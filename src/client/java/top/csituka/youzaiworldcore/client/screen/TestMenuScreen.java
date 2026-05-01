@@ -1,7 +1,6 @@
 package top.csituka.youzaiworldcore.client.screen;
 
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
@@ -33,38 +32,43 @@ public class TestMenuScreen extends Screen {
 
         int largeButtonY = centerY - LARGE_BUTTON_HEIGHT / 2 - ROW_SPACING;
 
-        this.addRenderableWidget(Button.builder(
+        this.addRenderableWidget(new TransparentButton(
+                startX, largeButtonY, LARGE_BUTTON_WIDTH, LARGE_BUTTON_HEIGHT,
                 Component.translatable("screen.youzaiworldcore.test_menu.button_main"),
-                button -> {}
-        ).bounds(startX, largeButtonY, LARGE_BUTTON_WIDTH, LARGE_BUTTON_HEIGHT).build());
+                () -> {}
+        ));
 
         int rightButtonsX = startX + LARGE_BUTTON_WIDTH + BUTTON_SPACING;
         int totalSmallHeight = SMALL_BUTTON_HEIGHT * 2 + BUTTON_SPACING;
         int smallButtonsStartY = centerY - totalSmallHeight / 2 - ROW_SPACING;
 
-        this.addRenderableWidget(Button.builder(
+        this.addRenderableWidget(new TransparentButton(
+                rightButtonsX, smallButtonsStartY, SMALL_BUTTON_WIDTH, SMALL_BUTTON_HEIGHT,
                 Component.translatable("screen.youzaiworldcore.test_menu.button_small1"),
-                button -> {}
-        ).bounds(rightButtonsX, smallButtonsStartY, SMALL_BUTTON_WIDTH, SMALL_BUTTON_HEIGHT).build());
+                () -> {}
+        ));
 
-        this.addRenderableWidget(Button.builder(
+        this.addRenderableWidget(new TransparentButton(
+                rightButtonsX, smallButtonsStartY + SMALL_BUTTON_HEIGHT + BUTTON_SPACING, SMALL_BUTTON_WIDTH, SMALL_BUTTON_HEIGHT,
                 Component.translatable("screen.youzaiworldcore.test_menu.button_small2"),
-                button -> {}
-        ).bounds(rightButtonsX, smallButtonsStartY + SMALL_BUTTON_HEIGHT + BUTTON_SPACING, SMALL_BUTTON_WIDTH, SMALL_BUTTON_HEIGHT).build());
+                () -> {}
+        ));
 
         int bottomRowY = largeButtonY + LARGE_BUTTON_HEIGHT + ROW_SPACING;
         int bottomRowWidth = NARROW_BUTTON_WIDTH + BUTTON_SPACING + WIDE_BUTTON_WIDTH;
         int bottomStartX = centerX - bottomRowWidth / 2;
 
-        this.addRenderableWidget(Button.builder(
+        this.addRenderableWidget(new TransparentButton(
+                bottomStartX, bottomRowY, NARROW_BUTTON_WIDTH, BOTTOM_BUTTON_HEIGHT,
                 Component.translatable("screen.youzaiworldcore.test_menu.button_narrow"),
-                button -> {}
-        ).bounds(bottomStartX, bottomRowY, NARROW_BUTTON_WIDTH, BOTTOM_BUTTON_HEIGHT).build());
+                () -> {}
+        ));
 
-        this.addRenderableWidget(Button.builder(
+        this.addRenderableWidget(new TransparentButton(
+                bottomStartX + NARROW_BUTTON_WIDTH + BUTTON_SPACING, bottomRowY, WIDE_BUTTON_WIDTH, BOTTOM_BUTTON_HEIGHT,
                 Component.translatable("screen.youzaiworldcore.test_menu.button_wide"),
-                button -> {}
-        ).bounds(bottomStartX + NARROW_BUTTON_WIDTH + BUTTON_SPACING, bottomRowY, WIDE_BUTTON_WIDTH, BOTTOM_BUTTON_HEIGHT).build());
+                () -> {}
+        ));
     }
 
     @Override
