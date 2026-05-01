@@ -1,0 +1,10 @@
+{
+  "key.youzaiworldcore.open_menu": "打开测试菜单",
+  "key.category.youzaiworldcore.main": "YouzaiWorldCore",
+  "screen.youzaiworldcore.test_menu.title": "测试菜单",
+  "screen.youzaiworldcore.test_menu.button_main": "主要功能",
+  "screen.youzaiworldcore.test_menu.button_small1": "功能一",
+  "screen.youzaiworldcore.test_menu.button_small2": "功能二",
+  "screen.youzaiworldcore.test_menu.button_left": "左侧",
+  "screen.youzaiworldcore.test_menu.button_right": "右侧"
+}
