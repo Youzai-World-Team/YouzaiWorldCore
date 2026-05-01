@@ -11,10 +11,10 @@
   "environment": "*",
   "entrypoints": {
     "fabric-datagen": [
-      "top.csituka.youzaiworldcore.client.YouzaiworldCoreDataGenerator"
+      "top.csituka.youzaiworldcore.client.DataGenerator"
     ],
     "client": [
-      "top.csituka.youzaiworldcore.client.YouzaiworldCoreClient"
+      "top.csituka.youzaiworldcore.client.Client"
     ],
     "main": [
       "top.csituka.youzaiworldcore.YouzaiworldCore"
