@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "id": "youzaiworldcore",
+  "version": "${version}",
+  "name": "YouzaiWorldCore",
+  "description": "",
+  "authors": [],
+  "contact": {},
+  "license": "All-Rights-Reserved",
+  "icon": "assets/youzaiworldcore/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "fabric-datagen": [
+      "top.csituka.youzaiworldcore.client.YouzaiworldCoreDataGenerator"
+    ],
+    "client": [
+      "top.csituka.youzaiworldcore.client.YouzaiworldCoreClient"
+    ],
+    "main": [
+      "top.csituka.youzaiworldcore.YouzaiworldCore"
+    ]
+  },
+  "mixins": [
+    "youzaiworldcore.mixins.json",
+    {
+      "config": "youzaiworldcore.client.mixins.json",
+      "environment": "client"
+    }
+  ],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric-api": "*",
+    "minecraft": "${minecraft_version}"
+  }
+}
