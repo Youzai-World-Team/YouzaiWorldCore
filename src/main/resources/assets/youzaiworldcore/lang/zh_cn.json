@@ -5,6 +5,6 @@
   "screen.youzaiworldcore.test_menu.button_main": "主要功能",
   "screen.youzaiworldcore.test_menu.button_small1": "功能一",
   "screen.youzaiworldcore.test_menu.button_small2": "功能二",
-  "screen.youzaiworldcore.test_menu.button_left": "左侧",
-  "screen.youzaiworldcore.test_menu.button_right": "右侧"
+  "screen.youzaiworldcore.test_menu.button_narrow": "窄",
+  "screen.youzaiworldcore.test_menu.button_wide": "宽按钮"
 }

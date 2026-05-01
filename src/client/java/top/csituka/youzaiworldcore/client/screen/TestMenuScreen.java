@@ -12,11 +12,11 @@ public class TestMenuScreen extends Screen {
     private static final int LARGE_BUTTON_HEIGHT = 80;
     private static final int SMALL_BUTTON_WIDTH = 100;
     private static final int SMALL_BUTTON_HEIGHT = 35;
-    private static final int SIDE_LARGE_BUTTON_WIDTH = 100;
-    private static final int SIDE_LARGE_BUTTON_HEIGHT = 80;
-    private static final int SIDE_SMALL_BUTTON_WIDTH = 80;
-    private static final int SIDE_SMALL_BUTTON_HEIGHT = 50;
+    private static final int NARROW_BUTTON_WIDTH = 80;
+    private static final int WIDE_BUTTON_WIDTH = 140;
+    private static final int BOTTOM_BUTTON_HEIGHT = 30;
     private static final int BUTTON_SPACING = 10;
+    private static final int ROW_SPACING = 15;
 
     public TestMenuScreen() {
         super(Component.translatable("screen.youzaiworldcore.test_menu.title"));
@@ -28,28 +28,19 @@ public class TestMenuScreen extends Screen {
         int centerX = this.width / 2;
         int centerY = this.height / 2;
 
-        int centerGroupWidth = LARGE_BUTTON_WIDTH + BUTTON_SPACING + SMALL_BUTTON_WIDTH;
-        int totalWidth = SIDE_SMALL_BUTTON_WIDTH + BUTTON_SPACING + centerGroupWidth + BUTTON_SPACING + SIDE_LARGE_BUTTON_WIDTH;
-        int startX = centerX - totalWidth / 2;
+        int topRowWidth = LARGE_BUTTON_WIDTH + BUTTON_SPACING + SMALL_BUTTON_WIDTH;
+        int startX = centerX - topRowWidth / 2;
 
-        int leftSmallX = startX;
-        int leftSmallY = centerY - SIDE_SMALL_BUTTON_HEIGHT / 2;
-        this.addRenderableWidget(Button.builder(
-                Component.translatable("screen.youzaiworldcore.test_menu.button_left"),
-                button -> {}
-        ).bounds(leftSmallX, leftSmallY, SIDE_SMALL_BUTTON_WIDTH, SIDE_SMALL_BUTTON_HEIGHT).build());
-
-        int centerGroupX = startX + SIDE_SMALL_BUTTON_WIDTH + BUTTON_SPACING;
-        int largeButtonY = centerY - LARGE_BUTTON_HEIGHT / 2;
+        int largeButtonY = centerY - LARGE_BUTTON_HEIGHT / 2 - ROW_SPACING;
 
         this.addRenderableWidget(Button.builder(
                 Component.translatable("screen.youzaiworldcore.test_menu.button_main"),
                 button -> {}
-        ).bounds(centerGroupX, largeButtonY, LARGE_BUTTON_WIDTH, LARGE_BUTTON_HEIGHT).build());
+        ).bounds(startX, largeButtonY, LARGE_BUTTON_WIDTH, LARGE_BUTTON_HEIGHT).build());
 
-        int rightButtonsX = centerGroupX + LARGE_BUTTON_WIDTH + BUTTON_SPACING;
+        int rightButtonsX = startX + LARGE_BUTTON_WIDTH + BUTTON_SPACING;
         int totalSmallHeight = SMALL_BUTTON_HEIGHT * 2 + BUTTON_SPACING;
-        int smallButtonsStartY = centerY - totalSmallHeight / 2;
+        int smallButtonsStartY = centerY - totalSmallHeight / 2 - ROW_SPACING;
 
         this.addRenderableWidget(Button.builder(
                 Component.translatable("screen.youzaiworldcore.test_menu.button_small1"),
@@ -61,12 +52,19 @@ public class TestMenuScreen extends Screen {
                 button -> {}
         ).bounds(rightButtonsX, smallButtonsStartY + SMALL_BUTTON_HEIGHT + BUTTON_SPACING, SMALL_BUTTON_WIDTH, SMALL_BUTTON_HEIGHT).build());
 
-        int rightLargeX = rightButtonsX + SMALL_BUTTON_WIDTH + BUTTON_SPACING;
-        int rightLargeY = centerY - SIDE_LARGE_BUTTON_HEIGHT / 2;
+        int bottomRowY = largeButtonY + LARGE_BUTTON_HEIGHT + ROW_SPACING;
+        int bottomRowWidth = NARROW_BUTTON_WIDTH + BUTTON_SPACING + WIDE_BUTTON_WIDTH;
+        int bottomStartX = centerX - bottomRowWidth / 2;
+
         this.addRenderableWidget(Button.builder(
-                Component.translatable("screen.youzaiworldcore.test_menu.button_right"),
+                Component.translatable("screen.youzaiworldcore.test_menu.button_narrow"),
                 button -> {}
-        ).bounds(rightLargeX, rightLargeY, SIDE_LARGE_BUTTON_WIDTH, SIDE_LARGE_BUTTON_HEIGHT).build());
+        ).bounds(bottomStartX, bottomRowY, NARROW_BUTTON_WIDTH, BOTTOM_BUTTON_HEIGHT).build());
+
+        this.addRenderableWidget(Button.builder(
+                Component.translatable("screen.youzaiworldcore.test_menu.button_wide"),
+                button -> {}
+        ).bounds(bottomStartX + NARROW_BUTTON_WIDTH + BUTTON_SPACING, bottomRowY, WIDE_BUTTON_WIDTH, BOTTOM_BUTTON_HEIGHT).build());
     }
 
     @Override

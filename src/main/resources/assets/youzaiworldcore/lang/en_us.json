@@ -5,6 +5,6 @@
   "screen.youzaiworldcore.test_menu.button_main": "Main Feature",
   "screen.youzaiworldcore.test_menu.button_small1": "Feature 1",
   "screen.youzaiworldcore.test_menu.button_small2": "Feature 2",
-  "screen.youzaiworldcore.test_menu.button_left": "Left",
-  "screen.youzaiworldcore.test_menu.button_right": "Right"
+  "screen.youzaiworldcore.test_menu.button_narrow": "Narrow",
+  "screen.youzaiworldcore.test_menu.button_wide": "Wide Button"
 }
