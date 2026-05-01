@@ -1,4 +1,4 @@
-package top.csituka.youzaiworldcore.client.screen;
+package top.csituka.youzaiworldcore.client.screen.widget;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;

@@ -4,9 +4,11 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
+
 import java.util.List;
 
-public class TestMenuScreen extends Screen {
+public class MainMenu extends Screen {
 
     private static final int LARGE_BUTTON_WIDTH = 120;
     private static final int LARGE_BUTTON_HEIGHT = 80;
@@ -23,7 +25,7 @@ public class TestMenuScreen extends Screen {
     private long startTime = 0;
     private List<TransparentButton> buttons;
 
-    public TestMenuScreen() {
+    public MainMenu() {
         super(Component.translatable("screen.youzaiworldcore.test_menu.title"));
     }
 
