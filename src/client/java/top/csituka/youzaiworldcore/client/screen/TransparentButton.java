@@ -8,19 +8,23 @@ import net.minecraft.network.chat.Component;
 
 public class TransparentButton extends AbstractWidget {
 
-    private static final int BACKGROUND_COLOR = 0x80FFFFFF;
-    private static final int HOVER_COLOR = 0xB0FFFFFF;
+    private static final int BACKGROUND_COLOR = 0xFFFFFF;
     private static final int TEXT_COLOR = 0xFF000000;
     private static final int CORNER_RADIUS = 6;
-    private static final float LERP_SPEED = 0.15f;
 
     private final Runnable onPress;
     private float currentAlpha = 0.5f;
     private float targetAlpha = 0.5f;
+    private float externalAlpha = 1f;
+    private static final float LERP_SPEED = 0.15f;
 
     public TransparentButton(int x, int y, int width, int height, Component message, Runnable onPress) {
         super(x, y, width, height, message);
         this.onPress = onPress;
+    }
+
+    public void setExternalAlpha(float alpha) {
+        this.externalAlpha = alpha;
     }
 
     @Override
@@ -28,7 +32,8 @@ public class TransparentButton extends AbstractWidget {
         targetAlpha = this.isHovered() ? 0.69f : 0.5f;
         currentAlpha = lerp(currentAlpha, targetAlpha, LERP_SPEED);
         
-        int backgroundColor = colorWithAlpha(BACKGROUND_COLOR, currentAlpha);
+        float finalAlpha = currentAlpha * externalAlpha;
+        int backgroundColor = colorWithAlpha(BACKGROUND_COLOR, finalAlpha);
         
         int x = this.getX();
         int y = this.getY();
@@ -38,13 +43,14 @@ public class TransparentButton extends AbstractWidget {
 
         fillRoundedRect(guiGraphics, x, y, width, height, r, backgroundColor);
 
+        int textColor = colorWithAlpha(TEXT_COLOR & 0x00FFFFFF, externalAlpha);
         var font = Minecraft.getInstance().font;
         String text = this.getMessage().getString();
         int textWidth = font.width(text);
         int textX = x + (width - textWidth) / 2;
         int textY = y + (height - 8) / 2;
         
-        guiGraphics.text(font, this.getMessage(), textX, textY, TEXT_COLOR, false);
+        guiGraphics.text(font, this.getMessage(), textX, textY, textColor, false);
     }
 
     private void fillRoundedRect(GuiGraphicsExtractor g, int x, int y, int w, int h, int r, int color) {
