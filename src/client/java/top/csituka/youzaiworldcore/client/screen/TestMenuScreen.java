@@ -1,5 +1,6 @@
 package top.csituka.youzaiworldcore.client.screen;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
@@ -127,7 +128,60 @@ public class TestMenuScreen extends Screen {
         int backgroundColor = (bgAlpha << 24);
         guiGraphics.fill(0, 0, this.width, this.height, backgroundColor);
         
+        renderWelcomeText(guiGraphics, alpha);
+        
         super.extractRenderState(guiGraphics, mouseX, mouseY, partialTick);
+    }
+    
+    private void renderWelcomeText(GuiGraphicsExtractor guiGraphics, float alpha) {
+        Minecraft client = Minecraft.getInstance();
+        String playerName = client.player != null ? client.player.getName().getString() : "Player";
+        String welcomeText = "您好，" + playerName + "！欢迎来到悠哉世界";
+        String titleText = "主菜单";
+        
+        int textAlpha = (int) (alpha * 255);
+        int textColor = (textAlpha << 24) | 0xFFFFFF;
+        
+        float scaledLargeH = LARGE_BUTTON_HEIGHT * 1.15f;
+        float scaledRowSpacing = ROW_SPACING * 1.15f;
+        int baseY = (int) (this.height / 2 - scaledLargeH / 2 - scaledRowSpacing - 15);
+        
+        float titleScale = 1.3f;
+        int letterSpacing = 3;
+        int titleWidth = calculateTextWidthWithSpacing(titleText, letterSpacing);
+        float titleX = (this.width - titleWidth * titleScale) / 2f / titleScale;
+        int titleY = baseY - 25;
+        
+        guiGraphics.pose().pushMatrix();
+        guiGraphics.pose().scale(titleScale, titleScale);
+        drawTextWithSpacing(guiGraphics, this.font, titleText, (int) titleX, (int) (titleY / titleScale), textColor, letterSpacing);
+        guiGraphics.pose().popMatrix();
+        
+        int welcomeWidth = this.font.width(welcomeText);
+        int welcomeX = (this.width - welcomeWidth) / 2;
+        int welcomeY = baseY - 5;
+        
+        guiGraphics.text(this.font, welcomeText, welcomeX, welcomeY, textColor, false);
+    }
+    
+    private int calculateTextWidthWithSpacing(String text, int letterSpacing) {
+        int width = 0;
+        for (int i = 0; i < text.length(); i++) {
+            width += this.font.width(String.valueOf(text.charAt(i)));
+            if (i < text.length() - 1) {
+                width += letterSpacing;
+            }
+        }
+        return width;
+    }
+    
+    private void drawTextWithSpacing(GuiGraphicsExtractor guiGraphics, net.minecraft.client.gui.Font font, String text, int x, int y, int color, int letterSpacing) {
+        int currentX = x;
+        for (int i = 0; i < text.length(); i++) {
+            String ch = String.valueOf(text.charAt(i));
+            guiGraphics.text(font, ch, currentX, y, color, false);
+            currentX += font.width(ch) + letterSpacing;
+        }
     }
 
     @Override
