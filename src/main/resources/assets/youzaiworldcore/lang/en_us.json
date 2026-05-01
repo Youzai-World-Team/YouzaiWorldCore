@@ -1,8 +1,7 @@
 {
-  "screen.youzaiworldcore.test_menu.title": "Test Menu",
-  "screen.youzaiworldcore.test_menu.button_main": "Main Feature",
-  "screen.youzaiworldcore.test_menu.button_small1": "Feature 1",
-  "screen.youzaiworldcore.test_menu.button_small2": "Feature 2",
-  "screen.youzaiworldcore.test_menu.button_narrow": "Narrow",
-  "screen.youzaiworldcore.test_menu.button_wide": "Wide Button"
+  "screen.youzaiworldcore.test_menu.button_main": "Switch World",
+  "screen.youzaiworldcore.test_menu.button_small1": "Apply Question",
+  "screen.youzaiworldcore.test_menu.button_small2": "Tutorial Center",
+  "screen.youzaiworldcore.test_menu.button_narrow": "Settings",
+  "screen.youzaiworldcore.test_menu.button_wide": "About Me"
 }

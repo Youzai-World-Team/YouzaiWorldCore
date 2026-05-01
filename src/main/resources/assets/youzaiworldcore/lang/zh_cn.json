@@ -1,8 +1,7 @@
 {
-  "screen.youzaiworldcore.test_menu.title": "测试菜单",
-  "screen.youzaiworldcore.test_menu.button_main": "主要功能",
-  "screen.youzaiworldcore.test_menu.button_small1": "功能一",
-  "screen.youzaiworldcore.test_menu.button_small2": "功能二",
-  "screen.youzaiworldcore.test_menu.button_narrow": "窄",
-  "screen.youzaiworldcore.test_menu.button_wide": "宽按钮"
+  "screen.youzaiworldcore.test_menu.button_main": "切换世界",
+  "screen.youzaiworldcore.test_menu.button_small1": "问卷申请",
+  "screen.youzaiworldcore.test_menu.button_small2": "教程中心",
+  "screen.youzaiworldcore.test_menu.button_narrow": "设置",
+  "screen.youzaiworldcore.test_menu.button_wide": "关于我"
 }

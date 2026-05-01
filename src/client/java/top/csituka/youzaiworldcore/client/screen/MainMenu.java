@@ -1,5 +1,6 @@
 package top.csituka.youzaiworldcore.client.screen;
 
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
@@ -130,9 +131,30 @@ public class MainMenu extends Screen {
         int backgroundColor = (bgAlpha << 24);
         guiGraphics.fill(0, 0, this.width, this.height, backgroundColor);
         
+        renderVersionText(guiGraphics, alpha);
         renderWelcomeText(guiGraphics, alpha);
         
         super.extractRenderState(guiGraphics, mouseX, mouseY, partialTick);
+    }
+    
+    private void renderVersionText(GuiGraphicsExtractor guiGraphics, float alpha) {
+        String version = FabricLoader.getInstance()
+                .getModContainer("youzaiworldcore")
+                .map(container -> container.getMetadata().getVersion().getFriendlyString())
+                .orElse("unknown");
+        String versionText = "YouzaiWorldCore v" + version;
+        
+        int textAlpha = (int) (alpha * 180);
+        int textColor = (textAlpha << 24) | 0xAAAAAA;
+        
+        float scale = 0.5f;
+        int marginX = 10;
+        int marginY = 10;
+        
+        guiGraphics.pose().pushMatrix();
+        guiGraphics.pose().scale(scale, scale);
+        guiGraphics.text(this.font, versionText, (int) (marginX / scale), (int) (marginY / scale), textColor, false);
+        guiGraphics.pose().popMatrix();
     }
     
     private void renderWelcomeText(GuiGraphicsExtractor guiGraphics, float alpha) {
