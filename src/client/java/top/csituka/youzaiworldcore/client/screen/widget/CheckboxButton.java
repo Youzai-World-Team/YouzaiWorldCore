@@ -48,6 +48,10 @@ public class CheckboxButton extends AbstractWidget {
         guiGraphics.text(font, Component.literal(box), x + w - boxWidth - 4, textY, textColor, false);
     }
 
+    public void render(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
+        this.extractWidgetRenderState(guiGraphics, mouseX, mouseY, partialTick);
+    }
+
     @Override
     public void onClick(MouseButtonEvent event, boolean isActuallyClick) {
         checked = !checked;

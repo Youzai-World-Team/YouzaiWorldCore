@@ -111,10 +111,17 @@ public class ConfirmationDialog {
         int titleColor = colorWithAlpha(0x000000, alpha);
         int messageColor = colorWithAlpha(0x000000, alpha);
 
-        int titleWidth = font.width(title);
-        guiGraphics.text(font, title, dialogX + (DIALOG_WIDTH - titleWidth) / 2, dialogY + 15, titleColor, false);
+        float titleScale = 1.2f;
+        int titleWidth = (int) (font.width(title) * titleScale);
+        int titleX = dialogX + (DIALOG_WIDTH - titleWidth) / 2;
+        int titleY = dialogY + 15;
 
-        int messageY = dialogY + 35;
+        guiGraphics.pose().pushMatrix();
+        guiGraphics.pose().scale(titleScale, titleScale);
+        guiGraphics.text(font, title, (int) (titleX / titleScale), (int) (titleY / titleScale), titleColor, false);
+        guiGraphics.pose().popMatrix();
+
+        int messageY = dialogY + 38;
         for (String message : messages) {
             int msgWidth = font.width(message);
             guiGraphics.text(font, message, dialogX + (DIALOG_WIDTH - msgWidth) / 2, messageY, messageColor, false);

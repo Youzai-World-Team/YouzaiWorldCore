@@ -8,7 +8,9 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 import top.csituka.youzaiworldcore.client.screen.element.MenuElementGroup;
+import top.csituka.youzaiworldcore.client.screen.widget.CheckboxButton;
 import top.csituka.youzaiworldcore.client.screen.widget.ConfirmationDialog;
+import top.csituka.youzaiworldcore.client.screen.widget.DropdownButton;
 import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
 
 import java.util.ArrayDeque;
@@ -116,7 +118,7 @@ public class MenuScreen extends Screen {
         float targetDialogProgress = hasDialog ? 1f : 0f;
         dialogAnimProgress = lerp(dialogAnimProgress, targetDialogProgress, DIALOG_ANIM_SPEED);
 
-        float menuAlpha = easedEntry * (1f - dialogAnimProgress * 0.5f);
+        float menuAlpha = easedEntry * (1f - dialogAnimProgress * 0.7f);
         float menuScale = 1f - dialogAnimProgress * 0.05f;
 
         currentButtons.clear();
@@ -148,6 +150,10 @@ public class MenuScreen extends Screen {
         for (AbstractWidget button : currentButtons) {
             if (button instanceof TransparentButton tb) {
                 tb.render(guiGraphics, transformedMouseX, transformedMouseY, partialTick);
+            } else if (button instanceof CheckboxButton cb) {
+                cb.render(guiGraphics, transformedMouseX, transformedMouseY, partialTick);
+            } else if (button instanceof DropdownButton db) {
+                db.render(guiGraphics, transformedMouseX, transformedMouseY, partialTick);
             }
         }
 
@@ -179,6 +185,18 @@ public class MenuScreen extends Screen {
 
         for (AbstractWidget widget : currentButtons) {
             if (widget instanceof TransparentButton button) {
+                if (transformedMouseX >= button.getX() && transformedMouseX < button.getX() + button.getWidth() &&
+                    transformedMouseY >= button.getY() && transformedMouseY < button.getY() + button.getHeight()) {
+                    button.onClick(event, isActuallyClick);
+                    return true;
+                }
+            } else if (widget instanceof CheckboxButton button) {
+                if (transformedMouseX >= button.getX() && transformedMouseX < button.getX() + button.getWidth() &&
+                    transformedMouseY >= button.getY() && transformedMouseY < button.getY() + button.getHeight()) {
+                    button.onClick(event, isActuallyClick);
+                    return true;
+                }
+            } else if (widget instanceof DropdownButton button) {
                 if (transformedMouseX >= button.getX() && transformedMouseX < button.getX() + button.getWidth() &&
                     transformedMouseY >= button.getY() && transformedMouseY < button.getY() + button.getHeight()) {
                     button.onClick(event, isActuallyClick);
