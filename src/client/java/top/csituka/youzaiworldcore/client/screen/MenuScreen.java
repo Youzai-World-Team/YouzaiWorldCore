@@ -33,6 +33,9 @@ public class MenuScreen extends Screen {
 
     private float backButtonAlpha = 0f;
 
+    private int mouseX = 0;
+    private int mouseY = 0;
+
     public MenuScreen(MenuElementGroup elementGroup) {
         super(Component.translatable("screen.youzaiworldcore.menu.title"));
         this.currentGroup = elementGroup;
@@ -66,6 +69,9 @@ public class MenuScreen extends Screen {
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
+        this.mouseX = mouseX;
+        this.mouseY = mouseY;
+
         if (entryProgress < 1f) {
             long elapsed = System.currentTimeMillis() - entryStartTime;
             entryProgress = Math.min(1f, elapsed / (ENTRY_ANIMATION_DURATION * 1000f));
@@ -118,8 +124,8 @@ public class MenuScreen extends Screen {
         renderTitle(guiGraphics, currentGroup, outAlpha);
         renderTitle(guiGraphics, targetGroup, inAlpha);
 
-        currentGroup.renderCustomContent(guiGraphics, this.width, this.height, outAlpha, outOffset);
-        targetGroup.renderCustomContent(guiGraphics, this.width, this.height, inAlpha, inOffset);
+        currentGroup.renderCustomContent(guiGraphics, this.width, this.height, outAlpha, outOffset, this.mouseX, this.mouseY);
+        targetGroup.renderCustomContent(guiGraphics, this.width, this.height, inAlpha, inOffset, this.mouseX, this.mouseY);
 
         if (transitionProgress >= 1f) {
             currentGroup = targetGroup;
@@ -132,7 +138,7 @@ public class MenuScreen extends Screen {
         this.clearWidgets();
         renderGroupButtons(group, entryAlpha, 0f);
         renderTitle(guiGraphics, group, entryAlpha);
-        group.renderCustomContent(guiGraphics, this.width, this.height, entryAlpha, 0f);
+        group.renderCustomContent(guiGraphics, this.width, this.height, entryAlpha, 0f, this.mouseX, this.mouseY);
     }
 
     private void addCloseButton(float alpha) {

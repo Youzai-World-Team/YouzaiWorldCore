@@ -12,11 +12,11 @@
   "screen.youzaiworldcore.switch_world.world4": "世界四",
   "screen.youzaiworldcore.switch_world.world5": "世界五",
   "screen.youzaiworldcore.switch_world.back": "返回",
-  "screen.youzaiworldcore.settings.category_general": "通用 —",
-  "screen.youzaiworldcore.settings.checkbox_music": "背景音乐",
-  "screen.youzaiworldcore.settings.checkbox_sound": "音效",
-  "screen.youzaiworldcore.settings.category_gameplay": "玩法 —",
-  "screen.youzaiworldcore.settings.checkbox_pvp": "PVP",
-  "screen.youzaiworldcore.settings.checkbox_friendly_fire": "友伤",
-  "screen.youzaiworldcore.settings.dropdown_difficulty": "难度"
+  "screen.youzaiworldcore.settings.category_general": "分组1 —",
+  "screen.youzaiworldcore.settings.checkbox_music": "复选框1",
+  "screen.youzaiworldcore.settings.checkbox_sound": "复选框2",
+  "screen.youzaiworldcore.settings.category_gameplay": "分组2 —",
+  "screen.youzaiworldcore.settings.checkbox_pvp": "复选框3",  
+  "screen.youzaiworldcore.settings.checkbox_friendly_fire": "复选框4",
+  "screen.youzaiworldcore.settings.dropdown_difficulty": "下拉框1"
 }

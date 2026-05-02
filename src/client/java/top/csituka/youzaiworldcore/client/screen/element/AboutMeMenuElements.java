@@ -44,7 +44,7 @@ public class AboutMeMenuElements implements MenuElementGroup {
     }
 
     @Override
-    public void renderCustomContent(GuiGraphicsExtractor guiGraphics, int screenWidth, int screenHeight, float alpha, float xOffset) {
+    public void renderCustomContent(GuiGraphicsExtractor guiGraphics, int screenWidth, int screenHeight, float alpha, float xOffset, int mouseX, int mouseY) {
         Minecraft client = Minecraft.getInstance();
         if (client.player == null) return;
 
@@ -97,7 +97,7 @@ public class AboutMeMenuElements implements MenuElementGroup {
                     modelX2, modelY2,
                     30,
                     0.0625f,
-                    modelCenterX, modelCenterY,
+                    mouseX, mouseY,
                     client.player
             );
         }
