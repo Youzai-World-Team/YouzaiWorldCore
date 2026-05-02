@@ -100,6 +100,10 @@ public class TransparentButton extends AbstractWidget {
         return current + (target - current) * speed;
     }
 
+    public void render(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
+        this.extractWidgetRenderState(guiGraphics, mouseX, mouseY, partialTick);
+    }
+
     @Override
     public void onClick(MouseButtonEvent event, boolean isActuallyClick) {
         if (this.onPress != null) {

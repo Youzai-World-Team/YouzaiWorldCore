@@ -5,11 +5,14 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 import top.csituka.youzaiworldcore.client.screen.element.MenuElementGroup;
+import top.csituka.youzaiworldcore.client.screen.widget.ConfirmationDialog;
 import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
 
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
 
@@ -35,6 +38,13 @@ public class MenuScreen extends Screen {
 
     private int mouseX = 0;
     private int mouseY = 0;
+
+    private ConfirmationDialog currentDialog;
+
+    private float dialogAnimProgress = 0f;
+    private static final float DIALOG_ANIM_SPEED = 0.08f;
+
+    private List<AbstractWidget> currentButtons = new ArrayList<>();
 
     public MenuScreen(MenuElementGroup elementGroup) {
         super(Component.translatable("screen.youzaiworldcore.menu.title"));
@@ -65,6 +75,25 @@ public class MenuScreen extends Screen {
         super.init();
         this.entryProgress = 0f;
         this.entryStartTime = System.currentTimeMillis();
+        if (currentDialog != null) {
+            currentDialog.init(this.width, this.height);
+        }
+    }
+
+    public void showDialog(ConfirmationDialog dialog) {
+        this.currentDialog = dialog;
+        dialog.init(this.width, this.height);
+        dialog.show();
+    }
+
+    public void closeDialog() {
+        if (this.currentDialog != null) {
+            this.currentDialog.hide();
+        }
+    }
+
+    public boolean hasDialog() {
+        return currentDialog != null && currentDialog.isFullyVisible();
     }
 
     @Override
@@ -83,24 +112,84 @@ public class MenuScreen extends Screen {
 
         renderVersionText(guiGraphics, easedEntry);
 
+        boolean hasDialog = currentDialog != null && currentDialog.isFullyVisible();
+        float targetDialogProgress = hasDialog ? 1f : 0f;
+        dialogAnimProgress = lerp(dialogAnimProgress, targetDialogProgress, DIALOG_ANIM_SPEED);
+
+        float menuAlpha = easedEntry * (1f - dialogAnimProgress * 0.5f);
+        float menuScale = 1f - dialogAnimProgress * 0.05f;
+
+        currentButtons.clear();
+
+        if (dialogAnimProgress > 0.001f) {
+            guiGraphics.pose().pushMatrix();
+            guiGraphics.pose().translate(this.width / 2f, this.height / 2f);
+            guiGraphics.pose().scale(menuScale, menuScale);
+            guiGraphics.pose().translate(-this.width / 2f, -this.height / 2f);
+        }
+
         if (targetGroup != null) {
-            renderTransition(guiGraphics);
+            renderTransition(guiGraphics, menuAlpha);
         } else {
-            renderSingleGroup(guiGraphics, currentGroup, easedEntry);
+            renderSingleGroup(guiGraphics, currentGroup, menuAlpha);
         }
 
         float targetBackAlpha = currentGroup.isRoot() ? 0f : 1f;
         backButtonAlpha = lerp(backButtonAlpha, targetBackAlpha, 0.12f);
         if (backButtonAlpha > 0.01f) {
-            addBackButton(easedEntry);
+            createBackButton(menuAlpha);
         }
 
-        addCloseButton(easedEntry);
+        createCloseButton(menuAlpha);
 
-        super.extractRenderState(guiGraphics, mouseX, mouseY, partialTick);
+        int transformedMouseX = (int) ((mouseX - this.width / 2.0) / menuScale + this.width / 2.0);
+        int transformedMouseY = (int) ((mouseY - this.height / 2.0) / menuScale + this.height / 2.0);
+
+        for (AbstractWidget button : currentButtons) {
+            if (button instanceof TransparentButton tb) {
+                tb.render(guiGraphics, transformedMouseX, transformedMouseY, partialTick);
+            }
+        }
+
+        if (dialogAnimProgress > 0.001f) {
+            guiGraphics.pose().popMatrix();
+        }
+
+        if (currentDialog != null && currentDialog.isVisible()) {
+            currentDialog.render(guiGraphics, this.width, this.height);
+            currentDialog.renderButtons(guiGraphics, mouseX, mouseY, partialTick);
+        } else if (currentDialog != null && !currentDialog.isVisible()) {
+            currentDialog = null;
+        }
     }
 
-    private void renderTransition(GuiGraphicsExtractor guiGraphics) {
+    @Override
+    public boolean mouseClicked(MouseButtonEvent event, boolean isActuallyClick) {
+        if (currentDialog != null && currentDialog.isFullyVisible()) {
+            return currentDialog.mouseClicked(event.x(), event.y());
+        }
+
+        double mouseX = event.x();
+        double mouseY = event.y();
+
+        float menuScale = 1f - dialogAnimProgress * 0.05f;
+
+        double transformedMouseX = (mouseX - this.width / 2.0) / menuScale + this.width / 2.0;
+        double transformedMouseY = (mouseY - this.height / 2.0) / menuScale + this.height / 2.0;
+
+        for (AbstractWidget widget : currentButtons) {
+            if (widget instanceof TransparentButton button) {
+                if (transformedMouseX >= button.getX() && transformedMouseX < button.getX() + button.getWidth() &&
+                    transformedMouseY >= button.getY() && transformedMouseY < button.getY() + button.getHeight()) {
+                    button.onClick(event, isActuallyClick);
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private void renderTransition(GuiGraphicsExtractor guiGraphics, float baseAlpha) {
         if (transitionProgress < 1f) {
             long elapsed = System.currentTimeMillis() - transitionStartTime;
             transitionProgress = Math.min(1f, elapsed / (TRANSITION_DURATION * 1000f));
@@ -111,13 +200,12 @@ public class MenuScreen extends Screen {
 
         float direction = transitionReverse ? 1f : -1f;
 
-        float outAlpha = 1f - eased;
+        float outAlpha = (1f - eased) * baseAlpha;
         float outOffset = direction * eased * slideDistance;
 
-        float inAlpha = eased;
+        float inAlpha = eased * baseAlpha;
         float inOffset = -direction * (1f - eased) * slideDistance;
 
-        this.clearWidgets();
         renderGroupButtons(currentGroup, outAlpha, outOffset);
         renderGroupButtons(targetGroup, inAlpha, inOffset);
 
@@ -135,13 +223,12 @@ public class MenuScreen extends Screen {
     }
 
     private void renderSingleGroup(GuiGraphicsExtractor guiGraphics, MenuElementGroup group, float entryAlpha) {
-        this.clearWidgets();
         renderGroupButtons(group, entryAlpha, 0f);
         renderTitle(guiGraphics, group, entryAlpha);
         group.renderCustomContent(guiGraphics, this.width, this.height, entryAlpha, 0f, this.mouseX, this.mouseY);
     }
 
-    private void addCloseButton(float alpha) {
+    private void createCloseButton(float alpha) {
         float scaledLargeH = MenuElementGroup.LARGE_BUTTON_HEIGHT;
         float scaledRowSpacing = MenuElementGroup.ROW_SPACING;
         int baseY = (int) (this.height / 2 - scaledLargeH / 2 - scaledRowSpacing - 15);
@@ -158,10 +245,10 @@ public class MenuScreen extends Screen {
         closeBtn.setBackgroundVisible(false);
         closeBtn.setTextColor(0xFFFFFF);
         closeBtn.setExternalAlpha(alpha);
-        this.addRenderableWidget(closeBtn);
+        currentButtons.add(closeBtn);
     }
 
-    private void addBackButton(float alpha) {
+    private void createBackButton(float alpha) {
         float scaledLargeH = MenuElementGroup.LARGE_BUTTON_HEIGHT;
         float scaledRowSpacing = MenuElementGroup.ROW_SPACING;
         int baseY = (int) (this.height / 2 - scaledLargeH / 2 - scaledRowSpacing - 15);
@@ -178,14 +265,14 @@ public class MenuScreen extends Screen {
         backBtn.setBackgroundVisible(false);
         backBtn.setTextColor(0xFFFFFF);
         backBtn.setExternalAlpha(alpha * backButtonAlpha);
-        this.addRenderableWidget(backBtn);
+        currentButtons.add(backBtn);
     }
 
     private void renderGroupButtons(MenuElementGroup group, float alpha, float xOffset) {
         List<AbstractWidget> buttons = group.createButtons(this, this.width, this.height, 1f, alpha);
         for (AbstractWidget button : buttons) {
             button.setX(button.getX() + (int) xOffset);
-            this.addRenderableWidget(button);
+            currentButtons.add(button);
         }
     }
 

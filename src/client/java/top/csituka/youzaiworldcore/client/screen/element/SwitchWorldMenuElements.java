@@ -4,6 +4,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.network.chat.Component;
 import top.csituka.youzaiworldcore.client.screen.MenuScreen;
+import top.csituka.youzaiworldcore.client.screen.widget.ConfirmationDialog;
 import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
 
 import java.util.ArrayList;
@@ -52,10 +53,7 @@ public class SwitchWorldMenuElements implements MenuElementGroup {
         TransparentButton topLeft = new TransparentButton(
                 (int) startX, (int) topY, (int) scaledLeftW, (int) scaledTopH,
                 Component.translatable("screen.youzaiworldcore.switch_world.world1"),
-                () -> {
-                    Minecraft.getInstance().player.connection.sendCommand("say 传送1");
-                    Minecraft.getInstance().setScreen(null);
-                }
+                () -> showTeleportDialog(screen, "1")
         );
         topLeft.setExternalAlpha(alpha);
         buttons.add(topLeft);
@@ -63,10 +61,7 @@ public class SwitchWorldMenuElements implements MenuElementGroup {
         TransparentButton topRight = new TransparentButton(
                 (int) (startX + scaledLeftW + scaledSpacing), (int) topY, (int) scaledRightW, (int) scaledTopH,
                 Component.translatable("screen.youzaiworldcore.switch_world.world2"),
-                () -> {
-                    Minecraft.getInstance().player.connection.sendCommand("say 传送2");
-                    Minecraft.getInstance().setScreen(null);
-                }
+                () -> showTeleportDialog(screen, "2")
         );
         topRight.setExternalAlpha(alpha);
         buttons.add(topRight);
@@ -76,10 +71,7 @@ public class SwitchWorldMenuElements implements MenuElementGroup {
         TransparentButton bottomLeft = new TransparentButton(
                 (int) startX, (int) bottomY, (int) scaledLeftW, (int) scaledBottomH,
                 Component.translatable("screen.youzaiworldcore.switch_world.world3"),
-                () -> {
-                    Minecraft.getInstance().player.connection.sendCommand("say 传送3");
-                    Minecraft.getInstance().setScreen(null);
-                }
+                () -> showTeleportDialog(screen, "3")
         );
         bottomLeft.setExternalAlpha(alpha);
         buttons.add(bottomLeft);
@@ -87,14 +79,24 @@ public class SwitchWorldMenuElements implements MenuElementGroup {
         TransparentButton bottomRight = new TransparentButton(
                 (int) (startX + scaledLeftW + scaledSpacing), (int) bottomY, (int) scaledRightW, (int) scaledBottomH,
                 Component.translatable("screen.youzaiworldcore.switch_world.world4"),
-                () -> {
-                    Minecraft.getInstance().player.connection.sendCommand("say 传送4");
-                    Minecraft.getInstance().setScreen(null);
-                }
+                () -> showTeleportDialog(screen, "4")
         );
         bottomRight.setExternalAlpha(alpha);
         buttons.add(bottomRight);
 
         return buttons;
+    }
+
+    private void showTeleportDialog(MenuScreen screen, String worldId) {
+        ConfirmationDialog dialog = new ConfirmationDialog(
+                "是否继续",
+                new String[]{"确定要传送吗？", "传送后您在当前世界的重生点将会被修改！"},
+                () -> {
+                    Minecraft.getInstance().player.connection.sendCommand("say 传送" + worldId);
+                    Minecraft.getInstance().setScreen(null);
+                },
+                null
+        );
+        screen.showDialog(dialog);
     }
 }
