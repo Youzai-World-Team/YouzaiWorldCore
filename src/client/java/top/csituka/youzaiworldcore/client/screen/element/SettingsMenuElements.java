@@ -12,8 +12,10 @@ import java.util.List;
 public class SettingsMenuElements implements MenuElementGroup {
 
     private static final int LIST_WIDTH = 250;
-    private static final int ROW_HEIGHT = 20;
-    private static final int ROW_SPACING = 4;
+    private static final int ROW_HEIGHT = 14;
+    private static final int ROW_SPACING = 2;
+    private static final int CATEGORY_SPACING = 8;
+    private static final int GRAY_COLOR = 0xAAAAAA;
 
     private boolean musicEnabled = true;
     private boolean soundEnabled = true;
@@ -47,6 +49,7 @@ public class SettingsMenuElements implements MenuElementGroup {
         float scaledListW = LIST_WIDTH * scale;
         float scaledRowH = ROW_HEIGHT * scale;
         float scaledSpacing = ROW_SPACING * scale;
+        float scaledCategorySpacing = CATEGORY_SPACING * scale;
         int startX = (int) (centerX - scaledListW / 2);
 
         float y = baseY;
@@ -57,7 +60,8 @@ public class SettingsMenuElements implements MenuElementGroup {
                 () -> {}
         );
         category1.setBackgroundVisible(false);
-        category1.setTextColor(0xFFFFFF);
+        category1.setTextColor(GRAY_COLOR);
+        category1.setTextLeftAligned(true);
         category1.setExternalAlpha(alpha);
         buttons.add(category1);
 
@@ -83,7 +87,7 @@ public class SettingsMenuElements implements MenuElementGroup {
         checkbox2.setExternalAlpha(alpha);
         buttons.add(checkbox2);
 
-        y += scaledRowH + scaledSpacing;
+        y += scaledRowH + scaledCategorySpacing;
 
         TransparentButton category2 = new TransparentButton(
                 startX, (int) y, (int) scaledListW, (int) scaledRowH,
@@ -91,7 +95,8 @@ public class SettingsMenuElements implements MenuElementGroup {
                 () -> {}
         );
         category2.setBackgroundVisible(false);
-        category2.setTextColor(0xFFFFFF);
+        category2.setTextColor(GRAY_COLOR);
+        category2.setTextLeftAligned(true);
         category2.setExternalAlpha(alpha);
         buttons.add(category2);
 

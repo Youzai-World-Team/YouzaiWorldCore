@@ -19,6 +19,7 @@ public class TransparentButton extends AbstractWidget {
     private float externalAlpha = 1f;
     private boolean backgroundVisible = true;
     private int textColorRgb = TEXT_COLOR & 0x00FFFFFF;
+    private boolean textLeftAligned = false;
     private static final float LERP_SPEED = 0.15f;
 
     public TransparentButton(int x, int y, int width, int height, Component message, Runnable onPress) {
@@ -36,6 +37,10 @@ public class TransparentButton extends AbstractWidget {
 
     public void setTextColor(int rgb) {
         this.textColorRgb = rgb & 0x00FFFFFF;
+    }
+
+    public void setTextLeftAligned(boolean leftAligned) {
+        this.textLeftAligned = leftAligned;
     }
 
     @Override
@@ -60,7 +65,7 @@ public class TransparentButton extends AbstractWidget {
         var font = Minecraft.getInstance().font;
         String text = this.getMessage().getString();
         int textWidth = font.width(text);
-        int textX = x + (width - textWidth) / 2;
+        int textX = textLeftAligned ? x + 4 : x + (width - textWidth) / 2;
         int textY = y + (height - 8) / 2;
         
         guiGraphics.text(font, this.getMessage(), textX, textY, textColor, false);
