@@ -15,7 +15,7 @@ public interface MenuElementGroup {
     int WIDE_BUTTON_WIDTH = 140;
     int BOTTOM_BUTTON_HEIGHT = 30;
     int BUTTON_SPACING = 10;
-    int ROW_SPACING = 15;
+    int ROW_SPACING = 10;
 
     String getTitleText();
 
