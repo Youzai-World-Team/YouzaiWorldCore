@@ -1,28 +1,36 @@
 package top.csituka.youzaiworldcore.client.screen;
 
 import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import top.csituka.youzaiworldcore.client.screen.element.MenuElementGroup;
 import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.List;
 
 public class MenuScreen extends Screen {
 
     private static final float ENTRY_ANIMATION_DURATION = 0.5f;
     private static final float TRANSITION_DURATION = 0.4f;
+    private static final int CLOSE_BUTTON_SIZE = 14;
+    private static final int TITLE_BUTTON_OFFSET = 100;
 
     private MenuElementGroup currentGroup;
     private MenuElementGroup targetGroup;
     private boolean transitionReverse = false;
+    private final Deque<MenuElementGroup> history = new ArrayDeque<>();
 
     private float entryProgress = 0f;
     private long entryStartTime = 0;
 
     private float transitionProgress = -1f;
     private long transitionStartTime = 0;
+
+    private float backButtonAlpha = 0f;
 
     public MenuScreen(MenuElementGroup elementGroup) {
         super(Component.translatable("screen.youzaiworldcore.menu.title"));
@@ -31,15 +39,18 @@ public class MenuScreen extends Screen {
 
     public void switchTo(MenuElementGroup newGroup) {
         if (targetGroup != null) return;
+        history.push(currentGroup);
         this.targetGroup = newGroup;
         this.transitionReverse = false;
         this.transitionProgress = 0f;
         this.transitionStartTime = System.currentTimeMillis();
     }
 
-    public void switchBack(MenuElementGroup newGroup) {
+    public void goBack() {
         if (targetGroup != null) return;
-        this.targetGroup = newGroup;
+        if (history.isEmpty()) return;
+        MenuElementGroup previous = history.pop();
+        this.targetGroup = previous;
         this.transitionReverse = true;
         this.transitionProgress = 0f;
         this.transitionStartTime = System.currentTimeMillis();
@@ -70,6 +81,14 @@ public class MenuScreen extends Screen {
         } else {
             renderSingleGroup(guiGraphics, currentGroup, easedEntry);
         }
+
+        float targetBackAlpha = currentGroup.isRoot() ? 0f : 1f;
+        backButtonAlpha = lerp(backButtonAlpha, targetBackAlpha, 0.12f);
+        if (backButtonAlpha > 0.01f) {
+            addBackButton(easedEntry);
+        }
+
+        addCloseButton(easedEntry);
 
         super.extractRenderState(guiGraphics, mouseX, mouseY, partialTick);
     }
@@ -109,6 +128,46 @@ public class MenuScreen extends Screen {
         this.clearWidgets();
         renderGroupButtons(group, entryAlpha, 0f);
         renderTitle(guiGraphics, group, entryAlpha);
+    }
+
+    private void addCloseButton(float alpha) {
+        float scaledLargeH = MenuElementGroup.LARGE_BUTTON_HEIGHT;
+        float scaledRowSpacing = MenuElementGroup.ROW_SPACING;
+        int baseY = (int) (this.height / 2 - scaledLargeH / 2 - scaledRowSpacing - 15);
+        int titleY = baseY - 25;
+
+        int closeX = this.width / 2 + TITLE_BUTTON_OFFSET;
+        int closeY = titleY + (int) ((this.font.lineHeight * 1.3f - CLOSE_BUTTON_SIZE) / 2f);
+
+        TransparentButton closeBtn = new TransparentButton(
+                closeX, closeY, CLOSE_BUTTON_SIZE, CLOSE_BUTTON_SIZE,
+                Component.literal("×"),
+                () -> Minecraft.getInstance().setScreen(null)
+        );
+        closeBtn.setBackgroundVisible(false);
+        closeBtn.setTextColor(0xFFFFFF);
+        closeBtn.setExternalAlpha(alpha);
+        this.addRenderableWidget(closeBtn);
+    }
+
+    private void addBackButton(float alpha) {
+        float scaledLargeH = MenuElementGroup.LARGE_BUTTON_HEIGHT;
+        float scaledRowSpacing = MenuElementGroup.ROW_SPACING;
+        int baseY = (int) (this.height / 2 - scaledLargeH / 2 - scaledRowSpacing - 15);
+        int titleY = baseY - 25;
+
+        int backX = this.width / 2 - TITLE_BUTTON_OFFSET - CLOSE_BUTTON_SIZE;
+        int backY = titleY + (int) ((this.font.lineHeight * 1.3f - CLOSE_BUTTON_SIZE) / 2f);
+
+        TransparentButton backBtn = new TransparentButton(
+                backX, backY, CLOSE_BUTTON_SIZE, CLOSE_BUTTON_SIZE,
+                Component.literal("←"),
+                this::goBack
+        );
+        backBtn.setBackgroundVisible(false);
+        backBtn.setTextColor(0xFFFFFF);
+        backBtn.setExternalAlpha(alpha * backButtonAlpha);
+        this.addRenderableWidget(backBtn);
     }
 
     private void renderGroupButtons(MenuElementGroup group, float alpha, float xOffset) {
@@ -202,6 +261,13 @@ public class MenuScreen extends Screen {
         return t < 0.5f
                 ? 4f * t * t * t
                 : 1f - (float) Math.pow(-2f * t + 2f, 3) / 2f;
+    }
+
+    private float lerp(float current, float target, float speed) {
+        if (Math.abs(current - target) < 0.001f) {
+            return target;
+        }
+        return current + (target - current) * speed;
     }
 
     @Override

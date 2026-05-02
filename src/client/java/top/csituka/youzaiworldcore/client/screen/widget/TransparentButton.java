@@ -17,6 +17,8 @@ public class TransparentButton extends AbstractWidget {
     private float currentAlpha = 0.5f;
     private float targetAlpha = 0.5f;
     private float externalAlpha = 1f;
+    private boolean backgroundVisible = true;
+    private int textColorRgb = TEXT_COLOR & 0x00FFFFFF;
     private static final float LERP_SPEED = 0.15f;
 
     public TransparentButton(int x, int y, int width, int height, Component message, Runnable onPress) {
@@ -26,6 +28,14 @@ public class TransparentButton extends AbstractWidget {
 
     public void setExternalAlpha(float alpha) {
         this.externalAlpha = alpha;
+    }
+
+    public void setBackgroundVisible(boolean visible) {
+        this.backgroundVisible = visible;
+    }
+
+    public void setTextColor(int rgb) {
+        this.textColorRgb = rgb & 0x00FFFFFF;
     }
 
     @Override
@@ -42,9 +52,11 @@ public class TransparentButton extends AbstractWidget {
         int height = this.height;
         int r = CORNER_RADIUS;
 
-        fillRoundedRect(guiGraphics, x, y, width, height, r, backgroundColor);
+        if (backgroundVisible) {
+            fillRoundedRect(guiGraphics, x, y, width, height, r, backgroundColor);
+        }
 
-        int textColor = colorWithAlpha(TEXT_COLOR & 0x00FFFFFF, externalAlpha);
+        int textColor = colorWithAlpha(textColorRgb, externalAlpha);
         var font = Minecraft.getInstance().font;
         String text = this.getMessage().getString();
         int textWidth = font.width(text);

@@ -20,6 +20,11 @@ public class SwitchWorldMenuElements implements MenuElementGroup {
     }
 
     @Override
+    public boolean isRoot() {
+        return false;
+    }
+
+    @Override
     public List<TransparentButton> createButtons(MenuScreen screen, int screenWidth, int screenHeight, float scale, float alpha) {
         List<TransparentButton> buttons = new ArrayList<>();
 
@@ -84,7 +89,7 @@ public class SwitchWorldMenuElements implements MenuElementGroup {
         TransparentButton bottomRight = new TransparentButton(
                 (int) (bottomStartX + scaledNarrowW + scaledSpacing), (int) bottomRowY, (int) scaledWideW, (int) scaledBottomH,
                 Component.translatable("screen.youzaiworldcore.switch_world.back"),
-                () -> screen.switchBack(new MainMenuElements())
+                () -> screen.goBack()
         );
         bottomRight.setExternalAlpha(alpha);
         buttons.add(bottomRight);

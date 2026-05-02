@@ -23,6 +23,11 @@ public class MainMenuElements implements MenuElementGroup {
     }
 
     @Override
+    public boolean isRoot() {
+        return true;
+    }
+
+    @Override
     public List<TransparentButton> createButtons(MenuScreen screen, int screenWidth, int screenHeight, float scale, float alpha) {
         List<TransparentButton> buttons = new ArrayList<>();
 

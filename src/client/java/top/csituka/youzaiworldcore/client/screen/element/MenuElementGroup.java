@@ -21,5 +21,7 @@ public interface MenuElementGroup {
 
     String getSubtitleText();
 
+    boolean isRoot();
+
     List<TransparentButton> createButtons(MenuScreen screen, int screenWidth, int screenHeight, float scale, float alpha);
 }
