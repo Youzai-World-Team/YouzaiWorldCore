@@ -17,7 +17,12 @@ public class SwitchWorldMenuElements implements MenuElementGroup {
 
     @Override
     public String getSubtitleText() {
-        return null;
+        Minecraft client = Minecraft.getInstance();
+        String worldId = "未知";
+        if (client.level != null) {
+            worldId = client.level.dimension().identifier().toString();
+        }
+        return "当前在" + worldId + "，请选择要传送的世界";
     }
 
     @Override
