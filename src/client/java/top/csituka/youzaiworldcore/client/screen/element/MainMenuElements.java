@@ -93,7 +93,7 @@ public class MainMenuElements implements MenuElementGroup {
         TransparentButton wideBtn = new TransparentButton(
                 (int) (bottomStartX + scaledNarrowW + scaledSpacing), (int) bottomRowY, (int) scaledWideW, (int) scaledBottomH,
                 Component.translatable("screen.youzaiworldcore.test_menu.button_wide"),
-                () -> {}
+                () -> screen.switchTo(new AboutMeMenuElements())
         );
         wideBtn.setExternalAlpha(alpha);
         buttons.add(wideBtn);

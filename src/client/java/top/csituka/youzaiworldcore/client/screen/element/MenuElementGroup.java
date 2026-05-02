@@ -1,5 +1,6 @@
 package top.csituka.youzaiworldcore.client.screen.element;
 
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractWidget;
 import top.csituka.youzaiworldcore.client.screen.MenuScreen;
 
@@ -24,4 +25,7 @@ public interface MenuElementGroup {
     boolean isRoot();
 
     List<AbstractWidget> createButtons(MenuScreen screen, int screenWidth, int screenHeight, float scale, float alpha);
+
+    default void renderCustomContent(GuiGraphicsExtractor guiGraphics, int screenWidth, int screenHeight, float alpha) {
+    }
 }
