@@ -1,6 +1,7 @@
 package top.csituka.youzaiworldcore.client.screen.element;
 
 import net.minecraft.network.chat.Component;
+import top.csituka.youzaiworldcore.client.screen.MenuScreen;
 import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
 
 import java.util.ArrayList;
@@ -19,7 +20,7 @@ public class SwitchWorldMenuElements implements MenuElementGroup {
     }
 
     @Override
-    public List<TransparentButton> createButtons(int screenWidth, int screenHeight, float scale, float alpha) {
+    public List<TransparentButton> createButtons(MenuScreen screen, int screenWidth, int screenHeight, float scale, float alpha) {
         List<TransparentButton> buttons = new ArrayList<>();
 
         int centerX = screenWidth / 2;
@@ -82,8 +83,8 @@ public class SwitchWorldMenuElements implements MenuElementGroup {
 
         TransparentButton bottomRight = new TransparentButton(
                 (int) (bottomStartX + scaledNarrowW + scaledSpacing), (int) bottomRowY, (int) scaledWideW, (int) scaledBottomH,
-                Component.translatable("screen.youzaiworldcore.switch_world.world5"),
-                () -> {}
+                Component.translatable("screen.youzaiworldcore.switch_world.back"),
+                () -> screen.switchBack(new MainMenuElements())
         );
         bottomRight.setExternalAlpha(alpha);
         buttons.add(bottomRight);

@@ -23,7 +23,7 @@ public class MainMenuElements implements MenuElementGroup {
     }
 
     @Override
-    public List<TransparentButton> createButtons(int screenWidth, int screenHeight, float scale, float alpha) {
+    public List<TransparentButton> createButtons(MenuScreen screen, int screenWidth, int screenHeight, float scale, float alpha) {
         List<TransparentButton> buttons = new ArrayList<>();
 
         int centerX = screenWidth / 2;
@@ -47,7 +47,7 @@ public class MainMenuElements implements MenuElementGroup {
         TransparentButton mainBtn = new TransparentButton(
                 (int) startX, (int) largeButtonY, (int) scaledLargeW, (int) scaledLargeH,
                 Component.translatable("screen.youzaiworldcore.test_menu.button_main"),
-                () -> Minecraft.getInstance().setScreen(new MenuScreen(new SwitchWorldMenuElements()))
+                () -> screen.switchTo(new SwitchWorldMenuElements())
         );
         mainBtn.setExternalAlpha(alpha);
         buttons.add(mainBtn);

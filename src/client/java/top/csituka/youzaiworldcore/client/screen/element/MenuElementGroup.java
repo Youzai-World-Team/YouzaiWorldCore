@@ -1,5 +1,6 @@
 package top.csituka.youzaiworldcore.client.screen.element;
 
+import top.csituka.youzaiworldcore.client.screen.MenuScreen;
 import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
 
 import java.util.List;
@@ -20,5 +21,5 @@ public interface MenuElementGroup {
 
     String getSubtitleText();
 
-    List<TransparentButton> createButtons(int screenWidth, int screenHeight, float scale, float alpha);
+    List<TransparentButton> createButtons(MenuScreen screen, int screenWidth, int screenHeight, float scale, float alpha);
 }
