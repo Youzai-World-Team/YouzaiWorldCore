@@ -3,6 +3,7 @@ package top.csituka.youzaiworldcore.client.screen;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import top.csituka.youzaiworldcore.client.screen.element.MenuElementGroup;
@@ -171,8 +172,8 @@ public class MenuScreen extends Screen {
     }
 
     private void renderGroupButtons(MenuElementGroup group, float alpha, float xOffset) {
-        List<TransparentButton> buttons = group.createButtons(this, this.width, this.height, 1f, alpha);
-        for (TransparentButton button : buttons) {
+        List<AbstractWidget> buttons = group.createButtons(this, this.width, this.height, 1f, alpha);
+        for (AbstractWidget button : buttons) {
             button.setX(button.getX() + (int) xOffset);
             this.addRenderableWidget(button);
         }

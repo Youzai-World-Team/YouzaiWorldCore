@@ -11,5 +11,9 @@
   "screen.youzaiworldcore.switch_world.world3": "World 3",
   "screen.youzaiworldcore.switch_world.world4": "World 4",
   "screen.youzaiworldcore.switch_world.world5": "World 5",
-  "screen.youzaiworldcore.switch_world.back": "Back"
+  "screen.youzaiworldcore.switch_world.back": "Back",
+  "screen.youzaiworldcore.settings.category_general": "— General —",
+  "screen.youzaiworldcore.settings.checkbox_music": "Background Music",
+  "screen.youzaiworldcore.settings.checkbox_sound": "Sound Effects",
+  "screen.youzaiworldcore.settings.category_gameplay": "— Gameplay —"
 }

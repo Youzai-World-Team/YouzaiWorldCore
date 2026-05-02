@@ -11,5 +11,9 @@
   "screen.youzaiworldcore.switch_world.world3": "世界三",
   "screen.youzaiworldcore.switch_world.world4": "世界四",
   "screen.youzaiworldcore.switch_world.world5": "世界五",
-  "screen.youzaiworldcore.switch_world.back": "返回"
+  "screen.youzaiworldcore.switch_world.back": "返回",
+  "screen.youzaiworldcore.settings.category_general": "— 通用 —",
+  "screen.youzaiworldcore.settings.checkbox_music": "背景音乐",
+  "screen.youzaiworldcore.settings.checkbox_sound": "音效",
+  "screen.youzaiworldcore.settings.category_gameplay": "— 玩法 —"
 }

@@ -1,6 +1,7 @@
 package top.csituka.youzaiworldcore.client.screen.element;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.network.chat.Component;
 import top.csituka.youzaiworldcore.client.screen.MenuScreen;
 import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
@@ -28,8 +29,8 @@ public class MainMenuElements implements MenuElementGroup {
     }
 
     @Override
-    public List<TransparentButton> createButtons(MenuScreen screen, int screenWidth, int screenHeight, float scale, float alpha) {
-        List<TransparentButton> buttons = new ArrayList<>();
+    public List<AbstractWidget> createButtons(MenuScreen screen, int screenWidth, int screenHeight, float scale, float alpha) {
+        List<AbstractWidget> buttons = new ArrayList<>();
 
         int centerX = screenWidth / 2;
         int centerY = screenHeight / 2;
@@ -84,7 +85,7 @@ public class MainMenuElements implements MenuElementGroup {
         TransparentButton narrowBtn = new TransparentButton(
                 (int) bottomStartX, (int) bottomRowY, (int) scaledNarrowW, (int) scaledBottomH,
                 Component.translatable("screen.youzaiworldcore.test_menu.button_narrow"),
-                () -> {}
+                () -> screen.switchTo(new SettingsMenuElements())
         );
         narrowBtn.setExternalAlpha(alpha);
         buttons.add(narrowBtn);
