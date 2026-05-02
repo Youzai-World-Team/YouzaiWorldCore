@@ -1,7 +1,14 @@
 {
+  "screen.youzaiworldcore.menu.title": "Menu",
   "screen.youzaiworldcore.test_menu.button_main": "Switch World",
   "screen.youzaiworldcore.test_menu.button_small1": "Apply Question",
   "screen.youzaiworldcore.test_menu.button_small2": "Tutorial Center",
   "screen.youzaiworldcore.test_menu.button_narrow": "Settings",
-  "screen.youzaiworldcore.test_menu.button_wide": "About Me"
+  "screen.youzaiworldcore.test_menu.button_wide": "About Me",
+  "screen.youzaiworldcore.switch_world.title": "Switch World",
+  "screen.youzaiworldcore.switch_world.world1": "World 1",
+  "screen.youzaiworldcore.switch_world.world2": "World 2",
+  "screen.youzaiworldcore.switch_world.world3": "World 3",
+  "screen.youzaiworldcore.switch_world.world4": "World 4",
+  "screen.youzaiworldcore.switch_world.world5": "World 5"
 }

@@ -1,7 +1,14 @@
 {
+  "screen.youzaiworldcore.menu.title": "菜单",
   "screen.youzaiworldcore.test_menu.button_main": "切换世界",
   "screen.youzaiworldcore.test_menu.button_small1": "问卷申请",
   "screen.youzaiworldcore.test_menu.button_small2": "教程中心",
   "screen.youzaiworldcore.test_menu.button_narrow": "设置",
-  "screen.youzaiworldcore.test_menu.button_wide": "关于我"
+  "screen.youzaiworldcore.test_menu.button_wide": "关于我",
+  "screen.youzaiworldcore.switch_world.title": "切换世界",
+  "screen.youzaiworldcore.switch_world.world1": "世界一",
+  "screen.youzaiworldcore.switch_world.world2": "世界二",
+  "screen.youzaiworldcore.switch_world.world3": "世界三",
+  "screen.youzaiworldcore.switch_world.world4": "世界四",
+  "screen.youzaiworldcore.switch_world.world5": "世界五"
 }

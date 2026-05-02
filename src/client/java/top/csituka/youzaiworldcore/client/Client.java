@@ -5,7 +5,8 @@ import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.minecraft.client.Minecraft;
 import org.lwjgl.glfw.GLFW;
-import top.csituka.youzaiworldcore.client.screen.MainMenu;
+import top.csituka.youzaiworldcore.client.screen.MenuScreen;
+import top.csituka.youzaiworldcore.client.screen.element.MainMenuElements;
 
 public class Client implements ClientModInitializer {
 
@@ -29,7 +30,7 @@ public class Client implements ClientModInitializer {
         boolean isPressed = isShiftPressed && isFPressed;
 
         if (isPressed && !wasPressed) {
-            client.setScreen(new MainMenu());
+            client.setScreen(new MenuScreen(new MainMenuElements()));
         }
         
         wasPressed = isPressed;

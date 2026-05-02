@@ -4,6 +4,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 
 public class TransparentButton extends AbstractWidget {
@@ -82,7 +83,8 @@ public class TransparentButton extends AbstractWidget {
         return current + (target - current) * speed;
     }
 
-    public void onClick(double mouseX, double mouseY) {
+    @Override
+    public void onClick(MouseButtonEvent event, boolean isActuallyClick) {
         if (this.onPress != null) {
             this.onPress.run();
         }
