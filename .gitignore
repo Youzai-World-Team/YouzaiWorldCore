@@ -21,5 +21,6 @@ gradle-app.setting
 .classpath
 
 run
+bin
 .idea
 .vscode
