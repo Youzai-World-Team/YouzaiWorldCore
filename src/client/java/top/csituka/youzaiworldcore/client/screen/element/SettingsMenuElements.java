@@ -4,6 +4,7 @@ import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.network.chat.Component;
 import top.csituka.youzaiworldcore.client.screen.MenuScreen;
 import top.csituka.youzaiworldcore.client.screen.widget.CheckboxButton;
+import top.csituka.youzaiworldcore.client.screen.widget.DropdownButton;
 import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
 
 import java.util.ArrayList;
@@ -19,6 +20,12 @@ public class SettingsMenuElements implements MenuElementGroup {
 
     private boolean musicEnabled = true;
     private boolean soundEnabled = true;
+    private boolean pvpEnabled = false;
+    private boolean friendlyFireEnabled = false;
+    private int difficultyIndex = 0;
+    private boolean dropdownOpen = false;
+
+    private static final List<String> DIFFICULTY_OPTIONS = List.of("和平", "简单", "普通", "困难");
 
     @Override
     public String getTitleText() {
@@ -99,6 +106,40 @@ public class SettingsMenuElements implements MenuElementGroup {
         category2.setTextLeftAligned(true);
         category2.setExternalAlpha(alpha);
         buttons.add(category2);
+
+        y += scaledRowH + scaledSpacing;
+
+        CheckboxButton checkbox3 = new CheckboxButton(
+                startX, (int) y, (int) scaledListW, (int) scaledRowH,
+                Component.translatable("screen.youzaiworldcore.settings.checkbox_pvp"),
+                pvpEnabled,
+                () -> pvpEnabled = !pvpEnabled
+        );
+        checkbox3.setExternalAlpha(alpha);
+        buttons.add(checkbox3);
+
+        y += scaledRowH + scaledSpacing;
+
+        CheckboxButton checkbox4 = new CheckboxButton(
+                startX, (int) y, (int) scaledListW, (int) scaledRowH,
+                Component.translatable("screen.youzaiworldcore.settings.checkbox_friendly_fire"),
+                friendlyFireEnabled,
+                () -> friendlyFireEnabled = !friendlyFireEnabled
+        );
+        checkbox4.setExternalAlpha(alpha);
+        buttons.add(checkbox4);
+
+        y += scaledRowH + scaledSpacing;
+
+        DropdownButton dropdown = new DropdownButton(
+                startX, (int) y, (int) scaledListW, (int) scaledRowH,
+                Component.translatable("screen.youzaiworldcore.settings.dropdown_difficulty"),
+                DIFFICULTY_OPTIONS, difficultyIndex, dropdownOpen,
+                idx -> difficultyIndex = idx,
+                () -> dropdownOpen = !dropdownOpen
+        );
+        dropdown.setExternalAlpha(alpha);
+        buttons.add(dropdown);
 
         return buttons;
     }

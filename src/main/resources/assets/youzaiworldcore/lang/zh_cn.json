@@ -15,5 +15,8 @@
   "screen.youzaiworldcore.settings.category_general": "通用 —",
   "screen.youzaiworldcore.settings.checkbox_music": "背景音乐",
   "screen.youzaiworldcore.settings.checkbox_sound": "音效",
-  "screen.youzaiworldcore.settings.category_gameplay": "玩法 —"
+  "screen.youzaiworldcore.settings.category_gameplay": "玩法 —",
+  "screen.youzaiworldcore.settings.checkbox_pvp": "PVP",
+  "screen.youzaiworldcore.settings.checkbox_friendly_fire": "友伤",
+  "screen.youzaiworldcore.settings.dropdown_difficulty": "难度"
 }

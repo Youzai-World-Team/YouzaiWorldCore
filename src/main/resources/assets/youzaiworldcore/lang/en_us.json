@@ -15,5 +15,8 @@
   "screen.youzaiworldcore.settings.category_general": "General —",
   "screen.youzaiworldcore.settings.checkbox_music": "Background Music",
   "screen.youzaiworldcore.settings.checkbox_sound": "Sound Effects",
-  "screen.youzaiworldcore.settings.category_gameplay": "Gameplay —"
+  "screen.youzaiworldcore.settings.category_gameplay": "Gameplay —",
+  "screen.youzaiworldcore.settings.checkbox_pvp": "PVP",
+  "screen.youzaiworldcore.settings.checkbox_friendly_fire": "Friendly Fire",
+  "screen.youzaiworldcore.settings.dropdown_difficulty": "Difficulty"
 }
