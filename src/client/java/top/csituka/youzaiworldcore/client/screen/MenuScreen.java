@@ -118,8 +118,8 @@ public class MenuScreen extends Screen {
         renderTitle(guiGraphics, currentGroup, outAlpha);
         renderTitle(guiGraphics, targetGroup, inAlpha);
 
-        currentGroup.renderCustomContent(guiGraphics, this.width, this.height, outAlpha);
-        targetGroup.renderCustomContent(guiGraphics, this.width, this.height, inAlpha);
+        currentGroup.renderCustomContent(guiGraphics, this.width, this.height, outAlpha, outOffset);
+        targetGroup.renderCustomContent(guiGraphics, this.width, this.height, inAlpha, inOffset);
 
         if (transitionProgress >= 1f) {
             currentGroup = targetGroup;
@@ -132,7 +132,7 @@ public class MenuScreen extends Screen {
         this.clearWidgets();
         renderGroupButtons(group, entryAlpha, 0f);
         renderTitle(guiGraphics, group, entryAlpha);
-        group.renderCustomContent(guiGraphics, this.width, this.height, entryAlpha);
+        group.renderCustomContent(guiGraphics, this.width, this.height, entryAlpha, 0f);
     }
 
     private void addCloseButton(float alpha) {

@@ -44,7 +44,7 @@ public class AboutMeMenuElements implements MenuElementGroup {
     }
 
     @Override
-    public void renderCustomContent(GuiGraphicsExtractor guiGraphics, int screenWidth, int screenHeight, float alpha) {
+    public void renderCustomContent(GuiGraphicsExtractor guiGraphics, int screenWidth, int screenHeight, float alpha, float xOffset) {
         Minecraft client = Minecraft.getInstance();
         if (client.player == null) return;
 
@@ -102,7 +102,7 @@ public class AboutMeMenuElements implements MenuElementGroup {
             );
         }
 
-        int dividerX = screenWidth / 2;
+        int dividerX = (int) (screenWidth / 2 + xOffset);
         guiGraphics.fill(dividerX, contentY, dividerX + 1, contentY + CONTENT_HEIGHT, dividerColor);
 
         var font = client.font;
@@ -114,7 +114,7 @@ public class AboutMeMenuElements implements MenuElementGroup {
         int labelWidth = font.width(label);
         int nameWidth = font.width(playerName);
         int maxTextWidth = Math.max(labelWidth, nameWidth);
-        int textX = rightX + (CONTENT_WIDTH / 2 - DIVIDER_MARGIN - maxTextWidth) / 2 + TEXT_OFFSET_X;
+        int textX = (int) (rightX + (CONTENT_WIDTH / 2 - DIVIDER_MARGIN - maxTextWidth) / 2 + TEXT_OFFSET_X + xOffset);
 
         int totalTextHeight = font.lineHeight * 2 + 4;
         int textStartY = contentY + CONTENT_HEIGHT / 2 - totalTextHeight / 2;
