@@ -1,5 +1,6 @@
 package top.csituka.youzaiworldcore.client.screen.element;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import top.csituka.youzaiworldcore.client.screen.MenuScreen;
 import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
@@ -45,7 +46,10 @@ public class SwitchWorldMenuElements implements MenuElementGroup {
         TransparentButton topLeft = new TransparentButton(
                 (int) startX, (int) topY, (int) scaledLeftW, (int) scaledTopH,
                 Component.translatable("screen.youzaiworldcore.switch_world.world1"),
-                () -> {}
+                () -> {
+                    Minecraft.getInstance().player.connection.sendCommand("say 传送1");
+                    Minecraft.getInstance().setScreen(null);
+                }
         );
         topLeft.setExternalAlpha(alpha);
         buttons.add(topLeft);
@@ -53,7 +57,10 @@ public class SwitchWorldMenuElements implements MenuElementGroup {
         TransparentButton topRight = new TransparentButton(
                 (int) (startX + scaledLeftW + scaledSpacing), (int) topY, (int) scaledRightW, (int) scaledTopH,
                 Component.translatable("screen.youzaiworldcore.switch_world.world2"),
-                () -> {}
+                () -> {
+                    Minecraft.getInstance().player.connection.sendCommand("say 传送2");
+                    Minecraft.getInstance().setScreen(null);
+                }
         );
         topRight.setExternalAlpha(alpha);
         buttons.add(topRight);
@@ -63,7 +70,10 @@ public class SwitchWorldMenuElements implements MenuElementGroup {
         TransparentButton bottomLeft = new TransparentButton(
                 (int) startX, (int) bottomY, (int) scaledLeftW, (int) scaledBottomH,
                 Component.translatable("screen.youzaiworldcore.switch_world.world3"),
-                () -> {}
+                () -> {
+                    Minecraft.getInstance().player.connection.sendCommand("say 传送3");
+                    Minecraft.getInstance().setScreen(null);
+                }
         );
         bottomLeft.setExternalAlpha(alpha);
         buttons.add(bottomLeft);
@@ -71,7 +81,10 @@ public class SwitchWorldMenuElements implements MenuElementGroup {
         TransparentButton bottomRight = new TransparentButton(
                 (int) (startX + scaledLeftW + scaledSpacing), (int) bottomY, (int) scaledRightW, (int) scaledBottomH,
                 Component.translatable("screen.youzaiworldcore.switch_world.world4"),
-                () -> {}
+                () -> {
+                    Minecraft.getInstance().player.connection.sendCommand("say 传送4");
+                    Minecraft.getInstance().setScreen(null);
+                }
         );
         bottomRight.setExternalAlpha(alpha);
         buttons.add(bottomRight);
