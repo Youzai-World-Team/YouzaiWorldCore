@@ -149,7 +149,7 @@ public class AboutMeMenuElements implements MenuElementGroup {
 
     private String getFirstJoinDate(Minecraft client) {
         try {
-            long playTicks = client.player.getStats().getValue(Stats.CUSTOM, Stats.PLAY_TIME);
+            long playTicks = client.player.getStats().getValue(Stats.CUSTOM.get(Stats.PLAY_TIME));
             if (playTicks > 0) {
                 long firstPlayedMs = System.currentTimeMillis() - (playTicks * 50L);
                 return Instant.ofEpochMilli(firstPlayedMs).atZone(ZoneId.systemDefault()).format(DATE_FORMAT);
@@ -169,7 +169,7 @@ public class AboutMeMenuElements implements MenuElementGroup {
 
     private String getPlayTime(Minecraft client) {
         try {
-            long playTicks = client.player.getStats().getValue(Stats.CUSTOM, Stats.PLAY_TIME);
+            long playTicks = client.player.getStats().getValue(Stats.CUSTOM.get(Stats.PLAY_TIME));
             long playMinutes = playTicks / 20 / 60;
             if (playMinutes < 60) {
                 return playMinutes + "分钟";
