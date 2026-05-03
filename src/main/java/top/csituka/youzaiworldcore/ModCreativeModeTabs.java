@@ -25,6 +25,7 @@ public class ModCreativeModeTabs {
                 output.accept(ModBlocks.DEEPSLATE_YZ_ORE.asItem());
                 output.accept(ModItems.RAW_YZ);
                 output.accept(ModItems.YZ_INGOT);
+                output.accept(ModItems.YZ_SHOVEL);
             })
             .build();
 

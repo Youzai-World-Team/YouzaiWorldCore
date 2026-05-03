@@ -5,9 +5,28 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.tags.BlockTags;
+import net.minecraft.tags.ItemTags;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ShovelItem;
+import net.minecraft.world.item.ToolMaterial;
 
 public class ModItems {
+
+    public static final TagKey<Item> REPAIRS_YZ_TOOL = TagKey.create(
+            Registries.ITEM,
+            Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "repairs_yz_tool")
+    );
+
+    public static final ToolMaterial YZ_TOOL_MATERIAL = new ToolMaterial(
+            BlockTags.INCORRECT_FOR_DIAMOND_TOOL,
+            1800,
+            8.0F,
+            1.5F,
+            10,
+            REPAIRS_YZ_TOOL
+    );
 
     public static final Item RAW_YZ = register(
             "raw_yz",
@@ -19,9 +38,20 @@ public class ModItems {
             new Item.Properties()
     );
 
+    public static final Item YZ_SHOVEL = registerShovel(
+            "yz_shovel",
+            YZ_TOOL_MATERIAL, 1.5F, -3.0F
+    );
+
     private static Item register(String name, Item.Properties settings) {
         ResourceKey<Item> itemKey = ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, name));
         Item item = new Item(settings.setId(itemKey));
+        return Registry.register(BuiltInRegistries.ITEM, itemKey, item);
+    }
+
+    private static Item registerShovel(String name, ToolMaterial material, float attackDamageBaseline, float attackSpeedBaseline) {
+        ResourceKey<Item> itemKey = ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, name));
+        Item item = new YzShovelItem(material, attackDamageBaseline, attackSpeedBaseline, new Item.Properties().setId(itemKey));
         return Registry.register(BuiltInRegistries.ITEM, itemKey, item);
     }
 
