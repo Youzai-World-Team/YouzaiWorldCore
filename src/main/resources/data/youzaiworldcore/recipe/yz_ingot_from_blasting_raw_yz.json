@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:blasting",
+  "category": "misc",
+  "cookingtime": 100,
+  "experience": 1.0,
+  "group": "yz_ingot",
+  "ingredient": "youzaiworldcore:raw_yz",
+  "result": {
+    "id": "youzaiworldcore:yz_ingot"
+  }
+}
