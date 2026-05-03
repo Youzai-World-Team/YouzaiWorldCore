@@ -14,6 +14,11 @@ public class ModItems {
             new Item.Properties()
     );
 
+    public static final Item YZ_INGOT = register(
+            "yz_ingot",
+            new Item.Properties()
+    );
+
     private static Item register(String name, Item.Properties settings) {
         ResourceKey<Item> itemKey = ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, name));
         Item item = new Item(settings.setId(itemKey));
