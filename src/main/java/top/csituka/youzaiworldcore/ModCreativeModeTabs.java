@@ -26,6 +26,7 @@ public class ModCreativeModeTabs {
                 output.accept(ModItems.RAW_YZ);
                 output.accept(ModItems.YZ_INGOT);
                 output.accept(ModItems.YZ_SHOVEL);
+                output.accept(ModItems.YZ_PICKAXE);
             })
             .build();
 

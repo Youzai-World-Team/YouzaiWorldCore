@@ -24,7 +24,7 @@ public class YouzaiworldCore implements ModInitializer {
         ModBlocks.initialize();
         ModItems.initialize();
         ModCreativeModeTabs.initialize();
-        YzShovelItem.registerChainMiningEvent();
+        YzChainMiningTool.registerChainMiningEvent();
 
         BiomeModifications.addFeature(
                 BiomeSelectors.foundInOverworld(),

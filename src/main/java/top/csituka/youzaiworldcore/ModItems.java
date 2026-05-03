@@ -43,6 +43,11 @@ public class ModItems {
             YZ_TOOL_MATERIAL, 1.5F, -3.0F
     );
 
+    public static final Item YZ_PICKAXE = registerPickaxe(
+            "yz_pickaxe",
+            YZ_TOOL_MATERIAL, 1.0F, -2.8F
+    );
+
     private static Item register(String name, Item.Properties settings) {
         ResourceKey<Item> itemKey = ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, name));
         Item item = new Item(settings.setId(itemKey));
@@ -52,6 +57,12 @@ public class ModItems {
     private static Item registerShovel(String name, ToolMaterial material, float attackDamageBaseline, float attackSpeedBaseline) {
         ResourceKey<Item> itemKey = ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, name));
         Item item = new YzShovelItem(material, attackDamageBaseline, attackSpeedBaseline, new Item.Properties().setId(itemKey));
+        return Registry.register(BuiltInRegistries.ITEM, itemKey, item);
+    }
+
+    private static Item registerPickaxe(String name, ToolMaterial material, float attackDamageBaseline, float attackSpeedBaseline) {
+        ResourceKey<Item> itemKey = ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, name));
+        Item item = new YzPickaxeItem(material, attackDamageBaseline, attackSpeedBaseline, new Item.Properties().setId(itemKey));
         return Registry.register(BuiltInRegistries.ITEM, itemKey, item);
     }
 
