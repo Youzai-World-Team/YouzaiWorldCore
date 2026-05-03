@@ -21,5 +21,6 @@
   "screen.youzaiworldcore.settings.dropdown_difficulty": "Difficulty",
   "block.youzaiworldcore.yz_ore": "Youzai Ore",
   "block.youzaiworldcore.deepslate_yz_ore": "Deepslate Youzai Ore",
-  "item.youzaiworldcore.raw_yz": "Raw Youzai"
+  "item.youzaiworldcore.raw_yz": "Raw Youzai",
+  "itemGroup.youzaiworldcore.youzai_tab": "Youzai World"
 }

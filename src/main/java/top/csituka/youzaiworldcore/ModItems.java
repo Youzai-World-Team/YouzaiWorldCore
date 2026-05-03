@@ -1,12 +1,10 @@
 package top.csituka.youzaiworldcore;
 
-import net.fabricmc.fabric.api.creativetab.v1.CreativeModeTabEvents;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
 
 public class ModItems {
@@ -23,13 +21,5 @@ public class ModItems {
     }
 
     public static void initialize() {
-        CreativeModeTabEvents.modifyOutputEvent(CreativeModeTabs.INGREDIENTS).register(creativeTab -> {
-            creativeTab.accept(RAW_YZ);
-        });
-
-        CreativeModeTabEvents.modifyOutputEvent(CreativeModeTabs.NATURAL_BLOCKS).register(creativeTab -> {
-            creativeTab.accept(ModBlocks.YZ_ORE.asItem());
-            creativeTab.accept(ModBlocks.DEEPSLATE_YZ_ORE.asItem());
-        });
     }
 }

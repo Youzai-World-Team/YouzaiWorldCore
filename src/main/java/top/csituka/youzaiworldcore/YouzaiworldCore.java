@@ -23,6 +23,7 @@ public class YouzaiworldCore implements ModInitializer {
     public void onInitialize() {
         ModBlocks.initialize();
         ModItems.initialize();
+        ModCreativeModeTabs.initialize();
 
         BiomeModifications.addFeature(
                 BiomeSelectors.foundInOverworld(),
