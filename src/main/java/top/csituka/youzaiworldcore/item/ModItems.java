@@ -1,4 +1,4 @@
-package top.csituka.youzaiworldcore;
+package top.csituka.youzaiworldcore.item;
 
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -6,11 +6,13 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.tags.BlockTags;
-import net.minecraft.tags.ItemTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ShovelItem;
 import net.minecraft.world.item.ToolMaterial;
+
+import top.csituka.youzaiworldcore.YouzaiworldCore;
+import top.csituka.youzaiworldcore.item.tool.YzPickaxeItem;
+import top.csituka.youzaiworldcore.item.tool.YzShovelItem;
 
 public class ModItems {
 

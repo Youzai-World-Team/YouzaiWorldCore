@@ -1,4 +1,4 @@
-package top.csituka.youzaiworldcore;
+package top.csituka.youzaiworldcore.block;
 
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -14,6 +14,8 @@ import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 
 import java.util.function.Function;
+
+import top.csituka.youzaiworldcore.YouzaiworldCore;
 
 public class ModBlocks {
 

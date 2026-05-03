@@ -1,4 +1,4 @@
-package top.csituka.youzaiworldcore;
+package top.csituka.youzaiworldcore.item.tool;
 
 import net.minecraft.world.item.ShovelItem;
 import net.minecraft.world.item.ToolMaterial;

@@ -10,6 +10,11 @@ import net.minecraft.world.level.levelgen.GenerationStep;
 import net.minecraft.core.Registry;
 import net.minecraft.world.level.levelgen.placement.PlacedFeature;
 
+import top.csituka.youzaiworldcore.block.ModBlocks;
+import top.csituka.youzaiworldcore.item.ModCreativeModeTabs;
+import top.csituka.youzaiworldcore.item.ModItems;
+import top.csituka.youzaiworldcore.item.tool.YzChainMiningTool;
+
 public class YouzaiworldCore implements ModInitializer {
 
     public static final String MOD_ID = "youzaiworldcore";

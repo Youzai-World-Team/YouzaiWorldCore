@@ -1,4 +1,4 @@
-package top.csituka.youzaiworldcore;
+package top.csituka.youzaiworldcore.item;
 
 import net.fabricmc.fabric.api.creativetab.v1.FabricCreativeModeTab;
 import net.minecraft.core.Registry;
@@ -9,6 +9,9 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.ItemStack;
+
+import top.csituka.youzaiworldcore.YouzaiworldCore;
+import top.csituka.youzaiworldcore.block.ModBlocks;
 
 public class ModCreativeModeTabs {
 

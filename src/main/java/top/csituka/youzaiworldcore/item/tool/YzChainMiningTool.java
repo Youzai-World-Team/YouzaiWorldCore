@@ -1,4 +1,4 @@
-package top.csituka.youzaiworldcore;
+package top.csituka.youzaiworldcore.item.tool;
 
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
 import net.minecraft.core.BlockPos;
