@@ -18,5 +18,8 @@
   "screen.youzaiworldcore.settings.category_gameplay": "Gameplay —",
   "screen.youzaiworldcore.settings.checkbox_pvp": "PVP",
   "screen.youzaiworldcore.settings.checkbox_friendly_fire": "Friendly Fire",
-  "screen.youzaiworldcore.settings.dropdown_difficulty": "Difficulty"
+  "screen.youzaiworldcore.settings.dropdown_difficulty": "Difficulty",
+  "block.youzaiworldcore.yz_ore": "Youzai Ore",
+  "block.youzaiworldcore.deepslate_yz_ore": "Deepslate Youzai Ore",
+  "item.youzaiworldcore.raw_yz": "Raw Youzai"
 }

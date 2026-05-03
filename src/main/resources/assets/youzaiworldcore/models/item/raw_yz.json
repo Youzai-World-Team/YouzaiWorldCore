@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "youzaiworldcore:item/raw_yz"
+  }
+}

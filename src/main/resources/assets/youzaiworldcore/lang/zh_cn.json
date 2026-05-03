@@ -16,7 +16,10 @@
   "screen.youzaiworldcore.settings.checkbox_music": "复选框1",
   "screen.youzaiworldcore.settings.checkbox_sound": "复选框2",
   "screen.youzaiworldcore.settings.category_gameplay": "分组2 —",
-  "screen.youzaiworldcore.settings.checkbox_pvp": "复选框3",  
+  "screen.youzaiworldcore.settings.checkbox_pvp": "复选框3",
   "screen.youzaiworldcore.settings.checkbox_friendly_fire": "复选框4",
-  "screen.youzaiworldcore.settings.dropdown_difficulty": "下拉框1"
+  "screen.youzaiworldcore.settings.dropdown_difficulty": "下拉框1",
+  "block.youzaiworldcore.yz_ore": "悠哉矿",
+  "block.youzaiworldcore.deepslate_yz_ore": "深层悠哉矿",
+  "item.youzaiworldcore.raw_yz": "悠哉原矿"
 }
