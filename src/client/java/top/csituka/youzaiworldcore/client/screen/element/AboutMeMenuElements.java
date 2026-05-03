@@ -4,8 +4,12 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
+import net.minecraft.stats.Stats;
 import top.csituka.youzaiworldcore.client.screen.MenuScreen;
 
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,9 +21,11 @@ public class AboutMeMenuElements implements MenuElementGroup {
     private static final int MODEL_OFFSET_X = 15;
     private static final int MODEL_OFFSET_Y = 30;
     private static final int DIVIDER_MARGIN = 10;
-    private static final int TEXT_OFFSET_X = -30;
+    private static final int TEXT_OFFSET_X = 0;
     private static final long DELAY_MS = 300;
     private static final long FADE_DURATION_MS = 600;
+
+    private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy/MM/dd");
 
     private long firstRenderTime = -1;
 
@@ -108,19 +114,75 @@ public class AboutMeMenuElements implements MenuElementGroup {
         var font = client.font;
         int labelColor = (textAlpha << 24) | 0xAAAAAA;
 
-        String label = "玩家ID：";
         String playerName = client.player.getName().getString();
+        String firstJoinDate = getFirstJoinDate(client);
+        String lastJoinDate = getLastJoinDate(client);
+        String playTimeStr = getPlayTime(client);
 
-        int labelWidth = font.width(label);
-        int nameWidth = font.width(playerName);
-        int maxTextWidth = Math.max(labelWidth, nameWidth);
-        int textX = (int) (rightX + (CONTENT_WIDTH / 2 - DIVIDER_MARGIN - maxTextWidth) / 2 + TEXT_OFFSET_X + xOffset);
+        String[][] infoItems = {
+                {"玩家ID：", playerName},
+                {"首次加入时间：", firstJoinDate},
+                {"最后加入时间：", lastJoinDate},
+                {"游玩时长：", playTimeStr}
+        };
 
-        int totalTextHeight = font.lineHeight * 2 + 4;
+        int maxLabelWidth = 0;
+        int maxValueWidth = 0;
+        for (String[] item : infoItems) {
+            int lw = font.width(item[0]);
+            int vw = font.width(item[1]);
+            if (lw > maxLabelWidth) maxLabelWidth = lw;
+            if (vw > maxValueWidth) maxValueWidth = vw;
+        }
+
+        int textX = (int) (rightX + TEXT_OFFSET_X + xOffset);
+
+        int totalTextHeight = font.lineHeight * infoItems.length + 4 * (infoItems.length - 1);
         int textStartY = contentY + CONTENT_HEIGHT / 2 - totalTextHeight / 2;
 
-        guiGraphics.text(font, label, textX, textStartY, labelColor, false);
-        guiGraphics.text(font, playerName, textX, textStartY + font.lineHeight + 4, textColor, false);
+        for (int i = 0; i < infoItems.length; i++) {
+            int y = textStartY + i * (font.lineHeight + 4);
+            guiGraphics.text(font, infoItems[i][0], textX, y, labelColor, false);
+            guiGraphics.text(font, infoItems[i][1], textX + maxLabelWidth, y, textColor, false);
+        }
+    }
+
+    private String getFirstJoinDate(Minecraft client) {
+        try {
+            long playTicks = client.player.getStats().getValue(Stats.CUSTOM, Stats.PLAY_TIME);
+            if (playTicks > 0) {
+                long firstPlayedMs = System.currentTimeMillis() - (playTicks * 50L);
+                return Instant.ofEpochMilli(firstPlayedMs).atZone(ZoneId.systemDefault()).format(DATE_FORMAT);
+            }
+        } catch (Exception ignored) {
+        }
+        return "未知";
+    }
+
+    private String getLastJoinDate(Minecraft client) {
+        try {
+            return Instant.ofEpochMilli(System.currentTimeMillis()).atZone(ZoneId.systemDefault()).format(DATE_FORMAT);
+        } catch (Exception ignored) {
+        }
+        return "未知";
+    }
+
+    private String getPlayTime(Minecraft client) {
+        try {
+            long playTicks = client.player.getStats().getValue(Stats.CUSTOM, Stats.PLAY_TIME);
+            long playMinutes = playTicks / 20 / 60;
+            if (playMinutes < 60) {
+                return playMinutes + "分钟";
+            }
+            long playHours = playMinutes / 60;
+            if (playHours < 24) {
+                return playHours + "小时";
+            }
+            long playDays = playHours / 24;
+            return playDays + "天";
+        } catch (Exception ignored) {
+        }
+        return "未知";
     }
 
     private float easeOutCubic(float t) {
