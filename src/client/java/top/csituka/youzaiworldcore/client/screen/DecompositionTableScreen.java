@@ -6,14 +6,18 @@ import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.gui.screens.inventory.MenuAccess;
 import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
+import top.csituka.youzaiworldcore.YouzaiworldCore;
 import top.csituka.youzaiworldcore.network.ClientNetworking;
 import top.csituka.youzaiworldcore.screen.DecompositionTableMenu;
 
 public class DecompositionTableScreen extends AbstractContainerScreen<DecompositionTableMenu> implements MenuAccess<DecompositionTableMenu> {
 
+    private static final Identifier DECOMPOSITION_BUTTON_TEXTURE = Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "textures/gui/decomposition_button.png");
     private static final int BACKGROUND_COLOR = 0x80FFFFFF;
     private static final int SLOT_COLOR = 0x40FFFFFF;
     private static final int SLOT_HOVER_COLOR = 0x60FFFFFF;
@@ -202,6 +206,8 @@ public class DecompositionTableScreen extends AbstractContainerScreen<Decomposit
             int y = this.getY();
             
             fillRoundedRect(guiGraphics, x, y, this.width, this.height, 3, color);
+            
+            guiGraphics.blit(RenderPipelines.GUI_TEXTURED, DECOMPOSITION_BUTTON_TEXTURE, x, y, 0, 0, this.width, this.height, this.width, this.height);
         }
 
         private void fillRoundedRect(GuiGraphicsExtractor g, int x, int y, int w, int h, int r, int color) {
