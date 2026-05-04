@@ -29,6 +29,7 @@ public class ModCreativeModeTabs {
                 output.accept(ModItems.RAW_YZ);
                 output.accept(ModBlocks.RAW_YZ_BLOCK.asItem());
                 output.accept(ModItems.YZ_INGOT);
+                output.accept(ModBlocks.YZ_BLOCK.asItem());
                 output.accept(ModItems.YZ_SHOVEL);
                 output.accept(ModItems.YZ_PICKAXE);
                 output.accept(ModItems.YZ_HOE);

@@ -61,7 +61,7 @@ public class ModItems {
 
     public static final Item YZ_SWORD = registerSword(
             "yz_sword",
-            YZ_TOOL_MATERIAL, 10.0F, -2.4F
+            YZ_TOOL_MATERIAL, 7.5F, -2.4F
     );
 
     public static final Item YZ_AXE = registerAxe(

@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:blasting",
+  "category": "blocks",
+  "cookingtime": 300,
+  "experience": 1.0,
+  "group": "yz_block",
+  "ingredient": "youzaiworldcore:raw_yz_block",
+  "result": {
+    "id": "youzaiworldcore:yz_block"
+  }
+}
