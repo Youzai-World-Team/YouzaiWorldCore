@@ -32,6 +32,7 @@ public class ModCreativeModeTabs {
                 output.accept(ModItems.YZ_PICKAXE);
                 output.accept(ModItems.YZ_HOE);
                 output.accept(ModItems.YZ_SWORD);
+                output.accept(ModItems.YZ_AXE);
                 output.accept(ModItems.HEART_OF_GUARDIANSHIP);
             })
             .build();

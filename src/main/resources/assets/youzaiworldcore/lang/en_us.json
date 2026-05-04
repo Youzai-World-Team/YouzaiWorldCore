@@ -31,6 +31,8 @@
   "item.youzaiworldcore.yz_hoe.tooltip": "Sneak to till a 3x3 area",
   "item.youzaiworldcore.yz_sword": "Youzai Sword",
   "item.youzaiworldcore.yz_sword.tooltip": "4% chance to critical hit, dealing double damage",
+  "item.youzaiworldcore.yz_axe": "Youzai Axe",
+  "item.youzaiworldcore.yz_axe.tooltip": "Sweep attack deals area damage when jumping",
   "item.youzaiworldcore.heart_of_guardianship": "Heart of Guardianship",
   "item.youzaiworldcore.heart_of_guardianship.tooltip": "Carrying this item prevents item drop on death, consumes one on each death",
   "itemGroup.youzaiworldcore.youzai_tab": "Youzai World"
