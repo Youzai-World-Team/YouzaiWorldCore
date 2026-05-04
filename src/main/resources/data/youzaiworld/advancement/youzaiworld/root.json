@@ -1,0 +1,24 @@
+{
+  "display": {
+    "icon": {
+      "id": "youzaiworld:logo"
+    },
+    "title": "悠哉世界",
+    "description": "欢迎来到悠哉世界！",
+    "background": "youzaiworld:textures/block/advancement_background.png",
+    "frame": "task",
+    "show_toast": false,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "auto": {
+      "trigger": "minecraft:tick"
+    }
+  },
+  "requirements": [
+    [
+      "auto"
+    ]
+  ]
+}

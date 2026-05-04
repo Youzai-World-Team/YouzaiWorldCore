@@ -1,0 +1,37 @@
+{
+    "parent": "youzaiworld:youzaiworld/root",
+    "criteria": {
+        "has_heart_of_guardianship": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "youzaiworldcore:heart_of_guardianship"
+                    }
+                ]
+            }
+        }
+    },
+    "display": {
+        "icon": {
+            "id": "youzaiworldcore:heart_of_guardianship"
+        },
+        "title": {
+            "text": "心之守护",
+            "color": "gold"
+        },
+        "description": {
+            "text": "永远守护你的行囊。",
+            "color": "gray"
+        },
+        "frame": "task",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": true
+    },
+    "requirements": [
+        [
+            "has_heart_of_guardianship"
+        ]
+    ]
+}
