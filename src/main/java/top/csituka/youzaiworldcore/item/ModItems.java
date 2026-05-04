@@ -50,6 +50,11 @@ public class ModItems {
             YZ_TOOL_MATERIAL, 1.0F, -2.8F
     );
 
+    public static final Item HEART_OF_GUARDIANSHIP = register(
+            "heart_of_guardianship",
+            new Item.Properties()
+    );
+
     private static Item register(String name, Item.Properties settings) {
         ResourceKey<Item> itemKey = ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, name));
         Item item = new Item(settings.setId(itemKey));
