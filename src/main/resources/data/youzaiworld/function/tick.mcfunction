@@ -4,6 +4,7 @@ execute as @a[scores={youzaiworld.death=1..},tag=!keep_inventory] at @s run func
 #--------------------------------------------------------------------------------------------------------------------------------
 execute as @a[scores={youzaiworld.death=1..},tag=keep_inventory] run clear @s youzaiworldcore:heart_of_guardianship 1
 execute as @a[scores={youzaiworld.death=1..},tag=keep_inventory] run tellraw @s [{"text":"物品栏已保留，消耗 1 守护之心!"}]
+execute as @a[scores={youzaiworld.death=1..},tag=keep_inventory] run advancement grant @s only youzaiworld:youzaiworld/used_heart_of_guardianship
 #--------------------------------------------------------------------------------------------------------------------------------
 scoreboard players reset @a youzaiworld.death
 
