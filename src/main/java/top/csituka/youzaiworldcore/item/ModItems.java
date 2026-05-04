@@ -11,6 +11,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ToolMaterial;
 
 import top.csituka.youzaiworldcore.YouzaiworldCore;
+import top.csituka.youzaiworldcore.item.tool.YzHoeItem;
 import top.csituka.youzaiworldcore.item.tool.YzPickaxeItem;
 import top.csituka.youzaiworldcore.item.tool.YzShovelItem;
 
@@ -50,6 +51,11 @@ public class ModItems {
             YZ_TOOL_MATERIAL, 1.0F, -2.8F
     );
 
+    public static final Item YZ_HOE = registerHoe(
+            "yz_hoe",
+            YZ_TOOL_MATERIAL, 0.0F, -3.0F
+    );
+
     public static final Item HEART_OF_GUARDIANSHIP = register(
             "heart_of_guardianship",
             new Item.Properties()
@@ -70,6 +76,12 @@ public class ModItems {
     private static Item registerPickaxe(String name, ToolMaterial material, float attackDamageBaseline, float attackSpeedBaseline) {
         ResourceKey<Item> itemKey = ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, name));
         Item item = new YzPickaxeItem(material, attackDamageBaseline, attackSpeedBaseline, new Item.Properties().setId(itemKey));
+        return Registry.register(BuiltInRegistries.ITEM, itemKey, item);
+    }
+
+    private static Item registerHoe(String name, ToolMaterial material, float attackDamageBaseline, float attackSpeedBaseline) {
+        ResourceKey<Item> itemKey = ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, name));
+        Item item = new YzHoeItem(material, attackDamageBaseline, attackSpeedBaseline, new Item.Properties().setId(itemKey));
         return Registry.register(BuiltInRegistries.ITEM, itemKey, item);
     }
 
