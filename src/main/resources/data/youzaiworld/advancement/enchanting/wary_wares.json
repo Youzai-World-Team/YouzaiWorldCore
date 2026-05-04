@@ -1,0 +1,36 @@
+{
+    "display": {
+        "icon": {
+            "id": "minecraft:enchanted_book",
+            "components": {
+                "enchantments": {
+                    "mending": 1
+                }
+            }
+        },
+        "title": "戒备货品",
+        "description": "与村民交易以换取附魔物品！",
+        "frame": "task",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": false
+    },
+    "criteria": {
+        "book": {
+            "trigger": "minecraft:villager_trade",
+            "conditions": {
+                "item": {
+                    "items": [
+                        "enchanted_book"
+                    ]
+                }
+            }
+        }
+    },
+    "requirements": [
+        [
+            "book"
+        ]
+    ],
+    "parent": "youzaiworld:enchanting/root"
+}

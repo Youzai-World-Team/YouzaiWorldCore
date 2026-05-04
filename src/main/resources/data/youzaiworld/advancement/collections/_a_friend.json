@@ -1,0 +1,26 @@
+{
+    "parent": "youzaiworld:passive/root",
+    "criteria": {
+        "impossible": {
+            "trigger": "minecraft:impossible"
+        }
+    },
+    "rewards": {
+        "function": "youzaiworld:passive_kills"
+    },
+    "display": {
+        "title": {
+            "translate": "患难见真情！"
+        },
+        "description": {
+            "translate": "我看拿下这个成就的是我，但这明明是你想要的！"
+        },
+        "icon": {
+            "id": "minecraft:lead"
+        },
+        "frame": "goal",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": false
+    }
+}

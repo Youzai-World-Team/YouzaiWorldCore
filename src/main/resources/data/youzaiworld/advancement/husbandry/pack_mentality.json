@@ -1,0 +1,138 @@
+{
+    "display": {
+        "icon": {
+            "id": "bone"
+        },
+        "title": "群体本能",
+        "description": "驯服所有狼类变种！",
+        "frame": "goal",
+        "announce_to_chat": true,
+        "show_toast": true,
+        "hidden": false
+    },
+    "criteria": {
+        "ashen": {
+            "trigger": "tame_animal",
+            "conditions": {
+                "entity": {
+                    "components": {
+                        "wolf/variant": "ashen"
+                    }
+                }
+            }
+        },
+        "black": {
+            "trigger": "tame_animal",
+            "conditions": {
+                "entity": {
+                    "components": {
+                        "wolf/variant": "black"
+                    }
+                }
+            }
+        },
+        "chestnut": {
+            "trigger": "tame_animal",
+            "conditions": {
+                "entity": {
+                    "components": {
+                        "wolf/variant": "chestnut"
+                    }
+                }
+            }
+        },
+        "pale": {
+            "trigger": "tame_animal",
+            "conditions": {
+                "entity": {
+                    "components": {
+                        "wolf/variant": "pale"
+                    }
+                }
+            }
+        },
+        "rusty": {
+            "trigger": "tame_animal",
+            "conditions": {
+                "entity": {
+                    "components": {
+                        "wolf/variant": "rusty"
+                    }
+                }
+            }
+        },
+        "snowy": {
+            "trigger": "tame_animal",
+            "conditions": {
+                "entity": {
+                    "components": {
+                        "wolf/variant": "snowy"
+                    }
+                }
+            }
+        },
+        "spotted": {
+            "trigger": "tame_animal",
+            "conditions": {
+                "entity": {
+                    "components": {
+                        "wolf/variant": "spotted"
+                    }
+                }
+            }
+        },
+        "striped": {
+            "trigger": "tame_animal",
+            "conditions": {
+                "entity": {
+                    "components": {
+                        "wolf/variant": "striped"
+                    }
+                }
+            }
+        },
+        "woods": {
+            "trigger": "tame_animal",
+            "conditions": {
+                "entity": {
+                    "components": {
+                        "wolf/variant": "woods"
+                    }
+                }
+            }
+        }
+    },
+    "requirements": [
+        [
+            "ashen"
+        ],
+        [
+            "black"
+        ],
+        [
+            "chestnut"
+        ],
+        [
+            "pale"
+        ],
+        [
+            "rusty"
+        ],
+        [
+            "snowy"
+        ],
+        [
+            "spotted"
+        ],
+        [
+            "striped"
+        ],
+        [
+            "woods"
+        ]
+    ],
+    "parent": "youzaiworld:husbandry/best_friends",
+    "rewards": {
+        "experience": 250
+    }
+}

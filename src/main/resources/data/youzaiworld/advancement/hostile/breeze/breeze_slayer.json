@@ -1,0 +1,26 @@
+{
+    "parent": "youzaiworld:hostile/breeze/breeze_kill",
+    "criteria": {
+        "impossible": {
+            "trigger": "minecraft:impossible"
+        }
+    },
+    "rewards": {
+        "function": "youzaiworld:hostile_kills"
+    },
+    "display": {
+        "title": {
+            "translate": "旋风人猎手！"
+        },
+        "description": {
+            "translate": "已击杀100只旋风人！"
+        },
+        "icon": {
+            "id": "minecraft:netherite_sword"
+        },
+        "frame": "task",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": false
+    }
+}

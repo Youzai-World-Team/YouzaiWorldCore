@@ -1,0 +1,26 @@
+{
+    "parent": "youzaiworld:hostile/wither_skeleton/wither_skeleton_kill",
+    "criteria": {
+        "impossible": {
+            "trigger": "minecraft:impossible"
+        }
+    },
+    "rewards": {
+        "function": "youzaiworld:hostile_kills"
+    },
+    "display": {
+        "title": {
+            "translate": "凋灵骷髅猎手！"
+        },
+        "description": {
+            "translate": "击杀1000只凋灵骷髅！"
+        },
+        "icon": {
+            "id": "minecraft:wither_skeleton_skull"
+        },
+        "frame": "task",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": false
+    }
+}

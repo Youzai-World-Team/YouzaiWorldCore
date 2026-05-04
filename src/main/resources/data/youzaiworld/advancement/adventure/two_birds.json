@@ -1,0 +1,54 @@
+{
+    "display": {
+        "icon": {
+            "id": "minecraft:phantom_membrane"
+        },
+        "title": "一箭双雕",
+        "description": "一箭击杀两只幻影！",
+        "frame": "challenge",
+        "announce_to_chat": true,
+        "show_toast": true,
+        "hidden": false
+    },
+    "criteria": {
+        "two_birds": {
+            "trigger": "killed_by_arrow",
+            "conditions": {
+                "victims": [
+                    [
+                        {
+                            "condition": "minecraft:entity_properties",
+                            "entity": "this",
+                            "predicate": {
+                                "type": "minecraft:phantom"
+                            }
+                        }
+                    ],
+                    [
+                        {
+                            "condition": "minecraft:entity_properties",
+                            "entity": "this",
+                            "predicate": {
+                                "type": "minecraft:phantom"
+                            }
+                        }
+                    ]
+                ],
+                "fired_from_weapon": {
+                    "items": [
+                        "crossbow"
+                    ]
+                }
+            }
+        }
+    },
+    "requirements": [
+        [
+            "two_birds"
+        ]
+    ],
+    "parent": "youzaiworld:adventure/root",
+    "rewards": {
+        "experience": 100
+    }
+}

@@ -1,0 +1,26 @@
+{
+    "parent": "youzaiworld:_intermediary/armies_of_the_dimensions",
+    "criteria": {
+        "impossible": {
+            "trigger": "minecraft:impossible"
+        }
+    },
+    "rewards": {
+        "function": "youzaiworld:hostile_kills"
+    },
+    "display": {
+        "title": {
+            "translate": "猪灵收集！"
+        },
+        "description": {
+            "translate": "击杀每一种猪灵及其关联生物！"
+        },
+        "icon": {
+            "id": "minecraft:golden_sword"
+        },
+        "frame": "goal",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": false
+    }
+}

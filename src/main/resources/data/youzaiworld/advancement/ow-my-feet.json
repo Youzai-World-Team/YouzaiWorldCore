@@ -1,0 +1,29 @@
+{
+    "display": {
+        "icon": {
+            "id": "minecraft:magma_block"
+        },
+        "title": "脚疼死了！",
+        "description": "在岩浆块上行走",
+        "frame": "task",
+        "hidden": false
+    },
+    "parent": "minecraft:adventure/jtsl",
+    "criteria": {
+        "trigger": {
+            "trigger": "minecraft:tick",
+            "conditions": {
+                "player": {
+                    "stepping_on": {
+                        "block": {
+                            "blocks": "minecraft:magma_block"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "rewards": {
+        "experience": 1
+    }
+}

@@ -1,0 +1,115 @@
+{
+    "display": {
+        "icon": {
+            "id": "diamond_sword",
+            "components": {
+                "enchantments": {
+                    "sharpness": 5
+                }
+            }
+        },
+        "title": "卓越剑士",
+        "description": "获得一把全附魔的剑！",
+        "frame": "challenge",
+        "announce_to_chat": true,
+        "show_toast": true,
+        "hidden": false
+    },
+    "criteria": {
+        "perfect_sword_sharpness": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "wooden_sword",
+                            "stone_sword",
+                            "golden_sword",
+                            "iron_sword",
+                            "diamond_sword",
+                            "netherite_sword"
+                        ],
+                        "components": {
+                            "enchantments": {
+                                "sharpness": 5,
+                                "fire_aspect": 2,
+                                "knockback": 2,
+                                "looting": 3,
+                                "mending": 1,
+                                "sweeping_edge": 3,
+                                "unbreaking": 3
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        "perfect_sword_smite": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "wooden_sword",
+                            "stone_sword",
+                            "golden_sword",
+                            "iron_sword",
+                            "diamond_sword",
+                            "netherite_sword"
+                        ],
+                        "components": {
+                            "enchantments": {
+                                "smite": 5,
+                                "fire_aspect": 2,
+                                "knockback": 2,
+                                "looting": 3,
+                                "mending": 1,
+                                "sweeping_edge": 3,
+                                "unbreaking": 3
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        "perfect_sword_bane": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "wooden_sword",
+                            "stone_sword",
+                            "golden_sword",
+                            "iron_sword",
+                            "diamond_sword",
+                            "netherite_sword"
+                        ],
+                        "components": {
+                            "enchantments": {
+                                "bane_of_arthropods": 5,
+                                "fire_aspect": 2,
+                                "knockback": 2,
+                                "looting": 3,
+                                "mending": 1,
+                                "sweeping_edge": 3,
+                                "unbreaking": 3
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    },
+    "requirements": [
+        [
+            "perfect_sword_bane",
+            "perfect_sword_sharpness",
+            "perfect_sword_smite"
+        ]
+    ],
+    "parent": "youzaiworld:enchanting/magical_treasure",
+    "rewards": {
+        "experience": 250
+    }
+}

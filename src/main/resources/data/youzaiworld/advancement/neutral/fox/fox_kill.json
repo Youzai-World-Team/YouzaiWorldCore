@@ -1,0 +1,26 @@
+{
+    "parent": "youzaiworld:collections/_these_guys",
+    "criteria": {
+        "impossible": {
+            "trigger": "minecraft:impossible"
+        }
+    },
+    "rewards": {
+        "function": "youzaiworld:neutral_kills"
+    },
+    "display": {
+        "title": {
+            "translate": "请照顾好我的家人！"
+        },
+        "description": {
+            "translate": "击杀你的第一只狐狸"
+        },
+        "icon": {
+            "id": "minecraft:fox_spawn_egg"
+        },
+        "frame": "task",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": false
+    }
+}

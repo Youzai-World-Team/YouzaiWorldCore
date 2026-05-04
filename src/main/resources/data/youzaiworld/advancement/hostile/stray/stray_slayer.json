@@ -1,0 +1,26 @@
+{
+    "parent": "youzaiworld:hostile/stray/stray_kill",
+    "criteria": {
+        "impossible": {
+            "trigger": "minecraft:impossible"
+        }
+    },
+    "rewards": {
+        "function": "youzaiworld:hostile_kills"
+    },
+    "display": {
+        "title": {
+            "translate": "游荡猎手！"
+        },
+        "description": {
+            "translate": "击杀1000只游荡者！"
+        },
+        "icon": {
+            "id": "minecraft:bow"
+        },
+        "frame": "task",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": false
+    }
+}

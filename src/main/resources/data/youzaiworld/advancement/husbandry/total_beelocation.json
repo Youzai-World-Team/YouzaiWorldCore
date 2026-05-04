@@ -1,0 +1,40 @@
+{
+    "display": {
+        "icon": {
+            "id": "bee_nest"
+        },
+        "title": "全面蜂巢定位",
+        "description": "使用精准采集工具，收获内含三只蜜蜂的蜂巢！",
+        "frame": "task",
+        "announce_to_chat": true,
+        "show_toast": true,
+        "hidden": false
+    },
+    "criteria": {
+        "bee_nest": {
+            "trigger": "bee_nest_destroyed",
+            "conditions": {
+                "block": "bee_nest",
+                "item": {
+                    "predicates": {
+                        "enchantments": [
+                            {
+                                "enchantments": "silk_touch",
+                                "levels": {
+                                    "min": 1
+                                }
+                            }
+                        ]
+                    }
+                },
+                "num_bees_inside": 3
+            }
+        }
+    },
+    "requirements": [
+        [
+            "bee_nest"
+        ]
+    ],
+    "parent": "youzaiworld:husbandry/bee_our_guest"
+}

@@ -1,0 +1,48 @@
+{
+    "display": {
+        "icon": {
+            "id": "soul_sand"
+        },
+        "title": "灵魂乐",
+        "description": "在灵魂沙峡谷播放音乐唱片",
+        "frame": "task",
+        "announce_to_chat": true,
+        "show_toast": true,
+        "hidden": false
+    },
+    "criteria": {
+        "soul_tunes": {
+            "trigger": "minecraft:item_used_on_block",
+            "conditions": {
+                "location": [
+                    {
+                        "condition": "minecraft:location_check",
+                        "predicate": {
+                            "dimension": "minecraft:the_nether",
+                            "biomes": "minecraft:soul_sand_valley",
+                            "block": {
+                                "blocks": [
+                                    "jukebox"
+                                ]
+                            }
+                        }
+                    },
+                    {
+                        "condition": "minecraft:match_tool",
+                        "predicate": {
+                            "predicates": {
+                                "jukebox_playable": {}
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    },
+    "requirements": [
+        [
+            "soul_tunes"
+        ]
+    ],
+    "parent": "youzaiworld:adventure/sound_of_music"
+}

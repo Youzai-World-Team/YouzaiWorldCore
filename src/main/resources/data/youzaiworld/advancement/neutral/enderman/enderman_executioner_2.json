@@ -1,0 +1,26 @@
+{
+    "parent": "youzaiworld:neutral/enderman/enderman_executioner_1",
+    "criteria": {
+        "impossible": {
+            "trigger": "minecraft:impossible"
+        }
+    },
+    "rewards": {
+        "function": "youzaiworld:neutral_kills"
+    },
+    "display": {
+        "title": {
+            "translate": "末影刽子手 II"
+        },
+        "description": {
+            "translate": "击杀500只末影人"
+        },
+        "icon": {
+            "id": "minecraft:diamond_sword"
+        },
+        "frame": "challenge",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": false
+    }
+}

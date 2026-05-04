@@ -1,0 +1,2 @@
+scoreboard objectives add youzaiworld.death deathCount
+gamerule keep_inventory true

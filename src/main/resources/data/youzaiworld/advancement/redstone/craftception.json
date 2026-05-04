@@ -1,0 +1,37 @@
+{
+    "display": {
+        "icon": {
+            "id": "crafter"
+        },
+        "title": "工匠打造工匠",
+        "description": "用制作台制作另一台制作台……这下你明白为何会混淆了吧？",
+        "frame": "challenge",
+        "announce_to_chat": true,
+        "show_toast": true,
+        "hidden": false
+    },
+    "criteria": {
+        "crafter": {
+            "trigger": "crafter_recipe_crafted",
+            "conditions": {
+                "recipe_id": "crafter",
+                "player": {
+                    "distance": {
+                        "absolute": {
+                            "max": 8
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "requirements": [
+        [
+            "crafter"
+        ]
+    ],
+    "parent": "youzaiworld:redstone/repeaters_comparators_observers",
+    "rewards": {
+        "experience": 100
+    }
+}

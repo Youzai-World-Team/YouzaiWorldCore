@@ -1,0 +1,26 @@
+{
+    "parent": "youzaiworld:collections/_these_guys",
+    "criteria": {
+        "impossible": {
+            "trigger": "minecraft:impossible"
+        }
+    },
+    "rewards": {
+        "function": "youzaiworld:neutral_kills"
+    },
+    "display": {
+        "title": {
+            "translate": "需要一个号角"
+        },
+        "description": {
+            "translate": "击杀你的第一只山羊"
+        },
+        "icon": {
+            "id": "minecraft:goat_spawn_egg"
+        },
+        "frame": "task",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": false
+    }
+}

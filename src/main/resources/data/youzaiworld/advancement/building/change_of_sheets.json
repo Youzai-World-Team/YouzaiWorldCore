@@ -1,0 +1,132 @@
+{
+    "display": {
+        "icon": {
+            "id": "minecraft:blue_bed"
+        },
+        "title": "换床单",
+        "description": "给你的床染色",
+        "frame": "task",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": false
+    },
+    "criteria": {
+        "dye_white_bed": {
+            "trigger": "minecraft:recipe_crafted",
+            "conditions": {
+                "recipe_id": "dye_white_bed"
+            }
+        },
+        "dye_light_gray_bed": {
+            "trigger": "minecraft:recipe_crafted",
+            "conditions": {
+                "recipe_id": "dye_light_gray_bed"
+            }
+        },
+        "dye_gray_bed": {
+            "trigger": "minecraft:recipe_crafted",
+            "conditions": {
+                "recipe_id": "dye_gray_bed"
+            }
+        },
+        "dye_black_bed": {
+            "trigger": "minecraft:recipe_crafted",
+            "conditions": {
+                "recipe_id": "dye_black_bed"
+            }
+        },
+        "dye_brown_bed": {
+            "trigger": "minecraft:recipe_crafted",
+            "conditions": {
+                "recipe_id": "dye_brown_bed"
+            }
+        },
+        "dye_red_bed": {
+            "trigger": "minecraft:recipe_crafted",
+            "conditions": {
+                "recipe_id": "dye_red_bed"
+            }
+        },
+        "dye_orange_bed": {
+            "trigger": "minecraft:recipe_crafted",
+            "conditions": {
+                "recipe_id": "dye_orange_bed"
+            }
+        },
+        "dye_yellow_bed": {
+            "trigger": "minecraft:recipe_crafted",
+            "conditions": {
+                "recipe_id": "dye_yellow_bed"
+            }
+        },
+        "dye_lime_bed": {
+            "trigger": "minecraft:recipe_crafted",
+            "conditions": {
+                "recipe_id": "dye_lime_bed"
+            }
+        },
+        "dye_green_bed": {
+            "trigger": "minecraft:recipe_crafted",
+            "conditions": {
+                "recipe_id": "dye_green_bed"
+            }
+        },
+        "dye_cyan_bed": {
+            "trigger": "minecraft:recipe_crafted",
+            "conditions": {
+                "recipe_id": "dye_cyan_bed"
+            }
+        },
+        "dye_blue_bed": {
+            "trigger": "minecraft:recipe_crafted",
+            "conditions": {
+                "recipe_id": "dye_blue_bed"
+            }
+        },
+        "dye_light_blue_bed": {
+            "trigger": "minecraft:recipe_crafted",
+            "conditions": {
+                "recipe_id": "dye_light_blue_bed"
+            }
+        },
+        "dye_pink_bed": {
+            "trigger": "minecraft:recipe_crafted",
+            "conditions": {
+                "recipe_id": "dye_pink_bed"
+            }
+        },
+        "dye_magenta_bed": {
+            "trigger": "minecraft:recipe_crafted",
+            "conditions": {
+                "recipe_id": "dye_magenta_bed"
+            }
+        },
+        "dye_purple_bed": {
+            "trigger": "minecraft:recipe_crafted",
+            "conditions": {
+                "recipe_id": "dye_purple_bed"
+            }
+        }
+    },
+    "requirements": [
+        [
+            "dye_white_bed",
+            "dye_light_gray_bed",
+            "dye_gray_bed",
+            "dye_black_bed",
+            "dye_brown_bed",
+            "dye_red_bed",
+            "dye_orange_bed",
+            "dye_yellow_bed",
+            "dye_lime_bed",
+            "dye_green_bed",
+            "dye_cyan_bed",
+            "dye_blue_bed",
+            "dye_light_blue_bed",
+            "dye_pink_bed",
+            "dye_magenta_bed",
+            "dye_purple_bed"
+        ]
+    ],
+    "parent": "youzaiworld:building/humble_home"
+}

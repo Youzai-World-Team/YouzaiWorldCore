@@ -1,0 +1,48 @@
+{
+    "display": {
+        "icon": {
+            "id": "name_tag"
+        },
+        "title": "换个角度看",
+        "description": "把怪物倒过来！",
+        "frame": "task",
+        "announce_to_chat": true,
+        "show_toast": true,
+        "hidden": false
+    },
+    "criteria": {
+        "dinnerbone": {
+            "trigger": "minecraft:player_interacted_with_entity",
+            "conditions": {
+                "item": {
+                    "items": [
+                        "name_tag"
+                    ],
+                    "components": {
+                        "custom_name": "\"Dinnerbone\""
+                    }
+                }
+            }
+        },
+        "grumm": {
+            "trigger": "minecraft:player_interacted_with_entity",
+            "conditions": {
+                "item": {
+                    "items": [
+                        "name_tag"
+                    ],
+                    "components": {
+                        "custom_name": "\"Grumm\""
+                    }
+                }
+            }
+        }
+    },
+    "requirements": [
+        [
+            "dinnerbone",
+            "grumm"
+        ]
+    ],
+    "parent": "youzaiworld:adventure/root"
+}

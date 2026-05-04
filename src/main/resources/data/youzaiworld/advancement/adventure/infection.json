@@ -1,0 +1,79 @@
+{
+    "display": {
+        "icon": {
+            "id": "sculk_vein"
+        },
+        "title": "感染",
+        "description": "在幽匿催化体附近击杀首领",
+        "frame": "challenge",
+        "announce_to_chat": true,
+        "show_toast": true,
+        "hidden": false
+    },
+    "criteria": {
+        "wither": {
+            "trigger": "kill_mob_near_sculk_catalyst",
+            "conditions": {
+                "entity": {
+                    "type": "wither"
+                },
+                "player": {
+                    "type_specific": {
+                        "type": "player"
+                    }
+                }
+            }
+        },
+        "dragon": {
+            "trigger": "kill_mob_near_sculk_catalyst",
+            "conditions": {
+                "entity": {
+                    "type": "ender_dragon"
+                },
+                "player": {
+                    "type_specific": {
+                        "type": "player"
+                    }
+                }
+            }
+        },
+        "elder_guardian": {
+            "trigger": "kill_mob_near_sculk_catalyst",
+            "conditions": {
+                "entity": {
+                    "type": "elder_guardian"
+                },
+                "player": {
+                    "type_specific": {
+                        "type": "player"
+                    }
+                }
+            }
+        },
+        "warden": {
+            "trigger": "kill_mob_near_sculk_catalyst",
+            "conditions": {
+                "entity": {
+                    "type": "warden"
+                },
+                "player": {
+                    "type_specific": {
+                        "type": "player"
+                    }
+                }
+            }
+        }
+    },
+    "requirements": [
+        [
+            "wither",
+            "dragon",
+            "elder_guardian",
+            "warden"
+        ]
+    ],
+    "parent": "youzaiworld:adventure/it_spreads",
+    "rewards": {
+        "experience": 250
+    }
+}

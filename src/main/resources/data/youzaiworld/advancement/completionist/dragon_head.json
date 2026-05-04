@@ -1,0 +1,35 @@
+{
+    "display": {
+        "icon": {
+            "id": "dragon_head"
+        },
+        "title": "龙之终结者",
+        "description": "获得一组龙头",
+        "frame": "challenge",
+        "announce_to_chat": true,
+        "show_toast": true,
+        "hidden": false
+    },
+    "criteria": {
+        "ender_dragon": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "dragon_head",
+                        "count": 64
+                    }
+                ]
+            }
+        }
+    },
+    "parent": "youzaiworld:completionist/all_mobs",
+    "requirements": [
+        [
+            "ender_dragon"
+        ]
+    ],
+    "rewards": {
+        "experience": 7500
+    }
+}

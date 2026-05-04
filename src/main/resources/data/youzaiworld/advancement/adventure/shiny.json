@@ -1,0 +1,37 @@
+{
+    "display": {
+        "icon": {
+            "id": "iron_axe"
+        },
+        "title": "昭雪",
+        "description": "将一名卫道士命名为“Johnny”！",
+        "frame": "challenge",
+        "announce_to_chat": true,
+        "show_toast": true,
+        "hidden": false
+    },
+    "criteria": {
+        "shining": {
+            "trigger": "minecraft:player_interacted_with_entity",
+            "conditions": {
+                "entity": {
+                    "type": "vindicator"
+                },
+                "item": {
+                    "items": [
+                        "name_tag"
+                    ],
+                    "components": {
+                        "custom_name": "\"Johnny\""
+                    }
+                }
+            }
+        }
+    },
+    "requirements": [
+        [
+            "shining"
+        ]
+    ],
+    "parent": "youzaiworld:adventure/technical_name"
+}

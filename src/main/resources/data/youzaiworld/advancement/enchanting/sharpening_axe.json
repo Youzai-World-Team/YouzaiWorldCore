@@ -1,0 +1,95 @@
+{
+    "display": {
+        "icon": {
+            "id": "netherite_axe"
+        },
+        "title": "磨砺斧刃",
+        "description": "给斧头施加剑的附魔！",
+        "frame": "task",
+        "announce_to_chat": true,
+        "show_toast": true,
+        "hidden": false
+    },
+    "criteria": {
+        "sharpness": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "predicates": {
+                            "enchantments": [
+                                {
+                                    "enchantments": "sharpness"
+                                }
+                            ]
+                        },
+                        "items": [
+                            "wooden_axe",
+                            "stone_axe",
+                            "iron_axe",
+                            "golden_axe",
+                            "diamond_axe",
+                            "netherite_axe"
+                        ]
+                    }
+                ]
+            }
+        },
+        "smite": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "predicates": {
+                            "enchantments": [
+                                {
+                                    "enchantments": "smite"
+                                }
+                            ]
+                        },
+                        "items": [
+                            "wooden_axe",
+                            "stone_axe",
+                            "iron_axe",
+                            "golden_axe",
+                            "diamond_axe",
+                            "netherite_axe"
+                        ]
+                    }
+                ]
+            }
+        },
+        "bane": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "predicates": {
+                            "enchantments": [
+                                {
+                                    "enchantments": "bane_of_arthropods"
+                                }
+                            ]
+                        },
+                        "items": [
+                            "wooden_axe",
+                            "stone_axe",
+                            "iron_axe",
+                            "golden_axe",
+                            "diamond_axe",
+                            "netherite_axe"
+                        ]
+                    }
+                ]
+            }
+        }
+    },
+    "requirements": [
+        [
+            "sharpness",
+            "smite",
+            "bane"
+        ]
+    ],
+    "parent": "youzaiworld:enchanting/selective_enchanting"
+}

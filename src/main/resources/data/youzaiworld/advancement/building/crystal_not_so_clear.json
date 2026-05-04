@@ -1,0 +1,33 @@
+{
+    "display": {
+        "icon": {
+            "id": "minecraft:tinted_glass"
+        },
+        "title": "水晶迷雾",
+        "description": "使用紫水晶制作染色玻璃",
+        "frame": "task",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": false
+    },
+    "criteria": {
+        "tint_glass": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "minecraft:tinted_glass"
+                        ]
+                    }
+                ]
+            }
+        }
+    },
+    "requirements": [
+        [
+            "tint_glass"
+        ]
+    ],
+    "parent": "youzaiworld:building/frosted_glass"
+}

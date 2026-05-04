@@ -1,0 +1,26 @@
+{
+    "parent": "youzaiworld:hostile/root",
+    "criteria": {
+        "impossible": {
+            "trigger": "minecraft:impossible"
+        }
+    },
+    "rewards": {
+        "function": "youzaiworld:neutral_kills"
+    },
+    "display": {
+        "title": {
+            "translate": "天下诸军！"
+        },
+        "description": {
+            "translate": "次元军团！"
+        },
+        "icon": {
+            "id": "minecraft:obsidian"
+        },
+        "frame": "goal",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": false
+    }
+}

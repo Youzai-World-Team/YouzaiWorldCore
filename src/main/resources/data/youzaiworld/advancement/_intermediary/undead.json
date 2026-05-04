@@ -1,0 +1,26 @@
+{
+    "parent": "youzaiworld:hostile/root",
+    "criteria": {
+        "impossible": {
+            "trigger": "minecraft:impossible"
+        }
+    },
+    "rewards": {
+        "function": "youzaiworld:neutral_kills"
+    },
+    "display": {
+        "title": {
+            "translate": "亡者复生！"
+        },
+        "description": {
+            "translate": "不死族！"
+        },
+        "icon": {
+            "id": "minecraft:mossy_cobblestone"
+        },
+        "frame": "goal",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": false
+    }
+}

@@ -1,0 +1,125 @@
+{
+    "display": {
+        "icon": {
+            "id": "minecraft:cut_copper"
+        },
+        "title": "就是这块料",
+        "description": "用切石机切割一些铜！",
+        "frame": "task",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": false
+    },
+    "criteria": {
+        "cut_copper_block": {
+            "trigger": "minecraft:recipe_crafted",
+            "conditions": {
+                "recipe_id": "cut_copper_from_copper_block_stonecutting",
+                "ingredients": [
+                    {
+                        "items": [
+                            "copper_block",
+                            "waxed_copper_block",
+                            "weathered_copper",
+                            "waxed_weathered_copper",
+                            "exposed_copper",
+                            "waxed_exposed_copper",
+                            "oxidized_copper",
+                            "waxed_oxidized_copper"
+                        ]
+                    }
+                ]
+            }
+        },
+        "cut_copper_slab": {
+            "trigger": "minecraft:recipe_crafted",
+            "conditions": {
+                "recipe_id": "cut_copper_slab_from_copper_block_stonecutting",
+                "ingredients": [
+                    {
+                        "items": [
+                            "copper_block",
+                            "waxed_copper_block",
+                            "weathered_copper",
+                            "waxed_weathered_copper",
+                            "exposed_copper",
+                            "waxed_exposed_copper",
+                            "oxidized_copper",
+                            "waxed_oxidized_copper"
+                        ]
+                    }
+                ]
+            }
+        },
+        "cut_copper_stair": {
+            "trigger": "minecraft:recipe_crafted",
+            "conditions": {
+                "recipe_id": "cut_copper_stairs_from_copper_block_stonecutting",
+                "ingredients": [
+                    {
+                        "items": [
+                            "copper_block",
+                            "waxed_copper_block",
+                            "weathered_copper",
+                            "waxed_weathered_copper",
+                            "exposed_copper",
+                            "waxed_exposed_copper",
+                            "oxidized_copper",
+                            "waxed_oxidized_copper"
+                        ]
+                    }
+                ]
+            }
+        },
+        "chiseled_copper": {
+            "trigger": "minecraft:recipe_crafted",
+            "conditions": {
+                "recipe_id": "chiseled_copper_from_copper_block_stonecutting",
+                "ingredients": [
+                    {
+                        "items": [
+                            "copper_block",
+                            "waxed_copper_block",
+                            "weathered_copper",
+                            "waxed_weathered_copper",
+                            "exposed_copper",
+                            "waxed_exposed_copper",
+                            "oxidized_copper",
+                            "waxed_oxidized_copper"
+                        ]
+                    }
+                ]
+            }
+        },
+        "copper_grate": {
+            "trigger": "minecraft:recipe_crafted",
+            "conditions": {
+                "recipe_id": "copper_grate_from_copper_block_stonecutting",
+                "ingredients": [
+                    {
+                        "items": [
+                            "copper_block",
+                            "waxed_copper_block",
+                            "weathered_copper",
+                            "waxed_weathered_copper",
+                            "exposed_copper",
+                            "waxed_exposed_copper",
+                            "oxidized_copper",
+                            "waxed_oxidized_copper"
+                        ]
+                    }
+                ]
+            }
+        }
+    },
+    "requirements": [
+        [
+            "cut_copper_block",
+            "cut_copper_slab",
+            "cut_copper_stair",
+            "chiseled_copper",
+            "copper_grate"
+        ]
+    ],
+    "parent": "youzaiworld:building/a_solid_foundation"
+}

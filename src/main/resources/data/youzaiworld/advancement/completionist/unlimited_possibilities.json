@@ -1,0 +1,43 @@
+{
+    "display": {
+        "icon": {
+            "id": "minecraft:end_portal_frame"
+        },
+        "title": "无限可能",
+        "description": "击败末影龙20次，解锁所有末地折跃门！",
+        "frame": "goal",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": false
+    },
+    "criteria": {
+        "gateway_project": {
+            "trigger": "minecraft:location",
+            "conditions": {
+                "player": {
+                    "type_specific": {
+                        "type": "player",
+                        "stats": [
+                            {
+                                "type": "minecraft:killed",
+                                "stat": "minecraft:ender_dragon",
+                                "value": {
+                                    "min": 20
+                                }
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+    },
+    "requirements": [
+        [
+            "gateway_project"
+        ]
+    ],
+    "parent": "youzaiworld:completionist/as_above",
+    "rewards": {
+        "experience": 500
+    }
+}

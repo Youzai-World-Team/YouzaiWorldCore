@@ -1,0 +1,26 @@
+{
+    "parent": "youzaiworld:hostile/zombie/zombie_executioner_2",
+    "criteria": {
+        "impossible": {
+            "trigger": "minecraft:impossible"
+        }
+    },
+    "rewards": {
+        "function": "youzaiworld:hostile_kills"
+    },
+    "display": {
+        "title": {
+            "translate": "僵尸杀手！"
+        },
+        "description": {
+            "translate": "击杀1000只僵尸"
+        },
+        "icon": {
+            "id": "minecraft:netherite_sword"
+        },
+        "frame": "challenge",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": false
+    }
+}

@@ -1,0 +1,46 @@
+{
+    "display": {
+        "icon": {
+            "id": "carved_pumpkin",
+            "components": {
+                "enchantments": {
+                    "binding_curse": 1
+                }
+            }
+        },
+        "title": "捣蛋鬼",
+        "description": "给雕刻南瓜附上绑定诅咒",
+        "frame": "challenge",
+        "announce_to_chat": true,
+        "show_toast": true,
+        "hidden": true
+    },
+    "criteria": {
+        "pure_evil": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "carved_pumpkin"
+                        ],
+                        "components": {
+                            "enchantments": {
+                                "binding_curse": 1
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    },
+    "requirements": [
+        [
+            "pure_evil"
+        ]
+    ],
+    "parent": "youzaiworld:enchanting/selective_enchanting",
+    "rewards": {
+        "experience": 100
+    }
+}

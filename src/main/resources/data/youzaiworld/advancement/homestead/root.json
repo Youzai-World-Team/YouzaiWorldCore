@@ -1,0 +1,31 @@
+{
+    "display": {
+        "icon": {
+            "id": "minecraft:emerald"
+        },
+        "title": "家园",
+        "description": "村民、掠夺者与灾厄村民！",
+        "frame": "task",
+        "show_toast": false,
+        "announce_to_chat": false,
+        "hidden": false,
+        "background": "block/emerald_block"
+    },
+    "criteria": {
+        "village": {
+            "trigger": "minecraft:location",
+            "conditions": {
+                "player": {
+                    "location": {
+                        "structures": "#village"
+                    }
+                }
+            }
+        }
+    },
+    "requirements": [
+        [
+            "village"
+        ]
+    ]
+}

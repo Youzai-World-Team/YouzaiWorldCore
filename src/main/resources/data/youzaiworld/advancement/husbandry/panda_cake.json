@@ -1,0 +1,47 @@
+{
+    "display": {
+        "icon": {
+            "id": "cake"
+        },
+        "title": "让他们吃蛋糕吧！",
+        "description": "给熊猫喂蛋糕",
+        "frame": "task",
+        "announce_to_chat": true,
+        "show_toast": true,
+        "hidden": false
+    },
+    "criteria": {
+        "panda_cake": {
+            "trigger": "player_interacted_with_entity",
+            "conditions": {
+                "entity": {
+                    "type": [
+                        "panda"
+                    ]
+                },
+                "item": {
+                    "items": [
+                        "cake"
+                    ]
+                },
+                "player": [
+                    {
+                        "condition": "entity_properties",
+                        "entity": "this",
+                        "predicate": {
+                            "type": [
+                                "player"
+                            ]
+                        }
+                    }
+                ]
+            }
+        }
+    },
+    "requirements": [
+        [
+            "panda_cake"
+        ]
+    ],
+    "parent": "youzaiworld:husbandry/root"
+}

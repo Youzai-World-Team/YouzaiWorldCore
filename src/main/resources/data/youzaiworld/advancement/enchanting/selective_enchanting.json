@@ -1,0 +1,33 @@
+{
+    "display": {
+        "icon": {
+            "id": "anvil"
+        },
+        "title": "定向附魔师",
+        "description": "制作铁砧以合并附魔！",
+        "frame": "task",
+        "announce_to_chat": true,
+        "show_toast": true,
+        "hidden": false
+    },
+    "criteria": {
+        "anvil": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "anvil"
+                        ]
+                    }
+                ]
+            }
+        }
+    },
+    "requirements": [
+        [
+            "anvil"
+        ]
+    ],
+    "parent": "youzaiworld:enchanting/root"
+}

@@ -1,0 +1,42 @@
+{
+    "display": {
+        "icon": {
+            "id": "warped_wart_block"
+        },
+        "title": "扭曲联盟",
+        "description": "让悦灵在诡异森林中将物品递送给你",
+        "frame": "challenge",
+        "announce_to_chat": true,
+        "show_toast": true,
+        "hidden": false
+    },
+    "criteria": {
+        "warped_allayance": {
+            "trigger": "thrown_item_picked_up_by_player",
+            "conditions": {
+                "entity": {
+                    "location": {
+                        "biomes": "warped_forest"
+                    },
+                    "type": [
+                        "allay"
+                    ]
+                },
+                "player": {
+                    "type": [
+                        "player"
+                    ]
+                }
+            }
+        }
+    },
+    "requirements": [
+        [
+            "warped_allayance"
+        ]
+    ],
+    "parent": "youzaiworld:husbandry/birthday_song",
+    "rewards": {
+        "experience": 100
+    }
+}

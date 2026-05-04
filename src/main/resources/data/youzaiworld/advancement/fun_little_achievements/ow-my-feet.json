@@ -1,0 +1,29 @@
+{
+  "display": {
+    "icon": {
+      "id": "minecraft:magma_block"
+    },
+    "title": "哎哟，我的脚！",
+    "description": "走在岩浆块上",
+    "frame": "task",
+    "hidden": false
+  },
+  "parent": "youzaiworld:fun_little_achievements/root",
+  "criteria": {
+    "trigger": {
+      "trigger": "minecraft:tick",
+      "conditions": {
+        "player": {
+          "stepping_on": {
+            "block": {
+              "blocks": "minecraft:magma_block"
+            }
+          }
+        }
+      }
+    }
+  },
+  "rewards": {
+    "experience": 1
+  }
+}

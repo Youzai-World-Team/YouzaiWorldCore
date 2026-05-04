@@ -1,0 +1,204 @@
+{
+    "display": {
+        "icon": {
+            "id": "minecraft:diamond_axe",
+            "components": {
+                "enchantments": {
+                    "efficiency": 5
+                }
+            }
+        },
+        "title": "磨斧寻仇",
+        "description": "收集所有木材变种！",
+        "frame": "goal",
+        "announce_to_chat": true,
+        "show_toast": true,
+        "hidden": false
+    },
+    "criteria": {
+        "oak": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "minecraft:oak_log"
+                        ]
+                    }
+                ]
+            }
+        },
+        "birch": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "minecraft:birch_log"
+                        ]
+                    }
+                ]
+            }
+        },
+        "spruce": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "minecraft:spruce_log"
+                        ]
+                    }
+                ]
+            }
+        },
+        "jungle": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "minecraft:jungle_log"
+                        ]
+                    }
+                ]
+            }
+        },
+        "acacia": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "minecraft:acacia_log"
+                        ]
+                    }
+                ]
+            }
+        },
+        "dark_oak": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "minecraft:dark_oak_log"
+                        ]
+                    }
+                ]
+            }
+        },
+        "mangrove": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "minecraft:mangrove_log"
+                        ]
+                    }
+                ]
+            }
+        },
+        "cherry": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "minecraft:cherry_log"
+                        ]
+                    }
+                ]
+            }
+        },
+        "bamboo": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "minecraft:bamboo_block"
+                        ]
+                    }
+                ]
+            }
+        },
+        "crimson": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "minecraft:crimson_stem"
+                        ]
+                    }
+                ]
+            }
+        },
+        "warped": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "minecraft:warped_stem"
+                        ]
+                    }
+                ]
+            }
+        },
+        "pale_oak": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "pale_oak_log"
+                    }
+                ]
+            }
+        }
+    },
+    "requirements": [
+        [
+            "oak"
+        ],
+        [
+            "birch"
+        ],
+        [
+            "spruce"
+        ],
+        [
+            "jungle"
+        ],
+        [
+            "acacia"
+        ],
+        [
+            "dark_oak"
+        ],
+        [
+            "mangrove"
+        ],
+        [
+            "cherry"
+        ],
+        [
+            "bamboo"
+        ],
+        [
+            "crimson"
+        ],
+        [
+            "warped"
+        ],
+        [
+            "pale_oak"
+        ]
+    ],
+    "rewards": {
+        "experience": 100
+    },
+    "parent": "youzaiworld:building/humble_home"
+}

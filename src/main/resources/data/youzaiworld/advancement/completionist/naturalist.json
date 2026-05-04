@@ -1,0 +1,1503 @@
+{
+    "display": {
+        "icon": {
+            "id": "moss_block"
+        },
+        "title": "你天生好手！",
+        "description": "收集游戏内所有自然方块及物品各一件",
+        "frame": "goal",
+        "announce_to_chat": true,
+        "hidden": false,
+        "show_toast": true
+    },
+    "criteria": {
+        "moss_block": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "moss_block"
+                    }
+                ]
+            }
+        },
+        "moss_carpet": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "moss_carpet"
+                    }
+                ]
+            }
+        },
+        "pale_moss_block": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "pale_moss_block"
+                    }
+                ]
+            }
+        },
+        "pale_moss_carpet": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "pale_moss_carpet"
+                    }
+                ]
+            }
+        },
+        "pale_hanging_moss": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "pale_hanging_moss"
+                    }
+                ]
+            }
+        },
+        "grass_block": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "grass_block"
+                    }
+                ]
+            }
+        },
+        "dirt_block": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "dirt"
+                    }
+                ]
+            }
+        },
+        "rooted_dirt": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "rooted_dirt"
+                    }
+                ]
+            }
+        },
+        "coarse_dirt": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "coarse_dirt"
+                    }
+                ]
+            }
+        },
+        "podzol": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "podzol"
+                    }
+                ]
+            }
+        },
+        "mycelium": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "mycelium"
+                    }
+                ]
+            }
+        },
+        "gravel": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "gravel"
+                    }
+                ]
+            }
+        },
+        "sand": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "sand"
+                    }
+                ]
+            }
+        },
+        "red_sand": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "red_sand"
+                    }
+                ]
+            }
+        },
+        "clay_block": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "clay"
+                    }
+                ]
+            }
+        },
+        "small_dripleaf": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "small_dripleaf"
+                    }
+                ]
+            }
+        },
+        "large_dripleaf": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "big_dripleaf"
+                    }
+                ]
+            }
+        },
+        "spore_blossom": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "spore_blossom"
+                    }
+                ]
+            }
+        },
+        "glowberry": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "glow_berries"
+                    }
+                ]
+            }
+        },
+        "hanging_root": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "hanging_roots"
+                    }
+                ]
+            }
+        },
+        "mangrove_root": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "mangrove_roots"
+                    }
+                ]
+            }
+        },
+        "muddy_roots": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "muddy_mangrove_roots"
+                    }
+                ]
+            }
+        },
+        "mud": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "mud"
+                    }
+                ]
+            }
+        },
+        "packed_mud": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "packed_mud"
+                    }
+                ]
+            }
+        },
+        "lilypad": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "lily_pad"
+                    }
+                ]
+            }
+        },
+        "snowball": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "snowball"
+                    }
+                ]
+            }
+        },
+        "snow_block": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "snow_block"
+                    }
+                ]
+            }
+        },
+        "snow_layer": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "snow"
+                    }
+                ]
+            }
+        },
+        "grass": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "short_grass"
+                    }
+                ]
+            }
+        },
+        "tall_grass": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "tall_grass"
+                    }
+                ]
+            }
+        },
+        "fern": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "fern"
+                    }
+                ]
+            }
+        },
+        "large_fern": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "large_fern"
+                    }
+                ]
+            }
+        },
+        "firefly_bush": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "firefly_bush"
+                    }
+                ]
+            }
+        },
+        "bush": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "bush"
+                    }
+                ]
+            }
+        },
+        "short_dry_grass": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "short_dry_grass"
+                    }
+                ]
+            }
+        },
+        "tall_dry_grass": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "tall_dry_grass"
+                    }
+                ]
+            }
+        },
+        "poppy": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "poppy"
+                    }
+                ]
+            }
+        },
+        "dandelion": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "dandelion"
+                    }
+                ]
+            }
+        },
+        "cornflower": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "cornflower"
+                    }
+                ]
+            }
+        },
+        "azure_bluet": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "azure_bluet"
+                    }
+                ]
+            }
+        },
+        "oxeye_daisy": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "oxeye_daisy"
+                    }
+                ]
+            }
+        },
+        "allium": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "allium"
+                    }
+                ]
+            }
+        },
+        "blue_orchid": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "blue_orchid"
+                    }
+                ]
+            }
+        },
+        "white_tulip": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "white_tulip"
+                    }
+                ]
+            }
+        },
+        "pink_tulip": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "pink_tulip"
+                    }
+                ]
+            }
+        },
+        "orange_tulip": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "orange_tulip"
+                    }
+                ]
+            }
+        },
+        "red_tulip": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "red_tulip"
+                    }
+                ]
+            }
+        },
+        "lily_of_the_valley": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "lily_of_the_valley"
+                    }
+                ]
+            }
+        },
+        "torchflower": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "torchflower"
+                    }
+                ]
+            }
+        },
+        "pitcher_pod": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "pitcher_plant"
+                    }
+                ]
+            }
+        },
+        "rose_bush": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "rose_bush"
+                    }
+                ]
+            }
+        },
+        "sunflower": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "sunflower"
+                    }
+                ]
+            }
+        },
+        "peony": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "peony"
+                    }
+                ]
+            }
+        },
+        "lilac": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "lilac"
+                    }
+                ]
+            }
+        },
+        "wildflower": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "wildflowers"
+                    }
+                ]
+            }
+        },
+        "closed_eyeblossom": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "closed_eyeblossom"
+                    }
+                ]
+            }
+        },
+        "open_eyeblossom": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "open_eyeblossom"
+                    }
+                ]
+            }
+        },
+        "pink_petals": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "pink_petals"
+                    }
+                ]
+            }
+        },
+        "beehive": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "beehive"
+                    }
+                ]
+            }
+        },
+        "bee_nest": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "bee_nest"
+                    }
+                ]
+            }
+        },
+        "acacia_leaves": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "acacia_leaves"
+                    }
+                ]
+            }
+        },
+        "azalea_leaves": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "azalea_leaves"
+                    }
+                ]
+            }
+        },
+        "flowering_azalea_leaves": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "flowering_azalea_leaves"
+                    }
+                ]
+            }
+        },
+        "birch_leaves": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "birch_leaves"
+                    }
+                ]
+            }
+        },
+        "cherry_leaves": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "cherry_leaves"
+                    }
+                ]
+            }
+        },
+        "dark_oak_leaves": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "dark_oak_leaves"
+                    }
+                ]
+            }
+        },
+        "jungle_leaves": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "jungle_leaves"
+                    }
+                ]
+            }
+        },
+        "mangrove_leaves": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "mangrove_leaves"
+                    }
+                ]
+            }
+        },
+        "oak_leaves": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "oak_leaves"
+                    }
+                ]
+            }
+        },
+        "pale_oak_leaves": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "pale_oak_leaves"
+                    }
+                ]
+            }
+        },
+        "spruce_leaves": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "spruce_leaves"
+                    }
+                ]
+            }
+        },
+        "leaf_litter": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "leaf_litter"
+                    }
+                ]
+            }
+        },
+        "acacia_sapling": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "acacia_sapling"
+                    }
+                ]
+            }
+        },
+        "azalea_sapling": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "azalea"
+                    }
+                ]
+            }
+        },
+        "flowering_azalea_sapling": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "flowering_azalea"
+                    }
+                ]
+            }
+        },
+        "birch_sapling": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "birch_sapling"
+                    }
+                ]
+            }
+        },
+        "cherry_sapling": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "cherry_sapling"
+                    }
+                ]
+            }
+        },
+        "dark_oak_sapling": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "dark_oak_sapling"
+                    }
+                ]
+            }
+        },
+        "jungle_sapling": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "jungle_sapling"
+                    }
+                ]
+            }
+        },
+        "mangrove_propagule": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "mangrove_propagule"
+                    }
+                ]
+            }
+        },
+        "oak_sapling": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "oak_sapling"
+                    }
+                ]
+            }
+        },
+        "pale_oak_sapling": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "pale_oak_sapling"
+                    }
+                ]
+            }
+        },
+        "spruce_sapling": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "spruce_sapling"
+                    }
+                ]
+            }
+        },
+        "cactus": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "cactus"
+                    }
+                ]
+            }
+        },
+        "cactus_flower": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "cactus_flower"
+                    }
+                ]
+            }
+        },
+        "red_mushroom": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "red_mushroom"
+                    }
+                ]
+            }
+        },
+        "brown_mushroom": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "brown_mushroom"
+                    }
+                ]
+            }
+        },
+        "mushroom_stem": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "mushroom_stem"
+                    }
+                ]
+            }
+        },
+        "red_mushroom_block": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "red_mushroom_block"
+                    }
+                ]
+            }
+        },
+        "brown_mushroom_block": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "brown_mushroom_block"
+                    }
+                ]
+            }
+        },
+        "vines": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "vine"
+                    }
+                ]
+            }
+        },
+        "cocoa_beans": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "cocoa_beans"
+                    }
+                ]
+            }
+        },
+        "bamboo": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "bamboo"
+                    }
+                ]
+            }
+        },
+        "resin": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "resin_clump"
+                    }
+                ]
+            }
+        },
+        "resin_block": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "resin_block"
+                    }
+                ]
+            }
+        },
+        "pumpkin": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "pumpkin"
+                    }
+                ]
+            }
+        },
+        "carved_pumpkin": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "carved_pumpkin"
+                    }
+                ]
+            }
+        },
+        "jack_o_lantern": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "jack_o_lantern"
+                    }
+                ]
+            }
+        },
+        "cobweb": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "cobweb"
+                    }
+                ]
+            }
+        },
+        "dead_bush": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "dead_bush"
+                    }
+                ]
+            }
+        },
+        "melon_block": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "melon"
+                    }
+                ]
+            }
+        },
+        "melon_slice": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "melon_slice"
+                    }
+                ]
+            }
+        },
+        "hay_bale": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "hay_block"
+                    }
+                ]
+            }
+        },
+        "honey_block": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "honey_block"
+                    }
+                ]
+            }
+        },
+        "honey_bottle": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "honey_bottle"
+                    }
+                ]
+            }
+        },
+        "honeycomb": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "honeycomb"
+                    }
+                ]
+            }
+        },
+        "honeycomb_block": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "honeycomb_block"
+                    }
+                ]
+            }
+        },
+        "powdered_snow_bucket": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "powder_snow_bucket"
+                    }
+                ]
+            }
+        },
+        "sniffer_egg": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "sniffer_egg"
+                    }
+                ]
+            }
+        },
+        "sugar_cane": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "sugar_cane"
+                    }
+                ]
+            }
+        },
+        "sweet_berry": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "sweet_berries"
+                    }
+                ]
+            }
+        },
+        "turtle_egg": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "turtle_egg"
+                    }
+                ]
+            }
+        },
+        "turtle_scute": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "turtle_scute"
+                    }
+                ]
+            }
+        },
+        "glow_lichen": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "glow_lichen"
+                    }
+                ]
+            }
+        }
+    },
+    "parent": "youzaiworld:completionist/hollow_earth",
+    "requirements": [
+        [
+            "acacia_leaves"
+        ],
+        [
+            "acacia_sapling"
+        ],
+        [
+            "allium"
+        ],
+        [
+            "azalea_leaves"
+        ],
+        [
+            "azalea_sapling"
+        ],
+        [
+            "azure_bluet"
+        ],
+        [
+            "bamboo"
+        ],
+        [
+            "bee_nest"
+        ],
+        [
+            "beehive"
+        ],
+        [
+            "birch_leaves"
+        ],
+        [
+            "birch_sapling"
+        ],
+        [
+            "blue_orchid"
+        ],
+        [
+            "brown_mushroom"
+        ],
+        [
+            "brown_mushroom_block"
+        ],
+        [
+            "bush"
+        ],
+        [
+            "cactus"
+        ],
+        [
+            "cactus_flower"
+        ],
+        [
+            "carved_pumpkin"
+        ],
+        [
+            "cherry_leaves"
+        ],
+        [
+            "cherry_sapling"
+        ],
+        [
+            "clay_block"
+        ],
+        [
+            "closed_eyeblossom"
+        ],
+        [
+            "coarse_dirt"
+        ],
+        [
+            "cobweb"
+        ],
+        [
+            "cocoa_beans"
+        ],
+        [
+            "cornflower"
+        ],
+        [
+            "dandelion"
+        ],
+        [
+            "dark_oak_leaves"
+        ],
+        [
+            "dark_oak_sapling"
+        ],
+        [
+            "dead_bush"
+        ],
+        [
+            "dirt_block"
+        ],
+        [
+            "fern"
+        ],
+        [
+            "firefly_bush"
+        ],
+        [
+            "flowering_azalea_leaves"
+        ],
+        [
+            "flowering_azalea_sapling"
+        ],
+        [
+            "glowberry"
+        ],
+        [
+            "glow_lichen"
+        ],
+        [
+            "grass"
+        ],
+        [
+            "grass_block"
+        ],
+        [
+            "gravel"
+        ],
+        [
+            "hanging_root"
+        ],
+        [
+            "hay_bale"
+        ],
+        [
+            "honey_block"
+        ],
+        [
+            "honey_bottle"
+        ],
+        [
+            "honeycomb"
+        ],
+        [
+            "honeycomb_block"
+        ],
+        [
+            "jack_o_lantern"
+        ],
+        [
+            "jungle_leaves"
+        ],
+        [
+            "jungle_sapling"
+        ],
+        [
+            "large_dripleaf"
+        ],
+        [
+            "large_fern"
+        ],
+        [
+            "leaf_litter"
+        ],
+        [
+            "lilac"
+        ],
+        [
+            "lily_of_the_valley"
+        ],
+        [
+            "lilypad"
+        ],
+        [
+            "mangrove_leaves"
+        ],
+        [
+            "mangrove_propagule"
+        ],
+        [
+            "mangrove_root"
+        ],
+        [
+            "melon_block"
+        ],
+        [
+            "melon_slice"
+        ],
+        [
+            "moss_block"
+        ],
+        [
+            "moss_carpet"
+        ],
+        [
+            "mud"
+        ],
+        [
+            "muddy_roots"
+        ],
+        [
+            "mushroom_stem"
+        ],
+        [
+            "mycelium"
+        ],
+        [
+            "oak_leaves"
+        ],
+        [
+            "oak_sapling"
+        ],
+        [
+            "open_eyeblossom"
+        ],
+        [
+            "orange_tulip"
+        ],
+        [
+            "oxeye_daisy"
+        ],
+        [
+            "packed_mud"
+        ],
+        [
+            "pale_hanging_moss"
+        ],
+        [
+            "pale_moss_block"
+        ],
+        [
+            "pale_moss_carpet"
+        ],
+        [
+            "pale_oak_leaves"
+        ],
+        [
+            "pale_oak_sapling"
+        ],
+        [
+            "peony"
+        ],
+        [
+            "pink_petals"
+        ],
+        [
+            "pink_tulip"
+        ],
+        [
+            "pitcher_pod"
+        ],
+        [
+            "podzol"
+        ],
+        [
+            "poppy"
+        ],
+        [
+            "powdered_snow_bucket"
+        ],
+        [
+            "pumpkin"
+        ],
+        [
+            "red_mushroom"
+        ],
+        [
+            "red_mushroom_block"
+        ],
+        [
+            "red_sand"
+        ],
+        [
+            "red_tulip"
+        ],
+        [
+            "resin"
+        ],
+        [
+            "resin_block"
+        ],
+        [
+            "rooted_dirt"
+        ],
+        [
+            "rose_bush"
+        ],
+        [
+            "sand"
+        ],
+        [
+            "short_dry_grass"
+        ],
+        [
+            "small_dripleaf"
+        ],
+        [
+            "sniffer_egg"
+        ],
+        [
+            "snow_block"
+        ],
+        [
+            "snow_layer"
+        ],
+        [
+            "snowball"
+        ],
+        [
+            "spore_blossom"
+        ],
+        [
+            "spruce_leaves"
+        ],
+        [
+            "spruce_sapling"
+        ],
+        [
+            "sugar_cane"
+        ],
+        [
+            "sunflower"
+        ],
+        [
+            "sweet_berry"
+        ],
+        [
+            "tall_dry_grass"
+        ],
+        [
+            "tall_grass"
+        ],
+        [
+            "torchflower"
+        ],
+        [
+            "turtle_egg"
+        ],
+        [
+            "turtle_scute"
+        ],
+        [
+            "vines"
+        ],
+        [
+            "white_tulip"
+        ],
+        [
+            "wildflower"
+        ]
+    ],
+    "rewards": {
+        "experience": 5000
+    }
+}

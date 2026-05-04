@@ -1,0 +1,35 @@
+{
+    "display": {
+        "icon": {
+            "id": "carved_pumpkin"
+        },
+        "title": "不给糖就捣蛋！",
+        "description": "击杀头戴雕刻南瓜的怪物！",
+        "frame": "task",
+        "announce_to_chat": true,
+        "show_toast": true,
+        "hidden": true
+    },
+    "criteria": {
+        "pumpkin_head": {
+            "trigger": "minecraft:player_killed_entity",
+            "conditions": {
+                "entity": {
+                    "equipment": {
+                        "head": {
+                            "items": [
+                                "carved_pumpkin"
+                            ]
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "requirements": [
+        [
+            "pumpkin_head"
+        ]
+    ],
+    "parent": "youzaiworld:adventure/skeleton_horse"
+}

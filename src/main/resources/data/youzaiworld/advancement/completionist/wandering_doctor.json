@@ -1,0 +1,1687 @@
+{
+    "display": {
+        "icon": {
+            "id": "enchanted_golden_apple"
+        },
+        "title": "无国界医生",
+        "description": "治愈世界上每种村庄类型里的每种职业僵尸村民各一名！",
+        "frame": "goal",
+        "announce_to_chat": true,
+        "show_toast": true,
+        "hidden": true
+    },
+    "criteria": {
+        "plains_armorer": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "plains"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:armorer\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "plains_butcher": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "plains"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:butcher\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "plains_cartographer": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "plains"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:cartographer\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "plains_cleric": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "plains"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:cleric\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "plains_farmer": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "plains"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:farmer\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "plains_fletcher": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "plains"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:fletcher\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "plains_fisherman": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "plains"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:fisherman\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "plains_leatherworker": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "plains"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:leatherworker\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "plains_librarian": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "plains"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:librarian\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "plains_mason": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "plains"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:mason\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "plains_shepherd": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "plains"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:shepherd\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "plains_toolsmith": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "plains"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:toolsmith\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "plains_weaponsmith": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "plains"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:weaponsmith\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "savanna_armorer": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "savanna"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:armorer\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "savanna_butcher": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "savanna"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:butcher\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "savanna_cartographer": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "savanna"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:cartographer\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "savanna_cleric": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "savanna"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:cleric\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "savanna_farmer": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "savanna"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:farmer\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "savanna_fletcher": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "savanna"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:fletcher\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "savanna_fisherman": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "savanna"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:fisherman\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "savanna_leatherworker": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "savanna"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:leatherworker\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "savanna_librarian": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "savanna"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:librarian\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "savanna_mason": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "savanna"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:mason\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "savanna_shepherd": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "savanna"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:shepherd\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "savanna_toolsmith": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "savanna"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:toolsmith\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "savanna_weaponsmith": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "savanna"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:weaponsmith\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "desert_armorer": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "desert"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:armorer\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "desert_butcher": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "desert"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:butcher\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "desert_cartographer": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "desert"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:cartographer\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "desert_cleric": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "desert"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:cleric\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "desert_farmer": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "desert"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:farmer\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "desert_fletcher": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "desert"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:fletcher\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "desert_fisherman": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "desert"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:fisherman\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "desert_leatherworker": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "desert"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:leatherworker\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "desert_librarian": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "desert"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:librarian\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "desert_mason": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "desert"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:mason\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "desert_shepherd": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "desert"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:shepherd\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "desert_toolsmith": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "desert"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:toolsmith\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "desert_weaponsmith": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "desert"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:weaponsmith\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "jungle_armorer": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "jungle"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:armorer\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "jungle_butcher": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "jungle"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:butcher\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "jungle_cartographer": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "jungle"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:cartographer\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "jungle_cleric": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "jungle"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:cleric\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "jungle_farmer": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "jungle"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:farmer\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "jungle_fletcher": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "jungle"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:fletcher\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "jungle_fisherman": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "jungle"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:fisherman\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "jungle_leatherworker": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "jungle"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:leatherworker\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "jungle_librarian": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "jungle"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:librarian\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "jungle_mason": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "jungle"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:mason\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "jungle_shepherd": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "jungle"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:shepherd\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "jungle_toolsmith": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "jungle"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:toolsmith\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "jungle_weaponsmith": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "jungle"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:weaponsmith\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "swamp_armorer": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "swamp"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:armorer\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "swamp_butcher": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "swamp"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:butcher\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "swamp_cartographer": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "swamp"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:cartographer\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "swamp_cleric": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "swamp"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:cleric\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "swamp_farmer": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "swamp"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:farmer\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "swamp_fletcher": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "swamp"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:fletcher\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "swamp_fisherman": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "swamp"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:fisherman\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "swamp_leatherworker": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "swamp"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:leatherworker\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "swamp_librarian": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "swamp"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:librarian\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "swamp_mason": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "swamp"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:mason\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "swamp_shepherd": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "swamp"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:shepherd\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "swamp_toolsmith": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "swamp"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:toolsmith\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "swamp_weaponsmith": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "swamp"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:weaponsmith\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "taiga_armorer": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "taiga"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:armorer\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "taiga_butcher": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "taiga"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:butcher\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "taiga_cartographer": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "taiga"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:cartographer\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "taiga_cleric": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "taiga"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:cleric\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "taiga_farmer": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "taiga"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:farmer\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "taiga_fletcher": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "taiga"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:fletcher\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "taiga_fisherman": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "taiga"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:fisherman\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "taiga_leatherworker": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "taiga"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:leatherworker\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "taiga_librarian": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "taiga"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:librarian\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "taiga_mason": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "taiga"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:mason\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "taiga_shepherd": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "taiga"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:shepherd\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "taiga_toolsmith": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "taiga"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:toolsmith\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "taiga_weaponsmith": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "taiga"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:weaponsmith\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "snow_armorer": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "snow"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:armorer\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "snow_butcher": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "snow"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:butcher\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "snow_cartographer": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "snow"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:cartographer\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "snow_cleric": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "snow"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:cleric\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "snow_farmer": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "snow"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:farmer\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "snow_fletcher": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "snow"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:fletcher\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "snow_fisherman": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "snow"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:fisherman\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "snow_leatherworker": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "snow"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:leatherworker\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "snow_librarian": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "snow"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:librarian\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "snow_mason": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "snow"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:mason\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "snow_shepherd": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "snow"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:shepherd\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "snow_toolsmith": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "snow"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:toolsmith\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "snow_weaponsmith": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "snow"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:weaponsmith\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "plains_nitwit": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "plains"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:nitwit\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "taiga_nitwit": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "taiga"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:nitwit\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "snow_nitwit": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "snow"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:nitwit\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "swamp_nitwit": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "swamp"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:nitwit\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "jungle_nitwit": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "jungle"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:nitwit\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "desert_nitwit": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "desert"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:nitwit\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        },
+        "savanna_nitwit": {
+            "trigger": "cured_zombie_villager",
+            "conditions": {
+                "villager": {
+                    "components": {
+                        "villager/variant": "savanna"
+                    },
+                    "nbt": "{VillagerData:{profession:\"minecraft:nitwit\"}}"
+                },
+                "player": {
+                    "type": "player"
+                }
+            }
+        }
+    },
+    "requirements": [
+        [
+            "desert_armorer"
+        ],
+        [
+            "desert_butcher"
+        ],
+        [
+            "desert_cartographer"
+        ],
+        [
+            "desert_cleric"
+        ],
+        [
+            "desert_farmer"
+        ],
+        [
+            "desert_fisherman"
+        ],
+        [
+            "desert_fletcher"
+        ],
+        [
+            "desert_leatherworker"
+        ],
+        [
+            "desert_librarian"
+        ],
+        [
+            "desert_mason"
+        ],
+        [
+            "desert_nitwit"
+        ],
+        [
+            "desert_shepherd"
+        ],
+        [
+            "desert_toolsmith"
+        ],
+        [
+            "desert_weaponsmith"
+        ],
+        [
+            "jungle_armorer"
+        ],
+        [
+            "jungle_butcher"
+        ],
+        [
+            "jungle_cartographer"
+        ],
+        [
+            "jungle_cleric"
+        ],
+        [
+            "jungle_farmer"
+        ],
+        [
+            "jungle_fisherman"
+        ],
+        [
+            "jungle_fletcher"
+        ],
+        [
+            "jungle_leatherworker"
+        ],
+        [
+            "jungle_librarian"
+        ],
+        [
+            "jungle_mason"
+        ],
+        [
+            "jungle_nitwit"
+        ],
+        [
+            "jungle_shepherd"
+        ],
+        [
+            "jungle_toolsmith"
+        ],
+        [
+            "jungle_weaponsmith"
+        ],
+        [
+            "savanna_armorer"
+        ],
+        [
+            "savanna_butcher"
+        ],
+        [
+            "savanna_cartographer"
+        ],
+        [
+            "savanna_cleric"
+        ],
+        [
+            "savanna_farmer"
+        ],
+        [
+            "savanna_fisherman"
+        ],
+        [
+            "savanna_fletcher"
+        ],
+        [
+            "savanna_leatherworker"
+        ],
+        [
+            "savanna_librarian"
+        ],
+        [
+            "savanna_mason"
+        ],
+        [
+            "savanna_nitwit"
+        ],
+        [
+            "savanna_shepherd"
+        ],
+        [
+            "savanna_toolsmith"
+        ],
+        [
+            "savanna_weaponsmith"
+        ],
+        [
+            "swamp_armorer"
+        ],
+        [
+            "swamp_butcher"
+        ],
+        [
+            "swamp_cartographer"
+        ],
+        [
+            "swamp_cleric"
+        ],
+        [
+            "swamp_farmer"
+        ],
+        [
+            "swamp_fisherman"
+        ],
+        [
+            "swamp_fletcher"
+        ],
+        [
+            "swamp_leatherworker"
+        ],
+        [
+            "swamp_librarian"
+        ],
+        [
+            "swamp_mason"
+        ],
+        [
+            "swamp_nitwit"
+        ],
+        [
+            "swamp_shepherd"
+        ],
+        [
+            "swamp_toolsmith"
+        ],
+        [
+            "swamp_weaponsmith"
+        ],
+        [
+            "snow_armorer"
+        ],
+        [
+            "snow_butcher"
+        ],
+        [
+            "snow_cartographer"
+        ],
+        [
+            "snow_cleric"
+        ],
+        [
+            "snow_farmer"
+        ],
+        [
+            "snow_fisherman"
+        ],
+        [
+            "snow_fletcher"
+        ],
+        [
+            "snow_leatherworker"
+        ],
+        [
+            "snow_librarian"
+        ],
+        [
+            "snow_mason"
+        ],
+        [
+            "snow_nitwit"
+        ],
+        [
+            "snow_shepherd"
+        ],
+        [
+            "snow_toolsmith"
+        ],
+        [
+            "snow_weaponsmith"
+        ],
+        [
+            "taiga_armorer"
+        ],
+        [
+            "taiga_butcher"
+        ],
+        [
+            "taiga_cartographer"
+        ],
+        [
+            "taiga_cleric"
+        ],
+        [
+            "taiga_farmer"
+        ],
+        [
+            "taiga_fisherman"
+        ],
+        [
+            "taiga_fletcher"
+        ],
+        [
+            "taiga_leatherworker"
+        ],
+        [
+            "taiga_librarian"
+        ],
+        [
+            "taiga_mason"
+        ],
+        [
+            "taiga_nitwit"
+        ],
+        [
+            "taiga_shepherd"
+        ],
+        [
+            "taiga_toolsmith"
+        ],
+        [
+            "taiga_weaponsmith"
+        ],
+        [
+            "plains_armorer"
+        ],
+        [
+            "plains_butcher"
+        ],
+        [
+            "plains_cartographer"
+        ],
+        [
+            "plains_cleric"
+        ],
+        [
+            "plains_farmer"
+        ],
+        [
+            "plains_fisherman"
+        ],
+        [
+            "plains_fletcher"
+        ],
+        [
+            "plains_leatherworker"
+        ],
+        [
+            "plains_librarian"
+        ],
+        [
+            "plains_mason"
+        ],
+        [
+            "plains_nitwit"
+        ],
+        [
+            "plains_shepherd"
+        ],
+        [
+            "plains_toolsmith"
+        ],
+        [
+            "plains_weaponsmith"
+        ]
+    ],
+    "parent": "youzaiworld:completionist/wandering_trader",
+    "rewards": {
+        "experience": 5000
+    }
+}

@@ -1,0 +1,33 @@
+{
+    "display": {
+        "icon": {
+            "id": "minecraft:ender_chest"
+        },
+        "title": "一切，无处不在",
+        "description": "使用末影之眼与黑曜石制作便携式存储空间",
+        "frame": "task",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": false
+    },
+    "criteria": {
+        "ender_chest": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "ender_chest"
+                        ]
+                    }
+                ]
+            }
+        }
+    },
+    "requirements": [
+        [
+            "ender_chest"
+        ]
+    ],
+    "parent": "youzaiworld:story/ice_bucket_challenge"
+}

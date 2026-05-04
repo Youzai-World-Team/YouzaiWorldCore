@@ -1,0 +1,26 @@
+{
+    "parent": "youzaiworld:hostile/hoglin/hoglin_kill",
+    "criteria": {
+        "impossible": {
+            "trigger": "minecraft:impossible"
+        }
+    },
+    "rewards": {
+        "function": "youzaiworld:hostile_kills"
+    },
+    "display": {
+        "title": {
+            "translate": "疣猪兽杀手！"
+        },
+        "description": {
+            "translate": "击杀1000只疣猪兽！"
+        },
+        "icon": {
+            "id": "minecraft:porkchop"
+        },
+        "frame": "task",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": false
+    }
+}

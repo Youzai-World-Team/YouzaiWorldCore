@@ -1,0 +1,26 @@
+{
+    "parent": "youzaiworld:passive/villager/villager_kill",
+    "criteria": {
+        "impossible": {
+            "trigger": "minecraft:impossible"
+        }
+    },
+    "rewards": {
+        "function": "youzaiworld:passive_kills"
+    },
+    "display": {
+        "title": {
+            "translate": "这是故意的！凶手！"
+        },
+        "description": {
+            "translate": "击杀5名村民"
+        },
+        "icon": {
+            "id": "minecraft:stone_sword"
+        },
+        "frame": "task",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": false
+    }
+}

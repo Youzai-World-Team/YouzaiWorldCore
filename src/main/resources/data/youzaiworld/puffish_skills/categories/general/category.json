@@ -1,0 +1,11 @@
+{
+	"unlocked_by_default": true,
+	"title": "通用",
+	"icon": {
+		"type": "item",
+		"data": {
+			"item": "iron_sword"
+		}
+	},
+	"background": "textures/gui/advancements/backgrounds/adventure.png"
+}

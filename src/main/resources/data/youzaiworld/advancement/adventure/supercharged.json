@@ -1,0 +1,39 @@
+{
+    "display": {
+        "icon": {
+            "id": "creeper_head"
+        },
+        "title": "超级充能！",
+        "description": "用闪电击中苦力怕！",
+        "frame": "challenge",
+        "announce_to_chat": true,
+        "show_toast": true,
+        "hidden": false
+    },
+    "criteria": {
+        "supercharge": {
+            "trigger": "channeled_lightning",
+            "conditions": {
+                "victims": [
+                    {
+                        "type": "creeper"
+                    }
+                ],
+                "player": {
+                    "type_specific": {
+                        "type": "player"
+                    }
+                }
+            }
+        }
+    },
+    "requirements": [
+        [
+            "supercharge"
+        ]
+    ],
+    "parent": "youzaiworld:adventure/root",
+    "rewards": {
+        "experience": 250
+    }
+}

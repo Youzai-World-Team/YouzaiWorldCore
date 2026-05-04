@@ -1,0 +1,20 @@
+{
+    "display": {
+        "icon": {
+            "id": "minecraft:lightning_rod"
+        },
+        "title": "雷神之怒",
+        "description": "电光一闪",
+        "frame": "task",
+        "hidden": false
+    },
+    "parent": "minecraft:adventure/dgys",
+    "criteria": {
+        "trigger": {
+            "trigger": "minecraft:lightning_strike"
+        }
+    },
+    "rewards": {
+        "experience": 1
+    }
+}

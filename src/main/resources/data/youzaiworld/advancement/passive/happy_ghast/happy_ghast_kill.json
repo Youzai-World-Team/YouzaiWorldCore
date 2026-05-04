@@ -1,0 +1,26 @@
+{
+    "parent": "youzaiworld:collections/_these_guys",
+    "criteria": {
+        "impossible": {
+            "trigger": "minecraft:impossible"
+        }
+    },
+    "rewards": {
+        "function": "youzaiworld:passive_kills"
+    },
+    "display": {
+        "title": {
+            "translate": "为什么？我不也让你开心了吗？"
+        },
+        "description": {
+            "translate": "首次击杀快乐恶魂"
+        },
+        "icon": {
+            "id": "minecraft:happy_ghast_spawn_egg"
+        },
+        "frame": "task",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": false
+    }
+}

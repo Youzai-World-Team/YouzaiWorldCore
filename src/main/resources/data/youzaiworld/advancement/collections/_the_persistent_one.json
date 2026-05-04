@@ -1,0 +1,26 @@
+{
+    "parent": "youzaiworld:passive/root",
+    "criteria": {
+        "impossible": {
+            "trigger": "minecraft:impossible"
+        }
+    },
+    "rewards": {
+        "function": "youzaiworld:passive_kills"
+    },
+    "display": {
+        "title": {
+            "translate": "不屈者！"
+        },
+        "description": {
+            "translate": "杀……那些死人？"
+        },
+        "icon": {
+            "id": "minecraft:mossy_cobblestone"
+        },
+        "frame": "goal",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": false
+    }
+}

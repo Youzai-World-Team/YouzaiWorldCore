@@ -1,0 +1,35 @@
+{
+    "display": {
+        "icon": {
+            "id": "creeper_head"
+        },
+        "title": "沉默者",
+        "description": "获得一组苦力怕头颅",
+        "frame": "challenge",
+        "announce_to_chat": true,
+        "show_toast": true,
+        "hidden": false
+    },
+    "criteria": {
+        "creeper": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "creeper_head",
+                        "count": 64
+                    }
+                ]
+            }
+        }
+    },
+    "parent": "youzaiworld:completionist/all_mobs",
+    "requirements": [
+        [
+            "creeper"
+        ]
+    ],
+    "rewards": {
+        "experience": 5000
+    }
+}

@@ -1,0 +1,36 @@
+{
+    "display": {
+        "icon": {
+            "id": "diamond_sword"
+        },
+        "title": "我有种不祥的预感……",
+        "description": "开始五级突袭",
+        "frame": "challenge",
+        "announce_to_chat": true,
+        "show_toast": true,
+        "hidden": true
+    },
+    "criteria": {
+        "bad_feeling": {
+            "trigger": "effects_changed",
+            "conditions": {
+                "effects": {
+                    "raid_omen": {
+                        "amplifier": {
+                            "min": 4
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "requirements": [
+        [
+            "bad_feeling"
+        ]
+    ],
+    "parent": "youzaiworld:homestead/hero_of_village",
+    "rewards": {
+        "experience": 250
+    }
+}

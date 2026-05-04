@@ -1,0 +1,26 @@
+{
+    "parent": "youzaiworld:_intermediary/undead",
+    "criteria": {
+        "impossible": {
+            "trigger": "minecraft:impossible"
+        }
+    },
+    "rewards": {
+        "function": "youzaiworld:hostile_kills"
+    },
+    "display": {
+        "title": {
+            "translate": "僵尸收集！"
+        },
+        "description": {
+            "translate": "击杀所有类型的僵尸！"
+        },
+        "icon": {
+            "id": "minecraft:rotten_flesh"
+        },
+        "frame": "goal",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": false
+    }
+}

@@ -1,0 +1,27 @@
+{
+    "display": {
+        "icon": {
+            "id": "minecraft:stone_pickaxe"
+        },
+        "title": "获得升级",
+        "description": "打造更好的镐子",
+        "frame": "task",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": false
+    },
+    "criteria": {
+        "better_pick": {
+            "trigger": "minecraft:recipe_crafted",
+            "conditions": {
+                "recipe_id": "stone_pickaxe"
+            }
+        }
+    },
+    "requirements": [
+        [
+            "better_pick"
+        ]
+    ],
+    "parent": "youzaiworld:story/stone_age"
+}

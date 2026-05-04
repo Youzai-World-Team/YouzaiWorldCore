@@ -1,0 +1,26 @@
+{
+    "parent": "youzaiworld:passive/root",
+    "criteria": {
+        "impossible": {
+            "trigger": "minecraft:impossible"
+        }
+    },
+    "rewards": {
+        "function": "youzaiworld:passive_kills"
+    },
+    "display": {
+        "title": {
+            "translate": "魔像收集！"
+        },
+        "description": {
+            "translate": "猎杀所有类型的魔像！不过，你为何要这么做？"
+        },
+        "icon": {
+            "id": "minecraft:carved_pumpkin"
+        },
+        "frame": "goal",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": false
+    }
+}

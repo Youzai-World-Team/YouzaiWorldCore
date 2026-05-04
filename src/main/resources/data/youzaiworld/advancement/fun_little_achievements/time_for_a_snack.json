@@ -1,0 +1,32 @@
+{
+  "display": {
+    "icon": {
+      "id": "minecraft:cookie"
+    },
+    "title": "该吃点心了",
+    "description": "站在基岩上吃饼干",
+    "frame": "challenge",
+    "hidden": false
+  },
+  "parent": "youzaiworld:fun_little_achievements/root",
+  "criteria": {
+    "trigger": {
+      "trigger": "minecraft:consume_item",
+      "conditions": {
+        "player": {
+          "stepping_on": {
+            "block": {
+              "blocks": "minecraft:bedrock"
+            }
+          }
+        },
+        "item": {
+          "items": "minecraft:cookie"
+        }
+      }
+    }
+  },
+  "rewards": {
+    "experience": 10
+  }
+}

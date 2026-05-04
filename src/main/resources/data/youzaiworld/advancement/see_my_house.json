@@ -1,0 +1,40 @@
+{
+    "display": {
+        "icon": {
+            "id": "minecraft:white_stained_glass"
+        },
+        "title": "从这儿能看见我家！",
+        "description": "在主世界拥有漂浮效果",
+        "frame": "challenge",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": false
+    },
+    "criteria": {
+        "up": {
+            "trigger": "minecraft:levitation",
+            "conditions": {
+                "player": [
+                    {
+                        "condition": "minecraft:entity_properties",
+                        "entity": "this",
+                        "predicate": {
+                            "location": {
+                                "dimension": "overworld"
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    },
+    "requirements": [
+        [
+            "up"
+        ]
+    ],
+    "parent": "minecraft:end/great_view",
+    "rewards": {
+        "experience": 250
+    }
+}

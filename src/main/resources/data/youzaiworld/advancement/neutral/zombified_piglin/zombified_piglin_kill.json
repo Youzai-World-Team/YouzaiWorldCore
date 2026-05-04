@@ -1,0 +1,26 @@
+{
+    "parent": "youzaiworld:collections/zombie_collection",
+    "criteria": {
+        "impossible": {
+            "trigger": "minecraft:impossible"
+        }
+    },
+    "rewards": {
+        "function": "youzaiworld:neutral_kills"
+    },
+    "display": {
+        "title": {
+            "translate": "就算我死了，其他人也会来！"
+        },
+        "description": {
+            "translate": "击杀你的第一只僵尸猪灵"
+        },
+        "icon": {
+            "id": "minecraft:zombified_piglin_spawn_egg"
+        },
+        "frame": "task",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": false
+    }
+}

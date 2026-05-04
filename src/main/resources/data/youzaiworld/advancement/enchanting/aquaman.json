@@ -1,0 +1,68 @@
+{
+    "display": {
+        "icon": {
+            "id": "trident",
+            "components": {
+                "enchantments": {
+                    "channeling": 1
+                }
+            }
+        },
+        "title": "恐怖三叉戟",
+        "description": "获得一把带有所有附魔的三叉戟！",
+        "frame": "challenge",
+        "announce_to_chat": true,
+        "show_toast": true,
+        "hidden": false
+    },
+    "criteria": {
+        "perfect_trident_riptide": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "trident",
+                        "components": {
+                            "enchantments": {
+                                "impaling": 5,
+                                "loyalty": 3,
+                                "mending": 1,
+                                "unbreaking": 3,
+                                "riptide": 3
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        "perfect_trident_channeling": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "trident",
+                        "components": {
+                            "enchantments": {
+                                "impaling": 5,
+                                "loyalty": 3,
+                                "mending": 1,
+                                "unbreaking": 3,
+                                "channeling": 1
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    },
+    "requirements": [
+        [
+            "perfect_trident_channeling",
+            "perfect_trident_riptide"
+        ]
+    ],
+    "parent": "youzaiworld:enchanting/magical_treasure",
+    "rewards": {
+        "experience": 250
+    }
+}

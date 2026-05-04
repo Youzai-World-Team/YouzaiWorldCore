@@ -1,0 +1,26 @@
+{
+    "parent": "youzaiworld:collections/skeleton_collection",
+    "criteria": {
+        "impossible": {
+            "trigger": "minecraft:impossible"
+        }
+    },
+    "rewards": {
+        "function": "youzaiworld:hostile_kills"
+    },
+    "display": {
+        "title": {
+            "translate": "凋灵骷髅击杀！"
+        },
+        "description": {
+            "translate": "击杀你的第一只凋灵骷髅！"
+        },
+        "icon": {
+            "id": "minecraft:wither_skeleton_spawn_egg"
+        },
+        "frame": "task",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": false
+    }
+}

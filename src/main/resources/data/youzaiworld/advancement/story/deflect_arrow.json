@@ -1,0 +1,37 @@
+{
+    "display": {
+        "icon": {
+            "id": "minecraft:shield"
+        },
+        "title": "改日再会，多谢！",
+        "description": "用盾牌格挡一次攻击",
+        "frame": "task",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": false
+    },
+    "criteria": {
+        "shield": {
+            "trigger": "minecraft:entity_hurt_player",
+            "conditions": {
+                "damage": {
+                    "type": {
+                        "tags": [
+                            {
+                                "expected": true,
+                                "id": "is_projectile"
+                            }
+                        ]
+                    },
+                    "blocked": true
+                }
+            }
+        }
+    },
+    "requirements": [
+        [
+            "shield"
+        ]
+    ],
+    "parent": "youzaiworld:story/acquire_hardware"
+}

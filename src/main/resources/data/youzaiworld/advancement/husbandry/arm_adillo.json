@@ -1,0 +1,39 @@
+{
+    "display": {
+        "icon": {
+            "id": "wolf_armor"
+        },
+        "title": "爪爪警探",
+        "description": "用狼甲保护你的爱犬！",
+        "frame": "task",
+        "announce_to_chat": true,
+        "show_toast": true,
+        "hidden": false
+    },
+    "criteria": {
+        "tough_doggo": {
+            "trigger": "player_interacted_with_entity",
+            "conditions": {
+                "item": {
+                    "items": "wolf_armor"
+                },
+                "entity": {
+                    "type": [
+                        "wolf"
+                    ]
+                },
+                "player": {
+                    "type": [
+                        "player"
+                    ]
+                }
+            }
+        }
+    },
+    "requirements": [
+        [
+            "tough_doggo"
+        ]
+    ],
+    "parent": "youzaiworld:husbandry/best_friends"
+}

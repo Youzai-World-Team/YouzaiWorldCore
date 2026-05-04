@@ -1,0 +1,26 @@
+{
+    "parent": "youzaiworld:collections/bastard_collection",
+    "criteria": {
+        "impossible": {
+            "trigger": "minecraft:impossible"
+        }
+    },
+    "rewards": {
+        "function": "youzaiworld:neutral_kills"
+    },
+    "display": {
+        "title": {
+            "translate": "击杀末影人！"
+        },
+        "description": {
+            "translate": "击杀你的第一只末影人"
+        },
+        "icon": {
+            "id": "minecraft:enderman_spawn_egg"
+        },
+        "frame": "task",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": false
+    }
+}

@@ -1,0 +1,38 @@
+{
+  "name": "我的菜单 - %version%",
+  "items": [
+    {
+      "type": "item",
+      "slot": [1, 1],
+      "item": {
+        "id": "minecraft:diamond",
+        "components": {
+          "custom_name": "§b%name%的钻石数量",
+          "lore": ["§7已拾取钻石： §b%stat.picked_up.diamond%"]
+        }
+      },
+      "action": {
+        "type": "command",
+        "command": "say %name% 总共拾取了 %stat.picked_up.diamond% 颗钻石！"
+      }
+    },
+    {
+      "type": "item",
+      "slot": [1, 2],
+      "item": {
+        "id": "minecraft:emerald",
+        "components": {
+          "custom_name": "§a给予效果",
+          "lore": ["§7夜视： §a30秒", "§7发光： §a15秒"]
+        }
+      },
+      "action": {
+        "type": "command",
+        "command": [
+          "effect give %name% night_vision 30 0",
+          "effect give %name% glowing 15 0"
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+    "parent": "youzaiworld:collections/_these_guys",
+    "criteria": {
+        "impossible": {
+            "trigger": "minecraft:impossible"
+        }
+    },
+    "rewards": {
+        "function": "youzaiworld:passive_kills"
+    },
+    "display": {
+        "title": {
+            "translate": "（吸鼻子）……我在自己的世界里从没见过这种生物"
+        },
+        "description": {
+            "translate": "击杀你的第一只嗅探兽"
+        },
+        "icon": {
+            "id": "minecraft:sniffer_spawn_egg"
+        },
+        "frame": "task",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": false
+    }
+}

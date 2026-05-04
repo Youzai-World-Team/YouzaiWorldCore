@@ -1,0 +1,42 @@
+{
+    "display": {
+        "icon": {
+            "id": "netherite_sword"
+        },
+        "title": "超杀",
+        "description": "一击造成10颗心的伤害",
+        "frame": "challenge",
+        "announce_to_chat": true,
+        "show_toast": true,
+        "hidden": false
+    },
+    "criteria": {
+        "overkill": {
+            "trigger": "minecraft:player_hurt_entity",
+            "conditions": {
+                "damage": {
+                    "dealt": {
+                        "min": 20
+                    },
+                    "type": {
+                        "is_direct": true
+                    }
+                },
+                "player": {
+                    "type_specific": {
+                        "type": "player"
+                    }
+                }
+            }
+        }
+    },
+    "requirements": [
+        [
+            "overkill"
+        ]
+    ],
+    "parent": "youzaiworld:adventure/root",
+    "rewards": {
+        "experience": 100
+    }
+}

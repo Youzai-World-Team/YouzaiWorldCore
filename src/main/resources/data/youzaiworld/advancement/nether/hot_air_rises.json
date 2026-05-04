@@ -1,0 +1,40 @@
+{
+    "display": {
+        "icon": {
+            "id": "minecraft:fire_charge"
+        },
+        "title": "热空气上升",
+        "description": "在下界获得漂浮效果",
+        "frame": "challenge",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": false
+    },
+    "criteria": {
+        "hot_air": {
+            "trigger": "minecraft:levitation",
+            "conditions": {
+                "player": [
+                    {
+                        "condition": "minecraft:entity_properties",
+                        "entity": "this",
+                        "predicate": {
+                            "location": {
+                                "dimension": "the_nether"
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    },
+    "requirements": [
+        [
+            "hot_air"
+        ]
+    ],
+    "parent": "youzaiworld:nether/great_view",
+    "rewards": {
+        "experience": 250
+    }
+}

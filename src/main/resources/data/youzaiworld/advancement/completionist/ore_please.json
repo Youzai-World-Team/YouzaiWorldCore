@@ -1,0 +1,268 @@
+{
+    "display": {
+        "icon": {
+            "id": "deepslate_diamond_ore"
+        },
+        "title": "来点矿石！",
+        "description": "收集游戏中每种矿石方块各一个",
+        "frame": "goal",
+        "announce_to_chat": true,
+        "show_toast": true,
+        "hidden": false
+    },
+    "criteria": {
+        "coal_ore": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "coal_ore"
+                    }
+                ]
+            }
+        },
+        "deepslate_coal_ore": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "deepslate_coal_ore"
+                    }
+                ]
+            }
+        },
+        "copper_ore": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "copper_ore"
+                    }
+                ]
+            }
+        },
+        "deepslate_copper_ore": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "deepslate_copper_ore"
+                    }
+                ]
+            }
+        },
+        "iron_ore": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "iron_ore"
+                    }
+                ]
+            }
+        },
+        "deepslate_iron_ore": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "deepslate_iron_ore"
+                    }
+                ]
+            }
+        },
+        "gold_ore": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "gold_ore"
+                    }
+                ]
+            }
+        },
+        "deepslate_gold_ore": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "deepslate_gold_ore"
+                    }
+                ]
+            }
+        },
+        "lapis_ore": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "lapis_ore"
+                    }
+                ]
+            }
+        },
+        "deepslate_lapis_ore": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "deepslate_lapis_ore"
+                    }
+                ]
+            }
+        },
+        "redstone_ore": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "redstone_ore"
+                    }
+                ]
+            }
+        },
+        "deepslate_redstone_ore": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "deepslate_redstone_ore"
+                    }
+                ]
+            }
+        },
+        "diamond_ore": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "diamond_ore"
+                    }
+                ]
+            }
+        },
+        "deepslate_diamond_ore": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "deepslate_diamond_ore"
+                    }
+                ]
+            }
+        },
+        "emerald_ore": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "emerald_ore"
+                    }
+                ]
+            }
+        },
+        "deepslate_emerald_ore": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "deepslate_emerald_ore"
+                    }
+                ]
+            }
+        },
+        "nether_gold_ore": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "nether_gold_ore"
+                    }
+                ]
+            }
+        },
+        "nether_quartz_ore": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "nether_quartz_ore"
+                    }
+                ]
+            }
+        },
+        "ancient_debris": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "ancient_debris"
+                    }
+                ]
+            }
+        }
+    },
+    "requirements": [
+        [
+            "ancient_debris"
+        ],
+        [
+            "coal_ore"
+        ],
+        [
+            "copper_ore"
+        ],
+        [
+            "deepslate_coal_ore"
+        ],
+        [
+            "deepslate_copper_ore"
+        ],
+        [
+            "deepslate_diamond_ore"
+        ],
+        [
+            "deepslate_emerald_ore"
+        ],
+        [
+            "deepslate_gold_ore"
+        ],
+        [
+            "deepslate_iron_ore"
+        ],
+        [
+            "deepslate_lapis_ore"
+        ],
+        [
+            "deepslate_redstone_ore"
+        ],
+        [
+            "diamond_ore"
+        ],
+        [
+            "emerald_ore"
+        ],
+        [
+            "gold_ore"
+        ],
+        [
+            "iron_ore"
+        ],
+        [
+            "lapis_ore"
+        ],
+        [
+            "nether_gold_ore"
+        ],
+        [
+            "nether_quartz_ore"
+        ],
+        [
+            "redstone_ore"
+        ]
+    ],
+    "parent": "youzaiworld:completionist/hollow_earth",
+    "rewards": {
+        "experience": 1000
+    }
+}

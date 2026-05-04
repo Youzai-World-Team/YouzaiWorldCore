@@ -1,0 +1,29 @@
+{
+  "display": {
+    "icon": {
+      "id": "minecraft:grass_block"
+    },
+    "title": "你碰到了草！",
+    "description": "触碰草地。",
+    "frame": "task",
+    "hidden": false
+  },
+  "parent": "youzaiworld:fun_little_achievements/root",
+  "criteria": {
+    "trigger": {
+      "trigger": "minecraft:tick",
+      "conditions": {
+        "player": {
+          "stepping_on": {
+            "block": {
+              "blocks": "minecraft:grass_block"
+            }
+          }
+        }
+      }
+    }
+  },
+  "rewards": {
+    "experience": 1
+  }
+}

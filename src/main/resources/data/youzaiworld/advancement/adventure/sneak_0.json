@@ -1,0 +1,34 @@
+{
+    "display": {
+        "icon": {
+            "id": "minecraft:chest"
+        },
+        "title": "潜行：0",
+        "description": "在远古城市打开箱子——响声极大",
+        "frame": "task",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": false
+    },
+    "criteria": {
+        "ancient_city": {
+            "trigger": "minecraft:player_generates_container_loot",
+            "conditions": {
+                "loot_table": "chests/ancient_city"
+            }
+        },
+        "ancient_city_ice": {
+            "trigger": "minecraft:player_generates_container_loot",
+            "conditions": {
+                "loot_table": "minecraft:chests/ancient_city_ice_box"
+            }
+        }
+    },
+    "requirements": [
+        [
+            "ancient_city",
+            "ancient_city_ice"
+        ]
+    ],
+    "parent": "youzaiworld:adventure/root"
+}

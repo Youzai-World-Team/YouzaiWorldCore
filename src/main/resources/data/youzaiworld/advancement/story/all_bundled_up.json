@@ -1,0 +1,22 @@
+{
+    "display": {
+        "icon": {
+            "id": "bundle"
+        },
+        "title": "全副武装",
+        "description": "制作包裹以整理背包",
+        "frame": "task",
+        "announce_to_chat": true,
+        "show_toast": true,
+        "hidden": false
+    },
+    "criteria": {
+        "bundle_craft": {
+            "trigger": "recipe_crafted",
+            "conditions": {
+                "recipe_id": "bundle"
+            }
+        }
+    },
+    "parent": "youzaiworld:story/time_to_mine"
+}

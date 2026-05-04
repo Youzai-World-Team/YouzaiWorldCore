@@ -1,0 +1,185 @@
+{
+    "display": {
+        "icon": {
+            "id": "minecraft:bubble_coral_block"
+        },
+        "title": "拯救珊瑚礁！",
+        "description": "前往珊瑚礁",
+        "frame": "task",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": false
+    },
+    "criteria": {
+        "fire_coral_block": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "fire_coral_block"
+                    }
+                ]
+            }
+        },
+        "fire_coral": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "fire_coral"
+                    }
+                ]
+            }
+        },
+        "fire_coral_fan": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "fire_coral_fan"
+                    }
+                ]
+            }
+        },
+        "brain_coral_block": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "brain_coral_block"
+                    }
+                ]
+            }
+        },
+        "brain_coral": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "brain_coral"
+                    }
+                ]
+            }
+        },
+        "brain_coral_fan": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "brain_coral_fan"
+                    }
+                ]
+            }
+        },
+        "bubble_coral_block": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "bubble_coral_block"
+                    }
+                ]
+            }
+        },
+        "bubble_coral": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "bubble_coral"
+                    }
+                ]
+            }
+        },
+        "bubble_coral_fan": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "bubble_coral_fan"
+                    }
+                ]
+            }
+        },
+        "horn_coral_block": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "horn_coral_block"
+                    }
+                ]
+            }
+        },
+        "horn_coral": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "horn_coral"
+                    }
+                ]
+            }
+        },
+        "horn_coral_fan": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "horn_coral_fan"
+                    }
+                ]
+            }
+        },
+        "tube_coral_block": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "tube_coral_block"
+                    }
+                ]
+            }
+        },
+        "tube_coral": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "tube_coral"
+                    }
+                ]
+            }
+        },
+        "tube_coral_fan": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "tube_coral_fan"
+                    }
+                ]
+            }
+        }
+    },
+    "requirements": [
+        [
+            "brain_coral",
+            "brain_coral_block",
+            "brain_coral_fan",
+            "bubble_coral",
+            "bubble_coral_block",
+            "bubble_coral_fan",
+            "fire_coral",
+            "fire_coral_block",
+            "fire_coral_fan",
+            "horn_coral",
+            "horn_coral_block",
+            "horn_coral_fan",
+            "tube_coral",
+            "tube_coral_block",
+            "tube_coral_fan"
+        ]
+    ],
+    "parent": "youzaiworld:aquatic/craft_boat"
+}

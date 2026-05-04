@@ -1,0 +1,57 @@
+{
+    "display": {
+        "icon": {
+            "id": "observer"
+        },
+        "title": "反复比对观察",
+        "description": "制作一些中继器、比较器和侦测器",
+        "frame": "task",
+        "announce_to_chat": true,
+        "show_toast": true,
+        "hidden": false
+    },
+    "criteria": {
+        "repeaters": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "repeater"
+                    }
+                ]
+            }
+        },
+        "comparators": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "comparator"
+                    }
+                ]
+            }
+        },
+        "observer": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "observer"
+                    }
+                ]
+            }
+        }
+    },
+    "requirements": [
+        [
+            "comparators"
+        ],
+        [
+            "observer"
+        ],
+        [
+            "repeaters"
+        ]
+    ],
+    "parent": "youzaiworld:redstone/redstone_dust"
+}
