@@ -1,9 +1,9 @@
-tag @a remove youzaiworld
-execute as @a[nbt={Inventory:[{id:"youzaiworldcore:heart_of_guardianship"}]}] run tag @s add youzaiworld
-execute as @a[scores={youzaiworld.death=1..},tag=!youzaiworld] at @s run function youzaiworld:run
+tag @a remove keep_inventory
+execute as @a[nbt={Inventory:[{id:"youzaiworldcore:heart_of_guardianship"}]}] run tag @s add keep_inventory
+execute as @a[scores={youzaiworld.death=1..},tag=!keep_inventory] at @s run function youzaiworld:keep_inventory
 #--------------------------------------------------------------------------------------------------------------------------------
-execute as @a[scores={youzaiworld.death=1..},tag=youzaiworld] run clear @s youzaiworldcore:heart_of_guardianship 1
-execute as @a[scores={youzaiworld.death=1..},tag=youzaiworld] run tellraw @s [{"text":"物品栏已保留，消耗 1 守护之心!"}]
+execute as @a[scores={youzaiworld.death=1..},tag=keep_inventory] run clear @s youzaiworldcore:heart_of_guardianship 1
+execute as @a[scores={youzaiworld.death=1..},tag=keep_inventory] run tellraw @s [{"text":"物品栏已保留，消耗 1 守护之心!"}]
 #--------------------------------------------------------------------------------------------------------------------------------
 scoreboard players reset @a youzaiworld.death
 
