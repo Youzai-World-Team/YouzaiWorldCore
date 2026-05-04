@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "youzaiworldcore:yz_ingot"
+  ],
+  "result": {
+    "count": 9,
+    "id": "youzaiworldcore:yz_nugget"
+  }
+}

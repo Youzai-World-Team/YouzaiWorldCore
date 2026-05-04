@@ -44,6 +44,11 @@ public class ModItems {
             new Item.Properties()
     );
 
+    public static final Item YZ_NUGGET = register(
+            "yz_nugget",
+            new Item.Properties()
+    );
+
     public static final Item YZ_SHOVEL = registerShovel(
             "yz_shovel",
             YZ_TOOL_MATERIAL, 1.5F, -3.0F
