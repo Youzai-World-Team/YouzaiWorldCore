@@ -8,6 +8,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Rarity;
 import net.minecraft.world.item.ToolMaterial;
 
 import top.csituka.youzaiworldcore.YouzaiworldCore;
@@ -58,7 +59,7 @@ public class ModItems {
 
     public static final Item HEART_OF_GUARDIANSHIP = registerHeartOfGuardianship(
             "heart_of_guardianship",
-            new Item.Properties()
+            new Item.Properties().rarity(Rarity.RARE)
     );
 
     private static Item register(String name, Item.Properties settings) {
