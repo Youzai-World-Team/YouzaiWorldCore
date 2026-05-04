@@ -79,6 +79,10 @@ public class DecompositionTableScreen extends AbstractContainerScreen<Decomposit
             return false;
         }
         
+        if (inputStack.isDamageableItem() && inputStack.getDamageValue() > 0) {
+            return false;
+        }
+        
         for (int i = 1; i <= 9; i++) {
             if (!this.menu.getContainer().getItem(i).isEmpty()) {
                 return false;
@@ -198,20 +202,6 @@ public class DecompositionTableScreen extends AbstractContainerScreen<Decomposit
             int y = this.getY();
             
             fillRoundedRect(guiGraphics, x, y, this.width, this.height, 3, color);
-            
-            drawDecomposeIcon(guiGraphics, x, y, canDecompose);
-        }
-
-        private void drawDecomposeIcon(GuiGraphicsExtractor guiGraphics, int x, int y, boolean enabled) {
-            int iconColor = enabled ? 0xFFFFFFFF : 0x60FFFFFF;
-            int centerX = x + this.width / 2;
-            int centerY = y + this.height / 2;
-            
-            guiGraphics.fill(centerX - 4, centerY - 1, centerX + 5, centerY + 1, iconColor);
-            guiGraphics.fill(centerX - 1, centerY - 4, centerX + 1, centerY + 5, iconColor);
-            
-            guiGraphics.fill(centerX + 2, centerY - 3, centerX + 5, centerY - 2, iconColor);
-            guiGraphics.fill(centerX + 2, centerY - 3, centerX + 3, centerY, iconColor);
         }
 
         private void fillRoundedRect(GuiGraphicsExtractor g, int x, int y, int w, int h, int r, int color) {

@@ -87,6 +87,10 @@ public class DecompositionTableMenu extends AbstractContainerMenu {
             return false;
         }
         
+        if (inputStack.isDamageableItem() && inputStack.getDamageValue() > 0) {
+            return false;
+        }
+        
         for (int i = OUTPUT_SLOT_START; i <= OUTPUT_SLOT_END; i++) {
             if (!container.getItem(i).isEmpty()) {
                 return false;
