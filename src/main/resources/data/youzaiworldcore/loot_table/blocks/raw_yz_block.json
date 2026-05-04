@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:block",
+  "pools": [
+    {
+      "bonus_rolls": 0,
+      "conditions": [
+        {
+          "condition": "minecraft:survives_explosion"
+        }
+      ],
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "youzaiworldcore:raw_yz_block"
+        }
+      ],
+      "rolls": 1
+    }
+  ],
+  "random_sequence": "youzaiworldcore:blocks/raw_yz_block"
+}

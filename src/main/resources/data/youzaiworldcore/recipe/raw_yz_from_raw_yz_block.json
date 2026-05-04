@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "building",
+  "ingredients": [
+    {
+      "item": "youzaiworldcore:raw_yz_block"
+    }
+  ],
+  "result": {
+    "id": "youzaiworldcore:raw_yz",
+    "count": 9
+  }
+}

@@ -39,6 +39,16 @@ public class ModBlocks {
             true
     );
 
+    public static final Block RAW_YZ_BLOCK = register(
+            "raw_yz_block",
+            Block::new,
+            BlockBehaviour.Properties.of()
+                    .strength(5.0f, 6.0f)
+                    .sound(SoundType.STONE)
+                    .requiresCorrectToolForDrops(),
+            true
+    );
+
     private static Block register(String name, Function<BlockBehaviour.Properties, Block> blockFactory, BlockBehaviour.Properties settings, boolean shouldRegisterItem) {
         ResourceKey<Block> blockKey = ResourceKey.create(Registries.BLOCK, Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, name));
         Block block = blockFactory.apply(settings.setId(blockKey));

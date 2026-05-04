@@ -24,6 +24,11 @@ public class YouzaiworldCore implements ModInitializer {
             Identifier.fromNamespaceAndPath(MOD_ID, "ore_yz")
     );
 
+    public static final ResourceKey<PlacedFeature> RAW_YZ_BLOCK_PLACED_KEY = ResourceKey.create(
+            Registries.PLACED_FEATURE,
+            Identifier.fromNamespaceAndPath(MOD_ID, "ore_raw_yz_block")
+    );
+
     @Override
     public void onInitialize() {
         ModBlocks.initialize();
@@ -35,6 +40,12 @@ public class YouzaiworldCore implements ModInitializer {
                 BiomeSelectors.foundInOverworld(),
                 GenerationStep.Decoration.UNDERGROUND_ORES,
                 YZ_ORE_PLACED_KEY
+        );
+
+        BiomeModifications.addFeature(
+                BiomeSelectors.foundInOverworld(),
+                GenerationStep.Decoration.UNDERGROUND_ORES,
+                RAW_YZ_BLOCK_PLACED_KEY
         );
     }
 }

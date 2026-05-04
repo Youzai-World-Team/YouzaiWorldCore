@@ -2,6 +2,7 @@
   "replace": false,
   "values": [
     "youzaiworldcore:yz_ore",
-    "youzaiworldcore:deepslate_yz_ore"
+    "youzaiworldcore:deepslate_yz_ore",
+    "youzaiworldcore:raw_yz_block"
   ]
 }
