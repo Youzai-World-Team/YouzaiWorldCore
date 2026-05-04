@@ -1,0 +1,40 @@
+{
+  "parent": "youzaiworld:youzaiworld/have_raw_yz",
+  "display": {
+    "icon": {
+      "id": "youzaiworld:yz_ore"
+    },
+    "title": {
+      "text": "悠哉原矿寻觅者",
+      "color": "gold"
+    },
+    "description": {
+      "text": "获得悠哉原矿或深板悠哉原矿。",
+      "color": "dark_gray"
+    },
+    "frame": "challenge",
+    "show_toast": false,
+    "announce_to_chat": false,
+    "hidden": true
+  },
+  "criteria": {
+    "get_yz_ore": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "youzaiworld:yz_ore"
+          },
+          {
+            "items": "youzaiworld:deepslate_yz_ore"
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "get_yz_ore"
+    ]
+  ]
+}
