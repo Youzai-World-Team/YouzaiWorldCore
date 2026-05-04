@@ -68,14 +68,6 @@
                     "type": "wolf"
                 }
             }
-        },
-        "dried_ghast": {
-            "trigger": "tame_animal",
-            "conditions": {
-                "entity": {
-                    "type": "dried_ghast"
-                }
-            }
         }
     },
     "requirements": [
@@ -99,9 +91,6 @@
         ],
         [
             "wolf"
-        ],
-        [
-            "dried_ghast"
         ]
     ],
     "parent": "youzaiworld:husbandry/root",
