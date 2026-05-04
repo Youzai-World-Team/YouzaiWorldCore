@@ -1,0 +1,49 @@
+{
+  "parent": "youzaiworld:youzaiworld/have_yz_ingot",
+  "display": {
+    "icon": {
+      "id": "youzaiworldcore:yz_pickaxe"
+    },
+    "title": {
+      "text": "与众不同的工具",
+      "color": "gold"
+    },
+    "description": {
+      "text": "获得任意一种悠哉工具。",
+      "color": "gray"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "has_tool": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "youzaiworldcore:yz_axe"
+          },
+          {
+            "items": "youzaiworldcore:yz_hoe"
+          },
+          {
+            "items": "youzaiworldcore:yz_pickaxe"
+          },
+          {
+            "items": "youzaiworldcore:yz_shovel"
+          },
+          {
+            "items": "youzaiworldcore:yz_sword"
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "has_tool"
+    ]
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "parent": "youzaiworld:youzaiworld/have_heart_of_guardianship",
+  "criteria": {
+    "manual_grant": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "manual_grant"
+    ]
+  ],
+  "display": {
+    "icon": {
+      "id": "youzaiworldcore:heart_of_guardianship"
+    },
+    "title": {
+      "text": "虚幻墓碑",
+      "color": "gold"
+    },
+    "description": {
+      "text": "死亡没能带走你的家当。",
+      "color": "gray"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": true
+  },
+  "rewards": {
+    "experience": 100
+  }
+}

@@ -1,0 +1,35 @@
+{
+    "parent": "youzaiworld:youzaiworld/have_raw_yz",
+    "display": {
+        "icon": {
+            "id": "youzaiworldcore:yz_ingot"
+        },
+        "title": {
+            "text": "变纯净了"
+        },
+        "description": {
+            "text": "获得悠哉锭。"
+        },
+        "frame": "task",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": false
+    },
+    "criteria": {
+        "get_yz_ingot": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "youzaiworldcore:yz_ingot"
+                    }
+                ]
+            }
+        }
+    },
+    "requirements": [
+        [
+            "get_yz_ingot"
+        ]
+    ]
+}

@@ -33,11 +33,13 @@
   "item.youzaiworldcore.yz_hoe": "悠哉锄",
   "item.youzaiworldcore.yz_hoe.tooltip": "蹲下使用可耕3x3的地",
   "item.youzaiworldcore.yz_sword": "悠哉剑",
-  "item.youzaiworldcore.yz_sword.tooltip": "攻击时有4%概率触发暴击，伤害翻倍",
+  "item.youzaiworldcore.yz_sword.tooltip": "攻击时有4%%概率触发暴击，伤害翻倍",
   "item.youzaiworldcore.yz_axe": "悠哉斧",
   "item.youzaiworldcore.yz_axe.tooltip": "跳劈时对周围敌人造成范围伤害",
   "item.youzaiworldcore.heart_of_guardianship": "守护之心",
   "item.youzaiworldcore.heart_of_guardianship.tooltip": "携带此物品死亡不会掉落，每次死亡消耗一个本物品",
   "block.youzaiworldcore.decomposition_table": "分解台",
-  "itemGroup.youzaiworldcore.youzai_tab": "悠哉世界"
+  "itemGroup.youzaiworldcore.youzai_tab": "悠哉世界",
+  "item.youzaiworldcore.logo": "Youzai World",
+  "item.youzaiworldcore.logo.tooltip": "Hello Youzai World Server!"
 }

@@ -1,0 +1,38 @@
+{
+    "parent": "youzaiworld:youzaiworld/root",
+    "display": {
+        "icon": {
+            "id": "youzaiworldcore:raw_yz"
+        },
+        "title": {
+            "text": "不寻常的矿石"
+        },
+        "description": {
+            "text": "获得粗悠哉矿。"
+        },
+        "frame": "goal",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": false
+    },
+    "criteria": {
+        "get_raw_yz": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "youzaiworldcore:raw_yz"
+                    },
+                    {
+                        "items": "youzaiworld:raw_yz_block"
+                    }
+                ]
+            }
+        }
+    },
+    "requirements": [
+        [
+            "get_raw_yz"
+        ]
+    ]
+}

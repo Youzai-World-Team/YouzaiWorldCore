@@ -79,6 +79,11 @@ public class ModItems {
             new Item.Properties().rarity(Rarity.RARE)
     );
 
+    public static final Item LOGO = register(
+            "logo",
+            new Item.Properties()
+    );
+
     private static Item register(String name, Item.Properties settings) {
         ResourceKey<Item> itemKey = ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, name));
         Item item = new Item(settings.setId(itemKey));
