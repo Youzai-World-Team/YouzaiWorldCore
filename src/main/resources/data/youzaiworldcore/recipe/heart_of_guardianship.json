@@ -10,15 +10,12 @@
         "@"
     ],
     "result": {
-        "id": "minecraft:heart_of_the_sea",
+        "id": "youzaiworldcore:heart_of_guardianship",
         "components": {
             "minecraft:custom_data": {
                 "Tags": ["keep"]
             },
             "minecraft:custom_name": {"text":"守护之心","color":"yellow","italic":false},
-            "minecraft:custom_model_data": {
-                "strings": ["heart_of_guardianship"]
-            },
             "minecraft:lore": [
                 {"text":"✦ =================== ✦","color":"dark_aqua","italic":false},
                 {"text":"▶ 使用说明 ◀","color":"yellow","bold":true,"italic":false},
