@@ -38,5 +38,6 @@
   "item.youzaiworldcore.yz_axe.tooltip": "跳劈时对周围敌人造成范围伤害",
   "item.youzaiworldcore.heart_of_guardianship": "守护之心",
   "item.youzaiworldcore.heart_of_guardianship.tooltip": "携带此物品死亡不会掉落，每次死亡消耗一个本物品",
+  "block.youzaiworldcore.decomposition_table": "分解台",
   "itemGroup.youzaiworldcore.youzai_tab": "悠哉世界"
 }

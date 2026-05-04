@@ -11,9 +11,12 @@ import net.minecraft.core.Registry;
 import net.minecraft.world.level.levelgen.placement.PlacedFeature;
 
 import top.csituka.youzaiworldcore.block.ModBlocks;
+import top.csituka.youzaiworldcore.block.entity.ModBlockEntities;
 import top.csituka.youzaiworldcore.item.ModCreativeModeTabs;
 import top.csituka.youzaiworldcore.item.ModItems;
 import top.csituka.youzaiworldcore.item.tool.YzChainMiningTool;
+import top.csituka.youzaiworldcore.network.ModNetworking;
+import top.csituka.youzaiworldcore.screen.ModMenuTypes;
 
 public class YouzaiworldCore implements ModInitializer {
 
@@ -32,8 +35,11 @@ public class YouzaiworldCore implements ModInitializer {
     @Override
     public void onInitialize() {
         ModBlocks.initialize();
+        ModBlockEntities.initialize();
         ModItems.initialize();
         ModCreativeModeTabs.initialize();
+        ModMenuTypes.initialize();
+        ModNetworking.initialize();
         YzChainMiningTool.registerChainMiningEvent();
 
         BiomeModifications.addFeature(

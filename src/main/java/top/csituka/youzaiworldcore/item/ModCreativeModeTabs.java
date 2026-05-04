@@ -37,6 +37,7 @@ public class ModCreativeModeTabs {
                 output.accept(ModItems.YZ_SWORD);
                 output.accept(ModItems.YZ_AXE);
                 output.accept(ModItems.HEART_OF_GUARDIANSHIP);
+                output.accept(ModBlocks.DECOMPOSITION_TABLE.asItem());
             })
             .build();
 

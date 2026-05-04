@@ -59,9 +59,19 @@ public class ModBlocks {
             true
     );
 
-    private static Block register(String name, Function<BlockBehaviour.Properties, Block> blockFactory, BlockBehaviour.Properties settings, boolean shouldRegisterItem) {
+    public static final DecompositionTableBlock DECOMPOSITION_TABLE = register(
+            "decomposition_table",
+            DecompositionTableBlock::new,
+            BlockBehaviour.Properties.of()
+                    .strength(2.5f, 3.0f)
+                    .sound(SoundType.WOOD),
+            true
+    );
+
+    @SuppressWarnings("unchecked")
+    private static <T extends Block> T register(String name, Function<BlockBehaviour.Properties, T> blockFactory, BlockBehaviour.Properties settings, boolean shouldRegisterItem) {
         ResourceKey<Block> blockKey = ResourceKey.create(Registries.BLOCK, Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, name));
-        Block block = blockFactory.apply(settings.setId(blockKey));
+        T block = blockFactory.apply(settings.setId(blockKey));
 
         if (shouldRegisterItem) {
             ResourceKey<Item> itemKey = ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, name));
