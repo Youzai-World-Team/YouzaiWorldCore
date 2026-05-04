@@ -1,0 +1,49 @@
+{
+    "display": {
+        "icon": {
+            "id": "minecraft:respawn_anchor"
+        },
+        "title": "并非九命",
+        "description": "将重生点设置在充能完毕的重生锚处",
+        "frame": "task",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": false
+    },
+    "criteria": {
+        "anchor": {
+            "trigger": "minecraft:item_used_on_block",
+            "conditions": {
+                "location": [
+                    {
+                        "condition": "minecraft:location_check",
+                        "predicate": {
+                            "block": {
+                                "blocks": [
+                                    "respawn_anchor"
+                                ],
+                                "state": {
+                                    "charges": "4"
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "condition": "minecraft:match_tool",
+                        "predicate": {
+                            "items": [
+                                "glowstone"
+                            ]
+                        }
+                    }
+                ]
+            }
+        }
+    },
+    "requirements": [
+        [
+            "anchor"
+        ]
+    ],
+    "parent": "youzaiworld:nether/crying_obsidian"
+}

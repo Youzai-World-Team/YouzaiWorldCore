@@ -1,0 +1,26 @@
+{
+    "parent": "youzaiworld:collections/_village_collection",
+    "criteria": {
+        "impossible": {
+            "trigger": "minecraft:impossible"
+        }
+    },
+    "rewards": {
+        "function": "youzaiworld:passive_kills"
+    },
+    "display": {
+        "title": {
+            "translate": "你本应是我们的英雄！"
+        },
+        "description": {
+            "translate": "击杀你的首个村民"
+        },
+        "icon": {
+            "id": "minecraft:villager_spawn_egg"
+        },
+        "frame": "task",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": false
+    }
+}

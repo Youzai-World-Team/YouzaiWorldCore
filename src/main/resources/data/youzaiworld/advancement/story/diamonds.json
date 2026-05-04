@@ -1,0 +1,33 @@
+{
+    "display": {
+        "icon": {
+            "id": "minecraft:diamond"
+        },
+        "title": "钻石！",
+        "description": "获取一些钻石！",
+        "frame": "task",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": false
+    },
+    "criteria": {
+        "diamonds": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "diamond"
+                        ]
+                    }
+                ]
+            }
+        }
+    },
+    "requirements": [
+        [
+            "diamonds"
+        ]
+    ],
+    "parent": "youzaiworld:story/acquire_hardware"
+}

@@ -1,0 +1,57 @@
+{
+    "display": {
+        "icon": {
+            "id": "dropper"
+        },
+        "title": "一进一出",
+        "description": "获取一些漏斗、投掷器与发射器",
+        "frame": "task",
+        "announce_to_chat": true,
+        "show_toast": true,
+        "hidden": false
+    },
+    "criteria": {
+        "hoppers": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "hopper"
+                    }
+                ]
+            }
+        },
+        "droppers": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "dropper"
+                    }
+                ]
+            }
+        },
+        "dispensers": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "dispenser"
+                    }
+                ]
+            }
+        }
+    },
+    "requirements": [
+        [
+            "dispensers"
+        ],
+        [
+            "droppers"
+        ],
+        [
+            "hoppers"
+        ]
+    ],
+    "parent": "youzaiworld:redstone/redstone_dust"
+}

@@ -1,0 +1,34 @@
+{
+    "display": {
+        "icon": {
+            "id": "name_tag"
+        },
+        "title": "技术名称",
+        "description": "将某生物命名为“命名牌”",
+        "frame": "task",
+        "announce_to_chat": true,
+        "show_toast": true,
+        "hidden": false
+    },
+    "criteria": {
+        "technicality": {
+            "trigger": "minecraft:player_interacted_with_entity",
+            "conditions": {
+                "item": {
+                    "items": [
+                        "name_tag"
+                    ],
+                    "components": {
+                        "custom_name": "命名牌"
+                    }
+                }
+            }
+        }
+    },
+    "requirements": [
+        [
+            "technicality"
+        ]
+    ],
+    "parent": "youzaiworld:adventure/toast_to_toast"
+}

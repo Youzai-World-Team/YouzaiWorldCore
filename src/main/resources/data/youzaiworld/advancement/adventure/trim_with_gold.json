@@ -1,0 +1,278 @@
+{
+    "display": {
+        "icon": {
+            "id": "golden_chestplate",
+            "components": {
+                "trim": {
+                    "material": "gold",
+                    "pattern": "bolt"
+                }
+            }
+        },
+        "title": "微光之物",
+        "description": "为你的盔甲镶金！",
+        "frame": "task",
+        "announce_to_chat": true,
+        "show_toast": true,
+        "hidden": false
+    },
+    "criteria": {
+        "tide": {
+            "trigger": "recipe_crafted",
+            "conditions": {
+                "recipe_id": "tide_armor_trim_smithing_template_smithing_trim",
+                "ingredients": [
+                    {
+                        "items": [
+                            "gold_ingot"
+                        ]
+                    }
+                ]
+            }
+        },
+        "coast": {
+            "trigger": "recipe_crafted",
+            "conditions": {
+                "recipe_id": "coast_armor_trim_smithing_template_smithing_trim",
+                "ingredients": [
+                    {
+                        "items": [
+                            "gold_ingot"
+                        ]
+                    }
+                ]
+            }
+        },
+        "spire": {
+            "trigger": "recipe_crafted",
+            "conditions": {
+                "recipe_id": "spire_armor_trim_smithing_template_smithing_trim",
+                "ingredients": [
+                    {
+                        "items": [
+                            "gold_ingot"
+                        ]
+                    }
+                ]
+            }
+        },
+        "eye": {
+            "trigger": "recipe_crafted",
+            "conditions": {
+                "recipe_id": "eye_armor_trim_smithing_template_smithing_trim",
+                "ingredients": [
+                    {
+                        "items": [
+                            "gold_ingot"
+                        ]
+                    }
+                ]
+            }
+        },
+        "wild": {
+            "trigger": "recipe_crafted",
+            "conditions": {
+                "recipe_id": "wild_armor_trim_smithing_template_smithing_trim",
+                "ingredients": [
+                    {
+                        "items": [
+                            "gold_ingot"
+                        ]
+                    }
+                ]
+            }
+        },
+        "dune": {
+            "trigger": "recipe_crafted",
+            "conditions": {
+                "recipe_id": "dune_armor_trim_smithing_template_smithing_trim",
+                "ingredients": [
+                    {
+                        "items": [
+                            "gold_ingot"
+                        ]
+                    }
+                ]
+            }
+        },
+        "rib": {
+            "trigger": "recipe_crafted",
+            "conditions": {
+                "recipe_id": "rib_armor_trim_smithing_template_smithing_trim",
+                "ingredients": [
+                    {
+                        "items": [
+                            "gold_ingot"
+                        ]
+                    }
+                ]
+            }
+        },
+        "snout": {
+            "trigger": "recipe_crafted",
+            "conditions": {
+                "recipe_id": "snout_armor_trim_smithing_template_smithing_trim",
+                "ingredients": [
+                    {
+                        "items": [
+                            "gold_ingot"
+                        ]
+                    }
+                ]
+            }
+        },
+        "ward": {
+            "trigger": "recipe_crafted",
+            "conditions": {
+                "recipe_id": "ward_armor_trim_smithing_template_smithing_trim",
+                "ingredients": [
+                    {
+                        "items": [
+                            "gold_ingot"
+                        ]
+                    }
+                ]
+            }
+        },
+        "silence": {
+            "trigger": "recipe_crafted",
+            "conditions": {
+                "recipe_id": "silence_armor_trim_smithing_template_smithing_trim",
+                "ingredients": [
+                    {
+                        "items": [
+                            "gold_ingot"
+                        ]
+                    }
+                ]
+            }
+        },
+        "vex": {
+            "trigger": "recipe_crafted",
+            "conditions": {
+                "recipe_id": "vex_armor_trim_smithing_template_smithing_trim",
+                "ingredients": [
+                    {
+                        "items": [
+                            "gold_ingot"
+                        ]
+                    }
+                ]
+            }
+        },
+        "sentry": {
+            "trigger": "recipe_crafted",
+            "conditions": {
+                "recipe_id": "sentry_armor_trim_smithing_template_smithing_trim",
+                "ingredients": [
+                    {
+                        "items": [
+                            "gold_ingot"
+                        ]
+                    }
+                ]
+            }
+        },
+        "host": {
+            "trigger": "recipe_crafted",
+            "conditions": {
+                "recipe_id": "host_armor_trim_smithing_template_smithing_trim",
+                "ingredients": [
+                    {
+                        "items": [
+                            "gold_ingot"
+                        ]
+                    }
+                ]
+            }
+        },
+        "wayfinder": {
+            "trigger": "recipe_crafted",
+            "conditions": {
+                "recipe_id": "wayfinder_armor_trim_smithing_template_smithing_trim",
+                "ingredients": [
+                    {
+                        "items": [
+                            "gold_ingot"
+                        ]
+                    }
+                ]
+            }
+        },
+        "raiser": {
+            "trigger": "recipe_crafted",
+            "conditions": {
+                "recipe_id": "raiser_armor_trim_smithing_template_smithing_trim",
+                "ingredients": [
+                    {
+                        "items": [
+                            "gold_ingot"
+                        ]
+                    }
+                ]
+            }
+        },
+        "shaper": {
+            "trigger": "recipe_crafted",
+            "conditions": {
+                "recipe_id": "shaper_armor_trim_smithing_template_smithing_trim",
+                "ingredients": [
+                    {
+                        "items": [
+                            "gold_ingot"
+                        ]
+                    }
+                ]
+            }
+        },
+        "bolt": {
+            "trigger": "recipe_crafted",
+            "conditions": {
+                "recipe_id": "bolt_armor_trim_smithing_template_smithing_trim",
+                "ingredients": [
+                    {
+                        "items": [
+                            "gold_ingot"
+                        ]
+                    }
+                ]
+            }
+        },
+        "flow": {
+            "trigger": "recipe_crafted",
+            "conditions": {
+                "recipe_id": "flow_armor_trim_smithing_template_smithing_trim",
+                "ingredients": [
+                    {
+                        "items": [
+                            "gold_ingot"
+                        ]
+                    }
+                ]
+            }
+        }
+    },
+    "requirements": [
+        [
+            "coast",
+            "tide",
+            "vex",
+            "sentry",
+            "rib",
+            "snout",
+            "ward",
+            "silence",
+            "wild",
+            "dune",
+            "eye",
+            "spire",
+            "host",
+            "shaper",
+            "raiser",
+            "wayfinder",
+            "bolt",
+            "flow"
+        ]
+    ],
+    "parent": "youzaiworld:adventure/trim_armor"
+}

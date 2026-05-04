@@ -1,0 +1,26 @@
+{
+    "parent": "youzaiworld:hostile/root",
+    "criteria": {
+        "impossible": {
+            "trigger": "minecraft:impossible"
+        }
+    },
+    "rewards": {
+        "function": "youzaiworld:hostile_kills"
+    },
+    "display": {
+        "title": {
+            "translate": "邪典藏品！"
+        },
+        "description": {
+            "translate": "烦人的小东西……"
+        },
+        "icon": {
+            "id": "minecraft:music_disc_11"
+        },
+        "frame": "goal",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": false
+    }
+}

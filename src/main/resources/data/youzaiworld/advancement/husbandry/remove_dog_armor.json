@@ -1,0 +1,38 @@
+{
+    "display": {
+        "icon": {
+            "id": "shears"
+        },
+        "title": "剪得漂亮！",
+        "description": "用剪刀卸下狗护甲",
+        "frame": "task",
+        "announce_to_chat": true,
+        "show_toast": true,
+        "hidden": false
+    },
+    "criteria": {
+        "remove_armor": {
+            "trigger": "player_interacted_with_entity",
+            "conditions": {
+                "entity": [
+                    {
+                        "condition": "entity_properties",
+                        "entity": "this",
+                        "predicate": {
+                            "type": "wolf"
+                        }
+                    }
+                ],
+                "item": {
+                    "items": "shears"
+                }
+            }
+        }
+    },
+    "requirements": [
+        [
+            "remove_armor"
+        ]
+    ],
+    "parent": "youzaiworld:husbandry/patchwork_pup"
+}

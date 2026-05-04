@@ -1,0 +1,26 @@
+{
+    "parent": "youzaiworld:hostile/zombie/zombie_executioner_1",
+    "criteria": {
+        "impossible": {
+            "trigger": "minecraft:impossible"
+        }
+    },
+    "rewards": {
+        "function": "youzaiworld:hostile_kills"
+    },
+    "display": {
+        "title": {
+            "translate": "僵尸刽子手 II"
+        },
+        "description": {
+            "translate": "击杀500只僵尸"
+        },
+        "icon": {
+            "id": "minecraft:diamond_sword"
+        },
+        "frame": "challenge",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": false
+    }
+}

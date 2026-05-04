@@ -1,0 +1,330 @@
+{
+    "display": {
+        "icon": {
+            "id": "jukebox"
+        },
+        "title": "记录在案",
+        "description": "收集游戏内所有音乐唱片！",
+        "frame": "goal",
+        "announce_to_chat": true,
+        "show_toast": true,
+        "hidden": false
+    },
+    "criteria": {
+        "five": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "music_disc_5"
+                        ]
+                    }
+                ]
+            }
+        },
+        "eleven": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "music_disc_11"
+                        ]
+                    }
+                ]
+            }
+        },
+        "thirteen": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "music_disc_13"
+                        ]
+                    }
+                ]
+            }
+        },
+        "blocks": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "music_disc_blocks"
+                        ]
+                    }
+                ]
+            }
+        },
+        "cat": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "music_disc_cat"
+                        ]
+                    }
+                ]
+            }
+        },
+        "chirp": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "music_disc_chirp"
+                        ]
+                    }
+                ]
+            }
+        },
+        "far": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "music_disc_far"
+                        ]
+                    }
+                ]
+            }
+        },
+        "mall": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "music_disc_mall"
+                        ]
+                    }
+                ]
+            }
+        },
+        "melohi": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "music_disc_mellohi"
+                        ]
+                    }
+                ]
+            }
+        },
+        "otherside": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "music_disc_otherside"
+                        ]
+                    }
+                ]
+            }
+        },
+        "pigstep": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "music_disc_pigstep"
+                        ]
+                    }
+                ]
+            }
+        },
+        "relic": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "music_disc_relic"
+                        ]
+                    }
+                ]
+            }
+        },
+        "stal": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "music_disc_stal"
+                        ]
+                    }
+                ]
+            }
+        },
+        "strad": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "music_disc_strad"
+                        ]
+                    }
+                ]
+            }
+        },
+        "ward": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "music_disc_ward"
+                        ]
+                    }
+                ]
+            }
+        },
+        "wait": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "music_disc_wait"
+                        ]
+                    }
+                ]
+            }
+        },
+        "creator": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "music_disc_creator"
+                        ]
+                    }
+                ]
+            }
+        },
+        "creator_music_box": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "music_disc_creator_music_box"
+                        ]
+                    }
+                ]
+            }
+        },
+        "precipice": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "music_disc_precipice"
+                    }
+                ]
+            }
+        },
+        "tears": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "music_disc_tears"
+                    }
+                ]
+            }
+        },
+        "lava_chicken": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "music_disc_lava_chicken"
+                    }
+                ]
+            }
+        }
+    },
+    "requirements": [
+        [
+            "five"
+        ],
+        [
+            "eleven"
+        ],
+        [
+            "thirteen"
+        ],
+        [
+            "blocks"
+        ],
+        [
+            "cat"
+        ],
+        [
+            "chirp"
+        ],
+        [
+            "far"
+        ],
+        [
+            "mall"
+        ],
+        [
+            "melohi"
+        ],
+        [
+            "otherside"
+        ],
+        [
+            "pigstep"
+        ],
+        [
+            "relic"
+        ],
+        [
+            "stal"
+        ],
+        [
+            "strad"
+        ],
+        [
+            "ward"
+        ],
+        [
+            "wait"
+        ],
+        [
+            "precipice"
+        ],
+        [
+            "creator"
+        ],
+        [
+            "creator_music_box"
+        ],
+        [
+            "tears"
+        ],
+        [
+            "lava_chicken"
+        ]
+    ],
+    "parent": "youzaiworld:adventure/on_that_note",
+    "rewards": {
+        "experience": 500
+    }
+}

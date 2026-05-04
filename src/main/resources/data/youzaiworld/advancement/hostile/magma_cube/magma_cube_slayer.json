@@ -1,0 +1,26 @@
+{
+    "parent": "youzaiworld:hostile/magma_cube/magma_cube_kill",
+    "criteria": {
+        "impossible": {
+            "trigger": "minecraft:impossible"
+        }
+    },
+    "rewards": {
+        "function": "youzaiworld:hostile_kills"
+    },
+    "display": {
+        "title": {
+            "translate": "岩浆怪杀手！"
+        },
+        "description": {
+            "translate": "击杀1000只岩浆怪！"
+        },
+        "icon": {
+            "id": "minecraft:magma_cream"
+        },
+        "frame": "challenge",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": false
+    }
+}

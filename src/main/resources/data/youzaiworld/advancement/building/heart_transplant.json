@@ -1,0 +1,35 @@
+{
+    "display": {
+        "icon": {
+            "id": "creaking_heart"
+        },
+        "title": "心脏移植",
+        "description": "从苍白花园移植一颗吱呀之心，用以召唤吱呀怪。",
+        "frame": "task",
+        "announce_to_chat": true,
+        "show_toast": true,
+        "hidden": false
+    },
+    "criteria": {
+        "heart_moving": {
+            "trigger": "placed_block",
+            "conditions": {
+                "location": [
+                    {
+                        "condition": "block_state_property",
+                        "block": "creaking_heart",
+                        "properties": {
+                            "creaking_heart_state": "awake"
+                        }
+                    }
+                ]
+            }
+        }
+    },
+    "requirements": [
+        [
+            "heart_moving"
+        ]
+    ],
+    "parent": "youzaiworld:adventure/cant_touch_this"
+}

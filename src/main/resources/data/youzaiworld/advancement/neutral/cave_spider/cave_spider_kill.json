@@ -1,0 +1,26 @@
+{
+    "parent": "youzaiworld:collections/arthropod_collection",
+    "criteria": {
+        "impossible": {
+            "trigger": "minecraft:impossible"
+        }
+    },
+    "rewards": {
+        "function": "youzaiworld:neutral_kills"
+    },
+    "display": {
+        "title": {
+            "translate": "击杀洞穴蜘蛛！"
+        },
+        "description": {
+            "translate": "击杀你的第一只洞穴蜘蛛"
+        },
+        "icon": {
+            "id": "minecraft:cave_spider_spawn_egg"
+        },
+        "frame": "task",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": false
+    }
+}

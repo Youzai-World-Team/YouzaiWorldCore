@@ -1,0 +1,47 @@
+{
+    "parent": "minecraft:adventure/kill_a_mob",
+    "criteria": {
+        "phantom damage": {
+            "trigger": "minecraft:entity_hurt_player",
+            "conditions": {
+                "damage": {
+                    "dealt": {
+                        "min": 1,
+                        "max": 10
+                    },
+                    "taken": {
+                        "min": 1,
+                        "max": 10
+                    },
+                    "source_entity": {
+                        "type": "minecraft:phantom"
+                    }
+                }
+            }
+        }
+    },
+    "display": {
+        "description": {
+            "text": "No Sleep, Get Punished "
+        },
+        "icon": {
+            "count": 1,
+            "id": "minecraft:phantom_membrane"
+        },
+        "title": {
+            "text": "Sleep Deprived"
+        },
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": false
+    },
+    "requirements": [
+        [
+            "phantom damage"
+        ]
+    ],
+    "rewards": {
+        "experience": 70
+    },
+    "sends_telemetry_event": true
+}

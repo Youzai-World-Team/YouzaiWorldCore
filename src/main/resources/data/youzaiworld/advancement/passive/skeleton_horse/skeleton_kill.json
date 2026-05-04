@@ -1,0 +1,26 @@
+{
+    "parent": "youzaiworld:collections/_the_persistent_one",
+    "criteria": {
+        "impossible": {
+            "trigger": "minecraft:impossible"
+        }
+    },
+    "rewards": {
+        "function": "youzaiworld:passive_kills"
+    },
+    "display": {
+        "title": {
+            "translate": "你非得再杀我一次吗？"
+        },
+        "description": {
+            "translate": "首次击杀骷髅马"
+        },
+        "icon": {
+            "id": "minecraft:skeleton_horse_spawn_egg"
+        },
+        "frame": "task",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": false
+    }
+}

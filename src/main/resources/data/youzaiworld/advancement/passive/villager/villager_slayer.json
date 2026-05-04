@@ -1,0 +1,29 @@
+{
+    "parent": "youzaiworld:passive/villager/villager_serial_killer",
+    "criteria": {
+        "impossible": {
+            "trigger": "minecraft:impossible"
+        }
+    },
+    "rewards": {
+        "function": "youzaiworld:passive_kills"
+    },
+    "display": {
+        "title": {
+            "translate": "唔……够了！"
+        },
+        "description": {
+            "translate": "击杀1000名村民"
+        },
+        "icon": {
+            "id": "minecraft:netherite_axe",
+            "components": {
+                "minecraft:enchantment_glint_override": true
+            }
+        },
+        "frame": "task",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": true
+    }
+}

@@ -1,0 +1,26 @@
+{
+    "parent": "youzaiworld:collections/_brother_bear",
+    "criteria": {
+        "impossible": {
+            "trigger": "minecraft:impossible"
+        }
+    },
+    "rewards": {
+        "function": "youzaiworld:neutral_kills"
+    },
+    "display": {
+        "title": {
+            "translate": "为什么？"
+        },
+        "description": {
+            "translate": "首次击杀北极熊"
+        },
+        "icon": {
+            "id": "minecraft:polar_bear_spawn_egg"
+        },
+        "frame": "task",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": false
+    }
+}

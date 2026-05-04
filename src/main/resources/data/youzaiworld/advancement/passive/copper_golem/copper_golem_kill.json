@@ -1,0 +1,26 @@
+{
+    "parent": "youzaiworld:collections/_golem_collection",
+    "criteria": {
+        "impossible": {
+            "trigger": "minecraft:impossible"
+        }
+    },
+    "rewards": {
+        "function": "youzaiworld:passive_kills"
+    },
+    "display": {
+        "title": {
+            "translate": "你当初为什么要创造我？"
+        },
+        "description": {
+            "translate": "击杀你的第一只铜傀儡"
+        },
+        "icon": {
+            "id": "minecraft:copper_golem_spawn_egg"
+        },
+        "frame": "task",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": false
+    }
+}

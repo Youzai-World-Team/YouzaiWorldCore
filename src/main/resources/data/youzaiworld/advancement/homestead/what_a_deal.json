@@ -1,0 +1,29 @@
+{
+    "display": {
+        "icon": {
+            "id": "emerald"
+        },
+        "title": "真划算！",
+        "description": "与村民交易",
+        "frame": "task",
+        "announce_to_chat": true,
+        "show_toast": true,
+        "hidden": false
+    },
+    "criteria": {
+        "trade": {
+            "trigger": "minecraft:villager_trade",
+            "conditions": {
+                "player": {
+                    "type": "player"
+                }
+            }
+        }
+    },
+    "requirements": [
+        [
+            "trade"
+        ]
+    ],
+    "parent": "youzaiworld:homestead/root"
+}

@@ -1,0 +1,190 @@
+{
+    "display": {
+        "icon": {
+            "id": "diamond_block"
+        },
+        "title": "富中之富",
+        "description": "集齐每种矿石方块各一个（含原矿及加工品）",
+        "frame": "goal",
+        "announce_to_chat": true,
+        "hidden": false,
+        "show_toast": true
+    },
+    "criteria": {
+        "coal_block": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "coal_block"
+                    }
+                ]
+            }
+        },
+        "raw_copper_block": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "raw_copper_block"
+                    }
+                ]
+            }
+        },
+        "raw_iron_block": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "raw_iron_block"
+                    }
+                ]
+            }
+        },
+        "raw_gold_block": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "raw_gold_block"
+                    }
+                ]
+            }
+        },
+        "copper_block": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "copper_block"
+                    }
+                ]
+            }
+        },
+        "iron_block": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "iron_block"
+                    }
+                ]
+            }
+        },
+        "gold_block": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "gold_block"
+                    }
+                ]
+            }
+        },
+        "lapis_block": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "lapis_block"
+                    }
+                ]
+            }
+        },
+        "redstone_block": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "redstone_block"
+                    }
+                ]
+            }
+        },
+        "diamond_block": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "diamond_block"
+                    }
+                ]
+            }
+        },
+        "emerald_block": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "emerald_block"
+                    }
+                ]
+            }
+        },
+        "quartz_block": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "quartz_block"
+                    }
+                ]
+            }
+        },
+        "netherite_block": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "netherite_block"
+                    }
+                ]
+            }
+        }
+    },
+    "requirements": [
+        [
+            "coal_block"
+        ],
+        [
+            "copper_block"
+        ],
+        [
+            "diamond_block"
+        ],
+        [
+            "emerald_block"
+        ],
+        [
+            "gold_block"
+        ],
+        [
+            "iron_block"
+        ],
+        [
+            "lapis_block"
+        ],
+        [
+            "netherite_block"
+        ],
+        [
+            "quartz_block"
+        ],
+        [
+            "raw_copper_block"
+        ],
+        [
+            "raw_gold_block"
+        ],
+        [
+            "raw_iron_block"
+        ],
+        [
+            "redstone_block"
+        ]
+    ],
+    "parent": "youzaiworld:completionist/ore_please",
+    "rewards": {
+        "experience": 1000
+    }
+}

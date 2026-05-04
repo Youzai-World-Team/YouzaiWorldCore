@@ -1,0 +1,33 @@
+{
+    "display": {
+        "icon": {
+            "id": "minecraft:nautilus_shell"
+        },
+        "title": "贝壳，贝壳",
+        "description": "获得鹦鹉螺壳！",
+        "frame": "task",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": false
+    },
+    "criteria": {
+        "sea_shell": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "minecraft:nautilus_shell"
+                        ]
+                    }
+                ]
+            }
+        }
+    },
+    "requirements": [
+        [
+            "sea_shell"
+        ]
+    ],
+    "parent": "youzaiworld:aquatic/treasure_map"
+}

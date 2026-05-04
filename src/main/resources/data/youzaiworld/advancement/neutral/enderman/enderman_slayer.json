@@ -1,0 +1,26 @@
+{
+    "parent": "youzaiworld:neutral/enderman/enderman_executioner_2",
+    "criteria": {
+        "impossible": {
+            "trigger": "minecraft:impossible"
+        }
+    },
+    "rewards": {
+        "function": "youzaiworld:neutral_kills"
+    },
+    "display": {
+        "title": {
+            "translate": "末影人猎手"
+        },
+        "description": {
+            "translate": "击杀1000只末影人！"
+        },
+        "icon": {
+            "id": "minecraft:netherite_sword"
+        },
+        "frame": "challenge",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": false
+    }
+}

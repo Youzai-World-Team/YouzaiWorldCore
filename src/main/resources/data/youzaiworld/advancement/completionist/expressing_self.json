@@ -1,0 +1,746 @@
+{
+    "display": {
+        "icon": {
+            "id": "creeper_banner_pattern"
+        },
+        "title": "展现自我！",
+        "description": "收集游戏内所有陶片、旗帜图案与护甲纹饰，做独一无二的你！",
+        "frame": "goal",
+        "announce_to_chat": true,
+        "show_toast": true,
+        "hidden": false
+    },
+    "criteria": {
+        "creeper": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "minecraft:creeper_banner_pattern"
+                        ]
+                    }
+                ]
+            }
+        },
+        "skeleton": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "minecraft:skull_banner_pattern"
+                        ]
+                    }
+                ]
+            }
+        },
+        "globe": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "minecraft:globe_banner_pattern"
+                        ]
+                    }
+                ]
+            }
+        },
+        "mojang": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "minecraft:mojang_banner_pattern"
+                        ]
+                    }
+                ]
+            }
+        },
+        "flower": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "minecraft:flower_banner_pattern"
+                        ]
+                    }
+                ]
+            }
+        },
+        "piglin": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "minecraft:piglin_banner_pattern"
+                        ]
+                    }
+                ]
+            }
+        },
+        "flow": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "flow_banner_pattern"
+                    }
+                ]
+            }
+        },
+        "guster": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "guster_banner_pattern"
+                    }
+                ]
+            }
+        },
+        "prize": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "minecraft:prize_pottery_sherd"
+                        ]
+                    }
+                ]
+            }
+        },
+        "howl": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "minecraft:howl_pottery_sherd"
+                        ]
+                    }
+                ]
+            }
+        },
+        "burn": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "minecraft:burn_pottery_sherd"
+                        ]
+                    }
+                ]
+            }
+        },
+        "friend": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "friend_pottery_sherd"
+                        ]
+                    }
+                ]
+            }
+        },
+        "heart": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "minecraft:heart_pottery_sherd"
+                        ]
+                    }
+                ]
+            }
+        },
+        "heartbreak": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "minecraft:heartbreak_pottery_sherd"
+                        ]
+                    }
+                ]
+            }
+        },
+        "danger": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "minecraft:danger_pottery_sherd"
+                        ]
+                    }
+                ]
+            }
+        },
+        "sheaf": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "minecraft:sheaf_pottery_sherd"
+                        ]
+                    }
+                ]
+            }
+        },
+        "shelter": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "minecraft:sheaf_pottery_sherd"
+                        ]
+                    }
+                ]
+            }
+        },
+        "brewer": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "minecraft:brewer_pottery_sherd"
+                        ]
+                    }
+                ]
+            }
+        },
+        "aim": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "archer_pottery_sherd"
+                        ]
+                    }
+                ]
+            }
+        },
+        "miner": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "minecraft:miner_pottery_sherd"
+                        ]
+                    }
+                ]
+            }
+        },
+        "blade": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "blade_pottery_sherd"
+                        ]
+                    }
+                ]
+            }
+        },
+        "skull": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "minecraft:skull_pottery_sherd"
+                        ]
+                    }
+                ]
+            }
+        },
+        "snort": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "snort_pottery_sherd"
+                        ]
+                    }
+                ]
+            }
+        },
+        "angler": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "angler_pottery_sherd"
+                        ]
+                    }
+                ]
+            }
+        },
+        "mourner": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "mourner_pottery_sherd"
+                        ]
+                    }
+                ]
+            }
+        },
+        "arms_up": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "arms_up_pottery_sherd"
+                        ]
+                    }
+                ]
+            }
+        },
+        "plenty": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "plenty_pottery_sherd"
+                        ]
+                    }
+                ]
+            }
+        },
+        "explorer": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "minecraft:explorer_pottery_sherd"
+                        ]
+                    }
+                ]
+            }
+        },
+        "scrape": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "scrape_pottery_sherd"
+                    }
+                ]
+            }
+        },
+        "flow_sherd": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "flow_pottery_sherd"
+                    }
+                ]
+            }
+        },
+        "guster_sherd": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "guster_pottery_sherd"
+                    }
+                ]
+            }
+        },
+        "coast": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "coast_armor_trim_smithing_template"
+                        ]
+                    }
+                ]
+            }
+        },
+        "tide": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "tide_armor_trim_smithing_template"
+                        ]
+                    }
+                ]
+            }
+        },
+        "wild": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "wild_armor_trim_smithing_template"
+                        ]
+                    }
+                ]
+            }
+        },
+        "dune": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "dune_armor_trim_smithing_template"
+                        ]
+                    }
+                ]
+            }
+        },
+        "vex": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "vex_armor_trim_smithing_template"
+                        ]
+                    }
+                ]
+            }
+        },
+        "sentry": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "sentry_armor_trim_smithing_template"
+                        ]
+                    }
+                ]
+            }
+        },
+        "rib": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "rib_armor_trim_smithing_template"
+                        ]
+                    }
+                ]
+            }
+        },
+        "snout": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "snout_armor_trim_smithing_template"
+                        ]
+                    }
+                ]
+            }
+        },
+        "ward": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "ward_armor_trim_smithing_template"
+                        ]
+                    }
+                ]
+            }
+        },
+        "silence": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "silence_armor_trim_smithing_template"
+                        ]
+                    }
+                ]
+            }
+        },
+        "eye": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "eye_armor_trim_smithing_template"
+                        ]
+                    }
+                ]
+            }
+        },
+        "spire": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "spire_armor_trim_smithing_template"
+                        ]
+                    }
+                ]
+            }
+        },
+        "wayfinder": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "wayfinder_armor_trim_smithing_template"
+                        ]
+                    }
+                ]
+            }
+        },
+        "host": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "host_armor_trim_smithing_template"
+                        ]
+                    }
+                ]
+            }
+        },
+        "raiser": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "raiser_armor_trim_smithing_template"
+                        ]
+                    }
+                ]
+            }
+        },
+        "shaper": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "shaper_armor_trim_smithing_template"
+                        ]
+                    }
+                ]
+            }
+        },
+        "bolt": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "bolt_armor_trim_smithing_template"
+                        ]
+                    }
+                ]
+            }
+        },
+        "flow_trim": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "flow_armor_trim_smithing_template"
+                        ]
+                    }
+                ]
+            }
+        }
+    },
+    "requirements": [
+        [
+            "aim"
+        ],
+        [
+            "angler"
+        ],
+        [
+            "arms_up"
+        ],
+        [
+            "blade"
+        ],
+        [
+            "bolt"
+        ],
+        [
+            "brewer"
+        ],
+        [
+            "burn"
+        ],
+        [
+            "coast"
+        ],
+        [
+            "creeper"
+        ],
+        [
+            "danger"
+        ],
+        [
+            "dune"
+        ],
+        [
+            "explorer"
+        ],
+        [
+            "eye"
+        ],
+        [
+            "flow"
+        ],
+        [
+            "flow_sherd"
+        ],
+        [
+            "flow_trim"
+        ],
+        [
+            "flower"
+        ],
+        [
+            "friend"
+        ],
+        [
+            "globe"
+        ],
+        [
+            "guster"
+        ],
+        [
+            "guster_sherd"
+        ],
+        [
+            "heart"
+        ],
+        [
+            "heartbreak"
+        ],
+        [
+            "host"
+        ],
+        [
+            "howl"
+        ],
+        [
+            "miner"
+        ],
+        [
+            "mojang"
+        ],
+        [
+            "mourner"
+        ],
+        [
+            "piglin"
+        ],
+        [
+            "plenty"
+        ],
+        [
+            "prize"
+        ],
+        [
+            "raiser"
+        ],
+        [
+            "rib"
+        ],
+        [
+            "scrape"
+        ],
+        [
+            "sentry"
+        ],
+        [
+            "shaper"
+        ],
+        [
+            "sheaf"
+        ],
+        [
+            "shelter"
+        ],
+        [
+            "silence"
+        ],
+        [
+            "skeleton"
+        ],
+        [
+            "skull"
+        ],
+        [
+            "snort"
+        ],
+        [
+            "snout"
+        ],
+        [
+            "spire"
+        ],
+        [
+            "tide"
+        ],
+        [
+            "vex"
+        ],
+        [
+            "ward"
+        ],
+        [
+            "wayfinder"
+        ],
+        [
+            "wild"
+        ]
+    ],
+    "parent": "youzaiworld:completionist/own_the_rainbow",
+    "rewards": {
+        "experience": 2500
+    }
+}

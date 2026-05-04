@@ -1,0 +1,13 @@
+{
+  "block.hoppergadgetry.chute": "滑槽",
+  "block.hoppergadgetry.duct": "管道",
+  "block.hoppergadgetry.grated_hopper": "格栅漏斗",
+  "container.chute": "物品滑槽",
+  "container.duct": "物品管道",
+  "container.grated_hopper": "格栅漏斗",
+  "entity.hoppergadgetry.chute_minecraft": "滑槽矿车",
+  "entity.hoppergadgetry.grated_hopper_minecart": "格栅漏斗矿车",
+  "item.hoppergadgetry.chute_minecart": "滑槽矿车",
+  "item.hoppergadgetry.grated_hopper_minecart": "格栅漏斗矿车",
+  "itemGroup.hoppergadgetry.main": "漏斗小工具"
+}

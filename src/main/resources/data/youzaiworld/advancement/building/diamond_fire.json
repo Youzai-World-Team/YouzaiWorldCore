@@ -1,0 +1,59 @@
+{
+    "display": {
+        "icon": {
+            "id": "minecraft:soul_lantern"
+        },
+        "title": "钻石烈焰！",
+        "description": "获取魂火光源！",
+        "frame": "task",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": false
+    },
+    "criteria": {
+        "soul_lantern": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "minecraft:soul_lantern"
+                        ]
+                    }
+                ]
+            }
+        },
+        "soul_torch": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "minecraft:soul_torch"
+                        ]
+                    }
+                ]
+            }
+        },
+        "soul_campfire": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "minecraft:soul_campfire"
+                        ]
+                    }
+                ]
+            }
+        }
+    },
+    "requirements": [
+        [
+            "soul_lantern",
+            "soul_torch",
+            "soul_campfire"
+        ]
+    ],
+    "parent": "youzaiworld:building/sophisticated_lighting"
+}

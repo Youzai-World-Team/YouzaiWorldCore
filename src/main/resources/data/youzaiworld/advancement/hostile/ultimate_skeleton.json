@@ -1,0 +1,26 @@
+{
+    "parent": "youzaiworld:hostile/absolute_skeleton",
+    "criteria": {
+        "impossible": {
+            "trigger": "minecraft:impossible"
+        }
+    },
+    "rewards": {
+        "function": "youzaiworld:hostile_kills"
+    },
+    "display": {
+        "title": {
+            "translate": "终极骷髅猎杀者！"
+        },
+        "description": {
+            "translate": "你居然到这儿了！骷髅马与凋灵额外加分！"
+        },
+        "icon": {
+            "id": "minecraft:bone"
+        },
+        "frame": "challenge",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": true
+    }
+}

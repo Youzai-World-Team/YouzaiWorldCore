@@ -1,0 +1,29 @@
+{
+    "display": {
+        "icon": {
+            "id": "minecraft:poisonous_potato"
+        },
+        "title": "毒马铃薯",
+        "description": "你何必呢？",
+        "frame": "task",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": false
+    },
+    "criteria": {
+        "poison_potato_0": {
+            "trigger": "minecraft:consume_item",
+            "conditions": {
+                "item": {
+                    "items": [
+                        "minecraft:poisonous_potato"
+                    ]
+                }
+            }
+        }
+    },
+    "rewards": {
+        "experience": 50
+    },
+    "parent": "minecraft:adventure/adventuring_time"
+}

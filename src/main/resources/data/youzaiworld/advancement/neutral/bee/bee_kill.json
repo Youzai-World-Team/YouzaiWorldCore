@@ -1,0 +1,26 @@
+{
+    "parent": "youzaiworld:collections/arthropod_collection",
+    "criteria": {
+        "impossible": {
+            "trigger": "minecraft:impossible"
+        }
+    },
+    "rewards": {
+        "function": "youzaiworld:neutral_kills"
+    },
+    "display": {
+        "title": {
+            "translate": "想必这是个失误。"
+        },
+        "description": {
+            "translate": "击杀你的第一只蜜蜂"
+        },
+        "icon": {
+            "id": "minecraft:bee_spawn_egg"
+        },
+        "frame": "task",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": false
+    }
+}

@@ -1,0 +1,31 @@
+{
+    "display": {
+        "icon": {
+            "id": "minecraft:danger_pottery_sherd"
+        },
+        "title": "破碎往昔",
+        "description": "获得一块陶片！",
+        "frame": "task",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": false
+    },
+    "criteria": {
+        "sherd": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "#decorated_pot_sherds"
+                    }
+                ]
+            }
+        }
+    },
+    "requirements": [
+        [
+            "sherd"
+        ]
+    ],
+    "parent": "youzaiworld:building/brush_suspicious_block"
+}

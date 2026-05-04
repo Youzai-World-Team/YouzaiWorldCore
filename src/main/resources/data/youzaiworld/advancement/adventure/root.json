@@ -1,0 +1,42 @@
+{
+    "display": {
+        "icon": {
+            "id": "minecraft:filled_map"
+        },
+        "title": "冒险",
+        "description": "危险与探索！",
+        "frame": "task",
+        "show_toast": false,
+        "announce_to_chat": false,
+        "hidden": false,
+        "background": "block/mossy_cobblestone"
+    },
+    "criteria": {
+        "combat": {
+            "trigger": "minecraft:player_killed_entity",
+            "conditions": {
+                "player": {
+                    "type_specific": {
+                        "type": "player"
+                    }
+                }
+            }
+        },
+        "death": {
+            "trigger": "minecraft:entity_hurt_player",
+            "conditions": {
+                "player": {
+                    "type_specific": {
+                        "type": "player"
+                    }
+                }
+            }
+        }
+    },
+    "requirements": [
+        [
+            "combat",
+            "death"
+        ]
+    ]
+}

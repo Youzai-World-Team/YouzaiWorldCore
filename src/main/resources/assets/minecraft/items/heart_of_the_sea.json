@@ -1,0 +1,19 @@
+{
+    "model": {
+        "type": "select",
+        "property": "custom_model_data",
+        "fallback": {
+            "type": "model",
+            "model": "item/heart_of_the_sea"
+        },
+        "cases": [
+            {
+                "when": "heart_of_guardianship",
+                "model": {
+                    "type": "model",
+                    "model": "item/heart_of_guardianship"
+                }
+            }
+        ]
+    }
+}

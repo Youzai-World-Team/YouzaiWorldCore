@@ -1,0 +1,36 @@
+{
+    "display": {
+        "icon": {
+            "id": "emerald_block"
+        },
+        "title": "村庄守护神！",
+        "description": "击败五级突袭",
+        "frame": "challenge",
+        "announce_to_chat": true,
+        "show_toast": true,
+        "hidden": true
+    },
+    "criteria": {
+        "never_tell_me_the_odds": {
+            "trigger": "effects_changed",
+            "conditions": {
+                "effects": {
+                    "hero_of_the_village": {
+                        "amplifier": {
+                            "min": 5
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "requirements": [
+        [
+            "never_tell_me_the_odds"
+        ]
+    ],
+    "parent": "youzaiworld:homestead/bad_feeling",
+    "rewards": {
+        "experience": 500
+    }
+}

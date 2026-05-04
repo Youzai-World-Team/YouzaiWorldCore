@@ -1,0 +1,153 @@
+{
+    "display": {
+        "icon": {
+            "id": "milk_bucket"
+        },
+        "title": "喝牛奶了吗？",
+        "description": "为每种奶牛变体挤一次奶",
+        "frame": "task",
+        "announce_to_chat": true,
+        "hidden": false,
+        "show_toast": true
+    },
+    "criteria": {
+        "temperate_cow": {
+            "trigger": "player_interacted_with_entity",
+            "conditions": {
+                "entity": [
+                    {
+                        "condition": "entity_properties",
+                        "entity": "this",
+                        "predicate": {
+                            "components": {
+                                "cow/variant": "temperate"
+                            }
+                        }
+                    }
+                ],
+                "item": {
+                    "items": "bucket"
+                },
+                "player": {
+                    "type_specific": {
+                        "type": "player"
+                    }
+                }
+            }
+        },
+        "cold_cow": {
+            "trigger": "player_interacted_with_entity",
+            "conditions": {
+                "entity": [
+                    {
+                        "condition": "entity_properties",
+                        "entity": "this",
+                        "predicate": {
+                            "components": {
+                                "cow/variant": "cold"
+                            }
+                        }
+                    }
+                ],
+                "item": {
+                    "items": "bucket"
+                },
+                "player": {
+                    "type_specific": {
+                        "type": "player"
+                    }
+                }
+            }
+        },
+        "warm_cow": {
+            "trigger": "player_interacted_with_entity",
+            "conditions": {
+                "entity": [
+                    {
+                        "condition": "entity_properties",
+                        "entity": "this",
+                        "predicate": {
+                            "components": {
+                                "cow/variant": "warm"
+                            }
+                        }
+                    }
+                ],
+                "item": {
+                    "items": "bucket"
+                },
+                "player": {
+                    "type_specific": {
+                        "type": "player"
+                    }
+                }
+            }
+        },
+        "red_mooshroom": {
+            "trigger": "player_interacted_with_entity",
+            "conditions": {
+                "entity": [
+                    {
+                        "condition": "entity_properties",
+                        "entity": "this",
+                        "predicate": {
+                            "components": {
+                                "mooshroom/variant": "red"
+                            }
+                        }
+                    }
+                ],
+                "item": {
+                    "items": "bucket"
+                },
+                "player": {
+                    "type_specific": {
+                        "type": "player"
+                    }
+                }
+            }
+        },
+        "brown_mooshroom": {
+            "trigger": "player_interacted_with_entity",
+            "conditions": {
+                "entity": [
+                    {
+                        "condition": "entity_properties",
+                        "entity": "this",
+                        "predicate": {
+                            "components": {
+                                "mooshroom/variant": "brown"
+                            }
+                        }
+                    }
+                ],
+                "item": {
+                    "items": "bucket"
+                },
+                "player": {
+                    "type_specific": {
+                        "type": "player"
+                    }
+                }
+            }
+        }
+    },
+    "requirements": [
+        [
+            "brown_mooshroom"
+        ],
+        [
+            "cold_cow"
+        ],
+        [
+            "red_mooshroom"
+        ],
+        [
+            "temperate_cow"
+        ],
+        [
+            "warm_cow"
+        ]
+    ],
+    "parent": "youzaiworld:husbandry/bats_and_bees"
+}

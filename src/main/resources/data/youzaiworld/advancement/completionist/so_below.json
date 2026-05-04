@@ -1,0 +1,1282 @@
+{
+    "display": {
+        "icon": {
+            "id": "netherrack"
+        },
+        "title": "如下",
+        "description": "收集下界的所有物品与方块！",
+        "frame": "goal",
+        "announce_to_chat": true,
+        "hidden": false,
+        "show_toast": true
+    },
+    "criteria": {
+        "netherrack": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "netherrack"
+                    }
+                ]
+            }
+        },
+        "nether_gold_ore": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "nether_gold_ore"
+                    }
+                ]
+            }
+        },
+        "nether_quartz_ore": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "nether_quartz_ore"
+                    }
+                ]
+            }
+        },
+        "nether_brick": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "nether_brick"
+                    }
+                ]
+            }
+        },
+        "nether_bricks": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "nether_bricks"
+                    }
+                ]
+            }
+        },
+        "nether_brick_fence": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "nether_brick_fence"
+                    }
+                ]
+            }
+        },
+        "nether_brick_slab": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "nether_brick_slab"
+                    }
+                ]
+            }
+        },
+        "nether_brick_stairs": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "nether_brick_stairs"
+                    }
+                ]
+            }
+        },
+        "nether_brick_wall": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "nether_brick_wall"
+                    }
+                ]
+            }
+        },
+        "cracked_nether_bricks": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "cracked_nether_bricks"
+                    }
+                ]
+            }
+        },
+        "red_nether_bricks": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "red_nether_bricks"
+                    }
+                ]
+            }
+        },
+        "red_nether_brick_slab": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "red_nether_brick_slab"
+                    }
+                ]
+            }
+        },
+        "red_nether_brick_stairs": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "red_nether_brick_stairs"
+                    }
+                ]
+            }
+        },
+        "red_nether_brick_wall": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "red_nether_brick_wall"
+                    }
+                ]
+            }
+        },
+        "chiseled_nether_brick": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "chiseled_nether_bricks"
+                    }
+                ]
+            }
+        },
+        "quartz": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "quartz"
+                    }
+                ]
+            }
+        },
+        "quartz_block": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "quartz_block"
+                    }
+                ]
+            }
+        },
+        "quartz_bricks": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "quartz_bricks"
+                    }
+                ]
+            }
+        },
+        "quartz_pillar": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "quartz_pillar"
+                    }
+                ]
+            }
+        },
+        "quartz_slab": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "quartz_slab"
+                    }
+                ]
+            }
+        },
+        "quartz_stairs": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "quartz_stairs"
+                    }
+                ]
+            }
+        },
+        "smooth_quartz_block": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "smooth_quartz"
+                    }
+                ]
+            }
+        },
+        "smooth_quartz_slab": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "smooth_quartz_slab"
+                    }
+                ]
+            }
+        },
+        "smooth_quartz_stairs": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "smooth_quartz_stairs"
+                    }
+                ]
+            }
+        },
+        "chiseled_quartz": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "chiseled_quartz_block"
+                    }
+                ]
+            }
+        },
+        "soul_sand": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "soul_sand"
+                    }
+                ]
+            }
+        },
+        "soul_soil": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "soul_soil"
+                    }
+                ]
+            }
+        },
+        "soul_campfire": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "soul_campfire"
+                    }
+                ]
+            }
+        },
+        "soul_lantern": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "soul_lantern"
+                    }
+                ]
+            }
+        },
+        "soul_torch": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "soul_torch"
+                    }
+                ]
+            }
+        },
+        "bone_block": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "bone_block"
+                    }
+                ]
+            }
+        },
+        "magma_block": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "magma_block"
+                    }
+                ]
+            }
+        },
+        "magma_cream": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "magma_cream"
+                    }
+                ]
+            }
+        },
+        "lava_bucket": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "lava_bucket"
+                    }
+                ]
+            }
+        },
+        "basalt": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "basalt"
+                    }
+                ]
+            }
+        },
+        "polished_basalt": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "polished_basalt"
+                    }
+                ]
+            }
+        },
+        "glowstone": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "glowstone"
+                    }
+                ]
+            }
+        },
+        "glowstone_dust": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "glowstone_dust"
+                    }
+                ]
+            }
+        },
+        "blackstone": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "blackstone"
+                    }
+                ]
+            }
+        },
+        "blackstone_slab": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "blackstone_slab"
+                    }
+                ]
+            }
+        },
+        "blackstone_stairs": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "blackstone_stairs"
+                    }
+                ]
+            }
+        },
+        "blackstone_wall": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "blackstone_wall"
+                    }
+                ]
+            }
+        },
+        "polished_blackstone": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "polished_blackstone"
+                    }
+                ]
+            }
+        },
+        "polished_blackstone_button": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "polished_blackstone_button"
+                    }
+                ]
+            }
+        },
+        "polished_blackstone_pressure_plate": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "polished_blackstone_pressure_plate"
+                    }
+                ]
+            }
+        },
+        "polished_blackstone_slab": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "polished_blackstone_slab"
+                    }
+                ]
+            }
+        },
+        "polished_blackstone_stairs": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "polished_blackstone_stairs"
+                    }
+                ]
+            }
+        },
+        "polished_blackstone_wall": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "polished_blackstone_wall"
+                    }
+                ]
+            }
+        },
+        "gilded_blackstone": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "gilded_blackstone"
+                    }
+                ]
+            }
+        },
+        "polished_blackstone_bricks": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "polished_blackstone_bricks"
+                    }
+                ]
+            }
+        },
+        "polished_blackstone_brick_slab": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "polished_blackstone_brick_slab"
+                    }
+                ]
+            }
+        },
+        "polished_blackstone_brick_stairs": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "polished_blackstone_brick_stairs"
+                    }
+                ]
+            }
+        },
+        "polished_blackstone_brick_wall": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "polished_blackstone_brick_wall"
+                    }
+                ]
+            }
+        },
+        "cracked_polished_blackstone_bricks": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "cracked_polished_blackstone_bricks"
+                    }
+                ]
+            }
+        },
+        "chiseled_polished_blackstone": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "chiseled_polished_blackstone"
+                    }
+                ]
+            }
+        },
+        "shroomlight": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "shroomlight"
+                    }
+                ]
+            }
+        },
+        "crimson_nylium": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "crimson_nylium"
+                    }
+                ]
+            }
+        },
+        "warped_nylium": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "warped_nylium"
+                    }
+                ]
+            }
+        },
+        "weeping_vines": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "weeping_vines"
+                    }
+                ]
+            }
+        },
+        "twisting_vines": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "twisting_vines"
+                    }
+                ]
+            }
+        },
+        "crimson_fungus": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "crimson_fungus"
+                    }
+                ]
+            }
+        },
+        "warped_fungus": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "warped_fungus"
+                    }
+                ]
+            }
+        },
+        "warped_fungus_on_a_stick": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "warped_fungus_on_a_stick"
+                    }
+                ]
+            }
+        },
+        "crimson_roots": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "crimson_roots"
+                    }
+                ]
+            }
+        },
+        "warped_roots": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "warped_roots"
+                    }
+                ]
+            }
+        },
+        "nether_sprouts": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "nether_sprouts"
+                    }
+                ]
+            }
+        },
+        "nether_wart": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "nether_wart"
+                    }
+                ]
+            }
+        },
+        "nether_wart_block": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "nether_wart_block"
+                    }
+                ]
+            }
+        },
+        "warped_wart_block": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "warped_wart_block"
+                    }
+                ]
+            }
+        },
+        "ancient_debris": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "ancient_debris"
+                    }
+                ]
+            }
+        },
+        "netherite_scrap": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "netherite_scrap"
+                    }
+                ]
+            }
+        },
+        "netherite_ingot": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "netherite_ingot"
+                    }
+                ]
+            }
+        },
+        "netherite_block": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "netherite_block"
+                    }
+                ]
+            }
+        },
+        "wither_skeleton_skull": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "wither_skeleton_skull"
+                    }
+                ]
+            }
+        },
+        "wither_rose": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "wither_rose"
+                    }
+                ]
+            }
+        },
+        "nether_star": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "nether_star"
+                    }
+                ]
+            }
+        },
+        "ochre_froglight": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "ochre_froglight"
+                    }
+                ]
+            }
+        },
+        "pearlescent_froglight": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "pearlescent_froglight"
+                    }
+                ]
+            }
+        },
+        "verdant_froglight": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "verdant_froglight"
+                    }
+                ]
+            }
+        },
+        "ghast_tear": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "ghast_tear"
+                    }
+                ]
+            }
+        },
+        "blaze_rod": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "blaze_rod"
+                    }
+                ]
+            }
+        },
+        "blaze_powder": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "blaze_powder"
+                    }
+                ]
+            }
+        },
+        "obsidian": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "obsidian"
+                    }
+                ]
+            }
+        },
+        "crying_obsidian": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "crying_obsidian"
+                    }
+                ]
+            }
+        },
+        "respawn_anchor": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "respawn_anchor"
+                    }
+                ]
+            }
+        },
+        "beacon": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "beacon"
+                    }
+                ]
+            }
+        },
+        "brewing_stand": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "brewing_stand"
+                    }
+                ]
+            }
+        },
+        "piglin_head": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "piglin_head"
+                    }
+                ]
+            }
+        },
+        "piglin_banner_pattern": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "piglin_banner_pattern"
+                    }
+                ]
+            }
+        },
+        "pigstep": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "music_disc_pigstep"
+                    }
+                ]
+            }
+        },
+        "rib_armor_trim": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "rib_armor_trim_smithing_template"
+                    }
+                ]
+            }
+        },
+        "snout_armor_trim": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "snout_armor_trim_smithing_template"
+                    }
+                ]
+            }
+        },
+        "upgrade_template": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "netherite_upgrade_smithing_template"
+                    }
+                ]
+            }
+        },
+        "fire_charge": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "fire_charge"
+                    }
+                ]
+            }
+        },
+        "flint_steel": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "flint_and_steel"
+                    }
+                ]
+            }
+        },
+        "spectral_arrow": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "spectral_arrow"
+                    }
+                ]
+            }
+        },
+        "dried_ghast": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "dried_ghast"
+                    }
+                ]
+            }
+        }
+    },
+    "requirements": [
+        [
+            "ancient_debris"
+        ],
+        [
+            "basalt"
+        ],
+        [
+            "beacon"
+        ],
+        [
+            "blackstone"
+        ],
+        [
+            "blackstone_slab"
+        ],
+        [
+            "blackstone_stairs"
+        ],
+        [
+            "blackstone_wall"
+        ],
+        [
+            "blaze_powder"
+        ],
+        [
+            "blaze_rod"
+        ],
+        [
+            "bone_block"
+        ],
+        [
+            "brewing_stand"
+        ],
+        [
+            "chiseled_nether_brick"
+        ],
+        [
+            "chiseled_polished_blackstone"
+        ],
+        [
+            "chiseled_quartz"
+        ],
+        [
+            "cracked_nether_bricks"
+        ],
+        [
+            "cracked_polished_blackstone_bricks"
+        ],
+        [
+            "crimson_fungus"
+        ],
+        [
+            "crimson_nylium"
+        ],
+        [
+            "crimson_roots"
+        ],
+        [
+            "crying_obsidian"
+        ],
+        [
+            "dried_ghast"
+        ],
+        [
+            "fire_charge"
+        ],
+        [
+            "flint_steel"
+        ],
+        [
+            "ghast_tear"
+        ],
+        [
+            "gilded_blackstone"
+        ],
+        [
+            "glowstone"
+        ],
+        [
+            "glowstone_dust"
+        ],
+        [
+            "lava_bucket"
+        ],
+        [
+            "magma_block"
+        ],
+        [
+            "magma_cream"
+        ],
+        [
+            "nether_brick"
+        ],
+        [
+            "nether_brick_fence"
+        ],
+        [
+            "nether_brick_slab"
+        ],
+        [
+            "nether_brick_stairs"
+        ],
+        [
+            "nether_brick_wall"
+        ],
+        [
+            "nether_bricks"
+        ],
+        [
+            "nether_gold_ore"
+        ],
+        [
+            "nether_quartz_ore"
+        ],
+        [
+            "nether_sprouts"
+        ],
+        [
+            "nether_star"
+        ],
+        [
+            "nether_wart"
+        ],
+        [
+            "nether_wart_block"
+        ],
+        [
+            "netherite_block"
+        ],
+        [
+            "netherite_ingot"
+        ],
+        [
+            "netherite_scrap"
+        ],
+        [
+            "netherrack"
+        ],
+        [
+            "obsidian"
+        ],
+        [
+            "ochre_froglight"
+        ],
+        [
+            "pearlescent_froglight"
+        ],
+        [
+            "piglin_banner_pattern"
+        ],
+        [
+            "piglin_head"
+        ],
+        [
+            "pigstep"
+        ],
+        [
+            "polished_basalt"
+        ],
+        [
+            "polished_blackstone"
+        ],
+        [
+            "polished_blackstone_brick_slab"
+        ],
+        [
+            "polished_blackstone_brick_stairs"
+        ],
+        [
+            "polished_blackstone_brick_wall"
+        ],
+        [
+            "polished_blackstone_bricks"
+        ],
+        [
+            "polished_blackstone_button"
+        ],
+        [
+            "polished_blackstone_pressure_plate"
+        ],
+        [
+            "polished_blackstone_slab"
+        ],
+        [
+            "polished_blackstone_stairs"
+        ],
+        [
+            "polished_blackstone_wall"
+        ],
+        [
+            "quartz"
+        ],
+        [
+            "quartz_block"
+        ],
+        [
+            "quartz_bricks"
+        ],
+        [
+            "quartz_pillar"
+        ],
+        [
+            "quartz_slab"
+        ],
+        [
+            "quartz_stairs"
+        ],
+        [
+            "red_nether_brick_slab"
+        ],
+        [
+            "red_nether_brick_stairs"
+        ],
+        [
+            "red_nether_brick_wall"
+        ],
+        [
+            "red_nether_bricks"
+        ],
+        [
+            "respawn_anchor"
+        ],
+        [
+            "rib_armor_trim"
+        ],
+        [
+            "shroomlight"
+        ],
+        [
+            "smooth_quartz_block"
+        ],
+        [
+            "smooth_quartz_slab"
+        ],
+        [
+            "smooth_quartz_stairs"
+        ],
+        [
+            "snout_armor_trim"
+        ],
+        [
+            "soul_campfire"
+        ],
+        [
+            "soul_lantern"
+        ],
+        [
+            "soul_sand"
+        ],
+        [
+            "soul_soil"
+        ],
+        [
+            "soul_torch"
+        ],
+        [
+            "spectral_arrow"
+        ],
+        [
+            "twisting_vines"
+        ],
+        [
+            "upgrade_template"
+        ],
+        [
+            "verdant_froglight"
+        ],
+        [
+            "warped_fungus"
+        ],
+        [
+            "warped_fungus_on_a_stick"
+        ],
+        [
+            "warped_nylium"
+        ],
+        [
+            "warped_roots"
+        ],
+        [
+            "warped_wart_block"
+        ],
+        [
+            "weeping_vines"
+        ],
+        [
+            "wither_rose"
+        ],
+        [
+            "wither_skeleton_skull"
+        ]
+    ],
+    "parent": "youzaiworld:completionist/hollow_earth",
+    "rewards": {
+        "experience": 2500
+    }
+}

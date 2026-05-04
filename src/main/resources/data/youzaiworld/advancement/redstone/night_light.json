@@ -1,0 +1,44 @@
+{
+    "display": {
+        "icon": {
+            "id": "redstone_lamp"
+        },
+        "title": "夜灯",
+        "description": "制作红石灯与日光传感器以节约电力",
+        "frame": "task",
+        "announce_to_chat": true,
+        "show_toast": true,
+        "hidden": false
+    },
+    "criteria": {
+        "lamp": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "redstone_lamp"
+                    }
+                ]
+            }
+        },
+        "daylight_detector": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "daylight_detector"
+                    }
+                ]
+            }
+        }
+    },
+    "requirements": [
+        [
+            "daylight_detector"
+        ],
+        [
+            "lamp"
+        ]
+    ],
+    "parent": "youzaiworld:redstone/redstone_dust"
+}

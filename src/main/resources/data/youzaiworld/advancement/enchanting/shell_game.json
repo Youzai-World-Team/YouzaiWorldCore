@@ -1,0 +1,47 @@
+{
+    "display": {
+        "icon": {
+            "id": "turtle_helmet",
+            "components": {
+                "enchantments": {
+                    "aqua_affinity": 1
+                }
+            }
+        },
+        "title": "贝壳游戏",
+        "description": "给海龟壳附魔【水下呼吸III】与【水下速掘】",
+        "frame": "challenge",
+        "announce_to_chat": true,
+        "show_toast": true,
+        "hidden": true
+    },
+    "criteria": {
+        "gills": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "turtle_helmet"
+                        ],
+                        "components": {
+                            "enchantments": {
+                                "aqua_affinity": 1,
+                                "respiration": 3
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    },
+    "requirements": [
+        [
+            "gills"
+        ]
+    ],
+    "parent": "youzaiworld:enchanting/selective_enchanting",
+    "rewards": {
+        "experience": 100
+    }
+}

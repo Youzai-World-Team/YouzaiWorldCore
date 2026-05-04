@@ -1,0 +1,40 @@
+{
+    "display": {
+        "icon": {
+            "id": "minecraft:ghast_tear"
+        },
+        "title": "一场阴森的骗局",
+        "description": "将一只恶魂带至主世界，并在骑乘快乐恶魂时将其击杀！",
+        "frame": "challenge",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": false
+    },
+    "criteria": {
+        "hindenberg": {
+            "trigger": "minecraft:player_killed_entity",
+            "conditions": {
+                "entity": {
+                    "type": "ghast"
+                },
+                "player": {
+                    "vehicle": {
+                        "type": "happy_ghast"
+                    },
+                    "location": {
+                        "dimension": "overworld"
+                    }
+                }
+            }
+        }
+    },
+    "requirements": [
+        [
+            "hindenberg"
+        ]
+    ],
+    "parent": "youzaiworld:nether/comfortable_alliance",
+    "rewards": {
+        "experience": 500
+    }
+}

@@ -1,0 +1,48 @@
+{
+    "display": {
+        "icon": {
+            "id": "minecraft:lava_bucket"
+        },
+        "title": "宾至如归",
+        "description": "骑乘炽足兽在主世界长途跋涉",
+        "frame": "task",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": true
+    },
+    "criteria": {
+        "ride_strider_two": {
+            "trigger": "minecraft:ride_entity_in_lava",
+            "conditions": {
+                "distance": {
+                    "horizontal": {
+                        "min": 50.0
+                    }
+                },
+                "player": [
+                    {
+                        "condition": "minecraft:entity_properties",
+                        "entity": "this",
+                        "predicate": {
+                            "vehicle": {
+                                "type": "minecraft:strider"
+                            },
+                            "location": {
+                                "dimension": "overworld"
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    },
+    "requirements": [
+        [
+            "ride_strider_two"
+        ]
+    ],
+    "parent": "youzaiworld:nether/floor_is_lava",
+    "rewards": {
+        "experience": 250
+    }
+}

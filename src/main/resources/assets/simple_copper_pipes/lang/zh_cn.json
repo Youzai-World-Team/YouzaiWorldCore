@@ -1,0 +1,49 @@
+{
+  "block.simple_copper_pipes.copper_pipe": "铜管道",
+  "block.simple_copper_pipes.exposed_copper_pipe": "斑驳铜管道",
+  "block.simple_copper_pipes.weathered_copper_pipe": "锈蚀铜管道",
+  "block.simple_copper_pipes.oxidized_copper_pipe": "氧化铜管道",
+  "block.simple_copper_pipes.waxed_copper_pipe": "涂蜡铜管道",
+  "block.simple_copper_pipes.waxed_exposed_copper_pipe": "涂蜡斑驳铜管道",
+  "block.simple_copper_pipes.waxed_weathered_copper_pipe": "涂蜡锈蚀铜管道",
+  "block.simple_copper_pipes.waxed_oxidized_copper_pipe": "涂蜡氧化铜管道",
+
+  "block.simple_copper_pipes.copper_fitting": "铜接头",
+  "block.simple_copper_pipes.exposed_copper_fitting": "斑驳铜接头",
+  "block.simple_copper_pipes.weathered_copper_fitting": "锈蚀铜接头",
+  "block.simple_copper_pipes.oxidized_copper_fitting": "氧化铜接头",
+  "block.simple_copper_pipes.waxed_copper_fitting": "涂蜡铜接头",
+  "block.simple_copper_pipes.waxed_exposed_copper_fitting": "涂蜡斑驳铜接头",
+  "block.simple_copper_pipes.waxed_weathered_copper_fitting": "涂蜡锈蚀铜接头",
+  "block.simple_copper_pipes.waxed_oxidized_copper_fitting": "涂蜡氧化铜接头",
+
+  "subtitles.block.copper_pipe.item_in": "物品进入管道",
+  "subtitles.block.copper_pipe.item_out": "物品离开管道",
+  "subtitles.block.copper_pipe.launch": "物品从管道喷出",
+
+  "stat.simple_copper_pipes.inspect_copper_pipe": "搜索铜管道次数",
+  "stat.simple_copper_pipes.inspect_copper_fitting": "搜索铜接头次数",
+
+  "option.simple_copper_pipes.component.title": "简单铜管道配置",
+  "option.simple_copper_pipes.false": "§c禁用",
+  "option.simple_copper_pipes.true": "§a启用",
+
+  "option.simple_copper_pipes.openable_fittings": "可交互接头",
+  "tooltip.simple_copper_pipes.openable_fittings": "铜接头是否应该拥有可交互的界面。",
+
+  "option.simple_copper_pipes.dispensing": "喷出物品",
+  "tooltip.simple_copper_pipes.dispensing": "铜管道是否能够喷出物品。",
+  "option.simple_copper_pipes.dispense_sounds": "喷出音效",
+  "tooltip.simple_copper_pipes.dispense_sounds": "铜管道喷出物品时是否播放音效。",
+  "option.simple_copper_pipes.suction_sounds": "吸入音效",
+  "tooltip.simple_copper_pipes.suction_sounds": "铜管道吸入新物品时是否播放音效。",
+  "option.simple_copper_pipes.sense_game_events": "感知游戏事件",
+  "tooltip.simple_copper_pipes.sense_game_events": "铜管道是否能够接收游戏事件（振动）。",
+
+  "option.simple_copper_pipes.carry_water": "运输水",
+  "tooltip.simple_copper_pipes.carry_water": "铜管道和接头是否能够运输水。",
+  "option.simple_copper_pipes.carry_lava": "运输熔岩",
+  "tooltip.simple_copper_pipes.carry_lava": "铜管道和接头是否能够运输熔岩。",
+  "option.simple_copper_pipes.carry_smoke": "运输烟雾",
+  "tooltip.simple_copper_pipes.carry_smoke": "铜管道和接头是否能够运输烟雾。"
+}

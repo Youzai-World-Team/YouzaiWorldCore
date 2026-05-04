@@ -1,0 +1,26 @@
+{
+    "parent": "youzaiworld:collections/_and_then_there_were_three",
+    "criteria": {
+        "impossible": {
+            "trigger": "minecraft:impossible"
+        }
+    },
+    "rewards": {
+        "function": "youzaiworld:passive_kills"
+    },
+    "display": {
+        "title": {
+            "translate": "在找幸运脚吗？"
+        },
+        "description": {
+            "translate": "击杀你的第一只兔子"
+        },
+        "icon": {
+            "id": "minecraft:rabbit_spawn_egg"
+        },
+        "frame": "task",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": false
+    }
+}

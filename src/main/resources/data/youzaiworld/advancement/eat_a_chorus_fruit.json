@@ -1,0 +1,29 @@
+{
+    "display": {
+        "icon": {
+            "id": "minecraft:chorus_fruit"
+        },
+        "title": "吃一个紫颂果",
+        "description": "你吃了一颗紫颂果。你传送到哪儿了？",
+        "frame": "task",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": false
+    },
+    "criteria": {
+        "eat_a_chorus_fruit_0": {
+            "trigger": "minecraft:consume_item",
+            "conditions": {
+                "item": {
+                    "items": [
+                        "minecraft:chorus_fruit"
+                    ]
+                }
+            }
+        }
+    },
+    "rewards": {
+        "experience": 50
+    },
+    "parent": "minecraft:end/root"
+}

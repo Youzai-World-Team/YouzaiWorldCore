@@ -1,0 +1,32 @@
+{
+    "display": {
+        "icon": {
+            "id": "minecraft:beacon"
+        },
+        "title": "信标激活器！",
+        "description": "激活信标全部能力！",
+        "frame": "challenge",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": false
+    },
+    "criteria": {
+        "powerful_beacon": {
+            "trigger": "minecraft:construct_beacon",
+            "conditions": {
+                "level": {
+                    "min": 4
+                }
+            }
+        }
+    },
+    "requirements": [
+        [
+            "powerful_beacon"
+        ]
+    ],
+    "parent": "youzaiworld:nether/beacon",
+    "rewards": {
+        "experience": 100
+    }
+}

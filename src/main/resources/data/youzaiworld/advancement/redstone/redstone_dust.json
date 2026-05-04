@@ -1,0 +1,31 @@
+{
+    "display": {
+        "icon": {
+            "id": "redstone"
+        },
+        "title": "杀红了眼",
+        "description": "获取一些红石！",
+        "frame": "task",
+        "announce_to_chat": true,
+        "show_toast": true,
+        "hidden": false
+    },
+    "criteria": {
+        "redstone": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "redstone"
+                    }
+                ]
+            }
+        }
+    },
+    "requirements": [
+        [
+            "redstone"
+        ]
+    ],
+    "parent": "youzaiworld:redstone/root"
+}

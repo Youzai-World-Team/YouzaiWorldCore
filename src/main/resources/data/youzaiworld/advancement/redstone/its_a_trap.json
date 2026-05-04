@@ -1,0 +1,111 @@
+{
+    "display": {
+        "icon": {
+            "id": "tripwire_hook"
+        },
+        "title": "这是个陷阱！",
+        "description": "收集所有陷阱方块！",
+        "frame": "goal",
+        "announce_to_chat": true,
+        "show_toast": true,
+        "hidden": false
+    },
+    "criteria": {
+        "trapped_chest": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "trapped_chest"
+                    }
+                ]
+            }
+        },
+        "tripwire": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "tripwire_hook"
+                    }
+                ]
+            }
+        },
+        "pressure_plate_wood": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "oak_pressure_plate",
+                            "birch_pressure_plate",
+                            "acacia_pressure_plate",
+                            "bamboo_pressure_plate",
+                            "cherry_pressure_plate",
+                            "jungle_pressure_plate",
+                            "spruce_pressure_plate",
+                            "warped_pressure_plate",
+                            "crimson_pressure_plate",
+                            "dark_oak_pressure_plate",
+                            "mangrove_pressure_plate"
+                        ]
+                    }
+                ]
+            }
+        },
+        "pressure_plate_stone": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "stone_pressure_plate",
+                            "polished_blackstone_pressure_plate"
+                        ]
+                    }
+                ]
+            }
+        },
+        "pressure_plate_iron": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "light_weighted_pressure_plate"
+                    }
+                ]
+            }
+        },
+        "pressure_plate_gold": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "heavy_weighted_pressure_plate"
+                    }
+                ]
+            }
+        }
+    },
+    "requirements": [
+        [
+            "pressure_plate_gold"
+        ],
+        [
+            "pressure_plate_iron"
+        ],
+        [
+            "pressure_plate_stone"
+        ],
+        [
+            "pressure_plate_wood"
+        ],
+        [
+            "tripwire"
+        ],
+        [
+            "trapped_chest"
+        ]
+    ],
+    "parent": "youzaiworld:redstone/secret_tunnel"
+}

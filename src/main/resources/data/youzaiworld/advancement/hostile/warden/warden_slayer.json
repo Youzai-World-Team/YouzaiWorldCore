@@ -1,0 +1,26 @@
+{
+    "parent": "youzaiworld:hostile/warden/warden_kill",
+    "criteria": {
+        "impossible": {
+            "trigger": "minecraft:impossible"
+        }
+    },
+    "rewards": {
+        "function": "youzaiworld:hostile_kills"
+    },
+    "display": {
+        "title": {
+            "translate": "典狱长猎杀者！"
+        },
+        "description": {
+            "translate": "击杀1000名守卫！\n\n若该“Warden”为特定游戏专属单位（如《我的世界》中的“监守者”），可针对性调整为：击杀1000只监守者！"
+        },
+        "icon": {
+            "id": "minecraft:sculk_catalyst"
+        },
+        "frame": "task",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": false
+    }
+}

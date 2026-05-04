@@ -1,0 +1,33 @@
+{
+    "display": {
+        "icon": {
+            "id": "minecraft:redstone"
+        },
+        "title": "红石",
+        "description": "严格来说，这并非《我的世界》",
+        "frame": "task",
+        "show_toast": false,
+        "announce_to_chat": false,
+        "hidden": false,
+        "background": "block/note_block"
+    },
+    "criteria": {
+        "dust": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "redstone"
+                        ]
+                    }
+                ]
+            }
+        }
+    },
+    "requirements": [
+        [
+            "dust"
+        ]
+    ]
+}

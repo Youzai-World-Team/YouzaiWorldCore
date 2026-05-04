@@ -1,0 +1,75 @@
+{
+    "display": {
+        "icon": {
+            "id": "lead"
+        },
+        "title": "小队空降进城",
+        "description": "每种青蛙变种各拴一只",
+        "frame": "challenge",
+        "announce_to_chat": true,
+        "show_toast": true,
+        "hidden": false
+    },
+    "criteria": {
+        "warm_frog": {
+            "trigger": "player_interacted_with_entity",
+            "conditions": {
+                "entity": {
+                    "components": {
+                        "frog/variant": "warm"
+                    }
+                },
+                "item": {
+                    "items": [
+                        "lead"
+                    ]
+                }
+            }
+        },
+        "temperate_frog": {
+            "trigger": "player_interacted_with_entity",
+            "conditions": {
+                "entity": {
+                    "components": {
+                        "frog/variant": "temperate"
+                    }
+                },
+                "item": {
+                    "items": [
+                        "lead"
+                    ]
+                }
+            }
+        },
+        "cold_frog": {
+            "trigger": "player_interacted_with_entity",
+            "conditions": {
+                "entity": {
+                    "components": {
+                        "frog/variant": "cold"
+                    }
+                },
+                "item": {
+                    "items": [
+                        "lead"
+                    ]
+                }
+            }
+        }
+    },
+    "requirements": [
+        [
+            "cold_frog"
+        ],
+        [
+            "temperate_frog"
+        ],
+        [
+            "warm_frog"
+        ]
+    ],
+    "parent": "youzaiworld:husbandry/bukkit_bukkit",
+    "rewards": {
+        "experience": 100
+    }
+}

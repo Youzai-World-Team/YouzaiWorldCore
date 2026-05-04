@@ -1,0 +1,20 @@
+{
+  "display": {
+    "icon": {
+      "id": "minecraft:lightning_rod"
+    },
+    "title": "雷神的愤怒",
+    "description": "看到闪电击中",
+    "frame": "task",
+    "hidden": false
+  },
+  "parent": "youzaiworld:fun_little_achievements/root",
+  "criteria": {
+    "trigger": {
+      "trigger": "minecraft:lightning_strike"
+    }
+  },
+  "rewards": {
+    "experience": 1
+  }
+}

@@ -1,0 +1,43 @@
+{
+    "display": {
+        "icon": {
+            "id": "carrot"
+        },
+        "title": "为吐司干杯！",
+        "description": "给兔子取名“Toast”",
+        "frame": "task",
+        "announce_to_chat": true,
+        "show_toast": true,
+        "hidden": false
+    },
+    "criteria": {
+        "toasty": {
+            "trigger": "minecraft:player_interacted_with_entity",
+            "conditions": {
+                "entity": [
+                    {
+                        "condition": "entity_properties",
+                        "predicate": {
+                            "type": "rabbit"
+                        },
+                        "entity": "this"
+                    }
+                ],
+                "item": {
+                    "items": [
+                        "name_tag"
+                    ],
+                    "components": {
+                        "custom_name": "“Toast”"
+                    }
+                }
+            }
+        }
+    },
+    "requirements": [
+        [
+            "toasty"
+        ]
+    ],
+    "parent": "youzaiworld:adventure/coat_of_many_colors"
+}

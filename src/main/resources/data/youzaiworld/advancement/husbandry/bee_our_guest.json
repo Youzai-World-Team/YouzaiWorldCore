@@ -1,0 +1,128 @@
+{
+    "display": {
+        "icon": {
+            "id": "honey_bottle"
+        },
+        "title": "欢迎光临蜂巢",
+        "description": "使用篝火安全地从蜂巢中采集蜂蜜",
+        "frame": "task",
+        "announce_to_chat": true,
+        "show_toast": true,
+        "hidden": false
+    },
+    "criteria": {
+        "honey_bottle_nest": {
+            "trigger": "item_used_on_block",
+            "conditions": {
+                "location": [
+                    {
+                        "condition": "location_check",
+                        "predicate": {
+                            "block": {
+                                "blocks": [
+                                    "bee_nest"
+                                ]
+                            },
+                            "smokey": true
+                        }
+                    },
+                    {
+                        "condition": "match_tool",
+                        "predicate": {
+                            "items": [
+                                "glass_bottle"
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        "honey_bottle_hive": {
+            "trigger": "item_used_on_block",
+            "conditions": {
+                "location": [
+                    {
+                        "condition": "location_check",
+                        "predicate": {
+                            "block": {
+                                "blocks": [
+                                    "beehive"
+                                ]
+                            },
+                            "smokey": true
+                        }
+                    },
+                    {
+                        "condition": "match_tool",
+                        "predicate": {
+                            "items": [
+                                "glass_bottle"
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        "honeycomb_nest": {
+            "trigger": "item_used_on_block",
+            "conditions": {
+                "location": [
+                    {
+                        "condition": "location_check",
+                        "predicate": {
+                            "block": {
+                                "blocks": [
+                                    "bee_nest"
+                                ]
+                            },
+                            "smokey": true
+                        }
+                    },
+                    {
+                        "condition": "match_tool",
+                        "predicate": {
+                            "items": [
+                                "shears"
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        "honeycomb_hive": {
+            "trigger": "item_used_on_block",
+            "conditions": {
+                "location": [
+                    {
+                        "condition": "location_check",
+                        "predicate": {
+                            "block": {
+                                "blocks": [
+                                    "beehive"
+                                ]
+                            },
+                            "smokey": true
+                        }
+                    },
+                    {
+                        "condition": "match_tool",
+                        "predicate": {
+                            "items": [
+                                "shears"
+                            ]
+                        }
+                    }
+                ]
+            }
+        }
+    },
+    "requirements": [
+        [
+            "honey_bottle_hive",
+            "honey_bottle_nest",
+            "honeycomb_nest",
+            "honeycomb_hive"
+        ]
+    ],
+    "parent": "youzaiworld:husbandry/root"
+}

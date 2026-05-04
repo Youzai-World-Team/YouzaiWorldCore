@@ -1,0 +1,26 @@
+{
+    "parent": "youzaiworld:collections/arthropod_collection",
+    "criteria": {
+        "impossible": {
+            "trigger": "minecraft:impossible"
+        }
+    },
+    "rewards": {
+        "function": "youzaiworld:hostile_kills"
+    },
+    "display": {
+        "title": {
+            "translate": "击杀末螨！"
+        },
+        "description": {
+            "translate": "击杀你的第一只末螨！"
+        },
+        "icon": {
+            "id": "minecraft:endermite_spawn_egg"
+        },
+        "frame": "task",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": false
+    }
+}

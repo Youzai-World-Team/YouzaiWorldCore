@@ -1,0 +1,26 @@
+{
+    "parent": "youzaiworld:collections/_i_am_under_the_water",
+    "criteria": {
+        "impossible": {
+            "trigger": "minecraft:impossible"
+        }
+    },
+    "rewards": {
+        "function": "youzaiworld:passive_kills"
+    },
+    "display": {
+        "title": {
+            "translate": "我对你来说不够可爱吗？"
+        },
+        "description": {
+            "translate": "首次击杀美西螈"
+        },
+        "icon": {
+            "id": "minecraft:axolotl_bucket"
+        },
+        "frame": "task",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": false
+    }
+}

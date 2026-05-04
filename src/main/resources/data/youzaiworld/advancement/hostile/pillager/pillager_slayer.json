@@ -1,0 +1,26 @@
+{
+    "parent": "youzaiworld:hostile/pillager/pillager_kill",
+    "criteria": {
+        "impossible": {
+            "trigger": "minecraft:impossible"
+        }
+    },
+    "rewards": {
+        "function": "youzaiworld:hostile_kills"
+    },
+    "display": {
+        "title": {
+            "translate": "掠夺者杀手！"
+        },
+        "description": {
+            "translate": "击杀1000名掠夺者！"
+        },
+        "icon": {
+            "id": "minecraft:crossbow"
+        },
+        "frame": "task",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": false
+    }
+}

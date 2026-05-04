@@ -1,0 +1,27 @@
+{
+    "display": {
+        "icon": {
+            "id": "honey_block"
+        },
+        "title": "黏着困境",
+        "description": "从蜂蜜块侧面滑下",
+        "frame": "task",
+        "announce_to_chat": true,
+        "show_toast": true,
+        "hidden": false
+    },
+    "criteria": {
+        "sticky_slide": {
+            "trigger": "slide_down_block",
+            "conditions": {
+                "block": "honey_block"
+            }
+        }
+    },
+    "requirements": [
+        [
+            "sticky_slide"
+        ]
+    ],
+    "parent": "youzaiworld:husbandry/bee_our_guest"
+}

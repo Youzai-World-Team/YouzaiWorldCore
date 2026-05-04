@@ -1,0 +1,152 @@
+{
+    "display": {
+        "icon": {
+            "id": "carved_pumpkin",
+            "components": {
+                "enchantments": {
+                    "binding_curse": 1
+                }
+            }
+        },
+        "title": "‘伊’兆不妙”",
+        "description": "击杀所有头戴雕刻南瓜的怪物！",
+        "frame": "challenge",
+        "announce_to_chat": true,
+        "show_toast": true,
+        "hidden": true
+    },
+    "criteria": {
+        "zombie_jack": {
+            "trigger": "minecraft:player_killed_entity",
+            "conditions": {
+                "entity": {
+                    "equipment": {
+                        "head": {
+                            "items": [
+                                "carved_pumpkin"
+                            ]
+                        }
+                    },
+                    "type": "zombie"
+                }
+            }
+        },
+        "husk_jack": {
+            "trigger": "minecraft:player_killed_entity",
+            "conditions": {
+                "entity": {
+                    "equipment": {
+                        "head": {
+                            "items": [
+                                "carved_pumpkin"
+                            ]
+                        }
+                    },
+                    "type": "husk"
+                }
+            }
+        },
+        "skeleton_jack": {
+            "trigger": "minecraft:player_killed_entity",
+            "conditions": {
+                "entity": {
+                    "equipment": {
+                        "head": {
+                            "items": [
+                                "carved_pumpkin"
+                            ]
+                        }
+                    },
+                    "type": "skeleton"
+                }
+            }
+        },
+        "stray_jack": {
+            "trigger": "minecraft:player_killed_entity",
+            "conditions": {
+                "entity": {
+                    "equipment": {
+                        "head": {
+                            "items": [
+                                "carved_pumpkin"
+                            ]
+                        }
+                    },
+                    "type": "stray"
+                }
+            }
+        },
+        "piglin_jack": {
+            "trigger": "minecraft:player_killed_entity",
+            "conditions": {
+                "entity": {
+                    "equipment": {
+                        "head": {
+                            "items": [
+                                "carved_pumpkin"
+                            ]
+                        }
+                    },
+                    "type": "zombified_piglin"
+                }
+            }
+        },
+        "wither_jack": {
+            "trigger": "minecraft:player_killed_entity",
+            "conditions": {
+                "entity": {
+                    "equipment": {
+                        "head": {
+                            "items": [
+                                "carved_pumpkin"
+                            ]
+                        }
+                    },
+                    "type": "wither_skeleton"
+                }
+            }
+        },
+        "bogged_jack": {
+            "trigger": "minecraft:player_killed_entity",
+            "conditions": {
+                "entity": {
+                    "equipment": {
+                        "head": {
+                            "items": [
+                                "carved_pumpkin"
+                            ]
+                        }
+                    },
+                    "type": "bogged"
+                }
+            }
+        }
+    },
+    "requirements": [
+        [
+            "zombie_jack"
+        ],
+        [
+            "husk_jack"
+        ],
+        [
+            "piglin_jack"
+        ],
+        [
+            "skeleton_jack"
+        ],
+        [
+            "stray_jack"
+        ],
+        [
+            "wither_jack"
+        ],
+        [
+            "bogged_jack"
+        ]
+    ],
+    "parent": "youzaiworld:adventure/trick_or_treat",
+    "rewards": {
+        "experience": 250
+    }
+}

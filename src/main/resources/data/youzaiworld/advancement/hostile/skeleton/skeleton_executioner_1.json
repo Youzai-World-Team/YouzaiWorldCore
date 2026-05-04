@@ -1,0 +1,26 @@
+{
+    "parent": "youzaiworld:hostile/skeleton/skeleton_assassin_2",
+    "criteria": {
+        "impossible": {
+            "trigger": "minecraft:impossible"
+        }
+    },
+    "rewards": {
+        "function": "youzaiworld:hostile_kills"
+    },
+    "display": {
+        "title": {
+            "translate": "骷髅刽子手Ⅰ"
+        },
+        "description": {
+            "translate": "击杀250只骷髅"
+        },
+        "icon": {
+            "id": "minecraft:golden_sword"
+        },
+        "frame": "challenge",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": false
+    }
+}

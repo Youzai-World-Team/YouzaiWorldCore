@@ -1,0 +1,291 @@
+{
+    "display": {
+        "icon": {
+            "id": "silence_armor_trim_smithing_template"
+        },
+        "title": "盈满饰件",
+        "description": "获取所有护甲纹饰各一件！",
+        "frame": "goal",
+        "announce_to_chat": true,
+        "show_toast": true,
+        "hidden": false
+    },
+    "criteria": {
+        "coast": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "coast_armor_trim_smithing_template"
+                        ]
+                    }
+                ]
+            }
+        },
+        "tide": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "tide_armor_trim_smithing_template"
+                        ]
+                    }
+                ]
+            }
+        },
+        "wild": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "wild_armor_trim_smithing_template"
+                        ]
+                    }
+                ]
+            }
+        },
+        "dune": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "dune_armor_trim_smithing_template"
+                        ]
+                    }
+                ]
+            }
+        },
+        "vex": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "vex_armor_trim_smithing_template"
+                        ]
+                    }
+                ]
+            }
+        },
+        "sentry": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "sentry_armor_trim_smithing_template"
+                        ]
+                    }
+                ]
+            }
+        },
+        "rib": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "rib_armor_trim_smithing_template"
+                        ]
+                    }
+                ]
+            }
+        },
+        "snout": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "snout_armor_trim_smithing_template"
+                        ]
+                    }
+                ]
+            }
+        },
+        "ward": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "ward_armor_trim_smithing_template"
+                        ]
+                    }
+                ]
+            }
+        },
+        "silence": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "silence_armor_trim_smithing_template"
+                        ]
+                    }
+                ]
+            }
+        },
+        "eye": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "eye_armor_trim_smithing_template"
+                        ]
+                    }
+                ]
+            }
+        },
+        "spire": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "spire_armor_trim_smithing_template"
+                        ]
+                    }
+                ]
+            }
+        },
+        "wayfinder": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "wayfinder_armor_trim_smithing_template"
+                        ]
+                    }
+                ]
+            }
+        },
+        "host": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "host_armor_trim_smithing_template"
+                        ]
+                    }
+                ]
+            }
+        },
+        "raiser": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "raiser_armor_trim_smithing_template"
+                        ]
+                    }
+                ]
+            }
+        },
+        "shaper": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "shaper_armor_trim_smithing_template"
+                        ]
+                    }
+                ]
+            }
+        },
+        "bolt": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "bolt_armor_trim_smithing_template"
+                        ]
+                    }
+                ]
+            }
+        },
+        "flow": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "flow_armor_trim_smithing_template"
+                        ]
+                    }
+                ]
+            }
+        }
+    },
+    "requirements": [
+        [
+            "coast"
+        ],
+        [
+            "tide"
+        ],
+        [
+            "dune"
+        ],
+        [
+            "wild"
+        ],
+        [
+            "vex"
+        ],
+        [
+            "sentry"
+        ],
+        [
+            "rib"
+        ],
+        [
+            "snout"
+        ],
+        [
+            "eye"
+        ],
+        [
+            "spire"
+        ],
+        [
+            "ward"
+        ],
+        [
+            "silence"
+        ],
+        [
+            "host"
+        ],
+        [
+            "raiser"
+        ],
+        [
+            "wayfinder"
+        ],
+        [
+            "shaper"
+        ],
+        [
+            "bolt"
+        ],
+        [
+            "flow"
+        ]
+    ],
+    "parent": "youzaiworld:adventure/trim_armor",
+    "rewards": {
+        "experience": 500
+    }
+}

@@ -1,0 +1,28 @@
+{
+    "display": {
+        "icon": {
+            "id": "minecraft:end_stone"
+        },
+        "title": "终结？",
+        "description": "进入末地",
+        "frame": "challenge",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": false
+    },
+    "criteria": {
+        "endgame": {
+            "trigger": "minecraft:changed_dimension",
+            "conditions": {
+                "from": "overworld",
+                "to": "the_end"
+            }
+        }
+    },
+    "requirements": [
+        [
+            "endgame"
+        ]
+    ],
+    "parent": "youzaiworld:story/ender_eye"
+}

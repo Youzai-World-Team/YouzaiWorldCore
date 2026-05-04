@@ -1,0 +1,27 @@
+{
+    "display": {
+        "icon": {
+            "id": "minecraft:chiseled_bookshelf"
+        },
+        "title": "是管家干的！",
+        "description": "合成錾制书架",
+        "frame": "task",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": false
+    },
+    "criteria": {
+        "chisel_bookshelf": {
+            "trigger": "minecraft:recipe_crafted",
+            "conditions": {
+                "recipe_id": "minecraft:chiseled_bookshelf"
+            }
+        }
+    },
+    "requirements": [
+        [
+            "chisel_bookshelf"
+        ]
+    ],
+    "parent": "youzaiworld:building/humble_home"
+}

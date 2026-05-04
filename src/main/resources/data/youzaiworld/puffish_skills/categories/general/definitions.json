@@ -1,0 +1,558 @@
+{
+	"root": {
+		"title": "开始",
+		"description": "开始提升你的属性吧！",
+		"cost": 0,
+		"frame": {
+			"type": "advancement",
+			"data": {
+				"frame": "challenge"
+			}
+		},
+		"icon": {
+			"type": "item",
+			"data": {
+				"item": "diamond"
+			}
+		},
+		"rewards": [
+			{
+				"type": "puffish_skills:attribute",
+				"data": {
+					"attribute": "max_health",
+					"value": 2,
+					"operation": "addition"
+				}
+			},
+			{
+				"type": "puffish_skills:attribute",
+				"data": {
+					"attribute": "puffish_skills:resistance",
+					"value": 0.01,
+					"operation": "multiply_total"
+				}
+			},
+			{
+				"type": "puffish_skills:attribute",
+				"data": {
+					"attribute": "puffish_skills:melee_damage",
+					"value": 0.03,
+					"operation": "multiply_total"
+				}
+			},
+			{
+				"type": "puffish_skills:attribute",
+				"data": {
+					"attribute": "puffish_skills:ranged_damage",
+					"value": 0.03,
+					"operation": "multiply_total"
+				}
+			}
+		],
+		"metadata": {
+			"icon": "u6ekfwv4t6o28y1r"
+		}
+	},
+	"win": {
+		"title": "圆满",
+		"description": "你的属性已经部分升满了，没有更多属性了！",
+		"cost": 0,
+		"frame": {
+			"type": "advancement",
+			"data": {
+				"frame": "challenge"
+			}
+		},
+		"icon": {
+			"type": "item",
+			"data": {
+				"item": "diamond"
+			}
+		},
+		"rewards": [
+			{
+				"type": "puffish_skills:attribute",
+				"data": {
+					"attribute": "max_health",
+					"value": 2,
+					"operation": "addition"
+				}
+			},
+			{
+				"type": "puffish_skills:attribute",
+				"data": {
+					"attribute": "puffish_skills:resistance",
+					"value": 0.01,
+					"operation": "multiply_total"
+				}
+			},
+			{
+				"type": "puffish_skills:attribute",
+				"data": {
+					"attribute": "puffish_skills:melee_damage",
+					"value": 0.03,
+					"operation": "multiply_total"
+				}
+			},
+			{
+				"type": "puffish_skills:attribute",
+				"data": {
+					"attribute": "puffish_skills:ranged_damage",
+					"value": 0.03,
+					"operation": "multiply_total"
+				}
+			}
+		],
+		"metadata": {
+			"icon": "sem3olzqf1bq7ma9"
+		}
+	},
+	"breakthrough_1": {
+		"title": "突破 1",
+		"description": "你需要突破才可以继续升级这个属性，需要花费 2 属性点！",
+		"cost": 2,
+		"frame": {
+			"type": "advancement",
+			"data": {
+				"frame": "challenge"
+			}
+		},
+		"icon": {
+			"type": "item",
+			"data": {
+				"item": "diamond"
+			}
+		},
+		"metadata": {
+			"icon": "8msly5q6jknsjf89"
+		}
+	},
+	"breakthrough_2": {
+		"title": "突破 2",
+		"description": "你需要突破才可以继续升级这个属性，需要花费 4 属性点！",
+		"cost": 4,
+		"frame": {
+			"type": "advancement",
+			"data": {
+				"frame": "challenge"
+			}
+		},
+		"icon": {
+			"type": "item",
+			"data": {
+				"item": "diamond"
+			}
+		},
+		"metadata": {
+			"icon": "udq07vjgwmf22g6o"
+		}
+	},
+	"breakthrough_3": {
+		"title": "突破 3",
+		"description": "你需要突破才可以继续升级这个属性，需要花费 8 属性点！",
+		"cost": 8,
+		"frame": {
+			"type": "advancement",
+			"data": {
+				"frame": "challenge"
+			}
+		},
+		"icon": {
+			"type": "item",
+			"data": {
+				"item": "diamond"
+			}
+		},
+		"metadata": {
+			"icon": "vp0c1j9ymddsmcaq"
+		}
+	},
+	"breakthrough_4": {
+		"title": "突破 4",
+		"description": "你需要突破才可以继续升级这个属性，需要花费 16 属性点！",
+		"cost": 16,
+		"frame": {
+			"type": "advancement",
+			"data": {
+				"frame": "challenge"
+			}
+		},
+		"icon": {
+			"type": "item",
+			"data": {
+				"item": "diamond"
+			}
+		},
+		"metadata": {
+			"icon": "i8zwzbx9jiet6smj"
+		}
+	},
+	"breakthrough_5": {
+		"title": "突破 5",
+		"description": "你需要突破才可以继续升级这个属性，需要花费 32 属性点！",
+		"cost": 32,
+		"frame": {
+			"type": "advancement",
+			"data": {
+				"frame": "challenge"
+			}
+		},
+		"icon": {
+			"type": "item",
+			"data": {
+				"item": "diamond"
+			}
+		},
+		"metadata": {
+			"icon": "jz205mtwiua48hj4"
+		}
+	},
+	"breakthrough_6": {
+		"title": "突破 6",
+		"description": "你需要突破才可以继续升级这个属性，需要花费 64 属性点！",
+		"cost": 64,
+		"frame": {
+			"type": "advancement",
+			"data": {
+				"frame": "challenge"
+			}
+		},
+		"icon": {
+			"type": "item",
+			"data": {
+				"item": "diamond"
+			}
+		},
+		"metadata": {
+			"icon": "0m7xp3753j0b0075"
+		}
+	},
+	"breakthrough_7": {
+		"title": "突破 7",
+		"description": "你需要突破才可以继续升级这个属性，需要花费 128 属性点！",
+		"cost": 128,
+		"frame": {
+			"type": "advancement",
+			"data": {
+				"frame": "challenge"
+			}
+		},
+		"icon": {
+			"type": "item",
+			"data": {
+				"item": "diamond"
+			}
+		},
+		"metadata": {
+			"icon": "ld87rjshijxhpf38"
+		}
+	},
+	"breakthrough_8": {
+		"title": "突破 8",
+		"description": "你需要突破才可以继续升级这个属性，需要花费 256 属性点！",
+		"cost": 256,
+		"frame": {
+			"type": "advancement",
+			"data": {
+				"frame": "challenge"
+			}
+		},
+		"icon": {
+			"type": "item",
+			"data": {
+				"item": "diamond"
+			}
+		},
+		"metadata": {
+			"icon": "z4pw8xhbh762i0br"
+		}
+	},
+	"comprehensiveimprovement": {
+		"title": "全面提升",
+		"icon": {
+			"type": "item",
+			"data": {
+				"item": "diamond"
+			}
+		},
+		"rewards": [
+			{
+				"type": "puffish_skills:attribute",
+				"data": {
+					"attribute": "max_health",
+					"value": 2,
+					"operation": "addition"
+				}
+			},
+			{
+				"type": "puffish_skills:attribute",
+				"data": {
+					"attribute": "puffish_skills:resistance",
+					"value": 0.01,
+					"operation": "multiply_total"
+				}
+			},
+			{
+				"type": "puffish_skills:attribute",
+				"data": {
+					"attribute": "puffish_skills:melee_damage",
+					"value": 0.03,
+					"operation": "multiply_total"
+				}
+			},
+			{
+				"type": "puffish_skills:attribute",
+				"data": {
+					"attribute": "puffish_skills:ranged_damage",
+					"value": 0.03,
+					"operation": "multiply_total"
+				}
+			}
+		],
+		"metadata": {
+			"icon": "wvxwey2cml3n6g8f"
+		}
+	},
+	"health+1": {
+		"title": "生命值上限提升 +1",
+		"icon": {
+			"type": "effect",
+			"data": {
+				"effect": "health_boost"
+			}
+		},
+		"rewards": [
+			{
+				"type": "puffish_skills:attribute",
+				"data": {
+					"attribute": "max_health",
+					"value": 1,
+					"operation": "addition"
+				}
+			}
+		],
+		"metadata": {
+			"icon": "cvlodxk1zwbfikyb"
+		}
+	},
+	"resistance+1%": {
+		"title": "抗性提升 +1%",
+		"icon": {
+			"type": "effect",
+			"data": {
+				"effect": "resistance"
+			}
+		},
+		"rewards": [
+			{
+				"type": "puffish_skills:attribute",
+				"data": {
+					"attribute": "puffish_skills:resistance",
+					"value": 0.01,
+					"operation": "multiply_total"
+				}
+			}
+		],
+		"metadata": {
+			"icon": "avobma6g5qrnx675"
+		}
+	},
+	"melee_damage+1%": {
+		"title": "近战伤害 +1%",
+		"icon": {
+			"type": "effect",
+			"data": {
+				"effect": "strength"
+			}
+		},
+		"rewards": [
+			{
+				"type": "puffish_skills:attribute",
+				"data": {
+					"attribute": "puffish_skills:melee_damage",
+					"value": 0.01,
+					"operation": "multiply_total"
+				}
+			}
+		],
+		"metadata": {
+			"icon": "hirawsy1hb5jtqz4"
+		}
+	},
+	"ranged_damage+1%": {
+		"title": "远程伤害 +1%",
+		"icon": {
+			"type": "item",
+			"data": {
+				"item": "bow"
+			}
+		},
+		"rewards": [
+			{
+				"type": "puffish_skills:attribute",
+				"data": {
+					"attribute": "puffish_skills:ranged_damage",
+					"value": 0.01,
+					"operation": "multiply_total"
+				}
+			}
+		],
+		"metadata": {
+			"icon": "mb0yak5feg8wnsj8"
+		}
+	},
+	"attack_speed+1%": {
+		"title": "攻击速度 +1%",
+		"icon": {
+			"type": "item",
+			"data": {
+				"item": "golden_sword"
+			}
+		},
+		"rewards": [
+			{
+				"type": "puffish_skills:attribute",
+				"data": {
+					"attribute": "attack_speed",
+					"value": 0.01,
+					"operation": "multiply_total"
+				}
+			}
+		],
+		"metadata": {
+			"icon": "m996dfs5ah8y3ev2"
+		}
+	},
+	"movement_speed+1%": {
+		"title": "移动速度 +1%",
+		"icon": {
+			"type": "effect",
+			"data": {
+				"effect": "speed"
+			}
+		},
+		"rewards": [
+			{
+				"type": "puffish_skills:attribute",
+				"data": {
+					"attribute": "movement_speed",
+					"value": 0.01,
+					"operation": "multiply_total"
+				}
+			}
+		],
+		"metadata": {
+			"icon": "kktk5xxsfqyv52xx"
+		}
+	},
+	"luck+0.1": {
+		"title": "幸运 +0.1",
+		"icon": {
+			"type": "effect",
+			"data": {
+				"effect": "luck"
+			}
+		},
+		"rewards": [
+			{
+				"type": "puffish_skills:attribute",
+				"data": {
+					"attribute": "luck",
+					"value": 0.1,
+					"operation": "addition"
+				}
+			}
+		],
+		"metadata": {
+			"icon": "tmimdtfgiqhdusa5"
+		}
+	},
+	"stamina+1%": {
+		"title": "耐力 +1%",
+		"icon": {
+			"type": "effect",
+			"data": {
+				"effect": "saturation"
+			}
+		},
+		"rewards": [
+			{
+				"type": "puffish_skills:attribute",
+				"data": {
+					"attribute": "puffish_skills:stamina",
+					"value": 0.05,
+					"operation": "multiply_total"
+				}
+			}
+		],
+		"metadata": {
+			"icon": "ugihw29519jkps0w"
+		}
+	},
+	"healing+1%": {
+		"title": "治愈能力 +1%",
+		"icon": {
+			"type": "effect",
+			"data": {
+				"effect": "regeneration"
+			}
+		},
+		"rewards": [
+			{
+				"type": "puffish_skills:attribute",
+				"data": {
+					"attribute": "puffish_skills:healing",
+					"value": 0.01,
+					"operation": "multiply_total"
+				}
+			}
+		],
+		"metadata": {
+			"icon": "kguh9ardplcqgqbt"
+		}
+	},
+	"jump+1%": {
+		"title": "跳跃高度 +1%",
+		"icon": {
+			"type": "effect",
+			"data": {
+				"effect": "jump_boost"
+			}
+		},
+		"rewards": [
+			{
+				"type": "puffish_skills:attribute",
+				"data": {
+					"attribute": "puffish_skills:jump",
+					"value": 0.01,
+					"operation": "multiply_total"
+				}
+			}
+		],
+		"metadata": {
+			"icon": "1nfve520hz34hbqz"
+		}
+	},
+	"mining_speed+1%": {
+		"title": "挖掘速度 +1%",
+		"icon": {
+			"type": "effect",
+			"data": {
+				"effect": "haste"
+			}
+		},
+		"rewards": [
+			{
+				"type": "puffish_skills:attribute",
+				"data": {
+					"attribute": "puffish_skills:mining_speed",
+					"value": 0.01,
+					"operation": "multiply_base"
+				}
+			}
+		],
+		"metadata": {
+			"icon": "acey07tjl23qh2wf"
+		}
+	}
+}

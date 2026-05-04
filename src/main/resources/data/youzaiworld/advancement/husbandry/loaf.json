@@ -1,0 +1,32 @@
+{
+    "display": {
+        "icon": {
+            "id": "bread"
+        },
+        "title": "烘焙面包",
+        "description": "制作面包！",
+        "frame": "task",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": false
+    },
+    "criteria": {
+        "craft_bread": {
+            "trigger": "recipe_crafted",
+            "conditions": {
+                "recipe_id": "bread",
+                "player": {
+                    "type": [
+                        "player"
+                    ]
+                }
+            }
+        }
+    },
+    "requirements": [
+        [
+            "craft_bread"
+        ]
+    ],
+    "parent": "youzaiworld:husbandry/seedy_place"
+}

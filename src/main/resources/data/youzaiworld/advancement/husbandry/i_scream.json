@@ -1,0 +1,79 @@
+{
+    "display": {
+        "icon": {
+            "id": "goat_horn"
+        },
+        "title": "我尖叫",
+        "description": "从尖叫山羊处获取山羊角",
+        "frame": "challenge",
+        "announce_to_chat": true,
+        "show_toast": true,
+        "hidden": true
+    },
+    "criteria": {
+        "admire": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "goat_horn",
+                        "components": {
+                            "instrument": "admire_goat_horn"
+                        }
+                    }
+                ]
+            }
+        },
+        "call": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "goat_horn",
+                        "components": {
+                            "instrument": "call_goat_horn"
+                        }
+                    }
+                ]
+            }
+        },
+        "dream": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "goat_horn",
+                        "components": {
+                            "instrument": "dream_goat_horn"
+                        }
+                    }
+                ]
+            }
+        },
+        "yearn": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "goat_horn",
+                        "components": {
+                            "instrument": "yearn_goat_horn"
+                        }
+                    }
+                ]
+            }
+        }
+    },
+    "requirements": [
+        [
+            "admire",
+            "call",
+            "dream",
+            "yearn"
+        ]
+    ],
+    "parent": "youzaiworld:husbandry/float_your_goat",
+    "rewards": {
+        "experience": 100
+    }
+}

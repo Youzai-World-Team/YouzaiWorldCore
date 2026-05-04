@@ -1,0 +1,34 @@
+{
+    "display": {
+        "icon": {
+            "id": "cake"
+        },
+        "title": "蛋糕是个谎言！",
+        "description": "拿些蛋糕",
+        "frame": "task",
+        "announce_to_chat": true,
+        "show_toast": true,
+        "hidden": true
+    },
+    "criteria": {
+        "trial_cake": {
+            "trigger": "inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "cake"
+                    }
+                ]
+            }
+        }
+    },
+    "requirements": [
+        [
+            "trial_cake"
+        ]
+    ],
+    "parent": "youzaiworld:husbandry/loaf",
+    "rewards": {
+        "experience": 100
+    }
+}

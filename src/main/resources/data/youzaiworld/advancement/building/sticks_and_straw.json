@@ -1,0 +1,56 @@
+{
+    "display": {
+        "icon": {
+            "id": "minecraft:bamboo_mosaic"
+        },
+        "title": "枝草之屋",
+        "description": "用干草捆和竹子建造",
+        "frame": "task",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": false
+    },
+    "criteria": {
+        "straw": {
+            "trigger": "minecraft:placed_block",
+            "conditions": {
+                "location": [
+                    {
+                        "condition": "minecraft:location_check",
+                        "predicate": {
+                            "block": {
+                                "blocks": [
+                                    "minecraft:hay_block"
+                                ]
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        "stick": {
+            "trigger": "minecraft:placed_block",
+            "conditions": {
+                "location": [
+                    {
+                        "condition": "minecraft:location_check",
+                        "predicate": {
+                            "block": {
+                                "blocks": "#bamboo_blocks"
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    },
+    "requirements": [
+        [
+            "straw"
+        ],
+        [
+            "stick"
+        ]
+    ],
+    "parent": "youzaiworld:building/humble_home"
+}
