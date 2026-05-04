@@ -2,15 +2,17 @@
     "type": "minecraft:crafting_shaped",
     "category": "misc",
     "key": {
-        "#": "minecraft:ender_pearl",
-        "@": "minecraft:chest"
+        "@": "minecraft:diamond",
+        "#": "minecraft:amethyst_shard",
+        "$": "minecraft:heart_of_the_sea"
     },
     "pattern": [
-        "#",
-        "@"
+        "@#@",
+        "#$#",
+        "@#@"
     ],
     "result": {
         "id": "youzaiworldcore:heart_of_guardianship",
-        "count": 2
+        "count": 4
     }
 }
