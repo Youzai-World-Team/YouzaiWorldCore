@@ -24,8 +24,12 @@
   "item.youzaiworldcore.raw_yz": "悠哉原矿",
   "item.youzaiworldcore.yz_ingot": "悠哉锭",
   "item.youzaiworldcore.yz_shovel": "悠哉铲",
+  "item.youzaiworldcore.yz_shovel.tooltip": "蹲下挖掘可向前连锁6格",
   "item.youzaiworldcore.yz_pickaxe": "悠哉镐",
+  "item.youzaiworldcore.yz_pickaxe.tooltip": "蹲下挖掘可向前连锁6格",
   "item.youzaiworldcore.yz_hoe": "悠哉锄",
+  "item.youzaiworldcore.yz_hoe.tooltip": "蹲下使用可耕3x3的地",
   "item.youzaiworldcore.heart_of_guardianship": "守护之心",
+  "item.youzaiworldcore.heart_of_guardianship.tooltip": "携带此物品死亡不会掉落，每次死亡消耗一个本物品",
   "itemGroup.youzaiworldcore.youzai_tab": "悠哉世界"
 }
