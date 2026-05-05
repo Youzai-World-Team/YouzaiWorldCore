@@ -68,6 +68,16 @@ public class ModBlocks {
             true
     );
 
+    public static final FlyBeaconBlock FLY_BEACON = register(
+            "fly_beacon",
+            FlyBeaconBlock::new,
+            BlockBehaviour.Properties.of()
+                    .strength(3.0f, 3.0f)
+                    .sound(SoundType.GLASS)
+                    .requiresCorrectToolForDrops(),
+            true
+    );
+
     @SuppressWarnings("unchecked")
     private static <T extends Block> T register(String name, Function<BlockBehaviour.Properties, T> blockFactory, BlockBehaviour.Properties settings, boolean shouldRegisterItem) {
         ResourceKey<Block> blockKey = ResourceKey.create(Registries.BLOCK, Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, name));

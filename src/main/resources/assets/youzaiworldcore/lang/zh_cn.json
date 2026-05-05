@@ -45,5 +45,6 @@
   "item.youzaiworldcore.fly_core.no_hunger": "饥饿值为零，飞行模式已关闭",
   "item.youzaiworldcore.logo": "悠哉世界",
   "block.youzaiworldcore.decomposition_table": "分解台",
+  "block.youzaiworldcore.fly_beacon": "飞行信标",
   "itemGroup.youzaiworldcore.youzai_tab": "悠哉世界"
 }
