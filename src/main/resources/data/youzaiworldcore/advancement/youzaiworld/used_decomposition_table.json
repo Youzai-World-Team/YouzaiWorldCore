@@ -2,7 +2,7 @@
     "parent": "youzaiworldcore:youzaiworld/have_decomposition_table",
     "display": {
         "icon": {
-            "id": "youzaiworldcore:have_decomposition_table"
+            "id": "youzaiworldcore:decomposition_table"
         },
         "title": {
             "text": "物品...分解了"
