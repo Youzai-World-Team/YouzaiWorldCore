@@ -64,7 +64,7 @@ public class ModBlocks {
             DecompositionTableBlock::new,
             BlockBehaviour.Properties.of()
                     .strength(2.5f, 3.0f)
-                    .sound(SoundType.WOOD),
+                    .sound(SoundType.METAL),
             true
     );
 
@@ -73,7 +73,7 @@ public class ModBlocks {
             FlyBeaconBlock::new,
             BlockBehaviour.Properties.of()
                     .strength(3.0f, 3.0f)
-                    .sound(SoundType.GLASS)
+                    .sound(SoundType.METAL)
                     .requiresCorrectToolForDrops(),
             true
     );
