@@ -77,9 +77,13 @@ public class FlyCoreTickHandler implements ServerTickEvents.StartTick {
                 UUID playerId = player.getUUID();
                 
                 if (FlyCoreItem.isFlying(playerId) && player.getAbilities().flying) {
-                    int currentFood = player.getFoodData().getFoodLevel();
-                    if (currentFood > 0) {
-                        player.getFoodData().setFoodLevel(currentFood - 1);
+                    float saturation = player.getFoodData().getSaturationLevel();
+                    int food = player.getFoodData().getFoodLevel();
+                    
+                    if (saturation > 0) {
+                        player.getFoodData().setSaturation(Math.max(0, saturation - 1));
+                    } else if (food > 0) {
+                        player.getFoodData().setFoodLevel(food - 1);
                     } else {
                         FlyCoreItem.disableFlight(player);
                         FlyCoreItem.setFlying(playerId, false);
