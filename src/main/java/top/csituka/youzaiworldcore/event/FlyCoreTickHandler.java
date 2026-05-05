@@ -44,7 +44,7 @@ public class FlyCoreTickHandler implements ServerTickEvents.StartTick {
                                 Component.translatable("item.youzaiworldcore.fly_core.disabled")
                                         .withStyle(ChatFormatting.RED)
                         );
-                    } else {
+                    } else if (player.getAbilities().flying && !player.onGround()) {
                         ItemStack flyCore = FlyCoreItem.getFlyCoreInHand(player);
                         if (flyCore != null) {
                             int newDamage = flyCore.getDamageValue() + 1;
@@ -76,7 +76,7 @@ public class FlyCoreTickHandler implements ServerTickEvents.StartTick {
                 
                 UUID playerId = player.getUUID();
                 
-                if (FlyCoreItem.isFlying(playerId) && player.getAbilities().flying) {
+                if (FlyCoreItem.isFlying(playerId) && player.getAbilities().flying && !player.onGround()) {
                     float saturation = player.getFoodData().getSaturationLevel();
                     int food = player.getFoodData().getFoodLevel();
                     
