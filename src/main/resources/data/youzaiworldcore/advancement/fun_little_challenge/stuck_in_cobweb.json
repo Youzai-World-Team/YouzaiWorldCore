@@ -1,0 +1,34 @@
+{
+  "parent": "youzaiworldcore:fun_little_challenge/root",
+  "display": {
+    "icon": {
+      "id": "minecraft:cobweb"
+    },
+    "title": "蛛网缠身",
+    "description": "“嘿，我让它先跑39米，用网抓虫，这才是真正的挑战！”— 获得一张蜘蛛网",
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "has_cobweb": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "minecraft:cobweb"
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "has_cobweb"
+    ]
+  ],
+  "rewards": {
+    "experience": 100
+  }
+}

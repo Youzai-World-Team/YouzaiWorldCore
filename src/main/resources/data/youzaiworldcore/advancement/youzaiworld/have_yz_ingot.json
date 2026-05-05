@@ -4,12 +4,8 @@
         "icon": {
             "id": "youzaiworldcore:yz_ingot"
         },
-        "title": {
-            "text": "变纯净了"
-        },
-        "description": {
-            "text": "获得悠哉锭。"
-        },
+        "title": "变纯净了",
+        "description": "获得悠哉锭。",
         "frame": "task",
         "show_toast": true,
         "announce_to_chat": true,

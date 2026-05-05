@@ -4,14 +4,8 @@
     "icon": {
       "id": "youzaiworldcore:yz_pickaxe"
     },
-    "title": {
-      "text": "我全都要",
-      "color": "gold"
-    },
-    "description": {
-      "text": "获得全套悠哉工具。",
-      "color": "green"
-    },
+    "title": "我全都要",
+    "description": "获得全套悠哉工具。",
     "frame": "challenge",
     "show_toast": true,
     "announce_to_chat": true,

@@ -4,12 +4,8 @@
         "icon": {
             "id": "youzaiworldcore:decomposition_table"
         },
-        "title": {
-            "text": "物品...分解了"
-        },
-        "description": {
-            "text": "使用拆解台分解了一个物品。"
-        },
+        "title": "物品...分解了",
+        "description": "使用拆解台分解了一个物品。",
         "frame": "goal",
         "show_toast": true,
         "announce_to_chat": true,

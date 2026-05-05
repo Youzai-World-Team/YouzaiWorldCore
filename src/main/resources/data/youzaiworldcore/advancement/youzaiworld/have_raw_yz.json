@@ -4,12 +4,8 @@
         "icon": {
             "id": "youzaiworldcore:raw_yz"
         },
-        "title": {
-            "text": "不寻常的矿石"
-        },
-        "description": {
-            "text": "获得粗悠哉矿。"
-        },
+        "title": "不寻常的矿石",
+        "description": "获得粗悠哉矿。",
         "frame": "goal",
         "show_toast": true,
         "announce_to_chat": true,

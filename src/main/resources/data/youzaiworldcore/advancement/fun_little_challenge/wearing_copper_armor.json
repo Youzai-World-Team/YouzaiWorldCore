@@ -1,0 +1,73 @@
+{
+  "parent": "youzaiworldcore:fun_little_challenge/stuck_in_cobweb",
+  "display": {
+    "icon": {
+      "id": "minecraft:copper_ingot"
+    },
+    "title": "铜头铁臂",
+    "description": "“铜盔铜甲铜裤衩，谁还不是个铁憨憨？”— 装备全套铜质盔甲",
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "copper_helmet": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "minecraft:copper_helmet"
+          }
+        ]
+      }
+    },
+    "copper_chestplate": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "minecraft:copper_chestplate"
+          }
+        ]
+      }
+    },
+    "copper_leggings": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "minecraft:copper_leggings"
+          }
+        ]
+      }
+    },
+    "copper_boots": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "minecraft:copper_boots"
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "copper_helmet"
+    ],
+    [
+      "copper_chestplate"
+    ],
+    [
+      "copper_leggings"
+    ],
+    [
+      "copper_boots"
+    ]
+  ],
+  "rewards": {
+    "experience": 500
+  }
+}

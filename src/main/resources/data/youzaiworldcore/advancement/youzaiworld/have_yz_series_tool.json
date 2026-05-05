@@ -4,14 +4,8 @@
     "icon": {
       "id": "youzaiworldcore:yz_pickaxe"
     },
-    "title": {
-      "text": "与众不同的工具",
-      "color": "gold"
-    },
-    "description": {
-      "text": "获得任意一种悠哉工具。",
-      "color": "gray"
-    },
+    "title": "与众不同的工具",
+    "description": "获得任意一种悠哉工具。",
     "frame": "challenge",
     "show_toast": true,
     "announce_to_chat": true,

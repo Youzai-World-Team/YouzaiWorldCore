@@ -4,14 +4,8 @@
     "icon": {
       "id": "youzaiworldcore:yz_ore"
     },
-    "title": {
-      "text": "悠哉原矿寻觅者",
-      "color": "gold"
-    },
-    "description": {
-      "text": "获得悠哉原矿或深板悠哉原矿。",
-      "color": "dark_gray"
-    },
+    "title": "悠哉原矿寻觅者",
+    "description": "获得悠哉原矿或深板悠哉原矿。",
     "frame": "challenge",
     "show_toast": false,
     "announce_to_chat": false,
