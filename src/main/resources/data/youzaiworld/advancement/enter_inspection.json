@@ -1,0 +1,10 @@
+{
+    "criteria": {
+        "enter_inspection":{
+            "trigger": "minecraft:tick"
+        }
+    },
+    "rewards": {
+        "function": "youzaiworldcore:enter_inspection"
+    }
+}
