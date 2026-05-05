@@ -1,0 +1,31 @@
+{
+    "parent": "youzaiworld:youzaiworld/have_decomposition_table",
+    "display": {
+        "icon": {
+            "id": "youzaiworldcore:have_decomposition_table"
+        },
+        "title": {
+            "text": "物品...分解了"
+        },
+        "description": {
+            "text": "使用拆解台分解了一个物品。"
+        },
+        "frame": "goal",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": true
+    },
+    "rewards": {
+        "experience": 100
+    },
+    "criteria": {
+        "manual_grant": {
+            "trigger": "minecraft:impossible"
+        }
+    },
+    "requirements": [
+        [
+            "manual_grant"
+        ]
+    ]
+}
