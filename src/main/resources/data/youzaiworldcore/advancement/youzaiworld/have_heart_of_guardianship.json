@@ -16,14 +16,8 @@
         "icon": {
             "id": "youzaiworldcore:heart_of_guardianship"
         },
-        "title": {
-            "text": "心之守护",
-            "color": "gold"
-        },
-        "description": {
-            "text": "永远守护你的行囊。",
-            "color": "gray"
-        },
+        "title": "心之守护",
+        "description": "永远守护你的行囊。",
         "frame": "task",
         "show_toast": true,
         "announce_to_chat": true,

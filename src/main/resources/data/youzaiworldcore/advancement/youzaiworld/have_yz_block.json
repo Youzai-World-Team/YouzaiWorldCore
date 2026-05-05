@@ -4,14 +4,8 @@
     "icon": {
       "id": "youzaiworldcore:yz_block"
     },
-    "title": {
-      "text": "凝块之力",
-      "color": "green"
-    },
-    "description": {
-      "text": "获得悠哉块。",
-      "color": "dark_gray"
-    },
+    "title": "凝块之力",
+    "description": "获得悠哉块。",
     "frame": "goal",
     "show_toast": false,
     "announce_to_chat": false,

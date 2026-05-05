@@ -16,12 +16,8 @@
         "icon": {
             "id": "youzaiworldcore:decomposition_table"
         },
-        "title": {
-            "text": "另类的工作台"
-        },
-        "description": {
-            "text": "制作出拆解台。"
-        },
+        "title": "另类的工作台",
+        "description": "制作出拆解台。",
         "frame": "task",
         "show_toast": true,
         "announce_to_chat": true,
