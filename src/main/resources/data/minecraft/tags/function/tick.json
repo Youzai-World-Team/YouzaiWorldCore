@@ -1,6 +1,7 @@
 {
    "replace": false,
    "values": [
-      "youzaiworldcore:tick"
+      "youzaiworldcore:tick",
+      "youzaiworldcore:check_sword_drop"
    ]
 }

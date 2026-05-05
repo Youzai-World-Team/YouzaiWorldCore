@@ -1,11 +1,11 @@
 {
   "display": {
     "icon": {
-      "id": "youzaiworldcore:logo"
+      "id": "minecraft:dirt"
     },
     "title": "有趣的小成就",
     "description": "完成一个小挑战！",
-    "background": "minecraft:textures/block/emerald_block.png",
+    "background": "minecraft:textures/block/glowstone.png",
     "frame": "task",
     "show_toast": false,
     "announce_to_chat": false,
