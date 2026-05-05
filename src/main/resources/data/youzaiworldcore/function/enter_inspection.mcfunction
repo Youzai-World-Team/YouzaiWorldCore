@@ -1,5 +1,5 @@
 # 初始化逻辑
-tag @s[tag=!enter_again] add first_enter 
+tag @s[tag=!enter_again,tag=!first_enter] add first_enter 
 
 # 玩家再次进入服务器逻辑
 scoreboard players reset @s player_enter

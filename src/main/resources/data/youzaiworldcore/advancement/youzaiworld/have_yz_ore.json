@@ -7,8 +7,8 @@
     "title": "悠哉原矿寻觅者",
     "description": "获得悠哉原矿或深板悠哉原矿。",
     "frame": "challenge",
-    "show_toast": false,
-    "announce_to_chat": false,
+    "show_toast": true,
+    "announce_to_chat": true,
     "hidden": true
   },
   "criteria": {

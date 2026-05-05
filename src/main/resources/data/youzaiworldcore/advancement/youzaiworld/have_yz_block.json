@@ -7,8 +7,8 @@
     "title": "凝块之力",
     "description": "获得悠哉块。",
     "frame": "goal",
-    "show_toast": false,
-    "announce_to_chat": false,
+    "show_toast": true,
+    "announce_to_chat": true,
     "hidden": true
   },
   "criteria": {
