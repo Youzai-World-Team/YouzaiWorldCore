@@ -12,11 +12,7 @@ import net.minecraft.world.item.Rarity;
 import net.minecraft.world.item.ToolMaterial;
 
 import top.csituka.youzaiworldcore.YouzaiworldCore;
-import top.csituka.youzaiworldcore.item.tool.YzAxeItem;
-import top.csituka.youzaiworldcore.item.tool.YzHoeItem;
-import top.csituka.youzaiworldcore.item.tool.YzPickaxeItem;
-import top.csituka.youzaiworldcore.item.tool.YzShovelItem;
-import top.csituka.youzaiworldcore.item.tool.YzSwordItem;
+import top.csituka.youzaiworldcore.item.tool.*;
 
 public class ModItems {
 

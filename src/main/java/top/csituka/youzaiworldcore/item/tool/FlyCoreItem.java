@@ -1,4 +1,4 @@
-package top.csituka.youzaiworldcore.item;
+package top.csituka.youzaiworldcore.item.tool;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;

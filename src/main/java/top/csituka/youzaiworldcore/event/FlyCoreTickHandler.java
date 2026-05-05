@@ -7,7 +7,7 @@ import net.minecraft.network.protocol.game.ClientboundSetActionBarTextPacket;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
-import top.csituka.youzaiworldcore.item.FlyCoreItem;
+import top.csituka.youzaiworldcore.item.tool.FlyCoreItem;
 
 import java.util.UUID;
 
