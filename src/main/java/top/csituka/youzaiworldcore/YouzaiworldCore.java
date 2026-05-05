@@ -11,6 +11,7 @@ import net.minecraft.world.level.levelgen.placement.PlacedFeature;
 
 import top.csituka.youzaiworldcore.block.ModBlocks;
 import top.csituka.youzaiworldcore.block.entity.ModBlockEntities;
+import top.csituka.youzaiworldcore.component.ModDataComponents;
 import top.csituka.youzaiworldcore.event.FlyCoreTickHandler;
 import top.csituka.youzaiworldcore.item.ModCreativeModeTabs;
 import top.csituka.youzaiworldcore.item.ModItems;
@@ -34,6 +35,7 @@ public class YouzaiworldCore implements ModInitializer {
 
     @Override
     public void onInitialize() {
+        ModDataComponents.initialize();
         ModBlocks.initialize();
         ModBlockEntities.initialize();
         ModItems.initialize();

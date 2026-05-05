@@ -7,6 +7,8 @@ import net.minecraft.network.protocol.game.ClientboundSetActionBarTextPacket;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
+import top.csituka.youzaiworldcore.component.ModDataComponents;
+import top.csituka.youzaiworldcore.item.ModItems;
 import top.csituka.youzaiworldcore.item.tool.FlyCoreItem;
 
 import java.util.UUID;
@@ -30,6 +32,7 @@ public class FlyCoreTickHandler implements ServerTickEvents.StartTick {
                     if (!FlyCoreItem.hasFlyCoreInHand(player)) {
                         FlyCoreItem.disableFlight(player);
                         FlyCoreItem.setFlying(playerId, false);
+                        clearAllFlyCoreActiveState(player);
                         sendActionBar(player,
                                 Component.translatable("item.youzaiworldcore.fly_core.disabled")
                                         .withStyle(ChatFormatting.RED)
@@ -42,6 +45,7 @@ public class FlyCoreTickHandler implements ServerTickEvents.StartTick {
                                 flyCore.shrink(1);
                                 FlyCoreItem.disableFlight(player);
                                 FlyCoreItem.setFlying(playerId, false);
+                                clearAllFlyCoreActiveState(player);
                                 sendActionBar(player,
                                         Component.translatable("item.youzaiworldcore.fly_core.disabled")
                                                 .withStyle(ChatFormatting.RED)
@@ -52,6 +56,15 @@ public class FlyCoreTickHandler implements ServerTickEvents.StartTick {
                         }
                     }
                 }
+            }
+        }
+    }
+
+    private void clearAllFlyCoreActiveState(ServerPlayer player) {
+        for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
+            ItemStack stack = player.getInventory().getItem(i);
+            if (stack.getItem() == ModItems.FLY_CORE && stack.has(ModDataComponents.FLY_CORE_ACTIVE)) {
+                stack.remove(ModDataComponents.FLY_CORE_ACTIVE);
             }
         }
     }

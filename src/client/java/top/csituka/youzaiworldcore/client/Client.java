@@ -13,7 +13,6 @@ import top.csituka.youzaiworldcore.screen.ModMenuTypes;
 
 public class Client implements ClientModInitializer {
 
-    private static final String MOD_ID = "youzaiworldcore";
     private static boolean wasPressed = false;
 
     @Override

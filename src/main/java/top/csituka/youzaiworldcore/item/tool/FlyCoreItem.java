@@ -13,6 +13,7 @@ import net.minecraft.world.item.Rarity;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.component.TooltipDisplay;
 import net.minecraft.world.level.Level;
+import top.csituka.youzaiworldcore.component.ModDataComponents;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -40,6 +41,7 @@ public class FlyCoreItem extends Item {
         if (flyingPlayers.contains(playerId)) {
             disableFlight(player);
             flyingPlayers.remove(playerId);
+            stack.remove(ModDataComponents.FLY_CORE_ACTIVE);
             sendActionBar(player, 
                     Component.translatable("item.youzaiworldcore.fly_core.disabled")
                             .withStyle(ChatFormatting.RED)
@@ -47,6 +49,7 @@ public class FlyCoreItem extends Item {
         } else {
             enableFlight(player);
             flyingPlayers.add(playerId);
+            stack.set(ModDataComponents.FLY_CORE_ACTIVE, true);
             sendActionBar(player, 
                     Component.translatable("item.youzaiworldcore.fly_core.enabled")
                             .withStyle(ChatFormatting.GREEN)
@@ -104,6 +107,10 @@ public class FlyCoreItem extends Item {
             return offHand;
         }
         return null;
+    }
+
+    public static boolean isPlayerFlying(Player player) {
+        return flyingPlayers.contains(player.getUUID());
     }
 
     @Override
