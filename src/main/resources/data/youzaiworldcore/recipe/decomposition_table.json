@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "#": "youzaiworldcore:yz_ingot",
+    "C": "minecraft:crafting_table"
+  },
+  "pattern": [
+    "###",
+    "#C#",
+    "###"
+  ],
+  "result": {
+    "id": "youzaiworldcore:decomposition_table"
+  }
+}

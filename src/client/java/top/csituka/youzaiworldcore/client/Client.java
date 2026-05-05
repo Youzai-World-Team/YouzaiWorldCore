@@ -4,9 +4,12 @@ import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.MenuScreens;
 import org.lwjgl.glfw.GLFW;
+import top.csituka.youzaiworldcore.client.screen.block.DecompositionTableScreen;
 import top.csituka.youzaiworldcore.client.screen.MenuScreen;
 import top.csituka.youzaiworldcore.client.screen.element.MainMenuElements;
+import top.csituka.youzaiworldcore.screen.ModMenuTypes;
 
 public class Client implements ClientModInitializer {
 
@@ -16,6 +19,8 @@ public class Client implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         ClientTickEvents.END_CLIENT_TICK.register(this::onClientTick);
+        
+        MenuScreens.register(ModMenuTypes.DECOMPOSITION_TABLE, DecompositionTableScreen::new);
     }
 
     private void onClientTick(Minecraft client) {

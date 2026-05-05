@@ -1,18 +1,18 @@
 {
-    "type": "minecraft:crafting_shaped",
-    "category": "misc",
-    "key": {
-        "@": "minecraft:diamond",
-        "#": "minecraft:amethyst_shard",
-        "$": "minecraft:heart_of_the_sea"
-    },
-    "pattern": [
-        "@#@",
-        "#$#",
-        "@#@"
-    ],
-    "result": {
-        "id": "youzaiworldcore:heart_of_guardianship",
-        "count": 4
-    }
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "@": "minecraft:diamond",
+    "#": "minecraft:amethyst_shard",
+    "$": "minecraft:heart_of_the_sea"
+  },
+  "pattern": [
+    "@#@",
+    "#$#",
+    "@#@"
+  ],
+  "result": {
+    "id": "youzaiworldcore:heart_of_guardianship",
+    "count": 4
+  }
 }

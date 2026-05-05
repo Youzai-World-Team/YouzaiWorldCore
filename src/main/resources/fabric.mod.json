@@ -31,6 +31,6 @@
     "fabricloader": ">=${loader_version}",
     "fabric-api": "*",
     "fabric-key-mapping-api-v1": "*",
-    "minecraft": "${minecraft_version}"
+    "minecraft": "<=${minecraft_version}"
   }
 }

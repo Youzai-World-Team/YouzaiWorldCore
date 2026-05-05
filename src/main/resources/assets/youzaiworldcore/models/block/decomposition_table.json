@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/cube_column",
+  "textures": {
+    "end": "youzaiworldcore:block/decomposition_table_top",
+    "side": "youzaiworldcore:block/decomposition_table_around"
+  }
+}

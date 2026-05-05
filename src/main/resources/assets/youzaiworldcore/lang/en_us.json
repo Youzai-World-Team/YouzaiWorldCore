@@ -38,7 +38,7 @@
   "item.youzaiworldcore.yz_axe.tooltip": "Sweep attack deals area damage when jumping",
   "item.youzaiworldcore.heart_of_guardianship": "Heart of Guardianship",
   "item.youzaiworldcore.heart_of_guardianship.tooltip": "Carrying this item prevents item drop on death, consumes one on each death",
-  "itemGroup.youzaiworldcore.youzai_tab": "Youzai World",
   "item.youzaiworldcore.logo": "Youzai World",
-  "item.youzaiworldcore.logo.tooltip": "Hello Youzai World Server!"
+  "block.youzaiworldcore.decomposition_table": "Decomposition Table",
+  "itemGroup.youzaiworldcore.youzai_tab": "Youzai World"
 }
