@@ -18,22 +18,50 @@
     "hidden": false
   },
   "criteria": {
-    "has_tool": {
+    "has_axe": {
       "trigger": "minecraft:inventory_changed",
       "conditions": {
         "items": [
           {
             "items": "youzaiworldcore:yz_axe"
-          },
+          }
+        ]
+      }
+    },
+    "has_hoe": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
           {
             "items": "youzaiworldcore:yz_hoe"
-          },
+          }
+        ]
+      }
+    },
+    "has_pickaxe": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
           {
             "items": "youzaiworldcore:yz_pickaxe"
-          },
+          }
+        ]
+      }
+    },
+    "has_shovel": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
           {
             "items": "youzaiworldcore:yz_shovel"
-          },
+          }
+        ]
+      }
+    },
+    "has_sword": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
           {
             "items": "youzaiworldcore:yz_sword"
           }
@@ -43,7 +71,11 @@
   },
   "requirements": [
     [
-      "has_tool"
+      "has_axe",
+      "has_hoe",
+      "has_pickaxe",
+      "has_shovel",
+      "has_sword"
     ]
   ]
 }
