@@ -11,6 +11,7 @@ import net.minecraft.world.level.levelgen.placement.PlacedFeature;
 
 import top.csituka.youzaiworldcore.block.ModBlocks;
 import top.csituka.youzaiworldcore.block.entity.ModBlockEntities;
+import top.csituka.youzaiworldcore.event.FlyCoreTickHandler;
 import top.csituka.youzaiworldcore.item.ModCreativeModeTabs;
 import top.csituka.youzaiworldcore.item.ModItems;
 import top.csituka.youzaiworldcore.item.tool.YzChainMiningTool;
@@ -40,6 +41,7 @@ public class YouzaiworldCore implements ModInitializer {
         ModMenuTypes.initialize();
         ModNetworking.initialize();
         YzChainMiningTool.registerChainMiningEvent();
+        FlyCoreTickHandler.register();
 
         BiomeModifications.addFeature(
                 BiomeSelectors.foundInOverworld(),
