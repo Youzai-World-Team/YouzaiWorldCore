@@ -45,5 +45,6 @@
   "item.youzaiworldcore.fly_core.no_hunger": "Not enough hunger, flight mode disabled",
   "item.youzaiworldcore.logo": "Youzai World",
   "block.youzaiworldcore.decomposition_table": "Decomposition Table",
+  "block.youzaiworldcore.fly_beacon": "Flight Beacon",
   "itemGroup.youzaiworldcore.youzai_tab": "Youzai World"
 }

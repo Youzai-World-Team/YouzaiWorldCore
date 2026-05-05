@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:block",
+  "pools": [
+    {
+      "bonus_rolls": 0,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "youzaiworldcore:fly_beacon"
+        }
+      ],
+      "rolls": 1
+    }
+  ],
+  "random_sequence": "youzaiworldcore:blocks/fly_beacon"
+}
