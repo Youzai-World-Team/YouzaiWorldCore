@@ -1,0 +1,35 @@
+{
+  "parent": "youzaiworldcore:fun_little_challenge/root",
+  "display": {
+    "icon": {
+      "id": "minecraft:wheat"
+    },
+    "title": "牛与猪的喜好",
+    "description": "获得 10 个小麦",
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "has_wheat": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "minecraft:wheat",
+            "count": 10
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "has_wheat"
+    ]
+  ],
+  "rewards": {
+    "experience": 100
+  }
+}

@@ -1,0 +1,76 @@
+{
+  "parent": "youzaiworldcore:fun_little_challenge/root",
+  "display": {
+    "icon": {
+      "id": "minecraft:cooked_beef"
+    },
+    "title": "美食家",
+    "description": "吃下 5 种不同食物",
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "food_1": {
+      "trigger": "minecraft:consume_item",
+      "conditions": {
+        "item": {
+          "items": "minecraft:apple"
+        }
+      }
+    },
+    "food_2": {
+      "trigger": "minecraft:consume_item",
+      "conditions": {
+        "item": {
+          "items": "minecraft:cooked_beef"
+        }
+      }
+    },
+    "food_3": {
+      "trigger": "minecraft:consume_item",
+      "conditions": {
+        "item": {
+          "items": "minecraft:cooked_porkchop"
+        }
+      }
+    },
+    "food_4": {
+      "trigger": "minecraft:consume_item",
+      "conditions": {
+        "item": {
+          "items": "minecraft:cooked_chicken"
+        }
+      }
+    },
+    "food_5": {
+      "trigger": "minecraft:consume_item",
+      "conditions": {
+        "item": {
+          "items": "minecraft:cooked_cod"
+        }
+      }
+    }
+  },
+  "requirements": [
+    [
+      "food_1"
+    ],
+    [
+      "food_2"
+    ],
+    [
+      "food_3"
+    ],
+    [
+      "food_4"
+    ],
+    [
+      "food_5"
+    ]
+  ],
+  "rewards": {
+    "experience": 100
+  }
+}
