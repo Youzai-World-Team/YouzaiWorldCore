@@ -12,11 +12,7 @@ import net.minecraft.world.item.Rarity;
 import net.minecraft.world.item.ToolMaterial;
 
 import top.csituka.youzaiworldcore.YouzaiworldCore;
-import top.csituka.youzaiworldcore.item.tool.YzAxeItem;
-import top.csituka.youzaiworldcore.item.tool.YzHoeItem;
-import top.csituka.youzaiworldcore.item.tool.YzPickaxeItem;
-import top.csituka.youzaiworldcore.item.tool.YzShovelItem;
-import top.csituka.youzaiworldcore.item.tool.YzSwordItem;
+import top.csituka.youzaiworldcore.item.tool.*;
 
 public class ModItems {
 
@@ -84,6 +80,11 @@ public class ModItems {
             new Item.Properties()
     );
 
+    public static final Item FLY_CORE = registerFlyCore(
+            "fly_core",
+            new Item.Properties()
+    );
+
     private static Item register(String name, Item.Properties settings) {
         ResourceKey<Item> itemKey = ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, name));
         Item item = new Item(settings.setId(itemKey));
@@ -123,6 +124,12 @@ public class ModItems {
     private static Item registerAxe(String name, ToolMaterial material, float attackDamageBaseline, float attackSpeedBaseline) {
         ResourceKey<Item> itemKey = ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, name));
         Item item = new YzAxeItem(material, attackDamageBaseline, attackSpeedBaseline, new Item.Properties().setId(itemKey));
+        return Registry.register(BuiltInRegistries.ITEM, itemKey, item);
+    }
+
+    private static Item registerFlyCore(String name, Item.Properties settings) {
+        ResourceKey<Item> itemKey = ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, name));
+        Item item = new FlyCoreItem(settings.setId(itemKey));
         return Registry.register(BuiltInRegistries.ITEM, itemKey, item);
     }
 
