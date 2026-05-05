@@ -42,6 +42,7 @@
   "item.youzaiworldcore.fly_core.tooltip": "右键切换飞行模式",
   "item.youzaiworldcore.fly_core.enabled": "飞行模式已启用",
   "item.youzaiworldcore.fly_core.disabled": "飞行模式已关闭",
+  "item.youzaiworldcore.fly_core.no_hunger": "饥饿值为零，飞行模式已关闭",
   "item.youzaiworldcore.logo": "悠哉世界",
   "block.youzaiworldcore.decomposition_table": "分解台",
   "itemGroup.youzaiworldcore.youzai_tab": "悠哉世界"

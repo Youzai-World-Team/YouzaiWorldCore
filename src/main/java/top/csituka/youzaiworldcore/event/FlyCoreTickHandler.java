@@ -16,16 +16,23 @@ import java.util.UUID;
 public class FlyCoreTickHandler implements ServerTickEvents.StartTick {
 
     private static int tickCounter = 0;
+    private static int hungerTickCounter = 0;
     private static final int TICKS_PER_SECOND = 20;
+    private static final int TICKS_PER_HUNGER = 100;
 
     @Override
     public void onStartTick(MinecraftServer server) {
         tickCounter++;
+        hungerTickCounter++;
         
         if (tickCounter >= TICKS_PER_SECOND) {
             tickCounter = 0;
             
             for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+                if (player.isCreative()) {
+                    continue;
+                }
+                
                 UUID playerId = player.getUUID();
                 
                 if (FlyCoreItem.isFlying(playerId)) {
@@ -54,6 +61,33 @@ public class FlyCoreTickHandler implements ServerTickEvents.StartTick {
                                 flyCore.setDamageValue(newDamage);
                             }
                         }
+                    }
+                }
+            }
+        }
+        
+        if (hungerTickCounter >= TICKS_PER_HUNGER) {
+            hungerTickCounter = 0;
+            
+            for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+                if (player.isCreative()) {
+                    continue;
+                }
+                
+                UUID playerId = player.getUUID();
+                
+                if (FlyCoreItem.isFlying(playerId) && player.getAbilities().flying) {
+                    int currentFood = player.getFoodData().getFoodLevel();
+                    if (currentFood > 0) {
+                        player.getFoodData().setFoodLevel(currentFood - 1);
+                    } else {
+                        FlyCoreItem.disableFlight(player);
+                        FlyCoreItem.setFlying(playerId, false);
+                        clearAllFlyCoreActiveState(player);
+                        sendActionBar(player,
+                                Component.translatable("item.youzaiworldcore.fly_core.no_hunger")
+                                        .withStyle(ChatFormatting.RED)
+                        );
                     }
                 }
             }

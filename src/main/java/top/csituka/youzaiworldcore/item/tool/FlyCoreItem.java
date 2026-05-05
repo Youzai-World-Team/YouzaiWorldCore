@@ -36,6 +36,10 @@ public class FlyCoreItem extends Item {
             return InteractionResult.PASS;
         }
         
+        if (player.isCreative()) {
+            return InteractionResult.FAIL;
+        }
+        
         UUID playerId = player.getUUID();
         
         if (flyingPlayers.contains(playerId)) {

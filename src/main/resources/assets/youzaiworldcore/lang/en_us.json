@@ -42,6 +42,7 @@
   "item.youzaiworldcore.fly_core.tooltip": "Right-click to toggle flight mode",
   "item.youzaiworldcore.fly_core.enabled": "Flight Mode Enabled",
   "item.youzaiworldcore.fly_core.disabled": "Flight Mode Disabled",
+  "item.youzaiworldcore.fly_core.no_hunger": "Not enough hunger, flight mode disabled",
   "item.youzaiworldcore.logo": "Youzai World",
   "block.youzaiworldcore.decomposition_table": "Decomposition Table",
   "itemGroup.youzaiworldcore.youzai_tab": "Youzai World"
