@@ -5,6 +5,6 @@
         }
     },
     "rewards": {
-        "function": "youzaiworldcore:enter_inspection"
+        "function": "youzaiworldcore:new_player"
     }
 }

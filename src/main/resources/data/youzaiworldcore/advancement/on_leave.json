@@ -1,0 +1,27 @@
+{
+  "criteria": {
+    "leave": {
+      "trigger": "minecraft:location",
+      "conditions": {
+        "player": {
+          "type_specific": {
+            "type": "minecraft:player",
+            "stats": [
+              {
+                "type": "minecraft:custom",
+                "stat": "minecraft:leave_game",
+                "value": {
+                  "min": 1
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  "requirements": [["leave"]],
+  "rewards": {
+    "function": "youzaiworldcore:on_leave_clear"
+  }
+}
