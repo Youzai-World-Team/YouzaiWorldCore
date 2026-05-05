@@ -1,0 +1,37 @@
+{
+  "parent": "youzaiworldcore:youzaiworld/have_yz_series_all_tools",
+  "display": {
+    "icon": {
+      "id": "youzaiworldcore:yz_sword"
+    },
+    "title": "释放剑气",
+    "description": "丢弃一把悠哉剑",
+    "frame": "challenge",
+    "show_toast": false,
+    "announce_to_chat": false,
+    "hidden": true
+  },
+  "criteria": {
+    "drop_sword": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "youzaiworldcore:yz_sword",
+            "count": {
+              "max": 0
+            }
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "drop_sword"
+    ]
+  ],
+  "rewards": {
+    "experience": 5000
+  }
+}
