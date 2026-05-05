@@ -75,7 +75,7 @@ public class ModItems {
             new Item.Properties().rarity(Rarity.RARE)
     );
 
-    public static final Item LOGO = register(
+    public static final Item LOGO = registerLogo(
             "logo",
             new Item.Properties()
     );
@@ -130,6 +130,12 @@ public class ModItems {
     private static Item registerFlyCore(String name, Item.Properties settings) {
         ResourceKey<Item> itemKey = ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, name));
         Item item = new FlyCoreItem(settings.setId(itemKey));
+        return Registry.register(BuiltInRegistries.ITEM, itemKey, item);
+    }
+
+    private static Item registerLogo(String name, Item.Properties settings) {
+        ResourceKey<Item> itemKey = ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, name));
+        Item item = new LogoItem(settings.setId(itemKey));
         return Registry.register(BuiltInRegistries.ITEM, itemKey, item);
     }
 
