@@ -1,5 +1,5 @@
 {
-  "parent": "youzaiworld:youzaiworld/have_raw_yz",
+  "parent": "youzaiworldcore:youzaiworld/have_raw_yz",
   "display": {
     "icon": {
       "id": "youzaiworldcore:yz_block"

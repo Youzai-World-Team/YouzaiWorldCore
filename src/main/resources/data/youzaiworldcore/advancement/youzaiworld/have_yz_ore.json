@@ -1,8 +1,8 @@
 {
-  "parent": "youzaiworld:youzaiworld/have_raw_yz",
+  "parent": "youzaiworldcore:youzaiworld/have_raw_yz",
   "display": {
     "icon": {
-      "id": "youzaiworld:yz_ore"
+      "id": "youzaiworldcore:yz_ore"
     },
     "title": {
       "text": "悠哉原矿寻觅者",
@@ -23,10 +23,10 @@
       "conditions": {
         "items": [
           {
-            "items": "youzaiworld:yz_ore"
+            "items": "youzaiworldcore:yz_ore"
           },
           {
-            "items": "youzaiworld:deepslate_yz_ore"
+            "items": "youzaiworldcore:deepslate_yz_ore"
           }
         ]
       }

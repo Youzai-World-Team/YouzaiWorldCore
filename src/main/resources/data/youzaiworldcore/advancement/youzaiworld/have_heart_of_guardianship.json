@@ -1,5 +1,5 @@
 {
-    "parent": "youzaiworld:youzaiworld/root",
+    "parent": "youzaiworldcore:youzaiworld/root",
     "criteria": {
         "has_heart_of_guardianship": {
             "trigger": "minecraft:inventory_changed",

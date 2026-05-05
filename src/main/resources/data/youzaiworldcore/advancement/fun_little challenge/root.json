@@ -1,0 +1,24 @@
+{
+  "display": {
+    "icon": {
+      "id": "youzaiworldcore:logo"
+    },
+    "title": "有趣的小成就",
+    "description": "完成一个小挑战！",
+    "background": "minecraft:textures/block/emerald_block.png",
+    "frame": "task",
+    "show_toast": false,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "auto": {
+      "trigger": "minecraft:tick"
+    }
+  },
+  "requirements": [
+    [
+      "auto"
+    ]
+  ]
+}
