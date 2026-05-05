@@ -1,30 +1,27 @@
 {
-    "parent": "youzaiworld:youzaiworld/root",
+    "parent": "youzaiworldcore:youzaiworld/have_raw_yz",
     "display": {
         "icon": {
-            "id": "youzaiworldcore:raw_yz"
+            "id": "youzaiworldcore:yz_ingot"
         },
         "title": {
-            "text": "不寻常的矿石"
+            "text": "变纯净了"
         },
         "description": {
-            "text": "获得粗悠哉矿。"
+            "text": "获得悠哉锭。"
         },
-        "frame": "goal",
+        "frame": "task",
         "show_toast": true,
         "announce_to_chat": true,
         "hidden": false
     },
     "criteria": {
-        "get_raw_yz": {
+        "get_yz_ingot": {
             "trigger": "minecraft:inventory_changed",
             "conditions": {
                 "items": [
                     {
-                        "items": "youzaiworldcore:raw_yz"
-                    },
-                    {
-                        "items": "youzaiworld:raw_yz_block"
+                        "items": "youzaiworldcore:yz_ingot"
                     }
                 ]
             }
@@ -32,7 +29,7 @@
     },
     "requirements": [
         [
-            "get_raw_yz"
+            "get_yz_ingot"
         ]
     ]
 }

@@ -1,10 +1,6 @@
 {
    "replace": false,
    "values": [
-      "youzaiworld:load",
-      "youzaiworld:boss_kills",
-      "youzaiworld:hostile_kills",
-      "youzaiworld:neutral_kills",
-      "youzaiworld:passive_kills"
+      "youzaiworldcore:load"
    ]
 }

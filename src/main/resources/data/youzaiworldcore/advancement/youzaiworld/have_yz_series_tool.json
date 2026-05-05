@@ -1,5 +1,5 @@
 {
-  "parent": "youzaiworld:youzaiworld/have_yz_ingot",
+  "parent": "youzaiworldcore:youzaiworld/have_yz_ingot",
   "display": {
     "icon": {
       "id": "youzaiworldcore:yz_pickaxe"

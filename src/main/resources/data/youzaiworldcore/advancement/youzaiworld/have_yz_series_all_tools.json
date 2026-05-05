@@ -1,5 +1,5 @@
 {
-  "parent": "youzaiworld:youzaiworld/have_yz_series_tool",
+  "parent": "youzaiworldcore:youzaiworld/have_yz_series_tool",
   "display": {
     "icon": {
       "id": "youzaiworldcore:yz_pickaxe"

@@ -1,5 +1,5 @@
 {
-  "parent": "youzaiworld:youzaiworld/have_heart_of_guardianship",
+  "parent": "youzaiworldcore:youzaiworld/have_heart_of_guardianship",
   "criteria": {
     "manual_grant": {
       "trigger": "minecraft:impossible"

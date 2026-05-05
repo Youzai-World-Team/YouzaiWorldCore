@@ -1,5 +1,5 @@
 {
-    "parent": "youzaiworld:youzaiworld/have_decomposition_table",
+    "parent": "youzaiworldcore:youzaiworld/have_decomposition_table",
     "display": {
         "icon": {
             "id": "youzaiworldcore:have_decomposition_table"

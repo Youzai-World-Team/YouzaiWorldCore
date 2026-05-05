@@ -1,5 +1,5 @@
 {
-    "parent": "youzaiworld:youzaiworld/have_yz_ingot",
+    "parent": "youzaiworldcore:youzaiworld/have_yz_ingot",
     "criteria": {
         "has_decomposition_table": {
             "trigger": "minecraft:inventory_changed",
