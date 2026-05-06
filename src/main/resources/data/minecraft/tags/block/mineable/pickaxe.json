@@ -5,6 +5,7 @@
     "youzaiworldcore:deepslate_yz_ore",
     "youzaiworldcore:raw_yz_block",
     "youzaiworldcore:yz_block",
-    "youzaiworldcore:fly_beacon"
+    "youzaiworldcore:fly_beacon",
+    "youzaiworldcore:decomposition_table"
   ]
 }
