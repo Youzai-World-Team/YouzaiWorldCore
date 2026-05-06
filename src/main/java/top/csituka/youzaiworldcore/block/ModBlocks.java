@@ -64,7 +64,8 @@ public class ModBlocks {
             DecompositionTableBlock::new,
             BlockBehaviour.Properties.of()
                     .strength(3.0f, 3.0f)
-                    .sound(SoundType.METAL),
+                    .sound(SoundType.METAL)
+                    .requiresCorrectToolForDrops(),
             true
     );
 
