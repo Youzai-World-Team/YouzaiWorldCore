@@ -18,6 +18,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import top.csituka.youzaiworldcore.screen.FlyBeaconMenu;
+import top.csituka.youzaiworldcore.block.FlyBeaconBlock;
 
 public class FlyBeaconBlockEntity extends BlockEntity implements Container, MenuProvider {
 
@@ -28,6 +29,7 @@ public class FlyBeaconBlockEntity extends BlockEntity implements Container, Menu
     private final NonNullList<ItemStack> items = NonNullList.withSize(1, ItemStack.EMPTY);
     private int energy = 0;
     private int fuelTickCounter = 0;
+    private boolean active = false;
 
     protected final ContainerData dataAccess = new ContainerData() {
         @Override
@@ -35,6 +37,7 @@ public class FlyBeaconBlockEntity extends BlockEntity implements Container, Menu
             return switch (index) {
                 case 0 -> energy;
                 case 1 -> MAX_ENERGY;
+                case 2 -> active ? 1 : 0;
                 default -> 0;
             };
         }
@@ -43,13 +46,14 @@ public class FlyBeaconBlockEntity extends BlockEntity implements Container, Menu
         public void set(int index, int value) {
             switch (index) {
                 case 0 -> energy = value;
+                case 2 -> active = value != 0;
                 default -> {}
             }
         }
 
         @Override
         public int getCount() {
-            return 2;
+            return 3;
         }
     };
 
@@ -146,6 +150,21 @@ public class FlyBeaconBlockEntity extends BlockEntity implements Container, Menu
         return energy;
     }
 
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
+        this.setChanged();
+        if (this.level != null) {
+            BlockState currentState = this.getBlockState();
+            BlockState newState = currentState.setValue(FlyBeaconBlock.ACTIVE, active);
+            this.level.setBlock(this.worldPosition, newState, 3);
+            this.level.sendBlockUpdated(this.worldPosition, currentState, newState, 3);
+        }
+    }
+
     public ContainerData getDataAccess() {
         return dataAccess;
     }
@@ -155,6 +174,7 @@ public class FlyBeaconBlockEntity extends BlockEntity implements Container, Menu
         super.saveAdditional(output);
         ContainerHelper.saveAllItems(output, items);
         output.putInt("Energy", energy);
+        output.putBoolean("Active", active);
     }
 
     @Override
@@ -162,6 +182,7 @@ public class FlyBeaconBlockEntity extends BlockEntity implements Container, Menu
         super.loadAdditional(input);
         ContainerHelper.loadAllItems(input, items);
         energy = input.getIntOr("Energy", 0);
+        active = input.getBooleanOr("Active", false);
     }
 
     @Override

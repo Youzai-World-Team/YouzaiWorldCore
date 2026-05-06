@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/cube_bottom_top",
+  "textures": {
+    "top": "youzaiworldcore:block/fly_beacon_top_active",
+    "bottom": "youzaiworldcore:block/fly_beacon_around",
+    "side": "youzaiworldcore:block/fly_beacon_around"
+  }
+}

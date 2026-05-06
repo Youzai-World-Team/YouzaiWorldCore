@@ -27,7 +27,7 @@ public class FlyBeaconMenu extends AbstractContainerMenu {
 
     public FlyBeaconMenu(int containerId, Inventory playerInventory) {
         this(containerId, playerInventory, new SimpleContainer(1), new ContainerData() {
-            private final int[] data = new int[2];
+            private final int[] data = new int[3];
             @Override
             public int get(int index) {
                 return data[index];
@@ -38,7 +38,7 @@ public class FlyBeaconMenu extends AbstractContainerMenu {
             }
             @Override
             public int getCount() {
-                return 2;
+                return 3;
             }
         }, ContainerLevelAccess.NULL);
     }
@@ -50,7 +50,7 @@ public class FlyBeaconMenu extends AbstractContainerMenu {
     public FlyBeaconMenu(int containerId, Inventory playerInventory, Container container, ContainerData data, ContainerLevelAccess access) {
         super(ModMenuTypes.FLY_BEACON, containerId);
         checkContainerSize(container, 1);
-        checkContainerDataCount(data, 2);
+        checkContainerDataCount(data, 3);
         this.container = container;
         this.data = data;
         this.access = access;
@@ -90,6 +90,14 @@ public class FlyBeaconMenu extends AbstractContainerMenu {
             return 0.0f;
         }
         return (float) energy / maxEnergy;
+    }
+
+    public boolean isActive() {
+        return this.data.get(2) != 0;
+    }
+
+    public void setActive(boolean active) {
+        this.data.set(2, active ? 1 : 0);
     }
 
     public Container getContainer() {

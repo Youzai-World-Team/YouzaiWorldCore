@@ -1,7 +1,10 @@
 {
   "variants": {
-    "": {
+    "active=false": {
       "model": "youzaiworldcore:block/fly_beacon"
+    },
+    "active=true": {
+      "model": "youzaiworldcore:block/fly_beacon_active"
     }
   }
 }
