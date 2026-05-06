@@ -17,6 +17,11 @@ public class ModBlockEntities {
             FabricBlockEntityTypeBuilder.create(DecompositionTableBlockEntity::new, ModBlocks.DECOMPOSITION_TABLE).build()
     );
 
+    public static final BlockEntityType<FlyBeaconBlockEntity> FLY_BEACON = register(
+            "fly_beacon",
+            FabricBlockEntityTypeBuilder.create(FlyBeaconBlockEntity::new, ModBlocks.FLY_BEACON).build()
+    );
+
     private static <T extends BlockEntityType<?>> T register(String name, T blockEntityType) {
         ResourceKey<BlockEntityType<?>> key = ResourceKey.create(Registries.BLOCK_ENTITY_TYPE, Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, name));
         return Registry.register(BuiltInRegistries.BLOCK_ENTITY_TYPE, key, blockEntityType);

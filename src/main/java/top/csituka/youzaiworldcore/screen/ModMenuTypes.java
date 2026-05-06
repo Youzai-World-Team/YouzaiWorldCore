@@ -14,6 +14,11 @@ public class ModMenuTypes {
             new MenuType<>(DecompositionTableMenu::new, FeatureFlagSet.of())
     );
 
+    public static final MenuType<FlyBeaconMenu> FLY_BEACON = register(
+            "fly_beacon",
+            new MenuType<>(FlyBeaconMenu::new, FeatureFlagSet.of())
+    );
+
     private static <T extends MenuType<?>> T register(String name, T menuType) {
         return Registry.register(BuiltInRegistries.MENU, Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, name), menuType);
     }
