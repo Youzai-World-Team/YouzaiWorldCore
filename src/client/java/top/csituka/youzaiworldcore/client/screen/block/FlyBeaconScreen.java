@@ -90,7 +90,8 @@ public class FlyBeaconScreen extends AbstractContainerScreen<FlyBeaconMenu> impl
         if (ratio > 0) {
             int fillWidth = Math.max(1, (int) (ENERGY_BAR_WIDTH * ratio));
             int energyColor = getEnergyColor(ratio);
-            fillRoundedRect(guiGraphics, barX, barY, fillWidth, ENERGY_BAR_HEIGHT, ENERGY_BAR_CORNER_RADIUS, energyColor);
+            int fillRadius = Math.min(ENERGY_BAR_CORNER_RADIUS, fillWidth / 2);
+            fillRoundedRect(guiGraphics, barX, barY, fillWidth, ENERGY_BAR_HEIGHT, fillRadius, energyColor);
         }
 
         drawRoundedBorder(guiGraphics, barX, barY, ENERGY_BAR_WIDTH, ENERGY_BAR_HEIGHT, ENERGY_BAR_CORNER_RADIUS, ENERGY_BAR_BORDER_COLOR);
