@@ -37,9 +37,11 @@ public class FlyCoreTickHandler implements ServerTickEvents.StartTick {
                 
                 if (FlyCoreItem.isFlying(playerId)) {
                     if (!FlyCoreItem.hasFlyCoreInHand(player)) {
-                        FlyCoreItem.disableFlight(player);
                         FlyCoreItem.setFlying(playerId, false);
                         clearAllFlyCoreActiveState(player);
+                        if (!FlyBeaconTickHandler.isBeaconFlying(playerId)) {
+                            FlyCoreItem.disableFlight(player);
+                        }
                         sendActionBar(player,
                                 Component.translatable("item.youzaiworldcore.fly_core.disabled")
                                         .withStyle(ChatFormatting.RED)
@@ -50,9 +52,11 @@ public class FlyCoreTickHandler implements ServerTickEvents.StartTick {
                             int newDamage = flyCore.getDamageValue() + 1;
                             if (newDamage >= flyCore.getMaxDamage()) {
                                 flyCore.shrink(1);
-                                FlyCoreItem.disableFlight(player);
                                 FlyCoreItem.setFlying(playerId, false);
                                 clearAllFlyCoreActiveState(player);
+                                if (!FlyBeaconTickHandler.isBeaconFlying(playerId)) {
+                                    FlyCoreItem.disableFlight(player);
+                                }
                                 sendActionBar(player,
                                         Component.translatable("item.youzaiworldcore.fly_core.disabled")
                                                 .withStyle(ChatFormatting.RED)
@@ -85,9 +89,11 @@ public class FlyCoreTickHandler implements ServerTickEvents.StartTick {
                     } else if (food > 0) {
                         player.getFoodData().setFoodLevel(food - 1);
                     } else {
-                        FlyCoreItem.disableFlight(player);
                         FlyCoreItem.setFlying(playerId, false);
                         clearAllFlyCoreActiveState(player);
+                        if (!FlyBeaconTickHandler.isBeaconFlying(playerId)) {
+                            FlyCoreItem.disableFlight(player);
+                        }
                         sendActionBar(player,
                                 Component.translatable("item.youzaiworldcore.fly_core.no_hunger")
                                         .withStyle(ChatFormatting.RED)

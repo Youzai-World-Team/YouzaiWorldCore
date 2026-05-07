@@ -20,7 +20,13 @@ import net.minecraft.world.level.storage.ValueOutput;
 import top.csituka.youzaiworldcore.screen.FlyBeaconMenu;
 import top.csituka.youzaiworldcore.block.FlyBeaconBlock;
 
+import java.util.Collections;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+
 public class FlyBeaconBlockEntity extends BlockEntity implements Container, MenuProvider {
+
+    private static final Set<BlockPos> activeBeacons = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
     public static final int MAX_ENERGY = 10000;
     public static final int ENERGY_PER_LAPIS = 1000;
@@ -70,6 +76,7 @@ public class FlyBeaconBlockEntity extends BlockEntity implements Container, Menu
         }
 
         if (blockEntity.active && blockEntity.energy > 0) {
+            activeBeacons.add(pos.immutable());
             blockEntity.drainTickCounter++;
             if (blockEntity.drainTickCounter >= ENERGY_DRAIN_INTERVAL) {
                 blockEntity.drainTickCounter = 0;
@@ -77,12 +84,14 @@ public class FlyBeaconBlockEntity extends BlockEntity implements Container, Menu
                 blockEntity.setChanged();
                 if (blockEntity.energy <= 0) {
                     blockEntity.active = false;
+                    activeBeacons.remove(pos.immutable());
                     BlockState newState = state.setValue(FlyBeaconBlock.ACTIVE, false);
                     level.setBlock(pos, newState, 3);
                     blockEntity.setChanged();
                 }
             }
         } else {
+            activeBeacons.remove(pos.immutable());
             blockEntity.drainTickCounter = 0;
         }
 
@@ -177,12 +186,21 @@ public class FlyBeaconBlockEntity extends BlockEntity implements Container, Menu
     public void setActive(boolean active) {
         this.active = active;
         this.setChanged();
+        if (active) {
+            activeBeacons.add(this.worldPosition.immutable());
+        } else {
+            activeBeacons.remove(this.worldPosition.immutable());
+        }
         if (this.level != null) {
             BlockState currentState = this.getBlockState();
             BlockState newState = currentState.setValue(FlyBeaconBlock.ACTIVE, active);
             this.level.setBlock(this.worldPosition, newState, 3);
             this.level.sendBlockUpdated(this.worldPosition, currentState, newState, 3);
         }
+    }
+
+    public static Set<BlockPos> getActiveBeacons() {
+        return activeBeacons;
     }
 
     public ContainerData getDataAccess() {
