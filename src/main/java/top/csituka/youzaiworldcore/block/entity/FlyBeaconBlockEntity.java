@@ -25,10 +25,13 @@ public class FlyBeaconBlockEntity extends BlockEntity implements Container, Menu
     public static final int MAX_ENERGY = 10000;
     public static final int ENERGY_PER_LAPIS = 1000;
     private static final int FUEL_CONSUME_INTERVAL = 20;
+    private static final int ENERGY_DRAIN_PER_TICK = 1;
+    private static final int ENERGY_DRAIN_INTERVAL = 20;
 
     private final NonNullList<ItemStack> items = NonNullList.withSize(1, ItemStack.EMPTY);
     private int energy = 0;
     private int fuelTickCounter = 0;
+    private int drainTickCounter = 0;
     private boolean active = false;
 
     protected final ContainerData dataAccess = new ContainerData() {
@@ -66,7 +69,24 @@ public class FlyBeaconBlockEntity extends BlockEntity implements Container, Menu
             return;
         }
 
-        if (blockEntity.energy < MAX_ENERGY) {
+        if (blockEntity.active && blockEntity.energy > 0) {
+            blockEntity.drainTickCounter++;
+            if (blockEntity.drainTickCounter >= ENERGY_DRAIN_INTERVAL) {
+                blockEntity.drainTickCounter = 0;
+                blockEntity.energy = Math.max(0, blockEntity.energy - ENERGY_DRAIN_PER_TICK);
+                blockEntity.setChanged();
+                if (blockEntity.energy <= 0) {
+                    blockEntity.active = false;
+                    BlockState newState = state.setValue(FlyBeaconBlock.ACTIVE, false);
+                    level.setBlock(pos, newState, 3);
+                    blockEntity.setChanged();
+                }
+            }
+        } else {
+            blockEntity.drainTickCounter = 0;
+        }
+
+        if (blockEntity.energy < 9000) {
             ItemStack fuelStack = blockEntity.items.get(0);
             if (fuelStack.is(Items.LAPIS_LAZULI)) {
                 blockEntity.fuelTickCounter++;
