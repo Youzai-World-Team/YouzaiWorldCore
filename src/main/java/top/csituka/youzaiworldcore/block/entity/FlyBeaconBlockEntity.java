@@ -90,6 +90,13 @@ public class FlyBeaconBlockEntity extends BlockEntity implements Container, Menu
                     blockEntity.setChanged();
                 }
             }
+        } else if (blockEntity.active) {
+            blockEntity.active = false;
+            activeBeacons.remove(pos.immutable());
+            BlockState newState = state.setValue(FlyBeaconBlock.ACTIVE, false);
+            level.setBlock(pos, newState, 3);
+            blockEntity.setChanged();
+            blockEntity.drainTickCounter = 0;
         } else {
             activeBeacons.remove(pos.immutable());
             blockEntity.drainTickCounter = 0;
@@ -168,6 +175,24 @@ public class FlyBeaconBlockEntity extends BlockEntity implements Container, Menu
     @Override
     public void clearContent() {
         items.clear();
+    }
+
+    public void dropContents() {
+        if (this.level == null) return;
+        for (ItemStack stack : items) {
+            if (!stack.isEmpty()) {
+                net.minecraft.world.Containers.dropItemStack(this.level, this.worldPosition.getX(), this.worldPosition.getY(), this.worldPosition.getZ(), stack);
+            }
+        }
+        items.clear();
+    }
+
+    @Override
+    public void preRemoveSideEffects(BlockPos pos, BlockState state) {
+        if (this.active) {
+            activeBeacons.remove(pos.immutable());
+        }
+        super.preRemoveSideEffects(pos, state);
     }
 
     @Override
