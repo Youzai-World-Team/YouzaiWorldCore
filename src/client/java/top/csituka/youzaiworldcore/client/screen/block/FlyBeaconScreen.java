@@ -56,7 +56,7 @@ public class FlyBeaconScreen extends AbstractContainerScreen<FlyBeaconMenu> impl
                 ClientPlayNetworking.send(new FlyBeaconActivePayload(newActive));
             }
         );
-        this.toggleButton.setActive(this.menu.isActive());
+        this.toggleButton.setToggled(this.menu.isActive());
         
         this.addRenderableWidget(this.toggleButton);
     }
@@ -68,7 +68,7 @@ public class FlyBeaconScreen extends AbstractContainerScreen<FlyBeaconMenu> impl
         drawFuelSlot(guiGraphics, mouseX, mouseY);
         drawPlayerInventory(guiGraphics, mouseX, mouseY);
 
-        this.toggleButton.setActive(this.menu.isActive());
+        this.toggleButton.setToggled(this.menu.isActive());
 
         super.extractRenderState(guiGraphics, mouseX, mouseY, partialTick);
     }

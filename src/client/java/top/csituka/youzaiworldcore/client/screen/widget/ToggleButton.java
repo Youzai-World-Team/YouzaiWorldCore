@@ -11,7 +11,7 @@ public class ToggleButton extends AbstractWidget {
     private static final int CORNER_RADIUS = 4;
     private static final float LERP_SPEED = 0.15f;
 
-    private boolean active = false;
+    private boolean toggled = false;
     private final Runnable onToggle;
     private float currentAlpha = 0.5f;
     private float targetAlpha = 0.5f;
@@ -21,12 +21,12 @@ public class ToggleButton extends AbstractWidget {
         this.onToggle = onToggle;
     }
 
-    public void setActive(boolean active) {
-        this.active = active;
+    public void setToggled(boolean toggled) {
+        this.toggled = toggled;
     }
 
-    public boolean isActive() {
-        return this.active;
+    public boolean isToggled() {
+        return this.toggled;
     }
 
     @Override
@@ -38,13 +38,13 @@ public class ToggleButton extends AbstractWidget {
         int y = this.getY();
         int size = this.width;
 
-        int bgColor = active ? colorWithAlpha(0x4CAF50, currentAlpha) : colorWithAlpha(0xF44336, currentAlpha);
-        int borderColor = active ? colorWithAlpha(0x81C784, 0.7f) : colorWithAlpha(0xEF9A9A, 0.7f);
+        int bgColor = toggled ? colorWithAlpha(0x4CAF50, currentAlpha) : colorWithAlpha(0xF44336, currentAlpha);
+        int borderColor = toggled ? colorWithAlpha(0x81C784, 0.7f) : colorWithAlpha(0xEF9A9A, 0.7f);
 
         fillRoundedRect(guiGraphics, x, y, size, size, CORNER_RADIUS, bgColor);
         drawRoundedBorder(guiGraphics, x, y, size, size, CORNER_RADIUS, borderColor);
 
-        if (active) {
+        if (toggled) {
             drawCheckMark(guiGraphics, x, y, size);
         } else {
             drawCrossMark(guiGraphics, x, y, size);
