@@ -32,7 +32,7 @@ public class FlyBeaconBlockEntity extends BlockEntity implements Container, Menu
     public static final int ENERGY_PER_LAPIS = 1000;
     private static final int FUEL_CONSUME_INTERVAL = 20;
     private static final int ENERGY_DRAIN_PER_TICK = 1;
-    private static final int ENERGY_DRAIN_INTERVAL = 20;
+    private static final int ENERGY_DRAIN_INTERVAL = 2;
 
     private final NonNullList<ItemStack> items = NonNullList.withSize(1, ItemStack.EMPTY);
     private int energy = 0;
