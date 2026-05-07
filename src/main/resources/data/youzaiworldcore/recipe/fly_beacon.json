@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "T": "minecraft:iron_block",
+    "F": "youzaiworldcore:fly_core"
+  },
+  "pattern": [
+    "TTT",
+    "TFT",
+    "TTT"
+  ],
+  "result": {
+    "id": "youzaiworldcore:fly_beacon",
+    "count": 1
+  }
+}
