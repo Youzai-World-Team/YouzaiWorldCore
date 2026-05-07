@@ -2,11 +2,11 @@ package top.csituka.youzaiworldcore.client.screen.block;
 
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.gui.screens.inventory.MenuAccess;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
+import top.csituka.youzaiworldcore.client.screen.widget.ToggleButton;
 import top.csituka.youzaiworldcore.network.FlyBeaconActivePayload;
 import top.csituka.youzaiworldcore.screen.FlyBeaconMenu;
 
@@ -35,7 +35,7 @@ public class FlyBeaconScreen extends AbstractContainerScreen<FlyBeaconMenu> impl
     private static final int TOGGLE_BUTTON_Y = 30;
     private static final int TOGGLE_BUTTON_SIZE = 12;
 
-    private Button toggleButton;
+    private ToggleButton toggleButton;
 
     public FlyBeaconScreen(FlyBeaconMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
@@ -47,18 +47,16 @@ public class FlyBeaconScreen extends AbstractContainerScreen<FlyBeaconMenu> impl
         this.leftPos = (this.width - this.imageWidth) / 2;
         this.topPos = (this.height - this.imageHeight) / 2;
         
-        this.toggleButton = Button.builder(
-            Component.literal(""),
-            button -> {
-                boolean newActive = !this.menu.isActive();
-                ClientPlayNetworking.send(new FlyBeaconActivePayload(newActive));
-            }
-        ).bounds(
+        this.toggleButton = new ToggleButton(
             this.leftPos + TOGGLE_BUTTON_X,
             this.topPos + TOGGLE_BUTTON_Y,
             TOGGLE_BUTTON_SIZE,
-            TOGGLE_BUTTON_SIZE
-        ).build();
+            () -> {
+                boolean newActive = !this.menu.isActive();
+                ClientPlayNetworking.send(new FlyBeaconActivePayload(newActive));
+            }
+        );
+        this.toggleButton.setActive(this.menu.isActive());
         
         this.addRenderableWidget(this.toggleButton);
     }
@@ -69,33 +67,10 @@ public class FlyBeaconScreen extends AbstractContainerScreen<FlyBeaconMenu> impl
         drawEnergyBar(guiGraphics, mouseX, mouseY);
         drawFuelSlot(guiGraphics, mouseX, mouseY);
         drawPlayerInventory(guiGraphics, mouseX, mouseY);
-        drawToggleButton(guiGraphics, mouseX, mouseY);
+
+        this.toggleButton.setActive(this.menu.isActive());
 
         super.extractRenderState(guiGraphics, mouseX, mouseY, partialTick);
-    }
-
-    private void drawToggleButton(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY) {
-        int buttonX = this.leftPos + TOGGLE_BUTTON_X;
-        int buttonY = this.topPos + TOGGLE_BUTTON_Y;
-        boolean isActive = this.menu.isActive();
-        
-        int bgColor = isActive ? 0xC04CAF50 : 0x40FFFFFF;
-        int borderColor = isActive ? 0xA081C784 : 0xA0FFFFFF;
-        
-        fillRoundedRect(guiGraphics, buttonX, buttonY, TOGGLE_BUTTON_SIZE, TOGGLE_BUTTON_SIZE, 3, bgColor);
-        drawRoundedBorder(guiGraphics, buttonX, buttonY, TOGGLE_BUTTON_SIZE, TOGGLE_BUTTON_SIZE, 3, borderColor);
-        
-        if (isActive) {
-            int checkColor = 0xFFFFFFFF;
-            int cx = buttonX + 3;
-            int cy = buttonY + 6;
-            for (int i = 0; i < 2; i++) {
-                guiGraphics.fill(cx + i, cy + i, cx + i + 1, cy + i + 1, checkColor);
-            }
-            for (int i = 0; i < 4; i++) {
-                guiGraphics.fill(cx + 2 + i, cy + 2 - i, cx + 3 + i, cy + 3 - i, checkColor);
-            }
-        }
     }
 
     private void drawBackground(GuiGraphicsExtractor guiGraphics) {
