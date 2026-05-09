@@ -1,0 +1,27 @@
+{
+    "parent": "youzaiworldcore:youzaiworld/have_fly_core",
+    "display": {
+        "icon": {
+            "id": "youzaiworldcore:fly_core"
+        },
+        "title": "哟呼——",
+        "description": "使用飞行核心。",
+        "frame": "goal",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": true
+    },
+    "rewards": {
+        "experience": 100
+    },
+    "criteria": {
+        "manual_grant": {
+            "trigger": "minecraft:impossible"
+        }
+    },
+    "requirements": [
+        [
+            "manual_grant"
+        ]
+    ]
+}

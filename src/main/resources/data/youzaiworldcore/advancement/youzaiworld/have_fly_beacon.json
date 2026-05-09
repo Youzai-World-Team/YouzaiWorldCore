@@ -1,0 +1,31 @@
+{
+    "parent": "youzaiworldcore:youzaiworld/have_fly_core",
+    "criteria": {
+        "has_fly_beacon": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "youzaiworldcore:fly_beacon"
+                    }
+                ]
+            }
+        }
+    },
+    "display": {
+        "icon": {
+            "id": "youzaiworldcore:fly_beacon"
+        },
+        "title": "带飞行核心的信标",
+        "description": "获得飞行信标。",
+        "frame": "task",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": false
+    },
+    "requirements": [
+        [
+            "has_fly_beacon"
+        ]
+    ]
+}

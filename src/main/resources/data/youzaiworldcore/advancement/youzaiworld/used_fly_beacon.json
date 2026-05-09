@@ -1,0 +1,27 @@
+{
+    "parent": "youzaiworldcore:youzaiworld/have_fly_beacon",
+    "display": {
+        "icon": {
+            "id": "youzaiworldcore:fly_beacon"
+        },
+        "title": "区域性飞行",
+        "description": "使用飞行信标。",
+        "frame": "goal",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": true
+    },
+    "rewards": {
+        "experience": 100
+    },
+    "criteria": {
+        "manual_grant": {
+            "trigger": "minecraft:impossible"
+        }
+    },
+    "requirements": [
+        [
+            "manual_grant"
+        ]
+    ]
+}

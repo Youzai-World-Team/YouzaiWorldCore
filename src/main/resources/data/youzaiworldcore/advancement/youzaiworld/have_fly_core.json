@@ -1,0 +1,31 @@
+{
+    "parent": "youzaiworldcore:youzaiworld/have_yz_block",
+    "criteria": {
+        "has_fly_core": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": "youzaiworldcore:fly_core"
+                    }
+                ]
+            }
+        }
+    },
+    "display": {
+        "icon": {
+            "id": "youzaiworldcore:fly_core"
+        },
+        "title": "飞，比跑快吧",
+        "description": "获得飞行核心。",
+        "frame": "task",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": false
+    },
+    "requirements": [
+        [
+            "has_fly_core"
+        ]
+    ]
+}
