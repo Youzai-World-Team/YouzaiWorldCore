@@ -47,5 +47,6 @@
   "item.youzaiworldcore.logo.tooltip": "Welcome to Youzai World",
   "block.youzaiworldcore.decomposition_table": "Decomposition Table",
   "block.youzaiworldcore.fly_beacon": "Flight Beacon",
-  "itemGroup.youzaiworldcore.youzai_tab": "Youzai World"
+  "itemGroup.youzaiworldcore.youzai_tab": "Youzai World",
+  "modmenu.summaryTranslation.youzaiworldcore": "Youzai World Server Core"
 }

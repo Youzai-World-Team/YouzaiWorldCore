@@ -3,9 +3,17 @@
   "id": "youzaiworldcore",
   "version": "${version}",
   "name": "YouzaiWorldCore",
-  "description": "",
-  "authors": [],
-  "contact": {},
+  "description": "This is the core mod of Youzai World Server.",
+  "authors": [
+    "ress2338396",
+    "zxabinbina",
+    "Youzai World Team"
+  ],
+  "contact": {
+    "homepage": "https://mcyzw.top",
+    "sources": "https://github.com/Youzai-World-Team/YouzaiWorldCore",
+    "issues": "https://github.com/Youzai-World-Team/YouzaiWorldCore/issues"
+  },
   "license": "Apache-2.0",
   "icon": "assets/youzaiworldcore/icon.png",
   "environment": "*",
@@ -29,8 +37,13 @@
   ],
   "depends": {
     "fabricloader": ">=${loader_version}",
-    "fabric-api": "*",
+    "fabric-api": ">=${fabric_version}",
     "fabric-key-mapping-api-v1": "*",
     "minecraft": "<=${minecraft_version}"
+  },
+  "custom": {
+    "modmenu": {
+      "update_checker": false
+    }
   }
 }
