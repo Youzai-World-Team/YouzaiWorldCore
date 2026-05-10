@@ -48,5 +48,6 @@
   "block.youzaiworldcore.decomposition_table": "Decomposition Table",
   "block.youzaiworldcore.fly_beacon": "Flight Beacon",
   "itemGroup.youzaiworldcore.youzai_tab": "Youzai World",
-  "modmenu.summaryTranslation.youzaiworldcore": "Youzai World Server Core"
+  "modmenu.summaryTranslation.youzaiworldcore": "Youzai World Server Core",
+  "youzaiworldcore.tellraw.format":"§r§7✦ §4ᴍ§cɪ§6ɴ§eᴇ§aᴄ§bʀ§3ᴀ§dғ§uᴛ §7- §eYouzai World §7✦ §r"
 }
