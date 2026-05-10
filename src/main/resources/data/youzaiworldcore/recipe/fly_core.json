@@ -2,15 +2,14 @@
   "type": "minecraft:crafting_shaped",
   "category": "misc",
   "key": {
-    "#": "minecraft:iron_block",
-    "%": "minecraft:diamond_block",
-    "@": "youzaiworldcore:yz_block",
-    "&": "minecraft:lapis_lazuli"
+    "#": "minecraft:phantom_membrane",
+    "%": "minecraft:amethyst_shard",
+    "@": "minecraft:stick"
   },
   "pattern": [
-    "&%&",
+    "#%#",
     "#@#",
-    "###"
+    " # "
   ],
   "result": {
     "id": "youzaiworldcore:fly_core",
