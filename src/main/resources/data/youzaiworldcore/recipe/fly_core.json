@@ -4,12 +4,13 @@
   "key": {
     "#": "minecraft:phantom_membrane",
     "%": "minecraft:amethyst_shard",
-    "@": "minecraft:stick"
+    "@": "minecraft:stick",
+    "&":"youzaiworldcore:yz_ingot"
   },
   "pattern": [
     "#%#",
-    "#@#",
-    " # "
+    "#&#",
+    " @ "
   ],
   "result": {
     "id": "youzaiworldcore:fly_core",
