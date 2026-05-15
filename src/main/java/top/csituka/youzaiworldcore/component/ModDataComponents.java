@@ -9,9 +9,9 @@ import top.csituka.youzaiworldcore.YouzaiworldCore;
 
 public class ModDataComponents {
 
-    public static final DataComponentType<Boolean> FLY_CORE_ACTIVE = Registry.register(
+    public static final DataComponentType<Boolean> VOID_STAFF_ACTIVE = Registry.register(
             BuiltInRegistries.DATA_COMPONENT_TYPE,
-            Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "fly_core_active"),
+            Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "void_staff_active"),
             DataComponentType.<Boolean>builder().persistent(Codec.BOOL).build()
     );
 

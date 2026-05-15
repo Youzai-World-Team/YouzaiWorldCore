@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "youzaiworldcore:item/fly_core"
+    "layer0": "youzaiworldcore:item/void_staff_active"
   }
 }

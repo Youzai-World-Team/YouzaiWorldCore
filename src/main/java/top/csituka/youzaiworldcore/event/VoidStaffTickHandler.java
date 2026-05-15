@@ -9,11 +9,11 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import top.csituka.youzaiworldcore.component.ModDataComponents;
 import top.csituka.youzaiworldcore.item.ModItems;
-import top.csituka.youzaiworldcore.item.tool.FlyCoreItem;
+import top.csituka.youzaiworldcore.item.tool.VoidStaffItem;
 
 import java.util.UUID;
 
-public class FlyCoreTickHandler implements ServerTickEvents.StartTick {
+public class VoidStaffTickHandler implements ServerTickEvents.StartTick {
 
     private static int tickCounter = 0;
     private static int hungerTickCounter = 0;
@@ -35,30 +35,30 @@ public class FlyCoreTickHandler implements ServerTickEvents.StartTick {
                 
                 UUID playerId = player.getUUID();
                 
-                if (FlyCoreItem.isFlying(playerId)) {
-                    if (!FlyCoreItem.hasFlyCoreInHand(player)) {
-                        FlyCoreItem.setFlying(playerId, false);
-                        clearAllFlyCoreActiveState(player);
+                if (VoidStaffItem.isFlying(playerId)) {
+                    if (!VoidStaffItem.hasVoidStaffInHand(player)) {
+                        VoidStaffItem.setFlying(playerId, false);
+                        clearAllVoidStaffActiveState(player);
                         if (!FlyBeaconTickHandler.isBeaconFlying(playerId)) {
-                            FlyCoreItem.disableFlight(player);
+                            VoidStaffItem.disableFlight(player);
                         }
                         sendActionBar(player,
-                                Component.translatable("item.youzaiworldcore.fly_core.disabled")
+                                Component.translatable("item.youzaiworldcore.void_staff.disabled")
                                         .withStyle(ChatFormatting.RED)
                         );
                     } else if (player.getAbilities().flying && !player.onGround()) {
-                        ItemStack flyCore = FlyCoreItem.getFlyCoreInHand(player);
+                        ItemStack flyCore = VoidStaffItem.getVoidStaffInHand(player);
                         if (flyCore != null) {
                             int newDamage = flyCore.getDamageValue() + 1;
                             if (newDamage >= flyCore.getMaxDamage()) {
                                 flyCore.shrink(1);
-                                FlyCoreItem.setFlying(playerId, false);
-                                clearAllFlyCoreActiveState(player);
+                                VoidStaffItem.setFlying(playerId, false);
+                                clearAllVoidStaffActiveState(player);
                                 if (!FlyBeaconTickHandler.isBeaconFlying(playerId)) {
-                                    FlyCoreItem.disableFlight(player);
+                                    VoidStaffItem.disableFlight(player);
                                 }
                                 sendActionBar(player,
-                                        Component.translatable("item.youzaiworldcore.fly_core.disabled")
+                                        Component.translatable("item.youzaiworldcore.void_staff.disabled")
                                                 .withStyle(ChatFormatting.RED)
                                 );
                             } else {
@@ -80,7 +80,7 @@ public class FlyCoreTickHandler implements ServerTickEvents.StartTick {
                 
                 UUID playerId = player.getUUID();
                 
-                if (FlyCoreItem.isFlying(playerId) && player.getAbilities().flying && !player.onGround()) {
+                if (VoidStaffItem.isFlying(playerId) && player.getAbilities().flying && !player.onGround()) {
                     float saturation = player.getFoodData().getSaturationLevel();
                     int food = player.getFoodData().getFoodLevel();
                     
@@ -89,13 +89,13 @@ public class FlyCoreTickHandler implements ServerTickEvents.StartTick {
                     } else if (food > 0) {
                         player.getFoodData().setFoodLevel(food - 1);
                     } else {
-                        FlyCoreItem.setFlying(playerId, false);
-                        clearAllFlyCoreActiveState(player);
+                        VoidStaffItem.setFlying(playerId, false);
+                        clearAllVoidStaffActiveState(player);
                         if (!FlyBeaconTickHandler.isBeaconFlying(playerId)) {
-                            FlyCoreItem.disableFlight(player);
+                            VoidStaffItem.disableFlight(player);
                         }
                         sendActionBar(player,
-                                Component.translatable("item.youzaiworldcore.fly_core.no_hunger")
+                                Component.translatable("item.youzaiworldcore.void_staff.no_hunger")
                                         .withStyle(ChatFormatting.RED)
                         );
                     }
@@ -104,11 +104,11 @@ public class FlyCoreTickHandler implements ServerTickEvents.StartTick {
         }
     }
 
-    private void clearAllFlyCoreActiveState(ServerPlayer player) {
+    private void clearAllVoidStaffActiveState(ServerPlayer player) {
         for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
             ItemStack stack = player.getInventory().getItem(i);
-            if (stack.getItem() == ModItems.FLY_CORE && stack.has(ModDataComponents.FLY_CORE_ACTIVE)) {
-                stack.remove(ModDataComponents.FLY_CORE_ACTIVE);
+            if (stack.getItem() == ModItems.VOID_STAFF && stack.has(ModDataComponents.VOID_STAFF_ACTIVE)) {
+                stack.remove(ModDataComponents.VOID_STAFF_ACTIVE);
             }
         }
     }
@@ -119,6 +119,6 @@ public class FlyCoreTickHandler implements ServerTickEvents.StartTick {
     }
 
     public static void register() {
-        ServerTickEvents.START_SERVER_TICK.register(new FlyCoreTickHandler());
+        ServerTickEvents.START_SERVER_TICK.register(new VoidStaffTickHandler());
     }
 }

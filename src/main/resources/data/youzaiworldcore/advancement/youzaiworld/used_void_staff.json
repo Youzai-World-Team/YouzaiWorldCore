@@ -1,11 +1,11 @@
 {
-    "parent": "youzaiworldcore:youzaiworld/have_fly_core",
+    "parent": "youzaiworldcore:youzaiworld/have_void_staff",
     "display": {
         "icon": {
-            "id": "youzaiworldcore:fly_core"
+            "id": "youzaiworldcore:void_staff"
         },
         "title": "哟呼——",
-        "description": "使用飞行核心。",
+        "description": "使用凭虚法杖。",
         "frame": "goal",
         "show_toast": true,
         "announce_to_chat": true,

@@ -80,8 +80,8 @@ public class ModItems {
             new Item.Properties()
     );
 
-    public static final Item FLY_CORE = registerFlyCore(
-            "fly_core",
+    public static final Item VOID_STAFF = registerVoidStaff(
+            "void_staff",
             new Item.Properties()
     );
 
@@ -127,9 +127,9 @@ public class ModItems {
         return Registry.register(BuiltInRegistries.ITEM, itemKey, item);
     }
 
-    private static Item registerFlyCore(String name, Item.Properties settings) {
+    private static Item registerVoidStaff(String name, Item.Properties settings) {
         ResourceKey<Item> itemKey = ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, name));
-        Item item = new FlyCoreItem(settings.setId(itemKey));
+        Item item = new VoidStaffItem(settings.setId(itemKey));
         return Registry.register(BuiltInRegistries.ITEM, itemKey, item);
     }
 

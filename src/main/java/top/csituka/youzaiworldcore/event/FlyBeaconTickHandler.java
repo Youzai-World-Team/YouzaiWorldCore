@@ -5,7 +5,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import top.csituka.youzaiworldcore.block.entity.FlyBeaconBlockEntity;
-import top.csituka.youzaiworldcore.item.tool.FlyCoreItem;
+import top.csituka.youzaiworldcore.item.tool.VoidStaffItem;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -52,13 +52,13 @@ public class FlyBeaconTickHandler implements ServerTickEvents.StartTick {
             if (inRange) {
                 currentAffected.add(playerId);
                 if (!beaconFlyingPlayers.contains(playerId)) {
-                    if (!FlyCoreItem.isFlying(playerId)) {
-                        FlyCoreItem.enableFlight(player);
+                    if (!VoidStaffItem.isFlying(playerId)) {
+                        VoidStaffItem.enableFlight(player);
                     }
                 }
             } else {
-                if (beaconFlyingPlayers.contains(playerId) && !FlyCoreItem.isFlying(playerId)) {
-                    FlyCoreItem.disableFlight(player);
+                if (beaconFlyingPlayers.contains(playerId) && !VoidStaffItem.isFlying(playerId)) {
+                    VoidStaffItem.disableFlight(player);
                 }
             }
         }

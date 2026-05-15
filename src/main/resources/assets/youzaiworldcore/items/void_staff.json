@@ -2,14 +2,14 @@
   "model": {
     "type": "minecraft:condition",
     "property": "minecraft:has_component",
-    "component": "youzaiworldcore:fly_core_active",
+    "component": "youzaiworldcore:void_staff_active",
     "on_true": {
       "type": "minecraft:model",
-      "model": "youzaiworldcore:item/fly_core_active"
+      "model": "youzaiworldcore:item/void_staff_active"
     },
     "on_false": {
       "type": "minecraft:model",
-      "model": "youzaiworldcore:item/fly_core"
+      "model": "youzaiworldcore:item/void_staff"
     }
   }
 }

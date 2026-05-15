@@ -1,5 +1,5 @@
 {
-    "parent": "youzaiworldcore:youzaiworld/have_fly_core",
+    "parent": "youzaiworldcore:youzaiworld/have_void_staff",
     "criteria": {
         "has_fly_beacon": {
             "trigger": "minecraft:inventory_changed",
@@ -16,7 +16,7 @@
         "icon": {
             "id": "youzaiworldcore:fly_beacon"
         },
-        "title": "带飞行核心的信标",
+        "title": "与众不同的信标",
         "description": "获得飞行信标。",
         "frame": "task",
         "show_toast": true,

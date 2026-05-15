@@ -1,12 +1,12 @@
 {
     "parent": "youzaiworldcore:youzaiworld/have_yz_block",
     "criteria": {
-        "has_fly_core": {
+        "has_void_staff": {
             "trigger": "minecraft:inventory_changed",
             "conditions": {
                 "items": [
                     {
-                        "items": "youzaiworldcore:fly_core"
+                        "items": "youzaiworldcore:void_staff"
                     }
                 ]
             }
@@ -14,10 +14,10 @@
     },
     "display": {
         "icon": {
-            "id": "youzaiworldcore:fly_core"
+            "id": "youzaiworldcore:void_staff"
         },
         "title": "飞，比跑快吧",
-        "description": "获得飞行核心。",
+        "description": "获得凭虚法杖。",
         "frame": "task",
         "show_toast": true,
         "announce_to_chat": true,
@@ -25,7 +25,7 @@
     },
     "requirements": [
         [
-            "has_fly_core"
+            "has_void_staff"
         ]
     ]
 }

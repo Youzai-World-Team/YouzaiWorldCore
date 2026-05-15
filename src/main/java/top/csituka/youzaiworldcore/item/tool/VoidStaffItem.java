@@ -20,11 +20,11 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
 
-public class FlyCoreItem extends Item {
+public class VoidStaffItem extends Item {
 
     private static final Set<UUID> flyingPlayers = new HashSet<>();
 
-    public FlyCoreItem(Properties properties) {
+    public VoidStaffItem(Properties properties) {
         super(properties.stacksTo(1).durability(600).rarity(Rarity.RARE));
     }
 
@@ -45,17 +45,17 @@ public class FlyCoreItem extends Item {
         if (flyingPlayers.contains(playerId)) {
             disableFlight(player);
             flyingPlayers.remove(playerId);
-            stack.remove(ModDataComponents.FLY_CORE_ACTIVE);
+            stack.remove(ModDataComponents.VOID_STAFF_ACTIVE);
             sendActionBar(player, 
-                    Component.translatable("item.youzaiworldcore.fly_core.disabled")
+                    Component.translatable("item.youzaiworldcore.void_staff.disabled")
                             .withStyle(ChatFormatting.RED)
             );
         } else {
             enableFlight(player);
             flyingPlayers.add(playerId);
-            stack.set(ModDataComponents.FLY_CORE_ACTIVE, true);
+            stack.set(ModDataComponents.VOID_STAFF_ACTIVE, true);
             sendActionBar(player, 
-                    Component.translatable("item.youzaiworldcore.fly_core.enabled")
+                    Component.translatable("item.youzaiworldcore.void_staff.enabled")
                             .withStyle(ChatFormatting.GREEN)
             );
         }
@@ -94,20 +94,20 @@ public class FlyCoreItem extends Item {
         }
     }
 
-    public static boolean hasFlyCoreInHand(Player player) {
+    public static boolean hasVoidStaffInHand(Player player) {
         ItemStack mainHand = player.getMainHandItem();
         ItemStack offHand = player.getOffhandItem();
         
-        return mainHand.getItem() instanceof FlyCoreItem || offHand.getItem() instanceof FlyCoreItem;
+        return mainHand.getItem() instanceof VoidStaffItem || offHand.getItem() instanceof VoidStaffItem;
     }
 
-    public static ItemStack getFlyCoreInHand(Player player) {
+    public static ItemStack getVoidStaffInHand(Player player) {
         ItemStack mainHand = player.getMainHandItem();
         ItemStack offHand = player.getOffhandItem();
         
-        if (mainHand.getItem() instanceof FlyCoreItem) {
+        if (mainHand.getItem() instanceof VoidStaffItem) {
             return mainHand;
-        } else if (offHand.getItem() instanceof FlyCoreItem) {
+        } else if (offHand.getItem() instanceof VoidStaffItem) {
             return offHand;
         }
         return null;
@@ -119,7 +119,7 @@ public class FlyCoreItem extends Item {
 
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, TooltipDisplay display, Consumer<Component> tooltip, TooltipFlag flag) {
-        tooltip.accept(Component.translatable("item.youzaiworldcore.fly_core.tooltip")
+        tooltip.accept(Component.translatable("item.youzaiworldcore.void_staff.tooltip")
                 .withStyle(ChatFormatting.GRAY));
         super.appendHoverText(stack, context, display, tooltip, flag);
     }

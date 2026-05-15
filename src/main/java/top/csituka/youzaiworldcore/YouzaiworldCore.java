@@ -13,7 +13,7 @@ import top.csituka.youzaiworldcore.block.ModBlocks;
 import top.csituka.youzaiworldcore.block.entity.ModBlockEntities;
 import top.csituka.youzaiworldcore.component.ModDataComponents;
 import top.csituka.youzaiworldcore.event.FlyBeaconTickHandler;
-import top.csituka.youzaiworldcore.event.FlyCoreTickHandler;
+import top.csituka.youzaiworldcore.event.VoidStaffTickHandler;
 import top.csituka.youzaiworldcore.item.ModCreativeModeTabs;
 import top.csituka.youzaiworldcore.item.ModItems;
 import top.csituka.youzaiworldcore.item.tool.YzChainMiningTool;
@@ -44,7 +44,7 @@ public class YouzaiworldCore implements ModInitializer {
         ModMenuTypes.initialize();
         ModNetworking.initialize();
         YzChainMiningTool.registerChainMiningEvent();
-        FlyCoreTickHandler.register();
+        VoidStaffTickHandler.register();
         FlyBeaconTickHandler.register();
 
         BiomeModifications.addFeature(
