@@ -1,5 +1,4 @@
 # 公共部分
-scoreboard players set @s triggered_session 0
 scoreboard players add @s enter_number 1
 tellraw @s [{"translate":"youzaiworldcore.tellraw.format"},{"text":"警告：服务器资源包未加载成功，可能会导致游戏出现问题（如物品丢失、方块消失等），请重新进入服务器以重试！",color:"red"}]
 

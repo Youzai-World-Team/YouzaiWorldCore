@@ -5,7 +5,6 @@ scoreboard objectives add health health "生命值"
 scoreboard objectives add beginner_tutorial_status dummy "新手教程状态"
 scoreboard objectives add leave_game minecraft.custom:minecraft.leave_game "离开游戏次数"
 scoreboard objectives add last_leave dummy "上次离开游戏数量"
-scoreboard objectives add triggered_session dummy "本次会话是否已触发过教程函数"
 scoreboard objectives add first_triggered dummy "是否已触发过首次进入教程"
 scoreboard objectives add receive_YZWC_messages dummy "接收YouzaiWorldCore消息设置(仅管理员)"
 
