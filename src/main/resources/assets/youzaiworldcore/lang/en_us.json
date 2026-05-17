@@ -49,5 +49,6 @@
   "block.youzaiworldcore.fly_beacon": "Flight Beacon",
   "itemGroup.youzaiworldcore.youzai_tab": "Youzai World",
   "modmenu.summaryTranslation.youzaiworldcore": "Youzai World Server Core",
-  "youzaiworldcore.tellraw.format":"§r§7✦ §4ᴍ§cɪ§6ɴ§eᴇ§aᴄ§bʀ§3ᴀ§dғ§uᴛ §7- §eYouzai World §7✦ §r"
+  "youzaiworldcore.tellraw.format":"§r§7✦ §4ᴍ§cɪ§6ɴ§eᴇ§aᴄ§bʀ§3ᴀ§dғ§uᴛ §7- §eYouzai World §7✦ §r",
+  "youzaiworldcore.tellraw.format.indev.warning":"§r§7✦ §eYouzaiWorldCore Debug Warning§7✦ §r"
 }

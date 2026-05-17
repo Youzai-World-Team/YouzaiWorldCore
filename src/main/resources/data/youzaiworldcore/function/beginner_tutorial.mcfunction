@@ -1,6 +1,7 @@
 # 公共部分
 scoreboard players add @s enter_number 1
 tellraw @s [{"translate":"youzaiworldcore.tellraw.format"},{"text":"警告：服务器资源包未加载成功，可能会导致游戏出现问题（如物品丢失、方块消失等），请重新进入服务器以重试！",color:"red"}]
+tellraw @s [{"translate":"youzaiworldcore.tellraw.format.indev.warning"},{"text":"正在使用 Indev 版本的功能，可能会存在不稳定和未完成的内容，请谨慎使用！",color:"yellow"}]
 
 # 根据 beginner_tutorial_status 的值调用对应的子函数
 # 值范围：0 ~ 11

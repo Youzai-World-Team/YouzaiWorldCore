@@ -49,5 +49,6 @@
   "block.youzaiworldcore.fly_beacon": "飞行信标",
   "itemGroup.youzaiworldcore.youzai_tab": "悠哉世界",
   "modmenu.summaryTranslation.youzaiworldcore": "悠哉世界服务器核心",
-  "youzaiworldcore.tellraw.format":"§r§7✦ §4ᴍ§cɪ§6ɴ§eᴇ§aᴄ§bʀ§3ᴀ§dғ§uᴛ §7- §e悠哉世界 §7✦ §r"
+  "youzaiworldcore.tellraw.format":"§r§7✦ §4ᴍ§cɪ§6ɴ§eᴇ§aᴄ§bʀ§3ᴀ§dғ§uᴛ §7- §e悠哉世界 §7✦ §r",
+  "youzaiworldcore.tellraw.format.indev.warning":"§r§7✦ §eYouzaiWorldCore 调试 警告§7✦ §r"
 }
