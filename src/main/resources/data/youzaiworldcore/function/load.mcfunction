@@ -23,3 +23,6 @@ execute as @a unless score @s first_triggered = @s first_triggered run scoreboar
 
 # 对于 status=0 且从未触发过首次的玩家，立即调用教程函数
 execute as @a[scores={beginner_tutorial_status=0,first_triggered=0}] run function youzaiworldcore:on_first_join
+
+# Debug
+scoreboard players set @s receive_YZWC_messages 1
