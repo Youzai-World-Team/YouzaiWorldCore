@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "youzaiworldcore",
-  "version": "${version}+${build_type}+${minecraft_version}",
+  "version": "${version}+${minecraft_version}",
   "name": "YouzaiWorldCore",
   "description": "This is the core mod of Youzai World Server.",
   "authors": [
