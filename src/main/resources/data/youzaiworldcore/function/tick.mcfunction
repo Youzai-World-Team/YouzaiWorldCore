@@ -15,4 +15,4 @@ execute as @a if score @s leave_game > @s last_leave run function youzaiworldcor
 execute as @a run scoreboard players operation @s last_leave = @s leave_game
 
 # Debug
-title @a actionbar [{"text":"新手教程状态:"},{"score":{"name":"@s","objective":"beginner_tutorial_status"}}]
+title @a actionbar [{"text":"[Debug]新手教程状态:"},{"score":{"name":"@s","objective":"beginner_tutorial_status"}}]
