@@ -5,7 +5,7 @@
     },
     "title": "悠哉世界",
     "description": "欢迎来到悠哉世界！",
-    "background": "youzaiworldcore:block/raw_yz_block",
+    "background": "youzaiworldcore:item/logo",
     "frame": "task",
     "show_toast": false,
     "announce_to_chat": false,
