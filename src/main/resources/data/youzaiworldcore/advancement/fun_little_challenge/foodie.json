@@ -6,7 +6,7 @@
     },
     "title": "美食家",
     "description": "吃下 5 种不同食物",
-    "frame": "task",
+    "frame": "goal",
     "show_toast": true,
     "announce_to_chat": true,
     "hidden": false

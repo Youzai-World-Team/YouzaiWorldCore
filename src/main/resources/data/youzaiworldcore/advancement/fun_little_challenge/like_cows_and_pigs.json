@@ -6,7 +6,7 @@
     },
     "title": "牛与猪的喜好",
     "description": "获得 10 个小麦",
-    "frame": "task",
+    "frame": "goal",
     "show_toast": true,
     "announce_to_chat": true,
     "hidden": false

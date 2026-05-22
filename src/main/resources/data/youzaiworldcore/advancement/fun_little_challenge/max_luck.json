@@ -1,5 +1,5 @@
 {
-  "parent": "youzaiworldcore:fun_little_challenge/get_emerald_blocks",
+  "parent": "youzaiworldcore:fun_little_challenge/root",
   "display": {
     "icon": {
       "id": "minecraft:potion",
@@ -9,7 +9,7 @@
     },
     "title": "幸运药水",
     "description": "获得幸运药水",
-    "frame": "challenge",
+    "frame": "goal",
     "show_toast": true,
     "announce_to_chat": true,
     "hidden": false

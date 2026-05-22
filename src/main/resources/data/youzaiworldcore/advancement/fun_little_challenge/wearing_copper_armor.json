@@ -1,5 +1,5 @@
 {
-  "parent": "youzaiworldcore:fun_little_challenge/stuck_in_cobweb",
+  "parent": "youzaiworldcore:fun_little_challenge/root",
   "display": {
     "icon": {
       "id": "minecraft:copper_ingot"
