@@ -8,6 +8,12 @@
                     {
                         "items": "youzaiworldcore:void_staff"
                     }
+                ],
+                "player": [
+                    {
+                        "condition": "minecraft:reference",
+                        "name": "youzaiworldcore:not_in_tutorial_dimension"
+                    }
                 ]
             }
         }

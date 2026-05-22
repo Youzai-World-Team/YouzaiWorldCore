@@ -1,0 +1,28 @@
+{
+  "parent": "youzaiworldcore:fun_little_challenge/root",
+  "display": {
+    "icon": {
+      "id": "minecraft:ender_eye"
+    },
+    "title":"归途",
+    "description":"从末地回到主世界",
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "way_home": {
+      "trigger": "minecraft:changed_dimension",
+      "conditions": {
+        "from": "minecraft:the_end",
+        "to": "minecraft:overworld"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "way_home"
+    ]
+  ]
+}

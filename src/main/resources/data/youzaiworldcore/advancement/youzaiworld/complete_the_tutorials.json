@@ -1,0 +1,24 @@
+{
+    "parent": "youzaiworldcore:youzaiworld/have_void_staff",
+    "display": {
+        "icon": {
+            "id": "youzaiworldcore:logo"
+        },
+        "title": "新的开始",
+        "description": "完成新手教程。",
+        "frame": "challenge",
+        "show_toast": true,
+        "announce_to_chat": true,
+        "hidden": false
+    },
+    "criteria": {
+        "manual_grant": {
+            "trigger": "minecraft:impossible"
+        }
+    },
+    "requirements": [
+        [
+            "manual_grant"
+        ]
+    ]
+}

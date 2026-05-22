@@ -19,6 +19,12 @@
                     {
                         "items": "youzaiworldcore:raw_yz"
                     }
+                ],
+                "player": [
+                    {
+                        "condition": "minecraft:reference",
+                        "name": "youzaiworldcore:not_in_tutorial_dimension"
+                    }
                 ]
             }
         }

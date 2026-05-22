@@ -19,6 +19,12 @@
           {
             "items": "youzaiworldcore:yz_axe"
           }
+        ],
+        "player": [
+          {
+            "condition": "minecraft:reference",
+            "name": "youzaiworldcore:not_in_tutorial_dimension"
+          }
         ]
       }
     },
@@ -28,6 +34,12 @@
         "items": [
           {
             "items": "youzaiworldcore:yz_hoe"
+          }
+        ],
+        "player": [
+          {
+            "condition": "minecraft:reference",
+            "name": "youzaiworldcore:not_in_tutorial_dimension"
           }
         ]
       }
@@ -39,6 +51,12 @@
           {
             "items": "youzaiworldcore:yz_pickaxe"
           }
+        ],
+        "player": [
+          {
+            "condition": "minecraft:reference",
+            "name": "youzaiworldcore:not_in_tutorial_dimension"
+          }
         ]
       }
     },
@@ -49,6 +67,12 @@
           {
             "items": "youzaiworldcore:yz_shovel"
           }
+        ],
+        "player": [
+          {
+            "condition": "minecraft:reference",
+            "name": "youzaiworldcore:not_in_tutorial_dimension"
+          }
         ]
       }
     },
@@ -58,6 +82,12 @@
         "items": [
           {
             "items": "youzaiworldcore:yz_sword"
+          }
+        ],
+        "player": [
+          {
+            "condition": "minecraft:reference",
+            "name": "youzaiworldcore:not_in_tutorial_dimension"
           }
         ]
       }

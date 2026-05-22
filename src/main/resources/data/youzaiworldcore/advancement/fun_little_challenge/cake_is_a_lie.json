@@ -1,0 +1,31 @@
+{
+  "parent": "youzaiworldcore:fun_little_challenge/root",
+  "display": {
+    "icon": {
+      "id": "minecraft:cake"
+    },
+    "title": "蛋糕是个谎言",
+    "description":"获得一个蛋糕",
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "get_cake": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "minecraft:cake"
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "get_cake"
+    ]
+  ]
+}
