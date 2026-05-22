@@ -13,6 +13,7 @@ import net.minecraft.world.item.Rarity;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.component.TooltipDisplay;
 import net.minecraft.world.level.Level;
+import org.jspecify.annotations.NonNull;
 import top.csituka.youzaiworldcore.component.ModDataComponents;
 
 import java.util.HashSet;
@@ -29,24 +30,25 @@ public class VoidStaffItem extends Item {
     }
 
     @Override
-    public InteractionResult use(Level level, Player player, InteractionHand usedHand) {
+    @NonNull
+    public InteractionResult use(Level level, Player player, @NonNull InteractionHand usedHand) {
         ItemStack stack = player.getItemInHand(usedHand);
-        
+
         if (level.isClientSide()) {
             return InteractionResult.PASS;
         }
-        
+
         if (player.isCreative()) {
             return InteractionResult.FAIL;
         }
-        
+
         UUID playerId = player.getUUID();
-        
+
         if (flyingPlayers.contains(playerId)) {
             disableFlight(player);
             flyingPlayers.remove(playerId);
             stack.remove(ModDataComponents.VOID_STAFF_ACTIVE);
-            sendActionBar(player, 
+            sendActionBar(player,
                     Component.translatable("item.youzaiworldcore.void_staff.disabled")
                             .withStyle(ChatFormatting.RED)
             );
@@ -54,12 +56,12 @@ public class VoidStaffItem extends Item {
             enableFlight(player);
             flyingPlayers.add(playerId);
             stack.set(ModDataComponents.VOID_STAFF_ACTIVE, true);
-            sendActionBar(player, 
+            sendActionBar(player,
                     Component.translatable("item.youzaiworldcore.void_staff.enabled")
                             .withStyle(ChatFormatting.GREEN)
             );
         }
-        
+
         return InteractionResult.SUCCESS;
     }
 
@@ -97,14 +99,14 @@ public class VoidStaffItem extends Item {
     public static boolean hasVoidStaffInHand(Player player) {
         ItemStack mainHand = player.getMainHandItem();
         ItemStack offHand = player.getOffhandItem();
-        
+
         return mainHand.getItem() instanceof VoidStaffItem || offHand.getItem() instanceof VoidStaffItem;
     }
 
     public static ItemStack getVoidStaffInHand(Player player) {
         ItemStack mainHand = player.getMainHandItem();
         ItemStack offHand = player.getOffhandItem();
-        
+
         if (mainHand.getItem() instanceof VoidStaffItem) {
             return mainHand;
         } else if (offHand.getItem() instanceof VoidStaffItem) {
@@ -118,7 +120,7 @@ public class VoidStaffItem extends Item {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, TooltipContext context, TooltipDisplay display, Consumer<Component> tooltip, TooltipFlag flag) {
+    public void appendHoverText(@NonNull ItemStack stack, @NonNull TooltipContext context, @NonNull TooltipDisplay display, Consumer<Component> tooltip, @NonNull TooltipFlag flag) {
         tooltip.accept(Component.translatable("item.youzaiworldcore.void_staff.tooltip")
                 .withStyle(ChatFormatting.GRAY));
         super.appendHoverText(stack, context, display, tooltip, flag);

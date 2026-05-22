@@ -10,6 +10,7 @@ import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import org.jspecify.annotations.NonNull;
 import top.csituka.youzaiworldcore.block.ModBlocks;
 import top.csituka.youzaiworldcore.block.entity.FlyBeaconBlockEntity;
 
@@ -28,14 +29,17 @@ public class FlyBeaconMenu extends AbstractContainerMenu {
     public FlyBeaconMenu(int containerId, Inventory playerInventory) {
         this(containerId, playerInventory, new SimpleContainer(1), new ContainerData() {
             private final int[] data = new int[3];
+
             @Override
             public int get(int index) {
                 return data[index];
             }
+
             @Override
             public void set(int index, int value) {
                 data[index] = value;
             }
+
             @Override
             public int getCount() {
                 return 3;
@@ -44,7 +48,13 @@ public class FlyBeaconMenu extends AbstractContainerMenu {
     }
 
     public FlyBeaconMenu(int containerId, Inventory playerInventory, FlyBeaconBlockEntity blockEntity) {
-        this(containerId, playerInventory, blockEntity, blockEntity.getDataAccess(), ContainerLevelAccess.create(blockEntity.getLevel(), blockEntity.getBlockPos()));
+        var blockEntityLevel = blockEntity.getLevel();
+
+        if (blockEntityLevel == null) {
+            throw new IllegalStateException("FlyBeaconBlockEntity level is null");
+        }
+
+        this(containerId, playerInventory, blockEntity, blockEntity.getDataAccess(), ContainerLevelAccess.create(blockEntityLevel, blockEntity.getBlockPos()));
     }
 
     public FlyBeaconMenu(int containerId, Inventory playerInventory, Container container, ContainerData data, ContainerLevelAccess access) {
@@ -57,7 +67,7 @@ public class FlyBeaconMenu extends AbstractContainerMenu {
 
         this.addSlot(new Slot(container, FUEL_SLOT, 80, 53) {
             @Override
-            public boolean mayPlace(ItemStack stack) {
+            public boolean mayPlace(@NonNull ItemStack stack) {
                 return stack.is(Items.LAPIS_LAZULI);
             }
         });
@@ -105,11 +115,12 @@ public class FlyBeaconMenu extends AbstractContainerMenu {
     }
 
     @Override
-    public ItemStack quickMoveStack(Player player, int index) {
+    @NonNull
+    public ItemStack quickMoveStack(@NonNull Player player, int index) {
         ItemStack itemStack = ItemStack.EMPTY;
         Slot slot = this.slots.get(index);
 
-        if (slot != null && slot.hasItem()) {
+        if (slot.hasItem()) {
             ItemStack slotStack = slot.getItem();
             itemStack = slotStack.copy();
 
@@ -144,7 +155,7 @@ public class FlyBeaconMenu extends AbstractContainerMenu {
     }
 
     @Override
-    public boolean stillValid(Player player) {
+    public boolean stillValid(@NonNull Player player) {
         return stillValid(this.access, player, ModBlocks.FLY_BEACON);
     }
 }

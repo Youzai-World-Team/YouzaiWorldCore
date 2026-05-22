@@ -11,6 +11,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
+import org.jspecify.annotations.NonNull;
 import top.csituka.youzaiworldcore.YouzaiworldCore;
 import top.csituka.youzaiworldcore.network.ClientNetworking;
 import top.csituka.youzaiworldcore.screen.DecompositionTableMenu;
@@ -46,19 +47,19 @@ public class DecompositionTableScreen extends AbstractContainerScreen<Decomposit
         super.init();
         this.leftPos = (this.width - this.imageWidth) / 2;
         this.topPos = (this.height - this.imageHeight) / 2;
-        
+
         decomposeButton = new DecomposeButton(
-            this.leftPos + BUTTON_X, 
-            this.topPos + BUTTON_Y, 
-            BUTTON_SIZE, 
-            BUTTON_SIZE,
-            this
+                this.leftPos + BUTTON_X,
+                this.topPos + BUTTON_Y,
+                BUTTON_SIZE,
+                BUTTON_SIZE,
+                this
         );
         this.addRenderableWidget(decomposeButton);
     }
 
     @Override
-    public void extractRenderState(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
+    public void extractRenderState(@NonNull GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
         drawBackground(guiGraphics);
 
         drawInputSlot(guiGraphics, mouseX, mouseY);
@@ -82,17 +83,17 @@ public class DecompositionTableScreen extends AbstractContainerScreen<Decomposit
         if (inputStack.isEmpty()) {
             return false;
         }
-        
+
         if (inputStack.isDamageableItem() && inputStack.getDamageValue() > 0) {
             return false;
         }
-        
+
         for (int i = 1; i <= 9; i++) {
             if (!this.menu.getContainer().getItem(i).isEmpty()) {
                 return false;
             }
         }
-        
+
         return true;
     }
 
@@ -180,19 +181,19 @@ public class DecompositionTableScreen extends AbstractContainerScreen<Decomposit
     }
 
     private static class DecomposeButton extends AbstractWidget {
-        
+
         private final DecompositionTableScreen screen;
-        
+
         public DecomposeButton(int x, int y, int width, int height, DecompositionTableScreen screen) {
             super(x, y, width, height, Component.empty());
             this.screen = screen;
         }
 
         @Override
-        protected void extractWidgetRenderState(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
+        protected void extractWidgetRenderState(@NonNull GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
             boolean canDecompose = screen.canDecompose();
             boolean isHovered = this.isHovered();
-            
+
             int color;
             if (!canDecompose) {
                 color = BUTTON_DISABLED_COLOR;
@@ -204,9 +205,9 @@ public class DecompositionTableScreen extends AbstractContainerScreen<Decomposit
 
             int x = this.getX();
             int y = this.getY();
-            
+
             fillRoundedRect(guiGraphics, x, y, this.width, this.height, 3, color);
-            
+
             guiGraphics.blit(RenderPipelines.GUI_TEXTURED, DECOMPOSITION_BUTTON_TEXTURE, x, y, 0, 0, this.width, this.height, this.width, this.height);
         }
 
@@ -228,14 +229,14 @@ public class DecompositionTableScreen extends AbstractContainerScreen<Decomposit
         }
 
         @Override
-        public void onClick(MouseButtonEvent event, boolean isActuallyClick) {
+        public void onClick(@NonNull MouseButtonEvent event, boolean isActuallyClick) {
             if (screen.canDecompose()) {
                 screen.onDecomposeClick();
             }
         }
 
         @Override
-        protected void updateWidgetNarration(NarrationElementOutput narrationElementOutput) {
+        protected void updateWidgetNarration(@NonNull NarrationElementOutput narrationElementOutput) {
         }
     }
 }

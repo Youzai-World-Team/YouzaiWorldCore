@@ -18,13 +18,12 @@ import net.minecraft.world.item.crafting.PlacementInfo;
 import net.minecraft.world.item.crafting.ShapedRecipe;
 import net.minecraft.world.item.crafting.ShapelessRecipe;
 import net.minecraft.world.level.Level;
+import org.jspecify.annotations.NonNull;
 import top.csituka.youzaiworldcore.block.entity.DecompositionTableBlockEntity;
 import top.csituka.youzaiworldcore.screen.slot.DecompositionInputSlot;
 import top.csituka.youzaiworldcore.screen.slot.DecompositionOutputSlot;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
 public class DecompositionTableMenu extends AbstractContainerMenu {
 
@@ -37,16 +36,24 @@ public class DecompositionTableMenu extends AbstractContainerMenu {
     private final Container container;
     private final ContainerLevelAccess access;
     private final Level level;
+    private final List<RecipeHolder<CraftingRecipe>> currentRecipes = new ArrayList<>();
     private List<ItemStack> currentOutputs = new ArrayList<>();
     private int currentRecipeIndex = 0;
-    private List<RecipeHolder<CraftingRecipe>> currentRecipes = new ArrayList<>();
+    private final HashMap<Item, RecipeHolder<CraftingRecipe>> recipesMap = new HashMap<>();
+
 
     public DecompositionTableMenu(int containerId, Inventory playerInventory) {
         this(containerId, playerInventory, new SimpleContainer(10), ContainerLevelAccess.NULL);
     }
 
     public DecompositionTableMenu(int containerId, Inventory playerInventory, DecompositionTableBlockEntity blockEntity) {
-        this(containerId, playerInventory, blockEntity, ContainerLevelAccess.create(blockEntity.getLevel(), blockEntity.getBlockPos()));
+        var blockEntityLevel = blockEntity.getLevel();
+
+        if (blockEntityLevel == null) {
+            throw new IllegalStateException("Block entity level is null");
+        }
+
+        this(containerId, playerInventory, blockEntity, ContainerLevelAccess.create(blockEntityLevel, blockEntity.getBlockPos()));
     }
 
     public DecompositionTableMenu(int containerId, Inventory playerInventory, Container container, ContainerLevelAccess access) {
@@ -81,22 +88,22 @@ public class DecompositionTableMenu extends AbstractContainerMenu {
         if (level.isClientSide()) {
             return false;
         }
-        
+
         ItemStack inputStack = container.getItem(INPUT_SLOT);
         if (inputStack.isEmpty()) {
             return false;
         }
-        
+
         if (inputStack.isDamageableItem() && inputStack.getDamageValue() > 0) {
             return false;
         }
-        
+
         for (int i = OUTPUT_SLOT_START; i <= OUTPUT_SLOT_END; i++) {
             if (!container.getItem(i).isEmpty()) {
                 return false;
             }
         }
-        
+
         return true;
     }
 
@@ -104,7 +111,7 @@ public class DecompositionTableMenu extends AbstractContainerMenu {
         if (!canDecompose()) {
             return;
         }
-        
+
         ItemStack inputStack = container.getItem(INPUT_SLOT);
         if (inputStack.isEmpty()) {
             return;
@@ -114,7 +121,7 @@ public class DecompositionTableMenu extends AbstractContainerMenu {
         currentRecipeIndex = 0;
 
         findRecipesForInput(inputStack);
-        
+
         if (!currentRecipes.isEmpty()) {
             applyCurrentRecipe();
         }
@@ -125,26 +132,34 @@ public class DecompositionTableMenu extends AbstractContainerMenu {
             return;
         }
 
-        RecipeManager recipeManager = level.getServer().getRecipeManager();
+        RecipeManager recipeManager = Objects.requireNonNull(level.getServer()).getRecipeManager();
         Item inputItem = inputStack.getItem();
-        
+
+        var recipesCache = recipesMap.get(inputItem);
+
+        if (recipesCache != null) {
+            @SuppressWarnings("unchecked") RecipeHolder<CraftingRecipe> craftingHolder = recipesCache;
+            currentRecipes.add(craftingHolder);
+            return;
+        }
+
         Collection<RecipeHolder<?>> allRecipes = recipeManager.getRecipes();
-        
+
         for (RecipeHolder<?> holder : allRecipes) {
             CraftingRecipe recipe = null;
-            
+
             if (holder.value() instanceof ShapedRecipe shapedRecipe) {
                 recipe = shapedRecipe;
             } else if (holder.value() instanceof ShapelessRecipe shapelessRecipe) {
                 recipe = shapelessRecipe;
             }
-            
+
             if (recipe != null) {
                 ItemStack result = getRecipeResult(recipe);
-                
+
                 if (!result.isEmpty() && result.getItem() == inputItem) {
-                    @SuppressWarnings("unchecked")
-                    RecipeHolder<CraftingRecipe> craftingHolder = (RecipeHolder<CraftingRecipe>) holder;
+                    @SuppressWarnings("unchecked") RecipeHolder<CraftingRecipe> craftingHolder = (RecipeHolder<CraftingRecipe>) holder;
+                    recipesMap.put(inputItem, craftingHolder);
                     currentRecipes.add(craftingHolder);
                 }
             }
@@ -155,35 +170,34 @@ public class DecompositionTableMenu extends AbstractContainerMenu {
         try {
             PlacementInfo placementInfo = recipe.placementInfo();
             List<Ingredient> ingredients = placementInfo.ingredients();
-            
+
             if (ingredients.isEmpty()) {
                 return ItemStack.EMPTY;
             }
-            
+
             List<ItemStack> sampleItems = new ArrayList<>();
             for (Ingredient ingredient : ingredients) {
                 if (!ingredient.isEmpty()) {
                     List<Holder<Item>> items = ingredient.items().toList();
                     if (!items.isEmpty()) {
-                        sampleItems.add(new ItemStack(items.get(0).value()));
+                        sampleItems.add(new ItemStack(items.getFirst().value()));
                     }
                 }
             }
-            
+
             if (sampleItems.isEmpty()) {
                 return ItemStack.EMPTY;
             }
-            
+
             int width = recipe instanceof ShapedRecipe shaped ? shaped.getWidth() : 1;
             int height = recipe instanceof ShapedRecipe shaped ? shaped.getHeight() : 1;
-            
+
             while (sampleItems.size() < width * height) {
                 sampleItems.add(ItemStack.EMPTY);
             }
-            
-            net.minecraft.world.item.crafting.CraftingInput craftingInput = 
-                net.minecraft.world.item.crafting.CraftingInput.of(width, height, sampleItems);
-            
+
+            net.minecraft.world.item.crafting.CraftingInput craftingInput = net.minecraft.world.item.crafting.CraftingInput.of(width, height, sampleItems);
+
             return recipe.assemble(craftingInput);
         } catch (Exception e) {
             return ItemStack.EMPTY;
@@ -197,42 +211,42 @@ public class DecompositionTableMenu extends AbstractContainerMenu {
 
         RecipeHolder<CraftingRecipe> recipeHolder = currentRecipes.get(currentRecipeIndex);
         CraftingRecipe recipe = recipeHolder.value();
-        
+
         ItemStack resultItem = getRecipeResult(recipe);
         int resultCount = resultItem.getCount();
-        
+
         if (resultCount <= 0) {
             resultCount = 1;
         }
-        
+
         ItemStack inputStack = container.getItem(INPUT_SLOT);
         if (inputStack.isEmpty() || inputStack.getCount() < resultCount) {
             return;
         }
-        
+
         List<ItemStack> outputs = getIngredientsFromRecipe(recipe);
-        
+
         currentOutputs = outputs;
-        
+
         for (int i = 0; i < Math.min(outputs.size(), 9); i++) {
             container.setItem(OUTPUT_SLOT_START + i, outputs.get(i).copy());
         }
-        
+
         inputStack.shrink(resultCount);
         container.setChanged();
     }
 
     private List<ItemStack> getIngredientsFromRecipe(CraftingRecipe recipe) {
         List<ItemStack> outputs = new ArrayList<>();
-        
+
         PlacementInfo placementInfo = recipe.placementInfo();
         List<Ingredient> ingredients = placementInfo.ingredients();
-        
+
         for (Ingredient ingredient : ingredients) {
             if (!ingredient.isEmpty()) {
                 List<Holder<Item>> items = ingredient.items().toList();
                 if (!items.isEmpty()) {
-                    outputs.add(new ItemStack(items.get(0).value()));
+                    outputs.add(new ItemStack(items.getFirst().value()));
                 } else {
                     outputs.add(ItemStack.EMPTY);
                 }
@@ -240,11 +254,11 @@ public class DecompositionTableMenu extends AbstractContainerMenu {
                 outputs.add(ItemStack.EMPTY);
             }
         }
-        
+
         while (outputs.size() < 9) {
             outputs.add(ItemStack.EMPTY);
         }
-        
+
         return outputs;
     }
 
@@ -252,11 +266,11 @@ public class DecompositionTableMenu extends AbstractContainerMenu {
         if (level.isClientSide()) {
             return;
         }
-        
+
         if (currentRecipes.size() <= 1) {
             return;
         }
-        
+
         currentRecipeIndex = (currentRecipeIndex + 1) % currentRecipes.size();
         applyCurrentRecipe();
     }
@@ -280,14 +294,15 @@ public class DecompositionTableMenu extends AbstractContainerMenu {
     }
 
     @Override
-    public ItemStack quickMoveStack(Player player, int index) {
+    @NonNull
+    public ItemStack quickMoveStack(@NonNull Player player, int index) {
         ItemStack itemStack = ItemStack.EMPTY;
         Slot slot = this.slots.get(index);
-        
-        if (slot != null && slot.hasItem()) {
+
+        if (slot.hasItem()) {
             ItemStack slotStack = slot.getItem();
             itemStack = slotStack.copy();
-            
+
             if (index >= INPUT_SLOT && index <= OUTPUT_SLOT_END) {
                 if (!this.moveItemStackTo(slotStack, PLAYER_INV_START, PLAYER_INV_END, true)) {
                     return ItemStack.EMPTY;
@@ -297,23 +312,27 @@ public class DecompositionTableMenu extends AbstractContainerMenu {
                     return ItemStack.EMPTY;
                 }
             }
-            
+
             if (slotStack.isEmpty()) {
                 slot.set(ItemStack.EMPTY);
             } else {
                 slot.setChanged();
             }
         }
-        
+
         return itemStack;
     }
 
     @Override
-    public boolean stillValid(Player player) {
+    public boolean stillValid(@NonNull Player player) {
         return stillValid(this.access, player, top.csituka.youzaiworldcore.block.ModBlocks.DECOMPOSITION_TABLE);
     }
 
     public Container getContainer() {
         return container;
+    }
+
+    public List<ItemStack> getCurrentOutputs() {
+        return currentOutputs;
     }
 }

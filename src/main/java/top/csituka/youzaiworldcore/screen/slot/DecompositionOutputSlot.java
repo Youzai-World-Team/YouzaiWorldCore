@@ -5,6 +5,7 @@ import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
+import org.jspecify.annotations.NonNull;
 import top.csituka.youzaiworldcore.screen.DecompositionTableMenu;
 
 public class DecompositionOutputSlot extends Slot {
@@ -17,17 +18,18 @@ public class DecompositionOutputSlot extends Slot {
     }
 
     @Override
-    public boolean mayPlace(ItemStack stack) {
+    public boolean mayPlace(@NonNull ItemStack stack) {
         return false;
     }
 
     @Override
-    public void onTake(Player player, ItemStack stack) {
+    public void onTake(@NonNull Player player, @NonNull ItemStack stack) {
         super.onTake(player, stack);
         menu.onOutputTaken(this.index);
     }
 
     @Override
+    @NonNull
     public ItemStack remove(int amount) {
         ItemStack result = super.remove(amount);
         if (!result.isEmpty()) {

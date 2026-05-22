@@ -6,6 +6,7 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.gui.screens.inventory.MenuAccess;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
+import org.jspecify.annotations.NonNull;
 import top.csituka.youzaiworldcore.client.screen.widget.ToggleButton;
 import top.csituka.youzaiworldcore.network.FlyBeaconActivePayload;
 import top.csituka.youzaiworldcore.screen.FlyBeaconMenu;
@@ -46,23 +47,23 @@ public class FlyBeaconScreen extends AbstractContainerScreen<FlyBeaconMenu> impl
         super.init();
         this.leftPos = (this.width - this.imageWidth) / 2;
         this.topPos = (this.height - this.imageHeight) / 2;
-        
+
         this.toggleButton = new ToggleButton(
-            this.leftPos + TOGGLE_BUTTON_X,
-            this.topPos + TOGGLE_BUTTON_Y,
-            TOGGLE_BUTTON_SIZE,
-            () -> {
-                boolean newActive = !this.menu.isActive();
-                ClientPlayNetworking.send(new FlyBeaconActivePayload(newActive));
-            }
+                this.leftPos + TOGGLE_BUTTON_X,
+                this.topPos + TOGGLE_BUTTON_Y,
+                TOGGLE_BUTTON_SIZE,
+                () -> {
+                    boolean newActive = !this.menu.isActive();
+                    ClientPlayNetworking.send(new FlyBeaconActivePayload(newActive));
+                }
         );
         this.toggleButton.setToggled(this.menu.isActive());
-        
+
         this.addRenderableWidget(this.toggleButton);
     }
 
     @Override
-    public void extractRenderState(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
+    public void extractRenderState(@NonNull GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
         drawBackground(guiGraphics);
         drawEnergyBar(guiGraphics, mouseX, mouseY);
         drawFuelSlot(guiGraphics, mouseX, mouseY);

@@ -4,6 +4,7 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
+import org.jspecify.annotations.NonNull;
 import top.csituka.youzaiworldcore.block.entity.FlyBeaconBlockEntity;
 import top.csituka.youzaiworldcore.item.tool.VoidStaffItem;
 
@@ -13,13 +14,17 @@ import java.util.UUID;
 
 public class FlyBeaconTickHandler implements ServerTickEvents.StartTick {
 
+    private static final FlyBeaconTickHandler INSTANCE = new FlyBeaconTickHandler();
     private static final int BEACON_RADIUS = 10;
     private static final int CHECK_INTERVAL = 10;
     private static final Set<UUID> beaconFlyingPlayers = new HashSet<>();
     private static int tickCounter = 0;
 
+    private FlyBeaconTickHandler() {
+    }
+
     @Override
-    public void onStartTick(MinecraftServer server) {
+    public void onStartTick(@NonNull MinecraftServer server) {
         tickCounter++;
         if (tickCounter < CHECK_INTERVAL) {
             return;
@@ -68,7 +73,7 @@ public class FlyBeaconTickHandler implements ServerTickEvents.StartTick {
     }
 
     public static boolean isBeaconFlying(UUID playerId) {
-        return beaconFlyingPlayers.contains(playerId);
+        return !beaconFlyingPlayers.contains(playerId);
     }
 
     public static void removePlayer(UUID playerId) {
@@ -76,6 +81,6 @@ public class FlyBeaconTickHandler implements ServerTickEvents.StartTick {
     }
 
     public static void register() {
-        ServerTickEvents.START_SERVER_TICK.register(new FlyBeaconTickHandler());
+        ServerTickEvents.START_SERVER_TICK.register(INSTANCE);
     }
 }

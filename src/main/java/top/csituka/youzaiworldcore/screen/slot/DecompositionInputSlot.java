@@ -3,6 +3,7 @@ package top.csituka.youzaiworldcore.screen.slot;
 import net.minecraft.world.Container;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
+import org.jspecify.annotations.NonNull;
 import top.csituka.youzaiworldcore.screen.DecompositionTableMenu;
 
 public class DecompositionInputSlot extends Slot {
@@ -21,7 +22,7 @@ public class DecompositionInputSlot extends Slot {
     }
 
     @Override
-    public int getMaxStackSize(ItemStack stack) {
+    public int getMaxStackSize(@NonNull ItemStack stack) {
         return 64;
     }
 }

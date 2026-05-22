@@ -14,6 +14,7 @@ import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import org.jspecify.annotations.NonNull;
 
 import java.util.function.Consumer;
 
@@ -24,13 +25,14 @@ public class YzHoeItem extends HoeItem {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, TooltipContext context, TooltipDisplay display, Consumer<Component> tooltip, TooltipFlag flag) {
+    public void appendHoverText(@NonNull ItemStack stack, @NonNull TooltipContext context, @NonNull TooltipDisplay display, Consumer<Component> tooltip, @NonNull TooltipFlag flag) {
         tooltip.accept(Component.translatable("item.youzaiworldcore.yz_hoe.tooltip")
                 .withStyle(ChatFormatting.GRAY));
         super.appendHoverText(stack, context, display, tooltip, flag);
     }
 
     @Override
+    @NonNull
     public InteractionResult useOn(UseOnContext context) {
         Player player = context.getPlayer();
         if (player != null && player.isShiftKeyDown()) {

@@ -17,6 +17,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
+import org.jspecify.annotations.NonNull;
 import top.csituka.youzaiworldcore.screen.FlyBeaconMenu;
 import top.csituka.youzaiworldcore.block.FlyBeaconBlock;
 
@@ -56,7 +57,8 @@ public class FlyBeaconBlockEntity extends BlockEntity implements Container, Menu
             switch (index) {
                 case 0 -> energy = value;
                 case 2 -> active = value != 0;
-                default -> {}
+                default -> {
+                }
             }
         }
 
@@ -102,8 +104,8 @@ public class FlyBeaconBlockEntity extends BlockEntity implements Container, Menu
             blockEntity.drainTickCounter = 0;
         }
 
-        if (blockEntity.energy < 9000) {
-            ItemStack fuelStack = blockEntity.items.get(0);
+        if (blockEntity.energy < 9001) {
+            ItemStack fuelStack = blockEntity.items.getFirst();
             if (fuelStack.is(Items.LAPIS_LAZULI)) {
                 blockEntity.fuelTickCounter++;
                 if (blockEntity.fuelTickCounter >= FUEL_CONSUME_INTERVAL) {
@@ -136,22 +138,25 @@ public class FlyBeaconBlockEntity extends BlockEntity implements Container, Menu
     }
 
     @Override
+    @NonNull
     public ItemStack getItem(int slot) {
         return items.get(slot);
     }
 
     @Override
+    @NonNull
     public ItemStack removeItem(int slot, int amount) {
         return ContainerHelper.removeItem(items, slot, amount);
     }
 
     @Override
+    @NonNull
     public ItemStack removeItemNoUpdate(int slot) {
         return ContainerHelper.takeItem(items, slot);
     }
 
     @Override
-    public void setItem(int slot, ItemStack stack) {
+    public void setItem(int slot, @NonNull ItemStack stack) {
         items.set(slot, stack);
         setChanged();
     }
@@ -162,7 +167,7 @@ public class FlyBeaconBlockEntity extends BlockEntity implements Container, Menu
     }
 
     @Override
-    public boolean stillValid(Player player) {
+    public boolean stillValid(@NonNull Player player) {
         if (this.level == null) {
             return false;
         }
@@ -188,7 +193,7 @@ public class FlyBeaconBlockEntity extends BlockEntity implements Container, Menu
     }
 
     @Override
-    public void preRemoveSideEffects(BlockPos pos, BlockState state) {
+    public void preRemoveSideEffects(@NonNull BlockPos pos, @NonNull BlockState state) {
         if (this.active) {
             activeBeacons.remove(pos.immutable());
         }
@@ -209,6 +214,9 @@ public class FlyBeaconBlockEntity extends BlockEntity implements Container, Menu
     }
 
     public void setActive(boolean active) {
+        if (active && energy <= 0) {
+            return;
+        }
         this.active = active;
         this.setChanged();
         if (active) {
@@ -233,7 +241,7 @@ public class FlyBeaconBlockEntity extends BlockEntity implements Container, Menu
     }
 
     @Override
-    protected void saveAdditional(ValueOutput output) {
+    protected void saveAdditional(@NonNull ValueOutput output) {
         super.saveAdditional(output);
         ContainerHelper.saveAllItems(output, items);
         output.putInt("Energy", energy);
@@ -241,7 +249,7 @@ public class FlyBeaconBlockEntity extends BlockEntity implements Container, Menu
     }
 
     @Override
-    protected void loadAdditional(ValueInput input) {
+    protected void loadAdditional(@NonNull ValueInput input) {
         super.loadAdditional(input);
         ContainerHelper.loadAllItems(input, items);
         energy = input.getIntOr("Energy", 0);
@@ -249,12 +257,13 @@ public class FlyBeaconBlockEntity extends BlockEntity implements Container, Menu
     }
 
     @Override
+    @NonNull
     public Component getDisplayName() {
         return Component.translatable("block.youzaiworldcore.fly_beacon");
     }
 
     @Override
-    public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
+    public AbstractContainerMenu createMenu(int containerId, @NonNull Inventory playerInventory, @NonNull Player player) {
         return new FlyBeaconMenu(containerId, playerInventory, this);
     }
 }
