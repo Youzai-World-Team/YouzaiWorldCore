@@ -1,3 +1,6 @@
+# 新手教程第一部分：欢迎界面
+
+
 # 先传送到教程世界
 # 在生产环境时需要替换为youzaiworld:tutorials
 execute as @s in minecraft:overworld run tp @s 0 100 0 0 0
@@ -5,7 +8,7 @@ execute as @s in minecraft:overworld run tp @s 0 100 0 0 0
 # 显示欢迎标题
 title @s title [{"text":"你好，","color":"white"},{"selector":"@s","color":"gold"}]
 title @s subtitle [{"text":"欢迎来到悠哉世界！","color":"yellow"}]
-tellraw @s [{"translate":"youzaiworldcore.tellraw.format"},{"text":"欢迎你 ",color:"green"},{"entity":"@s",nbt:"name",color:"gold",bold:true},{"text":"，在正式开始之前，请先完成新手教程，了解服务器的基本玩法和特色功能！",color:"green"}]
+tellraw @s [{"translate":"youzaiworldcore.tellraw.format"},{"text":"欢迎你 ",color:"green"},{"selector":"@s",color:"gold",bold:true},{"text":"，在正式开始之前，请先完成新手教程，了解服务器的基本玩法和特色功能！",color:"green"}]
 
 # 播放点声音
 playsound entity.player.levelup master @s
