@@ -13,6 +13,8 @@ import top.csituka.youzaiworldcore.component.ModDataComponents;
 import top.csituka.youzaiworldcore.item.ModItems;
 import top.csituka.youzaiworldcore.item.tool.VoidStaffItem;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -23,6 +25,7 @@ import java.util.UUID;
  *     <li>每秒检查玩家是否手持凭虚法杖，若未手持则关闭飞行并清除相关状态</li>
  *     <li>每刻（实际每 5 秒）消耗玩家的饥饿值或饱和度来维持飞行，耗尽时强制关闭飞行</li>
  *     <li>当法杖耐久耗尽时自动销毁并关闭飞行</li>
+ *     <li>玩家首次通过法杖获得飞行能力时授予成就</li>
  *     <li>玩家断开连接或加入时清理残留的 active 状态组件</li>
  * </ul>
  * 实现 Fabric API 的 {@link ServerTickEvents.StartTick} 接口。
@@ -43,6 +46,9 @@ public class VoidStaffTickHandler implements ServerTickEvents.StartTick {
 
     // 每次扣除饥饿值的间隔刻数（100 tick = 5 秒）
     private static final int TICKS_PER_HUNGER = 100;
+
+    // 记录已经授予过“使用凭虚法杖”成就的玩家，避免重复授予
+    private static final Set<UUID> grantedAchievementPlayers = new HashSet<>();
 
     // 私有构造，确保单例
     private VoidStaffTickHandler() {
@@ -111,6 +117,13 @@ public class VoidStaffTickHandler implements ServerTickEvents.StartTick {
                                 flyCore.setDamageValue(newDamage);
                             }
                         }
+                    }
+
+                    // ***** 新增：首次获得飞行能力时授予成就 *****
+                    // 玩家正在飞行且标记为 true，并且尚未授予过成就
+                    if (player.getAbilities().flying && !grantedAchievementPlayers.contains(playerId)) {
+                        grantUsedVoidStaffAdvancementViaCommand(player, server);
+                        grantedAchievementPlayers.add(playerId);
                     }
                 }
             }
@@ -184,10 +197,24 @@ public class VoidStaffTickHandler implements ServerTickEvents.StartTick {
     }
 
     /**
+     * 通过执行服务器指令授予玩家“使用凭虚法杖”成就。
+     *
+     * @param player 目标玩家
+     * @param server Minecraft 服务器实例
+     */
+    private void grantUsedVoidStaffAdvancementViaCommand(ServerPlayer player, MinecraftServer server) {
+        String command = "advancement grant " + player.getName().getString() + " only youzaiworldcore:youzaiworld/used_void_staff";
+        server.getCommands().performPrefixedCommand(
+                player.createCommandSourceStack(),
+                command
+        );
+    }
+
+    /**
      * 向 Fabric 事件总线注册本 tick 处理器及相关连接事件监听器。
      * <ul>
      *     <li>注册服务器 start tick 事件</li>
-     *     <li>注册玩家断开连接事件：清除该玩家的飞行标记</li>
+     *     <li>注册玩家断开连接事件：清除该玩家的飞行标记，并移除成就记录</li>
      *     <li>注册玩家加入事件：清除背包中所有凭虚法杖的 active 组件（防止残留状态）</li>
      * </ul>
      */
@@ -197,7 +224,9 @@ public class VoidStaffTickHandler implements ServerTickEvents.StartTick {
 
         // 玩家断开连接时清除飞行标记，避免内存泄漏
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
-            VoidStaffItem.setFlying(handler.player.getUUID(), false);
+            UUID playerId = handler.player.getUUID();
+            VoidStaffItem.setFlying(playerId, false);
+            grantedAchievementPlayers.remove(playerId);
         });
 
         // 玩家加入时清理背包中凭虚法杖的 active 组件（以防上次异常断线残留）

@@ -112,7 +112,7 @@ public class FlyBeaconTickHandler implements ServerTickEvents.StartTick {
      * @param server Minecraft 服务器实例
      */
     private void grantFlyBeaconAdvancementViaCommand(ServerPlayer player, MinecraftServer server) {
-        String command = "advancement grant " + player.getName().getString() + " only youzaiworldcore:youzaiworld/have_fly_beacon";
+        String command = "advancement grant " + player.getName().getString() + " only youzaiworldcore:youzaiworld/used_fly_beacon";
         server.getCommands().performPrefixedCommand(
                 player.createCommandSourceStack(),
                 command
