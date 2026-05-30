@@ -88,6 +88,8 @@ public class FlyBeaconTickHandler implements ServerTickEvents.StartTick {
                 if (!beaconFlyingPlayers.contains(playerId)) {
                     if (!VoidStaffItem.isFlying(playerId)) {
                         VoidStaffItem.enableFlight(player);
+                        // 授予“区域性飞行”成就（通过指令）
+                        grantFlyBeaconAdvancementViaCommand(player, server);
                     }
                 }
             } else {
@@ -101,6 +103,20 @@ public class FlyBeaconTickHandler implements ServerTickEvents.StartTick {
         // 更新信标飞行玩家集合为本次检查的结果
         beaconFlyingPlayers.clear();
         beaconFlyingPlayers.addAll(currentAffected);
+    }
+
+    /**
+     * 通过执行服务器指令授予玩家“区域性飞行”成就。
+     *
+     * @param player 目标玩家
+     * @param server Minecraft 服务器实例
+     */
+    private void grantFlyBeaconAdvancementViaCommand(ServerPlayer player, MinecraftServer server) {
+        String command = "advancement grant " + player.getName().getString() + " only youzaiworldcore:youzaiworld/have_fly_beacon";
+        server.getCommands().performPrefixedCommand(
+                player.createCommandSourceStack(),
+                command
+        );
     }
 
     /**
