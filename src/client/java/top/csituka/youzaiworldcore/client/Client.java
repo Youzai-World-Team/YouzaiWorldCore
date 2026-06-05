@@ -22,6 +22,8 @@ public class Client implements ClientModInitializer {
         
         MenuScreens.register(ModMenuTypes.DECOMPOSITION_TABLE, DecompositionTableScreen::new);
         MenuScreens.register(ModMenuTypes.FLY_BEACON, FlyBeaconScreen::new);
+
+        top.csituka.youzaiworldcore.network.ClientNetworking.initialize();
     }
 
     private void onClientTick(Minecraft client) {

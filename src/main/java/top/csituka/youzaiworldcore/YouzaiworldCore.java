@@ -2,10 +2,12 @@ package top.csituka.youzaiworldcore;
 
 import com.mojang.brigadier.arguments.FloatArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
+import com.mojang.brigadier.arguments.StringArgumentType;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.biome.v1.BiomeModifications;
 import net.fabricmc.fabric.api.biome.v1.BiomeSelectors;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.DimensionArgument;
@@ -28,6 +30,7 @@ import top.csituka.youzaiworldcore.item.ModCreativeModeTabs;
 import top.csituka.youzaiworldcore.item.ModItems;
 import top.csituka.youzaiworldcore.item.tool.YzChainMiningTool;
 import top.csituka.youzaiworldcore.network.ModNetworking;
+import top.csituka.youzaiworldcore.network.OpenMenuPayload;
 import top.csituka.youzaiworldcore.screen.ModMenuTypes;
 
 import java.util.Collection;
@@ -147,6 +150,23 @@ public class YouzaiworldCore implements ModInitializer {
                         )
                     )
                 )
+                .then(Commands.literal("open_menu")
+                    .requires(Commands.hasPermission(Commands.LEVEL_ADMINS))
+                    .then(Commands.argument("menu_name", StringArgumentType.word())
+                        .executes(context -> executeOpenMenu(
+                            context.getSource(),
+                            StringArgumentType.getString(context, "menu_name"),
+                            context.getSource().getPlayerOrException()
+                        ))
+                        .then(Commands.argument("target", EntityArgument.player())
+                            .executes(context -> executeOpenMenu(
+                                context.getSource(),
+                                StringArgumentType.getString(context, "menu_name"),
+                                EntityArgument.getPlayer(context, "target")
+                            ))
+                        )
+                    )
+                )
                 .executes(context -> {
                     context.getSource().sendSuccess(() -> Component.literal("Hello World!"), false);
                     return 1;
@@ -190,5 +210,30 @@ public class YouzaiworldCore implements ModInitializer {
                 true
         );
         return finalCount;
+    }
+
+    /**
+     * 打开指定玩家的 GUI 菜单。
+     *
+     * @param source   命令源
+     * @param menuName 菜单名称（main、switch_world、settings、about_me）
+     * @param player   目标玩家
+     * @return 1 表示成功，0 表示失败
+     */
+    private static int executeOpenMenu(CommandSourceStack source, String menuName, ServerPlayer player) {
+        // 验证菜单名称是否有效
+        if (!menuName.equals("main") && !menuName.equals("switch_world")
+                && !menuName.equals("settings") && !menuName.equals("about_me")) {
+            source.sendFailure(Component.literal("未知的菜单名称: " + menuName + "。有效值: main, switch_world, settings, about_me"));
+            return 0;
+        }
+
+        ServerPlayNetworking.send(player, new OpenMenuPayload(menuName));
+
+        source.sendSuccess(() ->
+                Component.literal("已为 " + player.getName().getString() + " 打开 " + menuName + " 菜单"),
+                true
+        );
+        return 1;
     }
 }

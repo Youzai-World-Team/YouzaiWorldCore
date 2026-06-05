@@ -12,6 +12,7 @@ public class ModNetworking {
         PayloadTypeRegistry.serverboundPlay().register(DecomposeItemPayload.ID, DecomposeItemPayload.STREAM_CODEC);
         PayloadTypeRegistry.serverboundPlay().register(FlyBeaconActivePayload.ID, FlyBeaconActivePayload.STREAM_CODEC);
         
+        // 注册服务端监听的数据包（来自客户端）
         ServerPlayNetworking.registerGlobalReceiver(DecomposeItemPayload.ID, (payload, context) -> {
             if (context.player().containerMenu instanceof DecompositionTableMenu menu) {
                 menu.performDecomposition();
@@ -25,5 +26,8 @@ public class ModNetworking {
                 }
             }
         });
+
+        // 注册客户端监听的数据包（来自服务端）
+        PayloadTypeRegistry.clientboundPlay().register(OpenMenuPayload.ID, OpenMenuPayload.STREAM_CODEC);
     }
 }
