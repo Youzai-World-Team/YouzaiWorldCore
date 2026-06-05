@@ -75,7 +75,7 @@ public class YouzaiworldCore implements ModInitializer {
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
             dispatcher.register(Commands.literal("yzwc")
                 .then(Commands.literal("teleport_world")
-                    .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                    .requires(Commands.hasPermission(Commands.LEVEL_ADMINS))
                     .then(Commands.argument("targets", EntityArgument.players())
                         .then(Commands.argument("dimension", DimensionArgument.dimension())
                             // /yzwc teleport_world <targets> <dimension>

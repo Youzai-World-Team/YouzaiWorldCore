@@ -5,6 +5,7 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundSetActionBarTextPacket;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
@@ -122,7 +123,7 @@ public class VoidStaffTickHandler implements ServerTickEvents.StartTick {
                     // ***** 新增：首次获得飞行能力时授予成就 *****
                     // 玩家正在飞行且标记为 true，并且尚未授予过成就
                     if (player.getAbilities().flying && !grantedAchievementPlayers.contains(playerId)) {
-                        grantUsedVoidStaffAdvancementViaCommand(player, server);
+                        grantUsedVoidStaffAdvancement(player, server);
                         grantedAchievementPlayers.add(playerId);
                     }
                 }
@@ -197,17 +198,18 @@ public class VoidStaffTickHandler implements ServerTickEvents.StartTick {
     }
 
     /**
-     * 通过执行服务器指令授予玩家“使用凭虚法杖”成就。
+     * 通过 Advancement API 直接授予玩家“使用凭虚法杖”成就。
      *
      * @param player 目标玩家
      * @param server Minecraft 服务器实例
      */
-    private void grantUsedVoidStaffAdvancementViaCommand(ServerPlayer player, MinecraftServer server) {
-        String command = "advancement grant " + player.getName().getString() + " only youzaiworldcore:youzaiworld/used_void_staff";
-        server.getCommands().performPrefixedCommand(
-                player.createCommandSourceStack(),
-                command
+    private void grantUsedVoidStaffAdvancement(ServerPlayer player, MinecraftServer server) {
+        net.minecraft.advancements.AdvancementHolder advancementHolder = server.getAdvancements().get(
+                Identifier.fromNamespaceAndPath("youzaiworldcore", "youzaiworld/used_void_staff")
         );
+        if (advancementHolder != null) {
+            player.getAdvancements().award(advancementHolder, "manual_grant");
+        }
     }
 
     /**

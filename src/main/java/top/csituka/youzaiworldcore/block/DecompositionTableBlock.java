@@ -1,7 +1,9 @@
 package top.csituka.youzaiworldcore.block;
 
 import com.mojang.serialization.MapCodec;
+import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.core.BlockPos;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionResult;
@@ -68,16 +70,17 @@ public class DecompositionTableBlock extends BaseEntityBlock {
     }
 
     /**
-     * 通过执行服务器指令授予玩家“使用分解台”成就。
+     * 通过 Advancement API 直接授予玩家"使用分解台"成就。
      *
      * @param player 目标玩家
      * @param server Minecraft 服务器实例
      */
     private void grantUsedDecompositionTableAdvancement(ServerPlayer player, MinecraftServer server) {
-        String command = "advancement grant " + player.getName().getString() + " only youzaiworldcore:youzaiworld/used_decomposition_table";
-        server.getCommands().performPrefixedCommand(
-                player.createCommandSourceStack(),
-                command
+        AdvancementHolder advancementHolder = server.getAdvancements().get(
+                Identifier.fromNamespaceAndPath("youzaiworldcore", "youzaiworld/used_decomposition_table")
         );
+        if (advancementHolder != null) {
+            player.getAdvancements().award(advancementHolder, "manual_grant");
+        }
     }
 }

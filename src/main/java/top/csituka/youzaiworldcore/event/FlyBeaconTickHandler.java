@@ -2,6 +2,7 @@ package top.csituka.youzaiworldcore.event;
 
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.core.BlockPos;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import org.jspecify.annotations.NonNull;
@@ -88,8 +89,8 @@ public class FlyBeaconTickHandler implements ServerTickEvents.StartTick {
                 if (!beaconFlyingPlayers.contains(playerId)) {
                     if (!VoidStaffItem.isFlying(playerId)) {
                         VoidStaffItem.enableFlight(player);
-                        // 授予“区域性飞行”成就（通过指令）
-                        grantFlyBeaconAdvancementViaCommand(player, server);
+                        // 授予“区域性飞行”成就
+                        grantFlyBeaconAdvancement(player, server);
                     }
                 }
             } else {
@@ -106,17 +107,18 @@ public class FlyBeaconTickHandler implements ServerTickEvents.StartTick {
     }
 
     /**
-     * 通过执行服务器指令授予玩家“区域性飞行”成就。
+     * 通过 Advancement API 直接授予玩家“区域性飞行”成就。
      *
      * @param player 目标玩家
      * @param server Minecraft 服务器实例
      */
-    private void grantFlyBeaconAdvancementViaCommand(ServerPlayer player, MinecraftServer server) {
-        String command = "advancement grant " + player.getName().getString() + " only youzaiworldcore:youzaiworld/used_fly_beacon";
-        server.getCommands().performPrefixedCommand(
-                player.createCommandSourceStack(),
-                command
+    private void grantFlyBeaconAdvancement(ServerPlayer player, MinecraftServer server) {
+        net.minecraft.advancements.AdvancementHolder advancementHolder = server.getAdvancements().get(
+                Identifier.fromNamespaceAndPath("youzaiworldcore", "youzaiworld/used_fly_beacon")
         );
+        if (advancementHolder != null) {
+            player.getAdvancements().award(advancementHolder, "manual_grant");
+        }
     }
 
     /**
