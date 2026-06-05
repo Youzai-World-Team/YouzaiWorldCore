@@ -1,16 +1,23 @@
 package top.csituka.youzaiworldcore;
 
+import com.mojang.brigadier.arguments.FloatArgumentType;
+import com.mojang.brigadier.arguments.IntegerArgumentType;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.biome.v1.BiomeModifications;
 import net.fabricmc.fabric.api.biome.v1.BiomeSelectors;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.Commands;
+import net.minecraft.commands.arguments.DimensionArgument;
+import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.levelgen.GenerationStep;
 import net.minecraft.world.level.levelgen.placement.PlacedFeature;
-import net.minecraft.commands.Commands;
-import net.minecraft.network.chat.Component;
 
 import top.csituka.youzaiworldcore.block.ModBlocks;
 import top.csituka.youzaiworldcore.block.entity.ModBlockEntities;
@@ -22,6 +29,9 @@ import top.csituka.youzaiworldcore.item.ModItems;
 import top.csituka.youzaiworldcore.item.tool.YzChainMiningTool;
 import top.csituka.youzaiworldcore.network.ModNetworking;
 import top.csituka.youzaiworldcore.screen.ModMenuTypes;
+
+import java.util.Collection;
+import java.util.Set;
 
 public class YouzaiworldCore implements ModInitializer {
 
@@ -63,14 +73,122 @@ public class YouzaiworldCore implements ModInitializer {
         );
 
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
-                dispatcher.register(Commands.literal("yzwc")
+            dispatcher.register(Commands.literal("yzwc")
+                .then(Commands.literal("teleport_world")
+                    .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                    .then(Commands.argument("targets", EntityArgument.players())
+                        .then(Commands.argument("dimension", DimensionArgument.dimension())
+                            // /yzwc teleport_world <targets> <dimension>
+                            .executes(context -> executeTeleportWorld(
+                                context.getSource(),
+                                EntityArgument.getPlayers(context, "targets"),
+                                DimensionArgument.getDimension(context, "dimension"),
+                                0, 100, 0, 90.0f, 0.0f
+                            ))
+                            // /yzwc teleport_world <targets> <dimension> <x>
+                            .then(Commands.argument("x", IntegerArgumentType.integer())
+                                .executes(context -> executeTeleportWorld(
+                                    context.getSource(),
+                                    EntityArgument.getPlayers(context, "targets"),
+                                    DimensionArgument.getDimension(context, "dimension"),
+                                    IntegerArgumentType.getInteger(context, "x"),
+                                    100, 0, 90.0f, 0.0f
+                                ))
+                                // /yzwc teleport_world <targets> <dimension> <x> <y>
+                                .then(Commands.argument("y", IntegerArgumentType.integer())
+                                    .executes(context -> executeTeleportWorld(
+                                        context.getSource(),
+                                        EntityArgument.getPlayers(context, "targets"),
+                                        DimensionArgument.getDimension(context, "dimension"),
+                                        IntegerArgumentType.getInteger(context, "x"),
+                                        IntegerArgumentType.getInteger(context, "y"),
+                                        0, 90.0f, 0.0f
+                                    ))
+                                    // /yzwc teleport_world <targets> <dimension> <x> <y> <z>
+                                    .then(Commands.argument("z", IntegerArgumentType.integer())
+                                        .executes(context -> executeTeleportWorld(
+                                            context.getSource(),
+                                            EntityArgument.getPlayers(context, "targets"),
+                                            DimensionArgument.getDimension(context, "dimension"),
+                                            IntegerArgumentType.getInteger(context, "x"),
+                                            IntegerArgumentType.getInteger(context, "y"),
+                                            IntegerArgumentType.getInteger(context, "z"),
+                                            90.0f, 0.0f
+                                        ))
+                                        // /yzwc teleport_world <targets> <dimension> <x> <y> <z> <yRot>
+                                        .then(Commands.argument("yRot", FloatArgumentType.floatArg(-180.0f, 180.0f))
+                                            .executes(context -> executeTeleportWorld(
+                                                context.getSource(),
+                                                EntityArgument.getPlayers(context, "targets"),
+                                                DimensionArgument.getDimension(context, "dimension"),
+                                                IntegerArgumentType.getInteger(context, "x"),
+                                                IntegerArgumentType.getInteger(context, "y"),
+                                                IntegerArgumentType.getInteger(context, "z"),
+                                                FloatArgumentType.getFloat(context, "yRot"),
+                                                0.0f
+                                            ))
+                                            // /yzwc teleport_world <targets> <dimension> <x> <y> <z> <yRot> <xRot>
+                                            .then(Commands.argument("xRot", FloatArgumentType.floatArg(-90.0f, 90.0f))
+                                                .executes(context -> executeTeleportWorld(
+                                                    context.getSource(),
+                                                    EntityArgument.getPlayers(context, "targets"),
+                                                    DimensionArgument.getDimension(context, "dimension"),
+                                                    IntegerArgumentType.getInteger(context, "x"),
+                                                    IntegerArgumentType.getInteger(context, "y"),
+                                                    IntegerArgumentType.getInteger(context, "z"),
+                                                    FloatArgumentType.getFloat(context, "yRot"),
+                                                    FloatArgumentType.getFloat(context, "xRot")
+                                                ))
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    )
+                )
                 .executes(context -> {
-                        // 在 mojmap 中，使用 sendSuccess 方法并传入一个 lambda 表达式来提供文本组件。
-                        // 第二个参数 'false' 表示消息仅对命令执行者可见，不会广播给其他管理员。
-                        context.getSource().sendSuccess(() -> Component.literal("Hello World!"), false);
-                        return 1;
-                        })
-                );
+                    context.getSource().sendSuccess(() -> Component.literal("Hello World!"), false);
+                    return 1;
+                })
+            );
         });
+    }
+
+    /**
+     * 执行传送玩家到指定维度的逻辑。
+     *
+     * @param source    命令源
+     * @param players   要传送的玩家集合
+     * @param dimension 目标维度
+     * @param x         X 坐标
+     * @param y         Y 坐标
+     * @param z         Z 坐标
+     * @param yRot      Y 轴旋转角度（偏航角，-180 ~ 180）
+     * @param xRot      X 轴旋转角度（俯仰角，-90 ~ 90）
+     * @return 传送的玩家数量
+     */
+    private static int executeTeleportWorld(
+            CommandSourceStack source,
+            Collection<ServerPlayer> players,
+            ServerLevel dimension,
+            int x, int y, int z,
+            float yRot, float xRot
+    ) {
+        Identifier dimensionId = dimension.dimension().identifier();
+        int count = 0;
+
+        for (ServerPlayer player : players) {
+            player.teleportTo(dimension, x + 0.5, y, z + 0.5, Set.of(), yRot, xRot, true);
+            count++;
+        }
+
+        final int finalCount = count;
+        source.sendSuccess(() ->
+                Component.literal("已将 " + finalCount + " 名玩家传送到 " + dimensionId +
+                        " 的 (" + x + ", " + y + ", " + z + ") 位置"),
+                true
+        );
+        return finalCount;
     }
 }
