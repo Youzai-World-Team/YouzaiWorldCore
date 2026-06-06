@@ -11,6 +11,7 @@ import top.csituka.youzaiworldcore.client.screen.element.MenuElementGroup;
 import top.csituka.youzaiworldcore.client.screen.widget.CheckboxButton;
 import top.csituka.youzaiworldcore.client.screen.widget.ConfirmationDialog;
 import top.csituka.youzaiworldcore.client.screen.widget.DropdownButton;
+import top.csituka.youzaiworldcore.client.screen.widget.TextureTileButton;
 import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
 
 import java.util.ArrayDeque;
@@ -154,6 +155,8 @@ public class MenuScreen extends Screen {
                 cb.render(guiGraphics, transformedMouseX, transformedMouseY, partialTick);
             } else if (button instanceof DropdownButton db) {
                 db.render(guiGraphics, transformedMouseX, transformedMouseY, partialTick);
+            } else if (button instanceof TextureTileButton ttb) {
+                ttb.render(guiGraphics, transformedMouseX, transformedMouseY, partialTick);
             }
         }
 
@@ -197,6 +200,12 @@ public class MenuScreen extends Screen {
                     return true;
                 }
             } else if (widget instanceof DropdownButton button) {
+                if (transformedMouseX >= button.getX() && transformedMouseX < button.getX() + button.getWidth() &&
+                    transformedMouseY >= button.getY() && transformedMouseY < button.getY() + button.getHeight()) {
+                    button.onClick(event, isActuallyClick);
+                    return true;
+                }
+            } else if (widget instanceof TextureTileButton button) {
                 if (transformedMouseX >= button.getX() && transformedMouseX < button.getX() + button.getWidth() &&
                     transformedMouseY >= button.getY() && transformedMouseY < button.getY() + button.getHeight()) {
                     button.onClick(event, isActuallyClick);
@@ -247,10 +256,8 @@ public class MenuScreen extends Screen {
     }
 
     private void createCloseButton(float alpha) {
-        float scaledLargeH = MenuElementGroup.LARGE_BUTTON_HEIGHT;
-        float scaledRowSpacing = MenuElementGroup.ROW_SPACING;
-        int baseY = (int) (this.height / 2 - scaledLargeH / 2 - scaledRowSpacing - 15);
-        int titleY = baseY - 25;
+        int baseY = (int) (this.height / 2 - 95);
+        int titleY = baseY;
 
         int closeX = this.width / 2 + TITLE_BUTTON_OFFSET;
         int closeY = titleY + (int) ((this.font.lineHeight * 1.3f - CLOSE_BUTTON_SIZE) / 2f);
@@ -267,10 +274,8 @@ public class MenuScreen extends Screen {
     }
 
     private void createBackButton(float alpha) {
-        float scaledLargeH = MenuElementGroup.LARGE_BUTTON_HEIGHT;
-        float scaledRowSpacing = MenuElementGroup.ROW_SPACING;
-        int baseY = (int) (this.height / 2 - scaledLargeH / 2 - scaledRowSpacing - 15);
-        int titleY = baseY - 25;
+        int baseY = (int) (this.height / 2 - 95);
+        int titleY = baseY;
 
         int backX = this.width / 2 - TITLE_BUTTON_OFFSET - CLOSE_BUTTON_SIZE;
         int backY = titleY + (int) ((this.font.lineHeight * 1.3f - CLOSE_BUTTON_SIZE) / 2f);
@@ -301,15 +306,13 @@ public class MenuScreen extends Screen {
         int textAlpha = (int) (alpha * 255);
         int textColor = (textAlpha << 24) | 0xFFFFFF;
 
-        float scaledLargeH = MenuElementGroup.LARGE_BUTTON_HEIGHT;
-        float scaledRowSpacing = MenuElementGroup.ROW_SPACING;
-        int baseY = (int) (this.height / 2 - scaledLargeH / 2 - scaledRowSpacing - 15);
+        int baseY = (int) (this.height / 2 - 95);
 
         float titleScale = 1.3f;
         int letterSpacing = 3;
         int titleWidth = calculateTextWidthWithSpacing(titleText, letterSpacing);
         float titleX = (this.width - titleWidth * titleScale) / 2f / titleScale;
-        int titleY = baseY - 25;
+        int titleY = baseY;
 
         guiGraphics.pose().pushMatrix();
         guiGraphics.pose().scale(titleScale, titleScale);
@@ -319,7 +322,7 @@ public class MenuScreen extends Screen {
         if (subtitleText != null) {
             int subtitleWidth = this.font.width(subtitleText);
             int subtitleX = (this.width - subtitleWidth) / 2;
-            int subtitleY = baseY - 5;
+            int subtitleY = baseY + 25;
 
             guiGraphics.text(this.font, subtitleText, subtitleX, subtitleY, textColor, false);
         }

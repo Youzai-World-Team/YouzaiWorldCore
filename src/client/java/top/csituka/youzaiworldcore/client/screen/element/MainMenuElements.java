@@ -1,15 +1,37 @@
 package top.csituka.youzaiworldcore.client.screen.element;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractWidget;
-import net.minecraft.network.chat.Component;
+import net.minecraft.client.gui.Font;
+import net.minecraft.resources.Identifier;
+import top.csituka.youzaiworldcore.YouzaiworldCore;
 import top.csituka.youzaiworldcore.client.screen.MenuScreen;
-import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
+import top.csituka.youzaiworldcore.client.screen.widget.TextureTileButton;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class MainMenuElements implements MenuElementGroup {
+
+    // Tile texture identifiers
+    private static final Identifier SWITCH_WORLDS_TEXTURE = Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "textures/gui/switch-worlds.png");
+    private static final Identifier QUESTIONNAIRE_TEXTURE = Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "textures/gui/questionnaire_application_and_survey.png");
+    private static final Identifier TITLE_TEXTURE = Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "textures/gui/title.png");
+    private static final Identifier EVENTS_TEXTURE = Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "textures/gui/events.png");
+    private static final Identifier ABOUT_ME_TEXTURE = Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "textures/gui/about-me.png");
+    private static final Identifier CHECK_IN_TEXTURE = Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "textures/gui/check-in.png");
+    private static final Identifier TUTORIAL_CENTER_TEXTURE = Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "textures/gui/tutorial_center.png");
+    private static final Identifier SETTINGS_TEXTURE = Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "textures/gui/settings.png");
+    private static final Identifier MAIL_TEXTURE = Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "textures/gui/mail.png");
+    private static final Identifier WEBSITE_TEXTURE = Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "textures/gui/website.png");
+    private static final Identifier REPORT_TEXTURE = Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "textures/gui/report.png");
+    private static final Identifier MANAGEMENT_TEXTURE = Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "textures/gui/management.png");
+
+    // Layout constants - reduced tile size for better screen fit
+    private static final int TILE_SIZE = 60;
+    private static final int GAP = 6;
+    private static final int GRID_COLS = 5;
 
     @Override
     public String getTitleText() {
@@ -33,71 +55,165 @@ public class MainMenuElements implements MenuElementGroup {
         List<AbstractWidget> buttons = new ArrayList<>();
 
         int centerX = screenWidth / 2;
-        int centerY = screenHeight / 2;
 
-        float scaledLargeW = LARGE_BUTTON_WIDTH * scale;
-        float scaledLargeH = LARGE_BUTTON_HEIGHT * scale;
-        float scaledSmallW = SMALL_BUTTON_WIDTH * scale;
-        float scaledSmallH = SMALL_BUTTON_HEIGHT * scale;
-        float scaledNarrowW = NARROW_BUTTON_WIDTH * scale;
-        float scaledWideW = WIDE_BUTTON_WIDTH * scale;
-        float scaledBottomH = BOTTOM_BUTTON_HEIGHT * scale;
-        float scaledSpacing = BUTTON_SPACING * scale;
-        float scaledRowSpacing = ROW_SPACING * scale;
+        int tile = (int) (TILE_SIZE * scale);
+        int gap = (int) (GAP * scale);
+        int tile2 = tile * 2 + gap; // Size spanning 2 columns + internal gap
 
-        float topRowWidth = scaledLargeW + scaledSpacing + scaledSmallW;
-        float startX = centerX - topRowWidth / 2;
+        // 5-column grid: total width = 5*tile + 4*gap
+        int totalGridWidth = tile * GRID_COLS + gap * (GRID_COLS - 1);
+        int gridStartX = centerX - totalGridWidth / 2;
 
-        float largeButtonY = centerY - scaledLargeH / 2 - scaledRowSpacing;
+        // Column x positions (left edge of each column)
+        int c0 = gridStartX;
+        int c1 = gridStartX + tile + gap;
+        int c2 = gridStartX + 2 * (tile + gap);
+        int c3 = gridStartX + 3 * (tile + gap);
+        int c4 = gridStartX + 4 * (tile + gap);
 
-        TransparentButton mainBtn = new TransparentButton(
-                (int) startX, (int) largeButtonY, (int) scaledLargeW, (int) scaledLargeH,
-                Component.translatable("screen.youzaiworldcore.test_menu.button_main"),
+        // Grid starts just below the subtitle area
+        // Title at height/2 - 100, subtitle at height/2 - 75
+        // Grid starts at height/2 - 30 → ~45px below subtitle
+        int row0Y = screenHeight / 2 - 30;
+        int row1Y = row0Y + tile + gap;
+        int row2Y = row0Y + 2 * (tile + gap);
+        int row3Y = row0Y + 3 * (tile + gap);
+
+        // ============================================================
+        // ROW 0:
+        //   [switch-worlds 2x2] [questionnaire 2x1] [title 1x1]
+        //   Col 0-1: switch-worlds (2x2, spans rows 0-1)
+        //   Col 2-3: questionnaire (2x1, row 0 only)
+        //   Col 4  : title (1x1, row 0 only)
+        // ============================================================
+        TextureTileButton switchBtn = new TextureTileButton(
+                c0, row0Y, tile2, tile2,
+                SWITCH_WORLDS_TEXTURE,
                 () -> screen.switchTo(new SwitchWorldMenuElements())
         );
-        mainBtn.setExternalAlpha(alpha);
-        buttons.add(mainBtn);
+        switchBtn.setExternalAlpha(alpha);
+        buttons.add(switchBtn);
 
-        float rightButtonsX = startX + scaledLargeW + scaledSpacing;
-        float totalSmallHeight = scaledSmallH * 2 + scaledSpacing;
-        float smallButtonsStartY = centerY - totalSmallHeight / 2 - scaledRowSpacing;
-
-        TransparentButton smallBtn1 = new TransparentButton(
-                (int) rightButtonsX, (int) smallButtonsStartY, (int) scaledSmallW, (int) scaledSmallH,
-                Component.translatable("screen.youzaiworldcore.test_menu.button_small1"),
+        TextureTileButton questBtn = new TextureTileButton(
+                c2, row0Y, tile2, tile,
+                QUESTIONNAIRE_TEXTURE,
                 () -> {}
         );
-        smallBtn1.setExternalAlpha(alpha);
-        buttons.add(smallBtn1);
+        questBtn.setExternalAlpha(alpha);
+        buttons.add(questBtn);
 
-        TransparentButton smallBtn2 = new TransparentButton(
-                (int) rightButtonsX, (int) (smallButtonsStartY + scaledSmallH + scaledSpacing), (int) scaledSmallW, (int) scaledSmallH,
-                Component.translatable("screen.youzaiworldcore.test_menu.button_small2"),
+        TextureTileButton titleBtn = new TextureTileButton(
+                c4, row0Y, tile, tile,
+                TITLE_TEXTURE,
                 () -> {}
         );
-        smallBtn2.setExternalAlpha(alpha);
-        buttons.add(smallBtn2);
+        titleBtn.setExternalAlpha(alpha);
+        buttons.add(titleBtn);
 
-        float bottomRowY = largeButtonY + scaledLargeH + scaledRowSpacing;
-        float bottomRowWidth = scaledNarrowW + scaledSpacing + scaledWideW;
-        float bottomStartX = centerX - bottomRowWidth / 2;
-
-        TransparentButton narrowBtn = new TransparentButton(
-                (int) bottomStartX, (int) bottomRowY, (int) scaledNarrowW, (int) scaledBottomH,
-                Component.translatable("screen.youzaiworldcore.test_menu.button_narrow"),
-                () -> screen.switchTo(new SettingsMenuElements())
-        );
-        narrowBtn.setExternalAlpha(alpha);
-        buttons.add(narrowBtn);
-
-        TransparentButton wideBtn = new TransparentButton(
-                (int) (bottomStartX + scaledNarrowW + scaledSpacing), (int) bottomRowY, (int) scaledWideW, (int) scaledBottomH,
-                Component.translatable("screen.youzaiworldcore.test_menu.button_wide"),
+        // ============================================================
+        // ROW 1:
+        //   [switch cont.] [events 1x1] [about-me 2x2]
+        //   Col 0-1: switch-worlds continues
+        //   Col 2  : events (1x1, row 1 only)
+        //   Col 3-4: about-me (2x2, spans rows 1-2)
+        //
+        // IMPORTANT: about-me added FIRST so events renders ON TOP
+        // ============================================================
+        TextureTileButton aboutMeBtn = new TextureTileButton(
+                c3, row1Y, tile2, tile2,
+                ABOUT_ME_TEXTURE,
                 () -> screen.switchTo(new AboutMeMenuElements())
         );
-        wideBtn.setExternalAlpha(alpha);
-        buttons.add(wideBtn);
+        aboutMeBtn.setExternalAlpha(alpha);
+        buttons.add(aboutMeBtn);
+
+        TextureTileButton eventsBtn = new TextureTileButton(
+                c2, row1Y, tile, tile,
+                EVENTS_TEXTURE,
+                () -> {}
+        );
+        eventsBtn.setExternalAlpha(alpha);
+        buttons.add(eventsBtn);
+
+        // ============================================================
+        // ROW 2:
+        //   [check-in 1x1] [tutorial 2x1] [about-me cont.]
+        //   Col 0  : check-in (1x1, row 2)
+        //   Col 1-2: tutorial (2x1, row 2 only)
+        //   Col 3-4: about-me continues
+        // ============================================================
+        TextureTileButton checkInBtn = new TextureTileButton(
+                c0, row2Y, tile, tile,
+                CHECK_IN_TEXTURE,
+                () -> {}
+        );
+        checkInBtn.setExternalAlpha(alpha);
+        buttons.add(checkInBtn);
+
+        TextureTileButton tutorialBtn = new TextureTileButton(
+                c1, row2Y, tile2, tile,
+                TUTORIAL_CENTER_TEXTURE,
+                () -> {}
+        );
+        tutorialBtn.setExternalAlpha(alpha);
+        buttons.add(tutorialBtn);
+
+        // ============================================================
+        // ROW 3: [settings] [mail] [website] [report] [management]
+        //   5 buttons (1x1 each), one per column
+        // ============================================================
+        Identifier[] bottomTextures = new Identifier[]{
+                SETTINGS_TEXTURE, MAIL_TEXTURE, WEBSITE_TEXTURE, REPORT_TEXTURE, MANAGEMENT_TEXTURE
+        };
+        int[] colXs = new int[]{c0, c1, c2, c3, c4};
+
+        for (int i = 0; i < 5; i++) {
+            TextureTileButton bottomBtn = new TextureTileButton(
+                    colXs[i], row3Y, tile, tile,
+                    bottomTextures[i],
+                    () -> {}
+            );
+            bottomBtn.setExternalAlpha(alpha);
+            buttons.add(bottomBtn);
+        }
 
         return buttons;
+    }
+
+    @Override
+    public void renderCustomContent(GuiGraphicsExtractor guiGraphics, int screenWidth, int screenHeight, float alpha, float xOffset, int mouseX, int mouseY) {
+        // Render bottom decorative elements: ♥ ----- ♥
+        int centerX = (int) (screenWidth / 2f + xOffset);
+
+        int tile = TILE_SIZE;
+        int gap = GAP;
+
+        int totalGridWidth = tile * GRID_COLS + gap * (GRID_COLS - 1);
+        int gridStartX = centerX - totalGridWidth / 2;
+
+        // Row 3 Y position (same calculation as createButtons)
+        int row0Y = screenHeight / 2 - 30;
+        int row3Y = row0Y + 3 * (tile + gap);
+        int decorationY = row3Y + tile + (int) (gap * 2.5f);
+
+        float textAlpha = alpha * 0.4f;
+        Font font = Minecraft.getInstance().font;
+
+        // Left heart at col 0
+        String heartStr = "♥";
+        int heartWidth = font.width(heartStr);
+        int heartColor = 0xFF4444 | ((int) (textAlpha * 255) << 24);
+        guiGraphics.text(font, heartStr, gridStartX + (tile - heartWidth) / 2, decorationY, heartColor, false);
+
+        // Horizontal line spanning from after left heart to before right heart
+        int lineX = gridStartX + tile + gap;
+        int lineY = decorationY + 4;
+        int lineEndX = gridStartX + totalGridWidth - tile - gap;
+        int lineColor = ((int) (textAlpha * 255) << 24) | 0xFFFFFF;
+        guiGraphics.fill(lineX, lineY, lineEndX, lineY + 2, lineColor);
+
+        // Right heart at col 4
+        int rightHeartX = gridStartX + totalGridWidth - tile;
+        guiGraphics.text(font, heartStr, rightHeartX + (tile - heartWidth) / 2, decorationY, heartColor, false);
     }
 }
