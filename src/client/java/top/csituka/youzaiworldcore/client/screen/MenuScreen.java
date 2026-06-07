@@ -315,11 +315,13 @@ public class MenuScreen extends Screen {
         float inAlpha = eased * baseAlpha;
         float inOffset = -direction * (1f - eased) * slideDistance;
 
-        renderGroupButtons(currentGroup, outAlpha, outOffset);
-        renderGroupButtons(targetGroup, inAlpha, inOffset);
+        // Use raw (unmapped) alpha in transition, because outAlpha ranges from baseAlpha→0
+        // and inAlpha ranges from 0→baseAlpha — no mapping needed for proper fade.
+        renderGroupButtonsRaw(currentGroup, outAlpha, outOffset);
+        renderGroupButtonsRaw(targetGroup, inAlpha, inOffset);
 
-        renderTitle(guiGraphics, currentGroup, outAlpha);
-        renderTitle(guiGraphics, targetGroup, inAlpha);
+        renderTitleRaw(guiGraphics, currentGroup, outAlpha);
+        renderTitleRaw(guiGraphics, targetGroup, inAlpha);
 
         currentGroup.renderCustomContent(guiGraphics, this.width, this.height, outAlpha, outOffset, this.mouseX, this.mouseY);
         targetGroup.renderCustomContent(guiGraphics, this.width, this.height, inAlpha, inOffset, this.mouseX, this.mouseY);
@@ -334,7 +336,8 @@ public class MenuScreen extends Screen {
     private void renderSingleGroup(GuiGraphicsExtractor guiGraphics, MenuElementGroup group, float entryAlpha) {
         renderGroupButtons(group, entryAlpha, 0f);
         renderTitle(guiGraphics, group, entryAlpha);
-        group.renderCustomContent(guiGraphics, this.width, this.height, entryAlpha, 0f, this.mouseX, this.mouseY);
+        float adjustedAlpha = 0.5f + 0.5f * entryAlpha;
+        group.renderCustomContent(guiGraphics, this.width, this.height, adjustedAlpha, 0f, this.mouseX, this.mouseY);
     }
 
     private void createCloseButton(float alpha) {
@@ -351,7 +354,7 @@ public class MenuScreen extends Screen {
         );
         closeBtn.setBackgroundVisible(false);
         closeBtn.setTextColor(0xFFFFFF);
-        closeBtn.setExternalAlpha(alpha);
+        closeBtn.setExternalAlpha(0.5f + 0.5f * alpha);
         currentButtons.add(closeBtn);
     }
 
@@ -369,11 +372,20 @@ public class MenuScreen extends Screen {
         );
         backBtn.setBackgroundVisible(false);
         backBtn.setTextColor(0xFFFFFF);
-        backBtn.setExternalAlpha(alpha * backButtonAlpha);
+        backBtn.setExternalAlpha((0.5f + 0.5f * alpha) * backButtonAlpha);
         currentButtons.add(backBtn);
     }
 
     private void renderGroupButtons(MenuElementGroup group, float alpha, float xOffset) {
+        float adjustedAlpha = 0.5f + 0.5f * alpha;
+        List<AbstractWidget> buttons = group.createButtons(this, this.width, this.height, 1f, adjustedAlpha);
+        for (AbstractWidget button : buttons) {
+            button.setX(button.getX() + (int) xOffset);
+            currentButtons.add(button);
+        }
+    }
+
+    private void renderGroupButtonsRaw(MenuElementGroup group, float alpha, float xOffset) {
         List<AbstractWidget> buttons = group.createButtons(this, this.width, this.height, 1f, alpha);
         for (AbstractWidget button : buttons) {
             button.setX(button.getX() + (int) xOffset);
@@ -385,6 +397,39 @@ public class MenuScreen extends Screen {
         String titleText = group.getTitleText();
         String subtitleText = group.getSubtitleText();
 
+        // TextureTileButton's overlay maxes at alpha=128, so texture visibility = 0.5 + 0.5*alpha.
+        // Map text alpha to the same range so text fades at the same rate as textures.
+        float textAlphaMapping = 0.5f + 0.5f * alpha;
+        int textAlpha = (int) (textAlphaMapping * 255);
+        int textColor = (textAlpha << 24) | 0xFFFFFF;
+
+        int baseY = (int) (this.height / 2 - 110);
+
+        float titleScale = 1.3f;
+        int letterSpacing = 3;
+        int titleWidth = calculateTextWidthWithSpacing(titleText, letterSpacing);
+        float titleX = (this.width - titleWidth * titleScale) / 2f / titleScale;
+        int titleY = baseY;
+
+        guiGraphics.pose().pushMatrix();
+        guiGraphics.pose().scale(titleScale, titleScale);
+        drawTextWithSpacing(guiGraphics, this.font, titleText, (int) titleX, (int) (titleY / titleScale), textColor, letterSpacing);
+        guiGraphics.pose().popMatrix();
+
+        if (subtitleText != null) {
+            int subtitleWidth = this.font.width(subtitleText);
+            int subtitleX = (this.width - subtitleWidth) / 2;
+            int subtitleY = baseY + 25;
+
+            guiGraphics.text(this.font, subtitleText, subtitleX, subtitleY, textColor, false);
+        }
+    }
+
+    private void renderTitleRaw(GuiGraphicsExtractor guiGraphics, MenuElementGroup group, float alpha) {
+        String titleText = group.getTitleText();
+        String subtitleText = group.getSubtitleText();
+
+        // Use original alpha (0-1 range) without mapping, for transition animation
         int textAlpha = (int) (alpha * 255);
         int textColor = (textAlpha << 24) | 0xFFFFFF;
 
@@ -420,7 +465,8 @@ public class MenuScreen extends Screen {
                 .orElse("unknown");
         String versionText = "YouzaiWorldCore v" + version;
 
-        int textAlpha = (int) (alpha * 180);
+        float textAlphaMapping = 0.5f + 0.5f * alpha;
+        int textAlpha = (int) (textAlphaMapping * 180);
         int textColor = (textAlpha << 24) | 0xAAAAAA;
 
         float scale = 0.5f;
