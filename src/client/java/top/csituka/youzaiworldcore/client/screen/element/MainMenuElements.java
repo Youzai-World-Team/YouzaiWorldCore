@@ -28,9 +28,9 @@ public class MainMenuElements implements MenuElementGroup {
     private static final Identifier REPORT_TEXTURE = Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "textures/gui/report.png");
     private static final Identifier MANAGEMENT_TEXTURE = Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "textures/gui/management.png");
 
-    // Layout constants - reduced tile size for better screen fit
-    private static final int TILE_SIZE = 60;
-    private static final int GAP = 6;
+    // Smaller tiles for better screen fit
+    private static final int TILE_SIZE = 45;
+    private static final int GAP = 4;
     private static final int GRID_COLS = 5;
 
     @Override
@@ -71,10 +71,8 @@ public class MainMenuElements implements MenuElementGroup {
         int c3 = gridStartX + 3 * (tile + gap);
         int c4 = gridStartX + 4 * (tile + gap);
 
-        // Grid starts just below the subtitle area
-        // Title at height/2 - 100, subtitle at height/2 - 75
-        // Grid starts at height/2 - 30 → ~45px below subtitle
-        int row0Y = screenHeight / 2 - 30;
+        // Grid starts just below subtitle (subtitle at height/2 - 85)
+        int row0Y = screenHeight / 2 - 60;
         int row1Y = row0Y + tile + gap;
         int row2Y = row0Y + 2 * (tile + gap);
         int row3Y = row0Y + 3 * (tile + gap);
@@ -192,9 +190,9 @@ public class MainMenuElements implements MenuElementGroup {
         int gridStartX = centerX - totalGridWidth / 2;
 
         // Row 3 Y position (same calculation as createButtons)
-        int row0Y = screenHeight / 2 - 30;
+        int row0Y = screenHeight / 2 - 60;
         int row3Y = row0Y + 3 * (tile + gap);
-        int decorationY = row3Y + tile + (int) (gap * 2.5f);
+        int decorationY = row3Y + tile + (int) (gap * 2f);
 
         float textAlpha = alpha * 0.4f;
         Font font = Minecraft.getInstance().font;

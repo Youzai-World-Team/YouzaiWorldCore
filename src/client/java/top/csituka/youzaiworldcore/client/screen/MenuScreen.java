@@ -24,7 +24,7 @@ public class MenuScreen extends Screen {
     private static final float ENTRY_ANIMATION_DURATION = 0.5f;
     private static final float TRANSITION_DURATION = 0.4f;
     private static final int CLOSE_BUTTON_SIZE = 14;
-    private static final int TITLE_BUTTON_OFFSET = 100;
+    private static final int TITLE_BUTTON_OFFSET = 90;
 
     private MenuElementGroup currentGroup;
     private MenuElementGroup targetGroup;
@@ -256,7 +256,7 @@ public class MenuScreen extends Screen {
     }
 
     private void createCloseButton(float alpha) {
-        int baseY = (int) (this.height / 2 - 95);
+        int baseY = (int) (this.height / 2 - 110);
         int titleY = baseY;
 
         int closeX = this.width / 2 + TITLE_BUTTON_OFFSET;
@@ -274,7 +274,7 @@ public class MenuScreen extends Screen {
     }
 
     private void createBackButton(float alpha) {
-        int baseY = (int) (this.height / 2 - 95);
+        int baseY = (int) (this.height / 2 - 110);
         int titleY = baseY;
 
         int backX = this.width / 2 - TITLE_BUTTON_OFFSET - CLOSE_BUTTON_SIZE;
@@ -306,7 +306,7 @@ public class MenuScreen extends Screen {
         int textAlpha = (int) (alpha * 255);
         int textColor = (textAlpha << 24) | 0xFFFFFF;
 
-        int baseY = (int) (this.height / 2 - 95);
+        int baseY = (int) (this.height / 2 - 110);
 
         float titleScale = 1.3f;
         int letterSpacing = 3;
