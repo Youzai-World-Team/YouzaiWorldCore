@@ -28,10 +28,11 @@ public class MainMenuElements implements MenuElementGroup {
     private static final Identifier REPORT_TEXTURE = Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "textures/gui/report.png");
     private static final Identifier MANAGEMENT_TEXTURE = Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "textures/gui/management.png");
 
-    // Smaller tiles for better screen fit
-    private static final int TILE_SIZE = 45;
+    // Layout constants
     private static final int GAP = 4;
     private static final int GRID_COLS = 5;
+    private static final int MAX_TILE_SIZE = 45;
+    private static final int MIN_TILE_SIZE = 24;
 
     @Override
     public String getTitleText() {
@@ -50,13 +51,24 @@ public class MainMenuElements implements MenuElementGroup {
         return true;
     }
 
+    /**
+     * Calculate the best tile size that fits the available screen height.
+     */
+    private int calcTileSize(int screenHeight) {
+        int gridStartY = screenHeight / 2 - 85;
+        int availableHeight = screenHeight - gridStartY - 20;
+        int tile = (availableHeight - 3 * GAP) / 4;
+        return Math.max(MIN_TILE_SIZE, Math.min(MAX_TILE_SIZE, tile));
+    }
+
     @Override
     public List<AbstractWidget> createButtons(MenuScreen screen, int screenWidth, int screenHeight, float scale, float alpha) {
         List<AbstractWidget> buttons = new ArrayList<>();
 
         int centerX = screenWidth / 2;
 
-        int tile = (int) (TILE_SIZE * scale);
+        // Dynamic tile size based on available screen height
+        int tile = Math.max(MIN_TILE_SIZE, Math.min(MAX_TILE_SIZE, (int) (calcTileSize(screenHeight) * scale)));
         int gap = (int) (GAP * scale);
         int tile2 = tile * 2 + gap; // Size spanning 2 columns + internal gap
 
@@ -71,8 +83,20 @@ public class MainMenuElements implements MenuElementGroup {
         int c3 = gridStartX + 3 * (tile + gap);
         int c4 = gridStartX + 4 * (tile + gap);
 
-        // Grid starts just below subtitle (subtitle at height/2 - 85)
-        int row0Y = screenHeight / 2 - 60;
+        // Grid starts ~10px below subtitle (subtitle at height/2 - 95)
+        int gridTop = screenHeight / 2 - 85;
+        // Ensure grid doesn't overflow top
+        if (gridTop - tile2 < 20) {
+            gridTop = 20 + tile2;
+        }
+        // Ensure grid doesn't overflow bottom
+        int gridBottom = gridTop + 3 * (tile + gap) + tile + gap * 2;
+        if (gridBottom > screenHeight - 10) {
+            gridTop = screenHeight - 10 - (3 * (tile + gap) + tile + gap * 2);
+            if (gridTop < 20) gridTop = 20;
+        }
+
+        int row0Y = gridTop;
         int row1Y = row0Y + tile + gap;
         int row2Y = row0Y + 2 * (tile + gap);
         int row3Y = row0Y + 3 * (tile + gap);
@@ -180,38 +204,6 @@ public class MainMenuElements implements MenuElementGroup {
 
     @Override
     public void renderCustomContent(GuiGraphicsExtractor guiGraphics, int screenWidth, int screenHeight, float alpha, float xOffset, int mouseX, int mouseY) {
-        // Render bottom decorative elements: ♥ ----- ♥
-        int centerX = (int) (screenWidth / 2f + xOffset);
-
-        int tile = TILE_SIZE;
-        int gap = GAP;
-
-        int totalGridWidth = tile * GRID_COLS + gap * (GRID_COLS - 1);
-        int gridStartX = centerX - totalGridWidth / 2;
-
-        // Row 3 Y position (same calculation as createButtons)
-        int row0Y = screenHeight / 2 - 60;
-        int row3Y = row0Y + 3 * (tile + gap);
-        int decorationY = row3Y + tile + (int) (gap * 2f);
-
-        float textAlpha = alpha * 0.4f;
-        Font font = Minecraft.getInstance().font;
-
-        // Left heart at col 0
-        String heartStr = "♥";
-        int heartWidth = font.width(heartStr);
-        int heartColor = 0xFF4444 | ((int) (textAlpha * 255) << 24);
-        guiGraphics.text(font, heartStr, gridStartX + (tile - heartWidth) / 2, decorationY, heartColor, false);
-
-        // Horizontal line spanning from after left heart to before right heart
-        int lineX = gridStartX + tile + gap;
-        int lineY = decorationY + 4;
-        int lineEndX = gridStartX + totalGridWidth - tile - gap;
-        int lineColor = ((int) (textAlpha * 255) << 24) | 0xFFFFFF;
-        guiGraphics.fill(lineX, lineY, lineEndX, lineY + 2, lineColor);
-
-        // Right heart at col 4
-        int rightHeartX = gridStartX + totalGridWidth - tile;
-        guiGraphics.text(font, heartStr, rightHeartX + (tile - heartWidth) / 2, decorationY, heartColor, false);
+        // No additional decorations
     }
 }
