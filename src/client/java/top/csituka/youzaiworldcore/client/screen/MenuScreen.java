@@ -26,6 +26,8 @@ public class MenuScreen extends Screen {
     private static final int CLOSE_BUTTON_SIZE = 14;
     private static final int TITLE_BUTTON_OFFSET = 90;
 
+    private static final float EXIT_ANIMATION_DURATION = 0.4f;
+
     private MenuElementGroup currentGroup;
     private MenuElementGroup targetGroup;
     private boolean transitionReverse = false;
@@ -38,6 +40,11 @@ public class MenuScreen extends Screen {
     private long transitionStartTime = 0;
 
     private float backButtonAlpha = 0f;
+
+    private boolean exiting = false;
+    private float exitProgress = 0f;
+    private long exitStartTime = 0;
+    private Runnable onExitComplete;
 
     private int mouseX = 0;
     private int mouseY = 0;
@@ -100,9 +107,81 @@ public class MenuScreen extends Screen {
     }
 
     @Override
+    public void onClose() {
+        if (exiting) return;
+        startExit(() -> Minecraft.getInstance().setScreen(null));
+    }
+
+    @Override
+    public void removed() {
+        super.removed();
+        exiting = false;
+        exitProgress = 0f;
+        onExitComplete = null;
+    }
+
+    @Override
+    public boolean keyPressed(net.minecraft.client.input.KeyEvent keyEvent) {
+        if (exiting) return true;
+        if (keyEvent.key() == 256) { // GLFW_KEY_ESCAPE
+            onClose();
+            return true;
+        }
+        return super.keyPressed(keyEvent);
+    }
+
+    public void startExit(Runnable onComplete) {
+        if (exiting) return;
+        this.exiting = true;
+        this.exitProgress = 0f;
+        this.exitStartTime = System.currentTimeMillis();
+        this.onExitComplete = onComplete;
+    }
+
+    @Override
     public void extractRenderState(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
         this.mouseX = mouseX;
         this.mouseY = mouseY;
+
+        if (exiting) {
+            long elapsed = System.currentTimeMillis() - exitStartTime;
+            exitProgress = Math.min(1f, elapsed / (EXIT_ANIMATION_DURATION * 1000f));
+
+            float easedExit = easeInOutCubic(exitProgress);
+            int bgAlpha = (int) ((1f - easedExit) * 128);
+            guiGraphics.fill(0, 0, this.width, this.height, (bgAlpha << 24));
+
+            renderVersionText(guiGraphics, 1f - easedExit);
+
+            float menuAlpha = 1f - easedExit;
+
+            currentButtons.clear();
+            renderSingleGroup(guiGraphics, currentGroup, menuAlpha);
+            createCloseButton(menuAlpha);
+
+            for (AbstractWidget button : currentButtons) {
+                if (button instanceof TransparentButton tb) {
+                    tb.render(guiGraphics, mouseX, mouseY, partialTick);
+                } else if (button instanceof CheckboxButton cb) {
+                    cb.render(guiGraphics, mouseX, mouseY, partialTick);
+                } else if (button instanceof DropdownButton db) {
+                    db.render(guiGraphics, mouseX, mouseY, partialTick);
+                } else if (button instanceof TextureTileButton ttb) {
+                    ttb.render(guiGraphics, mouseX, mouseY, partialTick);
+                }
+            }
+
+            if (exitProgress >= 1f) {
+                Runnable callback = onExitComplete;
+                exiting = false;
+                exitProgress = 0f;
+                onExitComplete = null;
+                if (callback != null) {
+                    callback.run();
+                }
+            }
+            return;
+        }
 
         if (entryProgress < 1f) {
             long elapsed = System.currentTimeMillis() - entryStartTime;
@@ -265,7 +344,7 @@ public class MenuScreen extends Screen {
         TransparentButton closeBtn = new TransparentButton(
                 closeX, closeY, CLOSE_BUTTON_SIZE, CLOSE_BUTTON_SIZE,
                 Component.literal("×"),
-                () -> Minecraft.getInstance().setScreen(null)
+                () -> startExit(() -> Minecraft.getInstance().setScreen(null))
         );
         closeBtn.setBackgroundVisible(false);
         closeBtn.setTextColor(0xFFFFFF);

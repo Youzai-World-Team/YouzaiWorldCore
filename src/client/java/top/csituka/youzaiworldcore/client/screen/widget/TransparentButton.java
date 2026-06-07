@@ -11,7 +11,7 @@ public class TransparentButton extends AbstractWidget {
 
     private static final int BACKGROUND_COLOR = 0xFFFFFF;
     private static final int TEXT_COLOR = 0xFF000000;
-    private static final int CORNER_RADIUS = 6;
+    private static final int CORNER_RADIUS = 8;
 
     private final Runnable onPress;
     private float currentAlpha = 0.5f;
@@ -47,10 +47,10 @@ public class TransparentButton extends AbstractWidget {
     protected void extractWidgetRenderState(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
         targetAlpha = this.isHovered() ? 0.69f : 0.5f;
         currentAlpha = lerp(currentAlpha, targetAlpha, LERP_SPEED);
-        
+
         float finalAlpha = currentAlpha * externalAlpha;
         int backgroundColor = colorWithAlpha(BACKGROUND_COLOR, finalAlpha);
-        
+
         int x = this.getX();
         int y = this.getY();
         int width = this.width;
@@ -67,29 +67,34 @@ public class TransparentButton extends AbstractWidget {
         int textWidth = font.width(text);
         int textX = textLeftAligned ? x + 4 : x + (width - textWidth) / 2;
         int textY = y + (height - 8) / 2;
-        
+
         guiGraphics.text(font, this.getMessage(), textX, textY, textColor, false);
     }
 
     private void fillRoundedRect(GuiGraphicsExtractor g, int x, int y, int w, int h, int r, int color) {
+        // Body center
         g.fill(x + r, y, x + w - r, y + h, color);
+        // Left/right edge strips
         g.fill(x, y + r, x + r, y + h - r, color);
         g.fill(x + w - r, y + r, x + w, y + h - r, color);
-        
+
+        // Fill quarter-circle interior pixels
         for (int i = 0; i < r; i++) {
             for (int j = 0; j < r; j++) {
-                if (i * i + j * j < r * r) {
-                    g.fill(x + r - i - 1, y + r - j - 1, x + r - i, y + r - j, color);
-                    g.fill(x + w - r + i, y + r - j - 1, x + w - r + i + 1, y + r - j, color);
-                    g.fill(x + r - i - 1, y + h - r + j, x + r - i, y + h - r + j + 1, color);
-                    g.fill(x + w - r + i, y + h - r + j, x + w - r + i + 1, y + h - r + j + 1, color);
+                int dx = r - 1 - i;
+                int dy = r - 1 - j;
+                if (dx * dx + dy * dy < r * r) {
+                    g.fill(x + i, y + j, x + i + 1, y + j + 1, color);
+                    g.fill(x + w - 1 - i, y + j, x + w - i, y + j + 1, color);
+                    g.fill(x + i, y + h - 1 - j, x + i + 1, y + h - j, color);
+                    g.fill(x + w - 1 - i, y + h - 1 - j, x + w - i, y + h - j, color);
                 }
             }
         }
     }
 
     private int colorWithAlpha(int color, float alpha) {
-        int a = (int) (alpha * 255);
+        int a = (int) (Math.max(0, Math.min(255, alpha * 255)));
         return (a << 24) | (color & 0x00FFFFFF);
     }
 
