@@ -11,7 +11,7 @@ public class TransparentButton extends AbstractWidget {
 
     private static final int BACKGROUND_COLOR = 0xFFFFFF;
     private static final int TEXT_COLOR = 0xFF000000;
-    private static final int CORNER_RADIUS = 8;
+    private static final int CORNER_RADIUS = 6;
 
     private final Runnable onPress;
     private float currentAlpha = 0.5f;

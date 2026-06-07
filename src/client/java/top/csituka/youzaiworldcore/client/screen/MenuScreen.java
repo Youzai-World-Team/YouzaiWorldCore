@@ -7,6 +7,9 @@ import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
+import net.minecraft.client.renderer.RenderPipelines;
+import top.csituka.youzaiworldcore.YouzaiworldCore;
 import top.csituka.youzaiworldcore.client.screen.element.MenuElementGroup;
 import top.csituka.youzaiworldcore.client.screen.widget.CheckboxButton;
 import top.csituka.youzaiworldcore.client.screen.widget.ConfirmationDialog;
@@ -26,7 +29,7 @@ public class MenuScreen extends Screen {
     private static final int CLOSE_BUTTON_SIZE = 14;
     private static final int TITLE_BUTTON_OFFSET = 90;
 
-    private static final float EXIT_ANIMATION_DURATION = 0.4f;
+    private static final float EXIT_ANIMATION_DURATION = 0.25f;
 
     private MenuElementGroup currentGroup;
     private MenuElementGroup targetGroup;
@@ -407,6 +410,9 @@ public class MenuScreen extends Screen {
         }
     }
 
+    private static final Identifier VERSION_ICON = Identifier.fromNamespaceAndPath(
+            YouzaiworldCore.MOD_ID, "textures/gui/icon.png");
+    
     private void renderVersionText(GuiGraphicsExtractor guiGraphics, float alpha) {
         String version = FabricLoader.getInstance()
                 .getModContainer("youzaiworldcore")
@@ -423,7 +429,21 @@ public class MenuScreen extends Screen {
 
         guiGraphics.pose().pushMatrix();
         guiGraphics.pose().scale(scale, scale);
-        guiGraphics.text(this.font, versionText, (int) (marginX / scale), (int) (marginY / scale), textColor, false);
+
+        int scaledMarginX = (int) (marginX / scale);
+        int scaledMarginY = (int) (marginY / scale);
+
+        // Draw icon before text; icon is ~4x larger than the scaled text
+        int iconSize = this.font.lineHeight * 2;
+        int iconY = scaledMarginY + (int) ((this.font.lineHeight - iconSize) / 2f);
+        guiGraphics.blit(RenderPipelines.GUI_TEXTURED, VERSION_ICON,
+                scaledMarginX, iconY,
+                0, 0,
+                iconSize, iconSize, iconSize, iconSize);
+
+        // Draw version text next to the icon
+        int textX = scaledMarginX + iconSize + 4;
+        guiGraphics.text(this.font, versionText, textX, scaledMarginY, textColor, false);
         guiGraphics.pose().popMatrix();
     }
 

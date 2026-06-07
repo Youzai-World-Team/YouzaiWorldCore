@@ -11,13 +11,13 @@ import net.minecraft.client.renderer.RenderPipelines;
 /**
  * A textured button with rounded corners and fade animation support.
  *
- * Fade technique: Match TransparentButton's approach — draw white with varying
- * alpha on top of the texture. Combined with the semi-transparent black menu
- * background, this creates a smooth fade to transparent.
+ * Fade technique: Draw a black overlay with varying alpha on top of the texture.
+ * Since the menu background is semi-transparent black, this creates a smooth
+ * fade to transparent without white residue artifacts.
  */
 public class TextureTileButton extends AbstractWidget {
 
-    private static final int CORNER_RADIUS = 8;
+    private static final int CORNER_RADIUS = 6;
 
     private final Identifier texture;
     private final Runnable onPress;
@@ -44,17 +44,22 @@ public class TextureTileButton extends AbstractWidget {
         int h = this.height;
         int r = CORNER_RADIUS;
 
-        // Draw textured background
+        // Draw textured background (always when any visibility)
         guiGraphics.blit(RenderPipelines.GUI_TEXTURED, texture,
                 x, y, 0, 0,
                 w, h, w, h);
 
-        // Fade using white overlay with alpha (matching TransparentButton's approach)
-        // When vis=1: overlay alpha = 0 (no overlay)
-        // When vis=0: overlay alpha = 255 (opaque white, hides the texture against the dark menu bg)
-        int overlayAlpha = (int) ((1f - vis) * 255);
+        // Fade overlay using accelerated quadratic curve:
+        // Background alpha = vis * 128; overlay represents darkness needed to obscure the texture.
+        // Using a quadratic acceleration (fadeFactor = (1-vis)^2) prevents the button area from
+        // accumulating more blackness than the surrounding background during exit animation.
+        // At vis=0.5: fadeFactor=0.25, overlay=32 vs bg=64 — button doesn't appear darker than bg
+        // At vis=0.2: fadeFactor=0.64, overlay=82 (texture faint + 82 overlay ≈ blends with bg=25)
+        // At vis=0:   fadeFactor=1.0,  overlay=128 (fully matches closed bg)
+        float fadeFactor = (1f - vis);
+        int overlayAlpha = (int) (fadeFactor * 128);
         if (overlayAlpha > 0) {
-            guiGraphics.fill(x, y, x + w, y + h, (overlayAlpha << 24) | 0xFFFFFF);
+            guiGraphics.fill(x, y, x + w, y + h, (overlayAlpha << 24));
         }
 
         // Clip corners
