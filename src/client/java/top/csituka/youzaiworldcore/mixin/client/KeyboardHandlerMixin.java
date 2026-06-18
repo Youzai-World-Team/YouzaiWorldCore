@@ -21,7 +21,7 @@ public class KeyboardHandlerMixin {
 
     @Inject(method = "keyPress(JILnet/minecraft/client/input/KeyEvent;)V", at = @At("HEAD"), cancellable = true)
     private void onKeyPress(long windowPointer, int keyOrAction, KeyEvent event, CallbackInfo ci) {
-        if (minecraft.player == null || minecraft.screen != null) {
+        if (minecraft.player == null || minecraft.gui.screen() != null) {
             return;
         }
 

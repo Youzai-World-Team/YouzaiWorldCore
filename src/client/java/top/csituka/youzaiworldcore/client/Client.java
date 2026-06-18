@@ -27,7 +27,7 @@ public class Client implements ClientModInitializer {
     }
 
     private void onClientTick(Minecraft client) {
-        if (client.player == null || client.screen != null) {
+        if (client.player == null || client.gui.screen() != null) {
             return;
         }
 
@@ -38,7 +38,7 @@ public class Client implements ClientModInitializer {
         boolean isPressed = isShiftPressed && isFPressed;
 
         if (isPressed && !wasPressed) {
-            client.setScreen(new MenuScreen(new MainMenuElements()));
+            client.setScreenAndShow(new MenuScreen(new MainMenuElements()));
         }
         
         wasPressed = isPressed;

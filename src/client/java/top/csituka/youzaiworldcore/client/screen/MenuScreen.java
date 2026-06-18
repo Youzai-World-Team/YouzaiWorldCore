@@ -112,7 +112,7 @@ public class MenuScreen extends Screen {
     @Override
     public void onClose() {
         if (exiting) return;
-        startExit(() -> Minecraft.getInstance().setScreen(null));
+        startExit(() -> Minecraft.getInstance().setScreenAndShow(null));
     }
 
     @Override
@@ -350,7 +350,7 @@ public class MenuScreen extends Screen {
         TransparentButton closeBtn = new TransparentButton(
                 closeX, closeY, CLOSE_BUTTON_SIZE, CLOSE_BUTTON_SIZE,
                 Component.literal("×"),
-                () -> startExit(() -> Minecraft.getInstance().setScreen(null))
+                () -> startExit(() -> Minecraft.getInstance().setScreenAndShow(null))
         );
         closeBtn.setBackgroundVisible(false);
         closeBtn.setTextColor(0xFFFFFF);

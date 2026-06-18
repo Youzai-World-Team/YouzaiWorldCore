@@ -50,7 +50,7 @@ dependencies {
     implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
     // Placeholder API
-    implementation('eu.pb4:placeholder-api:3.0.0+26.1')
+    implementation('eu.pb4:placeholder-api:3.1.0-beta.1+26.2')
 
     // Permissions API
     include(implementation('me.lucko:fabric-permissions-api:0.6.1'))

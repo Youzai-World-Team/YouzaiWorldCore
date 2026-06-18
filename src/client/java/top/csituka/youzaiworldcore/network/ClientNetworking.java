@@ -29,7 +29,7 @@ public class ClientNetworking {
             client.execute(() -> {
                 MenuElementGroup element = MENU_MAP.get(payload.menuName());
                 if (element != null) {
-                    client.setScreen(new MenuScreen(element));
+                    client.setScreenAndShow(new MenuScreen(element));
                 }
             });
         });

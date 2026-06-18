@@ -287,7 +287,7 @@ public class SwitchWorldMenuElements implements MenuElementGroup {
                 new String[]{"确定要传送吗？", "传送后您在当前世界的重生点将会被修改！"},
                 () -> {
                     Minecraft.getInstance().player.connection.sendCommand("say 传送" + worldId);
-                    Minecraft.getInstance().setScreen(null);
+                    Minecraft.getInstance().setScreenAndShow(null);
                 },
                 null
         );
