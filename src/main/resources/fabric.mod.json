@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "youzaiworldcore",
-  "version": "${version}+${minecraft_version}",
+  "version": "${version}+mc${minecraft_version}",
   "name": "YouzaiWorldCore",
   "description": "This is the core mod of Youzai World Server.",
   "authors": [
@@ -45,7 +45,7 @@
     "fabricloader": ">=${loader_version}",
     "fabric-api": "*",
     "fabric-key-mapping-api-v1": "*",
-    "minecraft": "<=${minecraft_version}",
+    "minecraft": ">=${minecraft_version}",
     "placeholder-api": ">=3.0.0"
   },
   "suggests": {
