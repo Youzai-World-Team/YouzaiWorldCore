@@ -17,6 +17,9 @@ public class ConfirmationDialog {
     private final String[] messages;
     private final Runnable onConfirm;
     private final Runnable onCancel;
+    private final String confirmButtonText;
+    private final String cancelButtonText;
+    private final boolean singleButtonMode;
 
     private int dialogX;
     private int dialogY;
@@ -30,11 +33,34 @@ public class ConfirmationDialog {
     private long hideTime = -1;
     private static final long FADE_DURATION_MS = 200;
 
+    /**
+     * 双按钮对话框构造函数（保留原有的兼容构造函数）
+     */
     public ConfirmationDialog(String title, String[] messages, Runnable onConfirm, Runnable onCancel) {
         this.title = title;
         this.messages = messages;
         this.onConfirm = onConfirm;
         this.onCancel = onCancel;
+        this.confirmButtonText = "确定";
+        this.cancelButtonText = "取消";
+        this.singleButtonMode = false;
+    }
+
+    /**
+     * 单按钮对话框构造函数
+     * @param title 标题
+     * @param messages 消息数组
+     * @param buttonText 按钮文本
+     * @param onClick 点击回调
+     */
+    public ConfirmationDialog(String title, String[] messages, String buttonText, Runnable onClick) {
+        this.title = title;
+        this.messages = messages;
+        this.onConfirm = onClick;
+        this.onCancel = null;
+        this.confirmButtonText = buttonText;
+        this.cancelButtonText = null;
+        this.singleButtonMode = true;
     }
 
     public void show() {
@@ -63,28 +89,46 @@ public class ConfirmationDialog {
         dialogY = (screenHeight - DIALOG_HEIGHT) / 2;
 
         int buttonY = dialogY + DIALOG_HEIGHT - BUTTON_HEIGHT - 15;
-        int totalButtonWidth = BUTTON_WIDTH * 2 + BUTTON_SPACING;
-        int buttonStartX = dialogX + (DIALOG_WIDTH - totalButtonWidth) / 2;
 
-        confirmButton = new TransparentButton(
-                buttonStartX, buttonY, BUTTON_WIDTH, BUTTON_HEIGHT,
-                Component.literal("确定"),
-                () -> {
-                    hide();
-                    if (onConfirm != null) onConfirm.run();
-                }
-        );
-        confirmButton.setTextColor(0x000000);
+        if (singleButtonMode) {
+            // 单按钮模式：按钮居中
+            int buttonStartX = dialogX + (DIALOG_WIDTH - BUTTON_WIDTH) / 2;
 
-        cancelButton = new TransparentButton(
-                buttonStartX + BUTTON_WIDTH + BUTTON_SPACING, buttonY, BUTTON_WIDTH, BUTTON_HEIGHT,
-                Component.literal("取消"),
-                () -> {
-                    hide();
-                    if (onCancel != null) onCancel.run();
-                }
-        );
-        cancelButton.setTextColor(0x000000);
+            confirmButton = new TransparentButton(
+                    buttonStartX, buttonY, BUTTON_WIDTH, BUTTON_HEIGHT,
+                    Component.literal(confirmButtonText),
+                    () -> {
+                        hide();
+                        if (onConfirm != null) onConfirm.run();
+                    }
+            );
+            confirmButton.setTextColor(0x000000);
+            cancelButton = null;
+        } else {
+            // 双按钮模式
+            int totalButtonWidth = BUTTON_WIDTH * 2 + BUTTON_SPACING;
+            int buttonStartX = dialogX + (DIALOG_WIDTH - totalButtonWidth) / 2;
+
+            confirmButton = new TransparentButton(
+                    buttonStartX, buttonY, BUTTON_WIDTH, BUTTON_HEIGHT,
+                    Component.literal(confirmButtonText),
+                    () -> {
+                        hide();
+                        if (onConfirm != null) onConfirm.run();
+                    }
+            );
+            confirmButton.setTextColor(0x000000);
+
+            cancelButton = new TransparentButton(
+                    buttonStartX + BUTTON_WIDTH + BUTTON_SPACING, buttonY, BUTTON_WIDTH, BUTTON_HEIGHT,
+                    Component.literal(cancelButtonText),
+                    () -> {
+                        hide();
+                        if (onCancel != null) onCancel.run();
+                    }
+            );
+            cancelButton.setTextColor(0x000000);
+        }
     }
 
     public void render(GuiGraphicsExtractor guiGraphics, int screenWidth, int screenHeight) {
@@ -103,7 +147,7 @@ public class ConfirmationDialog {
             alpha = Math.min(1f, elapsed / (float) FADE_DURATION_MS);
         }
 
-        float bgFinalAlpha = 0.5f * alpha;
+        float bgFinalAlpha = 0.75f * alpha;
         int bgColor = colorWithAlpha(0xFFFFFF, bgFinalAlpha);
         fillRoundedRect(guiGraphics, dialogX, dialogY, DIALOG_WIDTH, DIALOG_HEIGHT, CORNER_RADIUS, bgColor);
 

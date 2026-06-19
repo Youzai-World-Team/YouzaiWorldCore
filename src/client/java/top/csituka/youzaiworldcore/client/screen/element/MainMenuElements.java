@@ -7,6 +7,7 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.resources.Identifier;
 import top.csituka.youzaiworldcore.YouzaiworldCore;
 import top.csituka.youzaiworldcore.client.screen.MenuScreen;
+import top.csituka.youzaiworldcore.client.screen.widget.ConfirmationDialog;
 import top.csituka.youzaiworldcore.client.screen.widget.TextureTileButton;
 
 import java.util.ArrayList;
@@ -119,7 +120,7 @@ public class MainMenuElements implements MenuElementGroup {
         TextureTileButton questBtn = new TextureTileButton(
                 c2, row0Y, tile2, tile,
                 QUESTIONNAIRE_TEXTURE,
-                () -> {}
+                () -> showNotImplementedDialog(screen)
         );
         questBtn.setExternalAlpha(alpha);
         buttons.add(questBtn);
@@ -127,7 +128,7 @@ public class MainMenuElements implements MenuElementGroup {
         TextureTileButton titleBtn = new TextureTileButton(
                 c4, row0Y, tile, tile,
                 TITLE_TEXTURE,
-                () -> {}
+                () -> showNotImplementedDialog(screen)
         );
         titleBtn.setExternalAlpha(alpha);
         buttons.add(titleBtn);
@@ -152,7 +153,7 @@ public class MainMenuElements implements MenuElementGroup {
         TextureTileButton eventsBtn = new TextureTileButton(
                 c2, row1Y, tile, tile,
                 EVENTS_TEXTURE,
-                () -> {}
+                () -> showNotImplementedDialog(screen)
         );
         eventsBtn.setExternalAlpha(alpha);
         buttons.add(eventsBtn);
@@ -167,7 +168,7 @@ public class MainMenuElements implements MenuElementGroup {
         TextureTileButton checkInBtn = new TextureTileButton(
                 c0, row2Y, tile, tile,
                 CHECK_IN_TEXTURE,
-                () -> {}
+                () -> showNotImplementedDialog(screen)
         );
         checkInBtn.setExternalAlpha(alpha);
         buttons.add(checkInBtn);
@@ -175,7 +176,7 @@ public class MainMenuElements implements MenuElementGroup {
         TextureTileButton tutorialBtn = new TextureTileButton(
                 c1, row2Y, tile2, tile,
                 TUTORIAL_CENTER_TEXTURE,
-                () -> {}
+                () -> showNotImplementedDialog(screen)
         );
         tutorialBtn.setExternalAlpha(alpha);
         buttons.add(tutorialBtn);
@@ -193,13 +194,26 @@ public class MainMenuElements implements MenuElementGroup {
             TextureTileButton bottomBtn = new TextureTileButton(
                     colXs[i], row3Y, tile, tile,
                     bottomTextures[i],
-                    () -> {}
+                    () -> showNotImplementedDialog(screen)
             );
             bottomBtn.setExternalAlpha(alpha);
             buttons.add(bottomBtn);
         }
 
         return buttons;
+    }
+
+    /**
+     * 显示"暂未实现"提示弹窗
+     */
+    private void showNotImplementedDialog(MenuScreen screen) {
+        ConfirmationDialog dialog = new ConfirmationDialog(
+                "暂未实现",
+                new String[]{"该区域正在开发中，无法使用！"},
+                "好",
+                null
+        );
+        screen.showDialog(dialog);
     }
 
     @Override
