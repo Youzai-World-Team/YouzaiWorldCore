@@ -15,7 +15,7 @@ import java.util.List;
 
 public class MainMenuElements implements MenuElementGroup {
 
-    // Tile texture identifiers
+    // 贴图定义
     private static final Identifier SWITCH_WORLDS_TEXTURE = Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "textures/gui/switch-worlds.png");
     private static final Identifier QUESTIONNAIRE_TEXTURE = Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "textures/gui/questionnaire_application_and_survey.png");
     private static final Identifier TITLE_TEXTURE = Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "textures/gui/title.png");

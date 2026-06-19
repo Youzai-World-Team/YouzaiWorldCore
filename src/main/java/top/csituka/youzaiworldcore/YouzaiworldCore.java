@@ -24,6 +24,7 @@ import net.minecraft.world.level.levelgen.placement.PlacedFeature;
 import top.csituka.youzaiworldcore.block.ModBlocks;
 import top.csituka.youzaiworldcore.block.entity.ModBlockEntities;
 import top.csituka.youzaiworldcore.component.ModDataComponents;
+import top.csituka.youzaiworldcore.event.AnvilRepairHandler;
 import top.csituka.youzaiworldcore.event.FlyBeaconTickHandler;
 import top.csituka.youzaiworldcore.event.VoidStaffTickHandler;
 import top.csituka.youzaiworldcore.item.ModCreativeModeTabs;
@@ -60,6 +61,7 @@ public class YouzaiworldCore implements ModInitializer {
         ModMenuTypes.initialize();
         ModNetworking.initialize();
         YzChainMiningTool.registerChainMiningEvent();
+        AnvilRepairHandler.register();
         VoidStaffTickHandler.register();
         FlyBeaconTickHandler.register();
 
