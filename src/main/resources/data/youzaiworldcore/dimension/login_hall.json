@@ -1,0 +1,13 @@
+{
+  "type": "youzaiworldcore:login_hall",
+  "generator": {
+    "type": "minecraft:flat",
+    "settings": {
+      "biome": "minecraft:the_void",
+      "layers": [],
+      "structures": {
+        "structures": {}
+      }
+    }
+  }
+}

@@ -11,11 +11,11 @@ scoreboard players reset @a youzaiworld.death
 # 非破坏性统计所有容器槽位中的守护之心总数
 execute as @a store result score @s youzaiworld.heart_count if items entity @s container.* youzaiworldcore:heart_of_guardianship
 # 在数量降至特定阈值时发送警告（仅当该阈值尚未被警告过）
-execute as @a[scores={youzaiworld.heart_count=10}] unless score @s youzaiworld.heart_warned = @s youzaiworld.heart_count run tellraw @s {"translate":"youzaiworldcore.tellraw.format","translate":"youzaiworldcore.heart_of_guardianship.warning.10"}
-execute as @a[scores={youzaiworld.heart_count=5}] unless score @s youzaiworld.heart_warned = @s youzaiworld.heart_count run tellraw @s {"translate":"youzaiworldcore.tellraw.format","translate":"youzaiworldcore.heart_of_guardianship.warning.5"}
-execute as @a[scores={youzaiworld.heart_count=3}] unless score @s youzaiworld.heart_warned = @s youzaiworld.heart_count run tellraw @s {"translate":"youzaiworldcore.tellraw.format","translate":"youzaiworldcore.heart_of_guardianship.warning.3"}
-execute as @a[scores={youzaiworld.heart_count=2}] unless score @s youzaiworld.heart_warned = @s youzaiworld.heart_count run tellraw @s {"translate":"youzaiworldcore.tellraw.format","translate":"youzaiworldcore.heart_of_guardianship.warning.2"}
-execute as @a[scores={youzaiworld.heart_count=1}] unless score @s youzaiworld.heart_warned = @s youzaiworld.heart_count run tellraw @s {"translate":"youzaiworldcore.tellraw.format","translate":"youzaiworldcore.heart_of_guardianship.warning.1"}
+execute as @a[scores={youzaiworld.heart_count=10}] unless score @s youzaiworld.heart_warned = @s youzaiworld.heart_count run tellraw @s [{"translate":"youzaiworldcore.tellraw.format"},{"translate":"youzaiworldcore.heart_of_guardianship.warning.10"}]
+execute as @a[scores={youzaiworld.heart_count=5}] unless score @s youzaiworld.heart_warned = @s youzaiworld.heart_count run tellraw @s [{"translate":"youzaiworldcore.tellraw.format"},{"translate":"youzaiworldcore.heart_of_guardianship.warning.5"}]
+execute as @a[scores={youzaiworld.heart_count=3}] unless score @s youzaiworld.heart_warned = @s youzaiworld.heart_count run tellraw @s [{"translate":"youzaiworldcore.tellraw.format"},{"translate":"youzaiworldcore.heart_of_guardianship.warning.3"}]
+execute as @a[scores={youzaiworld.heart_count=2}] unless score @s youzaiworld.heart_warned = @s youzaiworld.heart_count run tellraw @s [{"translate":"youzaiworldcore.tellraw.format"},{"translate":"youzaiworldcore.heart_of_guardianship.warning.2"}]
+execute as @a[scores={youzaiworld.heart_count=1}] unless score @s youzaiworld.heart_warned = @s youzaiworld.heart_count run tellraw @s [{"translate":"youzaiworldcore.tellraw.format"},{"translate":"youzaiworldcore.heart_of_guardianship.warning.1"}]
 # 更新警告等级标记，防止下一 tick 重复警告
 execute as @a[scores={youzaiworld.heart_count=10}] run scoreboard players set @s youzaiworld.heart_warned 10
 execute as @a[scores={youzaiworld.heart_count=5}] run scoreboard players set @s youzaiworld.heart_warned 5

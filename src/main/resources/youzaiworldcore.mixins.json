@@ -4,6 +4,7 @@
   "package": "top.csituka.youzaiworldcore.mixin",
   "compatibilityLevel": "JAVA_25",
   "mixins": [
+    "LivingEntityDamageMixin"
   ],
   "injectors": {
     "defaultRequire": 1
