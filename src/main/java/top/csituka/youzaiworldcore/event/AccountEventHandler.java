@@ -46,10 +46,18 @@ public class AccountEventHandler {
         // 初始化账户管理器
         AccountManager.initialize();
 
-        // 玩家加入时：立即传送到登录大厅并打开登录/注册界面
+        // 玩家加入时：立即保护，下一 tick 传送到登录大厅并打开登录/注册界面
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
             ServerPlayer player = handler.getPlayer();
-            handlePlayerJoin(player);
+            // 立即设置无敌/飞行，防止延迟期间受伤
+            player.setInvulnerable(true);
+            player.getAbilities().flying = true;
+            player.getAbilities().mayfly = true;
+            player.onUpdateAbilities();
+            // 延迟一 tick 确保玩家已完全初始化
+            server.execute(() -> {
+                handlePlayerJoin(player);
+            });
         });
 
         // 玩家离开时：清理状态
@@ -84,6 +92,7 @@ public class AccountEventHandler {
 
     /**
      * 处理玩家加入
+     * 先传送至登录大厅，再延迟一 tick 打开 GUI，确保客户端已完成维度切换
      */
     private static void handlePlayerJoin(ServerPlayer player) {
         // 如果已经注册，发送登录界面；否则发送注册界面
@@ -96,8 +105,14 @@ public class AccountEventHandler {
         // 传送到登录大厅
         teleportToLoginHall(player);
 
-        // 发送打开界面请求
-        sendOpenLoginScreen(player, mode);
+        // 延迟一 tick 发送 GUI 打开请求，确保客户端已完成维度切换
+        // 否则传送过程中打开 GUI 会被客户端丢弃
+        var server = player.level().getServer();
+        if (server != null) {
+            server.execute(() -> {
+                sendOpenLoginScreen(player, mode);
+            });
+        }
     }
 
     /**
