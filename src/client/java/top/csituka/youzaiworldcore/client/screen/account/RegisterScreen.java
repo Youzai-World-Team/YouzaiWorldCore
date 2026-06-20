@@ -31,6 +31,8 @@ public class RegisterScreen extends AbstractAccountScreen {
         this.confirmPasswordField = new EditBox(this.font, centerX - WIDGET_WIDTH / 2, labelY + 16, WIDGET_WIDTH, WIDGET_HEIGHT, Component.literal("\u786E\u8BA4\u5BC6\u7801"));
         this.confirmPasswordField.setMaxLength(128);
         this.extraFields.add(this.confirmPasswordField);
+        // 注册到 Screen 的子组件列表
+        addRenderableWidget(this.confirmPasswordField);
     }
 
     @Override

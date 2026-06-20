@@ -51,12 +51,16 @@ public abstract class AbstractAccountScreen extends Screen {
         this.entryStartTime = System.currentTimeMillis();
 
         int centerX = this.width / 2;
-        int startY = this.height / 2 - 60;
+        // 与 extractRenderState 使用相同的坐标系：容器居中，startY 相对于容器顶部
+        int containerY = (this.height - GUI_HEIGHT) / 2;
+        int startY = containerY + 50;
 
         // 密码输入框
         this.passwordField = new EditBox(this.font, centerX - WIDGET_WIDTH / 2, startY + 40, WIDGET_WIDTH, WIDGET_HEIGHT, Component.literal("\u5BC6\u7801"));
         this.passwordField.setMaxLength(128);
         // 26.2 版本 EditBox 没有 setFilter 方法，移除
+        // 注册到 Screen 的子组件列表，否则无法接收鼠标/键盘/字符事件
+        addRenderableWidget(this.passwordField);
 
         // 子类可以添加额外输入框
         initExtraFields(centerX, startY);
@@ -69,6 +73,7 @@ public abstract class AbstractAccountScreen extends Screen {
                 Component.literal(getActionButtonText()),
                 this::onActionButtonClick
         );
+        addRenderableWidget(this.actionButton);
 
         // 返回按钮
         this.backButton = new TransparentButton(
@@ -76,6 +81,7 @@ public abstract class AbstractAccountScreen extends Screen {
                 Component.literal("\u8FD4\u56DE"),
                 () -> onBack()
         );
+        addRenderableWidget(this.backButton);
     }
 
     /** 子类在此添加额外的输入框 */
@@ -166,10 +172,9 @@ public abstract class AbstractAccountScreen extends Screen {
 
     @Override
     public boolean mouseClicked(@NonNull MouseButtonEvent event, boolean isActuallyClick) {
-        // 先检查输入框
-        this.passwordField.mouseClicked(event, isActuallyClick);
-        for (EditBox field : extraFields) {
-            field.mouseClicked(event, isActuallyClick);
+        // 先让 super 处理子组件（输入框）的点击和焦点切换
+        if (super.mouseClicked(event, isActuallyClick)) {
+            return true;
         }
 
         // 检查按钮
@@ -188,6 +193,11 @@ public abstract class AbstractAccountScreen extends Screen {
 
     @Override
     public boolean keyPressed(@NonNull KeyEvent keyEvent) {
+        // 让 super 先处理（转发给聚焦的 EditBox）
+        if (super.keyPressed(keyEvent)) {
+            return true;
+        }
+
         if (keyEvent.key() == InputConstants.KEY_ESCAPE) {
             onClose();
             return true;
@@ -216,17 +226,6 @@ public abstract class AbstractAccountScreen extends Screen {
             return true;
         }
 
-        // 将键盘事件发送给输入框
-        if (this.passwordField.isFocused()) {
-            this.passwordField.keyPressed(keyEvent);
-            return true;
-        }
-        for (EditBox field : extraFields) {
-            if (field.isFocused()) {
-                field.keyPressed(keyEvent);
-                return true;
-            }
-        }
         return false;
     }
 
