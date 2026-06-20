@@ -50,5 +50,10 @@
   "itemGroup.youzaiworldcore.youzai_tab": "Youzai World",
   "modmenu.summaryTranslation.youzaiworldcore": "Youzai World Server Core",
   "youzaiworldcore.tellraw.format":"§r§7✦ §4ᴍ§cɪ§6ɴ§eᴇ§aᴄ§bʀ§3ᴀ§dғ§uᴛ §7- §eYouzai World §7✦ §r",
-  "youzaiworldcore.tellraw.format.indev.warning":"§r§7✦ §eYouzaiWorldCore Debug Warning§7✦ §r"
+  "youzaiworldcore.tellraw.format.indev.warning":"§r§7✦ §eYouzaiWorldCore Debug Warning§7✦ §r",
+  "youzaiworldcore.heart_of_guardianship.warning.10": "§gYou have only 10 Guardian Hearts remaining in your backpack!\n§2Please replenish them as soon as possible to avoid dropping items upon death!",
+  "youzaiworldcore.heart_of_guardianship.warning.5": "§gYou have only 5 Guardian Hearts remaining in your backpack!\n§2Please replenish them as soon as possible to avoid dropping items upon death!",
+  "youzaiworldcore.heart_of_guardianship.warning.3": "§gYou have only 3 Guardian Hearts remaining in your backpack!\n§2Please replenish them as soon as possible to avoid dropping items upon death!",
+  "youzaiworldcore.heart_of_guardianship.warning.2": "§gYou have only 2 Guardian Hearts remaining in your backpack!\n§2Please replenish them as soon as possible to avoid dropping items upon death!",
+  "youzaiworldcore.heart_of_guardianship.warning.1": "§gYou have only 1 Guardian Heart remaining in your backpack!\n§2Please replenish it as soon as possible to avoid dropping items upon death!"
 }

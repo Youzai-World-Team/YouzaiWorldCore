@@ -50,5 +50,10 @@
   "itemGroup.youzaiworldcore.youzai_tab": "悠哉世界",
   "modmenu.summaryTranslation.youzaiworldcore": "悠哉世界服务器核心",
   "youzaiworldcore.tellraw.format":"§r§7✦ §4ᴍ§cɪ§6ɴ§eᴇ§aᴄ§bʀ§3ᴀ§dғ§uᴛ §7- §e悠哉世界 §7✦ §r",
-  "youzaiworldcore.tellraw.format.indev.warning":"§r§7✦ §eYouzaiWorldCore 调试 警告§7✦ §r"
+  "youzaiworldcore.tellraw.format.indev.warning":"§r§7✦ §eYouzaiWorldCore 调试 警告§7✦ §r",
+  "youzaiworldcore.heart_of_guardianship.warning.10": "§g您背包内的守护之心仅剩余 10 个了！\n§2请尽快补充，以免死亡时掉落物品！",
+  "youzaiworldcore.heart_of_guardianship.warning.5": "§g您背包内的守护之心仅剩余 5 个了！\n§2请尽快补充，以免死亡时掉落物品！",
+  "youzaiworldcore.heart_of_guardianship.warning.3": "§g您背包内的守护之心仅剩余 3 个了！\n§2请尽快补充，以免死亡时掉落物品！",
+  "youzaiworldcore.heart_of_guardianship.warning.2": "§g您背包内的守护之心仅剩余 2 个了！\n§2请尽快补充，以免死亡时掉落物品！",
+  "youzaiworldcore.heart_of_guardianship.warning.1": "§g您背包内的守护之心仅剩余 1 个了！\n§2请尽快补充，以免死亡时掉落物品！"
 }
