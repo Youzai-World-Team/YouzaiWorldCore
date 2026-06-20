@@ -20,7 +20,7 @@ import java.util.List;
 public abstract class AbstractAccountScreen extends Screen {
 
     protected static final int GUI_WIDTH = 280;
-    protected static final int GUI_HEIGHT = 220;
+    protected static final int GUI_HEIGHT = 250;
     protected static final int WIDGET_WIDTH = 200;
     protected static final int WIDGET_HEIGHT = 20;
 
@@ -62,7 +62,8 @@ public abstract class AbstractAccountScreen extends Screen {
         initExtraFields(centerX, startY);
 
         // 确定按钮（子类设置文本和回调）
-        int buttonY = startY + 70 + (extraFields.size() * 25);
+        // 每个额外输入框增加 45px 垂直间距以保证不重叠
+        int buttonY = startY + 70 + (extraFields.size() * 45);
         this.actionButton = new TransparentButton(
                 centerX - 60, buttonY, 120, 25,
                 Component.literal(getActionButtonText()),
@@ -151,7 +152,7 @@ public abstract class AbstractAccountScreen extends Screen {
             int statusAlpha = (int) (alpha * 0.9f);
             int statusColorWithAlpha = (statusAlpha << 24) | (statusColor & 0x00FFFFFF);
             int statusWidth = this.font.width(statusMessage);
-            guiGraphics.text(this.font, statusMessage, this.width / 2 - statusWidth / 2, startY + 105 + (extraFields.size() * 25), statusColorWithAlpha, false);
+            guiGraphics.text(this.font, statusMessage, this.width / 2 - statusWidth / 2, startY + 105 + (extraFields.size() * 45), statusColorWithAlpha, false);
         }
 
         // 按钮渲染 - 使用 render 方法（遵循 MenuScreen 中的调用方式）

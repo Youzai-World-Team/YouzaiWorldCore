@@ -23,9 +23,12 @@ public class RegisterScreen extends AbstractAccountScreen {
     @Override
     protected void initExtraFields(int centerX, int startY) {
         // 确认密码输入框
+        // startY 相对于 GUI 容器顶部
+        // 密码输入框在 startY + 40（高度20，底部在 startY + 60）
+        // 确认密码标签放在 startY + 68（与密码框底间隔8px）
         int labelY = startY + 68;
 
-        this.confirmPasswordField = new EditBox(this.font, centerX - WIDGET_WIDTH / 2, labelY + 14, WIDGET_WIDTH, WIDGET_HEIGHT, Component.literal("\u786E\u8BA4\u5BC6\u7801"));
+        this.confirmPasswordField = new EditBox(this.font, centerX - WIDGET_WIDTH / 2, labelY + 16, WIDGET_WIDTH, WIDGET_HEIGHT, Component.literal("\u786E\u8BA4\u5BC6\u7801"));
         this.confirmPasswordField.setMaxLength(128);
         this.extraFields.add(this.confirmPasswordField);
     }
@@ -69,7 +72,8 @@ public class RegisterScreen extends AbstractAccountScreen {
         if (easedEntry >= 1f) {
             int reqAlpha = 180;
             int reqColor = (reqAlpha << 24) | 0xFFAAAA44;
-            int reqY = startY + 132 + (extraFields.size() * 25);
+            // 放在返回按钮下方 10px
+            int reqY = startY + 210;
             int reqWidth = this.font.width(PASSWORD_REQUIREMENTS);
             guiGraphics.text(this.font, PASSWORD_REQUIREMENTS, this.width / 2 - reqWidth / 2, reqY, reqColor, false);
         }

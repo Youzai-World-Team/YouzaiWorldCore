@@ -316,6 +316,11 @@ public class YouzaiworldCore implements ModInitializer {
             case SUCCESS -> {
                 AccountManager.snapshotState(player);
                 AccountManager.setLoggedIn(player, true);
+                // 移除无敌/飞行
+                player.setInvulnerable(false);
+                player.getAbilities().flying = false;
+                player.getAbilities().mayfly = false;
+                player.onUpdateAbilities();
                 source.sendSuccess(() -> Component.literal("注册成功！"), false);
                 // 传送回主世界
                 ServerLevel overworld = player.level().getServer().getLevel(Level.OVERWORLD);
@@ -351,6 +356,11 @@ public class YouzaiworldCore implements ModInitializer {
         switch (result) {
             case SUCCESS -> {
                 AccountManager.setLoggedIn(player, true);
+                // 移除无敌/飞行
+                player.setInvulnerable(false);
+                player.getAbilities().flying = false;
+                player.getAbilities().mayfly = false;
+                player.onUpdateAbilities();
                 LoginState state = AccountManager.getLoginState(player);
                 state.restorePosition(player);
                 source.sendSuccess(() -> Component.literal("登录成功！"), false);
@@ -390,6 +400,11 @@ public class YouzaiworldCore implements ModInitializer {
         // 登出：保存状态，传送到登录大厅
         AccountManager.snapshotState(player);
         AccountManager.setLoggedIn(player, false);
+
+        player.setInvulnerable(true);
+        player.getAbilities().flying = true;
+        player.getAbilities().mayfly = true;
+        player.onUpdateAbilities();
 
         ServerLevel loginHall = player.level().getServer().getLevel(
                 ResourceKey.create(Registries.DIMENSION,

@@ -46,13 +46,10 @@ public class AccountEventHandler {
         // 初始化账户管理器
         AccountManager.initialize();
 
-        // 玩家加入时：打开登录/注册界面并传送到登录大厅
+        // 玩家加入时：立即传送到登录大厅并打开登录/注册界面
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
             ServerPlayer player = handler.getPlayer();
-            // 延迟一小段时间确保客户端已就绪
-            server.execute(() -> {
-                handlePlayerJoin(player);
-            });
+            handlePlayerJoin(player);
         });
 
         // 玩家离开时：清理状态
@@ -112,12 +109,19 @@ public class AccountEventHandler {
             targetLevel = player.level().getServer().getLevel(Level.OVERWORLD);
         }
         if (targetLevel != null) {
+            // 重置坠落距离防止传送到位时摔死
+            player.fallDistance = 0f;
             player.teleportTo(targetLevel, 
                     LOGIN_HALL_POS.getX() + 0.5, 
                     LOGIN_HALL_POS.getY(), 
                     LOGIN_HALL_POS.getZ() + 0.5, 
                     java.util.Set.of(), 
                     0f, 0f, true);
+            // 使玩家无敌且可飞行，防止在登录大厅中摔落/虚空伤害
+            player.setInvulnerable(true);
+            player.getAbilities().flying = true;
+            player.getAbilities().mayfly = true;
+            player.onUpdateAbilities();
         }
     }
 
@@ -151,7 +155,12 @@ public class AccountEventHandler {
         switch (result) {
             case SUCCESS -> {
                 AccountManager.setLoggedIn(player, true);
-                // 恢复玩家状态和位置
+                // 恢复玩家状态和位置（移除无敌/飞行）
+                player.setInvulnerable(false);
+                player.getAbilities().flying = false;
+                player.getAbilities().mayfly = false;
+                player.onUpdateAbilities();
+                player.fallDistance = 0f;
                 LoginState state = AccountManager.getLoginState(player);
                 state.restorePosition(player);
                 ServerPlayNetworking.send(player, new LoginResultPayload(0, "\u767B\u5F55\u6210\u529F\uFF01"));
@@ -197,6 +206,12 @@ public class AccountEventHandler {
         switch (result) {
             case SUCCESS -> {
                 AccountManager.setLoggedIn(player, true);
+                // 移除无敌/飞行
+                player.setInvulnerable(false);
+                player.getAbilities().flying = false;
+                player.getAbilities().mayfly = false;
+                player.onUpdateAbilities();
+                player.fallDistance = 0f;
                 // 传送到主世界 0 100 0
                 ServerLevel overworld = player.level().getServer().getLevel(Level.OVERWORLD);
                 if (overworld != null) {
