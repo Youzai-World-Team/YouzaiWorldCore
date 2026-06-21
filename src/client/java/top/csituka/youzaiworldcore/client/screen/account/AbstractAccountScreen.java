@@ -1,6 +1,7 @@
 package top.csituka.youzaiworldcore.client.screen.account;
 
 import com.mojang.blaze3d.platform.InputConstants;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
@@ -14,28 +15,26 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 登入/注册 GUI 抽象基类。
+ * 账户操作 GUI 的抽象基类。
  * <p>
- * 提供所有账户操作界面共用的布局和交互功能：</p>
+ * 提供登录和注册界面共用的布局与交互功能：
  * <ul>
- *   <li>半透明背景 + 居中圆角容器</li>
- *   <li>"玩家登入/注册" 标题</li>
- *   <li>"欢迎来到悠哉世界服务器..." 欢迎文本</li>
+ *   <li>半透明黑色背景 + 居中圆角容器</li>
+ *   <li>动态标题与欢迎文本（由子类提供）</li>
  *   <li>当前玩家代号显示</li>
- *   <li>密码输入框（及子类可扩展的额外输入框）</li>
- *   <li>确定操作按钮（文本由子类指定）+ 返回按钮</li>
+ *   <li>密码输入框（子类可扩展额外输入框）</li>
+ *   <li>确定操作按钮（文本由子类指定）</li>
+ *   <li>"回到服务器列表" 按钮（断开连接）</li>
  *   <li>状态信息显示区域</li>
  *   <li>淡入动画效果（easeOutCubic）</li>
- *   <li>Tab 键切换焦点、Enter 键提交、Escape 键关闭</li>
+ *   <li>Tab/Enter/Escape 键盘快捷操作</li>
  * </ul>
+ * </p>
  */
 public abstract class AbstractAccountScreen extends Screen {
 
     /** GUI 容器总宽度 */
     protected static final int GUI_WIDTH = 280;
-
-    /** GUI 容器总高度 */
-    protected static final int GUI_HEIGHT = 290;
 
     /** 输入框/按钮的标准宽度 */
     protected static final int WIDGET_WIDTH = 200;
@@ -46,6 +45,9 @@ public abstract class AbstractAccountScreen extends Screen {
     /** 当前玩家的玩家代号（显示在界面中） */
     protected final String playerName;
 
+    /** GUI 容器总高度（由子类在构造函数中指定，登录和注册的容器高度不同） */
+    protected final int guiHeight;
+
     /** 密码输入框 */
     protected EditBox passwordField;
 
@@ -55,8 +57,8 @@ public abstract class AbstractAccountScreen extends Screen {
     /** 确定操作按钮（"登入"或"注册"） */
     protected TransparentButton actionButton;
 
-    /** 返回按钮 */
-    protected TransparentButton backButton;
+    /** "回到服务器列表" 按钮 */
+    protected TransparentButton backToServerListButton;
 
     /** 状态信息文本（如"密码错误""登录成功"等） */
     protected String statusMessage = "";
@@ -76,14 +78,41 @@ public abstract class AbstractAccountScreen extends Screen {
     private static final float ENTRY_DURATION = 0.3f;
 
     /**
-     * 构造一个抽象账户界面。
+     * 构造一个账户操作界面。
      *
-     * @param title      界面标题（用于 Screen 构造）
+     * @param title      界面标题（用于 Screen 构造，如"玩家登入"/"玩家注册"）
      * @param playerName 当前玩家的玩家代号
+     * @param guiHeight  容器总高度（根据界面内容量不同而不同）
      */
-    protected AbstractAccountScreen(@NonNull String title, String playerName) {
+    protected AbstractAccountScreen(@NonNull String title, String playerName, int guiHeight) {
         super(Component.literal(title));
         this.playerName = playerName;
+        this.guiHeight = guiHeight;
+    }
+
+    // ===== 子类必须实现的抽象方法 =====
+
+    /** 返回界面标题文本（如"玩家登入"或"玩家注册"） */
+    protected abstract String getTitleText();
+
+    /** 返回欢迎文本（如"欢迎来到悠哉世界服务器，请登入你的账户："） */
+    protected abstract String getWelcomeText();
+
+    /** 返回确定按钮显示的文本（"登入"或"注册"） */
+    protected abstract String getActionButtonText();
+
+    /** 确定按钮点击时的回调逻辑 */
+    protected abstract void onActionButtonClick();
+
+    // ===== 子类可选覆写的钩子方法 =====
+
+    /** 子类在此添加额外的输入框（如注册界面的确认密码框） */
+    protected void initExtraFields(int centerX, int startY) {
+    }
+
+    /** 子类可在此方法中绘制额外内容（如注册界面的密码要求提示） */
+    protected void renderExtraContent(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY,
+                                       float partialTick, float easedEntry, int containerY, int startY, int alpha) {
     }
 
     @Override
@@ -95,20 +124,20 @@ public abstract class AbstractAccountScreen extends Screen {
 
         int centerX = this.width / 2;
         // 容器居中，startY 相对于容器顶部
-        int containerY = (this.height - GUI_HEIGHT) / 2;
+        int containerY = (this.height - guiHeight) / 2;
         int startY = containerY + 50;
 
         // ===== 密码输入框 =====
-        this.passwordField = new EditBox(this.font, centerX - WIDGET_WIDTH / 2, startY + 40, WIDGET_WIDTH, WIDGET_HEIGHT, Component.literal("密码"));
+        this.passwordField = new EditBox(this.font, centerX - WIDGET_WIDTH / 2,
+                startY + 40, WIDGET_WIDTH, WIDGET_HEIGHT, Component.literal("密码"));
         this.passwordField.setMaxLength(128);
-        // 注册到 Screen 的子组件列表，否则无法接收鼠标/键盘/字符事件
         addRenderableWidget(this.passwordField);
 
-        // 子类可以添加额外输入框（如确认密码框）
+        // ===== 子类可以添加额外输入框（如确认密码框） =====
         initExtraFields(centerX, startY);
 
         // ===== 确定按钮 =====
-        // 每个额外输入框增加 45px 垂直间距以保证不重叠
+        // 每个额外输入框增加 45px 垂直间距
         int buttonY = startY + 70 + (extraFields.size() * 45);
         this.actionButton = new TransparentButton(
                 centerX - 60, buttonY, 120, 25,
@@ -117,28 +146,22 @@ public abstract class AbstractAccountScreen extends Screen {
         );
         addRenderableWidget(this.actionButton);
 
-        // ===== 返回按钮 =====
-        this.backButton = new TransparentButton(
-                centerX - 60, buttonY + 32, 120, 25,
-                Component.literal("返回"),
-                () -> onBack()
+        // ===== "回到服务器列表" 按钮（固定在容器底部） =====
+        int backY = containerY + guiHeight - 35;
+        this.backToServerListButton = new TransparentButton(
+                centerX - 60, backY, 120, 25,
+                Component.literal("回到服务器列表"),
+                this::onBackToServerList
         );
-        addRenderableWidget(this.backButton);
+        addRenderableWidget(this.backToServerListButton);
     }
 
-    /** 子类在此添加额外的输入框（如确认密码框） */
-    protected void initExtraFields(int centerX, int startY) {
-    }
-
-    /** 子类实现：返回确定按钮上显示的文本（"登入"或"注册"） */
-    protected abstract String getActionButtonText();
-
-    /** 子类实现：确定按钮点击时的回调逻辑 */
-    protected abstract void onActionButtonClick();
-
-    /** 返回按钮回调：默认关闭界面 */
-    protected void onBack() {
-        onClose();
+    /**
+     * "回到服务器列表"按钮回调：断开玩家与服务器的连接。
+     * 调用 {@link Minecraft#disconnectFromWorld(Component)} 断开连接并返回主菜单。
+     */
+    protected void onBackToServerList() {
+        Minecraft.getInstance().disconnectFromWorld(Component.literal("返回服务器列表"));
     }
 
     @Override
@@ -156,34 +179,39 @@ public abstract class AbstractAccountScreen extends Screen {
 
         // ===== 绘制圆角矩形主容器 =====
         int containerX = this.width / 2 - GUI_WIDTH / 2;
-        int containerY = this.height / 2 - GUI_HEIGHT / 2;
+        int containerY = this.height / 2 - guiHeight / 2;
         int containerAlpha = (int) (easedEntry * 200);
-        fillRoundedRect(guiGraphics, containerX, containerY, GUI_WIDTH, GUI_HEIGHT, 8, (containerAlpha << 24) | 0x1A1A1A);
+        fillRoundedRect(guiGraphics, containerX, containerY, GUI_WIDTH, guiHeight, 8,
+                (containerAlpha << 24) | 0x1A1A1A);
 
         // 计算当前透明度下的文本颜色
         int alpha = (int) (easedEntry * 255);
         int textColor = (alpha << 24) | 0xFFFFFF;
         int dimTextColor = (alpha << 24) | 0xAAAAAA;
 
-        // ===== 标题：玩家登入/注册 =====
-        String titleText = "玩家登入/注册";
+        // ===== 标题 =====
+        String titleText = getTitleText();
         int titleWidth = this.font.width(titleText);
-        guiGraphics.text(this.font, titleText, this.width / 2 - titleWidth / 2, containerY + 12, textColor, false);
+        guiGraphics.text(this.font, titleText, this.width / 2 - titleWidth / 2,
+                containerY + 12, textColor, false);
 
         // ===== 欢迎文本 =====
-        String welcomeText = "欢迎来到悠哉世界服务器，请登入/注册你的账户：";
+        String welcomeText = getWelcomeText();
         int welcomeWidth = this.font.width(welcomeText);
-        guiGraphics.text(this.font, welcomeText, this.width / 2 - welcomeWidth / 2, containerY + 30, dimTextColor, false);
+        guiGraphics.text(this.font, welcomeText, this.width / 2 - welcomeWidth / 2,
+                containerY + 30, dimTextColor, false);
 
         int centerX = this.width / 2;
         int startY = containerY + 50;
 
         // ===== 玩家代号显示 =====
         String nameLabel = "玩家代号： " + playerName;
-        guiGraphics.text(this.font, nameLabel, centerX - this.font.width(nameLabel) / 2, startY + 2, textColor, false);
+        guiGraphics.text(this.font, nameLabel, centerX - this.font.width(nameLabel) / 2,
+                startY + 2, textColor, false);
 
         // ===== 密码标签 =====
-        guiGraphics.text(this.font, "密码", centerX - WIDGET_WIDTH / 2, startY + 24, dimTextColor, false);
+        guiGraphics.text(this.font, "密码", centerX - WIDGET_WIDTH / 2,
+                startY + 24, dimTextColor, false);
 
         // ===== 渲染密码输入框 =====
         this.passwordField.extractRenderState(guiGraphics, mouseX, mouseY, partialTick);
@@ -201,18 +229,14 @@ public abstract class AbstractAccountScreen extends Screen {
             int statusAlpha = (int) (alpha * 0.9f);
             int statusColorWithAlpha = (statusAlpha << 24) | (statusColor & 0x00FFFFFF);
             int statusWidth = this.font.width(statusMessage);
-            // 状态信息位置：根据额外输入框数量动态调整 Y 偏移
+            int statusY = startY + 135 + (extraFields.size() * 45);
             guiGraphics.text(this.font, statusMessage, this.width / 2 - statusWidth / 2,
-                    startY + 135 + (extraFields.size() * 45), statusColorWithAlpha, false);
+                    statusY, statusColorWithAlpha, false);
         }
 
         // ===== 渲染按钮 =====
         this.actionButton.render(guiGraphics, mouseX, mouseY, partialTick);
-        this.backButton.render(guiGraphics, mouseX, mouseY, partialTick);
-    }
-
-    /** 子类可在此方法中绘制额外内容（如注册界面的密码要求提示） */
-    protected void renderExtraContent(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick, float easedEntry, int containerY, int startY, int alpha) {
+        this.backToServerListButton.render(guiGraphics, mouseX, mouseY, partialTick);
     }
 
     @Override
@@ -222,18 +246,21 @@ public abstract class AbstractAccountScreen extends Screen {
             return true;
         }
 
-        // 手动检测按钮点击（因为 TransparentButton 在 26.2 中 extractWidgetRenderState
-        // 不是 public 的，改用 render 方式，所以点击检测需要自行实现）
         int mx = (int) event.x();
         int my = (int) event.y();
+
+        // ===== 检测确定按钮 =====
         if (isInBounds(mx, my, this.actionButton)) {
             this.actionButton.onClick(event, isActuallyClick);
             return true;
         }
-        if (isInBounds(mx, my, this.backButton)) {
-            this.backButton.onClick(event, isActuallyClick);
+
+        // ===== 检测"回到服务器列表"按钮 =====
+        if (isInBounds(mx, my, this.backToServerListButton)) {
+            this.backToServerListButton.onClick(event, isActuallyClick);
             return true;
         }
+
         return false;
     }
 
@@ -249,6 +276,7 @@ public abstract class AbstractAccountScreen extends Screen {
             onClose();
             return true;
         }
+
         // Tab 键在输入框之间切换焦点
         if (keyEvent.key() == InputConstants.KEY_TAB) {
             List<EditBox> allFields = new ArrayList<>(extraFields);
@@ -267,8 +295,10 @@ public abstract class AbstractAccountScreen extends Screen {
             }
             return true;
         }
+
         // Enter 键触发确定按钮
-        if (keyEvent.key() == InputConstants.KEY_RETURN || keyEvent.key() == InputConstants.KEY_NUMPADENTER) {
+        if (keyEvent.key() == InputConstants.KEY_RETURN
+                || keyEvent.key() == InputConstants.KEY_NUMPADENTER) {
             onActionButtonClick();
             return true;
         }
@@ -278,18 +308,20 @@ public abstract class AbstractAccountScreen extends Screen {
 
     @Override
     public void tick() {
-        // 26.2 版本 EditBox 已不再需要手动 tick，此方法留空即可
+        // 26.2 版本 EditBox 已不再需要手动 tick
     }
 
     @Override
     public void extractBackground(@NonNull GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
-        // 不绘制默认背景（我们使用自定义半透明背景）
+        // 不绘制默认背景（使用自定义半透明背景）
     }
 
     @Override
     public boolean isPauseScreen() {
-        return false; // 不暂停游戏
+        return false;
     }
+
+    // ===== 工具方法 =====
 
     /**
      * 检测鼠标位置是否在按钮的矩形范围内。
@@ -306,7 +338,6 @@ public abstract class AbstractAccountScreen extends Screen {
 
     /**
      * 绘制圆角矩形填充。
-     * 使用逐像素绘制四角圆角的方式实现圆角效果。
      *
      * @param g     GuiGraphicsExtractor 实例
      * @param x     矩形左上角 X
