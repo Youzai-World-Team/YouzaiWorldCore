@@ -19,6 +19,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import java.util.UUID;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.levelgen.GenerationStep;
 import net.minecraft.world.level.levelgen.placement.PlacedFeature;
@@ -498,14 +499,19 @@ public class YouzaiworldCore implements ModInitializer {
             return 1;
         }
 
-        // 玩家不在线：尝试通过已有文件判断
+        // 玩家不在线：使用离线模式 UUID 生成规则
+        UUID offlineUUID = UUID.nameUUIDFromBytes(("OfflinePlayer:" + playerName).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        if (AccountManager.isRegistered(offlineUUID)) {
+            source.sendFailure(Component.literal("该玩家已经拥有账户！"));
+            return 0;
+        }
         if (AccountManager.isPlayerNameTaken(playerName)) {
             source.sendFailure(Component.literal("该玩家代号已被使用！"));
             return 0;
         }
-
-        source.sendFailure(Component.literal("无法为离线玩家创建账户（需要玩家在线以获取 UUID）！"));
-        return 0;
+        AccountManager.register(offlineUUID, playerName, password);
+        source.sendSuccess(() -> Component.literal("已为离线玩家 " + playerName + " 创建账户！"), true);
+        return 1;
     }
 
     private static int executeMgrGetAccountStatus(CommandSourceStack source, String playerName) {
