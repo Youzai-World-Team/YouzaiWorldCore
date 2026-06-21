@@ -20,7 +20,7 @@ import java.util.List;
 public abstract class AbstractAccountScreen extends Screen {
 
     protected static final int GUI_WIDTH = 280;
-    protected static final int GUI_HEIGHT = 250;
+    protected static final int GUI_HEIGHT = 290;
     protected static final int WIDGET_WIDTH = 200;
     protected static final int WIDGET_HEIGHT = 20;
 
@@ -158,7 +158,7 @@ public abstract class AbstractAccountScreen extends Screen {
             int statusAlpha = (int) (alpha * 0.9f);
             int statusColorWithAlpha = (statusAlpha << 24) | (statusColor & 0x00FFFFFF);
             int statusWidth = this.font.width(statusMessage);
-            guiGraphics.text(this.font, statusMessage, this.width / 2 - statusWidth / 2, startY + 105 + (extraFields.size() * 45), statusColorWithAlpha, false);
+            guiGraphics.text(this.font, statusMessage, this.width / 2 - statusWidth / 2, startY + 135 + (extraFields.size() * 45), statusColorWithAlpha, false);
         }
 
         // 按钮渲染 - 使用 render 方法（遵循 MenuScreen 中的调用方式）

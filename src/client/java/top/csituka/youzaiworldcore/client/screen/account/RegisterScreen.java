@@ -75,7 +75,7 @@ public class RegisterScreen extends AbstractAccountScreen {
             int reqAlpha = 180;
             int reqColor = (reqAlpha << 24) | 0xFFAAAA44;
             // 放在返回按钮下方 10px
-            int reqY = startY + 210;
+            int reqY = startY + 220;
             int reqWidth = this.font.width(PASSWORD_REQUIREMENTS);
             guiGraphics.text(this.font, PASSWORD_REQUIREMENTS, this.width / 2 - reqWidth / 2, reqY, reqColor, false);
         }
