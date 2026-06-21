@@ -363,7 +363,24 @@ public class YouzaiworldCore implements ModInitializer {
                 player.getAbilities().mayfly = false;
                 player.onUpdateAbilities();
                 LoginState state = AccountManager.getLoginState(player);
-                state.restorePosition(player);
+                if (state.hasSnapshot()) {
+                    // 有保存的位置快照（断线前已登录），恢复到下线前位置
+                    state.restorePosition(player);
+                    state.clearSnapshot();
+                } else {
+                    // 无保存位置（已登出玩家或新注册玩家），传送到虚空登录大厅
+                    var server = player.level().getServer();
+                    if (server != null) {
+                        var loginHall = server.getLevel(AccountEventHandler.LOGIN_HALL_DIMENSION);
+                        if (loginHall != null) {
+                            player.teleportTo(loginHall,
+                                    AccountEventHandler.LOGIN_HALL_POS.getX() + 0.5,
+                                    AccountEventHandler.LOGIN_HALL_POS.getY(),
+                                    AccountEventHandler.LOGIN_HALL_POS.getZ() + 0.5,
+                                    Set.of(), 0f, 0f, true);
+                        }
+                    }
+                }
                 source.sendSuccess(() -> Component.literal("登录成功！"), false);
                 return 1;
             }
