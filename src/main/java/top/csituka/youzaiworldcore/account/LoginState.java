@@ -83,13 +83,18 @@ public class LoginState {
     private boolean hasSnapshot = false;
 
     /**
-     * 构造一个登录状态对象，首次创建时立即快照当前位置。
+     * 构造一个登录状态对象。
+     * <p>
+     * 注意：构造函数<b>不会</b>自动快照玩家位置。
+     * 位置快照只在 {@link #snapshotFullState(ServerPlayer)} 被显式调用时记录，
+     * 该调用仅在玩家已登录后断线（DISCONNECT 事件）时发生。
+     * 这样做是为了防止非登录态玩家（如重连但未登录）错误记录登录大厅的位置。
+     * </p>
      *
      * @param player 服务端玩家对象
      */
     public LoginState(ServerPlayer player) {
         this.playerUuid = player.getUUID();
-        snapshotPosition(player);
     }
 
     /**
@@ -161,6 +166,17 @@ public class LoginState {
         this.hasSnapshot = false;
     }
 
+    /**
+     * 标记为已有快照（用于 {@link #snapshotPosition} 连续更新场景）。
+     * <p>
+     * 与 {@link #snapshotFullState(ServerPlayer)} 不同，
+     * {@link #snapshotPosition(ServerPlayer)} 不会自动设置此标记。
+     * 在 Tick 循环中调用此方法确保登录时可以定位到玩家位置。</p>
+     */
+    public void markSnapshot() {
+        this.hasSnapshot = true;
+    }
+
     // ===== Getters & Setters =====
 
     public UUID getPlayerUuid() {
@@ -185,5 +201,31 @@ public class LoginState {
 
     public void resetFailures() {
         this.consecutiveLoginFailures = 0;
+    }
+
+    // ===== 调试用 getter =====
+
+    public ResourceKey<Level> getLastDimension() {
+        return lastDimension;
+    }
+
+    public double getLastX() {
+        return lastX;
+    }
+
+    public double getLastY() {
+        return lastY;
+    }
+
+    public double getLastZ() {
+        return lastZ;
+    }
+
+    public float getLastYRot() {
+        return lastYRot;
+    }
+
+    public float getLastXRot() {
+        return lastXRot;
     }
 }

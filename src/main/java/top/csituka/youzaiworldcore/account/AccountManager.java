@@ -327,6 +327,15 @@ public class AccountManager {
     }
 
     /**
+     * 获取当前登录状态映射的大小（调试用）。
+     *
+     * @return LOGIN_STATES 中的条目数
+     */
+    public static int getLoginStateMapSize() {
+        return LOGIN_STATES.size();
+    }
+
+    /**
      * 从登录状态映射中移除指定玩家的记录。
      * 通常在玩家登出、被踢出或注销时调用。
      *
@@ -420,6 +429,24 @@ public class AccountManager {
     public static void snapshotState(ServerPlayer player) {
         LoginState state = getLoginState(player);
         state.snapshotFullState(player);
+    }
+
+    /**
+     * 仅快照玩家当前位置和朝向，不保存其他状态数据。
+     * <p>
+     * 在服务端每 Tick 调用，作为 DISCONNECT 事件可能未触发的兜底措施。
+     * 确保玩家断线时，LOGIN_STATES 中始终有最新的位置信息。</p>
+     *
+     * @param player 服务端玩家对象
+     */
+    public static void snapshotPositionOnly(ServerPlayer player) {
+        LoginState state = LOGIN_STATES.get(player.getUUID());
+        if (state != null) {
+            state.snapshotPosition(player);
+            if (!state.hasSnapshot()) {
+                state.markSnapshot();
+            }
+        }
     }
 
     /**

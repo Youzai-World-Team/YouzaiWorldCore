@@ -12,6 +12,7 @@ import net.minecraft.world.item.ItemStack;
 
 import top.csituka.youzaiworldcore.YouzaiworldCore;
 import top.csituka.youzaiworldcore.block.ModBlocks;
+import top.csituka.youzaiworldcore.item.preset.PresetItems;
 
 public class ModCreativeModeTabs {
 
@@ -24,6 +25,7 @@ public class ModCreativeModeTabs {
             .icon(() -> new ItemStack(ModItems.RAW_YZ))
             .title(Component.translatable("itemGroup.youzaiworldcore.youzai_tab"))
             .displayItems((params, output) -> {
+                // ── 原悠哉世界物品 ──
                 output.accept(ModBlocks.YZ_ORE.asItem());
                 output.accept(ModBlocks.DEEPSLATE_YZ_ORE.asItem());
                 output.accept(ModItems.RAW_YZ);
@@ -41,6 +43,13 @@ public class ModCreativeModeTabs {
                 output.accept(ModItems.HEART_OF_GUARDIANSHIP);
                 output.accept(ModItems.VOID_STAFF);
                 output.accept(ModItems.LOGO);
+
+                // ── 毕业套装预设 (移植自 godlygearbox) ──
+                var holders = params.holders();
+                output.accept(PresetItems.createPreset01(holders));
+                output.accept(PresetItems.createPreset02(holders));
+                output.accept(PresetItems.createPreset03(holders));
+                output.accept(PresetItems.createPreset04(holders));
             })
             .build();
 

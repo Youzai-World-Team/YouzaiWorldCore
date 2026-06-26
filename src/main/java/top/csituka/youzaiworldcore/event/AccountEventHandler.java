@@ -85,20 +85,41 @@ public class AccountEventHandler {
 
         /**
          * 玩家断开连接事件。
-         * - 已登录玩家：保存完整状态快照（含位置），标记为登出，保留 LoginState
-         *   以便下次重连时恢复到下线前的位置
-         * - 未登录玩家：直接清理 LoginState，无需保留任何数据
-         */
+         * <p>
+         * 核心原则：只有<b>已登录</b>的玩家才保存位置快照（以便下次登录恢复）；</p>
+         * <ul>
+         *   <li><b>已登录玩家断线</b>：调用 {@link AccountManager#snapshotState} 保存完整状态
+         *       （含维度/坐标/血量/背包等），标记为登出但<b>保留</b> LoginState 对象。
+         *       下次重连时 {@link #handlePlayerJoin} 会识别到 {@code hasSnapshot = true}，
+         *       登录后自动恢复到下线前位置。</li>
+         *   <li><b>未登录玩家断线</b>：直接清除 LoginState，<b>不保留任何位置信息</b>。
+         *       这包括以下场景：
+         *       <ul>
+         *         <li>首次加入但未注册的新玩家</li>
+         *         <li>已注册但尚未登录的玩家（如点击"回到服务器列表"后）</li>
+         *         <li>已注销的玩家（账户被删除时状态已被清除）</li>
+         *       </ul>
+         *       这些玩家重连后 LoginState 会被重新创建（{@code hasSnapshot = false}），
+         *       登录成功后将传送到主世界出生点 (0, 100, 0)，<b>不会</b>被传回登录大厅。 </li>
+         * </ul>
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
-            ServerPlayer player = handler.getPlayer();
-            if (AccountManager.isLoggedIn(player)) {
-                // 已登录：保存完整状态快照（含下线位置），标记为登出
-                // 保留 LoginState 以便下次重连登录时恢复到下线前位置
-                AccountManager.snapshotState(player);
-                AccountManager.setLoggedIn(player, false);
-            } else {
-                // 未登录：直接清理，无数据需要保留
-                AccountManager.removePlayer(player);
+            try {
+                ServerPlayer player = handler.getPlayer();
+                boolean loggedIn = AccountManager.isLoggedIn(player);
+                String playerName = player.getGameProfile().name();
+                int mapSize = AccountManager.getLoginStateMapSize();
+                YouzaiworldCore.LOGGER.info("DISCONNECT: player={}, isLoggedIn={}, mapSize={}", playerName, loggedIn, mapSize);
+                if (loggedIn) {
+                    // 已登录：保存完整状态快照（含下线位置），标记为登出
+                    // 保留 LoginState 以便下次重连登录时恢复到下线前位置
+                    AccountManager.snapshotState(player);
+                    AccountManager.setLoggedIn(player, false);
+                } else {
+                    // 未登录：直接清理，无数据需要保留
+                    AccountManager.removePlayer(player);
+                }
+            } catch (Exception e) {
+                YouzaiworldCore.LOGGER.error("DISCONNECT handler error: {}", e.getMessage(), e);
             }
         });
 
@@ -120,12 +141,21 @@ public class AccountEventHandler {
 
         /**
          * 服务端每 Tick 事件。
-         * 清理未登录玩家的所有状态效果（保护机制之一）。
+         * <ul>
+         *   <li><b>已登录玩家</b>：持续更新位置快照，确保断线时总有最后位置可恢复。
+         *       同时设置 {@code hasSnapshot = true}，这样即使在 DISCONNECT 事件
+         *       未正确触发的情况下，登录时也能恢复到最后已知的位置。</li>
+         *   <li><b>未登录玩家</b>：清除所有状态效果（防止未登录时获得/消耗效果）。</li>
+         * </ul>
          */
         ServerTickEvents.END_SERVER_TICK.register(server -> {
             for (ServerPlayer player : server.getPlayerList().getPlayers()) {
-                if (!AccountManager.isLoggedIn(player)) {
-                    // 清除所有状态效果（防止未登录时获得/消耗效果）
+                if (AccountManager.isLoggedIn(player)) {
+                    // 已登录：持续更新位置快照，作为 DISCONNECT 事件的兜底
+                    // 即使 DISCONNECT 由于某些原因未触发，玩家最后位置也已保存
+                    AccountManager.snapshotPositionOnly(player);
+                } else {
+                    // 未登录：清除所有状态效果（保护机制之一）
                     if (!player.getActiveEffects().isEmpty()) {
                         player.removeAllEffects();
                     }
@@ -139,33 +169,38 @@ public class AccountEventHandler {
     /**
      * 处理玩家加入游戏。
      * <p>
-     * 逻辑流程：</p>
-     * <ol>
-     *   <li>获取或创建 LoginState（已存在的不会重新创建）</li>
-     *   <li>如果已有快照（断线重连玩家），保留其位置信息不覆盖</li>
-     *   <li>否则保存当前状态快照</li>
-     *   <li>传送至登录大厅等待操作</li>
-     *   <li>延迟 3 tick 打开登录/注册 GUI</li>
-     * </ol>
+     * 核心原则：</p>
+     * <ul>
+     *   <li>只有在<b>已登录状态下断线</b>的玩家才会持有 {@code hasSnapshot = true} 的
+     *       LoginState（由 DISCONNECT 事件的 {@link AccountManager#snapshotState} 保存）。</li>
+     *   <li>其他情况（首次加入、未登录断线后重连、注销后重连）创建的 LoginState
+     *       都不会有快照，加入时也<b>不会</b>为其创建新快照。
+     *       这些玩家登录成功后将被传送至主世界出生点 (0, 100, 0)。</li>
+     *   <li>这就避免了"回到服务器列表 → 重连"场景中，玩家被错误记录登录大厅位置，
+     *       导致登录后传送到虚空维度死亡的问题。</li>
+     * </ul>
      *
      * @param player 加入游戏的玩家
      */
     private static void handlePlayerJoin(ServerPlayer player) {
-        // 获取或创建 LoginState（已存在的不会覆盖已有状态）
+        // 获取或创建 LoginState
+        // - 已登录断线玩家：返回已有 state，hasSnapshot = true，位置已保存
+        // - 其他情况：创建新 state，hasSnapshot = false，位置未保存
         LoginState state = AccountManager.getLoginState(player);
+        YouzaiworldCore.LOGGER.info("handlePlayerJoin: player={}, hasSnapshot={}, mapSize={}",
+                player.getGameProfile().name(), state.hasSnapshot(), AccountManager.getLoginStateMapSize());
 
-        // 如果已有快照（来自已登录玩家的断线重连），不要覆盖保存的位置信息
-        if (!state.hasSnapshot()) {
-            // 没有快照（新玩家或已登出玩家），保存当前状态
-            AccountManager.snapshotState(player);
-        }
+        // 关键：不在此处创建任何快照！
+        // 只有已登录断线的玩家（其 LoginState 仍保留在 LOGIN_STATES 中且 hasSnapshot=true）
+        // 才持有有效的位置信息。其他情况不应记录位置，而是登录后由 handleLogin 自动
+        // 传送到主世界出生点。
 
         // 传送至登录大厅，让玩家在安全环境中操作
         teleportToLoginHall(player);
 
         // 使用多 tick 延迟确保客户端有足够时间处理维度切换
         // Minecraft 的 teleportTo 是异步的——仅发送网络包给客户端
-        // 对于断线重连玩家，客户端有主世界缓存，延迟不足会显示主世界背景背景
+        // 对于断线重连玩家，客户端有主世界缓存，延迟不足会显示主世界背景
         var server = player.level().getServer();
         if (server != null) {
             String mode = AccountManager.isRegistered(player.getUUID()) ? "login" : "register";
@@ -295,18 +330,23 @@ public class AccountEventHandler {
 
                 // 根据是否有保存的位置快照决定传送目标
                 LoginState state = AccountManager.getLoginState(player);
+                YouzaiworldCore.LOGGER.info("handleLogin: player={}, hasSnapshot={}, lastDim={}, lastPos=({}, {}, {}), mapSize={}",
+                        player.getGameProfile().name(),
+                        state.hasSnapshot(),
+                        state.getLastDimension(),
+                        state.getLastX(), state.getLastY(), state.getLastZ(),
+                        AccountManager.getLoginStateMapSize());
                 if (state.hasSnapshot()) {
                     // 有保存的位置快照（断线前已登录），恢复到下线前位置
                     state.restorePosition(player);
                     state.clearSnapshot();
                 } else {
-                    // 无保存位置（已登出玩家），传送到登录大厅位置
-                    ServerLevel loginHall = player.level().getServer().getLevel(LOGIN_HALL_DIMENSION);
-                    if (loginHall != null) {
-                        player.teleportTo(loginHall,
-                                LOGIN_HALL_POS.getX() + 0.5,
-                                LOGIN_HALL_POS.getY(),
-                                LOGIN_HALL_POS.getZ() + 0.5,
+                    // 无保存位置（从未登录过的玩家或断线重连后位置丢失），
+                    // 传送到主世界 (0, 100, 0)，防止玩家在无快照时被留在
+                    // 登录大厅虚空维度中掉落死亡。
+                    ServerLevel overworld = player.level().getServer().getLevel(Level.OVERWORLD);
+                    if (overworld != null) {
+                        player.teleportTo(overworld, 0.5, 100, 0.5,
                                 Set.of(), 0f, 0f, true);
                     }
                 }

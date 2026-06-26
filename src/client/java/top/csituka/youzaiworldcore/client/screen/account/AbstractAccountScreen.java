@@ -266,14 +266,16 @@ public abstract class AbstractAccountScreen extends Screen {
 
     @Override
     public boolean keyPressed(@NonNull KeyEvent keyEvent) {
-        // 让 super 先处理（转发给聚焦的 EditBox）
-        if (super.keyPressed(keyEvent)) {
+        // Escape 键：在 super 处理之前拦截，防止关闭界面。
+        // Screen.keyPressed 内部会在 isEscape() && shouldCloseOnEsc() 时调用 onClose()。
+        // 玩家未完成登录/注册操作时不应离开此界面。
+        // 玩家只能通过"回到服务器列表"按钮离开。
+        if (keyEvent.key() == InputConstants.KEY_ESCAPE) {
             return true;
         }
 
-        // Escape 键关闭界面
-        if (keyEvent.key() == InputConstants.KEY_ESCAPE) {
-            onClose();
+        // 让 super 处理（转发给聚焦的 EditBox）
+        if (super.keyPressed(keyEvent)) {
             return true;
         }
 

@@ -26,6 +26,8 @@ import net.minecraft.world.level.levelgen.placement.PlacedFeature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import top.csituka.youzaiworldcore.luckperms.LuckPermsHelper;
+
 import top.csituka.youzaiworldcore.account.AccountManager;
 import top.csituka.youzaiworldcore.account.LoginState;
 import top.csituka.youzaiworldcore.block.ModBlocks;
@@ -93,7 +95,7 @@ public class YouzaiworldCore implements ModInitializer {
             dispatcher.register(Commands.literal("yzwc")
                 // === teleport_world ===
                 .then(Commands.literal("teleport_world")
-                    .requires(Commands.hasPermission(Commands.LEVEL_ADMINS))
+                    .requires(source -> LuckPermsHelper.checkPermission(source, LuckPermsHelper.PERMISSION_TELEPORT_WORLD, Commands.LEVEL_ADMINS))
                     .then(Commands.argument("targets", EntityArgument.players())
                         .then(Commands.argument("dimension", DimensionArgument.dimension())
                             .executes(context -> executeTeleportWorld(
@@ -161,7 +163,7 @@ public class YouzaiworldCore implements ModInitializer {
                 )
                 // === open_menu ===
                 .then(Commands.literal("open_menu")
-                    .requires(Commands.hasPermission(Commands.LEVEL_ADMINS))
+                    .requires(source -> LuckPermsHelper.checkPermission(source, LuckPermsHelper.PERMISSION_OPEN_MENU, Commands.LEVEL_ADMINS))
                     .then(Commands.argument("menu_name", StringArgumentType.word())
                         .executes(context -> executeOpenMenu(
                             context.getSource(),
@@ -223,9 +225,9 @@ public class YouzaiworldCore implements ModInitializer {
                             ))
                         )
                     )
-                    // === account mgr (OP 权限) ===
+                    // === account mgr (LuckPerms 权限) ===
                     .then(Commands.literal("mgr")
-                        .requires(Commands.hasPermission(Commands.LEVEL_ADMINS))
+                        .requires(source -> LuckPermsHelper.checkPermission(source, LuckPermsHelper.PERMISSION_ACCOUNT_MGR_WILDCARD, Commands.LEVEL_ADMINS))
                         .then(Commands.literal("reset_password")
                             .then(Commands.argument("playerName", StringArgumentType.word())
                                 .then(Commands.argument("newPassword", StringArgumentType.word())
@@ -368,16 +370,12 @@ public class YouzaiworldCore implements ModInitializer {
                     state.restorePosition(player);
                     state.clearSnapshot();
                 } else {
-                    // 无保存位置（已登出玩家或新注册玩家），传送到虚空登录大厅
+                    // 无保存位置：首次登录或未登录断线后重连，传送到主世界 (0, 100, 0)
                     var server = player.level().getServer();
                     if (server != null) {
-                        var loginHall = server.getLevel(AccountEventHandler.LOGIN_HALL_DIMENSION);
-                        if (loginHall != null) {
-                            player.teleportTo(loginHall,
-                                    AccountEventHandler.LOGIN_HALL_POS.getX() + 0.5,
-                                    AccountEventHandler.LOGIN_HALL_POS.getY(),
-                                    AccountEventHandler.LOGIN_HALL_POS.getZ() + 0.5,
-                                    Set.of(), 0f, 0f, true);
+                        ServerLevel overworld = server.getLevel(Level.OVERWORLD);
+                        if (overworld != null) {
+                            player.teleportTo(overworld, 0.5, 100, 0.5, Set.of(), 0f, 0f, true);
                         }
                     }
                 }
@@ -415,8 +413,9 @@ public class YouzaiworldCore implements ModInitializer {
             return 0;
         }
 
-        // 登出：保存状态，传送到登录大厅
-        AccountManager.snapshotState(player);
+        // 登出：清除位置快照（注销玩家的最近位置不应保留），标记为未登录
+        LoginState state = AccountManager.getLoginState(player);
+        state.clearSnapshot();
         AccountManager.setLoggedIn(player, false);
 
         player.setInvulnerable(true);
