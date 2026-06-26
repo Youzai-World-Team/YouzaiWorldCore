@@ -33,13 +33,7 @@ import java.util.stream.Collectors;
  * <ul>
  *   <li>{@code youzaiworldcore.command.teleport_world} — 跨维度传送</li>
  *   <li>{@code youzaiworldcore.command.open_menu} — 打开管理菜单</li>
- *   <li>{@code youzaiworldcore.command.account.mgr} — 账户管理（管理子命令）</li>
- *   <li>{@code youzaiworldcore.command.account.mgr.reset_password} — 重置密码</li>
- *   <li>{@code youzaiworldcore.command.account.mgr.delete} — 删除账户</li>
- *   <li>{@code youzaiworldcore.command.account.mgr.create} — 创建账户</li>
- *   <li>{@code youzaiworldcore.command.account.mgr.get_status} — 查看账户状态</li>
- *   <li>{@code youzaiworldcore.command.account.mgr.unblock} — 解封玩家</li>
- *   <li>{@code youzaiworldcore.command.account.*} — 所有账户相关命令的通配符</li>
+ *   <li>{@code youzaiworldcore.command.*} — 所有命令的通配符</li>
  *   <li>{@code youzaiworldcore.*} — 所有模组权限的通配符</li>
  * </ul>
  *
@@ -66,31 +60,7 @@ public final class LuckPermsHelper {
     /** 打开管理菜单命令 {@code /yzwc open_menu} */
     public static final String PERMISSION_OPEN_MENU = "youzaiworldcore.command.open_menu";
 
-    /** 账户管理命令 {@code /yzwc account mgr.*} 的所有子命令 */
-    public static final String PERMISSION_ACCOUNT_MGR = "youzaiworldcore.command.account.mgr";
-
-    /** 密码重置子命令 */
-    public static final String PERMISSION_ACCOUNT_MGR_RESET_PASSWORD = "youzaiworldcore.command.account.mgr.reset_password";
-
-    /** 账户删除子命令 */
-    public static final String PERMISSION_ACCOUNT_MGR_DELETE = "youzaiworldcore.command.account.mgr.delete";
-
-    /** 账户创建子命令 */
-    public static final String PERMISSION_ACCOUNT_MGR_CREATE = "youzaiworldcore.command.account.mgr.create";
-
-    /** 查看账户状态子命令 */
-    public static final String PERMISSION_ACCOUNT_MGR_GET_STATUS = "youzaiworldcore.command.account.mgr.get_status";
-
-    /** 解封玩家子命令 */
-    public static final String PERMISSION_ACCOUNT_MGR_UNBLOCK = "youzaiworldcore.command.account.mgr.unblock";
-
-    /** 所有账户管理命令的通配符（等价于上面所有 mgr 子命令的合集） */
-    public static final String PERMISSION_ACCOUNT_MGR_WILDCARD = "youzaiworldcore.command.account.mgr.*";
-
-    /** 所有账户相关命令（含普通玩家命令）的通配符 */
-    public static final String PERMISSION_ACCOUNT_WILDCARD = "youzaiworldcore.command.account.*";
-
-    /** 所有模组命令的通配符 */
+    /** 所有命令的通配符 */
     public static final String PERMISSION_COMMAND_WILDCARD = "youzaiworldcore.command.*";
 
     /** 整个模组的通配符权限 */

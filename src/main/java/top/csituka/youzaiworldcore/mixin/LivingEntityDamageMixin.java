@@ -8,22 +8,15 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
-import top.csituka.youzaiworldcore.event.AccountEventHandler;
 
 /**
- * 混合注入：未登录玩家在登录大厅中免疫伤害
+ * 混合注入：保留用于未来的伤害保护逻辑（当前无活跃规则）
  */
 @Mixin(LivingEntity.class)
 public class LivingEntityDamageMixin {
 
-    @Inject(method = "hurtServer", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "hurtServer", at = @At("HEAD"))
     private void onHurtServer(ServerLevel level, DamageSource source, float amount, CallbackInfoReturnable<Boolean> cir) {
-        // 只有服务端的 ServerPlayer 才处理
-        LivingEntity self = (LivingEntity) (Object) this;
-        if (self instanceof ServerPlayer player) {
-            if (AccountEventHandler.shouldBlockDamage(player)) {
-                cir.setReturnValue(false);
-            }
-        }
+        // 预留：未来可以在合适的时机增加伤害保护逻辑
     }
 }

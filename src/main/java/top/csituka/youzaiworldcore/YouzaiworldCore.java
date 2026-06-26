@@ -3,7 +3,6 @@ package top.csituka.youzaiworldcore;
 import com.mojang.brigadier.arguments.FloatArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
-import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.biome.v1.BiomeModifications;
 import net.fabricmc.fabric.api.biome.v1.BiomeSelectors;
@@ -19,21 +18,15 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import java.util.UUID;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.levelgen.GenerationStep;
 import net.minecraft.world.level.levelgen.placement.PlacedFeature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import top.csituka.youzaiworldcore.luckperms.LuckPermsHelper;
-
-import top.csituka.youzaiworldcore.account.AccountManager;
-import top.csituka.youzaiworldcore.account.LoginState;
 import top.csituka.youzaiworldcore.block.ModBlocks;
 import top.csituka.youzaiworldcore.block.entity.ModBlockEntities;
 import top.csituka.youzaiworldcore.component.ModDataComponents;
-import top.csituka.youzaiworldcore.event.AccountEventHandler;
 import top.csituka.youzaiworldcore.event.AnvilRepairHandler;
 import top.csituka.youzaiworldcore.event.FlyBeaconTickHandler;
 import top.csituka.youzaiworldcore.event.VoidStaffTickHandler;
@@ -76,7 +69,6 @@ public class YouzaiworldCore implements ModInitializer {
         AnvilRepairHandler.register();
         VoidStaffTickHandler.register();
         FlyBeaconTickHandler.register();
-        AccountEventHandler.register();
 
         BiomeModifications.addFeature(
                 BiomeSelectors.foundInOverworld(),
@@ -179,112 +171,6 @@ public class YouzaiworldCore implements ModInitializer {
                         )
                     )
                 )
-                // === account (普通玩家可用) ===
-                .then(Commands.literal("account")
-                    .then(Commands.literal("register")
-                        .then(Commands.argument("password", StringArgumentType.word())
-                            .then(Commands.argument("confirmPassword", StringArgumentType.word())
-                                .executes(context -> executeAccountRegister(
-                                    context.getSource(),
-                                    StringArgumentType.getString(context, "password"),
-                                    StringArgumentType.getString(context, "confirmPassword")
-                                ))
-                            )
-                        )
-                    )
-                    .then(Commands.literal("login")
-                        .then(Commands.argument("password", StringArgumentType.word())
-                            .executes(context -> executeAccountLogin(
-                                context.getSource(),
-                                StringArgumentType.getString(context, "password")
-                            ))
-                        )
-                    )
-                    .then(Commands.literal("logout")
-                        .executes(context -> executeAccountLogout(context.getSource()))
-                    )
-                    .then(Commands.literal("change_password")
-                        .then(Commands.argument("oldPassword", StringArgumentType.word())
-                            .then(Commands.argument("newPassword", StringArgumentType.word())
-                                .then(Commands.argument("confirmPassword", StringArgumentType.word())
-                                    .executes(context -> executeChangePassword(
-                                        context.getSource(),
-                                        StringArgumentType.getString(context, "oldPassword"),
-                                        StringArgumentType.getString(context, "newPassword"),
-                                        StringArgumentType.getString(context, "confirmPassword")
-                                    ))
-                                )
-                            )
-                        )
-                    )
-                    .then(Commands.literal("cancel_account")
-                        .then(Commands.argument("password", StringArgumentType.word())
-                            .executes(context -> executeCancelAccount(
-                                context.getSource(),
-                                StringArgumentType.getString(context, "password")
-                            ))
-                        )
-                    )
-                    // === account mgr (LuckPerms 权限) ===
-                    .then(Commands.literal("mgr")
-                        .requires(source -> LuckPermsHelper.checkPermission(source, LuckPermsHelper.PERMISSION_ACCOUNT_MGR_WILDCARD, Commands.LEVEL_ADMINS))
-                        .then(Commands.literal("reset_password")
-                            .then(Commands.argument("playerName", StringArgumentType.word())
-                                .then(Commands.argument("newPassword", StringArgumentType.word())
-                                    .then(Commands.argument("confirmPassword", StringArgumentType.word())
-                                        .executes(context -> executeMgrResetPassword(
-                                            context.getSource(),
-                                            StringArgumentType.getString(context, "playerName"),
-                                            StringArgumentType.getString(context, "newPassword"),
-                                            StringArgumentType.getString(context, "confirmPassword")
-                                        ))
-                                    )
-                                )
-                            )
-                        )
-                        .then(Commands.literal("delete")
-                            .then(Commands.argument("playerName", StringArgumentType.word())
-                                .then(Commands.argument("password", StringArgumentType.word())
-                                    .executes(context -> executeMgrDeleteAccount(
-                                        context.getSource(),
-                                        StringArgumentType.getString(context, "playerName"),
-                                        StringArgumentType.getString(context, "password")
-                                    ))
-                                )
-                            )
-                        )
-                        .then(Commands.literal("create")
-                            .then(Commands.argument("playerName", StringArgumentType.word())
-                                .then(Commands.argument("password", StringArgumentType.word())
-                                    .then(Commands.argument("confirmPassword", StringArgumentType.word())
-                                        .executes(context -> executeMgrCreateAccount(
-                                            context.getSource(),
-                                            StringArgumentType.getString(context, "playerName"),
-                                            StringArgumentType.getString(context, "password"),
-                                            StringArgumentType.getString(context, "confirmPassword")
-                                        ))
-                                    )
-                                )
-                            )
-                        )
-                        .then(Commands.literal("get_account_status")
-                            .then(Commands.argument("playerName", StringArgumentType.word())
-                                .executes(context -> executeMgrGetAccountStatus(
-                                    context.getSource(),
-                                    StringArgumentType.getString(context, "playerName")
-                                ))
-                            )
-                        )
-                        .then(Commands.literal("unblock")
-                            .then(Commands.argument("playerName", StringArgumentType.word())
-                                .executes(context -> executeMgrUnblock(
-                                    context.getSource(),
-                                    StringArgumentType.getString(context, "playerName")
-                                ))
-                            )
-                        )
-                    )
-                )
                 .executes(context -> {
                     context.getSource().sendSuccess(() -> Component.literal("Hello World!"), false);
                     return 1;
@@ -294,253 +180,6 @@ public class YouzaiworldCore implements ModInitializer {
     }
 
     // ==================== 命令执行方法 ====================
-
-    // ===== 普通玩家账户命令 =====
-
-    private static int executeAccountRegister(CommandSourceStack source, String password, String confirmPassword) throws CommandSyntaxException {
-        ServerPlayer player = source.getPlayerOrException();
-
-        if (AccountManager.isLoggedIn(player)) {
-            source.sendFailure(Component.literal("您已经登录了！"));
-            return 0;
-        }
-        if (!password.equals(confirmPassword)) {
-            source.sendFailure(Component.literal("两次输入的密码不一致！"));
-            return 0;
-        }
-        if (password.isEmpty()) {
-            source.sendFailure(Component.literal("密码不能为空！"));
-            return 0;
-        }
-
-        String playerName = player.getGameProfile().name();
-        var result = AccountManager.register(player.getUUID(), playerName, password);
-        switch (result) {
-            case SUCCESS -> {
-                AccountManager.snapshotState(player);
-                AccountManager.setLoggedIn(player, true);
-                // 移除无敌/飞行
-                player.setInvulnerable(false);
-                player.getAbilities().flying = false;
-                player.getAbilities().mayfly = false;
-                player.onUpdateAbilities();
-                source.sendSuccess(() -> Component.literal("注册成功！"), false);
-                // 传送回主世界
-                ServerLevel overworld = player.level().getServer().getLevel(Level.OVERWORLD);
-                if (overworld != null) {
-                    player.teleportTo(overworld, 0.5, 100, 0.5, Set.of(), 0f, 0f, true);
-                }
-                return 1;
-            }
-            case ALREADY_REGISTERED -> {
-                source.sendFailure(Component.literal("该账户已经注册了！"));
-                return 0;
-            }
-            case NAME_TAKEN -> {
-                source.sendFailure(Component.literal("该玩家代号已被使用！"));
-                return 0;
-            }
-            default -> {
-                source.sendFailure(Component.literal("注册失败，未知错误！"));
-                return 0;
-            }
-        }
-    }
-
-    private static int executeAccountLogin(CommandSourceStack source, String password) throws CommandSyntaxException {
-        ServerPlayer player = source.getPlayerOrException();
-
-        if (AccountManager.isLoggedIn(player)) {
-            source.sendFailure(Component.literal("您已经登录了！"));
-            return 0;
-        }
-
-        var result = AccountManager.login(player.getUUID(), password);
-        switch (result) {
-            case SUCCESS -> {
-                AccountManager.setLoggedIn(player, true);
-                // 移除无敌/飞行
-                player.setInvulnerable(false);
-                player.getAbilities().flying = false;
-                player.getAbilities().mayfly = false;
-                player.onUpdateAbilities();
-                LoginState state = AccountManager.getLoginState(player);
-                if (state.hasSnapshot()) {
-                    // 有保存的位置快照（断线前已登录），恢复到下线前位置
-                    state.restorePosition(player);
-                    state.clearSnapshot();
-                } else {
-                    // 无保存位置：首次登录或未登录断线后重连，传送到主世界 (0, 100, 0)
-                    var server = player.level().getServer();
-                    if (server != null) {
-                        ServerLevel overworld = server.getLevel(Level.OVERWORLD);
-                        if (overworld != null) {
-                            player.teleportTo(overworld, 0.5, 100, 0.5, Set.of(), 0f, 0f, true);
-                        }
-                    }
-                }
-                source.sendSuccess(() -> Component.literal("登录成功！"), false);
-                return 1;
-            }
-            case NOT_REGISTERED -> {
-                source.sendFailure(Component.literal("该账户尚未注册！"));
-                return 0;
-            }
-            case WRONG_PASSWORD -> {
-                source.sendFailure(Component.literal("密码错误"));
-                return 0;
-            }
-            case KICK -> {
-                player.connection.disconnect(Component.literal("密码错误过多，已被踢出服务器"));
-                return 0;
-            }
-            case BLOCKED -> {
-                player.connection.disconnect(Component.literal("由于您过多次数密码验证失败，请前往QQ交流群联系管理员"));
-                return 0;
-            }
-            default -> {
-                source.sendFailure(Component.literal("登录失败！"));
-                return 0;
-            }
-        }
-    }
-
-    private static int executeAccountLogout(CommandSourceStack source) throws CommandSyntaxException {
-        ServerPlayer player = source.getPlayerOrException();
-
-        if (!AccountManager.isLoggedIn(player)) {
-            source.sendFailure(Component.literal("您尚未登录！"));
-            return 0;
-        }
-
-        // 登出：清除位置快照（注销玩家的最近位置不应保留），标记为未登录
-        LoginState state = AccountManager.getLoginState(player);
-        state.clearSnapshot();
-        AccountManager.setLoggedIn(player, false);
-
-        player.setInvulnerable(true);
-        player.getAbilities().flying = true;
-        player.getAbilities().mayfly = true;
-        player.onUpdateAbilities();
-
-        ServerLevel loginHall = player.level().getServer().getLevel(
-                ResourceKey.create(Registries.DIMENSION,
-                        Identifier.fromNamespaceAndPath(MOD_ID, "login_hall")));
-        if (loginHall != null) {
-            player.teleportTo(loginHall, 0.5, 100, 0.5, Set.of(), 0f, 0f, true);
-        }
-
-        AccountEventHandler.sendOpenLoginScreen(player, "login");
-        source.sendSuccess(() -> Component.literal("已登出！"), false);
-        return 1;
-    }
-
-    private static int executeChangePassword(CommandSourceStack source, String oldPassword, String newPassword, String confirmPassword) throws CommandSyntaxException {
-        ServerPlayer player = source.getPlayerOrException();
-
-        if (!newPassword.equals(confirmPassword)) {
-            source.sendFailure(Component.literal("两次输入的新密码不一致！"));
-            return 0;
-        }
-
-        boolean success = AccountManager.changePassword(player.getUUID(), oldPassword, newPassword);
-        if (success) {
-            source.sendSuccess(() -> Component.literal("密码修改成功！"), false);
-            return 1;
-        } else {
-            source.sendFailure(Component.literal("旧密码错误或账户不存在！"));
-            return 0;
-        }
-    }
-
-    private static int executeCancelAccount(CommandSourceStack source, String password) throws CommandSyntaxException {
-        ServerPlayer player = source.getPlayerOrException();
-
-        String playerName = player.getGameProfile().name();
-        boolean success = AccountManager.deleteAccountByPlayerName(playerName, password);
-        if (success) {
-            // 注销后踢出服务器
-            player.connection.disconnect(Component.literal("账户已注销！"));
-            return 1;
-        } else {
-            source.sendFailure(Component.literal("密码错误或账户不存在！"));
-            return 0;
-        }
-    }
-
-    // ===== 管理员账户管理命令 =====
-
-    private static int executeMgrResetPassword(CommandSourceStack source, String playerName, String newPassword, String confirmPassword) {
-        if (!newPassword.equals(confirmPassword)) {
-            source.sendFailure(Component.literal("两次输入的密码不一致！"));
-            return 0;
-        }
-
-        boolean success = AccountManager.resetPassword(playerName, newPassword);
-        if (success) {
-            source.sendSuccess(() -> Component.literal("已重置玩家 " + playerName + " 的密码！"), true);
-            return 1;
-        } else {
-            source.sendFailure(Component.literal("玩家 " + playerName + " 的账户不存在！"));
-            return 0;
-        }
-    }
-
-    private static int executeMgrDeleteAccount(CommandSourceStack source, String playerName, String password) {
-        boolean success = AccountManager.deleteAccountByPlayerName(playerName, password);
-        if (success) {
-            source.sendSuccess(() -> Component.literal("已删除玩家 " + playerName + " 的账户！"), true);
-            return 1;
-        } else {
-            source.sendFailure(Component.literal("密码错误或玩家 " + playerName + " 的账户不存在！"));
-            return 0;
-        }
-    }
-
-    private static int executeMgrCreateAccount(CommandSourceStack source, String playerName, String password, String confirmPassword) {
-        if (!password.equals(confirmPassword)) {
-            source.sendFailure(Component.literal("两次输入的密码不一致！"));
-            return 0;
-        }
-
-        // 查找是否有该玩家名的在线玩家
-        ServerPlayer targetPlayer = source.getServer().getPlayerList().getPlayerByName(playerName);
-        if (targetPlayer != null) {
-            if (AccountManager.isRegistered(targetPlayer.getUUID())) {
-                source.sendFailure(Component.literal("该玩家已经拥有账户！"));
-                return 0;
-            }
-            AccountManager.register(targetPlayer.getUUID(), playerName, password);
-            source.sendSuccess(() -> Component.literal("已为在线玩家 " + playerName + " 创建账户！"), true);
-            return 1;
-        }
-
-        // 玩家不在线：使用离线模式 UUID 生成规则
-        UUID offlineUUID = UUID.nameUUIDFromBytes(("OfflinePlayer:" + playerName).getBytes(java.nio.charset.StandardCharsets.UTF_8));
-        if (AccountManager.isRegistered(offlineUUID)) {
-            source.sendFailure(Component.literal("该玩家已经拥有账户！"));
-            return 0;
-        }
-        if (AccountManager.isPlayerNameTaken(playerName)) {
-            source.sendFailure(Component.literal("该玩家代号已被使用！"));
-            return 0;
-        }
-        AccountManager.register(offlineUUID, playerName, password);
-        source.sendSuccess(() -> Component.literal("已为离线玩家 " + playerName + " 创建账户！"), true);
-        return 1;
-    }
-
-    private static int executeMgrGetAccountStatus(CommandSourceStack source, String playerName) {
-        String status = AccountManager.getAccountStatus(playerName);
-        source.sendSuccess(() -> Component.literal(status), false);
-        return 1;
-    }
-
-    private static int executeMgrUnblock(CommandSourceStack source, String playerName) {
-        AccountManager.unblockPlayer(playerName);
-        source.sendSuccess(() -> Component.literal("已解除玩家 " + playerName + " 的阻止登入状态！"), true);
-        return 1;
-    }
 
     // ===== 原有命令 =====
 
