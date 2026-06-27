@@ -3,14 +3,19 @@ package top.csituka.youzaiworldcore.client.screen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ServerboundChatCommandPacket;
 import top.csituka.youzaiworldcore.client.screen.widget.ConfirmationDialog;
 import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * 账户登入 GUI
@@ -34,6 +39,8 @@ public class LoginScreen extends Screen {
     private EditBox passwordField;
     private TransparentButton loginButton;
     private TransparentButton disconnectButton;
+
+    private final List<AbstractWidget> allWidgets = new ArrayList<>();
 
     private ConfirmationDialog currentDialog;
     private boolean processing = false;
@@ -59,14 +66,12 @@ public class LoginScreen extends Screen {
         this.usernameField.setEditable(false);
         this.usernameField.setCanLoseFocus(false);
         this.usernameField.setTextColor(0xAAAAAA);
-        this.addRenderableWidget(this.usernameField);
 
         // 密码输入框
         this.passwordField = new EditBox(this.font, fieldX, containerTop + 55 + ROW_SPACING, FIELD_WIDTH, FIELD_HEIGHT,
                 Component.translatable("screen.youzaiworldcore.login.label_password"));
         this.passwordField.setMaxLength(128);
         this.passwordField.setHint(Component.translatable("screen.youzaiworldcore.login.hint_password"));
-        this.addRenderableWidget(this.passwordField);
 
         // 登入按钮
         int buttonY = containerTop + 55 + ROW_SPACING + 40;
@@ -79,7 +84,6 @@ public class LoginScreen extends Screen {
                 this::onLoginClick
         );
         this.loginButton.setTextColor(0xFFFFFF);
-        this.addRenderableWidget(this.loginButton);
 
         // 断开连接按钮
         this.disconnectButton = new TransparentButton(
@@ -88,12 +92,21 @@ public class LoginScreen extends Screen {
                 this::onDisconnectClick
         );
         this.disconnectButton.setTextColor(0xFFFFFF);
-        this.addRenderableWidget(this.disconnectButton);
+
+        // 收集所有 widget
+        this.allWidgets.clear();
+        this.allWidgets.add(this.usernameField);
+        this.allWidgets.add(this.passwordField);
+        this.allWidgets.add(this.loginButton);
+        this.allWidgets.add(this.disconnectButton);
+
+        // 默认聚焦密码框
+        this.passwordField.setFocused(true);
     }
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
-        // 绘制半透明背景
+        // 绘制全屏半透明背景
         guiGraphics.fill(0, 0, this.width, this.height, 0x80000000);
 
         int centerX = this.width / 2;
@@ -125,10 +138,18 @@ public class LoginScreen extends Screen {
         drawLabel(guiGraphics, this.font,
                 Component.translatable("screen.youzaiworldcore.login.label_username").getString(),
                 leftColX, containerTop + 58);
-
         drawLabel(guiGraphics, this.font,
                 Component.translatable("screen.youzaiworldcore.login.label_password").getString(),
                 leftColX, containerTop + 58 + ROW_SPACING);
+
+        // 手动渲染所有 widget
+        for (AbstractWidget widget : this.allWidgets) {
+            if (widget instanceof EditBox editBox) {
+                editBox.extractWidgetRenderState(guiGraphics, mouseX, mouseY, partialTick);
+            } else if (widget instanceof TransparentButton button) {
+                button.render(guiGraphics, mouseX, mouseY, partialTick);
+            }
+        }
 
         // 渲染弹窗
         if (currentDialog != null && currentDialog.isVisible()) {
@@ -137,22 +158,33 @@ public class LoginScreen extends Screen {
         } else if (currentDialog != null && !currentDialog.isVisible()) {
             currentDialog = null;
         }
-
-        // 如果有弹窗，不要让输入框聚焦
-        if (currentDialog != null && currentDialog.isFullyVisible()) {
-            this.setFocused(null);
-        }
     }
 
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean isActuallyClick) {
-        // 弹窗优先处理点击
+        // 弹窗优先
         if (currentDialog != null && currentDialog.isFullyVisible()) {
             return currentDialog.mouseClicked(event.x(), event.y());
         }
 
-        // 处理输入框和按钮的点击
-        return super.mouseClicked(event, isActuallyClick);
+        double mx = event.x();
+        double my = event.y();
+
+        // 转发到 EditBox
+        if (this.passwordField.mouseClicked(event, isActuallyClick)) return true;
+        if (this.usernameField.mouseClicked(event, isActuallyClick)) return true;
+
+        // 转发到按钮
+        if (isMouseOverButton(this.loginButton, mx, my)) {
+            this.loginButton.onClick(event, isActuallyClick);
+            return true;
+        }
+        if (isMouseOverButton(this.disconnectButton, mx, my)) {
+            this.disconnectButton.onClick(event, isActuallyClick);
+            return true;
+        }
+
+        return false;
     }
 
     @Override
@@ -161,7 +193,7 @@ public class LoginScreen extends Screen {
             return true;
         }
 
-        // 拦截 ESC 键
+        // 拦截 ESC
         if (keyEvent.key() == 256) { // GLFW_KEY_ESCAPE
             return true;
         }
@@ -172,7 +204,17 @@ public class LoginScreen extends Screen {
             return true;
         }
 
-        return super.keyPressed(keyEvent);
+        // 转发到当前聚焦的 EditBox
+        if (this.passwordField.isFocused() && this.passwordField.keyPressed(keyEvent)) return true;
+        if (this.usernameField.isFocused() && this.usernameField.keyPressed(keyEvent)) return true;
+
+        return false;
+    }
+
+    @Override
+    public boolean charTyped(CharacterEvent charEvent) {
+        if (this.passwordField.isFocused() && this.passwordField.charTyped(charEvent)) return true;
+        return false;
     }
 
     @Override
@@ -199,7 +241,6 @@ public class LoginScreen extends Screen {
 
         String password = this.passwordField.getValue();
 
-        // 客户端本地校验
         if (password.isEmpty()) {
             showErrorDialog(
                     Component.translatable("screen.youzaiworldcore.login.error_title").getString(),
@@ -208,7 +249,6 @@ public class LoginScreen extends Screen {
             return;
         }
 
-        // 发送登录命令
         processing = true;
         String command = "yzwc account login " + password;
         sendCommand(command);
@@ -229,7 +269,6 @@ public class LoginScreen extends Screen {
             Minecraft.getInstance().player.connection.send(
                     new ServerboundChatCommandPacket(command));
         }
-        // 命令已发送，关闭当前 GUI，等待服务器处理
         Minecraft.getInstance().setScreenAndShow(null);
     }
 
@@ -239,8 +278,8 @@ public class LoginScreen extends Screen {
                 messages,
                 Component.translatable("screen.youzaiworldcore.login.dialog_ok").getString(),
                 () -> {
-                    // 关闭弹窗后重新聚焦密码框
                     this.passwordField.setFocused(true);
+                    this.processing = false;
                 }
         );
         this.currentDialog.init(this.width, this.height);
@@ -250,5 +289,10 @@ public class LoginScreen extends Screen {
     private void drawLabel(GuiGraphicsExtractor guiGraphics, Font font, String text, int x, int y) {
         int labelY = y + (FIELD_HEIGHT - font.lineHeight) / 2;
         guiGraphics.text(font, text, x, labelY, 0xFFFFFF, false);
+    }
+
+    private boolean isMouseOverButton(TransparentButton button, double mx, double my) {
+        return mx >= button.getX() && mx < button.getX() + button.getWidth()
+                && my >= button.getY() && my < button.getY() + button.getHeight();
     }
 }

@@ -3,14 +3,19 @@ package top.csituka.youzaiworldcore.client.screen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ServerboundChatCommandPacket;
 import top.csituka.youzaiworldcore.client.screen.widget.ConfirmationDialog;
 import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * 账户注册 GUI
@@ -36,6 +41,8 @@ public class RegisterScreen extends Screen {
     private TransparentButton registerButton;
     private TransparentButton disconnectButton;
 
+    private final List<AbstractWidget> allWidgets = new ArrayList<>();
+
     private ConfirmationDialog currentDialog;
     private boolean processing = false;
 
@@ -60,21 +67,18 @@ public class RegisterScreen extends Screen {
         this.usernameField.setEditable(false);
         this.usernameField.setCanLoseFocus(false);
         this.usernameField.setTextColor(0xAAAAAA);
-        this.addRenderableWidget(this.usernameField);
 
         // 密码输入框
         this.passwordField = new EditBox(this.font, fieldX, containerTop + 55 + ROW_SPACING, FIELD_WIDTH, FIELD_HEIGHT,
                 Component.translatable("screen.youzaiworldcore.register.label_password"));
         this.passwordField.setMaxLength(128);
         this.passwordField.setHint(Component.translatable("screen.youzaiworldcore.register.hint_password"));
-        this.addRenderableWidget(this.passwordField);
 
         // 确认密码输入框
         this.confirmPasswordField = new EditBox(this.font, fieldX, containerTop + 55 + ROW_SPACING * 2, FIELD_WIDTH, FIELD_HEIGHT,
                 Component.translatable("screen.youzaiworldcore.register.label_confirm_password"));
         this.confirmPasswordField.setMaxLength(128);
         this.confirmPasswordField.setHint(Component.translatable("screen.youzaiworldcore.register.hint_confirm"));
-        this.addRenderableWidget(this.confirmPasswordField);
 
         // 注册按钮
         int buttonY = containerTop + 55 + ROW_SPACING * 3 + 30;
@@ -87,7 +91,6 @@ public class RegisterScreen extends Screen {
                 this::onRegisterClick
         );
         this.registerButton.setTextColor(0xFFFFFF);
-        this.addRenderableWidget(this.registerButton);
 
         // 断开连接按钮
         this.disconnectButton = new TransparentButton(
@@ -96,12 +99,22 @@ public class RegisterScreen extends Screen {
                 this::onDisconnectClick
         );
         this.disconnectButton.setTextColor(0xFFFFFF);
-        this.addRenderableWidget(this.disconnectButton);
+
+        // 收集所有 widget 用于手动渲染和事件分发
+        this.allWidgets.clear();
+        this.allWidgets.add(this.usernameField);
+        this.allWidgets.add(this.passwordField);
+        this.allWidgets.add(this.confirmPasswordField);
+        this.allWidgets.add(this.registerButton);
+        this.allWidgets.add(this.disconnectButton);
+
+        // 默认聚焦到密码框
+        this.passwordField.setFocused(true);
     }
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
-        // 绘制半透明背景
+        // 绘制全屏半透明背景
         guiGraphics.fill(0, 0, this.width, this.height, 0x80000000);
 
         int centerX = this.width / 2;
@@ -133,11 +146,9 @@ public class RegisterScreen extends Screen {
         drawLabel(guiGraphics, this.font,
                 Component.translatable("screen.youzaiworldcore.register.label_username").getString(),
                 leftColX, containerTop + 58);
-
         drawLabel(guiGraphics, this.font,
                 Component.translatable("screen.youzaiworldcore.register.label_password").getString(),
                 leftColX, containerTop + 58 + ROW_SPACING);
-
         drawLabel(guiGraphics, this.font,
                 Component.translatable("screen.youzaiworldcore.register.label_confirm_password").getString(),
                 leftColX, containerTop + 58 + ROW_SPACING * 2);
@@ -155,17 +166,22 @@ public class RegisterScreen extends Screen {
                 hintY + this.font.lineHeight + 2,
                 hintColor, false);
 
-        // 渲染弹窗
+        // 手动渲染所有 widget（EditBox / TransparentButton）
+        // 需要注意 EditBox 的 extractWidgetRenderState 需要正确的鼠标坐标来判断悬停
+        for (AbstractWidget widget : this.allWidgets) {
+            if (widget instanceof EditBox editBox) {
+                editBox.extractWidgetRenderState(guiGraphics, mouseX, mouseY, partialTick);
+            } else if (widget instanceof TransparentButton button) {
+                button.render(guiGraphics, mouseX, mouseY, partialTick);
+            }
+        }
+
+        // 渲染弹窗（在 widget 之上）
         if (currentDialog != null && currentDialog.isVisible()) {
             currentDialog.render(guiGraphics, this.width, this.height);
             currentDialog.renderButtons(guiGraphics, mouseX, mouseY, partialTick);
         } else if (currentDialog != null && !currentDialog.isVisible()) {
             currentDialog = null;
-        }
-
-        // 如果有弹窗，不要让输入框聚焦
-        if (currentDialog != null && currentDialog.isFullyVisible()) {
-            this.setFocused(null);
         }
     }
 
@@ -176,8 +192,25 @@ public class RegisterScreen extends Screen {
             return currentDialog.mouseClicked(event.x(), event.y());
         }
 
-        // 处理输入框和按钮的点击
-        return super.mouseClicked(event, isActuallyClick);
+        double mx = event.x();
+        double my = event.y();
+
+        // 转发点击到 EditBox
+        if (this.passwordField.mouseClicked(event, isActuallyClick)) return true;
+        if (this.confirmPasswordField.mouseClicked(event, isActuallyClick)) return true;
+        if (this.usernameField.mouseClicked(event, isActuallyClick)) return true;
+
+        // 转发点击到按钮
+        if (isMouseOverButton(this.registerButton, mx, my)) {
+            this.registerButton.onClick(event, isActuallyClick);
+            return true;
+        }
+        if (isMouseOverButton(this.disconnectButton, mx, my)) {
+            this.disconnectButton.onClick(event, isActuallyClick);
+            return true;
+        }
+
+        return false;
     }
 
     @Override
@@ -190,7 +223,21 @@ public class RegisterScreen extends Screen {
         if (keyEvent.key() == 256) { // GLFW_KEY_ESCAPE
             return true;
         }
-        return super.keyPressed(keyEvent);
+
+        // 转发键盘事件到当前聚焦的 EditBox
+        if (this.passwordField.isFocused() && this.passwordField.keyPressed(keyEvent)) return true;
+        if (this.confirmPasswordField.isFocused() && this.confirmPasswordField.keyPressed(keyEvent)) return true;
+        if (this.usernameField.isFocused() && this.usernameField.keyPressed(keyEvent)) return true;
+
+        return false;
+    }
+
+    @Override
+    public boolean charTyped(CharacterEvent charEvent) {
+        // 转发字符输入到当前聚焦的 EditBox
+        if (this.passwordField.isFocused() && this.passwordField.charTyped(charEvent)) return true;
+        if (this.confirmPasswordField.isFocused() && this.confirmPasswordField.charTyped(charEvent)) return true;
+        return false;
     }
 
     @Override
@@ -273,8 +320,8 @@ public class RegisterScreen extends Screen {
                 messages,
                 Component.translatable("screen.youzaiworldcore.register.dialog_ok").getString(),
                 () -> {
-                    // 关闭弹窗后重新聚焦密码框
                     this.passwordField.setFocused(true);
+                    this.processing = false;
                 }
         );
         this.currentDialog.init(this.width, this.height);
@@ -284,5 +331,10 @@ public class RegisterScreen extends Screen {
     private void drawLabel(GuiGraphicsExtractor guiGraphics, Font font, String text, int x, int y) {
         int labelY = y + (FIELD_HEIGHT - font.lineHeight) / 2;
         guiGraphics.text(font, text, x, labelY, 0xFFFFFF, false);
+    }
+
+    private boolean isMouseOverButton(TransparentButton button, double mx, double my) {
+        return mx >= button.getX() && mx < button.getX() + button.getWidth()
+                && my >= button.getY() && my < button.getY() + button.getHeight();
     }
 }
