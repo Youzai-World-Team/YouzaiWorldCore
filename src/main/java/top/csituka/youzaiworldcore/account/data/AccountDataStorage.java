@@ -228,6 +228,24 @@ public class AccountDataStorage {
     }
 
     /**
+     * 从磁盘重新加载所有数据（账户数据 + 配置）。
+     * <p>
+     * 此方法会清空内存缓存并从磁盘文件重新读取，适用于 {@code /yzwc reload} 命令。
+     * 操作受读写锁保护，线程安全。
+     * </p>
+     *
+     * @return 重新加载后的账户数量
+     */
+    public static int reload() {
+        LOGGER.info("正在从磁盘重新加载账户数据...");
+        loadConfig();
+        loadFromDisk();
+        int count = CACHE.size();
+        LOGGER.info("账户数据重载完成，共 {} 个账户", count);
+        return count;
+    }
+
+    /**
      * 获取所有账户数据
      */
     public static Map<String, PlayerAccount> getAll() {

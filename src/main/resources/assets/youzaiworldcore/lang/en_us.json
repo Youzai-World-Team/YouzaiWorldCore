@@ -101,6 +101,7 @@
   "youzaiworldcore.message.command.teleport_success": "Teleported %s players to %s at (%s, %s, %s)",
   "youzaiworldcore.message.command.unknown_menu": "Unknown menu name: %s. Valid values: main, switch_world, settings, about_me",
   "youzaiworldcore.message.command.open_menu_success": "Opened %s menu for %s",
+  "youzaiworldcore.message.command.reload_success": "§aMod reloaded successfully! Reloaded %s account data entries.",
   "youzaiworldcore.message.preset.graduation_set": "§cGraduation Set",
   "youzaiworldcore.message.preset.graduation_supplement": "§6Graduation Set Supplement",
   "youzaiworldcore.message.preset.totem_box": "§eTotem Box",

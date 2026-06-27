@@ -25,6 +25,7 @@ import org.slf4j.LoggerFactory;
 
 import top.csituka.youzaiworldcore.account.command.AccountCommands;
 import top.csituka.youzaiworldcore.account.data.AccountDataStorage;
+import top.csituka.youzaiworldcore.command.ReloadCommand;
 import top.csituka.youzaiworldcore.luckperms.LuckPermsHelper;
 import top.csituka.youzaiworldcore.block.ModBlocks;
 import top.csituka.youzaiworldcore.block.entity.ModBlockEntities;
@@ -185,6 +186,9 @@ public class YouzaiworldCore implements ModInitializer {
 
             // ===== 注册账户管理命令 =====
             AccountCommands.register(dispatcher);
+
+            // ===== 注册重载命令 =====
+            ReloadCommand.register(dispatcher);
         });
     }
 

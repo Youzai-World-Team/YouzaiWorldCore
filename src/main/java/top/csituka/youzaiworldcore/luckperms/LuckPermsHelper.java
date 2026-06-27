@@ -60,6 +60,9 @@ public final class LuckPermsHelper {
     /** 打开管理菜单命令 {@code /yzwc open_menu} */
     public static final String PERMISSION_OPEN_MENU = "youzaiworldcore.command.open_menu";
 
+    /** 模组重载命令 {@code /yzwc reload} */
+    public static final String PERMISSION_RELOAD = "youzaiworldcore.command.reload";
+
     /** 所有命令的通配符 */
     public static final String PERMISSION_COMMAND_WILDCARD = "youzaiworldcore.command.*";
 
