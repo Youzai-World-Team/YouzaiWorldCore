@@ -2,7 +2,10 @@ package top.csituka.youzaiworldcore.network;
 
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.Screen;
+import top.csituka.youzaiworldcore.client.screen.LoginScreen;
 import top.csituka.youzaiworldcore.client.screen.MenuScreen;
+import top.csituka.youzaiworldcore.client.screen.RegisterScreen;
 import top.csituka.youzaiworldcore.client.screen.element.AboutMeMenuElements;
 import top.csituka.youzaiworldcore.client.screen.element.MainMenuElements;
 import top.csituka.youzaiworldcore.client.screen.element.MenuElementGroup;
@@ -40,6 +43,26 @@ public class ClientNetworking {
                 top.csituka.youzaiworldcore.feature.ExperimentalFeatures.setEnabled(
                         payload.featureId(), payload.enabled()
                 );
+            });
+        });
+
+        // 注册认证界面打开处理器
+        ClientPlayNetworking.registerGlobalReceiver(OpenAuthScreenPayload.ID, (payload, context) -> {
+            Minecraft client = context.client();
+            client.execute(() -> {
+                // 如果当前已经是认证界面，不重复打开
+                Screen currentScreen = client.gui.screen();
+                if (currentScreen instanceof RegisterScreen
+                        || currentScreen instanceof LoginScreen) {
+                    return;
+                }
+                String type = payload.screenType();
+                String username = payload.username();
+                if ("register".equals(type)) {
+                    client.setScreenAndShow(new RegisterScreen(username));
+                } else if ("login".equals(type)) {
+                    client.setScreenAndShow(new LoginScreen(username));
+                }
             });
         });
     }

@@ -1,5 +1,6 @@
 package top.csituka.youzaiworldcore.account.mixin;
 
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import org.spongepowered.asm.mixin.Mixin;
@@ -11,6 +12,7 @@ import top.csituka.youzaiworldcore.YouzaiworldCore;
 import top.csituka.youzaiworldcore.account.data.PlayerAccount;
 import top.csituka.youzaiworldcore.account.data.PlayerAuthAccess;
 import top.csituka.youzaiworldcore.account.util.AuthLocationData;
+import top.csituka.youzaiworldcore.network.OpenAuthScreenPayload;
 
 /**
  * ServerPlayer Mixin — 追踪认证状态、位置保存、踢出计时器
@@ -109,6 +111,19 @@ public abstract class AccountServerPlayerMixin implements PlayerAuthAccess {
         YouzaiworldCore.LOGGER.debug("已保存玩家 {} 的位置: {}", yzwc$player.getScoreboardName(), loc);
     }
 
+    // ===== 发送认证界面打开数据包 =====
+    @Unique
+    private void sendAuthScreenPacket(String type) {
+        if (yzwc$player.connection != null && yzwc$player.connection.isAcceptingMessages()) {
+            try {
+                ServerPlayNetworking.send(yzwc$player,
+                        new OpenAuthScreenPayload(type, yzwc$player.getScoreboardName()));
+            } catch (Exception e) {
+                YouzaiworldCore.LOGGER.error("发送认证界面数据包失败: {}", e.getMessage());
+            }
+        }
+    }
+
     // ===== 玩家 tick — 未认证时倒计时并阻止 tick =====
     @Inject(method = "doTick", at = @At("HEAD"), cancellable = true)
     private void onPlayerTick(CallbackInfo ci) {
@@ -123,14 +138,18 @@ public abstract class AccountServerPlayerMixin implements PlayerAuthAccess {
                 );
             }
         } else {
-            // 每 10 秒发送一次提示
+            // 每 10 秒发送一次提示并同步打开 GUI
             if (yzwc$kickTimer % 200 == 0) {
                 if (yzwc$account != null && yzwc$account.isRegistered()) {
                     yzwc$player.sendSystemMessage(
                             Component.translatable("youzaiworldcore.message.account.prompt_login"));
+                    // 发送登录 GUI 打开数据包
+                    sendAuthScreenPacket("login");
                 } else {
                     yzwc$player.sendSystemMessage(
                             Component.translatable("youzaiworldcore.message.account.prompt_register"));
+                    // 发送注册 GUI 打开数据包
+                    sendAuthScreenPacket("register");
                 }
             }
             yzwc$kickTimer--;
