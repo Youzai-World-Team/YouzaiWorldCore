@@ -1,0 +1,39 @@
+package top.csituka.youzaiworldcore.client.renderer.entity.layer;
+
+import com.geckolib.cache.model.BakedGeoModel;
+import com.geckolib.renderer.base.GeoRenderer;
+import com.geckolib.renderer.base.RenderPassInfo;
+import com.geckolib.renderer.layer.GeoRenderLayer;
+import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
+import net.minecraft.resources.Identifier;
+import top.csituka.youzaiworldcore.client.renderer.entity.ChickenWardenAnimatable;
+import net.minecraft.client.renderer.entity.state.WardenRenderState;
+
+/**
+ * 脉冲斑点层2 — 使用 warden_pulsating_spots_2.png 动态闪烁（与斑点层1交替）
+ */
+public class Spots2Layer extends GeoRenderLayer<ChickenWardenAnimatable, net.minecraft.world.entity.monster.warden.Warden, WardenRenderState> {
+
+    private static final Identifier TEXTURE = Identifier.parse("youzaiworldcore:textures/entity/warden/warden_pulsating_spots_2.png");
+
+    public Spots2Layer(GeoRenderer<ChickenWardenAnimatable, net.minecraft.world.entity.monster.warden.Warden, WardenRenderState> renderer) {
+        super(renderer);
+    }
+
+    @Override
+    public void submitRenderTask(RenderPassInfo<WardenRenderState> renderPassInfo, SubmitNodeCollector renderTasks) {
+        var renderType = RenderTypes.entityTranslucentEmissive(TEXTURE);
+        BakedGeoModel model = getDefaultBakedModel(renderPassInfo.renderState());
+        int packedLight = renderPassInfo.packedLight();
+        int packedOverlay = renderPassInfo.packedOverlay();
+        int renderColor = renderPassInfo.renderColor();
+
+        renderTasks.submitCustomGeometry(renderPassInfo.poseStack(), renderType, (pose, vertexConsumer) -> {
+            renderPassInfo.poseStack().pushPose();
+            renderPassInfo.poseStack().last().set(pose);
+            renderPassInfo.renderPosed(() -> model.render(renderPassInfo, vertexConsumer, packedLight, packedOverlay, renderColor));
+            renderPassInfo.poseStack().popPose();
+        });
+    }
+}

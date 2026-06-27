@@ -32,14 +32,24 @@ fabricApi {
 repositories {
     mavenCentral()
     mavenLocal()
+    // GeckoLib Maven 仓库 (Cloudsmith)
+    exclusiveContent {
+        forRepository {
+            maven {
+                name = 'GeckoLib'
+                url = 'https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/'
+            }
+        }
+        filter { includeGroupAndSubgroups('com.geckolib') }
+    }
     maven {
-        url 'https://maven.nucleoid.xyz/'
+        url = 'https://maven.nucleoid.xyz/'
         content {
             includeGroup('eu.pb4')
         }
     }
     maven {
-        url 'https://maven.lucko.me/'
+        url = 'https://maven.lucko.me/'
         content {
             includeGroup('net.luckperms')
         }
@@ -50,6 +60,12 @@ dependencies {
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
     implementation "net.fabricmc:fabric-loader:${project.loader_version}"
     implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+
+    // GeckoLib（监守者鸡模型/动画支持）
+    // 依赖格式：com.geckolib:geckolib-fabric-{minecraft_version}:{geckolib_version}
+    // Group ID 从 GeckoLib 4.x 的 software.bernie.geckolib 变更为 com.geckolib
+    // 版本号在 gradle.properties 中配置
+    implementation "com.geckolib:geckolib-fabric-${project.minecraft_version}:${project.geckolib_version}"
 
     // Placeholder API
     implementation('eu.pb4:placeholder-api:3.1.0-beta.1+26.2')

@@ -48,7 +48,8 @@
     "fabric-api": "*",
     "fabric-key-mapping-api-v1": "*",
     "minecraft": ">=${minecraft_version}",
-    "placeholder-api": ">=3.0.0"
+    "placeholder-api": ">=3.0.0",
+    "geckolib": "*"
   },
   "suggests": {
     "luckperms": ">=5.0.0"
