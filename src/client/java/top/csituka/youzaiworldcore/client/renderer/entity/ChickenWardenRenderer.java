@@ -1,32 +1,54 @@
 package top.csituka.youzaiworldcore.client.renderer.entity;
 
-import com.geckolib.renderer.GeoReplacedEntityRenderer;
+import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
+import net.minecraft.client.renderer.entity.WardenRenderer;
+import net.minecraft.client.renderer.entity.state.EntityRenderState;
+import net.minecraft.client.renderer.entity.state.WardenRenderState;
+import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.world.entity.monster.warden.Warden;
-import top.csituka.youzaiworldcore.client.renderer.entity.layer.BioluminescentLayer;
-import top.csituka.youzaiworldcore.client.renderer.entity.layer.Spots1Layer;
-import top.csituka.youzaiworldcore.client.renderer.entity.layer.Spots2Layer;
-import top.csituka.youzaiworldcore.client.renderer.entity.layer.TendrilsLayer;
-import top.csituka.youzaiworldcore.client.renderer.entity.layer.HeartLayer;
-import top.csituka.youzaiworldcore.client.renderer.entity.model.ChickenWardenModel;
+import top.csituka.youzaiworldcore.feature.ExperimentalFeatures;
 
 /**
- * 监守者鸡自定义渲染器（GeckoLib 5 GeoReplacedEntityRenderer）
- * 将原版 Warden 实体替换渲染为鸡的外观
- * 实现6层渲染以还原生物发光/斑点/心脏等特效
+ * 监守者渲染包装器
+ * <p>
+ * 不直接继承 GeoReplacedEntityRenderer（避免 GeckoLib 内部状态类型冲突），
+ * 而是直接继承 EntityRenderer 并持有两个渲染器实例。
+ * </p>
  */
-public class ChickenWardenRenderer extends GeoReplacedEntityRenderer<ChickenWardenAnimatable, Warden, net.minecraft.client.renderer.entity.state.WardenRenderState> {
+public class ChickenWardenRenderer extends net.minecraft.client.renderer.entity.EntityRenderer<Warden, WardenRenderState> {
 
-    private static final ChickenWardenAnimatable ANIMATABLE = new ChickenWardenAnimatable();
+    private final WardenRenderer vanillaRenderer;
+    private final GeckoWardenRenderer geckoRenderer;
 
     public ChickenWardenRenderer(EntityRendererProvider.Context context) {
-        super(context, new ChickenWardenModel(), ANIMATABLE);
+        super(context);
+        this.vanillaRenderer = new WardenRenderer(context);
+        this.geckoRenderer = new GeckoWardenRenderer(context);
+    }
 
-        // 注册多层渲染 Layer（还原基岩版 render_controllers 效果）
-        withRenderLayer(new BioluminescentLayer(this));
-        withRenderLayer(new Spots1Layer(this));
-        withRenderLayer(new Spots2Layer(this));
-        withRenderLayer(new TendrilsLayer(this));
-        withRenderLayer(new HeartLayer(this));
+    @Override
+    public WardenRenderState createRenderState() {
+        return new WardenRenderState();
+    }
+
+    @Override
+    public void extractRenderState(Warden entity, WardenRenderState renderState, float partialTick) {
+        if (ExperimentalFeatures.isEnabled("chicken_warden_model")) {
+            geckoRenderer.extractRenderState(entity, renderState, partialTick);
+        } else {
+            vanillaRenderer.extractRenderState(entity, renderState, partialTick);
+        }
+    }
+
+    @Override
+    public void submit(WardenRenderState renderState, PoseStack poseStack,
+                       SubmitNodeCollector renderTasks, CameraRenderState cameraState) {
+        if (ExperimentalFeatures.isEnabled("chicken_warden_model")) {
+            geckoRenderer.submit(renderState, poseStack, renderTasks, cameraState);
+        } else {
+            vanillaRenderer.submit(renderState, poseStack, renderTasks, cameraState);
+        }
     }
 }

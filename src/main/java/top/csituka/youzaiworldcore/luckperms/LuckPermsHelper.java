@@ -63,6 +63,9 @@ public final class LuckPermsHelper {
     /** 模组重载命令 {@code /yzwc reload} */
     public static final String PERMISSION_RELOAD = "youzaiworldcore.command.reload";
 
+    /** 实验性功能切换命令 {@code /yzwc experimental_feature} */
+    public static final String PERMISSION_EXPERIMENTAL_FEATURE = "youzaiworldcore.command.experimental_feature";
+
     /** 所有命令的通配符 */
     public static final String PERMISSION_COMMAND_WILDCARD = "youzaiworldcore.command.*";
 

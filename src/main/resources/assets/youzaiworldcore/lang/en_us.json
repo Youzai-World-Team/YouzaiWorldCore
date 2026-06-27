@@ -134,5 +134,11 @@
   "youzaiworldcore.message.gui.back_button": "\u2190",
   "youzaiworldcore.message.gui.version_text": "YouzaiWorldCore v%s",
   "youzaiworldcore.message.gui.confirm_yes": "Confirm",
-  "youzaiworldcore.message.gui.confirm_cancel": "Cancel"
+  "youzaiworldcore.message.gui.confirm_cancel": "Cancel",
+
+  "youzaiworldcore.message.command.experimental_feature.not_found": "§cExperimental feature not found: %s",
+  "youzaiworldcore.message.command.experimental_feature.set_failed": "§cFailed to set experimental feature '%s'",
+  "youzaiworldcore.message.command.experimental_feature.toggle_success": "§aExperimental feature '%s' is now ",
+  "youzaiworldcore.message.command.experimental_feature.enabled": "§aENABLED",
+  "youzaiworldcore.message.command.experimental_feature.disabled": "§cDISABLED"
 }

@@ -33,6 +33,15 @@ public class ClientNetworking {
                 }
             });
         });
+
+        // 注册实验性功能同步处理器
+        ClientPlayNetworking.registerGlobalReceiver(FeatureSyncPayload.ID, (payload, context) -> {
+            context.client().execute(() -> {
+                top.csituka.youzaiworldcore.feature.ExperimentalFeatures.setEnabled(
+                        payload.featureId(), payload.enabled()
+                );
+            });
+        });
     }
 
     public static void sendDecomposePacket() {

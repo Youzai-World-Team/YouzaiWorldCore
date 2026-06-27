@@ -134,5 +134,11 @@
   "youzaiworldcore.message.gui.back_button": "\u2190",
   "youzaiworldcore.message.gui.version_text": "YouzaiWorldCore v%s",
   "youzaiworldcore.message.gui.confirm_yes": "确定",
-  "youzaiworldcore.message.gui.confirm_cancel": "取消"
+  "youzaiworldcore.message.gui.confirm_cancel": "取消",
+
+  "youzaiworldcore.message.command.experimental_feature.not_found": "§c未找到实验性功能: %s",
+  "youzaiworldcore.message.command.experimental_feature.set_failed": "§c设置实验性功能 '%s' 状态失败",
+  "youzaiworldcore.message.command.experimental_feature.toggle_success": "§a实验性功能 '%s' 已",
+  "youzaiworldcore.message.command.experimental_feature.enabled": "§a启用",
+  "youzaiworldcore.message.command.experimental_feature.disabled": "§c禁用"
 }

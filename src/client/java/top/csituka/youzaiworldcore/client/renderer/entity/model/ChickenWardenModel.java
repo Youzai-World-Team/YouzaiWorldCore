@@ -6,16 +6,21 @@ import top.csituka.youzaiworldcore.client.renderer.entity.ChickenWardenAnimatabl
 
 /**
  * 监守者鸡模型
- * 加载基岩版 warden.geo.json（GeckoLib 5 原生支持基岩版 .geo.json 格式）
+ * <p>
+ * 加载基岩版 warden.geo.json（GeckoLib 5 原生支持基岩版 .geo.json 格式）。
+ * 禁用时通过 ChickenWardenRenderer 委托给原版 WardenRenderer 渲染，不会用到此模型。
+ * </p>
  */
 public class ChickenWardenModel extends GeoModel<ChickenWardenAnimatable> {
 
     private static final Identifier MODEL_LOC = Identifier.parse(
             "youzaiworldcore:entity/warden"
     );
+
     private static final Identifier TEXTURE_LOC = Identifier.parse(
             "youzaiworldcore:textures/entity/warden/chicken.png"
     );
+
     private static final Identifier ANIMATION_LOC = Identifier.parse(
             "youzaiworldcore:entity/warden"
     );
