@@ -13,6 +13,8 @@ base {
 loom {
     splitEnvironmentSourceSets()
 
+    accessWidenerPath = file("src/client/resources/youzaiworldcore.client.accesswidener")
+
     mods {
         "youzaiworldcore" {
             sourceSet sourceSets.main

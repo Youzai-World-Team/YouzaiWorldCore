@@ -42,6 +42,7 @@
       "environment": "client"
     }
   ],
+  "accessWidener": "youzaiworldcore.client.accesswidener",
   "depends": {
     "fabricloader": ">=${loader_version}",
     "fabric-api": "*",
