@@ -1,8 +1,12 @@
 {
-  "parent": "minecraft:block/cube_bottom_top",
+  "parent": "minecraft:block/cube",
   "textures": {
-    "top": "youzaiworldcore:block/decomposition_table_top",
-    "bottom": "youzaiworldcore:block/yz_block",
-    "side": "youzaiworldcore:block/decomposition_table_around"
+    "particle": "youzaiworldcore:block/decomposition_table_main_around",
+    "up": "youzaiworldcore:block/decomposition_table_top",
+    "down": "youzaiworldcore:block/decomposition_table_base",
+    "north": "youzaiworldcore:block/decomposition_table_main_around",
+    "east": "youzaiworldcore:block/decomposition_table_other_around",
+    "south": "youzaiworldcore:block/decomposition_table_other_around",
+    "west": "youzaiworldcore:block/decomposition_table_other_around"
   }
 }
