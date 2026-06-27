@@ -1,5 +1,6 @@
 package top.csituka.youzaiworldcore.account.mixin;
 
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.*;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.ServerGamePacketListenerImpl;
@@ -194,10 +195,10 @@ public abstract class AccountPacketHandlerMixin {
         PlayerAccount account = AuthPlayerHelper.getAccount(player);
         if (account != null && account.isRegistered()) {
             player.sendSystemMessage(
-                    net.minecraft.network.chat.Component.literal("§c请先使用 §6/yzwc account login <密码> §c登录！"));
+                    Component.translatable("youzaiworldcore.message.account.action_blocked_login"));
         } else {
             player.sendSystemMessage(
-                    net.minecraft.network.chat.Component.literal("§c请先使用 §6/yzwc account register <密码> <确认密码> §c注册！"));
+                    Component.translatable("youzaiworldcore.message.account.action_blocked_register"));
         }
     }
 }

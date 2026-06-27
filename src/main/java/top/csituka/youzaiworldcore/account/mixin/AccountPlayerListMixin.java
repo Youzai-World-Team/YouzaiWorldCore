@@ -88,7 +88,7 @@ public abstract class AccountPlayerListMixin {
 
         if (AuthPlayerHelper.isAuthenticated(player)) {
             AuthPlayerHelper.restoreLocation(player);
-            player.sendSystemMessage(Component.literal("§a会话已恢复，欢迎回来！"));
+            player.sendSystemMessage(Component.translatable("youzaiworldcore.message.account.session_restored"));
             return;
         }
 
@@ -96,11 +96,11 @@ public abstract class AccountPlayerListMixin {
 
         PlayerAccount account = AuthPlayerHelper.getAccount(player);
         if (account != null && account.isRegistered()) {
-            player.sendSystemMessage(Component.literal("§e=== 账户认证 ==="));
-            player.sendSystemMessage(Component.literal("§e请使用 §6/yzwc account login <密码> §e登录"));
+            player.sendSystemMessage(Component.translatable("youzaiworldcore.message.account.auth_header"));
+            player.sendSystemMessage(Component.translatable("youzaiworldcore.message.account.prompt_login"));
         } else {
-            player.sendSystemMessage(Component.literal("§e=== 账户认证 ==="));
-            player.sendSystemMessage(Component.literal("§e请使用 §6/yzwc account register <密码> <确认密码> §e注册"));
+            player.sendSystemMessage(Component.translatable("youzaiworldcore.message.account.auth_header"));
+            player.sendSystemMessage(Component.translatable("youzaiworldcore.message.account.prompt_register"));
         }
     }
 

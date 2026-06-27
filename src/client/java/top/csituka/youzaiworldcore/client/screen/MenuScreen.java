@@ -6,6 +6,7 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.client.renderer.RenderPipelines;
@@ -349,7 +350,7 @@ public class MenuScreen extends Screen {
 
         TransparentButton closeBtn = new TransparentButton(
                 closeX, closeY, CLOSE_BUTTON_SIZE, CLOSE_BUTTON_SIZE,
-                Component.literal("×"),
+                Component.translatable("youzaiworldcore.message.gui.close_button"),
                 () -> startExit(() -> Minecraft.getInstance().setScreenAndShow(null))
         );
         closeBtn.setBackgroundVisible(false);
@@ -367,7 +368,7 @@ public class MenuScreen extends Screen {
 
         TransparentButton backBtn = new TransparentButton(
                 backX, backY, CLOSE_BUTTON_SIZE, CLOSE_BUTTON_SIZE,
-                Component.literal("←"),
+                Component.translatable("youzaiworldcore.message.gui.back_button"),
                 this::goBack
         );
         backBtn.setBackgroundVisible(false);
@@ -463,7 +464,7 @@ public class MenuScreen extends Screen {
                 .getModContainer("youzaiworldcore")
                 .map(container -> container.getMetadata().getVersion().getFriendlyString())
                 .orElse("unknown");
-        String versionText = "YouzaiWorldCore v" + version;
+        String versionText = I18n.get("youzaiworldcore.message.gui.version_text", version);
 
         float textAlphaMapping = 0.5f + 0.5f * alpha;
         int textAlpha = (int) (textAlphaMapping * 180);

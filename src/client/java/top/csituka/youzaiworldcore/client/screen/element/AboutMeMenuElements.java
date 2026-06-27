@@ -4,6 +4,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
+import net.minecraft.client.resources.language.I18n;
 import net.minecraft.stats.Stats;
 import top.csituka.youzaiworldcore.client.screen.MenuScreen;
 
@@ -31,7 +32,7 @@ public class AboutMeMenuElements implements MenuElementGroup {
 
     @Override
     public String getTitleText() {
-        return "关于我";
+        return I18n.get("youzaiworldcore.message.gui.title_about_me");
     }
 
     @Override
@@ -120,10 +121,10 @@ public class AboutMeMenuElements implements MenuElementGroup {
         String playTimeStr = getPlayTime(client);
 
         String[][] infoItems = {
-                {"玩家ID：", playerName},
-                {"首次加入时间：", firstJoinDate},
-                {"最后加入时间：", lastJoinDate},
-                {"游玩时长：", playTimeStr}
+                {I18n.get("youzaiworldcore.message.gui.label_player_id"), playerName},
+                {I18n.get("youzaiworldcore.message.gui.label_first_join"), firstJoinDate},
+                {I18n.get("youzaiworldcore.message.gui.label_last_join"), lastJoinDate},
+                {I18n.get("youzaiworldcore.message.gui.label_play_time"), playTimeStr}
         };
 
         int maxLabelWidth = 0;
@@ -156,7 +157,7 @@ public class AboutMeMenuElements implements MenuElementGroup {
             }
         } catch (Exception ignored) {
         }
-        return "未知";
+        return I18n.get("youzaiworldcore.message.gui.unknown");
     }
 
     private String getLastJoinDate(Minecraft client) {
@@ -164,7 +165,7 @@ public class AboutMeMenuElements implements MenuElementGroup {
             return Instant.ofEpochMilli(System.currentTimeMillis()).atZone(ZoneId.systemDefault()).format(DATE_FORMAT);
         } catch (Exception ignored) {
         }
-        return "未知";
+        return I18n.get("youzaiworldcore.message.gui.unknown");
     }
 
     private String getPlayTime(Minecraft client) {
@@ -172,17 +173,17 @@ public class AboutMeMenuElements implements MenuElementGroup {
             long playTicks = client.player.getStats().getValue(Stats.CUSTOM.get(Stats.PLAY_TIME));
             long playMinutes = playTicks / 20 / 60;
             if (playMinutes < 60) {
-                return playMinutes + "分钟";
+                return I18n.get("youzaiworldcore.message.gui.time_minutes", playMinutes);
             }
             long playHours = playMinutes / 60;
             if (playHours < 24) {
-                return playHours + "小时";
+                return I18n.get("youzaiworldcore.message.gui.time_hours", playHours);
             }
             long playDays = playHours / 24;
-            return playDays + "天";
+            return I18n.get("youzaiworldcore.message.gui.time_days", playDays);
         } catch (Exception ignored) {
         }
-        return "未知";
+        return I18n.get("youzaiworldcore.message.gui.unknown");
     }
 
     private float easeOutCubic(float t) {

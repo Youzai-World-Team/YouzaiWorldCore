@@ -1,6 +1,7 @@
 package top.csituka.youzaiworldcore.client.screen.element;
 
 import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 import top.csituka.youzaiworldcore.client.screen.MenuScreen;
 import top.csituka.youzaiworldcore.client.screen.widget.CheckboxButton;
@@ -25,11 +26,9 @@ public class SettingsMenuElements implements MenuElementGroup {
     private int difficultyIndex = 0;
     private boolean dropdownOpen = false;
 
-    private static final List<String> DIFFICULTY_OPTIONS = List.of("和平", "简单", "普通", "困难");
-
     @Override
     public String getTitleText() {
-        return "设置";
+        return I18n.get("youzaiworldcore.message.gui.title_settings");
     }
 
     @Override
@@ -131,10 +130,16 @@ public class SettingsMenuElements implements MenuElementGroup {
 
         y += scaledRowH + scaledSpacing;
 
+        List<String> difficultyOptions = List.of(
+                I18n.get("youzaiworldcore.message.gui.difficulty_peaceful"),
+                I18n.get("youzaiworldcore.message.gui.difficulty_easy"),
+                I18n.get("youzaiworldcore.message.gui.difficulty_normal"),
+                I18n.get("youzaiworldcore.message.gui.difficulty_hard")
+        );
         DropdownButton dropdown = new DropdownButton(
                 startX, (int) y, (int) scaledListW, (int) scaledRowH,
                 Component.translatable("screen.youzaiworldcore.settings.dropdown_difficulty"),
-                DIFFICULTY_OPTIONS, difficultyIndex, dropdownOpen,
+                difficultyOptions, difficultyIndex, dropdownOpen,
                 idx -> difficultyIndex = idx,
                 () -> dropdownOpen = !dropdownOpen
         );

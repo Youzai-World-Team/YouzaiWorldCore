@@ -138,12 +138,12 @@ public class PresetItems {
         // ── 打包进红色潜影盒 ──
         ItemStack container = new ItemStack(Items.DYED_SHULKER_BOX.pick(DyeColor.RED));
         container.set(DataComponents.CONTAINER, ItemContainerContents.fromItems(items));
-        container.set(DataComponents.CUSTOM_NAME, Component.literal("§c毕业套装"));
+        container.set(DataComponents.CUSTOM_NAME, Component.translatable("youzaiworldcore.message.preset.graduation_set"));
         return container;
     }
 
     // ========================================================================
-    // Preset 02 — §6毕业套补充 (橙色潜影盒)
+    // Preset 02 — 毕业套补充 (橙色潜影盒)
     // ========================================================================
 
     /**
@@ -211,12 +211,12 @@ public class PresetItems {
         // ── 打包进橙色潜影盒 ──
         ItemStack container = new ItemStack(Items.DYED_SHULKER_BOX.pick(DyeColor.ORANGE));
         container.set(DataComponents.CONTAINER, ItemContainerContents.fromItems(items));
-        container.set(DataComponents.CUSTOM_NAME, Component.literal("§6毕业套补充"));
+        container.set(DataComponents.CUSTOM_NAME, Component.translatable("youzaiworldcore.message.preset.graduation_supplement"));
         return container;
     }
 
     // ========================================================================
-    // Preset 03 — §e不死图腾 (黄色潜影盒)
+    // Preset 03 — 不死图腾 (黄色潜影盒)
     // ========================================================================
 
     /**
@@ -230,7 +230,7 @@ public class PresetItems {
 
         ItemStack container = new ItemStack(Items.DYED_SHULKER_BOX.pick(DyeColor.YELLOW));
         container.set(DataComponents.CONTAINER, ItemContainerContents.fromItems(items));
-        container.set(DataComponents.CUSTOM_NAME, Component.literal("§e不死图腾"));
+        container.set(DataComponents.CUSTOM_NAME, Component.translatable("youzaiworldcore.message.preset.totem_box"));
         return container;
     }
 
@@ -249,7 +249,7 @@ public class PresetItems {
 
         ItemStack container = new ItemStack(Items.DYED_SHULKER_BOX.pick(DyeColor.GRAY));
         container.set(DataComponents.CONTAINER, ItemContainerContents.fromItems(items));
-        container.set(DataComponents.CUSTOM_NAME, Component.literal("§8炸药包"));
+        container.set(DataComponents.CUSTOM_NAME, Component.translatable("youzaiworldcore.message.preset.explosive_pack"));
         return container;
     }
 

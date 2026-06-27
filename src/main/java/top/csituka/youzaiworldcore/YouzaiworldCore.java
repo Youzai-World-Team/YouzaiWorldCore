@@ -178,7 +178,7 @@ public class YouzaiworldCore implements ModInitializer {
                     )
                 )
                 .executes(context -> {
-                    context.getSource().sendSuccess(() -> Component.literal("Hello World!"), false);
+                    context.getSource().sendSuccess(() -> Component.translatable("youzaiworldcore.message.command.hello_world"), false);
                     return 1;
                 })
             );
@@ -212,8 +212,8 @@ public class YouzaiworldCore implements ModInitializer {
 
         final int finalCount = count;
         source.sendSuccess(() ->
-                Component.literal("已将 " + finalCount + " 名玩家传送到 " + dimensionId +
-                        " 的 (" + x + ", " + y + ", " + z + ") 位置"),
+                Component.translatable("youzaiworldcore.message.command.teleport_success",
+                        finalCount, dimensionId, x, y, z),
                 true
         );
         return finalCount;
@@ -225,14 +225,15 @@ public class YouzaiworldCore implements ModInitializer {
     private static int executeOpenMenu(CommandSourceStack source, String menuName, ServerPlayer player) {
         if (!menuName.equals("main") && !menuName.equals("switch_world")
                 && !menuName.equals("settings") && !menuName.equals("about_me")) {
-            source.sendFailure(Component.literal("未知的菜单名称: " + menuName + "。有效值: main, switch_world, settings, about_me"));
+            source.sendFailure(Component.translatable("youzaiworldcore.message.command.unknown_menu", menuName));
             return 0;
         }
 
         ServerPlayNetworking.send(player, new OpenMenuPayload(menuName));
 
         source.sendSuccess(() ->
-                Component.literal("已为 " + player.getName().getString() + " 打开 " + menuName + " 菜单"),
+                Component.translatable("youzaiworldcore.message.command.open_menu_success",
+                        player.getName().getString(), menuName),
                 true
         );
         return 1;

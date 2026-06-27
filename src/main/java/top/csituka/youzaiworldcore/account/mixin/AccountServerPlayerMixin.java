@@ -1,5 +1,6 @@
 package top.csituka.youzaiworldcore.account.mixin;
 
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
@@ -118,7 +119,7 @@ public abstract class AccountServerPlayerMixin implements PlayerAuthAccess {
         if (yzwc$kickTimer <= 0) {
             if (yzwc$player.connection != null && yzwc$player.connection.isAcceptingMessages()) {
                 yzwc$player.connection.disconnect(
-                        net.minecraft.network.chat.Component.literal("§c认证超时！请重新加入服务器。")
+                        Component.translatable("youzaiworldcore.message.account.auth_timeout")
                 );
             }
         } else {
@@ -126,10 +127,10 @@ public abstract class AccountServerPlayerMixin implements PlayerAuthAccess {
             if (yzwc$kickTimer % 200 == 0) {
                 if (yzwc$account != null && yzwc$account.isRegistered()) {
                     yzwc$player.sendSystemMessage(
-                            net.minecraft.network.chat.Component.literal("§e请使用 §6/yzwc account login <密码> §e登录！"));
+                            Component.translatable("youzaiworldcore.message.account.prompt_login"));
                 } else {
                     yzwc$player.sendSystemMessage(
-                            net.minecraft.network.chat.Component.literal("§e请使用 §6/yzwc account register <密码> <确认密码> §e注册！"));
+                            Component.translatable("youzaiworldcore.message.account.prompt_register"));
                 }
             }
             yzwc$kickTimer--;

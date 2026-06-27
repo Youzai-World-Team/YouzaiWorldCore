@@ -2,6 +2,7 @@ package top.csituka.youzaiworldcore.client.screen.widget;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 
 public class ConfirmationDialog {
@@ -41,8 +42,8 @@ public class ConfirmationDialog {
         this.messages = messages;
         this.onConfirm = onConfirm;
         this.onCancel = onCancel;
-        this.confirmButtonText = "确定";
-        this.cancelButtonText = "取消";
+        this.confirmButtonText = I18n.get("youzaiworldcore.message.gui.confirm_yes");
+        this.cancelButtonText = I18n.get("youzaiworldcore.message.gui.confirm_cancel");
         this.singleButtonMode = false;
     }
 

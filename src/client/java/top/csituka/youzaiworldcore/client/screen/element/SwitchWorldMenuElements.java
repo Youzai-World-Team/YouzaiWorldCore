@@ -2,6 +2,7 @@ package top.csituka.youzaiworldcore.client.screen.element;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.client.resources.language.I18n;
 import net.minecraft.resources.Identifier;
 import top.csituka.youzaiworldcore.YouzaiworldCore;
 import top.csituka.youzaiworldcore.client.screen.MenuScreen;
@@ -80,17 +81,17 @@ public class SwitchWorldMenuElements implements MenuElementGroup {
 
     @Override
     public String getTitleText() {
-        return "切换世界";
+        return I18n.get("youzaiworldcore.message.gui.title_switch_world");
     }
 
     @Override
     public String getSubtitleText() {
         Minecraft client = Minecraft.getInstance();
-        String worldId = "未知";
+        String worldId = I18n.get("youzaiworldcore.message.gui.unknown");
         if (client.level != null) {
             worldId = client.level.dimension().identifier().toString();
         }
-        return "当前在" + worldId + "，请选择要传送的世界";
+        return I18n.get("youzaiworldcore.message.gui.subtitle_switch_world", worldId);
     }
 
     @Override
@@ -283,8 +284,8 @@ public class SwitchWorldMenuElements implements MenuElementGroup {
      */
     private void showTeleportDialog(MenuScreen screen, String worldId) {
         ConfirmationDialog dialog = new ConfirmationDialog(
-                "是否继续",
-                new String[]{"确定要传送吗？", "传送后您在当前世界的重生点将会被修改！"},
+                I18n.get("youzaiworldcore.message.gui.confirm_teleport_title"),
+                new String[]{I18n.get("youzaiworldcore.message.gui.confirm_teleport_msg1"), I18n.get("youzaiworldcore.message.gui.confirm_teleport_msg2")},
                 () -> {
                     Minecraft.getInstance().player.connection.sendCommand("say 传送" + worldId);
                     Minecraft.getInstance().setScreenAndShow(null);

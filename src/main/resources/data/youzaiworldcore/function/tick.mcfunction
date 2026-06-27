@@ -31,6 +31,3 @@ execute as @a if score @s youzaiworld.heart_count matches 11.. run scoreboard pl
 execute as @a if score @s leave_game > @s last_leave run function youzaiworldcore:beginner_tutorial
 # 更新 last_leave
 execute as @a run scoreboard players operation @s last_leave = @s leave_game
-
-# Debug
-title @a actionbar [{"text":"[Debug]新手教程状态:"},{"score":{"name":"@s","objective":"beginner_tutorial_status"}}]

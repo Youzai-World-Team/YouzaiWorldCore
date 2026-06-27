@@ -111,20 +111,20 @@ public class AccountCommands {
                                 )
                         )
                         .executes(ctx -> {
-                            ctx.getSource().sendSuccess(() -> Component.literal("§6=== YouzaiWorld 账户系统 ==="), false);
-                            ctx.getSource().sendSuccess(() -> Component.literal("§e/yzwc account register <密码> <确认密码>  §7- 注册"), false);
-                            ctx.getSource().sendSuccess(() -> Component.literal("§e/yzwc account login <密码>          §7- 登录"), false);
-                            ctx.getSource().sendSuccess(() -> Component.literal("§e/yzwc account logout                §7- 登出"), false);
-                            ctx.getSource().sendSuccess(() -> Component.literal("§e/yzwc account deactivate <密码>      §7- 注销账户"), false);
-                            ctx.getSource().sendSuccess(() -> Component.literal("§e/yzwc account change_password <旧> <新> <确认> §7- 修改密码"), false);
+                            ctx.getSource().sendSuccess(() -> Component.translatable("youzaiworldcore.message.account.help_title"), false);
+                            ctx.getSource().sendSuccess(() -> Component.translatable("youzaiworldcore.message.account.help_register"), false);
+                            ctx.getSource().sendSuccess(() -> Component.translatable("youzaiworldcore.message.account.help_login"), false);
+                            ctx.getSource().sendSuccess(() -> Component.translatable("youzaiworldcore.message.account.help_logout"), false);
+                            ctx.getSource().sendSuccess(() -> Component.translatable("youzaiworldcore.message.account.help_deactivate"), false);
+                            ctx.getSource().sendSuccess(() -> Component.translatable("youzaiworldcore.message.account.help_change_password"), false);
                             if (Commands.LEVEL_ADMINS.check(ctx.getSource().permissions())) {
                                 ctx.getSource().sendSuccess(() -> Component.literal(""), false);
-                                ctx.getSource().sendSuccess(() -> Component.literal("§6管理员命令:"), false);
-                                ctx.getSource().sendSuccess(() -> Component.literal("§e/yzwc account mgr create <玩家> <密码> <确认>    §7- 创建账户并设置密码"), false);
-                                ctx.getSource().sendSuccess(() -> Component.literal("§e/yzwc account mgr reset_password <玩家> <新> <确认> §7- 重置密码"), false);
-                                ctx.getSource().sendSuccess(() -> Component.literal("§e/yzwc account mgr delete <玩家>           §7- 删除账户"), false);
-                                ctx.getSource().sendSuccess(() -> Component.literal("§e/yzwc account mgr session_timeout <秒>    §7- 设置会话超时(0=关闭)"), false);
-                                ctx.getSource().sendSuccess(() -> Component.literal("§7  当前超时: " + AccountDataStorage.getSessionTimeout() + "秒"), false);
+                                ctx.getSource().sendSuccess(() -> Component.translatable("youzaiworldcore.message.account.help_admin_title"), false);
+                                ctx.getSource().sendSuccess(() -> Component.translatable("youzaiworldcore.message.account.help_admin_create"), false);
+                                ctx.getSource().sendSuccess(() -> Component.translatable("youzaiworldcore.message.account.help_admin_reset_password"), false);
+                                ctx.getSource().sendSuccess(() -> Component.translatable("youzaiworldcore.message.account.help_admin_delete"), false);
+                                ctx.getSource().sendSuccess(() -> Component.translatable("youzaiworldcore.message.account.help_admin_session_timeout"), false);
+                                ctx.getSource().sendSuccess(() -> Component.translatable("youzaiworldcore.message.account.current_timeout", AccountDataStorage.getSessionTimeout()), false);
                             }
                             return 1;
                         })
@@ -146,28 +146,28 @@ public class AccountCommands {
         String confirm = StringArgumentType.getString(ctx, "confirm");
 
         if (!password.equals(confirm)) {
-            source.sendFailure(Component.literal("§c两次输入的密码不一致！"));
+            source.sendFailure(Component.translatable("youzaiworldcore.message.account.password_mismatch"));
             return 0;
         }
 
         if (password.length() < 4) {
-            source.sendFailure(Component.literal("§c密码长度不能少于4个字符！"));
+            source.sendFailure(Component.translatable("youzaiworldcore.message.account.password_too_short"));
             return 0;
         }
 
         if (password.length() > 128) {
-            source.sendFailure(Component.literal("§c密码长度不能超过128个字符！"));
+            source.sendFailure(Component.translatable("youzaiworldcore.message.account.password_too_long"));
             return 0;
         }
 
         PlayerAccount account = AccountDataStorage.get(player.getScoreboardName());
         if (account == null) {
-            source.sendFailure(Component.literal("§c账户数据不存在，请重新加入服务器！"));
+            source.sendFailure(Component.translatable("youzaiworldcore.message.account.account_not_found"));
             return 0;
         }
 
         if (account.isRegistered()) {
-            source.sendFailure(Component.literal("§c你已经注册过了！请使用 §6/yzwc account login <密码> §c登录"));
+            source.sendFailure(Component.translatable("youzaiworldcore.message.account.already_registered"));
             return 0;
         }
 
@@ -196,7 +196,7 @@ public class AccountCommands {
             AccountDataStorage.update(account);
         }
 
-        source.sendSuccess(() -> Component.literal("§a注册成功！欢迎加入服务器！"), true);
+        source.sendSuccess(() -> Component.translatable("youzaiworldcore.message.account.register_success"), true);
         YouzaiworldCore.LOGGER.info("玩家 {} 注册成功", player.getScoreboardName());
         return 1;
     }
@@ -210,7 +210,7 @@ public class AccountCommands {
         PlayerAuthAccess authPlayer = (PlayerAuthAccess) (Object) player;
 
         if (authPlayer.yzwc$isAuthenticated()) {
-            source.sendFailure(Component.literal("§c你已经登录了！"));
+            source.sendFailure(Component.translatable("youzaiworldcore.message.account.already_logged_in"));
             return 0;
         }
 
@@ -218,13 +218,13 @@ public class AccountCommands {
         PlayerAccount account = authPlayer.yzwc$getAccount();
 
         if (account == null || !account.isRegistered()) {
-            source.sendFailure(Component.literal("§c你还没有注册！请使用 §6/yzwc account register <密码> <确认密码> §c注册"));
+            source.sendFailure(Component.translatable("youzaiworldcore.message.account.not_registered"));
             return 0;
         }
 
         // 检查登录次数限制
         if (account.loginTries >= 5) {
-            source.sendFailure(Component.literal("§c登录尝试次数过多！请稍后再试。"));
+            source.sendFailure(Component.translatable("youzaiworldcore.message.account.login_too_many_attempts"));
             return 0;
         }
 
@@ -245,18 +245,18 @@ public class AccountCommands {
                     AccountDataStorage.update(account);
                 }
 
-                source.sendSuccess(() -> Component.literal("§a登录成功！欢迎回来！"), true);
+                source.sendSuccess(() -> Component.translatable("youzaiworldcore.message.account.login_success"), true);
                 YouzaiworldCore.LOGGER.info("玩家 {} 登录成功", player.getScoreboardName());
                 return 1;
             }
             case WRONG -> {
                 account.loginTries++;
                 AccountDataStorage.update(account);
-                source.sendFailure(Component.literal("§c密码错误！剩余尝试次数: " + (5 - account.loginTries)));
+                source.sendFailure(Component.translatable("youzaiworldcore.message.account.wrong_password", 5 - account.loginTries));
                 return 0;
             }
             case NOT_REGISTERED -> {
-                source.sendFailure(Component.literal("§c你还没有注册！请使用 §6/yzwc account register <密码> <确认密码> §c注册"));
+                source.sendFailure(Component.translatable("youzaiworldcore.message.account.not_registered"));
                 return 0;
             }
         }
@@ -272,7 +272,7 @@ public class AccountCommands {
         PlayerAuthAccess authPlayer = (PlayerAuthAccess) (Object) player;
 
         if (!authPlayer.yzwc$isAuthenticated()) {
-            source.sendFailure(Component.literal("§c你还未登录！"));
+            source.sendFailure(Component.translatable("youzaiworldcore.message.account.not_logged_in"));
             return 0;
         }
 
@@ -307,7 +307,7 @@ public class AccountCommands {
             player.teleportTo(finalEndWorld, 0, -60, 0, Set.of(), 0, 0, true);
         }
 
-        source.sendSuccess(() -> Component.literal("§a已登出！使用 §6/yzwc account login <密码> §a重新登录"), true);
+        source.sendSuccess(() -> Component.translatable("youzaiworldcore.message.account.logout_success"), true);
         YouzaiworldCore.LOGGER.info("玩家 {} 登出", player.getScoreboardName());
         return 1;
     }
@@ -321,7 +321,7 @@ public class AccountCommands {
         PlayerAuthAccess authPlayer = (PlayerAuthAccess) (Object) player;
 
         if (!authPlayer.yzwc$isAuthenticated()) {
-            source.sendFailure(Component.literal("§c请先登录后再注销账户！"));
+            source.sendFailure(Component.translatable("youzaiworldcore.message.account.login_first_deactivate"));
             return 0;
         }
 
@@ -329,13 +329,13 @@ public class AccountCommands {
         PlayerAccount account = authPlayer.yzwc$getAccount();
 
         if (account == null || !account.isRegistered()) {
-            source.sendFailure(Component.literal("§c账户不存在！"));
+            source.sendFailure(Component.translatable("youzaiworldcore.message.account.account_not_exist"));
             return 0;
         }
 
         AuthHelper.PasswordResult result = AuthHelper.checkPassword(account, password);
         if (result != AuthHelper.PasswordResult.CORRECT) {
-            source.sendFailure(Component.literal("§c密码错误！"));
+            source.sendFailure(Component.translatable("youzaiworldcore.message.account.wrong_password_simple"));
             return 0;
         }
 
@@ -344,7 +344,7 @@ public class AccountCommands {
         authPlayer.yzwc$setAuthenticated(false);
         authPlayer.yzwc$setAccount(new PlayerAccount(player.getScoreboardName()));
 
-        player.connection.disconnect(Component.literal("§c你的账户已被注销。"));
+        player.connection.disconnect(Component.translatable("youzaiworldcore.message.account.deactivated"));
         YouzaiworldCore.LOGGER.info("玩家 {} 注销了账户", player.getScoreboardName());
         return 1;
     }
@@ -358,7 +358,7 @@ public class AccountCommands {
         PlayerAuthAccess authPlayer = (PlayerAuthAccess) (Object) player;
 
         if (!authPlayer.yzwc$isAuthenticated()) {
-            source.sendFailure(Component.literal("§c请先登录后再修改密码！"));
+            source.sendFailure(Component.translatable("youzaiworldcore.message.account.login_first_change_password"));
             return 0;
         }
 
@@ -368,30 +368,30 @@ public class AccountCommands {
         PlayerAccount account = authPlayer.yzwc$getAccount();
 
         if (account == null || !account.isRegistered()) {
-            source.sendFailure(Component.literal("§c账户不存在！"));
+            source.sendFailure(Component.translatable("youzaiworldcore.message.account.account_not_exist"));
             return 0;
         }
 
         if (!newPassword.equals(confirmPassword)) {
-            source.sendFailure(Component.literal("§c两次输入的新密码不一致！"));
+            source.sendFailure(Component.translatable("youzaiworldcore.message.account.new_password_mismatch"));
             return 0;
         }
 
         AuthHelper.PasswordResult result = AuthHelper.checkPassword(account, oldPassword);
         if (result != AuthHelper.PasswordResult.CORRECT) {
-            source.sendFailure(Component.literal("§c旧密码错误！"));
+            source.sendFailure(Component.translatable("youzaiworldcore.message.account.old_password_wrong"));
             return 0;
         }
 
         if (newPassword.length() < 4) {
-            source.sendFailure(Component.literal("§c新密码长度不能少于4个字符！"));
+            source.sendFailure(Component.translatable("youzaiworldcore.message.account.new_password_too_short"));
             return 0;
         }
 
         account.password = PasswordHasher.hash(newPassword);
         AccountDataStorage.update(account);
 
-        source.sendSuccess(() -> Component.literal("§a密码修改成功！"), true);
+        source.sendSuccess(() -> Component.translatable("youzaiworldcore.message.account.change_password_success"), true);
         YouzaiworldCore.LOGGER.info("玩家 {} 修改了密码", player.getScoreboardName());
         return 1;
     }
@@ -409,19 +409,19 @@ public class AccountCommands {
         String confirmPassword = StringArgumentType.getString(ctx, "confirmPassword");
 
         if (!newPassword.equals(confirmPassword)) {
-            source.sendFailure(Component.literal("§c两次输入的密码不一致！"));
+            source.sendFailure(Component.translatable("youzaiworldcore.message.account.password_mismatch"));
             return 0;
         }
 
         if (newPassword.length() < 4) {
-            source.sendFailure(Component.literal("§c密码长度不能少于4个字符！"));
+            source.sendFailure(Component.translatable("youzaiworldcore.message.account.password_too_short"));
             return 0;
         }
 
         // 检查是否已存在
         PlayerAccount existing = AccountDataStorage.get(playerName);
         if (existing != null && existing.isRegistered()) {
-            source.sendFailure(Component.literal("§c玩家 " + playerName + " 已经拥有账户！"));
+            source.sendFailure(Component.translatable("youzaiworldcore.message.account.player_already_has_account", playerName));
             return 0;
         }
 
@@ -431,7 +431,7 @@ public class AccountCommands {
         account.registrationDate = ZonedDateTime.now();
         AccountDataStorage.update(account);
         source.sendSuccess(() ->
-                Component.literal("§a已为玩家 " + playerName + " 创建离线账户并设置密码！"),
+                Component.translatable("youzaiworldcore.message.account.admin_create_success", playerName),
                 true
         );
         YouzaiworldCore.LOGGER.info("管理员创建了玩家 {} 的离线账户", playerName);
@@ -448,18 +448,18 @@ public class AccountCommands {
         String confirmPassword = StringArgumentType.getString(ctx, "confirmPassword");
 
         if (!newPassword.equals(confirmPassword)) {
-            source.sendFailure(Component.literal("§c两次输入的密码不一致！"));
+            source.sendFailure(Component.translatable("youzaiworldcore.message.account.password_mismatch"));
             return 0;
         }
 
         if (newPassword.length() < 4) {
-            source.sendFailure(Component.literal("§c密码长度不能少于4个字符！"));
+            source.sendFailure(Component.translatable("youzaiworldcore.message.account.password_too_short"));
             return 0;
         }
 
         PlayerAccount account = AccountDataStorage.get(playerName);
         if (account == null) {
-            source.sendFailure(Component.literal("§c玩家 " + playerName + " 没有账户数据！"));
+            source.sendFailure(Component.translatable("youzaiworldcore.message.account.player_no_account", playerName));
             return 0;
         }
 
@@ -472,10 +472,10 @@ public class AccountCommands {
         if (onlinePlayer != null) {
             PlayerAuthAccess authPlayer = (PlayerAuthAccess) (Object) onlinePlayer;
             authPlayer.yzwc$setAuthenticated(false);
-            onlinePlayer.sendSystemMessage(Component.literal("§c管理员已重置你的密码！请使用 /yzwc account login 重新登录。"));
+            onlinePlayer.sendSystemMessage(Component.translatable("youzaiworldcore.message.account.admin_reset_notification"));
         }
 
-        source.sendSuccess(() -> Component.literal("§a已重置玩家 " + playerName + " 的密码！"), true);
+        source.sendSuccess(() -> Component.translatable("youzaiworldcore.message.account.admin_reset_success", playerName), true);
         YouzaiworldCore.LOGGER.info("管理员重置了玩家 {} 的密码", playerName);
         return 1;
     }
@@ -489,12 +489,12 @@ public class AccountCommands {
 
         PlayerAccount account = AccountDataStorage.get(playerName);
         if (account == null) {
-            source.sendFailure(Component.literal("§c玩家 " + playerName + " 没有账户数据！"));
+            source.sendFailure(Component.translatable("youzaiworldcore.message.account.player_no_account", playerName));
             return 0;
         }
 
         if (!AccountDataStorage.delete(playerName)) {
-            source.sendFailure(Component.literal("§c删除失败！"));
+            source.sendFailure(Component.translatable("youzaiworldcore.message.account.delete_failed"));
             return 0;
         }
 
@@ -504,10 +504,10 @@ public class AccountCommands {
             PlayerAuthAccess authPlayer = (PlayerAuthAccess) (Object) onlinePlayer;
             authPlayer.yzwc$setAuthenticated(false);
             authPlayer.yzwc$setAccount(new PlayerAccount(playerName));
-            onlinePlayer.connection.disconnect(Component.literal("§c你的账户已被管理员删除。"));
+            onlinePlayer.connection.disconnect(Component.translatable("youzaiworldcore.message.account.admin_deleted"));
         }
 
-        source.sendSuccess(() -> Component.literal("§a已删除玩家 " + playerName + " 的账户！"), true);
+        source.sendSuccess(() -> Component.translatable("youzaiworldcore.message.account.admin_delete_success", playerName), true);
         YouzaiworldCore.LOGGER.info("管理员删除了玩家 {} 的账户", playerName);
         return 1;
     }
@@ -528,9 +528,9 @@ public class AccountCommands {
             // 无参数 → 仅显示当前值
             int current = AccountDataStorage.getSessionTimeout();
             if (current == 0) {
-                source.sendSuccess(() -> Component.literal("§e会话认证：§c关闭（0秒）"), false);
+                source.sendSuccess(() -> Component.translatable("youzaiworldcore.message.account.session_timeout_disabled"), false);
             } else {
-                source.sendSuccess(() -> Component.literal("§e会话认证超时：§a" + current + " 秒"), false);
+                source.sendSuccess(() -> Component.translatable("youzaiworldcore.message.account.session_timeout_value", current), false);
             }
             return 1;
         }
@@ -538,9 +538,9 @@ public class AccountCommands {
         AccountDataStorage.setSessionTimeout(seconds);
 
         if (seconds == 0) {
-            source.sendSuccess(() -> Component.literal("§a会话认证已关闭，不再自动恢复"), true);
+            source.sendSuccess(() -> Component.translatable("youzaiworldcore.message.account.session_timeout_set_disabled"), true);
         } else {
-            source.sendSuccess(() -> Component.literal("§a会话超时时间已设为 " + seconds + " 秒"), true);
+            source.sendSuccess(() -> Component.translatable("youzaiworldcore.message.account.session_timeout_set", seconds), true);
         }
         YouzaiworldCore.LOGGER.info("管理员将会话超时设为 {} 秒", seconds);
         return 1;

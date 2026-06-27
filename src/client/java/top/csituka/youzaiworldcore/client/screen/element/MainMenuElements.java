@@ -4,6 +4,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.Font;
+import net.minecraft.client.resources.language.I18n;
 import net.minecraft.resources.Identifier;
 import top.csituka.youzaiworldcore.YouzaiworldCore;
 import top.csituka.youzaiworldcore.client.screen.MenuScreen;
@@ -37,14 +38,14 @@ public class MainMenuElements implements MenuElementGroup {
 
     @Override
     public String getTitleText() {
-        return "主菜单";
+        return I18n.get("youzaiworldcore.message.gui.title_main_menu");
     }
 
     @Override
     public String getSubtitleText() {
         Minecraft client = Minecraft.getInstance();
         String playerName = client.player != null ? client.player.getName().getString() : "Player";
-        return "您好，" + playerName + "！欢迎来到悠哉世界";
+        return I18n.get("youzaiworldcore.message.gui.subtitle_main_menu", playerName);
     }
 
     @Override
@@ -208,9 +209,9 @@ public class MainMenuElements implements MenuElementGroup {
      */
     private void showNotImplementedDialog(MenuScreen screen) {
         ConfirmationDialog dialog = new ConfirmationDialog(
-                "暂未实现",
-                new String[]{"该区域正在开发中，无法使用！"},
-                "好",
+                I18n.get("youzaiworldcore.message.gui.not_implemented_title"),
+                new String[]{I18n.get("youzaiworldcore.message.gui.not_implemented_desc")},
+                I18n.get("youzaiworldcore.message.gui.confirm_ok"),
                 null
         );
         screen.showDialog(dialog);
