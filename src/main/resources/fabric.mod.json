@@ -36,6 +36,7 @@
   },
   "mixins": [
     "youzaiworldcore.mixins.json",
+    "youzaiworldcore.account.mixins.json",
     {
       "config": "youzaiworldcore.client.mixins.json",
       "environment": "client"

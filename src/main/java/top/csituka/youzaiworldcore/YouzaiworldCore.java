@@ -23,6 +23,8 @@ import net.minecraft.world.level.levelgen.placement.PlacedFeature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import top.csituka.youzaiworldcore.account.command.AccountCommands;
+import top.csituka.youzaiworldcore.account.data.AccountDataStorage;
 import top.csituka.youzaiworldcore.luckperms.LuckPermsHelper;
 import top.csituka.youzaiworldcore.block.ModBlocks;
 import top.csituka.youzaiworldcore.block.entity.ModBlockEntities;
@@ -69,6 +71,10 @@ public class YouzaiworldCore implements ModInitializer {
         AnvilRepairHandler.register();
         VoidStaffTickHandler.register();
         FlyBeaconTickHandler.register();
+
+        // ===== 初始化账户系统 =====
+        AccountDataStorage.initialize();
+        LOGGER.info("账户系统已初始化");
 
         BiomeModifications.addFeature(
                 BiomeSelectors.foundInOverworld(),
@@ -176,6 +182,9 @@ public class YouzaiworldCore implements ModInitializer {
                     return 1;
                 })
             );
+
+            // ===== 注册账户管理命令 =====
+            AccountCommands.register(dispatcher);
         });
     }
 
