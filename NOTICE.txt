@@ -1,2 +1,7 @@
 This product includes software developed by lucko (Luck) and contributors:
 https://github.com/LuckPerms/LuckPerms
+
+This product incorporates code adapted from Higher Chat, originally created by MDLC01:
+https://github.com/MDLC01/higher-chat-mc | https://modrinth.com/mod/higher-chat
+The original work is dedicated to the public domain under the Unlicense.
+For the full license text, see the LICENSE.txt file in this distribution.
