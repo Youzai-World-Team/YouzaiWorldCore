@@ -94,7 +94,7 @@ public final class InvisibilityManager {
                 false
         ));
 
-        // 2. 从其他玩家的 Tab 列表中移除
+        // 2. 仅从其他玩家的 Tab 列表中移除（自己保留，方便观察）
         ClientboundPlayerInfoRemovePacket removePacket =
                 new ClientboundPlayerInfoRemovePacket(List.of(uuid));
         for (ServerPlayer other : allPlayers) {
@@ -103,7 +103,7 @@ public final class InvisibilityManager {
             }
         }
 
-        // 3. 从其他玩家的视野中移除实体
+        // 3. 仅从其他玩家的视野中移除实体（自己不移除）
         ClientboundRemoveEntitiesPacket removeEntityPacket =
                 new ClientboundRemoveEntitiesPacket(player.getId());
         for (ServerPlayer other : allPlayers) {
@@ -112,7 +112,7 @@ public final class InvisibilityManager {
             }
         }
 
-        // 4. 发送伪装退服消息给其他玩家
+        // 4. 仅给其他玩家发送伪装退服消息
         Component leaveMessage = Component.translatable(
                 "multiplayer.player.left", player.getDisplayName()
         );
@@ -161,7 +161,7 @@ public final class InvisibilityManager {
         // 1. 移除隐身状态效果
         player.removeEffect(MobEffects.INVISIBILITY);
 
-        // 2. 重新发送玩家信息给所有其他玩家（恢复 Tab 列表）
+        // 2. 仅向其他玩家重新发送玩家信息（恢复 Tab 列表）
         ClientboundPlayerInfoUpdatePacket addToTabPacket =
                 new ClientboundPlayerInfoUpdatePacket(
                         EnumSet.allOf(ClientboundPlayerInfoUpdatePacket.Action.class),
@@ -173,8 +173,11 @@ public final class InvisibilityManager {
             }
         }
 
-        // 3. 向其他玩家重新发送玩家实体包（恢复可见）
-        resendPlayerEntity(player, allPlayers);
+        // 3. 仅向其他玩家重新发送玩家实体包（恢复可见）
+        List<ServerPlayer> others = allPlayers.stream()
+                .filter(p -> p != player)
+                .toList();
+        resendPlayerEntity(player, others);
 
         // 4. 发送伪装进服消息给其他玩家
         Component joinMessage = Component.translatable(
@@ -215,7 +218,7 @@ public final class InvisibilityManager {
         // 1. 移除效果
         player.removeEffect(MobEffects.INVISIBILITY);
 
-        // 2. 恢复 Tab 和实体可见
+        // 2. 仅向其他玩家恢复 Tab 列表
         ClientboundPlayerInfoUpdatePacket addToTabPacket =
                 new ClientboundPlayerInfoUpdatePacket(
                         EnumSet.allOf(ClientboundPlayerInfoUpdatePacket.Action.class),
@@ -227,7 +230,7 @@ public final class InvisibilityManager {
             }
         }
 
-        // 3. 恢复实体可见
+        // 3. 仅恢复其他玩家的实体可见
         List<ServerPlayer> others = allPlayers.stream()
                 .filter(p -> p != player)
                 .toList();
