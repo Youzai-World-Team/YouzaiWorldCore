@@ -131,7 +131,7 @@ public class RegisterScreen extends Screen {
         guiGraphics.text(this.font, titleText,
                 (int) (titleX / titleScale),
                 (int) ((containerTop + 10) / titleScale),
-                0xFFFFFF, false);
+                0xFFFFFFFF, false);
         guiGraphics.pose().popMatrix();
 
         // 绘制副标题
@@ -140,7 +140,7 @@ public class RegisterScreen extends Screen {
         guiGraphics.text(this.font, subtitleText,
                 centerX - subtitleWidth / 2,
                 containerTop + 35,
-                0xCCCCCC, false);
+                0xFFCCCCCC, false);
 
         // 绘制标签
         drawLabel(guiGraphics, this.font,
@@ -156,7 +156,7 @@ public class RegisterScreen extends Screen {
         // 绘制提示文本
         String hint1 = Component.translatable("screen.youzaiworldcore.register.hint_line1").getString();
         String hint2 = Component.translatable("screen.youzaiworldcore.register.hint_line2").getString();
-        int hintColor = 0xAAAAAA;
+        int hintColor = 0xFFAAAAAA;
         int hintY = containerTop + 55 + ROW_SPACING * 3;
         guiGraphics.text(this.font, hint1,
                 centerX - this.font.width(hint1) / 2,
@@ -195,10 +195,25 @@ public class RegisterScreen extends Screen {
         double mx = event.x();
         double my = event.y();
 
-        // 转发点击到 EditBox
-        if (this.passwordField.mouseClicked(event, isActuallyClick)) return true;
-        if (this.confirmPasswordField.mouseClicked(event, isActuallyClick)) return true;
-        if (this.usernameField.mouseClicked(event, isActuallyClick)) return true;
+        // 转发点击到 EditBox（需手动管理焦点）
+        if (this.passwordField.mouseClicked(event, isActuallyClick)) {
+            this.passwordField.setFocused(true);
+            this.confirmPasswordField.setFocused(false);
+            this.usernameField.setFocused(false);
+            return true;
+        }
+        if (this.confirmPasswordField.mouseClicked(event, isActuallyClick)) {
+            this.confirmPasswordField.setFocused(true);
+            this.passwordField.setFocused(false);
+            this.usernameField.setFocused(false);
+            return true;
+        }
+        if (this.usernameField.mouseClicked(event, isActuallyClick)) {
+            this.usernameField.setFocused(true);
+            this.passwordField.setFocused(false);
+            this.confirmPasswordField.setFocused(false);
+            return true;
+        }
 
         // 转发点击到按钮
         if (isMouseOverButton(this.registerButton, mx, my)) {
@@ -330,7 +345,7 @@ public class RegisterScreen extends Screen {
 
     private void drawLabel(GuiGraphicsExtractor guiGraphics, Font font, String text, int x, int y) {
         int labelY = y + (FIELD_HEIGHT - font.lineHeight) / 2;
-        guiGraphics.text(font, text, x, labelY, 0xFFFFFF, false);
+        guiGraphics.text(font, text, x, labelY, 0xFFFFFFFF, false);
     }
 
     private boolean isMouseOverButton(TransparentButton button, double mx, double my) {

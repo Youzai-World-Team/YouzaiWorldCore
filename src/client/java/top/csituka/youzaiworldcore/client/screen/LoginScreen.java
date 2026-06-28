@@ -123,7 +123,7 @@ public class LoginScreen extends Screen {
         guiGraphics.text(this.font, titleText,
                 (int) (titleX / titleScale),
                 (int) ((containerTop + 10) / titleScale),
-                0xFFFFFF, false);
+                0xFFFFFFFF, false);
         guiGraphics.pose().popMatrix();
 
         // 绘制副标题
@@ -132,7 +132,7 @@ public class LoginScreen extends Screen {
         guiGraphics.text(this.font, subtitleText,
                 centerX - subtitleWidth / 2,
                 containerTop + 35,
-                0xCCCCCC, false);
+                0xFFCCCCCC, false);
 
         // 绘制标签
         drawLabel(guiGraphics, this.font,
@@ -170,9 +170,17 @@ public class LoginScreen extends Screen {
         double mx = event.x();
         double my = event.y();
 
-        // 转发到 EditBox
-        if (this.passwordField.mouseClicked(event, isActuallyClick)) return true;
-        if (this.usernameField.mouseClicked(event, isActuallyClick)) return true;
+        // 转发到 EditBox（需手动管理焦点）
+        if (this.passwordField.mouseClicked(event, isActuallyClick)) {
+            this.passwordField.setFocused(true);
+            this.usernameField.setFocused(false);
+            return true;
+        }
+        if (this.usernameField.mouseClicked(event, isActuallyClick)) {
+            this.usernameField.setFocused(true);
+            this.passwordField.setFocused(false);
+            return true;
+        }
 
         // 转发到按钮
         if (isMouseOverButton(this.loginButton, mx, my)) {
@@ -288,7 +296,7 @@ public class LoginScreen extends Screen {
 
     private void drawLabel(GuiGraphicsExtractor guiGraphics, Font font, String text, int x, int y) {
         int labelY = y + (FIELD_HEIGHT - font.lineHeight) / 2;
-        guiGraphics.text(font, text, x, labelY, 0xFFFFFF, false);
+        guiGraphics.text(font, text, x, labelY, 0xFFFFFFFF, false);
     }
 
     private boolean isMouseOverButton(TransparentButton button, double mx, double my) {
