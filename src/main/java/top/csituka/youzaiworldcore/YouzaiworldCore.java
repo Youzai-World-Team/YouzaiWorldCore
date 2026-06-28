@@ -7,6 +7,7 @@ import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.biome.v1.BiomeModifications;
 import net.fabricmc.fabric.api.biome.v1.BiomeSelectors;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -30,10 +31,13 @@ import top.csituka.youzaiworldcore.luckperms.LuckPermsHelper;
 import top.csituka.youzaiworldcore.block.ModBlocks;
 import top.csituka.youzaiworldcore.block.entity.ModBlockEntities;
 import top.csituka.youzaiworldcore.command.ExperimentalFeatureCommand;
+import top.csituka.youzaiworldcore.command.InvisibilityCommand;
 import top.csituka.youzaiworldcore.component.ModDataComponents;
 import top.csituka.youzaiworldcore.event.AnvilRepairHandler;
 import top.csituka.youzaiworldcore.event.FlyBeaconTickHandler;
 import top.csituka.youzaiworldcore.event.VoidStaffTickHandler;
+import top.csituka.youzaiworldcore.invisibility.InvisibilityManager;
+import top.csituka.youzaiworldcore.invisibility.InvisibilityTickHandler;
 import top.csituka.youzaiworldcore.item.ModCreativeModeTabs;
 import top.csituka.youzaiworldcore.item.ModItems;
 import top.csituka.youzaiworldcore.item.tool.YzChainMiningTool;
@@ -90,6 +94,15 @@ public class YouzaiworldCore implements ModInitializer {
                 RAW_YZ_BLOCK_PLACED_KEY
         );
 
+        // ===== 初始化隐身功能 =====
+        InvisibilityTickHandler.register();
+        ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
+            if (handler.getPlayer() instanceof ServerPlayer serverPlayer) {
+                InvisibilityManager.onPlayerDisconnect(serverPlayer);
+            }
+        });
+        LOGGER.info("隐身功能已初始化");
+
         // ===== 初始化实验性功能系统 =====
         top.csituka.youzaiworldcore.feature.ExperimentalFeatures.register(
                 "chicken_warden_model",
@@ -109,6 +122,7 @@ public class YouzaiworldCore implements ModInitializer {
         // ===== 注册所有 /yzwc 命令 =====
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
             ExperimentalFeatureCommand.register(dispatcher);
+            InvisibilityCommand.register(dispatcher);
 
             dispatcher.register(Commands.literal("yzwc")
                 // === teleport_world ===

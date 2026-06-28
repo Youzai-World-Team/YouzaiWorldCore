@@ -69,6 +69,9 @@ public final class LuckPermsHelper {
     /** 实验性功能查询 {@code /yzwc experimental_feature <id>} */
     public static final String PERMISSION_EXPERIMENTAL_FEATURE_QUERY = "youzaiworldcore.command.experimental_feature.query";
 
+    /** 隐身功能 {@code /yzwc function invisibility} */
+    public static final String PERMISSION_INVISIBILITY = "youzaiworldcore.command.function.invisibility";
+
     /** 实验性功能自切换 {@code /yzwc experimental_feature <id> <bool>}（为自己切换） */
     public static final String PERMISSION_EXPERIMENTAL_FEATURE_SELF = "youzaiworldcore.command.experimental_feature.self";
 
