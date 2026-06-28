@@ -192,10 +192,17 @@ public class MainMenuElements implements MenuElementGroup {
         int[] colXs = new int[]{c0, c1, c2, c3, c4};
 
         for (int i = 0; i < 5; i++) {
+            final Runnable onClick;
+            if (i == 0) {
+                // 设置按钮 — 打开设置界面
+                onClick = () -> screen.switchTo(new SettingsMenuElements());
+            } else {
+                onClick = () -> showNotImplementedDialog(screen);
+            }
             TextureTileButton bottomBtn = new TextureTileButton(
                     colXs[i], row3Y, tile, tile,
                     bottomTextures[i],
-                    () -> showNotImplementedDialog(screen)
+                    onClick
             );
             bottomBtn.setExternalAlpha(alpha);
             buttons.add(bottomBtn);
