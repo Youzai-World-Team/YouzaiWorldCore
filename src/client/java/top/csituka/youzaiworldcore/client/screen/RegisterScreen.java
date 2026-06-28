@@ -195,7 +195,7 @@ public class RegisterScreen extends Screen {
         double mx = event.x();
         double my = event.y();
 
-        // 转发点击到 EditBox（需手动管理焦点）
+        // 转发点击到 EditBox（需手动管理焦点，只读账户框忽略点击以免出现光标闪烁）
         if (this.passwordField.mouseClicked(event, isActuallyClick)) {
             this.passwordField.setFocused(true);
             this.confirmPasswordField.setFocused(false);
@@ -208,10 +208,11 @@ public class RegisterScreen extends Screen {
             this.usernameField.setFocused(false);
             return true;
         }
-        if (this.usernameField.mouseClicked(event, isActuallyClick)) {
-            this.usernameField.setFocused(true);
-            this.passwordField.setFocused(false);
+        // 账户输入框为只读，不转发点击，避免出现光标闪烁标记
+        if (isMouseOverEditBox(this.usernameField, mx, my)) {
+            this.passwordField.setFocused(true);
             this.confirmPasswordField.setFocused(false);
+            this.usernameField.setFocused(false);
             return true;
         }
 
@@ -239,10 +240,9 @@ public class RegisterScreen extends Screen {
             return true;
         }
 
-        // 转发键盘事件到当前聚焦的 EditBox
+        // 转发键盘事件到当前聚焦的 EditBox（账户只读，不转发）
         if (this.passwordField.isFocused() && this.passwordField.keyPressed(keyEvent)) return true;
         if (this.confirmPasswordField.isFocused() && this.confirmPasswordField.keyPressed(keyEvent)) return true;
-        if (this.usernameField.isFocused() && this.usernameField.keyPressed(keyEvent)) return true;
 
         return false;
     }
@@ -351,5 +351,10 @@ public class RegisterScreen extends Screen {
     private boolean isMouseOverButton(TransparentButton button, double mx, double my) {
         return mx >= button.getX() && mx < button.getX() + button.getWidth()
                 && my >= button.getY() && my < button.getY() + button.getHeight();
+    }
+
+    private boolean isMouseOverEditBox(EditBox box, double mx, double my) {
+        return mx >= box.getX() && mx < box.getX() + box.getWidth()
+                && my >= box.getY() && my < box.getY() + box.getHeight();
     }
 }
