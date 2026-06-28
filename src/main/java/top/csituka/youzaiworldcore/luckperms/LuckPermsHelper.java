@@ -75,6 +75,30 @@ public final class LuckPermsHelper {
     /** 实验性功能管理 {@code /yzwc experimental_feature <id> <bool> all/only} */
     public static final String PERMISSION_EXPERIMENTAL_FEATURE_ADMIN = "youzaiworldcore.command.experimental_feature.admin";
 
+    /** 管理：创建离线玩家账户 */
+    public static final String PERMISSION_ACCOUNT_MGR_CREATE = "youzaiworldcore.command.account.mgr.create";
+
+    /** 管理：重置玩家密码 */
+    public static final String PERMISSION_ACCOUNT_MGR_RESET_PASSWORD = "youzaiworldcore.command.account.mgr.reset_password";
+
+    /** 管理：删除玩家账户 */
+    public static final String PERMISSION_ACCOUNT_MGR_DELETE = "youzaiworldcore.command.account.mgr.delete";
+
+    /** 管理：查看/设置会话超时时间 */
+    public static final String PERMISSION_ACCOUNT_MGR_SESSION_TIMEOUT = "youzaiworldcore.command.account.mgr.session_timeout";
+
+    /** 管理：查看/设置登录锁定冷却时间 */
+    public static final String PERMISSION_ACCOUNT_MGR_LOGIN_COOLDOWN = "youzaiworldcore.command.account.mgr.login_cooldown";
+
+    /** 管理：查询账户锁定状态 */
+    public static final String PERMISSION_ACCOUNT_MGR_LOGIN_COOLDOWN_STATUS = "youzaiworldcore.command.account.mgr.login_cooldown.status";
+
+    /** 管理：解锁玩家账户 */
+    public static final String PERMISSION_ACCOUNT_MGR_LOGIN_COOLDOWN_UNLOCK = "youzaiworldcore.command.account.mgr.login_cooldown.unlock";
+
+    /** 管理命令通配符（等价于所有 mgr 子命令的合集） */
+    public static final String PERMISSION_ACCOUNT_MGR_WILDCARD = "youzaiworldcore.command.account.mgr.*";
+
     /** 所有命令的通配符 */
     public static final String PERMISSION_COMMAND_WILDCARD = "youzaiworldcore.command.*";
 

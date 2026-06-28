@@ -109,6 +109,28 @@ public class AccountCommands {
                                                 .executes(ctx -> executeAdminSessionTimeout(ctx))
                                         )
                                 )
+                                .then(Commands.literal("login_cooldown")
+                                        // 无参数：显示当前冷却设置
+                                        .executes(ctx -> executeAdminLoginCooldownDisplay(ctx))
+                                        // set <秒>：设置冷却时间
+                                        .then(Commands.literal("set")
+                                                .then(Commands.argument("seconds", com.mojang.brigadier.arguments.IntegerArgumentType.integer(-1, 86400))
+                                                        .executes(ctx -> executeAdminLoginCooldownSet(ctx))
+                                                )
+                                        )
+                                        // status <玩家>：查询账户状态
+                                        .then(Commands.literal("status")
+                                                .then(Commands.argument("player", StringArgumentType.string())
+                                                        .executes(ctx -> executeAdminLoginCooldownStatus(ctx))
+                                                )
+                                        )
+                                        // unlock <玩家>：解锁账户
+                                        .then(Commands.literal("unlock")
+                                                .then(Commands.argument("player", StringArgumentType.string())
+                                                        .executes(ctx -> executeAdminLoginCooldownUnlock(ctx))
+                                                )
+                                        )
+                                )
                         )
                         .executes(ctx -> {
                             ctx.getSource().sendSuccess(() -> Component.translatable("youzaiworldcore.message.account.help_title"), false);
@@ -125,6 +147,10 @@ public class AccountCommands {
                                 ctx.getSource().sendSuccess(() -> Component.translatable("youzaiworldcore.message.account.help_admin_delete"), false);
                                 ctx.getSource().sendSuccess(() -> Component.translatable("youzaiworldcore.message.account.help_admin_session_timeout"), false);
                                 ctx.getSource().sendSuccess(() -> Component.translatable("youzaiworldcore.message.account.current_timeout", AccountDataStorage.getSessionTimeout()), false);
+                                ctx.getSource().sendSuccess(() -> Component.translatable("youzaiworldcore.message.account.help_admin_login_cooldown"), false);
+                                ctx.getSource().sendSuccess(() -> Component.translatable("youzaiworldcore.message.account.help_admin_login_cooldown_status"), false);
+                                ctx.getSource().sendSuccess(() -> Component.translatable("youzaiworldcore.message.account.help_admin_login_cooldown_unlock"), false);
+                                ctx.getSource().sendSuccess(() -> Component.translatable("youzaiworldcore.message.account.current_login_cooldown", AccountDataStorage.getLoginCooldown()), false);
                             }
                             return 1;
                         })
@@ -222,10 +248,30 @@ public class AccountCommands {
             return 0;
         }
 
-        // 检查登录次数限制
-        if (account.loginTries >= 5) {
-            source.sendFailure(Component.translatable("youzaiworldcore.message.account.login_too_many_attempts"));
-            return 0;
+        long cooldownSeconds = AccountDataStorage.getLoginCooldown();
+
+        // ===== 登录尝试冷却/锁定检查 =====
+        // cooldownSeconds == -1 : 永不锁定，跳过检查
+        if (cooldownSeconds != -1 && account.loginTries >= 5) {
+            if (cooldownSeconds > 0) {
+                // 限时冷却
+                long elapsedSeconds = java.time.Duration.between(account.lastKickedDate, ZonedDateTime.now()).getSeconds();
+                if (elapsedSeconds < cooldownSeconds) {
+                    long remaining = cooldownSeconds - elapsedSeconds;
+                    source.sendFailure(Component.translatable(
+                        "youzaiworldcore.message.account.cooldown_wait", formatCooldown(remaining)));
+                    return 0;
+                }
+                // 冷却已过 → 重置计数，允许重试
+                account.loginTries = 0;
+                account.lastKickedDate = java.time.ZonedDateTime.of(1970, 1, 1, 0, 0, 0, 0, java.time.ZoneOffset.UTC);
+                AccountDataStorage.update(account);
+                source.sendSuccess(() -> Component.translatable("youzaiworldcore.message.account.cooldown_expired"), false);
+            } else {
+                // cooldownSeconds == 0 : 永久锁定
+                source.sendFailure(Component.translatable("youzaiworldcore.message.account.cooldown_permanent"));
+                return 0;
+            }
         }
 
         AuthHelper.PasswordResult result = AuthHelper.checkPassword(account, password);
@@ -251,6 +297,10 @@ public class AccountCommands {
             }
             case WRONG -> {
                 account.loginTries++;
+                // 刚达到 5 次 → 记录锁定时间，以便冷却计时
+                if (account.loginTries >= 5) {
+                    account.lastKickedDate = ZonedDateTime.now();
+                }
                 AccountDataStorage.update(account);
                 source.sendFailure(Component.translatable("youzaiworldcore.message.account.wrong_password", 5 - account.loginTries));
                 return 0;
@@ -546,6 +596,118 @@ public class AccountCommands {
         return 1;
     }
 
+    /**
+     * 管理员：显示当前登录冷却设置
+     * /yzwc account mgr login_cooldown set
+     */
+    private static int executeAdminLoginCooldownDisplay(CommandContext<CommandSourceStack> ctx) {
+        CommandSourceStack source = ctx.getSource();
+        int current = AccountDataStorage.getLoginCooldown();
+        if (current == -1) {
+            source.sendSuccess(() -> Component.translatable("youzaiworldcore.message.account.admin_cooldown_never"), false);
+        } else if (current == 0) {
+            source.sendSuccess(() -> Component.translatable("youzaiworldcore.message.account.admin_cooldown_permanent"), false);
+        } else {
+            source.sendSuccess(() -> Component.translatable("youzaiworldcore.message.account.admin_cooldown_value", formatCooldown(current)), false);
+        }
+        return 1;
+    }
+
+    /**
+     * 管理员：设置登录失败锁定冷却时间
+     * /yzwc account mgr login_cooldown set <秒>
+     */
+    private static int executeAdminLoginCooldownSet(CommandContext<CommandSourceStack> ctx) {
+        CommandSourceStack source = ctx.getSource();
+        int seconds = IntegerArgumentType.getInteger(ctx, "seconds");
+        AccountDataStorage.setLoginCooldown(seconds);
+
+        if (seconds == -1) {
+            source.sendSuccess(() -> Component.translatable("youzaiworldcore.message.account.admin_cooldown_set_never"), true);
+        } else if (seconds == 0) {
+            source.sendSuccess(() -> Component.translatable("youzaiworldcore.message.account.admin_cooldown_set_permanent"), true);
+        } else {
+            source.sendSuccess(() -> Component.translatable("youzaiworldcore.message.account.admin_cooldown_set_value", formatCooldown(seconds)), true);
+        }
+        YouzaiworldCore.LOGGER.info("管理员将登录锁定冷却设为 {} 秒", seconds);
+        return 1;
+    }
+
+    /**
+     * 管理员：查询指定玩家的账户锁定状态
+     * /yzwc account mgr login_cooldown status <玩家>
+     */
+    private static int executeAdminLoginCooldownStatus(CommandContext<CommandSourceStack> ctx) {
+        CommandSourceStack source = ctx.getSource();
+        String playerName = StringArgumentType.getString(ctx, "player");
+
+        PlayerAccount account = AccountDataStorage.get(playerName);
+        if (account == null) {
+            source.sendFailure(Component.translatable("youzaiworldcore.message.account.admin_player_no_account", playerName));
+            return 0;
+        }
+
+        int cooldownGlobal = AccountDataStorage.getLoginCooldown();
+        int tries = account.loginTries;
+
+        source.sendSuccess(() -> Component.translatable("youzaiworldcore.message.account.admin_cooldown_status_title", playerName), false);
+        String color = (tries >= 5) ? "c" : "a";
+        source.sendSuccess(() -> Component.translatable("youzaiworldcore.message.account.admin_cooldown_status_tries", color, String.valueOf(tries)), false);
+
+        if (cooldownGlobal == -1) {
+            source.sendSuccess(() -> Component.translatable("youzaiworldcore.message.account.admin_cooldown_status_global_never"), false);
+        } else if (tries < 5) {
+            source.sendSuccess(() -> Component.translatable("youzaiworldcore.message.account.admin_cooldown_status_normal"), false);
+        } else if (cooldownGlobal == 0) {
+            source.sendSuccess(() -> Component.translatable("youzaiworldcore.message.account.admin_cooldown_status_permanent"), false);
+        } else {
+            long elapsedSeconds = java.time.Duration.between(account.lastKickedDate, ZonedDateTime.now()).getSeconds();
+            if (elapsedSeconds < cooldownGlobal) {
+                long remaining = cooldownGlobal - elapsedSeconds;
+                source.sendSuccess(() -> Component.translatable("youzaiworldcore.message.account.admin_cooldown_status_blocked", formatCooldown(remaining)), false);
+            } else {
+                source.sendSuccess(() -> Component.translatable("youzaiworldcore.message.account.admin_cooldown_status_expired"), false);
+            }
+        }
+        String globalDesc = cooldownGlobal == -1 ? "永不锁定" : cooldownGlobal == 0 ? "永久锁定" : formatCooldown(cooldownGlobal);
+        source.sendSuccess(() -> Component.translatable("youzaiworldcore.message.account.admin_cooldown_status_global", globalDesc), false);
+        return 1;
+    }
+
+    /**
+     * 管理员：解锁指定玩家的账户（重置登录尝试计数）
+     * /yzwc account mgr login_cooldown unlock <玩家>
+     */
+    private static int executeAdminLoginCooldownUnlock(CommandContext<CommandSourceStack> ctx) {
+        CommandSourceStack source = ctx.getSource();
+        String playerName = StringArgumentType.getString(ctx, "player");
+
+        PlayerAccount account = AccountDataStorage.get(playerName);
+        if (account == null) {
+            source.sendFailure(Component.translatable("youzaiworldcore.message.account.admin_player_no_account", playerName));
+            return 0;
+        }
+
+        if (account.loginTries < 5) {
+            source.sendFailure(Component.translatable("youzaiworldcore.message.account.admin_cooldown_not_locked", playerName, String.valueOf(account.loginTries)));
+            return 0;
+        }
+
+        account.loginTries = 0;
+        account.lastKickedDate = java.time.ZonedDateTime.of(1970, 1, 1, 0, 0, 0, 0, java.time.ZoneOffset.UTC);
+        AccountDataStorage.update(account);
+
+        // 如果玩家在线，通知他
+        ServerPlayer onlinePlayer = source.getServer().getPlayerList().getPlayerByName(playerName);
+        if (onlinePlayer != null) {
+            onlinePlayer.sendSystemMessage(Component.translatable("youzaiworldcore.message.account.admin_cooldown_unlock_notification"));
+        }
+
+        source.sendSuccess(() -> Component.translatable("youzaiworldcore.message.account.admin_cooldown_unlock_success", playerName), true);
+        YouzaiworldCore.LOGGER.info("管理员解锁了玩家 {} 的账户", playerName);
+        return 1;
+    }
+
     // ===== 工具方法 =====
 
     /**
@@ -576,5 +738,25 @@ public class AccountCommands {
         ), false);
 
         YouzaiworldCore.LOGGER.info("已将玩家 {} 传送至主世界出生点并清除重生点", player.getScoreboardName());
+    }
+
+    /**
+     * 将秒数格式化为人类可读的时间字符串。
+     * <p>
+     * 示例：3661 秒 → "1小时1分钟1秒"
+     * </p>
+     */
+    private static String formatCooldown(long seconds) {
+        if (seconds <= 0) return "0秒";
+        long days = seconds / 86400;
+        long hours = (seconds % 86400) / 3600;
+        long minutes = (seconds % 3600) / 60;
+        long secs = seconds % 60;
+        StringBuilder sb = new StringBuilder();
+        if (days > 0) sb.append(days).append("天");
+        if (hours > 0) sb.append(hours).append("小时");
+        if (minutes > 0) sb.append(minutes).append("分钟");
+        if (secs > 0 || sb.isEmpty()) sb.append(secs).append("秒");
+        return sb.toString();
     }
 }

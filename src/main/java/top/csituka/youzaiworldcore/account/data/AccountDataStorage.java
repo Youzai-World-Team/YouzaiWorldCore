@@ -33,6 +33,9 @@ public class AccountDataStorage {
     /** 会话认证超时时间（秒），0=关闭 */
     private static int sessionTimeout = 0;
 
+    /** 登录失败锁定冷却时间（秒），默认 5 分钟 */
+    private static int loginCooldown = 300;
+
     /**
      * 获取会话超时时间
      */
@@ -45,6 +48,21 @@ public class AccountDataStorage {
      */
     public static void setSessionTimeout(int seconds) {
         sessionTimeout = Math.max(0, seconds);
+        saveConfig();
+    }
+
+    /**
+     * 获取登录失败锁定冷却时间（秒）
+     */
+    public static int getLoginCooldown() {
+        return loginCooldown;
+    }
+
+    /**
+     * 设置登录失败锁定冷却时间（秒）
+     */
+    public static void setLoginCooldown(int seconds) {
+        loginCooldown = Math.max(-1, seconds);
         saveConfig();
     }
 
@@ -73,8 +91,13 @@ public class AccountDataStorage {
             if (Files.exists(CONFIG_FILE)) {
                 String json = Files.readString(CONFIG_FILE);
                 var obj = PlayerAccount.GSON.fromJson(json, java.util.Map.class);
-                if (obj != null && obj.containsKey("session_timeout")) {
-                    sessionTimeout = ((Number) obj.get("session_timeout")).intValue();
+                if (obj != null) {
+                    if (obj.containsKey("session_timeout")) {
+                        sessionTimeout = ((Number) obj.get("session_timeout")).intValue();
+                    }
+                    if (obj.containsKey("login_cooldown")) {
+                        loginCooldown = ((Number) obj.get("login_cooldown")).intValue();
+                    }
                 }
             }
         } catch (IOException e) {
@@ -86,6 +109,7 @@ public class AccountDataStorage {
         try {
             var map = new java.util.HashMap<String, Object>();
             map.put("session_timeout", sessionTimeout);
+            map.put("login_cooldown", loginCooldown);
             Files.writeString(CONFIG_FILE, PlayerAccount.GSON.toJson(map));
         } catch (IOException e) {
             LOGGER.error("保存账户配置失败", e);
