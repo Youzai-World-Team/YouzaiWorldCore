@@ -66,6 +66,15 @@ public final class LuckPermsHelper {
     /** 实验性功能切换命令 {@code /yzwc experimental_feature} */
     public static final String PERMISSION_EXPERIMENTAL_FEATURE = "youzaiworldcore.command.experimental_feature";
 
+    /** 实验性功能查询 {@code /yzwc experimental_feature <id>} */
+    public static final String PERMISSION_EXPERIMENTAL_FEATURE_QUERY = "youzaiworldcore.command.experimental_feature.query";
+
+    /** 实验性功能自切换 {@code /yzwc experimental_feature <id> <bool>}（为自己切换） */
+    public static final String PERMISSION_EXPERIMENTAL_FEATURE_SELF = "youzaiworldcore.command.experimental_feature.self";
+
+    /** 实验性功能管理 {@code /yzwc experimental_feature <id> <bool> all/only} */
+    public static final String PERMISSION_EXPERIMENTAL_FEATURE_ADMIN = "youzaiworldcore.command.experimental_feature.admin";
+
     /** 所有命令的通配符 */
     public static final String PERMISSION_COMMAND_WILDCARD = "youzaiworldcore.command.*";
 

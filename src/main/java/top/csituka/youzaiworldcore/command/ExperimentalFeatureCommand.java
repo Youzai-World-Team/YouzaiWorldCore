@@ -37,24 +37,31 @@ import java.util.UUID;
 public class ExperimentalFeatureCommand {
 
     public static final String PERMISSION_EXPERIMENTAL_FEATURE = "youzaiworldcore.command.experimental_feature";
+    public static final String PERMISSION_QUERY = "youzaiworldcore.command.experimental_feature.query";
+    public static final String PERMISSION_SELF = "youzaiworldcore.command.experimental_feature.self";
+    public static final String PERMISSION_ADMIN = "youzaiworldcore.command.experimental_feature.admin";
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
-        // /yzwc experimental_feature <id>
-        var featureNode = Commands.argument("id", StringArgumentType.word())
+        // /yzwc experimental_feature <id> — 查询（所有人，但可通过 LuckPerms 控制）
+        var queryNode = Commands.argument("id", StringArgumentType.word())
+                .requires(src -> LuckPermsHelper.checkPermission(
+                        src, PERMISSION_QUERY, Commands.LEVEL_ALL))
                 .executes(ExperimentalFeatureCommand::queryFeature)
-                // /yzwc experimental_feature <id> <bool>
+                // /yzwc experimental_feature <id> <bool> — 自切换
                 .then(Commands.argument("enabled", BoolArgumentType.bool())
+                        .requires(src -> LuckPermsHelper.checkPermission(
+                                src, PERMISSION_SELF, Commands.LEVEL_ALL))
                         .executes(ctx -> setFeatureSelf(ctx, BoolArgumentType.getBool(ctx, "enabled")))
-                        // /yzwc experimental_feature <id> <bool> all
+                        // /yzwc experimental_feature <id> <bool> all — 全服
                         .then(Commands.literal("all")
                                 .requires(src -> LuckPermsHelper.checkPermission(
-                                        src, PERMISSION_EXPERIMENTAL_FEATURE, Commands.LEVEL_ADMINS))
+                                        src, PERMISSION_ADMIN, Commands.LEVEL_ADMINS))
                                 .executes(ctx -> setFeatureAll(ctx, BoolArgumentType.getBool(ctx, "enabled")))
                         )
-                        // /yzwc experimental_feature <id> <bool> only <player>
+                        // /yzwc experimental_feature <id> <bool> only <player> — 指定玩家
                         .then(Commands.literal("only")
                                 .requires(src -> LuckPermsHelper.checkPermission(
-                                        src, PERMISSION_EXPERIMENTAL_FEATURE, Commands.LEVEL_ADMINS))
+                                        src, PERMISSION_ADMIN, Commands.LEVEL_ADMINS))
                                 .then(Commands.argument("target", EntityArgument.player())
                                         .executes(ctx -> setFeatureForPlayer(
                                                 ctx, BoolArgumentType.getBool(ctx, "enabled"),
@@ -65,7 +72,7 @@ public class ExperimentalFeatureCommand {
 
         dispatcher.register(Commands.literal("yzwc")
                 .then(Commands.literal("experimental_feature")
-                        .then(featureNode)
+                        .then(queryNode)
                 )
         );
     }
