@@ -103,6 +103,9 @@ public class YouzaiworldCore implements ModInitializer {
         );
         top.csituka.youzaiworldcore.feature.ExperimentalFeatures.loadDefaults();
 
+        // 加载服务端持久化配置
+        top.csituka.youzaiworldcore.feature.ExperimentalFeatures.loadServerSettings();
+
         // ===== 注册所有 /yzwc 命令 =====
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
             ExperimentalFeatureCommand.register(dispatcher);

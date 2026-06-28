@@ -30,6 +30,9 @@ public class Client implements ClientModInitializer {
 
         top.csituka.youzaiworldcore.network.ClientNetworking.initialize();
 
+        // 加载客户端持久化配置
+        top.csituka.youzaiworldcore.feature.ExperimentalFeatures.loadClientSettings();
+
         // 注册监守者鸡自定义渲染器（替换原版 Warden 渲染）
         var wardenHolder = BuiltInRegistries.ENTITY_TYPE.get(Identifier.parse("minecraft:warden")).orElseThrow();
         EntityType<? extends net.minecraft.world.entity.monster.warden.Warden> wardenType = (EntityType<? extends net.minecraft.world.entity.monster.warden.Warden>) wardenHolder.value();

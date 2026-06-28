@@ -14,6 +14,7 @@ import top.csituka.youzaiworldcore.client.screen.element.SwitchWorldMenuElements
 
 import java.util.Map;
 import java.util.HashMap;
+import java.util.UUID;
 
 public class ClientNetworking {
 
@@ -40,9 +41,20 @@ public class ClientNetworking {
         // 注册实验性功能同步处理器
         ClientPlayNetworking.registerGlobalReceiver(FeatureSyncPayload.ID, (payload, context) -> {
             context.client().execute(() -> {
-                top.csituka.youzaiworldcore.feature.ExperimentalFeatures.setEnabled(
-                        payload.featureId(), payload.enabled()
-                );
+                var features = top.csituka.youzaiworldcore.feature.ExperimentalFeatures.class;
+                UUID targetPlayer = payload.targetPlayer();
+
+                // 首次收到同步包时设置客户端玩家 UUID
+                if (targetPlayer != null) {
+                    top.csituka.youzaiworldcore.feature.ExperimentalFeatures.setClientPlayerUuid(targetPlayer);
+                    top.csituka.youzaiworldcore.feature.ExperimentalFeatures.applyPersonalSync(
+                            targetPlayer, payload.featureId(), payload.enabled()
+                    );
+                } else {
+                    top.csituka.youzaiworldcore.feature.ExperimentalFeatures.applyGlobalSync(
+                            payload.featureId(), payload.enabled()
+                    );
+                }
             });
         });
 
