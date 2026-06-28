@@ -138,17 +138,11 @@ public abstract class AccountServerPlayerMixin implements PlayerAuthAccess {
                 );
             }
         } else {
-            // 每 10 秒发送一次提示并同步打开 GUI
+            // 每 10 秒发送一次 GUI 打开数据包（聊天提示已由 GUI 替代，不再重复发送）
             if (yzwc$kickTimer % 200 == 0) {
                 if (yzwc$account != null && yzwc$account.isRegistered()) {
-                    yzwc$player.sendSystemMessage(
-                            Component.translatable("youzaiworldcore.message.account.prompt_login"));
-                    // 发送登录 GUI 打开数据包
                     sendAuthScreenPacket("login");
                 } else {
-                    yzwc$player.sendSystemMessage(
-                            Component.translatable("youzaiworldcore.message.account.prompt_register"));
-                    // 发送注册 GUI 打开数据包
                     sendAuthScreenPacket("register");
                 }
             }
