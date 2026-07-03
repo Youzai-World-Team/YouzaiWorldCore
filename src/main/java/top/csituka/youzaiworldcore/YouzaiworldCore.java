@@ -77,6 +77,7 @@ public class YouzaiworldCore implements ModInitializer {
         AnvilRepairHandler.register();
         VoidStaffTickHandler.register();
         FlyBeaconTickHandler.register();
+        VoidStaffTickHandler.register();
 
         // ===== 初始化账户系统 =====
         AccountDataStorage.initialize();

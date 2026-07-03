@@ -26,6 +26,7 @@
   "item.youzaiworldcore.yz_axe.tooltip": "Sweep attack deals area damage when jumping",
   "item.youzaiworldcore.heart_of_guardianship": "Heart of Guardianship",
   "item.youzaiworldcore.heart_of_guardianship.tooltip": "Carrying this item prevents item drop on death, consumes one on each death",
+  "item.youzaiworldcore.heart_of_guardianship.consumed": "Inventory preserved, 1 Heart of Guardianship consumed!",
   "item.youzaiworldcore.void_staff": "Void Staff",
   "item.youzaiworldcore.void_staff.tooltip": "Right-click to toggle flight mode",
   "item.youzaiworldcore.void_staff.enabled": "Flight Mode Enabled",

@@ -26,6 +26,7 @@
   "item.youzaiworldcore.yz_axe.tooltip": "跳劈时对周围敌人造成范围伤害",
   "item.youzaiworldcore.heart_of_guardianship": "守护之心",
   "item.youzaiworldcore.heart_of_guardianship.tooltip": "携带此物品死亡不会掉落，每次死亡消耗一个本物品",
+  "item.youzaiworldcore.heart_of_guardianship.consumed": "物品栏已保留，消耗 1 守护之心！",
   "item.youzaiworldcore.void_staff": "凭虚法杖",
   "item.youzaiworldcore.void_staff.tooltip": "右键切换飞行模式",
   "item.youzaiworldcore.void_staff.enabled": "飞行模式已启用",
