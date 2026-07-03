@@ -5,3 +5,13 @@ This product incorporates code adapted from Higher Chat, originally created by M
 https://github.com/MDLC01/higher-chat-mc | https://modrinth.com/mod/higher-chat
 The original work is dedicated to the public domain under the Unlicense.
 For the full license text, see the LICENSE.txt file in this distribution.
+
+This product includes font resources from Emoji+ (v2.2) by Fogg05:
+https://github.com/Fogg05/Emoji-Plus
+Licensed under the MIT License. Based on Fluent Emoji by Microsoft Corporation (MIT).
+For the full license text, see the LICENSE.txt file in this distribution.
+
+This product includes font resources from MCsans+ (v4.2) by Fogg05:
+https://github.com/Fogg05/mcsans-plus
+Licensed under the MIT License. Based on NotoSans (SIL Open Font License v1.1).
+For the full license text, see the LICENSE.txt file in this distribution.

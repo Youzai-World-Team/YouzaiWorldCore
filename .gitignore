@@ -25,5 +25,5 @@ bin
 .idea
 .vscode
 .workbuddy
-minecraft
+minecraft_jar
 .workbuddy/memory

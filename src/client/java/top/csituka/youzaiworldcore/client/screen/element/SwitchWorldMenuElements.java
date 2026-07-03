@@ -27,7 +27,7 @@ import java.util.List;
  * │      │      │          │          │ building │
  * │      │      │          │          │ (1×1)    │
  * ├──────┼──────┤          ├──────────┴──────────┤
- * │nether│ end  │ command_zone (1×2)│ market_world (2×2)   │
+ * │nether│ end  │ command_zone (1×2)│ tutorials_world (2×2) │
  * │(1×1) │(1×1) │          │                       │
  * ├──────┼──────┤          │                       │
  * │over- │login │          │                       │
@@ -64,8 +64,8 @@ public class SwitchWorldMenuElements implements MenuElementGroup {
     private static final Identifier COMMAND_ZONE_TEXTURE =
             Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "textures/gui/command_zone.png");
     /** 教程世界（2*2） */
-    private static final Identifier MARKET_WORLD_TEXTURE =
-            Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "textures/gui/market_world.png");
+    private static final Identifier TUTORIALS_WORLD_TEXTURE =
+            Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "textures/gui/tutorials_world.png");
     /** 主世界（1*1） */
     private static final Identifier OVERWORLD_TEXTURE =
             Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "textures/gui/overworld.png");
@@ -207,21 +207,21 @@ public class SwitchWorldMenuElements implements MenuElementGroup {
 
         // ================================================================
         // ROW 2（第三行）：
-        //   [the_nether 1x1]  [the_end 1x1]  [command_zone 1x2]  [market_world 2x2]
+        //   [the_nether 1x1]  [the_end 1x1]  [command_zone 1x2]  [tutorials_world 2x2]
         //   列 0  : the_nether（1x1，位于 survival_world 正下方左侧）
         //   列 1  : the_end（1x1，紧邻 the_nether 右侧）
         //   列 2  : command_zone（1x2，位于 kingdom 正下方，跨行 2-3）
-        //   列 3-4: market_world（2x2，位于 gameplay+building 下方，跨行 2-3）
-        //   注意：market_world 先添加，确保行 2-3 不互相遮挡
+        //   列 3-4: tutorials_world（2x2，位于 gameplay+building 下方，跨行 2-3）
+        //   注意：tutorials_world 先添加，确保行 2-3 不互相遮挡
         // ================================================================
-        /* 教程世界 【market_world.png】（2*2，先添加） */
-        TextureTileButton marketWorldBtn = new TextureTileButton(
+        /* 教程世界 【tutorials_world.png】（2*2，先添加） */
+        TextureTileButton tutorialsWorldBtn = new TextureTileButton(
                 c3, row2Y, tile2, tile2,
-                MARKET_WORLD_TEXTURE,
+                TUTORIALS_WORLD_TEXTURE,
                 () -> showTeleportDialog(screen, "market")
         );
-        marketWorldBtn.setExternalAlpha(alpha);
-        buttons.add(marketWorldBtn);
+        tutorialsWorldBtn.setExternalAlpha(alpha);
+        buttons.add(tutorialsWorldBtn);
 
         /* 下界 【the_nether.png】 */
         TextureTileButton theNetherBtn = new TextureTileButton(
@@ -252,11 +252,11 @@ public class SwitchWorldMenuElements implements MenuElementGroup {
 
         // ================================================================
         // ROW 3（第四行）：
-        //   [overworld 1x1]  [login_hall 1x1]  [command_zone 续]  [market_world 续]
+        //   [overworld 1x1]  [login_hall 1x1]  [command_zone 续]  [tutorials_world 续]
         //   列 0  : overworld（1x1）
         //   列 1  : login_hall（1x1）
         //   列 2  : command_zone 续行
-        //   列 3-4: market_world 续行
+        //   列 3-4: tutorials_world 续行
         // ================================================================
         /* 主世界 【overworld.png】 */
         TextureTileButton overworldBtn = new TextureTileButton(
