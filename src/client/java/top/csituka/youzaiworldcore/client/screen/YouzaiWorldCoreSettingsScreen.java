@@ -321,9 +321,8 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
         // 父类渲染（按钮等）
         super.extractRenderState(guiGraphics, mouseX, mouseY, partialTick);
 
-        // ===== 下拉弹窗后置渲染（在全部 Widget 之后，确保不被遮挡） =====
-        if (debugModeDropdown != null && debugModeDropdown.isOpen()) {
-            // 不切换 stratum（同一 stratum 内后渲染即在上层）
+        // ===== 下拉弹窗后置渲染（含动画，无论是否打开都需持续调用以驱动淡入淡出） =====
+        if (debugModeDropdown != null) {
             debugModeDropdown.renderPopup(guiGraphics, mouseX, mouseY, partialTick);
         }
     }
