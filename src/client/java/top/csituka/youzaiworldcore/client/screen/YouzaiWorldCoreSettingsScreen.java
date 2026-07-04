@@ -57,11 +57,13 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
     private int debugAddrLabelY;
     private int debugPortLabelY;
 
-    /** 调试方式下拉框的选项列表 */
-    private static final List<String> DEBUG_MODE_OPTIONS = List.of("内嵌服务端", "专用服务端");
+    private static final List<String> DEBUG_MODE_OPTIONS = List.of(
+            Component.translatable("screen.youzaiworldcore.settings.debug_mode_embedded").getString(),
+            Component.translatable("screen.youzaiworldcore.settings.debug_mode_dedicated").getString()
+    );
 
     public YouzaiWorldCoreSettingsScreen(Screen parent) {
-        super(Component.translatable("options.youzaiworldcore.settings"));
+        super(Component.translatable("screen.youzaiworldcore.settings.title"));
         this.panorama = new Panorama();
         // 从持久化配置读取初始状态
         this.devModeEnabled = ClientExternalSettings.isDevModeEnabled();
@@ -138,7 +140,7 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
 
         sidebarExpFeatures = new TransparentButton(
                 sidebarX, sidebarY, SIDEBAR_WIDTH, 22,
-                Component.literal("实验性功能"),
+                Component.translatable("screen.youzaiworldcore.settings.sidebar_experimental"),
                 () -> { selectedSection = 0; rebuildWidgets(); }
         );
         sidebarExpFeatures.setTextLeftAligned(true);
@@ -148,7 +150,7 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
 
         sidebarDev = new TransparentButton(
                 sidebarX, sidebarY + 30, SIDEBAR_WIDTH, 22,
-                Component.literal("开发者"),
+                Component.translatable("screen.youzaiworldcore.settings.sidebar_developer"),
                 () -> { selectedSection = 1; rebuildWidgets(); }
         );
         sidebarDev.setTextLeftAligned(true);
@@ -172,7 +174,7 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
             // 启用开发者模式（始终显示）
             devModeToggle = new CheckboxButton(
                     baseX, y, CONTENT_WIDTH, 20,
-                    Component.literal("启用开发者模式"),
+                    Component.translatable("screen.youzaiworldcore.settings.checkbox_dev_mode"),
                     devModeEnabled,
                     () -> {
                         ClientExternalSettings.setDevModeEnabled(!devModeEnabled);
@@ -189,7 +191,7 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
                 // 输出日志
                 logToggle = new CheckboxButton(
                         baseX, y, CONTENT_WIDTH, 20,
-                        Component.literal("输出日志到 latest.log 文件里"),
+                        Component.translatable("screen.youzaiworldcore.settings.checkbox_log_to_file"),
                         logToFile,
                         () -> {
                             ClientExternalSettings.setLogToFile(!logToFile);
@@ -208,7 +210,7 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
                 // "调试方式" 下拉选择框
                 debugModeDropdown = new DropdownButton(
                         baseX, y, CONTENT_WIDTH, SIDEBAR_WIDTH, 20,
-                        Component.literal("调试方式"),
+                        Component.translatable("screen.youzaiworldcore.settings.dropdown_debug_mode"),
                         DEBUG_MODE_OPTIONS,
                         debugModeIndex,
                         false,
@@ -241,7 +243,7 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
                 y += 10;
                 debugAddressInput = new EditBox(
                         this.font, baseX, y, CONTENT_WIDTH, 20,
-                        Component.literal("地址")
+                        Component.translatable("screen.youzaiworldcore.settings.label_address")
                 );
                 debugAddressInput.setValue(debugAddress);
                 debugAddressInput.setResponder(s -> {
@@ -257,7 +259,7 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
                 y += 10;
                 debugPortInput = new EditBox(
                         this.font, baseX, y, CONTENT_WIDTH, 20,
-                        Component.literal("端口")
+                        Component.translatable("screen.youzaiworldcore.settings.label_port")
                 );
                 debugPortInput.setValue(debugPort);
                 debugPortInput.setResponder(s -> {
@@ -285,13 +287,13 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
         int cx = this.width / 2;
 
         // ===== 标题 =====
-        var titleText = Component.translatable("options.youzaiworldcore.settings");
+        var titleText = Component.translatable("screen.youzaiworldcore.settings.title");
         int titleWidth = this.font.width(titleText);
         guiGraphics.text(this.font, titleText, cx - titleWidth / 2, 12, 0xFFFFFFFF, false);
 
         // ===== 说明文字 =====
-        String desc = "在此处您只能调整客户端设置，其他设置请加入服务器并登入账户后";
-        String desc2 = "按下 Shift + F 按键组合打开主菜单，转到 设置 来更改。";
+        var desc = Component.translatable("screen.youzaiworldcore.settings.desc_line1");
+        var desc2 = Component.translatable("screen.youzaiworldcore.settings.desc_line2");
         int descColor = 0xB0FFFFFF;
         guiGraphics.text(this.font, desc, cx - this.font.width(desc) / 2, 40, descColor, false);
         guiGraphics.text(this.font, desc2, cx - this.font.width(desc2) / 2, 52, descColor, false);
@@ -301,20 +303,25 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
 
         if (selectedSection == 0) {
             // 实验性功能
-            guiGraphics.text(this.font, "实验性功能", baseX, baseY, 0xFFFFFFFF, false);
-            guiGraphics.text(this.font, "当前版本无可用的实验性功能~", baseX, baseY + 20, 0x80FFFFFF, false);
+            guiGraphics.text(this.font, Component.translatable("screen.youzaiworldcore.settings.sidebar_experimental"),
+                    baseX, baseY, 0xFFFFFFFF, false);
+            guiGraphics.text(this.font, Component.translatable("screen.youzaiworldcore.settings.experimental_empty"),
+                    baseX, baseY + 20, 0x80FFFFFF, false);
 
         } else if (selectedSection == 1) {
             // 开发者
-            guiGraphics.text(this.font, "开发者", baseX, baseY, 0xFFFFFFFF, false);
-            guiGraphics.text(this.font, "这些设置仅用于开发，默认情况下请不要修改！", baseX, baseY + 14, 0x80FFFFFF, false);
+            guiGraphics.text(this.font, Component.translatable("screen.youzaiworldcore.settings.sidebar_developer"),
+                    baseX, baseY, 0xFFFFFFFF, false);
+            guiGraphics.text(this.font, Component.translatable("screen.youzaiworldcore.settings.dev_warning"),
+                    baseX, baseY + 14, 0x80FFFFFF, false);
 
             if (devModeEnabled && "dedicated".equals(debugModeType)) {
-                // 专用服务端子分栏标题
-                guiGraphics.text(this.font, "调试服务器", baseX, debugSectionLabelY, 0xFFFFCC88, false);
-                // 地址/端口标签
-                guiGraphics.text(this.font, "地址", baseX, debugAddrLabelY, 0xB0FFFFFF, false);
-                guiGraphics.text(this.font, "端口", baseX, debugPortLabelY, 0xB0FFFFFF, false);
+                guiGraphics.text(this.font, Component.translatable("screen.youzaiworldcore.settings.label_debug_section"),
+                        baseX, debugSectionLabelY, 0xFFFFCC88, false);
+                guiGraphics.text(this.font, Component.translatable("screen.youzaiworldcore.settings.label_address"),
+                        baseX, debugAddrLabelY, 0xB0FFFFFF, false);
+                guiGraphics.text(this.font, Component.translatable("screen.youzaiworldcore.settings.label_port"),
+                        baseX, debugPortLabelY, 0xB0FFFFFF, false);
             }
         }
 
