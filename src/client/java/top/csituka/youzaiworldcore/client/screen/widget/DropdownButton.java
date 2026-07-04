@@ -46,8 +46,8 @@ public class DropdownButton extends AbstractWidget {
     // ===== 弹窗淡入淡出动画 =====
     /** 当前动画进度 0.0 ~ 1.0 */
     private float popupAnimAlpha = 0f;
-    /** 动画 lerp 速度 */
-    private static final float POPUP_ANIM_SPEED = 0.12f;
+    /** 动画 lerp 速度（×2.5 加速） */
+    private static final float POPUP_ANIM_SPEED = 0.3f;
 
     /**
      * @param x           按钮左上角 X
@@ -142,6 +142,8 @@ public class DropdownButton extends AbstractWidget {
     public void renderPopup(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
         // 更新淡入淡出动画
         popupAnimAlpha = lerp(popupAnimAlpha, open ? 1f : 0f, POPUP_ANIM_SPEED);
+        // 淡出接近完成时直接归零，避免残留渲染
+        if (!open && popupAnimAlpha < 0.1f) popupAnimAlpha = 0f;
         if (popupAnimAlpha < 0.005f || options.isEmpty()) return;
 
         var font = Minecraft.getInstance().font;
