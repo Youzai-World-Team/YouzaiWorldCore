@@ -98,6 +98,7 @@
   "youzaiworldcore.message.account.auth_header": "§e=== Account Authentication ===",
   "youzaiworldcore.message.account.action_blocked_login": "§cPlease use §6/yzwc account login <password> §cto log in first!",
   "youzaiworldcore.message.account.action_blocked_register": "§cPlease use §6/yzwc account register <password> <confirm> §cto register first!",
+  "youzaiworldcore.message.account.invisibility_blocked": "§cYou cannot use this while invisible! Use §6/yzwc function invisibility false §cto disable invisibility first.",
   "youzaiworldcore.message.command.hello_world": "Hello World!",
   "youzaiworldcore.message.command.teleport_success": "Teleported %s players to %s at (%s, %s, %s)",
   "youzaiworldcore.message.command.unknown_menu": "Unknown menu name: %s. Valid values: main, switch_world, settings, about_me",
@@ -197,5 +198,8 @@
   "screen.youzaiworldcore.login.error_title": "Login Error",
   "screen.youzaiworldcore.login.error_empty": "Password cannot be empty!",
   "screen.youzaiworldcore.login.dialog_ok": "OK",
-  "screen.youzaiworldcore.login.disconnect_message": "Disconnected"
+  "screen.youzaiworldcore.login.disconnect_message": "Disconnected",
+  "title.youzaiworldcore.join_server": "Join Server",
+  "options.youzaiworldcore.installed_mods": "Installed Mods...",
+  "options.youzaiworldcore.settings": "YouzaiWorldCore Settings..."
 }

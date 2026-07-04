@@ -6,7 +6,12 @@
   "client": [
     "KeyboardHandlerMixin",
     "ChatComponentMixin",
-    "HudMixin"
+    "HudMixin",
+    "TitleScreenMixin",
+    "OptionsScreenMixin",
+    "ChatOptionsMixin",
+    "PauseScreenMixin",
+    "ScreenAccessor"
   ],
   "injectors": {
     "defaultRequire": 1

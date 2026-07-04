@@ -20,6 +20,7 @@ import top.csituka.youzaiworldcore.account.util.AuthHelper;
 import top.csituka.youzaiworldcore.account.util.AuthLocationData;
 import top.csituka.youzaiworldcore.account.util.AuthPlayerHelper;
 import top.csituka.youzaiworldcore.account.util.PasswordHasher;
+import top.csituka.youzaiworldcore.invisibility.InvisibilityManager;
 
 import java.time.ZonedDateTime;
 import java.util.Set;
@@ -321,6 +322,11 @@ public class AccountCommands {
         ServerPlayer player = source.getPlayerOrException();
         PlayerAuthAccess authPlayer = (PlayerAuthAccess) (Object) player;
 
+        if (InvisibilityManager.isInvisible(player)) {
+            source.sendFailure(Component.translatable("youzaiworldcore.message.account.invisibility_blocked"));
+            return 0;
+        }
+
         if (!authPlayer.yzwc$isAuthenticated()) {
             source.sendFailure(Component.translatable("youzaiworldcore.message.account.not_logged_in"));
             return 0;
@@ -370,6 +376,11 @@ public class AccountCommands {
         ServerPlayer player = source.getPlayerOrException();
         PlayerAuthAccess authPlayer = (PlayerAuthAccess) (Object) player;
 
+        if (InvisibilityManager.isInvisible(player)) {
+            source.sendFailure(Component.translatable("youzaiworldcore.message.account.invisibility_blocked"));
+            return 0;
+        }
+
         if (!authPlayer.yzwc$isAuthenticated()) {
             source.sendFailure(Component.translatable("youzaiworldcore.message.account.login_first_deactivate"));
             return 0;
@@ -406,6 +417,11 @@ public class AccountCommands {
         CommandSourceStack source = ctx.getSource();
         ServerPlayer player = source.getPlayerOrException();
         PlayerAuthAccess authPlayer = (PlayerAuthAccess) (Object) player;
+
+        if (InvisibilityManager.isInvisible(player)) {
+            source.sendFailure(Component.translatable("youzaiworldcore.message.account.invisibility_blocked"));
+            return 0;
+        }
 
         if (!authPlayer.yzwc$isAuthenticated()) {
             source.sendFailure(Component.translatable("youzaiworldcore.message.account.login_first_change_password"));

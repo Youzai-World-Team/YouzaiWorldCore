@@ -98,6 +98,7 @@
   "youzaiworldcore.message.account.auth_header": "§e=== 账户认证 ===",
   "youzaiworldcore.message.account.action_blocked_login": "§c请先使用 §6/yzwc account login <密码> §c登录！",
   "youzaiworldcore.message.account.action_blocked_register": "§c请先使用 §6/yzwc account register <密码> <确认密码> §c注册！",
+  "youzaiworldcore.message.account.invisibility_blocked": "§c隐身状态下无法执行此操作！请先使用 §6/yzwc function invisibility false §c关闭隐身。",
   "youzaiworldcore.message.command.hello_world": "Hello World!",
   "youzaiworldcore.message.command.teleport_success": "已将 %s 名玩家传送到 %s 的 (%s, %s, %s) 位置",
   "youzaiworldcore.message.command.unknown_menu": "未知的菜单名称: %s。有效值: main, switch_world, settings, about_me",
@@ -197,5 +198,8 @@
   "screen.youzaiworldcore.login.error_title": "登入错误",
   "screen.youzaiworldcore.login.error_empty": "密码不能为空！",
   "screen.youzaiworldcore.login.dialog_ok": "好",
-  "screen.youzaiworldcore.login.disconnect_message": "已断开连接"
+  "screen.youzaiworldcore.login.disconnect_message": "已断开连接",
+  "title.youzaiworldcore.join_server": "加入服务器",
+  "options.youzaiworldcore.installed_mods": "已安装的模组…",
+  "options.youzaiworldcore.settings": "YouzaiWorldCore 设置…"
 }
