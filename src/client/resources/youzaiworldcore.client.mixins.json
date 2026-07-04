@@ -13,6 +13,7 @@
     "PauseScreenMixin",
     "LoadingOverlayMixin",
     "ProgressScreenMixin",
+    "ScreenMixinForProgressBg",
     "AccessibilityOptionsScreenMixin",
     "ScreenAccessor"
   ],

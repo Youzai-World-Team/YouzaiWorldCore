@@ -246,17 +246,17 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
 
         if (selectedSection == 0) {
             // 实验性功能
-            guiGraphics.text(this.font, "实验性功能", baseX, baseY, 0xFFFFFF, false);
+            guiGraphics.text(this.font, "实验性功能", baseX, baseY, 0xFFFFFFFF, false);
             guiGraphics.text(this.font, "当前版本无可用的实验性功能~", baseX, baseY + 20, 0x80FFFFFF, false);
 
         } else if (selectedSection == 1) {
             // 开发者
-            guiGraphics.text(this.font, "开发者", baseX, baseY, 0xFFFFFF, false);
+            guiGraphics.text(this.font, "开发者", baseX, baseY, 0xFFFFFFFF, false);
             guiGraphics.text(this.font, "这些设置仅用于开发，默认情况下请不要修改！", baseX, baseY + 14, 0x80FFFFFF, false);
 
             if (devModeEnabled) {
                 // 调试服务器子分栏标题
-                guiGraphics.text(this.font, "调试服务器", baseX, debugSectionLabelY, 0xFFCC88, false);
+                guiGraphics.text(this.font, "调试服务器", baseX, debugSectionLabelY, 0xFFFFCC88, false);
                 // 地址/端口标签
                 guiGraphics.text(this.font, "地址", baseX, debugAddrLabelY, 0xB0FFFFFF, false);
                 guiGraphics.text(this.font, "端口", baseX, debugPortLabelY, 0xB0FFFFFF, false);
