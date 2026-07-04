@@ -216,51 +216,56 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
                             String newType = (idx == 0) ? "embedded" : "dedicated";
                             ClientExternalSettings.setDebugModeType(newType);
                             debugModeType = newType;
-                            rebuildWidgets();
+                            boolean show = "dedicated".equals(newType);
+                            if (debugAddressInput != null) {
+                                debugAddressInput.setVisible(show);
+                                debugAddressInput.setFocused(false);
+                            }
+                            if (debugPortInput != null) {
+                                debugPortInput.setVisible(show);
+                                debugPortInput.setFocused(false);
+                            }
                         },
                         null
                 );
                 addRenderableWidget(debugModeDropdown);
                 y += 26;
 
-                // ===== 专用服务端子分栏（仅当调试方式为 "dedicated" 时显示） =====
-                if (isDedicated) {
-                    y += 4;
-                    debugSectionLabelY = y;
-                    y += 12;
+                // ===== 专用服务端子分栏（地址/端口输入框，始终创建，按调试模式控制可见性） =====
+                y += 4;
+                debugSectionLabelY = y;
+                y += 12;
 
-                    // 地址输入框 + 标签
-                    debugAddrLabelY = y;
-                    y += 10;
-                    debugAddressInput = new EditBox(
-                            this.font, baseX, y, CONTENT_WIDTH, 20,
-                            Component.literal("地址")
-                    );
-                    debugAddressInput.setValue(debugAddress);
-                    debugAddressInput.setResponder(s -> {
-                        debugAddress = s;
-                        ClientExternalSettings.setDebugAddress(s);
-                    });
-                    addRenderableWidget(debugAddressInput);
-                    y += 26;
+                // 地址输入框 + 标签
+                debugAddrLabelY = y;
+                y += 10;
+                debugAddressInput = new EditBox(
+                        this.font, baseX, y, CONTENT_WIDTH, 20,
+                        Component.literal("地址")
+                );
+                debugAddressInput.setValue(debugAddress);
+                debugAddressInput.setResponder(s -> {
+                    debugAddress = s;
+                    ClientExternalSettings.setDebugAddress(s);
+                });
+                debugAddressInput.setVisible(isDedicated);
+                addRenderableWidget(debugAddressInput);
+                y += 26;
 
-                    // 端口输入框 + 标签
-                    debugPortLabelY = y;
-                    y += 10;
-                    debugPortInput = new EditBox(
-                            this.font, baseX, y, CONTENT_WIDTH, 20,
-                            Component.literal("端口")
-                    );
-                    debugPortInput.setValue(debugPort);
-                    debugPortInput.setResponder(s -> {
-                        debugPort = s;
-                        ClientExternalSettings.setDebugPort(s);
-                    });
-                    addRenderableWidget(debugPortInput);
-                } else {
-                    debugAddressInput = null;
-                    debugPortInput = null;
-                }
+                // 端口输入框 + 标签
+                debugPortLabelY = y;
+                y += 10;
+                debugPortInput = new EditBox(
+                        this.font, baseX, y, CONTENT_WIDTH, 20,
+                        Component.literal("端口")
+                );
+                debugPortInput.setValue(debugPort);
+                debugPortInput.setResponder(s -> {
+                    debugPort = s;
+                    ClientExternalSettings.setDebugPort(s);
+                });
+                debugPortInput.setVisible(isDedicated);
+                addRenderableWidget(debugPortInput);
             } else {
                 logToggle = null;
                 debugModeDropdown = null;

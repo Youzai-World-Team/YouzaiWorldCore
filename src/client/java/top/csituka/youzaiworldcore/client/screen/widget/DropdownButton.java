@@ -43,6 +43,12 @@ public class DropdownButton extends AbstractWidget {
     private final Runnable onToggleOpen;
     private int hoveredOption = -1;
 
+    // ===== 弹窗淡入淡出动画 =====
+    /** 当前动画进度 0.0 ~ 1.0 */
+    private float popupAnimAlpha = 0f;
+    /** 动画 lerp 速度 */
+    private static final float POPUP_ANIM_SPEED = 0.12f;
+
     /**
      * @param x           按钮左上角 X
      * @param y           按钮左上角 Y
@@ -130,13 +136,13 @@ public class DropdownButton extends AbstractWidget {
 
     /**
      * 在后置阶段渲染下拉弹窗，确保弹窗覆盖在所有页面元素之上。
-     * 由 {@code YouzaiWorldCoreSettingsScreen} 在 {@code super.extractRenderState()} 之后、
-     * 新的 stratum 上调用。
+     * 由 {@code YouzaiWorldCoreSettingsScreen} 在 {@code super.extractRenderState()} 之后调用。
+     * 同一 stratum 后渲染即在上层，无需切换 stratum。
      */
     public void renderPopup(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
-        if (!open || options.isEmpty()) return;
-
-        int alpha = (int) (externalAlpha * 255);
+        // 更新淡入淡出动画
+        popupAnimAlpha = lerp(popupAnimAlpha, open ? 1f : 0f, POPUP_ANIM_SPEED);
+        if (popupAnimAlpha < 0.005f || options.isEmpty()) return;
 
         var font = Minecraft.getInstance().font;
         int bx = this.getX();         // 按钮 X
@@ -151,19 +157,30 @@ public class DropdownButton extends AbstractWidget {
         // 弹窗靠右对齐于按钮下方（对齐倒三角箭头）
         int px = bx + bw - pw;
 
-        // 1. 投影（偏移 +3,+3）
+        // 插值：背景色从深色 (0x282828) 到白色 (0xE8E8E8)
+        int interpR = lerpInt(0x28, 0xE8, popupAnimAlpha);
+        int interpG = lerpInt(0x28, 0xE8, popupAnimAlpha);
+        int interpB = lerpInt(0x28, 0xE8, popupAnimAlpha);
+        int bgColor = 0xFF000000 | (interpR << 16) | (interpG << 8) | interpB;
+
+        // 投影、边框同步淡入
+        int shadowColor = lerpColor(0x00000000, POPUP_SHADOW, popupAnimAlpha);
+        int borderColor = lerpColor(0x00B0B0B0, POPUP_BORDER, popupAnimAlpha);
+        int hoverColor = lerpColor(0x00000000, HOVER_BG, popupAnimAlpha);
+        int sepColor = lerpColor(0x00000000, 0x20A0A0A0, popupAnimAlpha);
+
+        // 1. 投影
         fillRoundedRect(guiGraphics,
                 px + SHADOW_OFFSET, dropdownY + SHADOW_OFFSET,
-                pw, popupH, r, POPUP_SHADOW);
+                pw, popupH, r, shadowColor);
 
-        // 2. 弹窗背景（白色圆角矩形）
-        fillRoundedRect(guiGraphics, px, dropdownY, pw, popupH, r, POPUP_BG);
+        // 2. 弹窗背景
+        fillRoundedRect(guiGraphics, px, dropdownY, pw, popupH, r, bgColor);
 
-        // 3. 圆角边框: 先绘制一个比背景大 1px 的圆角矩形（边框色），
-        //    再在内部绘制一个缩小 1px 的圆角矩形（背景色）覆盖中间，只留下 1px 边框
+        // 3. 圆角边框
         fillRoundedRect(guiGraphics, px - 1, dropdownY - 1,
-                pw + 2, popupH + 2, r + 1, POPUP_BORDER);
-        fillRoundedRect(guiGraphics, px, dropdownY, pw, popupH, r, POPUP_BG);
+                pw + 2, popupH + 2, r + 1, borderColor);
+        fillRoundedRect(guiGraphics, px, dropdownY, pw, popupH, r, bgColor);
 
         // 4. 计算悬停项
         hoveredOption = -1;
@@ -172,24 +189,44 @@ public class DropdownButton extends AbstractWidget {
         }
 
         // 5. 逐项渲染
+        int textAlpha = Math.round(0xFF * popupAnimAlpha);
         for (int i = 0; i < options.size(); i++) {
             int optY = dropdownY + i * h;
             int optTextY = optY + (h - 8) / 2;
 
-            // 悬停高亮（圆角遮罩内绘制）
             if (i == hoveredOption) {
-                guiGraphics.fill(px + 1, optY, px + pw - 1, optY + h, HOVER_BG);
+                guiGraphics.fill(px + 1, optY, px + pw - 1, optY + h, hoverColor);
             }
 
-            // 分割线（项之间）
             if (i > 0) {
-                guiGraphics.fill(px + 8, optY, px + pw - 8, optY + 1, 0x20A0A0A0);
+                guiGraphics.fill(px + 8, optY, px + pw - 8, optY + 1, sepColor);
             }
 
-            // 选项文字（无阴影、无加粗）
             int optColor = (i == selectedIndex) ? OPTION_SELECTED_COLOR : OPTION_TEXT_COLOR;
-            guiGraphics.text(font, Component.literal(options.get(i)), px + 10, optTextY, optColor, false);
+            int fadedColor = (textAlpha << 24) | (optColor & 0x00FFFFFF);
+            guiGraphics.text(font, Component.literal(options.get(i)), px + 10, optTextY, fadedColor, false);
         }
+    }
+
+    // ========== 动画工具 ==========
+
+    private static float lerp(float a, float b, float t) {
+        if (Math.abs(a - b) < 0.001f) return b;
+        return a + (b - a) * t;
+    }
+
+    /** 在 [from, to] 之间按 t (0~1) 插值整数 */
+    private static int lerpInt(int from, int to, float t) {
+        return Math.round(from + (to - from) * t);
+    }
+
+    /** 在两种 ARGB 颜色之间插值（按 Alpha 混合） */
+    private static int lerpColor(int from, int to, float t) {
+        int a = lerpInt(from >>> 24, to >>> 24, t);
+        int r = lerpInt((from >> 16) & 0xFF, (to >> 16) & 0xFF, t);
+        int g = lerpInt((from >> 8) & 0xFF, (to >> 8) & 0xFF, t);
+        int b = lerpInt(from & 0xFF, to & 0xFF, t);
+        return (a << 24) | (r << 16) | (g << 8) | b;
     }
 
     // ========== 圆角矩形填充工具 ==========
