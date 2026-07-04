@@ -217,5 +217,9 @@
   "title.youzaiworldcore.join_server": "加入服务器",
   "options.youzaiworldcore.installed_mods": "已安装的模组…",
   "options.youzaiworldcore.settings": "YouzaiWorldCore 设置…",
-  "title.youzaiworldcore.test_page": "YouzaiWorldCore 测试…"
+  "title.youzaiworldcore.test_page": "YouzaiWorldCore 测试…",
+  "gui.toMenu": "返回到标题屏幕",
+  "multiplayer.status.cannot_connect": "无法连接到服务器\n\n这可能是由于服务器未运行或网络连接问题导致的。\n若需要他人协助，请提供以下信息：",
+  "multiplayer.status.cannot_resolve": "无法解析主机名\n\n这可能是由于 DNS 端口转发出现问题或网络连接问题导致的。\n若需要他人协助，请提供以下信息：",
+  "multiplayer.status.incompatible": "版本不兼容！\n\n请下载最新的客户端再尝试加入服务器！"
 }

@@ -1,6 +1,6 @@
 # YouzaiWorldCore — Core Mod of Youzai World
 
-> **Version**: 1.10.0+indev · **Minecraft**: 26.2 · **Loader**: Fabric Loader 0.19.3  
+> **Version**: 1.12.5+indev · **Minecraft**: 26.2 · **Loader**: Fabric Loader 0.19.3  
 > **License**: [Apache-2.0](LICENSE.txt)
 
 <div align="center">
@@ -38,11 +38,13 @@
 
 A complete offline-mode account system supporting password registration, login, logout, and admin management.
 
-- **Password Security**: SHA-256 salted hash storage with login attempt limits (max 5 attempts)
+- **Password Security**: BCrypt salted hash storage (compatible with legacy SHA-256), with login attempt limits (max 5 attempts)
+- **Login Cooldown/Lock**: Configurable lockout duration after failed attempts — supports permanent lock, timed cooldown (auto-unlock), and never-lock modes; admin query/unlock tools available
 - **Session Management**: Configurable session timeout with automatic recovery on reconnection
-- **Location Persistence**: Automatically saves player position on logout and teleports them to the void; restores position precisely on login
-- **Login Hall**: Unauthenticated players are restricted to the custom `login_hall` dimension and cannot move or interact
-- **Admin Tools**: Create offline accounts, reset passwords, delete accounts, configure session timeout
+- **Location Persistence**: Automatically saves player position on logout and teleports them to the void; restores position precisely on login; JSON persistent storage prevents overwrites on reconnect
+- **Login Hall**: Unauthenticated players are restricted to the custom `login_hall` dimension with Mixin-based blocking of movement, interaction, attacking, and chat
+- **Admin Tools**: Create offline accounts, reset passwords, delete accounts, configure session timeout, manage login locks
+- **Invisibility Integration**: Sensitive account operations (logout, deactivate, change password) are blocked while invisible
 
 ### 2. GUI Menu System
 
@@ -68,8 +70,8 @@ A new mineral and tool set, equivalent to diamond-tier tools.
 | **YZ Hoe** | Sneak-use to till a 3×3 area of soil |
 | **YZ Sword** | 4% critical hit chance on attack, double damage |
 | **YZ Axe** | Jump-attack to deal area damage to surrounding enemies |
-| **Heart of Guardianship** | Prevents item drop on death when carried; consumes one per death |
-| **Void Staff** | Right-click to toggle flight mode; auto-disables when hunger reaches zero |
+| **Heart of Guardianship** | Prevents item drop on death when carried (Mixin-based); consumes one per death; threshold warnings at 10/5/3/2/1 remaining |
+| **Void Staff** | Right-click to toggle flight mode; consumes 1 durability per second and hunger every 5 seconds; auto-disables when durability or hunger depletes |
 | **Logo (Youzai World)** | Server identity item |
 
 ### 4. Custom Blocks
@@ -106,19 +108,40 @@ Contains two advancement branches:
 - **Youzai World** (main progression): Covers obtaining YZ ore/ingots/blocks/tools, using the decomposition table, fly beacon, heart of guardianship, void staff, etc.
 - **Fun Little Challenges**: The Cake Is a Lie, Foodie, Get Emerald Blocks, Like Cows and Pigs, Max Luck, Stuck in Cobweb, Way Home, Wearing Copper Armor
 
-### 7. Experimental Feature System
+### 7. Invisibility System
+
+A deceptive player invisibility system — the invisible player completely disappears from other players' Tab lists and vision, with fake leave/join messages broadcast to others.
+
+- **Requirements**: OP level 4 or `youzaiworldcore.command.function.invisibility` permission node; player must be in Creative mode
+- **Behavior**: Appears as leaving to other players → removed from Tab list → entity removed from vision → shows white boss bar "Invisible" to self
+- **State Recovery**: Disabling invisibility restores entity visibility, Tab list appearance, and broadcasts a fake join message
+- **Auto-Cancel**: Automatically forces invisibility off when leaving Creative mode
+- **Disconnect Cleanup**: Cleans up all invisibility state on player disconnect
+
+### 8. Experimental Feature System
 
 Supports server-wide global toggle + player-level override for experimental features, with state configuration persisted to JSON files.
 
-### 8. Placeholder System (Placeholder API)
+### 9. Placeholder System (Placeholder API)
 
-Integrates Placeholder API and LuckPerms placeholders, supporting dynamic/static placeholder resolution.
+Integrates Placeholder API and LuckPerms placeholders, supporting dynamic/static placeholder resolution. The mod registers `%luckperms_*%` placeholder series for use by other mods.
 
-### 9. Permission System
+### 10. Permission System
 
-Provides fine-grained permission control based on **LuckPerms**, with automatic fallback to vanilla OP level checks.
+Provides fine-grained permission control based on **LuckPerms**, with automatic fallback to vanilla OP level checks. Includes granular sub-permissions for account management commands (e.g., `youzaiworldcore.command.account.mgr.*`).
 
-### 10. Preset Item System
+### 11. Client External Settings
+
+A client-side persistent configuration system, stored at `config/youzaiworldcore/client_external_settings.json`:
+
+| Setting | Description |
+|---------|-------------|
+| **Dev Mode** | Enables developer mode features |
+| **Log to File** | Outputs debug logs to latest.log |
+| **Debug Mode Type** | "embedded" (integrated server) / "dedicated" (separate server) |
+| **Debug Address/Port** | Connection config for dedicated server debug mode |
+
+### 12. Preset Item System
 
 Four preset shulker boxes in the creative mode tab, generated with one click:
 
@@ -138,6 +161,15 @@ All commands use `/yzwc` as the root command, built on the Brigadier command fra
 ```
 /yzwc
 ├── (no arguments) — Displays the "Hello World" message
+│
+├── function
+│   └── invisibility <true/false>
+│       ├── Description: Toggle invisibility mode (requires Creative mode)
+│       ├── Permission: youzaiworldcore.command.function.invisibility (or OP level 4)
+│       ├── Requirement: Player must be in Creative mode; auto-cancels when leaving Creative
+│       └── Examples:
+│           /yzwc function invisibility true    ← Enable invisibility
+│           /yzwc function invisibility false   ← Disable invisibility
 │
 ├── teleport_world <targets> <dimension> [x] [y] [z] [yRot] [xRot]
 │   ├── Description: Teleports target player(s) to specified coordinates in a dimension
@@ -169,15 +201,15 @@ All commands use `/yzwc` as the root command, built on the Brigadier command fra
 │   │   • Self-toggle: youzaiworldcore.command.experimental_feature.self
 │   │   • Admin (all/only): youzaiworldcore.command.experimental_feature.admin (or OP level 4)
 │   ├── Parameters:
-│   │   • id — Experimental feature internal ID (e.g., chicken_warden_model)
+│   │   • id — Experimental feature internal ID
 │   │   • true/false — Enable/disable (optional; omit for query mode)
 │   │   • all — Toggle server-wide (requires admin permission)
 │   │   • only <player> — Toggle for a specific player (requires admin permission)
 │   └── Examples:
-│       /yzwc experimental_feature chicken_warden_model          ← Query status
-│       /yzwc experimental_feature chicken_warden_model true     ← Enable for self
-│       /yzwc experimental_feature chicken_warden_model false all ← Disable server-wide
-│       /yzwc experimental_feature chicken_warden_model true only Steve ← Enable for Steve
+│       /yzwc experimental_feature <id>              ← Query status
+│       /yzwc experimental_feature <id> true         ← Enable for self
+│       /yzwc experimental_feature <id> false all    ← Disable server-wide
+│       /yzwc experimental_feature <id> true only Steve ← Enable for Steve
 │
 ├── reload
 │   ├── Description: Reloads mod data at runtime (account data, config, etc.) without restarting the server
@@ -198,22 +230,25 @@ All commands use `/yzwc` as the root command, built on the Brigadier command fra
     │   ├── login <password>
     │   │   ├── Description: Log in to an account
     │   │   ├── Permission: None (everyone)
-    │   │   ├── Restriction: Max 5 attempts
+    │   │   ├── Restriction: Max 5 attempts; locked beyond limit per cooldown config
     │   │   └── Example: /yzwc account login MyPass123
     │   │
     │   ├── logout
     │   │   ├── Description: Log out of an account and teleport to the End void
     │   │   ├── Permission: None (everyone)
+    │   │   ├── Restriction: Cannot logout while invisible
     │   │   └── Example: /yzwc account logout
     │   │
     │   ├── deactivate <password>
     │   │   ├── Description: Deactivate (delete) an account
     │   │   ├── Permission: None (everyone)
+    │   │   ├── Restriction: Cannot deactivate while invisible
     │   │   └── Example: /yzwc account deactivate MyPass123
     │   │
     │   └── change_password <oldPassword> <newPassword> <confirmPassword>
     │       ├── Description: Change account password
     │       ├── Permission: None (everyone)
+    │       ├── Restriction: Cannot change password while invisible
     │       └── Example: /yzwc account change_password Old123 New456 New456
     │
     └── 🔧 Admin Commands (requires OP level 4):
@@ -229,11 +264,25 @@ All commands use `/yzwc` as the root command, built on the Brigadier command fra
         │   ├── Description: Delete a specific player's account
         │   └── Example: /yzwc account mgr delete Steve
         │
-        └── mgr session_timeout [seconds]
-            ├── Description: View or set session timeout duration (0 = disabled)
-            └── Examples:
-                /yzwc account mgr session_timeout          ← View current value
-                /yzwc account mgr session_timeout 3600     ← Set to 1 hour
+        ├── mgr session_timeout [seconds]
+        │   ├── Description: View or set session timeout duration (0 = disabled)
+        │   └── Examples:
+        │       /yzwc account mgr session_timeout          ← View current value
+        │       /yzwc account mgr session_timeout 3600     ← Set to 1 hour
+        │
+        ├── mgr login_cooldown
+        │   ├── Description: Manage login failure lock cooldown system
+        │   ├── (no args)         → Display current cooldown setting
+        │   ├── set <seconds>     → Set cooldown (-1=never lock, 0=permanent, >0=seconds)
+        │   ├── status <player>   → Query a player's lock status
+        │   └── unlock <player>   → Unlock a player's account
+        │   └── Examples:
+        │       /yzwc account mgr login_cooldown                   ← Display settings
+        │       /yzwc account mgr login_cooldown set 600           ← Set to 10 minutes
+        │       /yzwc account mgr login_cooldown status Steve      ← Query Steve
+        │       /yzwc account mgr login_cooldown unlock Steve      ← Unlock Steve
+        │
+        └── (no subcommand) — Displays account management help
 ```
 
 ### Permission Nodes Overview
@@ -243,10 +292,19 @@ All commands use `/yzwc` as the root command, built on the Brigadier command fra
 | `youzaiworldcore.command.teleport_world` | Cross-dimension teleport | OP level 4 |
 | `youzaiworldcore.command.open_menu` | Open GUI menu | OP level 4 |
 | `youzaiworldcore.command.reload` | Mod reload | OP level 4 |
+| `youzaiworldcore.command.function.invisibility` | Invisibility function | OP level 4 |
 | `youzaiworldcore.command.experimental_feature` | Experimental feature (basic) | Everyone |
 | `youzaiworldcore.command.experimental_feature.query` | Experimental feature query | Everyone |
 | `youzaiworldcore.command.experimental_feature.self` | Self-toggle experimental feature | Everyone |
 | `youzaiworldcore.command.experimental_feature.admin` | Admin experimental feature | OP level 4 |
+| `youzaiworldcore.command.account.mgr.create` | Account mgr: create | OP level 4 |
+| `youzaiworldcore.command.account.mgr.reset_password` | Account mgr: reset password | OP level 4 |
+| `youzaiworldcore.command.account.mgr.delete` | Account mgr: delete | OP level 4 |
+| `youzaiworldcore.command.account.mgr.session_timeout` | Account mgr: session timeout | OP level 4 |
+| `youzaiworldcore.command.account.mgr.login_cooldown` | Account mgr: login cooldown | OP level 4 |
+| `youzaiworldcore.command.account.mgr.login_cooldown.status` | Account mgr: lock status query | OP level 4 |
+| `youzaiworldcore.command.account.mgr.login_cooldown.unlock` | Account mgr: unlock account | OP level 4 |
+| `youzaiworldcore.command.account.mgr.*` | All account mgr commands wildcard | OP level 4 |
 | `youzaiworldcore.command.*` | All commands wildcard | — |
 | `youzaiworldcore.*` | Full mod wildcard | — |
 
@@ -256,9 +314,7 @@ All commands use `/yzwc` as the root command, built on the Brigadier command fra
 
 The experimental feature system supports server-wide toggles and per-player overrides, with configuration persisted to `config/youzaiworldcore/experimental_feature/`.
 
-| Internal ID | Name | Description | Provider | Source | Default State | Current State |
-|-------------|------|-------------|----------|--------|---------------|---------------|
-| `chicken_warden_model` | Chicken Warden Model | Modifies the vanilla Warden's texture and model with a "Kunkun" style using the GeckoLib animation engine | [终end](https://space.bilibili.com/397147959) | [KLpbbs](https://klpbbs.com/thread-52966-1-1.html) | ❌ Disabled | Experimental |
+> **Current Status**: No experimental features are currently registered. The `chicken_warden_model` (Chicken Warden) feature was registered in earlier versions but has since been removed.
 
 ### Usage Notes
 
@@ -301,11 +357,12 @@ Menus communicate between server and client via `OpenMenuPayload` (S2C packet, I
 |------------|---------|---------|
 | Minecraft | 26.2 | Base game engine |
 | Fabric Loader | 0.19.3 | Mod loader |
-| Fabric API | 0.152.1+26.2 | Fabric standard API |
-| GeckoLib | 5.5.1 | 3D entity animation (Chicken Warden model) |
-| Placeholder API | 3.1.0-beta.1+26.2 | Text placeholder resolution |
+| Fabric API | 0.154.0+26.2 | Fabric standard API |
+| ModMenu | 20.0.0-beta.4 | Mod menu integration (settings screen) |
+| GeckoLib | 5.5.1 | 3D entity animation (Chicken Warden - removed) |
+| Placeholder API | 3.0.0+ | Text placeholder resolution |
 | Fabric Permissions API | 0.6.1 (bundled) | Cross-mod permission API |
-| LuckPerms API | 5.5 (compile-only, optional runtime) | Advanced permission control |
+| LuckPerms API | 5.5 (compile-only, suggested runtime) | Advanced permission control |
 
 ### Build Requirements
 
@@ -330,15 +387,17 @@ src/
 │   ├── component/                              # Data components
 │   ├── event/                                  # Event listeners
 │   ├── feature/                                # Experimental feature system
+│   ├── invisibility/                           # Invisibility system
 │   ├── item/                                   # Items and tools
-│   ├── luckperms/                              # LuckPerms integration
-│   ├── mixin/                                  # General Mixins
+│   ├── luckperms/                              # LuckPerms permission integration
+│   ├── mixin/                                  # General Mixins (Guardian Heart, etc.)
 │   ├── network/                                # Network packets
 │   ├── placeholders/                           # Placeholder system
 │   └── screen/                                 # Container menus
 │
 ├── client/java/top/csituka/youzaiworldcore/    # Client-only code
 │   ├── client/Client.java                      # Client entry point
+│   ├── config/                                 # Client external settings
 │   ├── network/ClientNetworking.java           # Client network handling
 │   ├── mixin/client/                           # Client Mixins
 │   ├── renderer/entity/                        # Entity renderers

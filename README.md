@@ -1,6 +1,6 @@
 # YouzaiWorldCore — 悠哉世界核心模组
 
-> **版本**: 1.10.0+indev · **Minecraft**: 26.2 · **加载器**: Fabric Loader 0.19.3  
+> **版本**: 1.12.5+indev · **Minecraft**: 26.2 · **加载器**: Fabric Loader 0.19.3  
 > **许可协议**: [Apache-2.0](LICENSE.txt)
 
 <div align="center">
@@ -38,11 +38,13 @@
 
 完整的离线模式账户系统，支持密码注册、登录、登出与管理员管理。
 
-- **密码安全**：SHA-256 加盐哈希存储，支持登录次数限制（最多 5 次）
+- **密码安全**：BCrypt 加盐哈希存储（兼容旧版 SHA-256），支持登录次数限制（最多 5 次）
+- **登录冷却/锁定**：管理员可配置登录失败锁定时长，支持：永久锁定、限时冷却（自动计时解锁）、永不锁定三种模式；提供查询/解锁管理工具
 - **会话管理**：支持可配置的会话超时时间，断线重连自动恢复
-- **位置保存**：登出时自动保存玩家位置并传送至虚空，登录后精确恢复
-- **登录大厅**：未认证玩家被限制在自定义的 `login_hall` 维度，无法移动或交互
-- **管理员工具**：创建离线账户、重置密码、删除账户、设置会话超时
+- **位置保存**：登出时自动保存玩家位置并传送至虚空，登录后精确恢复；支持 JSON 持久化防止重连覆盖
+- **登录大厅**：未认证玩家被限制在自定义的 `login_hall` 维度，通过 Mixin 阻止移动/交互/攻击/聊天等所有操作
+- **管理员工具**：创建离线账户、重置密码、删除账户、设置会话超时、管理登录锁定
+- **隐身联动**：处于隐身状态下无法执行登出/注销/改密等敏感操作
 
 ### 2. GUI 菜单系统
 
@@ -68,8 +70,8 @@
 | **悠哉锄** | 蹲下使用可耕 3×3 的地 |
 | **悠哉剑** | 攻击时有 4% 概率触发暴击，伤害翻倍 |
 | **悠哉斧** | 跳劈时对周围敌人造成范围伤害 |
-| **守护之心** | 携带时死亡不掉落物品，每次死亡消耗一个 |
-| **凭虚法杖** | 右键切换飞行模式，饥饿值为零时自动关闭 |
+| **守护之心** | 携带时死亡不掉落物品（Mixin 实现），每次死亡消耗一个；剩余 10/5/3/2/1 个时发送阈值警告 |
+| **凭虚法杖** | 右键切换飞行模式，每秒消耗 1 点耐久，每 5 秒消耗饥饿值；耐久度和饥饿值耗尽时自动关闭 |
 | **悠哉世界（Logo）** | 服务器标识物品 |
 
 ### 4. 自定义方块
@@ -106,19 +108,40 @@
 - **悠哉世界**（主要进度）：涵盖获取悠哉矿石/锭/块/工具、使用分解台/飞行信标/守护之心/凭虚法杖等
 - **趣味小挑战**：蛋糕是谎言、美食家、绿宝石块、像牛和猪一样、最大幸运、困在蜘蛛网、回家之路、铜盔甲
 
-### 7. 实验性功能系统
+### 7. 隐身系统
+
+一套欺骗性的玩家隐身系统，隐身者从其他玩家的 Tab 列表和视野中完全消失，并模拟伪装进退服消息。
+
+- **启用条件**：需要 OP 4 级或 `youzaiworldcore.command.function.invisibility` 权限节点，且必须在创造模式
+- **功能表现**：对其他玩家显示为退服 → 从 Tab 列表移除 → 从视野中移除实体 → 给自己显示白色 Boss 栏 "隐身中"
+- **状态恢复**：关闭隐身时自动恢复实体可见、Tab 列表显示，并向其他玩家发送伪装的进服消息
+- **自动强制关闭**：玩家退出创造模式时自动强制关闭隐身
+- **登出清理**：玩家断开连接时自动清理隐身残留状态
+
+### 8. 实验性功能系统
 
 支持服务端全局开关 + 玩家级覆写的实验性功能管理系统，状态配置持久化到 JSON 文件。
 
-### 8. 占位符系统（Placeholder API）
+### 9. 占位符系统（Placeholder API）
 
-集成 Placeholder API 和 LuckPerms 占位符，支持动态/静态占位符解析。
+集成 Placeholder API 和 LuckPerms 占位符，支持动态/静态占位符解析。模组注册 `%luckperms_*%` 系列占位符，可供其他模组使用的文本占位符解析。
 
-### 9. 权限系统
+### 10. 权限系统
 
-提供基于 **LuckPerms** 的细粒度权限控制，自动回退至原版 OP 等级检查。
+提供基于 **LuckPerms** 的细粒度权限控制，自动回退至原版 OP 等级检查。支持账户管理命令的细分权限节点（如 `youzaiworldcore.command.account.mgr.*`）。
 
-### 10. 预设物品系统
+### 11. 客户端外部设置
+
+客户端专用的持久化配置系统，配置文件位于 `config/youzaiworldcore/client_external_settings.json`：
+
+| 配置项 | 说明 |
+|--------|------|
+| **开发者模式** | 启用开发者模式功能 |
+| **日志输出** | 输出调试日志到 latest.log |
+| **调试方式** | "embedded" 内嵌服务端 / "dedicated" 专用服务端 |
+| **调试地址/端口** | 专用服务端调试模式的连接配置 |
+
+### 12. 预设物品系统
 
 创造模式标签页中的四大预设潜影盒，一键生成：
 
@@ -138,6 +161,15 @@
 ```
 /yzwc
 ├── (无参数) — 显示 "Hello World" 提示信息
+│
+├── function
+│   └── invisibility <true/false>
+│       ├── 描述：切换隐身状态（在创造模式下）
+│       ├── 权限：youzaiworldcore.command.function.invisibility（或 OP 4 级）
+│       ├── 要求：玩家必须在创造模式；退出创造模式时强制关闭
+│       └── 示例：
+│           /yzwc function invisibility true    ← 开启隐身
+│           /yzwc function invisibility false   ← 关闭隐身
 │
 ├── teleport_world <targets> <dimension> [x] [y] [z] [yRot] [xRot]
 │   ├── 描述：将目标玩家传送到指定维度的坐标
@@ -169,15 +201,15 @@
 │   │   • 自切换：youzaiworldcore.command.experimental_feature.self
 │   │   • 管理（all/only）：youzaiworldcore.command.experimental_feature.admin（或 OP 4 级）
 │   ├── 参数：
-│   │   • id — 实验性功能内部 ID（如 chicken_warden_model）
+│   │   • id — 实验性功能内部 ID
 │   │   • true/false — 启用/禁用（可选，省略则为查询模式）
 │   │   • all — 全服切换（需要管理员权限）
 │   │   • only <player> — 为指定玩家切换（需要管理员权限）
 │   └── 示例：
-│       /yzwc experimental_feature chicken_warden_model          ← 查询状态
-│       /yzwc experimental_feature chicken_warden_model true     ← 为自己启用
-│       /yzwc experimental_feature chicken_warden_model false all ← 全服禁用
-│       /yzwc experimental_feature chicken_warden_model true only Steve ← 为 Steve 启用
+│       /yzwc experimental_feature <id>              ← 查询状态
+│       /yzwc experimental_feature <id> true         ← 为自己启用
+│       /yzwc experimental_feature <id> false all    ← 全服禁用
+│       /yzwc experimental_feature <id> true only Steve ← 为 Steve 启用
 │
 ├── reload
 │   ├── 描述：运行时重新加载模组数据（账户数据、配置等），无需重启服务器
@@ -198,22 +230,25 @@
     │   ├── login <password>
     │   │   ├── 描述：登录账户
     │   │   ├── 权限：无（所有人）
-    │   │   ├── 限制：最多 5 次尝试
+    │   │   ├── 限制：最多 5 次尝试，超限后根据冷却配置锁定
     │   │   └── 示例：/yzwc account login MyPass123
     │   │
     │   ├── logout
     │   │   ├── 描述：登出账户，传送至末地虚空
     │   │   ├── 权限：无（所有人）
+    │   │   ├── 限制：隐身状态下不可登出
     │   │   └── 示例：/yzwc account logout
     │   │
     │   ├── deactivate <password>
     │   │   ├── 描述：注销（删除）账户
     │   │   ├── 权限：无（所有人）
+    │   │   ├── 限制：隐身状态下不可注销
     │   │   └── 示例：/yzwc account deactivate MyPass123
     │   │
     │   └── change_password <oldPassword> <newPassword> <confirmPassword>
     │       ├── 描述：修改密码
     │       ├── 权限：无（所有人）
+    │       ├── 限制：隐身状态下不可修改密码
     │       └── 示例：/yzwc account change_password Old123 New456 New456
     │
     └── 🔧 管理员命令（需 OP 4 级）：
@@ -229,11 +264,25 @@
         │   ├── 描述：删除指定玩家的账户
         │   └── 示例：/yzwc account mgr delete Steve
         │
-        └── mgr session_timeout [seconds]
-            ├── 描述：查看或设置会话超时时间（0 = 关闭）
-            └── 示例：
-                /yzwc account mgr session_timeout          ← 查看当前值
-                /yzwc account mgr session_timeout 3600     ← 设为 1 小时
+        ├── mgr session_timeout [seconds]
+        │   ├── 描述：查看或设置会话超时时间（0 = 关闭）
+        │   └── 示例：
+        │       /yzwc account mgr session_timeout          ← 查看当前值
+        │       /yzwc account mgr session_timeout 3600     ← 设为 1 小时
+        │
+        ├── mgr login_cooldown
+        │   ├── 描述：管理登录失败锁定冷却系统
+        │   ├── (无参数)         → 显示当前冷却设置
+        │   ├── set <seconds>    → 设置冷却时间（-1=永不锁定，0=永久锁定，>0=秒数）
+        │   ├── status <player>  → 查询指定玩家的锁定状态
+        │   └── unlock <player>  → 解锁指定玩家的账户
+        │   └── 示例：
+        │       /yzwc account mgr login_cooldown                   ← 显示设置
+        │       /yzwc account mgr login_cooldown set 600           ← 设为 10 分钟
+        │       /yzwc account mgr login_cooldown status Steve      ← 查询 Steve
+        │       /yzwc account mgr login_cooldown unlock Steve      ← 解锁 Steve
+        │
+        └── (无子命令) — 显示账户管理帮助信息
 ```
 
 ### 权限节点一览
@@ -243,10 +292,19 @@
 | `youzaiworldcore.command.teleport_world` | 跨维度传送 | OP 4 级 |
 | `youzaiworldcore.command.open_menu` | 打开菜单 | OP 4 级 |
 | `youzaiworldcore.command.reload` | 模组重载 | OP 4 级 |
+| `youzaiworldcore.command.function.invisibility` | 隐身功能 | OP 4 级 |
 | `youzaiworldcore.command.experimental_feature` | 实验性功能（基础） | 所有人 |
 | `youzaiworldcore.command.experimental_feature.query` | 实验性功能查询 | 所有人 |
 | `youzaiworldcore.command.experimental_feature.self` | 自切换实验性功能 | 所有人 |
 | `youzaiworldcore.command.experimental_feature.admin` | 管理实验性功能 | OP 4 级 |
+| `youzaiworldcore.command.account.mgr.create` | 账户管理：创建 | OP 4 级 |
+| `youzaiworldcore.command.account.mgr.reset_password` | 账户管理：重置密码 | OP 4 级 |
+| `youzaiworldcore.command.account.mgr.delete` | 账户管理：删除 | OP 4 级 |
+| `youzaiworldcore.command.account.mgr.session_timeout` | 账户管理：会话超时 | OP 4 级 |
+| `youzaiworldcore.command.account.mgr.login_cooldown` | 账户管理：登录冷却 | OP 4 级 |
+| `youzaiworldcore.command.account.mgr.login_cooldown.status` | 账户管理：锁定状态查询 | OP 4 级 |
+| `youzaiworldcore.command.account.mgr.login_cooldown.unlock` | 账户管理：解锁账户 | OP 4 级 |
+| `youzaiworldcore.command.account.mgr.*` | 所有账户管理命令通配符 | OP 4 级 |
 | `youzaiworldcore.command.*` | 所有命令通配符 | — |
 | `youzaiworldcore.*` | 整个模组通配符 | — |
 
@@ -256,9 +314,7 @@
 
 实验性功能系统支持服务端全局开关和玩家级覆写，配置持久化到 `config/youzaiworldcore/experimental_feature/` 目录。
 
-| 内部 ID | 名称 | 功能描述 | 提供者 | 来源 | 默认状态 | 当前状态 |
-|---------|------|---------|-------|------|---------|---------|
-| `chicken_warden_model` | 鸡管者模型 | 修改 Minecraft 原版监守者（Warden）的材质与模型为"坤坤"样式，使用 GeckoLib 动画引擎 | [终end](https://space.bilibili.com/397147959) | [苦力怕论坛](https://klpbbs.com/thread-52966-1-1.html) | ❌ 禁用 | 实验性 |
+> **当前状态**：暂无已注册的实验性功能。`chicken_warden_model`（鸡管者模型）曾在早期版本中注册，现已被移除。
 
 ### 使用注意事项
 
@@ -301,11 +357,12 @@ GUI 菜单系统基于 `MenuScreen` + `MenuElementGroup` 接口实现，支持�
 |------|------|------|
 | Minecraft | 26.2 | 基础游戏引擎 |
 | Fabric Loader | 0.19.3 | 模组加载器 |
-| Fabric API | 0.152.1+26.2 | Fabric 标准 API |
-| GeckoLib | 5.5.1 | 3D 实体动画（鸡管者模型） |
-| Placeholder API | 3.1.0-beta.1+26.2 | 文本占位符解析 |
+| Fabric API | 0.154.0+26.2 | Fabric 标准 API |
+| ModMenu | 20.0.0-beta.4 | 模组菜单集成（设置界面） |
+| GeckoLib | 5.5.1 | 3D 实体动画（鸡管者模型 - 已移除） |
+| Placeholder API | 3.0.0+ | 文本占位符解析 |
 | Fabric Permissions API | 0.6.1（内置） | 跨模组权限 |
-| LuckPerms API | 5.5（编译时，可选运行时） | 高级权限控制 |
+| LuckPerms API | 5.5（编译时，建议运行时） | 高级权限控制 |
 
 ### 构建要求
 
@@ -330,15 +387,17 @@ src/
 │   ├── component/                              # 数据组件
 │   ├── event/                                  # 事件监听器
 │   ├── feature/                                # 实验性功能系统
+│   ├── invisibility/                           # 隐身功能系统
 │   ├── item/                                   # 物品与工具
-│   ├── luckperms/                              # LuckPerms 集成
-│   ├── mixin/                                  # 通用 Mixin
+│   ├── luckperms/                              # LuckPerms 权限集成
+│   ├── mixin/                                  # 通用 Mixin（守护之心等）
 │   ├── network/                                # 网络数据包
 │   ├── placeholders/                           # 占位符系统
 │   └── screen/                                 # 容器菜单
 │
 ├── client/java/top/csituka/youzaiworldcore/    # 客户端专用代码
 │   ├── client/Client.java                      # 客户端入口
+│   ├── config/                                 # 客户端外部设置
 │   ├── network/ClientNetworking.java           # 客户端网络处理
 │   ├── mixin/client/                           # 客户端 Mixin
 │   ├── renderer/entity/                        # 实体渲染器
