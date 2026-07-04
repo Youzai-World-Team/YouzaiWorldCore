@@ -11,6 +11,9 @@
     "OptionsScreenMixin",
     "ChatOptionsMixin",
     "PauseScreenMixin",
+    "LoadingOverlayMixin",
+    "ProgressScreenMixin",
+    "AccessibilityOptionsScreenMixin",
     "ScreenAccessor"
   ],
   "injectors": {
