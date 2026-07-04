@@ -258,6 +258,11 @@ public final class ExperimentalFeatures {
 
     /** 加载客户端配置（自动清理已删除功能的残留配置） */
     public static void loadClientSettings() {
+        // 先将 REGISTRY 中的默认值填入 CLIENT_GLOBAL（register 只写入服务端的 GLOBAL_STATE）
+        for (FeatureEntry entry : REGISTRY.values()) {
+            CLIENT_GLOBAL.putIfAbsent(entry.id(), entry.defaultEnabled());
+        }
+
         Path file = CONFIG_DIR.resolve("client_settings.json");
         if (!Files.exists(file)) {
             saveClientSettings();

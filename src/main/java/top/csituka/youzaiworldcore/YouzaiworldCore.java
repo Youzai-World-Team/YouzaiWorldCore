@@ -36,6 +36,7 @@ import top.csituka.youzaiworldcore.component.ModDataComponents;
 import top.csituka.youzaiworldcore.event.AnvilRepairHandler;
 import top.csituka.youzaiworldcore.event.FlyBeaconTickHandler;
 import top.csituka.youzaiworldcore.event.VoidStaffTickHandler;
+import top.csituka.youzaiworldcore.feature.ExperimentalFeatures;
 import top.csituka.youzaiworldcore.invisibility.InvisibilityManager;
 import top.csituka.youzaiworldcore.invisibility.InvisibilityTickHandler;
 import top.csituka.youzaiworldcore.item.ModCreativeModeTabs;
@@ -105,11 +106,10 @@ public class YouzaiworldCore implements ModInitializer {
         LOGGER.info("隐身功能已初始化");
 
         // ===== 初始化实验性功能系统 =====
-        // 如需注册实验性功能，请在此处调用 ExperimentalFeatures.register()
-        top.csituka.youzaiworldcore.feature.ExperimentalFeatures.loadDefaults();
+        ExperimentalFeatures.loadDefaults();
 
         // 加载服务端持久化配置
-        top.csituka.youzaiworldcore.feature.ExperimentalFeatures.loadServerSettings();
+        ExperimentalFeatures.loadServerSettings();
 
         // ===== 注册所有 /yzwc 命令 =====
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {

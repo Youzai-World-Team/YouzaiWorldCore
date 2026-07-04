@@ -201,5 +201,6 @@
   "screen.youzaiworldcore.login.disconnect_message": "Disconnected",
   "title.youzaiworldcore.join_server": "Join Server",
   "options.youzaiworldcore.installed_mods": "Installed Mods...",
-  "options.youzaiworldcore.settings": "YouzaiWorldCore Settings..."
+  "options.youzaiworldcore.settings": "YouzaiWorldCore Settings...",
+  "title.youzaiworldcore.test_page": "YouzaiWorldCore Test..."
 }
