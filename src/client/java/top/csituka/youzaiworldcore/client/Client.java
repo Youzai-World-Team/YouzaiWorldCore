@@ -3,14 +3,9 @@ package top.csituka.youzaiworldcore.client;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.MenuScreens;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.Identifier;
-import net.minecraft.world.entity.EntityType;
 import org.lwjgl.glfw.GLFW;
-import top.csituka.youzaiworldcore.client.renderer.entity.ChickenWardenRenderer;
 import top.csituka.youzaiworldcore.client.screen.block.DecompositionTableScreen;
 import top.csituka.youzaiworldcore.client.screen.block.FlyBeaconScreen;
 import top.csituka.youzaiworldcore.client.screen.MenuScreen;
@@ -32,11 +27,6 @@ public class Client implements ClientModInitializer {
 
         // 加载客户端持久化配置
         top.csituka.youzaiworldcore.feature.ExperimentalFeatures.loadClientSettings();
-
-        // 注册监守者鸡自定义渲染器（替换原版 Warden 渲染）
-        var wardenHolder = BuiltInRegistries.ENTITY_TYPE.get(Identifier.parse("minecraft:warden")).orElseThrow();
-        EntityType<? extends net.minecraft.world.entity.monster.warden.Warden> wardenType = (EntityType<? extends net.minecraft.world.entity.monster.warden.Warden>) wardenHolder.value();
-        EntityRendererRegistry.register(wardenType, ChickenWardenRenderer::new);
     }
 
     private void onClientTick(Minecraft client) {

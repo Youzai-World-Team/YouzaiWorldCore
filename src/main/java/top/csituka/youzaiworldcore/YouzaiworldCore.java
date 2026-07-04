@@ -105,16 +105,7 @@ public class YouzaiworldCore implements ModInitializer {
         LOGGER.info("隐身功能已初始化");
 
         // ===== 初始化实验性功能系统 =====
-        top.csituka.youzaiworldcore.feature.ExperimentalFeatures.register(
-                "chicken_warden_model",
-                "鸡管者模型",
-                "终end",
-                "https://space.bilibili.com/397147959",
-                "本功能修改了坚守者的材质与模型为坤坤。",
-                "苦力怕论坛",
-                "https://klpbbs.com/thread-52966-1-1.html",
-                false
-        );
+        // 如需注册实验性功能，请在此处调用 ExperimentalFeatures.register()
         top.csituka.youzaiworldcore.feature.ExperimentalFeatures.loadDefaults();
 
         // 加载服务端持久化配置
