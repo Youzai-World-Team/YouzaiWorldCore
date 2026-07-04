@@ -12,7 +12,6 @@
   ],
   "contributors": [
     "why",
-    "zhongbilibili",
     "Everyone who has contributed to this project"
   ],
   "contact": {
@@ -33,6 +32,9 @@
     "main": [
       "top.csituka.youzaiworldcore.YouzaiworldCore",
       "top.csituka.youzaiworldcore.placeholders.LuckPermsFabricPlaceholders"
+    ],
+    "modmenu": [
+      "top.csituka.youzaiworldcore.client.ModMenuIntegration"
     ]
   },
   "mixins": [
@@ -45,16 +47,14 @@
   ],
   "accessWidener": "youzaiworldcore.client.accesswidener",
   "depends": {
-    "fabricloader": ">=${loader_version}",
-    "fabric-api": "*",
-    "fabric-key-mapping-api-v1": "*",
+    "fabric-api": ">=0.154.0+26.2",
     "minecraft": ">=${minecraft_version}",
     "placeholder-api": ">=3.0.0",
-    "geckolib": "*",
-    "modmenu":"*"
+    "geckolib": ">=5.5.1",
+    "modmenu":">=20.0.0-beta.4"
   },
   "suggests": {
-    "luckperms": ">=5.0.0"
+    "luckperms": ">=5.5"
   },
   "custom": {
     "modmenu": {

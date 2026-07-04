@@ -54,6 +54,14 @@ repositories {
             includeGroup('net.luckperms')
         }
     }
+    // TerraformersMC Maven（ModMenu）
+    maven {
+    name = "Terraformers"
+    url = "https://maven.terraformersmc.com/"
+    content {
+            includeGroup('com.terraformersmc')
+        }
+  }
 }
 
 dependencies {
@@ -62,9 +70,6 @@ dependencies {
     implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
     // GeckoLib（监守者鸡模型/动画支持）
-    // 依赖格式：com.geckolib:geckolib-fabric-{minecraft_version}:{geckolib_version}
-    // Group ID 从 GeckoLib 4.x 的 software.bernie.geckolib 变更为 com.geckolib
-    // 版本号在 gradle.properties 中配置
     implementation "com.geckolib:geckolib-fabric-${project.minecraft_version}:${project.geckolib_version}"
 
     // Placeholder API
@@ -74,7 +79,10 @@ dependencies {
     include(implementation('me.lucko:fabric-permissions-api:0.6.1'))
 
     // LuckPerms API
-    compileOnly 'net.luckperms:api:5.5'
+    compileOnly "net.luckperms:api:${project.luckperms_version}"
+
+    // ModMenu
+    compileOnly "com.terraformersmc:modmenu:${project.modmenu_version}"
 }
 
 processResources {

@@ -4,7 +4,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.AbstractOptionSliderButton;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.PopupScreen;
 import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.layouts.FrameLayout;
@@ -300,7 +299,7 @@ public class OptionsScreenMixin {
      * 在 OptionsScreen 表头水平布局中添加「YouzaiWorldCore 设置...」按钮。
      * 仅适用于 {@code inWorld == false}（从标题屏幕打开选项）的情况。
      * <p>
-     * 按钮点击后弹出 {@link PopupScreen}，显示"暂未实现"提示。
+     * 按钮点击后打开 {@link top.csituka.youzaiworldcore.client.screen.YouzaiWorldCoreSettingsScreen}。
      *
      * @return 创建成功的 Button 实例，失败返回 null
      */
@@ -330,21 +329,12 @@ public class OptionsScreenMixin {
 
             GridLayout horizontalGrid = (GridLayout) linearLayoutWrappedField.get(horizontalLayout);
 
-            // 创建按钮
+            // 创建按钮（打开 YouzaiWorldCore 设置页面）
             Button settingsButton = Button.builder(
                     Component.translatable("options.youzaiworldcore.settings"),
                     btn -> {
-                        PopupScreen popup = new PopupScreen.Builder(
-                                screen,
-                                Component.translatable("youzaiworldcore.message.gui.not_implemented_title")
-                        )
-                                .addMessage(Component.translatable("youzaiworldcore.message.gui.not_implemented_desc"))
-                                .addButton(
-                                        Component.translatable("youzaiworldcore.message.gui.confirm_ok"),
-                                        PopupScreen::onClose
-                                )
-                                .build();
-                        minecraft.gui.setScreen(popup);
+                        var settingsScreen = new top.csituka.youzaiworldcore.client.screen.YouzaiWorldCoreSettingsScreen(screen);
+                        minecraft.gui.setScreen(settingsScreen);
                     }
             ).build();
 
