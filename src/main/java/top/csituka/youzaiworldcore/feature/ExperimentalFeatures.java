@@ -159,13 +159,14 @@ public final class ExperimentalFeatures {
 
     // ==================== 服务端配置持久化 ====================
 
-    /** 加载服务端配置（不存在则创建默认） */
+    /** 加载服务端配置（不存在则创建默认；自动清理已删除功能的残留配置） */
     public static void loadServerSettings() {
         Path file = CONFIG_DIR.resolve("server_settings.json");
         if (!Files.exists(file)) {
             saveServerSettings();
             return;
         }
+        boolean cleaned = false;
         try {
             String json = Files.readString(file);
             JsonObject root = GSON.fromJson(json, JsonObject.class);
@@ -173,6 +174,19 @@ public final class ExperimentalFeatures {
 
             JsonObject features = root.getAsJsonObject("features");
             if (features == null) return;
+
+            // 先清理已经删除的功能残留
+            List<String> staleKeys = new ArrayList<>();
+            for (Map.Entry<String, JsonElement> entry : features.entrySet()) {
+                if (!REGISTRY.containsKey(entry.getKey())) {
+                    staleKeys.add(entry.getKey());
+                }
+            }
+            for (String stale : staleKeys) {
+                features.remove(stale);
+                cleaned = true;
+                LOGGER.info("清理服务端配置中已删除的实验性功能: {}", stale);
+            }
 
             for (Map.Entry<String, JsonElement> entry : features.entrySet()) {
                 String id = entry.getKey();
@@ -196,6 +210,13 @@ public final class ExperimentalFeatures {
                 }
             }
             LOGGER.info("已从 {} 加载服务端配置", file);
+
+            if (cleaned) {
+                // 有残留配置被清理，重新保存
+                root.add("features", features);
+                Files.writeString(file, GSON.toJson(root));
+                LOGGER.info("已清理服务端配置中的残留条目并重新保存");
+            }
         } catch (Exception e) {
             LOGGER.error("加载服务端配置失败: {}", e.getMessage());
         }
@@ -235,13 +256,14 @@ public final class ExperimentalFeatures {
 
     // ==================== 客户端配置持久化 ====================
 
-    /** 加载客户端配置 */
+    /** 加载客户端配置（自动清理已删除功能的残留配置） */
     public static void loadClientSettings() {
         Path file = CONFIG_DIR.resolve("client_settings.json");
         if (!Files.exists(file)) {
             saveClientSettings();
             return;
         }
+        boolean cleaned = false;
         try {
             String json = Files.readString(file);
             JsonObject root = GSON.fromJson(json, JsonObject.class);
@@ -256,6 +278,19 @@ public final class ExperimentalFeatures {
             JsonObject features = root.getAsJsonObject("features");
             if (features == null) return;
 
+            // 先清理已经删除的功能残留
+            List<String> staleKeys = new ArrayList<>();
+            for (Map.Entry<String, JsonElement> entry : features.entrySet()) {
+                if (!REGISTRY.containsKey(entry.getKey())) {
+                    staleKeys.add(entry.getKey());
+                }
+            }
+            for (String stale : staleKeys) {
+                features.remove(stale);
+                cleaned = true;
+                LOGGER.info("清理客户端配置中已删除的实验性功能: {}", stale);
+            }
+
             for (Map.Entry<String, JsonElement> entry : features.entrySet()) {
                 String id = entry.getKey();
                 if (!REGISTRY.containsKey(id)) continue;
@@ -269,6 +304,13 @@ public final class ExperimentalFeatures {
                 }
             }
             LOGGER.info("已从 {} 加载客户端配置", file);
+
+            if (cleaned) {
+                // 有残留配置被清理，重新保存
+                root.add("features", features);
+                Files.writeString(file, GSON.toJson(root));
+                LOGGER.info("已清理客户端配置中的残留条目并重新保存");
+            }
         } catch (Exception e) {
             LOGGER.error("加载客户端配置失败: {}", e.getMessage());
         }

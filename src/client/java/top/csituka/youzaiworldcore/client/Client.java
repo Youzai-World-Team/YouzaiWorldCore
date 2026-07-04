@@ -27,6 +27,8 @@ public class Client implements ClientModInitializer {
 
         // 加载客户端持久化配置
         top.csituka.youzaiworldcore.feature.ExperimentalFeatures.loadClientSettings();
+        // 加载客户端外部设置
+        top.csituka.youzaiworldcore.client.config.ClientExternalSettings.load();
     }
 
     private void onClientTick(Minecraft client) {
