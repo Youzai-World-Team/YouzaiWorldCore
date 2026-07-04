@@ -8,6 +8,7 @@ import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.narration.NarratableEntry;
 import net.minecraft.client.gui.screens.ConnectScreen;
 import net.minecraft.client.gui.screens.TitleScreen;
+import net.minecraft.client.gui.screens.worldselection.SelectWorldScreen;
 import net.minecraft.client.multiplayer.ServerData;
 import net.minecraft.client.multiplayer.resolver.ServerAddress;
 import net.minecraft.network.chat.Component;
@@ -17,7 +18,6 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import top.csituka.youzaiworldcore.client.TestScreen;
 import top.csituka.youzaiworldcore.client.config.ClientExternalSettings;
 
 import java.util.ArrayList;
@@ -26,7 +26,9 @@ import java.util.Objects;
 
 /**
  * 修改Minecraft标题界面：
- * - 「单人游戏」替换为「YouzaiWorldCore 测试...」，打开空白测试页
+ * - 「单人游戏」替换为「YouzaiWorldCore 测试...」按钮，行为根据「调试方式」配置变化：
+ *   内嵌服务端 → 打开单人游戏选择世界页面
+ *   专用服务端 → 连接调试服务器（地址/端口从配置读取）
  * - 隐藏其余所有按钮（含模组添加的）
  * - 下方添加「加入服务器」按钮，直连 play.mcyzw.top
  * - 【选项】和【退出游戏】放在同一行
@@ -102,13 +104,32 @@ public class TitleScreenMixin {
         // 3a. YouzaiWorldCore 测试... 按钮（开发者模式启用时显示）
         boolean showTest = ClientExternalSettings.isDevModeEnabled();
         if (showTest) {
-            testButton = Button.builder(
-                    Component.translatable("title.youzaiworldcore.test_page"),
-                    button -> minecraft.gui.setScreen(new TestScreen(
-                            Component.translatable("title.youzaiworldcore.test_page")))
-            ).bounds(
-                    width / 2 - BUTTON_WIDTH / 2, 0, BUTTON_WIDTH, BUTTON_HEIGHT
-            ).build();
+            String debugMode = ClientExternalSettings.getDebugModeType();
+            boolean isDedicated = "dedicated".equals(debugMode);
+
+            if (isDedicated) {
+                // 专用服务端模式：连接到调试服务器
+                String addr = ClientExternalSettings.getDebugAddress();
+                String port = ClientExternalSettings.getDebugPort();
+                String fullAddr = addr + ":" + port;
+                ServerData serverData = new ServerData("Debug Server", fullAddr, ServerData.Type.OTHER);
+                ServerAddress address = ServerAddress.parseString(fullAddr);
+                testButton = Button.builder(
+                        Component.translatable("title.youzaiworldcore.test_page"),
+                        button -> ConnectScreen.startConnecting(
+                                screen, minecraft, address, serverData, false, null)
+                ).bounds(
+                        width / 2 - BUTTON_WIDTH / 2, 0, BUTTON_WIDTH, BUTTON_HEIGHT
+                ).build();
+            } else {
+                // 内嵌服务端模式：打开单人游戏选择世界页面
+                testButton = Button.builder(
+                        Component.translatable("title.youzaiworldcore.test_page"),
+                        button -> minecraft.gui.setScreen(new SelectWorldScreen(screen))
+                ).bounds(
+                        width / 2 - BUTTON_WIDTH / 2, 0, BUTTON_WIDTH, BUTTON_HEIGHT
+                ).build();
+            }
             childrenList.add(testButton);
             renderables.add(testButton);
             narratables.add(testButton);

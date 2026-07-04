@@ -6,11 +6,15 @@ import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.renderer.Panorama;
 import net.minecraft.network.chat.Component;
 import top.csituka.youzaiworldcore.client.config.ClientExternalSettings;
 import top.csituka.youzaiworldcore.client.screen.widget.CheckboxButton;
+import top.csituka.youzaiworldcore.client.screen.widget.DropdownButton;
 import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
+
+import java.util.List;
 
 /**
  * YouzaiWorldCore 设置界面。
@@ -36,19 +40,25 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
     private TransparentButton sidebarDev;
     private CheckboxButton devModeToggle;
     private CheckboxButton logToggle;
+    private DropdownButton debugModeDropdown;
     private EditBox debugAddressInput;
     private EditBox debugPortInput;
 
     // ===== 设置状态（通过 ClientExternalSettings 持久化） =====
     private boolean devModeEnabled;
     private boolean logToFile;
+    private String debugModeType; // "embedded" 或 "dedicated"
     private String debugAddress;
     private String debugPort;
 
     // ===== 文本标签 Y 坐标（由 buildContentWidgets 计算，extractRenderState 使用） =====
+    /** "调试服务器" 子分栏标题 Y（仅专用服务端时显示） */
     private int debugSectionLabelY;
     private int debugAddrLabelY;
     private int debugPortLabelY;
+
+    /** 调试方式下拉框的选项列表 */
+    private static final List<String> DEBUG_MODE_OPTIONS = List.of("内嵌服务端", "专用服务端");
 
     public YouzaiWorldCoreSettingsScreen(Screen parent) {
         super(Component.translatable("options.youzaiworldcore.settings"));
@@ -56,6 +66,7 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
         // 从持久化配置读取初始状态
         this.devModeEnabled = ClientExternalSettings.isDevModeEnabled();
         this.logToFile = ClientExternalSettings.isLogToFile();
+        this.debugModeType = ClientExternalSettings.getDebugModeType();
         this.debugAddress = ClientExternalSettings.getDebugAddress();
         this.debugPort = ClientExternalSettings.getDebugPort();
     }
@@ -95,6 +106,16 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
         return super.charTyped(characterEvent);
     }
 
+    @Override
+    public boolean mouseClicked(MouseButtonEvent mouseButtonEvent, boolean bl) {
+        // ===== 点击弹窗外区域时关闭下拉弹窗 =====
+        if (debugModeDropdown != null && debugModeDropdown.isOpen()
+                && !debugModeDropdown.isPositionInsidePopup(mouseButtonEvent.x(), mouseButtonEvent.y())) {
+            debugModeDropdown.closePopup();
+        }
+        return super.mouseClicked(mouseButtonEvent, bl);
+    }
+
     protected void rebuildWidgets() {
         this.clearWidgets();
 
@@ -107,7 +128,7 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
                 this::onClose
         );
         closeButton.setBackgroundVisible(false);
-        closeButton.setTextColor(0xFFFFFF);
+        closeButton.setTextColor(0xFFFFFFFF);
         closeButton.setTextLeftAligned(true);
         addRenderableWidget(closeButton);
 
@@ -121,7 +142,7 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
                 () -> { selectedSection = 0; rebuildWidgets(); }
         );
         sidebarExpFeatures.setTextLeftAligned(true);
-        sidebarExpFeatures.setTextColor(0xFFFFFF);
+        sidebarExpFeatures.setTextColor(0xFFFFFFFF);
         sidebarExpFeatures.setBackgroundVisible(selectedSection == 0);
         addRenderableWidget(sidebarExpFeatures);
 
@@ -131,7 +152,7 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
                 () -> { selectedSection = 1; rebuildWidgets(); }
         );
         sidebarDev.setTextLeftAligned(true);
-        sidebarDev.setTextColor(0xFFFFFF);
+        sidebarDev.setTextColor(0xFFFFFFFF);
         sidebarDev.setBackgroundVisible(selectedSection == 1);
         addRenderableWidget(sidebarDev);
 
@@ -179,41 +200,70 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
                 addRenderableWidget(logToggle);
                 y += 26;
 
-                // 调试服务器（子分栏）- 标签文字 + 4px 间距
-                y += 4;
-                debugSectionLabelY = y;
-                y += 12;
+                // ===== 调试方式选择 =====
+                boolean isDedicated = "dedicated".equals(debugModeType);
+                int debugModeIndex = isDedicated ? 1 : 0;
 
-                // 地址输入框 + 标签
-                debugAddrLabelY = y;
-                y += 10;
-                debugAddressInput = new EditBox(
-                        this.font, baseX, y, CONTENT_WIDTH, 20,
-                        Component.literal("地址")
+                y += 4;
+                // "调试方式" 下拉选择框
+                debugModeDropdown = new DropdownButton(
+                        baseX, y, CONTENT_WIDTH, SIDEBAR_WIDTH, 20,
+                        Component.literal("调试方式"),
+                        DEBUG_MODE_OPTIONS,
+                        debugModeIndex,
+                        false,
+                        idx -> {
+                            String newType = (idx == 0) ? "embedded" : "dedicated";
+                            ClientExternalSettings.setDebugModeType(newType);
+                            debugModeType = newType;
+                            rebuildWidgets();
+                        },
+                        null
                 );
-                debugAddressInput.setValue(debugAddress);
-                debugAddressInput.setResponder(s -> {
-                    debugAddress = s;
-                    ClientExternalSettings.setDebugAddress(s);
-                });
-                addRenderableWidget(debugAddressInput);
+                addRenderableWidget(debugModeDropdown);
                 y += 26;
 
-                // 端口输入框 + 标签
-                debugPortLabelY = y;
-                y += 10;
-                debugPortInput = new EditBox(
-                        this.font, baseX, y, CONTENT_WIDTH, 20,
-                        Component.literal("端口")
-                );
-                debugPortInput.setValue(debugPort);
-                debugPortInput.setResponder(s -> {
-                    debugPort = s;
-                    ClientExternalSettings.setDebugPort(s);
-                });
-                addRenderableWidget(debugPortInput);
+                // ===== 专用服务端子分栏（仅当调试方式为 "dedicated" 时显示） =====
+                if (isDedicated) {
+                    y += 4;
+                    debugSectionLabelY = y;
+                    y += 12;
+
+                    // 地址输入框 + 标签
+                    debugAddrLabelY = y;
+                    y += 10;
+                    debugAddressInput = new EditBox(
+                            this.font, baseX, y, CONTENT_WIDTH, 20,
+                            Component.literal("地址")
+                    );
+                    debugAddressInput.setValue(debugAddress);
+                    debugAddressInput.setResponder(s -> {
+                        debugAddress = s;
+                        ClientExternalSettings.setDebugAddress(s);
+                    });
+                    addRenderableWidget(debugAddressInput);
+                    y += 26;
+
+                    // 端口输入框 + 标签
+                    debugPortLabelY = y;
+                    y += 10;
+                    debugPortInput = new EditBox(
+                            this.font, baseX, y, CONTENT_WIDTH, 20,
+                            Component.literal("端口")
+                    );
+                    debugPortInput.setValue(debugPort);
+                    debugPortInput.setResponder(s -> {
+                        debugPort = s;
+                        ClientExternalSettings.setDebugPort(s);
+                    });
+                    addRenderableWidget(debugPortInput);
+                } else {
+                    debugAddressInput = null;
+                    debugPortInput = null;
+                }
             } else {
                 logToggle = null;
+                debugModeDropdown = null;
                 debugAddressInput = null;
                 debugPortInput = null;
             }
@@ -254,8 +304,8 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
             guiGraphics.text(this.font, "开发者", baseX, baseY, 0xFFFFFFFF, false);
             guiGraphics.text(this.font, "这些设置仅用于开发，默认情况下请不要修改！", baseX, baseY + 14, 0x80FFFFFF, false);
 
-            if (devModeEnabled) {
-                // 调试服务器子分栏标题
+            if (devModeEnabled && "dedicated".equals(debugModeType)) {
+                // 专用服务端子分栏标题
                 guiGraphics.text(this.font, "调试服务器", baseX, debugSectionLabelY, 0xFFFFCC88, false);
                 // 地址/端口标签
                 guiGraphics.text(this.font, "地址", baseX, debugAddrLabelY, 0xB0FFFFFF, false);
@@ -265,6 +315,12 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
 
         // 父类渲染（按钮等）
         super.extractRenderState(guiGraphics, mouseX, mouseY, partialTick);
+
+        // ===== 下拉弹窗后置渲染（在全部 Widget 之后，确保不被遮挡） =====
+        if (debugModeDropdown != null && debugModeDropdown.isOpen()) {
+            // 不切换 stratum（同一 stratum 内后渲染即在上层）
+            debugModeDropdown.renderPopup(guiGraphics, mouseX, mouseY, partialTick);
+        }
     }
 
     @Override

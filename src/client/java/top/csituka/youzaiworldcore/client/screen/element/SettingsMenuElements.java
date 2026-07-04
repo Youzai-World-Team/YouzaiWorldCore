@@ -137,7 +137,7 @@ public class SettingsMenuElements implements MenuElementGroup {
                 I18n.get("youzaiworldcore.message.gui.difficulty_hard")
         );
         DropdownButton dropdown = new DropdownButton(
-                startX, (int) y, (int) scaledListW, (int) scaledRowH,
+                startX, (int) y, (int) scaledListW, (int) scaledListW, (int) scaledRowH,
                 Component.translatable("screen.youzaiworldcore.settings.dropdown_difficulty"),
                 difficultyOptions, difficultyIndex, dropdownOpen,
                 idx -> difficultyIndex = idx,

@@ -20,8 +20,9 @@ import java.nio.file.Path;
  * <ul>
  *   <li>{@code devModeEnabled} — 启用开发者模式</li>
  *   <li>{@code logToFile} — 输出日志到 latest.log</li>
- *   <li>{@code debugAddress} — 调试服务器地址</li>
- *   <li>{@code debugPort} — 调试服务器端口</li>
+ *   <li>{@code debugModeType} — 调试方式 ("embedded" 内嵌服务端 / "dedicated" 专用服务端)</li>
+ *   <li>{@code debugAddress} — 调试服务器地址（专用服务端）</li>
+ *   <li>{@code debugPort} — 调试服务器端口（专用服务端）</li>
  * </ul>
  */
 public final class ClientExternalSettings {
@@ -35,6 +36,7 @@ public final class ClientExternalSettings {
     // ===== 运行时状态 =====
     private static boolean devModeEnabled = false;
     private static boolean logToFile = false;
+    private static String debugModeType = "embedded"; // "embedded" 或 "dedicated"
     private static String debugAddress = "localhost";
     private static String debugPort = "25565";
 
@@ -48,6 +50,10 @@ public final class ClientExternalSettings {
 
     public static boolean isLogToFile() {
         return logToFile;
+    }
+
+    public static String getDebugModeType() {
+        return debugModeType;
     }
 
     public static String getDebugAddress() {
@@ -67,6 +73,11 @@ public final class ClientExternalSettings {
 
     public static void setLogToFile(boolean value) {
         logToFile = value;
+        save();
+    }
+
+    public static void setDebugModeType(String value) {
+        debugModeType = value;
         save();
     }
 
@@ -99,6 +110,9 @@ public final class ClientExternalSettings {
             if (root.has("logToFile") && !root.get("logToFile").isJsonNull())
                 logToFile = root.get("logToFile").getAsBoolean();
 
+            if (root.has("debugModeType") && !root.get("debugModeType").isJsonNull())
+                debugModeType = root.get("debugModeType").getAsString();
+
             if (root.has("debugAddress") && !root.get("debugAddress").isJsonNull())
                 debugAddress = root.get("debugAddress").getAsString();
 
@@ -118,6 +132,7 @@ public final class ClientExternalSettings {
             JsonObject root = new JsonObject();
             root.addProperty("devModeEnabled", devModeEnabled);
             root.addProperty("logToFile", logToFile);
+            root.addProperty("debugModeType", debugModeType);
             root.addProperty("debugAddress", debugAddress);
             root.addProperty("debugPort", debugPort);
             Files.writeString(CONFIG_FILE, GSON.toJson(root));
