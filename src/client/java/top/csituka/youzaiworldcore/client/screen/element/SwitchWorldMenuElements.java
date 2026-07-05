@@ -1,16 +1,20 @@
 package top.csituka.youzaiworldcore.client.screen.element;
 
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.resources.language.I18n;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import top.csituka.youzaiworldcore.YouzaiworldCore;
 import top.csituka.youzaiworldcore.client.screen.MenuScreen;
 import top.csituka.youzaiworldcore.client.screen.widget.ConfirmationDialog;
 import top.csituka.youzaiworldcore.client.screen.widget.TextureTileButton;
+import top.csituka.youzaiworldcore.dimensionalinventories.WorldPoolTeleportPayload;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 切换世界菜单 — 宫格磁贴布局
@@ -18,6 +22,10 @@ import java.util.List;
  * 按钮排列分为 4 行，呈宫格布局，按钮大小类似于 Windows 10 开始菜单磁贴，
  * 尺寸支持 1*1、1*2、2*1、2*2，使用贴图填充按钮（带圆角），
  * 所有行两侧对齐，间距合理，参考主菜单(MainMenuElements)的写法。
+ *
+ * <p>前 7 个按钮（生存世界/王城/玩法/创造/建筑/指令区/教程世界）已集成维度池传送系统：
+ * 点击时发送 {@link WorldPoolTeleportPayload} 到服务端进行维度池传送。
+ * 其余按钮（下界/末地/主世界/登录大厅）保留旧有的聊天提示行为。</p>
  *
  * 5列布局：
  * ┌─────────────┬──────────┬──────────┬──────────┐
@@ -36,6 +44,17 @@ import java.util.List;
  * └──────┴──────┴──────────┴───────────────────────┘
  */
 public class SwitchWorldMenuElements implements MenuElementGroup {
+
+    // ========== 维度池映射（按钮标识 -> 维度池 ID） ==========
+    private static final Map<String, String> POOL_MAP = Map.of(
+            "survival",   "youzaiworldcore_survival_world_pool",
+            "kingdom",    "youzaiworldcore_main_city_pool",
+            "gameplay",   "youzaiworldcore_gameplay_pool",
+            "creative",   "youzaiworldcore_creation_pool",
+            "building",   "youzaiworldcore_building_pool",
+            "command",    "youzaiworldcore_commands_pool",
+            "marketplace","youzaiworldcore_tutorial_world_pool"
+    );
 
     // ========== 贴图标识符 ==========
     // 以下贴图均放在 textures/gui/ 下，有些尚未放入，但照样引用
@@ -159,7 +178,7 @@ public class SwitchWorldMenuElements implements MenuElementGroup {
         TextureTileButton survivalBtn = new TextureTileButton(
                 c0, row0Y, tile2, tile2,
                 SURVIVAL_WORLD_TEXTURE,
-                () -> showTeleportDialog(screen, "survival")
+                () -> requestPoolTeleport(screen, "survival")
         );
         survivalBtn.setExternalAlpha(alpha);
         buttons.add(survivalBtn);
@@ -168,7 +187,7 @@ public class SwitchWorldMenuElements implements MenuElementGroup {
         TextureTileButton kingdomBtn = new TextureTileButton(
                 c2, row0Y, tile, tile2,
                 KINGDOM_TEXTURE,
-                () -> showTeleportDialog(screen, "kingdom")
+                () -> requestPoolTeleport(screen, "kingdom")
         );
         kingdomBtn.setExternalAlpha(alpha);
         buttons.add(kingdomBtn);
@@ -177,7 +196,7 @@ public class SwitchWorldMenuElements implements MenuElementGroup {
         TextureTileButton gameplayBtn = new TextureTileButton(
                 c3, row0Y, tile, tile2,
                 GAMEPLAY_TEXTURE,
-                () -> showTeleportDialog(screen, "gameplay")
+                () -> requestPoolTeleport(screen, "gameplay")
         );
         gameplayBtn.setExternalAlpha(alpha);
         buttons.add(gameplayBtn);
@@ -186,7 +205,7 @@ public class SwitchWorldMenuElements implements MenuElementGroup {
         TextureTileButton creativeBtn = new TextureTileButton(
                 c4, row0Y, tile, tile,
                 CREATIVE_TEXTURE,
-                () -> showTeleportDialog(screen, "creative")
+                () -> requestPoolTeleport(screen, "creative")
         );
         creativeBtn.setExternalAlpha(alpha);
         buttons.add(creativeBtn);
@@ -200,7 +219,7 @@ public class SwitchWorldMenuElements implements MenuElementGroup {
         TextureTileButton buildingBtn = new TextureTileButton(
                 c4, row1Y, tile, tile,
                 BUILDING_TEXTURE,
-                () -> showTeleportDialog(screen, "building")
+                () -> requestPoolTeleport(screen, "building")
         );
         buildingBtn.setExternalAlpha(alpha);
         buttons.add(buildingBtn);
@@ -218,7 +237,7 @@ public class SwitchWorldMenuElements implements MenuElementGroup {
         TextureTileButton tutorialsWorldBtn = new TextureTileButton(
                 c3, row2Y, tile2, tile2,
                 TUTORIALS_WORLD_TEXTURE,
-                () -> showTeleportDialog(screen, "market")
+                () -> requestPoolTeleport(screen, "marketplace")
         );
         tutorialsWorldBtn.setExternalAlpha(alpha);
         buttons.add(tutorialsWorldBtn);
@@ -245,7 +264,7 @@ public class SwitchWorldMenuElements implements MenuElementGroup {
         TextureTileButton commandZoneBtn = new TextureTileButton(
                 c2, row2Y, tile, tile2,
                 COMMAND_ZONE_TEXTURE,
-                () -> showTeleportDialog(screen, "command")
+                () -> requestPoolTeleport(screen, "command")
         );
         commandZoneBtn.setExternalAlpha(alpha);
         buttons.add(commandZoneBtn);
@@ -280,15 +299,50 @@ public class SwitchWorldMenuElements implements MenuElementGroup {
     }
 
     /**
-     * 显示传送确认对话框
+     * 发送维度池传送请求（7 个维度池按钮使用此方法）。
+     * <p>
+     * 通过 Fabric 网络包 {@link WorldPoolTeleportPayload} 向服务端发送目标池 ID，
+     * 服务端接收后由 {@link top.csituka.youzaiworldcore.dimensionalinventories.DimensionPoolManager}
+     * 执行完整的池切换流程。
+     */
+    private void requestPoolTeleport(MenuScreen screen, String buttonId) {
+        String poolId = POOL_MAP.get(buttonId);
+        if (poolId == null) {
+            var player = Minecraft.getInstance().player;
+            if (player != null) {
+                player.sendSystemMessage(
+                        Component.literal("§c未知的维度池按钮: " + buttonId));
+            }
+            return;
+        }
+
+        ConfirmationDialog dialog = new ConfirmationDialog(
+                I18n.get("youzaiworldcore.message.gui.confirm_teleport_title"),
+                new String[]{I18n.get("youzaiworldcore.message.gui.confirm_teleport_msg1"),
+                        I18n.get("youzaiworldcore.message.gui.confirm_teleport_msg2")},
+                () -> {
+                    ClientPlayNetworking.send(new WorldPoolTeleportPayload(poolId));
+                    Minecraft.getInstance().gui.setScreen(null);
+                },
+                null
+        );
+        screen.showDialog(dialog);
+    }
+
+    /**
+     * 显示传送确认对话框（非维度池按钮使用，仅输出聊天提示）。
+     * 保留给下界/末地/主世界/登录大厅等旧按钮。
      */
     private void showTeleportDialog(MenuScreen screen, String worldId) {
         ConfirmationDialog dialog = new ConfirmationDialog(
                 I18n.get("youzaiworldcore.message.gui.confirm_teleport_title"),
                 new String[]{I18n.get("youzaiworldcore.message.gui.confirm_teleport_msg1"), I18n.get("youzaiworldcore.message.gui.confirm_teleport_msg2")},
                 () -> {
-                    Minecraft.getInstance().player.connection.sendCommand("say 传送" + worldId);
-                    Minecraft.getInstance().setScreenAndShow(null);
+                    var player = Minecraft.getInstance().player;
+                    if (player != null) {
+                        player.connection.sendCommand("say 传送" + worldId);
+                    }
+                    Minecraft.getInstance().gui.setScreen(null);
                 },
                 null
         );

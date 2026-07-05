@@ -34,6 +34,9 @@ import top.csituka.youzaiworldcore.block.entity.ModBlockEntities;
 import top.csituka.youzaiworldcore.command.ExperimentalFeatureCommand;
 import top.csituka.youzaiworldcore.command.InvisibilityCommand;
 import top.csituka.youzaiworldcore.component.ModDataComponents;
+import top.csituka.youzaiworldcore.dimensionalinventories.DimensionPoolSettings;
+import top.csituka.youzaiworldcore.dimensionalinventories.DimensionPoolManager;
+import top.csituka.youzaiworldcore.dimensionalinventories.WorldPoolCommand;
 import top.csituka.youzaiworldcore.event.AnvilRepairHandler;
 import top.csituka.youzaiworldcore.event.FlyBeaconTickHandler;
 import top.csituka.youzaiworldcore.event.VoidStaffTickHandler;
@@ -114,6 +117,30 @@ public class YouzaiworldCore implements ModInitializer {
         });
         LOGGER.info("隐身功能已初始化");
 
+        // ===== 初始化维度池系统 =====
+        DimensionPoolSettings.load();
+        LOGGER.info("维度池系统已初始化");
+
+        // ===== 注册维度池事件 =====
+        net.fabricmc.fabric.api.entity.event.v1.ServerEntityLevelChangeEvents.AFTER_PLAYER_CHANGE_LEVEL.register(
+            (player, origin, destination) -> {
+                DimensionPoolManager.onPlayerChangeDimension(player, origin, destination);
+            }
+        );
+        net.fabricmc.fabric.api.entity.event.v1.ServerEntityLevelChangeEvents.AFTER_ENTITY_CHANGE_LEVEL.register(
+            (originalEntity, newEntity, origin, destination) -> {
+                if (!(newEntity instanceof net.minecraft.server.level.ServerPlayer)) {
+                    DimensionPoolManager.onNonPlayerEntityChangeDimension(originalEntity, newEntity, origin, destination);
+                }
+            }
+        );
+        net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents.AFTER_RESPAWN.register(
+            (oldPlayer, newPlayer, alive) -> {
+                DimensionPoolManager.onPlayerRespawn(oldPlayer, newPlayer, alive);
+            }
+        );
+        LOGGER.info("维度池事件已注册");
+
         // ===== 初始化实验性功能系统 =====
         ExperimentalFeatures.loadDefaults();
 
@@ -124,6 +151,7 @@ public class YouzaiworldCore implements ModInitializer {
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
             ExperimentalFeatureCommand.register(dispatcher);
             InvisibilityCommand.register(dispatcher);
+            WorldPoolCommand.register(dispatcher);
 
             dispatcher.register(Commands.literal("yzwc")
                 // === teleport_world ===
@@ -251,7 +279,7 @@ public class YouzaiworldCore implements ModInitializer {
         final int finalCount = count;
         source.sendSuccess(() ->
                 Component.translatable("youzaiworldcore.message.command.teleport_success",
-                        finalCount, dimensionId, x, y, z),
+                        finalCount, dimensionId.toString(), x, y, z),
                 true
         );
         return finalCount;

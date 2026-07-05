@@ -218,5 +218,14 @@
   "multiplayer.status.cannot_connect": "Unable to connect to the server\n\nThis may be due to the server not running or a network connection issue.\nIf you need assistance from others, please provide the following information:",
   "multiplayer.status.cannot_resolve": "Unable to resolve hostname\n\nThis may be caused by an issue with the DNS port forwarding or a network connection problem.\nIf you need assistance from others, please provide the following information:",
   "multiplayer.status.incompatible": "Version incompatibility!\n\nPlease download the latest client and try to join the server again!",
-  "connect.failed": "Unable to connect to the server.This may be due to the server not running or a network connection issue.If you need assistance from others, please provide the following information:"
+  "connect.failed": "Unable to connect to the server.This may be due to the server not running or a network connection issue.If you need assistance from others, please provide the following information:",
+
+  "youzaiworldcore.message.diminv.pool_not_found": "§cDimension pool not found: %s",
+  "youzaiworldcore.message.diminv.pool_empty": "§cDimension pool %s has no dimensions configured. Please contact an admin.",
+  "youzaiworldcore.message.diminv.already_in_pool": "§eYou are already in the %s dimension pool.",
+  "youzaiworldcore.message.diminv.teleport_success": "§aTeleported to %s dimension pool.",
+  "youzaiworldcore.message.diminv.teleport_command_success": "§aTeleported %s players to %s dimension pool.",
+  "youzaiworldcore.message.diminv.no_pools": "§cNo dimension pools are configured.",
+  "youzaiworldcore.message.diminv.pool_list_header": "§6=== Dimension Pools (%s) ===",
+  "youzaiworldcore.message.diminv.dimension_not_found": "§cTarget dimension %s does not exist or is not loaded."
 }
