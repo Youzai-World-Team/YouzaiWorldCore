@@ -4,6 +4,7 @@ import com.google.gson.*;
 import net.fabricmc.loader.api.FabricLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import top.csituka.youzaiworldcore.YouzaiworldCore;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -24,7 +25,7 @@ import java.util.*;
  */
 public final class ExperimentalFeatures {
 
-    public static final Logger LOGGER = LoggerFactory.getLogger("ExperimentalFeatures");
+    public static final Logger LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/ExperimentalFeatures");
 
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
@@ -63,7 +64,9 @@ public final class ExperimentalFeatures {
                 id, name, provider, providerUrl, description, source, sourceUrl, defaultEnabled
         ));
         GLOBAL_STATE.putIfAbsent(id, defaultEnabled);
-        LOGGER.info("注册实验性功能: {} ({})，默认: {}", name, id, defaultEnabled);
+        if (YouzaiworldCore.logToFile) {
+            LOGGER.info("注册实验性功能: {} ({})，默认: {}", name, id, defaultEnabled);
+        }
     }
 
     public static void loadDefaults() {
@@ -102,7 +105,9 @@ public final class ExperimentalFeatures {
         if (!REGISTRY.containsKey(id)) return false;
         GLOBAL_STATE.put(id, enabled);
         PLAYER_STATE.remove(id);
-        LOGGER.info("实验性功能 '{}' 全局状态: {}", id, enabled);
+        if (YouzaiworldCore.logToFile) {
+            LOGGER.info("实验性功能 '{}' 全局状态: {}", id, enabled);
+        }
         saveServerSettings();
         return true;
     }
@@ -110,7 +115,9 @@ public final class ExperimentalFeatures {
     public static boolean setForPlayer(String id, UUID playerUuid, boolean enabled) {
         if (!REGISTRY.containsKey(id)) return false;
         PLAYER_STATE.computeIfAbsent(id, k -> new HashMap<>()).put(playerUuid, enabled);
-        LOGGER.info("实验性功能 '{}' 玩家 {} 覆写: {}", id, playerUuid, enabled);
+        if (YouzaiworldCore.logToFile) {
+            LOGGER.info("实验性功能 '{}' 玩家 {} 覆写: {}", id, playerUuid, enabled);
+        }
         saveServerSettings();
         return true;
     }
@@ -185,7 +192,9 @@ public final class ExperimentalFeatures {
             for (String stale : staleKeys) {
                 features.remove(stale);
                 cleaned = true;
-                LOGGER.info("清理服务端配置中已删除的实验性功能: {}", stale);
+                if (YouzaiworldCore.logToFile) {
+                    LOGGER.info("清理服务端配置中已删除的实验性功能: {}", stale);
+                }
             }
 
             for (Map.Entry<String, JsonElement> entry : features.entrySet()) {
@@ -209,13 +218,17 @@ public final class ExperimentalFeatures {
                     }
                 }
             }
-            LOGGER.info("已从 {} 加载服务端配置", file);
+            if (YouzaiworldCore.logToFile) {
+                LOGGER.info("已从 {} 加载服务端配置", file);
+            }
 
             if (cleaned) {
                 // 有残留配置被清理，重新保存
                 root.add("features", features);
                 Files.writeString(file, GSON.toJson(root));
-                LOGGER.info("已清理服务端配置中的残留条目并重新保存");
+                if (YouzaiworldCore.logToFile) {
+                    LOGGER.info("已清理服务端配置中的残留条目并重新保存");
+                }
             }
         } catch (Exception e) {
             LOGGER.error("加载服务端配置失败: {}", e.getMessage());
@@ -293,7 +306,9 @@ public final class ExperimentalFeatures {
             for (String stale : staleKeys) {
                 features.remove(stale);
                 cleaned = true;
-                LOGGER.info("清理客户端配置中已删除的实验性功能: {}", stale);
+                if (YouzaiworldCore.logToFile) {
+                    LOGGER.info("清理客户端配置中已删除的实验性功能: {}", stale);
+                }
             }
 
             for (Map.Entry<String, JsonElement> entry : features.entrySet()) {
@@ -308,13 +323,17 @@ public final class ExperimentalFeatures {
                     CLIENT_PERSONAL.put(id, obj.get("personal").getAsBoolean());
                 }
             }
-            LOGGER.info("已从 {} 加载客户端配置", file);
+            if (YouzaiworldCore.logToFile) {
+                LOGGER.info("已从 {} 加载客户端配置", file);
+            }
 
             if (cleaned) {
                 // 有残留配置被清理，重新保存
                 root.add("features", features);
                 Files.writeString(file, GSON.toJson(root));
-                LOGGER.info("已清理客户端配置中的残留条目并重新保存");
+                if (YouzaiworldCore.logToFile) {
+                    LOGGER.info("已清理客户端配置中的残留条目并重新保存");
+                }
             }
         } catch (Exception e) {
             LOGGER.error("加载客户端配置失败: {}", e.getMessage());

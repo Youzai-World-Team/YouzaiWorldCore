@@ -217,5 +217,6 @@
   "gui.toMenu": "Return to Title Screen",
   "multiplayer.status.cannot_connect": "Unable to connect to the server\n\nThis may be due to the server not running or a network connection issue.\nIf you need assistance from others, please provide the following information:",
   "multiplayer.status.cannot_resolve": "Unable to resolve hostname\n\nThis may be caused by an issue with the DNS port forwarding or a network connection problem.\nIf you need assistance from others, please provide the following information:",
-  "multiplayer.status.incompatible": "Version incompatibility!\n\nPlease download the latest client and try to join the server again!"
+  "multiplayer.status.incompatible": "Version incompatibility!\n\nPlease download the latest client and try to join the server again!",
+  "connect.failed": "Unable to connect to the server.This may be due to the server not running or a network connection issue.If you need assistance from others, please provide the following information:"
 }

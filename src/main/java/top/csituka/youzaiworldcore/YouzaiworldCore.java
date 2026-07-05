@@ -27,6 +27,7 @@ import org.slf4j.LoggerFactory;
 import top.csituka.youzaiworldcore.account.command.AccountCommands;
 import top.csituka.youzaiworldcore.account.data.AccountDataStorage;
 import top.csituka.youzaiworldcore.command.ReloadCommand;
+import top.csituka.youzaiworldcore.config.ServerExternalSettings;
 import top.csituka.youzaiworldcore.luckperms.LuckPermsHelper;
 import top.csituka.youzaiworldcore.block.ModBlocks;
 import top.csituka.youzaiworldcore.block.entity.ModBlockEntities;
@@ -53,7 +54,11 @@ public class YouzaiworldCore implements ModInitializer {
 
     public static final String MOD_ID = "youzaiworldcore";
 
-    public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
+    public static final Logger LOGGER = LoggerFactory.getLogger("YouzaiWorldCore");
+
+    /** logToFile 标志：由 {@code config/youzaiworldcore/server_external_settings.json} 控制，
+     * 用于条件化服务端噪音日志（实验性功能注册、配置加载、账户数据详情等） */
+    public static boolean logToFile = false;
 
     public static final ResourceKey<PlacedFeature> YZ_ORE_PLACED_KEY = ResourceKey.create(
             Registries.PLACED_FEATURE,
@@ -67,6 +72,10 @@ public class YouzaiworldCore implements ModInitializer {
 
     @Override
     public void onInitialize() {
+        // ===== 加载服务端外部设置（logToFile 等） =====
+        ServerExternalSettings.load();
+        logToFile = ServerExternalSettings.isLogToFile();
+
         ModDataComponents.initialize();
         ModBlocks.initialize();
         ModBlockEntities.initialize();

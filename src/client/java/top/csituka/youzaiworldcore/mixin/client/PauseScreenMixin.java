@@ -15,6 +15,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import top.csituka.youzaiworldcore.client.config.ClientExternalSettings;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -48,7 +49,7 @@ import java.util.Set;
 @Mixin(PauseScreen.class)
 public class PauseScreenMixin {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger("YouzaiWorldCore|PauseScreenMixin");
+    private static final Logger LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/PauseScreenMixin");
 
     /** 需要在暂停菜单中保留的按钮翻译键 */
     private static final Set<String> KEEP_KEYS = new HashSet<>(Set.of(
@@ -179,7 +180,9 @@ public class PauseScreenMixin {
             disconnectBtn.setHeight(BTN_H);
         }
 
-        LOGGER.debug("Re-paused pause menu: removed {} unwanted buttons, kept 6", toRemove.size());
+        if (ClientExternalSettings.isLogToFile()) {
+            LOGGER.debug("Re-paused pause menu: removed {} unwanted buttons, kept 6", toRemove.size());
+        }
     }
 
     private static String extractTranslationKey(Component component) {

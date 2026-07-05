@@ -33,7 +33,7 @@ import java.util.*;
  */
 public final class InvisibilityManager {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger("InvisibilityManager");
+    private static final Logger LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/InvisibilityManager");
 
     /** 隐身在线的玩家 UUID 集合 */
     private static final Set<UUID> INVISIBLE_PLAYERS = new HashSet<>();

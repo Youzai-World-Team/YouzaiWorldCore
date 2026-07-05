@@ -23,6 +23,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import top.csituka.youzaiworldcore.client.config.ClientExternalSettings;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -40,7 +41,7 @@ import java.util.List;
 @Mixin(OptionsScreen.class)
 public class OptionsScreenMixin {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger("YouzaiWorldCore|OptionsScreenMixin");
+    private static final Logger LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/OptionsScreenMixin");
     private static final String MODS_SCREEN_CLASS = "com.terraformersmc.modmenu.gui.ModsScreen";
     private static boolean modMenuChecked = false;
     private static Class<?> modsScreenClass = null;
@@ -147,7 +148,9 @@ public class OptionsScreenMixin {
             gridChildConstructor.setAccessible(true);
 
             reflectionReady = true;
-            LOGGER.info("Reflection fields initialized for GridLayout manipulation");
+            if (ClientExternalSettings.isLogToFile()) {
+                LOGGER.info("Reflection fields initialized for GridLayout manipulation");
+            }
         } catch (ReflectiveOperationException e) {
             LOGGER.error("Failed to initialize reflection for GridLayout manipulation", e);
         }
@@ -214,7 +217,9 @@ public class OptionsScreenMixin {
                     // 替换列表中的条目（先转型为原始 List 以突破通配符限制）
                     ((List) gridChildren).set(i, newContainer);
 
-                    LOGGER.debug("Replaced telemetry button with mods button in GridLayout at (col={}, row={})", col, row);
+                    if (ClientExternalSettings.isLogToFile()) {
+                        LOGGER.debug("Replaced telemetry button with mods button in GridLayout at (col={}, row={})", col, row);
+                    }
                     return true;
                 }
             }
@@ -278,11 +283,13 @@ public class OptionsScreenMixin {
             while (it.hasNext()) {
                 Object container = it.next();
                 LayoutElement child = (LayoutElement) childWrapperChildField.get(container);
-                if (child instanceof AbstractWidget widget && isWidgetToRemove(widget)) {
+                    if (child instanceof AbstractWidget widget && isWidgetToRemove(widget)) {
                     it.remove();
                     removed = true;
-                    LOGGER.debug("Removed widget from header horizontal layout: {}",
-                            extractTranslationKey(widget.getMessage()));
+                    if (ClientExternalSettings.isLogToFile()) {
+                        LOGGER.debug("Removed widget from header horizontal layout: {}",
+                                extractTranslationKey(widget.getMessage()));
+                    }
                 }
             }
 
@@ -341,7 +348,9 @@ public class OptionsScreenMixin {
             // 添加到 GridLayout（列 0，行 0）
             horizontalGrid.addChild(settingsButton, 0, 0);
 
-            LOGGER.debug("Added YouzaiWorldCore settings button to header");
+            if (ClientExternalSettings.isLogToFile()) {
+                LOGGER.debug("Added YouzaiWorldCore settings button to header");
+            }
             return settingsButton;
         } catch (ReflectiveOperationException e) {
             LOGGER.error("Failed to add settings button to header", e);

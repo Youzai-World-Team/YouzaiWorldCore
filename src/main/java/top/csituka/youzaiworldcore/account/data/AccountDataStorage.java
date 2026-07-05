@@ -21,7 +21,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  */
 public class AccountDataStorage {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(YouzaiworldCore.MOD_ID + "/AccountStorage");
+    private static final Logger LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/AccountDataStorage");
 
     private static Path STORAGE_FILE;
     private static Path CONFIG_FILE;
@@ -81,7 +81,9 @@ public class AccountDataStorage {
         }
         STORAGE_FILE = configDir.resolve("data");
         CONFIG_FILE = configDir.resolve("config");
-        LOGGER.info("账户数据文件路径: {}", STORAGE_FILE.toAbsolutePath());
+        if (YouzaiworldCore.logToFile) {
+            LOGGER.info("账户数据文件路径: {}", STORAGE_FILE.toAbsolutePath());
+        }
         loadConfig();
         loadFromDisk();
     }
@@ -124,7 +126,9 @@ public class AccountDataStorage {
         try {
             CACHE.clear();
             if (!Files.exists(STORAGE_FILE)) {
-                LOGGER.info("账户数据文件不存在，将创建新的: {}", STORAGE_FILE.toAbsolutePath());
+                if (YouzaiworldCore.logToFile) {
+                    LOGGER.info("账户数据文件不存在，将创建新的: {}", STORAGE_FILE.toAbsolutePath());
+                }
                 saveToDisk(); // 创建空文件
                 return;
             }
@@ -139,7 +143,9 @@ public class AccountDataStorage {
             if (loaded != null) {
                 CACHE.putAll(loaded);
             }
-            LOGGER.info("已加载 {} 个账户", CACHE.size());
+            if (YouzaiworldCore.logToFile) {
+                LOGGER.info("已加载 {} 个账户", CACHE.size());
+            }
         } catch (IOException e) {
             LOGGER.error("读取账户数据失败", e);
         } finally {
@@ -261,11 +267,15 @@ public class AccountDataStorage {
      * @return 重新加载后的账户数量
      */
     public static int reload() {
-        LOGGER.info("正在从磁盘重新加载账户数据...");
+        if (YouzaiworldCore.logToFile) {
+            LOGGER.info("正在从磁盘重新加载账户数据...");
+        }
         loadConfig();
         loadFromDisk();
         int count = CACHE.size();
-        LOGGER.info("账户数据重载完成，共 {} 个账户", count);
+        if (YouzaiworldCore.logToFile) {
+            LOGGER.info("账户数据重载完成，共 {} 个账户", count);
+        }
         return count;
     }
 

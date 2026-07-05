@@ -29,6 +29,9 @@ public class Client implements ClientModInitializer {
         top.csituka.youzaiworldcore.feature.ExperimentalFeatures.loadClientSettings();
         // 加载客户端外部设置
         top.csituka.youzaiworldcore.client.config.ClientExternalSettings.load();
+        // 单人模式集成服务器：遵照客户端设置覆盖 logToFile 标志
+        top.csituka.youzaiworldcore.YouzaiworldCore.logToFile =
+                top.csituka.youzaiworldcore.client.config.ClientExternalSettings.isLogToFile();
     }
 
     private void onClientTick(Minecraft client) {

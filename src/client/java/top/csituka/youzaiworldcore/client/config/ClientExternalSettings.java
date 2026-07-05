@@ -27,7 +27,7 @@ import java.nio.file.Path;
  */
 public final class ClientExternalSettings {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger("ClientExternalSettings");
+    private static final Logger LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/ClientExternalSettings");
 
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final Path CONFIG_FILE = FabricLoader.getInstance()
@@ -73,6 +73,8 @@ public final class ClientExternalSettings {
 
     public static void setLogToFile(boolean value) {
         logToFile = value;
+        // 单人模式集成服务器：运行时同步到服务端 logToFile 标志
+        top.csituka.youzaiworldcore.YouzaiworldCore.logToFile = value;
         save();
     }
 
@@ -119,7 +121,9 @@ public final class ClientExternalSettings {
             if (root.has("debugPort") && !root.get("debugPort").isJsonNull())
                 debugPort = root.get("debugPort").getAsString();
 
-            LOGGER.info("已从 {} 加载客户端外部设置", CONFIG_FILE);
+            if (logToFile) {
+                LOGGER.info("已从 {} 加载客户端外部设置", CONFIG_FILE);
+            }
         } catch (Exception e) {
             LOGGER.error("加载客户端外部设置失败: {}", e.getMessage());
         }
