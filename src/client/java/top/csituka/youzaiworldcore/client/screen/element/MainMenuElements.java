@@ -57,7 +57,7 @@ public class MainMenuElements implements MenuElementGroup {
      * Calculate the best tile size that fits the available screen height.
      */
     private int calcTileSize(int screenHeight) {
-        int gridStartY = screenHeight / 2 - 85;
+        int gridStartY = screenHeight / 2 - 95;
         int availableHeight = screenHeight - gridStartY - 20;
         int tile = (availableHeight - 3 * GAP) / 4;
         return Math.max(MIN_TILE_SIZE, Math.min(MAX_TILE_SIZE, tile));
@@ -86,7 +86,7 @@ public class MainMenuElements implements MenuElementGroup {
         int c4 = gridStartX + 4 * (tile + gap);
 
         // Grid starts ~10px below subtitle (subtitle at height/2 - 95)
-        int gridTop = screenHeight / 2 - 85;
+        int gridTop = screenHeight / 2 - 95;
         // Ensure grid doesn't overflow top
         if (gridTop - tile2 < 20) {
             gridTop = 20 + tile2;
