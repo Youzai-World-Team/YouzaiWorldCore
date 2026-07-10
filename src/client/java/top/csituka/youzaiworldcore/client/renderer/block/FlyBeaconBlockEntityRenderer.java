@@ -17,11 +17,11 @@ import top.csituka.youzaiworldcore.block.entity.FlyBeaconBlockEntity;
  */
 public class FlyBeaconBlockEntityRenderer implements BlockEntityRenderer<FlyBeaconBlockEntity, FlyBeaconBlockEntityRenderState> {
 
-    /** 边界水平半宽（方块）。比 BEACON_RADIUS(10) 少半格，与方块边缘对齐 */
-    private static final float HALF = 9.5f;
+    /** 边界水平半宽（方块）。比 BEACON_RADIUS(10) 少半格外扩一像素 */
+    private static final float HALF = 9.5f + 0.0625f;
 
     /** 边界底部相对信标 Y 的偏移 */
-    private static final float HEIGHT_BOTTOM = -1.0f;
+    private static final float HEIGHT_BOTTOM = -0.0625f;
 
     /** 边界顶部相对信标 Y — 极高值模拟无限向上 */
     private static final float HEIGHT_TOP = 1024.0f;
