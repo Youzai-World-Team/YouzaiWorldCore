@@ -131,7 +131,8 @@ public class YouzaiworldCore implements ModInitializer {
                 "为不同维度池提供独立的玩家背包、状态和游戏模式管理",
                 "GitHub",
                 "https://github.com/Youzai-World-Team/YouzaiWorldCore",
-                false  // 默认关闭
+                false,  // 默认关闭
+                true    // 服务端控制
         );
         LOGGER.info("实验性功能 'dimension_pool' 已注册");
 
