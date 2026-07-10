@@ -6,6 +6,7 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.NotNull;
 import top.csituka.youzaiworldcore.YouzaiworldCore;
+import top.csituka.youzaiworldcore.util.DebugLogger;
 
 /**
  * 客户端 -> 服务端：请求传送到指定维度池。
@@ -23,8 +24,17 @@ public record WorldPoolTeleportPayload(String poolId) implements CustomPacketPay
 
     public static final StreamCodec<RegistryFriendlyByteBuf, WorldPoolTeleportPayload> STREAM_CODEC =
             StreamCodec.of(
-                    (buf, payload) -> buf.writeUtf(payload.poolId),
-                    buf -> new WorldPoolTeleportPayload(buf.readUtf())
+                    (buf, payload) -> {
+                        DebugLogger.entering("WorldPoolPayload", "encode", "poolId=" + payload.poolId);
+                        buf.writeUtf(payload.poolId);
+                        DebugLogger.exiting("WorldPoolPayload", "encode");
+                    },
+                    buf -> {
+                        DebugLogger.entering("WorldPoolPayload", "decode");
+                        String poolId = buf.readUtf();
+                        DebugLogger.exiting("WorldPoolPayload", "decode", "poolId=" + poolId);
+                        return new WorldPoolTeleportPayload(poolId);
+                    }
             );
 
     @Override

@@ -7,6 +7,8 @@ import net.fabricmc.loader.api.FabricLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import top.csituka.youzaiworldcore.util.DebugLogger;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -68,11 +70,13 @@ public final class ClientExternalSettings {
 
     public static void setDevModeEnabled(boolean value) {
         devModeEnabled = value;
+        DebugLogger.setDevModeEnabled(value);
         save();
     }
 
     public static void setLogToFile(boolean value) {
         logToFile = value;
+        DebugLogger.setLogToFile(value);
         // 单人模式集成服务器：运行时同步到服务端 logToFile 标志
         top.csituka.youzaiworldcore.YouzaiworldCore.logToFile = value;
         save();
@@ -124,6 +128,9 @@ public final class ClientExternalSettings {
             if (logToFile) {
                 LOGGER.info("已从 {} 加载客户端外部设置", CONFIG_FILE);
             }
+            // 同步开发者模式与日志开关到 DebugLogger
+            DebugLogger.setDevModeEnabled(devModeEnabled);
+            DebugLogger.setLogToFile(logToFile);
         } catch (Exception e) {
             LOGGER.error("加载客户端外部设置失败: {}", e.getMessage());
         }

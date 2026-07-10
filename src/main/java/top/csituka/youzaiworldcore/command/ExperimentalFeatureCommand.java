@@ -17,6 +17,7 @@ import net.minecraft.server.level.ServerPlayer;
 import top.csituka.youzaiworldcore.feature.ExperimentalFeatures;
 import top.csituka.youzaiworldcore.luckperms.LuckPermsHelper;
 import top.csituka.youzaiworldcore.network.FeatureSyncPayload;
+import top.csituka.youzaiworldcore.util.DebugLogger;
 
 import java.util.Collection;
 import java.util.List;
@@ -42,6 +43,7 @@ public class ExperimentalFeatureCommand {
     public static final String PERMISSION_ADMIN = "youzaiworldcore.command.experimental_feature.admin";
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
+        DebugLogger.entering("ExperimentalFeatureCommand", "register");
         // /yzwc experimental_feature <id> — 查询（所有人，但可通过 LuckPerms 控制）
         var queryNode = Commands.argument("id", StringArgumentType.word())
                 .requires(src -> LuckPermsHelper.checkPermission(
@@ -75,18 +77,23 @@ public class ExperimentalFeatureCommand {
                         .then(queryNode)
                 )
         );
+        DebugLogger.exiting("ExperimentalFeatureCommand", "register");
     }
 
     // ==================== 查询 ====================
 
     private static int queryFeature(CommandContext<CommandSourceStack> ctx) {
+        DebugLogger.entering("ExperimentalFeatureCommand", "queryFeature",
+                "id=" + StringArgumentType.getString(ctx, "id"));
         String id = StringArgumentType.getString(ctx, "id");
         ExperimentalFeatures.FeatureEntry entry = ExperimentalFeatures.getEntry(id);
 
         if (entry == null) {
+            DebugLogger.branch("ExperimentalFeatureCommand", "entry is null", true, "id=" + id);
             ctx.getSource().sendFailure(
                     Component.translatable("youzaiworldcore.message.command.experimental_feature.not_found", id)
             );
+            DebugLogger.exiting("ExperimentalFeatureCommand", "queryFeature", "0 (not found)");
             return 0;
         }
 
@@ -123,6 +130,7 @@ public class ExperimentalFeatureCommand {
         text.append(Component.literal("§6================================"));
 
         ctx.getSource().sendSuccess(() -> text, false);
+        DebugLogger.exiting("ExperimentalFeatureCommand", "queryFeature", "1 (success)");
         return 1;
     }
 
@@ -131,12 +139,17 @@ public class ExperimentalFeatureCommand {
     private static int setFeatureSelf(CommandContext<CommandSourceStack> ctx, boolean enabled)
             throws CommandSyntaxException {
         String id = StringArgumentType.getString(ctx, "id");
+        DebugLogger.entering("ExperimentalFeatureCommand", "setFeatureSelf",
+                "id=" + id + ", enabled=" + enabled);
         if (ExperimentalFeatures.getEntry(id) == null) {
+            DebugLogger.branch("ExperimentalFeatureCommand", "feature not found", true, "id=" + id);
             ctx.getSource().sendFailure(
                     Component.translatable("youzaiworldcore.message.command.experimental_feature.not_found", id)
             );
+            DebugLogger.exiting("ExperimentalFeatureCommand", "setFeatureSelf", "0 (not found)");
             return 0;
         }
+        DebugLogger.branch("ExperimentalFeatureCommand", "feature found", false, "id=" + id);
 
         ServerPlayer player = ctx.getSource().getPlayerOrException();
         UUID playerUuid = player.getUUID();
@@ -153,6 +166,7 @@ public class ExperimentalFeatureCommand {
                 Component.literal("§a已为自己" + statusKey + "实验性功能: §f" + id),
                 false
         );
+        DebugLogger.exiting("ExperimentalFeatureCommand", "setFeatureSelf", "1 (success)");
         return 1;
     }
 
@@ -160,12 +174,17 @@ public class ExperimentalFeatureCommand {
 
     private static int setFeatureAll(CommandContext<CommandSourceStack> ctx, boolean enabled) {
         String id = StringArgumentType.getString(ctx, "id");
+        DebugLogger.entering("ExperimentalFeatureCommand", "setFeatureAll",
+                "id=" + id + ", enabled=" + enabled);
         if (ExperimentalFeatures.getEntry(id) == null) {
+            DebugLogger.branch("ExperimentalFeatureCommand", "feature not found", true, "id=" + id);
             ctx.getSource().sendFailure(
                     Component.translatable("youzaiworldcore.message.command.experimental_feature.not_found", id)
             );
+            DebugLogger.exiting("ExperimentalFeatureCommand", "setFeatureAll", "0 (not found)");
             return 0;
         }
+        DebugLogger.branch("ExperimentalFeatureCommand", "feature found", false, "id=" + id);
 
         // 设置全局状态并清空所有玩家覆写
         ExperimentalFeatures.setGlobal(id, enabled);
@@ -181,6 +200,7 @@ public class ExperimentalFeatureCommand {
                 Component.literal("§a已全服" + statusKey + "实验性功能: §f" + id),
                 true
         );
+        DebugLogger.exiting("ExperimentalFeatureCommand", "setFeatureAll", "1 (success)");
         return 1;
     }
 
@@ -189,12 +209,17 @@ public class ExperimentalFeatureCommand {
     private static int setFeatureForPlayer(CommandContext<CommandSourceStack> ctx, boolean enabled,
                                             ServerPlayer target) {
         String id = StringArgumentType.getString(ctx, "id");
+        DebugLogger.entering("ExperimentalFeatureCommand", "setFeatureForPlayer",
+                "id=" + id + ", enabled=" + enabled + ", target=" + target.getName().getString());
         if (ExperimentalFeatures.getEntry(id) == null) {
+            DebugLogger.branch("ExperimentalFeatureCommand", "feature not found", true, "id=" + id);
             ctx.getSource().sendFailure(
                     Component.translatable("youzaiworldcore.message.command.experimental_feature.not_found", id)
             );
+            DebugLogger.exiting("ExperimentalFeatureCommand", "setFeatureForPlayer", "0 (not found)");
             return 0;
         }
+        DebugLogger.branch("ExperimentalFeatureCommand", "feature found", false, "id=" + id);
 
         UUID targetUuid = target.getUUID();
         ExperimentalFeatures.setForPlayer(id, targetUuid, enabled);
@@ -209,6 +234,7 @@ public class ExperimentalFeatureCommand {
                         + " §a" + statusKey + " §f实验性功能: " + id),
                 true
         );
+        DebugLogger.exiting("ExperimentalFeatureCommand", "setFeatureForPlayer", "1 (success)");
         return 1;
     }
 }

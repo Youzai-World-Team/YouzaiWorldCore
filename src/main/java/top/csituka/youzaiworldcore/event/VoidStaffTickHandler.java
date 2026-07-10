@@ -13,6 +13,7 @@ import org.jspecify.annotations.NonNull;
 import top.csituka.youzaiworldcore.component.ModDataComponents;
 import top.csituka.youzaiworldcore.item.ModItems;
 import top.csituka.youzaiworldcore.item.tool.VoidStaffItem;
+import top.csituka.youzaiworldcore.util.DebugLogger;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -62,11 +63,15 @@ public class VoidStaffTickHandler implements ServerTickEvents.StartTick {
      */
     @Override
     public void onStartTick(@NonNull MinecraftServer server) {
+        DebugLogger.entering("VoidStaffTickHandler", "onStartTick",
+                "tickCounter=" + tickCounter + ", hungerTickCounter=" + hungerTickCounter);
         tickCounter++;
         hungerTickCounter++;
 
         // ========== 1. 每秒执行：检查手持状态与耐久消耗 ==========
-        if (tickCounter >= TICKS_PER_SECOND) {
+        boolean secondElapsed = tickCounter >= TICKS_PER_SECOND;
+        DebugLogger.branch("VoidStaffTickHandler", "tickCounter >= TICKS_PER_SECOND (" + TICKS_PER_SECOND + ")", secondElapsed);
+        if (secondElapsed) {
             tickCounter = 0; // 重置计数器，进入下一秒周期
 
             for (ServerPlayer player : server.getPlayerList().getPlayers()) {
@@ -77,16 +82,22 @@ public class VoidStaffTickHandler implements ServerTickEvents.StartTick {
 
                 UUID playerId = player.getUUID();
 
-                // 仅处理当前被标记为“正在使用凭虚法杖飞行”的玩家
-                if (VoidStaffItem.isFlying(playerId)) {
+                // 仅处理当前被标记为"正在使用凭虚法杖飞行"的玩家
+                boolean isFlying = VoidStaffItem.isFlying(playerId);
+                DebugLogger.branch("VoidStaffTickHandler", "player " + playerId + " is flying", isFlying);
+                if (isFlying) {
                     // 情况1：玩家不再手持凭虚法杖
-                    if (!VoidStaffItem.hasVoidStaffInHand(player)) {
+                    boolean hasStaffInHand = VoidStaffItem.hasVoidStaffInHand(player);
+                    DebugLogger.branch("VoidStaffTickHandler", "player " + playerId + " has void staff in hand", hasStaffInHand);
+                    if (!hasStaffInHand) {
                         // 关闭飞行标记
                         VoidStaffItem.setFlying(playerId, false);
                         // 清除背包中所有凭虚法杖的 active 组件
                         clearAllVoidStaffActiveState(player);
                         // 如果玩家同时处于飞行信标的飞行范围内，则恢复普通飞行（由信标接管）
-                        if (FlyBeaconTickHandler.isBeaconFlying(playerId)) {
+                        boolean isBeaconFlying = FlyBeaconTickHandler.isBeaconFlying(playerId);
+                        DebugLogger.branch("VoidStaffTickHandler", "player " + playerId + " is beacon flying", isBeaconFlying);
+                        if (isBeaconFlying) {
                             VoidStaffItem.disableFlight(player);
                         }
                         // 发送动作栏提示：法杖已禁用
@@ -94,6 +105,7 @@ public class VoidStaffTickHandler implements ServerTickEvents.StartTick {
                                 Component.translatable("item.youzaiworldcore.void_staff.disabled")
                                         .withStyle(ChatFormatting.RED)
                         );
+                        DebugLogger.info("VoidStaffTickHandler", "Disabled void staff for " + player.getName().getString() + " (no longer in hand)");
                     }
                     // 情况2：玩家手持法杖且正在飞行，且未站在地面上（即真正在飞）
                     else if (player.getAbilities().flying && !player.onGround()) {
@@ -101,7 +113,10 @@ public class VoidStaffTickHandler implements ServerTickEvents.StartTick {
                         if (flyCore != null) {
                             // 增加 1 点耐久损耗
                             int newDamage = flyCore.getDamageValue() + 1;
-                            if (newDamage >= flyCore.getMaxDamage()) {
+                            boolean durabilityDepleted = newDamage >= flyCore.getMaxDamage();
+                            DebugLogger.branch("VoidStaffTickHandler", "durability depleted for " + player.getName().getString(),
+                                    durabilityDepleted, "newDamage=" + newDamage + "/" + flyCore.getMaxDamage());
+                            if (durabilityDepleted) {
                                 // 耐久耗尽：销毁当前法杖，关闭飞行
                                 flyCore.shrink(1);
                                 VoidStaffItem.setFlying(playerId, false);
@@ -113,6 +128,7 @@ public class VoidStaffTickHandler implements ServerTickEvents.StartTick {
                                         Component.translatable("item.youzaiworldcore.void_staff.disabled")
                                                 .withStyle(ChatFormatting.RED)
                                 );
+                                DebugLogger.info("VoidStaffTickHandler", "Void staff depleted for " + player.getName().getString());
                             } else {
                                 // 未耗尽：仅增加损伤值
                                 flyCore.setDamageValue(newDamage);
@@ -125,13 +141,16 @@ public class VoidStaffTickHandler implements ServerTickEvents.StartTick {
                     if (player.getAbilities().flying && !grantedAchievementPlayers.contains(playerId)) {
                         grantUsedVoidStaffAdvancement(player, server);
                         grantedAchievementPlayers.add(playerId);
+                        DebugLogger.info("VoidStaffTickHandler", "Granted void staff advancement to " + player.getName().getString());
                     }
                 }
             }
         }
 
         // ========== 2. 每 5 秒执行：消耗饥饿值/饱和度 ==========
-        if (hungerTickCounter >= TICKS_PER_HUNGER) {
+        boolean hungerPeriod = hungerTickCounter >= TICKS_PER_HUNGER;
+        DebugLogger.branch("VoidStaffTickHandler", "hungerTickCounter >= TICKS_PER_HUNGER (" + TICKS_PER_HUNGER + ")", hungerPeriod);
+        if (hungerPeriod) {
             hungerTickCounter = 0; // 重置计数器，进入下一个 5 秒周期
 
             for (ServerPlayer player : server.getPlayerList().getPlayers()) {
@@ -142,9 +161,13 @@ public class VoidStaffTickHandler implements ServerTickEvents.StartTick {
                 UUID playerId = player.getUUID();
 
                 // 仅对正在飞行且真正在空中的玩家扣除饥饿
-                if (VoidStaffItem.isFlying(playerId) && player.getAbilities().flying && !player.onGround()) {
+                boolean shouldConsumeHunger = VoidStaffItem.isFlying(playerId) && player.getAbilities().flying && !player.onGround();
+                DebugLogger.branch("VoidStaffTickHandler", "should consume hunger for " + player.getName().getString(), shouldConsumeHunger);
+                if (shouldConsumeHunger) {
                     float saturation = player.getFoodData().getSaturationLevel();
                     int food = player.getFoodData().getFoodLevel();
+                    DebugLogger.branch("VoidStaffTickHandler", "saturation > 0 for " + player.getName().getString(), saturation > 0,
+                            "saturation=" + saturation + ", food=" + food);
 
                     // 优先扣除饱和度
                     if (saturation > 0) {
@@ -165,10 +188,13 @@ public class VoidStaffTickHandler implements ServerTickEvents.StartTick {
                                 Component.translatable("item.youzaiworldcore.void_staff.no_hunger")
                                         .withStyle(ChatFormatting.RED)
                         );
+                        DebugLogger.info("VoidStaffTickHandler", "Disabled flight for " + player.getName().getString() + " (no hunger)");
                     }
                 }
             }
         }
+
+        DebugLogger.exiting("VoidStaffTickHandler", "onStartTick");
     }
 
     /**
@@ -221,25 +247,35 @@ public class VoidStaffTickHandler implements ServerTickEvents.StartTick {
      * </ul>
      */
     public static void register() {
+        DebugLogger.entering("VoidStaffTickHandler", "register");
+
         // 注册 tick 处理器
         ServerTickEvents.START_SERVER_TICK.register(INSTANCE);
 
         // 玩家断开连接时清除飞行标记，避免内存泄漏
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
+            DebugLogger.entering("VoidStaffTickHandler", "DISCONNECT handler");
             UUID playerId = handler.player.getUUID();
             VoidStaffItem.setFlying(playerId, false);
             grantedAchievementPlayers.remove(playerId);
+            DebugLogger.info("VoidStaffTickHandler", "Player disconnected, cleared fly state: " + playerId);
+            DebugLogger.exiting("VoidStaffTickHandler", "DISCONNECT handler");
         });
 
         // 玩家加入时清理背包中凭虚法杖的 active 组件（以防上次异常断线残留）
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
+            DebugLogger.entering("VoidStaffTickHandler", "JOIN handler");
             ServerPlayer player = handler.player;
             for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
                 ItemStack stack = player.getInventory().getItem(i);
                 if (stack.getItem() == ModItems.VOID_STAFF && stack.has(ModDataComponents.VOID_STAFF_ACTIVE)) {
                     stack.remove(ModDataComponents.VOID_STAFF_ACTIVE);
+                    DebugLogger.info("VoidStaffTickHandler", "Cleaned up stale ACTIVE component on " + player.getName().getString() + " slot " + i);
                 }
             }
+            DebugLogger.exiting("VoidStaffTickHandler", "JOIN handler");
         });
+
+        DebugLogger.exiting("VoidStaffTickHandler", "register");
     }
 }

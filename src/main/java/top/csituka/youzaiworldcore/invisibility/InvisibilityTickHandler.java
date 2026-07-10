@@ -6,6 +6,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.GameType;
 import org.jspecify.annotations.NonNull;
+import top.csituka.youzaiworldcore.util.DebugLogger;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -58,6 +59,8 @@ public class InvisibilityTickHandler implements ServerTickEvents.StartTick {
     }
 
     public static void register() {
+        DebugLogger.entering("InvisibilityTickHandler", "register");
         ServerTickEvents.START_SERVER_TICK.register(INSTANCE);
+        DebugLogger.exiting("InvisibilityTickHandler", "register");
     }
 }

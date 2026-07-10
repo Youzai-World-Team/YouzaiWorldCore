@@ -16,6 +16,7 @@ import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import org.jspecify.annotations.NonNull;
 import top.csituka.youzaiworldcore.screen.DecompositionTableMenu;
+import top.csituka.youzaiworldcore.util.DebugLogger;
 
 /**
  * 分解台方块实体（BlockEntity）。
@@ -41,6 +42,7 @@ public class DecompositionTableBlockEntity extends BlockEntity implements Contai
      */
     public DecompositionTableBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.DECOMPOSITION_TABLE, pos, state);
+        DebugLogger.entering("DecompositionTableBlockEntity", "constructor", "pos=" + pos);
     }
 
     // ==================== Container 接口实现 ====================
@@ -115,8 +117,11 @@ public class DecompositionTableBlockEntity extends BlockEntity implements Contai
      */
     @Override
     public void setItem(int slot, @NonNull ItemStack stack) {
+        DebugLogger.entering("DecompositionTableBlockEntity", "setItem",
+                "slot=" + slot + ", item=" + stack.getItem());
         items.set(slot, stack);
         setChanged(); // 标记数据已修改，需要持久化
+        DebugLogger.exiting("DecompositionTableBlockEntity", "setItem");
     }
 
     /**
@@ -137,17 +142,29 @@ public class DecompositionTableBlockEntity extends BlockEntity implements Contai
      */
     @Override
     public boolean stillValid(@NonNull Player player) {
+        DebugLogger.entering("DecompositionTableBlockEntity", "stillValid",
+                "player=" + player.getName().getString());
         if (this.level == null) {
+            DebugLogger.branch("DecompositionTableBlockEntity", "level is null", true);
+            DebugLogger.exiting("DecompositionTableBlockEntity", "stillValid", "false");
             return false;
         }
         // 检查当前方块实体是否仍与世界中存放的一致（防止被替换）
         if (this.level.getBlockEntity(this.worldPosition) != this) {
+            DebugLogger.branch("DecompositionTableBlockEntity", "block entity mismatch", true);
+            DebugLogger.exiting("DecompositionTableBlockEntity", "stillValid", "false");
             return false;
         }
         // 检查玩家与方块中心的距离是否 ≤ 8 格（64 平方距离）
-        return player.distanceToSqr(this.worldPosition.getX() + 0.5,
+        boolean inRange = player.distanceToSqr(this.worldPosition.getX() + 0.5,
                 this.worldPosition.getY() + 0.5,
                 this.worldPosition.getZ() + 0.5) <= 64.0;
+        DebugLogger.branch("DecompositionTableBlockEntity", "player in range", inRange,
+                "distanceSq=" + player.distanceToSqr(this.worldPosition.getX() + 0.5,
+                        this.worldPosition.getY() + 0.5,
+                        this.worldPosition.getZ() + 0.5));
+        DebugLogger.exiting("DecompositionTableBlockEntity", "stillValid", String.valueOf(inRange));
+        return inRange;
     }
 
     /**
@@ -155,7 +172,9 @@ public class DecompositionTableBlockEntity extends BlockEntity implements Contai
      */
     @Override
     public void clearContent() {
+        DebugLogger.entering("DecompositionTableBlockEntity", "clearContent");
         items.clear();
+        DebugLogger.exiting("DecompositionTableBlockEntity", "clearContent");
     }
 
     /**
@@ -165,6 +184,8 @@ public class DecompositionTableBlockEntity extends BlockEntity implements Contai
      * @return 容器自身
      */
     public Container getInventory() {
+        DebugLogger.entering("DecompositionTableBlockEntity", "getInventory");
+        DebugLogger.exiting("DecompositionTableBlockEntity", "getInventory", "self");
         return this;
     }
 
@@ -178,8 +199,10 @@ public class DecompositionTableBlockEntity extends BlockEntity implements Contai
      */
     @Override
     protected void saveAdditional(@NonNull ValueOutput output) {
+        DebugLogger.entering("DecompositionTableBlockEntity", "saveAdditional", "pos=" + worldPosition);
         super.saveAdditional(output);
         ContainerHelper.saveAllItems(output, items); // 保存物品栏所有槽位
+        DebugLogger.exiting("DecompositionTableBlockEntity", "saveAdditional");
     }
 
     /**
@@ -190,8 +213,10 @@ public class DecompositionTableBlockEntity extends BlockEntity implements Contai
      */
     @Override
     protected void loadAdditional(@NonNull ValueInput input) {
+        DebugLogger.entering("DecompositionTableBlockEntity", "loadAdditional", "pos=" + worldPosition);
         super.loadAdditional(input);
         ContainerHelper.loadAllItems(input, items); // 加载物品栏所有槽位
+        DebugLogger.exiting("DecompositionTableBlockEntity", "loadAdditional");
     }
 
     // ==================== MenuProvider 接口实现 ====================
@@ -219,6 +244,10 @@ public class DecompositionTableBlockEntity extends BlockEntity implements Contai
      */
     @Override
     public AbstractContainerMenu createMenu(int containerId, @NonNull Inventory playerInventory, @NonNull Player player) {
-        return new DecompositionTableMenu(containerId, playerInventory, this);
+        DebugLogger.entering("DecompositionTableBlockEntity", "createMenu",
+                "containerId=" + containerId + ", player=" + player.getName().getString());
+        DecompositionTableMenu menu = new DecompositionTableMenu(containerId, playerInventory, this);
+        DebugLogger.exiting("DecompositionTableBlockEntity", "createMenu");
+        return menu;
     }
 }

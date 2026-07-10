@@ -20,6 +20,7 @@ import net.minecraft.world.level.storage.ValueOutput;
 import org.jspecify.annotations.NonNull;
 import top.csituka.youzaiworldcore.screen.FlyBeaconMenu;
 import top.csituka.youzaiworldcore.block.FlyBeaconBlock;
+import top.csituka.youzaiworldcore.util.DebugLogger;
 
 import java.util.Collections;
 import java.util.Set;
@@ -70,14 +71,18 @@ public class FlyBeaconBlockEntity extends BlockEntity implements Container, Menu
 
     public FlyBeaconBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.FLY_BEACON, pos, state);
+        DebugLogger.entering("FlyBeaconBlockEntity", "constructor", "pos=" + pos);
     }
 
     public static void serverTick(Level level, BlockPos pos, BlockState state, FlyBeaconBlockEntity blockEntity) {
         if (level.isClientSide()) {
             return;
         }
+        DebugLogger.entering("FlyBeaconBlockEntity", "serverTick", "pos=" + pos + ", active=" + blockEntity.active + ", energy=" + blockEntity.energy);
 
         if (blockEntity.active && blockEntity.energy > 0) {
+            DebugLogger.branch("FlyBeaconBlockEntity", "active with energy", true,
+                    "energy=" + blockEntity.energy);
             activeBeacons.add(pos.immutable());
             blockEntity.drainTickCounter++;
             if (blockEntity.drainTickCounter >= ENERGY_DRAIN_INTERVAL) {
@@ -85,6 +90,9 @@ public class FlyBeaconBlockEntity extends BlockEntity implements Container, Menu
                 blockEntity.energy = Math.max(0, blockEntity.energy - ENERGY_DRAIN_PER_TICK);
                 blockEntity.setChanged();
                 if (blockEntity.energy <= 0) {
+                    DebugLogger.branch("FlyBeaconBlockEntity", "energy depleted", true);
+                    DebugLogger.stateChange("FlyBeaconBlockEntity", "flyBeacon@" + pos.toShortString(),
+                            "active", true, false);
                     blockEntity.active = false;
                     activeBeacons.remove(pos.immutable());
                     BlockState newState = state.setValue(FlyBeaconBlock.ACTIVE, false);
@@ -93,6 +101,10 @@ public class FlyBeaconBlockEntity extends BlockEntity implements Container, Menu
                 }
             }
         } else if (blockEntity.active) {
+            DebugLogger.branch("FlyBeaconBlockEntity", "active but no energy", true,
+                    "energy=" + blockEntity.energy);
+            DebugLogger.stateChange("FlyBeaconBlockEntity", "flyBeacon@" + pos.toShortString(),
+                    "active", true, false);
             blockEntity.active = false;
             activeBeacons.remove(pos.immutable());
             BlockState newState = state.setValue(FlyBeaconBlock.ACTIVE, false);
@@ -100,6 +112,7 @@ public class FlyBeaconBlockEntity extends BlockEntity implements Container, Menu
             blockEntity.setChanged();
             blockEntity.drainTickCounter = 0;
         } else {
+            DebugLogger.branch("FlyBeaconBlockEntity", "inactive", false);
             activeBeacons.remove(pos.immutable());
             blockEntity.drainTickCounter = 0;
         }
@@ -214,9 +227,13 @@ public class FlyBeaconBlockEntity extends BlockEntity implements Container, Menu
     }
 
     public void setActive(boolean active) {
+        DebugLogger.entering("FlyBeaconBlockEntity", "setActive",
+                "targetActive=" + active + ", currentActive=" + this.active + ", energy=" + energy);
         if (active && energy <= 0) {
+            DebugLogger.branch("FlyBeaconBlockEntity", "cannot activate - no energy", true);
             return;
         }
+        boolean oldActive = this.active;
         this.active = active;
         this.setChanged();
         if (active) {
@@ -230,6 +247,9 @@ public class FlyBeaconBlockEntity extends BlockEntity implements Container, Menu
             this.level.setBlock(this.worldPosition, newState, 3);
             this.level.sendBlockUpdated(this.worldPosition, currentState, newState, 3);
         }
+        DebugLogger.stateChange("FlyBeaconBlockEntity", "flyBeacon@" + worldPosition.toShortString(),
+                "active", oldActive, active);
+        DebugLogger.exiting("FlyBeaconBlockEntity", "setActive");
     }
 
     public static Set<BlockPos> getActiveBeacons() {

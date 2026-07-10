@@ -8,6 +8,7 @@ import net.minecraft.network.chat.Component;
 import top.csituka.youzaiworldcore.YouzaiworldCore;
 import top.csituka.youzaiworldcore.account.data.AccountDataStorage;
 import top.csituka.youzaiworldcore.luckperms.LuckPermsHelper;
+import top.csituka.youzaiworldcore.util.DebugLogger;
 
 /**
  * 模组重载命令 /yzwc reload
@@ -26,6 +27,7 @@ public class ReloadCommand {
      * @param dispatcher Brigadier 命令调度器
      */
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
+        DebugLogger.entering("ReloadCommand", "register");
         dispatcher.register(Commands.literal("yzwc")
                 .then(Commands.literal("reload")
                         .requires(source -> LuckPermsHelper.checkPermission(
@@ -33,6 +35,7 @@ public class ReloadCommand {
                         .executes(ReloadCommand::executeReload)
                 )
         );
+        DebugLogger.exiting("ReloadCommand", "register");
     }
 
     /**
@@ -44,9 +47,12 @@ public class ReloadCommand {
      */
     private static int executeReload(CommandContext<CommandSourceStack> ctx) {
         CommandSourceStack source = ctx.getSource();
+        DebugLogger.entering("ReloadCommand", "executeReload",
+                "source=" + source.getTextName());
 
         YouzaiworldCore.LOGGER.info("管理员 {} 正在重载模组...",
                 source.getTextName());
+        DebugLogger.info("ReloadCommand", "管理员 {} 正在重载模组", source.getTextName());
 
         // 重载账户数据存储
         int accountCount = AccountDataStorage.reload();
@@ -62,6 +68,10 @@ public class ReloadCommand {
         );
 
         YouzaiworldCore.LOGGER.info("模组重载完成，已重新加载 {} 个账户数据", accountCount);
+
+        DebugLogger.branch("ReloadCommand", "reload result", accountCount > 0,
+                "accountCount=" + accountCount);
+        DebugLogger.exiting("ReloadCommand", "executeReload", "1 (success, accounts=" + accountCount + ")");
         return 1;
     }
 }

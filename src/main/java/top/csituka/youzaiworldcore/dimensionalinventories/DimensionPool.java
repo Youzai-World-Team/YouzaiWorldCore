@@ -2,6 +2,7 @@ package top.csituka.youzaiworldcore.dimensionalinventories;
 
 import net.minecraft.world.level.GameType;
 import org.jetbrains.annotations.Nullable;
+import top.csituka.youzaiworldcore.util.DebugLogger;
 
 import java.util.*;
 
@@ -71,7 +72,11 @@ public final class DimensionPool {
     // ===== 操作 =====
 
     public void addDimension(String dimension) {
+        DebugLogger.entering("DimPool", "addDimension", "poolId=" + this.id + ", dimension=" + dimension);
+        boolean wasEmpty = this.dimensions.isEmpty();
         this.dimensions.add(dimension);
+        DebugLogger.stateChange("DimPool", this.id != null ? this.id : "null", "dimensions", dimension + " added, total=" + this.dimensions.size());
+        DebugLogger.exiting("DimPool", "addDimension");
     }
 
     public void removeDimension(String dimension) {
@@ -79,11 +84,17 @@ public final class DimensionPool {
     }
 
     public boolean containsDimension(String dimension) {
-        return this.dimensions.contains(dimension);
+        DebugLogger.entering("DimPool", "containsDimension", "poolId=" + this.id + ", dimension=" + dimension);
+        boolean result = this.dimensions.contains(dimension);
+        DebugLogger.exiting("DimPool", "containsDimension", String.valueOf(result));
+        return result;
     }
 
     public boolean isEmpty() {
-        return this.dimensions.isEmpty();
+        DebugLogger.entering("DimPool", "isEmpty", "poolId=" + this.id);
+        boolean result = this.dimensions.isEmpty();
+        DebugLogger.exiting("DimPool", "isEmpty", String.valueOf(result));
+        return result;
     }
 
     @Override

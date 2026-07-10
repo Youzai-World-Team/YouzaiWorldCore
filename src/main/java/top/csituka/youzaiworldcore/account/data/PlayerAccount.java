@@ -3,6 +3,7 @@ package top.csituka.youzaiworldcore.account.data;
 import com.google.gson.*;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
+import top.csituka.youzaiworldcore.util.DebugLogger;
 
 import java.lang.reflect.Type;
 import java.time.ZonedDateTime;
@@ -76,6 +77,8 @@ public class PlayerAccount {
      * 从数据库 JSON 数据反序列化
      */
     public PlayerAccount(String username, String usernameLowerCase, String uuid, String jsonData) {
+        DebugLogger.entering("PlayerAccount", "PlayerAccount(json)",
+                "username=" + username + ", usernameLowerCase=" + usernameLowerCase + ", uuid=" + uuid);
         PlayerAccount parsed = GSON.fromJson(jsonData, PlayerAccount.class);
         this.username = username;
         this.usernameLowerCase = usernameLowerCase;
@@ -90,36 +93,48 @@ public class PlayerAccount {
             this.lastKickedDate = parsed.lastKickedDate != null ? parsed.lastKickedDate : EPOCH;
             this.lastPositionJson = parsed.lastPositionJson;
         }
+        DebugLogger.exiting("PlayerAccount", "PlayerAccount(json)");
     }
 
     /**
      * 创建新账户（仅名称）
      */
     public PlayerAccount(String username) {
+        DebugLogger.entering("PlayerAccount", "PlayerAccount(name)", "username=" + username);
         this.username = username;
         this.usernameLowerCase = username.toLowerCase(java.util.Locale.ENGLISH);
+        DebugLogger.exiting("PlayerAccount", "PlayerAccount(name)");
     }
 
     /**
      * 创建新账户（名称 + UUID）
      */
     public PlayerAccount(String username, java.util.UUID uuid) {
+        DebugLogger.entering("PlayerAccount", "PlayerAccount(name,uuid)",
+                "username=" + username + ", uuid=" + uuid);
         this(username);
         this.uuid = uuid != null ? uuid.toString() : null;
+        DebugLogger.exiting("PlayerAccount", "PlayerAccount(name,uuid)");
     }
 
     /**
      * 序列化为 JSON
      */
     public String toJson() {
-        return GSON.toJson(this);
+        DebugLogger.entering("PlayerAccount", "toJson", "username=" + username);
+        String json = GSON.toJson(this);
+        DebugLogger.exiting("PlayerAccount", "toJson", "length=" + json.length());
+        return json;
     }
 
     /**
      * 是否已注册（有密码）
      */
     public boolean isRegistered() {
-        return password != null && !password.isEmpty();
+        DebugLogger.entering("PlayerAccount", "isRegistered", "username=" + username);
+        boolean result = password != null && !password.isEmpty();
+        DebugLogger.exiting("PlayerAccount", "isRegistered", String.valueOf(result));
+        return result;
     }
 
     /**

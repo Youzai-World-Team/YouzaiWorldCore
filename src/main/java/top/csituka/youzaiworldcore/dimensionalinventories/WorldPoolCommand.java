@@ -9,6 +9,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import top.csituka.youzaiworldcore.feature.ExperimentalFeatures;
 import top.csituka.youzaiworldcore.luckperms.LuckPermsHelper;
+import top.csituka.youzaiworldcore.util.DebugLogger;
 
 import java.util.Collection;
 
@@ -70,12 +71,16 @@ public final class WorldPoolCommand {
     private static int executeTeleport(CommandSourceStack source,
                                         Collection<ServerPlayer> targets,
                                         String poolId) {
+        DebugLogger.entering("WorldPoolCmd", "executeTeleport", "poolId=" + poolId + ", targets=" + targets.size());
         DimensionPool pool = DimensionPoolSettings.getPool(poolId);
         if (pool == null) {
+            DebugLogger.branch("WorldPoolCmd", "pool found", false, "poolId=" + poolId + " 不存在");
             source.sendFailure(Component.translatable(
                     "youzaiworldcore.message.diminv.pool_not_found", poolId));
+            DebugLogger.exiting("WorldPoolCmd", "executeTeleport", "pool not found, return 0");
             return 0;
         }
+        DebugLogger.branch("WorldPoolCmd", "pool found", true, "poolId=" + poolId + " -> " + pool.displayName());
 
         int count = 0;
         for (ServerPlayer player : targets) {
@@ -89,6 +94,8 @@ public final class WorldPoolCommand {
                 "youzaiworldcore.message.diminv.teleport_command_success",
                 finalCount, pool.displayName()), true);
 
+        DebugLogger.info("WorldPoolCmd", "传送完成: %d/%d 玩家已传送到 %s", count, targets.size(), poolId);
+        DebugLogger.exiting("WorldPoolCmd", "executeTeleport", "count=" + count);
         return count;
     }
 
@@ -96,13 +103,17 @@ public final class WorldPoolCommand {
      * 列出所有维度池及其包含的维度。
      */
     private static int executeList(CommandSourceStack source) {
+        DebugLogger.entering("WorldPoolCmd", "executeList");
         Collection<DimensionPool> pools = DimensionPoolSettings.getAllPools();
 
         if (pools.isEmpty()) {
+            DebugLogger.branch("WorldPoolCmd", "pools empty", true);
             source.sendSuccess(() -> Component.translatable(
                     "youzaiworldcore.message.diminv.no_pools"), false);
+            DebugLogger.exiting("WorldPoolCmd", "executeList", "no pools, return 0");
             return 0;
         }
+        DebugLogger.branch("WorldPoolCmd", "pools empty", false, "found " + pools.size() + " pools");
 
         source.sendSuccess(() -> Component.translatable(
                 "youzaiworldcore.message.diminv.pool_list_header", pools.size()), false);
@@ -111,6 +122,7 @@ public final class WorldPoolCommand {
             source.sendSuccess(() -> Component.literal(DimensionPoolSettings.formatPoolInfo(pool)), false);
         }
 
+        DebugLogger.exiting("WorldPoolCmd", "executeList", "listed " + pools.size() + " pools");
         return pools.size();
     }
 }

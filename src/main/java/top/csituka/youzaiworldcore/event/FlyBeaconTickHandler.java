@@ -8,6 +8,7 @@ import net.minecraft.server.level.ServerPlayer;
 import org.jspecify.annotations.NonNull;
 import top.csituka.youzaiworldcore.block.entity.FlyBeaconBlockEntity;
 import top.csituka.youzaiworldcore.item.tool.VoidStaffItem;
+import top.csituka.youzaiworldcore.util.DebugLogger;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -46,9 +47,11 @@ public class FlyBeaconTickHandler implements ServerTickEvents.StartTick {
      */
     @Override
     public void onStartTick(@NonNull MinecraftServer server) {
+        DebugLogger.entering("FlyBeaconTickHandler", "onStartTick");
         tickCounter++;
         // 未达到检查间隔则直接返回
         if (tickCounter < CHECK_INTERVAL) {
+            DebugLogger.exiting("FlyBeaconTickHandler", "onStartTick", "skipped (check interval not reached)");
             return;
         }
         tickCounter = 0; // 重置计数器
@@ -88,7 +91,7 @@ public class FlyBeaconTickHandler implements ServerTickEvents.StartTick {
                 if (!beaconFlyingPlayers.contains(playerId)) {
                     if (!VoidStaffItem.isFlying(playerId)) {
                         VoidStaffItem.enableFlight(player);
-                        // 授予“区域性飞行”成就
+                        // 授予"区域性飞行"成就
                         grantFlyBeaconAdvancement(player, server);
                     }
                 }
@@ -103,6 +106,7 @@ public class FlyBeaconTickHandler implements ServerTickEvents.StartTick {
         // 更新信标飞行玩家集合为本次检查的结果
         beaconFlyingPlayers.clear();
         beaconFlyingPlayers.addAll(currentAffected);
+        DebugLogger.exiting("FlyBeaconTickHandler", "onStartTick");
     }
 
     /**
@@ -146,6 +150,8 @@ public class FlyBeaconTickHandler implements ServerTickEvents.StartTick {
      * 向 Fabric 事件总线注册此处理器。
      */
     public static void register() {
+        DebugLogger.entering("FlyBeaconTickHandler", "register");
         ServerTickEvents.START_SERVER_TICK.register(INSTANCE);
+        DebugLogger.exiting("FlyBeaconTickHandler", "register");
     }
 }
