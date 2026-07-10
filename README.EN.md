@@ -20,14 +20,14 @@
 - **Offline-Mode Server**: Built-in account authentication system supporting registration, login, logout, password changes, and session recovery
 - **Survival Gameplay Enhancement**: Provides the YZ tool series (with special effects like chain mining, area damage, etc.), custom blocks, and crafting recipes
 - **Server Administration**: GUI menu navigation, Dimension Pool system (independent inventories/states/gamemodes), world switching, and admin operation tools
-- **Player Experience Optimization**: Skill attribute system (Puffish Skills), advancement system, and placeholder integration
+- **Player Experience Optimization**: Advancement system, placeholder integration
 
 ### Target Audience
 
 | User Type | Description |
 |-----------|-------------|
 | **Server Administrators** | OPs/Admins operating the Youzai World server, managing the system through commands and menus |
-| **Survival Players** | Regular players on the server, using YZ tools, skill system, world teleportation, etc. |
+| **Survival Players** | Regular players on the server, using YZ tools, advancement system, world teleportation, etc. |
 | **Mod Developers** | Developers who want to understand the mod architecture, extend functionality, or contribute code |
 
 ---
@@ -83,32 +83,14 @@ A new mineral and tool set, equivalent to diamond-tier tools.
 | **Decomposition Table** | GUI-based block used to decompose items back to raw materials |
 | **Fly Beacon** | Grants area flight capability, toggleable activation state |
 
-### 5. Skill System (Puffish Skills)
-
-Integrates the Puffish Skills mod, providing 11 attribute upgrades:
-
-| Attribute | Effect |
-|-----------|--------|
-| Health +1 | Increases max health by 1 per level |
-| Resistance +1% | Increases damage reduction by 1% per level |
-| Melee Damage +1% | Percentage increase to melee attack damage |
-| Ranged Damage +1% | Percentage increase to ranged attack damage |
-| Attack Speed +1% | Percentage increase to attack speed |
-| Movement Speed +1% | Percentage increase to movement speed |
-| Luck +0.1 | Increases luck value by 0.1 per level |
-| Stamina +1% | Percentage increase to stamina |
-| Healing +1% | Percentage increase to healing amount |
-| Jump +1% | Percentage increase to jump height |
-| Mining Speed +1% | Percentage increase to mining speed |
-
-### 6. Advancement System
+### 5. Advancement System
 
 Contains two advancement branches:
 
 - **Youzai World** (main progression): Covers obtaining YZ ore/ingots/blocks/tools, using the decomposition table, fly beacon, heart of guardianship, void staff, etc.
 - **Fun Little Challenges**: The Cake Is a Lie, Foodie, Get Emerald Blocks, Like Cows and Pigs, Max Luck, Stuck in Cobweb, Way Home, Wearing Copper Armor
 
-### 7. Invisibility System
+### 6. Invisibility System
 
 A deceptive player invisibility system — the invisible player completely disappears from other players' Tab lists and vision, with fake leave/join messages broadcast to others.
 
@@ -118,19 +100,19 @@ A deceptive player invisibility system — the invisible player completely disap
 - **Auto-Cancel**: Automatically forces invisibility off when leaving Creative mode
 - **Disconnect Cleanup**: Cleans up all invisibility state on player disconnect
 
-### 8. Experimental Feature System
+### 7. Experimental Feature System
 
 Supports server-wide global toggle + player-level override for experimental features, with state configuration persisted to JSON files. Supports **server-controlled** mode (`serverSide`), where server-controlled features are not stored in client configuration and do not allow player overrides.
 
-### 9. Placeholder System (Placeholder API)
+### 8. Placeholder System (Placeholder API)
 
 Integrates Placeholder API and LuckPerms placeholders, supporting dynamic/static placeholder resolution. The mod registers `%luckperms_*%` placeholder series for use by other mods.
 
-### 10. Permission System
+### 9. Permission System
 
 Provides fine-grained permission control based on **LuckPerms**, with automatic fallback to vanilla OP level checks. Includes granular sub-permissions for account management commands (e.g., `youzaiworldcore.command.account.mgr.*`).
 
-### 11. Client External Settings
+### 10. Client External Settings
 
 A client-side persistent configuration system, stored at `config/youzaiworldcore/client_external_settings.json`:
 
@@ -141,15 +123,55 @@ A client-side persistent configuration system, stored at `config/youzaiworldcore
 | **Debug Mode Type** | "embedded" (integrated server) / "dedicated" (separate server) |
 | **Debug Address/Port** | Connection config for dedicated server debug mode |
 
-### 12. Server External Settings
+### 11. Server External Settings
 
 A server-side persistent configuration system, stored at `config/youzaiworldcore/server_external_settings.json`:
 
 | Setting | Description |
 |---------|-------------|
+| **Dev Mode** | Enables developer mode (server-side; works together with logToFile to control debug logging) |
 | **Log to File** | Outputs detailed noisy logs (experimental feature registration, config loading, account data, etc.) to latest.log |
 
-### 13. Dimension Pool System
+The dual-toggle system (`devModeEnabled` + `logToFile`) works in tandem: debug output is only produced when **both** toggles are enabled.
+
+### 12. Debug Logging System (DebugLogger)
+
+A professional debug logging utility, controlled by the dual-toggle system, providing comprehensive tracing methods:
+
+| Method Category | Description |
+|----------------|-------------|
+| **entering / exiting** | Method entry/exit tracing with optional parameter/return value logging |
+| **branch** | Conditional branch decision logging with result and context |
+| **stateChange** | State change logging with old → new value comparison |
+| **exception** | Exception catch-block logging with full stack trace or summary |
+| **trace / debug / info / warn / error** | Standard log levels |
+
+Log format: `[yyyy-MM-dd HH:mm:ss.SSS] [LEVEL] [Module] description`
+
+### 13. Window Customization
+
+- **Custom Window Icon**: Replaces the default Minecraft window icon (taskbar and title bar) with `jar_icon.png` from mod assets
+- **Custom Window Title**: Intercepts `Window.setTitle()` via `WindowTitleMixin`, replacing the title with the mod's custom format (`YouzaiWorldCore 1.12.5+indev — Minecraft 26.2`)
+
+### 14. Title Screen Overhaul
+
+The main menu screen has been fully redesigned via `TitleScreenMixin`:
+
+- **Custom Buttons**: Join Server, Options, Quit Game buttons using the custom `TitleScreenTextButton` widget
+- **Announcement Banner**: Displays mod announcements (title + server description) above the title screen with fade-in animation
+- **Gradient Background**: Intercepts loading screen background rendering via `ScreenMixinForProgressBg` to add gradient backgrounds
+- **Logo Texture**: Replaces Mojang loading screen logo texture with custom resources via `LogoTextureMixin`
+- **Debug Mode**: Additional "Test Page" button visible when developer mode is enabled
+
+### 15. CI/CD Build
+
+The project includes a GitHub Actions continuous integration workflow (`.github/workflows/build.yml`):
+
+- Automatically builds on **Ubuntu / Windows / macOS** platforms
+- JDK 25
+- Automatically uploads Linux build artifacts on success
+
+### 16. Dimension Pool System
 
 A multi-world server management system providing **independent state pools** — players have separate inventories, health, status effects, and game modes across different dimension pools.
 
@@ -161,7 +183,7 @@ A multi-world server management system providing **independent state pools** —
 - **Configuration persistence**: Pool definitions stored at `config/youzaiworldcore/dimensional_inventories/pool_settings.json`; player states stored at `<world>/youzaiworldcore/dimensional_inventories/data/<pool-id>/<uuid>.json`
 - **Experimental**: The dimension pool system is currently managed as an experimental feature (ID: `dimension_pool`), disabled by default
 
-### 14. Preset Item System
+### 17. Preset Item System
 
 Four preset shulker boxes in the creative mode tab, generated with one click:
 
@@ -404,8 +426,7 @@ Menus communicate between server and client via `OpenMenuPayload` (S2C packet, I
 | Fabric Loader | 0.19.3 | Mod loader |
 | Fabric API | 0.154.0+26.2 | Fabric standard API |
 | ModMenu | 20.0.0-beta.4 | Mod menu integration (settings screen) |
-| GeckoLib | 5.5.1 | 3D entity animation (Chicken Warden - removed) |
-| Placeholder API | 3.0.0+ | Text placeholder resolution |
+| Placeholder API | 3.1.0-beta.1+26.2 | Text placeholder resolution |
 | Fabric Permissions API | 0.6.1 (bundled) | Cross-mod permission API |
 | LuckPerms API | 5.5 (compile-only, suggested runtime) | Advanced permission control |
 
@@ -440,11 +461,13 @@ src/
 │   ├── mixin/                                  # General Mixins (Guardian Heart, etc.)
 │   ├── network/                                # Network packets
 │   ├── placeholders/                           # Placeholder system
-│   └── screen/                                 # Container menus
+│   ├── screen/                                 # Container menus
+│   └── util/                                   # Utilities (DebugLogger, etc.)
 │
 ├── client/java/top/csituka/youzaiworldcore/    # Client-only code
-│   ├── client/Client.java                      # Client entry point
+│   ├── client/Client.java                      # Client entry point (window icon setup)
 │   ├── config/                                 # Client external settings
+│   ├── higherchat/                             # Chat display optimization
 │   ├── network/ClientNetworking.java           # Client network handling
 │   ├── mixin/client/                           # Client Mixins
 │   ├── renderer/entity/                        # Entity renderers
@@ -457,6 +480,10 @@ src/
 └── main/resources/                             # Resource files
     ├── assets/youzaiworldcore/                 # Assets (language files, textures, etc.)
     └── data/                                   # Data packs (advancements, recipes, loot tables, etc.)
+
+.github/
+└── workflows/
+    └── build.yml                               # GitHub Actions build workflow
 ```
 
 ---
