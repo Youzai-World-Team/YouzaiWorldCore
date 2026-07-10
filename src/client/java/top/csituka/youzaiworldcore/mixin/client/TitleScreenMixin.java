@@ -2,21 +2,18 @@ package top.csituka.youzaiworldcore.mixin.client;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.gui.components.AbstractWidget;
-import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.LogoRenderer;
 import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.components.SplashRenderer;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.narration.NarratableEntry;
 import net.minecraft.client.gui.screens.ConnectScreen;
+import net.minecraft.client.gui.screens.options.OptionsScreen;
 import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.client.gui.screens.worldselection.SelectWorldScreen;
 import net.minecraft.client.multiplayer.ServerData;
 import net.minecraft.client.multiplayer.resolver.ServerAddress;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.ComponentContents;
-import net.minecraft.network.chat.contents.TranslatableContents;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -24,10 +21,10 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import top.csituka.youzaiworldcore.client.config.ClientExternalSettings;
+import top.csituka.youzaiworldcore.client.screen.widget.TitleScreenTextButton;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * 修改 Minecraft 标题界面为双半透明方块布局：
@@ -54,10 +51,10 @@ public class TitleScreenMixin {
     private static final int PANEL_GAP = 16;
 
     /** 按钮高度 */
-    private static final int BUTTON_HEIGHT = 20;
+    private static final int BUTTON_HEIGHT = 16;
 
     /** 按钮间距 */
-    private static final int BUTTON_GAP = 6;
+    private static final int BUTTON_GAP = 8;
 
     /** 两个面板统一高度 */
     private static final int PANEL_HEIGHT = 130;
@@ -65,6 +62,9 @@ public class TitleScreenMixin {
 
     /** 公告标题颜色 */
     private static final int ANNOUNCEMENT_TITLE_COLOR = 0xFFFFAA00;
+
+    /** 公告标题阴影颜色 */
+    private static final int ANNOUNCEMENT_TITLE_SHADOW = 0x40000000;
 
     /** 公告正文颜色 */
     private static final int ANNOUNCEMENT_TEXT_COLOR = 0xFFE0E0E0;
@@ -74,9 +74,9 @@ public class TitleScreenMixin {
     /**
      * 在 {@code TitleScreen.init()} 执行完毕后：
      * <ol>
-     *   <li>移除所有非核心按钮（仅保留「选项」「退出游戏」）</li>
-     *   <li>添加自定义「加入服务器」按钮</li>
-     *   <li>将所有三个按钮排列在左侧半透明面板区域内</li>
+     *   <li>移除所有原版组件</li>
+     *   <li>创建三个自定义无背景文字按钮，替换为悬浮下划线样式</li>
+     *   <li>将所有按钮排列在左侧半透明面板区域内</li>
      *   <li>开发者模式额外显示测试按钮</li>
      * </ol>
      */
@@ -88,30 +88,13 @@ public class TitleScreenMixin {
 
         ScreenAccessor accessor = (ScreenAccessor) screen;
 
-        // ============ 1. 收集需要保留的核心按钮 ============
-        AbstractWidget optionsBtn = null;
-        AbstractWidget quitBtn = null;
-        List<GuiEventListener> toRemove = new ArrayList<>();
-
-        for (GuiEventListener child : screen.children()) {
-            if (child instanceof AbstractWidget widget) {
-                String key = extractTranslationKey(widget.getMessage());
-                if ("menu.options".equals(key)) {
-                    optionsBtn = widget;
-                } else if ("menu.quit".equals(key)) {
-                    quitBtn = widget;
-                } else {
-                    toRemove.add(child);
-                }
-            }
-        }
-
-        // ============ 2. 移除不要的组件 ============
+        // ============ 1. 移除所有原版组件 ============
         List<Renderable> renderables = accessor.youzaiworldcore$getRenderables();
         List<NarratableEntry> narratables = accessor.youzaiworldcore$getNarratables();
         List<GuiEventListener> childrenList = accessor.youzaiworldcore$getChildren();
 
-        for (GuiEventListener child : toRemove) {
+        List<GuiEventListener> allChildren = new ArrayList<>(childrenList);
+        for (GuiEventListener child : allChildren) {
             childrenList.remove(child);
             if (child instanceof Renderable r) {
                 renderables.remove(r);
@@ -121,87 +104,105 @@ public class TitleScreenMixin {
             }
         }
 
-        // ============ 3. 创建自定义按钮 ============
+        // ============ 2. 创建自定义按钮 ============
         Minecraft minecraft = accessor.youzaiworldcore$getMinecraft();
 
         // 隐藏原版标题和闪烁标语
         this.splash = null;
 
-        // 3a. 加入服务器按钮
-        Button joinButton = createJoinServerButton(width, screen, accessor);
-        childrenList.add(joinButton);
-        renderables.add(joinButton);
-        narratables.add(joinButton);
+        // 2a. 加入服务器
+        TitleScreenTextButton joinBtn = new TitleScreenTextButton(
+            0, 0, 0, BUTTON_HEIGHT,
+            Component.translatable("title.youzaiworldcore.join_server"),
+            () -> {
+                ServerData serverData = new ServerData("Youzai World", "play.mcyzw.top", ServerData.Type.OTHER);
+                ServerAddress address = ServerAddress.parseString("play.mcyzw.top");
+                ConnectScreen.startConnecting(screen, minecraft, address, serverData, false, null);
+            }
+        );
+        childrenList.add(joinBtn);
+        renderables.add(joinBtn);
+        narratables.add(joinBtn);
 
-        // 3b. 开发者测试按钮（仅在开发者模式启用时显示）
-        Button testButton = null;
+        // 2b. 选项
+        TitleScreenTextButton optionsBtn = new TitleScreenTextButton(
+            0, 0, 0, BUTTON_HEIGHT,
+            Component.translatable("menu.options"),
+            () -> minecraft.gui.setScreen(new OptionsScreen(screen, minecraft.options, false))
+        );
+        childrenList.add(optionsBtn);
+        renderables.add(optionsBtn);
+        narratables.add(optionsBtn);
+
+        // 2c. 退出游戏
+        TitleScreenTextButton quitBtn = new TitleScreenTextButton(
+            0, 0, 0, BUTTON_HEIGHT,
+            Component.translatable("menu.quit"),
+            () -> minecraft.stop()
+        );
+        childrenList.add(quitBtn);
+        renderables.add(quitBtn);
+        narratables.add(quitBtn);
+
+        // 2d. 开发者测试按钮（仅在开发者模式启用时显示）
+        TitleScreenTextButton testButton = null;
         boolean showTest = ClientExternalSettings.isDevModeEnabled();
         if (showTest) {
             String debugMode = ClientExternalSettings.getDebugModeType();
             boolean isDedicated = "dedicated".equals(debugMode);
 
+            Runnable testAction;
             if (isDedicated) {
                 String addr = ClientExternalSettings.getDebugAddress();
                 String port = ClientExternalSettings.getDebugPort();
                 String fullAddr = addr + ":" + port;
-                ServerData serverData = new ServerData("Debug Server", fullAddr, ServerData.Type.OTHER);
-                ServerAddress address = ServerAddress.parseString(fullAddr);
-                testButton = Button.builder(
-                        Component.translatable("title.youzaiworldcore.test_page"),
-                        button -> ConnectScreen.startConnecting(
-                                screen, minecraft, address, serverData, false, null)
-                ).build();
+                ServerData srvData = new ServerData("Debug Server", fullAddr, ServerData.Type.OTHER);
+                ServerAddress srvAddr = ServerAddress.parseString(fullAddr);
+                testAction = () -> ConnectScreen.startConnecting(screen, minecraft, srvAddr, srvData, false, null);
             } else {
-                testButton = Button.builder(
-                        Component.translatable("title.youzaiworldcore.test_page"),
-                        button -> minecraft.gui.setScreen(new SelectWorldScreen(screen))
-                ).build();
+                testAction = () -> minecraft.gui.setScreen(new SelectWorldScreen(screen));
             }
+
+            testButton = new TitleScreenTextButton(
+                0, 0, 0, BUTTON_HEIGHT,
+                Component.translatable("title.youzaiworldcore.test_page"),
+                testAction
+            );
             childrenList.add(testButton);
             renderables.add(testButton);
             narratables.add(testButton);
         }
 
-        // ============ 4. 计算居中布局位置 ============
+        // ============ 3. 计算居中布局位置 ============
         int totalGroupWidth = PANEL_WIDTH * 2 + PANEL_GAP;
         int groupStartX = (width - totalGroupWidth) / 2;
         int leftPanelX = groupStartX;
-        int rightPanelX = groupStartX + PANEL_WIDTH + PANEL_GAP;
         int panelY = (height - PANEL_HEIGHT) / 2;
 
+        int buttonX = leftPanelX + PANEL_PADDING;
         int buttonWidth = PANEL_WIDTH - PANEL_PADDING * 2;
         int buttonStartY = panelY + PANEL_PADDING;
-        int buttonX = leftPanelX + PANEL_PADDING;
 
-        // 行 0：加入服务器
-        joinButton.setX(buttonX);
-        joinButton.setY(buttonStartY);
-        joinButton.setWidth(buttonWidth);
-        joinButton.setHeight(BUTTON_HEIGHT);
+        // 加入服务器
+        joinBtn.setX(buttonX);
+        joinBtn.setY(buttonStartY);
+        joinBtn.setWidth(buttonWidth);
 
-        // 行 1：选项
-        if (optionsBtn != null) {
-            optionsBtn.setX(buttonX);
-            optionsBtn.setY(buttonStartY + BUTTON_HEIGHT + BUTTON_GAP);
-            optionsBtn.setWidth(buttonWidth);
-            optionsBtn.setHeight(BUTTON_HEIGHT);
-        }
+        // 选项
+        optionsBtn.setX(buttonX);
+        optionsBtn.setY(buttonStartY + BUTTON_HEIGHT + BUTTON_GAP);
+        optionsBtn.setWidth(buttonWidth);
 
-        // 行 2：退出游戏
-        if (quitBtn != null) {
-            quitBtn.setX(buttonX);
-            quitBtn.setY(buttonStartY + 2 * (BUTTON_HEIGHT + BUTTON_GAP));
-            quitBtn.setWidth(buttonWidth);
-            quitBtn.setHeight(BUTTON_HEIGHT);
-        }
+        // 退出游戏
+        quitBtn.setX(buttonX);
+        quitBtn.setY(buttonStartY + 2 * (BUTTON_HEIGHT + BUTTON_GAP));
+        quitBtn.setWidth(buttonWidth);
 
         // 测试按钮：放在左面板下方
         if (testButton != null) {
-            int testBtnWidth = PANEL_WIDTH - PANEL_PADDING * 2;
             testButton.setX(buttonX);
             testButton.setY(buttonStartY + 3 * (BUTTON_HEIGHT + BUTTON_GAP) + 4);
-            testButton.setWidth(testBtnWidth);
-            testButton.setHeight(BUTTON_HEIGHT);
+            testButton.setWidth(buttonWidth);
         }
     }
 
@@ -268,8 +269,11 @@ public class TitleScreenMixin {
         int textY = panelY + PANEL_PADDING;
         int maxTextWidth = panelW - PANEL_PADDING * 2;
 
-        // 公告标题（始终不换行）
-        String title = "📢 " + Component.translatable("title.youzaiworldcore.announcement_title").getString();
+        // 公告标题（不加 emoji，带阴影以突出显示）
+        String title = Component.translatable("title.youzaiworldcore.announcement_title").getString();
+        // 阴影
+        graphics.text(font, title, textX + 1, textY + 1, ANNOUNCEMENT_TITLE_SHADOW);
+        // 正文
         graphics.text(font, title, textX, textY, ANNOUNCEMENT_TITLE_COLOR);
 
         // 公告内容行（逐行自动换行）
@@ -348,44 +352,5 @@ public class TitleScreenMixin {
 
         // 没有空格，直接按字符截断
         return maxChar;
-    }
-
-    // ==================== 原有辅助方法保持不变 ====================
-
-    /**
-     * 创建「加入服务器」按钮，直连 play.mcyzw.top
-     */
-    private static Button createJoinServerButton(int width, TitleScreen screen, ScreenAccessor accessor) {
-        Minecraft minecraft = Objects.requireNonNull(accessor.youzaiworldcore$getMinecraft());
-        TitleScreen safeScreen = Objects.requireNonNull(screen);
-
-        return Button.builder(
-                Component.translatable("title.youzaiworldcore.join_server"),
-                button -> {
-                    ServerData serverData = new ServerData(
-                            "Youzai World",
-                            "play.mcyzw.top",
-                            ServerData.Type.OTHER
-                    );
-                    ServerAddress address = ServerAddress.parseString("play.mcyzw.top");
-                    ConnectScreen.startConnecting(
-                            safeScreen,
-                            minecraft,
-                            address,
-                            serverData,
-                            false,
-                            null
-                    );
-                }
-        ).build();
-    }
-
-    private static String extractTranslationKey(Component component) {
-        if (component == null) return null;
-        ComponentContents contents = component.getContents();
-        if (contents instanceof TranslatableContents translatable) {
-            return translatable.getKey();
-        }
-        return null;
     }
 }
