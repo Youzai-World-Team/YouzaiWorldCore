@@ -7,6 +7,12 @@ import net.fabricmc.fabric.api.client.rendering.v1.BlockEntityRendererRegistry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.MenuScreens;
 import org.lwjgl.glfw.GLFW;
+import org.lwjgl.glfw.GLFWImage;
+import org.lwjgl.system.MemoryUtil;
+
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.nio.ByteBuffer;
 import top.csituka.youzaiworldcore.block.entity.ModBlockEntities;
 import top.csituka.youzaiworldcore.client.config.ClientExternalSettings;
 import top.csituka.youzaiworldcore.client.renderer.block.FlyBeaconBlockEntityRenderer;
@@ -20,6 +26,7 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
 public class Client implements ClientModInitializer {
 
     private static boolean wasPressed = false;
+    private static boolean windowIconSet = false;
 
     @Override
     public void onInitializeClient() {
@@ -58,6 +65,15 @@ public class Client implements ClientModInitializer {
     }
 
     private void onClientTick(Minecraft client) {
+        // 窗口图标设置（仅执行一次）
+        if (!windowIconSet) {
+            long handle = client.getWindow().handle();
+            if (handle != 0) {
+                setWindowIcon(handle);
+                windowIconSet = true;
+            }
+        }
+
         if (client.player == null || client.gui.screen() != null) {
             return;
         }
@@ -75,5 +91,51 @@ public class Client implements ClientModInitializer {
         }
 
         wasPressed = isPressed;
+    }
+
+    /**
+     * 使用模组资源中的 jar_icon.png 设置 Minecraft 窗口图标（任务栏和标题栏）。
+     */
+    private static void setWindowIcon(long windowHandle) {
+        try (var stream = Minecraft.class.getClassLoader()
+                .getResourceAsStream("assets/youzaiworldcore/jar_icon.png")) {
+
+            if (stream == null) {
+                DebugLogger.warn("Client", "窗口图标资源 jar_icon.png 未找到");
+                return;
+            }
+
+            // 使用纯 Java ImageIO 解码 PNG（避免 STBImage 的 native 崩溃问题）
+            BufferedImage image = ImageIO.read(stream);
+            int width = image.getWidth();
+            int height = image.getHeight();
+
+            // BufferedImage.getRGB 返回 ARGB（高位 A，次高 R，次次高 G，低位 B）
+            // GLFW 需要 RGBA，故需转换
+            ByteBuffer buffer = MemoryUtil.memAlloc(width * height * 4);
+            for (int y = 0; y < height; y++) {
+                for (int x = 0; x < width; x++) {
+                    int argb = image.getRGB(x, y);
+                    buffer.put((byte) ((argb >> 16) & 0xFF)); // R
+                    buffer.put((byte) ((argb >> 8) & 0xFF));  // G
+                    buffer.put((byte) (argb & 0xFF));          // B
+                    buffer.put((byte) ((argb >> 24) & 0xFF));  // A
+                }
+            }
+            buffer.flip();
+
+            try (GLFWImage icon = GLFWImage.malloc()) {
+                icon.set(width, height, buffer);
+                try (GLFWImage.Buffer iconBuffer = GLFWImage.malloc(1)) {
+                    iconBuffer.put(0, icon);
+                    GLFW.glfwSetWindowIcon(windowHandle, iconBuffer);
+                    DebugLogger.info("Client", "窗口图标已设置为 jar_icon.png ({}x{})", width, height);
+                }
+            }
+
+            MemoryUtil.memFree(buffer);
+        } catch (Exception e) {
+            DebugLogger.error("Client", "设置窗口图标时出错", e);
+        }
     }
 }

@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "youzaiworldcore",
-  "version": "${version}+mc${minecraft_version}",
+  "version": "${version}",
   "name": "YouzaiWorldCore",
   "description": "This is the core mod of Youzai World Server.",
   "authors": [
@@ -20,7 +20,7 @@
     "issues": "https://github.com/Youzai-World-Team/YouzaiWorldCore/issues"
   },
   "license": "Apache-2.0",
-  "icon": "assets/youzaiworldcore/icon.png",
+  "icon": "assets/youzaiworldcore/jar_icon.png",
   "environment": "*",
   "entrypoints": {
     "fabric-datagen": [
