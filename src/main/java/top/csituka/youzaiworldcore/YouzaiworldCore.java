@@ -68,6 +68,17 @@ public class YouzaiworldCore implements ModInitializer {
      * 与 {@link #logToFile} 同时启用时激活完整的调试日志输出 */
     public static boolean devModeEnabled = false;
 
+    /** 模组启动 Logo（ASCII 艺术字） */
+    public static final String LOGO =
+            "-------------------------------------------------------------------------\n" +
+            "    __   __                   _    _    _            _     _    _____                \n" +
+            "    \\ \\ / /                  (_)  | |  | |          | |   | |  /  __ \\               \n" +
+            "     \\ V /___  _   _ ______ _ _   | |  | | ___  _ __| | __| |  | /  \\/ ___  _ __ ___ \n" +
+            "      \\ // _ \\| | | |_  / _` | |  | |/\\| |/ _ \\| '__| |/ _` |  | |    / _ \\| '__/ _ \\\n" +
+            "      | | (_) | |_| |/ / (_| | |  \\  /\\  / (_) | |  | | (_| |  | \\__/\\ (_) | | |  __/\n" +
+            "      \\_/\\___/ \\__,_/___\\__,_|_|   \\/  \\/ \\___/|_|  |_|\\__,_|   \\____/\\___/|_|  \\___|\n" +
+            "-------------------------------------------------------------------------";
+
     public static final ResourceKey<PlacedFeature> YZ_ORE_PLACED_KEY = ResourceKey.create(
             Registries.PLACED_FEATURE,
             Identifier.fromNamespaceAndPath(MOD_ID, "ore_yz")
@@ -86,6 +97,9 @@ public class YouzaiworldCore implements ModInitializer {
         devModeEnabled = ServerExternalSettings.isDevModeEnabled();
         DebugLogger.setDevModeEnabled(devModeEnabled);
         DebugLogger.setLogToFile(logToFile);
+
+        // ===== 输出模组 Logo（启动后第一条输出） =====
+        LOGGER.info("\n{}", LOGO);
 
         DebugLogger.entering("YouzaiworldCore", "onInitialize",
                 "devMode=" + devModeEnabled + ", logToFile=" + logToFile);
@@ -172,6 +186,7 @@ public class YouzaiworldCore implements ModInitializer {
         DebugLogger.entering("YouzaiworldCore", "DimensionPoolEvents.register");
         net.fabricmc.fabric.api.entity.event.v1.ServerEntityLevelChangeEvents.AFTER_PLAYER_CHANGE_LEVEL.register(
             (player, origin, destination) -> {
+                if (!ExperimentalFeatures.isGlobalEnabled("dimension_pool")) return;
                 DebugLogger.info("DimensionPoolManager", "玩家维度变化事件触发: {} -> {} -> {}",
                         player.getName().getString(),
                         origin.dimension().identifier().toString(),
@@ -181,6 +196,7 @@ public class YouzaiworldCore implements ModInitializer {
         );
         net.fabricmc.fabric.api.entity.event.v1.ServerEntityLevelChangeEvents.AFTER_ENTITY_CHANGE_LEVEL.register(
             (originalEntity, newEntity, origin, destination) -> {
+                if (!ExperimentalFeatures.isGlobalEnabled("dimension_pool")) return;
                 if (!(newEntity instanceof net.minecraft.server.level.ServerPlayer)) {
                     DimensionPoolManager.onNonPlayerEntityChangeDimension(originalEntity, newEntity, origin, destination);
                 }
@@ -188,6 +204,7 @@ public class YouzaiworldCore implements ModInitializer {
         );
         net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents.AFTER_RESPAWN.register(
             (oldPlayer, newPlayer, alive) -> {
+                if (!ExperimentalFeatures.isGlobalEnabled("dimension_pool")) return;
                 DebugLogger.info("DimensionPoolManager", "玩家复活事件触发: {} (alive={})",
                         newPlayer.getName().getString(), alive);
                 DimensionPoolManager.onPlayerRespawn(oldPlayer, newPlayer, alive);
