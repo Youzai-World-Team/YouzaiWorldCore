@@ -23,8 +23,8 @@ public class FlyBeaconTickHandler implements ServerTickEvents.StartTick {
     // 单例实例
     private static final FlyBeaconTickHandler INSTANCE = new FlyBeaconTickHandler();
 
-    // 信标的有效范围半径（水平方向，单位：方块）
-    private static final int BEACON_RADIUS = 10;
+    // 信标的有效范围半宽（水平方向，单位：方块），与渲染边界 HALF 一致
+    private static final float BEACON_HALF = 9.5625f;
 
     // 检查间隔（游戏刻），每 10 刻（0.5 秒）执行一次范围判断，降低性能开销
     private static final int CHECK_INTERVAL = 10;
@@ -69,15 +69,14 @@ public class FlyBeaconTickHandler implements ServerTickEvents.StartTick {
             UUID playerId = player.getUUID();
             boolean inRange = false;
 
-            // 检查玩家是否处于任意激活信标的有效范围内
+            // 检查玩家是否处于任意激活信标的正方形有效范围内
             for (BlockPos beaconPos : activeBeacons) {
-                // 计算玩家与信标中心的水平距离（信标方块中心为 x+0.5, z+0.5）
-                double dx = player.getX() - (beaconPos.getX() + 0.5);
-                double dz = player.getZ() - (beaconPos.getZ() + 0.5);
-                double horizontalDist = Math.sqrt(dx * dx + dz * dz);
+                // 正方形检测：玩家距信标中心的 X/Z 偏移均不超过半宽（信标中心为 x+0.5, z+0.5）
+                double dx = Math.abs(player.getX() - (beaconPos.getX() + 0.5));
+                double dz = Math.abs(player.getZ() - (beaconPos.getZ() + 0.5));
 
-                // 水平距离 ≤ 半径 且 玩家 Y 坐标 ≥ 信标 Y 坐标（玩家必须在信标同一高度或上方）
-                if (horizontalDist <= BEACON_RADIUS && player.getY() >= beaconPos.getY()) {
+                // 正方形范围 且 玩家 Y 坐标 ≥ 信标 Y 坐标
+                if (dx <= BEACON_HALF && dz <= BEACON_HALF && player.getY() >= beaconPos.getY()) {
                     inRange = true;
                     break;
                 }
