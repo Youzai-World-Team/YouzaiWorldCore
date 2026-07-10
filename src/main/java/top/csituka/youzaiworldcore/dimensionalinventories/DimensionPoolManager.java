@@ -116,63 +116,25 @@ public final class DimensionPoolManager {
             return false;
         }
 
-        // 3. 确定源池
+        // 3. 确定源池 & 已在目标池中则跳过
         String currentDimensionId = player.level().dimension().identifier().toString();
         DimensionPool sourcePool = DimensionPoolSettings.getPoolByDimension(currentDimensionId).orElse(null);
 
-        // 4. 已在目标池中则跳过
         if (sourcePool != null && sourcePool.id().equals(targetPoolId)) {
             player.sendSystemMessage(Component.translatable(
                     "youzaiworldcore.message.diminv.already_in_pool", targetPool.displayName()));
             return true;
         }
 
-        // 5. 保存当前状态到源池
-        if (sourcePool != null) {
-            savePlayerState(player, server, sourcePool.id());
+        // ★★★ 4. 先确定传送到哪个维度，验证可用性，再修改玩家状态 ★★★
+        ResourceKey<Level> targetDimensionKey = determineTeleportTarget(player, server, targetPool);
+        if (targetDimensionKey == null) {
+            player.sendSystemMessage(Component.translatable(
+                    "youzaiworldcore.message.diminv.no_valid_dimension",
+                    targetPool.displayName()));
+            return false;
         }
 
-        // 6. 清空背包 + 移除效果
-        PlayerStateData.clearPlayerInventory(player);
-        player.removeAllEffects();
-
-        // 7. 加载目标池的历史状态
-        boolean hasSavedState = loadPlayerState(player, server, targetPool.id());
-
-        // 8. 确定传送目标
-        ResourceKey<Level> targetDimensionKey;
-        double teleportX, teleportY, teleportZ;
-        float teleportYRot, teleportXRot;
-
-        if (hasSavedState) {
-            PlayerStateData loadedData = getLastLoadedData(player, server);
-            if (loadedData != null) {
-                targetDimensionKey = ResourceKey.create(
-                        net.minecraft.core.registries.Registries.DIMENSION,
-                        Identifier.parse(loadedData.getDimension()));
-                teleportX = loadedData.getX();
-                teleportY = loadedData.getY();
-                teleportZ = loadedData.getZ();
-                teleportYRot = loadedData.getYRot();
-                teleportXRot = loadedData.getXRot();
-            } else {
-                String firstDim = targetPool.dimensions().first();
-                targetDimensionKey = ResourceKey.create(
-                        net.minecraft.core.registries.Registries.DIMENSION,
-                        Identifier.parse(firstDim));
-                teleportX = 0.5; teleportY = 100; teleportZ = 0.5;
-                teleportYRot = 90; teleportXRot = 0;
-            }
-        } else {
-            String firstDim = targetPool.dimensions().first();
-            targetDimensionKey = ResourceKey.create(
-                    net.minecraft.core.registries.Registries.DIMENSION,
-                    Identifier.parse(firstDim));
-            teleportX = 0.5; teleportY = 100; teleportZ = 0.5;
-            teleportYRot = 90; teleportXRot = 0;
-        }
-
-        // 9. 获取目标 ServerLevel
         ServerLevel targetLevel = server.getLevel(targetDimensionKey);
         if (targetLevel == null) {
             player.sendSystemMessage(Component.translatable(
@@ -181,7 +143,41 @@ public final class DimensionPoolManager {
             return false;
         }
 
-        // 10. 设置守卫标记，防止 AFTER_PLAYER_CHANGE_LEVEL 事件重复处理
+        // 计算传送坐标
+        double teleportX, teleportY, teleportZ;
+        float teleportYRot, teleportXRot;
+        boolean hasSavedState = hasSavedPlayerData(player, server, targetPool.id());
+        if (hasSavedState) {
+            PlayerStateData loadedData = getLastLoadedData(player, server);
+            if (loadedData != null) {
+                teleportX = loadedData.getX();
+                teleportY = loadedData.getY();
+                teleportZ = loadedData.getZ();
+                teleportYRot = loadedData.getYRot();
+                teleportXRot = loadedData.getXRot();
+            } else {
+                teleportX = 0.5; teleportY = 100; teleportZ = 0.5;
+                teleportYRot = 90; teleportXRot = 0;
+            }
+        } else {
+            teleportX = 0.5; teleportY = 100; teleportZ = 0.5;
+            teleportYRot = 90; teleportXRot = 0;
+        }
+
+        // ★★★ 5. 验证通过，现在才修改玩家状态 ★★★
+        // 保存当前状态到源池
+        if (sourcePool != null) {
+            savePlayerState(player, server, sourcePool.id());
+        }
+
+        // 清空背包 + 移除效果
+        PlayerStateData.clearPlayerInventory(player);
+        player.removeAllEffects();
+
+        // 加载目标池的历史状态
+        loadPlayerState(player, server, targetPool.id());
+
+        // 6. 执行传送
         TELEPORT_IN_PROGRESS.add(player.getUUID());
         try {
             player.teleportTo(targetLevel, teleportX, teleportY, teleportZ,
@@ -190,10 +186,10 @@ public final class DimensionPoolManager {
             TELEPORT_IN_PROGRESS.remove(player.getUUID());
         }
 
-        // 11. 强制设置游戏模式
+        // 7. 强制设置游戏模式
         player.setGameMode(targetPool.gameMode());
 
-        // 12. 成功消息
+        // 8. 成功消息
         player.sendSystemMessage(Component.translatable(
                 "youzaiworldcore.message.diminv.teleport_success",
                 targetPool.displayName()));
@@ -201,6 +197,63 @@ public final class DimensionPoolManager {
         LOGGER.info("玩家 {} 已传送到维度池 {}",
                 player.getName().getString(), targetPoolId);
         return true;
+    }
+
+    /**
+     * 确定传送目标维度键。
+     * <p>
+     * 优先使用保存的历史数据中的维度；无历史数据时使用池配置的首个可用维度。
+     * 逐一验证池中的每个维度，返回第一个在服务端已加载的维度。
+     *
+     * @return 可用的目标维度 ResourceKey，如果池中所有维度均不可用则返回 null
+     */
+    private static ResourceKey<Level> determineTeleportTarget(
+            ServerPlayer player, MinecraftServer server, DimensionPool targetPool) {
+
+        // 优先使用已保存数据中的维度（但必须属于目标池）
+        if (hasSavedPlayerData(player, server, targetPool.id())) {
+            PlayerStateData loadedData = getLastLoadedData(player, server);
+            if (loadedData != null) {
+                String dimStr = loadedData.getDimension();
+                if (dimStr != null && !dimStr.isEmpty()
+                        && targetPool.containsDimension(dimStr)) {  // ★ 验证维度属于此池
+                    ResourceKey<Level> key = ResourceKey.create(
+                            net.minecraft.core.registries.Registries.DIMENSION,
+                            Identifier.parse(dimStr));
+                    if (server.getLevel(key) != null) {
+                        return key;
+                    }
+                    LOGGER.warn("保存的维度 {} 不可用，尝试池中的其他维度", dimStr);
+                } else {
+                    LOGGER.debug("忽略已保存的维度 {}（不属于池 {}）", dimStr, targetPool.id());
+                }
+            }
+        }
+
+        // 逐一遍历池中的维度，返回第一个可用的
+        for (String dimId : targetPool.dimensions()) {
+            if (dimId == null || dimId.isEmpty()) continue;
+            ResourceKey<Level> key = ResourceKey.create(
+                    net.minecraft.core.registries.Registries.DIMENSION,
+                    Identifier.parse(dimId));
+            if (server.getLevel(key) != null) {
+                return key;
+            }
+            LOGGER.warn("池 {} 中的维度 {} 不可用，尝试下一个",
+                    targetPool.displayName(), dimId);
+        }
+
+        return null;
+    }
+
+    /** 检查指定池是否存在玩家的历史状态数据文件 */
+    private static boolean hasSavedPlayerData(ServerPlayer player, MinecraftServer server, String poolId) {
+        try {
+            Path file = getPlayerDataFile(server, poolId, player.getUUID().toString());
+            return Files.exists(file);
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     // ===== 状态保存/加载 =====
@@ -298,21 +351,19 @@ public final class DimensionPoolManager {
     /**
      * 处理玩家复活事件。
      * <p>
-     * 当玩家在非生存世界维度池中死亡时，Minecraft 会将玩家复活到世界出生点
-     * （通常是主世界，属于生存世界维度池）。此方法：
+     * 玩家死亡时，Minecraft 原生机制已处理了物品掉落和状态重置。
+     * 此方法仅做两件事：
      * <ol>
-     *   <li>记录死亡时的维度与池归属（通过 oldPlayer）</li>
-     *   <li>检测复活后的维度与池归属（通过 newPlayer）</li>
-     *   <li>如果跨池：保存 oldPlayer 的状态到源池，为 newPlayer 加载目标池状态</li>
-     *   <li>始终强制设置游戏模式</li>
+     *   <li>记录日志用于调试</li>
+     *   <li>根据复活后的维度设置正确的游戏模式</li>
      * </ol>
      * <p>
-     * 注意：此方法使用 {@code TELEPORT_IN_PROGRESS} 守卫防止与
-     * {@link #onPlayerChangeDimension(ServerPlayer, ServerLevel, ServerLevel)}
-     * 重复处理（当复活过程也触发了维度变化事件时）。
+     * <b>注意：</b>不应在此处保存 oldPlayer 状态到源池。
+     * 死亡状态（空背包、死亡坐标）会覆盖该池之前保存的正确状态，
+     * 导致后续传送回该池时玩家获得空背包和错误坐标，
+     * 进而引发 {@code server.getLevel()} 找不到维度而使传送失效。
      */
     public static void onPlayerRespawn(ServerPlayer oldPlayer, ServerPlayer newPlayer, boolean alive) {
-        // 如果 teleportToPool 主动发起的传送正在进行中，跳过复活处理
         if (TELEPORT_IN_PROGRESS.contains(newPlayer.getUUID())) {
             LOGGER.debug("跳过玩家 {} 的复活事件（teleport 进行中）", newPlayer.getName().getString());
             return;
@@ -321,38 +372,12 @@ public final class DimensionPoolManager {
         String oldDim = oldPlayer.level().dimension().identifier().toString();
         String newDim = newPlayer.level().dimension().identifier().toString();
 
-        LOGGER.info("玩家 {} 复活：{} → {}", newPlayer.getName().getString(), oldDim, newDim);
-
-        // 检查是否跨越维度池
         boolean samePool = DimensionPoolSettings.dimensionsInSamePool(oldDim, newDim);
-        if (samePool) {
-            // 在同一池内复活 — 只需设置游戏模式
-            setPoolGameMode(newPlayer, newDim);
-            return;
-        }
+        LOGGER.info("玩家 {} 复活：{} → {} {}",
+                newPlayer.getName().getString(), oldDim, newDim,
+                samePool ? "（同池，不改状态）" : "（跨池，仅设游戏模式）");
 
-        DimensionPool sourcePool = DimensionPoolSettings.getPoolByDimension(oldDim).orElse(null);
-        DimensionPool destPool = DimensionPoolSettings.getPoolByDimension(newDim).orElse(null);
-
-        if (destPool == null) {
-            LOGGER.debug("复活目标维度 {} 不属于任何池，跳过状态处理", newDim);
-            return;
-        }
-
-        MinecraftServer server = getServer(newPlayer);
-
-        // 从源池保存状态（死亡前的状态）
-        if (sourcePool != null && !sourcePool.id().equals(destPool.id())) {
-            savePlayerState(oldPlayer, server, sourcePool.id());
-            LOGGER.info("玩家 {} 死亡，状态已保存到池 {}", newPlayer.getName().getString(), sourcePool.id());
-        }
-
-        // 清空新玩家的背包并加载目标池状态
-        PlayerStateData.clearPlayerInventory(newPlayer);
-        newPlayer.removeAllEffects();
-        loadPlayerState(newPlayer, server, destPool.id());
-
-        // 设置游戏模式
+        // 仅设置游戏模式，不做状态保存/加载
         setPoolGameMode(newPlayer, newDim);
     }
 
