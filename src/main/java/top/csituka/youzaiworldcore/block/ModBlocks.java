@@ -75,7 +75,8 @@ public class ModBlocks {
             BlockBehaviour.Properties.of()
                     .strength(3.0f, 3.0f)
                     .sound(SoundType.METAL)
-                    .requiresCorrectToolForDrops(),
+                    .requiresCorrectToolForDrops()
+                    .lightLevel(state -> state.getValue(FlyBeaconBlock.ACTIVE) ? 12 : 0),
             true
     );
 
