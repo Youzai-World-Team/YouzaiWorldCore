@@ -219,11 +219,10 @@
   "options.youzaiworldcore.settings": "YouzaiWorldCore 设置…",
   "title.youzaiworldcore.test_page": "YouzaiWorldCore 测试…",
   "gui.toMenu": "返回到标题屏幕",
-  "multiplayer.status.cannot_connect": "无法连接到服务器\n\n这可能是由于服务器未运行或网络连接问题导致的。\n若需要他人协助，请提供以下信息：",
-  "multiplayer.status.cannot_resolve": "无法解析主机名\n\n这可能是由于 DNS 端口转发出现问题或网络连接问题导致的。\n若需要他人协助，请提供以下信息：",
-  "multiplayer.status.incompatible": "版本不兼容！\n\n请下载最新的客户端再尝试加入服务器！",
+  "multiplayer.status.cannot_connect": "无法连接到服务器!这可能是由于服务器未运行或网络连接问题导致的。若需要他人协助，请提供以下信息：",
+  "multiplayer.status.cannot_resolve": "无法解析主机名!这可能是由于 DNS 端口转发出现问题或网络连接问题导致的。若需要他人协助，请提供以下信息：",
+  "multiplayer.status.incompatible": "版本不兼容！请下载最新的客户端再尝试加入服务器！",
   "connect.failed": "无法连接至服务器，这可能是由于服务器未运行或网络连接问题导致的。若需要他人协助，请提供以下信息：",
-
   "youzaiworldcore.message.diminv.pool_not_found": "§c维度池不存在: %s",
   "youzaiworldcore.message.diminv.pool_empty": "§c%s 维度池尚未配置任何维度，请联系管理员进行设置。",
   "youzaiworldcore.message.diminv.already_in_pool": "§e你已经在 %s 维度池中了。",
@@ -231,5 +230,6 @@
   "youzaiworldcore.message.diminv.teleport_command_success": "§a已将 %s 名玩家传送至 %s 维度池。",
   "youzaiworldcore.message.diminv.no_pools": "§c当前没有配置任何维度池。",
   "youzaiworldcore.message.diminv.pool_list_header": "§6=== 维度池列表 (%s) ===",
-  "youzaiworldcore.message.diminv.dimension_not_found": "§c目标维度 %s 不存在或未加载。"
+  "youzaiworldcore.message.diminv.dimension_not_found": "§c目标维度 %s 不存在或未加载。",
+  "youzaiworldcore.message.diminv.no_valid_dimension": "§c%s 维度池没有可用的维度，请联系管理员检查配置。"
 }
