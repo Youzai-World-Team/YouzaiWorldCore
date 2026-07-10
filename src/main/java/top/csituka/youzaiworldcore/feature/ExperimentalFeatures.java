@@ -51,21 +51,45 @@ public final class ExperimentalFeatures {
 
     // ==================== 注册 ====================
 
+    /**
+     * 注册可由客户端自行开关的实验性功能。
+     */
     public static void register(
             String id, String name, String provider, String providerUrl,
             String description, String source, String sourceUrl,
             boolean defaultEnabled
+    ) {
+        register(id, name, provider, providerUrl, description, source, sourceUrl,
+                defaultEnabled, false);
+    }
+
+    /**
+     * 注册实验性功能。
+     *
+     * @param serverSide 是否仅服务端控制。{@code true} 时：
+     *                   <ul>
+     *                     <li>不存储到客户端配置</li>
+     *                     <li>只能通过全局开关控制</li>
+     *                     <li>不允许玩家自切换</li>
+     *                   </ul>
+     */
+    public static void register(
+            String id, String name, String provider, String providerUrl,
+            String description, String source, String sourceUrl,
+            boolean defaultEnabled, boolean serverSide
     ) {
         if (REGISTRY.containsKey(id)) {
             LOGGER.warn("实验性功能 '{}' 重复注册", id);
             return;
         }
         REGISTRY.put(id, new FeatureEntry(
-                id, name, provider, providerUrl, description, source, sourceUrl, defaultEnabled
+                id, name, provider, providerUrl, description, source, sourceUrl,
+                defaultEnabled, serverSide
         ));
         GLOBAL_STATE.putIfAbsent(id, defaultEnabled);
         if (YouzaiworldCore.logToFile) {
-            LOGGER.info("注册实验性功能: {} ({})，默认: {}", name, id, defaultEnabled);
+            LOGGER.info("注册实验性功能: {} ({})，默认: {}，服务端控制: {}",
+                    name, id, defaultEnabled, serverSide);
         }
     }
 
@@ -87,6 +111,11 @@ public final class ExperimentalFeatures {
 
     public static boolean isEnabled(String id, UUID playerUuid) {
         if (!REGISTRY.containsKey(id)) return false;
+        FeatureEntry entry = REGISTRY.get(id);
+        // 服务端控制的功能：跳过玩家覆写，只看全局
+        if (entry.serverSide()) {
+            return GLOBAL_STATE.getOrDefault(id, false);
+        }
         Map<UUID, Boolean> playerOverrides = PLAYER_STATE.get(id);
         if (playerOverrides != null) {
             Boolean playerVal = playerOverrides.get(playerUuid);
@@ -114,6 +143,8 @@ public final class ExperimentalFeatures {
 
     public static boolean setForPlayer(String id, UUID playerUuid, boolean enabled) {
         if (!REGISTRY.containsKey(id)) return false;
+        // 服务端控制的功能不允许玩家覆写
+        if (REGISTRY.get(id).serverSide()) return false;
         PLAYER_STATE.computeIfAbsent(id, k -> new HashMap<>()).put(playerUuid, enabled);
         if (YouzaiworldCore.logToFile) {
             LOGGER.info("实验性功能 '{}' 玩家 {} 覆写: {}", id, playerUuid, enabled);
@@ -162,6 +193,9 @@ public final class ExperimentalFeatures {
 
     public static void applyPersonalSync(UUID targetPlayer, String id, boolean enabled) {
         if (clientPlayerUuid != null && clientPlayerUuid.equals(targetPlayer)) {
+            // 服务端控制的功能不接受个人同步
+            FeatureEntry entry = REGISTRY.get(id);
+            if (entry != null && entry.serverSide()) return;
             CLIENT_PERSONAL.put(id, enabled);
             saveClientSettings();
         }
@@ -323,6 +357,8 @@ public final class ExperimentalFeatures {
             for (Map.Entry<String, JsonElement> entry : features.entrySet()) {
                 String id = entry.getKey();
                 if (!REGISTRY.containsKey(id)) continue;
+                // 服务端控制的功能不从客户端配置加载
+                if (REGISTRY.get(id).serverSide()) continue;
 
                 JsonObject obj = entry.getValue().getAsJsonObject();
                 if (obj.has("global")) {
@@ -359,6 +395,8 @@ public final class ExperimentalFeatures {
             JsonObject features = new JsonObject();
             for (FeatureEntry entry : REGISTRY.values()) {
                 String id = entry.id();
+                // 服务端控制的功能不存储到客户端
+                if (entry.serverSide()) continue;
                 JsonObject obj = new JsonObject();
                 obj.addProperty("global", CLIENT_GLOBAL.getOrDefault(id, entry.defaultEnabled()));
                 obj.addProperty("personal", CLIENT_PERSONAL.get(id)); // null if not set
@@ -383,6 +421,7 @@ public final class ExperimentalFeatures {
             String description,
             String source,
             String sourceUrl,
-            boolean defaultEnabled
+            boolean defaultEnabled,
+            boolean serverSide
     ) {}
 }
