@@ -69,6 +69,21 @@ public class OptionsScreenMixin {
             "options.online"
     };
 
+    /** 允许保留的选项页面按钮翻译键白名单 */
+    private static final java.util.Set<String> ALLOWED_OPTION_KEYS = java.util.Set.of(
+            "options.skinCustomisation",
+            "options.sounds",
+            "options.video",
+            "options.controls",
+            "options.language",
+            "options.chat",
+            "options.resourcepack",
+            "options.accessibility",
+            "options.credits_and_attribution",
+            "options.youzaiworldcore.installed_mods",
+            "options.youzaiworldcore.settings"
+    );
+
     private static boolean isWidgetToRemove(AbstractWidget widget) {
         String key = extractTranslationKey(widget.getMessage());
         if (isKeyToRemove(key)) return true;
@@ -452,7 +467,28 @@ public class OptionsScreenMixin {
         renderables.add(modsButton);
         narratables.add(modsButton);
 
-        // ============ 6. 如果修改了布局，触发重新布局 ============
+        // ============ 6. 移除其他模组添加的选项按钮 ============
+        // 遍历剩余 children，移除所有翻译键以 options. 开头但不在白名单中的按钮
+        // 这可以捕获其他模组通过 ScreenEvents 或 mixin 注入到 OptionsScreen 的额外按钮
+        List<GuiEventListener> modAddedToRemove = new ArrayList<>();
+        for (GuiEventListener child : screen.children()) {
+            if (child instanceof AbstractWidget widget) {
+                String key = extractTranslationKey(widget.getMessage());
+                if (key != null && key.startsWith("options.") && !ALLOWED_OPTION_KEYS.contains(key)) {
+                    modAddedToRemove.add(child);
+                }
+            }
+        }
+        for (GuiEventListener child : modAddedToRemove) {
+            childrenList.remove(child);
+            renderables.remove((Object) child);
+            narratables.remove((Object) child);
+        }
+        if (!modAddedToRemove.isEmpty() && ClientExternalSettings.isLogToFile()) {
+            LOGGER.info("Removed {} mod-added option buttons from OptionsScreen", modAddedToRemove.size());
+        }
+
+        // ============ 7. 如果修改了布局，触发重新布局 ============
         if (gridReplaced || headerFixed || settingsAdded) {
             accessor.youzaiworldcore$repositionElements();
         }
