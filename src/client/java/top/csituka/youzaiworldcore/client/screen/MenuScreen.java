@@ -342,7 +342,7 @@ public class MenuScreen extends Screen {
     }
 
     private void createCloseButton(float alpha) {
-        int baseY = (int) (this.height / 2 - 110);
+        int baseY = (int) (this.height / 2 - 140);
         int titleY = baseY;
 
         int closeX = this.width / 2 + TITLE_BUTTON_OFFSET;
@@ -360,7 +360,7 @@ public class MenuScreen extends Screen {
     }
 
     private void createBackButton(float alpha) {
-        int baseY = (int) (this.height / 2 - 110);
+        int baseY = (int) (this.height / 2 - 140);
         int titleY = baseY;
 
         int backX = this.width / 2 - TITLE_BUTTON_OFFSET - CLOSE_BUTTON_SIZE;
@@ -404,9 +404,9 @@ public class MenuScreen extends Screen {
         int textAlpha = (int) (textAlphaMapping * 255);
         int textColor = (textAlpha << 24) | 0xFFFFFF;
 
-        int baseY = (int) (this.height / 2 - 110);
+        int baseY = (int) (this.height / 2 - 140);
 
-        float titleScale = 1.3f;
+        float titleScale = 1.15f;
         int letterSpacing = 3;
         int titleWidth = calculateTextWidthWithSpacing(titleText, letterSpacing);
         float titleX = (this.width - titleWidth * titleScale) / 2f / titleScale;
@@ -434,9 +434,9 @@ public class MenuScreen extends Screen {
         int textAlpha = (int) (alpha * 255);
         int textColor = (textAlpha << 24) | 0xFFFFFF;
 
-        int baseY = (int) (this.height / 2 - 110);
+        int baseY = (int) (this.height / 2 - 140);
 
-        float titleScale = 1.3f;
+        float titleScale = 1.15f;
         int letterSpacing = 3;
         int titleWidth = calculateTextWidthWithSpacing(titleText, letterSpacing);
         float titleX = (this.width - titleWidth * titleScale) / 2f / titleScale;

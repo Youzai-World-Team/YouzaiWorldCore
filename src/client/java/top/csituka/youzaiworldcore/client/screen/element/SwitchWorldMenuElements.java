@@ -122,7 +122,7 @@ public class SwitchWorldMenuElements implements MenuElementGroup {
      * 根据屏幕高度计算最佳磁贴尺寸
      */
     private int calcTileSize(int screenHeight) {
-        int gridStartY = screenHeight / 2 - 85;
+        int gridStartY = screenHeight / 2 - 95;
         int availableHeight = screenHeight - gridStartY - 20;
         int tile = (availableHeight - 3 * GAP) / 4;
         return Math.max(MIN_TILE_SIZE, Math.min(MAX_TILE_SIZE, tile));
@@ -151,7 +151,7 @@ public class SwitchWorldMenuElements implements MenuElementGroup {
         int c4 = gridStartX + 4 * (tile + gap);
 
         // 网格顶部起始 Y
-        int gridTop = screenHeight / 2 - 85;
+        int gridTop = screenHeight / 2 - 95;
         if (gridTop - tile2 < 20) {
             gridTop = 20 + tile2;
         }
