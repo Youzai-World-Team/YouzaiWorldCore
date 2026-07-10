@@ -19,7 +19,7 @@
 
 - **Offline-Mode Server**: Built-in account authentication system supporting registration, login, logout, password changes, and session recovery
 - **Survival Gameplay Enhancement**: Provides the YZ tool series (with special effects like chain mining, area damage, etc.), custom blocks, and crafting recipes
-- **Server Administration**: GUI menu navigation, world switching, and admin operation tools
+- **Server Administration**: GUI menu navigation, Dimension Pool system (independent inventories/states/gamemodes), world switching, and admin operation tools
 - **Player Experience Optimization**: Skill attribute system (Puffish Skills), advancement system, and placeholder integration
 
 ### Target Audience
@@ -53,7 +53,7 @@ A comprehensive graphical menu system built on Fabric Screen, featuring a Window
 | Menu | Description |
 |------|-------------|
 | **Main Menu** | Feature hub containing tile buttons for world switching, events, check-in, tutorials, settings, etc. |
-| **Switch World** | Displays all teleportable worlds (Survival, Kingdom, Gameplay, Creative, Building, etc.) |
+| **Switch World** | Displays 11 teleportable world tile buttons. The first 7 (Survival, Kingdom, Gameplay, Creative, Building, Command Zone, Tutorial World) are integrated with the Dimension Pool system, sending `WorldPoolTeleportPayload` packets for full inventory/state/gamemode switching; the remaining buttons retain legacy chat-command behavior |
 | **Settings** | Provides music/sound effect toggles, PVP/friendly fire toggles, difficulty selection, etc. |
 | **About Me** | Displays player 3D model render, player ID, first/last join time, playtime duration |
 
@@ -120,7 +120,7 @@ A deceptive player invisibility system — the invisible player completely disap
 
 ### 8. Experimental Feature System
 
-Supports server-wide global toggle + player-level override for experimental features, with state configuration persisted to JSON files.
+Supports server-wide global toggle + player-level override for experimental features, with state configuration persisted to JSON files. Supports **server-controlled** mode (`serverSide`), where server-controlled features are not stored in client configuration and do not allow player overrides.
 
 ### 9. Placeholder System (Placeholder API)
 
@@ -141,7 +141,27 @@ A client-side persistent configuration system, stored at `config/youzaiworldcore
 | **Debug Mode Type** | "embedded" (integrated server) / "dedicated" (separate server) |
 | **Debug Address/Port** | Connection config for dedicated server debug mode |
 
-### 12. Preset Item System
+### 12. Server External Settings
+
+A server-side persistent configuration system, stored at `config/youzaiworldcore/server_external_settings.json`:
+
+| Setting | Description |
+|---------|-------------|
+| **Log to File** | Outputs detailed noisy logs (experimental feature registration, config loading, account data, etc.) to latest.log |
+
+### 13. Dimension Pool System
+
+A multi-world server management system providing **independent state pools** — players have separate inventories, health, status effects, and game modes across different dimension pools.
+
+- **How it works**: Dimensions are grouped into "pools"; when a player crosses between pools, state save/load happens automatically
+- **7 predefined pools**: Survival World (with vanilla 3 dimensions), Main City, Gameplay, Creation, Building, Commands, Tutorial World
+- **Pool switching flow**: Check target pool → save current state → clear inventory + remove effects → load target pool state → teleport → force-set game mode
+- **Default spawn**: Each pool can independently configure landing coordinates for players returning after death in another pool
+- **Cross-pool teleportation**: Supports dimension portals, command teleportation, respawn events, and other trigger methods
+- **Configuration persistence**: Pool definitions stored at `config/youzaiworldcore/dimensional_inventories/pool_settings.json`; player states stored at `<world>/youzaiworldcore/dimensional_inventories/data/<pool-id>/<uuid>.json`
+- **Experimental**: The dimension pool system is currently managed as an experimental feature (ID: `dimension_pool`), disabled by default
+
+### 14. Preset Item System
 
 Four preset shulker boxes in the creative mode tab, generated with one click:
 
@@ -161,6 +181,25 @@ All commands use `/yzwc` as the root command, built on the Brigadier command fra
 ```
 /yzwc
 ├── (no arguments) — Displays the "Hello World" message
+│
+├── world_pool
+│   ├── Description: Dimension pool management system (requires experimental feature dimension_pool enabled)
+│   ├── Permission: youzaiworldcore.command.world_pool (or OP level 4)
+│   │
+│   ├── teleport <targets> <dimension_pool>
+│   │   ├── Description: Teleports target player(s) to a specified dimension pool
+│   │   ├── Parameters:
+│   │   │   • targets — Target player(s) (supports multiple players)
+│   │   │   • dimension_pool — Target pool ID (Tab-completion supported)
+│   │   ├── Available pool IDs: survival_world_pool, main_city_pool, gameplay_pool, creation_pool, building_pool, commands_pool, tutorial_world_pool
+│   │   └── Examples:
+│   │       /yzwc world_pool teleport @p survival_world_pool
+│   │       /yzwc world_pool teleport @a building_pool
+│   │
+│   └── list
+│       ├── Description: Lists all dimension pools with their dimensions, game mode, and advancement/stat toggles
+│       └── Examples:
+│           /yzwc world_pool list
 │
 ├── function
 │   └── invisibility <true/false>
@@ -292,6 +331,7 @@ All commands use `/yzwc` as the root command, built on the Brigadier command fra
 | `youzaiworldcore.command.teleport_world` | Cross-dimension teleport | OP level 4 |
 | `youzaiworldcore.command.open_menu` | Open GUI menu | OP level 4 |
 | `youzaiworldcore.command.reload` | Mod reload | OP level 4 |
+| `youzaiworldcore.command.world_pool` | Dimension pool management | OP level 4 |
 | `youzaiworldcore.command.function.invisibility` | Invisibility function | OP level 4 |
 | `youzaiworldcore.command.experimental_feature` | Experimental feature (basic) | Everyone |
 | `youzaiworldcore.command.experimental_feature.query` | Experimental feature query | Everyone |
@@ -312,9 +352,13 @@ All commands use `/yzwc` as the root command, built on the Brigadier command fra
 
 ## 🧪 Experimental Feature Internal ID List
 
-The experimental feature system supports server-wide toggles and per-player overrides, with configuration persisted to `config/youzaiworldcore/experimental_feature/`.
+The experimental feature system supports server-wide toggles and per-player overrides, with configuration persisted to `config/youzaiworldcore/experimental_feature/`. The `chicken_warden_model` feature was registered in earlier versions but has since been removed.
 
-> **Current Status**: No experimental features are currently registered. The `chicken_warden_model` (Chicken Warden) feature was registered in earlier versions but has since been removed.
+| Internal ID | Name | Description | Control Mode | Default State |
+|-------------|------|-------------|--------------|---------------|
+| `dimension_pool` | Dimension Pool System | Provides independent player inventories, states, and game mode management across dimension pools | 🔒 Server-controlled | ❌ Disabled |
+
+> **Server-Controlled**: `serverSide=true`, this feature can only be toggled globally by the server. It is not stored in client configuration and does not allow player-level overrides.
 
 ### Usage Notes
 
@@ -333,7 +377,7 @@ The GUI menu system is based on the `MenuScreen` + `MenuElementGroup` interface,
 | Internal ID | Menu Name | Hierarchy | Description |
 |-------------|-----------|-----------|-------------|
 | `main` | Main Menu | Root menu | Feature hub with a 5-column tile layout, including Switch Worlds, Questionnaire, Title, Events, About Me, Check-In, Tutorial Center, Settings, Mail, Website, Report, Management |
-| `switch_world` | Switch World | Main Menu → Switch World | Displays 11 teleportable world tile buttons (Survival, Kingdom, Gameplay, Creative, Building, Nether, End, Command Zone, Market, Overworld, Login Hall); opens a confirmation dialog on click |
+| `switch_world` | Switch World | Main Menu → Switch World | 5-column tile layout with 11 world buttons. The first 7 (Survival, Kingdom, Gameplay, Creative, Building, Command Zone, Tutorial World) use the Dimension Pool system via `WorldPoolTeleportPayload`; the Nether/End/Overworld/Login Hall retain legacy chat-command behavior |
 | `settings` | Settings | Main Menu → Settings | General settings (music/sound toggles), gameplay settings (PVP/friendly fire toggles, difficulty dropdown) |
 | `about_me` | About Me | Main Menu → About Me | Displays player 3D model render, player ID, first/last join time, playtime duration with fade-in animation |
 
@@ -346,6 +390,7 @@ Menus communicate between server and client via `OpenMenuPayload` (S2C packet, I
 | `youzaiworldcore:open_menu` | Server → Client | Opens a menu screen by name |
 | `youzaiworldcore:feature_sync` | Server → Client | Synchronizes experimental feature states |
 | `youzaiworldcore:open_auth_screen` | Server → Client | Opens the authentication screen |
+| `youzaiworldcore:world_pool_teleport` | Client → Server | Requests teleportation to a specified dimension pool |
 | `youzaiworldcore:decompose_item` | Client → Server | Decomposes an item in the decomposition table |
 | `youzaiworldcore:fly_beacon_active` | Client → Server | Toggles the fly beacon activation state |
 
@@ -385,6 +430,8 @@ src/
 │   ├── block/                                  # Custom blocks
 │   ├── command/                                # Command registration
 │   ├── component/                              # Data components
+│   ├── config/                                 # Server external settings
+│   ├── dimensionalinventories/                 # Dimension pool system
 │   ├── event/                                  # Event listeners
 │   ├── feature/                                # Experimental feature system
 │   ├── invisibility/                           # Invisibility system

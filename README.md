@@ -19,7 +19,7 @@
 
 - **离线模式服务器**：内置账户认证系统，支持注册/登录/登出/密码修改与会话恢复
 - **生存玩法增强**：提供悠哉系列工具（具有连锁挖掘、范围伤害等特殊效果）、自定义方块与合成配方
-- **服务器运营管理**：GUI 菜单导航、世界切换、管理员运营工具
+- **服务器运营管理**：GUI 菜单导航、维度池系统（独立背包/状态/游戏模式）、世界切换、管理员运营工具
 - **玩家体验优化**：技能属性系统（Puffish Skills）、成就系统、占位符集成
 
 ### 目标用户群体
@@ -53,7 +53,7 @@
 | 菜单 | 说明 |
 |------|------|
 | **主菜单** | 功能总入口，包含切换世界、活动、签到、教程、设置等磁贴按钮 |
-| **切换世界** | 展示所有可传送的世界（生存、王城、玩法、创造、建筑等） |
+| **切换世界** | 展示 11 个可传送世界的磁贴按钮。前 7 个（生存、王城、玩法、创造、建筑、指令区、教程世界）集成维度池系统，通过 `WorldPoolTeleportPayload` 数据包实现完全背包/状态/游戏模式切换；其余按钮保留旧式聊天提示行为 |
 | **设置** | 提供音乐/音效开关、PVP/友军伤害开关、难度选择等配置 |
 | **关于我** | 显示玩家 3D 模型渲染、玩家ID、首次/最后加入时间、游玩时长 |
 
@@ -120,7 +120,7 @@
 
 ### 8. 实验性功能系统
 
-支持服务端全局开关 + 玩家级覆写的实验性功能管理系统，状态配置持久化到 JSON 文件。
+支持服务端全局开关 + 玩家级覆写的实验性功能管理系统，状态配置持久化到 JSON 文件。支持 **服务端控制** 模式（`serverSide`），在服务端控制的功能不会被存储到客户端配置，也不允许玩家个人覆写。
 
 ### 9. 占位符系统（Placeholder API）
 
@@ -141,7 +141,27 @@
 | **调试方式** | "embedded" 内嵌服务端 / "dedicated" 专用服务端 |
 | **调试地址/端口** | 专用服务端调试模式的连接配置 |
 
-### 12. 预设物品系统
+### 12. 服务端外部设置
+
+服务端专用的持久化配置系统，配置文件位于 `config/youzaiworldcore/server_external_settings.json`：
+
+| 配置项 | 说明 |
+|--------|------|
+| **日志输出** | 将详细的噪音日志（实验性功能注册、配置加载、账户数据等）写入 latest.log |
+
+### 13. 维度池系统（Dimension Pool）
+
+一套用于管理多世界服务器的**独立状态池**系统，维度池之间玩家拥有独立的背包、生命值、状态效果和游戏模式。
+
+- **工作原理**：将一组维度划分为一个"池"，玩家在不同池之间穿越时自动完成状态保存/加载
+- **7 个预定义池**：生存世界（含原版三维度）、主城、玩法、创造、建筑、指令区、教程世界
+- **池切换流程**：检查目标池 → 保存当前状态 → 清空背包 + 移除效果 → 加载目标池历史状态 → 传送 → 强制设置游戏模式
+- **默认出生点**：每个池可独立配置玩家死亡后首次传送回的降落坐标
+- **跨池传送**：支持维度传送门（如下界传送门）、命令传送、复活事件等多种触发方式
+- **配置持久化**：池定义存储于 `config/youzaiworldcore/dimensional_inventories/pool_settings.json`，玩家状态存储于 `<world>/youzaiworldcore/dimensional_inventories/data/<pool-id>/<uuid>.json`
+- **实验性**：维度池系统当前作为实验性功能（ID: `dimension_pool`）管理，默认关闭
+
+### 14. 预设物品系统
 
 创造模式标签页中的四大预设潜影盒，一键生成：
 
@@ -161,6 +181,25 @@
 ```
 /yzwc
 ├── (无参数) — 显示 "Hello World" 提示信息
+│
+├── world_pool
+│   ├── 描述：维度池管理系统（需要启用实验性功能 dimension_pool）
+│   ├── 权限：youzaiworldcore.command.world_pool（或 OP 4 级）
+│   │
+│   ├── teleport <targets> <dimension_pool>
+│   │   ├── 描述：将目标玩家传送到指定维度池
+│   │   ├── 参数：
+│   │   │   • targets — 目标玩家（支持多选）
+│   │   │   • dimension_pool — 目标维度池 ID（支持 Tab 补全）
+│   │   ├── 可用池 ID：survival_world_pool, main_city_pool, gameplay_pool, creation_pool, building_pool, commands_pool, tutorial_world_pool
+│   │   └── 示例：
+│   │       /yzwc world_pool teleport @p survival_world_pool
+│   │       /yzwc world_pool teleport @a building_pool
+│   │
+│   └── list
+│       ├── 描述：列出所有维度池及其包含的维度、游戏模式和进度/统计开关
+│       └── 示例：
+│           /yzwc world_pool list
 │
 ├── function
 │   └── invisibility <true/false>
@@ -292,6 +331,7 @@
 | `youzaiworldcore.command.teleport_world` | 跨维度传送 | OP 4 级 |
 | `youzaiworldcore.command.open_menu` | 打开菜单 | OP 4 级 |
 | `youzaiworldcore.command.reload` | 模组重载 | OP 4 级 |
+| `youzaiworldcore.command.world_pool` | 维度池管理 | OP 4 级 |
 | `youzaiworldcore.command.function.invisibility` | 隐身功能 | OP 4 级 |
 | `youzaiworldcore.command.experimental_feature` | 实验性功能（基础） | 所有人 |
 | `youzaiworldcore.command.experimental_feature.query` | 实验性功能查询 | 所有人 |
@@ -312,9 +352,13 @@
 
 ## 🧪 实验性功能内部 ID 列表
 
-实验性功能系统支持服务端全局开关和玩家级覆写，配置持久化到 `config/youzaiworldcore/experimental_feature/` 目录。
+实验性功能系统支持服务端全局开关和玩家级覆写，配置持久化到 `config/youzaiworldcore/experimental_feature/` 目录。`chicken_warden_model`（鸡管者模型）曾在早期版本中注册，现已被移除。
 
-> **当前状态**：暂无已注册的实验性功能。`chicken_warden_model`（鸡管者模型）曾在早期版本中注册，现已被移除。
+| 内部 ID | 名称 | 功能描述 | 控制模式 | 默认状态 |
+|---------|------|---------|---------|---------|
+| `dimension_pool` | 维度池传送系统 | 为不同维度池提供独立的玩家背包、状态和游戏模式管理 | 🔒 服务端控制 | ❌ 禁用 |
+
+> **服务端控制**：`serverSide=true`，该功能仅由服务端全局开关控制，不存储到客户端配置，不允许玩家个人覆写。
 
 ### 使用注意事项
 
@@ -333,7 +377,7 @@ GUI 菜单系统基于 `MenuScreen` + `MenuElementGroup` 接口实现，支持�
 | 内部 ID | 菜单名称 | 层级关系 | 功能说明 |
 |---------|---------|---------|---------|
 | `main` | 主菜单 | 根菜单 | 功能总入口，展示 5 列磁贴布局，包含切换世界、问卷调查、称号、活动、关于我、签到、教程中心、设置、邮箱、官网、举报、管理 |
-| `switch_world` | 切换世界 | 主菜单 → 切换世界 | 显示 11 个可传送世界的磁贴按钮（生存、王城、玩法、创造、建筑、下界、末地、指令区、市场、主世界、登录大厅），点击弹出传送确认对话框 |
+| `switch_world` | 切换世界 | 主菜单 → 切换世界 | 5 列磁贴布局，11 个世界按钮。前 7 个（生存、王城、玩法、创造、建筑、指令区、教程世界）集成维度池系统，发送 `WorldPoolTeleportPayload` 实现完整状态切换；下界/末地/主世界/登录大厅保留旧式聊天提示 |
 | `settings` | 设置 | 主菜单 → 设置 | 通用设置（音乐/音效开关）、游戏设置（PVP/友军伤害开关、难度下拉选择） |
 | `about_me` | 关于我 | 主菜单 → 关于我 | 显示玩家 3D 模型渲染、玩家ID、首次/最后加入时间、游玩时长，带淡入动画效果 |
 
@@ -346,6 +390,7 @@ GUI 菜单系统基于 `MenuScreen` + `MenuElementGroup` 接口实现，支持�
 | `youzaiworldcore:open_menu` | 服务端 → 客户端 | 打开指定名称的菜单界面 |
 | `youzaiworldcore:feature_sync` | 服务端 → 客户端 | 同步实验性功能状态 |
 | `youzaiworldcore:open_auth_screen` | 服务端 → 客户端 | 打开认证界面 |
+| `youzaiworldcore:world_pool_teleport` | 客户端 → 服务端 | 请求传送到指定维度池 |
 | `youzaiworldcore:decompose_item` | 客户端 → 服务端 | 分解台物品分解请求 |
 | `youzaiworldcore:fly_beacon_active` | 客户端 → 服务端 | 飞行信标激活状态切换 |
 
@@ -385,6 +430,8 @@ src/
 │   ├── block/                                  # 自定义方块
 │   ├── command/                                # 命令注册
 │   ├── component/                              # 数据组件
+│   ├── config/                                 # 服务端外部设置
+│   ├── dimensionalinventories/                 # 维度池系统
 │   ├── event/                                  # 事件监听器
 │   ├── feature/                                # 实验性功能系统
 │   ├── invisibility/                           # 隐身功能系统
