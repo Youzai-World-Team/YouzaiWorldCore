@@ -64,6 +64,10 @@ public class TitleScreenMixin {
     /** 两个面板统一高度 */
     private static final int PANEL_HEIGHT = 130;
 
+    /** 面板组垂直下移偏移量（相对垂直居中位置） */
+    @Unique
+    private static final int PANEL_Y_OFFSET = 12;
+
     /** 公告标题颜色 */
     private static final int ANNOUNCEMENT_TITLE_COLOR = 0xFFFFAA00;
 
@@ -82,7 +86,7 @@ public class TitleScreenMixin {
 
     /** Logo 距离屏幕上边缘的像素 */
     @Unique
-    private static final int LOGO_TOP_MARGIN = 12;
+    private static final int LOGO_TOP_MARGIN = 20;
 
     /** Logo 绘制宽度（像素） */
     @Unique
@@ -222,7 +226,7 @@ public class TitleScreenMixin {
         int totalGroupWidth = PANEL_WIDTH * 2 + PANEL_GAP;
         int groupStartX = (width - totalGroupWidth) / 2;
         int leftPanelX = groupStartX;
-        int panelY = (height - PANEL_HEIGHT) / 2;
+        int panelY = (height - PANEL_HEIGHT) / 2 + PANEL_Y_OFFSET;
 
         int buttonX = leftPanelX + PANEL_PADDING;
         int buttonWidth = PANEL_WIDTH - PANEL_PADDING * 2;
@@ -297,7 +301,7 @@ public class TitleScreenMixin {
         int groupStartX = (width - totalGroupWidth) / 2;
         int leftPanelX = groupStartX;
         int rightPanelX = groupStartX + PANEL_WIDTH + (int) currentGap;
-        int panelY = (height - PANEL_HEIGHT) / 2;
+        int panelY = (height - PANEL_HEIGHT) / 2 + PANEL_Y_OFFSET;
 
         // 按钮跟随左侧面板移动，并同步应用淡入透明度
         int buttonX = leftPanelX + PANEL_PADDING;
