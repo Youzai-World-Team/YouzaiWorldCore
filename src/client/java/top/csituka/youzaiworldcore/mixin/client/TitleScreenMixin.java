@@ -14,6 +14,9 @@ import net.minecraft.client.gui.screens.worldselection.SelectWorldScreen;
 import net.minecraft.client.multiplayer.ServerData;
 import net.minecraft.client.multiplayer.resolver.ServerAddress;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.util.ARGB;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
@@ -21,6 +24,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import top.csituka.youzaiworldcore.YouzaiworldCore;
 import top.csituka.youzaiworldcore.client.config.ClientExternalSettings;
 import top.csituka.youzaiworldcore.client.screen.widget.TitleScreenTextButton;
 
@@ -60,6 +64,10 @@ public class TitleScreenMixin {
     /** 两个面板统一高度 */
     private static final int PANEL_HEIGHT = 130;
 
+    /** 面板组垂直下移偏移量（相对垂直居中位置） */
+    @Unique
+    private static final int PANEL_Y_OFFSET = 12;
+
     /** 公告标题颜色 */
     private static final int ANNOUNCEMENT_TITLE_COLOR = 0xFFFFAA00;
 
@@ -68,6 +76,25 @@ public class TitleScreenMixin {
 
     /** 公告正文颜色 */
     private static final int ANNOUNCEMENT_TEXT_COLOR = 0xFFE0E0E0;
+
+    // ============ Logo ============
+
+    /** Logo 资源路径 */
+    @Unique
+    private static final Identifier LOGO_TEXTURE = Identifier.fromNamespaceAndPath(
+            YouzaiworldCore.MOD_ID, "textures/gui/yzw-logo.png");
+
+    /** Logo 距离屏幕上边缘的像素 */
+    @Unique
+    private static final int LOGO_TOP_MARGIN = 20;
+
+    /** Logo 绘制宽度（像素） */
+    @Unique
+    private static final int LOGO_DRAW_WIDTH = 200;
+
+    /** Logo 绘制高度（像素） */
+    @Unique
+    private static final int LOGO_DRAW_HEIGHT = 34;
 
     // ============ 淡入动画 ============
 
@@ -199,7 +226,7 @@ public class TitleScreenMixin {
         int totalGroupWidth = PANEL_WIDTH * 2 + PANEL_GAP;
         int groupStartX = (width - totalGroupWidth) / 2;
         int leftPanelX = groupStartX;
-        int panelY = (height - PANEL_HEIGHT) / 2;
+        int panelY = (height - PANEL_HEIGHT) / 2 + PANEL_Y_OFFSET;
 
         int buttonX = leftPanelX + PANEL_PADDING;
         int buttonWidth = PANEL_WIDTH - PANEL_PADDING * 2;
@@ -274,7 +301,7 @@ public class TitleScreenMixin {
         int groupStartX = (width - totalGroupWidth) / 2;
         int leftPanelX = groupStartX;
         int rightPanelX = groupStartX + PANEL_WIDTH + (int) currentGap;
-        int panelY = (height - PANEL_HEIGHT) / 2;
+        int panelY = (height - PANEL_HEIGHT) / 2 + PANEL_Y_OFFSET;
 
         // 按钮跟随左侧面板移动，并同步应用淡入透明度
         int buttonX = leftPanelX + PANEL_PADDING;
@@ -288,6 +315,7 @@ public class TitleScreenMixin {
         drawPanelBackground(graphics, leftPanelX, panelY, PANEL_WIDTH, PANEL_HEIGHT, fadeAlpha);
         drawPanelBackground(graphics, rightPanelX, panelY, PANEL_WIDTH, PANEL_HEIGHT, fadeAlpha);
         drawPanelContent(graphics, rightPanelX, panelY, PANEL_WIDTH, PANEL_HEIGHT, font, fadeAlpha);
+        drawLogo(graphics, width, fadeAlpha);
     }
 
     /**
@@ -296,6 +324,21 @@ public class TitleScreenMixin {
     private void drawPanelBackground(GuiGraphicsExtractor graphics, int x, int y, int w, int h, float fadeAlpha) {
         int bgAlpha = (int) (0x80 * fadeAlpha);
         graphics.fill(x, y, x + w, y + h, (bgAlpha << 24));
+    }
+
+    /**
+     * 绘制顶部居中 Logo，水平居中、距离上边缘 LOGO_TOP_MARGIN 像素，透明度受淡入进度控制。
+     */
+    private void drawLogo(GuiGraphicsExtractor graphics, int screenWidth, float fadeAlpha) {
+        int logoX = (screenWidth - LOGO_DRAW_WIDTH) / 2;
+        int logoY = LOGO_TOP_MARGIN;
+        int color = ARGB.white(fadeAlpha);
+        graphics.blit(RenderPipelines.GUI_TEXTURED, LOGO_TEXTURE,
+                logoX, logoY,
+                0, 0,
+                LOGO_DRAW_WIDTH, LOGO_DRAW_HEIGHT,
+                LOGO_DRAW_WIDTH, LOGO_DRAW_HEIGHT,
+                color);
     }
 
     /**
