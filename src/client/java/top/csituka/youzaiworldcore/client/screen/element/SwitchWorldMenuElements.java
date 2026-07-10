@@ -47,13 +47,13 @@ public class SwitchWorldMenuElements implements MenuElementGroup {
 
     // ========== 维度池映射（按钮标识 -> 维度池 ID） ==========
     private static final Map<String, String> POOL_MAP = Map.of(
-            "survival",   "youzaiworldcore_survival_world_pool",
-            "kingdom",    "youzaiworldcore_main_city_pool",
-            "gameplay",   "youzaiworldcore_gameplay_pool",
-            "creative",   "youzaiworldcore_creation_pool",
-            "building",   "youzaiworldcore_building_pool",
-            "command",    "youzaiworldcore_commands_pool",
-            "marketplace","youzaiworldcore_tutorial_world_pool"
+            "survival",   "survival_world_pool",
+            "kingdom",    "main_city_pool",
+            "gameplay",   "gameplay_pool",
+            "creative",   "creation_pool",
+            "building",   "building_pool",
+            "command",    "commands_pool",
+            "marketplace","tutorial_world_pool"
     );
 
     // ========== 贴图标识符 ==========

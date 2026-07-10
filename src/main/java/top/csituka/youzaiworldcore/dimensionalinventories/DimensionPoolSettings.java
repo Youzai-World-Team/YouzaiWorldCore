@@ -138,7 +138,7 @@ public final class DimensionPoolSettings {
 
         // 1. 生存世界 — 包含原版三维度
         DimensionPool survival = new DimensionPool(
-                "youzaiworldcore_survival_world_pool",
+                "survival_world_pool",
                 "生存世界",
                 GameType.SURVIVAL,
                 true,   // 允许进度
@@ -150,38 +150,38 @@ public final class DimensionPoolSettings {
         POOLS.put(survival.id(), survival);
 
         // 2. 主城（空池）
-        POOLS.put("youzaiworldcore_main_city_pool", new DimensionPool(
-                "youzaiworldcore_main_city_pool", "主城",
+        POOLS.put("main_city_pool", new DimensionPool(
+                "main_city_pool", "主城",
                 GameType.ADVENTURE, false, false
         ));
 
         // 3. 玩法（空池）
-        POOLS.put("youzaiworldcore_gameplay_pool", new DimensionPool(
-                "youzaiworldcore_gameplay_pool", "玩法",
+        POOLS.put("gameplay_pool", new DimensionPool(
+                "gameplay_pool", "玩法",
                 GameType.ADVENTURE, false, false
         ));
 
         // 4. 创造（空池）
-        POOLS.put("youzaiworldcore_creation_pool", new DimensionPool(
-                "youzaiworldcore_creation_pool", "创造",
+        POOLS.put("creation_pool", new DimensionPool(
+                "creation_pool", "创造",
                 GameType.CREATIVE, false, false
         ));
 
         // 5. 建筑（空池）
-        POOLS.put("youzaiworldcore_building_pool", new DimensionPool(
-                "youzaiworldcore_building_pool", "建筑",
+        POOLS.put("building_pool", new DimensionPool(
+                "building_pool", "建筑",
                 GameType.CREATIVE, false, false
         ));
 
         // 6. 指令区（空池）
-        POOLS.put("youzaiworldcore_commands_pool", new DimensionPool(
-                "youzaiworldcore_commands_pool", "指令区",
+        POOLS.put("commands_pool", new DimensionPool(
+                "commands_pool", "指令区",
                 GameType.ADVENTURE, false, false
         ));
 
         // 7. 教程世界（空池）
-        POOLS.put("youzaiworldcore_tutorial_world_pool", new DimensionPool(
-                "youzaiworldcore_tutorial_world_pool", "教程世界",
+        POOLS.put("tutorial_world_pool", new DimensionPool(
+                "tutorial_world_pool", "教程世界",
                 GameType.ADVENTURE, false, false
         ));
 

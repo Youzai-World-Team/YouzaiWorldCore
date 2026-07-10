@@ -113,6 +113,7 @@ public class YouzaiworldCore implements ModInitializer {
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
             if (handler.getPlayer() instanceof ServerPlayer serverPlayer) {
                 InvisibilityManager.onPlayerDisconnect(serverPlayer);
+                DimensionPoolManager.onPlayerDisconnect(serverPlayer);
             }
         });
         LOGGER.info("隐身功能已初始化");

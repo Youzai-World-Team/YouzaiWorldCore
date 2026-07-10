@@ -295,14 +295,88 @@ public final class DimensionPoolManager {
         }
     }
 
+    /**
+     * 处理玩家复活事件。
+     * <p>
+     * 当玩家在非生存世界维度池中死亡时，Minecraft 会将玩家复活到世界出生点
+     * （通常是主世界，属于生存世界维度池）。此方法：
+     * <ol>
+     *   <li>记录死亡时的维度与池归属（通过 oldPlayer）</li>
+     *   <li>检测复活后的维度与池归属（通过 newPlayer）</li>
+     *   <li>如果跨池：保存 oldPlayer 的状态到源池，为 newPlayer 加载目标池状态</li>
+     *   <li>始终强制设置游戏模式</li>
+     * </ol>
+     * <p>
+     * 注意：此方法使用 {@code TELEPORT_IN_PROGRESS} 守卫防止与
+     * {@link #onPlayerChangeDimension(ServerPlayer, ServerLevel, ServerLevel)}
+     * 重复处理（当复活过程也触发了维度变化事件时）。
+     */
     public static void onPlayerRespawn(ServerPlayer oldPlayer, ServerPlayer newPlayer, boolean alive) {
-        String currentDim = newPlayer.level().dimension().identifier().toString();
-        DimensionPoolSettings.getPoolByDimension(currentDim).ifPresent(pool -> {
+        // 如果 teleportToPool 主动发起的传送正在进行中，跳过复活处理
+        if (TELEPORT_IN_PROGRESS.contains(newPlayer.getUUID())) {
+            LOGGER.debug("跳过玩家 {} 的复活事件（teleport 进行中）", newPlayer.getName().getString());
+            return;
+        }
+
+        String oldDim = oldPlayer.level().dimension().identifier().toString();
+        String newDim = newPlayer.level().dimension().identifier().toString();
+
+        LOGGER.info("玩家 {} 复活：{} → {}", newPlayer.getName().getString(), oldDim, newDim);
+
+        // 检查是否跨越维度池
+        boolean samePool = DimensionPoolSettings.dimensionsInSamePool(oldDim, newDim);
+        if (samePool) {
+            // 在同一池内复活 — 只需设置游戏模式
+            setPoolGameMode(newPlayer, newDim);
+            return;
+        }
+
+        DimensionPool sourcePool = DimensionPoolSettings.getPoolByDimension(oldDim).orElse(null);
+        DimensionPool destPool = DimensionPoolSettings.getPoolByDimension(newDim).orElse(null);
+
+        if (destPool == null) {
+            LOGGER.debug("复活目标维度 {} 不属于任何池，跳过状态处理", newDim);
+            return;
+        }
+
+        MinecraftServer server = getServer(newPlayer);
+
+        // 从源池保存状态（死亡前的状态）
+        if (sourcePool != null && !sourcePool.id().equals(destPool.id())) {
+            savePlayerState(oldPlayer, server, sourcePool.id());
+            LOGGER.info("玩家 {} 死亡，状态已保存到池 {}", newPlayer.getName().getString(), sourcePool.id());
+        }
+
+        // 清空新玩家的背包并加载目标池状态
+        PlayerStateData.clearPlayerInventory(newPlayer);
+        newPlayer.removeAllEffects();
+        loadPlayerState(newPlayer, server, destPool.id());
+
+        // 设置游戏模式
+        setPoolGameMode(newPlayer, newDim);
+    }
+
+    /** 根据当前维度设置玩家的游戏模式 */
+    private static void setPoolGameMode(ServerPlayer player, String dimensionId) {
+        DimensionPoolSettings.getPoolByDimension(dimensionId).ifPresent(pool -> {
             GameType targetGameMode = pool.gameMode();
             if (targetGameMode != null) {
-                newPlayer.setGameMode(targetGameMode);
+                player.setGameMode(targetGameMode);
             }
         });
+    }
+
+    /**
+     * 清理指定玩家的传送守卫标记。
+     * <p>
+     * 在玩家断开连接时调用，防止因断线导致 {@link #TELEPORT_IN_PROGRESS} 留下脏数据，
+     * 进而影响该玩家重新加入后的维度切换处理。
+     */
+    public static void onPlayerDisconnect(ServerPlayer player) {
+        UUID uuid = player.getUUID();
+        if (TELEPORT_IN_PROGRESS.remove(uuid)) {
+            LOGGER.warn("清理玩家 {} 的残留传送守卫标记", player.getName().getString());
+        }
     }
 
     public static void onNonPlayerEntityChangeDimension(net.minecraft.world.entity.Entity originalEntity,
