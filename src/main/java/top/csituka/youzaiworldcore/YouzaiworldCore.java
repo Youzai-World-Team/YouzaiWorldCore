@@ -122,6 +122,19 @@ public class YouzaiworldCore implements ModInitializer {
         DimensionPoolSettings.load();
         LOGGER.info("维度池系统已初始化");
 
+        // ===== 注册实验性功能 =====
+        ExperimentalFeatures.register(
+                "dimension_pool",
+                "维度池传送系统",
+                "Youzai World Team",
+                "https://mcyzw.top",
+                "为不同维度池提供独立的玩家背包、状态和游戏模式管理",
+                "GitHub",
+                "https://github.com/Youzai-World-Team/YouzaiWorldCore",
+                false  // 默认关闭
+        );
+        LOGGER.info("实验性功能 'dimension_pool' 已注册");
+
         // ===== 注册维度池事件 =====
         net.fabricmc.fabric.api.entity.event.v1.ServerEntityLevelChangeEvents.AFTER_PLAYER_CHANGE_LEVEL.register(
             (player, origin, destination) -> {

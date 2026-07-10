@@ -7,6 +7,7 @@ import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import top.csituka.youzaiworldcore.feature.ExperimentalFeatures;
 import top.csituka.youzaiworldcore.luckperms.LuckPermsHelper;
 
 import java.util.Collection;
@@ -31,7 +32,8 @@ public final class WorldPoolCommand {
         dispatcher.register(Commands.literal("yzwc")
             .then(Commands.literal("world_pool")
                 .requires(source -> LuckPermsHelper.checkPermission(
-                        source, PERMISSION_WORLD_POOL, Commands.LEVEL_ADMINS))
+                        source, PERMISSION_WORLD_POOL, Commands.LEVEL_ADMINS)
+                        && ExperimentalFeatures.isGlobalEnabled("dimension_pool"))
 
                 // === teleport ===
                 .then(Commands.literal("teleport")

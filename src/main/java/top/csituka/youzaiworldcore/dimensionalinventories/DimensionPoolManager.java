@@ -12,7 +12,7 @@ import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import top.csituka.youzaiworldcore.YouzaiworldCore;
+import top.csituka.youzaiworldcore.dimensionalinventories.DimensionPool.DefaultSpawn;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -49,6 +49,16 @@ public final class DimensionPoolManager {
      * 该守卫用于跳过由此触发的重复处理，防止状态被二次清空/覆盖。
      */
     private static final Set<UUID> TELEPORT_IN_PROGRESS = new HashSet<>();
+
+    /**
+     * 记录跨池死亡后需要回默认出生点的玩家。
+     * <p>
+     * 键格式：{@code <playerUuid>|<poolId>}。当玩家在池 B 死亡、复活到池 A、
+     * 再传送回池 B 时，使用池 B 配置的 {@link DimensionPool.DefaultSpawn defaultSpawn}
+     * 而非从状态文件中读取的死亡位置坐标。
+     * 传送完成后自动移除对应条目。
+     */
+    private static final Set<String> DEATH_PENDING_SPAWN = new HashSet<>();
 
     private DimensionPoolManager() {}
 
@@ -144,24 +154,47 @@ public final class DimensionPoolManager {
         }
 
         // 计算传送坐标
-        double teleportX, teleportY, teleportZ;
-        float teleportYRot, teleportXRot;
-        boolean hasSavedState = hasSavedPlayerData(player, server, targetPool.id());
-        if (hasSavedState) {
-            PlayerStateData loadedData = getLastLoadedData(player, server);
-            if (loadedData != null) {
-                teleportX = loadedData.getX();
-                teleportY = loadedData.getY();
-                teleportZ = loadedData.getZ();
-                teleportYRot = loadedData.getYRot();
-                teleportXRot = loadedData.getXRot();
+        double teleportX = 0.5, teleportY = 100, teleportZ = 0.5;
+        float teleportYRot = 90, teleportXRot = 0;
+
+        // ★★★ 优先使用死亡默认出生点（跨池死亡后首次传送） ★★★
+        String deathKey = deathSpawnKey(player.getUUID(), targetPool.id());
+        DimensionPool.DefaultSpawn defaultSpawn = null;
+        if (DEATH_PENDING_SPAWN.remove(deathKey)) {
+            defaultSpawn = targetPool.defaultSpawn();
+            if (defaultSpawn != null && defaultSpawn.getDimension() != null
+                    && targetPool.containsDimension(defaultSpawn.getDimension())) {
+                teleportX = defaultSpawn.getX();
+                teleportY = defaultSpawn.getY();
+                teleportZ = defaultSpawn.getZ();
+                teleportYRot = defaultSpawn.getYaw();
+                teleportXRot = defaultSpawn.getPitch();
+                LOGGER.info("玩家 {} 使用默认出生点传送至池 {}",
+                        player.getName().getString(), targetPool.id());
+            } else {
+                // 配置了默认出生点但无效，降级到已保存坐标
+                defaultSpawn = null;
+            }
+        }
+
+        if (defaultSpawn == null) {
+            boolean hasSavedState = hasSavedPlayerData(player, server, targetPool.id());
+            if (hasSavedState) {
+                PlayerStateData loadedData = getLastLoadedData(player, server);
+                if (loadedData != null) {
+                    teleportX = loadedData.getX();
+                    teleportY = loadedData.getY();
+                    teleportZ = loadedData.getZ();
+                    teleportYRot = loadedData.getYRot();
+                    teleportXRot = loadedData.getXRot();
+                } else {
+                    teleportX = 0.5; teleportY = 100; teleportZ = 0.5;
+                    teleportYRot = 90; teleportXRot = 0;
+                }
             } else {
                 teleportX = 0.5; teleportY = 100; teleportZ = 0.5;
                 teleportYRot = 90; teleportXRot = 0;
             }
-        } else {
-            teleportX = 0.5; teleportY = 100; teleportZ = 0.5;
-            teleportYRot = 90; teleportXRot = 0;
         }
 
         // ★★★ 5. 验证通过，现在才修改玩家状态 ★★★
@@ -254,6 +287,11 @@ public final class DimensionPoolManager {
         } catch (Exception e) {
             return false;
         }
+    }
+
+    /** 生成死亡默认出生点标记键 */
+    private static String deathSpawnKey(UUID playerUuid, String poolId) {
+        return playerUuid.toString() + "|" + poolId;
     }
 
     // ===== 状态保存/加载 =====
@@ -376,6 +414,16 @@ public final class DimensionPoolManager {
         LOGGER.info("玩家 {} 复活：{} → {} {}",
                 newPlayer.getName().getString(), oldDim, newDim,
                 samePool ? "（同池，不改状态）" : "（跨池，仅设游戏模式）");
+
+        // 如果跨池死亡，标记源池：下次传送回该池时使用默认出生点
+        if (!samePool) {
+            DimensionPoolSettings.getPoolByDimension(oldDim).ifPresent(sourcePool -> {
+                String key = deathSpawnKey(newPlayer.getUUID(), sourcePool.id());
+                DEATH_PENDING_SPAWN.add(key);
+                LOGGER.info("标记玩家 {} 传回池 {} 时使用默认出生点",
+                        newPlayer.getName().getString(), sourcePool.id());
+            });
+        }
 
         // 仅设置游戏模式，不做状态保存/加载
         setPoolGameMode(newPlayer, newDim);

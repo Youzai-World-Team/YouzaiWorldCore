@@ -145,6 +145,15 @@ public final class ExperimentalFeatures {
         return CLIENT_GLOBAL.getOrDefault(id, false);
     }
 
+    /**
+     * 仅检查客户端的全局状态（忽略玩家个人覆写）。
+     * <p>
+     * 用于需要严格由服务端控制的场景，防止玩家通过自切换覆写全局开关。
+     */
+    public static boolean isGlobalOnClient(String id) {
+        return CLIENT_GLOBAL.getOrDefault(id, false);
+    }
+
     public static void applyGlobalSync(String id, boolean enabled) {
         CLIENT_GLOBAL.put(id, enabled);
         CLIENT_PERSONAL.remove(id);
