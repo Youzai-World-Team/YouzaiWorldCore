@@ -1,9 +1,12 @@
 package top.csituka.youzaiworldcore.mixin.client;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.LogoRenderer;
 import net.minecraft.client.gui.components.Renderable;
+import net.minecraft.client.gui.components.SplashRenderer;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.narration.NarratableEntry;
 import net.minecraft.client.gui.screens.ConnectScreen;
@@ -15,8 +18,10 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.ComponentContents;
 import net.minecraft.network.chat.contents.TranslatableContents;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import top.csituka.youzaiworldcore.client.config.ClientExternalSettings;
 
@@ -25,36 +30,55 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * 修改Minecraft标题界面：
- * - 「单人游戏」替换为「YouzaiWorldCore 测试...」按钮，行为根据「调试方式」配置变化：
- *   内嵌服务端 → 打开单人游戏选择世界页面
- *   专用服务端 → 连接调试服务器（地址/端口从配置读取）
- * - 隐藏其余所有按钮（含模组添加的）
- * - 下方添加「加入服务器」按钮，直连 play.mcyzw.top
- * - 【选项】和【退出游戏】放在同一行
- * - 所有按钮居中排列
+ * 修改 Minecraft 标题界面为双半透明方块布局：
+ * <ul>
+ *   <li>两个等宽半透明方块居中对齐，保留间距</li>
+ *   <li>左侧面板：竖向排列「加入服务器」「选项」「退出游戏」</li>
+ *   <li>右侧面板：服务器公告文字</li>
+ * </ul>
+ * 保留开发者测试按钮（仅开发者模式显示）。
  */
 @Mixin(TitleScreen.class)
 public class TitleScreenMixin {
 
-    /** 全宽按钮宽度 */
-    private static final int BUTTON_WIDTH = 200;
+    @Shadow private SplashRenderer splash;
 
-    /** 半宽按钮宽度（选项/退出各占一半） */
-    private static final int HALF_BUTTON_WIDTH = 98;
+    // ============ 布局常量 ============
+    /** 两个面板统一宽度 */
+    private static final int PANEL_WIDTH = 170;
+
+    /** 面板内边距 */
+    private static final int PANEL_PADDING = 12;
+
+    /** 两个面板之间的间距 */
+    private static final int PANEL_GAP = 16;
 
     /** 按钮高度 */
     private static final int BUTTON_HEIGHT = 20;
 
     /** 按钮间距 */
-    private static final int BUTTON_GAP = 4;
+    private static final int BUTTON_GAP = 6;
+
+    /** 两个面板统一高度 */
+    private static final int PANEL_HEIGHT = 130;
+    private static final int PANEL_BG_COLOR = 0x80000000;
+
+    /** 公告标题颜色 */
+    private static final int ANNOUNCEMENT_TITLE_COLOR = 0xFFFFAA00;
+
+    /** 公告正文颜色 */
+    private static final int ANNOUNCEMENT_TEXT_COLOR = 0xFFE0E0E0;
+
+    // ==================== init(): 移除并重排按钮 ====================
 
     /**
      * 在 {@code TitleScreen.init()} 执行完毕后：
-     * 1. 移除所有按钮，仅保留选项/退出
-     * 2. 添加「YouzaiWorldCore 测试...」按钮（替换单人游戏）
-     * 3. 添加「加入服务器」按钮
-     * 4. 将所有按钮居中排列（选项和退出在同一行）
+     * <ol>
+     *   <li>移除所有非核心按钮（仅保留「选项」「退出游戏」）</li>
+     *   <li>添加自定义「加入服务器」按钮</li>
+     *   <li>将所有三个按钮排列在左侧半透明面板区域内</li>
+     *   <li>开发者模式额外显示测试按钮</li>
+     * </ol>
      */
     @Inject(method = "init", at = @At("TAIL"))
     private void youzaiworldcore$reworkTitleButtons(CallbackInfo ci) {
@@ -64,7 +88,7 @@ public class TitleScreenMixin {
 
         ScreenAccessor accessor = (ScreenAccessor) screen;
 
-        // ============ 1. 收集需要保留的按钮 ============
+        // ============ 1. 收集需要保留的核心按钮 ============
         AbstractWidget optionsBtn = null;
         AbstractWidget quitBtn = null;
         List<GuiEventListener> toRemove = new ArrayList<>();
@@ -82,7 +106,7 @@ public class TitleScreenMixin {
             }
         }
 
-        // ============ 2. 移除不需要的按钮 ============
+        // ============ 2. 移除不要的组件 ============
         List<Renderable> renderables = accessor.youzaiworldcore$getRenderables();
         List<NarratableEntry> narratables = accessor.youzaiworldcore$getNarratables();
         List<GuiEventListener> childrenList = accessor.youzaiworldcore$getChildren();
@@ -97,18 +121,26 @@ public class TitleScreenMixin {
             }
         }
 
-        // ============ 3. 添加新按钮 ============
+        // ============ 3. 创建自定义按钮 ============
         Minecraft minecraft = accessor.youzaiworldcore$getMinecraft();
-        Button testButton = null;
 
-        // 3a. YouzaiWorldCore 测试... 按钮（开发者模式启用时显示）
+        // 隐藏原版标题和闪烁标语
+        this.splash = null;
+
+        // 3a. 加入服务器按钮
+        Button joinButton = createJoinServerButton(width, screen, accessor);
+        childrenList.add(joinButton);
+        renderables.add(joinButton);
+        narratables.add(joinButton);
+
+        // 3b. 开发者测试按钮（仅在开发者模式启用时显示）
+        Button testButton = null;
         boolean showTest = ClientExternalSettings.isDevModeEnabled();
         if (showTest) {
             String debugMode = ClientExternalSettings.getDebugModeType();
             boolean isDedicated = "dedicated".equals(debugMode);
 
             if (isDedicated) {
-                // 专用服务端模式：连接到调试服务器
                 String addr = ClientExternalSettings.getDebugAddress();
                 String port = ClientExternalSettings.getDebugPort();
                 String fullAddr = addr + ":" + port;
@@ -118,16 +150,11 @@ public class TitleScreenMixin {
                         Component.translatable("title.youzaiworldcore.test_page"),
                         button -> ConnectScreen.startConnecting(
                                 screen, minecraft, address, serverData, false, null)
-                ).bounds(
-                        width / 2 - BUTTON_WIDTH / 2, 0, BUTTON_WIDTH, BUTTON_HEIGHT
                 ).build();
             } else {
-                // 内嵌服务端模式：打开单人游戏选择世界页面
                 testButton = Button.builder(
                         Component.translatable("title.youzaiworldcore.test_page"),
                         button -> minecraft.gui.setScreen(new SelectWorldScreen(screen))
-                ).bounds(
-                        width / 2 - BUTTON_WIDTH / 2, 0, BUTTON_WIDTH, BUTTON_HEIGHT
                 ).build();
             }
             childrenList.add(testButton);
@@ -135,62 +162,195 @@ public class TitleScreenMixin {
             narratables.add(testButton);
         }
 
-        // 3b. 加入服务器按钮
-        Button joinButton = createJoinServerButton(width, screen, accessor);
-        childrenList.add(joinButton);
-        renderables.add(joinButton);
-        narratables.add(joinButton);
+        // ============ 4. 计算居中布局位置 ============
+        int totalGroupWidth = PANEL_WIDTH * 2 + PANEL_GAP;
+        int groupStartX = (width - totalGroupWidth) / 2;
+        int leftPanelX = groupStartX;
+        int rightPanelX = groupStartX + PANEL_WIDTH + PANEL_GAP;
+        int panelY = (height - PANEL_HEIGHT) / 2;
 
-        // ============ 4. 居中排列所有按钮 ============
-        // 根据开发者模式是否启用，动态调整行数
-        boolean hasTestButton = testButton != null;
-        // 布局：
-        //   行0: [ YouzaiWorldCore 测试... ]  (仅开发者模式)
-        //   行1: [       加入服务器         ]
-        //   行2: [   选项... ] [   退出游戏   ]
-        int rows = hasTestButton ? 3 : 2;
-        int totalHeight = rows * BUTTON_HEIGHT + (rows - 1) * BUTTON_GAP;
-        int centerX = width / 2;
+        int buttonWidth = PANEL_WIDTH - PANEL_PADDING * 2;
+        int buttonStartY = panelY + PANEL_PADDING;
+        int buttonX = leftPanelX + PANEL_PADDING;
 
-        int startY = Math.min(
-                height / 4 + 48,
-                (height - totalHeight) / 2
-        );
-        startY = Math.min(startY, height - totalHeight - 40);
-        startY = Math.max(startY, 60);
-
-        int currentY = startY;
-
-        // 行 0：YouzaiWorldCore 测试...（可选）
-        if (hasTestButton) {
-            testButton.setX(centerX - BUTTON_WIDTH / 2);
-            testButton.setY(currentY);
-            testButton.setWidth(BUTTON_WIDTH);
-            testButton.setHeight(BUTTON_HEIGHT);
-            currentY += BUTTON_HEIGHT + BUTTON_GAP;
-        }
-
-        // 行 1/0：加入服务器
-        joinButton.setX(centerX - BUTTON_WIDTH / 2);
-        joinButton.setY(currentY);
-        joinButton.setWidth(BUTTON_WIDTH);
+        // 行 0：加入服务器
+        joinButton.setX(buttonX);
+        joinButton.setY(buttonStartY);
+        joinButton.setWidth(buttonWidth);
         joinButton.setHeight(BUTTON_HEIGHT);
-        currentY += BUTTON_HEIGHT + BUTTON_GAP;
 
-        // 行 2/1：选项 + 退出（同一行）
+        // 行 1：选项
         if (optionsBtn != null) {
-            optionsBtn.setX(centerX - BUTTON_WIDTH / 2);
-            optionsBtn.setY(currentY);
-            optionsBtn.setWidth(HALF_BUTTON_WIDTH);
+            optionsBtn.setX(buttonX);
+            optionsBtn.setY(buttonStartY + BUTTON_HEIGHT + BUTTON_GAP);
+            optionsBtn.setWidth(buttonWidth);
             optionsBtn.setHeight(BUTTON_HEIGHT);
         }
+
+        // 行 2：退出游戏
         if (quitBtn != null) {
-            quitBtn.setX(centerX + BUTTON_WIDTH / 2 - HALF_BUTTON_WIDTH);
-            quitBtn.setY(currentY);
-            quitBtn.setWidth(HALF_BUTTON_WIDTH);
+            quitBtn.setX(buttonX);
+            quitBtn.setY(buttonStartY + 2 * (BUTTON_HEIGHT + BUTTON_GAP));
+            quitBtn.setWidth(buttonWidth);
             quitBtn.setHeight(BUTTON_HEIGHT);
         }
+
+        // 测试按钮：放在左面板下方
+        if (testButton != null) {
+            int testBtnWidth = PANEL_WIDTH - PANEL_PADDING * 2;
+            testButton.setX(buttonX);
+            testButton.setY(buttonStartY + 3 * (BUTTON_HEIGHT + BUTTON_GAP) + 4);
+            testButton.setWidth(testBtnWidth);
+            testButton.setHeight(BUTTON_HEIGHT);
+        }
     }
+
+    // ==================== extractRenderState(): 绘制面板 ====================
+
+    /**
+     * 劫持 LogoRenderer 的渲染调用，屏蔽原版标题 LOGO。
+     */
+    @Redirect(
+        method = "extractRenderState",
+        at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/client/gui/components/LogoRenderer;extractRenderState(Lnet/minecraft/client/gui/GuiGraphicsExtractor;IF)V"
+        )
+    )
+    private void youzaiworldcore$hideLogo(LogoRenderer renderer, GuiGraphicsExtractor graphics, int width, float alpha) {
+        // no-op：不绘制原版标题 LOGO
+    }
+
+    /**
+     * 在全景图渲染之后、按钮等组件渲染之前绘制左右两个半透明面板。
+     * <p>
+     * 两个面板等宽，作为整体居中对齐。
+     * 渲染顺序：全景图 → 面板 → 组件(按钮/logo等)
+     */
+    @Inject(
+        method = "extractRenderState",
+        at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/client/gui/screens/TitleScreen;extractPanorama(Lnet/minecraft/client/gui/GuiGraphicsExtractor;F)V",
+            shift = At.Shift.AFTER
+        )
+    )
+    private void youzaiworldcore$drawPanels(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick, CallbackInfo ci) {
+        TitleScreen screen = (TitleScreen) (Object) this;
+        int width = screen.width;
+        int height = screen.height;
+        var font = ((ScreenAccessor) screen).youzaiworldcore$getFont();
+
+        // 计算居中位置
+        int totalGroupWidth = PANEL_WIDTH * 2 + PANEL_GAP;
+        int groupStartX = (width - totalGroupWidth) / 2;
+        int leftPanelX = groupStartX;
+        int rightPanelX = groupStartX + PANEL_WIDTH + PANEL_GAP;
+        int panelY = (height - PANEL_HEIGHT) / 2;
+
+        drawPanelBackground(graphics, leftPanelX, panelY, PANEL_WIDTH, PANEL_HEIGHT);
+        drawPanelBackground(graphics, rightPanelX, panelY, PANEL_WIDTH, PANEL_HEIGHT);
+        drawPanelContent(graphics, rightPanelX, panelY, PANEL_WIDTH, PANEL_HEIGHT, font);
+    }
+
+    /**
+     * 绘制单个半透明面板背景（无描边）。
+     */
+    private void drawPanelBackground(GuiGraphicsExtractor graphics, int x, int y, int w, int h) {
+        graphics.fill(x, y, x + w, y + h, PANEL_BG_COLOR);
+    }
+
+    /**
+     * 绘制右侧面板内容（公告标题 + 正文，带自动换行）。
+     */
+    private void drawPanelContent(GuiGraphicsExtractor graphics, int panelX, int panelY, int panelW, int panelH, net.minecraft.client.gui.Font font) {
+        int textX = panelX + PANEL_PADDING;
+        int textY = panelY + PANEL_PADDING;
+        int maxTextWidth = panelW - PANEL_PADDING * 2;
+
+        // 公告标题（始终不换行）
+        String title = "📢 " + Component.translatable("title.youzaiworldcore.announcement_title").getString();
+        graphics.text(font, title, textX, textY, ANNOUNCEMENT_TITLE_COLOR);
+
+        // 公告内容行（逐行自动换行）
+        String[] rawLines = {
+            Component.translatable("title.youzaiworldcore.announcement_line1").getString(),
+            Component.translatable("title.youzaiworldcore.announcement_line2").getString(),
+            Component.translatable("title.youzaiworldcore.announcement_line3").getString(),
+            "",
+            Component.translatable("title.youzaiworldcore.announcement_line4").getString(),
+        };
+
+        int lineY = textY + font.lineHeight + 8;
+        for (String raw : rawLines) {
+            lineY = drawWrappedLine(graphics, font, raw, textX, lineY, maxTextWidth, ANNOUNCEMENT_TEXT_COLOR);
+        }
+    }
+
+    /**
+     * 绘制一行文本，如果超过最大宽度则自动换行。
+     *
+     * @return 下一行可用的 Y 坐标
+     */
+    private static int drawWrappedLine(GuiGraphicsExtractor graphics, net.minecraft.client.gui.Font font,
+                                       String text, int x, int y, int maxWidth, int color) {
+        if (text.isEmpty()) {
+            return y + font.lineHeight + 2;
+        }
+
+        int lineHeight = font.lineHeight + 2;
+        int currentY = y;
+        String remaining = text;
+
+        while (!remaining.isEmpty()) {
+            int fitCount = fontWidth(font, remaining, maxWidth);
+            if (fitCount <= 0) break; // 完全画不下，放弃
+
+            String line = remaining.substring(0, fitCount);
+            graphics.text(font, line, x, currentY, color);
+
+            remaining = remaining.substring(fitCount).trim();
+            currentY += lineHeight;
+        }
+
+        return currentY;
+    }
+
+    /**
+     * 计算在给定像素宽度内最多能容纳的字符数，
+     * 优先在空格处断开（单词换行），找不到空格则逐字断开。
+     */
+    private static int fontWidth(net.minecraft.client.gui.Font font, String text, int maxPixels) {
+        if (text.isEmpty() || font.width(text) <= maxPixels) {
+            return text.length();
+        }
+
+        // 二分查找最后一个不超过 maxPixels 的位置
+        int low = 0;
+        int high = text.length();
+        while (low < high) {
+            int mid = (low + high + 1) / 2;
+            if (font.width(text.substring(0, mid)) <= maxPixels) {
+                low = mid;
+            } else {
+                high = mid - 1;
+            }
+        }
+
+        int maxChar = low;
+        if (maxChar <= 0) return 0;
+
+        // 在 0 ~ maxChar 范围内找最后一个空格（单词换行）
+        int lastSpace = text.lastIndexOf(' ', maxChar);
+        if (lastSpace > 0) {
+            return lastSpace; // 从空格处断开，空格本身留在行末
+        }
+
+        // 没有空格，直接按字符截断
+        return maxChar;
+    }
+
+    // ==================== 原有辅助方法保持不变 ====================
 
     /**
      * 创建「加入服务器」按钮，直连 play.mcyzw.top
@@ -217,8 +377,7 @@ public class TitleScreenMixin {
                             null
                     );
                 }
-        ).bounds(width / 2 - BUTTON_WIDTH / 2, 0, BUTTON_WIDTH, BUTTON_HEIGHT)
-         .build();
+        ).build();
     }
 
     private static String extractTranslationKey(Component component) {

@@ -12,6 +12,7 @@
     "ChatOptionsMixin",
     "PauseScreenMixin",
     "LoadingOverlayMixin",
+    "LogoTextureMixin",
     "ProgressScreenMixin",
     "ScreenMixinForProgressBg",
     "AccessibilityOptionsScreenMixin",

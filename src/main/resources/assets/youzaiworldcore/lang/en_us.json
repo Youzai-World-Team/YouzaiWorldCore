@@ -228,5 +228,10 @@
   "youzaiworldcore.message.diminv.no_pools": "§cNo dimension pools are configured.",
   "youzaiworldcore.message.diminv.pool_list_header": "§6=== Dimension Pools (%s) ===",
   "youzaiworldcore.message.diminv.dimension_not_found": "§cTarget dimension %s does not exist or is not loaded.",
-  "youzaiworldcore.message.diminv.no_valid_dimension": "§cDimension pool %s has no available dimensions. Please contact an admin."
+  "youzaiworldcore.message.diminv.no_valid_dimension": "§cDimension pool %s has no available dimensions. Please contact an admin.",
+  "title.youzaiworldcore.announcement_title": "Server Announcements",
+  "title.youzaiworldcore.announcement_line1": "Welcome to Youzai World!",
+  "title.youzaiworldcore.announcement_line2": "New players please register first (/yzwc account register)",
+  "title.youzaiworldcore.announcement_line3": "Contact an admin if you encounter issues",
+  "title.youzaiworldcore.announcement_line4": "Website: mcyzw.top"
 }
