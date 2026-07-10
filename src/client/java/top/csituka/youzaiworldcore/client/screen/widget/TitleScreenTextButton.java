@@ -20,6 +20,9 @@ public class TitleScreenTextButton extends AbstractWidget {
     /** 悬浮时文字向右偏移的像素 */
     private static final int HOVER_SHIFT = 6;
 
+    /** 外部淡入透明度（0~1），由父级（TitleScreen）控制 */
+    private float renderAlpha = 1.0f;
+
     private final Runnable onPress;
     private float underlineProgress = 0f; // 0.0 ~ 1.0
     private float shiftProgress = 0f;     // 0.0 ~ 1.0，向右滑动的动画进度
@@ -27,6 +30,15 @@ public class TitleScreenTextButton extends AbstractWidget {
     public TitleScreenTextButton(int x, int y, int width, int height, Component message, Runnable onPress) {
         super(x, y, width, height, message);
         this.onPress = onPress;
+    }
+
+    /**
+     * 设置外部淡入透明度，由父级屏幕在每一帧调用。
+     *
+     * @param alpha 0.0（完全透明）~ 1.0（完全不透明）
+     */
+    public void setRenderAlpha(float alpha) {
+        this.renderAlpha = Mth.clamp(alpha, 0.0f, 1.0f);
     }
 
     @Override
@@ -49,8 +61,10 @@ public class TitleScreenTextButton extends AbstractWidget {
         int textX = this.getX() + Math.round(shiftProgress * HOVER_SHIFT);
         int textY = this.getY() + (this.height - 8) / 2;
 
-        // 文字颜色（悬浮时变亮）
-        int color = this.isHovered() ? TEXT_COLOR_HOVER : TEXT_COLOR;
+        // 文字颜色（悬浮时变亮），同时叠加外部淡入透明度
+        int baseColor = this.isHovered() ? TEXT_COLOR_HOVER : TEXT_COLOR;
+        int textAlpha = (int) (renderAlpha * 255);
+        int color = (textAlpha << 24) | (baseColor & 0x00FFFFFF);
         guiGraphics.text(font, this.getMessage(), textX, textY, color, false);
 
         // 下划线（从左往右延伸；位置跟随文字偏移）
@@ -60,7 +74,7 @@ public class TitleScreenTextButton extends AbstractWidget {
             int underlineEndX = textX + underlineWidth;
 
             double smoothProgress = Mth.clamp(underlineProgress * 1.2, 0.0, 1.0);
-            int alpha = (int) (smoothProgress * 255);
+            int alpha = (int) (smoothProgress * 255 * renderAlpha);
             int lineColor = (alpha << 24) | (UNDERLINE_COLOR & 0x00FFFFFF);
 
             guiGraphics.fill(textX, underlineY, underlineEndX, underlineY + 1, lineColor);
