@@ -231,5 +231,10 @@
   "youzaiworldcore.message.diminv.no_pools": "§c当前没有配置任何维度池。",
   "youzaiworldcore.message.diminv.pool_list_header": "§6=== 维度池列表 (%s) ===",
   "youzaiworldcore.message.diminv.dimension_not_found": "§c目标维度 %s 不存在或未加载。",
-  "youzaiworldcore.message.diminv.no_valid_dimension": "§c%s 维度池没有可用的维度，请联系管理员检查配置。"
+  "youzaiworldcore.message.diminv.no_valid_dimension": "§c%s 维度池没有可用的维度，请联系管理员检查配置。",
+  "title.youzaiworldcore.announcement_title": "服务器公告",
+  "title.youzaiworldcore.announcement_line1": "欢迎来到悠哉世界！",
+  "title.youzaiworldcore.announcement_line2": "新玩家请先注册账号 (/yzwc account register)",
+  "title.youzaiworldcore.announcement_line3": "遇到问题请联系管理员",
+  "title.youzaiworldcore.announcement_line4": "官方网站: mcyzw.top"
 }

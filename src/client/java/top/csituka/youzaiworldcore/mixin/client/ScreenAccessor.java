@@ -1,6 +1,7 @@
 package top.csituka.youzaiworldcore.mixin.client;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.narration.NarratableEntry;
 import net.minecraft.client.gui.screens.Screen;
@@ -30,6 +31,10 @@ public interface ScreenAccessor {
     /** {@code Minecraft} 实例，用于创建 DirectConnect 或 JoinMultiplayerScreen */
     @Accessor("minecraft")
     Minecraft youzaiworldcore$getMinecraft();
+
+    /** {@link Font} 实例，用于在标题屏幕上绘制文本 */
+    @Accessor("font")
+    Font youzaiworldcore$getFont();
 
     /**
      * 触发重新布局，用于在替换 GridLayout 内部子元素后刷新位置。
