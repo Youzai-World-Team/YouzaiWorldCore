@@ -5,12 +5,17 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.datafix.DataFixTypes;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.level.saveddata.SavedDataType;
 import top.csituka.youzaiworldcore.YouzaiworldCore;
+import top.csituka.youzaiworldcore.block.TeleportAnchorBlock;
+import top.csituka.youzaiworldcore.block.entity.TeleportAnchorBlockEntity;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -88,13 +93,30 @@ public class TeleportAnchorManager extends SavedData {
     }
 
     /**
-     * 移除某个玩家的一个传送锚点。
+     * 移除某个玩家的一个传送锚点，并更新对应方块的 BlockEntity 激活者列表。
+     * 如果 BlockEntity 中不再有任何激活者，方块回到非激活状态。
      */
     public void removePoint(ServerPlayer player, int index) {
         List<TeleportAnchorData> points = playerPoints.get(player.getUUID());
         if (points != null && index >= 0 && index < points.size()) {
-            points.remove(index);
+            TeleportAnchorData removed = points.remove(index);
             setDirty();
+
+            // 更新对应方块 BlockEntity 的激活者集合
+            ServerLevel targetLevel = player.level().getServer().getLevel(removed.dimension());
+            if (targetLevel != null) {
+                BlockEntity be = targetLevel.getBlockEntity(removed.pos());
+                if (be instanceof TeleportAnchorBlockEntity anchorBE) {
+                    boolean nowEmpty = anchorBE.removeActivator(player.getUUID());
+                    if (nowEmpty) {
+                        BlockState newState = targetLevel.getBlockState(removed.pos())
+                                .setValue(TeleportAnchorBlock.ACTIVE, false);
+                        targetLevel.setBlock(removed.pos(), newState, 3);
+                        targetLevel.sendBlockUpdated(removed.pos(),
+                                targetLevel.getBlockState(removed.pos()), newState, 3);
+                    }
+                }
+            }
         }
     }
 

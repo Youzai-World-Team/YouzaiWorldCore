@@ -248,5 +248,8 @@
   "screen.youzaiworldcore.teleport_anchor.delete": "Delete",
   "screen.youzaiworldcore.teleport_anchor.rename_hint": "Enter new name...",
   "screen.youzaiworldcore.teleport_anchor.rename_confirm": "Confirm",
-  "screen.youzaiworldcore.teleport_anchor.rename_cancel": "Cancel"
+  "screen.youzaiworldcore.teleport_anchor.rename_cancel": "Cancel",
+  "screen.youzaiworldcore.teleport_anchor.delete_hint": "Delete this teleport point?",
+  "screen.youzaiworldcore.teleport_anchor.delete_confirm": "Delete",
+  "screen.youzaiworldcore.teleport_anchor.delete_cancel": "Cancel"
 }

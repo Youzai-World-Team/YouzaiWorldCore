@@ -36,6 +36,7 @@ public class TeleportAnchorScreen extends Screen {
     private final List<TeleportAnchorData> points;
     private int selectedIndex = -1;
     private boolean renameMode = false;
+    private boolean confirmingDelete = false;
     private EditBox renameEditBox;
 
     private int panelX;
@@ -52,7 +53,7 @@ public class TeleportAnchorScreen extends Screen {
         super.init();
 
         int listHeight = Math.max(0, points.size() * (ITEM_HEIGHT + ITEM_GAP) - ITEM_GAP);
-        int actionsHeight = renameMode ? 0 : BUTTON_HEIGHT + ACTIONS_Y_OFFSET;
+        int actionsHeight = (confirmingDelete || !renameMode) ? BUTTON_HEIGHT + ACTIONS_Y_OFFSET : 0;
         int renameHeight = renameMode ? 40 : 0;
         int totalHeight = TITLE_HEIGHT + PANEL_PADDING + listHeight + PANEL_PADDING
                 + Math.max(actionsHeight, renameHeight);
@@ -78,13 +79,11 @@ public class TeleportAnchorScreen extends Screen {
         }
         listBottomY = buttonY - ITEM_GAP;
 
-        // 三个功能按钮始终显示（未选中时置灰禁用）
-        if (!renameMode) {
+        // 功能按钮或删除确认或重命名模式
+            buildDeleteConfirmUI();
+        } else if (!renameMode) {
             buildActionButtons();
-        }
-
-        // 重命名模式
-        if (renameMode) {
+        } else {
             buildRenameUI();
         }
     }
@@ -120,15 +119,46 @@ public class TeleportAnchorScreen extends Screen {
         Button deleteBtn = Button.builder(
                 Component.translatable("screen.youzaiworldcore.teleport_anchor.delete"),
                 btn -> {
-                    ClientPlayNetworking.send(new TeleportAnchorDeletePayload(selectedIndex));
-                    points.remove(selectedIndex);
-                    selectedIndex = -1;
+                    confirmingDelete = true;
                     rebuildWidgets();
                 })
                 .bounds(startX + (BUTTON_WIDTH + 8) * 2, actionsY, BUTTON_WIDTH, BUTTON_HEIGHT)
                 .build();
         deleteBtn.active = hasSelection;
         addRenderableWidget(deleteBtn);
+    }
+
+    private void buildDeleteConfirmUI() {
+        int actionsY = listBottomY + PANEL_PADDING + ACTIONS_Y_OFFSET;
+        int totalBtnWidth = BUTTON_WIDTH * 2 + 8;
+        int startX = panelX + (PANEL_WIDTH - totalBtnWidth) / 2;
+
+        // 确认按钮
+        Button confirmBtn = Button.builder(
+                Component.translatable("screen.youzaiworldcore.teleport_anchor.delete_confirm"),
+                btn -> confirmDeletePoint())
+                .bounds(startX, actionsY, BUTTON_WIDTH, BUTTON_HEIGHT)
+                .build();
+        addRenderableWidget(confirmBtn);
+
+        // 取消按钮
+        Button cancelBtn = Button.builder(
+                Component.translatable("screen.youzaiworldcore.teleport_anchor.delete_cancel"),
+                btn -> {
+                    confirmingDelete = false;
+                    rebuildWidgets();
+                })
+                .bounds(startX + BUTTON_WIDTH + 8, actionsY, BUTTON_WIDTH, BUTTON_HEIGHT)
+                .build();
+        addRenderableWidget(cancelBtn);
+    }
+
+    private void confirmDeletePoint() {
+        ClientPlayNetworking.send(new TeleportAnchorDeletePayload(selectedIndex));
+        points.remove(selectedIndex);
+        selectedIndex = -1;
+        confirmingDelete = false;
+        rebuildWidgets();
     }
 
     private void buildRenameUI() {
@@ -212,6 +242,16 @@ public class TeleportAnchorScreen extends Screen {
             guiGraphics.fill(panelX + PANEL_PADDING, highlightY,
                     panelX + PANEL_WIDTH - PANEL_PADDING, highlightY + ITEM_HEIGHT,
                     SELECTED_HIGHLIGHT_COLOR);
+        }
+
+        // 删除确认提示文字
+        if (confirmingDelete) {
+            String confirmMsg = Component.translatable(
+                    "screen.youzaiworldcore.teleport_anchor.delete_hint").getString();
+            int msgWidth = font.width(confirmMsg);
+            int msgY = listBottomY + PANEL_PADDING - 2;
+            guiGraphics.text(font, confirmMsg,
+                    (this.width - msgWidth) / 2, msgY, 0xFFFFAA00, false);
         }
 
         // 渲染子组件（按钮和输入框）
