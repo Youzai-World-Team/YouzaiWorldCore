@@ -6,7 +6,10 @@
   "mixins": [
     "LivingEntityDamageMixin",
     "PlayerDropEquipmentMixin",
-    "ServerPlayerDeathMixin"
+    "ServerPlayerDeathMixin",
+    "invisibility.ServerLevelParticleMixin",
+    "invisibility.ServerLevelSoundMixin",
+    "invisibility.ChestBlockEntityAnimationMixin"
   ],
   "injectors": {
     "defaultRequire": 1
