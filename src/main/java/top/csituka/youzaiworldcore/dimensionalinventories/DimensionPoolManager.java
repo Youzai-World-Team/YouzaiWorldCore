@@ -220,7 +220,7 @@ public final class DimensionPoolManager {
             DebugLogger.branch("DimensionPoolManager", "目标池是否有已保存的历史状态", hasSavedState,
                     "targetPoolId=" + targetPool.id());
             if (hasSavedState) {
-                PlayerStateData loadedData = getLastLoadedData(player, server);
+                PlayerStateData loadedData = getLastLoadedData(player, server, targetPool.id());
                 DebugLogger.branch("DimensionPoolManager", "已加载的历史数据是否有效", loadedData != null, "");
                 if (loadedData != null) {
                     teleportX = loadedData.getX();
@@ -306,7 +306,7 @@ public final class DimensionPoolManager {
         boolean hasSaved = hasSavedPlayerData(player, server, targetPool.id());
         DebugLogger.branch("DimensionPoolManager", "是否有已保存的玩家数据", hasSaved, "poolId=" + targetPool.id());
         if (hasSaved) {
-            PlayerStateData loadedData = getLastLoadedData(player, server);
+            PlayerStateData loadedData = getLastLoadedData(player, server, targetPool.id());
             DebugLogger.branch("DimensionPoolManager", "已加载数据是否有效", loadedData != null, "");
             if (loadedData != null) {
                 String dimStr = loadedData.getDimension();
@@ -449,20 +449,11 @@ public final class DimensionPoolManager {
         }
     }
 
-    private static PlayerStateData getLastLoadedData(ServerPlayer player, MinecraftServer server) {
+    private static PlayerStateData getLastLoadedData(ServerPlayer player, MinecraftServer server, String poolId) {
         DebugLogger.entering("DimensionPoolManager", "getLastLoadedData",
-                "player=" + player.getName().getString());
+                "player=" + player.getName().getString() + ", poolId=" + poolId);
         try {
-            String currentDim = player.level().dimension().identifier().toString();
-            var poolOpt = DimensionPoolSettings.getPoolByDimension(currentDim);
-            DebugLogger.branch("DimensionPoolManager", "当前维度是否属于某个维度池", poolOpt.isEmpty(),
-                    "currentDim=" + currentDim);
-            if (poolOpt.isEmpty()) {
-                DebugLogger.exiting("DimensionPoolManager", "getLastLoadedData", "result=null (no_pool_for_dim)");
-                return null;
-            }
-
-            Path file = getPlayerDataFile(server, poolOpt.get().id(), player.getUUID().toString());
+            Path file = getPlayerDataFile(server, poolId, player.getUUID().toString());
             boolean fileExists = Files.exists(file);
             DebugLogger.branch("DimensionPoolManager", "状态文件是否存在", !fileExists, "file=" + file);
             if (!fileExists) {
