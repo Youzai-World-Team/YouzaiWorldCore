@@ -9,7 +9,7 @@
   <a><img src="https://img.shields.io/badge/Minecraft-Java_26.2-brightgreen?style=for-the-badge&logo=minecraft" alt="Minecraft Version"></a>
   <a><img src="https://img.shields.io/badge/Mod_Loader-Fabric-orange?style=for-the-badge" alt="Mod Loader"></a>
   <a><img src="https://img.shields.io/badge/License-Apache_2.0-green?style=for-the-badge" alt="License"></a>
-  <a href="https://qm.qq.com/q/tRrIqxf04K"><img src="https://img.shields.io/badge/QQ Group-895689642-red?style=for-the-badge&logo=tencent-qq" alt="QQ Group"></a>
+  <a href="https://nightly.link/Youzai-World-Team/YouzaiWorldCore/workflows/build/main/youzaiworldcore.zip"><img src="https://img.shields.io/badge/Download-Latest_Build-blue?style=for-the-badge&logo=githubactions" alt="Download Latest Build"></a>
 </p>
 
 > **Version**: 1.12.5+indev · **Minecraft**: 26.2 · **Loader**: Fabric Loader 0.19.3  
