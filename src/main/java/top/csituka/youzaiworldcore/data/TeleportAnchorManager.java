@@ -86,6 +86,16 @@ public class TeleportAnchorManager extends SavedData {
     }
 
     /**
+     * 为玩家添加一个传送锚点，使用指定的自定义名称。
+     */
+    public void addPointWithName(ServerPlayer player, BlockPos pos, ResourceKey<Level> dimension, String name) {
+        UUID uuid = player.getUUID();
+        List<TeleportAnchorData> points = playerPoints.computeIfAbsent(uuid, k -> new ArrayList<>());
+        points.add(new TeleportAnchorData(pos.immutable(), dimension, name));
+        setDirty();
+    }
+
+    /**
      * 获取某个玩家的所有传送锚点。
      */
     public List<TeleportAnchorData> getPointsForPlayer(ServerPlayer player) {

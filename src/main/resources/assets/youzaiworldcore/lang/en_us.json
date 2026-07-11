@@ -251,5 +251,9 @@
   "screen.youzaiworldcore.teleport_anchor.rename_cancel": "Cancel",
   "screen.youzaiworldcore.teleport_anchor.delete_hint": "Delete this teleport point?",
   "screen.youzaiworldcore.teleport_anchor.delete_confirm": "Delete",
-  "screen.youzaiworldcore.teleport_anchor.delete_cancel": "Cancel"
+  "screen.youzaiworldcore.teleport_anchor.delete_cancel": "Cancel",
+  "screen.youzaiworldcore.teleport_anchor_name.title": "Name Teleport Anchor",
+  "screen.youzaiworldcore.teleport_anchor_name.hint": "Enter a name...",
+  "screen.youzaiworldcore.teleport_anchor_name.confirm": "Confirm",
+  "screen.youzaiworldcore.teleport_anchor_name.default": "Teleport Point"
 }
