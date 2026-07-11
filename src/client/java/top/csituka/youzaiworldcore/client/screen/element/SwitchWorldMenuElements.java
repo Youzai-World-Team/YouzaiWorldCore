@@ -26,7 +26,7 @@ import java.util.Map;
  *
  * <p>前 7 个按钮（生存世界/王城/玩法/创造/建筑/指令区/教程世界）已集成维度池传送系统：
  * 点击时发送 {@link WorldPoolTeleportPayload} 到服务端进行维度池传送。
- * 其余按钮（下界/末地/主世界/登录大厅）保留旧有的聊天提示行为。</p>
+ * 其余按钮（下界/末地/主世界）保留旧有的聊天提示行为。</p>
  *
  * 5列布局：
  * ┌─────────────┬──────────┬──────────┬──────────┐
@@ -39,9 +39,8 @@ import java.util.Map;
  * │nether│ end  │ command_zone (1×2)│ tutorials_world (2×2) │
  * │(1×1) │(1×1) │          │                       │
  * ├──────┼──────┤          │                       │
- * │over- │login │          │                       │
- * │world │_hall │          │                       │
- * │(1×1) │(1×1) │          │                       │
+ * │    overworld (2×1)     │          │                       │
+ * │                       │          │                       │
  * └──────┴──────┴──────────┴───────────────────────┘
  */
 public class SwitchWorldMenuElements implements MenuElementGroup {
@@ -86,12 +85,9 @@ public class SwitchWorldMenuElements implements MenuElementGroup {
     /** 教程世界（2*2） */
     private static final Identifier TUTORIALS_WORLD_TEXTURE =
             Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "textures/gui/tutorials_world.png");
-    /** 主世界（1*1） */
+    /** 主世界（2*1） */
     private static final Identifier OVERWORLD_TEXTURE =
             Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "textures/gui/overworld.png");
-    /** 登录大厅（1*1） */
-    private static final Identifier LOGIN_HALL_TEXTURE =
-            Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "textures/gui/login_hall.png");
 
     // ========== 布局常量 ==========
     private static final int GAP = 4;
@@ -272,29 +268,19 @@ public class SwitchWorldMenuElements implements MenuElementGroup {
 
         // ================================================================
         // ROW 3（第四行）：
-        //   [overworld 1x1]  [login_hall 1x1]  [command_zone 续]  [tutorials_world 续]
-        //   列 0  : overworld（1x1）
-        //   列 1  : login_hall（1x1）
+        //   [overworld (2x1)]      [command_zone 续]  [tutorials_world 续]
+        //   列 0-1: overworld（2x1，跨两列）
         //   列 2  : command_zone 续行
         //   列 3-4: tutorials_world 续行
         // ================================================================
-        /* 主世界 【overworld.png】 */
+        /* 主世界 【overworld.png】（2*1，跨列 0-1） */
         TextureTileButton overworldBtn = new TextureTileButton(
-                c0, row3Y, tile, tile,
+                c0, row3Y, tile2, tile,
                 OVERWORLD_TEXTURE,
                 () -> showTeleportDialog(screen, "overworld")
         );
         overworldBtn.setExternalAlpha(alpha);
         buttons.add(overworldBtn);
-
-        /* 登录大厅 【login_hall.png】 */
-        TextureTileButton loginHallBtn = new TextureTileButton(
-                c1, row3Y, tile, tile,
-                LOGIN_HALL_TEXTURE,
-                () -> showTeleportDialog(screen, "login")
-        );
-        loginHallBtn.setExternalAlpha(alpha);
-        buttons.add(loginHallBtn);
 
         return buttons;
     }
@@ -338,7 +324,7 @@ public class SwitchWorldMenuElements implements MenuElementGroup {
 
     /**
      * 显示传送确认对话框（非维度池按钮使用，仅输出聊天提示）。
-     * 保留给下界/末地/主世界/登录大厅等旧按钮。
+     * 保留给下界/末地/主世界等旧按钮。
      */
     private void showTeleportDialog(MenuScreen screen, String worldId) {
         ConfirmationDialog dialog = new ConfirmationDialog(
