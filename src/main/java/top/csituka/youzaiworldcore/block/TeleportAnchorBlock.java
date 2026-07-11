@@ -7,6 +7,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
@@ -86,5 +87,13 @@ public class TeleportAnchorBlock extends Block {
         }
 
         return InteractionResult.SUCCESS;
+    }
+
+    @Override
+    public void destroy(LevelAccessor level, BlockPos pos, BlockState state) {
+        if (state.getValue(ACTIVE) && level instanceof Level lvl && lvl.getServer() != null) {
+            TeleportAnchorManager.get(lvl.getServer()).removeAnchorAt(pos, lvl.dimension());
+        }
+        super.destroy(level, pos, state);
     }
 }

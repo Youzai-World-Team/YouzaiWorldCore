@@ -97,4 +97,31 @@ public class TeleportAnchorManager extends SavedData {
             setDirty();
         }
     }
+
+    /**
+     * 重命名某个玩家的一个传送锚点。
+     */
+    public void renamePoint(ServerPlayer player, int index, String newName) {
+        List<TeleportAnchorData> points = playerPoints.get(player.getUUID());
+        if (points != null && index >= 0 && index < points.size()) {
+            TeleportAnchorData old = points.get(index);
+            points.set(index, new TeleportAnchorData(old.pos(), old.dimension(), newName));
+            setDirty();
+        }
+    }
+
+    /**
+     * 移除所有玩家列表中指向指定坐标和维度的传送锚点（方块被破坏时调用）。
+     */
+    public void removeAnchorAt(BlockPos pos, ResourceKey<Level> dimension) {
+        boolean changed = false;
+        for (List<TeleportAnchorData> points : playerPoints.values()) {
+            if (points.removeIf(p -> p.pos().equals(pos) && p.dimension().equals(dimension))) {
+                changed = true;
+            }
+        }
+        if (changed) {
+            setDirty();
+        }
+    }
 }

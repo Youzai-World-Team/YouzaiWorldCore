@@ -242,5 +242,11 @@
   "title.youzaiworldcore.announcement_line4": "Website: mcyzw.top",
   "block.youzaiworldcore.tp_anchor": "Teleport Anchor",
   "screen.youzaiworldcore.teleport_anchor.title": "Select Teleport Point",
-  "message.youzaiworldcore.teleport_anchor.activated": "§aTeleport anchor activated! Right-click again to open the teleport list."
+  "message.youzaiworldcore.teleport_anchor.activated": "§aTeleport anchor activated! Right-click again to open the teleport list.",
+  "screen.youzaiworldcore.teleport_anchor.teleport": "Teleport",
+  "screen.youzaiworldcore.teleport_anchor.rename": "Rename",
+  "screen.youzaiworldcore.teleport_anchor.delete": "Delete",
+  "screen.youzaiworldcore.teleport_anchor.rename_hint": "Enter new name...",
+  "screen.youzaiworldcore.teleport_anchor.rename_confirm": "Confirm",
+  "screen.youzaiworldcore.teleport_anchor.rename_cancel": "Cancel"
 }

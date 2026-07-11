@@ -245,5 +245,11 @@
   "title.youzaiworldcore.announcement_line4": "官方网站: mcyzw.top",
   "block.youzaiworldcore.tp_anchor": "传送锚点",
   "screen.youzaiworldcore.teleport_anchor.title": "选择传送点",
-  "message.youzaiworldcore.teleport_anchor.activated": "§a传送锚点已激活！再次右键打开传送列表。"
+  "message.youzaiworldcore.teleport_anchor.activated": "§a传送锚点已激活！再次右键打开传送列表。",
+  "screen.youzaiworldcore.teleport_anchor.teleport": "传送",
+  "screen.youzaiworldcore.teleport_anchor.rename": "重命名",
+  "screen.youzaiworldcore.teleport_anchor.delete": "删除",
+  "screen.youzaiworldcore.teleport_anchor.rename_hint": "输入新名称...",
+  "screen.youzaiworldcore.teleport_anchor.rename_confirm": "确认",
+  "screen.youzaiworldcore.teleport_anchor.rename_cancel": "取消"
 }

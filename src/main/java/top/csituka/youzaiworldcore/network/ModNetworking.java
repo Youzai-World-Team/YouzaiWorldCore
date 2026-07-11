@@ -34,6 +34,10 @@ public class ModNetworking {
         DebugLogger.info("ModNetworking", "Registered clientbound packet: TeleportAnchorListPayload");
         PayloadTypeRegistry.serverboundPlay().register(TeleportAnchorTeleportPayload.TYPE, TeleportAnchorTeleportPayload.STREAM_CODEC);
         DebugLogger.info("ModNetworking", "Registered serverbound packet: TeleportAnchorTeleportPayload");
+        PayloadTypeRegistry.serverboundPlay().register(TeleportAnchorDeletePayload.TYPE, TeleportAnchorDeletePayload.STREAM_CODEC);
+        DebugLogger.info("ModNetworking", "Registered serverbound packet: TeleportAnchorDeletePayload");
+        PayloadTypeRegistry.serverboundPlay().register(TeleportAnchorRenamePayload.TYPE, TeleportAnchorRenamePayload.STREAM_CODEC);
+        DebugLogger.info("ModNetworking", "Registered serverbound packet: TeleportAnchorRenamePayload");
 
         // ===== 服务端接收处理器 =====
         ServerPlayNetworking.registerGlobalReceiver(DecomposeItemPayload.ID, (payload, context) -> {
@@ -108,6 +112,30 @@ public class ModNetworking {
                 DebugLogger.info("ModNetworking", "Teleported player to " + target.pos() + " in " + target.dimension().identifier());
             });
             DebugLogger.exiting("ModNetworking", "TeleportAnchorTeleportPayload handler");
+        });
+
+        // ===== 传送锚点删除处理器 =====
+        ServerPlayNetworking.registerGlobalReceiver(TeleportAnchorDeletePayload.TYPE, (payload, context) -> {
+            var player = context.player();
+            var server = player.level().getServer();
+            if (server != null) {
+                server.execute(() -> {
+                    TeleportAnchorManager manager = TeleportAnchorManager.get(server);
+                    manager.removePoint((net.minecraft.server.level.ServerPlayer) player, payload.pointIndex());
+                });
+            }
+        });
+
+        // ===== 传送锚点重命名处理器 =====
+        ServerPlayNetworking.registerGlobalReceiver(TeleportAnchorRenamePayload.TYPE, (payload, context) -> {
+            var player = context.player();
+            var server = player.level().getServer();
+            if (server != null) {
+                server.execute(() -> {
+                    TeleportAnchorManager manager = TeleportAnchorManager.get(server);
+                    manager.renamePoint((net.minecraft.server.level.ServerPlayer) player, payload.pointIndex(), payload.newName());
+                });
+            }
         });
 
         DebugLogger.exiting("ModNetworking", "initialize");
