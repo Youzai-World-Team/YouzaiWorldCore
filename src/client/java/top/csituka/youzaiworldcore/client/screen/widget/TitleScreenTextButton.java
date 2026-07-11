@@ -23,6 +23,9 @@ public class TitleScreenTextButton extends AbstractWidget {
     /** 外部淡入透明度（0~1），由父级（TitleScreen）控制 */
     private float renderAlpha = 1.0f;
 
+    /** 是否处于选中状态（选中时保持悬浮态外观：高亮文字 + 显示下划线） */
+    private boolean selected = false;
+
     private final Runnable onPress;
     private float underlineProgress = 0f; // 0.0 ~ 1.0
     private float shiftProgress = 0f;     // 0.0 ~ 1.0，向右滑动的动画进度
@@ -41,28 +44,47 @@ public class TitleScreenTextButton extends AbstractWidget {
         this.renderAlpha = Mth.clamp(alpha, 0.0f, 1.0f);
     }
 
+    /**
+     * 设置选中状态。选中时保持悬浮态外观（高亮文字 + 显示下划线），
+     * 用于设置页侧边栏等需要标记当前激活项的场景。
+     */
+    public void setSelected(boolean selected) {
+        this.selected = selected;
+    }
+
     @Override
     protected void extractWidgetRenderState(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
         var font = Minecraft.getInstance().font;
         String text = this.getMessage().getString();
         int textWidth = font.width(text);
 
-        // 统一更新动画进度（悬浮 → target=1，离开 → target=0）
-        float target = this.isHovered() ? 1.0f : 0.0f;
-        if (Math.abs(underlineProgress - target) < 0.001f) {
-            underlineProgress = target;
-            shiftProgress = target;
+        // 选中状态视为持续悬浮，使下划线和文字高亮始终生效
+        boolean hovered = this.isHovered() || this.selected;
+
+        // 动画逻辑：
+        // - 选中时：立即展开下划线（不重新播放动画）
+        // - 取消选中时：平滑收回下划线（带动画）
+        // - 常规悬浮/离开：正常动画
+        if (this.selected) {
+            underlineProgress = 1.0f;
+            shiftProgress = 1.0f;
         } else {
-            underlineProgress += (target - underlineProgress) * ANIM_SPEED;
-            shiftProgress += (target - shiftProgress) * ANIM_SPEED;
+            float target = this.isHovered() ? 1.0f : 0.0f;
+            if (Math.abs(underlineProgress - target) < 0.001f) {
+                underlineProgress = target;
+                shiftProgress = target;
+            } else {
+                underlineProgress += (target - underlineProgress) * ANIM_SPEED;
+                shiftProgress += (target - shiftProgress) * ANIM_SPEED;
+            }
         }
 
         // 文字位置（左对齐，垂直居中；shiftProgress 控制平滑右移）
         int textX = this.getX() + Math.round(shiftProgress * HOVER_SHIFT);
         int textY = this.getY() + (this.height - 8) / 2;
 
-        // 文字颜色（悬浮时变亮），同时叠加外部淡入透明度
-        int baseColor = this.isHovered() ? TEXT_COLOR_HOVER : TEXT_COLOR;
+        // 文字颜色（悬浮或选中时变亮），同时叠加外部淡入透明度
+        int baseColor = hovered ? TEXT_COLOR_HOVER : TEXT_COLOR;
         int textAlpha = (int) (renderAlpha * 255);
         int color = (textAlpha << 24) | (baseColor & 0x00FFFFFF);
         guiGraphics.text(font, this.getMessage(), textX, textY, color, false);
