@@ -24,6 +24,7 @@ import java.util.List;
  * 可通过 OptionsScreen 中的「YouzaiWorldCore 设置...」按钮或
  * ModMenu 模组列表页面的「设置」按钮打开。
  */
+@SuppressWarnings("null")
 public class YouzaiWorldCoreSettingsScreen extends Screen {
 
     private static final int SIDEBAR_WIDTH = 120;

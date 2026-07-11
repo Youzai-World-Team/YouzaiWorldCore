@@ -115,6 +115,7 @@ public final class ClientExternalSettings {
     // ===== 持久化 =====
 
     /** 从文件加载配置（不存在则创建默认文件） */
+    @SuppressWarnings({"null", "unused"})
     public static void load() {
         if (!Files.exists(CONFIG_FILE)) {
             save();

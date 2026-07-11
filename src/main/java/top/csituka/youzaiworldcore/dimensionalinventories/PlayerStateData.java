@@ -26,7 +26,7 @@ import java.util.*;
  * 包含：物品栏、盔甲、副手、末影箱、生命、饥饿、经验、分数、状态效果、
  * 以及离开时的维度与坐标（用于传送返回）。
  */
-@SuppressWarnings("unchecked")
+@SuppressWarnings("null")
 public final class PlayerStateData {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/PlayerStateData");

@@ -22,6 +22,7 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
  *   <li>玩家必须处于创造模式</li>
  * </ul>
  */
+@SuppressWarnings("null")
 public class InvisibilityCommand {
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {

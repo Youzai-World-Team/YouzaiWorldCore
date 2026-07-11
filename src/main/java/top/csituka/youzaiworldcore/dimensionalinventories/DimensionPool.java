@@ -73,7 +73,6 @@ public final class DimensionPool {
 
     public void addDimension(String dimension) {
         DebugLogger.entering("DimPool", "addDimension", "poolId=" + this.id + ", dimension=" + dimension);
-        boolean wasEmpty = this.dimensions.isEmpty();
         this.dimensions.add(dimension);
         DebugLogger.stateChange("DimPool", this.id != null ? this.id : "null", "dimensions", dimension + " added, total=" + this.dimensions.size());
         DebugLogger.exiting("DimPool", "addDimension");

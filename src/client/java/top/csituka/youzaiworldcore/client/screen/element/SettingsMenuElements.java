@@ -11,6 +11,7 @@ import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
 import java.util.ArrayList;
 import java.util.List;
 
+@SuppressWarnings("null")
 public class SettingsMenuElements implements MenuElementGroup {
 
     private static final int LIST_WIDTH = 250;

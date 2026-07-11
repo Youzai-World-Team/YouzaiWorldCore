@@ -3,7 +3,6 @@ package top.csituka.youzaiworldcore.client.screen.element;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractWidget;
-import net.minecraft.client.gui.Font;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.resources.Identifier;
 import top.csituka.youzaiworldcore.YouzaiworldCore;

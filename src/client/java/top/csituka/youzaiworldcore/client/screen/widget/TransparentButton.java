@@ -7,6 +7,7 @@ import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 
+@SuppressWarnings("null")
 public class TransparentButton extends AbstractWidget {
 
     private static final int BACKGROUND_COLOR = 0xFFFFFF;

@@ -10,14 +10,13 @@ import net.minecraft.network.chat.Component;
 import java.util.List;
 import java.util.function.IntConsumer;
 
+@SuppressWarnings("null")
 public class DropdownButton extends AbstractWidget {
 
     private static final int TEXT_COLOR = 0x00FFFFFF;
     private static final int ARROW_COLOR = 0x00AAAAAA;
 
     // ===== 下拉弹窗样式（浅色主题） =====
-    /** 弹窗背景色：全不透明白色偏灰，在深色背景上呈现柔和感 */
-    private static final int POPUP_BG = 0xFFE8E8E8;
     /** 弹窗边框色 */
     private static final int POPUP_BORDER = 0xFFB0B0B0;
     /** 弹窗投影偏移 (px) */

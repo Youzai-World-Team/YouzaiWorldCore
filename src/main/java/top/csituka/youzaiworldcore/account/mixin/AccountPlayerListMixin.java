@@ -34,6 +34,7 @@ import java.util.Set;
  * 注意：不能声明 AuthPlayerHelper 类型的局部变量，
  * 改用其静态辅助方法访问。
  */
+@SuppressWarnings("null")
 @Mixin(PlayerList.class)
 public abstract class AccountPlayerListMixin {
 

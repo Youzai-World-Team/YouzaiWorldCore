@@ -8,6 +8,7 @@ import java.lang.reflect.Type;
 /**
  * Gson 自定义序列化器，用于在 JSON 中读写 GameType。
  */
+@SuppressWarnings({"null", "unused"})
 public final class GameTypeSerializer implements JsonSerializer<GameType>, JsonDeserializer<GameType> {
 
     @Override

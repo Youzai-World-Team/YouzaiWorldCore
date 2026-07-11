@@ -15,6 +15,7 @@ import net.minecraft.client.renderer.RenderPipelines;
  * Since the menu background is semi-transparent black, this creates a smooth
  * fade to transparent without white residue artifacts.
  */
+@SuppressWarnings("null")
 public class TextureTileButton extends AbstractWidget {
 
     private static final int CORNER_RADIUS = 6;

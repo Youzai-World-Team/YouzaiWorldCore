@@ -22,6 +22,7 @@ import java.util.List;
  * 在玩家传送到虚空维度且已注册但未登录时显示。
  * 无返回按钮、无关闭按钮、不能使用 ESC 键关闭。
  */
+@SuppressWarnings("null")
 public class LoginScreen extends Screen {
 
     private static final int CONTAINER_WIDTH = 280;
@@ -272,12 +273,14 @@ public class LoginScreen extends Screen {
     // ===== 工具方法 =====
 
     private void sendCommand(String command) {
-        if (Minecraft.getInstance().player != null
-                && Minecraft.getInstance().player.connection != null) {
-            Minecraft.getInstance().player.connection.send(
+        var player = Minecraft.getInstance().player;
+        if (player != null && player.connection != null) {
+            player.connection.send(
                     new ServerboundChatCommandPacket(command));
         }
-        Minecraft.getInstance().setScreenAndShow(null);
+        if (Minecraft.getInstance().gui.screen() == this) {
+            Minecraft.getInstance().setScreenAndShow(null);
+        }
     }
 
     private void showErrorDialog(String title, String[] messages) {

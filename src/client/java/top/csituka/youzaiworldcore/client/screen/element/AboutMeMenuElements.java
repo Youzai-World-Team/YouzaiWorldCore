@@ -4,6 +4,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
+import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.stats.Stats;
 import top.csituka.youzaiworldcore.client.screen.MenuScreen;
@@ -50,10 +51,12 @@ public class AboutMeMenuElements implements MenuElementGroup {
         return new ArrayList<>();
     }
 
+    @SuppressWarnings("null")
     @Override
     public void renderCustomContent(GuiGraphicsExtractor guiGraphics, int screenWidth, int screenHeight, float alpha, float xOffset, int mouseX, int mouseY) {
         Minecraft client = Minecraft.getInstance();
         if (client.player == null) return;
+        var player = client.player;
 
         if (firstRenderTime == -1) {
             firstRenderTime = System.currentTimeMillis();
@@ -105,7 +108,7 @@ public class AboutMeMenuElements implements MenuElementGroup {
                     30,
                     0.0625f,
                     mouseX, mouseY,
-                    client.player
+                    player
             );
         }
 
@@ -115,10 +118,10 @@ public class AboutMeMenuElements implements MenuElementGroup {
         var font = client.font;
         int labelColor = (textAlpha << 24) | 0xAAAAAA;
 
-        String playerName = client.player.getName().getString();
-        String firstJoinDate = getFirstJoinDate(client);
+        String playerName = player.getName().getString();
+        String firstJoinDate = getFirstJoinDate(player);
         String lastJoinDate = getLastJoinDate(client);
-        String playTimeStr = getPlayTime(client);
+        String playTimeStr = getPlayTime(player);
 
         String[][] infoItems = {
                 {I18n.get("youzaiworldcore.message.gui.label_player_id"), playerName},
@@ -148,9 +151,9 @@ public class AboutMeMenuElements implements MenuElementGroup {
         }
     }
 
-    private String getFirstJoinDate(Minecraft client) {
+    private String getFirstJoinDate(LocalPlayer player) {
         try {
-            long playTicks = client.player.getStats().getValue(Stats.CUSTOM.get(Stats.PLAY_TIME));
+            long playTicks = player.getStats().getValue(Stats.CUSTOM.get(Stats.PLAY_TIME));
             if (playTicks > 0) {
                 long firstPlayedMs = System.currentTimeMillis() - (playTicks * 50L);
                 return Instant.ofEpochMilli(firstPlayedMs).atZone(ZoneId.systemDefault()).format(DATE_FORMAT);
@@ -168,9 +171,9 @@ public class AboutMeMenuElements implements MenuElementGroup {
         return I18n.get("youzaiworldcore.message.gui.unknown");
     }
 
-    private String getPlayTime(Minecraft client) {
+    private String getPlayTime(LocalPlayer player) {
         try {
-            long playTicks = client.player.getStats().getValue(Stats.CUSTOM.get(Stats.PLAY_TIME));
+            long playTicks = player.getStats().getValue(Stats.CUSTOM.get(Stats.PLAY_TIME));
             long playMinutes = playTicks / 20 / 60;
             if (playMinutes < 60) {
                 return I18n.get("youzaiworldcore.message.gui.time_minutes", playMinutes);

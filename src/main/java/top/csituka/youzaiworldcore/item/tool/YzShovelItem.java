@@ -11,12 +11,14 @@ import org.jspecify.annotations.NonNull;
 
 import java.util.function.Consumer;
 
+@SuppressWarnings("null")
 public class YzShovelItem extends ShovelItem {
 
     public YzShovelItem(ToolMaterial material, float attackDamageBaseline, float attackSpeedBaseline, Properties settings) {
         super(material, attackDamageBaseline, attackSpeedBaseline, settings);
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void appendHoverText(@NonNull ItemStack stack, @NonNull TooltipContext context, @NonNull TooltipDisplay display, Consumer<Component> tooltip, @NonNull TooltipFlag flag) {
         tooltip.accept(Component.translatable("item.youzaiworldcore.yz_shovel.tooltip")

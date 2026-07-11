@@ -15,6 +15,7 @@ import java.util.Set;
  * 通过 PlayerAuthAccess 接口访问 AccountServerPlayerMixin 混合数据，
  * 避免 Mixin 0.8.7 的"禁止外部直接引用 mixin 类"限制。
  */
+@SuppressWarnings({"null", "unused"})
 public class AuthPlayerHelper {
 
     private static PlayerAuthAccess access(ServerPlayer player) {

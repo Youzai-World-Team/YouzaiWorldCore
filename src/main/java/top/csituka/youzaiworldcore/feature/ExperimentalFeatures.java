@@ -24,6 +24,7 @@ import java.util.*;
  * </ul>
  * </p>
  */
+@SuppressWarnings({"null", "unused"})
 public final class ExperimentalFeatures {
 
     public static final Logger LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/ExperimentalFeatures");

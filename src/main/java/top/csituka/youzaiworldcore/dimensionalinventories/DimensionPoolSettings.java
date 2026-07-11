@@ -7,7 +7,6 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.world.level.GameType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import top.csituka.youzaiworldcore.YouzaiworldCore;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
 import java.io.IOException;

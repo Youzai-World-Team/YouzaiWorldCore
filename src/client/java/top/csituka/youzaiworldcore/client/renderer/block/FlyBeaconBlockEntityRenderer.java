@@ -42,6 +42,7 @@ public class FlyBeaconBlockEntityRenderer implements BlockEntityRenderer<FlyBeac
         return new FlyBeaconBlockEntityRenderState();
     }
 
+    @SuppressWarnings("null")
     @Override
     public void extractRenderState(FlyBeaconBlockEntity entity, FlyBeaconBlockEntityRenderState state,
                                     float tickProgress, Vec3 cameraPos,
@@ -52,6 +53,7 @@ public class FlyBeaconBlockEntityRenderer implements BlockEntityRenderer<FlyBeac
 
     // ---- 渲染 ----
 
+    @SuppressWarnings("null")
     @Override
     public void submit(FlyBeaconBlockEntityRenderState state, PoseStack matrices,
                        SubmitNodeCollector queue, CameraRenderState cameraState) {
@@ -155,6 +157,7 @@ public class FlyBeaconBlockEntityRenderer implements BlockEntityRenderer<FlyBeac
         putVertex(consumer, pose, x4, y4, z4);
     }
 
+    @SuppressWarnings("null")
     private static void putVertex(VertexConsumer consumer, PoseStack.Pose pose,
                                    float x, float y, float z) {
         consumer.addVertex(pose, x, y, z).setColor(R, G, B, A);

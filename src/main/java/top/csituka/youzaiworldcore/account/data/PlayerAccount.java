@@ -13,6 +13,7 @@ import java.time.format.DateTimeFormatter;
  * 玩家账户数据模型
  * 使用 Gson 序列化/反序列化，存储在 JSON 文件中
  */
+@SuppressWarnings("null")
 public class PlayerAccount {
 
     public static final Gson GSON = new GsonBuilder()

@@ -27,6 +27,7 @@ import top.csituka.youzaiworldcore.client.higherchat.SharedStorage;
  *
  * <p>Adapted from Higher Chat by MDLC01.</p>
  */
+@SuppressWarnings("null")
 @Mixin(Hud.class)
 public abstract class HudMixin {
 

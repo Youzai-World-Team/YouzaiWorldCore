@@ -14,6 +14,7 @@ import org.jspecify.annotations.NonNull;
 import top.csituka.youzaiworldcore.block.ModBlocks;
 import top.csituka.youzaiworldcore.block.entity.FlyBeaconBlockEntity;
 
+@SuppressWarnings("null")
 public class FlyBeaconMenu extends AbstractContainerMenu {
 
     private static final int FUEL_SLOT = 0;

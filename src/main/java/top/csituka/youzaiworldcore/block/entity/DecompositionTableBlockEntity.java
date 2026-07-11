@@ -26,6 +26,7 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
  * 以便玩家右键时打开对应的 GUI 容器。
  * </p>
  */
+@SuppressWarnings("null")
 public class DecompositionTableBlockEntity extends BlockEntity implements Container, MenuProvider {
 
     /**

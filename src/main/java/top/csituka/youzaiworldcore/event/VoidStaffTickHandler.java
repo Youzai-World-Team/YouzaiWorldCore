@@ -32,6 +32,7 @@ import java.util.UUID;
  * </ul>
  * 实现 Fabric API 的 {@link ServerTickEvents.StartTick} 接口。
  */
+@SuppressWarnings("null")
 public class VoidStaffTickHandler implements ServerTickEvents.StartTick {
 
     // 单例实例

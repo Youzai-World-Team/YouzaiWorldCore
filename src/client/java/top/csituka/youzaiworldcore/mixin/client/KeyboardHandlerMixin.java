@@ -2,7 +2,6 @@ package top.csituka.youzaiworldcore.mixin.client;
 
 import net.minecraft.client.KeyboardHandler;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.Options;
 import net.minecraft.client.input.KeyEvent;
 import org.lwjgl.glfw.GLFW;
 import org.spongepowered.asm.mixin.Final;

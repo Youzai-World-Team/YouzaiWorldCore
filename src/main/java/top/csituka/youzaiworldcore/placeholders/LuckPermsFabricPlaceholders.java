@@ -44,6 +44,7 @@ import net.minecraft.server.level.ServerPlayer;
 
 import java.util.Map;
 
+@SuppressWarnings("null")
 public class LuckPermsFabricPlaceholders implements ModInitializer, PlaceholderPlatform {
 
     @Override

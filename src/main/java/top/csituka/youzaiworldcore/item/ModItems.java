@@ -14,6 +14,7 @@ import net.minecraft.world.item.ToolMaterial;
 import top.csituka.youzaiworldcore.YouzaiworldCore;
 import top.csituka.youzaiworldcore.item.tool.*;
 
+@SuppressWarnings("null")
 public class ModItems {
 
     public static final TagKey<Item> REPAIRS_YZ_TOOL = TagKey.create(

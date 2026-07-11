@@ -7,6 +7,7 @@ import net.minecraft.world.flag.FeatureFlagSet;
 import net.minecraft.world.inventory.MenuType;
 import top.csituka.youzaiworldcore.YouzaiworldCore;
 
+@SuppressWarnings("null")
 public class ModMenuTypes {
 
     public static final MenuType<DecompositionTableMenu> DECOMPOSITION_TABLE = register(

@@ -54,6 +54,7 @@ import top.csituka.youzaiworldcore.screen.ModMenuTypes;
 import java.util.Collection;
 import java.util.Set;
 
+@SuppressWarnings("null")
 public class YouzaiworldCore implements ModInitializer {
 
     public static final String MOD_ID = "youzaiworldcore";
@@ -98,7 +99,7 @@ public class YouzaiworldCore implements ModInitializer {
         logToFile = ServerExternalSettings.isLogToFile();
         devModeEnabled = ServerExternalSettings.isDevModeEnabled();
         DebugLogger.setDevModeEnabled(devModeEnabled);
-        DebugLogger.setLogToFile(logToFile);
+        DebugLogger.setLogLevel(logToFile ? 1 : 0);
 
         // ===== 输出模组 Logo（启动后第一条输出） =====
         LOGGER.info("\n{}", LOGO);

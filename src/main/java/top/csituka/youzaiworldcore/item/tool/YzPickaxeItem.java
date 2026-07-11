@@ -10,12 +10,14 @@ import net.minecraft.world.item.component.TooltipDisplay;
 
 import java.util.function.Consumer;
 
+@SuppressWarnings("null")
 public class YzPickaxeItem extends Item {
 
     public YzPickaxeItem(ToolMaterial material, float attackDamageBaseline, float attackSpeedBaseline, Properties settings) {
         super(settings.pickaxe(material, attackDamageBaseline, attackSpeedBaseline));
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, TooltipDisplay display, Consumer<Component> tooltip, TooltipFlag flag) {
         tooltip.accept(Component.translatable("item.youzaiworldcore.yz_pickaxe.tooltip")

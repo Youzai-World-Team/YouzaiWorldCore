@@ -21,6 +21,7 @@ import top.csituka.youzaiworldcore.block.entity.ModBlockEntities;
 import org.jetbrains.annotations.Nullable;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
+@SuppressWarnings("null")
 public class FlyBeaconBlock extends BaseEntityBlock {
 
     public static final BooleanProperty ACTIVE = BooleanProperty.create("active");

@@ -20,6 +20,7 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
  * 当玩家手持铁锭并下蹲时对准损坏/严重破损的铁砧右键使用，
  * 可消耗一个铁锭将铁砧修复到上一等级。
  */
+@SuppressWarnings("null")
 public class AnvilRepairHandler implements UseBlockCallback {
 
     private static final AnvilRepairHandler INSTANCE = new AnvilRepairHandler();

@@ -3,7 +3,7 @@ package top.csituka.youzaiworldcore.client;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.rendering.v1.BlockEntityRendererRegistry;
+import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.MenuScreens;
 import org.lwjgl.glfw.GLFW;
@@ -14,7 +14,6 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.nio.ByteBuffer;
 import top.csituka.youzaiworldcore.block.entity.ModBlockEntities;
-import top.csituka.youzaiworldcore.client.config.ClientExternalSettings;
 import top.csituka.youzaiworldcore.client.renderer.block.FlyBeaconBlockEntityRenderer;
 import top.csituka.youzaiworldcore.client.screen.block.DecompositionTableScreen;
 import top.csituka.youzaiworldcore.client.screen.block.FlyBeaconScreen;
@@ -28,6 +27,7 @@ public class Client implements ClientModInitializer {
     private static boolean wasPressed = false;
     private static boolean windowIconSet = false;
 
+    @SuppressWarnings("null")
     @Override
     public void onInitializeClient() {
         DebugLogger.entering("Client", "onInitializeClient");
@@ -37,7 +37,7 @@ public class Client implements ClientModInitializer {
 
         // 方块实体渲染器注册
         DebugLogger.info("Client", "注册飞行信标方块实体渲染器...");
-        BlockEntityRendererRegistry.register(ModBlockEntities.FLY_BEACON, FlyBeaconBlockEntityRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.FLY_BEACON, FlyBeaconBlockEntityRenderer::new);
 
         DebugLogger.info("Client", "注册菜单屏幕...");
         MenuScreens.register(ModMenuTypes.DECOMPOSITION_TABLE, DecompositionTableScreen::new);
@@ -53,7 +53,7 @@ public class Client implements ClientModInitializer {
         DebugLogger.info("Client", "加载客户端外部设置...");
         top.csituka.youzaiworldcore.client.config.ClientExternalSettings.load();
         // 单人模式集成服务器：遵照客户端设置覆盖 logToFile 标志
-        boolean clientLogToFile = top.csituka.youzaiworldcore.client.config.ClientExternalSettings.isLogToFile();
+        boolean clientLogToFile = top.csituka.youzaiworldcore.client.config.ClientExternalSettings.getLogLevel() > 0;
         top.csituka.youzaiworldcore.YouzaiworldCore.logToFile = clientLogToFile;
         top.csituka.youzaiworldcore.YouzaiworldCore.devModeEnabled =
                 top.csituka.youzaiworldcore.client.config.ClientExternalSettings.isDevModeEnabled();

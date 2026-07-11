@@ -49,6 +49,7 @@ import java.util.stream.Collectors;
  * }
  * }</pre>
  */
+@SuppressWarnings("null")
 public final class LuckPermsHelper {
 
     // ===== 权限节点常量 =====

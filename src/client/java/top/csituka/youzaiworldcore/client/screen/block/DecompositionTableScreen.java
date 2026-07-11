@@ -4,7 +4,6 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
-import net.minecraft.client.gui.screens.inventory.MenuAccess;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
@@ -16,7 +15,8 @@ import top.csituka.youzaiworldcore.YouzaiworldCore;
 import top.csituka.youzaiworldcore.network.ClientNetworking;
 import top.csituka.youzaiworldcore.screen.DecompositionTableMenu;
 
-public class DecompositionTableScreen extends AbstractContainerScreen<DecompositionTableMenu> implements MenuAccess<DecompositionTableMenu> {
+@SuppressWarnings("null")
+public class DecompositionTableScreen extends AbstractContainerScreen<DecompositionTableMenu> {
 
     private static final Identifier DECOMPOSITION_BUTTON_TEXTURE = Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "textures/gui/decomposition_button.png");
     private static final int BACKGROUND_COLOR = 0x80FFFFFF;

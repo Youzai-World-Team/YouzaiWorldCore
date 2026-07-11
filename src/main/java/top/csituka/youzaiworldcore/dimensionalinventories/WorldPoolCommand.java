@@ -22,6 +22,7 @@ import java.util.Collection;
  *   <li>{@code /yzwc world_pool list} — 列出所有维度池及其包含的维度</li>
  * </ul>
  */
+@SuppressWarnings("null")
 public final class WorldPoolCommand {
 
     private static final String POOL_ARG = "dimension_pool";

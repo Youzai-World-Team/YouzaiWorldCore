@@ -15,6 +15,7 @@ import org.jspecify.annotations.NonNull;
 import java.util.Random;
 import java.util.function.Consumer;
 
+@SuppressWarnings("null")
 public class YzSwordItem extends Item {
 
     private static final float CRITICAL_CHANCE = 0.04F;
@@ -27,6 +28,7 @@ public class YzSwordItem extends Item {
         this.attackDamage = attackDamageBaseline + material.attackDamageBonus();
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void appendHoverText(@NonNull ItemStack stack, @NonNull TooltipContext context, @NonNull TooltipDisplay display, Consumer<Component> tooltip, @NonNull TooltipFlag flag) {
         tooltip.accept(Component.translatable("item.youzaiworldcore.yz_sword.tooltip")

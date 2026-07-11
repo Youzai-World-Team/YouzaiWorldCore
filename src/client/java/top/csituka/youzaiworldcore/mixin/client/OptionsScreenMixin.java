@@ -163,7 +163,7 @@ public class OptionsScreenMixin {
             gridChildConstructor.setAccessible(true);
 
             reflectionReady = true;
-            if (ClientExternalSettings.isLogToFile()) {
+            if (ClientExternalSettings.getLogLevel() > 0) {
                 LOGGER.info("Reflection fields initialized for GridLayout manipulation");
             }
         } catch (ReflectiveOperationException e) {
@@ -175,7 +175,6 @@ public class OptionsScreenMixin {
      * 从 {@link OptionsScreen} 的 layout 层级中遍历找到 {@link GridLayout} 实例。
      * 路径：OptionsScreen.layout → HeaderAndFooterLayout.contentsFrame → FrameLayout.children → GridLayout
      */
-    @SuppressWarnings("unchecked")
     private static GridLayout findGridLayout(OptionsScreen screen) {
         try {
             initReflection();
@@ -204,7 +203,6 @@ public class OptionsScreenMixin {
      *
      * @return 替换成功返回 true
      */
-    @SuppressWarnings("unchecked")
     private static boolean replaceInGridLayout(GridLayout grid, AbstractWidget targetWidget, AbstractWidget newWidget) {
         try {
             initReflection();
@@ -229,10 +227,12 @@ public class OptionsScreenMixin {
                             newWidget, row, col, occupiedRows, occupiedCols, layoutSettings
                     );
 
-                    // 替换列表中的条目（先转型为原始 List 以突破通配符限制）
-                    ((List) gridChildren).set(i, newContainer);
+                    // 替换列表中的条目（强制转型以突破通配符限制）
+                    @SuppressWarnings("unchecked")
+                    List<Object> gridList = (List<Object>) gridChildren;
+                    gridList.set(i, newContainer);
 
-                    if (ClientExternalSettings.isLogToFile()) {
+                    if (ClientExternalSettings.getLogLevel() > 0) {
                         LOGGER.debug("Replaced telemetry button with mods button in GridLayout at (col={}, row={})", col, row);
                     }
                     return true;
@@ -258,7 +258,6 @@ public class OptionsScreenMixin {
      *
      * @return 至少移除了一个元素返回 true
      */
-    @SuppressWarnings("unchecked")
     private static boolean removeFovSliderFromHeader(OptionsScreen screen) {
         try {
             initReflection();
@@ -301,7 +300,7 @@ public class OptionsScreenMixin {
                     if (child instanceof AbstractWidget widget && isWidgetToRemove(widget)) {
                     it.remove();
                     removed = true;
-                    if (ClientExternalSettings.isLogToFile()) {
+                    if (ClientExternalSettings.getLogLevel() > 0) {
                         LOGGER.debug("Removed widget from header horizontal layout: {}",
                                 extractTranslationKey(widget.getMessage()));
                     }
@@ -325,7 +324,6 @@ public class OptionsScreenMixin {
      *
      * @return 创建成功的 Button 实例，失败返回 null
      */
-    @SuppressWarnings("unchecked")
     private static Button addSettingsButtonToHeader(OptionsScreen screen, Minecraft minecraft) {
         try {
             initReflection();
@@ -363,7 +361,7 @@ public class OptionsScreenMixin {
             // 添加到 GridLayout（列 0，行 0）
             horizontalGrid.addChild(settingsButton, 0, 0);
 
-            if (ClientExternalSettings.isLogToFile()) {
+            if (ClientExternalSettings.getLogLevel() > 0) {
                 LOGGER.debug("Added YouzaiWorldCore settings button to header");
             }
             return settingsButton;
@@ -484,7 +482,7 @@ public class OptionsScreenMixin {
             renderables.remove((Object) child);
             narratables.remove((Object) child);
         }
-        if (!modAddedToRemove.isEmpty() && ClientExternalSettings.isLogToFile()) {
+        if (!modAddedToRemove.isEmpty() && ClientExternalSettings.getLogLevel() > 0) {
             LOGGER.info("Removed {} mod-added option buttons from OptionsScreen", modAddedToRemove.size());
         }
 

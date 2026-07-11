@@ -14,6 +14,7 @@ import top.csituka.youzaiworldcore.YouzaiworldCore;
 import top.csituka.youzaiworldcore.block.ModBlocks;
 import top.csituka.youzaiworldcore.item.preset.PresetItems;
 
+@SuppressWarnings("null")
 public class ModCreativeModeTabs {
 
     public static final ResourceKey<CreativeModeTab> YOUZAI_TAB_KEY = ResourceKey.create(

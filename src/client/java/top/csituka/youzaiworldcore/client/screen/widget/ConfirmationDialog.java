@@ -5,6 +5,7 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 
+@SuppressWarnings("null")
 public class ConfirmationDialog {
 
     private static final int DIALOG_WIDTH = 200;

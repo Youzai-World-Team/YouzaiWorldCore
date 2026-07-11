@@ -3,7 +3,6 @@ package top.csituka.youzaiworldcore.client.screen.block;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
-import net.minecraft.client.gui.screens.inventory.MenuAccess;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 import org.jspecify.annotations.NonNull;
@@ -11,7 +10,7 @@ import top.csituka.youzaiworldcore.client.screen.widget.ToggleButton;
 import top.csituka.youzaiworldcore.network.FlyBeaconActivePayload;
 import top.csituka.youzaiworldcore.screen.FlyBeaconMenu;
 
-public class FlyBeaconScreen extends AbstractContainerScreen<FlyBeaconMenu> implements MenuAccess<FlyBeaconMenu> {
+public class FlyBeaconScreen extends AbstractContainerScreen<FlyBeaconMenu> {
 
     private static final int BACKGROUND_COLOR = 0x80FFFFFF;
     private static final int SLOT_COLOR = 0x40FFFFFF;

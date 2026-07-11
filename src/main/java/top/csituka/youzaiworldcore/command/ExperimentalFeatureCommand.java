@@ -19,8 +19,6 @@ import top.csituka.youzaiworldcore.luckperms.LuckPermsHelper;
 import top.csituka.youzaiworldcore.network.FeatureSyncPayload;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
-import java.util.Collection;
-import java.util.List;
 import java.util.UUID;
 
 /**
@@ -35,6 +33,7 @@ import java.util.UUID;
  * </ul>
  * </p>
  */
+@SuppressWarnings("null")
 public class ExperimentalFeatureCommand {
 
     public static final String PERMISSION_EXPERIMENTAL_FEATURE = "youzaiworldcore.command.experimental_feature";

@@ -12,6 +12,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
+@SuppressWarnings("null")
 public class YzChainMiningTool {
 
     private static final int CHAIN_RANGE = 6;

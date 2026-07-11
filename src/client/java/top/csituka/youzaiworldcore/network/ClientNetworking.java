@@ -17,6 +17,7 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.UUID;
 
+@SuppressWarnings("null")
 public class ClientNetworking {
 
     private static final Map<String, MenuElementGroup> MENU_MAP = new HashMap<>();
@@ -50,7 +51,6 @@ public class ClientNetworking {
         ClientPlayNetworking.registerGlobalReceiver(FeatureSyncPayload.ID, (payload, context) -> {
             DebugLogger.entering("ClientNetworking", "FeatureSyncPayload handler");
             context.client().execute(() -> {
-                var features = top.csituka.youzaiworldcore.feature.ExperimentalFeatures.class;
                 UUID targetPlayer = payload.targetPlayer();
 
                 // 首次收到同步包时设置客户端玩家 UUID

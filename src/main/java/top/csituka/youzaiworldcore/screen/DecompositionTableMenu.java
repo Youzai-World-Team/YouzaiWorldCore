@@ -25,6 +25,7 @@ import top.csituka.youzaiworldcore.screen.slot.DecompositionOutputSlot;
 
 import java.util.*;
 
+@SuppressWarnings("null")
 public class DecompositionTableMenu extends AbstractContainerMenu {
 
     private static final int INPUT_SLOT = 0;
@@ -138,7 +139,7 @@ public class DecompositionTableMenu extends AbstractContainerMenu {
         var recipesCache = recipesMap.get(inputItem);
 
         if (recipesCache != null) {
-            @SuppressWarnings("unchecked") RecipeHolder<CraftingRecipe> craftingHolder = recipesCache;
+            RecipeHolder<CraftingRecipe> craftingHolder = recipesCache;
             currentRecipes.add(craftingHolder);
             return;
         }
@@ -166,6 +167,7 @@ public class DecompositionTableMenu extends AbstractContainerMenu {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private ItemStack getRecipeResult(CraftingRecipe recipe) {
         try {
             PlacementInfo placementInfo = recipe.placementInfo();
@@ -236,6 +238,7 @@ public class DecompositionTableMenu extends AbstractContainerMenu {
         container.setChanged();
     }
 
+    @SuppressWarnings("deprecation")
     private List<ItemStack> getIngredientsFromRecipe(CraftingRecipe recipe) {
         List<ItemStack> outputs = new ArrayList<>();
 

@@ -34,6 +34,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *   <li>从其他玩家视野中隐藏/恢复玩家实体</li>
  * </ul>
  */
+@SuppressWarnings("null")
 public final class InvisibilityManager {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/InvisibilityManager");

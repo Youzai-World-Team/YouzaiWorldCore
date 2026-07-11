@@ -7,6 +7,7 @@ import net.minecraft.resources.Identifier;
 import org.jspecify.annotations.NonNull;
 import top.csituka.youzaiworldcore.YouzaiworldCore;
 
+@SuppressWarnings("null")
 public record DecomposeItemPayload() implements CustomPacketPayload {
     
     public static final Identifier DECOMPOSE_ITEM_ID = Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "decompose_item");

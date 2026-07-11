@@ -10,7 +10,6 @@ import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.Relative;
 import net.minecraft.world.level.Level;
 import top.csituka.youzaiworldcore.YouzaiworldCore;
 import top.csituka.youzaiworldcore.account.data.AccountDataStorage;
@@ -41,6 +40,7 @@ import java.util.Set;
  *   /yzwc account mgr reset_password <玩家> <新密码> <确认密码> — 重置密码
  *   /yzwc account mgr delete <玩家代号>                — 删除玩家账户
  */
+@SuppressWarnings({"null", "unused"})
 public class AccountCommands {
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
@@ -931,7 +931,7 @@ public class AccountCommands {
      */
     private static void teleportToWorldSpawn(ServerPlayer player) {
         var server = player.level().getServer();
-        if (server == null) return;
+        if (server == null) return; // dead code guard
         var overworld = server.overworld();
         var spawnPos = overworld.getRespawnData().pos();
 

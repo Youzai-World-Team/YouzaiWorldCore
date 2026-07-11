@@ -24,6 +24,7 @@ import java.nio.file.Path;
  *   <li>{@code logToFile} — 输出详细日志到 latest.log</li>
  * </ul>
  */
+@SuppressWarnings({"null", "unused"})
 public final class ServerExternalSettings {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/ServerExternalSettings");
@@ -89,6 +90,6 @@ public final class ServerExternalSettings {
     /** 将当前设置同步到 DebugLogger */
     private static void syncToDebugLogger() {
         DebugLogger.setDevModeEnabled(devModeEnabled);
-        DebugLogger.setLogToFile(logToFile);
+        DebugLogger.setLogLevel(logToFile ? 1 : 0);
     }
 }

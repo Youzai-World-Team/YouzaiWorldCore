@@ -11,6 +11,7 @@ import net.minecraft.util.Mth;
 /**
  * 无背景文字按钮，鼠标悬浮时文字向右平滑滑动，下方从左往右延伸出一条横线。
  */
+@SuppressWarnings("null")
 public class TitleScreenTextButton extends AbstractWidget {
 
     private static final int TEXT_COLOR = 0xFFE0E0E0;

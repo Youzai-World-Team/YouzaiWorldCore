@@ -11,6 +11,7 @@ import net.minecraft.world.phys.Vec3;
  * 记录玩家最后的位置信息
  * 用于认证完成后恢复到原位置
  */
+@SuppressWarnings("null")
 public class AuthLocationData {
 
     private static final Gson GSON = new Gson();

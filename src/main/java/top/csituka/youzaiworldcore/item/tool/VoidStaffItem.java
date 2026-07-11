@@ -22,6 +22,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
 
+@SuppressWarnings("null")
 public class VoidStaffItem extends Item {
 
     private static final Set<UUID> flyingPlayers = new HashSet<>();
@@ -163,6 +164,7 @@ public class VoidStaffItem extends Item {
         return result;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void appendHoverText(@NonNull ItemStack stack, @NonNull TooltipContext context, @NonNull TooltipDisplay display, Consumer<Component> tooltip, @NonNull TooltipFlag flag) {
         tooltip.accept(Component.translatable("item.youzaiworldcore.void_staff.tooltip")

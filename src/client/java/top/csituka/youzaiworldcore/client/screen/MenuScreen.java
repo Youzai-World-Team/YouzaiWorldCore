@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
 
+@SuppressWarnings("null")
 public class MenuScreen extends Screen {
 
     private static final float ENTRY_ANIMATION_DURATION = 0.5f;

@@ -10,12 +10,14 @@ import org.jspecify.annotations.NonNull;
 
 import java.util.function.Consumer;
 
+@SuppressWarnings("null")
 public class LogoItem extends Item {
 
     public LogoItem(Properties properties) {
         super(properties);
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void appendHoverText(@NonNull ItemStack stack, @NonNull TooltipContext context, @NonNull TooltipDisplay display, Consumer<Component> tooltip, @NonNull TooltipFlag flag) {
         tooltip.accept(Component.translatable("item.youzaiworldcore.logo.tooltip")

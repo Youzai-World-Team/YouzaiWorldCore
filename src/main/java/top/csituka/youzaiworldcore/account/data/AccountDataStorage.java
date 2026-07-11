@@ -20,6 +20,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * 数据文件：./config/youzaiworldcore/account/data
  * 格式：JSON，Map<String, PlayerAccount>，key 为小写用户名
  */
+@SuppressWarnings("null")
 public class AccountDataStorage {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/AccountDataStorage");

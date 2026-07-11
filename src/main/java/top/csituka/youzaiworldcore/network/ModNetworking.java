@@ -9,6 +9,7 @@ import top.csituka.youzaiworldcore.screen.DecompositionTableMenu;
 import top.csituka.youzaiworldcore.screen.FlyBeaconMenu;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
+@SuppressWarnings("null")
 public class ModNetworking {
     
     public static void initialize() {

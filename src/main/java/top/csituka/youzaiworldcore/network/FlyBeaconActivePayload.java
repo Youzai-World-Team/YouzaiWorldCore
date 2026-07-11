@@ -7,6 +7,7 @@ import net.minecraft.resources.Identifier;
 import org.jspecify.annotations.NonNull;
 import top.csituka.youzaiworldcore.YouzaiworldCore;
 
+@SuppressWarnings("null")
 public record FlyBeaconActivePayload(boolean active) implements CustomPacketPayload {
     
     public static final Identifier FLY_BEACON_ACTIVE_ID = Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "fly_beacon_active");

@@ -57,6 +57,7 @@ import java.util.stream.Collectors;
 /**
  * Provides LuckPerms placeholders using the {@link LuckPerms} API.
  */
+@SuppressWarnings("null")
 public class LPPlaceholderProvider implements PlaceholderProvider {
 
     /**

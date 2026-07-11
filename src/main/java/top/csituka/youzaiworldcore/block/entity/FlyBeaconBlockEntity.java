@@ -26,6 +26,7 @@ import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+@SuppressWarnings("null")
 public class FlyBeaconBlockEntity extends BlockEntity implements Container, MenuProvider {
 
     private static final Set<BlockPos> activeBeacons = Collections.newSetFromMap(new ConcurrentHashMap<>());

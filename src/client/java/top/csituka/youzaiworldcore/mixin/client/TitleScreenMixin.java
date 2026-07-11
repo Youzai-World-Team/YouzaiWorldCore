@@ -40,6 +40,7 @@ import java.util.List;
  * </ul>
  * 保留开发者测试按钮（仅开发者模式显示）。
  */
+@SuppressWarnings("null")
 @Mixin(TitleScreen.class)
 public class TitleScreenMixin {
 
@@ -70,9 +71,6 @@ public class TitleScreenMixin {
 
     /** 公告标题颜色 */
     private static final int ANNOUNCEMENT_TITLE_COLOR = 0xFFFFAA00;
-
-    /** 公告标题阴影颜色 */
-    private static final int ANNOUNCEMENT_TITLE_SHADOW = 0x40000000;
 
     /** 公告正文颜色 */
     private static final int ANNOUNCEMENT_TEXT_COLOR = 0xFFE0E0E0;

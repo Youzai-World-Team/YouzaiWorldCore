@@ -36,6 +36,7 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
  * 具有朝向属性（{@link #FACING}），放置时正面（main_around 贴图）朝向玩家。
  * </p>
  */
+@SuppressWarnings("null")
 public class DecompositionTableBlock extends BaseEntityBlock {
 
     public static final MapCodec<DecompositionTableBlock> CODEC = simpleCodec(DecompositionTableBlock::new);

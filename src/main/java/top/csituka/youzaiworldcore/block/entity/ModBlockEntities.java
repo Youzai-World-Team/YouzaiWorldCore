@@ -10,6 +10,7 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import top.csituka.youzaiworldcore.YouzaiworldCore;
 import top.csituka.youzaiworldcore.block.ModBlocks;
 
+@SuppressWarnings("null")
 public class ModBlockEntities {
 
     public static final BlockEntityType<DecompositionTableBlockEntity> DECOMPOSITION_TABLE = register(

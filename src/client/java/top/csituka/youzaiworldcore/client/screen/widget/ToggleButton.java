@@ -6,6 +6,7 @@ import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 
+@SuppressWarnings("null")
 public class ToggleButton extends AbstractWidget {
 
     private static final int CORNER_RADIUS = 4;
@@ -69,7 +70,6 @@ public class ToggleButton extends AbstractWidget {
         int x1 = bx + margin;
         int y1 = by + margin;
         int x2 = bx + size - margin - 1;
-        int y2 = by + size - margin - 1;
         for (int i = 0; i <= x2 - x1; i++) {
             guiGraphics.fill(x1 + i, y1 + i, x1 + i + 1, y1 + i + 1, color);
             guiGraphics.fill(x2 - i, y1 + i, x2 - i + 1, y1 + i + 1, color);

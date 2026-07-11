@@ -7,6 +7,7 @@ import net.minecraft.resources.Identifier;
 import org.jspecify.annotations.NonNull;
 import top.csituka.youzaiworldcore.YouzaiworldCore;
 
+@SuppressWarnings("null")
 public record OpenMenuPayload(String menuName) implements CustomPacketPayload {
 
     public static final Identifier OPEN_MENU_ID = Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "open_menu");

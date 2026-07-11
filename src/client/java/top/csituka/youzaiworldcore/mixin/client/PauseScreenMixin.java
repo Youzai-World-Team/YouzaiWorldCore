@@ -18,9 +18,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import top.csituka.youzaiworldcore.client.config.ClientExternalSettings;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 /**
  * 修改 ESC 暂停菜单（{@link PauseScreen}）：
@@ -50,17 +48,6 @@ import java.util.Set;
 public class PauseScreenMixin {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/PauseScreenMixin");
-
-    /** 需要在暂停菜单中保留的按钮翻译键 */
-    private static final Set<String> KEEP_KEYS = new HashSet<>(Set.of(
-            "menu.returnToGame",
-            "gui.advancements",
-            "gui.stats",
-            "menu.options",
-            "menu.multiplayerOptions.button",
-            "menu.returnToMenu",
-            "menu.disconnect"
-    ));
 
     /** 全宽按钮宽度（与原版保持一致） */
     private static final int FULL_W = 204;
@@ -180,7 +167,7 @@ public class PauseScreenMixin {
             disconnectBtn.setHeight(BTN_H);
         }
 
-        if (ClientExternalSettings.isLogToFile()) {
+        if (ClientExternalSettings.getLogLevel() > 0) {
             LOGGER.debug("Re-paused pause menu: removed {} unwanted buttons, kept 6", toRemove.size());
         }
     }

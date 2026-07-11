@@ -7,6 +7,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.core.component.DataComponentType;
 import top.csituka.youzaiworldcore.YouzaiworldCore;
 
+@SuppressWarnings("null")
 public class ModDataComponents {
 
     public static final DataComponentType<Boolean> VOID_STAFF_ACTIVE = Registry.register(

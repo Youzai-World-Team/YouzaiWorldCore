@@ -17,6 +17,7 @@ import java.util.UUID;
  * 非 null 时表示仅对指定玩家同步（scope = self / only）。
  * </p>
  */
+@SuppressWarnings("null")
 public record FeatureSyncPayload(String featureId, boolean enabled, @Nullable UUID targetPlayer) implements CustomPacketPayload {
 
     public static final Identifier FEATURE_SYNC_ID = Identifier.parse(YouzaiworldCore.MOD_ID + ":feature_sync");

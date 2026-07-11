@@ -17,6 +17,7 @@ import java.util.UUID;
  * <p>
  * 每 10 tick 检查隐身玩家是否退出了创造模式，自动关闭隐身。
  */
+@SuppressWarnings("null")
 public class InvisibilityTickHandler implements ServerTickEvents.StartTick {
 
     private static final InvisibilityTickHandler INSTANCE = new InvisibilityTickHandler();
