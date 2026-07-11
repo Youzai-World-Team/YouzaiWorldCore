@@ -80,6 +80,7 @@ public class TeleportAnchorScreen extends Screen {
         listBottomY = buttonY - ITEM_GAP;
 
         // 功能按钮或删除确认或重命名模式
+        if (confirmingDelete) {
             buildDeleteConfirmUI();
         } else if (!renameMode) {
             buildActionButtons();
