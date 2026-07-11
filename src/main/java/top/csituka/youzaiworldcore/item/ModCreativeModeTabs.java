@@ -42,7 +42,6 @@ public class ModCreativeModeTabs {
                 output.accept(ModBlocks.FLY_BEACON.asItem());
                 output.accept(ModItems.HEART_OF_GUARDIANSHIP);
                 output.accept(ModItems.VOID_STAFF);
-                output.accept(ModItems.LOGO);
 
                 // ── 毕业套装预设 (移植自 godlygearbox) ──
                 var holders = params.holders();
