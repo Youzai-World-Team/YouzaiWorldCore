@@ -23,6 +23,11 @@ public class ModBlockEntities {
             FabricBlockEntityTypeBuilder.create(FlyBeaconBlockEntity::new, ModBlocks.FLY_BEACON).build()
     );
 
+    public static final BlockEntityType<TeleportAnchorBlockEntity> TELEPORT_ANCHOR = register(
+            "teleport_anchor",
+            FabricBlockEntityTypeBuilder.create(TeleportAnchorBlockEntity::new, ModBlocks.TP_ANCHOR).build()
+    );
+
     private static <T extends BlockEntityType<?>> T register(String name, T blockEntityType) {
         ResourceKey<BlockEntityType<?>> key = ResourceKey.create(Registries.BLOCK_ENTITY_TYPE, Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, name));
         return Registry.register(BuiltInRegistries.BLOCK_ENTITY_TYPE, key, blockEntityType);

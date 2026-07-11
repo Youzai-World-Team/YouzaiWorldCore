@@ -41,6 +41,7 @@ public class ModCreativeModeTabs {
                 output.accept(ModItems.YZ_AXE);
                 output.accept(ModBlocks.DECOMPOSITION_TABLE.asItem());
                 output.accept(ModBlocks.FLY_BEACON.asItem());
+                output.accept(ModBlocks.TP_ANCHOR.asItem());
                 output.accept(ModItems.HEART_OF_GUARDIANSHIP);
                 output.accept(ModItems.VOID_STAFF);
 

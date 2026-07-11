@@ -6,6 +6,8 @@ import net.minecraft.client.gui.screens.Screen;
 import top.csituka.youzaiworldcore.client.screen.LoginScreen;
 import top.csituka.youzaiworldcore.client.screen.MenuScreen;
 import top.csituka.youzaiworldcore.client.screen.RegisterScreen;
+import top.csituka.youzaiworldcore.client.screen.block.TeleportAnchorNameScreen;
+import top.csituka.youzaiworldcore.client.screen.block.TeleportAnchorScreen;
 import top.csituka.youzaiworldcore.client.screen.element.AboutMeMenuElements;
 import top.csituka.youzaiworldcore.client.screen.element.MainMenuElements;
 import top.csituka.youzaiworldcore.client.screen.element.MenuElementGroup;
@@ -99,6 +101,27 @@ public class ClientNetworking {
             DebugLogger.exiting("ClientNetworking", "OpenAuthScreenPayload handler");
         });
         DebugLogger.info("ClientNetworking", "Registered receiver: OpenAuthScreenPayload");
+
+        // 注册传送锚点列表处理器
+        ClientPlayNetworking.registerGlobalReceiver(TeleportAnchorListPayload.TYPE, (payload, context) -> {
+            DebugLogger.entering("ClientNetworking", "TeleportAnchorListPayload handler");
+            context.client().execute(() -> {
+                context.client().setScreenAndShow(new TeleportAnchorScreen(payload.points(), payload.currentPos(), payload.currentDim()));
+            });
+            DebugLogger.exiting("ClientNetworking", "TeleportAnchorListPayload handler");
+        });
+        DebugLogger.info("ClientNetworking", "Registered receiver: TeleportAnchorListPayload");
+
+        // 注册传送锚点命名界面处理器
+        ClientPlayNetworking.registerGlobalReceiver(TeleportAnchorOpenNamePayload.TYPE, (payload, context) -> {
+            DebugLogger.entering("ClientNetworking", "TeleportAnchorOpenNamePayload handler");
+            context.client().execute(() -> {
+                context.client().setScreenAndShow(
+                        new TeleportAnchorNameScreen(payload.pos(), payload.dimension()));
+            });
+            DebugLogger.exiting("ClientNetworking", "TeleportAnchorOpenNamePayload handler");
+        });
+        DebugLogger.info("ClientNetworking", "Registered receiver: TeleportAnchorOpenNamePayload");
 
         DebugLogger.exiting("ClientNetworking", "initialize");
     }

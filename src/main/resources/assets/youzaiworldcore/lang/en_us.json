@@ -239,5 +239,21 @@
   "title.youzaiworldcore.announcement_line1": "Welcome to Youzai World!",
   "title.youzaiworldcore.announcement_line2": "New players please register first (/yzwc account register)",
   "title.youzaiworldcore.announcement_line3": "Contact an admin if you encounter issues",
-  "title.youzaiworldcore.announcement_line4": "Website: mcyzw.top"
+  "title.youzaiworldcore.announcement_line4": "Website: mcyzw.top",
+  "block.youzaiworldcore.tp_anchor": "Teleport Anchor",
+  "screen.youzaiworldcore.teleport_anchor.title": "Select Teleport Point",
+  "message.youzaiworldcore.teleport_anchor.activated": "§aTeleport anchor activated! Right-click again to open the teleport list.",
+  "screen.youzaiworldcore.teleport_anchor.teleport": "Teleport",
+  "screen.youzaiworldcore.teleport_anchor.rename": "Rename",
+  "screen.youzaiworldcore.teleport_anchor.delete": "Delete",
+  "screen.youzaiworldcore.teleport_anchor.rename_hint": "Enter new name...",
+  "screen.youzaiworldcore.teleport_anchor.rename_confirm": "Confirm",
+  "screen.youzaiworldcore.teleport_anchor.rename_cancel": "Cancel",
+  "screen.youzaiworldcore.teleport_anchor.delete_hint": "Delete this teleport point?",
+  "screen.youzaiworldcore.teleport_anchor.delete_confirm": "Delete",
+  "screen.youzaiworldcore.teleport_anchor.delete_cancel": "Cancel",
+  "screen.youzaiworldcore.teleport_anchor_name.title": "Name Teleport Anchor",
+  "screen.youzaiworldcore.teleport_anchor_name.hint": "Enter a name...",
+  "screen.youzaiworldcore.teleport_anchor_name.confirm": "Confirm",
+  "screen.youzaiworldcore.teleport_anchor_name.default": "Teleport Point"
 }
