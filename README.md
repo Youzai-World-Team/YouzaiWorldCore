@@ -1,5 +1,17 @@
 # YouzaiWorldCore — 悠哉世界核心模组
 
+<p align="center">
+  <img src="https://mcyzw.top/images/banner.webp" alt="Banner">
+</p>
+
+<p align="center">
+  <a href="https://github.com/Youzai-World-Team"><img src="https://img.shields.io/badge/Organization-Youzai_World_Team-blue?style=for-the-badge&logo=github" alt="Organization"></a>
+  <a><img src="https://img.shields.io/badge/Minecraft-Java_26.2-brightgreen?style=for-the-badge&logo=minecraft" alt="Minecraft Version"></a>
+  <a><img src="https://img.shields.io/badge/Mod_Loader-Fabric-orange?style=for-the-badge" alt="Mod Loader"></a>
+  <a><img src="https://img.shields.io/badge/License-Apache_2.0-green?style=for-the-badge" alt="License"></a>
+  <a href="https://qm.qq.com/q/tRrIqxf04K"><img src="https://img.shields.io/badge/QQ群-895689642-red?style=for-the-badge&logo=tencent-qq" alt="QQ Group"></a>
+</p>
+
 > **版本**: 1.12.5+indev · **Minecraft**: 26.2 · **加载器**: Fabric Loader 0.19.3  
 > **许可协议**: [Apache-2.0](LICENSE.txt)
 
