@@ -14,6 +14,7 @@ import net.minecraft.world.level.Level;
  * @param dimension 锚点所在的维度
  * @param name      锚点的显示名称
  */
+@SuppressWarnings("null")
 public record TeleportAnchorData(BlockPos pos, ResourceKey<Level> dimension, String name) {
 
     public static final Codec<TeleportAnchorData> CODEC = RecordCodecBuilder.create(instance ->

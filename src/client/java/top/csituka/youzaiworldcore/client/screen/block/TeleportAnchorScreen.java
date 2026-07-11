@@ -24,6 +24,7 @@ import java.util.List;
  * 点击传送点条目将其选中，下方出现「传送」「重命名」「删除」三个功能按钮。
  * 支持选中高亮、重命名输入框、仅从当前玩家列表删除。
  */
+@SuppressWarnings("null")
 public class TeleportAnchorScreen extends Screen {
 
     private static final int PANEL_WIDTH = 300;

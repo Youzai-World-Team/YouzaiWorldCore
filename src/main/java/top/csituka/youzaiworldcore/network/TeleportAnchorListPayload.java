@@ -23,6 +23,7 @@ import java.util.List;
  * @param currentPos      当前右键的锚点位置（用于禁用传送按钮），null 表示无限制
  * @param currentDim      当前右键的锚点维度
  */
+@SuppressWarnings("null")
 public record TeleportAnchorListPayload(List<TeleportAnchorData> points,
                                          @Nullable BlockPos currentPos,
                                          @Nullable ResourceKey<Level> currentDim) implements CustomPacketPayload {

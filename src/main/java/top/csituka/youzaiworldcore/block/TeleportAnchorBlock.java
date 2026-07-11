@@ -2,7 +2,6 @@ package top.csituka.youzaiworldcore.block;
 
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
-import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
@@ -17,7 +16,6 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
 import top.csituka.youzaiworldcore.block.entity.TeleportAnchorBlockEntity;
 import top.csituka.youzaiworldcore.data.TeleportAnchorManager;
 import top.csituka.youzaiworldcore.network.TeleportAnchorListPayload;
@@ -36,6 +34,7 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
  * 激活状态通过 BlockState 的 ACTIVE 属性和 BlockEntity 中的玩家 UUID 集合共同管理。
  * 当至少一个玩家激活了此锚点时，ACTIVE=true 使方块发光。
  */
+@SuppressWarnings("null")
 public class TeleportAnchorBlock extends BaseEntityBlock {
 
     public static final BooleanProperty ACTIVE = BooleanProperty.create("active");

@@ -29,6 +29,7 @@ import java.util.UUID;
  * 使用 Minecraft 的 {@link SavedData} 系统持久化，自动保存到世界存档。
  * 每个玩家关联一个传送锚点列表。
  */
+@SuppressWarnings("null")
 public class TeleportAnchorManager extends SavedData {
 
     private final Map<UUID, List<TeleportAnchorData>> playerPoints = new HashMap<>();

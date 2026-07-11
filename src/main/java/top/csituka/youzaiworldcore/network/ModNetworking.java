@@ -18,6 +18,7 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
 
 import java.util.UUID;
 
+@SuppressWarnings({"null", "unused"})
 public class ModNetworking {
     
     public static void initialize() {

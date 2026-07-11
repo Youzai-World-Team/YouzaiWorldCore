@@ -18,6 +18,7 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
  * 玩家激活锚点时弹出，输入自定义名称后确认激活。
  * 若名称为空则使用默认名称。
  */
+@SuppressWarnings("null")
 public class TeleportAnchorNameScreen extends Screen {
 
     private static final int PANEL_WIDTH = 280;

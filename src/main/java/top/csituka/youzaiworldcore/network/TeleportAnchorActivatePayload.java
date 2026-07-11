@@ -12,6 +12,7 @@ import top.csituka.youzaiworldcore.YouzaiworldCore;
 /**
  * C2S 数据包：玩家在命名界面确认后，发送锚点位置、维度和自定义名称给服务端完成激活。
  */
+@SuppressWarnings("null")
 public record TeleportAnchorActivatePayload(BlockPos pos, ResourceKey<Level> dimension, String name) implements CustomPacketPayload {
 
     public static final Identifier ID = Identifier.fromNamespaceAndPath(

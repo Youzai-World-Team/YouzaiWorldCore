@@ -12,6 +12,7 @@ import top.csituka.youzaiworldcore.YouzaiworldCore;
 /**
  * S2C 数据包：服务端通知客户端打开传送锚点命名界面。
  */
+@SuppressWarnings("null")
 public record TeleportAnchorOpenNamePayload(BlockPos pos, ResourceKey<Level> dimension) implements CustomPacketPayload {
 
     public static final Identifier ID = Identifier.fromNamespaceAndPath(

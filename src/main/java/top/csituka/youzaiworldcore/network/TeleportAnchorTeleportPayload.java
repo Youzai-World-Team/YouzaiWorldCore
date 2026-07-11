@@ -11,6 +11,7 @@ import top.csituka.youzaiworldcore.YouzaiworldCore;
  *
  * @param pointIndex 在传送点列表中的索引
  */
+@SuppressWarnings("null")
 public record TeleportAnchorTeleportPayload(int pointIndex) implements CustomPacketPayload {
 
     public static final Identifier ID = Identifier.fromNamespaceAndPath(

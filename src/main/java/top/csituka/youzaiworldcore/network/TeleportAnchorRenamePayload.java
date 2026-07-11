@@ -12,6 +12,7 @@ import top.csituka.youzaiworldcore.YouzaiworldCore;
  * @param pointIndex 在传送点列表中的索引
  * @param newName    新的显示名称
  */
+@SuppressWarnings("null")
 public record TeleportAnchorRenamePayload(int pointIndex, String newName) implements CustomPacketPayload {
 
     public static final Identifier ID = Identifier.fromNamespaceAndPath(

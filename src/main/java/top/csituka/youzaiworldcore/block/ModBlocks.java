@@ -92,7 +92,6 @@ public class ModBlocks {
             true
     );
 
-    @SuppressWarnings("unchecked")
     private static <T extends Block> T register(String name, Function<BlockBehaviour.Properties, T> blockFactory, BlockBehaviour.Properties settings, boolean shouldRegisterItem) {
         ResourceKey<Block> blockKey = ResourceKey.create(Registries.BLOCK, Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, name));
         T block = blockFactory.apply(settings.setId(blockKey));
