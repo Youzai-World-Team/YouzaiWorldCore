@@ -12,6 +12,7 @@ import net.minecraft.network.chat.Component;
 import top.csituka.youzaiworldcore.client.config.ClientExternalSettings;
 import top.csituka.youzaiworldcore.client.screen.widget.CheckboxButton;
 import top.csituka.youzaiworldcore.client.screen.widget.DropdownButton;
+import top.csituka.youzaiworldcore.client.screen.widget.TitleScreenTextButton;
 import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
 
 import java.util.List;
@@ -36,8 +37,8 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
 
     // ===== 组件引用 =====
     private TransparentButton closeButton;
-    private TransparentButton sidebarExpFeatures;
-    private TransparentButton sidebarDev;
+    private TitleScreenTextButton sidebarExpFeatures;
+    private TitleScreenTextButton sidebarDev;
     private CheckboxButton devModeToggle;
     private DropdownButton logLevelDropdown;
     private DropdownButton debugModeDropdown;
@@ -151,24 +152,20 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
         int sidebarX = 20;
         int sidebarY = 90;
 
-        sidebarExpFeatures = new TransparentButton(
+        sidebarExpFeatures = new TitleScreenTextButton(
                 sidebarX, sidebarY, SIDEBAR_WIDTH, 22,
                 Component.translatable("screen.youzaiworldcore.settings.sidebar_experimental"),
                 () -> { selectedSection = 0; rebuildWidgets(); }
         );
-        sidebarExpFeatures.setTextLeftAligned(true);
-        sidebarExpFeatures.setTextColor(0xFFFFFFFF);
-        sidebarExpFeatures.setBackgroundVisible(selectedSection == 0);
+        sidebarExpFeatures.setSelected(selectedSection == 0);
         addRenderableWidget(sidebarExpFeatures);
 
-        sidebarDev = new TransparentButton(
+        sidebarDev = new TitleScreenTextButton(
                 sidebarX, sidebarY + 30, SIDEBAR_WIDTH, 22,
                 Component.translatable("screen.youzaiworldcore.settings.sidebar_developer"),
                 () -> { selectedSection = 1; rebuildWidgets(); }
         );
-        sidebarDev.setTextLeftAligned(true);
-        sidebarDev.setTextColor(0xFFFFFFFF);
-        sidebarDev.setBackgroundVisible(selectedSection == 1);
+        sidebarDev.setSelected(selectedSection == 1);
         addRenderableWidget(sidebarDev);
 
         // ===== 右侧设置内容 =====
