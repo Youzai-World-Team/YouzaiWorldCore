@@ -21,7 +21,7 @@ import java.nio.file.Path;
  * 保存设置：
  * <ul>
  *   <li>{@code devModeEnabled} — 启用开发者模式</li>
- *   <li>{@code logToFile} — 输出日志到 latest.log</li>
+ *   <li>{@code logLevel} — 日志输出丰富度（0=关闭, 1=基本, 2=详细, 3=调试）</li>
  *   <li>{@code debugModeType} — 调试方式 ("embedded" 内嵌服务端 / "dedicated" 专用服务端)</li>
  *   <li>{@code debugAddress} — 调试服务器地址（专用服务端）</li>
  *   <li>{@code debugPort} — 调试服务器端口（专用服务端）</li>
@@ -37,7 +37,8 @@ public final class ClientExternalSettings {
 
     // ===== 运行时状态 =====
     private static boolean devModeEnabled = false;
-    private static boolean logToFile = false;
+    /** 日志输出丰富度：0=关闭, 1=基本, 2=详细, 3=调试 */
+    private static int logLevel = 0;
     private static String debugModeType = "embedded"; // "embedded" 或 "dedicated"
     private static String debugAddress = "localhost";
     private static String debugPort = "25565";
@@ -50,8 +51,15 @@ public final class ClientExternalSettings {
         return devModeEnabled;
     }
 
+    /** @deprecated 请改用 {@link #getLogLevel()} */
+    @Deprecated
     public static boolean isLogToFile() {
-        return logToFile;
+        return logLevel > 0;
+    }
+
+    /** 获取日志输出丰富度等级（0=关闭, 1=基本, 2=详细, 3=调试） */
+    public static int getLogLevel() {
+        return logLevel;
     }
 
     public static String getDebugModeType() {
@@ -74,11 +82,18 @@ public final class ClientExternalSettings {
         save();
     }
 
+    /** @deprecated 请改用 {@link #setLogLevel(int)} */
+    @Deprecated
     public static void setLogToFile(boolean value) {
-        logToFile = value;
-        DebugLogger.setLogToFile(value);
-        // 单人模式集成服务器：运行时同步到服务端 logToFile 标志
-        top.csituka.youzaiworldcore.YouzaiworldCore.logToFile = value;
+        setLogLevel(value ? 1 : 0);
+    }
+
+    /** 设置日志输出丰富度等级（0=关闭, 1=基本, 2=详细, 3=调试） */
+    public static void setLogLevel(int level) {
+        logLevel = Math.max(0, Math.min(3, level));
+        DebugLogger.setLogLevel(logLevel);
+        // 单人模式集成服务器：只要日志级别 > 0 就开启服务端日志输出
+        top.csituka.youzaiworldcore.YouzaiworldCore.logToFile = (logLevel > 0);
         save();
     }
 
@@ -113,8 +128,13 @@ public final class ClientExternalSettings {
             if (root.has("devModeEnabled") && !root.get("devModeEnabled").isJsonNull())
                 devModeEnabled = root.get("devModeEnabled").getAsBoolean();
 
-            if (root.has("logToFile") && !root.get("logToFile").isJsonNull())
-                logToFile = root.get("logToFile").getAsBoolean();
+            // ===== logLevel 读取（优先新字段，兼容旧版 logToFile 布尔值） =====
+            if (root.has("logLevel") && !root.get("logLevel").isJsonNull()) {
+                logLevel = Math.max(0, Math.min(3, root.get("logLevel").getAsInt()));
+            } else if (root.has("logToFile") && !root.get("logToFile").isJsonNull()) {
+                // 兼容旧版：logToFile=true → 级别 1（基本）
+                logLevel = root.get("logToFile").getAsBoolean() ? 1 : 0;
+            }
 
             if (root.has("debugModeType") && !root.get("debugModeType").isJsonNull())
                 debugModeType = root.get("debugModeType").getAsString();
@@ -125,12 +145,13 @@ public final class ClientExternalSettings {
             if (root.has("debugPort") && !root.get("debugPort").isJsonNull())
                 debugPort = root.get("debugPort").getAsString();
 
-            if (logToFile) {
+            if (logLevel > 0) {
                 LOGGER.info("已从 {} 加载客户端外部设置", CONFIG_FILE);
             }
-            // 同步开发者模式与日志开关到 DebugLogger
+            // 同步到 DebugLogger 和全局标志
             DebugLogger.setDevModeEnabled(devModeEnabled);
-            DebugLogger.setLogToFile(logToFile);
+            DebugLogger.setLogLevel(logLevel);
+            top.csituka.youzaiworldcore.YouzaiworldCore.logToFile = (logLevel > 0);
         } catch (Exception e) {
             LOGGER.error("加载客户端外部设置失败: {}", e.getMessage());
         }
@@ -142,7 +163,7 @@ public final class ClientExternalSettings {
             Files.createDirectories(CONFIG_FILE.getParent());
             JsonObject root = new JsonObject();
             root.addProperty("devModeEnabled", devModeEnabled);
-            root.addProperty("logToFile", logToFile);
+            root.addProperty("logLevel", logLevel);
             root.addProperty("debugModeType", debugModeType);
             root.addProperty("debugAddress", debugAddress);
             root.addProperty("debugPort", debugPort);

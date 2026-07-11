@@ -39,14 +39,14 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
     private TransparentButton sidebarExpFeatures;
     private TransparentButton sidebarDev;
     private CheckboxButton devModeToggle;
-    private CheckboxButton logToggle;
+    private DropdownButton logLevelDropdown;
     private DropdownButton debugModeDropdown;
     private EditBox debugAddressInput;
     private EditBox debugPortInput;
 
     // ===== 设置状态（通过 ClientExternalSettings 持久化） =====
     private boolean devModeEnabled;
-    private boolean logToFile;
+    private int logLevel; // 0=关闭, 1=基本, 2=详细, 3=调试
     private String debugModeType; // "embedded" 或 "dedicated"
     private String debugAddress;
     private String debugPort;
@@ -56,10 +56,19 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
     private int debugSectionLabelY;
     private int debugAddrLabelY;
     private int debugPortLabelY;
+    /** "重启客户端后生效" 提示文字 Y */
+    private int restartHintY;
 
     private static final List<String> DEBUG_MODE_OPTIONS = List.of(
             Component.translatable("screen.youzaiworldcore.settings.debug_mode_embedded").getString(),
             Component.translatable("screen.youzaiworldcore.settings.debug_mode_dedicated").getString()
+    );
+
+    private static final List<String> LOG_LEVEL_OPTIONS = List.of(
+            Component.translatable("screen.youzaiworldcore.settings.log_level_off").getString(),
+            Component.translatable("screen.youzaiworldcore.settings.log_level_basic").getString(),
+            Component.translatable("screen.youzaiworldcore.settings.log_level_detailed").getString(),
+            Component.translatable("screen.youzaiworldcore.settings.log_level_debug").getString()
     );
 
     public YouzaiWorldCoreSettingsScreen(Screen parent) {
@@ -67,7 +76,7 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
         this.panorama = new Panorama();
         // 从持久化配置读取初始状态
         this.devModeEnabled = ClientExternalSettings.isDevModeEnabled();
-        this.logToFile = ClientExternalSettings.isLogToFile();
+        this.logLevel = ClientExternalSettings.getLogLevel();
         this.debugModeType = ClientExternalSettings.getDebugModeType();
         this.debugAddress = ClientExternalSettings.getDebugAddress();
         this.debugPort = ClientExternalSettings.getDebugPort();
@@ -114,6 +123,10 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
         if (debugModeDropdown != null && debugModeDropdown.isOpen()
                 && !debugModeDropdown.isPositionInsidePopup(mouseButtonEvent.x(), mouseButtonEvent.y())) {
             debugModeDropdown.closePopup();
+        }
+        if (logLevelDropdown != null && logLevelDropdown.isOpen()
+                && !logLevelDropdown.isPositionInsidePopup(mouseButtonEvent.x(), mouseButtonEvent.y())) {
+            logLevelDropdown.closePopup();
         }
         return super.mouseClicked(mouseButtonEvent, bl);
     }
@@ -179,6 +192,8 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
                     () -> {
                         ClientExternalSettings.setDevModeEnabled(!devModeEnabled);
                         devModeEnabled = !devModeEnabled;
+                        // 同步到全局标志
+                        top.csituka.youzaiworldcore.YouzaiworldCore.devModeEnabled = devModeEnabled;
                         rebuildWidgets();
                     }
             );
@@ -188,25 +203,32 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
             if (devModeEnabled) {
                 // ===== 开发者模式下才显示的选项 =====
 
-                // 输出日志
-                logToggle = new CheckboxButton(
-                        baseX, y, CONTENT_WIDTH, 20,
-                        Component.translatable("screen.youzaiworldcore.settings.checkbox_log_to_file"),
-                        logToFile,
-                        () -> {
-                            ClientExternalSettings.setLogToFile(!logToFile);
-                            logToFile = !logToFile;
-                            rebuildWidgets();
-                        }
+                // ===== 日志输出丰富度（下拉框） =====
+                y += 4;
+                logLevelDropdown = new DropdownButton(
+                        baseX, y, CONTENT_WIDTH, SIDEBAR_WIDTH, 20,
+                        Component.translatable("screen.youzaiworldcore.settings.dropdown_log_level"),
+                        LOG_LEVEL_OPTIONS,
+                        logLevel,
+                        false,
+                        idx -> {
+                            ClientExternalSettings.setLogLevel(idx);
+                            logLevel = idx;
+                        },
+                        null
                 );
-                addRenderableWidget(logToggle);
+                addRenderableWidget(logLevelDropdown);
                 y += 26;
 
+                // "重启客户端后生效" 提示文字
+                restartHintY = y;
+                y += 12;
+
                 // ===== 调试方式选择 =====
+                y += 4;
                 boolean isDedicated = "dedicated".equals(debugModeType);
                 int debugModeIndex = isDedicated ? 1 : 0;
 
-                y += 4;
                 // "调试方式" 下拉选择框
                 debugModeDropdown = new DropdownButton(
                         baseX, y, CONTENT_WIDTH, SIDEBAR_WIDTH, 20,
@@ -269,7 +291,7 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
                 debugPortInput.setVisible(isDedicated);
                 addRenderableWidget(debugPortInput);
             } else {
-                logToggle = null;
+                logLevelDropdown = null;
                 debugModeDropdown = null;
                 debugAddressInput = null;
                 debugPortInput = null;
@@ -315,13 +337,20 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
             guiGraphics.text(this.font, Component.translatable("screen.youzaiworldcore.settings.dev_warning"),
                     baseX, baseY + 14, 0x80FFFFFF, false);
 
-            if (devModeEnabled && "dedicated".equals(debugModeType)) {
-                guiGraphics.text(this.font, Component.translatable("screen.youzaiworldcore.settings.label_debug_section"),
-                        baseX, debugSectionLabelY, 0xFFFFCC88, false);
-                guiGraphics.text(this.font, Component.translatable("screen.youzaiworldcore.settings.label_address"),
-                        baseX, debugAddrLabelY, 0xB0FFFFFF, false);
-                guiGraphics.text(this.font, Component.translatable("screen.youzaiworldcore.settings.label_port"),
-                        baseX, debugPortLabelY, 0xB0FFFFFF, false);
+            if (devModeEnabled) {
+                // ===== "重启客户端后生效" 提示文字（日志输出丰富度下拉框下方） =====
+                var restartHint = Component.translatable("screen.youzaiworldcore.settings.log_level_restart_hint");
+                guiGraphics.text(this.font, restartHint,
+                        baseX, restartHintY, 0x80FFFFFF, false);
+
+                if ("dedicated".equals(debugModeType)) {
+                    guiGraphics.text(this.font, Component.translatable("screen.youzaiworldcore.settings.label_debug_section"),
+                            baseX, debugSectionLabelY, 0xFFFFCC88, false);
+                    guiGraphics.text(this.font, Component.translatable("screen.youzaiworldcore.settings.label_address"),
+                            baseX, debugAddrLabelY, 0xB0FFFFFF, false);
+                    guiGraphics.text(this.font, Component.translatable("screen.youzaiworldcore.settings.label_port"),
+                            baseX, debugPortLabelY, 0xB0FFFFFF, false);
+                }
             }
         }
 
@@ -331,6 +360,9 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
         // ===== 下拉弹窗后置渲染（含动画，无论是否打开都需持续调用以驱动淡入淡出） =====
         if (debugModeDropdown != null) {
             debugModeDropdown.renderPopup(guiGraphics, mouseX, mouseY, partialTick);
+        }
+        if (logLevelDropdown != null) {
+            logLevelDropdown.renderPopup(guiGraphics, mouseX, mouseY, partialTick);
         }
     }
 

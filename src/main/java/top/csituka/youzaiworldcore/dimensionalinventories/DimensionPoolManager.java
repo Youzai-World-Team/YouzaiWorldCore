@@ -601,6 +601,15 @@ public final class DimensionPoolManager {
                         newPlayer.getName().getString(), sourcePool.id());
                 DebugLogger.info("DimensionPoolManager", "标记玩家 {} 传回池 {} 时使用默认出生点",
                         newPlayer.getName().getString(), sourcePool.id());
+
+                // 非生存世界维度池死亡时，向玩家发送提示消息
+                if (!"survival_world_pool".equals(sourcePool.id())) {
+                    newPlayer.sendSystemMessage(Component.translatable(
+                            "youzaiworldcore.message.diminv.death_spawn_notice",
+                            sourcePool.displayName()));
+                    DebugLogger.info("DimensionPoolManager", "已向玩家 {} 发送死亡提示消息（源池：{}）",
+                            newPlayer.getName().getString(), sourcePool.displayName());
+                }
             });
         }
 
