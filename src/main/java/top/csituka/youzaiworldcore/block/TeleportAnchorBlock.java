@@ -91,6 +91,23 @@ public class TeleportAnchorBlock extends BaseEntityBlock {
                 level.sendBlockUpdated(pos, state, state.setValue(ACTIVE, true), 3);
             }
 
+            // 播放激活粒子效果（仅激活者可见）
+            {
+                var particle = net.minecraft.core.particles.ParticleTypes.END_ROD;
+                var packet = new net.minecraft.network.protocol.game.ClientboundLevelParticlesPacket(
+                        particle, false, false,
+                        pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
+                        0.6f, 0.6f, 0.6f, 0.08f, 40
+                );
+                serverPlayer.connection.send(packet);
+            }
+
+            // 播放经验升级音效（仅激活者听见）
+            serverPlayer.playSound(
+                    net.minecraft.sounds.SoundEvents.PLAYER_LEVELUP,
+                    1.0f, 1.0f
+            );
+
             TeleportAnchorManager manager = TeleportAnchorManager.get(level.getServer());
             manager.addPoint(serverPlayer, pos, level.dimension());
 
@@ -111,7 +128,7 @@ public class TeleportAnchorBlock extends BaseEntityBlock {
                     })
                     .toList();
 
-            ServerPlayNetworking.send(serverPlayer, new TeleportAnchorListPayload(validPoints));
+            ServerPlayNetworking.send(serverPlayer, new TeleportAnchorListPayload(validPoints, pos, level.dimension()));
         }
 
         return InteractionResult.SUCCESS;

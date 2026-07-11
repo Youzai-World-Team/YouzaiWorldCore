@@ -5,7 +5,11 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.level.Level;
+import org.jspecify.annotations.Nullable;
 import top.csituka.youzaiworldcore.data.TeleportAnchorData;
 import top.csituka.youzaiworldcore.network.TeleportAnchorDeletePayload;
 import top.csituka.youzaiworldcore.network.TeleportAnchorRenamePayload;
@@ -34,6 +38,10 @@ public class TeleportAnchorScreen extends Screen {
     private static final int SELECTED_HIGHLIGHT_COLOR = 0x40FFFFFF;
 
     private final List<TeleportAnchorData> points;
+    @Nullable
+    private final BlockPos currentAnchorPos;
+    @Nullable
+    private final ResourceKey<Level> currentAnchorDim;
     private int selectedIndex = -1;
     private boolean renameMode = false;
     private boolean confirmingDelete = false;
@@ -43,9 +51,13 @@ public class TeleportAnchorScreen extends Screen {
     private int panelY;
     private int listBottomY;
 
-    public TeleportAnchorScreen(List<TeleportAnchorData> points) {
+    public TeleportAnchorScreen(List<TeleportAnchorData> points,
+                                 @Nullable BlockPos currentAnchorPos,
+                                 @Nullable ResourceKey<Level> currentAnchorDim) {
         super(Component.translatable("screen.youzaiworldcore.teleport_anchor.title"));
         this.points = points;
+        this.currentAnchorPos = currentAnchorPos;
+        this.currentAnchorDim = currentAnchorDim;
     }
 
     @Override
@@ -95,6 +107,12 @@ public class TeleportAnchorScreen extends Screen {
         int startX = panelX + (PANEL_WIDTH - totalBtnWidth) / 2;
         boolean hasSelection = selectedIndex >= 0;
 
+        // 判断选中的传送点是否为当前右键的锚点（禁止传送给自己）
+        boolean isCurrentAnchor = hasSelection && selectedIndex < points.size()
+                && currentAnchorPos != null && currentAnchorDim != null
+                && points.get(selectedIndex).pos().equals(currentAnchorPos)
+                && points.get(selectedIndex).dimension().equals(currentAnchorDim);
+
         Button teleportBtn = Button.builder(
                 Component.translatable("screen.youzaiworldcore.teleport_anchor.teleport"),
                 btn -> {
@@ -103,7 +121,7 @@ public class TeleportAnchorScreen extends Screen {
                 })
                 .bounds(startX, actionsY, BUTTON_WIDTH, BUTTON_HEIGHT)
                 .build();
-        teleportBtn.active = hasSelection;
+        teleportBtn.active = hasSelection && !isCurrentAnchor;
         addRenderableWidget(teleportBtn);
 
         Button renameBtn = Button.builder(

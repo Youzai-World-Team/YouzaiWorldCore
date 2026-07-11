@@ -9,6 +9,7 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
+import org.jspecify.annotations.Nullable;
 import top.csituka.youzaiworldcore.YouzaiworldCore;
 import top.csituka.youzaiworldcore.data.TeleportAnchorData;
 
@@ -17,8 +18,14 @@ import java.util.List;
 
 /**
  * S2C 数据包：服务端将玩家的活跃传送点列表发送给客户端，用于打开传送 GUI。
+ *
+ * @param points          玩家的活跃传送点列表
+ * @param currentPos      当前右键的锚点位置（用于禁用传送按钮），null 表示无限制
+ * @param currentDim      当前右键的锚点维度
  */
-public record TeleportAnchorListPayload(List<TeleportAnchorData> points) implements CustomPacketPayload {
+public record TeleportAnchorListPayload(List<TeleportAnchorData> points,
+                                         @Nullable BlockPos currentPos,
+                                         @Nullable ResourceKey<Level> currentDim) implements CustomPacketPayload {
 
     public static final Identifier ID = Identifier.fromNamespaceAndPath(
             YouzaiworldCore.MOD_ID, "teleport_anchor_list");
@@ -31,6 +38,8 @@ public record TeleportAnchorListPayload(List<TeleportAnchorData> points) impleme
                 public TeleportAnchorListPayload decode(RegistryFriendlyByteBuf buf) {
                     CompoundTag tag = buf.readNbt();
                     List<TeleportAnchorData> points = new ArrayList<>();
+                    BlockPos currentPos = null;
+                    ResourceKey<Level> currentDim = null;
                     if (tag != null && tag.contains("points")) {
                         ListTag list = tag.getListOrEmpty("points");
                         for (int i = 0; i < list.size(); i++) {
@@ -43,8 +52,19 @@ public record TeleportAnchorListPayload(List<TeleportAnchorData> points) impleme
                             String name = entry.getStringOr("name", "传送点");
                             points.add(new TeleportAnchorData(pos, dimension, name));
                         }
+                        if (tag.contains("currentPos")) {
+                            currentPos = BlockPos.of(tag.getLongOr("currentPos", 0L));
+                        }
+                        if (tag.contains("currentDim")) {
+                            String dimStr = tag.getStringOr("currentDim", "");
+                            if (!dimStr.isEmpty()) {
+                                currentDim = ResourceKey.create(
+                                        net.minecraft.core.registries.Registries.DIMENSION,
+                                        Identifier.parse(dimStr));
+                            }
+                        }
                     }
-                    return new TeleportAnchorListPayload(points);
+                    return new TeleportAnchorListPayload(points, currentPos, currentDim);
                 }
 
                 @Override
@@ -59,6 +79,12 @@ public record TeleportAnchorListPayload(List<TeleportAnchorData> points) impleme
                         list.add(entry);
                     }
                     tag.put("points", list);
+                    if (payload.currentPos() != null) {
+                        tag.putLong("currentPos", payload.currentPos().asLong());
+                    }
+                    if (payload.currentDim() != null) {
+                        tag.putString("currentDim", payload.currentDim().identifier().toString());
+                    }
                     buf.writeNbt(tag);
                 }
             };
