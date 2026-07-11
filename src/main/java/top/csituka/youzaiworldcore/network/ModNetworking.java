@@ -183,8 +183,10 @@ public class ModNetworking {
                     player.connection.send(pkt);
                 }
 
-                // 音效（仅本人）
-                player.playSound(net.minecraft.sounds.SoundEvents.PLAYER_LEVELUP, 1.0f, 1.0f);
+                // 音效（在锚点位置播放，激活者能听见）
+                level.playSound(null, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
+                        net.minecraft.sounds.SoundEvents.PLAYER_LEVELUP,
+                        net.minecraft.sounds.SoundSource.PLAYERS, 1.0f, 1.0f);
 
                 // 添加到玩家传送列表
                 TeleportAnchorManager manager = TeleportAnchorManager.get(server);
