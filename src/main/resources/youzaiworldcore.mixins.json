@@ -9,7 +9,12 @@
     "ServerPlayerDeathMixin",
     "invisibility.ServerLevelParticleMixin",
     "invisibility.ServerLevelSoundMixin",
-    "invisibility.ChestBlockEntityAnimationMixin"
+    "invisibility.ServerLevelBlockEventMixin",
+    "invisibility.ChestBlockEntityAnimationMixin",
+    "invisibility.BarrelBlockEntityAnimationMixin",
+    "invisibility.EnderChestBlockEntityInteractionMixin",
+    "invisibility.ShulkerBoxBlockEntityInteractionMixin",
+    "invisibility.DecoratedPotBlockWobbleMixin"
   ],
   "injectors": {
     "defaultRequire": 1

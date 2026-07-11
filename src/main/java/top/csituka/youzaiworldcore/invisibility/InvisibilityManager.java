@@ -1,6 +1,7 @@
 package top.csituka.youzaiworldcore.invisibility;
 
 import net.minecraft.commands.Commands;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.*;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -19,6 +20,7 @@ import org.slf4j.LoggerFactory;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 隐身功能管理器。
@@ -41,6 +43,12 @@ public final class InvisibilityManager {
 
     /** 每个隐身玩家对应的 Boss 栏 */
     private static final Map<UUID, ServerBossEvent> BOSS_BARS = new HashMap<>();
+
+    /**
+     * 被隐身玩家交互的容器位置集合。
+     * 当隐身玩家打开容器时，记录该容器位置，用于抑制动画和声音的广播。
+     */
+    private static final Set<BlockPos> INVISIBLE_CONTAINER_INTERACTIONS = ConcurrentHashMap.newKeySet();
 
     /** 权限节点 */
     public static final String PERMISSION_INVISIBILITY = "youzaiworldcore.command.function.invisibility";
@@ -331,6 +339,37 @@ public final class InvisibilityManager {
         Set<UUID> result = Collections.unmodifiableSet(INVISIBLE_PLAYERS);
         DebugLogger.exiting("InvisibilityManager", "getInvisiblePlayers", "size=" + result.size());
         return result;
+    }
+
+    // ==================== 容器交互跟踪 ====================
+
+    /**
+     * 标记一个容器位置作为"被隐身玩家交互中"。
+     * 该标记会抑制该容器的动画和声音广播给其他玩家。
+     *
+     * @param pos 容器位置
+     */
+    public static void markContainerInteraction(BlockPos pos) {
+        INVISIBLE_CONTAINER_INTERACTIONS.add(pos);
+    }
+
+    /**
+     * 检查指定位置是否被隐身玩家交互（需要抑制动画/声音）。
+     *
+     * @param pos 容器位置
+     * @return 如果该位置被隐身玩家交互则返回 true
+     */
+    public static boolean isContainerInteractionBlocked(BlockPos pos) {
+        return INVISIBLE_CONTAINER_INTERACTIONS.contains(pos);
+    }
+
+    /**
+     * 清除指定位置的隐身容器交互标记。
+     *
+     * @param pos 容器位置
+     */
+    public static void clearContainerInteraction(BlockPos pos) {
+        INVISIBLE_CONTAINER_INTERACTIONS.remove(pos);
     }
 
     // ==================== 内部方法 ====================

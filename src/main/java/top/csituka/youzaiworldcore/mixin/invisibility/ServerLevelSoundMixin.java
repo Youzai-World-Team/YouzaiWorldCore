@@ -1,5 +1,6 @@
 package top.csituka.youzaiworldcore.mixin.invisibility;
 
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -25,7 +26,7 @@ public abstract class ServerLevelSoundMixin {
 
     /**
      * 拦截 {@code playSeededSound(Entity, double, double, double, Holder, SoundSource, float, float, long)}
-     * —— 定点音效广播（如玩家饮用药水产生的声音）。
+     * —— 定点音效广播（如玩家饮用药水产生的声音、容器开合声音）。
      */
     @Inject(
             method = "playSeededSound(Lnet/minecraft/world/entity/Entity;DDDLnet/minecraft/core/Holder;Lnet/minecraft/sounds/SoundSource;FFJ)V",
@@ -44,8 +45,15 @@ public abstract class ServerLevelSoundMixin {
             long seed,
             CallbackInfo ci
     ) {
-        // 如果声音来源是隐身玩家，取消广播（其他玩家听不到，隐身玩家由自身客户端播放）
+        // 情况1：声音来源是隐身玩家 → 取消广播（隐身玩家由客户端本地播放）
         if (source instanceof ServerPlayer player && InvisibilityManager.isInvisible(player)) {
+            ci.cancel();
+            return;
+        }
+
+        // 情况2：声音来源为空且位置在隐身容器交互记录中 → 取消广播（容器声音）
+        if (source == null && InvisibilityManager.isContainerInteractionBlocked(
+                BlockPos.containing(x, y, z))) {
             ci.cancel();
         }
     }
