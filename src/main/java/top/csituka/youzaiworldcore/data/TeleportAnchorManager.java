@@ -1,0 +1,100 @@
+package top.csituka.youzaiworldcore.data;
+
+import com.mojang.serialization.Codec;
+import net.minecraft.core.BlockPos;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.datafix.DataFixTypes;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.saveddata.SavedData;
+import net.minecraft.world.level.saveddata.SavedDataType;
+import top.csituka.youzaiworldcore.YouzaiworldCore;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+/**
+ * 管理所有玩家的传送锚点数据。
+ * <p>
+ * 使用 Minecraft 的 {@link SavedData} 系统持久化，自动保存到世界存档。
+ * 每个玩家关联一个传送锚点列表。
+ */
+public class TeleportAnchorManager extends SavedData {
+
+    private final Map<UUID, List<TeleportAnchorData>> playerPoints = new HashMap<>();
+
+    private static final Codec<TeleportAnchorManager> CODEC = Codec.unboundedMap(
+            Codec.STRING,               // UUID → String
+            TeleportAnchorData.CODEC.listOf()  // 值：传送点列表
+    ).xmap(
+            map -> {
+                TeleportAnchorManager manager = new TeleportAnchorManager();
+                map.forEach((uuidStr, points) ->
+                        manager.playerPoints.put(UUID.fromString(uuidStr), new ArrayList<>(points)));
+                return manager;
+            },
+            manager -> {
+                Map<String, List<TeleportAnchorData>> map = new HashMap<>();
+                manager.playerPoints.forEach((uuid, points) ->
+                        map.put(uuid.toString(), points));
+                return map;
+            }
+    );
+
+    public static final SavedDataType<TeleportAnchorManager> TYPE = new SavedDataType<>(
+            Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "teleport_anchors"),
+            TeleportAnchorManager::new,
+            CODEC,
+            DataFixTypes.LEVEL
+    );
+
+    private TeleportAnchorManager() {
+    }
+
+    /**
+     * 从服务端获取传送锚点管理器（自动加载/创建持久化数据）。
+     */
+    public static TeleportAnchorManager get(MinecraftServer server) {
+        return server.overworld().getDataStorage().computeIfAbsent(TYPE);
+    }
+
+    /**
+     * 为玩家添加一个传送锚点。
+     *
+     * @return 自动生成的显示名称
+     */
+    public String addPoint(ServerPlayer player, BlockPos pos, ResourceKey<Level> dimension) {
+        UUID uuid = player.getUUID();
+        List<TeleportAnchorData> points = playerPoints.computeIfAbsent(uuid, k -> new ArrayList<>());
+
+        int index = points.size() + 1;
+        String name = "传送点 #" + index;
+
+        points.add(new TeleportAnchorData(pos.immutable(), dimension, name));
+        setDirty();
+        return name;
+    }
+
+    /**
+     * 获取某个玩家的所有传送锚点。
+     */
+    public List<TeleportAnchorData> getPointsForPlayer(ServerPlayer player) {
+        return playerPoints.getOrDefault(player.getUUID(), List.of());
+    }
+
+    /**
+     * 移除某个玩家的一个传送锚点。
+     */
+    public void removePoint(ServerPlayer player, int index) {
+        List<TeleportAnchorData> points = playerPoints.get(player.getUUID());
+        if (points != null && index >= 0 && index < points.size()) {
+            points.remove(index);
+            setDirty();
+        }
+    }
+}

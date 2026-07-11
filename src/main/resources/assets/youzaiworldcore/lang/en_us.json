@@ -239,5 +239,8 @@
   "title.youzaiworldcore.announcement_line1": "Welcome to Youzai World!",
   "title.youzaiworldcore.announcement_line2": "New players please register first (/yzwc account register)",
   "title.youzaiworldcore.announcement_line3": "Contact an admin if you encounter issues",
-  "title.youzaiworldcore.announcement_line4": "Website: mcyzw.top"
+  "title.youzaiworldcore.announcement_line4": "Website: mcyzw.top",
+  "block.youzaiworldcore.tp_anchor": "Teleport Anchor",
+  "screen.youzaiworldcore.teleport_anchor.title": "Select Teleport Point",
+  "message.youzaiworldcore.teleport_anchor.activated": "§aTeleport anchor activated! Right-click again to open the teleport list."
 }

@@ -6,6 +6,7 @@ import net.minecraft.client.gui.screens.Screen;
 import top.csituka.youzaiworldcore.client.screen.LoginScreen;
 import top.csituka.youzaiworldcore.client.screen.MenuScreen;
 import top.csituka.youzaiworldcore.client.screen.RegisterScreen;
+import top.csituka.youzaiworldcore.client.screen.block.TeleportAnchorScreen;
 import top.csituka.youzaiworldcore.client.screen.element.AboutMeMenuElements;
 import top.csituka.youzaiworldcore.client.screen.element.MainMenuElements;
 import top.csituka.youzaiworldcore.client.screen.element.MenuElementGroup;
@@ -99,6 +100,16 @@ public class ClientNetworking {
             DebugLogger.exiting("ClientNetworking", "OpenAuthScreenPayload handler");
         });
         DebugLogger.info("ClientNetworking", "Registered receiver: OpenAuthScreenPayload");
+
+        // 注册传送锚点列表处理器
+        ClientPlayNetworking.registerGlobalReceiver(TeleportAnchorListPayload.TYPE, (payload, context) -> {
+            DebugLogger.entering("ClientNetworking", "TeleportAnchorListPayload handler");
+            context.client().execute(() -> {
+                context.client().setScreenAndShow(new TeleportAnchorScreen(payload.points()));
+            });
+            DebugLogger.exiting("ClientNetworking", "TeleportAnchorListPayload handler");
+        });
+        DebugLogger.info("ClientNetworking", "Registered receiver: TeleportAnchorListPayload");
 
         DebugLogger.exiting("ClientNetworking", "initialize");
     }

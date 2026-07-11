@@ -242,5 +242,8 @@
   "title.youzaiworldcore.announcement_line1": "欢迎来到悠哉世界！",
   "title.youzaiworldcore.announcement_line2": "新玩家请先注册账号 (/yzwc account register)",
   "title.youzaiworldcore.announcement_line3": "遇到问题请联系管理员",
-  "title.youzaiworldcore.announcement_line4": "官方网站: mcyzw.top"
+  "title.youzaiworldcore.announcement_line4": "官方网站: mcyzw.top",
+  "block.youzaiworldcore.tp_anchor": "传送锚点",
+  "screen.youzaiworldcore.teleport_anchor.title": "选择传送点",
+  "message.youzaiworldcore.teleport_anchor.activated": "§a传送锚点已激活！再次右键打开传送列表。"
 }

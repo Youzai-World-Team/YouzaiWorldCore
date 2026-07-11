@@ -3,6 +3,7 @@ package top.csituka.youzaiworldcore.network;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import top.csituka.youzaiworldcore.block.entity.FlyBeaconBlockEntity;
+import top.csituka.youzaiworldcore.data.TeleportAnchorManager;
 import top.csituka.youzaiworldcore.dimensionalinventories.DimensionPoolManager;
 import top.csituka.youzaiworldcore.dimensionalinventories.WorldPoolTeleportPayload;
 import top.csituka.youzaiworldcore.screen.DecompositionTableMenu;
@@ -28,6 +29,11 @@ public class ModNetworking {
         DebugLogger.info("ModNetworking", "Registered clientbound packet: FeatureSyncPayload");
         PayloadTypeRegistry.clientboundPlay().register(OpenAuthScreenPayload.ID, OpenAuthScreenPayload.STREAM_CODEC);
         DebugLogger.info("ModNetworking", "Registered clientbound packet: OpenAuthScreenPayload");
+
+        PayloadTypeRegistry.clientboundPlay().register(TeleportAnchorListPayload.TYPE, TeleportAnchorListPayload.STREAM_CODEC);
+        DebugLogger.info("ModNetworking", "Registered clientbound packet: TeleportAnchorListPayload");
+        PayloadTypeRegistry.serverboundPlay().register(TeleportAnchorTeleportPayload.TYPE, TeleportAnchorTeleportPayload.STREAM_CODEC);
+        DebugLogger.info("ModNetworking", "Registered serverbound packet: TeleportAnchorTeleportPayload");
 
         // ===== 服务端接收处理器 =====
         ServerPlayNetworking.registerGlobalReceiver(DecomposeItemPayload.ID, (payload, context) -> {
@@ -65,6 +71,43 @@ public class ModNetworking {
                 DimensionPoolManager.teleportToPool(context.player(), payload.poolId());
             });
             DebugLogger.exiting("ModNetworking", "WorldPoolTeleportPayload handler");
+        });
+
+        // ===== 传送锚点传送处理器 =====
+        ServerPlayNetworking.registerGlobalReceiver(TeleportAnchorTeleportPayload.TYPE, (payload, context) -> {
+            DebugLogger.entering("ModNetworking", "TeleportAnchorTeleportPayload handler");
+            var player = context.player();
+            var server = player.level().getServer();
+            if (server == null) {
+                DebugLogger.exiting("ModNetworking", "TeleportAnchorTeleportPayload handler", "server is null");
+                return;
+            }
+            server.execute(() -> {
+                TeleportAnchorManager manager = TeleportAnchorManager.get(server);
+                var points = manager.getPointsForPlayer((net.minecraft.server.level.ServerPlayer) player);
+                int index = payload.pointIndex();
+                if (index < 0 || index >= points.size()) {
+                    DebugLogger.info("ModNetworking", "Invalid teleport point index: " + index);
+                    return;
+                }
+                var target = points.get(index);
+                var targetLevel = server.getLevel(target.dimension());
+                if (targetLevel == null) {
+                    DebugLogger.info("ModNetworking", "Target dimension not loaded: " + target.dimension().identifier());
+                    return;
+                }
+                net.minecraft.server.level.ServerPlayer serverPlayer = (net.minecraft.server.level.ServerPlayer) player;
+                serverPlayer.teleportTo(targetLevel,
+                        target.pos().getX() + 0.5,
+                        target.pos().getY() + 1.0,
+                        target.pos().getZ() + 0.5,
+                        java.util.Set.of(),
+                        serverPlayer.getYRot(),
+                        serverPlayer.getXRot(),
+                        true);
+                DebugLogger.info("ModNetworking", "Teleported player to " + target.pos() + " in " + target.dimension().identifier());
+            });
+            DebugLogger.exiting("ModNetworking", "TeleportAnchorTeleportPayload handler");
         });
 
         DebugLogger.exiting("ModNetworking", "initialize");

@@ -80,6 +80,17 @@ public class ModBlocks {
             true
     );
 
+    public static final TeleportAnchorBlock TP_ANCHOR = register(
+            "tp_anchor",
+            TeleportAnchorBlock::new,
+            BlockBehaviour.Properties.of()
+                    .strength(5.0f, 6.0f)
+                    .sound(SoundType.STONE)
+                    .requiresCorrectToolForDrops()
+                    .lightLevel(state -> state.getValue(TeleportAnchorBlock.ACTIVE) ? 15 : 0),
+            true
+    );
+
     @SuppressWarnings("unchecked")
     private static <T extends Block> T register(String name, Function<BlockBehaviour.Properties, T> blockFactory, BlockBehaviour.Properties settings, boolean shouldRegisterItem) {
         ResourceKey<Block> blockKey = ResourceKey.create(Registries.BLOCK, Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, name));

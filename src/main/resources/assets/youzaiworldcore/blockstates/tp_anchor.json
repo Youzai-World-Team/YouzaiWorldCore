@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "active=false": {
+      "model": "youzaiworldcore:block/tp_anchor"
+    },
+    "active=true": {
+      "model": "youzaiworldcore:block/tp_anchor_active"
+    }
+  }
+}
