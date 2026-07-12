@@ -99,7 +99,7 @@ public final class TeleportAnchorCommand {
                             .withColor(TextColor.fromRgb(0x55FF55))
                             .withBold(true)
                             .withClickEvent(new ClickEvent.RunCommand(
-                                    "/tp @s " + x + " " + y + " " + z))
+                                    "/yzwc teleport_world @s " + dim + " " + x + " " + (y + 1) + " " + z))
                             .withHoverEvent(new HoverEvent.ShowText(
                                     Component.literal("点击传送到 §e" + point.name()
                                             + "§r（" + dim + " @ " + x + ", " + y + ", " + z + "）"))));
