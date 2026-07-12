@@ -630,8 +630,7 @@ public class TeleportAnchorScreen extends Screen {
                     x, y, 0, 0, w, h, w, h);
             // 不可用时叠加暗色遮罩使贴图变淡
             if (!this.active) {
-                int dimAlpha = (int) ((1f - vis) * 200);
-                guiGraphics.fill(x, y, x + w, y + h, dimAlpha << 24);
+                guiGraphics.fill(x, y, x + w, y + h, 0x80000000);
             }
         }
     }
