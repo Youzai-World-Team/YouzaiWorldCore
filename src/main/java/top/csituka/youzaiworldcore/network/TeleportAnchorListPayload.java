@@ -51,7 +51,9 @@ public record TeleportAnchorListPayload(List<TeleportAnchorData> points,
                             ResourceKey<Level> dimension = ResourceKey.create(
                                     net.minecraft.core.registries.Registries.DIMENSION, dimId);
                             String name = entry.getStringOr("name", "传送点");
-                            points.add(new TeleportAnchorData(pos, dimension, name));
+                            String poolId = entry.getStringOr("poolId", "");
+                            if (poolId.isEmpty()) poolId = null;
+                            points.add(new TeleportAnchorData(pos, dimension, name, poolId));
                         }
                         if (tag.contains("currentPos")) {
                             currentPos = BlockPos.of(tag.getLongOr("currentPos", 0L));
@@ -77,6 +79,9 @@ public record TeleportAnchorListPayload(List<TeleportAnchorData> points,
                         entry.putLong("pos", point.pos().asLong());
                         entry.putString("dimension", point.dimension().identifier().toString());
                         entry.putString("name", point.name());
+                        if (point.poolId() != null) {
+                            entry.putString("poolId", point.poolId());
+                        }
                         list.add(entry);
                     }
                     tag.put("points", list);

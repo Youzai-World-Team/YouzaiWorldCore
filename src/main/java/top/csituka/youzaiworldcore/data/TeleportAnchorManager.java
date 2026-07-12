@@ -23,6 +23,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.jetbrains.annotations.Nullable;
+
 /**
  * 管理所有玩家的传送锚点数据。
  * <p>
@@ -78,14 +80,16 @@ public class TeleportAnchorManager extends SavedData {
     }
 
     /**
-     * 为玩家添加一个传送锚点，使用指定的自定义名称。
+     * 为玩家添加一个传送锚点，使用指定的自定义名称和维度池标识。
      *
-     * @return true 如果添加成功；false 如果已达上限
+     * @param poolId 当前维度所属的维度池 ID，null 表示未加入任何池
+     * @return true 表示添加成功
      */
-    public boolean addPointWithName(ServerPlayer player, BlockPos pos, ResourceKey<Level> dimension, String name) {
+    public boolean addPointWithName(ServerPlayer player, BlockPos pos, ResourceKey<Level> dimension,
+                                     String name, @Nullable String poolId) {
         UUID uuid = player.getUUID();
         List<TeleportAnchorData> points = playerPoints.computeIfAbsent(uuid, k -> new ArrayList<>());
-        points.add(new TeleportAnchorData(pos.immutable(), dimension, name));
+        points.add(new TeleportAnchorData(pos.immutable(), dimension, name, poolId));
         setDirty();
         return true;
     }
@@ -174,7 +178,7 @@ public class TeleportAnchorManager extends SavedData {
         for (int i = 0; i < points.size(); i++) {
             TeleportAnchorData p = points.get(i);
             if (p.pos().equals(pos) && p.dimension().equals(dimension)) {
-                points.set(i, new TeleportAnchorData(p.pos(), p.dimension(), newName));
+                points.set(i, new TeleportAnchorData(p.pos(), p.dimension(), newName, p.poolId()));
                 setDirty();
                 return true;
             }

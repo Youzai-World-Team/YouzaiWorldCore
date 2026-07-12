@@ -11,7 +11,6 @@ import top.csituka.youzaiworldcore.client.screen.MenuScreen;
 import top.csituka.youzaiworldcore.client.screen.widget.ConfirmationDialog;
 import top.csituka.youzaiworldcore.client.screen.widget.TextureTileButton;
 import top.csituka.youzaiworldcore.dimensionalinventories.WorldPoolTeleportPayload;
-import top.csituka.youzaiworldcore.feature.ExperimentalFeatures;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -293,12 +292,6 @@ public class SwitchWorldMenuElements implements MenuElementGroup {
      * 执行完整的池切换流程。
      */
     private void requestPoolTeleport(MenuScreen screen, String buttonId) {
-        // 检查实验性功能是否已启用
-        if (!ExperimentalFeatures.isGlobalOnClient("dimension_pool")) {
-            showNotImplementedDialog(screen);
-            return;
-        }
-
         String poolId = POOL_MAP.get(buttonId);
         if (poolId == null) {
             var player = Minecraft.getInstance().player;
@@ -342,16 +335,4 @@ public class SwitchWorldMenuElements implements MenuElementGroup {
         screen.showDialog(dialog);
     }
 
-    /**
-     * 显示"暂未实现"提示弹窗
-     */
-    private void showNotImplementedDialog(MenuScreen screen) {
-        ConfirmationDialog dialog = new ConfirmationDialog(
-                I18n.get("youzaiworldcore.message.gui.not_implemented_title"),
-                new String[]{I18n.get("youzaiworldcore.message.gui.not_implemented_desc")},
-                I18n.get("youzaiworldcore.message.gui.confirm_ok"),
-                null
-        );
-        screen.showDialog(dialog);
-    }
 }

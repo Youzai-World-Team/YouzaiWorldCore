@@ -507,7 +507,7 @@ public class TeleportAnchorScreen extends Screen {
             String newName = renameEditBox.getValue().trim();
             if (!newName.isEmpty()) {
                 TeleportAnchorData old = points.get(selectedIndex);
-                points.set(selectedIndex, new TeleportAnchorData(old.pos(), old.dimension(), newName));
+                points.set(selectedIndex, new TeleportAnchorData(old.pos(), old.dimension(), newName, old.poolId()));
                 ClientPlayNetworking.send(new TeleportAnchorRenamePayload(old.pos(), old.dimension(), newName));
             }
         }

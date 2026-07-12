@@ -172,27 +172,10 @@ public class YouzaiworldCore implements ModInitializer {
         LOGGER.info("维度池系统已初始化");
         DebugLogger.exiting("YouzaiworldCore", "DimensionPoolSystem.init");
 
-        // ===== 注册实验性功能 =====
-        DebugLogger.entering("YouzaiworldCore", "ExperimentalFeatures.register.dimension_pool");
-        ExperimentalFeatures.register(
-                "dimension_pool",
-                "维度池传送系统",
-                "Youzai World Team",
-                "https://mcyzw.top",
-                "为不同维度池提供独立的玩家背包、状态和游戏模式管理",
-                "GitHub",
-                "https://github.com/Youzai-World-Team/YouzaiWorldCore",
-                false,  // 默认关闭
-                true    // 服务端控制
-        );
-        LOGGER.info("实验性功能 'dimension_pool' 已注册");
-        DebugLogger.exiting("YouzaiworldCore", "ExperimentalFeatures.register.dimension_pool");
-
         // ===== 注册维度池事件 =====
         DebugLogger.entering("YouzaiworldCore", "DimensionPoolEvents.register");
         net.fabricmc.fabric.api.entity.event.v1.ServerEntityLevelChangeEvents.AFTER_PLAYER_CHANGE_LEVEL.register(
             (player, origin, destination) -> {
-                if (!ExperimentalFeatures.isGlobalEnabled("dimension_pool")) return;
                 DebugLogger.info("DimensionPoolManager", "玩家维度变化事件触发: {} -> {} -> {}",
                         player.getName().getString(),
                         origin.dimension().identifier().toString(),
@@ -202,7 +185,6 @@ public class YouzaiworldCore implements ModInitializer {
         );
         net.fabricmc.fabric.api.entity.event.v1.ServerEntityLevelChangeEvents.AFTER_ENTITY_CHANGE_LEVEL.register(
             (originalEntity, newEntity, origin, destination) -> {
-                if (!ExperimentalFeatures.isGlobalEnabled("dimension_pool")) return;
                 if (!(newEntity instanceof net.minecraft.server.level.ServerPlayer)) {
                     DimensionPoolManager.onNonPlayerEntityChangeDimension(originalEntity, newEntity, origin, destination);
                 }
@@ -210,7 +192,6 @@ public class YouzaiworldCore implements ModInitializer {
         );
         net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents.AFTER_RESPAWN.register(
             (oldPlayer, newPlayer, alive) -> {
-                if (!ExperimentalFeatures.isGlobalEnabled("dimension_pool")) return;
                 DebugLogger.info("DimensionPoolManager", "玩家复活事件触发: {} (alive={})",
                         newPlayer.getName().getString(), alive);
                 DimensionPoolManager.onPlayerRespawn(oldPlayer, newPlayer, alive);

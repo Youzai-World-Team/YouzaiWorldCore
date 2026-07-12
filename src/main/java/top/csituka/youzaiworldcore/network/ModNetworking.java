@@ -134,6 +134,25 @@ public class ModNetworking {
                     return;
                 }
 
+                // 维度池隔离校验：源维度与目标维度必须同池，或至少一方未加入任何池
+                String sourceDim = serverPlayer.level().dimension().identifier().toString();
+                String targetDim = target.dimension().identifier().toString();
+                if (!sourceDim.equals(targetDim)) {
+                    boolean samePool = top.csituka.youzaiworldcore.dimensionalinventories.DimensionPoolSettings
+                            .dimensionsInSamePool(sourceDim, targetDim);
+                    var sourcePool = top.csituka.youzaiworldcore.dimensionalinventories.DimensionPoolSettings
+                            .getPoolByDimension(sourceDim);
+                    var targetPool = top.csituka.youzaiworldcore.dimensionalinventories.DimensionPoolSettings
+                            .getPoolByDimension(targetDim);
+                    // 仅当双方都有池但不同池时拒绝；任一方无池则放行
+                    if (sourcePool.isPresent() && targetPool.isPresent() && !samePool) {
+                        serverPlayer.sendSystemMessage(
+                                Component.translatable("message.youzaiworldcore.teleport_anchor.pool_mismatch"));
+                        DebugLogger.info("ModNetworking", "Cross-pool teleport blocked: " + sourceDim + " -> " + targetDim);
+                        return;
+                    }
+                }
+
                 // 冷却检查
                 long gameTime = serverPlayer.level().getGameTime();
                 if (!manager.canTeleport(serverPlayer, gameTime)) {
@@ -236,12 +255,16 @@ public class ModNetworking {
                         net.minecraft.sounds.SoundEvents.PLAYER_LEVELUP,
                         net.minecraft.sounds.SoundSource.PLAYERS, 1.0f, 1.0f);
 
-                // 添加到玩家传送列表
+                // 添加到玩家传送列表（附加维度池标识）
                 TeleportAnchorManager manager = TeleportAnchorManager.get(server);
                 String finalName = payload.name().isEmpty()
                         ? Component.translatable("screen.youzaiworldcore.teleport_anchor_name.default").getString()
                         : payload.name();
-                manager.addPointWithName(player, pos, level.dimension(), finalName);
+                String poolId = top.csituka.youzaiworldcore.dimensionalinventories.DimensionPoolSettings
+                        .getPoolByDimension(level.dimension().identifier().toString())
+                        .map(p -> p.id())
+                        .orElse(null);
+                manager.addPointWithName(player, pos, level.dimension(), finalName, poolId);
 
                 player.sendSystemMessage(
                         Component.translatable("message.youzaiworldcore.teleport_anchor.activated")
