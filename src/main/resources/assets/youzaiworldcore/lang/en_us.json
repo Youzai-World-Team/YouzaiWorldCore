@@ -271,5 +271,7 @@
   "screen.youzaiworldcore.teleport_anchor_name.default": "Teleport Point",
   "message.youzaiworldcore.teleport_anchor.no_xp": "§cNot enough XP levels! Need %s levels.",
   "message.youzaiworldcore.teleport_anchor.invalid": "§cTarget teleport anchor is no longer valid, removed from list!",
-  "message.youzaiworldcore.teleport_anchor.cooldown": "§cTeleport on cooldown, please wait %s seconds."
+  "message.youzaiworldcore.teleport_anchor.cooldown": "§cTeleport on cooldown, please wait %s seconds.",
+  "screen.youzaiworldcore.teleport_anchor.tooltip_copy": "Copy coordinates to clipboard",
+  "message.youzaiworldcore.teleport_anchor.copied": "§aCoordinates copied to clipboard: %s"
 }

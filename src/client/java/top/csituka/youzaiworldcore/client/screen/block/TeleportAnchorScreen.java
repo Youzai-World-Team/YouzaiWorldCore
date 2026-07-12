@@ -58,6 +58,8 @@ public class TeleportAnchorScreen extends Screen {
 
     private static final Identifier LOCATION_ICON = Identifier.fromNamespaceAndPath(
             YouzaiworldCore.MOD_ID, "textures/gui/teleport_location.png");
+    private static final Identifier COPY_ICON = Identifier.fromNamespaceAndPath(
+            YouzaiworldCore.MOD_ID, "textures/gui/teleport_copy.png");
     private static final Identifier EDIT_ICON = Identifier.fromNamespaceAndPath(
             YouzaiworldCore.MOD_ID, "textures/gui/teleport_edit.png");
     private static final Identifier BACK_ICON = Identifier.fromNamespaceAndPath(
@@ -95,6 +97,8 @@ public class TeleportAnchorScreen extends Screen {
     private final List<TransparentButton> renameConfirmButtons = new ArrayList<>();
     @Nullable
     private TextureIconButton teleportButton;
+    @Nullable
+    private TextureIconButton copyButton;
     @Nullable
     private TextureIconButton editToggleButton;
     @Nullable
@@ -193,6 +197,7 @@ public class TeleportAnchorScreen extends Screen {
         this.pointButtons.clear();
         this.renameConfirmButtons.clear();
         this.teleportButton = null;
+        this.copyButton = null;
         this.editToggleButton = null;
         this.renameButton = null;
         this.removeButton = null;
@@ -267,10 +272,37 @@ public class TeleportAnchorScreen extends Screen {
 
         // 编辑/返回按钮（贴图，已含文字，不显示额外 label）
         int editX = panelX + PANEL_WIDTH - PANEL_PADDING - ICON_BUTTON_SIZE;
+        int copyX = editX - ICON_BUTTON_SIZE - 4;
         Identifier editIcon = editMode ? BACK_ICON : EDIT_ICON;
         Component editTooltip = Component.translatable(editMode
                 ? "screen.youzaiworldcore.teleport_anchor.back"
                 : "screen.youzaiworldcore.teleport_anchor.tooltip_edit");
+
+        // 复制坐标按钮（位于编辑按钮左侧）
+        copyButton = new TextureIconButton(
+                copyX, actionsY, ICON_BUTTON_SIZE, ICON_BUTTON_SIZE,
+                COPY_ICON,
+                Component.empty(),
+                Component.translatable("screen.youzaiworldcore.teleport_anchor.tooltip_copy"),
+                () -> {
+                    if (!hasSelection) return;
+                    TeleportAnchorData point = points.get(selectedIndex);
+                    String dim = point.dimension().identifier().toString();
+                    String text = dim + " "
+                            + point.pos().getX() + " "
+                            + point.pos().getY() + " "
+                            + point.pos().getZ();
+                    Minecraft.getInstance().keyboardHandler.setClipboard(text);
+                    var localPlayer = Minecraft.getInstance().player;
+                    if (localPlayer != null) {
+                        localPlayer.sendSystemMessage(
+                                Component.translatable("message.youzaiworldcore.teleport_anchor.copied", text));
+                    }
+                });
+        copyButton.active = hasSelection;
+        if (!copyButton.active) copyButton.setExternalAlpha(0.3f);
+        addRenderableWidget(copyButton);
+
         editToggleButton = new TextureIconButton(
                 editX, actionsY, ICON_BUTTON_SIZE, ICON_BUTTON_SIZE,
                 editIcon,

@@ -271,5 +271,7 @@
   "screen.youzaiworldcore.teleport_anchor_name.default": "传送点",
   "message.youzaiworldcore.teleport_anchor.no_xp": "§c经验等级不足！需要 %s 级经验。",
   "message.youzaiworldcore.teleport_anchor.invalid": "§c目标传送锚点已失效，已从列表中移除！",
-  "message.youzaiworldcore.teleport_anchor.cooldown": "§c传送冷却中，请等待 %s 秒后再试。"
+  "message.youzaiworldcore.teleport_anchor.cooldown": "§c传送冷却中，请等待 %s 秒后再试。",
+  "screen.youzaiworldcore.teleport_anchor.tooltip_copy": "复制坐标到剪贴板",
+  "message.youzaiworldcore.teleport_anchor.copied": "§a坐标已复制到剪贴板：%s"
 }
