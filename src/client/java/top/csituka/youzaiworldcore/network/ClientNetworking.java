@@ -13,7 +13,7 @@ import top.csituka.youzaiworldcore.client.screen.element.MainMenuElements;
 import top.csituka.youzaiworldcore.client.screen.element.MenuElementGroup;
 import top.csituka.youzaiworldcore.client.screen.element.SettingsMenuElements;
 import top.csituka.youzaiworldcore.client.screen.element.SwitchWorldMenuElements;
-import top.csituka.youzaiworldcore.client.hud.ManaHudRenderer;
+import top.csituka.youzaiworldcore.mana.ManaManager;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
 import java.util.Map;
@@ -127,7 +127,7 @@ public class ClientNetworking {
         // 注册魔力同步处理器
         ClientPlayNetworking.registerGlobalReceiver(ManaSyncPayload.ID, (payload, context) -> {
             context.client().execute(() -> {
-                ManaHudRenderer.setClientMana(payload.mana());
+                ManaManager.setClientMana(payload.mana());
             });
         });
         DebugLogger.info("ClientNetworking", "Registered receiver: ManaSyncPayload");

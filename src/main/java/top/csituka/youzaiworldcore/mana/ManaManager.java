@@ -19,6 +19,31 @@ public class ManaManager {
     /** 最大魔力值 */
     public static final int MAX_MANA = 100;
 
+    // ─── 客户端缓存与魔力不足标记（在客户端 use 时使用） ───
+
+    /** 客户端缓存的当前玩家魔力值（由 ManaSyncPayload 更新） */
+    private static int clientMana = MAX_MANA;
+
+    /** 上次魔力不足尝试的时间戳 */
+    private static long lastInsufficientManaTime = -10000;
+
+    public static int getClientMana() {
+        return clientMana;
+    }
+
+    public static void setClientMana(int mana) {
+        clientMana = Math.max(0, Math.min(MAX_MANA, mana));
+    }
+
+    /** 标记一次魔力不足（由物品类的客户端 use 调用） */
+    public static void markInsufficientMana() {
+        lastInsufficientManaTime = System.currentTimeMillis();
+    }
+
+    public static long getLastInsufficientManaTime() {
+        return lastInsufficientManaTime;
+    }
+
     /** 每 tick 恢复的魔力（每 0.5 秒 = 10 tick 恢复 1 点） */
     private static final int MANA_RECOVER_INTERVAL = 10; // 0.5 秒
 

@@ -19,7 +19,6 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.NonNull;
 import top.csituka.youzaiworldcore.mana.ManaManager;
-
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Consumer;
@@ -50,6 +49,9 @@ public class SkyStarStaffItem extends Item {
     @NonNull
     public InteractionResult use(@NonNull Level level, @NonNull Player player, @NonNull InteractionHand usedHand) {
         if (level.isClientSide()) {
+            if (ManaManager.getClientMana() < MANA_COST) {
+                ManaManager.markInsufficientMana();
+            }
             return InteractionResult.SUCCESS;
         }
 
