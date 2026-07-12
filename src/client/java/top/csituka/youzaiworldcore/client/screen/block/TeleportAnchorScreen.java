@@ -208,6 +208,11 @@ public class TeleportAnchorScreen extends Screen {
     }
 
     private void selectPoint(int index) {
+        // 切换选中点时先关闭编辑模式，避免旧按钮与新按钮重叠
+        if (editMode) {
+            editMode = false;
+            editModeProgress = 0f;
+        }
         selectedIndex = index;
         ensureVisible(index);
         rebuildWidgets();
@@ -348,6 +353,13 @@ public class TeleportAnchorScreen extends Screen {
     private void confirmDeletePoint() {
         TeleportAnchorData point = points.get(selectedIndex);
         ClientPlayNetworking.send(new TeleportAnchorDeletePayload(point.pos(), point.dimension()));
+
+        // 如果删除的是当前打开的锚点，关闭界面
+        if (isCurrentAnchor(point)) {
+            Minecraft.getInstance().setScreenAndShow(null);
+            return;
+        }
+
         points.remove(selectedIndex);
         selectedIndex = -1;
         confirmingDelete = false;
@@ -616,6 +628,11 @@ public class TeleportAnchorScreen extends Screen {
             int h = this.height;
             guiGraphics.blit(RenderPipelines.GUI_TEXTURED, texture,
                     x, y, 0, 0, w, h, w, h);
+            // 不可用时叠加暗色遮罩使贴图变淡
+            if (!this.active) {
+                int dimAlpha = (int) ((1f - vis) * 200);
+                guiGraphics.fill(x, y, x + w, y + h, dimAlpha << 24);
+            }
         }
     }
 }
