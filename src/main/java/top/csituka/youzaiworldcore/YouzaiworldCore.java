@@ -35,6 +35,7 @@ import top.csituka.youzaiworldcore.block.ModBlocks;
 import top.csituka.youzaiworldcore.block.entity.ModBlockEntities;
 import top.csituka.youzaiworldcore.command.ExperimentalFeatureCommand;
 import top.csituka.youzaiworldcore.command.InvisibilityCommand;
+import top.csituka.youzaiworldcore.command.TeleportAnchorCommand;
 import top.csituka.youzaiworldcore.component.ModDataComponents;
 import top.csituka.youzaiworldcore.dimensionalinventories.DimensionPoolSettings;
 import top.csituka.youzaiworldcore.dimensionalinventories.DimensionPoolManager;
@@ -319,6 +320,10 @@ public class YouzaiworldCore implements ModInitializer {
             // ===== 注册重载命令 =====
             DebugLogger.info("YouzaiworldCore", "注册命令: ReloadCommand");
             ReloadCommand.register(dispatcher);
+
+            // ===== 注册传送锚点管理命令 =====
+            DebugLogger.info("YouzaiworldCore", "注册命令: TeleportAnchorCommand");
+            TeleportAnchorCommand.register(dispatcher);
 
             DebugLogger.info("YouzaiworldCore", "所有 /yzwc 命令注册完成");
         });

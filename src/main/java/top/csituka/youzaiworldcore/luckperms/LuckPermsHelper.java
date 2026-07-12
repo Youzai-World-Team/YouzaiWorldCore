@@ -79,6 +79,9 @@ public final class LuckPermsHelper {
     /** 实验性功能管理 {@code /yzwc experimental_feature <id> <bool> all/only} */
     public static final String PERMISSION_EXPERIMENTAL_FEATURE_ADMIN = "youzaiworldcore.command.experimental_feature.admin";
 
+    /** 传送锚点管理 {@code /yzwc teleport_anchor list} */
+    public static final String PERMISSION_TELEPORT_ANCHOR = "youzaiworldcore.command.teleport_anchor";
+
     /** 管理：创建离线玩家账户 */
     public static final String PERMISSION_ACCOUNT_MGR_CREATE = "youzaiworldcore.command.account.mgr.create";
 
