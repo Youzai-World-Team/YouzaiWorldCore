@@ -22,6 +22,7 @@ import top.csituka.youzaiworldcore.client.screen.MenuScreen;
 import top.csituka.youzaiworldcore.client.screen.element.MainMenuElements;
 import top.csituka.youzaiworldcore.screen.ModMenuTypes;
 import top.csituka.youzaiworldcore.util.DebugLogger;
+import top.csituka.youzaiworldcore.client.effect.TeleportFovEffect;
 
 public class Client implements ClientModInitializer {
 
@@ -69,6 +70,9 @@ public class Client implements ClientModInitializer {
     }
 
     private void onClientTick(Minecraft client) {
+        // 更新传送 FOV 动画（在游戏内且不论是否在 GUI 中都持续更新）
+        TeleportFovEffect.tick();
+
         // 窗口图标设置（仅执行一次）
         if (!windowIconSet) {
             long handle = client.getWindow().handle();

@@ -13,6 +13,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
 import org.jspecify.annotations.Nullable;
 import top.csituka.youzaiworldcore.YouzaiworldCore;
+import top.csituka.youzaiworldcore.client.effect.TeleportFovEffect;
 import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
 import top.csituka.youzaiworldcore.data.TeleportAnchorData;
 import top.csituka.youzaiworldcore.network.TeleportAnchorDeletePayload;
@@ -274,7 +275,8 @@ public class TeleportAnchorScreen extends Screen {
                 () -> {
                     if (hasSelection && !isCurrentAnchor) {
                         TeleportAnchorData point = points.get(selectedIndex);
-                        ClientPlayNetworking.send(new TeleportAnchorTeleportPayload(point.pos(), point.dimension()));
+                        // 启动 FOV 动画，数据包在放大到顶后自动发送
+                        TeleportFovEffect.startTeleport(point.pos(), point.dimension());
                         Minecraft.getInstance().setScreenAndShow(null);
                     }
                 });

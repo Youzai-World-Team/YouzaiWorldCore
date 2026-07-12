@@ -17,7 +17,8 @@
     "ScreenMixinForProgressBg",
     "AccessibilityOptionsScreenMixin",
     "ScreenAccessor",
-    "WindowTitleMixin"
+    "WindowTitleMixin",
+    "GameRendererMixin"
   ],
   "injectors": {
     "defaultRequire": 1
