@@ -109,6 +109,7 @@ public class SkyStarStaffItem extends Item {
     /**
      * 对单个目标召唤一颗陨石。
      */
+    @SuppressWarnings("deprecation")
     private void summonSingleMeteor(Level level, LivingEntity target, Player player) {
         double meteorX = target.getX();
         double meteorY = target.getY() + METEOR_FALL_HEIGHT;

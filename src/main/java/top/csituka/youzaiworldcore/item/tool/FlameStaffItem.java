@@ -109,6 +109,7 @@ public class FlameStaffItem extends Item {
     /**
      * 发射火焰激光：对前方直线上的实体造成伤害并点燃。
      */
+    @SuppressWarnings("deprecation")
     private void fireFlameLaser(Level level, Player player, float damage) {
         Vec3 eyePos = player.getEyePosition(1.0f);
         Vec3 lookDir = player.getViewVector(1.0f);

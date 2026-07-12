@@ -7,6 +7,7 @@ import net.minecraft.world.item.ItemStack;
 import org.jspecify.annotations.NonNull;
 import top.csituka.youzaiworldcore.screen.DecompositionTableMenu;
 
+@SuppressWarnings("null")
 public class DecompositionOutputSlot extends Slot {
 
     private final DecompositionTableMenu menu;
