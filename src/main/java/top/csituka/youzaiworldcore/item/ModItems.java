@@ -86,6 +86,16 @@ public class ModItems {
             new Item.Properties()
     );
 
+    public static final Item FLAME_STAFF = registerFlameStaff(
+            "flame_staff",
+            new Item.Properties()
+    );
+
+    public static final Item SKY_STAR_STAFF = registerSkyStarStaff(
+            "sky_star_staff",
+            new Item.Properties()
+    );
+
     private static Item register(String name, Item.Properties settings) {
         ResourceKey<Item> itemKey = ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, name));
         Item item = new Item(settings.setId(itemKey));
@@ -137,6 +147,18 @@ public class ModItems {
     private static Item registerLogo(String name, Item.Properties settings) {
         ResourceKey<Item> itemKey = ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, name));
         Item item = new LogoItem(settings.setId(itemKey));
+        return Registry.register(BuiltInRegistries.ITEM, itemKey, item);
+    }
+
+    private static Item registerFlameStaff(String name, Item.Properties settings) {
+        ResourceKey<Item> itemKey = ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, name));
+        Item item = new FlameStaffItem(settings.setId(itemKey));
+        return Registry.register(BuiltInRegistries.ITEM, itemKey, item);
+    }
+
+    private static Item registerSkyStarStaff(String name, Item.Properties settings) {
+        ResourceKey<Item> itemKey = ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, name));
+        Item item = new SkyStarStaffItem(settings.setId(itemKey));
         return Registry.register(BuiltInRegistries.ITEM, itemKey, item);
     }
 

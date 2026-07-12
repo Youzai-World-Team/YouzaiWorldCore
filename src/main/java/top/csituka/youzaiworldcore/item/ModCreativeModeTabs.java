@@ -44,6 +44,8 @@ public class ModCreativeModeTabs {
                 output.accept(ModBlocks.TP_ANCHOR.asItem());
                 output.accept(ModItems.HEART_OF_GUARDIANSHIP);
                 output.accept(ModItems.VOID_STAFF);
+                output.accept(ModItems.FLAME_STAFF);
+                output.accept(ModItems.SKY_STAR_STAFF);
 
                 // ── 毕业套装预设 (移植自 godlygearbox) ──
                 var holders = params.holders();
