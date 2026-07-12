@@ -28,11 +28,19 @@ import java.util.UUID;
  * <p>
  * 使用 Minecraft 的 {@link SavedData} 系统持久化，自动保存到世界存档。
  * 每个玩家关联一个传送锚点列表。
+ * <p>
+ * 传送冷却时间为运行时状态，不参与持久化。
  */
 @SuppressWarnings("null")
 public class TeleportAnchorManager extends SavedData {
 
+    /** 传送冷却时间（tick），3 秒 = 60 tick。 */
+    public static final long TELEPORT_COOLDOWN_TICKS = 60L;
+
     private final Map<UUID, List<TeleportAnchorData>> playerPoints = new HashMap<>();
+
+    /** 运行时传送冷却记录（玩家UUID → 上次传送的游戏时间），不持久化。 */
+    private final transient Map<UUID, Long> teleportCooldowns = new HashMap<>();
 
     private static final Codec<TeleportAnchorManager> CODEC = Codec.unboundedMap(
             Codec.STRING,               // UUID → String
@@ -70,30 +78,16 @@ public class TeleportAnchorManager extends SavedData {
     }
 
     /**
-     * 为玩家添加一个传送锚点。
-     *
-     * @return 自动生成的显示名称
-     */
-    public String addPoint(ServerPlayer player, BlockPos pos, ResourceKey<Level> dimension) {
-        UUID uuid = player.getUUID();
-        List<TeleportAnchorData> points = playerPoints.computeIfAbsent(uuid, k -> new ArrayList<>());
-
-        int index = points.size() + 1;
-        String name = "传送点 #" + index;
-
-        points.add(new TeleportAnchorData(pos.immutable(), dimension, name));
-        setDirty();
-        return name;
-    }
-
-    /**
      * 为玩家添加一个传送锚点，使用指定的自定义名称。
+     *
+     * @return true 如果添加成功；false 如果已达上限
      */
-    public void addPointWithName(ServerPlayer player, BlockPos pos, ResourceKey<Level> dimension, String name) {
+    public boolean addPointWithName(ServerPlayer player, BlockPos pos, ResourceKey<Level> dimension, String name) {
         UUID uuid = player.getUUID();
         List<TeleportAnchorData> points = playerPoints.computeIfAbsent(uuid, k -> new ArrayList<>());
         points.add(new TeleportAnchorData(pos.immutable(), dimension, name));
         setDirty();
+        return true;
     }
 
     /**
@@ -104,43 +98,88 @@ public class TeleportAnchorManager extends SavedData {
     }
 
     /**
-     * 移除某个玩家的一个传送锚点，并更新对应方块的 BlockEntity 激活者列表。
-     * 如果 BlockEntity 中不再有任何激活者，方块回到非激活状态。
+     * 获取某个玩家当前已激活的传送锚点数量。
      */
-    public void removePoint(ServerPlayer player, int index) {
+    public int getPointCount(ServerPlayer player) {
         List<TeleportAnchorData> points = playerPoints.get(player.getUUID());
-        if (points != null && index >= 0 && index < points.size()) {
-            TeleportAnchorData removed = points.remove(index);
-            setDirty();
-
-            // 更新对应方块 BlockEntity 的激活者集合
-            ServerLevel targetLevel = player.level().getServer().getLevel(removed.dimension());
-            if (targetLevel != null) {
-                BlockEntity be = targetLevel.getBlockEntity(removed.pos());
-                if (be instanceof TeleportAnchorBlockEntity anchorBE) {
-                    boolean nowEmpty = anchorBE.removeActivator(player.getUUID());
-                    if (nowEmpty) {
-                        BlockState newState = targetLevel.getBlockState(removed.pos())
-                                .setValue(TeleportAnchorBlock.ACTIVE, false);
-                        targetLevel.setBlock(removed.pos(), newState, 3);
-                        targetLevel.sendBlockUpdated(removed.pos(),
-                                targetLevel.getBlockState(removed.pos()), newState, 3);
-                    }
-                }
-            }
-        }
+        return points != null ? points.size() : 0;
     }
 
     /**
-     * 重命名某个玩家的一个传送锚点。
+     * 按坐标查找玩家的传送锚点数据。
+     *
+     * @return 匹配的数据；未找到返回 null
      */
-    public void renamePoint(ServerPlayer player, int index, String newName) {
+    public TeleportAnchorData findPoint(ServerPlayer player, BlockPos pos, ResourceKey<Level> dimension) {
         List<TeleportAnchorData> points = playerPoints.get(player.getUUID());
-        if (points != null && index >= 0 && index < points.size()) {
-            TeleportAnchorData old = points.get(index);
-            points.set(index, new TeleportAnchorData(old.pos(), old.dimension(), newName));
-            setDirty();
+        if (points == null) return null;
+        for (TeleportAnchorData p : points) {
+            if (p.pos().equals(pos) && p.dimension().equals(dimension)) {
+                return p;
+            }
         }
+        return null;
+    }
+
+    /**
+     * 按坐标移除某个玩家的一个传送锚点，并更新对应方块的 BlockEntity 激活者列表。
+     * 如果 BlockEntity 中不再有任何激活者，方块回到非激活状态。
+     *
+     * @return true 如果成功移除；false 如果未找到匹配项
+     */
+    public boolean removePointByPos(ServerPlayer player, BlockPos pos, ResourceKey<Level> dimension) {
+        List<TeleportAnchorData> points = playerPoints.get(player.getUUID());
+        if (points == null) return false;
+
+        int idx = -1;
+        for (int i = 0; i < points.size(); i++) {
+            TeleportAnchorData p = points.get(i);
+            if (p.pos().equals(pos) && p.dimension().equals(dimension)) {
+                idx = i;
+                break;
+            }
+        }
+        if (idx < 0) return false;
+
+        TeleportAnchorData removed = points.remove(idx);
+        setDirty();
+
+        // 更新对应方块 BlockEntity 的激活者集合
+        ServerLevel targetLevel = player.level().getServer().getLevel(removed.dimension());
+        if (targetLevel != null) {
+            BlockEntity be = targetLevel.getBlockEntity(removed.pos());
+            if (be instanceof TeleportAnchorBlockEntity anchorBE) {
+                boolean nowEmpty = anchorBE.removeActivator(player.getUUID());
+                if (nowEmpty) {
+                    BlockState newState = targetLevel.getBlockState(removed.pos())
+                            .setValue(TeleportAnchorBlock.ACTIVE, false);
+                    targetLevel.setBlock(removed.pos(), newState, 3);
+                    targetLevel.sendBlockUpdated(removed.pos(),
+                            targetLevel.getBlockState(removed.pos()), newState, 3);
+                }
+            }
+        }
+        return true;
+    }
+
+    /**
+     * 按坐标重命名某个玩家的一个传送锚点。
+     *
+     * @return true 如果成功重命名；false 如果未找到匹配项
+     */
+    public boolean renamePointByPos(ServerPlayer player, BlockPos pos, ResourceKey<Level> dimension, String newName) {
+        List<TeleportAnchorData> points = playerPoints.get(player.getUUID());
+        if (points == null) return false;
+
+        for (int i = 0; i < points.size(); i++) {
+            TeleportAnchorData p = points.get(i);
+            if (p.pos().equals(pos) && p.dimension().equals(dimension)) {
+                points.set(i, new TeleportAnchorData(p.pos(), p.dimension(), newName));
+                setDirty();
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -156,5 +195,37 @@ public class TeleportAnchorManager extends SavedData {
         if (changed) {
             setDirty();
         }
+    }
+
+    // ===== 传送冷却 =====
+
+    /**
+     * 检查玩家是否可以传送（冷却是否已过）。
+     *
+     * @param currentGameTime 当前游戏时间（{@code level.getGameTime()}）
+     * @return true 如果冷却已过或从未传送过
+     */
+    public boolean canTeleport(ServerPlayer player, long currentGameTime) {
+        Long lastTime = teleportCooldowns.get(player.getUUID());
+        if (lastTime == null) return true;
+        return currentGameTime - lastTime >= TELEPORT_COOLDOWN_TICKS;
+    }
+
+    /**
+     * 获取玩家剩余冷却秒数（向上取整）。0 表示可以传送。
+     */
+    public int getRemainingCooldownSeconds(ServerPlayer player, long currentGameTime) {
+        Long lastTime = teleportCooldowns.get(player.getUUID());
+        if (lastTime == null) return 0;
+        long remaining = TELEPORT_COOLDOWN_TICKS - (currentGameTime - lastTime);
+        if (remaining <= 0) return 0;
+        return (int) Math.ceil(remaining / 20.0);
+    }
+
+    /**
+     * 记录玩家本次传送的时间，用于冷却计算。
+     */
+    public void recordTeleport(ServerPlayer player, long currentGameTime) {
+        teleportCooldowns.put(player.getUUID(), currentGameTime);
     }
 }
