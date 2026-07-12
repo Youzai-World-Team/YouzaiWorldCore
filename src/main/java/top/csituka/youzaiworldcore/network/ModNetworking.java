@@ -35,6 +35,8 @@ public class ModNetworking {
 
         PayloadTypeRegistry.clientboundPlay().register(OpenMenuPayload.ID, OpenMenuPayload.STREAM_CODEC);
         DebugLogger.info("ModNetworking", "Registered clientbound packet: OpenMenuPayload");
+        PayloadTypeRegistry.clientboundPlay().register(ManaSyncPayload.ID, ManaSyncPayload.STREAM_CODEC);
+        DebugLogger.info("ModNetworking", "Registered clientbound packet: ManaSyncPayload");
         PayloadTypeRegistry.clientboundPlay().register(FeatureSyncPayload.ID, FeatureSyncPayload.STREAM_CODEC);
         DebugLogger.info("ModNetworking", "Registered clientbound packet: FeatureSyncPayload");
         PayloadTypeRegistry.clientboundPlay().register(OpenAuthScreenPayload.ID, OpenAuthScreenPayload.STREAM_CODEC);

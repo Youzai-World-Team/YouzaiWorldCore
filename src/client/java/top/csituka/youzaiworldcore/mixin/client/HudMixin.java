@@ -20,6 +20,7 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import top.csituka.youzaiworldcore.client.higherchat.SharedStorage;
+import top.csituka.youzaiworldcore.client.hud.ManaHudRenderer;
 
 /**
  * Intercepts HUD icon rendering to track their vertical positions,
@@ -38,6 +39,15 @@ public abstract class HudMixin {
             at = @At("HEAD"))
     private void onExtractRenderState(GuiGraphicsExtractor graphics, DeltaTracker deltaTracker, CallbackInfo ci) {
         SharedStorage.resetData();
+    }
+
+    /**
+     * 在 HUD 渲染结束时绘制魔力条。
+     */
+    @Inject(method = "extractRenderState(Lnet/minecraft/client/gui/GuiGraphicsExtractor;Lnet/minecraft/client/DeltaTracker;)V",
+            at = @At("RETURN"))
+    private void onRenderManaBar(GuiGraphicsExtractor graphics, DeltaTracker deltaTracker, CallbackInfo ci) {
+        ManaHudRenderer.render(graphics);
     }
 
     /**

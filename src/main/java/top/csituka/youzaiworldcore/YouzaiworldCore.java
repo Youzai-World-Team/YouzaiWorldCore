@@ -30,6 +30,7 @@ import top.csituka.youzaiworldcore.command.ReloadCommand;
 import top.csituka.youzaiworldcore.config.ServerExternalSettings;
 import top.csituka.youzaiworldcore.luckperms.LuckPermsHelper;
 import top.csituka.youzaiworldcore.util.DebugLogger;
+import top.csituka.youzaiworldcore.mana.ManaTickHandler;
 import top.csituka.youzaiworldcore.block.ModBlocks;
 import top.csituka.youzaiworldcore.block.entity.ModBlockEntities;
 import top.csituka.youzaiworldcore.command.ExperimentalFeatureCommand;
@@ -127,6 +128,8 @@ public class YouzaiworldCore implements ModInitializer {
         AnvilRepairHandler.register();
         DebugLogger.info("YouzaiworldCore", "注册虚空法杖 Tick 事件...");
         VoidStaffTickHandler.register();
+        DebugLogger.info("YouzaiworldCore", "注册魔力恢复 Tick 事件...");
+        ManaTickHandler.register();
         DebugLogger.info("YouzaiworldCore", "注册飞行信标 Tick 事件...");
         FlyBeaconTickHandler.register();
 

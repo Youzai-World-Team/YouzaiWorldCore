@@ -13,6 +13,7 @@ import org.lwjgl.system.MemoryUtil;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.nio.ByteBuffer;
+import top.csituka.youzaiworldcore.client.hud.ManaHudRenderer;
 import top.csituka.youzaiworldcore.block.entity.ModBlockEntities;
 import top.csituka.youzaiworldcore.client.renderer.block.FlyBeaconBlockEntityRenderer;
 import top.csituka.youzaiworldcore.client.screen.block.DecompositionTableScreen;
@@ -34,6 +35,9 @@ public class Client implements ClientModInitializer {
 
         DebugLogger.info("Client", "注册客户端 Tick 事件...");
         ClientTickEvents.END_CLIENT_TICK.register(this::onClientTick);
+
+        DebugLogger.info("Client", "注册魔力条 HUD 渲染...");
+        ManaHudRenderer.register();
 
         // 方块实体渲染器注册
         DebugLogger.info("Client", "注册飞行信标方块实体渲染器...");
