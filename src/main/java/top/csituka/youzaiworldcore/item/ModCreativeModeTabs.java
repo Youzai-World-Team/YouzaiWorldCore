@@ -9,6 +9,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 
 import top.csituka.youzaiworldcore.YouzaiworldCore;
 import top.csituka.youzaiworldcore.block.ModBlocks;
@@ -17,37 +18,88 @@ import top.csituka.youzaiworldcore.item.preset.PresetItems;
 @SuppressWarnings("null")
 public class ModCreativeModeTabs {
 
-    public static final ResourceKey<CreativeModeTab> YOUZAI_TAB_KEY = ResourceKey.create(
+    // ── 悠哉世界 - 方块 ──
+    public static final ResourceKey<CreativeModeTab> YOUZAI_BLOCKS_KEY = ResourceKey.create(
             Registries.CREATIVE_MODE_TAB,
-            Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "youzai_tab")
+            Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "youzai_blocks")
     );
 
-    public static final CreativeModeTab YOUZAI_TAB = FabricCreativeModeTab.builder()
-            .icon(() -> new ItemStack(ModItems.RAW_YZ))
-            .title(Component.translatable("itemGroup.youzaiworldcore.youzai_tab"))
+    public static final CreativeModeTab YOUZAI_BLOCKS = FabricCreativeModeTab.builder()
+            .icon(() -> new ItemStack(ModBlocks.YZ_BLOCK))
+            .title(Component.translatable("itemGroup.youzaiworldcore.youzai_blocks"))
             .displayItems((params, output) -> {
-                // ── 原悠哉世界物品 ──
-                output.accept(ModBlocks.YZ_ORE.asItem());
-                output.accept(ModBlocks.DEEPSLATE_YZ_ORE.asItem());
-                output.accept(ModItems.RAW_YZ);
-                output.accept(ModBlocks.RAW_YZ_BLOCK.asItem());
-                output.accept(ModItems.YZ_INGOT);
-                output.accept(ModItems.YZ_NUGGET);
-                output.accept(ModBlocks.YZ_BLOCK.asItem());
+                output.accept(ModBlocks.YZ_ORE);
+                output.accept(ModBlocks.DEEPSLATE_YZ_ORE);
+                output.accept(ModBlocks.RAW_YZ_BLOCK);
+                output.accept(ModBlocks.YZ_BLOCK);
+                output.accept(ModBlocks.DECOMPOSITION_TABLE);
+                output.accept(ModBlocks.FLY_BEACON);
+                output.accept(ModBlocks.TP_ANCHOR);
+            })
+            .build();
+
+    // ── 悠哉世界 - 工具&武器 ──
+    public static final ResourceKey<CreativeModeTab> YOUZAI_TOOLS_WEAPONS_KEY = ResourceKey.create(
+            Registries.CREATIVE_MODE_TAB,
+            Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "youzai_tools_weapons")
+    );
+
+    public static final CreativeModeTab YOUZAI_TOOLS_WEAPONS = FabricCreativeModeTab.builder()
+            .icon(() -> new ItemStack(ModItems.YZ_SWORD))
+            .title(Component.translatable("itemGroup.youzaiworldcore.youzai_tools_weapons"))
+            .displayItems((params, output) -> {
                 output.accept(ModItems.YZ_SHOVEL);
                 output.accept(ModItems.YZ_PICKAXE);
                 output.accept(ModItems.YZ_HOE);
                 output.accept(ModItems.YZ_SWORD);
                 output.accept(ModItems.YZ_AXE);
-                output.accept(ModBlocks.DECOMPOSITION_TABLE.asItem());
-                output.accept(ModBlocks.FLY_BEACON.asItem());
-                output.accept(ModBlocks.TP_ANCHOR.asItem());
-                output.accept(ModItems.HEART_OF_GUARDIANSHIP);
                 output.accept(ModItems.VOID_STAFF);
                 output.accept(ModItems.FLAME_STAFF);
                 output.accept(ModItems.SKY_STAR_STAFF);
+            })
+            .build();
 
-                // ── 毕业套装预设 (移植自 godlygearbox) ──
+    // ── 悠哉世界 - 原材料 ──
+    public static final ResourceKey<CreativeModeTab> YOUZAI_MATERIALS_KEY = ResourceKey.create(
+            Registries.CREATIVE_MODE_TAB,
+            Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "youzai_materials")
+    );
+
+    public static final CreativeModeTab YOUZAI_MATERIALS = FabricCreativeModeTab.builder()
+            .icon(() -> new ItemStack(ModItems.RAW_YZ))
+            .title(Component.translatable("itemGroup.youzaiworldcore.youzai_materials"))
+            .displayItems((params, output) -> {
+                output.accept(ModItems.RAW_YZ);
+                output.accept(ModItems.YZ_INGOT);
+                output.accept(ModItems.YZ_NUGGET);
+            })
+            .build();
+
+    // ── 悠哉世界 - 实用物品 ──
+    public static final ResourceKey<CreativeModeTab> YOUZAI_UTILITIES_KEY = ResourceKey.create(
+            Registries.CREATIVE_MODE_TAB,
+            Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "youzai_utilities")
+    );
+
+    public static final CreativeModeTab YOUZAI_UTILITIES = FabricCreativeModeTab.builder()
+            .icon(() -> new ItemStack(ModItems.HEART_OF_GUARDIANSHIP))
+            .title(Component.translatable("itemGroup.youzaiworldcore.youzai_utilities"))
+            .displayItems((params, output) -> {
+                output.accept(ModItems.HEART_OF_GUARDIANSHIP);
+                output.accept(ModItems.LOGO);
+            })
+            .build();
+
+    // ── 悠哉世界 - 工具包 ──
+    public static final ResourceKey<CreativeModeTab> YOUZAI_KITS_KEY = ResourceKey.create(
+            Registries.CREATIVE_MODE_TAB,
+            Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "youzai_kits")
+    );
+
+    public static final CreativeModeTab YOUZAI_KITS = FabricCreativeModeTab.builder()
+            .icon(() -> new ItemStack(Items.SHULKER_BOX))
+            .title(Component.translatable("itemGroup.youzaiworldcore.youzai_kits"))
+            .displayItems((params, output) -> {
                 var holders = params.holders();
                 output.accept(PresetItems.createPreset01(holders));
                 output.accept(PresetItems.createPreset02(holders));
@@ -57,6 +109,10 @@ public class ModCreativeModeTabs {
             .build();
 
     public static void initialize() {
-        Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, YOUZAI_TAB_KEY, YOUZAI_TAB);
+        Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, YOUZAI_BLOCKS_KEY, YOUZAI_BLOCKS);
+        Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, YOUZAI_TOOLS_WEAPONS_KEY, YOUZAI_TOOLS_WEAPONS);
+        Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, YOUZAI_MATERIALS_KEY, YOUZAI_MATERIALS);
+        Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, YOUZAI_UTILITIES_KEY, YOUZAI_UTILITIES);
+        Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, YOUZAI_KITS_KEY, YOUZAI_KITS);
     }
 }
