@@ -272,36 +272,12 @@ public class TeleportAnchorScreen extends Screen {
 
         // 编辑/返回按钮（贴图，已含文字，不显示额外 label）
         int editX = panelX + PANEL_WIDTH - PANEL_PADDING - ICON_BUTTON_SIZE;
+        // 复制按钮默认在编辑按钮左侧；编辑模式展开时再往左移动腾出空间
         int copyX = editX - ICON_BUTTON_SIZE - 4;
         Identifier editIcon = editMode ? BACK_ICON : EDIT_ICON;
         Component editTooltip = Component.translatable(editMode
                 ? "screen.youzaiworldcore.teleport_anchor.back"
                 : "screen.youzaiworldcore.teleport_anchor.tooltip_edit");
-
-        // 复制坐标按钮（位于编辑按钮左侧）
-        copyButton = new TextureIconButton(
-                copyX, actionsY, ICON_BUTTON_SIZE, ICON_BUTTON_SIZE,
-                COPY_ICON,
-                Component.empty(),
-                Component.translatable("screen.youzaiworldcore.teleport_anchor.tooltip_copy"),
-                () -> {
-                    if (!hasSelection) return;
-                    TeleportAnchorData point = points.get(selectedIndex);
-                    String dim = point.dimension().identifier().toString();
-                    String text = dim + " "
-                            + point.pos().getX() + " "
-                            + point.pos().getY() + " "
-                            + point.pos().getZ();
-                    Minecraft.getInstance().keyboardHandler.setClipboard(text);
-                    var localPlayer = Minecraft.getInstance().player;
-                    if (localPlayer != null) {
-                        localPlayer.sendSystemMessage(
-                                Component.translatable("message.youzaiworldcore.teleport_anchor.copied", text));
-                    }
-                });
-        copyButton.active = hasSelection;
-        if (!copyButton.active) copyButton.setExternalAlpha(0.3f);
-        addRenderableWidget(copyButton);
 
         editToggleButton = new TextureIconButton(
                 editX, actionsY, ICON_BUTTON_SIZE, ICON_BUTTON_SIZE,
@@ -323,6 +299,8 @@ public class TeleportAnchorScreen extends Screen {
             int expandOffset = Math.round((1f - editModeProgress) * (ICON_BUTTON_SIZE * 2 + 4));
             int renameX = editX - expandOffset;
             int removeX = renameX - ICON_BUTTON_SIZE - 4;
+            // 复制按钮随展开一同左移，避免与重命名/移除按钮重叠
+            copyX = removeX - ICON_BUTTON_SIZE - 4;
 
             renameButton = new TextureIconButton(
                     renameX, actionsY, ICON_BUTTON_SIZE, ICON_BUTTON_SIZE,
@@ -356,6 +334,31 @@ public class TeleportAnchorScreen extends Screen {
             if (!removeButton.active) removeButton.setExternalAlpha(0.3f);
             addRenderableWidget(removeButton);
         }
+
+        // 复制坐标按钮（在编辑模式展开逻辑之后创建，确保 X 坐标正确）
+        copyButton = new TextureIconButton(
+                copyX, actionsY, ICON_BUTTON_SIZE, ICON_BUTTON_SIZE,
+                COPY_ICON,
+                Component.empty(),
+                Component.translatable("screen.youzaiworldcore.teleport_anchor.tooltip_copy"),
+                () -> {
+                    if (!hasSelection) return;
+                    TeleportAnchorData point = points.get(selectedIndex);
+                    String dim = point.dimension().identifier().toString();
+                    String text = dim + " "
+                            + point.pos().getX() + " "
+                            + point.pos().getY() + " "
+                            + point.pos().getZ();
+                    Minecraft.getInstance().keyboardHandler.setClipboard(text);
+                    var localPlayer = Minecraft.getInstance().player;
+                    if (localPlayer != null) {
+                        localPlayer.sendSystemMessage(
+                                Component.translatable("message.youzaiworldcore.teleport_anchor.copied", text));
+                    }
+                });
+        copyButton.active = hasSelection;
+        if (!copyButton.active) copyButton.setExternalAlpha(0.3f);
+        addRenderableWidget(copyButton);
     }
 
     private void buildDeleteConfirmUI() {
@@ -469,14 +472,7 @@ public class TeleportAnchorScreen extends Screen {
     }
 
     private static String formatPointLabel(TeleportAnchorData point) {
-        String dimDisplay = switch (point.dimension().identifier().getPath()) {
-            case "overworld" -> "主世界";
-            case "the_nether" -> "下界";
-            case "the_end" -> "末地";
-            default -> point.dimension().identifier().getPath();
-        };
-        return point.name() + " (" + dimDisplay + " @ "
-                + point.pos().getX() + ", " + point.pos().getY() + ", " + point.pos().getZ() + ")";
+        return point.name();
     }
 
     @Override
