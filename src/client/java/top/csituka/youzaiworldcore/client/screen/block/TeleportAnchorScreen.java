@@ -51,6 +51,9 @@ public class TeleportAnchorScreen extends Screen {
     /** 列表区域最多同时显示的条目数，超出时启用滚动。 */
     private static final int MAX_VISIBLE_ITEMS = 8;
 
+    /** 编辑模式下按钮之间的紧凑间距。 */
+    private static final int EDIT_GAP = 2;
+
     /** 当前锚点定位图标的尺寸（与条目高度对齐）。 */
     private static final int LOCATION_ICON_SIZE = 14;
 
@@ -95,7 +98,6 @@ public class TeleportAnchorScreen extends Screen {
 
     /** 平滑过渡进度 0..1：0=未展开，1=完全展开。 */
     private float editModeProgress = 0f;
-    private static final float TRANSITION_SPEED = 0.18f;
 
     // UI 组件
     private final List<TransparentButton> pointButtons = new ArrayList<>();
@@ -246,7 +248,7 @@ public class TeleportAnchorScreen extends Screen {
     private void enterEditMode() {
         if (editMode) return;
         editMode = true;
-        editModeProgress = 0f;
+        editModeProgress = 1f;
         rebuildWidgets();
     }
 
@@ -284,7 +286,7 @@ public class TeleportAnchorScreen extends Screen {
         // 编辑/返回按钮（贴图，已含文字，不显示额外 label）
         int editX = panelX + PANEL_WIDTH - PANEL_PADDING - ICON_BUTTON_SIZE;
         // 复制按钮默认在编辑按钮左侧；编辑模式展开时再往左移动腾出空间
-        int copyX = editX - ICON_BUTTON_SIZE - 4;
+        int copyX = editX - ICON_BUTTON_SIZE - EDIT_GAP;
         Identifier editIcon = editMode ? BACK_ICON : EDIT_ICON;
         Component editTooltip = Component.translatable(editMode
                 ? "screen.youzaiworldcore.teleport_anchor.back"
@@ -306,16 +308,17 @@ public class TeleportAnchorScreen extends Screen {
 
         // 编辑模式下显示重命名 + 移除 + 上下移动按钮（X 偏移基于动画进度实现平滑过渡）
         if (editMode) {
-            // progress 0->1：从最右（与返回按钮重叠）展开到最左
-            // 总共 4 个按钮：rename, remove, moveUp, moveDown
-            int totalExpand = ICON_BUTTON_SIZE * 4 + 4 * 3;
-            int expandOffset = Math.round((1f - editModeProgress) * totalExpand);
+            // progress 0->1：按钮从右侧滑入，最终停在返回按钮左侧
+            // totalExpand=92 是重命名按钮起点偏移（最右），minOffset=24 是终点偏移（与返回按钮间隔一个按钮+间隙）
+            int totalExpand = ICON_BUTTON_SIZE * 4 + EDIT_GAP * 3;
+            int minOffset  = ICON_BUTTON_SIZE + EDIT_GAP;
+            int expandOffset = minOffset + Math.round((1f - editModeProgress) * (totalExpand - minOffset));
             int renameX = editX - expandOffset;
-            int removeX = renameX - ICON_BUTTON_SIZE - 4;
-            int moveUpX = removeX - ICON_BUTTON_SIZE - 4;
-            int moveDownX = moveUpX - ICON_BUTTON_SIZE - 4;
+            int removeX = renameX - ICON_BUTTON_SIZE - EDIT_GAP;
+            int moveUpX = removeX - ICON_BUTTON_SIZE - EDIT_GAP;
+            int moveDownX = moveUpX - ICON_BUTTON_SIZE - EDIT_GAP;
             // 复制按钮随展开一同左移
-            copyX = moveDownX - ICON_BUTTON_SIZE - 4;
+            copyX = moveDownX - ICON_BUTTON_SIZE - EDIT_GAP;
 
             renameButton = new TextureIconButton(
                     renameX, actionsY, ICON_BUTTON_SIZE, ICON_BUTTON_SIZE,
@@ -593,18 +596,6 @@ public class TeleportAnchorScreen extends Screen {
 
         // 在当前锚点条目的名称前叠加定位图标（在按钮之上绘制）
         drawCurrentAnchorIcons(guiGraphics);
-
-        // 更新编辑模式动画进度
-        updateEditModeAnimation();
-    }
-
-    /** 推进 editModeProgress 0..1，线性插值向目标值靠近。 */
-    private void updateEditModeAnimation() {
-        float target = editMode ? 1f : 0f;
-        editModeProgress += (target - editModeProgress) * TRANSITION_SPEED;
-        if (Math.abs(editModeProgress - target) < 0.005f) {
-            editModeProgress = target;
-        }
     }
 
     /** 在当前正在打开的传送锚点条目左侧绘制定位图标。 */
