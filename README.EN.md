@@ -92,6 +92,7 @@ A new mineral and tool set, equivalent to diamond-tier tools.
 |-------|------------|
 | **YZ Ore / Deepslate YZ Ore** | Generates in the Overworld, drops XP (2-5), requires diamond pickaxe |
 | **Raw YZ Block / YZ Block** | Mineral storage blocks |
+| **Teleport Anchor** | Player-activated block for remote teleportation to saved locations. First right-click opens naming screen; subsequent right-clicks open the teleport list with rename/reorder/delete/copy-coordinates support |
 | **Decomposition Table** | GUI-based block used to decompose items back to raw materials |
 | **Fly Beacon** | Grants area flight capability, toggleable activation state |
 
@@ -205,6 +206,19 @@ Four preset shulker boxes in the creative mode tab, generated with one click:
 | **Graduation Supplement** (Orange) | Utility tools, building materials, extra armor |
 | **Totem Box** (Yellow) | 27 totems of undying |
 | **Explosive Pack** (Gray) | 27 stacks × 64 TNT |
+
+### 18. Teleport Anchor System
+
+A block-based **player-owned teleport network** — right-click interaction enables naming, saving, and remote teleporting to any activated anchor.
+
+- **Block Properties**: `tp_anchor` block has an ACTIVE state, glows when activated (light level 15)
+- **Activation Flow**: Right-click unactivated anchor → naming screen (`TeleportAnchorNameScreen`) → enter name (max 32 chars, Enter to confirm) → particle effects + sound confirmation
+- **Teleport Flow**: Right-click activated anchor → teleport list (`TeleportAnchorScreen`) showing all saved points (ID, dimension, coordinates, custom name) → select target → click Teleport
+- **Teleport Cost**: 1 XP level (same dimension), 2 XP levels (cross-dimension); free in Creative mode
+- **Teleport Cooldown**: 60 ticks (3 seconds) global cooldown to prevent teleport spamming
+- **Edit Management**: Rename, reorder (move up/down), and delete teleport points
+- **Coordinate Copy**: One-click copy of `dimension x y z` to clipboard
+- **Data Persistence**: Powered by `SavedData`, survives server restarts; each player has an independent point list
 
 ---
 
@@ -425,6 +439,13 @@ Menus communicate between server and client via `OpenMenuPayload` (S2C packet, I
 | `youzaiworldcore:feature_sync` | Server → Client | Synchronizes experimental feature states |
 | `youzaiworldcore:open_auth_screen` | Server → Client | Opens the authentication screen |
 | `youzaiworldcore:world_pool_teleport` | Client → Server | Requests teleportation to a specified dimension pool |
+| `youzaiworldcore:teleport_anchor_open_name` | Server → Client | Opens teleport anchor naming screen |
+| `youzaiworldcore:teleport_anchor_list` | Server → Client | Sends teleport point list to client |
+| `youzaiworldcore:teleport_anchor_activate` | Client → Server | Activates teleport anchor with name |
+| `youzaiworldcore:teleport_anchor_teleport` | Client → Server | Requests teleport to a saved point |
+| `youzaiworldcore:teleport_anchor_delete` | Client → Server | Deletes a teleport point |
+| `youzaiworldcore:teleport_anchor_rename` | Client → Server | Renames a teleport point |
+| `youzaiworldcore:teleport_anchor_reorder` | Client → Server | Reorders teleport points |
 | `youzaiworldcore:decompose_item` | Client → Server | Decomposes an item in the decomposition table |
 | `youzaiworldcore:fly_beacon_active` | Client → Server | Toggles the fly beacon activation state |
 
@@ -464,6 +485,7 @@ src/
 │   ├── command/                                # Command registration
 │   ├── component/                              # Data components
 │   ├── config/                                 # Server external settings
+│   ├── data/                                    # Teleport anchor data manager (SavedData)
 │   ├── dimensionalinventories/                 # Dimension pool system
 │   ├── event/                                  # Event listeners
 │   ├── feature/                                # Experimental feature system

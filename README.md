@@ -92,6 +92,7 @@
 |------|------|
 | **悠哉矿 / 深层悠哉矿** | 主世界生成，掉落经验（2-5），需钻石镐采集 |
 | **悠哉原矿块 / 悠哉块** | 矿物存储方块 |
+| **传送锚点** | 玩家激活后可远程传送回已命名位置。首次右键进入命名界面，后续右键打开传送列表；支持编辑（重命名/排序/删除）、复制坐标 |
 | **分解台** | GUI 界面，用于分解物品为原材料 |
 | **飞行信标** | 提供区域飞行能力，可切换激活状态 |
 
@@ -205,6 +206,19 @@
 | **毕业套补充**（橙色） | 实用工具、建筑材料、额外防具 |
 | **不死图腾**（黄色） | 27 个不死图腾 |
 | **炸药包**（灰色） | 27 组 × 64 TNT |
+
+### 18. 传送锚点系统（Teleport Anchor）
+
+一套基于方块的**玩家自主传送网络**，右键交互即可命名、保存和远程传送到任意已激活的锚点。
+
+- **方块特性**：`tp_anchor` 方块自带 ACTIVE 状态，激活后发光（光照等级 15）
+- **激活流程**：右键未激活锚点 → 弹出命名界面（`TeleportAnchorNameScreen`）→ 输入名称（最��� 32 字符，支持 Enter 确认）→ 粒子效果 + 音效确认激活
+- **传送流程**：右键已激活锚点 → 弹出传送列表（`TeleportAnchorScreen`），显示该玩家所有传送点（ID、维度、坐标、自定义名称）→ 选择目标 → 点击传送
+- **传送消耗**：同维度消耗 1 级经验，跨维度消耗 2 级经验；创造模式免费
+- **传送冷却**：60 tick（3 秒）全局冷却，防止频繁传送
+- **编辑管理**：支持重命名、上移/下移排序、删除传送点
+- **坐标复制**：一键复制 `维度 x y z` 到剪贴板
+- **数据持久化**：基于 `SavedData` 实现，服务端重启不丢失；每个玩家独立存储传送点列表
 
 ---
 
@@ -425,6 +439,13 @@ GUI 菜单系统基于 `MenuScreen` + `MenuElementGroup` 接口实现，支持�
 | `youzaiworldcore:feature_sync` | 服务端 → 客户端 | 同步实验性功能状态 |
 | `youzaiworldcore:open_auth_screen` | 服务端 → 客户端 | 打开认证界面 |
 | `youzaiworldcore:world_pool_teleport` | 客户端 → 服务端 | 请求传送到指定维度池 |
+| `youzaiworldcore:teleport_anchor_open_name` | 服务端 → 客户端 | 打开传送锚点命名界面 |
+| `youzaiworldcore:teleport_anchor_list` | 服务端 → 客户端 | 发送传送点列表到客户端 |
+| `youzaiworldcore:teleport_anchor_activate` | 客户端 → 服务端 | 激活传送锚点（含名称） |
+| `youzaiworldcore:teleport_anchor_teleport` | 客户端 → 服务端 | 请求传送到指定传送点 |
+| `youzaiworldcore:teleport_anchor_delete` | 客户端 → 服务端 | 删除传送点 |
+| `youzaiworldcore:teleport_anchor_rename` | 客户端 → 服务端 | 重命名传送点 |
+| `youzaiworldcore:teleport_anchor_reorder` | 客户端 → 服务端 | 调整传送点排序 |
 | `youzaiworldcore:decompose_item` | 客户端 → 服务端 | 分解台物品分解请求 |
 | `youzaiworldcore:fly_beacon_active` | 客户端 → 服务端 | 飞行信标激活状态切换 |
 
@@ -464,6 +485,7 @@ src/
 │   ├── command/                                # 命令注册
 │   ├── component/                              # 数据组件
 │   ├── config/                                 # 服务端外部设置
+│   ├── data/                                    # 传送锚点数据管理器（SavedData）
 │   ├── dimensionalinventories/                 # 维度池系统
 │   ├── event/                                  # 事件监听器
 │   ├── feature/                                # 实验性功能系统
