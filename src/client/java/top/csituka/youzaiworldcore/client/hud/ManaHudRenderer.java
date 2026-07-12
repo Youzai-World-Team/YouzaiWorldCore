@@ -24,7 +24,7 @@ public class ManaHudRenderer {
     private static long prevFrameTime = 0;
 
     // ═══════════════════════════════════════
-    //  主渲染入口（由 HudMixin 在 extractRenderState RETURN 处调用）
+    //  主渲染入口
     // ═══════════════════════════════════════
 
     public static void render(GuiGraphicsExtractor graphics) {
@@ -35,13 +35,13 @@ public class ManaHudRenderer {
         if (prevFrameTime == 0) prevFrameTime = now;
         float deltaMs = now - prevFrameTime;
         prevFrameTime = now;
-        if (deltaMs > 100) deltaMs = 16; // 防止长时间暂停后跳帧
+        if (deltaMs > 100) deltaMs = 16;
 
         int mana = ManaManager.getClientMana();
         boolean holdingStaff = isHoldingAnyStaff(client);
         boolean shouldShow = holdingStaff || mana < 100;
 
-        // ── 更新动画状态 ──
+        // ── 蓝条动画状态 ──
         if (shouldShow && animState == AnimState.HIDDEN) {
             animState = AnimState.SHOWING;
             animProgress = 0.0f;
@@ -49,7 +49,6 @@ public class ManaHudRenderer {
             animState = AnimState.HIDEING;
         }
 
-        // ── 更新动画进度 ──
         if (animState == AnimState.SHOWING) {
             animProgress += deltaMs / SHOW_DURATION_MS;
             if (animProgress >= 1.0f) {
@@ -61,13 +60,10 @@ public class ManaHudRenderer {
             if (animProgress <= 0.0f) {
                 animProgress = 0.0f;
                 animState = AnimState.HIDDEN;
-                return; // 完全隐藏
+                // 仍然往下走，让蓄力条动画能在蓝条隐藏时继续播放
             }
-        } else if (animState == AnimState.HIDDEN) {
-            return;
         }
 
-        // ── 计算动画参数 ──
         int alpha = Math.min(255, Math.max(0, (int) (animProgress * 255)));
         int slideOffset = (int) ((1.0f - animProgress) * SLIDE_DISTANCE);
 
@@ -75,10 +71,12 @@ public class ManaHudRenderer {
         int screenHeight = graphics.guiHeight();
 
         // ── 渲染魔力条 ──
-        renderManaBar(graphics, screenWidth, screenHeight, slideOffset, alpha);
+        if (animState != AnimState.HIDDEN) {
+            renderManaBar(graphics, screenWidth, screenHeight, slideOffset, alpha);
+        }
 
-        // ── 渲染蓄力条 ──
-        renderChargeBar(graphics, client, screenWidth, screenHeight, alpha);
+        // ── 渲染蓄力条（独立于蓝条动画） ──
+        renderChargeBar(graphics, client, screenWidth, screenHeight, deltaMs);
     }
 
     // ═══════════════════════════════════════
@@ -102,21 +100,18 @@ public class ManaHudRenderer {
                                        int screenWidth, int screenHeight,
                                        int slideOffset, int alpha) {
         int mana = ManaManager.getClientMana();
-
-        // 蓝条位置：左下角（y = 屏幕高度 - 12 + 动画滑动偏移）
         int x = 4;
         int y = screenHeight - 10 + slideOffset;
 
-        // 判断是否在闪烁（魔力不足）
         long elapsed = System.currentTimeMillis() - ManaManager.getLastInsufficientManaTime();
         boolean flashing = elapsed < 1500;
         boolean flashOn = flashing && ((elapsed / 200) % 2 == 0);
 
-        // ── 背景 ──
+        // 背景
         int bgColor = packARGB(0x22, 0x22, 0x22, alpha);
         graphics.fill(x, y, x + BAR_WIDTH, y + BAR_HEIGHT, bgColor);
 
-        // ── 填充 ──
+        // 填充
         int fillWidth = (int) ((mana / 100.0f) * BAR_WIDTH);
         int fillColor;
         if (flashing && flashOn) {
@@ -128,11 +123,10 @@ public class ManaHudRenderer {
         }
         graphics.fill(x, y, x + fillWidth, y + BAR_HEIGHT, fillColor);
 
-        // ── 文字 ──
+        // 文字
         int textY = y - 10;
 
         if (flashing) {
-            // 左侧显示魔力值，右侧显示红字"魔力不足"
             String manaText = mana + " / 100";
             int manaWidth = Minecraft.getInstance().font.width(manaText);
             graphics.text(Minecraft.getInstance().font, manaText,
@@ -153,42 +147,68 @@ public class ManaHudRenderer {
     }
 
     // ═══════════════════════════════════════
-    //  蓄力条渲染
+    //  蓄力条渲染（带长度动画）
     // ═══════════════════════════════════════
+
+    /** 动画插值后的蓄力进度（0~1） */
+    private static float chargeDisplayProgress = 0.0f;
+    /** 上次帧是否在蓄力（用于检测开始/结束） */
+    private static boolean wasCharging = false;
 
     private static final int CHARGE_BAR_WIDTH = 40;
     private static final int CHARGE_BAR_HEIGHT = 3;
+    /** 蓄力增长：指数平滑因子（每帧 8%，等效约 580ms 填满） */
+    private static final float CHARGE_GROW_FACTOR = 0.08f;
+    /** 蓄力收缩：指数平滑因子（等效约 380ms 缩完） */
+    private static final float CHARGE_SHRINK_FACTOR = 0.12f;
 
     private static void renderChargeBar(GuiGraphicsExtractor graphics, Minecraft client,
-                                         int screenWidth, int screenHeight, int alpha) {
-        if (!client.player.isUsingItem()) return;
-        var useItem = client.player.getUseItem();
-        if (!(useItem.getItem() instanceof FlameStaffItem)) return;
+                                         int screenWidth, int screenHeight, float deltaMs) {
+        boolean charging = client.player.isUsingItem()
+                && client.player.getUseItem().getItem() instanceof FlameStaffItem;
 
-        int maxTicks = FlameStaffItem.MAX_CHARGE_TICKS;
-        int usedTicks = Math.min(maxTicks, client.player.getTicksUsingItem());
-        float progress = usedTicks / (float) maxTicks;
-        if (progress <= 0) return;
+        // 检测蓄力开始 → 重置动画起点
+        if (charging && !wasCharging) {
+            chargeDisplayProgress = 0.0f;
+        }
+        wasCharging = charging;
+
+        float targetProgress = charging
+                ? Math.min(1.0f, Math.min(FlameStaffItem.MAX_CHARGE_TICKS, client.player.getTicksUsingItem())
+                        / (float) FlameStaffItem.MAX_CHARGE_TICKS)
+                : 0.0f;
+
+        // 指数平滑（帧率无关）
+        float factor = charging ? CHARGE_GROW_FACTOR : CHARGE_SHRINK_FACTOR;
+        float t = 1.0f - (float) Math.pow(1.0 - factor, deltaMs / 16.67);
+        chargeDisplayProgress += (targetProgress - chargeDisplayProgress) * t;
+
+        // 微小值截断
+        if (Math.abs(chargeDisplayProgress) < 0.001f) chargeDisplayProgress = 0.0f;
+
+        if (chargeDisplayProgress <= 0.001f) return;
 
         int barX = (screenWidth - CHARGE_BAR_WIDTH) / 2;
-        int barY = screenHeight / 2 + 15; // 准星下方
+        int barY = screenHeight / 2 + 15;
 
         // 背景
         graphics.fill(barX, barY,
                 barX + CHARGE_BAR_WIDTH, barY + CHARGE_BAR_HEIGHT,
-                packARGB(0x33, 0x33, 0x33, alpha));
+                packARGB(0x33, 0x33, 0x33, 0xFF));
 
         // 填充（红→橙渐变）
-        int fillW = (int) (progress * CHARGE_BAR_WIDTH);
+        int fillW = (int) (chargeDisplayProgress * CHARGE_BAR_WIDTH);
         int chargeColor = packARGB(
                 0xFF,
-                Math.max(0, 0xFF - (int)(progress * 0xAA)),
+                Math.max(0, 0xFF - (int) (chargeDisplayProgress * 0xAA)),
                 0x00,
-                alpha
+                0xFF
         );
-        graphics.fill(barX, barY,
-                barX + fillW, barY + CHARGE_BAR_HEIGHT,
-                chargeColor);
+        if (fillW > 0) {
+            graphics.fill(barX, barY,
+                    barX + fillW, barY + CHARGE_BAR_HEIGHT,
+                    chargeColor);
+        }
     }
 
     // ═══════════════════════════════════════
@@ -213,6 +233,5 @@ public class ManaHudRenderer {
     }
 
     public static void register() {
-        // 由 HudMixin 注入调用
     }
 }
