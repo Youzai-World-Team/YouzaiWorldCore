@@ -10,8 +10,10 @@ import top.csituka.youzaiworldcore.network.TeleportAnchorTeleportPayload;
 /**
  * 传送锚点传送时的 FOV 缩放动画管理器。
  * <p>
- * 流程：点击传送 → 视野快速放大（ZOOMING_IN）→ 放大到顶（ZOOMED_IN）
- * → 发送传送数据包 → 视野快速缩小（ZOOMING_OUT）→ 恢复正常（IDLE）
+ * 流程：点击传送 → 视野放大（ZOOMING_IN）→ 衔接传送数据包 → 视野缩小（ZOOMING_OUT）→ 恢复正常（IDLE）
+ * <p>
+ * 放大阶段和缩小阶段之间<b>无间隙衔接</b>，在放大的峰值瞬间发送数据包并立即进入缩小阶段，
+ * 整个动画一气呵成。
  * <p>
  * 缓动策略：
  * <ul>
@@ -27,15 +29,12 @@ public final class TeleportFovEffect {
     public enum Phase {
         IDLE,
         ZOOMING_IN,
-        ZOOMED_IN,
         ZOOMING_OUT
     }
 
     // ===== 动画参数 =====
     /** 放大阶段持续刻数（10 tick = 0.5 秒） */
     private static final int ZOOM_IN_TICKS = 10;
-    /** 放大到顶后的保持刻数 */
-    private static final int ZOOMED_HOLD_TICKS = 3;
     /** 缩小阶段持续刻数（12 tick = 0.6 秒） */
     private static final int ZOOM_OUT_TICKS = 12;
 
@@ -78,17 +77,8 @@ public final class TeleportFovEffect {
         switch (phase) {
             case ZOOMING_IN -> {
                 if (tickCounter >= ZOOM_IN_TICKS) {
-                    tickCounter = ZOOM_IN_TICKS; // 锁定在终点
-                    phase = Phase.ZOOMED_IN;
-                    tickCounter = 0;
-
-                    // 放大到顶 → 发送传送数据包
+                    // 放大到顶 → 发送传送数据包 → 无间隙进入缩小阶段
                     sendTeleportPacket();
-                }
-            }
-
-            case ZOOMED_IN -> {
-                if (tickCounter >= ZOOMED_HOLD_TICKS) {
                     phase = Phase.ZOOMING_OUT;
                     tickCounter = 0;
                 }
@@ -96,7 +86,6 @@ public final class TeleportFovEffect {
 
             case ZOOMING_OUT -> {
                 if (tickCounter >= ZOOM_OUT_TICKS) {
-                    tickCounter = ZOOM_OUT_TICKS; // 锁定在终点
                     phase = Phase.IDLE;
                     tickCounter = 0;
                     targetPos = null;
@@ -156,22 +145,24 @@ public final class TeleportFovEffect {
 
     /**
      * 根据阶段和 sub-tick 进度计算 FOV 倍率。
+     * <p>
+     * 阶段衔接处值连续，无跳变：
+     * <pre>
+     * ZOOMING_IN  t=1.0  →  1 - (1-0.08)×1       = 0.08
+     * ZOOMING_OUT t=0.0  →  0.08 + (1-0.08)×0    = 0.08   ← 无缝衔接
+     * </pre>
      */
     private static float computeFovModifier(float partialTick) {
         if (phase == Phase.IDLE) return 1.0f;
 
         switch (phase) {
             case ZOOMING_IN -> {
-                // 带 sub-tick 精度的进度（如 tickCounter=5, partialTick=0.5 → 5.5/10）
+                // 带 sub-tick 精度的进度
                 float rawProgress = (tickCounter + partialTick) / ZOOM_IN_TICKS;
                 float progress = Math.min(1.0f, rawProgress);
                 // ease-in quintic：从慢到快，起步柔和
                 float eased = quinticEaseIn(progress);
                 return 1.0f - (1.0f - MIN_FOV_MODIFIER) * eased;
-            }
-
-            case ZOOMED_IN -> {
-                return MIN_FOV_MODIFIER;
             }
 
             case ZOOMING_OUT -> {
