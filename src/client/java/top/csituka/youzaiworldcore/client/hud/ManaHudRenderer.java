@@ -94,7 +94,7 @@ public class ManaHudRenderer {
 
     private static void renderManaBar(GuiGraphicsExtractor g, int sw, int sh, int slide, int alpha, int mana) {
         int x = 4;
-        int y = sh - 10 + slide;
+        int y = sh - 9 + slide;
 
         long elapsed = System.currentTimeMillis() - ManaManager.getLastInsufficientManaTime();
         boolean flash = elapsed < 1500;
