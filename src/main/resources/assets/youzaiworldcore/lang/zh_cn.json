@@ -259,5 +259,7 @@
   "screen.youzaiworldcore.teleport_anchor_name.hint": "输入传送点名称...",
   "screen.youzaiworldcore.teleport_anchor_name.confirm": "确认",
   "screen.youzaiworldcore.teleport_anchor_name.default": "传送点",
-  "message.youzaiworldcore.teleport_anchor.no_xp": "§c经验等级不足！需要 %d 级经验。"
+  "message.youzaiworldcore.teleport_anchor.no_xp": "§c经验等级不足！需要 %d 级经验。",
+  "message.youzaiworldcore.teleport_anchor.invalid": "§c目标传送锚点已失效，已从列表中移除！",
+  "message.youzaiworldcore.teleport_anchor.cooldown": "§c传送冷却中，请等待 %d 秒后再试。"
 }

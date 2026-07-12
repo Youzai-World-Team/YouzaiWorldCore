@@ -1,18 +1,24 @@
 package top.csituka.youzaiworldcore.network;
 
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.level.Level;
 import top.csituka.youzaiworldcore.YouzaiworldCore;
 
 /**
- * C2S 数据包：客户端请求删除指定索引的传送锚点（仅从当前玩家列表删除）。
+ * C2S 数据包：客户端请求删除指定坐标的传送锚点（仅从当前玩家列表删除）。
+ * <p>
+ * 使用坐标+维度作为标识而非列表索引，避免索引错位。
  *
- * @param pointIndex 在传送点列表中的索引
+ * @param pos       目标传送锚点的世界坐标
+ * @param dimension 目标传送锚点所在的维度
  */
 @SuppressWarnings("null")
-public record TeleportAnchorDeletePayload(int pointIndex) implements CustomPacketPayload {
+public record TeleportAnchorDeletePayload(BlockPos pos, ResourceKey<Level> dimension) implements CustomPacketPayload {
 
     public static final Identifier ID = Identifier.fromNamespaceAndPath(
             YouzaiworldCore.MOD_ID, "teleport_anchor_delete");
@@ -21,8 +27,18 @@ public record TeleportAnchorDeletePayload(int pointIndex) implements CustomPacke
 
     public static final StreamCodec<RegistryFriendlyByteBuf, TeleportAnchorDeletePayload> STREAM_CODEC =
             StreamCodec.of(
-                    (buf, payload) -> buf.writeInt(payload.pointIndex),
-                    buf -> new TeleportAnchorDeletePayload(buf.readInt())
+                    (buf, payload) -> {
+                        buf.writeBlockPos(payload.pos);
+                        buf.writeUtf(payload.dimension().identifier().toString());
+                    },
+                    buf -> {
+                        BlockPos pos = buf.readBlockPos();
+                        String dimStr = buf.readUtf();
+                        ResourceKey<Level> dimension = ResourceKey.create(
+                                net.minecraft.core.registries.Registries.DIMENSION,
+                                Identifier.parse(dimStr));
+                        return new TeleportAnchorDeletePayload(pos, dimension);
+                    }
             );
 
     @Override

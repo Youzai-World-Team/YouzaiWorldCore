@@ -2,13 +2,13 @@ package top.csituka.youzaiworldcore.client.screen.block;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
+import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
 import top.csituka.youzaiworldcore.network.TeleportAnchorActivatePayload;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 
@@ -23,10 +23,13 @@ public class TeleportAnchorNameScreen extends Screen {
 
     private static final int PANEL_WIDTH = 280;
     private static final int PANEL_HEIGHT = 90;
+    private static final int BUTTON_WIDTH = 80;
+    private static final int BUTTON_HEIGHT = 20;
 
     private final BlockPos anchorPos;
     private final ResourceKey<Level> anchorDim;
     private EditBox nameInput;
+    private TransparentButton confirmButton;
 
     public TeleportAnchorNameScreen(BlockPos anchorPos, ResourceKey<Level> anchorDim) {
         super(Component.translatable("screen.youzaiworldcore.teleport_anchor_name.title"));
@@ -50,12 +53,14 @@ public class TeleportAnchorNameScreen extends Screen {
         nameInput.setFocused(true);
         addRenderableWidget(nameInput);
 
-        // 确认按钮
-        addRenderableWidget(Button.builder(
+        // 确认按钮 — 使用 TransparentButton
+        confirmButton = new TransparentButton(
+                panelX + (PANEL_WIDTH / 2) - (BUTTON_WIDTH / 2), panelY + 58,
+                BUTTON_WIDTH, BUTTON_HEIGHT,
                 Component.translatable("screen.youzaiworldcore.teleport_anchor_name.confirm"),
-                btn -> confirmName())
-                .bounds(panelX + (PANEL_WIDTH / 2) - 40, panelY + 58, 80, 20)
-                .build());
+                this::confirmName);
+        confirmButton.setTextColor(0xFFFFFF);
+        addRenderableWidget(confirmButton);
     }
 
     private void confirmName() {

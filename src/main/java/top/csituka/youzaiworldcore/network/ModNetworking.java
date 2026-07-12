@@ -10,6 +10,7 @@ import top.csituka.youzaiworldcore.block.TeleportAnchorBlock;
 import top.csituka.youzaiworldcore.block.entity.FlyBeaconBlockEntity;
 import top.csituka.youzaiworldcore.block.entity.TeleportAnchorBlockEntity;
 import top.csituka.youzaiworldcore.data.TeleportAnchorManager;
+import top.csituka.youzaiworldcore.data.TeleportAnchorData;
 import top.csituka.youzaiworldcore.dimensionalinventories.DimensionPoolManager;
 import top.csituka.youzaiworldcore.dimensionalinventories.WorldPoolTeleportPayload;
 import top.csituka.youzaiworldcore.screen.DecompositionTableMenu;
@@ -101,19 +102,43 @@ public class ModNetworking {
             }
             server.execute(() -> {
                 TeleportAnchorManager manager = TeleportAnchorManager.get(server);
-                var points = manager.getPointsForPlayer((net.minecraft.server.level.ServerPlayer) player);
-                int index = payload.pointIndex();
-                if (index < 0 || index >= points.size()) {
-                    DebugLogger.info("ModNetworking", "Invalid teleport point index: " + index);
+                net.minecraft.server.level.ServerPlayer serverPlayer = (net.minecraft.server.level.ServerPlayer) player;
+
+                // 按坐标查找传送点（不再依赖索引，避免过滤列表与原始列表的索引错位）
+                TeleportAnchorData target =
+                        manager.findPoint(serverPlayer, payload.pos(), payload.dimension());
+                if (target == null) {
+                    DebugLogger.info("ModNetworking", "Teleport point not found at " + payload.pos());
                     return;
                 }
-                var target = points.get(index);
+
                 var targetLevel = server.getLevel(target.dimension());
                 if (targetLevel == null) {
                     DebugLogger.info("ModNetworking", "Target dimension not loaded: " + target.dimension().identifier());
                     return;
                 }
-                net.minecraft.server.level.ServerPlayer serverPlayer = (net.minecraft.server.level.ServerPlayer) player;
+
+                // 重新校验目标方块仍存在且处于激活状态
+                BlockState anchorState = targetLevel.getBlockState(target.pos());
+                if (!(anchorState.getBlock() instanceof TeleportAnchorBlock)
+                        || !anchorState.getValue(TeleportAnchorBlock.ACTIVE)) {
+                    // 目标锚点已失效，从玩家列表中清理
+                    manager.removePointByPos(serverPlayer, target.pos(), target.dimension());
+                    serverPlayer.sendSystemMessage(
+                            Component.translatable("message.youzaiworldcore.teleport_anchor.invalid"));
+                    DebugLogger.info("ModNetworking", "Target anchor invalid at " + target.pos());
+                    return;
+                }
+
+                // 冷却检查
+                long gameTime = serverPlayer.level().getGameTime();
+                if (!manager.canTeleport(serverPlayer, gameTime)) {
+                    int remaining = manager.getRemainingCooldownSeconds(serverPlayer, gameTime);
+                    serverPlayer.sendSystemMessage(
+                            Component.translatable("message.youzaiworldcore.teleport_anchor.cooldown", remaining));
+                    DebugLogger.info("ModNetworking", "Player on cooldown: " + remaining + "s remaining");
+                    return;
+                }
 
                 // 经验等级消耗：同维度 1 级，跨维度 2 级；创造模式免费
                 boolean isCreative = serverPlayer.getAbilities().instabuild;
@@ -127,6 +152,9 @@ public class ModNetworking {
                 if (!isCreative) {
                     serverPlayer.giveExperienceLevels(-cost);
                 }
+
+                // 记录冷却
+                manager.recordTeleport(serverPlayer, gameTime);
 
                 serverPlayer.teleportTo(targetLevel,
                         target.pos().getX() + 0.5,
@@ -148,7 +176,7 @@ public class ModNetworking {
             if (server != null) {
                 server.execute(() -> {
                     TeleportAnchorManager manager = TeleportAnchorManager.get(server);
-                    manager.removePoint((net.minecraft.server.level.ServerPlayer) player, payload.pointIndex());
+                    manager.removePointByPos((net.minecraft.server.level.ServerPlayer) player, payload.pos(), payload.dimension());
                 });
             }
         });
@@ -160,7 +188,8 @@ public class ModNetworking {
             if (server != null) {
                 server.execute(() -> {
                     TeleportAnchorManager manager = TeleportAnchorManager.get(server);
-                    manager.renamePoint((net.minecraft.server.level.ServerPlayer) player, payload.pointIndex(), payload.newName());
+                    manager.renamePointByPos((net.minecraft.server.level.ServerPlayer) player,
+                            payload.pos(), payload.dimension(), payload.newName());
                 });
             }
         });
