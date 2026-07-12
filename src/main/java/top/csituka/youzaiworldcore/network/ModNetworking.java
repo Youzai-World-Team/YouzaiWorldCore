@@ -114,6 +114,20 @@ public class ModNetworking {
                     return;
                 }
                 net.minecraft.server.level.ServerPlayer serverPlayer = (net.minecraft.server.level.ServerPlayer) player;
+
+                // 经验等级消耗：同维度 1 级，跨维度 2 级；创造模式免费
+                boolean isCreative = serverPlayer.getAbilities().instabuild;
+                int cost = target.dimension().equals(serverPlayer.level().dimension()) ? 1 : 2;
+                if (!isCreative && serverPlayer.experienceLevel < cost) {
+                    serverPlayer.sendSystemMessage(
+                            Component.translatable("message.youzaiworldcore.teleport_anchor.no_xp", cost));
+                    DebugLogger.info("ModNetworking", "Player lacks XP: needs " + cost + " but has " + serverPlayer.experienceLevel);
+                    return;
+                }
+                if (!isCreative) {
+                    serverPlayer.giveExperienceLevels(-cost);
+                }
+
                 serverPlayer.teleportTo(targetLevel,
                         target.pos().getX() + 0.5,
                         target.pos().getY() + 1.0,
