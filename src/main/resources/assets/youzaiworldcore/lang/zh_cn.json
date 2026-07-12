@@ -273,5 +273,7 @@
   "message.youzaiworldcore.teleport_anchor.invalid": "§c目标传送锚点已失效，已从列表中移除！",
   "message.youzaiworldcore.teleport_anchor.cooldown": "§c传送冷却中，请等待 %s 秒后再试。",
   "screen.youzaiworldcore.teleport_anchor.tooltip_copy": "复制坐标到剪贴板",
-  "message.youzaiworldcore.teleport_anchor.copied": "§a坐标已复制到剪贴板：%s"
+  "message.youzaiworldcore.teleport_anchor.copied": "§a坐标已复制到剪贴板：%s",
+  "screen.youzaiworldcore.teleport_anchor.tooltip_move_up": "向上移动",
+  "screen.youzaiworldcore.teleport_anchor.tooltip_move_down": "向下移动"
 }

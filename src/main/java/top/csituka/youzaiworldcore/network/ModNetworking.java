@@ -54,6 +54,8 @@ public class ModNetworking {
         DebugLogger.info("ModNetworking", "Registered serverbound packet: TeleportAnchorRenamePayload");
         PayloadTypeRegistry.serverboundPlay().register(TeleportAnchorActivatePayload.TYPE, TeleportAnchorActivatePayload.STREAM_CODEC);
         DebugLogger.info("ModNetworking", "Registered serverbound packet: TeleportAnchorActivatePayload");
+        PayloadTypeRegistry.serverboundPlay().register(TeleportAnchorReorderPayload.TYPE, TeleportAnchorReorderPayload.STREAM_CODEC);
+        DebugLogger.info("ModNetworking", "Registered serverbound packet: TeleportAnchorReorderPayload");
 
         // ===== 服务端接收处理器 =====
         ServerPlayNetworking.registerGlobalReceiver(DecomposeItemPayload.ID, (payload, context) -> {
@@ -245,6 +247,19 @@ public class ModNetworking {
                         Component.translatable("message.youzaiworldcore.teleport_anchor.activated")
                 );
             });
+        });
+
+        // ===== 传送锚点排序处理器 =====
+        ServerPlayNetworking.registerGlobalReceiver(TeleportAnchorReorderPayload.TYPE, (payload, context) -> {
+            var player = context.player();
+            var server = player.level().getServer();
+            if (server != null) {
+                server.execute(() -> {
+                    TeleportAnchorManager manager = TeleportAnchorManager.get(server);
+                    manager.movePoint((net.minecraft.server.level.ServerPlayer) player,
+                            payload.fromIndex(), payload.toIndex());
+                });
+            }
         });
 
         DebugLogger.exiting("ModNetworking", "initialize");

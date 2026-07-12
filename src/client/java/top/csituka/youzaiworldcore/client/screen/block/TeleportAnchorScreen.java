@@ -17,6 +17,7 @@ import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
 import top.csituka.youzaiworldcore.data.TeleportAnchorData;
 import top.csituka.youzaiworldcore.network.TeleportAnchorDeletePayload;
 import top.csituka.youzaiworldcore.network.TeleportAnchorRenamePayload;
+import top.csituka.youzaiworldcore.network.TeleportAnchorReorderPayload;
 import top.csituka.youzaiworldcore.network.TeleportAnchorTeleportPayload;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 
@@ -68,6 +69,10 @@ public class TeleportAnchorScreen extends Screen {
             YouzaiworldCore.MOD_ID, "textures/gui/teleport_rename.png");
     private static final Identifier REMOVE_ICON = Identifier.fromNamespaceAndPath(
             YouzaiworldCore.MOD_ID, "textures/gui/teleport_remove.png");
+    private static final Identifier MOVE_UP_ICON = Identifier.fromNamespaceAndPath(
+            YouzaiworldCore.MOD_ID, "textures/gui/teleport_moveup.png");
+    private static final Identifier MOVE_DOWN_ICON = Identifier.fromNamespaceAndPath(
+            YouzaiworldCore.MOD_ID, "textures/gui/teleport_movedown.png");
 
     private final List<TeleportAnchorData> points;
     @Nullable
@@ -105,6 +110,10 @@ public class TeleportAnchorScreen extends Screen {
     private TextureIconButton renameButton;
     @Nullable
     private TextureIconButton removeButton;
+    @Nullable
+    private TextureIconButton moveUpButton;
+    @Nullable
+    private TextureIconButton moveDownButton;
     private EditBox renameEditBox;
 
     private int panelX;
@@ -201,6 +210,8 @@ public class TeleportAnchorScreen extends Screen {
         this.editToggleButton = null;
         this.renameButton = null;
         this.removeButton = null;
+        this.moveUpButton = null;
+        this.moveDownButton = null;
         this.renameEditBox = null;
         super.rebuildWidgets();
     }
@@ -293,14 +304,18 @@ public class TeleportAnchorScreen extends Screen {
         if (!editToggleButton.active) editToggleButton.setExternalAlpha(0.3f);
         addRenderableWidget(editToggleButton);
 
-        // 编辑模式下显示重命名 + 移除按钮（X 偏移基于动画进度实现平滑过渡）
+        // 编辑模式下显示重命名 + 移除 + 上下移动按钮（X 偏移基于动画进度实现平滑过渡）
         if (editMode) {
             // progress 0->1：从最右（与返回按钮重叠）展开到最左
-            int expandOffset = Math.round((1f - editModeProgress) * (ICON_BUTTON_SIZE * 2 + 4));
+            // 总共 4 个按钮：rename, remove, moveUp, moveDown
+            int totalExpand = ICON_BUTTON_SIZE * 4 + 4 * 3;
+            int expandOffset = Math.round((1f - editModeProgress) * totalExpand);
             int renameX = editX - expandOffset;
             int removeX = renameX - ICON_BUTTON_SIZE - 4;
-            // 复制按钮随展开一同左移，避免与重命名/移除按钮重叠
-            copyX = removeX - ICON_BUTTON_SIZE - 4;
+            int moveUpX = removeX - ICON_BUTTON_SIZE - 4;
+            int moveDownX = moveUpX - ICON_BUTTON_SIZE - 4;
+            // 复制按钮随展开一同左移
+            copyX = moveDownX - ICON_BUTTON_SIZE - 4;
 
             renameButton = new TextureIconButton(
                     renameX, actionsY, ICON_BUTTON_SIZE, ICON_BUTTON_SIZE,
@@ -333,6 +348,38 @@ public class TeleportAnchorScreen extends Screen {
             removeButton.active = hasSelection;
             if (!removeButton.active) removeButton.setExternalAlpha(0.3f);
             addRenderableWidget(removeButton);
+
+            // 向上移动按钮
+            moveUpButton = new TextureIconButton(
+                    moveUpX, actionsY, ICON_BUTTON_SIZE, ICON_BUTTON_SIZE,
+                    MOVE_UP_ICON,
+                    Component.empty(),
+                    Component.translatable("screen.youzaiworldcore.teleport_anchor.tooltip_move_up"),
+                    () -> {
+                        if (!hasSelection) return;
+                        moveSelectedPoint(-1);
+                    });
+            // 仅在有选中且不是第一项时可点击
+            boolean canMoveUp = hasSelection && selectedIndex > 0;
+            moveUpButton.active = canMoveUp;
+            if (!moveUpButton.active) moveUpButton.setExternalAlpha(0.3f);
+            addRenderableWidget(moveUpButton);
+
+            // 向下移动按钮
+            moveDownButton = new TextureIconButton(
+                    moveDownX, actionsY, ICON_BUTTON_SIZE, ICON_BUTTON_SIZE,
+                    MOVE_DOWN_ICON,
+                    Component.empty(),
+                    Component.translatable("screen.youzaiworldcore.teleport_anchor.tooltip_move_down"),
+                    () -> {
+                        if (!hasSelection) return;
+                        moveSelectedPoint(1);
+                    });
+            // 仅在有选中且不是最后一项时可点击
+            boolean canMoveDown = hasSelection && selectedIndex >= 0 && selectedIndex < points.size() - 1;
+            moveDownButton.active = canMoveDown;
+            if (!moveDownButton.active) moveDownButton.setExternalAlpha(0.3f);
+            addRenderableWidget(moveDownButton);
         }
 
         // 复制坐标按钮（在编辑模式展开逻辑之后创建，确保 X 坐标正确）
@@ -359,6 +406,24 @@ public class TeleportAnchorScreen extends Screen {
         copyButton.active = hasSelection;
         if (!copyButton.active) copyButton.setExternalAlpha(0.3f);
         addRenderableWidget(copyButton);
+    }
+
+    /**
+     * 移动当前选中的传送点。
+     * @param delta -1 表示向上，+1 表示向下
+     */
+    private void moveSelectedPoint(int delta) {
+        if (selectedIndex < 0 || selectedIndex >= points.size()) return;
+        int newIndex = selectedIndex + delta;
+        if (newIndex < 0 || newIndex >= points.size()) return;
+        // 本地 UI 即时交换
+        TeleportAnchorData temp = points.get(selectedIndex);
+        points.set(selectedIndex, points.get(newIndex));
+        points.set(newIndex, temp);
+        // 发送给服务端持久化
+        ClientPlayNetworking.send(new TeleportAnchorReorderPayload(selectedIndex, newIndex));
+        selectedIndex = newIndex;
+        rebuildWidgets();
     }
 
     private void buildDeleteConfirmUI() {

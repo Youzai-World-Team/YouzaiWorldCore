@@ -197,6 +197,24 @@ public class TeleportAnchorManager extends SavedData {
         }
     }
 
+    /**
+     * 移动某个玩家的一个传送锚点到新索引位置（用于持久化排序）。
+     * 将 {@code fromIndex} 处的元素移到 {@code toIndex}，其余元素保持相对顺序。
+     *
+     * @return true 如果成功；false 如果索引非法或列表不存在
+     */
+    public boolean movePoint(ServerPlayer player, int fromIndex, int toIndex) {
+        List<TeleportAnchorData> points = playerPoints.get(player.getUUID());
+        if (points == null || fromIndex < 0 || fromIndex >= points.size()
+                || toIndex < 0 || toIndex >= points.size()) {
+            return false;
+        }
+        TeleportAnchorData moved = points.remove(fromIndex);
+        points.add(toIndex, moved);
+        setDirty();
+        return true;
+    }
+
     // ===== 传送冷却 =====
 
     /**

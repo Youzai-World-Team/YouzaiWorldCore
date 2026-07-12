@@ -273,5 +273,7 @@
   "message.youzaiworldcore.teleport_anchor.invalid": "§cTarget teleport anchor is no longer valid, removed from list!",
   "message.youzaiworldcore.teleport_anchor.cooldown": "§cTeleport on cooldown, please wait %s seconds.",
   "screen.youzaiworldcore.teleport_anchor.tooltip_copy": "Copy coordinates to clipboard",
-  "message.youzaiworldcore.teleport_anchor.copied": "§aCoordinates copied to clipboard: %s"
+  "message.youzaiworldcore.teleport_anchor.copied": "§aCoordinates copied to clipboard: %s",
+  "screen.youzaiworldcore.teleport_anchor.tooltip_move_up": "Move up",
+  "screen.youzaiworldcore.teleport_anchor.tooltip_move_down": "Move down"
 }
