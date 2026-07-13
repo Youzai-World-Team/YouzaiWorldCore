@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:block/cube_all",
   "textures": {
-    "all": "youzaiworldcore:block/tp_anchor"
+    "all": "youzaiworldcore:block/tp_anchor_active"
   }
 }

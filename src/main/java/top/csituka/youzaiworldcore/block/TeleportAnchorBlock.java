@@ -63,7 +63,9 @@ public class TeleportAnchorBlock extends BaseEntityBlock {
     @Override
     @NonNull
     public RenderShape getRenderShape(@NonNull BlockState state) {
-        return RenderShape.MODEL;
+        // 26.2 中已没有 ENTITYBLOCK_ANIMATED，改为 INVISIBLE 以阻止默认方块模型渲染，
+        // 由 TeleportAnchorBlockEntityRenderer 接管整个方块的渲染（实现逐玩家纹理）。
+        return RenderShape.INVISIBLE;
     }
 
     @Override

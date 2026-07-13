@@ -17,6 +17,7 @@ import top.csituka.youzaiworldcore.client.hud.ManaHudRenderer;
 import top.csituka.youzaiworldcore.client.hud.AdventureLevelHudRenderer;
 import top.csituka.youzaiworldcore.block.entity.ModBlockEntities;
 import top.csituka.youzaiworldcore.client.renderer.block.FlyBeaconBlockEntityRenderer;
+import top.csituka.youzaiworldcore.client.renderer.block.TeleportAnchorBlockEntityRenderer;
 import top.csituka.youzaiworldcore.client.screen.block.DecompositionTableScreen;
 import top.csituka.youzaiworldcore.client.screen.block.FlyBeaconScreen;
 import top.csituka.youzaiworldcore.client.screen.MenuScreen;
@@ -46,6 +47,8 @@ public class Client implements ClientModInitializer {
         // 方块实体渲染器注册
         DebugLogger.info("Client", "注册飞行信标方块实体渲染器...");
         BlockEntityRenderers.register(ModBlockEntities.FLY_BEACON, FlyBeaconBlockEntityRenderer::new);
+        DebugLogger.info("Client", "注册传送锚点方块实体渲染器...");
+        BlockEntityRenderers.register(ModBlockEntities.TELEPORT_ANCHOR, TeleportAnchorBlockEntityRenderer::new);
 
         DebugLogger.info("Client", "注册菜单屏幕...");
         MenuScreens.register(ModMenuTypes.DECOMPOSITION_TABLE, DecompositionTableScreen::new);
