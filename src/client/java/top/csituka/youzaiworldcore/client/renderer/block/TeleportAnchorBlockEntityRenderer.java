@@ -57,25 +57,28 @@ public class TeleportAnchorBlockEntityRenderer
                        SubmitNodeCollector queue, CameraRenderState cameraState) {
         boolean activated = state.isActivatedByMe();
         Identifier texture = activated ? TEXTURE_ACTIVE : TEXTURE_INACTIVE;
-        // entityCutout：不透明纹理，支持 alpha test，性能良好
-        var renderType = RenderTypes.entityCutout(texture);
 
+        // 无论激活与否，一律使用自发光着色器，锚点始终发光
+        // （每个玩家看到的激活/未激活贴图不同，但亮度相同）
+        var renderType = RenderTypes.entityTranslucentEmissive(texture);
+
+        // emissive 忽略光照值，随便填
         matrices.pushPose();
         queue.submitCustomGeometry(matrices, renderType, (pose, consumer) -> {
-            addFullBrightnessCube(consumer, pose);
+            addCube(consumer, pose, 0, 0);
         });
         matrices.popPose();
     }
 
     /**
-     * 渲染一个全亮度的单位立方体（从 0,0,0 到 1,1,1）。
+     * 渲染一个单位立方体（从 0,0,0 到 1,1,1）。
      * 顶点按各面外侧视角的逆时针顺序排列，与 GL 正面剔除兼容。
      * 每个面共享整个纹理（UV 0,0 → 1,1）。
+     *
+     * @param lu lightmap U（块光照分量 * 16，0-240）
+     * @param lv lightmap V（天光分量 * 16，0-240）
      */
-    private static void addFullBrightnessCube(VertexConsumer consumer, PoseStack.Pose pose) {
-        // 使用满光照 (240, 240) 让方块看起来更明亮
-        int lu = 240;
-        int lv = 240;
+    private static void addCube(VertexConsumer consumer, PoseStack.Pose pose, int lu, int lv) {
 
         // 每个面：4 个顶点 (按外侧 CCW)，法线指向外
         // UV 顺序：(0,0) (1,0) (1,1) (0,1)

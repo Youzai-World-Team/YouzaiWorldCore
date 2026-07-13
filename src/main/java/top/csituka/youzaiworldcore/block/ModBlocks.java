@@ -88,7 +88,7 @@ public class ModBlocks {
                     .strength(5.0f, 6.0f)
                     .sound(SoundType.STONE)
                     .requiresCorrectToolForDrops()
-                    .lightLevel(state -> state.getValue(TeleportAnchorBlock.ACTIVE) ? 15 : 0),
+                    .lightLevel(state -> 15),
             true
     );
 
