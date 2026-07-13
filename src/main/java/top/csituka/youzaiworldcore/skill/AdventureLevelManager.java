@@ -3,7 +3,6 @@ package top.csituka.youzaiworldcore.skill;
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.player.Player;
 import top.csituka.youzaiworldcore.network.LevelExpSyncPayload;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 

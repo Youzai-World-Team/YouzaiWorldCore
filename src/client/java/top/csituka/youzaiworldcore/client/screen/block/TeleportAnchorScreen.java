@@ -19,7 +19,6 @@ import top.csituka.youzaiworldcore.data.TeleportAnchorData;
 import top.csituka.youzaiworldcore.network.TeleportAnchorDeletePayload;
 import top.csituka.youzaiworldcore.network.TeleportAnchorRenamePayload;
 import top.csituka.youzaiworldcore.network.TeleportAnchorReorderPayload;
-import top.csituka.youzaiworldcore.network.TeleportAnchorTeleportPayload;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 
 import java.util.ArrayList;

@@ -18,6 +18,7 @@ import top.csituka.youzaiworldcore.client.renderer.CustomRenderTypes;
  * 渲染不同的纹理（tp_anchor.png / tp_anchor_active.png），
  * 实现每个玩家眼中锚点激活状态不同的效果。
  */
+@SuppressWarnings("null")
 public class TeleportAnchorBlockEntityRenderer
         implements BlockEntityRenderer<TeleportAnchorBlockEntity, TeleportAnchorBlockEntityRenderState> {
 

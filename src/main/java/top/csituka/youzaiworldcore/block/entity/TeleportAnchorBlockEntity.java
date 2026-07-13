@@ -24,6 +24,7 @@ import java.util.UUID;
  * 当集合从空变为非空时，方块进入 ACTIVE 状态并发光；
  * 当集合从非空变为空时，方块回到非激活状态。
  */
+@SuppressWarnings("null")
 public class TeleportAnchorBlockEntity extends BlockEntity {
 
     private final Set<UUID> activators = new HashSet<>();

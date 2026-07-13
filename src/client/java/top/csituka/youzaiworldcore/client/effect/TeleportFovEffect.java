@@ -23,6 +23,7 @@ import top.csituka.youzaiworldcore.network.TeleportAnchorTeleportPayload;
  * <p>
  * 渲染时使用 partialTick 进行逐帧插值，消除阶跃感，在任何帧率下都保持丝滑。
  */
+@SuppressWarnings("null")
 public final class TeleportFovEffect {
 
     // ===== 枚举：动画阶段 =====
@@ -75,6 +76,8 @@ public final class TeleportFovEffect {
         tickCounter++;
 
         switch (phase) {
+            case IDLE -> {
+            }
             case ZOOMING_IN -> {
                 if (tickCounter >= ZOOM_IN_TICKS) {
                     // 放大到顶 → 发送传送数据包 → 无间隙进入缩小阶段

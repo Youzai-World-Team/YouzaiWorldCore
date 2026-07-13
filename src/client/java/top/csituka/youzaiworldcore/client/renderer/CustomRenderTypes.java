@@ -19,6 +19,7 @@ import java.util.function.Function;
  * 半透明），因此通过反射获取私有的 {@code ENTITY_EMISSIVE_SNIPPET} 骨架，构建一个
  * 使用 {@link ColorTargetState#DEFAULT}（不透明无混合）的自定义管线。
  */
+@SuppressWarnings({"null"})
 public final class CustomRenderTypes {
 
     /** 缓存的 EMISSIVE_SNIPPET — 使用反射从 RenderPipelines 中提取，仅初始化一次 */
@@ -51,7 +52,7 @@ public final class CustomRenderTypes {
 
     // ---- 反射辅助 ----
 
-    @SuppressWarnings({"JavaLangInvokeHandleSignature", "unchecked"})
+    @SuppressWarnings({"JavaLangInvokeHandleSignature"})
     private static RenderPipeline.Snippet loadEntityEmissiveSnippet() {
         try {
             Field field = RenderPipelines.class.getDeclaredField("ENTITY_EMISSIVE_SNIPPET");

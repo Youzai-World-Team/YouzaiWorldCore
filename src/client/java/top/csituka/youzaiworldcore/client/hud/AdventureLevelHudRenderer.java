@@ -29,7 +29,6 @@ public class AdventureLevelHudRenderer {
     private static int displayCurrentExp = 0;
     private static int displayNeededExp = 100;
     private static int lastGainedExp = 0;
-    private static boolean lastLeveledUp = false;
 
     // ─── 动画状态 ───
     private enum AnimState { HIDDEN, SHOWING, VISIBLE, HIDING }
@@ -56,7 +55,6 @@ public class AdventureLevelHudRenderer {
         displayCurrentExp = currentExp;
         displayNeededExp = neededExp;
         lastGainedExp = gainedExp;
-        lastLeveledUp = leveledUp;
         lastExpGainTime = System.currentTimeMillis();
 
         // 记录升级时间戳，驱动升级文字动画
