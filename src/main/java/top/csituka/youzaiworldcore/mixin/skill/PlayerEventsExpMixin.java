@@ -5,7 +5,6 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -15,13 +14,13 @@ import top.csituka.youzaiworldcore.skill.AdventureLevelManager;
 
 /**
  * 玩家事件 → 冒险经验。
- * 原版等级升级 / 进食 / 获得 buff / 伤害结算
+ * 原版等级升级 / 进食 / 获得 buff / 睡觉
  */
 @Mixin(ServerPlayer.class)
 public class PlayerEventsExpMixin {
 
-    @Shadow
-    private int lastRecordedExperienceLevel;
+    @Unique
+    private int yzwc$prevExperienceLevel = -1;
 
     // ─── 原版等级升级检测 ───
 
@@ -29,13 +28,17 @@ public class PlayerEventsExpMixin {
     private void onTickCheckLevelUp(CallbackInfo ci) {
         ServerPlayer self = (ServerPlayer) (Object) this;
         int current = self.experienceLevel;
-        if (current > lastRecordedExperienceLevel) {
-            int gained = current - lastRecordedExperienceLevel;
+        if (yzwc$prevExperienceLevel < 0) {
+            yzwc$prevExperienceLevel = current;
+            return;
+        }
+        if (current > yzwc$prevExperienceLevel) {
+            int gained = current - yzwc$prevExperienceLevel;
             for (int i = 0; i < gained; i++) {
                 AdventureLevelManager.grantExp(self, AdventureLevelManager.EXP_VANILLA_LEVEL_UP);
             }
         }
-        lastRecordedExperienceLevel = current;
+        yzwc$prevExperienceLevel = current;
     }
 
     // ─── 进食 ───

@@ -21,7 +21,6 @@
     "skill.EntityDeathExpMixin",
     "skill.PlayerEventsExpMixin",
     "skill.DamageExpMixin",
-    "skill.ItemEventsExpMixin",
     "skill.BlockInteractionExpMixin$EnchantExpMixin",
     "skill.BlockInteractionExpMixin$AnvilExpMixin",
     "skill.BlockInteractionExpMixin$SmithingExpMixin",
@@ -29,9 +28,7 @@
     "skill.BlockInteractionExpMixin$BeaconPlayerMixin",
     "skill.FireworkExpMixin",
     "skill.ProjectileExpMixin",
-    "skill.MovementExpMixin",
-    "skill.DimensionExpMixin",
-    "skill.ExperienceOrbExpMixin"
+    "skill.MovementExpMixin"
   ],
   "injectors": {
     "defaultRequire": 1
