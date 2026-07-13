@@ -23,7 +23,7 @@ public class PlayerLevelData {
     /** 玩家名称（用于人类可读） */
     public String username;
 
-    /** 累积总经验值 */
+    /** 累积总经验值（防溢出：0 ~ Integer.MAX_VALUE） */
     public int totalExp;
 
     // ─── 首次标记（持久化） ───
@@ -67,9 +67,19 @@ public class PlayerLevelData {
         this.totalExp = 0;
     }
 
-    /** 增加经验值 */
+    /**
+     * 增加经验值（防溢出：clamp 至 0 ~ Integer.MAX_VALUE）。
+     * 若 totalExp 已为负数（异常状态），则先从 0 开始重新积累。
+     */
     public void addExp(int amount) {
-        this.totalExp += amount;
+        if (amount <= 0) return;
+        // 修复负数异常：如果 totalExp 为负，重置为 0
+        if (this.totalExp < 0) {
+            this.totalExp = 0;
+        }
+        // 防溢出：如果加上 amount 会超过 MAX_VALUE，则取 MAX_VALUE
+        long result = (long) this.totalExp + amount;
+        this.totalExp = (int) Math.min(result, Integer.MAX_VALUE);
     }
 
     /** 获取当前等级 */

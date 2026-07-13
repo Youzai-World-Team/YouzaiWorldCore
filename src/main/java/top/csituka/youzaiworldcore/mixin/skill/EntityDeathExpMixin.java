@@ -26,8 +26,8 @@ public class EntityDeathExpMixin {
         LivingEntity self = (LivingEntity) (Object) this;
         if (self.level().isClientSide()) return;
 
-        // 获取击杀者
-        if (self.getKillCredit() instanceof ServerPlayer killer) {
+        // 获取击杀者（排除自杀）
+        if (self.getKillCredit() instanceof ServerPlayer killer && killer != self) {
             if (self instanceof Player) {
                 // PVP 击杀
                 AdventureLevelManager.grantExp(killer, AdventureLevelManager.EXP_KILL_PVP);
