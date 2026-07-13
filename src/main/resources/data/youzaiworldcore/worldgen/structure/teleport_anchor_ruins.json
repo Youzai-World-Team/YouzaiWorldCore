@@ -10,6 +10,6 @@
   },
   "start_pool": "youzaiworldcore:teleport_anchor_ruins",
   "step": "surface_structures",
-  "terrain_adaptation": "bury",
+  "terrain_adaptation": "none",
   "use_expansion_hack": false
 }

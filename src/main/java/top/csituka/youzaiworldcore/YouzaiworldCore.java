@@ -48,7 +48,6 @@ import top.csituka.youzaiworldcore.feature.ExperimentalFeatures;
 import top.csituka.youzaiworldcore.invisibility.InvisibilityManager;
 import top.csituka.youzaiworldcore.invisibility.InvisibilityTickHandler;
 import top.csituka.youzaiworldcore.item.ModCreativeModeTabs;
-import top.csituka.youzaiworldcore.world.VillageStructureInjector;
 import top.csituka.youzaiworldcore.item.ModItems;
 import top.csituka.youzaiworldcore.item.tool.YzChainMiningTool;
 import top.csituka.youzaiworldcore.network.ModNetworking;
@@ -174,9 +173,6 @@ public class YouzaiworldCore implements ModInitializer {
         });
         LOGGER.info("隐身功能已初始化");
         DebugLogger.exiting("YouzaiworldCore", "InvisibilitySystem.init");
-
-        //DebugLogger.info("YouzaiworldCore", "初始化传送锚点村庄遗迹注入...");
-        //VillageStructureInjector.init();
 
         // ===== 初始化维度池系统 =====
         DebugLogger.entering("YouzaiworldCore", "DimensionPoolSystem.init");
