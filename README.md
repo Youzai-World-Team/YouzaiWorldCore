@@ -22,14 +22,14 @@
 
 ## 📖 项目概述
 
-**YouzaiWorldCore** 是悠哉世界（Youzai World）Minecraft 多人服务器的核心玩法模组，基于 **Fabric** 框架开发，深度集成 **LuckPerms** 权限系统与 **Placeholder API**。模组为服务器提供完整的基础设施，涵盖账户认证、GUI 菜单、自定义物品与方块、维度池、传送锚点、魔力系统、隐身管理等核心能力。
+**YouzaiWorldCore** 是悠哉世界（Youzai World）Minecraft 多人服务器的核心玩法模组，基于 **Fabric** 框架开发，深度集成 **LuckPerms** 权限系统与 **Placeholder API**。模组为服务器提供完整的基础设施，涵盖账户认证、GUI 菜单、自定义物品与方块、坐姿交互、维度池、传送锚点、魔力系统、冒险经验、隐身管理等核心能力。
 
 ### 目标用户群体
 
 | 用户类型 | 说明 |
 |---------|------|
 | **服务器管理员** | 通过命令和菜单管理系统，配置维度池、账户策略、实验性功能等 |
-| **生存玩家** | 使用 YZ 工具、成就系统、传送锚点、魔力法杖进行游戏 |
+| **生存玩家** | 使用悠哉系列工具、成就系统、传送锚点、坐姿交互、魔力法杖进行游戏 |
 | **模组开发者** | 了解模组架构、扩展功能或贡献代码 |
 
 ---
@@ -69,7 +69,7 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 - **自定义窗口图标**：运行时通过 Java ImageIO 加载 `jar_icon.png` 替换任务栏与标题栏图标
 - **自定义窗口标题**：`WindowTitleMixin` 拦截 `Window.setTitle()`，标题替换为"悠哉世界"
 
-### 5. YZ 工具与物品
+### 5.悠哉系列工具与物品
 
 一套全新的矿物与工具系列，等级对标钻石工具（耐久 1800，挖掘速度 8.0，附魔等级 10）。
 
@@ -95,7 +95,17 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 | **飞行信标** | 9.56 方块半径内提供飞行，激活时发光（亮度 12） |
 | **传送锚点** | 激活后右键打开传送列表，支持命名/排序/删除/复制坐标（亮度 15） |
 
-### 7. 魔力系统
+### 7. 坐姿交互系统
+
+右键点击楼梯（StairBlock）或台阶（SlabBlock）即可坐下，无需命令或特殊物品。
+
+- **触发条件**：主手为空 + 右键楼梯/台阶（无需潜行）
+- **实现方式**：创建不可见、无碰撞箱的 `SeatEntity` 作为载具 → 玩家骑乘（`startRiding`）
+- **Y 轴定位**：楼梯下半部分/台阶下半部分 → 坐高 +0.5；楼梯上半部分/台阶上半部分/双层台阶 → 坐高 +1.0
+- **离开座位**：原版潜行下马机制（`removeVehicle`）
+- **实体自毁**：无乘客时自动销毁
+
+### 8. 魔力系统
 
 全新的魔力值系统，为特殊法杖提供能量。
 
@@ -105,7 +115,7 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 - **网络同步**：每 5 tick 通过 `ManaSyncPayload` 向客户端同步
 - **消耗途径**：烈焰法杖（10 魔力/次）、星辰法杖（60 魔力/次）
 
-### 8. 传送锚点系统
+### 9. 传送锚点系统
 
 基于方块的玩家自主传送网络，右键交互即可命名、保存和远程传送。
 
@@ -118,7 +128,7 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 - **数据持久化**：基于 `SavedData`，服务端重启不丢失
 - **命令支持**：`/yzwc teleport_anchor list [player]` 列出传送点（含可点击传送链接）
 
-### 9. 维度池系统
+### 10. 维度池系统
 
 多世界服务器的独立状态池系统——不同池之间玩家拥有独立的背包、生命、效果和游戏模式。
 
@@ -128,7 +138,7 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 - **跨池传送**：支持维度传送门、命令传送、复活事件等多种触发
 - **数据存储**：池配置 `config/youzaiworldcore/dimensional_inventories/pool_settings.json`，玩家状态 `<world>/youzaiworldcore/dimensional_inventories/data/<pool-id>/<uuid>.json`
 
-### 10. 隐身系统
+### 11. 隐身系统
 
 创造模式下的欺骗性隐身，从其他玩家的 Tab 列表和视野中完全消失。
 
@@ -137,15 +147,36 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 - **8 个 Mixin**：抑制隐身玩家产生的粒子、音效、方块事件、容器动画（箱子/木桶/末影箱/潜影盒/饰纹陶罐）
 - **Tick 检查**：每 10 tick 检测是否退出创造模式，自动强制关闭
 
-### 11. 占位符系统
+### 12. 冒险经验系统
+
+基于玩家行为的经验等级系统，等级提升提供额外属性增益。
+
+- **经验获取途径**：挖掘 50 方块（+25）、放置 50 方块（+25）、死亡（+10）、守护之心保护（+50）、不死图腾触发（+500）、完成进度（+50）
+- **升级公式**：`expForNext = 50 + level × 50`
+- **客户端 HUD**：`AdventureLevelHudRenderer` 渲染等级条
+- **网络同步**：通过 `LevelExpSyncPayload` 同步经验值
+
+### 13. 占位符系统
 
 集成 Placeholder API，注册 `%luckperms_*%` 命名空间，提供 20+ 个占位符（`prefix`、`suffix`、`groups`、`primary_group_name`、`has_permission_<node>`、`meta_<key>`、`in_group_<name>`、`expiry_time_<node>` 等）。
 
-### 12. 权限系统
+### 14. 权限系统
 
 基于 LuckPerms 的细粒度权限控制，自动回退至原版 OP 等级检查。提供 19 个独立权限节点，含 `account.mgr.*`、`command.*`、`*` 通配符。
 
-### 13. 预设物品系统
+### 15. 创造模式标签页
+
+创造模式物品栏重新组织为 **5 个独立标签页**：
+
+| 标签页 ID | 名称 | 内容 |
+|-----------|------|------|
+| `youzai_blocks` | 悠哉方块 | 7 个自定义方块 |
+| `youzai_tools_weapons` | 悠哉工具与武器 | 5 个悠哉系列工具 + 3 个法杖 |
+| `youzai_materials` | 悠哉材料 | 原矿、锭、粒 |
+| `youzai_utilities` | 悠哉实用物品 | 守护之心、Logo |
+| `youzai_kits` | 悠哉工具包 | 4 个预设潜影盒 |
+
+### 16. 预设物品系统
 
 创造模式标签页中的四大预设潜影盒：
 
@@ -156,14 +187,14 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 | 不死图腾 | 黄色 | 27 个不死图腾 |
 | 炸药包 | 灰色 | 27 组 × 64 TNT |
 
-### 14. 成就系统
+### 17. 成就系统
 
 两大进度分支，共 20+ 个成就：
 
-- **悠哉世界**（主进度）：获取 YZ 材料、制作工具、使用分解台/飞行信标/守护之心/凭虚法杖
+- **悠哉世界**（主进度）：获取悠哉系列材料、制作工具、使用分解台/飞行信标/守护之心/凭虚法杖
 - **趣味小挑战**：蛋糕是谎言、美食家、最大幸运、回家之路等
 
-### 15. 调试与配置
+### 18. 调试与配置
 
 | 配置 | 文件位置 | 内容 |
 |------|---------|------|
@@ -171,7 +202,7 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 | 客户端外部设置 | `config/youzaiworldcore/client_external_settings.json` | `devModeEnabled`、`logLevel`（0-3）、调试地址/端口 |
 | DebugLogger | `util/DebugLogger` | 四级日志（OFF/BASIC/DETAILED/DEBUG），entering/exiting/branch/stateChange/exception 追踪 |
 
-### 16. CI/CD
+### 19. CI/CD
 
 GitHub Actions 工作流（`.github/workflows/build.yml`）：Ubuntu / Windows / macOS 三平台 JDK 25 自动构建，Linux 构建产物自动上传。
 
@@ -286,7 +317,7 @@ GitHub Actions 工作流（`.github/workflows/build.yml`）：Ubuntu / Windows /
 | `decomposition_table` | 分解台 |
 | `fly_beacon` | 飞行信标 |
 
-### 网络数据包（共 14 个）
+### 网络数据包（共 15 个）
 
 | 数据包 ID | 方向 | 用途 |
 |-----------|------|------|
@@ -294,6 +325,7 @@ GitHub Actions 工作流（`.github/workflows/build.yml`）：Ubuntu / Windows /
 | `feature_sync` | S→C | 同步实验性功能状态 |
 | `open_auth_screen` | S→C | 打开认证界面 |
 | `mana_sync` | S→C | 同步魔力值 |
+| `level_exp_sync` | S→C | 同步冒险等级经验 |
 | `world_pool_teleport` | C→S | 请求维度池传送 |
 | `teleport_anchor_open_name` | S→C | 打开传送锚点命名界面 |
 | `teleport_anchor_list` | S→C | 发送传送点列表 |
@@ -336,24 +368,28 @@ src/
 │   ├── config/                           # 服务端外部设置
 │   ├── data/                             # 传送锚点 SavedData
 │   ├── dimensionalinventories/           # 维度池系统
-│   ├── event/                            # 事件处理器
+│   ├── event/                            # 事件处理器（铁砧修复/飞行信标/虚空法杖/坐姿交互）
+│   ├── entity/seat/                      # 座椅实体系统
 │   ├── feature/                          # 实验性功能系统
 │   ├── invisibility/                     # 隐身系统
-│   ├── item/                             # 物品与工具
+│   ├── item/                             # 物品、工具、创造标签页、预设
 │   ├── luckperms/                        # LuckPerms 权限集成
 │   ├── mana/                             # 魔力系统
-│   ├── mixin/                            # 主 Mixin（守护之心/隐身容器/粒子/音效）
-│   ├── network/                          # 网络数据包（14 个）
+│   ├── mixin/                            # 主 Mixin（+ 隐身容器/粒子/音效 + 座椅 + 技能）
+│   ├── network/                          # 网络数据包（15 个）
 │   ├── placeholders/                     # Placeholder API 集成（24 个占位符）
 │   ├── screen/                           # 容器菜单
+│   ├── skill/                            # 冒险经验等级系统
 │   └── util/                             # DebugLogger 等工具
 │
 ├── client/java/top/csituka/youzaiworldcore/
 │   ├── client/Client.java                # 客户端入口
 │   ├── config/                           # 客户端外部设置
+│   ├── effect/                           # 传送 FOV 效果
 │   ├── higherchat/                       # Simple Voice Chat 集成
-│   ├── mixin/client/                     # 客户端 Mixin（标题/选项/暂停/聊天/加载 等）
-│   ├── renderer/entity/                  # 实体渲染器
+│   ├── hud/                              # 魔力条 / 冒险等级 HUD
+│   ├── mixin/client/                     # 客户端 Mixin（标题/选项/暂停/聊天/加载/座椅 等）
+│   ├── renderer/                         # 方块/实体渲染器
 │   └── screen/                           # GUI 屏幕
 │       ├── MenuScreen.java               # 菜单容器
 │       ├── LoginScreen / RegisterScreen  # 认证界面
@@ -381,7 +417,7 @@ src/
 | `yz_ingot_from_nuggets` | 合成 | 9 悠哉粒 → 悠哉锭 |
 | `yz_block` | 合成 | 9 悠哉锭 → 悠哉块 |
 | `yz_nugget_from_ingot` | 合成 | 悠哉锭 → 9 悠哉粒 |
-| `yz_pickaxe` / `yz_axe` / `yz_shovel` / `yz_hoe` / `yz_sword` | 合成 | YZ 工具 |
+| `yz_pickaxe` / `yz_axe` / `yz_shovel` / `yz_hoe` / `yz_sword` | 合成 |悠哉系列工具 |
 | `decomposition_table` | 合成 | 分解台 |
 | `fly_beacon` | 合成 | 飞行信标 |
 | `heart_of_guardianship` | 合成 | 守护之心 |
@@ -402,8 +438,8 @@ src/
 
 ## 🤝 贡献者
 
-**核心作者**：ress2338396, zxabinbina, Maskviva, Youzai World Team  
-**贡献者**：why, zhongbilibili, Everyone who has contributed to this project
+**核心作者**：Maskviva, ress2338396, zxabinbina, Youzai World Team  
+**贡献者**：Fogg05, lucko, MDLC01, why, 不用珍珠的墨影
 
 ---
 
