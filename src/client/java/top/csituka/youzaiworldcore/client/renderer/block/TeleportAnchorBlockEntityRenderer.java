@@ -7,11 +7,11 @@ import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.feature.ModelFeatureRenderer.CrumblingOverlay;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
-import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.phys.Vec3;
 import top.csituka.youzaiworldcore.block.entity.TeleportAnchorBlockEntity;
+import top.csituka.youzaiworldcore.client.renderer.CustomRenderTypes;
 
 /**
  * 传送锚点的 BlockEntityRenderer — 根据当前客户端玩家是否激活了此锚点，
@@ -58,9 +58,9 @@ public class TeleportAnchorBlockEntityRenderer
         boolean activated = state.isActivatedByMe();
         Identifier texture = activated ? TEXTURE_ACTIVE : TEXTURE_INACTIVE;
 
-        // 无论激活与否，一律使用自发光着色器，锚点始终发光
-        // （每个玩家看到的激活/未激活贴图不同，但亮度相同）
-        var renderType = RenderTypes.entityTranslucentEmissive(texture);
+        // 使用不透明+自发光管线（而非 entityTranslucentEmissive），
+        // 消除半透明混合导致的"黯淡+微微透明"视觉效果。
+        var renderType = CustomRenderTypes.TP_ANCHOR.apply(texture);
 
         // emissive 忽略光照值，随便填
         matrices.pushPose();
