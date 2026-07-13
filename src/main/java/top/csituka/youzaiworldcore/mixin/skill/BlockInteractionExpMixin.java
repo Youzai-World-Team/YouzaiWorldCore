@@ -1,6 +1,5 @@
 package top.csituka.youzaiworldcore.mixin.skill;
 
-import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.*;
@@ -15,7 +14,8 @@ import top.csituka.youzaiworldcore.skill.AdventureLevelManager;
 
 /**
  * 方块交互 → 冒险经验。
- * 附魔台 / 铁砧 / 锻造台 / 酿造台 / 织布机 / 砂轮 / 制图台 / 信标
+ * 附魔台 / 铁砧 / 锻造台 / 酿造台 / 信标
+ * 注：织布机/砂轮/制图台在 MC 1.21.5 中 API 不兼容，暂跳过。
  */
 public class BlockInteractionExpMixin {
 
@@ -65,42 +65,6 @@ public class BlockInteractionExpMixin {
         }
     }
 
-    // ─── 织布机 ───
-    @Mixin(LoomMenu.class)
-    public static class LoomExpMixin {
-        @Inject(method = "clickMenuButton", at = @At("RETURN"))
-        private void onLoom(Player player, int slot, CallbackInfoReturnable<Boolean> cir) {
-            if (cir.getReturnValue() != null && cir.getReturnValue()
-                    && player instanceof ServerPlayer sp) {
-                AdventureLevelManager.grantExp(sp, AdventureLevelManager.EXP_LOOM);
-            }
-        }
-    }
-
-    // ─── 砂轮 ───
-    @Mixin(GrindstoneMenu.class)
-    public static class GrindstoneExpMixin {
-        @Inject(method = "clickMenuButton", at = @At("RETURN"))
-        private void onGrindstone(Player player, int slot, CallbackInfoReturnable<Boolean> cir) {
-            if (cir.getReturnValue() != null && cir.getReturnValue()
-                    && player instanceof ServerPlayer sp) {
-                AdventureLevelManager.grantExp(sp, AdventureLevelManager.EXP_GRINDSTONE);
-            }
-        }
-    }
-
-    // ─── 制图台 ───
-    @Mixin(CartographyTableMenu.class)
-    public static class CartographyExpMixin {
-        @Inject(method = "clickMenuButton", at = @At("RETURN"))
-        private void onCartography(Player player, int slot, CallbackInfoReturnable<Boolean> cir) {
-            if (cir.getReturnValue() != null && cir.getReturnValue()
-                    && player instanceof ServerPlayer sp) {
-                AdventureLevelManager.grantExp(sp, AdventureLevelManager.EXP_CARTOGRAPHY);
-            }
-        }
-    }
-
     // ─── 信标激活（通过检测玩家获得信标 buff） ───
     @Mixin(ServerPlayer.class)
     public static class BeaconPlayerMixin {
@@ -110,7 +74,6 @@ public class BlockInteractionExpMixin {
         @Inject(method = "tick", at = @At("TAIL"))
         private void onTickBeaconCheck(CallbackInfo ci) {
             ServerPlayer self = (ServerPlayer) (Object) this;
-            // 信标效果特征：长时间持续（> 200 ticks）且有 amplifier >= 0
             boolean hasBeaconEffect = false;
             for (var effect : self.getActiveEffects()) {
                 if (effect.getDuration() > 200 && effect.getAmplifier() >= 0
