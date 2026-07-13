@@ -13,6 +13,9 @@ import top.csituka.youzaiworldcore.skill.AdventureLevelManager;
 /**
  * 伤害事件 → 冒险经验。
  * 近战每点 +0.5 / 远程每点 +0.5 / 承受每点 +0.5
+ *
+ * <p>注意：MC 1.21.5 中 {@code die()} 从 {@code hurtServer} 内部调用，
+ * 因此本 mixin 仅使用 {@code grantExpSilent}（不发送网络包），避免阻塞死亡流程。</p>
  */
 @Mixin(LivingEntity.class)
 public class DamageExpMixin {

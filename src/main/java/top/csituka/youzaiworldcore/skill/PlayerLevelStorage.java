@@ -29,6 +29,10 @@ public class PlayerLevelStorage {
     private static Path STORAGE_FILE;
     private static final ReadWriteLock LOCK = new ReentrantReadWriteLock();
 
+    /** 防抖：距上次保存至少间隔的毫秒数 */
+    private static final long SAVE_DEBOUNCE_MS = 2000;
+    private static volatile long lastSaveTime = 0;
+
     /** 内存缓存：UUID 字符串 -> PlayerLevelData */
     private static final ConcurrentHashMap<String, PlayerLevelData> CACHE = new ConcurrentHashMap<>();
 
@@ -63,7 +67,7 @@ public class PlayerLevelStorage {
             CACHE.clear();
             if (!Files.exists(STORAGE_FILE)) {
                 DebugLogger.branch("PlayerLevelStorage", "STORAGE_FILE exists", false);
-                saveToDisk(); // 创建空文件
+                forceSave(); // 创建空文件
                 return;
             }
             DebugLogger.branch("PlayerLevelStorage", "STORAGE_FILE exists", true);
@@ -129,7 +133,7 @@ public class PlayerLevelStorage {
             if (data == null) {
                 data = new PlayerLevelData(uuid, username);
                 CACHE.put(key, data);
-                saveToDisk();
+                forceSave(); // 新记录立即保存
             }
             return data;
         } finally {
@@ -150,10 +154,21 @@ public class PlayerLevelStorage {
     }
 
     /**
-     * 强制保存指定玩家的数据。
+     * 标记数据已变更（防抖：至少间隔 2 秒才写盘一次）。
+     * 多次修改会合并为一次写操作。
      */
     public static void markDirty(UUID uuid) {
-        // 简化实现：直接全量保存（数据量不大）
+        long now = System.currentTimeMillis();
+        if (now - lastSaveTime < SAVE_DEBOUNCE_MS) return;
+        lastSaveTime = now;
+        saveToDisk();
+    }
+
+    /**
+     * 强制立即保存到磁盘（无视防抖）。
+     */
+    public static void forceSave() {
+        lastSaveTime = System.currentTimeMillis();
         saveToDisk();
     }
 

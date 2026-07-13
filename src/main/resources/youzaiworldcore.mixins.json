@@ -18,13 +18,12 @@
     "skill.BlockPlaceExpMixin",
     "skill.AdvancementExpMixin",
     "skill.TotemExpMixin",
-    "skill.EntityDeathExpMixin",
-    "skill.PlayerEventsExpMixin",
     "skill.DamageExpMixin",
+    "skill.PlayerEventsExpMixin",
+    "skill.MovementExpMixin",
     "skill.BlockInteractionExpMixin$BeaconPlayerMixin",
     "skill.FireworkExpMixin",
-    "skill.ProjectileExpMixin",
-    "skill.MovementExpMixin"
+    "skill.ProjectileExpMixin"
   ],
   "injectors": {
     "defaultRequire": 1

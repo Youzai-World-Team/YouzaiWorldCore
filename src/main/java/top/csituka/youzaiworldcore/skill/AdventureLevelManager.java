@@ -351,22 +351,22 @@ public class AdventureLevelManager {
 
     // ==================== 伤害经验 ====================
 
-    /** 每点近战伤害 = 0.5 经验，取整发放 */
+    /** 每点近战伤害 = 0.5 经验，取整发放（纯持久化，不发包以避免死亡流程阻塞） */
     public static void onMeleeDamage(ServerPlayer player, float damage) {
         int raw = (int) (damage * EXP_MELEE_DAMAGE);
-        if (raw > 0) grantExp(player, raw);
+        if (raw > 0) grantExpSilent(player.getUUID(), player.getName().getString(), raw);
     }
 
-    /** 每点远程伤害 = 0.5 经验，取整发放 */
+    /** 每点远程伤害 = 0.5 经验，取整发放（纯持久化） */
     public static void onRangedDamage(ServerPlayer player, float damage) {
         int raw = (int) (damage * EXP_RANGED_DAMAGE);
-        if (raw > 0) grantExp(player, raw);
+        if (raw > 0) grantExpSilent(player.getUUID(), player.getName().getString(), raw);
     }
 
-    /** 每点承受伤害 = 0.5 经验，取整发放 */
+    /** 每点承受伤害 = 0.5 经验，取整发放（纯持久化） */
     public static void onTakeDamage(ServerPlayer player, float damage) {
         int raw = (int) (damage * EXP_TAKE_DAMAGE);
-        if (raw > 0) grantExp(player, raw);
+        if (raw > 0) grantExpSilent(player.getUUID(), player.getName().getString(), raw);
     }
 
     // ==================== 经验发放核心 ====================
@@ -396,12 +396,46 @@ public class AdventureLevelManager {
                 player.getName().getString(), amount, oldLevel, newLevel);
     }
 
-    /** 无 ServerPlayer 上下文时使用 */
+    /** 无 ServerPlayer 上下文时使用（仅持久化，不发送 HUD 同步包） */
     public static void grantExpSilent(UUID uuid, String username, int amount) {
         if (amount <= 0) return;
         PlayerLevelData data = PlayerLevelStorage.getOrCreate(uuid, username);
         data.addExp(amount);
         PlayerLevelStorage.markDirty(uuid);
+    }
+
+    /**
+     * 在死亡等关键流程中安全发放经验并将 HUD 同步延后到下一 tick 发送。
+     * 防止 {@code ServerPlayNetworking.send()} 在死亡阶段阻塞 tick。
+     */
+    public static void grantExpDeferred(ServerPlayer player, int amount) {
+        if (amount <= 0) return;
+        UUID uuid = player.getUUID();
+        PlayerLevelData data = PlayerLevelStorage.getOrCreate(uuid, player.getName().getString());
+        int oldLevel = data.getLevel();
+        data.addExp(amount);
+        int newLevel = data.getLevel();
+        boolean leveledUp = oldLevel != newLevel;
+        PlayerLevelStorage.markDirty(uuid);
+
+        // 延迟到下一 tick 发送同步包
+        if (player.level() instanceof net.minecraft.server.level.ServerLevel serverLevel) {
+            serverLevel.getServer().execute(() -> {
+                try {
+                    PlayerLevelData refreshed = PlayerLevelStorage.getOrCreate(uuid, player.getName().getString());
+                    ServerPlayNetworking.send(player, new LevelExpSyncPayload(
+                            refreshed.getLevel(),
+                            refreshed.getCurrentLevelExp(),
+                            refreshed.getExpForNextLevel(),
+                            amount,
+                            leveledUp));
+                } catch (Exception ignored) {}
+            });
+        }
+
+        if (leveledUp) {
+            checkMilestone(player, newLevel);
+        }
     }
 
     private static void grantExpByUuid(UUID uuid, int amount) {
