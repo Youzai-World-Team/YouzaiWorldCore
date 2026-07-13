@@ -17,13 +17,7 @@
     "invisibility.DecoratedPotBlockWobbleMixin",
     "skill.BlockPlaceExpMixin",
     "skill.AdvancementExpMixin",
-    "skill.TotemExpMixin",
-    "skill.DamageExpMixin",
-    "skill.PlayerEventsExpMixin",
-    "skill.MovementExpMixin",
-    "skill.BlockInteractionExpMixin$BeaconPlayerMixin",
-    "skill.FireworkExpMixin",
-    "skill.ProjectileExpMixin"
+    "skill.TotemExpMixin"
   ],
   "injectors": {
     "defaultRequire": 1
