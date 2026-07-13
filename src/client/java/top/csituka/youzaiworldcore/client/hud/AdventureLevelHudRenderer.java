@@ -18,7 +18,7 @@ public class AdventureLevelHudRenderer {
 
     // ─── 布局常量 ───
     private static final int BAR_WIDTH = 182;
-    private static final int BAR_HEIGHT = 5;
+    private static final int BAR_HEIGHT = 2;
     private static final int SLIDE_DIST = 20;
     private static final int SHOW_MS = 250;
     private static final int HIDE_MS = 300;
@@ -38,6 +38,12 @@ public class AdventureLevelHudRenderer {
     private static long prevFrameTime = 0;
     private static long lastExpGainTime = 0;
 
+    // ─── 升级提示动画 ───
+    private static long lastLevelUpTime = 0;
+    private static final int LEVEL_UP_CROSSFADE_MS = 500;   // 淡入/淡出各 500ms
+    private static final int LEVEL_UP_HOLD_MS = 2000;        // 升级文字保持 2000ms
+    private static final int LEVEL_UP_TOTAL_MS = LEVEL_UP_CROSSFADE_MS * 2 + LEVEL_UP_HOLD_MS; // = 2200ms
+
     // ─── 平滑经验条 ───
     private static float smoothDisplayExp = 0.0f;
     private static long smoothLastUpdate = 0;
@@ -52,6 +58,11 @@ public class AdventureLevelHudRenderer {
         lastGainedExp = gainedExp;
         lastLeveledUp = leveledUp;
         lastExpGainTime = System.currentTimeMillis();
+
+        // 记录升级时间戳，驱动升级文字动画
+        if (leveledUp) {
+            lastLevelUpTime = lastExpGainTime;
+        }
 
         // 触发滑入动画
         if (animState == AnimState.HIDDEN || animState == AnimState.HIDING) {
@@ -126,52 +137,76 @@ public class AdventureLevelHudRenderer {
         int sw = g.guiWidth();
         int sh = g.guiHeight();
 
-        // 位置：物品栏上方
+        // 位置：物品栏上方，进一步上移
         int barX = (sw - BAR_WIDTH) / 2;
-        int barY = sh - 40 + slide; // 高于物品栏（物品栏约在 sh-22）
+        int barY = sh - 48 + slide;
 
-        // ─── 背景 ───
-        g.fill(barX - 1, barY - 1, barX + BAR_WIDTH + 1, barY + BAR_HEIGHT + 1,
-                packARGB(0, 0, 0, (int) (alpha * 0.5f)));
+        // ─── 背景（纯色，无描边） ───
         g.fill(barX, barY, barX + BAR_WIDTH, barY + BAR_HEIGHT,
                 packARGB(40, 40, 40, alpha));
 
         // ─── 经验填充条 ───
         int fillWidth = (int) (smoothDisplayExp * BAR_WIDTH);
         if (fillWidth > 0) {
-            // 金色渐变感的经验条
-            int fillColor = packARGB(255, 200 + (int) (55 * smoothDisplayExp), 50,
-                    alpha);
+            int fillColor = packARGB(255, 200 + (int) (55 * smoothDisplayExp), 50, alpha);
             g.fill(barX, barY, barX + fillWidth, barY + BAR_HEIGHT, fillColor);
         }
 
-        // ─── 分割线（每 10% 一条） ───
-        for (int i = 1; i < 10; i++) {
-            int segX = barX + (BAR_WIDTH * i / 10);
-            g.fill(segX, barY, segX + 1, barY + BAR_HEIGHT,
-                    packARGB(0, 0, 0, (int) (alpha * 0.3f)));
-        }
+        // ─── 文字（带升级交叉淡入淡出） ───
+        String normalText = "冒险等级 Lv." + displayLevel + "  " + displayCurrentExp + " / " + displayNeededExp;
+        String levelUpText = "等级提升：" + displayLevel + "级";
 
-        // ─── 文字 ───
-        String text;
-        if (lastLeveledUp && animState == AnimState.SHOWING) {
-            // 刚升级时显示升级文本
-            text = "冒险等级 Lv." + displayLevel + "  UP!";
-        } else {
-            text = "冒险等级 Lv." + displayLevel + "  " + displayCurrentExp + " / " + displayNeededExp;
-        }
-        int textWidth = client.font.width(text);
-        int textX = barX + (BAR_WIDTH - textWidth) / 2;
         int textY = barY - 12;
 
-        // 文字阴影
-        g.text(client.font, text, textX + 1, textY + 1,
-                packARGB(0, 0, 0, alpha), false);
-        // 文字本体
-        int textColor = lastLeveledUp && animState != AnimState.HIDING
-                ? packARGB(255, 215, 0, alpha)  // 金色：刚升级
-                : packARGB(255, 255, 255, alpha);
-        g.text(client.font, text, textX, textY, textColor, false);
+        // 计算升级动画进度
+        long now = System.currentTimeMillis();
+        long elapsed = now - lastLevelUpTime;
+        boolean inLevelUpWindow = elapsed < LEVEL_UP_TOTAL_MS;
+
+        float normalAlpha;  // 普通文字透明度
+        float levelUpAlpha;  // 升级文字透明度
+
+        if (!inLevelUpWindow || elapsed < 0) {
+            // 不在升级窗口 → 只显示普通文字
+            normalAlpha = 1.0f;
+            levelUpAlpha = 0.0f;
+        } else if (elapsed < LEVEL_UP_CROSSFADE_MS) {
+            // 阶段1：淡出普通 → 淡入升级
+            float t = (float) elapsed / LEVEL_UP_CROSSFADE_MS;
+            normalAlpha = 1.0f - t;
+            levelUpAlpha = t;
+        } else if (elapsed < LEVEL_UP_CROSSFADE_MS + LEVEL_UP_HOLD_MS) {
+            // 阶段2：升级文字完全可见
+            normalAlpha = 0.0f;
+            levelUpAlpha = 1.0f;
+        } else {
+            // 阶段3：淡出升级 → 淡入普通
+            float t = (float) (elapsed - LEVEL_UP_CROSSFADE_MS - LEVEL_UP_HOLD_MS) / LEVEL_UP_CROSSFADE_MS;
+            normalAlpha = t;
+            levelUpAlpha = 1.0f - t;
+        }
+
+        // 渲染普通文字（带透明度）
+        if (normalAlpha > 0.01f) {
+            int normalTextWidth = client.font.width(normalText);
+            int normalTextX = barX + (BAR_WIDTH - normalTextWidth) / 2;
+            int na = (int) (alpha * normalAlpha);
+            g.text(client.font, normalText, normalTextX + 1, textY + 1,
+                    packARGB(0, 0, 0, na), false);
+            g.text(client.font, normalText, normalTextX, textY,
+                    packARGB(255, 255, 255, na), false);
+        }
+
+        // 渲染升级文字（带透明度，金色）
+        if (levelUpAlpha > 0.01f) {
+            int levelUpTextWidth = client.font.width(levelUpText);
+            int levelUpTextX = barX + (BAR_WIDTH - levelUpTextWidth) / 2;
+            int la = (int) (alpha * levelUpAlpha);
+            g.text(client.font, levelUpText, levelUpTextX + 1, textY + 1,
+                    packARGB(0, 0, 0, la), false);
+            g.text(client.font, levelUpText, levelUpTextX, textY,
+                    packARGB(255, 215, 0, la), false);
+        }
 
         // ─── 获得经验飘字 ───
         if (lastGainedExp > 0 && animState != AnimState.HIDDEN) {
