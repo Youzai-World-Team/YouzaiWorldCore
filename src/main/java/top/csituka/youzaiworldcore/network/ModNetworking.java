@@ -46,6 +46,8 @@ public class ModNetworking {
         DebugLogger.info("ModNetworking", "Registered clientbound packet: TeleportAnchorListPayload");
         PayloadTypeRegistry.clientboundPlay().register(TeleportAnchorOpenNamePayload.TYPE, TeleportAnchorOpenNamePayload.STREAM_CODEC);
         DebugLogger.info("ModNetworking", "Registered clientbound packet: TeleportAnchorOpenNamePayload");
+        PayloadTypeRegistry.clientboundPlay().register(LevelExpSyncPayload.ID, LevelExpSyncPayload.STREAM_CODEC);
+        DebugLogger.info("ModNetworking", "Registered clientbound packet: LevelExpSyncPayload");
         PayloadTypeRegistry.serverboundPlay().register(TeleportAnchorTeleportPayload.TYPE, TeleportAnchorTeleportPayload.STREAM_CODEC);
         DebugLogger.info("ModNetworking", "Registered serverbound packet: TeleportAnchorTeleportPayload");
         PayloadTypeRegistry.serverboundPlay().register(TeleportAnchorDeletePayload.TYPE, TeleportAnchorDeletePayload.STREAM_CODEC);

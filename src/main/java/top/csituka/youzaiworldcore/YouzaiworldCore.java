@@ -29,6 +29,7 @@ import top.csituka.youzaiworldcore.account.data.AccountDataStorage;
 import top.csituka.youzaiworldcore.command.ReloadCommand;
 import top.csituka.youzaiworldcore.config.ServerExternalSettings;
 import top.csituka.youzaiworldcore.luckperms.LuckPermsHelper;
+import top.csituka.youzaiworldcore.skill.AdventureLevelManager;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 import top.csituka.youzaiworldcore.mana.ManaTickHandler;
 import top.csituka.youzaiworldcore.block.ModBlocks;
@@ -141,6 +142,12 @@ public class YouzaiworldCore implements ModInitializer {
         LOGGER.info("账户系统已初始化");
         DebugLogger.exiting("YouzaiworldCore", "AccountSystem.init");
 
+        // ===== 初始化冒险等级系统 =====
+        DebugLogger.entering("YouzaiworldCore", "AdventureLevelSystem.init");
+        AdventureLevelManager.initialize();
+        LOGGER.info("冒险等级系统已初始化");
+        DebugLogger.exiting("YouzaiworldCore", "AdventureLevelSystem.init");
+
         DebugLogger.info("YouzaiworldCore", "注册矿物生成...");
         BiomeModifications.addFeature(
                 BiomeSelectors.foundInOverworld(),
@@ -168,8 +175,8 @@ public class YouzaiworldCore implements ModInitializer {
         LOGGER.info("隐身功能已初始化");
         DebugLogger.exiting("YouzaiworldCore", "InvisibilitySystem.init");
 
-        DebugLogger.info("YouzaiworldCore", "初始化传送锚点村庄遗迹注入...");
-        VillageStructureInjector.init();
+        //DebugLogger.info("YouzaiworldCore", "初始化传送锚点村庄遗迹注入...");
+        //VillageStructureInjector.init();
 
         // ===== 初始化维度池系统 =====
         DebugLogger.entering("YouzaiworldCore", "DimensionPoolSystem.init");

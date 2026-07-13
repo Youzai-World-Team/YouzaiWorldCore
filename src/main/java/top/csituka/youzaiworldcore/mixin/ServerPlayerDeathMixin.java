@@ -17,10 +17,11 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import top.csituka.youzaiworldcore.item.ModItems;
+import top.csituka.youzaiworldcore.skill.AdventureLevelManager;
 
 /**
  * 混合注入 {@link ServerPlayer#die(DamageSource)}，
- * 在玩家死亡时处理「守护之心」的消耗、消息提示、成就授予与数量警告。
+ * 在玩家死亡时处理「守护之心」的消耗、消息提示、成就授予、数量警告与冒险经验发放。
  *
  * <p>规则：</p>
  * <ul>
@@ -31,6 +32,12 @@ import top.csituka.youzaiworldcore.item.ModItems;
  *       <li>玩家背包无守护之心 → 正常掉落物品</li>
  *     </ul>
  *   </li>
+ * </ul>
+ *
+ * <p>冒险经验：</p>
+ * <ul>
+ *   <li>普通死亡 → +10 冒险经验</li>
+ *   <li>守护之心保护 → +50 冒险经验（替代普通死亡经验）</li>
  * </ul>
  */
 @Mixin(ServerPlayer.class)
@@ -52,8 +59,15 @@ public class ServerPlayerDeathMixin {
     private boolean yzwc$hadHeartBeforeDeath = false;
 
     /**
+     * 标记本次死亡是否应发放普通死亡经验（+10）。
+     * 当玩家没有守护之心保护时为 true。
+     */
+    @Unique
+    private boolean yzwc$grantDeathExp = false;
+
+    /**
      * 在 {@link ServerPlayer#die(DamageSource)} 执行之初注入，
-     * 仅记录守护之心状态，<b>不消耗</b>（消耗推迟到 TAIL 注入）。
+     * 仅记录守护之心状态与经验标记，<b>不消耗</b>（消耗推迟到 TAIL 注入）。
      *
      * <p>执行顺序：HEAD(记录) → {@code dropEquipment()} 检测 → TAIL(消耗)</p>
      */
@@ -61,20 +75,26 @@ public class ServerPlayerDeathMixin {
     private void youzaiworldcore$onDie(DamageSource damageSource, CallbackInfo ci) {
         ServerPlayer player = (ServerPlayer) (Object) this;
 
-        // 旁观者模式不处理
+        // 旁观者模式不处理（不发放经验，不处理守护之心）
         if (player.isSpectator()) {
             yzwc$hadHeartBeforeDeath = false;
+            yzwc$grantDeathExp = false;
             return;
         }
 
         // keepInventory=true 时，原版已保留物品栏，守护之心不消耗
-        if (server.getGameRules().get(GameRules.KEEP_INVENTORY)) {
+        // 但死亡本身仍应发放经验
+        boolean keepInventory = server.getGameRules().get(GameRules.KEEP_INVENTORY);
+        if (keepInventory) {
             yzwc$hadHeartBeforeDeath = false;
+            yzwc$grantDeathExp = true; // keepInventory 时也发放死亡经验
             return;
         }
 
         // 记录消耗前是否有守护之心（暂不消耗，PlayerDropEquipmentMixin 需要检测到它）
         yzwc$hadHeartBeforeDeath = hasHeartInInventory(player);
+        // 有守护之心 → 发放守护之心经验（+50）；无守护之心 → 发放普通死亡经验（+10）
+        yzwc$grantDeathExp = !yzwc$hadHeartBeforeDeath;
     }
 
     /**
@@ -140,7 +160,7 @@ public class ServerPlayerDeathMixin {
 
     /**
      * 在 {@link ServerPlayer#die(DamageSource)} 执行完毕后注入，
-     * 此时 {@code dropEquipment()} 已执行完毕，可以安全地消耗守护之心。
+     * 此时 {@code dropEquipment()} 已执行完毕，可以安全地消耗守护之心并发放经验。
      *
      * <p>推迟到此阶段才消耗，是为了让 {@link PlayerDropEquipmentMixin}
      * 在 {@code dropEquipment()} 检测时仍能发现背包中的守护之心并取消掉落。</p>
@@ -149,31 +169,35 @@ public class ServerPlayerDeathMixin {
     private void youzaiworldcore$afterDie(DamageSource damageSource, CallbackInfo ci) {
         ServerPlayer player = (ServerPlayer) (Object) this;
 
-        // 只有 HEAD 记录到有守护之心才需要处理
-        if (!yzwc$hadHeartBeforeDeath) {
-            return;
+        // 处理守护之心消耗
+        if (yzwc$hadHeartBeforeDeath) {
+            // 消耗 1 个守护之心
+            consumeOneHeart(player);
+
+            // 发送消耗提醒
+            player.sendSystemMessage(
+                    Component.translatable("youzaiworldcore.tellraw.format")
+                            .append(Component.translatable("item.youzaiworldcore.heart_of_guardianship.consumed"))
+            );
+
+            // 授予成就（used_heart_of_guardianship）
+            AdvancementHolder advancement = server.getAdvancements().get(
+                    Identifier.fromNamespaceAndPath("youzaiworldcore", "youzaiworld/used_heart_of_guardianship")
+            );
+            if (advancement != null) {
+                player.getAdvancements().award(advancement, "manual_grant");
+            }
+
+            // 消耗后统计剩余守护之心数量，触发相应阈值警告
+            int remaining = countHearts(player);
+            warnIfThreshold(player, remaining);
+
+            // 发放冒险经验：守护之心保护 → +50
+            AdventureLevelManager.grantExp(player, AdventureLevelManager.EXP_HEART_OF_GUARDIANSHIP);
+        } else if (yzwc$grantDeathExp) {
+            // 发放冒险经验：普通死亡 → +10
+            AdventureLevelManager.grantExp(player, AdventureLevelManager.EXP_DEATH);
         }
-
-        // 消耗 1 个守护之心
-        consumeOneHeart(player);
-
-        // 发送消耗提醒
-        player.sendSystemMessage(
-                Component.translatable("youzaiworldcore.tellraw.format")
-                        .append(Component.translatable("item.youzaiworldcore.heart_of_guardianship.consumed"))
-        );
-
-        // 授予成就（used_heart_of_guardianship）
-        AdvancementHolder advancement = server.getAdvancements().get(
-                Identifier.fromNamespaceAndPath("youzaiworldcore", "youzaiworld/used_heart_of_guardianship")
-        );
-        if (advancement != null) {
-            player.getAdvancements().award(advancement, "manual_grant");
-        }
-
-        // 消耗后统计剩余守护之心数量，触发相应阈值警告
-        int remaining = countHearts(player);
-        warnIfThreshold(player, remaining);
     }
 
     /**

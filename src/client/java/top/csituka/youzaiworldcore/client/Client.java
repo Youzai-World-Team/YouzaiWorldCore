@@ -14,6 +14,7 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.nio.ByteBuffer;
 import top.csituka.youzaiworldcore.client.hud.ManaHudRenderer;
+import top.csituka.youzaiworldcore.client.hud.AdventureLevelHudRenderer;
 import top.csituka.youzaiworldcore.block.entity.ModBlockEntities;
 import top.csituka.youzaiworldcore.client.renderer.block.FlyBeaconBlockEntityRenderer;
 import top.csituka.youzaiworldcore.client.screen.block.DecompositionTableScreen;
@@ -39,6 +40,8 @@ public class Client implements ClientModInitializer {
 
         DebugLogger.info("Client", "注册魔力条 HUD 渲染...");
         ManaHudRenderer.register();
+        DebugLogger.info("Client", "注册冒险等级 HUD 渲染...");
+        AdventureLevelHudRenderer.register();
 
         // 方块实体渲染器注册
         DebugLogger.info("Client", "注册飞行信标方块实体渲染器...");

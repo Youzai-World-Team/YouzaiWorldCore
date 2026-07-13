@@ -14,7 +14,10 @@
     "invisibility.BarrelBlockEntityAnimationMixin",
     "invisibility.EnderChestBlockEntityInteractionMixin",
     "invisibility.ShulkerBoxBlockEntityInteractionMixin",
-    "invisibility.DecoratedPotBlockWobbleMixin"
+    "invisibility.DecoratedPotBlockWobbleMixin",
+    "skill.BlockPlaceExpMixin",
+    "skill.AdvancementExpMixin",
+    "skill.TotemExpMixin"
   ],
   "injectors": {
     "defaultRequire": 1
