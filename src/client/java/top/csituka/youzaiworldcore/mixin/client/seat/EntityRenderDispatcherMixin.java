@@ -6,6 +6,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
 import net.minecraft.client.renderer.entity.EntityRenderer;
+import net.minecraft.client.renderer.entity.state.EntityRenderState;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import org.spongepowered.asm.mixin.Mixin;
@@ -34,17 +35,34 @@ public abstract class EntityRenderDispatcherMixin {
             at = @At("RETURN"),
             cancellable = true
     )
-    @SuppressWarnings("unchecked")
     private void fallbackRendererForSeat(Entity entity,
             CallbackInfoReturnable<EntityRenderer<?, ?>> cir) {
         if (entity.getType() == ModSeatEntities.SEAT
                 && cir.getReturnValue() == null) {
-            // 从注册表中获取 area_effect_cloud 的实体类型并借用其渲染器
-            EntityType<?> fallbackType = BuiltInRegistries.ENTITY_TYPE.getValue(
-                    Identifier.fromNamespaceAndPath("minecraft", "area_effect_cloud"));
-            if (fallbackType != null) {
-                cir.setReturnValue(getRenderers().get(fallbackType));
-            }
+            cir.setReturnValue(getFallbackRenderer());
         }
+    }
+
+    /**
+     * 拦截 EntityRenderState 重载——submit 阶段使用此路径查找渲染器。
+     */
+    @Inject(
+            method = "getRenderer(Lnet/minecraft/client/renderer/entity/state/EntityRenderState;)"
+                    + "Lnet/minecraft/client/renderer/entity/EntityRenderer;",
+            at = @At("RETURN"),
+            cancellable = true
+    )
+    private void fallbackRendererForSeatState(EntityRenderState state,
+            CallbackInfoReturnable<EntityRenderer<?, ?>> cir) {
+        if (state.entityType == ModSeatEntities.SEAT
+                && cir.getReturnValue() == null) {
+            cir.setReturnValue(getFallbackRenderer());
+        }
+    }
+
+    private EntityRenderer<?, ?> getFallbackRenderer() {
+        EntityType<?> fallbackType = BuiltInRegistries.ENTITY_TYPE.getValue(
+                Identifier.fromNamespaceAndPath("minecraft", "area_effect_cloud"));
+        return fallbackType != null ? getRenderers().get(fallbackType) : null;
     }
 }
