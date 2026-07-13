@@ -17,7 +17,8 @@
     "invisibility.DecoratedPotBlockWobbleMixin",
     "skill.BlockPlaceExpMixin",
     "skill.AdvancementExpMixin",
-    "skill.TotemExpMixin"
+    "skill.TotemExpMixin",
+    "seat.EntityVehicleAccessor"
   ],
   "injectors": {
     "defaultRequire": 1

@@ -18,7 +18,8 @@
     "AccessibilityOptionsScreenMixin",
     "ScreenAccessor",
     "WindowTitleMixin",
-    "GameRendererMixin"
+    "GameRendererMixin",
+    "seat.EntityRenderDispatcherMixin"
   ],
   "injectors": {
     "defaultRequire": 1

@@ -12,7 +12,10 @@
   ],
   "contributors": [
     "why",
-    "Everyone who has contributed to this project"
+    "不用珍珠的墨影",
+    "lucko",
+    "MDLC01",
+    "Fogg05"
   ],
   "contact": {
     "homepage": "https://mcyzw.top",
@@ -20,7 +23,7 @@
     "issues": "https://github.com/Youzai-World-Team/YouzaiWorldCore/issues"
   },
   "license": "Apache-2.0",
-  "icon": "mod_icon.png",
+  "icon": "icon.png",
   "environment": "*",
   "entrypoints": {
     "fabric-datagen": [
