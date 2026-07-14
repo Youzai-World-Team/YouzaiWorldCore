@@ -1,6 +1,8 @@
 {
-  "type": "minecraft:jigsaw",
+  "type": "moogs_structures:moogs_structures_generic_nether_jigsaw_structure",
   "biomes": "#youzaiworldcore:has_structure/the_nerther_teleport_anchor_ruins",
+  "land_search_direction": "HIGHEST_LAND",
+  "ledge_offset_y": 3,
   "max_distance_from_center": 80,
   "size": 1,
   "spawn_overrides": {},
