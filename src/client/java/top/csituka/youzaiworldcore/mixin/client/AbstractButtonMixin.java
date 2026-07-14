@@ -2,7 +2,7 @@ package top.csituka.youzaiworldcore.mixin.client;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.AbstractButton;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -10,13 +10,25 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
- * 替换原版标准按钮 {@link Button.Plain} 的渲染样式，
- * 使其与项目自定义 {@code TransparentButton} 视觉一致。
+ * 替换原版按钮样式，使其与项目自定义 {@code TransparentButton} 视觉一致。
  *
- * <h3>注入策略</h3>
- * 直接 mixin {@link Button.Plain#extractContents} 方法，
- * 替换全部背景 + 文字渲染逻辑。此方案仅影响 {@code Button.builder().build()} 创建的
- * 标准按钮（暂停菜单、选项界面等），不影响 {@code SpriteIconButton} 等图标按钮。
+ * <h3>Mixin 目标</h3>
+ * {@link AbstractButton}，影响所有子类：
+ * <ul>
+ *   <li>{@code Button.Plain} — 标准按钮（暂停菜单、确认对话框等）</li>
+ *   <li>{@code CycleButton} — 选项切换按钮（选项子页面中的各项设置）</li>
+ *   <li>{@code SpriteIconButton.CenteredIcon} — 纯图标按钮（仅背景受影响）</li>
+ *   <li>{@code SpriteIconButton.TextAndIcon} — 文字+图标按钮（仅背景受影响，
+ *       文字由子类自行渲染，不做修改）</li>
+ * </ul>
+ *
+ * <h3>双注入策略</h3>
+ * <ol>
+ *   <li><b>注入点 1</b>：{@link AbstractButton#extractDefaultSprite}
+ *       — 替换精灵背景为白底圆角矩形，同时缓存 {@code GuiGraphicsExtractor} 引用</li>
+ *   <li><b>注入点 2</b>：{@link AbstractButton#extractDefaultLabel}
+ *       — 使用注入点 1 缓存的引用，将文字替换为黑色居中文字</li>
+ * </ol>
  *
  * <h3>视觉效果（与 TransparentButton 一致）</h3>
  * <ul>
@@ -26,8 +38,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  *   <li>圆角半径：6px</li>
  * </ul>
  */
-@Mixin(Button.Plain.class)
+@Mixin(AbstractButton.class)
 public class AbstractButtonMixin {
+
+    // ==================== 样式常量 ====================
 
     private static final int BACKGROUND_COLOR = 0xFFFFFF;
     private static final int CORNER_RADIUS = 6;
@@ -42,30 +56,30 @@ public class AbstractButtonMixin {
     @Unique
     private float youzaiworldcore$currentHoverAlpha = NORMAL_ALPHA;
 
-    /**
-     * 替换 {@code Button.Plain.extractContents} 的全部渲染逻辑。
-     *
-     * <p>原版调用链：
-     * <pre>{@code
-     *   extractContents:
-     *     extractDefaultSprite(guiGraphics)        // → 精灵背景
-     *     collector = textRendererForWidget(...)     // → ActiveTextCollector
-     *     extractDefaultLabel(collector)             // → 浅色文字
-     * }</pre>
-     *
-     * <p>替换后：白底圆角矩形背景 + 黑色居中文字，风格与 {@code TransparentButton} 一致。</p>
-     */
-    @Inject(method = "extractContents(Lnet/minecraft/client/gui/GuiGraphicsExtractor;IIF)V",
-            at = @At("HEAD"),
-            cancellable = true)
-    private void youzaiworldcore$replaceContents(
-            GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick,
-            CallbackInfo ci
-    ) {
-        // 转换为目标类型以消除 IDE 误报（Mixin 运行时 this 即 Button.Plain 实例）
-        Button.Plain self = (Button.Plain) (Object) this;
+    // ==================== 注入点 1：背景精灵替换 ====================
 
-        // ============ 1. 背景：白底圆角矩形 ============
+    /**
+     * 缓存的 {@code GuiGraphicsExtractor} 引用。
+     * <p>在注入点 1 设置，在注入点 2 使用。满足以下前提：
+     * <ul>
+     *   <li>两个方法均在同一渲染帧、同一线程内顺序调用；</li>
+     *   <li>{@code extractDefaultSprite} 总在 {@code extractDefaultLabel} 之前执行；</li>
+     *   <li>Minecraft 渲染为单线程模型。</li>
+     * </ul>
+     * 若注入点 2 中此引用为 null（例如子类跳过了 {@code extractDefaultSprite}），
+     * 则回退到原版逻辑，不做替换。</p>
+     */
+    @Unique
+    private GuiGraphicsExtractor youzaiworldcore$cachedGuiGraphics;
+
+    /**
+     * 在 {@code extractDefaultSprite} 执行前注入，绘制自定义白底圆角矩形背景，
+     * 缓存 {@code GuiGraphicsExtractor} 供后续文字渲染使用，并取消原版精灵渲染。
+     */
+    @Inject(method = "extractDefaultSprite", at = @At("HEAD"), cancellable = true)
+    private void youzaiworldcore$replaceDefaultSprite(GuiGraphicsExtractor guiGraphics, CallbackInfo ci) {
+        this.youzaiworldcore$cachedGuiGraphics = guiGraphics;
+        AbstractButton self = this$youzaiworldcore$self();
 
         // 确定目标不透明度
         float targetAlpha;
@@ -86,7 +100,6 @@ public class AbstractButtonMixin {
         }
 
         // 叠加 AbstractWidget.alpha（用于上层淡入淡出动效）
-        // 使用 getAlpha() 而非 .alpha：后者为 protected 字段，跨包不可见
         float finalAlpha = youzaiworldcore$currentHoverAlpha * self.getAlpha();
         int backgroundColor = youzaiworldcore$colorWithAlpha(BACKGROUND_COLOR, finalAlpha);
 
@@ -98,10 +111,33 @@ public class AbstractButtonMixin {
                 backgroundColor
         );
 
-        // ============ 2. 文字：黑色居中 ============
+        ci.cancel();
+    }
 
+    // ==================== 注入点 2：文字渲染替换 ====================
+
+    /**
+     * 在 {@code extractDefaultLabel} 执行前注入，使用注入点 1 缓存的
+     * {@code GuiGraphicsExtractor} 绘制黑色居中文字。
+     *
+     * <p>若缓存为 null（调用方未经过 {@code extractDefaultSprite}），
+     * 则不做替换，回退到原版 {@code ActiveTextCollector} 文字渲染。
+     * 这在 {@code CycleButton} 使用自定义精灵时正确——自定义精灵需搭配原版浅色文字。</p>
+     */
+    @Inject(method = "extractDefaultLabel", at = @At("HEAD"), cancellable = true)
+    private void youzaiworldcore$replaceDefaultLabel(
+            net.minecraft.client.gui.ActiveTextCollector collector, CallbackInfo ci
+    ) {
+        GuiGraphicsExtractor guiGraphics = this.youzaiworldcore$cachedGuiGraphics;
+        if (guiGraphics == null) {
+            return; // 回退到原版
+        }
+
+        AbstractButton self = this$youzaiworldcore$self();
         var font = Minecraft.getInstance().font;
         var message = self.getMessage();
+
+        // 居中绘制
         int textWidth = font.width(message);
         int textX = self.getX() + (self.getWidth() - textWidth) / 2;
         int textY = self.getY() + (self.getHeight() - 8) / 2;
@@ -116,6 +152,15 @@ public class AbstractButtonMixin {
     }
 
     // ==================== 辅助方法 ====================
+
+    /**
+     * 将 {@code this} 转换为目标类型 {@link AbstractButton}，消除 IDE 误报。
+     * <p>Mixin 运行时 this 即 AbstractButton 子类实例，此转换是安全的。</p>
+     */
+    @Unique
+    private AbstractButton this$youzaiworldcore$self() {
+        return (AbstractButton) (Object) this;
+    }
 
     /**
      * 绘制圆角矩形（与 {@code TransparentButton.fillRoundedRect} 完全一致）。
