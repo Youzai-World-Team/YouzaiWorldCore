@@ -18,8 +18,6 @@
 
 </div>
 
----
-
 ## 📖 Project Overview
 
 **YouzaiWorldCore** is the core gameplay mod for the **Youzai World** Minecraft multiplayer server, built on the **Fabric** framework with deep integration of **LuckPerms** permission system and **Placeholder API**. The mod provides a comprehensive infrastructure for the server, covering account authentication, GUI menus, custom items and blocks, sit interaction, dimension pools, teleport anchors, mana system, adventure XP, invisibility management, and more.
@@ -83,7 +81,6 @@ A new mineral and tool set equivalent to diamond tier (durability 1800, speed 8.
 | **Void Staff** | Right-click to toggle flight; consumes 1 durability/sec (max 600) and hunger every 5s; auto-disables on depletion |
 | **Flame Staff** | Charged fire laser, costs 10 mana |
 | **Sky Star Staff** | Meteor attack, 10-block radius, costs 60 mana |
-| **Logo (Youzai World)** | Server welcome item |
 
 ### 6. Custom Blocks
 
@@ -126,6 +123,7 @@ Block-based player-owned teleport network — right-click to name, save, and rem
 - **Dimension Pool Isolation**: Records pool ID (`poolId`) on activation; validates pool membership on cross-pool teleport
 - **Editing**: Rename, reorder (up/down), delete, one-click coordinate copy to clipboard
 - **Persistence**: `SavedData`-based, survives server restarts
+- **World Generation**: Teleport anchor ruins naturally generate in the Overworld (14 biomes including forests/taiga/mountains/plains/swamps, 28-chunk spacing), Nether (18-chunk spacing), and End (end highlands/midlands, 22-chunk spacing), powered by Moog's Structure Lib
 - **Command**: `/yzwc teleport_anchor list [player]` with clickable teleport links
 
 ### 10. Dimension Pool System
@@ -348,6 +346,7 @@ The experimental feature system framework is fully implemented, supporting serve
 | Fabric API | 0.154.0+26.2 | Standard API |
 | ModMenu | 20.0.0-beta.4 | Mod menu integration |
 | Placeholder API | 3.1.0-beta.1+26.2 | Text placeholders |
+| Moog's Structure Lib | 3.0.4 | Teleport anchor ruin worldgen |
 | Fabric Permissions API | 0.6.1 (bundled) | Cross-mod permission API |
 | LuckPerms | 5.5 (suggested runtime) | Advanced permission control |
 
@@ -388,7 +387,7 @@ src/
 │   ├── effect/                           # Teleport FOV effect
 │   ├── higherchat/                       # Simple Voice Chat integration
 │   ├── hud/                              # Mana bar / adventure level HUD
-│   ├── mixin/client/                     # Client Mixins (title, options, pause, chat, loading, seat, etc.)
+│   ├── mixin/client/                     # Client Mixins (title, options, button, pause, chat, loading, seat, etc.; 17 total)
 │   ├── renderer/                         # Block/entity renderers
 │   └── screen/                           # GUI screens
 │       ├── MenuScreen.java               # Menu container
@@ -399,7 +398,7 @@ src/
 │
 └── main/resources/
     ├── assets/youzaiworldcore/           # Textures, models, language files
-    └── data/                             # Advancements, recipes, loot tables, dimensions
+    └── data/                             # Advancements, recipes, loot tables, dimensions, structures, structure sets, template pools
 
 .github/workflows/
 └── build.yml                             # CI/CD build workflow

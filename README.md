@@ -18,8 +18,6 @@
 
 </div>
 
----
-
 ## 📖 项目概述
 
 **YouzaiWorldCore** 是悠哉世界（Youzai World）Minecraft 多人服务器的核心玩法模组，基于 **Fabric** 框架开发，深度集成 **LuckPerms** 权限系统与 **Placeholder API**。模组为服务器提供完整的基础设施，涵盖账户认证、GUI 菜单、自定义物品与方块、坐姿交互、维度池、传送锚点、魔力系统、冒险经验、隐身管理等核心能力。
@@ -83,7 +81,6 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 | **凭虚法杖** | 右键切换飞行，每秒消耗 1 点耐久（最大 600），每 5 秒消耗饥饿值；耗尽自动关闭 |
 | **烈焰法杖** | 蓄力发射火焰激光，消耗 10 魔力 |
 | **星辰法杖** | 召唤陨石攻击，10 方块半径，消耗 60 魔力 |
-| **悠哉世界（Logo）** | 服务器欢迎物品 |
 
 ### 6. 自定义方块
 
@@ -126,6 +123,7 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 - **维度池隔离**：锚点激活时记录所在维度池（`poolId`），跨池传送进行归属校验
 - **编辑功能**：重命名、上移/下移排序、删除、一键复制坐标到剪贴板
 - **数据持久化**：基于 `SavedData`，服务端重启不丢失
+- **世界生成**：传送锚点遗迹在主世界（森林/针叶林/山地/平原/沼泽等 14 种生物群系，间距 28 chunks）、下界（间距 18 chunks）和末地（末地高地/末地内陆，间距 22 chunks）自然生成，基于 Moog's Structure Lib
 - **命令支持**：`/yzwc teleport_anchor list [player]` 列出传送点（含可点击传送链接）
 
 ### 10. 维度池系统
@@ -348,6 +346,7 @@ GitHub Actions 工作流（`.github/workflows/build.yml`）：Ubuntu / Windows /
 | Fabric API | 0.154.0+26.2 | Fabric 标准 API |
 | ModMenu | 20.0.0-beta.4 | 模组菜单集成 |
 | Placeholder API | 3.1.0-beta.1+26.2 | 文本占位符 |
+| Moog's Structure Lib | 3.0.4 | 传送锚点遗迹世界生成 |
 | Fabric Permissions API | 0.6.1（内置） | 跨模组权限 API |
 | LuckPerms | 5.5（建议运行时） | 高级权限控制 |
 
@@ -388,7 +387,7 @@ src/
 │   ├── effect/                           # 传送 FOV 效果
 │   ├── higherchat/                       # Simple Voice Chat 集成
 │   ├── hud/                              # 魔力条 / 冒险等级 HUD
-│   ├── mixin/client/                     # 客户端 Mixin（标题/选项/暂停/聊天/加载/座椅 等）
+│   ├── mixin/client/                     # 客户端 Mixin（标题/选项/按钮/暂停/聊天/加载/座椅 等，共 17 个）
 │   ├── renderer/                         # 方块/实体渲染器
 │   └── screen/                           # GUI 屏幕
 │       ├── MenuScreen.java               # 菜单容器
@@ -399,7 +398,7 @@ src/
 │
 └── main/resources/
     ├── assets/youzaiworldcore/           # 纹理、模型、语言文件
-    └── data/                             # 成就、配方、战利品表、维度
+    └── data/                             # 成就、配方、战利品表、维度、结构、结构集、模板池
 
 .github/workflows/
 └── build.yml                             # CI/CD 构建工作流
