@@ -52,6 +52,15 @@ repositories {
             includeGroup('com.terraformersmc')
         }
   }
+
+    // Modrinth Maven（Moog's Structure Lib）
+    maven {
+        name = "Modrinth"
+        url = "https://api.modrinth.com/maven"
+        content {
+            includeGroup("maven.modrinth")
+        }
+    }
 }
 
 dependencies {
@@ -70,6 +79,9 @@ dependencies {
 
     // ModMenu
     compileOnly "com.terraformersmc:modmenu:${project.modmenu_version}"
+
+    // Moog's Structure Lib
+    implementation "maven.modrinth:moogs-structure-lib:3.0.4"
 }
 
 processResources {
