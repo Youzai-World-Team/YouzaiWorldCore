@@ -19,7 +19,8 @@
     "ScreenAccessor",
     "WindowTitleMixin",
     "GameRendererMixin",
-    "seat.EntityRenderDispatcherMixin"
+    "seat.EntityRenderDispatcherMixin",
+    "AbstractButtonMixin"
   ],
   "injectors": {
     "defaultRequire": 1
