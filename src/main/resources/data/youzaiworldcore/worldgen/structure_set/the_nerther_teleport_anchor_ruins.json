@@ -1,0 +1,14 @@
+{
+  "placement": {
+    "type": "minecraft:random_spread",
+    "salt": 73915682,
+    "separation": 12,
+    "spacing": 28
+  },
+  "structures": [
+    {
+      "structure": "youzaiworldcore:the_nerther_teleport_anchor_ruins",
+      "weight": 1
+    }
+  ]
+}

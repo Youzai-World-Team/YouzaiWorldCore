@@ -2,6 +2,7 @@
   "values": [
     "#minecraft:is_forest",
     "#minecraft:is_taiga",
+    "#minecraft:is_mountain",
     "minecraft:plains",
     "minecraft:sunflower_plains",
     "minecraft:snowy_plains",
@@ -11,8 +12,7 @@
     "minecraft:windswept_gravelly_hills",
     "minecraft:windswept_forest",
     "minecraft:meadow",
-    "minecraft:dark_forest",
-    "minecraft:birch_forest",
-    "minecraft:old_growth_birch_forest"
+    "minecraft:swamp",
+    "minecraft:mushroom_fields"
   ]
 }

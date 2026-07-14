@@ -134,7 +134,7 @@ public class SeatEntity extends Entity {
 
     /**
      * 返回乘客相对于本实体位置的偏移量。
-     * 返回 (0, 0.2, 0) 使玩家略微高于方块表面，呈现自然坐姿。
+     * 返回 (0, 0, 0) 使玩家坐在方块表面上（半格高度）。
      */
     @Override
     @NonNull
@@ -143,7 +143,7 @@ public class SeatEntity extends Entity {
             @NonNull EntityDimensions dimensions,
             float partialTick
     ) {
-        return new Vec3(0.0, 0.2, 0.0);
+        return new Vec3(0.0, 0.0, 0.0);
     }
 
     // ======================== 物理 / 碰撞 ========================

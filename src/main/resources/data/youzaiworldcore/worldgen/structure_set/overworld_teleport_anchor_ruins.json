@@ -1,0 +1,14 @@
+{
+  "placement": {
+    "type": "minecraft:random_spread",
+    "salt": 21847593,
+    "separation": 20,
+    "spacing": 48
+  },
+  "structures": [
+    {
+      "structure": "youzaiworldcore:overworld_teleport_anchor_ruins",
+      "weight": 1
+    }
+  ]
+}

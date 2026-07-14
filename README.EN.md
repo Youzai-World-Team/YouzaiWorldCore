@@ -439,7 +439,7 @@ src/
 ## 🤝 Contributors
 
 **Core Authors**：Maskviva, ress2338396, zxabinbina, Youzai World Team  
-**Contributors**：Fogg05, lucko, MDLC01, why, 不用珍珠的墨影
+**Contributors**：byzzdemy, Fogg05, lucko, MDLC01, why
 
 ---
 

@@ -3,7 +3,7 @@
     {
       "element": {
         "element_type": "minecraft:single_pool_element",
-        "location": "youzaiworldcore:teleport_anchor_ruins",
+        "location": "youzaiworldcore:overworld_teleport_anchor_ruins",
         "processors": "minecraft:empty",
         "projection": "rigid"
       },

@@ -16,6 +16,7 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
  * 注册模式参照 {@code ModBlocks} / {@code ModBlockEntities}，
  * 使用 {@link Registry#register} 配合 {@link ResourceKey} 进行注册。
  */
+@SuppressWarnings("null")
 public class ModSeatEntities {
 
     /**
@@ -44,7 +45,6 @@ public class ModSeatEntities {
      * {@code build()} 接受 {@code ResourceKey<EntityType<?>>}，
      * 此处直接传递已声明的通配符 key 即可，无需泛型转型。
      */
-    @SuppressWarnings("unchecked")
     private static <T extends net.minecraft.world.entity.Entity> EntityType<T> register(
             String name, EntityType.Builder<T> builder
     ) {
