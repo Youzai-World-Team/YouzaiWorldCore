@@ -52,7 +52,7 @@ public class ReloadCommand {
 
         YouzaiworldCore.LOGGER.info("管理员 {} 正在重载模组...",
                 source.getTextName());
-        DebugLogger.info("ReloadCommand", "管理员 {} 正在重载模组", source.getTextName());
+        DebugLogger.info("ReloadCommand", "管理员 %s 正在重载模组", source.getTextName());
 
         // 重载账户数据存储
         int accountCount = AccountDataStorage.reload();

@@ -123,7 +123,7 @@ public class SitHandler implements UseBlockCallback {
         // 让玩家骑乘座椅实体（通过 SeatEntity.mountPlayer 绕过 canSerialize 校验）
         seat.mountPlayer(serverPlayer);
 
-        DebugLogger.info("SitHandler", "Player {} is now sitting at {}", player.getName().getString(), pos);
+        DebugLogger.info("SitHandler", "Player %s is now sitting at %s", player.getName().getString(), pos);
         DebugLogger.exiting("SitHandler", "interact", "SUCCESS");
         return InteractionResult.SUCCESS;
     }

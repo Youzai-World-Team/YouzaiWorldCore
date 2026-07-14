@@ -68,7 +68,7 @@ public class Client implements ClientModInitializer {
         top.csituka.youzaiworldcore.YouzaiworldCore.logToFile = clientLogToFile;
         top.csituka.youzaiworldcore.YouzaiworldCore.devModeEnabled =
                 top.csituka.youzaiworldcore.client.config.ClientExternalSettings.isDevModeEnabled();
-        DebugLogger.info("Client", "客户端初始化完成 (devMode={}, logToFile={})",
+        DebugLogger.info("Client", "客户端初始化完成 (devMode=%s, logToFile=%s)",
                 top.csituka.youzaiworldcore.YouzaiworldCore.devModeEnabled,
                 clientLogToFile);
 
@@ -143,7 +143,7 @@ public class Client implements ClientModInitializer {
                 try (GLFWImage.Buffer iconBuffer = GLFWImage.malloc(1)) {
                     iconBuffer.put(0, icon);
                     GLFW.glfwSetWindowIcon(windowHandle, iconBuffer);
-                    DebugLogger.info("Client", "窗口图标已设置为 jar_icon.png ({}x{})", width, height);
+                    DebugLogger.info("Client", "窗口图标已设置为 jar_icon.png (%sx%s)", width, height);
                 }
             }
 

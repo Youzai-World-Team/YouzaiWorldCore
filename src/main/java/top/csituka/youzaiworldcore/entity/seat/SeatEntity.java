@@ -101,7 +101,7 @@ public class SeatEntity extends Entity {
         ((ServerLevel) player.level()).getChunkSource()
                 .sendToTrackingPlayersAndSelf(this,
                         new ClientboundSetPassengersPacket(this));
-        DebugLogger.info("SeatEntity", "Player {} mounted on seat at {}",
+        DebugLogger.info("SeatEntity", "Player %s mounted on seat at %s",
                 player.getName().getString(), blockPosition());
     }
 

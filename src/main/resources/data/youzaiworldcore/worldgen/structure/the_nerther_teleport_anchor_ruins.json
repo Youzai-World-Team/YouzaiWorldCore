@@ -7,14 +7,14 @@
   "start_height": {
     "type": "minecraft:uniform",
     "min_inclusive": {
-      "absolute": 32
+      "absolute": 33
     },
     "max_inclusive": {
-      "absolute": 100
+      "absolute": 45
     }
   },
   "start_pool": "youzaiworldcore:the_nerther_teleport_anchor_ruins",
   "step": "surface_structures",
-  "terrain_adaptation": "none",
+  "terrain_adaptation": "beard_box",
   "use_expansion_hack": false
 }

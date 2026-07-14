@@ -115,7 +115,7 @@ public class ManaManager {
         if (!playerMana.containsKey(playerId)) {
             playerMana.put(playerId, MAX_MANA);
         }
-        DebugLogger.info("ManaManager", "初始化玩家 {} 的魔力为 {}/{}",
+        DebugLogger.info("ManaManager", "初始化玩家 %s 的魔力为 %s/%s",
                 player.getName().getString(), getMana(playerId), MAX_MANA);
     }
 

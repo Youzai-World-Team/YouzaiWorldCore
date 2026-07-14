@@ -171,7 +171,7 @@ public class YouzaiworldCore implements ModInitializer {
         InvisibilityTickHandler.register();
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
             if (handler.getPlayer() instanceof ServerPlayer serverPlayer) {
-                DebugLogger.info("YouzaiworldCore", "玩家断开连接: {}",
+                DebugLogger.info("YouzaiworldCore", "玩家断开连接: %s",
                         serverPlayer.getName().getString());
                 InvisibilityManager.onPlayerDisconnect(serverPlayer);
                 DimensionPoolManager.onPlayerDisconnect(serverPlayer);
@@ -190,7 +190,7 @@ public class YouzaiworldCore implements ModInitializer {
         DebugLogger.entering("YouzaiworldCore", "DimensionPoolEvents.register");
         net.fabricmc.fabric.api.entity.event.v1.ServerEntityLevelChangeEvents.AFTER_PLAYER_CHANGE_LEVEL.register(
             (player, origin, destination) -> {
-                DebugLogger.info("DimensionPoolManager", "玩家维度变化事件触发: {} -> {} -> {}",
+                DebugLogger.info("DimensionPoolManager", "玩家维度变化事件触发: %s -> %s -> %s",
                         player.getName().getString(),
                         origin.dimension().identifier().toString(),
                         destination.dimension().identifier().toString());
@@ -206,7 +206,7 @@ public class YouzaiworldCore implements ModInitializer {
         );
         net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents.AFTER_RESPAWN.register(
             (oldPlayer, newPlayer, alive) -> {
-                DebugLogger.info("DimensionPoolManager", "玩家复活事件触发: {} (alive={})",
+                DebugLogger.info("DimensionPoolManager", "玩家复活事件触发: %s (alive=%s)",
                         newPlayer.getName().getString(), alive);
                 DimensionPoolManager.onPlayerRespawn(oldPlayer, newPlayer, alive);
             }
@@ -367,7 +367,7 @@ public class YouzaiworldCore implements ModInitializer {
         int count = 0;
 
         for (ServerPlayer player : players) {
-            DebugLogger.info("YouzaiworldCore", "传送玩家 {} 到维度 {} 坐标 ({}, {}, {})",
+            DebugLogger.info("YouzaiworldCore", "传送玩家 %s 到维度 %s 坐标 (%s, %s, %s)",
                     player.getName().getString(), dimensionId, x, y, z);
             player.teleportTo(dimension, x + 0.5, y, z + 0.5, Set.of(), yRot, xRot, true);
             count++;
@@ -401,7 +401,7 @@ public class YouzaiworldCore implements ModInitializer {
         DebugLogger.branch("YouzaiworldCore", "验证菜单名称是否有效", true, menuName);
 
         ServerPlayNetworking.send(player, new OpenMenuPayload(menuName));
-        DebugLogger.info("YouzaiworldCore", "已向玩家 {} 发送打开菜单 {} 的数据包",
+        DebugLogger.info("YouzaiworldCore", "已向玩家 %s 发送打开菜单 %s 的数据包",
                 player.getName().getString(), menuName);
 
         source.sendSuccess(() ->
