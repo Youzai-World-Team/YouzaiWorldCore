@@ -20,7 +20,8 @@
     "WindowTitleMixin",
     "GameRendererMixin",
     "seat.EntityRenderDispatcherMixin",
-    "AbstractButtonMixin"
+    "AbstractButtonMixin",
+    "AbstractSliderButtonMixin"
   ],
   "injectors": {
     "defaultRequire": 1
