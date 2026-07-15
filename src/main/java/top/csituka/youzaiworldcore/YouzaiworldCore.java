@@ -7,6 +7,7 @@ import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.biome.v1.BiomeModifications;
 import net.fabricmc.fabric.api.biome.v1.BiomeSelectors;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.commands.CommandSourceStack;
@@ -56,6 +57,7 @@ import top.csituka.youzaiworldcore.item.tool.YzChainMiningTool;
 import top.csituka.youzaiworldcore.network.ModNetworking;
 import top.csituka.youzaiworldcore.network.OpenMenuPayload;
 import top.csituka.youzaiworldcore.screen.ModMenuTypes;
+import top.csituka.youzaiworldcore.worldgen.VillageStructureInjector;
 
 import java.util.Collection;
 import java.util.Set;
@@ -168,6 +170,13 @@ public class YouzaiworldCore implements ModInitializer {
                 GenerationStep.Decoration.UNDERGROUND_ORES,
                 RAW_YZ_BLOCK_PLACED_KEY
         );
+
+        // ===== 注册村庄传送锚点结构注入 =====
+        DebugLogger.entering("YouzaiworldCore", "VillageStructureInjector.register");
+        ServerLifecycleEvents.SERVER_STARTING.register(server ->
+                VillageStructureInjector.inject(server.registryAccess()));
+        LOGGER.info("村庄传送锚点结构注入已注册");
+        DebugLogger.exiting("YouzaiworldCore", "VillageStructureInjector.register");
 
         // ===== 初始化隐身功能 =====
         DebugLogger.entering("YouzaiworldCore", "InvisibilitySystem.init");

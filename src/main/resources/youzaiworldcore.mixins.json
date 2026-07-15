@@ -18,7 +18,8 @@
     "skill.BlockPlaceExpMixin",
     "skill.AdvancementExpMixin",
     "skill.TotemExpMixin",
-    "seat.EntityVehicleAccessor"
+    "seat.EntityVehicleAccessor",
+    "StructureTemplatePoolAccessor"
   ],
   "injectors": {
     "defaultRequire": 1
