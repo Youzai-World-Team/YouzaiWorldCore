@@ -48,7 +48,8 @@ public class AbstractSliderButtonMixin {
 
     // 滑块
     private static final int HANDLE_WIDTH = 8;
-    private static final int HANDLE_CORNER = 3;
+    private static final int HANDLE_CORNER = 4;
+    private static final int HANDLE_OVERHANG = 2;
     private static final float HANDLE_NORMAL = 0.80f;
     private static final float HANDLE_HOVER = 1.00f;
     private static final float HANDLE_DISABLED = 0.40f;
@@ -131,10 +132,12 @@ public class AbstractSliderButtonMixin {
             }
         }
 
-        // ---- 4. 滑块 (Thumb)：圆角矩形，通高 ----
+        // ---- 4. 滑块 (Thumb)：圆角矩形，上下微微突出轨道 ----
         int handleX = x + (int) (value * (w - HANDLE_WIDTH));
+        int handleY = y - HANDLE_OVERHANG;
+        int handleH = h + HANDLE_OVERHANG * 2;
         int handleColor = yzwc$color(yzwc$currentHandleAlpha * self.getAlpha());
-        yzwc$fillRoundedRect(guiGraphics, handleX, y, HANDLE_WIDTH, h, HANDLE_CORNER, handleColor);
+        yzwc$fillRoundedRect(guiGraphics, handleX, handleY, HANDLE_WIDTH, handleH, HANDLE_CORNER, handleColor);
 
         // ---- 5. 文字 ----
         var font = Minecraft.getInstance().font;
