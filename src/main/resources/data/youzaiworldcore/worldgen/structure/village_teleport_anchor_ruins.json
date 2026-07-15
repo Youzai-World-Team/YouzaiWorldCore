@@ -1,0 +1,18 @@
+{
+  "type": "moogs_structures:moogs_structures_generic_jigsaw_structure",
+  "biomes": "#youzaiworldcore:has_structure/village_teleport_anchor_ruins",
+  "max_distance_from_center": 80,
+  "project_start_to_heightmap": "WORLD_SURFACE_WG",
+  "size": 1,
+  "cannot_spawn_in_liquid": true,
+  "terrain_height_radius_check": 1,
+  "allowed_terrain_height_range": 3,
+  "spawn_overrides": {},
+  "start_height": {
+    "absolute": 0
+  },
+  "start_pool": "youzaiworldcore:village_teleport_anchor_ruins",
+  "step": "surface_structures",
+  "terrain_adaptation": "beard_thin",
+  "use_expansion_hack": false
+}
