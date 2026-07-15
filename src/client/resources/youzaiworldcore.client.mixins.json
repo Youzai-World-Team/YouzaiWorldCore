@@ -21,7 +21,8 @@
     "GameRendererMixin",
     "seat.EntityRenderDispatcherMixin",
     "AbstractButtonMixin",
-    "AbstractSliderButtonMixin"
+    "AbstractSliderButtonMixin",
+    "EditBoxMixin"
   ],
   "injectors": {
     "defaultRequire": 1
