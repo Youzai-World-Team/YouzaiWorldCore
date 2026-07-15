@@ -187,6 +187,12 @@ public class AbstractSliderButtonMixin {
     private static void yzwc$fillRoundedRect(
             GuiGraphicsExtractor g, int x, int y, int w, int h, int r, int color
     ) {
+        // 防止圆角半径超过矩形尺寸导致越界
+        r = Math.min(r, Math.min(w / 2, h / 2));
+        if (r <= 0) {
+            g.fill(x, y, x + w, y + h, color);
+            return;
+        }
         g.fill(x + r, y, x + w - r, y + h, color);
         g.fill(x, y + r, x + r, y + h - r, color);
         g.fill(x + w - r, y + r, x + w, y + h - r, color);
