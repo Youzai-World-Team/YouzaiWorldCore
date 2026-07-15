@@ -25,9 +25,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  *
  * <h3>交互状态</h3>
  * <ul>
- *   <li><b>正常</b>：填充 60%, 未填充 25%, 滑块 80%</li>
- *   <li><b>悬停/聚焦</b>：填充 75%, 未填充 30%, 滑块 100% (平滑 lerp)</li>
- *   <li><b>禁用</b>：填充 30%, 未填充 15%, 滑块 40%, 文字 #666</li>
+ *   <li><b>正常</b>：填充 45%, 未填充 20%, 滑块 85%</li>
+ *   <li><b>悬停/聚焦</b>：填充 55%, 未填充 25%, 滑块 100% (平滑 lerp)</li>
+ *   <li><b>禁用</b>：填充 22%, 未填充 12%, 滑块 35%, 文字 #666</li>
  * </ul>
  */
 @Mixin(AbstractSliderButton.class)
@@ -39,20 +39,20 @@ public class AbstractSliderButtonMixin {
 
     // 轨道
     private static final int TRACK_CORNER = 6;
-    private static final float TRACK_FILLED_NORMAL = 0.60f;
-    private static final float TRACK_FILLED_HOVER = 0.75f;
-    private static final float TRACK_FILLED_DISABLED = 0.30f;
-    private static final float TRACK_UNFILLED_NORMAL = 0.25f;
-    private static final float TRACK_UNFILLED_HOVER = 0.30f;
-    private static final float TRACK_UNFILLED_DISABLED = 0.15f;
+    private static final float TRACK_FILLED_NORMAL = 0.45f;
+    private static final float TRACK_FILLED_HOVER = 0.55f;
+    private static final float TRACK_FILLED_DISABLED = 0.22f;
+    private static final float TRACK_UNFILLED_NORMAL = 0.20f;
+    private static final float TRACK_UNFILLED_HOVER = 0.25f;
+    private static final float TRACK_UNFILLED_DISABLED = 0.12f;
 
-    // 滑块
+    // 滑块 — 明显高于轨道以建立清晰层次
     private static final int HANDLE_WIDTH = 8;
     private static final int HANDLE_CORNER = 4;
     private static final int HANDLE_OVERHANG = 2;
-    private static final float HANDLE_NORMAL = 0.80f;
+    private static final float HANDLE_NORMAL = 1.00f;
     private static final float HANDLE_HOVER = 1.00f;
-    private static final float HANDLE_DISABLED = 0.40f;
+    private static final float HANDLE_DISABLED = 0.35f;
 
     // 文字
     private static final int TEXT_COLOR = 0xFF000000;
