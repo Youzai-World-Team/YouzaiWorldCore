@@ -45,6 +45,7 @@ import top.csituka.youzaiworldcore.entity.seat.ModSeatEntities;
 import top.csituka.youzaiworldcore.event.AnvilRepairHandler;
 import top.csituka.youzaiworldcore.event.FlyBeaconTickHandler;
 import top.csituka.youzaiworldcore.event.SitHandler;
+import top.csituka.youzaiworldcore.event.TeleportAnchorInteractHandler;
 import top.csituka.youzaiworldcore.event.VoidStaffTickHandler;
 import top.csituka.youzaiworldcore.feature.ExperimentalFeatures;
 import top.csituka.youzaiworldcore.invisibility.InvisibilityManager;
@@ -134,6 +135,8 @@ public class YouzaiworldCore implements ModInitializer {
         AnvilRepairHandler.register();
         DebugLogger.info("YouzaiworldCore", "注册坐姿交互事件...");
         SitHandler.register();
+        DebugLogger.info("YouzaiworldCore", "注册传送锚点交互转发事件...");
+        TeleportAnchorInteractHandler.register();
         DebugLogger.info("YouzaiworldCore", "注册虚空法杖 Tick 事件...");
         VoidStaffTickHandler.register();
         DebugLogger.info("YouzaiworldCore", "注册魔力恢复 Tick 事件...");

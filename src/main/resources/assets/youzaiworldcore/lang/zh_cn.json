@@ -280,5 +280,7 @@
   "message.youzaiworldcore.teleport_anchor.copied": "§a坐标已复制到剪贴板：%s",
   "screen.youzaiworldcore.teleport_anchor.tooltip_move_up": "向上移动",
   "screen.youzaiworldcore.teleport_anchor.tooltip_move_down": "向下移动",
+  "screen.youzaiworldcore.teleport_anchor.tooltip_search": "搜索传送锚点",
+  "screen.youzaiworldcore.teleport_anchor.search_hint": "搜索传送锚点名称...",
   "message.youzaiworldcore.teleport_anchor.pool_mismatch": "§c无法跨维度池传送！目标传送点不在当前维度池中。"
 }

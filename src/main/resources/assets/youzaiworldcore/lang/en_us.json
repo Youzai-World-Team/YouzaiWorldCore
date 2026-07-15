@@ -280,5 +280,7 @@
   "message.youzaiworldcore.teleport_anchor.copied": "§aCoordinates copied to clipboard: %s",
   "screen.youzaiworldcore.teleport_anchor.tooltip_move_up": "Move up",
   "screen.youzaiworldcore.teleport_anchor.tooltip_move_down": "Move down",
+  "screen.youzaiworldcore.teleport_anchor.tooltip_search": "Search teleport anchors",
+  "screen.youzaiworldcore.teleport_anchor.search_hint": "Search teleport anchor name...",
   "message.youzaiworldcore.teleport_anchor.pool_mismatch": "§cCannot teleport across dimension pools! The target point is not in the current pool."
 }

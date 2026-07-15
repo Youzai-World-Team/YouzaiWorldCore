@@ -76,6 +76,8 @@ public class TeleportAnchorScreen extends Screen {
             YouzaiworldCore.MOD_ID, "textures/gui/teleport_moveup.png");
     private static final Identifier MOVE_DOWN_ICON = Identifier.fromNamespaceAndPath(
             YouzaiworldCore.MOD_ID, "textures/gui/teleport_movedown.png");
+    private static final Identifier SEARCH_ICON = Identifier.fromNamespaceAndPath(
+            YouzaiworldCore.MOD_ID, "textures/gui/teleport_search.png");
 
     private final List<TeleportAnchorData> points;
     @Nullable
@@ -99,6 +101,13 @@ public class TeleportAnchorScreen extends Screen {
     /** 平滑过渡进度 0..1：0=未展开，1=完全展开。 */
     private float editModeProgress = 0f;
 
+    /** 搜索模式：true 时显示搜索输入框，列表仅显示名称匹配的传送点。 */
+    private boolean searchMode = false;
+    private String searchQuery = "";
+    private EditBox searchBox;
+    /** 当前显示的传送点数量（搜索模式下可能少于 points.size()）。 */
+    private int displayPointCount = 0;
+
     // UI 组件
     private final List<TransparentButton> pointButtons = new ArrayList<>();
     private final List<TransparentButton> renameConfirmButtons = new ArrayList<>();
@@ -116,6 +125,8 @@ public class TeleportAnchorScreen extends Screen {
     private TextureIconButton moveUpButton;
     @Nullable
     private TextureIconButton moveDownButton;
+    @Nullable
+    private TextureIconButton searchButton;
     private EditBox renameEditBox;
 
     private int panelX;
@@ -139,18 +150,36 @@ public class TeleportAnchorScreen extends Screen {
         this.pointButtons.clear();
         this.renameConfirmButtons.clear();
         this.teleportButton = null;
+        this.copyButton = null;
         this.editToggleButton = null;
         this.renameButton = null;
         this.removeButton = null;
+        this.moveUpButton = null;
+        this.moveDownButton = null;
+        this.searchButton = null;
         this.renameEditBox = null;
+        this.searchBox = null;
+
+        // 搜索模式：构建过滤后的列表
+        List<TeleportAnchorData> displayPoints = points;
+        if (searchMode && searchQuery != null && !searchQuery.isEmpty()) {
+            String lower = searchQuery.toLowerCase();
+            displayPoints = points.stream()
+                    .filter(p -> p.name().toLowerCase().contains(lower))
+                    .toList();
+        }
+        displayPointCount = displayPoints.size();
 
         // 限制滚动偏移在有效范围内
-        int maxScroll = Math.max(0, points.size() - MAX_VISIBLE_ITEMS);
+        int maxScroll = Math.max(0, displayPoints.size() - MAX_VISIBLE_ITEMS);
         if (scrollOffset > maxScroll) scrollOffset = maxScroll;
         if (scrollOffset < 0) scrollOffset = 0;
 
-        int visibleCount = Math.min(points.size(), MAX_VISIBLE_ITEMS);
+        int visibleCount = Math.min(displayPoints.size(), MAX_VISIBLE_ITEMS);
         int listHeight = Math.max(0, visibleCount * (ITEM_HEIGHT + ITEM_GAP) - ITEM_GAP);
+
+        // 搜索框高度
+        int searchHeight = searchMode ? (22 + 4) : 0;
 
         int actionsHeight;
         if (confirmingDelete) {
@@ -161,17 +190,37 @@ public class TeleportAnchorScreen extends Screen {
             actionsHeight = BUTTON_HEIGHT + ACTIONS_Y_OFFSET;
         }
 
-        int totalHeight = TITLE_HEIGHT + PANEL_PADDING + listHeight + PANEL_PADDING + actionsHeight;
+        int totalHeight = TITLE_HEIGHT + PANEL_PADDING + searchHeight + listHeight + PANEL_PADDING + actionsHeight;
 
         panelX = (this.width - PANEL_WIDTH) / 2;
         panelY = (this.height - totalHeight) / 2;
-        actionsY = panelY + TITLE_HEIGHT + PANEL_PADDING + listHeight + PANEL_PADDING + ACTIONS_Y_OFFSET;
+        actionsY = panelY + TITLE_HEIGHT + PANEL_PADDING + searchHeight + listHeight + PANEL_PADDING + ACTIONS_Y_OFFSET;
+
+        // 搜索模式：构建搜索输入框
+        if (searchMode) {
+            int searchY = panelY + TITLE_HEIGHT + PANEL_PADDING;
+            searchBox = new EditBox(this.font,
+                    panelX + PANEL_PADDING, searchY,
+                    PANEL_WIDTH - PANEL_PADDING * 2, 18,
+                    Component.translatable("screen.youzaiworldcore.teleport_anchor.search_hint"));
+            searchBox.setMaxLength(32);
+            searchBox.setValue(searchQuery);
+            searchBox.setFocused(true);
+            searchBox.setResponder(text -> {
+                searchQuery = text;
+                scrollOffset = 0;
+                rebuildWidgets();
+            });
+            addRenderableWidget(searchBox);
+        }
 
         // 构建列表条目按钮
-        int buttonY = panelY + TITLE_HEIGHT + PANEL_PADDING;
+        int buttonY = panelY + TITLE_HEIGHT + PANEL_PADDING + searchHeight;
         for (int i = 0; i < visibleCount; i++) {
-            int pointIndex = scrollOffset + i;
-            TeleportAnchorData point = points.get(pointIndex);
+            int displayIndex = scrollOffset + i;
+            TeleportAnchorData point = displayPoints.get(displayIndex);
+            // 在原始 points 中查找该点的索引
+            int pointIndex = points.indexOf(point);
             boolean isSelected = (pointIndex == selectedIndex);
 
             String label = formatPointLabel(point);
@@ -288,6 +337,7 @@ public class TeleportAnchorScreen extends Screen {
         int editX = panelX + PANEL_WIDTH - PANEL_PADDING - ICON_BUTTON_SIZE;
         // 复制按钮默认在编辑按钮左侧；编辑模式展开时再往左移动腾出空间
         int copyX = editX - ICON_BUTTON_SIZE - EDIT_GAP;
+        int searchX = copyX - ICON_BUTTON_SIZE - EDIT_GAP;
         Identifier editIcon = editMode ? BACK_ICON : EDIT_ICON;
         Component editTooltip = Component.translatable(editMode
                 ? "screen.youzaiworldcore.teleport_anchor.back"
@@ -320,6 +370,7 @@ public class TeleportAnchorScreen extends Screen {
             int moveDownX = moveUpX - ICON_BUTTON_SIZE - EDIT_GAP;
             // 复制按钮随展开一同左移
             copyX = moveDownX - ICON_BUTTON_SIZE - EDIT_GAP;
+            searchX = copyX - ICON_BUTTON_SIZE - EDIT_GAP;
 
             renameButton = new TextureIconButton(
                     renameX, actionsY, ICON_BUTTON_SIZE, ICON_BUTTON_SIZE,
@@ -385,6 +436,22 @@ public class TeleportAnchorScreen extends Screen {
             if (!moveDownButton.active) moveDownButton.setExternalAlpha(0.3f);
             addRenderableWidget(moveDownButton);
         }
+
+        // 搜索按钮
+        searchButton = new TextureIconButton(
+                searchX, actionsY, ICON_BUTTON_SIZE, ICON_BUTTON_SIZE,
+                SEARCH_ICON,
+                Component.empty(),
+                Component.translatable("screen.youzaiworldcore.teleport_anchor.tooltip_search"),
+                () -> {
+                    searchMode = !searchMode;
+                    if (!searchMode) {
+                        searchQuery = "";
+                        scrollOffset = 0;
+                    }
+                    rebuildWidgets();
+                });
+        addRenderableWidget(searchButton);
 
         // 复制坐标按钮（在编辑模式展开逻辑之后创建，确保 X 坐标正确）
         copyButton = new TextureIconButton(
@@ -523,8 +590,8 @@ public class TeleportAnchorScreen extends Screen {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
-        if (points.size() > MAX_VISIBLE_ITEMS) {
-            int maxScroll = points.size() - MAX_VISIBLE_ITEMS;
+        if (displayPointCount > MAX_VISIBLE_ITEMS) {
+            int maxScroll = displayPointCount - MAX_VISIBLE_ITEMS;
             if (scrollY > 0) {
                 if (scrollOffset > 0) {
                     scrollOffset--;
@@ -578,15 +645,15 @@ public class TeleportAnchorScreen extends Screen {
         }
 
         // 滚动指示器
-        if (points.size() > MAX_VISIBLE_ITEMS) {
+        if (displayPointCount > MAX_VISIBLE_ITEMS) {
             int scrollbarX = panelX + PANEL_WIDTH - 4;
-            int scrollbarY = panelY + TITLE_HEIGHT + PANEL_PADDING;
+            int scrollbarY = panelY + TITLE_HEIGHT + PANEL_PADDING + (searchMode ? 26 : 0);
             int scrollbarHeight = MAX_VISIBLE_ITEMS * (ITEM_HEIGHT + ITEM_GAP) - ITEM_GAP;
             guiGraphics.fill(scrollbarX, scrollbarY, scrollbarX + 2, scrollbarY + scrollbarHeight, 0x40FFFFFF);
 
-            int maxScroll = points.size() - MAX_VISIBLE_ITEMS;
+            int maxScroll = displayPointCount - MAX_VISIBLE_ITEMS;
             if (maxScroll > 0) {
-                int thumbHeight = Math.max(10, scrollbarHeight * MAX_VISIBLE_ITEMS / points.size());
+                int thumbHeight = Math.max(10, scrollbarHeight * MAX_VISIBLE_ITEMS / displayPointCount);
                 int thumbY = scrollbarY + (scrollbarHeight - thumbHeight) * scrollOffset / maxScroll;
                 guiGraphics.fill(scrollbarX, thumbY, scrollbarX + 2, thumbY + thumbHeight, 0x80FFFFFF);
             }
@@ -630,10 +697,25 @@ public class TeleportAnchorScreen extends Screen {
                 return true;
             }
         }
-        // ESC 退出编辑模式
-        if (keyEvent.key() == 256 && editMode && !renameMode && !confirmingDelete) {
-            exitEditMode();
-            return true;
+        // 搜索模式下转发键盘输入
+        if (searchMode && searchBox != null && searchBox.isFocused()) {
+            if (searchBox.keyPressed(keyEvent)) {
+                return true;
+            }
+        }
+        // ESC 退出搜索或编辑模式
+        if (keyEvent.key() == 256) {
+            if (searchMode && !renameMode && !confirmingDelete) {
+                searchMode = false;
+                searchQuery = "";
+                scrollOffset = 0;
+                rebuildWidgets();
+                return true;
+            }
+            if (editMode && !renameMode && !confirmingDelete) {
+                exitEditMode();
+                return true;
+            }
         }
         return super.keyPressed(keyEvent);
     }
@@ -642,6 +724,11 @@ public class TeleportAnchorScreen extends Screen {
     public boolean charTyped(net.minecraft.client.input.CharacterEvent characterEvent) {
         if (renameMode && renameEditBox != null && renameEditBox.isFocused()) {
             if (renameEditBox.charTyped(characterEvent)) {
+                return true;
+            }
+        }
+        if (searchMode && searchBox != null && searchBox.isFocused()) {
+            if (searchBox.charTyped(characterEvent)) {
                 return true;
             }
         }
@@ -656,6 +743,14 @@ public class TeleportAnchorScreen extends Screen {
                     && mouseButtonEvent.x() < renameEditBox.getX() + renameEditBox.getWidth()
                     && mouseButtonEvent.y() >= renameEditBox.getY()
                     && mouseButtonEvent.y() < renameEditBox.getY() + renameEditBox.getHeight()
+            );
+        }
+        if (searchMode && searchBox != null) {
+            searchBox.setFocused(
+                    mouseButtonEvent.x() >= searchBox.getX()
+                    && mouseButtonEvent.x() < searchBox.getX() + searchBox.getWidth()
+                    && mouseButtonEvent.y() >= searchBox.getY()
+                    && mouseButtonEvent.y() < searchBox.getY() + searchBox.getHeight()
             );
         }
         return super.mouseClicked(mouseButtonEvent, bl);

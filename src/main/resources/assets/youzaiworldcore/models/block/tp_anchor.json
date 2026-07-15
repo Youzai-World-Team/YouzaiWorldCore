@@ -1,6 +1,61 @@
 {
-  "parent": "minecraft:block/cube_all",
+  "parent": "minecraft:block/block",
   "textures": {
+    "particle": "youzaiworldcore:block/tp_anchor",
     "all": "youzaiworldcore:block/tp_anchor"
-  }
+  },
+  "elements": [
+    {
+      "__comment": "底座 Plinth — 完整方块底面 [0,0,0]→[16,4,16]",
+      "from": [0, 0, 0],
+      "to": [16, 4, 16],
+      "faces": {
+        "down":  { "uv": [0, 13, 16, 16], "texture": "#all" },
+        "up":    { "uv": [0, 13, 16, 16], "texture": "#all" },
+        "north": { "uv": [0, 13, 16, 16], "texture": "#all" },
+        "south": { "uv": [0, 13, 16, 16], "texture": "#all" },
+        "west":  { "uv": [0, 13, 16, 16], "texture": "#all" },
+        "east":  { "uv": [0, 13, 16, 16], "texture": "#all" }
+      }
+    },
+    {
+      "__comment": "柱身 Shaft — 等宽 [3,4,3]→[13,24,13]，UV 映射到纹理中央 V=0.20→0.80",
+      "from": [3, 4, 3],
+      "to": [13, 24, 13],
+      "faces": {
+        "down":  { "uv": [3, 3, 13, 13], "texture": "#all" },
+        "up":    { "uv": [3, 3, 13, 13], "texture": "#all" },
+        "north": { "uv": [3, 3, 13, 13], "texture": "#all" },
+        "south": { "uv": [3, 3, 13, 13], "texture": "#all" },
+        "west":  { "uv": [3, 3, 13, 13], "texture": "#all" },
+        "east":  { "uv": [3, 3, 13, 13], "texture": "#all" }
+      }
+    },
+    {
+      "__comment": "柱头装饰 Capital — [2,24,2]→[14,27,14]",
+      "from": [2, 24, 2],
+      "to": [14, 27, 14],
+      "faces": {
+        "down":  { "uv": [2, 1, 14, 3], "texture": "#all" },
+        "up":    { "uv": [2, 1, 14, 3], "texture": "#all" },
+        "north": { "uv": [2, 1, 14, 3], "texture": "#all" },
+        "south": { "uv": [2, 1, 14, 3], "texture": "#all" },
+        "west":  { "uv": [2, 1, 14, 3], "texture": "#all" },
+        "east":  { "uv": [2, 1, 14, 3], "texture": "#all" }
+      }
+    },
+    {
+      "__comment": "顶饰 Abacus — [4,27,4]→[12,32,12]",
+      "from": [4, 27, 4],
+      "to": [12, 32, 12],
+      "faces": {
+        "down":  { "uv": [4, 0, 12, 1], "texture": "#all" },
+        "up":    { "uv": [4, 0, 12, 1], "texture": "#all" },
+        "north": { "uv": [4, 0, 12, 1], "texture": "#all" },
+        "south": { "uv": [4, 0, 12, 1], "texture": "#all" },
+        "west":  { "uv": [4, 0, 12, 1], "texture": "#all" },
+        "east":  { "uv": [4, 0, 12, 1], "texture": "#all" }
+      }
+    }
+  ]
 }

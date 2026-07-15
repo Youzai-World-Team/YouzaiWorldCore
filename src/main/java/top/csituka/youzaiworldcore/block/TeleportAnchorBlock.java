@@ -5,6 +5,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.BaseEntityBlock;
@@ -15,6 +16,9 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.Shapes;
+import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jspecify.annotations.NonNull;
 import top.csituka.youzaiworldcore.block.entity.TeleportAnchorBlockEntity;
 import top.csituka.youzaiworldcore.data.TeleportAnchorManager;
@@ -58,6 +62,38 @@ public class TeleportAnchorBlock extends BaseEntityBlock {
     @Override
     public BlockEntity newBlockEntity(@NonNull BlockPos pos, @NonNull BlockState state) {
         return new TeleportAnchorBlockEntity(pos, state);
+    }
+
+    // ---- 石柱碰撞箱 (2 格高) ----
+
+    /**
+     * 石柱的碰撞箱，由 4 个长方体组成（与 BER 几何体一致）。
+     * 底座满格 16x16x4（完整方块底面），柱身等宽从 y=4 到 y=32，总高 2 格。
+     * 注意：Y 超出 16 的部分 Minecraft 自动裁剪到 [0,16] 范围内。
+     */
+    private static final VoxelShape PILLAR_SHAPE = Shapes.or(
+            // 底座 Plinth: [0, 0, 0] → [16, 4, 16] — 完整方块底面
+            Block.box(0.0, 0.0, 0.0, 16.0, 4.0, 16.0),
+            // 柱身 Shaft: [3, 4, 3] → [13, 24, 13] — 等宽柱身
+            Block.box(3.0, 4.0, 3.0, 13.0, 24.0, 13.0),
+            // 柱头 Capital: [2, 24, 2] → [14, 27, 14] — 装饰柱头
+            Block.box(2.0, 24.0, 2.0, 14.0, 27.0, 14.0),
+            // 顶饰 Abacus: [4, 27, 4] → [12, 32, 12] — 顶部收口
+            Block.box(4.0, 27.0, 4.0, 12.0, 32.0, 12.0)
+    );
+
+    @Override
+    @NonNull
+    protected VoxelShape getShape(@NonNull BlockState state, @NonNull BlockGetter level,
+                                   @NonNull BlockPos pos, @NonNull CollisionContext context) {
+        return PILLAR_SHAPE;
+    }
+
+    @Override
+    @NonNull
+    protected VoxelShape getCollisionShape(@NonNull BlockState state, @NonNull BlockGetter level,
+                                            @NonNull BlockPos pos, @NonNull CollisionContext context) {
+        return PILLAR_SHAPE;
     }
 
     @Override
