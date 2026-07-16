@@ -3,6 +3,7 @@ package top.csituka.youzaiworldcore.client;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.MenuScreens;
@@ -15,6 +16,8 @@ import java.awt.image.BufferedImage;
 import java.nio.ByteBuffer;
 import top.csituka.youzaiworldcore.client.hud.ManaHudRenderer;
 import top.csituka.youzaiworldcore.client.hud.AdventureLevelHudRenderer;
+import top.csituka.youzaiworldcore.client.renderer.entity.AnimationSubtitleRenderer;
+import top.csituka.youzaiworldcore.entity.animation_subtitle.ModAnimationSubtitleEntities;
 import top.csituka.youzaiworldcore.block.entity.ModBlockEntities;
 import top.csituka.youzaiworldcore.client.renderer.block.FlyBeaconBlockEntityRenderer;
 import top.csituka.youzaiworldcore.client.renderer.block.TeleportAnchorBlockEntityRenderer;
@@ -49,6 +52,10 @@ public class Client implements ClientModInitializer {
         BlockEntityRenderers.register(ModBlockEntities.FLY_BEACON, FlyBeaconBlockEntityRenderer::new);
         DebugLogger.info("Client", "注册传送锚点方块实体渲染器...");
         BlockEntityRenderers.register(ModBlockEntities.TELEPORT_ANCHOR, TeleportAnchorBlockEntityRenderer::new);
+
+        // 实体渲染器注册
+        DebugLogger.info("Client", "注册动画字幕实体渲染器...");
+        EntityRendererRegistry.register(ModAnimationSubtitleEntities.ANIMATION_SUBTITLE, AnimationSubtitleRenderer::new);
 
         DebugLogger.info("Client", "注册菜单屏幕...");
         MenuScreens.register(ModMenuTypes.DECOMPOSITION_TABLE, DecompositionTableScreen::new);

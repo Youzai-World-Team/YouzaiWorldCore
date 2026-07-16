@@ -18,71 +18,63 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 村庄传送锚点结构注入器。
+ * 村庄传送锚点结构注入器 — town_centers 替换模式。
  *
- * <p>参考 Waystones mod 的 Template Pool 注入机制，在服务器启动时将传送锚点废墟
- * 结构直接替换原版村庄的 meeting point（钟所在的位置），使传送锚点作为村庄核心
- * 出现在每个村庄的正中央。</p>
+ * <p>将原版 5 种村庄的 {@code town_centers} 模板池替换为自定义 meeting point 结构。
+ * 每个自定义结构在原版 meeting point 基础上加入了传送锚点石柱，并保留了 Jigsaw 连接块，
+ * 确保后续 streets → houses 链条完整，村庄正常生成。</p>
  *
- * <h3>机制</h3>
- * <p>村庄 Jigsaw 生成以 {@code town_centers} 池为起点。将该池内容替换为仅含
- * 传送锚点结构的一元素，确保每个村庄中心必然生成传送锚点。</p>
- *
- * <h3>覆盖的村庄类型</h3>
+ * <h3>结构 NBT 命名</h3>
  * <ul>
- *   <li>plains (平原)</li>
- *   <li>desert (沙漠)</li>
- *   <li>savanna (热带草原)</li>
- *   <li>snowy (雪原)</li>
- *   <li>taiga (针叶林)</li>
+ *   <li>{@code plains_village_teleport_anchor_ruins.nbt} — plains</li>
+ *   <li>{@code desert_village_teleport_anchor_ruins.nbt} — desert</li>
+ *   <li>{@code savanna_village_teleport_anchor_ruins.nbt} — savanna</li>
+ *   <li>{@code snowy_village_teleport_anchor_ruins.nbt} — snowy</li>
+ *   <li>{@code taiga_village_teleport_anchor_ruins.nbt} — taiga</li>
  * </ul>
  */
 @SuppressWarnings("null")
 public final class VillageStructureInjector {
 
-    /** minecraft:empty 处理器列表的 ResourceKey */
     private static final ResourceKey<StructureProcessorList> EMPTY_PROCESSOR_LIST_KEY =
             ResourceKey.create(Registries.PROCESSOR_LIST,
                     Identifier.fromNamespaceAndPath("minecraft", "empty"));
 
-    /** 村庄传送锚点结构的命名空间路径 */
-    private static final String TP_ANCHOR_STRUCTURE_PATH = "youzaiworldcore:villige_teleport_anchor_ruins";
+    private static final String STRUCTURE_PREFIX = "youzaiworldcore:";
 
-    /** 5 种原版村庄的 town_centers 池 — 村庄 Jigsaw 的生成起点 */
-    private static final String[] TOWN_CENTER_POOLS = {
-            "village/plains/town_centers",
-            "village/desert/town_centers",
-            "village/savanna/town_centers",
-            "village/snowy/town_centers",
-            "village/taiga/town_centers"
+    /** 村庄类型 → 结构 NBT 名称 映射 */
+    private static final String[] TOWN_CENTER_ENTRIES = {
+            "plains_village_teleport_anchor_ruins",
+            "desert_village_teleport_anchor_ruins",
+            "savanna_village_teleport_anchor_ruins",
+            "snowy_village_teleport_anchor_ruins",
+            "taiga_village_teleport_anchor_ruins",
     };
 
-    private VillageStructureInjector() {
-        // 工具类，禁止实例化
+    /** 结构名到村庄池路径的映射（通过提取前缀） */
+    private static String toPoolPath(String structureName) {
+        String prefix = structureName.split("_")[0];
+        return "village/" + prefix + "/town_centers";
     }
 
+    private VillageStructureInjector() {}
+
     /**
-     * 替换所有原版村庄的 town_centers 池为传送锚点结构。
-     *
-     * <p>应在 {@code ServerLifecycleEvents.SERVER_STARTING} 阶段调用，
-     * 此时 Dynamic Registries 已加载但世界生成尚未开始。</p>
+     * 替换所有原版村庄的 town_centers 池为含传送锚点的自定义 meeting point。
      *
      * @param registryAccess 服务器注册表访问接口
      */
     public static void inject(RegistryAccess registryAccess) {
-        YouzaiworldCore.LOGGER.info("[VillageStructureInjector] 开始替换原版村庄 meeting point 为传送锚点...");
+        YouzaiworldCore.LOGGER.info("[VillageStructureInjector] 开始替换原版村庄 town_centers...");
 
         Holder<StructureProcessorList> emptyProcessorList = registryAccess
                 .lookupOrThrow(Registries.PROCESSOR_LIST)
                 .getOrThrow(EMPTY_PROCESSOR_LIST_KEY);
 
-        LegacySinglePoolElement tpAnchorElement = StructurePoolElement
-                .legacy(TP_ANCHOR_STRUCTURE_PATH, emptyProcessorList)
-                .apply(StructureTemplatePool.Projection.RIGID);
-
         int successCount = 0;
 
-        for (String poolPath : TOWN_CENTER_POOLS) {
+        for (String structureName : TOWN_CENTER_ENTRIES) {
+            String poolPath = toPoolPath(structureName);
             Identifier poolId = Identifier.withDefaultNamespace(poolPath);
 
             StructureTemplatePool pool = registryAccess
@@ -91,26 +83,29 @@ public final class VillageStructureInjector {
                     .orElse(null);
 
             if (pool == null) {
-                YouzaiworldCore.LOGGER.warn("[VillageStructureInjector] 未找到 town_centers 池: {}", poolId);
+                YouzaiworldCore.LOGGER.warn("[VillageStructureInjector] 未找到: {}", poolId);
                 continue;
             }
 
+            LegacySinglePoolElement element = StructurePoolElement
+                    .legacy(STRUCTURE_PREFIX + structureName, emptyProcessorList)
+                    .apply(StructureTemplatePool.Projection.RIGID);
+
             StructureTemplatePoolAccessor accessor = (StructureTemplatePoolAccessor) pool;
 
-            // 用传送锚点元素完全替换池内容
-            List<Pair<StructurePoolElement, Integer>> newWeighted = new ArrayList<>();
-            newWeighted.add(new Pair<>(tpAnchorElement, 1));
-            accessor.setRawTemplates(newWeighted);
+            List<Pair<StructurePoolElement, Integer>> weighted = new ArrayList<>();
+            weighted.add(new Pair<>(element, 1));
+            accessor.setRawTemplates(weighted);
 
-            ObjectArrayList<StructurePoolElement> newFlat = new ObjectArrayList<>();
-            newFlat.add(tpAnchorElement);
-            accessor.setTemplates(newFlat);
+            ObjectArrayList<StructurePoolElement> flat = new ObjectArrayList<>();
+            flat.add(element);
+            accessor.setTemplates(flat);
 
             successCount++;
             YouzaiworldCore.LOGGER.info("[VillageStructureInjector] 已替换: {}", poolId);
         }
 
-        YouzaiworldCore.LOGGER.info("[VillageStructureInjector] 完成: 成功替换 {}/{} 个村庄的 meeting point",
-                successCount, TOWN_CENTER_POOLS.length);
+        YouzaiworldCore.LOGGER.info("[VillageStructureInjector] 完成: 替换 {}/{} 个村庄 town_centers",
+                successCount, TOWN_CENTER_ENTRIES.length);
     }
 }

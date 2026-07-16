@@ -4,6 +4,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.ChatScreen;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.gui.screens.inventory.CreativeModeInventoryScreen;
 import net.minecraft.util.Mth;
 import org.spongepowered.asm.mixin.Mixin;
@@ -49,9 +50,11 @@ public class EditBoxMixin {
         EditBox self = (EditBox) (Object) this;
         if (!self.isVisible()) return;
 
-        // 保留聊天栏和创造模式物品栏搜索框的原版样式
+        // 保留原版工作方块输入框的样式（容器/告示牌/聊天/创造搜索等）
         net.minecraft.client.gui.screens.Screen screen = Minecraft.getInstance().gui.screen();
-        if (screen instanceof ChatScreen || screen instanceof CreativeModeInventoryScreen) {
+        if (screen instanceof ChatScreen
+                || screen instanceof CreativeModeInventoryScreen
+                || screen instanceof AbstractContainerScreen) {
             return;
         }
 
