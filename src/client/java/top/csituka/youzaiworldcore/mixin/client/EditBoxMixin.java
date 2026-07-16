@@ -3,6 +3,8 @@ package top.csituka.youzaiworldcore.mixin.client;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.screens.ChatScreen;
+import net.minecraft.client.gui.screens.inventory.CreativeModeInventoryScreen;
 import net.minecraft.util.Mth;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -46,6 +48,12 @@ public class EditBoxMixin {
     ) {
         EditBox self = (EditBox) (Object) this;
         if (!self.isVisible()) return;
+
+        // 保留聊天栏和创造模式物品栏搜索框的原版样式
+        net.minecraft.client.gui.screens.Screen screen = Minecraft.getInstance().gui.screen();
+        if (screen instanceof ChatScreen || screen instanceof CreativeModeInventoryScreen) {
+            return;
+        }
 
         float target = !self.isActive() ? DISABLED_ALPHA
                 : self.isFocused() ? FOCUSED_ALPHA : NORMAL_ALPHA;
