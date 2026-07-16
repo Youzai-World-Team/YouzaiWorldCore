@@ -284,5 +284,9 @@
   "screen.youzaiworldcore.teleport_anchor.search_hint": "搜索传送锚点名称...",
   "message.youzaiworldcore.teleport_anchor.pool_mismatch": "§c无法跨维度池传送！目标传送点不在当前维度池中。",
   "youzaiworldcore.message.command.animation_subtitles.success": "§a动画字幕生成成功！",
-  "youzaiworldcore.message.command.animation_subtitles.failed": "§c动画字幕生成失败！"
+  "youzaiworldcore.message.command.animation_subtitles.failed": "§c动画字幕生成失败！",
+  "youzaiworldcore.message.gui.quit_title": "退出游戏",
+  "youzaiworldcore.message.gui.quit_message": "确定要退出游戏吗？",
+  "youzaiworldcore.message.gui.quit_confirm": "确定退出",
+  "youzaiworldcore.message.gui.quit_cancel": "取消"
 }

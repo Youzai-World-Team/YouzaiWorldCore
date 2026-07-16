@@ -181,11 +181,11 @@ public class TitleScreenMixin {
         renderables.add(optionsBtn);
         narratables.add(optionsBtn);
 
-        // 2c. 退出游戏
+        // 2c. 退出游戏（弹出确认对话框）
         TitleScreenTextButton quitBtn = new TitleScreenTextButton(
             0, 0, 0, BUTTON_HEIGHT,
             Component.translatable("menu.quit"),
-            () -> minecraft.stop()
+            () -> minecraft.gui.setScreen(new top.csituka.youzaiworldcore.client.screen.QuitConfirmationScreen())
         );
         childrenList.add(quitBtn);
         renderables.add(quitBtn);

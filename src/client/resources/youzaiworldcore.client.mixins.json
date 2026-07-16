@@ -22,7 +22,8 @@
     "seat.EntityRenderDispatcherMixin",
     "AbstractButtonMixin",
     "AbstractSliderButtonMixin",
-    "EditBoxMixin"
+    "EditBoxMixin",
+    "MinecraftQuitMixin"
   ],
   "injectors": {
     "defaultRequire": 1

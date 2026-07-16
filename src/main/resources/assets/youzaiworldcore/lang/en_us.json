@@ -284,5 +284,9 @@
   "screen.youzaiworldcore.teleport_anchor.search_hint": "Search teleport anchor name...",
   "message.youzaiworldcore.teleport_anchor.pool_mismatch": "§cCannot teleport across dimension pools! The target point is not in the current pool.",
   "youzaiworldcore.message.command.animation_subtitles.success": "§aAnimation subtitle spawned successfully!",
-  "youzaiworldcore.message.command.animation_subtitles.failed": "§cFailed to spawn animation subtitle!"
+  "youzaiworldcore.message.command.animation_subtitles.failed": "§cFailed to spawn animation subtitle!",
+  "youzaiworldcore.message.gui.quit_title": "Quit Game",
+  "youzaiworldcore.message.gui.quit_message": "Are you sure you want to quit?",
+  "youzaiworldcore.message.gui.quit_confirm": "Confirm Quit",
+  "youzaiworldcore.message.gui.quit_cancel": "Cancel"
 }
