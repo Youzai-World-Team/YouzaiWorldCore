@@ -22,6 +22,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import top.csituka.youzaiworldcore.client.higherchat.SharedStorage;
 import top.csituka.youzaiworldcore.client.hud.ManaHudRenderer;
 import top.csituka.youzaiworldcore.client.hud.AdventureLevelHudRenderer;
+import top.csituka.youzaiworldcore.client.pickup.DrawEntriesHandler;
 
 /**
  * Intercepts HUD icon rendering to track their vertical positions,
@@ -50,6 +51,7 @@ public abstract class HudMixin {
     private void onRenderManaBar(GuiGraphicsExtractor graphics, DeltaTracker deltaTracker, CallbackInfo ci) {
         ManaHudRenderer.render(graphics);
         AdventureLevelHudRenderer.render(graphics);
+        DrawEntriesHandler.INSTANCE.render(graphics);
     }
 
     /**

@@ -20,6 +20,7 @@
     "WindowTitleMixin",
     "GameRendererMixin",
     "seat.EntityRenderDispatcherMixin",
+    "PickUpNotifyMixin",
     "AbstractButtonMixin",
     "AbstractSliderButtonMixin",
     "EditBoxMixin",

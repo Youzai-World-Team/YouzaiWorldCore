@@ -16,6 +16,8 @@ import java.awt.image.BufferedImage;
 import java.nio.ByteBuffer;
 import top.csituka.youzaiworldcore.client.hud.ManaHudRenderer;
 import top.csituka.youzaiworldcore.client.hud.AdventureLevelHudRenderer;
+import top.csituka.youzaiworldcore.client.pickup.AddEntriesHandler;
+import top.csituka.youzaiworldcore.client.pickup.DrawEntriesHandler;
 import top.csituka.youzaiworldcore.client.renderer.entity.AnimationSubtitleRenderer;
 import top.csituka.youzaiworldcore.entity.animation_subtitle.ModAnimationSubtitleEntities;
 import top.csituka.youzaiworldcore.block.entity.ModBlockEntities;
@@ -46,6 +48,10 @@ public class Client implements ClientModInitializer {
         ManaHudRenderer.register();
         DebugLogger.info("Client", "注册冒险等级 HUD 渲染...");
         AdventureLevelHudRenderer.register();
+
+        DebugLogger.info("Client", "初始化拾取通知系统...");
+        DrawEntriesHandler.INSTANCE.setEnabled(true);
+        DebugLogger.info("Client", "拾取通知系统已初始化");
 
         // 方块实体渲染器注册
         DebugLogger.info("Client", "注册飞行信标方块实体渲染器...");
@@ -83,6 +89,12 @@ public class Client implements ClientModInitializer {
     }
 
     private void onClientTick(Minecraft client) {
+        // 消费拾取通知队列（从 Netty 线程捕获的数据在主线程上创建条目）
+        AddEntriesHandler.drainQueue();
+
+        // 更新拾取通知条目状态
+        DrawEntriesHandler.INSTANCE.tick();
+
         // 更新传送 FOV 动画（在游戏内且不论是否在 GUI 中都持续更新）
         TeleportFovEffect.tick();
 
