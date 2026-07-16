@@ -1,8 +1,5 @@
 package top.csituka.youzaiworldcore.entity.animation_subtitle;
 
-import net.minecraft.core.BlockPos;
-import net.minecraft.nbt.Tag;
-import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -64,11 +61,6 @@ public class AnimationSubtitleEntity extends Entity {
     public static final int DEFAULT_HOLD_TICKS = 100;
     /** 每字符掉落间隔 (tick) */
     private static final int DROP_INTERVAL = 1;
-    /** 浮动动画幅度 */
-    private static final float FLOAT_AMPLITUDE = 0.008F;
-    /** 浮动动画速度 */
-    private static final float FLOAT_SPEED = 0.08F;
-
     // ======================== 碎片物理参数 ========================
 
     private static final double GRAVITY = 0.018;
@@ -305,7 +297,6 @@ public class AnimationSubtitleEntity extends Entity {
             setDeltaMovement(delta);
 
             // 移动
-            Vec3 oldPos = position();
             move(MoverType.SELF, getDeltaMovement());
 
             // 地面碰撞

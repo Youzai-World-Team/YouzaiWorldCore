@@ -28,6 +28,7 @@ import java.util.List;
  *
  * <p>使用 MC 1.26.2 的新渲染管线：{@code extractRenderState → submit}。</p>
  */
+@SuppressWarnings("null")
 public class AnimationSubtitleRenderer extends EntityRenderer<AnimationSubtitleEntity, AnimationSubtitleEntityRenderState> {
 
     /** 弹出动画每字符间隔 (tick) */
@@ -144,7 +145,6 @@ public class AnimationSubtitleRenderer extends EntityRenderer<AnimationSubtitleE
         int droppedCount = state.droppedCount;
         visibleIdx = 0;
         int currentLine = 0;
-        int lineVisibleBase = 0;
 
         for (int i = 0; i < glyphs.size(); i++) {
             GlyphSlot slot = glyphs.get(i);
@@ -155,7 +155,6 @@ public class AnimationSubtitleRenderer extends EntityRenderer<AnimationSubtitleE
             String s = slot.styledText();
             if ("\n".equals(s)) {
                 currentLine++;
-                lineVisibleBase = visibleIdx + 1;
                 continue;
             }
 
@@ -334,9 +333,6 @@ public class AnimationSubtitleRenderer extends EntityRenderer<AnimationSubtitleE
                     false,
                     packedLight
             );
-
-            // 获取 RenderType
-            RenderType renderType = null;
 
             // 通过 GlyphVisitor 捕获 TextRenderable
             // 使用一个简单的收集器

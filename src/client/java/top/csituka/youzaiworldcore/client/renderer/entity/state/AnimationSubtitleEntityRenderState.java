@@ -1,10 +1,8 @@
 package top.csituka.youzaiworldcore.client.renderer.entity.state;
 
 import net.minecraft.client.renderer.entity.state.EntityRenderState;
-import net.minecraft.world.phys.Vec3;
 import top.csituka.youzaiworldcore.text.StyledTextUtil.GlyphSlot;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**

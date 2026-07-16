@@ -20,7 +20,7 @@
 
 ## 📖 项目概述
 
-**YouzaiWorldCore** 是悠哉世界（Youzai World）Minecraft 多人服务器的核心玩法模组，基于 **Fabric** 框架开发，深度集成 **LuckPerms** 权限系统与 **Placeholder API**。模组为服务器提供完整的基础设施，涵盖账户认证、GUI 菜单、自定义物品与方块、坐姿交互、维度池、传送锚点、魔力系统、冒险经验、隐身管理等核心能力。
+**YouzaiWorldCore** 是悠哉世界（Youzai World）Minecraft 多人服务器的核心玩法模组，基于 **Fabric** 框架开发，深度集成 **LuckPerms** 权限系统与 **Placeholder API**。模组为服务器提供完整的基础设施，涵盖账户认证、GUI 菜单、自定义物品与方块、坐姿交互、维度池、传送锚点、魔力系统、动画字幕、新手教程、冒险经验、隐身管理、语音聊天集成等 21 项核心能力。
 
 ### 目标用户群体
 
@@ -107,7 +107,7 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 全新的魔力值系统，为特殊法杖提供能量。
 
 - **最大魔力**：100
-- **自动恢复**：每 2 tick 恢复 1 点
+- **自动恢复**：每 20 tick（1 秒）恢复 1 点
 - **客户端 HUD**：`ManaHudRenderer` 渲染魔力条
 - **网络同步**：每 5 tick 通过 `ManaSyncPayload` 向客户端同步
 - **消耗途径**：烈焰法杖（10 魔力/次）、星辰法杖（60 魔力/次）
@@ -124,6 +124,7 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 - **编辑功能**：重命名、上移/下移排序、删除、一键复制坐标到剪贴板
 - **数据持久化**：基于 `SavedData`，服务端重启不丢失
 - **世界生成**：传送锚点遗迹在主世界（森林/针叶林/山地/平原/沼泽等 14 种生物群系，间距 28 chunks）、下界（间距 18 chunks）和末地（末地高地/末地内陆，间距 22 chunks）自然生成，基于 Moog's Structure Lib
+- **村庄结构注入**：通过 `VillageStructureInjector` 替换 5 种原版村庄（平原/沙漠/热带草原/雪原/针叶林）的 `town_centers` 模板池，加入自定义传送锚点集会点结构
 - **命令支持**：`/yzwc teleport_anchor list [player]` 列出传送点（含可点击传送链接）
 
 ### 10. 维度池系统
@@ -145,7 +146,20 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 - **8 个 Mixin**：抑制隐身玩家产生的粒子、音效、方块事件、容器动画（箱子/木桶/末影箱/潜影盒/饰纹陶罐）
 - **Tick 检查**：每 10 tick 检测是否退出创造模式，自动强制关闭
 
-### 12. 冒险经验系统
+### 12. 动画字幕系统
+
+基于实体的动态字幕系统，支持逐字弹出动画和碎片分裂效果，用于 NPC 对话、剧情演出等场景。
+
+- **实现方式**：`AnimationSubtitleEntity`（不可选中、不可推动、渲染距离 256 方块）
+- **双模式架构**：主字幕（逐字弹出 → 保持显示 → 逐字掉落为碎片）和碎片（物理下落 → 沉降 → 静止 → 缩小消失）
+- **命令**：`/yzwc function animation_subtitles`（需 OP 4 或对应权限）
+  - `set pos <pos> <rot1> <rot2> <text> [time]` — 在指定坐标与朝向上生成
+  - `set player_location <text> [time] [player]` — 在目标玩家面前 2 格处生成，自动匹配朝向
+- **格式码支持**：使用 `&` 作为 § 格式码前缀，支持颜色（0-9, a-f）和样式（k/l/m/n/o/r）
+- **动画参数**：弹出间隔 4 tick、弹出时长 8 tick、保持默认 100 tick（5 秒）、掉落间隔 1 tick
+- **碎片物理**：重力 0.018、地面弹力 0.22、沉降 6 tick、静止 90 tick、缩小 20 tick
+
+### 13. 冒险经验系统
 
 基于玩家行为的经验等级系统，等级提升提供额外属性增益。
 
@@ -154,15 +168,15 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 - **客户端 HUD**：`AdventureLevelHudRenderer` 渲染等级条
 - **网络同步**：通过 `LevelExpSyncPayload` 同步经验值
 
-### 13. 占位符系统
+### 14. 占位符系统
 
-集成 Placeholder API，注册 `%luckperms_*%` 命名空间，提供 20+ 个占位符（`prefix`、`suffix`、`groups`、`primary_group_name`、`has_permission_<node>`、`meta_<key>`、`in_group_<name>`、`expiry_time_<node>` 等）。
+集成 Placeholder API，注册 `%luckperms_*%` 命名空间，提供 **32 个占位符**（11 个静态 + 21 个动态参数型）：`prefix`、`suffix`、`meta`、`meta_all`、`prefix_element`、`suffix_element`、`context`、`groups`、`inherited_groups`、`primary_group_name`、`has_permission`、`inherits_permission`、`check_permission`、`in_group`、`inherits_group`、`on_track`、`has_groups_on_track`、`highest_group_by_weight`、`lowest_group_by_weight`、`highest_inherited_group_by_weight`、`lowest_inherited_group_by_weight`、`highest_group_weight`、`current_group_on_track`、`next_group_on_track`、`previous_group_on_track`、`first_group_on_tracks`、`last_group_on_tracks`、`expiry_time`、`inherited_expiry_time`、`group_expiry_time`、`inherited_group_expiry_time` 等。
 
-### 14. 权限系统
+### 15. 权限系统
 
-基于 LuckPerms 的细粒度权限控制，自动回退至原版 OP 等级检查。提供 19 个独立权限节点，含 `account.mgr.*`、`command.*`、`*` 通配符。
+基于 LuckPerms 的细粒度权限控制，自动回退至原版 OP 等级检查。提供 **20 个独立权限节点**，含 `account.mgr.*`、`command.*`、`*` 通配符。
 
-### 15. 创造模式标签页
+### 16. 创造模式标签页
 
 创造模式物品栏重新组织为 **5 个独立标签页**：
 
@@ -174,7 +188,7 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 | `youzai_utilities` | 悠哉实用物品 | 守护之心、Logo |
 | `youzai_kits` | 悠哉工具包 | 4 个预设潜影盒 |
 
-### 16. 预设物品系统
+### 17. 预设物品系统
 
 创造模式标签页中的四大预设潜影盒：
 
@@ -185,14 +199,14 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 | 不死图腾 | 黄色 | 27 个不死图腾 |
 | 炸药包 | 灰色 | 27 组 × 64 TNT |
 
-### 17. 成就系统
+### 18. 成就系统
 
 两大进度分支，共 20+ 个成就：
 
 - **悠哉世界**（主进度）：获取悠哉系列材料、制作工具、使用分解台/飞行信标/守护之心/凭虚法杖
 - **趣味小挑战**：蛋糕是谎言、美食家、最大幸运、回家之路等
 
-### 18. 调试与配置
+### 19. 调试与配置
 
 | 配置 | 文件位置 | 内容 |
 |------|---------|------|
@@ -200,7 +214,7 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 | 客户端外部设置 | `config/youzaiworldcore/client_external_settings.json` | `devModeEnabled`、`logLevel`（0-3）、调试地址/端口 |
 | DebugLogger | `util/DebugLogger` | 四级日志（OFF/BASIC/DETAILED/DEBUG），entering/exiting/branch/stateChange/exception 追踪 |
 
-### 19. CI/CD
+### 20. CI/CD
 
 GitHub Actions 工作流（`.github/workflows/build.yml`）：Ubuntu / Windows / macOS 三平台 JDK 25 自动构建，Linux 构建产物自动上传。
 
@@ -233,6 +247,11 @@ GitHub Actions 工作流（`.github/workflows/build.yml`）：Ubuntu / Windows /
 ├── function invisibility <true/false>
 │   ├── 权限：youzaiworldcore.command.function.invisibility（OP 4）
 │   └── 限制：必须在创造模式
+│
+├── function animation_subtitles
+│   ├── 权限：youzaiworldcore.command.function.animation_subtitles（OP 4）
+│   ├── set pos <pos> <rot1> <rot2> <text> [time]  → 在指定坐标生成动画字幕
+│   └── set player_location <text> [time] [player]  → 在目标面前生成动画字幕
 │
 ├── experimental_feature <id> [true/false [all|only <player>]]
 │   ├── 权限：.query（所有人）/ .self（所有人）/ .admin（OP 4）
@@ -272,6 +291,7 @@ GitHub Actions 工作流（`.github/workflows/build.yml`）：Ubuntu / Windows /
 | `youzaiworldcore.command.world_pool` | 维度池管理 | OP 4 |
 | `youzaiworldcore.command.teleport_anchor` | 传送锚点管理 | OP 4 |
 | `youzaiworldcore.command.function.invisibility` | 隐身功能 | OP 4 |
+| `youzaiworldcore.command.function.animation_subtitles` | 动画字幕 | OP 4 |
 | `youzaiworldcore.command.experimental_feature` | 实验性功能（基础） | 所有人 |
 | `youzaiworldcore.command.experimental_feature.query` | 查询 | 所有人 |
 | `youzaiworldcore.command.experimental_feature.self` | 自切换 | 所有人 |
@@ -369,6 +389,7 @@ src/
 │   ├── dimensionalinventories/           # 维度池系统
 │   ├── event/                            # 事件处理器（铁砧修复/飞行信标/虚空法杖/坐姿交互）
 │   ├── entity/seat/                      # 座椅实体系统
+│   ├── entity/animation_subtitle/        # 动画字幕实体系统
 │   ├── feature/                          # 实验性功能系统
 │   ├── invisibility/                     # 隐身系统
 │   ├── item/                             # 物品、工具、创造标签页、预设
@@ -376,18 +397,19 @@ src/
 │   ├── mana/                             # 魔力系统
 │   ├── mixin/                            # 主 Mixin（+ 隐身容器/粒子/音效 + 座椅 + 技能）
 │   ├── network/                          # 网络数据包（15 个）
-│   ├── placeholders/                     # Placeholder API 集成（24 个占位符）
+│   ├── placeholders/                     # Placeholder API 集成（32 个占位符）
 │   ├── screen/                           # 容器菜单
 │   ├── skill/                            # 冒险经验等级系统
+│   ├── worldgen/                         # 世界生成（村庄结构注入器）
 │   └── util/                             # DebugLogger 等工具
 │
 ├── client/java/top/csituka/youzaiworldcore/
 │   ├── client/Client.java                # 客户端入口
 │   ├── config/                           # 客户端外部设置
 │   ├── effect/                           # 传送 FOV 效果
-│   ├── higherchat/                       # Simple Voice Chat 集成
+│   ├── higherchat/                       # Simple Voice Chat 集成（HUD 图标位置跟踪，优化聊天框位置避免遮挡）
 │   ├── hud/                              # 魔力条 / 冒险等级 HUD
-│   ├── mixin/client/                     # 客户端 Mixin（标题/选项/按钮/暂停/聊天/加载/座椅 等，共 17 个）
+│   ├── mixin/client/                     # 客户端 Mixin（标题/选项/按钮/暂停/聊天/加载/座椅/渲染 等，共 19 个）
 │   ├── renderer/                         # 方块/实体渲染器
 │   └── screen/                           # GUI 屏幕
 │       ├── MenuScreen.java               # 菜单容器

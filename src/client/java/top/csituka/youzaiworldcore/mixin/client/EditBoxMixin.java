@@ -19,6 +19,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * 自行绘制背景 + 文字 + 光标，避免原版精灵/textY 依赖问题。
  */
 @Mixin(EditBox.class)
+@SuppressWarnings("null")
 public class EditBoxMixin {
 
     private static final int CORNER_RADIUS = 6;

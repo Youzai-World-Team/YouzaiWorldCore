@@ -3,7 +3,7 @@ package top.csituka.youzaiworldcore.client;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
+import net.minecraft.client.renderer.entity.EntityRenderers;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.MenuScreens;
@@ -55,7 +55,7 @@ public class Client implements ClientModInitializer {
 
         // 实体渲染器注册
         DebugLogger.info("Client", "注册动画字幕实体渲染器...");
-        EntityRendererRegistry.register(ModAnimationSubtitleEntities.ANIMATION_SUBTITLE, AnimationSubtitleRenderer::new);
+        EntityRenderers.register(ModAnimationSubtitleEntities.ANIMATION_SUBTITLE, AnimationSubtitleRenderer::new);
 
         DebugLogger.info("Client", "注册菜单屏幕...");
         MenuScreens.register(ModMenuTypes.DECOMPOSITION_TABLE, DecompositionTableScreen::new);
