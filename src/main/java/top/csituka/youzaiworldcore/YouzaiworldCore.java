@@ -35,7 +35,6 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
 import top.csituka.youzaiworldcore.mana.ManaTickHandler;
 import top.csituka.youzaiworldcore.block.ModBlocks;
 import top.csituka.youzaiworldcore.block.entity.ModBlockEntities;
-import top.csituka.youzaiworldcore.command.AnimationSubtitlesCommand;
 import top.csituka.youzaiworldcore.command.ExperimentalFeatureCommand;
 import top.csituka.youzaiworldcore.command.InvisibilityCommand;
 import top.csituka.youzaiworldcore.command.TeleportAnchorCommand;
@@ -44,7 +43,6 @@ import top.csituka.youzaiworldcore.dimensionalinventories.DimensionPoolSettings;
 import top.csituka.youzaiworldcore.dimensionalinventories.DimensionPoolManager;
 import top.csituka.youzaiworldcore.dimensionalinventories.WorldPoolCommand;
 import top.csituka.youzaiworldcore.entity.seat.ModSeatEntities;
-import top.csituka.youzaiworldcore.entity.animation_subtitle.ModAnimationSubtitleEntities;
 import top.csituka.youzaiworldcore.event.AnvilRepairHandler;
 import top.csituka.youzaiworldcore.event.FlyBeaconTickHandler;
 import top.csituka.youzaiworldcore.event.SitHandler;
@@ -134,8 +132,6 @@ public class YouzaiworldCore implements ModInitializer {
         ModNetworking.initialize();
         DebugLogger.info("YouzaiworldCore", "注册座椅实体...");
         ModSeatEntities.initialize();
-        DebugLogger.info("YouzaiworldCore", "注册动画字幕实体...");
-        ModAnimationSubtitleEntities.initialize();
         DebugLogger.info("YouzaiworldCore", "注册连锁采集事件...");
         YzChainMiningTool.registerChainMiningEvent();
         DebugLogger.info("YouzaiworldCore", "注册铁砧修复事件...");
@@ -356,10 +352,6 @@ public class YouzaiworldCore implements ModInitializer {
             // ===== 注册传送锚点管理命令 =====
             DebugLogger.info("YouzaiworldCore", "注册命令: TeleportAnchorCommand");
             TeleportAnchorCommand.register(dispatcher);
-
-            // ===== 注册动画字幕命令 =====
-            DebugLogger.info("YouzaiworldCore", "注册命令: AnimationSubtitlesCommand");
-            AnimationSubtitlesCommand.register(dispatcher);
 
             DebugLogger.info("YouzaiworldCore", "所有 /yzwc 命令注册完成");
         });

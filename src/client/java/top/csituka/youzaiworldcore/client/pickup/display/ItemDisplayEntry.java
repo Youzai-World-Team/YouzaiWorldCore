@@ -89,9 +89,6 @@ public class ItemDisplayEntry extends DisplayEntry<ItemStack> {
         // 弹出动画：围绕中心缩放
         if (popTime > 0) {
             float popScale = 1.0f + popTime / (float) POP_TIME * 0.3f;
-            int scaledSize = (int) (ICON_SIZE * popScale);
-            int offsetX = (ICON_SIZE - scaledSize) / 2;
-            int offsetY = (ICON_SIZE - scaledSize) / 2;
             // 使用 PoseStack 进行缩放
             graphics.pose().pushMatrix();
             graphics.pose().translate(x + ICON_SIZE / 2.0f, y + ICON_SIZE / 2.0f);

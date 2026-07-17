@@ -5,7 +5,6 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import org.jspecify.annotations.NonNull;
 import top.csituka.youzaiworldcore.client.pickup.display.DisplayEntry;
 import top.csituka.youzaiworldcore.client.pickup.display.ItemDisplayEntry;
-import top.csituka.youzaiworldcore.client.pickup.display.ExperienceDisplayEntry;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
 import java.util.LinkedHashMap;
@@ -143,10 +142,7 @@ public final class DrawEntriesHandler {
         int currentY = screenHeight - OFFSET_Y;
 
         // 先计算总高度
-        int totalHeight = 0;
-        for (DisplayEntry<?> entry : collector.values()) {
-            totalHeight += DisplayEntry.ELEMENT_HEIGHT;
-        }
+        int totalHeight = collector.size() * DisplayEntry.ELEMENT_HEIGHT;
 
         // 从底部向上排列
         currentY = screenHeight - OFFSET_Y - totalHeight;
