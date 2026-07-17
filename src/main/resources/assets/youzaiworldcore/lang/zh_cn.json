@@ -287,5 +287,12 @@
   "youzaiworldcore.message.gui.quit_title": "退出游戏",
   "youzaiworldcore.message.gui.quit_message": "确定要退出游戏吗？",
   "youzaiworldcore.message.gui.quit_confirm": "确定退出",
-  "youzaiworldcore.message.gui.quit_cancel": "取消"
+  "youzaiworldcore.message.gui.quit_cancel": "取消",
+
+  "enchantment.level.x": "%s",
+  "potion.potency.x": "%s",
+  "langpatch.conf.enchantment.default.type": "default",
+  "langpatch.conf.potion.default.type": "default",
+  "langpatch.conf.enchantment.override": "false",
+  "langpatch.conf.potion.override": "false"
 }

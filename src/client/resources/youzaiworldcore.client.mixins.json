@@ -24,7 +24,8 @@
     "AbstractButtonMixin",
     "AbstractSliderButtonMixin",
     "EditBoxMixin",
-    "MinecraftQuitMixin"
+    "MinecraftQuitMixin",
+    "enchlevellangpatch.EnchantmentLevelLangPatchMixin"
   ],
   "injectors": {
     "defaultRequire": 1

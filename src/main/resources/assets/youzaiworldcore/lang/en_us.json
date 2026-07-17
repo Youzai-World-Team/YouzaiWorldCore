@@ -287,5 +287,12 @@
   "youzaiworldcore.message.gui.quit_title": "Quit Game",
   "youzaiworldcore.message.gui.quit_message": "Are you sure you want to quit?",
   "youzaiworldcore.message.gui.quit_confirm": "Confirm Quit",
-  "youzaiworldcore.message.gui.quit_cancel": "Cancel"
+  "youzaiworldcore.message.gui.quit_cancel": "Cancel",
+
+  "enchantment.level.x": "%s",
+  "potion.potency.x": "%s",
+  "langpatch.conf.enchantment.default.type": "default",
+  "langpatch.conf.potion.default.type": "default",
+  "langpatch.conf.enchantment.override": "false",
+  "langpatch.conf.potion.override": "false"
 }
