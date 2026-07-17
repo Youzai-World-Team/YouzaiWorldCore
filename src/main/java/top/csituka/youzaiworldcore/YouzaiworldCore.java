@@ -48,6 +48,7 @@ import top.csituka.youzaiworldcore.entity.animation_subtitle.ModAnimationSubtitl
 import top.csituka.youzaiworldcore.event.AnvilRepairHandler;
 import top.csituka.youzaiworldcore.event.FlyBeaconTickHandler;
 import top.csituka.youzaiworldcore.event.SitHandler;
+import top.csituka.youzaiworldcore.event.StonecutterDamageHandler;
 import top.csituka.youzaiworldcore.event.TeleportAnchorInteractHandler;
 import top.csituka.youzaiworldcore.event.VoidStaffTickHandler;
 import top.csituka.youzaiworldcore.feature.ExperimentalFeatures;
@@ -149,6 +150,8 @@ public class YouzaiworldCore implements ModInitializer {
         ManaTickHandler.register();
         DebugLogger.info("YouzaiworldCore", "注册飞行信标 Tick 事件...");
         FlyBeaconTickHandler.register();
+        DebugLogger.info("YouzaiworldCore", "注册切石机伤害 Tick 事件...");
+        StonecutterDamageHandler.register();
 
         // ===== 初始化账户系统 =====
         DebugLogger.entering("YouzaiworldCore", "AccountSystem.init");

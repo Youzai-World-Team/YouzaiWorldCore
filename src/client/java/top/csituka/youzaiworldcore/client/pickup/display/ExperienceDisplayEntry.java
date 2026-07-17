@@ -71,9 +71,24 @@ public class ExperienceDisplayEntry extends DisplayEntry<Void> {
     protected Component buildDisplayComponent() {
         MutableComponent text = Component.literal("")
                 .append(Component.literal("经验").copy().withStyle(getNameStyle()));
-        text.append(Component.literal(" +" + totalXp)
+        String xpText = getXpAbbreviation(totalXp);
+        text.append(Component.literal(" +" + xpText)
                 .withStyle(ChatFormatting.GREEN));
         return text;
+    }
+
+    /**
+     * 将 XP 值缩写成可读格式（与物品数量缩写一致）。
+     */
+    private static String getXpAbbreviation(int value) {
+        if (value >= 1_000_000_000) {
+            return String.format("%.1fB", value / 1_000_000_000.0);
+        } else if (value >= 1_000_000) {
+            return String.format("%.1fM", value / 1_000_000.0);
+        } else if (value >= 1000) {
+            return String.format("%.1fK", value / 1000.0);
+        }
+        return String.valueOf(value);
     }
 
     @Override
