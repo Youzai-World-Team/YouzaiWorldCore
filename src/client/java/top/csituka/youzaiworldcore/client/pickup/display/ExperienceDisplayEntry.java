@@ -23,7 +23,7 @@ public class ExperienceDisplayEntry extends DisplayEntry<Void> {
 
     /** 经验球图标纹理 */
     private static final Identifier XP_ICON_TEXTURE =
-            Identifier.fromNamespaceAndPath("youzaiworldcore", "textures/gui/xp_bottle_texture.png");
+            Identifier.fromNamespaceAndPath("youzaiworldcore", "textures/gui/experience_orb.png");
 
     /** 累计经验值 */
     private int totalXp;
