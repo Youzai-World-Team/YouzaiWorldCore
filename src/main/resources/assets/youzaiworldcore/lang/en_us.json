@@ -295,16 +295,13 @@
   "youzaiworldcore.message.gui.quit_message": "Are you sure you want to quit?",
   "youzaiworldcore.message.gui.quit_confirm": "Confirm Quit",
   "youzaiworldcore.message.gui.quit_cancel": "Cancel",
-
   "enchantment.level.x": "%s",
   "potion.potency.x": "%s",
   "langpatch.conf.enchantment.default.type": "default",
   "langpatch.conf.potion.default.type": "default",
   "langpatch.conf.enchantment.override": "false",
   "langpatch.conf.potion.override": "false",
-
   "message.youzaiworldcore.endportal.extra_dragon_egg": "§2Extra dragon egg dropped and given to %s!",
-
   "youzaiworldcore.message.dragon_elytra.seems_like_slain": "The Ender Dragon seems to have dropped something...",
-  "youzaiworldcore.message.dragon_elytra.elytra_dropped_position": "An Elytra has dropped near %s, %s, %s"
+  "youzaiworldcore.message.dragon_elytra.elytra_dropped_position": "An Elytra has dropped near %s %s %s"
 }

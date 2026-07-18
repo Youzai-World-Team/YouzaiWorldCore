@@ -295,7 +295,6 @@
   "youzaiworldcore.message.gui.quit_message": "确定要退出游戏吗？",
   "youzaiworldcore.message.gui.quit_confirm": "确定退出",
   "youzaiworldcore.message.gui.quit_cancel": "取消",
-
   "enchantment.level.x": "%s",
   "potion.potency.x": "%s",
   "langpatch.conf.enchantment.default.type": "default",
@@ -305,9 +304,7 @@
   "youzaiworldcore.message.gui.title_adventure_level": "冒险等级",
   "youzaiworldcore.message.gui.adventure_level_label": "冒险等级",
   "youzaiworldcore.message.gui.exp_from_activities": "通过进行各种活动获取冒险经验",
-
   "message.youzaiworldcore.endportal.extra_dragon_egg": "§2末影龙额外掉落了一个龙蛋，已放入 %s 的背包！",
-
   "youzaiworldcore.message.dragon_elytra.seems_like_slain": "末影龙似乎掉落了一些东西……",
-  "youzaiworldcore.message.dragon_elytra.elytra_dropped_position": "一只鞘翅已掉落在 %s、%s、%s 附近"
+  "youzaiworldcore.message.dragon_elytra.elytra_dropped_position": "一只鞘翅已掉落在 %s %s %s 附近"
 }

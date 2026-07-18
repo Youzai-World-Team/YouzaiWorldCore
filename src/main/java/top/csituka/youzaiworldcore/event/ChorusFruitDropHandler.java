@@ -30,7 +30,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * <p>
  * 实现说明：
  * <ul>
- *   <li>匹配时使用 {@code new BlockPos(x, 1, z)} 将 Y 轴归一化为 1，使距离比较退化为纯水平（XZ）距离；</li>
+ *   <li>匹配时果实位置与记录位置两侧都需用 {@code BlockPos.containing(x, 1, z)} 将 Y 轴归一化为 1，
+ *       使 {@code closerThan} 退化为纯水平（XZ）距离比较，否则高空植物的真实高度差会使三维距离远超阈值；</li>
  *   <li>传送目标为记录方块坐标 {@code y + 1}，即被破坏方块上方一格；</li>
  *   <li>记录位置在 {@link #EXPIRY_MS} 毫秒后过期移除，避免列表无限增长；</li>
  *   <li>仅服务端生效，客户端忽略。</li>
@@ -152,8 +153,10 @@ public class ChorusFruitDropHandler {
                 continue;
             }
 
-            // 水平距离在阈值内则传送果实到该方块上方一格
-            if (lowChorusPos.closerThan(recordedPos, MAX_DISTANCE)) {
+            // 将记录位置同样归一化为 Y=1，与 lowChorusPos 对齐，使 closerThan 退化为纯水平（XZ）距离比较。
+            // 若此处直接用真实高度（紫颂植物常位于高空）参与三维欧氏距离计算，垂直分量会让距离远超阈值，导致永远无法匹配。
+            BlockPos lowRecordedPos = BlockPos.containing(recordedPos.getX(), 1.0, recordedPos.getZ());
+            if (lowChorusPos.closerThan(lowRecordedPos, MAX_DISTANCE)) {
                 BlockPos target = new BlockPos(recordedPos.getX(), recordedPos.getY() + 1, recordedPos.getZ());
                 itemEntity.teleportTo(target.getX(), target.getY(), target.getZ());
                 lastAction.put(recordedPos.immutable(), now);
