@@ -95,13 +95,9 @@ public class ItemDisplayEntry extends DisplayEntry<ItemStack> {
             graphics.pose().scale(popScale, popScale);
             graphics.pose().translate(-ICON_SIZE / 2.0f, -ICON_SIZE / 2.0f);
             graphics.item(data, 0, 0);
-            graphics.itemDecorations(Minecraft.getInstance().font, data, 0, 0);
             graphics.pose().popMatrix();
         } else {
             graphics.item(data, x, y);
-            if (displayAmount > 1) {
-                graphics.itemDecorations(Minecraft.getInstance().font, data, x, y);
-            }
         }
     }
 

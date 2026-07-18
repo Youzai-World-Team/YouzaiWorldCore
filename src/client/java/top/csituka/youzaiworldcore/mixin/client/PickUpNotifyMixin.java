@@ -39,7 +39,10 @@ public abstract class PickUpNotifyMixin {
      */
     @Inject(method = "handleTakeItemEntity", at = @At("HEAD"))
     private void onHandleTakeItemEntity(ClientboundTakeItemEntityPacket packet, CallbackInfo ci) {
+        // PacketUtils.ensureRunningOnSameThread 会在网络线程和主线程各调度一次此方法，
+        // 只在主线程上捕获以避免重复入队
         Minecraft client = Minecraft.getInstance();
+        if (Thread.currentThread() != client.getRunningThread()) return;
         if (client.level == null || client.player == null) return;
         if (client.player.getId() != packet.getPlayerId()) return;
 
