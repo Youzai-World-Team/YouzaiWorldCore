@@ -18,21 +18,18 @@ import top.csituka.youzaiworldcore.client.pickup.SubtitleCaptureHandler;
 @SuppressWarnings("null")
 public class SubtitleDisplayEntry extends DisplayEntry<Void> {
 
-    private static final int ICON_SIZE = 0; // 无图标
     private static final int TEXT_ICON_MARGIN = 0;
-    private static final int DIRECTION_MARGIN = 2;
 
     /** 方向指示文本 */
     private static final String INDICATOR_LEFT = " <";
     private static final String INDICATOR_RIGHT = "> ";
-    private static final String INDICATOR_FORWARD = "";
     private static final String INDICATOR_BEHIND = " ";
 
     /** 字幕文本 */
     private final Component subtitleText;
 
     /** 方向指示 */
-    private final SubtitleCaptureHandler.Direction direction;
+    private SubtitleCaptureHandler.Direction direction;
 
     /**
      * 构造字幕显示条目。
@@ -50,7 +47,7 @@ public class SubtitleDisplayEntry extends DisplayEntry<Void> {
 
     @Override
     public Object getKey() {
-        return this;
+        return subtitleText.getString();
     }
 
     @Override
@@ -65,7 +62,14 @@ public class SubtitleDisplayEntry extends DisplayEntry<Void> {
 
     @Override
     public void mergeWith(DisplayEntry<?> other) {
-        // 字幕不合并，每次播放创建新条目
+        if (other instanceof SubtitleDisplayEntry otherSub) {
+            // 更新方向指示为最新的
+            this.direction = otherSub.direction;
+            this.displayComponent = buildDisplayComponent();
+            if (otherSub.remainingTicks > this.remainingTicks) {
+                this.remainingTicks = otherSub.remainingTicks;
+            }
+        }
     }
 
     @Override
@@ -107,13 +111,11 @@ public class SubtitleDisplayEntry extends DisplayEntry<Void> {
     public boolean equals(Object obj) {
         if (this == obj) return true;
         if (!(obj instanceof SubtitleDisplayEntry other)) return false;
-        // 相同文本且方向一致视为同一条字幕
-        return subtitleText.getString().equals(other.subtitleText.getString())
-                && direction == other.direction;
+        return subtitleText.getString().equals(other.subtitleText.getString());
     }
 
     @Override
     public int hashCode() {
-        return subtitleText.getString().hashCode() * 31 + direction.ordinal();
+        return subtitleText.getString().hashCode();
     }
 }
