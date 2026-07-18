@@ -21,6 +21,7 @@
     "GameRendererMixin",
     "seat.EntityRenderDispatcherMixin",
     "PickUpNotifyMixin",
+    "SubtitleOverlayMixin",
     "AbstractButtonMixin",
     "AbstractSliderButtonMixin",
     "EditBoxMixin",

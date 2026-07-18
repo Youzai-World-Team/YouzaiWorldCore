@@ -1,6 +1,7 @@
 package top.csituka.youzaiworldcore.event;
 
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
@@ -129,6 +130,11 @@ public class StonecutterDamageHandler implements ServerTickEvents.StartTick {
                     DebugLogger.info("StonecutterDamageHandler",
                             "Continual damage: dealt %.1f to %s (timer=%d) -> hurt=%s",
                             DAMAGE_AMOUNT, player.getName().getString(), elapsed, hurtResult);
+
+                    // 若此次伤害导致玩家死亡，授予成就
+                    if (!player.isAlive()) {
+                        grantStonecutterAdvancement(player);
+                    }
                 }
                 entry.setValue(0); // 重置计时器
             } else {
@@ -182,6 +188,11 @@ public class StonecutterDamageHandler implements ServerTickEvents.StartTick {
                         DebugLogger.info("StonecutterDamageHandler",
                                 "New arrival: dealt %.1f to %s -> hurt=%s",
                                 DAMAGE_AMOUNT, player.getName().getString(), hurtResult);
+
+                        // 若此次伤害导致玩家死亡，授予成就
+                        if (!player.isAlive()) {
+                            grantStonecutterAdvancement(player);
+                        }
                     }
                     // 加入追踪映射，计时器从 0 开始
                     playerTimers.put(player.getUUID(), 0);
@@ -235,6 +246,29 @@ public class StonecutterDamageHandler implements ServerTickEvents.StartTick {
             DebugLogger.exception("StonecutterDamageHandler",
                     "getStonecutterDamageSource", e);
             return null;
+        }
+    }
+
+    /**
+     * 如果玩家因切石机死亡，授予 "我成了建材" 成就。
+     * <p>
+     * 成就 ID: {@code youzaiworldcore:fun_little_challenge/tested_stonecutter}
+     * </p>
+     *
+     * @param player 已死亡的玩家
+     */
+    private static void grantStonecutterAdvancement(ServerPlayer player) {
+        AdvancementHolder advancement = player.level().getServer().getAdvancements().get(
+                Identifier.fromNamespaceAndPath("youzaiworldcore", "fun_little_challenge/tested_stonecutter")
+        );
+        if (advancement != null) {
+            player.getAdvancements().award(advancement, "manual_grant");
+            DebugLogger.info("StonecutterDamageHandler",
+                    "Granted advancement 'tested_stonecutter' to %s",
+                    player.getName().getString());
+        } else {
+            DebugLogger.warn("StonecutterDamageHandler",
+                    "Advancement 'fun_little_challenge/tested_stonecutter' not found!");
         }
     }
 

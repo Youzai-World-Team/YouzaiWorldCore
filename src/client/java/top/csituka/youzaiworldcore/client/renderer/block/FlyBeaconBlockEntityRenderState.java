@@ -1,6 +1,7 @@
 package top.csituka.youzaiworldcore.client.renderer.block;
 
 import net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState;
+import net.minecraft.core.BlockPos;
 
 /**
  * 飞行信标 BlockEntity 的渲染状态。
@@ -8,6 +9,7 @@ import net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState;
  */
 public class FlyBeaconBlockEntityRenderState extends BlockEntityRenderState {
     private boolean active;
+    private BlockPos pos;
 
     public boolean isActive() {
         return active;
@@ -15,5 +17,13 @@ public class FlyBeaconBlockEntityRenderState extends BlockEntityRenderState {
 
     public void setActive(boolean active) {
         this.active = active;
+    }
+
+    public BlockPos getPos() {
+        return pos;
+    }
+
+    public void setPos(BlockPos pos) {
+        this.pos = pos;
     }
 }

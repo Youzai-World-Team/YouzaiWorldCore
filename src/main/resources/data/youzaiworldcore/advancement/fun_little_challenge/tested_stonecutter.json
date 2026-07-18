@@ -1,0 +1,24 @@
+{
+  "parent": "youzaiworldcore:fun_little_challenge/root",
+  "criteria": {
+    "manual_grant": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "manual_grant"
+    ]
+  ],
+  "display": {
+    "icon": {
+      "id": "minecraft:stonecutter"
+    },
+    "title": "我成了建材",
+    "description": "至少切得很整齐",
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": true
+  }
+}
