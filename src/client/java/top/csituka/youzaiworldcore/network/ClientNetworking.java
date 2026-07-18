@@ -14,6 +14,7 @@ import top.csituka.youzaiworldcore.client.screen.element.MenuElementGroup;
 import top.csituka.youzaiworldcore.client.screen.element.SettingsMenuElements;
 import top.csituka.youzaiworldcore.client.screen.element.SwitchWorldMenuElements;
 import top.csituka.youzaiworldcore.client.hud.AdventureLevelHudRenderer;
+import top.csituka.youzaiworldcore.client.skill.ClientAttributeData;
 import top.csituka.youzaiworldcore.mana.ManaManager;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
@@ -146,6 +147,14 @@ public class ClientNetworking {
             });
         });
         DebugLogger.info("ClientNetworking", "Registered receiver: LevelExpSyncPayload");
+
+        // 注册属性数据同步处理器
+        ClientPlayNetworking.registerGlobalReceiver(AttributeSyncPayload.TYPE, (payload, context) -> {
+            context.client().execute(() -> {
+                ClientAttributeData.update(payload);
+            });
+        });
+        DebugLogger.info("ClientNetworking", "Registered receiver: AttributeSyncPayload");
 
         DebugLogger.exiting("ClientNetworking", "initialize");
     }

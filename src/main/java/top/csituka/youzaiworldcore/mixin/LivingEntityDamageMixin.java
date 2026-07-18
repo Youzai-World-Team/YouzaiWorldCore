@@ -1,21 +1,45 @@
 package top.csituka.youzaiworldcore.mixin;
 
-import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import org.spongepowered.asm.mixin.injection.ModifyVariable;
+import top.csituka.youzaiworldcore.skill.AttributeManager;
+
+import java.util.UUID;
 
 /**
- * 混合注入：保留用于未来的伤害保护逻辑（当前无活跃规则）
+ * 混合注入：修改 {@link LivingEntity#hurtServer(net.minecraft.server.level.ServerLevel, DamageSource, float)} 的伤害值。
+ * <ul>
+ *   <li>伤害抗性：对所有来源伤害按比例减免</li>
+ *   <li>远程伤害：当伤害来源为弹射物时，按比例增伤</li>
+ * </ul>
  */
 @Mixin(LivingEntity.class)
 public class LivingEntityDamageMixin {
 
-    @Inject(method = "hurtServer", at = @At("HEAD"))
-    private void onHurtServer(ServerLevel level, DamageSource source, float amount, CallbackInfoReturnable<Boolean> cir) {
-        // 预留：未来可以在合适的时机增加伤害保护逻辑
+    @ModifyVariable(method = "hurtServer", at = @At("HEAD"), argsOnly = true, index = 3)
+    private float modifyDamage(float amount, net.minecraft.server.level.ServerLevel level, DamageSource source, float _unused) {
+        //noinspection ConstantValue
+        if (!((Object) this instanceof ServerPlayer player)) return amount;
+        UUID uuid = player.getUUID();
+
+        // 1. 远程伤害增幅：弹射物攻击增伤
+        if (source.getDirectEntity() != null && source.getDirectEntity() != source.getEntity()) {
+            // 检查是谁发射的弹射物
+            if (source.getEntity() instanceof Player shooter && shooter.getUUID().equals(uuid)) {
+                float multiplier = AttributeManager.getRangedDamageMultiplier(uuid);
+                amount *= multiplier;
+            }
+        }
+
+        // 2. 伤害抗性减免
+        float reduction = AttributeManager.getDamageReduction(uuid);
+        amount *= (1f - reduction);
+
+        return Math.max(0f, amount);
     }
 }

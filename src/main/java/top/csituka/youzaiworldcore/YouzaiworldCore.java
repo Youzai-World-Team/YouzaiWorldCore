@@ -31,6 +31,8 @@ import top.csituka.youzaiworldcore.command.ReloadCommand;
 import top.csituka.youzaiworldcore.config.ServerExternalSettings;
 import top.csituka.youzaiworldcore.luckperms.LuckPermsHelper;
 import top.csituka.youzaiworldcore.skill.AdventureLevelManager;
+import top.csituka.youzaiworldcore.skill.AttributeManager;
+import top.csituka.youzaiworldcore.skill.PlayerAttributeStorage;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 import top.csituka.youzaiworldcore.mana.ManaTickHandler;
 import top.csituka.youzaiworldcore.block.ModBlocks;
@@ -160,6 +162,13 @@ public class YouzaiworldCore implements ModInitializer {
         AdventureLevelManager.initialize();
         LOGGER.info("冒险等级系统已初始化");
         DebugLogger.exiting("YouzaiworldCore", "AdventureLevelSystem.init");
+
+        // ===== 初始化属性加点系统 =====
+        DebugLogger.entering("YouzaiworldCore", "AttributeSystem.init");
+        PlayerAttributeStorage.initialize();
+        AttributeManager.initialize();
+        LOGGER.info("属性加点系统已初始化");
+        DebugLogger.exiting("YouzaiworldCore", "AttributeSystem.init");
 
         DebugLogger.info("YouzaiworldCore", "注册矿物生成...");
         BiomeModifications.addFeature(

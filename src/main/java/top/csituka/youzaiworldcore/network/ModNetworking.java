@@ -15,6 +15,7 @@ import top.csituka.youzaiworldcore.dimensionalinventories.DimensionPoolManager;
 import top.csituka.youzaiworldcore.dimensionalinventories.WorldPoolTeleportPayload;
 import top.csituka.youzaiworldcore.screen.DecompositionTableMenu;
 import top.csituka.youzaiworldcore.screen.FlyBeaconMenu;
+import top.csituka.youzaiworldcore.skill.AttributeManager;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
 import java.util.UUID;
@@ -285,6 +286,20 @@ public class ModNetworking {
                             payload.fromIndex(), payload.toIndex());
                 });
             }
+        });
+
+        // ===== 属性加点系统数据包 =====
+        PayloadTypeRegistry.clientboundPlay().register(AttributeSyncPayload.TYPE, AttributeSyncPayload.STREAM_CODEC);
+        DebugLogger.info("ModNetworking", "Registered clientbound packet: AttributeSyncPayload");
+        PayloadTypeRegistry.serverboundPlay().register(AttributeUpgradePayload.TYPE, AttributeUpgradePayload.STREAM_CODEC);
+        DebugLogger.info("ModNetworking", "Registered serverbound packet: AttributeUpgradePayload");
+
+        // ===== 属性加点 C2S 处理器 =====
+        ServerPlayNetworking.registerGlobalReceiver(AttributeUpgradePayload.TYPE, (payload, context) -> {
+            var player = (net.minecraft.server.level.ServerPlayer) context.player();
+            player.level().getServer().execute(() -> {
+                AttributeManager.handleUpgrade(player, payload.attributeKey());
+            });
         });
 
         DebugLogger.exiting("ModNetworking", "initialize");

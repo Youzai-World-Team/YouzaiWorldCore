@@ -148,6 +148,15 @@ public class AdventureLevelManager {
         int newLevel = data.getLevel();
         boolean leveledUp = oldLevel != newLevel;
 
+        // 升级时发放 1 技能点
+        if (leveledUp) {
+            for (int lvl = oldLevel; lvl < newLevel; lvl++) {
+                AttributeManager.grantSkillPoint(uuid, player.getName().getString());
+            }
+            // 同步属性数据到客户端
+            AttributeManager.syncToClient(player);
+        }
+
         PlayerLevelStorage.markDirty(uuid);
 
         ServerPlayNetworking.send(player, new LevelExpSyncPayload(

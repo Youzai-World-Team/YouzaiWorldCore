@@ -18,6 +18,7 @@
     "skill.BlockPlaceExpMixin",
     "skill.AdvancementExpMixin",
     "skill.TotemExpMixin",
+    "skill.LivingEntityHealMixin",
     "seat.EntityVehicleAccessor",
     "StructureTemplatePoolAccessor"
   ],
