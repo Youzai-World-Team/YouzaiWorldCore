@@ -49,6 +49,12 @@ public abstract class DisplayEntry<T> {
     /** 当前移动进度 [0.0, 1.0] */
     protected float moveOutProgress;
 
+    /** 淡入动画剩余 tick */
+    protected int fadeInTime;
+
+    /** 淡入动画总时长（tick） */
+    protected static final int FADE_IN_DURATION = 5;
+
     /** 弹出动画剩余 tick（用于拾取瞬间的弹入效果） */
     protected int popTime;
 
@@ -67,6 +73,7 @@ public abstract class DisplayEntry<T> {
         this.moveOutDuration = Math.min(displayTime, 20); // 默认移出时间不超过显示时间
         this.isMovingOut = false;
         this.moveOutProgress = 0.0f;
+        this.fadeInTime = FADE_IN_DURATION;
         this.popTime = 0;
         // displayComponent 由子类构造器在设置完字段后自行调用 buildDisplayComponent()
     }
@@ -123,6 +130,9 @@ public abstract class DisplayEntry<T> {
         if (remainingTicks > 0) {
             remainingTicks--;
         }
+        if (fadeInTime > 0) {
+            fadeInTime--;
+        }
         if (popTime > 0) {
             popTime--;
         }
@@ -152,6 +162,17 @@ public abstract class DisplayEntry<T> {
     }
 
     /**
+     * 刷新显示时间（合并相同条目时调用），延长显示时间但不会重播淡入动画。
+     */
+    protected void refreshDisplay(int newRemainingTicks) {
+        if (newRemainingTicks > this.remainingTicks) {
+            this.remainingTicks = newRemainingTicks;
+        }
+        this.isMovingOut = false;
+        this.moveOutProgress = 0.0f;
+    }
+
+    /**
      * 判断此条目是否正在移出。
      */
     public boolean isMovingOut() {
@@ -168,23 +189,34 @@ public abstract class DisplayEntry<T> {
 
     /**
      * 获取淡出透明度 [0.0, 1.0]。
+     * <ul>
+     *   <li>淡入阶段：从 0 渐变为 1（{@value #FADE_IN_DURATION} tick）</li>
+     *   <li>正常显示：保持 1.0</li>
+     *   <li>移出阶段：从 1 渐变为 0（仅淡出一次，无重复）</li>
+     * </ul>
      */
     public float getFadeAlpha() {
-        if (isMovingOut) {
-            return 1.0f - moveOutProgress;
+        // 淡入阶段
+        if (fadeInTime > 0) {
+            return (float) (FADE_IN_DURATION - fadeInTime) / FADE_IN_DURATION;
         }
-        // 最后 20% 时间开始淡出
-        float relative = getRelativeRemainingTime();
-        if (relative > 0.2f) return 1.0f;
-        return relative / 0.2f;
+        // 移出阶段（包含滑动 + 淡出，仅执行一次）
+        if (isMovingOut) {
+            return Math.max(0f, 1.0f - moveOutProgress);
+        }
+        // 正常显示
+        return 1.0f;
     }
 
     /**
      * 获取移出偏移量（像素）。
+     * 使用 ease-in 曲线（由慢到快），让滑出动画更自然。
      */
     public int getMoveOffset() {
         if (!isMovingOut) return 0;
-        return (int) (moveOutProgress * 30); // 向右移出 30 像素
+        // ease-in: moveOutProgress²，开始时缓慢，后面加速
+        float eased = moveOutProgress * moveOutProgress;
+        return (int) (eased * 30); // 向右移出 30 像素
     }
 
     /**
