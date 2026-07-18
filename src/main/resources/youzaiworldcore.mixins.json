@@ -19,7 +19,8 @@
     "skill.AdvancementExpMixin",
     "skill.TotemExpMixin",
     "seat.EntityVehicleAccessor",
-    "StructureTemplatePoolAccessor"
+    "StructureTemplatePoolAccessor",
+    "chargedcreeper.CreeperChargedAccessor"
   ],
   "injectors": {
     "defaultRequire": 1

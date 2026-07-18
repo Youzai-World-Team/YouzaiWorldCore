@@ -180,6 +180,13 @@
   "youzaiworldcore.message.command.experimental_feature.toggle_success": "§aExperimental feature '%s' is now ",
   "youzaiworldcore.message.command.experimental_feature.enabled": "§aENABLED",
   "youzaiworldcore.message.command.experimental_feature.disabled": "§cDISABLED",
+  "youzaiworldcore.message.command.event.ncc.query_enable_enabled": "§6Naturally Charged Creepers event status: §aenabled",
+  "youzaiworldcore.message.command.event.ncc.query_enable_disabled": "§6Naturally Charged Creepers event status: §cdisabled",
+  "youzaiworldcore.message.command.event.ncc.set_enable_enabled": "§aEnabled Naturally Charged Creepers event",
+  "youzaiworldcore.message.command.event.ncc.set_enable_disabled": "§cDisabled Naturally Charged Creepers event",
+  "youzaiworldcore.message.command.event.ncc.query_chance": "Naturally Charged Creepers chance: %s (%s%%)",
+  "youzaiworldcore.message.command.event.ncc.set_chance": "Set Naturally Charged Creepers chance to %s (%s%%)",
+  "youzaiworldcore.message.command.event.ncc.chance_invalid": "§cChance must be between 0 and 1",
   "screen.youzaiworldcore.register.title": "Account Registration",
   "screen.youzaiworldcore.register.subtitle": "Welcome to Youzai World Server, please register~",
   "screen.youzaiworldcore.register.label_username": "Account",
@@ -294,5 +301,10 @@
   "langpatch.conf.enchantment.default.type": "default",
   "langpatch.conf.potion.default.type": "default",
   "langpatch.conf.enchantment.override": "false",
-  "langpatch.conf.potion.override": "false"
+  "langpatch.conf.potion.override": "false",
+
+  "message.youzaiworldcore.endportal.extra_dragon_egg": "§2Extra dragon egg dropped and given to %s!",
+
+  "youzaiworldcore.message.dragon_elytra.seems_like_slain": "The Ender Dragon seems to have dropped something...",
+  "youzaiworldcore.message.dragon_elytra.elytra_dropped_position": "An Elytra has dropped near %s, %s, %s"
 }

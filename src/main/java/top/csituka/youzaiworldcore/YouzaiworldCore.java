@@ -27,7 +27,10 @@ import org.slf4j.LoggerFactory;
 
 import top.csituka.youzaiworldcore.account.command.AccountCommands;
 import top.csituka.youzaiworldcore.account.data.AccountDataStorage;
+import top.csituka.youzaiworldcore.command.EventCommand;
 import top.csituka.youzaiworldcore.command.ReloadCommand;
+import top.csituka.youzaiworldcore.config.ChargedCreeperConfig;
+import top.csituka.youzaiworldcore.config.EndPortalConfig;
 import top.csituka.youzaiworldcore.config.ServerExternalSettings;
 import top.csituka.youzaiworldcore.luckperms.LuckPermsHelper;
 import top.csituka.youzaiworldcore.skill.AdventureLevelManager;
@@ -44,6 +47,10 @@ import top.csituka.youzaiworldcore.dimensionalinventories.DimensionPoolManager;
 import top.csituka.youzaiworldcore.dimensionalinventories.WorldPoolCommand;
 import top.csituka.youzaiworldcore.entity.seat.ModSeatEntities;
 import top.csituka.youzaiworldcore.event.AnvilRepairHandler;
+import top.csituka.youzaiworldcore.event.ChargedCreeperHandler;
+import top.csituka.youzaiworldcore.event.ChorusFruitDropHandler;
+import top.csituka.youzaiworldcore.event.DragonElytraDropHandler;
+import top.csituka.youzaiworldcore.event.EndPortalHandler;
 import top.csituka.youzaiworldcore.event.FlyBeaconTickHandler;
 import top.csituka.youzaiworldcore.event.SitHandler;
 import top.csituka.youzaiworldcore.event.StonecutterDamageHandler;
@@ -148,6 +155,21 @@ public class YouzaiworldCore implements ModInitializer {
         FlyBeaconTickHandler.register();
         DebugLogger.info("YouzaiworldCore", "注册切石机伤害 Tick 事件...");
         StonecutterDamageHandler.register();
+        DebugLogger.info("YouzaiworldCore", "注册末影龙鞘翅掉落事件...");
+        DragonElytraDropHandler.register();
+        DebugLogger.info("YouzaiworldCore", "注册紫颂果就近掉落事件...");
+        ChorusFruitDropHandler.register();
+        DebugLogger.info("YouzaiworldCore", "加载天然带电苦力怕配置...");
+        ChargedCreeperConfig.load();
+        DebugLogger.info("YouzaiworldCore", "注册天然带电苦力怕事件...");
+        ChargedCreeperHandler.register();
+
+        // ===== 初始化末地传送门功能（EndPortalRecipe 合并） =====
+        DebugLogger.entering("YouzaiworldCore", "EndPortalSystem.init");
+        EndPortalConfig.load();
+        EndPortalHandler.register();
+        LOGGER.info("末地传送门功能已初始化（可合成 / 可搬运 / 额外龙蛋）");
+        DebugLogger.exiting("YouzaiworldCore", "EndPortalSystem.init");
 
         // ===== 初始化账户系统 =====
         DebugLogger.entering("YouzaiworldCore", "AccountSystem.init");
@@ -352,6 +374,10 @@ public class YouzaiworldCore implements ModInitializer {
             // ===== 注册传送锚点管理命令 =====
             DebugLogger.info("YouzaiworldCore", "注册命令: TeleportAnchorCommand");
             TeleportAnchorCommand.register(dispatcher);
+
+            // ===== 注册事件管理命令 =====
+            DebugLogger.info("YouzaiworldCore", "注册命令: EventCommand");
+            EventCommand.register(dispatcher);
 
             DebugLogger.info("YouzaiworldCore", "所有 /yzwc 命令注册完成");
         });
