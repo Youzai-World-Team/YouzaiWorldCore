@@ -61,9 +61,7 @@ public class ExperienceDisplayEntry extends DisplayEntry<Void> {
         if (other instanceof ExperienceDisplayEntry xpEntry) {
             this.totalXp += xpEntry.totalXp;
             this.displayComponent = buildDisplayComponent();
-            if (xpEntry.remainingTicks > this.remainingTicks) {
-                this.remainingTicks = xpEntry.remainingTicks;
-            }
+            refreshDisplay(xpEntry.remainingTicks);
         }
     }
 
@@ -93,16 +91,19 @@ public class ExperienceDisplayEntry extends DisplayEntry<Void> {
 
     @Override
     protected void renderSprite(GuiGraphicsExtractor graphics, int x, int y, int alpha) {
+        int argb = (alpha << 24) | 0xFFFFFF;
         if (popTime > 0) {
             float popScale = 1.0f + popTime / 5.0f * 0.3f;
             graphics.pose().pushMatrix();
             graphics.pose().translate(x + ICON_SIZE / 2.0f, y + ICON_SIZE / 2.0f);
             graphics.pose().scale(popScale, popScale);
             graphics.pose().translate(-ICON_SIZE / 2.0f, -ICON_SIZE / 2.0f);
-            graphics.blit(RenderPipelines.GUI_TEXTURED, XP_ICON_TEXTURE, 0, 0, 0, 0, ICON_SIZE, ICON_SIZE, ICON_SIZE, ICON_SIZE);
+            graphics.blit(RenderPipelines.GUI_TEXTURED, XP_ICON_TEXTURE,
+                    0, 0, 0, 0, ICON_SIZE, ICON_SIZE, ICON_SIZE, ICON_SIZE, argb);
             graphics.pose().popMatrix();
         } else {
-            graphics.blit(RenderPipelines.GUI_TEXTURED, XP_ICON_TEXTURE, x, y, 0, 0, ICON_SIZE, ICON_SIZE, ICON_SIZE, ICON_SIZE);
+            graphics.blit(RenderPipelines.GUI_TEXTURED, XP_ICON_TEXTURE,
+                    x, y, 0, 0, ICON_SIZE, ICON_SIZE, ICON_SIZE, ICON_SIZE, argb);
         }
     }
 
