@@ -20,7 +20,7 @@
 
 ## 📖 Project Overview
 
-**YouzaiWorldCore** is the core gameplay mod for the **Youzai World** Minecraft multiplayer server, built on the **Fabric** framework with deep integration of **LuckPerms** permission system and **Placeholder API**. The mod provides a comprehensive infrastructure for the server, covering account authentication, GUI menus, custom items and blocks, sit interaction, dimension pools, teleport anchors, mana system, invisibility management, adventure XP, enchantment-level language patches, pickup display, beginner tutorial, voice chat integration, and 20+ core features in total.
+**YouzaiWorldCore** is the core gameplay mod for the **Youzai World** Minecraft multiplayer server, built on the **Fabric** framework with deep integration of **LuckPerms** permission system and **Placeholder API**. The mod provides a comprehensive infrastructure for the server, covering account authentication, GUI menus, custom items and blocks, sit interaction, dimension pools, teleport anchors, mana system, invisibility management, adventure XP, enchantment-level language patches, pickup display, world enhancement features (charged creepers / dragon elytra drop / end portal, etc.), beginner tutorial, voice chat integration, and 20+ core features in total.
 
 ### Target Audience
 
@@ -221,6 +221,30 @@ Client-side pickup feedback: when picking up items or XP, float the obtained ent
 
 ---
 
+### 21. World Enhancement Features
+
+A set of native, dependency-free "world tweak" enhancements (inspired by classic community gameplay) covering mob behavior, drop collection, and End mechanics:
+
+- **Naturally Charged Creepers**: When a creeper enters the server world, it is marked charged with a configurable probability (`chance`, default 0.1 / 10%). The charge is written via the `DATA_IS_POWERED` entity data exposed through a Mixin, ensuring correct client-side lightning halo sync; a data tag dedups to avoid re-rolls on chunk reload. Config `config/youzaiworldcore/charged_creeper.json` (`enabled` default true, `chance` default 0.1, auto-clamped to [0,1]). Commands: `/yzwc event naturally_charged_creepers enable [true|false]` / `settings chance [double]`
+- **Chorus Fruit Drops Nearby**: After a chorus plant is broken, its dropped chorus fruit is teleported to the nearest recently-broken chorus plant location (horizontal distance < 20 blocks within a 2-second window), preventing fruit from scattering everywhere
+- **Dragon Drops Elytra**: When the Ender Dragon is slain, an extra elytra drops and a broadcast message is sent; kill attribution priority: direct player → projectile owner (bow/crossbow/trident) → nearest player within a 30-block radius
+- **End Portal Enhancements**: ① End portal frames can be broken with a silk-touch pickaxe and drop (including embedded ender eyes) while clearing the activated portal blocks; ② An extra dragon egg is granted to nearby players when the Ender Dragon is slain; ③ New recipe `craftable_end_portal` (ender eyes + dragon egg + end stone → 12 end portal frames). Config `config/youzaiworldcore/end_portal_settings.json` with three toggles (silk-touch requirement / direct-to-inventory / dragon-egg message)
+
+---
+
+### 22. Double Doors System
+
+A streamlined implementation that supports click-to-open only for "same-material wooden doors / fence gates", with a per-player independent toggle.
+
+- **Trigger**: Right-click a door / fence gate with an empty hand; `DoorBlockMixin` / `FenceGateBlockMixin` calls `DoubleDoorsHandler.onDoorClick` after `useWithoutItem` performs the vanilla toggle; sneaking disables double-open, keeping only the vanilla single-open behavior
+- **Pairing Rule**: Searches adjacent, same-type (both `DoorBlock` or both `FenceGateBlock`), same display-name (material) partner doors within a 3×3 horizontal area and synchronizes them to the clicked door's open/closed state; no recursion (adjacent pairs only)
+- **Supported Scope**: Wooden doors (including double doors), fence gates (auto-aligned facing); iron doors (not hand-openable), trapdoors, redstone triggers, villager AI, and chain opening are out of scope
+- **Per-Player Toggle**: `/yzwc function double_doors [true|false]` controls the player's own setting; omitting the argument queries the player's own status; new players enabled by default
+- **Persistence**: `config/youzaiworldcore/double_doors_players.json`, storing only players explicitly set via command (`DoubleDoorsState`; unset players fall back to the default enabled state)
+- **Client Forwarding Architecture**: The `/yzwc` root command is already registered on the client (for `/yzwc settings`), so this command only parses and forwards on the client; the authoritative state is held by the server via `DoubleDoorsTogglePayload` (C→S)
+
+---
+
 ## 📜 Command Tree
 
 All commands use `/yzwc` as the root command.
@@ -249,6 +273,10 @@ All commands use `/yzwc` as the root command.
 │   ├── Permission: youzaiworldcore.command.function.invisibility (OP 4)
 │   └── Requires Creative mode
 │
+├── function double_doors <true|false>
+│   ├── Permission: youzaiworldcore.command.function.double_doors (self, everyone can run)
+│   └── Omit to query own status; new players enabled by default; state persisted to double_doors_players.json
+│
 ├── experimental_feature <id> [true/false [all|only <player>]]
 │   ├── Permissions: .query (everyone) / .self (everyone) / .admin (OP 4)
 │   └── Query or toggle experimental features
@@ -256,6 +284,11 @@ All commands use `/yzwc` as the root command.
 ├── reload
 │   ├── Permission: youzaiworldcore.command.reload (OP 4)
 │   └── Reload account data and config at runtime
+│
+├── event naturally_charged_creepers
+│   ├── enable [true|false]               → Enable/disable naturally charged creepers (omit to query)
+│   ├── settings chance [double]           → Set charge probability 0.0~1.0 (omit to query)
+│   └── Permissions: .query (everyone) / .set (OP 4)
 │
 └── account
     ├── 📋 Player Commands:
@@ -287,10 +320,13 @@ All commands use `/yzwc` as the root command.
 | `youzaiworldcore.command.world_pool` | Dimension pool management | OP 4 |
 | `youzaiworldcore.command.teleport_anchor` | Teleport anchor management | OP 4 |
 | `youzaiworldcore.command.function.invisibility` | Invisibility function | OP 4 |
+| `youzaiworldcore.command.function.double_doors` | Double Doors function (self toggle / query) | Everyone (self-only) |
 | `youzaiworldcore.command.experimental_feature` | Experimental feature (basic) | Everyone |
 | `youzaiworldcore.command.experimental_feature.query` | Query | Everyone |
 | `youzaiworldcore.command.experimental_feature.self` | Self-toggle | Everyone |
 | `youzaiworldcore.command.experimental_feature.admin` | Admin | OP 4 |
+| `youzaiworldcore.command.event.query` | Event management query (omit arg = query) | Everyone |
+| `youzaiworldcore.command.event.set` | Event management modify (enable / settings) | OP 4 |
 | `youzaiworldcore.command.account.mgr.create` | Create account | OP 4 |
 | `youzaiworldcore.command.account.mgr.reset_password` | Reset password | OP 4 |
 | `youzaiworldcore.command.account.mgr.delete` | Delete account | OP 4 |
@@ -330,9 +366,9 @@ The experimental feature system framework is fully implemented, supporting serve
 | `decomposition_table` | Decomposition Table |
 | `fly_beacon` | Fly Beacon |
 
-### Network Packets (15 total)
+### Network Packets (20 total)
 
-> Note: the `world_pool_teleport` packet class lives in the `dimensionalinventories` package; the other 14 are in the `network` package.
+> Note: the `world_pool_teleport` packet class lives in the `dimensionalinventories` package; the other 19 are in the `network` package.
 
 | Packet ID | Direction | Purpose |
 |-----------|-----------|---------|
@@ -341,6 +377,7 @@ The experimental feature system framework is fully implemented, supporting serve
 | `open_auth_screen` | S→C | Open auth screen |
 | `mana_sync` | S→C | Sync mana values |
 | `level_exp_sync` | S→C | Sync adventure level XP |
+| `attribute_sync` | S→C | Sync player attribute data (skill points / attributes / level) |
 | `world_pool_teleport` | C→S | Request dimension pool teleport |
 | `teleport_anchor_open_name` | S→C | Open anchor naming screen |
 | `teleport_anchor_list` | S→C | Send point list |
@@ -351,6 +388,10 @@ The experimental feature system framework is fully implemented, supporting serve
 | `teleport_anchor_reorder` | C→S | Reorder points |
 | `decompose_item` | C→S | Decompose item |
 | `fly_beacon_active` | C→S | Toggle fly beacon |
+| `invisibility_toggle` | C→S | Toggle / disable own invisibility |
+| `experimental_feature` | C→S | Forward experimental feature command (query / self / all / specific player) |
+| `attribute_upgrade` | C→S | Request to allocate a point to an attribute |
+| `double_doors_toggle` | C→S | Toggle / query own Double Doors setting |
 
 ---
 
@@ -381,21 +422,23 @@ src/
 │   ├── YouzaiworldCore.java              # Main entry point
 │   ├── account/                          # Account auth (Mixin + JSON storage)
 │   ├── block/ + entity/                  # Custom blocks & block entities
-│   ├── command/                          # Command registration
+│   ├── command/                          # Command registration (incl. EventCommand for charged creeper mgmt)
 │   ├── component/                        # Data components
-│   ├── config/                           # Server external settings
+│   ├── config/                           # Server external settings (incl. charged creeper / end portal / double doors configs)
 │   ├── data/                             # Teleport anchor SavedData
 │   ├── dimensionalinventories/           # Dimension pool system (incl. WorldPoolTeleportPayload)
 │   ├── enchlevellangpatch/               # Enchantment-level language patch (api + impl)
-│   ├── event/                            # Event handlers (anvil repair, fly beacon, void staff, sit, anchor interact, stonecutter damage)
+│   ├── event/                            # Event handlers (anvil repair, fly beacon, void staff, sit, anchor interact, stonecutter damage, charged creeper, chorus fruit, dragon elytra, end portal, double doors)
 │   ├── entity/seat/                      # Seat entity system
 │   ├── feature/                          # Experimental features system
 │   ├── invisibility/                     # Invisibility system
 │   ├── item/                             # Items, tools, creative tabs, presets
 │   ├── luckperms/                        # LuckPerms permission integration
 │   ├── mana/                             # Mana system
-│   ├── mixin/                            # Main Mixins (+ invis containers/particles/sounds + seat + skill)
-│   ├── network/                          # Network packets (14 packet classes)
+│   ├── mixin/                            # Main Mixins (+ invis containers/particles/sounds + seat + skill + charged creeper + double doors)
+│   ├── mixin/chargedcreeper/             # Charged creeper Mixin (exposes DATA_IS_POWERED accessor)
+│   ├── mixin/doubledoors/                # Double Doors Mixin (DoorBlock / FenceGateBlock click-to-open)
+│   ├── network/                          # Network packets (19 packet classes)
 │   ├── placeholders/                     # Placeholder API (32 placeholders)
 │   ├── screen/                           # Container menus
 │   ├── skill/                            # Adventure level XP system
@@ -408,7 +451,7 @@ src/
 │   ├── effect/                           # Teleport FOV effect
 │   ├── higherchat/                       # Simple Voice Chat integration (tracks HUD icon positions, optimizes chat box placement)
 │   ├── hud/                              # Mana bar / adventure level HUD
-│   ├── mixin/client/                     # Client Mixins (title, options, button, pause, chat, loading, seat, rendering, pickup, enchant-patch, etc.; 23 total)
+│   ├── mixin/client/                     # Client Mixins (title, options, button, pause, chat, loading, seat, rendering, pickup, enchant-patch, etc.; 24 total)
 │   ├── network/                          # Client network handling (ClientNetworking)
 │   ├── pickup/                           # Pickup display (item/XP floating notifications)
 │   ├── renderer/                         # Block/entity renderers
@@ -447,6 +490,7 @@ src/
 | `flame_staff` | Crafting | Flame Staff |
 | `sky_star_staff` | Crafting | Sky Star Staff |
 | `raw_yz_block` / `raw_yz_from_raw_yz_block` | Crafting | Ore block conversion |
+| `craftable_end_portal` | Crafting | End Portal Frame ×12 (ender eyes + dragon egg + end stone) |
 
 ---
 

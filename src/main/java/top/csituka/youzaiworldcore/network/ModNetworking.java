@@ -2,8 +2,13 @@ package top.csituka.youzaiworldcore.network;
 
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.minecraft.commands.Commands;
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.HoverEvent;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import top.csituka.youzaiworldcore.block.TeleportAnchorBlock;
@@ -11,8 +16,12 @@ import top.csituka.youzaiworldcore.block.entity.FlyBeaconBlockEntity;
 import top.csituka.youzaiworldcore.block.entity.TeleportAnchorBlockEntity;
 import top.csituka.youzaiworldcore.data.TeleportAnchorManager;
 import top.csituka.youzaiworldcore.data.TeleportAnchorData;
+import top.csituka.youzaiworldcore.config.DoubleDoorsState;
 import top.csituka.youzaiworldcore.dimensionalinventories.DimensionPoolManager;
 import top.csituka.youzaiworldcore.dimensionalinventories.WorldPoolTeleportPayload;
+import top.csituka.youzaiworldcore.feature.ExperimentalFeatures;
+import top.csituka.youzaiworldcore.invisibility.InvisibilityManager;
+import top.csituka.youzaiworldcore.luckperms.LuckPermsHelper;
 import top.csituka.youzaiworldcore.screen.DecompositionTableMenu;
 import top.csituka.youzaiworldcore.screen.FlyBeaconMenu;
 import top.csituka.youzaiworldcore.skill.AttributeManager;
@@ -59,6 +68,18 @@ public class ModNetworking {
         DebugLogger.info("ModNetworking", "Registered serverbound packet: TeleportAnchorActivatePayload");
         PayloadTypeRegistry.serverboundPlay().register(TeleportAnchorReorderPayload.TYPE, TeleportAnchorReorderPayload.STREAM_CODEC);
         DebugLogger.info("ModNetworking", "Registered serverbound packet: TeleportAnchorReorderPayload");
+
+        // ===== 双开门功能切换 / 查询数据包 =====
+        PayloadTypeRegistry.serverboundPlay().register(DoubleDoorsTogglePayload.ID, DoubleDoorsTogglePayload.STREAM_CODEC);
+        DebugLogger.info("ModNetworking", "Registered serverbound packet: DoubleDoorsTogglePayload");
+
+        // ===== 隐身功能切换数据包 =====
+        PayloadTypeRegistry.serverboundPlay().register(InvisibilityPayload.ID, InvisibilityPayload.STREAM_CODEC);
+        DebugLogger.info("ModNetworking", "Registered serverbound packet: InvisibilityPayload");
+
+        // ===== 实验性功能命令转发数据包 =====
+        PayloadTypeRegistry.serverboundPlay().register(ExperimentalFeaturePayload.ID, ExperimentalFeaturePayload.STREAM_CODEC);
+        DebugLogger.info("ModNetworking", "Registered serverbound packet: ExperimentalFeaturePayload");
 
         // ===== 服务端接收处理器 =====
         ServerPlayNetworking.registerGlobalReceiver(DecomposeItemPayload.ID, (payload, context) -> {
@@ -288,6 +309,175 @@ public class ModNetworking {
             }
         });
 
+        // ===== 双开门功能切换 / 查询处理器 =====
+        ServerPlayNetworking.registerGlobalReceiver(DoubleDoorsTogglePayload.ID, (payload, context) -> {
+            DebugLogger.entering("ModNetworking", "DoubleDoorsTogglePayload handler");
+            var player = (net.minecraft.server.level.ServerPlayer) context.player();
+            var server = player.level().getServer();
+            if (server == null) {
+                DebugLogger.exiting("ModNetworking", "DoubleDoorsTogglePayload handler", "server is null");
+                return;
+            }
+            server.execute(() -> {
+                UUID uuid = player.getUUID();
+                Boolean enabled = payload.enabled();
+                if (enabled != null) {
+                    DoubleDoorsState.setEnabled(uuid, enabled);
+                }
+                boolean cur = DoubleDoorsState.isEnabled(uuid);
+                if (enabled != null) {
+                    // 设置结果反馈
+                    player.sendSystemMessage(Component.translatable(
+                            enabled
+                                    ? "youzaiworldcore.message.command.function.double_doors.set_enabled"
+                                    : "youzaiworldcore.message.command.function.double_doors.set_disabled",
+                            player.getName().getString()));
+                } else {
+                    // 查询反馈（区分默认启用 / 显式启用 / 已禁用）
+                    player.sendSystemMessage(Component.translatable(
+                            DoubleDoorsState.isExplicitlySet(uuid)
+                                    ? "youzaiworldcore.message.command.function.double_doors.query_enabled"
+                                    : (cur
+                                            ? "youzaiworldcore.message.command.function.double_doors.query_default"
+                                            : "youzaiworldcore.message.command.function.double_doors.query_disabled")));
+                }
+            });
+            DebugLogger.exiting("ModNetworking", "DoubleDoorsTogglePayload handler");
+        });
+
+        // ===== 隐身功能切换处理器 =====
+        ServerPlayNetworking.registerGlobalReceiver(InvisibilityPayload.ID, (payload, context) -> {
+            DebugLogger.entering("ModNetworking", "InvisibilityPayload handler");
+            var player = (net.minecraft.server.level.ServerPlayer) context.player();
+            var server = player.level().getServer();
+            if (server == null) {
+                DebugLogger.exiting("ModNetworking", "InvisibilityPayload handler", "server is null");
+                return;
+            }
+            server.execute(() -> {
+                // 权限检查：OP4 或 LuckPerms 节点
+                if (!InvisibilityManager.hasPermission(player)) {
+                    player.sendSystemMessage(Component.literal("§c你没有权限使用隐身功能"));
+                    DebugLogger.exiting("ModNetworking", "InvisibilityPayload handler", "no permission");
+                    return;
+                }
+                // 创造模式检查（隐身功能仅创造模式可用）
+                if (player.gameMode() != GameType.CREATIVE) {
+                    player.sendSystemMessage(Component.literal(
+                            "§c只有创造模式才能使用隐身功能（请先切换到创造模式）"));
+                    DebugLogger.exiting("ModNetworking", "InvisibilityPayload handler", "not creative");
+                    return;
+                }
+                if (payload.enabled()) {
+                    DebugLogger.branch("ModNetworking", "InvisibilityPayload", true, "enabling");
+                    InvisibilityManager.enable(player);
+                } else {
+                    DebugLogger.branch("ModNetworking", "InvisibilityPayload", false, "disabling");
+                    InvisibilityManager.disable(player);
+                }
+            });
+            DebugLogger.exiting("ModNetworking", "InvisibilityPayload handler");
+        });
+
+        // ===== 实验性功能命令转发处理器 =====
+        ServerPlayNetworking.registerGlobalReceiver(ExperimentalFeaturePayload.ID, (payload, context) -> {
+            DebugLogger.entering("ModNetworking", "ExperimentalFeaturePayload handler");
+            var player = (net.minecraft.server.level.ServerPlayer) context.player();
+            var server = player.level().getServer();
+            if (server == null) {
+                DebugLogger.exiting("ModNetworking", "ExperimentalFeaturePayload handler", "server is null");
+                return;
+            }
+            server.execute(() -> {
+                String id = payload.id();
+                ExperimentalFeatures.FeatureEntry entry = ExperimentalFeatures.getEntry(id);
+                if (entry == null) {
+                    player.sendSystemMessage(Component.translatable(
+                            "youzaiworldcore.message.command.experimental_feature.not_found", id));
+                    DebugLogger.exiting("ModNetworking", "ExperimentalFeaturePayload handler", "entry not found");
+                    return;
+                }
+
+                byte mode = payload.mode();
+                boolean enabled = payload.enabled();
+
+                switch (mode) {
+                    case ExperimentalFeaturePayload.MODE_QUERY -> {
+                        DebugLogger.branch("ModNetworking", "ExperimentalFeaturePayload mode", true, "query");
+                        if (!LuckPermsHelper.checkPermission(player.createCommandSourceStack(),
+                                LuckPermsHelper.PERMISSION_EXPERIMENTAL_FEATURE_QUERY, Commands.LEVEL_ALL)) {
+                            player.sendSystemMessage(Component.literal("§c你没有权限查询实验性功能"));
+                            DebugLogger.exiting("ModNetworking", "ExperimentalFeaturePayload handler", "no query permission");
+                            return;
+                        }
+                        sendExperimentalFeatureQuery(player, entry);
+                    }
+                    case ExperimentalFeaturePayload.MODE_SELF -> {
+                        DebugLogger.branch("ModNetworking", "ExperimentalFeaturePayload mode", false, "self");
+                        if (!LuckPermsHelper.checkPermission(player.createCommandSourceStack(),
+                                LuckPermsHelper.PERMISSION_EXPERIMENTAL_FEATURE_SELF, Commands.LEVEL_ALL)) {
+                            player.sendSystemMessage(Component.literal("§c你没有权限切换实验性功能"));
+                            DebugLogger.exiting("ModNetworking", "ExperimentalFeaturePayload handler", "no self permission");
+                            return;
+                        }
+                        ExperimentalFeatures.setForPlayer(id, player.getUUID(), enabled);
+                        FeatureSyncPayload sync = new FeatureSyncPayload(id, enabled, player.getUUID());
+                        ServerPlayNetworking.send(player, sync);
+                        player.sendSystemMessage(Component.literal(
+                                "§a已为自己" + (enabled ? "§a启用" : "§c禁用") + "实验性功能: §f" + id));
+                    }
+                    case ExperimentalFeaturePayload.MODE_ALL -> {
+                        DebugLogger.branch("ModNetworking", "ExperimentalFeaturePayload mode", false, "all");
+                        if (!LuckPermsHelper.checkPermission(player.createCommandSourceStack(),
+                                LuckPermsHelper.PERMISSION_EXPERIMENTAL_FEATURE_ADMIN, Commands.LEVEL_ADMINS)) {
+                            player.sendSystemMessage(Component.literal("§c你没有权限全服切换实验性功能"));
+                            DebugLogger.exiting("ModNetworking", "ExperimentalFeaturePayload handler", "no admin permission");
+                            return;
+                        }
+                        ExperimentalFeatures.setGlobal(id, enabled);
+                        FeatureSyncPayload sync = new FeatureSyncPayload(id, enabled, null);
+                        for (net.minecraft.server.level.ServerPlayer p : server.getPlayerList().getPlayers()) {
+                            ServerPlayNetworking.send(p, sync);
+                        }
+                        player.sendSystemMessage(Component.literal(
+                                "§a已全服" + (enabled ? "§a启用" : "§c禁用") + "实验性功能: §f" + id));
+                    }
+                    case ExperimentalFeaturePayload.MODE_ONLY -> {
+                        DebugLogger.branch("ModNetworking", "ExperimentalFeaturePayload mode", false, "only");
+                        if (!LuckPermsHelper.checkPermission(player.createCommandSourceStack(),
+                                LuckPermsHelper.PERMISSION_EXPERIMENTAL_FEATURE_ADMIN, Commands.LEVEL_ADMINS)) {
+                            player.sendSystemMessage(Component.literal("§c你没有权限为他人切换实验性功能"));
+                            DebugLogger.exiting("ModNetworking", "ExperimentalFeaturePayload handler", "no admin permission");
+                            return;
+                        }
+                        String targetName = payload.targetName();
+                        if (targetName == null || targetName.isEmpty()) {
+                            player.sendSystemMessage(Component.literal("§c未指定目标玩家"));
+                            DebugLogger.exiting("ModNetworking", "ExperimentalFeaturePayload handler", "target is null");
+                            return;
+                        }
+                        net.minecraft.server.level.ServerPlayer target =
+                                server.getPlayerList().getPlayerByName(targetName);
+                        if (target == null) {
+                            player.sendSystemMessage(Component.literal("§c找不到玩家: " + targetName));
+                            DebugLogger.exiting("ModNetworking", "ExperimentalFeaturePayload handler", "target not found");
+                            return;
+                        }
+                        ExperimentalFeatures.setForPlayer(id, target.getUUID(), enabled);
+                        FeatureSyncPayload sync = new FeatureSyncPayload(id, enabled, target.getUUID());
+                        ServerPlayNetworking.send(target, sync);
+                        player.sendSystemMessage(Component.literal(
+                                "§a已为目标玩家 §f" + target.getName().getString() + " §a"
+                                        + (enabled ? "§a启用" : "§c禁用") + " §f实验性功能: " + id));
+                    }
+                    default -> {
+                        DebugLogger.warn("ModNetworking", "ExperimentalFeaturePayload 未知 mode=%d", mode);
+                    }
+                }
+            });
+            DebugLogger.exiting("ModNetworking", "ExperimentalFeaturePayload handler");
+        });
+
         // ===== 属性加点系统数据包 =====
         PayloadTypeRegistry.clientboundPlay().register(AttributeSyncPayload.TYPE, AttributeSyncPayload.STREAM_CODEC);
         DebugLogger.info("ModNetworking", "Registered clientbound packet: AttributeSyncPayload");
@@ -303,5 +493,49 @@ public class ModNetworking {
         });
 
         DebugLogger.exiting("ModNetworking", "initialize");
+    }
+
+    /**
+     * 向玩家发送实验性功能查询信息面板（含名称、ID、提供者、来源、全局状态）。
+     * 等价于原 {@code ExperimentalFeatureCommand.queryFeature} 的展示逻辑，
+     * 现由数据包处理器在权限校验通过后调用。
+     */
+    private static void sendExperimentalFeatureQuery(net.minecraft.server.level.ServerPlayer player,
+                                                  ExperimentalFeatures.FeatureEntry entry) {
+        DebugLogger.entering("ModNetworking", "sendExperimentalFeatureQuery", "id=" + entry.id());
+        boolean globalEnabled = ExperimentalFeatures.isGlobalEnabled(entry.id());
+        MutableComponent text = Component.literal(
+                "§6===== §e实验性功能 §6=====\n"
+        );
+        text.append(Component.literal("§7名称：§f" + entry.name() + "\n"));
+        text.append(Component.literal("§7内部ID：§f" + entry.id() + "\n"));
+
+        // 提供者
+        text.append(Component.literal("§7提供者：")
+                .append(Component.literal("§b§n" + entry.provider())
+                        .withStyle(style -> style
+                                .withClickEvent(new ClickEvent.OpenUrl(java.net.URI.create(entry.providerUrl())))
+                                .withHoverEvent(new HoverEvent.ShowText(
+                                        Component.literal("§a点击打开: " + entry.providerUrl())))
+                        )
+                ).append(Component.literal("\n")));
+
+        text.append(Component.literal("§7描述：§f" + entry.description() + "\n"));
+
+        // 来源
+        text.append(Component.literal("§7来源：")
+                .append(Component.literal("§b§n" + entry.source())
+                        .withStyle(style -> style
+                                .withClickEvent(new ClickEvent.OpenUrl(java.net.URI.create(entry.sourceUrl())))
+                                .withHoverEvent(new HoverEvent.ShowText(
+                                        Component.literal("§a点击打开: " + entry.sourceUrl())))
+                        )
+                ).append(Component.literal("\n")));
+
+        text.append(Component.literal("§7全局状态：" + (globalEnabled ? "§a已启用" : "§c已禁用") + "\n"));
+        text.append(Component.literal("§6================================"));
+
+        player.sendSystemMessage(text);
+        DebugLogger.exiting("ModNetworking", "sendExperimentalFeatureQuery");
     }
 }

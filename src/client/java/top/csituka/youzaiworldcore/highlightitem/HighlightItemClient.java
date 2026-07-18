@@ -11,12 +11,11 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
 /**
  * 高亮物品功能客户端装配（纯指令控制，无 GUI）。
  * <p>
- * 负责：加载配置、注册 3 个键位（F10/H/B）、注册客户端命令。
- * 不再包含配置界面键位 G，所有设置通过 {@code /yzwc settings highlight_item} 指令完成。
+ * 负责：加载配置、注册 2 个键位（F10 切换高亮 / B 切换比较模式）、注册客户端命令。
+ * 所有设置通过 {@code /yzwc settings highlight_item} 指令完成；悬停物品本身永不着色。
  */
 public class HighlightItemClient {
     public static final KeyMapping TOGGLE_BIND;
-    public static final KeyMapping COLOR_HOVERED_BIND;
     public static final KeyMapping COMPARATOR_BIND;
 
     private static final Identifier CATEGORY = Identifier.parse(YouzaiworldCore.MOD_ID + ":highlight");
@@ -24,8 +23,6 @@ public class HighlightItemClient {
     static {
         TOGGLE_BIND = new KeyMapping("key.youzaiworldcore.highlight.toggle",
                 GLFW.GLFW_KEY_F10, new KeyMapping.Category(CATEGORY));
-        COLOR_HOVERED_BIND = new KeyMapping("key.youzaiworldcore.highlight.color_hover",
-                GLFW.GLFW_KEY_H, new KeyMapping.Category(CATEGORY));
         COMPARATOR_BIND = new KeyMapping("key.youzaiworldcore.highlight.comparator",
                 GLFW.GLFW_KEY_B, new KeyMapping.Category(CATEGORY));
     }
@@ -59,11 +56,6 @@ public class HighlightItemClient {
         if (TOGGLE_BIND.consumeClick()) {
             DebugLogger.branch("HighlightItem", "键位 F10 切换高亮", true);
             HighlightItem.configurator.updateToggle(player, Configurator.NotificationContext.ON_SCREEN);
-        }
-        if (COLOR_HOVERED_BIND.consumeClick()) {
-            DebugLogger.branch("HighlightItem", "键位 H 切换悬停着色", true);
-            HighlightItem.configurator.updateColorHovered(
-                    !Configurator.COLOR_HOVERED, player, Configurator.NotificationContext.ON_SCREEN);
         }
         if (COMPARATOR_BIND.consumeClick()) {
             DebugLogger.branch("HighlightItem", "键位 B 切换比较模式", true);

@@ -73,6 +73,9 @@ public final class LuckPermsHelper {
     /** 隐身功能 {@code /yzwc function invisibility} */
     public static final String PERMISSION_INVISIBILITY = "youzaiworldcore.command.function.invisibility";
 
+    /** 双开门功能（自身开关/查询）{@code /yzwc function double_doors [true|false]} */
+    public static final String PERMISSION_DOUBLE_DOORS = "youzaiworldcore.command.function.double_doors";
+
     /** 实验性功能自切换 {@code /yzwc experimental_feature <id> <bool>}（为自己切换） */
     public static final String PERMISSION_EXPERIMENTAL_FEATURE_SELF = "youzaiworldcore.command.experimental_feature.self";
 

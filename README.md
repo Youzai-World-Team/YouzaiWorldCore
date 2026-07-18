@@ -20,7 +20,7 @@
 
 ## 📖 项目概述
 
-**YouzaiWorldCore** 是悠哉世界（Youzai World）Minecraft 多人服务器的核心玩法模组，基于 **Fabric** 框架开发，深度集成 **LuckPerms** 权限系统与 **Placeholder API**。模组为服务器提供完整的基础设施，涵盖账户认证、GUI 菜单、自定义物品与方块、坐姿交互、维度池、传送锚点、魔力系统、隐身管理、冒险经验、附魔等级语言补丁、拾取显示、新手教程、语音聊天集成等 20 余项核心能力。
+**YouzaiWorldCore** 是悠哉世界（Youzai World）Minecraft 多人服务器的核心玩法模组，基于 **Fabric** 框架开发，深度集成 **LuckPerms** 权限系统与 **Placeholder API**。模组为服务器提供完整的基础设施，涵盖账户认证、GUI 菜单、自定义物品与方块、坐姿交互、维度池、传送锚点、魔力系统、隐身管理、冒险经验、附魔等级语言补丁、拾取显示、世界增强（带电苦力怕 / 末影龙掉鞘翅 / 末地传送门等）、新手教程、语音聊天集成等 20 余项核心能力。
 
 ### 目标用户群体
 
@@ -221,6 +221,30 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 
 ---
 
+### 21. 世界增强功能
+
+一组原生集成、不依赖外部库的"世界微调"增强（灵感来自社区经典玩法），覆盖生物行为、掉落归集与末地机制：
+
+- **天然带电苦力怕（Naturally Charged Creepers）**：苦力怕进入服务端世界时，以可配置概率（`chance`，默认 0.1 / 10%）标记为带电状态。通过 Mixin 暴露的 `DATA_IS_POWERED` 实体数据写入，确保客户端闪电光环正确同步；数据标签去重避免区块重载重复判定。配置 `config/youzaiworldcore/charged_creeper.json`（`enabled` 默认 true、`chance` 默认 0.1，自动钳制 [0,1]）。命令：`/yzwc event naturally_charged_creepers enable [true|false]` / `settings chance [double]`
+- **紫颂果就近掉落（Chorus Fruit Drops Nearby）**：破坏紫颂植物后，其掉落的紫颂果会被就近传送至最近被破坏的紫颂植物位置（水平距离 < 20 格、2 秒时间窗内），避免果实散落满地
+- **末影龙鞘翅掉落（Dragon Drops Elytra）**：末影龙被击杀时额外掉落一个鞘翅并广播提示；击杀归属优先级：直接玩家 → 弹射物发射者（弓/弩/三叉戟）→ 30 格半径内最近玩家
+- **末地传送门增强**：① 末地传送门框可被精准采集镐破坏并掉落（含已嵌末影之眼），同时清除激活的传送门方块；② 末影龙被击杀时向附近玩家额外给予一个龙蛋；③ 新增合成配方 `craftable_end_portal`（末影之眼 + 龙蛋 + 末地石 → 12 个末地传送门框）。配置 `config/youzaiworldcore/end_portal_settings.json` 三项开关（精准采集要求 / 直接入背包 / 龙蛋提示）
+
+---
+
+### 22. 双开门系统
+
+仅支持「同材质木门 / 栅栏门」点击双开的精简实现，按玩家独立开关。
+
+- **触发方式**：徒手右键门 / 栅栏门，`DoorBlockMixin` / `FenceGateBlockMixin` 在 `useWithoutItem` 完成原版开关后调用 `DoubleDoorsHandler.onDoorClick`；潜行时禁用双开，仅保留原版单开
+- **配对规则**：在 3×3 水平范围内搜索相邻、同类型（同为 `DoorBlock` 或同为 `FenceGateBlock`）、显示名（材质）相同的配对门，统一同步为被点击门的开合状态；不做递归（仅相邻双开）
+- **支持范围**：木门（含双层）、栅栏门（自动对齐朝向）；铁门等无法徒手开启的方块、活板门、红石触发、村民 AI、连锁开门均不在范围内
+- **玩家独立开关**：`/yzwc function double_doors [true|false]` 控制自身，缺省（不带参数）查询自身状态，新玩家默认开启
+- **数据持久化**：`config/youzaiworldcore/double_doors_players.json`，仅保存被指令显式设置过的玩家（`DoubleDoorsState`，未设置者回退默认启用）
+- **客户端转发架构**：`/yzwc` 根命令已在客户端注册（用于 `/yzwc settings`），故该命令在客户端仅做解析与转发，权威状态由服务端通过 `DoubleDoorsTogglePayload`（C→S）承载
+
+---
+
 ## 📜 指令树
 
 所有指令以 `/yzwc` 为根命令。
@@ -249,6 +273,10 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 │   ├── 权限：youzaiworldcore.command.function.invisibility（OP 4）
 │   └── 限制：必须在创造模式
 │
+├── function double_doors <true|false>
+│   ├── 权限：youzaiworldcore.command.function.double_doors（玩家自身，所有人可执行）
+│   └── 缺省查询自身状态；新玩家默认启用，状态持久化至 double_doors_players.json
+│
 ├── experimental_feature <id> [true/false [all|only <player>]]
 │   ├── 权限：.query（所有人）/ .self（所有人）/ .admin（OP 4）
 │   └── 查询或切换实验性功能
@@ -256,6 +284,11 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 ├── reload
 │   ├── 权限：youzaiworldcore.command.reload（OP 4）
 │   └── 运行时重载账户数据和配置
+│
+├── event naturally_charged_creepers
+│   ├── enable [true|false]               → 开启/关闭天然带电苦力怕（缺省查询）
+│   ├── settings chance [double]           → 设置带电概率 0.0~1.0（缺省查询）
+│   └── 权限：.query（所有人）/ .set（OP 4）
 │
 └── account
     ├── 📋 玩家命令：
@@ -287,10 +320,13 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 | `youzaiworldcore.command.world_pool` | 维度池管理 | OP 4 |
 | `youzaiworldcore.command.teleport_anchor` | 传送锚点管理 | OP 4 |
 | `youzaiworldcore.command.function.invisibility` | 隐身功能 | OP 4 |
+| `youzaiworldcore.command.function.double_doors` | 双开门功能（自身开关 / 查询） | 所有人（仅自身） |
 | `youzaiworldcore.command.experimental_feature` | 实验性功能（基础） | 所有人 |
 | `youzaiworldcore.command.experimental_feature.query` | 查询 | 所有人 |
 | `youzaiworldcore.command.experimental_feature.self` | 自切换 | 所有人 |
 | `youzaiworldcore.command.experimental_feature.admin` | 管理 | OP 4 |
+| `youzaiworldcore.command.event.query` | 事件管理查询（省略参数即为查询） | 所有人 |
+| `youzaiworldcore.command.event.set` | 事件管理修改（enable / settings） | OP 4 |
 | `youzaiworldcore.command.account.mgr.create` | 创建账户 | OP 4 |
 | `youzaiworldcore.command.account.mgr.reset_password` | 重置密码 | OP 4 |
 | `youzaiworldcore.command.account.mgr.delete` | 删除账户 | OP 4 |
@@ -330,9 +366,9 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 | `decomposition_table` | 分解台 |
 | `fly_beacon` | 飞行信标 |
 
-### 网络数据包（共 15 个）
+### 网络数据包（共 20 个）
 
-> 注：`world_pool_teleport` 数据包类位于 `dimensionalinventories` 包，其余 14 个位于 `network` 包。
+> 注：`world_pool_teleport` 数据包类位于 `dimensionalinventories` 包，其余 19 个位于 `network` 包。
 
 | 数据包 ID | 方向 | 用途 |
 |-----------|------|------|
@@ -341,6 +377,7 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 | `open_auth_screen` | S→C | 打开认证界面 |
 | `mana_sync` | S→C | 同步魔力值 |
 | `level_exp_sync` | S→C | 同步冒险等级经验 |
+| `attribute_sync` | S→C | 同步玩家属性数据（技能点 / 各项属性 / 等级） |
 | `world_pool_teleport` | C→S | 请求维度池传送 |
 | `teleport_anchor_open_name` | S→C | 打开传送锚点命名界面 |
 | `teleport_anchor_list` | S→C | 发送传送点列表 |
@@ -351,6 +388,10 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 | `teleport_anchor_reorder` | C→S | 调整排序 |
 | `decompose_item` | C→S | 分解物品 |
 | `fly_beacon_active` | C→S | 切换飞行信标 |
+| `invisibility_toggle` | C→S | 切换 / 关闭自身隐身 |
+| `experimental_feature` | C→S | 转发实验性功能命令（查询 / 自切换 / 全服 / 指定玩家） |
+| `attribute_upgrade` | C→S | 请求为某项属性加点 |
+| `double_doors_toggle` | C→S | 切换 / 查询自身双开门开关 |
 
 ---
 
@@ -381,21 +422,23 @@ src/
 │   ├── YouzaiworldCore.java              # 主入口
 │   ├── account/                          # 账户认证（Mixin + JSON 存储）
 │   ├── block/ + entity/                  # 自定义方块与方块实体
-│   ├── command/                          # 命令注册
+│   ├── command/                          # 命令注册（含 EventCommand 天然带电苦力怕管理）
 │   ├── component/                        # 数据组件
-│   ├── config/                           # 服务端外部设置
+│   ├── config/                           # 服务端外部设置（含带电苦力怕 / 末地传送门 / 双开门配置）
 │   ├── data/                             # 传送锚点 SavedData
 │   ├── dimensionalinventories/           # 维度池系统（含 WorldPoolTeleportPayload）
 │   ├── enchlevellangpatch/               # 附魔等级语言补丁（api + impl）
-│   ├── event/                            # 事件处理器（铁砧修复/飞行信标/虚空法杖/坐姿交互/传送锚点交互/切石机伤害）
+│   ├── event/                            # 事件处理器（铁砧修复/飞行信标/虚空法杖/坐姿交互/传送锚点交互/切石机伤害/天然带电苦力怕/紫颂果/末影龙鞘翅/末地传送门/双开门）
 │   ├── entity/seat/                      # 座椅实体系统
 │   ├── feature/                          # 实验性功能系统
 │   ├── invisibility/                     # 隐身系统
 │   ├── item/                             # 物品、工具、创造标签页、预设
 │   ├── luckperms/                        # LuckPerms 权限集成
 │   ├── mana/                             # 魔力系统
-│   ├── mixin/                            # 主 Mixin（+ 隐身容器/粒子/音效 + 座椅 + 技能）
-│   ├── network/                          # 网络数据包（14 个数据包类）
+│   ├── mixin/                            # 主 Mixin（+ 隐身容器/粒子/音效 + 座椅 + 技能 + 带电苦力怕 + 双开门）
+│   ├── mixin/chargedcreeper/             # 带电苦力怕 Mixin（暴露 DATA_IS_POWERED 访问器）
+│   ├── mixin/doubledoors/                # 双开门 Mixin（DoorBlock / FenceGateBlock 点击双开）
+│   ├── network/                          # 网络数据包（19 个数据包类）
 │   ├── placeholders/                     # Placeholder API 集成（32 个占位符）
 │   ├── screen/                           # 容器菜单
 │   ├── skill/                            # 冒险经验等级系统
@@ -408,7 +451,7 @@ src/
 │   ├── effect/                           # 传送 FOV 效果
 │   ├── higherchat/                       # Simple Voice Chat 集成（HUD 图标位置跟踪，优化聊天框位置避免遮挡）
 │   ├── hud/                              # 魔力条 / 冒险等级 HUD
-│   ├── mixin/client/                     # 客户端 Mixin（标题/选项/按钮/暂停/聊天/加载/座椅/渲染/拾取/附魔补丁 等，共 23 个）
+│   ├── mixin/client/                     # 客户端 Mixin（标题/选项/按钮/暂停/聊天/加载/座椅/渲染/拾取/附魔补丁 等，共 24 个）
 │   ├── network/                          # 客户端网络处理（ClientNetworking）
 │   ├── pickup/                           # 拾取显示（物品/经验浮动提示）
 │   ├── renderer/                         # 方块/实体渲染器
@@ -447,6 +490,7 @@ src/
 | `flame_staff` | 合成 | 烈焰法杖 |
 | `sky_star_staff` | 合成 | 星辰法杖 |
 | `raw_yz_block` / `raw_yz_from_raw_yz_block` | 合成 | 原矿块转换 |
+| `craftable_end_portal` | 合成 | 末地传送门框 ×12（末影之眼 + 龙蛋 + 末地石） |
 
 ---
 

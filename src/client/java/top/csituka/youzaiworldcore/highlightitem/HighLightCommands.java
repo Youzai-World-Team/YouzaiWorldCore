@@ -1,7 +1,6 @@
 package top.csituka.youzaiworldcore.highlightitem;
 
 import com.mojang.brigadier.Command;
-import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.arguments.FloatArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
@@ -21,7 +20,7 @@ import static net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal;
  * 高亮物品客户端命令（纯指令控制，无 GUI）。
  * <p>
  * 命令根：{@code /yzwc settings highlight_item}，子命令：{@code toggle} / {@code color}
- * / {@code hoverColor} / {@code mode}。
+ * / {@code mode}。
  * 枚举参数的解析使用 {@link StringArgumentType} 按名称匹配，避免自定义 ArgumentType 注册。
  */
 public class HighLightCommands {
@@ -72,15 +71,6 @@ public class HighLightCommands {
                                                                         Component.translatable("youzaiworldcore.highlight.config.update.fail"));
                                                                 DebugLogger.exception("HighlightItem", "命令 color 解析失败: " + name, e);
                                                             }
-                                                            return Command.SINGLE_SUCCESS;
-                                                        })))
-                                        .then(literal("hoverColor")
-                                                .then(argument("boolean", BoolArgumentType.bool())
-                                                        .executes(cmdContext -> {
-                                                            HighlightItem.configurator.updateColorHovered(
-                                                                    BoolArgumentType.getBool(cmdContext, "boolean"),
-                                                                    cmdContext.getSource().getPlayer(),
-                                                                    Configurator.NotificationContext.SENDING_COMMAND);
                                                             return Command.SINGLE_SUCCESS;
                                                         })))
                                         .then(literal("mode")

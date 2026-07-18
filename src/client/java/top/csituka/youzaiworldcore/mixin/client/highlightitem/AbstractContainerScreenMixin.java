@@ -32,8 +32,14 @@ public abstract class AbstractContainerScreenMixin {
             return;
         }
 
-        // 悬停物品本身：仅当开启“悬停着色”时才着色，否则保留原版白色高亮
-        if (slot == this.hoveredSlot && !Configurator.COLOR_HOVERED) {
+        // 悬停的是空槽位时不作任何高亮，避免所有空格子被连带着高亮
+        if (this.hoveredSlot.getItem().isEmpty()) {
+            DebugLogger.trace("HighlightItem", "悬停槽位为空，跳过高亮");
+            return;
+        }
+
+        // 悬停物品本身一律不着色（保留原版白色高亮），无论任何设置
+        if (slot == this.hoveredSlot) {
             return;
         }
 

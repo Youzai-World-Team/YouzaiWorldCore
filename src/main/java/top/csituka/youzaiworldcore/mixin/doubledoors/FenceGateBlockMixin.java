@@ -4,90 +4,68 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.FenceGateBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
-import net.minecraft.world.level.redstone.Orientation;
 import net.minecraft.world.phys.BlockHitResult;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import top.csituka.youzaiworldcore.event.DoubleDoorsHandler;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
 /**
- * 栅栏门（FenceGateBlock）的双开 Mixin。
- * <ul>
- *   <li>注入 {@code useWithoutItem} 的 RETURN，捕获玩家点击交互</li>
- *   <li>注入 {@code neighborChanged} 的 HEAD+RETURN，捕获红石信号变化</li>
- * </ul>
+ * 栅栏门（FenceGateBlock）双开 Mixin。
+ * <p>
+ * 仅在玩家点击（{@code useWithoutItem}）时触发：在 HEAD 记录点击前的 OPEN 状态，
+ * 在 RETURN 比对点击后的新状态；仅当<b>确实发生了切换</b>时，
+ * 把新开合状态交给 {@link DoubleDoorsHandler} 同步相邻同材质栅栏门。
+ * </p>
+ * <p>
+ * 红石信号触发不在本精简版本范围内（已移除 {@code neighborChanged} 注入）。
+ * </p>
  */
 @Mixin(value = FenceGateBlock.class, priority = 1001)
 public class FenceGateBlockMixin {
 
     private static final String MODULE = "FenceGateBlockMixin";
 
-    /** 保存邻居变化前的 OPEN 状态，用于判断是否实际发生了变化 */
-    private static final ThreadLocal<Boolean> prevOpenState = new ThreadLocal<>();
+    /** 保存点击前（原版切换前）的 OPEN 状态，用于判断是否发生了切换 */
+    private static final ThreadLocal<Boolean> preOpen = new ThreadLocal<>();
 
-    /**
-     * 玩家点击栅栏门时触发。
-     * 注入在 {@code useWithoutItem} 的 RETURN 处。
-     */
+    @Inject(method = "useWithoutItem", at = @At("HEAD"))
+    private void youzaiworldcore$head(BlockState blockState, Level level, BlockPos blockPos,
+                                        Player player, BlockHitResult blockHitResult,
+                                        CallbackInfoReturnable<InteractionResult> cir) {
+        if (level.isClientSide()) {
+            preOpen.remove();
+            return;
+        }
+        preOpen.set(level.getBlockState(blockPos).getValue(BlockStateProperties.OPEN));
+    }
+
     @Inject(method = "useWithoutItem", at = @At("RETURN"))
-    private void youzaiworldcore$onUseWithoutItem(BlockState blockState, Level level, BlockPos blockPos,
-                                                    Player player, BlockHitResult blockHitResult,
-                                                    CallbackInfoReturnable<InteractionResult> cir) {
+    private void youzaiworldcore$return(BlockState blockState, Level level, BlockPos blockPos,
+                                          Player player, BlockHitResult blockHitResult,
+                                          CallbackInfoReturnable<InteractionResult> cir) {
         if (level.isClientSide()) {
+            preOpen.remove();
             return;
         }
-        DebugLogger.debug(MODULE, "useWithoutItem@RETURN: pos=%s, player=%s",
-                blockPos, player.getName().getString());
-        DoubleDoorsHandler.onDoorClick(level, player, blockPos, blockHitResult);
-    }
-
-    /**
-     * 红石信号更新导致邻居变化时，在 {@code neighborChanged} 的 HEAD 处
-     * 保存当前 OPEN 状态以在 RETURN 处判断是否实际变化。
-     */
-    @Inject(method = "neighborChanged", at = @At("HEAD"))
-    private void youzaiworldcore$beforeNeighborChanged(BlockState state, Level level, BlockPos pos,
-                                                        Block block, Orientation orientation,
-                                                        boolean isMoving,
-                                                        CallbackInfo ci) {
-        if (level.isClientSide()) {
-            prevOpenState.remove();
+        Boolean pre = preOpen.get();
+        preOpen.remove();
+        if (pre == null) {
             return;
         }
-        prevOpenState.set(state.getValue(BlockStateProperties.OPEN));
-    }
-
-    /**
-     * 红石信号更新后，在 {@code neighborChanged} 的 RETURN 处判断门状态是否变化。
-     */
-    @Inject(method = "neighborChanged", at = @At("RETURN"))
-    private void youzaiworldcore$afterNeighborChanged(BlockState state, Level level, BlockPos pos,
-                                                       Block block, Orientation orientation,
-                                                       boolean isMoving,
-                                                       CallbackInfo ci) {
-        if (level.isClientSide()) {
-            prevOpenState.remove();
+        boolean post = level.getBlockState(blockPos).getValue(BlockStateProperties.OPEN);
+        if (post == pre) {
+            // 未发生切换（如被红石供能锁定），不触发双开
+            DebugLogger.debug(MODULE, "useWithoutItem: 状态未变化，跳过 pos=%s", blockPos);
             return;
         }
-        Boolean prev = prevOpenState.get();
-        if (prev == null) {
-            prevOpenState.remove();
-            return;
-        }
-        boolean current = state.getValue(BlockStateProperties.OPEN);
-        if (prev != current) {
-            DebugLogger.debug(MODULE, "neighborChanged@RETURN: pos=%s, open=%s->%s", pos, prev, current);
-            DoubleDoorsHandler.onNeighborChanged(level, pos, state);
-        }
-        prevOpenState.remove();
+        DebugLogger.debug(MODULE, "useWithoutItem: pos=%s, targetOpen=%s", blockPos, post);
+        DoubleDoorsHandler.onDoorClick(level, player, blockPos, post);
     }
 }

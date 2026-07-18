@@ -29,6 +29,9 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
 import top.csituka.youzaiworldcore.client.effect.TeleportFovEffect;
 import top.csituka.youzaiworldcore.enchlevellangpatch.impl.LangPatchImpl;
 import top.csituka.youzaiworldcore.highlightitem.HighlightItemClient;
+import top.csituka.youzaiworldcore.command.DoubleDoorsClientCommand;
+import top.csituka.youzaiworldcore.command.ExperimentalFeatureClientCommand;
+import top.csituka.youzaiworldcore.command.InvisibilityClientCommand;
 
 public class Client implements ClientModInitializer {
 
@@ -83,6 +86,18 @@ public class Client implements ClientModInitializer {
         // 高亮物品功能初始化（配置加载、键位注册、客户端命令、延迟调度器）
         DebugLogger.info("Client", "初始化高亮物品功能...");
         HighlightItemClient.initialize();
+
+        // 双开门功能客户端命令（解析后转发至服务端数据包）
+        DebugLogger.info("Client", "注册双开门客户端命令...");
+        DoubleDoorsClientCommand.register();
+
+        // 隐身功能客户端命令（解析后转发至服务端数据包）
+        DebugLogger.info("Client", "注册隐身客户端命令...");
+        InvisibilityClientCommand.register();
+
+        // 实验性功能客户端命令（解析后转发至服务端数据包）
+        DebugLogger.info("Client", "注册实验性功能客户端命令...");
+        ExperimentalFeatureClientCommand.register();
 
         DebugLogger.info("Client", "客户端初始化完成 (devMode=%s, logToFile=%s)",
                 top.csituka.youzaiworldcore.YouzaiworldCore.devModeEnabled,

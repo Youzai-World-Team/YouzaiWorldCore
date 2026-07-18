@@ -33,7 +33,6 @@ public class Configurator {
 
     public static boolean TOGGLE;
     public static int COLOR;
-    public static boolean COLOR_HOVERED;
     public static ItemComparator.Comparators COMPARATOR;
     public static NotificationPreference NOTIFICATION_PREFERENCE;
 
@@ -76,7 +75,6 @@ public class Configurator {
 
     public enum Config {
         COLOR("color", Colors.HighLightColor.DEFAULT.json().toString()),
-        COLOR_HOVERED("color-hovered", "false"),
         TOGGLE("toggle", "true"),
         COMPARATOR("comparator", ItemComparator.Comparators.ITEM_ONLY.name()),
         NOTIFICATION_PREFERENCE("notif-preference", NotificationPreference.NONE.name());
@@ -138,8 +136,6 @@ public class Configurator {
                 (int) (colors[0] * 255),
                 (int) (colors[1] * 255),
                 (int) (colors[2] * 255));
-        COLOR_HOVERED = Boolean.parseBoolean(
-                properties.getProperty(Config.COLOR_HOVERED.getKey(), Config.COLOR_HOVERED.getDefault()));
         COMPARATOR = ItemComparator.Comparators.valueOf(
                 properties.getProperty(Config.COMPARATOR.getKey(), Config.COMPARATOR.getDefault()));
         NOTIFICATION_PREFERENCE = NotificationPreference.valueOf(
@@ -147,7 +143,6 @@ public class Configurator {
 
         DebugLogger.stateChange("HighlightItem", "config", "toggle", TOGGLE);
         DebugLogger.stateChange("HighlightItem", "config", "color", COLOR);
-        DebugLogger.stateChange("HighlightItem", "config", "colorHovered", COLOR_HOVERED);
         DebugLogger.stateChange("HighlightItem", "config", "comparator", COMPARATOR.name());
         DebugLogger.stateChange("HighlightItem", "config", "notif", NOTIFICATION_PREFERENCE.name());
     }
@@ -184,26 +179,6 @@ public class Configurator {
                             .withStyle(TOGGLE ? ChatFormatting.GRAY : ChatFormatting.DARK_GRAY),
                     player);
             DebugLogger.stateChange("HighlightItem", "toggle", "value", TOGGLE);
-        } catch (IOException e) {
-            notify(notification,
-                    Component.translatable("youzaiworldcore.highlight.config.update.fail").withStyle(ChatFormatting.RED),
-                    player);
-            LOGGER.error("[HighlightItem] 无法更新配置文件", e);
-        }
-    }
-
-    /** 切换“悬停物品本身也着色”选项。 */
-    public void updateColorHovered(boolean hovered, LocalPlayer player, NotificationContext notification) {
-        COLOR_HOVERED = hovered;
-        try {
-            updateConfig(Config.COLOR_HOVERED, "" + COLOR_HOVERED);
-            notify(notification,
-                    Component.translatable(COLOR_HOVERED
-                                    ? "youzaiworldcore.highlight.color_hovered_activated"
-                                    : "youzaiworldcore.highlight.color_hovered_deactivated")
-                            .withStyle(COLOR_HOVERED ? ChatFormatting.GRAY : ChatFormatting.DARK_GRAY),
-                    player);
-            DebugLogger.stateChange("HighlightItem", "colorHovered", "value", COLOR_HOVERED);
         } catch (IOException e) {
             notify(notification,
                     Component.translatable("youzaiworldcore.highlight.config.update.fail").withStyle(ChatFormatting.RED),
@@ -283,27 +258,25 @@ public class Configurator {
         }
     }
 
+    /**
+     * 切换/反馈消息统一以“唱片机”式顶部 Toast 弹出（与唱片机 now-playing 同属 Toast 家族、同屏幕位置）。
+     * 仅当用户显式选择 CHAT / OVERLAY 偏好时，才改走聊天栏 / 叠加层。
+     */
     private void notify(NotificationContext type, Component text, LocalPlayer player) {
-        if (type.equals(NotificationContext.ON_SCREEN)
-                || NOTIFICATION_PREFERENCE.equals(NotificationPreference.TOAST)) {
-            notifyToast(text);
-            return;
-        }
-
-        if (player == null) {
-            return;
-        }
-
         if (NOTIFICATION_PREFERENCE.equals(NotificationPreference.CHAT)) {
-            player.sendSystemMessage(text);
-        } else if (NOTIFICATION_PREFERENCE.equals(NotificationPreference.OVERLAY)) {
-            player.sendOverlayMessage(text);
-        } else {
-            switch (type) {
-                case SENDING_COMMAND -> player.sendSystemMessage(text);
-                case IN_GAME -> player.sendOverlayMessage(text);
+            if (player != null) {
+                player.sendSystemMessage(text);
             }
+            return;
         }
+        if (NOTIFICATION_PREFERENCE.equals(NotificationPreference.OVERLAY)) {
+            if (player != null) {
+                player.sendOverlayMessage(text);
+            }
+            return;
+        }
+        // 默认 / TOAST / ON_SCREEN / SENDING_COMMAND / IN_GAME 均走 Toast（唱片机文本展示路径）
+        notifyToast(text);
     }
 
     private void notifyToast(Component text) {

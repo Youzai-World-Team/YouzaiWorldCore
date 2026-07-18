@@ -30,7 +30,7 @@ import top.csituka.youzaiworldcore.account.data.AccountDataStorage;
 import top.csituka.youzaiworldcore.command.EventCommand;
 import top.csituka.youzaiworldcore.command.ReloadCommand;
 import top.csituka.youzaiworldcore.config.ChargedCreeperConfig;
-import top.csituka.youzaiworldcore.config.DoubleDoorsConfig;
+import top.csituka.youzaiworldcore.config.DoubleDoorsState;
 import top.csituka.youzaiworldcore.config.EndPortalConfig;
 import top.csituka.youzaiworldcore.config.ServerExternalSettings;
 import top.csituka.youzaiworldcore.luckperms.LuckPermsHelper;
@@ -41,8 +41,6 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
 import top.csituka.youzaiworldcore.mana.ManaTickHandler;
 import top.csituka.youzaiworldcore.block.ModBlocks;
 import top.csituka.youzaiworldcore.block.entity.ModBlockEntities;
-import top.csituka.youzaiworldcore.command.ExperimentalFeatureCommand;
-import top.csituka.youzaiworldcore.command.InvisibilityCommand;
 import top.csituka.youzaiworldcore.command.TeleportAnchorCommand;
 import top.csituka.youzaiworldcore.component.ModDataComponents;
 import top.csituka.youzaiworldcore.dimensionalinventories.DimensionPoolSettings;
@@ -168,9 +166,9 @@ public class YouzaiworldCore implements ModInitializer {
         DebugLogger.info("YouzaiworldCore", "注册天然带电苦力怕事件...");
         ChargedCreeperHandler.register();
 
-        // ===== 初始化双开门功能（Double Doors 移植） =====
-        DebugLogger.info("YouzaiworldCore", "加载双开门配置...");
-        DoubleDoorsConfig.load();
+        // ===== 初始化双开门功能（Double Doors 移植，已精简为按玩家开关） =====
+        DebugLogger.info("YouzaiworldCore", "加载双开门玩家状态...");
+        DoubleDoorsState.load();
         DebugLogger.info("YouzaiworldCore", "初始化双开门处理器...");
         DoubleDoorsHandler.register();
 
@@ -279,10 +277,6 @@ public class YouzaiworldCore implements ModInitializer {
         // ===== 注册所有 /yzwc 命令 =====
         DebugLogger.entering("YouzaiworldCore", "CommandRegistration");
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
-            DebugLogger.info("YouzaiworldCore", "注册命令: ExperimentalFeatureCommand");
-            ExperimentalFeatureCommand.register(dispatcher);
-            DebugLogger.info("YouzaiworldCore", "注册命令: InvisibilityCommand");
-            InvisibilityCommand.register(dispatcher);
             DebugLogger.info("YouzaiworldCore", "注册命令: WorldPoolCommand");
             WorldPoolCommand.register(dispatcher);
 
