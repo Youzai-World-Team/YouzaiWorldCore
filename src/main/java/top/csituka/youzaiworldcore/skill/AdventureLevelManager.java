@@ -28,24 +28,63 @@ public class AdventureLevelManager {
 
     // ==================== 升级公式 ====================
 
+    /**
+     * 计算升到下一级所需的经验。
+     * <p>
+     * 公式：C = 200 + 20 × log₁₀(2n)²⁰
+     * <ul>
+     *   <li>C：升级所需经验数值</li>
+     *   <li>n：玩家当前等级（n ≥ 1）</li>
+     * </ul>
+     * 等级较低时 log₁₀(2n) < 1，C ≈ 220（平坦区）；
+     * 等级较高时（n ≥ 50）增长加速。
+     */
     public static int expForNextLevel(int level) {
-        return 50 + level * 50;
+        if (level < 1) level = 1;
+        double logVal = Math.log10(2.0 * level);
+        double result = 200.0 + 20.0 * Math.pow(logVal, 20.0);
+        // clamp 防止溢出
+        if (result > Integer.MAX_VALUE) return Integer.MAX_VALUE;
+        return Math.max(1, (int) Math.round(result));
     }
 
-    public static int totalExpForLevel(int level) {
+    /**
+     * 升到指定等级所需的总累积经验。
+     * level=1 时返回 0（初始等级）。
+     */
+    public static long totalExpForLevel(int level) {
         if (level <= 1) return 0;
-        return 50 * (level - 1) * (level + 2) / 2;
+        long total = 0;
+        for (int i = 1; i < level; i++) {
+            total += expForNextLevel(i);
+            if (total > Integer.MAX_VALUE) return Integer.MAX_VALUE;
+        }
+        return total;
     }
 
+    /**
+     * 从总经验值反算当前等级。
+     */
     public static int getLevelFromExp(int totalExp) {
+        if (totalExp <= 0) return 1;
+        long accumulated = 0;
         int level = 1;
-        while (totalExpForLevel(level + 1) <= totalExp) { level++; }
+        while (true) {
+            int needed = expForNextLevel(level);
+            if ((long) accumulated + needed > totalExp) break;
+            accumulated += needed;
+            level++;
+        }
         return level;
     }
 
+    /**
+     * 获取当前等级内已获得的经验值（从等级起点到当前的进度）。
+     */
     public static int getCurrentLevelExp(int totalExp) {
         int level = getLevelFromExp(totalExp);
-        return totalExp - totalExpForLevel(level);
+        long base = totalExpForLevel(level);
+        return (int) (totalExp - base);
     }
 
     // ==================== 事件经验常量 ====================

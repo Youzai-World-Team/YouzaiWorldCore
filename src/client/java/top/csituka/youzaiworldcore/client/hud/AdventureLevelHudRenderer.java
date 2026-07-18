@@ -27,7 +27,7 @@ public class AdventureLevelHudRenderer {
     // ─── 客户端缓存的 HUD 数据（由 LevelExpSyncPayload 更新） ───
     private static int displayLevel = 1;
     private static int displayCurrentExp = 0;
-    private static int displayNeededExp = 100;
+    private static int displayNeededExp = 200;
     private static int lastGainedExp = 0;
 
     /**
