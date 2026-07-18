@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "AAA",
+    "AEA",
+    "SSS"
+  ],
+  "key": {
+    "A": "minecraft:ender_eye",
+    "E": "minecraft:dragon_egg",
+    "S": "minecraft:end_stone"
+  },
+  "result": {
+    "id": "minecraft:end_portal_frame",
+    "count": 12
+  }
+}

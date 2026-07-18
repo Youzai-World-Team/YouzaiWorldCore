@@ -20,7 +20,8 @@
     "skill.TotemExpMixin",
     "skill.LivingEntityHealMixin",
     "seat.EntityVehicleAccessor",
-    "StructureTemplatePoolAccessor"
+    "StructureTemplatePoolAccessor",
+    "chargedcreeper.CreeperChargedAccessor"
   ],
   "injectors": {
     "defaultRequire": 1
