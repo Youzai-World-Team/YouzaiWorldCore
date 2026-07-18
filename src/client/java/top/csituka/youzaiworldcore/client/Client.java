@@ -28,6 +28,7 @@ import top.csituka.youzaiworldcore.screen.ModMenuTypes;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 import top.csituka.youzaiworldcore.client.effect.TeleportFovEffect;
 import top.csituka.youzaiworldcore.enchlevellangpatch.impl.LangPatchImpl;
+import top.csituka.youzaiworldcore.highlightitem.HighlightItemClient;
 
 public class Client implements ClientModInitializer {
 
@@ -79,6 +80,10 @@ public class Client implements ClientModInitializer {
         // LangPatch init
         LangPatchImpl.init();
 
+        // 高亮物品功能初始化（配置加载、键位注册、客户端命令、延迟调度器）
+        DebugLogger.info("Client", "初始化高亮物品功能...");
+        HighlightItemClient.initialize();
+
         DebugLogger.info("Client", "客户端初始化完成 (devMode=%s, logToFile=%s)",
                 top.csituka.youzaiworldcore.YouzaiworldCore.devModeEnabled,
                 clientLogToFile);
@@ -95,6 +100,9 @@ public class Client implements ClientModInitializer {
 
         // 更新传送 FOV 动画（在游戏内且不论是否在 GUI 中都持续更新）
         TeleportFovEffect.tick();
+
+        // 高亮物品功能：键位处理（即使界面打开也需响应，故置于界面早退判断之前）
+        HighlightItemClient.onClientTick(client);
 
         // 窗口图标设置（仅执行一次）
         if (!windowIconSet) {
