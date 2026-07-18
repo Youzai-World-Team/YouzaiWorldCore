@@ -168,7 +168,7 @@ public class MainMenuElements implements MenuElementGroup {
         TextureTileButton checkInBtn = new TextureTileButton(
                 c0, row2Y, tile, tile,
                 CHECK_IN_TEXTURE,
-                () -> showNotImplementedDialog(screen)
+                () -> screen.switchTo(new AdventureLevelMenuElements())
         );
         checkInBtn.setExternalAlpha(alpha);
         buttons.add(checkInBtn);

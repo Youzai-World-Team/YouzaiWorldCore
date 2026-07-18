@@ -30,6 +30,21 @@ public class AdventureLevelHudRenderer {
     private static int displayNeededExp = 100;
     private static int lastGainedExp = 0;
 
+    /**
+     * 供菜单页面读取当前冒险等级。
+     */
+    public static int getLevel() { return displayLevel; }
+
+    /**
+     * 供菜单页面读取当前等级内的经验进度。
+     */
+    public static int getCurrentExp() { return displayCurrentExp; }
+
+    /**
+     * 供菜单页面读取升至下一级所需的总经验。
+     */
+    public static int getNeededExp() { return displayNeededExp; }
+
     // ─── 动画状态 ───
     private enum AnimState { HIDDEN, SHOWING, VISIBLE, HIDING }
     private static AnimState animState = AnimState.HIDDEN;
