@@ -11,9 +11,8 @@ import net.minecraft.client.renderer.RenderPipelines;
 /**
  * A textured button with rounded corners and fade animation support.
  *
- * Fade technique: Draw a black overlay with varying alpha on top of the texture.
- * Since the menu background is semi-transparent black, this creates a smooth
- * fade to transparent without white residue artifacts.
+ * Fade technique: Use blitSprite(float) to render the texture with actual alpha
+ * transparency, so the image genuinely fades in/out together with the menu.
  */
 @SuppressWarnings("null")
 public class TextureTileButton extends AbstractWidget {
@@ -45,34 +44,28 @@ public class TextureTileButton extends AbstractWidget {
         int h = this.height;
         int r = CORNER_RADIUS;
 
-        // Draw textured background (always when any visibility)
+        // Draw textured background with actual alpha transparency,
+        // so the image genuinely fades in/out with the menu
+        // 11-param blit: last arg is ARGB color (-1 = fully opaque, alpha controls fade)
+        int visArgb = ((int) (vis * 255) << 24) | 0xFFFFFF;
         guiGraphics.blit(RenderPipelines.GUI_TEXTURED, texture,
                 x, y, 0, 0,
-                w, h, w, h);
+                w, h, w, h, visArgb);
 
-        // Fade overlay using accelerated quadratic curve:
-        // Background alpha = vis * 128; overlay represents darkness needed to obscure the texture.
-        // Using a quadratic acceleration (fadeFactor = (1-vis)^2) prevents the button area from
-        // accumulating more blackness than the surrounding background during exit animation.
-        // At vis=0.5: fadeFactor=0.25, overlay=32 vs bg=64 — button doesn't appear darker than bg
-        // At vis=0.2: fadeFactor=0.64, overlay=82 (texture faint + 82 overlay ≈ blends with bg=25)
-        // At vis=0:   fadeFactor=1.0,  overlay=128 (fully matches closed bg)
-        float fadeFactor = (1f - vis);
-        int overlayAlpha = (int) (fadeFactor * 128);
-        if (overlayAlpha > 0) {
-            guiGraphics.fill(x, y, x + w, y + h, (overlayAlpha << 24));
-        }
-
-        // Clip corners
-        for (int i = 0; i < r; i++) {
-            for (int j = 0; j < r; j++) {
-                int dx = r - 1 - i;
-                int dy = r - 1 - j;
-                if (dx * dx + dy * dy >= r * r) {
-                    guiGraphics.fill(x + i, y + j, x + i + 1, y + j + 1, 0x73000000);
-                    guiGraphics.fill(x + w - 1 - i, y + j, x + w - i, y + j + 1, 0x73000000);
-                    guiGraphics.fill(x + i, y + h - 1 - j, x + i + 1, y + h - j, 0x73000000);
-                    guiGraphics.fill(x + w - 1 - i, y + h - 1 - j, x + w - i, y + h - j, 0x73000000);
+        // Clip corners — scale clipping alpha with vis so corners fade too
+        int clipAlpha = (int) (0.45f * vis * 255);
+        if (clipAlpha > 0) {
+            int clipColor = (clipAlpha << 24);
+            for (int i = 0; i < r; i++) {
+                for (int j = 0; j < r; j++) {
+                    int dx = r - 1 - i;
+                    int dy = r - 1 - j;
+                    if (dx * dx + dy * dy >= r * r) {
+                        guiGraphics.fill(x + i, y + j, x + i + 1, y + j + 1, clipColor);
+                        guiGraphics.fill(x + w - 1 - i, y + j, x + w - i, y + j + 1, clipColor);
+                        guiGraphics.fill(x + i, y + h - 1 - j, x + i + 1, y + h - j, clipColor);
+                        guiGraphics.fill(x + w - 1 - i, y + h - 1 - j, x + w - i, y + h - j, clipColor);
+                    }
                 }
             }
         }

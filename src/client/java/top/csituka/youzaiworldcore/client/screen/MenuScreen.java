@@ -338,8 +338,7 @@ public class MenuScreen extends Screen {
     private void renderSingleGroup(GuiGraphicsExtractor guiGraphics, MenuElementGroup group, float entryAlpha) {
         renderGroupButtons(group, entryAlpha, 0f);
         renderTitle(guiGraphics, group, entryAlpha);
-        float adjustedAlpha = 0.5f + 0.5f * entryAlpha;
-        group.renderCustomContent(guiGraphics, this.width, this.height, adjustedAlpha, 0f, this.mouseX, this.mouseY);
+        group.renderCustomContent(guiGraphics, this.width, this.height, entryAlpha, 0f, this.mouseX, this.mouseY);
     }
 
     private void createCloseButton(float alpha) {
@@ -356,7 +355,7 @@ public class MenuScreen extends Screen {
         );
         closeBtn.setBackgroundVisible(false);
         closeBtn.setTextColor(0xFFFFFF);
-        closeBtn.setExternalAlpha(0.5f + 0.5f * alpha);
+        closeBtn.setExternalAlpha(alpha);
         currentButtons.add(closeBtn);
     }
 
@@ -374,13 +373,12 @@ public class MenuScreen extends Screen {
         );
         backBtn.setBackgroundVisible(false);
         backBtn.setTextColor(0xFFFFFF);
-        backBtn.setExternalAlpha((0.5f + 0.5f * alpha) * backButtonAlpha);
+        backBtn.setExternalAlpha(alpha * backButtonAlpha);
         currentButtons.add(backBtn);
     }
 
     private void renderGroupButtons(MenuElementGroup group, float alpha, float xOffset) {
-        float adjustedAlpha = 0.5f + 0.5f * alpha;
-        List<AbstractWidget> buttons = group.createButtons(this, this.width, this.height, 1f, adjustedAlpha);
+        List<AbstractWidget> buttons = group.createButtons(this, this.width, this.height, 1f, alpha);
         for (AbstractWidget button : buttons) {
             button.setX(button.getX() + (int) xOffset);
             currentButtons.add(button);
@@ -399,10 +397,7 @@ public class MenuScreen extends Screen {
         String titleText = group.getTitleText();
         String subtitleText = group.getSubtitleText();
 
-        // TextureTileButton's overlay maxes at alpha=128, so texture visibility = 0.5 + 0.5*alpha.
-        // Map text alpha to the same range so text fades at the same rate as textures.
-        float textAlphaMapping = 0.5f + 0.5f * alpha;
-        int textAlpha = (int) (textAlphaMapping * 255);
+        int textAlpha = (int) (alpha * 255);
         int textColor = (textAlpha << 24) | 0xFFFFFF;
 
         int baseY = (int) (this.height / 2 - 140);
@@ -467,8 +462,7 @@ public class MenuScreen extends Screen {
                 .orElse("unknown");
         String versionText = I18n.get("youzaiworldcore.message.gui.version_text", version);
 
-        float textAlphaMapping = 0.5f + 0.5f * alpha;
-        int textAlpha = (int) (textAlphaMapping * 180);
+        int textAlpha = (int) (alpha * 180);
         int textColor = (textAlpha << 24) | 0xAAAAAA;
 
         float scale = 0.5f;
