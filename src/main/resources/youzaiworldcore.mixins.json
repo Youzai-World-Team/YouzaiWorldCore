@@ -21,7 +21,10 @@
     "skill.LivingEntityHealMixin",
     "seat.EntityVehicleAccessor",
     "StructureTemplatePoolAccessor",
-    "chargedcreeper.CreeperChargedAccessor"
+    "chargedcreeper.CreeperChargedAccessor",
+    "doubledoors.DoorBlockMixin",
+    "doubledoors.FenceGateBlockMixin",
+    "doubledoors.TrapDoorBlockMixin"
   ],
   "injectors": {
     "defaultRequire": 1

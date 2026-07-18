@@ -30,6 +30,7 @@ import top.csituka.youzaiworldcore.account.data.AccountDataStorage;
 import top.csituka.youzaiworldcore.command.EventCommand;
 import top.csituka.youzaiworldcore.command.ReloadCommand;
 import top.csituka.youzaiworldcore.config.ChargedCreeperConfig;
+import top.csituka.youzaiworldcore.config.DoubleDoorsConfig;
 import top.csituka.youzaiworldcore.config.EndPortalConfig;
 import top.csituka.youzaiworldcore.config.ServerExternalSettings;
 import top.csituka.youzaiworldcore.luckperms.LuckPermsHelper;
@@ -52,6 +53,7 @@ import top.csituka.youzaiworldcore.event.AnvilRepairHandler;
 import top.csituka.youzaiworldcore.event.ChargedCreeperHandler;
 import top.csituka.youzaiworldcore.event.ChorusFruitDropHandler;
 import top.csituka.youzaiworldcore.event.DragonElytraDropHandler;
+import top.csituka.youzaiworldcore.event.DoubleDoorsHandler;
 import top.csituka.youzaiworldcore.event.EndPortalHandler;
 import top.csituka.youzaiworldcore.event.FlyBeaconTickHandler;
 import top.csituka.youzaiworldcore.event.SitHandler;
@@ -165,6 +167,12 @@ public class YouzaiworldCore implements ModInitializer {
         ChargedCreeperConfig.load();
         DebugLogger.info("YouzaiworldCore", "注册天然带电苦力怕事件...");
         ChargedCreeperHandler.register();
+
+        // ===== 初始化双开门功能（Double Doors 移植） =====
+        DebugLogger.info("YouzaiworldCore", "加载双开门配置...");
+        DoubleDoorsConfig.load();
+        DebugLogger.info("YouzaiworldCore", "初始化双开门处理器...");
+        DoubleDoorsHandler.register();
 
         // ===== 初始化末地传送门功能（EndPortalRecipe 合并） =====
         DebugLogger.entering("YouzaiworldCore", "EndPortalSystem.init");
