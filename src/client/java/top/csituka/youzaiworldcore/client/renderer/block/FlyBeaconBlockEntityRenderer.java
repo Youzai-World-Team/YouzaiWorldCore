@@ -27,10 +27,6 @@ import java.util.*;
 public class FlyBeaconBlockEntityRenderer implements BlockEntityRenderer<FlyBeaconBlockEntity, FlyBeaconBlockEntityRenderState> {
 
     // ======================== 几何常量 ========================
-
-    /** 边界水平半宽（方块），与 TickHandler 的 BEACON_HALF (9.5625 = 9 + 9/16) 保持一致 */
-    private static final float HALF = 9.0f + 9.0f / 16.0f; // 9.5625
-
     /** 正方形半宽，用于计算 xmin/xmax/zmin/zmax */
     private static final double HALF_D = 9.0 + 9.0 / 16.0; // 9.5625 双精度版
 
