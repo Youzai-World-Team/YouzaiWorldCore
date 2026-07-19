@@ -81,6 +81,10 @@ public class ModNetworking {
         PayloadTypeRegistry.serverboundPlay().register(ExperimentalFeaturePayload.ID, ExperimentalFeaturePayload.STREAM_CODEC);
         DebugLogger.info("ModNetworking", "Registered serverbound packet: ExperimentalFeaturePayload");
 
+        // ===== 宠物管理命令转发数据包 =====
+        PayloadTypeRegistry.serverboundPlay().register(PetCommandPayload.ID, PetCommandPayload.STREAM_CODEC);
+        DebugLogger.info("ModNetworking", "Registered serverbound packet: PetCommandPayload");
+
         // ===== 服务端接收处理器 =====
         ServerPlayNetworking.registerGlobalReceiver(DecomposeItemPayload.ID, (payload, context) -> {
             DebugLogger.entering("ModNetworking", "DecomposeItemPayload handler");
@@ -490,6 +494,28 @@ public class ModNetworking {
             player.level().getServer().execute(() -> {
                 AttributeManager.handleUpgrade(player, payload.attributeKey());
             });
+        });
+
+        // ===== 宠物管理命令 C2S 转发处理器 =====
+        ServerPlayNetworking.registerGlobalReceiver(PetCommandPayload.ID, (payload, context) -> {
+            var player = (net.minecraft.server.level.ServerPlayer) context.player();
+            DebugLogger.entering("ModNetworking", "PetCommandPayload handler", "args=" + payload.args());
+            var server = player.level().getServer();
+            if (server == null) {
+                DebugLogger.exiting("ModNetworking", "PetCommandPayload handler", "server is null");
+                return;
+            }
+            server.execute(() -> {
+                try {
+                    // 重建完整命令字符串：yzwc pet <args>
+                    String fullCommand = "yzwc pet " + payload.args();
+                    DebugLogger.info("ModNetworking", "执行宠物命令: /%s", fullCommand);
+                    server.getCommands().performPrefixedCommand(player.createCommandSourceStack(), fullCommand);
+                } catch (Exception e) {
+                    DebugLogger.error("ModNetworking", "执行宠物命令失败: %s", e.getMessage());
+                }
+            });
+            DebugLogger.exiting("ModNetworking", "PetCommandPayload handler");
         });
 
         DebugLogger.exiting("ModNetworking", "initialize");

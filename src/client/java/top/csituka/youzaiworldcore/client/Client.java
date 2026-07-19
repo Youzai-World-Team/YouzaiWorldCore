@@ -32,6 +32,7 @@ import top.csituka.youzaiworldcore.highlightitem.HighlightItemClient;
 import top.csituka.youzaiworldcore.command.DoubleDoorsClientCommand;
 import top.csituka.youzaiworldcore.command.ExperimentalFeatureClientCommand;
 import top.csituka.youzaiworldcore.command.InvisibilityClientCommand;
+import top.csituka.youzaiworldcore.command.PetClientCommand;
 
 public class Client implements ClientModInitializer {
 
@@ -98,6 +99,10 @@ public class Client implements ClientModInitializer {
         // 实验性功能客户端命令（解析后转发至服务端数据包）
         DebugLogger.info("Client", "注册实验性功能客户端命令...");
         ExperimentalFeatureClientCommand.register();
+
+        // 宠物管理命令转发客户端命令（解析后转发至服务端数据包）
+        DebugLogger.info("Client", "注册宠物管理命令客户端命令...");
+        PetClientCommand.register();
 
         DebugLogger.info("Client", "客户端初始化完成 (devMode=%s, logToFile=%s)",
                 top.csituka.youzaiworldcore.YouzaiworldCore.devModeEnabled,
