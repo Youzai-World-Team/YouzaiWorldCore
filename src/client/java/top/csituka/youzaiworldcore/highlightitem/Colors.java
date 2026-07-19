@@ -1,7 +1,6 @@
 package top.csituka.youzaiworldcore.highlightitem;
 
 import com.google.gson.JsonObject;
-import net.minecraft.network.chat.Component;
 import net.minecraft.util.ARGB;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
