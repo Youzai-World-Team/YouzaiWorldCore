@@ -66,6 +66,10 @@ import top.csituka.youzaiworldcore.item.ModItems;
 import top.csituka.youzaiworldcore.item.tool.YzChainMiningTool;
 import top.csituka.youzaiworldcore.network.ModNetworking;
 import top.csituka.youzaiworldcore.network.OpenMenuPayload;
+import top.csituka.youzaiworldcore.pet.PetBackupManager;
+import top.csituka.youzaiworldcore.pet.command.PetCommand;
+import top.csituka.youzaiworldcore.pet.config.PetModuleConfig;
+import top.csituka.youzaiworldcore.pet.event.PetEventHandlers;
 import top.csituka.youzaiworldcore.screen.ModMenuTypes;
 import top.csituka.youzaiworldcore.worldgen.VillageStructureInjector;
 
@@ -274,6 +278,20 @@ public class YouzaiworldCore implements ModInitializer {
         ExperimentalFeatures.loadServerSettings();
         DebugLogger.exiting("YouzaiworldCore", "ExperimentalFeatures.load");
 
+        // ===== 初始化宠物模块 =====
+        DebugLogger.entering("YouzaiworldCore", "PetModule.init");
+        PetModuleConfig.load();
+        PetEventHandlers.register();
+        // 宠物备份管理器在服务器启动时由 ServerLifecycleEvents 初始化
+        ServerLifecycleEvents.SERVER_STARTING.register(server -> {
+            PetBackupManager.initialize(server);
+        });
+        ServerLifecycleEvents.SERVER_STOPPING.register(server -> {
+            PetBackupManager.shutdown();
+        });
+        LOGGER.info("宠物模块已初始化");
+        DebugLogger.exiting("YouzaiworldCore", "PetModule.init");
+
         // ===== 注册所有 /yzwc 命令 =====
         DebugLogger.entering("YouzaiworldCore", "CommandRegistration");
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
@@ -389,6 +407,10 @@ public class YouzaiworldCore implements ModInitializer {
             // ===== 注册事件管理命令 =====
             DebugLogger.info("YouzaiworldCore", "注册命令: EventCommand");
             EventCommand.register(dispatcher);
+
+            // ===== 注册宠物管理命令 =====
+            DebugLogger.info("YouzaiworldCore", "注册命令: PetCommand");
+            PetCommand.register(dispatcher);
 
             DebugLogger.info("YouzaiworldCore", "所有 /yzwc 命令注册完成");
         });

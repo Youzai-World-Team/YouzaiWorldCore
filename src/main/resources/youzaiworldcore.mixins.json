@@ -23,7 +23,9 @@
     "StructureTemplatePoolAccessor",
     "chargedcreeper.CreeperChargedAccessor",
     "doubledoors.DoorBlockMixin",
-    "doubledoors.FenceGateBlockMixin"
+    "doubledoors.FenceGateBlockMixin",
+    "pet.WolfTameMixin",
+    "pet.WolfBreedMixin"
   ],
   "injectors": {
     "defaultRequire": 1
