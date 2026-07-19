@@ -24,6 +24,11 @@ import top.csituka.youzaiworldcore.client.screen.block.DecompositionTableScreen;
 import top.csituka.youzaiworldcore.client.screen.block.FlyBeaconScreen;
 import top.csituka.youzaiworldcore.client.screen.MenuScreen;
 import top.csituka.youzaiworldcore.client.screen.element.MainMenuElements;
+import top.csituka.youzaiworldcore.client.config.ClientExternalSettings;
+import top.csituka.youzaiworldcore.update.UpdateChecker;
+import top.csituka.youzaiworldcore.update.UpdateAddressState;
+import top.csituka.youzaiworldcore.config.UpdateCheckerConfig;
+import top.csituka.youzaiworldcore.client.update.ClientUpdateState;
 import top.csituka.youzaiworldcore.screen.ModMenuTypes;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 import top.csituka.youzaiworldcore.client.effect.TeleportFovEffect;
@@ -80,6 +85,29 @@ public class Client implements ClientModInitializer {
         top.csituka.youzaiworldcore.YouzaiworldCore.logToFile = clientLogToFile;
         top.csituka.youzaiworldcore.YouzaiworldCore.devModeEnabled =
                 top.csituka.youzaiworldcore.client.config.ClientExternalSettings.isDevModeEnabled();
+
+        // 加载更新检查器配置（客户端独立直连 version.json，用于标题界面公告）
+        DebugLogger.info("Client", "加载更新检查器配置...");
+        UpdateCheckerConfig.load();
+
+        // 客户端（含内嵌服务端）更新地址：开发者模式启用时采用自定义基址，否则使用系统默认
+        boolean clientDevMode = ClientExternalSettings.isDevModeEnabled();
+        String checkBase = clientDevMode ? ClientExternalSettings.getUpdateCheckAddress() : "";
+        String jumpBase = clientDevMode ? ClientExternalSettings.getUpdateJumpAddress() : "";
+        // 推送到共享状态，供内嵌（集成）服务端使用
+        UpdateAddressState.pushClientState(clientDevMode, checkBase, jumpBase);
+
+        // 客户端启动时异步检查更新（与服务端解耦，标题界面尚未连服，无法依赖 S2C 推送）
+        if (UpdateCheckerConfig.isEnabled() && UpdateCheckerConfig.isCheckOnStartupClient()) {
+            DebugLogger.info("Client", "启动时异步检查更新...");
+            UpdateChecker.checkAsync(checkBase, jumpBase).thenAccept(result -> {
+                if (result != null) {
+                    ClientUpdateState.set(result);
+                    DebugLogger.info("Client", "更新检查完成: updateAvailable=%s, latest=%s, error=%s",
+                            result.updateAvailable(), result.latestVersion(), result.errorMessage());
+                }
+            });
+        }
 
         // LangPatch init
         LangPatchImpl.init();

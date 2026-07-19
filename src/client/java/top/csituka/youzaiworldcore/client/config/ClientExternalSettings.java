@@ -25,6 +25,9 @@ import java.nio.file.Path;
  *   <li>{@code debugModeType} — 调试方式 ("embedded" 内嵌服务端 / "dedicated" 专用服务端)</li>
  *   <li>{@code debugAddress} — 调试服务器地址（专用服务端）</li>
  *   <li>{@code debugPort} — 调试服务器端口（专用服务端）</li>
+ *   <li>{@code ignoredUpdateVersion} — 已忽略提示的更新版本号</li>
+ *   <li>{@code updateCheckAddress} — 自定义检查更新基址（空 = 系统默认，仅开发者模式生效）</li>
+ *   <li>{@code updateJumpAddress} — 自定义下载页（跳转）基址（空 = 系统默认，仅开发者模式生效）</li>
  * </ul>
  */
 public final class ClientExternalSettings {
@@ -42,6 +45,15 @@ public final class ClientExternalSettings {
     private static String debugModeType = "embedded"; // "embedded" 或 "dedicated"
     private static String debugAddress = "localhost";
     private static String debugPort = "25565";
+
+    /** 已忽略提示的更新版本号（非空表示不再在标题界面提示该版本）；仅非强制更新时可忽略 */
+    private static String ignoredUpdateVersion = "";
+
+    /** 自定义检查更新基址（空串 = 使用系统默认）；仅开发者模式启用时生效 */
+    private static String updateCheckAddress = "";
+
+    /** 自定义下载页（跳转）基址（空串 = 使用系统默认）；仅开发者模式启用时生效 */
+    private static String updateJumpAddress = "";
 
     private ClientExternalSettings() {}
 
@@ -72,6 +84,39 @@ public final class ClientExternalSettings {
 
     public static String getDebugPort() {
         return debugPort;
+    }
+
+    /** @return 已忽略提示的更新版本号（空字符串表示未忽略任何版本） */
+    public static String getIgnoredUpdateVersion() {
+        return ignoredUpdateVersion;
+    }
+
+    /** @return 自定义检查更新基址（空串表示使用系统默认） */
+    public static String getUpdateCheckAddress() {
+        return updateCheckAddress;
+    }
+
+    /** @return 自定义下载页（跳转）基址（空串表示使用系统默认） */
+    public static String getUpdateJumpAddress() {
+        return updateJumpAddress;
+    }
+
+    /** 设置被忽略的更新版本号（空值将忽略为 ""）并持久化 */
+    public static void setIgnoredUpdateVersion(String value) {
+        ignoredUpdateVersion = (value == null) ? "" : value;
+        save();
+    }
+
+    /** 设置自定义检查更新基址（null 视为空串）并持久化 */
+    public static void setUpdateCheckAddress(String value) {
+        updateCheckAddress = (value == null) ? "" : value;
+        save();
+    }
+
+    /** 设置自定义下载页（跳转）基址（null 视为空串）并持久化 */
+    public static void setUpdateJumpAddress(String value) {
+        updateJumpAddress = (value == null) ? "" : value;
+        save();
     }
 
     // ===== 写入 =====
@@ -146,6 +191,15 @@ public final class ClientExternalSettings {
             if (root.has("debugPort") && !root.get("debugPort").isJsonNull())
                 debugPort = root.get("debugPort").getAsString();
 
+            if (root.has("ignoredUpdateVersion") && !root.get("ignoredUpdateVersion").isJsonNull())
+                ignoredUpdateVersion = root.get("ignoredUpdateVersion").getAsString();
+
+            if (root.has("updateCheckAddress") && !root.get("updateCheckAddress").isJsonNull())
+                updateCheckAddress = root.get("updateCheckAddress").getAsString();
+
+            if (root.has("updateJumpAddress") && !root.get("updateJumpAddress").isJsonNull())
+                updateJumpAddress = root.get("updateJumpAddress").getAsString();
+
             if (logLevel > 0) {
                 LOGGER.info("已从 {} 加载客户端外部设置", CONFIG_FILE);
             }
@@ -168,6 +222,9 @@ public final class ClientExternalSettings {
             root.addProperty("debugModeType", debugModeType);
             root.addProperty("debugAddress", debugAddress);
             root.addProperty("debugPort", debugPort);
+            root.addProperty("ignoredUpdateVersion", ignoredUpdateVersion);
+            root.addProperty("updateCheckAddress", updateCheckAddress);
+            root.addProperty("updateJumpAddress", updateJumpAddress);
             Files.writeString(CONFIG_FILE, GSON.toJson(root));
         } catch (IOException e) {
             LOGGER.error("保存客户端外部设置失败: {}", e.getMessage());

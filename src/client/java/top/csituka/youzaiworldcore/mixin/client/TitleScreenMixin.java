@@ -27,7 +27,14 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import top.csituka.youzaiworldcore.YouzaiworldCore;
 import top.csituka.youzaiworldcore.client.config.ClientExternalSettings;
 import top.csituka.youzaiworldcore.client.screen.widget.TitleScreenTextButton;
+import top.csituka.youzaiworldcore.client.update.ClientUpdateState;
+import top.csituka.youzaiworldcore.config.UpdateCheckerConfig;
+import top.csituka.youzaiworldcore.update.UpdateChecker;
+import top.csituka.youzaiworldcore.update.UpdateResult;
+import top.csituka.youzaiworldcore.util.DebugLogger;
 
+import java.awt.Desktop;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -36,7 +43,7 @@ import java.util.List;
  * <ul>
  *   <li>两个等宽半透明方块居中对齐，保留间距</li>
  *   <li>左侧面板：竖向排列「加入服务器」「选项」「退出游戏」</li>
- *   <li>右侧面板：服务器公告文字</li>
+ *   <li>右侧面板：服务器公告文字；若有可用更新，则在公告上方叠加更新信息块（标题 + 最新版本 + 发布时间 + 更新内容 + 可点击下载按钮 + 条件忽略按钮）</li>
  * </ul>
  * 保留开发者测试按钮（仅开发者模式显示）。
  */
@@ -68,6 +75,10 @@ public class TitleScreenMixin {
     /** 面板组垂直下移偏移量（相对垂直居中位置） */
     @Unique
     private static final int PANEL_Y_OFFSET = 12;
+
+    /** 更新可用时右面板额外向上扩展的高度（用于容纳更新信息块） */
+    @Unique
+    private static final int UPDATE_BLOCK_HEIGHT = 104;
 
     /** 公告标题颜色 */
     private static final int ANNOUNCEMENT_TITLE_COLOR = 0xFFFFAA00;
@@ -116,6 +127,14 @@ public class TitleScreenMixin {
     @Unique
     private boolean youzaiworldcore$fadeCompleted = false;
 
+    /** 更新下载按钮（独立于左侧布局循环，按右面板坐标定位） */
+    @Unique
+    private TitleScreenTextButton youzaiworldcore$downloadUpdateBtn;
+
+    /** 不再提示此版本按钮（仅当非强制更新时显示） */
+    @Unique
+    private TitleScreenTextButton youzaiworldcore$ignoreUpdateBtn;
+
     // ==================== init(): 移除并重排按钮 ====================
 
     /**
@@ -125,6 +144,7 @@ public class TitleScreenMixin {
      *   <li>创建三个自定义无背景文字按钮，替换为悬浮下划线样式</li>
      *   <li>将所有按钮排列在左侧半透明面板区域内</li>
      *   <li>开发者模式额外显示测试按钮</li>
+     *   <li>创建更新提示按钮（默认隐藏，由 drawPanelContent 按更新状态定位与显隐）</li>
      * </ol>
      */
     @Inject(method = "init", at = @At("TAIL"))
@@ -220,6 +240,30 @@ public class TitleScreenMixin {
             narratables.add(testButton);
         }
 
+        // 2e. 更新提示按钮（下载 / 忽略），默认隐藏，由 drawPanelContent 按更新状态定位与显隐
+        TitleScreenTextButton downloadBtn = new TitleScreenTextButton(
+            0, 0, 0, BUTTON_HEIGHT,
+            Component.translatable("title.youzaiworldcore.update_download_btn"),
+            this::youzaiworldcore$openDownloadPage
+        );
+        downloadBtn.visible = (false);
+        childrenList.add(downloadBtn);
+        renderables.add(downloadBtn);
+        narratables.add(downloadBtn);
+
+        TitleScreenTextButton ignoreBtn = new TitleScreenTextButton(
+            0, 0, 0, BUTTON_HEIGHT,
+            Component.translatable("title.youzaiworldcore.update_ignore_btn"),
+            this::youzaiworldcore$ignoreUpdate
+        );
+        ignoreBtn.visible = (false);
+        childrenList.add(ignoreBtn);
+        renderables.add(ignoreBtn);
+        narratables.add(ignoreBtn);
+
+        youzaiworldcore$downloadUpdateBtn = downloadBtn;
+        youzaiworldcore$ignoreUpdateBtn = ignoreBtn;
+
         // ============ 3. 计算居中布局位置 ============
         int totalGroupWidth = PANEL_WIDTH * 2 + PANEL_GAP;
         int groupStartX = (width - totalGroupWidth) / 2;
@@ -274,6 +318,7 @@ public class TitleScreenMixin {
      * <p>
      * 两个面板等宽，作为整体居中对齐。
      * 渲染顺序：全景图 → 面板 → 组件(按钮/logo等)
+     * </p>
      */
     @Inject(
         method = "extractRenderState",
@@ -304,15 +349,22 @@ public class TitleScreenMixin {
         // 按钮跟随左侧面板移动，并同步应用淡入透明度
         int buttonX = leftPanelX + PANEL_PADDING;
         for (GuiEventListener child : ((ScreenAccessor) screen).youzaiworldcore$getChildren()) {
-            if (child instanceof TitleScreenTextButton btn) {
+            if (child instanceof TitleScreenTextButton btn
+                    && btn != youzaiworldcore$downloadUpdateBtn
+                    && btn != youzaiworldcore$ignoreUpdateBtn) {
                 btn.setRenderAlpha(fadeAlpha);
                 btn.setX(buttonX);
             }
         }
 
+        // 更新可用时右面板向上扩展以容纳更新信息块；左面板保持原样
+        boolean showUpdate = youzaiworldcore$shouldShowUpdate();
+        int rightPanelY = showUpdate ? panelY - UPDATE_BLOCK_HEIGHT : panelY;
+        int rightPanelH = showUpdate ? PANEL_HEIGHT + UPDATE_BLOCK_HEIGHT : PANEL_HEIGHT;
+
         drawPanelBackground(graphics, leftPanelX, panelY, PANEL_WIDTH, PANEL_HEIGHT, fadeAlpha);
-        drawPanelBackground(graphics, rightPanelX, panelY, PANEL_WIDTH, PANEL_HEIGHT, fadeAlpha);
-        drawPanelContent(graphics, rightPanelX, panelY, PANEL_WIDTH, PANEL_HEIGHT, font, fadeAlpha);
+        drawPanelBackground(graphics, rightPanelX, rightPanelY, PANEL_WIDTH, rightPanelH, fadeAlpha);
+        drawPanelContent(graphics, rightPanelX, rightPanelY, PANEL_WIDTH, rightPanelH, font, fadeAlpha, showUpdate);
         drawLogo(graphics, width, fadeAlpha);
     }
 
@@ -340,11 +392,15 @@ public class TitleScreenMixin {
     }
 
     /**
-     * 绘制右侧面板内容（公告标题 + 正文，带自动换行），透明度受淡入进度控制。
+     * 绘制右侧面板内容：
+     * <ul>
+     *   <li>更新可用时，在面板顶部扩展区渲染更新信息块（标题 + 最新版本 + 发布时间 + 更新内容 + 下载/忽略按钮）</li>
+     *   <li>原服务器公告保持在更新块下方，维持原样</li>
+     * </ul>
+     * 透明度受淡入进度控制。
      */
-    private void drawPanelContent(GuiGraphicsExtractor graphics, int panelX, int panelY, int panelW, int panelH, net.minecraft.client.gui.Font font, float fadeAlpha) {
+    private void drawPanelContent(GuiGraphicsExtractor graphics, int panelX, int panelY, int panelW, int panelH, net.minecraft.client.gui.Font font, float fadeAlpha, boolean showUpdate) {
         int textX = panelX + PANEL_PADDING;
-        int textY = panelY + PANEL_PADDING;
         int maxTextWidth = panelW - PANEL_PADDING * 2;
 
         // 根据淡入透明度计算各文本颜色的 alpha 分量
@@ -356,14 +412,74 @@ public class TitleScreenMixin {
         int titleShadow = (shadowAlpha << 24);
         int textColor = (textAlpha << 24) | (ANNOUNCEMENT_TEXT_COLOR & 0x00FFFFFF);
 
-        // 公告标题（不加 emoji，带阴影以突出显示）
-        String title = Component.translatable("title.youzaiworldcore.announcement_title").getString();
-        // 阴影
-        graphics.text(font, title, textX + 1, textY + 1, titleShadow);
-        // 正文
-        graphics.text(font, title, textX, textY, titleColor);
+        int topY = panelY;
+        int originalStartY = showUpdate ? topY + UPDATE_BLOCK_HEIGHT : topY;
 
-        // 公告内容行（逐行自动换行）
+        // ===== 更新信息块（面板顶部扩展区）=====
+        if (showUpdate) {
+            UpdateResult r = ClientUpdateState.get();
+            if (r != null) {
+                // 标题（强制更新用红色，普通更新用绿色）
+                String updTitle = Component.translatable(r.forcedUpdate()
+                        ? "title.youzaiworldcore.update_forced_title"
+                        : "title.youzaiworldcore.update_title").getString();
+                int updTitleColor = (titleAlpha << 24) | (r.forcedUpdate() ? 0x00FF5555 : 0x0088FF88);
+                int updTitleY = topY + PANEL_PADDING;
+                graphics.text(font, updTitle, textX + 1, updTitleY + 1, titleShadow);
+                graphics.text(font, updTitle, textX, updTitleY, updTitleColor);
+
+                int y = updTitleY + font.lineHeight + 4;
+                int btnLimit = originalStartY - 44;
+
+                // 最新版本
+                String latestLine = Component.translatable("title.youzaiworldcore.update_latest",
+                        r.latestVersion()
+                                + (r.latestType() != null && !r.latestType().isEmpty() ? " (" + r.latestType() + ")" : "")
+                ).getString();
+                y = drawWrappedLine(graphics, font, latestLine, textX, y, maxTextWidth, textColor);
+
+                // 发布时间
+                if ((r.releaseDate() != null && !r.releaseDate().isEmpty())
+                        || (r.releaseTime() != null && !r.releaseTime().isEmpty())) {
+                    String rel = Component.translatable("title.youzaiworldcore.update_released",
+                            r.releaseDate() == null ? "" : r.releaseDate(),
+                            r.releaseTime() == null ? "" : r.releaseTime()).getString();
+                    y = drawWrappedLine(graphics, font, rel, textX, y, maxTextWidth, textColor);
+                }
+
+                // 更新内容
+                if (r.changelog() != null && !r.changelog().isEmpty()) {
+                    String head = Component.translatable("title.youzaiworldcore.update_changelog").getString();
+                    y = drawWrappedLine(graphics, font, head, textX, y, maxTextWidth, textColor);
+                    for (String line : r.changelog()) {
+                        if (y > btnLimit) break;
+                        y = drawWrappedLine(graphics, font, "• " + line, textX, y, maxTextWidth, textColor);
+                    }
+                }
+
+                // 定位下载 / 忽略按钮（更新块底部）
+                int downloadY = originalStartY - 4 - BUTTON_HEIGHT * 2 - 6;
+                int ignoreY = originalStartY - 4 - BUTTON_HEIGHT;
+                youzaiworldcore$positionUpdateButtons(textX, downloadY, ignoreY, maxTextWidth, fadeAlpha, r);
+            }
+        }
+
+        // ===== 原服务器公告（更新块下方，保持原样）=====
+        int annY = originalStartY + PANEL_PADDING;
+        int annBottom = panelY + panelH - PANEL_PADDING;
+        youzaiworldcore$drawAnnouncement(graphics, font, textX, annY, maxTextWidth, textColor, titleColor, titleShadow, annBottom);
+    }
+
+    /**
+     * 渲染原服务器公告（标题 + 数行正文），超出面板底部时截断。
+     */
+    private void youzaiworldcore$drawAnnouncement(GuiGraphicsExtractor graphics, net.minecraft.client.gui.Font font,
+                                                 int textX, int startY, int maxTextWidth,
+                                                 int textColor, int titleColor, int titleShadow, int bottomLimit) {
+        String title = Component.translatable("title.youzaiworldcore.announcement_title").getString();
+        graphics.text(font, title, textX + 1, startY + 1, titleShadow);
+        graphics.text(font, title, textX, startY, titleColor);
+
         String[] rawLines = {
             Component.translatable("title.youzaiworldcore.announcement_line1").getString(),
             Component.translatable("title.youzaiworldcore.announcement_line2").getString(),
@@ -372,10 +488,95 @@ public class TitleScreenMixin {
             Component.translatable("title.youzaiworldcore.announcement_line4").getString(),
         };
 
-        int lineY = textY + font.lineHeight + 8;
+        int lineY = startY + font.lineHeight + 8;
         for (String raw : rawLines) {
+            if (lineY > bottomLimit) break;
             lineY = drawWrappedLine(graphics, font, raw, textX, lineY, maxTextWidth, textColor);
         }
+    }
+
+    /**
+     * 按当前更新状态定位下载 / 忽略按钮并设置可见性。
+     * <p>忽略按钮仅在非强制更新时显示（强制更新不可忽略）。</p>
+     */
+    private void youzaiworldcore$positionUpdateButtons(int x, int downloadY, int ignoreY, int w, float fadeAlpha, UpdateResult r) {
+        TitleScreenTextButton d = youzaiworldcore$downloadUpdateBtn;
+        if (d != null) {
+            d.visible = (true);
+            d.setRenderAlpha(fadeAlpha);
+            d.setX(x);
+            d.setY(downloadY);
+            d.setWidth(w);
+        }
+        TitleScreenTextButton i = youzaiworldcore$ignoreUpdateBtn;
+        if (i != null) {
+            boolean visible = !r.forcedUpdate();
+            i.visible = (visible);
+            if (visible) {
+                i.setRenderAlpha(fadeAlpha);
+                i.setX(x);
+                i.setY(ignoreY);
+                i.setWidth(w);
+            }
+        }
+    }
+
+    /**
+     * 判断标题界面是否应显示更新信息块。
+     * <p>规则：开启显示 + 存在可用更新 + （非强制更新时未被忽略）。</p>
+     */
+    private static boolean youzaiworldcore$shouldShowUpdate() {
+        if (!UpdateCheckerConfig.isShowOnTitleScreen()) return false;
+        UpdateResult r = ClientUpdateState.get();
+        if (r == null || !r.updateAvailable()) return false;
+        if (!r.forcedUpdate()) {
+            String ignored = ClientExternalSettings.getIgnoredUpdateVersion();
+            if (ignored != null && !ignored.isEmpty() && ignored.equals(r.latestVersion())) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /** 点击「前往下载更新」：在默认浏览器打开构造好的下载页地址 */
+    private void youzaiworldcore$openDownloadPage() {
+        String url;
+        if (ClientExternalSettings.isDevModeEnabled()
+                && ClientExternalSettings.getUpdateJumpAddress() != null
+                && !ClientExternalSettings.getUpdateJumpAddress().isEmpty()) {
+            // 开发者模式 + 自定义跳转地址：实时按客户端设置构造（自动附加 ?version=&type=）
+            url = UpdateChecker.buildJumpUrl(
+                    ClientExternalSettings.getUpdateJumpAddress(),
+                    UpdateChecker.getCurrentVersionString());
+        } else {
+            // 否则使用检查结果中的下载地址（含系统默认，或内嵌服务端依客户端设置解析）
+            UpdateResult r = ClientUpdateState.get();
+            url = (r != null) ? r.downloadUrl() : null;
+        }
+        if (url == null || url.isEmpty()) return;
+        DebugLogger.entering("TitleScreenMixin", "openDownloadPage", url);
+        try {
+            URI uri = new URI(url);
+            if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
+                Desktop.getDesktop().browse(uri);
+                DebugLogger.info("TitleScreenMixin", "已在浏览器打开更新下载页: %s", url);
+            } else {
+                DebugLogger.warn("TitleScreenMixin", "当前环境不支持打开浏览器，下载地址: %s", url);
+            }
+        } catch (Exception e) {
+            DebugLogger.exception("TitleScreenMixin", "openDownloadPage", e);
+        }
+    }
+
+    /** 点击「不再提示此版本」：记住当前最新版本号，重启后仍不再提示（强制更新除外） */
+    private void youzaiworldcore$ignoreUpdate() {
+        UpdateResult r = ClientUpdateState.get();
+        if (r == null || r.latestVersion() == null) return;
+        DebugLogger.entering("TitleScreenMixin", "ignoreUpdate", r.latestVersion());
+        ClientExternalSettings.setIgnoredUpdateVersion(r.latestVersion());
+        DebugLogger.info("TitleScreenMixin", "已忽略版本更新提示: %s", r.latestVersion());
+        if (youzaiworldcore$downloadUpdateBtn != null) youzaiworldcore$downloadUpdateBtn.visible = (false);
+        if (youzaiworldcore$ignoreUpdateBtn != null) youzaiworldcore$ignoreUpdateBtn.visible = (false);
     }
 
     // ==================== 淡入动画 ====================

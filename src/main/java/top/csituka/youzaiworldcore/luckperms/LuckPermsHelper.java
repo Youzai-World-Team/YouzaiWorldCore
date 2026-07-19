@@ -91,6 +91,9 @@ public final class LuckPermsHelper {
     /** 传送锚点管理 {@code /yzwc teleport_anchor list} */
     public static final String PERMISSION_TELEPORT_ANCHOR = "youzaiworldcore.command.teleport_anchor";
 
+    /** 更新检查 {@code /yzwc update [check]} */
+    public static final String PERMISSION_UPDATE_CHECK = "youzaiworldcore.command.update";
+
     /** 管理：创建离线玩家账户 */
     public static final String PERMISSION_ACCOUNT_MGR_CREATE = "youzaiworldcore.command.account.mgr.create";
 

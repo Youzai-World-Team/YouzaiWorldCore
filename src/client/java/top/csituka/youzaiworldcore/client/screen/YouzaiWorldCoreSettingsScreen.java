@@ -11,6 +11,7 @@ import net.minecraft.client.renderer.Panorama;
 import net.minecraft.network.chat.Component;
 import top.csituka.youzaiworldcore.client.config.ClientExternalSettings;
 import top.csituka.youzaiworldcore.client.screen.widget.CheckboxButton;
+import top.csituka.youzaiworldcore.update.UpdateAddressState;
 import top.csituka.youzaiworldcore.client.screen.widget.DropdownButton;
 import top.csituka.youzaiworldcore.client.screen.widget.TitleScreenTextButton;
 import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
@@ -23,6 +24,8 @@ import java.util.List;
  * 背景使用原版滚动全景图，左侧索引栏 + 右侧设置内容。
  * 可通过 OptionsScreen 中的「YouzaiWorldCore 设置...」按钮或
  * ModMenu 模组列表页面的「设置」按钮打开。
+ * <p>
+ * 当窗口高度不足以容纳所有内容时，右侧设置区可滚动，并显示滚动条。
  */
 @SuppressWarnings("null")
 public class YouzaiWorldCoreSettingsScreen extends Screen {
@@ -31,10 +34,27 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
     private static final int CONTENT_LEFT = 160;
     private static final int CONTENT_WIDTH = 320;
 
+    /** 内容区顶部 Y（section 标题绘制的起始行） */
+    private static final int CONTENT_TOP = 90;
+    /** 内容区底部留白 */
+    private static final int CONTENT_BOTTOM_PAD = 10;
+    /** 滚动条宽度 */
+    private static final int SCROLLBAR_WIDTH = 4;
+    /** 滚动条距右侧间距 */
+    private static final int SCROLLBAR_PAD = 2;
+
     private final Panorama panorama;
 
     /** 当前选中的分栏索引：0 = 实验性功能, 1 = 开发者 */
     private int selectedSection = 0;
+
+    // ===== 滚动状态 =====
+    /** 当前垂直滚动偏移量（像素） */
+    private double scrollOffset = 0.0;
+    /** 内容区视口高度（buildContentWidgets 中根据 window height 计算） */
+    private int viewportHeight = 0;
+    /** 内容区底部边界 Y（视口底部 exl. padding） */
+    private int contentBottom = 0;
 
     // ===== 组件引用 =====
     private TransparentButton closeButton;
@@ -46,12 +66,18 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
     private EditBox debugAddressInput;
     private EditBox debugPortInput;
 
+    // ===== 更新服务器区域（开发者模式下显示） =====
+    private EditBox updateCheckInput;
+    private EditBox updateJumpInput;
+
     // ===== 设置状态（通过 ClientExternalSettings 持久化） =====
     private boolean devModeEnabled;
     private int logLevel; // 0=关闭, 1=基本, 2=详细, 3=调试
     private String debugModeType; // "embedded" 或 "dedicated"
     private String debugAddress;
     private String debugPort;
+    private String updateCheckAddress;
+    private String updateJumpAddress;
 
     // ===== 文本标签 Y 坐标（由 buildContentWidgets 计算，extractRenderState 使用） =====
     /** "调试服务器" 子分栏标题 Y（仅专用服务端时显示） */
@@ -60,6 +86,15 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
     private int debugPortLabelY;
     /** "重启客户端后生效" 提示文字 Y */
     private int restartHintY;
+
+    // ===== 更新服务器区域标签 Y 坐标 =====
+    /** "更新服务器" 子分栏标题 Y */
+    private int updateSectionLabelY;
+    private int updateCheckLabelY;
+    private int updateJumpLabelY;
+
+    /** 内容区底部的最大 Y 值（由 buildContentWidgets 追踪） */
+    private int maxContentY = 0;
 
     private static final List<String> DEBUG_MODE_OPTIONS = List.of(
             Component.translatable("screen.youzaiworldcore.settings.debug_mode_embedded").getString(),
@@ -82,12 +117,19 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
         this.debugModeType = ClientExternalSettings.getDebugModeType();
         this.debugAddress = ClientExternalSettings.getDebugAddress();
         this.debugPort = ClientExternalSettings.getDebugPort();
+        this.updateCheckAddress = ClientExternalSettings.getUpdateCheckAddress();
+        this.updateJumpAddress = ClientExternalSettings.getUpdateJumpAddress();
+        // 打开设置界面时，将当前（持久化）客户端更新地址推送到共享状态，供内嵌服务端使用
+        pushUpdateState();
     }
 
     @Override
     protected void init() {
         super.init();
         this.panorama.startSpin();
+        // 初始化视口尺寸
+        this.viewportHeight = this.height - CONTENT_TOP - CONTENT_BOTTOM_PAD;
+        this.contentBottom = this.height - CONTENT_BOTTOM_PAD;
         rebuildWidgets();
     }
 
@@ -95,6 +137,62 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
     public void tick() {
         super.tick();
         // 26.2 的 EditBox 没有 tick() 方法，无需手动刷新光标
+    }
+
+    // ========== 事件处理（Y 坐标滚动修正） ==========
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+        int maxScroll = Math.max(0, maxContentY - viewportHeight);
+        if (maxScroll <= 0) return false;
+        // 仅当鼠标在内容区范围内时才响应滚动
+        int baseX = CONTENT_LEFT + (this.width - CONTENT_LEFT - CONTENT_WIDTH) / 2;
+        if (mouseX < baseX || mouseX > baseX + CONTENT_WIDTH) return false;
+        // 每次滚动约 20px（与多数 UI 组件一致）
+        scrollOffset -= scrollY * 20;
+        scrollOffset = Math.max(0, Math.min(maxScroll, scrollOffset));
+        return true;
+    }
+
+    /**
+     * 注意：不覆盖 getChildAt — mouseClicked/mouseReleased/mouseDragged
+     * 已在事件对象中做好 scrollOffset 调整，若 getChildAt 再追加一次将导致双重偏移，
+     * 使滚动后的点击/拖拽全部失效。
+     */
+
+    @Override
+    public boolean mouseClicked(MouseButtonEvent event, boolean bl) {
+        // 用修正后的坐标检查弹窗外部点击（弹窗位置与 widgets 同坐标系均为自然坐标）
+        double adjustedY = event.y() + scrollOffset;
+        if (debugModeDropdown != null && debugModeDropdown.isOpen()
+                && !debugModeDropdown.isPositionInsidePopup(event.x(), adjustedY)) {
+            debugModeDropdown.closePopup();
+        }
+        if (logLevelDropdown != null && logLevelDropdown.isOpen()
+                && !logLevelDropdown.isPositionInsidePopup(event.x(), adjustedY)) {
+            logLevelDropdown.closePopup();
+        }
+        // 向子组件传递修正后的坐标（super 靠 adjustedEvent.y 匹配自然 Y 的 widget）
+        MouseButtonEvent adjustedEvent = new MouseButtonEvent(
+                event.x(), adjustedY, event.buttonInfo()
+        );
+        return super.mouseClicked(adjustedEvent, bl);
+    }
+
+    @Override
+    public boolean mouseReleased(MouseButtonEvent event) {
+        MouseButtonEvent adjusted = new MouseButtonEvent(
+                event.x(), event.y() + scrollOffset, event.buttonInfo()
+        );
+        return super.mouseReleased(adjusted);
+    }
+
+    @Override
+    public boolean mouseDragged(MouseButtonEvent event, double dragX, double dragY) {
+        MouseButtonEvent adjusted = new MouseButtonEvent(
+                event.x(), event.y() + scrollOffset, event.buttonInfo()
+        );
+        return super.mouseDragged(adjusted, dragX, dragY);
     }
 
     @Override
@@ -107,6 +205,10 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
             return true;
         if (debugPortInput != null && debugPortInput.isFocused() && debugPortInput.keyPressed(keyEvent))
             return true;
+        if (updateCheckInput != null && updateCheckInput.isFocused() && updateCheckInput.keyPressed(keyEvent))
+            return true;
+        if (updateJumpInput != null && updateJumpInput.isFocused() && updateJumpInput.keyPressed(keyEvent))
+            return true;
         return super.keyPressed(keyEvent);
     }
 
@@ -116,25 +218,20 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
             return true;
         if (debugPortInput != null && debugPortInput.isFocused() && debugPortInput.charTyped(characterEvent))
             return true;
+        if (updateCheckInput != null && updateCheckInput.isFocused() && updateCheckInput.charTyped(characterEvent))
+            return true;
+        if (updateJumpInput != null && updateJumpInput.isFocused() && updateJumpInput.charTyped(characterEvent))
+            return true;
         return super.charTyped(characterEvent);
     }
 
-    @Override
-    public boolean mouseClicked(MouseButtonEvent mouseButtonEvent, boolean bl) {
-        // ===== 点击弹窗外区域时关闭下拉弹窗 =====
-        if (debugModeDropdown != null && debugModeDropdown.isOpen()
-                && !debugModeDropdown.isPositionInsidePopup(mouseButtonEvent.x(), mouseButtonEvent.y())) {
-            debugModeDropdown.closePopup();
-        }
-        if (logLevelDropdown != null && logLevelDropdown.isOpen()
-                && !logLevelDropdown.isPositionInsidePopup(mouseButtonEvent.x(), mouseButtonEvent.y())) {
-            logLevelDropdown.closePopup();
-        }
-        return super.mouseClicked(mouseButtonEvent, bl);
-    }
+    // ========== 布局构建 ==========
 
     protected void rebuildWidgets() {
         this.clearWidgets();
+        // 切换分栏或重置布局时复位滚动偏移
+        scrollOffset = 0.0;
+        maxContentY = 0;
 
         int cx = this.width / 2;
 
@@ -173,12 +270,26 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
         buildContentWidgets();
     }
 
+    /**
+     * 将当前开发者模式下自定义更新地址推送到共享状态，供内嵌（集成）服务端使用。
+     * 仅开发者模式启用时，自定义基址才对外生效；否则推送空串（使用系统默认）。
+     */
+    private void pushUpdateState() {
+        boolean dev = ClientExternalSettings.isDevModeEnabled();
+        UpdateAddressState.pushClientState(
+                dev,
+                dev ? updateCheckAddress : "",
+                dev ? updateJumpAddress : ""
+        );
+    }
+
     private void buildContentWidgets() {
         int baseX = CONTENT_LEFT + (this.width - CONTENT_LEFT - CONTENT_WIDTH) / 2;
-        int baseY = 90;
+        int baseY = CONTENT_TOP;
 
         if (selectedSection == 0) {
             // 实验性功能 — 无交互组件，纯文本
+            maxContentY = baseY + 40;
         } else if (selectedSection == 1) {
             int y = baseY + 30;
 
@@ -192,6 +303,8 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
                         devModeEnabled = !devModeEnabled;
                         // 同步到全局标志
                         top.csituka.youzaiworldcore.YouzaiworldCore.devModeEnabled = devModeEnabled;
+                        // 开发者模式变更影响更新地址是否生效，推送到共享状态
+                        pushUpdateState();
                         rebuildWidgets();
                     }
             );
@@ -238,29 +351,23 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
                             String newType = (idx == 0) ? "embedded" : "dedicated";
                             ClientExternalSettings.setDebugModeType(newType);
                             debugModeType = newType;
-                            boolean show = "dedicated".equals(newType);
-                            if (debugAddressInput != null) {
-                                debugAddressInput.setVisible(show);
-                                debugAddressInput.setFocused(false);
-                            }
-                            if (debugPortInput != null) {
-                                debugPortInput.setVisible(show);
-                                debugPortInput.setFocused(false);
-                            }
+                            // 切换调试方式后完全重建布局，自动处理 Y 坐标重新计算与可见性
+                            rebuildWidgets();
                         },
                         null
                 );
                 addRenderableWidget(debugModeDropdown);
                 y += 26;
 
-                // ===== 专用服务端子分栏（地址/端口输入框，始终创建，按调试模式控制可见性） =====
+                // ===== 调试服务器区域（专用服务端时占用垂直空间，内嵌时跳过 Y 偏移） =====
+                // 始终创建 widget（保持下拉回调可切换可见性），但仅专用模式时递增 y
                 y += 4;
-                debugSectionLabelY = y;
-                y += 12;
+                debugSectionLabelY = isDedicated ? y : -1;
+                if (isDedicated) y += 12;
 
                 // 地址输入框 + 标签
-                debugAddrLabelY = y;
-                y += 10;
+                debugAddrLabelY = isDedicated ? y : -1;
+                if (isDedicated) y += 10;
                 debugAddressInput = new EditBox(
                         this.font, baseX, y, CONTENT_WIDTH, 20,
                         Component.translatable("screen.youzaiworldcore.settings.label_address")
@@ -272,11 +379,11 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
                 });
                 debugAddressInput.setVisible(isDedicated);
                 addRenderableWidget(debugAddressInput);
-                y += 26;
+                y += (isDedicated ? 26 : 0);
 
                 // 端口输入框 + 标签
-                debugPortLabelY = y;
-                y += 10;
+                debugPortLabelY = isDedicated ? y : -1;
+                if (isDedicated) y += 10;
                 debugPortInput = new EditBox(
                         this.font, baseX, y, CONTENT_WIDTH, 20,
                         Component.translatable("screen.youzaiworldcore.settings.label_port")
@@ -288,30 +395,74 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
                 });
                 debugPortInput.setVisible(isDedicated);
                 addRenderableWidget(debugPortInput);
+                y += (isDedicated ? 26 : 0);
+
+                // ===== 更新服务器区域（位于调试服务器区域下方） =====
+                // 专用模式：从调试端口输入框底部向下间隔；内嵌模式：紧接调试方式下拉框（跳过调试服务器→无空白）
+                y += (isDedicated ? 12 : 4);
+                updateSectionLabelY = y;
+                y += 12;
+
+                // 检查更新地址 输入框 + 标签
+                updateCheckLabelY = y;
+                y += 10;
+                updateCheckInput = new EditBox(
+                        this.font, baseX, y, CONTENT_WIDTH, 20,
+                        Component.translatable("screen.youzaiworldcore.settings.label_update_check_address")
+                );
+                updateCheckInput.setValue(updateCheckAddress);
+                updateCheckInput.setResponder(s -> {
+                    updateCheckAddress = s;
+                    ClientExternalSettings.setUpdateCheckAddress(s);
+                    pushUpdateState();
+                });
+                addRenderableWidget(updateCheckInput);
+                y += 26;
+
+                // 跳转地址 输入框 + 标签
+                updateJumpLabelY = y;
+                y += 10;
+                updateJumpInput = new EditBox(
+                        this.font, baseX, y, CONTENT_WIDTH, 20,
+                        Component.translatable("screen.youzaiworldcore.settings.label_update_jump_address")
+                );
+                updateJumpInput.setValue(updateJumpAddress);
+                updateJumpInput.setResponder(s -> {
+                    updateJumpAddress = s;
+                    ClientExternalSettings.setUpdateJumpAddress(s);
+                    pushUpdateState();
+                });
+                addRenderableWidget(updateJumpInput);
             } else {
                 logLevelDropdown = null;
                 debugModeDropdown = null;
                 debugAddressInput = null;
                 debugPortInput = null;
+                updateCheckInput = null;
+                updateJumpInput = null;
             }
+
+            // 追踪实际内容底部 Y（最后一个输入框底部 + 余量）
+            maxContentY = y + 26;
         }
     }
 
+    // ========== 渲染 ==========
+
     @Override
     public void extractRenderState(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
-        // 全景图背景
+        // 1. 背景层（屏幕坐标）
         this.panorama.extractRenderState(guiGraphics, this.width, this.height);
-        // 半透明遮罩
         guiGraphics.fill(0, 0, this.width, this.height, 0x60_00_00_00);
 
         int cx = this.width / 2;
 
-        // ===== 标题 =====
+        // 标题
         var titleText = Component.translatable("screen.youzaiworldcore.settings.title");
         int titleWidth = this.font.width(titleText);
         guiGraphics.text(this.font, titleText, cx - titleWidth / 2, 12, 0xFFFFFFFF, false);
 
-        // ===== 说明文字 =====
+        // 说明文字
         var desc = Component.translatable("screen.youzaiworldcore.settings.desc_line1");
         var desc2 = Component.translatable("screen.youzaiworldcore.settings.desc_line2");
         int descColor = 0xB0FFFFFF;
@@ -319,24 +470,38 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
         guiGraphics.text(this.font, desc2, cx - this.font.width(desc2) / 2, 52, descColor, false);
 
         int baseX = CONTENT_LEFT + (this.width - CONTENT_LEFT - CONTENT_WIDTH) / 2;
-        int baseY = 90;
 
+        // ===================================================================
+        // 2. 预渲染侧栏 + 关闭按钮（屏幕坐标，不受裁切影响 → 始终可见）
+        // ===================================================================
+        closeButton.extractRenderState(guiGraphics, mouseX, mouseY, partialTick);
+        sidebarExpFeatures.extractRenderState(guiGraphics, mouseX, mouseY, partialTick);
+        sidebarDev.extractRenderState(guiGraphics, mouseX, mouseY, partialTick);
+
+        // ===================================================================
+        // 3. 内容区（可滚动）— 先设裁切（屏幕坐标），再平移坐标系
+        // ===================================================================
+        // enableScissor 在 pushMatrix 之前调用：裁切矩形保留在屏幕坐标中，
+        // 不受后续 translate 影响，正确限制内容区的可见范围。
+        guiGraphics.enableScissor(baseX, CONTENT_TOP, baseX + CONTENT_WIDTH, contentBottom);
+
+        guiGraphics.pose().pushMatrix();
+        guiGraphics.pose().translate(0, -(float) scrollOffset);
+
+        // 3a. 纯文本标签（在平移坐标系下使用自然 Y 坐标）
         if (selectedSection == 0) {
-            // 实验性功能
             guiGraphics.text(this.font, Component.translatable("screen.youzaiworldcore.settings.sidebar_experimental"),
-                    baseX, baseY, 0xFFFFFFFF, false);
+                    baseX, CONTENT_TOP, 0xFFFFFFFF, false);
             guiGraphics.text(this.font, Component.translatable("screen.youzaiworldcore.settings.experimental_empty"),
-                    baseX, baseY + 20, 0x80FFFFFF, false);
+                    baseX, CONTENT_TOP + 20, 0x80FFFFFF, false);
 
         } else if (selectedSection == 1) {
-            // 开发者
             guiGraphics.text(this.font, Component.translatable("screen.youzaiworldcore.settings.sidebar_developer"),
-                    baseX, baseY, 0xFFFFFFFF, false);
+                    baseX, CONTENT_TOP, 0xFFFFFFFF, false);
             guiGraphics.text(this.font, Component.translatable("screen.youzaiworldcore.settings.dev_warning"),
-                    baseX, baseY + 14, 0x80FFFFFF, false);
+                    baseX, CONTENT_TOP + 14, 0x80FFFFFF, false);
 
             if (devModeEnabled) {
-                // ===== "重启客户端后生效" 提示文字（日志输出丰富度下拉框下方） =====
                 var restartHint = Component.translatable("screen.youzaiworldcore.settings.log_level_restart_hint");
                 guiGraphics.text(this.font, restartHint,
                         baseX, restartHintY, 0x80FFFFFF, false);
@@ -349,18 +514,52 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
                     guiGraphics.text(this.font, Component.translatable("screen.youzaiworldcore.settings.label_port"),
                             baseX, debugPortLabelY, 0xB0FFFFFF, false);
                 }
+
+                // 更新服务器区域标签
+                guiGraphics.text(this.font, Component.translatable("screen.youzaiworldcore.settings.label_update_server_section"),
+                        baseX, updateSectionLabelY, 0xFFFFCC88, false);
+                guiGraphics.text(this.font, Component.translatable("screen.youzaiworldcore.settings.label_update_check_address"),
+                        baseX, updateCheckLabelY, 0xB0FFFFFF, false);
+                guiGraphics.text(this.font, Component.translatable("screen.youzaiworldcore.settings.label_update_jump_address"),
+                        baseX, updateJumpLabelY, 0xB0FFFFFF, false);
             }
         }
 
-        // 父类渲染（按钮等）
-        super.extractRenderState(guiGraphics, mouseX, mouseY, partialTick);
+        // 3b. 父类渲染 widgets（侧栏/关闭按钮在此二次渲染，但被裁切矩形剪裁 → 不可见）
+        //     传入修正后的鼠标 Y 以保证 hover 高亮正确
+        super.extractRenderState(guiGraphics, mouseX, (int) (mouseY + scrollOffset), partialTick);
 
-        // ===== 下拉弹窗后置渲染（含动画，无论是否打开都需持续调用以驱动淡入淡出） =====
+        // 弹窗同属平移坐标系，关闭裁切以免弹窗被截断
+        guiGraphics.disableScissor();
+
+        // 3c. 下拉弹窗后置渲染（在平移坐标系中保持与按钮的相对位置）
         if (debugModeDropdown != null) {
-            debugModeDropdown.renderPopup(guiGraphics, mouseX, mouseY, partialTick);
+            debugModeDropdown.renderPopup(guiGraphics, mouseX, (int) (mouseY + scrollOffset), partialTick);
         }
         if (logLevelDropdown != null) {
-            logLevelDropdown.renderPopup(guiGraphics, mouseX, mouseY, partialTick);
+            logLevelDropdown.renderPopup(guiGraphics, mouseX, (int) (mouseY + scrollOffset), partialTick);
+        }
+
+        guiGraphics.pose().popMatrix();
+
+        // ===================================================================
+        // 4. 滚动条（屏幕坐标，位于内容区右侧边缘）
+        // ===================================================================
+        int maxScroll = Math.max(0, maxContentY - viewportHeight);
+        if (maxScroll > 0) {
+            int scrollbarLeft = baseX + CONTENT_WIDTH + SCROLLBAR_PAD;
+            int scrollbarRight = scrollbarLeft + SCROLLBAR_WIDTH;
+            int scrollbarTop = CONTENT_TOP;
+            int scrollbarBottom = contentBottom;
+
+            // 滚动条轨道
+            guiGraphics.fill(scrollbarLeft, scrollbarTop, scrollbarRight, scrollbarBottom, 0x30FFFFFF);
+
+            // 滚动条滑块（按比例计算高度与位置）
+            double ratio = (double) viewportHeight / maxContentY;
+            int thumbHeight = Math.max(12, (int) (ratio * viewportHeight));
+            int thumbY = scrollbarTop + (int) ((scrollOffset / maxScroll) * (viewportHeight - thumbHeight));
+            guiGraphics.fill(scrollbarLeft, thumbY, scrollbarRight, thumbY + thumbHeight, 0x80FFFFFF);
         }
     }
 

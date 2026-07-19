@@ -42,6 +42,10 @@ import top.csituka.youzaiworldcore.mana.ManaTickHandler;
 import top.csituka.youzaiworldcore.block.ModBlocks;
 import top.csituka.youzaiworldcore.block.entity.ModBlockEntities;
 import top.csituka.youzaiworldcore.command.TeleportAnchorCommand;
+import top.csituka.youzaiworldcore.command.UpdateCommand;
+import top.csituka.youzaiworldcore.update.UpdateChecker;
+import top.csituka.youzaiworldcore.config.UpdateCheckerConfig;
+import top.csituka.youzaiworldcore.update.UpdateResult;
 import top.csituka.youzaiworldcore.component.ModDataComponents;
 import top.csituka.youzaiworldcore.dimensionalinventories.DimensionPoolSettings;
 import top.csituka.youzaiworldcore.dimensionalinventories.DimensionPoolManager;
@@ -221,6 +225,19 @@ public class YouzaiworldCore implements ModInitializer {
                 VillageStructureInjector.inject(server.registryAccess()));
         LOGGER.info("村庄传送锚点结构注入已注册");
         DebugLogger.exiting("YouzaiworldCore", "VillageStructureInjector.register");
+
+        // ===== 初始化更新检查器（UpdateChecker）=====
+        DebugLogger.entering("YouzaiworldCore", "UpdateChecker.init");
+        UpdateCheckerConfig.load();
+        ServerLifecycleEvents.SERVER_STARTED.register(server -> {
+            if (UpdateCheckerConfig.isEnabled() && UpdateCheckerConfig.isCheckOnStartupServer()) {
+                DebugLogger.info("YouzaiworldCore", "服务器启动后异步检查更新...");
+                UpdateChecker.AddressPair addrs = UpdateChecker.resolveServerAddresses(server);
+                UpdateChecker.checkAsync(addrs.checkBase, addrs.jumpBase)
+                        .thenAccept(YouzaiworldCore::youzaiworldcore$logUpdate);
+            }
+        });
+        DebugLogger.exiting("YouzaiworldCore", "UpdateChecker.init");
 
         // ===== 初始化隐身功能 =====
         DebugLogger.entering("YouzaiworldCore", "InvisibilitySystem.init");
@@ -408,6 +425,10 @@ public class YouzaiworldCore implements ModInitializer {
             DebugLogger.info("YouzaiworldCore", "注册命令: EventCommand");
             EventCommand.register(dispatcher);
 
+            // ===== 注册更新检查命令 =====
+            DebugLogger.info("YouzaiworldCore", "注册命令: UpdateCommand");
+            UpdateCommand.register(dispatcher);
+
             // ===== 注册宠物管理命令 =====
             DebugLogger.info("YouzaiworldCore", "注册命令: PetCommand");
             PetCommand.register(dispatcher);
@@ -486,5 +507,57 @@ public class YouzaiworldCore implements ModInitializer {
 
         DebugLogger.exiting("YouzaiworldCore", "executeOpenMenu", "success");
         return 1;
+    }
+
+    // ==================== 更新检查：控制台日志 ====================
+
+    /**
+     * 将更新检查结果输出到服务端控制台。
+     * <ul>
+     *   <li>失败：仅记录调试日志（静默降级，不影响服务器）</li>
+     *   <li>无更新：调试日志记录已是最新</li>
+     *   <li>有更新：输出带边框横幅；强制更新使用 WARN 级别，普通更新使用 INFO 级别</li>
+     * </ul>
+     */
+    private static void youzaiworldcore$logUpdate(UpdateResult result) {
+        if (result == null) {
+            return;
+        }
+        if (result.errorMessage() != null) {
+            DebugLogger.warn("YouzaiworldCore", "更新检查失败: %s", result.errorMessage());
+            return;
+        }
+        if (!result.updateAvailable()) {
+            DebugLogger.info("YouzaiworldCore", "更新检查完成：已是最新版本 (%s)", result.currentVersion());
+            return;
+        }
+
+        String border = "========================================";
+        if (result.forcedUpdate()) {
+            LOGGER.warn(border);
+            LOGGER.warn("[强制更新] 发现新版本: {} -> {} ({})",
+                    result.currentVersion(), result.latestVersion(), result.latestType());
+        } else {
+            LOGGER.info(border);
+            LOGGER.info("发现新版本: {} -> {} ({})",
+                    result.currentVersion(), result.latestVersion(), result.latestType());
+        }
+
+        if (result.releaseDate() != null && !result.releaseDate().isEmpty()) {
+            LOGGER.info("发布时间: {} {}", result.releaseDate(),
+                    result.releaseTime() == null ? "" : result.releaseTime());
+        }
+        if (result.changelog() != null) {
+            for (String line : result.changelog()) {
+                LOGGER.info("  - {}", line);
+            }
+        }
+        LOGGER.info("下载地址: {}", result.downloadUrl());
+
+        if (result.forcedUpdate()) {
+            LOGGER.warn(border);
+        } else {
+            LOGGER.info(border);
+        }
     }
 }
