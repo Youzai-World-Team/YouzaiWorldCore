@@ -20,15 +20,17 @@
 
 ## 📖 项目概述
 
-**YouzaiWorldCore** 是悠哉世界（Youzai World）Minecraft 多人服务器的核心玩法模组，基于 **Fabric** 框架开发，深度集成 **LuckPerms** 权限系统与 **Placeholder API**。模组为服务器提供完整的基础设施，涵盖账户认证、GUI 菜单、自定义物品与方块、坐姿交互、维度池、传送锚点、魔力系统、隐身管理、冒险经验、附魔等级语言补丁、拾取显示、世界增强（带电苦力怕 / 末影龙掉鞘翅 / 末地传送门等）、新手教程、语音聊天集成等 20 余项核心能力。
+**YouzaiWorldCore** 是悠哉世界（Youzai World）Minecraft 多人服务器的核心玩法模组，基于 **Fabric** 框架开发，深度集成 **LuckPerms** 权限系统与 **Placeholder API**。模组为服务器提供完整的基础设施，涵盖账户认证、GUI 菜单、自定义物品与方块、坐姿交互、维度池、传送锚点、魔力系统、隐身管理、冒险等级与属性成长、附魔等级语言补丁、拾取显示、世界增强（带电苦力怕 / 末影龙掉鞘翅 / 末地传送门等）、宠物系统、物品高亮、新手教程、语音聊天集成等 20 余项核心能力。
 
 ### 目标用户群体
 
 | 用户类型 | 说明 |
 |---------|------|
-| **服务器管理员** | 通过命令和菜单管理系统，配置维度池、账户策略、实验性功能等 |
-| **生存玩家** | 使用悠哉系列工具、成就系统、传送锚点、坐姿交互、魔力法杖进行游戏 |
+| **服务器管理员** | 通过命令和菜单管理系统，配置维度池、账户策略、宠物备份、实验性功能等 |
+| **生存玩家** | 使用悠哉系列工具、成就系统、传送锚点、坐姿交互、魔力法杖、宠物与属性成长进行游戏 |
 | **模组开发者** | 了解模组架构、扩展功能或贡献代码 |
+
+> **版本说明**：本模组面向 Minecraft **Java 26.2**。26.1 起 Mojang 采用新的命名/源码规则，游戏 jar 已去除混淆，可直接反编译参考最新实现。
 
 ---
 
@@ -67,7 +69,7 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 - **自定义窗口图标**：运行时通过 Java ImageIO 加载 `jar_icon.png` 替换任务栏与标题栏图标
 - **自定义窗口标题**：`WindowTitleMixin` 拦截 `Window.setTitle()`，标题替换为"悠哉世界"
 
-### 5.悠哉系列工具与物品
+### 5. 悠哉系列工具与物品
 
 一套全新的矿物与工具系列，等级对标钻石工具（耐久 1800，挖掘速度 8.0，附魔等级 10）。
 
@@ -123,8 +125,8 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 - **维度池隔离**：锚点激活时记录所在维度池（`poolId`），跨池传送进行归属校验
 - **编辑功能**：重命名、上移/下移排序、删除、一键复制坐标到剪贴板
 - **数据持久化**：基于 `SavedData`，服务端重启不丢失
-- **世界生成**：传送锚点遗迹在主世界（森林/针叶林/山地/平原/沼泽等 14 种生物群系，间距 28 chunks）、下界（间距 18 chunks）和末地（末地高地/末地内陆，间距 22 chunks）自然生成（数据驱动，基于 Moog's Structure Lib）
-- **村庄结构注入**：通过 `VillageStructureInjector` 替换 5 种原版村庄（平原/沙漠/热带草原/雪原/针叶林）的 `town_centers` 模板池，加入自定义传送锚点集会点结构
+- **渲染**：`TeleportAnchorBlockEntityRenderer` 通过 `RenderState` + 程序化自定义几何体（`queue.submitCustomGeometry`）绘制逐玩家纹理，无外部模型文件
+- **村庄结构注入**：`VillageStructureInjector` 替换 5 种原版村庄（平原/沙漠/热带草原/雪原/针叶林）的 `town_centers` 模板池，注入带传送锚点的自定义集会点结构（基于原版 Jigsaw / 模板池 API）
 - **命令支持**：`/yzwc teleport_anchor list [player]` 列出传送点（含可点击传送链接）
 
 ### 10. 维度池系统
@@ -141,19 +143,24 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 
 创造模式下的欺骗性隐身，从其他玩家的 Tab 列表和视野中完全消失。
 
-- **命令**：`/yzwc function invisibility <true/false>`（需 OP 4 或对应权限）
+- **命令**：`/yzwc function invisibility <true/false>`（需 OP 4 或对应权限；**客户端命令**，经 `InvisibilityPayload` 转发）
 - **行为**：伪装退服消息 → Tab 列表移除 → 视野中移除实体 → 显示白色 Boss 栏"隐身中"
 - **8 个 Mixin**：抑制隐身玩家产生的粒子、音效、方块事件、容器动画（箱子/木桶/末影箱/潜影盒/饰纹陶罐）
 - **Tick 检查**：每 10 tick 检测是否退出创造模式，自动强制关闭
 
-### 12. 冒险经验系统
+### 12. 冒险等级与属性系统
 
-基于玩家行为的经验等级系统，等级提升提供额外属性增益。
+基于玩家行为的经验等级系统，并提供可分配的属性成长，二者共享同一成长框架。
 
-- **经验获取途径**：挖掘 50 方块（+25）、放置 50 方块（+25）、死亡（+10）、守护之心保护（+50）、不死图腾触发（+500）、完成进度（+50）
-- **升级公式**：`expForNext = 50 + level × 50`
-- **客户端 HUD**：`AdventureLevelHudRenderer` 渲染等级条
-- **网络同步**：通过 `LevelExpSyncPayload` 同步经验值
+- **冒险等级（经验）**
+  - **经验获取途径**：挖掘 50 方块（+25）、放置 50 方块（+25）、死亡（+10）、守护之心保护（+50）、不死图腾触发（+500）、完成进度（+50）
+  - **升级公式**：`expForNext = 50 + level × 50`
+  - **网络同步**：`LevelExpSyncPayload`（S→C）同步经验值
+- **属性系统**
+  - 升级获得的属性点可通过 `/yzwc` 属性菜单（GUI 元素）分配，映射到 10 项原版属性：`MAX_HEALTH`、`MOVEMENT_SPEED`、`JUMP_STRENGTH`、`LUCK`、`ATTACK_DAMAGE`、`BLOCK_BREAK_SPEED` 等
+  - **客户端 HUD**：`AdventureLevelHudRenderer` 渲染等级与属性
+  - **网络同步**：`AttributeSyncPayload`（S→C）同步属性数据；`AttributeUpgradePayload`（C→S）请求加点
+  - **存储**：`config/youzaiworldcore/skill_module/player_level_data.json` 与 `player_attributes_data.json`（按玩家持久化）
 
 ### 13. 占位符系统
 
@@ -161,7 +168,7 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 
 ### 14. 权限系统
 
-基于 LuckPerms 的细粒度权限控制，自动回退至原版 OP 等级检查。提供 **20 个独立权限节点**，含 `account.mgr.*`、`command.*`、`*` 通配符。
+基于 LuckPerms 的细粒度权限控制，自动回退至原版 OP 等级检查。模组内所有命令与功能均通过 `luckperms/LuckPermsHelper` 统一鉴权，提供 **20+ 个独立权限节点**，含 `account.mgr.*`、`command.*`、`*` 通配符。
 
 ### 15. 创造模式标签页
 
@@ -219,8 +226,6 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 - **条目类型**：`DisplayEntry` 抽象基类，具体实现 `ItemDisplayEntry`（物品，含数量/堆叠信息）与 `ExperienceDisplayEntry`（经验值）
 - **客户端接入**：`PickUpNotifyMixin` 拦截拾取通知驱动显示；`ClientNetworking` 处理客户端网络相关逻辑
 
----
-
 ### 21. 世界增强功能
 
 一组原生集成、不依赖外部库的"世界微调"增强（灵感来自社区经典玩法），覆盖生物行为、掉落归集与末地机制：
@@ -230,8 +235,6 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 - **末影龙鞘翅掉落（Dragon Drops Elytra）**：末影龙被击杀时额外掉落一个鞘翅并广播提示；击杀归属优先级：直接玩家 → 弹射物发射者（弓/弩/三叉戟）→ 30 格半径内最近玩家
 - **末地传送门增强**：① 末地传送门框可被精准采集镐破坏并掉落（含已嵌末影之眼），同时清除激活的传送门方块；② 末影龙被击杀时向附近玩家额外给予一个龙蛋；③ 新增合成配方 `craftable_end_portal`（末影之眼 + 龙蛋 + 末地石 → 12 个末地传送门框）。配置 `config/youzaiworldcore/end_portal_settings.json` 三项开关（精准采集要求 / 直接入背包 / 龙蛋提示）
 
----
-
 ### 22. 双开门系统
 
 仅支持「同材质木门 / 栅栏门」点击双开的精简实现，按玩家独立开关。
@@ -239,15 +242,44 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 - **触发方式**：徒手右键门 / 栅栏门，`DoorBlockMixin` / `FenceGateBlockMixin` 在 `useWithoutItem` 完成原版开关后调用 `DoubleDoorsHandler.onDoorClick`；潜行时禁用双开，仅保留原版单开
 - **配对规则**：在 3×3 水平范围内搜索相邻、同类型（同为 `DoorBlock` 或同为 `FenceGateBlock`）、显示名（材质）相同的配对门，统一同步为被点击门的开合状态；不做递归（仅相邻双开）
 - **支持范围**：木门（含双层）、栅栏门（自动对齐朝向）；铁门等无法徒手开启的方块、活板门、红石触发、村民 AI、连锁开门均不在范围内
-- **玩家独立开关**：`/yzwc function double_doors [true|false]` 控制自身，缺省（不带参数）查询自身状态，新玩家默认开启
+- **玩家独立开关**：`/yzwc function double_doors [true|false]`（**客户端命令**）控制自身，缺省（不带参数）查询自身状态，新玩家默认开启
 - **数据持久化**：`config/youzaiworldcore/double_doors_players.json`，仅保存被指令显式设置过的玩家（`DoubleDoorsState`，未设置者回退默认启用）
-- **客户端转发架构**：`/yzwc` 根命令已在客户端注册（用于 `/yzwc settings`），故该命令在客户端仅做解析与转发，权威状态由服务端通过 `DoubleDoorsTogglePayload`（C→S）承载
+- **客户端转发架构**：`/yzwc` 根命令已在客户端注册（用于 `/yzwc settings` 及转发型子命令），故双开门、隐身、实验性功能等命令在客户端仅做解析与转发，权威状态由服务端通过 `DoubleDoorsTogglePayload` / `InvisibilityPayload` / `ExperimentalFeaturePayload`（C→S）承载
+
+### 23. 宠物系统
+
+基于原版狼（Wolf）的驯养追踪与管理系统，将已驯服的狼登记为"宠物"并提供长效的归属、信任与行为管理。
+
+- **核心数据结构**：`PetEntry` 记录内部名称（`internalName`）、显示名、行为模式、主人 UUID、信任玩家集合、驯服时间、实体 UUID；全局注册表 `PetGlobalState` 持久化所有宠物
+- **行为模式**：`hunting`（狩猎）/ `companionship`（陪伴）/ `attack`（攻击）/ `guard`（守卫）——经 `/yzwc pet set <内部名> mode` 切换
+- **信任系统**：主人可将其他玩家加入信任列表，被信任者可以查看列表、高亮宠物；`trust add/remove/list <玩家>`
+- **归属操作**：`rename`（重命名）、`transfer <新主人>`（转让所有权，原主人自动进入信任列表）、`release_life [force]`（放生，需二次确认）
+- **快速定位**：`highlight <内部名>` 对目标狼施加 5 秒发光效果，便于在群体中定位
+- **管理员运维**：`admin restore`（从最新备份恢复）、`admin backup_list`（列出备份）、`admin backup_interval <秒>`（设置定时备份间隔，60–3600 秒）
+- **持久化**：`config/youzaiworldcore/pet_module/settings.json` + 定时备份 `pet_module/pet_backup_<时间戳>.json`
+- **命令架构**：`/yzwc pet` 为**客户端命令**，客户端将参数经 `PetCommandPayload`（C→S）整体转发，服务端 `PetCommand` 持有完整 Brigadier 命令树与权限校验
+
+### 24. 物品高亮系统
+
+纯客户端功能，为手持或指定物品提供描边高亮，便于在背包 / 世界中快速定位目标物品（不影响服务端逻辑）。
+
+- **命令**：`/yzwc settings highlight_item`
+  - `toggle` —— 开/关高亮
+  - `color <名称 | custom r g b a>` —— 预设颜色或自定义 RGBA（r/g/b 0–255，a 0.0–1.0）
+  - `mode <比较器>` —— 选择触发高亮的物品匹配规则（`ItemComparator.Comparators`）
+- **实现**：`highlightitem` 包（`HighlightItem` / `Configurator` / `Colors` / `ItemComparator`），通过客户端 Mixin 在渲染层注入描边；所有配置经客户端命令即时生效
+
+### 25. 实验性功能
+
+实验性功能系统框架已完全实现，支持服务端全局开关 + 玩家级覆写 + 服务端控制模式（`serverSide`）。注册接口 `ExperimentalFeatures.register(...)` 与配置持久化（`config/youzaiworldcore/experimental_feature/server_settings.json` / `client_settings.json`）均就绪，并通过 `FeatureSyncPayload` 同步。
+
+> **当前状态**：框架已实现，但**暂未注册任何实验性功能**（`REGISTRY` 为空）。维度池系统已脱离实验性阶段，作为核心功能直接启用。
 
 ---
 
 ## 📜 指令树
 
-所有指令以 `/yzwc` 为根命令。
+所有指令以 `/yzwc` 为根命令。标注 **（客户端命令）** 的子命令仅做参数解析与转发，权威逻辑由服务端数据包接收器执行。
 
 ```
 /yzwc
@@ -269,26 +301,36 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 │   ├── 权限：youzaiworldcore.command.teleport_anchor（OP 4）
 │   └── 列出传送锚点（含可点击传送链接）
 │
-├── function invisibility <true/false>
-│   ├── 权限：youzaiworldcore.command.function.invisibility（OP 4）
-│   └── 限制：必须在创造模式
-│
-├── function double_doors <true|false>
-│   ├── 权限：youzaiworldcore.command.function.double_doors（玩家自身，所有人可执行）
-│   └── 缺省查询自身状态；新玩家默认启用，状态持久化至 double_doors_players.json
-│
-├── experimental_feature <id> [true/false [all|only <player>]]
-│   ├── 权限：.query（所有人）/ .self（所有人）/ .admin（OP 4）
-│   └── 查询或切换实验性功能
-│
-├── reload
-│   ├── 权限：youzaiworldcore.command.reload（OP 4）
-│   └── 运行时重载账户数据和配置
-│
 ├── event naturally_charged_creepers
 │   ├── enable [true|false]               → 开启/关闭天然带电苦力怕（缺省查询）
 │   ├── settings chance [double]           → 设置带电概率 0.0~1.0（缺省查询）
 │   └── 权限：.query（所有人）/ .set（OP 4）
+│
+├── pet <args...>                         ← （客户端命令，整体转发至服务端）
+│   ├── list                                          → 列出自己的宠物与受信任宠物
+│   ├── set <内部名> rename <新显示名>                 → 重命名（主人）
+│   ├── set <内部名> mode <hunting|companionship|attack|guard> → 切换行为模式
+│   ├── set <内部名> trust add|remove <玩家> | trust list → 信任管理
+│   ├── set <内部名> release_life [force]              → 放生（需二次确认）
+│   ├── set <内部名> transfer <新主人>                 → 转让所有权
+│   ├── highlight <内部名>                            → 高亮定位（发光 5 秒）
+│   └── admin restore | backup_list | backup_interval <秒> → 管理员备份/恢复
+│
+├── function invisibility <true/false>    ← （客户端命令）
+│   ├── 权限：youzaiworldcore.command.function.invisibility（OP 4）
+│   └── 限制：必须在创造模式
+│
+├── function double_doors <true|false>    ← （客户端命令）
+│   ├── 权限：youzaiworldcore.command.function.double_doors（玩家自身，所有人可执行）
+│   └── 缺省查询自身状态；新玩家默认启用，状态持久化至 double_doors_players.json
+│
+├── experimental_feature <id> [true/false [all|only <player>]]   ← （客户端命令）
+│   ├── 权限：.query（所有人）/ .self（所有人）/ .admin（OP 4）
+│   └── 查询或切换实验性功能（转发至服务端）
+│
+├── reload
+│   ├── 权限：youzaiworldcore.command.reload（OP 4）
+│   └── 运行时重载账户数据和配置
 │
 └── account
     ├── 📋 玩家命令：
@@ -310,6 +352,8 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
             └── unlock <player>  ← 解锁账户
 ```
 
+> **客户端命令说明**：`/yzwc pet`、`/yzwc function invisibility`、`/yzwc function double_doors`、`/yzwc experimental_feature` 均在客户端注册，仅负责解析参数并通过对应 C→S 数据包（`PetCommandPayload` / `InvisibilityPayload` / `DoubleDoorsTogglePayload` / `ExperimentalFeaturePayload`）转发；服务端持有权威状态与权限判定。其余子命令（`teleport_world` / `open_menu` / `world_pool` / `teleport_anchor` / `event` / `reload` / `account`）为服务端命令。
+
 ### 权限节点一览
 
 | 权限节点 | 说明 | 回退等级 |
@@ -327,6 +371,10 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 | `youzaiworldcore.command.experimental_feature.admin` | 管理 | OP 4 |
 | `youzaiworldcore.command.event.query` | 事件管理查询（省略参数即为查询） | 所有人 |
 | `youzaiworldcore.command.event.set` | 事件管理修改（enable / settings） | OP 4 |
+| `youzaiworldcore.command.pet.list` | 查看宠物列表 | 所有人 |
+| `youzaiworldcore.command.pet.set` | 宠物设置（重命名/模式/信任/放生/转让） | 所有人（仅自身宠物） |
+| `youzaiworldcore.command.pet.highlight` | 高亮宠物 | 所有人（主人/信任玩家） |
+| `youzaiworldcore.command.pet.admin` | 宠物管理员（备份/恢复/间隔） | OP 4 |
 | `youzaiworldcore.command.account.mgr.create` | 创建账户 | OP 4 |
 | `youzaiworldcore.command.account.mgr.reset_password` | 重置密码 | OP 4 |
 | `youzaiworldcore.command.account.mgr.delete` | 删除账户 | OP 4 |
@@ -337,14 +385,6 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 | `youzaiworldcore.command.account.mgr.*` | 账户管理通配符 | OP 4 |
 | `youzaiworldcore.command.*` | 所有命令通配符 | — |
 | `youzaiworldcore.*` | 全模组通配符 | — |
-
----
-
-## 🧪 实验性功能
-
-实验性功能系统框架已完全实现，支持服务端全局开关 + 玩家级覆写 + 服务端控制模式（`serverSide`）。配置持久化到 `config/youzaiworldcore/experimental_feature/`（`server_settings.json` / `client_settings.json`），通过 `FeatureSyncPayload` 同步。
-
-> **当前状态**：暂无已注册的实验性功能。维度池系统已脱离实验性阶段，作为核心功能直接启用。
 
 ---
 
@@ -366,21 +406,21 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 | `decomposition_table` | 分解台 |
 | `fly_beacon` | 飞行信标 |
 
-### 网络数据包（共 20 个）
+### 网络数据包（共 21 个）
 
-> 注：`world_pool_teleport` 数据包类位于 `dimensionalinventories` 包，其余 19 个位于 `network` 包。
+> 注：`world_pool_teleport` 数据包类位于 `dimensionalinventories` 包，其余 20 个位于 `network` 包。
 
 | 数据包 ID | 方向 | 用途 |
 |-----------|------|------|
 | `open_menu` | S→C | 打开 GUI 菜单 |
-| `feature_sync` | S→C | 同步实验性功能状态 |
 | `open_auth_screen` | S→C | 打开认证界面 |
+| `feature_sync` | S→C | 同步实验性功能状态 |
 | `mana_sync` | S→C | 同步魔力值 |
 | `level_exp_sync` | S→C | 同步冒险等级经验 |
 | `attribute_sync` | S→C | 同步玩家属性数据（技能点 / 各项属性 / 等级） |
-| `world_pool_teleport` | C→S | 请求维度池传送 |
-| `teleport_anchor_open_name` | S→C | 打开传送锚点命名界面 |
 | `teleport_anchor_list` | S→C | 发送传送点列表 |
+| `teleport_anchor_open_name` | S→C | 打开传送锚点命名界面 |
+| `world_pool_teleport` | C→S | 请求维度池传送 |
 | `teleport_anchor_activate` | C→S | 激活传送锚点 |
 | `teleport_anchor_teleport` | C→S | 请求传送 |
 | `teleport_anchor_delete` | C→S | 删除传送点 |
@@ -392,6 +432,7 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 | `experimental_feature` | C→S | 转发实验性功能命令（查询 / 自切换 / 全服 / 指定玩家） |
 | `attribute_upgrade` | C→S | 请求为某项属性加点 |
 | `double_doors_toggle` | C→S | 切换 / 查询自身双开门开关 |
+| `pet_command` | C→S | 转发 `/yzwc pet` 客户端命令至服务端执行 |
 
 ---
 
@@ -404,11 +445,11 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 | Fabric API | 0.154.0+26.2 | Fabric 标准 API |
 | ModMenu | 20.0.0-beta.4 | 模组菜单集成 |
 | Placeholder API | 3.1.0-beta.1+26.2 | 文本占位符 |
-| Moog's Structure Lib | 3.0.4 | 传送锚点遗迹世界生成 |
+| Moog's Structure Lib | 3.0.4 | 声明依赖（村庄结构注入所引用） |
 | Fabric Permissions API | 0.6.1（内置） | 跨模组权限 API |
 | LuckPerms | 5.5（建议运行时） | 高级权限控制 |
 
-**构建要求**：JDK 25+ · Gradle（Fabric Loom 1.16-SNAPSHOT）
+**构建要求**：JDK 25+ · Gradle（Fabric Loom 1.16-SNAPSHOT）· 模组版本 `1.19.0-indev`
 
 **构建与 CI/CD**：GitHub Actions 工作流（`.github/workflows/build.yml`）在 Ubuntu / Windows / macOS 三平台使用 JDK 25 自动构建，Linux 构建产物自动上传。
 
@@ -420,51 +461,49 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 src/
 ├── main/java/top/csituka/youzaiworldcore/
 │   ├── YouzaiworldCore.java              # 主入口
-│   ├── account/                          # 账户认证（Mixin + JSON 存储）
+│   ├── account/                          # 账户认证（data/command/mixin/util 子包）
 │   ├── block/ + entity/                  # 自定义方块与方块实体
-│   ├── command/                          # 命令注册（含 EventCommand 天然带电苦力怕管理）
+│   ├── command/                          # 命令注册（TeleportAnchorCommand / ReloadCommand / EventCommand）
 │   ├── component/                        # 数据组件
-│   ├── config/                           # 服务端外部设置（含带电苦力怕 / 末地传送门 / 双开门配置）
+│   ├── config/                           # 服务端外部设置（带电苦力怕 / 末地传送门 / 双开门 / 宠物配置）
 │   ├── data/                             # 传送锚点 SavedData
 │   ├── dimensionalinventories/           # 维度池系统（含 WorldPoolTeleportPayload）
 │   ├── enchlevellangpatch/               # 附魔等级语言补丁（api + impl）
-│   ├── event/                            # 事件处理器（铁砧修复/飞行信标/虚空法杖/坐姿交互/传送锚点交互/切石机伤害/天然带电苦力怕/紫颂果/末影龙鞘翅/末地传送门/双开门）
+│   ├── event/                            # 事件处理器（飞行信标/双开门/末地门/虚空杖/龙翼/chorus/带电苦力怕/分解/坐姿 等）
 │   ├── entity/seat/                      # 座椅实体系统
-│   ├── feature/                          # 实验性功能系统
+│   ├── feature/                          # 实验性功能系统（ExperimentalFeatures 注册框架）
 │   ├── invisibility/                     # 隐身系统
 │   ├── item/                             # 物品、工具、创造标签页、预设
-│   ├── luckperms/                        # LuckPerms 权限集成
+│   ├── luckperms/                        # LuckPerms 集成（LuckPermsHelper 统一鉴权）
 │   ├── mana/                             # 魔力系统
-│   ├── mixin/                            # 主 Mixin（+ 隐身容器/粒子/音效 + 座椅 + 技能 + 带电苦力怕 + 双开门）
-│   ├── mixin/chargedcreeper/             # 带电苦力怕 Mixin（暴露 DATA_IS_POWERED 访问器）
-│   ├── mixin/doubledoors/                # 双开门 Mixin（DoorBlock / FenceGateBlock 点击双开）
-│   ├── network/                          # 网络数据包（19 个数据包类）
+│   ├── mixin/                            # Mixin（含子包 chargedcreeper / doubledoors / invisibility / pet / seat / skill）
+│   ├── network/                          # 网络数据包（20 个数据包类 + ModNetworking）
+│   ├── pet/                              # 宠物系统（config/command/event 子包 + PetGlobalState/PetEntry）
 │   ├── placeholders/                     # Placeholder API 集成（32 个占位符）
 │   ├── screen/                           # 容器菜单
-│   ├── skill/                            # 冒险经验等级系统
-│   ├── worldgen/                         # 世界生成（村庄结构注入器）
-│   └── util/                             # DebugLogger 等工具
-│
+│   ├── skill/                            # 冒险等级 + 属性系统
+│   ├── util/                             # DebugLogger 等工具
+│   └── worldgen/                         # 世界生成（VillageStructureInjector 村庄结构注入）
+
 ├── client/java/top/csituka/youzaiworldcore/
 │   ├── client/Client.java                # 客户端入口
+│   ├── command/                          # 客户端命令（ExperimentalFeature / Invisibility / DoubleDoors / Pet 转发）
 │   ├── config/                           # 客户端外部设置
 │   ├── effect/                           # 传送 FOV 效果
 │   ├── higherchat/                       # Simple Voice Chat 集成（HUD 图标位置跟踪，优化聊天框位置避免遮挡）
+│   ├── highlightitem/                    # 物品高亮（HighlightItem / Configurator / Colors / ItemComparator）
 │   ├── hud/                              # 魔力条 / 冒险等级 HUD
-│   ├── mixin/client/                     # 客户端 Mixin（标题/选项/按钮/暂停/聊天/加载/座椅/渲染/拾取/附魔补丁 等，共 24 个）
+│   ├── mixin/client/                     # 客户端 Mixin（标题/选项/按钮/暂停/聊天/加载/座椅/渲染/拾取/附魔补丁 等）
 │   ├── network/                          # 客户端网络处理（ClientNetworking）
-│   ├── pickup/                           # 拾取显示（物品/经验浮动提示）
-│   ├── renderer/                         # 方块/实体渲染器
-│   └── screen/                           # GUI 屏幕
-│       ├── MenuScreen.java               # 菜单容器
-│       ├── LoginScreen / RegisterScreen  # 认证界面
-│       ├── element/                      # 菜单元素组
-│       ├── widget/                       # UI 组件
-│       └── block/                        # 方块 GUI
-│
+│   ├── pickup/                           # 拾取显示（item/XP 浮动提示）
+│   ├── renderer/                         # 方块/实体渲染器（含传送锚点 BER）
+│   └── screen/                           # GUI 屏幕（MenuScreen、Login/Register、element/widget/block 子包）
+│       └── skill/                        # 客户端冒险等级/属性菜单元素
+
 └── main/resources/
     ├── assets/youzaiworldcore/           # 纹理、模型、语言文件
-    └── data/                             # 成就、配方、战利品表、维度、结构、结构集、模板池、新手教程函数
+    ├── data/                             # 成就、配方、战利品表、维度、结构、结构集、模板池、新手教程函数
+    └── fabric.mod.json                   # 模组元数据（声明 moogs_structures 为硬依赖）
 
 .github/workflows/
 └── build.yml                             # CI/CD 构建工作流
@@ -482,7 +521,7 @@ src/
 | `yz_ingot_from_nuggets` | 合成 | 9 悠哉粒 → 悠哉锭 |
 | `yz_block` | 合成 | 9 悠哉锭 → 悠哉块 |
 | `yz_nugget_from_ingot` | 合成 | 悠哉锭 → 9 悠哉粒 |
-| `yz_pickaxe` / `yz_axe` / `yz_shovel` / `yz_hoe` / `yz_sword` | 合成 |悠哉系列工具 |
+| `yz_pickaxe` / `yz_axe` / `yz_shovel` / `yz_hoe` / `yz_sword` | 合成 | 悠哉系列工具 |
 | `decomposition_table` | 合成 | 分解台 |
 | `fly_beacon` | 合成 | 飞行信标 |
 | `heart_of_guardianship` | 合成 | 守护之心 |
@@ -509,4 +548,4 @@ src/
 
 ---
 
-> **注意**：测试模组请在服务端进行，客户端单独运行无法正常工作。
+> **注意**：测试模组请在服务端进行，客户端单独运行无法正常工作。客户端命令（`/yzwc pet`、`/yzwc function *`、`/yzwc experimental_feature`、`/yzwc settings highlight_item`）需连入服务器后方可生效。
