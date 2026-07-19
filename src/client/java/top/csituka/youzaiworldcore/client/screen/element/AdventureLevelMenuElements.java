@@ -44,9 +44,6 @@ public class AdventureLevelMenuElements implements MenuElementGroup {
 
     private record AttrDef(String key, String shortName, String format, int stepPercent) {}
 
-    /** 缓存上次创建的按钮列表，用于 renderCustomContent 中响应 hover */
-    private List<AbstractWidget> attrButtons = new ArrayList<>();
-
     @Override
     public String getTitleText() {
         return I18n.get("youzaiworldcore.message.gui.title_adventure_level");
@@ -103,7 +100,6 @@ public class AdventureLevelMenuElements implements MenuElementGroup {
                 buttons.add(btn);
             }
         }
-        this.attrButtons = buttons;
         return buttons;
     }
 
