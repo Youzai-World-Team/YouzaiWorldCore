@@ -154,7 +154,7 @@ A player-behavior-based experience level system coupled with an allocatable attr
 
 - **Adventure Level (XP)**
   - **XP Sources**: Mine 50 blocks (+25), Place 50 blocks (+25), Death (+10), Guardian Heart protects (+50), Totem of Undying triggers (+500), Complete advancement (+50)
-  - **Level Formula**: `expForNext = 50 + level × 50`
+  - **Level Formula**: `C = 200 + 20 × log₁₀(2n)²⁰` (n = current level, n ≥ 1; ≈ 220 at low levels, accelerates past n ≥ 50)
   - **Network Sync**: `LevelExpSyncPayload` (S→C) synchronizes XP values
 - **Attribute System**
   - Attribute points earned on level-up can be allocated via the `/yzwc` attribute menu (GUI element), mapped onto 10 vanilla attributes: `MAX_HEALTH`, `MOVEMENT_SPEED`, `JUMP_STRENGTH`, `LUCK`, `ATTACK_DAMAGE`, `BLOCK_BREAK_SPEED`, etc.
