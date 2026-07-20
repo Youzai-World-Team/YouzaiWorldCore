@@ -27,7 +27,8 @@
     "EditBoxMixin",
     "MinecraftQuitMixin",
     "enchlevellangpatch.EnchantmentLevelLangPatchMixin",
-    "highlightitem.AbstractContainerScreenMixin"
+    "highlightitem.AbstractContainerScreenMixin",
+    "OptionsSaveMixin"
   ],
   "injectors": {
     "defaultRequire": 1

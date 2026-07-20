@@ -38,6 +38,7 @@ import top.csituka.youzaiworldcore.command.DoubleDoorsClientCommand;
 import top.csituka.youzaiworldcore.command.ExperimentalFeatureClientCommand;
 import top.csituka.youzaiworldcore.command.InvisibilityClientCommand;
 import top.csituka.youzaiworldcore.command.PetClientCommand;
+import top.csituka.youzaiworldcore.client.config.ConfigIOManager;
 
 public class Client implements ClientModInitializer {
 
@@ -48,6 +49,10 @@ public class Client implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         DebugLogger.entering("Client", "onInitializeClient");
+
+        // 配置文件导入崩溃自愈：检测并恢复孤立的 config_bak_* 备份
+        DebugLogger.info("Client", "检查上次导入中断后的配置恢复...");
+        ConfigIOManager.recoverIfNeeded(Minecraft.getInstance().gameDirectory);
 
         DebugLogger.info("Client", "注册客户端 Tick 事件...");
         ClientTickEvents.END_CLIENT_TICK.register(this::onClientTick);

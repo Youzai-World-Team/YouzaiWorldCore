@@ -15,7 +15,11 @@ import top.csituka.youzaiworldcore.update.UpdateAddressState;
 import top.csituka.youzaiworldcore.client.screen.widget.DropdownButton;
 import top.csituka.youzaiworldcore.client.screen.widget.TitleScreenTextButton;
 import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
+import top.csituka.youzaiworldcore.client.config.ConfigIOManager;
+import top.csituka.youzaiworldcore.client.config.PlatformDetector;
+import top.csituka.youzaiworldcore.util.DebugLogger;
 
+import java.io.File;
 import java.util.List;
 
 /**
@@ -45,7 +49,7 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
 
     private final Panorama panorama;
 
-    /** 当前选中的分栏索引：0 = 实验性功能, 1 = 开发者 */
+    /** 当前选中的分栏索引：0 = 实验性功能, 1 = 开发者, 2 = 导出/导入配置 */
     private int selectedSection = 0;
 
     // ===== 滚动状态 =====
@@ -60,6 +64,7 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
     private TransparentButton closeButton;
     private TitleScreenTextButton sidebarExpFeatures;
     private TitleScreenTextButton sidebarDev;
+    private TitleScreenTextButton sidebarConfigIo;
     private CheckboxButton devModeToggle;
     private DropdownButton logLevelDropdown;
     private DropdownButton debugModeDropdown;
@@ -78,6 +83,28 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
     private String debugPort;
     private String updateCheckAddress;
     private String updateJumpAddress;
+
+    // ===== 配置导入/导出分栏状态 =====
+    /** 导出按钮（分栏 2） */
+    private TransparentButton configExportButton;
+    /** 导入按钮（分栏 2） */
+    private TransparentButton configImportButton;
+    /** 配置操作进行中（导出或导入） */
+    private boolean configOpActive = false;
+    /** 操作开始时间戳（毫秒） */
+    private long configOpStartTime = 0;
+    /** 操作类型： "export" 或 "import" */
+    private String configOpType = "";
+    /** 当前操作进度文本 */
+    private String configOpProgressText = "";
+    /** 是否 Android 平台（缓存） */
+    private boolean isAndroidPlatform = false;
+    /** 导出提示文字 Y */
+    private int configExportHintY;
+    /** 导入提示文字 Y */
+    private int configImportHintY;
+    /** 底部通用提示 Y */
+    private int configBottomHintY;
 
     // ===== 文本标签 Y 坐标（由 buildContentWidgets 计算，extractRenderState 使用） =====
     /** "调试服务器" 子分栏标题 Y（仅专用服务端时显示） */
@@ -162,6 +189,9 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
 
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean bl) {
+        // 操作进行中时屏蔽所有点击
+        if (configOpActive) return true;
+
         // 用修正后的坐标检查弹窗外部点击（弹窗位置与 widgets 同坐标系均为自然坐标）
         double adjustedY = event.y() + scrollOffset;
         if (debugModeDropdown != null && debugModeDropdown.isOpen()
@@ -197,6 +227,9 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
 
     @Override
     public boolean keyPressed(KeyEvent keyEvent) {
+        // 操作进行中时屏蔽键盘事件
+        if (configOpActive) return true;
+
         if (keyEvent.key() == 256) { // ESC
             onClose();
             return true;
@@ -266,6 +299,15 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
         sidebarDev.setSelected(selectedSection == 1);
         addRenderableWidget(sidebarDev);
 
+        sidebarConfigIo = new TitleScreenTextButton(
+                sidebarX, sidebarY + 60, SIDEBAR_WIDTH, 22,
+                Component.translatable("screen.youzaiworldcore.settings.sidebar_config_io"),
+                () -> { selectedSection = 2; rebuildWidgets(); }
+        );
+        sidebarConfigIo.setSelected(selectedSection == 2);
+        sidebarConfigIo.active = !configOpActive;
+        addRenderableWidget(sidebarConfigIo);
+
         // ===== 右侧设置内容 =====
         buildContentWidgets();
     }
@@ -283,6 +325,167 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
         );
     }
 
+    /**
+     * 构建「导出/导入配置」分栏（selectedSection == 2）。
+     * <p>
+     * 包含导出按钮（PC 弹文件选择器 / Android 自动保存至 config_backups/）与导入按钮。
+     * 操作进行中时按钮文案变为进度文本，操作锁定期间禁侧栏切换。
+     * </p>
+     */
+    private void buildConfigIoSection(int baseX, int baseY) {
+        this.isAndroidPlatform = PlatformDetector.isAndroid();
+
+        int y = baseY + 30;
+        int buttonWidth = CONTENT_WIDTH - 40;
+        int btnX = baseX + (CONTENT_WIDTH - buttonWidth) / 2;
+
+        // ----- 导出按钮 -----
+        String exportLabel = (configOpActive && "export".equals(configOpType))
+                ? configOpProgressText
+                : Component.translatable("screen.youzaiworldcore.settings.config_io_export_btn").getString();
+        configExportButton = new TransparentButton(
+                btnX, y, buttonWidth, 22,
+                Component.literal(exportLabel),
+                this::onConfigExport
+        );
+        configExportButton.active = !configOpActive;
+        configExportButton.setTextColor(0xFFFFFFFF);
+        addRenderableWidget(configExportButton);
+        y += 24;
+
+        // 导出提示
+        configExportHintY = y;
+        y += 16;
+
+        // ----- 导入按钮 -----
+        y += 14;
+        String importLabel = (configOpActive && "import".equals(configOpType))
+                ? configOpProgressText
+                : Component.translatable("screen.youzaiworldcore.settings.config_io_import_btn").getString();
+        configImportButton = new TransparentButton(
+                btnX, y, buttonWidth, 22,
+                Component.literal(importLabel),
+                this::onConfigImport
+        );
+        configImportButton.active = !configOpActive;
+        configImportButton.setTextColor(0xFFFFFFFF);
+        addRenderableWidget(configImportButton);
+        y += 24;
+
+        // 导入提示
+        configImportHintY = y;
+        y += 16;
+
+        // 底部通用提示
+        y += 20;
+        configBottomHintY = y;
+
+        maxContentY = y + 40;
+    }
+
+    /**
+     * 导出按钮回调。自动保存至 {@code config_backups/} 目录。
+     */
+    private void onConfigExport() {
+        if (configOpActive) return;
+        DebugLogger.entering("SettingsScreen", "onConfigExport");
+        File gameDir = Minecraft.getInstance().gameDirectory;
+
+        configOpActive = true;
+        configOpType = "export";
+        configOpStartTime = System.currentTimeMillis();
+        configOpProgressText = Component.translatable("screen.youzaiworldcore.settings.config_io_op_in_progress").getString();
+        configExportButton.setMessage(Component.literal(configOpProgressText));
+        configExportButton.active = false;
+        configImportButton.active = false;
+        sidebarConfigIo.active = false;
+
+        ConfigIOManager.exportConfig(gameDir, (processed, total, phase) -> {
+            int pct = total > 0 ? (int) ((float) processed / total * 100) : 0;
+            String progress = Component.translatable(
+                    "screen.youzaiworldcore.settings.config_io_op_progress",
+                    pct
+            ).getString();
+            // 更新按钮文本（回主线程）
+            Minecraft.getInstance().execute(() -> {
+                configOpProgressText = progress;
+                if (configExportButton != null) {
+                    configExportButton.setMessage(Component.literal(progress));
+                }
+            });
+        }).thenAccept(path -> {
+            Minecraft.getInstance().execute(() -> {
+                finishConfigOp();
+                // 自动保存至 config_backups/，用 Toast 提示路径
+                showToast(Component.translatable("message.youzaiworldcore.config_io.export_saved",
+                        Component.literal(path.toString())));
+            });
+        }).exceptionally(ex -> {
+            Minecraft.getInstance().execute(() -> {
+                finishConfigOp();
+                String msg = extractErrorMessage(ex);
+                showToast(Component.literal("§e" + msg));
+            });
+            return null;
+        });
+    }
+
+    /**
+     * 导入按钮回调。打开备份文件列表（全平台统一）。
+     */
+    private void onConfigImport() {
+        if (configOpActive) return;
+        DebugLogger.entering("SettingsScreen", "onConfigImport");
+        File gameDir = Minecraft.getInstance().gameDirectory;
+
+        Minecraft.getInstance().execute(() -> {
+            Minecraft.getInstance().setScreenAndShow(new ConfigBackupListScreen(this, gameDir));
+        });
+    }
+
+    /** 完成操作（恢复按钮状态） */
+    private void finishConfigOp() {
+        configOpActive = false;
+        configOpType = "";
+        configOpProgressText = "";
+        if (configExportButton != null) {
+            configExportButton.setMessage(Component.translatable("screen.youzaiworldcore.settings.config_io_export_btn"));
+            configExportButton.active = true;
+        }
+        if (configImportButton != null) {
+            configImportButton.setMessage(Component.translatable("screen.youzaiworldcore.settings.config_io_import_btn"));
+            configImportButton.active = true;
+        }
+        if (sidebarConfigIo != null) sidebarConfigIo.active = true;
+    }
+
+    /** 从异常中提取用户可阅读的错误消息 */
+    private static String extractErrorMessage(Throwable ex) {
+        Throwable cause = ex;
+        while (cause.getCause() != null) cause = cause.getCause();
+        String msg = cause.getMessage();
+        if (msg == null) msg = ex.getMessage();
+        if (msg == null) return Component.translatable("message.youzaiworldcore.config_io.import_failed_generic").getString();
+        if (msg.contains("被占用")) return Component.translatable("message.youzaiworldcore.config_io.import_failed_occupied").getString();
+        if (msg.contains("ZIP 炸弹") || msg.contains("损坏") || msg.contains("无效")) {
+            return Component.translatable("message.youzaiworldcore.config_io.import_failed_corrupt").getString();
+        }
+        if (msg.contains("磁盘空间")) return Component.translatable("message.youzaiworldcore.config_io.import_failed_disk").getString();
+        if (msg.contains("无效")) return Component.translatable("message.youzaiworldcore.config_io.import_invalid_pack").getString();
+        // 通用
+        return Component.translatable("message.youzaiworldcore.config_io.import_failed_generic").getString();
+    }
+
+    /** 显示 Toast（MC 原生 ToastManager，Android 端也可渲染） */
+    private void showToast(Component message) {
+        var toast = new net.minecraft.client.gui.components.toasts.SystemToast(
+                new net.minecraft.client.gui.components.toasts.SystemToast.SystemToastId(),
+                Component.translatable("screen.youzaiworldcore.config_io.export_success_title"),
+                message
+        );
+        Minecraft.getInstance().gui.toastManager().addToast(toast);
+    }
+
     private void buildContentWidgets() {
         int baseX = CONTENT_LEFT + (this.width - CONTENT_LEFT - CONTENT_WIDTH) / 2;
         int baseY = CONTENT_TOP;
@@ -290,6 +493,9 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
         if (selectedSection == 0) {
             // 实验性功能 — 无交互组件，纯文本
             maxContentY = baseY + 40;
+        } else if (selectedSection == 2) {
+            // 导出/导入配置分栏
+            buildConfigIoSection(baseX, baseY);
         } else if (selectedSection == 1) {
             int y = baseY + 30;
 
@@ -477,6 +683,9 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
         closeButton.extractRenderState(guiGraphics, mouseX, mouseY, partialTick);
         sidebarExpFeatures.extractRenderState(guiGraphics, mouseX, mouseY, partialTick);
         sidebarDev.extractRenderState(guiGraphics, mouseX, mouseY, partialTick);
+        if (sidebarConfigIo != null) {
+            sidebarConfigIo.extractRenderState(guiGraphics, mouseX, mouseY, partialTick);
+        }
 
         // ===================================================================
         // 3. 内容区（可滚动）— 先设裁切（屏幕坐标），再平移坐标系
@@ -523,6 +732,27 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
                 guiGraphics.text(this.font, Component.translatable("screen.youzaiworldcore.settings.label_update_jump_address"),
                         baseX, updateJumpLabelY, 0xB0FFFFFF, false);
             }
+        } else if (selectedSection == 2) {
+            // 导出/导入配置分栏文本
+            guiGraphics.text(this.font, Component.translatable("screen.youzaiworldcore.settings.sidebar_config_io"),
+                    baseX, CONTENT_TOP, 0xFFFFFFFF, false);
+
+            // 导出提示文字
+            String exportHintKey = isAndroidPlatform
+                    ? "screen.youzaiworldcore.settings.config_io_export_hint_android"
+                    : "screen.youzaiworldcore.settings.config_io_export_hint_pc";
+            guiGraphics.text(this.font, Component.translatable(exportHintKey),
+                    baseX, configExportHintY, 0x80FFFFFF, false);
+
+            // 导入提示文字
+            guiGraphics.text(this.font, Component.translatable("screen.youzaiworldcore.settings.config_io_import_hint"),
+                    baseX, configImportHintY, 0x80FFFFFF, false);
+
+            // 底部通用提示
+            guiGraphics.text(this.font, Component.translatable("screen.youzaiworldcore.settings.config_io_bottom_hint_line1"),
+                    baseX, configBottomHintY, 0x60FFFFFF, false);
+            guiGraphics.text(this.font, Component.translatable("screen.youzaiworldcore.settings.config_io_bottom_hint_line2"),
+                    baseX, configBottomHintY + 10, 0x60FFFFFF, false);
         }
 
         // 3b. 父类渲染 widgets（侧栏/关闭按钮在此二次渲染，但被裁切矩形剪裁 → 不可见）
@@ -561,6 +791,46 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
             int thumbY = scrollbarTop + (int) ((scrollOffset / maxScroll) * (viewportHeight - thumbHeight));
             guiGraphics.fill(scrollbarLeft, thumbY, scrollbarRight, thumbY + thumbHeight, 0x80FFFFFF);
         }
+
+        // ===================================================================
+        // 5. 防 ANR 遮罩（操作耗时 > 5 秒时显示）
+        // ===================================================================
+        if (configOpActive) {
+            long elapsed = System.currentTimeMillis() - configOpStartTime;
+            if (elapsed > 5000) {
+                // 半透明遮罩
+                guiGraphics.fill(0, 0, this.width, this.height, 0x80000000);
+
+                // 进度条背景
+                int barWidth = 200;
+                int barHeight = 8;
+                int barX = (this.width - barWidth) / 2;
+                int barY = this.height / 2;
+
+                // 背景矩形
+                guiGraphics.fill(barX, barY, barX + barWidth, barY + barHeight, 0xFFFFFFFF);
+
+                // 前景进度（模拟，仅使用简单动画）
+                float progress = Math.min(1f, (elapsed - 5000) / 30000f); // 0→1 over 30 seconds
+                int fillWidth = (int) (barWidth * progress);
+                guiGraphics.fill(barX, barY, barX + fillWidth, barY + barHeight, 0xFF00AAFF);
+
+                // 操作提示文字
+                String opLabel = "import".equals(configOpType)
+                        ? Component.translatable("screen.youzaiworldcore.settings.config_io_importing_mask").getString()
+                        : Component.translatable("screen.youzaiworldcore.settings.config_io_exporting_mask").getString();
+                int opLabelWidth = this.font.width(opLabel);
+                guiGraphics.text(this.font, opLabel,
+                        (this.width - opLabelWidth) / 2, barY - 16, 0xFFFFFFFF, false);
+
+                // 当前进度文本
+                if (configOpProgressText != null && !configOpProgressText.isEmpty()) {
+                    int progWidth = this.font.width(configOpProgressText);
+                    guiGraphics.text(this.font, configOpProgressText,
+                            (this.width - progWidth) / 2, barY + barHeight + 6, 0xB0FFFFFF, false);
+                }
+            }
+        }
     }
 
     @Override
@@ -574,6 +844,7 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
 
     @Override
     public void onClose() {
+        if (configOpActive) return; // 操作进行中不可关闭
         Minecraft.getInstance().gui.setScreen(null);
     }
 }

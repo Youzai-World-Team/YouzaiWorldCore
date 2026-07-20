@@ -15,6 +15,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import top.csituka.youzaiworldcore.client.screen.QuitConfirmationScreen;
+import top.csituka.youzaiworldcore.client.screen.ConfigImportSuccessScreen;
 
 /**
  * 拦截游戏退出行为，在所有退出路径上弹出确认对话框。
@@ -100,6 +101,12 @@ public class MinecraftQuitMixin {
             // 则不叠加第二个对话框，直接放行退出
             if (currentScreen instanceof QuitConfirmationScreen) {
                 LOGGER.debug("QuitConfirmationScreen already showing, allowing direct close");
+                return true;
+            }
+
+            // 如果当前显示的是「配置导入成功」重启弹窗，直接退出（不可被退出弹窗替换）
+            if (currentScreen instanceof ConfigImportSuccessScreen) {
+                LOGGER.info("ConfigImportSuccessScreen showing during window close, stopping game directly");
                 return true;
             }
 
