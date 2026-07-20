@@ -341,7 +341,6 @@
   "youzaiworldcore.highlight.config.update.fail": "配置文件无法更新！",
   "key.youzaiworldcore.highlight.toggle": "切换高亮",
   "key.youzaiworldcore.highlight.comparator": "切换比较模式",
-
   "youzaiworldcore.message.pet.list.empty": "§e你还没有宠物。试着驯服一匹狼吧！",
   "youzaiworldcore.message.pet.list.header": "§6=== 我的宠物 (%s) ===",
   "youzaiworldcore.message.pet.not_found": "§c未找到名为 %s 的宠物",
@@ -386,14 +385,13 @@
   "youzaiworldcore.message.command.update.available": "§6发现新版本: %s -> %s (%s)",
   "youzaiworldcore.message.command.update.available_forced": "§c[强制更新] 发现新版本: %s -> %s (%s)",
   "youzaiworldcore.message.command.update.failed": "§c更新检查失败: %s",
-  "title.youzaiworldcore.update_title": "更新可用",
-  "title.youzaiworldcore.update_forced_title": "强制更新",
+  "title.youzaiworldcore.update_title": "有新的可选更新可用",
+  "title.youzaiworldcore.update_forced_title": "有新的重要更新",
   "title.youzaiworldcore.update_latest": "最新版本: %s",
   "title.youzaiworldcore.update_released": "发布于 %s %s",
   "title.youzaiworldcore.update_changelog": "更新内容:",
   "title.youzaiworldcore.update_download_btn": "前往下载更新",
   "title.youzaiworldcore.update_ignore_btn": "不再提示此版本",
-
   "screen.youzaiworldcore.settings.sidebar_config_io": "导出/导入配置",
   "screen.youzaiworldcore.settings.config_io_export_btn": "导出当前配置",
   "screen.youzaiworldcore.settings.config_io_import_btn": "导入配置包",
@@ -423,5 +421,9 @@
   "message.youzaiworldcore.config_io.import_failed_occupied": "导入失败：检测到配置文件被外部程序占用，请关闭相关软件后重试。",
   "message.youzaiworldcore.config_io.import_failed_corrupt": "压缩包已损坏或磁盘异常，请重新获取。",
   "message.youzaiworldcore.config_io.import_failed_disk": "操作失败：磁盘空间不足，请清理后重试。",
-  "message.youzaiworldcore.config_io.import_invalid_pack": "无效的配置文件包。"
+  "message.youzaiworldcore.config_io.import_invalid_pack": "无效的配置文件包。",
+  "screen.youzaiworldcore.forced_update.title": "有新的重要更新",
+  "screen.youzaiworldcore.forced_update.message": "检测到有有新的重要更新，请更新后再进入服务器。",
+  "screen.youzaiworldcore.forced_update.download_btn": "前往下载",
+  "screen.youzaiworldcore.forced_update.back_btn": "返回"
 }
