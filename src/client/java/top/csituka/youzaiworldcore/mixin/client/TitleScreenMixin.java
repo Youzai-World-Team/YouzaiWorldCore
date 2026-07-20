@@ -31,6 +31,7 @@ import top.csituka.youzaiworldcore.client.update.ClientUpdateState;
 import top.csituka.youzaiworldcore.config.UpdateCheckerConfig;
 import top.csituka.youzaiworldcore.update.TitleScreenScrollState;
 import top.csituka.youzaiworldcore.update.UpdateChecker;
+import top.csituka.youzaiworldcore.update.UpdateChecker;
 import top.csituka.youzaiworldcore.update.UpdateResult;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
@@ -185,6 +186,12 @@ public class TitleScreenMixin {
             0, 0, 0, BUTTON_HEIGHT,
             Component.translatable("title.youzaiworldcore.join_server"),
             () -> {
+                // 强制更新时阻止进入服务器，显示弹窗
+                if (youzaiworldcore$isForcedUpdateBlocking()) {
+                    Minecraft.getInstance().gui.setScreen(
+                            new top.csituka.youzaiworldcore.client.screen.ForcedUpdateScreen());
+                    return;
+                }
                 ServerData serverData = new ServerData("Youzai World", "play.mcyzw.top", ServerData.Type.OTHER);
                 ServerAddress address = ServerAddress.parseString("play.mcyzw.top");
                 ConnectScreen.startConnecting(screen, minecraft, address, serverData, false, null);
@@ -297,6 +304,18 @@ public class TitleScreenMixin {
             testButton.setX(buttonX);
             testButton.setY(buttonStartY + 3 * (BUTTON_HEIGHT + BUTTON_GAP) + 4);
             testButton.setWidth(buttonWidth);
+        }
+
+        // 每次进入标题界面（含从服务器断开后）重新检查更新
+        if (UpdateCheckerConfig.isCheckOnStartupClient()) {
+            boolean clientDevMode = ClientExternalSettings.isDevModeEnabled();
+            String checkBase = clientDevMode ? ClientExternalSettings.getUpdateCheckAddress() : "";
+            String jumpBase = clientDevMode ? ClientExternalSettings.getUpdateJumpAddress() : "";
+            UpdateChecker.checkAsync(checkBase, jumpBase).thenAccept(result -> {
+                if (result != null) {
+                    ClientUpdateState.set(result);
+                }
+            });
         }
     }
 
@@ -573,6 +592,13 @@ public class TitleScreenMixin {
             }
         }
         return true;
+    }
+
+    /** 强制更新状态下阻止进入服务器 */
+    private static boolean youzaiworldcore$isForcedUpdateBlocking() {
+        if (!UpdateCheckerConfig.isShowOnTitleScreen()) return false;
+        UpdateResult r = ClientUpdateState.get();
+        return r != null && r.updateAvailable() && r.forcedUpdate();
     }
 
     /** 点击「前往下载更新」：在默认浏览器打开构造好的下载页地址 */
