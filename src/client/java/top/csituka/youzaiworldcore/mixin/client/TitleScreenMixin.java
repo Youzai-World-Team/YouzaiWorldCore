@@ -29,6 +29,7 @@ import top.csituka.youzaiworldcore.client.config.ClientExternalSettings;
 import top.csituka.youzaiworldcore.client.screen.widget.TitleScreenTextButton;
 import top.csituka.youzaiworldcore.client.update.ClientUpdateState;
 import top.csituka.youzaiworldcore.config.UpdateCheckerConfig;
+import top.csituka.youzaiworldcore.update.TitleScreenScrollState;
 import top.csituka.youzaiworldcore.update.UpdateChecker;
 import top.csituka.youzaiworldcore.update.UpdateResult;
 import top.csituka.youzaiworldcore.util.DebugLogger;
@@ -75,10 +76,6 @@ public class TitleScreenMixin {
     /** 面板组垂直下移偏移量（相对垂直居中位置） */
     @Unique
     private static final int PANEL_Y_OFFSET = 12;
-
-    /** 更新可用时右面板额外向上扩展的高度（用于容纳更新信息块） */
-    @Unique
-    private static final int UPDATE_BLOCK_HEIGHT = 104;
 
     /** 公告标题颜色 */
     private static final int ANNOUNCEMENT_TITLE_COLOR = 0xFFFFAA00;
@@ -134,6 +131,12 @@ public class TitleScreenMixin {
     /** 不再提示此版本按钮（仅当非强制更新时显示） */
     @Unique
     private TitleScreenTextButton youzaiworldcore$ignoreUpdateBtn;
+
+    /** 更新信息块滚动偏移量（每帧从 TitleScreenScrollState 同步） */
+    @Unique
+    private double youzaiworldcore$updateScrollOffset = 0.0;
+
+    // ==================== init(): 移除并重排按钮 ====================
 
     // ==================== init(): 移除并重排按钮 ====================
 
@@ -357,15 +360,38 @@ public class TitleScreenMixin {
             }
         }
 
-        // 更新可用时右面板向上扩展以容纳更新信息块；左面板保持原样
+        // 绘制前同步滚动偏移量（MouseHandlerScrollMixin 通过 TitleScreenScrollState 更新）
+        youzaiworldcore$updateScrollOffset = TitleScreenScrollState.getScrollOffset();
+
+        // 左右面板统一使用相同的位置与高度
         boolean showUpdate = youzaiworldcore$shouldShowUpdate();
-        int rightPanelY = showUpdate ? panelY - UPDATE_BLOCK_HEIGHT : panelY;
-        int rightPanelH = showUpdate ? PANEL_HEIGHT + UPDATE_BLOCK_HEIGHT : PANEL_HEIGHT;
 
         drawPanelBackground(graphics, leftPanelX, panelY, PANEL_WIDTH, PANEL_HEIGHT, fadeAlpha);
-        drawPanelBackground(graphics, rightPanelX, rightPanelY, PANEL_WIDTH, rightPanelH, fadeAlpha);
-        drawPanelContent(graphics, rightPanelX, rightPanelY, PANEL_WIDTH, rightPanelH, font, fadeAlpha, showUpdate);
+        drawPanelBackground(graphics, rightPanelX, panelY, PANEL_WIDTH, PANEL_HEIGHT, fadeAlpha);
+        drawPanelContent(graphics, rightPanelX, panelY, PANEL_WIDTH, PANEL_HEIGHT, font, fadeAlpha, showUpdate);
         drawLogo(graphics, width, fadeAlpha);
+
+        // 更新信息块滚动条（仅在内容超出面板时显示）
+        if (showUpdate) {
+            int maxScroll = TitleScreenScrollState.getMaxScroll();
+            if (maxScroll > 0) {
+                int sbLeft = rightPanelX + PANEL_WIDTH - 8;
+                int sbRight = sbLeft + 4;
+                int sbTop = panelY + 2;
+                int sbBottom = panelY + PANEL_HEIGHT - 2;
+                // 轨道（白色半透明）
+                int trackAlpha = (int) (0x40 * fadeAlpha);
+                graphics.fill(sbLeft, sbTop, sbRight, sbBottom, (trackAlpha << 24) | 0x00FFFFFF);
+                // 滑块（白色较高透明度）
+                double ratio = (double) PANEL_HEIGHT / TitleScreenScrollState.getContentHeight();
+                int thumbH = Math.max(10, (int)(ratio * PANEL_HEIGHT));
+                int scroll = (int) Math.round(youzaiworldcore$updateScrollOffset);
+                int thumbY = sbTop + (int)((double)scroll / maxScroll * (sbBottom - sbTop - thumbH));
+                int thumbA = (int) (0x90 * fadeAlpha);
+                int thumbColor = (thumbA << 24) | 0x00FFFFFF;
+                graphics.fill(sbLeft, thumbY, sbRight, thumbY + thumbH, thumbColor);
+            }
+        }
     }
 
     /**
@@ -394,14 +420,15 @@ public class TitleScreenMixin {
     /**
      * 绘制右侧面板内容：
      * <ul>
-     *   <li>更新可用时，在面板顶部扩展区渲染更新信息块（标题 + 最新版本 + 发布时间 + 更新内容 + 下载/忽略按钮）</li>
-     *   <li>原服务器公告保持在更新块下方，维持原样</li>
+     *   <li>有可用更新时，整个面板显示更新信息（标题 + 最新版本 + 发布时间 + 更新内容 + 下载/忽略按钮），不显示公告</li>
+     *   <li>无可用更新时，显示原服务器公告</li>
      * </ul>
      * 透明度受淡入进度控制。
      */
     private void drawPanelContent(GuiGraphicsExtractor graphics, int panelX, int panelY, int panelW, int panelH, net.minecraft.client.gui.Font font, float fadeAlpha, boolean showUpdate) {
         int textX = panelX + PANEL_PADDING;
         int maxTextWidth = panelW - PANEL_PADDING * 2;
+        int panelBottom = panelY + panelH - PANEL_PADDING;
 
         // 根据淡入透明度计算各文本颜色的 alpha 分量
         int titleAlpha = (int) (0xFF * fadeAlpha);
@@ -412,24 +439,31 @@ public class TitleScreenMixin {
         int titleShadow = (shadowAlpha << 24);
         int textColor = (textAlpha << 24) | (ANNOUNCEMENT_TEXT_COLOR & 0x00FFFFFF);
 
-        int topY = panelY;
-        int originalStartY = showUpdate ? topY + UPDATE_BLOCK_HEIGHT : topY;
-
-        // ===== 更新信息块（面板顶部扩展区）=====
         if (showUpdate) {
             UpdateResult r = ClientUpdateState.get();
             if (r != null) {
+                int scroll = (int) Math.round(youzaiworldcore$updateScrollOffset);
+
+                // 按钮固定在面板底部（不被平移影响）
+                int downloadY = panelBottom - BUTTON_HEIGHT * 2 - 2;
+                int ignoreY = panelBottom - BUTTON_HEIGHT;
+
+                // ===== 可滚动文本区域（标题 + 日志）：裁切到按钮上方 =====
+                int textAreaBottom = downloadY; // 文本裁切到下载按钮顶边，避免透过按钮漏出
+                graphics.enableScissor(panelX, panelY, panelX + panelW, textAreaBottom);
+                graphics.pose().pushMatrix();
+                graphics.pose().translate(0, -scroll);
+
                 // 标题（强制更新用红色，普通更新用绿色）
                 String updTitle = Component.translatable(r.forcedUpdate()
                         ? "title.youzaiworldcore.update_forced_title"
                         : "title.youzaiworldcore.update_title").getString();
                 int updTitleColor = (titleAlpha << 24) | (r.forcedUpdate() ? 0x00FF5555 : 0x0088FF88);
-                int updTitleY = topY + PANEL_PADDING;
+                int updTitleY = panelY + PANEL_PADDING;
                 graphics.text(font, updTitle, textX + 1, updTitleY + 1, titleShadow);
                 graphics.text(font, updTitle, textX, updTitleY, updTitleColor);
 
                 int y = updTitleY + font.lineHeight + 4;
-                int btnLimit = originalStartY - 44;
 
                 // 最新版本
                 String latestLine = Component.translatable("title.youzaiworldcore.update_latest",
@@ -447,27 +481,30 @@ public class TitleScreenMixin {
                     y = drawWrappedLine(graphics, font, rel, textX, y, maxTextWidth, textColor);
                 }
 
-                // 更新内容
+                // 更新内容 — 不再添加 • 前缀
                 if (r.changelog() != null && !r.changelog().isEmpty()) {
                     String head = Component.translatable("title.youzaiworldcore.update_changelog").getString();
                     y = drawWrappedLine(graphics, font, head, textX, y, maxTextWidth, textColor);
                     for (String line : r.changelog()) {
-                        if (y > btnLimit) break;
-                        y = drawWrappedLine(graphics, font, "• " + line, textX, y, maxTextWidth, textColor);
+                        y = drawWrappedLine(graphics, font, line, textX, y, maxTextWidth, textColor);
                     }
                 }
 
-                // 定位下载 / 忽略按钮（更新块底部）
-                int downloadY = originalStartY - 4 - BUTTON_HEIGHT * 2 - 6;
-                int ignoreY = originalStartY - 4 - BUTTON_HEIGHT;
+                // 内容总高度 = 面板高度 + 文本超出 textAreaBottom 的部分
+                int contentH = panelH + Math.max(0, y - textAreaBottom);
+                TitleScreenScrollState.setContentHeight(contentH);
+
+                graphics.pose().popMatrix();
+                graphics.disableScissor();
+
+                // 定位按钮（文本裁切之外，始终完整可见）
                 youzaiworldcore$positionUpdateButtons(textX, downloadY, ignoreY, maxTextWidth, fadeAlpha, r);
             }
+        } else {
+            // ===== 无更新时，显示原服务器公告 =====
+            int annY = panelY + PANEL_PADDING;
+            youzaiworldcore$drawAnnouncement(graphics, font, textX, annY, maxTextWidth, textColor, titleColor, titleShadow, panelBottom);
         }
-
-        // ===== 原服务器公告（更新块下方，保持原样）=====
-        int annY = originalStartY + PANEL_PADDING;
-        int annBottom = panelY + panelH - PANEL_PADDING;
-        youzaiworldcore$drawAnnouncement(graphics, font, textX, annY, maxTextWidth, textColor, titleColor, titleShadow, annBottom);
     }
 
     /**

@@ -28,7 +28,8 @@
     "MinecraftQuitMixin",
     "enchlevellangpatch.EnchantmentLevelLangPatchMixin",
     "highlightitem.AbstractContainerScreenMixin",
-    "OptionsSaveMixin"
+    "OptionsSaveMixin",
+    "MouseHandlerScrollMixin"
   ],
   "injectors": {
     "defaultRequire": 1

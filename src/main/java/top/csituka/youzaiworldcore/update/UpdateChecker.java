@@ -72,42 +72,61 @@ public final class UpdateChecker {
     }
 
     /**
-     * 构造检查更新地址：基址自动附加 {@code /version.json}。
-     * <p>例：基址 "https://mcyzw.top/yzwc" → {@code https://mcyzw.top/yzwc/version.json}；
-     * 基址为空或 null 时回退 {@link #DEFAULT_BASE}。</p>
+     * 构造检查更新地址。
+     * <p>若提供了自定义基址（非空且不等于 {@link #DEFAULT_BASE}），直接原样使用
+     * （仅补充可能的 scheme 前缀）；否则回退默认并自动附加 {@code /version.json}。</p>
      */
     public static String buildCheckUrl(String checkBase) {
-        String base = (checkBase == null || checkBase.isEmpty()) ? DEFAULT_BASE : checkBase.trim();
-        if (base.endsWith("/")) {
-            base = base.substring(0, base.length() - 1);
+        if (checkBase == null || checkBase.isEmpty() || checkBase.trim().equals(DEFAULT_BASE)) {
+            return DEFAULT_BASE + "/version.json";
         }
-        return base + "/version.json";
+        String base = checkBase.trim();
+        // 用户自定义的地址可能不含协议前缀（如 "127.0.0.1:5500/yzwc"），补上 http://
+        if (!base.startsWith("http://") && !base.startsWith("https://")) {
+            base = "http://" + base;
+        }
+        return base;
     }
 
     /**
-     * 构造下载页（跳转）地址：基址自动附加 {@code ?version=<数字>&type=<类型>}。
-     * <p>例：基址 "https://mcyzw.top/yzwc"、版本 "1.19.0-indev"
-     * → {@code https://mcyzw.top/yzwc?version=1.19.0&type=indev}；
-     * 基址为空或 null 时回退 {@link #DEFAULT_BASE}。</p>
+     * 构造下载页（跳转）地址。
+     * <p>若提供了自定义基址（非空且不等于 {@link #DEFAULT_BASE}），直接原样使用
+     * （仅做 {@code @version} / {@code @type} 占位符替换和 scheme 补全）；
+     * 否则回退默认并自动附加 {@code ?version=<数字>&type=<类型>}。</p>
      */
     public static String buildJumpUrl(String jumpBase, String fullVersion) {
-        String base = (jumpBase == null || jumpBase.isEmpty()) ? DEFAULT_BASE : jumpBase.trim();
-        if (base.endsWith("/")) {
-            base = base.substring(0, base.length() - 1);
-        }
+        // 统一从 fullVersion 提取数字和类型
         int dash = fullVersion.indexOf('-');
         String number = dash >= 0 ? fullVersion.substring(0, dash) : fullVersion;
         String type = dash >= 0 ? fullVersion.substring(dash + 1) : "release";
-        return base + "?version=" + number + "&type=" + type;
+
+        if (jumpBase == null || jumpBase.isEmpty() || jumpBase.trim().equals(DEFAULT_BASE)) {
+            String base = DEFAULT_BASE;
+            if (base.endsWith("/")) {
+                base = base.substring(0, base.length() - 1);
+            }
+            return base + "?version=" + number + "&type=" + type;
+        }
+
+        String base = jumpBase.trim()
+                .replace("@version", number)
+                .replace("@type", type);
+        // 用户自定义的地址可能不含协议前缀，补上 http://
+        if (!base.startsWith("http://") && !base.startsWith("https://")) {
+            base = "http://" + base;
+        }
+        return base;
     }
 
     // ==================== 远程拉取 ====================
 
-    /** 同步拉取并解析远程 version.json（调用方需确保不在主线程执行） */
-    public static RemoteVersionInfo fetchRemoteVersion(String url) throws Exception {
-        DebugLogger.entering(MODULE, "fetchRemoteVersion", "url=" + url);
-
+    /**
+     * 用指定 HTTP 版本发送请求并获取响应体，超时时返回 null。
+     */
+    private static HttpResponse<String> tryFetch(HttpClient.Version version, String url) throws Exception {
         HttpClient client = HttpClient.newBuilder()
+                .version(version)
+                .proxy(HttpClient.Builder.NO_PROXY)
                 .connectTimeout(Duration.ofSeconds(8))
                 .followRedirects(HttpClient.Redirect.NORMAL)
                 .build();
@@ -119,7 +138,21 @@ public final class UpdateChecker {
                 .GET()
                 .build();
 
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        return client.send(request, HttpResponse.BodyHandlers.ofString());
+    }
+
+    /** 同步拉取并解析远程 version.json（调用方需确保不在主线程执行） */
+    public static RemoteVersionInfo fetchRemoteVersion(String url) throws Exception {
+        DebugLogger.entering(MODULE, "fetchRemoteVersion", "url=" + url);
+
+        // 先尝试 HTTP/2；若因协议版本不支持超时则降级到 HTTP/1.1 重试
+        HttpResponse<String> response;
+        try {
+            response = tryFetch(HttpClient.Version.HTTP_2, url);
+        } catch (java.net.http.HttpTimeoutException e) {
+            DebugLogger.info(MODULE, "HTTP/2 超时，降级到 HTTP/1.1 重试: url=%s", url);
+            response = tryFetch(HttpClient.Version.HTTP_1_1, url);
+        }
         if (response.statusCode() != 200) {
             throw new java.io.IOException("HTTP " + response.statusCode());
         }
@@ -164,6 +197,7 @@ public final class UpdateChecker {
      */
     public static UpdateResult check(String checkBase, String jumpBase) {
         String checkUrl = buildCheckUrl(checkBase);
+        DebugLogger.info(MODULE, "开始检查更新: checkUrl=%s", checkUrl);
         DebugLogger.entering(MODULE, "check", "checkUrl=" + checkUrl);
         String current = getCurrentVersionString();
         String downloadUrl = buildJumpUrl(jumpBase, current);

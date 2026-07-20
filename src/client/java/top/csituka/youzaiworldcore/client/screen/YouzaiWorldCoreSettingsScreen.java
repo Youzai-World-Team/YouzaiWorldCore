@@ -192,7 +192,32 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
         // 操作进行中时屏蔽所有点击
         if (configOpActive) return true;
 
-        // 用修正后的坐标检查弹窗外部点击（弹窗位置与 widgets 同坐标系均为自然坐标）
+        // ========== 固定位置组件（侧栏/关闭按钮）：使用屏幕坐标，不受滚动偏移影响 ==========
+        double mx = event.x();
+        double my = event.y();
+
+        if (closeButton != null && mx >= closeButton.getX() && mx < closeButton.getX() + closeButton.getWidth()
+                && my >= closeButton.getY() && my < closeButton.getY() + closeButton.getHeight()) {
+            closeButton.onClick(event, bl);
+            return true;
+        }
+        if (sidebarExpFeatures != null && mx >= sidebarExpFeatures.getX() && mx < sidebarExpFeatures.getX() + sidebarExpFeatures.getWidth()
+                && my >= sidebarExpFeatures.getY() && my < sidebarExpFeatures.getY() + sidebarExpFeatures.getHeight()) {
+            sidebarExpFeatures.onClick(event, bl);
+            return true;
+        }
+        if (sidebarDev != null && mx >= sidebarDev.getX() && mx < sidebarDev.getX() + sidebarDev.getWidth()
+                && my >= sidebarDev.getY() && my < sidebarDev.getY() + sidebarDev.getHeight()) {
+            sidebarDev.onClick(event, bl);
+            return true;
+        }
+        if (sidebarConfigIo != null && mx >= sidebarConfigIo.getX() && mx < sidebarConfigIo.getX() + sidebarConfigIo.getWidth()
+                && my >= sidebarConfigIo.getY() && my < sidebarConfigIo.getY() + sidebarConfigIo.getHeight()) {
+            sidebarConfigIo.onClick(event, bl);
+            return true;
+        }
+
+        // ========== 滚动内容区：用修正后的坐标检查弹窗外部点击 ==========
         double adjustedY = event.y() + scrollOffset;
         if (debugModeDropdown != null && debugModeDropdown.isOpen()
                 && !debugModeDropdown.isPositionInsidePopup(event.x(), adjustedY)) {
@@ -335,7 +360,7 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
     private void buildConfigIoSection(int baseX, int baseY) {
         this.isAndroidPlatform = PlatformDetector.isAndroid();
 
-        int y = baseY + 30;
+        int y = baseY + 16;
         int buttonWidth = CONTENT_WIDTH - 40;
         int btnX = baseX + (CONTENT_WIDTH - buttonWidth) / 2;
 
@@ -380,7 +405,7 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
         y += 20;
         configBottomHintY = y;
 
-        maxContentY = y + 40;
+        maxContentY = y + 6;
     }
 
     /**
@@ -492,12 +517,12 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
 
         if (selectedSection == 0) {
             // 实验性功能 — 无交互组件，纯文本
-            maxContentY = baseY + 40;
+            maxContentY = baseY + 24;
         } else if (selectedSection == 2) {
             // 导出/导入配置分栏
             buildConfigIoSection(baseX, baseY);
         } else if (selectedSection == 1) {
-            int y = baseY + 30;
+            int y = baseY + 16;
 
             // 启用开发者模式（始终显示）
             devModeToggle = new CheckboxButton(
@@ -649,7 +674,7 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
             }
 
             // 追踪实际内容底部 Y（最后一个输入框底部 + 余量）
-            maxContentY = y + 26;
+            maxContentY = y + 6;
         }
     }
 
