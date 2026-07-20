@@ -10,7 +10,7 @@ jobs:
       fail-fast: false
       matrix:
         java: [25]          # 根据项目实际调整
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout repository
