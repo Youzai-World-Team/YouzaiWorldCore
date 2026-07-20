@@ -10,7 +10,6 @@ import top.csituka.youzaiworldcore.enchlevellangpatch.api.EnchantmentLevelLangPa
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
-import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -40,6 +39,7 @@ public final class IndependentLangPatchRegistry implements Serializable {
         return new IndependentLangPatchRegistry(registryName, LP_DEFAULT);
     }
 
+    @SuppressWarnings("null")
     public void add(NamespacedKey id, EnchantmentLevelLangPatch e) {
         readWriteLock.writeLock().lock();
         try {
@@ -143,10 +143,10 @@ public final class IndependentLangPatchRegistry implements Serializable {
         }
     }
 
-    @SuppressWarnings("UnstableApiUsage")
+    @SuppressWarnings({"UnstableApiUsage", "null"})
     private ImmutableBiMap<String, EnchantmentLevelLangPatch> computeMap() {
         return this.map.entrySet().stream()
-                .collect(ImmutableBiMap.toImmutableBiMap(e -> e.getKey().toString(), Map.Entry::getValue));
+                .collect(ImmutableBiMap.toImmutableBiMap(e -> e.getKey().toString(), e -> e.getValue()));
     }
 
     public ImmutableBiMap<String, EnchantmentLevelLangPatch> asImmutableBiMap() {

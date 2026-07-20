@@ -24,6 +24,7 @@ import static net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal;
  */
 public class HighLightCommands {
 
+    @SuppressWarnings("null")
     public void register() {
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, context) -> dispatcher.register(
                 literal("yzwc")

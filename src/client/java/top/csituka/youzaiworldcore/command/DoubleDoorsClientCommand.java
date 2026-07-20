@@ -29,6 +29,7 @@ public class DoubleDoorsClientCommand {
 
     private static final String MODULE = "DoubleDoorsClientCommand";
 
+    @SuppressWarnings("null")
     public static void register() {
         DebugLogger.entering(MODULE, "register");
 

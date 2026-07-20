@@ -49,6 +49,7 @@ public final class PetModuleConfig {
                 return;
             }
             String json = Files.readString(CONFIG_FILE);
+            @SuppressWarnings("null")
             ConfigData data = GSON.fromJson(json, ConfigData.class);
             if (data != null) {
                 backupIntervalSeconds = data.backupIntervalSeconds;

@@ -29,6 +29,7 @@ public class InvisibilityClientCommand {
 
     private static final String MODULE = "InvisibilityClientCommand";
 
+    @SuppressWarnings("null")
     public static void register() {
         DebugLogger.entering(MODULE, "register");
 

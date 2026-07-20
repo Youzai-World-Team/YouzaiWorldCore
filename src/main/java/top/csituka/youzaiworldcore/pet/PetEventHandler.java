@@ -37,6 +37,7 @@ public final class PetEventHandler {
      * @param player 驯服该狼的玩家
      * @param level  服务端世界
      */
+    @SuppressWarnings("null")
     public static void onTame(Wolf wolf, ServerPlayer player, ServerLevel level) {
         DebugLogger.entering(MODULE, "onTame", "wolf=" + wolf.getUUID() + ", player=" + player.getName().getString());
 
@@ -57,7 +58,9 @@ public final class PetEventHandler {
         }
 
         // 设置显示名称
-        wolf.setCustomName(Component.literal(internalName));
+        @SuppressWarnings("null")
+        Component tameName = Component.literal(internalName);
+        wolf.setCustomName(tameName);
         wolf.setCustomNameVisible(true);
 
         // 用实体标签标记为宠物（用于实体加载时快速识别）
@@ -81,6 +84,7 @@ public final class PetEventHandler {
      * @param breeder   触发繁殖的玩家
      * @param level     服务端世界
      */
+    @SuppressWarnings("null")
     public static void onBreed(Wolf parent1, Wolf parent2, Wolf baby,
                                 ServerPlayer breeder, ServerLevel level) {
         DebugLogger.entering(MODULE, "onBreed",
@@ -153,7 +157,9 @@ public final class PetEventHandler {
         }
 
         // 设置显示名称
-        baby.setCustomName(Component.literal(internalName));
+        @SuppressWarnings("null")
+        Component babyName = Component.literal(internalName);
+        baby.setCustomName(babyName);
         baby.setCustomNameVisible(true);
         baby.addTag(PetInternalTags.TAG_PET_MARKER);
         baby.addTag(PetInternalTags.internalNameTag(internalName));
@@ -268,6 +274,7 @@ public final class PetEventHandler {
      * @param wolf  加载的狼实体
      * @param level 服务端世界
      */
+    @SuppressWarnings("null")
     public static void onEntityLoad(Wolf wolf, ServerLevel level) {
         DebugLogger.debug(MODULE, "实体加载: wolf=%s", wolf.getUUID());
 
@@ -290,8 +297,10 @@ public final class PetEventHandler {
     /**
      * 将注册表数据同步到实体对象。
      */
+    @SuppressWarnings("null")
     private static void syncRegistryToEntity(Wolf wolf, PetEntry entry) {
         // 同步显示名称
+        @SuppressWarnings("null")
         Component displayName = Component.literal(entry.displayName());
         if (!displayName.equals(wolf.getCustomName())) {
             wolf.setCustomName(displayName);
@@ -302,6 +311,7 @@ public final class PetEventHandler {
             wolf.addTag(PetInternalTags.TAG_PET_MARKER);
         }
 
+        @SuppressWarnings("null")
         String expectedTag = PetInternalTags.internalNameTag(entry.internalName());
         boolean hasNameTag = wolf.entityTags().stream()
                 .anyMatch(t -> t.startsWith(PetInternalTags.TAG_INTERNAL_NAME_PREFIX));
@@ -313,6 +323,7 @@ public final class PetEventHandler {
     /**
      * 清理实体上的宠物残留数据。
      */
+    @SuppressWarnings("null")
     private static void cleanupEntityData(Wolf wolf) {
         // 移除宠物标记
         wolf.removeTag(PetInternalTags.TAG_PET_MARKER);
@@ -320,7 +331,7 @@ public final class PetEventHandler {
         // 移除所有内部名称标签
         new HashSet<>(wolf.entityTags()).stream()
                 .filter(t -> t.startsWith(PetInternalTags.TAG_INTERNAL_NAME_PREFIX))
-                .forEach(wolf::removeTag);
+                .forEach(tag -> wolf.removeTag(tag));
 
         // 重置显示名称
         wolf.setCustomName(null);
@@ -386,6 +397,7 @@ public final class PetEventHandler {
      * @param player      切换维度的玩家
      * @param destination 目标维度
      */
+    @SuppressWarnings("null")
     public static void onChangeDimension(ServerPlayer player, ServerLevel destination) {
         DebugLogger.debug(MODULE, "维度变化: 玩家=%s, 目标=%s",
                 player.getName().getString(), destination.dimension().identifier());
@@ -401,6 +413,7 @@ public final class PetEventHandler {
         for (PetEntry pet : pets) {
             // 遍历所有维度查找已加载的宠物
             for (ServerLevel level : player.level().getServer().getAllLevels()) {
+                @SuppressWarnings("null")
                 net.minecraft.world.entity.Entity entity = level.getEntity(pet.entityUUID());
                 if (entity instanceof Wolf wolf) {
                     // 跳过坐下的狼
@@ -408,9 +421,11 @@ public final class PetEventHandler {
                         continue;
                     }
                     // 传送至玩家位置
+                    @SuppressWarnings("null")
+                    java.util.Set<net.minecraft.world.entity.Relative> relativeSet = java.util.Set.of();
                     wolf.teleportTo(destination,
                             player.getX(), player.getY(), player.getZ(),
-                            java.util.Set.of(), player.getYRot(), player.getXRot(), true);
+                            relativeSet, player.getYRot(), player.getXRot(), true);
                     teleported++;
                     DebugLogger.debug(MODULE, "传送宠物 [%s] 至玩家位置", pet.internalName());
                     break;
@@ -430,16 +445,20 @@ public final class PetEventHandler {
      * @param player 传送的玩家
      * @param level  当前世界
      */
+    @SuppressWarnings("null")
     public static void onTeleportWithinDimension(ServerPlayer player, ServerLevel level) {
         PetGlobalState state = PetGlobalState.get(player.level().getServer());
         List<PetEntry> pets = state.findByOwner(player.getUUID());
 
         for (PetEntry pet : pets) {
-            net.minecraft.world.entity.Entity entity = level.getEntity(pet.entityUUID());
-            if (entity instanceof Wolf wolf && !wolf.isInSittingPose()) {
-                wolf.teleportTo(level,
-                        player.getX(), player.getY(), player.getZ(),
-                        java.util.Set.of(), player.getYRot(), player.getXRot(), true);
+        @SuppressWarnings("null")
+        net.minecraft.world.entity.Entity entity = level.getEntity(pet.entityUUID());
+        if (entity instanceof Wolf wolf && !wolf.isInSittingPose()) {
+            @SuppressWarnings("null")
+            java.util.Set<net.minecraft.world.entity.Relative> relativeSet = java.util.Set.of();
+            wolf.teleportTo(level,
+                    player.getX(), player.getY(), player.getZ(),
+                    relativeSet, player.getYRot(), player.getXRot(), true);
             }
         }
     }

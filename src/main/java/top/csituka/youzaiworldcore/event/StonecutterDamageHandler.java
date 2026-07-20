@@ -107,6 +107,7 @@ public class StonecutterDamageHandler implements ServerTickEvents.StartTick {
         while (it.hasNext()) {
             Map.Entry<UUID, Integer> entry = it.next();
             UUID playerId = entry.getKey();
+            @SuppressWarnings("null")
             ServerPlayer player = server.getPlayerList().getPlayer(playerId);
 
             // 玩家离线或死亡 → 移除追踪
@@ -153,6 +154,7 @@ public class StonecutterDamageHandler implements ServerTickEvents.StartTick {
             while (it.hasNext()) {
                 Map.Entry<UUID, Integer> entry = it.next();
                 UUID playerId = entry.getKey();
+                @SuppressWarnings("null")
                 ServerPlayer player = server.getPlayerList().getPlayer(playerId);
                 if (player == null) {
                     it.remove();
@@ -238,8 +240,10 @@ public class StonecutterDamageHandler implements ServerTickEvents.StartTick {
      */
     private static DamageSource getStonecutterDamageSource(ServerPlayer player) {
         try {
+            @SuppressWarnings("null")
             Registry<DamageType> damageTypeRegistry = player.level().registryAccess()
                     .lookupOrThrow(Registries.DAMAGE_TYPE);
+            @SuppressWarnings("null")
             Holder.Reference<DamageType> holder = damageTypeRegistry.getOrThrow(STONECUTTER_DAMAGE);
             return new DamageSource(holder);
         } catch (Exception e) {

@@ -31,7 +31,6 @@ import top.csituka.youzaiworldcore.client.update.ClientUpdateState;
 import top.csituka.youzaiworldcore.config.UpdateCheckerConfig;
 import top.csituka.youzaiworldcore.update.TitleScreenScrollState;
 import top.csituka.youzaiworldcore.update.UpdateChecker;
-import top.csituka.youzaiworldcore.update.UpdateChecker;
 import top.csituka.youzaiworldcore.update.UpdateResult;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 

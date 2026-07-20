@@ -51,17 +51,18 @@ public record PetEntry(
                         }
                         return set;
                     },
-                    set -> set.stream().map(UUID::toString).toList()
+                    set -> set.stream().map(uuid -> uuid.toString()).toList()
             );
 
+    @SuppressWarnings("null")
     public static final Codec<PetEntry> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-            Codec.STRING.fieldOf("internalName").forGetter(PetEntry::internalName),
-            Codec.STRING.xmap(UUID::fromString, UUID::toString).fieldOf("entityUUID").forGetter(PetEntry::entityUUID),
-            Codec.STRING.xmap(UUID::fromString, UUID::toString).fieldOf("ownerUUID").forGetter(PetEntry::ownerUUID),
-            Codec.STRING.fieldOf("displayName").forGetter(PetEntry::displayName),
-            UUID_SET_CODEC.fieldOf("trustedPlayers").forGetter(PetEntry::trustedPlayers),
-            PetMode.CODEC.fieldOf("mode").forGetter(PetEntry::mode),
-            Codec.LONG.fieldOf("tameTimestamp").forGetter(PetEntry::tameTimestamp)
+            Codec.STRING.fieldOf("internalName").forGetter(e -> e.internalName()),
+            Codec.STRING.xmap(UUID::fromString, uuid -> uuid.toString()).fieldOf("entityUUID").forGetter(e -> e.entityUUID()),
+            Codec.STRING.xmap(UUID::fromString, uuid -> uuid.toString()).fieldOf("ownerUUID").forGetter(e -> e.ownerUUID()),
+            Codec.STRING.fieldOf("displayName").forGetter(e -> e.displayName()),
+            UUID_SET_CODEC.fieldOf("trustedPlayers").forGetter(e -> e.trustedPlayers()),
+            PetMode.CODEC.fieldOf("mode").forGetter(e -> e.mode()),
+            Codec.LONG.fieldOf("tameTimestamp").forGetter(e -> e.tameTimestamp())
     ).apply(instance, PetEntry::new));
 
     /**

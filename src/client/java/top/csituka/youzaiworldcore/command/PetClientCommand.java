@@ -22,6 +22,7 @@ public class PetClientCommand {
 
     private static final String MODULE = "PetClientCommand";
 
+    @SuppressWarnings("null")
     public static void register() {
         DebugLogger.entering(MODULE, "register");
 

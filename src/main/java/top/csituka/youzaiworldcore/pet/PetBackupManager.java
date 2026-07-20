@@ -228,7 +228,7 @@ public final class PetBackupManager {
         DebugLogger.entering(MODULE, "restoreFromBackup", "file=" + backupFile);
         try {
             String json = Files.readString(backupFile);
-            @SuppressWarnings("unchecked")
+            @SuppressWarnings({"unchecked", "null"})
             Map<String, Object> raw = GSON.fromJson(json, Map.class);
 
             Map<UUID, PetEntry> result = new HashMap<>();

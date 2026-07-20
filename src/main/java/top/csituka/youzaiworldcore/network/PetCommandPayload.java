@@ -22,15 +22,18 @@ public record PetCommandPayload(String args) implements CustomPacketPayload {
     public static final Identifier IDENTIFIER = Identifier.fromNamespaceAndPath(
             YouzaiworldCore.MOD_ID, "pet_command");
 
+    @SuppressWarnings("null")
     public static final Type<PetCommandPayload> ID = new Type<>(IDENTIFIER);
 
+    @SuppressWarnings("null")
     public static final StreamCodec<RegistryFriendlyByteBuf, PetCommandPayload> STREAM_CODEC =
             StreamCodec.of(
-                    (buf, p) -> buf.writeUtf(p.args),
+                    (buf, p) -> buf.writeUtf(p.args()),
                     buf -> new PetCommandPayload(buf.readUtf())
             );
 
     @Override
+    @SuppressWarnings("null")
     public Type<? extends CustomPacketPayload> type() {
         return ID;
     }

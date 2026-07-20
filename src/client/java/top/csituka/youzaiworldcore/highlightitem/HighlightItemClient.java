@@ -14,6 +14,7 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
  * 负责：加载配置、注册 2 个键位（F10 切换高亮 / B 切换比较模式）、注册客户端命令。
  * 所有设置通过 {@code /yzwc settings highlight_item} 指令完成；悬停物品本身永不着色。
  */
+@SuppressWarnings("null")
 public class HighlightItemClient {
     public static final KeyMapping TOGGLE_BIND;
     public static final KeyMapping COMPARATOR_BIND;

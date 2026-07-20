@@ -48,8 +48,10 @@ public class MouseHandlerScrollMixin {
         double scaledY = MouseHandler.getScaledYPos(win, self.ypos());
 
         // 检查鼠标是否在右面板区域内
-        int width = mc.gui.screen().width;
-        int height = mc.gui.screen().height;
+        var screen = mc.gui.screen();
+        if (screen == null) return;
+        int width = screen.width;
+        int height = screen.height;
         int totalGroupWidth = PANEL_WIDTH * 2 + PANEL_GAP;
         int groupStartX = (width - totalGroupWidth) / 2;
         int rightPanelX = groupStartX + PANEL_WIDTH + PANEL_GAP;

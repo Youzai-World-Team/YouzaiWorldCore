@@ -8,6 +8,7 @@ import net.minecraft.world.level.block.DoorBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.phys.BlockHitResult;
+import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -35,8 +36,9 @@ public class DoorBlockMixin {
     /** 保存点击前（原版切换前）的 OPEN 状态，用于判断是否发生了切换 */
     private static final ThreadLocal<Boolean> preOpen = new ThreadLocal<>();
 
+    @SuppressWarnings("null")
     @Inject(method = "useWithoutItem", at = @At("HEAD"))
-    private void youzaiworldcore$head(BlockState blockState, Level level, BlockPos blockPos,
+    private void youzaiworldcore$head(BlockState blockState, Level level, @NotNull BlockPos blockPos,
                                         Player player, BlockHitResult blockHitResult,
                                         CallbackInfoReturnable<InteractionResult> cir) {
         if (level.isClientSide()) {
@@ -46,8 +48,9 @@ public class DoorBlockMixin {
         preOpen.set(level.getBlockState(blockPos).getValue(BlockStateProperties.OPEN));
     }
 
+    @SuppressWarnings("null")
     @Inject(method = "useWithoutItem", at = @At("RETURN"))
-    private void youzaiworldcore$return(BlockState blockState, Level level, BlockPos blockPos,
+    private void youzaiworldcore$return(BlockState blockState, Level level, @NotNull BlockPos blockPos,
                                           Player player, BlockHitResult blockHitResult,
                                           CallbackInfoReturnable<InteractionResult> cir) {
         if (level.isClientSide()) {

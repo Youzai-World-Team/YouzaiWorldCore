@@ -26,6 +26,7 @@ public enum PetMode implements StringRepresentable {
     /** 守卫：仅攻击攻击主人/信任玩家的生物（被动反击），不响应主动攻击命令 */
     GUARD;
 
+    @SuppressWarnings("null")
     public static final Codec<PetMode> CODEC = StringRepresentable.fromEnum(PetMode::values);
 
     /**
@@ -40,6 +41,7 @@ public enum PetMode implements StringRepresentable {
     }
 
     @Override
+    @SuppressWarnings("null")
     public @NotNull String getSerializedName() {
         return name().toLowerCase(Locale.ROOT);
     }

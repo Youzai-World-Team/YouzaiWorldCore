@@ -176,7 +176,7 @@ public final class ConfigIOManager {
                 DebugLogger.warn(DEBUG_TAG, "config 缺失但未找到 config_bak_* 备份，无法自愈");
             } else {
                 // 按最后修改时间排序，取最新的
-                configBaks.sort(Comparator.comparingLong(File::lastModified).reversed());
+                configBaks.sort(Comparator.comparingLong((File f) -> f.lastModified()).reversed());
                 File newest = configBaks.get(0);
                 try {
                     Files.move(newest.toPath(), configDir);
@@ -196,7 +196,7 @@ public final class ConfigIOManager {
             if (optionsBaks.isEmpty()) {
                 DebugLogger.warn(DEBUG_TAG, "options.txt 缺失但未找到 options_bak_* 备份，无法自愈");
             } else {
-                optionsBaks.sort(Comparator.comparingLong(File::lastModified).reversed());
+                optionsBaks.sort(Comparator.comparingLong((File f) -> f.lastModified()).reversed());
                 File newest = optionsBaks.get(0);
                 try {
                     Files.move(newest.toPath(), optionsFile);
@@ -547,7 +547,7 @@ public final class ConfigIOManager {
         File[] files = backupDir.toFile().listFiles((dir, name) -> name.startsWith("config_export_") && name.endsWith(".zip"));
         if (files == null || files.length <= 5) return;
 
-        Arrays.sort(files, Comparator.comparingLong(File::lastModified).reversed());
+        Arrays.sort(files, Comparator.comparingLong((File f) -> f.lastModified()).reversed());
         for (int i = 5; i < files.length; i++) {
             deleteQuietly(files[i].toPath());
             DebugLogger.debug(DEBUG_TAG, "清理旧备份: %s", files[i].getName());

@@ -12,6 +12,7 @@ import net.minecraft.world.level.block.FenceGateBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import top.csituka.youzaiworldcore.config.DoubleDoorsState;
@@ -58,8 +59,9 @@ public class DoubleDoorsHandler {
      * @param blockPos   被点击方块位置（门可能为上半部，内部会归一化）
      * @param targetOpen 被点击门切换后的开合状态（与玩家点击意图一致）
      */
+    @SuppressWarnings("null")
     public static void onDoorClick(Level level, @Nullable Player player,
-                                   BlockPos blockPos, boolean targetOpen) {
+                                   @NotNull BlockPos blockPos, boolean targetOpen) {
         if (level.isClientSide()) {
             return;
         }
@@ -119,8 +121,9 @@ public class DoubleDoorsHandler {
     /**
      * 把与被点击门相邻的同材质配对门同步为 {@code targetOpen} 状态。
      */
+    @SuppressWarnings("null")
     private static void processDoor(@Nullable Player player, Level level,
-                                   BlockPos blockPos, BlockState blockState,
+                                   @NotNull BlockPos blockPos, BlockState blockState,
                                    boolean targetOpen) {
         DebugLogger.entering(MODULE, "processDoor",
                 "pos=" + blockPos + ", targetOpen=" + targetOpen);
@@ -204,8 +207,9 @@ public class DoubleDoorsHandler {
      * ② 拥有 {@code OPEN} 属性；③ 显示名（即材质/类型）相同。
      * </p>
      */
-    private static List<BlockPos> findPartnerDoors(Level level, BlockPos origin,
-                                                   Block block, Component doorName,
+    @SuppressWarnings("null")
+    private static List<BlockPos> findPartnerDoors(Level level, @NotNull BlockPos origin,
+                                                   Block block, @NotNull Component doorName,
                                                    int yOffset) {
         List<BlockPos> result = new ArrayList<>();
         for (int x = -1; x <= 1; x++) {

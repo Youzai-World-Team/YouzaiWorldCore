@@ -36,18 +36,21 @@ public class PetGlobalState extends SavedData {
     private static final String MODULE = "PetGlobalState";
 
     /** 数据存储 ID */
+    @SuppressWarnings("null")
     private static final Identifier DATA_ID = Identifier.fromNamespaceAndPath(
             YouzaiworldCore.MOD_ID, "pet_registry");
 
     /** 序列化 Codec */
+    @SuppressWarnings("null")
     private static final Codec<PetGlobalState> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codec.unboundedMap(
-                    Codec.STRING.xmap(UUID::fromString, UUID::toString),
+                    Codec.STRING.xmap(UUID::fromString, uuid -> uuid.toString()),
                     PetEntry.CODEC
             ).fieldOf("pets").forGetter(state -> state.entityMap)
     ).apply(instance, PetGlobalState::new));
 
     /** SavedDataType 描述符，用于 {@code ServerLevel.getDataStorage().computeIfAbsent(TYPE)} */
+    @SuppressWarnings("null")
     public static final SavedDataType<PetGlobalState> TYPE = new SavedDataType<>(
             DATA_ID,
             (Supplier<PetGlobalState>) PetGlobalState::new,
@@ -108,6 +111,7 @@ public class PetGlobalState extends SavedData {
      * @throws IllegalStateException 如果主世界不可用
      */
     @NotNull
+    @SuppressWarnings("null")
     public static PetGlobalState get(@NotNull MinecraftServer server) {
         ServerLevel overworld = server.getLevel(Level.OVERWORLD);
         if (overworld == null) {
@@ -146,6 +150,7 @@ public class PetGlobalState extends SavedData {
      * @param ownerUUID 主人 UUID
      * @return 该主人的所有宠物条目列表（不可变）
      */
+    @SuppressWarnings("null")
     public List<PetEntry> findByOwner(@NotNull UUID ownerUUID) {
         Set<UUID> uuids = ownerIndex.getOrDefault(ownerUUID, Collections.emptySet());
         return uuids.stream()

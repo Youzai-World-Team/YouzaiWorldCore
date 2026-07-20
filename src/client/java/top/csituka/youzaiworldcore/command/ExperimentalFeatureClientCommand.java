@@ -28,6 +28,7 @@ public class ExperimentalFeatureClientCommand {
 
     private static final String MODULE = "ExperimentalFeatureClientCommand";
 
+    @SuppressWarnings("null")
     public static void register() {
         DebugLogger.entering(MODULE, "register");
 

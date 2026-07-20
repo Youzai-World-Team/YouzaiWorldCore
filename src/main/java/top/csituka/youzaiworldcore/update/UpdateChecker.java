@@ -217,7 +217,9 @@ public final class UpdateChecker {
         try {
             SemanticVersion currentVersion = SemanticVersion.parse(current);
             SemanticVersion latestVersion = SemanticVersion.parse(remote.latestVersion());
-            updateAvailable = currentVersion.compareTo(latestVersion) < 0;
+            @SuppressWarnings("deprecation")
+            int cmp = currentVersion.compareTo(latestVersion);
+            updateAvailable = cmp < 0;
         } catch (Exception e) {
             DebugLogger.warn(MODULE, "版本号比较失败（%s vs %s）: %s",
                     current, remote.latestVersion(), e.getMessage());

@@ -200,6 +200,7 @@ public class Configurator {
         }
     }
 
+    @SuppressWarnings("null")
     public void updateMode(ItemComparator.Comparators mode, LocalPlayer player, NotificationContext notification) {
         COMPARATOR = mode;
         try {
@@ -260,6 +261,7 @@ public class Configurator {
      * 切换/反馈消息统一以“唱片机”式顶部 Toast 弹出（与唱片机 now-playing 同属 Toast 家族、同屏幕位置）。
      * 仅当用户显式选择 CHAT / OVERLAY 偏好时，才改走聊天栏 / 叠加层。
      */
+    @SuppressWarnings("null")
     private void notify(NotificationContext type, Component text, LocalPlayer player) {
         if (NOTIFICATION_PREFERENCE.equals(NotificationPreference.CHAT)) {
             if (player != null) {
@@ -282,6 +284,7 @@ public class Configurator {
     }
 
     /** 弹出系统通知 Toast（简化版，不依赖对 SystemToast 字段的访问器）。 */
+    @SuppressWarnings("null")
     private void notifyToast(Component title, Component desc) {
         Minecraft.getInstance().gui.toastManager()
                 .addToast(new SystemToast(SystemToast.SystemToastId.PERIODIC_NOTIFICATION, title, desc));
