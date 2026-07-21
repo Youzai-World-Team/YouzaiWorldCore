@@ -156,6 +156,114 @@ public class ClientNetworking {
         });
         DebugLogger.info("ClientNetworking", "Registered receiver: AttributeSyncPayload");
 
+        // ======================================================================
+        // 邮件系统（Mail）—— 客户端 S2C 接收器
+        // ======================================================================
+
+        // 打开发布 GUI（P5 实现）
+        ClientPlayNetworking.registerGlobalReceiver(OpenMailComposePayload.ID, (payload, context) -> {
+            DebugLogger.entering("ClientNetworking", "OpenMailComposePayload handler");
+            context.client().execute(() -> {
+                context.client().setScreenAndShow(new top.csituka.youzaiworldcore.client.screen.MailComposeScreen());
+            });
+            DebugLogger.exiting("ClientNetworking", "OpenMailComposePayload handler");
+        });
+        DebugLogger.info("ClientNetworking", "Registered receiver: OpenMailComposePayload");
+
+        // 收件箱列表
+        ClientPlayNetworking.registerGlobalReceiver(MailListPayload.ID, (payload, context) -> {
+            DebugLogger.entering("ClientNetworking", "MailListPayload handler", "entries=" + payload.entries().size());
+            context.client().execute(() -> {
+                top.csituka.youzaiworldcore.client.MailClientState.currentInbox = new java.util.ArrayList<>(payload.entries());
+                // MailScreen.extractRenderState 已从 MailClientState.currentInbox 读取数据
+            });
+            DebugLogger.exiting("ClientNetworking", "MailListPayload handler");
+        });
+        DebugLogger.info("ClientNetworking", "Registered receiver: MailListPayload");
+
+        // 已发送邮件摘要列表
+        ClientPlayNetworking.registerGlobalReceiver(MailSentListPayload.ID, (payload, context) -> {
+            DebugLogger.entering("ClientNetworking", "MailSentListPayload handler", "summaries=" + payload.summaries().size());
+            context.client().execute(() -> {
+                top.csituka.youzaiworldcore.client.MailClientState.currentSentList = new java.util.ArrayList<>(payload.summaries());
+                context.client().setScreenAndShow(new top.csituka.youzaiworldcore.client.screen.MailSentScreen());
+            });
+            DebugLogger.exiting("ClientNetworking", "MailSentListPayload handler");
+        });
+        DebugLogger.info("ClientNetworking", "Registered receiver: MailSentListPayload");
+
+        // 邮件更新（新增/移除/编辑预填）
+        ClientPlayNetworking.registerGlobalReceiver(MailUpdatePayload.ID, (payload, context) -> {
+            DebugLogger.entering("ClientNetworking", "MailUpdatePayload handler", "mode=" + payload.mode());
+            context.client().execute(() -> {
+                switch (payload.mode()) {
+                    case MailUpdatePayload.MODE_UPDATE -> {
+                        // 新增或更新收件箱条目
+                        var inbox = top.csituka.youzaiworldcore.client.MailClientState.currentInbox;
+                        boolean found = false;
+                        for (int i = 0; i < inbox.size(); i++) {
+                            if (inbox.get(i).mail().getId().equals(payload.mail().getId())) {
+                                inbox.set(i, new MailStreamCodecs.MailRefAndMail(payload.ref(), payload.mail()));
+                                found = true;
+                                break;
+                            }
+                        }
+                        if (!found) {
+                            inbox.add(new MailStreamCodecs.MailRefAndMail(payload.ref(), payload.mail()));
+                        }
+                    }
+                    case MailUpdatePayload.MODE_REMOVE -> {
+                        // 从收件箱移除
+                        top.csituka.youzaiworldcore.client.MailClientState.currentInbox
+                                .removeIf(pair -> pair.mail().getId().equals(payload.removedMailId()));
+                    }
+                    case MailUpdatePayload.MODE_EDIT_PREFILL -> {
+                        // 编辑预填：存储数据后打开 MailComposeScreen 编辑模式
+                        DebugLogger.info("ClientNetworking", "Edit prefill received: mailId=%s, canEdit=%s",
+                                payload.mail().getId(), payload.canEdit());
+                        top.csituka.youzaiworldcore.client.MailClientState.pendingEditData =
+                                new MailStreamCodecs.MailRefAndMail(payload.ref(), payload.mail());
+                        if (payload.canEdit()) {
+                            context.client().setScreenAndShow(
+                                    new top.csituka.youzaiworldcore.client.screen.MailComposeScreen(true, payload.mail().getId()));
+                        } else {
+                            context.client().player.sendSystemMessage(
+                                    net.minecraft.network.chat.Component.literal("§c已有玩家领取过附件，不可编辑，仅可撤回"));
+                        }
+                    }
+                }
+            });
+            DebugLogger.exiting("ClientNetworking", "MailUpdatePayload handler");
+        });
+        DebugLogger.info("ClientNetworking", "Registered receiver: MailUpdatePayload");
+
+        // 操作结果反馈
+        ClientPlayNetworking.registerGlobalReceiver(MailOpResultPayload.ID, (payload, context) -> {
+            DebugLogger.entering("ClientNetworking", "MailOpResultPayload handler", "success=" + payload.success());
+            context.client().execute(() -> {
+                var player = context.client().player;
+                if (player != null) {
+                    var color = payload.success() ? "§a" : "§c";
+                    player.sendSystemMessage(
+                            net.minecraft.network.chat.Component.literal(color + (payload.reason() != null ? payload.reason() : "")));
+                }
+            });
+            DebugLogger.exiting("ClientNetworking", "MailOpResultPayload handler");
+        });
+        DebugLogger.info("ClientNetworking", "Registered receiver: MailOpResultPayload");
+
+        // 未读数量与发布权限同步
+        ClientPlayNetworking.registerGlobalReceiver(MailUnreadCountPayload.ID, (payload, context) -> {
+            DebugLogger.entering("ClientNetworking", "MailUnreadCountPayload handler", "unread=" + payload.unreadCount());
+            context.client().execute(() -> {
+                top.csituka.youzaiworldcore.client.MailClientState.unreadCount = payload.unreadCount();
+                top.csituka.youzaiworldcore.client.MailClientState.canSend = payload.canSend();
+                // MainMenuElements.renderCustomContent 已读取 MailClientState.unreadCount 绘制徽标
+            });
+            DebugLogger.exiting("ClientNetworking", "MailUnreadCountPayload handler");
+        });
+        DebugLogger.info("ClientNetworking", "Registered receiver: MailUnreadCountPayload");
+
         DebugLogger.exiting("ClientNetworking", "initialize");
     }
 

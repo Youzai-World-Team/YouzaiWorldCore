@@ -287,6 +287,45 @@ public class YouzaiworldCore implements ModInitializer {
         LOGGER.info("维度池事件已注册");
         DebugLogger.exiting("YouzaiworldCore", "DimensionPoolEvents.register");
 
+        // ===== 初始化邮件系统 =====
+        DebugLogger.entering("YouzaiworldCore", "MailSystem.init");
+        var mailConfigDir = net.fabricmc.loader.api.FabricLoader.getInstance().getConfigDir()
+                .resolve("youzaiworldcore");
+        var mailDataDir = mailConfigDir.resolve("mail");
+        try {
+            java.nio.file.Files.createDirectories(mailDataDir);
+        } catch (java.io.IOException e) {
+            LOGGER.error("创建邮件数据目录失败", e);
+        }
+        top.csituka.youzaiworldcore.mail.MailSettings.initialize(mailConfigDir);
+        top.csituka.youzaiworldcore.mail.SentMailRepository.initialize(mailDataDir);
+        top.csituka.youzaiworldcore.mail.MailDataStorage.initialize(mailDataDir);
+        LOGGER.info("邮件系统已初始化");
+        DebugLogger.exiting("YouzaiworldCore", "MailSystem.init");
+
+        // ===== 注册邮件系统事件 =====
+        ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
+            var player = handler.getPlayer();
+            if (player instanceof net.minecraft.server.level.ServerPlayer sp) {
+                // 登录时推动未读数 + 权限
+                int unread = top.csituka.youzaiworldcore.mail.MailDataStorage.getUnreadCount(sp.getUUID());
+                boolean canSend = top.csituka.youzaiworldcore.mail.MailPermissionHelper.hasMailPermission(sp);
+                net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(sp,
+                        new top.csituka.youzaiworldcore.network.MailUnreadCountPayload(unread, canSend));
+                // 触发收件箱清理（从调用 load 时会剔除已撤回/过期条目）
+                top.csituka.youzaiworldcore.mail.MailDataStorage.load(sp.getUUID());
+            }
+        });
+        // 周期性过期清理（每 3000 tick = 约 2.5 分钟）
+        net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.START_SERVER_TICK.register(server -> {
+            // 使用服务器 Tick 计数器实现定时触发
+            if (server.getTickCount() % top.csituka.youzaiworldcore.mail.MailSettings.get().getAutoPurgeIntervalTicks() == 0) {
+                top.csituka.youzaiworldcore.mail.MailManager.purge();
+            }
+        });
+        LOGGER.info("邮件系统事件（登录推送 / 过期清理）已注册");
+        DebugLogger.exiting("YouzaiworldCore", "MailSystem.events");
+
         // ===== 初始化实验性功能系统 =====
         DebugLogger.entering("YouzaiworldCore", "ExperimentalFeatures.load");
         ExperimentalFeatures.loadDefaults();

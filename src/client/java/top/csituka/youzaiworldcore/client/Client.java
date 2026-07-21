@@ -137,6 +137,10 @@ public class Client implements ClientModInitializer {
         DebugLogger.info("Client", "注册宠物管理命令客户端命令...");
         PetClientCommand.register();
 
+        // 邮件系统客户端命令（解析后转发至服务端数据包）
+        DebugLogger.info("Client", "注册邮件系统客户端命令...");
+        top.csituka.youzaiworldcore.command.MailClientCommand.register();
+
         DebugLogger.info("Client", "客户端初始化完成 (devMode=%s, logToFile=%s)",
                 top.csituka.youzaiworldcore.YouzaiworldCore.devModeEnabled,
                 clientLogToFile);

@@ -39,6 +39,9 @@ public class MainMenuElements implements MenuElementGroup {
     private static final int MAX_TILE_SIZE = 45;
     private static final int MIN_TILE_SIZE = 24;
 
+    // Instance fields set by createButtons(), read by renderCustomContent()
+    private int tile, gap, row3Y;
+
     @Override
     public String getTitleText() {
         return I18n.get("youzaiworldcore.message.gui.title_main_menu");
@@ -73,8 +76,8 @@ public class MainMenuElements implements MenuElementGroup {
         int centerX = screenWidth / 2;
 
         // Dynamic tile size based on available screen height
-        int tile = Math.max(MIN_TILE_SIZE, Math.min(MAX_TILE_SIZE, (int) (calcTileSize(screenHeight) * scale)));
-        int gap = (int) (GAP * scale);
+        tile = Math.max(MIN_TILE_SIZE, Math.min(MAX_TILE_SIZE, (int) (calcTileSize(screenHeight) * scale)));
+        gap = (int) (GAP * scale);
         int tile2 = tile * 2 + gap; // Size spanning 2 columns + internal gap
 
         // 5-column grid: total width = 5*tile + 4*gap
@@ -104,7 +107,7 @@ public class MainMenuElements implements MenuElementGroup {
         int row0Y = gridTop;
         int row1Y = row0Y + tile + gap;
         int row2Y = row0Y + 2 * (tile + gap);
-        int row3Y = row0Y + 3 * (tile + gap);
+        row3Y = row0Y + 3 * (tile + gap);
 
         // ============================================================
         // ROW 0:
@@ -199,6 +202,9 @@ public class MainMenuElements implements MenuElementGroup {
             if (i == 0) {
                 // 设置按钮 — 打开设置界面
                 onClick = () -> screen.switchTo(new SettingsMenuElements());
+            } else if (i == 1) {
+                // 邮件 — 打开信箱
+                onClick = () -> Minecraft.getInstance().setScreenAndShow(new top.csituka.youzaiworldcore.client.screen.MailScreen());
             } else if (i == 2) {
                 // 官方网站 — 在默认浏览器打开 https://mcyzw.top
                 onClick = () -> {
@@ -245,6 +251,19 @@ public class MainMenuElements implements MenuElementGroup {
 
     @Override
     public void renderCustomContent(GuiGraphicsExtractor guiGraphics, int screenWidth, int screenHeight, float alpha, float xOffset, int mouseX, int mouseY) {
-        // No additional decorations
+        // 邮件按钮未读徽标（底行第二个按钮）
+        int unread = top.csituka.youzaiworldcore.client.MailClientState.unreadCount;
+        if (unread > 0) {
+            int totalWidth = 5 * tile + 4 * gap;
+            int startX = (screenWidth - totalWidth) / 2;
+            int col1X = startX + tile * 1 + gap * 1;
+            int badgeX = col1X + tile - 10;
+            int badgeY = row3Y - 2;
+            int badgeSize = 14;
+
+            guiGraphics.fill(badgeX, badgeY, badgeX + badgeSize, badgeY + badgeSize, 0xFFFF4444);
+            String badgeText = unread > 99 ? "99+" : String.valueOf(unread);
+            guiGraphics.centeredText(net.minecraft.client.Minecraft.getInstance().font, badgeText, badgeX + badgeSize / 2, badgeY + 3, 0xFFFFFFFF);
+        }
     }
 }
