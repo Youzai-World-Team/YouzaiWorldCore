@@ -16,12 +16,12 @@ https://github.com/Fogg05/mcsans-plus
 Licensed under the MIT License. Based on NotoSans (SIL Open Font License v1.1).
 For the full license text, see the LICENSE.txt file in this distribution.
 
-This product ports game-logic from the following mods by Serilum (rick-south),
-distributed All Rights Reserved:
+This product implements features by referencing the design and behavior of the
+following mods by Serilum (rick-south), distributed All Rights Reserved:
 https://www.curseforge.com/members/rick-south/projects
-Naturally Charged Creepers, Chorus Fruit Drops Nearby, Dragon-Drops-Elytra (by 
-Serilum), and Double Doors (reimplemented without the upstream "Collective" 
-dependency).
+Naturally Charged Creepers, Chorus Fruit Drops Nearby, Dragon-Drops-Elytra (by
+Serilum), and Double Doors. These are independent, native reimplementations
+written for this product and do not depend on the upstream "Collective" dependency.
 
 This product ports the redstone-component list used by its statistics module from
 the "rankboard" project. 
@@ -35,7 +35,9 @@ No HighLightItem source code is included in this product.
 https://github.com/elmital/HighLightItem
 
 This product bundles and retextures the GUI plaque texture from AdvancementPlaques
-by Grend, licensed under CC-BY-NC-ND-4.0.
+by Grend, licensed under CC-BY-NC-ND-4.0. The original author (Grend) has
+granted permission for third parties to recreate and retexture the plaque texture;
+the bundled version is a retexture produced under that permission.
 https://modrinth.com/mod/advancementplaques
 
 This product's client HUD layout avoids overlapping the Simple Voice Chat icon

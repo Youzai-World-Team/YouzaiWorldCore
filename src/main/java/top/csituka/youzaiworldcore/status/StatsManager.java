@@ -70,7 +70,7 @@ public final class StatsManager {
      */
     private static final ConcurrentHashMap<LocalDate, Map<String, Map<String, Long>>> SNAPSHOTS = new ConcurrentHashMap<>();
 
-    /** 红石元件列表（由 rankboard-main 移植） */
+    /** 红石元件列表（参考 rankboard-main 的设计整理） */
     private static final Set<String> REDSTONE_COMPONENTS = Set.of(
             "redstone", "redstone_torch", "repeater", "comparator", "observer",
             "piston", "sticky_piston", "dispenser", "dropper", "hopper", "lever",

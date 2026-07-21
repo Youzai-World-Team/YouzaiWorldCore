@@ -21,7 +21,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 /**
  * 紫颂果就近掉落处理器。
  * <p>
- * 功能移植自 Serilum 的 Chorus Fruit Drops Nearby
+ * 参考 Serilum 的 Chorus Fruit Drops Nearby 的设计与行为实现（原生重写，不依赖其前置 Collective）
  * 行为：当紫颂植物（{@link Blocks#CHORUS_PLANT}）被破坏时记录其位置；
  * 紫颂果（{@link Items#CHORUS_FRUIT}）物品实体进入世界时，将其就近传送到
  * 最近一次被破坏的紫颂植物位置（水平欧氏距离 &lt; {@link #MAX_DISTANCE} 且处于

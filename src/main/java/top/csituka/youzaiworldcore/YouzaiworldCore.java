@@ -174,7 +174,7 @@ public class YouzaiworldCore implements ModInitializer {
         DebugLogger.info("YouzaiworldCore", "注册天然带电苦力怕事件...");
         ChargedCreeperHandler.register();
 
-        // ===== 初始化双开门功能（Double Doors 移植，已精简为按玩家开关） =====
+        // ===== 初始化双开门功能（Double Doors，参考 Serilum 的 Double Doors 设计，原生实现，已精简为按玩家开关） =====
         DebugLogger.info("YouzaiworldCore", "加载双开门玩家状态...");
         DoubleDoorsState.load();
         DebugLogger.info("YouzaiworldCore", "初始化双开门处理器...");

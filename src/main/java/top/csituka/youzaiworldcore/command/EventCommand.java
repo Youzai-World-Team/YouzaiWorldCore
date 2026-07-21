@@ -24,7 +24,7 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
  * <li>查询（省略参数）需 {@code youzaiworldcore.command.event.query}，默认所有人可查询；</li>
  * <li>修改（带参数）需 {@code youzaiworldcore.command.event.set}，默认 OP 4。</li>
  * </ul>
- * 功能移植自 Serilum 的 Naturally Charged Creepers
+ * 参考 Serilum 的 Naturally Charged Creepers 的设计与行为实现（原生重写，不依赖其前置 Collective）
  * </p>
  */
 @SuppressWarnings("null")

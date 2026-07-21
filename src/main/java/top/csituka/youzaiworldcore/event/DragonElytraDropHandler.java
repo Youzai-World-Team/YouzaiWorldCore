@@ -41,7 +41,7 @@ import java.util.Optional;
  * </p>
  *
  * @see EndPortalHandler
- * @see 原始模组 Dragon-Drops-Elytra by Serilum (natamus)</a>
+ * @see 设计参考：Dragon-Drops-Elytra by Serilum (natamus)
  */
 @SuppressWarnings("null")
 public class DragonElytraDropHandler {

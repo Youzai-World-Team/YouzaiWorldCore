@@ -346,17 +346,20 @@
 
    ---
 
-   This product ports game-logic from the following mods by Serilum
-   (rick-south), distributed All Rights Reserved:
+   This product implements features by referencing the design and behavior
+   of the following mods by Serilum (rick-south), distributed All Rights
+   Reserved:
    https://www.curseforge.com/members/rick-south/projects
 
    Naturally Charged Creepers, Chorus Fruit Drops Nearby,
-   Dragon-Drops-Elytra (by Serilum), and Double Doors (reimplemented
-   without the upstream "Collective" dependency).
+   Dragon-Drops-Elytra (by Serilum), and Double Doors. These are
+   independent, native reimplementations written for this product and do not
+   depend on the upstream "Collective" prerequisite; no Serilum source code
+   is included.
 
-   These ports are provided for interoperability. All original rights are
-   reserved by Serilum (rick-south); they are not licensed under the
-   Apache License, Version 2.0.
+   All original rights in the referenced works are reserved by Serilum
+   (rick-south); these features are not licensed under the Apache License,
+   Version 2.0.
 
    ---
 
@@ -389,6 +392,11 @@
    Attribution-NonCommercial-NoDerivatives 4.0 International Public
    License (CC-BY-NC-ND-4.0):
    https://modrinth.com/mod/advancementplaques
+
+   The original author (Grend) has granted permission for third parties to
+   recreate and retexture the plaque texture. The version bundled here is a
+   retexture produced under that permission; the CC-BY-NC-ND-4.0 terms
+   below continue to govern any redistribution of the bundled texture.
 
    Creative Commons Attribution-NonCommercial-NoDerivatives 4.0
    International Public License

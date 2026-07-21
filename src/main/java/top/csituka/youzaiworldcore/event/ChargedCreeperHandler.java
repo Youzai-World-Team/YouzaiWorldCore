@@ -14,7 +14,7 @@ import java.util.Set;
 /**
  * 天然带电苦力怕处理器。
  * <p>
- * 功能移植自 Serilum 的 Naturally Charged Creepers
+ * 参考 Serilum 的 Naturally Charged Creepers 的设计与行为实现（原生重写，不依赖其前置 Collective）
  * 行为：每当苦力怕进入服务端世界时，以 {@link ChargedCreeperConfig#getChance()} 的概率
  * 将其标记为带电状态。通过数据标签保证每个苦力怕只判定一次，避免区块重载时重复判定。
  * </p>

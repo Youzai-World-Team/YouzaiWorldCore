@@ -18,7 +18,7 @@ import java.nio.file.Path;
  * <p>
  * 文件位置：{@code config/youzaiworldcore/charged_creeper.json}
  * <p>
- * 功能移植自 Serilum 的 Naturally Charged Creepers
+ * 参考 Serilum 的 Naturally Charged Creepers 的设计与行为实现（原生重写，不依赖其前置 Collective）
  * 本类仅负责配置的持久化与读取，充电逻辑见
  * {@link top.csituka.youzaiworldcore.event.ChargedCreeperHandler}。
  * </p>
