@@ -244,6 +244,7 @@
   "screen.youzaiworldcore.settings.label_update_server_section": "Update Server",
   "screen.youzaiworldcore.settings.label_update_check_address": "Check Update URL",
   "screen.youzaiworldcore.settings.label_update_jump_address": "Redirect URL",
+  "title.youzaiworldcore.website": "Website",
   "title.youzaiworldcore.join_server": "Join Server",
   "options.youzaiworldcore.installed_mods": "Installed Mods...",
   "options.youzaiworldcore.settings": "YouzaiWorldCore Settings...",

@@ -10,8 +10,12 @@ import top.csituka.youzaiworldcore.client.screen.MenuScreen;
 import top.csituka.youzaiworldcore.client.screen.widget.ConfirmationDialog;
 import top.csituka.youzaiworldcore.client.screen.widget.TextureTileButton;
 
+import java.awt.Desktop;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+
+import top.csituka.youzaiworldcore.util.DebugLogger;
 
 public class MainMenuElements implements MenuElementGroup {
 
@@ -195,6 +199,22 @@ public class MainMenuElements implements MenuElementGroup {
             if (i == 0) {
                 // 设置按钮 — 打开设置界面
                 onClick = () -> screen.switchTo(new SettingsMenuElements());
+            } else if (i == 2) {
+                // 官方网站 — 在默认浏览器打开 https://mcyzw.top
+                onClick = () -> {
+                    DebugLogger.entering("MainMenuElements", "openWebsite");
+                    try {
+                        URI uri = new URI("https://mcyzw.top");
+                        if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
+                            Desktop.getDesktop().browse(uri);
+                            DebugLogger.info("MainMenuElements", "已在浏览器打开官网: https://mcyzw.top");
+                        } else {
+                            DebugLogger.warn("MainMenuElements", "当前环境不支持打开浏览器");
+                        }
+                    } catch (Exception e) {
+                        DebugLogger.exception("MainMenuElements", "openWebsite", e);
+                    }
+                };
             } else {
                 onClick = () -> showNotImplementedDialog(screen);
             }
