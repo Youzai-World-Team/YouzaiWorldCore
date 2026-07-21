@@ -61,12 +61,6 @@ repositories {
             includeGroup("maven.modrinth")
         }
     }
-
-    // Nucleoid Maven（Trinkets）
-    maven {
-		name = "Nucleoid"
-		url = 'https://maven.nucleoid.xyz/releases'
-	}
 }
 
 dependencies {
@@ -88,9 +82,6 @@ dependencies {
 
     // Moog's Structure Lib
     implementation "maven.modrinth:moogs-structure-lib:3.0.4"
-
-    // Trinkets
-    implementation "eu.pb4:trinkets:${trinkets_version}"
 }
 
 processResources {
