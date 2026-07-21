@@ -18,12 +18,12 @@ import java.nio.file.Path;
  * <p>
  * 文件位置：{@code config/youzaiworldcore/charged_creeper.json}
  * <p>
- * 功能移植自 Serilum 的 Naturally Charged Creepers（已取得作者许可，无需署名）。
+ * 功能移植自 Serilum 的 Naturally Charged Creepers
  * 本类仅负责配置的持久化与读取，充电逻辑见
  * {@link top.csituka.youzaiworldcore.event.ChargedCreeperHandler}。
  * </p>
  */
-@SuppressWarnings({"null", "unused"})
+@SuppressWarnings({ "null", "unused" })
 public final class ChargedCreeperConfig {
 
     public static final String MODULE = "ChargedCreeperConfig";
@@ -43,7 +43,9 @@ public final class ChargedCreeperConfig {
     private ChargedCreeperConfig() {
     }
 
-    /** @return 功能是否启用（由 {@code /yzwc event naturally_charged_creepers enable} 控制） */
+    /**
+     * @return 功能是否启用（由 {@code /yzwc event naturally_charged_creepers enable} 控制）
+     */
     public static boolean isEnabled() {
         return enabled;
     }

@@ -154,7 +154,7 @@ A player-behavior-based experience level system coupled with an allocatable attr
 
 - **Adventure Level (XP)**
   - **XP Sources**: Mine 50 blocks (+25), Place 50 blocks (+25), Death (+10), Guardian Heart protects (+50), Totem of Undying triggers (+500), Complete advancement (+50)
-  - **Level Formula**: `C = 200 + 20 × log₁₀(2n)²⁰` (n = current level, n ≥ 1; ≈ 220 at low levels, accelerates past n ≥ 50)
+  - **Level Formula**: `C = 200 + 20 × log₁₀(2n)²⁰` (n = current level, n ≥ 1; ~200–220 at n ≤ 5, then grows rapidly by the log₁₀(2n)²⁰ power law — ≈ 4000 at n = 10, hitting the int cap at high levels)
   - **Network Sync**: `LevelExpSyncPayload` (S→C) synchronizes XP values
 - **Attribute System**
   - Attribute points earned on level-up can be allocated via the `/yzwc` attribute menu (GUI element), mapped onto 10 vanilla attributes: `MAX_HEALTH`, `MOVEMENT_SPEED`, `JUMP_STRENGTH`, `LUCK`, `ATTACK_DAMAGE`, `BLOCK_BREAK_SPEED`, etc.
@@ -207,6 +207,8 @@ Two branches with 20+ advancements:
 | Server External Settings | `config/youzaiworldcore/server_external_settings.json` | `devModeEnabled`, `logToFile` (dual-toggle for DebugLogger) |
 | Client External Settings | `config/youzaiworldcore/client_external_settings.json` | `devModeEnabled`, `logLevel` (0–3), debug address/port |
 | DebugLogger | `util/DebugLogger` | 4 log levels (OFF/BASIC/DETAILED/DEBUG), entering/exiting/branch/stateChange/exception tracing |
+| Update Checker Settings | `config/youzaiworldcore/update_checker.json` | `enabled` (toggles update checks, UpdateCheckerConfig) |
+| Player Stats Data | `<world>/youzaiworldcore/status/data.json` + `rank_export/` | StatsManager persistence & leaderboard export dir |
 
 ### 19. Enchantment Level Language Patch System
 
@@ -275,6 +277,27 @@ The experimental feature system framework is fully implemented, supporting serve
 
 > **Current Status**: The framework is implemented but **no experimental feature is currently registered** (`REGISTRY` is empty). The dimension pool system has graduated from experimental status and is now enabled as a core feature.
 
+### 26. Stats System (Status)
+
+Reads player behavior data from the vanilla `Stats` system, persists it, and supports querying and leaderboard export.
+
+- **Entry**: `status/StatsManager`; data persisted to `<world>/youzaiworldcore/status/data.json`
+- **Metrics**: **21 metrics** in total — play time, jumps, deaths, mob/player kills, damage dealt/taken, walk/sprint/elytra/fall distance, fish caught, villager trades, items dropped, sleep-in-bed, enchantments, raid wins, animals bred, bell rings, cake eaten, and an aggregated "redstone placement" leaderboard
+- **Commands** (server-side):
+  - `/yzwc status <player> list` — view a player's stats (perm `youzaiworldcore.command.status.query`)
+  - `/yzwc status <player> delete` — delete a player's stats (perm `youzaiworldcore.command.status.delete`)
+  - `/yzwc status rank_export <day|week|month|year|all> [name]` — export leaderboard to `rank_export/<name>.json` (perm `youzaiworldcore.command.status.export`)
+- **Permissions**: `status.query` / `status.delete` / `status.export` (default OP 4)
+
+### 27. Update Checker
+
+Asynchronously detects new mod versions, prompting for online or forced updates.
+
+- **Entry**: `update/UpdateChecker` (shared by client and server); fetches `https://mcyzw.top/yzwc/version.json` at runtime and compares via `SemanticVersion`
+- **Config**: `config/youzaiworldcore/update_checker.json` (`UpdateCheckerConfig`, toggleable)
+- **Command** (server-side): `/yzwc update [check]` — trigger an immediate check and report result (normal/forced update notice + clickable download link); perm `youzaiworldcore.command.update` (OP 4)
+- **Client**: `client/update/ClientUpdateState` + `client/screen/ForcedUpdateScreen` provide the forced-update screen
+
 ---
 
 ## 📜 Command Tree
@@ -332,7 +355,7 @@ All commands use `/yzwc` as the root command. Subcommands marked **(client comma
 │   ├── Permission: youzaiworldcore.command.reload (OP 4)
 │   └── Reload account data and config at runtime
 │
-└── account
+├── account
     ├── 📋 Player Commands:
     │   ├── register <password> <confirm>           ← Register (4–128 chars)
     │   ├── login <password>                        ← Login (5 attempts, 5 min cooldown)
@@ -350,6 +373,14 @@ All commands use `/yzwc` as the root command. Subcommands marked **(client comma
             ├── set <seconds>    ← Set (-1=never, 0=permanent, >0=timed)
             ├── status <player>  ← Query lock status
             └── unlock <player>  ← Unlock account
+├── status
+│   ├── <player> list                          → View player's stats (perm .query)
+│   ├── <player> delete                        → Delete player's stats (perm .delete)
+│   ├── rank_export <day|week|month|year|all> [name] → Export leaderboard (perm .export)
+│   └── Permissions: .query / .delete / .export (OP 4)
+└── update [check]
+    ├── Permission: youzaiworldcore.command.update (OP 4)
+    └── Check for mod updates (fetches remote version info, reports normal/forced update + download link)
 ```
 
 > **Client command note**: `/yzwc pet`, `/yzwc function invisibility`, `/yzwc function double_doors`, and `/yzwc experimental_feature` are registered on the client and only parse arguments, forwarding them through the corresponding C→S packets (`PetCommandPayload` / `InvisibilityPayload` / `DoubleDoorsTogglePayload` / `ExperimentalFeaturePayload`); the server holds the authoritative state and permission checks. All other subcommands (`teleport_world` / `open_menu` / `world_pool` / `teleport_anchor` / `event` / `reload` / `account`) are server-side.
@@ -375,6 +406,11 @@ All commands use `/yzwc` as the root command. Subcommands marked **(client comma
 | `youzaiworldcore.command.pet.set` | Pet settings (rename/mode/trust/release/transfer) | Everyone (own pets) |
 | `youzaiworldcore.command.pet.highlight` | Highlight pet | Everyone (owner/trusted) |
 | `youzaiworldcore.command.pet.admin` | Pet admin (backup/restore/interval) | OP 4 |
+| `youzaiworldcore.command.pet` | Pet module parent permission (base) | OP 4 |
+| `youzaiworldcore.command.status.query` | View stats | OP 4 |
+| `youzaiworldcore.command.status.delete` | Delete stats | OP 4 |
+| `youzaiworldcore.command.status.export` | Export stats leaderboard | OP 4 |
+| `youzaiworldcore.command.update` | Update check | OP 4 |
 | `youzaiworldcore.command.account.mgr.create` | Create account | OP 4 |
 | `youzaiworldcore.command.account.mgr.reset_password` | Reset password | OP 4 |
 | `youzaiworldcore.command.account.mgr.delete` | Delete account | OP 4 |
@@ -482,6 +518,8 @@ src/
 │   ├── placeholders/                     # Placeholder API (32 placeholders)
 │   ├── screen/                           # Container menus
 │   ├── skill/                            # Adventure level + attribute system
+│   ├── status/                           # Stats system (StatsManager, 21 metrics + commands)
+│   ├── update/                           # Update checker (UpdateChecker + 4 supporting files)
 │   ├── util/                             # DebugLogger, etc.
 │   └── worldgen/                         # World generation (VillageStructureInjector)
 │
@@ -493,12 +531,13 @@ src/
 │   ├── higherchat/                       # Simple Voice Chat integration (HUD icon position tracking)
 │   ├── highlightitem/                    # Item highlight (HighlightItem / Configurator / Colors / ItemComparator)
 │   ├── hud/                              # Mana bar / adventure level HUD
+│   ├── skill/                            # Client adventure level / attribute data (ClientAttributeData)
+│   ├── update/                           # Update checker client state (ClientUpdateState)
 │   ├── mixin/client/                     # Client Mixins (title, options, button, pause, chat, loading, seat, rendering, pickup, enchant-patch, etc.)
 │   ├── network/                          # Client network handling (ClientNetworking)
 │   ├── pickup/                           # Pickup display (item/XP floating notifications)
 │   ├── renderer/                         # Block/entity renderers (incl. teleport anchor BER)
 │   └── screen/                           # GUI screens (MenuScreen, Login/Register, element/widget/block subpackages)
-│       └── skill/                        # Client adventure level / attribute menu elements
 │
 └── main/resources/
     ├── assets/youzaiworldcore/           # Textures, models, language files

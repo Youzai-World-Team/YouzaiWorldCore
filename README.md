@@ -154,7 +154,7 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 
 - **冒险等级（经验）**
   - **经验获取途径**：挖掘 50 方块（+25）、放置 50 方块（+25）、死亡（+10）、守护之心保护（+50）、不死图腾触发（+500）、完成进度（+50）
-  - **升级公式**：`C = 200 + 20 × log₁₀(2n)²⁰`（n 为当前等级，n ≥ 1；低等级约 220 平坦区，n ≥ 50 后加速）
+  - **升级公式**：`C = 200 + 20 × log₁₀(2n)²⁰`（n 为当前等级，n ≥ 1；低等级 n≤5 时 C≈200–220，之后随 log₁₀(2n)²⁰ 幂律快速增长，n=10 约 4000，高等级触及 Int 上限）
   - **网络同步**：`LevelExpSyncPayload`（S→C）同步经验值
 - **属性系统**
   - 升级获得的属性点可通过 `/yzwc` 属性菜单（GUI 元素）分配，映射到 10 项原版属性：`MAX_HEALTH`、`MOVEMENT_SPEED`、`JUMP_STRENGTH`、`LUCK`、`ATTACK_DAMAGE`、`BLOCK_BREAK_SPEED` 等
@@ -207,6 +207,8 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 | 服务端外部设置 | `config/youzaiworldcore/server_external_settings.json` | `devModeEnabled`、`logToFile`（双开关控制 DebugLogger） |
 | 客户端外部设置 | `config/youzaiworldcore/client_external_settings.json` | `devModeEnabled`、`logLevel`（0-3）、调试地址/端口 |
 | DebugLogger | `util/DebugLogger` | 四级日志（OFF/BASIC/DETAILED/DEBUG），entering/exiting/branch/stateChange/exception 追踪 |
+| 更新检查设置 | `config/youzaiworldcore/update_checker.json` | `enabled`（开关更新检查，UpdateCheckerConfig） |
+| 玩家统计数据 | `<world>/youzaiworldcore/status/data.json` + `rank_export/` | StatsManager 持久化统计与排行榜导出目录 |
 
 ### 19. 附魔等级语言补丁系统
 
@@ -275,6 +277,27 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 
 > **当前状态**：框架已实现，但**暂未注册任何实验性功能**（`REGISTRY` 为空）。维度池系统已脱离实验性阶段，作为核心功能直接启用。
 
+### 26. 统计系统（Status）
+
+读取原版统计系统（`Stats`）的玩家行为数据，持久化保存并支持查询与排行榜导出。
+
+- **入口**：`status/StatsManager`；数据持久化于 `<world>/youzaiworldcore/status/data.json`
+- **指标**：共 **21 项**，涵盖在线时间、跳跃/死亡/击杀、伤害、步行/疾跑/鞘翅/坠落距离、钓鱼、交易、丢弃、睡觉、附魔、袭击、繁殖、敲钟、吃蛋糕，以及「红石大蛇榜」汇总的红石放置量
+- **命令**（服务端）：
+  - `/yzwc status <player> list` —— 查看该玩家各项统计（权限 `youzaiworldcore.command.status.query`）
+  - `/yzwc status <player> delete` —— 删除该玩家统计记录（权限 `youzaiworldcore.command.status.delete`）
+  - `/yzwc status rank_export <day|week|month|year|all> [name]` —— 导出排行榜至 `rank_export/<name>.json`（权限 `youzaiworldcore.command.status.export`）
+- **权限**：`status.query` / `status.delete` / `status.export`（默认 OP 4）
+
+### 27. 更新检查系统（Update Checker）
+
+异步检测模组新版本，提示在线更新或强制更新。
+
+- **入口**：`update/UpdateChecker`（客户端与服务端共用）；运行时从 `https://mcyzw.top/yzwc/version.json` 拉取版本信息，基于 `SemanticVersion` 比较
+- **配置**：`config/youzaiworldcore/update_checker.json`（`UpdateCheckerConfig`，可开关检查）
+- **命令**（服务端）：`/yzwc update [check]` —— 触发一次即时检查并反馈结果（普通/强制更新提示 + 可点击下载链接），权限 `youzaiworldcore.command.update`（OP 4）
+- **客户端**：`client/update/ClientUpdateState` + `client/screen/ForcedUpdateScreen` 提供强制更新界面
+
 ---
 
 ## 📜 指令树
@@ -332,7 +355,7 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 │   ├── 权限：youzaiworldcore.command.reload（OP 4）
 │   └── 运行时重载账户数据和配置
 │
-└── account
+├── account
     ├── 📋 玩家命令：
     │   ├── register <password> <confirm>           ← 注册（4-128 字符）
     │   ├── login <password>                        ← 登录（5 次上限，超限冷却 5 分钟）
@@ -350,6 +373,14 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
             ├── set <seconds>    ← 设置（-1=永不，0=永久，>0=秒数）
             ├── status <player>  ← 查询锁定状态
             └── unlock <player>  ← 解锁账户
+├── status
+│   ├── <player> list                          → 查看该玩家统计（权限 .query）
+│   ├── <player> delete                        → 删除该玩家统计（权限 .delete）
+│   ├── rank_export <day|week|month|year|all> [name] → 导出排行榜（权限 .export）
+│   └── 权限：.query / .delete / .export（OP 4）
+└── update [check]
+    ├── 权限：youzaiworldcore.command.update（OP 4）
+    └── 检查模组更新（拉取远程版本信息，反馈普通/强制更新与下载链接）
 ```
 
 > **客户端命令说明**：`/yzwc pet`、`/yzwc function invisibility`、`/yzwc function double_doors`、`/yzwc experimental_feature` 均在客户端注册，仅负责解析参数并通过对应 C→S 数据包（`PetCommandPayload` / `InvisibilityPayload` / `DoubleDoorsTogglePayload` / `ExperimentalFeaturePayload`）转发；服务端持有权威状态与权限判定。其余子命令（`teleport_world` / `open_menu` / `world_pool` / `teleport_anchor` / `event` / `reload` / `account`）为服务端命令。
@@ -375,6 +406,11 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 | `youzaiworldcore.command.pet.set` | 宠物设置（重命名/模式/信任/放生/转让） | 所有人（仅自身宠物） |
 | `youzaiworldcore.command.pet.highlight` | 高亮宠物 | 所有人（主人/信任玩家） |
 | `youzaiworldcore.command.pet.admin` | 宠物管理员（备份/恢复/间隔） | OP 4 |
+| `youzaiworldcore.command.pet` | 宠物模块父权限（基础） | OP 4 |
+| `youzaiworldcore.command.status.query` | 查看统计 | OP 4 |
+| `youzaiworldcore.command.status.delete` | 删除统计 | OP 4 |
+| `youzaiworldcore.command.status.export` | 导出统计排行榜 | OP 4 |
+| `youzaiworldcore.command.update` | 更新检查 | OP 4 |
 | `youzaiworldcore.command.account.mgr.create` | 创建账户 | OP 4 |
 | `youzaiworldcore.command.account.mgr.reset_password` | 重置密码 | OP 4 |
 | `youzaiworldcore.command.account.mgr.delete` | 删除账户 | OP 4 |
@@ -482,6 +518,8 @@ src/
 │   ├── placeholders/                     # Placeholder API 集成（32 个占位符）
 │   ├── screen/                           # 容器菜单
 │   ├── skill/                            # 冒险等级 + 属性系统
+│   ├── status/                           # 统计系统（StatsManager，21 项指标 + 命令）
+│   ├── update/                           # 更新检查（UpdateChecker 等 5 文件）
 │   ├── util/                             # DebugLogger 等工具
 │   └── worldgen/                         # 世界生成（VillageStructureInjector 村庄结构注入）
 
@@ -493,12 +531,13 @@ src/
 │   ├── higherchat/                       # Simple Voice Chat 集成（HUD 图标位置跟踪，优化聊天框位置避免遮挡）
 │   ├── highlightitem/                    # 物品高亮（HighlightItem / Configurator / Colors / ItemComparator）
 │   ├── hud/                              # 魔力条 / 冒险等级 HUD
+│   ├── skill/                            # 客户端冒险等级/属性数据（ClientAttributeData）
+│   ├── update/                           # 更新检查客户端状态（ClientUpdateState）
 │   ├── mixin/client/                     # 客户端 Mixin（标题/选项/按钮/暂停/聊天/加载/座椅/渲染/拾取/附魔补丁 等）
 │   ├── network/                          # 客户端网络处理（ClientNetworking）
 │   ├── pickup/                           # 拾取显示（item/XP 浮动提示）
 │   ├── renderer/                         # 方块/实体渲染器（含传送锚点 BER）
 │   └── screen/                           # GUI 屏幕（MenuScreen、Login/Register、element/widget/block 子包）
-│       └── skill/                        # 客户端冒险等级/属性菜单元素
 
 └── main/resources/
     ├── assets/youzaiworldcore/           # 纹理、模型、语言文件

@@ -29,10 +29,10 @@ import java.util.Optional;
  * <p>
  * 末影龙被击杀时执行逻辑：
  * <ol>
- *   <li>确定击杀归属玩家（直接击杀 / 弹射物击杀 / 半径搜索兜底）</li>
- *   <li>在归属玩家位置（或龙的位置）生成一个鞘翅掉落物</li>
- *   <li>向末地内全体玩家广播提示消息</li>
- *   <li>向归属玩家发送位置提示私聊消息</li>
+ * <li>确定击杀归属玩家（直接击杀 / 弹射物击杀 / 半径搜索兜底）</li>
+ * <li>在归属玩家位置（或龙的位置）生成一个鞘翅掉落物</li>
+ * <li>向末地内全体玩家广播提示消息</li>
+ * <li>向归属玩家发送位置提示私聊消息</li>
  * </ol>
  * </p>
  * <p>
@@ -41,7 +41,7 @@ import java.util.Optional;
  * </p>
  *
  * @see EndPortalHandler
- * @see <a href="https://github.com/Serilum/Dragon-Drops-Elytra">原始模组 Dragon-Drops-Elytra by Serilum (natamus)</a>
+ * @see 原始模组 Dragon-Drops-Elytra by Serilum (natamus)</a>
  */
 @SuppressWarnings("null")
 public class DragonElytraDropHandler {
@@ -52,7 +52,8 @@ public class DragonElytraDropHandler {
     private static final DragonElytraDropHandler INSTANCE = new DragonElytraDropHandler();
     private static final Logger LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/DragonElytra");
 
-    private DragonElytraDropHandler() {}
+    private DragonElytraDropHandler() {
+    }
 
     // ========================================================================
     // 回调方法
@@ -90,8 +91,7 @@ public class DragonElytraDropHandler {
         ItemEntity elytraEntity = new ItemEntity(
                 level,
                 dropPos.getX(), dropPos.getY() + 1.0, dropPos.getZ(),
-                elytraStack
-        );
+                elytraStack);
         elytraEntity.setDefaultPickUpDelay();
         level.addFreshEntity(elytraEntity);
 
@@ -99,8 +99,7 @@ public class DragonElytraDropHandler {
 
         // ===== 4. 广播提示消息（所有在末地世界的玩家） =====
         Component broadcastMsg = Component.translatable(
-                "youzaiworldcore.message.dragon_elytra.seems_like_slain"
-        ).withStyle(ChatFormatting.DARK_GREEN);
+                "youzaiworldcore.message.dragon_elytra.seems_like_slain").withStyle(ChatFormatting.DARK_GREEN);
 
         ServerLevel serverLevel = (ServerLevel) entity.level();
         for (ServerPlayer player : serverLevel.getServer().getPlayerList().getPlayers()) {
@@ -114,8 +113,7 @@ public class DragonElytraDropHandler {
             if (player instanceof ServerPlayer serverPlayer) {
                 Component positionMsg = Component.translatable(
                         "youzaiworldcore.message.dragon_elytra.elytra_dropped_position",
-                        dropPos.getX(), dropPos.getY() + 1, dropPos.getZ()
-                ).withStyle(ChatFormatting.DARK_GREEN);
+                        dropPos.getX(), dropPos.getY() + 1, dropPos.getZ()).withStyle(ChatFormatting.DARK_GREEN);
                 serverPlayer.sendSystemMessage(positionMsg);
             }
         });
@@ -130,10 +128,10 @@ public class DragonElytraDropHandler {
     /**
      * 确定击杀末影龙的归属玩家，优先级：
      * <ol>
-     *   <li><b>直接玩家</b>：伤害来源实体本身就是 {@link Player}</li>
-     *   <li><b>弹射物归属</b>：伤害来源是 {@link Projectile}，取其发射者
-     *       （覆盖弓 / 弩 / 三叉戟等远程击杀，原 Dragon-Drops-Elytra 未处理此分支）</li>
-     *   <li><b>半径搜索兜底</b>：在 {@value #SEARCH_RADIUS} 格半径内搜索最近玩家</li>
+     * <li><b>直接玩家</b>：伤害来源实体本身就是 {@link Player}</li>
+     * <li><b>弹射物归属</b>：伤害来源是 {@link Projectile}，取其发射者
+     * （覆盖弓 / 弩 / 三叉戟等远程击杀，原 Dragon-Drops-Elytra 未处理此分支）</li>
+     * <li><b>半径搜索兜底</b>：在 {@value #SEARCH_RADIUS} 格半径内搜索最近玩家</li>
      * </ol>
      *
      * @param dragon       死亡的末影龙实体
@@ -165,16 +163,14 @@ public class DragonElytraDropHandler {
                 dragonPos.getZ() - SEARCH_RADIUS,
                 dragonPos.getX() + SEARCH_RADIUS,
                 dragonPos.getY() + SEARCH_RADIUS,
-                dragonPos.getZ() + SEARCH_RADIUS
-        );
+                dragonPos.getZ() + SEARCH_RADIUS);
 
         List<Player> nearbyPlayers = dragon.level().getEntitiesOfClass(Player.class, searchBox);
         if (!nearbyPlayers.isEmpty()) {
             // 按距离排序，取最近的玩家（相比原 Dragon-Drops-Elytra "取第一个" 更合理）
             nearbyPlayers.sort((a, b) -> Double.compare(
                     a.distanceToSqr(dragon),
-                    b.distanceToSqr(dragon)
-            ));
+                    b.distanceToSqr(dragon)));
             Player nearest = nearbyPlayers.getFirst();
             LOGGER.info("通过半径搜索确定归属玩家: {} (距离={})",
                     nearest.getName().getString(),
@@ -193,7 +189,8 @@ public class DragonElytraDropHandler {
     /**
      * 向 Fabric 事件总线注册末影龙鞘翅掉落事件。
      * <p>
-     * 在 {@link net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents#AFTER_DEATH}
+     * 在
+     * {@link net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents#AFTER_DEATH}
      * 上注册，与 {@link EndPortalHandler} 完全独立。
      * </p>
      */

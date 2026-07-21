@@ -14,18 +14,19 @@ import java.util.Set;
 /**
  * 天然带电苦力怕处理器。
  * <p>
- * 功能移植自 Serilum 的 Naturally Charged Creepers（已取得作者许可，无需署名）。
+ * 功能移植自 Serilum 的 Naturally Charged Creepers
  * 行为：每当苦力怕进入服务端世界时，以 {@link ChargedCreeperConfig#getChance()} 的概率
  * 将其标记为带电状态。通过数据标签保证每个苦力怕只判定一次，避免区块重载时重复判定。
  * </p>
  * <p>
  * 实现要点：
  * <ul>
- *   <li>仅服务端生效（{@code level.isClientSide()} 守卫），带电状态由服务端权威同步；</li>
- *   <li>监听 {@code ServerEntityEvents.ENTITY_LOAD}，覆盖自然生成、刷怪蛋、指令召唤与区块重载等所有来源；</li>
- *   <li>带电写入 26.2 的 {@code DATA_IS_POWERED} 实体数据（见 {@link CreeperChargedAccessor}），
- *       以确保客户端闪电光环等渲染正确同步；</li>
- *   <li>所有诊断日志经 {@link DebugLogger} 输出，受开发者模式 + 日志级别双维度控制。</li>
+ * <li>仅服务端生效（{@code level.isClientSide()} 守卫），带电状态由服务端权威同步；</li>
+ * <li>监听 {@code ServerEntityEvents.ENTITY_LOAD}，覆盖自然生成、刷怪蛋、指令召唤与区块重载等所有来源；</li>
+ * <li>带电写入 26.2 的 {@code DATA_IS_POWERED} 实体数据（见
+ * {@link CreeperChargedAccessor}），
+ * 以确保客户端闪电光环等渲染正确同步；</li>
+ * <li>所有诊断日志经 {@link DebugLogger} 输出，受开发者模式 + 日志级别双维度控制。</li>
  * </ul>
  * </p>
  */
@@ -49,8 +50,7 @@ public class ChargedCreeperHandler {
         double chance = ChargedCreeperConfig.getChance();
         DebugLogger.info(MODULE, "天然带电苦力怕处理器已注册 (chance=%.4f)", chance);
 
-        ServerEntityEvents.ENTITY_LOAD.register((Entity entity, ServerLevel world) ->
-                onEntityJoin(world, entity));
+        ServerEntityEvents.ENTITY_LOAD.register((Entity entity, ServerLevel world) -> onEntityJoin(world, entity));
 
         DebugLogger.exiting(MODULE, "register");
     }
@@ -97,8 +97,8 @@ public class ChargedCreeperHandler {
                 entity.getUUID(), roll, chance, charged ? "带电" : "普通");
 
         if (charged) {
-            EntityDataAccessor<Boolean> poweredData =
-                    ((CreeperChargedAccessor) creeper).youzaiworldcore$getDataIsPowered();
+            EntityDataAccessor<Boolean> poweredData = ((CreeperChargedAccessor) creeper)
+                    .youzaiworldcore$getDataIsPowered();
             creeper.getEntityData().set(poweredData, true);
             DebugLogger.info(MODULE, "creeper %s 已设为带电状态", entity.getUUID());
         }

@@ -21,7 +21,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 /**
  * 紫颂果就近掉落处理器。
  * <p>
- * 功能移植自 Serilum 的 Chorus Fruit Drops Nearby（已取得作者许可，无需署名）。
+ * 功能移植自 Serilum 的 Chorus Fruit Drops Nearby
  * 行为：当紫颂植物（{@link Blocks#CHORUS_PLANT}）被破坏时记录其位置；
  * 紫颂果（{@link Items#CHORUS_FRUIT}）物品实体进入世界时，将其就近传送到
  * 最近一次被破坏的紫颂植物位置（水平欧氏距离 &lt; {@link #MAX_DISTANCE} 且处于
@@ -30,11 +30,11 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * <p>
  * 实现说明：
  * <ul>
- *   <li>匹配时果实位置与记录位置两侧都需用 {@code BlockPos.containing(x, 1, z)} 将 Y 轴归一化为 1，
- *       使 {@code closerThan} 退化为纯水平（XZ）距离比较，否则高空植物的真实高度差会使三维距离远超阈值；</li>
- *   <li>传送目标为记录方块坐标 {@code y + 1}，即被破坏方块上方一格；</li>
- *   <li>记录位置在 {@link #EXPIRY_MS} 毫秒后过期移除，避免列表无限增长；</li>
- *   <li>仅服务端生效，客户端忽略。</li>
+ * <li>匹配时果实位置与记录位置两侧都需用 {@code BlockPos.containing(x, 1, z)} 将 Y 轴归一化为 1，
+ * 使 {@code closerThan} 退化为纯水平（XZ）距离比较，否则高空植物的真实高度差会使三维距离远超阈值；</li>
+ * <li>传送目标为记录方块坐标 {@code y + 1}，即被破坏方块上方一格；</li>
+ * <li>记录位置在 {@link #EXPIRY_MS} 毫秒后过期移除，避免列表无限增长；</li>
+ * <li>仅服务端生效，客户端忽略。</li>
  * </ul>
  * 所有诊断日志均通过 {@link DebugLogger} 输出，受开发者模式 + 日志级别双维度控制，
  * 生产环境无噪音，调试时可在配置中开启 devMode / logToFile 获得完整日志。
@@ -66,11 +66,10 @@ public class ChorusFruitDropHandler {
     public static void register() {
         DebugLogger.entering(MODULE, "register");
 
-        PlayerBlockBreakEvents.AFTER.register((world, player, pos, state, blockEntity) ->
-                onBlockBreak(world, pos, state));
+        PlayerBlockBreakEvents.AFTER
+                .register((world, player, pos, state, blockEntity) -> onBlockBreak(world, pos, state));
 
-        ServerEntityEvents.ENTITY_LOAD.register((Entity entity, ServerLevel world) ->
-                onChorusFruit(world, entity));
+        ServerEntityEvents.ENTITY_LOAD.register((Entity entity, ServerLevel world) -> onChorusFruit(world, entity));
 
         DebugLogger.info(MODULE, "紫颂果就近掉落处理器已注册 (maxDistance=%.1f, expiry=%dms)",
                 MAX_DISTANCE, EXPIRY_MS);
