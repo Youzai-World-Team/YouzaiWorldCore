@@ -309,6 +309,12 @@ public class YouzaiworldCore implements ModInitializer {
         LOGGER.info("宠物模块已初始化");
         DebugLogger.exiting("YouzaiworldCore", "PetModule.init");
 
+        // ===== 初始化统计模块 =====
+        DebugLogger.entering("YouzaiworldCore", "StatsModule.init");
+        top.csituka.youzaiworldcore.status.StatsManager.initialize();
+        LOGGER.info("统计模块已初始化");
+        DebugLogger.exiting("YouzaiworldCore", "StatsModule.init");
+
         // ===== 注册所有 /yzwc 命令 =====
         DebugLogger.entering("YouzaiworldCore", "CommandRegistration");
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {

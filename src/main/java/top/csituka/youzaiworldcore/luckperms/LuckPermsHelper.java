@@ -118,6 +118,22 @@ public final class LuckPermsHelper {
     /** 管理命令通配符（等价于所有 mgr 子命令的合集） */
     public static final String PERMISSION_ACCOUNT_MGR_WILDCARD = "youzaiworldcore.command.account.mgr.*";
 
+    // ===== 统计状态命令权限 =====
+
+    /** 统计查询命令 {@code /yzwc status <player> list} */
+    public static final String PERMISSION_STATUS_QUERY = "youzaiworldcore.command.status.query";
+
+    /** 统计删除命令 {@code /yzwc status <player> delete} */
+    public static final String PERMISSION_STATUS_DELETE = "youzaiworldcore.command.status.delete";
+
+    /** 统计排行榜导出命令 {@code /yzwc status rank_export [name]} */
+    public static final String PERMISSION_STATUS_EXPORT = "youzaiworldcore.command.status.export";
+
+    // ===== 宠物模块权限 =====
+
+    /** 宠物模块管理命令基本权限 */
+    public static final String PERMISSION_PET_COMMAND = "youzaiworldcore.command.pet";
+
     /** 所有命令的通配符 */
     public static final String PERMISSION_COMMAND_WILDCARD = "youzaiworldcore.command.*";
 
