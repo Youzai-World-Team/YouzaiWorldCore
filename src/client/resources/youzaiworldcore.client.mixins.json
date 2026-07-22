@@ -29,7 +29,9 @@
     "enchlevellangpatch.EnchantmentLevelLangPatchMixin",
     "highlightitem.AbstractContainerScreenMixin",
     "OptionsSaveMixin",
-    "MouseHandlerScrollMixin"
+    "MouseHandlerScrollMixin",
+    "PingDisplayMixin",
+    "EntityRendererMixin"
   ],
   "injectors": {
     "defaultRequire": 1

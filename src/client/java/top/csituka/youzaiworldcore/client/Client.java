@@ -39,6 +39,7 @@ import top.csituka.youzaiworldcore.command.InvisibilityClientCommand;
 import top.csituka.youzaiworldcore.command.PetClientCommand;
 import top.csituka.youzaiworldcore.client.config.ConfigIOManager;
 
+
 public class Client implements ClientModInitializer {
 
     private static boolean wasPressed = false;
