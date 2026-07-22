@@ -208,6 +208,10 @@ public class YouzaiworldCore implements ModInitializer {
         LOGGER.info("属性加点系统已初始化");
         DebugLogger.exiting("YouzaiworldCore", "AttributeSystem.init");
 
+        // ===== 注册阳光修复附魔处理器 =====
+        DebugLogger.info("YouzaiworldCore", "注册阳光修复附魔 Tick 事件...");
+        top.csituka.youzaiworldcore.event.SunRepairHandler.register();
+
         DebugLogger.info("YouzaiworldCore", "注册矿物生成...");
         BiomeModifications.addFeature(
                 BiomeSelectors.foundInOverworld(),
