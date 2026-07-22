@@ -64,23 +64,11 @@ public final class LuckPermsHelper {
     /** 模组重载命令 {@code /yzwc reload} */
     public static final String PERMISSION_RELOAD = "youzaiworldcore.command.reload";
 
-    /** 实验性功能切换命令 {@code /yzwc experimental_feature} */
-    public static final String PERMISSION_EXPERIMENTAL_FEATURE = "youzaiworldcore.command.experimental_feature";
-
-    /** 实验性功能查询 {@code /yzwc experimental_feature <id>} */
-    public static final String PERMISSION_EXPERIMENTAL_FEATURE_QUERY = "youzaiworldcore.command.experimental_feature.query";
-
     /** 隐身功能 {@code /yzwc function invisibility} */
     public static final String PERMISSION_INVISIBILITY = "youzaiworldcore.command.function.invisibility";
 
     /** 双开门功能（自身开关/查询）{@code /yzwc function double_doors [true|false]} */
     public static final String PERMISSION_DOUBLE_DOORS = "youzaiworldcore.command.function.double_doors";
-
-    /** 实验性功能自切换 {@code /yzwc experimental_feature <id> <bool>}（为自己切换） */
-    public static final String PERMISSION_EXPERIMENTAL_FEATURE_SELF = "youzaiworldcore.command.experimental_feature.self";
-
-    /** 实验性功能管理 {@code /yzwc experimental_feature <id> <bool> all/only} */
-    public static final String PERMISSION_EXPERIMENTAL_FEATURE_ADMIN = "youzaiworldcore.command.experimental_feature.admin";
 
     /** 事件管理查询 {@code /yzwc event ...} 查询类子命令（省略参数即为查询） */
     public static final String PERMISSION_EVENT_QUERY = "youzaiworldcore.command.event.query";

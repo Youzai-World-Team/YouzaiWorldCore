@@ -20,7 +20,6 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
 
 import java.util.Map;
 import java.util.HashMap;
-import java.util.UUID;
 
 @SuppressWarnings("null")
 public class ClientNetworking {
@@ -51,30 +50,6 @@ public class ClientNetworking {
             DebugLogger.exiting("ClientNetworking", "OpenMenuPayload handler");
         });
         DebugLogger.info("ClientNetworking", "Registered receiver: OpenMenuPayload");
-
-        // 注册实验性功能同步处理器
-        ClientPlayNetworking.registerGlobalReceiver(FeatureSyncPayload.ID, (payload, context) -> {
-            DebugLogger.entering("ClientNetworking", "FeatureSyncPayload handler");
-            context.client().execute(() -> {
-                UUID targetPlayer = payload.targetPlayer();
-
-                // 首次收到同步包时设置客户端玩家 UUID
-                boolean hasTarget = targetPlayer != null;
-                DebugLogger.branch("ClientNetworking", "targetPlayer != null", hasTarget);
-                if (hasTarget) {
-                    top.csituka.youzaiworldcore.feature.ExperimentalFeatures.setClientPlayerUuid(targetPlayer);
-                    top.csituka.youzaiworldcore.feature.ExperimentalFeatures.applyPersonalSync(
-                            targetPlayer, payload.featureId(), payload.enabled()
-                    );
-                } else {
-                    top.csituka.youzaiworldcore.feature.ExperimentalFeatures.applyGlobalSync(
-                            payload.featureId(), payload.enabled()
-                    );
-                }
-            });
-            DebugLogger.exiting("ClientNetworking", "FeatureSyncPayload handler");
-        });
-        DebugLogger.info("ClientNetworking", "Registered receiver: FeatureSyncPayload");
 
         // 注册认证界面打开处理器
         ClientPlayNetworking.registerGlobalReceiver(OpenAuthScreenPayload.ID, (payload, context) -> {

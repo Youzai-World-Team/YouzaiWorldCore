@@ -62,7 +62,6 @@ import top.csituka.youzaiworldcore.event.SitHandler;
 import top.csituka.youzaiworldcore.event.StonecutterDamageHandler;
 import top.csituka.youzaiworldcore.event.TeleportAnchorInteractHandler;
 import top.csituka.youzaiworldcore.event.VoidStaffTickHandler;
-import top.csituka.youzaiworldcore.feature.ExperimentalFeatures;
 import top.csituka.youzaiworldcore.invisibility.InvisibilityManager;
 import top.csituka.youzaiworldcore.invisibility.InvisibilityTickHandler;
 import top.csituka.youzaiworldcore.item.ModCreativeModeTabs;
@@ -88,7 +87,7 @@ public class YouzaiworldCore implements ModInitializer {
     public static final Logger LOGGER = LoggerFactory.getLogger("YouzaiWorldCore");
 
     /** logToFile 标志：由 {@code config/youzaiworldcore/server_external_settings.json} 控制，
-     * 用于条件化服务端噪音日志（实验性功能注册、配置加载、账户数据详情等） */
+     * 用于条件化服务端噪音日志（配置加载、账户数据详情等） */
     public static boolean logToFile = false;
 
     /** devModeEnabled 标志：由 {@code config/youzaiworldcore/server_external_settings.json} 控制，
@@ -325,14 +324,6 @@ public class YouzaiworldCore implements ModInitializer {
         });
         LOGGER.info("邮件系统事件（登录推送 / 过期清理）已注册");
         DebugLogger.exiting("YouzaiworldCore", "MailSystem.events");
-
-        // ===== 初始化实验性功能系统 =====
-        DebugLogger.entering("YouzaiworldCore", "ExperimentalFeatures.load");
-        ExperimentalFeatures.loadDefaults();
-
-        // 加载服务端持久化配置
-        ExperimentalFeatures.loadServerSettings();
-        DebugLogger.exiting("YouzaiworldCore", "ExperimentalFeatures.load");
 
         // ===== 初始化宠物模块 =====
         DebugLogger.entering("YouzaiworldCore", "PetModule.init");
