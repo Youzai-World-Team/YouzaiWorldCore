@@ -7,13 +7,17 @@ import net.minecraft.world.item.enchantment.Enchantment;
 import top.csituka.youzaiworldcore.YouzaiworldCore;
 
 /**
- * 阳光修复附魔（数据驱动，定义在 data 包 JSON 中）。
- * 玩家在阳光下时，打上此附魔的耐久工具会缓慢恢复。
+ * 附魔 ResourceKey 注册中心（数据驱动，定义在 data 包 JSON 中）。
  */
 public class ModEnchantments {
 
     public static final ResourceKey<Enchantment> SUN_REPAIR_KEY = ResourceKey.create(
             Registries.ENCHANTMENT,
             Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "sun_repair")
+    );
+
+    public static final ResourceKey<Enchantment> SPIRIT_TURBO_KEY = ResourceKey.create(
+            Registries.ENCHANTMENT,
+            Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "spirit_turbo")
     );
 }

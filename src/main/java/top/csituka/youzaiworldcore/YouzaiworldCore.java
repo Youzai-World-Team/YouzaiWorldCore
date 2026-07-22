@@ -211,6 +211,8 @@ public class YouzaiworldCore implements ModInitializer {
         // ===== 注册阳光修复附魔处理器 =====
         DebugLogger.info("YouzaiworldCore", "注册阳光修复附魔 Tick 事件...");
         top.csituka.youzaiworldcore.event.SunRepairHandler.register();
+        DebugLogger.info("YouzaiWorldCore", "注册乐魂涡轮加速器 Tick 事件...");
+        top.csituka.youzaiworldcore.event.HappyGhastTurboHandler.register();
 
         DebugLogger.info("YouzaiworldCore", "注册矿物生成...");
         BiomeModifications.addFeature(
