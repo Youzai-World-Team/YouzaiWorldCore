@@ -220,29 +220,6 @@ public class TitleScreenMixin {
         renderables.add(quitBtn);
         narratables.add(quitBtn);
 
-        // 2d. 官方网站 — 在默认浏览器打开 https://mcyzw.top
-        TitleScreenTextButton websiteBtn = new TitleScreenTextButton(
-            0, 0, 0, BUTTON_HEIGHT,
-            Component.translatable("title.youzaiworldcore.website"),
-            () -> {
-                DebugLogger.entering("TitleScreenMixin", "openWebsite");
-                try {
-                    URI uri = new URI("https://mcyzw.top");
-                    if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
-                        Desktop.getDesktop().browse(uri);
-                        DebugLogger.info("TitleScreenMixin", "已在浏览器打开官网: https://mcyzw.top");
-                    } else {
-                        DebugLogger.warn("TitleScreenMixin", "当前环境不支持打开浏览器");
-                    }
-                } catch (Exception e) {
-                    DebugLogger.exception("TitleScreenMixin", "openWebsite", e);
-                }
-            }
-        );
-        childrenList.add(websiteBtn);
-        renderables.add(websiteBtn);
-        narratables.add(websiteBtn);
-
         // 2e. 开发者测试按钮（仅在开发者模式启用时显示）
         TitleScreenTextButton testButton = null;
         boolean showTest = ClientExternalSettings.isDevModeEnabled();
@@ -321,15 +298,10 @@ public class TitleScreenMixin {
         quitBtn.setY(buttonStartY + 2 * (BUTTON_HEIGHT + BUTTON_GAP));
         quitBtn.setWidth(buttonWidth);
 
-        // 官方网站
-        websiteBtn.setX(buttonX);
-        websiteBtn.setY(buttonStartY + 3 * (BUTTON_HEIGHT + BUTTON_GAP));
-        websiteBtn.setWidth(buttonWidth);
-
         // 测试按钮：放在官网下方
         if (testButton != null) {
             testButton.setX(buttonX);
-            testButton.setY(buttonStartY + 4 * (BUTTON_HEIGHT + BUTTON_GAP) + 4);
+            testButton.setY(buttonStartY + 3 * (BUTTON_HEIGHT + BUTTON_GAP));
             testButton.setWidth(buttonWidth);
         }
 
