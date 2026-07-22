@@ -336,6 +336,14 @@ public final class PetEventHandler {
         // 重置显示名称
         wolf.setCustomName(null);
         wolf.setCustomNameVisible(false);
+
+        // 还原为野生狼
+        wolf.setOrderedToSit(false);
+        wolf.setPersistentAngerEndTime(0);
+        if (wolf.getPersistentAngerTarget() != null) {
+            wolf.setPersistentAngerTarget(null);
+        }
+        wolf.setTame(false, true);
     }
 
     // ============================

@@ -694,6 +694,12 @@ public class PetCommand {
             if (wolf.getPersistentAngerTarget() != null) {
                 wolf.setPersistentAngerTarget(null);
             }
+            // ==== 将驯服狗还原为野生狼 ====
+            // 取消坐下状态
+            wolf.setOrderedToSit(false);
+            // 取消驯服标记并重置属性（setTame(false, true) 会调用 applyTamingSideEffects，
+            // 将最大生命值从 40 降回野生狼的 8）
+            wolf.setTame(false, true);
         } else {
             // 实体未加载：仅从注册表删除
             state.removePet(entry.entityUUID());
