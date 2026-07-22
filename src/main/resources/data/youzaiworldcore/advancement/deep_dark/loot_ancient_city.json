@@ -1,0 +1,31 @@
+{
+  "parent": "youzaiworldcore:deep_dark/enter_ancient_city",
+  "display": {
+    "icon": {
+      "id": "minecraft:chest"
+    },
+    "title": {
+      "translate": "advancements.youzaiworldcore.deep_dark.loot_ancient_city.title"
+    },
+    "description": {
+      "translate": "advancements.youzaiworldcore.deep_dark.loot_ancient_city.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "loot": {
+      "trigger": "minecraft:player_generates_container_loot",
+      "conditions": {
+        "loot_table": "minecraft:chests/ancient_city"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "loot"
+    ]
+  ]
+}
