@@ -25,7 +25,10 @@
     "doubledoors.DoorBlockMixin",
     "doubledoors.FenceGateBlockMixin",
     "pet.WolfTameMixin",
-    "pet.WolfBreedMixin"
+    "pet.WolfBreedMixin",
+    "pet.WolfModeAttackMixin",
+    "pet.WolfOwnerHurtTargetGoalMixin",
+    "pet.WolfHurtByTargetGoalMixin"
   ],
   "injectors": {
     "defaultRequire": 1
