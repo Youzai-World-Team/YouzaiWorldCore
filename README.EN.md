@@ -246,7 +246,7 @@ A streamlined implementation that supports click-to-open only for "same-material
 - **Supported Scope**: Wooden doors (including double doors), fence gates (auto-aligned facing); iron doors (not hand-openable), trapdoors, redstone triggers, villager AI, and chain opening are out of scope
 - **Per-Player Toggle**: `/yzwc function double_doors [true|false]` (**client command**) controls the player's own setting; omitting the argument queries the player's own status; new players enabled by default
 - **Persistence**: `config/youzaiworldcore/double_doors_players.json`, storing only players explicitly set via command (`DoubleDoorsState`; unset players fall back to the default enabled state)
-- **Client Forwarding Architecture**: The `/yzwc` root command is registered on the client (for `/yzwc settings` and forwarding-type subcommands), so double doors, invisibility, and experimental features only parse and forward on the client; the authoritative state is held by the server via `DoubleDoorsTogglePayload` / `InvisibilityPayload` / `ExperimentalFeaturePayload` (C→S)
+- **Client Forwarding Architecture**: The `/yzwc` root command is registered on the client (for `/yzwc settings` and forwarding-type subcommands), so double doors and invisibility only parse and forward on the client; the authoritative state is held by the server via `DoubleDoorsTogglePayload` / `InvisibilityPayload` (C→S)
 
 ### 23. Pet System
 
@@ -271,13 +271,7 @@ A purely client-side feature that renders an outline around the held or targeted
   - `mode <comparator>` —— choose the item-matching rule that triggers highlight (`ItemComparator.Comparators`)
 - **Implementation**: `highlightitem` package (`HighlightItem` / `Configurator` / `Colors` / `ItemComparator`) injects the outline via a client-side Mixin on the render layer; all configuration applies immediately through client commands
 
-### 25. Experimental Features
-
-The experimental feature system framework is fully implemented, supporting server-wide toggle + player-level override + server-controlled mode (`serverSide`). The registration API `ExperimentalFeatures.register(...)` and config persistence (`config/youzaiworldcore/experimental_feature/server_settings.json` / `client_settings.json`) are ready, and sync runs through `FeatureSyncPayload`.
-
-> **Current Status**: The framework is implemented but **no experimental feature is currently registered** (`REGISTRY` is empty). The dimension pool system has graduated from experimental status and is now enabled as a core feature.
-
-### 26. Stats System (Status)
+### 25. Stats System (Status)
 
 Reads player behavior data from the vanilla `Stats` system, persists it, and supports querying and leaderboard export.
 
@@ -347,10 +341,6 @@ All commands use `/yzwc` as the root command. Subcommands marked **(client comma
 │   ├── Permission: youzaiworldcore.command.function.double_doors (self, everyone can run)
 │   └── Omit to query own status; new players enabled by default; state persisted to double_doors_players.json
 │
-├── experimental_feature <id> [true/false [all|only <player>]]   ← (client command)
-│   ├── Permissions: .query (everyone) / .self (everyone) / .admin (OP 4)
-│   └── Query or toggle experimental features (forwarded to server)
-│
 ├── reload
 │   ├── Permission: youzaiworldcore.command.reload (OP 4)
 │   └── Reload account data and config at runtime
@@ -383,7 +373,7 @@ All commands use `/yzwc` as the root command. Subcommands marked **(client comma
     └── Check for mod updates (fetches remote version info, reports normal/forced update + download link)
 ```
 
-> **Client command note**: `/yzwc pet`, `/yzwc function invisibility`, `/yzwc function double_doors`, and `/yzwc experimental_feature` are registered on the client and only parse arguments, forwarding them through the corresponding C→S packets (`PetCommandPayload` / `InvisibilityPayload` / `DoubleDoorsTogglePayload` / `ExperimentalFeaturePayload`); the server holds the authoritative state and permission checks. All other subcommands (`teleport_world` / `open_menu` / `world_pool` / `teleport_anchor` / `event` / `reload` / `account`) are server-side.
+> **Client command note**: `/yzwc pet`, `/yzwc function invisibility`, and `/yzwc function double_doors` are registered on the client and only parse arguments, forwarding them through the corresponding C→S packets (`PetCommandPayload` / `InvisibilityPayload` / `DoubleDoorsTogglePayload`); the server holds the authoritative state and permission checks. All other subcommands (`teleport_world` / `open_menu` / `world_pool` / `teleport_anchor` / `event` / `reload` / `account`) are server-side.
 
 ### Permission Nodes Overview
 
@@ -396,10 +386,6 @@ All commands use `/yzwc` as the root command. Subcommands marked **(client comma
 | `youzaiworldcore.command.teleport_anchor` | Teleport anchor management | OP 4 |
 | `youzaiworldcore.command.function.invisibility` | Invisibility function | OP 4 |
 | `youzaiworldcore.command.function.double_doors` | Double Doors function (self toggle / query) | Everyone (self-only) |
-| `youzaiworldcore.command.experimental_feature` | Experimental feature (basic) | Everyone |
-| `youzaiworldcore.command.experimental_feature.query` | Query | Everyone |
-| `youzaiworldcore.command.experimental_feature.self` | Self-toggle | Everyone |
-| `youzaiworldcore.command.experimental_feature.admin` | Admin | OP 4 |
 | `youzaiworldcore.command.event.query` | Event management query (omit arg = query) | Everyone |
 | `youzaiworldcore.command.event.set` | Event management modify (enable / settings) | OP 4 |
 | `youzaiworldcore.command.pet.list` | View pet list | Everyone |
@@ -450,7 +436,6 @@ All commands use `/yzwc` as the root command. Subcommands marked **(client comma
 |-----------|-----------|---------|
 | `open_menu` | S→C | Open GUI menu |
 | `open_auth_screen` | S→C | Open auth screen |
-| `feature_sync` | S→C | Sync experimental feature states |
 | `mana_sync` | S→C | Sync mana values |
 | `level_exp_sync` | S→C | Sync adventure level XP |
 | `attribute_sync` | S→C | Sync player attribute data (skill points / attributes / level) |
@@ -465,7 +450,6 @@ All commands use `/yzwc` as the root command. Subcommands marked **(client comma
 | `decompose_item` | C→S | Decompose item |
 | `fly_beacon_active` | C→S | Toggle fly beacon |
 | `invisibility_toggle` | C→S | Toggle / disable own invisibility |
-| `experimental_feature` | C→S | Forward experimental feature command (query / self / all / specific player) |
 | `attribute_upgrade` | C→S | Request to allocate a point to an attribute |
 | `double_doors_toggle` | C→S | Toggle / query own Double Doors setting |
 | `pet_command` | C→S | Forward `/yzwc pet` client command to server |
@@ -507,7 +491,7 @@ src/
 │   ├── enchlevellangpatch/               # Enchantment-level language patch (api + impl)
 │   ├── event/                            # Event handlers (fly beacon, double doors, end portal, void staff, dragon, chorus, charged creeper, decompose, sit, etc.)
 │   ├── entity/seat/                      # Seat entity system
-│   ├── feature/                          # Experimental features (ExperimentalFeatures registration framework)
+│   ├── event/                            # Event handlers (fly beacon, double doors, end portal, void staff, dragon, chorus, charged creeper, decompose, sit, etc.)
 │   ├── invisibility/                     # Invisibility system
 │   ├── item/                             # Items, tools, creative tabs, presets
 │   ├── luckperms/                        # LuckPerms integration (LuckPermsHelper unified auth)
@@ -525,7 +509,7 @@ src/
 │
 ├── client/java/top/csituka/youzaiworldcore/
 │   ├── client/Client.java                # Client entry point
-│   ├── command/                          # Client commands (ExperimentalFeature / Invisibility / DoubleDoors / Pet forwarding)
+│   ├── command/                          # Client commands (Invisibility / DoubleDoors / Pet forwarding)
 │   ├── config/                           # Client external settings
 │   ├── effect/                           # Teleport FOV effect
 │   ├── higherchat/                       # Simple Voice Chat integration (HUD icon position tracking)
@@ -587,4 +571,4 @@ src/
 
 ---
 
-> **Note**: Test the mod on a server environment; running it on the client alone will not function correctly. Client commands (`/yzwc pet`, `/yzwc function *`, `/yzwc experimental_feature`, `/yzwc settings highlight_item`) require being connected to a server to take effect.
+> **Note**: Test the mod on a server environment; running it on the client alone will not function correctly. Client commands (`/yzwc pet`, `/yzwc function *`, `/yzwc settings highlight_item`) require being connected to a server to take effect.

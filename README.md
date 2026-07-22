@@ -26,7 +26,7 @@
 
 | 用户类型 | 说明 |
 |---------|------|
-| **服务器管理员** | 通过命令和菜单管理系统，配置维度池、账户策略、宠物备份、实验性功能等 |
+| **服务器管理员** | 通过命令和菜单管理系统，配置维度池、账户策略、宠物备份等 |
 | **生存玩家** | 使用悠哉系列工具、成就系统、传送锚点、坐姿交互、魔力法杖、宠物与属性成长进行游戏 |
 | **模组开发者** | 了解模组架构、扩展功能或贡献代码 |
 
@@ -246,7 +246,7 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 - **支持范围**：木门（含双层）、栅栏门（自动对齐朝向）；铁门等无法徒手开启的方块、活板门、红石触发、村民 AI、连锁开门均不在范围内
 - **玩家独立开关**：`/yzwc function double_doors [true|false]`（**客户端命令**）控制自身，缺省（不带参数）查询自身状态，新玩家默认开启
 - **数据持久化**：`config/youzaiworldcore/double_doors_players.json`，仅保存被指令显式设置过的玩家（`DoubleDoorsState`，未设置者回退默认启用）
-- **客户端转发架构**：`/yzwc` 根命令已在客户端注册（用于 `/yzwc settings` 及转发型子命令），故双开门、隐身、实验性功能等命令在客户端仅做解析与转发，权威状态由服务端通过 `DoubleDoorsTogglePayload` / `InvisibilityPayload` / `ExperimentalFeaturePayload`（C→S）承载
+- **客户端转发架构**：`/yzwc` 根命令已在客户端注册（用于 `/yzwc settings` 及转发型子命令），故双开门、隐身等命令在客户端仅做解析与转发，权威状态由服务端通过 `DoubleDoorsTogglePayload` / `InvisibilityPayload`（C→S）承载
 
 ### 23. 宠物系统
 
@@ -271,13 +271,7 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
   - `mode <比较器>` —— 选择触发高亮的物品匹配规则（`ItemComparator.Comparators`）
 - **实现**：`highlightitem` 包（`HighlightItem` / `Configurator` / `Colors` / `ItemComparator`），通过客户端 Mixin 在渲染层注入描边；所有配置经客户端命令即时生效
 
-### 25. 实验性功能
-
-实验性功能系统框架已完全实现，支持服务端全局开关 + 玩家级覆写 + 服务端控制模式（`serverSide`）。注册接口 `ExperimentalFeatures.register(...)` 与配置持久化（`config/youzaiworldcore/experimental_feature/server_settings.json` / `client_settings.json`）均就绪，并通过 `FeatureSyncPayload` 同步。
-
-> **当前状态**：框架已实现，但**暂未注册任何实验性功能**（`REGISTRY` 为空）。维度池系统已脱离实验性阶段，作为核心功能直接启用。
-
-### 26. 统计系统（Status）
+### 25. 统计系统（Status）
 
 读取原版统计系统（`Stats`）的玩家行为数据，持久化保存并支持查询与排行榜导出。
 
@@ -347,10 +341,6 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 │   ├── 权限：youzaiworldcore.command.function.double_doors（玩家自身，所有人可执行）
 │   └── 缺省查询自身状态；新玩家默认启用，状态持久化至 double_doors_players.json
 │
-├── experimental_feature <id> [true/false [all|only <player>]]   ← （客户端命令）
-│   ├── 权限：.query（所有人）/ .self（所有人）/ .admin（OP 4）
-│   └── 查询或切换实验性功能（转发至服务端）
-│
 ├── reload
 │   ├── 权限：youzaiworldcore.command.reload（OP 4）
 │   └── 运行时重载账户数据和配置
@@ -383,7 +373,7 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
     └── 检查模组更新（拉取远程版本信息，反馈普通/强制更新与下载链接）
 ```
 
-> **客户端命令说明**：`/yzwc pet`、`/yzwc function invisibility`、`/yzwc function double_doors`、`/yzwc experimental_feature` 均在客户端注册，仅负责解析参数并通过对应 C→S 数据包（`PetCommandPayload` / `InvisibilityPayload` / `DoubleDoorsTogglePayload` / `ExperimentalFeaturePayload`）转发；服务端持有权威状态与权限判定。其余子命令（`teleport_world` / `open_menu` / `world_pool` / `teleport_anchor` / `event` / `reload` / `account`）为服务端命令。
+> **客户端命令说明**：`/yzwc pet`、`/yzwc function invisibility`、`/yzwc function double_doors` 均在客户端注册，仅负责解析参数并通过对应 C→S 数据包（`PetCommandPayload` / `InvisibilityPayload` / `DoubleDoorsTogglePayload`）转发；服务端持有权威状态与权限判定。其余子命令（`teleport_world` / `open_menu` / `world_pool` / `teleport_anchor` / `event` / `reload` / `account`）为服务端命令。
 
 ### 权限节点一览
 
@@ -396,10 +386,6 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 | `youzaiworldcore.command.teleport_anchor` | 传送锚点管理 | OP 4 |
 | `youzaiworldcore.command.function.invisibility` | 隐身功能 | OP 4 |
 | `youzaiworldcore.command.function.double_doors` | 双开门功能（自身开关 / 查询） | 所有人（仅自身） |
-| `youzaiworldcore.command.experimental_feature` | 实验性功能（基础） | 所有人 |
-| `youzaiworldcore.command.experimental_feature.query` | 查询 | 所有人 |
-| `youzaiworldcore.command.experimental_feature.self` | 自切换 | 所有人 |
-| `youzaiworldcore.command.experimental_feature.admin` | 管理 | OP 4 |
 | `youzaiworldcore.command.event.query` | 事件管理查询（省略参数即为查询） | 所有人 |
 | `youzaiworldcore.command.event.set` | 事件管理修改（enable / settings） | OP 4 |
 | `youzaiworldcore.command.pet.list` | 查看宠物列表 | 所有人 |
@@ -450,7 +436,6 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 |-----------|------|------|
 | `open_menu` | S→C | 打开 GUI 菜单 |
 | `open_auth_screen` | S→C | 打开认证界面 |
-| `feature_sync` | S→C | 同步实验性功能状态 |
 | `mana_sync` | S→C | 同步魔力值 |
 | `level_exp_sync` | S→C | 同步冒险等级经验 |
 | `attribute_sync` | S→C | 同步玩家属性数据（技能点 / 各项属性 / 等级） |
@@ -465,7 +450,6 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 | `decompose_item` | C→S | 分解物品 |
 | `fly_beacon_active` | C→S | 切换飞行信标 |
 | `invisibility_toggle` | C→S | 切换 / 关闭自身隐身 |
-| `experimental_feature` | C→S | 转发实验性功能命令（查询 / 自切换 / 全服 / 指定玩家） |
 | `attribute_upgrade` | C→S | 请求为某项属性加点 |
 | `double_doors_toggle` | C→S | 切换 / 查询自身双开门开关 |
 | `pet_command` | C→S | 转发 `/yzwc pet` 客户端命令至服务端执行 |
@@ -507,7 +491,7 @@ src/
 │   ├── enchlevellangpatch/               # 附魔等级语言补丁（api + impl）
 │   ├── event/                            # 事件处理器（飞行信标/双开门/末地门/虚空杖/龙翼/chorus/带电苦力怕/分解/坐姿 等）
 │   ├── entity/seat/                      # 座椅实体系统
-│   ├── feature/                          # 实验性功能系统（ExperimentalFeatures 注册框架）
+│   ├── event/                            # 事件处理器（飞行信标/双开门/末地门/虚空杖/龙翼/chorus/带电苦力怕/分解/坐姿 等）
 │   ├── invisibility/                     # 隐身系统
 │   ├── item/                             # 物品、工具、创造标签页、预设
 │   ├── luckperms/                        # LuckPerms 集成（LuckPermsHelper 统一鉴权）
@@ -525,7 +509,7 @@ src/
 
 ├── client/java/top/csituka/youzaiworldcore/
 │   ├── client/Client.java                # 客户端入口
-│   ├── command/                          # 客户端命令（ExperimentalFeature / Invisibility / DoubleDoors / Pet 转发）
+│   ├── command/                          # 客户端命令（Invisibility / DoubleDoors / Pet 转发）
 │   ├── config/                           # 客户端外部设置
 │   ├── effect/                           # 传送 FOV 效果
 │   ├── higherchat/                       # Simple Voice Chat 集成（HUD 图标位置跟踪，优化聊天框位置避免遮挡）
@@ -587,4 +571,4 @@ src/
 
 ---
 
-> **注意**：测试模组请在服务端进行，客户端单独运行无法正常工作。客户端命令（`/yzwc pet`、`/yzwc function *`、`/yzwc experimental_feature`、`/yzwc settings highlight_item`）需连入服务器后方可生效。
+> **注意**：测试模组请在服务端进行，客户端单独运行无法正常工作。客户端命令（`/yzwc pet`、`/yzwc function *`、`/yzwc settings highlight_item`）需连入服务器后方可生效。
