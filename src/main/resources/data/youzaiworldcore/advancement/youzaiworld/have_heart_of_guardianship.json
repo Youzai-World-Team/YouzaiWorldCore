@@ -1,37 +1,41 @@
 {
-    "parent": "youzaiworldcore:youzaiworld/root",
-    "criteria": {
-        "has_heart_of_guardianship": {
-            "trigger": "minecraft:inventory_changed",
-            "conditions": {
-                "items": [
-                    {
-                        "items": "youzaiworldcore:heart_of_guardianship"
-                    }
-                ],
-                "player": [
-                    {
-                        "condition": "minecraft:reference",
-                        "name": "youzaiworldcore:not_in_tutorial_dimension"
-                    }
-                ]
-            }
-        }
-    },
-    "display": {
-        "icon": {
-            "id": "youzaiworldcore:heart_of_guardianship"
-        },
-        "title": "心之守护",
-        "description": "永远守护你的行囊。",
-        "frame": "task",
-        "show_toast": true,
-        "announce_to_chat": true,
-        "hidden": false
-    },
-    "requirements": [
-        [
-            "has_heart_of_guardianship"
+  "parent": "youzaiworldcore:youzaiworld/root",
+  "criteria": {
+    "has_heart_of_guardianship": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "youzaiworldcore:heart_of_guardianship"
+          }
+        ],
+        "player": [
+          {
+            "condition": "minecraft:reference",
+            "name": "youzaiworldcore:not_in_tutorial_dimension"
+          }
         ]
+      }
+    }
+  },
+  "display": {
+    "icon": {
+      "id": "youzaiworldcore:heart_of_guardianship"
+    },
+    "title": {
+      "translate": "advancements.youzaiworldcore.youzaiworld.have_heart_of_guardianship.title"
+    },
+    "description": {
+      "translate": "advancements.youzaiworldcore.youzaiworld.have_heart_of_guardianship.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "requirements": [
+    [
+      "has_heart_of_guardianship"
     ]
+  ]
 }

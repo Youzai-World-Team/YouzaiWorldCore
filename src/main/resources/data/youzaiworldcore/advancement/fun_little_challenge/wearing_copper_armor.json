@@ -4,8 +4,12 @@
     "icon": {
       "id": "minecraft:copper_ingot"
     },
-    "title": "铜头铁臂",
-    "description": "“铜盔铜甲铜裤衩，谁还不是个铁憨憨？”— 装备全套铜质盔甲",
+    "title": {
+      "translate": "advancements.youzaiworldcore.fun_little_challenge.wearing_copper_armor.title"
+    },
+    "description": {
+      "translate": "advancements.youzaiworldcore.fun_little_challenge.wearing_copper_armor.description"
+    },
     "frame": "goal",
     "show_toast": true,
     "announce_to_chat": true,

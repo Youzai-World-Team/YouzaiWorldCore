@@ -14,8 +14,12 @@
     "icon": {
       "id": "minecraft:stonecutter"
     },
-    "title": "我成了建材",
-    "description": "至少切得很整齐",
+    "title": {
+      "translate": "advancements.youzaiworldcore.fun_little_challenge.tested_stonecutter.title"
+    },
+    "description": {
+      "translate": "advancements.youzaiworldcore.fun_little_challenge.tested_stonecutter.description"
+    },
     "frame": "goal",
     "show_toast": true,
     "announce_to_chat": true,

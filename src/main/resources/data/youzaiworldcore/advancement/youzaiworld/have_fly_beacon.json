@@ -1,37 +1,41 @@
 {
-    "parent": "youzaiworldcore:youzaiworld/have_void_staff",
-    "criteria": {
-        "has_fly_beacon": {
-            "trigger": "minecraft:inventory_changed",
-            "conditions": {
-                "items": [
-                    {
-                        "items": "youzaiworldcore:fly_beacon"
-                    }
-                ],
-                "player": [
-                    {
-                        "condition": "minecraft:reference",
-                        "name": "youzaiworldcore:not_in_tutorial_dimension"
-                    }
-                ]
-            }
-        }
-    },
-    "display": {
-        "icon": {
-            "id": "youzaiworldcore:fly_beacon"
-        },
-        "title": "与众不同的信标",
-        "description": "获得飞行信标。",
-        "frame": "task",
-        "show_toast": true,
-        "announce_to_chat": true,
-        "hidden": false
-    },
-    "requirements": [
-        [
-            "has_fly_beacon"
+  "parent": "youzaiworldcore:youzaiworld/have_void_staff",
+  "criteria": {
+    "has_fly_beacon": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "youzaiworldcore:fly_beacon"
+          }
+        ],
+        "player": [
+          {
+            "condition": "minecraft:reference",
+            "name": "youzaiworldcore:not_in_tutorial_dimension"
+          }
         ]
+      }
+    }
+  },
+  "display": {
+    "icon": {
+      "id": "youzaiworldcore:fly_beacon"
+    },
+    "title": {
+      "translate": "advancements.youzaiworldcore.youzaiworld.have_fly_beacon.title"
+    },
+    "description": {
+      "translate": "advancements.youzaiworldcore.youzaiworld.have_fly_beacon.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "requirements": [
+    [
+      "has_fly_beacon"
     ]
+  ]
 }

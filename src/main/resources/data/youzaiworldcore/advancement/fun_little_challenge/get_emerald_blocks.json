@@ -4,8 +4,12 @@
     "icon": {
       "id": "minecraft:emerald_block"
     },
-    "title": "富有的商人",
-    "description": "获得 3 个绿宝石块",
+    "title": {
+      "translate": "advancements.youzaiworldcore.fun_little_challenge.get_emerald_blocks.title"
+    },
+    "description": {
+      "translate": "advancements.youzaiworldcore.fun_little_challenge.get_emerald_blocks.description"
+    },
     "frame": "goal",
     "show_toast": true,
     "announce_to_chat": true,

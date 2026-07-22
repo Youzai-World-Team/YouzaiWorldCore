@@ -1,37 +1,41 @@
 {
-    "parent": "youzaiworldcore:youzaiworld/root",
-    "display": {
-        "icon": {
-            "id": "youzaiworldcore:raw_yz"
-        },
-        "title": "不寻常的矿石",
-        "description": "获得粗悠哉矿。",
-        "frame": "goal",
-        "show_toast": true,
-        "announce_to_chat": true,
-        "hidden": false
+  "parent": "youzaiworldcore:youzaiworld/root",
+  "display": {
+    "icon": {
+      "id": "youzaiworldcore:raw_yz"
     },
-    "criteria": {
-        "get_raw_yz": {
-            "trigger": "minecraft:inventory_changed",
-            "conditions": {
-                "items": [
-                    {
-                        "items": "youzaiworldcore:raw_yz"
-                    }
-                ],
-                "player": [
-                    {
-                        "condition": "minecraft:reference",
-                        "name": "youzaiworldcore:not_in_tutorial_dimension"
-                    }
-                ]
-            }
-        }
+    "title": {
+      "translate": "advancements.youzaiworldcore.youzaiworld.have_raw_yz.title"
     },
-    "requirements": [
-        [
-            "get_raw_yz"
+    "description": {
+      "translate": "advancements.youzaiworldcore.youzaiworld.have_raw_yz.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "get_raw_yz": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "youzaiworldcore:raw_yz"
+          }
+        ],
+        "player": [
+          {
+            "condition": "minecraft:reference",
+            "name": "youzaiworldcore:not_in_tutorial_dimension"
+          }
         ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "get_raw_yz"
     ]
+  ]
 }

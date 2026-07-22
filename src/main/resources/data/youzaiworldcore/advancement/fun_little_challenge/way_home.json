@@ -4,8 +4,12 @@
     "icon": {
       "id": "minecraft:ender_eye"
     },
-    "title":"归途",
-    "description":"从末地回到主世界",
+    "title": {
+      "translate": "advancements.youzaiworldcore.fun_little_challenge.way_home.title"
+    },
+    "description": {
+      "translate": "advancements.youzaiworldcore.fun_little_challenge.way_home.description"
+    },
     "frame": "goal",
     "show_toast": true,
     "announce_to_chat": true,

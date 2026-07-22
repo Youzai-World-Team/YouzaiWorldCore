@@ -4,8 +4,12 @@
     "icon": {
       "id": "minecraft:cobweb"
     },
-    "title": "蛛网缠身",
-    "description": "“嘿，我让它先跑39米，用网抓虫，这才是真正的挑战！”— 获得一张蜘蛛网",
+    "title": {
+      "translate": "advancements.youzaiworldcore.fun_little_challenge.stuck_in_cobweb.title"
+    },
+    "description": {
+      "translate": "advancements.youzaiworldcore.fun_little_challenge.stuck_in_cobweb.description"
+    },
     "frame": "goal",
     "show_toast": true,
     "announce_to_chat": true,

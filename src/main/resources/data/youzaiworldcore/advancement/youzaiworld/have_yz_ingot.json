@@ -1,37 +1,41 @@
 {
-    "parent": "youzaiworldcore:youzaiworld/have_raw_yz",
-    "display": {
-        "icon": {
-            "id": "youzaiworldcore:yz_ingot"
-        },
-        "title": "变纯净了",
-        "description": "获得悠哉锭。",
-        "frame": "task",
-        "show_toast": true,
-        "announce_to_chat": true,
-        "hidden": false
+  "parent": "youzaiworldcore:youzaiworld/have_raw_yz",
+  "display": {
+    "icon": {
+      "id": "youzaiworldcore:yz_ingot"
     },
-    "criteria": {
-        "get_yz_ingot": {
-            "trigger": "minecraft:inventory_changed",
-            "conditions": {
-                "items": [
-                    {
-                        "items": "youzaiworldcore:yz_ingot"
-                    }
-                ],
-                "player": [
-                    {
-                        "condition": "minecraft:reference",
-                        "name": "youzaiworldcore:not_in_tutorial_dimension"
-                    }
-                ]
-            }
-        }
+    "title": {
+      "translate": "advancements.youzaiworldcore.youzaiworld.have_yz_ingot.title"
     },
-    "requirements": [
-        [
-            "get_yz_ingot"
+    "description": {
+      "translate": "advancements.youzaiworldcore.youzaiworld.have_yz_ingot.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "get_yz_ingot": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "youzaiworldcore:yz_ingot"
+          }
+        ],
+        "player": [
+          {
+            "condition": "minecraft:reference",
+            "name": "youzaiworldcore:not_in_tutorial_dimension"
+          }
         ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "get_yz_ingot"
     ]
+  ]
 }

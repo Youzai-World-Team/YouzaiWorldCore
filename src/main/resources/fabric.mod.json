@@ -54,12 +54,13 @@
     "minecraft": ">=${minecraft_version}",
     "placeholder-api": ">=3.0.0",
     "modmenu": ">=20.0.0-beta.4",
-    "moogs_structures": ">=3.0.4",
-    "advancementplaques": ">=1.7.2",
-    "trinkets_updated": ">=4.1.0-beta.2+26.2"
+    "moogs_structures": ">=3.0.4"
   },
   "suggests": {
-    "luckperms": ">=5.5"
+    "luckperms": ">=5.5",
+    "advancementplaques": ">=1.7.2",
+    "trinkets_updated": ">=4.1.0-beta.2+26.2",
+    "EnchantmentDescriptions": ">=26.2.0.1"
   },
   "custom": {
     "modmenu": {

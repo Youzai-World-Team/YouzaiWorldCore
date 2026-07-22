@@ -4,8 +4,12 @@
     "icon": {
       "id": "minecraft:cake"
     },
-    "title": "蛋糕是个谎言",
-    "description":"获得一个蛋糕",
+    "title": {
+      "translate": "advancements.youzaiworldcore.fun_little_challenge.cake_is_a_lie.title"
+    },
+    "description": {
+      "translate": "advancements.youzaiworldcore.fun_little_challenge.cake_is_a_lie.description"
+    },
     "frame": "goal",
     "show_toast": true,
     "announce_to_chat": true,

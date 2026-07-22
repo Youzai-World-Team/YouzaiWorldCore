@@ -7,8 +7,12 @@
         "minecraft:potion_contents": "minecraft:luck"
       }
     },
-    "title": "幸运药水",
-    "description": "获得幸运药水",
+    "title": {
+      "translate": "advancements.youzaiworldcore.fun_little_challenge.max_luck.title"
+    },
+    "description": {
+      "translate": "advancements.youzaiworldcore.fun_little_challenge.max_luck.description"
+    },
     "frame": "goal",
     "show_toast": true,
     "announce_to_chat": true,

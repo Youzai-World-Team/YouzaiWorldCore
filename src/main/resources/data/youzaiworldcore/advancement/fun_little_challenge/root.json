@@ -3,8 +3,12 @@
     "icon": {
       "id": "minecraft:dirt"
     },
-    "title": "有趣的小成就",
-    "description": "完成一个小挑战！",
+    "title": {
+      "translate": "advancements.youzaiworldcore.fun_little_challenge.root.title"
+    },
+    "description": {
+      "translate": "advancements.youzaiworldcore.fun_little_challenge.root.description"
+    },
     "background": "minecraft:block/glowstone",
     "frame": "task",
     "show_toast": false,

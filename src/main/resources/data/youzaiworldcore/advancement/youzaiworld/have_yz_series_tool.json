@@ -4,8 +4,12 @@
     "icon": {
       "id": "youzaiworldcore:yz_pickaxe"
     },
-    "title": "与众不同的工具",
-    "description": "获得任意一种悠哉工具。",
+    "title": {
+      "translate": "advancements.youzaiworldcore.youzaiworld.have_yz_series_tool.title"
+    },
+    "description": {
+      "translate": "advancements.youzaiworldcore.youzaiworld.have_yz_series_tool.description"
+    },
     "frame": "challenge",
     "show_toast": true,
     "announce_to_chat": true,

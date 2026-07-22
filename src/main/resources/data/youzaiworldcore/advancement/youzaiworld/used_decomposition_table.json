@@ -1,27 +1,31 @@
 {
-    "parent": "youzaiworldcore:youzaiworld/have_decomposition_table",
-    "display": {
-        "icon": {
-            "id": "youzaiworldcore:decomposition_table"
-        },
-        "title": "物品...分解了",
-        "description": "使用拆解台分解了一个物品。",
-        "frame": "goal",
-        "show_toast": true,
-        "announce_to_chat": true,
-        "hidden": true
+  "parent": "youzaiworldcore:youzaiworld/have_decomposition_table",
+  "display": {
+    "icon": {
+      "id": "youzaiworldcore:decomposition_table"
     },
-    "rewards": {
-        "experience": 100
+    "title": {
+      "translate": "advancements.youzaiworldcore.youzaiworld.used_decomposition_table.title"
     },
-    "criteria": {
-        "manual_grant": {
-            "trigger": "minecraft:impossible"
-        }
+    "description": {
+      "translate": "advancements.youzaiworldcore.youzaiworld.used_decomposition_table.description"
     },
-    "requirements": [
-        [
-            "manual_grant"
-        ]
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": true
+  },
+  "rewards": {
+    "experience": 100
+  },
+  "criteria": {
+    "manual_grant": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "manual_grant"
     ]
+  ]
 }

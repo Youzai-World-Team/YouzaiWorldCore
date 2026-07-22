@@ -4,8 +4,12 @@
     "icon": {
       "id": "minecraft:cooked_beef"
     },
-    "title": "美食家",
-    "description": "吃下 5 种不同食物",
+    "title": {
+      "translate": "advancements.youzaiworldcore.fun_little_challenge.foodie.title"
+    },
+    "description": {
+      "translate": "advancements.youzaiworldcore.fun_little_challenge.foodie.description"
+    },
     "frame": "goal",
     "show_toast": true,
     "announce_to_chat": true,

@@ -1,27 +1,31 @@
 {
-    "parent": "youzaiworldcore:youzaiworld/have_void_staff",
-    "display": {
-        "icon": {
-            "id": "youzaiworldcore:void_staff"
-        },
-        "title": "哟呼——",
-        "description": "使用凭虚法杖。",
-        "frame": "goal",
-        "show_toast": true,
-        "announce_to_chat": true,
-        "hidden": true
+  "parent": "youzaiworldcore:youzaiworld/have_void_staff",
+  "display": {
+    "icon": {
+      "id": "youzaiworldcore:void_staff"
     },
-    "rewards": {
-        "experience": 100
+    "title": {
+      "translate": "advancements.youzaiworldcore.youzaiworld.used_void_staff.title"
     },
-    "criteria": {
-        "manual_grant": {
-            "trigger": "minecraft:impossible"
-        }
+    "description": {
+      "translate": "advancements.youzaiworldcore.youzaiworld.used_void_staff.description"
     },
-    "requirements": [
-        [
-            "manual_grant"
-        ]
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": true
+  },
+  "rewards": {
+    "experience": 100
+  },
+  "criteria": {
+    "manual_grant": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "manual_grant"
     ]
+  ]
 }

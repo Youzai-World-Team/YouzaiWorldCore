@@ -1,37 +1,41 @@
 {
-    "parent": "youzaiworldcore:youzaiworld/have_yz_block",
-    "criteria": {
-        "has_void_staff": {
-            "trigger": "minecraft:inventory_changed",
-            "conditions": {
-                "items": [
-                    {
-                        "items": "youzaiworldcore:void_staff"
-                    }
-                ],
-                "player": [
-                    {
-                        "condition": "minecraft:reference",
-                        "name": "youzaiworldcore:not_in_tutorial_dimension"
-                    }
-                ]
-            }
-        }
-    },
-    "display": {
-        "icon": {
-            "id": "youzaiworldcore:void_staff"
-        },
-        "title": "飞，比跑快吧",
-        "description": "获得凭虚法杖。",
-        "frame": "task",
-        "show_toast": true,
-        "announce_to_chat": true,
-        "hidden": false
-    },
-    "requirements": [
-        [
-            "has_void_staff"
+  "parent": "youzaiworldcore:youzaiworld/have_yz_block",
+  "criteria": {
+    "has_void_staff": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "youzaiworldcore:void_staff"
+          }
+        ],
+        "player": [
+          {
+            "condition": "minecraft:reference",
+            "name": "youzaiworldcore:not_in_tutorial_dimension"
+          }
         ]
+      }
+    }
+  },
+  "display": {
+    "icon": {
+      "id": "youzaiworldcore:void_staff"
+    },
+    "title": {
+      "translate": "advancements.youzaiworldcore.youzaiworld.have_void_staff.title"
+    },
+    "description": {
+      "translate": "advancements.youzaiworldcore.youzaiworld.have_void_staff.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "requirements": [
+    [
+      "has_void_staff"
     ]
+  ]
 }

@@ -4,8 +4,12 @@
     "icon": {
       "id": "minecraft:wheat"
     },
-    "title": "牛与猪的喜好",
-    "description": "获得 10 个小麦",
+    "title": {
+      "translate": "advancements.youzaiworldcore.fun_little_challenge.like_cows_and_pigs.title"
+    },
+    "description": {
+      "translate": "advancements.youzaiworldcore.fun_little_challenge.like_cows_and_pigs.description"
+    },
     "frame": "goal",
     "show_toast": true,
     "announce_to_chat": true,
