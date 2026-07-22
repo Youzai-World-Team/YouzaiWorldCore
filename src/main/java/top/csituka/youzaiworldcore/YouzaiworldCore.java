@@ -62,6 +62,7 @@ import top.csituka.youzaiworldcore.event.SitHandler;
 import top.csituka.youzaiworldcore.event.StonecutterDamageHandler;
 import top.csituka.youzaiworldcore.event.TeleportAnchorInteractHandler;
 import top.csituka.youzaiworldcore.event.VoidStaffTickHandler;
+import top.csituka.youzaiworldcore.event.WardenDeathHandler;
 import top.csituka.youzaiworldcore.invisibility.InvisibilityManager;
 import top.csituka.youzaiworldcore.invisibility.InvisibilityTickHandler;
 import top.csituka.youzaiworldcore.item.ModCreativeModeTabs;
@@ -166,6 +167,8 @@ public class YouzaiworldCore implements ModInitializer {
         StonecutterDamageHandler.register();
         DebugLogger.info("YouzaiworldCore", "注册末影龙鞘翅掉落事件...");
         DragonElytraDropHandler.register();
+        DebugLogger.info("YouzaiworldCore", "注册监守者战利品发放事件...");
+        WardenDeathHandler.register();
         DebugLogger.info("YouzaiworldCore", "注册紫颂果就近掉落事件...");
         ChorusFruitDropHandler.register();
         DebugLogger.info("YouzaiworldCore", "加载天然带电苦力怕配置...");

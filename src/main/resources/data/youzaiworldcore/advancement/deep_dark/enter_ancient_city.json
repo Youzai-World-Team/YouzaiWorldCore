@@ -1,0 +1,41 @@
+{
+  "parent": "youzaiworldcore:deep_dark/visit_deep_dark",
+  "display": {
+    "icon": {
+      "id": "minecraft:reinforced_deepslate"
+    },
+    "title": {
+      "translate": "advancements.youzaiworldcore.deep_dark.enter_ancient_city.title"
+    },
+    "description": {
+      "translate": "advancements.youzaiworldcore.deep_dark.enter_ancient_city.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "enter_ancient_city": {
+      "trigger": "minecraft:location",
+      "conditions": {
+        "player": [
+          {
+            "condition": "minecraft:entity_properties",
+            "entity": "this",
+            "predicate": {
+              "location": {
+                "structures": "minecraft:ancient_city"
+              }
+            }
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "enter_ancient_city"
+    ]
+  ]
+}

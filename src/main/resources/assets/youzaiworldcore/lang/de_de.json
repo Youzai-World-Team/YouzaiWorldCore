@@ -419,5 +419,19 @@
   "screen.youzaiworldcore.forced_update.title": "Wichtiges Update verfügbar",
   "screen.youzaiworldcore.forced_update.message": "Ein neues wichtiges Update wurde erkannt. Bitte vor dem Beitritt aktualisieren.",
   "screen.youzaiworldcore.forced_update.download_btn": "Herunterladen",
-  "screen.youzaiworldcore.forced_update.back_btn": "Zurück"
+  "screen.youzaiworldcore.forced_update.back_btn": "Zurück",
+  "advancements.youzaiworldcore.deep_dark.visit_deep_dark.title": "Into the Deep Dark",
+  "advancements.youzaiworldcore.deep_dark.visit_deep_dark.description": "Enter the Deep Dark biome",
+  "advancements.youzaiworldcore.deep_dark.enter_ancient_city.title": "Ancient City",
+  "advancements.youzaiworldcore.deep_dark.enter_ancient_city.description": "Step into a forgotten Ancient City",
+  "advancements.youzaiworldcore.deep_dark.loot_ancient_city.title": "City Looter",
+  "advancements.youzaiworldcore.deep_dark.loot_ancient_city.description": "Open a loot chest in an Ancient City",
+  "advancements.youzaiworldcore.deep_dark.hold_recovery_compass.title": "Recovery Compass",
+  "advancements.youzaiworldcore.deep_dark.hold_recovery_compass.description": "Obtain a Recovery Compass",
+  "advancements.youzaiworldcore.deep_dark.swift_sneak.title": "Swift Sneak",
+  "advancements.youzaiworldcore.deep_dark.swift_sneak.description": "Obtain a Swift Sneak enchanted book",
+  "advancements.youzaiworldcore.deep_dark.use_disc_5.title": "Echoes of the Deep",
+  "advancements.youzaiworldcore.deep_dark.use_disc_5.description": "Obtain Music Disc 5",
+  "advancements.youzaiworldcore.deep_dark.kill_warden.title": "Slay the Warden",
+  "advancements.youzaiworldcore.deep_dark.kill_warden.description": "Defeat the Warden"
 }
