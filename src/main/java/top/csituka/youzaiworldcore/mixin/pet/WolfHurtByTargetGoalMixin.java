@@ -4,7 +4,6 @@ import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.animal.wolf.Wolf;
 import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
@@ -19,17 +18,19 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
  * {@code HurtByTargetGoal} 会在狼自己被攻击时触发反击。
  * COMPANIONSHIP 模式下狼应完全被动，不响应任何攻击。
  * </p>
+ * <p>
+ * {@code mob} 字段继承自父类 {@code TargetGoal}，Mixin @Shadow 无法直接引用。
+ * 通过 {@link TargetGoalAccessor#getMob()} 间接获取。
+ * </p>
  */
 @Mixin(HurtByTargetGoal.class)
 public abstract class WolfHurtByTargetGoalMixin {
 
     private static final String MODULE = "WolfHurtByTargetGoalMixin";
 
-    @Shadow
-    protected Mob mob;
-
     @Inject(method = "canUse", at = @At("HEAD"), cancellable = true)
     private void onCanUse(CallbackInfoReturnable<Boolean> cir) {
+        Mob mob = ((TargetGoalAccessor) this).getMob();
         if (!(mob instanceof Wolf wolf)) {
             return; // 仅处理狼
         }

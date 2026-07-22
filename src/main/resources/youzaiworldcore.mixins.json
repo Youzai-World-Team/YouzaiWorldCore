@@ -28,7 +28,9 @@
     "pet.WolfBreedMixin",
     "pet.WolfModeAttackMixin",
     "pet.WolfOwnerHurtTargetGoalMixin",
-    "pet.WolfHurtByTargetGoalMixin"
+    "pet.WolfOwnerHurtByTargetGoalMixin",
+    "pet.WolfHurtByTargetGoalMixin",
+    "pet.TargetGoalAccessor"
   ],
   "injectors": {
     "defaultRequire": 1
