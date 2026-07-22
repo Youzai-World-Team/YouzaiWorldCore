@@ -50,6 +50,12 @@ License, shaded into the built jar.
 https://github.com/lucko/fabric-permissions-api
 For the full license text, see the LICENSE.txt file in this distribution.
 
+This product implements its ping-display feature as an independent
+reimplementation inspired by PingView by karlsson, licensed under the MIT
+License. No PingView source code is included in this product.
+https://modrinth.com/mod/ping-view
+For the full license text, see the LICENSE.txt file in this distribution.
+
 This product studies the deobfuscated Minecraft (Java Edition, 26.2) jar by
 Mojang Studios for API compatibility. Minecraft is proprietary software governed
 by the Minecraft End User License Agreement; no Minecraft code or assets are
