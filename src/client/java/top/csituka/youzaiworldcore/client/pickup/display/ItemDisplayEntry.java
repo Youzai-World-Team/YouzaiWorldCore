@@ -87,25 +87,50 @@ public class ItemDisplayEntry extends DisplayEntry<ItemStack> {
     @Override
     protected void renderSprite(GuiGraphicsExtractor graphics, int x, int y, int alpha) {
         if (data.isEmpty()) return;
-
-        // 通过物品 ID 推导贴图路径，用 blit + ARGB 颜色参数实现真 alpha 透明度淡出
         int argb = (Math.min(255, Math.max(0, alpha)) << 24) | 0xFFFFFF;
-        Identifier itemId = BuiltInRegistries.ITEM.getKey(data.getItem());
-        Identifier texId = Identifier.fromNamespaceAndPath(itemId.getNamespace(), "textures/item/" + itemId.getPath() + ".png");
 
-        // 弹出动画：围绕中心缩放
+        Identifier texId = resolveTexture(); // 找可用的贴图
+
         if (popTime > 0) {
             float popScale = 1.0f + popTime / (float) POP_TIME * 0.3f;
             graphics.pose().pushMatrix();
             graphics.pose().translate(x + ICON_SIZE / 2.0f, y + ICON_SIZE / 2.0f);
             graphics.pose().scale(popScale, popScale);
             graphics.pose().translate(-ICON_SIZE / 2.0f, -ICON_SIZE / 2.0f);
-            graphics.blit(RenderPipelines.GUI_TEXTURED, texId,
-                    0, 0, 0, 0, ICON_SIZE, ICON_SIZE, ICON_SIZE, ICON_SIZE, argb);
+            if (texId != null) {
+                graphics.blit(RenderPipelines.GUI_TEXTURED, texId, 0, 0, 0, 0, ICON_SIZE, ICON_SIZE, ICON_SIZE, ICON_SIZE, argb);
+            } else {
+                graphics.item(data, 0, 0);
+                if (alpha < 255) graphics.fill(0, 0, ICON_SIZE, ICON_SIZE, ((255 - alpha) << 24));
+            }
             graphics.pose().popMatrix();
         } else {
-            graphics.blit(RenderPipelines.GUI_TEXTURED, texId,
-                    x, y, 0, 0, ICON_SIZE, ICON_SIZE, ICON_SIZE, ICON_SIZE, argb);
+            if (texId != null) {
+                graphics.blit(RenderPipelines.GUI_TEXTURED, texId, x, y, 0, 0, ICON_SIZE, ICON_SIZE, ICON_SIZE, ICON_SIZE, argb);
+            } else {
+                graphics.item(data, x, y);
+                if (alpha < 255) graphics.fill(x, y, x + ICON_SIZE, y + ICON_SIZE, ((255 - alpha) << 24));
+            }
+        }
+    }
+
+    /** 查找可用的贴图路径：先找 item 贴图，没有则试 block 贴图 */
+    private Identifier resolveTexture() {
+        Identifier itemId = BuiltInRegistries.ITEM.getKey(data.getItem());
+        // 试 item 贴图
+        Identifier tex = Identifier.fromNamespaceAndPath(itemId.getNamespace(), "textures/item/" + itemId.getPath() + ".png");
+        if (resourceExists(tex)) return tex;
+        // 试 block 贴图（方块类物品常用）
+        tex = Identifier.fromNamespaceAndPath(itemId.getNamespace(), "textures/block/" + itemId.getPath() + ".png");
+        if (resourceExists(tex)) return tex;
+        return null; // 都没有 → 回退 item()
+    }
+
+    private static boolean resourceExists(Identifier texId) {
+        try {
+            return Minecraft.getInstance().getResourceManager().getResource(texId).isPresent();
+        } catch (Exception e) {
+            return false;
         }
     }
 

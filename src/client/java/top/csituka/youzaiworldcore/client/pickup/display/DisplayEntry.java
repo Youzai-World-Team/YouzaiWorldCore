@@ -70,7 +70,7 @@ public abstract class DisplayEntry<T> {
         this.displayAmount = amount;
         this.remainingTicks = displayTime;
         this.maxDisplayTime = displayTime;
-        this.moveOutDuration = Math.min(displayTime, 20); // 默认移出时间不超过显示时间
+        this.moveOutDuration = Math.min(displayTime, 10); // 移出动画约 0.5s（20tick/s × 10tick）
         this.isMovingOut = false;
         this.moveOutProgress = 0.0f;
         this.fadeInTime = FADE_IN_DURATION;
