@@ -35,7 +35,6 @@ import top.csituka.youzaiworldcore.client.effect.TeleportFovEffect;
 import top.csituka.youzaiworldcore.enchlevellangpatch.impl.LangPatchImpl;
 import top.csituka.youzaiworldcore.highlightitem.HighlightItemClient;
 import top.csituka.youzaiworldcore.command.DoubleDoorsClientCommand;
-import top.csituka.youzaiworldcore.command.ExperimentalFeatureClientCommand;
 import top.csituka.youzaiworldcore.command.InvisibilityClientCommand;
 import top.csituka.youzaiworldcore.command.PetClientCommand;
 import top.csituka.youzaiworldcore.client.config.ConfigIOManager;
@@ -79,9 +78,6 @@ public class Client implements ClientModInitializer {
         DebugLogger.info("Client", "初始化客户端网络...");
         top.csituka.youzaiworldcore.network.ClientNetworking.initialize();
 
-        // 加载客户端持久化配置
-        DebugLogger.info("Client", "加载实验性功能客户端配置...");
-        top.csituka.youzaiworldcore.feature.ExperimentalFeatures.loadClientSettings();
         // 加载客户端外部设置
         DebugLogger.info("Client", "加载客户端外部设置...");
         top.csituka.youzaiworldcore.client.config.ClientExternalSettings.load();
@@ -128,10 +124,6 @@ public class Client implements ClientModInitializer {
         // 隐身功能客户端命令（解析后转发至服务端数据包）
         DebugLogger.info("Client", "注册隐身客户端命令...");
         InvisibilityClientCommand.register();
-
-        // 实验性功能客户端命令（解析后转发至服务端数据包）
-        DebugLogger.info("Client", "注册实验性功能客户端命令...");
-        ExperimentalFeatureClientCommand.register();
 
         // 宠物管理命令转发客户端命令（解析后转发至服务端数据包）
         DebugLogger.info("Client", "注册宠物管理命令客户端命令...");

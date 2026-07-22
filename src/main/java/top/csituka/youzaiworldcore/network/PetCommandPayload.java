@@ -10,8 +10,7 @@ import top.csituka.youzaiworldcore.YouzaiworldCore;
  * C2S 数据包：客户端转发宠物管理命令至服务端。
  * <p>
  * {@code /yzwc} 根命令在客户端已被注册（用于 {@code /yzwc settings}），
- * 导致客户端无法识别 {@code pet} 子命令，会将 {@code pet} 误解析为
- * {@code experimental_feature} 的参数。故 {@code /yzwc pet ...} 必须在客户端
+ * 导致客户端无法识别 {@code pet} 子命令。故 {@code /yzwc pet ...} 必须在客户端
  * 仅做解析与转发，由服务端通过此数据包接收命令参数字符串并执行。
  * </p>
  *
