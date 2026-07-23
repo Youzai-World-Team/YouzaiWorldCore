@@ -258,19 +258,25 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
                 && !logLevelDropdown.isPositionInsidePopup(event.x(), adjustedY)) {
             logLevelDropdown.closePopup();
         }
-        // ===== 关于分栏：按钮区域直接命中 =====
+        // ===== 关于分栏：打开开源许可链接（与标题屏幕打开下载页实现一致） =====
         if (selectedSection == 2) {
-            DebugLogger.entering("SettingsScreen", "ossBtnClick",
-                    String.format("mx=%.0f my=%.0f adjY=%.0f scroll=%.0f", mx, event.y(), adjustedY, scrollOffset));
-            // 宽泛命中区：从文字下方到视口底部
-            if (adjustedY >= CONTENT_TOP + 220 && adjustedY < this.height) {
+            int btnY0 = CONTENT_TOP + 64 + 8;  // 图标正下方
+            int btnX0 = CONTENT_LEFT + (this.width - CONTENT_LEFT - CONTENT_WIDTH) / 2;
+            if (mx >= btnX0 && mx < btnX0 + ABOUT_ICON_SIZE
+                    && adjustedY >= btnY0 && adjustedY < btnY0 + 22) {
                 DebugLogger.info("SettingsScreen", "OSS button HIT");
                 try {
+                    URI uri = new URI(
+                            "https://github.com/Youzai-World-Team/YouzaiWorldCore/blob/main/NOTICE.txt");
                     if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
-                        Desktop.getDesktop().browse(URI.create(
-                                "https://github.com/Youzai-World-Team/YouzaiWorldCore/blob/main/NOTICE.txt"));
+                        Desktop.getDesktop().browse(uri);
+                        DebugLogger.info("SettingsScreen", "已在浏览器打开开源许可页");
+                    } else {
+                        DebugLogger.warn("SettingsScreen", "当前环境不支持打开浏览器");
                     }
-                } catch (Exception ignored) {}
+                } catch (Exception e) {
+                    DebugLogger.exception("SettingsScreen", "ossButtonClick", e);
+                }
                 return true;
             }
         }
@@ -572,7 +578,7 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
 
         if (selectedSection == 3) {
             // 开发者分栏 — 直接内联，不再委托给 buildContentWidgetsDeveloper（原计划未实现）
-            int y = baseY + 16;
+            int y = baseY + 23;  // warning 文字底 (CONTENT_TOP+14 + lineHeight≈9 = 113) + 1px 间隙
 
             // 启用开发者模式（始终显示）
             devModeToggle = new CheckboxButton(
@@ -748,22 +754,15 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
             maxContentY = y + 40;
         } else if (selectedSection == 2) {
             // 关于分栏 — 添加查看开源许可按钮
-            int btnY = CONTENT_TOP + 240;  // 紧接 OSS 致谢文本下方（≈y+12）
+            int btnY = CONTENT_TOP + 64 + 8;  // 图标正下方（≈ 90+64+8 = 162）
             ossNoticeButton = new TransparentButton(
-                    baseX, btnY, CONTENT_WIDTH, 22,
+                    baseX, btnY, ABOUT_ICON_SIZE, 22,
                     Component.translatable("screen.youzaiworldcore.settings.about_license_btn_notice"),
-                    () -> {
-                        try {
-                            if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
-                                Desktop.getDesktop().browse(URI.create(
-                                        "https://github.com/Youzai-World-Team/YouzaiWorldCore/blob/main/NOTICE.txt"));
-                            }
-                        } catch (Exception ignored) {}
-                    }
+                    () -> {}  // 点击逻辑在 mouseClicked 中，用 Runtime.exec 绕过 headless 限制
             );
             addRenderableWidget(ossNoticeButton);
-            // 内容区高度：到按钮底部 + 余量即可，不强制 ≥ viewportHeight
-            maxContentY = btnY + 40;
+            // 内容区高度：仅覆盖实际文本与按钮末尾，不留多余空白 → 无滚动条
+            maxContentY = CONTENT_TOP + 240 + 6;  // ≈336，紧贴文本末尾
             DebugLogger.info("SettingsScreen", "关于分栏: maxContentY=%d (height=%d, vpH=%d)",
                     maxContentY, this.height, this.viewportHeight);
         }

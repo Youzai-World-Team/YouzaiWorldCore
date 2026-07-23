@@ -64,12 +64,42 @@ public class TransparentButton extends AbstractWidget {
 
         int textColor = colorWithAlpha(textColorRgb, externalAlpha);
         var font = Minecraft.getInstance().font;
-        String text = this.getMessage().getString();
-        int textWidth = font.width(text);
-        int textX = textLeftAligned ? x + 4 : x + (width - textWidth) / 2;
+        Component msg = this.getMessage();
+        int textWidth = font.width(msg);
+        int availW = width - 8;  // 两侧 4px 边距后可用宽度
         int textY = y + (height - 8) / 2;
 
-        guiGraphics.text(font, this.getMessage(), textX, textY, textColor, false);
+        if (textWidth > availW) {
+            // 文字超宽 → 裁剪到按钮边界，悬停时横向滚动
+            int textX = x + 4;
+            // 始终往返滚动，头尾各停顿 2 秒
+            int scrollRange = textWidth - availW;  // 恰好滚完多余部分，不附加空白
+            int period = Math.max(2000, scrollRange * 30);
+            int pauseMs = 2000;
+            long cycle = period * 2 + pauseMs * 2;
+            long t = System.currentTimeMillis() % cycle;
+            int scrollPx;
+            if (t < period) {
+                // 前滚：0 → range
+                scrollPx = (int)((float)t / period * scrollRange);
+            } else if (t < period + pauseMs) {
+                // 尾停顿：range
+                scrollPx = scrollRange;
+            } else if (t < period * 2 + pauseMs) {
+                // 回滚：range → 0
+                float p = (float)(t - period - pauseMs) / period;
+                scrollPx = (int)((1.0f - p) * scrollRange);
+            } else {
+                // 头停顿：0
+                scrollPx = 0;
+            }
+            guiGraphics.enableScissor(x, y, x + width, y + height);
+            guiGraphics.text(font, msg, textX - scrollPx, textY, textColor, false);
+            guiGraphics.disableScissor();
+        } else {
+            int textX = textLeftAligned ? x + 4 : x + (width - textWidth) / 2;
+            guiGraphics.text(font, msg, textX, textY, textColor, false);
+        }
     }
 
     private void fillRoundedRect(GuiGraphicsExtractor g, int x, int y, int w, int h, int r, int color) {

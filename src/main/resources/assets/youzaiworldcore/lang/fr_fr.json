@@ -389,7 +389,7 @@
   "screen.youzaiworldcore.settings.sidebar_config_io": "Exporter/Importer la configuration",
   "screen.youzaiworldcore.settings.sidebar_visual": "Visuel",
   "screen.youzaiworldcore.settings.toggle_yzui": "Activer YZUI",
-  "screen.youzaiworldcore.settings.sidebar_about": "À propos",
+  "screen.youzaiworldcore.settings.sidebar_about": "À propos YouzaiWorldCore",
   "screen.youzaiworldcore.settings.config_io_export_btn": "Exporter la configuration actuelle",
   "screen.youzaiworldcore.settings.config_io_import_btn": "Importer un pack de configuration",
   "screen.youzaiworldcore.settings.config_io_export_hint_pc": "Packe config et options.txt dans un ZIP et enregistre localement.",

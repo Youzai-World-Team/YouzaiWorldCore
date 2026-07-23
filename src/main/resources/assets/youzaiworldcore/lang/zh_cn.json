@@ -389,7 +389,7 @@
   "screen.youzaiworldcore.settings.sidebar_config_io": "导出/导入配置",
   "screen.youzaiworldcore.settings.sidebar_visual": "视觉",
   "screen.youzaiworldcore.settings.toggle_yzui": "启用 YZUI",
-  "screen.youzaiworldcore.settings.sidebar_about": "关于",
+  "screen.youzaiworldcore.settings.sidebar_about": "关于 YouzaiWorldCore",
   "screen.youzaiworldcore.settings.config_io_export_btn": "导出当前配置",
   "screen.youzaiworldcore.settings.config_io_import_btn": "导入配置包",
   "screen.youzaiworldcore.settings.config_io_export_hint_pc": "将 config 和 options.txt 打包为 ZIP 保存到本地。",
