@@ -191,7 +191,7 @@ public final class ItemBorderRenderer {
         Identifier itemId = BuiltInRegistries.ITEM.getKey(item.getItem());
         String itemIdStr = itemId.toString();
 
-        for (Map.Entry<String, List<String>> entry : ItemBorderConfig.getManualBorders().entrySet()) {
+        for (Map.Entry<String, List<String>> entry : ItemBorderConfig.MANUAL_BORDERS.entrySet()) {
             String colorKey = entry.getKey();
             List<String> itemIds = entry.getValue();
 
