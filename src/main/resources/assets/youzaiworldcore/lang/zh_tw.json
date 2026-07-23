@@ -531,5 +531,6 @@
   "enchantment.youzaiworldcore.sun_repair.desc": "在陽光下修復工具",
   "enchantment.youzaiworldcore.spirit_turbo": "樂魂渦輪加速器",
   "enchantment.youzaiworldcore.spirit_turbo.desc": "附魔在挽具上以提升樂魂移動速度",
-  "youzaiworldcore.anvil_uses": "§7鐵砧使用: %d 次"
+  "youzaiworldcore.anvil_uses": "§7鐵砧使用: %d 次",
+  "youzaiworldcore.anvil_remaining": "§7剩餘可修: %d 次"
 }

@@ -531,5 +531,6 @@
   "enchantment.youzaiworldcore.sun_repair.desc": "Чинит инструменты на солнечном свету",
   "enchantment.youzaiworldcore.spirit_turbo": "Духовный турбо-ускоритель",
   "enchantment.youzaiworldcore.spirit_turbo.desc": "Накладывается на поводок для ускорения передвижения Аллеев",
-  "youzaiworldcore.anvil_uses": "§7Исп. наковальни: %d"
+  "youzaiworldcore.anvil_uses": "§7Исп. наковальни: %d",
+  "youzaiworldcore.anvil_remaining": "§7Ост. ремонтов: %d"
 }

@@ -531,5 +531,6 @@
   "enchantment.youzaiworldcore.sun_repair.desc": "于日下修器",
   "enchantment.youzaiworldcore.spirit_turbo": "乐魂涡轮",
   "enchantment.youzaiworldcore.spirit_turbo.desc": "附于挽具，以增乐魂之行速",
-  "youzaiworldcore.anvil_uses": "§7砥砧之用: %d 次"
+  "youzaiworldcore.anvil_uses": "§7砥砧之用: %d 次",
+  "youzaiworldcore.anvil_remaining": "§7餘次可砥: %d"
 }

@@ -11,13 +11,19 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
 import java.util.List;
 
 /**
- * 铁砧使用次数显示功能（客户端）。
+ * 铁砧使用次数与剩余可修次数显示功能（客户端）。
  * <p>
- * 在物品悬浮提示中显示该物品经过铁砧加工的次数，依据 {@code DataComponents.REPAIR_COST}
- * 的递推关系 {@code cost(n) = cost(n-1) * 2 + 1} 反推：{@code uses = log2(repairCost + 1)}。
+ * 在物品悬浮提示中显示：
+ * <ol>
+ *   <li>该物品经过铁砧加工的次数（依据 {@code REPAIR_COST} 递推反推）</li>
+ *   <li>大约还可维修的次数（直至「过于昂贵」上限 40 级）</li>
+ * </ol>
  * <p>
- * 验证依据：反编译 26.2 原版 {@code AnvilMenu.calculateIncreasedRepairCost(I)I}
- * 为该递推公式的原版实现，证明该算法对单链加工场景严格正确。
+ * 剩余次数估算假设最小材料费 = 1 级经验，递推 {@code cost_{n+1} = cost_n * 2 + 1}，
+ * 直至下次维修费用 ≥ 40。
+ * <p>
+ * 验证依据：反编译 26.2 原版 {@code AnvilMenu.calculateIncreasedRepairCost(I)I} 与
+ * {@code COST_FAIL = 40}。
  * <p>
  * 独立重写，参考：Anvil Uses by Z1proW（MIT 许可）
  * https://github.com/Z1proW/Anvil-Uses
@@ -25,6 +31,17 @@ import java.util.List;
 public final class AnvilUsesClient {
 
     public static final String MODULE = "AnvilUses";
+
+    /**
+     * 原版铁砧「过于昂贵」上限（{@code COST_FAIL}），取自 26.2 的
+     * {@code net.minecraft.world.inventory.AnvilMenu}。
+     */
+    private static final int COST_FAIL = 40;
+
+    /**
+     * 每次维修的最小材料费估算值（经验等级），用于剩余次数递推。
+     */
+    private static final int MIN_MATERIAL_COST = 1;
 
     private static volatile boolean initialized = false;
 
@@ -44,32 +61,62 @@ public final class AnvilUsesClient {
 
         ItemTooltipCallback.EVENT.register(AnvilUsesClient::onItemTooltip);
 
-        DebugLogger.info(MODULE, "铁砧使用次数显示功能已注册");
+        DebugLogger.info(MODULE, "铁砧使用次数与剩余可修显示功能已注册 (COST_FAIL=%d)", COST_FAIL);
 
         initialized = true;
         DebugLogger.exiting(MODULE, "initialize");
     }
 
     /**
-     * 工具提示回调：读取 {@code REPAIR_COST} 并追加使用次数显示。
+     * 工具提示回调：读取 {@code REPAIR_COST} 并追加使用次数与剩余可修行。
      */
     private static void onItemTooltip(ItemStack item, Item.TooltipContext context, TooltipFlag flag, List<Component> tooltip) {
         DebugLogger.trace(MODULE, "onItemTooltip: item={}", item.getItem());
 
         int repairCost = item.getOrDefault(DataComponents.REPAIR_COST, 0);
 
-        if (repairCost == 0) {
+        if (repairCost > 0) {
+            // — 铁砧使用次数 —
+            // repairCost+1 可能溢出为负数（当 repairCost == Integer.MAX_VALUE 时）
+            // log2 处理：Integer.numberOfLeadingZeros(负数) = 0，结果为 31
+            int uses = floorLog2(repairCost + 1);
+            DebugLogger.debug(MODULE, "repairCost=%d -> uses=%d", repairCost, uses);
+
+            tooltip.add(Component.translatable("youzaiworldcore.anvil_uses", uses));
+
+            // — 剩余可修次数 —
+            int remaining = calculateRemainingRepairs(repairCost);
+            DebugLogger.debug(MODULE, "repairCost=%d -> remainingRepairs=%d", repairCost, remaining);
+
+            tooltip.add(Component.translatable("youzaiworldcore.anvil_remaining", remaining));
+        } else {
             DebugLogger.trace(MODULE, "repairCost==0，跳过");
-            return;
+        }
+    }
+
+    /**
+     * 估算从当前 {@code repairCost} 状态出发，还可继续维修的次数。
+     * <p>
+     * 模拟递推：每次维修假设材料费 = {@value #MIN_MATERIAL_COST} 级，
+     * 维修后 {@code repairCost} 按原版 {@code calculateIncreasedRepairCost}
+     * 规则增长，直到下次维修费用 ≥ {@value #COST_FAIL}（「过于昂贵」上限）。
+     */
+    static int calculateRemainingRepairs(int repairCost) {
+        int c = repairCost;
+        int remaining = 0;
+
+        while (true) {
+            // 下次维修费用 ≈ 材料费 + 当前惩罚值
+            int nextCost = MIN_MATERIAL_COST + c;
+            if (nextCost >= COST_FAIL) {
+                break;
+            }
+            remaining++;
+            // 维修后 repairCost 按 calculateIncreasedRepairCost 递推
+            c = c * 2 + 1;
         }
 
-        // repairCost+1 可能溢出为负数（当 repairCost == Integer.MAX_VALUE 时）
-        // log2 处理：Integer.numberOfLeadingZeros(负数) = 0，结果为 31
-        int uses = floorLog2(repairCost + 1);
-
-        DebugLogger.debug(MODULE, "repairCost=%d -> uses=%d (item=%s)", repairCost, uses, item.getItem());
-
-        tooltip.add(Component.translatable("youzaiworldcore.anvil_uses", uses));
+        return remaining;
     }
 
     /**

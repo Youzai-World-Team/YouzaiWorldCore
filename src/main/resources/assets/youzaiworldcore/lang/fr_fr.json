@@ -531,5 +531,6 @@
   "enchantment.youzaiworldcore.sun_repair.desc": "Répare les outils à la lumière du soleil",
   "enchantment.youzaiworldcore.spirit_turbo": "Accélérateur Turbo Spirituel",
   "enchantment.youzaiworldcore.spirit_turbo.desc": "Enchante sur un licol pour augmenter la vitesse de déplacement des Allays",
-  "youzaiworldcore.anvil_uses": "§7Utilisations d'enclume: %d"
+  "youzaiworldcore.anvil_uses": "§7Utilisations d'enclume: %d",
+  "youzaiworldcore.anvil_remaining": "§7Réparations rest.: %d"
 }
