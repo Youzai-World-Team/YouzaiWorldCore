@@ -532,5 +532,6 @@
   "enchantment.youzaiworldcore.spirit_turbo": "Geister-Turbo-Beschleuniger",
   "enchantment.youzaiworldcore.spirit_turbo.desc": "Auf einem Halfter verzaubern, um die Allay-Laufgeschwindigkeit zu erhöhen",
   "youzaiworldcore.anvil_uses": "§7Amboss-Nutzung: %d",
-  "youzaiworldcore.anvil_remaining": "§7Verbleibende Rep.: %d"
+  "youzaiworldcore.anvil_remaining": "§7Verbleibende Rep.: %d",
+  "youzaiworldcore.anvil_exhausted": "§7Zu teuer zum Weiterreparieren"
 }

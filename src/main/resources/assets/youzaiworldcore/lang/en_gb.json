@@ -532,5 +532,6 @@
   "enchantment.youzaiworldcore.spirit_turbo": "Spirit Turbo Accelerator",
   "enchantment.youzaiworldcore.spirit_turbo.desc": "Enchant on a lead to boost Allay movement speed",
   "youzaiworldcore.anvil_uses": "§7Anvil Uses: %d",
-  "youzaiworldcore.anvil_remaining": "§7Remaining Repairs: %d"
+  "youzaiworldcore.anvil_remaining": "§7Remaining Repairs: %d",
+  "youzaiworldcore.anvil_exhausted": "§7Too expensive to continue repairing"
 }

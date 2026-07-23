@@ -545,5 +545,6 @@
   "enchantment.youzaiworldcore.spirit_turbo": "乐魂涡轮加速器",
   "enchantment.youzaiworldcore.spirit_turbo.desc": "附魔在挽具上以提升乐魂移动速度",
   "youzaiworldcore.anvil_uses": "§7已使用铁砧: %s 次",
-  "youzaiworldcore.anvil_remaining": "§7预计剩余可修: %s 次"
+  "youzaiworldcore.anvil_remaining": "§7预计剩余可修: %s 次",
+  "youzaiworldcore.anvil_exhausted": "§4已无法再被铁砧维修"
 }

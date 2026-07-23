@@ -88,7 +88,11 @@ public final class AnvilUsesClient {
             int remaining = calculateRemainingRepairs(repairCost);
             DebugLogger.debug(MODULE, "repairCost=%d -> remainingRepairs=%d", repairCost, remaining);
 
-            tooltip.add(Component.translatable("youzaiworldcore.anvil_remaining", remaining));
+            if (remaining > 0) {
+                tooltip.add(Component.translatable("youzaiworldcore.anvil_remaining", remaining));
+            } else {
+                tooltip.add(Component.translatable("youzaiworldcore.anvil_exhausted"));
+            }
         } else {
             DebugLogger.trace(MODULE, "repairCost==0，跳过");
         }

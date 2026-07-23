@@ -532,5 +532,6 @@
   "enchantment.youzaiworldcore.spirit_turbo": "Acelerador Turbo Espiritual",
   "enchantment.youzaiworldcore.spirit_turbo.desc": "Encanta en un arnés para aumentar la velocidad de los Allays",
   "youzaiworldcore.anvil_uses": "§7Usos de yunque: %d",
-  "youzaiworldcore.anvil_remaining": "§7Reparaciones rest.: %d"
+  "youzaiworldcore.anvil_remaining": "§7Reparaciones rest.: %d",
+  "youzaiworldcore.anvil_exhausted": "§7Demasiado caro para seguir reparando"
 }

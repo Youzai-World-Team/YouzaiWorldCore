@@ -532,5 +532,6 @@
   "enchantment.youzaiworldcore.spirit_turbo": "Духовный турбо-ускоритель",
   "enchantment.youzaiworldcore.spirit_turbo.desc": "Накладывается на поводок для ускорения передвижения Аллеев",
   "youzaiworldcore.anvil_uses": "§7Исп. наковальни: %d",
-  "youzaiworldcore.anvil_remaining": "§7Ост. ремонтов: %d"
+  "youzaiworldcore.anvil_remaining": "§7Ост. ремонтов: %d",
+  "youzaiworldcore.anvil_exhausted": "§7Слишком дорого для дальнейшего ремонта"
 }
