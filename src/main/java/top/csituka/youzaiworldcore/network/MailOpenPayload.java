@@ -14,12 +14,15 @@ public record MailOpenPayload() implements CustomPacketPayload {
     public static final Identifier IDENTIFIER = Identifier.fromNamespaceAndPath(
             YouzaiworldCore.MOD_ID, "mail_open");
 
+    @SuppressWarnings("null")
     public static final Type<MailOpenPayload> ID = new Type<>(IDENTIFIER);
 
+    @SuppressWarnings("null")
     public static final StreamCodec<RegistryFriendlyByteBuf, MailOpenPayload> STREAM_CODEC =
             StreamCodec.unit(new MailOpenPayload());
 
     @Override
+    @SuppressWarnings("null")
     public Type<? extends CustomPacketPayload> type() {
         return ID;
     }

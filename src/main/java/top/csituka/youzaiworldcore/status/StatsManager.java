@@ -385,7 +385,6 @@ public final class StatsManager {
         return currentValue;
     }
 
-    @SuppressWarnings("unchecked")
     private static int executeRankExport(CommandContext<CommandSourceStack> ctx, String name, String period) {
         DebugLogger.entering(MODULE, "executeRankExport", "name=" + name + ", period=" + period);
         CommandSourceStack source = ctx.getSource();
@@ -496,7 +495,6 @@ public final class StatsManager {
                 for (Map.Entry<?, ?> e : pm.entrySet()) {
                     Object val = e.getValue();
                     if (val instanceof Map) {
-                        @SuppressWarnings("unchecked")
                         Map<String, Object> typed = (Map<String, Object>) val;
                         playersMap.put(e.getKey().toString(), typed);
                     }
@@ -507,7 +505,6 @@ public final class StatsManager {
                         continue;
                     Object val = e.getValue();
                     if (val instanceof Map) {
-                        @SuppressWarnings("unchecked")
                         Map<String, Object> typed = (Map<String, Object>) val;
                         playersMap.put(e.getKey().toString(), typed);
                     }
@@ -593,7 +590,6 @@ public final class StatsManager {
         }
     }
 
-    @SuppressWarnings("unchecked")
     static void scanOfflineStats(MinecraftServer server) {
         Path statsDir = server.getWorldPath(LevelResource.ROOT).resolve("stats");
         if (!Files.isDirectory(statsDir)) {

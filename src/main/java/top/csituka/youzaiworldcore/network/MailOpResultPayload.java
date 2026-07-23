@@ -20,6 +20,7 @@ public record MailOpResultPayload(UUID mailId, boolean success, String reason) i
     public static final Identifier IDENTIFIER = Identifier.fromNamespaceAndPath(
             YouzaiworldCore.MOD_ID, "mail_op_result");
 
+    @SuppressWarnings("null")
     public static final Type<MailOpResultPayload> ID = new Type<>(IDENTIFIER);
 
     public static MailOpResultPayload success(UUID mailId, String reason) {
@@ -30,6 +31,7 @@ public record MailOpResultPayload(UUID mailId, boolean success, String reason) i
         return new MailOpResultPayload(mailId, false, reason);
     }
 
+    @SuppressWarnings("null")
     public static final StreamCodec<RegistryFriendlyByteBuf, MailOpResultPayload> STREAM_CODEC =
             StreamCodec.of(
                     (buf, p) -> {
@@ -49,6 +51,7 @@ public record MailOpResultPayload(UUID mailId, boolean success, String reason) i
             );
 
     @Override
+    @SuppressWarnings("null")
     public Type<? extends CustomPacketPayload> type() {
         return ID;
     }

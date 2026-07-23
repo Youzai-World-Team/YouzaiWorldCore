@@ -18,8 +18,10 @@ public record MailUnreadCountPayload(int unreadCount, boolean canSend) implement
     public static final Identifier IDENTIFIER = Identifier.fromNamespaceAndPath(
             YouzaiworldCore.MOD_ID, "mail_unread_count");
 
+    @SuppressWarnings("null")
     public static final Type<MailUnreadCountPayload> ID = new Type<>(IDENTIFIER);
 
+    @SuppressWarnings("null")
     public static final StreamCodec<RegistryFriendlyByteBuf, MailUnreadCountPayload> STREAM_CODEC =
             StreamCodec.of(
                     (buf, p) -> {
@@ -30,6 +32,7 @@ public record MailUnreadCountPayload(int unreadCount, boolean canSend) implement
             );
 
     @Override
+    @SuppressWarnings("null")
     public Type<? extends CustomPacketPayload> type() {
         return ID;
     }

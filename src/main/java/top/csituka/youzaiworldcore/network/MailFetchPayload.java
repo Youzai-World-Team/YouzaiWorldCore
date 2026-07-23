@@ -19,8 +19,10 @@ public record MailFetchPayload(UUID mailId) implements CustomPacketPayload {
     public static final Identifier IDENTIFIER = Identifier.fromNamespaceAndPath(
             YouzaiworldCore.MOD_ID, "mail_fetch");
 
+    @SuppressWarnings("null")
     public static final Type<MailFetchPayload> ID = new Type<>(IDENTIFIER);
 
+    @SuppressWarnings("null")
     public static final StreamCodec<RegistryFriendlyByteBuf, MailFetchPayload> STREAM_CODEC =
             StreamCodec.of(
                     (buf, p) -> buf.writeUUID(p.mailId()),
@@ -28,6 +30,7 @@ public record MailFetchPayload(UUID mailId) implements CustomPacketPayload {
             );
 
     @Override
+    @SuppressWarnings("null")
     public Type<? extends CustomPacketPayload> type() {
         return ID;
     }

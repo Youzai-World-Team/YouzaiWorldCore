@@ -39,8 +39,10 @@ public record MailAdminEditPayload(
     public static final Identifier IDENTIFIER = Identifier.fromNamespaceAndPath(
             YouzaiworldCore.MOD_ID, "mail_admin_edit");
 
+    @SuppressWarnings("null")
     public static final Type<MailAdminEditPayload> ID = new Type<>(IDENTIFIER);
 
+    @SuppressWarnings("null")
     public static final StreamCodec<RegistryFriendlyByteBuf, MailAdminEditPayload> STREAM_CODEC =
             StreamCodec.of(
                     (buf, p) -> {
@@ -89,6 +91,7 @@ public record MailAdminEditPayload(
             );
 
     @Override
+    @SuppressWarnings("null")
     public Type<? extends CustomPacketPayload> type() {
         return ID;
     }

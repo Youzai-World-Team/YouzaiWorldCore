@@ -15,12 +15,15 @@ public record OpenMailComposePayload() implements CustomPacketPayload {
     public static final Identifier IDENTIFIER = Identifier.fromNamespaceAndPath(
             YouzaiworldCore.MOD_ID, "open_mail_compose");
 
+    @SuppressWarnings("null")
     public static final Type<OpenMailComposePayload> ID = new Type<>(IDENTIFIER);
 
+    @SuppressWarnings("null")
     public static final StreamCodec<RegistryFriendlyByteBuf, OpenMailComposePayload> STREAM_CODEC =
             StreamCodec.unit(new OpenMailComposePayload());
 
     @Override
+    @SuppressWarnings("null")
     public Type<? extends CustomPacketPayload> type() {
         return ID;
     }

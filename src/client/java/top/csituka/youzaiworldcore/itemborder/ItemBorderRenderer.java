@@ -2,6 +2,7 @@ package top.csituka.youzaiworldcore.itemborder;
 
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.world.item.component.CustomData;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -218,7 +219,9 @@ public final class ItemBorderRenderer {
     private static Integer readNbtBorderColor(ItemStack item) {
         if (!item.has(DataComponents.CUSTOM_DATA)) return null;
 
-        CompoundTag customTag = item.get(DataComponents.CUSTOM_DATA).copyTag();
+        CustomData customData = item.get(DataComponents.CUSTOM_DATA);
+        if (customData == null) return null;
+        CompoundTag customTag = customData.copyTag();
         if (!customTag.contains("yzwc_border_colors")) return null;
 
         CompoundTag colorsTag = customTag.getCompound("yzwc_border_colors").orElse(null);
@@ -265,7 +268,6 @@ public final class ItemBorderRenderer {
      */
     private static int getCustomNameColor(ItemStack item) {
         Component name = item.getHoverName();
-        if (name == null) return 0;
 
         TextColor textColor = extractTextColor(name);
         if (textColor == null) return 0;
@@ -311,6 +313,7 @@ public final class ItemBorderRenderer {
      * @param input 颜色字符串
      * @return RGB 颜色值（不含 alpha），或 null
      */
+    @SuppressWarnings("null")
     private static Integer parseColorSimple(String input) {
         if (input == null || input.isBlank()) return null;
 

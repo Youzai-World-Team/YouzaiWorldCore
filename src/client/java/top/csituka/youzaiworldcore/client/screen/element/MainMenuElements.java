@@ -250,6 +250,7 @@ public class MainMenuElements implements MenuElementGroup {
     }
 
     @Override
+    @SuppressWarnings("null")
     public void renderCustomContent(GuiGraphicsExtractor guiGraphics, int screenWidth, int screenHeight, float alpha, float xOffset, int mouseX, int mouseY) {
         // 邮件按钮未读徽标（底行第二个按钮）
         int unread = top.csituka.youzaiworldcore.client.MailClientState.unreadCount;

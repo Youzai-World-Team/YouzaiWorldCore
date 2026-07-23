@@ -31,6 +31,7 @@ public final class PingDisplayRender {
     /**
      * 在 Tab 列表中渲染 ping 文字，替代原版信号格图标。
      */
+    @SuppressWarnings("null")
     public static void renderPingText(Minecraft mc, GuiGraphicsExtractor context,
                                       int slotWidth, int x, int y, PlayerInfo entry) {
         int ping = entry.getLatency();

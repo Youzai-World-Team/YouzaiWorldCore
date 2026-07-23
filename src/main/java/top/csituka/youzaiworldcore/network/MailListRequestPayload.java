@@ -17,8 +17,10 @@ public record MailListRequestPayload(String targetPlayer) implements CustomPacke
     public static final Identifier IDENTIFIER = Identifier.fromNamespaceAndPath(
             YouzaiworldCore.MOD_ID, "mail_list_request");
 
+    @SuppressWarnings("null")
     public static final Type<MailListRequestPayload> ID = new Type<>(IDENTIFIER);
 
+    @SuppressWarnings("null")
     public static final StreamCodec<RegistryFriendlyByteBuf, MailListRequestPayload> STREAM_CODEC =
             StreamCodec.of(
                     (buf, p) -> buf.writeUtf(p.targetPlayer()),
@@ -26,6 +28,7 @@ public record MailListRequestPayload(String targetPlayer) implements CustomPacke
             );
 
     @Override
+    @SuppressWarnings("null")
     public Type<? extends CustomPacketPayload> type() {
         return ID;
     }

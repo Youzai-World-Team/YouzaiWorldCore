@@ -26,8 +26,10 @@ public record MailActionPayload(UUID mailId, String action) implements CustomPac
     public static final Identifier IDENTIFIER = Identifier.fromNamespaceAndPath(
             YouzaiworldCore.MOD_ID, "mail_action");
 
+    @SuppressWarnings("null")
     public static final Type<MailActionPayload> ID = new Type<>(IDENTIFIER);
 
+    @SuppressWarnings("null")
     public static final StreamCodec<RegistryFriendlyByteBuf, MailActionPayload> STREAM_CODEC = StreamCodec.of(
             (buf, p) -> {
                 buf.writeUUID(p.mailId());
@@ -36,6 +38,7 @@ public record MailActionPayload(UUID mailId, String action) implements CustomPac
             buf -> new MailActionPayload(buf.readUUID(), buf.readUtf()));
 
     @Override
+    @SuppressWarnings("null")
     public Type<? extends CustomPacketPayload> type() {
         return ID;
     }

@@ -19,8 +19,10 @@ public record MailRecallPayload(UUID mailId) implements CustomPacketPayload {
     public static final Identifier IDENTIFIER = Identifier.fromNamespaceAndPath(
             YouzaiworldCore.MOD_ID, "mail_recall");
 
+    @SuppressWarnings("null")
     public static final Type<MailRecallPayload> ID = new Type<>(IDENTIFIER);
 
+    @SuppressWarnings("null")
     public static final StreamCodec<RegistryFriendlyByteBuf, MailRecallPayload> STREAM_CODEC =
             StreamCodec.of(
                     (buf, p) -> buf.writeUUID(p.mailId()),
@@ -28,6 +30,7 @@ public record MailRecallPayload(UUID mailId) implements CustomPacketPayload {
             );
 
     @Override
+    @SuppressWarnings("null")
     public Type<? extends CustomPacketPayload> type() {
         return ID;
     }

@@ -15,12 +15,15 @@ public record MailSentListRequestPayload() implements CustomPacketPayload {
     public static final Identifier IDENTIFIER = Identifier.fromNamespaceAndPath(
             YouzaiworldCore.MOD_ID, "mail_sent_list_request");
 
+    @SuppressWarnings("null")
     public static final Type<MailSentListRequestPayload> ID = new Type<>(IDENTIFIER);
 
+    @SuppressWarnings("null")
     public static final StreamCodec<RegistryFriendlyByteBuf, MailSentListRequestPayload> STREAM_CODEC =
             StreamCodec.unit(new MailSentListRequestPayload());
 
     @Override
+    @SuppressWarnings("null")
     public Type<? extends CustomPacketPayload> type() {
         return ID;
     }

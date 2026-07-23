@@ -19,6 +19,7 @@ public record MailListPayload(List<MailStreamCodecs.MailRefAndMail> entries) imp
     public static final Identifier IDENTIFIER = Identifier.fromNamespaceAndPath(
             YouzaiworldCore.MOD_ID, "mail_list");
 
+    @SuppressWarnings("null")
     public static final Type<MailListPayload> ID = new Type<>(IDENTIFIER);
 
     public static final StreamCodec<RegistryFriendlyByteBuf, MailListPayload> STREAM_CODEC = StreamCodec.of(
@@ -38,6 +39,7 @@ public record MailListPayload(List<MailStreamCodecs.MailRefAndMail> entries) imp
             });
 
     @Override
+    @SuppressWarnings("null")
     public Type<? extends CustomPacketPayload> type() {
         return ID;
     }

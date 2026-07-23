@@ -4,7 +4,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.animal.wolf.Wolf;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import top.csituka.youzaiworldcore.util.DebugLogger;
 
 import java.util.Optional;
 
@@ -16,8 +15,6 @@ import java.util.Optional;
  */
 public final class PetModeController {
 
-    private static final String MODULE = "PetModeController";
-
     private PetModeController() {
     }
 
@@ -28,6 +25,7 @@ public final class PetModeController {
      * @return PetMode，如果该狼不是宠物则返回 null
      */
     @Nullable
+    @SuppressWarnings("null")
     public static PetMode getMode(@NotNull Wolf wolf) {
         if (wolf.level().isClientSide()) {
             return null;
