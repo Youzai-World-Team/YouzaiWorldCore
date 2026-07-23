@@ -546,5 +546,9 @@
   "enchantment.youzaiworldcore.spirit_turbo.desc": "Verzaubert auf Geschirr, um die Bewegungsgeschwindigkeit von Seelen zu erhöhen.",
   "youzaiworldcore.anvil_uses": "§7Ambos benutzt: %s mal",
   "youzaiworldcore.anvil_remaining": "§7Voraussichtlich verbleibende Reparaturen: %s",
-  "youzaiworldcore.anvil_exhausted": "§4Kann nicht mehr mit dem Ambos repariert werden"
+  "youzaiworldcore.anvil_exhausted": "§4Kann nicht mehr mit dem Ambos repariert werden",
+  "trinkets.slot.chest.elytra": "Elytren",
+  "trinkets.slot.chest.backpack": "Rucksack",
+  "trinkets.slot.offhand.totem": "Totem der Unsterblichkeit",
+  "trinkets.slot.offhand.heart": "Herz der Bewahrung"
 }

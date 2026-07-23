@@ -546,5 +546,9 @@
   "enchantment.youzaiworldcore.spirit_turbo.desc": "附魔在挽具上以提升樂魂移動速度",
   "youzaiworldcore.anvil_uses": "§7已使用鐵砧: %s 次",
   "youzaiworldcore.anvil_remaining": "§7預計剩餘可修: %s 次",
-  "youzaiworldcore.anvil_exhausted": "§4已無法再被鐵砧維修"
+  "youzaiworldcore.anvil_exhausted": "§4已無法再被鐵砧維修",
+  "trinkets.slot.chest.elytra": "鞘翅",
+  "trinkets.slot.chest.backpack": "背包",
+  "trinkets.slot.offhand.totem": "不死圖騰",
+  "trinkets.slot.offhand.heart": "守護之心"
 }

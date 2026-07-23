@@ -1,0 +1,5 @@
+{
+  "icon": "youzaiworldcore:container/slots/backpack",
+  "order": -1280,
+  "validator_predicates": ["trinkets:default"]
+}

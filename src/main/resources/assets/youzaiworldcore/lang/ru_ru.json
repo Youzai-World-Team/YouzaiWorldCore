@@ -546,5 +546,9 @@
   "enchantment.youzaiworldcore.spirit_turbo.desc": "Накладывается на упряжь для увеличения скорости передвижения духов.",
   "youzaiworldcore.anvil_uses": "§7Наковальня использована: %s раз",
   "youzaiworldcore.anvil_remaining": "§7Осталось примерно ремонтов: %s",
-  "youzaiworldcore.anvil_exhausted": "§4Больше не может быть отремонтировано на наковальне"
+  "youzaiworldcore.anvil_exhausted": "§4Больше не может быть отремонтировано на наковальне",
+  "trinkets.slot.chest.elytra": "Элитры",
+  "trinkets.slot.chest.backpack": "Рюкзак",
+  "trinkets.slot.offhand.totem": "Тотем бессмертия",
+  "trinkets.slot.offhand.heart": "Сердце стража"
 }

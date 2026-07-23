@@ -546,5 +546,9 @@
   "enchantment.youzaiworldcore.spirit_turbo.desc": "Enchanted on harnesses to increase spirit movement speed.",
   "youzaiworldcore.anvil_uses": "§7Anvil used: %s times",
   "youzaiworldcore.anvil_remaining": "§7Estimated remaining repairs: %s",
-  "youzaiworldcore.anvil_exhausted": "§4Can no longer be repaired by an anvil"
+  "youzaiworldcore.anvil_exhausted": "§4Can no longer be repaired by an anvil",
+  "trinkets.slot.chest.elytra": "Elytra",
+  "trinkets.slot.chest.backpack": "Backpack",
+  "trinkets.slot.offhand.totem": "Totem of Undying",
+  "trinkets.slot.offhand.heart": "Heart of Guardianship"
 }

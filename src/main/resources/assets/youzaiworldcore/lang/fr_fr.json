@@ -546,5 +546,9 @@
   "enchantment.youzaiworldcore.spirit_turbo.desc": "Enchanté sur les harnais pour augmenter la vitesse de déplacement des esprits.",
   "youzaiworldcore.anvil_uses": "§7Enclume utilisée : %s fois",
   "youzaiworldcore.anvil_remaining": "§7Réparations estimées restantes : %s",
-  "youzaiworldcore.anvil_exhausted": "§4Ne peut plus être réparé sur une enclume"
+  "youzaiworldcore.anvil_exhausted": "§4Ne peut plus être réparé sur une enclume",
+  "trinkets.slot.chest.elytra": "Élytres",
+  "trinkets.slot.chest.backpack": "Sac à dos",
+  "trinkets.slot.offhand.totem": "Totem d'immortalité",
+  "trinkets.slot.offhand.heart": "Cœur de garde"
 }

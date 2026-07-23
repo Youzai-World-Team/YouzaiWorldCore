@@ -18,6 +18,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import top.csituka.youzaiworldcore.item.ModItems;
 import top.csituka.youzaiworldcore.skill.AdventureLevelManager;
+import top.csituka.youzaiworldcore.util.TrinketHelper;
 
 /**
  * 混合注入 {@link ServerPlayer#die(DamageSource)}，
@@ -52,6 +53,11 @@ public class ServerPlayerDeathMixin {
 
     @Unique
     private static void consumeOneHeart(ServerPlayer player) {
+        // 优先从饰品槽消耗
+        if (TrinketHelper.isLoaded() && TrinketHelper.consumeOne(player, ModItems.HEART_OF_GUARDIANSHIP)) {
+            return;
+        }
+        // 回退到背包
         Inventory inventory = player.getInventory();
         for (int i = 0; i < inventory.getContainerSize(); i++) {
             ItemStack stack = inventory.getItem(i);
@@ -65,6 +71,11 @@ public class ServerPlayerDeathMixin {
     @Unique
     private static int countHearts(ServerPlayer player) {
         int count = 0;
+        // 统计饰品槽中的
+        if (TrinketHelper.isLoaded()) {
+            count += TrinketHelper.countItem(player, ModItems.HEART_OF_GUARDIANSHIP);
+        }
+        // 统计背包中的
         Inventory inventory = player.getInventory();
         for (int i = 0; i < inventory.getContainerSize(); i++) {
             ItemStack stack = inventory.getItem(i);
@@ -77,6 +88,11 @@ public class ServerPlayerDeathMixin {
 
     @Unique
     private static boolean hasHeartInInventory(ServerPlayer player) {
+        // 检查饰品槽
+        if (TrinketHelper.isLoaded() && TrinketHelper.isItemEquipped(player, ModItems.HEART_OF_GUARDIANSHIP)) {
+            return true;
+        }
+        // 检查背包
         Inventory inventory = player.getInventory();
         for (int i = 0; i < inventory.getContainerSize(); i++) {
             ItemStack stack = inventory.getItem(i);

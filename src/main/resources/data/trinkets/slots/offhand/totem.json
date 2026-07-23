@@ -1,0 +1,5 @@
+{
+  "icon": "youzaiworldcore:container/slots/totem",
+  "order": -640,
+  "validator_predicates": ["trinkets:default"]
+}

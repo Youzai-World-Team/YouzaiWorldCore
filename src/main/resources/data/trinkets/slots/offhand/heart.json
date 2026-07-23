@@ -1,0 +1,5 @@
+{
+  "icon": "youzaiworldcore:container/slots/heart_of_guardianship",
+  "order": -896,
+  "validator_predicates": ["trinkets:default"]
+}

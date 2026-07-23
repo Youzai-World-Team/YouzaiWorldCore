@@ -546,5 +546,9 @@
   "enchantment.youzaiworldcore.spirit_turbo.desc": "Encantado en arreos para aumentar la velocidad de movimiento espiritual.",
   "youzaiworldcore.anvil_uses": "§7Yunque usado: %s veces",
   "youzaiworldcore.anvil_remaining": "§7Reparaciones estimadas restantes: %s",
-  "youzaiworldcore.anvil_exhausted": "§4Ya no se puede reparar con yunque"
+  "youzaiworldcore.anvil_exhausted": "§4Ya no se puede reparar con yunque",
+  "trinkets.slot.chest.elytra": "Élitros",
+  "trinkets.slot.chest.backpack": "Mochila",
+  "trinkets.slot.offhand.totem": "Tótem de la inmortalidad",
+  "trinkets.slot.offhand.heart": "Corazón de tutela"
 }
