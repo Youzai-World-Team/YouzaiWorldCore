@@ -20,14 +20,14 @@
 
 ## 📖 Project Overview
 
-**YouzaiWorldCore** is the core gameplay mod for the **Youzai World** Minecraft multiplayer server, built on the **Fabric** framework with deep integration of **LuckPerms** permission system and **Placeholder API**. The mod provides a comprehensive infrastructure for the server, covering account authentication, GUI menus, custom items and blocks, sit interaction, dimension pools, teleport anchors, mana system, invisibility management, adventure level & attribute growth, enchantment-level language patches, pickup display, world enhancement features (charged creepers / dragon elytra drop / end portal, etc.), a pet system, item highlighting, beginner tutorial, voice chat integration, and 20+ core features in total.
+**YouzaiWorldCore** is the core gameplay mod for the **Youzai World** Minecraft multiplayer server, built on the **Fabric** framework with deep integration of **LuckPerms** permission system and **Placeholder API**. The mod provides a comprehensive infrastructure for the server, covering account authentication, GUI menus, custom items and blocks, sit interaction, dimension pools, teleport anchors, mana system, invisibility management, adventure level & attribute growth, enchantment-level language patches, pickup display, world enhancement features (charged creepers / dragon elytra drop / end portal / warden loot / stonecutter damage, etc.), a pet system, item highlighting & borders, a mailbox, custom enchantments, trinket-slot integration, config import/export, beginner tutorial, voice chat integration, and 30+ core features in total.
 
 ### Target Audience
 
 | User Type | Description |
 |-----------|-------------|
-| **Server Administrators** | Manage the system through commands and menus, configure dimension pools, account policies, pet backups, etc. |
-| **Survival Players** | Use Youzai tools, advancement system, teleport anchors, sit interaction, mana staves, pets and attribute growth for gameplay |
+| **Server Administrators** | Manage the system through commands and menus, configure dimension pools, account policies, pet backups, mail announcements, etc. |
+| **Survival Players** | Use Youzai tools, advancement system, teleport anchors, sit interaction, mana staves, pets and attribute growth, trinket slots for gameplay |
 | **Mod Developers** | Understand the mod architecture, extend functionality, or contribute code |
 
 > **Version note**: This mod targets Minecraft **Java 26.2**. From 26.1 onward Mojang adopted new naming/source conventions; the game jar is deobfuscated and can be decompiled directly for reference.
@@ -46,6 +46,7 @@ Complete password authentication for offline-mode servers, with Mixin-based rest
 - **Position Save/Restore**: Saves position on logout → teleports to End void; restores precisely on login
 - **Login Hall**: Unauthenticated players confined to `youzaiworldcore:login_hall` custom dimension; Mixin blocks movement, interaction, attacking, and chat
 - **Invisibility Integration**: Sensitive operations (logout, deactivate, password change) blocked while invisible
+- **Account Deletion Integration**: Deactivating/deleting an account also clears its mailbox (`MailManager.onAccountDeleted`)
 
 ### 2. GUI Menu System
 
@@ -53,9 +54,9 @@ Windows 10 Start Menu-style tile layout with page switching and animated transit
 
 | Menu ID | Name | Description |
 |---------|------|-------------|
-| `main` | Main Menu | Feature hub: world switching, events, check-in, tutorials, settings |
+| `main` | Main Menu | Feature hub: world switching, events, check-in, tutorials, mail, settings |
 | `switch_world` | Switch World | 11 world buttons; first 7 integrated with dimension pool system |
-| `settings` | Settings | Music/sound toggles, PVP/friendly fire, difficulty selection |
+| `settings` | Settings | Music/sound toggles, PVP/friendly fire, difficulty selection (client) |
 | `about_me` | About Me | 3D player model render, ID, join/playtime |
 
 **Shortcut**: `Shift + F` to open the main menu.
@@ -168,7 +169,7 @@ Integrates Placeholder API with `%luckperms_*%` namespace, providing **32 placeh
 
 ### 14. Permission System
 
-Fine-grained LuckPerms-based permission control with automatic OP-level fallback. All commands and features route authorization through `luckperms/LuckPermsHelper`, providing **20+ distinct permission nodes** including `account.mgr.*`, `command.*`, and `*` wildcards.
+Fine-grained LuckPerms-based permission control with automatic OP-level fallback. All commands and features route authorization through `luckperms/LuckPermsHelper`, providing **20+ distinct permission nodes** including `account.mgr.*`, `command.*`, `mail.*`, and `*` wildcards.
 
 ### 15. Creative Mode Tabs
 
@@ -198,7 +199,14 @@ Four preset shulker boxes in the creative tab:
 Two branches with 20+ advancements:
 
 - **Youzai World** (main): Obtain Youzai materials, craft tools, use decomposition table / fly beacon / heart of guardianship / void staff
-- **Fun Little Challenges**: The Cake Is a Lie, Foodie, Max Luck, Way Home, etc.
+- **Fun Little Challenges**: The Cake Is a Lie, Foodie, Max Luck, Way Home, I Became Building Material (died on a stonecutter), etc.
+- **Deep Dark**: New dedicated branch with 6 advancements:
+  - `visit_deep_dark` — Enter the Deep Dark
+  - `enter_ancient_city` — Step into the ancient city
+  - `loot_ancient_city` — Open a loot chest in the ancient city
+  - `hold_recovery_compass` — Obtain a recovery compass
+  - `use_disc_5` (Echo of the City) — Obtain music disc 5
+  - `kill_warden` (Warden's Fall) — Defeat the Warden
 
 ### 18. Debug & Configuration
 
@@ -208,6 +216,7 @@ Two branches with 20+ advancements:
 | Client External Settings | `config/youzaiworldcore/client_external_settings.json` | `devModeEnabled`, `logLevel` (0–3), debug address/port |
 | DebugLogger | `util/DebugLogger` | 4 log levels (OFF/BASIC/DETAILED/DEBUG), entering/exiting/branch/stateChange/exception tracing |
 | Update Checker Settings | `config/youzaiworldcore/update_checker.json` | `enabled` (toggles update checks, UpdateCheckerConfig) |
+| Mail Settings | `config/youzaiworldcore/mail_settings.json` | Expiry policy, permission node/level, attachment caps |
 | Player Stats Data | `<world>/youzaiworldcore/status/data.json` + `rank_export/` | StatsManager persistence & leaderboard export dir |
 
 ### 19. Enchantment Level Language Patch System
@@ -236,6 +245,8 @@ A set of native, dependency-free "world tweak" enhancements (inspired by classic
 - **Chorus Fruit Drops Nearby**: After a chorus plant is broken, its dropped chorus fruit is teleported to the nearest recently-broken chorus plant location (horizontal distance < 20 blocks within a 2-second window), preventing fruit from scattering everywhere
 - **Dragon Drops Elytra**: When the Ender Dragon is slain, an extra elytra drops and a broadcast message is sent; kill attribution priority: direct player → projectile owner (bow/crossbow/trident) → nearest player within a 30-block radius
 - **End Portal Enhancements**: ① End portal frames can be broken with a silk-touch pickaxe and drop (including embedded ender eyes) while clearing the activated portal blocks; ② An extra dragon egg is granted to nearby players when the Ender Dragon is slain; ③ New recipe `craftable_end_portal` (ender eyes + dragon egg + end stone → 12 end portal frames). Config `config/youzaiworldcore/end_portal_settings.json` with three toggles (silk-touch requirement / direct-to-inventory / dragon-egg message)
+- **Warden Loot**: When a player kills a Warden, 300 XP is granted directly and bundle loot drops (sculk shrieker, random pools of netherite scrap / diamonds / gold / iron, ancient-city-style items, enchanted books — 50% Swift Sneak I–III / 50% Soul Speed I–III, boosted by Looting). Implemented by `WardenDeathHandler` (`ServerLivingEntityEvents.AFTER_DEATH`), replacing the fragile datapack tick-scan approach
+- **Stonecutter Damage**: Standing on a stonecutter block deals continuous damage — an immediate 1-heart hit on first contact, then once every 1.5s (30 ticks) until you step off; death shows the custom message "attempted to test the sharpness of the stonecutter with their own body" and grants the "I Became Building Material" advancement. Creative/Spectator modes are immune. Implemented by `StonecutterDamageHandler` (time-sliced scan + per-player timer, performance-first)
 
 ### 22. Double Doors System
 
@@ -265,11 +276,16 @@ A tamed-wolf (Wolf) tracking and management system that registers tamed wolves a
 
 A purely client-side feature that renders an outline around the held or targeted item, helping players quickly locate items in the inventory / world (no server-side effect).
 
-- **Command**: `/yzwc settings highlight_item`
-  - `toggle` —— enable/disable highlight
-  - `color <name | custom r g b a>` —— preset color or custom RGBA (r/g/b 0–255, a 0.0–1.0)
-  - `mode <comparator>` —— choose the item-matching rule that triggers highlight (`ItemComparator.Comparators`)
-- **Implementation**: `highlightitem` package (`HighlightItem` / `Configurator` / `Colors` / `ItemComparator`) injects the outline via a client-side Mixin on the render layer; all configuration applies immediately through client commands
+- **Controls**
+  - **Keybinds**: `F10` toggles highlight (`key.youzaiworldcore.highlight.toggle`), `B` cycles comparison mode (`key.youzaiworldcore.highlight.comparator`)
+  - **Command**: `/yzwc settings highlight_item`
+    - `toggle` —— enable/disable highlight
+    - `color <name | custom r g b a>` —— preset color or custom RGBA (r/g/b 0–255, a 0.0–1.0)
+    - `mode <comparator>` —— choose the item-matching rule that triggers highlight
+  - **Settings Screen**: Client settings offer "Enable Highlight / Comparison Mode / Notification Preference" options
+- **Comparison Modes**: `item_only`, `item_and_amount`, `item_and_nbt`, `item_and_nbt_and_amount`, `name_only`, `name_and_amount`, `namespace`
+- **Notification Preference**: `none` (default) / `toast` / `chat` / `overlay`
+- **Implementation**: `highlightitem` package (`HighlightItemClient` / `HighLightCommands` / `Configurator` / `Colors` / `ItemComparator`) injects the outline via a client-side Mixin on the render layer; keybinds and commands apply immediately
 
 ### 25. Stats System (Status)
 
@@ -283,7 +299,72 @@ Reads player behavior data from the vanilla `Stats` system, persists it, and sup
   - `/yzwc status rank_export <day|week|month|year|all> [name]` — export leaderboard to `rank_export/<name>.json` (perm `youzaiworldcore.command.status.export`)
 - **Permissions**: `status.query` / `status.delete` / `status.export` (default OP 4)
 
-### 27. Update Checker
+### 26. Mailbox ★NEW
+
+A one-way **admin → player** server mailbox / announcement box (not player-to-player), published by admins through a GUI and received by players in their mailbox (Shift+F → Mail).
+
+- **Scope**: Senders are admins only (OP / LuckPerms `youzaiworldcore.mail` node); recipients can be multi-selected and unioned — All (incl. admins) / All non-admin / Specific Player / Role Group
+- **Mail Types**: Announcement (ANNOUNCEMENT), Notice (NOTICE), Reward (REWARD)
+- **Reward Carriers** (REWARD type): Items (up to 10 slots, copied from admin's inventory as templates, originals not consumed), Command (run as console, supports `%player%` / `%uuid%` placeholders), Vanilla XP, Vanilla Levels, this mod's Adventure Level
+- **Expiry**: 1 day / 7 days / 30 days (default) / permanent; unstarred expired mail auto-purges, starred expired mail keeps text but disables claiming
+- **GUI**
+  - **Player Mailbox** (`MailScreen`): filters (all/unread/starred), details, claim/star/delete; top-right "Compose" / "Sent" buttons visible to permission holders only
+  - **Compose/Edit** (`MailComposeScreen`): multi-select recipients + type + subject + body + attachments (≤10 item slots) + expiry dropdown; editing sent mail reuses this screen (`MailSentScreen`[Edit] → prefill → `MailAdminEditPayload`)
+- **Commands** (**client command**, parse-and-forward; server-side authorization)
+  - `/yzwc mail send_mail` —— open compose GUI
+  - `/yzwc mail sent` —— open sent-mail management list
+  - `/yzwc mail recall <mailId>` —— recall a sent mail (remove from repo + push removal to online recipients)
+  - `/yzwc mail purge [player|all]` —— purge expired mail
+  - `/yzwc mail list [player]` —— view a player's mailbox
+- **Permission**: `youzaiworldcore.mail` (default OP 4); falls back to `mail_permission_level` when LuckPerms is absent
+- **Storage**: Global repo `config/youzaiworldcore/mail/sent.json` + per-player index `config/youzaiworldcore/mail/box/<uuid>.json` + settings `mail_settings.json`; cross-world consistent, bound to the account system (offline accounts also indexed, visible on login)
+- **Network**: 16 dedicated packets (C→S `mail_compose_open` / `mail_open` / `mail_sent_list_request` / `mail_recall` / `mail_purge` / `mail_list_request` / `mail_fetch` / `mail_action` / `mail_admin_send` / `mail_admin_edit`; S→C `open_mail_compose` / `mail_list` / `mail_sent_list` / `mail_update` / `mail_op_result` / `mail_unread_count`)
+
+### 27. Custom Enchantments ★NEW
+
+The mod adds two data-driven enchantments, defined in `data/youzaiworldcore/enchantment/` JSON and registered via `ModEnchantments` ResourceKeys.
+
+- **Sun Repair (`sun_repair`)**: "Repairs tools in sunlight." `SunRepairHandler` checks online players every 5–10s (random interval); for damaged items carrying this enchantment that are in sunlight (sky light present, not raining/thundering, not night, unobstructed overhead), it restores 1 durability per tick. Covers main hand, offhand, armor slots, and the whole inventory.
+- **Spirit Turbo Booster (`spirit_turbo`)**: "Enchanted on harnesses to increase spirit movement speed." `HappyGhastTurboHandler` checks all Happy Ghasts every 20 ticks; if its harness carries this enchantment, it adds +20% flying speed per level to the `FLYING_SPEED` attribute.
+
+### 28. Anvil Use-Count Display ★NEW
+
+A client-side tooltip enhancement (`anviluses` package). Shows how many times an item has been worked on an anvil and how many more repairs remain:
+
+- **Anvil Uses**: Derived from `DataComponents.REPAIR_COST` (`floor(log2(repairCost+1))`)
+- **Estimated Remaining Repairs**: Simulates vanilla `calculateIncreasedRepairCost` growth until the next repair cost hits the "too expensive" cap (40 levels); at 0 it shows "can no longer be repaired by an anvil"
+- Inspired by Anvil Uses (Z1proW); independently rewritten against decompiled 26.2 `AnvilMenu`, no external dependency
+
+### 29. Item Border System ★NEW
+
+A client-side visual enhancement (`itemborder` package, inspired by ItemBorders). Draws **rarity-gradient borders** on item slots, using pure native 26.2 APIs (GuiGraphicsExtractor pipeline + `ItemStack.getRarity`), no external dependency:
+
+- **Behavior**: Hardcoded constants (master toggle, hotbar drawing, square corners, full border, extra glow, auto rarity coloring all on by default); common (white) rarity items are not bordered by default
+- **Preset Rarity Assignment**: ~60 built-in items — UNCOMMON (yellow) 18, RARE (aqua) 19, EPIC (light purple) 22 (including Youzai ingot / tools / Heart of Guardianship)
+- All settings are hardcoded constants; no user-editable config file
+
+### 30. Trinkets Slot Integration ★NEW
+
+Declares 4 custom trinket slots for the **Trinkets** mod via `data/trinkets/` data packs (requires the Trinkets mod installed), letting specific items equip into trinket slots instead of the main inventory:
+
+| Slot (slots) | Item | Description |
+|--------------|------|-------------|
+| `chest/elytra` | Elytra | Equip elytra in the chest trinket slot |
+| `chest/backpack` | Backpack | Equip backpack in the chest trinket slot |
+| `offhand/totem` | Totem of Undying | Equip totem in the offhand trinket slot |
+| `offhand/heart` | Heart of Guardianship | Equip Heart of Guardianship in the offhand trinket slot |
+
+Each slot has a custom icon and the `trinkets:default` validator; `order` controls sorting.
+
+### 31. Config Import/Export ★NEW
+
+A new "Export/Import Config" sidebar in client settings (YZUI). Based on 26.2 Headless limits (AWT/file dialogs unavailable), it uses automatic paths + backups instead of external file pickers:
+
+- **Export**: Packages `config/youzaiworldcore/` and `options.txt` into a ZIP saved locally (manual path on PC; auto-saved to `config_backups` on Android, keeping the latest 5)
+- **Import**: Restores config from a ZIP; requires a client restart to take effect (auto-backs up current config to `config_backups` for rollback on failure)
+- **Entry**: `screen.youzaiworldcore.settings.sidebar_config_io`; `ConfigIOManager` self-heals at client startup by detecting and restoring orphaned `config_bak_*` backups left from an interrupted import
+
+### 32. Update Checker
 
 Asynchronously detects new mod versions, prompting for online or forced updates.
 
@@ -333,11 +414,18 @@ All commands use `/yzwc` as the root command. Subcommands marked **(client comma
 │   ├── highlight <internalName>                      → Highlight (Glowing 5s)
 │   └── admin restore | backup_list | backup_interval <sec> → Admin backup/restore
 │
+├── mail <args...>                         ← (client command, forwarded to server)
+│   ├── send_mail                                    → Open compose GUI (requires mail permission)
+│   ├── sent                                        → Open sent-mail management list
+│   ├── recall <mailId>                             → Recall a sent mail
+│   ├── purge [player|all]                          → Purge expired mail
+│   └── list [player]                               → View a player's mailbox
+│
 ├── function invisibility <true/false>    ← (client command)
 │   ├── Permission: youzaiworldcore.command.function.invisibility (OP 4)
 │   └── Requires Creative mode
 │
-├── function double_doors <true|false>    ← (client command)
+├── function double_doors <true/false>    ← (client command)
 │   ├── Permission: youzaiworldcore.command.function.double_doors (self, everyone can run)
 │   └── Omit to query own status; new players enabled by default; state persisted to double_doors_players.json
 │
@@ -373,7 +461,7 @@ All commands use `/yzwc` as the root command. Subcommands marked **(client comma
     └── Check for mod updates (fetches remote version info, reports normal/forced update + download link)
 ```
 
-> **Client command note**: `/yzwc pet`, `/yzwc function invisibility`, and `/yzwc function double_doors` are registered on the client and only parse arguments, forwarding them through the corresponding C→S packets (`PetCommandPayload` / `InvisibilityPayload` / `DoubleDoorsTogglePayload`); the server holds the authoritative state and permission checks. All other subcommands (`teleport_world` / `open_menu` / `world_pool` / `teleport_anchor` / `event` / `reload` / `account`) are server-side.
+> **Client command note**: `/yzwc pet`, `/yzwc mail`, `/yzwc function invisibility`, and `/yzwc function double_doors` are registered on the client and only parse arguments, forwarding them through the corresponding C→S packets (`PetCommandPayload` / `MailComposeOpenPayload` and other mail packets / `InvisibilityPayload` / `DoubleDoorsTogglePayload`); the server holds the authoritative state and permission checks. All other subcommands (`teleport_world` / `open_menu` / `world_pool` / `teleport_anchor` / `event` / `reload` / `account` / `status` / `update`) are server-side.
 
 ### Permission Nodes Overview
 
@@ -393,6 +481,7 @@ All commands use `/yzwc` as the root command. Subcommands marked **(client comma
 | `youzaiworldcore.command.pet.highlight` | Highlight pet | Everyone (owner/trusted) |
 | `youzaiworldcore.command.pet.admin` | Pet admin (backup/restore/interval) | OP 4 |
 | `youzaiworldcore.command.pet` | Pet module parent permission (base) | OP 4 |
+| `youzaiworldcore.mail` | Mail system (compose/sent/recall/purge/list) | OP 4 |
 | `youzaiworldcore.command.status.query` | View stats | OP 4 |
 | `youzaiworldcore.command.status.delete` | Delete stats | OP 4 |
 | `youzaiworldcore.command.status.export` | Export stats leaderboard | OP 4 |
@@ -428,9 +517,9 @@ All commands use `/yzwc` as the root command. Subcommands marked **(client comma
 | `decomposition_table` | Decomposition Table |
 | `fly_beacon` | Fly Beacon |
 
-### Network Packets (21 total)
+### Network Packets (35 total)
 
-> Note: the `world_pool_teleport` packet class lives in the `dimensionalinventories` package; the other 20 are in the `network` package.
+> Note: the `world_pool_teleport` packet class lives in the `dimensionalinventories` package; the rest (including the 16 mail packets) are in the `network` package.
 
 | Packet ID | Direction | Purpose |
 |-----------|-----------|---------|
@@ -441,6 +530,12 @@ All commands use `/yzwc` as the root command. Subcommands marked **(client comma
 | `attribute_sync` | S→C | Sync player attribute data (skill points / attributes / level) |
 | `teleport_anchor_list` | S→C | Send point list |
 | `teleport_anchor_open_name` | S→C | Open anchor naming screen |
+| `mail_unread_count` | S→C | Sync unread count + compose permission (canSend) |
+| `open_mail_compose` | S→C | Open compose GUI |
+| `mail_list` | S→C | Send inbox list |
+| `mail_sent_list` | S→C | Send sent-mail list |
+| `mail_update` | S→C | Add/update/remove a single mail |
+| `mail_op_result` | S→C | Mail operation result feedback |
 | `world_pool_teleport` | C→S | Request dimension pool teleport |
 | `teleport_anchor_activate` | C→S | Activate anchor |
 | `teleport_anchor_teleport` | C→S | Request teleport |
@@ -453,6 +548,16 @@ All commands use `/yzwc` as the root command. Subcommands marked **(client comma
 | `attribute_upgrade` | C→S | Request to allocate a point to an attribute |
 | `double_doors_toggle` | C→S | Toggle / query own Double Doors setting |
 | `pet_command` | C→S | Forward `/yzwc pet` client command to server |
+| `mail_compose_open` | C→S | Request to open compose GUI |
+| `mail_open` | C→S | Request inbox list |
+| `mail_sent_list_request` | C→S | Request sent-mail list |
+| `mail_recall` | C→S | Recall mail |
+| `mail_purge` | C→S | Purge expired mail |
+| `mail_list_request` | C→S | View a player's mailbox |
+| `mail_fetch` | C→S | Fetch full mail for editing |
+| `mail_action` | C→S | Open/read/star/claim/delete |
+| `mail_admin_send` | C→S | Publish mail |
+| `mail_admin_edit` | C→S | Edit/cancel-edit mail |
 
 ---
 
@@ -465,6 +570,7 @@ All commands use `/yzwc` as the root command. Subcommands marked **(client comma
 | Fabric API | 0.154.0+26.2 | Standard API |
 | ModMenu | 20.0.0-beta.4 | Mod menu integration |
 | Placeholder API | 3.1.0-beta.1+26.2 | Text placeholders |
+| Trinkets | Latest 26.2-compatible | Trinket slot system (Feature 30 depends on it) |
 | Moog's Structure Lib | 3.0.4 | Declared dependency (referenced by village structure injection) |
 | Fabric Permissions API | 0.6.1 (bundled) | Cross-mod permission API |
 | LuckPerms | 5.5 (suggested runtime) | Advanced permission control |
@@ -483,21 +589,22 @@ src/
 │   ├── YouzaiworldCore.java              # Main entry point
 │   ├── account/                          # Account auth (data/command/mixin/util subpackages)
 │   ├── block/ + entity/                  # Custom blocks & block entities
-│   ├── command/                          # Command registration (TeleportAnchor / Reload / Event)
+│   ├── command/                          # Command registration (TeleportAnchor / Reload / Event / Mail client-forward)
 │   ├── component/                        # Data components
-│   ├── config/                           # Server external settings (charged creeper / end portal / double doors / pet config)
+│   ├── config/                           # Server external settings (charged creeper / end portal / double doors / pet / mail config)
 │   ├── data/                             # Teleport anchor SavedData
 │   ├── dimensionalinventories/           # Dimension pool system (incl. WorldPoolTeleportPayload)
+│   ├── enchantment/                      # Custom enchantment ResourceKey registration (ModEnchantments)
 │   ├── enchlevellangpatch/               # Enchantment-level language patch (api + impl)
-│   ├── event/                            # Event handlers (fly beacon, double doors, end portal, void staff, dragon, chorus, charged creeper, decompose, sit, etc.)
+│   ├── event/                            # Event handlers (fly beacon, double doors, end portal, void staff, dragon, chorus, charged creeper, decompose, sit, warden, stonecutter, anvil repair, sun repair, spirit turbo, etc.)
 │   ├── entity/seat/                      # Seat entity system
-│   ├── event/                            # Event handlers (fly beacon, double doors, end portal, void staff, dragon, chorus, charged creeper, decompose, sit, etc.)
 │   ├── invisibility/                     # Invisibility system
 │   ├── item/                             # Items, tools, creative tabs, presets
 │   ├── luckperms/                        # LuckPerms integration (LuckPermsHelper unified auth)
+│   ├── mail/                             # Mail system (Mail / MailManager / SentMailRepository / MailDataStorage / MailSettings / MailPermissionHelper)
 │   ├── mana/                             # Mana system
 │   ├── mixin/                            # Mixins (subpackages: chargedcreeper / doubledoors / invisibility / pet / seat / skill)
-│   ├── network/                          # Network packets (20 packet classes + ModNetworking)
+│   ├── network/                          # Network packets (35 packet classes + ModNetworking)
 │   ├── pet/                              # Pet system (config/command/event subpackages + PetGlobalState/PetEntry)
 │   ├── placeholders/                     # Placeholder API (32 placeholders)
 │   ├── screen/                           # Container menus
@@ -508,25 +615,28 @@ src/
 │   └── worldgen/                         # World generation (VillageStructureInjector)
 │
 ├── client/java/top/csituka/youzaiworldcore/
-│   ├── client/Client.java                # Client entry point
-│   ├── command/                          # Client commands (Invisibility / DoubleDoors / Pet forwarding)
-│   ├── config/                           # Client external settings
+│   ├── client/Client.java                # Client entry (registers highlight/border/anvil/mail commands, etc.)
+│   ├── command/                          # Client commands (Invisibility / DoubleDoors / Pet / Mail forwarding)
+│   ├── config/                           # Client external settings + ConfigIOManager (config import/export)
 │   ├── effect/                           # Teleport FOV effect
 │   ├── higherchat/                       # Simple Voice Chat integration (HUD icon position tracking)
-│   ├── highlightitem/                    # Item highlight (HighlightItem / Configurator / Colors / ItemComparator)
+│   ├── highlightitem/                    # Item highlight (HighlightItemClient / HighLightCommands / Configurator / Colors / ItemComparator)
+│   ├── itemborder/                       # Item border (ItemBorderClient / ItemBorderConfig / ItemBorderRenderer)
+│   ├── anviluses/                        # Anvil use-count display (AnvilUsesClient)
 │   ├── hud/                              # Mana bar / adventure level HUD
 │   ├── skill/                            # Client adventure level / attribute data (ClientAttributeData)
 │   ├── update/                           # Update checker client state (ClientUpdateState)
-│   ├── mixin/client/                     # Client Mixins (title, options, button, pause, chat, loading, seat, rendering, pickup, enchant-patch, etc.)
+│   ├── mixin/client/                     # Client Mixins (title, options, button, pause, chat, loading, seat, rendering, pickup, enchant-patch, itemborder, etc.)
 │   ├── network/                          # Client network handling (ClientNetworking)
 │   ├── pickup/                           # Pickup display (item/XP floating notifications)
 │   ├── renderer/                         # Block/entity renderers (incl. teleport anchor BER)
-│   └── screen/                           # GUI screens (MenuScreen, Login/Register, element/widget/block subpackages)
+│   └── screen/                           # GUI screens (MenuScreen, Login/Register, MailScreen/MailComposeScreen/MailSentScreen, element/widget/block subpackages)
 │
 └── main/resources/
     ├── assets/youzaiworldcore/           # Textures, models, language files
-    ├── data/                             # Advancements, recipes, loot tables, dimensions, structures, structure sets, template pools, beginner tutorial functions
-    └── fabric.mod.json                   # Mod metadata (declares moogs_structures as a hard dependency)
+    ├── data/                             # Advancements (incl. deep_dark branch), recipes, loot tables, dimensions, structures, structure sets, template pools, beginner tutorial functions, trinkets slots
+    └── fabric.mod.json                   # Mod metadata (declares moogs_structures / trinkets as hard dependencies)
+```
 
 .github/workflows/
 └── build.yml                             # CI/CD build workflow
@@ -571,4 +681,4 @@ src/
 
 ---
 
-> **Note**: Test the mod on a server environment; running it on the client alone will not function correctly. Client commands (`/yzwc pet`, `/yzwc function *`, `/yzwc settings highlight_item`) require being connected to a server to take effect.
+> **Note**: Test the mod on a server environment; running it on the client alone will not function correctly. Client commands (`/yzwc pet`, `/yzwc mail`, `/yzwc function *`, `/yzwc settings highlight_item`) require being connected to a server to take effect.
