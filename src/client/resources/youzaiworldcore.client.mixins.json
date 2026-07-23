@@ -33,7 +33,8 @@
     "PingDisplayMixin",
     "EntityRendererMixin",
     "itemborder.AbstractContainerScreenMixin",
-    "itemborder.HudHotbarMixin"
+    "itemborder.HudHotbarMixin",
+    "itemborder.ItemStackRarityMixin"
   ],
   "injectors": {
     "defaultRequire": 1
