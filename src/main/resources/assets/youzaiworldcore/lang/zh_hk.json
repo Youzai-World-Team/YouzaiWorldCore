@@ -387,6 +387,8 @@
   "title.youzaiworldcore.update_download_btn": "前往下載更新",
   "title.youzaiworldcore.update_ignore_btn": "唔再提示此版本",
   "screen.youzaiworldcore.settings.sidebar_config_io": "匯出/匯入配置",
+  "screen.youzaiworldcore.settings.sidebar_visual": "視覺",
+  "screen.youzaiworldcore.settings.toggle_yzui": "啟用 YZUI",
   "screen.youzaiworldcore.settings.sidebar_about": "關於",
   "screen.youzaiworldcore.settings.config_io_export_btn": "匯出當前配置",
   "screen.youzaiworldcore.settings.config_io_import_btn": "匯入配置包",

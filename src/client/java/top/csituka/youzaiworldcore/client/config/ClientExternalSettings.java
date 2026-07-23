@@ -55,6 +55,9 @@ public final class ClientExternalSettings {
     /** 自定义下载页（跳转）基址（空串 = 使用系统默认）；仅开发者模式启用时生效 */
     private static String updateJumpAddress = "";
 
+    /** 是否启用 YZUI（自定义 UI 样式），关闭则回退到原版 UI 供资源包替换 */
+    private static boolean yzuiEnabled = true;
+
     private ClientExternalSettings() {}
 
     // ===== 读取 =====
@@ -99,6 +102,11 @@ public final class ClientExternalSettings {
     /** @return 自定义下载页（跳转）基址（空串表示使用系统默认） */
     public static String getUpdateJumpAddress() {
         return updateJumpAddress;
+    }
+
+    /** @return 是否启用 YZUI 自定义 UI 样式 */
+    public static boolean isYzuiEnabled() {
+        return yzuiEnabled;
     }
 
     /** 设置被忽略的更新版本号（空值将忽略为 ""）并持久化 */
@@ -157,6 +165,13 @@ public final class ClientExternalSettings {
         save();
     }
 
+    /** 设置 YZUI 启用状态并持久化 */
+    public static void setYzuiEnabled(boolean value) {
+        yzuiEnabled = value;
+        DebugLogger.info("ClientExternalSettings", "YZUI 已" + (value ? "启用" : "禁用"));
+        save();
+    }
+
     // ===== 持久化 =====
 
     /** 从文件加载配置（不存在则创建默认文件） */
@@ -200,6 +215,9 @@ public final class ClientExternalSettings {
             if (root.has("updateJumpAddress") && !root.get("updateJumpAddress").isJsonNull())
                 updateJumpAddress = root.get("updateJumpAddress").getAsString();
 
+            if (root.has("yzuiEnabled") && !root.get("yzuiEnabled").isJsonNull())
+                yzuiEnabled = root.get("yzuiEnabled").getAsBoolean();
+
             if (logLevel > 0) {
                 LOGGER.info("已从 {} 加载客户端外部设置", CONFIG_FILE);
             }
@@ -225,6 +243,7 @@ public final class ClientExternalSettings {
             root.addProperty("ignoredUpdateVersion", ignoredUpdateVersion);
             root.addProperty("updateCheckAddress", updateCheckAddress);
             root.addProperty("updateJumpAddress", updateJumpAddress);
+            root.addProperty("yzuiEnabled", yzuiEnabled);
             Files.writeString(CONFIG_FILE, GSON.toJson(root));
         } catch (IOException e) {
             LOGGER.error("保存客户端外部设置失败: {}", e.getMessage());

@@ -13,6 +13,7 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import top.csituka.youzaiworldcore.client.config.ClientExternalSettings;
 
 /**
  * 完全替换原版输入框渲染，使其与 {@code TransparentButton} 视觉一致。
@@ -50,6 +51,11 @@ public class EditBoxMixin {
     ) {
         EditBox self = (EditBox) (Object) this;
         if (!self.isVisible()) return;
+
+        // YZUI 禁用时回退到原版渲染，让资源包可以替换 UI（模组自定义屏幕除外）
+        if (!yzwc$shouldApplyYzui()) {
+            return;
+        }
 
         // 保留原版工作方块输入框的样式（容器/告示牌/聊天/创造搜索等）
         net.minecraft.client.gui.screens.Screen screen = Minecraft.getInstance().gui.screen();
@@ -150,5 +156,17 @@ public class EditBoxMixin {
                     g.fill(x + w - 1 - i, y + h - 1 - j, x + w - i, y + h - j, c);
                 }
             }
+    }
+
+    /**
+     * 判断当前是否应应用 YZUI 自定义 UI 渲染。
+     * <p>当用户关闭了 YZUI 全局开关时，原版屏幕回退到原版渲染以允许资源包替换；
+     * 但模组自定义屏幕（包名以 {@code top.csituka.youzaiworldcore} 开头）始终使用 YZUI。</p>
+     */
+    @Unique
+    private static boolean yzwc$shouldApplyYzui() {
+        if (ClientExternalSettings.isYzuiEnabled()) return true;
+        var screen = Minecraft.getInstance().gui.screen();
+        return screen != null && screen.getClass().getName().startsWith("top.csituka.youzaiworldcore");
     }
 }

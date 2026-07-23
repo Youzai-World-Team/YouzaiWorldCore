@@ -387,6 +387,8 @@
   "title.youzaiworldcore.update_download_btn": "Перейти к загрузке",
   "title.youzaiworldcore.update_ignore_btn": "Больше не показывать эту версию",
   "screen.youzaiworldcore.settings.sidebar_config_io": "Экспорт/Импорт конфигурации",
+  "screen.youzaiworldcore.settings.sidebar_visual": "Визуал",
+  "screen.youzaiworldcore.settings.toggle_yzui": "Включить YZUI",
   "screen.youzaiworldcore.settings.sidebar_about": "О программе",
   "screen.youzaiworldcore.settings.config_io_export_btn": "Экспортировать текущую конфигурацию",
   "screen.youzaiworldcore.settings.config_io_import_btn": "Импортировать пакет конфигурации",

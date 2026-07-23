@@ -69,7 +69,7 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
 
     private final Panorama panorama;
 
-    /** 当前选中的分栏索引：0 = 开发者, 1 = 导出/导入配置, 2 = 关于 */
+    /** 当前选中的分栏索引：0 = 视觉, 1 = 导出/导入配置, 2 = 关于, 3 = 开发者 */
     private int selectedSection = 0;
 
     // ===== 滚动状态 =====
@@ -84,6 +84,7 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
     private TransparentButton closeButton;
     private TitleScreenTextButton sidebarDev;
     private TitleScreenTextButton sidebarConfigIo;
+    private TitleScreenTextButton sidebarVisual;
     private TitleScreenTextButton sidebarAbout;
     /** 关于分栏底部的「查看开源许可」按钮 */
     private TransparentButton ossNoticeButton;
@@ -105,6 +106,8 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
     private String debugPort;
     private String updateCheckAddress;
     private String updateJumpAddress;
+    /** 是否启用 YZUI 自定义 UI 样式 */
+    private boolean yzuiEnabled;
 
     // ===== 配置导入/导出分栏状态 =====
     /** 导出按钮（分栏 1） */
@@ -168,6 +171,7 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
         this.debugPort = ClientExternalSettings.getDebugPort();
         this.updateCheckAddress = ClientExternalSettings.getUpdateCheckAddress();
         this.updateJumpAddress = ClientExternalSettings.getUpdateJumpAddress();
+        this.yzuiEnabled = ClientExternalSettings.isYzuiEnabled();
         // 打开设置界面时，将当前（持久化）客户端更新地址推送到共享状态，供内嵌服务端使用
         pushUpdateState();
     }
@@ -231,6 +235,11 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
         if (sidebarConfigIo != null && mx >= sidebarConfigIo.getX() && mx < sidebarConfigIo.getX() + sidebarConfigIo.getWidth()
                 && my >= sidebarConfigIo.getY() && my < sidebarConfigIo.getY() + sidebarConfigIo.getHeight()) {
             sidebarConfigIo.onClick(event, bl);
+            return true;
+        }
+        if (sidebarVisual != null && mx >= sidebarVisual.getX() && mx < sidebarVisual.getX() + sidebarVisual.getWidth()
+                && my >= sidebarVisual.getY() && my < sidebarVisual.getY() + sidebarVisual.getHeight()) {
+            sidebarVisual.onClick(event, bl);
             return true;
         }
         if (sidebarAbout != null && mx >= sidebarAbout.getX() && mx < sidebarAbout.getX() + sidebarAbout.getWidth()
@@ -346,13 +355,13 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
         int sidebarX = 20;
         int sidebarY = 90;
 
-        sidebarDev = new TitleScreenTextButton(
+        sidebarVisual = new TitleScreenTextButton(
                 sidebarX, sidebarY, SIDEBAR_WIDTH, 22,
-                Component.translatable("screen.youzaiworldcore.settings.sidebar_developer"),
+                Component.translatable("screen.youzaiworldcore.settings.sidebar_visual"),
                 () -> { selectedSection = 0; rebuildWidgets(); }
         );
-        sidebarDev.setSelected(selectedSection == 0);
-        addRenderableWidget(sidebarDev);
+        sidebarVisual.setSelected(selectedSection == 0);
+        addRenderableWidget(sidebarVisual);
 
         sidebarConfigIo = new TitleScreenTextButton(
                 sidebarX, sidebarY + 30, SIDEBAR_WIDTH, 22,
@@ -370,6 +379,14 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
         );
         sidebarAbout.setSelected(selectedSection == 2);
         addRenderableWidget(sidebarAbout);
+
+        sidebarDev = new TitleScreenTextButton(
+                sidebarX, sidebarY + 90, SIDEBAR_WIDTH, 22,
+                Component.translatable("screen.youzaiworldcore.settings.sidebar_developer"),
+                () -> { selectedSection = 3; rebuildWidgets(); }
+        );
+        sidebarDev.setSelected(selectedSection == 3);
+        addRenderableWidget(sidebarDev);
 
         // ===== 右侧设置内容 =====
         buildContentWidgets();
@@ -553,7 +570,7 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
         int baseX = CONTENT_LEFT + (this.width - CONTENT_LEFT - CONTENT_WIDTH) / 2;
         int baseY = CONTENT_TOP;
 
-        if (selectedSection == 0) {
+        if (selectedSection == 3) {
             // 开发者分栏 — 直接内联，不再委托给 buildContentWidgetsDeveloper（原计划未实现）
             int y = baseY + 16;
 
@@ -711,6 +728,24 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
         } else if (selectedSection == 1) {
             // 导出/导入配置分栏
             buildConfigIoSection(baseX, baseY);
+        } else if (selectedSection == 0) {
+            // 视觉分栏 — YZUI 开关
+            int y = baseY + 16;
+
+            CheckboxButton yzuiToggle = new CheckboxButton(
+                    baseX, y, CONTENT_WIDTH, 20,
+                    Component.translatable("screen.youzaiworldcore.settings.toggle_yzui"),
+                    yzuiEnabled,
+                    () -> {
+                        boolean newVal = !yzuiEnabled;
+                        yzuiEnabled = newVal;
+                        ClientExternalSettings.setYzuiEnabled(newVal);
+                        DebugLogger.info("SettingsScreen", "YZUI 已" + (newVal ? "启用" : "禁用"));
+                    }
+            );
+            addRenderableWidget(yzuiToggle);
+
+            maxContentY = y + 40;
         } else if (selectedSection == 2) {
             // 关于分栏 — 添加查看开源许可按钮
             int btnY = CONTENT_TOP + 240;  // 紧接 OSS 致谢文本下方（≈y+12）
@@ -824,6 +859,9 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
         if (sidebarConfigIo != null) {
             sidebarConfigIo.extractRenderState(guiGraphics, mouseX, mouseY, partialTick);
         }
+        if (sidebarVisual != null) {
+            sidebarVisual.extractRenderState(guiGraphics, mouseX, mouseY, partialTick);
+        }
         if (sidebarAbout != null) {
             sidebarAbout.extractRenderState(guiGraphics, mouseX, mouseY, partialTick);
         }
@@ -839,7 +877,7 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
         guiGraphics.pose().translate(0, -(float) scrollOffset);
 
         // 3a. 纯文本标签（在平移坐标系下使用自然 Y 坐标）
-        if (selectedSection == 0) {
+        if (selectedSection == 3) {
             guiGraphics.text(this.font, Component.translatable("screen.youzaiworldcore.settings.sidebar_developer"),
                     baseX, CONTENT_TOP, 0xFFFFFFFF, false);
             guiGraphics.text(this.font, Component.translatable("screen.youzaiworldcore.settings.dev_warning"),
@@ -888,6 +926,10 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
                     baseX, configBottomHintY, 0x60FFFFFF, false);
             guiGraphics.text(this.font, Component.translatable("screen.youzaiworldcore.settings.config_io_bottom_hint_line2"),
                     baseX, configBottomHintY + 10, 0x60FFFFFF, false);
+        } else if (selectedSection == 0) {
+            // ===== 视觉分栏文本 =====
+            guiGraphics.text(this.font, Component.translatable("screen.youzaiworldcore.settings.sidebar_visual"),
+                    baseX, CONTENT_TOP, 0xFFFFFFFF, false);
         } else if (selectedSection == 2) {
             // ===== 关于分栏 =====
             // 所有文字在图标右侧，使用 drawWrappedText 自动换行。

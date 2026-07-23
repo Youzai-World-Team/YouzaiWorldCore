@@ -9,6 +9,7 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import top.csituka.youzaiworldcore.client.config.ClientExternalSettings;
 
 /**
  * 替换原版滑动条样式，使其与项目自定义 {@code TransparentButton} 视觉一致。
@@ -83,6 +84,10 @@ public class AbstractSliderButtonMixin {
             GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick,
             CallbackInfo ci
     ) {
+        // YZUI 禁用时回退到原版渲染，让资源包可以替换 UI（模组自定义屏幕除外）
+        if (!yzwc$shouldApplyYzui()) {
+            return;
+        }
         AbstractSliderButton self = (AbstractSliderButton) (Object) this;
 
         boolean hovered = self.isHoveredOrFocused() || canChangeValue;
@@ -209,5 +214,17 @@ public class AbstractSliderButtonMixin {
                 }
             }
         }
+    }
+
+    /**
+     * 判断当前是否应应用 YZUI 自定义 UI 渲染。
+     * <p>当用户关闭了 YZUI 全局开关时，原版屏幕回退到原版渲染以允许资源包替换；
+     * 但模组自定义屏幕（包名以 {@code top.csituka.youzaiworldcore} 开头）始终使用 YZUI。</p>
+     */
+    @Unique
+    private static boolean yzwc$shouldApplyYzui() {
+        if (ClientExternalSettings.isYzuiEnabled()) return true;
+        var screen = Minecraft.getInstance().gui.screen();
+        return screen != null && screen.getClass().getName().startsWith("top.csituka.youzaiworldcore");
     }
 }

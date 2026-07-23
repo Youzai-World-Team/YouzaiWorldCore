@@ -387,6 +387,8 @@
   "title.youzaiworldcore.update_download_btn": "Aller au téléchargement",
   "title.youzaiworldcore.update_ignore_btn": "Ne plus afficher cette version",
   "screen.youzaiworldcore.settings.sidebar_config_io": "Exporter/Importer la configuration",
+  "screen.youzaiworldcore.settings.sidebar_visual": "Visuel",
+  "screen.youzaiworldcore.settings.toggle_yzui": "Activer YZUI",
   "screen.youzaiworldcore.settings.sidebar_about": "À propos",
   "screen.youzaiworldcore.settings.config_io_export_btn": "Exporter la configuration actuelle",
   "screen.youzaiworldcore.settings.config_io_import_btn": "Importer un pack de configuration",

@@ -8,6 +8,7 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import top.csituka.youzaiworldcore.client.config.ClientExternalSettings;
 
 /**
  * 替换原版按钮样式，使其与项目自定义 {@code TransparentButton} 视觉一致。
@@ -78,6 +79,10 @@ public class AbstractButtonMixin {
      */
     @Inject(method = "extractDefaultSprite", at = @At("HEAD"), cancellable = true)
     private void youzaiworldcore$replaceDefaultSprite(GuiGraphicsExtractor guiGraphics, CallbackInfo ci) {
+        // YZUI 禁用时回退到原版渲染，让资源包可以替换 UI（模组自定义屏幕除外）
+        if (!youzaiworldcore$shouldApplyYzui()) {
+            return;
+        }
         this.youzaiworldcore$cachedGuiGraphics = guiGraphics;
         AbstractButton self = this$youzaiworldcore$self();
 
@@ -129,7 +134,7 @@ public class AbstractButtonMixin {
             net.minecraft.client.gui.ActiveTextCollector collector, CallbackInfo ci
     ) {
         GuiGraphicsExtractor guiGraphics = this.youzaiworldcore$cachedGuiGraphics;
-        if (guiGraphics == null) {
+        if (!youzaiworldcore$shouldApplyYzui() || guiGraphics == null) {
             return; // 回退到原版
         }
 
@@ -197,5 +202,18 @@ public class AbstractButtonMixin {
     private static int youzaiworldcore$colorWithAlpha(int color, float alpha) {
         int a = (int) (Math.max(0, Math.min(255, alpha * 255)));
         return (a << 24) | (color & 0x00FFFFFF);
+    }
+
+    /**
+     * 判断当前是否应应用 YZUI 自定义 UI 渲染。
+     * <p>当用户关闭了 YZUI 全局开关时，原版屏幕（Vanilla）回退到原版渲染以允许资源包替换；
+     * 但模组自定义屏幕（包名以 {@code top.csituka.youzaiworldcore} 开头）始终使用 YZUI，
+     * 因为这些屏幕的视觉设计以 YZUI 白底样式为前提。</p>
+     */
+    @Unique
+    private static boolean youzaiworldcore$shouldApplyYzui() {
+        if (ClientExternalSettings.isYzuiEnabled()) return true;
+        var screen = Minecraft.getInstance().gui.screen();
+        return screen != null && screen.getClass().getName().startsWith("top.csituka.youzaiworldcore");
     }
 }
