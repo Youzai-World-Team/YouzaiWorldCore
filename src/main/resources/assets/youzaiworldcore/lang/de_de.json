@@ -530,5 +530,6 @@
   "enchantment.youzaiworldcore.sun_repair": "Sonnenreparatur",
   "enchantment.youzaiworldcore.sun_repair.desc": "Repariert Werkzeuge im Sonnenlicht",
   "enchantment.youzaiworldcore.spirit_turbo": "Geister-Turbo-Beschleuniger",
-  "enchantment.youzaiworldcore.spirit_turbo.desc": "Auf einem Halfter verzaubern, um die Allay-Laufgeschwindigkeit zu erhöhen"
+  "enchantment.youzaiworldcore.spirit_turbo.desc": "Auf einem Halfter verzaubern, um die Allay-Laufgeschwindigkeit zu erhöhen",
+  "youzaiworldcore.anvil_uses": "§7Amboss-Nutzung: %d"
 }

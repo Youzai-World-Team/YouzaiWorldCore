@@ -543,5 +543,6 @@
   "enchantment.youzaiworldcore.sun_repair": "Sun Repair",
   "enchantment.youzaiworldcore.sun_repair.desc": "Repairs tools under sunlight",
   "enchantment.youzaiworldcore.spirit_turbo": "Spirit Turbo Accelerator",
-  "enchantment.youzaiworldcore.spirit_turbo.desc": "Enchant on a lead to boost Allay movement speed"
+  "enchantment.youzaiworldcore.spirit_turbo.desc": "Enchant on a lead to boost Allay movement speed",
+  "youzaiworldcore.anvil_uses": "§7Anvil Uses: %d"
 }
