@@ -23,7 +23,9 @@ import top.csituka.youzaiworldcore.client.config.ConfigIOManager;
 import top.csituka.youzaiworldcore.client.config.PlatformDetector;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
+import java.awt.Desktop;
 import java.io.File;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -62,6 +64,8 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
     private static final float ABOUT_TITLE_SCALE = 1.5f;
     /** 标题颜色（金橙） */
     private static final int ABOUT_TITLE_COLOR = 0xFFFFCC88;
+    /** 图标圆角半径（像素） */
+    private static final int ICON_CORNER_RADIUS = 6;
 
     private final Panorama panorama;
 
@@ -81,6 +85,8 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
     private TitleScreenTextButton sidebarDev;
     private TitleScreenTextButton sidebarConfigIo;
     private TitleScreenTextButton sidebarAbout;
+    /** 关于分栏底部的「查看开源许可」按钮 */
+    private TransparentButton ossNoticeButton;
     private CheckboxButton devModeToggle;
     private DropdownButton logLevelDropdown;
     private DropdownButton debugModeDropdown;
@@ -242,6 +248,22 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
         if (logLevelDropdown != null && logLevelDropdown.isOpen()
                 && !logLevelDropdown.isPositionInsidePopup(event.x(), adjustedY)) {
             logLevelDropdown.closePopup();
+        }
+        // ===== 关于分栏：按钮区域直接命中 =====
+        if (selectedSection == 2) {
+            DebugLogger.entering("SettingsScreen", "ossBtnClick",
+                    String.format("mx=%.0f my=%.0f adjY=%.0f scroll=%.0f", mx, event.y(), adjustedY, scrollOffset));
+            // 宽泛命中区：从文字下方到视口底部
+            if (adjustedY >= CONTENT_TOP + 220 && adjustedY < this.height) {
+                DebugLogger.info("SettingsScreen", "OSS button HIT");
+                try {
+                    if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
+                        Desktop.getDesktop().browse(URI.create(
+                                "https://github.com/Youzai-World-Team/YouzaiWorldCore/blob/main/NOTICE.txt"));
+                    }
+                } catch (Exception ignored) {}
+                return true;
+            }
         }
         // 向子组件传递修正后的坐标（super 靠 adjustedEvent.y 匹配自然 Y 的 widget）
         MouseButtonEvent adjustedEvent = new MouseButtonEvent(
@@ -690,10 +712,23 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
             // 导出/导入配置分栏
             buildConfigIoSection(baseX, baseY);
         } else if (selectedSection == 2) {
-            // 关于分栏 — 用 this.height + 200 确保 maxContentY 始终大于
-            // viewPortHeight（= height - 100），从而 maxScroll > 0 → 始终可滚动，
-            // 滚动区域自然覆盖整个窗口，尾部不再有"不可滚动的空白区"。
-            maxContentY = Math.max(CONTENT_TOP + 400, this.height + 200);
+            // 关于分栏 — 添加查看开源许可按钮
+            int btnY = CONTENT_TOP + 240;  // 紧接 OSS 致谢文本下方（≈y+12）
+            ossNoticeButton = new TransparentButton(
+                    baseX, btnY, CONTENT_WIDTH, 22,
+                    Component.translatable("screen.youzaiworldcore.settings.about_license_btn_notice"),
+                    () -> {
+                        try {
+                            if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
+                                Desktop.getDesktop().browse(URI.create(
+                                        "https://github.com/Youzai-World-Team/YouzaiWorldCore/blob/main/NOTICE.txt"));
+                            }
+                        } catch (Exception ignored) {}
+                    }
+            );
+            addRenderableWidget(ossNoticeButton);
+            // 内容区高度：到按钮底部 + 余量即可，不强制 ≥ viewportHeight
+            maxContentY = btnY + 40;
             DebugLogger.info("SettingsScreen", "关于分栏: maxContentY=%d (height=%d, vpH=%d)",
                     maxContentY, this.height, this.viewportHeight);
         }
@@ -730,6 +765,31 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
             currentY += this.font.lineHeight + 2;
         }
         return currentY;
+    }
+
+    /**
+     * 为矩形添加圆角效果：覆盖角上的像素以产生裁切感。
+     * 使用和内容区背景色相同的半透明黑色。
+     */
+    private void clipRoundedCorners(GuiGraphicsExtractor guiGraphics, int x, int y, int w, int h, int r) {
+        // 背景覆盖色 = 0x60000000（与内容区的半透明黑色遮罩一致）
+        int bgColor = 0x60000000;
+        for (int i = 0; i < r; i++) {
+            for (int j = 0; j < r; j++) {
+                int dx = r - 1 - i;
+                int dy = r - 1 - j;
+                if (dx * dx + dy * dy >= r * r) {
+                    // 左上角
+                    guiGraphics.fill(x + i, y + j, x + i + 1, y + j + 1, bgColor);
+                    // 右上角
+                    guiGraphics.fill(x + w - 1 - i, y + j, x + w - i, y + j + 1, bgColor);
+                    // 左下角
+                    guiGraphics.fill(x + i, y + h - 1 - j, x + i + 1, y + h - j, bgColor);
+                    // 右下角
+                    guiGraphics.fill(x + w - 1 - i, y + h - 1 - j, x + w - i, y + h - j, bgColor);
+                }
+            }
+        }
     }
 
     // ========== 渲染 ==========
@@ -831,6 +891,7 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
         } else if (selectedSection == 2) {
             // ===== 关于分栏 =====
             // 所有文字在图标右侧，使用 drawWrappedText 自动换行。
+            // 除"开源许可"和"感谢所有群成员"后有一空行外，其余行间无多余空行。
             String version = UpdateChecker.getCurrentVersionString();
             int topY = CONTENT_TOP;
             int iconX = baseX;
@@ -838,11 +899,12 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
             int textX = baseX + ABOUT_ICON_SIZE + 10;
             int wrapWidth = CONTENT_WIDTH - ABOUT_ICON_SIZE - 10;  // 320 - 64 - 10 = 246
 
-            // 1. 绘制模组图标（左上）
+            // 1. 绘制模组图标 + 圆角（左上）
             guiGraphics.blit(RenderPipelines.GUI_TEXTURED, MOD_ICON_TEXTURE,
                     iconX, iconY, 0, 0,
                     ABOUT_ICON_SIZE, ABOUT_ICON_SIZE,
                     ABOUT_ICON_SIZE, ABOUT_ICON_SIZE);
+            clipRoundedCorners(guiGraphics, iconX, iconY, ABOUT_ICON_SIZE, ABOUT_ICON_SIZE, ICON_CORNER_RADIUS);
 
             int y = topY;
             // 2. 标题（1.5x，图标右侧）
@@ -869,37 +931,40 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
                     Component.translatable("screen.youzaiworldcore.settings.about_desc_line2"),
                     textX, y, wrapWidth, 0xA0FFFFFF, false);
 
-            // 5. 链接与版权
-            y += 16;
+            // 5. 链接与版权（行间仅 4px 呼吸空间）
+            y += 4;
             y = drawWrappedText(guiGraphics,
                     Component.translatable("screen.youzaiworldcore.settings.about_website"),
                     textX, y, wrapWidth, 0xFFFFFFFF, false);
-            y += 14;
+            y += 4;
             y = drawWrappedText(guiGraphics,
                     Component.translatable("screen.youzaiworldcore.settings.about_authors"),
                     textX, y, wrapWidth, 0x80FFFFFF, false);
-            y += 14;
+            y += 4;
             y = drawWrappedText(guiGraphics,
                     Component.translatable("screen.youzaiworldcore.settings.about_license"),
                     textX, y, wrapWidth, 0x80FFFFFF, false);
 
-            // 6. 鸣谢
+            // 6. 鸣谢（开源许可后有一空行）
             y += 20;
             y = drawWrappedText(guiGraphics,
                     Component.translatable("screen.youzaiworldcore.settings.about_credit_why"),
                     textX, y, wrapWidth, 0x80FFFFFF, false);
-            y += 11;
+            y += 4;
             y = drawWrappedText(guiGraphics,
                     Component.translatable("screen.youzaiworldcore.settings.about_credit_byzzdemy"),
                     textX, y, wrapWidth, 0x80FFFFFF, false);
-            y += 11;
+            y += 4;
             y = drawWrappedText(guiGraphics,
                     Component.translatable("screen.youzaiworldcore.settings.about_credit_testers"),
                     textX, y, wrapWidth, 0x80FFFFFF, false);
+
+            // 7. OSS 致谢（感谢测试后有一空行），纯文本，自动换行
             y += 20;
             y = drawWrappedText(guiGraphics,
                     Component.translatable("screen.youzaiworldcore.settings.about_credit_oss"),
                     textX, y, wrapWidth, 0xA0FFFFFF, false);
+            // 按钮由 buildContentWidgets 渲染，不在此处
         }
 
         // 3b. 父类渲染 widgets（侧栏/关闭按钮在此二次渲染，但被裁切矩形剪裁 → 不可见）

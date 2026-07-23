@@ -406,6 +406,7 @@
   "screen.youzaiworldcore.settings.about_credit_byzzdemy": "Thanks to byzzdemy for providing NBT structure files of Teleport Anchor Ruins",
   "screen.youzaiworldcore.settings.about_credit_testers": "Thanks to all group members for helping test features. Your efforts are appreciated!",
   "screen.youzaiworldcore.settings.about_credit_oss": "YouzaiWorldCore would not exist without FabricMC and other open-source projects",
+  "screen.youzaiworldcore.settings.about_license_btn_notice": "View Open Source Licenses",
   "screen.youzaiworldcore.settings.config_io.export_dialog_title": "Choose Config Export Path",
   "screen.youzaiworldcore.settings.config_io.import_dialog_title": "Choose Config Pack",
   "screen.youzaiworldcore.settings.config_io_op_in_progress": "Processing...",

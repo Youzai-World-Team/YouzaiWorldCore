@@ -31,7 +31,9 @@
     "OptionsSaveMixin",
     "MouseHandlerScrollMixin",
     "PingDisplayMixin",
-    "EntityRendererMixin"
+    "EntityRendererMixin",
+    "itemborder.AbstractContainerScreenMixin",
+    "itemborder.HudHotbarMixin"
   ],
   "injectors": {
     "defaultRequire": 1
