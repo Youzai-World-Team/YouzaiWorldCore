@@ -101,7 +101,13 @@ public abstract class ContextualBarMixin {
             HealthBarRenderer.fillBarFill(graphics, left, top, progressWidth, BAR_WIDTH, COLOR_EXP_FILL);
         }
 
-        // 经验数值文字（左：当前等级内经验，右：升级所需）
+        // 经验数值文字：与血条/饥饿条文本同位置（居中在各自的 85px 区域内）
+        int sw = graphics.guiWidth();
+        int yzuiBarWidth = HealthBarRenderer.BAR_WIDTH; // 85
+        int yzuiGap = HealthBarRenderer.BAR_GAP;        // 8
+        int yzuiTotal = yzuiBarWidth * 2 + yzuiGap;     // 178
+        int startX = (sw - yzuiTotal) / 2;
+
         Font font = Minecraft.getInstance().font;
         int currentXp = (int) (progress * xpNeeded);
         int textY = top - 2; // 条上方 2px（基线）
@@ -110,18 +116,21 @@ public abstract class ContextualBarMixin {
         String currentText = String.valueOf(currentXp);
         String neededText = String.valueOf(xpNeeded);
 
-        // 左对齐：当前经验
-        int leftX = left + 2;
-        graphics.text(font, currentText, leftX + shadowOffset, textY + shadowOffset,
+        // 左经验值：居中在血条区域（healthX + 85/2）
+        int healthCenterX = startX + yzuiBarWidth / 2;
+        int currentWidth = font.width(currentText);
+        int currentX = healthCenterX - currentWidth / 2;
+        graphics.text(font, currentText, currentX + shadowOffset, textY + shadowOffset,
                 0xFF000000, false);
-        graphics.text(font, currentText, leftX, textY, 0xFFFFFFFF, false);
+        graphics.text(font, currentText, currentX, textY, 0xFFFFFFFF, false);
 
-        // 右对齐：所需经验
+        // 右经验值：居中在饥饿条区域（foodX + 85/2）
+        int foodCenterX = startX + yzuiBarWidth + yzuiGap + yzuiBarWidth / 2;
         int neededWidth = font.width(neededText);
-        int rightX = left + BAR_WIDTH - neededWidth - 2;
-        graphics.text(font, neededText, rightX + shadowOffset, textY + shadowOffset,
+        int neededX = foodCenterX - neededWidth / 2;
+        graphics.text(font, neededText, neededX + shadowOffset, textY + shadowOffset,
                 0xFF000000, false);
-        graphics.text(font, neededText, rightX, textY, 0xFFFFFFFF, false);
+        graphics.text(font, neededText, neededX, textY, 0xFFFFFFFF, false);
 
         DebugLogger.debug(LOG_TAG,
                 "经验条: progress=%.3f, current=%d, needed=%d, width=%d/%d",
