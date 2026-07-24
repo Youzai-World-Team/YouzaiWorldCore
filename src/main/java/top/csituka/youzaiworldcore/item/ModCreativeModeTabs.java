@@ -82,6 +82,7 @@ public class ModCreativeModeTabs {
                         .title(Component.translatable("itemGroup.youzaiworldcore.youzai_utilities"))
                         .displayItems((params, output) -> {
                                 output.accept(ModItems.HEART_OF_GUARDIANSHIP);
+                                output.accept(ModItems.INVISIBLE_ITEM_FRAME);
                         })
                         .build();
 

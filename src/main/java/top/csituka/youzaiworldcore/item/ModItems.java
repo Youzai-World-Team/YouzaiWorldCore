@@ -96,6 +96,11 @@ public class ModItems {
             new Item.Properties()
     );
 
+    public static final Item INVISIBLE_ITEM_FRAME = registerInvisibleItemFrame(
+            "invisible_item_frame",
+            new Item.Properties()
+    );
+
     private static Item register(String name, Item.Properties settings) {
         ResourceKey<Item> itemKey = ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, name));
         Item item = new Item(settings.setId(itemKey));
@@ -159,6 +164,12 @@ public class ModItems {
     private static Item registerSkyStarStaff(String name, Item.Properties settings) {
         ResourceKey<Item> itemKey = ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, name));
         Item item = new SkyStarStaffItem(settings.setId(itemKey));
+        return Registry.register(BuiltInRegistries.ITEM, itemKey, item);
+    }
+
+    private static Item registerInvisibleItemFrame(String name, Item.Properties settings) {
+        ResourceKey<Item> itemKey = ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, name));
+        Item item = new InvisibleItemFrameItem(settings.setId(itemKey));
         return Registry.register(BuiltInRegistries.ITEM, itemKey, item);
     }
 

@@ -557,5 +557,6 @@
   "trinkets.slot.chest.elytra": "鞘翅",
   "trinkets.slot.chest.backpack": "背包",
   "trinkets.slot.offhand.totem": "不死图腾",
-  "trinkets.slot.offhand.heart": "守护之心"
+  "trinkets.slot.offhand.heart": "守护之心",
+  "item.youzaiworldcore.invisible_item_frame": "隐形物品展示框"
 }

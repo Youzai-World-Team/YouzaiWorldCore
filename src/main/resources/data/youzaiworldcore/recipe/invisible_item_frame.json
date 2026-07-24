@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "#": "minecraft:item_frame",
+    "X": "minecraft:phantom_membrane"
+  },
+  "pattern": [
+    " X ",
+    "X#X",
+    " X "
+  ],
+  "result": {
+    "id": "youzaiworldcore:invisible_item_frame",
+    "count": 1
+  }
+}

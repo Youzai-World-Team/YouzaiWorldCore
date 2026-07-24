@@ -557,5 +557,6 @@
   "trinkets.slot.chest.elytra": "Elytra",
   "trinkets.slot.chest.backpack": "Backpack",
   "trinkets.slot.offhand.totem": "Totem of Undying",
-  "trinkets.slot.offhand.heart": "Heart of Guardianship"
+  "trinkets.slot.offhand.heart": "Heart of Guardianship",
+  "item.youzaiworldcore.invisible_item_frame": "Invisible Item Frame"
 }

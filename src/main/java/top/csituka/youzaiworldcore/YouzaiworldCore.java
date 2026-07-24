@@ -52,8 +52,10 @@ import top.csituka.youzaiworldcore.dimensionalinventories.DimensionPoolManager;
 import top.csituka.youzaiworldcore.dimensionalinventories.WorldPoolCommand;
 import top.csituka.youzaiworldcore.entity.seat.ModSeatEntities;
 import top.csituka.youzaiworldcore.event.AnvilRepairHandler;
+import top.csituka.youzaiworldcore.event.BoneMealSugarCaneHandler;
 import top.csituka.youzaiworldcore.event.ChargedCreeperHandler;
 import top.csituka.youzaiworldcore.event.ChorusFruitDropHandler;
+import top.csituka.youzaiworldcore.event.ConcretePowderSolidifyHandler;
 import top.csituka.youzaiworldcore.event.DragonElytraDropHandler;
 import top.csituka.youzaiworldcore.event.DoubleDoorsHandler;
 import top.csituka.youzaiworldcore.event.EndPortalHandler;
@@ -213,6 +215,15 @@ public class YouzaiworldCore implements ModInitializer {
         top.csituka.youzaiworldcore.event.SunRepairHandler.register();
         DebugLogger.info("YouzaiWorldCore", "注册乐魂涡轮加速器 Tick 事件...");
         top.csituka.youzaiworldcore.event.HappyGhastTurboHandler.register();
+
+        // ===== 注册甘蔗骨粉催熟事件 =====
+        DebugLogger.info("YouzaiworldCore", "注册甘蔗骨粉催熟事件...");
+        BoneMealSugarCaneHandler.register();
+
+        // ===== 注册混凝土粉末掉落物遇水固化事件 =====
+        DebugLogger.info("YouzaiworldCore", "注册混凝土粉末掉落物遇水固化事件...");
+        ConcretePowderSolidifyHandler.initialize();
+        ConcretePowderSolidifyHandler.register();
 
         DebugLogger.info("YouzaiworldCore", "注册矿物生成...");
         BiomeModifications.addFeature(
