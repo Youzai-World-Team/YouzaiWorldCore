@@ -34,7 +34,9 @@
     "EntityRendererMixin",
     "itemborder.AbstractContainerScreenMixin",
     "itemborder.HudHotbarMixin",
-    "itemborder.ItemStackRarityMixin"
+    "itemborder.ItemStackRarityMixin",
+    "technocrown.PigRendererMixin",
+    "technocrown.PigRenderStateMixin"
   ],
   "injectors": {
     "defaultRequire": 1
