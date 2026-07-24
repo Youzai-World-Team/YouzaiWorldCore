@@ -2,6 +2,7 @@ package top.csituka.youzaiworldcore.client.hud;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.world.entity.player.Player;
 
 /**
  * 冒险等级 HUD 渲染器。
@@ -150,9 +151,22 @@ public class AdventureLevelHudRenderer {
         int sw = g.guiWidth();
         int sh = g.guiHeight();
 
-        // 位置：物品栏上方，进一步上移
+        // 位置：置于 YZUI 两行条之上
+        // 计算 YZUI 第一行顶部（参考 HealthBarMixin 的布局逻辑）
+        int row1BarY = sh - HealthBarRenderer.Y_OFFSET_FROM_BOTTOM;        // 第一行条顶 Y
+        // 第一行文字顶部 ≈ 条顶 - 条高(5) - 文字间距(10) - 字高(9)
+        int yzuiTextTop = row1BarY - HealthBarRenderer.BAR_HEIGHT - 10 - 9;
+
+        // 如果第二行（盔甲/氧气条）有显示，则其文字顶部更高
+        Player player = client.player;
+        if (player != null && (player.getArmorValue() > 0 || player.getAirSupply() < player.getMaxAirSupply())) {
+            // 第二行条顶 Y = row1BarY - BAR_HEIGHT - ROW_GAP(12)，再扣除相同文字高度
+            yzuiTextTop -= (HealthBarRenderer.BAR_HEIGHT + 12 + 10 + 9);
+        }
+
+        // 经验 HUD 置于 YZUI 文字顶部之上，间隔 6px
         int barX = (sw - BAR_WIDTH) / 2;
-        int barY = sh - 48 + slide;
+        int barY = yzuiTextTop - 6 - BAR_HEIGHT + slide;
 
         // ─── 背景（纯色，无描边） ───
         g.fill(barX, barY, barX + BAR_WIDTH, barY + BAR_HEIGHT,
