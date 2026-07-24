@@ -25,6 +25,7 @@
     "AbstractButtonMixin",
     "AbstractSliderButtonMixin",
     "HealthBarMixin",
+    "food.FoodDataExhaustionAccessor",
     "EditBoxMixin",
     "MinecraftQuitMixin",
     "enchlevellangpatch.EnchantmentLevelLangPatchMixin",

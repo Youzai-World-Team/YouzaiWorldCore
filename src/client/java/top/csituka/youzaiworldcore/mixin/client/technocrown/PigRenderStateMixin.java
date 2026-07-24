@@ -4,6 +4,8 @@ import net.minecraft.client.renderer.entity.state.PigRenderState;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 
+import top.csituka.youzaiworldcore.client.accessor.RenderCrownDuck;
+
 /**
  * Mixin that injects a {@link RenderCrownDuck} boolean field into {@link PigRenderState},
  * allowing the crown feature renderer to determine whether the pig's crown should be drawn.

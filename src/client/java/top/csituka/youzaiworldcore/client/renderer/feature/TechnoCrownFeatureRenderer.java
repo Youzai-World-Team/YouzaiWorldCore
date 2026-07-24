@@ -13,7 +13,7 @@ import net.minecraft.resources.Identifier;
 import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 
-import top.csituka.youzaiworldcore.mixin.client.technocrown.RenderCrownDuck;
+import top.csituka.youzaiworldcore.client.accessor.RenderCrownDuck;
 
 /**
  * Feature renderer that draws a Technoblade crown on a pig when the pig's

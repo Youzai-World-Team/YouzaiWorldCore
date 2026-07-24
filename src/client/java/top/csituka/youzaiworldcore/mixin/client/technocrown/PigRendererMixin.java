@@ -17,6 +17,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import top.csituka.youzaiworldcore.client.renderer.feature.TechnoCrownFeatureRenderer;
+import top.csituka.youzaiworldcore.client.accessor.RenderCrownDuck;
 
 /**
  * Mixin into {@link PigRenderer} to:
