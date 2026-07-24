@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "youzaiworldcore:item/item_frame"
+    "layer0": "youzaiworldcore:item/glow_item_frame"
   }
 }

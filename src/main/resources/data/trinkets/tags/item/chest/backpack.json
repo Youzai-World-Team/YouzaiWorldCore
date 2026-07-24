@@ -1,7 +1,7 @@
 {
   "replace": false,
   "values": [
-    "sophisticatedbackpacks:leather_backpack",
+    "sophisticatedbackpacks:backpack",
     "sophisticatedbackpacks:copper_backpack",
     "sophisticatedbackpacks:iron_backpack",
     "sophisticatedbackpacks:gold_backpack",

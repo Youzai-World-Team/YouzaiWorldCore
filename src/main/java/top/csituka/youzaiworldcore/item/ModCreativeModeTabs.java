@@ -83,6 +83,7 @@ public class ModCreativeModeTabs {
                         .displayItems((params, output) -> {
                                 output.accept(ModItems.HEART_OF_GUARDIANSHIP);
                                 output.accept(ModItems.INVISIBLE_ITEM_FRAME);
+                                output.accept(ModItems.INVISIBLE_GLOW_ITEM_FRAME);
                         })
                         .build();
 

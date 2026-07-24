@@ -2,11 +2,11 @@
   "type": "minecraft:crafting_shapeless",
   "category": "misc",
   "ingredients": [
-    "minecraft:item_frame",
+    "minecraft:glow_item_frame",
     "minecraft:phantom_membrane"
   ],
   "result": {
-    "id": "youzaiworldcore:invisible_item_frame",
+    "id": "youzaiworldcore:invisible_glow_item_frame",
     "count": 1
   }
 }
