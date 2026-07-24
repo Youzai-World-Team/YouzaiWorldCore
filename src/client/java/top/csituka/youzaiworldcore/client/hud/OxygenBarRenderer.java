@@ -9,8 +9,10 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
 /**
  * YZUI 氧气值条渲染器。
  *
- * <p>替换原版气泡图标为长条状进度条，仅在水下 ({@code airSupply < maxAirSupply}) 时显示。
- * 位于食物条正上方（第二行右侧）。</p>
+ * <p>
+ * 替换原版气泡图标为长条状进度条，仅在水下 ({@code airSupply < maxAirSupply}) 时显示。
+ * 位于食物条正上方（第二行右侧）。
+ * </p>
  */
 @SuppressWarnings("null")
 public final class OxygenBarRenderer {
@@ -27,7 +29,8 @@ public final class OxygenBarRenderer {
 
     private static final String LOG_TAG = "OxygenBarRenderer";
 
-    private OxygenBarRenderer() {}
+    private OxygenBarRenderer() {
+    }
 
     /**
      * 在指定位置渲染自定义长条氧气值条。
@@ -54,7 +57,6 @@ public final class OxygenBarRenderer {
         int displayAir = Math.max(0, airSupply);
 
         int bw = HealthBarRenderer.BAR_WIDTH;
-        int bh = HealthBarRenderer.BAR_HEIGHT;
 
         float fillRatio = Math.min(1.0f, Math.max(0.0f, (float) displayAir / maxAirSupply));
 
@@ -62,14 +64,14 @@ public final class OxygenBarRenderer {
                 "渲染氧气条: air=%d, max=%d, fill=%.2f, pos=(%d,%d)",
                 displayAir, maxAirSupply, fillRatio, barX, barY);
 
-        // === 1. 背景 ===
-        graphics.fill(barX, barY, barX + bw, barY + bh, BG_COLOR);
+        // === 1. 背景（圆角） ===
+        HealthBarRenderer.fillBarBg(graphics, barX, barY, BG_COLOR);
 
-        // === 2. 填充（氧气低时显示红色警告） ===
+        // === 2. 填充（左侧圆角；氧气低时显示红色警告） ===
         int fillWidth = (int) (fillRatio * bw);
         if (fillWidth > 0) {
             int color = (fillRatio <= LOW_OXYGEN_RATIO) ? COLOR_OXYGEN_LOW : COLOR_OXYGEN;
-            graphics.fill(barX, barY, barX + fillWidth, barY + bh, color);
+            HealthBarRenderer.fillBarFill(graphics, barX, barY, fillWidth, color);
         }
 
         // === 3. 文字 ===

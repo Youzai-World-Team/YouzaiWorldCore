@@ -9,8 +9,10 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
 /**
  * YZUI 盔甲值条渲染器。
  *
- * <p>替换原版盔甲图标为长条状进度条，仅在 {@code armorValue > 0} 时显示。
- * 位于血条正上方（第二行左侧）。</p>
+ * <p>
+ * 替换原版盔甲图标为长条状进度条，仅在 {@code armorValue > 0} 时显示。
+ * 位于血条正上方（第二行左侧）。
+ * </p>
  */
 @SuppressWarnings("null")
 public final class ArmorBarRenderer {
@@ -25,7 +27,8 @@ public final class ArmorBarRenderer {
 
     private static final String LOG_TAG = "ArmorBarRenderer";
 
-    private ArmorBarRenderer() {}
+    private ArmorBarRenderer() {
+    }
 
     /**
      * 在指定位置渲染自定义长条盔甲值条。
@@ -48,20 +51,19 @@ public final class ArmorBarRenderer {
         }
 
         int bw = HealthBarRenderer.BAR_WIDTH;
-        int bh = HealthBarRenderer.BAR_HEIGHT;
 
         float fillRatio = Math.min(1.0f, armor / ARMOR_REFERENCE);
 
         DebugLogger.debug(LOG_TAG,
                 "渲染盔甲条: armor=%d, fill=%.2f, pos=(%d,%d)", armor, fillRatio, barX, barY);
 
-        // === 1. 背景 ===
-        graphics.fill(barX, barY, barX + bw, barY + bh, BG_COLOR);
+        // === 1. 背景（圆角） ===
+        HealthBarRenderer.fillBarBg(graphics, barX, barY, BG_COLOR);
 
-        // === 2. 填充 ===
+        // === 2. 填充（左侧圆角） ===
         int fillWidth = (int) (fillRatio * bw);
         if (fillWidth > 0) {
-            graphics.fill(barX, barY, barX + fillWidth, barY + bh, COLOR_ARMOR);
+            HealthBarRenderer.fillBarFill(graphics, barX, barY, fillWidth, COLOR_ARMOR);
         }
 
         // === 3. 文字 ===

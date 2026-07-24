@@ -108,8 +108,8 @@ public final class FoodBarRenderer {
         //   4. 饱和度叠加（橙色 + 白色高亮线）
         //   5. 文字
 
-        // === 1. 背景 ===
-        graphics.fill(barX, barY, barX + bw, barY + bh, BG_COLOR);
+        // === 1. 背景（圆角） ===
+        HealthBarRenderer.fillBarBg(graphics, barX, barY, BG_COLOR);
 
         // === 2. 消耗度底色（绘制在食物填充下方，从右侧延伸） ===
         //    参考 AppleSkin：底色在食物条背后，宽度 = exhaustionRatio * BAR_WIDTH
@@ -122,11 +122,11 @@ public final class FoodBarRenderer {
             graphics.fill(exhStartX, barY, barX + bw, barY + bh, COLOR_EXHAUSTION);
         }
 
-        // === 3. 食物填充（棕色） ===
+        // === 3. 食物填充（左侧圆角） ===
         int fillWidth = (int) (fillRatio * bw);
         int barColor = getFoodColor(fillRatio);
         if (fillWidth > 0) {
-            graphics.fill(barX, barY, barX + fillWidth, barY + bh, barColor);
+            HealthBarRenderer.fillBarFill(graphics, barX, barY, fillWidth, barColor);
         }
 
         // === 4. 饱和度叠加（橙色半透明 + 白色高亮线） ===
