@@ -164,9 +164,9 @@ public class AdventureLevelHudRenderer {
             yzuiTextTop -= (HealthBarRenderer.BAR_HEIGHT + 12 + 10 + 9);
         }
 
-        // 经验 HUD 置于 YZUI 文字顶部之上，间隔 6px
+        // 经验 HUD 置于 YZUI 文字顶部之上，间隔 2px
         int barX = (sw - BAR_WIDTH) / 2;
-        int barY = yzuiTextTop - 6 - BAR_HEIGHT + slide;
+        int barY = yzuiTextTop - 2 - BAR_HEIGHT + slide;
 
         // ─── 背景（纯色，无描边） ───
         g.fill(barX, barY, barX + BAR_WIDTH, barY + BAR_HEIGHT,

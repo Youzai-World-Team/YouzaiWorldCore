@@ -165,43 +165,51 @@ public final class HealthBarRenderer {
     private static final int RADIUS = 1;
 
     /**
-     * 绘制整条背景（全宽双端圆角）。
-     * 用于背景层，圆角两端。
+     * 绘制整条背景（全宽双端圆角），使用默认 BAR_WIDTH。
      */
     public static void fillBarBg(GuiGraphicsExtractor graphics, int x, int y, int color) {
-        int w = BAR_WIDTH;
+        fillBarBg(graphics, x, y, BAR_WIDTH, color);
+    }
+
+    /**
+     * 绘制整条背景（全宽双端圆角），指定宽度。
+     */
+    public static void fillBarBg(GuiGraphicsExtractor graphics, int x, int y, int w, int color) {
         int h = BAR_HEIGHT;
         int r = RADIUS;
-        // 主体
         graphics.fill(x + r, y, x + w - r, y + h, color);
-        // 左右端
         graphics.fill(x, y + r, x + r, y + h - r, color);
         graphics.fill(x + w - r, y + r, x + w, y + h - r, color);
     }
 
     /**
-     * 绘制左对齐的部分填充（左侧圆角，右侧平直；若填充到右边缘则双端圆角）。
-     * 用于血条/食物/盔甲/氧气的填充部分，fillWidth ≤ BAR_WIDTH。
+     * 绘制左对齐的部分填充（左侧圆角，右侧平直；若填充到右边缘则双端圆角），使用默认 BAR_WIDTH。
      */
     public static void fillBarFill(GuiGraphicsExtractor graphics, int x, int y, int fillWidth, int color) {
-        if (fillWidth <= 0) return;
+        fillBarFill(graphics, x, y, fillWidth, BAR_WIDTH, color);
+    }
+
+    /**
+     * 绘制左对齐的部分填充（左侧圆角，右侧平直；若填充到右边缘则双端圆角），指定总宽度。
+     */
+    public static void fillBarFill(GuiGraphicsExtractor graphics, int x, int y, int fillWidth, int totalWidth, int color) {
+        if (fillWidth <= 0 || totalWidth <= 0) return;
         int h = BAR_HEIGHT;
         int r = RADIUS;
-        int actualW = Math.min(fillWidth, BAR_WIDTH);
-        int rightEdge = x + actualW; // 填充右边界（绝对坐标）
+        int actualW = Math.min(fillWidth, totalWidth);
+        int rightEdge = x + actualW;
 
         // 主体（排除左右两端的角落像素列）
-        // 若填充到右边缘区域，右边界回退 r 像素以排除右上/右下角落
-        int rightLimit = (actualW >= BAR_WIDTH - r) ? rightEdge - r : rightEdge;
+        int rightLimit = (actualW >= totalWidth - r) ? rightEdge - r : rightEdge;
         if (rightLimit > x + r) {
             graphics.fill(x + r, y, rightLimit, y + h, color);
         }
 
-        // 左端（填充圆角区域，排除左上/左下角落 → 列 x, 行 y+r 到 y+h-r）
+        // 左端（填充圆角区域，排除左上/左下角落）
         graphics.fill(x, y + r, x + r, y + h - r, color);
 
         // 若填充覆盖到右边缘区域，也圆角右端
-        if (actualW >= BAR_WIDTH - r) {
+        if (actualW >= totalWidth - r) {
             graphics.fill(rightEdge - r, y + r, rightEdge, y + h - r, color);
         }
     }

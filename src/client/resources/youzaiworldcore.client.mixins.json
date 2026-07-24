@@ -38,7 +38,8 @@
     "itemborder.HudHotbarMixin",
     "itemborder.ItemStackRarityMixin",
     "technocrown.PigRendererMixin",
-    "technocrown.PigRenderStateMixin"
+    "technocrown.PigRenderStateMixin",
+    "ContextualBarMixin"
   ],
   "injectors": {
     "defaultRequire": 1
