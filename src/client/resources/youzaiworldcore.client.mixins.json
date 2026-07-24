@@ -24,6 +24,7 @@
     "SubtitleOverlayMixin",
     "AbstractButtonMixin",
     "AbstractSliderButtonMixin",
+    "HealthBarMixin",
     "EditBoxMixin",
     "MinecraftQuitMixin",
     "enchlevellangpatch.EnchantmentLevelLangPatchMixin",

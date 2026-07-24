@@ -17,19 +17,19 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import top.csituka.youzaiworldcore.client.renderer.feature.TechnoCrownFeatureRenderer;
-import top.csituka.youzaiworldcore.mixin.client.technocrown.RenderCrownDuck;
 
 /**
  * Mixin into {@link PigRenderer} to:
  * <ol>
- *   <li>Register the {@link TechnoCrownFeatureRenderer} layer on construction.</li>
- *   <li>Compute the crown visibility each frame by checking whether the pig's
- *       custom name equals "Technoblade".</li>
+ * <li>Register the {@link TechnoCrownFeatureRenderer} layer on
+ * construction.</li>
+ * <li>Compute the crown visibility each frame by checking whether the pig's
+ * custom name equals "Technoblade".</li>
  * </ol>
  * <p>
  * Adapted from technomodel by thecolonel63 (MIT License).
  */
-@SuppressWarnings({"unchecked", "rawtypes"})
+@SuppressWarnings({ "unchecked", "rawtypes" })
 @Mixin(PigRenderer.class)
 public abstract class PigRendererMixin extends LivingEntityRenderer {
 
@@ -43,14 +43,12 @@ public abstract class PigRendererMixin extends LivingEntityRenderer {
      * Injects at the tail of the {@code PigRenderer(Context)} constructor to
      * attach the Technoblade crown feature renderer.
      */
-    @Inject(method = "<init>(Lnet/minecraft/client/renderer/entity/EntityRendererProvider$Context;)V",
-            at = @At("TAIL"))
+    @Inject(method = "<init>(Lnet/minecraft/client/renderer/entity/EntityRendererProvider$Context;)V", at = @At("TAIL"))
     private void addTechnoCrownFeature(EntityRendererProvider.Context context, CallbackInfo ci) {
         this.addLayer(new TechnoCrownFeatureRenderer<PigRenderState, PigModel, PigModel>(
                 this,
                 new PigModel(context.bakeLayer(ModelLayers.PIG_SADDLE)),
-                new BabyPigModel(context.bakeLayer(ModelLayers.PIG_BABY))
-        ));
+                new BabyPigModel(context.bakeLayer(ModelLayers.PIG_BABY))));
         LOGGER.debug("[YouzaiWorldCore] TechnoCrownFeatureRenderer added to PigRenderer");
     }
 
@@ -59,8 +57,7 @@ public abstract class PigRendererMixin extends LivingEntityRenderer {
      * to set the crown render flag based on the pig's custom name.
      */
     @Inject(method = "extractRenderState(Lnet/minecraft/world/entity/animal/pig/Pig;"
-            + "Lnet/minecraft/client/renderer/entity/state/PigRenderState;F)V",
-            at = @At("TAIL"))
+            + "Lnet/minecraft/client/renderer/entity/state/PigRenderState;F)V", at = @At("TAIL"))
     private void onUpdateRenderState(Pig pigEntity, PigRenderState pigEntityRenderState, float f, CallbackInfo ci) {
         boolean shouldRender = pigEntity.getName().getString().equals("Technoblade");
         ((RenderCrownDuck) pigEntityRenderState).youzaiworldcore$setRenderCrown(shouldRender);
