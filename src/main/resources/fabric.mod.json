@@ -61,8 +61,7 @@
     "advancementplaques": "*",
     "trinkets_updated": "*",
     "EnchantmentDescriptions": "*",
-    "sophisticatedbackpacks": "*",
-    "legendarytooltips": "*"
+    "sophisticatedbackpacks": "*"
   },
   "custom": {
     "modmenu": {

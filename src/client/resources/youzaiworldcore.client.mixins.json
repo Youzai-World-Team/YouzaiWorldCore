@@ -39,7 +39,8 @@
     "itemborder.ItemStackRarityMixin",
     "technocrown.PigRendererMixin",
     "technocrown.PigRenderStateMixin",
-    "ContextualBarMixin"
+    "ContextualBarMixin",
+    "InventoryScreenSwitchMixin"
   ],
   "injectors": {
     "defaultRequire": 1
