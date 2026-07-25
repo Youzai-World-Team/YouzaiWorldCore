@@ -34,6 +34,7 @@ import top.csituka.youzaiworldcore.config.DoubleDoorsState;
 import top.csituka.youzaiworldcore.config.EndPortalConfig;
 import top.csituka.youzaiworldcore.config.ServerExternalSettings;
 import top.csituka.youzaiworldcore.luckperms.LuckPermsHelper;
+import top.csituka.youzaiworldcore.trialvault.TrialVaultConfig;
 import top.csituka.youzaiworldcore.skill.AdventureLevelManager;
 import top.csituka.youzaiworldcore.skill.AttributeManager;
 import top.csituka.youzaiworldcore.skill.PlayerAttributeStorage;
@@ -178,6 +179,10 @@ public class YouzaiworldCore implements ModInitializer {
         ChargedCreeperConfig.load();
         DebugLogger.info("YouzaiworldCore", "注册天然带电苦力怕事件...");
         ChargedCreeperHandler.register();
+
+        // ===== 初始化试炼宝库无限领奖功能（参考 trial-chamber-time-removal，原生重写） =====
+        DebugLogger.info("YouzaiworldCore", "加载试炼宝库无限领奖配置...");
+        TrialVaultConfig.load();
 
         // ===== 初始化双开门功能（Double Doors，参考 Serilum 的 Double Doors 设计，原生实现，已精简为按玩家开关） =====
         DebugLogger.info("YouzaiworldCore", "加载双开门玩家状态...");

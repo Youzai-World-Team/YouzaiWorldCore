@@ -30,7 +30,8 @@
     "pet.WolfOwnerHurtTargetGoalMixin",
     "pet.WolfOwnerHurtByTargetGoalMixin",
     "pet.WolfHurtByTargetGoalMixin",
-    "pet.TargetGoalAccessor"
+    "pet.TargetGoalAccessor",
+    "trialvault.VaultServerDataMixin"
   ],
   "injectors": {
     "defaultRequire": 1

@@ -32,9 +32,9 @@ public class TechnoCrownFeatureRenderer<S extends LivingEntityRenderState, RM ex
 
     private static final Logger LOGGER = LogUtils.getLogger();
 
-    private final Identifier TEXTURE_ADULT = Identifier.withDefaultNamespace(
+    private final @NonNull Identifier TEXTURE_ADULT = Identifier.withDefaultNamespace(
             "textures/entity/pig/technocrown_adult.png");
-    private final Identifier TEXTURE_BABY = Identifier.withDefaultNamespace(
+    private final @NonNull Identifier TEXTURE_BABY = Identifier.withDefaultNamespace(
             "textures/entity/pig/technocrown_baby.png");
 
     private final EM adultModel;
@@ -47,6 +47,7 @@ public class TechnoCrownFeatureRenderer<S extends LivingEntityRenderState, RM ex
     }
 
     @Override
+    @SuppressWarnings("null")
     public void submit(
             @NonNull PoseStack stack,
             @NonNull SubmitNodeCollector collector,
