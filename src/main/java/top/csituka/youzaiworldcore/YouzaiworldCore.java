@@ -53,6 +53,7 @@ import top.csituka.youzaiworldcore.dimensionalinventories.WorldPoolCommand;
 import top.csituka.youzaiworldcore.entity.seat.ModSeatEntities;
 import top.csituka.youzaiworldcore.event.AnvilRepairHandler;
 import top.csituka.youzaiworldcore.event.BoneMealSugarCaneHandler;
+import top.csituka.youzaiworldcore.event.BoneMealSugarCaneDispenserBehavior;
 import top.csituka.youzaiworldcore.event.ChargedCreeperHandler;
 import top.csituka.youzaiworldcore.event.ChorusFruitDropHandler;
 import top.csituka.youzaiworldcore.event.ConcretePowderSolidifyHandler;
@@ -219,6 +220,8 @@ public class YouzaiworldCore implements ModInitializer {
         // ===== 注册甘蔗骨粉催熟事件 =====
         DebugLogger.info("YouzaiworldCore", "注册甘蔗骨粉催熟事件...");
         BoneMealSugarCaneHandler.register();
+        DebugLogger.info("YouzaiworldCore", "注册发射器骨粉催熟甘蔗行为...");
+        BoneMealSugarCaneDispenserBehavior.register();
 
         // ===== 注册混凝土粉末掉落物遇水固化事件 =====
         DebugLogger.info("YouzaiworldCore", "注册混凝土粉末掉落物遇水固化事件...");

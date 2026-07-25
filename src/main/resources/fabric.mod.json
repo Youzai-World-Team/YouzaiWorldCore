@@ -61,7 +61,8 @@
     "advancementplaques": "*",
     "trinkets_updated": "*",
     "EnchantmentDescriptions": "*",
-    "sophisticatedbackpacks": "*"
+    "sophisticatedbackpacks": "*",
+    "appleskin": "*"
   },
   "custom": {
     "modmenu": {

@@ -84,12 +84,43 @@ public class BoneMealSugarCaneHandler implements UseBlockCallback {
         ServerLevel serverLevel = (ServerLevel) level;
         ServerPlayer serverPlayer = (ServerPlayer) player;
 
+        // 调用共享催熟方法
+        boolean grew = tryGrowSugarCane(serverLevel, clickedPos);
+
+        if (!grew) {
+            DebugLogger.exiting("BoneMealSugarCaneHandler", "interact", "FAIL (could not grow)");
+            return InteractionResult.FAIL;
+        }
+
+        // ===== 消耗骨粉（非创造模式）=====
+        if (!serverPlayer.isCreative()) {
+            stack.shrink(1);
+            serverPlayer.getInventory().setChanged();
+        }
+
+        DebugLogger.info("BoneMealSugarCaneHandler",
+                "甘蔗催熟成功：玩家=%s", player.getName().getString());
+        DebugLogger.exiting("BoneMealSugarCaneHandler", "interact", "SUCCESS");
+        return InteractionResult.SUCCESS;
+    }
+
+    /**
+     * 静态工具方法：尝试在指定甘蔗柱上催熟一格。
+     * <p>
+     * 供玩家交互处理器和发射器行为共享使用。
+     * </p>
+     *
+     * @param level  服务端世界
+     * @param bottomPos 甘蔗底部方块位置
+     * @return 是否成功催熟
+     */
+    public static boolean tryGrowSugarCane(ServerLevel level, BlockPos bottomPos) {
         // 找到甘蔗柱顶部
-        BlockPos topPos = clickedPos;
+        BlockPos topPos = bottomPos;
         int caneHeight = 1;
         while (true) {
             BlockPos abovePos = topPos.above();
-            BlockState aboveState = serverLevel.getBlockState(abovePos);
+            BlockState aboveState = level.getBlockState(abovePos);
             if (aboveState.getBlock() instanceof SugarCaneBlock) {
                 topPos = abovePos;
                 caneHeight++;
@@ -99,42 +130,33 @@ public class BoneMealSugarCaneHandler implements UseBlockCallback {
         }
 
         DebugLogger.info("BoneMealSugarCaneHandler",
-                "甘蔗柱底部=%s, 顶部=%s, 高度=%d", clickedPos, topPos, caneHeight);
+                "甘蔗柱底部=%s, 顶部=%s, 高度=%d", bottomPos, topPos, caneHeight);
 
-        // ===== 条件 4：检查是否已达到最大高度 =====
+        // 条件：检查是否已达到最大高度
         if (caneHeight >= MAX_CANE_HEIGHT) {
             DebugLogger.branch("BoneMealSugarCaneHandler", "cane height < max", false,
                     "height=" + caneHeight + ", max=" + MAX_CANE_HEIGHT);
-            DebugLogger.exiting("BoneMealSugarCaneHandler", "interact", "FAIL (max height reached)");
-            return InteractionResult.FAIL;
+            return false;
         }
 
-        // ===== 条件 5：顶部上方必须有空气 =====
+        // 条件：顶部上方必须有空气
         BlockPos aboveTop = topPos.above();
-        if (!serverLevel.getBlockState(aboveTop).isAir()) {
+        if (!level.getBlockState(aboveTop).isAir()) {
             DebugLogger.branch("BoneMealSugarCaneHandler", "space above is air", false,
-                    "block=" + serverLevel.getBlockState(aboveTop).getBlock());
-            DebugLogger.exiting("BoneMealSugarCaneHandler", "interact", "FAIL (blocked above)");
-            return InteractionResult.FAIL;
+                    "block=" + level.getBlockState(aboveTop).getBlock());
+            return false;
         }
 
-        // ===== 执行催熟：放置新甘蔗 =====
+        // 执行催熟：放置新甘蔗
         BlockState newCaneState = Blocks.SUGAR_CANE.defaultBlockState();
-        serverLevel.setBlockAndUpdate(aboveTop, newCaneState);
+        level.setBlockAndUpdate(aboveTop, newCaneState);
 
         // 播放骨粉粒子效果
-        serverLevel.levelEvent(1505, aboveTop, 15);
-
-        // ===== 消耗骨粉（非创造模式）=====
-        if (!serverPlayer.isCreative()) {
-            stack.shrink(1);
-            serverPlayer.getInventory().setChanged();
-        }
+        level.levelEvent(1505, aboveTop, 15);
 
         DebugLogger.info("BoneMealSugarCaneHandler",
-                "甘蔗催熟成功：玩家=%s, 新位置=%s", player.getName().getString(), aboveTop);
-        DebugLogger.exiting("BoneMealSugarCaneHandler", "interact", "SUCCESS");
-        return InteractionResult.SUCCESS;
+                "甘蔗催熟成功：新位置=%s", aboveTop);
+        return true;
     }
 
     /**
