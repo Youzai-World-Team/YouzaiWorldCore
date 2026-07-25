@@ -35,15 +35,18 @@ public class InvisibilityClientCommand {
 
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, context) -> dispatcher.register(
                 literal("yzwc")
-                        .then(literal("function"))
-                                .then(literal("invisibility"))
+                        .then(literal("function")
+                                .then(literal("invisibility")
                                         .then(argument("enabled", BoolArgumentType.bool())
                                                 .executes(cmdContext -> {
                                                     sendToggle(
                                                             cmdContext.getSource().getPlayer(),
                                                             BoolArgumentType.getBool(cmdContext, "enabled"));
                                                     return Command.SINGLE_SUCCESS;
-                                                }))
+                                                })
+                                        )
+                                )
+                        )
         ));
 
         DebugLogger.info(MODULE, "客户端命令 /yzwc function invisibility 已注册");

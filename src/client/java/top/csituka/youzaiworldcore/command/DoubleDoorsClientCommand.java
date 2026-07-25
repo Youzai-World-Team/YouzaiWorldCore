@@ -35,8 +35,8 @@ public class DoubleDoorsClientCommand {
 
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, context) -> dispatcher.register(
                 literal("yzwc")
-                        .then(literal("function"))
-                                .then(literal("double_doors"))
+                        .then(literal("function")
+                                .then(literal("double_doors")
                                         // /yzwc function double_doors  -> 查询自身
                                         .executes(cmdContext -> {
                                             sendToggle(cmdContext.getSource().getPlayer(), null);
@@ -49,7 +49,10 @@ public class DoubleDoorsClientCommand {
                                                             cmdContext.getSource().getPlayer(),
                                                             BoolArgumentType.getBool(cmdContext, "enabled"));
                                                     return Command.SINGLE_SUCCESS;
-                                                }))
+                                                })
+                                        )
+                                )
+                        )
         ));
 
         DebugLogger.info(MODULE, "客户端命令 /yzwc function double_doors 已注册");
