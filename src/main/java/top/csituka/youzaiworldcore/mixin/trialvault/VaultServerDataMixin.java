@@ -1,6 +1,6 @@
 package top.csituka.youzaiworldcore.mixin.trialvault;
 
-import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.entity.vault.VaultServerData;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
@@ -46,7 +46,7 @@ public class VaultServerDataMixin {
      * </p>
      */
     @Inject(method = "hasRewardedPlayer", at = @At("HEAD"), cancellable = true)
-    private void youzaiworldcore$bypassHasRewardedPlayer(ServerPlayer player,
+    private void youzaiworldcore$bypassHasRewardedPlayer(Player player,
                                                           CallbackInfoReturnable<Boolean> cir) {
         if (!TrialVaultConfig.isEnabled()) {
             return;
@@ -67,7 +67,7 @@ public class VaultServerDataMixin {
      * </p>
      */
     @Inject(method = "addToRewardedPlayers", at = @At("HEAD"), cancellable = true)
-    private void youzaiworldcore$bypassAddToRewardedPlayers(ServerPlayer player,
+    private void youzaiworldcore$bypassAddToRewardedPlayers(Player player,
                                                              CallbackInfo ci) {
         if (!TrialVaultConfig.isEnabled()) {
             return;
