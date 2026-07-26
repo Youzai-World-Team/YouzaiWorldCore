@@ -92,7 +92,7 @@ public class EditBoxMixin {
 
         // ---- 占位提示 ----
         if (clipped.isEmpty() && this.hint != null && !self.isFocused()) {
-            int hintColor = (a << 24) | 0x808080;
+            int hintColor = (a << 24) | 0x666666; // 深灰（避免与白底背景混色）
             String hintStr = this.hint.getString();
             String hintClipped = this.font.plainSubstrByWidth(hintStr, maxW);
             gfx.text(this.font, hintClipped, textX, textY, hintColor, false);
@@ -108,7 +108,7 @@ public class EditBoxMixin {
         // ---- 补全建议 ----
         if (this.suggestion != null && !this.suggestion.isEmpty() && !text.isEmpty()) {
             int sugX = textX + this.font.width(clipped);
-            int sugColor = (a << 24) | 0x808080;
+            int sugColor = (a << 24) | 0x888888;
             String sugClipped = this.font.plainSubstrByWidth(this.suggestion, maxW - this.font.width(clipped));
             if (!sugClipped.isEmpty()) {
                 gfx.text(this.font, sugClipped, sugX, textY, sugColor, false);
