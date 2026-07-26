@@ -28,15 +28,18 @@ public class YzuCreativeInventoryScreen extends Screen {
     private static final Logger LOG = LoggerFactory.getLogger("YzuCreativeInventoryScreen");
 
     // layout
-    private static final int PW = 380, PH = 210, PR = 6;
+    private static final int PW = 356, PH = 168, PR = 6;
     private static final int TY = 4, TW = 28, TH = 22, TG = 2, TR = 4;
-    private static final int SX = 250, SY = 6, SW = 120, SH = 16;
+    private static final int SX = 250, SY = 6, SW = 96, SH = 16; // 搜索框右缘 ≤ 物品栏右缘 (x=346)
     private static final int GX = 10, GY = 34, SS = 16, SG = 2, COLS = 9, VROWS = 7;
-    private static final int MX = 180, MY = 28, MW = 50, MH = 80, MSCALE = 35;
-    private static final int AX = 236, AY = 28;
-    private static final int OX = 236, OY = 100;
-    private static final int HB_Y = 184;
-    private static final int MAX_VIS = 6; // 最多显示 6 个分类按钮（+< > 共 8 个位置，不重叠搜索框）
+    private static final int SCROLL_X = 174, SCROLL_Y = 34, SCROLL_W = 4, SCROLL_H = 124; // 网格右侧滚动条
+    // 右侧面板：玩家模型（左上）+ 装备+副手（右上）/ 生存物品栏3×9（中）/ 快捷栏（底，与网格底对齐）
+    private static final int PM_X = 184, PM_Y = 34, PM_W = 30, PM_H = 50, PM_SCALE = 22;
+    private static final int ARM_X = 222, ARM_Y = 34; // 装备 2×2（slots 5-8）
+    private static final int OFF_X = 264, OFF_Y = 46; // 副手槽（slot 45）
+    private static final int INV_X = 184, INV_Y = 86, INV_ROWS = 3, INV_COLS = 9; // 生存物品栏 3×9（slots 9-35）
+    private static final int HB_X = 184, HB_Y = 140; // 1×9 快捷栏（底部对齐网格底 y=158）
+    private static final int MAX_VIS = 6;
 
     // colors
     private static final int BG = 0x80FFFFFF, SC = 0x40FFFFFF, SHV = 0x60FFFFFF, TA = 0x90FFFFFF;
@@ -177,22 +180,43 @@ public class YzuCreativeInventoryScreen extends Screen {
         fillR(g, lp, tp, PW, PH, PR, BG);
         drawTabs(g, mx, my);
         drawGrid(g, mx, my);
+        drawScroll(g, mx, my);
 
         var slots = player.inventoryMenu.slots;
-        int hbx = lp+GX, hby = tp+HB_Y;
+        // 玩家模型 3D 渲染（原版 InventoryScreen 风格，鼠标跟随旋转）
+        if (player != null) {
+            InventoryScreen.extractEntityInInventoryFollowsMouse(g, lp+PM_X, tp+PM_Y, lp+PM_X+PM_W, tp+PM_Y+PM_H, PM_SCALE, 0.0625f, xm, ym, player);
+        }
+
+        // 装备 2×2（slots 5-8：helmet/chest/legs/boots）
+        int ax = lp+ARM_X, ay = tp+ARM_Y;
+        for (int r = 0; r < 2; r++) for (int c = 0; c < 2; c++) {
+            int sx = ax + c*(SS+SG), sy = ay + r*(SS+SG);
+            fillR(g, sx, sy, SS, SS, 3, mx>=sx&&mx<sx+SS&&my>=sy&&my<sy+SS ? SHV : SC);
+            ItemStack ast = slots.get(5+r*2+c).getItem(); renderSlot(g, ast, sx, sy, 200+r*2+c); ItemBorderRenderer.renderBorder(g, sx, sy, ast);
+        }
+
+        // 副手（slot 45）
+        int ox = lp+OFF_X, oy = tp+OFF_Y;
+        fillR(g, ox, oy, SS, SS, 3, mx>=ox&&mx<ox+SS&&my>=oy&&my<oy+SS ? SHV : SC);
+        ItemStack ost = slots.get(45).getItem(); renderSlot(g, ost, ox, oy, 210); ItemBorderRenderer.renderBorder(g, ox, oy, ost);
+
+        // 生存物品栏 3×9（slots 9-35）
+        int invX = lp+INV_X, invY = tp+INV_Y;
+        for (int r = 0; r < INV_ROWS; r++) for (int c = 0; c < INV_COLS; c++) {
+            int sx = invX + c*(SS+SG), sy = invY + r*(SS+SG);
+            fillR(g, sx, sy, SS, SS, 3, mx>=sx&&mx<sx+SS&&my>=sy&&my<sy+SS ? SHV : SC);
+            ItemStack ist = slots.get(9+r*INV_COLS+c).getItem(); renderSlot(g, ist, sx, sy, 220+r*INV_COLS+c); ItemBorderRenderer.renderBorder(g, sx, sy, ist);
+        }
+
+        // 快捷栏 1×9（slots 36-44）
+        int hbx = lp+HB_X, hby = tp+HB_Y;
         for (int c = 0; c < 9; c++) {
-            int sx = hbx + c*(SS+SG); fillR(g, sx, hby, SS, SS, 3, mx>=sx&&mx<sx+SS&&my>=hby&&my<hby+SS ? SHV : SC);
+            int sx = hbx + c*(SS+SG);
+            fillR(g, sx, hby, SS, SS, 3, mx>=sx&&mx<sx+SS&&my>=hby&&my<hby+SS ? SHV : SC);
             ItemStack hst = slots.get(36+c).getItem(); renderSlot(g, hst, sx, hby, c); ItemBorderRenderer.renderBorder(g, sx, hby, hst);
         }
-        int ax = lp+AX, ay = tp+AY;
-        for (int r = 0; r < 4; r++) {
-            int sy = ay+r*(SS+SG); fillR(g, ax, sy, SS, SS, 3, SC);
-            ItemStack ast = slots.get(5+r).getItem(); renderSlot(g, ast, ax, sy, 100+r); ItemBorderRenderer.renderBorder(g, ax, sy, ast);
-        }
-        ItemStack ost = slots.get(45).getItem();
-        fillR(g, lp+OX, tp+OY, SS, SS, 3, SC); renderSlot(g, ost, lp+OX, tp+OY, 200); ItemBorderRenderer.renderBorder(g, lp+OX, tp+OY, ost);
 
-        if (player != null) InventoryScreen.extractEntityInInventoryFollowsMouse(g, lp+MX, tp+MY, lp+MX+MW, tp+MY+MH, MSCALE, 0.0625f, xm, ym, player);
         super.extractRenderState(g, mx, my, pt);
         xm = mx; ym = my;
 
@@ -257,6 +281,19 @@ public class YzuCreativeInventoryScreen extends Screen {
         }
     }
 
+    private void drawScroll(GuiGraphicsExtractor g, int mx, int my) {
+        int rows = (vis.size()+COLS-1)/COLS, maxS = Math.max(0, rows-VROWS);
+        int bx = lp+SCROLL_X, by = tp+SCROLL_Y;
+        // 背景槽
+        g.fill(bx, by, bx+SCROLL_W, by+SCROLL_H, 0x30FFFFFF);
+        if (maxS <= 0) return; // 无可滚动时不绘制 thumb
+        int thumbH = Math.max(6, (int)((float)VROWS/rows * SCROLL_H));
+        int trackH = SCROLL_H - thumbH;
+        int thumbY = by + (int)((float)Math.round(soff) / maxS * trackH);
+        boolean hov = mx>=bx-1 && mx<bx+SCROLL_W+1 && my>=by && my<by+SCROLL_H;
+        g.fill(bx, thumbY, bx+SCROLL_W, thumbY+thumbH, hov ? 0xCCFFFFFF : 0x80FFFFFF);
+    }
+
     private void pickupItem(ItemStack stack, int count) {
         stack = stack.copy(); stack.setCount(Math.min(count, stack.getMaxStackSize()));
         try { minecraft.player.containerMenu.setCarried(stack); }
@@ -264,6 +301,58 @@ public class YzuCreativeInventoryScreen extends Screen {
     }
 
     private void clearCarried() { minecraft.player.containerMenu.setCarried(ItemStack.EMPTY); }
+
+    /** 处理真实容器槽位的点击：合并/互换逻辑（与原版 InventoryMenu 行为一致）
+     *  <p>创造模式特殊处理：
+     *  <ul>
+     *  <li>空手拿取 → 复制到光标，不消耗库存（物品无限）</li>
+     *  <li>携带放置 → 走 {@link Player#getInventory()}{@code .add()} 真正写入服务端库存，
+     *  否则仅修改菜单槽位视图，切换到生存模式后会被服务端真实库存覆盖导致"消失"。</li>
+     *  </ul></p>
+     */
+    private void handleSlotClick(int slotIndex) {
+        var slot = player.inventoryMenu.slots.get(slotIndex);
+        ItemStack si = slot.getItem(), ca = minecraft.player.containerMenu.getCarried();
+        boolean creative = player.isCreative();
+        if (ca.isEmpty()) { // 空手 → 复制槽位物品到光标
+            if (!si.isEmpty()) {
+                minecraft.player.containerMenu.setCarried(si.copy());
+                // 创造模式不消耗库存；生存模式置空槽位
+                if (!creative) slot.set(ItemStack.EMPTY);
+                slot.setChanged();
+            }
+            return;
+        }
+        if (creative) {
+            // 创造模式携带物品 → 真正写入 Player.inventory（避免切换模式后消失）
+            // 同物品 → 先合并到原槽位（视觉反馈），再把剩余 add 到库存
+            if (!si.isEmpty() && ItemStack.isSameItemSameComponents(ca, si)) {
+                int space = si.getMaxStackSize() - si.getCount();
+                int move = Math.min(space, ca.getCount());
+                if (move > 0) { si.grow(move); ca.shrink(move); }
+            }
+            if (!ca.isEmpty()) {
+                player.getInventory().add(ca.copy());
+                ca.setCount(0);
+            }
+            minecraft.player.containerMenu.setCarried(ca.isEmpty() ? ItemStack.EMPTY : ca);
+            slot.setChanged();
+            return;
+        }
+        if (!si.isEmpty() && ItemStack.isSameItemSameComponents(ca, si)) {
+            // 生存模式同物品 → 合并（尽量放入槽位）
+            int space = si.getMaxStackSize() - si.getCount();
+            int move = Math.min(space, ca.getCount());
+            if (move > 0) { si.grow(move); ca.shrink(move); minecraft.player.containerMenu.setCarried(ca.isEmpty() ? ItemStack.EMPTY : ca); }
+        } else {
+            // 生存模式不同物品（或空槽位）→ 互换
+            minecraft.player.containerMenu.setCarried(si.copy()); slot.set(ca.copy()); slot.setChanged();
+        }
+    }
+
+    private boolean inRect(int mx, int my, int x, int y) {
+        return mx>=x && mx<x+SS && my>=y && my<y+SS;
+    }
 
     @Override public boolean mouseClicked(@NonNull MouseButtonEvent ev, boolean real) {
         // 点击搜索框 → 立即切换到全部物品模式（让 EditBox 接管焦点）
@@ -294,26 +383,26 @@ public class YzuCreativeInventoryScreen extends Screen {
         // 右翻页
         if (ev.x()>=tx&&ev.x()<tx+TW&&ev.y()>=arrowY&&ev.y()<arrowY+TH) { if (ev.button()==0&&tabPage<pc-1) tabPage++; return true; }
 
-        // 热栏
-        int hbx = lp+GX, hby = tp+HB_Y;
+        // 装备 2×2（slots 5-8：helmet/chest/legs/boots）+ 副手（slot 45）
+        int ax = lp+ARM_X, ay = tp+ARM_Y;
+        for (int r = 0; r < 2; r++) for (int c = 0; c < 2; c++) {
+            int sx = ax + c*(SS+SG), sy = ay + r*(SS+SG);
+            if (inRect((int)ev.x(), (int)ev.y(), sx, sy)) { handleSlotClick(5+r*2+c); return true; }
+        }
+        if (inRect((int)ev.x(), (int)ev.y(), lp+OFF_X, tp+OFF_Y)) { handleSlotClick(45); return true; }
+
+        // 生存物品栏 3×9（slots 9-35）
+        int invX = lp+INV_X, invY = tp+INV_Y;
+        for (int r = 0; r < INV_ROWS; r++) for (int c = 0; c < INV_COLS; c++) {
+            int sx = invX + c*(SS+SG), sy = invY + r*(SS+SG);
+            if (inRect((int)ev.x(), (int)ev.y(), sx, sy)) { handleSlotClick(9+r*INV_COLS+c); return true; }
+        }
+
+        // 快捷栏 1×9（slots 36-44）
+        int hbx = lp+HB_X, hby = tp+HB_Y;
         for (int c = 0; c < 9; c++) {
             int sx = hbx + c*(SS+SG);
-            if (ev.x()>=sx&&ev.x()<sx+SS&&ev.y()>=hby&&ev.y()<hby+SS) {
-                var slot = player.inventoryMenu.slots.get(36+c);
-                ItemStack si = slot.getItem(), ca = minecraft.player.containerMenu.getCarried();
-                if (ca.isEmpty()) { // 空手 → 拿起槽位物品
-                    minecraft.player.containerMenu.setCarried(si.copy()); slot.set(ItemStack.EMPTY);
-                } else if (!si.isEmpty() && ItemStack.isSameItemSameComponents(ca, si)) {
-                    // 同物品 → 合并（尽量放入槽位）
-                    int space = si.getMaxStackSize() - si.getCount();
-                    int move = Math.min(space, ca.getCount());
-                    if (move > 0) { si.grow(move); ca.shrink(move); minecraft.player.containerMenu.setCarried(ca.isEmpty() ? ItemStack.EMPTY : ca); }
-                } else {
-                    // 不同物品（或空槽位）→ 互换
-                    minecraft.player.containerMenu.setCarried(si.copy()); slot.set(ca.copy());
-                }
-                return true;
-            }
+            if (inRect((int)ev.x(), (int)ev.y(), sx, hby)) { handleSlotClick(36+c); return true; }
         }
 
         // 网格
