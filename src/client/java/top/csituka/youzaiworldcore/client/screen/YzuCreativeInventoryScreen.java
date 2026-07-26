@@ -62,6 +62,9 @@ public class YzuCreativeInventoryScreen extends Screen {
     @Override protected void init() {
         lp = (width - PW) / 2; tp = (height - PH) / 2;
         rebuildTabs();
+        // 强制构建 Tab 物品列表（原版 CreativeModeInventoryScreen.init() 中由 tryRebuildTabContents 完成，
+        // 但我们替换了原版屏幕阻止了该调用，因此需要手动触发。）
+        forceBuildTabContents();
         populateAll();
         initSearch();
 
@@ -91,6 +94,25 @@ public class YzuCreativeInventoryScreen extends Screen {
             if (t.getType() == CreativeModeTab.Type.CATEGORY) tabs.add(t);
         }
         selTab = tabs.isEmpty() ? null : tabs.get(0);
+    }
+
+    /** 强制构建所有 Tab 的 displayItems（原版在 CreativeModeInventoryScreen.init 中完成）。 */
+    private void forceBuildTabContents() {
+        try {
+            var level = player.level();
+            var features = level.enabledFeatures();
+            boolean op = player.isCreative() || player.isSpectator();
+            var holders = level.registryAccess(); // RegistryAccess implements HolderLookup.Provider
+            var params = new CreativeModeTab.ItemDisplayParameters(features, op, holders);
+            for (CreativeModeTab tab : tabs) {
+                if (tab.getDisplayItems() == null || tab.getDisplayItems().isEmpty()) {
+                    tab.buildContents(params);
+                }
+            }
+            LOG.debug("forceBuildTabContents done for {} tabs", tabs.size());
+        } catch (Exception e) {
+            LOG.warn("forceBuildTabContents failed: {}", e.getMessage());
+        }
     }
 
     private void populateAll() {
