@@ -10,10 +10,14 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
+import net.minecraft.world.item.enchantment.EnchantmentInstance;
 
 import top.csituka.youzaiworldcore.YouzaiworldCore;
 import top.csituka.youzaiworldcore.block.ModBlocks;
+import top.csituka.youzaiworldcore.enchantment.ModEnchantments;
 import top.csituka.youzaiworldcore.item.preset.PresetItems;
+import top.csituka.youzaiworldcore.util.DebugLogger;
 
 @SuppressWarnings("null")
 public class ModCreativeModeTabs {
@@ -109,11 +113,48 @@ public class ModCreativeModeTabs {
                         })
                         .build();
 
+        // ── 悠哉世界 - 附魔 ──
+        public static final ResourceKey<CreativeModeTab> YOUZAI_ENCHANTMENTS_KEY = ResourceKey.create(
+                        Registries.CREATIVE_MODE_TAB,
+                        Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "youzai_enchantments"));
+
+        public static final CreativeModeTab YOUZAI_ENCHANTMENTS = FabricCreativeModeTab.builder()
+                        .icon(() -> new ItemStack(Items.ENCHANTED_BOOK))
+                        .title(Component.translatable("itemGroup.youzaiworldcore.youzai_enchantments"))
+                        .displayItems((params, output) -> {
+                                var enchantmentRegistry = params.holders().lookupOrThrow(Registries.ENCHANTMENT);
+                                int total = 0;
+                                for (var key : ModEnchantments.ALL) {
+                                        var holderOpt = enchantmentRegistry.get(key);
+                                        if (holderOpt.isPresent()) {
+                                                var holder = holderOpt.get();
+                                                int maxLevel = holder.value().getMaxLevel();
+                                                for (int level = 1; level <= maxLevel; level++) {
+                                                        output.accept(EnchantmentHelper.createBook(new EnchantmentInstance(holder, level)));
+                                                        total++;
+                                                }
+                                                DebugLogger.debug("ModCreativeModeTabs",
+                                                                "YOUZAI_ENCHANTMENTS: added enchantment %s (max level %d)",
+                                                                key.identifier(), maxLevel);
+                                        } else {
+                                                DebugLogger.warn("ModCreativeModeTabs",
+                                                                "YOUZAI_ENCHANTMENTS: enchantment %s not found in registry, skipped",
+                                                                key.identifier());
+                                        }
+                                }
+                                DebugLogger.info("ModCreativeModeTabs",
+                                                "YOUZAI_ENCHANTMENTS tab populated with %d enchanted book(s)", total);
+                        })
+                        .build();
+
         public static void initialize() {
                 Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, YOUZAI_BLOCKS_KEY, YOUZAI_BLOCKS);
                 Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, YOUZAI_TOOLS_WEAPONS_KEY, YOUZAI_TOOLS_WEAPONS);
                 Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, YOUZAI_MATERIALS_KEY, YOUZAI_MATERIALS);
                 Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, YOUZAI_UTILITIES_KEY, YOUZAI_UTILITIES);
                 Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, YOUZAI_KITS_KEY, YOUZAI_KITS);
+                Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, YOUZAI_ENCHANTMENTS_KEY, YOUZAI_ENCHANTMENTS);
+                DebugLogger.info("ModCreativeModeTabs", "Registered YOUZAI_ENCHANTMENTS creative tab (%s)",
+                                YOUZAI_ENCHANTMENTS_KEY.identifier());
         }
 }
