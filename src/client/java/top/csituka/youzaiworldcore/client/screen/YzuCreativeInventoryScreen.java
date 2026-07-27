@@ -70,7 +70,6 @@ public class YzuCreativeInventoryScreen extends Screen {
     private final List<Integer> draggedSlots = new ArrayList<>();
     // 双击检测
     private long lastClickTime;
-    private int lastClickButton = -1;
     private int lastClickSlot = -1;
 
     public YzuCreativeInventoryScreen(Player player) {
@@ -141,7 +140,7 @@ public class YzuCreativeInventoryScreen extends Screen {
         }
     }
 
-    @SuppressWarnings({ "null", "unchecked" })
+    @SuppressWarnings("null")
     private void populateAll() {
         allItems.clear();
         BuiltInRegistries.ITEM.stream().forEach(item -> {
@@ -271,12 +270,29 @@ public class YzuCreativeInventoryScreen extends Screen {
         ym = my;
 
         ItemStack carried = minecraft.player.containerMenu.getCarried();
-        if (!carried.isEmpty()) {
-            g.item(carried, mx - 8, my - 8, 0);
-            g.itemDecorations(font, carried, mx - 8, my - 8, null);
-        }
-        // 拖拽中预览：在被拖过的格子上渲染即将放置的物品
+        // 先渲染拖拽预览（底层），再渲染鼠标物品（顶层）
         drawDragPreview(g, carried);
+        if (!carried.isEmpty()) {
+            // 拖拽中实时计算鼠标上的预期剩余数量
+            int cursorCount = carried.getCount();
+            if (isDragInProgress) {
+                int vc = getDragValidCount(carried);
+                if (vc > 0) {
+                    if (dragButton == 0) {
+                        // 左键平均分：全部分配完毕，余数 = total % validCount
+                        int total = carried.getCount();
+                        cursorCount = total % vc;
+                    } else {
+                        // 右键每格1个：每格消耗1
+                        cursorCount = Math.max(0, carried.getCount() - vc);
+                    }
+                }
+            }
+            ItemStack cursorDisplay = cursorCount == carried.getCount() ? carried : carried.copy();
+            if (cursorDisplay != carried) cursorDisplay.setCount(cursorCount);
+            g.item(cursorDisplay, mx - 8, my - 8, 0);
+            if (!cursorDisplay.isEmpty()) g.itemDecorations(font, cursorDisplay, mx - 8, my - 8, null);
+        }
         if (carried.isEmpty()) {
             int hov = getHoveredGridIndex(mx, my);
             if (hov >= 0 && hov < vis.size()) {
@@ -378,8 +394,8 @@ public class YzuCreativeInventoryScreen extends Screen {
             tx += TW + TG;
         }
 
-        // 右翻页（始终显示）
-        int rightX = tx;
+        // 右翻页（固定位置：最大 6 个 Tab 尾部之后）
+        int rightX = lp + 3 + TW + TG + MAX_VIS * (TW + TG);
         boolean canRight = tabPage < pc - 1;
         boolean rh = canRight && mx >= rightX && mx < rightX + TW && my >= arrowY && my < arrowY + TH;
         fillR(g, rightX, arrowY, TW, TH, TR, rh ? 0x80FFFFFF : (canRight ? 0x60FFFFFF : 0x30FFFFFF));
@@ -574,19 +590,19 @@ public class YzuCreativeInventoryScreen extends Screen {
 
     /** 根据槽位索引返回屏幕 X 坐标（仅右侧面板槽位有效）。 */
     private int getSlotScreenX(int si) {
-        int ax = lp + ARM_X, ay = tp + ARM_Y;
-        int invX = lp + INV_X, invY = tp + INV_Y;
-        int hbx = lp + HB_X, hby = tp + HB_Y;
-        int offX = lp + OFF_X, offY = tp + OFF_Y;
+        int ax = lp + ARM_X;
+        int invX = lp + INV_X;
+        int hbx = lp + HB_X;
+        int offX = lp + OFF_X;
         if (si >= 5 && si <= 8) {
-            int r = (si - 5) / 2, c = (si - 5) % 2;
+            int c = (si - 5) % 2;
             return ax + c * (SS + SG);
         }
         if (si == 45)
             return offX;
         if (si >= 9 && si <= 35) {
             int idx = si - 9;
-            int r = idx / INV_COLS, c = idx % INV_COLS;
+            int c = idx % INV_COLS;
             return invX + c * (SS + SG);
         }
         if (si >= 36 && si <= 44) {
@@ -596,19 +612,19 @@ public class YzuCreativeInventoryScreen extends Screen {
     }
 
     private int getSlotScreenY(int si) {
-        int ax = lp + ARM_X, ay = tp + ARM_Y;
-        int invX = lp + INV_X, invY = tp + INV_Y;
-        int hbx = lp + HB_X, hby = tp + HB_Y;
-        int offX = lp + OFF_X, offY = tp + OFF_Y;
+        int ay = tp + ARM_Y;
+        int invY = tp + INV_Y;
+        int hby = tp + HB_Y;
+        int offY = tp + OFF_Y;
         if (si >= 5 && si <= 8) {
-            int r = (si - 5) / 2, c = (si - 5) % 2;
+            int r = (si - 5) / 2;
             return ay + r * (SS + SG);
         }
         if (si == 45)
             return offY;
         if (si >= 9 && si <= 35) {
             int idx = si - 9;
-            int r = idx / INV_COLS, c = idx % INV_COLS;
+            int r = idx / INV_COLS;
             return invY + r * (SS + SG);
         }
         if (si >= 36 && si <= 44) {
@@ -624,6 +640,22 @@ public class YzuCreativeInventoryScreen extends Screen {
         dragButton = button;
         draggedSlots.clear();
         draggedSlots.add(firstSlot);
+    }
+
+    /** 返回当前拖拽中有效的槽位数（空格 或 同类型有空位）。用于实时计算鼠标上的预期剩余数量。 */
+    private int getDragValidCount(ItemStack carried) {
+        if (carried.isEmpty()) return 0;
+        int vc = 0;
+        var slots = player.inventoryMenu.slots;
+        for (int si : draggedSlots) {
+            if (si < 0 || si >= slots.size()) continue;
+            ItemStack existing = slots.get(si).getItem();
+            if (existing.isEmpty()) { vc++; continue; }
+            if (ItemStack.isSameItemSameComponents(carried, existing) && existing.getCount() < existing.getMaxStackSize()) {
+                vc++;
+            }
+        }
+        return vc;
     }
 
     /** 结束拖拽并执行分发。异种物品格跳过，满格跳过。 */
@@ -757,8 +789,9 @@ public class YzuCreativeInventoryScreen extends Screen {
             tx += TW + TG;
         }
 
-        // 右翻页
-        if (ev.x() >= tx && ev.x() < tx + TW && ev.y() >= arrowY && ev.y() < arrowY + TH) {
+        // 右翻页（固定位置）
+        int rightX = lp + 3 + TW + TG + MAX_VIS * (TW + TG);
+        if (ev.x() >= rightX && ev.x() < rightX + TW && ev.y() >= arrowY && ev.y() < arrowY + TH) {
             if (ev.button() == 0 && tabPage < pc - 1)
                 tabPage++;
             return true;
@@ -783,7 +816,6 @@ public class YzuCreativeInventoryScreen extends Screen {
                 long now = System.currentTimeMillis();
                 boolean doubleClick = (now - lastClickTime < 250L) && rpSlot == lastClickSlot;
                 lastClickTime = now;
-                lastClickButton = ev.button();
                 lastClickSlot = rpSlot;
                 if (doubleClick) {
                     player.inventoryMenu.clicked(rpSlot, ev.button(), ContainerInput.PICKUP_ALL, player);
