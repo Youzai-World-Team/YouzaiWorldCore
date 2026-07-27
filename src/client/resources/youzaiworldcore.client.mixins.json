@@ -40,7 +40,8 @@
     "technocrown.PigRendererMixin",
     "technocrown.PigRenderStateMixin",
     "ContextualBarMixin",
-    "InventoryScreenSwitchMixin"
+    "InventoryScreenSwitchMixin",
+    "RecipeBookBackgroundMixin"
   ],
   "injectors": {
     "defaultRequire": 1
