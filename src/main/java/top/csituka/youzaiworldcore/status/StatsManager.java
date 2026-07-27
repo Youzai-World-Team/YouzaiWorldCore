@@ -147,7 +147,7 @@ public final class StatsManager {
             // 快照当天现有数据作为基线
             currentSnapshotDate = LocalDate.now();
             snapshotToday(server);
-            DebugLogger.info(MODULE, "状态数据加载完成，共 {} 位玩家，{} 个红石元件，快照日期 {}",
+            DebugLogger.info(MODULE, "状态数据加载完成，共 %s 位玩家，%s 个红石元件，快照日期 %s",
                     CACHE.size(), REDSTONE_ITEMS != null ? REDSTONE_ITEMS.size() : 0, currentSnapshotDate);
         });
 
@@ -162,7 +162,7 @@ public final class StatsManager {
 
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
             if (handler.getPlayer() instanceof ServerPlayer player) {
-                DebugLogger.info(MODULE, "玩家 {} 断开，保存统计...", player.getName().getString());
+                DebugLogger.info(MODULE, "玩家 %s 断开，保存统计...", player.getName().getString());
                 refreshPlayer(server, player);
                 save(server);
             }
@@ -201,7 +201,7 @@ public final class StatsManager {
         // 清理 365 天前的旧快照
         LocalDate cutoff = today.minusDays(365);
         SNAPSHOTS.keySet().removeIf(d -> d.isBefore(cutoff));
-        DebugLogger.info(MODULE, "快照已更新：{}，{} 位玩家", today, dayData.size());
+        DebugLogger.info(MODULE, "快照已更新：%s，%s 位玩家", today, dayData.size());
     }
 
     /** 更新今天快照（增量覆盖已有值） */
@@ -226,7 +226,7 @@ public final class StatsManager {
                 .filter(StatsManager::isRedstoneComponent)
                 .collect(Collectors.toSet());
         REDSTONE_ITEMS = Collections.unmodifiableSet(items);
-        DebugLogger.info(MODULE, "红石元件缓存初始化完成：{} 个", items.size());
+        DebugLogger.info(MODULE, "红石元件缓存初始化完成：%s 个", items.size());
     }
 
     static boolean isRedstoneComponent(Item item) {
@@ -440,7 +440,7 @@ public final class StatsManager {
             // 同名检测：防止覆盖已有文件
             if (Files.exists(exportFile)) {
                 source.sendFailure(Component.literal("导出失败：文件 \"" + fileName + ".json\" 已存在，请换个名称。"));
-                DebugLogger.info(MODULE, "排行榜导出被拦截：文件已存在 {}", exportFile.toAbsolutePath());
+                DebugLogger.info(MODULE, "排行榜导出被拦截：文件已存在 %s", exportFile.toAbsolutePath());
                 return 0;
             }
 
@@ -482,7 +482,7 @@ public final class StatsManager {
     static void load(MinecraftServer server) {
         Path file = getDataFile(server);
         if (!Files.isRegularFile(file)) {
-            DebugLogger.info(MODULE, "状态数据文件不存在: {}", file);
+            DebugLogger.info(MODULE, "状态数据文件不存在: %s", file);
             return;
         }
         try (Reader reader = Files.newBufferedReader(file)) {
@@ -531,7 +531,7 @@ public final class StatsManager {
                     CACHE.put(entry.getKey(), new PlayerStats(uuid, name, lastUpdated, statsMap));
                     loaded++;
                 } catch (Exception e) {
-                    DebugLogger.warn(MODULE, "解析玩家 {} 数据失败: {}", entry.getKey(), e.getMessage());
+                    DebugLogger.warn(MODULE, "解析玩家 %s 数据失败: %s", entry.getKey(), e.getMessage());
                 }
             }
 
@@ -558,12 +558,12 @@ public final class StatsManager {
                             SNAPSHOTS.put(date, dayData);
                         }
                     } catch (Exception e) {
-                        DebugLogger.warn(MODULE, "解析快照 {} 失败: {}", se.getKey(), e.getMessage());
+                        DebugLogger.warn(MODULE, "解析快照 %s 失败: %s", se.getKey(), e.getMessage());
                     }
                 }
             }
 
-            DebugLogger.info(MODULE, "已加载 {} 位玩家状态 + {} 天快照", loaded, SNAPSHOTS.size());
+            DebugLogger.info(MODULE, "已加载 %s 位玩家状态 + %s 天快照", loaded, SNAPSHOTS.size());
         } catch (IOException e) {
             LOGGER.error("读取状态数据文件失败", e);
         }
@@ -584,7 +584,7 @@ public final class StatsManager {
 
             String json = GSON.toJson(root);
             Files.writeString(getDataFile(server), json);
-            DebugLogger.info(MODULE, "状态数据已保存，共 {} 位玩家 + {} 天快照", CACHE.size(), SNAPSHOTS.size());
+            DebugLogger.info(MODULE, "状态数据已保存，共 %s 位玩家 + %s 天快照", CACHE.size(), SNAPSHOTS.size());
         } catch (IOException e) {
             LOGGER.error("保存状态数据失败", e);
         }
@@ -593,7 +593,7 @@ public final class StatsManager {
     static void scanOfflineStats(MinecraftServer server) {
         Path statsDir = server.getWorldPath(LevelResource.ROOT).resolve("stats");
         if (!Files.isDirectory(statsDir)) {
-            DebugLogger.info(MODULE, "stats 目录不存在: {}", statsDir);
+            DebugLogger.info(MODULE, "stats 目录不存在: %s", statsDir);
             return;
         }
         int added = 0;
@@ -646,7 +646,7 @@ public final class StatsManager {
                         }
                     }
                 } catch (Exception e) {
-                    DebugLogger.warn(MODULE, "读取玩家统计文件失败: {} - {}", statFile, e.getMessage());
+                    DebugLogger.warn(MODULE, "读取玩家统计文件失败: %s - %s", statFile, e.getMessage());
                 }
 
                 CACHE.put(uuidStr, playerStats);
@@ -655,7 +655,7 @@ public final class StatsManager {
         } catch (IOException e) {
             LOGGER.error("扫描 stats 目录失败", e);
         }
-        DebugLogger.info(MODULE, "新增 {} 位离线玩家统计", added);
+        DebugLogger.info(MODULE, "新增 %s 位离线玩家统计", added);
     }
 
     private static boolean isRedstoneItemId(String itemId) {
@@ -692,7 +692,7 @@ public final class StatsManager {
                 long value = metric.reader.applyAsLong(player);
                 stats.set(metric.key, value);
             } catch (Exception e) {
-                DebugLogger.warn(MODULE, "读取统计 {} 失败: {}", metric.key, e.getMessage());
+                DebugLogger.warn(MODULE, "读取统计 %s 失败: %s", metric.key, e.getMessage());
             }
         }
     }
@@ -701,7 +701,7 @@ public final class StatsManager {
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
             refreshPlayer(server, player);
         }
-        DebugLogger.info(MODULE, "已刷新 {} 位在线玩家统计", server.getPlayerList().getPlayers().size());
+        DebugLogger.info(MODULE, "已刷新 %s 位在线玩家统计", server.getPlayerList().getPlayers().size());
     }
 
     // ==================== 格式化方法 ====================

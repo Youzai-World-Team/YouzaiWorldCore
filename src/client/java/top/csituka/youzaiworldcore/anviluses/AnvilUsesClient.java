@@ -71,7 +71,7 @@ public final class AnvilUsesClient {
      * 工具提示回调：读取 {@code REPAIR_COST} 并追加使用次数与剩余可修行。
      */
     private static void onItemTooltip(ItemStack item, Item.TooltipContext context, TooltipFlag flag, List<Component> tooltip) {
-        DebugLogger.trace(MODULE, "onItemTooltip: item={}", item.getItem());
+        DebugLogger.trace(MODULE, "onItemTooltip: item=%s", item.getItem());
 
         int repairCost = item.getOrDefault(DataComponents.REPAIR_COST, 0);
 

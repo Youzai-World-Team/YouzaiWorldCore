@@ -343,7 +343,7 @@ public final class ItemBorderRenderer {
             } catch (NumberFormatException ignored) {}
         }
 
-        DebugLogger.warn(MODULE, "无法解析颜色值: \"{}\"", trimmed);
+        DebugLogger.warn(MODULE, "无法解析颜色值: \"%s\"", trimmed);
         return null;
     }
 
