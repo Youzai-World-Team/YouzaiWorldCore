@@ -41,7 +41,12 @@
     "technocrown.PigRenderStateMixin",
     "ContextualBarMixin",
     "InventoryScreenSwitchMixin",
-    "RecipeBookBackgroundMixin"
+    "RecipeBookBackgroundMixin",
+    "RecipeBookTabButtonMixin",
+    "RecipeButtonMixin",
+    "CycleButtonYzuiMixin",
+    "ImageButtonYzuiMixin",
+    "RecipeBookLayoutMixin"
   ],
   "injectors": {
     "defaultRequire": 1

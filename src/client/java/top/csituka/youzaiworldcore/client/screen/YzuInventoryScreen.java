@@ -5,12 +5,14 @@ import net.minecraft.client.gui.screens.inventory.AbstractRecipeBookScreen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.client.gui.screens.recipebook.CraftingRecipeBookComponent;
 import net.minecraft.client.gui.navigation.ScreenPosition;
+import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.inventory.InventoryMenu;
-import net.minecraft.world.inventory.RecipeBookType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import org.jspecify.annotations.NonNull;
@@ -30,11 +32,11 @@ import java.util.Set;
  * <p>
  * 槽位布局同原版（InventoryMenu 固定坐标），但外观变更为 YZUI 圆角矩形风格：
  * <ul>
- *   <li>半透明白色圆角面板背景</li>
- *   <li>半透明圆角槽位背景（悬浮时高亮）</li>
- *   <li>配方书打开时左侧显示 YZUI 风格配方书面板</li>
- *   <li>配方书切换按钮位于副手槽上方</li>
- *   <li>左键拖拽手势：有物品时合并同种，Shift+左键拖拽批量快速转移</li>
+ * <li>半透明白色圆角面板背景</li>
+ * <li>半透明圆角槽位背景（悬浮时高亮）</li>
+ * <li>配方书打开时左侧显示 YZUI 风格配方书面板</li>
+ * <li>配方书切换按钮位于副手槽上方</li>
+ * <li>左键拖拽手势：有物品时合并同种，Shift+左键拖拽批量快速转移</li>
  * </ul>
  */
 public class YzuInventoryScreen extends AbstractRecipeBookScreen<InventoryMenu> {
@@ -42,22 +44,18 @@ public class YzuInventoryScreen extends AbstractRecipeBookScreen<InventoryMenu> 
     private static final Logger LOGGER = LoggerFactory.getLogger("YzuInventoryScreen");
 
     // ========== YZUI 配色常量 ==========
-    private static final int PANEL_BG            = 0x80FFFFFF;
-    private static final int SLOT_COLOR          = 0x40FFFFFF;
-    private static final int SLOT_HOVER_COLOR    = 0x60FFFFFF;
-    private static final int CRAFT_RESULT_BG     = 0x60FFFFFF;
+    private static final int PANEL_BG = 0x80FFFFFF;
+    private static final int SLOT_COLOR = 0x40FFFFFF;
+    private static final int SLOT_HOVER_COLOR = 0x60FFFFFF;
+    private static final int CRAFT_RESULT_BG = 0x60FFFFFF;
     /** 副手槽背景色（褐色块） */
-    private static final int OFFHAND_SLOT_COLOR  = 0x60A08050;
-    /** 配方书面板背景 */
-    private static final int RECIPE_BOOK_PANEL   = 0xC0FFFFFF;
+    private static final int OFFHAND_SLOT_COLOR = 0x60A08050;
 
     private static final int PANEL_RADIUS = 6;
-    private static final int SLOT_RADIUS  = 3;
-    private static final int SLOT_SIZE    = 16;
+    private static final int SLOT_RADIUS = 3;
+    private static final int SLOT_SIZE = 16;
 
     // ========== 配方书布局常量 ==========
-    private static final int RECIPE_BOOK_W = 147;
-    private static final int RECIPE_BOOK_H = 166;
 
     /** 玩家模型渲染区域（相对 leftPos/topPos） */
     private static final int ENTITY_X = 26;
@@ -91,8 +89,7 @@ public class YzuInventoryScreen extends AbstractRecipeBookScreen<InventoryMenu> 
                 player.inventoryMenu,
                 new CraftingRecipeBookComponent(player.inventoryMenu),
                 player.getInventory(),
-                Component.translatable("container.crafting")
-        );
+                Component.translatable("container.crafting"));
         LOGGER.debug("YzuInventoryScreen created for player: {}", player.getName().getString());
     }
 
@@ -111,9 +108,9 @@ public class YzuInventoryScreen extends AbstractRecipeBookScreen<InventoryMenu> 
 
     @Override
     public void extractRenderState(@NonNull GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
-        boolean bookVisible = isRecipeBookOpen();
-        if (bookVisible) drawRecipeBookPanel(g);
         drawMainPanel(g);
+        // 在 2×2 合成格与输出槽之间绘制合成箭头
+        drawCraftArrow(g);
         drawPlayerModel(g);
         super.extractRenderState(g, mouseX, mouseY, partialTick);
         this.xMouse = (float) mouseX;
@@ -121,7 +118,8 @@ public class YzuInventoryScreen extends AbstractRecipeBookScreen<InventoryMenu> 
     }
 
     @Override
-    public void extractBackground(@NonNull GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
+    public void extractBackground(@NonNull GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY,
+            float partialTick) {
         // no-op — YZUI 面板在 extractRenderState 中绘制
     }
 
@@ -218,7 +216,10 @@ public class YzuInventoryScreen extends AbstractRecipeBookScreen<InventoryMenu> 
             if (gesturePending) {
                 gesturePending = false;
                 if (gestureMode == 2) {
-                    this.menu.clicked(gestureOriginSlot, 0, ContainerInput.QUICK_MOVE, this.minecraft.player);
+                    LocalPlayer player = this.minecraft.player;
+                    if (player != null) {
+                        this.menu.clicked(gestureOriginSlot, 0, ContainerInput.QUICK_MOVE, player);
+                    }
                 }
                 resetGesture();
                 return super.mouseReleased(ev); // 让 super 重置 skipNextRelease 等
@@ -234,16 +235,20 @@ public class YzuInventoryScreen extends AbstractRecipeBookScreen<InventoryMenu> 
 
     /** 实时处理手势拖拽经过的单个槽位。 */
     private void processGestureSlot(int slotIndex) {
+        LocalPlayer player = this.minecraft.player;
+        if (player == null)
+            return;
         if (gestureMode == 2) {
             // Shift 批量拖拽：快速转移
-            this.menu.clicked(slotIndex, 0, ContainerInput.QUICK_MOVE, this.minecraft.player);
+            this.menu.clicked(slotIndex, 0, ContainerInput.QUICK_MOVE, player);
             return;
         }
         if (gestureMode == 1) {
             // 合并拖拽：将经过的同种物品合并到光标
             ItemStack ca = this.menu.getCarried();
-            if (ca.isEmpty()) return;
-            this.menu.clicked(slotIndex, 0, ContainerInput.PICKUP, this.minecraft.player);
+            if (ca.isEmpty())
+                return;
+            this.menu.clicked(slotIndex, 0, ContainerInput.PICKUP, player);
         }
     }
 
@@ -255,38 +260,35 @@ public class YzuInventoryScreen extends AbstractRecipeBookScreen<InventoryMenu> 
 
     // ========== YZUI 面板绘制方法 ==========
 
-    private boolean isRecipeBookOpen() {
-        var player = this.minecraft != null ? this.minecraft.player : null;
-        return player != null && player.getRecipeBook().isOpen(RecipeBookType.CRAFTING);
-    }
-
-    private void drawRecipeBookPanel(GuiGraphicsExtractor g) {
-        int xOffset = (this.width < 379) ? 0 : 86;
-        int rx = (this.width - RECIPE_BOOK_W) / 2 - xOffset;
-        int ry = (this.height - RECIPE_BOOK_H) / 2;
-        fillRoundedRect(g, rx, ry, RECIPE_BOOK_W, RECIPE_BOOK_H, PANEL_RADIUS, RECIPE_BOOK_PANEL);
-    }
-
     private void drawMainPanel(GuiGraphicsExtractor g) {
         fillRoundedRect(g, this.leftPos, this.topPos, this.imageWidth, this.imageHeight,
                 PANEL_RADIUS, PANEL_BG);
     }
 
-    private void drawPlayerModel(GuiGraphicsExtractor g) {
+    /** 在 2×2 合成格与输出槽之间绘制原版交易箭头贴图。 */
+    private void drawCraftArrow(GuiGraphicsExtractor g) {
+        // 箭头位置：合成格右边缘 (left+132) 与输出槽左边缘 (left+154) 之间
+        int ax = this.leftPos + 133;
+        int ay = this.topPos + 30;
+        g.blitSprite(RenderPipelines.GUI_TEXTURED,
+                Identifier.parse("container/villager/trade_arrow"),
+                ax, ay, 20, 16);
+    }
+
+    private void drawPlayerModel(@NonNull GuiGraphicsExtractor g) {
         var player = this.minecraft != null ? this.minecraft.player : null;
         if (player != null) {
             InventoryScreen.extractEntityInInventoryFollowsMouse(
                     g,
                     this.leftPos + ENTITY_X,
-                    this.topPos  + ENTITY_Y,
+                    this.topPos + ENTITY_Y,
                     this.leftPos + ENTITY_W,
-                    this.topPos  + ENTITY_H,
+                    this.topPos + ENTITY_H,
                     ENTITY_SIZE,
                     ENTITY_Y_OFFSET,
                     this.xMouse,
                     this.yMouse,
-                    player
-            );
+                    player);
         }
     }
 
@@ -294,7 +296,8 @@ public class YzuInventoryScreen extends AbstractRecipeBookScreen<InventoryMenu> 
 
     private void drawSlotBackgrounds(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY) {
         for (Slot slot : this.menu.slots) {
-            if (!slot.isActive()) continue;
+            if (!slot.isActive())
+                continue;
 
             int sx = slot.x;
             int sy = slot.y;

@@ -57,11 +57,13 @@ public class EditBoxMixin {
             return;
         }
 
-        // 保留原版工作方块输入框的样式（容器/告示牌/聊天/创造搜索等）
+        // 保留原版工作方块输入框的样式（告示牌/聊天/创造搜索/铁砧等），
+        // 但容许 YZUI 自定义物品栏屏幕中的搜索框（配方书搜索）应用 YZUI 样式
         net.minecraft.client.gui.screens.Screen screen = Minecraft.getInstance().gui.screen();
         if (screen instanceof ChatScreen
                 || screen instanceof CreativeModeInventoryScreen
-                || screen instanceof AbstractContainerScreen) {
+                || (screen instanceof AbstractContainerScreen
+                    && !screen.getClass().getName().startsWith("top.csituka.youzaiworldcore"))) {
             return;
         }
 
