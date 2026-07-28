@@ -6,10 +6,13 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.ItemStack;
@@ -25,6 +28,7 @@ import java.util.List;
 import java.util.Set;
 
 import top.csituka.youzaiworldcore.itemborder.ItemBorderRenderer;
+import top.csituka.youzaiworldcore.util.TrinketHelper;
 
 @SuppressWarnings("null")
 public class YzuCreativeInventoryScreen extends Screen {
@@ -49,6 +53,8 @@ public class YzuCreativeInventoryScreen extends Screen {
     private static final int BG = 0x80FFFFFF, SC = 0x40FFFFFF, SHV = 0x60FFFFFF, TA = 0x90FFFFFF;
     private static final int[] TC = { 0x60CC8866, 0x6099CCFF, 0x6066AA44, 0x60AA66CC, 0x60FF6644, 0x604488CC,
             0x60FF8844, 0x60FFCC44, 0x60CCAACC, 0x60FFAAAA, 0x60FF66AA };
+
+    private static final String YZWC_SEARCH_HINT = "搜索物品...";
 
     /** 跨会话持久化的搜索文本 */
     private static String lastSearch = "";
@@ -114,6 +120,7 @@ public class YzuCreativeInventoryScreen extends Screen {
         searchBox.setBordered(false);
         searchBox.setVisible(true);
         searchBox.setTextColor(0xFFFFFFFF);
+        searchBox.setHint(Component.literal(YZWC_SEARCH_HINT));
         searchBox.setResponder(this::onSearch);
         addRenderableWidget(searchBox);
     }
@@ -238,8 +245,16 @@ public class YzuCreativeInventoryScreen extends Screen {
             for (int c = 0; c < 2; c++) {
                 int sx = ax + c * (SS + SG), sy = ay + r * (SS + SG);
                 fillR(g, sx, sy, SS, SS, 3, mx >= sx && mx < sx + SS && my >= sy && my < sy + SS ? SHV : SC);
-                ItemStack ast = slots.get(5 + r * 2 + c).getItem();
-                renderSlot(g, ast, sx, sy, 200 + r * 2 + c);
+                int slotIdx = 5 + r * 2 + c;
+                ItemStack ast = slots.get(slotIdx).getItem();
+                // 空槽绘制原版占位图标（通过 Slot.getNoItemIcon() 获取对应 sprite）
+                if (ast.isEmpty()) {
+                    Identifier iconId = slots.get(slotIdx).getNoItemIcon();
+                    if (iconId != null) {
+                        g.blitSprite(RenderPipelines.GUI_TEXTURED, iconId, sx, sy, SS, SS);
+                    }
+                }
+                renderSlot(g, ast, sx, sy, 200 + slotIdx);
                 ItemBorderRenderer.renderBorder(g, sx, sy, ast);
             }
 
@@ -247,6 +262,12 @@ public class YzuCreativeInventoryScreen extends Screen {
         int ox = lp + OFF_X, oy = tp + OFF_Y;
         fillR(g, ox, oy, SS, SS, 3, mx >= ox && mx < ox + SS && my >= oy && my < oy + SS ? SHV : SC);
         ItemStack ost = slots.get(45).getItem();
+        if (ost.isEmpty()) {
+            Identifier offId = slots.get(45).getNoItemIcon();
+            if (offId != null) {
+                g.blitSprite(RenderPipelines.GUI_TEXTURED, offId, ox, oy, SS, SS);
+            }
+        }
         renderSlot(g, ost, ox, oy, 210);
         ItemBorderRenderer.renderBorder(g, ox, oy, ost);
 
@@ -307,6 +328,32 @@ public class YzuCreativeInventoryScreen extends Screen {
                 if (!st.isEmpty())
                     g.setTooltipForNextFrame(font, Screen.getTooltipFromItem(minecraft, st), st.getTooltipImage(), mx,
                             my, null);
+            }
+        }
+
+        // Trinkets 悬停提示：鼠标放在关联的容器槽位（盔甲/副手）上时，绘制饰品槽位指示器
+        if (TrinketHelper.isLoaded()) {
+            int hoverSlot = getRightPanelSlotAt(mx, my);
+            if (hoverSlot >= 0 && hoverSlot < slots.size()) {
+                Slot slotObj = slots.get(hoverSlot);
+                java.util.List<TrinketHelper.TrinketSlotInfo> attached =
+                        TrinketHelper.getSlotsAttachedTo(player, slotObj);
+                if (!attached.isEmpty()) {
+                    // 在悬停槽位右上侧显示一排小槽位指示器
+                    int baseX = getSlotScreenX(hoverSlot);
+                    int baseY = getSlotScreenY(hoverSlot);
+                    int indicatorX = baseX + SS + SG;
+                    int indicatorY = baseY;
+                    for (int i = 0; i < attached.size(); i++) {
+                        int sx = indicatorX + i * (SS + SG);
+                        // 指示器背景（浅色半透明）
+                        fillR(g, sx, indicatorY, SS, SS, 3, 0x70FFFFFF);
+                        ItemStack ti = attached.get(i).stack();
+                        if (!ti.isEmpty()) {
+                            g.fakeItem(ti, sx, indicatorY);
+                        }
+                    }
+                }
             }
         }
     }
@@ -384,6 +431,9 @@ public class YzuCreativeInventoryScreen extends Screen {
         boolean canLeft = tabPage > 0;
         boolean lh = canLeft && mx >= leftX && mx < leftX + TW && my >= arrowY && my < arrowY + TH;
         fillR(g, leftX, arrowY, TW, TH, TR, lh ? 0x80FFFFFF : (canLeft ? 0x60FFFFFF : 0x30FFFFFF));
+        int ltx = leftX + (TW - font.width("<")) / 2;
+        int lty = arrowY + (TH - font.lineHeight) / 2;
+        g.text(font, "<", ltx, lty, canLeft ? 0xCCFFFFFF : 0x60FFFFFF, true);
 
         // Tab
         int tx = leftX + TW + TG;
@@ -405,6 +455,9 @@ public class YzuCreativeInventoryScreen extends Screen {
         boolean canRight = tabPage < pc - 1;
         boolean rh = canRight && mx >= rightX && mx < rightX + TW && my >= arrowY && my < arrowY + TH;
         fillR(g, rightX, arrowY, TW, TH, TR, rh ? 0x80FFFFFF : (canRight ? 0x60FFFFFF : 0x30FFFFFF));
+        int rtx = rightX + (TW - font.width(">")) / 2;
+        int rty = arrowY + (TH - font.lineHeight) / 2;
+        g.text(font, ">", rtx, rty, canRight ? 0xCCFFFFFF : 0x60FFFFFF, true);
     }
 
     private void drawGrid(GuiGraphicsExtractor g, int mx, int my) {

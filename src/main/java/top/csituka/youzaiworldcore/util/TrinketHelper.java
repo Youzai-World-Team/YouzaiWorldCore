@@ -1,11 +1,16 @@
 package top.csituka.youzaiworldcore.util;
 
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
 
@@ -54,6 +59,143 @@ public final class TrinketHelper {
     }
 
     // ========== 高层 API ==========
+
+    /** 饰品槽位信息，用于 UI 渲染 */
+    public record TrinketSlotInfo(String groupKey, int slotIndex, ItemStack stack, Object access) {
+    }
+
+    /**
+     * 获取玩家所有可见饰品槽位的物品信息。
+     * <p>
+     * 遍历 TrinketAttachment.getInventories() 返回的 {@code Map<String, TrinketInventory>}，
+     * 对每个 Inventory 中可见的槽位提取 ItemStack。
+     *
+     * @return 可见槽位列表（含空槽位）
+     */
+    @SuppressWarnings("unchecked")
+    public static List<TrinketSlotInfo> getAllVisibleSlots(LivingEntity entity) {
+        List<TrinketSlotInfo> result = new ArrayList<>();
+        if (!TRINKETS_LOADED)
+            return result;
+        try {
+            MethodHandles h = getHandles();
+            Object attachment = h.getAttachmentMethod.invoke(null, entity);
+            if (attachment == null)
+                return result;
+
+            // TrinketAttachment.getInventories() → Map<String, TrinketInventory>
+            Map<String, Object> inventories = (Map<String, Object>) h.getInventoriesMethod.invoke(attachment);
+            for (Map.Entry<String, Object> entry : inventories.entrySet()) {
+                String groupKey = entry.getKey(); // e.g., "chest/elytra"
+                Object inv = entry.getValue();    // TrinketInventory
+                int size = (int) h.invContainerSizeMethod.invoke(inv);
+                for (int i = 0; i < size; i++) {
+                    boolean visible = (boolean) h.invIsVisibleMethod.invoke(inv, i);
+                    if (!visible)
+                        continue;
+                    Object access = h.invGetSlotAccessMethod.invoke(inv, i);
+                    ItemStack stack = (ItemStack) h.accessGetMethod.invoke(access);
+                    result.add(new TrinketSlotInfo(groupKey, i, stack, access));
+                }
+            }
+        } catch (Exception e) {
+            LOGGER.warn("获取饰品槽位失败", e);
+        }
+        return result;
+    }
+
+    /**
+     * 获取与指定容器槽位关联的所有可见 Trinket 饰品槽信息。
+     * <p>
+     * 利用 {@code SlotGroup.isAttachedToSlot(Slot)} 判断组归属，
+     * 若匹配则返回该组所有可见槽位。
+     *
+     * @param entity  玩家实体
+     * @param slot    容器槽位（如盔甲槽、副手槽）
+     * @return 关联的可见饰品槽列表（含空槽）
+     */
+    @SuppressWarnings("unchecked")
+    public static List<TrinketSlotInfo> getSlotsAttachedTo(LivingEntity entity, Slot slot) {
+        List<TrinketSlotInfo> result = new ArrayList<>();
+        if (!TRINKETS_LOADED || slot == null)
+            return result;
+        try {
+            MethodHandles h = getHandles();
+            Object attachment = h.getAttachmentMethod.invoke(null, entity);
+            if (attachment == null)
+                return result;
+
+            // SlotGroup.getEntityGroups(Entity) → Map<String, SlotGroup>
+            Map<String, Object> groups = (Map<String, Object>) h.getEntityGroupsMethod.invoke(null, entity);
+            for (Map.Entry<String, Object> entry : groups.entrySet()) {
+                String groupName = entry.getKey();
+                Object group = entry.getValue(); // SlotGroup
+                // SlotGroup.isAttachedToSlot(Slot) → boolean
+                boolean attached = (boolean) h.groupIsAttachedMethod.invoke(group, slot);
+                if (!attached)
+                    continue;
+                // SlotGroup.getSlots() → Collection<SlotType>
+                java.util.Collection<Object> slotTypes = (java.util.Collection<Object>) h.groupGetSlotsMethod.invoke(group);
+                for (Object st : slotTypes) {
+                    // SlotType.name() → String (slot name like "elytra")
+                    String slotName = (String) h.slotTypeNameMethod.invoke(st);
+                    String invKey = groupName + "/" + slotName;
+                    // TrinketAttachment.getInventories() → Map<String, TrinketInventory>
+                    Map<String, Object> inventories = (Map<String, Object>) h.getInventoriesMethod.invoke(attachment);
+                    Object inv = inventories.get(invKey);
+                    if (inv == null)
+                        continue;
+                    int size = (int) h.invContainerSizeMethod.invoke(inv);
+                    for (int i = 0; i < size; i++) {
+                        boolean visible = (boolean) h.invIsVisibleMethod.invoke(inv, i);
+                        if (!visible)
+                            continue;
+                        Object access = h.invGetSlotAccessMethod.invoke(inv, i);
+                        ItemStack stack = (ItemStack) h.accessGetMethod.invoke(access);
+                        result.add(new TrinketSlotInfo(invKey, i, stack, access));
+                    }
+                }
+            }
+        } catch (Exception e) {
+            LOGGER.warn("获取关联饰品槽位失败", e);
+        }
+        return result;
+    }
+
+    /**
+     * 获取饰品槽位的 ItemStack（实际调用 TrinketSlotAccess.get()）。
+     *
+     * @param slotInfo 从 {@link #getAllVisibleSlots} 获取的槽位信息
+     * @return 当前的 ItemStack
+     */
+    public static ItemStack getSlotStack(TrinketSlotInfo slotInfo) {
+        try {
+            MethodHandles h = getHandles();
+            return (ItemStack) h.accessGetMethod.invoke(slotInfo.access());
+        } catch (Exception e) {
+            LOGGER.warn("读取饰品槽物品失败", e);
+            return ItemStack.EMPTY;
+        }
+    }
+
+    /**
+     * 设置饰品槽位的 ItemStack（实际调用 TrinketSlotAccess.set()）。
+     *
+     * @param slotInfo 从 {@link #getAllVisibleSlots} 获取的槽位信息
+     * @param stack    要设置的物品
+     * @return 是否成功
+     */
+    public static boolean setSlotStack(TrinketSlotInfo slotInfo, ItemStack stack) {
+        try {
+            MethodHandles h = getHandles();
+            // TrinketSlotAccess.set(ItemStack)
+            // The method is "set" with single ItemStack param
+            return (boolean) h.accessSetMethod.invoke(slotInfo.access(), stack);
+        } catch (Exception e) {
+            LOGGER.warn("设置饰品槽物品失败", e);
+            return false;
+        }
+    }
 
     /**
      * 检查玩家是否在任意饰品槽中装备了指定物品。
@@ -164,11 +306,24 @@ public final class TrinketHelper {
         final java.lang.reflect.Method findFirstPredicateMethod;
         final java.lang.reflect.Method equippedPredicateMethod;
         final java.lang.reflect.Method accessGetMethod;
+        final java.lang.reflect.Method accessSetMethod;
+        final java.lang.reflect.Method getInventoriesMethod;
+        final java.lang.reflect.Method invContainerSizeMethod;
+        final java.lang.reflect.Method invIsVisibleMethod;
+        final java.lang.reflect.Method invGetSlotAccessMethod;
+        final java.lang.reflect.Method getEntityGroupsMethod;
+        final java.lang.reflect.Method groupIsAttachedMethod;
+        final java.lang.reflect.Method groupGetSlotsMethod;
+        final java.lang.reflect.Method slotTypeNameMethod;
 
+        @SuppressWarnings("unchecked")
         MethodHandles() throws ReflectiveOperationException {
             Class<?> apiClass = Class.forName(TRINKETS_API_CLASS);
             Class<?> attachmentClass = Class.forName("eu.pb4.trinkets.api.TrinketAttachment");
             Class<?> accessClass = Class.forName("eu.pb4.trinkets.api.TrinketSlotAccess");
+            Class<?> inventoryClass = Class.forName("eu.pb4.trinkets.api.TrinketInventory");
+            Class<?> groupClass = Class.forName("eu.pb4.trinkets.api.SlotGroup");
+            Class<?> slotTypeClass = Class.forName("eu.pb4.trinkets.api.SlotType");
 
             getAttachmentMethod = apiClass.getMethod("getAttachment", LivingEntity.class);
             isEquippedItemMethod = attachmentClass.getMethod("isEquipped", Item.class);
@@ -176,6 +331,15 @@ public final class TrinketHelper {
             // equipped(Predicate, boolean) returns List<TrinketSlotAccess>
             equippedPredicateMethod = attachmentClass.getMethod("equipped", Predicate.class, boolean.class);
             accessGetMethod = accessClass.getMethod("get");
+            accessSetMethod = accessClass.getMethod("set", ItemStack.class);
+            getInventoriesMethod = attachmentClass.getMethod("getInventories");
+            invContainerSizeMethod = inventoryClass.getMethod("getContainerSize");
+            invIsVisibleMethod = inventoryClass.getMethod("isVisible", int.class);
+            invGetSlotAccessMethod = inventoryClass.getMethod("getSlotAccess", int.class);
+            getEntityGroupsMethod = groupClass.getMethod("getEntityGroups", LivingEntity.class);
+            groupIsAttachedMethod = groupClass.getMethod("isAttachedToSlot", Slot.class);
+            groupGetSlotsMethod = groupClass.getMethod("getSlots");
+            slotTypeNameMethod = slotTypeClass.getMethod("name");
         }
     }
 }
