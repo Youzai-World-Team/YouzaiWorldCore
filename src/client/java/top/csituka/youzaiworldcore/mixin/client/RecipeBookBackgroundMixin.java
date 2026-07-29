@@ -4,12 +4,14 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.recipebook.RecipeBookComponent;
+import net.minecraft.resources.Identifier;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import com.mojang.blaze3d.pipeline.RenderPipeline;
 import top.csituka.youzaiworldcore.client.config.ClientExternalSettings;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
@@ -34,20 +36,22 @@ public class RecipeBookBackgroundMixin {
     private static final String YZWC_BG_DBG = "RecipeBookBg";
 
     @Shadow
-    private int getXOrigin() {
-        return 0;
-    }
+    private int getXOrigin() { return 0; }
 
     @Shadow
-    private int getYOrigin() {
-        return 0;
-    }
+    private int getYOrigin() { return 0; }
 
-    @Inject(method = "extractRenderState", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/GuiGraphicsExtractor;blit(Lcom/mojang/blaze3d/pipeline/RenderPipeline;Lnet/minecraft/resources/Identifier;IIFFIIII)V"), cancellable = true)
+    @Inject(
+            method = "extractRenderState",
+            at = @At(value = "INVOKE",
+                    target = "Lnet/minecraft/client/gui/GuiGraphicsExtractor;blit(Lcom/mojang/blaze3d/pipeline/RenderPipeline;Lnet/minecraft/resources/Identifier;IIFFIIII)V"),
+            cancellable = true
+    )
     private void yzwc$recipeBookBackground(
             GuiGraphicsExtractor g,
             int mx, int my, float pt,
-            CallbackInfo ci) {
+            CallbackInfo ci
+    ) {
         if (!yzwc$shouldApplyYzui())
             return; // 不取消 → 原版 blit 正常执行
 
