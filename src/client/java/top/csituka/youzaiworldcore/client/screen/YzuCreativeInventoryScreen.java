@@ -8,7 +8,6 @@ import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.core.NonNullList;
-import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -29,8 +28,6 @@ import java.util.List;
 import java.util.Set;
 
 import top.csituka.youzaiworldcore.itemborder.ItemBorderRenderer;
-import top.csituka.youzaiworldcore.network.TrinketInteractPayload;
-import top.csituka.youzaiworldcore.util.TrinketHelper;
 
 @SuppressWarnings("null")
 public class YzuCreativeInventoryScreen extends Screen {
@@ -85,9 +82,6 @@ public class YzuCreativeInventoryScreen extends Screen {
     // 双击检测
     private long lastClickTime;
     private int lastClickSlot = -1;
-    // Trinkets 悬停状态
-    private int trinketSourceSlot = -1;
-    private java.util.List<TrinketHelper.TrinketSlotInfo> activeTrinketSlots = java.util.List.of();
 
     public YzuCreativeInventoryScreen(Player player) {
         super(Component.translatable("container.crafting"));
@@ -301,8 +295,6 @@ public class YzuCreativeInventoryScreen extends Screen {
         xm = mx;
         ym = my;
 
-        // ===== Trinkets 悬停提示（在拖拽预览和鼠标物品之前渲染，避免遮盖） =====
-        trinketOverlayTick(g, mx, my);
 
         ItemStack carried = minecraft.player.containerMenu.getCarried();
         // 先渲染拖拽预览（底层），再渲染鼠标物品（顶层）
@@ -340,45 +332,22 @@ public class YzuCreativeInventoryScreen extends Screen {
         }
     }
 
-    /** Trinkets 悬停提示的每帧状态更新 + 渲染（在鼠标物品之前调用，避免遮盖）。 */
-    private void trinketOverlayTick(GuiGraphicsExtractor g, int mx, int my) {
-        if (!TrinketHelper.isLoaded() || player == null)
             return;
         var slots = player.inventoryMenu.slots;
         int hitSlot = getRightPanelSlotAt(mx, my);
-        boolean onSource = hitSlot >= 0 && hitSlot < slots.size();
 
-        boolean onIndicator = false;
-        if (trinketSourceSlot >= 0 && !activeTrinketSlots.isEmpty()) {
-            int baseX = getSlotScreenX(trinketSourceSlot);
-            int baseY = getSlotScreenY(trinketSourceSlot);
             int indStartX = baseX + SS + SG;
-            int indEndX = indStartX + activeTrinketSlots.size() * (SS + SG);
-            onIndicator = mx >= indStartX && mx < indEndX && my >= baseY && my < baseY + SS;
         }
 
-        if (onSource && hitSlot != trinketSourceSlot && !onIndicator) {
             Slot slotObj = slots.get(hitSlot);
-            activeTrinketSlots = TrinketHelper.getSlotsAttachedTo(player, slotObj);
-            trinketSourceSlot = activeTrinketSlots.isEmpty() ? -1 : hitSlot;
-        } else if (!onSource && !onIndicator) {
-            activeTrinketSlots = List.of();
-            trinketSourceSlot = -1;
         }
 
-        if (!activeTrinketSlots.isEmpty() && trinketSourceSlot >= 0) {
-            int baseX = getSlotScreenX(trinketSourceSlot);
-            int baseY = getSlotScreenY(trinketSourceSlot);
             int indStartX = baseX + SS + SG;
-            int indW = activeTrinketSlots.size() * (SS + SG) - SG;
             fillR(g, indStartX - 2, baseY - 2, indW + 4, SS + 4, 4, 0x50000000);
-            for (int i = 0; i < activeTrinketSlots.size(); i++) {
                 int sx = indStartX + i * (SS + SG);
-                TrinketHelper.TrinketSlotInfo slotInfo = activeTrinketSlots.get(i);
                 ItemStack ti = slotInfo.stack();
                 if (ti.isEmpty()) {
                     // 空槽：绘制 Trinkets 自定义占位图标
-                    Identifier iconId = TrinketHelper.getSlotIcon(slotInfo);
                     if (iconId != null) {
                         fillR(g, sx, baseY, SS, SS, 3, 0xFFFFFFFF);
                         g.blitSprite(RenderPipelines.GUI_TEXTURED, iconId, sx, baseY, SS, SS);
@@ -391,32 +360,20 @@ public class YzuCreativeInventoryScreen extends Screen {
                 }
             }
         }
-    }
 
     /** 返回鼠标在 Trinket 指示器区域内的槽位索引。 */
-    private int getTrinketIndicatorAt(int mx, int my) {
-        if (trinketSourceSlot < 0 || activeTrinketSlots.isEmpty())
             return -1;
-        int baseX = getSlotScreenX(trinketSourceSlot) + SS + SG;
-        int baseY = getSlotScreenY(trinketSourceSlot);
-        int count = activeTrinketSlots.size();
         if (mx < baseX || mx >= baseX + count * (SS + SG) || my < baseY || my >= baseY + SS)
             return -1;
         return (mx - baseX) / (SS + SG);
-    }
 
     /** 处理 Trinket 饰品槽点击（左键取放/右键取半）。已改为通过 C2S 数据包发送到服务端执行。 */
-    private void trinketHandleClick(TrinketHelper.TrinketSlotInfo tsi, int button) {
         ItemStack carried = minecraft.player.containerMenu.getCarried();
-        ItemStack slotStack = TrinketHelper.getSlotStack(tsi);
         byte action;
         if (button == 0) {
             if (carried.isEmpty() && !slotStack.isEmpty()) {
-                action = TrinketInteractPayload.ACTION_TAKE;
             } else if (!carried.isEmpty() && slotStack.isEmpty()) {
-                action = TrinketInteractPayload.ACTION_PLACE;
             } else {
-                action = TrinketInteractPayload.ACTION_SWAP;
             }
         } else if (button == 1 && !slotStack.isEmpty()) {
             // 右键取半：在客户端模拟，再发放入
@@ -425,9 +382,7 @@ public class YzuCreativeInventoryScreen extends Screen {
                 // 客户端先模拟取半，然后将剩余放回服务端
                 minecraft.player.containerMenu.setCarried(slotStack.copy());
                 slotStack.shrink(half);
-                TrinketHelper.setSlotStack(tsi, slotStack);
                 // 服务端同步：先取整个，客户端已手动缩小不要覆盖
-                ClientPlayNetworking.send(new TrinketInteractPayload(tsi.groupKey(), tsi.slotIndex(), TrinketInteractPayload.ACTION_TAKE));
                 return;
             } else {
                 // 有携带物右键放1个：客户端模拟放1
@@ -435,15 +390,12 @@ public class YzuCreativeInventoryScreen extends Screen {
                 one.setCount(1);
                 minecraft.player.containerMenu.setCarried(carried);
                 // 服务端：放下1个
-                ClientPlayNetworking.send(new TrinketInteractPayload(tsi.groupKey(), tsi.slotIndex(), TrinketInteractPayload.ACTION_PLACE));
                 return;
             }
         } else {
             return;
         }
         // 发送 C2S 数据包
-        ClientPlayNetworking.send(new TrinketInteractPayload(tsi.groupKey(), tsi.slotIndex(), action));
-    }
 
     /** 拖拽中在被拖槽位上渲染物品预览（含数字）。异种/满格跳过，数量按有效格均分计算。 */
     private void drawDragPreview(GuiGraphicsExtractor g, ItemStack carried) {
@@ -1093,15 +1045,6 @@ public class YzuCreativeInventoryScreen extends Screen {
             }
         }
 
-        // Trinket 指示器点击交互
-        if (TrinketHelper.isLoaded() && trinketSourceSlot >= 0 && !activeTrinketSlots.isEmpty()) {
-            int ti = getTrinketIndicatorAt((int) ev.x(), (int) ev.y());
-            if (ti >= 0 && ti < activeTrinketSlots.size()) {
-                TrinketHelper.TrinketSlotInfo tsi = activeTrinketSlots.get(ti);
-                trinketHandleClick(tsi, ev.button());
-                return true;
-            }
-        }
 
         // 点击 GUI 外部（任意按钮）→ 创造模式清手，生存丢出
         boolean inside = ev.x() >= lp && ev.x() < lp + PW && ev.y() >= tp && ev.y() < tp + PH;

@@ -3,17 +3,12 @@ package top.csituka.youzaiworldcore.client.screen;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.AbstractRecipeBookScreen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
-import net.minecraft.client.gui.screens.recipebook.CraftingRecipeBookComponent;
 import net.minecraft.client.gui.navigation.ScreenPosition;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.client.renderer.RenderPipelines;
-import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.input.MouseButtonEvent;
-import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.ContainerInput;
-import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import org.jspecify.annotations.NonNull;
@@ -25,8 +20,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import top.csituka.youzaiworldcore.network.TrinketInteractPayload;
-import top.csituka.youzaiworldcore.util.TrinketHelper;
 
 /**
  * YZUI 生存模式物品栏屏幕。
@@ -85,9 +78,6 @@ public class YzuInventoryScreen extends AbstractRecipeBookScreen<InventoryMenu> 
     private boolean gestureDragging;
     /** 拖拽经过的槽位列表 */
     private final List<Integer> gestureSlots = new ArrayList<>();
-    // Trinkets 悬停状态
-    private int trinketSourceSlot = -1;
-    private java.util.List<TrinketHelper.TrinketSlotInfo> activeTrinketSlots = java.util.List.of();
 
     // ========== 构造 ==========
 
@@ -120,9 +110,6 @@ public class YzuInventoryScreen extends AbstractRecipeBookScreen<InventoryMenu> 
         drawCraftArrow(g);
         drawPlayerModel(g);
 
-        // ===== Trinkets 悬停提示（在 super.extractRenderState 之前渲染，避免遮盖鼠标物品） =====
-        if (TrinketHelper.isLoaded())
-            trinketOverlayTick(g, mouseX, mouseY);
 
         super.extractRenderState(g, mouseX, mouseY, partialTick);
         this.xMouse = (float) mouseX;
@@ -184,13 +171,6 @@ public class YzuInventoryScreen extends AbstractRecipeBookScreen<InventoryMenu> 
             }
         }
 
-        // Trinket 指示器点击
-        if (TrinketHelper.isLoaded() && trinketSourceSlot >= 0 && !activeTrinketSlots.isEmpty()) {
-            int ti = getTrinketIndicatorAt((int) ev.x(), (int) ev.y());
-            if (ti >= 0 && ti < activeTrinketSlots.size()) {
-                trinketHandleClick(activeTrinketSlots.get(ti), ev.button());
-                return true;
-            }
         }
 
         return super.mouseClicked(ev, real);
@@ -408,53 +388,32 @@ public class YzuInventoryScreen extends AbstractRecipeBookScreen<InventoryMenu> 
         }
     }
 
-    // ========== Trinkets 悬停提示 ==========
 
-    private void trinketOverlayTick(GuiGraphicsExtractor g, int mx, int my) {
-        if (!TrinketHelper.isLoaded() || this.minecraft == null || this.minecraft.player == null)
             return;
 
         Slot hitSlot = getSlotAt(mx, my);
-        boolean onSource = hitSlot != null;
 
-        boolean onIndicator = false;
-        if (trinketSourceSlot >= 0 && !activeTrinketSlots.isEmpty()) {
-            Slot srcSlot = trinketSourceSlot >= 0 && trinketSourceSlot < this.menu.slots.size()
-                    ? this.menu.slots.get(trinketSourceSlot) : null;
+                    : null;
             if (srcSlot != null) {
                 int baseX = srcSlot.x + this.leftPos + 16 + 2;
                 int baseY = srcSlot.y + this.topPos;
-                int indEndX = baseX + activeTrinketSlots.size() * 18;
-                onIndicator = mx >= baseX && mx < indEndX && my >= baseY && my < baseY + 16;
             }
         }
 
-        if (onSource) {
             int hitIdx = this.menu.slots.indexOf(hitSlot);
-            if (hitIdx != trinketSourceSlot && !onIndicator) {
-                activeTrinketSlots = TrinketHelper.getSlotsAttachedTo(this.minecraft.player, hitSlot);
-                trinketSourceSlot = activeTrinketSlots.isEmpty() ? -1 : hitIdx;
             }
-        } else if (!onIndicator) {
-            activeTrinketSlots = List.of();
-            trinketSourceSlot = -1;
         }
 
-        if (!activeTrinketSlots.isEmpty() && trinketSourceSlot >= 0 && trinketSourceSlot < this.menu.slots.size()) {
-            Slot src = this.menu.slots.get(trinketSourceSlot);
             int baseX = src.x + this.leftPos + 16 + 2;
             int baseY = src.y + this.topPos;
-            int indW = activeTrinketSlots.size() * 18 - 2;
             int sr = Math.min(4, Math.min(indW / 2, 10));
             g.fill(baseX - 2 + sr, baseY - 2, baseX - 2 + indW + 4 - sr, baseY - 2 + 16 + 4, 0x50000000);
             g.fill(baseX - 2, baseY - 2 + sr, baseX - 2 + sr, baseY - 2 + 16 + 4 - sr, 0x50000000);
-            g.fill(baseX - 2 + indW + 4 - sr, baseY - 2 + sr, baseX - 2 + indW + 4, baseY - 2 + 16 + 4 - sr, 0x50000000);
-            for (int i = 0; i < activeTrinketSlots.size(); i++) {
+            g.fill(baseX - 2 + indW + 4 - sr, baseY - 2 + sr, baseX - 2 + indW + 4, baseY - 2 + 16 + 4 - sr,
+                    0x50000000);
                 int sx = baseX + i * 18;
-                TrinketHelper.TrinketSlotInfo slotInfo = activeTrinketSlots.get(i);
                 ItemStack ti = slotInfo.stack();
                 if (ti.isEmpty()) {
-                    Identifier iconId = TrinketHelper.getSlotIcon(slotInfo);
                     if (iconId != null) {
                         g.fill(sx, baseY, sx + 16, baseY + 16, 0xFFFFFFFF);
                         g.blitSprite(RenderPipelines.GUI_TEXTURED, iconId, sx, baseY, 16, 16);
@@ -467,40 +426,25 @@ public class YzuInventoryScreen extends AbstractRecipeBookScreen<InventoryMenu> 
                 }
             }
         }
-    }
 
-    private int getTrinketIndicatorAt(int mx, int my) {
-        if (trinketSourceSlot < 0 || activeTrinketSlots.isEmpty()
-                || trinketSourceSlot >= this.menu.slots.size())
             return -1;
-        Slot src = this.menu.slots.get(trinketSourceSlot);
         int baseX = src.x + this.leftPos + 16 + 2;
         int baseY = src.y + this.topPos;
-        int count = activeTrinketSlots.size();
         if (mx < baseX || mx >= baseX + count * 18 || my < baseY || my >= baseY + 16)
             return -1;
         return (mx - baseX) / 18;
-    }
 
-    private void trinketHandleClick(TrinketHelper.TrinketSlotInfo tsi, int button) {
         if (this.minecraft == null || this.minecraft.player == null)
             return;
         ItemStack carried = this.minecraft.player.containerMenu.getCarried();
         byte action;
         if (button == 0) {
             if (carried.isEmpty()) {
-                action = TrinketInteractPayload.ACTION_TAKE;
             } else {
                 // 有携带物：如果槽位有物品则交换，否则放入
-                ItemStack slotStack = TrinketHelper.getSlotStack(tsi);
-                action = slotStack.isEmpty() ? TrinketInteractPayload.ACTION_PLACE : TrinketInteractPayload.ACTION_SWAP;
             }
         } else {
             return;
         }
-        ClientPlayNetworking.send(new TrinketInteractPayload(tsi.groupKey(), tsi.slotIndex(), action));
         // 让下一次 tick 重新查询
-        trinketSourceSlot = -1;
-        activeTrinketSlots = List.of();
-    }
 }

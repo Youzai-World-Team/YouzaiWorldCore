@@ -82,6 +82,9 @@ dependencies {
 
     // Moog's Structure Lib
     implementation "maven.modrinth:moogs-structure-lib:3.0.4"
+
+    // Trinkets API
+    implementation "eu.pb4:trinkets:4.1.0-beta.2+26.2"
 }
 
 processResources {

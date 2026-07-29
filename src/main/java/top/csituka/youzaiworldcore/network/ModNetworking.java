@@ -20,7 +20,6 @@ import top.csituka.youzaiworldcore.screen.DecompositionTableMenu;
 import top.csituka.youzaiworldcore.screen.FlyBeaconMenu;
 import top.csituka.youzaiworldcore.skill.AttributeManager;
 import top.csituka.youzaiworldcore.util.DebugLogger;
-import top.csituka.youzaiworldcore.util.TrinketHelper;
 
 import java.util.UUID;
 
@@ -74,9 +73,6 @@ public class ModNetworking {
         PayloadTypeRegistry.serverboundPlay().register(PetCommandPayload.ID, PetCommandPayload.STREAM_CODEC);
         DebugLogger.info("ModNetworking", "Registered serverbound packet: PetCommandPayload");
 
-        // ===== Trinkets 饰品槽交互数据包 =====
-        PayloadTypeRegistry.serverboundPlay().register(TrinketInteractPayload.ID, TrinketInteractPayload.STREAM_CODEC);
-        DebugLogger.info("ModNetworking", "Registered serverbound packet: TrinketInteractPayload");
 
         // ===== 服务端接收处理器 =====
         ServerPlayNetworking.registerGlobalReceiver(DecomposeItemPayload.ID, (payload, context) -> {
@@ -412,72 +408,6 @@ public class ModNetworking {
             DebugLogger.exiting("ModNetworking", "PetCommandPayload handler");
         });
 
-        // ===== Trinkets 饰品槽交互处理器（服务端权威操作） =====
-        ServerPlayNetworking.registerGlobalReceiver(TrinketInteractPayload.ID, (payload, context) -> {
-            DebugLogger.entering("ModNetworking", "TrinketInteractPayload handler");
-            var player = context.player();
-            var server = player.level().getServer();
-            if (server == null) {
-                DebugLogger.exiting("ModNetworking", "TrinketInteractPayload handler", "server is null");
-                return;
-            }
-            server.execute(() -> {
-                try {
-                    // 获取 TrinketAttachment
-                    Object attachment = TrinketHelper.getAttachment(player);
-                    if (attachment == null) {
-                        DebugLogger.warn("ModNetworking", "TrinketAttachment is null for player %s", player.getName().getString());
-                        return;
-                    }
-                    // 获取 TrinketInventory
-                    Object inv = TrinketHelper.getInventory(attachment, payload.groupKey());
-                    if (inv == null) {
-                        DebugLogger.warn("ModNetworking", "TrinketInventory '%s' not found", payload.groupKey());
-                        return;
-                    }
-                    // 获取 TrinketSlotAccess
-                    Object access = TrinketHelper.getSlotAccess(inv, payload.slotIndex());
-                    if (access == null) {
-                        DebugLogger.warn("ModNetworking", "TrinketSlotAccess at %s[%d] not found", payload.groupKey(), payload.slotIndex());
-                        return;
-                    }
-
-                    // 读取当前数据
-                    net.minecraft.world.item.ItemStack carried = player.containerMenu.getCarried();
-                    net.minecraft.world.item.ItemStack slotStack = TrinketHelper.getStack(access);
-
-                    switch (payload.action()) {
-                        case TrinketInteractPayload.ACTION_PLACE:
-                            if (!carried.isEmpty()) {
-                                TrinketHelper.setStack(access, carried.copy());
-                                player.containerMenu.setCarried(net.minecraft.world.item.ItemStack.EMPTY);
-                                DebugLogger.info("ModNetworking", "Trinket PLACE: %s -> %s[%d]", carried.getHoverName().getString(), payload.groupKey(), payload.slotIndex());
-                            }
-                            break;
-                        case TrinketInteractPayload.ACTION_TAKE:
-                            if (!slotStack.isEmpty()) {
-                                player.containerMenu.setCarried(slotStack.copy());
-                                TrinketHelper.setStack(access, net.minecraft.world.item.ItemStack.EMPTY);
-                                DebugLogger.info("ModNetworking", "Trinket TAKE: %s[%d] -> cursor", payload.groupKey(), payload.slotIndex());
-                            }
-                            break;
-                        case TrinketInteractPayload.ACTION_SWAP:
-                            TrinketHelper.setStack(access, carried.copy());
-                            player.containerMenu.setCarried(slotStack.copy());
-                            DebugLogger.info("ModNetworking", "Trinket SWAP: cursor <-> %s[%d]", payload.groupKey(), payload.slotIndex());
-                            break;
-                        default:
-                            DebugLogger.warn("ModNetworking", "Unknown trinket action: %d", payload.action());
-                            break;
-                    }
-                    // 广播容器变更，触发服务端→客户端同步
-                    player.containerMenu.broadcastChanges();
-                } catch (Exception e) {
-                    DebugLogger.error("ModNetworking", "Trinket interact handler error: %s", e.getMessage());
-                }
-            });
-            DebugLogger.exiting("ModNetworking", "TrinketInteractPayload handler");
-        });
 
         // ======================================================================
         // 邮件系统（Mail）—— 数据包注册
