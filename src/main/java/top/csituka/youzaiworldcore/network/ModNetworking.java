@@ -20,6 +20,9 @@ import top.csituka.youzaiworldcore.screen.DecompositionTableMenu;
 import top.csituka.youzaiworldcore.screen.FlyBeaconMenu;
 import top.csituka.youzaiworldcore.skill.AttributeManager;
 import top.csituka.youzaiworldcore.util.DebugLogger;
+import eu.pb4.trinkets.api.TrinketsApi;
+import eu.pb4.trinkets.api.TrinketAttachment;
+import eu.pb4.trinkets.api.TrinketInventory;
 import top.csituka.youzaiworldcore.util.TrinketHelper;
 
 import java.util.UUID;
@@ -423,33 +426,37 @@ public class ModNetworking {
             }
             server.execute(() -> {
                 try {
-                    // 获取 TrinketAttachment
-                    Object attachment = TrinketHelper.getAttachment(player);
+                    // 直接使用 Trinkets API
+                    TrinketAttachment attachment = TrinketsApi.getAttachment(player);
                     if (attachment == null) {
                         DebugLogger.warn("ModNetworking", "TrinketAttachment is null for player %s", player.getName().getString());
                         return;
                     }
-                    // 获取 TrinketInventory
-                    Object inv = TrinketHelper.getInventory(attachment, payload.groupKey());
+                    TrinketInventory inv = attachment.getInventories().get(payload.groupKey());
                     if (inv == null) {
                         DebugLogger.warn("ModNetworking", "TrinketInventory '%s' not found", payload.groupKey());
                         return;
                     }
-                    // 获取 TrinketSlotAccess
-                    Object access = TrinketHelper.getSlotAccess(inv, payload.slotIndex());
+                    eu.pb4.trinkets.api.TrinketSlotAccess access = inv.getSlotAccess(payload.slotIndex());
                     if (access == null) {
                         DebugLogger.warn("ModNetworking", "TrinketSlotAccess at %s[%d] not found", payload.groupKey(), payload.slotIndex());
                         return;
                     }
 
-                    // 读取当前数据
                     net.minecraft.world.item.ItemStack carried = player.containerMenu.getCarried();
-                    net.minecraft.world.item.ItemStack slotStack = TrinketHelper.getStack(access);
+                    net.minecraft.world.item.ItemStack slotStack = access.get();
 
                     switch (payload.action()) {
                         case TrinketInteractPayload.ACTION_PLACE:
                             if (!carried.isEmpty()) {
-                                TrinketHelper.setStack(access, carried.copy());
+                                // 验证：只有通过 SlotType.validatorCheck 的物品才允许放入
+                                if (!access.slotType().validatorCheck(carried, access, player)) {
+                                    DebugLogger.info("ModNetworking", "Validator rejected %s -> %s[%d]",
+                                            carried.getHoverName().getString(), payload.groupKey(), payload.slotIndex());
+                                    return;
+                                }
+                                access.set(carried.copy());
+                                inv.setChanged();
                                 player.containerMenu.setCarried(net.minecraft.world.item.ItemStack.EMPTY);
                                 DebugLogger.info("ModNetworking", "Trinket PLACE: %s -> %s[%d]", carried.getHoverName().getString(), payload.groupKey(), payload.slotIndex());
                             }
@@ -457,20 +464,21 @@ public class ModNetworking {
                         case TrinketInteractPayload.ACTION_TAKE:
                             if (!slotStack.isEmpty()) {
                                 player.containerMenu.setCarried(slotStack.copy());
-                                TrinketHelper.setStack(access, net.minecraft.world.item.ItemStack.EMPTY);
+                                access.set(net.minecraft.world.item.ItemStack.EMPTY);
+                                inv.setChanged();
                                 DebugLogger.info("ModNetworking", "Trinket TAKE: %s[%d] -> cursor", payload.groupKey(), payload.slotIndex());
                             }
                             break;
                         case TrinketInteractPayload.ACTION_SWAP:
-                            TrinketHelper.setStack(access, carried.copy());
+                            access.set(carried.copy());
                             player.containerMenu.setCarried(slotStack.copy());
+                            inv.setChanged();
                             DebugLogger.info("ModNetworking", "Trinket SWAP: cursor <-> %s[%d]", payload.groupKey(), payload.slotIndex());
                             break;
                         default:
                             DebugLogger.warn("ModNetworking", "Unknown trinket action: %d", payload.action());
                             break;
                     }
-                    // 广播容器变更，触发服务端→客户端同步
                     player.containerMenu.broadcastChanges();
                 } catch (Exception e) {
                     DebugLogger.error("ModNetworking", "Trinket interact handler error: %s", e.getMessage());
