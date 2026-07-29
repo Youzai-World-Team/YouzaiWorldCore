@@ -46,8 +46,7 @@
     "RecipeButtonMixin",
     "CycleButtonYzuiMixin",
     "ImageButtonYzuiMixin",
-    "RecipeBookLayoutMixin",
-    "BackpackTrinketMixin"
+    "RecipeBookLayoutMixin"
   ],
   "injectors": {
     "defaultRequire": 1

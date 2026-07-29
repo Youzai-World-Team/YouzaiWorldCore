@@ -9,7 +9,6 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import top.csituka.youzaiworldcore.item.ModItems;
-import top.csituka.youzaiworldcore.util.TrinketHelper;
 
 /**
  * 混合注入：拦截 {@link Player#dropEquipment(ServerLevel)}，
@@ -44,10 +43,6 @@ public class PlayerDropEquipmentMixin {
      * 检查是否有至少一个 {@link HeartOfGuardianshipItem}。
      */
     private static boolean hasHeartInInventory(Player player) {
-        // 检查饰品槽
-        if (TrinketHelper.isLoaded() && TrinketHelper.isItemEquipped(player, ModItems.HEART_OF_GUARDIANSHIP)) {
-            return true;
-        }
         // 检查背包
         Inventory inventory = player.getInventory();
         for (int i = 0; i < inventory.getContainerSize(); i++) {
