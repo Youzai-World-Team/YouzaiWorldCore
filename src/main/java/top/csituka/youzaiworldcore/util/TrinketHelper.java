@@ -37,7 +37,7 @@ public final class TrinketHelper {
     }
 
     /** 饰品槽位信息 */
-    public record TrinketSlotInfo(String groupKey, int slotIndex, ItemStack stack, Object access) {
+    public record TrinketSlotInfo(String groupKey, int slotIndex, @org.jspecify.annotations.NonNull ItemStack stack, Object access) {
     }
 
     public static List<TrinketSlotInfo> getAllVisibleSlots(LivingEntity entity) {
@@ -78,7 +78,11 @@ public final class TrinketHelper {
                 if (!group.isAttachedToSlot(slot))
                     continue;
                 for (SlotType st : group.getSlots()) {
-                    String invKey = groupName + "/" + st.name();
+                    // getId() 返回完整槽位 id（如 "offhand/totem"），
+                    // 与 attachment.getInventories() 的 map key 一致（LivingEntityTrinketAttachment:155）。
+                    // 注意：不能用 groupName + "/" + getId()（会变成 offhand/offhand/totem），
+                    // 也不能用已弃用的 name()（仅返回 "totem"）。
+                    String invKey = st.getId();
                     TrinketInventory inv = attachment.getInventories().get(invKey);
                     if (inv == null)
                         continue;

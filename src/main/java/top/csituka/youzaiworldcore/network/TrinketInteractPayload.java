@@ -4,6 +4,7 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
+import org.jspecify.annotations.NonNull;
 import top.csituka.youzaiworldcore.YouzaiworldCore;
 
 /**
@@ -26,10 +27,10 @@ public record TrinketInteractPayload(String groupKey, int slotIndex, byte action
     /** 交换：光标与饰品槽互换 */
     public static final byte ACTION_SWAP = 2;
 
-    public static final Identifier IDENTIFIER = Identifier.fromNamespaceAndPath(
+    public static final @NonNull Identifier IDENTIFIER = Identifier.fromNamespaceAndPath(
             YouzaiworldCore.MOD_ID, "trinket_interact");
 
-    public static final Type<TrinketInteractPayload> ID = new Type<>(IDENTIFIER);
+    public static final @NonNull Type<TrinketInteractPayload> ID = new Type<>(IDENTIFIER);
 
     public static final StreamCodec<RegistryFriendlyByteBuf, TrinketInteractPayload> STREAM_CODEC =
             StreamCodec.of(
@@ -46,7 +47,7 @@ public record TrinketInteractPayload(String groupKey, int slotIndex, byte action
             );
 
     @Override
-    public Type<? extends CustomPacketPayload> type() {
+    public @NonNull Type<? extends CustomPacketPayload> type() {
         return ID;
     }
 }

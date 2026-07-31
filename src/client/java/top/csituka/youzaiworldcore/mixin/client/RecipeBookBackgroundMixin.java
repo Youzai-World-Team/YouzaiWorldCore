@@ -1,25 +1,29 @@
 package top.csituka.youzaiworldcore.mixin.client;
 
+import com.mojang.blaze3d.pipeline.RenderPipeline;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.recipebook.RecipeBookComponent;
+import net.minecraft.resources.Identifier;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.Redirect;
 import top.csituka.youzaiworldcore.client.config.ClientExternalSettings;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
 /**
- * Mixin 替换 {@link RecipeBookComponent#extractRenderState} 中的背景纹理 blit，
- * 改为绘制 YZUI 半透明白色圆角面板。
+ * Mixin 替换 {@link RecipeBookComponent#extractRenderState} 中的背景纹理 blit。
  * <p>
- * 当 YZUI 关闭时不拦截 blit，让原版纹理正常绘制。
- * 当 YZUI 开启时，面板从 Tab 列左侧延伸至配方内容右侧，将 Tab 按钮包裹在内。
+ * 使用 {@link Redirect} 而非 {@code @Inject(cancellable=true)}：
+ * {@code ci.cancel()} 在 INVOKE 点会取消整个方法剩余部分（Tab/搜索框/配方网格全部不渲染），
+ * 导致配方书只有背景没有控件。{@code @Redirect} 只替换 blit 调用本身，后续渲染正常执行。
  * </p>
+ * <ul>
+ *   <li>YZUI 开启：替换为 YZUI 半透明白色圆角扩展面板（覆盖 Tab 列）</li>
+ *   <li>YZUI 关闭：调用原版 blit，保留原版背景</li>
+ * </ul>
  */
 @Mixin(RecipeBookComponent.class)
 public class RecipeBookBackgroundMixin {
@@ -33,37 +37,34 @@ public class RecipeBookBackgroundMixin {
     @Unique
     private static final String YZWC_BG_DBG = "RecipeBookBg";
 
-    @Shadow
-    private int getXOrigin() {
-        return 0;
-    }
-
-    @Shadow
-    private int getYOrigin() {
-        return 0;
-    }
-
-    @Inject(method = "extractRenderState", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/GuiGraphicsExtractor;blit(Lcom/mojang/blaze3d/pipeline/RenderPipeline;Lnet/minecraft/resources/Identifier;IIFFIIII)V"), cancellable = true)
+    @Redirect(
+            method = "extractRenderState",
+            at = @At(value = "INVOKE",
+                    target = "Lnet/minecraft/client/gui/GuiGraphicsExtractor;blit(Lcom/mojang/blaze3d/pipeline/RenderPipeline;Lnet/minecraft/resources/Identifier;IIFFIIII)V"),
+            require = 1
+    )
     private void yzwc$recipeBookBackground(
             GuiGraphicsExtractor g,
-            int mx, int my, float pt,
-            CallbackInfo ci) {
-        if (!yzwc$shouldApplyYzui())
+            RenderPipeline pipeline,
+            Identifier texture,
+            int x, int y,
+            float u, float v,
+            int w, int h,
+            int texW, int texH
+    ) {
+        if (!yzwc$shouldApplyYzui()) {
+            // YZUI 关闭：原版 blit 正常执行
+            g.blit(pipeline, texture, x, y, u, v, w, h, texW, texH);
             return;
+        }
 
-        // 取消原版 blit，只绘制 YZUI 扩展面板（覆盖 Tab 列区域）
-        ci.cancel();
-
-        int x = getXOrigin();
-        int y = getYOrigin();
-
-        // 只扩展左侧 Tab 列，不覆盖主面板
+        // YZUI 开启：替换为扩展圆角面板（覆盖 Tab 列）。@Redirect 只替换 blit，
+        // 方法后续的搜索框/Tab/配方网格渲染正常继续。
         int combX = x - YZWC_TAB_STRIP_W;
         int combW = 147 + YZWC_TAB_STRIP_W;
-
         yzwc$fillRoundedRect(g, combX, y, combW, 166, YZWC_RECIPE_BG_RADIUS, YZWC_RECIPE_BOOK_BG);
         DebugLogger.info(YZWC_BG_DBG,
-                "YZUI recipe book bg at (%d, %d) %dx%d", combX, y, combW, 166);
+                "YZUI recipe book bg at (%d, %d) %dx%d (controls still render)", combX, y, combW, 166);
     }
 
     @Unique

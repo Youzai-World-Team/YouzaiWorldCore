@@ -23,6 +23,7 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 import top.csituka.youzaiworldcore.network.TrinketInteractPayload;
@@ -467,7 +468,7 @@ public class YzuInventoryScreen extends AbstractRecipeBookScreen<InventoryMenu> 
                     Identifier iconId = TrinketHelper.getSlotIcon(slotInfo);
                     if (iconId != null) {
                         g.fill(sx, baseY, sx + 16, baseY + 16, 0xFFFFFFFF);
-                        g.blitSprite(RenderPipelines.GUI_TEXTURED, iconId, sx, baseY, 16, 16);
+                        g.blitSprite(RenderPipelines.GUI_TEXTURED, Objects.requireNonNull(iconId), sx, baseY, 16, 16);
                     } else {
                         g.fill(sx, baseY, sx + 16, baseY + 16, 0xFFFFFFFF);
                     }
