@@ -24,6 +24,7 @@ import eu.pb4.trinkets.api.TrinketsApi;
 import eu.pb4.trinkets.api.TrinketAttachment;
 import eu.pb4.trinkets.api.TrinketInventory;
 import eu.pb4.trinkets.api.TrinketSlotAccess;
+import eu.pb4.trinkets.impl.TrinketUtilities;
 import top.csituka.youzaiworldcore.util.TrinketHelper;
 
 import java.util.UUID;
@@ -461,6 +462,7 @@ public class ModNetworking {
                                 }
                                 access.set(carried.copy());
                                 inv.setChanged();
+                                TrinketUtilities.callTrinketEquipmentChange(slotStack, carried, access, player);
                                 player.containerMenu.setCarried(net.minecraft.world.item.ItemStack.EMPTY);
                                 DebugLogger.info("ModNetworking", "Trinket PLACE: %s -> %s[%d]", carried.getHoverName().getString(), payload.groupKey(), payload.slotIndex());
                             }
@@ -470,6 +472,7 @@ public class ModNetworking {
                                 player.containerMenu.setCarried(slotStack.copy());
                                 access.set(net.minecraft.world.item.ItemStack.EMPTY);
                                 inv.setChanged();
+                                TrinketUtilities.callTrinketEquipmentChange(slotStack, net.minecraft.world.item.ItemStack.EMPTY, access, player);
                                 DebugLogger.info("ModNetworking", "Trinket TAKE: %s[%d] -> cursor", payload.groupKey(), payload.slotIndex());
                             }
                             break;
@@ -484,6 +487,7 @@ public class ModNetworking {
                             access.set(carried.copy());
                             player.containerMenu.setCarried(slotStack.copy());
                             inv.setChanged();
+                            TrinketUtilities.callTrinketEquipmentChange(slotStack, carried, access, player);
                             DebugLogger.info("ModNetworking", "Trinket SWAP: cursor <-> %s[%d]", payload.groupKey(), payload.slotIndex());
                             break;
                         default:

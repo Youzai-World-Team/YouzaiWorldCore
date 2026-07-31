@@ -49,21 +49,21 @@ public class RecipeBookBackgroundMixin {
             int mx, int my, float pt,
             CallbackInfo ci) {
         if (!yzwc$shouldApplyYzui())
-            return; // 不取消 → 原版 blit 正常执行
+            return;
 
-        ci.cancel(); // 取消原版 blit，改绘 YZUI 面板
+        // 取消原版 blit，只绘制 YZUI 扩展面板（覆盖 Tab 列区域）
+        ci.cancel();
 
-        // @Shadow 方法直接通过 this 访问
         int x = getXOrigin();
         int y = getYOrigin();
 
-        // 向左固定扩展，覆盖 Tab 列
+        // 只扩展左侧 Tab 列，不覆盖主面板
         int combX = x - YZWC_TAB_STRIP_W;
         int combW = 147 + YZWC_TAB_STRIP_W;
 
         yzwc$fillRoundedRect(g, combX, y, combW, 166, YZWC_RECIPE_BG_RADIUS, YZWC_RECIPE_BOOK_BG);
         DebugLogger.info(YZWC_BG_DBG,
-                "Extended panel at (%d, %d) %dx%d", combX, y, combW, 166);
+                "YZUI recipe book bg at (%d, %d) %dx%d", combX, y, combW, 166);
     }
 
     @Unique

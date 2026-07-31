@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Set;
 
 import top.csituka.youzaiworldcore.network.TrinketInteractPayload;
+import top.csituka.youzaiworldcore.util.DebugLogger;
 import top.csituka.youzaiworldcore.util.TrinketHelper;
 
 /**
@@ -186,8 +187,13 @@ public class YzuInventoryScreen extends AbstractRecipeBookScreen<InventoryMenu> 
 
         // Trinket 指示器点击
         if (TrinketHelper.isLoaded() && trinketSourceSlot >= 0 && !activeTrinketSlots.isEmpty()) {
-            int ti = getTrinketIndicatorAt((int) ev.x(), (int) ev.y());
+            int ex = (int) ev.x();
+            int ey = (int) ev.y();
+            int ti = getTrinketIndicatorAt(ex, ey);
+            DebugLogger.info("TrinketClick", "click at (%d,%d) trinketSrc=%d indCount=%d ti=%d",
+                    ex, ey, trinketSourceSlot, activeTrinketSlots.size(), ti);
             if (ti >= 0 && ti < activeTrinketSlots.size()) {
+                DebugLogger.info("TrinketClick", "-> handling click on indicator %d", ti);
                 trinketHandleClick(activeTrinketSlots.get(ti), ev.button());
                 return true;
             }
@@ -434,6 +440,10 @@ public class YzuInventoryScreen extends AbstractRecipeBookScreen<InventoryMenu> 
             if (hitIdx != trinketSourceSlot && !onIndicator) {
                 activeTrinketSlots = TrinketHelper.getSlotsAttachedTo(this.minecraft.player, hitSlot);
                 trinketSourceSlot = activeTrinketSlots.isEmpty() ? -1 : hitIdx;
+                if (!activeTrinketSlots.isEmpty()) {
+                    DebugLogger.info("TrinketOverlay", "Show %d indicators for slot %d",
+                            activeTrinketSlots.size(), hitIdx);
+                }
             }
         } else if (!onIndicator) {
             activeTrinketSlots = List.of();
@@ -485,6 +495,8 @@ public class YzuInventoryScreen extends AbstractRecipeBookScreen<InventoryMenu> 
     private void trinketHandleClick(TrinketHelper.TrinketSlotInfo tsi, int button) {
         if (this.minecraft == null || this.minecraft.player == null)
             return;
+        DebugLogger.info("TrinketClick", "Click on %s[%d] button=%d",
+                tsi.groupKey(), tsi.slotIndex(), button);
         ItemStack carried = this.minecraft.player.containerMenu.getCarried();
         byte action;
         if (button == 0) {
