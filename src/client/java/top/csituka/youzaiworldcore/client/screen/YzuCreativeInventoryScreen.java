@@ -461,6 +461,60 @@ public class YzuCreativeInventoryScreen extends Screen {
         }
     }
 
+    /**
+     * Shift+左键点击指示器：将饰品槽内物品快捷移动到主物品栏/快捷栏。
+     * <p>
+     * 创造模式菜单（CreativeModeMenu）没有 Trinkets 注入槽，无法复用标准
+     * QUICK_MOVE 点击（Trinkets 的 quickMove mixin 仅针对 InventoryMenu），
+     * 改为发送 {@link TrinketInteractPayload#ACTION_QUICK_MOVE}，由服务端把物品
+     * 转移到玩家背包（0-35 主栏+快捷栏）；饰品槽同步走 Trinkets 网络层。
+     * <p>
+     * 发送后执行客户端本地预览：物品栏槽位（player.inventoryMenu.slots）引用的是
+     * 客户端本地 Inventory，服务端槽位推送（broadcastChanges→synchronizeSlotToRemote）
+     * 依赖 synchronizer/remoteSlots 变化检测，创造模式下可能缺失导致物品栏不刷新
+     * （需重开物品栏才显示）。本地按与服务端相同逻辑（同种堆叠→空位）模拟转移，
+     * 保证即时可见；服务端权威广播到达后最终校正。
+     */
+    private void trinketQuickMove(TrinketHelper.TrinketSlotInfo tsi) {
+        ItemStack slotStack = TrinketHelper.getSlotStack(tsi);
+        if (slotStack.isEmpty()) {
+            DebugLogger.info("TrinketClick", "Shift-click on %s[%d]: slot empty, nothing to move",
+                    tsi.groupKey(), tsi.slotIndex());
+            return;
+        }
+        DebugLogger.info("TrinketClick", "Shift-click on %s[%d] -> QUICK_MOVE to inventory",
+                tsi.groupKey(), tsi.slotIndex());
+        ClientPlayNetworking.send(new TrinketInteractPayload(tsi.groupKey(), tsi.slotIndex(),
+                TrinketInteractPayload.ACTION_QUICK_MOVE));
+        // 本地预览：同种堆叠 → 空位，与服务端逻辑一致
+        try {
+            net.minecraft.world.entity.player.Inventory clientInv = player.getInventory();
+            ItemStack toMove = slotStack.copy();
+            for (int i = 0; i < clientInv.getContainerSize(); i++) {
+                ItemStack existing = clientInv.getItem(i);
+                if (existing.isEmpty()) {
+                    clientInv.setItem(i, toMove);
+                    toMove = ItemStack.EMPTY;
+                    break;
+                } else if (ItemStack.isSameItemSameComponents(existing, toMove)
+                        && existing.getCount() < existing.getMaxStackSize()) {
+                    int space = existing.getMaxStackSize() - existing.getCount();
+                    int take = Math.min(space, toMove.getCount());
+                    existing.grow(take);
+                    toMove.shrink(take);
+                    if (toMove.isEmpty()) {
+                        break;
+                    }
+                }
+            }
+            TrinketHelper.setSlotStack(tsi, toMove.isEmpty() ? ItemStack.EMPTY : toMove);
+        } catch (Exception e) {
+            DebugLogger.warn("TrinketClick", "Local preview failed: %s", e.getMessage());
+        }
+        trinketSourceSlot = -1;
+        activeTrinketSlots = List.of();
+    }
+
     /** 拖拽中在被拖槽位上渲染物品预览（含数字）。异种/满格跳过，数量按有效格均分计算。 */
     private void drawDragPreview(GuiGraphicsExtractor g, ItemStack carried) {
         if (!isDragInProgress || carried.isEmpty() || draggedSlots.isEmpty())
@@ -1114,7 +1168,12 @@ public class YzuCreativeInventoryScreen extends Screen {
             int ti = getTrinketIndicatorAt((int) ev.x(), (int) ev.y());
             if (ti >= 0 && ti < activeTrinketSlots.size()) {
                 TrinketHelper.TrinketSlotInfo tsi = activeTrinketSlots.get(ti);
-                trinketHandleClick(tsi, ev.button());
+                if (ev.hasShiftDown() && ev.button() == 0) {
+                    // Shift+左键点击指示器：快捷移动槽位物品到物品栏
+                    trinketQuickMove(tsi);
+                } else {
+                    trinketHandleClick(tsi, ev.button());
+                }
                 return true;
             }
         }

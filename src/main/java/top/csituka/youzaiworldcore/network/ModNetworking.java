@@ -507,6 +507,51 @@ public class ModNetworking {
                             TrinketUtilities.callTrinketEquipmentChange(slotStack, cursor, access, player);
                             DebugLogger.info("ModNetworking", "Trinket SWAP: cursor <-> %s[%d]", payload.groupKey(), payload.slotIndex());
                             break;
+                        case TrinketInteractPayload.ACTION_QUICK_MOVE:
+                            // 快捷移动：饰品槽物品 → 主物品栏/快捷栏（玩家背包 0-35）。
+                            // 手动转移不依赖菜单类型（CreativeModeMenu 无 Trinkets 注入槽，
+                            // 不能用标准 QUICK_MOVE 点击）；物品栏由 menu 广播同步，
+                            // 饰品槽由 Trinkets 的 tick 级脏检查自动 SYNC_INVENTORY 同步。
+                            if (slotStack.isEmpty()) {
+                                DebugLogger.info("ModNetworking", "QUICK_MOVE skipped: slot %s[%d] is empty",
+                                        payload.groupKey(), payload.slotIndex());
+                                break;
+                            }
+                            {
+                                net.minecraft.world.item.ItemStack toMove = slotStack.copy();
+                                net.minecraft.world.entity.player.Inventory playerInv = player.getInventory();
+                                for (int i = 0; i < playerInv.getContainerSize(); i++) {
+                                    net.minecraft.world.item.ItemStack existing = playerInv.getItem(i);
+                                    if (existing.isEmpty()) {
+                                        playerInv.setItem(i, toMove);
+                                        toMove = net.minecraft.world.item.ItemStack.EMPTY;
+                                        break;
+                                    } else if (net.minecraft.world.item.ItemStack.isSameItemSameComponents(existing, toMove)
+                                            && existing.getCount() < existing.getMaxStackSize()) {
+                                        int space = existing.getMaxStackSize() - existing.getCount();
+                                        int take = Math.min(space, toMove.getCount());
+                                        existing.grow(take);
+                                        toMove.shrink(take);
+                                        if (toMove.isEmpty()) {
+                                            break;
+                                        }
+                                    }
+                                }
+                                if (toMove.isEmpty()) {
+                                    access.set(net.minecraft.world.item.ItemStack.EMPTY);
+                                    inv.setChanged();
+                                    TrinketUtilities.callTrinketEquipmentChange(slotStack, net.minecraft.world.item.ItemStack.EMPTY, access, player);
+                                    DebugLogger.info("ModNetworking", "Trinket QUICK_MOVE: %s -> %s[%d] -> inventory",
+                                            slotStack.getHoverName().getString(), payload.groupKey(), payload.slotIndex());
+                                } else {
+                                    access.set(toMove);
+                                    inv.setChanged();
+                                    TrinketUtilities.callTrinketEquipmentChange(slotStack, toMove, access, player);
+                                    DebugLogger.info("ModNetworking", "Trinket QUICK_MOVE partial: %s -> %s[%d] (inventory full, %d left)",
+                                            slotStack.getHoverName().getString(), payload.groupKey(), payload.slotIndex(), toMove.getCount());
+                                }
+                            }
+                            break;
                         default:
                             DebugLogger.warn("ModNetworking", "Unknown trinket action: %d", payload.action());
                             break;

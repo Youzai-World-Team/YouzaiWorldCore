@@ -23,7 +23,7 @@ import top.csituka.youzaiworldcore.YouzaiworldCore;
  *
  * @param groupKey  库存键，格式如 {@code "chest/elytra"}
  * @param slotIndex 槽位索引
- * @param action    操作类型：0=放入（光标→槽），1=取出（槽→光标），2=交换
+ * @param action    操作类型：0=放入（光标→槽），1=取出（槽→光标），2=交换，3=快捷移动（槽→物品栏）
  * @param cursor    客户端鼠标当前携带的物品（EMPTY 表示空手）
  */
 public record TrinketInteractPayload(String groupKey, int slotIndex, byte action,
@@ -35,6 +35,8 @@ public record TrinketInteractPayload(String groupKey, int slotIndex, byte action
     public static final byte ACTION_TAKE = 1;
     /** 交换：光标与饰品槽互换 */
     public static final byte ACTION_SWAP = 2;
+    /** 快捷移动：饰品槽物品 → 主物品栏/快捷栏（服务端转移到玩家背包 0-35） */
+    public static final byte ACTION_QUICK_MOVE = 3;
 
     /**
      * 便捷构造器：不携带 cursor（服务端回退到 {@code containerMenu.getCarried()}）。
