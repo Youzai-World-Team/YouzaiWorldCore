@@ -30,6 +30,8 @@ import top.csituka.youzaiworldcore.network.TrinketInteractPayload;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 import top.csituka.youzaiworldcore.util.TrinketHelper;
 
+import eu.pb4.trinkets.impl.TrinketSlot;
+
 /**
  * YZUI 生存模式物品栏屏幕。
  * <p>
@@ -195,7 +197,15 @@ public class YzuInventoryScreen extends AbstractRecipeBookScreen<InventoryMenu> 
                     ex, ey, trinketSourceSlot, activeTrinketSlots.size(), ti);
             if (ti >= 0 && ti < activeTrinketSlots.size()) {
                 DebugLogger.info("TrinketClick", "-> handling click on indicator %d", ti);
-                trinketHandleClick(activeTrinketSlots.get(ti), ev.button());
+                // 先清理残留手势状态，避免与指示器交互互相干扰
+                resetGesture();
+                TrinketHelper.TrinketSlotInfo tsi = activeTrinketSlots.get(ti);
+                if (ev.hasShiftDown() && ev.button() == 0) {
+                    // Shift+左键点击指示器：快捷移动槽位物品到物品栏
+                    trinketQuickMove(tsi);
+                } else {
+                    trinketHandleClick(tsi, ev.button());
+                }
                 return true;
             }
         }
@@ -496,22 +506,85 @@ public class YzuInventoryScreen extends AbstractRecipeBookScreen<InventoryMenu> 
     private void trinketHandleClick(TrinketHelper.TrinketSlotInfo tsi, int button) {
         if (this.minecraft == null || this.minecraft.player == null)
             return;
-        DebugLogger.info("TrinketClick", "Click on %s[%d] button=%d",
-                tsi.groupKey(), tsi.slotIndex(), button);
-        ItemStack carried = this.minecraft.player.containerMenu.getCarried();
+        LocalPlayer player = this.minecraft.player;
+        ItemStack carried = player.containerMenu.getCarried();
+        ItemStack slotStack = TrinketHelper.getSlotStack(tsi);
+        DebugLogger.info("TrinketClick", "Click on %s[%d] button=%d carried=%s slot=%s",
+                tsi.groupKey(), tsi.slotIndex(), button,
+                carried.isEmpty() ? "empty" : carried.getHoverName().getString(),
+                slotStack.isEmpty() ? "empty" : slotStack.getHoverName().getString());
         byte action;
         if (button == 0) {
             if (carried.isEmpty()) {
                 action = TrinketInteractPayload.ACTION_TAKE;
             } else {
                 // 有携带物：如果槽位有物品则交换，否则放入
-                ItemStack slotStack = TrinketHelper.getSlotStack(tsi);
                 action = slotStack.isEmpty() ? TrinketInteractPayload.ACTION_PLACE : TrinketInteractPayload.ACTION_SWAP;
             }
         } else {
             return;
         }
-        ClientPlayNetworking.send(new TrinketInteractPayload(tsi.groupKey(), tsi.slotIndex(), action));
+        // 携带 cursor 一并上报：服务端 carried 与客户端不同步（如刚点击拿起物品、
+        // 点击数据包尚未处理）时以 cursor 兜底，避免操作被静默丢弃。
+        ClientPlayNetworking.send(new TrinketInteractPayload(tsi.groupKey(), tsi.slotIndex(), action, carried));
+        // 本地预览：立即更新鼠标物品与槽位显示（服务端权威广播到达后最终校正）。
+        // 注意只修改客户端本地状态，服务端仍以权威数据为准。
+        try {
+            if (action == TrinketInteractPayload.ACTION_PLACE && !carried.isEmpty()) {
+                player.containerMenu.setCarried(ItemStack.EMPTY);
+                TrinketHelper.setSlotStack(tsi, carried.copy());
+            } else if (action == TrinketInteractPayload.ACTION_TAKE && !slotStack.isEmpty()) {
+                player.containerMenu.setCarried(slotStack.copy());
+                TrinketHelper.setSlotStack(tsi, ItemStack.EMPTY);
+            } else if (action == TrinketInteractPayload.ACTION_SWAP && !carried.isEmpty()) {
+                player.containerMenu.setCarried(slotStack.copy());
+                TrinketHelper.setSlotStack(tsi, carried.copy());
+            }
+        } catch (Exception e) {
+            DebugLogger.warn("TrinketClick", "Local preview failed: %s", e.getMessage());
+        }
+        // 让下一次 tick 重新查询
+        trinketSourceSlot = -1;
+        activeTrinketSlots = List.of();
+    }
+
+    /**
+     * Shift+左键点击指示器：将饰品槽内物品快捷移动到主物品栏/快捷栏（槽位 9..45，不含副手）。
+     * <p>
+     * 直接复用标准 menu.clicked(QUICK_MOVE) 点击：客户端与服务端均由 Trinkets 的
+     * InventoryMenuMixin.quickMove 拦截 trinket 槽索引并执行
+     * {@code moveItemStackTo(stack, 9, 45, false)}，与原版 shift+点击 trinket 槽行为完全一致，
+     * 槽位内容与物品栏槽位由标准菜单同步广播校正。
+     */
+    private void trinketQuickMove(TrinketHelper.TrinketSlotInfo tsi) {
+        if (this.minecraft == null || this.minecraft.player == null)
+            return;
+        LocalPlayer player = this.minecraft.player;
+        ItemStack slotStack = TrinketHelper.getSlotStack(tsi);
+        if (slotStack.isEmpty()) {
+            DebugLogger.info("TrinketClick", "Shift-click on %s[%d]: slot empty, nothing to move",
+                    tsi.groupKey(), tsi.slotIndex());
+            return;
+        }
+        // 在 menu.slots 中定位该 trinket 槽对应的真实 Slot 索引（Trinkets 注入在菜单末尾）
+        int slotIdx = -1;
+        var slots = player.containerMenu.slots;
+        for (int i = 0; i < slots.size(); i++) {
+            Slot s = slots.get(i);
+            if (s instanceof TrinketSlot ts && ts.getAccess() != null
+                    && ts.getAccess().getAsIdentifierPath().equals(tsi.groupKey() + "/" + tsi.slotIndex())) {
+                slotIdx = i;
+                break;
+            }
+        }
+        if (slotIdx < 0) {
+            DebugLogger.info("TrinketClick", "Shift-click on %s[%d]: matching menu slot not found",
+                    tsi.groupKey(), tsi.slotIndex());
+            return;
+        }
+        DebugLogger.info("TrinketClick", "Shift-click on %s[%d] -> QUICK_MOVE to inventory (menu slot %d)",
+                tsi.groupKey(), tsi.slotIndex(), slotIdx);
+        this.menu.clicked(slotIdx, 0, ContainerInput.QUICK_MOVE, player);
         // 让下一次 tick 重新查询
         trinketSourceSlot = -1;
         activeTrinketSlots = List.of();

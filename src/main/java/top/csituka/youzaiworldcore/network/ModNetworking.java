@@ -445,49 +445,66 @@ public class ModNetworking {
                     }
 
                     net.minecraft.world.item.ItemStack carried = player.containerMenu.getCarried();
+                    // 服务端 carried 与客户端不同步（例如客户端刚点击拿起物品、点击数据包尚未被服务端
+                    // 处理）时，以客户端上报的 cursor 兜底；服务端槽位状态与 validator 校验仍然权威。
+                    net.minecraft.world.item.ItemStack reported = payload.cursor() != null ? payload.cursor() : net.minecraft.world.item.ItemStack.EMPTY;
+                    net.minecraft.world.item.ItemStack cursor = !carried.isEmpty() ? carried : reported;
                     net.minecraft.world.item.ItemStack slotStack = access.get();
+
+                    DebugLogger.info("ModNetworking", "TrinketReq group=%s[%d] action=%d serverCarried=%s cursor=%s(%d) slot=%s",
+                            payload.groupKey(), payload.slotIndex(), payload.action(),
+                            carried.isEmpty() ? "empty" : carried.getHoverName().getString(),
+                            cursor.isEmpty() ? "empty" : cursor.getHoverName().getString(), cursor.getCount(),
+                            slotStack.isEmpty() ? "empty" : slotStack.getHoverName().getString());
 
                     switch (payload.action()) {
                         case TrinketInteractPayload.ACTION_PLACE:
-                            if (!carried.isEmpty()) {
-                                if (!slotStack.isEmpty()) {
-                                    DebugLogger.info("ModNetworking", "PLACE rejected: slot %s[%d] is not empty",
-                                            payload.groupKey(), payload.slotIndex());
-                                    return;
-                                }
-                                if (!access.slotType().validatorCheck(carried, access, player)) {
-                                    DebugLogger.info("ModNetworking", "Validator rejected %s -> %s[%d]",
-                                            carried.getHoverName().getString(), payload.groupKey(), payload.slotIndex());
-                                    return;
-                                }
-                                access.set(carried.copy());
-                                inv.setChanged();
-                                TrinketUtilities.callTrinketEquipmentChange(slotStack, carried, access, player);
-                                player.containerMenu.setCarried(net.minecraft.world.item.ItemStack.EMPTY);
-                                DebugLogger.info("ModNetworking", "Trinket PLACE: %s -> %s[%d]", carried.getHoverName().getString(), payload.groupKey(), payload.slotIndex());
+                            if (cursor.isEmpty()) {
+                                DebugLogger.info("ModNetworking", "PLACE skipped: no item to place (serverCarried empty, clientCursor empty)");
+                                break;
                             }
+                            if (!slotStack.isEmpty()) {
+                                DebugLogger.info("ModNetworking", "PLACE rejected: slot %s[%d] is not empty",
+                                        payload.groupKey(), payload.slotIndex());
+                                break;
+                            }
+                            if (!access.slotType().validatorCheck(cursor, access, player)) {
+                                DebugLogger.info("ModNetworking", "Validator rejected %s -> %s[%d]",
+                                        cursor.getHoverName().getString(), payload.groupKey(), payload.slotIndex());
+                                break;
+                            }
+                            access.set(cursor.copy());
+                            inv.setChanged();
+                            TrinketUtilities.callTrinketEquipmentChange(slotStack, cursor, access, player);
+                            player.containerMenu.setCarried(net.minecraft.world.item.ItemStack.EMPTY);
+                            DebugLogger.info("ModNetworking", "Trinket PLACE: %s -> %s[%d]", cursor.getHoverName().getString(), payload.groupKey(), payload.slotIndex());
                             break;
                         case TrinketInteractPayload.ACTION_TAKE:
-                            if (!slotStack.isEmpty()) {
-                                player.containerMenu.setCarried(slotStack.copy());
-                                access.set(net.minecraft.world.item.ItemStack.EMPTY);
-                                inv.setChanged();
-                                TrinketUtilities.callTrinketEquipmentChange(slotStack, net.minecraft.world.item.ItemStack.EMPTY, access, player);
-                                DebugLogger.info("ModNetworking", "Trinket TAKE: %s[%d] -> cursor", payload.groupKey(), payload.slotIndex());
+                            if (slotStack.isEmpty()) {
+                                DebugLogger.info("ModNetworking", "TAKE skipped: slot %s[%d] is empty",
+                                        payload.groupKey(), payload.slotIndex());
+                                break;
                             }
+                            player.containerMenu.setCarried(slotStack.copy());
+                            access.set(net.minecraft.world.item.ItemStack.EMPTY);
+                            inv.setChanged();
+                            TrinketUtilities.callTrinketEquipmentChange(slotStack, net.minecraft.world.item.ItemStack.EMPTY, access, player);
+                            DebugLogger.info("ModNetworking", "Trinket TAKE: %s[%d] -> cursor", payload.groupKey(), payload.slotIndex());
                             break;
                         case TrinketInteractPayload.ACTION_SWAP:
-                            if (!carried.isEmpty()) {
-                                if (!access.slotType().validatorCheck(carried, access, player)) {
-                                    DebugLogger.info("ModNetworking", "Validator rejected %s -> %s[%d] (SWAP)",
-                                            carried.getHoverName().getString(), payload.groupKey(), payload.slotIndex());
-                                    return;
-                                }
+                            if (cursor.isEmpty()) {
+                                DebugLogger.info("ModNetworking", "SWAP skipped: no item to swap (serverCarried empty, clientCursor empty)");
+                                break;
                             }
-                            access.set(carried.copy());
+                            if (!access.slotType().validatorCheck(cursor, access, player)) {
+                                DebugLogger.info("ModNetworking", "Validator rejected %s -> %s[%d] (SWAP)",
+                                        cursor.getHoverName().getString(), payload.groupKey(), payload.slotIndex());
+                                break;
+                            }
+                            access.set(cursor.copy());
                             player.containerMenu.setCarried(slotStack.copy());
                             inv.setChanged();
-                            TrinketUtilities.callTrinketEquipmentChange(slotStack, carried, access, player);
+                            TrinketUtilities.callTrinketEquipmentChange(slotStack, cursor, access, player);
                             DebugLogger.info("ModNetworking", "Trinket SWAP: cursor <-> %s[%d]", payload.groupKey(), payload.slotIndex());
                             break;
                         default:

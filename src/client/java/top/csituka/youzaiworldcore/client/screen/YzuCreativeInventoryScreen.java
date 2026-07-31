@@ -30,6 +30,7 @@ import java.util.Set;
 
 import top.csituka.youzaiworldcore.itemborder.ItemBorderRenderer;
 import top.csituka.youzaiworldcore.network.TrinketInteractPayload;
+import top.csituka.youzaiworldcore.util.DebugLogger;
 import top.csituka.youzaiworldcore.util.TrinketHelper;
 
 @SuppressWarnings("null")
@@ -441,8 +442,23 @@ public class YzuCreativeInventoryScreen extends Screen {
         } else {
             return;
         }
-        // 发送 C2S 数据包
-        ClientPlayNetworking.send(new TrinketInteractPayload(tsi.groupKey(), tsi.slotIndex(), action));
+        // 发送 C2S 数据包（携带 cursor 兜底服务端 carried 不同步）
+        ClientPlayNetworking.send(new TrinketInteractPayload(tsi.groupKey(), tsi.slotIndex(), action, carried));
+        // 本地预览：立即更新鼠标物品与槽位显示（服务端权威广播到达后最终校正）
+        try {
+            if (action == TrinketInteractPayload.ACTION_PLACE && !carried.isEmpty()) {
+                minecraft.player.containerMenu.setCarried(ItemStack.EMPTY);
+                TrinketHelper.setSlotStack(tsi, carried.copy());
+            } else if (action == TrinketInteractPayload.ACTION_TAKE && !slotStack.isEmpty()) {
+                minecraft.player.containerMenu.setCarried(slotStack.copy());
+                TrinketHelper.setSlotStack(tsi, ItemStack.EMPTY);
+            } else if (action == TrinketInteractPayload.ACTION_SWAP && !carried.isEmpty()) {
+                minecraft.player.containerMenu.setCarried(slotStack.copy());
+                TrinketHelper.setSlotStack(tsi, carried.copy());
+            }
+        } catch (Exception e) {
+            DebugLogger.warn("TrinketClick", "Local preview failed: %s", e.getMessage());
+        }
     }
 
     /** 拖拽中在被拖槽位上渲染物品预览（含数字）。异种/满格跳过，数量按有效格均分计算。 */
