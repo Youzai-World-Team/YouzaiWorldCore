@@ -93,6 +93,9 @@ public class YzuInventoryScreen extends AbstractRecipeBookScreen<InventoryMenu> 
     // Trinkets 悬停状态
     private int trinketSourceSlot = -1;
     private java.util.List<TrinketHelper.TrinketSlotInfo> activeTrinketSlots = java.util.List.of();
+    /** 子菜单隐藏宽限期（鼠标离开有效区后仍保留的毫秒数） */
+    private static final long TRINKET_HIDE_GRACE_MS = 400;
+    private long trinketHideDeadline = -1;
 
     // ========== 构造 ==========
 
@@ -457,9 +460,19 @@ public class YzuInventoryScreen extends AbstractRecipeBookScreen<InventoryMenu> 
                             activeTrinketSlots.size(), hitIdx);
                 }
             }
-        } else if (!onIndicator) {
-            activeTrinketSlots = List.of();
-            trinketSourceSlot = -1;
+            trinketHideDeadline = -1; // 鼠标在有效区，取消隐藏计时
+        } else if (onIndicator) {
+            trinketHideDeadline = -1; // 鼠标在弹出区，保持显示
+        } else {
+            // 鼠标离开有效区：先进入宽限期，不立即隐藏（防止路径经过间隙时闪没）
+            long now = System.currentTimeMillis();
+            if (trinketHideDeadline < 0) {
+                trinketHideDeadline = now + TRINKET_HIDE_GRACE_MS;
+            } else if (now >= trinketHideDeadline) {
+                activeTrinketSlots = List.of();
+                trinketSourceSlot = -1;
+                trinketHideDeadline = -1;
+            }
         }
 
         if (!activeTrinketSlots.isEmpty() && trinketSourceSlot >= 0 && trinketSourceSlot < this.menu.slots.size()) {
@@ -547,6 +560,7 @@ public class YzuInventoryScreen extends AbstractRecipeBookScreen<InventoryMenu> 
         // 让下一次 tick 重新查询
         trinketSourceSlot = -1;
         activeTrinketSlots = List.of();
+        trinketHideDeadline = -1;
     }
 
     /**
@@ -589,5 +603,6 @@ public class YzuInventoryScreen extends AbstractRecipeBookScreen<InventoryMenu> 
         // 让下一次 tick 重新查询
         trinketSourceSlot = -1;
         activeTrinketSlots = List.of();
+        trinketHideDeadline = -1;
     }
 }

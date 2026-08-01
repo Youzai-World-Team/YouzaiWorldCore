@@ -106,6 +106,9 @@ public class YzuCreativeInventoryScreen extends Screen {
     /** 上次向 Trinkets 查询过的槽位（含"查了但没有饰品槽"的结果），避免同一槽位每帧重复查询 */
     private int trinketQueriedSlot = -1;
     private java.util.List<TrinketHelper.TrinketSlotInfo> activeTrinketSlots = java.util.List.of();
+    /** 子菜单隐藏宽限期（鼠标离开有效区后仍保留的毫秒数） */
+    private static final long TRINKET_HIDE_GRACE_MS = 400;
+    private long trinketHideDeadline = -1;
 
     public YzuCreativeInventoryScreen(Player player) {
         super(Component.translatable("container.crafting"));
@@ -393,15 +396,27 @@ public class YzuCreativeInventoryScreen extends Screen {
 
         // 按 trinketQueriedSlot 去重：悬停在"没有饰品槽"的槽位上时，原先每帧都会重新遍历
         // 一遍 SlotGroup 并新建 ArrayList，这里改成同一槽位只查一次。
-        if (onSource && hitSlot != trinketQueriedSlot && !onIndicator) {
-            Slot slotObj = slots.get(hitSlot);
-            trinketQueriedSlot = hitSlot;
-            activeTrinketSlots = TrinketHelper.getSlotsAttachedTo(player, slotObj);
-            trinketSourceSlot = activeTrinketSlots.isEmpty() ? -1 : hitSlot;
-        } else if (!onSource && !onIndicator) {
-            activeTrinketSlots = List.of();
-            trinketSourceSlot = -1;
-            trinketQueriedSlot = -1;
+        if (onSource) {
+            if (hitSlot != trinketQueriedSlot && !onIndicator) {
+                Slot slotObj = slots.get(hitSlot);
+                trinketQueriedSlot = hitSlot;
+                activeTrinketSlots = TrinketHelper.getSlotsAttachedTo(player, slotObj);
+                trinketSourceSlot = activeTrinketSlots.isEmpty() ? -1 : hitSlot;
+            }
+            trinketHideDeadline = -1; // 鼠标在有效区，取消隐藏计时
+        } else if (onIndicator) {
+            trinketHideDeadline = -1; // 鼠标在弹出区，保持显示
+        } else {
+            // 鼠标离开有效区：先进入宽限期，不立即隐藏（防止路径经过间隙时闪没）
+            long now = System.currentTimeMillis();
+            if (trinketHideDeadline < 0) {
+                trinketHideDeadline = now + TRINKET_HIDE_GRACE_MS;
+            } else if (now >= trinketHideDeadline) {
+                activeTrinketSlots = List.of();
+                trinketSourceSlot = -1;
+                trinketQueriedSlot = -1;
+                trinketHideDeadline = -1;
+            }
         }
 
         if (!activeTrinketSlots.isEmpty() && trinketSourceSlot >= 0) {
@@ -551,6 +566,7 @@ public class YzuCreativeInventoryScreen extends Screen {
         trinketSourceSlot = -1;
         activeTrinketSlots = List.of();
         trinketQueriedSlot = -1; // 强制下一帧重新查询，让指示器按新内容刷新
+        trinketHideDeadline = -1;
     }
 
     /** 拖拽中在被拖槽位上渲染物品预览（含数字）。异种/满格跳过，数量按有效格均分计算。 */
