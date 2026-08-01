@@ -47,7 +47,11 @@
     "CycleButtonYzuiMixin",
     "ImageButtonYzuiMixin",
     "RecipeBookLayoutMixin",
-    "SurvivalTrinketSlotYzuiMixin"
+    "SurvivalTrinketSlotYzuiMixin",
+    "laowumeme.CatRendererLaowuMixin",
+    "laowumeme.CatModelLaowuMixin",
+    "laowumeme.CatRenderStateLaowuMixin",
+    "laowumeme.SoundBufferLibraryLaowuMixin"
   ],
   "injectors": {
     "defaultRequire": 1

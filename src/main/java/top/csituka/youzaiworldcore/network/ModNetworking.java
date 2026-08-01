@@ -75,6 +75,12 @@ public class ModNetworking {
         PayloadTypeRegistry.serverboundPlay().register(InvisibilityPayload.ID, InvisibilityPayload.STREAM_CODEC);
         DebugLogger.info("ModNetworking", "Registered serverbound packet: InvisibilityPayload");
 
+        // ===== 老吴贴贴事件 S2C 数据包（trigger / stop） =====
+        PayloadTypeRegistry.clientboundPlay().register(LaowuMemeTriggerPayload.ID, LaowuMemeTriggerPayload.STREAM_CODEC);
+        DebugLogger.info("ModNetworking", "Registered clientbound packet: LaowuMemeTriggerPayload");
+        PayloadTypeRegistry.clientboundPlay().register(LaowuMemeStopPayload.ID, LaowuMemeStopPayload.STREAM_CODEC);
+        DebugLogger.info("ModNetworking", "Registered clientbound packet: LaowuMemeStopPayload");
+
         // ===== 宠物管理命令转发数据包 =====
         PayloadTypeRegistry.serverboundPlay().register(PetCommandPayload.ID, PetCommandPayload.STREAM_CODEC);
         DebugLogger.info("ModNetworking", "Registered serverbound packet: PetCommandPayload");

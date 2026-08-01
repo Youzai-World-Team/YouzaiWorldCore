@@ -32,6 +32,7 @@ import top.csituka.youzaiworldcore.command.ReloadCommand;
 import top.csituka.youzaiworldcore.config.ChargedCreeperConfig;
 import top.csituka.youzaiworldcore.config.DoubleDoorsState;
 import top.csituka.youzaiworldcore.config.EndPortalConfig;
+import top.csituka.youzaiworldcore.config.LaowuMemeConfig;
 import top.csituka.youzaiworldcore.config.ServerExternalSettings;
 import top.csituka.youzaiworldcore.luckperms.LuckPermsHelper;
 import top.csituka.youzaiworldcore.trialvault.TrialVaultConfig;
@@ -62,6 +63,7 @@ import top.csituka.youzaiworldcore.event.DragonElytraDropHandler;
 import top.csituka.youzaiworldcore.event.DoubleDoorsHandler;
 import top.csituka.youzaiworldcore.event.EndPortalHandler;
 import top.csituka.youzaiworldcore.event.FlyBeaconTickHandler;
+import top.csituka.youzaiworldcore.event.LaowuMemeHandler;
 import top.csituka.youzaiworldcore.event.SitHandler;
 import top.csituka.youzaiworldcore.event.StonecutterDamageHandler;
 import top.csituka.youzaiworldcore.event.TeleportAnchorInteractHandler;
@@ -91,17 +93,23 @@ public class YouzaiworldCore implements ModInitializer {
 
     public static final Logger LOGGER = LoggerFactory.getLogger("YouzaiWorldCore");
 
-    /** logToFile 标志：由 {@code config/youzaiworldcore/server_external_settings.json} 控制，
-     * 用于条件化服务端噪音日志（配置加载、账户数据详情等） */
+    /**
+     * logToFile 标志：由 {@code config/youzaiworldcore/server_external_settings.json}
+     * 控制，
+     * 用于条件化服务端噪音日志（配置加载、账户数据详情等）
+     */
     public static boolean logToFile = false;
 
-    /** devModeEnabled 标志：由 {@code config/youzaiworldcore/server_external_settings.json} 控制，
-     * 与 {@link #logToFile} 同时启用时激活完整的调试日志输出 */
+    /**
+     * devModeEnabled 标志：由
+     * {@code config/youzaiworldcore/server_external_settings.json} 控制，
+     * 与 {@link #logToFile} 同时启用时激活完整的调试日志输出
+     */
     public static boolean devModeEnabled = false;
 
     /** 模组启动 Logo（ASCII 艺术字） */
-    public static final String LOGO =
-            "-----------------------------------------------------------------------------------------\n" +
+    public static final String LOGO = "-----------------------------------------------------------------------------------------\n"
+            +
             "    __   __                   _    _    _            _     _    _____                \n" +
             "    \\ \\ / /                  (_)  | |  | |          | |   | |  /  __ \\               \n" +
             "     \\ V /___  _   _ ______ _ _   | |  | | ___  _ __| | __| |  | /  \\/ ___  _ __ ___ \n" +
@@ -114,13 +122,11 @@ public class YouzaiworldCore implements ModInitializer {
 
     public static final ResourceKey<PlacedFeature> YZ_ORE_PLACED_KEY = ResourceKey.create(
             Registries.PLACED_FEATURE,
-            Identifier.fromNamespaceAndPath(MOD_ID, "ore_yz")
-    );
+            Identifier.fromNamespaceAndPath(MOD_ID, "ore_yz"));
 
     public static final ResourceKey<PlacedFeature> RAW_YZ_BLOCK_PLACED_KEY = ResourceKey.create(
             Registries.PLACED_FEATURE,
-            Identifier.fromNamespaceAndPath(MOD_ID, "ore_raw_yz_block")
-    );
+            Identifier.fromNamespaceAndPath(MOD_ID, "ore_raw_yz_block"));
 
     @Override
     public void onInitialize() {
@@ -180,11 +186,18 @@ public class YouzaiworldCore implements ModInitializer {
         DebugLogger.info("YouzaiworldCore", "注册天然带电苦力怕事件...");
         ChargedCreeperHandler.register();
 
+        // ===== 初始化老吴贴贴事件（laowu meme 移植，全局开关由 /yzwc event global laowu 控制） =====
+        DebugLogger.info("YouzaiworldCore", "加载老吴贴贴事件配置...");
+        LaowuMemeConfig.load();
+        DebugLogger.info("YouzaiworldCore", "注册老吴贴贴事件状态机...");
+        LaowuMemeHandler.register();
+
         // ===== 初始化试炼宝库无限领奖功能（参考 trial-chamber-time-removal，原生重写） =====
         DebugLogger.info("YouzaiworldCore", "加载试炼宝库无限领奖配置...");
         TrialVaultConfig.load();
 
-        // ===== 初始化双开门功能（Double Doors，参考 Serilum 的 Double Doors 设计，原生实现，已精简为按玩家开关） =====
+        // ===== 初始化双开门功能（Double Doors，参考 Serilum 的 Double Doors 设计，原生实现，已精简为按玩家开关）
+        // =====
         DebugLogger.info("YouzaiworldCore", "加载双开门玩家状态...");
         DoubleDoorsState.load();
         DebugLogger.info("YouzaiworldCore", "初始化双开门处理器...");
@@ -237,19 +250,17 @@ public class YouzaiworldCore implements ModInitializer {
         BiomeModifications.addFeature(
                 BiomeSelectors.foundInOverworld(),
                 GenerationStep.Decoration.UNDERGROUND_ORES,
-                YZ_ORE_PLACED_KEY
-        );
+                YZ_ORE_PLACED_KEY);
 
         BiomeModifications.addFeature(
                 BiomeSelectors.foundInOverworld(),
                 GenerationStep.Decoration.UNDERGROUND_ORES,
-                RAW_YZ_BLOCK_PLACED_KEY
-        );
+                RAW_YZ_BLOCK_PLACED_KEY);
 
         // ===== 注册村庄传送锚点结构注入 =====
         DebugLogger.entering("YouzaiworldCore", "VillageStructureInjector.register");
-        ServerLifecycleEvents.SERVER_STARTING.register(server ->
-                VillageStructureInjector.inject(server.registryAccess()));
+        ServerLifecycleEvents.SERVER_STARTING
+                .register(server -> VillageStructureInjector.inject(server.registryAccess()));
         LOGGER.info("村庄传送锚点结构注入已注册");
         DebugLogger.exiting("YouzaiworldCore", "VillageStructureInjector.register");
 
@@ -289,28 +300,26 @@ public class YouzaiworldCore implements ModInitializer {
         // ===== 注册维度池事件 =====
         DebugLogger.entering("YouzaiworldCore", "DimensionPoolEvents.register");
         net.fabricmc.fabric.api.entity.event.v1.ServerEntityLevelChangeEvents.AFTER_PLAYER_CHANGE_LEVEL.register(
-            (player, origin, destination) -> {
-                DebugLogger.info("DimensionPoolManager", "玩家维度变化事件触发: %s -> %s -> %s",
-                        player.getName().getString(),
-                        origin.dimension().identifier().toString(),
-                        destination.dimension().identifier().toString());
-                DimensionPoolManager.onPlayerChangeDimension(player, origin, destination);
-            }
-        );
+                (player, origin, destination) -> {
+                    DebugLogger.info("DimensionPoolManager", "玩家维度变化事件触发: %s -> %s -> %s",
+                            player.getName().getString(),
+                            origin.dimension().identifier().toString(),
+                            destination.dimension().identifier().toString());
+                    DimensionPoolManager.onPlayerChangeDimension(player, origin, destination);
+                });
         net.fabricmc.fabric.api.entity.event.v1.ServerEntityLevelChangeEvents.AFTER_ENTITY_CHANGE_LEVEL.register(
-            (originalEntity, newEntity, origin, destination) -> {
-                if (!(newEntity instanceof net.minecraft.server.level.ServerPlayer)) {
-                    DimensionPoolManager.onNonPlayerEntityChangeDimension(originalEntity, newEntity, origin, destination);
-                }
-            }
-        );
+                (originalEntity, newEntity, origin, destination) -> {
+                    if (!(newEntity instanceof net.minecraft.server.level.ServerPlayer)) {
+                        DimensionPoolManager.onNonPlayerEntityChangeDimension(originalEntity, newEntity, origin,
+                                destination);
+                    }
+                });
         net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents.AFTER_RESPAWN.register(
-            (oldPlayer, newPlayer, alive) -> {
-                DebugLogger.info("DimensionPoolManager", "玩家复活事件触发: %s (alive=%s)",
-                        newPlayer.getName().getString(), alive);
-                DimensionPoolManager.onPlayerRespawn(oldPlayer, newPlayer, alive);
-            }
-        );
+                (oldPlayer, newPlayer, alive) -> {
+                    DebugLogger.info("DimensionPoolManager", "玩家复活事件触发: %s (alive=%s)",
+                            newPlayer.getName().getString(), alive);
+                    DimensionPoolManager.onPlayerRespawn(oldPlayer, newPlayer, alive);
+                });
         LOGGER.info("维度池事件已注册");
         DebugLogger.exiting("YouzaiworldCore", "DimensionPoolEvents.register");
 
@@ -346,7 +355,8 @@ public class YouzaiworldCore implements ModInitializer {
         // 周期性过期清理（每 3000 tick = 约 2.5 分钟）
         net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.START_SERVER_TICK.register(server -> {
             // 使用服务器 Tick 计数器实现定时触发
-            if (server.getTickCount() % top.csituka.youzaiworldcore.mail.MailSettings.get().getAutoPurgeIntervalTicks() == 0) {
+            if (server.getTickCount()
+                    % top.csituka.youzaiworldcore.mail.MailSettings.get().getAutoPurgeIntervalTicks() == 0) {
                 top.csituka.youzaiworldcore.mail.MailManager.purge();
             }
         });
@@ -380,98 +390,121 @@ public class YouzaiworldCore implements ModInitializer {
             WorldPoolCommand.register(dispatcher);
 
             dispatcher.register(Commands.literal("yzwc")
-                // === teleport_world ===
-                .then(Commands.literal("teleport_world")
-                    .requires(source -> LuckPermsHelper.checkPermission(source, LuckPermsHelper.PERMISSION_TELEPORT_WORLD, Commands.LEVEL_ADMINS))
-                    .then(Commands.argument("targets", EntityArgument.players())
-                        .then(Commands.argument("dimension", DimensionArgument.dimension())
-                            .executes(context -> executeTeleportWorld(
-                                context.getSource(),
-                                EntityArgument.getPlayers(context, "targets"),
-                                DimensionArgument.getDimension(context, "dimension"),
-                                0, 100, 0, 90.0f, 0.0f
-                            ))
-                            .then(Commands.argument("x", IntegerArgumentType.integer())
-                                .executes(context -> executeTeleportWorld(
-                                    context.getSource(),
-                                    EntityArgument.getPlayers(context, "targets"),
-                                    DimensionArgument.getDimension(context, "dimension"),
-                                    IntegerArgumentType.getInteger(context, "x"),
-                                    100, 0, 90.0f, 0.0f
-                                ))
-                                .then(Commands.argument("y", IntegerArgumentType.integer())
-                                    .executes(context -> executeTeleportWorld(
-                                        context.getSource(),
-                                        EntityArgument.getPlayers(context, "targets"),
-                                        DimensionArgument.getDimension(context, "dimension"),
-                                        IntegerArgumentType.getInteger(context, "x"),
-                                        IntegerArgumentType.getInteger(context, "y"),
-                                        0, 90.0f, 0.0f
-                                    ))
-                                    .then(Commands.argument("z", IntegerArgumentType.integer())
-                                        .executes(context -> executeTeleportWorld(
-                                            context.getSource(),
-                                            EntityArgument.getPlayers(context, "targets"),
-                                            DimensionArgument.getDimension(context, "dimension"),
-                                            IntegerArgumentType.getInteger(context, "x"),
-                                            IntegerArgumentType.getInteger(context, "y"),
-                                            IntegerArgumentType.getInteger(context, "z"),
-                                            90.0f, 0.0f
-                                        ))
-                                        .then(Commands.argument("yRot", FloatArgumentType.floatArg(-180.0f, 180.0f))
+                    // === teleport_world ===
+                    .then(Commands.literal("teleport_world")
+                            .requires(source -> LuckPermsHelper.checkPermission(source,
+                                    LuckPermsHelper.PERMISSION_TELEPORT_WORLD, Commands.LEVEL_ADMINS))
+                            .then(Commands.argument("targets", EntityArgument.players())
+                                    .then(Commands.argument("dimension", DimensionArgument.dimension())
                                             .executes(context -> executeTeleportWorld(
-                                                context.getSource(),
-                                                EntityArgument.getPlayers(context, "targets"),
-                                                DimensionArgument.getDimension(context, "dimension"),
-                                                IntegerArgumentType.getInteger(context, "x"),
-                                                IntegerArgumentType.getInteger(context, "y"),
-                                                IntegerArgumentType.getInteger(context, "z"),
-                                                FloatArgumentType.getFloat(context, "yRot"),
-                                                0.0f
-                                            ))
-                                            .then(Commands.argument("xRot", FloatArgumentType.floatArg(-90.0f, 90.0f))
-                                                .executes(context -> executeTeleportWorld(
                                                     context.getSource(),
                                                     EntityArgument.getPlayers(context, "targets"),
                                                     DimensionArgument.getDimension(context, "dimension"),
-                                                    IntegerArgumentType.getInteger(context, "x"),
-                                                    IntegerArgumentType.getInteger(context, "y"),
-                                                    IntegerArgumentType.getInteger(context, "z"),
-                                                    FloatArgumentType.getFloat(context, "yRot"),
-                                                    FloatArgumentType.getFloat(context, "xRot")
-                                                ))
-                                            )
-                                        )
-                                    )
-                                )
-                            )
-                        )
-                    )
-                )
-                // === open_menu ===
-                .then(Commands.literal("open_menu")
-                    .requires(source -> LuckPermsHelper.checkPermission(source, LuckPermsHelper.PERMISSION_OPEN_MENU, Commands.LEVEL_ADMINS))
-                        .then(Commands.argument("menu_name", StringArgumentType.word())
-                        .executes(context -> executeOpenMenu(
-                            context.getSource(),
-                            StringArgumentType.getString(context, "menu_name"),
-                            context.getSource().getPlayerOrException()
-                        ))
-                        .then(Commands.argument("target", EntityArgument.player())
-                            .executes(context -> executeOpenMenu(
-                                context.getSource(),
-                                StringArgumentType.getString(context, "menu_name"),
-                                EntityArgument.getPlayer(context, "target")
-                            ))
-                        )
-                    )
-                )
-                .executes(context -> {
-                    DebugLogger.info("YouzaiworldCore", "执行 /yzwc 根命令 (hello)");
-                    context.getSource().sendSuccess(() -> Component.translatable("youzaiworldcore.message.command.hello_world"), false);
-                    return 1;
-                })
-            );
+                                                    0, 100, 0, 90.0f, 0.0f))
+                                            .then(Commands.argument("x", IntegerArgumentType.integer())
+                                                    .executes(context -> executeTeleportWorld(
+                                                            context.getSource(),
+                                                            EntityArgument.getPlayers(context, "targets"),
+                                                            DimensionArgument.getDimension(context, "dimension"),
+                                                            IntegerArgumentType.getInteger(context, "x"),
+                                                            100, 0, 90.0f, 0.0f))
+                                                    .then(Commands.argument("y", IntegerArgumentType.integer())
+                                                            .executes(context -> executeTeleportWorld(
+                                                                    context.getSource(),
+                                                                    EntityArgument.getPlayers(context, "targets"),
+                                                                    DimensionArgument.getDimension(context,
+                                                                            "dimension"),
+                                                                    IntegerArgumentType.getInteger(context, "x"),
+                                                                    IntegerArgumentType.getInteger(context, "y"),
+                                                                    0, 90.0f, 0.0f))
+                                                            .then(Commands.argument("z", IntegerArgumentType.integer())
+                                                                    .executes(context -> executeTeleportWorld(
+                                                                            context.getSource(),
+                                                                            EntityArgument.getPlayers(context,
+                                                                                    "targets"),
+                                                                            DimensionArgument.getDimension(context,
+                                                                                    "dimension"),
+                                                                            IntegerArgumentType.getInteger(context,
+                                                                                    "x"),
+                                                                            IntegerArgumentType.getInteger(context,
+                                                                                    "y"),
+                                                                            IntegerArgumentType.getInteger(context,
+                                                                                    "z"),
+                                                                            90.0f, 0.0f))
+                                                                    .then(Commands
+                                                                            .argument("yRot",
+                                                                                    FloatArgumentType.floatArg(-180.0f,
+                                                                                            180.0f))
+                                                                            .executes(context -> executeTeleportWorld(
+                                                                                    context.getSource(),
+                                                                                    EntityArgument.getPlayers(context,
+                                                                                            "targets"),
+                                                                                    DimensionArgument.getDimension(
+                                                                                            context, "dimension"),
+                                                                                    IntegerArgumentType
+                                                                                            .getInteger(context, "x"),
+                                                                                    IntegerArgumentType
+                                                                                            .getInteger(context, "y"),
+                                                                                    IntegerArgumentType
+                                                                                            .getInteger(context, "z"),
+                                                                                    FloatArgumentType.getFloat(context,
+                                                                                            "yRot"),
+                                                                                    0.0f))
+                                                                            .then(Commands
+                                                                                    .argument("xRot",
+                                                                                            FloatArgumentType.floatArg(
+                                                                                                    -90.0f, 90.0f))
+                                                                                    .executes(
+                                                                                            context -> executeTeleportWorld(
+                                                                                                    context.getSource(),
+                                                                                                    EntityArgument
+                                                                                                            .getPlayers(
+                                                                                                                    context,
+                                                                                                                    "targets"),
+                                                                                                    DimensionArgument
+                                                                                                            .getDimension(
+                                                                                                                    context,
+                                                                                                                    "dimension"),
+                                                                                                    IntegerArgumentType
+                                                                                                            .getInteger(
+                                                                                                                    context,
+                                                                                                                    "x"),
+                                                                                                    IntegerArgumentType
+                                                                                                            .getInteger(
+                                                                                                                    context,
+                                                                                                                    "y"),
+                                                                                                    IntegerArgumentType
+                                                                                                            .getInteger(
+                                                                                                                    context,
+                                                                                                                    "z"),
+                                                                                                    FloatArgumentType
+                                                                                                            .getFloat(
+                                                                                                                    context,
+                                                                                                                    "yRot"),
+                                                                                                    FloatArgumentType
+                                                                                                            .getFloat(
+                                                                                                                    context,
+                                                                                                                    "xRot")))))))))))
+                    // === open_menu ===
+                    .then(Commands.literal("open_menu")
+                            .requires(source -> LuckPermsHelper.checkPermission(source,
+                                    LuckPermsHelper.PERMISSION_OPEN_MENU, Commands.LEVEL_ADMINS))
+                            .then(Commands.argument("menu_name", StringArgumentType.word())
+                                    .executes(context -> executeOpenMenu(
+                                            context.getSource(),
+                                            StringArgumentType.getString(context, "menu_name"),
+                                            context.getSource().getPlayerOrException()))
+                                    .then(Commands.argument("target", EntityArgument.player())
+                                            .executes(context -> executeOpenMenu(
+                                                    context.getSource(),
+                                                    StringArgumentType.getString(context, "menu_name"),
+                                                    EntityArgument.getPlayer(context, "target"))))))
+                    .executes(context -> {
+                        DebugLogger.info("YouzaiworldCore", "执行 /yzwc 根命令 (hello)");
+                        context.getSource().sendSuccess(
+                                () -> Component.translatable("youzaiworldcore.message.command.hello_world"), false);
+                        return 1;
+                    }));
 
             // ===== 注册账户管理命令 =====
             DebugLogger.info("YouzaiworldCore", "注册命令: AccountCommands");
@@ -516,8 +549,7 @@ public class YouzaiworldCore implements ModInitializer {
             Collection<ServerPlayer> players,
             ServerLevel dimension,
             int x, int y, int z,
-            float yRot, float xRot
-    ) {
+            float yRot, float xRot) {
         Identifier dimensionId = dimension.dimension().identifier();
         DebugLogger.entering("YouzaiworldCore", "executeTeleportWorld",
                 "source=" + source.getTextName() + ", targets=" + players.size()
@@ -533,11 +565,9 @@ public class YouzaiworldCore implements ModInitializer {
         }
 
         final int finalCount = count;
-        source.sendSuccess(() ->
-                Component.translatable("youzaiworldcore.message.command.teleport_success",
-                        finalCount, dimensionId.toString(), x, y, z),
-                true
-        );
+        source.sendSuccess(() -> Component.translatable("youzaiworldcore.message.command.teleport_success",
+                finalCount, dimensionId.toString(), x, y, z),
+                true);
 
         DebugLogger.exiting("YouzaiworldCore", "executeTeleportWorld", "count=" + count);
         return finalCount;
@@ -563,11 +593,9 @@ public class YouzaiworldCore implements ModInitializer {
         DebugLogger.info("YouzaiworldCore", "已向玩家 %s 发送打开菜单 %s 的数据包",
                 player.getName().getString(), menuName);
 
-        source.sendSuccess(() ->
-                Component.translatable("youzaiworldcore.message.command.open_menu_success",
-                        player.getName().getString(), menuName),
-                true
-        );
+        source.sendSuccess(() -> Component.translatable("youzaiworldcore.message.command.open_menu_success",
+                player.getName().getString(), menuName),
+                true);
 
         DebugLogger.exiting("YouzaiworldCore", "executeOpenMenu", "success");
         return 1;
@@ -578,9 +606,9 @@ public class YouzaiworldCore implements ModInitializer {
     /**
      * 将更新检查结果输出到服务端控制台。
      * <ul>
-     *   <li>失败：仅记录调试日志（静默降级，不影响服务器）</li>
-     *   <li>无更新：调试日志记录已是最新</li>
-     *   <li>有更新：输出带边框横幅；强制更新使用 WARN 级别，普通更新使用 INFO 级别</li>
+     * <li>失败：仅记录调试日志（静默降级，不影响服务器）</li>
+     * <li>无更新：调试日志记录已是最新</li>
+     * <li>有更新：输出带边框横幅；强制更新使用 WARN 级别，普通更新使用 INFO 级别</li>
      * </ul>
      */
     private static void youzaiworldcore$logUpdate(UpdateResult result) {

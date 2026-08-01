@@ -239,6 +239,25 @@ public class ClientNetworking {
         });
         DebugLogger.info("ClientNetworking", "Registered receiver: MailUnreadCountPayload");
 
+        // ======================================================================
+        // 老吴贴贴事件（LaowuMeme）—— 客户端 S2C 接收器
+        // 服务端权威状态机广播 trigger/stop，客户端只收包驱动渲染与音频。
+        // ======================================================================
+
+        ClientPlayNetworking.registerGlobalReceiver(LaowuMemeTriggerPayload.ID, (payload, context) -> {
+            context.client().execute(() ->
+                    top.csituka.youzaiworldcore.client.laowumeme.LaowuMemeClientState.get()
+                            .onTrigger(payload.catAId(), payload.catBId(), payload.soundId(), payload.rollSign()));
+        });
+        DebugLogger.info("ClientNetworking", "Registered receiver: LaowuMemeTriggerPayload");
+
+        ClientPlayNetworking.registerGlobalReceiver(LaowuMemeStopPayload.ID, (payload, context) -> {
+            context.client().execute(() ->
+                    top.csituka.youzaiworldcore.client.laowumeme.LaowuMemeClientState.get()
+                            .onStop(payload.catAId(), payload.catBId()));
+        });
+        DebugLogger.info("ClientNetworking", "Registered receiver: LaowuMemeStopPayload");
+
         DebugLogger.exiting("ClientNetworking", "initialize");
     }
 

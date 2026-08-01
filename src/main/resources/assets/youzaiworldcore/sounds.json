@@ -1,0 +1,23 @@
+{
+  "laowu2": {
+    "category": "neutral",
+    "subtitle": "subtitles.youzaiworldcore.laowu2",
+    "sounds": [
+      {"name": "youzaiworldcore:laowu2", "stream": true}
+    ]
+  },
+  "qiliang": {
+    "category": "neutral",
+    "subtitle": "subtitles.youzaiworldcore.qiliang",
+    "sounds": [
+      {"name": "youzaiworldcore:qiliang", "stream": true}
+    ]
+  },
+  "zhanhou": {
+    "category": "neutral",
+    "subtitle": "subtitles.youzaiworldcore.zhanhou",
+    "sounds": [
+      {"name": "youzaiworldcore:zhanhou", "stream": true}
+    ]
+  }
+}

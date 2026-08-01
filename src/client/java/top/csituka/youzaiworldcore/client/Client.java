@@ -144,6 +144,11 @@ public class Client implements ClientModInitializer {
         DebugLogger.info("Client", "注册邮件系统客户端命令...");
         top.csituka.youzaiworldcore.command.MailClientCommand.register();
 
+        // 老吴贴贴事件：注册内置曲目 SoundEvent + 初始化本地音频池
+        DebugLogger.info("Client", "初始化老吴贴贴音频系统...");
+        top.csituka.youzaiworldcore.client.laowumeme.LaowuModSounds.init();
+        top.csituka.youzaiworldcore.client.laowumeme.LaowuAudioPool.init();
+
         DebugLogger.info("Client", "客户端初始化完成 (devMode=%s, logToFile=%s)",
                 top.csituka.youzaiworldcore.YouzaiworldCore.devModeEnabled,
                 clientLogToFile);
