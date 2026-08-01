@@ -144,6 +144,12 @@ public class Client implements ClientModInitializer {
         DebugLogger.info("Client", "注册邮件系统客户端命令...");
         top.csituka.youzaiworldcore.command.MailClientCommand.register();
 
+        // 服务端 /yzwc 子命令客户端占位镜像：防止服务端专属子命令
+        // （event / update / teleport_world / status 等）在客户端解析阶段被
+        // Fabric 客户端命令机制拦截（报"错误的命令参数 at position 5"）
+        DebugLogger.info("Client", "注册服务端 /yzwc 子命令占位镜像...");
+        top.csituka.youzaiworldcore.command.YzwcServerMirrorCommand.register();
+
         // 老吴贴贴事件：注册内置曲目 SoundEvent + 初始化本地音频池
         DebugLogger.info("Client", "初始化老吴贴贴音频系统...");
         top.csituka.youzaiworldcore.client.laowumeme.LaowuModSounds.init();

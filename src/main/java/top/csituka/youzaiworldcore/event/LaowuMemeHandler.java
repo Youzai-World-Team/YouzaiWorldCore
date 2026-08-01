@@ -31,7 +31,7 @@ import java.util.UUID;
  * （中心距 2.0）并镜像面对面 → 广播 {@link LaowuMemeTriggerPayload}（客户端歪头 + 放大 +
  * 按服务端选曲播放 BGM）→ 右键任一只即释放（恢复 AI + 外推 + 3 分钟冷却）。
  * <p>
- * 与全局开关的联动：事件被 {@code /yzwc event global laowu false} 禁用时，
+ * 与全局开关的联动：事件被 {@code /yzwc event goble laowu false} 禁用时，
  * 立即释放全部活跃配对（恢复 AI、广播 stop）并清空冷却，重新启用即可再次触发。
  * <p>
  * 死代码清理：不再保留从未使用的 {@code ROLL_ANGLE}（歪头角度唯一来源为客户端
@@ -105,7 +105,17 @@ public final class LaowuMemeHandler {
         while (it.hasNext()) {
             MemePair p = it.next();
             if (!p.alive()) {
-                silentStop(p); // 猫没了，静默停音乐
+                // 猫被移除/死亡：必须恢复存活猫的 AI 并广播 stop。
+                // 否则存活猫仍带着 setNoAi(true) 永久定在原地（原实现的卡死 bug）。
+                abort(p);
+                it.remove();
+                continue;
+            }
+            if (!p.grounded()) {
+                // 配对期间任一只猫脚下悬空（虚空/无支撑）：释放配对恢复 AI 与物理，
+                // 猫自然下落，不再被 setOnGround(true)+setPos 强行悬浮。
+                DebugLogger.info(MODULE, "配对 %s <-> %s 脚下悬空，释放配对", p.catAId, p.catBId);
+                abort(p);
                 it.remove();
                 continue;
             }
@@ -197,12 +207,16 @@ public final class LaowuMemeHandler {
                 away = away.normalize().scale(0.35);
                 c.setDeltaMovement(away);
             }
-            cooldownExpire.put(c.getUUID(), expire);
+            // 冷却只记录在带「老吴」标签的猫身上（每只老吴猫个体计时）：
+            // 普通邻猫不被拖累、可立即参与下一次配对；多只老吴猫之间互不影响。
+            if (isLaowu(c)) {
+                cooldownExpire.put(c.getUUID(), expire);
+            }
         }
         broadcastStop(p);
     }
 
-    /** 中止（猫消失 / 事件禁用）：恢复 AI + 广播 stop，不写冷却、不给外推 */
+    /** 中止（猫消失 / 事件禁用 / 脚下悬空）：恢复 AI + 广播 stop，不写冷却、不给外推 */
     private static void abort(MemePair p) {
         for (Cat c : new Cat[] { p.catA, p.catB }) {
             if (c == null || c.isRemoved()) {
@@ -210,11 +224,6 @@ public final class LaowuMemeHandler {
             }
             c.setNoAi(false);
         }
-        broadcastStop(p);
-    }
-
-    /** 猫消失：仅广播 stop（客户端停音乐），无需恢复 AI */
-    private static void silentStop(MemePair p) {
         broadcastStop(p);
     }
 
@@ -247,6 +256,11 @@ public final class LaowuMemeHandler {
 
     private static boolean onCooldown(UUID id) {
         return cooldownExpire.containsKey(id);
+    }
+
+    /** 猫脚下 1 格是否为非空气方块（虚空 / 深坑视为无支撑） */
+    private static boolean hasGroundBelow(Cat c) {
+        return !c.level().getBlockState(c.blockPosition().below()).isAir();
     }
 
     private static MemePair findPair(UUID id) {
@@ -285,6 +299,11 @@ public final class LaowuMemeHandler {
 
         boolean alive() {
             return !catA.isRemoved() && !catB.isRemoved() && catA.isAlive() && catB.isAlive();
+        }
+
+        /** 两只猫脚下是否都有支撑方块（任一只悬空应释放配对，恢复物理下落） */
+        boolean grounded() {
+            return hasGroundBelow(catA) && hasGroundBelow(catB);
         }
 
         Cat other(Cat c) {

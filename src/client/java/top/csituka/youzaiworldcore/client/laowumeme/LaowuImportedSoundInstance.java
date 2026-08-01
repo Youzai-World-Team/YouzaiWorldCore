@@ -32,6 +32,9 @@ import top.csituka.youzaiworldcore.YouzaiworldCore;
  */
 public class LaowuImportedSoundInstance extends AbstractTickableSoundInstance {
 
+    /** 静音下限：>16 格时音量钳到该值（≈-60dB）。不能返回 0——SoundEngine.play 会跳过 0 音量实例 */
+    private static final float MIN_VOLUME = 0.001f;
+
     private final WeighedSoundEvents events;
     private final int catAId, catBId;
 
@@ -72,21 +75,24 @@ public class LaowuImportedSoundInstance extends AbstractTickableSoundInstance {
 
     @Override
     public float getVolume() {
-        // 手动平滑距离衰减：0~16 格线性从 1 降到 0，超过 16 格保持 0（静音但不突然停）
-        // 与 LaowuSoundInstance 一致，保证导入音频也有自然衰退
+        // 手动平滑距离衰减：0~16 格线性从 1 降到 0.001，超过 16 格钳制在 0.001（近静音，不归零）
+        // 与 LaowuSoundInstance 一致，保证导入音频也有自然衰退且靠近后能恢复音量
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null) {
             return this.volume;
         }
         double dist = Math.sqrt(mc.player.distanceToSqr(this.x, this.y, this.z));
         float f = (float) (1.0 - dist / 16.0);
-        if (f < 0.0f) {
-            f = 0.0f;
-        }
-        if (f > 1.0f) {
-            f = 1.0f;
+        if (f < MIN_VOLUME) {
+            f = MIN_VOLUME;
         }
         return this.volume * f;
+    }
+
+    /** 允许 0/近零音量开始播放（配合 MIN_VOLUME 双保险）：实时音量由 getVolume() 按距离动态计算 */
+    @Override
+    public boolean canStartSilent() {
+        return true;
     }
 
     @Override
@@ -96,6 +102,8 @@ public class LaowuImportedSoundInstance extends AbstractTickableSoundInstance {
         }
     }
 
+    /** 更新到两只猫中点；返回 false 表示猫已不存在，应停止。
+     *  注意：不再按距离停止——距离只影响 getVolume()，玩家走远再靠近声音自然恢复。 */
     private boolean updatePos() {
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null) {
@@ -109,10 +117,6 @@ public class LaowuImportedSoundInstance extends AbstractTickableSoundInstance {
         this.x = (a.getX() + b.getX()) / 2.0;
         this.y = (a.getY() + b.getY()) / 2.0;
         this.z = (a.getZ() + b.getZ()) / 2.0;
-        // 玩家离中点超过 32 格时直接停止，避免极远距离仍占声音通道。
-        if (mc.player != null && mc.player.distanceToSqr(this.x, this.y, this.z) > 32 * 32) {
-            return false;
-        }
         return true;
     }
 }
