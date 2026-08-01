@@ -37,6 +37,7 @@ import java.util.concurrent.CompletableFuture;
  * provider 每次从重置后的流重新建解码器，实现无缝循环。
  * </p>
  */
+@SuppressWarnings("null")
 @Mixin(SoundBufferLibrary.class)
 public abstract class SoundBufferLibraryLaowuMixin {
 

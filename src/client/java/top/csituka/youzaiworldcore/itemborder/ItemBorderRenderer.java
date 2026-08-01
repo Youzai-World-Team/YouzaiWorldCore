@@ -37,6 +37,7 @@ import java.util.Optional;
  *   <li>配置使用本项目的 Gson JSON 模式，替代 Iceberg 配置框架</li>
  * </ul>
  */
+@SuppressWarnings({ "null", "unused" })
 public final class ItemBorderRenderer {
 
     public static final String MODULE = "ItemBorderRenderer";

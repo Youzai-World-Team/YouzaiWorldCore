@@ -25,6 +25,7 @@ import top.csituka.youzaiworldcore.client.accessor.LaowuStateAccess;
  * 按需求不实现连续旋转动画。
  * </p>
  */
+@SuppressWarnings("null")
 @Mixin({ AdultFelineModel.class, BabyFelineModel.class })
 public abstract class CatModelLaowuMixin {
 
@@ -55,11 +56,9 @@ public abstract class CatModelLaowuMixin {
             return;
         }
         try {
-            // this 在编译期是 mixin 类；转型到 Model 取 root()（Model.root() 为 public）。
-            ModelPart root = ((Model) (Object) this).root();
-            if (root == null) {
-                return;
-            }
+            // this 在编译期是 mixin 类；转型到 Model 取 root()（Model.root() 为 public final，
+            // 返回非空字段，26.2 jar javap 核实；整个方法体在 try/catch 兜底内）。
+            ModelPart root = ((Model<?>) (Object) this).root();
 
             // 四条腿部件（平级挂 root，javap 核实）。先取到手，下面按是否整活决定形变或复位。
             ModelPart leftHind = root.getChild("left_hind_leg");

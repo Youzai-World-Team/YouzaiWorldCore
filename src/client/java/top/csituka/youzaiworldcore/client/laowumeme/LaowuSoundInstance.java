@@ -28,6 +28,7 @@ import net.minecraft.world.entity.Entity;
  * 实例仅在两只猫实体不存在时停止（由 {@link LaowuMemeClientState} 创建/停止）。
  * </p>
  */
+@SuppressWarnings("null")
 public class LaowuSoundInstance extends AbstractTickableSoundInstance {
 
     /** 静音下限：>16 格时音量钳到该值（≈-60dB）。不能返回 0——见类注释 */

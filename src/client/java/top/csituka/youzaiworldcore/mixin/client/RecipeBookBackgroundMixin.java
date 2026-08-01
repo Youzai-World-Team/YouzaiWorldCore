@@ -25,6 +25,7 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
  *   <li>YZUI 关闭：调用原版 blit，保留原版背景</li>
  * </ul>
  */
+@SuppressWarnings("null")
 @Mixin(RecipeBookComponent.class)
 public class RecipeBookBackgroundMixin {
 

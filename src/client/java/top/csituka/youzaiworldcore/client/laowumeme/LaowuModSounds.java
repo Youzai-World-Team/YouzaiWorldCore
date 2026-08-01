@@ -14,6 +14,7 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
  * {@code assets/youzaiworldcore/sounds.json} 定义，开箱即用、零操作。
  * </p>
  */
+@SuppressWarnings("null")
 public final class LaowuModSounds {
 
     public static final String MODULE = "LaowuModSounds";

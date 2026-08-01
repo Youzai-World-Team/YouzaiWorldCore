@@ -47,6 +47,7 @@ import eu.pb4.trinkets.impl.TrinketSlot;
  * <li>左键拖拽手势：有物品时合并同种，Shift+左键拖拽批量快速转移</li>
  * </ul>
  */
+@SuppressWarnings({ "null", "unused" })
 public class YzuInventoryScreen extends AbstractRecipeBookScreen<InventoryMenu> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("YzuInventoryScreen");

@@ -30,6 +30,7 @@ import top.csituka.youzaiworldcore.YouzaiworldCore;
  * 调 {@code getVolume()} 时 {@code this.sound} 为 null 直接 NPE（网络协议错误断连）。
  * </p>
  */
+@SuppressWarnings("null")
 public class LaowuImportedSoundInstance extends AbstractTickableSoundInstance {
 
     /** 静音下限：>16 格时音量钳到该值（≈-60dB）。不能返回 0——SoundEngine.play 会跳过 0 音量实例 */

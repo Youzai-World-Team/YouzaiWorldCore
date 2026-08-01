@@ -26,6 +26,7 @@ import top.csituka.youzaiworldcore.YouzaiworldCore;
  * @param action    操作类型：0=放入（光标→槽），1=取出（槽→光标），2=交换，3=快捷移动（槽→物品栏）
  * @param cursor    客户端鼠标当前携带的物品（EMPTY 表示空手）
  */
+@SuppressWarnings("null")
 public record TrinketInteractPayload(String groupKey, int slotIndex, byte action,
                                      ItemStack cursor) implements CustomPacketPayload {
 

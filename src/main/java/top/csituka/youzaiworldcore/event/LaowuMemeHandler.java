@@ -37,6 +37,7 @@ import java.util.UUID;
  * 死代码清理：不再保留从未使用的 {@code ROLL_ANGLE}（歪头角度唯一来源为客户端
  * {@code CatModelLaowuMixin.HEAD_ROLL}）；服务端选曲 {@code soundId} 真正下发并生效。
  */
+@SuppressWarnings("null")
 public final class LaowuMemeHandler {
 
     private static final String MODULE = "LaowuMemeHandler";

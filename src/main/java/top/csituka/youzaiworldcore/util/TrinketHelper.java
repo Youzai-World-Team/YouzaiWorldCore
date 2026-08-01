@@ -25,6 +25,7 @@ import java.util.Optional;
  * 使用直接 Trinkets API 调用。
  * </p>
  */
+@SuppressWarnings("null")
 public final class TrinketHelper {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/TrinketHelper");

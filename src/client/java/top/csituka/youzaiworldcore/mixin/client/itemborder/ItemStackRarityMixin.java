@@ -26,6 +26,7 @@ import java.util.Map;
  * {@code getRarity()}，不存在递归冲突。
  * </p>
  */
+@SuppressWarnings({ "null", "unused" })
 @Mixin(ItemStack.class)
 public abstract class ItemStackRarityMixin {
 

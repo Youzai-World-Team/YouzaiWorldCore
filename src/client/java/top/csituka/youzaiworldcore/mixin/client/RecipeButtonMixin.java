@@ -25,6 +25,7 @@ import top.csituka.youzaiworldcore.client.config.ClientExternalSettings;
  *   <li>YZUI 关闭：调用原版 blitSprite，保留原版槽位纹理</li>
  * </ul>
  */
+@SuppressWarnings("null")
 @Mixin(RecipeButton.class)
 public class RecipeButtonMixin {
 

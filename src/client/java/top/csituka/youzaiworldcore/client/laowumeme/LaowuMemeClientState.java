@@ -22,6 +22,7 @@ import java.util.Map;
  * {@link LaowuModSounds} / 服务端 {@code LaowuMemeHandler.BUILTIN_SOUND_COUNT} 为准）。
  * </p>
  */
+@SuppressWarnings("null")
 public final class LaowuMemeClientState {
 
     private static final String MODULE = "LaowuMemeClientState";
