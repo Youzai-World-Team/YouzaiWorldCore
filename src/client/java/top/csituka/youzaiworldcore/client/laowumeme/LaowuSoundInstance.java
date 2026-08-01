@@ -15,11 +15,23 @@ import net.minecraft.world.entity.Entity;
  * 在某些情况下不生效（实测战吼与导入音频远离猫时音量不衰退、超过某距离骤然消失），
  * 而 laowu2/qiliang 偶发正常。为让所有音频（含战吼、导入）行为一致且自然衰退，
  * 这里关闭 MC 自带衰减（{@code attenuation=NONE}），改为在 {@link #getVolume()} 里
- * 按玩家到猫中点的距离线性计算音量：0~16 格从 1 平滑降到 0，超过 16 格保持静音，
- * tick() 在 32 格处彻底停止。由 {@link LaowuMemeClientState} 创建/停止。
+ * 按玩家到猫中点的距离线性计算音量。
+ * </p>
+ * <p>
+ * 距离语义（v2 修复）：0~16 格从 1 平滑降到 0.001（≈-60dB，人耳不可闻）；超过 16 格
+ * 钳制在 0.001 而非 0。实例<b>不再因距离而停止</b>——玩家走远→音量近静音，靠近→音量自动
+ * 恢复。原因（26.2 字节码实测）：{@code SoundEngine.play} 对「0 音量且
+ * {@code canStartSilent()==false}」的实例直接跳过（"volume was zero"），且原「>32 格
+ * stop」会永久销毁实例，两者都会导致靠近后无法恢复声音。
+ * </p>
+ * <p>
+ * 实例仅在两只猫实体不存在时停止（由 {@link LaowuMemeClientState} 创建/停止）。
  * </p>
  */
 public class LaowuSoundInstance extends AbstractTickableSoundInstance {
+
+    /** 静音下限：>16 格时音量钳到该值（≈-60dB）。不能返回 0——见类注释 */
+    private static final float MIN_VOLUME = 0.001f;
 
     private final int catAId, catBId;
 
@@ -37,20 +49,23 @@ public class LaowuSoundInstance extends AbstractTickableSoundInstance {
 
     @Override
     public float getVolume() {
-        // 手动平滑距离衰减：0~16 格线性从 1 降到 0，超过 16 格保持 0（静音但不突然停）
+        // 手动平滑距离衰减：0~16 格线性从 1 降到 0.001，超过 16 格钳制在 0.001（近静音，不归零）
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null) {
             return this.volume;
         }
         double dist = Math.sqrt(mc.player.distanceToSqr(this.x, this.y, this.z));
         float f = (float) (1.0 - dist / 16.0);
-        if (f < 0.0f) {
-            f = 0.0f;
-        }
-        if (f > 1.0f) {
-            f = 1.0f;
+        if (f < MIN_VOLUME) {
+            f = MIN_VOLUME;
         }
         return this.volume * f;
+    }
+
+    /** 允许 0/近零音量开始播放（配合 MIN_VOLUME 双保险）：实时音量由 getVolume() 按距离动态计算 */
+    @Override
+    public boolean canStartSilent() {
+        return true;
     }
 
     @Override
@@ -60,7 +75,8 @@ public class LaowuSoundInstance extends AbstractTickableSoundInstance {
         }
     }
 
-    /** 更新到两只猫中点；返回 false 表示猫已不存在或玩家过远（>32格）应停止 */
+    /** 更新到两只猫中点；返回 false 表示猫已不存在，应停止。
+     *  注意：不再按距离停止——距离只影响 getVolume()，玩家走远再靠近声音自然恢复。 */
     private boolean updatePos() {
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null) {
@@ -74,11 +90,6 @@ public class LaowuSoundInstance extends AbstractTickableSoundInstance {
         this.x = (a.getX() + b.getX()) / 2.0;
         this.y = (a.getY() + b.getY()) / 2.0;
         this.z = (a.getZ() + b.getZ()) / 2.0;
-        // 音量由 getVolume() 按距离平滑衰减，不在此处手动覆盖。
-        // 玩家离中点超过 32 格时直接停止，避免极远距离仍占声音通道。
-        if (mc.player != null && mc.player.distanceToSqr(this.x, this.y, this.z) > 32 * 32) {
-            return false;
-        }
         return true;
     }
 }
