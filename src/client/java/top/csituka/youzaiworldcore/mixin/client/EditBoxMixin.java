@@ -6,6 +6,7 @@ import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.gui.screens.inventory.CreativeModeInventoryScreen;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.util.Mth;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -31,6 +32,8 @@ public class EditBoxMixin {
     private static final int TEXT_COLOR = 0x404040;
     private static final int TEXT_COLOR_DISABLED = 0x808080;
     private static final int CURSOR_COLOR = 0xFF000000;
+    /** 选中文本高亮色：半透明蓝（ARGB），适配 YZUI 白色背景（原版 0xFF0000FF 不透明蓝会完全盖住白底） */
+    private static final int HIGHLIGHT_COLOR = 0x660000FF;
     private static final int PADDING = 4;
 
     @Unique private float yzwc$bgAlpha = NORMAL_ALPHA;
@@ -39,6 +42,7 @@ public class EditBoxMixin {
     @Shadow private net.minecraft.client.gui.Font font;
     @Shadow private boolean isEditable;
     @Shadow private int cursorPos;
+    @Shadow private int highlightPos;
     @Shadow private int displayPos;
     @Shadow private long focusedTime;
     @Shadow private String suggestion;
@@ -87,6 +91,22 @@ public class EditBoxMixin {
         String clipped = this.font.plainSubstrByWidth(
                 text.length() > this.displayPos ? text.substring(this.displayPos) : "", maxW);
         int textX = x + PADDING;
+
+        // ---- 选中文本高亮（复刻原版 renderHighlight：选中范围 = cursorPos..highlightPos，
+        //      裁剪到可视区；半透明蓝适配 YZUI 白底，绘制在文本下层） ----
+        if (!text.isEmpty() && !clipped.isEmpty()) {
+            int selStart = Math.min(this.cursorPos, this.highlightPos);
+            int selEnd = Math.max(this.cursorPos, this.highlightPos);
+            int visStart = Math.max(selStart, this.displayPos);
+            int visEnd = Math.min(selEnd, this.displayPos + clipped.length());
+            if (visStart < visEnd) {
+                int hlX1 = textX + this.font.width(text.substring(this.displayPos, visStart));
+                int hlX2 = textX + this.font.width(text.substring(this.displayPos, visEnd));
+                int hx1 = Math.min(hlX1, textX + w);
+                int hx2 = Math.min(hlX2, textX + w);
+                gfx.fill(RenderPipelines.GUI_TEXT_HIGHLIGHT, hx1, textY - 1, hx2 - 1, textY + 9, HIGHLIGHT_COLOR);
+            }
+        }
 
         if (!clipped.isEmpty()) {
             gfx.text(this.font, clipped, textX, textY, textColor, false);
