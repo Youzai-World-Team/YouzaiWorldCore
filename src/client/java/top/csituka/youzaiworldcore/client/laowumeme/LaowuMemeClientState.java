@@ -34,8 +34,9 @@ public final class LaowuMemeClientState {
 
     private static final String MODULE = "LaowuMemeClientState";
 
-    /** 粒子生成节流：每 N tick 生成一批（每批 1 个），避免粒子过密 */
-    private static final int PARTICLE_INTERVAL_TICKS = 3;
+    /** 粒子生成节流：每 N tick 生成一批（每批 1 个），避免粒子过密。
+     *  12 tick = 0.6 秒一个，保持"持续冒出"的存在感但不密集（3 tick 实测过于频繁）。 */
+    private static final int PARTICLE_INTERVAL_TICKS = 12;
     /** 粒子向上飘动速度（y 分量） */
     private static final double PARTICLE_RISE_SPEED = 0.08;
 
@@ -97,12 +98,11 @@ public final class LaowuMemeClientState {
                 continue;
             }
             Vec3 mid = ea.position().add(eb.position()).scale(0.5);
-            // 粒子生成在两猫中点【头顶上方】（y 取脚底 +1.3~2.0，高于猫背/猫头）。
-            // 原实现取脚底 +0.3~1.1，落在两只猫贴脸的身体正中间——猫放大 1.25 倍头对头时
-            // 粒子被模型完全遮挡（看不到粒子的根因）；村民愤怒粒子本就该从头顶冒出。
+            // 粒子生成在两猫中点【头顶上方一点】（y 取脚底 +0.8~1.2）。
+            // 猫高约 0.7 格：+0.8 起即高于猫背/猫头，不会被贴脸放大的模型遮挡，也不会过高。
             // x/z 保持中点附近小幅随机偏移（±0.4），粒子缓慢上飘。
             double px = mid.x + (Math.random() - 0.5) * 0.8;
-            double py = mid.y + 1.3 + Math.random() * 0.7;
+            double py = mid.y + 0.8 + Math.random() * 0.4;
             double pz = mid.z + (Math.random() - 0.5) * 0.8;
             mc.level.addParticle(ParticleTypes.ANGRY_VILLAGER, px, py, pz,
                     0.0, PARTICLE_RISE_SPEED, 0.0);

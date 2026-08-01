@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -566,6 +567,23 @@ public final class StatsManager {
             DebugLogger.info(MODULE, "已加载 %s 位玩家状态 + %s 天快照", loaded, SNAPSHOTS.size());
         } catch (IOException e) {
             LOGGER.error("读取状态数据文件失败", e);
+        } catch (RuntimeException e) {
+            // 健壮性：状态数据 JSON 损坏（如异常中断写入导致文件截断/非法）不应让服务器启动崩溃。
+            // 备份损坏文件保留现场，然后以空数据继续——后续 save() 会重建一份干净的数据文件。
+            DebugLogger.error(MODULE, "状态数据文件损坏，已备份并跳过加载: %s (%s)", file, e.getMessage());
+            backupCorruptFile(file);
+        }
+    }
+
+    /** 将损坏的状态数据文件备份为 {@code data.json.corrupt-<时间戳>}，避免覆盖现场 */
+    private static void backupCorruptFile(Path file) {
+        try {
+            String stamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss"));
+            Path backup = file.resolveSibling("data.json.corrupt-" + stamp);
+            Files.copy(file, backup, StandardCopyOption.REPLACE_EXISTING);
+            DebugLogger.warn(MODULE, "损坏文件已备份: %s", backup);
+        } catch (IOException ex) {
+            LOGGER.error("备份损坏的状态数据文件失败", ex);
         }
     }
 

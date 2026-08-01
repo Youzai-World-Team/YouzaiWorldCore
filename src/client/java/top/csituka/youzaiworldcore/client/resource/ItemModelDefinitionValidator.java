@@ -1,11 +1,12 @@
 package top.csituka.youzaiworldcore.client.resource;
 
-import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
-import net.fabricmc.fabric.api.resource.SimpleSynchronousResourceReloadListener;
+import net.minecraft.client.Minecraft;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
-import net.minecraft.server.packs.PackType;
+import net.minecraft.server.packs.resources.ReloadableResourceManager;
 import net.minecraft.server.packs.resources.ResourceManager;
+import net.minecraft.server.packs.resources.SimplePreparableReloadListener;
+import net.minecraft.util.profiling.ProfilerFiller;
 
 import top.csituka.youzaiworldcore.YouzaiworldCore;
 import top.csituka.youzaiworldcore.util.DebugLogger;
@@ -32,40 +33,46 @@ import java.util.List;
  * 本监听器在每次客户端资源重载后遍历本模组命名空间下的所有物品，
  * 校验其模型定义文件是否存在，并通过 {@link DebugLogger} 输出结果，便于日志排查。
  * </p>
+ * <p>
+ * 实现说明：Fabric 的 {@code ResourceManagerHelper / SimpleSynchronousResourceReloadListener}
+ * 在 26.2 已弃用，改用原版 {@link ReloadableResourceManager#registerReloadListener} +
+ * {@link SimplePreparableReloadListener}（26.2 jar javap 核实：{@code Minecraft.resourceManager}
+ * 字段实际类型即 {@code ReloadableResourceManager}，注册入口为其 {@code registerReloadListener}）。
+ * </p>
  */
 @SuppressWarnings("null")
-public final class ItemModelDefinitionValidator implements SimpleSynchronousResourceReloadListener {
+public final class ItemModelDefinitionValidator extends SimplePreparableReloadListener<Void> {
 
     private static final String MODULE = "ItemModelDefinitionValidator";
 
     /** 客户端物品模型定义所在目录（对应 ClientItemInfoLoader.LISTER 的 "items"） */
     private static final String ITEM_DEFINITION_DIR = "items/";
 
-    private static final Identifier LISTENER_ID = Identifier.fromNamespaceAndPath(
-            YouzaiworldCore.MOD_ID, "item_model_definition_validator");
-
-    private ItemModelDefinitionValidator() {}
+    private ItemModelDefinitionValidator() {
+    }
 
     /**
      * 注册资源重载监听器（应在客户端初始化阶段调用，早于首次资源重载）。
      */
     public static void register() {
         DebugLogger.entering(MODULE, "register");
-        ResourceManagerHelper.get(PackType.CLIENT_RESOURCES)
-                .registerReloadListener(new ItemModelDefinitionValidator());
+        // Fabric 的 ResourceManagerHelper 已弃用；原版 ReloadableResourceManager 提供注册入口
+        // （Minecraft.resourceManager 字段即该类型，强转安全）。
+        ReloadableResourceManager rm = (ReloadableResourceManager) Minecraft.getInstance().getResourceManager();
+        rm.registerReloadListener(new ItemModelDefinitionValidator());
         DebugLogger.info(MODULE, "物品模型定义自检已注册（每次资源重载校验 assets/%s/%s*.json）",
                 YouzaiworldCore.MOD_ID, ITEM_DEFINITION_DIR);
         DebugLogger.exiting(MODULE, "register");
     }
 
     @Override
-    public Identifier getFabricId() {
-        return LISTENER_ID;
+    protected Void prepare(ResourceManager resourceManager, ProfilerFiller profilerFiller) {
+        return null;
     }
 
     @Override
-    public void onResourceManagerReload(ResourceManager resourceManager) {
-        DebugLogger.entering(MODULE, "onResourceManagerReload");
+    protected void apply(Void unused, ResourceManager resourceManager, ProfilerFiller profilerFiller) {
+        DebugLogger.entering(MODULE, "apply");
 
         List<String> missing = new ArrayList<>();
         int checked = 0;
@@ -104,7 +111,7 @@ public final class ItemModelDefinitionValidator implements SimpleSynchronousReso
                     YouzaiworldCore.MOD_ID, ITEM_DEFINITION_DIR, YouzaiworldCore.MOD_ID);
         }
 
-        DebugLogger.exiting(MODULE, "onResourceManagerReload",
+        DebugLogger.exiting(MODULE, "apply",
                 "checked=" + checked + ", missing=" + missing.size());
     }
 }
