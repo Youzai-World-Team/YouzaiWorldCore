@@ -26,6 +26,7 @@ bin
 .idea
 .vscode
 .workbuddy
+.claude
 minecraft_jar
 .workbuddy/memory
 logo.txt

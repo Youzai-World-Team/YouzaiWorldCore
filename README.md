@@ -20,14 +20,14 @@
 
 ## 📖 项目概述
 
-**YouzaiWorldCore** 是悠哉世界（Youzai World）Minecraft 多人服务器的核心玩法模组，基于 **Fabric** 框架开发，深度集成 **LuckPerms** 权限系统与 **Placeholder API**。模组为服务器提供完整的基础设施，涵盖账户认证、GUI 菜单、自定义物品与方块、坐姿交互、维度池、传送锚点、魔力系统、隐身管理、冒险等级与属性成长、附魔等级语言补丁、拾取显示、世界增强（带电苦力怕 / 末影龙掉鞘翅 / 末地传送门 / 监守者战利品 / 切石机伤害等）、宠物系统、物品高亮与边框、邮件信箱、自定义附魔、饰品槽集成、配置导入导出、新手教程、语音聊天集成等 30 余项核心能力。
+**YouzaiWorldCore** 是悠哉世界（Youzai World）Minecraft 多人服务器的核心玩法模组，基于 **Fabric** 框架开发，深度集成 **LuckPerms** 权限系统与 **Placeholder API**。模组为服务器提供完整的基础设施，涵盖账户认证、GUI 菜单、YZUI 界面系统（物品栏 / HUD / 配方书全面重绘）、自定义物品与方块、坐姿交互、维度池、传送锚点、魔力系统、隐身管理、冒险等级与属性成长、附魔等级语言补丁、拾取显示、世界增强（带电苦力怕 / 末影龙掉鞘翅 / 末地传送门 / 监守者战利品 / 切石机伤害 / 试炼宝库无限领奖等）、宠物系统、物品高亮与边框、邮件信箱、自定义附魔、饰品槽集成与 YZUI 饰品交互、配置导入导出、新手教程、语音聊天集成等 35 余项核心能力。
 
 ### 目标用户群体
 
 | 用户类型 | 说明 |
 |---------|------|
-| **服务器管理员** | 通过命令和菜单管理系统，配置维度池、账户策略、宠物备份、邮件公告等 |
-| **生存玩家** | 使用悠哉系列工具、成就系统、传送锚点、坐姿交互、魔力法杖、宠物与属性成长、饰品槽进行游戏 |
+| **服务器管理员** | 通过命令和菜单管理系统，配置维度池、账户策略、宠物备份、邮件公告、事件开关等 |
+| **生存玩家** | 使用悠哉系列工具、成就系统、传送锚点、坐姿交互、魔力法杖、宠物与属性成长、YZUI 界面与饰品槽进行游戏 |
 | **模组开发者** | 了解模组架构、扩展功能或贡献代码 |
 
 > **版本说明**：本模组面向 Minecraft **Java 26.2**。26.1 起 Mojang 采用新的命名/源码规则，游戏 jar 已去除混淆，可直接反编译参考最新实现。
@@ -173,19 +173,20 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 
 ### 15. 创造模式标签页
 
-创造模式物品栏重新组织为 **5 个独立标签页**：
+创造模式物品栏重新组织为 **6 个独立标签页**：
 
 | 标签页 ID | 名称 | 内容 |
 |-----------|------|------|
 | `youzai_blocks` | 悠哉方块 | 7 个自定义方块 |
 | `youzai_tools_weapons` | 悠哉工具与武器 | 5 个悠哉系列工具 + 3 个法杖 |
 | `youzai_materials` | 悠哉材料 | 原矿、锭、粒 |
-| `youzai_utilities` | 悠哉实用物品 | 守护之心、Logo |
-| `youzai_kits` | 悠哉工具包 | 4 个预设潜影盒 |
+| `youzai_utilities` | 悠哉实用物品 | 守护之心、隐形物品展示框、隐形发光物品展示框 |
+| `youzai_kits` | 悠哉工具包 | 9 个预设潜影盒 |
+| `youzai_enchantments` | 悠哉世界 - 附魔 | 本模组自定义附魔的附魔书，按 `ModEnchantments.ALL` 遍历并为每个等级各生成一本 |
 
 ### 16. 预设物品系统
 
-创造模式标签页中的四大预设潜影盒：
+创造模式「悠哉工具包」标签页中的九大预设潜影盒（`PresetItems.createPreset01`–`createPreset09`）：
 
 | 预设 | 颜色 | 内容 |
 |------|------|------|
@@ -193,6 +194,11 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 | 毕业套补充 | 橙色 | 实用工具、建筑材料、额外防具 |
 | 不死图腾 | 黄色 | 27 个不死图腾 |
 | 炸药包 | 灰色 | 27 组 × 64 TNT |
+| 烟花火箭 | 粉红色 | 27 组烟花火箭 |
+| 重锤套装 | 淡蓝色 | 3 把不同附魔配置的重锤（Mace） |
+| 附魔之瓶 | 黄绿色 | 27 组 × 64 附魔之瓶 |
+| 末影珍珠 | 绿色 | 27 组 × 64 末影珍珠 |
+| 七彩箭矢 | 淡灰色 | 普通箭 / 光灵箭 / 各类药水箭组合 |
 
 ### 17. 成就系统
 
@@ -213,9 +219,10 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 | 配置 | 文件位置 | 内容 |
 |------|---------|------|
 | 服务端外部设置 | `config/youzaiworldcore/server_external_settings.json` | `devModeEnabled`、`logToFile`（双开关控制 DebugLogger） |
-| 客户端外部设置 | `config/youzaiworldcore/client_external_settings.json` | `devModeEnabled`、`logLevel`（0-3）、调试地址/端口 |
+| 客户端外部设置 | `config/youzaiworldcore/client_external_settings.json` | `devModeEnabled`、`logLevel`（0-3）、`yzuiEnabled`（YZUI 界面总开关）、调试地址/端口 |
 | DebugLogger | `util/DebugLogger` | 四级日志（OFF/BASIC/DETAILED/DEBUG），entering/exiting/branch/stateChange/exception 追踪 |
 | 更新检查设置 | `config/youzaiworldcore/update_checker.json` | `enabled`（开关更新检查，UpdateCheckerConfig） |
+| 试炼宝库设置 | `config/youzaiworldcore/trial_vault.json` | `enabled`（无限领奖开关，TrialVaultConfig，默认 true） |
 | 邮件设置 | `config/youzaiworldcore/mail_settings.json` | 过期策略、权限节点/等级、附件上限等 |
 | 玩家统计数据 | `<world>/youzaiworldcore/status/data.json` + `rank_export/` | StatsManager 持久化统计与排行榜导出目录 |
 
@@ -239,7 +246,7 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 
 ### 21. 世界增强功能
 
-一组原生集成、不依赖外部库的"世界微调"增强（灵感来自社区经典玩法），覆盖生物行为、掉落归集与末地机制：
+一组原生集成、不依赖外部库的"世界微调"增强（灵感来自社区经典玩法），覆盖生物行为、掉落归集、末地机制、试炼密室与农业自动化：
 
 - **天然带电苦力怕（Naturally Charged Creepers）**：苦力怕进入服务端世界时，以可配置概率（`chance`，默认 0.1 / 10%）标记为带电状态。通过 Mixin 暴露的 `DATA_IS_POWERED` 实体数据写入，确保客户端闪电光环正确同步；数据标签去重避免区块重载重复判定。配置 `config/youzaiworldcore/charged_creeper.json`（`enabled` 默认 true、`chance` 默认 0.1，自动钳制 [0,1]）。命令：`/yzwc event naturally_charged_creepers enable [true|false]` / `settings chance [double]`
 - **紫颂果就近掉落（Chorus Fruit Drops Nearby）**：破坏紫颂植物后，其掉落的紫颂果会被就近传送至最近被破坏的紫颂植物位置（水平距离 < 20 格、2 秒时间窗内），避免果实散落满地
@@ -247,6 +254,9 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 - **末地传送门增强**：① 末地传送门框可被精准采集镐破坏并掉落（含已嵌末影之眼），同时清除激活的传送门方块；② 末影龙被击杀时向附近玩家额外给予一个龙蛋；③ 新增合成配方 `craftable_end_portal`（末影之眼 + 龙蛋 + 末地石 → 12 个末地传送门框）。配置 `config/youzaiworldcore/end_portal_settings.json` 三项开关（精准采集要求 / 直接入背包 / 龙蛋提示）
 - **监守者战利品（Warden Loot）**：玩家击杀监守者时直接发放 300 经验，并掉落 bundle 战利品（含尖啸催生体、下界合金碎片/钻石/金锭等随机池、远古城市风格物品、附魔书——50% 迅捷潜行 I–III / 50% 灵魂疾行 I–III，受抢夺附魔加成）。由 `WardenDeathHandler`（`ServerLivingEntityEvents.AFTER_DEATH`）实现，取代脆弱的数据包 tick 扫描
 - **切石机伤害（Stonecutter Damage）**：站在切石机方块上会受到持续伤害——首次站上立即造成 1 颗心伤害，之后每 1.5 秒（30 tick）一次，直至离开；死亡显示自定义消息"尝试用身体测试切石机的锋利度"，并授予「我成了建材」成就。创造/旁观模式免疫。由 `StonecutterDamageHandler`（分时扫描 + 独立计时器，性能优先）实现
+- **试炼宝库无限领奖（Trial Vault）★新增**：移除试炼宝库「每玩家仅可领奖一次」的限制，同一玩家可对同一宝库反复插钥匙领奖。由 `VaultServerDataMixin` 精确注入 `VaultServerData#hasRewardedPlayer`（恒返回 false）与 `#addToRewardedPlayers`（取消写入）实现，而非通配 Redirect。配置 `config/youzaiworldcore/trial_vault.json`（`enabled` 默认 true）。命令：`/yzwc event trial_vault enable [true|false]`。参考 trial-chamber-time-removal 设计思路，原生重写、无前置依赖
+- **骨粉催熟甘蔗（Bone Meal Sugar Cane）★新增**：手持骨粉右键甘蔗可将其催熟一格（上限 3 格高）；同时注册**发射器行为**（`BoneMealSugarCaneDispenserBehavior`），发射器装骨粉亦可催熟正对的甘蔗，便于自动化农场
+- **混凝土粉末遇水固化（Concrete Powder Solidify）★新增**：混凝土粉末以**掉落物实体**形式落入水中时自动固化为对应颜色的混凝土物品实体（原版仅方块形态固化）。`ConcretePowderSolidifyHandler` 每 20 tick（1 秒）扫描一次以控制性能，颜色映射表在初始化时由注册表构建
 
 ### 22. 双开门系统
 
@@ -299,7 +309,7 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
   - `/yzwc status rank_export <day|week|month|year|all> [name]` —— 导出排行榜至 `rank_export/<name>.json`（权限 `youzaiworldcore.command.status.export`）
 - **权限**：`status.query` / `status.delete` / `status.export`（默认 OP 4）
 
-### 26. 邮件系统（Mailbox） ★新增
+### 26. 邮件系统（Mailbox）
 
 单向的**管理员 → 玩家**服务器信箱 / 公告箱（非玩家间私聊），由管理员经 GUI 发布，玩家在信箱（Shift+F → 邮件）中查收、领取奖励。
 
@@ -320,14 +330,14 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 - **存储**：全局仓库 `config/youzaiworldcore/mail/sent.json` + 每玩家索引 `config/youzaiworldcore/mail/box/<uuid>.json` + 设置 `mail_settings.json`；跨世界一致，绑定账户系统（离线账户同样入索引，登录可见）
 - **网络**：共 16 个专用数据包（C2S `mail_compose_open` / `mail_open` / `mail_sent_list_request` / `mail_recall` / `mail_purge` / `mail_list_request` / `mail_fetch` / `mail_action` / `mail_admin_send` / `mail_admin_edit`；S2C `open_mail_compose` / `mail_list` / `mail_sent_list` / `mail_update` / `mail_op_result` / `mail_unread_count`）
 
-### 27. 自定义附魔 ★新增
+### 27. 自定义附魔
 
 模组新增两个数据驱动附魔，定义于 `data/youzaiworldcore/enchantment/` JSON，由 `ModEnchantments` 注册 ResourceKey。
 
 - **阳光修复（Sun Repair，`sun_repair`）**：「在阳光下修复工具」。由 `SunRepairHandler` 每 5–10 秒随机间隔检查在线玩家，对处于阳光下（有天空光照、非雨/雷、非夜晚、头顶无遮挡）且带此附魔的损坏物品每 tick 恢复 1 点耐久；覆盖手持、盔甲栏与整个物品栏
 - **乐魂涡轮加速器（Spirit Turbo Booster，`spirit_turbo`）**：「附魔在挽具上以提升乐魂移动速度」。由 `HappyGhastTurboHandler` 每 20 tick 检查所有乐魂（Happy Ghast），若其挽具带此附魔，则为其 `FLYING_SPEED` 属性每级追加 +20% 飞行速度
 
-### 28. 铁砧使用次数显示 ★新增
+### 28. 铁砧使用次数显示
 
 客户端提示增强（`anviluses` 包）。在物品悬浮提示中显示该物品经过铁砧加工的次数与剩余可维修次数：
 
@@ -335,7 +345,7 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 - **预计剩余可修**：递推模拟原版 `calculateIncreasedRepairCost` 规则，直到下次维修费用达到「过于昂贵」上限（40 级）；为 0 时提示「已无法再被铁砧维修」
 - 灵感来自 Anvil Uses（Z1proW），参考 26.2 原版 `AnvilMenu` 反编译实现，独立重写、无外部依赖
 
-### 29. 物品边框系统 ★新增
+### 29. 物品边框系统
 
 客户端视觉增强（`itemborder` 包，参考 ItemBorders 设计理念）。为物品槽位绘制**稀有度渐变色边框**，纯原生 26.2 API（GuiGraphicsExtractor 管线 + `ItemStack.getRarity`），无外部依赖：
 
@@ -343,9 +353,9 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 - **预设稀有度分配**：内置约 60 项分配——UNCOMMON（黄）18 项、RARE（青）19 项、EPIC（亮紫）22 项（含悠哉锭/系列工具/守护之心等本模组物品）
 - 所有配置为硬编码常量，无可修改配置文件
 
-### 30. Trinkets 饰品槽集成 ★新增
+### 30. Trinkets 饰品槽集成
 
-通过 `data/trinkets/` 数据包为 **Trinkets** 模组声明 4 个自定义饰品槽（需安装 Trinkets 模组），让特定物品可装备至饰品栏而非主物品栏：
+通过 `data/trinkets/` 数据包为 **Trinkets** 模组声明 4 个自定义饰品槽（Trinkets 为硬依赖），让特定物品可装备至饰品栏而非主物品栏：
 
 | 槽位（slots） | 物品 | 说明 |
 |---------------|------|------|
@@ -356,7 +366,15 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 
 每个槽位含自定义图标与 `trinkets:default` 校验器，order 控制排序。
 
-### 31. 配置导入/导出 ★新增
+**YZUI 饰品交互 ★新增**：YZUI 物品栏（生存 / 创造）不使用 Trinkets 注入的原生槽位，而是实现了一套**悬停指示器**交互——鼠标悬停在可装备槽位上时，在其旁弹出对应饰品槽指示器，点击即可装卸：
+
+- **服务端权威**：所有操作经 C→S 数据包 `trinket_interact`（`TrinketInteractPayload`）提交，服务端通过 Trinkets API 修改权威数据后由 Trinkets 网络层同步回客户端并持久化
+- **四种操作**：`ACTION_PLACE`（光标→槽，0）、`ACTION_TAKE`（槽→光标，1）、`ACTION_SWAP`（互换，2）、`ACTION_QUICK_MOVE`（Shift+左键，槽→主物品栏 0–35，3）
+- **光标兜底**：数据包携带客户端当前鼠标物品（`cursor`）。服务端优先使用自身 `containerMenu.getCarried()`，两者不同步时（如点击拿起物品后立刻点击指示器、点击包尚未被服务端处理）以客户端上报值兜底，避免操作被静默丢弃；槽位状态与校验始终以服务端为准
+- **本地预览**：客户端在收到服务端确认前先行本地预览，消除交互延迟感
+- **原生槽位屏蔽**：`SurvivalTrinketSlotYzuiMixin` 在 YZUI 屏幕下强制 Trinkets 的 `SurvivalTrinketSlot#isActive()` 返回 `false`，避免其注入槽位在装备位两侧渲染出"无用格子"并与 YZUI 指示器坐标重叠误触；YZUI 关闭时不拦截，Trinkets 原生物品栏行为不受影响（该 Mixin 以 `targets = "eu.pb4.trinkets.impl.SurvivalTrinketSlot"` 字符串声明，避免编译期强依赖实现包）
+
+### 31. 配置导入/导出
 
 客户端设置中新增「导出/导入配置」侧栏（YZUI）。基于 26.2 Headless 限制（AWT/文件对话框不可用），采用自动路径 + 备份策略，不依赖外部文件选择器：
 
@@ -372,6 +390,54 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 - **配置**：`config/youzaiworldcore/update_checker.json`（`UpdateCheckerConfig`，可开关检查）
 - **命令**（服务端）：`/yzwc update [check]` —— 触发一次即时检查并反馈结果（普通/强制更新提示 + 可点击下载链接），权限 `youzaiworldcore.command.update`（OP 4）
 - **客户端**：`client/update/ClientUpdateState` + `client/screen/ForcedUpdateScreen` 提供强制更新界面
+
+### 33. YZUI 界面系统 ★新增
+
+纯客户端的整体界面重绘方案，将原版物品栏、HUD、配方书与上下文栏统一替换为 **YZUI 风格**（半透明白色圆角面板 + 圆角填充条）。由**全局开关**控制：客户端设置「视觉」分栏中的「启用 YZUI」复选框（`screen.youzaiworldcore.settings.toggle_yzui`），持久化于 `client_external_settings.json` 的 `yzuiEnabled` 字段（默认开启）。**关闭后全部回退原版渲染**，便于资源包接管。
+
+#### 33.1 物品栏屏幕
+
+`InventoryScreenSwitchMixin` 拦截 `Gui#setScreen`，在 YZUI 开启时将原版屏幕替换为自定义实现（`InventoryScreen` → 按游戏模式分流；`CreativeModeInventoryScreen` → YZUI 创造屏）：
+
+- **`YzuInventoryScreen`（生存物品栏）**：沿用原版 `InventoryMenu` 固定槽位坐标，仅外观改为 YZUI 圆角风格——半透明白色圆角面板、圆角槽位背景（悬浮高亮）、褐色副手槽底色；配方书打开时于左侧渲染 YZUI 风格配方书面板，切换按钮置于副手槽上方
+- **`YzuCreativeInventoryScreen`（创造物品栏）**：完全自绘的创造屏（356×168），内部经 `BuiltInRegistries.ITEM` 自填充物品，含分类标签页（每页配色独立）、搜索框（跨会话记忆上次搜索文本）、9×7 物品网格 + 右侧滚动条，以及右栏的玩家 3D 模型、装备 2×2 与副手槽、3×9 生存物品栏、底部快捷栏
+- **拖拽手势**：左键拖拽在有物品时合并同种物品，`Shift + 左键拖拽`批量快速转移；创造屏支持右键取半并实时计算鼠标预期剩余数量
+
+#### 33.2 HUD 组件
+
+`HealthBarMixin` 取消原版 `Hud#extractPlayerHealth` / `extractFood` / `extractArmor` / `extractAirBubbles` 四项渲染，改由 `client/hud/` 下的自定义渲染器绘制长条状进度条：
+
+| 渲染器 | 替换对象 | 特性 |
+|--------|---------|------|
+| `HealthBarRenderer` | 爱心血条 | 85×5 长条 + 「当前/最大」文字；手持食物时右侧闪烁预估恢复量叠加层；伤害吸收金色叠加；中毒（紫色垂直条纹）/ 凋零（灰黑水平条纹）状态条纹指示 |
+| `FoodBarRenderer` | 鸡腿饥饿值 | 长条化，配合 `FoodDataExhaustionAccessor` 读取消耗度 |
+| `ArmorBarRenderer` | 盔甲图标 | 长条化 |
+| `OxygenBarRenderer` | 氧气气泡 | 长条化 |
+
+#### 33.3 上下文栏与配方书
+
+- **`ContextualBarMixin`**：对经验条（`ExperienceBar`）、定位条（`LocatorBar`）、跳跃条（`JumpableVehicleBar`）取消原版精灵表背景，替换为 YZUI 圆角填充条（宽度与原版 `ContextualBar#WIDTH` = 182 一致），同时保留 `LocatorBar` 的航点指示器渲染；经验数值文字居中显示于血条与饥饿条区域内
+- **配方书重绘**：`RecipeBookBackgroundMixin`（以 `@Redirect` 替换背景 blit 而非 `ci.cancel()`，避免连带取消 Tab/搜索框/网格渲染）、`RecipeBookLayoutMixin`（搜索框左移、过滤按钮加宽）、`RecipeBookTabButtonMixin`、`RecipeButtonMixin`
+- **按钮样式**：`CycleButtonYzuiMixin`（过滤按钮：选中态绿色勾 `recipe_filter_craftable.png` / 未选中态红色叉 `recipe_filter_all.png`）、`ImageButtonYzuiMixin`（配方书显隐按钮 `recipe_book_show.png` / `recipe_book_hide.png`）；两者均限定在 YZUI 开关开启**且**当前屏幕为 YZUI 自定义屏幕时生效
+
+### 34. 隐形物品展示框 ★新增
+
+两个自定义物品，放置后展示框实体为隐形状态（仅展示其中的物品），适合装饰与展示墙：
+
+| 物品 | 合成配方 |
+|------|---------|
+| **隐形物品展示框**（`invisible_item_frame`） | 物品展示框 + 幻翼膜（无序合成） |
+| **隐形发光物品展示框**（`invisible_glow_item_frame`） | 发光物品展示框 + 幻翼膜（无序合成） |
+
+由 `InvisibleItemFrameItem` / `InvisibleGlowItemFrameItem` 重写 `useOn`，自行完成放置位置校验、附着面计算与实体生成，并在生成后设置隐形标记；收录于「悠哉实用物品」创造标签页。
+
+### 35. Technoblade 纪念皇冠 ★新增
+
+彩蛋功能：将猪命名为 **`Technoblade`** 后，其头顶会渲染一顶皇冠（成年 / 幼年两套模型与纹理）。
+
+- **实现**：`TechnoCrownFeatureRenderer` 作为 `RenderLayer` 由 `PigRendererMixin` 在 `PigRenderer` 构造末尾挂载；`PigRenderStateMixin` + `RenderCrownDuck` 访问器每帧根据自定义名称计算皇冠可见性
+- **纹理**：`assets/minecraft/textures/entity/pig/technocrown_adult.png` / `technocrown_baby.png`
+- 改编自 thecolonel63 的 technomodel（MIT 许可）
 
 ---
 
@@ -399,9 +465,12 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 │   ├── 权限：youzaiworldcore.command.teleport_anchor（OP 4）
 │   └── 列出传送锚点（含可点击传送链接）
 │
-├── event naturally_charged_creepers
-│   ├── enable [true|false]               → 开启/关闭天然带电苦力怕（缺省查询）
-│   ├── settings chance [double]           → 设置带电概率 0.0~1.0（缺省查询）
+├── event
+│   ├── naturally_charged_creepers
+│   │   ├── enable [true|false]           → 开启/关闭天然带电苦力怕（缺省查询）
+│   │   └── settings chance [double]      → 设置带电概率 0.0~1.0（缺省查询）
+│   ├── trial_vault
+│   │   └── enable [true|false]           → 开启/关闭试炼宝库无限领奖（缺省查询）
 │   └── 权限：.query（所有人）/ .set（OP 4）
 │
 ├── pet <args...>                         ← （客户端命令，整体转发至服务端）
@@ -517,9 +586,9 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 | `decomposition_table` | 分解台 |
 | `fly_beacon` | 飞行信标 |
 
-### 网络数据包（共 35 个）
+### 网络数据包（共 36 个）
 
-> 注：`world_pool_teleport` 数据包类位于 `dimensionalinventories` 包，其余位于 `network` 包；邮件相关 16 个数据包亦位于 `network` 包。
+> 注：`world_pool_teleport` 数据包类位于 `dimensionalinventories` 包，其余位于 `network` 包；邮件相关 16 个数据包亦位于 `network` 包。方向统计：S→C 13 个，C→S 23 个。
 
 | 数据包 ID | 方向 | 用途 |
 |-----------|------|------|
@@ -548,6 +617,7 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 | `attribute_upgrade` | C→S | 请求为某项属性加点 |
 | `double_doors_toggle` | C→S | 切换 / 查询自身双开门开关 |
 | `pet_command` | C→S | 转发 `/yzwc pet` 客户端命令至服务端执行 |
+| `trinket_interact` | C→S | YZUI 饰品槽交互（放入/取出/交换/快捷移动，携带客户端光标物品兜底） |
 | `mail_compose_open` | C→S | 请求打开发布邮件 GUI |
 | `mail_open` | C→S | 请求收件箱列表 |
 | `mail_sent_list_request` | C→S | 请求已发送邮件列表 |
@@ -570,12 +640,12 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 | Fabric API | 0.154.0+26.2 | Fabric 标准 API |
 | ModMenu | 20.0.0-beta.4 | 模组菜单集成 |
 | Placeholder API | 3.1.0-beta.1+26.2 | 文本占位符 |
-| Trinkets | 最新 26.2 兼容版 | 饰品槽系统（第 30 项功能依赖） |
+| Trinkets | 4.1.0-beta.2+26.2（`trinkets_updated`） | 饰品槽系统（第 30 项功能依赖，硬依赖） |
 | Moog's Structure Lib | 3.0.4 | 声明依赖（村庄结构注入所引用） |
 | Fabric Permissions API | 0.6.1（内置） | 跨模组权限 API |
 | LuckPerms | 5.5（建议运行时） | 高级权限控制 |
 
-**构建要求**：JDK 25+ · Gradle（Fabric Loom 1.16-SNAPSHOT）· 模组版本 `1.19.0-indev`
+**构建要求**：JDK 25+ · Gradle（Fabric Loom 1.16-SNAPSHOT）· 模组版本 `1.20.5-indev`
 
 **构建与 CI/CD**：GitHub Actions 工作流（`.github/workflows/build.yml`）在 Ubuntu / Windows / macOS 三平台使用 JDK 25 自动构建，Linux 构建产物自动上传。
 
@@ -584,7 +654,7 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 ## 🏗️ 项目结构
 
 ```
-src/
+src/                                       # 336 个 Java 源文件（main 211 / client 125）
 ├── main/java/top/csituka/youzaiworldcore/
 │   ├── YouzaiworldCore.java              # 主入口
 │   ├── account/                          # 账户认证（data/command/mixin/util 子包）
@@ -596,47 +666,48 @@ src/
 │   ├── dimensionalinventories/           # 维度池系统（含 WorldPoolTeleportPayload）
 │   ├── enchantment/                      # 自定义附魔 ResourceKey 注册（ModEnchantments）
 │   ├── enchlevellangpatch/               # 附魔等级语言补丁（api + impl）
-│   ├── event/                            # 事件处理器（飞行信标/双开门/末地门/虚空杖/龙翼/chorus/带电苦力怕/分解/坐姿/监守者/切石机/铁砧修复/阳光修复/乐魂涡轮 等）
+│   ├── event/                            # 事件处理器（飞行信标/双开门/末地门/虚空杖/龙翼/chorus/带电苦力怕/分解/坐姿/监守者/切石机/铁砧修复/阳光修复/乐魂涡轮/骨粉甘蔗/混凝土固化 等）
 │   ├── entity/seat/                      # 座椅实体系统
 │   ├── invisibility/                     # 隐身系统
-│   ├── item/                             # 物品、工具、创造标签页、预设
+│   ├── item/                             # 物品、工具、创造标签页（6 个）、预设（9 个）、隐形展示框
 │   ├── luckperms/                        # LuckPerms 集成（LuckPermsHelper 统一鉴权）
 │   ├── mail/                             # 邮件系统（Mail / MailManager / SentMailRepository / MailDataStorage / MailSettings / MailPermissionHelper）
 │   ├── mana/                             # 魔力系统
-│   ├── mixin/                            # Mixin（含子包 chargedcreeper / doubledoors / invisibility / pet / seat / skill）
-│   ├── network/                          # 网络数据包（35 个数据包类 + ModNetworking）
+│   ├── mixin/                            # Mixin（含子包 chargedcreeper / doubledoors / invisibility / pet / seat / skill / trialvault）
+│   ├── network/                          # 网络数据包（36 个数据包类 + ModNetworking）
 │   ├── pet/                              # 宠物系统（config/command/event 子包 + PetGlobalState/PetEntry）
 │   ├── placeholders/                     # Placeholder API 集成（32 个占位符）
 │   ├── screen/                           # 容器菜单
 │   ├── skill/                            # 冒险等级 + 属性系统
 │   ├── status/                           # 统计系统（StatsManager，21 项指标 + 命令）
+│   ├── trialvault/                       # 试炼宝库无限领奖配置（TrialVaultConfig）
 │   ├── update/                           # 更新检查（UpdateChecker 等 5 文件）
-│   ├── util/                             # DebugLogger 等工具
+│   ├── util/                             # DebugLogger、TrinketHelper 等工具
 │   └── worldgen/                         # 世界生成（VillageStructureInjector 村庄结构注入）
 
 ├── client/java/top/csituka/youzaiworldcore/
 │   ├── client/Client.java                # 客户端入口（注册高亮/边框/铁砧/邮件命令等）
 │   ├── command/                          # 客户端命令（Invisibility / DoubleDoors / Pet / Mail 转发）
-│   ├── config/                           # 客户端外部设置 + ConfigIOManager（配置导入导出）
+│   ├── config/                           # 客户端外部设置（含 yzuiEnabled）+ ConfigIOManager（配置导入导出）
 │   ├── effect/                           # 传送 FOV 效果
 │   ├── higherchat/                       # Simple Voice Chat 集成（HUD 图标位置跟踪，优化聊天框位置避免遮挡）
 │   ├── highlightitem/                    # 物品高亮（HighlightItemClient / HighLightCommands / Configurator / Colors / ItemComparator）
 │   ├── itemborder/                       # 物品边框（ItemBorderClient / ItemBorderConfig / ItemBorderRenderer）
 │   ├── anviluses/                        # 铁砧使用次数显示（AnvilUsesClient）
-│   ├── hud/                              # 魔力条 / 冒险等级 HUD
+│   ├── client/accessor/                  # 渲染访问器（RenderCrownDuck）
+│   ├── hud/                              # 魔力条 / 冒险等级 HUD / YZUI 生命·饥饿·盔甲·氧气条
 │   ├── skill/                            # 客户端冒险等级/属性数据（ClientAttributeData）
 │   ├── update/                           # 更新检查客户端状态（ClientUpdateState）
-│   ├── mixin/client/                     # 客户端 Mixin（标题/选项/按钮/暂停/聊天/加载/座椅/渲染/拾取/附魔补丁/itemborder 等）
+│   ├── mixin/client/                     # 客户端 Mixin（标题/选项/按钮/暂停/聊天/加载/座椅/渲染/拾取/附魔补丁/itemborder/YZUI 物品栏·血条·上下文栏·配方书/technocrown 等）
 │   ├── network/                          # 客户端网络处理（ClientNetworking）
 │   ├── pickup/                           # 拾取显示（item/XP 浮动提示）
-│   ├── renderer/                         # 方块/实体渲染器（含传送锚点 BER）
-│   └── screen/                           # GUI 屏幕（MenuScreen、Login/Register、MailScreen/MailComposeScreen/MailSentScreen、element/widget/block 子包）
+│   ├── renderer/                         # 方块/实体渲染器（含传送锚点 BER、feature/TechnoCrownFeatureRenderer）
+│   └── screen/                           # GUI 屏幕（MenuScreen、Login/Register、YzuInventoryScreen/YzuCreativeInventoryScreen、MailScreen/MailComposeScreen/MailSentScreen、element/widget/block 子包）
 
 └── main/resources/
-    ├── assets/youzaiworldcore/           # 纹理、模型、语言文件
+    ├── assets/youzaiworldcore/           # 纹理、模型、语言文件（9 种语言）
     ├── data/                             # 成就（含 deep_dark 分支）、配方、战利品表、维度、结构、结构集、模板池、新手教程函数、trinkets 饰品槽
-    └── fabric.mod.json                   # 模组元数据（声明 moogs_structures / trinkets 为硬依赖）
-```
+    └── fabric.mod.json                   # 模组元数据（声明 moogs_structures / trinkets_updated / modmenu / placeholder-api 为硬依赖）
 
 .github/workflows/
 └── build.yml                             # CI/CD 构建工作流
@@ -659,10 +730,12 @@ src/
 | `fly_beacon` | 合成 | 飞行信标 |
 | `heart_of_guardianship` | 合成 | 守护之心 |
 | `void_staff` | 合成 | 凭虚法杖 |
-| `flame_staff` | 合成 | 烈焰法杖 |
-| `sky_star_staff` | 合成 | 天星法杖 |
+| `invisible_item_frame` | 无序合成 | 物品展示框 + 幻翼膜 → 隐形物品展示框 |
+| `invisible_glow_item_frame` | 无序合成 | 发光物品展示框 + 幻翼膜 → 隐形发光物品展示框 |
 | `raw_yz_block` / `raw_yz_from_raw_yz_block` | 合成 | 原矿块转换 |
 | `craftable_end_portal` | 合成 | 末地传送门框 ×12（末影之眼 + 龙蛋 + 末地石） |
+
+> 共 20 个配方文件（`data/youzaiworldcore/recipe/`）。**烈焰法杖**与**天星法杖**目前无合成配方，仅可通过创造模式标签页或命令获取。
 
 ---
 
@@ -682,3 +755,5 @@ src/
 ---
 
 > **注意**：测试模组请在服务端进行，客户端单独运行无法正常工作。客户端命令（`/yzwc pet`、`/yzwc mail`、`/yzwc function *`、`/yzwc settings highlight_item`）需连入服务器后方可生效。
+>
+> **YZUI 说明**：YZUI 界面系统（物品栏 / HUD / 配方书重绘）为纯客户端功能，可在客户端设置的「视觉」分栏中通过「启用 YZUI」复选框关闭，关闭后全部回退原版渲染，便于资源包接管。
