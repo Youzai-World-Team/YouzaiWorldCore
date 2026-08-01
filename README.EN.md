@@ -24,11 +24,11 @@
 
 ### Target Audience
 
-| User Type | Description |
-|-----------|-------------|
-| **Server Administrators** | Manage the system through commands and menus, configure dimension pools, account policies, pet backups, mail announcements, event toggles, etc. |
-| **Survival Players** | Use Youzai tools, advancement system, teleport anchors, sit interaction, mana staves, pets and attribute growth, the YZUI interface and trinket slots for gameplay |
-| **Mod Developers** | Understand the mod architecture, extend functionality, or contribute code |
+| User Type                 | Description                                                                                                                                                        |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Server Administrators** | Manage the system through commands and menus, configure dimension pools, account policies, pet backups, mail announcements, event toggles, etc.                    |
+| **Survival Players**      | Use Youzai tools, advancement system, teleport anchors, sit interaction, mana staves, pets and attribute growth, the YZUI interface and trinket slots for gameplay |
+| **Mod Developers**        | Understand the mod architecture, extend functionality, or contribute code                                                                                          |
 
 > **Version note**: This mod targets Minecraft **Java 26.2**. From 26.1 onward Mojang adopted new naming/source conventions; the game jar is deobfuscated and can be decompiled directly for reference.
 
@@ -52,12 +52,12 @@ Complete password authentication for offline-mode servers, with Mixin-based rest
 
 Windows 10 Start Menu-style tile layout with page switching and animated transitions.
 
-| Menu ID | Name | Description |
-|---------|------|-------------|
-| `main` | Main Menu | Feature hub: world switching, events, check-in, tutorials, mail, settings |
-| `switch_world` | Switch World | 11 world buttons; first 7 integrated with dimension pool system |
-| `settings` | Settings | Music/sound toggles, PVP/friendly fire, difficulty selection (client) |
-| `about_me` | About Me | 3D player model render, ID, join/playtime |
+| Menu ID        | Name         | Description                                                            |
+| -------------- | ------------ | ---------------------------------------------------------------------- |
+| `main`         | Main Menu    | Feature hub: world switching, events, level, tutorials, mail, settings |
+| `switch_world` | Switch World | 11 world buttons; first 7 integrated with dimension pool system        |
+| `settings`     | Settings     | Music/sound toggles, PVP/friendly fire, difficulty selection (client)  |
+| `about_me`     | About Me     | 3D player model render, ID, join/playtime                              |
 
 **Shortcut**: `Shift + F` to open the main menu.
 
@@ -74,26 +74,26 @@ Fully redesigned Minecraft main menu via `TitleScreenMixin`: custom buttons (Joi
 
 A new mineral and tool set equivalent to diamond tier (durability 1800, speed 8.0, enchantability 10).
 
-| Item | Special Effect |
-|------|----------------|
-| **YZ Shovel / Pickaxe** | Sneak-mine to chain-break 6 blocks ahead |
-| **YZ Hoe** | Sneak-use to till a 3×3 area |
-| **YZ Sword** | 4% crit chance for double damage |
-| **YZ Axe** | Jump-attack deals 50% sweeping damage in 3-block radius |
-| **Heart of Guardianship** | Prevents item drop on death (Mixin); consumes 1 per death; warns at 10/5/3/2/1 remaining |
-| **Void Staff** | Right-click to toggle flight; consumes 1 durability/sec (max 600) and hunger every 5s; auto-disables on depletion |
-| **Flame Staff** | Charged fire laser, costs 10 mana |
-| **Sky Star Staff** | Meteor attack, 10-block radius, costs 60 mana |
+| Item                      | Special Effect                                                                                                    |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| **YZ Shovel / Pickaxe**   | Sneak-mine to chain-break 6 blocks ahead                                                                          |
+| **YZ Hoe**                | Sneak-use to till a 3×3 area                                                                                      |
+| **YZ Sword**              | 4% crit chance for double damage                                                                                  |
+| **YZ Axe**                | Jump-attack deals 50% sweeping damage in 3-block radius                                                           |
+| **Heart of Guardianship** | Prevents item drop on death (Mixin); consumes 1 per death; warns at 10/5/3/2/1 remaining                          |
+| **Void Staff**            | Right-click to toggle flight; consumes 1 durability/sec (max 600) and hunger every 5s; auto-disables on depletion |
+| **Flame Staff**           | Charged fire laser, costs 10 mana                                                                                 |
+| **Sky Star Staff**        | Meteor attack, 10-block radius, costs 60 mana                                                                     |
 
 ### 6. Custom Blocks
 
-| Block | Properties |
-|-------|------------|
-| **YZ Ore / Deepslate Youzai Ore** | Overworld generation, drops 2–5 XP, requires diamond pickaxe |
-| **Raw Youzai Block / Youzai Block** | Mineral storage blocks |
-| **Decomposition Table** | GUI block for decomposing items into raw materials |
-| **Fly Beacon** | Grants flight within 9.56-block radius, glows when active (light 12) |
-| **Teleport Anchor** | Right-click for teleport list after activation; supports naming/reordering/deleting/copying coordinates (light 15) |
+| Block                               | Properties                                                                                                         |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| **YZ Ore / Deepslate Youzai Ore**   | Overworld generation, drops 2–5 XP, requires diamond pickaxe                                                       |
+| **Raw Youzai Block / Youzai Block** | Mineral storage blocks                                                                                             |
+| **Decomposition Table**             | GUI block for decomposing items into raw materials                                                                 |
+| **Fly Beacon**                      | Grants flight within 9.56-block radius, glows when active (light 12)                                               |
+| **Teleport Anchor**                 | Right-click for teleport list after activation; supports naming/reordering/deleting/copying coordinates (light 15) |
 
 ### 7. Sit Interaction System
 
@@ -175,30 +175,30 @@ Fine-grained LuckPerms-based permission control with automatic OP-level fallback
 
 The creative menu has been reorganized into **6 independent tabs**:
 
-| Tab ID | Name | Contents |
-|--------|------|----------|
-| `youzai_blocks` | Youzai Blocks | 7 custom blocks |
-| `youzai_tools_weapons` | Youzai Tools & Weapons | 5 tools + 3 staves |
-| `youzai_materials` | Youzai Materials | Raw ore, ingot, nugget |
-| `youzai_utilities` | Youzai Utilities | Heart of Guardianship, Invisible Item Frame, Invisible Glow Item Frame |
-| `youzai_kits` | Youzai Kits | 9 preset shulker boxes |
-| `youzai_enchantments` | Youzai World - Enchantments | Enchanted books for the mod's custom enchantments; iterates `ModEnchantments.ALL` and emits one book per level |
+| Tab ID                 | Name                        | Contents                                                                                                       |
+| ---------------------- | --------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `youzai_blocks`        | Youzai Blocks               | 7 custom blocks                                                                                                |
+| `youzai_tools_weapons` | Youzai Tools & Weapons      | 5 tools + 3 staves                                                                                             |
+| `youzai_materials`     | Youzai Materials            | Raw ore, ingot, nugget                                                                                         |
+| `youzai_utilities`     | Youzai Utilities            | Heart of Guardianship, Invisible Item Frame, Invisible Glow Item Frame                                         |
+| `youzai_kits`          | Youzai Kits                 | 9 preset shulker boxes                                                                                         |
+| `youzai_enchantments`  | Youzai World - Enchantments | Enchanted books for the mod's custom enchantments; iterates `ModEnchantments.ALL` and emits one book per level |
 
 ### 16. Preset Item System
 
 Nine preset shulker boxes in the "Youzai Kits" creative tab (`PresetItems.createPreset01`–`createPreset09`):
 
-| Preset | Color | Contents |
-|--------|-------|----------|
-| Graduation Set | Red | Full enchanted netherite gear, tools/weapons, consumables |
-| Graduation Supplement | Orange | Utility tools, building materials, extra armor |
-| Totem Box | Yellow | 27 totems of undying |
-| Explosive Pack | Gray | 27 stacks × 64 TNT |
-| Firework Rockets | Pink | 27 stacks of firework rockets |
-| Mace Set | Light Blue | 3 maces with different enchantment loadouts |
-| Bottles o' Enchanting | Lime | 27 stacks × 64 bottles o' enchanting |
-| Ender Pearls | Green | 27 stacks × 64 ender pearls |
-| Rainbow Arrows | Light Gray | Arrows / spectral arrows / assorted tipped arrows |
+| Preset                | Color      | Contents                                                  |
+| --------------------- | ---------- | --------------------------------------------------------- |
+| Graduation Set        | Red        | Full enchanted netherite gear, tools/weapons, consumables |
+| Graduation Supplement | Orange     | Utility tools, building materials, extra armor            |
+| Totem Box             | Yellow     | 27 totems of undying                                      |
+| Explosive Pack        | Gray       | 27 stacks × 64 TNT                                        |
+| Firework Rockets      | Pink       | 27 stacks of firework rockets                             |
+| Mace Set              | Light Blue | 3 maces with different enchantment loadouts               |
+| Bottles o' Enchanting | Lime       | 27 stacks × 64 bottles o' enchanting                      |
+| Ender Pearls          | Green      | 27 stacks × 64 ender pearls                               |
+| Rainbow Arrows        | Light Gray | Arrows / spectral arrows / assorted tipped arrows         |
 
 ### 17. Advancement System
 
@@ -216,15 +216,15 @@ Two branches with 20+ advancements:
 
 ### 18. Debug & Configuration
 
-| Config | File Location | Contents |
-|--------|--------------|----------|
-| Server External Settings | `config/youzaiworldcore/server_external_settings.json` | `devModeEnabled`, `logToFile` (dual-toggle for DebugLogger) |
-| Client External Settings | `config/youzaiworldcore/client_external_settings.json` | `devModeEnabled`, `logLevel` (0–3), `yzuiEnabled` (YZUI interface master toggle), debug address/port |
-| DebugLogger | `util/DebugLogger` | 4 log levels (OFF/BASIC/DETAILED/DEBUG), entering/exiting/branch/stateChange/exception tracing |
-| Update Checker Settings | `config/youzaiworldcore/update_checker.json` | `enabled` (toggles update checks, UpdateCheckerConfig) |
-| Trial Vault Settings | `config/youzaiworldcore/trial_vault.json` | `enabled` (unlimited-reward toggle, TrialVaultConfig, default true) |
-| Mail Settings | `config/youzaiworldcore/mail_settings.json` | Expiry policy, permission node/level, attachment caps |
-| Player Stats Data | `<world>/youzaiworldcore/status/data.json` + `rank_export/` | StatsManager persistence & leaderboard export dir |
+| Config                   | File Location                                               | Contents                                                                                             |
+| ------------------------ | ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| Server External Settings | `config/youzaiworldcore/server_external_settings.json`      | `devModeEnabled`, `logToFile` (dual-toggle for DebugLogger)                                          |
+| Client External Settings | `config/youzaiworldcore/client_external_settings.json`      | `devModeEnabled`, `logLevel` (0–3), `yzuiEnabled` (YZUI interface master toggle), debug address/port |
+| DebugLogger              | `util/DebugLogger`                                          | 4 log levels (OFF/BASIC/DETAILED/DEBUG), entering/exiting/branch/stateChange/exception tracing       |
+| Update Checker Settings  | `config/youzaiworldcore/update_checker.json`                | `enabled` (toggles update checks, UpdateCheckerConfig)                                               |
+| Trial Vault Settings     | `config/youzaiworldcore/trial_vault.json`                   | `enabled` (unlimited-reward toggle, TrialVaultConfig, default true)                                  |
+| Mail Settings            | `config/youzaiworldcore/mail_settings.json`                 | Expiry policy, permission node/level, attachment caps                                                |
+| Player Stats Data        | `<world>/youzaiworldcore/status/data.json` + `rank_export/` | StatsManager persistence & leaderboard export dir                                                    |
 
 ### 19. Enchantment Level Language Patch System
 
@@ -357,12 +357,12 @@ A client-side visual enhancement (`itemborder` package, inspired by ItemBorders)
 
 Declares 4 custom trinket slots for the **Trinkets** mod via `data/trinkets/` data packs (Trinkets is a hard dependency), letting specific items equip into trinket slots instead of the main inventory:
 
-| Slot (slots) | Item | Description |
-|--------------|------|-------------|
-| `chest/elytra` | Elytra | Equip elytra in the chest trinket slot |
-| `chest/backpack` | Backpack | Equip backpack in the chest trinket slot |
-| `offhand/totem` | Totem of Undying | Equip totem in the offhand trinket slot |
-| `offhand/heart` | Heart of Guardianship | Equip Heart of Guardianship in the offhand trinket slot |
+| Slot (slots)     | Item                  | Description                                             |
+| ---------------- | --------------------- | ------------------------------------------------------- |
+| `chest/elytra`   | Elytra                | Equip elytra in the chest trinket slot                  |
+| `chest/backpack` | Backpack              | Equip backpack in the chest trinket slot                |
+| `offhand/totem`  | Totem of Undying      | Equip totem in the offhand trinket slot                 |
+| `offhand/heart`  | Heart of Guardianship | Equip Heart of Guardianship in the offhand trinket slot |
 
 Each slot has a custom icon and the `trinkets:default` validator; `order` controls sorting.
 
@@ -407,12 +407,12 @@ A purely client-side, whole-interface restyle that replaces the vanilla inventor
 
 `HealthBarMixin` cancels four vanilla renders — `Hud#extractPlayerHealth` / `extractFood` / `extractArmor` / `extractAirBubbles` — delegating to custom renderers under `client/hud/` that draw long progress bars:
 
-| Renderer | Replaces | Features |
-|----------|----------|----------|
-| `HealthBarRenderer` | Heart health bar | 85×5 bar with "current/max" text; blinking estimated-restore overlay on the right when holding food; gold absorption overlay; poison (purple vertical stripes) / wither (dark gray horizontal stripes) status striping |
-| `FoodBarRenderer` | Hunger drumsticks | Bar form, reading exhaustion via `FoodDataExhaustionAccessor` |
-| `ArmorBarRenderer` | Armor icons | Bar form |
-| `OxygenBarRenderer` | Air bubbles | Bar form |
+| Renderer            | Replaces          | Features                                                                                                                                                                                                               |
+| ------------------- | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `HealthBarRenderer` | Heart health bar  | 85×5 bar with "current/max" text; blinking estimated-restore overlay on the right when holding food; gold absorption overlay; poison (purple vertical stripes) / wither (dark gray horizontal stripes) status striping |
+| `FoodBarRenderer`   | Hunger drumsticks | Bar form, reading exhaustion via `FoodDataExhaustionAccessor`                                                                                                                                                          |
+| `ArmorBarRenderer`  | Armor icons       | Bar form                                                                                                                                                                                                               |
+| `OxygenBarRenderer` | Air bubbles       | Bar form                                                                                                                                                                                                               |
 
 #### 33.3 Contextual Bars & Recipe Book
 
@@ -424,9 +424,9 @@ A purely client-side, whole-interface restyle that replaces the vanilla inventor
 
 Two custom items whose placed frame entity is invisible (only the displayed item shows), ideal for decoration and display walls:
 
-| Item | Recipe |
-|------|--------|
-| **Invisible Item Frame** (`invisible_item_frame`) | Item Frame + Phantom Membrane (shapeless) |
+| Item                                                        | Recipe                                         |
+| ----------------------------------------------------------- | ---------------------------------------------- |
+| **Invisible Item Frame** (`invisible_item_frame`)           | Item Frame + Phantom Membrane (shapeless)      |
 | **Invisible Glow Item Frame** (`invisible_glow_item_frame`) | Glow Item Frame + Phantom Membrane (shapeless) |
 
 `InvisibleItemFrameItem` / `InvisibleGlowItemFrameItem` override `useOn` to perform their own placement validation, attachment-face computation, and entity spawning, marking the entity invisible after spawn. Both appear in the "Youzai Utilities" creative tab.
@@ -534,37 +534,37 @@ All commands use `/yzwc` as the root command. Subcommands marked **(client comma
 
 ### Permission Nodes Overview
 
-| Permission Node | Description | Fallback |
-|----------------|-------------|----------|
-| `youzaiworldcore.command.teleport_world` | Cross-dimension teleport | OP 4 |
-| `youzaiworldcore.command.open_menu` | Open GUI menu | OP 4 |
-| `youzaiworldcore.command.reload` | Mod reload | OP 4 |
-| `youzaiworldcore.command.world_pool` | Dimension pool management | OP 4 |
-| `youzaiworldcore.command.teleport_anchor` | Teleport anchor management | OP 4 |
-| `youzaiworldcore.command.function.invisibility` | Invisibility function | OP 4 |
-| `youzaiworldcore.command.function.double_doors` | Double Doors function (self toggle / query) | Everyone (self-only) |
-| `youzaiworldcore.command.event.query` | Event management query (omit arg = query) | Everyone |
-| `youzaiworldcore.command.event.set` | Event management modify (enable / settings) | OP 4 |
-| `youzaiworldcore.command.pet.list` | View pet list | Everyone |
-| `youzaiworldcore.command.pet.set` | Pet settings (rename/mode/trust/release/transfer) | Everyone (own pets) |
-| `youzaiworldcore.command.pet.highlight` | Highlight pet | Everyone (owner/trusted) |
-| `youzaiworldcore.command.pet.admin` | Pet admin (backup/restore/interval) | OP 4 |
-| `youzaiworldcore.command.pet` | Pet module parent permission (base) | OP 4 |
-| `youzaiworldcore.mail` | Mail system (compose/sent/recall/purge/list) | OP 4 |
-| `youzaiworldcore.command.status.query` | View stats | OP 4 |
-| `youzaiworldcore.command.status.delete` | Delete stats | OP 4 |
-| `youzaiworldcore.command.status.export` | Export stats leaderboard | OP 4 |
-| `youzaiworldcore.command.update` | Update check | OP 4 |
-| `youzaiworldcore.command.account.mgr.create` | Create account | OP 4 |
-| `youzaiworldcore.command.account.mgr.reset_password` | Reset password | OP 4 |
-| `youzaiworldcore.command.account.mgr.delete` | Delete account | OP 4 |
-| `youzaiworldcore.command.account.mgr.session_timeout` | Session timeout | OP 4 |
-| `youzaiworldcore.command.account.mgr.login_cooldown` | Login cooldown | OP 4 |
-| `youzaiworldcore.command.account.mgr.login_cooldown.status` | Lock status query | OP 4 |
-| `youzaiworldcore.command.account.mgr.login_cooldown.unlock` | Unlock | OP 4 |
-| `youzaiworldcore.command.account.mgr.*` | Account mgr wildcard | OP 4 |
-| `youzaiworldcore.command.*` | All commands wildcard | — |
-| `youzaiworldcore.*` | Full mod wildcard | — |
+| Permission Node                                             | Description                                       | Fallback                 |
+| ----------------------------------------------------------- | ------------------------------------------------- | ------------------------ |
+| `youzaiworldcore.command.teleport_world`                    | Cross-dimension teleport                          | OP 4                     |
+| `youzaiworldcore.command.open_menu`                         | Open GUI menu                                     | OP 4                     |
+| `youzaiworldcore.command.reload`                            | Mod reload                                        | OP 4                     |
+| `youzaiworldcore.command.world_pool`                        | Dimension pool management                         | OP 4                     |
+| `youzaiworldcore.command.teleport_anchor`                   | Teleport anchor management                        | OP 4                     |
+| `youzaiworldcore.command.function.invisibility`             | Invisibility function                             | OP 4                     |
+| `youzaiworldcore.command.function.double_doors`             | Double Doors function (self toggle / query)       | Everyone (self-only)     |
+| `youzaiworldcore.command.event.query`                       | Event management query (omit arg = query)         | Everyone                 |
+| `youzaiworldcore.command.event.set`                         | Event management modify (enable / settings)       | OP 4                     |
+| `youzaiworldcore.command.pet.list`                          | View pet list                                     | Everyone                 |
+| `youzaiworldcore.command.pet.set`                           | Pet settings (rename/mode/trust/release/transfer) | Everyone (own pets)      |
+| `youzaiworldcore.command.pet.highlight`                     | Highlight pet                                     | Everyone (owner/trusted) |
+| `youzaiworldcore.command.pet.admin`                         | Pet admin (backup/restore/interval)               | OP 4                     |
+| `youzaiworldcore.command.pet`                               | Pet module parent permission (base)               | OP 4                     |
+| `youzaiworldcore.mail`                                      | Mail system (compose/sent/recall/purge/list)      | OP 4                     |
+| `youzaiworldcore.command.status.query`                      | View stats                                        | OP 4                     |
+| `youzaiworldcore.command.status.delete`                     | Delete stats                                      | OP 4                     |
+| `youzaiworldcore.command.status.export`                     | Export stats leaderboard                          | OP 4                     |
+| `youzaiworldcore.command.update`                            | Update check                                      | OP 4                     |
+| `youzaiworldcore.command.account.mgr.create`                | Create account                                    | OP 4                     |
+| `youzaiworldcore.command.account.mgr.reset_password`        | Reset password                                    | OP 4                     |
+| `youzaiworldcore.command.account.mgr.delete`                | Delete account                                    | OP 4                     |
+| `youzaiworldcore.command.account.mgr.session_timeout`       | Session timeout                                   | OP 4                     |
+| `youzaiworldcore.command.account.mgr.login_cooldown`        | Login cooldown                                    | OP 4                     |
+| `youzaiworldcore.command.account.mgr.login_cooldown.status` | Lock status query                                 | OP 4                     |
+| `youzaiworldcore.command.account.mgr.login_cooldown.unlock` | Unlock                                            | OP 4                     |
+| `youzaiworldcore.command.account.mgr.*`                     | Account mgr wildcard                              | OP 4                     |
+| `youzaiworldcore.command.*`                                 | All commands wildcard                             | —                        |
+| `youzaiworldcore.*`                                         | Full mod wildcard                                 | —                        |
 
 ---
 
@@ -572,78 +572,78 @@ All commands use `/yzwc` as the root command. Subcommands marked **(client comma
 
 ### GUI Menu IDs
 
-| Internal ID | Name | Hierarchy |
-|-------------|------|-----------|
-| `main` | Main Menu | Root |
+| Internal ID    | Name         | Hierarchy           |
+| -------------- | ------------ | ------------------- |
+| `main`         | Main Menu    | Root                |
 | `switch_world` | Switch World | Main → Switch World |
-| `settings` | Settings | Main → Settings |
-| `about_me` | About Me | Main → About Me |
+| `settings`     | Settings     | Main → Settings     |
+| `about_me`     | About Me     | Main → About Me     |
 
 ### Container Menu Types
 
-| ID | Block |
-|----|-------|
+| ID                    | Block               |
+| --------------------- | ------------------- |
 | `decomposition_table` | Decomposition Table |
-| `fly_beacon` | Fly Beacon |
+| `fly_beacon`          | Fly Beacon          |
 
 ### Network Packets (36 total)
 
 > Note: the `world_pool_teleport` packet class lives in the `dimensionalinventories` package; the rest (including the 16 mail packets) are in the `network` package. Direction split: 13 S→C, 23 C→S.
 
-| Packet ID | Direction | Purpose |
-|-----------|-----------|---------|
-| `open_menu` | S→C | Open GUI menu |
-| `open_auth_screen` | S→C | Open auth screen |
-| `mana_sync` | S→C | Sync mana values |
-| `level_exp_sync` | S→C | Sync adventure level XP |
-| `attribute_sync` | S→C | Sync player attribute data (skill points / attributes / level) |
-| `teleport_anchor_list` | S→C | Send point list |
-| `teleport_anchor_open_name` | S→C | Open anchor naming screen |
-| `mail_unread_count` | S→C | Sync unread count + compose permission (canSend) |
-| `open_mail_compose` | S→C | Open compose GUI |
-| `mail_list` | S→C | Send inbox list |
-| `mail_sent_list` | S→C | Send sent-mail list |
-| `mail_update` | S→C | Add/update/remove a single mail |
-| `mail_op_result` | S→C | Mail operation result feedback |
-| `world_pool_teleport` | C→S | Request dimension pool teleport |
-| `teleport_anchor_activate` | C→S | Activate anchor |
-| `teleport_anchor_teleport` | C→S | Request teleport |
-| `teleport_anchor_delete` | C→S | Delete point |
-| `teleport_anchor_rename` | C→S | Rename point |
-| `teleport_anchor_reorder` | C→S | Reorder points |
-| `decompose_item` | C→S | Decompose item |
-| `fly_beacon_active` | C→S | Toggle fly beacon |
-| `invisibility_toggle` | C→S | Toggle / disable own invisibility |
-| `attribute_upgrade` | C→S | Request to allocate a point to an attribute |
-| `double_doors_toggle` | C→S | Toggle / query own Double Doors setting |
-| `pet_command` | C→S | Forward `/yzwc pet` client command to server |
-| `trinket_interact` | C→S | YZUI trinket slot interaction (place/take/swap/quick-move, carries client cursor as fallback) |
-| `mail_compose_open` | C→S | Request to open compose GUI |
-| `mail_open` | C→S | Request inbox list |
-| `mail_sent_list_request` | C→S | Request sent-mail list |
-| `mail_recall` | C→S | Recall mail |
-| `mail_purge` | C→S | Purge expired mail |
-| `mail_list_request` | C→S | View a player's mailbox |
-| `mail_fetch` | C→S | Fetch full mail for editing |
-| `mail_action` | C→S | Open/read/star/claim/delete |
-| `mail_admin_send` | C→S | Publish mail |
-| `mail_admin_edit` | C→S | Edit/cancel-edit mail |
+| Packet ID                   | Direction | Purpose                                                                                       |
+| --------------------------- | --------- | --------------------------------------------------------------------------------------------- |
+| `open_menu`                 | S→C       | Open GUI menu                                                                                 |
+| `open_auth_screen`          | S→C       | Open auth screen                                                                              |
+| `mana_sync`                 | S→C       | Sync mana values                                                                              |
+| `level_exp_sync`            | S→C       | Sync adventure level XP                                                                       |
+| `attribute_sync`            | S→C       | Sync player attribute data (skill points / attributes / level)                                |
+| `teleport_anchor_list`      | S→C       | Send point list                                                                               |
+| `teleport_anchor_open_name` | S→C       | Open anchor naming screen                                                                     |
+| `mail_unread_count`         | S→C       | Sync unread count + compose permission (canSend)                                              |
+| `open_mail_compose`         | S→C       | Open compose GUI                                                                              |
+| `mail_list`                 | S→C       | Send inbox list                                                                               |
+| `mail_sent_list`            | S→C       | Send sent-mail list                                                                           |
+| `mail_update`               | S→C       | Add/update/remove a single mail                                                               |
+| `mail_op_result`            | S→C       | Mail operation result feedback                                                                |
+| `world_pool_teleport`       | C→S       | Request dimension pool teleport                                                               |
+| `teleport_anchor_activate`  | C→S       | Activate anchor                                                                               |
+| `teleport_anchor_teleport`  | C→S       | Request teleport                                                                              |
+| `teleport_anchor_delete`    | C→S       | Delete point                                                                                  |
+| `teleport_anchor_rename`    | C→S       | Rename point                                                                                  |
+| `teleport_anchor_reorder`   | C→S       | Reorder points                                                                                |
+| `decompose_item`            | C→S       | Decompose item                                                                                |
+| `fly_beacon_active`         | C→S       | Toggle fly beacon                                                                             |
+| `invisibility_toggle`       | C→S       | Toggle / disable own invisibility                                                             |
+| `attribute_upgrade`         | C→S       | Request to allocate a point to an attribute                                                   |
+| `double_doors_toggle`       | C→S       | Toggle / query own Double Doors setting                                                       |
+| `pet_command`               | C→S       | Forward `/yzwc pet` client command to server                                                  |
+| `trinket_interact`          | C→S       | YZUI trinket slot interaction (place/take/swap/quick-move, carries client cursor as fallback) |
+| `mail_compose_open`         | C→S       | Request to open compose GUI                                                                   |
+| `mail_open`                 | C→S       | Request inbox list                                                                            |
+| `mail_sent_list_request`    | C→S       | Request sent-mail list                                                                        |
+| `mail_recall`               | C→S       | Recall mail                                                                                   |
+| `mail_purge`                | C→S       | Purge expired mail                                                                            |
+| `mail_list_request`         | C→S       | View a player's mailbox                                                                       |
+| `mail_fetch`                | C→S       | Fetch full mail for editing                                                                   |
+| `mail_action`               | C→S       | Open/read/star/claim/delete                                                                   |
+| `mail_admin_send`           | C→S       | Publish mail                                                                                  |
+| `mail_admin_edit`           | C→S       | Edit/cancel-edit mail                                                                         |
 
 ---
 
 ## 🔧 Tech Stack & Dependencies
 
-| Dependency | Version | Purpose |
-|------------|---------|---------|
-| Minecraft | 26.2 | Engine |
-| Fabric Loader | 0.19.3 | Mod loader |
-| Fabric API | 0.154.0+26.2 | Standard API |
-| ModMenu | 20.0.0-beta.4 | Mod menu integration |
-| Placeholder API | 3.1.0-beta.1+26.2 | Text placeholders |
-| Trinkets | 4.1.0-beta.2+26.2 (`trinkets_updated`) | Trinket slot system (Feature 30 depends on it; hard dependency) |
-| Moog's Structure Lib | 3.0.4 | Declared dependency (referenced by village structure injection) |
-| Fabric Permissions API | 0.6.1 (bundled) | Cross-mod permission API |
-| LuckPerms | 5.5 (suggested runtime) | Advanced permission control |
+| Dependency             | Version                                | Purpose                                                         |
+| ---------------------- | -------------------------------------- | --------------------------------------------------------------- |
+| Minecraft              | 26.2                                   | Engine                                                          |
+| Fabric Loader          | 0.19.3                                 | Mod loader                                                      |
+| Fabric API             | 0.154.0+26.2                           | Standard API                                                    |
+| ModMenu                | 20.0.0-beta.4                          | Mod menu integration                                            |
+| Placeholder API        | 3.1.0-beta.1+26.2                      | Text placeholders                                               |
+| Trinkets               | 4.1.0-beta.2+26.2 (`trinkets_updated`) | Trinket slot system (Feature 30 depends on it; hard dependency) |
+| Moog's Structure Lib   | 3.0.4                                  | Declared dependency (referenced by village structure injection) |
+| Fabric Permissions API | 0.6.1 (bundled)                        | Cross-mod permission API                                        |
+| LuckPerms              | 5.5 (suggested runtime)                | Advanced permission control                                     |
 
 **Build Requirements**: JDK 25+ · Gradle (Fabric Loom 1.16-SNAPSHOT) · Mod version `1.20.5-indev`
 
@@ -717,23 +717,23 @@ src/                                       # 336 Java source files (main 211 / c
 
 ## 📦 Recipe List
 
-| Recipe | Type | Description |
-|--------|------|-------------|
-| `yz_ingot_from_blasting_raw_yz` | Blasting | Raw Youzai → Youzai Ingot |
-| `yz_block_from_blasting_raw_yz_block` | Blasting | Raw Block → Youzai Block |
-| `yz_ingot_from_yz_block` | Crafting | Youzai Block → 9 Ingots |
-| `yz_ingot_from_nuggets` | Crafting | 9 Nuggets → Ingot |
-| `yz_block` | Crafting | 9 Ingots → Block |
-| `yz_nugget_from_ingot` | Crafting | Ingot → 9 Nuggets |
-| `yz_pickaxe` / `yz_axe` / `yz_shovel` / `yz_hoe` / `yz_sword` | Crafting | Youzai tools |
-| `decomposition_table` | Crafting | Decomposition Table |
-| `fly_beacon` | Crafting | Fly Beacon |
-| `heart_of_guardianship` | Crafting | Heart of Guardianship |
-| `void_staff` | Crafting | Void Staff |
-| `invisible_item_frame` | Shapeless | Item Frame + Phantom Membrane → Invisible Item Frame |
-| `invisible_glow_item_frame` | Shapeless | Glow Item Frame + Phantom Membrane → Invisible Glow Item Frame |
-| `raw_yz_block` / `raw_yz_from_raw_yz_block` | Crafting | Ore block conversion |
-| `craftable_end_portal` | Crafting | End Portal Frame ×12 (ender eyes + dragon egg + end stone) |
+| Recipe                                                        | Type      | Description                                                    |
+| ------------------------------------------------------------- | --------- | -------------------------------------------------------------- |
+| `yz_ingot_from_blasting_raw_yz`                               | Blasting  | Raw Youzai → Youzai Ingot                                      |
+| `yz_block_from_blasting_raw_yz_block`                         | Blasting  | Raw Block → Youzai Block                                       |
+| `yz_ingot_from_yz_block`                                      | Crafting  | Youzai Block → 9 Ingots                                        |
+| `yz_ingot_from_nuggets`                                       | Crafting  | 9 Nuggets → Ingot                                              |
+| `yz_block`                                                    | Crafting  | 9 Ingots → Block                                               |
+| `yz_nugget_from_ingot`                                        | Crafting  | Ingot → 9 Nuggets                                              |
+| `yz_pickaxe` / `yz_axe` / `yz_shovel` / `yz_hoe` / `yz_sword` | Crafting  | Youzai tools                                                   |
+| `decomposition_table`                                         | Crafting  | Decomposition Table                                            |
+| `fly_beacon`                                                  | Crafting  | Fly Beacon                                                     |
+| `heart_of_guardianship`                                       | Crafting  | Heart of Guardianship                                          |
+| `void_staff`                                                  | Crafting  | Void Staff                                                     |
+| `invisible_item_frame`                                        | Shapeless | Item Frame + Phantom Membrane → Invisible Item Frame           |
+| `invisible_glow_item_frame`                                   | Shapeless | Glow Item Frame + Phantom Membrane → Invisible Glow Item Frame |
+| `raw_yz_block` / `raw_yz_from_raw_yz_block`                   | Crafting  | Ore block conversion                                           |
+| `craftable_end_portal`                                        | Crafting  | End Portal Frame ×12 (ender eyes + dragon egg + end stone)     |
 
 > 20 recipe files total (`data/youzaiworldcore/recipe/`). The **Flame Staff** and **Sky Star Staff** currently have no crafting recipe — they are only obtainable from the creative tab or via commands.
 

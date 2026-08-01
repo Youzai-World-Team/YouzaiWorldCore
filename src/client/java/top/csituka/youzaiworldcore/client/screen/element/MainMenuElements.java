@@ -20,18 +20,30 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
 public class MainMenuElements implements MenuElementGroup {
 
     // 贴图定义
-    private static final Identifier SWITCH_WORLDS_TEXTURE = Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "textures/gui/switch-worlds.png");
-    private static final Identifier QUESTIONNAIRE_TEXTURE = Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "textures/gui/questionnaire_application_and_survey.png");
-    private static final Identifier TITLE_TEXTURE = Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "textures/gui/title.png");
-    private static final Identifier EVENTS_TEXTURE = Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "textures/gui/events.png");
-    private static final Identifier ABOUT_ME_TEXTURE = Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "textures/gui/about-me.png");
-    private static final Identifier CHECK_IN_TEXTURE = Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "textures/gui/check-in.png");
-    private static final Identifier TUTORIAL_CENTER_TEXTURE = Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "textures/gui/tutorial_center.png");
-    private static final Identifier SETTINGS_TEXTURE = Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "textures/gui/settings.png");
-    private static final Identifier MAIL_TEXTURE = Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "textures/gui/mail.png");
-    private static final Identifier WEBSITE_TEXTURE = Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "textures/gui/website.png");
-    private static final Identifier REPORT_TEXTURE = Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "textures/gui/report.png");
-    private static final Identifier MANAGEMENT_TEXTURE = Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "textures/gui/management.png");
+    private static final Identifier SWITCH_WORLDS_TEXTURE = Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID,
+            "textures/gui/switch-worlds.png");
+    private static final Identifier QUESTIONNAIRE_TEXTURE = Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID,
+            "textures/gui/questionnaire_application_and_survey.png");
+    private static final Identifier TITLE_TEXTURE = Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID,
+            "textures/gui/title.png");
+    private static final Identifier EVENTS_TEXTURE = Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID,
+            "textures/gui/events.png");
+    private static final Identifier ABOUT_ME_TEXTURE = Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID,
+            "textures/gui/about-me.png");
+    private static final Identifier CHECK_IN_TEXTURE = Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID,
+            "textures/gui/level.png");
+    private static final Identifier TUTORIAL_CENTER_TEXTURE = Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID,
+            "textures/gui/tutorial_center.png");
+    private static final Identifier SETTINGS_TEXTURE = Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID,
+            "textures/gui/settings.png");
+    private static final Identifier MAIL_TEXTURE = Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID,
+            "textures/gui/mail.png");
+    private static final Identifier WEBSITE_TEXTURE = Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID,
+            "textures/gui/website.png");
+    private static final Identifier REPORT_TEXTURE = Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID,
+            "textures/gui/report.png");
+    private static final Identifier MANAGEMENT_TEXTURE = Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID,
+            "textures/gui/management.png");
 
     // Layout constants
     private static final int GAP = 4;
@@ -70,7 +82,8 @@ public class MainMenuElements implements MenuElementGroup {
     }
 
     @Override
-    public List<AbstractWidget> createButtons(MenuScreen screen, int screenWidth, int screenHeight, float scale, float alpha) {
+    public List<AbstractWidget> createButtons(MenuScreen screen, int screenWidth, int screenHeight, float scale,
+            float alpha) {
         List<AbstractWidget> buttons = new ArrayList<>();
 
         int centerX = screenWidth / 2;
@@ -101,7 +114,8 @@ public class MainMenuElements implements MenuElementGroup {
         int gridBottom = gridTop + 3 * (tile + gap) + tile + gap * 2;
         if (gridBottom > screenHeight - 10) {
             gridTop = screenHeight - 10 - (3 * (tile + gap) + tile + gap * 2);
-            if (gridTop < 20) gridTop = 20;
+            if (gridTop < 20)
+                gridTop = 20;
         }
 
         int row0Y = gridTop;
@@ -111,91 +125,84 @@ public class MainMenuElements implements MenuElementGroup {
 
         // ============================================================
         // ROW 0:
-        //   [switch-worlds 2x2] [questionnaire 2x1] [title 1x1]
-        //   Col 0-1: switch-worlds (2x2, spans rows 0-1)
-        //   Col 2-3: questionnaire (2x1, row 0 only)
-        //   Col 4  : title (1x1, row 0 only)
+        // [switch-worlds 2x2] [questionnaire 2x1] [title 1x1]
+        // Col 0-1: switch-worlds (2x2, spans rows 0-1)
+        // Col 2-3: questionnaire (2x1, row 0 only)
+        // Col 4 : title (1x1, row 0 only)
         // ============================================================
         TextureTileButton switchBtn = new TextureTileButton(
                 c0, row0Y, tile2, tile2,
                 SWITCH_WORLDS_TEXTURE,
-                () -> screen.switchTo(new SwitchWorldMenuElements())
-        );
+                () -> screen.switchTo(new SwitchWorldMenuElements()));
         switchBtn.setExternalAlpha(alpha);
         buttons.add(switchBtn);
 
         TextureTileButton questBtn = new TextureTileButton(
                 c2, row0Y, tile2, tile,
                 QUESTIONNAIRE_TEXTURE,
-                () -> showNotImplementedDialog(screen)
-        );
+                () -> showNotImplementedDialog(screen));
         questBtn.setExternalAlpha(alpha);
         buttons.add(questBtn);
 
         TextureTileButton titleBtn = new TextureTileButton(
                 c4, row0Y, tile, tile,
                 TITLE_TEXTURE,
-                () -> showNotImplementedDialog(screen)
-        );
+                () -> showNotImplementedDialog(screen));
         titleBtn.setExternalAlpha(alpha);
         buttons.add(titleBtn);
 
         // ============================================================
         // ROW 1:
-        //   [switch cont.] [events 1x1] [about-me 2x2]
-        //   Col 0-1: switch-worlds continues
-        //   Col 2  : events (1x1, row 1 only)
-        //   Col 3-4: about-me (2x2, spans rows 1-2)
+        // [switch cont.] [events 1x1] [about-me 2x2]
+        // Col 0-1: switch-worlds continues
+        // Col 2 : events (1x1, row 1 only)
+        // Col 3-4: about-me (2x2, spans rows 1-2)
         //
         // IMPORTANT: about-me added FIRST so events renders ON TOP
         // ============================================================
         TextureTileButton aboutMeBtn = new TextureTileButton(
                 c3, row1Y, tile2, tile2,
                 ABOUT_ME_TEXTURE,
-                () -> screen.switchTo(new AboutMeMenuElements())
-        );
+                () -> screen.switchTo(new AboutMeMenuElements()));
         aboutMeBtn.setExternalAlpha(alpha);
         buttons.add(aboutMeBtn);
 
         TextureTileButton eventsBtn = new TextureTileButton(
                 c2, row1Y, tile, tile,
                 EVENTS_TEXTURE,
-                () -> showNotImplementedDialog(screen)
-        );
+                () -> showNotImplementedDialog(screen));
         eventsBtn.setExternalAlpha(alpha);
         buttons.add(eventsBtn);
 
         // ============================================================
         // ROW 2:
-        //   [check-in 1x1] [tutorial 2x1] [about-me cont.]
-        //   Col 0  : check-in (1x1, row 2)
-        //   Col 1-2: tutorial (2x1, row 2 only)
-        //   Col 3-4: about-me continues
+        // [level 1x1] [tutorial 2x1] [about-me cont.]
+        // Col 0 : level (1x1, row 2)
+        // Col 1-2: tutorial (2x1, row 2 only)
+        // Col 3-4: about-me continues
         // ============================================================
         TextureTileButton checkInBtn = new TextureTileButton(
                 c0, row2Y, tile, tile,
                 CHECK_IN_TEXTURE,
-                () -> screen.switchTo(new AdventureLevelMenuElements())
-        );
+                () -> screen.switchTo(new AdventureLevelMenuElements()));
         checkInBtn.setExternalAlpha(alpha);
         buttons.add(checkInBtn);
 
         TextureTileButton tutorialBtn = new TextureTileButton(
                 c1, row2Y, tile2, tile,
                 TUTORIAL_CENTER_TEXTURE,
-                () -> showNotImplementedDialog(screen)
-        );
+                () -> showNotImplementedDialog(screen));
         tutorialBtn.setExternalAlpha(alpha);
         buttons.add(tutorialBtn);
 
         // ============================================================
         // ROW 3: [settings] [mail] [website] [report] [management]
-        //   5 buttons (1x1 each), one per column
+        // 5 buttons (1x1 each), one per column
         // ============================================================
-        Identifier[] bottomTextures = new Identifier[]{
+        Identifier[] bottomTextures = new Identifier[] {
                 SETTINGS_TEXTURE, MAIL_TEXTURE, WEBSITE_TEXTURE, REPORT_TEXTURE, MANAGEMENT_TEXTURE
         };
-        int[] colXs = new int[]{c0, c1, c2, c3, c4};
+        int[] colXs = new int[] { c0, c1, c2, c3, c4 };
 
         for (int i = 0; i < 5; i++) {
             final Runnable onClick;
@@ -204,7 +211,8 @@ public class MainMenuElements implements MenuElementGroup {
                 onClick = () -> screen.switchTo(new SettingsMenuElements());
             } else if (i == 1) {
                 // 邮件 — 打开信箱
-                onClick = () -> Minecraft.getInstance().setScreenAndShow(new top.csituka.youzaiworldcore.client.screen.MailScreen());
+                onClick = () -> Minecraft.getInstance()
+                        .setScreenAndShow(new top.csituka.youzaiworldcore.client.screen.MailScreen());
             } else if (i == 2) {
                 // 官方网站 — 在默认浏览器打开 https://mcyzw.top
                 onClick = () -> {
@@ -227,8 +235,7 @@ public class MainMenuElements implements MenuElementGroup {
             TextureTileButton bottomBtn = new TextureTileButton(
                     colXs[i], row3Y, tile, tile,
                     bottomTextures[i],
-                    onClick
-            );
+                    onClick);
             bottomBtn.setExternalAlpha(alpha);
             buttons.add(bottomBtn);
         }
@@ -242,16 +249,16 @@ public class MainMenuElements implements MenuElementGroup {
     private void showNotImplementedDialog(MenuScreen screen) {
         ConfirmationDialog dialog = new ConfirmationDialog(
                 I18n.get("youzaiworldcore.message.gui.not_implemented_title"),
-                new String[]{I18n.get("youzaiworldcore.message.gui.not_implemented_desc")},
+                new String[] { I18n.get("youzaiworldcore.message.gui.not_implemented_desc") },
                 I18n.get("youzaiworldcore.message.gui.confirm_ok"),
-                null
-        );
+                null);
         screen.showDialog(dialog);
     }
 
     @Override
     @SuppressWarnings("null")
-    public void renderCustomContent(GuiGraphicsExtractor guiGraphics, int screenWidth, int screenHeight, float alpha, float xOffset, int mouseX, int mouseY) {
+    public void renderCustomContent(GuiGraphicsExtractor guiGraphics, int screenWidth, int screenHeight, float alpha,
+            float xOffset, int mouseX, int mouseY) {
         // 邮件按钮未读徽标（底行第二个按钮）
         int unread = top.csituka.youzaiworldcore.client.MailClientState.unreadCount;
         if (unread > 0) {
@@ -264,7 +271,8 @@ public class MainMenuElements implements MenuElementGroup {
 
             guiGraphics.fill(badgeX, badgeY, badgeX + badgeSize, badgeY + badgeSize, 0xFFFF4444);
             String badgeText = unread > 99 ? "99+" : String.valueOf(unread);
-            guiGraphics.centeredText(net.minecraft.client.Minecraft.getInstance().font, badgeText, badgeX + badgeSize / 2, badgeY + 3, 0xFFFFFFFF);
+            guiGraphics.centeredText(net.minecraft.client.Minecraft.getInstance().font, badgeText,
+                    badgeX + badgeSize / 2, badgeY + 3, 0xFFFFFFFF);
         }
     }
 }

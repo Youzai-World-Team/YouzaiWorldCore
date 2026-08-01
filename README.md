@@ -24,11 +24,11 @@
 
 ### 目标用户群体
 
-| 用户类型 | 说明 |
-|---------|------|
-| **服务器管理员** | 通过命令和菜单管理系统，配置维度池、账户策略、宠物备份、邮件公告、事件开关等 |
-| **生存玩家** | 使用悠哉系列工具、成就系统、传送锚点、坐姿交互、魔力法杖、宠物与属性成长、YZUI 界面与饰品槽进行游戏 |
-| **模组开发者** | 了解模组架构、扩展功能或贡献代码 |
+| 用户类型         | 说明                                                                                                |
+| ---------------- | --------------------------------------------------------------------------------------------------- |
+| **服务器管理员** | 通过命令和菜单管理系统，配置维度池、账户策略、宠物备份、邮件公告、事件开关等                        |
+| **生存玩家**     | 使用悠哉系列工具、成就系统、传送锚点、坐姿交互、魔力法杖、宠物与属性成长、YZUI 界面与饰品槽进行游戏 |
+| **模组开发者**   | 了解模组架构、扩展功能或贡献代码                                                                    |
 
 > **版本说明**：本模组面向 Minecraft **Java 26.2**。26.1 起 Mojang 采用新的命名/源码规则，游戏 jar 已去除混淆，可直接反编译参考最新实现。
 
@@ -52,12 +52,12 @@
 
 Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡。
 
-| 菜单 ID | 名称 | 说明 |
-|---------|------|------|
-| `main` | 主菜单 | 功能总入口：切换世界、活动、签到、教程、邮件、设置等 |
-| `switch_world` | 切换世界 | 11 个世界按钮，前 7 个集成维度池系统 |
-| `settings` | 设置 | 音乐/音效开关、PVP/友军伤害、难度选择（客户端） |
-| `about_me` | 关于我 | 3D 玩家模型渲染、ID、加入/游玩时间 |
+| 菜单 ID        | 名称     | 说明                                                 |
+| -------------- | -------- | ---------------------------------------------------- |
+| `main`         | 主菜单   | 功能总入口：切换世界、活动、等级、教程、邮件、设置等 |
+| `switch_world` | 切换世界 | 11 个世界按钮，前 7 个集成维度池系统                 |
+| `settings`     | 设置     | 音乐/音效开关、PVP/友军伤害、难度选择（客户端）      |
+| `about_me`     | 关于我   | 3D 玩家模型渲染、ID、加入/游玩时间                   |
 
 **快捷键**：`Shift + F` 打开主菜单。
 
@@ -74,26 +74,26 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 
 一套全新的矿物与工具系列，等级对标钻石工具（耐久 1800，挖掘速度 8.0，附魔等级 10）。
 
-| 物品 | 特殊效果 |
-|------|---------|
-| **悠哉铲 / 悠哉镐** | 潜行挖掘连锁前方 6 个同类方块 |
-| **悠哉锄** | 潜行使用耕 3×3 区域 |
-| **悠哉剑** | 4% 概率触发暴击，伤害翻倍 |
-| **悠哉斧** | 跳劈对 3 格范围内敌人造成 50% 横扫伤害 |
-| **守护之心** | 携带时死亡不掉落物品（Mixin 实现），每次消耗 1 个；剩余 10/5/3/2/1 时警告 |
-| **凭虚法杖** | 右键切换飞行，每秒消耗 1 点耐久（最大 600），每 5 秒消耗饥饿值；耗尽自动关闭 |
-| **烈焰法杖** | 蓄力发射火焰激光，消耗 10 魔力 |
-| **天星法杖** | 召唤陨石攻击，10 方块半径，消耗 60 魔力 |
+| 物品                | 特殊效果                                                                     |
+| ------------------- | ---------------------------------------------------------------------------- |
+| **悠哉铲 / 悠哉镐** | 潜行挖掘连锁前方 6 个同类方块                                                |
+| **悠哉锄**          | 潜行使用耕 3×3 区域                                                          |
+| **悠哉剑**          | 4% 概率触发暴击，伤害翻倍                                                    |
+| **悠哉斧**          | 跳劈对 3 格范围内敌人造成 50% 横扫伤害                                       |
+| **守护之心**        | 携带时死亡不掉落物品（Mixin 实现），每次消耗 1 个；剩余 10/5/3/2/1 时警告    |
+| **凭虚法杖**        | 右键切换飞行，每秒消耗 1 点耐久（最大 600），每 5 秒消耗饥饿值；耗尽自动关闭 |
+| **烈焰法杖**        | 蓄力发射火焰激光，消耗 10 魔力                                               |
+| **天星法杖**        | 召唤陨石攻击，10 方块半径，消耗 60 魔力                                      |
 
 ### 6. 自定义方块
 
-| 方块 | 特性 |
-|------|------|
-| **悠哉矿 / 深层悠哉矿** | 主世界生成，掉落经验 2–5，需钻石镐 |
-| **悠哉原矿块 / 悠哉块** | 矿物存储方块 |
-| **分解台** | GUI 分解物品为原材料 |
-| **飞行信标** | 9.56 方块半径内提供飞行，激活时发光（亮度 12） |
-| **传送锚点** | 激活后右键打开传送列表，支持命名/排序/删除/复制坐标（亮度 15） |
+| 方块                    | 特性                                                           |
+| ----------------------- | -------------------------------------------------------------- |
+| **悠哉矿 / 深层悠哉矿** | 主世界生成，掉落经验 2–5，需钻石镐                             |
+| **悠哉原矿块 / 悠哉块** | 矿物存储方块                                                   |
+| **分解台**              | GUI 分解物品为原材料                                           |
+| **飞行信标**            | 9.56 方块半径内提供飞行，激活时发光（亮度 12）                 |
+| **传送锚点**            | 激活后右键打开传送列表，支持命名/排序/删除/复制坐标（亮度 15） |
 
 ### 7. 坐姿交互系统
 
@@ -175,30 +175,30 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 
 创造模式物品栏重新组织为 **6 个独立标签页**：
 
-| 标签页 ID | 名称 | 内容 |
-|-----------|------|------|
-| `youzai_blocks` | 悠哉方块 | 7 个自定义方块 |
-| `youzai_tools_weapons` | 悠哉工具与武器 | 5 个悠哉系列工具 + 3 个法杖 |
-| `youzai_materials` | 悠哉材料 | 原矿、锭、粒 |
-| `youzai_utilities` | 悠哉实用物品 | 守护之心、隐形物品展示框、隐形发光物品展示框 |
-| `youzai_kits` | 悠哉工具包 | 9 个预设潜影盒 |
-| `youzai_enchantments` | 悠哉世界 - 附魔 | 本模组自定义附魔的附魔书，按 `ModEnchantments.ALL` 遍历并为每个等级各生成一本 |
+| 标签页 ID              | 名称            | 内容                                                                          |
+| ---------------------- | --------------- | ----------------------------------------------------------------------------- |
+| `youzai_blocks`        | 悠哉方块        | 7 个自定义方块                                                                |
+| `youzai_tools_weapons` | 悠哉工具与武器  | 5 个悠哉系列工具 + 3 个法杖                                                   |
+| `youzai_materials`     | 悠哉材料        | 原矿、锭、粒                                                                  |
+| `youzai_utilities`     | 悠哉实用物品    | 守护之心、隐形物品展示框、隐形发光物品展示框                                  |
+| `youzai_kits`          | 悠哉工具包      | 9 个预设潜影盒                                                                |
+| `youzai_enchantments`  | 悠哉世界 - 附魔 | 本模组自定义附魔的附魔书，按 `ModEnchantments.ALL` 遍历并为每个等级各生成一本 |
 
 ### 16. 预设物品系统
 
 创造模式「悠哉工具包」标签页中的九大预设潜影盒（`PresetItems.createPreset01`–`createPreset09`）：
 
-| 预设 | 颜色 | 内容 |
-|------|------|------|
-| 毕业套装 | 红色 | 满配下界合金装备、全附魔工具/武器、消耗品 |
-| 毕业套补充 | 橙色 | 实用工具、建筑材料、额外防具 |
-| 不死图腾 | 黄色 | 27 个不死图腾 |
-| 炸药包 | 灰色 | 27 组 × 64 TNT |
-| 烟花火箭 | 粉红色 | 27 组烟花火箭 |
-| 重锤套装 | 淡蓝色 | 3 把不同附魔配置的重锤（Mace） |
-| 附魔之瓶 | 黄绿色 | 27 组 × 64 附魔之瓶 |
-| 末影珍珠 | 绿色 | 27 组 × 64 末影珍珠 |
-| 七彩箭矢 | 淡灰色 | 普通箭 / 光灵箭 / 各类药水箭组合 |
+| 预设       | 颜色   | 内容                                      |
+| ---------- | ------ | ----------------------------------------- |
+| 毕业套装   | 红色   | 满配下界合金装备、全附魔工具/武器、消耗品 |
+| 毕业套补充 | 橙色   | 实用工具、建筑材料、额外防具              |
+| 不死图腾   | 黄色   | 27 个不死图腾                             |
+| 炸药包     | 灰色   | 27 组 × 64 TNT                            |
+| 烟花火箭   | 粉红色 | 27 组烟花火箭                             |
+| 重锤套装   | 淡蓝色 | 3 把不同附魔配置的重锤（Mace）            |
+| 附魔之瓶   | 黄绿色 | 27 组 × 64 附魔之瓶                       |
+| 末影珍珠   | 绿色   | 27 组 × 64 末影珍珠                       |
+| 七彩箭矢   | 淡灰色 | 普通箭 / 光灵箭 / 各类药水箭组合          |
 
 ### 17. 成就系统
 
@@ -216,15 +216,15 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 
 ### 18. 调试与配置
 
-| 配置 | 文件位置 | 内容 |
-|------|---------|------|
-| 服务端外部设置 | `config/youzaiworldcore/server_external_settings.json` | `devModeEnabled`、`logToFile`（双开关控制 DebugLogger） |
-| 客户端外部设置 | `config/youzaiworldcore/client_external_settings.json` | `devModeEnabled`、`logLevel`（0-3）、`yzuiEnabled`（YZUI 界面总开关）、调试地址/端口 |
-| DebugLogger | `util/DebugLogger` | 四级日志（OFF/BASIC/DETAILED/DEBUG），entering/exiting/branch/stateChange/exception 追踪 |
-| 更新检查设置 | `config/youzaiworldcore/update_checker.json` | `enabled`（开关更新检查，UpdateCheckerConfig） |
-| 试炼宝库设置 | `config/youzaiworldcore/trial_vault.json` | `enabled`（无限领奖开关，TrialVaultConfig，默认 true） |
-| 邮件设置 | `config/youzaiworldcore/mail_settings.json` | 过期策略、权限节点/等级、附件上限等 |
-| 玩家统计数据 | `<world>/youzaiworldcore/status/data.json` + `rank_export/` | StatsManager 持久化统计与排行榜导出目录 |
+| 配置           | 文件位置                                                    | 内容                                                                                     |
+| -------------- | ----------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| 服务端外部设置 | `config/youzaiworldcore/server_external_settings.json`      | `devModeEnabled`、`logToFile`（双开关控制 DebugLogger）                                  |
+| 客户端外部设置 | `config/youzaiworldcore/client_external_settings.json`      | `devModeEnabled`、`logLevel`（0-3）、`yzuiEnabled`（YZUI 界面总开关）、调试地址/端口     |
+| DebugLogger    | `util/DebugLogger`                                          | 四级日志（OFF/BASIC/DETAILED/DEBUG），entering/exiting/branch/stateChange/exception 追踪 |
+| 更新检查设置   | `config/youzaiworldcore/update_checker.json`                | `enabled`（开关更新检查，UpdateCheckerConfig）                                           |
+| 试炼宝库设置   | `config/youzaiworldcore/trial_vault.json`                   | `enabled`（无限领奖开关，TrialVaultConfig，默认 true）                                   |
+| 邮件设置       | `config/youzaiworldcore/mail_settings.json`                 | 过期策略、权限节点/等级、附件上限等                                                      |
+| 玩家统计数据   | `<world>/youzaiworldcore/status/data.json` + `rank_export/` | StatsManager 持久化统计与排行榜导出目录                                                  |
 
 ### 19. 附魔等级语言补丁系统
 
@@ -357,12 +357,12 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 
 通过 `data/trinkets/` 数据包为 **Trinkets** 模组声明 4 个自定义饰品槽（Trinkets 为硬依赖），让特定物品可装备至饰品栏而非主物品栏：
 
-| 槽位（slots） | 物品 | 说明 |
-|---------------|------|------|
-| `chest/elytra` | 鞘翅（Elytra） | 胸饰槽装备鞘翅 |
-| `chest/backpack` | 背包（Backpack） | 胸饰槽装备背包 |
-| `offhand/totem` | 不死图腾（Totem of Undying） | 副手槽装备不死图腾 |
-| `offhand/heart` | 守护之心（Heart of Guardianship） | 副手槽装备守护之心 |
+| 槽位（slots）    | 物品                              | 说明               |
+| ---------------- | --------------------------------- | ------------------ |
+| `chest/elytra`   | 鞘翅（Elytra）                    | 胸饰槽装备鞘翅     |
+| `chest/backpack` | 背包（Backpack）                  | 胸饰槽装备背包     |
+| `offhand/totem`  | 不死图腾（Totem of Undying）      | 副手槽装备不死图腾 |
+| `offhand/heart`  | 守护之心（Heart of Guardianship） | 副手槽装备守护之心 |
 
 每个槽位含自定义图标与 `trinkets:default` 校验器，order 控制排序。
 
@@ -407,12 +407,12 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 
 `HealthBarMixin` 取消原版 `Hud#extractPlayerHealth` / `extractFood` / `extractArmor` / `extractAirBubbles` 四项渲染，改由 `client/hud/` 下的自定义渲染器绘制长条状进度条：
 
-| 渲染器 | 替换对象 | 特性 |
-|--------|---------|------|
-| `HealthBarRenderer` | 爱心血条 | 85×5 长条 + 「当前/最大」文字；手持食物时右侧闪烁预估恢复量叠加层；伤害吸收金色叠加；中毒（紫色垂直条纹）/ 凋零（灰黑水平条纹）状态条纹指示 |
-| `FoodBarRenderer` | 鸡腿饥饿值 | 长条化，配合 `FoodDataExhaustionAccessor` 读取消耗度 |
-| `ArmorBarRenderer` | 盔甲图标 | 长条化 |
-| `OxygenBarRenderer` | 氧气气泡 | 长条化 |
+| 渲染器              | 替换对象   | 特性                                                                                                                                        |
+| ------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `HealthBarRenderer` | 爱心血条   | 85×5 长条 + 「当前/最大」文字；手持食物时右侧闪烁预估恢复量叠加层；伤害吸收金色叠加；中毒（紫色垂直条纹）/ 凋零（灰黑水平条纹）状态条纹指示 |
+| `FoodBarRenderer`   | 鸡腿饥饿值 | 长条化，配合 `FoodDataExhaustionAccessor` 读取消耗度                                                                                        |
+| `ArmorBarRenderer`  | 盔甲图标   | 长条化                                                                                                                                      |
+| `OxygenBarRenderer` | 氧气气泡   | 长条化                                                                                                                                      |
 
 #### 33.3 上下文栏与配方书
 
@@ -424,9 +424,9 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 
 两个自定义物品，放置后展示框实体为隐形状态（仅展示其中的物品），适合装饰与展示墙：
 
-| 物品 | 合成配方 |
-|------|---------|
-| **隐形物品展示框**（`invisible_item_frame`） | 物品展示框 + 幻翼膜（无序合成） |
+| 物品                                                  | 合成配方                            |
+| ----------------------------------------------------- | ----------------------------------- |
+| **隐形物品展示框**（`invisible_item_frame`）          | 物品展示框 + 幻翼膜（无序合成）     |
 | **隐形发光物品展示框**（`invisible_glow_item_frame`） | 发光物品展示框 + 幻翼膜（无序合成） |
 
 由 `InvisibleItemFrameItem` / `InvisibleGlowItemFrameItem` 重写 `useOn`，自行完成放置位置校验、附着面计算与实体生成，并在生成后设置隐形标记；收录于「悠哉实用物品」创造标签页。
@@ -534,37 +534,37 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 
 ### 权限节点一览
 
-| 权限节点 | 说明 | 回退等级 |
-|---------|------|---------|
-| `youzaiworldcore.command.teleport_world` | 跨维度传送 | OP 4 |
-| `youzaiworldcore.command.open_menu` | 打开 GUI 菜单 | OP 4 |
-| `youzaiworldcore.command.reload` | 模组重载 | OP 4 |
-| `youzaiworldcore.command.world_pool` | 维度池管理 | OP 4 |
-| `youzaiworldcore.command.teleport_anchor` | 传送锚点管理 | OP 4 |
-| `youzaiworldcore.command.function.invisibility` | 隐身功能 | OP 4 |
-| `youzaiworldcore.command.function.double_doors` | 双开门功能（自身开关 / 查询） | 所有人（仅自身） |
-| `youzaiworldcore.command.event.query` | 事件管理查询（省略参数即为查询） | 所有人 |
-| `youzaiworldcore.command.event.set` | 事件管理修改（enable / settings） | OP 4 |
-| `youzaiworldcore.command.pet.list` | 查看宠物列表 | 所有人 |
-| `youzaiworldcore.command.pet.set` | 宠物设置（重命名/模式/信任/放生/转让） | 所有人（仅自身宠物） |
-| `youzaiworldcore.command.pet.highlight` | 高亮宠物 | 所有人（主人/信任玩家） |
-| `youzaiworldcore.command.pet.admin` | 宠物管理员（备份/恢复/间隔） | OP 4 |
-| `youzaiworldcore.command.pet` | 宠物模块父权限（基础） | OP 4 |
-| `youzaiworldcore.mail` | 邮件系统（发布/已发送/撤回/清理/查看） | OP 4 |
-| `youzaiworldcore.command.status.query` | 查看统计 | OP 4 |
-| `youzaiworldcore.command.status.delete` | 删除统计 | OP 4 |
-| `youzaiworldcore.command.status.export` | 导出统计排行榜 | OP 4 |
-| `youzaiworldcore.command.update` | 更新检查 | OP 4 |
-| `youzaiworldcore.command.account.mgr.create` | 创建账户 | OP 4 |
-| `youzaiworldcore.command.account.mgr.reset_password` | 重置密码 | OP 4 |
-| `youzaiworldcore.command.account.mgr.delete` | 删除账户 | OP 4 |
-| `youzaiworldcore.command.account.mgr.session_timeout` | 会话超时 | OP 4 |
-| `youzaiworldcore.command.account.mgr.login_cooldown` | 登录冷却 | OP 4 |
-| `youzaiworldcore.command.account.mgr.login_cooldown.status` | 锁定状态查询 | OP 4 |
-| `youzaiworldcore.command.account.mgr.login_cooldown.unlock` | 解锁 | OP 4 |
-| `youzaiworldcore.command.account.mgr.*` | 账户管理通配符 | OP 4 |
-| `youzaiworldcore.command.*` | 所有命令通配符 | — |
-| `youzaiworldcore.*` | 全模组通配符 | — |
+| 权限节点                                                    | 说明                                   | 回退等级                |
+| ----------------------------------------------------------- | -------------------------------------- | ----------------------- |
+| `youzaiworldcore.command.teleport_world`                    | 跨维度传送                             | OP 4                    |
+| `youzaiworldcore.command.open_menu`                         | 打开 GUI 菜单                          | OP 4                    |
+| `youzaiworldcore.command.reload`                            | 模组重载                               | OP 4                    |
+| `youzaiworldcore.command.world_pool`                        | 维度池管理                             | OP 4                    |
+| `youzaiworldcore.command.teleport_anchor`                   | 传送锚点管理                           | OP 4                    |
+| `youzaiworldcore.command.function.invisibility`             | 隐身功能                               | OP 4                    |
+| `youzaiworldcore.command.function.double_doors`             | 双开门功能（自身开关 / 查询）          | 所有人（仅自身）        |
+| `youzaiworldcore.command.event.query`                       | 事件管理查询（省略参数即为查询）       | 所有人                  |
+| `youzaiworldcore.command.event.set`                         | 事件管理修改（enable / settings）      | OP 4                    |
+| `youzaiworldcore.command.pet.list`                          | 查看宠物列表                           | 所有人                  |
+| `youzaiworldcore.command.pet.set`                           | 宠物设置（重命名/模式/信任/放生/转让） | 所有人（仅自身宠物）    |
+| `youzaiworldcore.command.pet.highlight`                     | 高亮宠物                               | 所有人（主人/信任玩家） |
+| `youzaiworldcore.command.pet.admin`                         | 宠物管理员（备份/恢复/间隔）           | OP 4                    |
+| `youzaiworldcore.command.pet`                               | 宠物模块父权限（基础）                 | OP 4                    |
+| `youzaiworldcore.mail`                                      | 邮件系统（发布/已发送/撤回/清理/查看） | OP 4                    |
+| `youzaiworldcore.command.status.query`                      | 查看统计                               | OP 4                    |
+| `youzaiworldcore.command.status.delete`                     | 删除统计                               | OP 4                    |
+| `youzaiworldcore.command.status.export`                     | 导出统计排行榜                         | OP 4                    |
+| `youzaiworldcore.command.update`                            | 更新检查                               | OP 4                    |
+| `youzaiworldcore.command.account.mgr.create`                | 创建账户                               | OP 4                    |
+| `youzaiworldcore.command.account.mgr.reset_password`        | 重置密码                               | OP 4                    |
+| `youzaiworldcore.command.account.mgr.delete`                | 删除账户                               | OP 4                    |
+| `youzaiworldcore.command.account.mgr.session_timeout`       | 会话超时                               | OP 4                    |
+| `youzaiworldcore.command.account.mgr.login_cooldown`        | 登录冷却                               | OP 4                    |
+| `youzaiworldcore.command.account.mgr.login_cooldown.status` | 锁定状态查询                           | OP 4                    |
+| `youzaiworldcore.command.account.mgr.login_cooldown.unlock` | 解锁                                   | OP 4                    |
+| `youzaiworldcore.command.account.mgr.*`                     | 账户管理通配符                         | OP 4                    |
+| `youzaiworldcore.command.*`                                 | 所有命令通配符                         | —                       |
+| `youzaiworldcore.*`                                         | 全模组通配符                           | —                       |
 
 ---
 
@@ -572,78 +572,78 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 
 ### GUI 菜单 ID
 
-| 内部 ID | 名称 | 层级 |
-|---------|------|------|
-| `main` | 主菜单 | 根菜单 |
+| 内部 ID        | 名称     | 层级              |
+| -------------- | -------- | ----------------- |
+| `main`         | 主菜单   | 根菜单            |
 | `switch_world` | 切换世界 | 主菜单 → 切换世界 |
-| `settings` | 设置 | 主菜单 → 设置 |
-| `about_me` | 关于我 | 主菜单 → 关于我 |
+| `settings`     | 设置     | 主菜单 → 设置     |
+| `about_me`     | 关于我   | 主菜单 → 关于我   |
 
 ### 容器型 MenuType
 
-| ID | 对应方块 |
-|----|---------|
-| `decomposition_table` | 分解台 |
-| `fly_beacon` | 飞行信标 |
+| ID                    | 对应方块 |
+| --------------------- | -------- |
+| `decomposition_table` | 分解台   |
+| `fly_beacon`          | 飞行信标 |
 
 ### 网络数据包（共 36 个）
 
 > 注：`world_pool_teleport` 数据包类位于 `dimensionalinventories` 包，其余位于 `network` 包；邮件相关 16 个数据包亦位于 `network` 包。方向统计：S→C 13 个，C→S 23 个。
 
-| 数据包 ID | 方向 | 用途 |
-|-----------|------|------|
-| `open_menu` | S→C | 打开 GUI 菜单 |
-| `open_auth_screen` | S→C | 打开认证界面 |
-| `mana_sync` | S→C | 同步魔力值 |
-| `level_exp_sync` | S→C | 同步冒险等级经验 |
-| `attribute_sync` | S→C | 同步玩家属性数据（技能点 / 各项属性 / 等级） |
-| `teleport_anchor_list` | S→C | 发送传送点列表 |
-| `teleport_anchor_open_name` | S→C | 打开传送锚点命名界面 |
-| `mail_unread_count` | S→C | 同步未读数与发布权限（canSend） |
-| `open_mail_compose` | S→C | 打开发布邮件 GUI |
-| `mail_list` | S→C | 发送收件箱列表 |
-| `mail_sent_list` | S→C | 发送已发送邮件列表 |
-| `mail_update` | S→C | 新增/更新/移除单封邮件 |
-| `mail_op_result` | S→C | 邮件操作结果反馈 |
-| `world_pool_teleport` | C→S | 请求维度池传送 |
-| `teleport_anchor_activate` | C→S | 激活传送锚点 |
-| `teleport_anchor_teleport` | C→S | 请求传送 |
-| `teleport_anchor_delete` | C→S | 删除传送点 |
-| `teleport_anchor_rename` | C→S | 重命名传送点 |
-| `teleport_anchor_reorder` | C→S | 调整排序 |
-| `decompose_item` | C→S | 分解物品 |
-| `fly_beacon_active` | C→S | 切换飞行信标 |
-| `invisibility_toggle` | C→S | 切换 / 关闭自身隐身 |
-| `attribute_upgrade` | C→S | 请求为某项属性加点 |
-| `double_doors_toggle` | C→S | 切换 / 查询自身双开门开关 |
-| `pet_command` | C→S | 转发 `/yzwc pet` 客户端命令至服务端执行 |
-| `trinket_interact` | C→S | YZUI 饰品槽交互（放入/取出/交换/快捷移动，携带客户端光标物品兜底） |
-| `mail_compose_open` | C→S | 请求打开发布邮件 GUI |
-| `mail_open` | C→S | 请求收件箱列表 |
-| `mail_sent_list_request` | C→S | 请求已发送邮件列表 |
-| `mail_recall` | C→S | 撤回邮件 |
-| `mail_purge` | C→S | 清理过期邮件 |
-| `mail_list_request` | C→S | 查看指定玩家信箱 |
-| `mail_fetch` | C→S | 编辑前拉取单封完整邮件 |
-| `mail_action` | C→S | 打开/已读/星标/领取/删除 |
-| `mail_admin_send` | C→S | 发布邮件 |
-| `mail_admin_edit` | C→S | 编辑/取消编辑邮件 |
+| 数据包 ID                   | 方向 | 用途                                                               |
+| --------------------------- | ---- | ------------------------------------------------------------------ |
+| `open_menu`                 | S→C  | 打开 GUI 菜单                                                      |
+| `open_auth_screen`          | S→C  | 打开认证界面                                                       |
+| `mana_sync`                 | S→C  | 同步魔力值                                                         |
+| `level_exp_sync`            | S→C  | 同步冒险等级经验                                                   |
+| `attribute_sync`            | S→C  | 同步玩家属性数据（技能点 / 各项属性 / 等级）                       |
+| `teleport_anchor_list`      | S→C  | 发送传送点列表                                                     |
+| `teleport_anchor_open_name` | S→C  | 打开传送锚点命名界面                                               |
+| `mail_unread_count`         | S→C  | 同步未读数与发布权限（canSend）                                    |
+| `open_mail_compose`         | S→C  | 打开发布邮件 GUI                                                   |
+| `mail_list`                 | S→C  | 发送收件箱列表                                                     |
+| `mail_sent_list`            | S→C  | 发送已发送邮件列表                                                 |
+| `mail_update`               | S→C  | 新增/更新/移除单封邮件                                             |
+| `mail_op_result`            | S→C  | 邮件操作结果反馈                                                   |
+| `world_pool_teleport`       | C→S  | 请求维度池传送                                                     |
+| `teleport_anchor_activate`  | C→S  | 激活传送锚点                                                       |
+| `teleport_anchor_teleport`  | C→S  | 请求传送                                                           |
+| `teleport_anchor_delete`    | C→S  | 删除传送点                                                         |
+| `teleport_anchor_rename`    | C→S  | 重命名传送点                                                       |
+| `teleport_anchor_reorder`   | C→S  | 调整排序                                                           |
+| `decompose_item`            | C→S  | 分解物品                                                           |
+| `fly_beacon_active`         | C→S  | 切换飞行信标                                                       |
+| `invisibility_toggle`       | C→S  | 切换 / 关闭自身隐身                                                |
+| `attribute_upgrade`         | C→S  | 请求为某项属性加点                                                 |
+| `double_doors_toggle`       | C→S  | 切换 / 查询自身双开门开关                                          |
+| `pet_command`               | C→S  | 转发 `/yzwc pet` 客户端命令至服务端执行                            |
+| `trinket_interact`          | C→S  | YZUI 饰品槽交互（放入/取出/交换/快捷移动，携带客户端光标物品兜底） |
+| `mail_compose_open`         | C→S  | 请求打开发布邮件 GUI                                               |
+| `mail_open`                 | C→S  | 请求收件箱列表                                                     |
+| `mail_sent_list_request`    | C→S  | 请求已发送邮件列表                                                 |
+| `mail_recall`               | C→S  | 撤回邮件                                                           |
+| `mail_purge`                | C→S  | 清理过期邮件                                                       |
+| `mail_list_request`         | C→S  | 查看指定玩家信箱                                                   |
+| `mail_fetch`                | C→S  | 编辑前拉取单封完整邮件                                             |
+| `mail_action`               | C→S  | 打开/已读/星标/领取/删除                                           |
+| `mail_admin_send`           | C→S  | 发布邮件                                                           |
+| `mail_admin_edit`           | C→S  | 编辑/取消编辑邮件                                                  |
 
 ---
 
 ## 🔧 技术栈与依赖
 
-| 依赖 | 版本 | 用途 |
-|------|------|------|
-| Minecraft | 26.2 | 基础引擎 |
-| Fabric Loader | 0.19.3 | 模组加载器 |
-| Fabric API | 0.154.0+26.2 | Fabric 标准 API |
-| ModMenu | 20.0.0-beta.4 | 模组菜单集成 |
-| Placeholder API | 3.1.0-beta.1+26.2 | 文本占位符 |
-| Trinkets | 4.1.0-beta.2+26.2（`trinkets_updated`） | 饰品槽系统（第 30 项功能依赖，硬依赖） |
-| Moog's Structure Lib | 3.0.4 | 声明依赖（村庄结构注入所引用） |
-| Fabric Permissions API | 0.6.1（内置） | 跨模组权限 API |
-| LuckPerms | 5.5（建议运行时） | 高级权限控制 |
+| 依赖                   | 版本                                    | 用途                                   |
+| ---------------------- | --------------------------------------- | -------------------------------------- |
+| Minecraft              | 26.2                                    | 基础引擎                               |
+| Fabric Loader          | 0.19.3                                  | 模组加载器                             |
+| Fabric API             | 0.154.0+26.2                            | Fabric 标准 API                        |
+| ModMenu                | 20.0.0-beta.4                           | 模组菜单集成                           |
+| Placeholder API        | 3.1.0-beta.1+26.2                       | 文本占位符                             |
+| Trinkets               | 4.1.0-beta.2+26.2（`trinkets_updated`） | 饰品槽系统（第 30 项功能依赖，硬依赖） |
+| Moog's Structure Lib   | 3.0.4                                   | 声明依赖（村庄结构注入所引用）         |
+| Fabric Permissions API | 0.6.1（内置）                           | 跨模组权限 API                         |
+| LuckPerms              | 5.5（建议运行时）                       | 高级权限控制                           |
 
 **构建要求**：JDK 25+ · Gradle（Fabric Loom 1.16-SNAPSHOT）· 模组版本 `1.20.5-indev`
 
@@ -717,23 +717,23 @@ src/                                       # 336 个 Java 源文件（main 211 /
 
 ## 📦 配方清单
 
-| 配方 | 类型 | 描述 |
-|------|------|------|
-| `yz_ingot_from_blasting_raw_yz` | 熔炼 | 悠哉原矿 → 悠哉锭 |
-| `yz_block_from_blasting_raw_yz_block` | 熔炼 | 原矿块 → 悠哉块 |
-| `yz_ingot_from_yz_block` | 合成 | 悠哉块 → 9 悠哉锭 |
-| `yz_ingot_from_nuggets` | 合成 | 9 悠哉粒 → 悠哉锭 |
-| `yz_block` | 合成 | 9 悠哉锭 → 悠哉块 |
-| `yz_nugget_from_ingot` | 合成 | 悠哉锭 → 9 悠哉粒 |
-| `yz_pickaxe` / `yz_axe` / `yz_shovel` / `yz_hoe` / `yz_sword` | 合成 | 悠哉系列工具 |
-| `decomposition_table` | 合成 | 分解台 |
-| `fly_beacon` | 合成 | 飞行信标 |
-| `heart_of_guardianship` | 合成 | 守护之心 |
-| `void_staff` | 合成 | 凭虚法杖 |
-| `invisible_item_frame` | 无序合成 | 物品展示框 + 幻翼膜 → 隐形物品展示框 |
-| `invisible_glow_item_frame` | 无序合成 | 发光物品展示框 + 幻翼膜 → 隐形发光物品展示框 |
-| `raw_yz_block` / `raw_yz_from_raw_yz_block` | 合成 | 原矿块转换 |
-| `craftable_end_portal` | 合成 | 末地传送门框 ×12（末影之眼 + 龙蛋 + 末地石） |
+| 配方                                                          | 类型     | 描述                                         |
+| ------------------------------------------------------------- | -------- | -------------------------------------------- |
+| `yz_ingot_from_blasting_raw_yz`                               | 熔炼     | 悠哉原矿 → 悠哉锭                            |
+| `yz_block_from_blasting_raw_yz_block`                         | 熔炼     | 原矿块 → 悠哉块                              |
+| `yz_ingot_from_yz_block`                                      | 合成     | 悠哉块 → 9 悠哉锭                            |
+| `yz_ingot_from_nuggets`                                       | 合成     | 9 悠哉粒 → 悠哉锭                            |
+| `yz_block`                                                    | 合成     | 9 悠哉锭 → 悠哉块                            |
+| `yz_nugget_from_ingot`                                        | 合成     | 悠哉锭 → 9 悠哉粒                            |
+| `yz_pickaxe` / `yz_axe` / `yz_shovel` / `yz_hoe` / `yz_sword` | 合成     | 悠哉系列工具                                 |
+| `decomposition_table`                                         | 合成     | 分解台                                       |
+| `fly_beacon`                                                  | 合成     | 飞行信标                                     |
+| `heart_of_guardianship`                                       | 合成     | 守护之心                                     |
+| `void_staff`                                                  | 合成     | 凭虚法杖                                     |
+| `invisible_item_frame`                                        | 无序合成 | 物品展示框 + 幻翼膜 → 隐形物品展示框         |
+| `invisible_glow_item_frame`                                   | 无序合成 | 发光物品展示框 + 幻翼膜 → 隐形发光物品展示框 |
+| `raw_yz_block` / `raw_yz_from_raw_yz_block`                   | 合成     | 原矿块转换                                   |
+| `craftable_end_portal`                                        | 合成     | 末地传送门框 ×12（末影之眼 + 龙蛋 + 末地石） |
 
 > 共 20 个配方文件（`data/youzaiworldcore/recipe/`）。**烈焰法杖**与**天星法杖**目前无合成配方，仅可通过创造模式标签页或命令获取。
 

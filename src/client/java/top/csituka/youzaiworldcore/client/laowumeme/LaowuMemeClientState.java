@@ -97,13 +97,17 @@ public final class LaowuMemeClientState {
                 continue;
             }
             Vec3 mid = ea.position().add(eb.position()).scale(0.5);
-            // 中点附近随机偏移（x/z ±0.4，y 抬到猫背高度 0.3~1.1），粒子缓慢上飘。
-            // Level.random 为 protected 不可外部访问，此处用 Math.random() 即可（粒子偏移无需种子一致性）。
+            // 粒子生成在两猫中点【头顶上方】（y 取脚底 +1.3~2.0，高于猫背/猫头）。
+            // 原实现取脚底 +0.3~1.1，落在两只猫贴脸的身体正中间——猫放大 1.25 倍头对头时
+            // 粒子被模型完全遮挡（看不到粒子的根因）；村民愤怒粒子本就该从头顶冒出。
+            // x/z 保持中点附近小幅随机偏移（±0.4），粒子缓慢上飘。
             double px = mid.x + (Math.random() - 0.5) * 0.8;
-            double py = mid.y + 0.3 + Math.random() * 0.8;
+            double py = mid.y + 1.3 + Math.random() * 0.7;
             double pz = mid.z + (Math.random() - 0.5) * 0.8;
             mc.level.addParticle(ParticleTypes.ANGRY_VILLAGER, px, py, pz,
                     0.0, PARTICLE_RISE_SPEED, 0.0);
+            DebugLogger.debug(MODULE, "生成愤怒粒子: (%.2f, %.2f, %.2f) 配对 %d<->%d",
+                    px, py, pz, aId, bId);
         }
     }
 
