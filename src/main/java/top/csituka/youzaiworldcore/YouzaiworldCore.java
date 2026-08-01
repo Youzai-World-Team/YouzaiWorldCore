@@ -27,8 +27,12 @@ import org.slf4j.LoggerFactory;
 
 import top.csituka.youzaiworldcore.account.command.AccountCommands;
 import top.csituka.youzaiworldcore.account.data.AccountDataStorage;
+import top.csituka.youzaiworldcore.afk.AfkManager;
+import top.csituka.youzaiworldcore.afk.AfkTickHandler;
+import top.csituka.youzaiworldcore.command.AfkCommand;
 import top.csituka.youzaiworldcore.command.EventCommand;
 import top.csituka.youzaiworldcore.command.ReloadCommand;
+import top.csituka.youzaiworldcore.config.AfkConfig;
 import top.csituka.youzaiworldcore.config.ChargedCreeperConfig;
 import top.csituka.youzaiworldcore.config.DoubleDoorsState;
 import top.csituka.youzaiworldcore.config.EndPortalConfig;
@@ -286,10 +290,23 @@ public class YouzaiworldCore implements ModInitializer {
                         serverPlayer.getName().getString());
                 InvisibilityManager.onPlayerDisconnect(serverPlayer);
                 DimensionPoolManager.onPlayerDisconnect(serverPlayer);
+                AfkManager.onDisconnect(serverPlayer);
             }
         });
         LOGGER.info("隐身功能已初始化");
         DebugLogger.exiting("YouzaiworldCore", "InvisibilitySystem.init");
+
+        // ===== 初始化 AFK（挂机）功能 =====
+        DebugLogger.entering("YouzaiworldCore", "AfkSystem.init");
+        AfkConfig.load();
+        AfkTickHandler.register();
+        ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
+            if (handler.getPlayer() instanceof ServerPlayer sp) {
+                AfkManager.onJoin(sp, server.getTickCount());
+            }
+        });
+        LOGGER.info("AFK 功能已初始化");
+        DebugLogger.exiting("YouzaiworldCore", "AfkSystem.init");
 
         // ===== 初始化维度池系统 =====
         DebugLogger.entering("YouzaiworldCore", "DimensionPoolSystem.init");
@@ -529,6 +546,10 @@ public class YouzaiworldCore implements ModInitializer {
             // ===== 注册宠物管理命令 =====
             DebugLogger.info("YouzaiworldCore", "注册命令: PetCommand");
             PetCommand.register(dispatcher);
+
+            // ===== 注册 AFK 管理命令 =====
+            DebugLogger.info("YouzaiworldCore", "注册命令: AfkCommand");
+            AfkCommand.register(dispatcher);
 
             DebugLogger.info("YouzaiworldCore", "所有 /yzwc 命令注册完成");
         });

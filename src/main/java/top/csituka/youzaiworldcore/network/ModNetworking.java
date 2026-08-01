@@ -13,6 +13,7 @@ import top.csituka.youzaiworldcore.block.entity.TeleportAnchorBlockEntity;
 import top.csituka.youzaiworldcore.data.TeleportAnchorManager;
 import top.csituka.youzaiworldcore.data.TeleportAnchorData;
 import top.csituka.youzaiworldcore.config.DoubleDoorsState;
+import top.csituka.youzaiworldcore.afk.AfkManager;
 import top.csituka.youzaiworldcore.dimensionalinventories.DimensionPoolManager;
 import top.csituka.youzaiworldcore.dimensionalinventories.WorldPoolTeleportPayload;
 import top.csituka.youzaiworldcore.invisibility.InvisibilityManager;
@@ -88,6 +89,10 @@ public class ModNetworking {
         // ===== Trinkets 饰品槽交互数据包 =====
         PayloadTypeRegistry.serverboundPlay().register(TrinketInteractPayload.ID, TrinketInteractPayload.STREAM_CODEC);
         DebugLogger.info("ModNetworking", "Registered serverbound packet: TrinketInteractPayload");
+
+        // ===== AFK 客户端心跳数据包 =====
+        PayloadTypeRegistry.serverboundPlay().register(AfkHeartbeatPayload.ID, AfkHeartbeatPayload.STREAM_CODEC);
+        DebugLogger.info("ModNetworking", "Registered serverbound packet: AfkHeartbeatPayload");
 
         // ===== 服务端接收处理器 =====
         ServerPlayNetworking.registerGlobalReceiver(DecomposeItemPayload.ID, (payload, context) -> {
@@ -422,6 +427,21 @@ public class ModNetworking {
             });
             DebugLogger.exiting("ModNetworking", "PetCommandPayload handler");
         });
+
+        // ===== AFK 客户端心跳处理器（服务端权威：更新客户端通道活动时间） =====
+        ServerPlayNetworking.registerGlobalReceiver(AfkHeartbeatPayload.ID, (payload, context) -> {
+            var player = (net.minecraft.server.level.ServerPlayer) context.player();
+            DebugLogger.trace("ModNetworking", "AfkHeartbeatPayload handler: player=%s, idleTicks=%d",
+                    player.getName().getString(), payload.idleTicks());
+            var server = player.level().getServer();
+            if (server == null) {
+                return;
+            }
+            server.execute(() -> {
+                AfkManager.onHeartbeat(player, server.getTickCount(), payload.idleTicks());
+            });
+        });
+        DebugLogger.info("ModNetworking", "Registered receiver: AfkHeartbeatPayload");
 
         // ===== Trinkets 饰品槽交互处理器（服务端权威操作） =====
         ServerPlayNetworking.registerGlobalReceiver(TrinketInteractPayload.ID, (payload, context) -> {

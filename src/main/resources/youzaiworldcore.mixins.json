@@ -31,7 +31,8 @@
     "pet.WolfOwnerHurtByTargetGoalMixin",
     "pet.WolfHurtByTargetGoalMixin",
     "pet.TargetGoalAccessor",
-    "trialvault.VaultServerDataMixin"
+    "trialvault.VaultServerDataMixin",
+    "afk.ServerPlayerTabDisplayNameMixin"
   ],
   "injectors": {
     "defaultRequire": 1

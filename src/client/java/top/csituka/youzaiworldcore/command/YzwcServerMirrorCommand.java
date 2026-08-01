@@ -112,9 +112,14 @@ public final class YzwcServerMirrorCommand {
             root.then(literal("update")
                     .then(literal("check").then(greedyArgs())));
 
+            // /yzwc afk | /yzwc afk status [player] | /yzwc afk list
+            // | /yzwc afk settings <key> <value>
+            // 无参 /yzwc afk 也会因占位节点无 executes 走 dispatcherUnknownCommand 转发
+            root.then(literal("afk").then(greedyArgs()));
+
             dispatcher.register(root);
             DebugLogger.info(MODULE,
-                    "服务端 /yzwc 子命令占位镜像已注册：teleport_world / open_menu / status / world_pool / account / reload / teleport_anchor / event / update");
+                    "服务端 /yzwc 子命令占位镜像已注册：teleport_world / open_menu / status / world_pool / account / reload / teleport_anchor / event / update / afk");
         });
 
         DebugLogger.exiting(MODULE, "register");

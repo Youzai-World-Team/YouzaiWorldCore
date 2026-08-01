@@ -122,6 +122,14 @@ public final class LuckPermsHelper {
     /** 宠物模块管理命令基本权限 */
     public static final String PERMISSION_PET_COMMAND = "youzaiworldcore.command.pet";
 
+    // ===== AFK 模块权限 =====
+
+    /** AFK 使用权限：/yzwc afk（手动切换）与 /yzwc afk status（查询自己） */
+    public static final String PERMISSION_AFK_USE = "youzaiworldcore.command.function.afk";
+
+    /** AFK 管理权限：/yzwc afk list、/yzwc afk status [他人]、/yzwc afk settings */
+    public static final String PERMISSION_AFK_ADMIN = "youzaiworldcore.command.admin.afk";
+
     /** 所有命令的通配符 */
     public static final String PERMISSION_COMMAND_WILDCARD = "youzaiworldcore.command.*";
 

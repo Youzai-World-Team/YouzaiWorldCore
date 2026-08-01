@@ -163,6 +163,9 @@ public class Client implements ClientModInitializer {
     }
 
     private void onClientTick(Minecraft client) {
+        // AFK 心跳：需在 GUI 打开早退之前发送（任何界面状态下都要维持心跳）
+        top.csituka.youzaiworldcore.client.afk.AfkInputTracker.onClientTick(client);
+
         // 消费拾取通知队列（从 Netty 线程捕获的数据在主线程上创建条目）
         AddEntriesHandler.drainQueue();
 

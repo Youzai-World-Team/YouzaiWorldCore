@@ -51,7 +51,9 @@
     "laowumeme.CatRendererLaowuMixin",
     "laowumeme.CatModelLaowuMixin",
     "laowumeme.CatRenderStateLaowuMixin",
-    "laowumeme.SoundBufferLibraryLaowuMixin"
+    "laowumeme.SoundBufferLibraryLaowuMixin",
+    "afk.AfkKeyboardHandlerMixin",
+    "afk.AfkMouseHandlerMixin"
   ],
   "injectors": {
     "defaultRequire": 1
