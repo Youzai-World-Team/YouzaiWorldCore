@@ -181,6 +181,9 @@ public class Client implements ClientModInitializer {
         // 更新传送 FOV 动画（在游戏内且不论是否在 GUI 中都持续更新）
         TeleportFovEffect.tick();
 
+        // 老吴贴贴：生成愤怒粒子（active 配对中点持续冒出，直到状态结束；内部判空）
+        top.csituka.youzaiworldcore.client.laowumeme.LaowuMemeClientState.get().tick();
+
         // 高亮物品功能：键位处理（即使界面打开也需响应，故置于界面早退判断之前）
         HighlightItemClient.onClientTick(client);
 

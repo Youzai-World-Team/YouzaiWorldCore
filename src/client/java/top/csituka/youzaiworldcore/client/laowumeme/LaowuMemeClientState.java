@@ -2,6 +2,7 @@ package top.csituka.youzaiworldcore.client.laowumeme;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.sounds.SoundInstance;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
 import top.csituka.youzaiworldcore.util.DebugLogger;
@@ -18,6 +19,12 @@ import java.util.Map;
  * 仅当该曲被本机禁用或越界时回退本地随机。
  * </p>
  * <p>
+ * 愤怒粒子：老吴状态期间，每 {@link #PARTICLE_INTERVAL_TICKS} tick 在两猫中点附近生成
+ * {@link ParticleTypes#ANGRY_VILLAGER} 粒子（村民工作方块被挖掉的生气符号），
+ * 由 {@link #tick()}（挂接客户端 END_CLIENT_TICK）驱动，直到状态结束（stop 包清空 active）。
+ * 采用客户端本地 {@code Level.addParticle}，零网络开销且各端效果一致。
+ * </p>
+ * <p>
  * 已清理原模组未使用的 {@code SOUND_*} 常量（音频索引统一以
  * {@link LaowuModSounds} / 服务端 {@code LaowuMemeHandler.BUILTIN_SOUND_COUNT} 为准）。
  * </p>
@@ -26,6 +33,11 @@ import java.util.Map;
 public final class LaowuMemeClientState {
 
     private static final String MODULE = "LaowuMemeClientState";
+
+    /** 粒子生成节流：每 N tick 生成一批（每批 1 个），避免粒子过密 */
+    private static final int PARTICLE_INTERVAL_TICKS = 3;
+    /** 粒子向上飘动速度（y 分量） */
+    private static final double PARTICLE_RISE_SPEED = 0.08;
 
     private static final LaowuMemeClientState INSTANCE = new LaowuMemeClientState();
 
@@ -41,6 +53,7 @@ public final class LaowuMemeClientState {
 
     private final Map<Integer, ActiveCat> active = new HashMap<>();
     private final Map<String, SoundInstance> sounds = new HashMap<>();
+    private int particleTickCounter = 0;
 
     private LaowuMemeClientState() {
     }
@@ -52,6 +65,46 @@ public final class LaowuMemeClientState {
     public int getRollSign(int entityId) {
         ActiveCat a = active.get(entityId);
         return a == null ? 0 : a.rollSign;
+    }
+
+    /** 客户端每 tick 驱动（由 {@code Client.onClientTick} 调用）：生成愤怒粒子 */
+    public void tick() {
+        if (active.isEmpty()) {
+            return;
+        }
+        particleTickCounter++;
+        if (particleTickCounter < PARTICLE_INTERVAL_TICKS) {
+            return;
+        }
+        particleTickCounter = 0;
+
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level == null) {
+            return;
+        }
+        // 遍历 active：同一对猫在 map 中有两条记录（catA→catB 与 catB→catA），按 key 去重只生成一次
+        java.util.Set<String> emitted = new java.util.HashSet<>();
+        for (Map.Entry<Integer, ActiveCat> e : active.entrySet()) {
+            int aId = e.getKey();
+            int bId = e.getValue().partnerId;
+            String k = key(aId, bId);
+            if (!emitted.add(k)) {
+                continue;
+            }
+            Entity ea = mc.level.getEntity(aId);
+            Entity eb = mc.level.getEntity(bId);
+            if (ea == null || eb == null) {
+                continue;
+            }
+            Vec3 mid = ea.position().add(eb.position()).scale(0.5);
+            // 中点附近随机偏移（x/z ±0.4，y 抬到猫背高度 0.3~1.1），粒子缓慢上飘。
+            // Level.random 为 protected 不可外部访问，此处用 Math.random() 即可（粒子偏移无需种子一致性）。
+            double px = mid.x + (Math.random() - 0.5) * 0.8;
+            double py = mid.y + 0.3 + Math.random() * 0.8;
+            double pz = mid.z + (Math.random() - 0.5) * 0.8;
+            mc.level.addParticle(ParticleTypes.ANGRY_VILLAGER, px, py, pz,
+                    0.0, PARTICLE_RISE_SPEED, 0.0);
+        }
     }
 
     /** 收到服务端 trigger 包：记录两只猫并按服务端选曲起音乐 */
