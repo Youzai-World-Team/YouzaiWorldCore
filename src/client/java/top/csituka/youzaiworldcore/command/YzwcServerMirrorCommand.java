@@ -101,11 +101,12 @@ public final class YzwcServerMirrorCommand {
                     .then(literal("list").then(greedyArgs())));
 
             // /yzwc event naturally_charged_creepers enable [bool] | ... settings chance [double]
-            // | /yzwc event trial_vault enable [bool] | /yzwc event global laowu [bool]
+            // | /yzwc event trial_vault enable [bool] | /yzwc event laowu enable [bool]
+            // | /yzwc event laowu settings cd [seconds]（laowu 挂 greedyArgs 兜底即可）
             root.then(literal("event")
                     .then(literal("naturally_charged_creepers").then(greedyArgs()))
                     .then(literal("trial_vault").then(greedyArgs()))
-                    .then(literal("global").then(greedyArgs())));
+                    .then(literal("laowu").then(greedyArgs())));
 
             // /yzwc update [check]
             root.then(literal("update")

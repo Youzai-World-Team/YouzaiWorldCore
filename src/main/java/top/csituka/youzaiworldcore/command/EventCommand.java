@@ -3,6 +3,7 @@ package top.csituka.youzaiworldcore.command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.arguments.DoubleArgumentType;
+import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -22,7 +23,8 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
  * 关闭天然带电苦力怕事件</li>
  * <li>{@code naturally_charged_creepers settings chance [double]} — 调整带电概率</li>
  * <li>{@code trial_vault enable [true|false]} — 开启 / 关闭试炼宝库无限领奖</li>
- * <li>{@code global laowu [true|false]} — 开启 / 关闭老吴贴贴事件（全局开关，对全体玩家生效）</li>
+ * <li>{@code laowu enable [true|false]} — 开启 / 关闭老吴贴贴事件（全局开关，对全体玩家生效）</li>
+ * <li>{@code laowu settings cd [seconds]} — 查询 / 调整老吴贴贴释放后的冷却时长（秒，至少 60，默认 180）</li>
  * </ul>
  * 权限：
  * <ul>
@@ -38,8 +40,7 @@ public class EventCommand {
         private static final String MODULE = "EventCommand";
         private static final String EVENT_NCC = "naturally_charged_creepers";
         private static final String EVENT_TRIAL_VAULT = "trial_vault";
-        /** 全局事件子树（用户约定命令路径 {@code /yzwc event global ...}） */
-        private static final String EVENT_GLOBE = "global";
+        /** 老吴贴贴事件（全局开关，直接挂在 {@code /yzwc event} 下） */
         private static final String EVENT_LAOWU = "laowu";
 
         public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
@@ -88,11 +89,11 @@ public class EventCommand {
                                                 .executes(ctx -> tvSetEnable(ctx,
                                                                 BoolArgumentType.getBool(ctx, "enabled"))));
 
-                // ===== global laowu（老吴贴贴全局开关）=====
+                // ===== laowu（老吴贴贴全局开关）=====
 
-                // /yzwc event global laowu [true|false]
+                // /yzwc event laowu enable [true|false]
                 // 省略参数 = 查询当前状态；带 true/false = 对全体玩家启用/禁用该功能
-                var laowuEnableNode = Commands.literal(EVENT_LAOWU)
+                var laowuEnableNode = Commands.literal("enable")
                                 .requires(src -> LuckPermsHelper.checkPermission(
                                                 src, LuckPermsHelper.PERMISSION_EVENT_QUERY, Commands.LEVEL_ALL))
                                 .executes(EventCommand::laowuQueryEnable)
@@ -103,6 +104,23 @@ public class EventCommand {
                                                 .executes(ctx -> laowuSetEnable(ctx,
                                                                 BoolArgumentType.getBool(ctx, "enabled"))));
 
+                // /yzwc event laowu settings cd [seconds]
+                // 省略参数 = 查询当前冷却时长；带秒数（>=60）= 设置释放后的冷却时长
+                var laowuCdNode = Commands.literal("cd")
+                                .requires(src -> LuckPermsHelper.checkPermission(
+                                                src, LuckPermsHelper.PERMISSION_EVENT_QUERY, Commands.LEVEL_ALL))
+                                .executes(EventCommand::laowuQueryCd)
+                                .then(Commands.argument("seconds",
+                                                IntegerArgumentType.integer(LaowuMemeConfig.MIN_COOLDOWN_SECONDS))
+                                                .requires(src -> LuckPermsHelper.checkPermission(
+                                                                src, LuckPermsHelper.PERMISSION_EVENT_SET,
+                                                                Commands.LEVEL_ADMINS))
+                                                .executes(ctx -> laowuSetCd(ctx,
+                                                                IntegerArgumentType.getInteger(ctx, "seconds"))));
+
+                var laowuSettingsNode = Commands.literal("settings")
+                                .then(laowuCdNode);
+
                 dispatcher.register(Commands.literal("yzwc")
                                 .then(Commands.literal("event")
                                                 .then(Commands.literal(EVENT_NCC)
@@ -110,8 +128,9 @@ public class EventCommand {
                                                                 .then(nccSettingsNode))
                                                 .then(Commands.literal(EVENT_TRIAL_VAULT)
                                                                 .then(tvEnableNode))
-                                                .then(Commands.literal(EVENT_GLOBE)
-                                                                .then(laowuEnableNode))));
+                                                .then(Commands.literal(EVENT_LAOWU)
+                                                                .then(laowuEnableNode)
+                                                                .then(laowuSettingsNode))));
 
                 DebugLogger.exiting(MODULE, "register");
         }
@@ -199,7 +218,7 @@ public class EventCommand {
                 return 1;
         }
 
-        // ==================== global laowu：查询 / 设置（全局开关） ====================
+        // ==================== laowu enable：查询 / 设置（全局开关） ====================
 
         private static int laowuQueryEnable(CommandContext<CommandSourceStack> ctx) {
                 DebugLogger.entering(MODULE, "laowuQueryEnable");
@@ -220,6 +239,30 @@ public class EventCommand {
                                 : "youzaiworldcore.message.command.event.laowu.set_enable_disabled"),
                                 true);
                 DebugLogger.exiting(MODULE, "laowuSetEnable", "1");
+                return 1;
+        }
+
+        // ==================== laowu settings cd：查询 / 设置（冷却时长，秒） ====================
+
+        private static int laowuQueryCd(CommandContext<CommandSourceStack> ctx) {
+                DebugLogger.entering(MODULE, "laowuQueryCd");
+                int seconds = LaowuMemeConfig.getCooldownSeconds();
+                ctx.getSource().sendSuccess(() -> Component.translatable(
+                                "youzaiworldcore.message.command.event.laowu.query_cd",
+                                seconds),
+                                false);
+                DebugLogger.exiting(MODULE, "laowuQueryCd", "1 (seconds=" + seconds + ")");
+                return 1;
+        }
+
+        private static int laowuSetCd(CommandContext<CommandSourceStack> ctx, int seconds) {
+                DebugLogger.entering(MODULE, "laowuSetCd", "seconds=" + seconds);
+                LaowuMemeConfig.setCooldownSeconds(seconds);
+                ctx.getSource().sendSuccess(() -> Component.translatable(
+                                "youzaiworldcore.message.command.event.laowu.set_cd",
+                                seconds),
+                                true);
+                DebugLogger.exiting(MODULE, "laowuSetCd", "1");
                 return 1;
         }
 }

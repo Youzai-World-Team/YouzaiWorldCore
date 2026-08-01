@@ -186,7 +186,7 @@ public class YouzaiworldCore implements ModInitializer {
         DebugLogger.info("YouzaiworldCore", "注册天然带电苦力怕事件...");
         ChargedCreeperHandler.register();
 
-        // ===== 初始化老吴贴贴事件（laowu meme 移植，全局开关由 /yzwc event global laowu 控制） =====
+        // ===== 初始化老吴贴贴事件（laowu meme 移植，全局开关由 /yzwc event laowu enable 控制） =====
         DebugLogger.info("YouzaiworldCore", "加载老吴贴贴事件配置...");
         LaowuMemeConfig.load();
         DebugLogger.info("YouzaiworldCore", "注册老吴贴贴事件状态机...");

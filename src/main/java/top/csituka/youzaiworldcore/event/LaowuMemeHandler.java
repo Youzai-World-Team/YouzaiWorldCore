@@ -29,9 +29,10 @@ import java.util.UUID;
  * <p>
  * 玩法：命名「老吴」的猫在 6 格内遇到任意另一只猫 → 双方被禁用 AI、平滑走到贴脸点
  * （中心距 2.0）并镜像面对面 → 广播 {@link LaowuMemeTriggerPayload}（客户端歪头 + 放大 +
- * 按服务端选曲播放 BGM）→ 右键任一只即释放（恢复 AI + 外推 + 3 分钟冷却）。
+ * 按服务端选曲播放 BGM）→ 右键任一只即释放（恢复 AI + 外推 + 冷却，时长默认 3 分钟、
+ * 可由 {@code /yzwc event laowu settings cd} 调整）。
  * <p>
- * 与全局开关的联动：事件被 {@code /yzwc event goble laowu false} 禁用时，
+ * 与全局开关的联动：事件被 {@code /yzwc event laowu enable false} 禁用时，
  * 立即释放全部活跃配对（恢复 AI、广播 stop）并清空冷却，重新启用即可再次触发。
  * <p>
  * 死代码清理：不再保留从未使用的 {@code ROLL_ANGLE}（歪头角度唯一来源为客户端
@@ -52,8 +53,6 @@ public final class LaowuMemeHandler {
     public static final double SPLIT = LOCK_DISTANCE / 2.0;
     /** 接近阶段每 tick 前进距离（≈走路） */
     public static final double APPROACH_SPEED = 0.14;
-    /** 释放后的冷却时长（tick，3 分钟） */
-    public static final long COOLDOWN_TICKS = 3L * 60 * 20;
     /** 内置曲目数量（服务端随机选曲范围）：0=laowu2, 1=qiliang, 2=zhanhou */
     public static final int BUILTIN_SOUND_COUNT = 3;
     /** 扫描节流：每 N tick 扫描一次全部维度 */
@@ -194,7 +193,7 @@ public final class LaowuMemeHandler {
 
     /** 右键释放：恢复 AI + 向外速度 + 写入冷却 + 广播 stop */
     private static void release(MemePair p, boolean giveKnockback) {
-        long expire = p.server().getTickCount() + COOLDOWN_TICKS;
+        long expire = p.server().getTickCount() + LaowuMemeConfig.getCooldownSeconds() * 20L;
         for (Cat c : new Cat[] { p.catA, p.catB }) {
             if (c == null || c.isRemoved()) {
                 continue;

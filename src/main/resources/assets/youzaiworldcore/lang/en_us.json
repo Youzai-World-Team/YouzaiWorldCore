@@ -202,6 +202,8 @@
   "youzaiworldcore.message.command.event.laowu.query_enable_disabled": "§6Laowu meme event (all players): §cdisabled",
   "youzaiworldcore.message.command.event.laowu.set_enable_enabled": "§aEnabled laowu meme event for all players",
   "youzaiworldcore.message.command.event.laowu.set_enable_disabled": "§cDisabled laowu meme event for all players",
+  "youzaiworldcore.message.command.event.laowu.query_cd": "§6Laowu meme event cooldown: §a%s seconds",
+  "youzaiworldcore.message.command.event.laowu.set_cd": "§aSet laowu meme event cooldown to %s seconds",
   "subtitles.youzaiworldcore.laowu2": "Laowu: That that",
   "subtitles.youzaiworldcore.qiliang": "Laowu: Lament",
   "subtitles.youzaiworldcore.zhanhou": "Laowu: Battle cry",
