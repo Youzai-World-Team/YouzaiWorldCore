@@ -1,5 +1,6 @@
 package top.csituka.youzaiworldcore.mixin.client.itemborder;
 
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Rarity;
 
@@ -31,13 +32,20 @@ public abstract class ItemStackRarityMixin {
     @Unique
     private static final String MODULE = "ItemStackRarityMixin";
 
-    /** 物品 ID → Rarity 的 O(1) 查询映射（从 MANUAL_BORDERS 编译时构建） */
+    /**
+     * 物品 ID → Rarity 的 O(1) 查询映射（从 MANUAL_BORDERS 构建）。
+     * <p>
+     * 用 {@link Identifier} 而非 {@code String} 作键：{@code getRarity()} 是全局热路径
+     * （物品名、tooltip、边框渲染都会走），原先每次调用都要
+     * {@code getKey().toString()} 拼一个新字符串。Identifier 自身可直接比较，
+     * hashCode 走 String 内部缓存，零分配。
+     */
     @Unique
-    private static final Map<String, Rarity> ITEM_RARITY_OVERRIDES;
+    private static final Map<Identifier, Rarity> ITEM_RARITY_OVERRIDES;
 
     static {
         DebugLogger.info(MODULE, "构建物品稀有度覆写映射表...");
-        Map<String, Rarity> map = new HashMap<>();
+        Map<Identifier, Rarity> map = new HashMap<>();
         for (Map.Entry<String, List<String>> entry : ItemBorderConfig.MANUAL_BORDERS.entrySet()) {
             Rarity rarity = colorNameToRarity(entry.getKey());
             if (rarity == null) {
@@ -45,7 +53,12 @@ public abstract class ItemStackRarityMixin {
                 continue;
             }
             for (String itemId : entry.getValue()) {
-                map.put(itemId, rarity);
+                Identifier parsed = Identifier.tryParse(itemId);
+                if (parsed == null) {
+                    DebugLogger.warn(MODULE, "无法解析物品 ID '%s'", itemId);
+                    continue;
+                }
+                map.put(parsed, rarity);
             }
         }
         ITEM_RARITY_OVERRIDES = Collections.unmodifiableMap(map);
@@ -69,11 +82,14 @@ public abstract class ItemStackRarityMixin {
     private void youzaiworldcore$modifyRarity(CallbackInfoReturnable<Rarity> cir) {
         ItemStack self = (ItemStack) (Object) this;
 
-        // 用注册表 ID 查映射
-        String itemId = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(self.getItem()).toString();
+        // 用注册表 ID 查映射（getKey 返回缓存的 Identifier 实例，不产生分配）
+        Identifier itemId = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(self.getItem());
+        if (itemId == null) return;
         Rarity override = ITEM_RARITY_OVERRIDES.get(itemId);
         if (override != null) {
-            DebugLogger.trace(MODULE, "覆写稀有度: %s → %s", itemId, override);
+            if (DebugLogger.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+                DebugLogger.trace(MODULE, "覆写稀有度: %s → %s", itemId, override);
+            }
             cir.setReturnValue(override);
         }
     }

@@ -1,5 +1,6 @@
 package top.csituka.youzaiworldcore.client.screen;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
@@ -7,7 +8,6 @@ import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.renderer.RenderPipelines;
-import net.minecraft.core.NonNullList;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
@@ -16,6 +16,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.CreativeModeTabs;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.inventory.ContainerInput;
 import org.jspecify.annotations.NonNull;
@@ -62,11 +63,25 @@ public class YzuCreativeInventoryScreen extends Screen {
     /** 跨会话持久化的搜索文本 */
     private static String lastSearch = "";
 
+    /**
+     * 全物品列表 + 小写名称索引的进程级缓存。
+     * <p>
+     * 物品注册表在运行期不变，没必要每次 {@link #init()}（开屏、改窗口大小都会触发）
+     * 都重建几千个 ItemStack、并对每个调用 {@code getHoverName().getString()}。
+     * 注册表条目数或语言变化时自动重建。
+     */
+    private static List<ItemStack> cachedAllItems;
+    private static List<String> cachedAllItemNames;
+    private static int cachedRegistrySize = -1;
+    private static String cachedLanguage;
+
     private final @NonNull Player player;
     private final List<CreativeModeTab> tabs = new ArrayList<>();
     private CreativeModeTab selTab;
     private EditBox searchBox;
-    private NonNullList<ItemStack> allItems = NonNullList.create();
+    private List<ItemStack> allItems = List.of();
+    /** 与 {@link #allItems} 一一对应的小写名称，供搜索直接比对 */
+    private List<String> allItemNames = List.of();
     private List<ItemStack> tabItems;
     private final List<Integer> vis = new ArrayList<>();
     private float soff;
@@ -88,6 +103,8 @@ public class YzuCreativeInventoryScreen extends Screen {
     private int lastClickSlot = -1;
     // Trinkets 悬停状态
     private int trinketSourceSlot = -1;
+    /** 上次向 Trinkets 查询过的槽位（含"查了但没有饰品槽"的结果），避免同一槽位每帧重复查询 */
+    private int trinketQueriedSlot = -1;
     private java.util.List<TrinketHelper.TrinketSlotInfo> activeTrinketSlots = java.util.List.of();
 
     public YzuCreativeInventoryScreen(Player player) {
@@ -159,28 +176,44 @@ public class YzuCreativeInventoryScreen extends Screen {
         }
     }
 
-    @SuppressWarnings("null")
     private void populateAll() {
-        allItems.clear();
-        BuiltInRegistries.ITEM.stream().forEach(item -> {
-            ItemStack st = new ItemStack(item);
-            if (!st.isEmpty())
-                allItems.add(st);
-        });
+        int registrySize = BuiltInRegistries.ITEM.size();
+        String language = Minecraft.getInstance().getLanguageManager().getSelected();
+        if (cachedAllItems == null || cachedRegistrySize != registrySize || !language.equals(cachedLanguage)) {
+            List<ItemStack> stacks = new ArrayList<>(registrySize);
+            List<String> names = new ArrayList<>(registrySize);
+            for (Item item : BuiltInRegistries.ITEM) {
+                ItemStack st = new ItemStack(item);
+                if (st.isEmpty())
+                    continue;
+                stacks.add(st);
+                names.add(st.getHoverName().getString().toLowerCase());
+            }
+            cachedAllItems = List.copyOf(stacks);
+            cachedAllItemNames = List.copyOf(names);
+            cachedRegistrySize = registrySize;
+            cachedLanguage = language;
+            LOG.debug("rebuilt item cache: {} items", cachedAllItems.size());
+        }
+        allItems = cachedAllItems;
+        allItemNames = cachedAllItemNames;
     }
 
     private void rebuildVis() {
         vis.clear();
         if (selTab == null) {
             tabItems = null;
-            // 搜索/全部模式：从 allItems 中按搜索文本过滤
+            // 搜索/全部模式：按搜索文本过滤预先算好的小写名称索引
             String q = searchBox != null ? searchBox.getValue().toLowerCase().trim() : "";
-            for (int i = 0; i < allItems.size(); i++) {
-                ItemStack s = allItems.get(i);
-                if (s.isEmpty())
-                    continue;
-                if (q.isEmpty() || s.getHoverName().getString().toLowerCase().contains(q))
+            int n = allItems.size();
+            if (q.isEmpty()) {
+                for (int i = 0; i < n; i++)
                     vis.add(i);
+            } else {
+                for (int i = 0; i < n; i++) {
+                    if (allItemNames.get(i).contains(q))
+                        vis.add(i);
+                }
             }
         } else {
             // 分类模式：直接使用该分类原版的物品列表及其排列顺序（不通过 Set 过滤，保留 tab 内部顺序）
@@ -358,13 +391,17 @@ public class YzuCreativeInventoryScreen extends Screen {
             onIndicator = mx >= indStartX && mx < indEndX && my >= baseY && my < baseY + SS;
         }
 
-        if (onSource && hitSlot != trinketSourceSlot && !onIndicator) {
+        // 按 trinketQueriedSlot 去重：悬停在"没有饰品槽"的槽位上时，原先每帧都会重新遍历
+        // 一遍 SlotGroup 并新建 ArrayList，这里改成同一槽位只查一次。
+        if (onSource && hitSlot != trinketQueriedSlot && !onIndicator) {
             Slot slotObj = slots.get(hitSlot);
+            trinketQueriedSlot = hitSlot;
             activeTrinketSlots = TrinketHelper.getSlotsAttachedTo(player, slotObj);
             trinketSourceSlot = activeTrinketSlots.isEmpty() ? -1 : hitSlot;
         } else if (!onSource && !onIndicator) {
             activeTrinketSlots = List.of();
             trinketSourceSlot = -1;
+            trinketQueriedSlot = -1;
         }
 
         if (!activeTrinketSlots.isEmpty() && trinketSourceSlot >= 0) {
@@ -513,6 +550,7 @@ public class YzuCreativeInventoryScreen extends Screen {
         }
         trinketSourceSlot = -1;
         activeTrinketSlots = List.of();
+        trinketQueriedSlot = -1; // 强制下一帧重新查询，让指示器按新内容刷新
     }
 
     /** 拖拽中在被拖槽位上渲染物品预览（含数字）。异种/满格跳过，数量按有效格均分计算。 */
@@ -539,8 +577,8 @@ public class YzuCreativeInventoryScreen extends Screen {
         if (validCount == 0)
             return;
 
-        for (int si : validSlots) {
-            int idx = validSlots.indexOf(si);
+        for (int idx = 0; idx < validCount; idx++) {
+            int si = validSlots.get(idx);
             ItemStack existing = slots.get(si).getItem();
             int previewCount = existing.getCount();
             if (dragButton == 0) {
@@ -1365,18 +1403,38 @@ public class YzuCreativeInventoryScreen extends Screen {
         return false;
     }
 
+    /**
+     * 绘制圆角矩形。
+     * <p>
+     * 每次 {@code g.fill} 都会往 GuiRenderState 里塞一个 ColoredRectangleRenderState
+     * （并复制一份 Matrix3x2f），所以圆角必须按<b>整行扫描线</b>输出，不能逐像素填。
+     * <ul>
+     * <li>{@code r <= 3}：圆角判定 {@code i²+j² < r²} 对所有角像素恒成立
+     * （{@code 2(r-1)² < r²}），结果与实心矩形完全一致 → 只发 1 个 fill；</li>
+     * <li>其余：中间整块 1 个 + 上下各 {@code r} 行、每行 1 个，共 {@code 1 + 2r} 个。</li>
+     * </ul>
+     * 输出像素与逐像素版本完全相同：16×16 槽位从 39 个 fill 降到 1 个，
+     * 168×356 面板（r=6）从 135 个降到 13 个。
+     */
     private static void fillR(GuiGraphicsExtractor g, int x, int y, int w, int h, int r, int c) {
-        g.fill(x + r, y, x + w - r, y + h, c);
-        g.fill(x, y + r, x + r, y + h - r, c);
-        g.fill(x + w - r, y + r, x + w, y + h - r, c);
-        for (int i = 0; i < r; i++)
-            for (int j = 0; j < r; j++) {
-                if (i * i + j * j < r * r) {
-                    g.fill(x + r - i - 1, y + r - j - 1, x + r - i, y + r - j, c);
-                    g.fill(x + w - r + i, y + r - j - 1, x + w - r + i + 1, y + r - j, c);
-                    g.fill(x + r - i - 1, y + h - r + j, x + r - i, y + h - r + j + 1, c);
-                    g.fill(x + w - r + i, y + h - r + j, x + w - r + i + 1, y + h - r + j + 1, c);
-                }
-            }
+        if (w <= 0 || h <= 0)
+            return;
+        r = Math.min(r, Math.min(w, h) / 2);
+        if (r <= 3) {
+            // 圆角不裁掉任何像素，等价于实心矩形
+            g.fill(x, y, x + w, y + h, c);
+            return;
+        }
+        // 中间整块（含左右两条直边）
+        g.fill(x, y + r, x + w, y + h - r, c);
+        // 上下圆角区：每行一条扫描线，行内水平跨度由圆角判定给出
+        for (int j = 0; j < r; j++) {
+            int n = 0;
+            while (n < r && n * n + j * j < r * r)
+                n++;
+            int x0 = x + r - n, x1 = x + w - r + n;
+            g.fill(x0, y + r - j - 1, x1, y + r - j, c);         // 顶部第 j 行
+            g.fill(x0, y + h - r + j, x1, y + h - r + j + 1, c); // 底部第 j 行
+        }
     }
 }

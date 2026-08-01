@@ -75,6 +75,31 @@ public final class ItemBorderRenderer {
         COLOR_NAME_MAP.put("grey",         0xAAAAAA);
     }
 
+    /**
+     * {@link ItemBorderConfig#MANUAL_BORDERS} 展平后的 O(1) 查表：物品 ID → RGB（不含 alpha）。
+     * <p>
+     * 原先每次渲染都要 {@code getKey().toString()} 造一个字符串、再线性扫 ~60 条配置、
+     * 命中后还要跑一遍 {@code parseColorSimple}（内含正则）。创造物品栏一帧要画 100 多个
+     * 槽位，这些开销全部乘 100。改为启动时展平一次，运行期只做一次 Identifier 查表
+     * （Identifier 的 hashCode 走 String 缓存，无分配）。
+     * <p>
+     * 必须放在 {@code COLOR_NAME_MAP} 静态块之后：{@code parseColorSimple} 依赖它。
+     */
+    private static final Map<Identifier, Integer> MANUAL_BORDER_BY_ID;
+
+    static {
+        Map<Identifier, Integer> byId = new HashMap<>();
+        for (Map.Entry<String, List<String>> entry : ItemBorderConfig.MANUAL_BORDERS.entrySet()) {
+            Integer color = parseColorSimple(entry.getKey());
+            if (color == null) continue;
+            for (String itemId : entry.getValue()) {
+                Identifier parsed = Identifier.tryParse(itemId);
+                if (parsed != null) byId.put(parsed, color);
+            }
+        }
+        MANUAL_BORDER_BY_ID = Map.copyOf(byId);
+    }
+
     private ItemBorderRenderer() {}
 
     // ============================================================
@@ -145,8 +170,11 @@ public final class ItemBorderRenderer {
         // 第一级：手动配置
         Integer manualColor = matchManualBorder(item);
         if (manualColor != null) {
-            DebugLogger.trace(MODULE, "手动匹配颜色: %08X for %s", manualColor,
-                    BuiltInRegistries.ITEM.getKey(item.getItem()));
+            // 先判等级再取参数：getKey() 与变长参数数组在渲染热路径上是白扔的垃圾
+            if (DebugLogger.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+                DebugLogger.trace(MODULE, "手动匹配颜色: %08X for %s", manualColor,
+                        BuiltInRegistries.ITEM.getKey(item.getItem()));
+            }
             return manualColor | 0xEE000000;
         }
 
@@ -190,17 +218,8 @@ public final class ItemBorderRenderer {
      */
     private static Integer matchManualBorder(ItemStack item) {
         Identifier itemId = BuiltInRegistries.ITEM.getKey(item.getItem());
-        String itemIdStr = itemId.toString();
-
-        for (Map.Entry<String, List<String>> entry : ItemBorderConfig.MANUAL_BORDERS.entrySet()) {
-            String colorKey = entry.getKey();
-            List<String> itemIds = entry.getValue();
-
-            if (itemIds.contains(itemIdStr)) {
-                return parseColorSimple(colorKey);
-            }
-        }
-        return null;
+        if (itemId == null) return null;
+        return MANUAL_BORDER_BY_ID.get(itemId);
     }
 
     // ============================================================
@@ -220,7 +239,8 @@ public final class ItemBorderRenderer {
         if (!item.has(DataComponents.CUSTOM_DATA)) return null;
 
         CustomData customData = item.get(DataComponents.CUSTOM_DATA);
-        if (customData == null) return null;
+        if (customData == null || customData.isEmpty()) return null;
+        // copyTag() 是深拷贝，只在确实带 NBT 的物品上走到这里
         CompoundTag customTag = customData.copyTag();
         if (!customTag.contains("yzwc_border_colors")) return null;
 
