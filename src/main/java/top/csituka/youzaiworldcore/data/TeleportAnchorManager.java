@@ -102,6 +102,43 @@ public class TeleportAnchorManager extends SavedData {
     }
 
     /**
+     * 获取玩家当前「可用」的传送锚点列表，供打开传送 GUI 时使用。
+     * <p>
+     * 在 {@link #getPointsForPlayer(ServerPlayer)} 的基础上过滤掉两类条目：
+     * <ul>
+     *   <li>目标坐标处的方块已不是传送锚点，或锚点已不再处于激活状态（失效锚点）</li>
+     *   <li>与 {@code fromDimension} 不属于同一维度池（任意一方未加入池时不做限制）</li>
+     * </ul>
+     * 传送锚点方块右键与传送石右键共用此方法，保证两条入口的可用列表完全一致。
+     *
+     * @param fromDimension 打开列表时玩家所处的维度，用于维度池隔离判定
+     * @return 过滤后的不可变列表
+     */
+    public List<TeleportAnchorData> getValidPointsForPlayer(ServerPlayer player, ResourceKey<Level> fromDimension) {
+        MinecraftServer server = player.level().getServer();
+        if (server == null) return List.of();
+
+        // 当前维度所属的维度池 ID；未加入任何池时为 null（不做隔离）
+        String currentPoolId = top.csituka.youzaiworldcore.dimensionalinventories.DimensionPoolSettings
+                .getPoolByDimension(fromDimension.identifier().toString())
+                .map(p -> p.id())
+                .orElse(null);
+
+        return getPointsForPlayer(player).stream()
+                .filter(p -> {
+                    ServerLevel targetLevel = server.getLevel(p.dimension());
+                    if (targetLevel == null) return false;
+                    BlockState anchorState = targetLevel.getBlockState(p.pos());
+                    if (!(anchorState.getBlock() instanceof TeleportAnchorBlock)) return false;
+                    if (!anchorState.getValue(TeleportAnchorBlock.ACTIVE)) return false;
+                    // 维度池隔离过滤：同池或至少一方未加入任何池时可通过
+                    if (p.poolId() == null || currentPoolId == null) return true;
+                    return p.poolId().equals(currentPoolId);
+                })
+                .toList();
+    }
+
+    /**
      * 获取某个玩家当前已激活的传送锚点数量。
      */
     public int getPointCount(ServerPlayer player) {

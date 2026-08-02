@@ -125,25 +125,9 @@ public class TeleportAnchorBlock extends BaseEntityBlock {
             // 玩家尚未激活此锚点 → 打开命名界面
             ServerPlayNetworking.send(serverPlayer, new TeleportAnchorOpenNamePayload(pos, level.dimension()));
         } else {
-            // 已激活 → 发送传送点列表给客户端
+            // 已激活 → 发送传送点列表给客户端（过滤失效锚点与跨维度池条目）
             TeleportAnchorManager manager = TeleportAnchorManager.get(level.getServer());
-            var points = manager.getPointsForPlayer(serverPlayer);
-            String currentPoolId = top.csituka.youzaiworldcore.dimensionalinventories.DimensionPoolSettings
-                    .getPoolByDimension(level.dimension().identifier().toString())
-                    .map(p -> p.id())
-                    .orElse(null);
-
-            var validPoints = points.stream()
-                    .filter(p -> {
-                        var targetLevel = serverPlayer.level().getServer().getLevel(p.dimension());
-                        if (targetLevel == null) return false;
-                        BlockState anchorState = targetLevel.getBlockState(p.pos());
-                        if (!anchorState.is(this) || !anchorState.getValue(ACTIVE)) return false;
-                        // 维度池隔离过滤：同池或至少一方未加入任何池时可通过
-                        if (p.poolId() == null || currentPoolId == null) return true;
-                        return p.poolId().equals(currentPoolId);
-                    })
-                    .toList();
+            var validPoints = manager.getValidPointsForPlayer(serverPlayer, level.dimension());
 
             ServerPlayNetworking.send(serverPlayer, new TeleportAnchorListPayload(validPoints, pos, level.dimension()));
         }

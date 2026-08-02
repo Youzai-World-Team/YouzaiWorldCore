@@ -590,5 +590,8 @@
   "youzaiworldcore.message.command.event.trial_vault.query_enable_enabled": "§6Trial vault infinite rewards: §aenabled",
   "youzaiworldcore.message.command.event.trial_vault.query_enable_disabled": "§6Trial vault infinite rewards: §cdisabled",
   "youzaiworldcore.message.command.event.trial_vault.set_enable_enabled": "§aTrial vault infinite rewards enabled",
-  "youzaiworldcore.message.command.event.trial_vault.set_enable_disabled": "§cTrial vault infinite rewards disabled"
+  "youzaiworldcore.message.command.event.trial_vault.set_enable_disabled": "§cTrial vault infinite rewards disabled",
+  "item.youzaiworldcore.teleport_stone": "傳送石",
+  "item.youzaiworldcore.teleport_stone.tooltip": "右鍵直接開啟傳送錨點列表",
+  "screen.youzaiworldcore.teleport_anchor.empty": "目前沒有可用傳送錨點，快去點亮一個吧~"
 }

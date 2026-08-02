@@ -60,6 +60,9 @@ public class TeleportAnchorScreen extends Screen {
     private static final int HIGHLIGHT_BG = 0x40FFFFFF;
     private static final int BUTTON_TEXT_COLOR = 0xFFFFFF;
 
+    /** 空列表提示文本的颜色（灰白，区别于正常条目）。 */
+    private static final int EMPTY_HINT_COLOR = 0xFFAAAAAA;
+
     private static final Identifier LOCATION_ICON = Identifier.fromNamespaceAndPath(
             YouzaiworldCore.MOD_ID, "textures/gui/teleport_location.png");
     private static final Identifier COPY_ICON = Identifier.fromNamespaceAndPath(
@@ -107,6 +110,15 @@ public class TeleportAnchorScreen extends Screen {
     private EditBox searchBox;
     /** 当前显示的传送点数量（搜索模式下可能少于 points.size()）。 */
     private int displayPointCount = 0;
+
+    /**
+     * 玩家一个可用传送锚点都没有：列表区域改为占一行高度并居中显示空列表提示文本。
+     * 仅在 {@code points} 本身为空时为 true；搜索无结果不算（那是过滤结果，不是没有锚点）。
+     */
+    private boolean showEmptyHint = false;
+
+    /** 列表区域顶部 Y 坐标，供绘制空列表提示时定位。 */
+    private int listTopY;
 
     // UI 组件
     private final List<TransparentButton> pointButtons = new ArrayList<>();
@@ -176,7 +188,11 @@ public class TeleportAnchorScreen extends Screen {
         if (scrollOffset < 0) scrollOffset = 0;
 
         int visibleCount = Math.min(displayPoints.size(), MAX_VISIBLE_ITEMS);
-        int listHeight = Math.max(0, visibleCount * (ITEM_HEIGHT + ITEM_GAP) - ITEM_GAP);
+        // 无可用锚点时，列表区域保留一行高度用于显示提示文本
+        showEmptyHint = points.isEmpty();
+        int listHeight = showEmptyHint
+                ? ITEM_HEIGHT
+                : Math.max(0, visibleCount * (ITEM_HEIGHT + ITEM_GAP) - ITEM_GAP);
 
         // 搜索框高度
         int searchHeight = searchMode ? (22 + 4) : 0;
@@ -215,7 +231,8 @@ public class TeleportAnchorScreen extends Screen {
         }
 
         // 构建列表条目按钮
-        int buttonY = panelY + TITLE_HEIGHT + PANEL_PADDING + searchHeight;
+        listTopY = panelY + TITLE_HEIGHT + PANEL_PADDING + searchHeight;
+        int buttonY = listTopY;
         for (int i = 0; i < visibleCount; i++) {
             int displayIndex = scrollOffset + i;
             TeleportAnchorData point = displayPoints.get(displayIndex);
@@ -240,7 +257,7 @@ public class TeleportAnchorScreen extends Screen {
 
             buttonY += ITEM_HEIGHT + ITEM_GAP;
         }
-        listBottomY = buttonY - ITEM_GAP;
+        listBottomY = showEmptyHint ? (listTopY + ITEM_HEIGHT) : (buttonY - ITEM_GAP);
 
         // 构建底部操作区域
         if (confirmingDelete) {
@@ -661,6 +678,15 @@ public class TeleportAnchorScreen extends Screen {
 
         // 渲染子组件
         super.extractRenderState(guiGraphics, mouseX, mouseY, partialTick);
+
+        // 无可用传送锚点时，在列表区域居中显示提示文本
+        if (showEmptyHint) {
+            String hint = Component.translatable(
+                    "screen.youzaiworldcore.teleport_anchor.empty").getString();
+            int hintWidth = font.width(hint);
+            int hintY = listTopY + (ITEM_HEIGHT - font.lineHeight) / 2;
+            guiGraphics.text(font, hint, (this.width - hintWidth) / 2, hintY, EMPTY_HINT_COLOR, false);
+        }
 
         // 在当前锚点条目的名称前叠加定位图标（在按钮之上绘制）
         drawCurrentAnchorIcons(guiGraphics);

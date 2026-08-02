@@ -590,5 +590,8 @@
   "youzaiworldcore.message.command.event.trial_vault.query_enable_enabled": "§6Trial-Vault-Unendliche-Belohnungen: §aaktiviert",
   "youzaiworldcore.message.command.event.trial_vault.query_enable_disabled": "§6Trial-Vault-Unendliche-Belohnungen: §cdeaktiviert",
   "youzaiworldcore.message.command.event.trial_vault.set_enable_enabled": "§aUnendliche Trial-Vault-Belohnungen aktiviert",
-  "youzaiworldcore.message.command.event.trial_vault.set_enable_disabled": "§cUnendliche Trial-Vault-Belohnungen deaktiviert"
+  "youzaiworldcore.message.command.event.trial_vault.set_enable_disabled": "§cUnendliche Trial-Vault-Belohnungen deaktiviert",
+  "item.youzaiworldcore.teleport_stone": "Teleportstein",
+  "item.youzaiworldcore.teleport_stone.tooltip": "Rechtsklick öffnet direkt deine Teleportanker-Liste",
+  "screen.youzaiworldcore.teleport_anchor.empty": "Noch keine Teleportanker verfügbar – zünde erst einen an!"
 }

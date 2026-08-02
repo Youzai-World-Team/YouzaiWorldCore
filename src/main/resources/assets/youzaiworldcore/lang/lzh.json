@@ -590,5 +590,8 @@
   "youzaiworldcore.message.command.event.trial_vault.query_enable_enabled": "§6試煉寶庫無盡之賞: §a已啟",
   "youzaiworldcore.message.command.event.trial_vault.query_enable_disabled": "§6試煉寶庫無盡之賞: §c已禁",
   "youzaiworldcore.message.command.event.trial_vault.set_enable_enabled": "§a已啟試煉寶庫無盡之賞",
-  "youzaiworldcore.message.command.event.trial_vault.set_enable_disabled": "§c已禁試煉寶庫無盡之賞"
+  "youzaiworldcore.message.command.event.trial_vault.set_enable_disabled": "§c已禁試煉寶庫無盡之賞",
+  "item.youzaiworldcore.teleport_stone": "傳送之石",
+  "item.youzaiworldcore.teleport_stone.tooltip": "右擊即啟傳送錨點之錄",
+  "screen.youzaiworldcore.teleport_anchor.empty": "今無可用之傳送錨點，速往燃其一也~"
 }

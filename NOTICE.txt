@@ -73,6 +73,11 @@ licensed under the MIT License:
 https://github.com/thecolonel63/technomodel
 For the full license text, see the LICENSE.txt file in this distribution.
 
+This product incorporates source code adapted from laowu-meme by Rogic460,
+licensed under the MIT License:
+https://github.com/Rogic460/Minecraft-laowu-meme
+For the full license text, see the LICENSE.txt file in this distribution.
+
 This product studies the deobfuscated Minecraft (Java Edition, 26.2) jar by
 Mojang Studios for API compatibility. Minecraft is proprietary software governed
 by the Minecraft End User License Agreement; no Minecraft code or assets are

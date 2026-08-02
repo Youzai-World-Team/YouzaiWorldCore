@@ -590,5 +590,8 @@
   "youzaiworldcore.message.command.event.trial_vault.query_enable_enabled": "§6Recompensas infinitas de la bóveda de prueba: §aactivadas",
   "youzaiworldcore.message.command.event.trial_vault.query_enable_disabled": "§6Recompensas infinitas de la bóveda de prueba: §cdesactivadas",
   "youzaiworldcore.message.command.event.trial_vault.set_enable_enabled": "§aRecompensas infinitas de la bóveda de prueba activadas",
-  "youzaiworldcore.message.command.event.trial_vault.set_enable_disabled": "§cRecompensas infinitas de la bóveda de prueba desactivadas"
+  "youzaiworldcore.message.command.event.trial_vault.set_enable_disabled": "§cRecompensas infinitas de la bóveda de prueba desactivadas",
+  "item.youzaiworldcore.teleport_stone": "Piedra de teletransporte",
+  "item.youzaiworldcore.teleport_stone.tooltip": "Clic derecho para abrir tu lista de anclas de teletransporte",
+  "screen.youzaiworldcore.teleport_anchor.empty": "Aún no hay anclas de teletransporte disponibles, ¡ve a activar una!"
 }

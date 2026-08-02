@@ -590,5 +590,8 @@
   "youzaiworldcore.message.command.event.trial_vault.query_enable_enabled": "§6Бесконечные награды испытательного хранилища: §aвключено",
   "youzaiworldcore.message.command.event.trial_vault.query_enable_disabled": "§6Бесконечные награды испытательного хранилища: §cвыключено",
   "youzaiworldcore.message.command.event.trial_vault.set_enable_enabled": "§aБесконечные награды испытательного хранилища включены",
-  "youzaiworldcore.message.command.event.trial_vault.set_enable_disabled": "§cБесконечные награды испытательного хранилища выключены"
+  "youzaiworldcore.message.command.event.trial_vault.set_enable_disabled": "§cБесконечные награды испытательного хранилища выключены",
+  "item.youzaiworldcore.teleport_stone": "Камень телепортации",
+  "item.youzaiworldcore.teleport_stone.tooltip": "ПКМ открывает список якорей телепортации",
+  "screen.youzaiworldcore.teleport_anchor.empty": "Пока нет доступных якорей телепортации — активируйте хотя бы один!"
 }

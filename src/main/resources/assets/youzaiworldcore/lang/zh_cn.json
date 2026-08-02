@@ -590,5 +590,8 @@
   "trinkets.slot.offhand.totem": "不死图腾",
   "trinkets.slot.offhand.heart": "守护之心",
   "item.youzaiworldcore.invisible_item_frame": "隐形物品展示框",
-  "item.youzaiworldcore.invisible_glow_item_frame": "隐形发光物品展示框"
+  "item.youzaiworldcore.invisible_glow_item_frame": "隐形发光物品展示框",
+  "item.youzaiworldcore.teleport_stone": "传送石",
+  "item.youzaiworldcore.teleport_stone.tooltip": "右键直接打开传送锚点列表",
+  "screen.youzaiworldcore.teleport_anchor.empty": "当前没有可用传送锚点，快去点亮一个吧~"
 }

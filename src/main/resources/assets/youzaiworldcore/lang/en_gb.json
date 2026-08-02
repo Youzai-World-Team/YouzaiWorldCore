@@ -590,5 +590,8 @@
   "trinkets.slot.offhand.totem": "Totem of Undying",
   "trinkets.slot.offhand.heart": "Heart of Guardianship",
   "item.youzaiworldcore.invisible_item_frame": "Invisible Item Frame",
-  "item.youzaiworldcore.invisible_glow_item_frame": "Invisible Glow Item Frame"
+  "item.youzaiworldcore.invisible_glow_item_frame": "Invisible Glow Item Frame",
+  "item.youzaiworldcore.teleport_stone": "Teleport Stone",
+  "item.youzaiworldcore.teleport_stone.tooltip": "Right-click to open your teleport anchor list",
+  "screen.youzaiworldcore.teleport_anchor.empty": "No teleport anchors available yet — go light one up!"
 }

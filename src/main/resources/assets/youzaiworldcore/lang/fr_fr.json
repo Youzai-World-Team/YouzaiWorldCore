@@ -590,5 +590,8 @@
   "youzaiworldcore.message.command.event.trial_vault.query_enable_enabled": "§6Récompenses infinies du coffre d'essai : §aactivées",
   "youzaiworldcore.message.command.event.trial_vault.query_enable_disabled": "§6Récompenses infinies du coffre d'essai : §cdésactivées",
   "youzaiworldcore.message.command.event.trial_vault.set_enable_enabled": "§aRécompenses infinies du coffre d'essai activées",
-  "youzaiworldcore.message.command.event.trial_vault.set_enable_disabled": "§cRécompenses infinies du coffre d'essai désactivées"
+  "youzaiworldcore.message.command.event.trial_vault.set_enable_disabled": "§cRécompenses infinies du coffre d'essai désactivées",
+  "item.youzaiworldcore.teleport_stone": "Pierre de téléportation",
+  "item.youzaiworldcore.teleport_stone.tooltip": "Clic droit pour ouvrir votre liste d'ancres de téléportation",
+  "screen.youzaiworldcore.teleport_anchor.empty": "Aucune ancre de téléportation disponible, allez en activer une !"
 }
