@@ -593,5 +593,12 @@
   "youzaiworldcore.message.command.event.trial_vault.set_enable_disabled": "§cUnendliche Trial-Vault-Belohnungen deaktiviert",
   "item.youzaiworldcore.teleport_stone": "Teleportstein",
   "item.youzaiworldcore.teleport_stone.tooltip": "Rechtsklick öffnet direkt deine Teleportanker-Liste",
-  "screen.youzaiworldcore.teleport_anchor.empty": "Noch keine Teleportanker verfügbar – zünde erst einen an!"
+  "screen.youzaiworldcore.teleport_anchor.empty": "Noch keine Teleportanker verfügbar – zünde erst einen an!",
+  "screen.youzaiworldcore.teleport_anchor.distance": "%s Blöcke",
+  "screen.youzaiworldcore.teleport_anchor.cross_dimension": "Andere Dimension",
+  "message.youzaiworldcore.teleport_stone.cooldown": "§cDer Teleportstein lädt noch, warte %s Sekunde(n).",
+  "message.youzaiworldcore.teleport_stone.no_durability": "§cNicht genug Haltbarkeit! Dieser Teleport kostet %s, übrig sind %s.",
+  "message.youzaiworldcore.teleport_stone.not_held": "§cDer Teleportstein ist nicht mehr in deiner Hand – Teleport abgebrochen.",
+  "item.youzaiworldcore.teleport_stone.tooltip_cost": "1 Haltbarkeit je %s Blöcke, dimensionsübergreifend pauschal %s",
+  "item.youzaiworldcore.teleport_stone.tooltip_cooldown": "%s Sekunden Abklingzeit nach erfolgreichem Teleport"
 }

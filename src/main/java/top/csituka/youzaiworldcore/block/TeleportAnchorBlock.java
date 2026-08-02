@@ -129,6 +129,9 @@ public class TeleportAnchorBlock extends BaseEntityBlock {
             TeleportAnchorManager manager = TeleportAnchorManager.get(level.getServer());
             var validPoints = manager.getValidPointsForPlayer(serverPlayer, level.dimension());
 
+            // 走方块入口打开列表：清除传送石标记，本次传送不扣传送石耐久
+            manager.markListOpenedByAnchor(serverPlayer);
+
             ServerPlayNetworking.send(serverPlayer, new TeleportAnchorListPayload(validPoints, pos, level.dimension()));
         }
 

@@ -8,6 +8,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.datafix.DataFixTypes;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -43,6 +44,13 @@ public class TeleportAnchorManager extends SavedData {
 
     /** 运行时传送冷却记录（玩家UUID → 上次传送的游戏时间），不持久化。 */
     private final transient Map<UUID, Long> teleportCooldowns = new HashMap<>();
+
+    /**
+     * 运行时记录：玩家最近一次传送列表是「用传送石打开」的，值为使用传送石的那只手。
+     * 通过传送锚点方块打开列表时会清除该标记。传送执行时据此判定是否扣除传送石耐久。
+     * 不持久化。
+     */
+    private final transient Map<UUID, InteractionHand> stoneOpenedLists = new HashMap<>();
 
     private static final Codec<TeleportAnchorManager> CODEC = Codec.unboundedMap(
             Codec.STRING,               // UUID → String
@@ -116,7 +124,6 @@ public class TeleportAnchorManager extends SavedData {
      */
     public List<TeleportAnchorData> getValidPointsForPlayer(ServerPlayer player, ResourceKey<Level> fromDimension) {
         MinecraftServer server = player.level().getServer();
-        if (server == null) return List.of();
 
         // 当前维度所属的维度池 ID；未加入任何池时为 null（不做隔离）
         String currentPoolId = top.csituka.youzaiworldcore.dimensionalinventories.DimensionPoolSettings
@@ -254,6 +261,38 @@ public class TeleportAnchorManager extends SavedData {
         points.add(toIndex, moved);
         setDirty();
         return true;
+    }
+
+    // ===== 传送列表打开来源（用于判定是否扣除传送石耐久） =====
+
+    /**
+     * 记录玩家用传送石打开了传送列表。
+     *
+     * @param hand 玩家使用传送石的那只手
+     */
+    public void markListOpenedByStone(ServerPlayer player, InteractionHand hand) {
+        stoneOpenedLists.put(player.getUUID(), hand);
+    }
+
+    /**
+     * 记录玩家通过传送锚点方块打开了传送列表，清除传送石标记。
+     * 走方块入口的传送不消耗传送石耐久。
+     */
+    public void markListOpenedByAnchor(ServerPlayer player) {
+        stoneOpenedLists.remove(player.getUUID());
+    }
+
+    /**
+     * 取出并清除玩家的「传送石打开」标记。
+     * <p>
+     * 一次传送请求只对应一次标记：无论本次传送最终成功还是被各项校验拒绝，标记都已消费，
+     * 玩家需要重新用传送石打开列表才会再次进入扣耐久流程。
+     *
+     * @return 打开列表时使用传送石的那只手；返回 null 表示本次列表不是用传送石打开的
+     */
+    @Nullable
+    public InteractionHand consumeStoneOpenMark(ServerPlayer player) {
+        return stoneOpenedLists.remove(player.getUUID());
     }
 
     // ===== 传送冷却 =====

@@ -593,5 +593,12 @@
   "item.youzaiworldcore.invisible_glow_item_frame": "隐形发光物品展示框",
   "item.youzaiworldcore.teleport_stone": "传送石",
   "item.youzaiworldcore.teleport_stone.tooltip": "右键直接打开传送锚点列表",
-  "screen.youzaiworldcore.teleport_anchor.empty": "当前没有可用传送锚点，快去点亮一个吧~"
+  "screen.youzaiworldcore.teleport_anchor.empty": "当前没有可用传送锚点，快去点亮一个吧~",
+  "screen.youzaiworldcore.teleport_anchor.distance": "%s 格",
+  "screen.youzaiworldcore.teleport_anchor.cross_dimension": "跨维度",
+  "message.youzaiworldcore.teleport_stone.cooldown": "§c传送石冷却中，请等待 %s 秒。",
+  "message.youzaiworldcore.teleport_stone.no_durability": "§c传送石耐久不足！本次传送需要 %s 点，剩余 %s 点。",
+  "message.youzaiworldcore.teleport_stone.not_held": "§c传送石已不在手中，传送已取消。",
+  "item.youzaiworldcore.teleport_stone.tooltip_cost": "每 %s 格消耗 1 点耐久，跨维度固定 %s 点",
+  "item.youzaiworldcore.teleport_stone.tooltip_cooldown": "传送成功后冷却 %s 秒"
 }

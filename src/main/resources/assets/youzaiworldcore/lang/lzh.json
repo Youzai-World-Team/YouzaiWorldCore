@@ -593,5 +593,12 @@
   "youzaiworldcore.message.command.event.trial_vault.set_enable_disabled": "§c已禁試煉寶庫無盡之賞",
   "item.youzaiworldcore.teleport_stone": "傳送之石",
   "item.youzaiworldcore.teleport_stone.tooltip": "右擊即啟傳送錨點之錄",
-  "screen.youzaiworldcore.teleport_anchor.empty": "今無可用之傳送錨點，速往燃其一也~"
+  "screen.youzaiworldcore.teleport_anchor.empty": "今無可用之傳送錨點，速往燃其一也~",
+  "screen.youzaiworldcore.teleport_anchor.distance": "%s 步",
+  "screen.youzaiworldcore.teleport_anchor.cross_dimension": "異界",
+  "message.youzaiworldcore.teleport_stone.cooldown": "§c傳送之石未復，且待 %s 息。",
+  "message.youzaiworldcore.teleport_stone.no_durability": "§c石力不支！此行需 %s 分，餘 %s 分。",
+  "message.youzaiworldcore.teleport_stone.not_held": "§c傳送之石不在手，其行乃止。",
+  "item.youzaiworldcore.teleport_stone.tooltip_cost": "每 %s 步耗石力一分，越界者固耗 %s 分",
+  "item.youzaiworldcore.teleport_stone.tooltip_cooldown": "既傳送，歇 %s 息"
 }

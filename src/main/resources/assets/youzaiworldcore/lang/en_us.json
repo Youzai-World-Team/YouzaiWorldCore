@@ -593,5 +593,12 @@
   "item.youzaiworldcore.invisible_glow_item_frame": "Invisible Glow Item Frame",
   "item.youzaiworldcore.teleport_stone": "Teleport Stone",
   "item.youzaiworldcore.teleport_stone.tooltip": "Right-click to open your teleport anchor list",
-  "screen.youzaiworldcore.teleport_anchor.empty": "No teleport anchors available yet — go light one up!"
+  "screen.youzaiworldcore.teleport_anchor.empty": "No teleport anchors available yet — go light one up!",
+  "screen.youzaiworldcore.teleport_anchor.distance": "%s blocks",
+  "screen.youzaiworldcore.teleport_anchor.cross_dimension": "Other dimension",
+  "message.youzaiworldcore.teleport_stone.cooldown": "§cThe Teleport Stone is on cooldown, wait %s more second(s).",
+  "message.youzaiworldcore.teleport_stone.no_durability": "§cNot enough durability! This teleport needs %s, but only %s remains.",
+  "message.youzaiworldcore.teleport_stone.not_held": "§cThe Teleport Stone is no longer in your hand; teleport cancelled.",
+  "item.youzaiworldcore.teleport_stone.tooltip_cost": "Costs 1 durability per %s blocks, %s flat across dimensions",
+  "item.youzaiworldcore.teleport_stone.tooltip_cooldown": "%s second cooldown after a successful teleport"
 }

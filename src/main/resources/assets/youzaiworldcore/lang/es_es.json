@@ -593,5 +593,12 @@
   "youzaiworldcore.message.command.event.trial_vault.set_enable_disabled": "§cRecompensas infinitas de la bóveda de prueba desactivadas",
   "item.youzaiworldcore.teleport_stone": "Piedra de teletransporte",
   "item.youzaiworldcore.teleport_stone.tooltip": "Clic derecho para abrir tu lista de anclas de teletransporte",
-  "screen.youzaiworldcore.teleport_anchor.empty": "Aún no hay anclas de teletransporte disponibles, ¡ve a activar una!"
+  "screen.youzaiworldcore.teleport_anchor.empty": "Aún no hay anclas de teletransporte disponibles, ¡ve a activar una!",
+  "screen.youzaiworldcore.teleport_anchor.distance": "%s bloques",
+  "screen.youzaiworldcore.teleport_anchor.cross_dimension": "Otra dimensión",
+  "message.youzaiworldcore.teleport_stone.cooldown": "§cLa piedra de teletransporte se está recargando, espera %s segundo(s).",
+  "message.youzaiworldcore.teleport_stone.no_durability": "§c¡Durabilidad insuficiente! Este teletransporte cuesta %s y solo quedan %s.",
+  "message.youzaiworldcore.teleport_stone.not_held": "§cLa piedra de teletransporte ya no está en tu mano; teletransporte cancelado.",
+  "item.youzaiworldcore.teleport_stone.tooltip_cost": "1 de durabilidad por cada %s bloques, %s fijo entre dimensiones",
+  "item.youzaiworldcore.teleport_stone.tooltip_cooldown": "%s segundos de espera tras un teletransporte exitoso"
 }

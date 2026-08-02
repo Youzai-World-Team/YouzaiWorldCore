@@ -593,5 +593,12 @@
   "youzaiworldcore.message.command.event.trial_vault.set_enable_disabled": "§cTrial vault infinite rewards disabled",
   "item.youzaiworldcore.teleport_stone": "傳送石",
   "item.youzaiworldcore.teleport_stone.tooltip": "右鍵直接開啟傳送錨點列表",
-  "screen.youzaiworldcore.teleport_anchor.empty": "目前沒有可用傳送錨點，快去點亮一個吧~"
+  "screen.youzaiworldcore.teleport_anchor.empty": "目前沒有可用傳送錨點，快去點亮一個吧~",
+  "screen.youzaiworldcore.teleport_anchor.distance": "%s 格",
+  "screen.youzaiworldcore.teleport_anchor.cross_dimension": "跨維度",
+  "message.youzaiworldcore.teleport_stone.cooldown": "§c傳送石冷卻中，請等待 %s 秒。",
+  "message.youzaiworldcore.teleport_stone.no_durability": "§c傳送石耐久不足！本次傳送需要 %s 點，剩餘 %s 點。",
+  "message.youzaiworldcore.teleport_stone.not_held": "§c傳送石已不在手中，傳送已取消。",
+  "item.youzaiworldcore.teleport_stone.tooltip_cost": "每 %s 格消耗 1 點耐久，跨維度固定 %s 點",
+  "item.youzaiworldcore.teleport_stone.tooltip_cooldown": "傳送成功後冷卻 %s 秒"
 }

@@ -4,6 +4,8 @@ import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -12,6 +14,7 @@ import top.csituka.youzaiworldcore.block.entity.FlyBeaconBlockEntity;
 import top.csituka.youzaiworldcore.block.entity.TeleportAnchorBlockEntity;
 import top.csituka.youzaiworldcore.data.TeleportAnchorManager;
 import top.csituka.youzaiworldcore.data.TeleportAnchorData;
+import top.csituka.youzaiworldcore.item.tool.TeleportStoneItem;
 import top.csituka.youzaiworldcore.config.DoubleDoorsState;
 import top.csituka.youzaiworldcore.afk.AfkManager;
 import top.csituka.youzaiworldcore.dimensionalinventories.DimensionPoolManager;
@@ -209,12 +212,58 @@ public class ModNetworking {
                     DebugLogger.info("ModNetworking", "Player lacks XP: needs " + cost + " but has " + serverPlayer.experienceLevel);
                     return;
                 }
+
+                // ===== 传送石入口：耐久校验 =====
+                // 标记无论成败都在此消费；校验放在扣经验之前，避免校验失败却已扣掉经验。
+                InteractionHand stoneHand = manager.consumeStoneOpenMark(serverPlayer);
+                ItemStack stoneStack = null;
+                int durabilityCost = 0;
+                if (stoneHand != null && !isCreative) {
+                    stoneStack = serverPlayer.getItemInHand(stoneHand);
+                    if (!(stoneStack.getItem() instanceof TeleportStoneItem)) {
+                        // 兜底：玩家在开着界面时换了手，另一只手再找一次
+                        InteractionHand otherHand = stoneHand == InteractionHand.MAIN_HAND
+                                ? InteractionHand.OFF_HAND
+                                : InteractionHand.MAIN_HAND;
+                        ItemStack alternative = serverPlayer.getItemInHand(otherHand);
+                        if (alternative.getItem() instanceof TeleportStoneItem) {
+                            stoneStack = alternative;
+                            stoneHand = otherHand;
+                        } else {
+                            // 传送石已不在手上：拒绝传送，避免丢弃传送石白嫖免耐久传送
+                            serverPlayer.sendSystemMessage(
+                                    Component.translatable("message.youzaiworldcore.teleport_stone.not_held"));
+                            DebugLogger.info("ModNetworking", "Teleport stone no longer held, teleport cancelled");
+                            return;
+                        }
+                    }
+
+                    durabilityCost = TeleportStoneItem.computeDurabilityCost(serverPlayer, target);
+                    int remainingDurability = stoneStack.getMaxDamage() - stoneStack.getDamageValue();
+                    if (remainingDurability < durabilityCost) {
+                        serverPlayer.sendSystemMessage(
+                                Component.translatable("message.youzaiworldcore.teleport_stone.no_durability",
+                                        durabilityCost, remainingDurability));
+                        DebugLogger.info("ModNetworking", "Teleport stone durability insufficient: needs "
+                                + durabilityCost + " but has " + remainingDurability);
+                        return;
+                    }
+                }
+
                 if (!isCreative) {
                     serverPlayer.giveExperienceLevels(-cost);
                 }
 
                 // 记录冷却
                 manager.recordTeleport(serverPlayer, gameTime);
+
+                // 传送石结算：先上冷却（此时 stack 尚未损毁），再扣耐久（可能因耗尽而损毁）
+                if (stoneStack != null) {
+                    serverPlayer.getCooldowns().addCooldown(stoneStack, TeleportStoneItem.COOLDOWN_TICKS);
+                    stoneStack.hurtAndBreak(durabilityCost, serverPlayer, stoneHand);
+                    DebugLogger.info("ModNetworking", "Teleport stone consumed %d durability (hand=%s)",
+                            durabilityCost, stoneHand);
+                }
 
                 serverPlayer.teleportTo(targetLevel,
                         target.pos().getX() + 0.5,

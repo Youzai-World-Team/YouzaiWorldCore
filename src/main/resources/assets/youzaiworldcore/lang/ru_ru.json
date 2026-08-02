@@ -593,5 +593,12 @@
   "youzaiworldcore.message.command.event.trial_vault.set_enable_disabled": "§cБесконечные награды испытательного хранилища выключены",
   "item.youzaiworldcore.teleport_stone": "Камень телепортации",
   "item.youzaiworldcore.teleport_stone.tooltip": "ПКМ открывает список якорей телепортации",
-  "screen.youzaiworldcore.teleport_anchor.empty": "Пока нет доступных якорей телепортации — активируйте хотя бы один!"
+  "screen.youzaiworldcore.teleport_anchor.empty": "Пока нет доступных якорей телепортации — активируйте хотя бы один!",
+  "screen.youzaiworldcore.teleport_anchor.distance": "%s бл.",
+  "screen.youzaiworldcore.teleport_anchor.cross_dimension": "Другое измерение",
+  "message.youzaiworldcore.teleport_stone.cooldown": "§cКамень телепортации перезаряжается, подождите %s сек.",
+  "message.youzaiworldcore.teleport_stone.no_durability": "§cНедостаточно прочности! Нужно %s, осталось %s.",
+  "message.youzaiworldcore.teleport_stone.not_held": "§cКамень телепортации больше не в руке — телепортация отменена.",
+  "item.youzaiworldcore.teleport_stone.tooltip_cost": "1 прочности за каждые %s блоков, %s при межмировом прыжке",
+  "item.youzaiworldcore.teleport_stone.tooltip_cooldown": "Перезарядка %s секунд после успешной телепортации"
 }

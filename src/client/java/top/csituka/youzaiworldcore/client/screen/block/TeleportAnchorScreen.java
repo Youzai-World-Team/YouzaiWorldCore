@@ -63,6 +63,12 @@ public class TeleportAnchorScreen extends Screen {
     /** 空列表提示文本的颜色（灰白，区别于正常条目）。 */
     private static final int EMPTY_HINT_COLOR = 0xFFAAAAAA;
 
+    /** 条目右侧距离文本的颜色。 */
+    private static final int DISTANCE_COLOR = 0xFFB0B0B0;
+
+    /** 条目右侧距离文本与条目右边缘的间距。 */
+    private static final int DISTANCE_PADDING = 6;
+
     private static final Identifier LOCATION_ICON = Identifier.fromNamespaceAndPath(
             YouzaiworldCore.MOD_ID, "textures/gui/teleport_location.png");
     private static final Identifier COPY_ICON = Identifier.fromNamespaceAndPath(
@@ -110,6 +116,12 @@ public class TeleportAnchorScreen extends Screen {
     private EditBox searchBox;
     /** 当前显示的传送点数量（搜索模式下可能少于 points.size()）。 */
     private int displayPointCount = 0;
+
+    /**
+     * 当前实际渲染的条目列表（搜索模式下为过滤后的子集，否则即 points 本身）。
+     * 渲染层按可见按钮下标定位条目时必须用它而不是 points，否则搜索状态下会错位。
+     */
+    private List<TeleportAnchorData> displayedPoints = List.of();
 
     /**
      * 玩家一个可用传送锚点都没有：列表区域改为占一行高度并居中显示空列表提示文本。
@@ -181,6 +193,7 @@ public class TeleportAnchorScreen extends Screen {
                     .toList();
         }
         displayPointCount = displayPoints.size();
+        this.displayedPoints = displayPoints;
 
         // 限制滚动偏移在有效范围内
         int maxScroll = Math.max(0, displayPoints.size() - MAX_VISIBLE_ITEMS);
@@ -690,14 +703,55 @@ public class TeleportAnchorScreen extends Screen {
 
         // 在当前锚点条目的名称前叠加定位图标（在按钮之上绘制）
         drawCurrentAnchorIcons(guiGraphics);
+
+        // 在每个条目右侧绘制该锚点与玩家的距离
+        drawEntryDistances(guiGraphics);
+    }
+
+    /**
+     * 在每个可见条目的右侧绘制该传送锚点距离玩家的直线距离。
+     * <p>
+     * 同维度显示具体格数（玩家当前位置 → 锚点落点的欧氏距离，与服务端计算传送石耐久消耗的口径一致）；
+     * 不同维度时距离没有可比性，显示「跨维度」。每帧重算，玩家移动时数字实时变化。
+     */
+    private void drawEntryDistances(GuiGraphicsExtractor guiGraphics) {
+        var player = Minecraft.getInstance().player;
+        if (player == null) return;
+        var font = Minecraft.getInstance().font;
+
+        for (int i = 0; i < pointButtons.size(); i++) {
+            int pointIndex = scrollOffset + i;
+            if (pointIndex >= displayedPoints.size()) break;
+            TeleportAnchorData point = displayedPoints.get(pointIndex);
+
+            String text = formatDistance(player, point);
+            TransparentButton btn = pointButtons.get(i);
+            int textX = btn.getX() + btn.getWidth() - DISTANCE_PADDING - font.width(text);
+            int textY = btn.getY() + (ITEM_HEIGHT - font.lineHeight) / 2;
+            guiGraphics.text(font, text, textX, textY, DISTANCE_COLOR, false);
+        }
+    }
+
+    /** 格式化单个传送点到玩家的距离文本。 */
+    private static String formatDistance(net.minecraft.client.player.LocalPlayer player,
+                                          TeleportAnchorData point) {
+        if (!point.dimension().equals(player.level().dimension())) {
+            return Component.translatable(
+                    "screen.youzaiworldcore.teleport_anchor.cross_dimension").getString();
+        }
+        BlockPos pos = point.pos();
+        double distance = Math.sqrt(player.distanceToSqr(
+                pos.getX() + 0.5, pos.getY() + 1.0, pos.getZ() + 0.5));
+        return Component.translatable("screen.youzaiworldcore.teleport_anchor.distance",
+                (int) Math.round(distance)).getString();
     }
 
     /** 在当前正在打开的传送锚点条目左侧绘制定位图标。 */
     private void drawCurrentAnchorIcons(GuiGraphicsExtractor guiGraphics) {
         for (int i = 0; i < pointButtons.size(); i++) {
             int pointIndex = scrollOffset + i;
-            if (pointIndex >= points.size()) break;
-            TeleportAnchorData point = points.get(pointIndex);
+            if (pointIndex >= displayedPoints.size()) break;
+            TeleportAnchorData point = displayedPoints.get(pointIndex);
             if (!isCurrentAnchor(point)) continue;
 
             TransparentButton btn = pointButtons.get(i);
