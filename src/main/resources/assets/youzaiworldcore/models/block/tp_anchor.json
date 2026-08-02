@@ -4,9 +4,10 @@
     "particle": "youzaiworldcore:block/tp_anchor",
     "all": "youzaiworldcore:block/tp_anchor"
   },
+  "__comment": "展开图画布 128x128，按 2 贴图像素 = 1 方块像素 绘制；模型 uv 为 0-16 空间，故 uv = 贴图像素 / 8。几何体 XZ 尺寸必须等于对应行的面宽，否则贴图会被拉伸/串面。",
   "elements": [
     {
-      "__comment": "底座 Plinth — 完整方块底面 [0,0,0]→[16,4,16]，侧面采样展开图底座行 (y28-32, 每面16px)，顶底采样共用区 (x0-16,y32-48)",
+      "__comment": "底座 Plinth — 完整方块底面 [0,0,0]→[16,4,16]，侧面采样展开图底座行 (贴图 y56-64, 每面32px)，顶底采样共用区 (贴图 x0-32, y64-96)",
       "from": [0, 0, 0],
       "to": [16, 4, 16],
       "faces": {
@@ -19,33 +20,33 @@
       }
     },
     {
-      "__comment": "柱身 Shaft — 等宽 [3,4,3]→[13,24,13]，侧面采样展开图柱身行 (y8-28, 每面10px)",
-      "from": [3, 4, 3],
-      "to": [13, 24, 13],
+      "__comment": "柱身 Shaft — 等宽 [4,4,4]→[12,24,12] (8 宽)，侧面采样展开图柱身行 (贴图 y16-56, 每面16px)",
+      "from": [4, 4, 4],
+      "to": [12, 24, 12],
       "faces": {
         "down":  { "uv": [0, 8, 4, 12], "texture": "#all" },
         "up":    { "uv": [0, 8, 4, 12], "texture": "#all" },
-        "north": { "uv": [0, 2, 2.5, 7], "texture": "#all" },
-        "south": { "uv": [2.5, 2, 5, 7], "texture": "#all" },
-        "west":  { "uv": [5, 2, 7.5, 7], "texture": "#all" },
-        "east":  { "uv": [7.5, 2, 10, 7], "texture": "#all" }
+        "north": { "uv": [0, 2, 2, 7], "texture": "#all" },
+        "south": { "uv": [2, 2, 4, 7], "texture": "#all" },
+        "west":  { "uv": [4, 2, 6, 7], "texture": "#all" },
+        "east":  { "uv": [6, 2, 8, 7], "texture": "#all" }
       }
     },
     {
-      "__comment": "柱头装饰 Capital — [2,24,2]→[14,27,14]，侧面采样展开图柱头行 (y5-8, 每面12px)",
-      "from": [2, 24, 2],
-      "to": [14, 27, 14],
+      "__comment": "柱头装饰 Capital — [3,24,3]→[13,27,13] (10 宽)，侧面采样展开图柱头行 (贴图 y10-16, 每面20px)",
+      "from": [3, 24, 3],
+      "to": [13, 27, 13],
       "faces": {
         "down":  { "uv": [0, 8, 4, 12], "texture": "#all" },
         "up":    { "uv": [0, 8, 4, 12], "texture": "#all" },
-        "north": { "uv": [0, 1.25, 3, 2], "texture": "#all" },
-        "south": { "uv": [3, 1.25, 6, 2], "texture": "#all" },
-        "west":  { "uv": [6, 1.25, 9, 2], "texture": "#all" },
-        "east":  { "uv": [9, 1.25, 12, 2], "texture": "#all" }
+        "north": { "uv": [0, 1.25, 2.5, 2], "texture": "#all" },
+        "south": { "uv": [2.5, 1.25, 5, 2], "texture": "#all" },
+        "west":  { "uv": [5, 1.25, 7.5, 2], "texture": "#all" },
+        "east":  { "uv": [7.5, 1.25, 10, 2], "texture": "#all" }
       }
     },
     {
-      "__comment": "顶饰 Abacus — [4,27,4]→[12,32,12]，侧面采样展开图顶饰行 (y0-5, 每面8px)",
+      "__comment": "顶饰 Abacus — [4,27,4]→[12,32,12] (8 宽)，侧面采样展开图顶饰行 (贴图 y0-10, 每面16px)",
       "from": [4, 27, 4],
       "to": [12, 32, 12],
       "faces": {

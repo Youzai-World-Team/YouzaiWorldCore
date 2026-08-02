@@ -74,10 +74,10 @@ public class TeleportAnchorBlock extends BaseEntityBlock {
     private static final VoxelShape PILLAR_SHAPE = Shapes.or(
             // 底座 Plinth: [0, 0, 0] → [16, 4, 16] — 完整方块底面
             Block.box(0.0, 0.0, 0.0, 16.0, 4.0, 16.0),
-            // 柱身 Shaft: [3, 4, 3] → [13, 24, 13] — 等宽柱身
-            Block.box(3.0, 4.0, 3.0, 13.0, 24.0, 13.0),
-            // 柱头 Capital: [2, 24, 2] → [14, 27, 14] — 装饰柱头
-            Block.box(2.0, 24.0, 2.0, 14.0, 27.0, 14.0),
+            // 柱身 Shaft: [4, 4, 4] → [12, 24, 12] — 等宽柱身
+            Block.box(4.0, 4.0, 4.0, 12.0, 24.0, 12.0),
+            // 柱头 Capital: [3, 24, 3] → [13, 27, 13] — 装饰柱头
+            Block.box(3.0, 24.0, 3.0, 13.0, 27.0, 13.0),
             // 顶饰 Abacus: [4, 27, 4] → [12, 32, 12] — 顶部收口
             Block.box(4.0, 27.0, 4.0, 12.0, 32.0, 12.0)
     );
