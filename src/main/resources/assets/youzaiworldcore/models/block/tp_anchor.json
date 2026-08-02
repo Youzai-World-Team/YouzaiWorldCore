@@ -6,55 +6,55 @@
   },
   "elements": [
     {
-      "__comment": "底座 Plinth — 完整方块底面 [0,0,0]→[16,4,16]",
+      "__comment": "底座 Plinth — 完整方块底面 [0,0,0]→[16,4,16]，侧面采样展开图底座行 (y28-32, 每面16px)，顶底采样共用区 (x0-16,y32-48)",
       "from": [0, 0, 0],
       "to": [16, 4, 16],
       "faces": {
-        "down":  { "uv": [0, 13, 16, 16], "texture": "#all" },
-        "up":    { "uv": [0, 13, 16, 16], "texture": "#all" },
-        "north": { "uv": [0, 13, 16, 16], "texture": "#all" },
-        "south": { "uv": [0, 13, 16, 16], "texture": "#all" },
-        "west":  { "uv": [0, 13, 16, 16], "texture": "#all" },
-        "east":  { "uv": [0, 13, 16, 16], "texture": "#all" }
+        "down":  { "uv": [0, 8, 4, 12], "texture": "#all" },
+        "up":    { "uv": [0, 8, 4, 12], "texture": "#all" },
+        "north": { "uv": [0, 7, 4, 8], "texture": "#all" },
+        "south": { "uv": [4, 7, 8, 8], "texture": "#all" },
+        "west":  { "uv": [8, 7, 12, 8], "texture": "#all" },
+        "east":  { "uv": [12, 7, 16, 8], "texture": "#all" }
       }
     },
     {
-      "__comment": "柱身 Shaft — 等宽 [3,4,3]→[13,24,13]，UV 映射到纹理中央 V=0.20→0.80",
+      "__comment": "柱身 Shaft — 等宽 [3,4,3]→[13,24,13]，侧面采样展开图柱身行 (y8-28, 每面10px)",
       "from": [3, 4, 3],
       "to": [13, 24, 13],
       "faces": {
-        "down":  { "uv": [3, 3, 13, 13], "texture": "#all" },
-        "up":    { "uv": [3, 3, 13, 13], "texture": "#all" },
-        "north": { "uv": [3, 3, 13, 13], "texture": "#all" },
-        "south": { "uv": [3, 3, 13, 13], "texture": "#all" },
-        "west":  { "uv": [3, 3, 13, 13], "texture": "#all" },
-        "east":  { "uv": [3, 3, 13, 13], "texture": "#all" }
+        "down":  { "uv": [0, 8, 4, 12], "texture": "#all" },
+        "up":    { "uv": [0, 8, 4, 12], "texture": "#all" },
+        "north": { "uv": [0, 2, 2.5, 7], "texture": "#all" },
+        "south": { "uv": [2.5, 2, 5, 7], "texture": "#all" },
+        "west":  { "uv": [5, 2, 7.5, 7], "texture": "#all" },
+        "east":  { "uv": [7.5, 2, 10, 7], "texture": "#all" }
       }
     },
     {
-      "__comment": "柱头装饰 Capital — [2,24,2]→[14,27,14]",
+      "__comment": "柱头装饰 Capital — [2,24,2]→[14,27,14]，侧面采样展开图柱头行 (y5-8, 每面12px)",
       "from": [2, 24, 2],
       "to": [14, 27, 14],
       "faces": {
-        "down":  { "uv": [2, 1, 14, 3], "texture": "#all" },
-        "up":    { "uv": [2, 1, 14, 3], "texture": "#all" },
-        "north": { "uv": [2, 1, 14, 3], "texture": "#all" },
-        "south": { "uv": [2, 1, 14, 3], "texture": "#all" },
-        "west":  { "uv": [2, 1, 14, 3], "texture": "#all" },
-        "east":  { "uv": [2, 1, 14, 3], "texture": "#all" }
+        "down":  { "uv": [0, 8, 4, 12], "texture": "#all" },
+        "up":    { "uv": [0, 8, 4, 12], "texture": "#all" },
+        "north": { "uv": [0, 1.25, 3, 2], "texture": "#all" },
+        "south": { "uv": [3, 1.25, 6, 2], "texture": "#all" },
+        "west":  { "uv": [6, 1.25, 9, 2], "texture": "#all" },
+        "east":  { "uv": [9, 1.25, 12, 2], "texture": "#all" }
       }
     },
     {
-      "__comment": "顶饰 Abacus — [4,27,4]→[12,32,12]",
+      "__comment": "顶饰 Abacus — [4,27,4]→[12,32,12]，侧面采样展开图顶饰行 (y0-5, 每面8px)",
       "from": [4, 27, 4],
       "to": [12, 32, 12],
       "faces": {
-        "down":  { "uv": [4, 0, 12, 1], "texture": "#all" },
-        "up":    { "uv": [4, 0, 12, 1], "texture": "#all" },
-        "north": { "uv": [4, 0, 12, 1], "texture": "#all" },
-        "south": { "uv": [4, 0, 12, 1], "texture": "#all" },
-        "west":  { "uv": [4, 0, 12, 1], "texture": "#all" },
-        "east":  { "uv": [4, 0, 12, 1], "texture": "#all" }
+        "down":  { "uv": [0, 8, 4, 12], "texture": "#all" },
+        "up":    { "uv": [0, 8, 4, 12], "texture": "#all" },
+        "north": { "uv": [0, 0, 2, 1.25], "texture": "#all" },
+        "south": { "uv": [2, 0, 4, 1.25], "texture": "#all" },
+        "west":  { "uv": [4, 0, 6, 1.25], "texture": "#all" },
+        "east":  { "uv": [6, 0, 8, 1.25], "texture": "#all" }
       }
     }
   ]

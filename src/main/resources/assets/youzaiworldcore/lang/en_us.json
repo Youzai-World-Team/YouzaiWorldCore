@@ -441,6 +441,7 @@
   "screen.youzaiworldcore.settings.about_license": "License: Apache-2.0",
   "screen.youzaiworldcore.settings.about_credit_why": "Thanks to §ewhy §ffor providing textures for the Void Staff and Decomposition Table, and for designing the server team logo.",
   "screen.youzaiworldcore.settings.about_credit_byzzdemy": "Thanks to §ebyzzdemy §ffor providing NBT structure files for various teleport anchor ruins.",
+  "screen.youzaiworldcore.settings.about_credit_zhongend": "Thanks to §ezhongend §ffor providing the §9model file§f for the cat’s “Spinosaurus” form.",
   "screen.youzaiworldcore.settings.about_credit_testers": "Thanks to all community members for testing – your efforts are appreciated.",
   "screen.youzaiworldcore.settings.about_credit_oss": "YouzaiWorldCore is made possible thanks to the §9FabricMC §fopen-source project and other §9open-source projects§f.",
   "screen.youzaiworldcore.settings.about_license_btn_notice": "Referenced open-source projects",

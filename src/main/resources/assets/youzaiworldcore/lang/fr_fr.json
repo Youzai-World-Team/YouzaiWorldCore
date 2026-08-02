@@ -412,6 +412,7 @@
   "screen.youzaiworldcore.settings.about_license": "Licence : Apache-2.0",
   "screen.youzaiworldcore.settings.about_credit_why": "Merci à §ewhy §fpour les textures du Bâton du vide et de la Table de décomposition, ainsi que pour le logo de l'équipe serveur.",
   "screen.youzaiworldcore.settings.about_credit_byzzdemy": "Merci à §ebyzzdemy §fpour les fichiers de structure NBT de diverses ruines d'ancres de téléportation.",
+  "screen.youzaiworldcore.settings.about_credit_zhongend": "Merci à §ezhongend §fpour avoir fourni le §9fichier de modèle§f de la forme “Spinosaurus” du chat.",
   "screen.youzaiworldcore.settings.about_credit_testers": "Merci à tous les membres de la communauté pour les tests – votre travail est apprécié.",
   "screen.youzaiworldcore.settings.about_credit_oss": "YouzaiWorldCore est rendu possible grâce au projet open-source §9FabricMC §fet d'autres §9projets open-source§f.",
   "screen.youzaiworldcore.settings.about_license_btn_notice": "Projets open-source référencés",

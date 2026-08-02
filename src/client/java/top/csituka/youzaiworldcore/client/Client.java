@@ -3,9 +3,11 @@ package top.csituka.youzaiworldcore.client;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.MenuScreens;
+import net.minecraft.world.entity.EntityTypes;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.glfw.GLFWImage;
 import org.lwjgl.system.MemoryUtil;
@@ -41,6 +43,7 @@ import top.csituka.youzaiworldcore.command.DoubleDoorsClientCommand;
 import top.csituka.youzaiworldcore.command.InvisibilityClientCommand;
 import top.csituka.youzaiworldcore.command.PetClientCommand;
 import top.csituka.youzaiworldcore.client.config.ConfigIOManager;
+import top.csituka.youzaiworldcore.client.laowumeme.geo.LaowuCatRenderer;
 
 
 public class Client implements ClientModInitializer {
@@ -48,7 +51,7 @@ public class Client implements ClientModInitializer {
     private static boolean wasPressed = false;
     private static boolean windowIconSet = false;
 
-    @SuppressWarnings("null")
+    @SuppressWarnings({ "null", "deprecation" })
     @Override
     public void onInitializeClient() {
         DebugLogger.entering("Client", "onInitializeClient");
@@ -74,6 +77,12 @@ public class Client implements ClientModInitializer {
         BlockEntityRenderers.register(ModBlockEntities.FLY_BEACON, FlyBeaconBlockEntityRenderer::new);
         DebugLogger.info("Client", "注册传送锚点方块实体渲染器...");
         BlockEntityRenderers.register(ModBlockEntities.TELEPORT_ANCHOR, TeleportAnchorBlockEntityRenderer::new);
+
+        // 猫渲染器：用 GeckoLib 模型整体接管原版 CatRenderer（正常态 idle/sit/running，对峙态 ha_qi）。
+        // EntityRendererRegistry 虽被标记 @Deprecated（官方建议改用 EntityRenderers.register），
+        // 但 26.2 的 EntityRenderers.register 是 private 且未被 Fabric TAW 放开，故仍用此入口。
+        DebugLogger.info("Client", "注册猫 GeckoLib 渲染器（老吴对峙）...");
+        EntityRendererRegistry.register(EntityTypes.CAT, LaowuCatRenderer::new);
 
         // 物品模型定义自检：资源重载后校验模组物品是否都有 assets/youzaiworldcore/items/*.json
         // （缺失会导致该物品在物品栏/手持时渲染为黑紫丢失材质）

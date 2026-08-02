@@ -1,6 +1,6 @@
 package top.csituka.youzaiworldcore.client.resource;
 
-import net.minecraft.client.Minecraft;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.ReloadableResourceManager;
@@ -36,8 +36,11 @@ import java.util.List;
  * <p>
  * 实现说明：Fabric 的 {@code ResourceManagerHelper / SimpleSynchronousResourceReloadListener}
  * 在 26.2 已弃用，改用原版 {@link ReloadableResourceManager#registerReloadListener} +
- * {@link SimplePreparableReloadListener}（26.2 jar javap 核实：{@code Minecraft.resourceManager}
- * 字段实际类型即 {@code ReloadableResourceManager}，注册入口为其 {@code registerReloadListener}）。
+ * {@link SimplePreparableReloadListener}。注册时机必须是 {@code CLIENT_STARTED}
+ * （Minecraft 构造完成后、{@code resourceManager} 已赋值）：Fabric 的 client entrypoint
+ * 在 {@code Minecraft.<init>} 中途触发，此时 {@code getResourceManager()} 仍为 null
+ * （26.2 jar javap 核实：字段为 {@code private final ReloadableResourceManager resourceManager}，
+ * 构造器后期才赋值）。
  * </p>
  */
 @SuppressWarnings("null")
@@ -52,16 +55,24 @@ public final class ItemModelDefinitionValidator extends SimplePreparableReloadLi
     }
 
     /**
-     * 注册资源重载监听器（应在客户端初始化阶段调用，早于首次资源重载）。
+     * 注册资源重载监听器（应在客户端初始化阶段调用）。
+     * <p>
+     * 实际注册推迟到 {@code CLIENT_STARTED}：Minecraft 构造完成后 {@code resourceManager}
+     * 才可用（onInitializeClient 阶段调用 {@code getResourceManager()} 会得到 null）。
+     * 注册后立即手动执行一次校验，弥补已错过的首次资源重载。
+     * </p>
      */
     public static void register() {
         DebugLogger.entering(MODULE, "register");
-        // Fabric 的 ResourceManagerHelper 已弃用；原版 ReloadableResourceManager 提供注册入口
-        // （Minecraft.resourceManager 字段即该类型，强转安全）。
-        ReloadableResourceManager rm = (ReloadableResourceManager) Minecraft.getInstance().getResourceManager();
-        rm.registerReloadListener(new ItemModelDefinitionValidator());
-        DebugLogger.info(MODULE, "物品模型定义自检已注册（每次资源重载校验 assets/%s/%s*.json）",
-                YouzaiworldCore.MOD_ID, ITEM_DEFINITION_DIR);
+        ClientLifecycleEvents.CLIENT_STARTED.register(client -> {
+            ReloadableResourceManager rm = (ReloadableResourceManager) client.getResourceManager();
+            ItemModelDefinitionValidator validator = new ItemModelDefinitionValidator();
+            rm.registerReloadListener(validator);
+            // CLIENT_STARTED 时首次资源重载已完成，手动补一次启动校验
+            validator.validate(rm);
+            DebugLogger.info(MODULE, "物品模型定义自检已注册（每次资源重载校验 assets/%s/%s*.json）",
+                    YouzaiworldCore.MOD_ID, ITEM_DEFINITION_DIR);
+        });
         DebugLogger.exiting(MODULE, "register");
     }
 
@@ -72,7 +83,12 @@ public final class ItemModelDefinitionValidator extends SimplePreparableReloadLi
 
     @Override
     protected void apply(Void unused, ResourceManager resourceManager, ProfilerFiller profilerFiller) {
-        DebugLogger.entering(MODULE, "apply");
+        validate(resourceManager);
+    }
+
+    /** 核心校验逻辑：遍历本模组物品，检查 items/*.json 定义是否存在 */
+    private void validate(ResourceManager resourceManager) {
+        DebugLogger.entering(MODULE, "validate");
 
         List<String> missing = new ArrayList<>();
         int checked = 0;
@@ -111,7 +127,7 @@ public final class ItemModelDefinitionValidator extends SimplePreparableReloadLi
                     YouzaiworldCore.MOD_ID, ITEM_DEFINITION_DIR, YouzaiworldCore.MOD_ID);
         }
 
-        DebugLogger.exiting(MODULE, "apply",
+        DebugLogger.exiting(MODULE, "validate",
                 "checked=" + checked + ", missing=" + missing.size());
     }
 }

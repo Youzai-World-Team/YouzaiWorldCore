@@ -412,6 +412,7 @@
   "screen.youzaiworldcore.settings.about_license": "開源許可: Apache-2.0",
   "screen.youzaiworldcore.settings.about_credit_why": "感謝 §ewhy §f提供物品§9憑虛法杖§f與方塊§9拆解台§f的貼圖，以及為伺服器團隊繪製 logo",
   "screen.youzaiworldcore.settings.about_credit_byzzdemy": "感謝 §ebyzzdemy §f提供各種§9傳送錨點遺跡§f的 §9NBT 結構檔案§f",
+  "screen.youzaiworldcore.settings.about_credit_zhongend": "感謝 §ezhongend §f提供§9貓的「棘背龍」形態§f的 §9模型檔案§f",
   "screen.youzaiworldcore.settings.about_credit_testers": "感謝所有群成員幫助測試功能，辛苦了",
   "screen.youzaiworldcore.settings.about_credit_oss": "YouzaiWorldCore 的誕生離不開 §9FabricMC §f開源項目以及其他 §9開源項目§f",
   "screen.youzaiworldcore.settings.about_license_btn_notice": "參考、用到的開源項目",

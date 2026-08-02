@@ -48,9 +48,6 @@
     "ImageButtonYzuiMixin",
     "RecipeBookLayoutMixin",
     "SurvivalTrinketSlotYzuiMixin",
-    "laowumeme.CatRendererLaowuMixin",
-    "laowumeme.CatModelLaowuMixin",
-    "laowumeme.CatRenderStateLaowuMixin",
     "laowumeme.SoundBufferLibraryLaowuMixin",
     "afk.AfkKeyboardHandlerMixin",
     "afk.AfkMouseHandlerMixin"

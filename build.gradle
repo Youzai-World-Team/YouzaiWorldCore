@@ -61,6 +61,19 @@ repositories {
             includeGroup("maven.modrinth")
         }
     }
+
+    // GeckoLib Maven（Cloudsmith，官方文档指定写法）
+    exclusiveContent {
+        forRepository {
+            maven {
+                name = 'GeckoLib'
+                url = 'https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/'
+            }
+        }
+        filter {
+            includeGroupAndSubgroups('com.geckolib')
+        }
+    }
 }
 
 dependencies {
@@ -85,6 +98,11 @@ dependencies {
 
     // Trinkets API
     implementation "eu.pb4:trinkets:4.1.0-beta.2+26.2"
+
+    // GeckoLib（老吴对峙态猫模型/动画）
+    // 文档写的是 modImplementation，但 Loom 1.16.3 已移除 mod* 配置（26.x 起不再需要重映射），
+    // 故与本文件其它 mod 依赖一致用 implementation。
+    implementation "com.geckolib:geckolib-fabric-${project.minecraft_version}:${project.geckolib_version}"
 }
 
 processResources {

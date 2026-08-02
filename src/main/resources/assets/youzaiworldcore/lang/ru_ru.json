@@ -412,6 +412,7 @@
   "screen.youzaiworldcore.settings.about_license": "Лицензия: Apache-2.0",
   "screen.youzaiworldcore.settings.about_credit_why": "Благодарность §ewhy §fза текстуры Посоха пустоты и Стола разложения, а также за дизайн логотипа команды сервера.",
   "screen.youzaiworldcore.settings.about_credit_byzzdemy": "Благодарность §ebyzzdemy §fза предоставление NBT-структур для различных руин якорей телепортации.",
+  "screen.youzaiworldcore.settings.about_credit_zhongend": "Спасибо §ezhongend §fза предоставление §9файла модели§f для формы «Спинозавр» у кошки.",
   "screen.youzaiworldcore.settings.about_credit_testers": "Благодарим всех участников сообщества за тестирование – ваши усилия ценны.",
   "screen.youzaiworldcore.settings.about_credit_oss": "YouzaiWorldCore стал возможным благодаря проекту с открытым исходным кодом §9FabricMC §fи другим §9проектам с открытым кодом§f.",
   "screen.youzaiworldcore.settings.about_license_btn_notice": "Используемые проекты с открытым кодом",

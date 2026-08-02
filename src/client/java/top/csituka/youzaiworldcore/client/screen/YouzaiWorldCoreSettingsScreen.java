@@ -762,7 +762,7 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
             );
             addRenderableWidget(ossNoticeButton);
             // 内容区高度：仅覆盖实际文本与按钮末尾，不留多余空白 → 无滚动条
-            maxContentY = CONTENT_TOP + 240 + 6;  // ≈336，紧贴文本末尾
+            maxContentY = CONTENT_TOP + 255;  // ≈345，覆盖 5 条鸣谢 + OSS 致谢末尾
             DebugLogger.info("SettingsScreen", "关于分栏: maxContentY=%d (height=%d, vpH=%d)",
                     maxContentY, this.height, this.viewportHeight);
         }
@@ -994,6 +994,10 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
             y += 4;
             y = drawWrappedText(guiGraphics,
                     Component.translatable("screen.youzaiworldcore.settings.about_credit_byzzdemy"),
+                    textX, y, wrapWidth, 0x80FFFFFF, false);
+            y += 4;
+            y = drawWrappedText(guiGraphics,
+                    Component.translatable("screen.youzaiworldcore.settings.about_credit_zhongend"),
                     textX, y, wrapWidth, 0x80FFFFFF, false);
             y += 4;
             y = drawWrappedText(guiGraphics,

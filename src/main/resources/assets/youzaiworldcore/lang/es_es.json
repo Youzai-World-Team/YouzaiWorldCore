@@ -412,6 +412,7 @@
   "screen.youzaiworldcore.settings.about_license": "Licencia: Apache-2.0",
   "screen.youzaiworldcore.settings.about_credit_why": "Gracias a §ewhy §fpor las texturas del Báculo del vacío y la Mesa de descomposición, y por diseñar el logo del equipo del servidor.",
   "screen.youzaiworldcore.settings.about_credit_byzzdemy": "Gracias a §ebyzzdemy §fpor proporcionar archivos de estructura NBT para varias ruinas de anclas de teletransporte.",
+  "screen.youzaiworldcore.settings.about_credit_zhongend": "Gracias a §ezhongend §fpor proporcionar el §9archivo de modelo§f para la forma “Spinosaurus” del gato.",
   "screen.youzaiworldcore.settings.about_credit_testers": "Gracias a todos los miembros de la comunidad por probar – vuestro esfuerzo es apreciado.",
   "screen.youzaiworldcore.settings.about_credit_oss": "YouzaiWorldCore es posible gracias al proyecto de código abierto §9FabricMC §fy otros §9proyectos de código abierto§f.",
   "screen.youzaiworldcore.settings.about_license_btn_notice": "Proyectos de código abierto referenciados",
