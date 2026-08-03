@@ -290,6 +290,7 @@
   "screen.youzaiworldcore.teleport_anchor_name.confirm": "確認",
   "screen.youzaiworldcore.teleport_anchor_name.default": "傳送點",
   "message.youzaiworldcore.teleport_anchor.no_xp": "§c經驗等級不足！需 %s 級。",
+  "message.youzaiworldcore.teleport_anchor.no_xp_short": "經驗等級不足！需 %s 級。",
   "message.youzaiworldcore.teleport_anchor.invalid": "§c目標錨點已失效，已從列表移除！",
   "message.youzaiworldcore.teleport_anchor.cooldown": "§c傳送冷卻，請待 %s 秒。",
   "screen.youzaiworldcore.teleport_anchor.tooltip_copy": "複製座標至剪貼板",
@@ -600,5 +601,7 @@
   "message.youzaiworldcore.teleport_stone.no_durability": "§c石力不支！此行需 %s 分，餘 %s 分。",
   "message.youzaiworldcore.teleport_stone.not_held": "§c傳送之石不在手，其行乃止。",
   "item.youzaiworldcore.teleport_stone.tooltip_cost": "每 %s 步耗石力一分，越界者固耗 %s 分",
-  "item.youzaiworldcore.teleport_stone.tooltip_cooldown": "既傳送，歇 %s 息"
+  "item.youzaiworldcore.teleport_stone.tooltip_cooldown": "既傳送，歇 %s 息",
+  "item.youzaiworldcore.teleport_stone.tooltip_charge": "按右鍵蓄勢 %s 息，乃啟其錄",
+  "message.youzaiworldcore.teleport_stone.charge_interrupted": "蓄勢中輟，石未入歇。"
 }

@@ -319,6 +319,7 @@
   "screen.youzaiworldcore.teleport_anchor_name.confirm": "Confirm",
   "screen.youzaiworldcore.teleport_anchor_name.default": "Teleport Point",
   "message.youzaiworldcore.teleport_anchor.no_xp": "§cInsufficient experience levels! Requires %s levels.",
+  "message.youzaiworldcore.teleport_anchor.no_xp_short": "Insufficient experience levels! Requires %s levels.",
   "message.youzaiworldcore.teleport_anchor.invalid": "§cTarget teleport anchor is invalid – removed from list!",
   "message.youzaiworldcore.teleport_anchor.cooldown": "§cTeleport cooldown – please wait %s seconds.",
   "screen.youzaiworldcore.teleport_anchor.tooltip_copy": "Copy coordinates to clipboard",
@@ -600,5 +601,7 @@
   "message.youzaiworldcore.teleport_stone.no_durability": "§cNot enough durability! This teleport needs %s, but only %s remains.",
   "message.youzaiworldcore.teleport_stone.not_held": "§cThe Teleport Stone is no longer in your hand; teleport cancelled.",
   "item.youzaiworldcore.teleport_stone.tooltip_cost": "Costs 1 durability per %s blocks, %s flat across dimensions",
-  "item.youzaiworldcore.teleport_stone.tooltip_cooldown": "%s second cooldown after a successful teleport"
+  "item.youzaiworldcore.teleport_stone.tooltip_cooldown": "%s second cooldown after a successful teleport",
+  "item.youzaiworldcore.teleport_stone.tooltip_charge": "Hold right-click for %s seconds to open the list",
+  "message.youzaiworldcore.teleport_stone.charge_interrupted": "Charging interrupted; the Teleport Stone is not on cooldown."
 }

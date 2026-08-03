@@ -290,6 +290,7 @@
   "screen.youzaiworldcore.teleport_anchor_name.confirm": "Confirmer",
   "screen.youzaiworldcore.teleport_anchor_name.default": "Point de téléportation",
   "message.youzaiworldcore.teleport_anchor.no_xp": "§cNiveaux d'expérience insuffisants ! %s niveaux requis.",
+  "message.youzaiworldcore.teleport_anchor.no_xp_short": "Niveaux d'expérience insuffisants ! %s niveaux requis.",
   "message.youzaiworldcore.teleport_anchor.invalid": "§cL'ancre de téléportation cible est invalide – retirée de la liste !",
   "message.youzaiworldcore.teleport_anchor.cooldown": "§cDélai de recharge de téléportation – attends %s secondes.",
   "screen.youzaiworldcore.teleport_anchor.tooltip_copy": "Copier les coordonnées dans le presse-papiers",
@@ -600,5 +601,7 @@
   "message.youzaiworldcore.teleport_stone.no_durability": "§cDurabilité insuffisante ! Cette téléportation coûte %s, il n'en reste que %s.",
   "message.youzaiworldcore.teleport_stone.not_held": "§cLa pierre de téléportation n'est plus en main ; téléportation annulée.",
   "item.youzaiworldcore.teleport_stone.tooltip_cost": "1 point de durabilité tous les %s blocs, %s fixe entre dimensions",
-  "item.youzaiworldcore.teleport_stone.tooltip_cooldown": "%s secondes de recharge après une téléportation réussie"
+  "item.youzaiworldcore.teleport_stone.tooltip_cooldown": "%s secondes de recharge après une téléportation réussie",
+  "item.youzaiworldcore.teleport_stone.tooltip_charge": "Maintenez le clic droit %s secondes pour ouvrir la liste",
+  "message.youzaiworldcore.teleport_stone.charge_interrupted": "Charge interrompue ; la pierre de téléportation n'est pas en recharge."
 }

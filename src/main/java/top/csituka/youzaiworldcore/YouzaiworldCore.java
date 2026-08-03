@@ -171,6 +171,8 @@ public class YouzaiworldCore implements ModInitializer {
         SitHandler.register();
         DebugLogger.info("YouzaiworldCore", "注册传送锚点交互转发事件...");
         TeleportAnchorInteractHandler.register();
+        DebugLogger.info("YouzaiworldCore", "注册传送石蓄力打断事件...");
+        top.csituka.youzaiworldcore.event.TeleportStoneChargeHandler.register();
         DebugLogger.info("YouzaiworldCore", "注册虚空法杖 Tick 事件...");
         VoidStaffTickHandler.register();
         DebugLogger.info("YouzaiworldCore", "注册魔力恢复 Tick 事件...");

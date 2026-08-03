@@ -66,6 +66,15 @@ public class TeleportAnchorScreen extends Screen {
     /** 条目右侧距离文本的颜色。 */
     private static final int DISTANCE_COLOR = 0xFFB0B0B0;
 
+    /** 经验不足提示文本的颜色（橙红，与删除确认提示区分）。 */
+    private static final int XP_WARNING_COLOR = 0xFFFF5555;
+
+    /** 同维度传送消耗的经验等级，与服务端 {@code ModNetworking} 中的口径保持一致。 */
+    private static final int XP_COST_SAME_DIMENSION = 1;
+
+    /** 跨维度传送消耗的经验等级。 */
+    private static final int XP_COST_CROSS_DIMENSION = 2;
+
     /** 条目右侧距离文本与条目右边缘的间距。 */
     private static final int DISTANCE_PADDING = 6;
 
@@ -131,6 +140,15 @@ public class TeleportAnchorScreen extends Screen {
 
     /** 列表区域顶部 Y 坐标，供绘制空列表提示时定位。 */
     private int listTopY;
+
+    /**
+     * 当前选中的锚点因经验等级不足而无法传送：传送按钮置灰，并在按钮上方显示提示文本。
+     * 每次重建 UI 时按当前经验等级重新判定。
+     */
+    private boolean showXpWarning = false;
+
+    /** 传送当前选中锚点所需的经验等级，配合 {@link #showXpWarning} 显示提示文本。 */
+    private int requiredXpLevel = 0;
 
     // UI 组件
     private final List<TransparentButton> pointButtons = new ArrayList<>();
@@ -343,6 +361,11 @@ public class TeleportAnchorScreen extends Screen {
         boolean hasSelection = selectedIndex >= 0 && selectedIndex < points.size();
         boolean isCurrentAnchor = hasSelection && isCurrentAnchor(points.get(selectedIndex));
 
+        // 经验等级预校验：不足时置灰传送按钮，避免白播一段传送 FOV 动画后才被服务端拒绝
+        boolean enoughXp = !hasSelection || hasEnoughXpFor(points.get(selectedIndex));
+        showXpWarning = hasSelection && !isCurrentAnchor && !enoughXp;
+        requiredXpLevel = hasSelection ? xpCostFor(points.get(selectedIndex)) : 0;
+
         // 传送按钮（文字 + 半透明白底）
         int teleportX = panelX + PANEL_PADDING;
         teleportButton = new TextureIconButton(
@@ -353,13 +376,19 @@ public class TeleportAnchorScreen extends Screen {
                 () -> {
                     if (hasSelection && !isCurrentAnchor) {
                         TeleportAnchorData point = points.get(selectedIndex);
+                        // 经验不足则什么都不做（按钮本应已置灰，这里兜底防止经验在界面打开期间变化）
+                        if (!hasEnoughXpFor(point)) {
+                            showXpWarning = true;
+                            requiredXpLevel = xpCostFor(point);
+                            return;
+                        }
                         // 启动 FOV 动画，数据包在放大到顶后自动发送
                         TeleportFovEffect.startTeleport(point.pos(), point.dimension());
                         Minecraft.getInstance().setScreenAndShow(null);
                     }
                 });
         teleportButton.setTextColor(BUTTON_TEXT_COLOR);
-        teleportButton.active = hasSelection && !isCurrentAnchor;
+        teleportButton.active = hasSelection && !isCurrentAnchor && enoughXp;
         if (!teleportButton.active) teleportButton.setExternalAlpha(0.3f);
         addRenderableWidget(teleportButton);
 
@@ -467,7 +496,7 @@ public class TeleportAnchorScreen extends Screen {
             addRenderableWidget(moveDownButton);
         }
 
-        // 搜索按钮
+        // 搜索按钮（一个可用锚点都没有时无从搜索，直接置灰）
         searchButton = new TextureIconButton(
                 searchX, actionsY, ICON_BUTTON_SIZE, ICON_BUTTON_SIZE,
                 SEARCH_ICON,
@@ -481,6 +510,8 @@ public class TeleportAnchorScreen extends Screen {
                     }
                     rebuildWidgets();
                 });
+        searchButton.active = !points.isEmpty();
+        if (!searchButton.active) searchButton.setExternalAlpha(0.3f);
         addRenderableWidget(searchButton);
 
         // 复制坐标按钮（在编辑模式展开逻辑之后创建，确保 X 坐标正确）
@@ -507,6 +538,59 @@ public class TeleportAnchorScreen extends Screen {
         copyButton.active = hasSelection;
         if (!copyButton.active) copyButton.setExternalAlpha(0.3f);
         addRenderableWidget(copyButton);
+    }
+
+    /**
+     * 按玩家当前经验等级刷新传送按钮的可用状态与提示。
+     * <p>
+     * 每帧调用一次：界面打开期间玩家的经验等级可能变化（捡起经验球、别处扣经验），
+     * 只在重建 UI 时判定会让按钮状态过期。
+     */
+    private void refreshTeleportAffordability() {
+        if (teleportButton == null) {
+            showXpWarning = false;
+            return;
+        }
+        boolean hasSelection = selectedIndex >= 0 && selectedIndex < points.size();
+        if (!hasSelection) {
+            showXpWarning = false;
+            return;
+        }
+        TeleportAnchorData point = points.get(selectedIndex);
+        boolean enoughXp = hasEnoughXpFor(point);
+        showXpWarning = !isCurrentAnchor(point) && !enoughXp;
+        requiredXpLevel = xpCostFor(point);
+
+        boolean active = !isCurrentAnchor(point) && enoughXp;
+        teleportButton.active = active;
+        teleportButton.setExternalAlpha(active ? 1f : 0.3f);
+    }
+
+    /**
+     * 传送到指定锚点需要消耗的经验等级：同维度 1 级，跨维度 2 级。
+     * <p>
+     * 与服务端 {@code ModNetworking} 中 {@code TeleportAnchorTeleportPayload} 处理器的口径一致，
+     * 两边同时改动才不会出现「按钮能点但服务端拒绝」的偏差。
+     */
+    private static int xpCostFor(TeleportAnchorData point) {
+        var player = Minecraft.getInstance().player;
+        if (player != null && point.dimension().equals(player.level().dimension())) {
+            return XP_COST_SAME_DIMENSION;
+        }
+        return XP_COST_CROSS_DIMENSION;
+    }
+
+    /**
+     * 客户端预判玩家的经验等级是否够本次传送。
+     * <p>
+     * 这只是提前拦截，真正的扣费与校验仍在服务端；创造模式免经验，直接放行。
+     */
+    private static boolean hasEnoughXpFor(TeleportAnchorData point) {
+        var player = Minecraft.getInstance().player;
+        if (player == null || player.getAbilities().instabuild) {
+            return true;
+        }
+        return player.experienceLevel >= xpCostFor(point);
     }
 
     /**
@@ -643,6 +727,11 @@ public class TeleportAnchorScreen extends Screen {
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
+        // 经验等级可能在界面打开期间变化，每帧按当前等级刷新传送按钮状态
+        if (!confirmingDelete && !renameMode) {
+            refreshTeleportAffordability();
+        }
+
         // 半透明黑色背景遮罩
         guiGraphics.fill(0, 0, this.width, this.height, 0x80000000);
 
@@ -672,6 +761,16 @@ public class TeleportAnchorScreen extends Screen {
             int msgY = listBottomY + PANEL_PADDING - 2;
             guiGraphics.text(font, confirmMsg,
                     (this.width - msgWidth) / 2, msgY, 0xFFFFAA00, false);
+        }
+
+        // 经验等级不足提示：绘制在底部按钮上方，说明传送按钮为何置灰
+        if (showXpWarning && !confirmingDelete && !renameMode) {
+            String warning = Component.translatable(
+                    "message.youzaiworldcore.teleport_anchor.no_xp_short", requiredXpLevel).getString();
+            int warnWidth = font.width(warning);
+            int warnY = listBottomY + PANEL_PADDING - 2;
+            guiGraphics.text(font, warning,
+                    (this.width - warnWidth) / 2, warnY, XP_WARNING_COLOR, false);
         }
 
         // 滚动指示器

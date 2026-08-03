@@ -290,6 +290,7 @@
   "screen.youzaiworldcore.teleport_anchor_name.confirm": "Bestätigen",
   "screen.youzaiworldcore.teleport_anchor_name.default": "Teleportpunkt",
   "message.youzaiworldcore.teleport_anchor.no_xp": "§cNicht genug Erfahrungsstufen! Benötigt %s Stufen.",
+  "message.youzaiworldcore.teleport_anchor.no_xp_short": "Nicht genug Erfahrungsstufen! Benötigt %s Stufen.",
   "message.youzaiworldcore.teleport_anchor.invalid": "§cZiel-Teleportanker ist ungültig – wurde aus der Liste entfernt!",
   "message.youzaiworldcore.teleport_anchor.cooldown": "§cTeleport-Kühlzeit – bitte %s Sekunden warten.",
   "screen.youzaiworldcore.teleport_anchor.tooltip_copy": "Koordinaten in die Zwischenablage kopieren",
@@ -600,5 +601,7 @@
   "message.youzaiworldcore.teleport_stone.no_durability": "§cNicht genug Haltbarkeit! Dieser Teleport kostet %s, übrig sind %s.",
   "message.youzaiworldcore.teleport_stone.not_held": "§cDer Teleportstein ist nicht mehr in deiner Hand – Teleport abgebrochen.",
   "item.youzaiworldcore.teleport_stone.tooltip_cost": "1 Haltbarkeit je %s Blöcke, dimensionsübergreifend pauschal %s",
-  "item.youzaiworldcore.teleport_stone.tooltip_cooldown": "%s Sekunden Abklingzeit nach erfolgreichem Teleport"
+  "item.youzaiworldcore.teleport_stone.tooltip_cooldown": "%s Sekunden Abklingzeit nach erfolgreichem Teleport",
+  "item.youzaiworldcore.teleport_stone.tooltip_charge": "Rechtsklick %s Sekunden halten, um die Liste zu öffnen",
+  "message.youzaiworldcore.teleport_stone.charge_interrupted": "Aufladen unterbrochen; der Teleportstein hat keine Abklingzeit."
 }

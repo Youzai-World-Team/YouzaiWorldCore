@@ -290,6 +290,7 @@
   "screen.youzaiworldcore.teleport_anchor_name.confirm": "確認",
   "screen.youzaiworldcore.teleport_anchor_name.default": "傳送點",
   "message.youzaiworldcore.teleport_anchor.no_xp": "§c經驗等級不足！需要 %s 級經驗。",
+  "message.youzaiworldcore.teleport_anchor.no_xp_short": "經驗等級不足！需要 %s 級經驗。",
   "message.youzaiworldcore.teleport_anchor.invalid": "§c目標傳送錨點已失效，已從列表中移除！",
   "message.youzaiworldcore.teleport_anchor.cooldown": "§c傳送冷卻中，請等待 %s 秒後再試。",
   "screen.youzaiworldcore.teleport_anchor.tooltip_copy": "複製座標到剪貼簿",
@@ -600,5 +601,7 @@
   "message.youzaiworldcore.teleport_stone.no_durability": "§c傳送石耐久不足！本次傳送需要 %s 點，剩餘 %s 點。",
   "message.youzaiworldcore.teleport_stone.not_held": "§c傳送石已不在手中，傳送已取消。",
   "item.youzaiworldcore.teleport_stone.tooltip_cost": "每 %s 格消耗 1 點耐久，跨維度固定 %s 點",
-  "item.youzaiworldcore.teleport_stone.tooltip_cooldown": "傳送成功後冷卻 %s 秒"
+  "item.youzaiworldcore.teleport_stone.tooltip_cooldown": "傳送成功後冷卻 %s 秒",
+  "item.youzaiworldcore.teleport_stone.tooltip_charge": "長按右鍵蓄力 %s 秒後開啟列表",
+  "message.youzaiworldcore.teleport_stone.charge_interrupted": "蓄力被打斷，傳送石未進入冷卻。"
 }

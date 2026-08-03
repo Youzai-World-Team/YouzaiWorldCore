@@ -101,6 +101,19 @@ public class ClientNetworking {
         });
         DebugLogger.info("ClientNetworking", "Registered receiver: TeleportAnchorOpenNamePayload");
 
+        // 注册传送石蓄力打断处理器：服务端已停止使用物品，客户端同步停手，避免一直保持蓄力动作
+        ClientPlayNetworking.registerGlobalReceiver(TeleportStoneInterruptPayload.TYPE, (payload, context) -> {
+            DebugLogger.entering("ClientNetworking", "TeleportStoneInterruptPayload handler");
+            Minecraft client = context.client();
+            client.execute(() -> {
+                if (client.player != null && client.player.isUsingItem() && client.gameMode != null) {
+                    client.gameMode.releaseUsingItem(client.player);
+                }
+            });
+            DebugLogger.exiting("ClientNetworking", "TeleportStoneInterruptPayload handler");
+        });
+        DebugLogger.info("ClientNetworking", "Registered receiver: TeleportStoneInterruptPayload");
+
         // 注册魔力同步处理器
         ClientPlayNetworking.registerGlobalReceiver(ManaSyncPayload.ID, (payload, context) -> {
             context.client().execute(() -> {

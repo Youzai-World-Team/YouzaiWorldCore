@@ -290,6 +290,7 @@
   "screen.youzaiworldcore.teleport_anchor_name.confirm": "Confirmar",
   "screen.youzaiworldcore.teleport_anchor_name.default": "Punto de teletransporte",
   "message.youzaiworldcore.teleport_anchor.no_xp": "§c¡Niveles de experiencia insuficientes! Se necesitan %s niveles.",
+  "message.youzaiworldcore.teleport_anchor.no_xp_short": "¡Niveles de experiencia insuficientes! Se necesitan %s niveles.",
   "message.youzaiworldcore.teleport_anchor.invalid": "§c¡El ancla de teletransporte objetivo no es válida – eliminada de la lista!",
   "message.youzaiworldcore.teleport_anchor.cooldown": "§cEnfriamiento de teletransporte – espera %s segundos.",
   "screen.youzaiworldcore.teleport_anchor.tooltip_copy": "Copiar coordenadas al portapapeles",
@@ -600,5 +601,7 @@
   "message.youzaiworldcore.teleport_stone.no_durability": "§c¡Durabilidad insuficiente! Este teletransporte cuesta %s y solo quedan %s.",
   "message.youzaiworldcore.teleport_stone.not_held": "§cLa piedra de teletransporte ya no está en tu mano; teletransporte cancelado.",
   "item.youzaiworldcore.teleport_stone.tooltip_cost": "1 de durabilidad por cada %s bloques, %s fijo entre dimensiones",
-  "item.youzaiworldcore.teleport_stone.tooltip_cooldown": "%s segundos de espera tras un teletransporte exitoso"
+  "item.youzaiworldcore.teleport_stone.tooltip_cooldown": "%s segundos de espera tras un teletransporte exitoso",
+  "item.youzaiworldcore.teleport_stone.tooltip_charge": "Mantén clic derecho %s segundos para abrir la lista",
+  "message.youzaiworldcore.teleport_stone.charge_interrupted": "Carga interrumpida; la piedra de teletransporte no entra en enfriamiento."
 }

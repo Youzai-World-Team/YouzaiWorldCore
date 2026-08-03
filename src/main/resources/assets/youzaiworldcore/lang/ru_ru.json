@@ -290,6 +290,7 @@
   "screen.youzaiworldcore.teleport_anchor_name.confirm": "Подтвердить",
   "screen.youzaiworldcore.teleport_anchor_name.default": "Точка телепортации",
   "message.youzaiworldcore.teleport_anchor.no_xp": "§cНедостаточно уровней опыта! Требуется %s уровней.",
+  "message.youzaiworldcore.teleport_anchor.no_xp_short": "Недостаточно уровней опыта! Требуется %s уровней.",
   "message.youzaiworldcore.teleport_anchor.invalid": "§cЦелевой якорь телепортации недействителен – удалён из списка!",
   "message.youzaiworldcore.teleport_anchor.cooldown": "§cЗадержка телепортации – подождите %s секунд.",
   "screen.youzaiworldcore.teleport_anchor.tooltip_copy": "Скопировать координаты в буфер обмена",
@@ -600,5 +601,7 @@
   "message.youzaiworldcore.teleport_stone.no_durability": "§cНедостаточно прочности! Нужно %s, осталось %s.",
   "message.youzaiworldcore.teleport_stone.not_held": "§cКамень телепортации больше не в руке — телепортация отменена.",
   "item.youzaiworldcore.teleport_stone.tooltip_cost": "1 прочности за каждые %s блоков, %s при межмировом прыжке",
-  "item.youzaiworldcore.teleport_stone.tooltip_cooldown": "Перезарядка %s секунд после успешной телепортации"
+  "item.youzaiworldcore.teleport_stone.tooltip_cooldown": "Перезарядка %s секунд после успешной телепортации",
+  "item.youzaiworldcore.teleport_stone.tooltip_charge": "Удерживайте ПКМ %s секунд, чтобы открыть список",
+  "message.youzaiworldcore.teleport_stone.charge_interrupted": "Зарядка прервана; телепортационный камень не на перезарядке."
 }
