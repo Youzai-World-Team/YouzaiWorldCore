@@ -366,6 +366,7 @@ public class YzuCreativeInventoryScreen extends Screen {
             if (!cursorDisplay.isEmpty()) g.itemDecorations(font, cursorDisplay, mx - 8, my - 8, null);
         }
         if (carried.isEmpty()) {
+            // 左侧网格悬停提示
             int hov = getHoveredGridIndex(mx, my);
             if (hov >= 0 && hov < vis.size()) {
                 int vi = vis.get(hov);
@@ -373,6 +374,16 @@ public class YzuCreativeInventoryScreen extends Screen {
                 if (!st.isEmpty())
                     g.setTooltipForNextFrame(font, Screen.getTooltipFromItem(minecraft, st), st.getTooltipImage(), mx,
                             my, null);
+            }
+            // 右侧面板（装备/副手/生存背包/快捷栏）悬停提示
+            if (hov < 0) {
+                int rps = getRightPanelSlotAt(mx, my);
+                if (rps >= 0) {
+                    ItemStack rpst = slots.get(rps).getItem();
+                    if (!rpst.isEmpty())
+                        g.setTooltipForNextFrame(font, Screen.getTooltipFromItem(minecraft, rpst),
+                                rpst.getTooltipImage(), mx, my, null);
+                }
             }
         }
     }
@@ -832,16 +843,10 @@ public class YzuCreativeInventoryScreen extends Screen {
                     }
                     minecraft.player.containerMenu.setCarried(ca.isEmpty() ? ItemStack.EMPTY : ca);
                     gameMode.handleCreativeModeItemAdd(slot.getItem(), slotIndex);
-                    var nc = minecraft.player.containerMenu.getCarried();
-                    if (!nc.isEmpty())
-                        gameMode.handleCreativeModeItemAdd(nc.copy(), -1);
                 } else {
                     minecraft.player.containerMenu.setCarried(si.copy());
                     slot.set(ca.copy());
                     gameMode.handleCreativeModeItemAdd(ca.copy(), slotIndex);
-                    var nc = minecraft.player.containerMenu.getCarried();
-                    if (!nc.isEmpty())
-                        gameMode.handleCreativeModeItemAdd(nc, -1);
                 }
             }
             return;
@@ -1378,6 +1383,38 @@ public class YzuCreativeInventoryScreen extends Screen {
         if (ev.key() == 256 || minecraft.options.keyInventory.matches(ev)) {
             minecraft.gui.setScreen(null);
             return true;
+        }
+
+        // 左侧网格悬停快捷键（Q/Ctrl+Q 丢弃，1-9 放入快捷栏）
+        int gridHov = getHoveredGridIndex((int) xm, (int) ym);
+        if (gridHov >= 0 && gridHov < vis.size()) {
+            int vi = vis.get(gridHov);
+            ItemStack gridItem = getItemForVis(vi);
+            if (!gridItem.isEmpty() && player.containerMenu.getCarried().isEmpty()) {
+                // Q → 丢弃 1 个；Ctrl+Q → 丢弃 1 组
+                if (minecraft.options.keyDrop.matches(ev)) {
+                    ItemStack toDrop = gridItem.copy();
+                    toDrop.setCount(ev.hasControlDown() ? toDrop.getMaxStackSize() : 1);
+                    minecraft.gameMode.handleCreativeModeItemDrop(toDrop);
+                    DebugLogger.info("YzuCreativeInventoryScreen",
+                            "grid drop: %s x%d (ctrl=%b)", toDrop.getHoverName().getString(),
+                            toDrop.getCount(), ev.hasControlDown());
+                    return true;
+                }
+                // 1-9 → 将整组物品放入对应快捷栏槽位
+                for (int i = 0; i < 9; i++) {
+                    if (minecraft.options.keyHotbarSlots[i].matches(ev)) {
+                        ItemStack fullStack = gridItem.copy();
+                        fullStack.setCount(fullStack.getMaxStackSize());
+                        player.inventoryMenu.getSlot(36 + i).set(fullStack);
+                        minecraft.gameMode.handleCreativeModeItemAdd(fullStack, 36 + i);
+                        DebugLogger.info("YzuCreativeInventoryScreen",
+                                "grid to hotbar[%d]: %s x%d", i,
+                                fullStack.getHoverName().getString(), fullStack.getCount());
+                        return true;
+                    }
+                }
+            }
         }
 
         // 获取鼠标悬停的右侧面板槽位（键盘快捷键仅对真实背包槽位有效）

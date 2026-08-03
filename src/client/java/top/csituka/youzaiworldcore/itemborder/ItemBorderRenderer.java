@@ -145,6 +145,31 @@ public final class ItemBorderRenderer {
     }
 
     // ============================================================
+    //  公开渲染入口（自定义界面的自绘槽位）
+    // ============================================================
+
+    /**
+     * 为自绘界面中的 16×16 物品槽绘制边框（如邮件附件槽与物品选取弹窗）。
+     * <p>
+     * 与 {@link #renderBorder(GuiGraphicsExtractor, int, int, ItemStack)} 的区别是
+     * 不受「快捷栏边框」开关约束——那是 HUD 专用选项，与界面内的槽位无关。
+     * </p>
+     *
+     * @param gui  当前 {@link GuiGraphicsExtractor} 实例
+     * @param x    槽位左上角 X（物品图标本身的坐标，不含槽位边距）
+     * @param y    槽位左上角 Y
+     * @param item 目标物品
+     */
+    public static void renderSlotBorder(GuiGraphicsExtractor gui, int x, int y, ItemStack item) {
+        if (!isRenderable(item)) return;
+
+        int startColor = resolveBorderColor(item);
+        if (startColor == 0) return;
+
+        drawBorder(gui, x, y, startColor, startColor);
+    }
+
+    // ============================================================
     //  渲染条件判断
     // ============================================================
 

@@ -313,13 +313,16 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 
 单向的**管理员 → 玩家**服务器信箱 / 公告箱（非玩家间私聊），由管理员经 GUI 发布，玩家在信箱（Shift+F → 邮件）中查收、领取奖励。
 
-- **定位**：发送方仅管理员（OP / LuckPerms `youzaiworldcore.mail` 节点）；接收方可多选取并集——全体（含管理）/ 全体非管理 / 指定玩家 / 角色组
+- **定位**：发送方仅管理员（OP / LuckPerms `youzaiworldcore.mail` 节点）；接收方二选一——全体成员 / 指定玩家（从账户系统已注册名单中勾选）
 - **邮件类型**：公告（ANNOUNCEMENT）、通知（NOTICE）、奖励（REWARD）
-- **奖励载体**（REWARD 类型）：物品（最多 10 个槽位，从管理员物品栏复制为模板，不消耗原物）、命令（以控制台执行，支持 `%player%` / `%uuid%` 占位符）、原版经验值、原版等级、本项目冒险等级
-- **过期策略**：可选 1 天 / 7 天 / 30 天（默认）/ 永久；过期未星标自动清理，已星标保留文本但禁用领取
+- **奖励载体**（REWARD 类型）：物品（最多 10 个槽位，从管理员物品栏复制为模板，不消耗原物）、命令（以控制台执行，支持 `%player%` / `%uuid%` 占位符）、原版经验值、原版等级、本项目冒险经验值、本项目冒险等级（四项可同时选择）
+- **过期策略**：可选 1 天 / 7 天 / 30 天（默认）/ 永久；过期未星标自动清理（服务端每次启动时亦会清理「已过期且无任何玩家星标」的邮件），已星标保留文本但禁用领取
 - **GUI**
-  - **玩家信箱**（`MailScreen`）：筛选（全部/未读/已收藏）、详情、领取/星标/删除；右上角「发布邮件」「已发送邮件」按钮仅权限持有者可见
-  - **发布/编辑页**（`MailComposeScreen`）：多选接收范围 + 类型 + 主题 + 正文 + 附件（≤10 物品槽）+ 过期下拉；编辑已发送邮件亦复用此界面（`MailSentScreen`[编辑] → 预填 → `MailAdminEditPayload`）
+  - **界面适配**：三个邮件界面均以 960×540 GUI 单位为设计基准等比缩放并居中，任意分辨率 / 界面尺寸下排版一致
+  - **玩家信箱**（`MailScreen`）：筛选（全部/未读/已收藏）、详情、领取/星标/删除；右上角「发布邮件」「已发送邮件」按钮仅权限持有者可见，另有「返回」（回主菜单）与「关闭」按钮；主菜单进入带过渡动画
+  - **发布/编辑页**（`MailComposeScreen`）：接收范围二选一（指定玩家经「选取玩家」弹窗勾选，支持搜索）+ 类型 + 主题 + 正文 + 附件（≤10 物品槽，显示稀有度边框，经「从物品栏选取」按钮挑选）+ 过期下拉；编辑已发送邮件亦复用此界面（`MailSentScreen`[编辑] → 预填 → `MailAdminEditPayload`）
+  - **已发送页**（`MailSentScreen`）：已过期邮件不再提供「编辑」「撤回」入口
+  - **操作反馈**：领取 / 撤回 / 权限不足等结果在界面顶部以浮动提示条显示（界面未打开时回落到聊天栏）
 - **命令**（**客户端命令**，解析后转发；服务端统一鉴权）
   - `/yzwc mail send_mail` —— 打开发布邮件 GUI
   - `/yzwc mail sent` —— 打开已发送邮件管理列表
@@ -328,7 +331,7 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
   - `/yzwc mail list [player]` —— 查看指定玩家信箱
 - **权限**：`youzaiworldcore.mail`（默认 OP 4）；未装 LuckPerms 时以 `mail_permission_level` 回退
 - **存储**：全局仓库 `config/youzaiworldcore/mail/sent.json` + 每玩家索引 `config/youzaiworldcore/mail/box/<uuid>.json` + 设置 `mail_settings.json`；跨世界一致，绑定账户系统（离线账户同样入索引，登录可见）
-- **网络**：共 16 个专用数据包（C2S `mail_compose_open` / `mail_open` / `mail_sent_list_request` / `mail_recall` / `mail_purge` / `mail_list_request` / `mail_fetch` / `mail_action` / `mail_admin_send` / `mail_admin_edit`；S2C `open_mail_compose` / `mail_list` / `mail_sent_list` / `mail_update` / `mail_op_result` / `mail_unread_count`）
+- **网络**：共 18 个专用数据包（C2S `mail_compose_open` / `mail_open` / `mail_sent_list_request` / `mail_recall` / `mail_purge` / `mail_list_request` / `mail_fetch` / `mail_action` / `mail_admin_send` / `mail_admin_edit` / `mail_player_list_request`；S2C `open_mail_compose` / `mail_list` / `mail_sent_list` / `mail_update` / `mail_op_result` / `mail_unread_count` / `mail_player_list`）
 
 ### 27. 自定义附魔
 
@@ -586,9 +589,9 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 | `decomposition_table` | 分解台   |
 | `fly_beacon`          | 飞行信标 |
 
-### 网络数据包（共 36 个）
+### 网络数据包（共 38 个）
 
-> 注：`world_pool_teleport` 数据包类位于 `dimensionalinventories` 包，其余位于 `network` 包；邮件相关 16 个数据包亦位于 `network` 包。方向统计：S→C 13 个，C→S 23 个。
+> 注：`world_pool_teleport` 数据包类位于 `dimensionalinventories` 包，其余位于 `network` 包；邮件相关 18 个数据包亦位于 `network` 包。方向统计：S→C 14 个，C→S 24 个。
 
 | 数据包 ID                   | 方向 | 用途                                                               |
 | --------------------------- | ---- | ------------------------------------------------------------------ |
@@ -600,6 +603,7 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 | `teleport_anchor_list`      | S→C  | 发送传送点列表                                                     |
 | `teleport_anchor_open_name` | S→C  | 打开传送锚点命名界面                                               |
 | `mail_unread_count`         | S→C  | 同步未读数与发布权限（canSend）                                    |
+| `mail_player_list`          | S→C  | 返回已注册玩家代号名单（发布页「选取玩家」弹窗）                   |
 | `open_mail_compose`         | S→C  | 打开发布邮件 GUI                                                   |
 | `mail_list`                 | S→C  | 发送收件箱列表                                                     |
 | `mail_sent_list`            | S→C  | 发送已发送邮件列表                                                 |
@@ -628,6 +632,7 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 | `mail_action`               | C→S  | 打开/已读/星标/领取/删除                                           |
 | `mail_admin_send`           | C→S  | 发布邮件                                                           |
 | `mail_admin_edit`           | C→S  | 编辑/取消编辑邮件                                                  |
+| `mail_player_list_request`  | C→S  | 请求已注册玩家代号名单                                             |
 
 ---
 

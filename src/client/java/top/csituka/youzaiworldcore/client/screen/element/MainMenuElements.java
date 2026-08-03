@@ -210,9 +210,9 @@ public class MainMenuElements implements MenuElementGroup {
                 // 设置按钮 — 打开设置界面
                 onClick = () -> screen.switchTo(new SettingsMenuElements());
             } else if (i == 1) {
-                // 邮件 — 打开信箱
-                onClick = () -> Minecraft.getInstance()
-                        .setScreenAndShow(new top.csituka.youzaiworldcore.client.screen.MailScreen());
+                // 邮件 — 打开信箱（先播放菜单淡出，再切到邮件界面，衔接其淡入动画）
+                onClick = () -> screen.startExit(() -> Minecraft.getInstance()
+                        .setScreenAndShow(new top.csituka.youzaiworldcore.client.screen.MailScreen()));
             } else if (i == 2) {
                 // 官方网站 — 在默认浏览器打开 https://mcyzw.top
                 onClick = () -> {

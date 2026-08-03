@@ -9,7 +9,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -19,7 +21,7 @@ import java.util.UUID;
  * 加载时自动剔除正文已不存在（被撤回）与过期未星标的条目。
  * </p>
  */
-@SuppressWarnings("null")
+@SuppressWarnings({ "null", "unused" })
 public class MailDataStorage {
 
     private static final String MODULE = "MailDataStorage";
@@ -236,6 +238,98 @@ public class MailDataStorage {
     public static int getUnreadCount(UUID playerUuid) {
         PlayerMailbox box = load(playerUuid);
         return (int) box.getMails().stream().filter(ref -> !ref.isRead()).count();
+    }
+
+    // ===== 全局扫描（启动清理用） =====
+
+    /**
+     * 扫描 box 目录下所有玩家收件箱，汇总被任意玩家星标过的邮件 ID。
+     * <p>
+     * 直接读文件而不走 {@link #load}：load 会顺带触发剔除与回写，
+     * 而本方法只做只读统计，且需要覆盖离线玩家。
+     * </p>
+     *
+     * @return 被至少一名玩家星标的 mailId 集合（目录不存在时返回空集）
+     */
+    public static Set<UUID> collectStarredMailIds() {
+        DebugLogger.entering(MODULE, "collectStarredMailIds");
+        Set<UUID> starred = new HashSet<>();
+        if (BOX_DIR == null || !Files.isDirectory(BOX_DIR)) {
+            DebugLogger.exiting(MODULE, "collectStarredMailIds", "box dir missing");
+            return starred;
+        }
+        try (var stream = Files.list(BOX_DIR)) {
+            for (Path file : stream.filter(p -> p.toString().endsWith(".json")).toList()) {
+                PlayerMailbox box = readBoxFile(file);
+                if (box == null) {
+                    continue;
+                }
+                for (MailRef ref : box.getMails()) {
+                    if (ref.isStarred() && ref.getMailId() != null) {
+                        starred.add(ref.getMailId());
+                    }
+                }
+            }
+        } catch (IOException e) {
+            YouzaiworldCore.LOGGER.error("扫描收件箱目录失败", e);
+            DebugLogger.exception(MODULE, "collectStarredMailIds", e);
+        }
+        DebugLogger.exiting(MODULE, "collectStarredMailIds", "starred=" + starred.size());
+        return starred;
+    }
+
+    /**
+     * 剔除所有玩家收件箱中指向「仓库已不存在的邮件」的悬空引用。
+     *
+     * @return 实际发生改动并回写的收件箱数量
+     */
+    public static int pruneDanglingRefs() {
+        DebugLogger.entering(MODULE, "pruneDanglingRefs");
+        int changed = 0;
+        if (BOX_DIR == null || !Files.isDirectory(BOX_DIR)) {
+            DebugLogger.exiting(MODULE, "pruneDanglingRefs", "box dir missing");
+            return 0;
+        }
+        try (var stream = Files.list(BOX_DIR)) {
+            for (Path file : stream.filter(p -> p.toString().endsWith(".json")).toList()) {
+                PlayerMailbox box = readBoxFile(file);
+                if (box == null || box.getPlayerUuid() == null) {
+                    continue;
+                }
+                boolean removed = box.getMails().removeIf(ref ->
+                        ref.getMailId() == null || SentMailRepository.get(ref.getMailId()) == null);
+                if (removed) {
+                    save(box.getPlayerUuid(), box);
+                    changed++;
+                }
+            }
+        } catch (IOException e) {
+            YouzaiworldCore.LOGGER.error("整理收件箱目录失败", e);
+            DebugLogger.exception(MODULE, "pruneDanglingRefs", e);
+        }
+        DebugLogger.exiting(MODULE, "pruneDanglingRefs", "changed=" + changed);
+        return changed;
+    }
+
+    /** 只读方式解析单个收件箱文件，失败时返回 null。 */
+    private static PlayerMailbox readBoxFile(Path file) {
+        try {
+            String json = Files.readString(file);
+            if (json.isBlank()) {
+                return null;
+            }
+            PlayerMailbox box = GSON.fromJson(json, PlayerMailbox.class);
+            if (box == null) {
+                return null;
+            }
+            if (box.getMails() == null) {
+                box.setMails(new ArrayList<>());
+            }
+            return box;
+        } catch (Exception e) {
+            YouzaiworldCore.LOGGER.error("读取收件箱文件失败 [{}]: {}", file.getFileName(), e.getMessage());
+            return null;
+        }
     }
 
     // ===== 工具方法 =====

@@ -5,7 +5,8 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.MultiLineEditBox;
-import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.CharacterEvent;
+import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.TagParser;
@@ -14,6 +15,7 @@ import net.minecraft.world.item.ItemStack;
 import top.csituka.youzaiworldcore.client.MailClientState;
 import top.csituka.youzaiworldcore.client.screen.widget.DropdownButton;
 import top.csituka.youzaiworldcore.client.screen.widget.MailCheckboxButton;
+import top.csituka.youzaiworldcore.itemborder.ItemBorderRenderer;
 import top.csituka.youzaiworldcore.mail.AttachmentType;
 import top.csituka.youzaiworldcore.mail.Mail;
 import top.csituka.youzaiworldcore.mail.MailAttachment;
@@ -22,6 +24,8 @@ import top.csituka.youzaiworldcore.mail.TargetSpec;
 import top.csituka.youzaiworldcore.network.AttachmentData;
 import top.csituka.youzaiworldcore.network.MailAdminEditPayload;
 import top.csituka.youzaiworldcore.network.MailAdminSendPayload;
+import top.csituka.youzaiworldcore.network.MailPlayerListRequestPayload;
+import top.csituka.youzaiworldcore.network.MailSentListRequestPayload;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
 import java.util.ArrayList;
@@ -31,9 +35,13 @@ import java.util.UUID;
 
 /**
  * 管理员邮件发布与编辑界面。
+ * <p>
+ * 接收范围为「全体成员 / 指定玩家」二选一；指定玩家通过 {@link MailPlayerPicker} 弹窗从
+ * 账户系统的已注册名单中勾选，输入框只读展示结果。
+ * </p>
  */
 @SuppressWarnings("null")
-public class MailComposeScreen extends Screen {
+public class MailComposeScreen extends MailBaseScreen {
 
     private static final String MODULE = "MailComposeScreen";
     private static final int ITEM_SLOTS = 10;
@@ -41,32 +49,45 @@ public class MailComposeScreen extends Screen {
     private static final List<String> TYPE_OPTIONS = List.of("公告", "通知", "奖励");
     private static final List<String> EXPIRE_OPTIONS = List.of("1天", "7天", "30天", "永久");
     private static final byte[] EXPIRE_VALUES = {0, 1, 2, 3};
+    /** 下拉框宽度：收窄后把省下的横向空间让给主题输入框 */
+    private static final int DROPDOWN_WIDTH = 62;
 
     private final boolean editMode;
     private final UUID editMailId;
     private Mail editSource;
 
     private MailCheckboxButton cbAll;
-    private MailCheckboxButton cbNonAdmin;
     private MailCheckboxButton cbPlayer;
-    private MailCheckboxButton cbRole;
     private MailCheckboxButton cbItem;
     private MailCheckboxButton cbCommand;
-    private MailCheckboxButton cbExp;
-    private MailCheckboxButton cbLevel;
-    private MailCheckboxButton cbAdventure;
+    private MailCheckboxButton cbVanillaExp;
+    private MailCheckboxButton cbVanillaLevel;
+    private MailCheckboxButton cbAdventureExp;
+    private MailCheckboxButton cbAdventureLevel;
 
-    private EditBox playerInput;
-    private EditBox roleInput;
     private EditBox titleInput;
     private EditBox commandInput;
-    private EditBox expInput;
-    private EditBox levelInput;
-    private EditBox adventureInput;
+    private EditBox vanillaExpInput;
+    private EditBox vanillaLevelInput;
+    private EditBox adventureExpInput;
+    private EditBox adventureLevelInput;
     private EditBox itemAmountInput;
     private MultiLineEditBox bodyInput;
     private DropdownButton typeDropdown;
     private DropdownButton expireDropdown;
+
+    /**
+     * 「选取玩家」弹窗的搜索输入框。
+     * <p>刻意不加入组件树：只作为文本模型承接键盘事件（保留输入法 / 粘贴 / 光标等原版能力），
+     * 显示由 {@link MailPlayerPicker} 自绘，从而不与表单组件抢渲染层级和焦点。</p>
+     */
+    private EditBox playerSearchInput;
+
+    private final MailPlayerPicker playerPicker = new MailPlayerPicker();
+    /** 当前选中的指定玩家代号 */
+    private final List<String> selectedPlayers = new ArrayList<>();
+    /** 旧版接收范围（全体非管理 / 角色组）：界面已不提供，但编辑时原样保留，避免静默丢数据 */
+    private final List<TargetSpec> legacyTargets = new ArrayList<>();
 
     private final ItemStack[] itemSlots = new ItemStack[ITEM_SLOTS];
     private final MailUi.Rect[] slotRects = new MailUi.Rect[ITEM_SLOTS];
@@ -79,10 +100,14 @@ public class MailComposeScreen extends Screen {
     private MailUi.Rect publishRect = new MailUi.Rect(0, 0, 0, 0);
     private MailUi.Rect pickItemRect = new MailUi.Rect(0, 0, 0, 0);
     private MailUi.Rect pickerRect = new MailUi.Rect(0, 0, 0, 0);
+    private MailUi.Rect pickPlayersRect = new MailUi.Rect(0, 0, 0, 0);
+    private MailUi.Rect playerFieldRect = new MailUi.Rect(0, 0, 0, 0);
 
     private String validationMessage = "";
     private boolean finished;
     private boolean cancelPacketSent;
+    /** 是否已完成首次初始化（窗口尺寸变化会再次触发 init，此时要保留已填内容） */
+    private boolean initialized;
 
     public MailComposeScreen() {
         this(false, null);
@@ -100,7 +125,7 @@ public class MailComposeScreen extends Screen {
     @Override
     protected void init() {
         super.init();
-        pageRect = MailUi.centeredPage(width, height, 620, 360);
+        pageRect = MailUi.centeredPage(620, 360);
         formRect = new MailUi.Rect(pageRect.x() + 22, pageRect.y() + 50,
                 pageRect.width() - 44, pageRect.height() - 68);
         if (editMode && editSource == null && MailClientState.pendingEditData != null) {
@@ -108,56 +133,79 @@ public class MailComposeScreen extends Screen {
             MailClientState.pendingEditData = null;
         }
 
-        Prefill prefill = createPrefill(editSource);
+        // 窗口尺寸变化会再次触发 init：此时从现有控件回捞已填内容，避免表单被清空
+        boolean keepAllChecked = initialized && cbAll.isChecked();
+        boolean keepPlayerChecked = initialized && cbPlayer.isChecked();
+        Prefill prefill = initialized ? capturePrefill() : createPrefill(editSource);
+
         createScopeWidgets(prefill);
         createMainFields(prefill);
         createAttachmentWidgets(prefill);
-        syncTargetState();
+        if (initialized) {
+            cbAll.setChecked(keepAllChecked);
+            cbPlayer.setChecked(keepPlayerChecked);
+        } else {
+            // 首次进入才拉取已注册玩家名单，打开弹窗时即可直接展示
+            ClientPlayNetworking.send(new MailPlayerListRequestPayload());
+        }
+        initialized = true;
         syncAttachmentState();
+
         DebugLogger.info(MODULE, "已打开邮件%s页面", editMode ? "编辑" : "发布");
+    }
+
+    /** 把当前表单内容打包成预填数据，用于 init 重建控件时原样恢复。 */
+    private Prefill capturePrefill() {
+        List<ItemStack> items = new ArrayList<>();
+        for (ItemStack stack : itemSlots) {
+            if (stack != null && !stack.isEmpty()) {
+                items.add(stack.copy());
+            }
+        }
+        return new Prefill(cbAll.isChecked(), List.copyOf(selectedPlayers), List.copyOf(legacyTargets),
+                typeDropdown.getSelectedIndex(), expireDropdown.getSelectedIndex(),
+                titleInput.getValue(), bodyInput.getValue(), items,
+                cbCommand.isChecked() ? commandInput.getValue() : "",
+                cbVanillaExp.isChecked() ? vanillaExpInput.getValue() : "",
+                cbVanillaLevel.isChecked() ? vanillaLevelInput.getValue() : "",
+                cbAdventureExp.isChecked() ? adventureExpInput.getValue() : "",
+                cbAdventureLevel.isChecked() ? adventureLevelInput.getValue() : "");
     }
 
     private void createScopeWidgets(Prefill prefill) {
         int x = formRect.x() + 12;
         int checkboxY = formRect.y() + 22;
-        cbAll = addRenderableWidget(new MailCheckboxButton(x, checkboxY, 52,
-                Component.literal("全体"), prefill.all(), this::syncTargetState));
-        cbNonAdmin = addRenderableWidget(new MailCheckboxButton(x + 62, checkboxY, 88,
-                Component.literal("全体非管理"), prefill.nonAdmin(), this::syncTargetState));
-        cbPlayer = addRenderableWidget(new MailCheckboxButton(x + 162, checkboxY, 78,
-                Component.literal("指定玩家"), prefill.playersEnabled(), this::syncTargetState));
-        cbRole = addRenderableWidget(new MailCheckboxButton(x + 252, checkboxY, 70,
-                Component.literal("角色组"), prefill.rolesEnabled(), this::syncTargetState));
+        cbAll = addRenderableWidget(new MailCheckboxButton(x, checkboxY, 72,
+                Component.literal("全体成员"), prefill.all(), () -> onScopeToggled(true)));
+        cbPlayer = addRenderableWidget(new MailCheckboxButton(x + 92, checkboxY, 72,
+                Component.literal("指定玩家"), prefill.playersEnabled(), () -> onScopeToggled(false)));
 
-        int inputY = formRect.y() + 42;
-        int halfWidth = Math.max(90, (formRect.width() - 90) / 2);
-        playerInput = createEditBox(formRect.x() + 42, inputY, halfWidth - 48, 16,
-                "Steve, Alex ...", 180);
-        playerInput.setValue(prefill.players());
-        roleInput = createEditBox(formRect.x() + halfWidth + 48, inputY,
-                formRect.width() - halfWidth - 60, 16, "group.admin ...", 180);
-        roleInput.setValue(prefill.roles());
-        addRenderableWidget(playerInput);
-        addRenderableWidget(roleInput);
+        selectedPlayers.clear();
+        selectedPlayers.addAll(prefill.players());
+        legacyTargets.clear();
+        legacyTargets.addAll(prefill.legacyTargets());
+
+        playerSearchInput = new EditBox(font, 0, 0, 100, 16, Component.literal(""));
+        playerSearchInput.setMaxLength(32);
     }
 
     private void createMainFields(Prefill prefill) {
         int rowY = formRect.y() + 70;
-        typeDropdown = new DropdownButton(formRect.x() + 48, rowY, 92, 92, 18,
+        typeDropdown = new DropdownButton(formRect.x() + 40, rowY, DROPDOWN_WIDTH, DROPDOWN_WIDTH, 18,
                 Component.literal(""), TYPE_OPTIONS, prefill.typeIndex(), false,
                 ignored -> syncAttachmentState(), () -> {
                 });
         addRenderableWidget(typeDropdown);
-        expireDropdown = new DropdownButton(formRect.x() + 218, rowY, 92, 92, 18,
+        expireDropdown = new DropdownButton(formRect.x() + 168, rowY, DROPDOWN_WIDTH, DROPDOWN_WIDTH, 18,
                 Component.literal(""), EXPIRE_OPTIONS, prefill.expireIndex(), false,
                 ignored -> {
                 }, () -> {
                 });
         addRenderableWidget(expireDropdown);
 
-        int titleX = formRect.x() + 362;
+        int titleX = formRect.x() + 268;
         titleInput = createEditBox(titleX, rowY, Math.max(80, formRect.right() - titleX - 12), 18,
-                "暑期活动开启公告", 64);
+                "请输入邮件主题", 64);
         titleInput.setValue(prefill.title());
         addRenderableWidget(titleInput);
 
@@ -205,24 +253,31 @@ public class MailComposeScreen extends Screen {
         commandInput.setValue(prefill.command());
         addRenderableWidget(commandInput);
 
+        // ===== 经验 / 等级：原版与本项目冒险体系各两项，可同时勾选 =====
         int numericY = formRect.y() + 231;
-        cbExp = addRenderableWidget(new MailCheckboxButton(x, numericY, 70,
-                Component.literal("原版经验"), prefill.expEnabled(), this::syncAttachmentState));
-        expInput = createEditBox(x + 76, numericY - 1, 42, 18, "0", 9);
-        expInput.setValue(prefill.expValue());
-        addRenderableWidget(expInput);
+        cbVanillaExp = addRenderableWidget(new MailCheckboxButton(x, numericY, 66,
+                Component.literal("原版经验"), prefill.vanillaExpEnabled(), this::syncAttachmentState));
+        vanillaExpInput = createEditBox(x + 70, numericY - 1, 38, 18, "0", 9);
+        vanillaExpInput.setValue(prefill.vanillaExpValue());
+        addRenderableWidget(vanillaExpInput);
 
-        cbLevel = addRenderableWidget(new MailCheckboxButton(x + 140, numericY, 70,
-                Component.literal("增加等级"), prefill.levelEnabled(), this::syncAttachmentState));
-        levelInput = createEditBox(x + 216, numericY - 1, 42, 18, "0", 9);
-        levelInput.setValue(prefill.levelValue());
-        addRenderableWidget(levelInput);
+        cbVanillaLevel = addRenderableWidget(new MailCheckboxButton(x + 120, numericY, 66,
+                Component.literal("原版等级"), prefill.vanillaLevelEnabled(), this::syncAttachmentState));
+        vanillaLevelInput = createEditBox(x + 190, numericY - 1, 38, 18, "0", 9);
+        vanillaLevelInput.setValue(prefill.vanillaLevelValue());
+        addRenderableWidget(vanillaLevelInput);
 
-        cbAdventure = addRenderableWidget(new MailCheckboxButton(x + 280, numericY, 76,
-                Component.literal("冒险经验"), prefill.adventureEnabled(), this::syncAttachmentState));
-        adventureInput = createEditBox(x + 362, numericY - 1, 48, 18, "0", 9);
-        adventureInput.setValue(prefill.adventureValue());
-        addRenderableWidget(adventureInput);
+        cbAdventureExp = addRenderableWidget(new MailCheckboxButton(x + 240, numericY, 66,
+                Component.literal("冒险经验"), prefill.adventureExpEnabled(), this::syncAttachmentState));
+        adventureExpInput = createEditBox(x + 310, numericY - 1, 38, 18, "0", 9);
+        adventureExpInput.setValue(prefill.adventureExpValue());
+        addRenderableWidget(adventureExpInput);
+
+        cbAdventureLevel = addRenderableWidget(new MailCheckboxButton(x + 360, numericY, 66,
+                Component.literal("冒险等级"), prefill.adventureLevelEnabled(), this::syncAttachmentState));
+        adventureLevelInput = createEditBox(x + 430, numericY - 1, 38, 18, "0", 9);
+        adventureLevelInput.setValue(prefill.adventureLevelValue());
+        addRenderableWidget(adventureLevelInput);
     }
 
     private EditBox createEditBox(int x, int y, int width, int height, String hint, int maxLength) {
@@ -236,18 +291,24 @@ public class MailComposeScreen extends Screen {
         return input;
     }
 
+    // ===== 渲染 =====
+
     @Override
-    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
-        extractBackground(graphics, mouseX, mouseY, partialTick);
+    protected void renderMailContent(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         MailUi.drawPage(graphics, pageRect);
         renderHeader(graphics, mouseX, mouseY);
         renderFormBackground(graphics, mouseX, mouseY);
-        super.extractRenderState(graphics, mouseX, mouseY, partialTick);
+        renderWidgets(graphics, mouseX, mouseY, partialTick);
 
         typeDropdown.renderPopup(graphics, mouseX, mouseY, partialTick);
         expireDropdown.renderPopup(graphics, mouseX, mouseY, partialTick);
         if (inventoryPickerOpen) {
             renderInventoryPicker(graphics, mouseX, mouseY);
+        }
+        if (playerPicker.isOpen()) {
+            playerPicker.setQuery(playerSearchInput.getValue());
+            playerPicker.render(graphics, font, mouseX, mouseY,
+                    MailViewport.DESIGN_WIDTH, MailViewport.DESIGN_HEIGHT);
         }
     }
 
@@ -280,25 +341,44 @@ public class MailComposeScreen extends Screen {
         MailUi.roundedRect(graphics, formRect.x(), formRect.y(), formRect.width(), formRect.height(), 5,
                 MailUi.PANEL_BACKGROUND);
         int x = formRect.x() + 12;
-        graphics.text(font, "接收范围（可多选，取并集）", x, formRect.y() + 9,
-                MailUi.TEXT_PRIMARY, false);
-        if (playerInput.isVisible()) {
-            graphics.text(font, "玩家", formRect.x() + 12, formRect.y() + 46, MailUi.TEXT_SECONDARY, false);
-            drawInputBackground(graphics, playerInput.getX(), playerInput.getY(), playerInput.getWidth(),
-                    playerInput.getHeight(), true);
+        graphics.text(font, "接收范围（二选一）", x, formRect.y() + 9, MailUi.TEXT_PRIMARY, false);
+        if (!legacyTargets.isEmpty()) {
+            String hint = "含 " + legacyTargets.size() + " 项旧版范围，保存时原样保留";
+            graphics.text(font, hint, formRect.right() - font.width(hint) - 12, formRect.y() + 9,
+                    MailUi.TEXT_MUTED, false);
         }
-        if (roleInput.isVisible()) {
-            int labelX = roleInput.getX() - 30;
-            graphics.text(font, "角色", labelX, formRect.y() + 46, MailUi.TEXT_SECONDARY, false);
-            drawInputBackground(graphics, roleInput.getX(), roleInput.getY(), roleInput.getWidth(),
-                    roleInput.getHeight(), true);
+
+        // ===== 指定玩家：只读展示 + 选取按钮 =====
+        if (cbPlayer.isChecked()) {
+            int fieldY = formRect.y() + 42;
+            graphics.text(font, "玩家", formRect.x() + 12, fieldY + 4, MailUi.TEXT_SECONDARY, false);
+            pickPlayersRect = new MailUi.Rect(formRect.right() - 84, fieldY - 2, 72, 20);
+            String counter = "已选 " + selectedPlayers.size() + " 人";
+            int counterWidth = font.width(counter);
+            playerFieldRect = new MailUi.Rect(formRect.x() + 42, fieldY,
+                    pickPlayersRect.x() - counterWidth - 20 - (formRect.x() + 42), 16);
+            drawInputBackground(graphics, playerFieldRect.x(), playerFieldRect.y(),
+                    playerFieldRect.width(), playerFieldRect.height(), true);
+            String display = selectedPlayers.isEmpty() ? "尚未选取玩家" : String.join(", ", selectedPlayers);
+            graphics.text(font, MailUi.ellipsize(font, display, playerFieldRect.width() - 8),
+                    playerFieldRect.x() + 4, playerFieldRect.y() + 4,
+                    selectedPlayers.isEmpty() ? MailUi.TEXT_MUTED : 0xFFE6E6E6, false);
+            graphics.text(font, counter, playerFieldRect.right() + 8, playerFieldRect.y() + 4,
+                    MailUi.TEXT_SECONDARY, false);
+            MailUi.button(graphics, font, pickPlayersRect, "选取玩家", 0xFF858585, 0xFF111111,
+                    pickPlayersRect.contains(mouseX, mouseY), true);
+        } else {
+            pickPlayersRect = new MailUi.Rect(0, 0, 0, 0);
+            playerFieldRect = new MailUi.Rect(0, 0, 0, 0);
+            graphics.text(font, "邮件将发送给全部已注册玩家", formRect.x() + 42, formRect.y() + 46,
+                    MailUi.TEXT_MUTED, false);
         }
 
         graphics.fill(formRect.x() + 12, formRect.y() + 63, formRect.right() - 12,
                 formRect.y() + 64, MailUi.DIVIDER);
         graphics.text(font, "类型", formRect.x() + 12, formRect.y() + 76, MailUi.TEXT_PRIMARY, false);
-        graphics.text(font, "过期时间", formRect.x() + 158, formRect.y() + 76, MailUi.TEXT_PRIMARY, false);
-        graphics.text(font, "主题", formRect.x() + 324, formRect.y() + 76, MailUi.TEXT_PRIMARY, false);
+        graphics.text(font, "过期时间", formRect.x() + 108, formRect.y() + 76, MailUi.TEXT_PRIMARY, false);
+        graphics.text(font, "主题", formRect.x() + 236, formRect.y() + 76, MailUi.TEXT_PRIMARY, false);
         drawInputBackground(graphics, typeDropdown.getX(), typeDropdown.getY(), typeDropdown.getWidth(), 18, true);
         drawInputBackground(graphics, expireDropdown.getX(), expireDropdown.getY(), expireDropdown.getWidth(), 18, true);
         drawInputBackground(graphics, titleInput.getX(), titleInput.getY(), titleInput.getWidth(),
@@ -321,9 +401,10 @@ public class MailComposeScreen extends Screen {
             ItemStack stack = itemSlots[i];
             if (stack != null && !stack.isEmpty()) {
                 graphics.item(stack, slot.x() + 1, slot.y() + 1, i);
+                ItemBorderRenderer.renderSlotBorder(graphics, slot.x() + 1, slot.y() + 1, stack);
                 graphics.itemDecorations(font, stack, slot.x() + 1, slot.y() + 1);
                 if (slot.contains(mouseX, mouseY)) {
-                    graphics.setTooltipForNextFrame(font, stack, mouseX, mouseY);
+                    showItemTooltip(graphics, stack, mouseX, mouseY);
                 }
             }
         }
@@ -336,12 +417,17 @@ public class MailComposeScreen extends Screen {
 
         drawInputBackground(graphics, commandInput.getX(), commandInput.getY(), commandInput.getWidth(),
                 commandInput.getHeight(), cbCommand.active && cbCommand.isChecked());
-        drawInputBackground(graphics, expInput.getX(), expInput.getY(), expInput.getWidth(), expInput.getHeight(),
-                cbExp.active && cbExp.isChecked());
-        drawInputBackground(graphics, levelInput.getX(), levelInput.getY(), levelInput.getWidth(),
-                levelInput.getHeight(), cbLevel.active && cbLevel.isChecked());
-        drawInputBackground(graphics, adventureInput.getX(), adventureInput.getY(), adventureInput.getWidth(),
-                adventureInput.getHeight(), cbAdventure.active && cbAdventure.isChecked());
+        drawInputBackground(graphics, vanillaExpInput.getX(), vanillaExpInput.getY(), vanillaExpInput.getWidth(),
+                vanillaExpInput.getHeight(), cbVanillaExp.active && cbVanillaExp.isChecked());
+        drawInputBackground(graphics, vanillaLevelInput.getX(), vanillaLevelInput.getY(),
+                vanillaLevelInput.getWidth(), vanillaLevelInput.getHeight(),
+                cbVanillaLevel.active && cbVanillaLevel.isChecked());
+        drawInputBackground(graphics, adventureExpInput.getX(), adventureExpInput.getY(),
+                adventureExpInput.getWidth(), adventureExpInput.getHeight(),
+                cbAdventureExp.active && cbAdventureExp.isChecked());
+        drawInputBackground(graphics, adventureLevelInput.getX(), adventureLevelInput.getY(),
+                adventureLevelInput.getWidth(), adventureLevelInput.getHeight(),
+                cbAdventureLevel.active && cbAdventureLevel.isChecked());
 
         if (editMode) {
             String hint = "编辑期间接收者暂不可见，保存或取消后恢复";
@@ -357,11 +443,11 @@ public class MailComposeScreen extends Screen {
     }
 
     private void renderInventoryPicker(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
-        graphics.fill(0, 0, width, height, 0x99000000);
+        graphics.fill(0, 0, MailViewport.DESIGN_WIDTH, MailViewport.DESIGN_HEIGHT, 0x99000000);
         int pickerWidth = 202;
         int pickerHeight = 112;
-        pickerRect = new MailUi.Rect((width - pickerWidth) / 2, (height - pickerHeight) / 2,
-                pickerWidth, pickerHeight);
+        pickerRect = new MailUi.Rect((MailViewport.DESIGN_WIDTH - pickerWidth) / 2,
+                (MailViewport.DESIGN_HEIGHT - pickerHeight) / 2, pickerWidth, pickerHeight);
         MailUi.roundedRect(graphics, pickerRect.x(), pickerRect.y(), pickerRect.width(), pickerRect.height(), 6,
                 0xFF2F2F2F);
         graphics.text(font, "选择要复制到附件槽的物品", pickerRect.x() + 11, pickerRect.y() + 9,
@@ -384,18 +470,36 @@ public class MailComposeScreen extends Screen {
             ItemStack stack = inventory.getItem(i);
             if (!stack.isEmpty()) {
                 graphics.item(stack, slotX + 1, slotY + 1, i + 100);
+                ItemBorderRenderer.renderSlotBorder(graphics, slotX + 1, slotY + 1, stack);
                 graphics.itemDecorations(font, stack, slotX + 1, slotY + 1);
                 if (sourceRect.contains(mouseX, mouseY)) {
-                    graphics.setTooltipForNextFrame(font, stack, mouseX, mouseY);
+                    showItemTooltip(graphics, stack, mouseX, mouseY);
                 }
             }
         }
     }
 
+    /**
+     * 展示物品提示。
+     * <p>提示框在整帧末尾以屏幕坐标绘制，不受当前缩放矩阵影响，
+     * 因此这里要把设计坐标换算回屏幕坐标，否则缩放后提示会偏离光标。</p>
+     */
+    private void showItemTooltip(GuiGraphicsExtractor graphics, ItemStack stack, int mouseX, int mouseY) {
+        graphics.setTooltipForNextFrame(font, stack,
+                viewport.toScreenX(mouseX), viewport.toScreenY(mouseY));
+    }
+
+    // ===== 输入 =====
+
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean isActuallyClick) {
-        double mouseX = event.x();
-        double mouseY = event.y();
+        double mouseX = viewport.toDesignX(event.x());
+        double mouseY = viewport.toDesignY(event.y());
+
+        if (playerPicker.isOpen()) {
+            playerPicker.mouseClicked(mouseX, mouseY);
+            return true;
+        }
         if (inventoryPickerOpen) {
             handleInventoryPickerClick(mouseX, mouseY);
             return true;
@@ -408,7 +512,12 @@ public class MailComposeScreen extends Screen {
             onPublish();
             return true;
         }
+        if (cbPlayer.isChecked() && pickPlayersRect.contains(mouseX, mouseY)) {
+            openPlayerPicker();
+            return true;
+        }
 
+        // 物品槽：左键仅切换当前槽位，右键清空；弹窗一律由「从物品栏选取」按钮打开
         for (int i = 0; i < ITEM_SLOTS; i++) {
             if (slotRects[i].contains(mouseX, mouseY) && cbItem.active && cbItem.isChecked()) {
                 selectedItemSlot = i;
@@ -418,7 +527,6 @@ public class MailComposeScreen extends Screen {
                 } else {
                     ItemStack stack = itemSlots[i];
                     itemAmountInput.setValue(stack.isEmpty() ? "1" : String.valueOf(stack.getCount()));
-                    inventoryPickerOpen = true;
                 }
                 return true;
             }
@@ -435,6 +543,29 @@ public class MailComposeScreen extends Screen {
             expireDropdown.closePopup();
         }
         return super.mouseClicked(event, isActuallyClick);
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+        if (playerPicker.isOpen()) {
+            return playerPicker.mouseScrolled(viewport.toDesignX(mouseX), viewport.toDesignY(mouseY), scrollY);
+        }
+        return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
+    }
+
+    private void openPlayerPicker() {
+        playerSearchInput.setValue("");
+        playerSearchInput.setFocused(true);
+        if (MailClientState.registeredPlayers.isEmpty()) {
+            // 名单尚未到达（如刚进界面就点开），补发一次请求
+            ClientPlayNetworking.send(new MailPlayerListRequestPayload());
+        }
+        playerPicker.open(selectedPlayers, names -> {
+            selectedPlayers.clear();
+            selectedPlayers.addAll(names);
+            validationMessage = "";
+            DebugLogger.info(MODULE, "已选取指定玩家: %d 人", names.size());
+        });
     }
 
     private void handleInventoryPickerClick(double mouseX, double mouseY) {
@@ -467,7 +598,15 @@ public class MailComposeScreen extends Screen {
     }
 
     @Override
-    public boolean keyPressed(net.minecraft.client.input.KeyEvent event) {
+    public boolean keyPressed(KeyEvent event) {
+        if (playerPicker.isOpen()) {
+            // ESC / 回车由弹窗处理，其余按键转给搜索输入框
+            if (playerPicker.keyPressed(event.key())) {
+                return true;
+            }
+            playerSearchInput.keyPressed(event);
+            return true;
+        }
         if (inventoryPickerOpen && event.key() == 256) {
             inventoryPickerOpen = false;
             return true;
@@ -475,13 +614,30 @@ public class MailComposeScreen extends Screen {
         return super.keyPressed(event);
     }
 
-    private void syncTargetState() {
-        if (playerInput != null) {
-            playerInput.setVisible(cbPlayer.isChecked());
+    @Override
+    public boolean charTyped(CharacterEvent event) {
+        if (playerPicker.isOpen()) {
+            playerSearchInput.charTyped(event);
+            return true;
         }
-        if (roleInput != null) {
-            roleInput.setVisible(cbRole.isChecked());
+        return super.charTyped(event);
+    }
+
+    // ===== 状态同步 =====
+
+    /**
+     * 接收范围二选一：勾上其中一个即取消另一个；两个都不选时自动选回，
+     * 但携带旧版范围（角色组 / 全体非管理）的邮件允许全不选，避免强行覆盖其原有范围。
+     */
+    private void onScopeToggled(boolean allClicked) {
+        MailCheckboxButton clicked = allClicked ? cbAll : cbPlayer;
+        MailCheckboxButton other = allClicked ? cbPlayer : cbAll;
+        if (clicked.isChecked()) {
+            other.setChecked(false);
+        } else if (!other.isChecked() && legacyTargets.isEmpty()) {
+            clicked.setChecked(true);
         }
+        validationMessage = "";
     }
 
     private void syncAttachmentState() {
@@ -491,14 +647,16 @@ public class MailComposeScreen extends Screen {
         boolean reward = typeDropdown.getSelectedIndex() == 2;
         cbItem.active = reward;
         cbCommand.active = reward;
-        cbExp.active = reward;
-        cbLevel.active = reward;
-        cbAdventure.active = reward;
+        cbVanillaExp.active = reward;
+        cbVanillaLevel.active = reward;
+        cbAdventureExp.active = reward;
+        cbAdventureLevel.active = reward;
         itemAmountInput.setEditable(reward && cbItem.isChecked());
         commandInput.setEditable(reward && cbCommand.isChecked());
-        expInput.setEditable(reward && cbExp.isChecked());
-        levelInput.setEditable(reward && cbLevel.isChecked());
-        adventureInput.setEditable(reward && cbAdventure.isChecked());
+        vanillaExpInput.setEditable(reward && cbVanillaExp.isChecked());
+        vanillaLevelInput.setEditable(reward && cbVanillaLevel.isChecked());
+        adventureExpInput.setEditable(reward && cbAdventureExp.isChecked());
+        adventureLevelInput.setEditable(reward && cbAdventureLevel.isChecked());
         if (!reward || !cbItem.isChecked()) {
             inventoryPickerOpen = false;
         }
@@ -511,13 +669,15 @@ public class MailComposeScreen extends Screen {
         }
     }
 
+    // ===== 提交 =====
+
     /** 校验表单并向服务端发送发布或编辑数据包。 */
     protected void onPublish() {
         validationMessage = "";
         List<TargetSpec> targets = collectTargets();
         if (targets.isEmpty()) {
             if (validationMessage.isEmpty()) {
-                validationMessage = "请至少选择一个接收范围";
+                validationMessage = "请选择接收范围";
             }
             return;
         }
@@ -547,7 +707,7 @@ public class MailComposeScreen extends Screen {
         if (editMode && editMailId != null) {
             ClientPlayNetworking.send(new MailAdminEditPayload(editMailId, false, targets, type, subject,
                     bodyInput.getValue(), expire, attachments));
-            ClientPlayNetworking.send(new top.csituka.youzaiworldcore.network.MailSentListRequestPayload());
+            ClientPlayNetworking.send(new MailSentListRequestPayload());
             DebugLogger.info(MODULE, "已提交邮件编辑: mailId=%s, title=%s", editMailId, subject);
         } else {
             ClientPlayNetworking.send(new MailAdminSendPayload(targets, type, subject,
@@ -559,28 +719,16 @@ public class MailComposeScreen extends Screen {
     }
 
     private List<TargetSpec> collectTargets() {
-        List<TargetSpec> targets = new ArrayList<>();
+        List<TargetSpec> targets = new ArrayList<>(legacyTargets);
         if (cbAll.isChecked()) {
             targets.add(TargetSpec.all());
         }
-        if (cbNonAdmin.isChecked()) {
-            targets.add(TargetSpec.nonadmin());
-        }
         if (cbPlayer.isChecked()) {
-            List<String> players = splitValues(playerInput.getValue());
-            if (players.isEmpty()) {
-                validationMessage = "请填写指定玩家";
+            if (selectedPlayers.isEmpty()) {
+                validationMessage = "请先选取指定玩家";
                 return List.of();
             }
-            targets.add(TargetSpec.forPlayers(players));
-        }
-        if (cbRole.isChecked()) {
-            List<String> roles = splitValues(roleInput.getValue());
-            if (roles.isEmpty()) {
-                validationMessage = "请填写角色组或权限节点";
-                return List.of();
-            }
-            targets.add(TargetSpec.forRoles(roles));
+            targets.add(TargetSpec.forPlayers(List.copyOf(selectedPlayers)));
         }
         return targets;
     }
@@ -605,16 +753,20 @@ public class MailComposeScreen extends Screen {
             }
             attachments.add(new AttachmentData(AttachmentType.COMMAND, command, 1, null));
         }
-        if (cbExp.isChecked() && !appendNumberAttachment(attachments, AttachmentType.VANILLA_EXP,
-                expInput.getValue(), "原版经验值")) {
+        if (cbVanillaExp.isChecked() && !appendNumberAttachment(attachments, AttachmentType.VANILLA_EXP,
+                vanillaExpInput.getValue(), "原版经验值")) {
             return List.of();
         }
-        if (cbLevel.isChecked() && !appendNumberAttachment(attachments, AttachmentType.VANILLA_LEVEL,
-                levelInput.getValue(), "等级值")) {
+        if (cbVanillaLevel.isChecked() && !appendNumberAttachment(attachments, AttachmentType.VANILLA_LEVEL,
+                vanillaLevelInput.getValue(), "原版等级")) {
             return List.of();
         }
-        if (cbAdventure.isChecked() && !appendNumberAttachment(attachments, AttachmentType.ADVENTURE_EXP,
-                adventureInput.getValue(), "冒险经验值")) {
+        if (cbAdventureExp.isChecked() && !appendNumberAttachment(attachments, AttachmentType.ADVENTURE_EXP,
+                adventureExpInput.getValue(), "冒险经验值")) {
+            return List.of();
+        }
+        if (cbAdventureLevel.isChecked() && !appendNumberAttachment(attachments, AttachmentType.ADVENTURE_LEVEL,
+                adventureLevelInput.getValue(), "冒险等级")) {
             return List.of();
         }
         return attachments;
@@ -635,30 +787,32 @@ public class MailComposeScreen extends Screen {
         }
     }
 
+    // ===== 预填 =====
+
     private Prefill createPrefill(Mail mail) {
         if (mail == null) {
             return Prefill.empty();
         }
         boolean all = false;
-        boolean nonAdmin = false;
         List<String> players = new ArrayList<>();
-        List<String> roles = new ArrayList<>();
+        List<TargetSpec> legacy = new ArrayList<>();
         if (mail.getTargets() != null) {
             for (TargetSpec target : mail.getTargets()) {
                 switch (target.scope()) {
                     case TargetSpec.SCOPE_ALL -> all = true;
-                    case TargetSpec.SCOPE_NONADMIN -> nonAdmin = true;
                     case TargetSpec.SCOPE_PLAYER -> players.addAll(target.args());
-                    case TargetSpec.SCOPE_ROLE -> roles.addAll(target.args());
+                    // 全体非管理 / 角色组：界面已移除，原样保留待回写
+                    default -> legacy.add(target);
                 }
             }
         }
 
         List<ItemStack> items = new ArrayList<>();
         String command = "";
-        String exp = "";
-        String level = "";
-        String adventure = "";
+        String vanillaExp = "";
+        String vanillaLevel = "";
+        String adventureExp = "";
+        String adventureLevel = "";
         if (mail.getAttachments() != null) {
             for (MailAttachment attachment : mail.getAttachments()) {
                 switch (attachment.type()) {
@@ -669,9 +823,10 @@ public class MailComposeScreen extends Screen {
                         }
                     }
                     case COMMAND -> command = attachment.data() == null ? "" : attachment.data();
-                    case VANILLA_EXP -> exp = String.valueOf(attachment.amount());
-                    case VANILLA_LEVEL -> level = String.valueOf(attachment.amount());
-                    case ADVENTURE_EXP -> adventure = String.valueOf(attachment.amount());
+                    case VANILLA_EXP -> vanillaExp = String.valueOf(attachment.amount());
+                    case VANILLA_LEVEL -> vanillaLevel = String.valueOf(attachment.amount());
+                    case ADVENTURE_EXP -> adventureExp = String.valueOf(attachment.amount());
+                    case ADVENTURE_LEVEL -> adventureLevel = String.valueOf(attachment.amount());
                 }
             }
         }
@@ -680,9 +835,9 @@ public class MailComposeScreen extends Screen {
             case NOTICE -> 1;
             case REWARD -> 2;
         };
-        return new Prefill(all, nonAdmin, String.join(", ", players), String.join(", ", roles),
-                typeIndex, expireIndex(mail), safe(mail.getTitle()), safe(mail.getBody()), items,
-                command, exp, level, adventure);
+        return new Prefill(all, players, legacy, typeIndex, expireIndex(mail),
+                safe(mail.getTitle()), safe(mail.getBody()), items,
+                command, vanillaExp, vanillaLevel, adventureExp, adventureLevel);
     }
 
     private ItemStack decodeItem(MailAttachment attachment) {
@@ -727,14 +882,6 @@ public class MailComposeScreen extends Screen {
         }
     }
 
-    private static List<String> splitValues(String value) {
-        return Arrays.stream(value.split("[,，\\s]+"))
-                .map(String::trim)
-                .filter(part -> !part.isEmpty())
-                .distinct()
-                .toList();
-    }
-
     private static int parsePositive(String value, int fallback) {
         try {
             int parsed = Integer.parseInt(value.trim());
@@ -748,8 +895,18 @@ public class MailComposeScreen extends Screen {
         return value == null ? "" : value;
     }
 
+    // ===== 关闭 =====
+
     @Override
     public void onClose() {
+        if (playerPicker.isOpen()) {
+            playerPicker.close();
+            return;
+        }
+        if (inventoryPickerOpen) {
+            inventoryPickerOpen = false;
+            return;
+        }
         if (editMode && editMailId != null && !finished && !cancelPacketSent) {
             cancelPacketSent = true;
             ClientPlayNetworking.send(new MailAdminEditPayload(editMailId, true, List.of(),
@@ -761,34 +918,26 @@ public class MailComposeScreen extends Screen {
     }
 
     private void navigateBack() {
-        Minecraft.getInstance().setScreenAndShow(editMode ? new MailSentScreen() : new MailScreen());
+        MailToast.clear();
+        switchTo(editMode ? new MailSentScreen() : new MailScreen());
     }
 
-    @Override
-    public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
-        MailUi.drawBackdrop(graphics, width, height);
-    }
-
-    @Override
-    public boolean isPauseScreen() {
-        return false;
-    }
-
-    private record Prefill(boolean all, boolean nonAdmin, String players, String roles,
+    /**
+     * 表单预填数据。
+     *
+     * @param legacyTargets 界面已移除但需原样保留的接收范围
+     */
+    private record Prefill(boolean all, List<String> players, List<TargetSpec> legacyTargets,
                            int typeIndex, int expireIndex, String title, String body,
-                           List<ItemStack> items, String command, String expValue,
-                           String levelValue, String adventureValue) {
+                           List<ItemStack> items, String command, String vanillaExpValue,
+                           String vanillaLevelValue, String adventureExpValue, String adventureLevelValue) {
 
         static Prefill empty() {
-            return new Prefill(true, false, "", "", 2, 2, "", "", List.of(), "", "", "", "");
+            return new Prefill(true, List.of(), List.of(), 2, 2, "", "", List.of(), "", "", "", "", "");
         }
 
         boolean playersEnabled() {
-            return !players.isBlank();
-        }
-
-        boolean rolesEnabled() {
-            return !roles.isBlank();
+            return !players.isEmpty();
         }
 
         boolean itemEnabled() {
@@ -799,16 +948,20 @@ public class MailComposeScreen extends Screen {
             return !command.isBlank();
         }
 
-        boolean expEnabled() {
-            return !expValue.isBlank();
+        boolean vanillaExpEnabled() {
+            return !vanillaExpValue.isBlank();
         }
 
-        boolean levelEnabled() {
-            return !levelValue.isBlank();
+        boolean vanillaLevelEnabled() {
+            return !vanillaLevelValue.isBlank();
         }
 
-        boolean adventureEnabled() {
-            return !adventureValue.isBlank();
+        boolean adventureExpEnabled() {
+            return !adventureExpValue.isBlank();
+        }
+
+        boolean adventureLevelEnabled() {
+            return !adventureLevelValue.isBlank();
         }
     }
 }

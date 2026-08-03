@@ -7,6 +7,7 @@ import net.minecraft.network.chat.Component;
 /**
  * 邮件界面的共享视觉常量与绘制工具。
  */
+@SuppressWarnings("null")
 final class MailUi {
 
     static final int PAGE_BACKGROUND = 0xF20D0D0D;
@@ -39,12 +40,18 @@ final class MailUi {
     }
 
     /**
-     * 计算居中的页面容器，保留小屏幕安全边距。
+     * 在设计空间（{@link MailViewport#DESIGN_WIDTH}×{@link MailViewport#DESIGN_HEIGHT}）内
+     * 计算居中的页面容器。
+     * <p>
+     * 真实屏幕尺寸的适配由 {@link MailViewport} 统一做等比缩放，这里不再参与，
+     * 因此页面尺寸恒定，排版在任何界面尺寸下都保持一致。
+     * </p>
      */
-    static Rect centeredPage(int width, int height, int maxWidth, int maxHeight) {
-        int pageWidth = Math.min(maxWidth, Math.max(1, width - 28));
-        int pageHeight = Math.min(maxHeight, Math.max(1, height - 28));
-        return new Rect((width - pageWidth) / 2, (height - pageHeight) / 2, pageWidth, pageHeight);
+    static Rect centeredPage(int maxWidth, int maxHeight) {
+        int pageWidth = Math.min(maxWidth, MailViewport.DESIGN_WIDTH - 28);
+        int pageHeight = Math.min(maxHeight, MailViewport.DESIGN_HEIGHT - 28);
+        return new Rect((MailViewport.DESIGN_WIDTH - pageWidth) / 2,
+                (MailViewport.DESIGN_HEIGHT - pageHeight) / 2, pageWidth, pageHeight);
     }
 
     /** 绘制圆角矩形。 */

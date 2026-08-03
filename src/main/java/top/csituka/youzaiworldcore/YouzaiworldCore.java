@@ -359,6 +359,9 @@ public class YouzaiworldCore implements ModInitializer {
         DebugLogger.exiting("YouzaiworldCore", "MailSystem.init");
 
         // ===== 注册邮件系统事件 =====
+        // 服务端启动完成后清理「已过期且没有任何玩家星标过」的邮件
+        ServerLifecycleEvents.SERVER_STARTED.register(
+                server -> top.csituka.youzaiworldcore.mail.MailManager.purgeOnServerStart());
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
             var player = handler.getPlayer();
             if (player instanceof net.minecraft.server.level.ServerPlayer sp) {
@@ -379,7 +382,7 @@ public class YouzaiworldCore implements ModInitializer {
                 top.csituka.youzaiworldcore.mail.MailManager.purge();
             }
         });
-        LOGGER.info("邮件系统事件（登录推送 / 过期清理）已注册");
+        LOGGER.info("邮件系统事件（启动清理 / 登录推送 / 过期清理）已注册");
         DebugLogger.exiting("YouzaiworldCore", "MailSystem.events");
 
         // ===== 初始化宠物模块 =====

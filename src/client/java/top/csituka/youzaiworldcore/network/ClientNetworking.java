@@ -40,6 +40,8 @@ public class ClientNetworking {
             DebugLogger.entering("ClientNetworking", "OpenMenuPayload handler");
             Minecraft client = context.client();
             client.execute(() -> {
+                // 打开本项目任何屏幕视为玩家活动（服务端 /yzwc open_menu 或管理员远程触发）
+                top.csituka.youzaiworldcore.client.afk.AfkInputTracker.markInput();
                 MenuElementGroup element = MENU_MAP.get(payload.menuName());
                 boolean hasElement = element != null;
                 DebugLogger.branch("ClientNetworking", "MENU_MAP contains menuName", hasElement, "menuName=" + payload.menuName());
@@ -164,7 +166,9 @@ public class ClientNetworking {
             DebugLogger.entering("ClientNetworking", "MailListPayload handler", "entries=" + payload.entries().size());
             context.client().execute(() -> {
                 top.csituka.youzaiworldcore.client.MailClientState.currentInbox = new java.util.ArrayList<>(payload.entries());
-                // MailScreen.extractRenderState 已从 MailClientState.currentInbox 读取数据
+                // 列表是权威快照，按它重算未读数，避免徽标与列表对不上
+                top.csituka.youzaiworldcore.client.MailClientState.recalculateUnreadCount();
+                // MailScreen.renderMailContent 已从 MailClientState.currentInbox 读取数据
             });
             DebugLogger.exiting("ClientNetworking", "MailListPayload handler");
         });
@@ -216,30 +220,37 @@ public class ClientNetworking {
                             context.client().setScreenAndShow(
                                     new top.csituka.youzaiworldcore.client.screen.MailComposeScreen(true, payload.mail().getId()));
                         } else {
-                            context.client().player.sendSystemMessage(
-                                    net.minecraft.network.chat.Component.literal("§c已有玩家领取过附件，不可编辑，仅可撤回"));
+                            notifyMailResult(context.client(), "已有玩家领取过附件，不可编辑，仅可撤回", false);
                         }
                     }
                 }
+                // 单条更新同样会改变未读数（如领取即已读），同步重算徽标
+                top.csituka.youzaiworldcore.client.MailClientState.recalculateUnreadCount();
             });
             DebugLogger.exiting("ClientNetworking", "MailUpdatePayload handler");
         });
         DebugLogger.info("ClientNetworking", "Registered receiver: MailUpdatePayload");
 
-        // 操作结果反馈
+        // 操作结果反馈：邮件界面打开时走顶部提示条，否则回落到聊天栏
         ClientPlayNetworking.registerGlobalReceiver(MailOpResultPayload.ID, (payload, context) -> {
             DebugLogger.entering("ClientNetworking", "MailOpResultPayload handler", "success=" + payload.success());
-            context.client().execute(() -> {
-                var player = context.client().player;
-                if (player != null) {
-                    var color = payload.success() ? "§a" : "§c";
-                    player.sendSystemMessage(
-                            net.minecraft.network.chat.Component.literal(color + (payload.reason() != null ? payload.reason() : "")));
-                }
-            });
+            context.client().execute(() ->
+                    notifyMailResult(context.client(),
+                            payload.reason() != null ? payload.reason() : "", payload.success()));
             DebugLogger.exiting("ClientNetworking", "MailOpResultPayload handler");
         });
         DebugLogger.info("ClientNetworking", "Registered receiver: MailOpResultPayload");
+
+        // 已注册玩家名单（发布页「选取玩家」弹窗）
+        ClientPlayNetworking.registerGlobalReceiver(MailPlayerListPayload.ID, (payload, context) -> {
+            DebugLogger.entering("ClientNetworking", "MailPlayerListPayload handler",
+                    "players=" + payload.playerNames().size());
+            context.client().execute(() ->
+                    top.csituka.youzaiworldcore.client.MailClientState.registeredPlayers =
+                            new java.util.ArrayList<>(payload.playerNames()));
+            DebugLogger.exiting("ClientNetworking", "MailPlayerListPayload handler");
+        });
+        DebugLogger.info("ClientNetworking", "Registered receiver: MailPlayerListPayload");
 
         // 未读数量与发布权限同步
         ClientPlayNetworking.registerGlobalReceiver(MailUnreadCountPayload.ID, (payload, context) -> {
@@ -277,5 +288,30 @@ public class ClientNetworking {
 
     public static void sendDecomposePacket() {
         ClientPlayNetworking.send(new DecomposeItemPayload());
+    }
+
+    /**
+     * 展示一条邮件系统反馈。
+     * <p>
+     * 邮件界面打开时聊天栏被界面遮住，玩家看不到反馈，因此改用界面顶部的浮动提示条；
+     * 界面未打开（例如通过 {@code /yzwc mail} 命令操作）时仍回落到聊天栏。
+     * </p>
+     *
+     * @param client  客户端实例
+     * @param message 反馈文本
+     * @param success 是否为成功类消息（决定配色）
+     */
+    private static void notifyMailResult(net.minecraft.client.Minecraft client, String message, boolean success) {
+        if (message == null || message.isBlank()) {
+            return;
+        }
+        if (top.csituka.youzaiworldcore.client.screen.MailToast.isMailScreenOpen()) {
+            top.csituka.youzaiworldcore.client.screen.MailToast.show(message, success);
+            return;
+        }
+        if (client.player != null) {
+            client.player.sendSystemMessage(
+                    net.minecraft.network.chat.Component.literal((success ? "§a" : "§c") + message));
+        }
     }
 }

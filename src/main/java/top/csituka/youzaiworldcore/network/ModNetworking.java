@@ -666,6 +666,8 @@ public class ModNetworking {
         DebugLogger.info("ModNetworking", "Registered serverbound packet: MailAdminSendPayload");
         PayloadTypeRegistry.serverboundPlay().register(MailAdminEditPayload.ID, MailAdminEditPayload.STREAM_CODEC);
         DebugLogger.info("ModNetworking", "Registered serverbound packet: MailAdminEditPayload");
+        PayloadTypeRegistry.serverboundPlay().register(MailPlayerListRequestPayload.ID, MailPlayerListRequestPayload.STREAM_CODEC);
+        DebugLogger.info("ModNetworking", "Registered serverbound packet: MailPlayerListRequestPayload");
 
         // S2C 注册
         PayloadTypeRegistry.clientboundPlay().register(OpenMailComposePayload.ID, OpenMailComposePayload.STREAM_CODEC);
@@ -680,6 +682,8 @@ public class ModNetworking {
         DebugLogger.info("ModNetworking", "Registered clientbound packet: MailOpResultPayload");
         PayloadTypeRegistry.clientboundPlay().register(MailUnreadCountPayload.ID, MailUnreadCountPayload.STREAM_CODEC);
         DebugLogger.info("ModNetworking", "Registered clientbound packet: MailUnreadCountPayload");
+        PayloadTypeRegistry.clientboundPlay().register(MailPlayerListPayload.ID, MailPlayerListPayload.STREAM_CODEC);
+        DebugLogger.info("ModNetworking", "Registered clientbound packet: MailPlayerListPayload");
 
         // ======================================================================
         // 邮件系统（Mail）—— 服务端接收处理器
@@ -719,6 +723,7 @@ public class ModNetworking {
                     }
                 }
                 ServerPlayNetworking.send(player, new MailListPayload(entries));
+                syncUnread(player);
                 DebugLogger.info("ModNetworking", "Sent inbox for %s: %d entries", player.getScoreboardName(), entries.size());
             });
             DebugLogger.exiting("ModNetworking", "MailOpenPayload handler");
@@ -765,7 +770,9 @@ public class ModNetworking {
                         var box = top.csituka.youzaiworldcore.mail.MailDataStorage.load(online.getUUID());
                         boolean hasRef = box.getMails().stream().anyMatch(r -> r.getMailId().equals(payload.mailId()));
                         if (hasRef) {
+                            top.csituka.youzaiworldcore.mail.MailDataStorage.removeRef(online.getUUID(), payload.mailId());
                             ServerPlayNetworking.send(online, MailUpdatePayload.createRemove(payload.mailId()));
+                            syncUnread(online);
                         }
                     }
                     ServerPlayNetworking.send(player, MailOpResultPayload.success(payload.mailId(), "已撤回"));
@@ -917,10 +924,22 @@ public class ModNetworking {
                         boolean claimResult = top.csituka.youzaiworldcore.mail.MailManager.claim(player, payload.mailId());
                         if (claimResult) {
                             ref.setClaimed(true);
+                            // 领取即视为已读，避免领完奖励红点仍在
+                            ref.setRead(true);
                             top.csituka.youzaiworldcore.mail.MailDataStorage.updateRef(uuid, ref);
+                            // 回推权威条目，客户端据此把按钮刷新为「已领取」
+                            var claimedMail = top.csituka.youzaiworldcore.mail.SentMailRepository.get(payload.mailId());
+                            if (claimedMail != null) {
+                                ServerPlayNetworking.send(player, MailUpdatePayload.createUpdate(ref, claimedMail));
+                            }
                             ServerPlayNetworking.send(player, MailOpResultPayload.success(payload.mailId(), "已领取奖励"));
                         } else {
                             ServerPlayNetworking.send(player, MailOpResultPayload.failure(payload.mailId(), "领取失败"));
+                            // 领取失败时把权威条目推回去，撤销客户端的乐观更新
+                            var failedMail = top.csituka.youzaiworldcore.mail.SentMailRepository.get(payload.mailId());
+                            if (failedMail != null) {
+                                ServerPlayNetworking.send(player, MailUpdatePayload.createUpdate(ref, failedMail));
+                            }
                         }
                         break;
                     case MailActionPayload.ACTION_DELETE:
@@ -928,6 +947,8 @@ public class ModNetworking {
                         ServerPlayNetworking.send(player, MailUpdatePayload.createRemove(payload.mailId()));
                         break;
                 }
+                // 任何操作都可能改变未读数，统一回推权威值（修复红点不消失 / 空信箱仍显示数量）
+                syncUnread(player);
                 DebugLogger.info("ModNetworking", "Mail action %s processed for %s", payload.action(), player.getScoreboardName());
             });
             DebugLogger.exiting("ModNetworking", "MailActionPayload handler");
@@ -1024,7 +1045,11 @@ public class ModNetworking {
                                     var optRef = onlineBox.getMails().stream().filter(r -> r.getMailId().equals(payload.mailId())).findFirst();
                                     optRef.ifPresent(ref -> ServerPlayNetworking.send(online,
                                             MailUpdatePayload.createUpdate(ref, mail)));
+                                } else {
+                                    // 接收范围收窄后该玩家已不再持有引用，通知其移除
+                                    ServerPlayNetworking.send(online, MailUpdatePayload.createRemove(payload.mailId()));
                                 }
+                                syncUnread(online);
                             }
                         }
                     } else {
@@ -1036,7 +1061,47 @@ public class ModNetworking {
             DebugLogger.exiting("ModNetworking", "MailAdminEditPayload handler");
         });
 
+        // 11. 请求已注册玩家名单（发布页「选取玩家」弹窗）
+        ServerPlayNetworking.registerGlobalReceiver(MailPlayerListRequestPayload.ID, (payload, context) -> {
+            DebugLogger.entering("ModNetworking", "MailPlayerListRequestPayload handler");
+            var player = (net.minecraft.server.level.ServerPlayer) context.player();
+            var server = player.level().getServer();
+            if (server == null) return;
+            server.execute(() -> {
+                if (!top.csituka.youzaiworldcore.mail.MailPermissionHelper.hasMailPermission(player)) {
+                    ServerPlayNetworking.send(player, MailOpResultPayload.failure(null, "没有权限"));
+                    DebugLogger.exiting("ModNetworking", "MailPlayerListRequestPayload handler", "no permission");
+                    return;
+                }
+                java.util.List<String> names = top.csituka.youzaiworldcore.account.data.AccountDataStorage.getAll()
+                        .values().stream()
+                        .map(account -> account.username)
+                        .filter(name -> name != null && !name.isBlank())
+                        .distinct()
+                        .sorted(String.CASE_INSENSITIVE_ORDER)
+                        .toList();
+                ServerPlayNetworking.send(player, new MailPlayerListPayload(names));
+                DebugLogger.info("ModNetworking", "Sent registered player list to %s: %d entries",
+                        player.getScoreboardName(), names.size());
+            });
+            DebugLogger.exiting("ModNetworking", "MailPlayerListRequestPayload handler");
+        });
+
         DebugLogger.exiting("ModNetworking", "initialize");
+    }
+
+    /**
+     * 重算并回推该玩家的未读邮件数与发布权限。
+     * <p>
+     * 读 / 领取 / 删除 / 星标 / 撤回 / 编辑之后都要调用：客户端徽标与界面红点完全依赖这个权威值，
+     * 少推一次就会出现「已读但红点还在」「信箱空了仍显示数量」。
+     * </p>
+     */
+    private static void syncUnread(net.minecraft.server.level.ServerPlayer player) {
+        int unread = top.csituka.youzaiworldcore.mail.MailDataStorage.getUnreadCount(player.getUUID());
+        boolean canSend = top.csituka.youzaiworldcore.mail.MailPermissionHelper.hasMailPermission(player);
+        ServerPlayNetworking.send(player, new MailUnreadCountPayload(unread, canSend));
+        DebugLogger.trace("ModNetworking", "同步未读数: player=%s, unread=%d", player.getScoreboardName(), unread);
     }
 
     /**

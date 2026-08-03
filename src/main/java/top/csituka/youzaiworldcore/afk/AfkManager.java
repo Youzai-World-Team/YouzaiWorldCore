@@ -43,10 +43,27 @@ public final class AfkManager {
     /** 客户端心跳超时（tick）：超过 5 秒未收到心跳视为客户端通道失效（原版客户端） */
     private static final int HEARTBEAT_TIMEOUT_TICKS = 100;
 
+    /**
+     * 手动 AFK 宽限期（tick）：进入后的 4 秒内忽略「客户端输入」与「聊天/指令」活动。
+     * 覆盖两个场景：
+     * <ol>
+     *   <li>{@code /yzwc afk} 命令输入本身是输入事件，进入后 ~3 秒内客户端心跳仍报告
+     *       「刚有输入」，若不忽略会立即触发自动退出（「切了就切回来」bug）；</li>
+     *   <li>命令执行触发的 {@code CHAT_MESSAGE} 服务端活动事件。</li>
+     * </ol>
+     * 位置/视角变化<b>不受</b>宽限期影响（手动 AFK 后立刻走动仍会恢复）。
+     */
+    private static final int MANUAL_GRACE_TICKS = 80;
+
     /** 玩家 AFK 数据表（会话级，掉线即清理） */
     private static final Map<UUID, AfkPlayerData> DATA = new ConcurrentHashMap<>();
 
     private AfkManager() {
+    }
+
+    /** @return 客户端心跳超时（tick）：超过该值视为客户端通道失效（原版客户端） */
+    public static int getHeartbeatTimeoutTicks() {
+        return HEARTBEAT_TIMEOUT_TICKS;
     }
 
     /**
@@ -57,8 +74,12 @@ public final class AfkManager {
         long clientLastActivityTick = -1;
         /** 最近一次心跳到达的服务端 tick，-1 = 从未收到心跳 */
         long lastHeartbeatTick = -1;
-        /** 服务端近似检测的最后活动 tick */
+        /** 服务端近似检测（位置/视角变化）的最后活动 tick */
         long serverLastActivityTick;
+        /** 服务端聊天/指令事件（ServerMessageEvents.CHAT_MESSAGE）的最后活动 tick，-1 = 从未 */
+        long chatLastActivityTick = -1;
+        /** 手动 AFK 宽限期截止 tick：此 tick 之前忽略客户端输入与聊天活动 */
+        long activityGraceUntilTick = 0;
         /** 当前是否处于 AFK 状态 */
         boolean isAfk = false;
         /** 进入 AFK 的服务端 tick */
@@ -122,6 +143,9 @@ public final class AfkManager {
 
     /**
      * 服务端近似检测到活动（位置/视角变化），更新服务端通道的最后活动时间。
+     * <p>
+     * 仅当客户端通道失效（原版客户端）时作为活动依据，见
+     * {@link #getEffectiveActivityTick}。</p>
      */
     public static void onServerActivity(ServerPlayer player, long serverTick) {
         AfkPlayerData data = getOrCreate(player.getUUID());
@@ -131,10 +155,31 @@ public final class AfkManager {
     }
 
     /**
-     * 计算玩家当前的有效活动 tick（按检测模式取最大值）。
+     * 服务端聊天/指令事件（{@code ServerMessageEvents.CHAT_MESSAGE}）上报活动。
      * <p>
-     * CLIENT 模式且客户端通道失效（从未收到心跳）→ 返回 {@code Long.MAX_VALUE}，
-     * 即永不判定 AFK（原版客户端无精确检测通道，文档约定）。</p>
+     * 「发送聊天消息」「执行指令」属明确语义活动，任何检测模式下都触发退出
+     * （手动 AFK 宽限期除外，用于挡住 {@code /yzwc afk} 命令自身）。</p>
+     */
+    public static void onChatActivity(ServerPlayer player, long serverTick) {
+        AfkPlayerData data = getOrCreate(player.getUUID());
+        data.chatLastActivityTick = serverTick;
+        DebugLogger.trace(MODULE, "onChatActivity %s: chatLastActivityTick=%d",
+                player.getName().getString(), serverTick);
+    }
+
+    /**
+     * 计算玩家当前的有效活动 tick（进入 AFK 判定用）。
+     * <p>
+     * 各模式语义：
+     * <ul>
+     *   <li>{@code CLIENT}：仅客户端通道；通道失效 → {@link Long#MAX_VALUE}（永不判定，
+     *       原版客户端无精确检测，文档约定）；</li>
+     *   <li>{@code SERVER}：仅服务端位置/视角近似检测；</li>
+     *   <li>{@code BOTH}：客户端通道存活时<b>以客户端为准</b>（位置检测不覆盖客户端
+     *       精确判定——「按住 W 挂机」客户端无重复输入 → 判定 AFK）；
+     *       客户端通道失效（原版客户端）时回退服务端近似检测。</li>
+     * </ul>
+     * </p>
      *
      * @return 有效活动 tick；返回 {@link Long#MAX_VALUE} 表示不可判定
      */
@@ -152,11 +197,10 @@ public final class AfkManager {
                 return data.serverLastActivityTick;
             }
             case BOTH -> {
-                long effective = data.serverLastActivityTick;
                 if (clientAlive && data.clientLastActivityTick >= 0) {
-                    effective = Math.max(effective, data.clientLastActivityTick);
+                    return data.clientLastActivityTick;
                 }
-                return effective;
+                return data.serverLastActivityTick;
             }
             default -> {
                 return data.serverLastActivityTick;
@@ -184,7 +228,13 @@ public final class AfkManager {
         data.isAfk = true;
         data.manualAfk = manual;
         data.afkSinceTick = player.level().getServer().getTickCount();
+        // 手动进入：设宽限期，忽略命令输入自身的残余活动（客户端心跳 + CHAT_MESSAGE）
+        data.activityGraceUntilTick = manual
+                ? data.afkSinceTick + MANUAL_GRACE_TICKS : 0;
         DebugLogger.stateChange(MODULE, player.getName().getString(), "isAfk", false, true);
+        DebugLogger.info(MODULE, "%s 手动模式宽限期截止 tick=%d（%d tick = %ds）",
+                player.getName().getString(), data.activityGraceUntilTick,
+                MANUAL_GRACE_TICKS, MANUAL_GRACE_TICKS / 20);
 
         // 可选无敌：记录进入前状态，退出时按原状恢复
         if (AfkConfig.isInvulnerableEnabled()) {
@@ -227,6 +277,7 @@ public final class AfkManager {
         data.isAfk = false;
         data.manualAfk = false;
         data.afkSinceTick = 0;
+        data.activityGraceUntilTick = 0;
         DebugLogger.stateChange(MODULE, player.getName().getString(), "isAfk", true, false);
 
         // 无敌恢复：仅当是我们加上去的才移除
@@ -305,6 +356,8 @@ public final class AfkManager {
         data.serverLastActivityTick = serverTick;
         data.clientLastActivityTick = -1;
         data.lastHeartbeatTick = -1;
+        data.chatLastActivityTick = -1;
+        data.activityGraceUntilTick = 0;
         data.isAfk = false;
         data.manualAfk = false;
         data.posInitialized = false;

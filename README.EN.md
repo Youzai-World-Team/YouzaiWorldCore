@@ -313,13 +313,16 @@ Reads player behavior data from the vanilla `Stats` system, persists it, and sup
 
 A one-way **admin → player** server mailbox / announcement box (not player-to-player), published by admins through a GUI and received by players in their mailbox (Shift+F → Mail).
 
-- **Scope**: Senders are admins only (OP / LuckPerms `youzaiworldcore.mail` node); recipients can be multi-selected and unioned — All (incl. admins) / All non-admin / Specific Player / Role Group
+- **Scope**: Senders are admins only (OP / LuckPerms `youzaiworldcore.mail` node); recipients are either-or — All Members / Specific Players (ticked from the account system's registered list)
 - **Mail Types**: Announcement (ANNOUNCEMENT), Notice (NOTICE), Reward (REWARD)
-- **Reward Carriers** (REWARD type): Items (up to 10 slots, copied from admin's inventory as templates, originals not consumed), Command (run as console, supports `%player%` / `%uuid%` placeholders), Vanilla XP, Vanilla Levels, this mod's Adventure Level
-- **Expiry**: 1 day / 7 days / 30 days (default) / permanent; unstarred expired mail auto-purges, starred expired mail keeps text but disables claiming
+- **Reward Carriers** (REWARD type): Items (up to 10 slots, copied from admin's inventory as templates, originals not consumed), Command (run as console, supports `%player%` / `%uuid%` placeholders), Vanilla XP, Vanilla Levels, this mod's Adventure XP, this mod's Adventure Level (all four selectable at once)
+- **Expiry**: 1 day / 7 days / 30 days (default) / permanent; unstarred expired mail auto-purges (the server also deletes "expired and starred by nobody" mail on every startup), starred expired mail keeps text but disables claiming
 - **GUI**
-  - **Player Mailbox** (`MailScreen`): filters (all/unread/starred), details, claim/star/delete; top-right "Compose" / "Sent" buttons visible to permission holders only
-  - **Compose/Edit** (`MailComposeScreen`): multi-select recipients + type + subject + body + attachments (≤10 item slots) + expiry dropdown; editing sent mail reuses this screen (`MailSentScreen`[Edit] → prefill → `MailAdminEditPayload`)
+  - **Scaling**: all three mail screens are laid out against a 960×540 GUI-unit design space and uniformly scaled + centered, so the layout is identical at any resolution / GUI scale
+  - **Player Mailbox** (`MailScreen`): filters (all/unread/starred), details, claim/star/delete; top-right "Compose" / "Sent" buttons visible to permission holders only, plus "Back" (to the main menu) and "Close" buttons; entering from the main menu plays a transition
+  - **Compose/Edit** (`MailComposeScreen`): recipients are either-or (specific players are ticked in a searchable "Pick Players" popup) + type + subject + body + attachments (≤10 item slots, rarity borders shown, filled via the "Pick From Inventory" button) + expiry dropdown; editing sent mail reuses this screen (`MailSentScreen`[Edit] → prefill → `MailAdminEditPayload`)
+  - **Sent list** (`MailSentScreen`): expired mail no longer offers "Edit" / "Recall"
+  - **Feedback**: claim / recall / permission results appear as a floating banner at the top of the screen (falls back to chat when no mail screen is open)
 - **Commands** (**client command**, parse-and-forward; server-side authorization)
   - `/yzwc mail send_mail` —— open compose GUI
   - `/yzwc mail sent` —— open sent-mail management list
@@ -328,7 +331,7 @@ A one-way **admin → player** server mailbox / announcement box (not player-to-
   - `/yzwc mail list [player]` —— view a player's mailbox
 - **Permission**: `youzaiworldcore.mail` (default OP 4); falls back to `mail_permission_level` when LuckPerms is absent
 - **Storage**: Global repo `config/youzaiworldcore/mail/sent.json` + per-player index `config/youzaiworldcore/mail/box/<uuid>.json` + settings `mail_settings.json`; cross-world consistent, bound to the account system (offline accounts also indexed, visible on login)
-- **Network**: 16 dedicated packets (C→S `mail_compose_open` / `mail_open` / `mail_sent_list_request` / `mail_recall` / `mail_purge` / `mail_list_request` / `mail_fetch` / `mail_action` / `mail_admin_send` / `mail_admin_edit`; S→C `open_mail_compose` / `mail_list` / `mail_sent_list` / `mail_update` / `mail_op_result` / `mail_unread_count`)
+- **Network**: 18 dedicated packets (C→S `mail_compose_open` / `mail_open` / `mail_sent_list_request` / `mail_recall` / `mail_purge` / `mail_list_request` / `mail_fetch` / `mail_action` / `mail_admin_send` / `mail_admin_edit` / `mail_player_list_request`; S→C `open_mail_compose` / `mail_list` / `mail_sent_list` / `mail_update` / `mail_op_result` / `mail_unread_count` / `mail_player_list`)
 
 ### 27. Custom Enchantments
 
@@ -586,9 +589,9 @@ All commands use `/yzwc` as the root command. Subcommands marked **(client comma
 | `decomposition_table` | Decomposition Table |
 | `fly_beacon`          | Fly Beacon          |
 
-### Network Packets (36 total)
+### Network Packets (38 total)
 
-> Note: the `world_pool_teleport` packet class lives in the `dimensionalinventories` package; the rest (including the 16 mail packets) are in the `network` package. Direction split: 13 S→C, 23 C→S.
+> Note: the `world_pool_teleport` packet class lives in the `dimensionalinventories` package; the rest (including the 18 mail packets) are in the `network` package. Direction split: 14 S→C, 24 C→S.
 
 | Packet ID                   | Direction | Purpose                                                                                       |
 | --------------------------- | --------- | --------------------------------------------------------------------------------------------- |
@@ -600,6 +603,7 @@ All commands use `/yzwc` as the root command. Subcommands marked **(client comma
 | `teleport_anchor_list`      | S→C       | Send point list                                                                               |
 | `teleport_anchor_open_name` | S→C       | Open anchor naming screen                                                                     |
 | `mail_unread_count`         | S→C       | Sync unread count + compose permission (canSend)                                              |
+| `mail_player_list`          | S→C       | Registered player-name list (for the compose screen's "Pick Players" popup)                   |
 | `open_mail_compose`         | S→C       | Open compose GUI                                                                              |
 | `mail_list`                 | S→C       | Send inbox list                                                                               |
 | `mail_sent_list`            | S→C       | Send sent-mail list                                                                           |
@@ -628,6 +632,7 @@ All commands use `/yzwc` as the root command. Subcommands marked **(client comma
 | `mail_action`               | C→S       | Open/read/star/claim/delete                                                                   |
 | `mail_admin_send`           | C→S       | Publish mail                                                                                  |
 | `mail_admin_edit`           | C→S       | Edit/cancel-edit mail                                                                         |
+| `mail_player_list_request`  | C→S       | Request the registered player-name list                                                       |
 
 ---
 

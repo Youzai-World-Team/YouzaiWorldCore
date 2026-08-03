@@ -3,10 +3,13 @@ package top.csituka.youzaiworldcore.mail;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
+import top.csituka.youzaiworldcore.YouzaiworldCore;
 import top.csituka.youzaiworldcore.account.data.AccountDataStorage;
 import top.csituka.youzaiworldcore.account.data.PlayerAccount;
 import top.csituka.youzaiworldcore.luckperms.LuckPermsHelper;
 import top.csituka.youzaiworldcore.skill.AdventureLevelManager;
+import top.csituka.youzaiworldcore.skill.PlayerLevelData;
+import top.csituka.youzaiworldcore.skill.PlayerLevelStorage;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
 import java.util.*;
@@ -270,6 +273,7 @@ public class MailManager {
                     case VANILLA_EXP -> player.giveExperiencePoints(att.amount());
                     case VANILLA_LEVEL -> player.giveExperienceLevels(att.amount());
                     case ADVENTURE_EXP -> AdventureLevelManager.grantExp(player, att.amount());
+                    case ADVENTURE_LEVEL -> grantAdventureLevels(player, att.amount());
                 }
             } catch (Exception e) {
                 DebugLogger.exception(MODULE, "claim-attachment", e);
@@ -358,22 +362,69 @@ public class MailManager {
     }
 
     /**
-     * 清理过期邮件：扫描仓库 + 所有收件箱，移除过期且未星标的条目。
+     * 清理过期邮件：扫描仓库，移除过期且无人星标的条目。
+     * <p>
+     * 配置 {@link MailSettings#isKeepStarredAfterExpire()} 为 true 时（默认），
+     * 只要还有任意一个玩家给该邮件打了星标就保留，与界面提示
+     * 「已收藏的过期邮件将保留」以及 {@link MailDataStorage#load} 的剔除规则保持一致。
+     * </p>
+     *
+     * @return 被移除的邮件数量
      */
-    public static void purge() {
+    public static int purge() {
         DebugLogger.entering(MODULE, "purge");
+        boolean keepStarred = MailSettings.get().isKeepStarredAfterExpire();
+        Set<UUID> starredIds = keepStarred ? MailDataStorage.collectStarredMailIds() : Set.of();
+
         Set<UUID> expiredIds = new HashSet<>();
         for (Mail mail : SentMailRepository.getAll()) {
-            if (mail.isExpired()) {
+            if (mail.isExpired() && !starredIds.contains(mail.getId())) {
                 expiredIds.add(mail.getId());
             }
         }
         for (UUID mailId : expiredIds) {
             SentMailRepository.remove(mailId);
         }
-        DebugLogger.info(MODULE, "清理过期邮件: 移除 %d 封", expiredIds.size());
+        if (!expiredIds.isEmpty()) {
+            DebugLogger.info(MODULE, "清理过期邮件: 移除 %d 封 (保留星标 %d 封)",
+                    expiredIds.size(), starredIds.size());
+        }
         // 收件箱清理在 MailDataStorage.load 时按需进行
-        DebugLogger.exiting(MODULE, "purge");
+        DebugLogger.exiting(MODULE, "purge", "removed=" + expiredIds.size());
+        return expiredIds.size();
+    }
+
+    /**
+     * 服务端启动清理：删除「已过期」且「没有任何玩家星标过」的邮件，
+     * 并顺带剔除各玩家收件箱中指向已删除邮件的悬空引用。
+     * <p>
+     * 由 {@code YouzaiworldCore} 在 {@code ServerLifecycleEvents.SERVER_STARTED} 调用。
+     * 与周期性的 {@link #purge()} 区别：本方法无视
+     * {@link MailSettings#isKeepStarredAfterExpire()} 之外还会主动整理收件箱文件。
+     * </p>
+     */
+    public static void purgeOnServerStart() {
+        DebugLogger.entering(MODULE, "purgeOnServerStart");
+        Set<UUID> starredIds = MailDataStorage.collectStarredMailIds();
+
+        Set<UUID> removedIds = new HashSet<>();
+        for (Mail mail : SentMailRepository.getAll()) {
+            if (mail.isExpired() && !starredIds.contains(mail.getId())) {
+                removedIds.add(mail.getId());
+            }
+        }
+        for (UUID mailId : removedIds) {
+            SentMailRepository.remove(mailId);
+        }
+
+        // 清理收件箱内指向已删除邮件的悬空引用
+        int cleanedBoxes = MailDataStorage.pruneDanglingRefs();
+
+        YouzaiworldCore.LOGGER.info("邮件启动清理：删除过期且无人星标的邮件 {} 封，整理收件箱 {} 个",
+                removedIds.size(), cleanedBoxes);
+        DebugLogger.info(MODULE, "启动清理完成: removed=%d, starredKept=%d, boxes=%d",
+                removedIds.size(), starredIds.size(), cleanedBoxes);
+        DebugLogger.exiting(MODULE, "purgeOnServerStart");
     }
 
     /**
@@ -416,5 +467,25 @@ public class MailManager {
             case 3 -> null;
             default -> now + 30L * 24 * 60 * 60 * 1000;
         };
+    }
+
+    /**
+     * 发放本项目冒险等级：把「升 N 级所需的总经验差值」折算成经验后调用
+     * {@link AdventureLevelManager#grantExp}，从而复用其升级发技能点、属性同步与 HUD 推送。
+     *
+     * @param player 接收玩家
+     * @param levels 要提升的等级数（正整数）
+     */
+    private static void grantAdventureLevels(ServerPlayer player, int levels) {
+        if (levels <= 0) {
+            return;
+        }
+        PlayerLevelData data = PlayerLevelStorage.getOrCreate(player.getUUID(), player.getName().getString());
+        int currentLevel = data.getLevel();
+        long targetTotal = AdventureLevelManager.totalExpForLevel(currentLevel + levels);
+        int delta = (int) Math.max(1L, targetTotal - data.totalExp);
+        DebugLogger.info(MODULE, "发放冒险等级: player=%s, levels=%d, Lv.%d → Lv.%d, exp=+%d",
+                player.getScoreboardName(), levels, currentLevel, currentLevel + levels, delta);
+        AdventureLevelManager.grantExp(player, delta);
     }
 }
