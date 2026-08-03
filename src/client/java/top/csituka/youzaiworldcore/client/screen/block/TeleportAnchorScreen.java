@@ -10,12 +10,15 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import org.jspecify.annotations.Nullable;
 import top.csituka.youzaiworldcore.YouzaiworldCore;
 import top.csituka.youzaiworldcore.client.effect.TeleportFovEffect;
 import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
 import top.csituka.youzaiworldcore.data.TeleportAnchorData;
+import top.csituka.youzaiworldcore.item.tool.TeleportStoneItem;
 import top.csituka.youzaiworldcore.network.TeleportAnchorDeletePayload;
 import top.csituka.youzaiworldcore.network.TeleportAnchorRenamePayload;
 import top.csituka.youzaiworldcore.network.TeleportAnchorReorderPayload;
@@ -23,6 +26,7 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * 传送锚点选择界面。
@@ -66,14 +70,36 @@ public class TeleportAnchorScreen extends Screen {
     /** 条目右侧距离文本的颜色。 */
     private static final int DISTANCE_COLOR = 0xFFB0B0B0;
 
-    /** 经验不足提示文本的颜色（橙红，与删除确认提示区分）。 */
-    private static final int XP_WARNING_COLOR = 0xFFFF5555;
+    /** 底部消耗信息文本的颜色。 */
+    private static final int COST_TEXT_COLOR = 0xFFB0B0B0;
+
+    /** 消耗不足时的文本颜色（橙红）。 */
+    private static final int COST_INSUFFICIENT_COLOR = 0xFFFF5555;
+
+    /** 消耗信息每行占用的高度。 */
+    private static final int COST_LINE_HEIGHT = 11;
+
+    /** 底部按钮与第一行消耗信息之间的间距。 */
+    private static final int COST_INFO_TOP_GAP = 4;
+
+    /** 耐久消耗行内嵌的传送石图标尺寸。 */
+    private static final int STONE_ICON_SIZE = 10;
 
     /** 同维度传送消耗的经验等级，与服务端 {@code ModNetworking} 中的口径保持一致。 */
     private static final int XP_COST_SAME_DIMENSION = 1;
 
     /** 跨维度传送消耗的经验等级。 */
     private static final int XP_COST_CROSS_DIMENSION = 2;
+
+    /**
+     * 距离单位对应的语言键，逐级换算：m → km → Mm → Gm，Gm 之后不再进位。
+     */
+    private static final String[] DISTANCE_UNIT_KEYS = {
+            "screen.youzaiworldcore.teleport_anchor.distance_m",
+            "screen.youzaiworldcore.teleport_anchor.distance_km",
+            "screen.youzaiworldcore.teleport_anchor.distance_mm",
+            "screen.youzaiworldcore.teleport_anchor.distance_gm",
+    };
 
     /** 条目右侧距离文本与条目右边缘的间距。 */
     private static final int DISTANCE_PADDING = 6;
@@ -96,12 +122,21 @@ public class TeleportAnchorScreen extends Screen {
             YouzaiworldCore.MOD_ID, "textures/gui/teleport_movedown.png");
     private static final Identifier SEARCH_ICON = Identifier.fromNamespaceAndPath(
             YouzaiworldCore.MOD_ID, "textures/gui/teleport_search.png");
+    private static final Identifier STONE_ICON = Identifier.fromNamespaceAndPath(
+            YouzaiworldCore.MOD_ID, "textures/item/teleport_stone.png");
 
     private final List<TeleportAnchorData> points;
     @Nullable
     private final BlockPos currentAnchorPos;
     @Nullable
     private final ResourceKey<Level> currentAnchorDim;
+
+    /**
+     * 本次列表由传送石打开时，玩家使用传送石的那只手；null 表示走的是传送锚点方块入口。
+     * 非 null 时本次传送要额外扣传送石耐久，界面因此多显示一行耐久消耗并做耐久预判。
+     */
+    @Nullable
+    private final InteractionHand stoneHand;
 
     private int selectedIndex = -1;
     private boolean renameMode = false;
@@ -141,15 +176,6 @@ public class TeleportAnchorScreen extends Screen {
     /** 列表区域顶部 Y 坐标，供绘制空列表提示时定位。 */
     private int listTopY;
 
-    /**
-     * 当前选中的锚点因经验等级不足而无法传送：传送按钮置灰，并在按钮上方显示提示文本。
-     * 每次重建 UI 时按当前经验等级重新判定。
-     */
-    private boolean showXpWarning = false;
-
-    /** 传送当前选中锚点所需的经验等级，配合 {@link #showXpWarning} 显示提示文本。 */
-    private int requiredXpLevel = 0;
-
     // UI 组件
     private final List<TransparentButton> pointButtons = new ArrayList<>();
     private final List<TransparentButton> renameConfirmButtons = new ArrayList<>();
@@ -178,11 +204,13 @@ public class TeleportAnchorScreen extends Screen {
 
     public TeleportAnchorScreen(List<TeleportAnchorData> points,
                                  @Nullable BlockPos currentAnchorPos,
-                                 @Nullable ResourceKey<Level> currentAnchorDim) {
+                                 @Nullable ResourceKey<Level> currentAnchorDim,
+                                 @Nullable InteractionHand stoneHand) {
         super(Component.translatable("screen.youzaiworldcore.teleport_anchor.title"));
         this.points = points;
         this.currentAnchorPos = currentAnchorPos;
         this.currentAnchorDim = currentAnchorDim;
+        this.stoneHand = stoneHand;
     }
 
     @Override
@@ -234,7 +262,9 @@ public class TeleportAnchorScreen extends Screen {
         } else if (renameMode) {
             actionsHeight = 40;
         } else {
-            actionsHeight = BUTTON_HEIGHT + ACTIONS_Y_OFFSET;
+            // 底部按钮下方常驻预留消耗信息的高度：行数只取决于本次入口是否为传送石，
+            // 与当前是否选中锚点无关，避免选中/取消选中时面板高度跳动
+            actionsHeight = BUTTON_HEIGHT + ACTIONS_Y_OFFSET + costInfoHeight();
         }
 
         int totalHeight = TITLE_HEIGHT + PANEL_PADDING + searchHeight + listHeight + PANEL_PADDING + actionsHeight;
@@ -361,10 +391,9 @@ public class TeleportAnchorScreen extends Screen {
         boolean hasSelection = selectedIndex >= 0 && selectedIndex < points.size();
         boolean isCurrentAnchor = hasSelection && isCurrentAnchor(points.get(selectedIndex));
 
-        // 经验等级预校验：不足时置灰传送按钮，避免白播一段传送 FOV 动画后才被服务端拒绝
-        boolean enoughXp = !hasSelection || hasEnoughXpFor(points.get(selectedIndex));
-        showXpWarning = hasSelection && !isCurrentAnchor && !enoughXp;
-        requiredXpLevel = hasSelection ? xpCostFor(points.get(selectedIndex)) : 0;
+        // 消耗预校验：经验等级 / 传送石耐久任一不足都置灰传送按钮，
+        // 避免白播一段传送 FOV 动画后才被服务端拒绝
+        boolean affordable = !hasSelection || canAfford(points.get(selectedIndex));
 
         // 传送按钮（文字 + 半透明白底）
         int teleportX = panelX + PANEL_PADDING;
@@ -376,10 +405,8 @@ public class TeleportAnchorScreen extends Screen {
                 () -> {
                     if (hasSelection && !isCurrentAnchor) {
                         TeleportAnchorData point = points.get(selectedIndex);
-                        // 经验不足则什么都不做（按钮本应已置灰，这里兜底防止经验在界面打开期间变化）
-                        if (!hasEnoughXpFor(point)) {
-                            showXpWarning = true;
-                            requiredXpLevel = xpCostFor(point);
+                        // 消耗不足则什么都不做（按钮本应已置灰，这里兜底防止界面打开期间数值变化）
+                        if (!canAfford(point)) {
                             return;
                         }
                         // 启动 FOV 动画，数据包在放大到顶后自动发送
@@ -388,7 +415,7 @@ public class TeleportAnchorScreen extends Screen {
                     }
                 });
         teleportButton.setTextColor(BUTTON_TEXT_COLOR);
-        teleportButton.active = hasSelection && !isCurrentAnchor && enoughXp;
+        teleportButton.active = hasSelection && !isCurrentAnchor && affordable;
         if (!teleportButton.active) teleportButton.setExternalAlpha(0.3f);
         addRenderableWidget(teleportButton);
 
@@ -541,29 +568,152 @@ public class TeleportAnchorScreen extends Screen {
     }
 
     /**
-     * 按玩家当前经验等级刷新传送按钮的可用状态与提示。
+     * 按玩家当前的经验等级与传送石耐久刷新传送按钮的可用状态。
      * <p>
-     * 每帧调用一次：界面打开期间玩家的经验等级可能变化（捡起经验球、别处扣经验），
+     * 每帧调用一次：界面打开期间这些数值可能变化（捡起经验球、别处扣经验），
      * 只在重建 UI 时判定会让按钮状态过期。
      */
     private void refreshTeleportAffordability() {
         if (teleportButton == null) {
-            showXpWarning = false;
             return;
         }
         boolean hasSelection = selectedIndex >= 0 && selectedIndex < points.size();
         if (!hasSelection) {
-            showXpWarning = false;
             return;
         }
         TeleportAnchorData point = points.get(selectedIndex);
-        boolean enoughXp = hasEnoughXpFor(point);
-        showXpWarning = !isCurrentAnchor(point) && !enoughXp;
-        requiredXpLevel = xpCostFor(point);
-
-        boolean active = !isCurrentAnchor(point) && enoughXp;
+        boolean active = !isCurrentAnchor(point) && canAfford(point);
         teleportButton.active = active;
         teleportButton.setExternalAlpha(active ? 1f : 0.3f);
+    }
+
+    /**
+     * 客户端预判本次传送的所有消耗是否都付得起：经验等级 +（传送石入口时）传送石耐久。
+     * <p>
+     * 这只是提前拦截，真正的扣费与校验仍在服务端；创造模式两项都免除，直接放行。
+     */
+    private boolean canAfford(TeleportAnchorData point) {
+        var player = Minecraft.getInstance().player;
+        if (player == null || player.getAbilities().instabuild) {
+            return true;
+        }
+        if (player.experienceLevel < xpCostFor(point)) {
+            return false;
+        }
+        if (stoneHand != null) {
+            ItemStack stone = findStoneStack(player);
+            if (stone.isEmpty()) {
+                return false;
+            }
+            return remainingDurability(stone) >= TeleportStoneItem.computeDurabilityCost(player, point);
+        }
+        return true;
+    }
+
+    /**
+     * 找到本次列表所对应的那把传送石。
+     * <p>
+     * 优先取打开列表时记录的那只手，找不到时再看另一只手——与服务端结算耐久时的兜底顺序一致。
+     *
+     * @return 对应的传送石；两只手都没有时返回 {@link ItemStack#EMPTY}
+     */
+    private ItemStack findStoneStack(net.minecraft.client.player.LocalPlayer player) {
+        if (stoneHand == null) {
+            return ItemStack.EMPTY;
+        }
+        ItemStack held = player.getItemInHand(stoneHand);
+        if (held.getItem() instanceof TeleportStoneItem) {
+            return held;
+        }
+        InteractionHand other = stoneHand == InteractionHand.MAIN_HAND
+                ? InteractionHand.OFF_HAND
+                : InteractionHand.MAIN_HAND;
+        ItemStack alternative = player.getItemInHand(other);
+        return alternative.getItem() instanceof TeleportStoneItem ? alternative : ItemStack.EMPTY;
+    }
+
+    /** 物品剩余耐久点数。 */
+    private static int remainingDurability(ItemStack stack) {
+        return stack.getMaxDamage() - stack.getDamageValue();
+    }
+
+    /** 消耗信息区域预留的高度：无锚点时不预留，传送石入口两行（经验 + 耐久），否则一行。 */
+    private int costInfoHeight() {
+        if (points.isEmpty()) {
+            return 0;
+        }
+        int lines = stoneHand != null ? 2 : 1;
+        return COST_INFO_TOP_GAP + lines * COST_LINE_HEIGHT;
+    }
+
+    /**
+     * 在底部按钮下方绘制本次传送的消耗信息：经验等级，以及传送石入口时的耐久消耗
+     * （数字前内嵌一枚传送石图标）。任一项不足时该行转为橙红色并追加「不足」标注，
+     * 与置灰的传送按钮相互印证。
+     * <p>
+     * 创造模式两项消耗都免除，因此不绘制任何消耗信息。
+     */
+    private void drawCostInfo(GuiGraphicsExtractor guiGraphics) {
+        if (confirmingDelete || renameMode) {
+            return;
+        }
+        if (selectedIndex < 0 || selectedIndex >= points.size()) {
+            return;
+        }
+        TeleportAnchorData point = points.get(selectedIndex);
+        if (isCurrentAnchor(point)) {
+            return;
+        }
+        var player = Minecraft.getInstance().player;
+        if (player == null || player.getAbilities().instabuild) {
+            return;
+        }
+
+        var font = Minecraft.getInstance().font;
+        int x = panelX + PANEL_PADDING;
+        int y = actionsY + BUTTON_HEIGHT + COST_INFO_TOP_GAP;
+
+        // 第一行：经验等级消耗
+        int xpCost = xpCostFor(point);
+        boolean enoughXp = player.experienceLevel >= xpCost;
+        String xpText = Component.translatable(
+                "screen.youzaiworldcore.teleport_anchor.cost_xp", xpCost).getString();
+        if (!enoughXp) {
+            xpText += Component.translatable(
+                    "screen.youzaiworldcore.teleport_anchor.cost_insufficient_xp").getString();
+        }
+        guiGraphics.text(font, xpText, x, y,
+                enoughXp ? COST_TEXT_COLOR : COST_INSUFFICIENT_COLOR, false);
+
+        // 第二行：传送石耐久消耗（仅传送石入口）
+        if (stoneHand == null) {
+            return;
+        }
+        y += COST_LINE_HEIGHT;
+
+        ItemStack stone = findStoneStack(player);
+        int durabilityCost = TeleportStoneItem.computeDurabilityCost(player, point);
+        boolean enoughDurability = !stone.isEmpty() && remainingDurability(stone) >= durabilityCost;
+        int color = enoughDurability ? COST_TEXT_COLOR : COST_INSUFFICIENT_COLOR;
+
+        // 「将消耗 」+ 传送石图标 + 「 300 点耐久」，图标嵌在数字前面
+        String prefix = Component.translatable(
+                "screen.youzaiworldcore.teleport_anchor.cost_durability_prefix").getString();
+        String suffix = Component.translatable(
+                "screen.youzaiworldcore.teleport_anchor.cost_durability_suffix", durabilityCost).getString();
+        if (!enoughDurability) {
+            suffix += Component.translatable(
+                    "screen.youzaiworldcore.teleport_anchor.cost_insufficient_durability").getString();
+        }
+
+        int cursorX = x;
+        guiGraphics.text(font, prefix, cursorX, y, color, false);
+        cursorX += font.width(prefix);
+        guiGraphics.blit(RenderPipelines.GUI_TEXTURED, STONE_ICON,
+                cursorX, y + (font.lineHeight - STONE_ICON_SIZE) / 2 - 1,
+                0, 0, STONE_ICON_SIZE, STONE_ICON_SIZE, STONE_ICON_SIZE, STONE_ICON_SIZE);
+        cursorX += STONE_ICON_SIZE;
+        guiGraphics.text(font, suffix, cursorX, y, color, false);
     }
 
     /**
@@ -578,19 +728,6 @@ public class TeleportAnchorScreen extends Screen {
             return XP_COST_SAME_DIMENSION;
         }
         return XP_COST_CROSS_DIMENSION;
-    }
-
-    /**
-     * 客户端预判玩家的经验等级是否够本次传送。
-     * <p>
-     * 这只是提前拦截，真正的扣费与校验仍在服务端；创造模式免经验，直接放行。
-     */
-    private static boolean hasEnoughXpFor(TeleportAnchorData point) {
-        var player = Minecraft.getInstance().player;
-        if (player == null || player.getAbilities().instabuild) {
-            return true;
-        }
-        return player.experienceLevel >= xpCostFor(point);
     }
 
     /**
@@ -727,7 +864,7 @@ public class TeleportAnchorScreen extends Screen {
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
-        // 经验等级可能在界面打开期间变化，每帧按当前等级刷新传送按钮状态
+        // 经验等级 / 传送石耐久都可能在界面打开期间变化，每帧刷新传送按钮状态
         if (!confirmingDelete && !renameMode) {
             refreshTeleportAffordability();
         }
@@ -763,15 +900,8 @@ public class TeleportAnchorScreen extends Screen {
                     (this.width - msgWidth) / 2, msgY, 0xFFFFAA00, false);
         }
 
-        // 经验等级不足提示：绘制在底部按钮上方，说明传送按钮为何置灰
-        if (showXpWarning && !confirmingDelete && !renameMode) {
-            String warning = Component.translatable(
-                    "message.youzaiworldcore.teleport_anchor.no_xp_short", requiredXpLevel).getString();
-            int warnWidth = font.width(warning);
-            int warnY = listBottomY + PANEL_PADDING - 2;
-            guiGraphics.text(font, warning,
-                    (this.width - warnWidth) / 2, warnY, XP_WARNING_COLOR, false);
-        }
+        // 底部消耗信息（经验 / 传送石耐久）
+        drawCostInfo(guiGraphics);
 
         // 滚动指示器
         if (displayPointCount > MAX_VISIBLE_ITEMS) {
@@ -831,7 +961,11 @@ public class TeleportAnchorScreen extends Screen {
         }
     }
 
-    /** 格式化单个传送点到玩家的距离文本。 */
+    /**
+     * 格式化单个传送点到玩家的距离文本。
+     * <p>
+     * 1 格方块 = 1 m，取欧氏距离；不同维度之间距离没有可比性，显示「跨维度」。
+     */
     private static String formatDistance(net.minecraft.client.player.LocalPlayer player,
                                           TeleportAnchorData point) {
         if (!point.dimension().equals(player.level().dimension())) {
@@ -841,8 +975,29 @@ public class TeleportAnchorScreen extends Screen {
         BlockPos pos = point.pos();
         double distance = Math.sqrt(player.distanceToSqr(
                 pos.getX() + 0.5, pos.getY() + 1.0, pos.getZ() + 0.5));
-        return Component.translatable("screen.youzaiworldcore.teleport_anchor.distance",
-                (int) Math.round(distance)).getString();
+        return formatMetres(distance);
+    }
+
+    /**
+     * 把米数格式化成带单位的距离文本：满 1000 就进一级，m → km → Mm → Gm，Gm 之后不再进位。
+     * <p>
+     * 无论换算到哪一级都固定保留 1 位小数；进位判断按四舍五入到 1 位小数后的值来做，
+     * 避免出现 {@code 1000.0m} 这种本该进位却没进位的显示。
+     */
+    private static String formatMetres(double metres) {
+        double value = metres;
+        int unit = 0;
+        while (unit < DISTANCE_UNIT_KEYS.length - 1 && roundToTenth(value) >= 1000.0) {
+            value /= 1000.0;
+            unit++;
+        }
+        String number = String.format(Locale.ROOT, "%.1f", value);
+        return Component.translatable(DISTANCE_UNIT_KEYS[unit], number).getString();
+    }
+
+    /** 四舍五入到 1 位小数。 */
+    private static double roundToTenth(double value) {
+        return Math.round(value * 10.0) / 10.0;
     }
 
     /** 在当前正在打开的传送锚点条目左侧绘制定位图标。 */

@@ -84,7 +84,8 @@ public class ClientNetworking {
         ClientPlayNetworking.registerGlobalReceiver(TeleportAnchorListPayload.TYPE, (payload, context) -> {
             DebugLogger.entering("ClientNetworking", "TeleportAnchorListPayload handler");
             context.client().execute(() -> {
-                context.client().setScreenAndShow(new TeleportAnchorScreen(payload.points(), payload.currentPos(), payload.currentDim()));
+                context.client().setScreenAndShow(new TeleportAnchorScreen(
+                        payload.points(), payload.currentPos(), payload.currentDim(), payload.stoneHand()));
             });
             DebugLogger.exiting("ClientNetworking", "TeleportAnchorListPayload handler");
         });

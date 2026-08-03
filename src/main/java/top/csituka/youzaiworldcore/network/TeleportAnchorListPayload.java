@@ -8,6 +8,7 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.level.Level;
 import org.jspecify.annotations.Nullable;
 import top.csituka.youzaiworldcore.YouzaiworldCore;
@@ -22,11 +23,15 @@ import java.util.List;
  * @param points          玩家的活跃传送点列表
  * @param currentPos      当前右键的锚点位置（用于禁用传送按钮），null 表示无限制
  * @param currentDim      当前右键的锚点维度
+ * @param stoneHand       本次列表由传送石打开时，使用传送石的那只手；
+ *                        {@code null} 表示走的是传送锚点方块入口（不消耗传送石耐久）。
+ *                        客户端据此预判耐久是否够本次传送、并在界面上显示耐久消耗
  */
 @SuppressWarnings("null")
 public record TeleportAnchorListPayload(List<TeleportAnchorData> points,
                                          @Nullable BlockPos currentPos,
-                                         @Nullable ResourceKey<Level> currentDim) implements CustomPacketPayload {
+                                         @Nullable ResourceKey<Level> currentDim,
+                                         @Nullable InteractionHand stoneHand) implements CustomPacketPayload {
 
     public static final Identifier ID = Identifier.fromNamespaceAndPath(
             YouzaiworldCore.MOD_ID, "teleport_anchor_list");
@@ -41,6 +46,7 @@ public record TeleportAnchorListPayload(List<TeleportAnchorData> points,
                     List<TeleportAnchorData> points = new ArrayList<>();
                     BlockPos currentPos = null;
                     ResourceKey<Level> currentDim = null;
+                    InteractionHand stoneHand = null;
                     if (tag != null && tag.contains("points")) {
                         ListTag list = tag.getListOrEmpty("points");
                         for (int i = 0; i < list.size(); i++) {
@@ -66,8 +72,13 @@ public record TeleportAnchorListPayload(List<TeleportAnchorData> points,
                                         Identifier.parse(dimStr));
                             }
                         }
+                        if (tag.contains("stoneHand")) {
+                            stoneHand = tag.getBooleanOr("stoneHand", false)
+                                    ? InteractionHand.OFF_HAND
+                                    : InteractionHand.MAIN_HAND;
+                        }
                     }
-                    return new TeleportAnchorListPayload(points, currentPos, currentDim);
+                    return new TeleportAnchorListPayload(points, currentPos, currentDim, stoneHand);
                 }
 
                 @Override
@@ -90,6 +101,10 @@ public record TeleportAnchorListPayload(List<TeleportAnchorData> points,
                     }
                     if (payload.currentDim() != null) {
                         tag.putString("currentDim", payload.currentDim().identifier().toString());
+                    }
+                    if (payload.stoneHand() != null) {
+                        // 只需要区分主手 / 副手，用一个布尔位表示：true = 副手
+                        tag.putBoolean("stoneHand", payload.stoneHand() == InteractionHand.OFF_HAND);
                     }
                     buf.writeNbt(tag);
                 }

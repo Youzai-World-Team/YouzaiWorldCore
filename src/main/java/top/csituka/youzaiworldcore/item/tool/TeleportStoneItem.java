@@ -102,12 +102,15 @@ public class TeleportStoneItem extends Item {
      * 同维度：{@code max(1, ceil(直线距离 / BLOCKS_PER_DURABILITY))}；跨维度：固定
      * {@value #CROSS_DIMENSION_COST} 点。距离取玩家当前位置到锚点落点（方块上表面中心）的欧氏距离，
      * 与客户端列表右侧显示的距离口径一致。
+     * <p>
+     * 客户端也会调用本方法预判耐久够不够（避免白播一段传送 FOV 动画），因此参数取
+     * {@link Player} 而不是 {@code ServerPlayer}，两端算出的结果必须完全一致。
      *
      * @param player 发起传送的玩家（用当前位置计算）
      * @param target 目标传送锚点
      * @return 需要消耗的耐久点数，至少为 1
      */
-    public static int computeDurabilityCost(ServerPlayer player, TeleportAnchorData target) {
+    public static int computeDurabilityCost(Player player, TeleportAnchorData target) {
         if (!target.dimension().equals(player.level().dimension())) {
             return CROSS_DIMENSION_COST;
         }
@@ -283,7 +286,7 @@ public class TeleportStoneItem extends Item {
         DebugLogger.info("TeleportStoneItem", "玩家 %s 蓄力完成，打开传送列表，可用锚点 %d 个",
                 serverPlayer.getName().getString(), validPoints.size());
 
-        ServerPlayNetworking.send(serverPlayer, new TeleportAnchorListPayload(validPoints, null, null));
+        ServerPlayNetworking.send(serverPlayer, new TeleportAnchorListPayload(validPoints, null, null, hand));
     }
 
     /**
