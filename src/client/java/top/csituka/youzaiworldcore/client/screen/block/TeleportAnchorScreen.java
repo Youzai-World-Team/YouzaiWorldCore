@@ -52,6 +52,9 @@ public class TeleportAnchorScreen extends Screen {
     private static final int BUTTON_HEIGHT = 20;
     private static final int ICON_BUTTON_SIZE = 20;
 
+    /** 标题栏右上角关闭按钮的尺寸（与其它菜单的关闭按钮一致）。 */
+    private static final int CLOSE_BUTTON_SIZE = 14;
+
     /** 列表区域最多同时显示的条目数，超出时启用滚动。 */
     private static final int MAX_VISIBLE_ITEMS = 8;
 
@@ -195,6 +198,8 @@ public class TeleportAnchorScreen extends Screen {
     private TextureIconButton moveDownButton;
     @Nullable
     private TextureIconButton searchButton;
+    @Nullable
+    private TransparentButton closeButton;
     private EditBox renameEditBox;
 
     private int panelX;
@@ -227,6 +232,7 @@ public class TeleportAnchorScreen extends Screen {
         this.moveUpButton = null;
         this.moveDownButton = null;
         this.searchButton = null;
+        this.closeButton = null;
         this.renameEditBox = null;
         this.searchBox = null;
 
@@ -272,6 +278,18 @@ public class TeleportAnchorScreen extends Screen {
         panelX = (this.width - PANEL_WIDTH) / 2;
         panelY = (this.height - totalHeight) / 2;
         actionsY = panelY + TITLE_HEIGHT + PANEL_PADDING + searchHeight + listHeight + PANEL_PADDING + ACTIONS_Y_OFFSET;
+
+        // 标题栏右上角的关闭按钮（样式与其它菜单的关闭按钮一致：无底、白色「×」）
+        closeButton = new TransparentButton(
+                panelX + PANEL_WIDTH - PANEL_PADDING - CLOSE_BUTTON_SIZE,
+                panelY + (TITLE_HEIGHT - CLOSE_BUTTON_SIZE) / 2 - 2,
+                CLOSE_BUTTON_SIZE, CLOSE_BUTTON_SIZE,
+                Component.translatable("youzaiworldcore.message.gui.close_button"),
+                this::onClose);
+        closeButton.setBackgroundVisible(false);
+        closeButton.setTextColor(0xFFFFFF);
+        closeButton.setTextLeftAligned(true);
+        addRenderableWidget(closeButton);
 
         // 搜索模式：构建搜索输入框
         if (searchMode) {
@@ -341,6 +359,7 @@ public class TeleportAnchorScreen extends Screen {
         this.removeButton = null;
         this.moveUpButton = null;
         this.moveDownButton = null;
+        this.closeButton = null;
         this.renameEditBox = null;
         super.rebuildWidgets();
     }
@@ -879,16 +898,7 @@ public class TeleportAnchorScreen extends Screen {
         guiGraphics.text(font, title, (this.width - titleWidth) / 2, panelY + 10, 0xFFFFFFFF, false);
 
         // 选中高亮
-        if (selectedIndex >= 0 && selectedIndex < points.size()) {
-            int relativeIndex = selectedIndex - scrollOffset;
-            if (relativeIndex >= 0 && relativeIndex < MAX_VISIBLE_ITEMS) {
-                int highlightY = panelY + TITLE_HEIGHT + PANEL_PADDING
-                        + relativeIndex * (ITEM_HEIGHT + ITEM_GAP);
-                guiGraphics.fill(panelX + PANEL_PADDING, highlightY,
-                        panelX + PANEL_WIDTH - PANEL_PADDING, highlightY + ITEM_HEIGHT,
-                        HIGHLIGHT_BG);
-            }
-        }
+        drawSelectionHighlight(guiGraphics);
 
         // 删除确认提示文字
         if (confirmingDelete) {
@@ -938,14 +948,44 @@ public class TeleportAnchorScreen extends Screen {
     }
 
     /**
-     * 在每个可见条目的右侧绘制该传送锚点距离玩家的直线距离。
+     * 给选中的条目铺一层高亮底色。
      * <p>
-     * 同维度显示具体格数（玩家当前位置 → 锚点落点的欧氏距离，与服务端计算传送石耐久消耗的口径一致）；
-     * 不同维度时距离没有可比性，显示「跨维度」。每帧重算，玩家移动时数字实时变化。
+     * 位置直接取该条目按钮的实际矩形，而不是按下标反推 Y 坐标：
+     * 搜索框会把列表整体下移、搜索过滤又会让原始下标与显示行错位，
+     * 反推出来的坐标会把底色画到别的行上（例如盖在搜索框下面）。
+     * 选中项当前不在可见范围内（被滚动或被搜索过滤掉）时不画。
+     */
+    private void drawSelectionHighlight(GuiGraphicsExtractor guiGraphics) {
+        if (selectedIndex < 0 || selectedIndex >= points.size()) {
+            return;
+        }
+        TeleportAnchorData selected = points.get(selectedIndex);
+        for (int i = 0; i < pointButtons.size(); i++) {
+            int displayIndex = scrollOffset + i;
+            if (displayIndex >= displayedPoints.size()) {
+                break;
+            }
+            // displayedPoints 里放的就是 points 中的同一批对象，用引用比较即可精确定位
+            if (displayedPoints.get(displayIndex) != selected) {
+                continue;
+            }
+            TransparentButton btn = pointButtons.get(i);
+            guiGraphics.fill(btn.getX(), btn.getY(),
+                    btn.getX() + btn.getWidth(), btn.getY() + btn.getHeight(),
+                    HIGHLIGHT_BG);
+            break;
+        }
+    }
+
+    /**
+     * 在每个可见条目的右侧绘制该传送锚点距离起点的直线距离。
+     * <p>
+     * 起点取决于列表是怎么打开的：右键传送锚点方块打开时取<b>该锚点方块</b>（静态，数值不随走动变化），
+     * 用传送石打开时取<b>玩家当前位置</b>（动态，每帧重算，玩家移动时数字实时变化）——
+     * 后者也正是服务端计算传送石耐久消耗时用的口径。
+     * 不同维度之间距离没有可比性，显示「跨维度」。
      */
     private void drawEntryDistances(GuiGraphicsExtractor guiGraphics) {
-        var player = Minecraft.getInstance().player;
-        if (player == null) return;
         var font = Minecraft.getInstance().font;
 
         for (int i = 0; i < pointButtons.size(); i++) {
@@ -953,7 +993,7 @@ public class TeleportAnchorScreen extends Screen {
             if (pointIndex >= displayedPoints.size()) break;
             TeleportAnchorData point = displayedPoints.get(pointIndex);
 
-            String text = formatDistance(player, point);
+            String text = formatDistance(point);
             TransparentButton btn = pointButtons.get(i);
             int textX = btn.getX() + btn.getWidth() - DISTANCE_PADDING - font.width(text);
             int textY = btn.getY() + (ITEM_HEIGHT - font.lineHeight) / 2;
@@ -962,20 +1002,43 @@ public class TeleportAnchorScreen extends Screen {
     }
 
     /**
-     * 格式化单个传送点到玩家的距离文本。
+     * 格式化单个传送点到起点的距离文本。
      * <p>
-     * 1 格方块 = 1 m，取欧氏距离；不同维度之间距离没有可比性，显示「跨维度」。
+     * 1 格方块 = 1 m，取欧氏距离；起点与目标都按锚点落点（方块上表面中心）取值，
+     * 玩家起点则直接用玩家坐标。跨维度时距离没有可比性，显示「跨维度」。
      */
-    private static String formatDistance(net.minecraft.client.player.LocalPlayer player,
-                                          TeleportAnchorData point) {
-        if (!point.dimension().equals(player.level().dimension())) {
+    private String formatDistance(TeleportAnchorData point) {
+        ResourceKey<Level> originDim;
+        double originX;
+        double originY;
+        double originZ;
+
+        if (currentAnchorPos != null && currentAnchorDim != null) {
+            // 传送锚点方块入口：以该锚点为静态起点
+            originDim = currentAnchorDim;
+            originX = currentAnchorPos.getX() + 0.5;
+            originY = currentAnchorPos.getY() + 1.0;
+            originZ = currentAnchorPos.getZ() + 0.5;
+        } else {
+            // 传送石入口：以玩家当前位置为动态起点
+            var player = Minecraft.getInstance().player;
+            if (player == null) return "";
+            originDim = player.level().dimension();
+            originX = player.getX();
+            originY = player.getY();
+            originZ = player.getZ();
+        }
+
+        if (!point.dimension().equals(originDim)) {
             return Component.translatable(
                     "screen.youzaiworldcore.teleport_anchor.cross_dimension").getString();
         }
+
         BlockPos pos = point.pos();
-        double distance = Math.sqrt(player.distanceToSqr(
-                pos.getX() + 0.5, pos.getY() + 1.0, pos.getZ() + 0.5));
-        return formatMetres(distance);
+        double dx = pos.getX() + 0.5 - originX;
+        double dy = pos.getY() + 1.0 - originY;
+        double dz = pos.getZ() + 0.5 - originZ;
+        return formatMetres(Math.sqrt(dx * dx + dy * dy + dz * dz));
     }
 
     /**
