@@ -1,0 +1,20 @@
+{
+  "anvil_cost": 4,
+  "description": {
+    "translate": "enchantment.youzaiworldcore.bounce"
+  },
+  "max_cost": {
+    "base": 25,
+    "per_level_above_first": 12
+  },
+  "max_level": 2,
+  "min_cost": {
+    "base": 8,
+    "per_level_above_first": 12
+  },
+  "slots": [
+    "offhand"
+  ],
+  "supported_items": "#youzaiworldcore:enchantable/shield",
+  "weight": 4
+}

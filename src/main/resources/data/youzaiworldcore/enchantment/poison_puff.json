@@ -1,0 +1,44 @@
+{
+  "anvil_cost": 4,
+  "description": {
+    "translate": "enchantment.youzaiworldcore.poison_puff"
+  },
+  "effects": {
+    "minecraft:post_attack": [
+      {
+        "affected": "victim",
+        "effect": {
+          "type": "minecraft:apply_mob_effect",
+          "to_apply": "minecraft:poison",
+          "min_duration": {
+            "type": "minecraft:linear",
+            "base": 60,
+            "per_level_above_first": 60
+          },
+          "max_duration": {
+            "type": "minecraft:linear",
+            "base": 60,
+            "per_level_above_first": 60
+          },
+          "min_amplifier": 0,
+          "max_amplifier": 0
+        },
+        "enchanted": "attacker"
+      }
+    ]
+  },
+  "max_cost": {
+    "base": 30,
+    "per_level_above_first": 15
+  },
+  "max_level": 2,
+  "min_cost": {
+    "base": 10,
+    "per_level_above_first": 15
+  },
+  "slots": [
+    "mainhand"
+  ],
+  "supported_items": "#minecraft:enchantable/trident",
+  "weight": 4
+}

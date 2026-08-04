@@ -1,0 +1,20 @@
+{
+  "anvil_cost": 4,
+  "description": {
+    "translate": "enchantment.youzaiworldcore.wind_charge"
+  },
+  "max_cost": {
+    "base": 35,
+    "per_level_above_first": 15
+  },
+  "max_level": 2,
+  "min_cost": {
+    "base": 15,
+    "per_level_above_first": 15
+  },
+  "slots": [
+    "chest"
+  ],
+  "supported_items": "#youzaiworldcore:enchantable/wind_charge",
+  "weight": 3
+}

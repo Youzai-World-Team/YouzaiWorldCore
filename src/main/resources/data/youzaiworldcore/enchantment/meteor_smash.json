@@ -1,0 +1,54 @@
+{
+  "anvil_cost": 6,
+  "description": {
+    "translate": "enchantment.youzaiworldcore.meteor_smash"
+  },
+  "effects": {
+    "minecraft:post_attack": [
+      {
+        "affected": "victim",
+        "effect": {
+          "type": "minecraft:all_of",
+          "effects": [
+            {
+              "type": "minecraft:ignite",
+              "duration": 200.0
+            },
+            {
+              "type": "minecraft:play_sound",
+              "pitch": 1.0,
+              "sound": "minecraft:entity.blaze.shoot",
+              "volume": 1.0
+            }
+          ]
+        },
+        "enchanted": "attacker",
+        "requirements": {
+          "condition": "minecraft:damage_source_properties",
+          "predicate": {
+            "tags": [
+              {
+                "expected": true,
+                "id": "minecraft:mace_smash"
+              }
+            ]
+          }
+        }
+      }
+    ]
+  },
+  "max_cost": {
+    "base": 40,
+    "per_level_above_first": 0
+  },
+  "max_level": 1,
+  "min_cost": {
+    "base": 20,
+    "per_level_above_first": 0
+  },
+  "slots": [
+    "mainhand"
+  ],
+  "supported_items": "#minecraft:enchantable/mace",
+  "weight": 3
+}

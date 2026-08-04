@@ -1,0 +1,54 @@
+{
+  "anvil_cost": 4,
+  "description": {
+    "translate": "enchantment.youzaiworldcore.soul_fire"
+  },
+  "effects": {
+    "minecraft:post_attack": [
+      {
+        "affected": "victim",
+        "effect": {
+          "type": "minecraft:all_of",
+          "effects": [
+            {
+              "type": "minecraft:ignite",
+              "duration": {
+                "type": "minecraft:linear",
+                "base": 4.0,
+                "per_level_above_first": 4.0
+              }
+            },
+            {
+              "type": "minecraft:play_sound",
+              "pitch": 1.0,
+              "sound": "minecraft:particle.soul_escape",
+              "volume": 0.8
+            }
+          ]
+        },
+        "enchanted": "attacker",
+        "requirements": {
+          "condition": "minecraft:damage_source_properties",
+          "predicate": {
+            "is_direct": true
+          }
+        }
+      }
+    ]
+  },
+  "exclusive_set": "#youzaiworldcore:exclusive_set/soul_fire",
+  "max_cost": {
+    "base": 30,
+    "per_level_above_first": 20
+  },
+  "max_level": 2,
+  "min_cost": {
+    "base": 10,
+    "per_level_above_first": 20
+  },
+  "slots": [
+    "mainhand"
+  ],
+  "supported_items": "#youzaiworldcore:enchantable/soul_fire",
+  "weight": 4
+}

@@ -1,0 +1,42 @@
+{
+  "anvil_cost": 1,
+  "description": {
+    "translate": "enchantment.youzaiworldcore.vitality"
+  },
+  "effects": {
+    "minecraft:tick": [
+      {
+        "effect": {
+          "type": "minecraft:apply_mob_effect",
+          "to_apply": "minecraft:health_boost",
+          "min_duration": 200,
+          "max_duration": 200,
+          "min_amplifier": {
+            "type": "minecraft:linear",
+            "base": 0,
+            "per_level_above_first": 1
+          },
+          "max_amplifier": {
+            "type": "minecraft:linear",
+            "base": 0,
+            "per_level_above_first": 1
+          }
+        }
+      }
+    ]
+  },
+  "max_cost": {
+    "base": 12,
+    "per_level_above_first": 11
+  },
+  "max_level": 5,
+  "min_cost": {
+    "base": 1,
+    "per_level_above_first": 11
+  },
+  "slots": [
+    "chest"
+  ],
+  "supported_items": "#youzaiworldcore:enchantable/vitality",
+  "weight": 5
+}

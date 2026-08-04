@@ -2,6 +2,21 @@
   "replace": false,
   "values": [
     "youzaiworldcore:sun_repair",
-    "youzaiworldcore:spirit_turbo"
+    "youzaiworldcore:spirit_turbo",
+    "youzaiworldcore:soul_fire",
+    "youzaiworldcore:leeching",
+    "youzaiworldcore:poison_puff",
+    "youzaiworldcore:fire_charge",
+    "youzaiworldcore:sonic_charge",
+    "youzaiworldcore:boomshot",
+    "youzaiworldcore:vitality",
+    "youzaiworldcore:glowing_aura",
+    "youzaiworldcore:cowardice",
+    "youzaiworldcore:wind_charge",
+    "youzaiworldcore:iron_wings",
+    "youzaiworldcore:spikes",
+    "youzaiworldcore:bounce",
+    "youzaiworldcore:smelting",
+    "youzaiworldcore:meteor_smash"
   ]
 }

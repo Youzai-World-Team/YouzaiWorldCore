@@ -240,6 +240,15 @@ public class YouzaiworldCore implements ModInitializer {
         top.csituka.youzaiworldcore.event.SunRepairHandler.register();
         DebugLogger.info("YouzaiWorldCore", "注册乐魂涡轮加速器 Tick 事件...");
         top.csituka.youzaiworldcore.event.HappyGhastTurboHandler.register();
+        // ===== Raiyon 附魔移植处理器 =====
+        DebugLogger.info("YouzaiworldCore", "注册吸血附魔事件...");
+        top.csituka.youzaiworldcore.event.LeechingHandler.register();
+        DebugLogger.info("YouzaiworldCore", "注册熔炼附魔事件...");
+        top.csituka.youzaiworldcore.event.SmeltingHandler.register();
+        DebugLogger.info("YouzaiworldCore", "注册风之充能附魔 Tick 事件...");
+        top.csituka.youzaiworldcore.event.WindChargeHandler.register();
+        DebugLogger.info("YouzaiworldCore", "注册发光光环附魔 Tick 事件...");
+        top.csituka.youzaiworldcore.event.GlowingAuraHandler.register();
 
         // ===== 注册甘蔗骨粉催熟事件 =====
         DebugLogger.info("YouzaiworldCore", "注册甘蔗骨粉催熟事件...");
