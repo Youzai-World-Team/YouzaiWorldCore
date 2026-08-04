@@ -387,7 +387,7 @@ public class MailComposeScreen extends MailBaseScreen {
                 formRect.y() + 160, MailUi.DIVIDER);
         graphics.text(font, "附加附件", x, formRect.y() + 166, MailUi.TEXT_PRIMARY, false);
 
-        boolean itemEnabled = cbItem.active && cbItem.isChecked();
+        boolean itemEnabled = cbItem != null && cbItem.active && cbItem.isChecked();
         for (int i = 0; i < ITEM_SLOTS; i++) {
             MailUi.Rect slot = slotRects[i];
             int border = i == selectedItemSlot && itemEnabled ? MailUi.YELLOW : 0xFF7C7C7C;
