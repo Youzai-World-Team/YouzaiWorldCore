@@ -1,13 +1,18 @@
 package top.csituka.youzaiworldcore.client.screen;
 
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.nbt.NbtOps;
+import net.minecraft.nbt.TagParser;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.FormattedCharSequence;
+import net.minecraft.world.item.ItemStack;
 import top.csituka.youzaiworldcore.client.MailClientState;
 import top.csituka.youzaiworldcore.mail.Mail;
 import top.csituka.youzaiworldcore.mail.MailAttachment;
+import top.csituka.youzaiworldcore.mail.AttachmentType;
 import top.csituka.youzaiworldcore.mail.MailRef;
 import top.csituka.youzaiworldcore.mail.MailType;
 import top.csituka.youzaiworldcore.network.MailActionPayload;
@@ -163,6 +168,8 @@ public class MailScreen extends MailBaseScreen {
         renderListPanel(graphics, mouseX, mouseY, filtered);
         if (selected != null) {
             renderDetailPanel(graphics, mouseX, mouseY, selected);
+        } else if (!filtered.isEmpty()) {
+            renderNoSelectionHint(graphics);
         } else {
             renderNoFilteredMail(graphics);
         }
@@ -311,14 +318,24 @@ public class MailScreen extends MailBaseScreen {
             int chipX = x;
             int chipY = attachmentY + 13;
             for (MailAttachment attachment : attachments) {
-                String chip = attachmentLabel(attachment);
-                int chipWidth = font.width(chip) + 14;
-                if (chipX + chipWidth > x + innerWidth) {
-                    break;
+                if (attachment.type() == AttachmentType.ITEM) {
+                    // ITEM 类型渲染物品贴图
+                    ItemStack stack = decodeAttachmentItem(attachment);
+                    if (!stack.isEmpty()) {
+                        graphics.item(stack, chipX, chipY, 0);
+                        graphics.itemDecorations(font, stack, chipX, chipY);
+                        chipX += 18;
+                    } else {
+                        // 解码失败时回退文字
+                        String label = "物品 ×" + Math.max(1, attachment.amount());
+                        chipX = renderAttachmentChip(graphics, chipX, chipY, x, innerWidth, label);
+                        if (chipX < 0) break;
+                    }
+                } else {
+                    String label = attachmentLabel(attachment);
+                    chipX = renderAttachmentChip(graphics, chipX, chipY, x, innerWidth, label);
+                    if (chipX < 0) break;
                 }
-                MailUi.roundedRect(graphics, chipX, chipY, chipWidth, 18, 4, 0xFF707070);
-                graphics.text(font, chip, chipX + 7, chipY + 5, 0xFFE8E8E8, false);
-                chipX += chipWidth + 6;
             }
         }
 
@@ -342,12 +359,20 @@ public class MailScreen extends MailBaseScreen {
         claimRect = starRect = deleteRect = new MailUi.Rect(0, 0, 0, 0);
     }
 
+    /** 右侧详情区未选中任何邮件时的占位提示。 */
+    private void renderNoSelectionHint(GuiGraphicsExtractor graphics) {
+        MailUi.roundedRect(graphics, detailRect.x(), detailRect.y(), detailRect.width(), detailRect.height(), 5,
+                MailUi.PANEL_BACKGROUND);
+        MailUi.centeredText(graphics, font, Component.literal("← 请选择一封邮件查看详情"), detailRect, MailUi.TEXT_MUTED);
+        claimRect = starRect = deleteRect = new MailUi.Rect(0, 0, 0, 0);
+    }
+
     private void renderBatchActions(GuiGraphicsExtractor graphics, int mouseX, int mouseY,
                                     List<MailStreamCodecs.MailRefAndMail> inbox) {
         int y = pageRect.bottom() - 46;
         deleteReadRect = new MailUi.Rect(pageRect.x() + 34, y, 88, 23);
         purgeExpiredRect = new MailUi.Rect(deleteReadRect.right() + 8, y, 96, 23);
-        boolean hasRead = inbox.stream().anyMatch(pair -> pair.ref().isRead());
+        boolean hasRead = inbox.stream().anyMatch(pair -> canDeleteByReadFilter(pair));
         boolean hasExpired = inbox.stream().anyMatch(pair -> pair.mail().isExpired() && !pair.ref().isStarred());
         MailUi.button(graphics, font, deleteReadRect, "删除全部已读", 0xFF8A8A8A, 0xFF111111,
                 deleteReadRect.contains(mouseX, mouseY), hasRead);
@@ -444,7 +469,8 @@ public class MailScreen extends MailBaseScreen {
             }
 
             if (deleteReadRect.contains(mouseX, mouseY)) {
-                List<UUID> ids = inbox.stream().filter(pair -> pair.ref().isRead())
+                List<UUID> ids = inbox.stream()
+                        .filter(pair -> canDeleteByReadFilter(pair))
                         .map(pair -> pair.mail().getId()).toList();
                 deleteMails(ids, "已删除全部已读邮件");
                 return true;
@@ -559,14 +585,10 @@ public class MailScreen extends MailBaseScreen {
     }
 
     /**
-     * 解析当前选中的邮件；未显式选择时自动选中第一封。
+     * 解析当前选中的邮件。
      * <p>
-     * 自动选中的那封同样标记为已读——它的正文已完整呈现在右侧详情区，
-     * 若不标记就会出现「已经看过但红点仍在」。
-     * </p>
-     * <p>
-     * 「未读」分类除外：那里一旦标记已读该邮件就会立刻离开列表，下一帧又自动选中下一封，
-     * 几帧之内就会把整个未读列表清空，所以该分类只在玩家真正点击时才标记。
+     * 仅在玩家主动点击邮件时设置 {@code selectedMailId}，右侧详情区在未选中时显示为空。
+     * 邮件被标记为已读的时机由 {@link #selectEntry} 控制，与自动选中解耦。
      * </p>
      */
     private MailStreamCodecs.MailRefAndMail resolveSelection(List<MailStreamCodecs.MailRefAndMail> filtered) {
@@ -574,23 +596,38 @@ public class MailScreen extends MailBaseScreen {
             selectedMailId = null;
             return null;
         }
-        boolean autoMarkRead = activeFilter != Filter.UNREAD;
         if (selectedMailId != null) {
             for (MailStreamCodecs.MailRefAndMail pair : filtered) {
                 if (pair.mail().getId().equals(selectedMailId)) {
-                    if (autoMarkRead) {
-                        markRead(pair.ref());
-                    }
                     return pair;
                 }
             }
         }
-        MailStreamCodecs.MailRefAndMail first = filtered.get(0);
-        selectedMailId = first.mail().getId();
-        if (autoMarkRead) {
-            markRead(first.ref());
+        // 不自动选中：保持 selectedMailId 为 null，右侧显示为空
+        return null;
+    }
+
+    /**
+     * 判断一封已读邮件是否可被「删除全部已读」操作删除。
+     * <ul>
+     *   <li>未读邮件不可删除。</li>
+     *   <li>有未领取奖励且未过期的邮件按未读处理，不可删除。</li>
+     *   <li>已过期且有星标的邮件受保护，不可删除。</li>
+     * </ul>
+     */
+    private static boolean canDeleteByReadFilter(MailStreamCodecs.MailRefAndMail pair) {
+        if (!pair.ref().isRead()) {
+            return false;
         }
-        return first;
+        // 未领取的奖励邮件，未过期时按未读处理
+        if (pair.mail().getType() == MailType.REWARD && !pair.ref().isClaimed() && !pair.mail().isExpired()) {
+            return false;
+        }
+        // 过期且星标的邮件受保护
+        if (pair.mail().isExpired() && pair.ref().isStarred()) {
+            return false;
+        }
+        return true;
     }
 
     private static String typeIcon(MailType type) {
@@ -642,6 +679,44 @@ public class MailScreen extends MailBaseScreen {
         }
         long minutes = milliseconds % 3_600_000L / 60_000L;
         return hours + "小时 " + minutes + "分钟";
+    }
+
+    /**
+     * 渲染单个文字型附件标签，返回新的 x 坐标；超出宽度返回 -1。
+     */
+    private int renderAttachmentChip(GuiGraphicsExtractor graphics, int chipX, int chipY,
+                                     int boundX, int innerWidth, String label) {
+        int chipWidth = font.width(label) + 14;
+        if (chipX + chipWidth > boundX + innerWidth) {
+            return -1;
+        }
+        MailUi.roundedRect(graphics, chipX, chipY, chipWidth, 18, 4, 0xFF707070);
+        graphics.text(font, label, chipX + 7, chipY + 5, 0xFFE8E8E8, false);
+        return chipX + chipWidth + 6;
+    }
+
+    /**
+     * 将 ITEM 类型附件的 NBT 字符串解码为 ItemStack。
+     */
+    private static ItemStack decodeAttachmentItem(MailAttachment attachment) {
+        if (attachment.itemNbt() == null || attachment.itemNbt().isBlank()
+                || Minecraft.getInstance().level == null) {
+            return ItemStack.EMPTY;
+        }
+        try {
+            var tag = TagParser.parseCompoundFully(attachment.itemNbt());
+            var lookup = Minecraft.getInstance().level.registryAccess();
+            ItemStack stack = ItemStack.CODEC.parse(
+                    lookup.createSerializationContext(NbtOps.INSTANCE), tag)
+                    .result().orElse(ItemStack.EMPTY);
+            if (!stack.isEmpty()) {
+                stack.setCount(Math.min(Math.max(1, attachment.amount()), stack.getMaxStackSize()));
+            }
+            return stack;
+        } catch (Exception e) {
+            DebugLogger.exception(MODULE, "decodeAttachmentItem", e);
+            return ItemStack.EMPTY;
+        }
     }
 
     private enum Filter {

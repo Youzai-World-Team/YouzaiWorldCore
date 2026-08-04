@@ -40,7 +40,7 @@ final class MailPlayerPicker {
     private MailUi.Rect panelRect = new MailUi.Rect(0, 0, 0, 0);
     private MailUi.Rect searchRect = new MailUi.Rect(0, 0, 0, 0);
     private MailUi.Rect listRect = new MailUi.Rect(0, 0, 0, 0);
-    private MailUi.Rect selectAllRect = new MailUi.Rect(0, 0, 0, 0);
+    private MailUi.Rect invertRect = new MailUi.Rect(0, 0, 0, 0);
     private MailUi.Rect clearRect = new MailUi.Rect(0, 0, 0, 0);
     private MailUi.Rect cancelRect = new MailUi.Rect(0, 0, 0, 0);
     private MailUi.Rect confirmRect = new MailUi.Rect(0, 0, 0, 0);
@@ -162,12 +162,12 @@ final class MailPlayerPicker {
 
         // ===== 底部按钮 =====
         int buttonY = panelRect.bottom() - 34;
-        selectAllRect = new MailUi.Rect(x, buttonY, 62, 22);
-        clearRect = new MailUi.Rect(selectAllRect.right() + 8, buttonY, 50, 22);
+        invertRect = new MailUi.Rect(x, buttonY, 50, 22);
+        clearRect = new MailUi.Rect(invertRect.right() + 8, buttonY, 50, 22);
         confirmRect = new MailUi.Rect(panelRect.right() - 62, buttonY, 50, 22);
         cancelRect = new MailUi.Rect(confirmRect.x() - 58, buttonY, 50, 22);
-        MailUi.button(graphics, font, selectAllRect, "全选当前", 0xFF7A7A7A, 0xFF111111,
-                selectAllRect.contains(mouseX, mouseY), !filtered.isEmpty());
+        MailUi.button(graphics, font, invertRect, "反选", 0xFF7A7A7A, 0xFF111111,
+                invertRect.contains(mouseX, mouseY), !filtered.isEmpty());
         MailUi.button(graphics, font, clearRect, "清空", 0xFF7A7A7A, 0xFF111111,
                 clearRect.contains(mouseX, mouseY), !selected.isEmpty());
         MailUi.button(graphics, font, cancelRect, "取消", 0xFF9A9A9A, 0xFF111111,
@@ -201,8 +201,13 @@ final class MailPlayerPicker {
             selected.clear();
             return true;
         }
-        if (selectAllRect.contains(mouseX, mouseY)) {
-            selected.addAll(filteredNames());
+        if (invertRect.contains(mouseX, mouseY)) {
+            List<String> filtered = filteredNames();
+            for (String name : filtered) {
+                if (!selected.remove(name)) {
+                    selected.add(name);
+                }
+            }
             return true;
         }
         if (listRect.contains(mouseX, mouseY)) {
@@ -268,6 +273,11 @@ final class MailPlayerPicker {
             query = next;
             scrollOffset = 0;
         }
+    }
+
+    /** 获取当前搜索词。 */
+    String getQuery() {
+        return query;
     }
 
     // ===== 工具 =====

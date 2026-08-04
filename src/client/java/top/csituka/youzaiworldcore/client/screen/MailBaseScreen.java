@@ -121,7 +121,7 @@ public abstract class MailBaseScreen extends Screen {
 
     @Override
     public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
-        MailUi.drawBackdrop(graphics, width, height);
+        // 透明背景：不绘制遮罩，让玩家看到游戏画面
     }
 
     // ===== 页面切换 =====

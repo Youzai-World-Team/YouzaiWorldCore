@@ -35,11 +35,18 @@ public final class MailClientState {
      * 服务端会在每次邮件操作后回推权威未读数；此方法用于收到列表 / 单条更新包后
      * 立即让主菜单徽标与列表保持一致，避免出现「红点数与列表对不上」的过渡帧。
      * </p>
+     * <p>
+     * 未领取的奖励邮件未过期时按未读处理，确保角标提醒玩家领取。
+     * </p>
      */
     public static void recalculateUnreadCount() {
         unreadCount = (int) currentInbox.stream()
                 .filter(pair -> pair.mail() != null && !pair.mail().isHidden())
-                .filter(pair -> pair.ref() != null && !pair.ref().isRead())
+                .filter(pair -> pair.ref() != null)
+                .filter(pair -> !pair.ref().isRead()
+                        || (pair.mail().getType() == top.csituka.youzaiworldcore.mail.MailType.REWARD
+                            && !pair.ref().isClaimed()
+                            && !pair.mail().isExpired()))
                 .count();
     }
 

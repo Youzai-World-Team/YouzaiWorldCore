@@ -244,6 +244,20 @@ public class MenuScreen extends Screen {
             }
         }
 
+        // 自定义覆盖层（角标等）渲染在按钮之上，确保不被按钮贴图遮挡
+        if (targetGroup != null) {
+            float eased = easeInOutCubic(transitionProgress);
+            float outAlpha = (1f - eased) * menuAlpha;
+            float inAlpha = eased * menuAlpha;
+            float direction = transitionReverse ? 1f : -1f;
+            float outOffset = direction * eased * (this.width * 0.12f);
+            float inOffset = -direction * (1f - eased) * (this.width * 0.12f);
+            currentGroup.renderCustomContent(guiGraphics, this.width, this.height, outAlpha, outOffset, this.mouseX, this.mouseY);
+            targetGroup.renderCustomContent(guiGraphics, this.width, this.height, inAlpha, inOffset, this.mouseX, this.mouseY);
+        } else {
+            currentGroup.renderCustomContent(guiGraphics, this.width, this.height, menuAlpha, 0f, this.mouseX, this.mouseY);
+        }
+
         if (dialogAnimProgress > 0.001f) {
             guiGraphics.pose().popMatrix();
         }
@@ -325,9 +339,6 @@ public class MenuScreen extends Screen {
         renderTitleRaw(guiGraphics, currentGroup, outAlpha);
         renderTitleRaw(guiGraphics, targetGroup, inAlpha);
 
-        currentGroup.renderCustomContent(guiGraphics, this.width, this.height, outAlpha, outOffset, this.mouseX, this.mouseY);
-        targetGroup.renderCustomContent(guiGraphics, this.width, this.height, inAlpha, inOffset, this.mouseX, this.mouseY);
-
         if (transitionProgress >= 1f) {
             currentGroup = targetGroup;
             targetGroup = null;
@@ -338,7 +349,6 @@ public class MenuScreen extends Screen {
     private void renderSingleGroup(GuiGraphicsExtractor guiGraphics, MenuElementGroup group, float entryAlpha) {
         renderGroupButtons(group, entryAlpha, 0f);
         renderTitle(guiGraphics, group, entryAlpha);
-        group.renderCustomContent(guiGraphics, this.width, this.height, entryAlpha, 0f, this.mouseX, this.mouseY);
     }
 
     private void createCloseButton(float alpha) {

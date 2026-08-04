@@ -10,13 +10,14 @@ import net.minecraft.network.chat.Component;
 @SuppressWarnings("null")
 final class MailUi {
 
-    static final int PAGE_BACKGROUND = 0xF20D0D0D;
-    static final int PANEL_BACKGROUND = 0xF2555555;
+    static final int PAGE_BACKGROUND = 0xC8191919;
+    static final int PANEL_BACKGROUND = 0xD23A3A3A;
     static final int PANEL_HEADER = 0xFF666666;
     static final int ROW_SELECTED = 0xFF999999;
     static final int ROW_HOVERED = 0xFF6A6A6A;
     static final int ROW_ALTERNATE = 0xFF595959;
     static final int INPUT_BACKGROUND = 0xFF4C4C4C;
+    static final int YZUI_INPUT_BG_ALPHA = 0x80;       // YZUI 风格输入框背景 alpha
     static final int DIVIDER = 0xFF707070;
     static final int TEXT_PRIMARY = 0xFFFFFFFF;
     static final int TEXT_SECONDARY = 0xFFB8B8B8;
@@ -114,6 +115,13 @@ final class MailUi {
         int green = Math.min(255, ((color >> 8) & 0xFF) + amount);
         int blue = Math.min(255, (color & 0xFF) + amount);
         return (alpha << 24) | (red << 16) | (green << 8) | blue;
+    }
+
+    /** 绘制 YZUI 风格圆角半透明白色输入框背景。 */
+    static void yzuiInputBackground(GuiGraphicsExtractor graphics, int x, int y, int width, int height,
+                                    boolean enabled) {
+        int color = enabled ? (YZUI_INPUT_BG_ALPHA << 24 | 0x00FFFFFF) : (0x40 << 24 | 0x00FFFFFF);
+        roundedRect(graphics, x, y, width, height, 6, color);
     }
 
     /** 简单的不可变界面矩形。 */

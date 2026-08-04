@@ -12,6 +12,7 @@ import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.TagParser;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
+import org.lwjgl.glfw.GLFW;
 import top.csituka.youzaiworldcore.client.MailClientState;
 import top.csituka.youzaiworldcore.client.screen.widget.DropdownButton;
 import top.csituka.youzaiworldcore.client.screen.widget.MailCheckboxButton;
@@ -77,11 +78,10 @@ public class MailComposeScreen extends MailBaseScreen {
     private DropdownButton expireDropdown;
 
     /**
-     * 「选取玩家」弹窗的搜索输入框。
-     * <p>刻意不加入组件树：只作为文本模型承接键盘事件（保留输入法 / 粘贴 / 光标等原版能力），
-     * 显示由 {@link MailPlayerPicker} 自绘，从而不与表单组件抢渲染层级和焦点。</p>
+     * 「选取玩家」弹窗的搜索文本。
+     * <p>不再依赖未加入组件树的 EditBox；直接处理键盘事件，支持回退、粘贴与输入法。</p>
      */
-    private EditBox playerSearchInput;
+    private String playerSearchText = "";
 
     private final MailPlayerPicker playerPicker = new MailPlayerPicker();
     /** 当前选中的指定玩家代号 */
@@ -184,9 +184,6 @@ public class MailComposeScreen extends MailBaseScreen {
         selectedPlayers.addAll(prefill.players());
         legacyTargets.clear();
         legacyTargets.addAll(prefill.legacyTargets());
-
-        playerSearchInput = new EditBox(font, 0, 0, 100, 16, Component.literal(""));
-        playerSearchInput.setMaxLength(32);
     }
 
     private void createMainFields(Prefill prefill) {
@@ -214,9 +211,9 @@ public class MailComposeScreen extends MailBaseScreen {
                 .setX(formRect.x() + 12)
                 .setY(bodyY)
                 .setPlaceholder(Component.literal("请输入邮件正文..."))
-                .setTextColor(0xFFE6E6E6)
+                .setTextColor(0xFF404040)        // YZUI 风格深色文字
                 .setTextShadow(false)
-                .setCursorColor(0xFFFFFFFF)
+                .setCursorColor(0xFF000000)      // YZUI 风格黑色光标
                 .setShowBackground(false)
                 .setShowDecorations(false)
                 .build(font, formRect.width() - 24, 45, Component.literal("邮件正文"));
@@ -306,7 +303,7 @@ public class MailComposeScreen extends MailBaseScreen {
             renderInventoryPicker(graphics, mouseX, mouseY);
         }
         if (playerPicker.isOpen()) {
-            playerPicker.setQuery(playerSearchInput.getValue());
+            playerPicker.setQuery(playerSearchText);
             playerPicker.render(graphics, font, mouseX, mouseY,
                     MailViewport.DESIGN_WIDTH, MailViewport.DESIGN_HEIGHT);
         }
@@ -385,7 +382,7 @@ public class MailComposeScreen extends MailBaseScreen {
                 titleInput.getHeight(), true);
 
         graphics.text(font, "文本正文", x, formRect.y() + 94, MailUi.TEXT_PRIMARY, false);
-        drawInputBackground(graphics, formRect.x() + 12, formRect.y() + 106,
+        MailUi.yzuiInputBackground(graphics, formRect.x() + 12, formRect.y() + 106,
                 formRect.width() - 24, 45, true);
         graphics.fill(formRect.x() + 12, formRect.y() + 159, formRect.right() - 12,
                 formRect.y() + 160, MailUi.DIVIDER);
@@ -554,8 +551,7 @@ public class MailComposeScreen extends MailBaseScreen {
     }
 
     private void openPlayerPicker() {
-        playerSearchInput.setValue("");
-        playerSearchInput.setFocused(true);
+        playerSearchText = "";
         if (MailClientState.registeredPlayers.isEmpty()) {
             // 名单尚未到达（如刚进界面就点开），补发一次请求
             ClientPlayNetworking.send(new MailPlayerListRequestPayload());
@@ -600,11 +596,26 @@ public class MailComposeScreen extends MailBaseScreen {
     @Override
     public boolean keyPressed(KeyEvent event) {
         if (playerPicker.isOpen()) {
-            // ESC / 回车由弹窗处理，其余按键转给搜索输入框
+            // ESC / 回车由弹窗处理，其余按键处理搜索输入
             if (playerPicker.keyPressed(event.key())) {
                 return true;
             }
-            playerSearchInput.keyPressed(event);
+            if (event.key() == GLFW.GLFW_KEY_BACKSPACE) {
+                if (!playerSearchText.isEmpty()) {
+                    playerSearchText = playerSearchText.substring(0, playerSearchText.length() - 1);
+                    playerPicker.setQuery(playerSearchText);
+                }
+                return true;
+            }
+            // Ctrl+V 粘贴
+            if (event.isPaste()) {
+                String clipboard = Minecraft.getInstance().keyboardHandler.getClipboard();
+                if (clipboard != null && !clipboard.isEmpty()) {
+                    playerSearchText += clipboard;
+                    playerPicker.setQuery(playerSearchText);
+                }
+                return true;
+            }
             return true;
         }
         if (inventoryPickerOpen && event.key() == 256) {
@@ -617,7 +628,12 @@ public class MailComposeScreen extends MailBaseScreen {
     @Override
     public boolean charTyped(CharacterEvent event) {
         if (playerPicker.isOpen()) {
-            playerSearchInput.charTyped(event);
+            String text = new String(Character.toChars(event.codepoint()));
+            // 过滤控制字符
+            if (!text.isEmpty() && event.codepoint() >= 32) {
+                playerSearchText += text;
+                playerPicker.setQuery(playerSearchText);
+            }
             return true;
         }
         return super.charTyped(event);
