@@ -71,6 +71,12 @@ public abstract class MailBaseScreen extends Screen {
 
         extractBackground(graphics, mouseX, mouseY, partialTick);
 
+        // 暗色遮罩层：与主菜单一致，游戏画面 + 半透明暗色叠加
+        int overlayAlpha = (int) (animationProgress * 128);
+        if (overlayAlpha > 0) {
+            graphics.fill(0, 0, width, height, overlayAlpha << 24);
+        }
+
         int designMouseX = (int) viewport.toDesignX(mouseX);
         int designMouseY = (int) viewport.toDesignY(mouseY);
 

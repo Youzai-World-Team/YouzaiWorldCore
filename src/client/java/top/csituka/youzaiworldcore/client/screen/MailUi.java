@@ -10,8 +10,8 @@ import net.minecraft.network.chat.Component;
 @SuppressWarnings("null")
 final class MailUi {
 
-    static final int PAGE_BACKGROUND = 0xC8191919;
-    static final int PANEL_BACKGROUND = 0xD23A3A3A;
+    static final int PAGE_BACKGROUND = 0x00000000; // 透明：游戏画面通过暗色遮罩层可见
+    static final int PANEL_BACKGROUND = 0xC8404040;
     static final int PANEL_HEADER = 0xFF666666;
     static final int ROW_SELECTED = 0xFF999999;
     static final int ROW_HOVERED = 0xFF6A6A6A;

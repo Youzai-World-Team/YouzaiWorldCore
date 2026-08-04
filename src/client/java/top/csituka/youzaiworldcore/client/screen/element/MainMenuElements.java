@@ -268,11 +268,33 @@ public class MainMenuElements implements MenuElementGroup {
             int badgeX = col1X + tile - 10;
             int badgeY = row3Y - 2;
             int badgeSize = 14;
+            int badgeRadius = badgeSize / 2;
 
-            guiGraphics.fill(badgeX, badgeY, badgeX + badgeSize, badgeY + badgeSize, 0xFFFF4444);
+            // 圆角红色徽标
+            drawRoundedRect(guiGraphics, badgeX, badgeY, badgeSize, badgeSize, badgeRadius, 0xFFFF4444);
             String badgeText = unread > 99 ? "99+" : String.valueOf(unread);
             guiGraphics.centeredText(net.minecraft.client.Minecraft.getInstance().font, badgeText,
                     badgeX + badgeSize / 2, badgeY + 3, 0xFFFFFFFF);
+        }
+    }
+
+    /** 绘制圆角矩形（逐像素填充）。 */
+    private static void drawRoundedRect(GuiGraphicsExtractor graphics, int x, int y, int w, int h, int r, int color) {
+        if (w <= 0 || h <= 0) return;
+        int radius = Math.max(0, Math.min(r, Math.min(w, h) / 2));
+        graphics.fill(x + radius, y, x + w - radius, y + h, color);
+        graphics.fill(x, y + radius, x + w, y + h - radius, color);
+        for (int ix = 0; ix < radius; ix++) {
+            for (int iy = 0; iy < radius; iy++) {
+                int dx = radius - 1 - ix;
+                int dy = radius - 1 - iy;
+                if (dx * dx + dy * dy < radius * radius) {
+                    graphics.fill(x + ix, y + iy, x + ix + 1, y + iy + 1, color);
+                    graphics.fill(x + w - 1 - ix, y + iy, x + w - ix, y + iy + 1, color);
+                    graphics.fill(x + ix, y + h - 1 - iy, x + ix + 1, y + h - iy, color);
+                    graphics.fill(x + w - 1 - ix, y + h - 1 - iy, x + w - ix, y + h - iy, color);
+                }
+            }
         }
     }
 }

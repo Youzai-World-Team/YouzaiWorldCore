@@ -48,6 +48,7 @@
     "ImageButtonYzuiMixin",
     "RecipeBookLayoutMixin",
     "SurvivalTrinketSlotYzuiMixin",
+    "MultiLineEditBoxYzuiMixin",
     "laowumeme.SoundBufferLibraryLaowuMixin",
     "afk.AfkKeyboardHandlerMixin",
     "afk.AfkMouseHandlerMixin"

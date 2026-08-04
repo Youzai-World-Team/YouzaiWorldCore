@@ -214,7 +214,7 @@ public class MailComposeScreen extends MailBaseScreen {
                 .setTextColor(0xFF404040)        // YZUI 风格深色文字
                 .setTextShadow(false)
                 .setCursorColor(0xFF000000)      // YZUI 风格黑色光标
-                .setShowBackground(false)
+                .setShowBackground(true)         // 启用背景，由 Mixin 替换为 YZUI 样式
                 .setShowDecorations(false)
                 .build(font, formRect.width() - 24, 45, Component.literal("邮件正文"));
         bodyInput.setCharacterLimit(500);
@@ -382,8 +382,7 @@ public class MailComposeScreen extends MailBaseScreen {
                 titleInput.getHeight(), true);
 
         graphics.text(font, "文本正文", x, formRect.y() + 94, MailUi.TEXT_PRIMARY, false);
-        MailUi.yzuiInputBackground(graphics, formRect.x() + 12, formRect.y() + 106,
-                formRect.width() - 24, 45, true);
+        // MultiLineEditBox 背景由 MultiLineEditBoxYzuiMixin 统一绘制 YZUI 风格
         graphics.fill(formRect.x() + 12, formRect.y() + 159, formRect.right() - 12,
                 formRect.y() + 160, MailUi.DIVIDER);
         graphics.text(font, "附加附件", x, formRect.y() + 166, MailUi.TEXT_PRIMARY, false);

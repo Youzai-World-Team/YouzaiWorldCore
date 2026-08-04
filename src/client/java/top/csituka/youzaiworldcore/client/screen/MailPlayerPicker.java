@@ -106,9 +106,10 @@ final class MailPlayerPicker {
         int queryColor = query.isEmpty() ? MailUi.TEXT_MUTED : 0xFFE6E6E6;
         graphics.text(font, MailUi.ellipsize(font, shown, searchRect.width() - 34), searchRect.x() + 18,
                 searchRect.y() + 5, queryColor, false);
-        // 光标闪烁：与原版 EditBox 一致的 ~1.3Hz
-        if (!query.isEmpty() && System.currentTimeMillis() / 400 % 2 == 0) {
-            int cursorX = searchRect.x() + 18 + Math.min(font.width(query), searchRect.width() - 34);
+        // 光标闪烁：约 1.3Hz，始终显示以指示输入焦点
+        if (System.currentTimeMillis() / 400 % 2 == 0) {
+            int cursorX = searchRect.x() + 18
+                    + (query.isEmpty() ? 0 : Math.min(font.width(query), searchRect.width() - 34));
             graphics.fill(cursorX + 1, searchRect.y() + 4, cursorX + 2, searchRect.y() + 14, 0xFFE6E6E6);
         }
 

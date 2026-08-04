@@ -324,6 +324,12 @@ public class MailScreen extends MailBaseScreen {
                     if (!stack.isEmpty()) {
                         graphics.item(stack, chipX, chipY, 0);
                         graphics.itemDecorations(font, stack, chipX, chipY);
+                        // 悬停显示物品提示
+                        if (mouseX >= chipX && mouseX < chipX + 16
+                                && mouseY >= chipY && mouseY < chipY + 16) {
+                            graphics.setTooltipForNextFrame(font, stack,
+                                    viewport.toScreenX(mouseX), viewport.toScreenY(mouseY));
+                        }
                         chipX += 18;
                     } else {
                         // 解码失败时回退文字
@@ -341,6 +347,7 @@ public class MailScreen extends MailBaseScreen {
 
         int buttonY = detailRect.bottom() - 35;
         boolean canClaim = mail.getType() == MailType.REWARD && !mail.isExpired() && !ref.isClaimed();
+        boolean canDelete = canDeleteIndividually(pair);
         claimRect = new MailUi.Rect(x, buttonY, 78, 24);
         starRect = new MailUi.Rect(x + 88, buttonY, 82, 24);
         deleteRect = new MailUi.Rect(x + 180, buttonY, 52, 24);
@@ -349,7 +356,7 @@ public class MailScreen extends MailBaseScreen {
         MailUi.button(graphics, font, starRect, ref.isStarred() ? "取消星标" : "收藏星标",
                 0xFF8A7540, MailUi.YELLOW, starRect.contains(mouseX, mouseY), true);
         MailUi.button(graphics, font, deleteRect, "删除",
-                0xFF8A4A4A, 0xFFFF7777, deleteRect.contains(mouseX, mouseY), true);
+                0xFF8A4A4A, 0xFFFF7777, deleteRect.contains(mouseX, mouseY), canDelete);
     }
 
     private void renderNoFilteredMail(GuiGraphicsExtractor graphics) {
@@ -463,7 +470,10 @@ public class MailScreen extends MailBaseScreen {
                     return true;
                 }
                 if (deleteRect.contains(mouseX, mouseY)) {
-                    deleteMail(selected.mail().getId());
+                    MailStreamCodecs.MailRefAndMail sel = resolveSelection(filtered);
+                    if (sel != null && canDeleteIndividually(sel)) {
+                        deleteMail(selected.mail().getId());
+                    }
                     return true;
                 }
             }
@@ -611,20 +621,39 @@ public class MailScreen extends MailBaseScreen {
      * 判断一封已读邮件是否可被「删除全部已读」操作删除。
      * <ul>
      *   <li>未读邮件不可删除。</li>
+     *   <li>星标邮件始终受保护，不可删除。</li>
      *   <li>有未领取奖励且未过期的邮件按未读处理，不可删除。</li>
-     *   <li>已过期且有星标的邮件受保护，不可删除。</li>
      * </ul>
      */
     private static boolean canDeleteByReadFilter(MailStreamCodecs.MailRefAndMail pair) {
         if (!pair.ref().isRead()) {
             return false;
         }
+        // 星标邮件始终受保护
+        if (pair.ref().isStarred()) {
+            return false;
+        }
         // 未领取的奖励邮件，未过期时按未读处理
         if (pair.mail().getType() == MailType.REWARD && !pair.ref().isClaimed() && !pair.mail().isExpired()) {
             return false;
         }
-        // 过期且星标的邮件受保护
-        if (pair.mail().isExpired() && pair.ref().isStarred()) {
+        return true;
+    }
+
+    /**
+     * 判断一封邮件是否可被右侧删除按钮单封删除。
+     * <ul>
+     *   <li>有未领取奖励且未过期的邮件不可删除。</li>
+     *   <li>星标邮件始终受保护，不可删除。</li>
+     * </ul>
+     */
+    private static boolean canDeleteIndividually(MailStreamCodecs.MailRefAndMail pair) {
+        // 未领取奖励且未过期 → 不可删除
+        if (pair.mail().getType() == MailType.REWARD && !pair.ref().isClaimed() && !pair.mail().isExpired()) {
+            return false;
+        }
+        // 星标邮件始终受保护
+        if (pair.ref().isStarred()) {
             return false;
         }
         return true;
