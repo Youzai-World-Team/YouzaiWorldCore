@@ -31,7 +31,6 @@ public class ModEnchantments {
     // ========== 新增附魔 (Raiyon's More Enchantments 移植) ==========
 
     // -- 武器 --
-    public static final ResourceKey<Enchantment> SOUL_FIRE_KEY = rk("soul_fire");
     public static final ResourceKey<Enchantment> LEECHING_KEY = rk("leeching");
     public static final ResourceKey<Enchantment> POISON_PUFF_KEY = rk("poison_puff");
 
@@ -39,15 +38,10 @@ public class ModEnchantments {
     public static final ResourceKey<Enchantment> FIRE_CHARGE_KEY = rk("fire_charge");
     public static final ResourceKey<Enchantment> SONIC_CHARGE_KEY = rk("sonic_charge");
 
-    // -- 弓 --
-    public static final ResourceKey<Enchantment> BOOMSHOT_KEY = rk("boomshot");
-
     // -- 护甲 --
-    public static final ResourceKey<Enchantment> VITALITY_KEY = rk("vitality");
     public static final ResourceKey<Enchantment> GLOWING_AURA_KEY = rk("glowing_aura");
     public static final ResourceKey<Enchantment> COWARDICE_KEY = rk("cowardice");
     public static final ResourceKey<Enchantment> WIND_CHARGE_KEY = rk("wind_charge");
-    public static final ResourceKey<Enchantment> IRON_WINGS_KEY = rk("iron_wings");
 
     // -- 盾牌 --
     public static final ResourceKey<Enchantment> SPIKES_KEY = rk("spikes");
@@ -67,17 +61,13 @@ public class ModEnchantments {
             SUN_REPAIR_KEY,
             SPIRIT_TURBO_KEY,
             // 新增
-            SOUL_FIRE_KEY,
             LEECHING_KEY,
             POISON_PUFF_KEY,
             FIRE_CHARGE_KEY,
             SONIC_CHARGE_KEY,
-            BOOMSHOT_KEY,
-            VITALITY_KEY,
             GLOWING_AURA_KEY,
             COWARDICE_KEY,
             WIND_CHARGE_KEY,
-            IRON_WINGS_KEY,
             SPIKES_KEY,
             BOUNCE_KEY,
             SMELTING_KEY,
