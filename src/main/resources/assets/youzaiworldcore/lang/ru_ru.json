@@ -603,6 +603,7 @@
   "screen.youzaiworldcore.teleport_anchor.cost_durability_suffix": " %s прочности",
   "screen.youzaiworldcore.teleport_anchor.cost_insufficient_xp": " (недостаточно)",
   "screen.youzaiworldcore.teleport_anchor.cost_insufficient_durability": " (недостаточно)",
+  "screen.youzaiworldcore.teleport_anchor.cost_insufficient_scroll": " (недостаточно)",
   "screen.youzaiworldcore.teleport_anchor.cross_dimension": "Другое измерение",
   "message.youzaiworldcore.teleport_stone.cooldown": "§cКамень телепортации перезаряжается, подождите %s сек.",
   "message.youzaiworldcore.teleport_stone.no_durability": "§cНедостаточно прочности! Нужно %s, осталось %s.",
@@ -610,5 +611,14 @@
   "item.youzaiworldcore.teleport_stone.tooltip_cost": "1 прочности за каждые %s блоков, %s при межмировом прыжке",
   "item.youzaiworldcore.teleport_stone.tooltip_cooldown": "Перезарядка %s секунд после успешной телепортации",
   "item.youzaiworldcore.teleport_stone.tooltip_charge": "Удерживайте ПКМ %s секунд, чтобы открыть список",
-  "message.youzaiworldcore.teleport_stone.charge_interrupted": "Зарядка прервана; телепортационный камень не на перезарядке."
+  "message.youzaiworldcore.teleport_stone.charge_interrupted": "Зарядка прервана; телепортационный камень не на перезарядке.",
+  "item.youzaiworldcore.warp_scroll": "Свиток Телепортации",
+  "item.youzaiworldcore.warp_scroll.tooltip": "ПКМ открывает список якорей; одноразовый — тратится при успехе.",
+  "item.youzaiworldcore.warp_scroll.tooltip_charge": "Удерживайте ПКМ %s секунд, чтобы открыть список",
+  "item.youzaiworldcore.warp_scroll.tooltip_consume": "Каждая телепортация тратит 1 свиток, расстояние не важно",
+  "item.youzaiworldcore.warp_scroll.tooltip_cooldown": "Перезарядка %s секунд после успешной телепортации",
+  "message.youzaiworldcore.warp_scroll.cooldown": "§cСвиток телепортации перезаряжается, подождите %s сек.",
+  "message.youzaiworldcore.warp_scroll.not_held": "§cСвиток телепортации больше не в руке — телепортация отменена.",
+  "screen.youzaiworldcore.teleport_anchor.cost_scroll_prefix": "Потратит 1 ",
+  "screen.youzaiworldcore.teleport_anchor.cost_scroll_suffix": "Свиток Телепортации"
 }

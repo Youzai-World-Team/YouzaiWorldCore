@@ -78,17 +78,43 @@ public class TeleportStoneItem extends Item {
     /** 打开传送列表前需要持续蓄力的时长（tick），100 tick = 5 秒。 */
     public static final int CHARGE_TICKS = 100;
 
-    /** 蓄力期间每隔多少 tick 播放一次蓄力音效。 */
-    private static final int CHARGE_SOUND_INTERVAL = 10;
+    /** 蓄力期间每隔多少 tick 播放一次蓄力音效（公开给卷轴复用，保持视听一致）。 */
+    public static final int CHARGE_SOUND_INTERVAL = 10;
 
-    /** 蓄力期间每 tick 在玩家周围生成的粒子数量（沿圆周均匀分布）。 */
-    private static final int CHARGE_PARTICLE_COUNT = 6;
+    /** 蓄力期间每 tick 在玩家周围生成的粒子数量（公开给卷轴复用）。 */
+    public static final int CHARGE_PARTICLE_COUNT = 6;
 
-    /** 蓄力粒子环的起始半径（格），随蓄力进度向玩家收拢。 */
-    private static final double CHARGE_RING_START_RADIUS = 1.8;
+    /** 蓄力粒子环的起始半径（格，公开给卷轴复用）。 */
+    public static final double CHARGE_RING_START_RADIUS = 1.8;
 
-    /** 蓄力粒子环的结束半径（格）。 */
-    private static final double CHARGE_RING_END_RADIUS = 0.4;
+    /** 蓄力粒子环的结束半径（格，公开给卷轴复用）。 */
+    public static final double CHARGE_RING_END_RADIUS = 0.4;
+
+    /**
+     * 蓄力音效间隔（{@link #CHARGE_SOUND_INTERVAL}）的公开访问器，
+     * 给 {@code WarpScrollItem} 等共用蓄力表现的物品复用。
+     */
+    public static int getChargeSoundInterval() {
+        return CHARGE_SOUND_INTERVAL;
+    }
+
+    /** {@link #CHARGE_PARTICLE_COUNT} 的公开访问器，给 {@code WarpScrollItem} 复用。 */
+    public static int getChargeParticleCount() {
+        return CHARGE_PARTICLE_COUNT;
+    }
+
+    /** {@link #CHARGE_RING_START_RADIUS} 的公开访问器，给 {@code WarpScrollItem} 复用。 */
+    public static double getChargeRingStartRadius() {
+        return CHARGE_RING_START_RADIUS;
+    }
+
+    /** {@link #CHARGE_RING_END_RADIUS} 的公开访问器，给 {@code WarpScrollItem} 复用。 */
+    public static double getChargeRingEndRadius() {
+        return CHARGE_RING_END_RADIUS;
+    }
+
+    /** 共享的蓄力打断提示：蓄力未完成时由服务端发出，蓝色与传送条目与卷轴条目均适用。 */
+    public static final String CHARGE_INTERRUPTED_KEY = "message.youzaiworldcore.teleport_stone.charge_interrupted";
 
     public TeleportStoneItem(Properties properties) {
         super(properties.stacksTo(1).durability(MAX_DURABILITY).rarity(Rarity.UNCOMMON));
@@ -286,7 +312,9 @@ public class TeleportStoneItem extends Item {
         DebugLogger.info("TeleportStoneItem", "玩家 %s 蓄力完成，打开传送列表，可用锚点 %d 个",
                 serverPlayer.getName().getString(), validPoints.size());
 
-        ServerPlayNetworking.send(serverPlayer, new TeleportAnchorListPayload(validPoints, null, null, hand));
+        ServerPlayNetworking.send(serverPlayer, new TeleportAnchorListPayload(validPoints,
+                null, null,
+                TeleportAnchorListPayload.EntryType.STONE, hand));
     }
 
     /**

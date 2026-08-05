@@ -603,6 +603,7 @@
   "screen.youzaiworldcore.teleport_anchor.cost_durability_suffix": " %s de durabilidad",
   "screen.youzaiworldcore.teleport_anchor.cost_insufficient_xp": " (insuficiente)",
   "screen.youzaiworldcore.teleport_anchor.cost_insufficient_durability": " (insuficiente)",
+  "screen.youzaiworldcore.teleport_anchor.cost_insufficient_scroll": " (insuficiente)",
   "screen.youzaiworldcore.teleport_anchor.cross_dimension": "Otra dimensión",
   "message.youzaiworldcore.teleport_stone.cooldown": "§cLa piedra de teletransporte se está recargando, espera %s segundo(s).",
   "message.youzaiworldcore.teleport_stone.no_durability": "§c¡Durabilidad insuficiente! Este teletransporte cuesta %s y solo quedan %s.",
@@ -610,5 +611,14 @@
   "item.youzaiworldcore.teleport_stone.tooltip_cost": "1 de durabilidad por cada %s bloques, %s fijo entre dimensiones",
   "item.youzaiworldcore.teleport_stone.tooltip_cooldown": "%s segundos de espera tras un teletransporte exitoso",
   "item.youzaiworldcore.teleport_stone.tooltip_charge": "Mantén clic derecho %s segundos para abrir la lista",
-  "message.youzaiworldcore.teleport_stone.charge_interrupted": "Carga interrumpida; la piedra de teletransporte no entra en enfriamiento."
+  "message.youzaiworldcore.teleport_stone.charge_interrupted": "Carga interrumpida; la piedra de teletransporte no entra en enfriamiento.",
+  "item.youzaiworldcore.warp_scroll": "Pergamino de Teletransporte",
+  "item.youzaiworldcore.warp_scroll.tooltip": "Clic derecho para abrir tu lista de anclas; un solo uso, se consume al teletransportar.",
+  "item.youzaiworldcore.warp_scroll.tooltip_charge": "Mantén clic derecho %s segundos para abrir la lista",
+  "item.youzaiworldcore.warp_scroll.tooltip_consume": "Cada teletransporte consume 1 pergamino, sin importar la distancia",
+  "item.youzaiworldcore.warp_scroll.tooltip_cooldown": "%s segundos de espera tras un teletransporte exitoso",
+  "message.youzaiworldcore.warp_scroll.cooldown": "§cEl pergamino de teletransporte se está recargando, espera %s segundo(s).",
+  "message.youzaiworldcore.warp_scroll.not_held": "§cEl pergamino de teletransporte ya no está en tu mano; teletransporte cancelado.",
+  "screen.youzaiworldcore.teleport_anchor.cost_scroll_prefix": "Consumirá 1 ",
+  "screen.youzaiworldcore.teleport_anchor.cost_scroll_suffix": "Pergamino de Teletransporte"
 }

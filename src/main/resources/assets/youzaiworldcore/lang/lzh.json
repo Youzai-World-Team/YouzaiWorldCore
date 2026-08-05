@@ -603,6 +603,7 @@
   "screen.youzaiworldcore.teleport_anchor.cost_durability_suffix": " 石力 %s 分",
   "screen.youzaiworldcore.teleport_anchor.cost_insufficient_xp": "（經驗不支）",
   "screen.youzaiworldcore.teleport_anchor.cost_insufficient_durability": "（石力不支）",
+  "screen.youzaiworldcore.teleport_anchor.cost_insufficient_scroll": "（卷軸不敷）",
   "screen.youzaiworldcore.teleport_anchor.cross_dimension": "異界",
   "message.youzaiworldcore.teleport_stone.cooldown": "§c傳送之石未復，且待 %s 息。",
   "message.youzaiworldcore.teleport_stone.no_durability": "§c石力不支！此行需 %s 分，餘 %s 分。",
@@ -610,5 +611,14 @@
   "item.youzaiworldcore.teleport_stone.tooltip_cost": "每 %s 步耗石力一分，越界者固耗 %s 分",
   "item.youzaiworldcore.teleport_stone.tooltip_cooldown": "既傳送，歇 %s 息",
   "item.youzaiworldcore.teleport_stone.tooltip_charge": "按右鍵蓄勢 %s 息，乃啟其錄",
-  "message.youzaiworldcore.teleport_stone.charge_interrupted": "蓄勢中輟，石未入歇。"
+  "message.youzaiworldcore.teleport_stone.charge_interrupted": "蓄勢中輟，石未入歇。",
+  "item.youzaiworldcore.warp_scroll": "傳送之卷",
+  "item.youzaiworldcore.warp_scroll.tooltip": "右擊即啟傳送錨點之錄；用則銷其全卷",
+  "item.youzaiworldcore.warp_scroll.tooltip_charge": "按右鍵蓄勢 %s 息，乃啟其錄",
+  "item.youzaiworldcore.warp_scroll.tooltip_consume": "每傳一次費卷一張，不計遠近",
+  "item.youzaiworldcore.warp_scroll.tooltip_cooldown": "既傳送，歇 %s 息",
+  "message.youzaiworldcore.warp_scroll.cooldown": "§c傳送之卷未復，且待 %s 息。",
+  "message.youzaiworldcore.warp_scroll.not_held": "§c傳送之卷不在手，其行乃止。",
+  "screen.youzaiworldcore.teleport_anchor.cost_scroll_prefix": "將費",
+  "screen.youzaiworldcore.teleport_anchor.cost_scroll_suffix": "傳送之卷"
 }

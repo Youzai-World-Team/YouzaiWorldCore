@@ -17,6 +17,7 @@ import net.minecraft.world.level.saveddata.SavedDataType;
 import top.csituka.youzaiworldcore.YouzaiworldCore;
 import top.csituka.youzaiworldcore.block.TeleportAnchorBlock;
 import top.csituka.youzaiworldcore.block.entity.TeleportAnchorBlockEntity;
+import top.csituka.youzaiworldcore.network.TeleportAnchorListPayload.EntryType;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -42,15 +43,22 @@ public class TeleportAnchorManager extends SavedData {
 
     private final Map<UUID, List<TeleportAnchorData>> playerPoints = new HashMap<>();
 
-    /** 运行时传送冷却记录（玩家UUID → 上次传送的游戏时间），不持久化。 */
+    /**
+     * 运行时传送冷却记录（玩家UUID → 上次传送的游戏时间），不持久化。
+     */
     private final transient Map<UUID, Long> teleportCooldowns = new HashMap<>();
 
     /**
-     * 运行时记录：玩家最近一次传送列表是「用传送石打开」的，值为使用传送石的那只手。
-     * 通过传送锚点方块打开列表时会清除该标记。传送执行时据此判定是否扣除传送石耐久。
+     * 运行时记录：玩家最近一次传送列表是「用传送石或传送卷轴打开」的，包括入口类型与打开时握持物品的那只手。
+     * 通过传送锚点方块打开列表时会清除该标记（{@link #markListOpenedByAnchor}）。
+     * 传送执行时据此判定要扣哪一种资源——
+     * <ul>
+     *   <li>{@link EntryType#STONE}：扣传送石耐久 + 60 秒物品冷却</li>
+     *   <li>{@link EntryType#SCROLL}：扣 1 张卷轴 + 120 秒物品冷却</li>
+     * </ul>
      * 不持久化。
      */
-    private final transient Map<UUID, InteractionHand> stoneOpenedLists = new HashMap<>();
+    private final transient Map<UUID, TeleportOpenerSource> openedLists = new HashMap<>();
 
     private static final Codec<TeleportAnchorManager> CODEC = Codec.unboundedMap(
             Codec.STRING,               // UUID → String
@@ -263,7 +271,22 @@ public class TeleportAnchorManager extends SavedData {
         return true;
     }
 
-    // ===== 传送列表打开来源（用于判定是否扣除传送石耐久） =====
+    // ===== 传送列表打开来源（用于判定扣哪种资源） =====
+
+    /**
+     * 列表入口类型的轻量快照：入口类型 + 玩家当时握持该物品的手。
+     * 仅在 {@link #openedLists} 中保存，持久化时不被序列化。
+     */
+    public record TeleportOpenerSource(EntryType type, InteractionHand hand) {
+    }
+
+    /**
+     * 记录玩家通过传送锚点方块打开了传送列表，清除传送石/卷轴标记。
+     * 走方块入口的传送不消耗任何物品。
+     */
+    public void markListOpenedByAnchor(ServerPlayer player) {
+        openedLists.remove(player.getUUID());
+    }
 
     /**
      * 记录玩家用传送石打开了传送列表。
@@ -271,28 +294,33 @@ public class TeleportAnchorManager extends SavedData {
      * @param hand 玩家使用传送石的那只手
      */
     public void markListOpenedByStone(ServerPlayer player, InteractionHand hand) {
-        stoneOpenedLists.put(player.getUUID(), hand);
+        openedLists.put(player.getUUID(), new TeleportOpenerSource(EntryType.STONE, hand));
     }
 
     /**
-     * 记录玩家通过传送锚点方块打开了传送列表，清除传送石标记。
-     * 走方块入口的传送不消耗传送石耐久。
-     */
-    public void markListOpenedByAnchor(ServerPlayer player) {
-        stoneOpenedLists.remove(player.getUUID());
-    }
-
-    /**
-     * 取出并清除玩家的「传送石打开」标记。
+     * 记录玩家用传送卷轴打开了传送列表。
      * <p>
-     * 一次传送请求只对应一次标记：无论本次传送最终成功还是被各项校验拒绝，标记都已消费，
-     * 玩家需要重新用传送石打开列表才会再次进入扣耐久流程。
+     * 与 {@link #markListOpenedByStone} 同源逻辑，仅入口类型不同——传送处理器据此走
+     * 「扣 1 张卷轴 + 120 秒冷却」的结算路径，而不是「扣耐久 + 60 秒冷却」。
      *
-     * @return 打开列表时使用传送石的那只手；返回 null 表示本次列表不是用传送石打开的
+     * @param hand 玩家使用传送卷轴的那只手
+     */
+    public void markListOpenedByScroll(ServerPlayer player, InteractionHand hand) {
+        openedLists.put(player.getUUID(), new TeleportOpenerSource(EntryType.SCROLL, hand));
+    }
+
+    /**
+     * 取出并清除玩家的「传送物品打开」标记。
+     * <p>
+     * 一次传送请求只对应一次标记：无论本次传送最终成功还是被各项校验拒绝，
+     * 标记都已消费——玩家需要重新用传送物品打开列表才会再次进入扣资源流程。
+     *
+     * @return 入口快照（含入口类型与使用物品的手），{@code null} 表示本次列表不是
+     *         通过传送物品打开的（即 {@link EntryType#ANCHOR} 入口，无资源消耗）
      */
     @Nullable
-    public InteractionHand consumeStoneOpenMark(ServerPlayer player) {
-        return stoneOpenedLists.remove(player.getUUID());
+    public TeleportOpenerSource consumeTeleportSourceMark(ServerPlayer player) {
+        return openedLists.remove(player.getUUID());
     }
 
     // ===== 传送冷却 =====

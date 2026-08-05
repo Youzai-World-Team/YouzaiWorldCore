@@ -19,7 +19,10 @@ import top.csituka.youzaiworldcore.client.effect.TeleportFovEffect;
 import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
 import top.csituka.youzaiworldcore.data.TeleportAnchorData;
 import top.csituka.youzaiworldcore.item.tool.TeleportStoneItem;
+import top.csituka.youzaiworldcore.item.tool.WarpScrollItem;
 import top.csituka.youzaiworldcore.network.TeleportAnchorDeletePayload;
+import top.csituka.youzaiworldcore.network.TeleportAnchorListPayload;
+import top.csituka.youzaiworldcore.network.TeleportAnchorListPayload.EntryType;
 import top.csituka.youzaiworldcore.network.TeleportAnchorRenamePayload;
 import top.csituka.youzaiworldcore.network.TeleportAnchorReorderPayload;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
@@ -38,6 +41,9 @@ import java.util.Locale;
  * 鼠标悬停提示使用 vanilla {@link Tooltip} 机制。
  * 当前打开的传送锚点（玩家正在右键的那个）在名称前显示定位图标。
  * 列表超过 {@link #MAX_VISIBLE_ITEMS} 时启用滚轮滚动。
+ * <p>
+ * 列表入口类型由 {@link TeleportAnchorListPayload#entryType} 决定，用于显示不同
+ * 的代价信息（传送锚点方块 / 传送石 / 传送卷轴），并控制客户端发送传送包前的预判。
  */
 @SuppressWarnings("null")
 public class TeleportAnchorScreen extends Screen {
@@ -88,6 +94,9 @@ public class TeleportAnchorScreen extends Screen {
     /** 耐久消耗行内嵌的传送石图标尺寸。 */
     private static final int STONE_ICON_SIZE = 10;
 
+    /** 卷轴消耗行内嵌的传送卷轴图标尺寸。 */
+    private static final int SCROLL_ICON_SIZE = 10;
+
     /** 同维度传送消耗的经验等级，与服务端 {@code ModNetworking} 中的口径保持一致。 */
     private static final int XP_COST_SAME_DIMENSION = 1;
 
@@ -127,19 +136,31 @@ public class TeleportAnchorScreen extends Screen {
             YouzaiworldCore.MOD_ID, "textures/gui/teleport_search.png");
     private static final Identifier STONE_ICON = Identifier.fromNamespaceAndPath(
             YouzaiworldCore.MOD_ID, "textures/item/teleport_stone.png");
+    private static final Identifier SCROLL_ICON = Identifier.fromNamespaceAndPath(
+            YouzaiworldCore.MOD_ID, "textures/item/warp_scroll.png");
 
     private final List<TeleportAnchorData> points;
+
     @Nullable
     private final BlockPos currentAnchorPos;
     @Nullable
     private final ResourceKey<Level> currentAnchorDim;
 
     /**
-     * 本次列表由传送石打开时，玩家使用传送石的那只手；null 表示走的是传送锚点方块入口。
-     * 非 null 时本次传送要额外扣传送石耐久，界面因此多显示一行耐久消耗并做耐久预判。
+     * 入口类型，决定本次列表的代价信息与预判逻辑：
+     * <ul>
+     *   <li>{@link EntryType#ANCHOR}：纯锚点入口，仅扣经验 + 维度池/锚点本身校验</li>
+     *   <li>{@link EntryType#STONE}：传送石入口，额外扣耐久 + 60 秒物品冷却</li>
+     *   <li>{@link EntryType#SCROLL}：传送卷轴入口，额外消耗 1 张卷轴 + 120 秒物品冷却，不查耐久/经验</li>
+     * </ul>
+     */
+    private final EntryType entryType;
+
+    /**
+     * 本次列表由传送石/卷轴打开时，玩家握持该物品的那只手；null 表示走的是传送锚点方块入口。
      */
     @Nullable
-    private final InteractionHand stoneHand;
+    private final InteractionHand entryHand;
 
     private int selectedIndex = -1;
     private boolean renameMode = false;
@@ -210,12 +231,14 @@ public class TeleportAnchorScreen extends Screen {
     public TeleportAnchorScreen(List<TeleportAnchorData> points,
                                  @Nullable BlockPos currentAnchorPos,
                                  @Nullable ResourceKey<Level> currentAnchorDim,
-                                 @Nullable InteractionHand stoneHand) {
+                                 EntryType entryType,
+                                 @Nullable InteractionHand entryHand) {
         super(Component.translatable("screen.youzaiworldcore.teleport_anchor.title"));
         this.points = points;
         this.currentAnchorPos = currentAnchorPos;
         this.currentAnchorDim = currentAnchorDim;
-        this.stoneHand = stoneHand;
+        this.entryType = entryType;
+        this.entryHand = entryHand;
     }
 
     @Override
@@ -268,7 +291,7 @@ public class TeleportAnchorScreen extends Screen {
         } else if (renameMode) {
             actionsHeight = 40;
         } else {
-            // 底部按钮下方常驻预留消耗信息的高度：行数只取决于本次入口是否为传送石，
+            // 底部按钮下方常驻预留消耗信息的高度：行数取决于入口类型，
             // 与当前是否选中锚点无关，避免选中/取消选中时面板高度跳动
             actionsHeight = BUTTON_HEIGHT + ACTIONS_Y_OFFSET + costInfoHeight();
         }
@@ -410,7 +433,7 @@ public class TeleportAnchorScreen extends Screen {
         boolean hasSelection = selectedIndex >= 0 && selectedIndex < points.size();
         boolean isCurrentAnchor = hasSelection && isCurrentAnchor(points.get(selectedIndex));
 
-        // 消耗预校验：经验等级 / 传送石耐久任一不足都置灰传送按钮，
+        // 消耗预校验：经验等级 / 传送石耐久 / 卷轴数量任一不足都置灰传送按钮，
         // 避免白播一段传送 FOV 动画后才被服务端拒绝
         boolean affordable = !hasSelection || canAfford(points.get(selectedIndex));
 
@@ -587,9 +610,9 @@ public class TeleportAnchorScreen extends Screen {
     }
 
     /**
-     * 按玩家当前的经验等级与传送石耐久刷新传送按钮的可用状态。
+     * 按玩家当前的等级、传送石耐久、卷轴数量刷新传送按钮的可用状态。
      * <p>
-     * 每帧调用一次：界面打开期间这些数值可能变化（捡起经验球、别处扣经验），
+     * 每帧调用一次：界面打开期间这些数值可能变化（捡起经验球、别处扣经验、扔掉卷轴），
      * 只在重建 UI 时判定会让按钮状态过期。
      */
     private void refreshTeleportAffordability() {
@@ -607,24 +630,37 @@ public class TeleportAnchorScreen extends Screen {
     }
 
     /**
-     * 客户端预判本次传送的所有消耗是否都付得起：经验等级 +（传送石入口时）传送石耐久。
+     * 客户端预判本次传送的所有消耗是否都付得起：
+     * <ul>
+     *   <li>经验等级（同维度 1 / 跨维度 2）</li>
+     *   <li>{@link EntryType#STONE} 入口额外检查传送石耐久</li>
+     *   <li>{@link EntryType#SCROLL} 入口额外检查卷轴数量 ≥ 1（与耐久/XP 无关）</li>
+     * </ul>
      * <p>
-     * 这只是提前拦截，真正的扣费与校验仍在服务端；创造模式两项都免除，直接放行。
+     * 这只是提前拦截，真正的扣费与校验仍在服务端；创造模式三项都免除，直接放行。
      */
     private boolean canAfford(TeleportAnchorData point) {
         var player = Minecraft.getInstance().player;
         if (player == null || player.getAbilities().instabuild) {
             return true;
         }
-        if (player.experienceLevel < xpCostFor(point)) {
+        // 卷轴入口完全免经验（一次性成本已由卷轴本体的消耗承担）
+        if (entryType != EntryType.SCROLL && player.experienceLevel < xpCostFor(point)) {
             return false;
         }
-        if (stoneHand != null) {
+        if (entryType == EntryType.STONE) {
             ItemStack stone = findStoneStack(player);
             if (stone.isEmpty()) {
                 return false;
             }
             return remainingDurability(stone) >= TeleportStoneItem.computeDurabilityCost(player, point);
+        }
+        if (entryType == EntryType.SCROLL) {
+            ItemStack scroll = findScrollStack(player);
+            if (scroll.isEmpty()) {
+                return false;
+            }
+            return WarpScrollItem.canAffordScroll(player, scroll);
         }
         return true;
     }
@@ -637,18 +673,40 @@ public class TeleportAnchorScreen extends Screen {
      * @return 对应的传送石；两只手都没有时返回 {@link ItemStack#EMPTY}
      */
     private ItemStack findStoneStack(net.minecraft.client.player.LocalPlayer player) {
-        if (stoneHand == null) {
+        if (entryHand == null) {
             return ItemStack.EMPTY;
         }
-        ItemStack held = player.getItemInHand(stoneHand);
+        ItemStack held = player.getItemInHand(entryHand);
         if (held.getItem() instanceof TeleportStoneItem) {
             return held;
         }
-        InteractionHand other = stoneHand == InteractionHand.MAIN_HAND
+        InteractionHand other = entryHand == InteractionHand.MAIN_HAND
                 ? InteractionHand.OFF_HAND
                 : InteractionHand.MAIN_HAND;
         ItemStack alternative = player.getItemInHand(other);
         return alternative.getItem() instanceof TeleportStoneItem ? alternative : ItemStack.EMPTY;
+    }
+
+    /**
+     * 找到本次列表所对应的那组传送卷轴。
+     * <p>
+     * 与 {@link #findStoneStack} 同模式：优先取 {@link #entryHand} 那只手的卷轴，再看另一只手。
+     *
+     * @return 对应的传送卷轴；两只手都没有时返回 {@link ItemStack#EMPTY}
+     */
+    private ItemStack findScrollStack(net.minecraft.client.player.LocalPlayer player) {
+        if (entryHand == null) {
+            return ItemStack.EMPTY;
+        }
+        ItemStack held = player.getItemInHand(entryHand);
+        if (held.getItem() instanceof WarpScrollItem) {
+            return held;
+        }
+        InteractionHand other = entryHand == InteractionHand.MAIN_HAND
+                ? InteractionHand.OFF_HAND
+                : InteractionHand.MAIN_HAND;
+        ItemStack alternative = player.getItemInHand(other);
+        return alternative.getItem() instanceof WarpScrollItem ? alternative : ItemStack.EMPTY;
     }
 
     /** 物品剩余耐久点数。 */
@@ -656,21 +714,31 @@ public class TeleportAnchorScreen extends Screen {
         return stack.getMaxDamage() - stack.getDamageValue();
     }
 
-    /** 消耗信息区域预留的高度：无锚点时不预留，传送石入口两行（经验 + 耐久），否则一行。 */
+    /** 消耗信息区域预留的高度：无锚点时不预留，否则按入口类型分配行数。 */
     private int costInfoHeight() {
         if (points.isEmpty()) {
             return 0;
         }
-        int lines = stoneHand != null ? 2 : 1;
+        int lines;
+        switch (entryType) {
+            case STONE -> lines = 2;  // 经验 + 耐久
+            case SCROLL -> lines = 1; // 仅卷轴消耗（不扣经验）
+            default -> lines = 1;     // ANCHOR：仅经验
+        }
         return COST_INFO_TOP_GAP + lines * COST_LINE_HEIGHT;
     }
 
     /**
-     * 在底部按钮下方绘制本次传送的消耗信息：经验等级，以及传送石入口时的耐久消耗
-     * （数字前内嵌一枚传送石图标）。任一项不足时该行转为橙红色并追加「不足」标注，
-     * 与置灰的传送按钮相互印证。
+     * 在底部按钮下方绘制本次传送的消耗信息。
      * <p>
-     * 创造模式两项消耗都免除，因此不绘制任何消耗信息。
+     * 按 {@link #entryType} 分类绘制：
+     * <ul>
+     *   <li>{@link EntryType#ANCHOR}：仅经验等级</li>
+     *   <li>{@link EntryType#STONE}：经验等级 + 传送石耐久（图嵌数字前）</li>
+     *   <li>{@link EntryType#SCROLL}：卷轴消耗（图嵌数字前），不显示经验等级</li>
+     * </ul>
+     * 任一项不足时该行转为橙红色并追加「不足」标注，与置灰的传送按钮相互印证。
+     * 创造模式三项都免除，因此不绘制任何消耗信息。
      */
     private void drawCostInfo(GuiGraphicsExtractor guiGraphics) {
         if (confirmingDelete || renameMode) {
@@ -692,47 +760,68 @@ public class TeleportAnchorScreen extends Screen {
         int x = panelX + PANEL_PADDING;
         int y = actionsY + BUTTON_HEIGHT + COST_INFO_TOP_GAP;
 
-        // 第一行：经验等级消耗
-        int xpCost = xpCostFor(point);
-        boolean enoughXp = player.experienceLevel >= xpCost;
-        String xpText = Component.translatable(
-                "screen.youzaiworldcore.teleport_anchor.cost_xp", xpCost).getString();
-        if (!enoughXp) {
-            xpText += Component.translatable(
-                    "screen.youzaiworldcore.teleport_anchor.cost_insufficient_xp").getString();
-        }
-        guiGraphics.text(font, xpText, x, y,
-                enoughXp ? COST_TEXT_COLOR : COST_INSUFFICIENT_COLOR, false);
-
-        // 第二行：传送石耐久消耗（仅传送石入口）
-        if (stoneHand == null) {
-            return;
-        }
-        y += COST_LINE_HEIGHT;
-
-        ItemStack stone = findStoneStack(player);
-        int durabilityCost = TeleportStoneItem.computeDurabilityCost(player, point);
-        boolean enoughDurability = !stone.isEmpty() && remainingDurability(stone) >= durabilityCost;
-        int color = enoughDurability ? COST_TEXT_COLOR : COST_INSUFFICIENT_COLOR;
-
-        // 「将消耗 」+ 传送石图标 + 「 300 点耐久」，图标嵌在数字前面
-        String prefix = Component.translatable(
-                "screen.youzaiworldcore.teleport_anchor.cost_durability_prefix").getString();
-        String suffix = Component.translatable(
-                "screen.youzaiworldcore.teleport_anchor.cost_durability_suffix", durabilityCost).getString();
-        if (!enoughDurability) {
-            suffix += Component.translatable(
-                    "screen.youzaiworldcore.teleport_anchor.cost_insufficient_durability").getString();
+        // 第一行：经验等级消耗（卷轴入口跳过——一次性成本已由卷轴承担）
+        if (entryType != EntryType.SCROLL) {
+            int xpCost = xpCostFor(point);
+            boolean enoughXp = player.experienceLevel >= xpCost;
+            String xpText = Component.translatable(
+                    "screen.youzaiworldcore.teleport_anchor.cost_xp", xpCost).getString();
+            if (!enoughXp) {
+                xpText += Component.translatable(
+                        "screen.youzaiworldcore.teleport_anchor.cost_insufficient_xp").getString();
+            }
+            guiGraphics.text(font, xpText, x, y,
+                    enoughXp ? COST_TEXT_COLOR : COST_INSUFFICIENT_COLOR, false);
+            y += COST_LINE_HEIGHT;
         }
 
-        int cursorX = x;
-        guiGraphics.text(font, prefix, cursorX, y, color, false);
-        cursorX += font.width(prefix);
-        guiGraphics.blit(RenderPipelines.GUI_TEXTURED, STONE_ICON,
-                cursorX, y + (font.lineHeight - STONE_ICON_SIZE) / 2 - 1,
-                0, 0, STONE_ICON_SIZE, STONE_ICON_SIZE, STONE_ICON_SIZE, STONE_ICON_SIZE);
-        cursorX += STONE_ICON_SIZE;
-        guiGraphics.text(font, suffix, cursorX, y, color, false);
+        // 第二行：入口专属消耗（耐久 / 卷轴），分别绘图标 + 数字
+        if (entryType == EntryType.STONE) {
+            ItemStack stone = findStoneStack(player);
+            int durabilityCost = TeleportStoneItem.computeDurabilityCost(player, point);
+            boolean enoughDurability = !stone.isEmpty() && remainingDurability(stone) >= durabilityCost;
+            int color = enoughDurability ? COST_TEXT_COLOR : COST_INSUFFICIENT_COLOR;
+
+            String prefix = Component.translatable(
+                    "screen.youzaiworldcore.teleport_anchor.cost_durability_prefix").getString();
+            String suffix = Component.translatable(
+                    "screen.youzaiworldcore.teleport_anchor.cost_durability_suffix", durabilityCost).getString();
+            if (!enoughDurability) {
+                suffix += Component.translatable(
+                        "screen.youzaiworldcore.teleport_anchor.cost_insufficient_durability").getString();
+            }
+
+            int cursorX = x;
+            guiGraphics.text(font, prefix, cursorX, y, color, false);
+            cursorX += font.width(prefix);
+            guiGraphics.blit(RenderPipelines.GUI_TEXTURED, STONE_ICON,
+                    cursorX, y + (font.lineHeight - STONE_ICON_SIZE) / 2 - 1,
+                    0, 0, STONE_ICON_SIZE, STONE_ICON_SIZE, STONE_ICON_SIZE, STONE_ICON_SIZE);
+            cursorX += STONE_ICON_SIZE;
+            guiGraphics.text(font, suffix, cursorX, y, color, false);
+        } else if (entryType == EntryType.SCROLL) {
+            ItemStack scroll = findScrollStack(player);
+            boolean enoughScroll = WarpScrollItem.canAffordScroll(player, scroll);
+            int color = enoughScroll ? COST_TEXT_COLOR : COST_INSUFFICIENT_COLOR;
+
+            String prefix = Component.translatable(
+                    "screen.youzaiworldcore.teleport_anchor.cost_scroll_prefix").getString();
+            String suffix = Component.translatable(
+                    "screen.youzaiworldcore.teleport_anchor.cost_scroll_suffix").getString();
+            if (!enoughScroll) {
+                suffix += Component.translatable(
+                        "screen.youzaiworldcore.teleport_anchor.cost_insufficient_scroll").getString();
+            }
+
+            int cursorX = x;
+            guiGraphics.text(font, prefix, cursorX, y, color, false);
+            cursorX += font.width(prefix);
+            guiGraphics.blit(RenderPipelines.GUI_TEXTURED, SCROLL_ICON,
+                    cursorX, y + (font.lineHeight - SCROLL_ICON_SIZE) / 2 - 1,
+                    0, 0, SCROLL_ICON_SIZE, SCROLL_ICON_SIZE, SCROLL_ICON_SIZE, SCROLL_ICON_SIZE);
+            cursorX += SCROLL_ICON_SIZE;
+            guiGraphics.text(font, suffix, cursorX, y, color, false);
+        }
     }
 
     /**
@@ -740,6 +829,8 @@ public class TeleportAnchorScreen extends Screen {
      * <p>
      * 与服务端 {@code ModNetworking} 中 {@code TeleportAnchorTeleportPayload} 处理器的口径一致，
      * 两边同时改动才不会出现「按钮能点但服务端拒绝」的偏差。
+     * <p>
+     * 卷轴入口完全免经验——该方法仍保持原口径，但调用方会跳过使用。
      */
     private static int xpCostFor(TeleportAnchorData point) {
         var player = Minecraft.getInstance().player;
@@ -883,7 +974,7 @@ public class TeleportAnchorScreen extends Screen {
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
-        // 经验等级 / 传送石耐久都可能在界面打开期间变化，每帧刷新传送按钮状态
+        // 经验等级 / 传送石耐久 / 卷轴数量都可能在界面打开期间变化，每帧刷新传送按钮状态
         if (!confirmingDelete && !renameMode) {
             refreshTeleportAffordability();
         }
@@ -910,7 +1001,7 @@ public class TeleportAnchorScreen extends Screen {
                     (this.width - msgWidth) / 2, msgY, 0xFFFFAA00, false);
         }
 
-        // 底部消耗信息（经验 / 传送石耐久）
+        // 底部消耗信息（按入口类型分支：经验 / 经验 + 耐久 / 卷轴）
         drawCostInfo(guiGraphics);
 
         // 滚动指示器
@@ -981,8 +1072,8 @@ public class TeleportAnchorScreen extends Screen {
      * 在每个可见条目的右侧绘制该传送锚点距离起点的直线距离。
      * <p>
      * 起点取决于列表是怎么打开的：右键传送锚点方块打开时取<b>该锚点方块</b>（静态，数值不随走动变化），
-     * 用传送石打开时取<b>玩家当前位置</b>（动态，每帧重算，玩家移动时数字实时变化）——
-     * 后者也正是服务端计算传送石耐久消耗时用的口径。
+     * 用传送石或卷轴打开时取<b>玩家当前位置</b>（动态，每帧重算，玩家移动时数字实时变化）——
+     * 后者也正是服务端计算传送石耐久消耗时用的口径（卷轴不依赖距离，沿用同一规则即可）。
      * 不同维度之间距离没有可比性，显示「跨维度」。
      */
     private void drawEntryDistances(GuiGraphicsExtractor guiGraphics) {
@@ -1020,7 +1111,7 @@ public class TeleportAnchorScreen extends Screen {
             originY = currentAnchorPos.getY() + 1.0;
             originZ = currentAnchorPos.getZ() + 0.5;
         } else {
-            // 传送石入口：以玩家当前位置为动态起点
+            // 传送石 / 卷轴入口：以玩家当前位置为动态起点
             var player = Minecraft.getInstance().player;
             if (player == null) return "";
             originDim = player.level().dimension();

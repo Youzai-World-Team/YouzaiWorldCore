@@ -603,6 +603,7 @@
   "screen.youzaiworldcore.teleport_anchor.cost_durability_suffix": " %s 點耐久",
   "screen.youzaiworldcore.teleport_anchor.cost_insufficient_xp": "（經驗不足）",
   "screen.youzaiworldcore.teleport_anchor.cost_insufficient_durability": "（耐久不足）",
+  "screen.youzaiworldcore.teleport_anchor.cost_insufficient_scroll": "（卷軸不足）",
   "screen.youzaiworldcore.teleport_anchor.cross_dimension": "跨維度",
   "message.youzaiworldcore.teleport_stone.cooldown": "§c傳送石冷卻中，請等待 %s 秒。",
   "message.youzaiworldcore.teleport_stone.no_durability": "§c傳送石耐久不足！本次傳送需要 %s 點，剩餘 %s 點。",
@@ -610,5 +611,14 @@
   "item.youzaiworldcore.teleport_stone.tooltip_cost": "每 %s 格消耗 1 點耐久，跨維度固定 %s 點",
   "item.youzaiworldcore.teleport_stone.tooltip_cooldown": "傳送成功後冷卻 %s 秒",
   "item.youzaiworldcore.teleport_stone.tooltip_charge": "長按右鍵蓄力 %s 秒後開啟列表",
-  "message.youzaiworldcore.teleport_stone.charge_interrupted": "蓄力被打斷，傳送石未進入冷卻。"
+  "message.youzaiworldcore.teleport_stone.charge_interrupted": "蓄力被打斷，傳送石未進入冷卻。",
+  "item.youzaiworldcore.warp_scroll": "傳送卷軸",
+  "item.youzaiworldcore.warp_scroll.tooltip": "右鍵直接開啟傳送錨點列表；一次性消耗，使用後即銷毀整張卷軸",
+  "item.youzaiworldcore.warp_scroll.tooltip_charge": "長按右鍵蓄力 %s 秒後開啟列表",
+  "item.youzaiworldcore.warp_scroll.tooltip_consume": "每次傳送消耗 1 張卷軸，不限傳送距離",
+  "item.youzaiworldcore.warp_scroll.tooltip_cooldown": "傳送成功後冷卻 %s 秒",
+  "message.youzaiworldcore.warp_scroll.cooldown": "§c傳送卷軸冷卻中，請等待 %s 秒。",
+  "message.youzaiworldcore.warp_scroll.not_held": "§c傳送卷軸已不在手中，傳送已取消。",
+  "screen.youzaiworldcore.teleport_anchor.cost_scroll_prefix": "將消耗1張",
+  "screen.youzaiworldcore.teleport_anchor.cost_scroll_suffix": "傳送卷軸"
 }

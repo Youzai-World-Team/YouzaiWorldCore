@@ -603,6 +603,7 @@
   "screen.youzaiworldcore.teleport_anchor.cost_durability_suffix": " %s Haltbarkeit",
   "screen.youzaiworldcore.teleport_anchor.cost_insufficient_xp": " (nicht genug)",
   "screen.youzaiworldcore.teleport_anchor.cost_insufficient_durability": " (nicht genug)",
+  "screen.youzaiworldcore.teleport_anchor.cost_insufficient_scroll": " (nicht genug)",
   "screen.youzaiworldcore.teleport_anchor.cross_dimension": "Andere Dimension",
   "message.youzaiworldcore.teleport_stone.cooldown": "§cDer Teleportstein lädt noch, warte %s Sekunde(n).",
   "message.youzaiworldcore.teleport_stone.no_durability": "§cNicht genug Haltbarkeit! Dieser Teleport kostet %s, übrig sind %s.",
@@ -610,5 +611,14 @@
   "item.youzaiworldcore.teleport_stone.tooltip_cost": "1 Haltbarkeit je %s Blöcke, dimensionsübergreifend pauschal %s",
   "item.youzaiworldcore.teleport_stone.tooltip_cooldown": "%s Sekunden Abklingzeit nach erfolgreichem Teleport",
   "item.youzaiworldcore.teleport_stone.tooltip_charge": "Rechtsklick %s Sekunden halten, um die Liste zu öffnen",
-  "message.youzaiworldcore.teleport_stone.charge_interrupted": "Aufladen unterbrochen; der Teleportstein hat keine Abklingzeit."
+  "message.youzaiworldcore.teleport_stone.charge_interrupted": "Aufladen unterbrochen; der Teleportstein hat keine Abklingzeit.",
+  "item.youzaiworldcore.warp_scroll": "Teleportationsrolle",
+  "item.youzaiworldcore.warp_scroll.tooltip": "Rechtsklick öffnet die Teleportanker-Liste; Einmalgebrauch, wird bei Erfolg verbraucht.",
+  "item.youzaiworldcore.warp_scroll.tooltip_charge": "Rechtsklick %s Sekunden halten, um die Liste zu öffnen",
+  "item.youzaiworldcore.warp_scroll.tooltip_consume": "Jeder Teleport verbraucht 1 Rolle, entfernungsunabhängig",
+  "item.youzaiworldcore.warp_scroll.tooltip_cooldown": "%s Sekunden Abklingzeit nach erfolgreichem Teleport",
+  "message.youzaiworldcore.warp_scroll.cooldown": "§cDie Teleportationsrolle lädt noch, warte %s Sekunde(n).",
+  "message.youzaiworldcore.warp_scroll.not_held": "§cDie Teleportationsrolle ist nicht mehr in deiner Hand – Teleport abgebrochen.",
+  "screen.youzaiworldcore.teleport_anchor.cost_scroll_prefix": "Verbraucht 1 ",
+  "screen.youzaiworldcore.teleport_anchor.cost_scroll_suffix": "Teleportationsrolle"
 }

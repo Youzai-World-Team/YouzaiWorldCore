@@ -89,6 +89,7 @@ public class ModCreativeModeTabs {
                                 output.accept(ModItems.INVISIBLE_ITEM_FRAME);
                                 output.accept(ModItems.INVISIBLE_GLOW_ITEM_FRAME);
                                 output.accept(ModItems.TELEPORT_STONE);
+                                output.accept(ModItems.WARP_SCROLL);
                         })
                         .build();
 

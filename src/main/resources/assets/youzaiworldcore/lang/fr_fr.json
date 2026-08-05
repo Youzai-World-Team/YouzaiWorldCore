@@ -603,6 +603,7 @@
   "screen.youzaiworldcore.teleport_anchor.cost_durability_suffix": " %s de durabilité",
   "screen.youzaiworldcore.teleport_anchor.cost_insufficient_xp": " (insuffisant)",
   "screen.youzaiworldcore.teleport_anchor.cost_insufficient_durability": " (insuffisant)",
+  "screen.youzaiworldcore.teleport_anchor.cost_insufficient_scroll": " (insuffisant)",
   "screen.youzaiworldcore.teleport_anchor.cross_dimension": "Autre dimension",
   "message.youzaiworldcore.teleport_stone.cooldown": "§cLa pierre de téléportation recharge, attendez %s seconde(s).",
   "message.youzaiworldcore.teleport_stone.no_durability": "§cDurabilité insuffisante ! Cette téléportation coûte %s, il n'en reste que %s.",
@@ -610,5 +611,14 @@
   "item.youzaiworldcore.teleport_stone.tooltip_cost": "1 point de durabilité tous les %s blocs, %s fixe entre dimensions",
   "item.youzaiworldcore.teleport_stone.tooltip_cooldown": "%s secondes de recharge après une téléportation réussie",
   "item.youzaiworldcore.teleport_stone.tooltip_charge": "Maintenez le clic droit %s secondes pour ouvrir la liste",
-  "message.youzaiworldcore.teleport_stone.charge_interrupted": "Charge interrompue ; la pierre de téléportation n'est pas en recharge."
+  "message.youzaiworldcore.teleport_stone.charge_interrupted": "Charge interrompue ; la pierre de téléportation n'est pas en recharge.",
+  "item.youzaiworldcore.warp_scroll": "Parchemin de Téléportation",
+  "item.youzaiworldcore.warp_scroll.tooltip": "Clic droit pour ouvrir la liste ; usage unique, consommé à la réussite.",
+  "item.youzaiworldcore.warp_scroll.tooltip_charge": "Maintenez le clic droit %s secondes pour ouvrir la liste",
+  "item.youzaiworldcore.warp_scroll.tooltip_consume": "Chaque téléportation consomme 1 parchemin, quelle que soit la distance",
+  "item.youzaiworldcore.warp_scroll.tooltip_cooldown": "%s secondes de recharge après une téléportation réussie",
+  "message.youzaiworldcore.warp_scroll.cooldown": "§cLe parchemin de téléportation recharge, attendez %s seconde(s).",
+  "message.youzaiworldcore.warp_scroll.not_held": "§cLe parchemin de téléportation n'est plus en main ; téléportation annulée.",
+  "screen.youzaiworldcore.teleport_anchor.cost_scroll_prefix": "Consomme 1 ",
+  "screen.youzaiworldcore.teleport_anchor.cost_scroll_suffix": "Parchemin de Téléportation"
 }

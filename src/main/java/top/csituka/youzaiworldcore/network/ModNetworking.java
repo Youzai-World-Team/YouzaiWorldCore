@@ -15,6 +15,8 @@ import top.csituka.youzaiworldcore.block.entity.TeleportAnchorBlockEntity;
 import top.csituka.youzaiworldcore.data.TeleportAnchorManager;
 import top.csituka.youzaiworldcore.data.TeleportAnchorData;
 import top.csituka.youzaiworldcore.item.tool.TeleportStoneItem;
+import top.csituka.youzaiworldcore.item.tool.WarpScrollItem;
+import top.csituka.youzaiworldcore.network.TeleportAnchorListPayload.EntryType;
 import top.csituka.youzaiworldcore.config.DoubleDoorsState;
 import top.csituka.youzaiworldcore.afk.AfkManager;
 import top.csituka.youzaiworldcore.dimensionalinventories.DimensionPoolManager;
@@ -206,31 +208,40 @@ public class ModNetworking {
                 }
 
                 // 经验等级消耗：同维度 1 级，跨维度 2 级；创造模式免费
+                // 仅传送锚点方块 / 传送石入口需要经验，传送卷轴一次性使用故免经验
+                TeleportAnchorManager.TeleportOpenerSource source = manager.consumeTeleportSourceMark(serverPlayer);
+                EntryType entryType = source != null ? source.type() : EntryType.ANCHOR;
+                InteractionHand entryHand = source != null ? source.hand() : null;
+                boolean isScrollEntry = entryType == EntryType.SCROLL;
+                boolean itemEntry = source != null;
+
                 boolean isCreative = serverPlayer.getAbilities().instabuild;
                 int cost = target.dimension().equals(serverPlayer.level().dimension()) ? 1 : 2;
-                if (!isCreative && serverPlayer.experienceLevel < cost) {
+                if (!isScrollEntry && !isCreative && serverPlayer.experienceLevel < cost) {
                     serverPlayer.sendSystemMessage(
                             Component.translatable("message.youzaiworldcore.teleport_anchor.no_xp", cost));
                     DebugLogger.info("ModNetworking", "Player lacks XP: needs " + cost + " but has " + serverPlayer.experienceLevel);
                     return;
                 }
 
-                // ===== 传送石入口：耐久校验 =====
+                // ===== 传送物品入口结算（耐久 / 卷轴均在传送真正成功时扣，避免先扣后拒） =====
                 // 标记无论成败都在此消费；校验放在扣经验之前，避免校验失败却已扣掉经验。
-                InteractionHand stoneHand = manager.consumeStoneOpenMark(serverPlayer);
-                ItemStack stoneStack = null;
+                ItemStack itemStack = null;
+                InteractionHand itemHand = null;
                 int durabilityCost = 0;
-                if (stoneHand != null && !isCreative) {
-                    stoneStack = serverPlayer.getItemInHand(stoneHand);
-                    if (!(stoneStack.getItem() instanceof TeleportStoneItem)) {
-                        // 兜底：玩家在开着界面时换了手，另一只手再找一次
-                        InteractionHand otherHand = stoneHand == InteractionHand.MAIN_HAND
+                if (itemEntry && !isCreative && entryHand != null) {
+                    itemStack = serverPlayer.getItemInHand(entryHand);
+                    var entryItem = itemStack.getItem();
+                    if (entryType == EntryType.STONE && !(entryItem instanceof TeleportStoneItem)) {
+                        // 兜底：玩家在开着界面时换了手，另一只手再找一次传送石
+                        InteractionHand otherHand = entryHand == InteractionHand.MAIN_HAND
                                 ? InteractionHand.OFF_HAND
                                 : InteractionHand.MAIN_HAND;
                         ItemStack alternative = serverPlayer.getItemInHand(otherHand);
                         if (alternative.getItem() instanceof TeleportStoneItem) {
-                            stoneStack = alternative;
-                            stoneHand = otherHand;
+                            itemStack = alternative;
+                            itemHand = otherHand;
+                            entryHand = otherHand;
                         } else {
                             // 传送石已不在手上：拒绝传送，避免丢弃传送石白嫖免耐久传送
                             serverPlayer.sendSystemMessage(
@@ -238,33 +249,68 @@ public class ModNetworking {
                             DebugLogger.info("ModNetworking", "Teleport stone no longer held, teleport cancelled");
                             return;
                         }
+                    } else if (entryType == EntryType.SCROLL && !(entryItem instanceof WarpScrollItem)) {
+                        InteractionHand otherHand = entryHand == InteractionHand.MAIN_HAND
+                                ? InteractionHand.OFF_HAND
+                                : InteractionHand.MAIN_HAND;
+                        ItemStack alternative = serverPlayer.getItemInHand(otherHand);
+                        if (alternative.getItem() instanceof WarpScrollItem) {
+                            itemStack = alternative;
+                            itemHand = otherHand;
+                            entryHand = otherHand;
+                        } else {
+                            serverPlayer.sendSystemMessage(
+                                    Component.translatable("message.youzaiworldcore.warp_scroll.not_held"));
+                            DebugLogger.info("ModNetworking", "Warp scroll no longer held, teleport cancelled");
+                            return;
+                        }
+                    } else {
+                        itemHand = entryHand;
                     }
 
-                    durabilityCost = TeleportStoneItem.computeDurabilityCost(serverPlayer, target);
-                    int remainingDurability = stoneStack.getMaxDamage() - stoneStack.getDamageValue();
-                    if (remainingDurability < durabilityCost) {
-                        serverPlayer.sendSystemMessage(
-                                Component.translatable("message.youzaiworldcore.teleport_stone.no_durability",
-                                        durabilityCost, remainingDurability));
-                        DebugLogger.info("ModNetworking", "Teleport stone durability insufficient: needs "
-                                + durabilityCost + " but has " + remainingDurability);
-                        return;
+                    // 传送石：按距离计算耐久消耗并校验
+                    if (entryType == EntryType.STONE) {
+                        durabilityCost = TeleportStoneItem.computeDurabilityCost(serverPlayer, target);
+                        int remainingDurability = itemStack.getMaxDamage() - itemStack.getDamageValue();
+                        if (remainingDurability < durabilityCost) {
+                            serverPlayer.sendSystemMessage(
+                                    Component.translatable("message.youzaiworldcore.teleport_stone.no_durability",
+                                            durabilityCost, remainingDurability));
+                            DebugLogger.info("ModNetworking", "Teleport stone durability insufficient: needs "
+                                    + durabilityCost + " but has " + remainingDurability);
+                            return;
+                        }
+                    } else if (entryType == EntryType.SCROLL) {
+                        // 卷轴：始终消耗 1 张（叠堆减 1，耗尽则该组物品销毁），不涉及耐久
+                        if (itemStack.getCount() < WarpScrollItem.SCROLL_CONSUME_AMOUNT) {
+                            serverPlayer.sendSystemMessage(
+                                    Component.translatable("message.youzaiworldcore.warp_scroll.not_held"));
+                            DebugLogger.info("ModNetworking", "Warp scroll count insufficient, teleport cancelled");
+                            return;
+                        }
                     }
                 }
 
-                if (!isCreative) {
+                if (!isScrollEntry && !isCreative) {
                     serverPlayer.giveExperienceLevels(-cost);
                 }
 
-                // 记录冷却
+                // 记录传送锚点自身的 3 秒入门冷却
                 manager.recordTeleport(serverPlayer, gameTime);
 
-                // 传送石结算：先上冷却（此时 stack 尚未损毁），再扣耐久（可能因耗尽而损毁）
-                if (stoneStack != null) {
-                    serverPlayer.getCooldowns().addCooldown(stoneStack, TeleportStoneItem.COOLDOWN_TICKS);
-                    stoneStack.hurtAndBreak(durabilityCost, serverPlayer, stoneHand);
-                    DebugLogger.info("ModNetworking", "Teleport stone consumed %d durability (hand=%s)",
-                            durabilityCost, stoneHand);
+                // 传送物品结算：先上冷却（堆对象还在），再扣耐久 / 缩卷轴
+                if (itemStack != null && itemHand != null) {
+                    if (entryType == EntryType.STONE) {
+                        serverPlayer.getCooldowns().addCooldown(itemStack, TeleportStoneItem.COOLDOWN_TICKS);
+                        itemStack.hurtAndBreak(durabilityCost, serverPlayer, itemHand);
+                        DebugLogger.info("ModNetworking", "Teleport stone consumed %d durability (hand=%s)",
+                                durabilityCost, itemHand);
+                    } else if (entryType == EntryType.SCROLL) {
+                        serverPlayer.getCooldowns().addCooldown(itemStack, WarpScrollItem.COOLDOWN_TICKS);
+                        itemStack.shrink(WarpScrollItem.SCROLL_CONSUME_AMOUNT);
+                        DebugLogger.info("ModNetworking", "Warp scroll consumed 1 (hand=%s, remaining=%s)",
+                                itemHand, itemStack.isEmpty() ? "destroyed" : itemStack.getCount());
+                    }
                 }
 
                 serverPlayer.teleportTo(targetLevel,

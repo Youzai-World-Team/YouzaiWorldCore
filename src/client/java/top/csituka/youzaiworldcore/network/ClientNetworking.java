@@ -87,7 +87,8 @@ public class ClientNetworking {
             DebugLogger.entering("ClientNetworking", "TeleportAnchorListPayload handler");
             context.client().execute(() -> {
                 context.client().setScreenAndShow(new TeleportAnchorScreen(
-                        payload.points(), payload.currentPos(), payload.currentDim(), payload.stoneHand()));
+                        payload.points(), payload.currentPos(), payload.currentDim(),
+                        payload.entryType(), payload.entryHand()));
             });
             DebugLogger.exiting("ClientNetworking", "TeleportAnchorListPayload handler");
         });

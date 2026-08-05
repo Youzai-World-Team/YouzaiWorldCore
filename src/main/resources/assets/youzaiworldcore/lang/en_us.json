@@ -603,6 +603,7 @@
   "screen.youzaiworldcore.teleport_anchor.cost_durability_suffix": " %s durability",
   "screen.youzaiworldcore.teleport_anchor.cost_insufficient_xp": " (not enough)",
   "screen.youzaiworldcore.teleport_anchor.cost_insufficient_durability": " (not enough)",
+  "screen.youzaiworldcore.teleport_anchor.cost_insufficient_scroll": " (not enough)",
   "screen.youzaiworldcore.teleport_anchor.cross_dimension": "Other dimension",
   "message.youzaiworldcore.teleport_stone.cooldown": "§cThe Teleport Stone is on cooldown, wait %s more second(s).",
   "message.youzaiworldcore.teleport_stone.no_durability": "§cNot enough durability! This teleport needs %s, but only %s remains.",
@@ -610,5 +611,14 @@
   "item.youzaiworldcore.teleport_stone.tooltip_cost": "Costs 1 durability per %s blocks, %s flat across dimensions",
   "item.youzaiworldcore.teleport_stone.tooltip_cooldown": "%s second cooldown after a successful teleport",
   "item.youzaiworldcore.teleport_stone.tooltip_charge": "Hold right-click for %s seconds to open the list",
-  "message.youzaiworldcore.teleport_stone.charge_interrupted": "Charging interrupted; the Teleport Stone is not on cooldown."
+  "message.youzaiworldcore.teleport_stone.charge_interrupted": "Charging interrupted; the Teleport Stone is not on cooldown.",
+  "item.youzaiworldcore.warp_scroll": "Warp Scroll",
+  "item.youzaiworldcore.warp_scroll.tooltip": "Right-click to open your teleport anchor list; single-use, consumed on success.",
+  "item.youzaiworldcore.warp_scroll.tooltip_charge": "Hold right-click for %s seconds to open the list",
+  "item.youzaiworldcore.warp_scroll.tooltip_consume": "Each teleport consumes 1 scroll, distance-agnostic",
+  "item.youzaiworldcore.warp_scroll.tooltip_cooldown": "%s second cooldown after a successful teleport",
+  "message.youzaiworldcore.warp_scroll.cooldown": "§cThe Warp Scroll is on cooldown, wait %s more second(s).",
+  "message.youzaiworldcore.warp_scroll.not_held": "§cThe Warp Scroll is no longer in your hand; teleport cancelled.",
+  "screen.youzaiworldcore.teleport_anchor.cost_scroll_prefix": "Will consume 1 ",
+  "screen.youzaiworldcore.teleport_anchor.cost_scroll_suffix": "Warp Scroll"
 }
