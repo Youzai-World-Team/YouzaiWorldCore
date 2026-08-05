@@ -1,0 +1,11 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "up": "youzaiworldcore:block/magic_table_top",
+    "down": "youzaiworldcore:block/magic_table_bottom",
+    "north": "youzaiworldcore:block/magic_table_side1",
+    "south": "youzaiworldcore:block/magic_table_side1",
+    "east": "youzaiworldcore:block/magic_table_side2",
+    "west": "youzaiworldcore:block/magic_table_side2"
+  }
+}

@@ -18,13 +18,15 @@ import top.csituka.youzaiworldcore.client.config.ClientExternalSettings;
  * 并绘制 YZUI 半透明白色圆角矩形。仅对包名以 {@code top.csituka.youzaiworldcore} 开头的屏幕生效。</p>
  *
  * <h3>修复说明</h3>
- * <p>原版 {@code AbstractTextAreaWidget.extractBackground} 会通过 {@code extractBorder} 绘制
- * {@code widget/text_field} 9-patch 精灵，该精灵顶部/底部带有明显的灰色渐变边
- * （在 26.2 默认纹理中表现为上下约 5px 的浅灰渐变至纯黑的过渡带）。</p>
- * <p>之前的实现仅在 {@code extractBackground} 注入点拦截并取消，但若任何渲染路径绕过该注入点
- * （如 Mixin 注入顺序异常、版本升级后签名变化等），灰色精灵仍会被绘制，表现为
- * "超大灰色圆角边框"。本实现改为在 {@code extractWidgetRenderState} 头部直接设置
- * {@code showBackground = false}，从源头确保原版精灵永远不会被绘制。</p>
+ * <p>原版 {@code AbstractTextAreaWidget.extractWidgetRenderState} 会在 {@code showBackground} 为真时
+ * 经 {@code extractBackground → extractBorder} 绘制 {@code widget/text_field} 九宫格精灵（黑底 + 1px 灰边）。
+ * 本实现在 {@code extractWidgetRenderState} 头部直接置 {@code showBackground = false}，
+ * 从源头确保原版精灵不会被绘制；{@code extractBackground} 的取消注入作为第二道保险。</p>
+ * <p>另有一处曾表现为「超大灰色圆角边框、边框内偏白」的问题，根因不在原版精灵，而在
+ * {@code yzwc$fillRoundedRect} 自身：旧写法用「整宽横条 + 竖条」两块矩形拼圆角，二者在中央重叠，
+ * 半透明白被混合两次（0.50 → 约 0.75），于是中心偏白、四周仅混合一次而透出深色面板显灰，
+ * 形成一圈宽度恰为 {@code CORNER_RADIUS} 的假边框。现改为与 {@code EditBoxMixin} 一致的
+ * 「中间列 + 左右侧条」三块互不重叠写法，整块背景透明度均匀。</p>
  *
  * <h3>光标说明</h3>
  * <p>光标样式（高度 9px + 闪烁周期 500ms）由 {@code MultiLineEditBoxYzuiCursorMixin} 处理。</p>
@@ -93,8 +95,16 @@ public class MultiLineEditBoxYzuiMixin {
     ) {
         if (w <= 0 || h <= 0) return;
         int radius = Math.max(0, Math.min(r, Math.min(w, h) / 2));
+        if (radius <= 0) {
+            graphics.fill(x, y, x + w, y + h, color);
+            return;
+        }
+        // 三块矩形互不重叠：中间列 + 左右侧条。
+        // 若改用「整宽横条 + 竖条」两块写法，中央会被半透明色混合两次，
+        // 呈现「中心偏白、四周偏灰」的假边框（宽度恰为 radius）。
         graphics.fill(x + radius, y, x + w - radius, y + h, color);
-        graphics.fill(x, y + radius, x + w, y + h - radius, color);
+        graphics.fill(x, y + radius, x + radius, y + h - radius, color);
+        graphics.fill(x + w - radius, y + radius, x + w, y + h - radius, color);
         for (int ix = 0; ix < radius; ix++) {
             for (int iy = 0; iy < radius; iy++) {
                 int dx = radius - 1 - ix;

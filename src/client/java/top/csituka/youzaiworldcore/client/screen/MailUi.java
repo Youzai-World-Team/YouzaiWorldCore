@@ -55,14 +55,26 @@ final class MailUi {
                 (MailViewport.DESIGN_HEIGHT - pageHeight) / 2, pageWidth, pageHeight);
     }
 
-    /** 绘制圆角矩形。 */
+    /**
+     * 绘制圆角矩形。
+     * <p>三块矩形必须互不重叠：中间列 + 左右侧条。若改用「整宽横条 + 竖条」两块写法，
+     * 二者会在中央重叠，半透明色被混合两次，呈现「中心偏实、四周偏透」的假边框
+     * （宽度恰为 {@code radius}）。多数调用使用不透明色看不出差异，但
+     * {@link #PANEL_BACKGROUND}、邮件类型标签（alpha {@code 0x55}）、
+     * {@link MailToast} 与 {@link #yzuiInputBackground} 均为半透明，必须避免重叠。</p>
+     */
     static void roundedRect(GuiGraphicsExtractor graphics, int x, int y, int width, int height, int radius, int color) {
         if (width <= 0 || height <= 0) {
             return;
         }
         int r = Math.max(0, Math.min(radius, Math.min(width, height) / 2));
+        if (r <= 0) {
+            graphics.fill(x, y, x + width, y + height, color);
+            return;
+        }
         graphics.fill(x + r, y, x + width - r, y + height, color);
-        graphics.fill(x, y + r, x + width, y + height - r, color);
+        graphics.fill(x, y + r, x + r, y + height - r, color);
+        graphics.fill(x + width - r, y + r, x + width, y + height - r, color);
         for (int ix = 0; ix < r; ix++) {
             for (int iy = 0; iy < r; iy++) {
                 int dx = r - 1 - ix;

@@ -628,5 +628,6 @@
   "item.youzaiworldcore.return_scroll.tooltip_cooldown": "%s seconds cooldown on success",
   "message.youzaiworldcore.return_scroll.cooldown": "§eReturn Scroll is on cooldown, wait %s more second(s).",
   "message.youzaiworldcore.return_scroll.no_anchor": "§eNo teleport anchors are available in this dimension~",
-  "message.youzaiworldcore.return_scroll.teleported": "§aReturned to %s"
+  "message.youzaiworldcore.return_scroll.teleported": "§aReturned to %s",
+  "block.youzaiworldcore.magic_table": "Magic Table"
 }

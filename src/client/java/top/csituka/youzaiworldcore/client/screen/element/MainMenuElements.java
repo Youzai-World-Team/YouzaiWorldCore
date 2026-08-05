@@ -278,12 +278,22 @@ public class MainMenuElements implements MenuElementGroup {
         }
     }
 
-    /** 绘制圆角矩形（逐像素填充）。 */
+    /**
+     * 绘制圆角矩形（逐像素填充）。
+     * <p>三块矩形互不重叠：中间列 + 左右侧条。两块「整宽横条 + 竖条」的写法会在中央重叠，
+     * 半透明色被混合两次而出现假边框；当前唯一调用方使用不透明色看不出差异，
+     * 但保持与其余 YZUI 圆角实现一致，避免日后改用半透明色时踩坑。</p>
+     */
     private static void drawRoundedRect(GuiGraphicsExtractor graphics, int x, int y, int w, int h, int r, int color) {
         if (w <= 0 || h <= 0) return;
         int radius = Math.max(0, Math.min(r, Math.min(w, h) / 2));
+        if (radius <= 0) {
+            graphics.fill(x, y, x + w, y + h, color);
+            return;
+        }
         graphics.fill(x + radius, y, x + w - radius, y + h, color);
-        graphics.fill(x, y + radius, x + w, y + h - radius, color);
+        graphics.fill(x, y + radius, x + radius, y + h - radius, color);
+        graphics.fill(x + w - radius, y + radius, x + w, y + h - radius, color);
         for (int ix = 0; ix < radius; ix++) {
             for (int iy = 0; iy < radius; iy++) {
                 int dx = radius - 1 - ix;

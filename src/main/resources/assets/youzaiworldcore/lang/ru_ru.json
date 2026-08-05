@@ -628,5 +628,6 @@
   "item.youzaiworldcore.return_scroll.tooltip_cooldown": "Перезарядка %s секунд при успехе",
   "message.youzaiworldcore.return_scroll.cooldown": "§eСвиток возврата перезаряжается, подождите %s сек.",
   "message.youzaiworldcore.return_scroll.no_anchor": "§eВ этом измерении нет доступных якорей телепортации~",
-  "message.youzaiworldcore.return_scroll.teleported": "§aВозвращён к %s"
+  "message.youzaiworldcore.return_scroll.teleported": "§aВозвращён к %s",
+  "block.youzaiworldcore.magic_table": "Магический Стол"
 }

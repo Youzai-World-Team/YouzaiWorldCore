@@ -628,5 +628,6 @@
   "item.youzaiworldcore.return_scroll.tooltip_cooldown": "%s Sekunden Abklingzeit bei Erfolg",
   "message.youzaiworldcore.return_scroll.cooldown": "§eRückkehrrolle lädt noch, warte %s Sekunde(n).",
   "message.youzaiworldcore.return_scroll.no_anchor": "§eKeine Teleportanker in dieser Dimension verfügbar~",
-  "message.youzaiworldcore.return_scroll.teleported": "§aZurückgekehrt nach %s"
+  "message.youzaiworldcore.return_scroll.teleported": "§aZurückgekehrt nach %s",
+  "block.youzaiworldcore.magic_table": "Magietisch"
 }

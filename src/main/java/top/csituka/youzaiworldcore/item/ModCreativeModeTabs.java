@@ -38,6 +38,7 @@ public class ModCreativeModeTabs {
                                 output.accept(ModBlocks.DECOMPOSITION_TABLE);
                                 output.accept(ModBlocks.FLY_BEACON);
                                 output.accept(ModBlocks.TP_ANCHOR);
+                                output.accept(ModBlocks.MAGIC_TABLE);
                         })
                         .build();
 

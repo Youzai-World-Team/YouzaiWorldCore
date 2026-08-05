@@ -650,5 +650,6 @@
   "item.youzaiworldcore.return_scroll.tooltip_cooldown": "成功后冷却 %s 秒",
   "message.youzaiworldcore.return_scroll.cooldown": "§e返回卷轴冷却中，请等待 %s 秒。",
   "message.youzaiworldcore.return_scroll.no_anchor": "§e在此维度没有可用的传送锚点~",
-  "message.youzaiworldcore.return_scroll.teleported": "§a已返回到 %s"
+  "message.youzaiworldcore.return_scroll.teleported": "§a已返回到 %s",
+  "block.youzaiworldcore.magic_table": "魔力台"
 }

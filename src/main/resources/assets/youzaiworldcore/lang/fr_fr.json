@@ -628,5 +628,6 @@
   "item.youzaiworldcore.return_scroll.tooltip_cooldown": "%s secondes de recharge après succès",
   "message.youzaiworldcore.return_scroll.cooldown": "§eParchemin de retour recharge, attendez %s seconde(s).",
   "message.youzaiworldcore.return_scroll.no_anchor": "§eAucune ancre de téléportation disponible dans cette dimension~",
-  "message.youzaiworldcore.return_scroll.teleported": "§aRetourné à %s"
+  "message.youzaiworldcore.return_scroll.teleported": "§aRetourné à %s",
+  "block.youzaiworldcore.magic_table": "Table Magique"
 }
