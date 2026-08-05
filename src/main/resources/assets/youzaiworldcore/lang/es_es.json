@@ -620,5 +620,13 @@
   "message.youzaiworldcore.warp_scroll.cooldown": "§cEl pergamino de teletransporte se está recargando, espera %s segundo(s).",
   "message.youzaiworldcore.warp_scroll.not_held": "§cEl pergamino de teletransporte ya no está en tu mano; teletransporte cancelado.",
   "screen.youzaiworldcore.teleport_anchor.cost_scroll_prefix": "Consumirá 1 ",
-  "screen.youzaiworldcore.teleport_anchor.cost_scroll_suffix": "Pergamino de Teletransporte"
+  "screen.youzaiworldcore.teleport_anchor.cost_scroll_suffix": "Pergamino de Teletransporte",
+  "item.youzaiworldcore.return_scroll": "Pergamino de Retorno",
+  "item.youzaiworldcore.return_scroll.tooltip": "Mantén clic derecho para canalizar; te teletransporta al ancla de teletransporte activada más cercana en tu dimensión actual.",
+  "item.youzaiworldcore.return_scroll.tooltip_charge": "Mantén clic derecho %s segundos",
+  "item.youzaiworldcore.return_scroll.tooltip_consume": "Consume 1 pergamino al tener éxito; sin ancla no se consume, pero entra en enfriamiento",
+  "item.youzaiworldcore.return_scroll.tooltip_cooldown": "%s segundos de espera al tener éxito",
+  "message.youzaiworldcore.return_scroll.cooldown": "§eEl pergamino de retorno se está recargando, espera %s segundo(s).",
+  "message.youzaiworldcore.return_scroll.no_anchor": "§eNo hay anclas de teletransporte disponibles en esta dimensión~",
+  "message.youzaiworldcore.return_scroll.teleported": "§aRegresado a %s"
 }

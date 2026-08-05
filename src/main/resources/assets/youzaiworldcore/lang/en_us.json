@@ -620,5 +620,13 @@
   "message.youzaiworldcore.warp_scroll.cooldown": "§cThe Warp Scroll is on cooldown, wait %s more second(s).",
   "message.youzaiworldcore.warp_scroll.not_held": "§cThe Warp Scroll is no longer in your hand; teleport cancelled.",
   "screen.youzaiworldcore.teleport_anchor.cost_scroll_prefix": "Will consume 1 ",
-  "screen.youzaiworldcore.teleport_anchor.cost_scroll_suffix": "Warp Scroll"
+  "screen.youzaiworldcore.teleport_anchor.cost_scroll_suffix": "Warp Scroll",
+  "item.youzaiworldcore.return_scroll": "Return Scroll",
+  "item.youzaiworldcore.return_scroll.tooltip": "Hold right-click to channel; teleports you to the nearest activated teleport anchor in your current dimension.",
+  "item.youzaiworldcore.return_scroll.tooltip_charge": "Hold right-click for %s seconds",
+  "item.youzaiworldcore.return_scroll.tooltip_consume": "Consumes 1 scroll on success; enters cooldown without consumption if no anchor is available",
+  "item.youzaiworldcore.return_scroll.tooltip_cooldown": "%s seconds cooldown on success",
+  "message.youzaiworldcore.return_scroll.cooldown": "§eReturn Scroll is on cooldown, wait %s more second(s).",
+  "message.youzaiworldcore.return_scroll.no_anchor": "§eNo teleport anchors are available in this dimension~",
+  "message.youzaiworldcore.return_scroll.teleported": "§aReturned to %s"
 }

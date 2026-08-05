@@ -620,5 +620,13 @@
   "message.youzaiworldcore.warp_scroll.cooldown": "§c傳送之卷未復，且待 %s 息。",
   "message.youzaiworldcore.warp_scroll.not_held": "§c傳送之卷不在手，其行乃止。",
   "screen.youzaiworldcore.teleport_anchor.cost_scroll_prefix": "將費",
-  "screen.youzaiworldcore.teleport_anchor.cost_scroll_suffix": "傳送之卷"
+  "screen.youzaiworldcore.teleport_anchor.cost_scroll_suffix": "傳送之卷",
+  "item.youzaiworldcore.return_scroll": "歸返之卷",
+  "item.youzaiworldcore.return_scroll.tooltip": "右擊蓄勢，歸返於此界最近之已啟傳送錨點",
+  "item.youzaiworldcore.return_scroll.tooltip_charge": "按右鍵蓄勢 %s 息",
+  "item.youzaiworldcore.return_scroll.tooltip_consume": "既歸返則費卷一張；無可啟之錄則不費而但入歇",
+  "item.youzaiworldcore.return_scroll.tooltip_cooldown": "既歸返，歇 %s 息",
+  "message.youzaiworldcore.return_scroll.cooldown": "§e歸返之卷未復，且待 %s 息。",
+  "message.youzaiworldcore.return_scroll.no_anchor": "§e此界無可啟之傳送錨點~",
+  "message.youzaiworldcore.return_scroll.teleported": "§a歸至 %s"
 }

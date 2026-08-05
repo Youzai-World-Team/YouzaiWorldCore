@@ -271,6 +271,41 @@ public class TeleportAnchorManager extends SavedData {
         return true;
     }
 
+    /**
+     * 在玩家当前维度内找到距离玩家最近的可用传送锚点。
+     * <p>
+     * 「可用」与 {@link #getValidPointsForPlayer(ServerPlayer, ResourceKey)} 同口径：
+     * 锚点方块仍然存在且处于激活状态、且与玩家维度同维度池（任意一方未入池时不做限制）。
+     * <p>
+     * 距离按传送石耐久计算公式的口径取：玩家坐标对锚点上表面中心
+     * (pos.getX()+0.5, pos.getY()+1.0, pos.getZ()+0.5) 的欧氏距离。
+     *
+     * @return 最近锚点；当前维度一个可用锚点都没有时返回 {@link Optional#empty()}
+     */
+    public java.util.Optional<TeleportAnchorData> findNearestActiveAnchorInDimension(
+            ServerPlayer player, ResourceKey<Level> dimension) {
+        List<TeleportAnchorData> candidates = getValidPointsForPlayer(player, dimension);
+        if (candidates.isEmpty()) {
+            return java.util.Optional.empty();
+        }
+        double px = player.getX();
+        double py = player.getY();
+        double pz = player.getZ();
+        TeleportAnchorData nearest = null;
+        double bestDistSq = Double.POSITIVE_INFINITY;
+        for (TeleportAnchorData p : candidates) {
+            double dx = (p.pos().getX() + 0.5) - px;
+            double dy = (p.pos().getY() + 1.0) - py;
+            double dz = (p.pos().getZ() + 0.5) - pz;
+            double d2 = dx * dx + dy * dy + dz * dz;
+            if (d2 < bestDistSq) {
+                bestDistSq = d2;
+                nearest = p;
+            }
+        }
+        return java.util.Optional.ofNullable(nearest);
+    }
+
     // ===== 传送列表打开来源（用于判定扣哪种资源） =====
 
     /**

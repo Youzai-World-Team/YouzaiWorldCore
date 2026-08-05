@@ -620,5 +620,13 @@
   "message.youzaiworldcore.warp_scroll.cooldown": "§cLe parchemin de téléportation recharge, attendez %s seconde(s).",
   "message.youzaiworldcore.warp_scroll.not_held": "§cLe parchemin de téléportation n'est plus en main ; téléportation annulée.",
   "screen.youzaiworldcore.teleport_anchor.cost_scroll_prefix": "Consomme 1 ",
-  "screen.youzaiworldcore.teleport_anchor.cost_scroll_suffix": "Parchemin de Téléportation"
+  "screen.youzaiworldcore.teleport_anchor.cost_scroll_suffix": "Parchemin de Téléportation",
+  "item.youzaiworldcore.return_scroll": "Parchemin de Retour",
+  "item.youzaiworldcore.return_scroll.tooltip": "Maintenez le clic droit pour canaliser ; vous téléporte à l'ancre de téléportation activée la plus proche dans votre dimension actuelle.",
+  "item.youzaiworldcore.return_scroll.tooltip_charge": "Maintenez le clic droit %s secondes",
+  "item.youzaiworldcore.return_scroll.tooltip_consume": "Consomme 1 parchemin en cas de succès ; sans ancre pas de consommation, mais recharge appliquée",
+  "item.youzaiworldcore.return_scroll.tooltip_cooldown": "%s secondes de recharge après succès",
+  "message.youzaiworldcore.return_scroll.cooldown": "§eParchemin de retour recharge, attendez %s seconde(s).",
+  "message.youzaiworldcore.return_scroll.no_anchor": "§eAucune ancre de téléportation disponible dans cette dimension~",
+  "message.youzaiworldcore.return_scroll.teleported": "§aRetourné à %s"
 }

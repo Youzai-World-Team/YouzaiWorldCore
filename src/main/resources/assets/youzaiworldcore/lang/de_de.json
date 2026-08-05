@@ -620,5 +620,13 @@
   "message.youzaiworldcore.warp_scroll.cooldown": "§cDie Teleportationsrolle lädt noch, warte %s Sekunde(n).",
   "message.youzaiworldcore.warp_scroll.not_held": "§cDie Teleportationsrolle ist nicht mehr in deiner Hand – Teleport abgebrochen.",
   "screen.youzaiworldcore.teleport_anchor.cost_scroll_prefix": "Verbraucht 1 ",
-  "screen.youzaiworldcore.teleport_anchor.cost_scroll_suffix": "Teleportationsrolle"
+  "screen.youzaiworldcore.teleport_anchor.cost_scroll_suffix": "Teleportationsrolle",
+  "item.youzaiworldcore.return_scroll": "Rückkehrrolle",
+  "item.youzaiworldcore.return_scroll.tooltip": "Rechtsklick halten; teleportiert dich zum nächsten aktivierten Teleportanker in deiner aktuellen Dimension.",
+  "item.youzaiworldcore.return_scroll.tooltip_charge": "Rechtsklick %s Sekunden halten",
+  "item.youzaiworldcore.return_scroll.tooltip_consume": "Bei Erfolg 1 Rolle verbraucht; ohne Anker kein Verbrauch, aber Abklingzeit startet",
+  "item.youzaiworldcore.return_scroll.tooltip_cooldown": "%s Sekunden Abklingzeit bei Erfolg",
+  "message.youzaiworldcore.return_scroll.cooldown": "§eRückkehrrolle lädt noch, warte %s Sekunde(n).",
+  "message.youzaiworldcore.return_scroll.no_anchor": "§eKeine Teleportanker in dieser Dimension verfügbar~",
+  "message.youzaiworldcore.return_scroll.teleported": "§aZurückgekehrt nach %s"
 }

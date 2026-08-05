@@ -28,6 +28,7 @@ public class SmeltingHandler {
     private static final String MODULE = "SmeltingHandler";
 
     // 方块 → 烧炼产物 Item（延迟创建 ItemStack，避免 static init 时 Components not bound）
+    @SuppressWarnings("null")
     private static final Map<Block, Item> SMELTING_MAP = Map.ofEntries(
             Map.entry(Blocks.SAND, Items.GLASS.asItem()),
             Map.entry(Blocks.RED_SAND, Items.GLASS.asItem()),
@@ -35,26 +36,27 @@ public class SmeltingHandler {
             Map.entry(Blocks.RAW_COPPER_BLOCK, Items.COPPER_INGOT),
             Map.entry(Blocks.RAW_IRON_BLOCK, Items.IRON_INGOT),
             Map.entry(Blocks.RAW_GOLD_BLOCK, Items.GOLD_INGOT),
-            Map.entry(Blocks.ANCIENT_DEBRIS, Items.NETHERITE_SCRAP)
-    );
+            Map.entry(Blocks.ANCIENT_DEBRIS, Items.NETHERITE_SCRAP));
 
     // 掉落物品 → 烧炼产物 Item
+    @SuppressWarnings("null")
     private static final Map<Item, Item> ITEM_SMELTING_MAP = Map.of(
             Items.CLAY_BALL, Items.BRICK,
             Items.RAW_COPPER, Items.COPPER_INGOT,
             Items.RAW_IRON, Items.IRON_INGOT,
-            Items.RAW_GOLD, Items.GOLD_INGOT
-    );
+            Items.RAW_GOLD, Items.GOLD_INGOT);
 
     public static void register() {
         PlayerBlockBreakEvents.AFTER.register((world, player, pos, state, blockEntity) -> {
-            if (world.isClientSide()) return;
+            if (world.isClientSide())
+                return;
 
             var reg = world.registryAccess().lookupOrThrow(Registries.ENCHANTMENT);
             Holder<Enchantment> holder = reg.getOrThrow(ModEnchantments.SMELTING_KEY);
 
             int enchantLevel = player.getMainHandItem().getEnchantments().getLevel(holder);
-            if (enchantLevel <= 0) return;
+            if (enchantLevel <= 0)
+                return;
 
             // 方块映射
             Item resultItem = SMELTING_MAP.get(state.getBlock());

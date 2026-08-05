@@ -620,5 +620,13 @@
   "message.youzaiworldcore.warp_scroll.cooldown": "§cСвиток телепортации перезаряжается, подождите %s сек.",
   "message.youzaiworldcore.warp_scroll.not_held": "§cСвиток телепортации больше не в руке — телепортация отменена.",
   "screen.youzaiworldcore.teleport_anchor.cost_scroll_prefix": "Потратит 1 ",
-  "screen.youzaiworldcore.teleport_anchor.cost_scroll_suffix": "Свиток Телепортации"
+  "screen.youzaiworldcore.teleport_anchor.cost_scroll_suffix": "Свиток Телепортации",
+  "item.youzaiworldcore.return_scroll": "Свиток Возврата",
+  "item.youzaiworldcore.return_scroll.tooltip": "Удерживайте ПКМ; телепортирует к ближайшему активированному якорю телепортации в вашем текущем измерении.",
+  "item.youzaiworldcore.return_scroll.tooltip_charge": "Удерживайте ПКМ %s секунд",
+  "item.youzaiworldcore.return_scroll.tooltip_consume": "При успехе тратит 1 свиток; без якоря — не тратит, но даёт перезарядку",
+  "item.youzaiworldcore.return_scroll.tooltip_cooldown": "Перезарядка %s секунд при успехе",
+  "message.youzaiworldcore.return_scroll.cooldown": "§eСвиток возврата перезаряжается, подождите %s сек.",
+  "message.youzaiworldcore.return_scroll.no_anchor": "§eВ этом измерении нет доступных якорей телепортации~",
+  "message.youzaiworldcore.return_scroll.teleported": "§aВозвращён к %s"
 }

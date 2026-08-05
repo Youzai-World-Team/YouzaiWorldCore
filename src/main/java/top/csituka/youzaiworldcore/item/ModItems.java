@@ -116,6 +116,11 @@ public class ModItems {
             new Item.Properties()
     );
 
+    public static final Item RETURN_SCROLL = registerReturnScroll(
+            "return_scroll",
+            new Item.Properties()
+    );
+
     private static Item register(String name, Item.Properties settings) {
         ResourceKey<Item> itemKey = ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, name));
         Item item = new Item(settings.setId(itemKey));
@@ -203,6 +208,12 @@ public class ModItems {
     private static Item registerWarpScroll(String name, Item.Properties settings) {
         ResourceKey<Item> itemKey = ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, name));
         Item item = new WarpScrollItem(settings.setId(itemKey));
+        return Registry.register(BuiltInRegistries.ITEM, itemKey, item);
+    }
+
+    private static Item registerReturnScroll(String name, Item.Properties settings) {
+        ResourceKey<Item> itemKey = ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, name));
+        Item item = new ReturnScrollItem(settings.setId(itemKey));
         return Registry.register(BuiltInRegistries.ITEM, itemKey, item);
     }
 
