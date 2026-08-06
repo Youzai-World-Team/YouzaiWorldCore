@@ -57,8 +57,8 @@ public final class HotbarRenderer {
     private static final int SLOT_RADIUS = 3;
     /** 槽位默认背景色（25% 白色） */
     private static final int SLOT_COLOR = 0x40FFFFFF;
-    /** 槽位选中背景色（37.5% 白色） */
-    private static final int SLOT_SELECTED_COLOR = 0x60FFFFFF;
+    /** 槽位选中背景色（50% 白色，足够覆盖底层高亮） */
+    private static final int SLOT_SELECTED_COLOR = 0x80FFFFFF;
     /** 槽位距面板左边缘的水平内边距 */
     private static final int SLOT_PADDING_X = 2;
     /** 槽位距面板上边缘的垂直内边距 */
@@ -83,12 +83,18 @@ public final class HotbarRenderer {
     private static final int SELECTION_FILL_COLOR = 0xB0FFFFFF;
 
     // ===== 副手槽常量 =====
-    /** 副手槽尺寸 */
-    private static final int OFFHAND_SIZE = 22;
-    /** 副手槽圆角半径 */
-    private static final int OFFHAND_RADIUS = 3;
+    /** 副手槽外尺寸（外框） */
+    private static final int OFFHAND_OUTER_SIZE = 22;
+    /** 副手槽外圆角半径 */
+    private static final int OFFHAND_OUTER_RADIUS = 4;
+    /** 副手槽内尺寸（填充，比外框小 2px 形成 1px 边框） */
+    private static final int OFFHAND_INNER_SIZE = 20;
+    /** 副手槽内圆角半径 */
+    private static final int OFFHAND_INNER_RADIUS = 3;
     /** 副手槽背景色（褐色调） */
-    private static final int OFFHAND_COLOR = 0x60A08050;
+    private static final int OFFHAND_FILL_COLOR = 0x60A08050;
+    /** 副手槽边框色（半透明白色，清晰勾勒圆角边缘） */
+    private static final int OFFHAND_BORDER_COLOR = 0xB0CCBBAA;
     /** 副手槽与面板的间距 */
     private static final int OFFHAND_GAP = 3;
     /** 物品在副手槽内的偏移 */
@@ -107,18 +113,24 @@ public final class HotbarRenderer {
             Identifier.withDefaultNamespace("hud/hotbar_attack_indicator_progress");
 
     // ===== 动画常量 =====
-    /** 动画插值速度（每帧趋近比例，经帧率无关归一化） */
-    private static final float ANIM_SPEED = 0.28f;
+    /** 选中槽位动画速度（指数衰减因子，越大越快；8.0 ≈ 290ms 达 90% 目标） */
+    private static final float ANIM_SPEED = 8.0f;
+
+    // ===== 副手槽动画常量 =====
+    /** 副手槽滑入滑出距离（px） */
+    private static final int OFFHAND_SLIDE_DIST = 12;
+    /** 副手槽动画速度（略快于选中槽位动画，≈230ms 达 90%） */
+    private static final float OFFHAND_ANIM_SPEED = 10.0f;
 
     // ===== 数字指示器常量 =====
-    /** 非选中槽位数字颜色（半透明白色） */
-    private static final int NUM_COLOR_NORMAL = 0x90FFFFFF;
-    /** 选中槽位数字颜色（不透明白色） */
-    private static final int NUM_COLOR_SELECTED = 0xFFFFFFFF;
-    /** 数字 X 偏移（槽位内左上角） */
-    private static final int NUM_OFFSET_X = 2;
+    /** 非选中槽位数字颜色（淡半透明，不喧宾夺主） */
+    private static final int NUM_COLOR_NORMAL = 0x60FFFFFF;
+    /** 选中槽位数字颜色（半透明白色） */
+    private static final int NUM_COLOR_SELECTED = 0xA0FFFFFF;
+    /** 数字 X 偏移（槽位内左上角，尽可能靠边） */
+    private static final int NUM_OFFSET_X = 1;
     /** 数字 Y 偏移（槽位内左上角） */
-    private static final int NUM_OFFSET_Y = 1;
+    private static final int NUM_OFFSET_Y = 0;
 
     // ===== 动画状态（@Unique，服务端无关） =====
     /** 当前动画位置（0~8 的浮点数） */
@@ -127,6 +139,14 @@ public final class HotbarRenderer {
     private static int lastKnownSelectedSlot = 0;
     /** 动画是否已初始化 */
     private static boolean animInitialized = false;
+    /** 副手槽动画进度（0.0=隐藏，1.0=完全可见） */
+    private static float offhandAnimProgress = 0f;
+    /** 上次副手是否有物品（用于检测过渡） */
+    private static boolean lastOffhandHasItem = false;
+    /** 副手动画是否已初始化 */
+    private static boolean offhandAnimInit = false;
+    /** 选中高亮虚拟目标（可超出 0~8，用于循环包装动画） */
+    private static float virtualTarget = 0f;
 
     private HotbarRenderer() {
     }
@@ -157,47 +177,121 @@ public final class HotbarRenderer {
         // === 动画初始化 ===
         if (!animInitialized) {
             animSelectedSlot = currentSlot;
+            virtualTarget = currentSlot;
             lastKnownSelectedSlot = currentSlot;
             animInitialized = true;
         }
 
-        // === 动画更新 ===
+        // === 动画更新（含循环包装） ===
         if (currentSlot != lastKnownSelectedSlot) {
+            // 快速滚动处理：若正在包装动画中途，先快照到包装完成位置
+            if (virtualTarget > 8.0f) {
+                animSelectedSlot -= 9.0f;
+                DebugLogger.debug(LOG_TAG,
+                        "包装中断(右): 快速快照 animPos=%.3f", animSelectedSlot);
+            } else if (virtualTarget < 0.0f) {
+                animSelectedSlot += 9.0f;
+                DebugLogger.debug(LOG_TAG,
+                        "包装中断(左): 快速快照 animPos=%.3f", animSelectedSlot);
+            }
+
+            // 检测循环包装：8→0（向右滚轮）或 0→8（向左滚轮）
+            if (lastKnownSelectedSlot == 8 && currentSlot == 0) {
+                virtualTarget = 9.0f; // 向右滑出屏幕
+                DebugLogger.debug(LOG_TAG,
+                        "槽位包装(右): animPos=%.2f → wrapRight, 虚拟目标=%.1f",
+                        animSelectedSlot, virtualTarget);
+            } else if (lastKnownSelectedSlot == 0 && currentSlot == 8) {
+                virtualTarget = -1.0f; // 向左滑出屏幕
+                DebugLogger.debug(LOG_TAG,
+                        "槽位包装(左): animPos=%.2f → wrapLeft, 虚拟目标=%.1f",
+                        animSelectedSlot, virtualTarget);
+            } else {
+                virtualTarget = currentSlot;
+            }
             DebugLogger.debug(LOG_TAG,
-                    "槽位切换: animPos=%.2f → target=%d, 前一=%d",
-                    animSelectedSlot, currentSlot, lastKnownSelectedSlot);
+                    "槽位切换: animPos=%.2f → 实际=%d, 虚拟目标=%.1f",
+                    animSelectedSlot, currentSlot, virtualTarget);
             lastKnownSelectedSlot = currentSlot;
         }
 
-        // 帧率无关的平滑插值
-        float delta = deltaTracker.getGameTimeDeltaTicks();
-        float t = 1.0f - (float) Math.pow(1.0f - ANIM_SPEED, delta * 60.0f);
-        animSelectedSlot += (currentSlot - animSelectedSlot) * t;
+        // 时间驱动平滑插值
+        float deltaSec = deltaTracker.getGameTimeDeltaTicks() / 20.0f;
+        float animT = 1.0f - (float) Math.exp(-ANIM_SPEED * deltaSec);
+        animSelectedSlot += (virtualTarget - animSelectedSlot) * animT;
 
-        // 吸附：距离目标足够近时直接跳至目标位置
-        if (Math.abs(animSelectedSlot - currentSlot) < 0.005f) {
-            animSelectedSlot = currentSlot;
+        // 包装瞬移：高亮滑出屏幕边缘后瞬间跳到另一端继续滑入
+        if (virtualTarget == 9.0f && animSelectedSlot > 8.8f) {
+            animSelectedSlot -= 9.0f;
+            virtualTarget = 0.0f;
+            DebugLogger.debug(LOG_TAG,
+                    "包装瞬移(右→左): animPos 校正为 %.3f, 目标=%.1f",
+                    animSelectedSlot, virtualTarget);
+        } else if (virtualTarget == -1.0f && animSelectedSlot < -0.8f) {
+            animSelectedSlot += 9.0f;
+            virtualTarget = 8.0f;
+            DebugLogger.debug(LOG_TAG,
+                    "包装瞬移(左→右): animPos 校正为 %.3f, 目标=%.1f",
+                    animSelectedSlot, virtualTarget);
+        }
+
+        // 吸附
+        if (Math.abs(animSelectedSlot - virtualTarget) < 0.005f) {
+            animSelectedSlot = virtualTarget;
         }
 
         // === 1. 面板背景 ===
         fillRoundedRect(graphics, panelX, panelY, PANEL_WIDTH, PANEL_HEIGHT, PANEL_RADIUS, PANEL_BG);
 
-        // === 2. 副手槽（仅当副手有物品时显示） ===
+        // === 2. 副手槽（带滑入滑出动画） ===
         ItemStack offhandItem = player.getOffhandItem();
-        if (!offhandItem.isEmpty()) {
+        boolean offhandHasItem = !offhandItem.isEmpty();
+
+        if (!offhandAnimInit) {
+            offhandAnimProgress = offhandHasItem ? 1.0f : 0.0f;
+            lastOffhandHasItem = offhandHasItem;
+            offhandAnimInit = true;
+        }
+
+        if (offhandHasItem != lastOffhandHasItem) {
+            lastOffhandHasItem = offhandHasItem;
+            DebugLogger.debug(LOG_TAG,
+                    "副手槽过渡: hasItem=%b, animProgress=%.3f",
+                    offhandHasItem, offhandAnimProgress);
+        }
+
+        // 指数衰减动画（与选中槽位动画共用 animT）
+        float offhandTarget = offhandHasItem ? 1.0f : 0.0f;
+        float offhandT = 1.0f - (float) Math.exp(-OFFHAND_ANIM_SPEED * deltaSec);
+        offhandAnimProgress += (offhandTarget - offhandAnimProgress) * offhandT;
+        if (Math.abs(offhandAnimProgress - offhandTarget) < 0.005f) {
+            offhandAnimProgress = offhandTarget;
+        }
+
+        // 仅在动画进度 > 0 时渲染（淡出完毕后完全移除）
+        if (offhandAnimProgress > 0.005f || offhandHasItem) {
             boolean leftHanded = player.getMainArm() == HumanoidArm.LEFT;
             int offhandX;
             if (leftHanded) {
                 offhandX = panelX + PANEL_WIDTH + OFFHAND_GAP;
             } else {
-                offhandX = panelX - OFFHAND_SIZE - OFFHAND_GAP;
+                offhandX = panelX - OFFHAND_OUTER_SIZE - OFFHAND_GAP;
             }
-            int offhandY = panelY + (PANEL_HEIGHT - OFFHAND_SIZE) / 2;
+            int offhandBaseY = panelY + (PANEL_HEIGHT - OFFHAND_OUTER_SIZE) / 2;
 
-            drawOffhandSlot(graphics, player, offhandItem, offhandX, offhandY);
+            // 滑入（从下向上）：progress 0→1 时 Y 从 baseY+SLIDE_DIST → baseY
+            // 滑出（从上向下）：progress 1→0 时 Y 从 baseY → baseY+SLIDE_DIST
+            int offhandSlideY = offhandBaseY
+                    + (int) ((1.0f - offhandAnimProgress) * OFFHAND_SLIDE_DIST);
+
+            drawOffhandSlot(graphics, player, offhandItem,
+                    offhandX, offhandSlideY, offhandAnimProgress);
         }
 
-        // === 3. 动画选中高亮框（边框 + 填充，1px 白色描边 + 高不透明度白色填充） ===
+        // === 3. 动画选中高亮框（绘制于槽位之下，作为底层高亮） ===
+        // 注：包装动画时高亮会短暂超出面板边缘，因 enableScissor 坐标系与 GUI
+        //     渲染坐标系不一致，暂不做裁剪。超出面板外的部分在大部分窗口分辨率下
+        //     不可见或仅 1~2 帧。
         int selOuterX = panelX + SLOT_PADDING_X
                 + Math.round(animSelectedSlot * SLOT_SPACING)
                 - (SELECTION_OUTER_SIZE - SLOT_SIZE) / 2;
@@ -206,19 +300,27 @@ public final class HotbarRenderer {
         fillRoundedRect(graphics, selOuterX, selOuterY,
                 SELECTION_OUTER_SIZE, SELECTION_OUTER_SIZE,
                 SELECTION_OUTER_RADIUS, SELECTION_BORDER_COLOR);
-        // 内填充（69% 白色，向内收缩 1px 形成边框效果）
+        // 内填充（60% 白色，作为底层高亮被槽位覆盖）
         fillRoundedRect(graphics, selOuterX + 1, selOuterY + 1,
                 SELECTION_INNER_SIZE, SELECTION_INNER_SIZE,
                 SELECTION_INNER_RADIUS, SELECTION_FILL_COLOR);
 
-        // === 4. 9 个槽位 + 物品 + 数字 ===
+        // === 4. 9 个槽位 + 物品 + 数字（绘制于高亮之上） ===
         Font font = client.font;
         for (int i = 0; i < 9; i++) {
             int slotX = panelX + SLOT_PADDING_X + i * SLOT_SPACING;
             int slotY = panelY + SLOT_PADDING_Y;
 
-            // 槽位背景：当前选中槽位更亮
-            int slotBg = (i == currentSlot) ? SLOT_SELECTED_COLOR : SLOT_COLOR;
+            // 槽位背景：包装动画期间保持离开槽位高亮，瞬移后切换到目标槽位
+            int highlightedSlot;
+            if (virtualTarget == 9.0f) {
+                highlightedSlot = 8;  // 向右滑出中，保持 slot 8 高亮
+            } else if (virtualTarget == -1.0f) {
+                highlightedSlot = 0;  // 向左滑出中，保持 slot 0 高亮
+            } else {
+                highlightedSlot = currentSlot;
+            }
+            int slotBg = (i == highlightedSlot) ? SLOT_SELECTED_COLOR : SLOT_COLOR;
             fillRoundedRect(graphics, slotX, slotY, SLOT_SIZE, SLOT_SIZE, SLOT_RADIUS, slotBg);
 
             // 物品
@@ -233,23 +335,33 @@ public final class HotbarRenderer {
             int numColor = (i == currentSlot) ? NUM_COLOR_SELECTED : NUM_COLOR_NORMAL;
             graphics.text(font, numText,
                     slotX + NUM_OFFSET_X, slotY + NUM_OFFSET_Y,
-                    numColor, true);
+                    numColor, false);
         }
 
         // === 5. 攻击冷却指示器（当选项设为「热键栏」时显示） ===
         drawAttackIndicator(graphics, client, panelX, panelY);
 
         DebugLogger.debug(LOG_TAG,
-                "热键栏已渲染: animPos=%.3f, actual=%d, panel=(%d,%d), delta=%.4f",
-                animSelectedSlot, currentSlot, panelX, panelY, delta);
+                "热键栏已渲染: animPos=%.3f, actual=%d, virtual=%.1f, panel=(%d,%d)",
+                animSelectedSlot, currentSlot, virtualTarget, panelX, panelY);
     }
 
     // ===== 副手槽绘制 =====
 
     private static void drawOffhandSlot(GuiGraphicsExtractor graphics, Player player,
-            ItemStack offhandStack, int x, int y) {
-        fillRoundedRect(graphics, x, y, OFFHAND_SIZE, OFFHAND_SIZE,
-                OFFHAND_RADIUS, OFFHAND_COLOR);
+            ItemStack offhandStack, int x, int y, float alpha) {
+        // 外框（颜色 alpha 通道乘以动画进度）
+        int borderAlpha = (int) ((OFFHAND_BORDER_COLOR >>> 24) * alpha);
+        int fillAlpha = (int) ((OFFHAND_FILL_COLOR >>> 24) * alpha);
+        int animBorderColor = (borderAlpha << 24) | (OFFHAND_BORDER_COLOR & 0x00FFFFFF);
+        int animFillColor = (fillAlpha << 24) | (OFFHAND_FILL_COLOR & 0x00FFFFFF);
+
+        fillRoundedRect(graphics, x, y,
+                OFFHAND_OUTER_SIZE, OFFHAND_OUTER_SIZE,
+                OFFHAND_OUTER_RADIUS, animBorderColor);
+        fillRoundedRect(graphics, x + 1, y + 1,
+                OFFHAND_INNER_SIZE, OFFHAND_INNER_SIZE,
+                OFFHAND_INNER_RADIUS, animFillColor);
 
         if (!offhandStack.isEmpty()) {
             graphics.item(offhandStack, x + OFFHAND_ITEM_INSET, y + OFFHAND_ITEM_INSET);

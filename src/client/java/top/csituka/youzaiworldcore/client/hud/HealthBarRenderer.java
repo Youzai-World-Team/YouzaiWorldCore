@@ -32,8 +32,8 @@ public final class HealthBarRenderer {
     public static final int BAR_HEIGHT = 5;
     /** 两血条之间的间隔 */
     public static final int BAR_GAP = 8;
-    /** 血条距离屏幕底部的垂直偏移（与原版第一行爱心一致） */
-    public static final int Y_OFFSET_FROM_BOTTOM = 39;
+    /** 血条距离屏幕底部的垂直偏移（YZUI 热键栏 24+2=26px，上移 6px 避免重叠） */
+    public static final int Y_OFFSET_FROM_BOTTOM = 45;
 
     private static final int TEXT_OFFSET_ABOVE_BAR = 10;
     private static final int TEXT_SHADOW_OFFSET = 1;

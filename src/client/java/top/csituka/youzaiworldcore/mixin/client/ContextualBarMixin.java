@@ -66,7 +66,8 @@ public abstract class ContextualBarMixin {
         ContextualBar bar = (ContextualBar) (Object) this;
 
         int left = bar.left(client.getWindow());
-        int top = bar.top(client.getWindow());
+        // YZUI 热键栏比原版高 4px（24 vs 22），上移 6px 避免重叠
+        int top = bar.top(client.getWindow()) - 6;
 
         // 绘制圆角背景
         HealthBarRenderer.fillBarBg(graphics, left, top, BAR_WIDTH, BG_COLOR);
