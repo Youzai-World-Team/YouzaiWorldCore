@@ -25,6 +25,7 @@
     "AbstractButtonMixin",
     "AbstractSliderButtonMixin",
     "HealthBarMixin",
+    "HotbarMixin",
     "food.FoodDataExhaustionAccessor",
     "EditBoxMixin",
     "MinecraftQuitMixin",
