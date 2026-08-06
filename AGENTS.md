@@ -17,12 +17,12 @@
 | 官网 | https://mcyzw.top |
 | 许可证 | Apache-2.0 |
 
-**主要功能域**（35+ 个功能模块，详见 README 的「功能介绍」章节）：
+**主要功能域**（40+ 个功能模块，详见 README 的「功能介绍」章节）：
 
 - **账户与安全**：离线服注册/登录/改密/注销、会话超时、登录冷却与锁定
 - **UI 系统**：YZUI 界面重绘（物品栏 / HUD / 配方书）、GUI 主菜单、标题界面与窗口定制
-- **玩法系统**：魔力、冒险等级与属性加点、传送锚点、维度池、宠物、邮件、统计、隐身、坐姿、双开门、试炼宝库无限领奖
-- **内容扩展**：悠哉系列矿物/工具/法杖、自定义方块与方块实体、自定义附魔、成就、村庄结构注入
+- **玩法系统**：魔力、冒险等级与属性加点、传送锚点与传送卷轴、维度池、宠物、邮件、统计、AFK 挂机检测、隐身、坐姿、双开门、试炼宝库无限领奖
+- **内容扩展**：悠哉系列矿物/工具/法杖、自定义方块与方块实体（含魔力台）、自定义附魔（13 个）、成就、村庄结构注入、老吴贴贴彩蛋
 - **运营支撑**：LuckPerms 权限集成、Placeholder API 占位符、更新检查、配置导入导出、调试日志体系
 
 **目标用户**：服务器运维/管理员（配置与指令）、服务器玩家（客户端 UI 与玩法）、参与开发的模组开发者。
@@ -41,6 +41,7 @@
 | Fabric API | 0.154.0+26.2 | 事件 / 网络 / 命令 / 生物群系修改 |
 | Placeholder API (eu.pb4) | 3.1.0-beta.1+26.2 | 文本占位符（硬依赖） |
 | Trinkets (eu.pb4) | 4.1.0-beta.2+26.2（模组 ID `trinkets_updated`） | 饰品槽（硬依赖） |
+| GeckoLib | 5.5.3+ | 实体动画与模型渲染（硬依赖，老吴贴贴 Geo 模型等） |
 | Moog's Structure Lib | 3.0.4（Modrinth Maven） | 结构注入相关（硬依赖） |
 | ModMenu | 20.0.0-beta.4 | `compileOnly`，配置入口（硬依赖声明） |
 | Fabric Permissions API | 0.6.1 | `include(implementation(...))`，已内置打包 |
@@ -85,7 +86,7 @@ YouzaiWorldCore/
 │   ├── dimensionalinventories/       # 维度池（跨维度独立背包）
 │   ├── enchantment/ · enchlevellangpatch/  # 自定义附魔 / 附魔等级语言补丁（api + impl）
 │   ├── entity/seat/                  # 座椅实体
-│   ├── event/                        # 18 个事件处理器（末地门 / 双开门 / 老吴贴贴 / 虚空杖 / 骨粉甘蔗 …）
+│   ├── event/                        # 23 个事件处理器（末地门 / 双开门 / 老吴贴贴 / 虚空杖 / 骨粉甘蔗 / 带电苦力怕 / 监守者 / 切石机 / 传送卷轴蓄力 / 发光光环 / 生命汲取 / 风弹 / 熔炼 / 阳光修复 / 乐魂涡轮 …）
 │   ├── invisibility/ · mana/ · skill/ · status/ · trialvault/   # 各玩法子系统
 │   ├── item/{,preset,tool}/          # 物品、预设物品、悠哉工具、创造标签页
 │   ├── luckperms/LuckPermsHelper.java# 统一鉴权入口（权限节点常量 + OP 回退）
@@ -102,8 +103,8 @@ YouzaiWorldCore/
 ├── src/main/resources/
 │   ├── fabric.mod.json               # 模组元数据、entrypoints、mixins、depends（版本占位符由 processResources 展开）
 │   ├── youzaiworldcore.mixins.json / youzaiworldcore.account.mixins.json
-│   ├── assets/youzaiworldcore/       # 纹理、模型、blockstates、sounds
-│   ├── assets/youzaiworldcore/lang/  # ⭐ 10 种语言（zh_cn/zh_hk/zh_tw/lzh/en_us/en_gb/de_de/es_es/fr_fr/ru_ru），行数需保持一致
+│   ├── assets/youzaiworldcore/       # 纹理、模型、blockstates、sounds（3 个 .ogg）
+│   ├── assets/youzaiworldcore/lang/  # ⭐ 10 种语言（zh_cn/zh_hk/zh_tw/lzh/en_us/en_gb/de_de/es_es/fr_fr/ru_ru），行数需保持一致（当前各约 633 行，zh_cn 约 655 行）
 │   ├── assets/minecraft/ · assets/advancementplaques/  # 原版与第三方资源覆盖（字体、标题、GUI）
 │   └── data/                         # 成就、配方、战利品表、维度、结构、模板池、tags、trinkets 槽位定义
 │
@@ -114,7 +115,7 @@ YouzaiWorldCore/
 │   ├── client/{config,hud,screen,renderer,render,pickup,effect,skill,update,video,resource,accessor,laowumeme,higherchat,afk}/
 │   ├── command/                      # 客户端命令（仅解析并转发数据包）
 │   ├── highlightitem/ · itemborder/ · anviluses/        # 纯客户端增强
-│   ├── mixin/client/                 # 51 个客户端 Mixin（子包：afk / food / highlightitem / itemborder / laowumeme / seat / technocrown / enchlevellangpatch）
+│   ├── mixin/client/                 # 50 个客户端 Mixin（已注册于 mixins.json；子包：afk / food / highlightitem / itemborder / laowumeme / seat / technocrown / enchlevellangpatch）
 │   └── network/ClientNetworking.java
 │
 └── src/client/resources/
@@ -278,7 +279,7 @@ YouzaiworldCore.onInitialize()
  ├─ ModCreativeModeTabs / ModMenuTypes / ModNetworking / ModSeatEntities
  ├─ 各 XxxHandler.register()               # 事件挂载
  ├─ 各 XxxConfig.load()                    # 子系统配置
- ├─ 各子系统 Manager/Storage.initialize()   # 账户 / 冒险等级 / 属性 / 宠物 / 邮件 …
+ ├─ 各子系统 Manager/Storage.initialize()   # 账户 / 冒险等级 / 属性 / 宠物 / 邮件 / AFK / 隐身 …
  ├─ BiomeModifications.addFeature(...)     # 矿物生成
  ├─ ServerLifecycleEvents.SERVER_STARTING  # 村庄结构注入
  ├─ ServerLifecycleEvents.SERVER_STARTED   # 异步更新检查
@@ -309,7 +310,7 @@ YouzaiworldCore.onInitialize()
 
 ### 6.4 关键设计决策
 
-1. **配置全部为 JSON + Gson**，统一落在 `config/youzaiworldcore/`（开发期即 `run/config/youzaiworldcore/`）。每个配置类是静态单例，提供 `load()` / `save()`，文件缺失时自动写出默认值。现有文件：`server_external_settings.json`、`client_external_settings.json`、`afk.json`、`charged_creeper.json`、`end_portal_settings.json`、`laowu_meme.json`、`trial_vault.json`、`update_checker.json`、`item_borders.json`、`fancy_tooltips.json`、`mail_settings.json` 及 `account/`、`pet_module/`、`skill_module/`、`mail/`、`highlight_item/`、`dimensional_inventories/` 等子目录。
+1. **配置全部为 JSON + Gson**，统一落在 `config/youzaiworldcore/`（开发期即 `run/config/youzaiworldcore/`）。每个配置类是静态单例，提供 `load()` / `save()`，文件缺失时自动写出默认值。现有文件：`server_external_settings.json`、`client_external_settings.json`、`afk.json`、`charged_creeper.json`、`end_portal_settings.json`、`laowu_meme.json`、`trial_vault.json`、`update_checker.json`、`item_borders.json`、`fancy_tooltips.json`、`mail_settings.json`、`double_doors_players.json` 及 `account/`、`pet_module/`、`skill_module/`、`mail/`、`highlight_item/`、`dimensional_inventories/` 等子目录。
 2. **网络层集中注册**：所有 Payload 的 `PayloadTypeRegistry` 注册与服务端接收器都写在 `ModNetworking.initialize()`，客户端接收器写在 `ClientNetworking`。Payload 一律用 `record` + `CustomPacketPayload.Type ID` + `StreamCodec STREAM_CODEC`。
 3. **权限双轨制**：`LuckPermsHelper` 暴露权限节点常量与 `checkPermission(...)`；LuckPerms 未安装时**不抛异常**，自动回退到原版 OP 等级（`Commands.LEVEL_ADMINS` = 4）。新增命令请在此类中补充节点常量并同步更新 README 权限表。
 4. **Mixin 三配置分离**：`youzaiworldcore.mixins.json`（服务端/通用）、`youzaiworldcore.account.mixins.json`（账户系统独立）、`youzaiworldcore.client.mixins.json`（客户端，`environment: client`）。新增 Mixin 必须登记进对应 JSON，否则不生效；`compatibilityLevel` 均为 `JAVA_25`，`injectors.defaultRequire = 1`，通用与客户端配置还开启了 `overwrites.requireAnnotations`。
@@ -334,7 +335,7 @@ YouzaiworldCore.onInitialize()
 ### 编码坑点
 - **不要凭旧版本 API 记忆写代码**：26.2 与 1.21.x 差异极大。用 `Identifier` 而非 `ResourceLocation`；不确定的签名一律先 `javap` 核对（[§5.3](#53-反编译原版-jar)）。
 - **新增 Mixin 忘记登记 JSON** 是最常见的"改了没反应"原因。
-- **多语言必须同步**：`assets/youzaiworldcore/lang/` 下 10 个文件当前各 592 行，新增语言键需要 10 个文件全部补齐，否则部分语言下显示原始键名。
+- **多语言必须同步**：`assets/youzaiworldcore/lang/` 下 10 个文件当前各约 633 行（zh_cn 约 655 行），新增语言键需要 10 个文件全部补齐，否则部分语言下显示原始键名。
 - **硬依赖不可缺**：`fabric-api`、`placeholder-api`、`modmenu`、`moogs_structures`、`trinkets_updated` 在 `fabric.mod.json` 中声明为 `depends`，缺失会导致加载器直接拒绝启动；LuckPerms、AdvancementPlaques 等是 `suggests`，可缺失。
 - **物品模型自检**：客户端启动时 `ItemModelDefinitionValidator` 会校验物品模型定义文件是否存在，新增物品若日志报缺失，需补 `assets/youzaiworldcore/items/<id>.json`。
 - **`src/main` 中禁止 client 类**：误引用会在服务端运行时抛 `NoClassDefFoundError`，且开发期客户端运行不报错，很难发现。
@@ -352,7 +353,7 @@ YouzaiworldCore.onInitialize()
 ### 项目内文档
 | 文件 | 内容 |
 |------|------|
-| [README.md](./README.md) | 完整功能清单（35 项）、指令树、权限节点表、网络数据包表、配方清单、项目结构 |
+| [README.md](./README.md) | 完整功能清单（40+ 项）、指令树、权限节点表、网络数据包表、配方清单、项目结构 |
 | [README.EN.md](./README.EN.md) | 上述内容的英文版 |
 | [DESIGN.md](./DESIGN.md) | 菜单 UI 草稿设计、固定 AI 提示词、"必须在服务端测试"提示 |
 | [邮件系统规划.md](./邮件系统规划.md) | 邮件系统完整设计文档 |
