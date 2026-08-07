@@ -62,13 +62,14 @@ public class SunRepairHandler {
         }
     }
 
-    /** 带阳光修复附魔的物品恢复 1 耐久 */
+    /** 带阳光修复附魔的物品恢复耐久，修复量随等级提升（每级 +1 耐久/次） */
     private static void checkStack(ItemStack stack) {
         if (stack.isEmpty() || !stack.isDamageableItem()) return;
         if (!stack.isDamaged()) return;
         int level = stack.getEnchantments().getLevel(cachedEnchantment);
         if (level > 0) {
-            stack.setDamageValue(Math.max(0, stack.getDamageValue() - 1));
+            int repaired = Math.min(level, stack.getDamageValue());
+            stack.setDamageValue(stack.getDamageValue() - repaired);
         }
     }
 

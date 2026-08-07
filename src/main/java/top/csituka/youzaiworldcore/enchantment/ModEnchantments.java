@@ -12,7 +12,7 @@ import java.util.List;
 /**
  * 附魔 ResourceKey 注册中心（数据驱动，定义在 data 包 JSON 中）。
  * <p>
- * 共 17 个附魔：sun_repair / spirit_turbo（原有）+ 15 个新附魔（源自 Raiyon's More Enchantments 移植）。
+ * 共 12 个附魔：sun_repair / spirit_turbo（原有）+ 10 个新附魔（源自 Raiyon's More Enchantments 移植）。
  */
 public class ModEnchantments {
 
@@ -39,7 +39,6 @@ public class ModEnchantments {
     public static final ResourceKey<Enchantment> SONIC_CHARGE_KEY = rk("sonic_charge");
 
     // -- 护甲 --
-    public static final ResourceKey<Enchantment> GLOWING_AURA_KEY = rk("glowing_aura");
     public static final ResourceKey<Enchantment> COWARDICE_KEY = rk("cowardice");
     public static final ResourceKey<Enchantment> WIND_CHARGE_KEY = rk("wind_charge");
 
@@ -65,7 +64,6 @@ public class ModEnchantments {
             POISON_PUFF_KEY,
             FIRE_CHARGE_KEY,
             SONIC_CHARGE_KEY,
-            GLOWING_AURA_KEY,
             COWARDICE_KEY,
             WIND_CHARGE_KEY,
             SPIKES_KEY,

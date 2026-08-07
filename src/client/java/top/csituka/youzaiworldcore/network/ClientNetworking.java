@@ -13,6 +13,7 @@ import top.csituka.youzaiworldcore.client.screen.element.MainMenuElements;
 import top.csituka.youzaiworldcore.client.screen.element.MenuElementGroup;
 import top.csituka.youzaiworldcore.client.screen.element.SettingsMenuElements;
 import top.csituka.youzaiworldcore.client.screen.element.SwitchWorldMenuElements;
+import top.csituka.youzaiworldcore.client.FunctionToggleClientState;
 import top.csituka.youzaiworldcore.client.hud.AdventureLevelHudRenderer;
 import top.csituka.youzaiworldcore.client.skill.ClientAttributeData;
 import top.csituka.youzaiworldcore.mana.ManaManager;
@@ -283,6 +284,18 @@ public class ClientNetworking {
                             .onStop(payload.catAId(), payload.catBId()));
         });
         DebugLogger.info("ClientNetworking", "Registered receiver: LaowuMemeStopPayload");
+
+        ClientPlayNetworking.registerGlobalReceiver(FunctionToggleSyncPayload.TYPE, (payload, context) -> {
+            var map = new java.util.HashMap<String, Boolean>();
+            map.put("ladder_extend_downward", payload.ladderExtendDownward());
+            map.put("tool_info_overlay", payload.toolInfoOverlay());
+            map.put("block_animation", payload.blockAnimation());
+            map.put("crafting_sound", payload.craftingSound());
+            map.put("item_sparkle", payload.itemSparkle());
+            FunctionToggleClientState.update(map);
+            DebugLogger.debug("ClientNetworking", "收到功能开关同步包");
+        });
+        DebugLogger.info("ClientNetworking", "Registered receiver: FunctionToggleSyncPayload");
 
         DebugLogger.exiting("ClientNetworking", "initialize");
     }

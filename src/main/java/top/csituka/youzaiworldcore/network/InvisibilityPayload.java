@@ -7,19 +7,12 @@ import net.minecraft.resources.Identifier;
 import top.csituka.youzaiworldcore.YouzaiworldCore;
 
 /**
- * C2S 数据包：客户端请求切换自身的隐身功能开关。
- * <p>
- * 与双开门命令同理，{@code /yzwc} 根命令已在客户端被注册（用于 {@code /yzwc settings}），
- * 客户端在解析 {@code /yzwc function invisibility} 时会因找不到子节点而失败。
- * 因此该指令在客户端仅做解析与转发，真正的权限 / 创造模式校验
- * 与状态变更由服务端通过此数据包完成
- * （服务端持有 {@code InvisibilityManager} 的权威逻辑）。
- * </p>
+ * C2S 数据包：客户端请求切换 / 查询隐身功能开关。
  *
- * @param enabled 目标开关：{@code true} 开启隐身，{@code false} 关闭隐身
+ * @param enabled 目标开关：{@code true} 开启，{@code false} 关闭，{@code null} 查询
  */
 @SuppressWarnings("null")
-public record InvisibilityPayload(boolean enabled) implements CustomPacketPayload {
+public record InvisibilityPayload(Boolean enabled) implements CustomPacketPayload {
 
     public static final Identifier IDENTIFIER = Identifier.fromNamespaceAndPath(
             YouzaiworldCore.MOD_ID, "invisibility_toggle");
@@ -28,8 +21,14 @@ public record InvisibilityPayload(boolean enabled) implements CustomPacketPayloa
 
     public static final StreamCodec<RegistryFriendlyByteBuf, InvisibilityPayload> STREAM_CODEC =
             StreamCodec.of(
-                    (buf, p) -> buf.writeBoolean(p.enabled()),
-                    buf -> new InvisibilityPayload(buf.readBoolean())
+                    (buf, p) -> {
+                        buf.writeBoolean(p.enabled() != null);
+                        if (p.enabled() != null) buf.writeBoolean(p.enabled());
+                    },
+                    buf -> {
+                        if (buf.readBoolean()) return new InvisibilityPayload(buf.readBoolean());
+                        return new InvisibilityPayload(null);
+                    }
             );
 
     @Override

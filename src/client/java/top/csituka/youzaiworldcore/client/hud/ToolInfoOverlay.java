@@ -8,6 +8,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.ItemStack;
 
 import top.csituka.youzaiworldcore.util.DebugLogger;
+import top.csituka.youzaiworldcore.client.FunctionToggleClientState;
 
 /**
  * 工具信息 HUD 叠加层。
@@ -51,6 +52,8 @@ public class ToolInfoOverlay {
         if (player == null) {
             return;
         }
+
+        if (!FunctionToggleClientState.isEnabled("tool_info_overlay")) return;
 
         // 每 10 tick 更新一次（0.5 秒）
         if (tickCounter % 10 != 0) {

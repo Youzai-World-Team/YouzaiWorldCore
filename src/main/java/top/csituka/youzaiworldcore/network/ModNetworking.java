@@ -64,6 +64,8 @@ public class ModNetworking {
         DebugLogger.info("ModNetworking", "Registered clientbound packet: TeleportStoneInterruptPayload");
         PayloadTypeRegistry.clientboundPlay().register(LevelExpSyncPayload.ID, LevelExpSyncPayload.STREAM_CODEC);
         DebugLogger.info("ModNetworking", "Registered clientbound packet: LevelExpSyncPayload");
+        PayloadTypeRegistry.clientboundPlay().register(FunctionToggleSyncPayload.TYPE, FunctionToggleSyncPayload.STREAM_CODEC);
+        DebugLogger.info("ModNetworking", "Registered clientbound packet: FunctionToggleSyncPayload");
         PayloadTypeRegistry.serverboundPlay().register(TeleportAnchorTeleportPayload.TYPE, TeleportAnchorTeleportPayload.STREAM_CODEC);
         DebugLogger.info("ModNetworking", "Registered serverbound packet: TeleportAnchorTeleportPayload");
         PayloadTypeRegistry.serverboundPlay().register(TeleportAnchorDeletePayload.TYPE, TeleportAnchorDeletePayload.STREAM_CODEC);
@@ -465,26 +467,39 @@ public class ModNetworking {
                 return;
             }
             server.execute(() -> {
-                // 权限检查：OP4 或 LuckPerms 节点
+                // 权限检查
                 if (!InvisibilityManager.hasPermission(player)) {
                     player.sendSystemMessage(Component.literal("§c你没有权限使用隐身功能"));
                     DebugLogger.exiting("ModNetworking", "InvisibilityPayload handler", "no permission");
                     return;
                 }
-                // 创造模式检查（隐身功能仅创造模式可用）
+                Boolean enabled = payload.enabled();
+                if (enabled == null) {
+                    // 查询当前状态
+                    boolean cur = InvisibilityManager.isInvisible(player);
+                    player.sendSystemMessage(Component.translatable(
+                            cur
+                                    ? "youzaiworldcore.message.command.function.invisibility.query_enabled"
+                                    : "youzaiworldcore.message.command.function.invisibility.query_disabled"));
+                    return;
+                }
+                // 创造模式检查（设置隐身才需要）
                 if (player.gameMode() != GameType.CREATIVE) {
                     player.sendSystemMessage(Component.literal(
                             "§c只有创造模式才能使用隐身功能（请先切换到创造模式）"));
                     DebugLogger.exiting("ModNetworking", "InvisibilityPayload handler", "not creative");
                     return;
                 }
-                if (payload.enabled()) {
+                if (enabled) {
                     DebugLogger.branch("ModNetworking", "InvisibilityPayload", true, "enabling");
                     InvisibilityManager.enable(player);
                 } else {
                     DebugLogger.branch("ModNetworking", "InvisibilityPayload", false, "disabling");
                     InvisibilityManager.disable(player);
                 }
+                player.sendSystemMessage(Component.translatable(enabled
+                        ? "youzaiworldcore.message.command.function.invisibility.set_enabled"
+                        : "youzaiworldcore.message.command.function.invisibility.set_disabled"));
             });
             DebugLogger.exiting("ModNetworking", "InvisibilityPayload handler");
         });

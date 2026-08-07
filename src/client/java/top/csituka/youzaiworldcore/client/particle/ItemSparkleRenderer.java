@@ -9,6 +9,7 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.phys.AABB;
 
 import top.csituka.youzaiworldcore.util.DebugLogger;
+import top.csituka.youzaiworldcore.client.FunctionToggleClientState;
 
 /**
  * 物品闪烁粒子渲染器。
@@ -50,6 +51,8 @@ public class ItemSparkleRenderer {
         if (level == null || player == null) {
             return;
         }
+
+        if (!FunctionToggleClientState.isEnabled("item_sparkle")) return;
 
         // 搜索玩家附近的掉落物
         AABB searchBox = player.getBoundingBox().inflate(RENDER_RADIUS);

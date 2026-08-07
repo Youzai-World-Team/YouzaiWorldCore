@@ -5,14 +5,16 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.Enchantment;
 import top.csituka.youzaiworldcore.enchantment.ModEnchantments;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
 /**
- * 吸血 (Leeching) 附魔: 击杀生物时回复目标最大生命值的一定比例。
- * 等级 1: 回复 25%；等级 2: 回复 40%。
+ * 吸血 (Leeching) 附魔: 击杀生物时回复固定生命值。
+ * 等级 1: 回复 2 HP；等级 2: 回复 4 HP。
+ * <p>
+ * 仅检查主手武器（与附魔 slots:[mainhand] 定义一致）；回复量固定，
+ * 避免按目标最大血量比例回复导致击杀 BOSS 时超模。
  */
 public class LeechingHandler {
 
@@ -30,31 +32,17 @@ public class LeechingHandler {
             var reg = level.registryAccess().lookupOrThrow(Registries.ENCHANTMENT);
             Holder<Enchantment> holder = reg.getOrThrow(ModEnchantments.LEECHING_KEY);
 
-            int enchantLevel = getEnchantmentLevel(player, holder);
+            // 仅查主手武器（与 slots:[mainhand] 定义一致）
+            int enchantLevel = player.getMainHandItem().getEnchantments().getLevel(holder);
             if (enchantLevel <= 0)
                 return;
 
-            float maxHealth = entity.getMaxHealth();
-            float healPercent = enchantLevel == 1 ? 0.25f : 0.40f;
-            float healAmount = maxHealth * healPercent;
-
+            // 固定值回复，避免按目标最大血量比例导致 BOSS 超模
+            float healAmount = (enchantLevel == 1) ? 2.0f : 4.0f;
             player.heal(healAmount);
+
             DebugLogger.info(MODULE, "Leeching healed %s for %.1f HP (level=%d, victim=%s)",
                     player.getName().getString(), healAmount, enchantLevel, entity.getName().getString());
         });
-    }
-
-    private static int getEnchantmentLevel(Player player, Holder<Enchantment> holder) {
-        int maxLevel = 0;
-        // 检查主手
-        maxLevel = Math.max(maxLevel, player.getMainHandItem().getEnchantments().getLevel(holder));
-        // 检查物品栏中其他可能持握的物品
-        for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
-            ItemStack stack = player.getInventory().getItem(i);
-            if (!stack.isEmpty()) {
-                maxLevel = Math.max(maxLevel, stack.getEnchantments().getLevel(holder));
-            }
-        }
-        return maxLevel;
     }
 }

@@ -11,6 +11,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
 import top.csituka.youzaiworldcore.util.DebugLogger;
+import top.csituka.youzaiworldcore.client.FunctionToggleClientState;
 
 /**
  * 方块动画粒子渲染器。
@@ -58,6 +59,8 @@ public class BlockAnimationRenderer {
         if (level == null || player == null) {
             return;
         }
+
+        if (!FunctionToggleClientState.isEnabled("block_animation")) return;
 
         Vec3 playerPos = player.position();
         int radius = 24; // 搜索半径（方块）

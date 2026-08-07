@@ -149,7 +149,10 @@ public class EventCommand {
                                                                 EventSettings::setWitherSkullDrop))
                                                 .then(simpleEventNode("trident_void_protect",
                                                                 EventSettings::isTridentVoidProtectEnabled,
-                                                                EventSettings::setTridentVoidProtect))));
+                                                                EventSettings::setTridentVoidProtect))
+                                                .then(simpleEventNode("crop_xp_drop",
+                                                                EventSettings::isCropXpDropEnabled,
+                                                                EventSettings::setCropXpDrop))));
 
                 DebugLogger.exiting(MODULE, "register");
         }

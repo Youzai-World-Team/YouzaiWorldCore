@@ -15,6 +15,6 @@
   "slots": [
     "mainhand"
   ],
-  "supported_items": "#minecraft:enchantable/mining",
+  "supported_items": "#youzaiworldcore:enchantable/smelting",
   "weight": 5
 }

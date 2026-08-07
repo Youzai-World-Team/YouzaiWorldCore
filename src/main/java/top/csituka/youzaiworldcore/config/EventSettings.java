@@ -34,6 +34,7 @@ public final class EventSettings {
     private static boolean babyZombieWeak = true;
     private static boolean witherSkullDrop = true;
     private static boolean tridentVoidProtect = true;
+    private static boolean cropXpDrop = true;
 
     private EventSettings() {
     }
@@ -43,12 +44,14 @@ public final class EventSettings {
     public static boolean isBabyZombieWeakEnabled() { return babyZombieWeak; }
     public static boolean isWitherSkullDropEnabled() { return witherSkullDrop; }
     public static boolean isTridentVoidProtectEnabled() { return tridentVoidProtect; }
+    public static boolean isCropXpDropEnabled() { return cropXpDrop; }
 
     public static void setDeathSound(boolean v) { if (deathSound != v) { deathSound = v; save(); } }
     public static void setJukeboxLoop(boolean v) { if (jukeboxLoop != v) { jukeboxLoop = v; save(); } }
     public static void setBabyZombieWeak(boolean v) { if (babyZombieWeak != v) { babyZombieWeak = v; save(); } }
     public static void setWitherSkullDrop(boolean v) { if (witherSkullDrop != v) { witherSkullDrop = v; save(); } }
     public static void setTridentVoidProtect(boolean v) { if (tridentVoidProtect != v) { tridentVoidProtect = v; save(); } }
+    public static void setCropXpDrop(boolean v) { if (cropXpDrop != v) { cropXpDrop = v; save(); } }
 
     public static void load() {
         DebugLogger.entering(MODULE, "load");
@@ -66,6 +69,7 @@ public final class EventSettings {
                 if (root.has("baby_zombie_weak")) babyZombieWeak = root.get("baby_zombie_weak").getAsBoolean();
                 if (root.has("wither_skull_drop")) witherSkullDrop = root.get("wither_skull_drop").getAsBoolean();
                 if (root.has("trident_void_protect")) tridentVoidProtect = root.get("trident_void_protect").getAsBoolean();
+                if (root.has("crop_xp_drop")) cropXpDrop = root.get("crop_xp_drop").getAsBoolean();
             }
             DebugLogger.info(MODULE, "已加载全局事件配置");
         } catch (Exception e) {
@@ -83,6 +87,7 @@ public final class EventSettings {
             root.addProperty("baby_zombie_weak", babyZombieWeak);
             root.addProperty("wither_skull_drop", witherSkullDrop);
             root.addProperty("trident_void_protect", tridentVoidProtect);
+            root.addProperty("crop_xp_drop", cropXpDrop);
             Files.writeString(CONFIG_FILE, GSON.toJson(root));
         } catch (IOException e) {
             LOGGER.error("保存事件配置失败: {}", e.getMessage());

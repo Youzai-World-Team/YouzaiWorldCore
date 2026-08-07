@@ -271,10 +271,16 @@ public class YouzaiworldCore implements ModInitializer {
         top.csituka.youzaiworldcore.event.LeechingHandler.register();
         DebugLogger.info("YouzaiworldCore", "注册熔炼附魔事件...");
         top.csituka.youzaiworldcore.event.SmeltingHandler.register();
-        DebugLogger.info("YouzaiworldCore", "注册风之充能附魔 Tick 事件...");
+        DebugLogger.info("YouzaiWorldCore", "注册风之充能附魔 Tick 事件...");
         top.csituka.youzaiworldcore.event.WindChargeHandler.register();
-        DebugLogger.info("YouzaiworldCore", "注册发光光环附魔 Tick 事件...");
-        top.csituka.youzaiworldcore.event.GlowingAuraHandler.register();
+        DebugLogger.info("YouzaiWorldCore", "注册弹跳附魔事件...");
+        top.csituka.youzaiworldcore.event.BounceHandler.register();
+        DebugLogger.info("YouzaiWorldCore", "注册怯懦附魔 Tick 事件...");
+        top.csituka.youzaiworldcore.event.CowardiceHandler.register();
+        DebugLogger.info("YouzaiWorldCore", "注册音速充能附魔事件...");
+        top.csituka.youzaiworldcore.event.SonicChargeHandler.register();
+        DebugLogger.info("YouzaiWorldCore", "注册流星猛击附魔事件...");
+        top.csituka.youzaiworldcore.event.MeteorSmashHandler.register();
 
         // ===== 注册甘蔗骨粉催熟事件 =====
         DebugLogger.info("YouzaiworldCore", "注册甘蔗骨粉催熟事件...");
@@ -340,6 +346,7 @@ public class YouzaiworldCore implements ModInitializer {
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
             if (handler.getPlayer() instanceof ServerPlayer sp) {
                 AfkManager.onJoin(sp, server.getTickCount());
+                FunctionCommand.syncToClient(sp);
             }
         });
         LOGGER.info("AFK 功能已初始化");

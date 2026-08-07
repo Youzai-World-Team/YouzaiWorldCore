@@ -3,38 +3,6 @@
   "description": {
     "translate": "enchantment.youzaiworldcore.cowardice"
   },
-  "effects": {
-    "minecraft:location_changed": [
-      {
-        "effect": {
-          "type": "minecraft:attribute",
-          "amount": {
-            "type": "minecraft:linear",
-            "base": 0.05,
-            "per_level_above_first": 0.05
-          },
-          "attribute": "minecraft:movement_speed",
-          "id": "minecraft:enchantment.youzaiworldcore.cowardice",
-          "operation": "add_value"
-        },
-        "requirements": {
-          "condition": "minecraft:all_of",
-          "terms": [
-            {
-              "condition": "minecraft:inverted",
-              "term": {
-                "condition": "minecraft:entity_properties",
-                "entity": "this",
-                "predicate": {
-                  "minecraft:vehicle": {}
-                }
-              }
-            }
-          ]
-        }
-      }
-    ]
-  },
   "max_cost": {
     "base": 25,
     "per_level_above_first": 12
