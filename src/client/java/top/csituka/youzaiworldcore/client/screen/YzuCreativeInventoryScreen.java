@@ -1421,8 +1421,27 @@ public class YzuCreativeInventoryScreen extends Screen {
         int hovSlot = getRightPanelSlotAt((int) xm, (int) ym);
         if (hovSlot >= 0) {
             // Q → 丢弃（Ctrl+Q 整组丢弃）
+            // 参照原版 CreativeModeInventoryScreen.slotClicked() 中 INVENTORY 标签页的 THROW 处理：
+            // 不通过 inventoryMenu.clicked(THROW) 走标准容器点击协议（该路径在创造模式下服务器不
+            // 会正确同步槽位状态，导致物品视觉上消失但服务端仍保留），而是直接操作本地槽位 +
+            // handleCreativeModeItemDrop / handleCreativeModeItemAdd 完成客户端-服务端同步。
             if (minecraft.options.keyDrop.matches(ev)) {
-                player.inventoryMenu.clicked(hovSlot, ev.hasControlDown() ? 1 : 0, ContainerInput.THROW, player);
+                if (minecraft.player.containerMenu.getCarried().isEmpty()) {
+                    var slot = player.inventoryMenu.getSlot(hovSlot);
+                    if (slot != null && slot.hasItem()) {
+                        int count = ev.hasControlDown() ? slot.getItem().getMaxStackSize() : 1;
+                        ItemStack removed = slot.remove(count);
+                        ItemStack remaining = slot.getItem();
+                        minecraft.player.drop(removed, true);
+                        minecraft.gameMode.handleCreativeModeItemDrop(removed);
+                        minecraft.gameMode.handleCreativeModeItemAdd(
+                                remaining.isEmpty() ? ItemStack.EMPTY : remaining, hovSlot);
+                        DebugLogger.info("YzuCreativeInventoryScreen",
+                                "right-panel drop: slot=%d %s remove=%d remain=%d (ctrl=%b)",
+                                hovSlot, removed.getHoverName().getString(),
+                                removed.getCount(), remaining.getCount(), ev.hasControlDown());
+                    }
+                }
                 return true;
             }
             // F → 交换副手槽（slot 45, button=40）
