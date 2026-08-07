@@ -33,6 +33,7 @@
     "highlightitem.AbstractContainerScreenMixin",
     "OptionsSaveMixin",
     "MouseHandlerScrollMixin",
+    "ScrollHotbarInputMixin",
     "PingDisplayMixin",
     "EntityRendererMixin",
     "itemborder.AbstractContainerScreenMixin",

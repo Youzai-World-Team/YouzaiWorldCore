@@ -147,8 +147,17 @@ public final class HotbarRenderer {
     private static boolean offhandAnimInit = false;
     /** 选中高亮虚拟目标（可超出 0~8，用于循环包装动画） */
     private static float virtualTarget = 0f;
+    /** 本帧是否由滚轮触发了槽位切换（ScrollHotbarInputMixin 标记） */
+    private static volatile boolean scrollInputThisFrame = false;
 
     private HotbarRenderer() {
+    }
+
+    // ===== 外部标记接口 =====
+
+    /** 由 ScrollHotbarInputMixin 调用，标记滚轮触发了槽位切换 */
+    public static void markScrollInput() {
+        scrollInputThisFrame = true;
     }
 
     // ===== 公共渲染入口 =====
@@ -182,8 +191,11 @@ public final class HotbarRenderer {
             animInitialized = true;
         }
 
-        // === 动画更新（含循环包装） ===
+        // === 动画更新（含循环包装，仅滚轮触发） ===
         if (currentSlot != lastKnownSelectedSlot) {
+            boolean isScroll = scrollInputThisFrame;
+            scrollInputThisFrame = false; // 消费标记
+
             // 快速滚动处理：若正在包装动画中途，先快照到包装完成位置
             if (virtualTarget > 8.0f) {
                 animSelectedSlot -= 9.0f;
@@ -195,16 +207,16 @@ public final class HotbarRenderer {
                         "包装中断(左): 快速快照 animPos=%.3f", animSelectedSlot);
             }
 
-            // 检测循环包装：8→0（向右滚轮）或 0→8（向左滚轮）
-            if (lastKnownSelectedSlot == 8 && currentSlot == 0) {
+            // 检测循环包装：仅滚轮输入触发，数字键直接跳转
+            if (isScroll && lastKnownSelectedSlot == 8 && currentSlot == 0) {
                 virtualTarget = 9.0f; // 向右滑出屏幕
                 DebugLogger.debug(LOG_TAG,
-                        "槽位包装(右): animPos=%.2f → wrapRight, 虚拟目标=%.1f",
+                        "槽位包装(右-滚轮): animPos=%.2f → wrapRight, 虚拟目标=%.1f",
                         animSelectedSlot, virtualTarget);
-            } else if (lastKnownSelectedSlot == 0 && currentSlot == 8) {
+            } else if (isScroll && lastKnownSelectedSlot == 0 && currentSlot == 8) {
                 virtualTarget = -1.0f; // 向左滑出屏幕
                 DebugLogger.debug(LOG_TAG,
-                        "槽位包装(左): animPos=%.2f → wrapLeft, 虚拟目标=%.1f",
+                        "槽位包装(左-滚轮): animPos=%.2f → wrapLeft, 虚拟目标=%.1f",
                         animSelectedSlot, virtualTarget);
             } else {
                 virtualTarget = currentSlot;
@@ -288,22 +300,24 @@ public final class HotbarRenderer {
                     offhandX, offhandSlideY, offhandAnimProgress);
         }
 
-        // === 3. 动画选中高亮框（绘制于槽位之下，作为底层高亮） ===
-        // 注：包装动画时高亮会短暂超出面板边缘，因 enableScissor 坐标系与 GUI
-        //     渲染坐标系不一致，暂不做裁剪。超出面板外的部分在大部分窗口分辨率下
-        //     不可见或仅 1~2 帧。
+        // === 3. 动画选中高亮框（绘制于槽位之下，scissor 裁剪到面板内） ===
         int selOuterX = panelX + SLOT_PADDING_X
                 + Math.round(animSelectedSlot * SLOT_SPACING)
                 - (SELECTION_OUTER_SIZE - SLOT_SIZE) / 2;
         int selOuterY = panelY + SLOT_PADDING_Y - (SELECTION_OUTER_SIZE - SLOT_SIZE) / 2;
-        // 外框（1px 不透明白色描边）
-        fillRoundedRect(graphics, selOuterX, selOuterY,
-                SELECTION_OUTER_SIZE, SELECTION_OUTER_SIZE,
-                SELECTION_OUTER_RADIUS, SELECTION_BORDER_COLOR);
-        // 内填充（60% 白色，作为底层高亮被槽位覆盖）
-        fillRoundedRect(graphics, selOuterX + 1, selOuterY + 1,
-                SELECTION_INNER_SIZE, SELECTION_INNER_SIZE,
-                SELECTION_INNER_RADIUS, SELECTION_FILL_COLOR);
+        // enableScissor 签名为 (left, top, right, bottom)，四个均为边界坐标
+        graphics.enableScissor(panelX, panelY,
+                panelX + PANEL_WIDTH, panelY + PANEL_HEIGHT);
+        try {
+            fillRoundedRect(graphics, selOuterX, selOuterY,
+                    SELECTION_OUTER_SIZE, SELECTION_OUTER_SIZE,
+                    SELECTION_OUTER_RADIUS, SELECTION_BORDER_COLOR);
+            fillRoundedRect(graphics, selOuterX + 1, selOuterY + 1,
+                    SELECTION_INNER_SIZE, SELECTION_INNER_SIZE,
+                    SELECTION_INNER_RADIUS, SELECTION_FILL_COLOR);
+        } finally {
+            graphics.disableScissor();
+        }
 
         // === 4. 9 个槽位 + 物品 + 数字（绘制于高亮之上） ===
         Font font = client.font;
