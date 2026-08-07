@@ -629,5 +629,9 @@
   "message.youzaiworldcore.return_scroll.cooldown": "§eReturn Scroll is on cooldown, wait %s more second(s).",
   "message.youzaiworldcore.return_scroll.no_anchor": "§eNo teleport anchors are available in this dimension~",
   "message.youzaiworldcore.return_scroll.teleported": "§aReturned to %s",
-  "block.youzaiworldcore.magic_table": "Magic Table"
+  "block.youzaiworldcore.magic_table": "Magic Table",
+  "youzaiworldcore.hud.clock": "§eDay %s §f%s",
+  "youzaiworldcore.hud.compass": "§eFacing: §f%s",
+  "youzaiworldcore.hud.recovery_compass": "§eDeath location: §f[%s, %s, %s] §7(%s)",
+  "youzaiworldcore.hud.recovery_compass.no_death": "§7No death recorded"
 }

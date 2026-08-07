@@ -33,7 +33,10 @@
     "pet.WolfHurtByTargetGoalMixin",
     "pet.TargetGoalAccessor",
     "trialvault.VaultServerDataMixin",
-    "afk.ServerPlayerTabDisplayNameMixin"
+    "afk.ServerPlayerTabDisplayNameMixin",
+    "babyzombie.ZombieFinalizeSpawnMixin",
+    "craftsound.ResultSlotOnTakeMixin",
+    "jukebox.JukeboxLoopMixin"
   ],
   "injectors": {
     "defaultRequire": 1

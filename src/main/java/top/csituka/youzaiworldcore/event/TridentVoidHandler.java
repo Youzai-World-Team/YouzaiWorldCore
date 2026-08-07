@@ -1,0 +1,89 @@
+package top.csituka.youzaiworldcore.event;
+
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.projectile.arrow.ThrownTrident;
+import net.minecraft.world.item.ItemStack;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * 三叉戟虚空保护事件处理器。
+ * <p>
+ * 当三叉戟落入虚空（Y 坐标低于世界最低高度）时，
+ * 自动将其转换为掉落物返回给投掷者附近。
+ * 监听 {@link ServerTickEvents#START_SERVER_TICK} 进行周期性检测。
+ * </p>
+ */
+@SuppressWarnings("null")
+public class TridentVoidHandler {
+
+    private static final TridentVoidHandler INSTANCE = new TridentVoidHandler();
+    private static final Logger LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/TridentVoid");
+
+    private TridentVoidHandler() {
+    }
+
+    private void onServerTick(ServerLevel level) {
+        // 遍历所有三叉戟实体
+        for (Entity entity : level.getAllEntities()) {
+            if (!(entity instanceof ThrownTrident trident)) {
+                continue;
+            }
+
+            // 检查是否低于世界最低高度
+            if (entity.getY() > level.getMinY() - 10) {
+                continue;
+            }
+
+            // 获取三叉戟的物品堆
+            ItemStack tridentStack = trident.getPickupItemStackOrigin();
+
+            // 在投掷者或世界出生点生成掉落物
+            Entity owner = trident.getOwner();
+            double spawnX, spawnY, spawnZ;
+
+            if (owner instanceof Player player) {
+                spawnX = player.getX();
+                spawnY = player.getY() + 1.0;
+                spawnZ = player.getZ();
+                LOGGER.info("三叉戟落入虚空，返还给投掷者 {} at [{}, {}, {}]",
+                        player.getName().getString(), spawnX, spawnY, spawnZ);
+            } else {
+                var respawnData = level.getRespawnData();
+                spawnX = respawnData.pos().getX() + 0.5;
+                spawnY = respawnData.pos().getY() + 1.0;
+                spawnZ = respawnData.pos().getZ() + 0.5;
+                LOGGER.info("三叉戟落入虚空，掉落于世界出生点");
+            }
+
+            ItemEntity itemEntity = new ItemEntity(level,
+                    spawnX, spawnY, spawnZ, tridentStack.copy());
+            itemEntity.setDefaultPickUpDelay();
+            itemEntity.setNoGravity(false);
+            level.addFreshEntity(itemEntity);
+
+            // 移除原三叉戟实体
+            trident.discard();
+
+            LOGGER.debug("三叉戟已从虚空回收");
+        }
+    }
+
+    /**
+     * 注册事件处理器。
+     */
+    public static void register() {
+        ServerTickEvents.START_SERVER_TICK.register(server -> {
+            // 对每个维度执行检测
+            for (ServerLevel level : server.getAllLevels()) {
+                INSTANCE.onServerTick(level);
+            }
+        });
+        LOGGER.info("三叉戟虚空保护事件处理器已注册");
+    }
+}

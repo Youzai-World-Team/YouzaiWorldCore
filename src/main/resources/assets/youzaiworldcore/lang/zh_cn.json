@@ -651,5 +651,9 @@
   "message.youzaiworldcore.return_scroll.cooldown": "§e返回卷轴冷却中，请等待 %s 秒。",
   "message.youzaiworldcore.return_scroll.no_anchor": "§e在此维度没有可用的传送锚点~",
   "message.youzaiworldcore.return_scroll.teleported": "§a已返回到 %s",
-  "block.youzaiworldcore.magic_table": "魔力台"
+  "block.youzaiworldcore.magic_table": "魔力台",
+  "youzaiworldcore.hud.clock": "§e第 %s 天 §f%s",
+  "youzaiworldcore.hud.compass": "§e方向: §f%s",
+  "youzaiworldcore.hud.recovery_compass": "§e死亡坐标: §f[%s, %s, %s] §7(%s)",
+  "youzaiworldcore.hud.recovery_compass.no_death": "§7暂无死亡记录"
 }

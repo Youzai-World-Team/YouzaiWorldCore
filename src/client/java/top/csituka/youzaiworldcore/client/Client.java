@@ -44,6 +44,9 @@ import top.csituka.youzaiworldcore.command.InvisibilityClientCommand;
 import top.csituka.youzaiworldcore.command.PetClientCommand;
 import top.csituka.youzaiworldcore.client.config.ConfigIOManager;
 import top.csituka.youzaiworldcore.client.laowumeme.geo.LaowuCatRenderer;
+import top.csituka.youzaiworldcore.client.hud.ToolInfoOverlay;
+import top.csituka.youzaiworldcore.client.particle.BlockAnimationRenderer;
+import top.csituka.youzaiworldcore.client.particle.ItemSparkleRenderer;
 
 
 public class Client implements ClientModInitializer {
@@ -169,6 +172,15 @@ public class Client implements ClientModInitializer {
         DebugLogger.info("Client", "初始化老吴贴贴音频系统...");
         top.csituka.youzaiworldcore.client.laowumeme.LaowuModSounds.init();
         top.csituka.youzaiworldcore.client.laowumeme.LaowuAudioPool.init();
+
+        DebugLogger.info("Client", "注册工具信息 HUD 叠加层...");
+        ToolInfoOverlay.register();
+
+        DebugLogger.info("Client", "注册方块动画粒子渲染器...");
+        BlockAnimationRenderer.register();
+
+        DebugLogger.info("Client", "注册物品闪烁粒子渲染器...");
+        ItemSparkleRenderer.register();
 
         DebugLogger.info("Client", "客户端初始化完成 (devMode=%s, logToFile=%s)",
                 top.csituka.youzaiworldcore.YouzaiworldCore.devModeEnabled,
