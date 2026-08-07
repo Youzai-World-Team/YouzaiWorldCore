@@ -655,5 +655,13 @@
   "youzaiworldcore.hud.clock": "§e第 %s 天 §f%s",
   "youzaiworldcore.hud.compass": "§e方向: §f%s",
   "youzaiworldcore.hud.recovery_compass": "§e死亡坐标: §f[%s, %s, %s] §7(%s)",
-  "youzaiworldcore.hud.recovery_compass.no_death": "§7暂无死亡记录"
+  "youzaiworldcore.hud.recovery_compass.no_death": "§7暂无死亡记录",
+  "youzaiworldcore.message.command.event.simple.query_enabled": "全局事件 §e%s §a当前已启用",
+  "youzaiworldcore.message.command.event.simple.query_disabled": "全局事件 §e%s §c当前已禁用",
+  "youzaiworldcore.message.command.event.simple.set_enabled": "全局事件 §e%s §a已启用",
+  "youzaiworldcore.message.command.event.simple.set_disabled": "全局事件 §e%s §c已禁用",
+  "youzaiworldcore.message.command.function.query_enabled": "功能 §e%s §a当前对您已启用",
+  "youzaiworldcore.message.command.function.query_disabled": "功能 §e%s §c当前对您已禁用",
+  "youzaiworldcore.message.command.function.set_enabled": "功能 §e%s §a已对您启用",
+  "youzaiworldcore.message.command.function.set_disabled": "功能 §e%s §c已对您禁用"
 }

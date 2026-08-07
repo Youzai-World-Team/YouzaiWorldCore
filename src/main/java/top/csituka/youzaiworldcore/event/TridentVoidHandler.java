@@ -11,6 +11,8 @@ import net.minecraft.world.item.ItemStack;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import top.csituka.youzaiworldcore.config.EventSettings;
+
 /**
  * 三叉戟虚空保护事件处理器。
  * <p>
@@ -29,6 +31,8 @@ public class TridentVoidHandler {
     }
 
     private void onServerTick(ServerLevel level) {
+        if (!EventSettings.isTridentVoidProtectEnabled()) return;
+
         // 遍历所有三叉戟实体
         for (Entity entity : level.getAllEntities()) {
             if (!(entity instanceof ThrownTrident trident)) {

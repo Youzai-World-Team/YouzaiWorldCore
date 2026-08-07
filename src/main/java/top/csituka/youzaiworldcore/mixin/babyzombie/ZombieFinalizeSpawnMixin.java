@@ -12,6 +12,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+import top.csituka.youzaiworldcore.config.EventSettings;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
 /**
@@ -29,6 +30,8 @@ public abstract class ZombieFinalizeSpawnMixin {
     private void weakenBabyZombie(ServerLevelAccessor level, DifficultyInstance difficulty,
             EntitySpawnReason spawnReason, SpawnGroupData groupData,
             CallbackInfoReturnable<SpawnGroupData> cir) {
+        if (!EventSettings.isBabyZombieWeakEnabled()) return;
+
         Zombie self = (Zombie) (Object) this;
 
         if (!self.isBaby()) {

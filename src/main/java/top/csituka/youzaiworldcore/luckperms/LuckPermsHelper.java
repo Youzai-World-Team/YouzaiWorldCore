@@ -76,6 +76,11 @@ public final class LuckPermsHelper {
     /** 事件管理修改 {@code /yzwc event ...} 修改类子命令（enable / settings） */
     public static final String PERMISSION_EVENT_SET = "youzaiworldcore.command.event.set";
 
+    /** 单玩家功能查询 {@code /yzwc function <name>} */
+    public static final String PERMISSION_FUNCTION_QUERY = "youzaiworldcore.command.function.query";
+    /** 单玩家功能设置 {@code /yzwc function <name> [true|false]} */
+    public static final String PERMISSION_FUNCTION_SET = "youzaiworldcore.command.function.set";
+
     /** 传送锚点管理 {@code /yzwc teleport_anchor list} */
     public static final String PERMISSION_TELEPORT_ANCHOR = "youzaiworldcore.command.teleport_anchor";
 

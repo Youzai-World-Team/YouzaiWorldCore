@@ -12,6 +12,8 @@ import net.minecraft.world.entity.player.Player;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import top.csituka.youzaiworldcore.config.EventSettings;
+
 import java.util.Random;
 
 /**
@@ -40,6 +42,10 @@ public class DeathSoundHandler {
         }
 
         ServerLevel level = (ServerLevel) entity.level();
+
+        if (!EventSettings.isDeathSoundEnabled()) {
+            return;
+        }
 
         LOGGER.info("玩家死亡触发: {}", entity.getName().getString());
 

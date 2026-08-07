@@ -102,11 +102,27 @@ public final class YzwcServerMirrorCommand {
 
             // /yzwc event naturally_charged_creepers enable [bool] | ... settings chance [double]
             // | /yzwc event trial_vault enable [bool] | /yzwc event laowu enable [bool]
-            // | /yzwc event laowu settings cd [seconds]（laowu 挂 greedyArgs 兜底即可）
+            // | /yzwc event laowu settings cd [seconds]
+            // | /yzwc event death_sound enable [bool] | jukebox_loop | baby_zombie_weak
+            // | wither_skull_drop | trident_void_protect
             root.then(literal("event")
                     .then(literal("naturally_charged_creepers").then(greedyArgs()))
                     .then(literal("trial_vault").then(greedyArgs()))
-                    .then(literal("laowu").then(greedyArgs())));
+                    .then(literal("laowu").then(greedyArgs()))
+                    .then(literal("death_sound").then(greedyArgs()))
+                    .then(literal("jukebox_loop").then(greedyArgs()))
+                    .then(literal("baby_zombie_weak").then(greedyArgs()))
+                    .then(literal("wither_skull_drop").then(greedyArgs()))
+                    .then(literal("trident_void_protect").then(greedyArgs())));
+
+            // /yzwc function ladder_extend_downward|... [true|false]
+            root.then(literal("function")
+                    .then(literal("ladder_extend_downward").then(greedyArgs()))
+                    .then(literal("crop_xp_drop").then(greedyArgs()))
+                    .then(literal("tool_info_overlay").then(greedyArgs()))
+                    .then(literal("block_animation").then(greedyArgs()))
+                    .then(literal("crafting_sound").then(greedyArgs()))
+                    .then(literal("item_sparkle").then(greedyArgs())));
 
             // /yzwc update [check]
             root.then(literal("update")

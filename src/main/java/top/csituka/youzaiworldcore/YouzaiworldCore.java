@@ -31,11 +31,14 @@ import top.csituka.youzaiworldcore.afk.AfkManager;
 import top.csituka.youzaiworldcore.afk.AfkTickHandler;
 import top.csituka.youzaiworldcore.command.AfkCommand;
 import top.csituka.youzaiworldcore.command.EventCommand;
+import top.csituka.youzaiworldcore.command.FunctionCommand;
 import top.csituka.youzaiworldcore.command.ReloadCommand;
 import top.csituka.youzaiworldcore.config.AfkConfig;
 import top.csituka.youzaiworldcore.config.ChargedCreeperConfig;
 import top.csituka.youzaiworldcore.config.DoubleDoorsState;
 import top.csituka.youzaiworldcore.config.EndPortalConfig;
+import top.csituka.youzaiworldcore.config.EventSettings;
+import top.csituka.youzaiworldcore.config.FunctionToggleManager;
 import top.csituka.youzaiworldcore.config.LaowuMemeConfig;
 import top.csituka.youzaiworldcore.config.ServerExternalSettings;
 import top.csituka.youzaiworldcore.luckperms.LuckPermsHelper;
@@ -206,6 +209,14 @@ public class YouzaiworldCore implements ModInitializer {
         ChargedCreeperConfig.load();
         DebugLogger.info("YouzaiworldCore", "注册天然带电苦力怕事件...");
         ChargedCreeperHandler.register();
+
+        // ===== 加载全局事件开关配置 =====
+        DebugLogger.info("YouzaiworldCore", "加载全局事件开关配置...");
+        EventSettings.load();
+
+        // ===== 加载单玩家功能开关配置 =====
+        DebugLogger.info("YouzaiworldCore", "加载单玩家功能开关配置...");
+        FunctionToggleManager.load();
 
         // ===== 初始化老吴贴贴事件（laowu meme 移植，全局开关由 /yzwc event laowu enable 控制） =====
         DebugLogger.info("YouzaiworldCore", "加载老吴贴贴事件配置...");
@@ -567,6 +578,10 @@ public class YouzaiworldCore implements ModInitializer {
             // ===== 注册事件管理命令 =====
             DebugLogger.info("YouzaiworldCore", "注册命令: EventCommand");
             EventCommand.register(dispatcher);
+
+            // ===== 注册功能开关命令 =====
+            DebugLogger.info("YouzaiworldCore", "注册命令: FunctionCommand");
+            FunctionCommand.register(dispatcher);
 
             // ===== 注册更新检查命令 =====
             DebugLogger.info("YouzaiworldCore", "注册命令: UpdateCommand");

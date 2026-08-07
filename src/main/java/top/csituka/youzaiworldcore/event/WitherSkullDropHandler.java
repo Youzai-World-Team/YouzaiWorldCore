@@ -12,6 +12,8 @@ import net.minecraft.world.level.Level;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import top.csituka.youzaiworldcore.config.EventSettings;
+
 /**
  * 凋零头颅必定掉落事件处理器。
  * <p>
@@ -35,6 +37,7 @@ public class WitherSkullDropHandler {
         if (!(entity instanceof WitherBoss)) {
             return;
         }
+        if (!EventSettings.isWitherSkullDropEnabled()) return;
 
         Level level = entity.level();
         LOGGER.info("凋零被击杀，掉落凋零骷髅头颅");

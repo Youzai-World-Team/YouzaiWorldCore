@@ -16,6 +16,8 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import top.csituka.youzaiworldcore.config.FunctionToggleManager;
+
 /**
  * 农作物收获经验掉落事件处理器。
  * <p>
@@ -43,6 +45,7 @@ public class CropXpHandler {
         if (level.isClientSide()) {
             return;
         }
+        if (!FunctionToggleManager.isEnabled(player.getUUID(), FunctionToggleManager.KEY_CROP_XP)) return;
 
         Block block = state.getBlock();
 

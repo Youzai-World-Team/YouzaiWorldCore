@@ -9,10 +9,14 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
 import top.csituka.youzaiworldcore.config.ChargedCreeperConfig;
+import top.csituka.youzaiworldcore.config.EventSettings;
 import top.csituka.youzaiworldcore.config.LaowuMemeConfig;
 import top.csituka.youzaiworldcore.luckperms.LuckPermsHelper;
 import top.csituka.youzaiworldcore.trialvault.TrialVaultConfig;
 import top.csituka.youzaiworldcore.util.DebugLogger;
+
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 /**
  * 事件管理命令：{@code /yzwc event ...}
@@ -130,7 +134,22 @@ public class EventCommand {
                                                                 .then(tvEnableNode))
                                                 .then(Commands.literal(EVENT_LAOWU)
                                                                 .then(laowuEnableNode)
-                                                                .then(laowuSettingsNode))));
+                                                                .then(laowuSettingsNode))
+                                                .then(simpleEventNode("death_sound",
+                                                                EventSettings::isDeathSoundEnabled,
+                                                                EventSettings::setDeathSound))
+                                                .then(simpleEventNode("jukebox_loop",
+                                                                EventSettings::isJukeboxLoopEnabled,
+                                                                EventSettings::setJukeboxLoop))
+                                                .then(simpleEventNode("baby_zombie_weak",
+                                                                EventSettings::isBabyZombieWeakEnabled,
+                                                                EventSettings::setBabyZombieWeak))
+                                                .then(simpleEventNode("wither_skull_drop",
+                                                                EventSettings::isWitherSkullDropEnabled,
+                                                                EventSettings::setWitherSkullDrop))
+                                                .then(simpleEventNode("trident_void_protect",
+                                                                EventSettings::isTridentVoidProtectEnabled,
+                                                                EventSettings::setTridentVoidProtect))));
 
                 DebugLogger.exiting(MODULE, "register");
         }
@@ -264,5 +283,49 @@ public class EventCommand {
                                 true);
                 DebugLogger.exiting(MODULE, "laowuSetCd", "1");
                 return 1;
+        }
+
+        // ==================== 简单全局事件（仅 enable/disable）的通用工厂 ====================
+
+        /**
+         * 构造一个只有 enable [true|false] 的简单事件节点。
+         * @param name   事件名（用于命令字面量和翻译键）
+         * @param getter 查询当前开关状态
+         * @param setter 设置开关状态（同时持久化）
+         */
+        private static com.mojang.brigadier.builder.LiteralArgumentBuilder<CommandSourceStack> simpleEventNode(
+                        String name, Supplier<Boolean> getter, Consumer<Boolean> setter) {
+                return Commands.literal(name)
+                                .then(Commands.literal("enable")
+                                                .requires(src -> LuckPermsHelper.checkPermission(
+                                                                src, LuckPermsHelper.PERMISSION_EVENT_QUERY,
+                                                                Commands.LEVEL_ALL))
+                                                .executes(ctx -> {
+                                                        boolean enabled = getter.get();
+                                                        ctx.getSource().sendSuccess(
+                                                                        () -> Component.translatable(enabled
+                                                                                        ? "youzaiworldcore.message.command.event.simple.query_enabled"
+                                                                                        : "youzaiworldcore.message.command.event.simple.query_disabled",
+                                                                                        name),
+                                                                        false);
+                                                        return 1;
+                                                })
+                                                .then(Commands.argument("enabled", BoolArgumentType.bool())
+                                                                .requires(src -> LuckPermsHelper.checkPermission(
+                                                                                src,
+                                                                                LuckPermsHelper.PERMISSION_EVENT_SET,
+                                                                                Commands.LEVEL_ADMINS))
+                                                                .executes(ctx -> {
+                                                                        boolean v = BoolArgumentType.getBool(ctx,
+                                                                                        "enabled");
+                                                                        setter.accept(v);
+                                                                        ctx.getSource().sendSuccess(
+                                                                                        () -> Component.translatable(v
+                                                                                                        ? "youzaiworldcore.message.command.event.simple.set_enabled"
+                                                                                                        : "youzaiworldcore.message.command.event.simple.set_disabled",
+                                                                                                        name),
+                                                                                        true);
+                                                                        return 1;
+                                                                })));
         }
 }

@@ -633,5 +633,13 @@
   "youzaiworldcore.hud.clock": "§eDay %s §f%s",
   "youzaiworldcore.hud.compass": "§eFacing: §f%s",
   "youzaiworldcore.hud.recovery_compass": "§eDeath location: §f[%s, %s, %s] §7(%s)",
-  "youzaiworldcore.hud.recovery_compass.no_death": "§7No death recorded"
+  "youzaiworldcore.hud.recovery_compass.no_death": "§7No death recorded",
+  "youzaiworldcore.message.command.event.simple.query_enabled": "Global event §e%s §ais currently enabled",
+  "youzaiworldcore.message.command.event.simple.query_disabled": "Global event §e%s §cis currently disabled",
+  "youzaiworldcore.message.command.event.simple.set_enabled": "Global event §e%s §aenabled",
+  "youzaiworldcore.message.command.event.simple.set_disabled": "Global event §e%s §cdisabled",
+  "youzaiworldcore.message.command.function.query_enabled": "Function §e%s §ais currently enabled for you",
+  "youzaiworldcore.message.command.function.query_disabled": "Function §e%s §cis currently disabled for you",
+  "youzaiworldcore.message.command.function.set_enabled": "Function §e%s §aenabled for you",
+  "youzaiworldcore.message.command.function.set_disabled": "Function §e%s §cdisabled for you"
 }

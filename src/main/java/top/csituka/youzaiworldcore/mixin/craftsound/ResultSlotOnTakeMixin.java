@@ -13,6 +13,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import top.csituka.youzaiworldcore.config.FunctionToggleManager;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
 /**
@@ -31,6 +32,7 @@ public abstract class ResultSlotOnTakeMixin {
         if (player.level().isClientSide()) {
             return;
         }
+        if (!FunctionToggleManager.isEnabled(player.getUUID(), FunctionToggleManager.KEY_CRAFT_SOUND)) return;
         if (stack.isEmpty()) {
             return;
         }

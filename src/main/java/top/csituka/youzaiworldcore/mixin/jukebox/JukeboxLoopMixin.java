@@ -12,6 +12,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import top.csituka.youzaiworldcore.config.EventSettings;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
 /**
@@ -34,6 +35,7 @@ public class JukeboxLoopMixin {
         if (level.isClientSide()) {
             return;
         }
+        if (!EventSettings.isJukeboxLoopEnabled()) return;
 
         var songPlayer = jukebox.getSongPlayer();
         if (songPlayer.isPlaying()) {

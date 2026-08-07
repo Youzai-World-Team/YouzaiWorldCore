@@ -20,6 +20,8 @@ import net.minecraft.world.phys.BlockHitResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import top.csituka.youzaiworldcore.config.FunctionToggleManager;
+
 /**
  * 梯子向下延展事件处理器。
  * <p>
@@ -46,6 +48,7 @@ public class LadderExtendHandler {
         if (level.isClientSide()) {
             return InteractionResult.PASS;
         }
+        if (!FunctionToggleManager.isEnabled(player.getUUID(), FunctionToggleManager.KEY_LADDER)) return InteractionResult.PASS;
         if (hand != InteractionHand.MAIN_HAND) {
             return InteractionResult.PASS;
         }
