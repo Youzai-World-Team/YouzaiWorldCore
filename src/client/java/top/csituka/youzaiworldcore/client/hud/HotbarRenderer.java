@@ -11,6 +11,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import top.csituka.youzaiworldcore.itemborder.ItemBorderRenderer;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
 /**
@@ -147,17 +148,17 @@ public final class HotbarRenderer {
     private static boolean offhandAnimInit = false;
     /** 选中高亮虚拟目标（可超出 0~8，用于循环包装动画） */
     private static float virtualTarget = 0f;
-    /** 本帧是否由滚轮触发了槽位切换（ScrollHotbarInputMixin 标记） */
-    private static volatile boolean scrollInputThisFrame = false;
+    /** 本帧滚轮方向（+1=前滚/向右, -1=后滚/向左, 0=无滚轮输入） */
+    private static volatile int scrollDirectionThisFrame = 0;
 
     private HotbarRenderer() {
     }
 
     // ===== 外部标记接口 =====
 
-    /** 由 ScrollHotbarInputMixin 调用，标记滚轮触发了槽位切换 */
-    public static void markScrollInput() {
-        scrollInputThisFrame = true;
+    /** 由 ScrollHotbarInputMixin 调用，标记滚轮方向 (+1 前滚 / -1 后滚) */
+    public static void markScrollInput(int direction) {
+        scrollDirectionThisFrame = direction;
     }
 
     // ===== 公共渲染入口 =====
@@ -191,39 +192,38 @@ public final class HotbarRenderer {
             animInitialized = true;
         }
 
-        // === 动画更新（含循环包装，仅滚轮触发） ===
+        // === 动画更新（连续空间循环包装，仅滚轮触发） ===
         if (currentSlot != lastKnownSelectedSlot) {
-            boolean isScroll = scrollInputThisFrame;
-            scrollInputThisFrame = false; // 消费标记
+            int scrollDir = scrollDirectionThisFrame;
+            scrollDirectionThisFrame = 0; // 消费
 
-            // 快速滚动处理：若正在包装动画中途，先快照到包装完成位置
-            if (virtualTarget > 8.0f) {
-                animSelectedSlot -= 9.0f;
+            if (scrollDir != 0) {
+                // 滚轮输入：在连续空间中追踪目标，支持跨边界累计滚动
+                if (scrollDir > 0 && currentSlot < lastKnownSelectedSlot) {
+                    // 向前滚过 8→0 边界：target += 9 进入连续右空间
+                    virtualTarget = currentSlot + 9.0f;
+                } else if (scrollDir < 0 && currentSlot > lastKnownSelectedSlot) {
+                    // 向后滚过 0→8 边界：target -= 9 进入连续左空间
+                    virtualTarget = currentSlot - 9.0f;
+                } else if (virtualTarget > 8.0f && scrollDir > 0) {
+                    // 包装动画进行中继续同向前滚，延长虚拟目标
+                    virtualTarget += 1.0f;
+                } else if (virtualTarget < 0.0f && scrollDir < 0) {
+                    // 包装动画进行中继续同向后滚
+                    virtualTarget -= 1.0f;
+                } else {
+                    virtualTarget = currentSlot;
+                }
                 DebugLogger.debug(LOG_TAG,
-                        "包装中断(右): 快速快照 animPos=%.3f", animSelectedSlot);
-            } else if (virtualTarget < 0.0f) {
-                animSelectedSlot += 9.0f;
-                DebugLogger.debug(LOG_TAG,
-                        "包装中断(左): 快速快照 animPos=%.3f", animSelectedSlot);
-            }
-
-            // 检测循环包装：仅滚轮输入触发，数字键直接跳转
-            if (isScroll && lastKnownSelectedSlot == 8 && currentSlot == 0) {
-                virtualTarget = 9.0f; // 向右滑出屏幕
-                DebugLogger.debug(LOG_TAG,
-                        "槽位包装(右-滚轮): animPos=%.2f → wrapRight, 虚拟目标=%.1f",
-                        animSelectedSlot, virtualTarget);
-            } else if (isScroll && lastKnownSelectedSlot == 0 && currentSlot == 8) {
-                virtualTarget = -1.0f; // 向左滑出屏幕
-                DebugLogger.debug(LOG_TAG,
-                        "槽位包装(左-滚轮): animPos=%.2f → wrapLeft, 虚拟目标=%.1f",
-                        animSelectedSlot, virtualTarget);
+                        "槽位切换(滚轮 dir=%d): animPos=%.2f → 实际=%d, 虚拟目标=%.1f",
+                        scrollDir, animSelectedSlot, currentSlot, virtualTarget);
             } else {
+                // 数字键：直接跳转，不触发包装
                 virtualTarget = currentSlot;
+                DebugLogger.debug(LOG_TAG,
+                        "槽位切换(按键): animPos=%.2f → 实际=%d",
+                        animSelectedSlot, currentSlot);
             }
-            DebugLogger.debug(LOG_TAG,
-                    "槽位切换: animPos=%.2f → 实际=%d, 虚拟目标=%.1f",
-                    animSelectedSlot, currentSlot, virtualTarget);
             lastKnownSelectedSlot = currentSlot;
         }
 
@@ -232,18 +232,20 @@ public final class HotbarRenderer {
         float animT = 1.0f - (float) Math.exp(-ANIM_SPEED * deltaSec);
         animSelectedSlot += (virtualTarget - animSelectedSlot) * animT;
 
-        // 包装瞬移：高亮滑出屏幕边缘后瞬间跳到另一端继续滑入
-        if (virtualTarget == 9.0f && animSelectedSlot > 8.8f) {
-            animSelectedSlot -= 9.0f;
-            virtualTarget = 0.0f;
+        // 包装瞬移：高亮滑出屏幕边缘后瞬间跳到对侧，virtualTarget 同步偏移
+        if (virtualTarget > 8.0f && animSelectedSlot > 8.8f) {
+            float snap = 9.0f;
+            animSelectedSlot -= snap;
+            virtualTarget -= snap;
             DebugLogger.debug(LOG_TAG,
-                    "包装瞬移(右→左): animPos 校正为 %.3f, 目标=%.1f",
+                    "包装瞬移(右→左): animPos=%.3f, 目标=%.1f",
                     animSelectedSlot, virtualTarget);
-        } else if (virtualTarget == -1.0f && animSelectedSlot < -0.8f) {
-            animSelectedSlot += 9.0f;
-            virtualTarget = 8.0f;
+        } else if (virtualTarget < 0.0f && animSelectedSlot < -0.8f) {
+            float snap = 9.0f;
+            animSelectedSlot += snap;
+            virtualTarget += snap;
             DebugLogger.debug(LOG_TAG,
-                    "包装瞬移(左→右): animPos 校正为 %.3f, 目标=%.1f",
+                    "包装瞬移(左→右): animPos=%.3f, 目标=%.1f",
                     animSelectedSlot, virtualTarget);
         }
 
@@ -327,10 +329,10 @@ public final class HotbarRenderer {
 
             // 槽位背景：包装动画期间保持离开槽位高亮，瞬移后切换到目标槽位
             int highlightedSlot;
-            if (virtualTarget == 9.0f) {
-                highlightedSlot = 8;  // 向右滑出中，保持 slot 8 高亮
-            } else if (virtualTarget == -1.0f) {
-                highlightedSlot = 0;  // 向左滑出中，保持 slot 0 高亮
+            if (virtualTarget > 8.0f) {
+                highlightedSlot = 8;  // 向右跨越边界中，保持 slot 8 高亮
+            } else if (virtualTarget < 0.0f) {
+                highlightedSlot = 0;  // 向左跨越边界中，保持 slot 0 高亮
             } else {
                 highlightedSlot = currentSlot;
             }
@@ -342,6 +344,7 @@ public final class HotbarRenderer {
             if (!stack.isEmpty()) {
                 graphics.item(stack, slotX + ITEM_INSET, slotY + ITEM_INSET);
                 graphics.itemDecorations(font, stack, slotX + ITEM_INSET, slotY + ITEM_INSET);
+                ItemBorderRenderer.renderBorder(graphics, slotX + ITEM_INSET, slotY + ITEM_INSET, stack);
             }
 
             // 数字指示器
@@ -382,6 +385,8 @@ public final class HotbarRenderer {
             Font font = Minecraft.getInstance().font;
             graphics.itemDecorations(font, offhandStack,
                     x + OFFHAND_ITEM_INSET, y + OFFHAND_ITEM_INSET);
+            ItemBorderRenderer.renderBorder(graphics,
+                    x + OFFHAND_ITEM_INSET, y + OFFHAND_ITEM_INSET, offhandStack);
         }
     }
 
