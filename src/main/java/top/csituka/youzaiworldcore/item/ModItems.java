@@ -10,10 +10,13 @@ import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Rarity;
 import net.minecraft.world.item.ToolMaterial;
+import net.minecraft.world.food.FoodProperties;
 
 import top.csituka.youzaiworldcore.YouzaiworldCore;
 import top.csituka.youzaiworldcore.item.tool.*;
 import top.csituka.youzaiworldcore.util.DebugLogger;
+
+import net.minecraft.world.entity.decoration.painting.PaintingVariant;
 
 @SuppressWarnings("null")
 public class ModItems {
@@ -150,6 +153,35 @@ public class ModItems {
                     )
     );
 
+    // ── Meme 画作（10 张）──
+
+    public static final Item MEME_PAINTING_01 = registerMemePainting("meme_01");
+    public static final Item MEME_PAINTING_02 = registerMemePainting("meme_02");
+    public static final Item MEME_PAINTING_03 = registerMemePainting("meme_03");
+    public static final Item MEME_PAINTING_04 = registerMemePainting("meme_04");
+    public static final Item MEME_PAINTING_05 = registerMemePainting("meme_05");
+    public static final Item MEME_PAINTING_06 = registerMemePainting("meme_06");
+    public static final Item MEME_PAINTING_07 = registerMemePainting("meme_07");
+    public static final Item MEME_PAINTING_08 = registerMemePainting("meme_08");
+    public static final Item MEME_PAINTING_09 = registerMemePainting("meme_09");
+    public static final Item MEME_PAINTING_10 = registerMemePainting("meme_10");
+    public static final Item MEME_PAINTING_11 = registerMemePainting("meme_11");
+    public static final Item MEME_PAINTING_12 = registerMemePainting("meme_12");
+
+    // ── Genshin 主题物品 ──
+
+    /**
+     * 「原石」原材料——悠哉世界货币体系的基础资源之一，Epic 紫色稀有度，
+     * 普通玩家无法在创造模式以外直接获得（仅创造模式 + 模组发放）。
+     */
+    public static final Item PRIMOGEM = registerPrimogem("primogem");
+
+    /**
+     * 「甜甜玛德琳」食物——效果等同原版熟鸡肉：
+     * nutrition=6（恢复 6 点饥饿值）、saturation=0.6。
+     */
+    public static final Item SWEET_MADAME = registerSweetMadame("sweet_madame");
+
     private static Item register(String name, Item.Properties settings) {
         ResourceKey<Item> itemKey = ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, name));
         Item item = new Item(settings.setId(itemKey));
@@ -262,5 +294,65 @@ public class ModItems {
     }
 
     public static void initialize() {
+    }
+
+    // ===== Meme 画作注册帮助器 =====
+
+    /**
+     * 注册一张自定义 meme 画物品。
+     * <p>
+     * {@link MemePaintingItem} 构造器会自动将变体→物品映射存入
+     * {@link MemePaintingItem#VARIANT_ITEM_MAP}，供 Mixin 使用。
+     * </p>
+     *
+     * @param id 画作 ID（不含命名空间，如 {@code meme_01}）
+     */
+    private static Item registerMemePainting(String id) {
+        ResourceKey<PaintingVariant> variantKey = ResourceKey.create(
+                Registries.PAINTING_VARIANT,
+                Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, id));
+        ResourceKey<Item> itemKey = ResourceKey.create(
+                Registries.ITEM,
+                Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, id));
+        Item item = new MemePaintingItem(variantKey, new Item.Properties().setId(itemKey).rarity(Rarity.UNCOMMON));
+        DebugLogger.info("ModItems", "注册物品 %s (MemePainting)".formatted(itemKey.identifier()));
+        return Registry.register(BuiltInRegistries.ITEM, itemKey, item);
+    }
+
+    /**
+     * 「原石」注册：纯原材料物品，Epic 紫色稀有度，无功能属性。
+     * <p>
+     * 纹理文件应放在 {@code assets/youzaiworldcore/textures/item/primogem.png}，
+     * 模型 JSON 已由 {@code items/primogem.json} + {@code models/item/primogem.json} 提供。
+     * </p>
+     */
+    private static Item registerPrimogem(String name) {
+        ResourceKey<Item> itemKey = ResourceKey.create(
+                Registries.ITEM,
+                Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, name));
+        Item item = new Item(new Item.Properties().setId(itemKey).rarity(Rarity.EPIC));
+        DebugLogger.info("ModItems", "注册物品 %s (Primogem raw material, rarity=EPIC)".formatted(itemKey.identifier()));
+        return Registry.register(BuiltInRegistries.ITEM, itemKey, item);
+    }
+
+    /**
+     * 「甜甜玛德琳」注册：食物物品，营养与饱食度等同原版熟鸡肉
+     * （nutrition=6, saturation=0.6）。
+     * <p>
+     * 通过 {@code Item.Properties.food(FoodProperties)} 注入 {@link FoodProperties}
+     * 数据组件，无需自定义 Item 类。
+     * </p>
+     */
+    private static Item registerSweetMadame(String name) {
+        ResourceKey<Item> itemKey = ResourceKey.create(
+                Registries.ITEM,
+                Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, name));
+        FoodProperties food = new FoodProperties.Builder()
+                .nutrition(6)
+                .saturationModifier(0.6f)
+                .build();
+        Item item = new SweetMadameItem(new Item.Properties().setId(itemKey).rarity(Rarity.EPIC).food(food));
+        DebugLogger.info("ModItems", "注册物品 %s (SweetMadame food: nutrition=6, sat=0.6, rarity=EPIC)".formatted(itemKey.identifier()));
+        return Registry.register(BuiltInRegistries.ITEM, itemKey, item);
     }
 }

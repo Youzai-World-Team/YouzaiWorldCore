@@ -36,7 +36,8 @@
     "afk.ServerPlayerTabDisplayNameMixin",
     "babyzombie.ZombieFinalizeSpawnMixin",
     "craftsound.ResultSlotOnTakeMixin",
-    "jukebox.JukeboxLoopMixin"
+    "jukebox.JukeboxLoopMixin",
+    "painting.MemePaintingDropMixin"
   ],
   "injectors": {
     "defaultRequire": 1

@@ -74,6 +74,9 @@ public class ModCreativeModeTabs {
                                 output.accept(ModItems.RAW_YZ);
                                 output.accept(ModItems.YZ_INGOT);
                                 output.accept(ModItems.YZ_NUGGET);
+                                // Genshin 主题物品：原石 / 甜甜玛德琳
+                                output.accept(ModItems.PRIMOGEM);
+                                output.accept(ModItems.SWEET_MADAME);
                         })
                         .build();
 
@@ -94,6 +97,31 @@ public class ModCreativeModeTabs {
                                 output.accept(ModItems.RETURN_SCROLL);
                                 // 《云·原神》音乐唱片（Epic 稀有度、由 datapack 注入 JukeboxPlayable）
                                 output.accept(ModItems.MUSIC_DISC_CLOUD_GENSHIN);
+                        })
+                        .build();
+
+        // ── 悠哉世界 - 画 ──
+        public static final ResourceKey<CreativeModeTab> YOUZAI_PAINTINGS_KEY = ResourceKey.create(
+                        Registries.CREATIVE_MODE_TAB,
+                        Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "youzai_paintings"));
+
+        public static final CreativeModeTab YOUZAI_PAINTINGS = FabricCreativeModeTab.builder()
+                        // 用 meme_01 作为标签页图标贴图
+                        .icon(() -> new ItemStack(ModItems.MEME_PAINTING_01))
+                        .title(Component.translatable("itemGroup.youzaiworldcore.youzai_paintings"))
+                        .displayItems((params, output) -> {
+                                output.accept(ModItems.MEME_PAINTING_01);
+                                output.accept(ModItems.MEME_PAINTING_02);
+                                output.accept(ModItems.MEME_PAINTING_03);
+                                output.accept(ModItems.MEME_PAINTING_04);
+                                output.accept(ModItems.MEME_PAINTING_05);
+                                output.accept(ModItems.MEME_PAINTING_06);
+                                output.accept(ModItems.MEME_PAINTING_07);
+                                output.accept(ModItems.MEME_PAINTING_08);
+                                output.accept(ModItems.MEME_PAINTING_09);
+                                output.accept(ModItems.MEME_PAINTING_10);
+                                output.accept(ModItems.MEME_PAINTING_11);
+                                output.accept(ModItems.MEME_PAINTING_12);
                         })
                         .build();
 
@@ -159,6 +187,7 @@ public class ModCreativeModeTabs {
                 Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, YOUZAI_MATERIALS_KEY, YOUZAI_MATERIALS);
                 Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, YOUZAI_UTILITIES_KEY, YOUZAI_UTILITIES);
                 Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, YOUZAI_KITS_KEY, YOUZAI_KITS);
+                Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, YOUZAI_PAINTINGS_KEY, YOUZAI_PAINTINGS);
                 Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, YOUZAI_ENCHANTMENTS_KEY, YOUZAI_ENCHANTMENTS);
                 DebugLogger.info("ModCreativeModeTabs", "Registered YOUZAI_ENCHANTMENTS creative tab (%s)",
                                 YOUZAI_ENCHANTMENTS_KEY.identifier());
