@@ -28,6 +28,8 @@ import java.nio.file.Path;
  *   <li>{@code ignoredUpdateVersion} — 已忽略提示的更新版本号</li>
  *   <li>{@code updateCheckAddress} — 自定义检查更新基址（空 = 系统默认，仅开发者模式生效）</li>
  *   <li>{@code updateJumpAddress} — 自定义下载页（跳转）基址（空 = 系统默认，仅开发者模式生效）</li>
+ *   <li>{@code yzuiEnabled} — 是否启用 YZUI 自定义 UI 样式</li>
+ *   <li>{@code autoSkipExperimentalWarning} — 是否自动跳过实验性设置警告屏幕</li>
  * </ul>
  */
 public final class ClientExternalSettings {
@@ -57,6 +59,12 @@ public final class ClientExternalSettings {
 
     /** 是否启用 YZUI（自定义 UI 样式），关闭则回退到原版 UI 供资源包替换 */
     private static boolean yzuiEnabled = true;
+
+    /** 是否自动跳过"使用实验性设置的世界不受支持"屏幕 */
+    private static boolean autoSkipExperimentalWarning = false;
+
+    /** 自动跳过时执行的操作：{@code "skip"} = 我知道我在做什么（不备份），{@code "backup"} = 创建备份并进入 */
+    private static String experimentalWarningSkipAction = "skip";
 
     private ClientExternalSettings() {}
 
@@ -107,6 +115,21 @@ public final class ClientExternalSettings {
     /** @return 是否启用 YZUI 自定义 UI 样式 */
     public static boolean isYzuiEnabled() {
         return yzuiEnabled;
+    }
+
+    /** @return 是否自动跳过实验性设置警告屏幕 */
+    public static boolean isAutoSkipExperimentalWarning() {
+        return autoSkipExperimentalWarning;
+    }
+
+    /** @return 自动跳过时执行的操作（"skip" 或 "backup"） */
+    public static String getExperimentalWarningSkipAction() {
+        return experimentalWarningSkipAction;
+    }
+
+    /** @return 自动跳过时是否应创建备份 */
+    public static boolean isExperimentalWarningSkipBackup() {
+        return "backup".equals(experimentalWarningSkipAction);
     }
 
     /** 设置被忽略的更新版本号（空值将忽略为 ""）并持久化 */
@@ -172,6 +195,21 @@ public final class ClientExternalSettings {
         save();
     }
 
+    /** 设置是否自动跳过实验性设置警告并持久化 */
+    public static void setAutoSkipExperimentalWarning(boolean value) {
+        autoSkipExperimentalWarning = value;
+        DebugLogger.info("ClientExternalSettings", "自动跳过实验性设置警告已" + (value ? "启用" : "禁用"));
+        save();
+    }
+
+    /** 设置自动跳过时的操作（"skip" 或 "backup"）并持久化 */
+    public static void setExperimentalWarningSkipAction(String value) {
+        experimentalWarningSkipAction = ("backup".equals(value)) ? "backup" : "skip";
+        DebugLogger.info("ClientExternalSettings",
+                "自动跳过操作已设为：" + experimentalWarningSkipAction);
+        save();
+    }
+
     // ===== 持久化 =====
 
     /** 从文件加载配置（不存在则创建默认文件） */
@@ -218,6 +256,14 @@ public final class ClientExternalSettings {
             if (root.has("yzuiEnabled") && !root.get("yzuiEnabled").isJsonNull())
                 yzuiEnabled = root.get("yzuiEnabled").getAsBoolean();
 
+            if (root.has("autoSkipExperimentalWarning") && !root.get("autoSkipExperimentalWarning").isJsonNull())
+                autoSkipExperimentalWarning = root.get("autoSkipExperimentalWarning").getAsBoolean();
+
+            if (root.has("experimentalWarningSkipAction") && !root.get("experimentalWarningSkipAction").isJsonNull()) {
+                String v = root.get("experimentalWarningSkipAction").getAsString();
+                experimentalWarningSkipAction = "backup".equals(v) ? "backup" : "skip";
+            }
+
             if (logLevel > 0) {
                 LOGGER.info("已从 {} 加载客户端外部设置", CONFIG_FILE);
             }
@@ -244,6 +290,8 @@ public final class ClientExternalSettings {
             root.addProperty("updateCheckAddress", updateCheckAddress);
             root.addProperty("updateJumpAddress", updateJumpAddress);
             root.addProperty("yzuiEnabled", yzuiEnabled);
+            root.addProperty("autoSkipExperimentalWarning", autoSkipExperimentalWarning);
+            root.addProperty("experimentalWarningSkipAction", experimentalWarningSkipAction);
             Files.writeString(CONFIG_FILE, GSON.toJson(root));
         } catch (IOException e) {
             LOGGER.error("保存客户端外部设置失败: {}", e.getMessage());

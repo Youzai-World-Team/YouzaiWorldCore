@@ -91,6 +91,7 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
     private CheckboxButton devModeToggle;
     private DropdownButton logLevelDropdown;
     private DropdownButton debugModeDropdown;
+    private DropdownButton skipActionDropdown;
     private EditBox debugAddressInput;
     private EditBox debugPortInput;
 
@@ -108,6 +109,11 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
     private String updateJumpAddress;
     /** 是否启用 YZUI 自定义 UI 样式 */
     private boolean yzuiEnabled;
+
+    /** 是否自动跳过实验性设置警告屏幕 */
+    private boolean autoSkipExperimentalWarning;
+    /** 自动跳过时的操作："skip" = 我知道我在做什么，"backup" = 创建备份并进入 */
+    private String experimentalWarningSkipAction;
 
     // ===== 配置导入/导出分栏状态 =====
     /** 导出按钮（分栏 1） */
@@ -160,6 +166,11 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
             Component.translatable("screen.youzaiworldcore.settings.log_level_debug").getString()
     );
 
+    private static final List<String> EXPERIMENTAL_SKIP_ACTION_OPTIONS = List.of(
+            Component.translatable("screen.youzaiworldcore.settings.experimental_skip_action_backup").getString(),
+            Component.translatable("screen.youzaiworldcore.settings.experimental_skip_action_skip").getString()
+    );
+
     public YouzaiWorldCoreSettingsScreen(Screen parent) {
         super(Component.translatable("screen.youzaiworldcore.settings.title"));
         this.panorama = new Panorama();
@@ -172,6 +183,8 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
         this.updateCheckAddress = ClientExternalSettings.getUpdateCheckAddress();
         this.updateJumpAddress = ClientExternalSettings.getUpdateJumpAddress();
         this.yzuiEnabled = ClientExternalSettings.isYzuiEnabled();
+        this.autoSkipExperimentalWarning = ClientExternalSettings.isAutoSkipExperimentalWarning();
+        this.experimentalWarningSkipAction = ClientExternalSettings.getExperimentalWarningSkipAction();
         // 打开设置界面时，将当前（持久化）客户端更新地址推送到共享状态，供内嵌服务端使用
         pushUpdateState();
     }
@@ -257,6 +270,10 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
         if (logLevelDropdown != null && logLevelDropdown.isOpen()
                 && !logLevelDropdown.isPositionInsidePopup(event.x(), adjustedY)) {
             logLevelDropdown.closePopup();
+        }
+        if (skipActionDropdown != null && skipActionDropdown.isOpen()
+                && !skipActionDropdown.isPositionInsidePopup(event.x(), adjustedY)) {
+            skipActionDropdown.closePopup();
         }
         // ===== 关于分栏：打开开源许可链接（与标题屏幕打开下载页实现一致） =====
         if (selectedSection == 2) {
@@ -598,6 +615,41 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
             addRenderableWidget(devModeToggle);
             y += 26;
 
+            // 自动跳过实验性设置警告（始终显示，不依赖开发者模式）
+            CheckboxButton autoSkipExperimentalToggle = new CheckboxButton(
+                    baseX, y, CONTENT_WIDTH, 20,
+                    Component.translatable("screen.youzaiworldcore.settings.checkbox_auto_skip_experimental_warning"),
+                    autoSkipExperimentalWarning,
+                    () -> {
+                        boolean newVal = !autoSkipExperimentalWarning;
+                        autoSkipExperimentalWarning = newVal;
+                        ClientExternalSettings.setAutoSkipExperimentalWarning(newVal);
+                        DebugLogger.info("SettingsScreen", "自动跳过实验性设置警告已" + (newVal ? "启用" : "禁用"));
+                    }
+            );
+            addRenderableWidget(autoSkipExperimentalToggle);
+            y += 26;
+
+            // 自动跳过时的操作选择（下拉框）
+            y += 4;
+            int skipActionIndex = "backup".equals(experimentalWarningSkipAction) ? 0 : 1;
+            skipActionDropdown = new DropdownButton(
+                    baseX, y, CONTENT_WIDTH, SIDEBAR_WIDTH, 20,
+                    Component.translatable("screen.youzaiworldcore.settings.dropdown_experimental_skip_action"),
+                    EXPERIMENTAL_SKIP_ACTION_OPTIONS,
+                    skipActionIndex,
+                    false,
+                    idx -> {
+                        String newAction = (idx == 0) ? "backup" : "skip";
+                        ClientExternalSettings.setExperimentalWarningSkipAction(newAction);
+                        experimentalWarningSkipAction = newAction;
+                        DebugLogger.info("SettingsScreen", "实验性设置跳过操作已设为：" + newAction);
+                    },
+                    null
+            );
+            addRenderableWidget(skipActionDropdown);
+            y += 26;
+
             if (devModeEnabled) {
                 // ===== 开发者模式下才显示的选项 =====
 
@@ -723,6 +775,7 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
             } else {
                 logLevelDropdown = null;
                 debugModeDropdown = null;
+                skipActionDropdown = null;
                 debugAddressInput = null;
                 debugPortInput = null;
                 updateCheckInput = null;
@@ -1025,6 +1078,9 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
         }
         if (logLevelDropdown != null) {
             logLevelDropdown.renderPopup(guiGraphics, mouseX, (int) (mouseY + scrollOffset), partialTick);
+        }
+        if (skipActionDropdown != null) {
+            skipActionDropdown.renderPopup(guiGraphics, mouseX, (int) (mouseY + scrollOffset), partialTick);
         }
 
         guiGraphics.pose().popMatrix();

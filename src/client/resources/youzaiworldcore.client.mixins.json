@@ -55,7 +55,8 @@
     "ScrollAreaYzuiMixin",
     "laowumeme.SoundBufferLibraryLaowuMixin",
     "afk.AfkKeyboardHandlerMixin",
-    "afk.AfkMouseHandlerMixin"
+    "afk.AfkMouseHandlerMixin",
+    "ExperimentalWarningSkipMixin"
   ],
   "injectors": {
     "defaultRequire": 1
