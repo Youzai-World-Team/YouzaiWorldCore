@@ -13,6 +13,7 @@ import net.minecraft.world.item.ToolMaterial;
 
 import top.csituka.youzaiworldcore.YouzaiworldCore;
 import top.csituka.youzaiworldcore.item.tool.*;
+import top.csituka.youzaiworldcore.util.DebugLogger;
 
 @SuppressWarnings("null")
 public class ModItems {
@@ -121,6 +122,34 @@ public class ModItems {
             new Item.Properties()
     );
 
+    /**
+     * 《云·原神》音乐唱片。
+     * <p>
+     * 26.2 起，原版 {@code MusicDiscItem} 子类被移除，唱片统一通过
+     * {@code Item.Properties.jukeboxPlayable(ResourceKey&lt;JukeboxSong&gt;)} 注入。
+     * {@code JukeboxSong} 本体由 datapack 提供（见
+     * {@code data/youzaiworldcore/jukebox_song/cloud_genshin.json}），而其内部持有的
+     * {@code Holder&lt;SoundEvent&gt;} 又依赖 {@code BuiltInRegistries.SOUND_EVENT}
+     * 中已注册的 {@link top.csituka.youzaiworldcore.sound.ModSoundEvents#MUSIC_DISC_CLOUD_GENSHIN}。
+     * </p>
+     * <p>
+     * 稀有度设为 {@link Rarity#EPIC}，按照《我的世界》原版唱片的标准为不可堆叠（{@code stacksTo(1)}）。
+     * 物品名称读取 {@code item.youzaiworldcore.music_disc_cloud_genshin}，
+     * hover 描述则由 JukeboxSong 的 description 提供，会读取
+     * {@code item.youzaiworldcore.music_disc_cloud_genshin.desc}（在 datapack JSON 中显式覆盖）。
+     * </p>
+     */
+    public static final Item MUSIC_DISC_CLOUD_GENSHIN = registerMusicDiscCloudGenshin(
+            "music_disc_cloud_genshin",
+            new Item.Properties().stacksTo(1).rarity(Rarity.EPIC)
+                    .jukeboxPlayable(
+                            net.minecraft.resources.ResourceKey.create(
+                                    net.minecraft.core.registries.Registries.JUKEBOX_SONG,
+                                    Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "cloud_genshin")
+                            )
+                    )
+    );
+
     private static Item register(String name, Item.Properties settings) {
         ResourceKey<Item> itemKey = ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, name));
         Item item = new Item(settings.setId(itemKey));
@@ -214,6 +243,21 @@ public class ModItems {
     private static Item registerReturnScroll(String name, Item.Properties settings) {
         ResourceKey<Item> itemKey = ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, name));
         Item item = new ReturnScrollItem(settings.setId(itemKey));
+        DebugLogger.info("ModItems", "注册物品 %s (ReturnScroll)".formatted(itemKey.identifier()));
+        return Registry.register(BuiltInRegistries.ITEM, itemKey, item);
+    }
+
+    /**
+     * 《云·原神》唱片的注册器——保持与原版唱片一致的「Items#registerItem」路径，
+     * 使用最朴素的 {@link Item} 构造以让 {@code Item.Properties.jukeboxPlayable(...)}
+     * 已经注入的 {@code JUKEBOX_PLAYABLE} 数据组件生效。
+     */
+    private static Item registerMusicDiscCloudGenshin(String name, Item.Properties settings) {
+        ResourceKey<Item> itemKey = ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, name));
+        Item item = new Item(settings.setId(itemKey));
+        DebugLogger.info("ModItems",
+                "注册物品 %s (MusicDisc<CloudGenshin>, stacksTo=1, rarity=EPIC)",
+                itemKey.identifier());
         return Registry.register(BuiltInRegistries.ITEM, itemKey, item);
     }
 

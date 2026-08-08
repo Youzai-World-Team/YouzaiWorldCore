@@ -1,4 +1,11 @@
 {
+  "cloud_genshin": {
+    "category": "record",
+    "subtitle": "subtitles.youzaiworldcore.cloud_genshin",
+    "sounds": [
+      {"name": "youzaiworldcore:cloud_genshin", "stream": true}
+    ]
+  },
   "laowu2": {
     "category": "neutral",
     "subtitle": "subtitles.youzaiworldcore.laowu2",

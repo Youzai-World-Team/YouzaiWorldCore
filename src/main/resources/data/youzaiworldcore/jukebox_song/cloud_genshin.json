@@ -1,0 +1,6 @@
+{
+  "sound_event": "youzaiworldcore:cloud_genshin",
+  "description": {"translate": "item.youzaiworldcore.music_disc_cloud_genshin.desc"},
+  "length_in_seconds": 48,
+  "comparator_output": 7
+}

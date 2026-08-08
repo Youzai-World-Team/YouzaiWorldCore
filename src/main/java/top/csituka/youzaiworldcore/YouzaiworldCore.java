@@ -88,6 +88,7 @@ import top.csituka.youzaiworldcore.item.ModItems;
 import top.csituka.youzaiworldcore.item.tool.YzChainMiningTool;
 import top.csituka.youzaiworldcore.network.ModNetworking;
 import top.csituka.youzaiworldcore.network.OpenMenuPayload;
+import top.csituka.youzaiworldcore.sound.ModSoundEvents;
 import top.csituka.youzaiworldcore.pet.PetBackupManager;
 import top.csituka.youzaiworldcore.pet.command.PetCommand;
 import top.csituka.youzaiworldcore.pet.config.PetModuleConfig;
@@ -163,6 +164,8 @@ public class YouzaiworldCore implements ModInitializer {
         ModBlockEntities.initialize();
         DebugLogger.info("YouzaiworldCore", "初始化物品...");
         ModItems.initialize();
+        DebugLogger.info("YouzaiworldCore", "初始化自定义 SoundEvent...");
+        ModSoundEvents.initialize();
         DebugLogger.info("YouzaiworldCore", "初始化创造模式标签页...");
         ModCreativeModeTabs.initialize();
         DebugLogger.info("YouzaiworldCore", "初始化菜单类型...");

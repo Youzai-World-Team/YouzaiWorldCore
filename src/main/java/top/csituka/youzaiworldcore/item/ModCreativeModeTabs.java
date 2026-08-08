@@ -92,6 +92,8 @@ public class ModCreativeModeTabs {
                                 output.accept(ModItems.TELEPORT_STONE);
                                 output.accept(ModItems.WARP_SCROLL);
                                 output.accept(ModItems.RETURN_SCROLL);
+                                // 《云·原神》音乐唱片（Epic 稀有度、由 datapack 注入 JukeboxPlayable）
+                                output.accept(ModItems.MUSIC_DISC_CLOUD_GENSHIN);
                         })
                         .build();
 
