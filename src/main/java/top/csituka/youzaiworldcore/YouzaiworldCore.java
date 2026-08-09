@@ -419,11 +419,14 @@ public class YouzaiworldCore implements ModInitializer {
                 top.csituka.youzaiworldcore.mail.MailDataStorage.load(sp.getUUID());
             }
         });
-        // 周期性过期清理（每 3000 tick = 约 2.5 分钟）
+        // 周期性过期清理（默认 3000 tick = 约 2.5 分钟）
+        // 使用 int[] 作为可变计数器，避免每 tick 取模运算
+        final int[] purgeCounter = {0};
         net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.START_SERVER_TICK.register(server -> {
-            // 使用服务器 Tick 计数器实现定时触发
-            if (server.getTickCount()
-                    % top.csituka.youzaiworldcore.mail.MailSettings.get().getAutoPurgeIntervalTicks() == 0) {
+            int interval = top.csituka.youzaiworldcore.mail.MailSettings.get().getAutoPurgeIntervalTicks();
+            if (interval <= 0) return;
+            if (++purgeCounter[0] >= interval) {
+                purgeCounter[0] = 0;
                 top.csituka.youzaiworldcore.mail.MailManager.purge();
             }
         });

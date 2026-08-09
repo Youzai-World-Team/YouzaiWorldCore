@@ -27,6 +27,10 @@ public class TridentVoidHandler {
     private static final TridentVoidHandler INSTANCE = new TridentVoidHandler();
     private static final Logger LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/TridentVoid");
 
+    /** 扫描间隔（tick），避免每tick全实体遍历。三叉戟是低频事件，20tick（1秒）足够。 */
+    private static final int SCAN_INTERVAL = 20;
+    private int tickCounter = 0;
+
     private TridentVoidHandler() {
     }
 
@@ -83,11 +87,15 @@ public class TridentVoidHandler {
      */
     public static void register() {
         ServerTickEvents.START_SERVER_TICK.register(server -> {
-            // 对每个维度执行检测
+            // 节流：每 SCAN_INTERVAL tick 扫描一次，而非每 tick 全维度遍历
+            if (++INSTANCE.tickCounter < SCAN_INTERVAL) {
+                return;
+            }
+            INSTANCE.tickCounter = 0;
             for (ServerLevel level : server.getAllLevels()) {
                 INSTANCE.onServerTick(level);
             }
         });
-        LOGGER.info("三叉戟虚空保护事件处理器已注册");
+        LOGGER.info("三叉戟虚空保护事件处理器已注册 (scanInterval={}tick)", SCAN_INTERVAL);
     }
 }

@@ -163,9 +163,9 @@ public final class StatsManager {
 
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
             if (handler.getPlayer() instanceof ServerPlayer player) {
-                DebugLogger.info(MODULE, "玩家 %s 断开，保存统计...", player.getName().getString());
+                DebugLogger.info(MODULE, "玩家 %s 断开，刷新统计到缓存（延迟写盘）", player.getName().getString());
                 refreshPlayer(server, player);
-                save(server);
+                // 不再立即全量写盘：刷新到 CACHE 后由周期性 tick (每 5 分钟) 或服务器停止时落盘
             }
         });
 
@@ -182,6 +182,8 @@ public final class StatsManager {
                     // 更新今天快照（使增量计算更精确）
                     updateTodaySnapshot(server);
                 }
+                // 周期性落盘（替代每次玩家断线时的立即写盘）
+                save(server);
             }
         });
 

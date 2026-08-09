@@ -13,7 +13,6 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -54,8 +53,8 @@ public class ChorusFruitDropHandler {
     /** 最近被破坏的紫颂植物方块位置列表（线程安全，支持遍历时安全删除） */
     private static final CopyOnWriteArrayList<BlockPos> lastChorusBlock = new CopyOnWriteArrayList<>();
 
-    /** 每个记录位置对应的最后交互时间戳 */
-    private static final Map<BlockPos, Date> lastAction = new HashMap<>();
+    /** 每个记录位置对应的最后交互时间戳（毫秒，System.currentTimeMillis()）。避免 Date 对象分配。 */
+    private static final Map<BlockPos, Long> lastAction = new HashMap<>();
 
     private ChorusFruitDropHandler() {
     }
@@ -95,7 +94,7 @@ public class ChorusFruitDropHandler {
         if (state.getBlock().equals(Blocks.CHORUS_PLANT)) {
             BlockPos immutablePos = pos.immutable();
             lastChorusBlock.add(immutablePos);
-            lastAction.put(immutablePos, new Date());
+            lastAction.put(immutablePos, System.currentTimeMillis());
             DebugLogger.info(MODULE, "记录紫颂植物破坏位置: %s (当前记录数=%d)",
                     immutablePos, lastChorusBlock.size());
         } else {
@@ -135,16 +134,16 @@ public class ChorusFruitDropHandler {
         // 将 Y 轴归一化为 1，使后续 closerThan 比较退化为纯水平（XZ）距离
         BlockPos lowChorusPos = BlockPos.containing(itemEntity.getX(), 1.0, itemEntity.getZ());
 
-        Date now = new Date();
+        long now = System.currentTimeMillis();
         for (BlockPos recordedPos : lastChorusBlock) {
-            Date last = lastAction.get(recordedPos);
+            Long last = lastAction.get(recordedPos);
             if (last == null) {
                 lastChorusBlock.remove(recordedPos);
                 continue;
             }
 
             // 过期清理：记录位置超过时间窗口则移除
-            long ageMs = now.getTime() - last.getTime();
+            long ageMs = now - last;
             if (ageMs > EXPIRY_MS) {
                 DebugLogger.debug(MODULE, "记录位置已过期，移除: %s (age=%dms)", recordedPos, ageMs);
                 lastChorusBlock.remove(recordedPos);

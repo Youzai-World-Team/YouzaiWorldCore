@@ -33,17 +33,17 @@ public record LevelExpSyncPayload(
 
     public static final StreamCodec<RegistryFriendlyByteBuf, LevelExpSyncPayload> STREAM_CODEC = StreamCodec.of(
             (buf, payload) -> {
-                buf.writeInt(payload.level);
-                buf.writeInt(payload.currentExp);
-                buf.writeInt(payload.neededExp);
-                buf.writeInt(payload.gainedExp);
+                buf.writeVarInt(payload.level);
+                buf.writeVarInt(payload.currentExp);
+                buf.writeVarInt(payload.neededExp);
+                buf.writeVarInt(payload.gainedExp);
                 buf.writeBoolean(payload.leveledUp);
             },
             buf -> new LevelExpSyncPayload(
-                    buf.readInt(),
-                    buf.readInt(),
-                    buf.readInt(),
-                    buf.readInt(),
+                    buf.readVarInt(),
+                    buf.readVarInt(),
+                    buf.readVarInt(),
+                    buf.readVarInt(),
                     buf.readBoolean()
             )
     );

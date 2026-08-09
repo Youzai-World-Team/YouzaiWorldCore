@@ -115,6 +115,14 @@ public class PlayerAttributeStorage {
         }
     }
 
+    /**
+     * 快速检查玩家是否有属性数据（无锁版本，用于热路径熔断）。
+     * <p>不触发任何懒创建或 I/O，仅检查缓存中是否存在。</p>
+     */
+    public static boolean hasAttributes(UUID uuid) {
+        return CACHE.containsKey(uuid.toString());
+    }
+
     public static void markDirty(UUID uuid) {
         long now = System.currentTimeMillis();
         if (now - lastSaveTime < SAVE_DEBOUNCE_MS) return;

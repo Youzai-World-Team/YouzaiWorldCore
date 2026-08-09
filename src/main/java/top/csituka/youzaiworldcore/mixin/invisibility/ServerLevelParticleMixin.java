@@ -65,6 +65,11 @@ public abstract class ServerLevelParticleMixin {
             double speed,
             CallbackInfoReturnable<Integer> cir
     ) {
+        // 快路径：无隐身玩家时直接跳过，避免在热路径上做全服扫描
+        if (InvisibilityManager.getInvisiblePlayers().isEmpty()) {
+            return;
+        }
+
         // 查找粒子位置附近的隐身玩家
         ServerPlayer invisiblePlayer = youzaiworldcore$findInvisiblePlayerAt(x, y, z);
         if (invisiblePlayer == null) {

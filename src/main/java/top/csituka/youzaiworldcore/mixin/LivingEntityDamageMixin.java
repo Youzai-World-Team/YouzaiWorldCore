@@ -23,9 +23,17 @@ public class LivingEntityDamageMixin {
 
     @ModifyVariable(method = "hurtServer", at = @At("HEAD"), argsOnly = true, index = 3)
     private float modifyDamage(float amount, net.minecraft.server.level.ServerLevel level, DamageSource source, float _unused) {
+        // 熔断器1：无效伤害量无需计算（如无敌/创造模式，amount 为 0）
+        if (amount <= 0f) return amount;
+
         //noinspection ConstantValue
         if (!((Object) this instanceof ServerPlayer player)) return amount;
         UUID uuid = player.getUUID();
+
+        // 熔断器2：玩家无任何属性数据时直接返回，避免不必要的存储查询
+        if (!top.csituka.youzaiworldcore.skill.PlayerAttributeStorage.hasAttributes(uuid)) {
+            return amount;
+        }
 
         // 1. 远程伤害增幅：弹射物攻击增伤
         if (source.getDirectEntity() != null && source.getDirectEntity() != source.getEntity()) {

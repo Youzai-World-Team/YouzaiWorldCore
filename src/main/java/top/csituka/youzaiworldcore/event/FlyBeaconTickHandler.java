@@ -59,6 +59,12 @@ public class FlyBeaconTickHandler implements ServerTickEvents.StartTick {
         // 获取当前所有已激活信标的方块坐标
         Set<BlockPos> activeBeacons = FlyBeaconBlockEntity.getActiveBeacons();
 
+        // 快路径：无激活信标或无在线玩家，跳过 O(P*B) 遍历
+        if (activeBeacons.isEmpty() || server.getPlayerList().getPlayerCount() == 0) {
+            DebugLogger.exiting("FlyBeaconTickHandler", "onStartTick", "no active beacons or no players");
+            return;
+        }
+
         // 记录本次 tick 中应被信标赋予飞行的玩家 UUID
         Set<UUID> currentAffected = new HashSet<>();
 

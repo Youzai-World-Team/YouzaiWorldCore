@@ -45,12 +45,11 @@ public class JukeboxLoopMixin {
             return;
         }
 
-        // 检测附近是否有玩家
+        // 检测附近是否有玩家（仅遍历本维度玩家，避免跨维度全服扫描）
         ServerLevel serverLevel = (ServerLevel) level;
         boolean playerNearby = false;
-        for (ServerPlayer player : serverLevel.getServer().getPlayerList().getPlayers()) {
-            if (player.level() == serverLevel
-                    && player.distanceToSqr(pos.getX(), pos.getY(), pos.getZ()) <= PLAYER_RADIUS_SQ) {
+        for (ServerPlayer player : serverLevel.players()) {
+            if (player.distanceToSqr(pos.getX(), pos.getY(), pos.getZ()) <= PLAYER_RADIUS_SQ) {
                 playerNearby = true;
                 break;
             }

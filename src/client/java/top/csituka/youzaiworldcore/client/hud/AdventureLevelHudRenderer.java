@@ -57,6 +57,13 @@ public class AdventureLevelHudRenderer {
     private static long lastLevelUpTime = 0;
     private static final int LEVEL_UP_CROSSFADE_MS = 500;   // 淡入/淡出各 500ms
     private static final int LEVEL_UP_HOLD_MS = 2000;        // 升级文字保持 2000ms
+
+    // ─── 字符串缓存（避免每帧拼接） ───
+    private static String cachedNormalText = "";
+    private static String cachedLevelUpText = "";
+    private static int cachedLevel = -1;
+    private static int cachedCurrentExp = -1;
+    private static int cachedNeededExp = -1;
     private static final int LEVEL_UP_TOTAL_MS = LEVEL_UP_CROSSFADE_MS * 2 + LEVEL_UP_HOLD_MS; // = 2200ms
 
     // ─── 平滑经验条 ───
@@ -179,9 +186,16 @@ public class AdventureLevelHudRenderer {
             g.fill(barX, barY, barX + fillWidth, barY + BAR_HEIGHT, fillColor);
         }
 
-        // ─── 文字（带升级交叉淡入淡出） ───
-        String normalText = "冒险等级 Lv." + displayLevel + "  " + displayCurrentExp + " / " + displayNeededExp;
-        String levelUpText = "等级提升：" + displayLevel + "级";
+        // ─── 文字（带升级交叉淡入淡出），仅在值变化时重建字符串 ───
+        if (displayLevel != cachedLevel || displayCurrentExp != cachedCurrentExp || displayNeededExp != cachedNeededExp) {
+            cachedLevel = displayLevel;
+            cachedCurrentExp = displayCurrentExp;
+            cachedNeededExp = displayNeededExp;
+            cachedNormalText = "冒险等级 Lv." + displayLevel + "  " + displayCurrentExp + " / " + displayNeededExp;
+            cachedLevelUpText = "等级提升：" + displayLevel + "级";
+        }
+        String normalText = cachedNormalText;
+        String levelUpText = cachedLevelUpText;
 
         int textY = barY - 12;
 

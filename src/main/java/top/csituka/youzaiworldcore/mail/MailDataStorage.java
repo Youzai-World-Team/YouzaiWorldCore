@@ -11,8 +11,10 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 每玩家邮件索引（收件箱）：{@code config/youzaiworldcore/mail/box/<player-uuid>.json}。
@@ -28,6 +30,9 @@ public class MailDataStorage {
 
     private static Path BOX_DIR;
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+
+    /** 内存缓存：玩家 UUID -> 收件箱。避免每次操作都读写磁盘。 */
+    private static final Map<UUID, PlayerMailbox> CACHE = new ConcurrentHashMap<>();
 
     /**
      * 每玩家信箱（存储及 Gson 序列化用）。
@@ -91,6 +96,14 @@ public class MailDataStorage {
      */
     public static PlayerMailbox load(UUID playerUuid) {
         DebugLogger.entering(MODULE, "load", "playerUuid=" + playerUuid);
+
+        // 先查内存缓存
+        PlayerMailbox cached = CACHE.get(playerUuid);
+        if (cached != null) {
+            DebugLogger.exiting(MODULE, "load", "cache hit, mails=" + cached.getMails().size());
+            return cached;
+        }
+
         Path file = getPlayerFile(playerUuid);
         PlayerMailbox box;
 
@@ -128,6 +141,8 @@ public class MailDataStorage {
             DebugLogger.info(MODULE, "加载清理: 移除了 %d 个引用 (playerUuid=%s)", removed, playerUuid);
             save(playerUuid, box);
         }
+        // 放入缓存
+        CACHE.put(playerUuid, box);
         DebugLogger.exiting(MODULE, "load", "mails=" + box.getMails().size());
         return box;
     }
@@ -140,6 +155,8 @@ public class MailDataStorage {
      */
     public static void save(UUID playerUuid, PlayerMailbox box) {
         DebugLogger.entering(MODULE, "save", "playerUuid=" + playerUuid + ", mails=" + box.getMails().size());
+        // 更新缓存
+        CACHE.put(playerUuid, box);
         Path file = getPlayerFile(playerUuid);
         try {
             Files.createDirectories(file.getParent());
@@ -219,6 +236,7 @@ public class MailDataStorage {
      */
     public static void removeBox(UUID playerUuid) {
         DebugLogger.entering(MODULE, "removeBox", "playerUuid=" + playerUuid);
+        CACHE.remove(playerUuid);
         Path file = getPlayerFile(playerUuid);
         try {
             boolean deleted = Files.deleteIfExists(file);

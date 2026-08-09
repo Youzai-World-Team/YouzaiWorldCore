@@ -19,76 +19,91 @@ import top.csituka.youzaiworldcore.client.hud.ArmorBarRenderer;
 import top.csituka.youzaiworldcore.client.hud.FoodBarRenderer;
 import top.csituka.youzaiworldcore.client.hud.HealthBarRenderer;
 import top.csituka.youzaiworldcore.client.hud.OxygenBarRenderer;
-import top.csituka.youzaiworldcore.util.DebugLogger;
 
 /**
  * YZUI 血条/饥饿条/盔甲条/氧气条替换 Mixin。
  *
- * <p>当 YZUI 启用时，取消以下原版渲染：</p>
+ * <p>
+ * 当 YZUI 启用时，取消以下原版渲染：
+ * </p>
  * <ul>
- *   <li>{@link Hud#extractPlayerHealth} — 爱心血条</li>
- *   <li>{@link Hud#extractFood} — 鸡腿饥饿值</li>
- *   <li>{@link Hud#extractArmor} — 盔甲图标</li>
- *   <li>{@link Hud#extractAirBubbles} — 氧气气泡</li>
+ * <li>{@link Hud#extractPlayerHealth} — 爱心血条</li>
+ * <li>{@link Hud#extractFood} — 鸡腿饥饿值</li>
+ * <li>{@link Hud#extractArmor} — 盔甲图标</li>
+ * <li>{@link Hud#extractAirBubbles} — 氧气气泡</li>
  * </ul>
  *
- * <p>替换为两行并排长条进度条：</p>
+ * <p>
+ * 替换为两行并排长条进度条：
+ * </p>
+ * 
  * <pre>
  * 第二行: [ARMOR BAR]          [OXYGEN BAR]   (仅在对应值非默认时显示)
  * 第一行: [HEALTH BAR]    gap    [FOOD BAR]    (始终显示)
  * </pre>
  *
- * <p>创造模式 / 旁观模式隐藏所有条。</p>
+ * <p>
+ * 创造模式 / 旁观模式隐藏所有条。
+ * </p>
  */
 @SuppressWarnings("null")
 @Mixin(Hud.class)
 public abstract class HealthBarMixin {
 
-    private static final String LOG_TAG = "HealthBarMixin";
     /** 两行之间的垂直间距（≥ 文字高度 + 行高，避免 text 与第二行条重叠） */
     private static final int ROW_GAP = 12;
 
+    /** 布局缓存：仅在窗口尺寸变化时重新计算 */
+    private static int cachedSw = -1;
+    private static int cachedSh = -1;
+    private static int cachedStartX;
+    private static int cachedRow1Y;
+    private static int cachedRow2Y;
+    private static int cachedHealthX;
+    private static int cachedFoodX;
+
     // ===== 取消原版渲染 =====
 
-    @Inject(method = "extractPlayerHealth(Lnet/minecraft/client/gui/GuiGraphicsExtractor;)V",
-            at = @At("HEAD"), cancellable = true)
+    @Inject(method = "extractPlayerHealth(Lnet/minecraft/client/gui/GuiGraphicsExtractor;)V", at = @At("HEAD"), cancellable = true)
     private void yzwc$onExtractPlayerHealth(GuiGraphicsExtractor graphics, CallbackInfo ci) {
-        if (yzwc$shouldApplyYzui()) ci.cancel();
+        if (yzwc$shouldApplyYzui())
+            ci.cancel();
     }
 
     @Inject(method = "extractFood(Lnet/minecraft/client/gui/GuiGraphicsExtractor;"
-            + "Lnet/minecraft/world/entity/player/Player;II)V",
-            at = @At("HEAD"), cancellable = true)
+            + "Lnet/minecraft/world/entity/player/Player;II)V", at = @At("HEAD"), cancellable = true)
     private void yzwc$onExtractFood(GuiGraphicsExtractor graphics,
             Player player, int i, int j, CallbackInfo ci) {
-        if (yzwc$shouldApplyYzui()) ci.cancel();
+        if (yzwc$shouldApplyYzui())
+            ci.cancel();
     }
 
     @Inject(method = "extractArmor(Lnet/minecraft/client/gui/GuiGraphicsExtractor;"
-            + "Lnet/minecraft/world/entity/player/Player;IIII)V",
-            at = @At("HEAD"), cancellable = true)
+            + "Lnet/minecraft/world/entity/player/Player;IIII)V", at = @At("HEAD"), cancellable = true)
     private static void yzwc$onExtractArmor(GuiGraphicsExtractor graphics,
             Player player, int i, int j, int k, int l, CallbackInfo ci) {
-        if (yzwc$shouldApplyYzui()) ci.cancel();
+        if (yzwc$shouldApplyYzui())
+            ci.cancel();
     }
 
     @Inject(method = "extractAirBubbles(Lnet/minecraft/client/gui/GuiGraphicsExtractor;"
-            + "Lnet/minecraft/world/entity/player/Player;III)V",
-            at = @At("HEAD"), cancellable = true)
+            + "Lnet/minecraft/world/entity/player/Player;III)V", at = @At("HEAD"), cancellable = true)
     private void yzwc$onExtractAirBubbles(GuiGraphicsExtractor graphics,
             Player player, int i, int j, int k, CallbackInfo ci) {
-        if (yzwc$shouldApplyYzui()) ci.cancel();
+        if (yzwc$shouldApplyYzui())
+            ci.cancel();
     }
 
     /**
      * 替换原版物品名称渲染：仅生存模式显示，加入深色圆角背景，文字与背景同步消失。
      *
-     * <p>取消原版 {@code extractSelectedItemName}，由本方法完全接管：
+     * <p>
+     * 取消原版 {@code extractSelectedItemName}，由本方法完全接管：
      * <ul>
-     *   <li>仅在生存/冒险模式显示（判定 {@code !creative && !spectator}）</li>
-     *   <li>物品切换后 60 tick（约 3 秒）后渐隐消失</li>
-     *   <li>15% 黑色不透明度圆角背景 + 白色文字</li>
-     *   <li>背景与文字同时出现、同时消失</li>
+     * <li>仅在生存/冒险模式显示（判定 {@code !creative && !spectator}）</li>
+     * <li>物品切换后 60 tick（约 3 秒）后渐隐消失</li>
+     * <li>15% 黑色不透明度圆角背景 + 白色文字</li>
+     * <li>背景与文字同时出现、同时消失</li>
      * </ul>
      * </p>
      */
@@ -99,20 +114,22 @@ public abstract class HealthBarMixin {
     @Unique
     private static final int HIGHLIGHT_DURATION_TICKS = 60; // 3 秒
     @Unique
-    private static final int FADE_TICKS = 20;               // 最后 20 tick 渐隐
+    private static final int FADE_TICKS = 20; // 最后 20 tick 渐隐
 
-    @Inject(method = "extractSelectedItemName(Lnet/minecraft/client/gui/GuiGraphicsExtractor;)V",
-            at = @At("HEAD"), cancellable = true)
+    @Inject(method = "extractSelectedItemName(Lnet/minecraft/client/gui/GuiGraphicsExtractor;)V", at = @At("HEAD"), cancellable = true)
     private void yzwc$onSelectedItemName(GuiGraphicsExtractor graphics, CallbackInfo ci) {
-        if (!yzwc$shouldApplyYzui()) return;
+        if (!yzwc$shouldApplyYzui())
+            return;
 
         Minecraft client = Minecraft.getInstance();
         Hud hud = client.gui.hud;
         Player player = client.player;
-        if (player == null) return;
+        if (player == null)
+            return;
 
         // 仅在生存/冒险模式显示（原版在创造模式也有，但用户要求仅生存模式可见）
-        if (player.isCreative() || player.isSpectator()) return;
+        if (player.isCreative() || player.isSpectator())
+            return;
 
         ItemStack held = player.getMainHandItem();
         if (held.isEmpty()) {
@@ -134,7 +151,8 @@ public abstract class HealthBarMixin {
 
         // 超时判定
         int elapsed = guiTicks - yzwc$itemHighlightStartTick;
-        if (elapsed > HIGHLIGHT_DURATION_TICKS) return;
+        if (elapsed > HIGHLIGHT_DURATION_TICKS)
+            return;
 
         // 渐隐 alpha
         int alpha = 255;
@@ -177,16 +195,12 @@ public abstract class HealthBarMixin {
         int textColor = (alpha << 24) | 0xFFFFFF;
         graphics.text(font, text, textX + 1, textY + 1, 0xFF000000, false); // 阴影
         graphics.text(font, text, textX, textY, textColor, false);
-
-        DebugLogger.debug(LOG_TAG,
-                "物品名称: text='%s', alpha=%d, elapsed=%d/%d, pos=(%d,%d)",
-                text, alpha, elapsed, HIGHLIGHT_DURATION_TICKS, textX, textY);
     }
 
     // ===== 渲染自定义条 =====
     //
     // 注：注入点使用 HEAD 而非 RETURN，确保 HUD 条的渲染层级低于物品名称等后续元素。
-    //     物品名称（extractSelectedItemName）在此之后才执行，自然覆盖在条之上。
+    // 物品名称（extractSelectedItemName）在此之后才执行，自然覆盖在条之上。
 
     @Inject(method = "extractRenderState(Lnet/minecraft/client/gui/GuiGraphicsExtractor;"
             + "Lnet/minecraft/client/DeltaTracker;)V", at = @At("HEAD"))
@@ -207,23 +221,27 @@ public abstract class HealthBarMixin {
         int sw = graphics.guiWidth();
         int sh = graphics.guiHeight();
 
-        int bw = HealthBarRenderer.BAR_WIDTH;
-        int bg = HealthBarRenderer.BAR_GAP;
-        int bh = HealthBarRenderer.BAR_HEIGHT;
-        int yOffset = HealthBarRenderer.Y_OFFSET_FROM_BOTTOM;
+        // 缓存布局计算：窗口尺寸不变时复用（仅在缩放/全屏切换时变化）
+        if (sw != cachedSw || sh != cachedSh) {
+            cachedSw = sw;
+            cachedSh = sh;
 
-        // 计算第一行（主行）位置
-        int totalWidth = bw * 2 + bg;
-        int startX = (sw - totalWidth) / 2;
-        int row1Y = sh - yOffset;               // 第一行（血条、食物条）
-        int row2Y = row1Y - bh - ROW_GAP;       // 第二行（盔甲条、氧气条）
+            int bw = HealthBarRenderer.BAR_WIDTH;
+            int bg = HealthBarRenderer.BAR_GAP;
+            int bh = HealthBarRenderer.BAR_HEIGHT;
+            int yOffset = HealthBarRenderer.Y_OFFSET_FROM_BOTTOM;
 
-        int healthX = startX;
-        int foodX = startX + bw + bg;
-
-        DebugLogger.debug(LOG_TAG,
-                "渲染四行: row1Y=%d, row2Y=%d, healthX=%d, foodX=%d, sw=%d, sh=%d",
-                row1Y, row2Y, healthX, foodX, sw, sh);
+            int totalWidth = bw * 2 + bg;
+            cachedStartX = (sw - totalWidth) / 2;
+            cachedRow1Y = sh - yOffset;
+            cachedRow2Y = cachedRow1Y - bh - ROW_GAP;
+            cachedHealthX = cachedStartX;
+            cachedFoodX = cachedStartX + bw + bg;
+        }
+        int row1Y = cachedRow1Y;
+        int row2Y = cachedRow2Y;
+        int healthX = cachedHealthX;
+        int foodX = cachedFoodX;
 
         // === 第二行（盔甲、氧气 — 仅在有值时显示） ===
         boolean armorVisible = player.getArmorValue() > 0;

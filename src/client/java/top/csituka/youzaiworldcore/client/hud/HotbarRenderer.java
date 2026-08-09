@@ -357,10 +357,6 @@ public final class HotbarRenderer {
 
         // === 5. 攻击冷却指示器（当选项设为「热键栏」时显示） ===
         drawAttackIndicator(graphics, client, panelX, panelY);
-
-        DebugLogger.debug(LOG_TAG,
-                "热键栏已渲染: animPos=%.3f, actual=%d, virtual=%.1f, panel=(%d,%d)",
-                animSelectedSlot, currentSlot, virtualTarget, panelX, panelY);
     }
 
     // ===== 副手槽绘制 =====
@@ -450,6 +446,23 @@ public final class HotbarRenderer {
      * @param r     圆角半径
      * @param color ARGB 颜色
      */
+    /** 预计算的圆角像素偏移缓存：radius → int[][]{{i,j}, ...} */
+    private static final java.util.Map<Integer, int[][]> CORNER_OFFSETS = new java.util.HashMap<>();
+
+    private static int[][] getCornerOffsets(int r) {
+        return CORNER_OFFSETS.computeIfAbsent(r, radius -> {
+            java.util.List<int[]> offsets = new java.util.ArrayList<>();
+            for (int i = 0; i < radius; i++) {
+                for (int j = 0; j < radius; j++) {
+                    if (i * i + j * j < radius * radius) {
+                        offsets.add(new int[]{i, j});
+                    }
+                }
+            }
+            return offsets.toArray(new int[0][]);
+        });
+    }
+
     private static void fillRoundedRect(GuiGraphicsExtractor g,
             int x, int y, int w, int h, int r, int color) {
         // 主体（排除左右两端的完整高度列）
@@ -463,24 +476,14 @@ public final class HotbarRenderer {
         // 左右边缘（排除上下角落区域）
         g.fill(x, y + r, x + r, y + h - r, color);
         g.fill(x + w - r, y + r, x + w, y + h - r, color);
-        // 四角圆形填充
-        for (int i = 0; i < r; i++) {
-            for (int j = 0; j < r; j++) {
-                if (i * i + j * j < r * r) {
-                    // 左上角
-                    g.fill(x + r - i - 1, y + r - j - 1,
-                            x + r - i, y + r - j, color);
-                    // 右上角
-                    g.fill(x + w - r + i, y + r - j - 1,
-                            x + w - r + i + 1, y + r - j, color);
-                    // 左下角
-                    g.fill(x + r - i - 1, y + h - r + j,
-                            x + r - i, y + h - r + j + 1, color);
-                    // 右下角
-                    g.fill(x + w - r + i, y + h - r + j,
-                            x + w - r + i + 1, y + h - r + j + 1, color);
-                }
-            }
+        // 四角圆形填充（使用预计算偏移表）
+        for (int[] offset : getCornerOffsets(r)) {
+            int i = offset[0];
+            int j = offset[1];
+            g.fill(x + r - i - 1, y + r - j - 1, x + r - i, y + r - j, color);
+            g.fill(x + w - r + i, y + r - j - 1, x + w - r + i + 1, y + r - j, color);
+            g.fill(x + r - i - 1, y + h - r + j, x + r - i, y + h - r + j + 1, color);
+            g.fill(x + w - r + i, y + h - r + j, x + w - r + i + 1, y + h - r + j + 1, color);
         }
     }
 }

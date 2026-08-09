@@ -1,6 +1,8 @@
 package top.csituka.youzaiworldcore.account.data;
 
 import com.google.gson.reflect.TypeToken;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.loader.api.FabricLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,6 +33,13 @@ public class AccountDataStorage {
 
     /** 内存缓存：小写用户名 -> PlayerAccount */
     private static final ConcurrentHashMap<String, PlayerAccount> CACHE = new ConcurrentHashMap<>();
+
+    /** 脏标记：自上次写入后缓存发生过变更 */
+    private static volatile boolean dirty = false;
+
+    /** 写盘延迟 tick 计数器（约 5 秒 = 100 tick），避免高频写入 */
+    private static int saveDebounceTicks = 0;
+    private static final int SAVE_DEBOUNCE_INTERVAL = 100;
 
     /** 会话认证超时时间（秒），0=关闭 */
     private static int sessionTimeout = 0;
@@ -73,7 +82,7 @@ public class AccountDataStorage {
     }
 
     /**
-     * 初始化存储路径
+     * 初始化存储路径，注册延迟写盘与服务器停止时的强制落盘。
      */
     public static void initialize() {
         DebugLogger.entering("AccountDataStorage", "initialize");
@@ -96,6 +105,25 @@ public class AccountDataStorage {
         }
         loadConfig();
         loadFromDisk();
+
+        // 注册 tick 级延迟写盘：有脏数据且距上次写入超过阈值时落盘
+        ServerTickEvents.END_SERVER_TICK.register(server -> {
+            if (dirty) {
+                saveDebounceTicks++;
+                if (saveDebounceTicks >= SAVE_DEBOUNCE_INTERVAL) {
+                    saveToDisk();
+                }
+            }
+        });
+
+        // 服务器停止时强制落盘
+        ServerLifecycleEvents.SERVER_STOPPING.register(server -> {
+            DebugLogger.info("AccountDataStorage", "服务器停止，强制落盘 (dirty=%s)", dirty);
+            if (dirty) {
+                saveToDisk();
+            }
+        });
+
         DebugLogger.exiting("AccountDataStorage", "initialize");
     }
 
@@ -186,15 +214,43 @@ public class AccountDataStorage {
     }
 
     /**
-     * 将缓存保存到磁盘
+     * 标记缓存已脏，通知延迟写盘机制。
+     * <p>
+     * 替代原有的每次操作后立即 saveToDisk() 调用。
+     * 实际写盘由 tick 级防抖器（{@value #SAVE_DEBOUNCE_INTERVAL} tick = ~5 秒后）或服务器停止时触发。
+     * </p>
+     */
+    private static void markDirty() {
+        dirty = true;
+        saveDebounceTicks = 0; // 重置倒计时，每次变更重新计时
+    }
+
+    /**
+     * 强制立即落盘（无视脏标记与防抖倒计时）。
+     * 用于 reload、服务器停止等需要立即持久化的场景。
+     */
+    public static void flushToDisk() {
+        DebugLogger.entering("AccountDataStorage", "flushToDisk");
+        saveToDisk();
+    }
+
+    /**
+     * 将缓存保存到磁盘。
+     * 由 markDirty/防抖/停止钩子调用，不建议直接调用。
      */
     public static void saveToDisk() {
+        if (!dirty) {
+            DebugLogger.info("AccountDataStorage", "saveToDisk 跳过（无脏数据）");
+            return;
+        }
         DebugLogger.entering("AccountDataStorage", "saveToDisk");
         LOCK.writeLock().lock();
         DebugLogger.info("AccountDataStorage", "writeLock acquired for saveToDisk");
         try {
             String json = PlayerAccount.GSON.toJson(CACHE);
             Files.writeString(STORAGE_FILE, json);
+            dirty = false;
+            saveDebounceTicks = 0;
         } catch (IOException e) {
             LOGGER.error("保存账户数据失败", e);
             DebugLogger.exception("AccountDataStorage", "saveToDisk-writeFile", e);
@@ -231,7 +287,7 @@ public class AccountDataStorage {
                 DebugLogger.branch("AccountDataStorage", "existing account found", false);
                 account = new PlayerAccount(username, uuid);
                 CACHE.put(key, account);
-                saveToDisk();
+                markDirty();
                 DebugLogger.exiting("AccountDataStorage", "getOrCreate", "created new account");
             } else {
                 DebugLogger.branch("AccountDataStorage", "existing account found", true);
@@ -274,7 +330,7 @@ public class AccountDataStorage {
                     java.time.ZonedDateTime.now());
             DebugLogger.stateChange("AccountDataStorage", key, "lastAuthenticatedDate",
                     java.time.ZonedDateTime.now());
-            saveToDisk();
+            markDirty();
             DebugLogger.exiting("AccountDataStorage", "register", "true (registered successfully)");
             return true;
         } finally {
@@ -291,7 +347,7 @@ public class AccountDataStorage {
         try {
             String key = account.usernameLowerCase;
             CACHE.put(key, account);
-            saveToDisk();
+            markDirty();
         } finally {
             LOCK.writeLock().unlock();
             DebugLogger.exiting("AccountDataStorage", "update");
@@ -310,7 +366,7 @@ public class AccountDataStorage {
             PlayerAccount removed = CACHE.remove(key);
             if (removed != null) {
                 DebugLogger.branch("AccountDataStorage", "account found to delete", true);
-                saveToDisk();
+                markDirty();
                 DebugLogger.exiting("AccountDataStorage", "delete", "true");
                 return true;
             }
@@ -362,22 +418,17 @@ public class AccountDataStorage {
     }
 
     /**
-     * 通过玩家名称（精确匹配）获取
+     * 通过玩家名称（精确大小写匹配）获取。
+     * <p>优化：先走 O(1) 的 {@link #get} 查询，再校验大小写匹配。</p>
      */
     public static PlayerAccount getByExactName(String username) {
         DebugLogger.entering("AccountDataStorage", "getByExactName", "username=" + username);
-        LOCK.readLock().lock();
-        try {
-            for (PlayerAccount acc : CACHE.values()) {
-                if (acc.username != null && acc.username.equals(username)) {
-                    DebugLogger.exiting("AccountDataStorage", "getByExactName", "found");
-                    return acc;
-                }
-            }
-            DebugLogger.exiting("AccountDataStorage", "getByExactName", "not found");
-            return null;
-        } finally {
-            LOCK.readLock().unlock();
+        PlayerAccount acc = get(username); // O(1) 通过小写键查找
+        if (acc != null && acc.username != null && acc.username.equals(username)) {
+            DebugLogger.exiting("AccountDataStorage", "getByExactName", "found");
+            return acc;
         }
+        DebugLogger.exiting("AccountDataStorage", "getByExactName", "not found");
+        return null;
     }
 }
