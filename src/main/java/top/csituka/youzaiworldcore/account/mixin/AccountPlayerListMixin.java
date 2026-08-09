@@ -2,6 +2,7 @@ package top.csituka.youzaiworldcore.account.mixin;
 
 import net.minecraft.network.Connection;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -130,7 +131,7 @@ public abstract class AccountPlayerListMixin {
         } else {
             // 未认证玩家断开时，如果 mixin 中有有效位置（来自上次登录或首次加入），持久化保存
             AuthLocationData loc = AuthPlayerHelper.getLastLocation(player);
-            if (loc != null && loc.position != null && account != null && !isVoidLocation(loc)) {
+            if (loc != null && loc.position != null && account != null && !AuthPlayerHelper.isVoidLocation(loc)) {
                 account.lastPositionJson = loc.toJson();
                 AccountDataStorage.update(account);
             }
@@ -147,17 +148,11 @@ public abstract class AccountPlayerListMixin {
     }
 
     @Unique
-    private static boolean isVoidLocation(AuthLocationData loc) {
-        if (loc.dimension == null) return false;
-        String dim = loc.dimension.identifier().toString();
-        if (!"minecraft:the_end".equals(dim)) return false;
-        return Math.abs(loc.position.x) < 1 && Math.abs(loc.position.y + 60) < 1 && Math.abs(loc.position.z) < 1;
-    }
-
-    @Unique
     private void teleportToVoid(ServerPlayer player) {
-        ServerLevel endWorld = server.getLevel(Level.END);
-        if (endWorld == null) endWorld = server.overworld();
-        player.teleportTo(endWorld, 0, -60, 0, Set.of(), 0, 0, true);
+        ResourceKey<Level> loginHallKey = AuthPlayerHelper.LOGIN_HALL_KEY;
+        ServerLevel loginHall = server.getLevel(loginHallKey);
+        if (loginHall == null) loginHall = server.overworld();
+        player.teleportTo(loginHall, AuthPlayerHelper.LOGIN_HALL_X, AuthPlayerHelper.LOGIN_HALL_Y,
+                AuthPlayerHelper.LOGIN_HALL_Z, Set.of(), 0, 0, true);
     }
 }

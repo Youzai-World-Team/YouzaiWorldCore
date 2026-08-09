@@ -1,8 +1,12 @@
 package top.csituka.youzaiworldcore.account.util;
 
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.Level;
 import top.csituka.youzaiworldcore.YouzaiworldCore;
 import top.csituka.youzaiworldcore.account.data.PlayerAccount;
 import top.csituka.youzaiworldcore.account.data.PlayerAuthAccess;
@@ -17,6 +21,20 @@ import java.util.Set;
  */
 @SuppressWarnings({"null", "unused"})
 public class AuthPlayerHelper {
+
+    /**
+     * 登录大厅维度标识，用于隔离未认证玩家。
+     * 代码统一通过此常量引用，避免直接使用 minecraft:the_end。
+     */
+    public static final ResourceKey<Level> LOGIN_HALL_KEY = ResourceKey.create(
+            Registries.DIMENSION,
+            Identifier.fromNamespaceAndPath("youzaiworldcore", "login_hall")
+    );
+
+    /** 登录大厅中"虚空牢笼"的坐标 */
+    public static final double LOGIN_HALL_X = 0;
+    public static final double LOGIN_HALL_Y = 64;
+    public static final double LOGIN_HALL_Z = 0;
 
     private static PlayerAuthAccess access(ServerPlayer player) {
         return (PlayerAuthAccess) (Object) player;
@@ -98,11 +116,13 @@ public class AuthPlayerHelper {
         YouzaiworldCore.LOGGER.info("已将玩家 {} 恢复到原位置", player.getScoreboardName());
     }
 
-    private static boolean isVoidLocation(AuthLocationData loc) {
+    public static boolean isVoidLocation(AuthLocationData loc) {
         if (loc.dimension == null) return false;
         String dim = loc.dimension.identifier().toString();
-        if (!"minecraft:the_end".equals(dim)) return false;
-        return Math.abs(loc.position.x) < 1 && Math.abs(loc.position.y + 60) < 1 && Math.abs(loc.position.z) < 1;
+        if (!"youzaiworldcore:login_hall".equals(dim)) return false;
+        return Math.abs(loc.position.x - LOGIN_HALL_X) < 1
+                && Math.abs(loc.position.y - LOGIN_HALL_Y) < 1
+                && Math.abs(loc.position.z - LOGIN_HALL_Z) < 1;
     }
 
     private static void teleportToSpawn(ServerPlayer player) {

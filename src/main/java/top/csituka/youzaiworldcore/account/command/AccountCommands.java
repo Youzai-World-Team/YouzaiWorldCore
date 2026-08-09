@@ -8,6 +8,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
@@ -230,7 +231,7 @@ public class AccountCommands {
 
         // 传送到原位置（如果有有效位置且不在虚空）
         AuthLocationData savedLoc = authPlayer.yzwc$getLastLocation();
-        if (savedLoc != null && savedLoc.position != null && !isVoidLocation(savedLoc)) {
+        if (savedLoc != null && savedLoc.position != null && !AuthPlayerHelper.isVoidLocation(savedLoc)) {
             DebugLogger.branch("AccountCommands", "valid saved location exists", true);
             AuthPlayerHelper.restoreLocation(player);
         } else {
@@ -420,16 +421,18 @@ public class AccountCommands {
             DebugLogger.branch("AccountCommands", "account is null", true);
         }
 
-        // 传送到虚空
-        ServerLevel endWorld = player.level().getServer() != null
-                ? player.level().getServer().getLevel(Level.END)
+        // 传送到登录大厅
+        ResourceKey<Level> loginHallKey = AuthPlayerHelper.LOGIN_HALL_KEY;
+        ServerLevel loginHall = player.level().getServer() != null
+                ? player.level().getServer().getLevel(loginHallKey)
                 : null;
-        if (endWorld == null && player.level().getServer() != null) {
-            endWorld = player.level().getServer().overworld();
+        if (loginHall == null && player.level().getServer() != null) {
+            loginHall = player.level().getServer().overworld();
         }
-        ServerLevel finalEndWorld = endWorld;
-        if (finalEndWorld != null) {
-            player.teleportTo(finalEndWorld, 0, -60, 0, Set.of(), 0, 0, true);
+        ServerLevel finalLoginHall = loginHall;
+        if (finalLoginHall != null) {
+            player.teleportTo(finalLoginHall, AuthPlayerHelper.LOGIN_HALL_X, AuthPlayerHelper.LOGIN_HALL_Y,
+                    AuthPlayerHelper.LOGIN_HALL_Z, Set.of(), 0, 0, true);
         }
 
         source.sendSuccess(() -> Component.translatable("youzaiworldcore.message.account.logout_success"), true);
@@ -916,15 +919,6 @@ public class AccountCommands {
 
     // ===== 工具方法 =====
 
-    /**
-     * 判断是否为虚空坐标（The End 的 (0, -60, 0)）
-     */
-    private static boolean isVoidLocation(AuthLocationData loc) {
-        if (loc.dimension == null) return false;
-        String dim = loc.dimension.identifier().toString();
-        if (!"minecraft:the_end".equals(dim)) return false;
-        return Math.abs(loc.position.x) < 1 && Math.abs(loc.position.y + 60) < 1 && Math.abs(loc.position.z) < 1;
-    }
 
     /**
      * 传送玩家到主世界出生点，并清除所有维度设置的重生点
