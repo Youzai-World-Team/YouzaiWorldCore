@@ -20,7 +20,7 @@
 
 ## 📖 项目概述
 
-**YouzaiWorldCore** 是悠哉世界（Youzai World）Minecraft 多人服务器的核心玩法模组，基于 **Fabric** 框架开发，深度集成 **LuckPerms** 权限系统与 **Placeholder API**。模组为服务器提供完整的基础设施，涵盖账户认证、GUI 菜单、YZUI 界面系统（物品栏 / HUD / 配方书全面重绘）、自定义物品与方块、坐姿交互、维度池、传送锚点与传送卷轴、魔力系统、AFK 挂机检测、隐身管理、冒险等级与属性成长、附魔等级语言补丁、拾取显示、世界增强（带电苦力怕 / 末影龙掉鞘翅 / 末地传送门 / 监守者战利品 / 切石机伤害 / 试炼宝库无限领奖等）、宠物系统、物品高亮与边框、邮件信箱、自定附魔（13 个）、饰品槽集成与 YZUI 饰品交互、老吴贴贴彩蛋、配置导入导出、新手教程、语音聊天集成等 40 余项核心能力。
+**YouzaiWorldCore** 是悠哉世界（Youzai World）Minecraft 多人服务器的核心玩法模组，基于 **Fabric** 框架开发，深度集成 **LuckPerms** 权限系统与 **Placeholder API**。模组为服务器提供完整的基础设施，涵盖账户认证、GUI 菜单、YZUI 界面系统（物品栏 / HUD / 配方书全面重绘）、自定义物品与方块、坐姿交互、维度池、传送锚点与传送卷轴、魔力系统、AFK 挂机检测、隐身管理、冒险等级与属性成长、附魔等级语言补丁、拾取显示、世界增强（带电苦力怕 / 末影龙掉鞘翅 / 末地传送门 / 监守者战利品 / 切石机伤害 / 试炼宝库无限领奖等）、宠物系统、物品高亮与边框、邮件信箱、自定附魔（12 个）、饰品槽集成与 YZUI 饰品交互、音乐唱片、Meme 画作、老吴贴贴彩蛋、Technoblade 纪念皇冠、配置导入导出、新手教程、语音聊天集成等 40 余项核心能力。
 
 ### 目标用户群体
 
@@ -84,6 +84,10 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 | **凭虚法杖**        | 右键切换飞行，每秒消耗 1 点耐久（最大 600），每 5 秒消耗饥饿值；耗尽自动关闭 |
 | **烈焰法杖**        | 蓄力发射火焰激光，消耗 10 魔力                                               |
 | **天星法杖**        | 召唤陨石攻击，10 方块半径，消耗 60 魔力                                      |
+| **传送石**          | 右键打开传送列表（与传送锚点共用 GUI），传送消耗经验/耐久                    |
+| **原石 / 甜甜玛德琳** | Genshin 主题材料（`primogem` / `sweet_madame`），收录于「悠哉材料」标签页   |
+| **《云·原神》音乐唱片** | Epic 稀有度，47 秒宣传曲，基于 MC 26.2 `JUKEBOX_PLAYABLE` 数据组件 + `JukeboxSong` datapack 注册表实现 |
+| **Meme 画作（×12）** | 12 张自定义画作（`meme_01`–`meme_12`），Uncommon 稀有度，收录于「悠哉世界 - 画」标签页 |
 
 ### 6. 自定义方块
 
@@ -173,16 +177,17 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 
 ### 15. 创造模式标签页
 
-创造模式物品栏重新组织为 **6 个独立标签页**：
+创造模式物品栏重新组织为 **7 个独立标签页**：
 
-| 标签页 ID              | 名称            | 内容                                                                          |
-| ---------------------- | --------------- | ----------------------------------------------------------------------------- |
-| `youzai_blocks`        | 悠哉方块        | 7 个自定义方块                                                                |
-| `youzai_tools_weapons` | 悠哉工具与武器  | 5 个悠哉系列工具 + 3 个法杖                                                   |
-| `youzai_materials`     | 悠哉材料        | 原矿、锭、粒                                                                  |
-| `youzai_utilities`     | 悠哉实用物品    | 守护之心、隐形物品展示框、隐形发光物品展示框                                  |
-| `youzai_kits`          | 悠哉工具包      | 9 个预设潜影盒                                                                |
-| `youzai_enchantments`  | 悠哉世界 - 附魔 | 本模组自定义附魔的附魔书，按 `ModEnchantments.ALL` 遍历并为每个等级各生成一本 |
+| 标签页 ID              | 名称              | 内容                                                                          |
+| ---------------------- | ----------------- | ----------------------------------------------------------------------------- |
+| `youzai_blocks`        | 悠哉方块          | 8 个自定义方块                                                                |
+| `youzai_tools_weapons` | 悠哉工具与武器    | 5 个悠哉系列工具 + 3 个法杖                                                   |
+| `youzai_materials`     | 悠哉材料          | 原矿、锭、粒、原石、甜甜玛德琳                                                |
+| `youzai_utilities`     | 悠哉实用物品      | 守护之心、隐形物品展示框、隐形发光物品展示框、传送石、传送/返回卷轴、音乐唱片 |
+| `youzai_paintings`     | 悠哉世界 - 画     | 12 张自定义 Meme 画作（meme_01–meme_12）                                      |
+| `youzai_kits`          | 悠哉工具包        | 9 个预设潜影盒                                                                |
+| `youzai_enchantments`  | 悠哉世界 - 附魔   | 本模组自定义附魔的附魔书，按 `ModEnchantments.ALL` 遍历并为每个等级各生成一本 |
 
 ### 16. 预设物品系统
 
@@ -260,6 +265,11 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 - **试炼宝库无限领奖（Trial Vault）★新增**：移除试炼宝库「每玩家仅可领奖一次」的限制，同一玩家可对同一宝库反复插钥匙领奖。由 `VaultServerDataMixin` 精确注入 `VaultServerData#hasRewardedPlayer`（恒返回 false）与 `#addToRewardedPlayers`（取消写入）实现，而非通配 Redirect。配置 `config/youzaiworldcore/trial_vault.json`（`enabled` 默认 true）。命令：`/yzwc event trial_vault enable [true|false]`。参考 trial-chamber-time-removal 设计思路，原生重写、无前置依赖
 - **骨粉催熟甘蔗（Bone Meal Sugar Cane）★新增**：手持骨粉右键甘蔗可将其催熟一格（上限 3 格高）；同时注册**发射器行为**（`BoneMealSugarCaneDispenserBehavior`），发射器装骨粉亦可催熟正对的甘蔗，便于自动化农场
 - **混凝土粉末遇水固化（Concrete Powder Solidify）★新增**：混凝土粉末以**掉落物实体**形式落入水中时自动固化为对应颜色的混凝土物品实体（原版仅方块形态固化）。`ConcretePowderSolidifyHandler` 每 20 tick（1 秒）扫描一次以控制性能，颜色映射表在初始化时由注册表构建
+- **幼年僵尸削弱（Baby Zombie Weakening）★新增**：降低幼年僵尸的生成速度与最大生命值，`ZombieFinalizeSpawnMixin` 在实体生成时削减属性
+- **唱片机循环（Jukebox Loop）★新增**：唱片机播放完毕后自动循环当前唱片，而非弹出唱片。`JukeboxLoopMixin` 在 `JukeboxBlockEntity` tick 中注入循环逻辑
+- **合成音效（Craft Sound）★新增**：从合成结果槽取出成品时播放对应物品的合成音效，替代原版静默取出。`ResultSlotOnTakeMixin` 在物品被取走时注入音效
+- **Meme 画作掉落（Painting Drop）★新增**：破坏本模组自定义 Meme 画作时掉落对应的画作物品（原版画作破坏后不掉落物品）。`MemePaintingDropMixin` 在画作实体被破坏时注入掉落逻辑
+- **跳过实验性警告（Experimental Warning Skip）★新增**：创建世界时自动跳过"实验性玩法"警告弹窗，提升开发/测试效率。`ExperimentalWarningSkipMixin` 拦截对应屏幕
 
 ### 22. AFK 挂机检测系统
 
@@ -379,9 +389,9 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 - **存储**：全局仓库 `config/youzaiworldcore/mail/sent.json` + 每玩家索引 `config/youzaiworldcore/mail/box/<uuid>.json` + 设置 `mail_settings.json`；跨世界一致，绑定账户系统（离线账户同样入索引，登录可见）
 - **网络**：共 18 个专用数据包（C2S `mail_compose_open` / `mail_open` / `mail_sent_list_request` / `mail_recall` / `mail_purge` / `mail_list_request` / `mail_fetch` / `mail_action` / `mail_admin_send` / `mail_admin_edit` / `mail_player_list_request`；S2C `open_mail_compose` / `mail_list` / `mail_sent_list` / `mail_update` / `mail_op_result` / `mail_unread_count` / `mail_player_list`）
 
-### 27. 自定义附魔
+### 31. 自定义附魔
 
-模组注册 **13 个数据驱动附魔**（定义于 `data/youzaiworldcore/enchantment/` JSON，由 `ModEnchantments` 注册 ResourceKey），含 2 个原创附魔与 11 个来自 Raiyon's More Enchantments 的移植附魔（原生重写，无外部依赖）。
+模组注册 **12 个数据驱动附魔**（定义于 `data/youzaiworldcore/enchantment/` JSON，由 `ModEnchantments` 注册 ResourceKey），含 2 个原创附魔与 10 个来自 Raiyon's More Enchantments 的移植附魔（原生重写，无外部依赖）。
 
 #### 原创附魔
 
@@ -396,7 +406,6 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 | **毒雾（Poison Puff）**   | `poison_puff`   | 武器     | 攻击时释放毒雾效果                                       |
 | **火焰弹（Fire Charge）**  | `fire_charge`   | 弩       | 弩射出火焰弹                                             |
 | **音爆弹（Sonic Charge）** | `sonic_charge`  | 弩       | 弩射出监守者音爆                                         |
-| **发光光环（Glowing Aura）** | `glowing_aura` | 护甲     | 对周围实体施加发光效果，由 `GlowingAuraHandler` 每 tick 扫描 |
 | **懦弱（Cowardice）**      | `cowardice`     | 护甲     | 低生命值时提升速度                                       |
 | **风弹（Wind Charge）**    | `wind_charge`   | 护甲     | 受伤时释放风弹击退周围实体，由 `WindChargeHandler` 处理  |
 | **尖刺（Spikes）**         | `spikes`        | 盾牌     | 反弹攻击者伤害                                           |
@@ -404,7 +413,7 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 | **熔炼（Smelting）**       | `smelting`      | 工具     | 挖掘方块时自动熔炼掉落物，由 `SmeltingHandler` 处理      |
 | **陨星重击（Meteor Smash）** | `meteor_smash` | 重锤     | 重锤砸地时召唤陨石                                       |
 
-> 以上 11 个移植附魔源自 Raiyon's More Enchantments，本项目参考其设计理念并原生重写，无外部依赖。
+> 以上 10 个移植附魔源自 Raiyon's More Enchantments，本项目参考其设计理念并原生重写，无外部依赖。
 
 ### 32. 铁砧使用次数显示
 
@@ -464,7 +473,7 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 
 纯客户端的整体界面重绘方案，将原版物品栏、HUD、配方书与上下文栏统一替换为 **YZUI 风格**（半透明白色圆角面板 + 圆角填充条）。由**全局开关**控制：客户端设置「视觉」分栏中的「启用 YZUI」复选框（`screen.youzaiworldcore.settings.toggle_yzui`），持久化于 `client_external_settings.json` 的 `yzuiEnabled` 字段（默认开启）。**关闭后全部回退原版渲染**，便于资源包接管。
 
-#### 33.1 物品栏屏幕
+#### 37.1 物品栏屏幕
 
 `InventoryScreenSwitchMixin` 拦截 `Gui#setScreen`，在 YZUI 开启时将原版屏幕替换为自定义实现（`InventoryScreen` → 按游戏模式分流；`CreativeModeInventoryScreen` → YZUI 创造屏）：
 
@@ -472,7 +481,7 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 - **`YzuCreativeInventoryScreen`（创造物品栏）**：完全自绘的创造屏（356×168），内部经 `BuiltInRegistries.ITEM` 自填充物品，含分类标签页（每页配色独立）、搜索框（跨会话记忆上次搜索文本）、9×7 物品网格 + 右侧滚动条，以及右栏的玩家 3D 模型、装备 2×2 与副手槽、3×9 生存物品栏、底部快捷栏
 - **拖拽手势**：左键拖拽在有物品时合并同种物品，`Shift + 左键拖拽`批量快速转移；创造屏支持右键取半并实时计算鼠标预期剩余数量
 
-#### 33.2 HUD 组件
+#### 37.2 HUD 组件
 
 `HealthBarMixin` 取消原版 `Hud#extractPlayerHealth` / `extractFood` / `extractArmor` / `extractAirBubbles` 四项渲染，改由 `client/hud/` 下的自定义渲染器绘制长条状进度条：
 
@@ -483,7 +492,7 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 | `ArmorBarRenderer`  | 盔甲图标   | 长条化                                                                                                                                      |
 | `OxygenBarRenderer` | 氧气气泡   | 长条化                                                                                                                                      |
 
-#### 33.3 上下文栏与配方书
+#### 37.3 上下文栏与配方书
 
 - **`ContextualBarMixin`**：对经验条（`ExperienceBar`）、定位条（`LocatorBar`）、跳跃条（`JumpableVehicleBar`）取消原版精灵表背景，替换为 YZUI 圆角填充条（宽度与原版 `ContextualBar#WIDTH` = 182 一致），同时保留 `LocatorBar` 的航点指示器渲染；经验数值文字居中显示于血条与饥饿条区域内
 - **配方书重绘**：`RecipeBookBackgroundMixin`（以 `@Redirect` 替换背景 blit 而非 `ci.cancel()`，避免连带取消 Tab/搜索框/网格渲染）、`RecipeBookLayoutMixin`（搜索框左移、过滤按钮加宽）、`RecipeBookTabButtonMixin`、`RecipeButtonMixin`
@@ -507,6 +516,30 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 - **实现**：`TechnoCrownFeatureRenderer` 作为 `RenderLayer` 由 `PigRendererMixin` 在 `PigRenderer` 构造末尾挂载；`PigRenderStateMixin` + `RenderCrownDuck` 访问器每帧根据自定义名称计算皇冠可见性
 - **纹理**：`assets/minecraft/textures/entity/pig/technocrown_adult.png` / `technocrown_baby.png`
 - 改编自 thecolonel63 的 technomodel（MIT 许可）
+
+### 40. 音乐唱片系统 ★新增
+
+基于 MC 26.2 全新的 `JUKEBOX_PLAYABLE` DataComponent + `JukeboxSong` datapack registry 系统实现的音乐唱片物品。
+
+- **唱片**：`music_disc_cloud_genshin`（《云·原神》宣传曲），Epic 稀有度，时长约 47 秒
+- **实现**：物品通过 `Item.Properties.jukeboxPlayable(ResourceKey<JukeboxSong>)` 注入播放能力；`JukeboxSong` 定义于 `data/youzaiworldcore/jukebox_song/cloud_genshin.json`；对应的 `SoundEvent`（`youzaiworldcore:cloud_genshin`）由 `ModSoundEvents` 在模组初始化时注册到 `BuiltInRegistries.SOUND_EVENT`
+- **收录**：位于「悠哉实用物品」创造标签页
+
+### 41. Meme 画作系统 ★新增
+
+12 张自定义画作，收录于独立的「悠哉世界 - 画」创造标签页（`youzai_paintings`）。
+
+- **画作**：`meme_01`–`meme_12`，Uncommon 稀有度，每张 1×1 至 4×4 不等
+- **注册**：通过 `PaintingVariant` 在 `data/youzaiworldcore/painting_variant/` 下定义，纹理位于 `assets/youzaiworldcore/textures/painting/`
+- **掉落**：破坏自定义画作时掉落对应物品（原版画作破坏不掉落），由 `MemePaintingDropMixin` 实现
+
+### 42. 工具信息覆盖（Tool HUD Overlay）★新增
+
+客户端 HUD 增强（`client/hud/ToolInfoOverlay`）。当手持工具/武器时，在屏幕指定区域显示其当前耐久度、附魔等级等关键信息的浮动面板，方便玩家快速了解装备状态，无需打开物品栏。
+
+### 43. 客户端功能开关系统 ★新增
+
+为双开门等玩家偏好功能提供持久化的客户端独立开关（`client/FunctionToggleClientState`），状态经 `FunctionToggleSyncPayload`（S→C）同步，在 `ClientExternalSettings` 中持久化，重启客户端不丢失。
 
 ---
 
@@ -667,9 +700,9 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 | `decomposition_table` | 分解台   |
 | `fly_beacon`          | 飞行信标 |
 
-### 网络数据包（共 38 个）
+### 网络数据包（共 42 个）
 
-> 注：`world_pool_teleport` 数据包类位于 `dimensionalinventories` 包，其余位于 `network` 包；邮件相关 18 个数据包亦位于 `network` 包。方向统计：S→C 14 个，C→S 24 个。
+> 注：`world_pool_teleport` 数据包类位于 `dimensionalinventories` 包，其余位于 `network` 包；邮件相关 18 个数据包亦位于 `network` 包。方向统计：S→C 19 个，C→S 23 个。
 
 | 数据包 ID                   | 方向 | 用途                                                               |
 | --------------------------- | ---- | ------------------------------------------------------------------ |
@@ -687,6 +720,10 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 | `mail_sent_list`            | S→C  | 发送已发送邮件列表                                                 |
 | `mail_update`               | S→C  | 新增/更新/移除单封邮件                                             |
 | `mail_op_result`            | S→C  | 邮件操作结果反馈                                                   |
+| `function_toggle_sync`      | S→C  | 同步功能开关状态（双开门等）                                       |
+| `laowu_meme_trigger`        | S→C  | 触发老吴贴贴粒子/音效                                             |
+| `laowu_meme_stop`           | S→C  | 停止老吴贴贴客户端效果                                            |
+| `teleport_stone_interrupt`  | S→C  | 传送石/传送卷轴蓄力中断                                           |
 | `world_pool_teleport`       | C→S  | 请求维度池传送                                                     |
 | `teleport_anchor_activate`  | C→S  | 激活传送锚点                                                       |
 | `teleport_anchor_teleport`  | C→S  | 请求传送                                                           |
@@ -711,6 +748,7 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 | `mail_admin_send`           | C→S  | 发布邮件                                                           |
 | `mail_admin_edit`           | C→S  | 编辑/取消编辑邮件                                                  |
 | `mail_player_list_request`  | C→S  | 请求已注册玩家代号名单                                             |
+| `afk_heartbeat`             | C→S  | AFK 心跳包（客户端上报输入活动状态）                               |
 
 ---
 
@@ -738,7 +776,7 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 ## 🏗️ 项目结构
 
 ```
-src/                                       # 383 个 Java 源文件（main 233 / client 150）
+src/                                       # 411 个 Java 源文件（main 252 / client 159）
 ├── main/java/top/csituka/youzaiworldcore/
 │   ├── YouzaiworldCore.java              # 主入口
 │   ├── account/                          # 账户认证（data/command/mixin/util 子包）
@@ -748,21 +786,22 @@ src/                                       # 383 个 Java 源文件（main 233 /
 │   ├── config/                           # 服务端外部设置（带电苦力怕 / 末地传送门 / 双开门 / 宠物 / 邮件 配置）
 │   ├── data/                             # 传送锚点 SavedData
 │   ├── dimensionalinventories/           # 维度池系统（含 WorldPoolTeleportPayload）
-│   ├── enchantment/                      # 自定义附魔 ResourceKey 注册（ModEnchantments）
+│   ├── enchantment/                      # 自定义附魔 ResourceKey 注册（ModEnchantments，12 个）
 │   ├── enchlevellangpatch/               # 附魔等级语言补丁（api + impl）
-│   ├── event/                            # 事件处理器（飞行信标/双开门/末地门/虚空杖/龙翼/chorus/带电苦力怕/分解/坐姿/监守者/切石机/铁砧修复/阳光修复/乐魂涡轮/骨粉甘蔗/混凝土固化 等）
+│   ├── event/                            # 事件处理器（30+ 个：飞行信标/双开门/末地门/虚空杖/龙翼/chorus/带电苦力怕/分解/坐姿/监守者/切石机/铁砧修复/阳光修复/乐魂涡轮/骨粉甘蔗/混凝土固化/幼年僵尸/唱片机循环/合成音效/Meme画作掉落 等）
 │   ├── entity/seat/                      # 座椅实体系统
 │   ├── invisibility/                     # 隐身系统
-│   ├── item/                             # 物品、工具、创造标签页（6 个）、预设（9 个）、隐形展示框
+│   ├── item/                             # 物品、工具、创造标签页（7 个）、预设（9 个）、隐形展示框
 │   ├── luckperms/                        # LuckPerms 集成（LuckPermsHelper 统一鉴权）
 │   ├── mail/                             # 邮件系统（Mail / MailManager / SentMailRepository / MailDataStorage / MailSettings / MailPermissionHelper）
 │   ├── mana/                             # 魔力系统
-│   ├── mixin/                            # Mixin（含子包 chargedcreeper / doubledoors / invisibility / pet / seat / skill / trialvault）
-│   ├── network/                          # 网络数据包（36 个数据包类 + ModNetworking）
+│   ├── mixin/                            # Mixin（含子包 afk / babyzombie / chargedcreeper / craftsound / doubledoors / invisibility / jukebox / painting / pet / seat / skill / trialvault）
+│   ├── network/                          # 网络数据包（42 个数据包类 + ModNetworking）
 │   ├── pet/                              # 宠物系统（config/command/event 子包 + PetGlobalState/PetEntry）
 │   ├── placeholders/                     # Placeholder API 集成（32 个占位符）
 │   ├── screen/                           # 容器菜单
 │   ├── skill/                            # 冒险等级 + 属性系统
+│   ├── sound/                            # 自定义 SoundEvent（1 个：cloud_genshin）
 │   ├── status/                           # 统计系统（StatsManager，21 项指标 + 命令）
 │   ├── trialvault/                       # 试炼宝库无限领奖配置（TrialVaultConfig）
 │   ├── update/                           # 更新检查（UpdateChecker 等 5 文件）
@@ -779,18 +818,20 @@ src/                                       # 383 个 Java 源文件（main 233 /
 │   ├── itemborder/                       # 物品边框（ItemBorderClient / ItemBorderConfig / ItemBorderRenderer）
 │   ├── anviluses/                        # 铁砧使用次数显示（AnvilUsesClient）
 │   ├── client/accessor/                  # 渲染访问器（RenderCrownDuck）
-│   ├── hud/                              # 魔力条 / 冒险等级 HUD / YZUI 生命·饥饿·盔甲·氧气条
+│   ├── hud/                              # 魔力条 / 冒险等级 HUD / YZUI 生命·饥饿·盔甲·氧气条 / 工具信息覆盖
 │   ├── skill/                            # 客户端冒险等级/属性数据（ClientAttributeData）
 │   ├── update/                           # 更新检查客户端状态（ClientUpdateState）
-│   ├── mixin/client/                     # 客户端 Mixin（标题/选项/按钮/暂停/聊天/加载/座椅/渲染/拾取/附魔补丁/itemborder/YZUI 物品栏·血条·上下文栏·配方书/technocrown 等）
+│   ├── laowumeme/                        # 老吴贴贴客户端（Geo 模型/渲染/音效池）
+│   ├── particle/                         # 粒子渲染（方块动画/物品闪光）
+│   ├── pickup/                           # 拾取显示（item/XP 浮动提示 + 字幕捕获）
+│   ├── mixin/client/                     # 客户端 Mixin（54 个：标题/选项/按钮/暂停/聊天/加载/座椅/渲染/拾取/附魔补丁/itemborder/YZUI 物品栏·血条·上下文栏·配方书/technocrown/AFK 输入/实验性警告跳过 等）
 │   ├── network/                          # 客户端网络处理（ClientNetworking）
-│   ├── pickup/                           # 拾取显示（item/XP 浮动提示）
-│   ├── renderer/                         # 方块/实体渲染器（含传送锚点 BER、feature/TechnoCrownFeatureRenderer）
+│   ├── renderer/                         # 方块/实体渲染器（含传送锚点 BER、飞行信标 BER、feature/TechnoCrownFeatureRenderer）
 │   └── screen/                           # GUI 屏幕（MenuScreen、Login/Register、YzuInventoryScreen/YzuCreativeInventoryScreen、MailScreen/MailComposeScreen/MailSentScreen、element/widget/block 子包）
 
 └── main/resources/
-    ├── assets/youzaiworldcore/           # 纹理、模型、语言文件（10 种语言）、音效（3 个 .ogg）
-    ├── data/                             # 成就（含 deep_dark 分支）、配方、战利品表、维度、结构、结构集、模板池、新手教程函数、trinkets 饰品槽
+    ├── assets/youzaiworldcore/           # 纹理、模型、语言文件（10 种语言）、音效（4 个 .ogg：cloud_genshin + laowu2/qiliang/zhanhou）、画作纹理（12 张 Meme 画作）
+    ├── data/                             # 成就（31 个，含 deep_dark 分支）、配方（20 个）、战利品表、维度（login_hall）、结构（4 个，含 cloud_genshin_ruins）、结构集、模板池、附魔（12 个 JSON）、新手教程函数（19 个）、jukebox_song（1 个）、trinkets 饰品槽
     └── fabric.mod.json                   # 模组元数据（声明 moogs_structures / trinkets_updated / modmenu / placeholder-api 为硬依赖）
 
 .github/workflows/

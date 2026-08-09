@@ -20,7 +20,7 @@
 
 ## 📖 Project Overview
 
-**YouzaiWorldCore** is the core gameplay mod for the **Youzai World** Minecraft multiplayer server, built on the **Fabric** framework with deep integration of **LuckPerms** permission system and **Placeholder API**. The mod provides a comprehensive infrastructure for the server, covering account authentication, GUI menus, the YZUI interface system (full inventory / HUD / recipe book restyle), custom items and blocks, sit interaction, dimension pools, teleport anchors & warp scrolls, mana system, AFK detection, invisibility management, adventure level & attribute growth, enchantment-level language patches, pickup display, world enhancement features (charged creepers / dragon elytra drop / end portal / warden loot / stonecutter damage / unlimited trial vault rewards, etc.), a pet system, item highlighting & borders, a mailbox, custom enchantments (13), trinket-slot integration with YZUI trinket interaction, Laowu Meme easter egg, config import/export, beginner tutorial, voice chat integration, and 40+ core features in total.
+**YouzaiWorldCore** is the core gameplay mod for the **Youzai World** Minecraft multiplayer server, built on the **Fabric** framework with deep integration of **LuckPerms** permission system and **Placeholder API**. The mod provides a comprehensive infrastructure for the server, covering account authentication, GUI menus, the YZUI interface system (full inventory / HUD / recipe book restyle), custom items and blocks, sit interaction, dimension pools, teleport anchors & warp scrolls, mana system, AFK detection, invisibility management, adventure level & attribute growth, enchantment-level language patches, pickup display, world enhancement features (charged creepers / dragon elytra drop / end portal / warden loot / stonecutter damage / unlimited trial vault rewards, etc.), a pet system, item highlighting & borders, a mailbox, custom enchantments (12), trinket-slot integration with YZUI trinket interaction, music disc, meme paintings, Laowu Meme easter egg, Technoblade memorial crown, config import/export, beginner tutorial, voice chat integration, and 40+ core features in total.
 
 ### Target Audience
 
@@ -84,6 +84,10 @@ A new mineral and tool set equivalent to diamond tier (durability 1800, speed 8.
 | **Void Staff**            | Right-click to toggle flight; consumes 1 durability/sec (max 600) and hunger every 5s; auto-disables on depletion |
 | **Flame Staff**           | Charged fire laser, costs 10 mana                                                                                 |
 | **Sky Star Staff**        | Meteor attack, 10-block radius, costs 60 mana                                                                     |
+| **Teleport Stone**        | Right-click to open teleport list (shared GUI with anchors), costs XP/durability                                  |
+| **Primogem / Sweet Madame** | Genshin-themed materials (`primogem` / `sweet_madame`), in the "Youzai Materials" tab                           |
+| **Cloud Genshin Music Disc** | Epic rarity, 47s promotional track, based on MC 26.2 `JUKEBOX_PLAYABLE` data component + `JukeboxSong` datapack registry |
+| **Meme Paintings (×12)**  | 12 custom paintings (`meme_01`–`meme_12`), Uncommon rarity, in the "Youzai World - Paintings" tab                |
 
 ### 6. Custom Blocks
 
@@ -173,14 +177,15 @@ Fine-grained LuckPerms-based permission control with automatic OP-level fallback
 
 ### 15. Creative Mode Tabs
 
-The creative menu has been reorganized into **6 independent tabs**:
+The creative menu has been reorganized into **7 independent tabs**:
 
 | Tab ID                 | Name                        | Contents                                                                                                       |
 | ---------------------- | --------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| `youzai_blocks`        | Youzai Blocks               | 7 custom blocks                                                                                                |
+| `youzai_blocks`        | Youzai Blocks               | 8 custom blocks                                                                                                |
 | `youzai_tools_weapons` | Youzai Tools & Weapons      | 5 tools + 3 staves                                                                                             |
-| `youzai_materials`     | Youzai Materials            | Raw ore, ingot, nugget                                                                                         |
-| `youzai_utilities`     | Youzai Utilities            | Heart of Guardianship, Invisible Item Frame, Invisible Glow Item Frame                                         |
+| `youzai_materials`     | Youzai Materials            | Raw ore, ingot, nugget, primogem, sweet madame                                                                 |
+| `youzai_utilities`     | Youzai Utilities            | Heart of Guardianship, Invisible Item Frame, Invisible Glow Item Frame, Teleport Stone, Warp/Return Scrolls, Music Disc |
+| `youzai_paintings`     | Youzai World - Paintings    | 12 custom meme paintings (meme_01–meme_12)                                                                     |
 | `youzai_kits`          | Youzai Kits                 | 9 preset shulker boxes                                                                                         |
 | `youzai_enchantments`  | Youzai World - Enchantments | Enchanted books for the mod's custom enchantments; iterates `ModEnchantments.ALL` and emits one book per level |
 
@@ -260,6 +265,11 @@ A set of native, dependency-free "world tweak" enhancements (inspired by classic
 - **Unlimited Trial Vault Rewards ★NEW**: Removes the vanilla "one reward per player per vault" limit, letting the same player insert keys and claim from the same vault repeatedly. Implemented by `VaultServerDataMixin` with precise injections into `VaultServerData#hasRewardedPlayer` (always returns false) and `#addToRewardedPlayers` (cancelled), rather than a wildcard Redirect. Config `config/youzaiworldcore/trial_vault.json` (`enabled`, default true). Command: `/yzwc event trial_vault enable [true|false]`. Inspired by trial-chamber-time-removal, rewritten natively with no upstream dependency
 - **Bone Meal Sugar Cane ★NEW**: Right-clicking sugar cane with bone meal grows it by one segment (up to 3 blocks tall); a **dispenser behavior** (`BoneMealSugarCaneDispenserBehavior`) is registered as well, so a dispenser loaded with bone meal can grow the sugar cane in front of it — useful for automated farms
 - **Concrete Powder Solidify ★NEW**: Concrete powder in **dropped-item entity** form solidifies into the matching concrete item when it lands in water (vanilla only solidifies the block form). `ConcretePowderSolidifyHandler` scans once every 20 ticks (1 second) to bound the performance cost; the color mapping table is built from the registry at initialization
+- **Baby Zombie Weakening ★NEW**: Reduces baby zombie spawn speed and max health via `ZombieFinalizeSpawnMixin` on entity finalization
+- **Jukebox Loop ★NEW**: Jukebox auto-loops the current disc instead of ejecting it when playback ends. `JukeboxLoopMixin` injects the loop logic into `JukeboxBlockEntity` tick
+- **Craft Sound ★NEW**: Plays a crafting sound when taking the result item from the output slot, replacing vanilla silent extraction. `ResultSlotOnTakeMixin` injects the sound on item pickup
+- **Painting Drop ★NEW**: Breaking custom meme paintings drops the corresponding painting item (vanilla paintings don't drop when broken). `MemePaintingDropMixin` injects drop logic on entity removal
+- **Experimental Warning Skip ★NEW**: Automatically skips the "Experimental Features" warning dialog when creating a world, improving dev/test efficiency. `ExperimentalWarningSkipMixin` intercepts the corresponding screen
 
 ### 22. AFK Detection System
 
@@ -379,9 +389,9 @@ A one-way **admin → player** server mailbox / announcement box (not player-to-
 - **Storage**: Global repo `config/youzaiworldcore/mail/sent.json` + per-player index `config/youzaiworldcore/mail/box/<uuid>.json` + settings `mail_settings.json`; cross-world consistent, bound to the account system (offline accounts also indexed, visible on login)
 - **Network**: 18 dedicated packets (C→S `mail_compose_open` / `mail_open` / `mail_sent_list_request` / `mail_recall` / `mail_purge` / `mail_list_request` / `mail_fetch` / `mail_action` / `mail_admin_send` / `mail_admin_edit` / `mail_player_list_request`; S→C `open_mail_compose` / `mail_list` / `mail_sent_list` / `mail_update` / `mail_op_result` / `mail_unread_count` / `mail_player_list`)
 
-### 27. Custom Enchantments
+### 31. Custom Enchantments
 
-The mod registers **13 data-driven enchantments** (defined in `data/youzaiworldcore/enchantment/` JSON, registered by `ModEnchantments` ResourceKeys) -- 2 original enchantments plus 11 ported from Raiyon's More Enchantments (reimplemented natively, no external dependency).
+The mod registers **12 data-driven enchantments** (defined in `data/youzaiworldcore/enchantment/` JSON, registered by `ModEnchantments` ResourceKeys) -- 2 original enchantments plus 10 ported from Raiyon's More Enchantments (reimplemented natively, no external dependency).
 
 #### Original Enchantments
 
@@ -396,7 +406,6 @@ The mod registers **13 data-driven enchantments** (defined in `data/youzaiworldc
 | **Poison Puff**         | `poison_puff`   | Weapons    | Release poison cloud on attack                        |
 | **Fire Charge**         | `fire_charge`   | Crossbow   | Shoot fire charges                                    |
 | **Sonic Charge**        | `sonic_charge`  | Crossbow   | Shoot warden sonic booms                              |
-| **Glowing Aura**        | `glowing_aura`  | Armor      | Apply Glowing to nearby entities (GlowingAuraHandler) |
 | **Cowardice**           | `cowardice`     | Armor      | Speed boost at low health                             |
 | **Wind Charge**         | `wind_charge`   | Armor      | Release wind burst on hurt (WindChargeHandler)        |
 | **Spikes**              | `spikes`        | Shield     | Reflect damage to attackers                           |
@@ -404,7 +413,7 @@ The mod registers **13 data-driven enchantments** (defined in `data/youzaiworldc
 | **Smelting**            | `smelting`      | Tools      | Auto-smelt mined blocks (SmeltingHandler)             |
 | **Meteor Smash**        | `meteor_smash`  | Mace       | Summon meteor on smash attack                         |
 
-> These 11 ported enchantments are inspired by Raiyon's More Enchantments, reimplemented natively with no external dependency.
+> These 10 ported enchantments are inspired by Raiyon's More Enchantments, reimplemented natively with no external dependency.
 
 ### 32. Anvil Use-Count Display
 
@@ -464,7 +473,7 @@ Asynchronously detects new mod versions, prompting for online or forced updates.
 
 A purely client-side, whole-interface restyle that replaces the vanilla inventory, HUD, recipe book, and contextual bars with the **YZUI look** (translucent white rounded panels + rounded fill bars). Controlled by a **global toggle**: the "Enable YZUI" checkbox in the Visual section of client settings (`screen.youzaiworldcore.settings.toggle_yzui`), persisted as `yzuiEnabled` in `client_external_settings.json` (on by default). **Turning it off reverts everything to vanilla rendering**, so resource packs can take over.
 
-#### 33.1 Inventory Screens
+#### 37.1 Inventory Screens
 
 `InventoryScreenSwitchMixin` intercepts `Gui#setScreen` and swaps vanilla screens for custom implementations while YZUI is on (`InventoryScreen` → routed by game mode; `CreativeModeInventoryScreen` → YZUI creative screen):
 
@@ -472,7 +481,7 @@ A purely client-side, whole-interface restyle that replaces the vanilla inventor
 - **`YzuCreativeInventoryScreen` (creative inventory)**: A fully custom-drawn creative screen (356×168) that self-populates from `BuiltInRegistries.ITEM`, with category tabs (each with its own accent color), a search box (last search text remembered across sessions), a 9×7 item grid with a scrollbar on the right, plus a right column holding the 3D player model, 2×2 armor and offhand slots, the 3×9 survival inventory, and the hotbar
 - **Drag gestures**: Left-drag merges same-type items when holding a stack, `Shift + left-drag` bulk quick-transfers; the creative screen supports right-click-take-half with live computation of the expected remaining cursor count
 
-#### 33.2 HUD Components
+#### 37.2 HUD Components
 
 `HealthBarMixin` cancels four vanilla renders — `Hud#extractPlayerHealth` / `extractFood` / `extractArmor` / `extractAirBubbles` — delegating to custom renderers under `client/hud/` that draw long progress bars:
 
@@ -483,7 +492,7 @@ A purely client-side, whole-interface restyle that replaces the vanilla inventor
 | `ArmorBarRenderer`  | Armor icons       | Bar form                                                                                                                                                                                                               |
 | `OxygenBarRenderer` | Air bubbles       | Bar form                                                                                                                                                                                                               |
 
-#### 33.3 Contextual Bars & Recipe Book
+#### 37.3 Contextual Bars & Recipe Book
 
 - **`ContextualBarMixin`**: For the experience bar (`ExperienceBar`), locator bar (`LocatorBar`), and jumpable-vehicle bar (`JumpableVehicleBar`), cancels the vanilla sprite-sheet background and substitutes a YZUI rounded fill bar (width matches vanilla `ContextualBar#WIDTH` = 182) while preserving `LocatorBar`'s waypoint indicator rendering; the XP number is centered within the health/hunger bar area
 - **Recipe book restyle**: `RecipeBookBackgroundMixin` (uses `@Redirect` to replace the background blit rather than `ci.cancel()`, which would also cancel tab/search-box/grid rendering), `RecipeBookLayoutMixin` (shifts the search box left, widens the filter button), `RecipeBookTabButtonMixin`, `RecipeButtonMixin`
@@ -507,6 +516,30 @@ An easter egg: name a pig **`Technoblade`** and a crown renders on its head (sep
 - **Implementation**: `TechnoCrownFeatureRenderer` is attached as a `RenderLayer` by `PigRendererMixin` at the tail of the `PigRenderer` constructor; `PigRenderStateMixin` + the `RenderCrownDuck` accessor compute crown visibility each frame from the custom name
 - **Textures**: `assets/minecraft/textures/entity/pig/technocrown_adult.png` / `technocrown_baby.png`
 - Adapted from technomodel by thecolonel63 (MIT License)
+
+### 40. Music Disc System ★NEW
+
+Music disc items implemented using MC 26.2's new `JUKEBOX_PLAYABLE` DataComponent + `JukeboxSong` datapack registry system.
+
+- **Disc**: `music_disc_cloud_genshin` (Cloud Genshin promotional track), Epic rarity, ~47s duration
+- **Implementation**: The item uses `Item.Properties.jukeboxPlayable(ResourceKey<JukeboxSong>)` to inject playback capability; the `JukeboxSong` is defined in `data/youzaiworldcore/jukebox_song/cloud_genshin.json`; the corresponding `SoundEvent` (`youzaiworldcore:cloud_genshin`) is registered by `ModSoundEvents` during mod init into `BuiltInRegistries.SOUND_EVENT`
+- **Tab**: Located in the "Youzai Utilities" creative tab
+
+### 41. Meme Painting System ★NEW
+
+12 custom paintings in a dedicated "Youzai World - Paintings" creative tab (`youzai_paintings`).
+
+- **Paintings**: `meme_01`–`meme_12`, Uncommon rarity, sizes from 1×1 to 4×4
+- **Registration**: Defined via `PaintingVariant` in `data/youzaiworldcore/painting_variant/`, textures in `assets/youzaiworldcore/textures/painting/`
+- **Drop**: Breaking custom paintings drops the corresponding item (vanilla paintings don't drop), implemented by `MemePaintingDropMixin`
+
+### 42. Tool HUD Overlay ★NEW
+
+Client-side HUD enhancement (`client/hud/ToolInfoOverlay`). When holding a tool or weapon, displays a floating panel showing current durability, enchantment levels, and other key information at a designated screen position — allowing players to quickly check equipment status without opening the inventory.
+
+### 43. Client-Side Function Toggle System ★NEW
+
+Persistent, per-player client-side toggles for preference features such as double doors (`client/FunctionToggleClientState`), synchronized via `FunctionToggleSyncPayload` (S→C) and persisted in `ClientExternalSettings`, surviving client restarts.
 
 ---
 
@@ -667,9 +700,9 @@ All commands use `/yzwc` as the root command. Subcommands marked **(client comma
 | `decomposition_table` | Decomposition Table |
 | `fly_beacon`          | Fly Beacon          |
 
-### Network Packets (38 total)
+### Network Packets (42 total)
 
-> Note: the `world_pool_teleport` packet class lives in the `dimensionalinventories` package; the rest (including the 18 mail packets) are in the `network` package. Direction split: 14 S→C, 24 C→S.
+> Note: the `world_pool_teleport` packet class lives in the `dimensionalinventories` package; the rest (including the 18 mail packets) are in the `network` package. Direction split: 19 S→C, 23 C→S.
 
 | Packet ID                   | Direction | Purpose                                                                                       |
 | --------------------------- | --------- | --------------------------------------------------------------------------------------------- |
@@ -687,6 +720,10 @@ All commands use `/yzwc` as the root command. Subcommands marked **(client comma
 | `mail_sent_list`            | S→C       | Send sent-mail list                                                                           |
 | `mail_update`               | S→C       | Add/update/remove a single mail                                                               |
 | `mail_op_result`            | S→C       | Mail operation result feedback                                                                |
+| `function_toggle_sync`      | S→C       | Sync function toggle state (double doors, etc.)                                              |
+| `laowu_meme_trigger`        | S→C       | Trigger Laowu Meme particles/sounds                                                          |
+| `laowu_meme_stop`           | S→C       | Stop Laowu Meme client effects                                                               |
+| `teleport_stone_interrupt`  | S→C       | Interrupt teleport stone/scroll charge                                                       |
 | `world_pool_teleport`       | C→S       | Request dimension pool teleport                                                               |
 | `teleport_anchor_activate`  | C→S       | Activate anchor                                                                               |
 | `teleport_anchor_teleport`  | C→S       | Request teleport                                                                              |
@@ -711,6 +748,7 @@ All commands use `/yzwc` as the root command. Subcommands marked **(client comma
 | `mail_admin_send`           | C→S       | Publish mail                                                                                  |
 | `mail_admin_edit`           | C→S       | Edit/cancel-edit mail                                                                         |
 | `mail_player_list_request`  | C→S       | Request the registered player-name list                                                       |
+| `afk_heartbeat`             | C→S       | AFK heartbeat packet (client reports input activity)                                         |
 
 ---
 
@@ -738,7 +776,7 @@ All commands use `/yzwc` as the root command. Subcommands marked **(client comma
 ## 🏗️ Project Structure
 
 ```
-src/                                       # 383 Java source files (main 233 / client 150)
+src/                                       # 411 Java source files (main 252 / client 159)
 ├── main/java/top/csituka/youzaiworldcore/
 │   ├── YouzaiworldCore.java              # Main entry point
 │   ├── account/                          # Account auth (data/command/mixin/util subpackages)
@@ -748,21 +786,22 @@ src/                                       # 383 Java source files (main 233 / c
 │   ├── config/                           # Server external settings (charged creeper / end portal / double doors / pet / mail config)
 │   ├── data/                             # Teleport anchor SavedData
 │   ├── dimensionalinventories/           # Dimension pool system (incl. WorldPoolTeleportPayload)
-│   ├── enchantment/                      # Custom enchantment ResourceKey registration (ModEnchantments)
+│   ├── enchantment/                      # Custom enchantment ResourceKey registration (ModEnchantments, 12)
 │   ├── enchlevellangpatch/               # Enchantment-level language patch (api + impl)
-│   ├── event/                            # Event handlers (fly beacon, double doors, end portal, void staff, dragon, chorus, charged creeper, decompose, sit, warden, stonecutter, anvil repair, sun repair, spirit turbo, bone meal sugar cane, concrete solidify, etc.)
+│   ├── event/                            # Event handlers (30+: fly beacon, double doors, end portal, void staff, dragon, chorus, charged creeper, decompose, sit, warden, stonecutter, anvil repair, sun repair, spirit turbo, bone meal sugar cane, concrete solidify, baby zombie, jukebox loop, craft sound, painting drop, etc.)
 │   ├── entity/seat/                      # Seat entity system
 │   ├── invisibility/                     # Invisibility system
-│   ├── item/                             # Items, tools, creative tabs (6), presets (9), invisible item frames
+│   ├── item/                             # Items, tools, creative tabs (7), presets (9), invisible item frames
 │   ├── luckperms/                        # LuckPerms integration (LuckPermsHelper unified auth)
 │   ├── mail/                             # Mail system (Mail / MailManager / SentMailRepository / MailDataStorage / MailSettings / MailPermissionHelper)
 │   ├── mana/                             # Mana system
-│   ├── mixin/                            # Mixins (subpackages: chargedcreeper / doubledoors / invisibility / pet / seat / skill / trialvault)
-│   ├── network/                          # Network packets (36 packet classes + ModNetworking)
+│   ├── mixin/                            # Mixins (subpackages: afk / babyzombie / chargedcreeper / craftsound / doubledoors / invisibility / jukebox / painting / pet / seat / skill / trialvault)
+│   ├── network/                          # Network packets (42 packet classes + ModNetworking)
 │   ├── pet/                              # Pet system (config/command/event subpackages + PetGlobalState/PetEntry)
 │   ├── placeholders/                     # Placeholder API (32 placeholders)
 │   ├── screen/                           # Container menus
 │   ├── skill/                            # Adventure level + attribute system
+│   ├── sound/                            # Custom SoundEvent (1: cloud_genshin)
 │   ├── status/                           # Stats system (StatsManager, 21 metrics + commands)
 │   ├── trialvault/                       # Unlimited trial vault reward config (TrialVaultConfig)
 │   ├── update/                           # Update checker (UpdateChecker + 4 supporting files)
@@ -779,18 +818,20 @@ src/                                       # 383 Java source files (main 233 / c
 │   ├── itemborder/                       # Item border (ItemBorderClient / ItemBorderConfig / ItemBorderRenderer)
 │   ├── anviluses/                        # Anvil use-count display (AnvilUsesClient)
 │   ├── client/accessor/                  # Render accessors (RenderCrownDuck)
-│   ├── hud/                              # Mana bar / adventure level HUD / YZUI health·food·armor·oxygen bars
+│   ├── hud/                              # Mana bar / adventure level HUD / YZUI health·food·armor·oxygen bars / ToolInfoOverlay
 │   ├── skill/                            # Client adventure level / attribute data (ClientAttributeData)
 │   ├── update/                           # Update checker client state (ClientUpdateState)
-│   ├── mixin/client/                     # Client Mixins (title, options, button, pause, chat, loading, seat, rendering, pickup, enchant-patch, itemborder, YZUI inventory·health bar·contextual bar·recipe book, technocrown, etc.)
+│   ├── mixin/client/                     # Client Mixins (54: title, options, button, pause, chat, loading, seat, rendering, pickup, enchant-patch, itemborder, YZUI inventory·health bar·contextual bar·recipe book, technocrown, AFK input, experimental warning skip, etc.)
 │   ├── network/                          # Client network handling (ClientNetworking)
-│   ├── pickup/                           # Pickup display (item/XP floating notifications)
-│   ├── renderer/                         # Block/entity renderers (incl. teleport anchor BER, feature/TechnoCrownFeatureRenderer)
+│   ├── laowumeme/                        # Laowu Meme client (Geo model/render/audio pool)
+│   ├── particle/                         # Particle rendering (block animation / item sparkle)
+│   ├── pickup/                           # Pickup display (item/XP floating notifications + subtitle capture)
+│   ├── renderer/                         # Block/entity renderers (incl. teleport anchor BER, fly beacon BER, feature/TechnoCrownFeatureRenderer)
 │   └── screen/                           # GUI screens (MenuScreen, Login/Register, YzuInventoryScreen/YzuCreativeInventoryScreen, MailScreen/MailComposeScreen/MailSentScreen, element/widget/block subpackages)
 │
 └── main/resources/
-    ├── assets/youzaiworldcore/           # Textures, models, language files (10 languages), sounds (3 .ogg)
-    ├── data/                             # Advancements (incl. deep_dark branch), recipes, loot tables, dimensions, structures, structure sets, template pools, beginner tutorial functions, trinkets slots
+    ├── assets/youzaiworldcore/           # Textures, models, language files (10 languages), sounds (4 .ogg), painting textures (12 meme paintings)
+    ├── data/                             # Advancements (31, incl. deep_dark branch), recipes (20), loot tables, dimensions (login_hall), structures (4, incl. cloud_genshin_ruins), structure sets, template pools, enchantments (12 JSON), beginner tutorial functions (19), jukebox_song (1), trinkets slots
     └── fabric.mod.json                   # Mod metadata (declares moogs_structures / trinkets_updated / modmenu / placeholder-api as hard dependencies)
 
 .github/workflows/
