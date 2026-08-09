@@ -29,6 +29,7 @@ public class MemePaintingClickHandler {
     /**
      * 在 {@code Client.onInitializeClient()} 中调用一次即可。
      */
+    @SuppressWarnings("null") // ConfirmLinkScreen.confirmLinkNow 传 null 安全：仅用于恢复父界面
     public static void register() {
         UseEntityCallback.EVENT.register((player, world, hand, entity, hitResult) -> {
             if (!world.isClientSide()) {
