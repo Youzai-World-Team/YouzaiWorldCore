@@ -1,5 +1,5 @@
 {
-  "parent": "youzaiworldcore:youzaiworld/have_void_staff",
+  "parent": "youzaiworldcore:youzaiworld/root",
   "display": {
     "icon": {
       "id": "youzaiworldcore:logo"
@@ -13,7 +13,7 @@
     "frame": "challenge",
     "show_toast": true,
     "announce_to_chat": true,
-    "hidden": false
+    "hidden": true
   },
   "criteria": {
     "manual_grant": {

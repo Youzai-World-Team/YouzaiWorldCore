@@ -1,0 +1,79 @@
+{
+  "parent": "youzaiworldcore:youzaiworld/discover_teleport_anchor",
+  "display": {
+    "icon": {
+      "id": "youzaiworldcore:flame_staff"
+    },
+    "title": {
+      "translate": "advancements.youzaiworldcore.youzaiworld.teleport_network.title"
+    },
+    "description": {
+      "translate": "advancements.youzaiworldcore.youzaiworld.teleport_network.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "found_overworld": {
+      "trigger": "minecraft:location",
+      "conditions": {
+        "player": [
+          {
+            "condition": "minecraft:entity_properties",
+            "entity": "this",
+            "predicate": {
+              "minecraft:location": {
+                "structures": "youzaiworldcore:overworld_teleport_anchor_ruins"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "found_end": {
+      "trigger": "minecraft:location",
+      "conditions": {
+        "player": [
+          {
+            "condition": "minecraft:entity_properties",
+            "entity": "this",
+            "predicate": {
+              "minecraft:location": {
+                "structures": "youzaiworldcore:the_end_teleport_anchor_ruins"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "found_nether": {
+      "trigger": "minecraft:location",
+      "conditions": {
+        "player": [
+          {
+            "condition": "minecraft:entity_properties",
+            "entity": "this",
+            "predicate": {
+              "minecraft:location": {
+                "structures": "youzaiworldcore:the_nerther_teleport_anchor_ruins"
+              }
+            }
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "found_overworld"
+    ],
+    [
+      "found_end"
+    ],
+    [
+      "found_nether"
+    ]
+  ]
+}

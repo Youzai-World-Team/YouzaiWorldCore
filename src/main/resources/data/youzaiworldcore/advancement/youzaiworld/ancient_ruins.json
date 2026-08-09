@@ -1,0 +1,28 @@
+{
+  "parent": "youzaiworldcore:youzaiworld/root",
+  "display": {
+    "icon": {
+      "id": "youzaiworldcore:flame_staff"
+    },
+    "title": {
+      "translate": "advancements.youzaiworldcore.youzaiworld.ancient_ruins.title"
+    },
+    "description": {
+      "translate": "advancements.youzaiworldcore.youzaiworld.ancient_ruins.description"
+    },
+    "frame": "task",
+    "show_toast": false,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "auto": {
+      "trigger": "minecraft:tick"
+    }
+  },
+  "requirements": [
+    [
+      "auto"
+    ]
+  ]
+}

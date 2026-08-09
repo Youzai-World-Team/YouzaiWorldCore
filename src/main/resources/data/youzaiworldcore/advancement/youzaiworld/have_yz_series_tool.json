@@ -10,7 +10,7 @@
     "description": {
       "translate": "advancements.youzaiworldcore.youzaiworld.have_yz_series_tool.description"
     },
-    "frame": "challenge",
+    "frame": "goal",
     "show_toast": true,
     "announce_to_chat": true,
     "hidden": false
