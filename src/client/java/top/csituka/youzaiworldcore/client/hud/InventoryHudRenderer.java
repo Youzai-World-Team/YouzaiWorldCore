@@ -39,11 +39,15 @@ public final class InventoryHudRenderer {
 
     /** 缓存的物品栏快照 */
     private static final ItemStack[] cached = new ItemStack[TOTAL];
+    /** 每槽位独立的缓存物品渲染器（避免每帧 27 次模型解析） */
+    private static final CachedItemRenderer[] itemRenderers = new CachedItemRenderer[TOTAL];
     private static int lastTimesChanged = -1;
 
     static {
-        for (int i = 0; i < TOTAL; i++)
+        for (int i = 0; i < TOTAL; i++) {
             cached[i] = ItemStack.EMPTY;
+            itemRenderers[i] = new CachedItemRenderer();
+        }
     }
 
     private InventoryHudRenderer() {
@@ -95,7 +99,7 @@ public final class InventoryHudRenderer {
                 if (!stack.isEmpty()) {
                     int ix = slotX + itemInset;
                     int iy = slotY + itemInset;
-                    graphics.item(stack, ix, iy);
+                    itemRenderers[ci].render(graphics, stack, ix, iy);
                     graphics.itemDecorations(font, stack, ix, iy);
                     ItemBorderRenderer.renderBorder(graphics, ix, iy, stack);
                 }

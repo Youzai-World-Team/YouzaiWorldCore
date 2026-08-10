@@ -27,7 +27,6 @@ public final class ArmorHudRenderer {
     private static final float REF_HEIGHT = 360f;
 
     private static final int BASE_SLOT_SIZE = 18;
-    private static final int BASE_SLOT_RADIUS = 3;
     private static final int BASE_SLOT_SPACING = 20;
     private static final int BASE_ITEM_INSET = 1;
     private static final int BASE_PADDING = 3;
@@ -58,16 +57,19 @@ public final class ArmorHudRenderer {
     private static final Identifier EMPTY_SLOT_BOOTS = Identifier.withDefaultNamespace("container/slot/boots");
     private static final Identifier EMPTY_SLOT_SHIELD = Identifier.withDefaultNamespace("container/slot/shield");
 
-    private static final int[][] CORNER_R3 = buildCornerTable(3);
     private static final int[][] CORNER_R6 = buildCornerTable(6);
     private static final Map<String, Identifier> trinketIconCache = new ConcurrentHashMap<>();
 
     // ===== 缓存 =====
     private static int lastTimesChanged = -1;
     private static final ItemStack[] cachedTrinkets = new ItemStack[3];
+    /** 每槽位独立的缓存物品渲染器 */
+    private static final CachedItemRenderer[] itemRenderers = new CachedItemRenderer[SLOT_COUNT];
     static {
         for (int i = 0; i < 3; i++)
             cachedTrinkets[i] = ItemStack.EMPTY;
+        for (int i = 0; i < SLOT_COUNT; i++)
+            itemRenderers[i] = new CachedItemRenderer();
     }
 
     private ArmorHudRenderer() {
@@ -107,22 +109,19 @@ public final class ArmorHudRenderer {
         fillRounded(graphics, panelX, panelY, panelW, panelH,
                 rnd(BASE_PANEL_RADIUS, s), PANEL_BG, CORNER_R6);
 
-        int slotRadius = rnd(BASE_SLOT_RADIUS, s);
-        int[][] cornerR = (slotRadius == 3) ? CORNER_R3 : buildCornerTable(slotRadius);
         int iconSize = rnd(16, s);
 
         for (int i = 0; i < SLOT_COUNT; i++) {
             int slotX = panelX + padding;
             int slotY = panelY + padding + i * slotSpacing;
-            drawSlot(graphics, font, player, s, i, slotX, slotY,
-                    slotSize, slotRadius, itemInset, textGap, iconSize, cornerR);
+            drawSlot(graphics, font, player, i, slotX, slotY,
+                    slotSize, itemInset, textGap, iconSize);
         }
     }
 
     private static void drawSlot(GuiGraphicsExtractor g, Font font,
-            Player player, float scale, int index, int slotX, int slotY,
-            int slotSize, int slotRadius, int itemInset, int textGap,
-            int iconSize, int[][] cornerR) {
+            Player player, int index, int slotX, int slotY,
+            int slotSize, int itemInset, int textGap, int iconSize) {
         SlotEntry entry = resolveSlotCached(player, index);
         boolean hasItem = entry.stack != null && !entry.stack.isEmpty();
 
@@ -130,9 +129,10 @@ public final class ArmorHudRenderer {
                 hasItem ? SLOT_FILLED_COLOR : SLOT_EMPTY_COLOR);
 
         if (hasItem) {
-            g.item(entry.stack, slotX + itemInset, slotY + itemInset);
-            ItemBorderRenderer.renderBorder(g,
-                    slotX + itemInset, slotY + itemInset, entry.stack);
+            int ix = slotX + itemInset;
+            int iy = slotY + itemInset;
+            itemRenderers[index].render(g, entry.stack, ix, iy);
+            ItemBorderRenderer.renderBorder(g, ix, iy, entry.stack);
 
             int textX = slotX + slotSize + textGap;
             int textY = slotY + (slotSize - font.lineHeight) / 2;
