@@ -58,7 +58,12 @@ public final class RoundedRect {
     }
 
     /**
-     * 绘制实心圆角矩形。
+     * 绘制实心圆角矩形（<b>钳制</b>语义）。
+     * <p>
+     * 半径钳制到 {@code min(w, h) / 2} 后照常绘制圆角——尺寸不足时自然收敛成胶囊/圆形。
+     * 对应原 {@code MailUi.roundedRect} / {@code MainMenuElements.drawRoundedRect}
+     * 的既有行为。
+     * </p>
      *
      * @param g     绘制上下文
      * @param x     左上角 X
@@ -73,18 +78,51 @@ public final class RoundedRect {
         if (w <= 0 || h <= 0) {
             return;
         }
-
-        // 半径钳制到 min(w, h) / 2，与 MailUi.roundedRect / MainMenuElements.drawRoundedRect /
-        // YzuInventoryScreen.fillRoundedRect 的既有语义一致。
-        //
-        // 另有几处旧实现（HotbarRenderer / ConfirmationDialog / ToggleButton / DropdownButton）
-        // 在 w <= 2r 时回退为直角矩形、且完全不校验高度（h <= 2r 时中段与圆角行重叠，
-        // 半透明色被混合两次形成假边框）。经逐一核对，这些调用点的实际尺寸均满足
-        // w > 2r 且 h > 2r，退化分支从未被触发，故统一为钳制不改变任何既有观感。
         int clamped = Math.min(w, h) / 2;
         if (r > clamped) {
             r = clamped;
         }
+        drawClamped(g, x, y, w, h, r, color);
+    }
+
+    /**
+     * 绘制实心圆角矩形（<b>窄则画直角</b>语义）。
+     * <p>
+     * 宽度不足以容纳两端圆角（{@code w <= 2r}）时整体回退为直角矩形。对应原
+     * {@code HotbarRenderer} / {@code ConfirmationDialog} / {@code ToggleButton} /
+     * {@code DropdownButton} / {@code FlyBeaconScreen} / {@code DecompositionTableScreen}
+     * 这一族实现的既有行为。
+     * </p>
+     * <p>
+     * <b>为什么要区分两种语义：</b>两族原实现在退化区结论不同。以飞行信标能量条为例
+     * （高 12px、半径 {@code min(4, fillWidth/2)}），当 {@code fillWidth} 恰为 8 时
+     * {@code w == 2r}，本族画直角、钳制族画圆角，相差 4 个像素。能量条宽度随能量实时变化，
+     * 一定会扫过这个值，因此不能用同一套语义覆盖两族。
+     * </p>
+     * <p>
+     * 高度方向：原实现未校验高度，{@code h <= 2r} 时中段会与圆角行重叠、半透明色被
+     * 二次混合。此处补上钳制（现有调用点均满足 {@code h > 2r}，不改变任何既有观感）。
+     * </p>
+     */
+    public static void fillOrSquare(GuiGraphicsExtractor g,
+            int x, int y, int w, int h, int r, int color) {
+        if (w <= 0 || h <= 0) {
+            return;
+        }
+        if (r > 0 && w <= r * 2) {
+            g.fill(x, y, x + w, y + h, color);
+            return;
+        }
+        int clampedH = h / 2;
+        if (r > clampedH) {
+            r = clampedH;
+        }
+        drawClamped(g, x, y, w, h, r, color);
+    }
+
+    /** 公共绘制内核：调用方须保证 {@code r <= w/2 且 r <= h/2}。 */
+    private static void drawClamped(GuiGraphicsExtractor g,
+            int x, int y, int w, int h, int r, int color) {
         if (r <= 0) {
             g.fill(x, y, x + w, y + h, color);
             return;
@@ -127,8 +165,8 @@ public final class RoundedRect {
             int x, int y, int w, int h,
             int outerRadius, int innerRadius,
             int borderColor, int fillColor) {
-        fill(g, x, y, w, h, outerRadius, borderColor);
-        fill(g, x + 1, y + 1, w - 2, h - 2, innerRadius, fillColor);
+        fillOrSquare(g, x, y, w, h, outerRadius, borderColor);
+        fillOrSquare(g, x + 1, y + 1, w - 2, h - 2, innerRadius, fillColor);
     }
 
     // ===== 内部：跨度表 =====

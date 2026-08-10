@@ -98,7 +98,7 @@ public final class InventoryHudRenderer {
 
         // 半径按实际缩放值传入。原先固定使用为 r=6 预建的偏移表，
         // 而传入半径是 round(6 * s)，s ≠ 1 时二者错配导致圆角缺角或溢出。
-        RoundedRect.fill(graphics, panelX, panelY, panelW, panelH,
+        RoundedRect.fillOrSquare(graphics, panelX, panelY, panelW, panelH,
                 rnd(BASE_PANEL_RADIUS, s), PANEL_BG);
 
         for (int row = 0; row < ROWS; row++) {

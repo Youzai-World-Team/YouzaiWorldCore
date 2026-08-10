@@ -70,6 +70,9 @@ public final class ArmorHudRenderer {
     /** 背包空位数指示器贴图（GUI sprite：textures/gui/sprites/inventory_hud_slot.png） */
     private static final Identifier EMPTY_SLOTS_ICON =
             Identifier.fromNamespaceAndPath("youzaiworldcore", "inventory_hud_slot");
+    /** 主手槽位空位贴图（GUI sprite：textures/gui/sprites/hud_hand_solt.png） */
+    private static final Identifier HAND_EMPTY_ICON =
+            Identifier.fromNamespaceAndPath("youzaiworldcore", "hud_hand_solt");
     /** 箭矢指示器图标：原版普通箭物品（用物品模型渲染，非贴图） */
     private static final ItemStack ARROW_STACK = new ItemStack(Items.ARROW);
 
@@ -202,7 +205,7 @@ public final class ArmorHudRenderer {
 
         // 半径按实际缩放值传入。原先固定使用为 r=6 预建的偏移表，
         // 而传入半径是 round(6 * s)，s ≠ 1 时二者错配导致圆角缺角或溢出。
-        RoundedRect.fill(graphics, panelX, panelY, panelW, panelH,
+        RoundedRect.fillOrSquare(graphics, panelX, panelY, panelW, panelH,
                 rnd(BASE_PANEL_RADIUS, s), PANEL_BG);
 
         int iconSize = rnd(16, s);
@@ -390,7 +393,8 @@ public final class ArmorHudRenderer {
         return switch (index) {
             case 0 -> {
                 ItemStack s = player.getOffhandItem();
-                yield s.isEmpty() ? SlotEntry.empty(EMPTY_SLOT_SHIELD) : SlotEntry.of(s, 40);
+                yield s.isEmpty() ? SlotEntry.empty(EMPTY_SLOT_SHIELD)
+                        : SlotEntry.of(s, 40, EMPTY_SLOT_SHIELD);
             }
             case 1 -> {
                 yield trinketSlotEntry(cachedTrinkets[0], TRINKET_TOTEM, player);
@@ -408,23 +412,21 @@ public final class ArmorHudRenderer {
             case 8 -> {
                 int sel = player.getInventory().getSelectedSlot();
                 ItemStack s = player.getInventory().getItem(sel);
-                yield s.isEmpty() ? SlotEntry.empty(null) : SlotEntry.of(s, sel);
+                yield s.isEmpty() ? SlotEntry.empty(HAND_EMPTY_ICON) : SlotEntry.of(s, sel, HAND_EMPTY_ICON);
             }
             default -> SlotEntry.empty(null);
         };
     }
 
     private static SlotEntry trinketSlotEntry(ItemStack s, String groupKey, Player player) {
-        if (s.isEmpty()) {
-            // 用 ICON_NONE 哨兵把「查不到图标」也缓存进去：
-            // computeIfAbsent 不会缓存 null，否则每次都要重跑 SlotGroup 双层遍历
-            Identifier icon = trinketIconCache.computeIfAbsent(groupKey, k -> {
-                Identifier found = trinketIcon(player, k);
-                return found != null ? found : ICON_NONE;
-            });
-            return SlotEntry.empty(icon == ICON_NONE ? null : icon);
-        }
-        return SlotEntry.of(s, -1);
+        // 用 ICON_NONE 哨兵把「查不到图标」也缓存进去：
+        // computeIfAbsent 不会缓存 null，否则每次都要重跑 SlotGroup 双层遍历
+        Identifier icon = trinketIconCache.computeIfAbsent(groupKey, k -> {
+            Identifier found = trinketIcon(player, k);
+            return found != null ? found : ICON_NONE;
+        });
+        Identifier placeholder = (icon == ICON_NONE) ? null : icon;
+        return s.isEmpty() ? SlotEntry.empty(placeholder) : SlotEntry.of(s, -1, placeholder);
     }
 
     private static Identifier trinketIcon(Player player, String groupKey) {
@@ -443,7 +445,7 @@ public final class ArmorHudRenderer {
 
     private static SlotEntry armorSlot(Player player, int slot, Identifier emptyIcon) {
         ItemStack s = player.getInventory().getItem(slot);
-        return s.isEmpty() ? SlotEntry.empty(emptyIcon) : SlotEntry.of(s, slot);
+        return s.isEmpty() ? SlotEntry.empty(emptyIcon) : SlotEntry.of(s, slot, emptyIcon);
     }
 
     // ===== 辅助 =====
@@ -489,8 +491,16 @@ public final class ArmorHudRenderer {
 
     private record SlotEntry(ItemStack stack, boolean showDurability,
             Identifier placeholderIcon, int excludeSlot) {
-        static SlotEntry of(ItemStack s, int ex) {
-            return new SlotEntry(s, s.getMaxDamage() > 0, null, ex);
+        /**
+         * 有物品的槽位。
+         * <p>
+         * {@code placeholderIcon} 对非空槽位同样要带上：本类的槽位决议是<b>带缓存</b>的，
+         * 而物品可能在原地被清空（盔甲损坏、消耗品用尽）却尚未触发 {@code timesChanged}。
+         * 此时 {@code stack.isEmpty()} 已为真，若不带占位图标，该槽会既不画物品也不画图标。
+         * </p>
+         */
+        static SlotEntry of(ItemStack s, int ex, Identifier placeholderIcon) {
+            return new SlotEntry(s, s.getMaxDamage() > 0, placeholderIcon, ex);
         }
 
         static SlotEntry empty(Identifier icon) {

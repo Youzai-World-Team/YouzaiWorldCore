@@ -611,7 +611,7 @@ public final class StatsManager {
     }
 
     static void save(MinecraftServer server) {
-        writeJson(getDataFile(server), serializeRoot());
+        writeJson(getDataFile(server), serializeRoot(), CACHE.size(), SNAPSHOTS.size());
     }
 
     /**
@@ -630,11 +630,15 @@ public final class StatsManager {
     static void saveAsync(MinecraftServer server) {
         String json = serializeRoot();
         Path target = getDataFile(server);
+        // 统计数量在本线程读取后按值传入：CACHE / SNAPSHOTS 由服务端线程持续改写，
+        // 后台线程直接读取会构成数据竞争
+        int playerCount = CACHE.size();
+        int snapshotCount = SNAPSHOTS.size();
         try {
-            IO_EXECUTOR.execute(() -> writeJson(target, json));
+            IO_EXECUTOR.execute(() -> writeJson(target, json, playerCount, snapshotCount));
         } catch (RejectedExecutionException e) {
             // executor 已关闭（关服流程中）：退化为同步写，绝不丢数据
-            writeJson(target, json);
+            writeJson(target, json, playerCount, snapshotCount);
         }
     }
 
@@ -653,11 +657,11 @@ public final class StatsManager {
         return GSON.toJson(root);
     }
 
-    /** 实际写盘。可能运行在后台 IO 线程。 */
-    private static void writeJson(Path target, String json) {
+    /** 实际写盘。可能运行在后台 IO 线程，因此不读取任何共享可变状态。 */
+    private static void writeJson(Path target, String json, int playerCount, int snapshotCount) {
         try {
             Files.writeString(target, json);
-            DebugLogger.info(MODULE, "状态数据已保存，共 %s 位玩家 + %s 天快照", CACHE.size(), SNAPSHOTS.size());
+            DebugLogger.info(MODULE, "状态数据已保存，共 %s 位玩家 + %s 天快照", playerCount, snapshotCount);
         } catch (IOException e) {
             LOGGER.error("保存状态数据失败", e);
         }

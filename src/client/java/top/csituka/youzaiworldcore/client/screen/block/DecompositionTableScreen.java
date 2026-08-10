@@ -167,7 +167,7 @@ public class DecompositionTableScreen extends AbstractContainerScreen<Decomposit
     // 圆角矩形绘制统一走 RoundedRect（行扫描，r=6 时 135 次 fill → 13 次），
     // 点亮的像素集合与原逐像素实现完全一致。
     private void fillRoundedRect(GuiGraphicsExtractor g, int x, int y, int w, int h, int r, int color) {
-        RoundedRect.fill(g, x, y, w, h, r, color);
+        RoundedRect.fillOrSquare(g, x, y, w, h, r, color);
     }
 
     private static class DecomposeButton extends AbstractWidget {
@@ -202,7 +202,7 @@ public class DecompositionTableScreen extends AbstractContainerScreen<Decomposit
         }
 
         private void fillRoundedRect(GuiGraphicsExtractor g, int x, int y, int w, int h, int r, int color) {
-            RoundedRect.fill(g, x, y, w, h, r, color);
+            RoundedRect.fillOrSquare(g, x, y, w, h, r, color);
         }
 
         @Override

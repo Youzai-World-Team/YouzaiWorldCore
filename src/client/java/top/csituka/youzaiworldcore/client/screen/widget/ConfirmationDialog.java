@@ -214,7 +214,7 @@ public class ConfirmationDialog {
 
     // 圆角矩形绘制统一走 RoundedRect（行扫描），点亮像素与原逐像素实现一致。
     private void fillRoundedRect(GuiGraphicsExtractor g, int x, int y, int w, int h, int r, int color) {
-        RoundedRect.fill(g, x, y, w, h, r, color);
+        RoundedRect.fillOrSquare(g, x, y, w, h, r, color);
     }
 
     private int colorWithAlpha(int color, float alpha) {

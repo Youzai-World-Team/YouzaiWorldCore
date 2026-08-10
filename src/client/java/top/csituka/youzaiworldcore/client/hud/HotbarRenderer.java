@@ -255,7 +255,7 @@ public final class HotbarRenderer {
         }
 
         // === 1. 面板背景 ===
-        RoundedRect.fill(graphics, panelX, panelY, PANEL_WIDTH, PANEL_HEIGHT, PANEL_RADIUS, PANEL_BG);
+        RoundedRect.fillOrSquare(graphics, panelX, panelY, PANEL_WIDTH, PANEL_HEIGHT, PANEL_RADIUS, PANEL_BG);
 
         // === 2. 副手槽（带滑入滑出动画） ===
         ItemStack offhandItem = player.getOffhandItem();
@@ -337,7 +337,7 @@ public final class HotbarRenderer {
             int slotY = panelY + SLOT_PADDING_Y;
 
             int slotBg = (i == highlightedSlot) ? SLOT_SELECTED_COLOR : SLOT_COLOR;
-            RoundedRect.fill(graphics, slotX, slotY, SLOT_SIZE, SLOT_SIZE, SLOT_RADIUS, slotBg);
+            RoundedRect.fillOrSquare(graphics, slotX, slotY, SLOT_SIZE, SLOT_SIZE, SLOT_RADIUS, slotBg);
 
             // 物品
             ItemStack stack = inventory.getItem(i);
