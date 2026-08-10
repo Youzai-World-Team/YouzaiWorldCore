@@ -413,19 +413,24 @@ public class YzuInventoryScreen extends AbstractRecipeBookScreen<InventoryMenu> 
 
     // ========== 工具方法 ==========
 
+    /**
+     * 圆角矩形填充，r≤3 时走矩形快速路径（无肉眼可见圆角效果），
+     * r>3 时走扫描线优化（每行一次 fill，非逐像素）。
+     */
     private static void fillRoundedRect(GuiGraphicsExtractor g, int x, int y, int w, int h, int r, int color) {
-        g.fill(x + r, y, x + w - r, y + h, color);
-        g.fill(x, y + r, x + r, y + h - r, color);
-        g.fill(x + w - r, y + r, x + w, y + h - r, color);
-        for (int i = 0; i < r; i++) {
-            for (int j = 0; j < r; j++) {
-                if (i * i + j * j < r * r) {
-                    g.fill(x + r - i - 1, y + r - j - 1, x + r - i, y + r - j, color);
-                    g.fill(x + w - r + i, y + r - j - 1, x + w - r + i + 1, y + r - j, color);
-                    g.fill(x + r - i - 1, y + h - r + j, x + r - i, y + h - r + j + 1, color);
-                    g.fill(x + w - r + i, y + h - r + j, x + w - r + i + 1, y + h - r + j + 1, color);
-                }
-            }
+        if (w <= 0 || h <= 0) return;
+        r = Math.min(r, Math.min(w, h) / 2);
+        if (r <= 3) {
+            g.fill(x, y, x + w, y + h, color);
+            return;
+        }
+        g.fill(x, y + r, x + w, y + h - r, color);
+        for (int j = 0; j < r; j++) {
+            int n = 0;
+            while (n < r && n * n + j * j < r * r) n++;
+            int x0 = x + r - n, x1 = x + w - r + n;
+            g.fill(x0, y + r - j - 1, x1, y + r - j, color);
+            g.fill(x0, y + h - r + j, x1, y + h - r + j + 1, color);
         }
     }
 

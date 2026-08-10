@@ -11,20 +11,19 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import top.csituka.youzaiworldcore.itemborder.ItemBorderRenderer;
-import top.csituka.youzaiworldcore.util.DebugLogger;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * YZUI 装备栏 HUD 渲染器。<p>
+ * YZUI 装备栏 HUD 渲染器。
+ * <p>
  * 通过 {@code Inventory.getTimesChanged()} + Trinkets 缓存比对检测变化，
- * 仅在变化时更新缓存，渲染走缓存数据。</p>
+ * 仅在变化时更新缓存，渲染走缓存数据。
+ * </p>
  */
 @SuppressWarnings("null")
 public final class ArmorHudRenderer {
-
-    private static final String LOG_TAG = "ArmorHudRenderer";
     private static final float REF_HEIGHT = 360f;
 
     private static final int BASE_SLOT_SIZE = 18;
@@ -44,24 +43,20 @@ public final class ArmorHudRenderer {
     private static final int SLOT_COUNT = 9;
 
     private static final int DURABILITY_COLOR_HIGH = 0xFFFFFFFF;
-    private static final int DURABILITY_COLOR_MED  = 0xFFFFFF55;
-    private static final int DURABILITY_COLOR_LOW  = 0xFFFF5555;
+    private static final int DURABILITY_COLOR_MED = 0xFFFFFF55;
+    private static final int DURABILITY_COLOR_LOW = 0xFFFF5555;
     private static final int COUNT_COLOR = 0xC0FFFFFF;
 
-    private static final String TRINKET_TOTEM  = "offhand/totem";
-    private static final String TRINKET_HEART  = "offhand/heart";
+    private static final String TRINKET_TOTEM = "offhand/totem";
+    private static final String TRINKET_HEART = "offhand/heart";
     private static final String TRINKET_ELYTRA = "chest/elytra";
 
-    private static final Identifier EMPTY_SLOT_HELMET =
-            Identifier.withDefaultNamespace("container/slot/helmet");
-    private static final Identifier EMPTY_SLOT_CHESTPLATE =
-            Identifier.withDefaultNamespace("container/slot/chestplate");
-    private static final Identifier EMPTY_SLOT_LEGGINGS =
-            Identifier.withDefaultNamespace("container/slot/leggings");
-    private static final Identifier EMPTY_SLOT_BOOTS =
-            Identifier.withDefaultNamespace("container/slot/boots");
-    private static final Identifier EMPTY_SLOT_SHIELD =
-            Identifier.withDefaultNamespace("container/slot/shield");
+    private static final Identifier EMPTY_SLOT_HELMET = Identifier.withDefaultNamespace("container/slot/helmet");
+    private static final Identifier EMPTY_SLOT_CHESTPLATE = Identifier
+            .withDefaultNamespace("container/slot/chestplate");
+    private static final Identifier EMPTY_SLOT_LEGGINGS = Identifier.withDefaultNamespace("container/slot/leggings");
+    private static final Identifier EMPTY_SLOT_BOOTS = Identifier.withDefaultNamespace("container/slot/boots");
+    private static final Identifier EMPTY_SLOT_SHIELD = Identifier.withDefaultNamespace("container/slot/shield");
 
     private static final int[][] CORNER_R3 = buildCornerTable(3);
     private static final int[][] CORNER_R6 = buildCornerTable(6);
@@ -131,8 +126,8 @@ public final class ArmorHudRenderer {
         SlotEntry entry = resolveSlotCached(player, index);
         boolean hasItem = entry.stack != null && !entry.stack.isEmpty();
 
-        fillRounded(g, slotX, slotY, slotSize, slotSize, slotRadius,
-                hasItem ? SLOT_FILLED_COLOR : SLOT_EMPTY_COLOR, cornerR);
+        g.fill(slotX, slotY, slotX + slotSize, slotY + slotSize,
+                hasItem ? SLOT_FILLED_COLOR : SLOT_EMPTY_COLOR);
 
         if (hasItem) {
             g.item(entry.stack, slotX + itemInset, slotY + itemInset);
@@ -160,14 +155,16 @@ public final class ArmorHudRenderer {
 
     private static boolean checkTrinketsChanged(Player player) {
         TrinketAttachment a = TrinketsApi.getAttachment(player);
-        if (a == null) return false;
+        if (a == null)
+            return false;
         String[] keys = { TRINKET_TOTEM, TRINKET_HEART, TRINKET_ELYTRA };
         for (int i = 0; i < 3; i++) {
             TrinketInventory inv = a.getInventories().get(keys[i]);
             ItemStack cur = (inv != null && inv.getContainerSize() > 0)
-                    ? inv.getItem(0) : ItemStack.EMPTY;
-            if (cur == null) cur = ItemStack.EMPTY;
-            if (!ItemStack.matches(cur, cachedTrinkets[i])) return true;
+                    ? inv.getItem(0)
+                    : ItemStack.EMPTY;
+            if (!ItemStack.matches(cur, cachedTrinkets[i]))
+                return true;
         }
         return false;
     }
@@ -179,7 +176,8 @@ public final class ArmorHudRenderer {
             if (a != null) {
                 TrinketInventory inv = a.getInventories().get(keys[i]);
                 ItemStack s = (inv != null && inv.getContainerSize() > 0)
-                        ? inv.getItem(0) : ItemStack.EMPTY;
+                        ? inv.getItem(0)
+                        : ItemStack.EMPTY;
                 cachedTrinkets[i] = (s != null && !s.isEmpty()) ? s.copy() : ItemStack.EMPTY;
             } else {
                 cachedTrinkets[i] = ItemStack.EMPTY;
@@ -240,10 +238,12 @@ public final class ArmorHudRenderer {
             for (var ge : eu.pb4.trinkets.api.SlotGroup
                     .getEntityGroups(player).entrySet()) {
                 for (var st : ge.getValue().getSlots()) {
-                    if (st.getId().equals(groupKey)) return st.icon();
+                    if (st.getId().equals(groupKey))
+                        return st.icon();
                 }
             }
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
         return null;
     }
 
@@ -266,7 +266,8 @@ public final class ArmorHudRenderer {
     private static int countInInventory(Player player, ItemStack ref, int exclude) {
         int total = 0;
         for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
-            if (i == exclude) continue;
+            if (i == exclude)
+                continue;
             ItemStack s = player.getInventory().getItem(i);
             if (ItemStack.isSameItemSameComponents(s, ref))
                 total += s.getCount();
@@ -282,7 +283,8 @@ public final class ArmorHudRenderer {
         int count = 0;
         for (int i = 0; i < r; i++)
             for (int j = 0; j < r; j++)
-                if (i * i + j * j < r * r) count++;
+                if (i * i + j * j < r * r)
+                    count++;
         int[][] tbl = new int[count][2];
         int idx = 0;
         for (int i = 0; i < r; i++)
@@ -316,6 +318,7 @@ public final class ArmorHudRenderer {
         static SlotEntry of(ItemStack s, int ex) {
             return new SlotEntry(s, s.getMaxDamage() > 0, null, ex);
         }
+
         static SlotEntry empty(Identifier icon) {
             return new SlotEntry(ItemStack.EMPTY, false, icon, -1);
         }
