@@ -734,6 +734,44 @@ public class YzuCreativeInventoryScreen extends Screen {
         minecraft.player.containerMenu.setCarried(ItemStack.EMPTY);
     }
 
+    /** 清理当前鼠标手势状态，避免拖拽到界面外后在释放事件中再次执行槽位操作。 */
+    private void resetDragState() {
+        pendingDrag = false;
+        isDragInProgress = false;
+        draggedSlots.clear();
+        yzwcDragMode = 0;
+        processedSlots.clear();
+    }
+
+    /**
+     * 创造模式把携带物拖出 YZUI 面板时按原版创造栏的方式丢出。
+     * <p>
+     * 创造物品栏中的物品本来就是客户端生成的虚拟副本，拖出面板应生成掉落物，
+     * 同时通过创造模式协议通知服务端，最后清理鼠标携带状态。
+     */
+    private boolean dropCreativeCarriedOutside(double mx, double my) {
+        boolean inside = mx >= lp && mx < lp + PW && my >= tp && my < tp + PH;
+        if (inside || !player.isCreative()) {
+            return false;
+        }
+
+        ItemStack carried = minecraft.player.containerMenu.getCarried();
+        if (carried.isEmpty()) {
+            if (pendingDrag || isDragInProgress) {
+                resetDragState();
+            }
+            return false;
+        }
+
+        ItemStack toDrop = carried.copy();
+        clearCarried();
+        player.drop(toDrop, true);
+        minecraft.gameMode.handleCreativeModeItemDrop(toDrop);
+        resetDragState();
+        DebugLogger.info("YzuCreativeInventoryScreen", "创造模式物品拖出界面，已作为掉落物丢出");
+        return true;
+    }
+
     /** 创造模式下的双击收集：手动合并所有同种物品到光标，避免标准 clicked(PICKUP_ALL) 协议导致服务端物品残留。 */
     private void handlePickupAll(int sourceSlot) {
         var container = minecraft.player.containerMenu;
@@ -1237,25 +1275,23 @@ public class YzuCreativeInventoryScreen extends Screen {
             }
         }
 
-        // 点击 GUI 外部（任意按钮）→ 创造模式清手，生存丢出
+        // 点击 GUI 外部（任意按钮）→ 创造模式丢出携带物，生存按普通掉落处理
         boolean inside = ev.x() >= lp && ev.x() < lp + PW && ev.y() >= tp && ev.y() < tp + PH;
         if (!inside) {
+            if (dropCreativeCarriedOutside(ev.x(), ev.y())) {
+                return true;
+            }
             ItemStack ca = minecraft.player.containerMenu.getCarried();
             if (!ca.isEmpty()) {
-                if (player.isCreative()) {
+                if (ev.button() == 0) {
+                    player.drop(ca, false);
                     clearCarried();
-                    minecraft.gameMode.handleCreativeModeItemAdd(ItemStack.EMPTY, -1);
-                } else {
-                    if (ev.button() == 0) {
-                        player.drop(ca, false);
-                        clearCarried();
-                    } else if (ev.button() == 1 && !ca.isEmpty()) {
-                        ItemStack one = ca.copy();
-                        one.setCount(1);
-                        ca.shrink(1);
-                        player.containerMenu.setCarried(ca.isEmpty() ? ItemStack.EMPTY : ca);
-                        player.drop(one, false);
-                    }
+                } else if (ev.button() == 1 && !ca.isEmpty()) {
+                    ItemStack one = ca.copy();
+                    one.setCount(1);
+                    ca.shrink(1);
+                    player.containerMenu.setCarried(ca.isEmpty() ? ItemStack.EMPTY : ca);
+                    player.drop(one, false);
                 }
                 return true;
             }
@@ -1293,6 +1329,11 @@ public class YzuCreativeInventoryScreen extends Screen {
 
     @Override
     public boolean mouseReleased(@NonNull MouseButtonEvent ev) {
+        // 拖拽物品从创造栏移到面板外后，释放事件是主要处理路径；按原版方式生成掉落物。
+        if (dropCreativeCarriedOutside(ev.x(), ev.y())) {
+            return true;
+        }
+
         // 右键释放：处理 pending 或 drag 后始终消耗
         if (ev.button() == 1) {
             if (pendingDrag && dragButton == 1) {
