@@ -142,15 +142,17 @@ public class FlyBeaconBlockEntityRenderer implements BlockEntityRenderer<FlyBeac
         );
 
         List<VisibleFace> myVisibleFaces = computeVisibleFacesForSquare(mySquare, allSquares);
+        List<Square> myVisibleBottomAreas = computeVisibleBottomAreas(myPos, mySquare, collectedBeacons);
 
-        if (myVisibleFaces.isEmpty()) {
+        if (myVisibleFaces.isEmpty() && myVisibleBottomAreas.isEmpty()) {
             return;
         }
 
         if (!debugLoggedThisFrame) {
             debugLoggedThisFrame = true;
-            DebugLogger.info("FlyBeaconRenderer", "BE [%d,%d,%d]: 共 %d 个激活信标，当前贡献 %d 个可见墙面段",
-                    myPos.getX(), myPos.getY(), myPos.getZ(), allSquares.size(), myVisibleFaces.size());
+            DebugLogger.info("FlyBeaconRenderer", "BE [%d,%d,%d]: 共 %d 个激活信标，当前贡献 %d 个可见墙面段、%d 个底部面片",
+                    myPos.getX(), myPos.getY(), myPos.getZ(), allSquares.size(),
+                    myVisibleFaces.size(), myVisibleBottomAreas.size());
         }
 
         // 渲染
@@ -198,25 +200,26 @@ public class FlyBeaconBlockEntityRenderer implements BlockEntityRenderer<FlyBeac
                 }
             }
 
-            // 2) 渲染底部封口（每个正方形贡献自己的底部面）
-            // 底部互相重叠只会导致 alpha 叠加颜色略深，不会产生线条，所以直接渲染即可
-            float localXMin = (float) (mySquare.xmin() - myPos.getX());
-            float localXMax = (float) (mySquare.xmax() - myPos.getX());
-            float localZMin = (float) (mySquare.zmin() - myPos.getZ());
-            float localZMax = (float) (mySquare.zmax() - myPos.getZ());
+            // 2) 渲染底部封口。每个底部面片只由一个信标负责，合起来形成所有区域的并集。
+            for (Square bottomArea : myVisibleBottomAreas) {
+                float localXMin = (float) (bottomArea.xmin() - myPos.getX());
+                float localXMax = (float) (bottomArea.xmax() - myPos.getX());
+                float localZMin = (float) (bottomArea.zmin() - myPos.getZ());
+                float localZMax = (float) (bottomArea.zmax() - myPos.getZ());
 
-            // 底部封口（从上方可见，法线朝上 +Y）
-            emitQuad(consumer, pose,
-                    localXMin, HEIGHT_BOTTOM, localZMin,
-                    localXMax, HEIGHT_BOTTOM, localZMin,
-                    localXMax, HEIGHT_BOTTOM, localZMax,
-                    localXMin, HEIGHT_BOTTOM, localZMax);
-            // 底部封口（从下方可见，法线朝下 -Y）
-            emitQuad(consumer, pose,
-                    localXMin, HEIGHT_BOTTOM, localZMax,
-                    localXMax, HEIGHT_BOTTOM, localZMax,
-                    localXMax, HEIGHT_BOTTOM, localZMin,
-                    localXMin, HEIGHT_BOTTOM, localZMin);
+                // 底部封口（从上方可见，法线朝上 +Y）
+                emitQuad(consumer, pose,
+                        localXMin, HEIGHT_BOTTOM, localZMin,
+                        localXMax, HEIGHT_BOTTOM, localZMin,
+                        localXMax, HEIGHT_BOTTOM, localZMax,
+                        localXMin, HEIGHT_BOTTOM, localZMax);
+                // 底部封口（从下方可见，法线朝下 -Y）
+                emitQuad(consumer, pose,
+                        localXMin, HEIGHT_BOTTOM, localZMax,
+                        localXMax, HEIGHT_BOTTOM, localZMax,
+                        localXMax, HEIGHT_BOTTOM, localZMin,
+                        localXMin, HEIGHT_BOTTOM, localZMin);
+            }
         });
 
         matrices.popPose();
@@ -242,11 +245,16 @@ public class FlyBeaconBlockEntityRenderer implements BlockEntityRenderer<FlyBeac
         for (Map.Entry<BlockPos, Boolean> entry : beacons.entrySet()) {
             if (!entry.getValue()) continue;
             BlockPos pos = entry.getKey();
-            double cx = pos.getX() + CENTER_OFFSET;
-            double cz = pos.getZ() + CENTER_OFFSET;
-            squares.add(new Square(cx - HALF_D, cx + HALF_D, cz - HALF_D, cz + HALF_D));
+            squares.add(squareForPosition(pos));
         }
         return squares;
+    }
+
+    /** 根据方块坐标生成对应的飞行信标范围正方形。 */
+    private static Square squareForPosition(BlockPos pos) {
+        double cx = pos.getX() + CENTER_OFFSET;
+        double cz = pos.getZ() + CENTER_OFFSET;
+        return new Square(cx - HALF_D, cx + HALF_D, cz - HALF_D, cz + HALF_D);
     }
 
     /**
@@ -318,6 +326,82 @@ public class FlyBeaconBlockEntityRenderer implements BlockEntityRenderer<FlyBeac
         addVisibleFacesForEdge(sq.zmin(), sq.zmax(), coverage, true, sq.xmin(), faces);
 
         return faces;
+    }
+
+    /**
+     * 计算当前信标应绘制的底部面片。
+     *
+     * 底部是填充面，不能像侧墙一样只保留外轮廓，否则重叠区域会被完全扣掉。
+     * 因此按稳定的方块坐标顺序为每个重叠区域指定一个信标，仅从当前正方形中扣除
+     * 排在当前信标之前的其他激活信标正方形，保证并集中的每个位置恰好绘制一次。
+     */
+    private static List<Square> computeVisibleBottomAreas(BlockPos myPos, Square mySquare,
+                                                            Map<BlockPos, Boolean> beacons) {
+        List<Square> visibleAreas = new ArrayList<>();
+        visibleAreas.add(mySquare);
+
+        for (Map.Entry<BlockPos, Boolean> entry : beacons.entrySet()) {
+            BlockPos otherPos = entry.getKey();
+            if (!entry.getValue()
+                    || !isBefore(otherPos, myPos)) {
+                continue;
+            }
+
+            Square otherSquare = squareForPosition(otherPos);
+            List<Square> remainingAreas = new ArrayList<>();
+            for (Square visibleArea : visibleAreas) {
+                remainingAreas.addAll(subtractSquare(visibleArea, otherSquare));
+            }
+            visibleAreas = remainingAreas;
+            if (visibleAreas.isEmpty()) {
+                break;
+            }
+        }
+
+        return visibleAreas;
+    }
+
+    /**
+     * 从一个轴对齐矩形中扣除另一个矩形，返回不重叠的剩余矩形集合。
+     */
+    private static List<Square> subtractSquare(Square source, Square cutter) {
+        double intersectionXMin = Math.max(source.xmin(), cutter.xmin());
+        double intersectionXMax = Math.min(source.xmax(), cutter.xmax());
+        double intersectionZMin = Math.max(source.zmin(), cutter.zmin());
+        double intersectionZMax = Math.min(source.zmax(), cutter.zmax());
+
+        if (intersectionXMin >= intersectionXMax || intersectionZMin >= intersectionZMax) {
+            return List.of(source);
+        }
+
+        List<Square> remaining = new ArrayList<>(4);
+
+        // 先切出上下两条完整宽度的区域，再切出交集两侧的中间区域，避免结果互相重叠。
+        if (source.zmin() < intersectionZMin) {
+            remaining.add(new Square(source.xmin(), source.xmax(), source.zmin(), intersectionZMin));
+        }
+        if (intersectionZMax < source.zmax()) {
+            remaining.add(new Square(source.xmin(), source.xmax(), intersectionZMax, source.zmax()));
+        }
+        if (source.xmin() < intersectionXMin) {
+            remaining.add(new Square(source.xmin(), intersectionXMin, intersectionZMin, intersectionZMax));
+        }
+        if (intersectionXMax < source.xmax()) {
+            remaining.add(new Square(intersectionXMax, source.xmax(), intersectionZMin, intersectionZMax));
+        }
+
+        return remaining;
+    }
+
+    /** 按 X、Y、Z 坐标建立稳定的底部面片归属顺序。 */
+    private static boolean isBefore(BlockPos left, BlockPos right) {
+        if (left.getX() != right.getX()) {
+            return left.getX() < right.getX();
+        }
+        if (left.getY() != right.getY()) {
+            return left.getY() < right.getY();
+        }
+        return left.getZ() < right.getZ();
     }
 
     /**
