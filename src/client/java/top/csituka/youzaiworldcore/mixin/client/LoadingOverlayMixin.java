@@ -7,15 +7,18 @@ import net.minecraft.util.Mth;
 import org.joml.Vector4f;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import top.csituka.youzaiworldcore.client.GradientBackgroundUtil;
+import top.csituka.youzaiworldcore.client.render.LoadingCircleRenderer;
 
 /**
  * 为 Mojang 加载页面背景添加 135° 对角线渐变，
- * 并使渐变跟随加载页面的淡入/淡出动画（替换纯色品牌背景的淡出效果）。
+ * 并使渐变跟随加载页面的淡入/淡出动画（替换纯色品牌背景的淡出效果）；
+ * 同时在启动进度条上方接入独立的 8-bit 加载圈组件。
  * <p>
  * 原版的淡出逻辑：
  * <ol>
@@ -28,9 +31,13 @@ import top.csituka.youzaiworldcore.client.GradientBackgroundUtil;
 @Mixin(LoadingOverlay.class)
 public class LoadingOverlayMixin {
 
+    @Unique private static final int youzaiworldcore$LOADING_CIRCLE_GAP = 8;
+
     @Shadow private long fadeOutStart;
     @Shadow private long fadeInStart;
     @Shadow private boolean fadeIn;
+
+    @Unique private LoadingCircleRenderer youzaiworldcore$loadingCircleRenderer;
 
     /**
      * 在渲染开头绘制带淡入/淡出 alpha 的渐变背景。
@@ -45,7 +52,7 @@ public class LoadingOverlayMixin {
     }
 
     /**
-     * 计算当前帧的淡出透明度（0-255），与 vanila {@code extractRenderState} 的
+     * 计算当前帧的淡出透明度（0-255），与 vanilla {@code extractRenderState} 的
      * 品牌背景填充 alpha 保持一致。
      */
     private int computeFadeAlpha() {
@@ -75,6 +82,24 @@ public class LoadingOverlayMixin {
 
         // 正常显示
         return 255;
+    }
+
+    /**
+     * 在原版启动进度条上方绘制独立的 8-bit 加载圈组件。
+     * 直接复用进度条传入的透明度，使两者在加载结束时同步淡出。
+     */
+    @Inject(method = "extractProgressBar", at = @At("TAIL"))
+    private void youzaiworldcore$drawLoadingCircle(GuiGraphicsExtractor graphics,
+                                                   int left, int top, int right, int bottom,
+                                                   float alpha, CallbackInfo ci) {
+        if (this.youzaiworldcore$loadingCircleRenderer == null) {
+            this.youzaiworldcore$loadingCircleRenderer = new LoadingCircleRenderer();
+        }
+
+        int centerX = left + (right - left) / 2;
+        int centerY = top - youzaiworldcore$LOADING_CIRCLE_GAP
+                - LoadingCircleRenderer.VISUAL_RADIUS;
+        this.youzaiworldcore$loadingCircleRenderer.render(graphics, centerX, centerY, alpha);
     }
 
     /**
