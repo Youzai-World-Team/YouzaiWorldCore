@@ -6,7 +6,7 @@ import net.minecraft.util.Util;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
 /**
- * 启动加载界面的 8-bit 加载圈组件。
+ * 加载界面的 8-bit 加载圈组件。
  */
 public final class LoadingCircleRenderer {
 
@@ -36,7 +36,7 @@ public final class LoadingCircleRenderer {
      * @param graphics 图形提取器
      * @param centerX  加载圈可见区域中心 X
      * @param centerY  加载圈可见区域中心 Y
-     * @param alpha    启动加载层透明度，范围为 0.0 到 1.0
+     * @param alpha    加载层透明度，范围为 0.0 到 1.0
      */
     public void render(GuiGraphicsExtractor graphics, int centerX, int centerY, float alpha) {
         long now = Util.getMillis();
