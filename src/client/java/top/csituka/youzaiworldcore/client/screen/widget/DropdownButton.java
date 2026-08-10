@@ -9,6 +9,7 @@ import net.minecraft.network.chat.Component;
 
 import java.util.List;
 import java.util.function.IntConsumer;
+import top.csituka.youzaiworldcore.client.render.RoundedRect;
 
 @SuppressWarnings("null")
 public class DropdownButton extends AbstractWidget {
@@ -232,25 +233,9 @@ public class DropdownButton extends AbstractWidget {
 
     // ========== 圆角矩形填充工具 ==========
 
+    // 圆角矩形绘制统一走 RoundedRect（行扫描），点亮像素与原逐像素实现一致。
     private static void fillRoundedRect(GuiGraphicsExtractor g, int x, int y, int w, int h, int r, int color) {
-        // 主体
-        g.fill(x + r, y, x + w - r, y + h, color);
-        // 左右边条
-        g.fill(x, y + r, x + r, y + h - r, color);
-        g.fill(x + w - r, y + r, x + w, y + h - r, color);
-        // 四角
-        for (int i = 0; i < r; i++) {
-            for (int j = 0; j < r; j++) {
-                int dx = r - 1 - i;
-                int dy = r - 1 - j;
-                if (dx * dx + dy * dy < r * r) {
-                    g.fill(x + i, y + j, x + i + 1, y + j + 1, color);
-                    g.fill(x + w - 1 - i, y + j, x + w - i, y + j + 1, color);
-                    g.fill(x + i, y + h - 1 - j, x + i + 1, y + h - j, color);
-                    g.fill(x + w - 1 - i, y + h - 1 - j, x + w - i, y + h - j, color);
-                }
-            }
-        }
+        RoundedRect.fill(g, x, y, w, h, r, color);
     }
 
     // ========== 旧版兼容 ==========

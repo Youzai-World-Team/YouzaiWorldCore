@@ -125,11 +125,31 @@ public final class DebugLogger {
     }
 
     // ===== 通用日志方法 =====
+    //
+    // 关于 varargs 重载：
+    // 形如 debug(module, msg, args...) 的可变参数方法，即使日志级别未开启，
+    // JVM 也会在<b>调用前</b>先分配一个 Object[] 并把基本类型装箱进去——
+    // 方法体内的 isEnabled 短路救不了这部分开销。
+    // 因此为「无参数」这一最常见情形提供非 varargs 重载：编译期即选中它，
+    // 不产生数组分配。带参数的调用点若位于每 tick / 每帧路径，
+    // 请在调用点外层自行包一层 isEnabled 判定（项目内已按此约定改造热路径）。
+
+    /** 输出 TRACE 级别日志（无格式参数，不分配 varargs 数组） */
+    public static void trace(String module, String message) {
+        if (!isEnabled(LEVEL_DEBUG)) return;
+        FALLBACK_LOGGER.trace(formatMessage("TRACE", module, message));
+    }
 
     /** 输出 TRACE 级别日志（需要日志级别 {@code >= LEVEL_DEBUG}） */
     public static void trace(String module, String message, Object... args) {
         if (!isEnabled(LEVEL_DEBUG)) return;
         FALLBACK_LOGGER.trace(formatMessage("TRACE", module, message, args));
+    }
+
+    /** 输出 DEBUG 级别日志（无格式参数，不分配 varargs 数组） */
+    public static void debug(String module, String message) {
+        if (!isEnabled(LEVEL_DETAILED)) return;
+        FALLBACK_LOGGER.debug(formatMessage("DEBUG", module, message));
     }
 
     /** 输出 DEBUG 级别日志（需要日志级别 {@code >= LEVEL_DETAILED}） */
@@ -138,16 +158,34 @@ public final class DebugLogger {
         FALLBACK_LOGGER.debug(formatMessage("DEBUG", module, message, args));
     }
 
+    /** 输出 INFO 级别日志（无格式参数，不分配 varargs 数组） */
+    public static void info(String module, String message) {
+        if (!isEnabled(LEVEL_BASIC)) return;
+        FALLBACK_LOGGER.info(formatMessage("INFO ", module, message));
+    }
+
     /** 输出 INFO 级别日志（需要日志级别 {@code >= LEVEL_BASIC}） */
     public static void info(String module, String message, Object... args) {
         if (!isEnabled(LEVEL_BASIC)) return;
         FALLBACK_LOGGER.info(formatMessage("INFO ", module, message, args));
     }
 
+    /** 输出 WARN 级别日志（无格式参数，不分配 varargs 数组） */
+    public static void warn(String module, String message) {
+        if (!isEnabled(LEVEL_BASIC)) return;
+        FALLBACK_LOGGER.warn(formatMessage("WARN ", module, message));
+    }
+
     /** 输出 WARN 级别日志（需要日志级别 {@code >= LEVEL_BASIC}） */
     public static void warn(String module, String message, Object... args) {
         if (!isEnabled(LEVEL_BASIC)) return;
         FALLBACK_LOGGER.warn(formatMessage("WARN ", module, message, args));
+    }
+
+    /** 输出 ERROR 级别日志（无格式参数，不分配 varargs 数组） */
+    public static void error(String module, String message) {
+        if (!isEnabled(LEVEL_BASIC)) return;
+        FALLBACK_LOGGER.error(formatMessage("ERROR", module, message));
     }
 
     /** 输出 ERROR 级别日志（需要日志级别 {@code >= LEVEL_BASIC}） */

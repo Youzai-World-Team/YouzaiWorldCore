@@ -81,6 +81,10 @@ public abstract class ItemStackRarityMixin {
 
     @Inject(method = "getRarity", at = @At("HEAD"), cancellable = true)
     private void youzaiworldcore$modifyRarity(CallbackInfoReturnable<Rarity> cir) {
+        // 无覆写配置时立即返回。getRarity() 是全局热路径（物品名、tooltip、
+        // 边框渲染都会走），没有配置时不该为它付出注册表查询 + 哈希查表的代价。
+        if (ITEM_RARITY_OVERRIDES.isEmpty()) return;
+
         ItemStack self = (ItemStack) (Object) this;
 
         // 用注册表 ID 查映射（getKey 返回缓存的 Identifier 实例，不产生分配）

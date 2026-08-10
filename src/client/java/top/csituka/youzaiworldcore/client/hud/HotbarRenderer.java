@@ -11,6 +11,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import top.csituka.youzaiworldcore.client.render.RoundedRect;
 import top.csituka.youzaiworldcore.itemborder.ItemBorderRenderer;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
@@ -74,9 +75,7 @@ public final class HotbarRenderer {
     private static final int SELECTION_OUTER_SIZE = 22;
     /** 高亮框外圆角半径 */
     private static final int SELECTION_OUTER_RADIUS = 4;
-    /** 高亮框内尺寸（填充，比外框小 2px 形成 1px 边框） */
-    private static final int SELECTION_INNER_SIZE = 20;
-    /** 高亮框内圆角半径 */
+    /** 高亮框内圆角半径（内填充尺寸恒为外框 -2，由 RoundedRect.fillWithBorder 推导） */
     private static final int SELECTION_INNER_RADIUS = 3;
     /** 高亮框边框颜色（不透明白色，清晰勾勒边缘） */
     private static final int SELECTION_BORDER_COLOR = 0xFFFFFFFF;
@@ -88,9 +87,7 @@ public final class HotbarRenderer {
     private static final int OFFHAND_OUTER_SIZE = 22;
     /** 副手槽外圆角半径 */
     private static final int OFFHAND_OUTER_RADIUS = 4;
-    /** 副手槽内尺寸（填充，比外框小 2px 形成 1px 边框） */
-    private static final int OFFHAND_INNER_SIZE = 20;
-    /** 副手槽内圆角半径 */
+    /** 副手槽内圆角半径（内填充尺寸恒为外框 -2，由 RoundedRect.fillWithBorder 推导） */
     private static final int OFFHAND_INNER_RADIUS = 3;
     /** 副手槽背景色（褐色调） */
     private static final int OFFHAND_FILL_COLOR = 0x60A08050;
@@ -132,6 +129,9 @@ public final class HotbarRenderer {
     private static final int NUM_OFFSET_X = 1;
     /** 数字 Y 偏移（槽位内左上角） */
     private static final int NUM_OFFSET_Y = 0;
+    /** 预分配的槽位编号文本（1~9），避免每帧 9 次 {@code String.valueOf} 分配 */
+    private static final String[] SLOT_NUMBERS =
+            { "1", "2", "3", "4", "5", "6", "7", "8", "9" };
 
     // ===== 动画状态（@Unique，服务端无关） =====
     /** 当前动画位置（0~8 的浮点数） */
@@ -255,7 +255,7 @@ public final class HotbarRenderer {
         }
 
         // === 1. 面板背景 ===
-        fillRoundedRect(graphics, panelX, panelY, PANEL_WIDTH, PANEL_HEIGHT, PANEL_RADIUS, PANEL_BG);
+        RoundedRect.fill(graphics, panelX, panelY, PANEL_WIDTH, PANEL_HEIGHT, PANEL_RADIUS, PANEL_BG);
 
         // === 2. 副手槽（带滑入滑出动画） ===
         ItemStack offhandItem = player.getOffhandItem();
@@ -311,46 +311,45 @@ public final class HotbarRenderer {
         graphics.enableScissor(panelX, panelY,
                 panelX + PANEL_WIDTH, panelY + PANEL_HEIGHT);
         try {
-            fillRoundedRect(graphics, selOuterX, selOuterY,
+            RoundedRect.fillWithBorder(graphics, selOuterX, selOuterY,
                     SELECTION_OUTER_SIZE, SELECTION_OUTER_SIZE,
-                    SELECTION_OUTER_RADIUS, SELECTION_BORDER_COLOR);
-            fillRoundedRect(graphics, selOuterX + 1, selOuterY + 1,
-                    SELECTION_INNER_SIZE, SELECTION_INNER_SIZE,
-                    SELECTION_INNER_RADIUS, SELECTION_FILL_COLOR);
+                    SELECTION_OUTER_RADIUS, SELECTION_INNER_RADIUS,
+                    SELECTION_BORDER_COLOR, SELECTION_FILL_COLOR);
         } finally {
             graphics.disableScissor();
         }
 
         // === 4. 9 个槽位 + 物品 + 数字（绘制于高亮之上） ===
         Font font = client.font;
+        // 槽位背景：包装动画期间保持离开槽位高亮，瞬移后切换到目标槽位。
+        // 该判定与槽位下标无关，提到循环外只算一次。
+        int highlightedSlot;
+        if (virtualTarget > 8.0f) {
+            highlightedSlot = 8;  // 向右跨越边界中，保持 slot 8 高亮
+        } else if (virtualTarget < 0.0f) {
+            highlightedSlot = 0;  // 向左跨越边界中，保持 slot 0 高亮
+        } else {
+            highlightedSlot = currentSlot;
+        }
+        var inventory = player.getInventory();
         for (int i = 0; i < 9; i++) {
             int slotX = panelX + SLOT_PADDING_X + i * SLOT_SPACING;
             int slotY = panelY + SLOT_PADDING_Y;
 
-            // 槽位背景：包装动画期间保持离开槽位高亮，瞬移后切换到目标槽位
-            int highlightedSlot;
-            if (virtualTarget > 8.0f) {
-                highlightedSlot = 8;  // 向右跨越边界中，保持 slot 8 高亮
-            } else if (virtualTarget < 0.0f) {
-                highlightedSlot = 0;  // 向左跨越边界中，保持 slot 0 高亮
-            } else {
-                highlightedSlot = currentSlot;
-            }
             int slotBg = (i == highlightedSlot) ? SLOT_SELECTED_COLOR : SLOT_COLOR;
-            fillRoundedRect(graphics, slotX, slotY, SLOT_SIZE, SLOT_SIZE, SLOT_RADIUS, slotBg);
+            RoundedRect.fill(graphics, slotX, slotY, SLOT_SIZE, SLOT_SIZE, SLOT_RADIUS, slotBg);
 
             // 物品
-            ItemStack stack = player.getInventory().getItem(i);
+            ItemStack stack = inventory.getItem(i);
             if (!stack.isEmpty()) {
                 graphics.item(stack, slotX + ITEM_INSET, slotY + ITEM_INSET);
                 graphics.itemDecorations(font, stack, slotX + ITEM_INSET, slotY + ITEM_INSET);
                 ItemBorderRenderer.renderBorder(graphics, slotX + ITEM_INSET, slotY + ITEM_INSET, stack);
             }
 
-            // 数字指示器
-            String numText = String.valueOf(i + 1);
+            // 数字指示器（复用常量字符串，避免每帧 9 次 String 分配）
             int numColor = (i == currentSlot) ? NUM_COLOR_SELECTED : NUM_COLOR_NORMAL;
-            graphics.text(font, numText,
+            graphics.text(font, SLOT_NUMBERS[i],
                     slotX + NUM_OFFSET_X, slotY + NUM_OFFSET_Y,
                     numColor, false);
         }
@@ -369,12 +368,10 @@ public final class HotbarRenderer {
         int animBorderColor = (borderAlpha << 24) | (OFFHAND_BORDER_COLOR & 0x00FFFFFF);
         int animFillColor = (fillAlpha << 24) | (OFFHAND_FILL_COLOR & 0x00FFFFFF);
 
-        fillRoundedRect(graphics, x, y,
+        RoundedRect.fillWithBorder(graphics, x, y,
                 OFFHAND_OUTER_SIZE, OFFHAND_OUTER_SIZE,
-                OFFHAND_OUTER_RADIUS, animBorderColor);
-        fillRoundedRect(graphics, x + 1, y + 1,
-                OFFHAND_INNER_SIZE, OFFHAND_INNER_SIZE,
-                OFFHAND_INNER_RADIUS, animFillColor);
+                OFFHAND_OUTER_RADIUS, OFFHAND_INNER_RADIUS,
+                animBorderColor, animFillColor);
 
         if (!offhandStack.isEmpty()) {
             graphics.item(offhandStack, x + OFFHAND_ITEM_INSET, y + OFFHAND_ITEM_INSET);
@@ -428,62 +425,11 @@ public final class HotbarRenderer {
                     progressWidth, ATTACK_INDICATOR_SIZE);
         }
 
-        DebugLogger.debug(LOG_TAG,
-                "攻击冷却指示器: strength=%.3f, progressW=%d, pos=(%d,%d)",
-                attackStrength, progressWidth, indicatorX, indicatorY);
-    }
-
-    // ===== 圆角矩形绘制（与 YzuInventoryScreen.fillRoundedRect 一致） =====
-
-    /**
-     * 使用像素填充方式绘制实心圆角矩形。
-     *
-     * @param g     GuiGraphicsExtractor 实例
-     * @param x     左上角 X 坐标
-     * @param y     左上角 Y 坐标
-     * @param w     宽度
-     * @param h     高度
-     * @param r     圆角半径
-     * @param color ARGB 颜色
-     */
-    /** 预计算的圆角像素偏移缓存：radius → int[][]{{i,j}, ...} */
-    private static final java.util.Map<Integer, int[][]> CORNER_OFFSETS = new java.util.HashMap<>();
-
-    private static int[][] getCornerOffsets(int r) {
-        return CORNER_OFFSETS.computeIfAbsent(r, radius -> {
-            java.util.List<int[]> offsets = new java.util.ArrayList<>();
-            for (int i = 0; i < radius; i++) {
-                for (int j = 0; j < radius; j++) {
-                    if (i * i + j * j < radius * radius) {
-                        offsets.add(new int[]{i, j});
-                    }
-                }
-            }
-            return offsets.toArray(new int[0][]);
-        });
-    }
-
-    private static void fillRoundedRect(GuiGraphicsExtractor g,
-            int x, int y, int w, int h, int r, int color) {
-        // 主体（排除左右两端的完整高度列）
-        if (w > r * 2) {
-            g.fill(x + r, y, x + w - r, y + h, color);
-        } else {
-            // 宽度不足以容纳两端圆角时回退为全宽
-            g.fill(x, y, x + w, y + h, color);
-            return;
-        }
-        // 左右边缘（排除上下角落区域）
-        g.fill(x, y + r, x + r, y + h - r, color);
-        g.fill(x + w - r, y + r, x + w, y + h - r, color);
-        // 四角圆形填充（使用预计算偏移表）
-        for (int[] offset : getCornerOffsets(r)) {
-            int i = offset[0];
-            int j = offset[1];
-            g.fill(x + r - i - 1, y + r - j - 1, x + r - i, y + r - j, color);
-            g.fill(x + w - r + i, y + r - j - 1, x + w - r + i + 1, y + r - j, color);
-            g.fill(x + r - i - 1, y + h - r + j, x + r - i, y + h - r + j + 1, color);
-            g.fill(x + w - r + i, y + h - r + j, x + w - r + i + 1, y + h - r + j + 1, color);
+        // 先判等级再取参数：varargs 数组与 4 个基本类型装箱在每帧路径上是白扔的垃圾
+        if (DebugLogger.isEnabled(DebugLogger.LEVEL_DETAILED)) {
+            DebugLogger.debug(LOG_TAG,
+                    "攻击冷却指示器: strength=%.3f, progressW=%d, pos=(%d,%d)",
+                    attackStrength, progressWidth, indicatorX, indicatorY);
         }
     }
 }

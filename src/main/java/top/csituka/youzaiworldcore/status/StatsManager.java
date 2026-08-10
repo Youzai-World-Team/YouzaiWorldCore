@@ -39,6 +39,10 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.function.ToLongFunction;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -59,6 +63,19 @@ public final class StatsManager {
     private static final String MODULE = "StatsManager";
 
     private static final int REFRESH_INTERVAL_TICKS = 6000;
+
+    /**
+     * 状态数据写盘专用线程（单线程 FIFO，保证写入顺序）。
+     * <p>
+     * 设为守护线程：即便服务端异常退出也不会挂住 JVM。正常关服路径会先
+     * {@code shutdownIoExecutor()} 排空队列，再做最终同步保存，不会丢数据。
+     * </p>
+     */
+    private static final ExecutorService IO_EXECUTOR = Executors.newSingleThreadExecutor(r -> {
+        Thread t = new Thread(r, "YZWC-Stats-IO");
+        t.setDaemon(true);
+        return t;
+    });
 
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
@@ -158,6 +175,9 @@ public final class StatsManager {
                 refreshPlayer(server, player);
             }
             snapshotToday(server);
+            // 先排空异步写盘队列，再做最终同步保存，
+            // 避免排队中的旧数据在最终保存之后落盘覆盖新数据
+            shutdownIoExecutor();
             save(server);
         });
 
@@ -183,7 +203,8 @@ public final class StatsManager {
                     updateTodaySnapshot(server);
                 }
                 // 周期性落盘（替代每次玩家断线时的立即写盘）
-                save(server);
+                // 序列化在本线程完成，阻塞写盘交给后台线程，避免每 5 分钟一次的卡顿尖刺
+                saveAsync(server);
             }
         });
 
@@ -590,23 +611,67 @@ public final class StatsManager {
     }
 
     static void save(MinecraftServer server) {
+        writeJson(getDataFile(server), serializeRoot());
+    }
+
+    /**
+     * 周期性落盘：序列化仍在服务端线程完成（读取实时的 {@code CACHE} / {@code SNAPSHOTS}，
+     * 必须与 tick 同线程以保证快照一致），仅把<b>阻塞写盘</b>挪到后台单线程。
+     * <p>
+     * 原实现每 6000 tick 在 {@code END_SERVER_TICK} 里同步执行
+     * {@code GSON.toJson(全部玩家 + 365 天快照)} 加 {@code Files.writeString}，
+     * 玩家基数大时是一次可感知的周期性卡顿（每 5 分钟一次尖刺）。
+     * </p>
+     * <p>
+     * 顺序保证：executor 为单线程 FIFO；关服时先 {@link #shutdownIoExecutor()}
+     * 等待队列排空，再执行同步 {@link #save}，因此不存在「旧数据后落盘覆盖新数据」的竞态。
+     * </p>
+     */
+    static void saveAsync(MinecraftServer server) {
+        String json = serializeRoot();
+        Path target = getDataFile(server);
         try {
-            Map<String, Object> root = new LinkedHashMap<>();
-            root.put("version", 2);
-            root.put("players", CACHE);
+            IO_EXECUTOR.execute(() -> writeJson(target, json));
+        } catch (RejectedExecutionException e) {
+            // executor 已关闭（关服流程中）：退化为同步写，绝不丢数据
+            writeJson(target, json);
+        }
+    }
 
-            // 保存快照
-            Map<String, Map<String, Map<String, Long>>> snapshotsData = new LinkedHashMap<>();
-            for (Map.Entry<LocalDate, Map<String, Map<String, Long>>> se : SNAPSHOTS.entrySet()) {
-                snapshotsData.put(se.getKey().toString(), se.getValue());
-            }
-            root.put("snapshots", snapshotsData);
+    /** 把当前缓存序列化为 JSON 字符串（调用方须在服务端线程）。 */
+    private static String serializeRoot() {
+        Map<String, Object> root = new LinkedHashMap<>();
+        root.put("version", 2);
+        root.put("players", CACHE);
 
-            String json = GSON.toJson(root);
-            Files.writeString(getDataFile(server), json);
+        // 保存快照
+        Map<String, Map<String, Map<String, Long>>> snapshotsData = new LinkedHashMap<>();
+        for (Map.Entry<LocalDate, Map<String, Map<String, Long>>> se : SNAPSHOTS.entrySet()) {
+            snapshotsData.put(se.getKey().toString(), se.getValue());
+        }
+        root.put("snapshots", snapshotsData);
+        return GSON.toJson(root);
+    }
+
+    /** 实际写盘。可能运行在后台 IO 线程。 */
+    private static void writeJson(Path target, String json) {
+        try {
+            Files.writeString(target, json);
             DebugLogger.info(MODULE, "状态数据已保存，共 %s 位玩家 + %s 天快照", CACHE.size(), SNAPSHOTS.size());
         } catch (IOException e) {
             LOGGER.error("保存状态数据失败", e);
+        }
+    }
+
+    /** 关服时排空并关闭 IO 线程，确保所有异步写盘落地后再做最终同步保存。 */
+    private static void shutdownIoExecutor() {
+        IO_EXECUTOR.shutdown();
+        try {
+            if (!IO_EXECUTOR.awaitTermination(10, TimeUnit.SECONDS)) {
+                LOGGER.warn("状态数据异步写盘未在 10 秒内完成，继续执行最终保存");
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         }
     }
 

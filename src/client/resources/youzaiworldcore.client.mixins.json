@@ -41,6 +41,7 @@
     "PingDisplayMixin",
     "EntityRendererMixin",
     "itemborder.AbstractContainerScreenMixin",
+    "itemborder.CustomDataAccessor",
     "itemborder.HudHotbarMixin",
     "itemborder.ItemStackRarityMixin",
     "technocrown.PigRendererMixin",

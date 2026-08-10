@@ -13,6 +13,7 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Rarity;
 
+import top.csituka.youzaiworldcore.mixin.client.itemborder.CustomDataAccessor;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
 import java.util.HashMap;
@@ -266,8 +267,13 @@ public final class ItemBorderRenderer {
 
         CustomData customData = item.get(DataComponents.CUSTOM_DATA);
         if (customData == null || customData.isEmpty()) return null;
-        // copyTag() 是深拷贝，只在确实带 NBT 的物品上走到这里
-        CompoundTag customTag = customData.copyTag();
+
+        // 只读访问，不做深拷贝。
+        // 原先这里调用 copyTag()——那是整棵 NBT 树的深拷贝，而本方法在容器界面里
+        // 是「每个带 CUSTOM_DATA 的物品、每帧」执行一次（创造物品栏一屏 100+ 槽位），
+        // 拷贝出来的副本只用于两次只读查询后即丢弃。
+        // 注意：下面全部是读取操作，绝不可写入该 Tag（见 CustomDataAccessor 的使用约定）。
+        CompoundTag customTag = ((CustomDataAccessor) (Object) customData).yzwc$getTag();
         if (!customTag.contains("yzwc_border_colors")) return null;
 
         CompoundTag colorsTag = customTag.getCompound("yzwc_border_colors").orElse(null);

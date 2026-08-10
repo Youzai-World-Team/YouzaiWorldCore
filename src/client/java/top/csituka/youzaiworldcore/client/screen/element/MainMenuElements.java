@@ -5,6 +5,7 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.resources.Identifier;
+import top.csituka.youzaiworldcore.client.render.RoundedRect;
 import top.csituka.youzaiworldcore.YouzaiworldCore;
 import top.csituka.youzaiworldcore.client.screen.MenuScreen;
 import top.csituka.youzaiworldcore.client.screen.widget.ConfirmationDialog;
@@ -279,32 +280,11 @@ public class MainMenuElements implements MenuElementGroup {
     }
 
     /**
-     * 绘制圆角矩形（逐像素填充）。
-     * <p>三块矩形互不重叠：中间列 + 左右侧条。两块「整宽横条 + 竖条」的写法会在中央重叠，
-     * 半透明色被混合两次而出现假边框；当前唯一调用方使用不透明色看不出差异，
-     * 但保持与其余 YZUI 圆角实现一致，避免日后改用半透明色时踩坑。</p>
+     * 绘制圆角矩形。
+     * <p>行扫描实现见 {@link RoundedRect}：中段与圆角行严格互不重叠，
+     * 半透明色不会被二次混合；点亮像素与原逐像素实现完全一致。</p>
      */
     private static void drawRoundedRect(GuiGraphicsExtractor graphics, int x, int y, int w, int h, int r, int color) {
-        if (w <= 0 || h <= 0) return;
-        int radius = Math.max(0, Math.min(r, Math.min(w, h) / 2));
-        if (radius <= 0) {
-            graphics.fill(x, y, x + w, y + h, color);
-            return;
-        }
-        graphics.fill(x + radius, y, x + w - radius, y + h, color);
-        graphics.fill(x, y + radius, x + radius, y + h - radius, color);
-        graphics.fill(x + w - radius, y + radius, x + w, y + h - radius, color);
-        for (int ix = 0; ix < radius; ix++) {
-            for (int iy = 0; iy < radius; iy++) {
-                int dx = radius - 1 - ix;
-                int dy = radius - 1 - iy;
-                if (dx * dx + dy * dy < radius * radius) {
-                    graphics.fill(x + ix, y + iy, x + ix + 1, y + iy + 1, color);
-                    graphics.fill(x + w - 1 - ix, y + iy, x + w - ix, y + iy + 1, color);
-                    graphics.fill(x + ix, y + h - 1 - iy, x + ix + 1, y + h - iy, color);
-                    graphics.fill(x + w - 1 - ix, y + h - 1 - iy, x + w - ix, y + h - iy, color);
-                }
-            }
-        }
+        RoundedRect.fill(graphics, x, y, w, h, r, color);
     }
 }

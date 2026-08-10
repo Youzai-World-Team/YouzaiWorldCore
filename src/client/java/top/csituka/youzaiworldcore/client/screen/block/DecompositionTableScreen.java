@@ -12,6 +12,7 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 import org.jspecify.annotations.NonNull;
 import top.csituka.youzaiworldcore.YouzaiworldCore;
+import top.csituka.youzaiworldcore.client.render.RoundedRect;
 import top.csituka.youzaiworldcore.network.ClientNetworking;
 import top.csituka.youzaiworldcore.screen.DecompositionTableMenu;
 
@@ -163,36 +164,10 @@ public class DecompositionTableScreen extends AbstractContainerScreen<Decomposit
         }
     }
 
-    // 预计算圆角像素偏移表：惰性计算并缓存
-    private static final java.util.Map<Integer, int[][]> ROUNDED_CORNER_CACHE = new java.util.HashMap<>();
-
-    private static int[][] getCornerOffsets(int r) {
-        return ROUNDED_CORNER_CACHE.computeIfAbsent(r, radius -> {
-            java.util.List<int[]> offsets = new java.util.ArrayList<>();
-            for (int i = 0; i < radius; i++) {
-                for (int j = 0; j < radius; j++) {
-                    if (i * i + j * j < radius * radius) {
-                        offsets.add(new int[]{i, j});
-                    }
-                }
-            }
-            return offsets.toArray(new int[0][]);
-        });
-    }
-
+    // 圆角矩形绘制统一走 RoundedRect（行扫描，r=6 时 135 次 fill → 13 次），
+    // 点亮的像素集合与原逐像素实现完全一致。
     private void fillRoundedRect(GuiGraphicsExtractor g, int x, int y, int w, int h, int r, int color) {
-        g.fill(x + r, y, x + w - r, y + h, color);
-        g.fill(x, y + r, x + r, y + h - r, color);
-        g.fill(x + w - r, y + r, x + w, y + h - r, color);
-
-        for (int[] offset : getCornerOffsets(r)) {
-            int i = offset[0];
-            int j = offset[1];
-            g.fill(x + r - i - 1, y + r - j - 1, x + r - i, y + r - j, color);
-            g.fill(x + w - r + i, y + r - j - 1, x + w - r + i + 1, y + r - j, color);
-            g.fill(x + r - i - 1, y + h - r + j, x + r - i, y + h - r + j + 1, color);
-            g.fill(x + w - r + i, y + h - r + j, x + w - r + i + 1, y + h - r + j + 1, color);
-        }
+        RoundedRect.fill(g, x, y, w, h, r, color);
     }
 
     private static class DecomposeButton extends AbstractWidget {
@@ -227,18 +202,7 @@ public class DecompositionTableScreen extends AbstractContainerScreen<Decomposit
         }
 
         private void fillRoundedRect(GuiGraphicsExtractor g, int x, int y, int w, int h, int r, int color) {
-            g.fill(x + r, y, x + w - r, y + h, color);
-            g.fill(x, y + r, x + r, y + h - r, color);
-            g.fill(x + w - r, y + r, x + w, y + h - r, color);
-
-            for (int[] offset : getCornerOffsets(r)) {
-                int i = offset[0];
-                int j = offset[1];
-                g.fill(x + r - i - 1, y + r - j - 1, x + r - i, y + r - j, color);
-                g.fill(x + w - r + i, y + r - j - 1, x + w - r + i + 1, y + r - j, color);
-                g.fill(x + r - i - 1, y + h - r + j, x + r - i, y + h - r + j + 1, color);
-                g.fill(x + w - r + i, y + h - r + j, x + w - r + i + 1, y + h - r + j + 1, color);
-            }
+            RoundedRect.fill(g, x, y, w, h, r, color);
         }
 
         @Override

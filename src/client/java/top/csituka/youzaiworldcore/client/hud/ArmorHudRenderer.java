@@ -11,6 +11,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import top.csituka.youzaiworldcore.client.render.RoundedRect;
 import top.csituka.youzaiworldcore.itemborder.ItemBorderRenderer;
 
 import java.util.Map;
@@ -72,8 +73,22 @@ public final class ArmorHudRenderer {
     /** 箭矢指示器图标：原版普通箭物品（用物品模型渲染，非贴图） */
     private static final ItemStack ARROW_STACK = new ItemStack(Items.ARROW);
 
-    private static final int[][] CORNER_R6 = buildCornerTable(6);
     private static final Map<String, Identifier> trinketIconCache = new ConcurrentHashMap<>();
+
+    /** 饰品槽键名，提为常量避免 {@code checkTrinketsChanged} 每帧分配数组 */
+    private static final String[] TRINKET_KEYS = { TRINKET_TOTEM, TRINKET_HEART, TRINKET_ELYTRA };
+
+    /**
+     * {@link #trinketIconCache} 的空值哨兵。
+     * <p>
+     * {@code ConcurrentHashMap.computeIfAbsent} 对返回 {@code null} 的映射函数
+     * <b>不写入缓存</b>，导致「该饰品槽查不到图标」这一结果永远缓存不住，
+     * 于是每帧都要重跑一遍 {@code trinketIcon()} 的 SlotGroup 双层遍历。
+     * 用哨兵值把「查不到」也缓存下来。
+     * </p>
+     */
+    private static final Identifier ICON_NONE =
+            Identifier.fromNamespaceAndPath("youzaiworldcore", "none");
 
     // ===== 缓存 =====
     private static int lastTimesChanged = -1;
@@ -87,11 +102,52 @@ public final class ArmorHudRenderer {
     /** 缓存的背包+快捷栏箭矢总数（普通箭 + 药水箭，仅在 timesChanged 变化时刷新） */
     private static int cachedArrowCount = 0;
 
+    /**
+     * 缓存的 9 个装备槽决议结果。
+     * <p>
+     * {@link SlotEntry} 持有的是物品栏里 {@link ItemStack} 的<b>活引用</b>而非副本，
+     * 因此耐久数字依旧实时跟随，只有「哪个槽放了什么」这一层被缓存。
+     * </p>
+     */
+    private static final SlotEntry[] cachedEntries = new SlotEntry[EQUIP_SLOT_COUNT];
+
+    /**
+     * 缓存的槽位数量文本值（非耐久物品显示的「全背包同类物品总数」）。
+     * <p>
+     * 原实现每帧、每个非耐久槽位都要调用一次 {@code countInInventory}，
+     * 而后者遍历全部 41 个槽位并逐个做 {@code isSameItemSameComponents}
+     * （组件深比较）——最坏 9×41 = 369 次深比较/帧。改为与
+     * {@link #cachedEmptySlots} 同一套脏检测下的预计算值。
+     * </p>
+     */
+    private static final int[] cachedSlotCounts = new int[EQUIP_SLOT_COUNT];
+
+    /**
+     * 上次缓存刷新时的选中快捷栏下标。
+     * <p>
+     * 槽位 8 显示的是「当前主手物品」，而滚轮换手<b>不会</b>递增
+     * {@code timesChanged}，必须单独作为脏检测输入。
+     * </p>
+     */
+    private static int lastSelectedSlot = -1;
+
+    /**
+     * 上次缓存对应的玩家实例（弱引用，避免退出世界后仍持有 {@code LocalPlayer}）。
+     * <p>
+     * 重生 / 换维度会重建玩家实例，而新实例的 {@code timesChanged} 从 0 起算，
+     * 有极小概率与上次残留值相同而漏刷新。加一道身份校验兜底。
+     * </p>
+     */
+    private static java.lang.ref.WeakReference<Player> lastPlayerRef =
+            new java.lang.ref.WeakReference<>(null);
+
     static {
         for (int i = 0; i < 3; i++)
             cachedTrinkets[i] = ItemStack.EMPTY;
-        for (int i = 0; i < EQUIP_SLOT_COUNT; i++)
+        for (int i = 0; i < EQUIP_SLOT_COUNT; i++) {
             itemRenderers[i] = new CachedItemRenderer();
+            cachedEntries[i] = SlotEntry.empty(null);
+        }
     }
 
     private ArmorHudRenderer() {
@@ -104,14 +160,27 @@ public final class ArmorHudRenderer {
             return;
 
         // 脏检测：timesChanged 变化时刷新物品栏快照 + 空位数；Trinkets 变化时刷新饰品缓存
+        boolean playerChanged = lastPlayerRef.get() != player;
+        if (playerChanged) {
+            lastPlayerRef = new java.lang.ref.WeakReference<>(player);
+        }
         int nowChanged = player.getInventory().getTimesChanged();
         boolean trinketsChanged = checkTrinketsChanged(player);
-        if (nowChanged != lastTimesChanged) {
+        boolean inventoryChanged = playerChanged || nowChanged != lastTimesChanged;
+        if (inventoryChanged) {
             updateInventoryCache(player);
             lastTimesChanged = nowChanged;
         }
-        if (trinketsChanged) {
+        if (playerChanged || trinketsChanged) {
             updateTrinketCache(player);
+        }
+
+        // 槽位决议 + 数量统计只在真正变化时重算：
+        // 物品栏变动、饰品变动，或滚轮切换了主手（后者不递增 timesChanged）
+        int selectedSlot = player.getInventory().getSelectedSlot();
+        if (inventoryChanged || trinketsChanged || selectedSlot != lastSelectedSlot) {
+            updateSlotCache(player);
+            lastSelectedSlot = selectedSlot;
         }
 
         float s = graphics.guiHeight() / REF_HEIGHT;
@@ -131,8 +200,10 @@ public final class ArmorHudRenderer {
         int panelY = sh - panelH - rnd(BASE_BOTTOM_OFFSET, s);
         Font font = client.font;
 
-        fillRounded(graphics, panelX, panelY, panelW, panelH,
-                rnd(BASE_PANEL_RADIUS, s), PANEL_BG, CORNER_R6);
+        // 半径按实际缩放值传入。原先固定使用为 r=6 预建的偏移表，
+        // 而传入半径是 round(6 * s)，s ≠ 1 时二者错配导致圆角缺角或溢出。
+        RoundedRect.fill(graphics, panelX, panelY, panelW, panelH,
+                rnd(BASE_PANEL_RADIUS, s), PANEL_BG);
 
         int iconSize = rnd(16, s);
 
@@ -140,7 +211,7 @@ public final class ArmorHudRenderer {
         for (int i = 0; i < EQUIP_SLOT_COUNT; i++) {
             int slotX = panelX + padding;
             int slotY = panelY + padding + i * slotSpacing;
-            drawEquipSlot(graphics, font, player, i, slotX, slotY,
+            drawEquipSlot(graphics, font, i, slotX, slotY,
                     slotSize, itemInset, textGap, iconSize);
         }
 
@@ -156,9 +227,9 @@ public final class ArmorHudRenderer {
     }
 
     private static void drawEquipSlot(GuiGraphicsExtractor g, Font font,
-            Player player, int index, int slotX, int slotY,
+            int index, int slotX, int slotY,
             int slotSize, int itemInset, int textGap, int iconSize) {
-        SlotEntry entry = resolveEquipSlot(player, index);
+        SlotEntry entry = cachedEntries[index];
         boolean hasItem = entry.stack != null && !entry.stack.isEmpty();
 
         g.fill(slotX, slotY, slotX + slotSize, slotY + slotSize,
@@ -174,13 +245,13 @@ public final class ArmorHudRenderer {
             int textY = slotY + (slotSize - font.lineHeight) / 2;
 
             if (entry.showDurability) {
+                // 耐久实时读取：entry.stack 是活引用，物品受损立即反映
                 int remaining = durabilityRemaining(entry.stack);
                 g.text(font, Integer.toString(remaining), textX, textY,
                         durabilityColor(remaining, entry.stack), true);
             } else {
-                int cnt = entry.stack.getCount()
-                        + countInInventory(player, entry.stack, entry.excludeSlot());
-                g.text(font, Integer.toString(cnt), textX, textY, COLOR_WHITE, true);
+                g.text(font, Integer.toString(cachedSlotCounts[index]), textX, textY,
+                        COLOR_WHITE, true);
             }
         } else if (entry.placeholderIcon != null) {
             g.blitSprite(RenderPipelines.GUI_TEXTURED, entry.placeholderIcon,
@@ -248,8 +319,9 @@ public final class ArmorHudRenderer {
         int empty = 0;
         // 重新统计箭矢总数（普通箭 + 药水箭）
         int arrows = 0;
+        var inventory = player.getInventory();
         for (int i = 0; i <= 35; i++) {
-            ItemStack s = player.getInventory().getItem(i);
+            ItemStack s = inventory.getItem(i);
             if (s.isEmpty()) {
                 empty++;
                 continue;
@@ -262,12 +334,31 @@ public final class ArmorHudRenderer {
         cachedArrowCount = arrows;
     }
 
+    /**
+     * 重算 9 个装备槽的决议结果与数量文本。
+     * <p>
+     * 仅在物品栏变动 / 饰品变动 / 主手切换时调用，把原先每帧执行的
+     * {@code resolveEquipSlot} 与 {@code countInInventory} 移出渲染热路径。
+     * </p>
+     */
+    private static void updateSlotCache(Player player) {
+        for (int i = 0; i < EQUIP_SLOT_COUNT; i++) {
+            SlotEntry entry = resolveEquipSlot(player, i);
+            cachedEntries[i] = entry;
+            if (!entry.showDurability && entry.stack != null && !entry.stack.isEmpty()) {
+                cachedSlotCounts[i] = entry.stack.getCount()
+                        + countInInventory(player, entry.stack, entry.excludeSlot());
+            } else {
+                cachedSlotCounts[i] = 0;
+            }
+        }
+    }
+
     private static void updateTrinketCache(Player player) {
         TrinketAttachment a = TrinketsApi.getAttachment(player);
-        String[] keys = { TRINKET_TOTEM, TRINKET_HEART, TRINKET_ELYTRA };
         for (int i = 0; i < 3; i++) {
             if (a != null) {
-                TrinketInventory inv = a.getInventories().get(keys[i]);
+                TrinketInventory inv = a.getInventories().get(TRINKET_KEYS[i]);
                 ItemStack s = (inv != null && inv.getContainerSize() > 0)
                         ? inv.getItem(0)
                         : ItemStack.EMPTY;
@@ -282,9 +373,8 @@ public final class ArmorHudRenderer {
         TrinketAttachment a = TrinketsApi.getAttachment(player);
         if (a == null)
             return false;
-        String[] keys = { TRINKET_TOTEM, TRINKET_HEART, TRINKET_ELYTRA };
         for (int i = 0; i < 3; i++) {
-            TrinketInventory inv = a.getInventories().get(keys[i]);
+            TrinketInventory inv = a.getInventories().get(TRINKET_KEYS[i]);
             ItemStack cur = (inv != null && inv.getContainerSize() > 0)
                     ? inv.getItem(0)
                     : ItemStack.EMPTY;
@@ -326,9 +416,13 @@ public final class ArmorHudRenderer {
 
     private static SlotEntry trinketSlotEntry(ItemStack s, String groupKey, Player player) {
         if (s.isEmpty()) {
-            Identifier icon = trinketIconCache.computeIfAbsent(groupKey,
-                    k -> trinketIcon(player, k));
-            return SlotEntry.empty(icon);
+            // 用 ICON_NONE 哨兵把「查不到图标」也缓存进去：
+            // computeIfAbsent 不会缓存 null，否则每次都要重跑 SlotGroup 双层遍历
+            Identifier icon = trinketIconCache.computeIfAbsent(groupKey, k -> {
+                Identifier found = trinketIcon(player, k);
+                return found != null ? found : ICON_NONE;
+            });
+            return SlotEntry.empty(icon == ICON_NONE ? null : icon);
         }
         return SlotEntry.of(s, -1);
     }
@@ -377,10 +471,12 @@ public final class ArmorHudRenderer {
 
     private static int countInInventory(Player player, ItemStack ref, int exclude) {
         int total = 0;
-        for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
+        var inventory = player.getInventory();
+        int size = inventory.getContainerSize();
+        for (int i = 0; i < size; i++) {
             if (i == exclude)
                 continue;
-            ItemStack s = player.getInventory().getItem(i);
+            ItemStack s = inventory.getItem(i);
             if (ItemStack.isSameItemSameComponents(s, ref))
                 total += s.getCount();
         }
@@ -389,40 +485,6 @@ public final class ArmorHudRenderer {
 
     private static int rnd(float base, float scale) {
         return Math.round(base * scale);
-    }
-
-    private static int[][] buildCornerTable(int r) {
-        int count = 0;
-        for (int i = 0; i < r; i++)
-            for (int j = 0; j < r; j++)
-                if (i * i + j * j < r * r)
-                    count++;
-        int[][] tbl = new int[count][2];
-        int idx = 0;
-        for (int i = 0; i < r; i++)
-            for (int j = 0; j < r; j++)
-                if (i * i + j * j < r * r)
-                    tbl[idx++] = new int[] { i, j };
-        return tbl;
-    }
-
-    private static void fillRounded(GuiGraphicsExtractor g,
-            int x, int y, int w, int h, int r, int color, int[][] corners) {
-        if (w > r * 2) {
-            g.fill(x + r, y, x + w - r, y + h, color);
-        } else {
-            g.fill(x, y, x + w, y + h, color);
-            return;
-        }
-        g.fill(x, y + r, x + r, y + h - r, color);
-        g.fill(x + w - r, y + r, x + w, y + h - r, color);
-        for (int[] c : corners) {
-            int i = c[0], j = c[1];
-            g.fill(x + r - i - 1, y + r - j - 1, x + r - i, y + r - j, color);
-            g.fill(x + w - r + i, y + r - j - 1, x + w - r + i + 1, y + r - j, color);
-            g.fill(x + r - i - 1, y + h - r + j, x + r - i, y + h - r + j + 1, color);
-            g.fill(x + w - r + i, y + h - r + j, x + w - r + i + 1, y + h - r + j + 1, color);
-        }
     }
 
     private record SlotEntry(ItemStack stack, boolean showDurability,

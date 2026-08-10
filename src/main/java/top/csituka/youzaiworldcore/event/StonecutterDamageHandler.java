@@ -92,13 +92,18 @@ public class StonecutterDamageHandler implements ServerTickEvents.StartTick {
      */
     @Override
     public void onStartTick(@NonNull MinecraftServer server) {
-        DebugLogger.entering("StonecutterDamageHandler", "onStartTick");
-
+        // 快速返回：无人被追踪且本 tick 不做扫描时，整个处理器无事可做。
+        // 放在最前面可跳过下方的迭代器分配与日志调用（每 tick 20 次/秒）。
         scanTickCounter++;
         boolean doScan = scanTickCounter >= SCAN_INTERVAL;
         if (doScan) {
             scanTickCounter = 0;
         }
+        if (playerTimers.isEmpty() && !doScan) {
+            return;
+        }
+
+        DebugLogger.entering("StonecutterDamageHandler", "onStartTick");
 
         // ============================================================
         // Step 1: 处理已追踪玩家的计时器（每 tick 执行，极轻量）
@@ -204,8 +209,11 @@ public class StonecutterDamageHandler implements ServerTickEvents.StartTick {
             }
         }
 
-        DebugLogger.exiting("StonecutterDamageHandler", "onStartTick",
-                "tracked=" + playerTimers.size());
+        // 先判等级再拼串：字符串拼接与 Integer.toString 在每 tick 路径上是白扔的垃圾
+        if (DebugLogger.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+            DebugLogger.exiting("StonecutterDamageHandler", "onStartTick",
+                    "tracked=" + playerTimers.size());
+        }
     }
 
     /**

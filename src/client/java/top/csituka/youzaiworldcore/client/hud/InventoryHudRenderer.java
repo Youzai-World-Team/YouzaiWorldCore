@@ -5,6 +5,7 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import top.csituka.youzaiworldcore.client.render.RoundedRect;
 import top.csituka.youzaiworldcore.itemborder.ItemBorderRenderer;
 
 /**
@@ -35,13 +36,20 @@ public final class InventoryHudRenderer {
     private static final int INVENTORY_START_SLOT = 9;
     private static final int TOTAL = COLS * ROWS; // 27
 
-    private static final int[][] CORNER_R6 = buildCornerTable(6);
-
     /** 缓存的物品栏快照 */
     private static final ItemStack[] cached = new ItemStack[TOTAL];
     /** 每槽位独立的缓存物品渲染器（避免每帧 27 次模型解析） */
     private static final CachedItemRenderer[] itemRenderers = new CachedItemRenderer[TOTAL];
     private static int lastTimesChanged = -1;
+    /**
+     * 上次缓存对应的玩家实例（弱引用，避免退出世界后仍持有 {@code LocalPlayer}）。
+     * <p>
+     * 重生 / 换维度会重建玩家实例，新实例的 {@code timesChanged} 从 0 起算，
+     * 有极小概率与上次残留值相同而漏刷新，加一道身份校验兜底。
+     * </p>
+     */
+    private static java.lang.ref.WeakReference<Player> lastPlayerRef =
+            new java.lang.ref.WeakReference<>(null);
 
     static {
         for (int i = 0; i < TOTAL; i++) {
@@ -60,10 +68,15 @@ public final class InventoryHudRenderer {
             return;
 
         // 脏检测：Inventory.timesChanged 变化时更新缓存
+        boolean playerChanged = lastPlayerRef.get() != player;
+        if (playerChanged) {
+            lastPlayerRef = new java.lang.ref.WeakReference<>(player);
+        }
         int nowChanged = player.getInventory().getTimesChanged();
-        if (nowChanged != lastTimesChanged) {
+        if (playerChanged || nowChanged != lastTimesChanged) {
+            var inventory = player.getInventory();
             for (int i = 0; i < TOTAL; i++)
-                cached[i] = player.getInventory().getItem(INVENTORY_START_SLOT + i).copy();
+                cached[i] = inventory.getItem(INVENTORY_START_SLOT + i).copy();
             lastTimesChanged = nowChanged;
         }
 
@@ -83,8 +96,10 @@ public final class InventoryHudRenderer {
         int panelY = sh - panelH - rnd(BASE_BOTTOM_OFFSET, s);
         Font font = client.font;
 
-        fillRounded(graphics, panelX, panelY, panelW, panelH,
-                rnd(BASE_PANEL_RADIUS, s), PANEL_BG, CORNER_R6);
+        // 半径按实际缩放值传入。原先固定使用为 r=6 预建的偏移表，
+        // 而传入半径是 round(6 * s)，s ≠ 1 时二者错配导致圆角缺角或溢出。
+        RoundedRect.fill(graphics, panelX, panelY, panelW, panelH,
+                rnd(BASE_PANEL_RADIUS, s), PANEL_BG);
 
         for (int row = 0; row < ROWS; row++) {
             for (int col = 0; col < COLS; col++) {
@@ -109,39 +124,5 @@ public final class InventoryHudRenderer {
 
     private static int rnd(float base, float scale) {
         return Math.round(base * scale);
-    }
-
-    private static int[][] buildCornerTable(int r) {
-        int count = 0;
-        for (int i = 0; i < r; i++)
-            for (int j = 0; j < r; j++)
-                if (i * i + j * j < r * r)
-                    count++;
-        int[][] tbl = new int[count][2];
-        int idx = 0;
-        for (int i = 0; i < r; i++)
-            for (int j = 0; j < r; j++)
-                if (i * i + j * j < r * r)
-                    tbl[idx++] = new int[] { i, j };
-        return tbl;
-    }
-
-    private static void fillRounded(GuiGraphicsExtractor g,
-            int x, int y, int w, int h, int r, int color, int[][] corners) {
-        if (w > r * 2) {
-            g.fill(x + r, y, x + w - r, y + h, color);
-        } else {
-            g.fill(x, y, x + w, y + h, color);
-            return;
-        }
-        g.fill(x, y + r, x + r, y + h - r, color);
-        g.fill(x + w - r, y + r, x + w, y + h - r, color);
-        for (int[] c : corners) {
-            int i = c[0], j = c[1];
-            g.fill(x + r - i - 1, y + r - j - 1, x + r - i, y + r - j, color);
-            g.fill(x + w - r + i, y + r - j - 1, x + w - r + i + 1, y + r - j, color);
-            g.fill(x + r - i - 1, y + h - r + j, x + r - i, y + h - r + j + 1, color);
-            g.fill(x + w - r + i, y + h - r + j, x + w - r + i + 1, y + h - r + j + 1, color);
-        }
     }
 }

@@ -3,6 +3,7 @@ package top.csituka.youzaiworldcore.client.screen;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
+import top.csituka.youzaiworldcore.client.render.RoundedRect;
 
 /**
  * 邮件界面的共享视觉常量与绘制工具。
@@ -64,30 +65,10 @@ final class MailUi {
      * {@link MailToast} 与 {@link #yzuiInputBackground} 均为半透明，必须避免重叠。</p>
      */
     static void roundedRect(GuiGraphicsExtractor graphics, int x, int y, int width, int height, int radius, int color) {
-        if (width <= 0 || height <= 0) {
-            return;
-        }
-        int r = Math.max(0, Math.min(radius, Math.min(width, height) / 2));
-        if (r <= 0) {
-            graphics.fill(x, y, x + width, y + height, color);
-            return;
-        }
-        graphics.fill(x + r, y, x + width - r, y + height, color);
-        graphics.fill(x, y + r, x + r, y + height - r, color);
-        graphics.fill(x + width - r, y + r, x + width, y + height - r, color);
-        for (int ix = 0; ix < r; ix++) {
-            for (int iy = 0; iy < r; iy++) {
-                int dx = r - 1 - ix;
-                int dy = r - 1 - iy;
-                if (dx * dx + dy * dy < r * r) {
-                    graphics.fill(x + ix, y + iy, x + ix + 1, y + iy + 1, color);
-                    graphics.fill(x + width - 1 - ix, y + iy, x + width - ix, y + iy + 1, color);
-                    graphics.fill(x + ix, y + height - 1 - iy, x + ix + 1, y + height - iy, color);
-                    graphics.fill(x + width - 1 - ix, y + height - 1 - iy,
-                            x + width - ix, y + height - iy, color);
-                }
-            }
-        }
+        // 行扫描实现，见 RoundedRect：中段与圆角行严格互不重叠，
+        // 半透明色（PANEL_BACKGROUND / 邮件类型标签 / MailToast / yzuiInputBackground）
+        // 不会被二次混合。点亮像素与原逐像素实现完全一致。
+        RoundedRect.fill(graphics, x, y, width, height, radius, color);
     }
 
     /** 绘制手动交互按钮。 */

@@ -83,9 +83,13 @@ public final class HealthBarRenderer {
 
         float fillRatio = Math.min(1.0f, Math.max(0.0f, health / maxHealth));
 
-        DebugLogger.debug(LOG_TAG,
-                "渲染血条: health=%.1f, max=%.1f, absorb=%.1f, fill=%.2f, pos=(%d,%d)",
-                health, maxHealth, absorption, fillRatio, barX, barY);
+        // 先判等级：6 个基本类型装箱 + varargs 数组在每帧路径上是白扔的垃圾
+        if (DebugLogger.isEnabled(DebugLogger.LEVEL_DETAILED)) {
+            DebugLogger.debug(LOG_TAG,
+                    "渲染血条: health=%.1f, max=%.1f, absorb=%.1f, fill=%.2f, pos=(%d,%d)",
+                    health, maxHealth, absorption, fillRatio, barX, barY);
+        }
+
 
         // === 1. 背景（圆角） ===
         fillBarBg(graphics, barX, barY, BG_COLOR);
@@ -125,11 +129,13 @@ public final class HealthBarRenderer {
                 graphics.fill(overlayStart, barY, overlayEnd, barY + BAR_HEIGHT, overlayColor);
             }
 
-            DebugLogger.debug(LOG_TAG,
-                    "预测血量: predictedHeal=%d, predictedHealth=%.1f, overlay=(%d,%d)-(%d,%d), flashAlpha=%.2f",
-                    predictedHeal, predictedHealth, overlayStart, barY,
-                    Math.min(barX + predictedWidth, barX + BAR_WIDTH), barY + BAR_HEIGHT,
-                    FoodBarRenderer.flashAlpha);
+            if (DebugLogger.isEnabled(DebugLogger.LEVEL_DETAILED)) {
+                DebugLogger.debug(LOG_TAG,
+                        "预测血量: predictedHeal=%d, predictedHealth=%.1f, overlay=(%d,%d)-(%d,%d), flashAlpha=%.2f",
+                        predictedHeal, predictedHealth, overlayStart, barY,
+                        Math.min(barX + predictedWidth, barX + BAR_WIDTH), barY + BAR_HEIGHT,
+                        FoodBarRenderer.flashAlpha);
+            }
         }
 
         // === 5. 状态效果指示器（中毒/凋零时在血条右侧绘制装饰条纹） ===
@@ -143,7 +149,7 @@ public final class HealthBarRenderer {
         if (showHealOverlay) {
             // 预测模式：始终显示绿色闪烁文字（脉冲，不切换回白色）
             int alpha = Math.min(255, Math.max(60, (int) ((FoodBarRenderer.flashAlpha * 0.6f + 0.4f) * 255)));
-            text = String.format("%d(+%d)/%d", displayHealth, predictedHeal, displayMax);
+            text = healthText(displayHealth, predictedHeal, displayMax);
             int textColor = (alpha << 24) | 0x88FF88;
             drawTextWithAlpha(graphics, font, text, barX, barY, textColor);
         } else {
@@ -151,15 +157,52 @@ public final class HealthBarRenderer {
             if (absorption > 0.0f) {
                 // 有吸收效果时直接合并显示：如 "30/20"（不拼接 +<吸收值>）
                 int totalHealth = Math.min(displayHealth + displayAbsorb, displayMax * 10); // safety cap
-                text = String.format("%d/%d", totalHealth, displayMax);
+                text = healthText(totalHealth, -1, displayMax);
             } else {
-                text = String.format("%d/%d", displayHealth, displayMax);
+                text = healthText(displayHealth, -1, displayMax);
             }
             drawTextCentered(graphics, font, text, barX, barY);
         }
     }
 
     // ===== 圆角绘制工具方法 =====
+
+    /**
+     * 生成血量文本，并按「数值未变则复用上次结果」缓存。
+     * <p>
+     * 原实现每帧调用 {@code String.format("%d/%d", ...)}——它要新建 Formatter、
+     * 解析格式串、把 int 装箱进 varargs 数组，是纯字符串拼接的数倍开销，
+     * 而血量数值每帧变化的情况极少。这里改为：
+     * </p>
+     * <ul>
+     *   <li>三个数值与上次完全一致时直接返回缓存字符串，零分配；</li>
+     *   <li>确需重建时用字符串拼接（编译期走 StringConcatFactory，比 format 快得多）。</li>
+     * </ul>
+     * 输出与 {@code String.format} 完全一致。
+     *
+     * @param current 当前值
+     * @param predicted 预测恢复量；{@code < 0} 表示不显示 {@code (+n)} 段
+     * @param max     最大值
+     */
+    private static String healthText(int current, int predicted, int max) {
+        if (current == cachedTextCurrent && predicted == cachedTextPredicted && max == cachedTextMax
+                && cachedText != null) {
+            return cachedText;
+        }
+        String built = predicted >= 0
+                ? current + "(+" + predicted + ")/" + max
+                : current + "/" + max;
+        cachedTextCurrent = current;
+        cachedTextPredicted = predicted;
+        cachedTextMax = max;
+        cachedText = built;
+        return built;
+    }
+
+    private static String cachedText;
+    private static int cachedTextCurrent = Integer.MIN_VALUE;
+    private static int cachedTextPredicted = Integer.MIN_VALUE;
+    private static int cachedTextMax = Integer.MIN_VALUE;
 
     /** 圆角半径（px），对于 5px 高的条取 1px 即足够 */
     private static final int RADIUS = 1;

@@ -97,9 +97,12 @@ public final class FoodBarRenderer {
         float satRatio  = Math.min(1.0f, displaySaturation / maxFood);
         float exhRatio  = Math.min(1.0f, Math.max(0.0f, exhaustion / MAX_EXHAUSTION));
 
-        DebugLogger.debug(LOG_TAG,
-                "food=%d, sat=%.1f, exh=%.2f, fill=%.2f, flash=%.2f",
-                displayFood, displaySaturation, exhaustion, fillRatio, flashAlpha);
+        // 先判等级：基本类型装箱 + varargs 数组在每帧路径上是白扔的垃圾
+        if (DebugLogger.isEnabled(DebugLogger.LEVEL_DETAILED)) {
+            DebugLogger.debug(LOG_TAG,
+                    "food=%d, sat=%.1f, exh=%.2f, fill=%.2f, flash=%.2f",
+                    displayFood, displaySaturation, exhaustion, fillRatio, flashAlpha);
+        }
 
         // ===== 渲染层级（从下到上） =====
         //   1. 背景

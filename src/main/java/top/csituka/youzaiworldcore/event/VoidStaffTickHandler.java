@@ -64,14 +64,22 @@ public class VoidStaffTickHandler implements ServerTickEvents.StartTick {
      */
     @Override
     public void onStartTick(@NonNull MinecraftServer server) {
-        DebugLogger.entering("VoidStaffTickHandler", "onStartTick",
-                "tickCounter=" + tickCounter + ", hungerTickCounter=" + hungerTickCounter);
+        // 日志开关提前取一次：下方所有 branch/entering 的参数都含字符串拼接，
+        // 而 Java 的实参在调用前就已求值——不加这道判定，日志关闭时每 tick
+        // 仍会白白拼串（本方法每秒 20 次，内层还要按在线玩家数放大）。
+        final boolean logDetail = DebugLogger.isEnabled(DebugLogger.LEVEL_DETAILED);
+        if (DebugLogger.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+            DebugLogger.entering("VoidStaffTickHandler", "onStartTick",
+                    "tickCounter=" + tickCounter + ", hungerTickCounter=" + hungerTickCounter);
+        }
         tickCounter++;
         hungerTickCounter++;
 
         // ========== 1. 每秒执行：检查手持状态与耐久消耗 ==========
         boolean secondElapsed = tickCounter >= TICKS_PER_SECOND;
-        DebugLogger.branch("VoidStaffTickHandler", "tickCounter >= TICKS_PER_SECOND (" + TICKS_PER_SECOND + ")", secondElapsed);
+        if (logDetail) {
+            DebugLogger.branch("VoidStaffTickHandler", "tickCounter >= TICKS_PER_SECOND (" + TICKS_PER_SECOND + ")", secondElapsed);
+        }
         if (secondElapsed) {
             tickCounter = 0; // 重置计数器，进入下一秒周期
 
@@ -85,11 +93,15 @@ public class VoidStaffTickHandler implements ServerTickEvents.StartTick {
 
                 // 仅处理当前被标记为"正在使用凭虚法杖飞行"的玩家
                 boolean isFlying = VoidStaffItem.isFlying(playerId);
-                DebugLogger.branch("VoidStaffTickHandler", "player " + playerId + " is flying", isFlying);
+                if (logDetail) {
+                    DebugLogger.branch("VoidStaffTickHandler", "player " + playerId + " is flying", isFlying);
+                }
                 if (isFlying) {
                     // 情况1：玩家不再手持凭虚法杖
                     boolean hasStaffInHand = VoidStaffItem.hasVoidStaffInHand(player);
-                    DebugLogger.branch("VoidStaffTickHandler", "player " + playerId + " has void staff in hand", hasStaffInHand);
+                    if (logDetail) {
+                        DebugLogger.branch("VoidStaffTickHandler", "player " + playerId + " has void staff in hand", hasStaffInHand);
+                    }
                     if (!hasStaffInHand) {
                         // 关闭飞行标记
                         VoidStaffItem.setFlying(playerId, false);
@@ -97,7 +109,9 @@ public class VoidStaffTickHandler implements ServerTickEvents.StartTick {
                         clearAllVoidStaffActiveState(player);
                         // 如果玩家同时处于飞行信标的飞行范围内，则恢复普通飞行（由信标接管）
                         boolean isBeaconFlying = FlyBeaconTickHandler.isBeaconFlying(playerId);
-                        DebugLogger.branch("VoidStaffTickHandler", "player " + playerId + " is beacon flying", isBeaconFlying);
+                        if (logDetail) {
+                            DebugLogger.branch("VoidStaffTickHandler", "player " + playerId + " is beacon flying", isBeaconFlying);
+                        }
                         if (isBeaconFlying) {
                             VoidStaffItem.disableFlight(player);
                         }
@@ -115,8 +129,10 @@ public class VoidStaffTickHandler implements ServerTickEvents.StartTick {
                             // 增加 1 点耐久损耗
                             int newDamage = flyCore.getDamageValue() + 1;
                             boolean durabilityDepleted = newDamage >= flyCore.getMaxDamage();
-                            DebugLogger.branch("VoidStaffTickHandler", "durability depleted for " + player.getName().getString(),
-                                    durabilityDepleted, "newDamage=" + newDamage + "/" + flyCore.getMaxDamage());
+                            if (logDetail) {
+                                DebugLogger.branch("VoidStaffTickHandler", "durability depleted for " + player.getName().getString(),
+                                        durabilityDepleted, "newDamage=" + newDamage + "/" + flyCore.getMaxDamage());
+                            }
                             if (durabilityDepleted) {
                                 // 耐久耗尽：销毁当前法杖，关闭飞行
                                 flyCore.shrink(1);
@@ -150,7 +166,9 @@ public class VoidStaffTickHandler implements ServerTickEvents.StartTick {
 
         // ========== 2. 每 5 秒执行：消耗饥饿值/饱和度 ==========
         boolean hungerPeriod = hungerTickCounter >= TICKS_PER_HUNGER;
-        DebugLogger.branch("VoidStaffTickHandler", "hungerTickCounter >= TICKS_PER_HUNGER (" + TICKS_PER_HUNGER + ")", hungerPeriod);
+        if (logDetail) {
+            DebugLogger.branch("VoidStaffTickHandler", "hungerTickCounter >= TICKS_PER_HUNGER (" + TICKS_PER_HUNGER + ")", hungerPeriod);
+        }
         if (hungerPeriod) {
             hungerTickCounter = 0; // 重置计数器，进入下一个 5 秒周期
 
@@ -163,12 +181,16 @@ public class VoidStaffTickHandler implements ServerTickEvents.StartTick {
 
                 // 仅对正在飞行且真正在空中的玩家扣除饥饿
                 boolean shouldConsumeHunger = VoidStaffItem.isFlying(playerId) && player.getAbilities().flying && !player.onGround();
-                DebugLogger.branch("VoidStaffTickHandler", "should consume hunger for " + player.getName().getString(), shouldConsumeHunger);
+                if (logDetail) {
+                    DebugLogger.branch("VoidStaffTickHandler", "should consume hunger for " + player.getName().getString(), shouldConsumeHunger);
+                }
                 if (shouldConsumeHunger) {
                     float saturation = player.getFoodData().getSaturationLevel();
                     int food = player.getFoodData().getFoodLevel();
-                    DebugLogger.branch("VoidStaffTickHandler", "saturation > 0 for " + player.getName().getString(), saturation > 0,
-                            "saturation=" + saturation + ", food=" + food);
+                    if (logDetail) {
+                        DebugLogger.branch("VoidStaffTickHandler", "saturation > 0 for " + player.getName().getString(), saturation > 0,
+                                "saturation=" + saturation + ", food=" + food);
+                    }
 
                     // 优先扣除饱和度
                     if (saturation > 0) {

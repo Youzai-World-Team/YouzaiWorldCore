@@ -54,8 +54,11 @@ public final class ArmorBarRenderer {
 
         float fillRatio = Math.min(1.0f, armor / ARMOR_REFERENCE);
 
-        DebugLogger.debug(LOG_TAG,
-                "渲染盔甲条: armor=%d, fill=%.2f, pos=(%d,%d)", armor, fillRatio, barX, barY);
+        // 先判等级：基本类型装箱 + varargs 数组在每帧路径上是白扔的垃圾
+        if (DebugLogger.isEnabled(DebugLogger.LEVEL_DETAILED)) {
+            DebugLogger.debug(LOG_TAG,
+                    "渲染盔甲条: armor=%d, fill=%.2f, pos=(%d,%d)", armor, fillRatio, barX, barY);
+        }
 
         // === 1. 背景（圆角） ===
         HealthBarRenderer.fillBarBg(graphics, barX, barY, BG_COLOR);

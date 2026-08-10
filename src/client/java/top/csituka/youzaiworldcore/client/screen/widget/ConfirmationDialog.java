@@ -4,6 +4,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
+import top.csituka.youzaiworldcore.client.render.RoundedRect;
 
 @SuppressWarnings("null")
 public class ConfirmationDialog {
@@ -211,21 +212,9 @@ public class ConfirmationDialog {
         return mouseX >= x && mouseX < x + button.getWidth() && mouseY >= y && mouseY < y + button.getHeight();
     }
 
+    // 圆角矩形绘制统一走 RoundedRect（行扫描），点亮像素与原逐像素实现一致。
     private void fillRoundedRect(GuiGraphicsExtractor g, int x, int y, int w, int h, int r, int color) {
-        g.fill(x + r, y, x + w - r, y + h, color);
-        g.fill(x, y + r, x + r, y + h - r, color);
-        g.fill(x + w - r, y + r, x + w, y + h - r, color);
-
-        for (int i = 0; i < r; i++) {
-            for (int j = 0; j < r; j++) {
-                if (i * i + j * j < r * r) {
-                    g.fill(x + r - i - 1, y + r - j - 1, x + r - i, y + r - j, color);
-                    g.fill(x + w - r + i, y + r - j - 1, x + w - r + i + 1, y + r - j, color);
-                    g.fill(x + r - i - 1, y + h - r + j, x + r - i, y + h - r + j + 1, color);
-                    g.fill(x + w - r + i, y + h - r + j, x + w - r + i + 1, y + h - r + j + 1, color);
-                }
-            }
-        }
+        RoundedRect.fill(g, x, y, w, h, r, color);
     }
 
     private int colorWithAlpha(int color, float alpha) {

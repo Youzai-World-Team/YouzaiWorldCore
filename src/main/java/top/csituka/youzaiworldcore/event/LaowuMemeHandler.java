@@ -61,6 +61,16 @@ public final class LaowuMemeHandler {
     private static final List<MemePair> activePairs = new ArrayList<>();
     private static final Map<UUID, Long> cooldownExpire = new HashMap<>();
     private static int scanCounter = 0;
+
+    /** 猫类型筛选器（常量化：{@code EntityTypeTest.forClass} 每次调用都会新建匿名实现） */
+    private static final EntityTypeTest<net.minecraft.world.entity.Entity, Cat> CAT_TEST =
+            EntityTypeTest.forClass(Cat.class);
+
+    /**
+     * {@link #scan} 的「本轮已配对」集合，复用以免每维度每次扫描都新建 HashSet。
+     * <p>仅在服务端主线程的 tick 回调中使用，每次使用前 clear，无跨调用状态。</p>
+     */
+    private static final Set<UUID> SCAN_USED = new HashSet<>();
     private static boolean registered = false;
 
     private LaowuMemeHandler() {
@@ -145,8 +155,15 @@ public final class LaowuMemeHandler {
 
     private static void scan(MinecraftServer server) {
         for (ServerLevel level : server.getAllLevels()) {
-            List<? extends Cat> cats = level.getEntities(EntityTypeTest.forClass(Cat.class), c -> true);
-            Set<UUID> used = new HashSet<>();
+            // 注意：不能把 isLaowu 下推进筛选谓词。外层要求发起方是「老吴」，
+            // 但内层找搭档时<b>不</b>要求对方也是老吴——老吴可以和普通猫配对。
+            // 下推会改变这一既有行为，故仅做常量化与容器复用。
+            List<? extends Cat> cats = level.getEntities(CAT_TEST, c -> true);
+            if (cats.isEmpty()) {
+                continue;
+            }
+            Set<UUID> used = SCAN_USED;
+            used.clear();
             for (Cat laowu : cats) {
                 if (!isLaowu(laowu)) {
                     continue;

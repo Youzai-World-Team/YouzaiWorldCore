@@ -6,6 +6,7 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 import org.jspecify.annotations.NonNull;
+import top.csituka.youzaiworldcore.client.render.RoundedRect;
 import top.csituka.youzaiworldcore.client.screen.widget.ToggleButton;
 import top.csituka.youzaiworldcore.network.FlyBeaconActivePayload;
 import top.csituka.youzaiworldcore.screen.FlyBeaconMenu;
@@ -160,39 +161,10 @@ public class FlyBeaconScreen extends AbstractContainerScreen<FlyBeaconMenu> {
         }
     }
 
-    // 预计算圆角像素偏移表：radius -> 有效的(i,j)偏移对列表
-    private static final java.util.Map<Integer, int[][]> ROUNDED_CORNER_CACHE = new java.util.HashMap<>();
-
-    /** 获取指定半径的有效圆角像素偏移，惰性计算并缓存。 */
-    private static int[][] getCornerOffsets(int r) {
-        return ROUNDED_CORNER_CACHE.computeIfAbsent(r, radius -> {
-            java.util.List<int[]> offsets = new java.util.ArrayList<>();
-            for (int i = 0; i < radius; i++) {
-                for (int j = 0; j < radius; j++) {
-                    if (i * i + j * j < radius * radius) {
-                        offsets.add(new int[]{i, j});
-                    }
-                }
-            }
-            return offsets.toArray(new int[0][]);
-        });
-    }
-
+    // 圆角矩形绘制统一走 RoundedRect（行扫描，r=6 时 135 次 fill → 13 次），
+    // 点亮的像素集合与原逐像素实现完全一致。
     private void fillRoundedRect(GuiGraphicsExtractor g, int x, int y, int w, int h, int r, int color) {
-        // 中心矩形 + 左右条（非圆角区域）
-        g.fill(x + r, y, x + w - r, y + h, color);
-        g.fill(x, y + r, x + r, y + h - r, color);
-        g.fill(x + w - r, y + r, x + w, y + h - r, color);
-
-        // 四角圆角像素填充（使用预计算偏移表避免每次 O(r²) 计算）
-        for (int[] offset : getCornerOffsets(r)) {
-            int i = offset[0];
-            int j = offset[1];
-            g.fill(x + r - i - 1, y + r - j - 1, x + r - i, y + r - j, color);
-            g.fill(x + w - r + i, y + r - j - 1, x + w - r + i + 1, y + r - j, color);
-            g.fill(x + r - i - 1, y + h - r + j, x + r - i, y + h - r + j + 1, color);
-            g.fill(x + w - r + i, y + h - r + j, x + w - r + i + 1, y + h - r + j + 1, color);
-        }
+        RoundedRect.fill(g, x, y, w, h, r, color);
     }
 
     private void drawRoundedBorder(GuiGraphicsExtractor g, int x, int y, int w, int h, int r, int color) {

@@ -45,6 +45,16 @@ public class ConcretePowderSolidifyHandler implements ServerTickEvents.StartTick
     /** Tick 计数器，用于间隔检查 */
     private int tickCounter = 0;
 
+    /**
+     * 实体类型筛选器（常量化）。
+     * <p>
+     * {@code EntityTypeTest.forClass} 每次调用都会新建一个匿名实现，
+     * 这里每秒对每个维度各调一次，提为常量即可消除。
+     * </p>
+     */
+    private static final EntityTypeTest<net.minecraft.world.entity.Entity, ItemEntity> ITEM_ENTITY_TEST =
+            EntityTypeTest.forClass(ItemEntity.class);
+
     private ConcretePowderSolidifyHandler() {
     }
 
@@ -115,16 +125,20 @@ public class ConcretePowderSolidifyHandler implements ServerTickEvents.StartTick
     }
 
     private static void processLevel(ServerLevel level) {
-        // 使用 EntityTypeTest.forClass 查找所有 ItemEntity，无需直接引用 EntityType.ITEM
+        // 谓词下推：把「是不是混凝土粉末」一并放进筛选条件。
+        // 原先谓词只过滤「存活且在水中」，于是水里的每个掉落物（养鱼场 / 水流运输带
+        // 场景下可能成百上千）都会被收集进列表，之后才逐个查映射表丢弃。
+        // 现在结果列表只包含真正需要转换的实体，绝大多数 tick 直接是空列表。
         List<? extends ItemEntity> itemsInWater = level.getEntities(
-                EntityTypeTest.forClass(ItemEntity.class),
-                entity -> entity.isAlive() && entity.isInWater());
+                ITEM_ENTITY_TEST,
+                entity -> entity.isAlive() && entity.isInWater()
+                        && POWDER_TO_CONCRETE.containsKey(entity.getItem().getItem()));
 
         if (itemsInWater.isEmpty())
             return;
 
         DebugLogger.trace("ConcretePowderSolidifyHandler",
-                "维度 %s 中有 %d 个物品在水中待检查",
+                "维度 %s 中有 %d 个混凝土粉末掉落物待固化",
                 level.dimension().identifier(), itemsInWater.size());
 
         int converted = 0;
