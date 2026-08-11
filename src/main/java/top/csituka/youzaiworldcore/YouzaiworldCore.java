@@ -59,6 +59,7 @@ import top.csituka.youzaiworldcore.component.ModDataComponents;
 import top.csituka.youzaiworldcore.dimensionalinventories.DimensionPoolSettings;
 import top.csituka.youzaiworldcore.dimensionalinventories.DimensionPoolManager;
 import top.csituka.youzaiworldcore.dimensionalinventories.WorldPoolCommand;
+import top.csituka.youzaiworldcore.damagenumber.DamageNumberHandler;
 import top.csituka.youzaiworldcore.respawn.InPlaceRespawnConfig;
 import top.csituka.youzaiworldcore.respawn.InPlaceRespawnManager;
 import top.csituka.youzaiworldcore.entity.seat.ModSeatEntities;
@@ -174,6 +175,8 @@ public class YouzaiworldCore implements ModInitializer {
         ModMenuTypes.initialize();
         DebugLogger.info("YouzaiworldCore", "初始化网络注册...");
         ModNetworking.initialize();
+        DebugLogger.info("YouzaiworldCore", "初始化伤害跳字处理器...");
+        DamageNumberHandler.initialize();
         DebugLogger.info("YouzaiworldCore", "注册座椅实体...");
         ModSeatEntities.initialize();
         DebugLogger.info("YouzaiworldCore", "注册连锁采集事件...");

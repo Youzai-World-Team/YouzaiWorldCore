@@ -70,6 +70,9 @@ public final class LuckPermsHelper {
     /** 双开门功能（自身开关/查询）{@code /yzwc function double_doors [true|false]} */
     public static final String PERMISSION_DOUBLE_DOORS = "youzaiworldcore.command.function.double_doors";
 
+    /** 伤害跳字功能（自身开关/查询）{@code /yzwc function damage_numbers [true|false]} */
+    public static final String PERMISSION_DAMAGE_NUMBERS = "youzaiworldcore.command.function.damage_numbers";
+
     /** 事件管理查询 {@code /yzwc event ...} 查询类子命令（省略参数即为查询） */
     public static final String PERMISSION_EVENT_QUERY = "youzaiworldcore.command.event.query";
 

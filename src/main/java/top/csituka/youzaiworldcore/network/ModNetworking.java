@@ -75,6 +75,8 @@ public class ModNetworking {
         DebugLogger.info("ModNetworking", "Registered clientbound packet: TeleportStoneInterruptPayload");
         PayloadTypeRegistry.clientboundPlay().register(LevelExpSyncPayload.ID, LevelExpSyncPayload.STREAM_CODEC);
         DebugLogger.info("ModNetworking", "Registered clientbound packet: LevelExpSyncPayload");
+        PayloadTypeRegistry.clientboundPlay().register(DamageNumberPayload.ID, DamageNumberPayload.STREAM_CODEC);
+        DebugLogger.info("ModNetworking", "Registered clientbound packet: DamageNumberPayload");
         PayloadTypeRegistry.clientboundPlay().register(FunctionToggleSyncPayload.TYPE, FunctionToggleSyncPayload.STREAM_CODEC);
         DebugLogger.info("ModNetworking", "Registered clientbound packet: FunctionToggleSyncPayload");
         PayloadTypeRegistry.serverboundPlay().register(TeleportAnchorTeleportPayload.TYPE, TeleportAnchorTeleportPayload.STREAM_CODEC);

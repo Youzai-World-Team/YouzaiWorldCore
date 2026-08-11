@@ -116,7 +116,7 @@ public final class YzwcServerMirrorCommand {
                     .then(literal("trident_void_protect").then(greedyArgs()))
                     .then(literal("crop_xp_drop").then(greedyArgs())));
 
-            // /yzwc function ladder_extend_downward|... [true|false]
+            // /yzwc function ladder_extend_downward|damage_numbers|... [true|false]
             // + 已有的客户端命令 double_doors / invisibility
             root.then(literal("function")
                     .then(literal("ladder_extend_downward").then(greedyArgs()))
@@ -124,6 +124,7 @@ public final class YzwcServerMirrorCommand {
                     .then(literal("block_animation").then(greedyArgs()))
                     .then(literal("crafting_sound").then(greedyArgs()))
                     .then(literal("item_sparkle").then(greedyArgs()))
+                    .then(literal("damage_numbers").then(greedyArgs()))
                     .then(literal("double_doors").then(greedyArgs()))
                     .then(literal("invisibility").then(greedyArgs())));
 

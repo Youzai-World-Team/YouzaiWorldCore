@@ -48,6 +48,7 @@ import top.csituka.youzaiworldcore.client.hud.ToolInfoOverlay;
 import top.csituka.youzaiworldcore.client.event.MemePaintingClickHandler;
 import top.csituka.youzaiworldcore.client.particle.BlockAnimationRenderer;
 import top.csituka.youzaiworldcore.client.particle.ItemSparkleRenderer;
+import top.csituka.youzaiworldcore.client.render.DamageNumberRenderer;
 
 
 public class Client implements ClientModInitializer {
@@ -71,6 +72,8 @@ public class Client implements ClientModInitializer {
         ManaHudRenderer.register();
         DebugLogger.info("Client", "注册冒险等级 HUD 渲染...");
         AdventureLevelHudRenderer.register();
+        DebugLogger.info("Client", "初始化伤害跳字渲染器...");
+        DamageNumberRenderer.initialize();
 
         DebugLogger.info("Client", "初始化拾取通知系统...");
         DrawEntriesHandler.INSTANCE.setEnabled(true);
