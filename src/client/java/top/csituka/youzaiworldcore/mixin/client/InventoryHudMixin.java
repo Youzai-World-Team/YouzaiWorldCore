@@ -11,13 +11,14 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import top.csituka.youzaiworldcore.client.config.ClientExternalSettings;
 import top.csituka.youzaiworldcore.client.hud.ArmorHudRenderer;
 import top.csituka.youzaiworldcore.client.hud.InventoryHudRenderer;
+import top.csituka.youzaiworldcore.client.hud.StatusEffectHudRenderer;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
 /**
- * YZUI 物品栏 + 装备耐久 HUD Mixin。
+ * YZUI 物品栏、装备耐久与状态效果 HUD Mixin。
  *
  * <p>在 {@link Hud#extractRenderState} 的 {@code extractHotbarAndDecorations}
- * 调用之后注入，使两个 HUD 与热键栏处于同一渲染层级。仅当 YZUI 启用时生效。</p>
+ * 调用之后注入，使三个 HUD 与热键栏处于同一渲染层级。仅当 YZUI 启用时生效。</p>
  */
 @SuppressWarnings("null")
 @Mixin(Hud.class)
@@ -43,8 +44,24 @@ public abstract class InventoryHudMixin {
         try {
             InventoryHudRenderer.render(graphics);
             ArmorHudRenderer.render(graphics);
+            StatusEffectHudRenderer.render(graphics);
         } catch (Exception e) {
-            DebugLogger.error(LOG_TAG, "HUD渲染异常: %s", e.getMessage());
+            DebugLogger.exception(LOG_TAG, "renderYzuiHud", e);
+        }
+    }
+
+    /**
+     * YZUI 已提供完整的状态效果面板时，停用右上角原版效果图标，避免重复显示。
+     */
+    @Inject(
+            method = "extractEffects(Lnet/minecraft/client/gui/GuiGraphicsExtractor;"
+                    + "Lnet/minecraft/client/DeltaTracker;)V",
+            at = @At("HEAD"),
+            cancellable = true)
+    private void yzwc$hideVanillaEffects(GuiGraphicsExtractor graphics,
+            DeltaTracker deltaTracker, CallbackInfo ci) {
+        if (ClientExternalSettings.isYzuiEnabled()) {
+            ci.cancel();
         }
     }
 }

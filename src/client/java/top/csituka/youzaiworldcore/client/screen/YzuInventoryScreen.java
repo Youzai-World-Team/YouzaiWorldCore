@@ -543,10 +543,8 @@ public class YzuInventoryScreen extends AbstractRecipeBookScreen<InventoryMenu> 
             int baseX = src.x + this.leftPos + 16 + 2;
             int baseY = src.y + this.topPos;
             int indW = activeTrinketSlots.size() * 18 - 2;
-            int sr = Math.min(4, Math.min(indW / 2, 10));
-            g.fill(baseX - 2 + sr, baseY - 2, baseX - 2 + indW + 4 - sr, baseY - 2 + 16 + 4, 0x50000000);
-            g.fill(baseX - 2, baseY - 2 + sr, baseX - 2 + sr, baseY - 2 + 16 + 4 - sr, 0x50000000);
-            g.fill(baseX - 2 + indW + 4 - sr, baseY - 2 + sr, baseX - 2 + indW + 4, baseY - 2 + 16 + 4 - sr, 0x50000000);
+            // 与创造模式保持一致：用半径 4 的圆角矩形保留四角灰色阴影。
+            fillRoundedRect(g, baseX - 2, baseY - 2, indW + 4, 16 + 4, 4, 0x50000000);
             for (int i = 0; i < activeTrinketSlots.size(); i++) {
                 int sx = baseX + i * 18;
                 TrinketHelper.TrinketSlotInfo slotInfo = activeTrinketSlots.get(i);

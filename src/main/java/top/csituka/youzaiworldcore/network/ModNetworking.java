@@ -2,6 +2,7 @@ package top.csituka.youzaiworldcore.network;
 
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.minecraft.advancements.triggers.CriteriaTriggers;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
@@ -679,6 +680,7 @@ public class ModNetworking {
                             }
                             inv.setChanged();
                             TrinketUtilities.callTrinketEquipmentChange(slotStack, placed, access, player);
+                            CriteriaTriggers.INVENTORY_CHANGED.trigger(player, player.getInventory(), placed);
                             net.minecraft.world.item.ItemStack remainder = cursor.copy();
                             remainder.shrink(placeCount);
                             player.containerMenu.setCarried(creativeCursor || remainder.isEmpty()
@@ -724,6 +726,7 @@ public class ModNetworking {
                                     ? net.minecraft.world.item.ItemStack.EMPTY : slotStack.copy());
                             inv.setChanged();
                             TrinketUtilities.callTrinketEquipmentChange(slotStack, cursor, access, player);
+                            CriteriaTriggers.INVENTORY_CHANGED.trigger(player, player.getInventory(), cursor);
                             DebugLogger.info("ModNetworking", "Trinket SWAP: cursor <-> %s[%d]", payload.groupKey(), payload.slotIndex());
                             break;
                         case TrinketInteractPayload.ACTION_QUICK_MOVE:

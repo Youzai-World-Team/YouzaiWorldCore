@@ -30,6 +30,7 @@
     "HealthBarMixin",
     "HotbarMixin",
     "InventoryHudMixin",
+    "StatusEffectOrderMixin",
     "food.FoodDataExhaustionAccessor",
     "EditBoxMixin",
     "MinecraftQuitMixin",
