@@ -101,7 +101,8 @@ public final class InPlaceRespawnManager {
 
         DebugLogger.entering("InPlaceRespawn", "finishRespawn",
                 "player=" + newPlayer.getName().getString());
-        ServerLevel deathLevel = newPlayer.getServer().getLevel(access.youzaiworldcore$getDeathDimension());
+        ServerLevel deathLevel = newPlayer.level().getServer()
+                .getLevel(access.youzaiworldcore$getDeathDimension());
         if (deathLevel == null) {
             newPlayer.sendSystemMessage(Component.translatable(
                     "youzaiworldcore.respawn.in_place.unavailable"));

@@ -12,8 +12,9 @@ public record InPlaceRespawnRequestPayload() implements CustomPacketPayload {
     public static final Identifier IDENTIFIER = Identifier.fromNamespaceAndPath(
             YouzaiworldCore.MOD_ID, "in_place_respawn_request");
     public static final Type<InPlaceRespawnRequestPayload> ID = new Type<>(IDENTIFIER);
-    public static final StreamCodec<RegistryFriendlyByteBuf, InPlaceRespawnRequestPayload> STREAM_CODEC =
-            StreamCodec.unit(new InPlaceRespawnRequestPayload());
+    @SuppressWarnings("null")
+    public static final StreamCodec<RegistryFriendlyByteBuf, InPlaceRespawnRequestPayload> STREAM_CODEC = StreamCodec
+            .unit(new InPlaceRespawnRequestPayload());
 
     @Override
     @SuppressWarnings("null")
