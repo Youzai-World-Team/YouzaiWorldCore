@@ -14,6 +14,7 @@ import top.csituka.youzaiworldcore.client.screen.element.MenuElementGroup;
 import top.csituka.youzaiworldcore.client.screen.element.SettingsMenuElements;
 import top.csituka.youzaiworldcore.client.screen.element.SwitchWorldMenuElements;
 import top.csituka.youzaiworldcore.client.FunctionToggleClientState;
+import top.csituka.youzaiworldcore.client.InPlaceRespawnClientState;
 import top.csituka.youzaiworldcore.client.hud.AdventureLevelHudRenderer;
 import top.csituka.youzaiworldcore.client.skill.ClientAttributeData;
 import top.csituka.youzaiworldcore.mana.ManaManager;
@@ -36,6 +37,24 @@ public class ClientNetworking {
 
     public static void initialize() {
         DebugLogger.entering("ClientNetworking", "initialize");
+
+        ClientPlayNetworking.registerGlobalReceiver(InPlaceRespawnInfoPayload.ID, (payload, context) ->
+                context.client().execute(() -> InPlaceRespawnClientState.updateInfo(
+                        payload.enabled(), payload.requiredLevel())));
+        DebugLogger.info("ClientNetworking", "Registered receiver: InPlaceRespawnInfoPayload");
+
+        ClientPlayNetworking.registerGlobalReceiver(InPlaceRespawnResultPayload.ID, (payload, context) ->
+                context.client().execute(() -> {
+                    if (payload.approved()) {
+                        if (context.client().player != null && !context.client().player.isAlive()) {
+                            context.client().player.respawn();
+                        }
+                        return;
+                    }
+                    InPlaceRespawnClientState.applyRejection(
+                            payload.reason(), payload.requiredLevel(), payload.currentLevel());
+                }));
+        DebugLogger.info("ClientNetworking", "Registered receiver: InPlaceRespawnResultPayload");
 
         ClientPlayNetworking.registerGlobalReceiver(OpenMenuPayload.ID, (payload, context) -> {
             DebugLogger.entering("ClientNetworking", "OpenMenuPayload handler");

@@ -1,48 +1,85 @@
 package top.csituka.youzaiworldcore.mixin;
 
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import top.csituka.youzaiworldcore.item.ModItems;
+import top.csituka.youzaiworldcore.respawn.DeferredDeathDropAccess;
+import top.csituka.youzaiworldcore.respawn.InPlaceRespawnPlayerAccess;
+import top.csituka.youzaiworldcore.util.DebugLogger;
 import top.csituka.youzaiworldcore.util.TrinketHelper;
 
 /**
- * 混合注入：拦截 {@link Player#dropEquipment(ServerLevel)}，
- * 当玩家背包中有「守护之心」时阻止物品掉落，
- * 由 {@link ServerPlayerDeathMixin} 处理后续的心消耗与提示。
- *
- * <p>原本由数据包 {@code keepInventory} 游戏规则 + 守护之心标记逻辑实现，
- * 现改为 Mixin 方式精确控制。</p>
+ * 混合注入 {@link Player} 的死亡掉落逻辑。
+ * <p>
+ * 守护之心继续阻止原版掉落；启用原地重生时先暂缓物品与经验掉落，
+ * 待玩家选择普通重生后再补做掉落，从而允许原地重生安全保留物品栏。
  */
 @Mixin(Player.class)
-public class PlayerDropEquipmentMixin {
+public abstract class PlayerDropEquipmentMixin implements DeferredDeathDropAccess {
+
+    @Shadow
+    protected abstract void dropEquipment(ServerLevel level);
+
+    @Unique
+    private boolean youzaiworldcore$forceDeferredDrop;
 
     @Inject(method = "dropEquipment", at = @At("HEAD"), cancellable = true)
     private void youzaiworldcore$onDropEquipment(ServerLevel level, CallbackInfo ci) {
-        Player player = (Player) (Object) this;
-
-        // 仅在服务端处理
-        if (level.isClientSide()) {
+        if (level.isClientSide() || youzaiworldcore$forceDeferredDrop) {
             return;
         }
 
-        // 检查玩家背包中是否有守护之心
-        if (hasHeartInInventory(player)) {
-            // 有守护之心 → 阻止物品掉落
+        Player player = (Player) (Object) this;
+        boolean deferredForRespawn = player instanceof ServerPlayer
+                && player instanceof InPlaceRespawnPlayerAccess access
+                && access.youzaiworldcore$isInPlaceRespawnEnabled();
+        if (deferredForRespawn || hasHeartInInventory(player)) {
             ci.cancel();
         }
-        // 没有守护之心 → 允许正常掉落（由原版逻辑处理）
+    }
+
+    /**
+     * 原地重生启用时先禁止生成死亡经验球；若最终选择普通重生且无守护之心，
+     * 由服务端重生 Mixin 按原版公式补发。
+     */
+    @Inject(method = "getBaseExperienceReward", at = @At("HEAD"), cancellable = true)
+    private void youzaiworldcore$deferExperienceReward(ServerLevel level,
+                                                        CallbackInfoReturnable<Integer> cir) {
+        Player player = (Player) (Object) this;
+        if (player instanceof ServerPlayer
+                && player instanceof InPlaceRespawnPlayerAccess access
+                && access.youzaiworldcore$isInPlaceRespawnEnabled()) {
+            cir.setReturnValue(0);
+        }
+    }
+
+    @Override
+    public void youzaiworldcore$dropDeferredEquipment(ServerLevel level) {
+        DebugLogger.entering("InPlaceRespawn", "dropDeferredEquipment");
+        youzaiworldcore$forceDeferredDrop = true;
+        try {
+            dropEquipment(level);
+        } finally {
+            youzaiworldcore$forceDeferredDrop = false;
+            DebugLogger.exiting("InPlaceRespawn", "dropDeferredEquipment");
+        }
     }
 
     /**
      * 遍历玩家背包（含快捷栏、主背包、盔甲栏、副手）以及 Trinkets 饰品槽，
-     * 检查是否有至少一个 {@link HeartOfGuardianshipItem}。
+     * 检查是否至少有一个守护之心。
      */
+    @Unique
     private static boolean hasHeartInInventory(Player player) {
         // 检查饰品槽
         if (TrinketHelper.isLoaded() && TrinketHelper.isItemEquipped(player, ModItems.HEART_OF_GUARDIANSHIP)) {

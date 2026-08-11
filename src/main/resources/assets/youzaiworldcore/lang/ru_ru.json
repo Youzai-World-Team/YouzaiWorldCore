@@ -683,5 +683,11 @@
   "youzaiworldcore.message.preset.rainbow_arrows": "§7Радужные стрелы",
   "youzaiworldcore.message.preset.totem_box": "§eТотем бессмертия",
   "youzaiworldcore.tellraw.format": "§r§7✦ §4ᴍ§cɪ§6ɴ§eᴇ§aᴄ§bʀ§3ᴀ§dғ§uᴛ §7- §eМир Юдзай §7✦ §r",
-  "youzaiworldcore.tellraw.format.indev.warning": "§r§7✦ §eПредупреждение отладки YouzaiWorldCore§7✦ §r"
+  "youzaiworldcore.tellraw.format.indev.warning": "§r§7✦ §eПредупреждение отладки YouzaiWorldCore§7✦ §r",
+  "youzaiworldcore.respawn.in_place.button": "Возродиться здесь",
+  "youzaiworldcore.respawn.in_place.cost": "Стоимость: %s уровней",
+  "youzaiworldcore.respawn.in_place.pending": "Запрос возрождения здесь…",
+  "youzaiworldcore.respawn.in_place.not_enough_levels": "§cНедостаточно уровней: нужно %s, доступно %s",
+  "youzaiworldcore.respawn.in_place.unavailable": "§cВозрождение на месте сейчас недоступно",
+  "youzaiworldcore.respawn.in_place.success": "§aПотрачено %s уровней; возрождение на месте смерти с Сопротивлением V на 10 секунд."
 }

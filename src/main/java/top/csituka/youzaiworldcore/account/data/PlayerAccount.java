@@ -69,6 +69,11 @@ public class PlayerAccount {
     @SerializedName("last_position")
     public String lastPositionJson;
 
+    /** 已成功使用原地重生的累计次数 */
+    @Expose
+    @SerializedName("in_place_respawn_count")
+    public int inPlaceRespawnCount = 0;
+
     private static final ZonedDateTime EPOCH = ZonedDateTime.of(1970, 1, 1, 0, 0, 0, 0, java.time.ZoneOffset.UTC);
 
     public PlayerAccount() {
@@ -93,6 +98,7 @@ public class PlayerAccount {
             this.loginTries = parsed.loginTries;
             this.lastKickedDate = parsed.lastKickedDate != null ? parsed.lastKickedDate : EPOCH;
             this.lastPositionJson = parsed.lastPositionJson;
+            this.inPlaceRespawnCount = Math.max(0, parsed.inPlaceRespawnCount);
         }
         DebugLogger.exiting("PlayerAccount", "PlayerAccount(json)");
     }

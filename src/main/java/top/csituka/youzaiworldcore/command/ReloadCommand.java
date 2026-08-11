@@ -9,6 +9,8 @@ import top.csituka.youzaiworldcore.YouzaiworldCore;
 import top.csituka.youzaiworldcore.account.data.AccountDataStorage;
 import top.csituka.youzaiworldcore.luckperms.LuckPermsHelper;
 import top.csituka.youzaiworldcore.config.UpdateCheckerConfig;
+import top.csituka.youzaiworldcore.dimensionalinventories.DimensionPoolSettings;
+import top.csituka.youzaiworldcore.respawn.InPlaceRespawnConfig;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
 /**
@@ -60,6 +62,10 @@ public class ReloadCommand {
 
         // 重载更新检查器配置
         UpdateCheckerConfig.reload();
+
+        // 重载维度池与原地重生配置
+        DimensionPoolSettings.reload();
+        InPlaceRespawnConfig.reload();
 
         // === 预留扩展点 ===
         // 后续如需重载其他模块（如自定义配置文件、缓存等），在此添加调用：

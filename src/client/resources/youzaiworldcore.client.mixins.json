@@ -61,7 +61,8 @@
     "laowumeme.SoundBufferLibraryLaowuMixin",
     "afk.AfkKeyboardHandlerMixin",
     "afk.AfkMouseHandlerMixin",
-    "ExperimentalWarningSkipMixin"
+    "ExperimentalWarningSkipMixin",
+    "DeathScreenMixin"
   ],
   "injectors": {
     "defaultRequire": 1

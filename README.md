@@ -69,6 +69,7 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 
 - **自定义窗口图标**：运行时通过 Java ImageIO 加载 `jar_icon.png` 替换任务栏与标题栏图标
 - **自定义窗口标题**：`WindowTitleMixin` 拦截 `Window.setTitle()`，标题替换为"悠哉世界"
+- **原地重生**：死亡界面将原版重生按钮拆分为左右两半；配置允许的维度可消耗原版经验等级在死亡坐标复活，保留物品栏、不消耗守护之心并获得 10 秒抗性 V。费用按账户累计成功次数计算：`floor(log2(本次累计次数 + 1)) + 5`，首次为 6 级。配置文件为 `config/youzaiworldcore/in_place_respawn.json`，默认仅对 `survival_world_pool` 维度池开启
 
 ### 5. 悠哉系列工具与物品
 
@@ -701,9 +702,9 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 | `decomposition_table` | 分解台   |
 | `fly_beacon`          | 飞行信标 |
 
-### 网络数据包（共 44 个）
+### 网络数据包（共 47 个）
 
-> 注：`world_pool_teleport` 数据包类位于 `dimensionalinventories` 包，其余位于 `network` 包；邮件相关 18 个数据包亦位于 `network` 包。方向统计：S→C 18 个，C→S 26 个。
+> 注：`world_pool_teleport` 数据包类位于 `dimensionalinventories` 包，其余位于 `network` 包；邮件相关 18 个数据包亦位于 `network` 包。方向统计：S→C 20 个，C→S 27 个。
 
 | 数据包 ID                   | 方向 | 用途                                                               |
 | --------------------------- | ---- | ------------------------------------------------------------------ |
@@ -725,7 +726,10 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 | `laowu_meme_trigger`        | S→C  | 触发老吴贴贴粒子/音效                                             |
 | `laowu_meme_stop`           | S→C  | 停止老吴贴贴客户端效果                                            |
 | `teleport_stone_interrupt`  | S→C  | 传送石/传送卷轴蓄力中断                                           |
+| `in_place_respawn_info`     | S→C  | 同步死亡维度是否允许原地重生及本次等级费用                         |
+| `in_place_respawn_result`   | S→C  | 返回原地重生申请的批准或拒绝结果                                   |
 | `world_pool_teleport`       | C→S  | 请求维度池传送                                                     |
+| `in_place_respawn_request`  | C→S  | 请求消耗等级并在死亡位置重生                                       |
 | `teleport_anchor_activate`  | C→S  | 激活传送锚点                                                       |
 | `teleport_anchor_teleport`  | C→S  | 请求传送                                                           |
 | `teleport_anchor_delete`    | C→S  | 删除传送点                                                         |

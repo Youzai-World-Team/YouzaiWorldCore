@@ -25,6 +25,7 @@ import top.csituka.youzaiworldcore.invisibility.InvisibilityManager;
 import top.csituka.youzaiworldcore.screen.DecompositionTableMenu;
 import top.csituka.youzaiworldcore.screen.FlyBeaconMenu;
 import top.csituka.youzaiworldcore.skill.AttributeManager;
+import top.csituka.youzaiworldcore.respawn.InPlaceRespawnManager;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 import eu.pb4.trinkets.api.TrinketsApi;
 import eu.pb4.trinkets.api.TrinketAttachment;
@@ -48,6 +49,9 @@ public class ModNetworking {
         DebugLogger.info("ModNetworking", "Registered serverbound packet: FlyBeaconActivePayload");
         PayloadTypeRegistry.serverboundPlay().register(WorldPoolTeleportPayload.ID, WorldPoolTeleportPayload.STREAM_CODEC);
         DebugLogger.info("ModNetworking", "Registered serverbound packet: WorldPoolTeleportPayload");
+        PayloadTypeRegistry.serverboundPlay().register(InPlaceRespawnRequestPayload.ID,
+                InPlaceRespawnRequestPayload.STREAM_CODEC);
+        DebugLogger.info("ModNetworking", "Registered serverbound packet: InPlaceRespawnRequestPayload");
 
         PayloadTypeRegistry.clientboundPlay().register(OpenMenuPayload.ID, OpenMenuPayload.STREAM_CODEC);
         DebugLogger.info("ModNetworking", "Registered clientbound packet: OpenMenuPayload");
@@ -55,6 +59,12 @@ public class ModNetworking {
         DebugLogger.info("ModNetworking", "Registered clientbound packet: ManaSyncPayload");
         PayloadTypeRegistry.clientboundPlay().register(OpenAuthScreenPayload.ID, OpenAuthScreenPayload.STREAM_CODEC);
         DebugLogger.info("ModNetworking", "Registered clientbound packet: OpenAuthScreenPayload");
+        PayloadTypeRegistry.clientboundPlay().register(InPlaceRespawnInfoPayload.ID,
+                InPlaceRespawnInfoPayload.STREAM_CODEC);
+        DebugLogger.info("ModNetworking", "Registered clientbound packet: InPlaceRespawnInfoPayload");
+        PayloadTypeRegistry.clientboundPlay().register(InPlaceRespawnResultPayload.ID,
+                InPlaceRespawnResultPayload.STREAM_CODEC);
+        DebugLogger.info("ModNetworking", "Registered clientbound packet: InPlaceRespawnResultPayload");
 
         PayloadTypeRegistry.clientboundPlay().register(TeleportAnchorListPayload.TYPE, TeleportAnchorListPayload.STREAM_CODEC);
         DebugLogger.info("ModNetworking", "Registered clientbound packet: TeleportAnchorListPayload");
@@ -133,6 +143,14 @@ public class ModNetworking {
                 }
             }
             DebugLogger.exiting("ModNetworking", "FlyBeaconActivePayload handler");
+        });
+
+        // ===== 原地重生请求处理器 =====
+        ServerPlayNetworking.registerGlobalReceiver(InPlaceRespawnRequestPayload.ID, (payload, context) -> {
+            DebugLogger.entering("ModNetworking", "InPlaceRespawnRequestPayload handler");
+            var player = context.player();
+            player.level().getServer().execute(() -> InPlaceRespawnManager.handleRequest(player));
+            DebugLogger.exiting("ModNetworking", "InPlaceRespawnRequestPayload handler");
         });
 
         // ===== 维度池传送处理器 =====

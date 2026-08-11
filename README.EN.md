@@ -69,6 +69,7 @@ Fully redesigned Minecraft main menu via `TitleScreenMixin`: custom buttons (Joi
 
 - **Custom Window Icon**: Loads `jar_icon.png` at runtime via Java ImageIO to replace taskbar and title bar icons
 - **Custom Window Title**: `WindowTitleMixin` intercepts `Window.setTitle()` to show "悠哉世界"
+- **Respawn Here**: Splits the vanilla respawn row into two half-width buttons in enabled dimensions. Respawning at the death position preserves inventory, does not consume a Heart of Guardianship, costs vanilla XP levels, and grants Resistance V for 10 seconds. The account-based cost is `floor(log2(current use number + 1)) + 5`, starting at 6 levels. Configure it in `config/youzaiworldcore/in_place_respawn.json`; only `survival_world_pool` is enabled by default
 
 ### 5. Youzai Tools & Items
 
@@ -701,9 +702,9 @@ All commands use `/yzwc` as the root command. Subcommands marked **(client comma
 | `decomposition_table` | Decomposition Table |
 | `fly_beacon`          | Fly Beacon          |
 
-### Network Packets (44 total)
+### Network Packets (47 total)
 
-> Note: the `world_pool_teleport` packet class lives in the `dimensionalinventories` package; the rest (including the 18 mail packets) are in the `network` package. Direction split: 18 S→C, 26 C→S.
+> Note: the `world_pool_teleport` packet class lives in the `dimensionalinventories` package; the rest (including the 18 mail packets) are in the `network` package. Direction split: 20 S→C, 27 C→S.
 
 | Packet ID                   | Direction | Purpose                                                                                       |
 | --------------------------- | --------- | --------------------------------------------------------------------------------------------- |
@@ -725,7 +726,10 @@ All commands use `/yzwc` as the root command. Subcommands marked **(client comma
 | `laowu_meme_trigger`        | S→C       | Trigger Laowu Meme particles/sounds                                                          |
 | `laowu_meme_stop`           | S→C       | Stop Laowu Meme client effects                                                               |
 | `teleport_stone_interrupt`  | S→C       | Interrupt teleport stone/scroll charge                                                       |
+| `in_place_respawn_info`     | S→C       | Sync whether the death dimension allows respawning here and its level cost                    |
+| `in_place_respawn_result`   | S→C       | Return approval or rejection for a respawn-here request                                       |
 | `world_pool_teleport`       | C→S       | Request dimension pool teleport                                                               |
+| `in_place_respawn_request`  | C→S       | Request a level-paid respawn at the death position                                             |
 | `teleport_anchor_activate`  | C→S       | Activate anchor                                                                               |
 | `teleport_anchor_teleport`  | C→S       | Request teleport                                                                              |
 | `teleport_anchor_delete`    | C→S       | Delete point                                                                                  |

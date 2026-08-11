@@ -724,5 +724,11 @@
   "youzaiworldcore.message.preset.rainbow_arrows": "§7七彩箭矢",
   "youzaiworldcore.message.preset.totem_box": "§e不死图腾",
   "youzaiworldcore.tellraw.format": "§r§7✦ §4ᴍ§cɪ§6ɴ§eᴇ§aᴄ§bʀ§3ᴀ§dғ§uᴛ §7- §e悠哉世界 §7✦ §r",
-  "youzaiworldcore.tellraw.format.indev.warning": "§r§7✦ §eYouzaiWorldCore 调试 警告§7✦ §r"
+  "youzaiworldcore.tellraw.format.indev.warning": "§r§7✦ §eYouzaiWorldCore 调试 警告§7✦ §r",
+  "youzaiworldcore.respawn.in_place.button": "原地重生",
+  "youzaiworldcore.respawn.in_place.cost": "本次需要 %s 级",
+  "youzaiworldcore.respawn.in_place.pending": "正在请求原地重生……",
+  "youzaiworldcore.respawn.in_place.not_enough_levels": "§c等级不足：需要 %s 级，当前 %s 级",
+  "youzaiworldcore.respawn.in_place.unavailable": "§c当前无法使用原地重生",
+  "youzaiworldcore.respawn.in_place.success": "§a已消耗 %s 级并在死亡处重生，获得 10 秒抗性 V。"
 }
