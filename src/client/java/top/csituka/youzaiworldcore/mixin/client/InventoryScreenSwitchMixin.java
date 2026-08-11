@@ -46,7 +46,7 @@ public abstract class InventoryScreenSwitchMixin {
                 LocalPlayer player = Minecraft.getInstance().player;
                 if (player == null) return;
 
-                if (player.isCreative() || player.isSpectator()) {
+                if (player.hasInfiniteMaterials()) {
                     LOGGER.debug("→ YzuCreativeInventoryScreen (creative)");
                     Minecraft.getInstance().gui.setScreen(new YzuCreativeInventoryScreen(player));
                 } else {

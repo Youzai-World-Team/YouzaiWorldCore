@@ -99,6 +99,10 @@ public class ModNetworking {
         PayloadTypeRegistry.serverboundPlay().register(TrinketInteractPayload.ID, TrinketInteractPayload.STREAM_CODEC);
         DebugLogger.info("ModNetworking", "Registered serverbound packet: TrinketInteractPayload");
 
+        // ===== YZUI 物品栏 Mouse Tweaks 数据包 =====
+        PayloadTypeRegistry.serverboundPlay().register(InventoryCollectPayload.ID, InventoryCollectPayload.STREAM_CODEC);
+        DebugLogger.info("ModNetworking", "Registered serverbound packet: InventoryCollectPayload");
+
         // ===== AFK 客户端心跳数据包 =====
         PayloadTypeRegistry.serverboundPlay().register(AfkHeartbeatPayload.ID, AfkHeartbeatPayload.STREAM_CODEC);
         DebugLogger.info("ModNetworking", "Registered serverbound packet: AfkHeartbeatPayload");
@@ -555,6 +559,55 @@ public class ModNetworking {
         });
         DebugLogger.info("ModNetworking", "Registered receiver: AfkHeartbeatPayload");
 
+        // ===== YZUI 生存物品栏左键拖拽收集（服务端权威操作） =====
+        ServerPlayNetworking.registerGlobalReceiver(InventoryCollectPayload.ID, (payload, context) -> {
+            var player = context.player();
+            var server = player.level().getServer();
+            if (server == null) {
+                return;
+            }
+            server.execute(() -> {
+                var menu = player.containerMenu;
+                boolean validMenu = menu == player.inventoryMenu
+                        && menu.containerId == payload.containerId()
+                        && !player.hasInfiniteMaterials();
+                if (!validMenu || payload.slotIndex() < 0 || payload.slotIndex() >= menu.slots.size()) {
+                    DebugLogger.info("InventoryCollect", "拒绝无效收集请求：container=%d, slot=%d",
+                            payload.containerId(), payload.slotIndex());
+                    menu.broadcastFullState();
+                    return;
+                }
+
+                var slot = menu.getSlot(payload.slotIndex());
+                ItemStack carried = menu.getCarried();
+                ItemStack slotStack = slot.getItem();
+                int capacity = carried.isEmpty() ? 0 : carried.getMaxStackSize() - carried.getCount();
+                if (!slot.isActive() || !slot.mayPickup(player) || slotStack.isEmpty() || capacity <= 0
+                        || !ItemStack.isSameItemSameComponents(carried, slotStack)) {
+                    DebugLogger.info("InventoryCollect", "忽略不满足条件的收集请求：slot=%d",
+                            payload.slotIndex());
+                    menu.broadcastFullState();
+                    return;
+                }
+
+                int requested = Math.min(capacity, slotStack.getCount());
+                ItemStack taken = slot.safeTake(requested, requested, player);
+                if (taken.isEmpty() || !ItemStack.isSameItemSameComponents(carried, taken)) {
+                    DebugLogger.info("InventoryCollect", "槽位拒绝取出物品：slot=%d", payload.slotIndex());
+                    menu.broadcastFullState();
+                    return;
+                }
+
+                ItemStack updatedCarried = carried.copy();
+                updatedCarried.grow(taken.getCount());
+                menu.setCarried(updatedCarried);
+                menu.broadcastChanges();
+                DebugLogger.info("InventoryCollect", "已从 slot %d 收集 %d 个 %s",
+                        payload.slotIndex(), taken.getCount(), taken.getHoverName().getString());
+            });
+        });
+        DebugLogger.info("ModNetworking", "Registered receiver: InventoryCollectPayload");
+
         // ===== Trinkets 饰品槽交互处理器（服务端权威操作） =====
         ServerPlayNetworking.registerGlobalReceiver(TrinketInteractPayload.ID, (payload, context) -> {
             DebugLogger.entering("ModNetworking", "TrinketInteractPayload handler");
@@ -583,10 +636,11 @@ public class ModNetworking {
                     }
 
                     net.minecraft.world.item.ItemStack carried = player.containerMenu.getCarried();
-                    // 服务端 carried 与客户端不同步（例如客户端刚点击拿起物品、点击数据包尚未被服务端
-                    // 处理）时，以客户端上报的 cursor 兜底；服务端槽位状态与 validator 校验仍然权威。
                     net.minecraft.world.item.ItemStack reported = payload.cursor() != null ? payload.cursor() : net.minecraft.world.item.ItemStack.EMPTY;
-                    net.minecraft.world.item.ItemStack cursor = !carried.isEmpty() ? carried : reported;
+                    // 生存模式不得信任客户端上报的任意 ItemStack；只有创造模式允许把本地创造栏
+                    // 生成的虚拟光标物品作为兜底。标准生存物品栏点击会先同步服务端 carried。
+                    boolean creativeCursor = player.hasInfiniteMaterials();
+                    net.minecraft.world.item.ItemStack cursor = creativeCursor ? reported : carried;
                     net.minecraft.world.item.ItemStack slotStack = access.get();
 
                     DebugLogger.info("ModNetworking", "TrinketReq group=%s[%d] action=%d serverCarried=%s cursor=%s(%d) slot=%s",
@@ -611,11 +665,27 @@ public class ModNetworking {
                                         cursor.getHoverName().getString(), payload.groupKey(), payload.slotIndex());
                                 break;
                             }
-                            access.set(cursor.copy());
+                            int placeCount = Math.min(cursor.getCount(), access.maxStackSize(cursor));
+                            if (placeCount <= 0) {
+                                DebugLogger.info("ModNetworking", "PLACE rejected: slot %s[%d] has no capacity",
+                                        payload.groupKey(), payload.slotIndex());
+                                break;
+                            }
+                            net.minecraft.world.item.ItemStack placed = cursor.copyWithCount(placeCount);
+                            if (!access.set(placed)) {
+                                DebugLogger.info("ModNetworking", "PLACE rejected by slot access: %s[%d]",
+                                        payload.groupKey(), payload.slotIndex());
+                                break;
+                            }
                             inv.setChanged();
-                            TrinketUtilities.callTrinketEquipmentChange(slotStack, cursor, access, player);
-                            player.containerMenu.setCarried(net.minecraft.world.item.ItemStack.EMPTY);
-                            DebugLogger.info("ModNetworking", "Trinket PLACE: %s -> %s[%d]", cursor.getHoverName().getString(), payload.groupKey(), payload.slotIndex());
+                            TrinketUtilities.callTrinketEquipmentChange(slotStack, placed, access, player);
+                            net.minecraft.world.item.ItemStack remainder = cursor.copy();
+                            remainder.shrink(placeCount);
+                            player.containerMenu.setCarried(creativeCursor || remainder.isEmpty()
+                                    ? net.minecraft.world.item.ItemStack.EMPTY : remainder);
+                            DebugLogger.info("ModNetworking", "Trinket PLACE: %s x%d -> %s[%d], remainder=%d",
+                                    placed.getHoverName().getString(), placed.getCount(), payload.groupKey(),
+                                    payload.slotIndex(), remainder.getCount());
                             break;
                         case TrinketInteractPayload.ACTION_TAKE:
                             if (slotStack.isEmpty()) {
@@ -623,7 +693,8 @@ public class ModNetworking {
                                         payload.groupKey(), payload.slotIndex());
                                 break;
                             }
-                            player.containerMenu.setCarried(slotStack.copy());
+                            player.containerMenu.setCarried(creativeCursor
+                                    ? net.minecraft.world.item.ItemStack.EMPTY : slotStack.copy());
                             access.set(net.minecraft.world.item.ItemStack.EMPTY);
                             inv.setChanged();
                             TrinketUtilities.callTrinketEquipmentChange(slotStack, net.minecraft.world.item.ItemStack.EMPTY, access, player);
@@ -639,8 +710,18 @@ public class ModNetworking {
                                         cursor.getHoverName().getString(), payload.groupKey(), payload.slotIndex());
                                 break;
                             }
-                            access.set(cursor.copy());
-                            player.containerMenu.setCarried(slotStack.copy());
+                            if (cursor.getCount() > access.maxStackSize(cursor)) {
+                                DebugLogger.info("ModNetworking", "SWAP rejected: %s x%d exceeds slot limit %d",
+                                        cursor.getHoverName().getString(), cursor.getCount(), access.maxStackSize(cursor));
+                                break;
+                            }
+                            if (!access.set(cursor.copy())) {
+                                DebugLogger.info("ModNetworking", "SWAP rejected by slot access: %s[%d]",
+                                        payload.groupKey(), payload.slotIndex());
+                                break;
+                            }
+                            player.containerMenu.setCarried(creativeCursor
+                                    ? net.minecraft.world.item.ItemStack.EMPTY : slotStack.copy());
                             inv.setChanged();
                             TrinketUtilities.callTrinketEquipmentChange(slotStack, cursor, access, player);
                             DebugLogger.info("ModNetworking", "Trinket SWAP: cursor <-> %s[%d]", payload.groupKey(), payload.slotIndex());

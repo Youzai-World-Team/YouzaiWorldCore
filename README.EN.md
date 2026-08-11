@@ -448,7 +448,7 @@ Each slot has a custom icon and the `trinkets:default` validator; `order` contro
 
 - **Server-authoritative**: All operations are submitted through the C→S packet `trinket_interact` (`TrinketInteractPayload`); the server mutates authoritative data via the Trinkets API, and the Trinkets network layer syncs it back to the client and persists it
 - **Four actions**: `ACTION_PLACE` (cursor → slot, 0), `ACTION_TAKE` (slot → cursor, 1), `ACTION_SWAP` (2), `ACTION_QUICK_MOVE` (Shift + left click, slot → main inventory 0–35, 3)
-- **Cursor fallback**: The packet carries the client's current cursor stack (`cursor`). The server prefers its own `containerMenu.getCarried()`, falling back to the reported value when the two are out of sync (e.g. clicking the indicator immediately after picking up an item, before the click packet is processed), so operations are never silently dropped; slot state and validation always remain server-authoritative
+- **Cursor validation**: The packet carries the client's current cursor stack (`cursor`). Survival trusts only the server's `containerMenu.getCarried()`, while creative may use its client-generated virtual cursor; slot state, stack limits, and validators always remain server-authoritative
 - **Local preview**: The client previews the result locally before the server confirmation arrives, removing perceived interaction latency
 - **Native slot suppression**: `SurvivalTrinketSlotYzuiMixin` forces Trinkets' `SurvivalTrinketSlot#isActive()` to return `false` while a YZUI screen is open, preventing its injected slots from rendering as "useless cells" beside the armor slots and from overlapping the YZUI indicator coordinates. With YZUI off nothing is intercepted, so the native Trinkets inventory behaves normally (the mixin declares `targets = "eu.pb4.trinkets.impl.SurvivalTrinketSlot"` as a string to avoid a compile-time dependency on the implementation package)
 
@@ -478,8 +478,9 @@ A purely client-side, whole-interface restyle that replaces the vanilla inventor
 `InventoryScreenSwitchMixin` intercepts `Gui#setScreen` and swaps vanilla screens for custom implementations while YZUI is on (`InventoryScreen` → routed by game mode; `CreativeModeInventoryScreen` → YZUI creative screen):
 
 - **`YzuInventoryScreen` (survival inventory)**: Keeps the vanilla `InventoryMenu` slot coordinates, changing only the look — translucent white rounded panel, rounded slot backgrounds (highlighted on hover), brown offhand slot tint. When the recipe book is open, a YZUI-styled recipe book panel renders on the left with its toggle button above the offhand slot
-- **`YzuCreativeInventoryScreen` (creative inventory)**: A fully custom-drawn creative screen (356×168) that self-populates from `BuiltInRegistries.ITEM`, with category tabs (each with its own accent color), a search box (last search text remembered across sessions), a 9×7 item grid with a scrollbar on the right, plus a right column holding the 3D player model, 2×2 armor and offhand slots, the 3×9 survival inventory, and the hotbar
-- **Drag gestures**: Left-drag merges same-type items when holding a stack, `Shift + left-drag` bulk quick-transfers; the creative screen supports right-click-take-half with live computation of the expected remaining cursor count
+- **`YzuCreativeInventoryScreen` (creative inventory)**: A fully custom-drawn creative screen (356×168) using the complete item variants from the vanilla creative search tab, with category tabs, a remembered search box, a 9×7 item grid and scrollbar, plus a right column holding the 3D player model, 2×2 armor and offhand slots, the 3×9 survival inventory, and the hotbar
+- **Mouse Tweaks gestures**: The survival inventory and the creative screen's right-side storage support right-drag distribution, left-drag collection of matching items, continuous Shift + left-drag quick-move (matching items only while holding a stack), and wheel-based single-item push/pull between the main inventory and hotbar
+- **Vanilla creative controls**: The left item grid supports Q / Ctrl+Q drop, F to offhand, 1–9 to hotbar, and pick-item clone; the right-side real inventory uses creative slot synchronization so equipment and quick-move actions do not create ghost items
 
 #### 37.2 HUD Components
 
@@ -700,9 +701,9 @@ All commands use `/yzwc` as the root command. Subcommands marked **(client comma
 | `decomposition_table` | Decomposition Table |
 | `fly_beacon`          | Fly Beacon          |
 
-### Network Packets (42 total)
+### Network Packets (44 total)
 
-> Note: the `world_pool_teleport` packet class lives in the `dimensionalinventories` package; the rest (including the 18 mail packets) are in the `network` package. Direction split: 19 S→C, 23 C→S.
+> Note: the `world_pool_teleport` packet class lives in the `dimensionalinventories` package; the rest (including the 18 mail packets) are in the `network` package. Direction split: 18 S→C, 26 C→S.
 
 | Packet ID                   | Direction | Purpose                                                                                       |
 | --------------------------- | --------- | --------------------------------------------------------------------------------------------- |
@@ -736,7 +737,8 @@ All commands use `/yzwc` as the root command. Subcommands marked **(client comma
 | `attribute_upgrade`         | C→S       | Request to allocate a point to an attribute                                                   |
 | `double_doors_toggle`       | C→S       | Toggle / query own Double Doors setting                                                       |
 | `pet_command`               | C→S       | Forward `/yzwc pet` client command to server                                                  |
-| `trinket_interact`          | C→S       | YZUI trinket slot interaction (place/take/swap/quick-move, carries client cursor as fallback) |
+| `trinket_interact`          | C→S       | YZUI trinket interaction (place/take/swap/quick-move; trusts client cursor in creative only)  |
+| `inventory_collect`        | C→S       | Collect a matching slot stack into the cursor during YZUI survival left-drag                 |
 | `mail_compose_open`         | C→S       | Request to open compose GUI                                                                   |
 | `mail_open`                 | C→S       | Request inbox list                                                                            |
 | `mail_sent_list_request`    | C→S       | Request sent-mail list                                                                        |
@@ -796,7 +798,7 @@ src/                                       # 411 Java source files (main 252 / c
 │   ├── mail/                             # Mail system (Mail / MailManager / SentMailRepository / MailDataStorage / MailSettings / MailPermissionHelper)
 │   ├── mana/                             # Mana system
 │   ├── mixin/                            # Mixins (subpackages: afk / babyzombie / chargedcreeper / craftsound / doubledoors / invisibility / jukebox / painting / pet / seat / skill / trialvault)
-│   ├── network/                          # Network packets (42 packet classes + ModNetworking)
+│   ├── network/                          # Network packets (43 packet classes + ModNetworking)
 │   ├── pet/                              # Pet system (config/command/event subpackages + PetGlobalState/PetEntry)
 │   ├── placeholders/                     # Placeholder API (32 placeholders)
 │   ├── screen/                           # Container menus

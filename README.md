@@ -448,7 +448,7 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 
 - **服务端权威**：所有操作经 C→S 数据包 `trinket_interact`（`TrinketInteractPayload`）提交，服务端通过 Trinkets API 修改权威数据后由 Trinkets 网络层同步回客户端并持久化
 - **四种操作**：`ACTION_PLACE`（光标→槽，0）、`ACTION_TAKE`（槽→光标，1）、`ACTION_SWAP`（互换，2）、`ACTION_QUICK_MOVE`（Shift+左键，槽→主物品栏 0–35，3）
-- **光标兜底**：数据包携带客户端当前鼠标物品（`cursor`）。服务端优先使用自身 `containerMenu.getCarried()`，两者不同步时（如点击拿起物品后立刻点击指示器、点击包尚未被服务端处理）以客户端上报值兜底，避免操作被静默丢弃；槽位状态与校验始终以服务端为准
+- **光标校验**：数据包携带客户端当前鼠标物品（`cursor`）。生存模式只信任服务端 `containerMenu.getCarried()`，创造模式才使用客户端生成的虚拟光标物品；槽位状态、堆叠上限与校验器始终以服务端为准
 - **本地预览**：客户端在收到服务端确认前先行本地预览，消除交互延迟感
 - **原生槽位屏蔽**：`SurvivalTrinketSlotYzuiMixin` 在 YZUI 屏幕下强制 Trinkets 的 `SurvivalTrinketSlot#isActive()` 返回 `false`，避免其注入槽位在装备位两侧渲染出"无用格子"并与 YZUI 指示器坐标重叠误触；YZUI 关闭时不拦截，Trinkets 原生物品栏行为不受影响（该 Mixin 以 `targets = "eu.pb4.trinkets.impl.SurvivalTrinketSlot"` 字符串声明，避免编译期强依赖实现包）
 
@@ -478,8 +478,9 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 `InventoryScreenSwitchMixin` 拦截 `Gui#setScreen`，在 YZUI 开启时将原版屏幕替换为自定义实现（`InventoryScreen` → 按游戏模式分流；`CreativeModeInventoryScreen` → YZUI 创造屏）：
 
 - **`YzuInventoryScreen`（生存物品栏）**：沿用原版 `InventoryMenu` 固定槽位坐标，仅外观改为 YZUI 圆角风格——半透明白色圆角面板、圆角槽位背景（悬浮高亮）、褐色副手槽底色；配方书打开时于左侧渲染 YZUI 风格配方书面板，切换按钮置于副手槽上方
-- **`YzuCreativeInventoryScreen`（创造物品栏）**：完全自绘的创造屏（356×168），内部经 `BuiltInRegistries.ITEM` 自填充物品，含分类标签页（每页配色独立）、搜索框（跨会话记忆上次搜索文本）、9×7 物品网格 + 右侧滚动条，以及右栏的玩家 3D 模型、装备 2×2 与副手槽、3×9 生存物品栏、底部快捷栏
-- **拖拽手势**：左键拖拽在有物品时合并同种物品，`Shift + 左键拖拽`批量快速转移；创造屏支持右键取半并实时计算鼠标预期剩余数量
+- **`YzuCreativeInventoryScreen`（创造物品栏）**：完全自绘的创造屏（356×168），使用原版创造搜索标签中的完整物品变体，含分类标签页（每页配色独立）、搜索框（跨会话记忆上次搜索文本）、9×7 物品网格 + 右侧滚动条，以及右栏的玩家 3D 模型、装备 2×2 与副手槽、3×9 生存物品栏、底部快捷栏
+- **Mouse Tweaks 手势**：生存物品栏及创造屏右侧背包支持右键持物拖拽逐个分发、左键取物后拖拽收集同类、Shift+左键拖拽连续快速移动（持物时只移动同类），以及在主背包与快捷栏之间滚轮逐个推出/拉入
+- **创造模式原版操作**：左侧物品网格支持 Q / Ctrl+Q 丢弃、F 放入副手、1–9 放入快捷栏、选取方块键克隆；右侧真实背包通过创造模式槽位同步协议执行，避免装备与快捷移动产生幽灵物品
 
 #### 37.2 HUD 组件
 
@@ -700,9 +701,9 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 | `decomposition_table` | 分解台   |
 | `fly_beacon`          | 飞行信标 |
 
-### 网络数据包（共 42 个）
+### 网络数据包（共 44 个）
 
-> 注：`world_pool_teleport` 数据包类位于 `dimensionalinventories` 包，其余位于 `network` 包；邮件相关 18 个数据包亦位于 `network` 包。方向统计：S→C 19 个，C→S 23 个。
+> 注：`world_pool_teleport` 数据包类位于 `dimensionalinventories` 包，其余位于 `network` 包；邮件相关 18 个数据包亦位于 `network` 包。方向统计：S→C 18 个，C→S 26 个。
 
 | 数据包 ID                   | 方向 | 用途                                                               |
 | --------------------------- | ---- | ------------------------------------------------------------------ |
@@ -736,7 +737,8 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 | `attribute_upgrade`         | C→S  | 请求为某项属性加点                                                 |
 | `double_doors_toggle`       | C→S  | 切换 / 查询自身双开门开关                                          |
 | `pet_command`               | C→S  | 转发 `/yzwc pet` 客户端命令至服务端执行                            |
-| `trinket_interact`          | C→S  | YZUI 饰品槽交互（放入/取出/交换/快捷移动，携带客户端光标物品兜底） |
+| `trinket_interact`          | C→S  | YZUI 饰品槽交互（放入/取出/交换/快捷移动；仅创造模式信任客户端光标） |
+| `inventory_collect`        | C→S  | YZUI 生存物品栏左键拖拽时，将槽位中的同类物品收集到光标             |
 | `mail_compose_open`         | C→S  | 请求打开发布邮件 GUI                                               |
 | `mail_open`                 | C→S  | 请求收件箱列表                                                     |
 | `mail_sent_list_request`    | C→S  | 请求已发送邮件列表                                                 |
@@ -796,7 +798,7 @@ src/                                       # 411 个 Java 源文件（main 252 /
 │   ├── mail/                             # 邮件系统（Mail / MailManager / SentMailRepository / MailDataStorage / MailSettings / MailPermissionHelper）
 │   ├── mana/                             # 魔力系统
 │   ├── mixin/                            # Mixin（含子包 afk / babyzombie / chargedcreeper / craftsound / doubledoors / invisibility / jukebox / painting / pet / seat / skill / trialvault）
-│   ├── network/                          # 网络数据包（42 个数据包类 + ModNetworking）
+│   ├── network/                          # 网络数据包（43 个数据包类 + ModNetworking）
 │   ├── pet/                              # 宠物系统（config/command/event 子包 + PetGlobalState/PetEntry）
 │   ├── placeholders/                     # Placeholder API 集成（32 个占位符）
 │   ├── screen/                           # 容器菜单

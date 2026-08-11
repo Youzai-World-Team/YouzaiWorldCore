@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
+import top.csituka.youzaiworldcore.network.InventoryCollectPayload;
 import top.csituka.youzaiworldcore.network.TrinketInteractPayload;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 import top.csituka.youzaiworldcore.util.TrinketHelper;
@@ -44,7 +45,10 @@ import eu.pb4.trinkets.impl.TrinketSlot;
  * <li>半透明圆角槽位背景（悬浮时高亮）</li>
  * <li>配方书打开时左侧显示 YZUI 风格配方书面板</li>
  * <li>配方书切换按钮位于副手槽上方</li>
- * <li>左键拖拽手势：有物品时合并同种，Shift+左键拖拽批量快速转移</li>
+ * <li>右键持物拖拽：向经过的槽位逐个分发物品</li>
+ * <li>左键取物后拖拽：收集经过槽位中的同类物品</li>
+ * <li>Shift+左键拖拽：空手连续快速移动任意物品，持物时仅移动同类物品</li>
+ * <li>滚轮：在主背包与快捷栏之间逐个推出或拉入同类物品</li>
  * </ul>
  */
 @SuppressWarnings({ "null", "unused" })
@@ -90,6 +94,8 @@ public class YzuInventoryScreen extends AbstractRecipeBookScreen<InventoryMenu> 
     private boolean gestureDragging;
     /** 拖拽经过的槽位列表 */
     private final List<Integer> gestureSlots = new ArrayList<>();
+    /** Shift+左键持物拖拽时仅处理与该物品相同的槽位；EMPTY 表示空手批量移动任意物品。 */
+    private ItemStack gestureShiftFilter = ItemStack.EMPTY;
     // Trinkets 悬停状态
     private int trinketSourceSlot = -1;
     private java.util.List<TrinketHelper.TrinketSlotInfo> activeTrinketSlots = java.util.List.of();
@@ -158,6 +164,15 @@ public class YzuInventoryScreen extends AbstractRecipeBookScreen<InventoryMenu> 
         return null;
     }
 
+    /** 通过原版容器点击协议执行并同步一次槽位操作。 */
+    private void clickMenuSlot(int slotIndex, int button, ContainerInput input) {
+        LocalPlayer player = this.minecraft != null ? this.minecraft.player : null;
+        if (player == null || this.minecraft.gameMode == null) {
+            return;
+        }
+        this.minecraft.gameMode.handleContainerInput(this.menu.containerId, slotIndex, button, input, player);
+    }
+
     // ========== 鼠标事件（手势拖拽） ==========
 
     @Override
@@ -169,6 +184,8 @@ public class YzuInventoryScreen extends AbstractRecipeBookScreen<InventoryMenu> 
                 gesturePending = true;
                 gestureOriginSlot = getSlotIndex(slot);
                 gestureMode = 2;
+                gestureShiftFilter = this.menu.getCarried().isEmpty()
+                        ? ItemStack.EMPTY : this.menu.getCarried().copy();
                 gestureProcessed.clear();
                 gestureSlots.clear();
                 return true;
@@ -261,7 +278,7 @@ public class YzuInventoryScreen extends AbstractRecipeBookScreen<InventoryMenu> 
                 if (gestureMode == 2) {
                     LocalPlayer player = this.minecraft.player;
                     if (player != null) {
-                        this.menu.clicked(gestureOriginSlot, 0, ContainerInput.QUICK_MOVE, player);
+                        processGestureSlot(gestureOriginSlot);
                     }
                 }
                 resetGesture();
@@ -282,8 +299,13 @@ public class YzuInventoryScreen extends AbstractRecipeBookScreen<InventoryMenu> 
         if (player == null)
             return;
         if (gestureMode == 2) {
-            // Shift 批量拖拽：快速转移
-            this.menu.clicked(slotIndex, 0, ContainerInput.QUICK_MOVE, player);
+            // 空手 Shift 拖拽处理所有物品；持物 Shift 拖拽只处理同类物品。
+            Slot slot = this.menu.getSlot(slotIndex);
+            if (!slot.hasItem() || (!gestureShiftFilter.isEmpty()
+                    && !ItemStack.isSameItemSameComponents(slot.getItem(), gestureShiftFilter))) {
+                return;
+            }
+            clickMenuSlot(slotIndex, 0, ContainerInput.QUICK_MOVE);
             return;
         }
         if (gestureMode == 1) {
@@ -291,14 +313,50 @@ public class YzuInventoryScreen extends AbstractRecipeBookScreen<InventoryMenu> 
             ItemStack ca = this.menu.getCarried();
             if (ca.isEmpty())
                 return;
-            this.menu.clicked(slotIndex, 0, ContainerInput.PICKUP, player);
+            Slot slot = this.menu.getSlot(slotIndex);
+            ItemStack slotStack = slot.getItem();
+            if (slotStack.isEmpty() || !ItemStack.isSameItemSameComponents(ca, slotStack)
+                    || ca.getCount() >= ca.getMaxStackSize()) {
+                return;
+            }
+            int move = Math.min(ca.getMaxStackSize() - ca.getCount(), slotStack.getCount());
+            ItemStack previewCarried = ca.copy();
+            previewCarried.grow(move);
+            ItemStack previewSlot = slotStack.copy();
+            previewSlot.shrink(move);
+            slot.set(previewSlot.isEmpty() ? ItemStack.EMPTY : previewSlot);
+            slot.setChanged();
+            this.menu.setCarried(previewCarried);
+            ClientPlayNetworking.send(new InventoryCollectPayload(this.menu.containerId, slotIndex));
         }
     }
 
     private void resetGesture() {
+        gesturePending = false;
+        gestureDragging = false;
         gestureMode = 0;
+        gestureShiftFilter = ItemStack.EMPTY;
         gestureProcessed.clear();
         gestureSlots.clear();
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+        if (scrollY != 0.0 && this.menu.getCarried().isEmpty()) {
+            Slot hovered = getSlotAt((int) mouseX, (int) mouseY);
+            int slotIndex = hovered != null ? getSlotIndex(hovered) : -1;
+            if (MouseTweaksSupport.isStorageSlot(slotIndex)) {
+                int steps = Math.max(1, (int) Math.round(Math.abs(scrollY)));
+                for (int i = 0; i < steps; i++) {
+                    if (!MouseTweaksSupport.scrollOne(this.menu, this.minecraft.player, slotIndex, scrollY,
+                            this::clickMenuSlot)) {
+                        break;
+                    }
+                }
+                return true;
+            }
+        }
+        return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
     }
 
     // ========== YZUI 面板绘制方法 ==========
@@ -543,8 +601,8 @@ public class YzuInventoryScreen extends AbstractRecipeBookScreen<InventoryMenu> 
         } else {
             return;
         }
-        // 携带 cursor 一并上报：服务端 carried 与客户端不同步（如刚点击拿起物品、
-        // 点击数据包尚未处理）时以 cursor 兜底，避免操作被静默丢弃。
+        // 光标内容随请求上报；服务端仅在创造模式使用该虚拟光标，
+        // 生存模式始终以服务端 containerMenu.getCarried() 为准。
         ClientPlayNetworking.send(new TrinketInteractPayload(tsi.groupKey(), tsi.slotIndex(), action, carried));
         // 本地预览：立即更新鼠标物品与槽位显示（服务端权威广播到达后最终校正）。
         // 注意只修改客户端本地状态，服务端仍以权威数据为准。
@@ -571,7 +629,7 @@ public class YzuInventoryScreen extends AbstractRecipeBookScreen<InventoryMenu> 
     /**
      * Shift+左键点击指示器：将饰品槽内物品快捷移动到主物品栏/快捷栏（槽位 9..45，不含副手）。
      * <p>
-     * 直接复用标准 menu.clicked(QUICK_MOVE) 点击：客户端与服务端均由 Trinkets 的
+     * 通过标准容器点击协议发送 QUICK_MOVE：客户端与服务端均由 Trinkets 的
      * InventoryMenuMixin.quickMove 拦截 trinket 槽索引并执行
      * {@code moveItemStackTo(stack, 9, 45, false)}，与原版 shift+点击 trinket 槽行为完全一致，
      * 槽位内容与物品栏槽位由标准菜单同步广播校正。
@@ -604,7 +662,7 @@ public class YzuInventoryScreen extends AbstractRecipeBookScreen<InventoryMenu> 
         }
         DebugLogger.info("TrinketClick", "Shift-click on %s[%d] -> QUICK_MOVE to inventory (menu slot %d)",
                 tsi.groupKey(), tsi.slotIndex(), slotIdx);
-        this.menu.clicked(slotIdx, 0, ContainerInput.QUICK_MOVE, player);
+        clickMenuSlot(slotIdx, 0, ContainerInput.QUICK_MOVE);
         // 让下一次 tick 重新查询
         trinketSourceSlot = -1;
         activeTrinketSlots = List.of();

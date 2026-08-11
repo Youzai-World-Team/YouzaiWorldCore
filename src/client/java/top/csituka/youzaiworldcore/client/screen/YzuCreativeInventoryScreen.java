@@ -4,6 +4,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.inventory.CreativeInventoryListener;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
@@ -16,7 +17,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.CreativeModeTabs;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.inventory.ContainerInput;
 import org.jspecify.annotations.NonNull;
@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 
 import top.csituka.youzaiworldcore.itemborder.ItemBorderRenderer;
@@ -34,6 +35,18 @@ import top.csituka.youzaiworldcore.network.TrinketInteractPayload;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 import top.csituka.youzaiworldcore.util.TrinketHelper;
 
+/**
+ * YZUI 创造模式物品栏屏幕。
+ * <p>
+ * 左侧提供创造物品分类、搜索和物品选择，右侧保留玩家的真实装备与背包槽位。
+ * 右侧背包区域支持以下 Mouse Tweaks 手势：
+ * <ul>
+ * <li>右键持物拖拽：向经过的槽位逐个分发物品</li>
+ * <li>左键取物后拖拽：收集经过槽位中的同类物品</li>
+ * <li>Shift+左键拖拽：空手连续快速移动任意物品，持物时仅移动同类物品</li>
+ * <li>滚轮：在主背包与快捷栏之间逐个推出或拉入同类物品</li>
+ * </ul>
+ */
 @SuppressWarnings("null")
 public class YzuCreativeInventoryScreen extends Screen {
 
@@ -64,11 +77,10 @@ public class YzuCreativeInventoryScreen extends Screen {
     private static String lastSearch = "";
 
     /**
-     * 全物品列表 + 小写名称索引的进程级缓存。
+     * 原版搜索标签物品变体 + 小写名称索引的进程级缓存。
      * <p>
-     * 物品注册表在运行期不变，没必要每次 {@link #init()}（开屏、改窗口大小都会触发）
-     * 都重建几千个 ItemStack、并对每个调用 {@code getHoverName().getString()}。
-     * 注册表条目数或语言变化时自动重建。
+     * 没必要每次 {@link #init()}（开屏、改窗口大小都会触发）都重新处理几千个
+     * ItemStack。注册表、创造标签构建参数或语言变化时会自动重建。
      */
     private static List<ItemStack> cachedAllItems;
     private static List<String> cachedAllItemNames;
@@ -76,6 +88,8 @@ public class YzuCreativeInventoryScreen extends Screen {
     private static String cachedLanguage;
 
     private final @NonNull Player player;
+    /** 原版创造物品栏使用的槽位监听器，负责把 InventoryMenu 的本地变更同步给服务端。 */
+    private CreativeInventoryListener creativeInventoryListener;
     private final List<CreativeModeTab> tabs = new ArrayList<>();
     private CreativeModeTab selTab;
     private EditBox searchBox;
@@ -94,13 +108,16 @@ public class YzuCreativeInventoryScreen extends Screen {
     private boolean pendingDrag;
     private int dragOriginSlot;
     private final List<Integer> draggedSlots = new ArrayList<>();
-    /** 0=无手势, 1=合并拖拽（左键有物品拖过相同物品），2=Shift批量拖拽（Shift+左键拖过任意物品） */
+    /** 0=无手势, 1=合并拖拽（左键有物品拖过相同物品），2=Shift批量拖拽（空手任意、持物同类） */
     private int yzwcDragMode;
+    /** Shift+左键持物拖拽时仅快速移动同类物品；EMPTY 表示空手拖拽任意物品。 */
+    private ItemStack shiftDragFilter = ItemStack.EMPTY;
     /** 手势拖拽中已处理过的槽位（避免重复处理） */
     private final Set<Integer> processedSlots = new HashSet<>();
     // 双击检测
     private long lastClickTime;
     private int lastClickSlot = -1;
+    private int lastClickButton = -1;
     // Trinkets 悬停状态
     private int trinketSourceSlot = -1;
     /** 上次向 Trinkets 查询过的槽位（含"查了但没有饰品槽"的结果），避免同一槽位每帧重复查询 */
@@ -137,7 +154,38 @@ public class YzuCreativeInventoryScreen extends Screen {
         rebuildVis();
 
         super.init();
+        registerCreativeInventoryListener();
         LOG.info("init lp={} tp={} tabs={} allItems={} vis={}", lp, tp, tabs.size(), allItems.size(), vis.size());
+    }
+
+    /**
+     * 注册原版创造物品栏槽位监听器。
+     * <p>
+     * {@link net.minecraft.world.inventory.InventoryMenu#clicked} 只修改客户端本地菜单；原版
+     * {@code CreativeModeInventoryScreen} 会在每次点击后调用 {@code broadcastChanges()}，再由此
+     * 监听器通过创造模式槽位数据包同步服务端。缺少该监听器会产生仅客户端可见的幽灵物品。
+     */
+    private void registerCreativeInventoryListener() {
+        if (creativeInventoryListener != null) {
+            player.inventoryMenu.removeSlotListener(creativeInventoryListener);
+        }
+        creativeInventoryListener = new CreativeInventoryListener(minecraft);
+        player.inventoryMenu.addSlotListener(creativeInventoryListener);
+        DebugLogger.info("YzuCreativeInventoryScreen", "已注册创造模式物品栏同步监听器");
+    }
+
+    @Override
+    public void removed() {
+        super.removed();
+        // 原版创造界面使用一次性的 ItemPickerMenu，关闭后光标副本随菜单一起丢弃；
+        // YZUI 复用了长期存在的 InventoryMenu，因此必须显式清空，避免下次打开残留隐藏光标物品。
+        player.inventoryMenu.setCarried(ItemStack.EMPTY);
+        resetDragState();
+        if (creativeInventoryListener != null) {
+            player.inventoryMenu.removeSlotListener(creativeInventoryListener);
+            creativeInventoryListener = null;
+            DebugLogger.info("YzuCreativeInventoryScreen", "已移除创造模式物品栏同步监听器");
+        }
     }
 
     private void initSearch() {
@@ -165,17 +213,16 @@ public class YzuCreativeInventoryScreen extends Screen {
         try {
             var level = player.level();
             var features = level.enabledFeatures();
-            boolean op = player.isCreative() || player.isSpectator();
+            boolean op = player.canUseGameMasterBlocks() && minecraft.options.operatorItemsTab().get();
             var holders = level.registryAccess(); // RegistryAccess implements HolderLookup.Provider
-            var params = new CreativeModeTab.ItemDisplayParameters(features, op, holders);
-            for (CreativeModeTab tab : tabs) {
-                if (tab.getDisplayItems() == null || tab.getDisplayItems().isEmpty()) {
-                    tab.buildContents(params);
-                }
+            if (CreativeModeTabs.tryRebuildTabContents(features, op, holders)) {
+                // 功能旗标、权限或注册表变化后，搜索标签内容也会变化，必须丢弃旧缓存。
+                cachedAllItems = null;
+                cachedAllItemNames = null;
             }
-            LOG.debug("forceBuildTabContents done for {} tabs", tabs.size());
+            DebugLogger.info("YzuCreativeInventoryScreen", "已构建 %d 个可见创造模式分类", tabs.size());
         } catch (Exception e) {
-            LOG.warn("forceBuildTabContents failed: {}", e.getMessage());
+            DebugLogger.exception("YzuCreativeInventoryScreen", "forceBuildTabContents", e);
         }
     }
 
@@ -183,20 +230,21 @@ public class YzuCreativeInventoryScreen extends Screen {
         int registrySize = BuiltInRegistries.ITEM.size();
         String language = Minecraft.getInstance().getLanguageManager().getSelected();
         if (cachedAllItems == null || cachedRegistrySize != registrySize || !language.equals(cachedLanguage)) {
-            List<ItemStack> stacks = new ArrayList<>(registrySize);
-            List<String> names = new ArrayList<>(registrySize);
-            for (Item item : BuiltInRegistries.ITEM) {
-                ItemStack st = new ItemStack(item);
+            Collection<ItemStack> searchItems = CreativeModeTabs.searchTab().getDisplayItems();
+            List<ItemStack> stacks = new ArrayList<>(Math.max(registrySize, searchItems.size()));
+            List<String> names = new ArrayList<>(Math.max(registrySize, searchItems.size()));
+            for (ItemStack st : searchItems) {
                 if (st.isEmpty())
                     continue;
                 stacks.add(st);
-                names.add(st.getHoverName().getString().toLowerCase());
+                names.add(st.getHoverName().getString().toLowerCase(Locale.ROOT));
             }
             cachedAllItems = List.copyOf(stacks);
             cachedAllItemNames = List.copyOf(names);
             cachedRegistrySize = registrySize;
             cachedLanguage = language;
-            LOG.debug("rebuilt item cache: {} items", cachedAllItems.size());
+            DebugLogger.info("YzuCreativeInventoryScreen", "已重建创造模式搜索缓存，共 %d 个物品变体",
+                    cachedAllItems.size());
         }
         allItems = cachedAllItems;
         allItemNames = cachedAllItemNames;
@@ -207,7 +255,7 @@ public class YzuCreativeInventoryScreen extends Screen {
         if (selTab == null) {
             tabItems = null;
             // 搜索/全部模式：按搜索文本过滤预先算好的小写名称索引
-            String q = searchBox != null ? searchBox.getValue().toLowerCase().trim() : "";
+            String q = searchBox != null ? searchBox.getValue().toLowerCase(Locale.ROOT).trim() : "";
             int n = allItems.size();
             if (q.isEmpty()) {
                 for (int i = 0; i < n; i++)
@@ -439,7 +487,9 @@ public class YzuCreativeInventoryScreen extends Screen {
             for (int i = 0; i < activeTrinketSlots.size(); i++) {
                 int sx = indStartX + i * (SS + SG);
                 TrinketHelper.TrinketSlotInfo slotInfo = activeTrinketSlots.get(i);
-                ItemStack ti = slotInfo.stack();
+                // TrinketSlotInfo 是悬停时创建的快照；必须通过 access 读取实时内容，
+                // 否则放入/取出后会一直绘制旧物品，直到指示器关闭并重新查询。
+                ItemStack ti = TrinketHelper.getSlotStack(slotInfo);
                 if (ti.isEmpty()) {
                     // 空槽：绘制 Trinkets 自定义占位图标
                     Identifier iconId = TrinketHelper.getSlotIcon(slotInfo);
@@ -469,55 +519,54 @@ public class YzuCreativeInventoryScreen extends Screen {
         return (mx - baseX) / (SS + SG);
     }
 
-    /** 处理 Trinket 饰品槽点击（左键取放/右键取半）。已改为通过 C2S 数据包发送到服务端执行。 */
+    /** 处理 Trinket 饰品槽点击（左键取放/交换，右键取放）。 */
     private void trinketHandleClick(TrinketHelper.TrinketSlotInfo tsi, int button) {
         ItemStack carried = minecraft.player.containerMenu.getCarried();
         ItemStack slotStack = TrinketHelper.getSlotStack(tsi);
         byte action;
-        if (button == 0) {
-            if (carried.isEmpty() && !slotStack.isEmpty()) {
-                action = TrinketInteractPayload.ACTION_TAKE;
-            } else if (!carried.isEmpty() && slotStack.isEmpty()) {
-                action = TrinketInteractPayload.ACTION_PLACE;
-            } else {
-                action = TrinketInteractPayload.ACTION_SWAP;
-            }
-        } else if (button == 1 && !slotStack.isEmpty()) {
-            // 右键取半：在客户端模拟，再发放入
-            int half = (slotStack.getCount() + 1) / 2;
-            if (carried.isEmpty()) {
-                // 客户端先模拟取半，然后将剩余放回服务端
-                minecraft.player.containerMenu.setCarried(slotStack.copy());
-                slotStack.shrink(half);
-                TrinketHelper.setSlotStack(tsi, slotStack);
-                // 服务端同步：先取整个，客户端已手动缩小不要覆盖
-                ClientPlayNetworking.send(new TrinketInteractPayload(tsi.groupKey(), tsi.slotIndex(), TrinketInteractPayload.ACTION_TAKE));
-                return;
-            } else {
-                // 有携带物右键放1个：客户端模拟放1
-                ItemStack one = carried.copy();
-                one.setCount(1);
-                minecraft.player.containerMenu.setCarried(carried);
-                // 服务端：放下1个
-                ClientPlayNetworking.send(new TrinketInteractPayload(tsi.groupKey(), tsi.slotIndex(), TrinketInteractPayload.ACTION_PLACE));
-                return;
-            }
+        if (button < 0 || button > 1) {
+            return;
+        }
+        if (carried.isEmpty() && !slotStack.isEmpty()) {
+            action = TrinketInteractPayload.ACTION_TAKE;
+        } else if (!carried.isEmpty() && slotStack.isEmpty()) {
+            action = TrinketInteractPayload.ACTION_PLACE;
+        } else if (button == 0 && !carried.isEmpty() && !slotStack.isEmpty()) {
+            action = TrinketInteractPayload.ACTION_SWAP;
         } else {
             return;
         }
+
+        if ((action == TrinketInteractPayload.ACTION_PLACE || action == TrinketInteractPayload.ACTION_SWAP)
+                && !TrinketHelper.canPlaceInSlot(tsi, carried, player)) {
+            DebugLogger.info("TrinketClick", "物品 %s 未通过饰品槽 %s[%d] 的客户端校验",
+                    carried.getHoverName().getString(), tsi.groupKey(), tsi.slotIndex());
+            return;
+        }
+
         // 发送 C2S 数据包（携带 cursor 兜底服务端 carried 不同步）
         ClientPlayNetworking.send(new TrinketInteractPayload(tsi.groupKey(), tsi.slotIndex(), action, carried));
         // 本地预览：立即更新鼠标物品与槽位显示（服务端权威广播到达后最终校正）
         try {
             if (action == TrinketInteractPayload.ACTION_PLACE && !carried.isEmpty()) {
-                minecraft.player.containerMenu.setCarried(ItemStack.EMPTY);
-                TrinketHelper.setSlotStack(tsi, carried.copy());
+                int placeCount = Math.min(carried.getCount(), TrinketHelper.getSlotMaxStackSize(tsi, carried));
+                if (placeCount > 0) {
+                    ItemStack placed = carried.copyWithCount(placeCount);
+                    if (TrinketHelper.setSlotStack(tsi, placed)) {
+                        ItemStack remainder = carried.copy();
+                        remainder.shrink(placeCount);
+                        minecraft.player.containerMenu.setCarried(remainder.isEmpty() ? ItemStack.EMPTY : remainder);
+                    }
+                }
             } else if (action == TrinketInteractPayload.ACTION_TAKE && !slotStack.isEmpty()) {
-                minecraft.player.containerMenu.setCarried(slotStack.copy());
-                TrinketHelper.setSlotStack(tsi, ItemStack.EMPTY);
+                if (TrinketHelper.setSlotStack(tsi, ItemStack.EMPTY)) {
+                    minecraft.player.containerMenu.setCarried(slotStack.copy());
+                }
             } else if (action == TrinketInteractPayload.ACTION_SWAP && !carried.isEmpty()) {
-                minecraft.player.containerMenu.setCarried(slotStack.copy());
-                TrinketHelper.setSlotStack(tsi, carried.copy());
+                int maxStackSize = TrinketHelper.getSlotMaxStackSize(tsi, carried);
+                if (carried.getCount() <= maxStackSize && TrinketHelper.setSlotStack(tsi, carried.copy())) {
+                    minecraft.player.containerMenu.setCarried(slotStack.copy());
+                }
             }
         } catch (Exception e) {
             DebugLogger.warn("TrinketClick", "Local preview failed: %s", e.getMessage());
@@ -590,13 +639,16 @@ public class YzuCreativeInventoryScreen extends Screen {
         for (int si : draggedSlots) {
             if (si < 0 || si >= slots.size())
                 continue;
-            ItemStack existing = slots.get(si).getItem();
+            Slot slot = slots.get(si);
+            if (!slot.mayPlace(carried))
+                continue;
+            ItemStack existing = slot.getItem();
             if (existing.isEmpty()) {
                 validSlots.add(si);
                 continue;
             }
             if (ItemStack.isSameItemSameComponents(carried, existing)
-                    && existing.getCount() < existing.getMaxStackSize()) {
+                    && existing.getCount() < slot.getMaxStackSize(carried)) {
                 validSlots.add(si);
             }
         }
@@ -606,7 +658,8 @@ public class YzuCreativeInventoryScreen extends Screen {
 
         for (int idx = 0; idx < validCount; idx++) {
             int si = validSlots.get(idx);
-            ItemStack existing = slots.get(si).getItem();
+            Slot slot = slots.get(si);
+            ItemStack existing = slot.getItem();
             int previewCount = existing.getCount();
             if (dragButton == 0) {
                 int avg = carried.getCount() / validCount;
@@ -617,7 +670,7 @@ public class YzuCreativeInventoryScreen extends Screen {
                 previewCount += 1;
             }
             ItemStack preview = existing.isEmpty() ? carried.copy() : existing.copy();
-            preview.setCount(Math.min(previewCount, preview.getMaxStackSize()));
+            preview.setCount(Math.min(previewCount, slot.getMaxStackSize(carried)));
             if (!preview.isEmpty()) {
                 int sx = getSlotScreenX(si), sy = getSlotScreenY(si);
                 g.item(preview, sx, sy, 9999);
@@ -730,6 +783,38 @@ public class YzuCreativeInventoryScreen extends Screen {
         }
     }
 
+    /** 按原版创造物品槽语义处理左侧网格点击。 */
+    private void handleCreativeGridClick(ItemStack gridItem, int button, boolean quickMove) {
+        ItemStack carried = minecraft.player.containerMenu.getCarried();
+
+        if (button == 2) {
+            if (carried.isEmpty()) {
+                pickupItem(gridItem, gridItem.getMaxStackSize());
+            }
+            return;
+        }
+
+        if (!carried.isEmpty() && ItemStack.isSameItemSameComponents(carried, gridItem)) {
+            if (button == 0) {
+                carried.setCount(quickMove ? carried.getMaxStackSize()
+                        : Math.min(carried.getCount() + 1, carried.getMaxStackSize()));
+            } else if (button == 1) {
+                carried.shrink(1);
+            }
+            minecraft.player.containerMenu.setCarried(carried.isEmpty() ? ItemStack.EMPTY : carried);
+            return;
+        }
+
+        if (carried.isEmpty()) {
+            pickupItem(gridItem, quickMove ? gridItem.getMaxStackSize() : gridItem.getCount());
+        } else if (button == 0) {
+            clearCarried();
+        } else if (button == 1) {
+            carried.shrink(1);
+            minecraft.player.containerMenu.setCarried(carried.isEmpty() ? ItemStack.EMPTY : carried);
+        }
+    }
+
     private void clearCarried() {
         minecraft.player.containerMenu.setCarried(ItemStack.EMPTY);
     }
@@ -740,6 +825,7 @@ public class YzuCreativeInventoryScreen extends Screen {
         isDragInProgress = false;
         draggedSlots.clear();
         yzwcDragMode = 0;
+        shiftDragFilter = ItemStack.EMPTY;
         processedSlots.clear();
     }
 
@@ -772,147 +858,31 @@ public class YzuCreativeInventoryScreen extends Screen {
         return true;
     }
 
-    /** 创造模式下的双击收集：手动合并所有同种物品到光标，避免标准 clicked(PICKUP_ALL) 协议导致服务端物品残留。 */
-    private void handlePickupAll(int sourceSlot) {
-        var container = minecraft.player.containerMenu;
-        var slots = player.inventoryMenu.slots;
-        var gameMode = minecraft.gameMode;
-
-        // 确定目标类型：优先用光标物品（首次点击已取到手中），若为空则从触发槽取
-        ItemStack carried = container.getCarried();
-        ItemStack type;
-        if (!carried.isEmpty()) {
-            type = carried;
-        } else {
-            type = slots.get(sourceSlot).getItem();
-            if (type.isEmpty()) return;
+    /**
+     * 按原版创造物品栏的 INVENTORY 标签页路径执行真实背包槽位操作。
+     * <p>
+     * 操作先由客户端 {@code InventoryMenu} 计算，再调用 {@code broadcastChanges()}；
+     * {@link CreativeInventoryListener} 会把所有变化槽位逐个通过创造模式协议同步到服务端。
+     */
+    private void clickInventorySlot(int slotIndex, int button, ContainerInput input) {
+        if (slotIndex < 0 || slotIndex >= player.inventoryMenu.slots.size()) {
+            DebugLogger.warn("YzuCreativeInventoryScreen", "忽略越界槽位点击：slot=%d, input=%s",
+                    slotIndex, input);
+            return;
         }
-
-        int total = carried.isEmpty() ? 0 : carried.getCount();
-        int maxStack = type.getMaxStackSize();
-        if (total >= maxStack) return;
-
-        // 扫描右侧面板所有槽位（5-45：装备/物品栏/热栏/副手），收集同种物品
-        for (int si = 5; si <= 45 && total < maxStack; si++) {
-            if (si == sourceSlot) continue;
-            ItemStack siStack = slots.get(si).getItem();
-            if (siStack.isEmpty() || !ItemStack.isSameItemSameComponents(type, siStack))
-                continue;
-            int take = Math.min(maxStack - total, siStack.getCount());
-            if (take <= 0) continue;
-            total += take;
-            siStack.shrink(take);
-            slots.get(si).setChanged();
-            gameMode.handleCreativeModeItemAdd(siStack.isEmpty() ? ItemStack.EMPTY : siStack, si);
-        }
-
-        // 仅客户端设置光标（创造模式下光标物品是虚拟的，关闭 GUI 即丢弃，不同步 -1 避免服务端误解）
-        ItemStack result = type.copy();
-        result.setCount(total);
-        container.setCarried(result);
+        player.inventoryMenu.clicked(slotIndex, button, input, player);
+        player.inventoryMenu.broadcastChanges();
     }
 
-    /** 处理生存背包的真实容器槽位点击。右键（有携带物）手动+仅槽位同步，避免服务端携带物处理导致丢物品。 */
+    /** 创造模式下的双击收集，与原版 INVENTORY 标签页相同地使用 PICKUP_ALL。 */
+    private void handlePickupAll(int sourceSlot, int button) {
+        clickInventorySlot(sourceSlot, button, ContainerInput.PICKUP_ALL);
+    }
+
+    /** 处理右侧真实背包槽位的左/右键与中键克隆。 */
     private void handleSlotClick(int slotIndex, int button) {
-        if (player.isCreative()) {
-            var gameMode = minecraft.gameMode;
-            var slot = player.inventoryMenu.slots.get(slotIndex);
-            ItemStack si = slot.getItem(), ca = minecraft.player.containerMenu.getCarried();
-
-            // 中键克隆
-            if (button == 2) {
-                if (!si.isEmpty()) {
-                    ItemStack clone = si.copy();
-                    clone.setCount(clone.getMaxStackSize());
-                    minecraft.player.containerMenu.setCarried(clone);
-                }
-                return;
-            }
-
-            if (button == 1) {
-                if (ca.isEmpty()) {
-                    // 空手右键取半：手动分 + handleCreativeModeItemAdd 同步槽位，避免标准协议在创造模式下失效
-                    if (!si.isEmpty()) {
-                        int half = (si.getCount() + 1) / 2;
-                        ItemStack toCursor = si.copy();
-                        toCursor.setCount(half);
-                        si.shrink(half);
-                        slot.setChanged();
-                        minecraft.player.containerMenu.setCarried(toCursor);
-                        gameMode.handleCreativeModeItemAdd(si.isEmpty() ? ItemStack.EMPTY : si, slotIndex);
-                    }
-                } else {
-                    // 有携带物右键：手动操作 + 仅同步槽位（不同步携带物，避免服务端创建物品导致丢出）
-                    if (!si.isEmpty() && ItemStack.isSameItemSameComponents(ca, si)) {
-                        int space = si.getMaxStackSize() - si.getCount();
-                        if (space > 0) {
-                            si.grow(1);
-                            ca.shrink(1);
-                        }
-                        minecraft.player.containerMenu.setCarried(ca.isEmpty() ? ItemStack.EMPTY : ca);
-                        gameMode.handleCreativeModeItemAdd(slot.getItem(), slotIndex);
-                    } else if (si.isEmpty()) {
-                        ItemStack one = ca.copy();
-                        one.setCount(1);
-                        slot.set(one);
-                        slot.setChanged();
-                        ca.shrink(1);
-                        minecraft.player.containerMenu.setCarried(ca.isEmpty() ? ItemStack.EMPTY : ca);
-                        gameMode.handleCreativeModeItemAdd(one, slotIndex);
-                    } // 不同物品：空操作
-                }
-                return;
-            }
-
-            // 左键：手动操作 + handleCreativeModeItemAdd
-            if (ca.isEmpty()) {
-                if (!si.isEmpty()) {
-                    minecraft.player.containerMenu.setCarried(si.copy());
-                    slot.set(ItemStack.EMPTY);
-                    gameMode.handleCreativeModeItemAdd(ItemStack.EMPTY, slotIndex);
-                }
-            } else {
-                if (!si.isEmpty() && ItemStack.isSameItemSameComponents(ca, si)) {
-                    int space = si.getMaxStackSize() - si.getCount();
-                    int move = Math.min(space, ca.getCount());
-                    if (move > 0) {
-                        si.grow(move);
-                        ca.shrink(move);
-                    }
-                    minecraft.player.containerMenu.setCarried(ca.isEmpty() ? ItemStack.EMPTY : ca);
-                    gameMode.handleCreativeModeItemAdd(slot.getItem(), slotIndex);
-                } else {
-                    minecraft.player.containerMenu.setCarried(si.copy());
-                    slot.set(ca.copy());
-                    gameMode.handleCreativeModeItemAdd(ca.copy(), slotIndex);
-                }
-            }
-            return;
-        }
-        // 生存模式（仅作为安全回退，此屏幕仅对创造模式可见）
-        var slot = player.inventoryMenu.slots.get(slotIndex);
-        ItemStack si = slot.getItem(), ca = minecraft.player.containerMenu.getCarried();
-        if (ca.isEmpty()) {
-            if (!si.isEmpty()) {
-                minecraft.player.containerMenu.setCarried(si.copy());
-                slot.set(ItemStack.EMPTY);
-                slot.setChanged();
-            }
-            return;
-        }
-        if (!si.isEmpty() && ItemStack.isSameItemSameComponents(ca, si)) {
-            int space = si.getMaxStackSize() - si.getCount();
-            int move = Math.min(space, ca.getCount());
-            if (move > 0) {
-                si.grow(move);
-                ca.shrink(move);
-                minecraft.player.containerMenu.setCarried(ca.isEmpty() ? ItemStack.EMPTY : ca);
-            }
-        } else {
-            minecraft.player.containerMenu.setCarried(si.copy());
-            slot.set(ca.copy());
-            slot.setChanged();
-        }
+        clickInventorySlot(slotIndex, button == 2 ? 0 : button,
+                button == 2 ? ContainerInput.CLONE : ContainerInput.PICKUP);
     }
 
     private boolean inRect(int mx, int my, int x, int y) {
@@ -1010,9 +980,12 @@ public class YzuCreativeInventoryScreen extends Screen {
         var slots = player.inventoryMenu.slots;
         for (int si : draggedSlots) {
             if (si < 0 || si >= slots.size()) continue;
-            ItemStack existing = slots.get(si).getItem();
+            Slot slot = slots.get(si);
+            if (!slot.mayPlace(carried)) continue;
+            ItemStack existing = slot.getItem();
             if (existing.isEmpty()) { vc++; continue; }
-            if (ItemStack.isSameItemSameComponents(carried, existing) && existing.getCount() < existing.getMaxStackSize()) {
+            if (ItemStack.isSameItemSameComponents(carried, existing)
+                    && existing.getCount() < slot.getMaxStackSize(carried)) {
                 vc++;
             }
         }
@@ -1037,11 +1010,14 @@ public class YzuCreativeInventoryScreen extends Screen {
         List<Integer> validSlots = new ArrayList<>();
         for (int si : draggedSlots) {
             var slot = player.inventoryMenu.slots.get(si);
+            if (!slot.mayPlace(carried)) {
+                continue;
+            }
             ItemStack existing = slot.getItem();
             if (existing.isEmpty()) {
                 validSlots.add(si);
             } else if (ItemStack.isSameItemSameComponents(carried, existing)) {
-                if (existing.getCount() < existing.getMaxStackSize()) {
+                if (existing.getCount() < slot.getMaxStackSize(carried)) {
                     validSlots.add(si);
                 }
             }
@@ -1063,7 +1039,7 @@ public class YzuCreativeInventoryScreen extends Screen {
                 ItemStack existing = slot.getItem();
                 int count = perSlot + (i < remainder ? 1 : 0);
                 if (!existing.isEmpty()) {
-                    int space = existing.getMaxStackSize() - existing.getCount();
+                    int space = slot.getMaxStackSize(carried) - existing.getCount();
                     int put = Math.min(space, count);
                     if (put > 0) {
                         existing.grow(put);
@@ -1072,11 +1048,12 @@ public class YzuCreativeInventoryScreen extends Screen {
                     }
                 } else {
                     ItemStack place = carried.copy();
-                    place.setCount(count);
+                    int put = Math.min(count, slot.getMaxStackSize(carried));
+                    place.setCount(put);
                     slot.set(place);
                     slot.setChanged();
                     gameMode.handleCreativeModeItemAdd(place, si);
-                    carried.shrink(count);
+                    carried.shrink(put);
                 }
             }
         } else if (dragButton == 1) {
@@ -1086,7 +1063,7 @@ public class YzuCreativeInventoryScreen extends Screen {
                 var slot = player.inventoryMenu.slots.get(si);
                 ItemStack existing = slot.getItem();
                 if (!existing.isEmpty()) {
-                    int space = existing.getMaxStackSize() - existing.getCount();
+                    int space = slot.getMaxStackSize(carried) - existing.getCount();
                     if (space > 0) {
                         existing.grow(1);
                         carried.shrink(1);
@@ -1164,10 +1141,12 @@ public class YzuCreativeInventoryScreen extends Screen {
                     dragButton = 0;
                     dragOriginSlot = rpSlot;
                     yzwcDragMode = 2; // Shift批量拖拽
+                    ItemStack carried = minecraft.player.containerMenu.getCarried();
+                    shiftDragFilter = carried.isEmpty() ? ItemStack.EMPTY : carried.copy();
                     processedSlots.clear();
                     return true;
                 }
-                player.inventoryMenu.clicked(rpSlot, 0, ContainerInput.QUICK_MOVE, player);
+                clickInventorySlot(rpSlot, 0, ContainerInput.QUICK_MOVE);
                 return true;
             }
 
@@ -1179,11 +1158,13 @@ public class YzuCreativeInventoryScreen extends Screen {
             // 双击检测（优先于任何点击处理，防止第一次点击清空槽位后 PICKUP_ALL 找不到目标）
             if (ev.button() == 0 || ev.button() == 1) {
                 long now = System.currentTimeMillis();
-                boolean doubleClick = (now - lastClickTime < 250L) && rpSlot == lastClickSlot;
+                boolean doubleClick = (now - lastClickTime < 250L)
+                        && rpSlot == lastClickSlot && ev.button() == lastClickButton;
                 lastClickTime = now;
                 lastClickSlot = rpSlot;
+                lastClickButton = ev.button();
                 if (doubleClick) {
-                    handlePickupAll(rpSlot);
+                    handlePickupAll(rpSlot, ev.button());
                     return true;
                 }
             }
@@ -1196,6 +1177,7 @@ public class YzuCreativeInventoryScreen extends Screen {
                     dragButton = 0;
                     dragOriginSlot = rpSlot;
                     yzwcDragMode = 0;
+                    shiftDragFilter = ItemStack.EMPTY;
                     processedSlots.clear();
                 } else {
                     // 有携带物右键：暂不处理，等 mouseReleased（右键分发拖拽）
@@ -1203,6 +1185,7 @@ public class YzuCreativeInventoryScreen extends Screen {
                     dragButton = 1;
                     dragOriginSlot = rpSlot;
                     yzwcDragMode = 0;
+                    shiftDragFilter = ItemStack.EMPTY;
                 }
                 return true;
             }
@@ -1215,6 +1198,7 @@ public class YzuCreativeInventoryScreen extends Screen {
                     dragButton = 0;
                     dragOriginSlot = rpSlot;
                     yzwcDragMode = 1; // 合并拖拽（仅刚从空格拿到物品时启用）
+                    shiftDragFilter = ItemStack.EMPTY;
                     processedSlots.clear();
                 }
                 return true;
@@ -1231,31 +1215,8 @@ public class YzuCreativeInventoryScreen extends Screen {
             ItemStack cl = getItemForVis(vi);
             if (cl.isEmpty())
                 return false;
-            ItemStack ca = minecraft.player.containerMenu.getCarried();
-            if (ev.button() == 0) {
-                if (ca.isEmpty())
-                    pickupItem(cl, 1);
-                else
-                    clearCarried();
-                return true;
-            }
-            if (ev.button() == 1) {
-                if (ca.isEmpty()) {
-                    pickupItem(cl, cl.getMaxStackSize());
-                } else if (ItemStack.isSameItemSameComponents(ca, cl)) {
-                    pickupItem(cl, ca.getCount() + 1);
-                } else {
-                    if (ca.getCount() > 1) {
-                        ca.shrink(1);
-                        minecraft.player.containerMenu.setCarried(ca);
-                    } else
-                        clearCarried();
-                }
-                return true;
-            }
-            if (ev.button() == 2) {
-                if (ca.isEmpty())
-                    pickupItem(cl, cl.getMaxStackSize());
+            if (ev.button() >= 0 && ev.button() <= 2) {
+                handleCreativeGridClick(cl, ev.button(), ev.hasShiftDown());
                 return true;
             }
         }
@@ -1343,6 +1304,7 @@ public class YzuCreativeInventoryScreen extends Screen {
                 endDrag();
             }
             yzwcDragMode = 0;
+            shiftDragFilter = ItemStack.EMPTY;
             processedSlots.clear();
             return true;
         }
@@ -1351,7 +1313,7 @@ public class YzuCreativeInventoryScreen extends Screen {
             pendingDrag = false;
             if (yzwcDragMode == 2) {
                 // Shift 单格快速转移（mouseClicked 未处理，需在此处理）
-                player.inventoryMenu.clicked(dragOriginSlot, 0, ContainerInput.QUICK_MOVE, player);
+                processGestureSlot(dragOriginSlot);
             } else if (yzwcDragMode == 1) {
                 // 合并手势未拖拽：点击已在 mouseClicked 中由 handleSlotClick 处理完毕，无需重复
                 // no-op
@@ -1364,6 +1326,7 @@ public class YzuCreativeInventoryScreen extends Screen {
                 handleSlotClick(dragOriginSlot, 1);
             }
             yzwcDragMode = 0;
+            shiftDragFilter = ItemStack.EMPTY;
             processedSlots.clear();
             return true;
         }
@@ -1376,6 +1339,7 @@ public class YzuCreativeInventoryScreen extends Screen {
                 endDrag();
             }
             yzwcDragMode = 0;
+            shiftDragFilter = ItemStack.EMPTY;
             processedSlots.clear();
             return true;
         }
@@ -1385,8 +1349,13 @@ public class YzuCreativeInventoryScreen extends Screen {
     /** 处理手势拖拽经过的单个槽位（实时处理，不等到 endDrag）。 */
     private void processGestureSlot(int si) {
         if (yzwcDragMode == 2) {
-            // Shift 批量拖拽：QUICK_MOVE
-            player.inventoryMenu.clicked(si, 0, ContainerInput.QUICK_MOVE, player);
+            // 空手 Shift 拖拽处理所有物品；持物 Shift 拖拽只处理同类物品。
+            ItemStack slotStack = player.inventoryMenu.getSlot(si).getItem();
+            if (slotStack.isEmpty() || (!shiftDragFilter.isEmpty()
+                    && !ItemStack.isSameItemSameComponents(slotStack, shiftDragFilter))) {
+                return;
+            }
+            clickInventorySlot(si, 0, ContainerInput.QUICK_MOVE);
             return;
         }
         if (yzwcDragMode == 1) {
@@ -1411,6 +1380,19 @@ public class YzuCreativeInventoryScreen extends Screen {
 
     @Override
     public boolean mouseScrolled(double mx, double my, double sx, double sy) {
+        int hoveredSlot = getRightPanelSlotAt((int) mx, (int) my);
+        if (sy != 0.0 && MouseTweaksSupport.isStorageSlot(hoveredSlot)
+                && player.inventoryMenu.getCarried().isEmpty()) {
+            int steps = Math.max(1, (int) Math.round(Math.abs(sy)));
+            for (int i = 0; i < steps; i++) {
+                if (!MouseTweaksSupport.scrollOne(player.inventoryMenu, player, hoveredSlot, sy,
+                        this::clickInventorySlot)) {
+                    break;
+                }
+            }
+            return true;
+        }
+
         int rows = (vis.size() + COLS - 1) / COLS;
         int maxS = Math.max(0, rows - VROWS);
         if (maxS <= 0)
@@ -1426,33 +1408,57 @@ public class YzuCreativeInventoryScreen extends Screen {
             return true;
         }
 
-        // 左侧网格悬停快捷键（Q/Ctrl+Q 丢弃，1-9 放入快捷栏）
+        // 左侧网格悬停快捷键（Q/Ctrl+Q、F、1-9、选取方块键）
         int gridHov = getHoveredGridIndex((int) xm, (int) ym);
         if (gridHov >= 0 && gridHov < vis.size()) {
             int vi = vis.get(gridHov);
             ItemStack gridItem = getItemForVis(vi);
-            if (!gridItem.isEmpty() && player.containerMenu.getCarried().isEmpty()) {
+            if (!gridItem.isEmpty()) {
                 // Q → 丢弃 1 个；Ctrl+Q → 丢弃 1 组
                 if (minecraft.options.keyDrop.matches(ev)) {
+                    if (!player.canDropItems()) {
+                        return true;
+                    }
                     ItemStack toDrop = gridItem.copy();
                     toDrop.setCount(ev.hasControlDown() ? toDrop.getMaxStackSize() : 1);
+                    player.drop(toDrop, true);
                     minecraft.gameMode.handleCreativeModeItemDrop(toDrop);
                     DebugLogger.info("YzuCreativeInventoryScreen",
                             "grid drop: %s x%d (ctrl=%b)", toDrop.getHoverName().getString(),
                             toDrop.getCount(), ev.hasControlDown());
                     return true;
                 }
-                // 1-9 → 将整组物品放入对应快捷栏槽位
-                for (int i = 0; i < 9; i++) {
-                    if (minecraft.options.keyHotbarSlots[i].matches(ev)) {
-                        ItemStack fullStack = gridItem.copy();
-                        fullStack.setCount(fullStack.getMaxStackSize());
-                        player.inventoryMenu.getSlot(36 + i).set(fullStack);
-                        minecraft.gameMode.handleCreativeModeItemAdd(fullStack, 36 + i);
-                        DebugLogger.info("YzuCreativeInventoryScreen",
-                                "grid to hotbar[%d]: %s x%d", i,
+
+                ItemStack carried = player.containerMenu.getCarried();
+                if (minecraft.options.keyPickItem.matches(ev)) {
+                    if (carried.isEmpty()) {
+                        pickupItem(gridItem, gridItem.getMaxStackSize());
+                    }
+                    return true;
+                }
+                if (carried.isEmpty()) {
+                    ItemStack fullStack = gridItem.copy();
+                    fullStack.setCount(fullStack.getMaxStackSize());
+
+                    // F → 将整组物品复制到副手（Inventory 索引 40，对应 InventoryMenu 槽位 45）
+                    if (minecraft.options.keySwapOffhand.matches(ev)) {
+                        player.getInventory().setItem(40, fullStack);
+                        player.inventoryMenu.broadcastChanges();
+                        DebugLogger.info("YzuCreativeInventoryScreen", "grid to offhand: %s x%d",
                                 fullStack.getHoverName().getString(), fullStack.getCount());
                         return true;
+                    }
+
+                    // 1-9 → 将整组物品放入对应快捷栏槽位
+                    for (int i = 0; i < 9; i++) {
+                        if (minecraft.options.keyHotbarSlots[i].matches(ev)) {
+                            player.getInventory().setItem(i, fullStack);
+                            player.inventoryMenu.broadcastChanges();
+                            DebugLogger.info("YzuCreativeInventoryScreen",
+                                    "grid to hotbar[%d]: %s x%d", i,
+                                    fullStack.getHoverName().getString(), fullStack.getCount());
+                            return true;
+                        }
                     }
                 }
             }
@@ -1467,7 +1473,7 @@ public class YzuCreativeInventoryScreen extends Screen {
             // 会正确同步槽位状态，导致物品视觉上消失但服务端仍保留），而是直接操作本地槽位 +
             // handleCreativeModeItemDrop / handleCreativeModeItemAdd 完成客户端-服务端同步。
             if (minecraft.options.keyDrop.matches(ev)) {
-                if (minecraft.player.containerMenu.getCarried().isEmpty()) {
+                if (player.canDropItems()) {
                     var slot = player.inventoryMenu.getSlot(hovSlot);
                     if (slot != null && slot.hasItem()) {
                         int count = ev.hasControlDown() ? slot.getItem().getMaxStackSize() : 1;
@@ -1488,7 +1494,7 @@ public class YzuCreativeInventoryScreen extends Screen {
             // F → 交换副手槽（slot 45, button=40）
             if (minecraft.options.keySwapOffhand.matches(ev)) {
                 if (player.containerMenu.getCarried().isEmpty()) {
-                    player.inventoryMenu.clicked(hovSlot, 40, ContainerInput.SWAP, player);
+                    clickInventorySlot(hovSlot, 40, ContainerInput.SWAP);
                 }
                 return true;
             }
@@ -1496,14 +1502,14 @@ public class YzuCreativeInventoryScreen extends Screen {
             for (int i = 0; i < 9; i++) {
                 if (minecraft.options.keyHotbarSlots[i].matches(ev)) {
                     if (player.containerMenu.getCarried().isEmpty()) {
-                        player.inventoryMenu.clicked(hovSlot, i, ContainerInput.SWAP, player);
+                        clickInventorySlot(hovSlot, i, ContainerInput.SWAP);
                     }
                     return true;
                 }
             }
             // 选取方块键（默认中键，可改为键盘键）→ 克隆
             if (minecraft.options.keyPickItem.matches(ev)) {
-                player.inventoryMenu.clicked(hovSlot, 0, ContainerInput.CLONE, player);
+                clickInventorySlot(hovSlot, 0, ContainerInput.CLONE);
                 return true;
             }
         }

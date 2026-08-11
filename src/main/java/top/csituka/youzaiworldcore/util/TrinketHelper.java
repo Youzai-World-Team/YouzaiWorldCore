@@ -120,6 +120,22 @@ public final class TrinketHelper {
         return false;
     }
 
+    /** 返回饰品槽对指定物品允许的最大堆叠数。 */
+    public static int getSlotMaxStackSize(TrinketSlotInfo slotInfo, ItemStack stack) {
+        if (slotInfo.access() instanceof TrinketSlotAccess access) {
+            return access.maxStackSize(stack);
+        }
+        return 0;
+    }
+
+    /** 检查指定物品是否通过饰品槽类型的校验器。 */
+    public static boolean canPlaceInSlot(TrinketSlotInfo slotInfo, ItemStack stack, LivingEntity entity) {
+        if (slotInfo.access() instanceof TrinketSlotAccess access) {
+            return access.slotType().validatorCheck(stack, access, entity);
+        }
+        return false;
+    }
+
     public static Identifier getSlotIcon(TrinketSlotInfo slotInfo) {
         if (slotInfo.access() instanceof TrinketSlotAccess access) {
             return access.slotType().icon();

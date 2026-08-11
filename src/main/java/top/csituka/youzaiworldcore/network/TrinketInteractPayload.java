@@ -15,10 +15,9 @@ import top.csituka.youzaiworldcore.YouzaiworldCore;
  * 修改服务端权威数据，再由 Trinkets 网络层同步回客户端并持久化。
  * </p>
  * <p>
- * {@code cursor} 字段携带客户端当前鼠标携带的物品（可能为 EMPTY）。服务端执行时
- * 优先使用服务端 {@code containerMenu.getCarried()}，若两者不同步（例如客户端点击
- * 拿起物品后立刻点击指示器，点击数据包尚未被服务端处理），则以客户端上报的
- * {@code cursor} 兜底，避免操作被静默丢弃。服务端槽位状态与校验始终权威。
+ * {@code cursor} 字段携带客户端当前鼠标携带的物品（可能为 EMPTY）。创造模式光标是
+ * 客户端生成的虚拟物品，因此服务端使用该字段；生存模式则只信任服务端
+ * {@code containerMenu.getCarried()}，避免客户端伪造物品。饰品槽状态与校验始终由服务端权威决定。
  * </p>
  *
  * @param groupKey  库存键，格式如 {@code "chest/elytra"}
@@ -30,7 +29,7 @@ import top.csituka.youzaiworldcore.YouzaiworldCore;
 public record TrinketInteractPayload(String groupKey, int slotIndex, byte action,
                                      ItemStack cursor) implements CustomPacketPayload {
 
-    /** 放入：光标物品 → 饰品槽，清空光标 */
+    /** 放入：按饰品槽堆叠上限从光标移入，剩余物品保留在光标 */
     public static final byte ACTION_PLACE = 0;
     /** 取出：饰品槽物品 → 光标，清空饰品槽 */
     public static final byte ACTION_TAKE = 1;
