@@ -2,16 +2,26 @@ package top.csituka.youzaiworldcore.client.hud;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import top.csituka.youzaiworldcore.client.config.ClientExternalSettings;
 import top.csituka.youzaiworldcore.item.ModItems;
 import top.csituka.youzaiworldcore.item.tool.FlameStaffItem;
 import top.csituka.youzaiworldcore.mana.ManaManager;
+import top.csituka.youzaiworldcore.util.DebugLogger;
 
+/**
+ * 客户端魔力条与法杖蓄力条渲染器。
+ *
+ * <p>YZUI 启用时，魔力条位于饱食度栏上方；氧气条显示时继续向上堆叠。
+ * YZUI 未启用或状态栏不可用时保留左下角布局。</p>
+ */
 @SuppressWarnings("null")
-public class ManaHudRenderer {
+public final class ManaHudRenderer {
 
-    // 蓝条尺寸
-    private static final int BAR_WIDTH = 100;
-    private static final int BAR_HEIGHT = 4;
+    // 左下角回退布局尺寸；YZUI 布局复用状态栏的 85×5 尺寸。
+    private static final int LEGACY_BAR_WIDTH = 100;
+    private static final int LEGACY_BAR_HEIGHT = 4;
+    /** YZUI 状态条相邻两行的间距，与 HealthBarMixin 保持一致。 */
+    private static final int YZUI_ROW_GAP = 12;
 
     // 蓝条显隐动画
     private static final int SHOW_MS = 300;
@@ -30,6 +40,14 @@ public class ManaHudRenderer {
 
     private static long prevFrameTime = 0;
 
+    private ManaHudRenderer() {
+    }
+
+    /**
+     * 更新动画并渲染魔力条与法杖蓄力条。
+     *
+     * @param graphics HUD 图形提取器
+     */
     public static void render(GuiGraphicsExtractor graphics) {
         Minecraft client = Minecraft.getInstance();
         if (client.player == null) return;
@@ -80,9 +98,42 @@ public class ManaHudRenderer {
         int sh = graphics.guiHeight();
 
         if (animState != AnimState.HIDDEN) {
-            renderManaBar(graphics, sw, sh, slide, alpha, actualMana);
+            if (usesYzuiStatusLayout(client)) {
+                int barWidth = HealthBarRenderer.BAR_WIDTH;
+                int totalWidth = barWidth * 2 + HealthBarRenderer.BAR_GAP;
+                int statusStartX = (sw - totalWidth) / 2;
+                int foodX = statusStartX + barWidth + HealthBarRenderer.BAR_GAP;
+
+                int rowStep = HealthBarRenderer.BAR_HEIGHT + YZUI_ROW_GAP;
+                int manaY = sh - HealthBarRenderer.Y_OFFSET_FROM_BOTTOM - rowStep;
+                if (client.player.getAirSupply() < client.player.getMaxAirSupply()) {
+                    manaY -= rowStep;
+                }
+
+                // 从上方滑入，避免显隐动画穿过下方的饱食度栏。
+                renderManaBar(graphics, foodX, manaY - slide,
+                        barWidth, HealthBarRenderer.BAR_HEIGHT, alpha, actualMana, true);
+            } else {
+                renderManaBar(graphics, 4, sh - 15 + slide,
+                        LEGACY_BAR_WIDTH, LEGACY_BAR_HEIGHT, alpha, actualMana, false);
+            }
         }
         renderChargeBar(graphics, client, sw, sh, deltaMs);
+    }
+
+    /**
+     * 判断魔力条当前是否占用 YZUI 饱食度栏上方的状态行。
+     */
+    static boolean isYzuiManaBarVisible() {
+        return animState != AnimState.HIDDEN && usesYzuiStatusLayout(Minecraft.getInstance());
+    }
+
+    private static boolean usesYzuiStatusLayout(Minecraft client) {
+        return ClientExternalSettings.isYzuiEnabled()
+                && client.player != null
+                && client.player.isAlive()
+                && !client.player.isCreative()
+                && !client.player.isSpectator();
     }
 
     private static boolean isHoldingAnyStaff(Minecraft client) {
@@ -92,28 +143,30 @@ public class ManaHudRenderer {
             || off  == ModItems.FLAME_STAFF || off  == ModItems.SKY_STAR_STAFF || off  == ModItems.VOID_STAFF;
     }
 
-    private static void renderManaBar(GuiGraphicsExtractor g, int sw, int sh, int slide, int alpha, int mana) {
-        int x = 4;
-        int y = sh - 15 + slide; // YZUI 热键栏上移 6px 同步调整
-
+    private static void renderManaBar(GuiGraphicsExtractor g, int x, int y,
+            int barWidth, int barHeight, int alpha, int mana, boolean yzuiStyle) {
         long elapsed = System.currentTimeMillis() - ManaManager.getLastInsufficientManaTime();
         boolean flash = elapsed < 1500;
         boolean flashOn = flash && ((elapsed / 200) % 2 == 0);
 
         // 背景
-        g.fill(x, y, x + BAR_WIDTH, y + BAR_HEIGHT, packARGB(0x22, 0x22, 0x22, alpha));
+        fillManaBarLayer(g, x, y, 0, barWidth, barWidth, barHeight,
+                packARGB(0x22, 0x22, 0x22, alpha), yzuiStyle, true);
 
-        int actualW = (int) ((mana / 100.0f) * BAR_WIDTH);
-        int displayW = (int) ((displayMana / 100.0f) * BAR_WIDTH);
+        int actualW = (int) ((mana / 100.0f) * barWidth);
+        int displayW = (int) ((displayMana / 100.0f) * barWidth);
+        boolean hasLossTrail = displayW > actualW;
 
         // 黄色消耗残影
-        if (displayW > actualW) {
+        if (hasLossTrail) {
             int ya = alpha;
             if (displayMana > mana) {
                 float ratio = (displayMana - mana) / (100.0f - mana);
                 ya = (int) (alpha * Math.max(0.3f, 1.0f - ratio * 0.5f));
             }
-            g.fill(x + actualW, y, x + displayW, y + BAR_HEIGHT, packARGB(0xFF, 0xD7, 0x00, ya));
+            fillManaBarLayer(g, x, y, actualW, displayW, barWidth, barHeight,
+                    packARGB(0xFF, 0xD7, 0x00, ya), yzuiStyle,
+                    displayW >= barWidth - 1);
         }
 
         // 蓝色实际填充
@@ -121,19 +174,59 @@ public class ManaHudRenderer {
         if (flash && flashOn) color = packARGB(0xFF, 0x44, 0x44, alpha);
         else if (flash)        color = packARGB(0x88, 0x22, 0x22, alpha);
         else                   color = packColorWithAlpha(getManaColor(mana), alpha);
-        if (actualW > 0) g.fill(x, y, x + actualW, y + BAR_HEIGHT, color);
+        if (actualW > 0) {
+            fillManaBarLayer(g, x, y, 0, actualW, barWidth, barHeight,
+                    color, yzuiStyle, !hasLossTrail && actualW >= barWidth - 1);
+        }
 
         // 文字
+        var font = Minecraft.getInstance().font;
         int ty = y - 10;
+        String t = mana + " / 100";
         if (flash) {
-            String t = mana + " / 100";
-            int tw = Minecraft.getInstance().font.width(t);
-            g.text(Minecraft.getInstance().font, t, x, ty, packARGB(0xFF, 0xFF, 0xFF, alpha), false);
-            g.text(Minecraft.getInstance().font, "魔力不足", x + tw + 4, ty, packARGB(0xFF, 0x55, 0x55, alpha), false);
+            String warning = "魔力不足";
+            int tw = font.width(t);
+            int textX = yzuiStyle
+                    ? x + (barWidth - tw - 4 - font.width(warning)) / 2
+                    : x;
+            g.text(font, t, textX, ty, packARGB(0xFF, 0xFF, 0xFF, alpha), false);
+            g.text(font, warning, textX + tw + 4, ty,
+                    packARGB(0xFF, 0x55, 0x55, alpha), false);
         } else {
-            String t = mana + " / 100";
-            g.text(Minecraft.getInstance().font, t, x + 1, ty + 1, packARGB(0x00, 0x00, 0x00, alpha), false);
-            g.text(Minecraft.getInstance().font, t, x, ty, packARGB(0xFF, 0xFF, 0xFF, alpha), false);
+            int textX = yzuiStyle ? x + (barWidth - font.width(t)) / 2 : x;
+            g.text(font, t, textX + 1, ty + 1, packARGB(0x00, 0x00, 0x00, alpha), false);
+            g.text(font, t, textX, ty, packARGB(0xFF, 0xFF, 0xFF, alpha), false);
+        }
+    }
+
+    /**
+     * 绘制魔力条中的一个水平色层；YZUI 模式会裁掉外框四角各 1 像素。
+     */
+    private static void fillManaBarLayer(GuiGraphicsExtractor g, int x, int y,
+            int startOffset, int endOffset, int barWidth, int barHeight,
+            int color, boolean yzuiStyle, boolean roundRight) {
+        int start = Math.max(0, Math.min(barWidth, startOffset));
+        int end = Math.max(start, Math.min(barWidth, endOffset));
+        if (end <= start) {
+            return;
+        }
+
+        if (!yzuiStyle || barWidth < 3 || barHeight < 3) {
+            g.fill(x + start, y, x + end, y + barHeight, color);
+            return;
+        }
+
+        boolean roundLeft = start == 0;
+        int bodyStart = start + (roundLeft ? 1 : 0);
+        int bodyEnd = end - (roundRight ? 1 : 0);
+        if (bodyEnd > bodyStart) {
+            g.fill(x + bodyStart, y, x + bodyEnd, y + barHeight, color);
+        }
+        if (roundLeft) {
+            g.fill(x, y + 1, x + 1, y + barHeight - 1, color);
+        }
+        if (roundRight) {
+            g.fill(x + end - 1, y + 1, x + end, y + barHeight - 1, color);
         }
     }
 
@@ -181,5 +274,10 @@ public class ManaHudRenderer {
         return (a << 24) | ((r & 0xFF) << 16) | ((g & 0xFF) << 8) | (b & 0xFF);
     }
 
-    public static void register() {}
+    /**
+     * 注册客户端魔力 HUD。
+     */
+    public static void register() {
+        DebugLogger.info("ManaHudRenderer", "魔力条已启用 YZUI 状态栏缺角样式与居中布局");
+    }
 }

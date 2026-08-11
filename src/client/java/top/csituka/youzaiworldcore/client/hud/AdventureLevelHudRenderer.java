@@ -158,17 +158,30 @@ public class AdventureLevelHudRenderer {
         int sw = g.guiWidth();
         int sh = g.guiHeight();
 
-        // 位置：置于 YZUI 两行条之上
+        // 位置：置于 YZUI 状态条之上
         // 计算 YZUI 第一行顶部（参考 HealthBarMixin 的布局逻辑）
         int row1BarY = sh - HealthBarRenderer.Y_OFFSET_FROM_BOTTOM;        // 第一行条顶 Y
         // 第一行文字顶部 ≈ 条顶 - 条高(5) - 文字间距(10) - 字高(9)
         int yzuiTextTop = row1BarY - HealthBarRenderer.BAR_HEIGHT - 10 - 9;
 
-        // 如果第二行（盔甲/氧气条）有显示，则其文字顶部更高
+        // 根据左右两列实际占用的最高状态行避让；氧气与魔力同时显示时右列会占到第三行。
         Player player = client.player;
-        if (player != null && (player.getArmorValue() > 0 || player.getAirSupply() < player.getMaxAirSupply())) {
-            // 第二行条顶 Y = row1BarY - BAR_HEIGHT - ROW_GAP(12)，再扣除相同文字高度
-            yzuiTextTop -= (HealthBarRenderer.BAR_HEIGHT + 12 + 10 + 9);
+        if (player != null) {
+            boolean armorVisible = player.getArmorValue() > 0;
+            boolean oxygenVisible = player.getAirSupply() < player.getMaxAirSupply();
+            boolean manaVisible = ManaHudRenderer.isYzuiManaBarVisible();
+
+            int upperRows = (armorVisible || oxygenVisible || manaVisible) ? 1 : 0;
+            if (oxygenVisible && manaVisible) {
+                upperRows = 2;
+            }
+
+            if (upperRows > 0) {
+                // 首个额外行沿用原有的文字与动画避让；后续行只增加实际的 17px 行距。
+                int firstRowOffset = HealthBarRenderer.BAR_HEIGHT + 12 + 10 + 9;
+                int additionalRowOffset = (upperRows - 1) * (HealthBarRenderer.BAR_HEIGHT + 12);
+                yzuiTextTop -= firstRowOffset + additionalRowOffset;
+            }
         }
 
         // 经验 HUD 置于 YZUI 文字顶部之上，间隔 2px
