@@ -24,6 +24,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * 渲染走缓存数据。装备耐久改显示剩余数字（满→绿/≤10%→红/其他→白），
  * 底部追加箭矢数量与背包空位数指示器。
  * </p>
+ * <p>装备与计数器共享槽位动画，支持入场、退场、数量/修复脉冲和低耐久摇晃。</p>
  */
 @SuppressWarnings("null")
 public final class ArmorHudRenderer {
@@ -96,8 +97,14 @@ public final class ArmorHudRenderer {
     private static final ItemStack[] cachedTrinkets = new ItemStack[3];
     /** 每装备槽位独立的缓存物品渲染器 */
     private static final CachedItemRenderer[] itemRenderers = new CachedItemRenderer[EQUIP_SLOT_COUNT];
+    /** 每个装备槽位独立的出现、退场、数量与耐久动画状态。 */
+    private static final HudSlotAnimationState[] equipAnimations =
+            new HudSlotAnimationState[EQUIP_SLOT_COUNT];
     /** 箭矢指示器图标渲染器（渲染原版箭物品模型） */
     private static final CachedItemRenderer arrowRenderer = new CachedItemRenderer();
+    /** 箭矢数量与空位数量指示器动画。 */
+    private static final HudSlotAnimationState arrowAnimation = new HudSlotAnimationState();
+    private static final HudSlotAnimationState emptySlotsAnimation = new HudSlotAnimationState();
     /** 缓存的背包+快捷栏空位数（仅在 timesChanged 变化时刷新） */
     private static int cachedEmptySlots = 0;
     /** 缓存的背包+快捷栏箭矢总数（普通箭 + 药水箭，仅在 timesChanged 变化时刷新） */
@@ -147,6 +154,7 @@ public final class ArmorHudRenderer {
             cachedTrinkets[i] = ItemStack.EMPTY;
         for (int i = 0; i < EQUIP_SLOT_COUNT; i++) {
             itemRenderers[i] = new CachedItemRenderer();
+            equipAnimations[i] = new HudSlotAnimationState();
             cachedEntries[i] = SlotEntry.empty(null);
         }
     }
@@ -190,6 +198,19 @@ public final class ArmorHudRenderer {
             lastSelectedSlot = selectedSlot;
         }
 
+        long nowMillis = System.currentTimeMillis();
+        for (int i = 0; i < EQUIP_SLOT_COUNT; i++) {
+            SlotEntry entry = cachedEntries[i];
+            ItemStack stack = entry.stack == null ? ItemStack.EMPTY : entry.stack;
+            int displayCount = entry.showDurability ? 1 : cachedSlotCounts[i];
+            equipAnimations[i].synchronize(stack, displayCount,
+                    nowMillis, !playerChanged);
+        }
+        arrowAnimation.synchronize(ARROW_STACK, cachedArrowCount,
+                nowMillis, !playerChanged);
+        emptySlotsAnimation.synchronize(ARROW_STACK, cachedEmptySlots,
+                nowMillis, !playerChanged);
+
         int slotSize = BASE_SLOT_SIZE;
         int slotSpacing = BASE_SLOT_SPACING;
         int itemInset = BASE_ITEM_INSET;
@@ -215,59 +236,103 @@ public final class ArmorHudRenderer {
             int slotX = panelX + padding;
             int slotY = panelY + padding + i * slotSpacing;
             drawEquipSlot(graphics, font, i, slotX, slotY,
-                    slotSize, itemInset, textGap, iconSize);
+                    slotSize, itemInset, textGap, iconSize, nowMillis);
         }
 
         // 槽位 10：箭矢数量指示器
         int arrowSlotY = panelY + padding + EQUIP_SLOT_COUNT * slotSpacing;
         drawArrowIndicator(graphics, font, panelX + padding, arrowSlotY,
-                slotSize, itemInset, textGap);
+                slotSize, itemInset, textGap, nowMillis);
 
         // 槽位 11：背包+快捷栏空位数指示器
         int emptySlotY = panelY + padding + (EQUIP_SLOT_COUNT + 1) * slotSpacing;
         drawEmptySlotsIndicator(graphics, font, panelX + padding, emptySlotY,
-                slotSize, itemInset, textGap, iconSize);
+                slotSize, itemInset, textGap, iconSize, nowMillis);
     }
 
     private static void drawEquipSlot(GuiGraphicsExtractor g, Font font,
             int index, int slotX, int slotY,
-            int slotSize, int itemInset, int textGap, int iconSize) {
+            int slotSize, int itemInset, int textGap, int iconSize,
+            long nowMillis) {
         SlotEntry entry = cachedEntries[index];
         boolean hasItem = entry.stack != null && !entry.stack.isEmpty();
 
         g.fill(slotX, slotY, slotX + slotSize, slotY + slotSize,
                 hasItem ? SLOT_FILLED_COLOR : SLOT_EMPTY_COLOR);
 
-        if (hasItem) {
-            int ix = slotX + itemInset;
-            int iy = slotY + itemInset;
-            itemRenderers[index].render(g, entry.stack, ix, iy);
-            ItemBorderRenderer.renderBorder(g, ix, iy, entry.stack);
-
-            int textX = slotX + slotSize + textGap;
-            int textY = slotY + (slotSize - font.lineHeight) / 2;
-
-            if (entry.showDurability) {
-                // 耐久实时读取：entry.stack 是活引用，物品受损立即反映
-                int remaining = durabilityRemaining(entry.stack);
-                g.text(font, Integer.toString(remaining), textX, textY,
-                        durabilityColor(remaining, entry.stack), true);
-            } else {
-                g.text(font, Integer.toString(cachedSlotCounts[index]), textX, textY,
-                        COLOR_WHITE, true);
-            }
-        } else if (entry.placeholderIcon != null) {
+        if (!hasItem && entry.placeholderIcon != null) {
             g.blitSprite(RenderPipelines.GUI_TEXTURED, entry.placeholderIcon,
                     slotX + itemInset, slotY + itemInset, iconSize, iconSize);
         }
+
+        HudSlotAnimationState animation = equipAnimations[index];
+        ItemStack outgoing = animation.outgoingStack(nowMillis);
+        if (!outgoing.isEmpty()) {
+            drawEquipItem(g, font, animation, outgoing, index,
+                    slotX, slotY, slotSize, itemInset, textGap,
+                    animation.outgoingDisplayCount(), nowMillis, true);
+        }
+        if (hasItem) {
+            int displayCount = entry.showDurability
+                    ? durabilityRemaining(entry.stack)
+                    : cachedSlotCounts[index];
+            drawEquipItem(g, font, animation, entry.stack, index,
+                    slotX, slotY, slotSize, itemInset, textGap,
+                    displayCount, nowMillis, false);
+        }
+    }
+
+    private static void drawEquipItem(GuiGraphicsExtractor g, Font font,
+            HudSlotAnimationState animation, ItemStack stack, int rendererIndex,
+            int slotX, int slotY, int slotSize, int itemInset, int textGap,
+            int displayCount, long nowMillis, boolean outgoing) {
+        int itemX = slotX + itemInset;
+        int itemY = slotY + itemInset;
+        int animatedWidth = slotSize + textGap + BASE_TEXT_WIDTH;
+        float centerX = slotX + animatedWidth / 2.0f;
+        float centerY = slotY + slotSize / 2.0f;
+
+        if (outgoing) {
+            animation.pushOutgoingTransform(g, centerX, centerY, nowMillis);
+            animation.outgoingRenderer().render(g, stack, itemX, itemY);
+        } else {
+            animation.pushCurrentTransform(g, stack, centerX, centerY, nowMillis);
+            itemRenderers[rendererIndex].render(g, stack, itemX, itemY);
+        }
+        ItemBorderRenderer.renderBorder(g, itemX, itemY, stack);
+
+        int textX = slotX + slotSize + textGap;
+        int textY = slotY + (slotSize - font.lineHeight) / 2;
+        boolean showDurability = stack.getMaxDamage() > 0;
+        int shownValue = showDurability ? durabilityRemaining(stack) : displayCount;
+        int color = showDurability
+                ? durabilityColor(shownValue, stack)
+                : COLOR_WHITE;
+        g.text(font, Integer.toString(shownValue), textX, textY, color, true);
+
+        if (outgoing) {
+            animation.drawOutgoingOverlay(g, slotX, slotY,
+                    animatedWidth, slotSize, nowMillis);
+        } else {
+            animation.drawCurrentOverlay(g, stack, slotX, slotY,
+                    animatedWidth, slotSize, nowMillis);
+        }
+        animation.popTransform(g);
     }
 
     /**
      * 绘制箭矢数量指示器（槽位 10）。
      */
     private static void drawArrowIndicator(GuiGraphicsExtractor g, Font font,
-            int slotX, int slotY, int slotSize, int itemInset, int textGap) {
+            int slotX, int slotY, int slotSize, int itemInset, int textGap,
+            long nowMillis) {
         g.fill(slotX, slotY, slotX + slotSize, slotY + slotSize, SLOT_FILLED_COLOR);
+
+        int animatedWidth = slotSize + textGap + BASE_TEXT_WIDTH;
+        float centerX = slotX + animatedWidth / 2.0f;
+        float centerY = slotY + slotSize / 2.0f;
+        arrowAnimation.pushCurrentTransform(g, ARROW_STACK,
+                centerX, centerY, nowMillis);
 
         // 原版普通箭物品模型图标（缓存解析，外观与物品栏一致）
         arrowRenderer.render(g, ARROW_STACK, slotX + itemInset, slotY + itemInset);
@@ -286,14 +351,24 @@ public final class ArmorHudRenderer {
         int textX = slotX + slotSize + textGap;
         int textY = slotY + (slotSize - font.lineHeight) / 2;
         g.text(font, Integer.toString(count), textX, textY, color, true);
+        arrowAnimation.drawCurrentOverlay(g, ARROW_STACK,
+                slotX, slotY, animatedWidth, slotSize, nowMillis);
+        arrowAnimation.popTransform(g);
     }
 
     /**
      * 绘制背包+快捷栏空位数指示器（槽位 11）。
      */
     private static void drawEmptySlotsIndicator(GuiGraphicsExtractor g, Font font,
-            int slotX, int slotY, int slotSize, int itemInset, int textGap, int iconSize) {
+            int slotX, int slotY, int slotSize, int itemInset, int textGap,
+            int iconSize, long nowMillis) {
         g.fill(slotX, slotY, slotX + slotSize, slotY + slotSize, SLOT_FILLED_COLOR);
+
+        int animatedWidth = slotSize + textGap + BASE_TEXT_WIDTH;
+        float centerX = slotX + animatedWidth / 2.0f;
+        float centerY = slotY + slotSize / 2.0f;
+        emptySlotsAnimation.pushCurrentTransform(g, ItemStack.EMPTY,
+                centerX, centerY, nowMillis);
 
         // 贴图占位图标
         g.blitSprite(RenderPipelines.GUI_TEXTURED, EMPTY_SLOTS_ICON,
@@ -313,6 +388,9 @@ public final class ArmorHudRenderer {
         int textX = slotX + slotSize + textGap;
         int textY = slotY + (slotSize - font.lineHeight) / 2;
         g.text(font, Integer.toString(empty), textX, textY, color, true);
+        emptySlotsAnimation.drawCurrentOverlay(g, ItemStack.EMPTY,
+                slotX, slotY, animatedWidth, slotSize, nowMillis);
+        emptySlotsAnimation.popTransform(g);
     }
 
     // ===== 缓存更新 =====

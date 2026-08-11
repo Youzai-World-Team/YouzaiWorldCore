@@ -21,6 +21,8 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -33,7 +35,8 @@ import java.util.Map;
  * 效果开始从最底行压缩：同一行依次容纳 2、3、4 个效果，填满 4 个后才继续
  * 压缩上一行。简略行内按获得顺序从右向左排列，新效果位于左侧；简略效果
  * 只显示图标与叠加在图标右下角的剩余时间。效果剩余时间不超过 10 秒时，
- * 对应的完整行或简略单元格会开始闪烁。</p>
+ * 对应的完整行或简略单元格会开始闪烁。新增、移除与布局变化分别使用拉伸淡入、
+ * 收缩淡出和坐标/宽度滑动动画。</p>
  */
 @SuppressWarnings("null")
 public final class StatusEffectHudRenderer {
@@ -79,6 +82,11 @@ public final class StatusEffectHudRenderer {
     private static WeakReference<Player> trackedPlayerRef = new WeakReference<>(null);
     /** 上次记录过的溢出数量，避免极端情况下每帧重复输出警告。 */
     private static int lastOverflowEffectCount = -1;
+    /** 按首次显示顺序保存的状态效果动画实例。 */
+    private static final Map<Holder<MobEffect>, StatusEffectHudAnimationState>
+            animationStates = new LinkedHashMap<>();
+    /** 首帧仅建立快照，避免进入世界时所有既有效果一起播放入场动画。 */
+    private static boolean animationsInitialized;
 
     private StatusEffectHudRenderer() {
     }
@@ -136,14 +144,8 @@ public final class StatusEffectHudRenderer {
         ensureTrackedPlayer(player);
         Map<Holder<MobEffect>, MobEffectInstance> activeEffects = player.getActiveEffectsMap();
         synchronizeOrder(activeEffects);
-        if (activeEffects.isEmpty()) {
-            return;
-        }
 
         List<MobEffectInstance> orderedEffects = collectOrderedEffects(activeEffects);
-        if (orderedEffects.isEmpty()) {
-            return;
-        }
 
         // 一行最多容纳四个简略效果。极端超过 52 个时优先保留最新效果，
         // 确保刚获得的效果不会因为容量上限而完全不可见。
@@ -166,12 +168,6 @@ public final class StatusEffectHudRenderer {
         int partialCompactColumns = partialCompactExtra > 0
                 ? partialCompactExtra + 1
                 : 0;
-        int compactEffectCount = fullCompactRowCount * MAX_COLUMNS
-                + partialCompactColumns;
-        int fullRowCount = effectCount - compactEffectCount;
-        int displayedRowCount = fullCompactRowCount
-                + (partialCompactColumns > 0 ? 1 : 0)
-                + fullRowCount;
 
         Font font = client.font;
 
@@ -200,14 +196,10 @@ public final class StatusEffectHudRenderer {
         int inventoryPanelHeight = inventoryGridHeight + padding * 2;
         int inventoryPanelY = guiHeight - inventoryPanelHeight - BASE_BOTTOM_OFFSET;
         int panelBottom = inventoryPanelY - BASE_VERTICAL_GAP;
-        int panelHeight = padding * 2 + displayedRowCount * rowHeight
-                + Math.max(0, displayedRowCount - 1) * rowGap;
-        int panelY = panelBottom - panelHeight;
-
-        RoundedRect.fillOrSquare(graphics, panelX, panelY, panelWidth, panelHeight,
-                BASE_PANEL_RADIUS, PANEL_BG);
 
         long nowMillis = System.currentTimeMillis();
+        Map<Holder<MobEffect>, StatusEffectHudAnimationState.Target> targets =
+                new LinkedHashMap<>();
 
         int effectIndex = 0;
         int row = 0;
@@ -215,20 +207,19 @@ public final class StatusEffectHudRenderer {
         // 从最底部开始逐行填满四个简略效果。
         for (int i = 0; i < fullCompactRowCount; i++, row++) {
             int rowY = panelBottom - padding - rowHeight - row * (rowHeight + rowGap);
-            drawCompactEffectRow(graphics, font, client, orderedEffects,
-                    effectIndex, MAX_COLUMNS,
+            addCompactTargets(targets, orderedEffects, effectIndex, MAX_COLUMNS,
                     panelX + padding, rowY, panelWidth - padding * 2,
-                    rowHeight, iconSize, panelGap, nowMillis);
+                    rowHeight, panelGap);
             effectIndex += MAX_COLUMNS;
         }
 
         // 尚不足四个的下一行按 2 / 3 列显示，填满后才继续向上压缩。
         if (partialCompactColumns > 0) {
             int rowY = panelBottom - padding - rowHeight - row * (rowHeight + rowGap);
-            drawCompactEffectRow(graphics, font, client, orderedEffects,
+            addCompactTargets(targets, orderedEffects,
                     effectIndex, partialCompactColumns,
                     panelX + padding, rowY, panelWidth - padding * 2,
-                    rowHeight, iconSize, panelGap, nowMillis);
+                    rowHeight, panelGap);
             effectIndex += partialCompactColumns;
             row++;
         }
@@ -237,10 +228,100 @@ public final class StatusEffectHudRenderer {
         for (; effectIndex < effectCount; effectIndex++, row++) {
             MobEffectInstance instance = orderedEffects.get(effectIndex);
             int rowY = panelBottom - padding - rowHeight - row * (rowHeight + rowGap);
-            drawEffectRow(graphics, font, client, instance,
-                    panelX + padding, rowY, panelWidth - padding * 2,
-                    rowHeight, iconSize, textGap, nowMillis);
+            targets.put(instance.getEffect(),
+                    new StatusEffectHudAnimationState.Target(
+                            panelX + padding, rowY,
+                            panelWidth - padding * 2, rowHeight, false));
         }
+
+        synchronizeAnimations(activeEffects, targets, nowMillis);
+        animationsInitialized = true;
+
+        List<StatusEffectHudAnimationState> renderStates =
+                collectRenderStates(orderedEffects, targets);
+        if (renderStates.isEmpty()) {
+            return;
+        }
+
+        int panelTop = panelBottom;
+        for (StatusEffectHudAnimationState state : renderStates) {
+            state.advance(nowMillis);
+            panelTop = Math.min(panelTop, state.y() - padding);
+        }
+        int panelHeight = Math.max(1, panelBottom - panelTop);
+        RoundedRect.fillOrSquare(graphics, panelX, panelTop, panelWidth, panelHeight,
+                BASE_PANEL_RADIUS, PANEL_BG);
+
+        for (StatusEffectHudAnimationState state : renderStates) {
+            drawAnimatedEffect(graphics, font, client, state,
+                    iconSize, textGap, nowMillis);
+        }
+    }
+
+    private static void synchronizeAnimations(
+            Map<Holder<MobEffect>, MobEffectInstance> activeEffects,
+            Map<Holder<MobEffect>, StatusEffectHudAnimationState.Target> targets,
+            long nowMillis) {
+        Iterator<Map.Entry<Holder<MobEffect>, StatusEffectHudAnimationState>> iterator =
+                animationStates.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<Holder<MobEffect>, StatusEffectHudAnimationState> entry =
+                    iterator.next();
+            Holder<MobEffect> effect = entry.getKey();
+            if (targets.containsKey(effect)) {
+                continue;
+            }
+            if (activeEffects.containsKey(effect)) {
+                // 超出 52 个时直接隐藏较旧效果，确保面板容量与最新效果优先级稳定。
+                iterator.remove();
+            } else {
+                entry.getValue().beginExit(nowMillis);
+            }
+        }
+
+        for (Map.Entry<Holder<MobEffect>, StatusEffectHudAnimationState.Target> entry
+                : targets.entrySet()) {
+            Holder<MobEffect> effect = entry.getKey();
+            MobEffectInstance instance = activeEffects.get(effect);
+            if (instance == null) {
+                continue;
+            }
+            StatusEffectHudAnimationState state = animationStates.get(effect);
+            if (state == null) {
+                state = new StatusEffectHudAnimationState(effect, instance,
+                        entry.getValue(), nowMillis, animationsInitialized);
+                animationStates.put(effect, state);
+            } else {
+                state.synchronize(instance, entry.getValue(),
+                        nowMillis, animationsInitialized);
+            }
+        }
+
+        animationStates.entrySet().removeIf(
+                entry -> entry.getValue().finished(nowMillis));
+    }
+
+    private static List<StatusEffectHudAnimationState> collectRenderStates(
+            List<MobEffectInstance> orderedEffects,
+            Map<Holder<MobEffect>, StatusEffectHudAnimationState.Target> targets) {
+        List<StatusEffectHudAnimationState> result =
+                new ArrayList<>(animationStates.size());
+        for (MobEffectInstance instance : orderedEffects) {
+            Holder<MobEffect> effect = instance.getEffect();
+            if (!targets.containsKey(effect)) {
+                continue;
+            }
+            StatusEffectHudAnimationState state = animationStates.get(effect);
+            if (state != null) {
+                result.add(state);
+            }
+        }
+        for (StatusEffectHudAnimationState state : animationStates.values()) {
+            if (state.exiting()) {
+                result.add(state);
+            }
+        }
+        return result;
     }
 
     // ===== 顺序同步 =====
@@ -250,6 +331,8 @@ public final class StatusEffectHudRenderer {
             return;
         }
         acquisitionOrder.clear();
+        animationStates.clear();
+        animationsInitialized = false;
         trackedPlayerRef = new WeakReference<>(player);
         DebugLogger.debug(MODULE, "本地玩家实例已变化，重置状态效果获得顺序");
     }
@@ -288,11 +371,12 @@ public final class StatusEffectHudRenderer {
 
     // ===== 单行绘制 =====
 
-    private static void drawCompactEffectRow(GuiGraphicsExtractor graphics, Font font,
-            Minecraft client, List<MobEffectInstance> effects,
+    private static void addCompactTargets(
+            Map<Holder<MobEffect>, StatusEffectHudAnimationState.Target> targets,
+            List<MobEffectInstance> effects,
             int startIndex, int columnCount,
             int rowX, int rowY, int rowWidth, int rowHeight,
-            int iconSize, int cellGap, long nowMillis) {
+            int cellGap) {
         int availableWidth = rowWidth - cellGap * (columnCount - 1);
         int baseCellWidth = availableWidth / columnCount;
         int remainder = availableWidth % columnCount;
@@ -301,17 +385,35 @@ public final class StatusEffectHudRenderer {
         for (int column = 0; column < columnCount; column++) {
             int cellWidth = baseCellWidth + (column < remainder ? 1 : 0);
             int effectIndex = startIndex + columnCount - 1 - column;
-            drawCompactEffect(graphics, font, client, effects.get(effectIndex),
-                    cellX, rowY, cellWidth, rowHeight, iconSize, nowMillis);
+            MobEffectInstance instance = effects.get(effectIndex);
+            targets.put(instance.getEffect(),
+                    new StatusEffectHudAnimationState.Target(
+                            cellX, rowY, cellWidth, rowHeight, true));
             cellX += cellWidth + cellGap;
         }
+    }
+
+    private static void drawAnimatedEffect(GuiGraphicsExtractor graphics, Font font,
+            Minecraft client, StatusEffectHudAnimationState state,
+            int iconSize, int textGap, long nowMillis) {
+        state.pushTransform(graphics, nowMillis);
+        if (state.compact()) {
+            drawCompactEffect(graphics, font, client, state.instance(),
+                    state.x(), state.y(), state.width(), state.height(),
+                    iconSize, nowMillis, state.alpha(nowMillis));
+        } else {
+            drawEffectRow(graphics, font, client, state.instance(),
+                    state.x(), state.y(), state.width(), state.height(),
+                    iconSize, textGap, nowMillis, state.alpha(nowMillis));
+        }
+        state.popTransform(graphics);
     }
 
     private static void drawCompactEffect(GuiGraphicsExtractor graphics, Font font,
             Minecraft client, MobEffectInstance instance,
             int cellX, int cellY, int cellWidth, int cellHeight,
-            int iconSize, long nowMillis) {
-        float alpha = flashAlpha(instance, nowMillis);
+            int iconSize, long nowMillis, float animationAlpha) {
+        float alpha = flashAlpha(instance, nowMillis) * animationAlpha;
         graphics.fill(cellX, cellY, cellX + cellWidth, cellY + cellHeight,
                 ARGB.multiplyAlpha(ROW_BG, alpha));
 
@@ -334,8 +436,8 @@ public final class StatusEffectHudRenderer {
     private static void drawEffectRow(GuiGraphicsExtractor graphics, Font font,
             Minecraft client, MobEffectInstance instance,
             int rowX, int rowY, int rowWidth, int rowHeight,
-            int iconSize, int textGap, long nowMillis) {
-        float alpha = flashAlpha(instance, nowMillis);
+            int iconSize, int textGap, long nowMillis, float animationAlpha) {
+        float alpha = flashAlpha(instance, nowMillis) * animationAlpha;
         graphics.fill(rowX, rowY, rowX + rowWidth, rowY + rowHeight,
                 ARGB.multiplyAlpha(ROW_BG, alpha));
 

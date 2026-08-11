@@ -15,6 +15,7 @@ import top.csituka.youzaiworldcore.itemborder.ItemBorderRenderer;
  * 通过 {@code Inventory.getTimesChanged()} 检测物品栏变化，
  * 仅在变化时更新缓存，渲染始终走缓存数据（避免每帧 27 次 getItem() 调用）。
  * </p>
+ * <p>槽位变化会播放物品淡入闪烁、淡出缩小、数量增加脉冲与低耐久警告动画。</p>
  */
 @SuppressWarnings("null")
 public final class InventoryHudRenderer {
@@ -39,6 +40,9 @@ public final class InventoryHudRenderer {
     private static final ItemStack[] cached = new ItemStack[TOTAL];
     /** 每槽位独立的缓存物品渲染器（避免每帧 27 次模型解析） */
     private static final CachedItemRenderer[] itemRenderers = new CachedItemRenderer[TOTAL];
+    /** 每个槽位独立的出现、退场、数量与耐久动画状态。 */
+    private static final HudSlotAnimationState[] slotAnimations =
+            new HudSlotAnimationState[TOTAL];
     private static int lastTimesChanged = -1;
     /**
      * 上次缓存对应的玩家实例（弱引用，避免退出世界后仍持有 {@code LocalPlayer}）。
@@ -54,6 +58,7 @@ public final class InventoryHudRenderer {
         for (int i = 0; i < TOTAL; i++) {
             cached[i] = ItemStack.EMPTY;
             itemRenderers[i] = new CachedItemRenderer();
+            slotAnimations[i] = new HudSlotAnimationState();
         }
     }
 
@@ -80,8 +85,13 @@ public final class InventoryHudRenderer {
         int nowChanged = player.getInventory().getTimesChanged();
         if (playerChanged || nowChanged != lastTimesChanged) {
             var inventory = player.getInventory();
-            for (int i = 0; i < TOTAL; i++)
-                cached[i] = inventory.getItem(INVENTORY_START_SLOT + i).copy();
+            long nowMillis = System.currentTimeMillis();
+            for (int i = 0; i < TOTAL; i++) {
+                ItemStack current = inventory.getItem(INVENTORY_START_SLOT + i);
+                slotAnimations[i].synchronize(current, current.getCount(),
+                        nowMillis, !playerChanged);
+                cached[i] = current.copy();
+            }
             lastTimesChanged = nowChanged;
         }
 
@@ -102,6 +112,8 @@ public final class InventoryHudRenderer {
         RoundedRect.fillOrSquare(graphics, panelX, panelY, panelW, panelH,
                 BASE_PANEL_RADIUS, PANEL_BG);
 
+        long nowMillis = System.currentTimeMillis();
+
         for (int row = 0; row < ROWS; row++) {
             for (int col = 0; col < COLS; col++) {
                 int ci = row * COLS + col;
@@ -112,15 +124,47 @@ public final class InventoryHudRenderer {
                 int slotBg = stack.isEmpty() ? SLOT_EMPTY_COLOR : SLOT_FILLED_COLOR;
                 graphics.fill(slotX, slotY, slotX + slotSize, slotY + slotSize, slotBg);
 
+                HudSlotAnimationState animation = slotAnimations[ci];
+                ItemStack outgoing = animation.outgoingStack(nowMillis);
+                if (!outgoing.isEmpty()) {
+                    drawAnimatedItem(graphics, font, animation, outgoing,
+                            slotX, slotY, itemInset, nowMillis, true, ci);
+                }
+
                 if (!stack.isEmpty()) {
-                    int ix = slotX + itemInset;
-                    int iy = slotY + itemInset;
-                    itemRenderers[ci].render(graphics, stack, ix, iy);
-                    graphics.itemDecorations(font, stack, ix, iy);
-                    ItemBorderRenderer.renderBorder(graphics, ix, iy, stack);
+                    drawAnimatedItem(graphics, font, animation, stack,
+                            slotX, slotY, itemInset, nowMillis, false, ci);
                 }
             }
         }
+    }
+
+    private static void drawAnimatedItem(GuiGraphicsExtractor graphics, Font font,
+            HudSlotAnimationState animation, ItemStack stack,
+            int slotX, int slotY, int itemInset, long nowMillis,
+            boolean outgoing, int rendererIndex) {
+        int itemX = slotX + itemInset;
+        int itemY = slotY + itemInset;
+        float centerX = itemX + 8.0f;
+        float centerY = itemY + 8.0f;
+
+        if (outgoing) {
+            animation.pushOutgoingTransform(graphics, centerX, centerY, nowMillis);
+            animation.outgoingRenderer().render(graphics, stack, itemX, itemY);
+        } else {
+            animation.pushCurrentTransform(graphics, stack, centerX, centerY, nowMillis);
+            itemRenderers[rendererIndex].render(graphics, stack, itemX, itemY);
+        }
+
+        graphics.itemDecorations(font, stack, itemX, itemY);
+        ItemBorderRenderer.renderBorder(graphics, itemX, itemY, stack);
+        if (outgoing) {
+            animation.drawOutgoingOverlay(graphics, itemX, itemY, 16, 16, nowMillis);
+        } else {
+            animation.drawCurrentOverlay(graphics, stack,
+                    itemX, itemY, 16, 16, nowMillis);
+        }
+        animation.popTransform(graphics);
     }
 
 }
