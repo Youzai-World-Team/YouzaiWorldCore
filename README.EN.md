@@ -494,6 +494,8 @@ A purely client-side, whole-interface restyle that replaces the vanilla inventor
 | `ArmorBarRenderer`  | Armor icons       | Bar form                                                                                                                                                                                                               |
 | `OxygenBarRenderer` | Air bubbles       | Bar form                                                                                                                                                                                                               |
 
+`InventoryHudMixin` also draws inventory, equipment, and status-effect panels in the lower-left corner. The status-effect panel sits to the right of the equipment HUD and above the inventory HUD, and appears only while effects are active. Its bottom edge stays fixed while it grows upward, listing each effect's icon, name, Roman-numeral level, and remaining duration from oldest at the bottom to newest at the top; the corresponding full row or compact cell flashes during the final 10 seconds, and the panel replaces the vanilla top-right effect icons. The panel uses at most 13 rows. Beyond 13 effects, the bottom row is compressed to two, then three, then four compact cells before compression proceeds to the row above; newer effects appear to the left of older effects within each compact row. Compact cells omit names and levels and overlay the remaining duration on the icon's lower-right. Up to the newest 52 effects are shown so newly acquired effects remain visible.
+
 #### 37.3 Contextual Bars & Recipe Book
 
 - **`ContextualBarMixin`**: For the experience bar (`ExperienceBar`), locator bar (`LocatorBar`), and jumpable-vehicle bar (`JumpableVehicleBar`), cancels the vanilla sprite-sheet background and substitutes a YZUI rounded fill bar (width matches vanilla `ContextualBar#WIDTH` = 182) while preserving `LocatorBar`'s waypoint indicator rendering; the XP number is centered within the health/hunger bar area
@@ -824,7 +826,7 @@ src/                                       # 411 Java source files (main 252 / c
 │   ├── itemborder/                       # Item border (ItemBorderClient / ItemBorderConfig / ItemBorderRenderer)
 │   ├── anviluses/                        # Anvil use-count display (AnvilUsesClient)
 │   ├── client/accessor/                  # Render accessors (RenderCrownDuck)
-│   ├── hud/                              # Mana bar / adventure level HUD / YZUI health·food·armor·oxygen bars / ToolInfoOverlay
+│   ├── hud/                              # Mana / adventure-level HUDs / YZUI inventory·equipment·status-effect·health·food·armor·oxygen HUDs / ToolInfoOverlay
 │   ├── skill/                            # Client adventure level / attribute data (ClientAttributeData)
 │   ├── update/                           # Update checker client state (ClientUpdateState)
 │   ├── mixin/client/                     # Client Mixins (54: title, options, button, pause, chat, loading, seat, rendering, pickup, enchant-patch, itemborder, YZUI inventory·health bar·contextual bar·recipe book, technocrown, AFK input, experimental warning skip, etc.)

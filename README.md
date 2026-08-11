@@ -494,6 +494,8 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 | `ArmorBarRenderer`  | 盔甲图标   | 长条化                                                                                                                                      |
 | `OxygenBarRenderer` | 氧气气泡   | 长条化                                                                                                                                      |
 
+`InventoryHudMixin` 还会在左下角绘制物品栏、装备与状态效果面板。状态效果面板位于装备栏右侧、物品栏上方，仅在玩家拥有状态效果时显示；面板底边固定并随效果数量向上增长，按获得顺序自下而上列出效果图标、名称、罗马数字等级与剩余时间，最后 10 秒对应的完整行或简略单元格闪烁，并替代原版右上角效果图标。面板最多占用 13 行；超过 13 个效果后，从最底行开始依次压缩为 2、3、4 个简略单元格，填满 4 个后才继续压缩上一行；简略行内新效果在左、旧效果在右。简略单元格省略名称与等级，只在图标右下角叠加剩余时间；最多显示最新 52 个效果，保证新获得的效果优先可见。
+
 #### 37.3 上下文栏与配方书
 
 - **`ContextualBarMixin`**：对经验条（`ExperienceBar`）、定位条（`LocatorBar`）、跳跃条（`JumpableVehicleBar`）取消原版精灵表背景，替换为 YZUI 圆角填充条（宽度与原版 `ContextualBar#WIDTH` = 182 一致），同时保留 `LocatorBar` 的航点指示器渲染；经验数值文字居中显示于血条与饥饿条区域内
@@ -824,7 +826,7 @@ src/                                       # 411 个 Java 源文件（main 252 /
 │   ├── itemborder/                       # 物品边框（ItemBorderClient / ItemBorderConfig / ItemBorderRenderer）
 │   ├── anviluses/                        # 铁砧使用次数显示（AnvilUsesClient）
 │   ├── client/accessor/                  # 渲染访问器（RenderCrownDuck）
-│   ├── hud/                              # 魔力条 / 冒险等级 HUD / YZUI 生命·饥饿·盔甲·氧气条 / 工具信息覆盖
+│   ├── hud/                              # 魔力条 / 冒险等级 HUD / YZUI 物品栏·装备·状态效果·生命·饥饿·盔甲·氧气条 / 工具信息覆盖
 │   ├── skill/                            # 客户端冒险等级/属性数据（ClientAttributeData）
 │   ├── update/                           # 更新检查客户端状态（ClientUpdateState）
 │   ├── laowumeme/                        # 老吴贴贴客户端（Geo 模型/渲染/音效池）
