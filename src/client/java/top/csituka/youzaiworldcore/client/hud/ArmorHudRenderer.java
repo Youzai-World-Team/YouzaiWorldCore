@@ -13,6 +13,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import top.csituka.youzaiworldcore.client.render.RoundedRect;
 import top.csituka.youzaiworldcore.itemborder.ItemBorderRenderer;
+import top.csituka.youzaiworldcore.util.DebugLogger;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -22,12 +23,14 @@ import java.util.concurrent.ConcurrentHashMap;
  * <p>
  * 通过 {@code Inventory.getTimesChanged()} + Trinkets 缓存比对检测变化，
  * 渲染走缓存数据。装备耐久改显示剩余数字（满→绿/≤10%→红/其他→白），
- * 底部追加箭矢数量与背包空位数指示器。
+ * 底部追加箭矢、烟花火箭数量与背包空位数指示器。
  * </p>
  * <p>装备与计数器共享槽位动画，支持入场、退场、数量/修复脉冲和低耐久摇晃。</p>
  */
 @SuppressWarnings("null")
 public final class ArmorHudRenderer {
+
+    private static final String MODULE = "ArmorHudRenderer";
 
     private static final int BASE_SLOT_SIZE = 18;
     private static final int BASE_SLOT_SPACING = 20;
@@ -45,9 +48,9 @@ public final class ArmorHudRenderer {
 
     /** 装备槽位数（含主手） */
     private static final int EQUIP_SLOT_COUNT = 9;
-    /** 指示器槽位数（箭矢 + 空位数） */
-    private static final int INDICATOR_SLOT_COUNT = 2;
-    /** 总槽位数 = 装备 9 + 指示器 2 = 11 */
+    /** 指示器槽位数（箭矢 + 烟花火箭 + 空位数） */
+    private static final int INDICATOR_SLOT_COUNT = 3;
+    /** 总槽位数 = 装备 9 + 指示器 3 = 12 */
     private static final int TOTAL_SLOT_COUNT = EQUIP_SLOT_COUNT + INDICATOR_SLOT_COUNT;
 
     // ===== 颜色 =====
@@ -74,6 +77,8 @@ public final class ArmorHudRenderer {
             Identifier.fromNamespaceAndPath("youzaiworldcore", "hud_hand_solt");
     /** 箭矢指示器图标：原版普通箭物品（用物品模型渲染，非贴图） */
     private static final ItemStack ARROW_STACK = new ItemStack(Items.ARROW);
+    /** 烟花火箭指示器图标：忽略飞行时间等组件，仅作为固定渲染模型。 */
+    private static final ItemStack FIREWORK_STACK = new ItemStack(Items.FIREWORK_ROCKET);
 
     private static final Map<String, Identifier> trinketIconCache = new ConcurrentHashMap<>();
 
@@ -102,13 +107,18 @@ public final class ArmorHudRenderer {
             new HudSlotAnimationState[EQUIP_SLOT_COUNT];
     /** 箭矢指示器图标渲染器（渲染原版箭物品模型） */
     private static final CachedItemRenderer arrowRenderer = new CachedItemRenderer();
-    /** 箭矢数量与空位数量指示器动画。 */
+    /** 烟花火箭指示器图标渲染器。 */
+    private static final CachedItemRenderer fireworkRenderer = new CachedItemRenderer();
+    /** 箭矢、烟花火箭与空位数量指示器动画。 */
     private static final HudSlotAnimationState arrowAnimation = new HudSlotAnimationState();
+    private static final HudSlotAnimationState fireworkAnimation = new HudSlotAnimationState();
     private static final HudSlotAnimationState emptySlotsAnimation = new HudSlotAnimationState();
     /** 缓存的背包+快捷栏空位数（仅在 timesChanged 变化时刷新） */
     private static int cachedEmptySlots = 0;
-    /** 缓存的背包+快捷栏箭矢总数（普通箭 + 药水箭，仅在 timesChanged 变化时刷新） */
+    /** 缓存的背包+快捷栏箭矢总数（普通箭 + 药水箭 + 光灵箭）。 */
     private static int cachedArrowCount = 0;
+    /** 缓存的背包+快捷栏烟花火箭总数（忽略飞行时间等组件）。 */
+    private static int cachedFireworkCount = 0;
 
     /**
      * 缓存的 9 个装备槽决议结果。
@@ -208,6 +218,8 @@ public final class ArmorHudRenderer {
         }
         arrowAnimation.synchronize(ARROW_STACK, cachedArrowCount,
                 nowMillis, !playerChanged);
+        fireworkAnimation.synchronize(FIREWORK_STACK, cachedFireworkCount,
+                nowMillis, !playerChanged);
         emptySlotsAnimation.synchronize(ARROW_STACK, cachedEmptySlots,
                 nowMillis, !playerChanged);
 
@@ -244,8 +256,13 @@ public final class ArmorHudRenderer {
         drawArrowIndicator(graphics, font, panelX + padding, arrowSlotY,
                 slotSize, itemInset, textGap, nowMillis);
 
-        // 槽位 11：背包+快捷栏空位数指示器
-        int emptySlotY = panelY + padding + (EQUIP_SLOT_COUNT + 1) * slotSpacing;
+        // 槽位 11：烟花火箭数量指示器
+        int fireworkSlotY = panelY + padding + (EQUIP_SLOT_COUNT + 1) * slotSpacing;
+        drawFireworkIndicator(graphics, font, panelX + padding, fireworkSlotY,
+                slotSize, itemInset, textGap, nowMillis);
+
+        // 槽位 12：背包+快捷栏空位数指示器
+        int emptySlotY = panelY + padding + (EQUIP_SLOT_COUNT + 2) * slotSpacing;
         drawEmptySlotsIndicator(graphics, font, panelX + padding, emptySlotY,
                 slotSize, itemInset, textGap, iconSize, nowMillis);
     }
@@ -357,7 +374,42 @@ public final class ArmorHudRenderer {
     }
 
     /**
-     * 绘制背包+快捷栏空位数指示器（槽位 11）。
+     * 绘制烟花火箭数量指示器（槽位 11）。
+     */
+    private static void drawFireworkIndicator(GuiGraphicsExtractor g, Font font,
+            int slotX, int slotY, int slotSize, int itemInset, int textGap,
+            long nowMillis) {
+        g.fill(slotX, slotY, slotX + slotSize, slotY + slotSize, SLOT_FILLED_COLOR);
+
+        int animatedWidth = slotSize + textGap + BASE_TEXT_WIDTH;
+        float centerX = slotX + animatedWidth / 2.0f;
+        float centerY = slotY + slotSize / 2.0f;
+        fireworkAnimation.pushCurrentTransform(g, FIREWORK_STACK,
+                centerX, centerY, nowMillis);
+
+        fireworkRenderer.render(g, FIREWORK_STACK,
+                slotX + itemInset, slotY + itemInset);
+
+        int count = cachedFireworkCount;
+        int color;
+        if (count >= 64) {
+            color = COLOR_GREEN;
+        } else if (count <= 20) {
+            color = COLOR_RED;
+        } else {
+            color = COLOR_WHITE;
+        }
+
+        int textX = slotX + slotSize + textGap;
+        int textY = slotY + (slotSize - font.lineHeight) / 2;
+        g.text(font, Integer.toString(count), textX, textY, color, true);
+        fireworkAnimation.drawCurrentOverlay(g, FIREWORK_STACK,
+                slotX, slotY, animatedWidth, slotSize, nowMillis);
+        fireworkAnimation.popTransform(g);
+    }
+
+    /**
+     * 绘制背包+快捷栏空位数指示器（槽位 12）。
      */
     private static void drawEmptySlotsIndicator(GuiGraphicsExtractor g, Font font,
             int slotX, int slotY, int slotSize, int itemInset, int textGap,
@@ -398,8 +450,9 @@ public final class ArmorHudRenderer {
     private static void updateInventoryCache(Player player) {
         // 重新统计快捷栏+背包空槽数（slots 0..35）
         int empty = 0;
-        // 重新统计箭矢总数（普通箭 + 药水箭）
+        // 重新统计箭矢总数（普通箭 + 药水箭 + 光灵箭）与全部烟花火箭。
         int arrows = 0;
+        int fireworks = 0;
         var inventory = player.getInventory();
         for (int i = 0; i <= 35; i++) {
             ItemStack s = inventory.getItem(i);
@@ -407,12 +460,22 @@ public final class ArmorHudRenderer {
                 empty++;
                 continue;
             }
-            if (s.is(Items.ARROW) || s.is(Items.TIPPED_ARROW)) {
+            if (s.is(Items.ARROW) || s.is(Items.TIPPED_ARROW)
+                    || s.is(Items.SPECTRAL_ARROW)) {
                 arrows += s.getCount();
+            } else if (s.is(Items.FIREWORK_ROCKET)) {
+                // 仅按物品类型统计，不比较飞行时间或烟花效果组件。
+                fireworks += s.getCount();
             }
+        }
+        if ((arrows != cachedArrowCount || fireworks != cachedFireworkCount)
+                && DebugLogger.isEnabled(DebugLogger.LEVEL_DETAILED)) {
+            DebugLogger.debug(MODULE, "更新 HUD 弹药统计: arrows=" + arrows
+                    + ", fireworks=" + fireworks);
         }
         cachedEmptySlots = empty;
         cachedArrowCount = arrows;
+        cachedFireworkCount = fireworks;
     }
 
     /**
