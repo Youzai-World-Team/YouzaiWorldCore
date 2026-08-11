@@ -59,6 +59,8 @@ import top.csituka.youzaiworldcore.component.ModDataComponents;
 import top.csituka.youzaiworldcore.dimensionalinventories.DimensionPoolSettings;
 import top.csituka.youzaiworldcore.dimensionalinventories.DimensionPoolManager;
 import top.csituka.youzaiworldcore.dimensionalinventories.WorldPoolCommand;
+import top.csituka.youzaiworldcore.respawn.InPlaceRespawnConfig;
+import top.csituka.youzaiworldcore.respawn.InPlaceRespawnManager;
 import top.csituka.youzaiworldcore.entity.seat.ModSeatEntities;
 import top.csituka.youzaiworldcore.event.AnvilRepairHandler;
 import top.csituka.youzaiworldcore.event.BoneMealSugarCaneHandler;
@@ -360,6 +362,13 @@ public class YouzaiworldCore implements ModInitializer {
         DimensionPoolSettings.load();
         LOGGER.info("维度池系统已初始化");
         DebugLogger.exiting("YouzaiworldCore", "DimensionPoolSystem.init");
+
+        // ===== 初始化原地重生系统 =====
+        DebugLogger.entering("YouzaiworldCore", "InPlaceRespawnSystem.init");
+        InPlaceRespawnConfig.load();
+        InPlaceRespawnManager.initialize();
+        LOGGER.info("原地重生系统已初始化");
+        DebugLogger.exiting("YouzaiworldCore", "InPlaceRespawnSystem.init");
 
         // ===== 注册维度池事件 =====
         DebugLogger.entering("YouzaiworldCore", "DimensionPoolEvents.register");

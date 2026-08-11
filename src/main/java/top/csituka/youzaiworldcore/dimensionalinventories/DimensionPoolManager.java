@@ -19,6 +19,7 @@ import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Supplier;
 
 /**
  * 维度池传送管理器 — 核心调度器。
@@ -62,6 +63,19 @@ public final class DimensionPoolManager {
     private static final Set<String> DEATH_PENDING_SPAWN = new HashSet<>();
 
     private DimensionPoolManager() {}
+
+    /**
+     * 在维度池状态切换守卫下执行内部传送或复活操作。
+     * 用于原地重生，避免“出生点维度 → 死亡维度”的内部传送触发跨池背包切换。
+     */
+    public static <T> T withTeleportGuard(UUID playerUuid, Supplier<T> action) {
+        TELEPORT_IN_PROGRESS.add(playerUuid);
+        try {
+            return action.get();
+        } finally {
+            TELEPORT_IN_PROGRESS.remove(playerUuid);
+        }
+    }
 
     // ===== 路径辅助 =====
 
@@ -566,6 +580,14 @@ public final class DimensionPoolManager {
                 "oldPlayer=" + oldPlayer.getName().getString()
                         + ", newPlayer=" + newPlayer.getName().getString()
                         + ", alive=" + alive);
+
+        if (oldPlayer instanceof top.csituka.youzaiworldcore.respawn.InPlaceRespawnPlayerAccess access
+                && access.youzaiworldcore$isInPlaceRespawnSelected()) {
+            DebugLogger.info("DimensionPoolManager", "跳过玩家 %s 的维度池复活处理（原地重生）",
+                    newPlayer.getName().getString());
+            DebugLogger.exiting("DimensionPoolManager", "onPlayerRespawn", "in_place_respawn");
+            return;
+        }
 
         boolean teleportInProgress = TELEPORT_IN_PROGRESS.contains(newPlayer.getUUID());
         DebugLogger.branch("DimensionPoolManager", "传送守卫检查（是否在传送中）", teleportInProgress, "");

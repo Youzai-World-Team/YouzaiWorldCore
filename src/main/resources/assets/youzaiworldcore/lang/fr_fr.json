@@ -683,5 +683,11 @@
   "youzaiworldcore.message.preset.rainbow_arrows": "§7Flèches arc-en-ciel",
   "youzaiworldcore.message.preset.totem_box": "§eTotem d'immortalité",
   "youzaiworldcore.tellraw.format": "§r§7✦ §4ᴍ§cɪ§6ɴ§eᴇ§aᴄ§bʀ§3ᴀ§dғ§uᴛ §7- §eMonde Youzai §7✦ §r",
-  "youzaiworldcore.tellraw.format.indev.warning": "§r§7✦ §eAvertissement de débogage YouzaiWorldCore§7✦ §r"
+  "youzaiworldcore.tellraw.format.indev.warning": "§r§7✦ §eAvertissement de débogage YouzaiWorldCore§7✦ §r",
+  "youzaiworldcore.respawn.in_place.button": "Réapparaître ici",
+  "youzaiworldcore.respawn.in_place.cost": "Coûte %s niveaux",
+  "youzaiworldcore.respawn.in_place.pending": "Demande de réapparition ici…",
+  "youzaiworldcore.respawn.in_place.not_enough_levels": "§cNiveaux insuffisants : %s requis, %s disponibles",
+  "youzaiworldcore.respawn.in_place.unavailable": "§cLa réapparition sur place est indisponible",
+  "youzaiworldcore.respawn.in_place.success": "§a%s niveaux dépensés, réapparition au lieu de mort avec Résistance V pendant 10 secondes."
 }

@@ -699,5 +699,11 @@
   "youzaiworldcore.message.preset.rainbow_arrows": "§7Rainbow Arrows",
   "youzaiworldcore.message.preset.totem_box": "§eTotem of Undying",
   "youzaiworldcore.tellraw.format": "§r§7✦ §4ᴍ§cɪ§6ɴ§eᴇ§aᴄ§bʀ§3ᴀ§dғ§uᴛ §7- §eYouzai World §7✦ §r",
-  "youzaiworldcore.tellraw.format.indev.warning": "§r§7✦ §eYouzaiWorldCore Debug Warning§7✦ §r"
+  "youzaiworldcore.tellraw.format.indev.warning": "§r§7✦ §eYouzaiWorldCore Debug Warning§7✦ §r",
+  "youzaiworldcore.respawn.in_place.button": "Respawn Here",
+  "youzaiworldcore.respawn.in_place.cost": "Costs %s levels",
+  "youzaiworldcore.respawn.in_place.pending": "Requesting respawn here…",
+  "youzaiworldcore.respawn.in_place.not_enough_levels": "§cNot enough levels: %s required, %s available",
+  "youzaiworldcore.respawn.in_place.unavailable": "§cRespawning here is currently unavailable",
+  "youzaiworldcore.respawn.in_place.success": "§aSpent %s levels and respawned at the death location with Resistance V for 10 seconds."
 }
