@@ -28,8 +28,6 @@ import java.util.concurrent.ConcurrentHashMap;
 @SuppressWarnings("null")
 public final class ArmorHudRenderer {
 
-    private static final float REF_HEIGHT = 360f;
-
     private static final int BASE_SLOT_SIZE = 18;
     private static final int BASE_SLOT_SPACING = 20;
     private static final int BASE_ITEM_INSET = 1;
@@ -156,7 +154,13 @@ public final class ArmorHudRenderer {
     private ArmorHudRenderer() {
     }
 
-    public static void render(GuiGraphicsExtractor graphics) {
+    /**
+     * 使用统一缩放矩阵内的设计坐标绘制装备栏 HUD。
+     *
+     * @param graphics HUD 绘制上下文
+     * @param guiHeight 当前缩放矩阵内的设计坐标高度
+     */
+    public static void render(GuiGraphicsExtractor graphics, int guiHeight) {
         Minecraft client = Minecraft.getInstance();
         Player player = client.player;
         if (player == null)
@@ -186,29 +190,25 @@ public final class ArmorHudRenderer {
             lastSelectedSlot = selectedSlot;
         }
 
-        float s = graphics.guiHeight() / REF_HEIGHT;
-        int slotSize = rnd(BASE_SLOT_SIZE, s);
-        int slotSpacing = rnd(BASE_SLOT_SPACING, s);
-        int itemInset = rnd(BASE_ITEM_INSET, s);
-        int padding = rnd(BASE_PADDING, s);
-        int textGap = rnd(BASE_TEXT_GAP, s);
-        int textWidth = rnd(BASE_TEXT_WIDTH, s);
+        int slotSize = BASE_SLOT_SIZE;
+        int slotSpacing = BASE_SLOT_SPACING;
+        int itemInset = BASE_ITEM_INSET;
+        int padding = BASE_PADDING;
+        int textGap = BASE_TEXT_GAP;
+        int textWidth = BASE_TEXT_WIDTH;
 
         int gridH = (TOTAL_SLOT_COUNT - 1) * slotSpacing + slotSize;
         int panelH = gridH + padding * 2;
         int panelW = padding + slotSize + textGap + textWidth + padding;
 
-        int sh = graphics.guiHeight();
-        int panelX = rnd(BASE_LEFT_OFFSET, s);
-        int panelY = sh - panelH - rnd(BASE_BOTTOM_OFFSET, s);
+        int panelX = BASE_LEFT_OFFSET;
+        int panelY = guiHeight - panelH - BASE_BOTTOM_OFFSET;
         Font font = client.font;
 
-        // 半径按实际缩放值传入。原先固定使用为 r=6 预建的偏移表，
-        // 而传入半径是 round(6 * s)，s ≠ 1 时二者错配导致圆角缺角或溢出。
         RoundedRect.fillOrSquare(graphics, panelX, panelY, panelW, panelH,
-                rnd(BASE_PANEL_RADIUS, s), PANEL_BG);
+                BASE_PANEL_RADIUS, PANEL_BG);
 
-        int iconSize = rnd(16, s);
+        int iconSize = 16;
 
         // 9 个装备槽位
         for (int i = 0; i < EQUIP_SLOT_COUNT; i++) {
@@ -483,10 +483,6 @@ public final class ArmorHudRenderer {
                 total += s.getCount();
         }
         return total;
-    }
-
-    private static int rnd(float base, float scale) {
-        return Math.round(base * scale);
     }
 
     private record SlotEntry(ItemStack stack, boolean showDurability,

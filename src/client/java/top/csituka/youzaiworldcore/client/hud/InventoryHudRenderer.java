@@ -19,7 +19,6 @@ import top.csituka.youzaiworldcore.itemborder.ItemBorderRenderer;
 @SuppressWarnings("null")
 public final class InventoryHudRenderer {
 
-    private static final float REF_HEIGHT = 360f;
     private static final int BASE_SLOT_SIZE = 18;
     private static final int BASE_SLOT_SPACING = 20;
     private static final int BASE_ITEM_INSET = 1;
@@ -61,7 +60,13 @@ public final class InventoryHudRenderer {
     private InventoryHudRenderer() {
     }
 
-    public static void render(GuiGraphicsExtractor graphics) {
+    /**
+     * 使用统一缩放矩阵内的设计坐标绘制物品栏 HUD。
+     *
+     * @param graphics HUD 绘制上下文
+     * @param guiHeight 当前缩放矩阵内的设计坐标高度
+     */
+    public static void render(GuiGraphicsExtractor graphics, int guiHeight) {
         Minecraft client = Minecraft.getInstance();
         Player player = client.player;
         if (player == null)
@@ -80,26 +85,22 @@ public final class InventoryHudRenderer {
             lastTimesChanged = nowChanged;
         }
 
-        float s = graphics.guiHeight() / REF_HEIGHT;
-        int slotSize = rnd(BASE_SLOT_SIZE, s);
-        int slotSpacing = rnd(BASE_SLOT_SPACING, s);
-        int itemInset = rnd(BASE_ITEM_INSET, s);
-        int padding = rnd(BASE_PADDING, s);
+        int slotSize = BASE_SLOT_SIZE;
+        int slotSpacing = BASE_SLOT_SPACING;
+        int itemInset = BASE_ITEM_INSET;
+        int padding = BASE_PADDING;
 
         int gridW = (COLS - 1) * slotSpacing + slotSize;
         int gridH = (ROWS - 1) * slotSpacing + slotSize;
         int panelW = gridW + padding * 2;
         int panelH = gridH + padding * 2;
 
-        int sh = graphics.guiHeight();
-        int panelX = rnd(BASE_LEFT_OFFSET, s);
-        int panelY = sh - panelH - rnd(BASE_BOTTOM_OFFSET, s);
+        int panelX = BASE_LEFT_OFFSET;
+        int panelY = guiHeight - panelH - BASE_BOTTOM_OFFSET;
         Font font = client.font;
 
-        // 半径按实际缩放值传入。原先固定使用为 r=6 预建的偏移表，
-        // 而传入半径是 round(6 * s)，s ≠ 1 时二者错配导致圆角缺角或溢出。
         RoundedRect.fillOrSquare(graphics, panelX, panelY, panelW, panelH,
-                rnd(BASE_PANEL_RADIUS, s), PANEL_BG);
+                BASE_PANEL_RADIUS, PANEL_BG);
 
         for (int row = 0; row < ROWS; row++) {
             for (int col = 0; col < COLS; col++) {
@@ -122,7 +123,4 @@ public final class InventoryHudRenderer {
         }
     }
 
-    private static int rnd(float base, float scale) {
-        return Math.round(base * scale);
-    }
 }

@@ -40,8 +40,6 @@ public final class StatusEffectHudRenderer {
 
     private static final String MODULE = "StatusEffectHudRenderer";
 
-    private static final float REF_HEIGHT = 360f;
-
     // ===== 与装备栏、物品栏 HUD 对齐的基础尺寸 =====
     private static final int BASE_SLOT_SIZE = 18;
     private static final int BASE_SLOT_SPACING = 20;
@@ -126,8 +124,9 @@ public final class StatusEffectHudRenderer {
      * 绘制状态效果 HUD。没有状态效果时不会创建或绘制面板。
      *
      * @param graphics HUD 绘制上下文
+     * @param guiHeight 当前缩放矩阵内的设计坐标高度
      */
-    public static void render(GuiGraphicsExtractor graphics) {
+    public static void render(GuiGraphicsExtractor graphics, int guiHeight) {
         Minecraft client = Minecraft.getInstance();
         Player player = client.player;
         if (player == null || client.level == null) {
@@ -174,41 +173,39 @@ public final class StatusEffectHudRenderer {
                 + (partialCompactColumns > 0 ? 1 : 0)
                 + fullRowCount;
 
-        float scale = graphics.guiHeight() / REF_HEIGHT;
         Font font = client.font;
 
-        int slotSize = rnd(BASE_SLOT_SIZE, scale);
-        int slotSpacing = rnd(BASE_SLOT_SPACING, scale);
-        int padding = rnd(BASE_PADDING, scale);
-        int textGap = rnd(BASE_TEXT_GAP, scale);
-        int armorTextWidth = rnd(BASE_ARMOR_TEXT_WIDTH, scale);
-        int panelGap = rnd(BASE_PANEL_GAP, scale);
-        int rowHeight = Math.max(font.lineHeight * 2, rnd(BASE_ROW_HEIGHT, scale));
-        int rowGap = rnd(BASE_ROW_GAP, scale);
-        int iconSize = rnd(BASE_ICON_SIZE, scale);
+        int slotSize = BASE_SLOT_SIZE;
+        int slotSpacing = BASE_SLOT_SPACING;
+        int padding = BASE_PADDING;
+        int textGap = BASE_TEXT_GAP;
+        int armorTextWidth = BASE_ARMOR_TEXT_WIDTH;
+        int panelGap = BASE_PANEL_GAP;
+        int rowHeight = Math.max(font.lineHeight * 2, BASE_ROW_HEIGHT);
+        int rowGap = BASE_ROW_GAP;
+        int iconSize = BASE_ICON_SIZE;
 
         // 装备栏右边缘。
         int armorPanelWidth = padding * 2 + slotSize + textGap + armorTextWidth;
-        int panelX = rnd(BASE_LEFT_OFFSET, scale) + armorPanelWidth + panelGap;
+        int panelX = BASE_LEFT_OFFSET + armorPanelWidth + panelGap;
 
         // 与物品栏面板右边缘对齐。
         int inventoryGridWidth = (INVENTORY_COLS - 1) * slotSpacing + slotSize;
         int inventoryPanelWidth = inventoryGridWidth + padding * 2;
-        int inventoryPanelRight = rnd(BASE_LEFT_OFFSET, scale) + inventoryPanelWidth;
-        int panelWidth = Math.max(rnd(80, scale), inventoryPanelRight - panelX);
+        int inventoryPanelRight = BASE_LEFT_OFFSET + inventoryPanelWidth;
+        int panelWidth = Math.max(80, inventoryPanelRight - panelX);
 
         // 底边固定在物品栏面板上方，面板随效果数量向上生长。
         int inventoryGridHeight = (INVENTORY_ROWS - 1) * slotSpacing + slotSize;
         int inventoryPanelHeight = inventoryGridHeight + padding * 2;
-        int inventoryPanelY = graphics.guiHeight()
-                - inventoryPanelHeight - rnd(BASE_BOTTOM_OFFSET, scale);
-        int panelBottom = inventoryPanelY - rnd(BASE_VERTICAL_GAP, scale);
+        int inventoryPanelY = guiHeight - inventoryPanelHeight - BASE_BOTTOM_OFFSET;
+        int panelBottom = inventoryPanelY - BASE_VERTICAL_GAP;
         int panelHeight = padding * 2 + displayedRowCount * rowHeight
                 + Math.max(0, displayedRowCount - 1) * rowGap;
         int panelY = panelBottom - panelHeight;
 
         RoundedRect.fillOrSquare(graphics, panelX, panelY, panelWidth, panelHeight,
-                rnd(BASE_PANEL_RADIUS, scale), PANEL_BG);
+                BASE_PANEL_RADIUS, PANEL_BG);
 
         long nowMillis = System.currentTimeMillis();
 
@@ -390,7 +387,4 @@ public final class StatusEffectHudRenderer {
                 : FLASH_DIM_ALPHA;
     }
 
-    private static int rnd(float base, float scale) {
-        return Math.round(base * scale);
-    }
 }
