@@ -245,13 +245,16 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 - **客户端接入**：`EnchantmentLevelLangPatchMixin` 将补丁注入语言加载流程
 - **用途**：使中文玩家以「十级」「一百级」等中文数字阅读高等级附魔，避免罗马数字冗长难读
 
-### 20. 拾取显示系统
+### 20. 拾取显示与伤害跳字系统
 
-客户端拾取反馈：拾取物品与经验时，在屏幕侧边 / 指定区域浮动显示本次获得的条目，提升拾取感知。
+客户端即时反馈：拾取物品与经验时显示获得条目，实体受伤时在受击位置显示实际伤害跳字。
 
 - **处理链路**：`AddEntriesHandler` 接收拾取事件并加入队列 → `PendingPickupQueue` 维护待显示条目 → `DrawEntriesHandler` 逐帧绘制
 - **条目类型**：`DisplayEntry` 抽象基类，具体实现 `ItemDisplayEntry`（物品，含数量/堆叠信息）与 `ExperienceDisplayEntry`（经验值）
 - **客户端接入**：`PickUpNotifyMixin` 拦截拾取通知驱动显示；`ClientNetworking` 处理客户端网络相关逻辑
+- **伤害跳字**：`DamageNumberLivingEntityMixin` 比较 `LivingEntity#hurtServer` 前后的生命值与吸收生命值，得到护甲、附魔、抗性和护盾结算后的实际损失；服务端经 `DamageNumberPayload`（S→C）同步受击位置，客户端 `DamageNumberRenderer` 使用 26.2 提交式世界渲染管线绘制上浮、横移并淡出的红色数字
+- **个人开关**：`/yzwc function damage_numbers [true|false]` 控制自己是否接收伤害跳字，省略参数时查询；新玩家默认开启，状态按 UUID 持久化至 `config/youzaiworldcore/function_toggles.json`
+- **可见性与性能**：仅向已开启且正在追踪目标的玩家同步；隐身目标不会向无关旁观者暴露位置。客户端最多保留 256 条跳字，并只渲染 64 格内的数字
 
 ### 21. 世界增强功能
 
@@ -545,9 +548,9 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 
 客户端 HUD 增强（`client/hud/ToolInfoOverlay`）。当手持工具/武器时，在屏幕指定区域显示其当前耐久度、附魔等级等关键信息的浮动面板，方便玩家快速了解装备状态，无需打开物品栏。
 
-### 43. 客户端功能开关系统 ★新增
+### 43. 单玩家功能开关系统 ★新增
 
-为双开门等玩家偏好功能提供持久化的客户端独立开关（`client/FunctionToggleClientState`），状态经 `FunctionToggleSyncPayload`（S→C）同步，在 `ClientExternalSettings` 中持久化，重启客户端不丢失。
+为伤害跳字、工具信息、方块动画等玩家偏好功能提供服务端权威的个人开关。状态由 `FunctionToggleManager` 按 UUID 持久化至 `config/youzaiworldcore/function_toggles.json`；客户端渲染类开关经 `FunctionToggleSyncPayload`（S→C）同步。伤害跳字直接在服务端按接收玩家过滤，关闭者不再收到 `DamageNumberPayload`。
 
 ---
 
@@ -611,6 +614,10 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 │   ├── 权限：youzaiworldcore.command.function.double_doors（玩家自身，所有人可执行）
 │   └── 缺省查询自身状态；新玩家默认启用，状态持久化至 double_doors_players.json
 │
+├── function damage_numbers [true|false]
+│   ├── 权限：youzaiworldcore.command.function.damage_numbers（玩家自身，所有人可执行）
+│   └── 缺省查询自身状态；新玩家默认启用，状态持久化至 function_toggles.json
+│
 ├── reload
 │   ├── 权限：youzaiworldcore.command.reload（OP 4）
 │   └── 运行时重载账户数据和配置
@@ -650,7 +657,7 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
     └── 检查模组更新（拉取远程版本信息，反馈普通/强制更新与下载链接）
 ```
 
-> **客户端命令说明**：`/yzwc pet`、`/yzwc mail`、`/yzwc function invisibility`、`/yzwc function double_doors` 均在客户端注册，仅负责解析参数并通过对应 C→S 数据包（`PetCommandPayload` / `MailComposeOpenPayload` 等邮件包 / `InvisibilityPayload` / `DoubleDoorsTogglePayload`）转发；服务端持有权威状态与权限判定。其余子命令（`teleport_world` / `open_menu` / `world_pool` / `teleport_anchor` / `event` / `reload` / `account` / `status` / `update`）为服务端命令。
+> **客户端命令说明**：`/yzwc pet`、`/yzwc mail`、`/yzwc function invisibility`、`/yzwc function double_doors` 均在客户端注册，仅负责解析参数并通过对应 C→S 数据包（`PetCommandPayload` / `MailComposeOpenPayload` 等邮件包 / `InvisibilityPayload` / `DoubleDoorsTogglePayload`）转发；服务端持有权威状态与权限判定。`/yzwc function damage_numbers` 及其他 `FunctionCommand` 子项是服务端命令，由客户端占位镜像原样转发。
 
 ### 权限节点一览
 
@@ -663,6 +670,7 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 | `youzaiworldcore.command.teleport_anchor`                   | 传送锚点管理                           | OP 4                    |
 | `youzaiworldcore.command.function.invisibility`             | 隐身功能                               | OP 4                    |
 | `youzaiworldcore.command.function.double_doors`             | 双开门功能（自身开关 / 查询）          | 所有人（仅自身）        |
+| `youzaiworldcore.command.function.damage_numbers`           | 伤害跳字显示（自身开关 / 查询）        | 所有人（仅自身）        |
 | `youzaiworldcore.command.function.afk`                     | AFK 自身切换                           | 所有人（仅自身）        |
 | `youzaiworldcore.command.afk.admin`                        | AFK 管理（status/list/settings）       | OP 4                    |
 | `youzaiworldcore.command.event.query`                       | 事件管理查询（省略参数即为查询）       | 所有人                  |
@@ -708,9 +716,9 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 | `decomposition_table` | 分解台   |
 | `fly_beacon`          | 飞行信标 |
 
-### 网络数据包（共 47 个）
+### 网络数据包（共 48 个）
 
-> 注：`world_pool_teleport` 数据包类位于 `dimensionalinventories` 包，其余位于 `network` 包；邮件相关 18 个数据包亦位于 `network` 包。方向统计：S→C 20 个，C→S 27 个。
+> 注：`world_pool_teleport` 数据包类位于 `dimensionalinventories` 包，其余位于 `network` 包；邮件相关 18 个数据包亦位于 `network` 包。方向统计：S→C 21 个，C→S 27 个。
 
 | 数据包 ID                   | 方向 | 用途                                                               |
 | --------------------------- | ---- | ------------------------------------------------------------------ |
@@ -718,6 +726,7 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 | `open_auth_screen`          | S→C  | 打开认证界面                                                       |
 | `mana_sync`                 | S→C  | 同步魔力值                                                         |
 | `level_exp_sync`            | S→C  | 同步冒险等级经验                                                   |
+| `damage_number`             | S→C  | 同步实体受击位置与实际伤害值，用于客户端世界空间跳字               |
 | `attribute_sync`            | S→C  | 同步玩家属性数据（技能点 / 各项属性 / 等级）                       |
 | `teleport_anchor_list`      | S→C  | 发送传送点列表                                                     |
 | `teleport_anchor_open_name` | S→C  | 打开传送锚点命名界面                                               |
@@ -807,8 +816,8 @@ src/                                       # 411 个 Java 源文件（main 252 /
 │   ├── luckperms/                        # LuckPerms 集成（LuckPermsHelper 统一鉴权）
 │   ├── mail/                             # 邮件系统（Mail / MailManager / SentMailRepository / MailDataStorage / MailSettings / MailPermissionHelper）
 │   ├── mana/                             # 魔力系统
-│   ├── mixin/                            # Mixin（含子包 afk / babyzombie / chargedcreeper / craftsound / doubledoors / invisibility / jukebox / painting / pet / seat / skill / trialvault）
-│   ├── network/                          # 网络数据包（43 个数据包类 + ModNetworking）
+│   ├── mixin/                            # Mixin（含子包 afk / babyzombie / chargedcreeper / craftsound / damagenumber / doubledoors / invisibility / jukebox / painting / pet / seat / skill / trialvault）
+│   ├── network/                          # 网络数据包（47 个 Payload 类 + ModNetworking）
 │   ├── pet/                              # 宠物系统（config/command/event 子包 + PetGlobalState/PetEntry）
 │   ├── placeholders/                     # Placeholder API 集成（32 个占位符）
 │   ├── screen/                           # 容器菜单

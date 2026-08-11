@@ -18,13 +18,14 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
 /**
  * 单玩家功能开关命令：{@code /yzwc function <功能名> [true|false]}
  * <p>
- * 5 项可开关功能（crop_xp_drop 已移至 /yzwc event）：
+ * 6 项可开关功能（crop_xp_drop 已移至 /yzwc event）：
  * <ul>
  * <li>{@code ladder_extend_downward} — 梯子向下延展</li>
  * <li>{@code tool_info_overlay} — 时钟/指南针/追溯指针信息显示</li>
  * <li>{@code block_animation} — 方块动画粒子</li>
  * <li>{@code crafting_sound} — 合成音效</li>
  * <li>{@code item_sparkle} — 物品闪烁粒子</li>
+ * <li>{@code damage_numbers} — 伤害跳字（所有玩家可控制自己的显示状态）</li>
  * </ul>
  * </p>
  */
@@ -42,30 +43,37 @@ public class FunctionCommand {
                         .then(functionNode("tool_info_overlay"))
                         .then(functionNode("block_animation"))
                         .then(functionNode("crafting_sound"))
-                        .then(functionNode("item_sparkle"))));
+                        .then(functionNode("item_sparkle"))
+                        .then(functionNode(FunctionToggleManager.KEY_DAMAGE_NUMBERS, true))));
 
         DebugLogger.exiting(MODULE, "register");
     }
 
     private static LiteralArgumentBuilder<CommandSourceStack> functionNode(String key) {
+        return functionNode(key, false);
+    }
+
+    private static LiteralArgumentBuilder<CommandSourceStack> functionNode(String key, boolean selfService) {
         return Commands.literal(key)
                 .requires(src -> LuckPermsHelper.checkPermission(src,
-                        LuckPermsHelper.PERMISSION_FUNCTION_QUERY, Commands.LEVEL_ALL))
+                        selfService
+                                ? LuckPermsHelper.PERMISSION_DAMAGE_NUMBERS
+                                : LuckPermsHelper.PERMISSION_FUNCTION_QUERY,
+                        Commands.LEVEL_ALL))
                 .executes(ctx -> queryToggle(ctx, key))
                 .then(Commands.argument("enabled", BoolArgumentType.bool())
                         .requires(src -> LuckPermsHelper.checkPermission(src,
-                                LuckPermsHelper.PERMISSION_FUNCTION_SET, Commands.LEVEL_ADMINS))
+                                selfService
+                                        ? LuckPermsHelper.PERMISSION_DAMAGE_NUMBERS
+                                        : LuckPermsHelper.PERMISSION_FUNCTION_SET,
+                                selfService ? Commands.LEVEL_ALL : Commands.LEVEL_ADMINS))
                         .executes(ctx -> setToggle(ctx, key, BoolArgumentType.getBool(ctx, "enabled"))));
     }
 
     private static int queryToggle(CommandContext<CommandSourceStack> ctx, String key) throws CommandSyntaxException {
         ServerPlayer player = ctx.getSource().getPlayerOrException();
         boolean enabled = FunctionToggleManager.isEnabled(player.getUUID(), key);
-        String label = getLabel(key);
-        ctx.getSource().sendSuccess(() -> Component.translatable(enabled
-                ? "youzaiworldcore.message.command.function.query_enabled"
-                : "youzaiworldcore.message.command.function.query_disabled", label),
-                false);
+        ctx.getSource().sendSuccess(() -> feedbackMessage(key, enabled, false), false);
         return 1;
     }
 
@@ -73,14 +81,13 @@ public class FunctionCommand {
         ServerPlayer player = ctx.getSource().getPlayerOrException();
         FunctionToggleManager.setEnabled(player.getUUID(), key, enabled);
 
-        // 同步到客户端
-        syncToClient(player);
+        // 纯客户端渲染开关需要同步；伤害跳字由服务端按接收者过滤，无需额外同步
+        if (!FunctionToggleManager.KEY_DAMAGE_NUMBERS.equals(key)) {
+            syncToClient(player);
+        }
 
-        String label = getLabel(key);
-        ctx.getSource().sendSuccess(() -> Component.translatable(enabled
-                ? "youzaiworldcore.message.command.function.set_enabled"
-                : "youzaiworldcore.message.command.function.set_disabled", label),
-                true);
+        ctx.getSource().sendSuccess(() -> feedbackMessage(key, enabled, true),
+                !FunctionToggleManager.KEY_DAMAGE_NUMBERS.equals(key));
         return 1;
     }
 
@@ -107,5 +114,23 @@ public class FunctionCommand {
             case "item_sparkle" -> "物品闪烁粒子";
             default -> key;
         };
+    }
+
+    private static Component feedbackMessage(String key, boolean enabled, boolean setting) {
+        if (FunctionToggleManager.KEY_DAMAGE_NUMBERS.equals(key)) {
+            String action = setting ? "set" : "query";
+            String state = enabled ? "enabled" : "disabled";
+            return Component.translatable(
+                    "youzaiworldcore.message.command.function.damage_numbers." + action + "_" + state);
+        }
+
+        return Component.translatable(enabled
+                ? setting
+                        ? "youzaiworldcore.message.command.function.set_enabled"
+                        : "youzaiworldcore.message.command.function.query_enabled"
+                : setting
+                        ? "youzaiworldcore.message.command.function.set_disabled"
+                        : "youzaiworldcore.message.command.function.query_disabled",
+                getLabel(key));
     }
 }

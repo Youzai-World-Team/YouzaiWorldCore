@@ -16,6 +16,7 @@ import top.csituka.youzaiworldcore.client.screen.element.SwitchWorldMenuElements
 import top.csituka.youzaiworldcore.client.FunctionToggleClientState;
 import top.csituka.youzaiworldcore.client.InPlaceRespawnClientState;
 import top.csituka.youzaiworldcore.client.hud.AdventureLevelHudRenderer;
+import top.csituka.youzaiworldcore.client.render.DamageNumberRenderer;
 import top.csituka.youzaiworldcore.client.skill.ClientAttributeData;
 import top.csituka.youzaiworldcore.mana.ManaManager;
 import top.csituka.youzaiworldcore.util.DebugLogger;
@@ -159,6 +160,12 @@ public class ClientNetworking {
             });
         });
         DebugLogger.info("ClientNetworking", "Registered receiver: LevelExpSyncPayload");
+
+        // 注册伤害跳字处理器
+        ClientPlayNetworking.registerGlobalReceiver(DamageNumberPayload.ID, (payload, context) ->
+                context.client().execute(() -> DamageNumberRenderer.add(
+                        payload.x(), payload.y(), payload.z(), payload.entityHeight(), payload.damage())));
+        DebugLogger.info("ClientNetworking", "Registered receiver: DamageNumberPayload");
 
         // 注册属性数据同步处理器
         ClientPlayNetworking.registerGlobalReceiver(AttributeSyncPayload.TYPE, (payload, context) -> {

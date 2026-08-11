@@ -245,13 +245,16 @@ A capability-style system that patches the rendering of **enchantment levels** a
 - **Client Integration**: `EnchantmentLevelLangPatchMixin` injects the patch into the language-loading flow
 - **Purpose**: Lets Chinese players read high-level enchantments as "十级" / "一百级" instead of long Roman numerals
 
-### 20. Pickup Display System
+### 20. Pickup Display & Damage Numbers
 
-Client-side pickup feedback: when picking up items or XP, float the obtained entries in a side / designated screen area to improve pickup awareness.
+Immediate client-side feedback: pickups show obtained item/XP entries, while damaged entities display their actual damage at the hit position.
 
 - **Pipeline**: `AddEntriesHandler` receives pickup events and enqueues them → `PendingPickupQueue` holds pending entries → `DrawEntriesHandler` renders them each frame
 - **Entry Types**: `DisplayEntry` abstract base, with concrete `ItemDisplayEntry` (items, including count/stack info) and `ExperienceDisplayEntry` (XP)
 - **Client Integration**: `PickUpNotifyMixin` intercepts pickup notifications to drive the display; `ClientNetworking` handles client-side network logic
+- **Damage Numbers**: `DamageNumberLivingEntityMixin` compares health plus absorption before and after `LivingEntity#hurtServer`, yielding the actual loss after armor, enchantments, resistance, and shield processing. The server sends the hit position through `DamageNumberPayload` (S→C), and the client `DamageNumberRenderer` uses the 26.2 submit-based world rendering pipeline for red numbers that rise, drift, and fade
+- **Per-Player Toggle**: `/yzwc function damage_numbers [true|false]` controls whether the executing player receives damage numbers; omitting the argument queries the current state. New players default to enabled, with UUID-keyed state persisted in `config/youzaiworldcore/function_toggles.json`
+- **Visibility & Performance**: Packets are sent only to enabled players tracking the target; invisible targets do not leak their location to unrelated observers. The client retains at most 256 numbers and renders only those within 64 blocks
 
 ### 21. World Enhancement Features
 
@@ -545,9 +548,9 @@ Music disc items implemented using MC 26.2's new `JUKEBOX_PLAYABLE` DataComponen
 
 Client-side HUD enhancement (`client/hud/ToolInfoOverlay`). When holding a tool or weapon, displays a floating panel showing current durability, enchantment levels, and other key information at a designated screen position — allowing players to quickly check equipment status without opening the inventory.
 
-### 43. Client-Side Function Toggle System ★NEW
+### 43. Per-Player Function Toggle System ★NEW
 
-Persistent, per-player client-side toggles for preference features such as double doors (`client/FunctionToggleClientState`), synchronized via `FunctionToggleSyncPayload` (S→C) and persisted in `ClientExternalSettings`, surviving client restarts.
+Server-authoritative per-player toggles for preference features such as damage numbers, tool information, and block animations. `FunctionToggleManager` persists UUID-keyed state in `config/youzaiworldcore/function_toggles.json`; client-rendered feature toggles are synchronized through `FunctionToggleSyncPayload` (S→C). Damage numbers are filtered per recipient on the server, so disabled players no longer receive `DamageNumberPayload`.
 
 ---
 
@@ -611,6 +614,10 @@ All commands use `/yzwc` as the root command. Subcommands marked **(client comma
 │   ├── Permission: youzaiworldcore.command.function.double_doors (self, everyone can run)
 │   └── Omit to query own status; new players enabled by default; state persisted to double_doors_players.json
 │
+├── function damage_numbers [true|false]
+│   ├── Permission: youzaiworldcore.command.function.damage_numbers (self, everyone can run)
+│   └── Omit to query own status; new players enabled by default; state persisted to function_toggles.json
+│
 ├── reload
 │   ├── Permission: youzaiworldcore.command.reload (OP 4)
 │   └── Reload account data and config at runtime
@@ -650,7 +657,7 @@ All commands use `/yzwc` as the root command. Subcommands marked **(client comma
     └── Check for mod updates (fetches remote version info, reports normal/forced update + download link)
 ```
 
-> **Client command note**: `/yzwc pet`, `/yzwc mail`, `/yzwc function invisibility`, and `/yzwc function double_doors` are registered on the client and only parse arguments, forwarding them through the corresponding C→S packets (`PetCommandPayload` / `MailComposeOpenPayload` and other mail packets / `InvisibilityPayload` / `DoubleDoorsTogglePayload`); the server holds the authoritative state and permission checks. All other subcommands (`teleport_world` / `open_menu` / `world_pool` / `teleport_anchor` / `event` / `reload` / `account` / `status` / `update`) are server-side.
+> **Client command note**: `/yzwc pet`, `/yzwc mail`, `/yzwc function invisibility`, and `/yzwc function double_doors` are registered on the client and only parse arguments, forwarding them through the corresponding C→S packets (`PetCommandPayload` / `MailComposeOpenPayload` and other mail packets / `InvisibilityPayload` / `DoubleDoorsTogglePayload`); the server holds the authoritative state and permission checks. `/yzwc function damage_numbers` and the other `FunctionCommand` children are server-side commands forwarded unchanged by the client placeholder mirror.
 
 ### Permission Nodes Overview
 
@@ -663,6 +670,7 @@ All commands use `/yzwc` as the root command. Subcommands marked **(client comma
 | `youzaiworldcore.command.teleport_anchor`                   | Teleport anchor management                        | OP 4                     |
 | `youzaiworldcore.command.function.invisibility`             | Invisibility function                             | OP 4                     |
 | `youzaiworldcore.command.function.double_doors`             | Double Doors function (self toggle / query)       | Everyone (self-only)     |
+| `youzaiworldcore.command.function.damage_numbers`           | Damage number display (self toggle / query)       | Everyone (self-only)     |
 | `youzaiworldcore.command.function.afk`                     | AFK self toggle                                   | Everyone (self-only)     |
 | `youzaiworldcore.command.afk.admin`                        | AFK admin (status/list/settings)                  | OP 4                     |
 | `youzaiworldcore.command.event.query`                       | Event management query (omit arg = query)         | Everyone                 |
@@ -708,9 +716,9 @@ All commands use `/yzwc` as the root command. Subcommands marked **(client comma
 | `decomposition_table` | Decomposition Table |
 | `fly_beacon`          | Fly Beacon          |
 
-### Network Packets (47 total)
+### Network Packets (48 total)
 
-> Note: the `world_pool_teleport` packet class lives in the `dimensionalinventories` package; the rest (including the 18 mail packets) are in the `network` package. Direction split: 20 S→C, 27 C→S.
+> Note: the `world_pool_teleport` packet class lives in the `dimensionalinventories` package; the rest (including the 18 mail packets) are in the `network` package. Direction split: 21 S→C, 27 C→S.
 
 | Packet ID                   | Direction | Purpose                                                                                       |
 | --------------------------- | --------- | --------------------------------------------------------------------------------------------- |
@@ -718,6 +726,7 @@ All commands use `/yzwc` as the root command. Subcommands marked **(client comma
 | `open_auth_screen`          | S→C       | Open auth screen                                                                              |
 | `mana_sync`                 | S→C       | Sync mana values                                                                              |
 | `level_exp_sync`            | S→C       | Sync adventure level XP                                                                       |
+| `damage_number`             | S→C       | Sync the hit position and actual damage for client-side world-space numbers                   |
 | `attribute_sync`            | S→C       | Sync player attribute data (skill points / attributes / level)                                |
 | `teleport_anchor_list`      | S→C       | Send point list                                                                               |
 | `teleport_anchor_open_name` | S→C       | Open anchor naming screen                                                                     |
@@ -807,8 +816,8 @@ src/                                       # 411 Java source files (main 252 / c
 │   ├── luckperms/                        # LuckPerms integration (LuckPermsHelper unified auth)
 │   ├── mail/                             # Mail system (Mail / MailManager / SentMailRepository / MailDataStorage / MailSettings / MailPermissionHelper)
 │   ├── mana/                             # Mana system
-│   ├── mixin/                            # Mixins (subpackages: afk / babyzombie / chargedcreeper / craftsound / doubledoors / invisibility / jukebox / painting / pet / seat / skill / trialvault)
-│   ├── network/                          # Network packets (43 packet classes + ModNetworking)
+│   ├── mixin/                            # Mixins (subpackages: afk / babyzombie / chargedcreeper / craftsound / damagenumber / doubledoors / invisibility / jukebox / painting / pet / seat / skill / trialvault)
+│   ├── network/                          # Network packets (47 Payload classes + ModNetworking)
 │   ├── pet/                              # Pet system (config/command/event subpackages + PetGlobalState/PetEntry)
 │   ├── placeholders/                     # Placeholder API (32 placeholders)
 │   ├── screen/                           # Container menus

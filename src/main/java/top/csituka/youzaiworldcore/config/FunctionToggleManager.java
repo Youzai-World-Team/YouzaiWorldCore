@@ -47,6 +47,7 @@ public final class FunctionToggleManager {
     public static final String KEY_BLOCK_ANIM = "block_animation";
     public static final String KEY_CRAFT_SOUND = "crafting_sound";
     public static final String KEY_ITEM_SPARKLE = "item_sparkle";
+    public static final String KEY_DAMAGE_NUMBERS = "damage_numbers";
 
     private FunctionToggleManager() {
     }
