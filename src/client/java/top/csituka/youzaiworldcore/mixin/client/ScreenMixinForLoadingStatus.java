@@ -85,6 +85,7 @@ public class ScreenMixinForLoadingStatus {
         }
 
         String key = translated.getKey();
-        return "gui.loadingMinecraft".equals(key) || "menu.savingLevel".equals(key);
+        return "gui.loadingMinecraft".equals(key) || "menu.savingLevel".equals(key)
+                || "selectWorld.resource_load".equals(key);
     }
 }
