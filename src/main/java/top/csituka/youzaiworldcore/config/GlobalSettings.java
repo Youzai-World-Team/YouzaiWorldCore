@@ -69,6 +69,8 @@ public final class GlobalSettings {
     public static final String DOUBLE_DOORS_MODULE = "double_doors_module";
     /** 单玩家功能开关（玩家个人配置，见 {@link UserSettings}） */
     public static final String FUNCTION_MODULE = "function_module";
+    /** 聊天消息格式化（仿 Styled Chat 精简版：模板 + %papi% 占位符） */
+    public static final String CHAT_FORMAT_MODULE = "chat_format_module";
 
     private static final JsonFileStore STORE = new JsonFileStore(ModPaths.globalSettingsFile());
 

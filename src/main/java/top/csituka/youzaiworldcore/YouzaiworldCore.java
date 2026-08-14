@@ -34,6 +34,7 @@ import top.csituka.youzaiworldcore.command.EventCommand;
 import top.csituka.youzaiworldcore.command.FunctionCommand;
 import top.csituka.youzaiworldcore.command.ReloadCommand;
 import top.csituka.youzaiworldcore.config.AfkConfig;
+import top.csituka.youzaiworldcore.config.ChatFormatSettings;
 import top.csituka.youzaiworldcore.config.ChargedCreeperConfig;
 import top.csituka.youzaiworldcore.config.EndPortalConfig;
 import top.csituka.youzaiworldcore.config.EventSettings;
@@ -236,6 +237,10 @@ public class YouzaiworldCore implements ModInitializer {
         // ===== 加载全局事件开关配置 =====
         DebugLogger.info("YouzaiworldCore", "加载全局事件开关配置...");
         EventSettings.load();
+
+        // ===== 加载聊天消息格式化配置 =====
+        DebugLogger.info("YouzaiworldCore", "加载聊天消息格式化配置...");
+        ChatFormatSettings.load();
 
         // ===== 加载单玩家功能开关配置 =====
         // 玩家个人配置按 UUID 存在 yzwc/server/config/user_settings/ 下，按需惰性读取，无需在此预加载

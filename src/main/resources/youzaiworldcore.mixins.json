@@ -38,7 +38,13 @@
     "babyzombie.ZombieFinalizeSpawnMixin",
     "craftsound.ResultSlotOnTakeMixin",
     "jukebox.JukeboxLoopMixin",
-    "painting.MemePaintingDropMixin"
+    "painting.MemePaintingDropMixin",
+    "chat.PlayerChatMessageMixin",
+    "chat.ServerGamePacketListenerImplMixin",
+    "chat.OutgoingChatMessageMixin",
+    "chat.PlayerListMixin",
+    "chat.ServerPlayerChatMixin",
+    "chat.MsgCommandMixin"
   ],
   "injectors": {
     "defaultRequire": 1

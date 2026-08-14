@@ -40,6 +40,7 @@ public final class DefaultSettingsWriter {
             // 玩法
             AfkConfig.writeDefaults();
             EventSettings.writeDefaults();
+            ChatFormatSettings.writeDefaults();
             ChargedCreeperConfig.writeDefaults();
             EndPortalConfig.writeDefaults();
             LaowuMemeConfig.writeDefaults();

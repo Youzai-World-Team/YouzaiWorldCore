@@ -8,6 +8,7 @@ import net.minecraft.network.chat.Component;
 import top.csituka.youzaiworldcore.YouzaiworldCore;
 import top.csituka.youzaiworldcore.account.data.AccountDataStorage;
 import top.csituka.youzaiworldcore.luckperms.LuckPermsHelper;
+import top.csituka.youzaiworldcore.config.ChatFormatSettings;
 import top.csituka.youzaiworldcore.config.GlobalSettings;
 import top.csituka.youzaiworldcore.config.ServerExternalSettings;
 import top.csituka.youzaiworldcore.config.UpdateCheckerConfig;
@@ -72,6 +73,9 @@ public class ReloadCommand {
         // 重载维度池与原地重生配置
         DimensionPoolSettings.reload();
         InPlaceRespawnConfig.reload();
+
+        // 重载聊天消息格式化配置（模板缓存随 load 自动失效重解析）
+        ChatFormatSettings.load();
 
         // === 预留扩展点 ===
         // 后续如需重载其他模块（如自定义配置文件、缓存等），在此添加调用：
