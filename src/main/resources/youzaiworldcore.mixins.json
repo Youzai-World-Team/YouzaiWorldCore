@@ -44,7 +44,9 @@
     "chat.OutgoingChatMessageMixin",
     "chat.PlayerListMixin",
     "chat.ServerPlayerChatMixin",
-    "chat.MsgCommandMixin"
+    "chat.MsgCommandMixin",
+    "ChestBlockEntityCopperTitleMixin",
+    "ShulkerBoxBlockEntityNameMixin"
   ],
   "injectors": {
     "defaultRequire": 1

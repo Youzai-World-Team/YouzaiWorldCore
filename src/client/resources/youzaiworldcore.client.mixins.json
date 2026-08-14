@@ -49,6 +49,7 @@
     "technocrown.PigRenderStateMixin",
     "ContextualBarMixin",
     "InventoryScreenSwitchMixin",
+    "YzuContainerScreenSwitchMixin",
     "RecipeBookBackgroundMixin",
     "RecipeBookTabButtonMixin",
     "RecipeButtonMixin",
