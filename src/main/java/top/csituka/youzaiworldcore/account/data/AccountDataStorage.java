@@ -1,34 +1,56 @@
 package top.csituka.youzaiworldcore.account.data;
 
+import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
-import net.fabricmc.loader.api.FabricLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import top.csituka.youzaiworldcore.YouzaiworldCore;
+import top.csituka.youzaiworldcore.config.ConfigSection;
+import top.csituka.youzaiworldcore.config.GlobalSettings;
+import top.csituka.youzaiworldcore.config.JsonFileStore;
+import top.csituka.youzaiworldcore.config.ModPaths;
+import top.csituka.youzaiworldcore.config.UserSettings;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
- * 账户数据存储系统
- * 数据文件：./config/youzaiworldcore/account/data
- * 格式：JSON，Map<String, PlayerAccount>，key 为小写用户名
+ * 账户数据存储系统。
+ * <p>
+ * 凭据文件：{@code yzwc/server/config/account_module/registerd_users_data.json}，
+ * 结构为 {@code {"account_module": {"registered_users": {"<小写玩家代号>": {...}}}}}，
+ * 每条记录里的 {@code uuid} 与 {@code yzwc/server/config/user_settings/<UUID>.json}
+ * 一一对应：注册时自动建档，注销时自动删档。
+ * </p>
+ * <p>
+ * 会话超时 / 登录冷却这类<b>全局</b>设置写在
+ * {@code yzwc/server/config/global_settings.json} 的 {@code account_module} 分节。
+ * </p>
  */
 @SuppressWarnings("null")
 public class AccountDataStorage {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/AccountDataStorage");
 
-    private static Path STORAGE_FILE;
-    private static Path CONFIG_FILE;
+    /** 凭据在文件里的键名 */
+    private static final String KEY_REGISTERED_USERS = "registered_users";
+
+    /** 注册用户凭据文件容器 */
+    private static final JsonFileStore USERS_STORE = new JsonFileStore(ModPaths.registeredUsersFile());
+
+    static {
+        // 新开服 / 坏文件恢复时，凭据文件的默认内容是一张空的注册用户表
+        USERS_STORE.setDefaultsWriter(() ->
+                USERS_STORE.section(GlobalSettings.ACCOUNT_MODULE)
+                        .set(KEY_REGISTERED_USERS, new JsonObject()));
+    }
+
     private static final ReadWriteLock LOCK = new ReentrantReadWriteLock();
 
     /** 内存缓存：小写用户名 -> PlayerAccount */
@@ -41,11 +63,16 @@ public class AccountDataStorage {
     private static int saveDebounceTicks = 0;
     private static final int SAVE_DEBOUNCE_INTERVAL = 100;
 
+    /** 默认值：不启用会话超时 */
+    private static final int DEFAULT_SESSION_TIMEOUT = 0;
+    /** 默认值：登录失败锁定冷却 5 分钟 */
+    private static final int DEFAULT_LOGIN_COOLDOWN = 300;
+
     /** 会话认证超时时间（秒），0=关闭 */
-    private static int sessionTimeout = 0;
+    private static int sessionTimeout = DEFAULT_SESSION_TIMEOUT;
 
     /** 登录失败锁定冷却时间（秒），默认 5 分钟 */
-    private static int loginCooldown = 300;
+    private static int loginCooldown = DEFAULT_LOGIN_COOLDOWN;
 
     /**
      * 获取会话超时时间
@@ -86,22 +113,12 @@ public class AccountDataStorage {
      */
     public static void initialize() {
         DebugLogger.entering("AccountDataStorage", "initialize");
-        Path configDir = FabricLoader.getInstance().getConfigDir()
-                .resolve("youzaiworldcore")
-                .resolve("account")
-                .normalize();
-        try {
-            Files.createDirectories(configDir);
-        } catch (IOException e) {
-            LOGGER.error("无法创建配置目录: {}", configDir, e);
-            DebugLogger.exception("AccountDataStorage", "initialize-createDirectories", e);
-        }
-        STORAGE_FILE = configDir.resolve("data");
-        CONFIG_FILE = configDir.resolve("config");
-        DebugLogger.info("AccountDataStorage", "STORAGE_FILE=%s, CONFIG_FILE=%s",
-                STORAGE_FILE.toAbsolutePath(), CONFIG_FILE.toAbsolutePath());
+        ModPaths.ensureDir(ModPaths.accountModuleDir());
+        ModPaths.ensureDir(ModPaths.userSettingsDir());
+        DebugLogger.info("AccountDataStorage", "凭据文件=%s, 个人配置目录=%s",
+                USERS_STORE.file().toAbsolutePath(), ModPaths.userSettingsDir().toAbsolutePath());
         if (YouzaiworldCore.logToFile) {
-            LOGGER.info("账户数据文件路径: {}", STORAGE_FILE.toAbsolutePath());
+            LOGGER.info("账户凭据文件路径: {}", USERS_STORE.file().toAbsolutePath());
         }
         loadConfig();
         loadFromDisk();
@@ -127,43 +144,39 @@ public class AccountDataStorage {
         DebugLogger.exiting("AccountDataStorage", "initialize");
     }
 
+    /** 从全局配置的 {@code account_module} 分节读取会话超时 / 登录冷却 */
     private static void loadConfig() {
         DebugLogger.entering("AccountDataStorage", "loadConfig");
-        try {
-            if (Files.exists(CONFIG_FILE)) {
-                DebugLogger.branch("AccountDataStorage", "CONFIG_FILE exists", true);
-                String json = Files.readString(CONFIG_FILE);
-                var obj = PlayerAccount.GSON.fromJson(json, java.util.Map.class);
-                if (obj != null) {
-                    if (obj.containsKey("session_timeout")) {
-                        sessionTimeout = ((Number) obj.get("session_timeout")).intValue();
-                    }
-                    if (obj.containsKey("login_cooldown")) {
-                        loginCooldown = ((Number) obj.get("login_cooldown")).intValue();
-                    }
-                }
-            } else {
-                DebugLogger.branch("AccountDataStorage", "CONFIG_FILE exists", false);
-            }
-        } catch (IOException e) {
-            LOGGER.error("读取账户配置失败", e);
-            DebugLogger.exception("AccountDataStorage", "loadConfig-readConfig", e);
+        ConfigSection section = GlobalSettings.section(GlobalSettings.ACCOUNT_MODULE);
+        if (section.isEmpty()) {
+            DebugLogger.branch("AccountDataStorage", "account_module 分节存在", false);
+            saveConfig();
+        } else {
+            DebugLogger.branch("AccountDataStorage", "account_module 分节存在", true);
+            sessionTimeout = section.getInt("session_timeout", sessionTimeout, 0, Integer.MAX_VALUE);
+            loginCooldown = section.getInt("login_cooldown", loginCooldown, -1, Integer.MAX_VALUE);
         }
         DebugLogger.exiting("AccountDataStorage", "loadConfig",
                 "sessionTimeout=" + sessionTimeout + ", loginCooldown=" + loginCooldown);
     }
 
+    /**
+     * 重置会话超时 / 登录冷却为默认值并写入全局配置的 {@code account_module} 分节。
+     * <p>供 {@link top.csituka.youzaiworldcore.config.DefaultSettingsWriter} 生成默认配置时调用。</p>
+     */
+    public static void writeDefaultSettings() {
+        sessionTimeout = DEFAULT_SESSION_TIMEOUT;
+        loginCooldown = DEFAULT_LOGIN_COOLDOWN;
+        saveConfig();
+    }
+
+    /** 把会话超时 / 登录冷却写回全局配置的 {@code account_module} 分节 */
     private static void saveConfig() {
         DebugLogger.entering("AccountDataStorage", "saveConfig");
-        try {
-            var map = new java.util.HashMap<String, Object>();
-            map.put("session_timeout", sessionTimeout);
-            map.put("login_cooldown", loginCooldown);
-            Files.writeString(CONFIG_FILE, PlayerAccount.GSON.toJson(map));
-        } catch (IOException e) {
-            LOGGER.error("保存账户配置失败", e);
-            DebugLogger.exception("AccountDataStorage", "saveConfig-writeConfig", e);
-        }
+        ConfigSection section = GlobalSettings.section(GlobalSettings.ACCOUNT_MODULE);
+        section.set("session_timeout", sessionTimeout);
+        section.set("login_cooldown", loginCooldown);
+        GlobalSettings.save();
         DebugLogger.exiting("AccountDataStorage", "saveConfig");
     }
 
@@ -176,27 +189,29 @@ public class AccountDataStorage {
         try {
             CACHE.clear();
             DebugLogger.stateChange("AccountDataStorage", "AccountDataStorage", "CACHE", "clear");
-            if (!Files.exists(STORAGE_FILE)) {
-                DebugLogger.branch("AccountDataStorage", "STORAGE_FILE exists", false);
-                if (YouzaiworldCore.logToFile) {
-                    LOGGER.info("账户数据文件不存在，将创建新的: {}", STORAGE_FILE.toAbsolutePath());
-                }
-                saveToDisk(); // 创建空文件
-                DebugLogger.exiting("AccountDataStorage", "loadFromDisk", "file not found, created empty");
-                return;
-            }
-            DebugLogger.branch("AccountDataStorage", "STORAGE_FILE exists", true);
 
-            String json = Files.readString(STORAGE_FILE);
-            if (json.isBlank()) {
-                DebugLogger.branch("AccountDataStorage", "json is blank", true);
-                DebugLogger.exiting("AccountDataStorage", "loadFromDisk", "blank file");
+            boolean created = USERS_STORE.loadOrCreateDefaults();
+            if (created && YouzaiworldCore.logToFile) {
+                LOGGER.info("账户凭据文件不存在，已创建默认空表: {}", USERS_STORE.file().toAbsolutePath());
+            }
+            ConfigSection section = USERS_STORE.section(GlobalSettings.ACCOUNT_MODULE);
+            JsonObject users = section.getObject(KEY_REGISTERED_USERS);
+            if (users == null) {
+                DebugLogger.branch("AccountDataStorage", "registered_users 存在", false);
+                writeUsersFile(); // 补齐缺失的空表
+                DebugLogger.exiting("AccountDataStorage", "loadFromDisk", "table missing, created empty");
                 return;
             }
-            DebugLogger.branch("AccountDataStorage", "json is blank", false);
+            DebugLogger.branch("AccountDataStorage", "registered_users 存在", true);
 
             java.lang.reflect.Type type = new TypeToken<Map<String, PlayerAccount>>() {}.getType();
-            Map<String, PlayerAccount> loaded = PlayerAccount.GSON.fromJson(json, type);
+            Map<String, PlayerAccount> loaded;
+            try {
+                loaded = PlayerAccount.GSON.fromJson(users, type);
+            } catch (RuntimeException e) {
+                section.fail(KEY_REGISTERED_USERS, "账户凭据解析失败：" + e.getMessage());
+                return; // 不可达
+            }
             if (loaded != null) {
                 CACHE.putAll(loaded);
             }
@@ -204,9 +219,6 @@ public class AccountDataStorage {
             if (YouzaiworldCore.logToFile) {
                 LOGGER.info("已加载 {} 个账户", CACHE.size());
             }
-        } catch (IOException e) {
-            LOGGER.error("读取账户数据失败", e);
-            DebugLogger.exception("AccountDataStorage", "loadFromDisk-readFile", e);
         } finally {
             LOCK.writeLock().unlock();
             DebugLogger.exiting("AccountDataStorage", "loadFromDisk");
@@ -247,17 +259,23 @@ public class AccountDataStorage {
         LOCK.writeLock().lock();
         DebugLogger.info("AccountDataStorage", "writeLock acquired for saveToDisk");
         try {
-            String json = PlayerAccount.GSON.toJson(CACHE);
-            Files.writeString(STORAGE_FILE, json);
+            writeUsersFile();
             dirty = false;
             saveDebounceTicks = 0;
-        } catch (IOException e) {
-            LOGGER.error("保存账户数据失败", e);
-            DebugLogger.exception("AccountDataStorage", "saveToDisk-writeFile", e);
         } finally {
             LOCK.writeLock().unlock();
             DebugLogger.exiting("AccountDataStorage", "saveToDisk");
         }
+    }
+
+    /**
+     * 无条件把缓存写进凭据文件（忽略脏标记）。
+     * <p>调用方需自行持有写锁。</p>
+     */
+    private static void writeUsersFile() {
+        ConfigSection section = USERS_STORE.section(GlobalSettings.ACCOUNT_MODULE);
+        section.set(KEY_REGISTERED_USERS, PlayerAccount.GSON.toJsonTree(CACHE));
+        USERS_STORE.save();
     }
 
     /**
@@ -331,6 +349,7 @@ public class AccountDataStorage {
             DebugLogger.stateChange("AccountDataStorage", key, "lastAuthenticatedDate",
                     java.time.ZonedDateTime.now());
             markDirty();
+            createUserSettings(account);
             DebugLogger.exiting("AccountDataStorage", "register", "true (registered successfully)");
             return true;
         } finally {
@@ -355,7 +374,7 @@ public class AccountDataStorage {
     }
 
     /**
-     * 删除玩家账户
+     * 删除玩家账户（同时删除该玩家的个人配置文件）
      * @return true 如果删除成功
      */
     public static boolean delete(String username) {
@@ -367,6 +386,7 @@ public class AccountDataStorage {
             if (removed != null) {
                 DebugLogger.branch("AccountDataStorage", "account found to delete", true);
                 markDirty();
+                deleteUserSettings(removed);
                 DebugLogger.exiting("AccountDataStorage", "delete", "true");
                 return true;
             }
@@ -375,6 +395,40 @@ public class AccountDataStorage {
             return false;
         } finally {
             LOCK.writeLock().unlock();
+        }
+    }
+
+    // ===== 个人配置建档 / 删档 =====
+
+    /** 注册成功后为该玩家建立个人配置文件 {@code user_settings/<UUID>.json} */
+    private static void createUserSettings(PlayerAccount account) {
+        UUID uuid = parseUuid(account);
+        if (uuid == null) {
+            LOGGER.warn("账户 {} 缺少合法 UUID，跳过创建个人配置文件", account.username);
+            return;
+        }
+        UserSettings.create(uuid);
+    }
+
+    /** 注销 / 删除账户后移除该玩家的个人配置文件 */
+    private static void deleteUserSettings(PlayerAccount account) {
+        UUID uuid = parseUuid(account);
+        if (uuid == null) {
+            LOGGER.warn("账户 {} 缺少合法 UUID，跳过删除个人配置文件", account.username);
+            return;
+        }
+        UserSettings.delete(uuid);
+    }
+
+    /** 从账户记录里解析 UUID，非法时返回 null */
+    private static UUID parseUuid(PlayerAccount account) {
+        if (account == null || account.uuid == null || account.uuid.isBlank()) {
+            return null;
+        }
+        try {
+            return UUID.fromString(account.uuid);
+        } catch (IllegalArgumentException e) {
+            return null;
         }
     }
 
@@ -394,6 +448,7 @@ public class AccountDataStorage {
         }
         loadConfig();
         loadFromDisk();
+        UserSettings.invalidateAll();
         int count = CACHE.size();
         DebugLogger.info("AccountDataStorage", "reload complete, %d accounts", count);
         if (YouzaiworldCore.logToFile) {

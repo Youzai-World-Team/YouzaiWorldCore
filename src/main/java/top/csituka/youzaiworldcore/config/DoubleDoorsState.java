@@ -1,19 +1,7 @@
 package top.csituka.youzaiworldcore.config;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonObject;
-import net.fabricmc.loader.api.FabricLoader;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -24,8 +12,17 @@ import java.util.UUID;
  * 控制（缺省为查询自身状态）。
  * </p>
  * <p>
- * 数据持久化于 {@code config/youzaiworldcore/double_doors_players.json}，
- * 仅保存被指令显式设置过的玩家；未设置的玩家使用 {@link #DEFAULT_ENABLED} 默认值。
+ * 这是<b>玩家个人配置</b>，存放于
+ * {@code yzwc/server/config/user_settings/<玩家UUID>.json} 的
+ * {@code double_doors_module} 分节：
+ * </p>
+ *
+ * <pre>
+ * { "double_doors_module": { "enabled": true } }
+ * </pre>
+ *
+ * <p>
+ * 未写过该键的玩家使用 {@link #DEFAULT_ENABLED} 默认值。
  * </p>
  */
 @SuppressWarnings({"null", "unused"})
@@ -33,16 +30,11 @@ public final class DoubleDoorsState {
 
     public static final String MODULE = "DoubleDoorsState";
 
+    /** 该玩家是否启用双开门 */
+    private static final String KEY_ENABLED = "enabled";
+
     /** 默认状态：新玩家默认开启双开门（与原全局默认一致） */
     private static final boolean DEFAULT_ENABLED = true;
-
-    private static final Logger LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/DoubleDoorsState");
-    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
-    private static final Path DATA_FILE = FabricLoader.getInstance()
-            .getConfigDir().resolve("youzaiworldcore").resolve("double_doors_players.json");
-
-    /** 玩家 UUID -> 是否启用双开门（仅保存被指令显式设置过的玩家） */
-    private static final Map<String, Boolean> playerEnabled = new HashMap<>();
 
     private DoubleDoorsState() {
     }
@@ -55,76 +47,29 @@ public final class DoubleDoorsState {
         if (playerUuid == null) {
             return DEFAULT_ENABLED;
         }
-        Boolean v = playerEnabled.get(playerUuid.toString());
-        return v == null ? DEFAULT_ENABLED : v;
+        return UserSettings.section(playerUuid, GlobalSettings.DOUBLE_DOORS_MODULE)
+                .getBoolean(KEY_ENABLED, DEFAULT_ENABLED);
     }
 
     /**
-     * 判断某玩家是否曾被指令显式设置过。
-     * 用于查询时区分「默认启用」与「显式启用」。
+     * 判断某玩家的双开门状态是否偏离默认值。
+     * <p>
+     * 用于查询时区分「默认启用」与「玩家自己改过」。个人配置文件在建档时就会写入
+     * {@link #DEFAULT_ENABLED}，因此这里比的是<b>取值是否与默认不同</b>，
+     * 而不是键存不存在。
+     * </p>
      */
     public static boolean isExplicitlySet(UUID playerUuid) {
-        return playerUuid != null && playerEnabled.containsKey(playerUuid.toString());
+        return playerUuid != null && isEnabled(playerUuid) != DEFAULT_ENABLED;
     }
 
-    /** 设置某玩家的双开门启用状态并立即持久化 */
+    /** 设置某玩家的双开门启用状态并立即持久化到该玩家的个人配置文件 */
     public static void setEnabled(UUID playerUuid, boolean enabled) {
         if (playerUuid == null) {
             return;
         }
-        playerEnabled.put(playerUuid.toString(), enabled);
-        save();
+        UserSettings.section(playerUuid, GlobalSettings.DOUBLE_DOORS_MODULE).set(KEY_ENABLED, enabled);
+        UserSettings.save(playerUuid);
         DebugLogger.info(MODULE, "玩家 %s 双开门状态已设置为 %s", playerUuid, enabled);
-    }
-
-    /** 从文件加载玩家状态（不存在则使用默认：全部启用） */
-    public static void load() {
-        DebugLogger.entering(MODULE, "load");
-
-        if (!Files.exists(DATA_FILE)) {
-            DebugLogger.info(MODULE, "玩家状态文件不存在，使用默认（全部启用）");
-            DebugLogger.exiting(MODULE, "load", "no file");
-            return;
-        }
-
-        try {
-            String json = Files.readString(DATA_FILE);
-            JsonObject root = GSON.fromJson(json, JsonObject.class);
-            if (root == null) {
-                DebugLogger.warn(MODULE, "玩家状态文件为空，使用默认");
-                return;
-            }
-            if (root.has("players") && root.get("players").isJsonObject()) {
-                JsonObject players = root.getAsJsonObject("players");
-                for (Map.Entry<String, com.google.gson.JsonElement> entry : players.entrySet()) {
-                    String uuid = entry.getKey();
-                    if (entry.getValue().isJsonPrimitive()
-                            && entry.getValue().getAsJsonPrimitive().isBoolean()) {
-                        playerEnabled.put(uuid, entry.getValue().getAsBoolean());
-                    }
-                }
-            }
-            DebugLogger.info(MODULE, "已加载 %d 名玩家的双开门状态", playerEnabled.size());
-        } catch (Exception e) {
-            LOGGER.error("加载双开门玩家状态失败: {}", e.getMessage());
-        }
-
-        DebugLogger.exiting(MODULE, "load");
-    }
-
-    /** 保存玩家状态到文件 */
-    public static void save() {
-        try {
-            Files.createDirectories(DATA_FILE.getParent());
-            JsonObject root = new JsonObject();
-            JsonObject players = new JsonObject();
-            for (Map.Entry<String, Boolean> entry : playerEnabled.entrySet()) {
-                players.addProperty(entry.getKey(), entry.getValue());
-            }
-            root.add("players", players);
-            Files.writeString(DATA_FILE, GSON.toJson(root));
-        } catch (IOException e) {
-            LOGGER.error("保存双开门玩家状态失败: {}", e.getMessage());
-        }
     }
 }

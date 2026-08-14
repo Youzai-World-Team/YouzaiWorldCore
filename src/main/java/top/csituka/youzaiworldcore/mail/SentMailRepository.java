@@ -2,14 +2,14 @@ package top.csituka.youzaiworldcore.mail;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
-import top.csituka.youzaiworldcore.YouzaiworldCore;
+import top.csituka.youzaiworldcore.config.GlobalSettings;
+import top.csituka.youzaiworldcore.config.JsonFileStore;
+import top.csituka.youzaiworldcore.config.ModPaths;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
-import java.io.IOException;
 import java.lang.reflect.Type;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Map;
 import java.util.UUID;
@@ -17,7 +17,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
- * 全局邮件仓库：{@code config/youzaiworldcore/mail/sent.json}。
+ * 全局邮件仓库：{@code yzwc/server/data/mail_module/data.json} 的 {@code sent_mails} 块。
  * <p>
  * 存储所有已发送的完整 {@link Mail} 对象，键为 {@link UUID mailId}。
  * 修改操作带读写锁保护。
@@ -28,24 +28,31 @@ public class SentMailRepository {
 
     private static final String MODULE = "SentMailRepository";
 
+    /** 邮件正文在数据文件里的块名 */
+    private static final String KEY_SENT_MAILS = "sent_mails";
+
     private static final ConcurrentHashMap<UUID, Mail> REPO = new ConcurrentHashMap<>();
     private static final ReentrantReadWriteLock LOCK = new ReentrantReadWriteLock();
-    private static Path STORAGE_FILE;
 
-    private static final Gson GSON = new GsonBuilder()
-            .setPrettyPrinting()
-            .create();
+    private static final JsonFileStore STORE =
+            new JsonFileStore(ModPaths.serverDataFile(GlobalSettings.MAIL_MODULE));
+
+    /** 仅用于 {@link Mail} 对象与 JSON 树之间的转换 */
+    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+
+    static {
+        // 新开服 / 坏文件恢复时的默认内容：一张空的邮件正文表
+        STORE.setDefaultsWriter(() -> STORE.putSection(KEY_SENT_MAILS, new JsonObject()));
+    }
 
     // ===== 初始化 =====
 
     /**
-     * 初始化仓库（设置存储路径并从磁盘加载）。
-     *
-     * @param dataDir 数据目录 {@code config/youzaiworldcore/mail}
+     * 初始化仓库（准备数据目录并从磁盘加载）。
      */
-    public static void initialize(Path dataDir) {
-        DebugLogger.entering(MODULE, "initialize", "dataDir=" + dataDir);
-        STORAGE_FILE = dataDir.resolve("sent.json");
+    public static void initialize() {
+        DebugLogger.entering(MODULE, "initialize", "file=" + STORE.file());
+        ModPaths.ensureDir(ModPaths.serverData(GlobalSettings.MAIL_MODULE));
         loadFromDisk();
         DebugLogger.exiting(MODULE, "initialize", "loaded=" + REPO.size());
     }
@@ -148,26 +155,26 @@ public class SentMailRepository {
         LOCK.writeLock().lock();
         try {
             REPO.clear();
-            if (!Files.exists(STORAGE_FILE)) {
-                DebugLogger.branch(MODULE, "STORAGE_FILE exists", false);
-                saveToDisk(); // 创建空文件
-                DebugLogger.exiting(MODULE, "loadFromDisk", "file not found, created empty");
-                return;
-            }
-            String json = Files.readString(STORAGE_FILE);
-            if (json.isBlank()) {
-                DebugLogger.exiting(MODULE, "loadFromDisk", "blank file");
+            STORE.loadOrCreateDefaults();
+            JsonObject sent = STORE.section(KEY_SENT_MAILS).raw();
+            if (sent.size() == 0) {
+                DebugLogger.branch(MODULE, "sent_mails 块存在", false);
+                saveToDisk(); // 补齐缺失的空表
+                DebugLogger.exiting(MODULE, "loadFromDisk", "no data, created empty");
                 return;
             }
             Type type = new TypeToken<Map<UUID, Mail>>() {}.getType();
-            Map<UUID, Mail> loaded = GSON.fromJson(json, type);
+            Map<UUID, Mail> loaded;
+            try {
+                loaded = GSON.fromJson(sent, type);
+            } catch (RuntimeException e) {
+                STORE.section(KEY_SENT_MAILS).fail("<邮件表>", "邮件正文解析失败：" + e.getMessage());
+                return; // 不可达
+            }
             if (loaded != null) {
                 REPO.putAll(loaded);
             }
             DebugLogger.info(MODULE, "已从磁盘加载 %d 封邮件", REPO.size());
-        } catch (IOException e) {
-            YouzaiworldCore.LOGGER.error("读取邮件仓库失败", e);
-            DebugLogger.exception(MODULE, "loadFromDisk", e);
         } finally {
             LOCK.writeLock().unlock();
             DebugLogger.exiting(MODULE, "loadFromDisk");
@@ -178,13 +185,9 @@ public class SentMailRepository {
         DebugLogger.entering(MODULE, "saveToDisk", "size=" + REPO.size());
         LOCK.readLock().lock();
         try {
-            Files.createDirectories(STORAGE_FILE.getParent());
-            String json = GSON.toJson(REPO);
-            Files.writeString(STORAGE_FILE, json);
+            STORE.putSection(KEY_SENT_MAILS, GSON.toJsonTree(REPO).getAsJsonObject());
+            STORE.save();
             DebugLogger.info(MODULE, "已保存 %d 封邮件到磁盘", REPO.size());
-        } catch (IOException e) {
-            YouzaiworldCore.LOGGER.error("保存邮件仓库失败", e);
-            DebugLogger.exception(MODULE, "saveToDisk", e);
         } finally {
             LOCK.readLock().unlock();
             DebugLogger.exiting(MODULE, "saveToDisk");

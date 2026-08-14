@@ -1,59 +1,54 @@
 package top.csituka.youzaiworldcore.respawn;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.server.level.ServerPlayer;
+import top.csituka.youzaiworldcore.config.ConfigSection;
+import top.csituka.youzaiworldcore.config.GlobalSettings;
 import top.csituka.youzaiworldcore.dimensionalinventories.DimensionPoolSettings;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
 /**
  * 原地重生配置管理器。
  * <p>
- * 配置文件：{@code config/youzaiworldcore/in_place_respawn.json}。
+ * 存放位置：{@code yzwc/server/config/global_settings.json} 的
+ * {@code respawn_module} 分节。
  * 可按维度池或具体维度开启；满足任意一项即视为启用。
  */
 @SuppressWarnings("null")
 public final class InPlaceRespawnConfig {
 
-    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
-    private static final Path CONFIG_FILE = FabricLoader.getInstance().getConfigDir()
-            .resolve("youzaiworldcore")
-            .resolve("in_place_respawn.json");
+    private static final String MODULE = "InPlaceRespawnConfig";
 
-    private static ConfigData data = createDefaultData();
+    /** 默认启用原地重生的维度池 */
+    private static final String DEFAULT_POOL = "survival_world_pool";
+
+    private static Set<String> enabledDimensionPools = defaultPools();
+    private static Set<String> enabledDimensions = new LinkedHashSet<>();
 
     private InPlaceRespawnConfig() {
     }
 
-    /** 加载配置；文件不存在时写出默认配置。 */
+    /** 从全局配置的 {@code respawn_module} 分节加载；分节缺失时写出默认配置。 */
     public static void load() {
-        DebugLogger.entering("InPlaceRespawnConfig", "load", "file=" + CONFIG_FILE);
-        try {
-            Files.createDirectories(CONFIG_FILE.getParent());
-            if (!Files.exists(CONFIG_FILE)) {
-                data = createDefaultData();
-                save();
-                DebugLogger.info("InPlaceRespawnConfig", "已创建默认原地重生配置：%s", CONFIG_FILE);
-                DebugLogger.exiting("InPlaceRespawnConfig", "load", "default_created");
-                return;
-            }
-
-            ConfigData loaded = GSON.fromJson(Files.readString(CONFIG_FILE), ConfigData.class);
-            data = sanitize(loaded);
-            DebugLogger.info("InPlaceRespawnConfig", "已加载配置：维度池 %d 个，独立维度 %d 个",
-                    data.enabledDimensionPools.size(), data.enabledDimensions.size());
-        } catch (Exception e) {
-            data = createDefaultData();
-            DebugLogger.exception("InPlaceRespawnConfig", "load", e);
+        DebugLogger.entering(MODULE, "load");
+        ConfigSection section = GlobalSettings.section(GlobalSettings.RESPAWN_MODULE);
+        if (section.isEmpty()) {
+            enabledDimensionPools = defaultPools();
+            enabledDimensions = new LinkedHashSet<>();
+            save();
+            DebugLogger.info(MODULE, "respawn_module 分节不存在，已写入默认原地重生配置");
+            DebugLogger.exiting(MODULE, "load", "default_created");
+            return;
         }
-        DebugLogger.exiting("InPlaceRespawnConfig", "load");
+
+        enabledDimensionPools = section.getStringSet("enabled_dimension_pools", defaultPools());
+        enabledDimensions = section.getStringSet("enabled_dimensions", new LinkedHashSet<>());
+
+        DebugLogger.info(MODULE, "已加载配置：维度池 %d 个，独立维度 %d 个",
+                enabledDimensionPools.size(), enabledDimensions.size());
+        DebugLogger.exiting(MODULE, "load");
     }
 
     /** 重新从磁盘加载配置。 */
@@ -64,41 +59,33 @@ public final class InPlaceRespawnConfig {
     /** 判断玩家当前死亡维度是否启用原地重生。 */
     public static boolean isEnabled(ServerPlayer player) {
         String dimensionId = player.level().dimension().identifier().toString();
-        if (data.enabledDimensions.contains(dimensionId)) {
+        if (enabledDimensions.contains(dimensionId)) {
             return true;
         }
         return DimensionPoolSettings.getPoolByDimension(dimensionId)
-                .map(pool -> data.enabledDimensionPools.contains(pool.id()))
+                .map(pool -> enabledDimensionPools.contains(pool.id()))
                 .orElse(false);
     }
 
-    private static void save() throws IOException {
-        Files.writeString(CONFIG_FILE, GSON.toJson(data));
+    /** 重置为默认值并写入 {@code respawn_module} 分节（新开服 / 坏文件恢复用）。 */
+    public static void writeDefaults() {
+        enabledDimensionPools = defaultPools();
+        enabledDimensions = new LinkedHashSet<>();
+        save();
     }
 
-    private static ConfigData createDefaultData() {
-        ConfigData defaults = new ConfigData();
-        defaults.enabledDimensionPools.add("survival_world_pool");
+    /** 保存当前配置到全局配置文件的 {@code respawn_module} 分节。 */
+    public static void save() {
+        ConfigSection section = GlobalSettings.section(GlobalSettings.RESPAWN_MODULE);
+        section.setStringCollection("enabled_dimension_pools", enabledDimensionPools);
+        section.setStringCollection("enabled_dimensions", enabledDimensions);
+        GlobalSettings.save();
+    }
+
+    /** @return 默认启用原地重生的维度池集合 */
+    private static Set<String> defaultPools() {
+        Set<String> defaults = new LinkedHashSet<>();
+        defaults.add(DEFAULT_POOL);
         return defaults;
-    }
-
-    private static ConfigData sanitize(ConfigData loaded) {
-        if (loaded == null) {
-            return createDefaultData();
-        }
-        if (loaded.enabledDimensionPools == null) {
-            loaded.enabledDimensionPools = new LinkedHashSet<>();
-        }
-        if (loaded.enabledDimensions == null) {
-            loaded.enabledDimensions = new LinkedHashSet<>();
-        }
-        loaded.enabledDimensionPools.removeIf(value -> value == null || value.isBlank());
-        loaded.enabledDimensions.removeIf(value -> value == null || value.isBlank());
-        return loaded;
-    }
-
-    private static final class ConfigData {
-        private Set<String> enabledDimensionPools = new LinkedHashSet<>();
-        private Set<String> enabledDimensions = new LinkedHashSet<>();
     }
 }

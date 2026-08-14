@@ -1,22 +1,15 @@
 package top.csituka.youzaiworldcore.config;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonObject;
-import net.fabricmc.loader.api.FabricLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-
 /**
  * 老吴贴贴事件（laowu meme）配置。
  * <p>
- * 文件位置：{@code config/youzaiworldcore/laowu_meme.json}
+ * 存放位置：{@code yzwc/server/config/global_settings.json} 的
+ * {@code laowu_meme_module} 分节。
  * <p>
  * 由 {@code /yzwc event laowu enable [true|false]} 控制，为<b>服务器全局</b>开关：
  * 启用时全体玩家的猫都可能触发老吴贴贴，禁用时对所有玩家立即停止并释放配对。
@@ -31,12 +24,11 @@ public final class LaowuMemeConfig {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/LaowuMemeConfig");
 
-    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
-    private static final Path CONFIG_FILE = FabricLoader.getInstance()
-            .getConfigDir().resolve("youzaiworldcore").resolve("laowu_meme.json");
+    /** 默认值：启用 */
+    private static final boolean DEFAULT_ENABLED = true;
 
     /** 事件总开关，默认 true（启用）。设为 false 时状态机直接释放全部配对并停止扫描 */
-    private static boolean enabled = true;
+    private static boolean enabled = DEFAULT_ENABLED;
     /** 冷却时长下限（秒）：至少 60 秒 */
     public static final int MIN_COOLDOWN_SECONDS = 60;
     /** 冷却时长默认值（秒）：3 分钟 */
@@ -96,44 +88,38 @@ public final class LaowuMemeConfig {
 
     // ===== 持久化 =====
 
-    /** 从文件加载配置（不存在则写入默认配置） */
+    /** 从全局配置的 {@code laowu_meme_module} 分节加载（分节缺失则写入默认配置） */
     public static void load() {
         DebugLogger.entering(MODULE, "load");
 
-        if (!Files.exists(CONFIG_FILE)) {
-            DebugLogger.info(MODULE, "配置文件不存在，写入默认配置 (enabled=%s)", enabled);
+        ConfigSection section = GlobalSettings.section(GlobalSettings.LAOWU_MEME_MODULE);
+        if (section.isEmpty()) {
+            DebugLogger.info(MODULE, "laowu_meme_module 分节不存在，写入默认配置 (enabled=%s)", enabled);
             save();
             DebugLogger.exiting(MODULE, "load", "created default");
             return;
         }
 
-        try {
-            String json = Files.readString(CONFIG_FILE);
-            JsonObject root = GSON.fromJson(json, JsonObject.class);
-            if (root != null && root.has("enabled") && !root.get("enabled").isJsonNull()) {
-                enabled = root.get("enabled").getAsBoolean();
-            }
-            if (root != null && root.has("cooldown_seconds") && !root.get("cooldown_seconds").isJsonNull()) {
-                cooldownSeconds = Math.max(MIN_COOLDOWN_SECONDS, root.get("cooldown_seconds").getAsInt());
-            }
-            DebugLogger.info(MODULE, "已加载配置: enabled=%s, cooldown_seconds=%d", enabled, cooldownSeconds);
-        } catch (Exception e) {
-            LOGGER.error("加载老吴贴贴事件配置失败: {}", e.getMessage());
-        }
+        enabled = section.getBoolean("enabled", enabled);
+        cooldownSeconds = section.getInt("cooldown_seconds", cooldownSeconds,
+                MIN_COOLDOWN_SECONDS, Integer.MAX_VALUE);
 
+        DebugLogger.info(MODULE, "已加载配置: enabled=%s, cooldown_seconds=%d", enabled, cooldownSeconds);
         DebugLogger.exiting(MODULE, "load");
     }
 
-    /** 保存当前配置到文件 */
+    /** 重置为默认值并写入 {@code laowu_meme_module} 分节（新开服 / 坏文件恢复用） */
+    public static void writeDefaults() {
+        enabled = DEFAULT_ENABLED;
+        cooldownSeconds = DEFAULT_COOLDOWN_SECONDS;
+        save();
+    }
+
+    /** 保存当前配置到全局配置文件的 {@code laowu_meme_module} 分节 */
     public static void save() {
-        try {
-            Files.createDirectories(CONFIG_FILE.getParent());
-            JsonObject root = new JsonObject();
-            root.addProperty("enabled", enabled);
-            root.addProperty("cooldown_seconds", cooldownSeconds);
-            Files.writeString(CONFIG_FILE, GSON.toJson(root));
-        } catch (IOException e) {
-            LOGGER.error("保存老吴贴贴事件配置失败: {}", e.getMessage());
-        }
+        ConfigSection section = GlobalSettings.section(GlobalSettings.LAOWU_MEME_MODULE);
+        section.set("enabled", enabled);
+        section.set("cooldown_seconds", cooldownSeconds);
+        GlobalSettings.save();
     }
 }

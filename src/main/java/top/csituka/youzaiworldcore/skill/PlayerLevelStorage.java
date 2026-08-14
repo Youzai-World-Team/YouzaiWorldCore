@@ -1,14 +1,9 @@
 package top.csituka.youzaiworldcore.skill;
 
+import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
-import net.fabricmc.loader.api.FabricLoader;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -17,15 +12,14 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * 冒险等级数据持久化存储。
- * 数据文件：./config/youzaiworldcore/skill_module/player_level_data.json
- * 格式：JSON，Map<String, PlayerLevelData>，key 为 UUID 字符串
+ * <p>
+ * 数据文件：{@code yzwc/server/data/skill_module/data.json} 的 {@code levels} 块。
+ * 格式：Map&lt;String, PlayerLevelData&gt;，key 为 UUID 字符串。
+ * </p>
  */
 @SuppressWarnings("null")
 public class PlayerLevelStorage {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/PlayerLevelStorage");
-
-    private static Path STORAGE_FILE;
     private static final ReadWriteLock LOCK = new ReentrantReadWriteLock();
 
     /** 防抖：距上次保存至少间隔的毫秒数 */
@@ -40,18 +34,7 @@ public class PlayerLevelStorage {
      */
     public static void initialize() {
         DebugLogger.entering("PlayerLevelStorage", "initialize");
-        Path configDir = FabricLoader.getInstance().getConfigDir()
-                .resolve("youzaiworldcore")
-                .resolve("skill_module")
-                .normalize();
-        try {
-            Files.createDirectories(configDir);
-        } catch (IOException e) {
-            LOGGER.error("无法创建技能模块配置目录: {}", configDir, e);
-            DebugLogger.exception("PlayerLevelStorage", "initialize-createDirectories", e);
-        }
-        STORAGE_FILE = configDir.resolve("player_level_data.json");
-        DebugLogger.info("PlayerLevelStorage", "STORAGE_FILE=%s", STORAGE_FILE.toAbsolutePath());
+        DebugLogger.info("PlayerLevelStorage", "数据文件=%s", SkillDataStore.file().toAbsolutePath());
         loadFromDisk();
         DebugLogger.exiting("PlayerLevelStorage", "initialize");
     }
@@ -64,24 +47,21 @@ public class PlayerLevelStorage {
         LOCK.writeLock().lock();
         try {
             CACHE.clear();
-            if (!Files.exists(STORAGE_FILE)) {
-                DebugLogger.branch("PlayerLevelStorage", "STORAGE_FILE exists", false);
-                forceSave(); // 创建空文件
+            SkillDataStore.refresh();
+            JsonObject levels = SkillDataStore.read(SkillDataStore.KEY_LEVELS);
+            if (levels == null) {
+                DebugLogger.branch("PlayerLevelStorage", "levels 块存在", false);
+                forceSave(); // 创建空数据块
                 return;
             }
-            DebugLogger.branch("PlayerLevelStorage", "STORAGE_FILE exists", true);
-            String json = Files.readString(STORAGE_FILE);
-            if (json.isBlank()) return;
+            DebugLogger.branch("PlayerLevelStorage", "levels 块存在", true);
 
             java.lang.reflect.Type type = new TypeToken<Map<String, PlayerLevelData>>() {}.getType();
-            Map<String, PlayerLevelData> loaded = PlayerLevelData.GSON.fromJson(json, type);
+            Map<String, PlayerLevelData> loaded = PlayerLevelData.GSON.fromJson(levels, type);
             if (loaded != null) {
                 CACHE.putAll(loaded);
             }
             DebugLogger.info("PlayerLevelStorage", "loaded %d player level records", CACHE.size());
-        } catch (IOException e) {
-            LOGGER.error("读取玩家等级数据失败", e);
-            DebugLogger.exception("PlayerLevelStorage", "loadFromDisk-readFile", e);
         } finally {
             LOCK.writeLock().unlock();
             DebugLogger.exiting("PlayerLevelStorage", "loadFromDisk");
@@ -95,11 +75,8 @@ public class PlayerLevelStorage {
         DebugLogger.entering("PlayerLevelStorage", "saveToDisk");
         LOCK.writeLock().lock();
         try {
-            String json = PlayerLevelData.GSON.toJson(CACHE);
-            Files.writeString(STORAGE_FILE, json);
-        } catch (IOException e) {
-            LOGGER.error("保存玩家等级数据失败", e);
-            DebugLogger.exception("PlayerLevelStorage", "saveToDisk-writeFile", e);
+            SkillDataStore.write(SkillDataStore.KEY_LEVELS,
+                    PlayerLevelData.GSON.toJsonTree(CACHE).getAsJsonObject());
         } finally {
             LOCK.writeLock().unlock();
             DebugLogger.exiting("PlayerLevelStorage", "saveToDisk");

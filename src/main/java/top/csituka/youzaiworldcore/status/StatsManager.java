@@ -32,7 +32,6 @@ import java.io.IOException;
 import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -50,10 +49,12 @@ import java.util.stream.Stream;
 /**
  * 玩家统计管理器。
  * <p>
- * 从 vanilla 统计系统读取玩家数据，持久化到 {@code .<world>/youzaiworldcore/status/data.json}，
+ * 从 vanilla 统计系统读取玩家数据，持久化到
+ * {@code <world_name>/data/yzwc/data/status_module/data.json}（随存档走）。
  * </p>
  * <p>
- * 提供 /yzwc status 命令支持查询、删除和排行榜导出（支持日/周/月/年/总周期）。
+ * 提供 /yzwc status 命令支持查询、删除和排行榜导出（支持日/周/月/年/总周期），
+ * 导出产物落在同目录的 {@code rank_export/} 下。
  * </p>
  */
 @SuppressWarnings("null")
@@ -482,10 +483,10 @@ public final class StatsManager {
 
     // ==================== 数据管理 ====================
 
+    /** 统计数据根目录：{@code <world_name>/data/yzwc/data/status_module/} */
     static Path getDataRoot(MinecraftServer server) {
-        return server.getWorldPath(LevelResource.ROOT)
-                .resolve("youzaiworldcore")
-                .resolve("status");
+        return top.csituka.youzaiworldcore.config.ModPaths.worldData(
+                server, top.csituka.youzaiworldcore.config.GlobalSettings.STATUS_MODULE);
     }
 
     private static void createDataDir(MinecraftServer server) {
@@ -594,16 +595,22 @@ public final class StatsManager {
             // 健壮性：状态数据 JSON 损坏（如异常中断写入导致文件截断/非法）不应让服务器启动崩溃。
             // 备份损坏文件保留现场，然后以空数据继续——后续 save() 会重建一份干净的数据文件。
             DebugLogger.error(MODULE, "状态数据文件损坏，已备份并跳过加载: %s (%s)", file, e.getMessage());
-            backupCorruptFile(file);
+            backupCorruptFile(server, file);
         }
     }
 
-    /** 将损坏的状态数据文件备份为 {@code data.json.corrupt-<时间戳>}，避免覆盖现场 */
-    private static void backupCorruptFile(Path file) {
+    /**
+     * 将损坏的状态数据文件打包备份到
+     * {@code <world_name>/data/yzwc/backup/status_module/status_corrupt_<时间戳>.zip}，避免覆盖现场。
+     */
+    private static void backupCorruptFile(MinecraftServer server, Path file) {
         try {
-            String stamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss"));
-            Path backup = file.resolveSibling("data.json.corrupt-" + stamp);
-            Files.copy(file, backup, StandardCopyOption.REPLACE_EXISTING);
+            String stamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
+            Path backupDir = top.csituka.youzaiworldcore.config.ModPaths.ensureDir(
+                    top.csituka.youzaiworldcore.config.ModPaths.worldBackup(
+                            server, top.csituka.youzaiworldcore.config.GlobalSettings.STATUS_MODULE));
+            Path backup = backupDir.resolve("status_corrupt_" + stamp + ".zip");
+            top.csituka.youzaiworldcore.util.BackupArchive.writeFile(backup, file, "data.json");
             DebugLogger.warn(MODULE, "损坏文件已备份: %s", backup);
         } catch (IOException ex) {
             LOGGER.error("备份损坏的状态数据文件失败", ex);

@@ -1,14 +1,9 @@
 package top.csituka.youzaiworldcore.skill;
 
+import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
-import net.fabricmc.loader.api.FabricLoader;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -18,15 +13,13 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 /**
  * 玩家属性加点数据持久化存储。
  * <p>
- * 数据文件：./config/youzaiworldcore/skill_module/player_attributes_data.json
- * 格式：JSON，Map{@code <String, PlayerAttributeData>}，key 为 UUID 字符串
+ * 数据文件：{@code yzwc/server/data/skill_module/data.json} 的 {@code attributes} 块。
+ * 格式：Map&lt;String, PlayerAttributeData&gt;，key 为 UUID 字符串。
+ * </p>
  */
 @SuppressWarnings("null")
 public class PlayerAttributeStorage {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/PlayerAttributeStorage");
-
-    private static Path STORAGE_FILE;
     private static final ReadWriteLock LOCK = new ReentrantReadWriteLock();
     private static final long SAVE_DEBOUNCE_MS = 2000;
     private static volatile long lastSaveTime = 0;
@@ -35,17 +28,7 @@ public class PlayerAttributeStorage {
 
     public static void initialize() {
         DebugLogger.entering("PlayerAttributeStorage", "initialize");
-        Path configDir = FabricLoader.getInstance().getConfigDir()
-                .resolve("youzaiworldcore")
-                .resolve("skill_module")
-                .normalize();
-        try {
-            Files.createDirectories(configDir);
-        } catch (IOException e) {
-            LOGGER.error("无法创建技能模块配置目录: {}", configDir, e);
-        }
-        STORAGE_FILE = configDir.resolve("player_attributes_data.json");
-        DebugLogger.info("PlayerAttributeStorage", "STORAGE_FILE=%s", STORAGE_FILE.toAbsolutePath());
+        DebugLogger.info("PlayerAttributeStorage", "数据文件=%s", SkillDataStore.file().toAbsolutePath());
         loadFromDisk();
         DebugLogger.exiting("PlayerAttributeStorage", "initialize");
     }
@@ -54,18 +37,16 @@ public class PlayerAttributeStorage {
         LOCK.writeLock().lock();
         try {
             CACHE.clear();
-            if (!Files.exists(STORAGE_FILE)) {
-                forceSave();
+            SkillDataStore.refresh();
+            JsonObject attributes = SkillDataStore.read(SkillDataStore.KEY_ATTRIBUTES);
+            if (attributes == null) {
+                forceSave(); // 创建空数据块
                 return;
             }
-            String json = Files.readString(STORAGE_FILE);
-            if (json.isBlank()) return;
             java.lang.reflect.Type type = new TypeToken<Map<String, PlayerAttributeData>>() {}.getType();
-            Map<String, PlayerAttributeData> loaded = PlayerAttributeData.GSON.fromJson(json, type);
+            Map<String, PlayerAttributeData> loaded = PlayerAttributeData.GSON.fromJson(attributes, type);
             if (loaded != null) CACHE.putAll(loaded);
             DebugLogger.info("PlayerAttributeStorage", "loaded %d player attribute records", CACHE.size());
-        } catch (IOException e) {
-            LOGGER.error("读取玩家属性数据失败", e);
         } finally {
             LOCK.writeLock().unlock();
         }
@@ -74,10 +55,8 @@ public class PlayerAttributeStorage {
     public static void saveToDisk() {
         LOCK.writeLock().lock();
         try {
-            String json = PlayerAttributeData.GSON.toJson(CACHE);
-            Files.writeString(STORAGE_FILE, json);
-        } catch (IOException e) {
-            LOGGER.error("保存玩家属性数据失败", e);
+            SkillDataStore.write(SkillDataStore.KEY_ATTRIBUTES,
+                    PlayerAttributeData.GSON.toJsonTree(CACHE).getAsJsonObject());
         } finally {
             LOCK.writeLock().unlock();
         }

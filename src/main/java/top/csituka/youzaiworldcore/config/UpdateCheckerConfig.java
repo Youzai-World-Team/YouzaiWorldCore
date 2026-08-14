@@ -1,22 +1,15 @@
 package top.csituka.youzaiworldcore.config;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonObject;
-import net.fabricmc.loader.api.FabricLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-
 /**
  * 更新检查器配置（专用服务端生效，通过配置文件）。
  * <p>
- * 文件位置：{@code config/youzaiworldcore/update_checker.json}
+ * 存放位置：{@code yzwc/server/config/global_settings.json} 的
+ * {@code update_module} 分节。
  * </p>
  * <p>客户端（含内嵌服务端）的地址在「开发者」设置中配置，本配置仅用于专用服务端。</p>
  */
@@ -27,30 +20,33 @@ public final class UpdateCheckerConfig {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/UpdateCheckerConfig");
 
-    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
-    private static final Path CONFIG_FILE = FabricLoader.getInstance()
-            .getConfigDir().resolve("youzaiworldcore").resolve("update_checker.json");
+    /** 默认值：启用更新检查 */
+    private static final boolean DEFAULT_ENABLED = true;
+    /** 默认地址（检查与跳转共用） */
+    private static final String DEFAULT_ADDRESS = "https://mcyzw.top/yzwc";
+    /** 默认值：各处检查 / 展示开关一律开启 */
+    private static final boolean DEFAULT_TOGGLE = true;
 
     /** 总开关，默认 true */
-    private static boolean enabled = true;
+    private static boolean enabled = DEFAULT_ENABLED;
 
     /** 检查更新基址（自动附加 /version.json；空值回退默认 https://mcyzw.top/yzwc） */
-    private static String checkAddress = "https://mcyzw.top/yzwc";
+    private static String checkAddress = DEFAULT_ADDRESS;
 
     /** 下载页（跳转）基址（自动附加 ?version=&type=；空值回退默认 https://mcyzw.top/yzwc） */
-    private static String jumpAddress = "https://mcyzw.top/yzwc";
+    private static String jumpAddress = DEFAULT_ADDRESS;
 
     /** 服务器启动后是否检查（控制台日志） */
-    private static boolean checkOnStartupServer = true;
+    private static boolean checkOnStartupServer = DEFAULT_TOGGLE;
 
     /** 客户端启动后是否检查（标题界面公告） */
-    private static boolean checkOnStartupClient = true;
+    private static boolean checkOnStartupClient = DEFAULT_TOGGLE;
 
     /** 是否在服务端控制台输出更新横幅 */
-    private static boolean announceToConsole = true;
+    private static boolean announceToConsole = DEFAULT_TOGGLE;
 
     /** 是否在客户端标题界面右侧面板显示更新信息 */
-    private static boolean showOnTitleScreen = true;
+    private static boolean showOnTitleScreen = DEFAULT_TOGGLE;
 
     private UpdateCheckerConfig() {
     }
@@ -116,47 +112,25 @@ public final class UpdateCheckerConfig {
 
     // ===== 持久化 =====
 
-    /** 从文件加载配置（不存在则写入默认配置） */
+    /** 从全局配置的 {@code update_module} 分节加载（分节缺失则写入默认配置） */
     public static void load() {
         DebugLogger.entering(MODULE, "load");
-        if (!Files.exists(CONFIG_FILE)) {
-            DebugLogger.info(MODULE, "配置文件不存在，写入默认配置");
+        ConfigSection section = GlobalSettings.section(GlobalSettings.UPDATE_MODULE);
+        if (section.isEmpty()) {
+            DebugLogger.info(MODULE, "update_module 分节不存在，写入默认配置");
             save();
             DebugLogger.exiting(MODULE, "load", "created default");
             return;
         }
-        try {
-            String json = Files.readString(CONFIG_FILE);
-            JsonObject root = GSON.fromJson(json, JsonObject.class);
-            if (root == null) {
-                return;
-            }
-            if (root.has("enabled") && !root.get("enabled").isJsonNull()) {
-                enabled = root.get("enabled").getAsBoolean();
-            }
-            if (root.has("checkAddress") && !root.get("checkAddress").isJsonNull()) {
-                checkAddress = root.get("checkAddress").getAsString();
-            }
-            if (root.has("jumpAddress") && !root.get("jumpAddress").isJsonNull()) {
-                jumpAddress = root.get("jumpAddress").getAsString();
-            }
-            if (root.has("checkOnStartupServer") && !root.get("checkOnStartupServer").isJsonNull()) {
-                checkOnStartupServer = root.get("checkOnStartupServer").getAsBoolean();
-            }
-            if (root.has("checkOnStartupClient") && !root.get("checkOnStartupClient").isJsonNull()) {
-                checkOnStartupClient = root.get("checkOnStartupClient").getAsBoolean();
-            }
-            if (root.has("announceToConsole") && !root.get("announceToConsole").isJsonNull()) {
-                announceToConsole = root.get("announceToConsole").getAsBoolean();
-            }
-            if (root.has("showOnTitleScreen") && !root.get("showOnTitleScreen").isJsonNull()) {
-                showOnTitleScreen = root.get("showOnTitleScreen").getAsBoolean();
-            }
-            DebugLogger.info(MODULE, "已加载配置: enabled=%s, checkAddress=%s, jumpAddress=%s",
-                    enabled, checkAddress, jumpAddress);
-        } catch (Exception e) {
-            LOGGER.error("加载更新检查器配置失败: {}", e.getMessage());
-        }
+        enabled = section.getBoolean("enabled", enabled);
+        checkAddress = section.getString("check_address", checkAddress);
+        jumpAddress = section.getString("jump_address", jumpAddress);
+        checkOnStartupServer = section.getBoolean("check_on_startup_server", checkOnStartupServer);
+        checkOnStartupClient = section.getBoolean("check_on_startup_client", checkOnStartupClient);
+        announceToConsole = section.getBoolean("announce_to_console", announceToConsole);
+        showOnTitleScreen = section.getBoolean("show_on_title_screen", showOnTitleScreen);
+        DebugLogger.info(MODULE, "已加载配置: enabled=%s, check_address=%s, jump_address=%s",
+                enabled, checkAddress, jumpAddress);
         DebugLogger.exiting(MODULE, "load");
     }
 
@@ -167,21 +141,28 @@ public final class UpdateCheckerConfig {
         DebugLogger.exiting(MODULE, "reload");
     }
 
-    /** 保存当前配置到文件 */
+    /** 重置为默认值并写入 {@code update_module} 分节（新开服 / 坏文件恢复用） */
+    public static void writeDefaults() {
+        enabled = DEFAULT_ENABLED;
+        checkAddress = DEFAULT_ADDRESS;
+        jumpAddress = DEFAULT_ADDRESS;
+        checkOnStartupServer = DEFAULT_TOGGLE;
+        checkOnStartupClient = DEFAULT_TOGGLE;
+        announceToConsole = DEFAULT_TOGGLE;
+        showOnTitleScreen = DEFAULT_TOGGLE;
+        save();
+    }
+
+    /** 保存当前配置到全局配置文件的 {@code update_module} 分节 */
     public static void save() {
-        try {
-            Files.createDirectories(CONFIG_FILE.getParent());
-            JsonObject root = new JsonObject();
-            root.addProperty("enabled", enabled);
-            root.addProperty("checkAddress", checkAddress);
-            root.addProperty("jumpAddress", jumpAddress);
-            root.addProperty("checkOnStartupServer", checkOnStartupServer);
-            root.addProperty("checkOnStartupClient", checkOnStartupClient);
-            root.addProperty("announceToConsole", announceToConsole);
-            root.addProperty("showOnTitleScreen", showOnTitleScreen);
-            Files.writeString(CONFIG_FILE, GSON.toJson(root));
-        } catch (IOException e) {
-            LOGGER.error("保存更新检查器配置失败: {}", e.getMessage());
-        }
+        ConfigSection section = GlobalSettings.section(GlobalSettings.UPDATE_MODULE);
+        section.set("enabled", enabled);
+        section.set("check_address", checkAddress);
+        section.set("jump_address", jumpAddress);
+        section.set("check_on_startup_server", checkOnStartupServer);
+        section.set("check_on_startup_client", checkOnStartupClient);
+        section.set("announce_to_console", announceToConsole);
+        section.set("show_on_title_screen", showOnTitleScreen);
+        GlobalSettings.save();
     }
 }

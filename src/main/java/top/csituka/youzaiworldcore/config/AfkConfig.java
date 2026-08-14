@@ -1,22 +1,15 @@
 package top.csituka.youzaiworldcore.config;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonObject;
-import net.fabricmc.loader.api.FabricLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-
 /**
  * AFK（挂机）功能配置。
  * <p>
- * 文件位置：{@code config/youzaiworldcore/afk.json}
+ * 存放位置：{@code yzwc/server/config/global_settings.json} 的
+ * {@code afk_module} 分节。
  * <p>
  * 由 {@code /yzwc afk settings <key> <value>} 命令在运行时修改并持久化。
  * 检测架构：客户端输入检测（精确，需客户端装模组）+ 服务端近似检测（位置 /
@@ -30,10 +23,6 @@ public final class AfkConfig {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/AfkConfig");
 
-    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
-    private static final Path CONFIG_FILE = FabricLoader.getInstance()
-            .getConfigDir().resolve("youzaiworldcore").resolve("afk.json");
-
     /** AFK 检测模式 */
     public enum DetectMode {
         /** 仅客户端心跳检测（原版客户端玩家永不判定 AFK） */
@@ -44,24 +33,42 @@ public final class AfkConfig {
         BOTH
     }
 
-    /** 功能总开关，默认 true */
-    private static boolean enabled = true;
-    /** 检测模式，默认 BOTH */
-    private static DetectMode detectMode = DetectMode.BOTH;
-    /** 触发 AFK 的无活动时长（秒），默认 300，下限 {@link #MIN_THRESHOLD_SECONDS} */
-    private static int thresholdSeconds = 300;
     /** 触发阈值下限（秒）：至少 30 秒 */
     public static final int MIN_THRESHOLD_SECONDS = 30;
+
+    /** 默认值：启用 AFK 检测 */
+    private static final boolean DEFAULT_ENABLED = true;
+    /** 默认值：双通道检测 */
+    private static final DetectMode DEFAULT_DETECT_MODE = DetectMode.BOTH;
+    /** 默认值：无活动 300 秒判定 AFK */
+    private static final int DEFAULT_THRESHOLD_SECONDS = 300;
+    /** 默认值：显示 Tab 前缀 */
+    private static final boolean DEFAULT_TAB_PREFIX_ENABLED = true;
+    /** 默认值：进入 / 退出 AFK 广播 */
+    private static final boolean DEFAULT_BROADCAST_ENABLED = true;
+    /** 默认值：AFK 期间不无敌 */
+    private static final boolean DEFAULT_INVULNERABLE_ENABLED = false;
+    /** 默认值：不自动踢出 */
+    private static final int DEFAULT_AUTO_KICK_SECONDS = 0;
+    /** 默认值：允许玩家手动切换 */
+    private static final boolean DEFAULT_MANUAL_TOGGLE_ENABLED = true;
+
+    /** 功能总开关，默认 true */
+    private static boolean enabled = DEFAULT_ENABLED;
+    /** 检测模式，默认 BOTH */
+    private static DetectMode detectMode = DEFAULT_DETECT_MODE;
+    /** 触发 AFK 的无活动时长（秒），默认 300，下限 {@link #MIN_THRESHOLD_SECONDS} */
+    private static int thresholdSeconds = DEFAULT_THRESHOLD_SECONDS;
     /** 是否在 Tab 列表显示 [AFK] 前缀，默认 true */
-    private static boolean tabPrefixEnabled = true;
+    private static boolean tabPrefixEnabled = DEFAULT_TAB_PREFIX_ENABLED;
     /** 进入/退出 AFK 是否向全体广播，默认 true */
-    private static boolean broadcastEnabled = true;
+    private static boolean broadcastEnabled = DEFAULT_BROADCAST_ENABLED;
     /** AFK 期间是否无敌（无限时长的抗性提升 V），默认 false */
-    private static boolean invulnerableEnabled = false;
+    private static boolean invulnerableEnabled = DEFAULT_INVULNERABLE_ENABLED;
     /** 超过该时长（秒）自动踢出，0 = 禁用（默认），须 >= 触发阈值 */
-    private static int autoKickSeconds = 0;
+    private static int autoKickSeconds = DEFAULT_AUTO_KICK_SECONDS;
     /** 是否允许玩家用 /yzwc afk 手动切换，默认 true */
-    private static boolean manualToggleEnabled = true;
+    private static boolean manualToggleEnabled = DEFAULT_MANUAL_TOGGLE_ENABLED;
 
     private AfkConfig() {
     }
@@ -239,88 +246,67 @@ public final class AfkConfig {
 
     // ===== 持久化 =====
 
-    /** 从文件加载配置（不存在则写入默认配置） */
+    /** 从全局配置的 {@code afk_module} 分节加载（分节缺失则写入默认配置） */
     public static void load() {
         DebugLogger.entering(MODULE, "load");
 
-        if (!Files.exists(CONFIG_FILE)) {
-            DebugLogger.info(MODULE, "配置文件不存在，写入默认配置 (enabled=%s, mode=%s, threshold=%ds)",
+        ConfigSection section = GlobalSettings.section(GlobalSettings.AFK_MODULE);
+        if (section.isEmpty()) {
+            DebugLogger.info(MODULE, "afk_module 分节不存在，写入默认配置 (enabled=%s, mode=%s, threshold=%ds)",
                     enabled, detectMode, thresholdSeconds);
             save();
             DebugLogger.exiting(MODULE, "load", "created default");
             return;
         }
 
-        try {
-            String json = Files.readString(CONFIG_FILE);
-            JsonObject root = GSON.fromJson(json, JsonObject.class);
-            if (root != null) {
-                if (root.has("enabled") && !root.get("enabled").isJsonNull()) {
-                    enabled = root.get("enabled").getAsBoolean();
-                }
-                if (root.has("detect_mode") && !root.get("detect_mode").isJsonNull()) {
-                    try {
-                        detectMode = DetectMode.valueOf(root.get("detect_mode").getAsString().toUpperCase());
-                    } catch (IllegalArgumentException e) {
-                        DebugLogger.warn(MODULE, "未知 detect_mode: %s，回退 BOTH",
-                                root.get("detect_mode").getAsString());
-                        detectMode = DetectMode.BOTH;
-                    }
-                }
-                if (root.has("threshold_seconds") && !root.get("threshold_seconds").isJsonNull()) {
-                    thresholdSeconds = Math.max(MIN_THRESHOLD_SECONDS,
-                            root.get("threshold_seconds").getAsInt());
-                }
-                if (root.has("tab_prefix_enabled") && !root.get("tab_prefix_enabled").isJsonNull()) {
-                    tabPrefixEnabled = root.get("tab_prefix_enabled").getAsBoolean();
-                }
-                if (root.has("broadcast_enabled") && !root.get("broadcast_enabled").isJsonNull()) {
-                    broadcastEnabled = root.get("broadcast_enabled").getAsBoolean();
-                }
-                if (root.has("invulnerable_enabled") && !root.get("invulnerable_enabled").isJsonNull()) {
-                    invulnerableEnabled = root.get("invulnerable_enabled").getAsBoolean();
-                }
-                if (root.has("auto_kick_seconds") && !root.get("auto_kick_seconds").isJsonNull()) {
-                    autoKickSeconds = Math.max(0, root.get("auto_kick_seconds").getAsInt());
-                    if (autoKickSeconds > 0 && autoKickSeconds < thresholdSeconds) {
-                        DebugLogger.warn(MODULE, "auto_kick_seconds 小于阈值，抬升至 %d", thresholdSeconds);
-                        autoKickSeconds = thresholdSeconds;
-                    }
-                }
-                if (root.has("manual_toggle_enabled") && !root.get("manual_toggle_enabled").isJsonNull()) {
-                    manualToggleEnabled = root.get("manual_toggle_enabled").getAsBoolean();
-                }
-            }
-            DebugLogger.info(MODULE,
-                    "已加载配置: enabled=%s, detect_mode=%s, threshold_seconds=%d, tab_prefix=%s, "
-                            + "broadcast=%s, invulnerable=%s, auto_kick=%ds, manual_toggle=%s",
-                    enabled, detectMode, thresholdSeconds, tabPrefixEnabled,
-                    broadcastEnabled, invulnerableEnabled, autoKickSeconds, manualToggleEnabled);
-        } catch (Exception e) {
-            LOGGER.error("加载 AFK 配置失败: {}", e.getMessage());
-            DebugLogger.exception(MODULE, "load", e);
+        enabled = section.getBoolean("enabled", enabled);
+        detectMode = section.getEnum("detect_mode", detectMode, DetectMode.class);
+        thresholdSeconds = section.getInt("threshold_seconds", thresholdSeconds,
+                MIN_THRESHOLD_SECONDS, Integer.MAX_VALUE);
+        tabPrefixEnabled = section.getBoolean("tab_prefix_enabled", tabPrefixEnabled);
+        broadcastEnabled = section.getBoolean("broadcast_enabled", broadcastEnabled);
+        invulnerableEnabled = section.getBoolean("invulnerable_enabled", invulnerableEnabled);
+        autoKickSeconds = section.getInt("auto_kick_seconds", autoKickSeconds, 0, Integer.MAX_VALUE);
+        if (autoKickSeconds > 0 && autoKickSeconds < thresholdSeconds) {
+            section.fail("auto_kick_seconds",
+                    "自动踢出时长 " + autoKickSeconds + " 秒必须为 0（禁用）或不小于触发阈值 "
+                            + thresholdSeconds + " 秒");
         }
+        manualToggleEnabled = section.getBoolean("manual_toggle_enabled", manualToggleEnabled);
+
+        DebugLogger.info(MODULE,
+                "已加载配置: enabled=%s, detect_mode=%s, threshold_seconds=%d, tab_prefix=%s, "
+                        + "broadcast=%s, invulnerable=%s, auto_kick=%ds, manual_toggle=%s",
+                enabled, detectMode, thresholdSeconds, tabPrefixEnabled,
+                broadcastEnabled, invulnerableEnabled, autoKickSeconds, manualToggleEnabled);
 
         DebugLogger.exiting(MODULE, "load");
     }
 
-    /** 保存当前配置到文件 */
+    /** 重置为默认值并写入 {@code afk_module} 分节（新开服 / 坏文件恢复用） */
+    public static void writeDefaults() {
+        enabled = DEFAULT_ENABLED;
+        detectMode = DEFAULT_DETECT_MODE;
+        thresholdSeconds = DEFAULT_THRESHOLD_SECONDS;
+        tabPrefixEnabled = DEFAULT_TAB_PREFIX_ENABLED;
+        broadcastEnabled = DEFAULT_BROADCAST_ENABLED;
+        invulnerableEnabled = DEFAULT_INVULNERABLE_ENABLED;
+        autoKickSeconds = DEFAULT_AUTO_KICK_SECONDS;
+        manualToggleEnabled = DEFAULT_MANUAL_TOGGLE_ENABLED;
+        save();
+    }
+
+    /** 保存当前配置到全局配置文件的 {@code afk_module} 分节 */
     public static void save() {
-        try {
-            Files.createDirectories(CONFIG_FILE.getParent());
-            JsonObject root = new JsonObject();
-            root.addProperty("enabled", enabled);
-            root.addProperty("detect_mode", detectMode.name());
-            root.addProperty("threshold_seconds", thresholdSeconds);
-            root.addProperty("tab_prefix_enabled", tabPrefixEnabled);
-            root.addProperty("broadcast_enabled", broadcastEnabled);
-            root.addProperty("invulnerable_enabled", invulnerableEnabled);
-            root.addProperty("auto_kick_seconds", autoKickSeconds);
-            root.addProperty("manual_toggle_enabled", manualToggleEnabled);
-            Files.writeString(CONFIG_FILE, GSON.toJson(root));
-        } catch (IOException e) {
-            LOGGER.error("保存 AFK 配置失败: {}", e.getMessage());
-            DebugLogger.exception(MODULE, "save", e);
-        }
+        ConfigSection section = GlobalSettings.section(GlobalSettings.AFK_MODULE);
+        section.set("enabled", enabled);
+        section.set("detect_mode", detectMode);
+        section.set("threshold_seconds", thresholdSeconds);
+        section.set("tab_prefix_enabled", tabPrefixEnabled);
+        section.set("broadcast_enabled", broadcastEnabled);
+        section.set("invulnerable_enabled", invulnerableEnabled);
+        section.set("auto_kick_seconds", autoKickSeconds);
+        section.set("manual_toggle_enabled", manualToggleEnabled);
+        GlobalSettings.save();
     }
 }

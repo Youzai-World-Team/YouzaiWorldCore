@@ -2,39 +2,39 @@ package top.csituka.youzaiworldcore.dimensionalinventories;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
 import com.google.gson.reflect.TypeToken;
-import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.world.level.GameType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import top.csituka.youzaiworldcore.config.ConfigSection;
+import top.csituka.youzaiworldcore.config.GlobalSettings;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
-import java.io.IOException;
 import java.lang.reflect.Type;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.*;
 
 /**
  * 维度池配置管理器。
  * <p>
- * 配置文件位置：{@code config/youzaiworldcore/dimensional_inventories/pool_settings.json}
+ * 存放位置：{@code yzwc/server/config/global_settings.json} 的
+ * {@code dimensional_inventories_module} 分节，池列表写在其 {@code pools} 键下。
  * <p>
- * 管理 7 个预定义维度池的 JSON 持久化配置。
+ * 管理 7 个预定义维度池的 JSON 持久化配置。玩家在各池中的背包 / 状态数据是
+ * 随存档走的，落在 {@code <world_name>/data/yzwc/data/dimensional_inventories_module/}，
+ * 见 {@link DimensionPoolManager}。
  */
 public final class DimensionPoolSettings {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/DimensionPoolSettings");
 
+    /** 池列表在分节里的键名 */
+    private static final String KEY_POOLS = "pools";
+
     private static final Gson GSON = new GsonBuilder()
             .setPrettyPrinting()
             .registerTypeAdapter(GameType.class, new GameTypeSerializer())
             .create();
-
-    private static final Path CONFIG_DIR = FabricLoader.getInstance()
-            .getConfigDir().resolve("youzaiworldcore").resolve("dimensional_inventories");
-
-    private static final Path CONFIG_FILE = CONFIG_DIR.resolve("pool_settings.json");
 
     /** 所有注册的维度池，按 ID 索引 */
     private static final Map<String, DimensionPool> POOLS = new LinkedHashMap<>();
@@ -99,62 +99,86 @@ public final class DimensionPoolSettings {
 
     // ===== 加载/保存 =====
 
-    /** 从文件加载配置，不存在则创建默认配置 */
+    /** 从全局配置加载，分节缺失则创建默认配置 */
     public static void load() {
         DebugLogger.entering("DimPoolSettings", "load");
-        if (!Files.exists(CONFIG_FILE)) {
-            DebugLogger.branch("DimPoolSettings", "Config file exists", false, CONFIG_FILE.toString() + " 不存在，创建默认配置");
-            LOGGER.info("维度池配置文件不存在，正在创建默认配置...");
-            DebugLogger.info("DimPoolSettings", "创建默认维度池配置");
+        ConfigSection section = GlobalSettings.section(GlobalSettings.DIMENSIONAL_INVENTORIES_MODULE);
+        JsonArray poolArray = section.getArray(KEY_POOLS);
+        if (poolArray == null) {
+            DebugLogger.branch("DimPoolSettings", "pools 已配置", false, "分节缺失，创建默认配置");
+            LOGGER.info("维度池配置不存在，正在创建默认配置...");
             createDefaultConfig();
             save();
             DebugLogger.exiting("DimPoolSettings", "load", "default config created");
             return;
         }
-        DebugLogger.branch("DimPoolSettings", "Config file exists", true, CONFIG_FILE.toString());
+        DebugLogger.branch("DimPoolSettings", "pools 已配置", true, "共 " + poolArray.size() + " 项");
+
+        Type listType = new TypeToken<List<DimensionPool>>() {}.getType();
+        List<DimensionPool> poolList;
         try {
-            String json = Files.readString(CONFIG_FILE);
-            Type listType = new TypeToken<List<DimensionPool>>() {}.getType();
-            List<DimensionPool> poolList = GSON.fromJson(json, listType);
-            if (poolList == null) {
-                DebugLogger.exiting("DimPoolSettings", "load", "parsed poolList is null");
-                return;
+            poolList = GSON.fromJson(poolArray, listType);
+        } catch (RuntimeException e) {
+            section.fail(KEY_POOLS, "维度池列表解析失败：" + e.getMessage());
+            return; // 不可达
+        }
+        if (poolList == null) {
+            section.fail(KEY_POOLS, "维度池列表解析结果为空");
+            return; // 不可达
+        }
+
+        POOLS.clear();
+        DIMENSION_TO_POOL.clear();
+
+        for (int i = 0; i < poolList.size(); i++) {
+            DimensionPool pool = poolList.get(i);
+            if (pool == null) {
+                section.fail(KEY_POOLS + "[" + i + "]", "维度池条目不能为 null");
+                continue; // 不可达，fail 一定抛异常
             }
-
-            POOLS.clear();
-            DIMENSION_TO_POOL.clear();
-
-            for (DimensionPool pool : poolList) {
-                POOLS.put(pool.id(), pool);
-                DebugLogger.trace("DimPoolSettings", "加载维度池: id=%s, dims=%s", pool.id(), pool.dimensions());
-                for (String dim : pool.dimensions()) {
-                    DIMENSION_TO_POOL.put(dim, pool.id());
+            if (pool.id() == null || pool.id().isBlank()) {
+                section.fail(KEY_POOLS + "[" + i + "].id", "维度池必须有非空的 id");
+            }
+            if (pool.gameMode() == null) {
+                section.fail(KEY_POOLS + "[" + i + "].gameMode",
+                        "维度池必须指定合法的游戏模式（survival / creative / adventure / spectator）");
+            }
+            if (POOLS.containsKey(pool.id())) {
+                section.fail(KEY_POOLS + "[" + i + "].id", "维度池 id 重复：" + pool.id());
+            }
+            POOLS.put(pool.id(), pool);
+            DebugLogger.trace("DimPoolSettings", "加载维度池: id=%s, dims=%s", pool.id(), pool.dimensions());
+            for (String dim : pool.dimensions()) {
+                String previous = DIMENSION_TO_POOL.put(dim, pool.id());
+                if (previous != null && !previous.equals(pool.id())) {
+                    section.fail(KEY_POOLS + "[" + i + "].dimensions",
+                            "维度 " + dim + " 同时属于维度池 " + previous + " 与 " + pool.id()
+                                    + "，一个维度只能属于一个池");
                 }
             }
-
-            LOGGER.info("已加载 {} 个维度池", POOLS.size());
-            DebugLogger.info("DimPoolSettings", "已加载 %d 个维度池", POOLS.size());
-        } catch (Exception e) {
-            LOGGER.error("加载维度池配置失败: {}", e.getMessage());
-            DebugLogger.exception("DimPoolSettings", "load() 解析配置", e);
         }
+
+        LOGGER.info("已加载 {} 个维度池", POOLS.size());
+        DebugLogger.info("DimPoolSettings", "已加载 %d 个维度池", POOLS.size());
         DebugLogger.exiting("DimPoolSettings", "load");
     }
 
-    /** 保存配置到文件 */
+    /** 重建 7 个默认维度池并写入 {@code dimensional_inventories_module} 分节（新开服 / 坏文件恢复用） */
+    public static void writeDefaults() {
+        createDefaultConfig();
+        save();
+    }
+
+    /** 保存配置到全局配置文件的 {@code dimensional_inventories_module} 分节 */
     public static void save() {
         DebugLogger.entering("DimPoolSettings", "save");
-        try {
-            Files.createDirectories(CONFIG_DIR);
-            List<DimensionPool> poolList = new ArrayList<>(POOLS.values());
-            String json = GSON.toJson(poolList);
-            Files.writeString(CONFIG_FILE, json);
-            LOGGER.info("维度池配置已保存");
-            DebugLogger.info("DimPoolSettings", "维度池配置已保存到 %s, 共 %d 个池", CONFIG_FILE, POOLS.size());
-        } catch (IOException e) {
-            LOGGER.error("保存维度池配置失败: {}", e.getMessage());
-            DebugLogger.exception("DimPoolSettings", "save() 写入文件", e);
-        }
+        ConfigSection section = GlobalSettings.section(GlobalSettings.DIMENSIONAL_INVENTORIES_MODULE);
+        List<DimensionPool> poolList = new ArrayList<>(POOLS.values());
+        section.set(KEY_POOLS, GSON.toJsonTree(poolList));
+        GlobalSettings.save();
+        LOGGER.info("维度池配置已保存");
+        DebugLogger.info("DimPoolSettings", "维度池配置已保存到 %s, 共 %d 个池",
+                GlobalSettings.file(), POOLS.size());
         DebugLogger.exiting("DimPoolSettings", "save");
     }
 

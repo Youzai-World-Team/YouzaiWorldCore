@@ -3,6 +3,8 @@ package top.csituka.youzaiworldcore.mail;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import top.csituka.youzaiworldcore.YouzaiworldCore;
+import top.csituka.youzaiworldcore.config.GlobalSettings;
+import top.csituka.youzaiworldcore.config.ModPaths;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
 import java.io.IOException;
@@ -17,7 +19,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * 每玩家邮件索引（收件箱）：{@code config/youzaiworldcore/mail/box/<player-uuid>.json}。
+ * 每玩家邮件索引（收件箱）：{@code yzwc/server/data/mail_module/box/<player-uuid>.json}。
  * <p>
  * 每玩家一个 JSON 文件，含轻量 {@link MailRef} 列表，不含正文。
  * 加载时自动剔除正文已不存在（被撤回）与过期未星标的条目。
@@ -68,18 +70,13 @@ public class MailDataStorage {
     // ===== 初始化 =====
 
     /**
-     * 初始化收件箱存储目录。
-     *
-     * @param dataDir 数据目录 {@code config/youzaiworldcore/mail}
+     * 初始化收件箱存储目录 {@code yzwc/server/data/mail_module/box/}。
      */
-    public static void initialize(Path dataDir) {
-        DebugLogger.entering(MODULE, "initialize", "dataDir=" + dataDir);
-        BOX_DIR = dataDir.resolve("box");
-        try {
-            Files.createDirectories(BOX_DIR);
-        } catch (IOException e) {
-            YouzaiworldCore.LOGGER.error("创建邮件收件箱目录失败", e);
-        }
+    public static void initialize() {
+        DebugLogger.entering(MODULE, "initialize");
+        BOX_DIR = ModPaths.serverData(GlobalSettings.MAIL_MODULE).resolve("box");
+        ModPaths.ensureDir(BOX_DIR);
+        DebugLogger.info(MODULE, "收件箱目录=%s", BOX_DIR.toAbsolutePath());
         DebugLogger.exiting(MODULE, "initialize");
     }
 

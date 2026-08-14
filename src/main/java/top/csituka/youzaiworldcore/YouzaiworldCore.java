@@ -35,12 +35,13 @@ import top.csituka.youzaiworldcore.command.FunctionCommand;
 import top.csituka.youzaiworldcore.command.ReloadCommand;
 import top.csituka.youzaiworldcore.config.AfkConfig;
 import top.csituka.youzaiworldcore.config.ChargedCreeperConfig;
-import top.csituka.youzaiworldcore.config.DoubleDoorsState;
 import top.csituka.youzaiworldcore.config.EndPortalConfig;
 import top.csituka.youzaiworldcore.config.EventSettings;
-import top.csituka.youzaiworldcore.config.FunctionToggleManager;
+import top.csituka.youzaiworldcore.config.GlobalSettings;
 import top.csituka.youzaiworldcore.config.LaowuMemeConfig;
+import top.csituka.youzaiworldcore.config.ModPaths;
 import top.csituka.youzaiworldcore.config.ServerExternalSettings;
+import top.csituka.youzaiworldcore.config.TempManager;
 import top.csituka.youzaiworldcore.luckperms.LuckPermsHelper;
 import top.csituka.youzaiworldcore.trialvault.TrialVaultConfig;
 import top.csituka.youzaiworldcore.skill.AdventureLevelManager;
@@ -110,15 +111,15 @@ public class YouzaiworldCore implements ModInitializer {
     public static final Logger LOGGER = LoggerFactory.getLogger("YouzaiWorldCore");
 
     /**
-     * logToFile 标志：由 {@code config/youzaiworldcore/server_external_settings.json}
-     * 控制，
+     * logToFile 标志：由 {@code yzwc/server/config/global_settings.json} 的
+     * {@code core_module.log_to_file} 控制，
      * 用于条件化服务端噪音日志（配置加载、账户数据详情等）
      */
     public static boolean logToFile = false;
 
     /**
-     * devModeEnabled 标志：由
-     * {@code config/youzaiworldcore/server_external_settings.json} 控制，
+     * devModeEnabled 标志：由 {@code yzwc/server/config/global_settings.json} 的
+     * {@code core_module.dev_mode_enabled} 控制，
      * 与 {@link #logToFile} 同时启用时激活完整的调试日志输出
      */
     public static boolean devModeEnabled = false;
@@ -146,6 +147,14 @@ public class YouzaiworldCore implements ModInitializer {
 
     @Override
     public void onInitialize() {
+        // ===== 建立服务端存放目录骨架（config / data / backup / temp） =====
+        ModPaths.bootstrapServerLayout();
+
+        // ===== 加载全局配置文件（yzwc/server/config/global_settings.json） =====
+        // 必须最先执行：其余所有模块的配置都从这份文件的各自分节里读
+        // 文件不存在（新开服）时会直接写出一份含全部模块默认值的完整配置
+        GlobalSettings.load();
+
         // ===== 加载服务端外部设置（devModeEnabled / logToFile 等） =====
         ServerExternalSettings.load();
         logToFile = ServerExternalSettings.isLogToFile();
@@ -158,6 +167,12 @@ public class YouzaiworldCore implements ModInitializer {
 
         DebugLogger.entering("YouzaiworldCore", "onInitialize",
                 "devMode=" + devModeEnabled + ", logToFile=" + logToFile);
+
+        // ===== 每次开服建立世界侧目录骨架，并清空缓存 / 临时目录（服务端侧 + 世界侧） =====
+        ServerLifecycleEvents.SERVER_STARTING.register(server -> {
+            ModPaths.bootstrapWorldLayout(server);
+            TempManager.clearOnServerStart(server);
+        });
 
         DebugLogger.info("YouzaiworldCore", "初始化数据组件...");
         ModDataComponents.initialize();
@@ -223,8 +238,7 @@ public class YouzaiworldCore implements ModInitializer {
         EventSettings.load();
 
         // ===== 加载单玩家功能开关配置 =====
-        DebugLogger.info("YouzaiworldCore", "加载单玩家功能开关配置...");
-        FunctionToggleManager.load();
+        // 玩家个人配置按 UUID 存在 yzwc/server/config/user_settings/ 下，按需惰性读取，无需在此预加载
 
         // ===== 初始化老吴贴贴事件（laowu meme 移植，全局开关由 /yzwc event laowu enable 控制） =====
         DebugLogger.info("YouzaiworldCore", "加载老吴贴贴事件配置...");
@@ -237,9 +251,8 @@ public class YouzaiworldCore implements ModInitializer {
         TrialVaultConfig.load();
 
         // ===== 初始化双开门功能（Double Doors，参考 Serilum 的 Double Doors 设计，原生实现，已精简为按玩家开关）
+        // 玩家个人开关存在 user_settings/<UUID>.json 的 double_doors_module 分节，按需惰性读取
         // =====
-        DebugLogger.info("YouzaiworldCore", "加载双开门玩家状态...");
-        DoubleDoorsState.load();
         DebugLogger.info("YouzaiworldCore", "初始化双开门处理器...");
         DoubleDoorsHandler.register();
 
@@ -400,18 +413,11 @@ public class YouzaiworldCore implements ModInitializer {
         DebugLogger.exiting("YouzaiworldCore", "DimensionPoolEvents.register");
 
         // ===== 初始化邮件系统 =====
+        // 配置在 global_settings.json 的 mail_module 分节；数据在 yzwc/server/data/mail_module/
         DebugLogger.entering("YouzaiworldCore", "MailSystem.init");
-        var mailConfigDir = net.fabricmc.loader.api.FabricLoader.getInstance().getConfigDir()
-                .resolve("youzaiworldcore");
-        var mailDataDir = mailConfigDir.resolve("mail");
-        try {
-            java.nio.file.Files.createDirectories(mailDataDir);
-        } catch (java.io.IOException e) {
-            LOGGER.error("创建邮件数据目录失败", e);
-        }
-        top.csituka.youzaiworldcore.mail.MailSettings.initialize(mailConfigDir);
-        top.csituka.youzaiworldcore.mail.SentMailRepository.initialize(mailDataDir);
-        top.csituka.youzaiworldcore.mail.MailDataStorage.initialize(mailDataDir);
+        top.csituka.youzaiworldcore.mail.MailSettings.initialize();
+        top.csituka.youzaiworldcore.mail.SentMailRepository.initialize();
+        top.csituka.youzaiworldcore.mail.MailDataStorage.initialize();
         LOGGER.info("邮件系统已初始化");
         DebugLogger.exiting("YouzaiworldCore", "MailSystem.init");
 

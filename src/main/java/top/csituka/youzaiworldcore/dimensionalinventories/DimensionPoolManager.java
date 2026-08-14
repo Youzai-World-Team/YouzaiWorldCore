@@ -92,13 +92,11 @@ public final class DimensionPoolManager {
         return result;
     }
 
-    /** 玩家状态数据根目录：<world>/youzaiworldcore/dimensional_inventories/data/ */
+    /** 玩家状态数据根目录：{@code <world_name>/data/yzwc/data/dimensional_inventories_module/} */
     private static Path getDataRoot(MinecraftServer server) {
         DebugLogger.entering("DimensionPoolManager", "getDataRoot", "server=" + server);
-        Path result = server.getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT)
-                .resolve("youzaiworldcore")
-                .resolve("dimensional_inventories")
-                .resolve("data");
+        Path result = top.csituka.youzaiworldcore.config.ModPaths.worldData(
+                server, top.csituka.youzaiworldcore.config.GlobalSettings.DIMENSIONAL_INVENTORIES_MODULE);
         DebugLogger.exiting("DimensionPoolManager", "getDataRoot", "result=" + result);
         return result;
     }
