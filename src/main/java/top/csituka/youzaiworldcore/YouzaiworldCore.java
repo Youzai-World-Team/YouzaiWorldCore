@@ -242,6 +242,12 @@ public class YouzaiworldCore implements ModInitializer {
         DebugLogger.info("YouzaiworldCore", "加载聊天消息格式化配置...");
         ChatFormatSettings.load();
 
+        // ===== 初始化 Tab 列表抬头 / 页脚定制（仿 Styled Player List 精简版，仅 Header/Footer） =====
+        DebugLogger.entering("YouzaiworldCore", "TabListSystem.init");
+        top.csituka.youzaiworldcore.tablist.TabListManager.initialize();
+        LOGGER.info("Tab 列表抬头 / 页脚定制已初始化");
+        DebugLogger.exiting("YouzaiworldCore", "TabListSystem.init");
+
         // ===== 加载单玩家功能开关配置 =====
         // 玩家个人配置按 UUID 存在 yzwc/server/config/user_settings/ 下，按需惰性读取，无需在此预加载
 

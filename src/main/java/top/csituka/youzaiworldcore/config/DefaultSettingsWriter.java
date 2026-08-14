@@ -41,6 +41,7 @@ public final class DefaultSettingsWriter {
             AfkConfig.writeDefaults();
             EventSettings.writeDefaults();
             ChatFormatSettings.writeDefaults();
+            top.csituka.youzaiworldcore.tablist.TabListSettings.writeDefaults();
             ChargedCreeperConfig.writeDefaults();
             EndPortalConfig.writeDefaults();
             LaowuMemeConfig.writeDefaults();

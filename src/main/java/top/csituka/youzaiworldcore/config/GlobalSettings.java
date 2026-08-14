@@ -71,6 +71,8 @@ public final class GlobalSettings {
     public static final String FUNCTION_MODULE = "function_module";
     /** 聊天消息格式化（仿 Styled Chat 精简版：模板 + %papi% 占位符） */
     public static final String CHAT_FORMAT_MODULE = "chat_format_module";
+    /** Tab 列表抬头 / 页脚定制（仿 Styled Player List 精简版，仅 Header/Footer） */
+    public static final String TABLIST_MODULE = "tablist_module";
 
     private static final JsonFileStore STORE = new JsonFileStore(ModPaths.globalSettingsFile());
 
