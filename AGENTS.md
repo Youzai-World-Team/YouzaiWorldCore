@@ -51,6 +51,8 @@
 
 模组版本：`mod_version = 1.20.5-indev`，`maven_group = top.csituka`，`archives_base_name = YouzaiWorldCore`。
 
+**`fabric.mod.json` 依赖声明**：`depends`（缺失则加载器拒绝启动，共 7 项）— `fabric-api`（>=0.154.0+26.2）、`minecraft`、`placeholder-api`（>=3.0.0）、`modmenu`（>=20.0.0-beta.4）、`moogs_structures`（>=3.0.4）、`trinkets_updated`（>=4.1.0-beta.2+26.2）、`geckolib`（>=5.5.3）；`suggests`（可缺失，4 项）— `luckperms`、`advancementplaques`、`EnchantmentDescriptions`、`sophisticatedbackpacks`。
+
 **Maven 仓库**：mavenCentral、mavenLocal、`maven.nucleoid.xyz`（eu.pb4）、`maven.lucko.me`（LuckPerms）、`maven.terraformersmc.com`（ModMenu）、`api.modrinth.com/maven`（Moog's Structure Lib）；插件仓库额外含 `maven.fabricmc.net` 与 SpongePowered。
 
 ---
@@ -71,33 +73,35 @@ YouzaiWorldCore/
 ├── minecraft_jar/{26.1.1,26.2}/                         # ⚠️ 反编译参考用的原版 jar（已 gitignore）
 ├── json/                                                # 更新检查器远程 JSON 样例（版本/公告）
 ├── Resources/                                           # 设计源文件（.psd）与截图
-├── run/                                                 # 开发运行目录（已 gitignore），运行期配置落在 run/config/youzaiworldcore/
+├── run/                                                 # 开发运行目录（已 gitignore），运行期文件落在 run/yzwc/server/ 与 run/<world>/data/yzwc/
 ├── config/ · bin/ · build/ · .gradle/                    # 生成物 / IDE 输出（勿手工编辑）
 │
 ├── src/main/java/top/csituka/youzaiworldcore/           # 通用 + 服务端（权威逻辑）
 │   ├── YouzaiworldCore.java          # ModInitializer 主入口：所有子系统在此按序 initialize()/register()
 │   ├── account/                      # 账户认证（command / data / mixin / util 子包）
 │   ├── afk/                          # AFK 挂机检测
-│   ├── block/ + block/entity/        # 自定义方块与方块实体（分解台 / 飞行信标 / 传送锚点）
-│   ├── command/                      # 服务端命令（Afk / Event / Reload / TeleportAnchor / Update）
+│   ├── block/ + block/entity/        # 自定义方块与方块实体（分解台 / 飞行信标 / 传送锚点 / 魔力台）
+│   ├── command/                      # 服务端命令（Afk / Event / Function / Reload / TeleportAnchor / Update）
 │   ├── component/                    # 自定义数据组件（ModDataComponents）
-│   ├── config/                       # 服务端 JSON 配置（ServerExternalSettings 等 7 个）
+│   ├── config/                       # ⭐ 统一存放层（ModPaths / GlobalSettings / UserSettings / JsonFileStore / ConfigSection / ConfigCrash / TempManager）+ 各模块配置类
+│   ├── damagenumber/                 # 伤害跳字服务端广播（DamageNumberHandler）
 │   ├── data/                         # SavedData 持久化（传送锚点）
 │   ├── dimensionalinventories/       # 维度池（跨维度独立背包）
 │   ├── enchantment/ · enchlevellangpatch/  # 自定义附魔 / 附魔等级语言补丁（api + impl）
 │   ├── entity/seat/                  # 座椅实体
-│   ├── event/                        # 30+ 个事件处理器（末地门 / 双开门 / 老吴贴贴 / 虚空杖 / 骨粉甘蔗 / 带电苦力怕 / 监守者 / 切石机 / 传送卷轴蓄力 / 生命汲取 / 风弹 / 熔炼 / 阳光修复 / 乐魂涡轮 / 幼年僵尸 / 唱片机循环 / 合成音效 / Meme画作掉落 …）
-│   ├── invisibility/ · mana/ · skill/ · status/ · trialvault/   # 各玩法子系统
+│   ├── event/                        # 31 个事件处理器（末地门 / 双开门 / 老吴贴贴 / 虚空杖 / 骨粉甘蔗 / 带电苦力怕 / 监守者 / 切石机 / 传送卷轴蓄力 / 生命汲取 / 风弹 / 熔炼 / 阳光修复 / 乐魂涡轮 / 幼年僵尸 / 唱片机循环 / 合成音效 / Meme画作掉落 / 铁锭修铁砧 / 死亡音效 …）
+│   ├── invisibility/ · mana/ · respawn/ · skill/ · status/ · trialvault/   # 各玩法子系统
 │   ├── item/{,preset,tool}/          # 物品、预设物品、悠哉工具、创造标签页（7 个）
 │   ├── luckperms/LuckPermsHelper.java# 统一鉴权入口（权限节点常量 + OP 回退）
 │   ├── mail/                         # 邮件系统（Mail / MailManager / MailDataStorage …）
-│   ├── mixin/                        # 服务端 Mixin（子包：afk / babyzombie / chargedcreeper / craftsound / doubledoors / invisibility / jukebox / painting / pet / seat / skill / trialvault）
-│   ├── network/                      # 42 个 Payload 记录类 + ModNetworking 统一注册 + MailStreamCodecs
+│   ├── mixin/                        # 服务端 Mixin（35 个；子包：afk / babyzombie / chargedcreeper / craftsound / damagenumber / doubledoors / invisibility / jukebox / painting / pet / seat / skill / trialvault）
+│   ├── network/                      # 48 个 Payload 记录类 + ModNetworking 统一注册 + MailStreamCodecs
 │   ├── pet/{,command,config,event}/  # 宠物系统
-│   ├── placeholders/                 # Placeholder API 占位符
+│   ├── placeholders/                 # Placeholder API 占位符（32 个）
 │   ├── screen/{,slot}/               # 容器菜单（AbstractContainerMenu）
 │   ├── sound/                         # 自定义 SoundEvent（cloud_genshin）
 │   ├── update/                       # 更新检查器
+│   ├── util/BackupArchive.java       # 备份 zip 读写工具
 │   ├── util/DebugLogger.java         # ⭐ 调试日志工具（新增功能必须使用）
 │   └── worldgen/                     # 村庄传送锚点结构注入
 │
@@ -105,9 +109,9 @@ YouzaiWorldCore/
 │   ├── fabric.mod.json               # 模组元数据、entrypoints、mixins、depends（版本占位符由 processResources 展开）
 │   ├── youzaiworldcore.mixins.json / youzaiworldcore.account.mixins.json
 │   ├── assets/youzaiworldcore/       # 纹理、模型、blockstates、sounds（4 个 .ogg）、画作纹理（12 张）
-│   ├── assets/youzaiworldcore/lang/  # ⭐ 10 种语言（zh_cn/zh_hk/zh_tw/lzh/en_us/en_gb/de_de/es_es/fr_fr/ru_ru），行数需保持一致（当前各约 633 行，zh_cn 约 655 行）
+│   ├── assets/youzaiworldcore/lang/  # ⭐ 10 种语言（zh_cn/zh_hk/zh_tw/lzh/en_us/en_gb/de_de/es_es/fr_fr/ru_ru），每个文件 738 行 / 736 键，新增语言键需 10 个文件全部补齐
 │   ├── assets/minecraft/ · assets/advancementplaques/  # 原版与第三方资源覆盖（字体、标题、GUI）
-│   └── data/                         # 成就（31 个）、配方（20 个）、战利品表、维度、结构（4 个，含 cloud_genshin_ruins）、模板池、tags、附魔（12 个 JSON）、jukebox_song、trinkets 槽位定义
+│   └── data/                         # 成就（31 个）、配方（20 个）、战利品表（方块 6 + 箱子 4）、维度、结构（9 个：5 村庄变体 + 3 遗迹 + cloud_genshin_ruins）、模板池、tags、附魔（12 个 JSON）、jukebox_song、trinkets 槽位定义
 │
 ├── src/client/java/top/csituka/youzaiworldcore/         # 仅客户端
 │   ├── client/Client.java            # ClientModInitializer 入口
@@ -117,7 +121,7 @@ YouzaiWorldCore/
 │   ├── command/                      # 客户端命令（仅解析并转发数据包）
 │   ├── highlightitem/ · itemborder/ · anviluses/        # 纯客户端增强
 │   ├── laowumeme/                     # 老吴贴贴客户端（Geo 模型/渲染/音效池）
-│   ├── mixin/client/                 # 54 个客户端 Mixin（已注册于 mixins.json；子包：afk / food / highlightitem / itemborder / laowumeme / seat / technocrown / enchlevellangpatch）
+│   ├── mixin/client/                 # 60 个客户端 Mixin（已注册于 mixins.json；子包：afk / enchlevellangpatch / food / highlightitem / itemborder / laowumeme / seat / technocrown）
 │   └── network/ClientNetworking.java
 │
 └── src/client/resources/
@@ -170,10 +174,48 @@ DebugLogger.exiting("ModuleName", "methodName", "result=" + r);
 | `LEVEL_DETAILED` | 2 | 追加 `debug` / `branch` |
 | `LEVEL_DEBUG` | 3 | 追加 `trace` / `entering` / `exiting` |
 
-**双开关**：仅当 `devModeEnabled == true` **且** `logLevel > 0` 时才输出。二者由 `config/youzaiworldcore/server_external_settings.json` 的 `devModeEnabled` / `logToFile` 控制，在 `YouzaiworldCore.onInitialize()` 开头加载并同步。
+**双开关**：仅当 `devModeEnabled == true` **且** `logLevel > 0` 时才输出。二者由 `yzwc/server/config/global_settings.json` 的 `core_module.dev_mode_enabled` / `core_module.log_to_file` 控制，在 `YouzaiworldCore.onInitialize()` 开头加载并同步。
 格式固定为 `[yyyy-MM-dd HH:mm:ss.SSS] [LEVEL] [Module] 描述`。模组启动横幅与关键里程碑另用 `YouzaiworldCore.LOGGER`（SLF4J，无条件输出）。
 
-### 4.3 代码风格
+### 4.3 文件存放规范（强制）
+
+服务端所有配置 / 数据 / 备份 / 缓存文件**只能**通过 `config/ModPaths` 取路径，禁止手写
+`getConfigDir().resolve("youzaiworldcore")` 之类的散装路径。目录布局：
+
+```
+<gameDir>/yzwc/server/                       # 与世界无关的内容
+├── config/
+│   ├── global_settings.json                 # 全局配置，按功能模块分节
+│   ├── account_module/registerd_users_data.json   # 玩家代号 / 密码 / UUID
+│   └── user_settings/<玩家UUID>.json        # 玩家个人配置，按功能模块分节
+├── data/<模块名>/data.json                  # 各模块数据
+├── backup/<模块名>/*.zip                    # 各模块备份（必须是 zip）
+└── temp/<模块名>/                           # 各模块缓存（每次开服清空）
+
+<world_name>/data/yzwc/                      # 需要随存档走的内容，同样的四层结构
+└── config/ · data/<模块名>/ · backup/<模块名>/ · temp/<模块名>/
+```
+
+**五条硬规则：**
+
+1. **先分类再写配置**：所有 `.json` 配置文件的根节点是「模块名 → 该模块配置对象」，禁止在根节点直接写配置项。模块名统一登记在 `GlobalSettings` 的常量里（`AFK_MODULE`、`PET_MODULE` …），并与 `data/` `backup/` `temp/` 下的文件夹名保持一致。
+2. **全局 vs 个人**：与世界无关、对所有人生效的配置写 `GlobalSettings.section(模块名)`；每位玩家各自一份的**且必须由服务端保存**的设置写 `UserSettings.section(uuid, 模块名)`（纯客户端功能的配置不放这里）。个人配置文件在账户注册时由 `AccountDataStorage.register` 创建、注销/删号时删除。
+3. **读配置用强类型 getter**：`ConfigSection.getBoolean/getInt/getDouble/getString/getEnum/getStringList` 等。键缺失回落默认值；类型不符或越界一律走下面第 5 条的失败流程。本项目不做配置迁移，也不做静默降级。
+4. **每个模块都要能生成自己的默认值**：模块配置类必须提供 `public static void writeDefaults()`（把字段**重置为 `DEFAULT_*` 常量**再 `save()`），并在 `DefaultSettingsWriter.writeAllDefaults()` 里登记一行。新开服（文件不存在）时 `GlobalSettings.load()` 会直接写出一份含全部模块默认值的完整配置，而不是等各模块 `load()` 零散补齐。非全局的文件（个人配置 / 账户凭据 / 各模块 `data.json`）通过 `JsonFileStore.setDefaultsWriter(...)` 注册自己的默认内容，再用 `loadOrCreateDefaults()` 读取。
+5. **备份必须是 zip**：用 `util/BackupArchive` 写 `backup/<模块名>/xxx.zip`（压缩包内放同名 `.json`）。临时文件用 `TempManager.serverTempDir(模块名)` / `worldTempDir(server, 模块名)`，并且不得假设能跨重启存活。
+
+**读到坏配置时的固定流程**（`JsonFileStore.fail` → `ConfigCrash`）：
+
+1. 把出错文件改名隔离为 `<原文件名>.error`（已存在则追加 `-<时间戳>`，绝不覆盖已有隔离文件）；
+2. 在原路径用该文件注册的默认内容**重新生成一份默认配置**；
+3. 控制台打印「文件 / 位置 / 原因 / 隔离到哪 / 已重建哪个」；
+4. 抛 `ConfigCrash.ConfigFormatException` 崩溃退出。
+
+若第 1 步改名失败（文件被占用等），则**跳过第 2 步**，绝不覆盖管理员的现场。
+
+新增模块时：在 `GlobalSettings` 加一个模块名常量 → 写 `writeDefaults()` 并登记进 `DefaultSettingsWriter` → 配置走 `GlobalSettings.section(...)` / `UserSettings.section(...)` → 数据走 `ModPaths.serverData(模块名)` 或 `ModPaths.worldData(server, 模块名)`。
+
+### 4.4 代码风格
 
 - **缩进 4 空格**，UTF-8 编码（`options.encoding = "UTF-8"`），Java 25 语法（record / pattern matching / sealed 均可用）。
 - **注释与用户可见文案一律中文**；类/公开方法写 Javadoc，说明用途、配置文件路径、权限节点。
@@ -181,7 +223,7 @@ DebugLogger.exiting("ModuleName", "methodName", "result=" + r);
 - 因 MC 源码缺少 `@Nullable` 标注，普遍在类上加 `@SuppressWarnings("null")`（必要时加 `"unused"`）以消除 IDE 噪音警告。
 - 工具类写成 `public final class` + 私有构造 + 全静态方法（如 `DebugLogger`、`LuckPermsHelper`、`ServerExternalSettings`）。
 
-### 4.4 命名约定
+### 4.5 命名约定
 
 | 对象 | 约定 | 示例 |
 |------|------|------|
@@ -197,7 +239,7 @@ DebugLogger.exiting("ModuleName", "methodName", "result=" + r);
 | 权限节点 | `youzaiworldcore.command.<命令>[.<动作>]` | `youzaiworldcore.command.teleport_world` |
 | Mixin 私有成员 | `youzaiworldcore$` 前缀 | `youzaiworldcore$logUpdate` |
 
-### 4.5 提交与分支
+### 4.6 提交与分支
 
 - **主分支 `main`**，直接在 `main` 上开发并推送；PR 亦合入 `main`（CI 对 push 与 pull_request 均触发）。
 - **提交信息为中文**，惯用形式（无强制 Conventional Commits）：
@@ -275,17 +317,21 @@ src/client →  仅客户端：渲染、GUI、HUD、输入、客户端命令（�
 
 ```
 YouzaiworldCore.onInitialize()
- ├─ ServerExternalSettings.load()          # 先加载配置 → 同步 DebugLogger 开关
+ ├─ GlobalSettings.load()                  # 最先：读 yzwc/server/config/global_settings.json
+ ├─ ServerExternalSettings.load()          # 取 core_module 分节 → 同步 DebugLogger 开关
+ ├─ SERVER_STARTING: TempManager.clear...   # 每次开服清空 temp/
  ├─ LOGGER.info(LOGO)                      # ASCII 启动横幅
  ├─ ModDataComponents / ModBlocks / ModBlockEntities / ModItems
  ├─ ModSoundEvents / ModCreativeModeTabs / ModMenuTypes / ModNetworking / ModSeatEntities
- ├─ 各 XxxHandler.register()               # 事件挂载
- ├─ 各 XxxConfig.load()                    # 子系统配置
- ├─ 各子系统 Manager/Storage.initialize()   # 账户 / 冒险等级 / 属性 / 宠物 / 邮件 / AFK / 隐身 …
+ ├─ DamageNumberHandler.initialize()       # 伤害跳字
+ ├─ 各 XxxHandler.register()               # 事件挂载（连锁采集/铁砧修复/坐姿/传送锚点/法杖/信标/切石机/龙翼/监守者/死亡音效/梯子/作物/头颅/三叉戟/紫颂/带电苦力怕/双开门/末地门/骨粉甘蔗/混凝土固化/附魔处理器/老吴贴贴/隐身…）
+ ├─ 各 XxxConfig.load()                    # 子系统配置（事件开关/带电苦力怕/末地门/试炼宝库/老吴贴贴/更新检查/AFK/维度池/原地重生）
+ ├─ 各子系统 Manager/Storage.initialize()   # 账户 / 冒险等级 / 属性 / 原地重生 / 邮件 / 宠物 / 统计 …
  ├─ BiomeModifications.addFeature(...)     # 矿物生成
- ├─ ServerLifecycleEvents.SERVER_STARTING  # 村庄结构注入
- ├─ ServerLifecycleEvents.SERVER_STARTED   # 异步更新检查
- ├─ ServerPlayConnectionEvents.DISCONNECT  # 隐身 / 维度池 / AFK 收尾
+ ├─ ServerLifecycleEvents.SERVER_STARTING  # 村庄结构注入 + 宠物备份
+ ├─ ServerLifecycleEvents.SERVER_STARTED   # 异步更新检查 + 邮件过期清理
+ ├─ ServerPlayConnectionEvents.JOIN        # AFK 登记 / 功能开关同步 / 邮件未读数推送
+ ├─ ServerPlayConnectionEvents.DISCONNECT  # 隐身 / 维度池 / AFK / 邮件收尾
  └─ CommandRegistrationCallback            # /yzwc 命令树注册
 ```
 
@@ -312,7 +358,7 @@ YouzaiworldCore.onInitialize()
 
 ### 6.4 关键设计决策
 
-1. **配置全部为 JSON + Gson**，统一落在 `config/youzaiworldcore/`（开发期即 `run/config/youzaiworldcore/`）。每个配置类是静态单例，提供 `load()` / `save()`，文件缺失时自动写出默认值。现有文件：`server_external_settings.json`、`client_external_settings.json`、`afk.json`、`charged_creeper.json`、`end_portal_settings.json`、`laowu_meme.json`、`trial_vault.json`、`update_checker.json`、`item_borders.json`、`fancy_tooltips.json`、`mail_settings.json`、`double_doors_players.json`、`function_toggles.json` 及 `account/`、`pet_module/`、`skill_module/`、`mail/`、`highlight_item/`、`dimensional_inventories/` 等子目录。
+1. **配置全部为 JSON + Gson，且集中收拢**（详见 [§4.3](#43-文件存放规范强制)）。服务端只有三类配置文件：全局 `yzwc/server/config/global_settings.json`、账户凭据 `yzwc/server/config/account_module/registerd_users_data.json`、玩家个人 `yzwc/server/config/user_settings/<UUID>.json`；全部按功能模块分节。数据 / 备份 / 缓存分别在 `yzwc/server/` 下的 `data/` `backup/` `temp/`，随存档走的同结构放在 `<world_name>/data/yzwc/`。各配置类仍是静态单例 `load()` / `save()`，但读写都走 `GlobalSettings` / `UserSettings`，分节缺失时自动写出默认值，格式非法则崩溃退出。**客户端配置尚未迁移**，仍在 `config/youzaiworldcore/`（`client_external_settings.json`、`item_borders.json`、`fancy_tooltips.json`、`highlight_item/` 等）。
 2. **网络层集中注册**：所有 Payload 的 `PayloadTypeRegistry` 注册与服务端接收器都写在 `ModNetworking.initialize()`，客户端接收器写在 `ClientNetworking`。Payload 一律用 `record` + `CustomPacketPayload.Type ID` + `StreamCodec STREAM_CODEC`。
 3. **权限双轨制**：`LuckPermsHelper` 暴露权限节点常量与 `checkPermission(...)`；LuckPerms 未安装时**不抛异常**，自动回退到原版 OP 等级（`Commands.LEVEL_ADMINS` = 4）。新增命令请在此类中补充节点常量并同步更新 README 权限表。
 4. **Mixin 三配置分离**：`youzaiworldcore.mixins.json`（服务端/通用）、`youzaiworldcore.account.mixins.json`（账户系统独立）、`youzaiworldcore.client.mixins.json`（客户端，`environment: client`）。新增 Mixin 必须登记进对应 JSON，否则不生效；`compatibilityLevel` 均为 `JAVA_25`，`injectors.defaultRequire = 1`，通用与客户端配置还开启了 `overwrites.requireAnnotations`。
@@ -331,14 +377,17 @@ YouzaiworldCore.onInitialize()
 
 ### 运行与调试
 - ⚠️ **测试必须在服务端进行**（`./gradlew runServer`）。单开客户端时账户、邮件、宠物、传送锚点等依赖服务端权威状态的功能都不会工作 —— 这是 `DESIGN.md` 首要提示。
-- **日志默认全部静默**。调不出日志时先检查 `config/youzaiworldcore/server_external_settings.json` 是否 `devModeEnabled: true` 且 `logToFile: true`；两者缺一，`DebugLogger` 全部方法直接 return。
+- **日志默认全部静默**。调不出日志时先检查 `yzwc/server/config/global_settings.json` 的 `core_module` 分节是否 `dev_mode_enabled: true` 且 `log_to_file: true`；两者缺一，`DebugLogger` 全部方法直接 return。
 - `YouzaiworldCore.logToFile` / `devModeEnabled` 是配置的镜像字段，只读不要手工赋值，改动请走 `ServerExternalSettings`。
+- **配置写错会直接崩服**：这是刻意行为（见 [§4.3](#43-文件存放规范强制)）。模组会先把坏文件改名成 `<原名>.error` 保留现场，再在原路径生成一份默认配置，然后打印「文件 / 位置 / 原因 / 隔离到哪 / 已重建哪个」并退出。照着新生成的默认文件把 `.error` 里的改动搬回去即可。
+- **新开服会自动生成完整默认配置**：`global_settings.json` 不存在时由 `DefaultSettingsWriter` 一次性写出全部模块分节，不需要先跑一遍再看有哪些键。
 
 ### 编码坑点
+- **配置 / 数据文件路径必须走 `ModPaths`**：不要再写 `FabricLoader.getInstance().getConfigDir().resolve("youzaiworldcore")`。新模块的配置分节名同时也是它在 `data/` `backup/` `temp/` 下的文件夹名，先在 `GlobalSettings` 里登记常量。
 - **不要凭旧版本 API 记忆写代码**：26.2 与 1.21.x 差异极大。用 `Identifier` 而非 `ResourceLocation`；不确定的签名一律先 `javap` 核对（[§5.3](#53-反编译原版-jar)）。
 - **新增 Mixin 忘记登记 JSON** 是最常见的"改了没反应"原因。
-- **多语言必须同步**：`assets/youzaiworldcore/lang/` 下 10 个文件当前各约 650+ 行（zh_cn 行数最多），新增语言键需要 10 个文件全部补齐，否则部分语言下显示原始键名。
-- **硬依赖不可缺**：`fabric-api`、`placeholder-api`、`modmenu`、`moogs_structures`、`trinkets_updated` 在 `fabric.mod.json` 中声明为 `depends`，缺失会导致加载器直接拒绝启动；LuckPerms、AdvancementPlaques 等是 `suggests`，可缺失。
+- **多语言必须同步**：`assets/youzaiworldcore/lang/` 下 10 个文件当前每个均为 738 行 / 736 个键，新增语言键需要 10 个文件全部补齐，否则部分语言下显示原始键名。
+- **硬依赖不可缺**：`fabric-api`、`minecraft`、`placeholder-api`、`modmenu`、`moogs_structures`、`trinkets_updated`、`geckolib` 共 7 项在 `fabric.mod.json` 中声明为 `depends`，缺失会导致加载器直接拒绝启动；LuckPerms、AdvancementPlaques、EnchantmentDescriptions、Sophisticated Backpacks 是 `suggests`，可缺失。
 - **物品模型自检**：客户端启动时 `ItemModelDefinitionValidator` 会校验物品模型定义文件是否存在，新增物品若日志报缺失，需补 `assets/youzaiworldcore/items/<id>.json`。
 - **`src/main` 中禁止 client 类**：误引用会在服务端运行时抛 `NoClassDefFoundError`，且开发期客户端运行不报错，很难发现。
 - **`@SuppressWarnings("null")`** 是既有约定而非疏漏，新类可沿用；但请勿用它掩盖真实的空指针风险。
@@ -346,7 +395,7 @@ YouzaiworldCore.onInitialize()
 ### 目录与版本控制
 - `run/`、`bin/`、`build/`、`.gradle/`、`minecraft_jar/`、`.idea/`、`.vscode/`、`.claude/`、`.workbuddy/`、`logo.txt` 均已 gitignore，勿提交。
 - 版本号只改 `gradle.properties`；`fabric.mod.json` 中的 `${version}` / `${minecraft_version}` / `${loader_version}` 由 `processResources` 自动展开。
-- 根目录 `config/` 为空占位目录，运行期配置实际生成在 `run/config/`。
+- 根目录 `config/` 为空占位目录；服务端运行期文件实际生成在 `run/yzwc/server/`（开发期）与 `run/<world>/data/yzwc/`，客户端配置仍在 `run/config/youzaiworldcore/`。
 
 ---
 
@@ -364,6 +413,7 @@ YouzaiworldCore.onInitialize()
 | `src/main/java/.../YouzaiworldCore.java` | 子系统注册时序总览 |
 | `src/main/java/.../enchantment/ModEnchantments.java` | 自定义附魔 12 个 ResourceKey 定义 |
 | `src/main/java/.../sound/ModSoundEvents.java` | 自定义 SoundEvent（音乐唱片） |
+| `src/main/java/.../network/ModNetworking.java` | 48 个网络数据包的统一注册与服务端接收器 |
 | `NOTICE.txt` / `LICENSE*.txt` | 第三方代码与字体（Noto Sans、FluentEmoji）授权说明 |
 
 ### 外部文档

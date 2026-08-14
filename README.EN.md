@@ -20,7 +20,7 @@
 
 ## 📖 Project Overview
 
-**YouzaiWorldCore** is the core gameplay mod for the **Youzai World** Minecraft multiplayer server, built on the **Fabric** framework with deep integration of **LuckPerms** permission system and **Placeholder API**. The mod provides a comprehensive infrastructure for the server, covering account authentication, GUI menus, the YZUI interface system (full inventory / HUD / recipe book restyle), custom items and blocks, sit interaction, dimension pools, teleport anchors & warp scrolls, mana system, AFK detection, invisibility management, adventure level & attribute growth, enchantment-level language patches, pickup display, world enhancement features (charged creepers / dragon elytra drop / end portal / warden loot / stonecutter damage / unlimited trial vault rewards, etc.), a pet system, item highlighting & borders, a mailbox, custom enchantments (12), trinket-slot integration with YZUI trinket interaction, music disc, meme paintings, Laowu Meme easter egg, Technoblade memorial crown, config import/export, beginner tutorial, voice chat integration, and 40+ core features in total.
+**YouzaiWorldCore** is the core gameplay mod for the **Youzai World** Minecraft multiplayer server, built on the **Fabric** framework with deep integration of **LuckPerms** permission system and **Placeholder API**. The mod provides a comprehensive infrastructure for the server, covering account authentication, GUI menus, the YZUI interface system (full inventory / HUD / recipe book restyle), custom items and blocks, sit interaction, dimension pools, teleport anchors & warp scrolls, mana system, AFK detection, invisibility management, adventure level & attribute growth, enchantment-level language patches, pickup display, world enhancement features (charged creepers / dragon elytra drop / end portal / warden loot / stonecutter damage / unlimited trial vault rewards, etc.), a pet system, item highlighting & borders, a mailbox, custom enchantments (12), trinket-slot integration with YZUI trinket interaction, music disc, meme paintings, Laowu Meme easter egg, Technoblade memorial crown, config import/export, beginner tutorial, chat box position optimization, and 40+ core features in total.
 
 ### Target Audience
 
@@ -45,6 +45,7 @@ Complete password authentication for offline-mode servers, with Mixin-based rest
 - **Session Management**: Configurable session timeout with same-IP auto-recovery
 - **Position Save/Restore**: Saves position on logout → teleports to End void; restores precisely on login
 - **Login Hall**: Unauthenticated players confined to `youzaiworldcore:login_hall` custom dimension; Mixin blocks movement, interaction, attacking, and chat
+- **Login/Register GUI**: On entering the login hall, the client auto-opens the register/login screens (`RegisterScreen` / `LoginScreen`, read-only pre-filled username, Enter to log in, Disconnect button), pushed by the server via `OpenAuthScreenPayload`
 - **Invisibility Integration**: Sensitive operations (logout, deactivate, password change) blocked while invisible
 - **Account Deletion Integration**: Deactivating/deleting an account also clears its mailbox (`MailManager.onAccountDeleted`)
 
@@ -63,13 +64,14 @@ Windows 10 Start Menu-style tile layout with page switching and animated transit
 
 ### 3. Title Screen Overhaul
 
-Fully redesigned Minecraft main menu via `TitleScreenMixin`: custom buttons (Join Server/Options/Quit), announcement banner with fade-in animation, gradient background (`GradientBackgroundUtil`), Mojang logo replaced with custom assets, and a test page button in developer mode.
+Fully redesigned Minecraft main menu via `TitleScreenMixin`: a left panel with custom buttons (Join Server `play.mcyzw.top` / Options / Quit), a right panel with the announcement + update info block (title/version/date/content/download/ignore, fade-in animation), a gradient background (`GradientBackgroundUtil`), the Mojang logo replaced with custom assets, and a test page button in developer mode. Clicking "Join Server" while a forced update is pending intercepts and shows `ForcedUpdateScreen`.
 
 ### 4. Window Customization
 
 - **Custom Window Icon**: Loads `jar_icon.png` at runtime via Java ImageIO to replace taskbar and title bar icons
-- **Custom Window Title**: `WindowTitleMixin` intercepts `Window.setTitle()` to show "悠哉世界"
-- **Respawn Here**: Splits the vanilla respawn row into two half-width buttons in enabled dimensions. Respawning at the death position preserves inventory, does not consume a Heart of Guardianship, costs vanilla XP levels, and grants Resistance V for 10 seconds. The account-based cost is `floor(log2(current use number + 1)) + 5`, starting at 6 levels. Configure it in `config/youzaiworldcore/in_place_respawn.json`; only `survival_world_pool` is enabled by default
+- **Custom Window Title**: `WindowTitleMixin` intercepts `Window.setTitle()`, replacing the title with `Youzai World Server · Wanderer v<version> | [Minecraft JAVA 26.2]`
+- **Quit Confirmation**: `MinecraftQuitMixin` hijacks the window close event — clicking "Quit Game" on the title screen or the window X / Alt+F4 shows a confirmation dialog (`QuitConfirmationScreen`); the game only exits after confirmation
+- **Respawn Here**: Splits the vanilla respawn row into two half-width buttons in enabled dimensions. Respawning at the death position preserves inventory, does not consume a Heart of Guardianship, costs vanilla XP levels, and grants Resistance V for 10 seconds. The account-based cost is `floor(log2(current use number + 1)) + 5`, starting at 6 levels. Configure it in the `respawn_module` section of `yzwc/server/config/global_settings.json`; only `survival_world_pool` is enabled by default
 
 ### 5. Youzai Tools & Items
 
@@ -143,7 +145,7 @@ Multi-world server management with independent state pools — players have sepa
 - **Switching Flow**: Check target pool → save current state → clear inventory + effects → load target state → teleport → force game mode
 - **Default Spawn**: Each pool can configure landing coordinates for post-death return
 - **Cross-Pool Teleportation**: Supports dimension portals, commands, respawn events
-- **Storage**: Pool config `config/youzaiworldcore/dimensional_inventories/pool_settings.json`, player state `<world>/youzaiworldcore/dimensional_inventories/data/<pool-id>/<uuid>.json`
+- **Storage**: Pool config in `dimensional_inventories_module.pools` of `yzwc/server/config/global_settings.json`, player state in `<world_name>/data/yzwc/data/dimensional_inventories_module/<pool-id>/<uuid>.json`
 
 ### 11. Invisibility System
 
@@ -166,7 +168,7 @@ A player-behavior-based experience level system coupled with an allocatable attr
   - Attribute points earned on level-up can be allocated via the `/yzwc` attribute menu (GUI element), mapped onto 10 vanilla attributes: `MAX_HEALTH`, `MOVEMENT_SPEED`, `JUMP_STRENGTH`, `LUCK`, `ATTACK_DAMAGE`, `BLOCK_BREAK_SPEED`, etc.
   - **Client HUD**: `AdventureLevelHudRenderer` renders level & attributes
   - **Network Sync**: `AttributeSyncPayload` (S→C) syncs attribute data; `AttributeUpgradePayload` (C→S) requests a point allocation
-  - **Storage**: `config/youzaiworldcore/skill_module/player_level_data.json` and `player_attributes_data.json` (per-player)
+  - **Storage**: the `levels` and `attributes` blocks of `yzwc/server/data/skill_module/data.json` (keyed by player UUID)
 
 ### 13. Placeholder System
 
@@ -208,32 +210,97 @@ Nine preset shulker boxes in the "Youzai Kits" creative tab (`PresetItems.create
 
 ### 17. Advancement System
 
-Two branches with **32** advancements:
+Two branches with **31** advancements (`data/youzaiworldcore/advancement/`):
 
-- **Youzai World** (main): Obtain Youzai materials, craft tools, use decomposition table / fly beacon / heart of guardianship / void staff
-- **Fun Little Challenges**: The Cake Is a Lie, Foodie, Max Luck, Way Home, I Became Building Material (died on a stonecutter), etc.
-- **Deep Dark**: New dedicated branch with 6 advancements:
-  - `visit_deep_dark` — Enter the Deep Dark
-  - `enter_ancient_city` — Step into the ancient city
-  - `loot_ancient_city` — Open a loot chest in the ancient city
-  - `hold_recovery_compass` — Obtain a recovery compass
-  - `use_disc_5` (Echo of the City) — Obtain music disc 5
-  - `kill_warden` (Warden's Fall) — Defeat the Warden
+- **Youzai World** (`youzaiworld/`, 21): Obtain Youzai materials (`have_raw_yz` / `have_yz_ore` / `have_yz_ingot` / `have_yz_block`), craft tools (`have_yz_series_tool` / `have_yz_series_all_tools`), use the decomposition table / fly beacon / heart of guardianship / void staff (`used_*` / `have_*`), discover teleport anchors and the teleport network (`discover_teleport_anchor` / `teleport_network` / `village_teleport_network`), explore the Cloud Genshin ruins and ancient ruins (`discover_cloud_genshin_ruins` / `ancient_ruins`), and complete all beginner tutorials (`complete_the_tutorials`)
+- **Fun Little Challenges** (`fun_little_challenge/`, 10): `cake_is_a_lie` (The Cake Is a Lie), `foodie` (Foodie), `get_emerald_blocks`, `like_cows_and_pigs`, `max_luck` (Max Luck), `stuck_in_cobweb`, `tested_stonecutter` (I Became Building Material — died on a stonecutter), `way_home` (Way Home), `wearing_copper_armor`
 
 ### 18. Debug & Configuration
 
-| Config                   | File Location                                               | Contents                                                                                             |
-| ------------------------ | ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| Server External Settings | `config/youzaiworldcore/server_external_settings.json`      | `devModeEnabled`, `logToFile` (dual-toggle for DebugLogger)                                          |
-| Client External Settings | `config/youzaiworldcore/client_external_settings.json`      | `devModeEnabled`, `logLevel` (0–3), `yzuiEnabled` (YZUI interface master toggle), debug address/port |
-| DebugLogger              | `util/DebugLogger`                                          | 4 log levels (OFF/BASIC/DETAILED/DEBUG), entering/exiting/branch/stateChange/exception tracing       |
-| Update Checker Settings  | `config/youzaiworldcore/update_checker.json`                | `enabled` (toggles update checks, UpdateCheckerConfig)                                               |
-| Trial Vault Settings     | `config/youzaiworldcore/trial_vault.json`                   | `enabled` (unlimited-reward toggle, TrialVaultConfig, default true)                                  |
-| Mail Settings            | `config/youzaiworldcore/mail_settings.json`                 | Expiry policy, permission node/level, attachment caps                                                |
-| Pet Settings             | `config/youzaiworldcore/pet_module/settings.json`           | Pet backup interval etc.                                                                             |
-| AFK Settings             | `config/youzaiworldcore/afk.json`                           | Detection threshold, prefix/broadcast/invulnerable/auto_kick                                         |
-| Laowu Meme Settings      | `config/youzaiworldcore/laowu_meme.json`                    | Global toggle, cooldown                                                                              |
-| Player Stats Data        | `<world>/youzaiworldcore/status/data.json` + `rank_export/` | StatsManager persistence & leaderboard export dir                                                    |
+#### 18.1 File Layout (Server Side)
+
+As of this version, every server-side config / data / backup / cache file lives under `yzwc/server/`
+in the game root directory; anything that must travel with the save goes to `<world_name>/data/yzwc/`.
+All paths are resolved through `config/ModPaths` — modules no longer hand-roll their own paths.
+
+```
+<game root>/yzwc/server/
+├── config/
+│   ├── global_settings.json                # Global config (world-independent), sectioned per module
+│   ├── account_module/
+│   │   └── registerd_users_data.json       # Player name / password / UUID (written on registration)
+│   └── user_settings/
+│       └── <player UUID>.json              # Per-player config (created on register, deleted on deactivate)
+├── data/
+│   └── <module>/data.json                  # Per-module data files
+├── backup/
+│   └── <module>/*.zip                      # Per-module backup archives
+└── temp/
+    └── <module>/                           # Per-module cache / temp files (cleared on every server start)
+
+<world folder>/data/yzwc/
+├── config/ · data/<module>/ · backup/<module>/ · temp/<module>/
+```
+
+**JSON structure convention**: every config file classifies by *feature module* first, then writes
+that module's settings:
+
+```json
+{
+  "pet_module": {
+    "auto_backup_enabled": true,
+    "backup_interval_seconds": 600
+  },
+  "afk_module": {
+    "enabled": true,
+    "threshold_seconds": 300
+  }
+}
+```
+
+**Generated on first run**: on a fresh server (file absent) the mod writes a complete
+`global_settings.json` **containing every module's default values**, plus empty account-credential and
+per-module data files, and creates the `config/ data/ backup/ temp/` skeleton — you never have to boot
+once just to discover which keys exist. A player's personal config file is created at registration,
+likewise pre-filled with the defaults for every personal setting.
+
+**Error handling**: there is no config migration and no silent fallback. As soon as a malformed or
+wrongly-typed value is read, the mod:
+
+1. renames the offending file aside to `<filename>.error` (timestamp appended if taken — an existing
+   quarantined file is never overwritten);
+2. **regenerates a default config** at the original path so you have a correctly-formatted reference;
+3. prints *which file, which key, why, where it was quarantined, and what was regenerated*;
+4. **crashes on purpose** — port your changes from the `.error` file into the new one and start again.
+
+If step 1 fails (file locked, etc.) step 2 is skipped so the original is never clobbered.
+
+#### 18.2 Configuration Overview
+
+| Config                   | Location                                                                       | Contents                                                                                             |
+| ------------------------ | ------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
+| Mod Core                 | `yzwc/server/config/global_settings.json` → `core_module`                      | `dev_mode_enabled`, `log_to_file` (dual-toggle for DebugLogger)                                      |
+| Account Settings         | `global_settings.json` → `account_module`                                      | `session_timeout`, `login_cooldown`                                                                  |
+| Account Credentials      | `yzwc/server/config/account_module/registerd_users_data.json`                  | Player name / lowercase name / password hash / UUID / login state                                    |
+| Per-Player Config        | `yzwc/server/config/user_settings/<UUID>.json`                                 | `double_doors_module`, `function_module` (7 per-player toggles: ladder extend / crop XP / tool info / block animation / craft sound / item sparkle / damage numbers) |
+| Client External Settings | `config/youzaiworldcore/client_external_settings.json` (client, not migrated)  | `devModeEnabled`, `logLevel` (0–3), `yzuiEnabled` (YZUI interface master toggle), debug address/port |
+| DebugLogger              | `util/DebugLogger`                                                             | 4 log levels (OFF/BASIC/DETAILED/DEBUG), entering/exiting/branch/stateChange/exception tracing       |
+| Update Checker Settings  | `global_settings.json` → `update_module`                                       | `enabled` (toggles update checks, UpdateCheckerConfig)                                               |
+| Trial Vault Settings     | `global_settings.json` → `trial_vault_module`                                  | `enabled` (unlimited-reward toggle, TrialVaultConfig, default true)                                  |
+| Mail Settings            | `global_settings.json` → `mail_module`                                         | Expiry policy, permission node/level, attachment caps                                                |
+| Pet Settings             | `global_settings.json` → `pet_module`                                          | Backup interval, retention count, auto-backup toggle                                                 |
+| AFK Settings             | `global_settings.json` → `afk_module`                                          | Detection threshold, prefix/broadcast/invulnerable/auto_kick                                         |
+| Laowu Meme Settings      | `global_settings.json` → `laowu_meme_module`                                   | Global toggle, cooldown                                                                              |
+| Global Event Toggles     | `global_settings.json` → `event_module`                                        | Death sound / jukebox loop / baby zombie nerf / wither skull / trident void protect / crop XP        |
+| Charged Creepers         | `global_settings.json` → `charged_creeper_module`                              | `enabled`, `chance`                                                                                  |
+| End Portal               | `global_settings.json` → `end_portal_module`                                   | Silk-touch requirement / direct-to-inventory / dragon-egg message                                    |
+| Respawn Here             | `global_settings.json` → `respawn_module`                                      | Enabled dimension pools and standalone dimensions                                                    |
+| Dimension Pools          | `global_settings.json` → `dimensional_inventories_module`                      | `pools` pool definition list                                                                         |
+| Adventure Level / Attrs  | `yzwc/server/data/skill_module/data.json`                                      | `levels` / `attributes` blocks, keyed by player UUID                                                 |
+| Mail Data                | `yzwc/server/data/mail_module/data.json` + `box/<uuid>.json`                   | Global mail body repository + per-player inbox index                                                 |
+| Pet Backups              | `yzwc/server/backup/pet_module/pet_backup_<timestamp>.zip`                     | Scheduled backup archives (containing a `.json` of the same name)                                    |
+| Player Stats Data        | `<world_name>/data/yzwc/data/status_module/data.json` + `rank_export/`         | StatsManager persistence & leaderboard export dir                                                    |
+| Dimension Pool State     | `<world_name>/data/yzwc/data/dimensional_inventories_module/<pool>/<uuid>.json`| Per-pool independent inventory and player state                                                      |
 
 ### 19. Enchantment Level Language Patch System
 
@@ -250,23 +317,23 @@ A capability-style system that patches the rendering of **enchantment levels** a
 Immediate client-side feedback: pickups show obtained item/XP entries, while damaged entities display their actual damage at the hit position.
 
 - **Pipeline**: `AddEntriesHandler` receives pickup events and enqueues them → `PendingPickupQueue` holds pending entries → `DrawEntriesHandler` renders them each frame
-- **Entry Types**: `DisplayEntry` abstract base, with concrete `ItemDisplayEntry` (items, including count/stack info) and `ExperienceDisplayEntry` (XP)
+- **Entry Types**: `DisplayEntry` abstract base, with concrete `ItemDisplayEntry` (items, including count/stack info), `ExperienceDisplayEntry` (XP), and `SubtitleDisplayEntry` (subtitle text + direction indicator, captured by `SubtitleCaptureHandler` and rendered in the same region as pickup notifications)
 - **Client Integration**: `PickUpNotifyMixin` intercepts pickup notifications to drive the display; `ClientNetworking` handles client-side network logic
 - **Damage Numbers**: `DamageNumberLivingEntityMixin` compares health plus absorption before and after `LivingEntity#hurtServer`, yielding the actual loss after armor, enchantments, resistance, and shield processing. The server sends the hit position through `DamageNumberPayload` (S→C), and the client `DamageNumberRenderer` uses the 26.2 submit-based world rendering pipeline for red numbers that rise, drift, and fade
-- **Per-Player Toggle**: `/yzwc function damage_numbers [true|false]` controls whether the executing player receives damage numbers; omitting the argument queries the current state. New players default to enabled, with UUID-keyed state persisted in `config/youzaiworldcore/function_toggles.json`
+- **Per-Player Toggle**: `/yzwc function damage_numbers [true|false]` controls whether the executing player receives damage numbers; omitting the argument queries the current state. New players default to enabled, with UUID-keyed state persisted in the `function_module` section of `yzwc/server/config/user_settings/<UUID>.json`
 - **Visibility & Performance**: Packets are sent only to enabled players tracking the target; invisible targets do not leak their location to unrelated observers. The client retains at most 256 numbers and renders only those within 64 blocks
 
 ### 21. World Enhancement Features
 
 A set of native, dependency-free "world tweak" enhancements (inspired by classic community gameplay) covering mob behavior, drop collection, End mechanics, trial chambers, and farming automation:
 
-- **Naturally Charged Creepers**: When a creeper enters the server world, it is marked charged with a configurable probability (`chance`, default 0.1 / 10%). The charge is written via the `DATA_IS_POWERED` entity data exposed through a Mixin, ensuring correct client-side lightning halo sync; a data tag dedups to avoid re-rolls on chunk reload. Config `config/youzaiworldcore/charged_creeper.json` (`enabled` default true, `chance` default 0.1, auto-clamped to [0,1]). Commands: `/yzwc event naturally_charged_creepers enable [true|false]` / `settings chance [double]`
+- **Naturally Charged Creepers**: When a creeper enters the server world, it is marked charged with a configurable probability (`chance`, default 0.1 / 10%). The charge is written via the `DATA_IS_POWERED` entity data exposed through a Mixin, ensuring correct client-side lightning halo sync; a data tag dedups to avoid re-rolls on chunk reload. Config in the `charged_creeper_module` section of `global_settings.json` (`enabled` default true, `chance` default 0.1; values outside [0,1] abort startup with an error). Commands: `/yzwc event naturally_charged_creepers enable [true|false]` / `settings chance [double]`
 - **Chorus Fruit Drops Nearby**: After a chorus plant is broken, its dropped chorus fruit is teleported to the nearest recently-broken chorus plant location (horizontal distance < 20 blocks within a 2-second window), preventing fruit from scattering everywhere
 - **Dragon Drops Elytra**: When the Ender Dragon is slain, an extra elytra drops and a broadcast message is sent; kill attribution priority: direct player → projectile owner (bow/crossbow/trident) → nearest player within a 30-block radius
-- **End Portal Enhancements**: ① End portal frames can be broken with a silk-touch pickaxe and drop (including embedded ender eyes) while clearing the activated portal blocks; ② An extra dragon egg is granted to nearby players when the Ender Dragon is slain; ③ New recipe `craftable_end_portal` (ender eyes + dragon egg + end stone → 12 end portal frames). Config `config/youzaiworldcore/end_portal_settings.json` with three toggles (silk-touch requirement / direct-to-inventory / dragon-egg message)
+- **End Portal Enhancements**: ① End portal frames can be broken with a silk-touch pickaxe and drop (including embedded ender eyes) while clearing the activated portal blocks; ② An extra dragon egg is granted to nearby players when the Ender Dragon is slain; ③ New recipe `craftable_end_portal` (ender eyes + dragon egg + end stone → 12 end portal frames). Config in the `end_portal_module` section of `global_settings.json` with three toggles (silk-touch requirement / direct-to-inventory / dragon-egg message)
 - **Warden Loot**: When a player kills a Warden, 300 XP is granted directly and bundle loot drops (sculk shrieker, random pools of netherite scrap / diamonds / gold / iron, ancient-city-style items, enchanted books — 50% Swift Sneak I–III / 50% Soul Speed I–III, boosted by Looting). Implemented by `WardenDeathHandler` (`ServerLivingEntityEvents.AFTER_DEATH`), replacing the fragile datapack tick-scan approach
 - **Stonecutter Damage**: Standing on a stonecutter block deals continuous damage — an immediate 1-heart hit on first contact, then once every 1.5s (30 ticks) until you step off; death shows the custom message "attempted to test the sharpness of the stonecutter with their own body" and grants the "I Became Building Material" advancement. Creative/Spectator modes are immune. Implemented by `StonecutterDamageHandler` (time-sliced scan + per-player timer, performance-first)
-- **Unlimited Trial Vault Rewards ★NEW**: Removes the vanilla "one reward per player per vault" limit, letting the same player insert keys and claim from the same vault repeatedly. Implemented by `VaultServerDataMixin` with precise injections into `VaultServerData#hasRewardedPlayer` (always returns false) and `#addToRewardedPlayers` (cancelled), rather than a wildcard Redirect. Config `config/youzaiworldcore/trial_vault.json` (`enabled`, default true). Command: `/yzwc event trial_vault enable [true|false]`. Inspired by trial-chamber-time-removal, rewritten natively with no upstream dependency
+- **Unlimited Trial Vault Rewards ★NEW**: Removes the vanilla "one reward per player per vault" limit, letting the same player insert keys and claim from the same vault repeatedly. Implemented by `VaultServerDataMixin` with precise injections into `VaultServerData#hasRewardedPlayer` (always returns false) and `#addToRewardedPlayers` (cancelled), rather than a wildcard Redirect. Config in the `trial_vault_module` section of `global_settings.json` (`enabled`, default true). Command: `/yzwc event trial_vault enable [true|false]`. Inspired by trial-chamber-time-removal, rewritten natively with no upstream dependency
 - **Bone Meal Sugar Cane ★NEW**: Right-clicking sugar cane with bone meal grows it by one segment (up to 3 blocks tall); a **dispenser behavior** (`BoneMealSugarCaneDispenserBehavior`) is registered as well, so a dispenser loaded with bone meal can grow the sugar cane in front of it — useful for automated farms
 - **Concrete Powder Solidify ★NEW**: Concrete powder in **dropped-item entity** form solidifies into the matching concrete item when it lands in water (vanilla only solidifies the block form). `ConcretePowderSolidifyHandler` scans once every 20 ticks (1 second) to bound the performance cost; the color mapping table is built from the registry at initialization
 - **Baby Zombie Weakening ★NEW**: Reduces baby zombie spawn speed and max health via `ZombieFinalizeSpawnMixin` on entity finalization
@@ -274,6 +341,8 @@ A set of native, dependency-free "world tweak" enhancements (inspired by classic
 - **Craft Sound ★NEW**: Plays a crafting sound when taking the result item from the output slot, replacing vanilla silent extraction. `ResultSlotOnTakeMixin` injects the sound on item pickup
 - **Painting Drop ★NEW**: Breaking custom meme paintings drops the corresponding painting item (vanilla paintings don't drop when broken). `MemePaintingDropMixin` injects drop logic on entity removal
 - **Experimental Warning Skip ★NEW**: Automatically skips the "Experimental Features" warning dialog when creating a world, improving dev/test efficiency. `ExperimentalWarningSkipMixin` intercepts the corresponding screen
+- **Anvil Repair ★NEW**: Sneak right-click an anvil while holding an iron ingot to repair it one stage (severely damaged → damaged → normal), consuming 1 ingot and preserving orientation. Implemented by `AnvilRepairHandler` (`UseBlockCallback`)
+- **Death Sound ★NEW**: On player death, a random global sound from 10 variants (player death / generic death / ender dragon / thunder / bell / warden / portal, etc.) plays on top of the vanilla death sound. Implemented by `DeathSoundHandler` (`ServerLivingEntityEvents.AFTER_DEATH`), toggleable in `event_module`
 
 ### 22. AFK Detection System
 
@@ -288,7 +357,7 @@ Server-side automatic AFK (Away From Keyboard) detection that marks idle players
   - `/yzwc afk status [player]` — query own/other's AFK status
   - `/yzwc afk list` — list all AFK players (admin)
   - `/yzwc afk settings <key> <value>` — modify AFK config at runtime (admin)
-- **Config**: `config/youzaiworldcore/afk.json` (`AfkConfig`: enabled/detect_mode/threshold/tab_prefix/broadcast/invulnerable/auto_kick/manual_toggle)
+- **Config**: `global_settings.json` → `afk_module` (`AfkConfig`: enabled/detect_mode/threshold_seconds/tab_prefix_enabled/broadcast_enabled/invulnerable_enabled/auto_kick_seconds/manual_toggle_enabled)
 
 ### 23. Warp Scroll System ★NEW
 
@@ -312,11 +381,11 @@ A decorative block (`magic_table`) serving as a visual centerpiece for server lo
 
 A server entertainment easter egg — two tamed cats trigger a nuzzling animation, custom sounds, and server-wide particle effects under certain conditions.
 
-- **Trigger**: Two tamed cats within range, with a configurable random cooldown
-- **Effects**: Geo skeletal animation, custom sounds (`laowu2.ogg` / `qiliang.ogg` / `zhanhou.ogg`), server-wide particle broadcast
-- **Implementation**: `LaowuMemeHandler` per-tick scan + `SoundBufferLibraryLaowuMixin` custom audio loading + client Geo model renderer
+- **Trigger**: Two tamed cats (one named exactly "老吴") within 6 blocks, with a configurable random cooldown (default 180s)
+- **Effects**: Geo skeletal animation, custom sounds (`laowu2.ogg` / `qiliang.ogg` / `zhanhou.ogg`, one of three chosen at random), server-wide particle broadcast; right-clicking either cat releases the pairing early (restores AI + enters cooldown)
+- **Implementation**: `LaowuMemeHandler` scans every 10 ticks + `SoundBufferLibraryLaowuMixin` custom audio loading (incl. user-imported tracks in `config/youzaiworldcore/laowu_meme/sounds/`) + client Geo model renderer
 - **Commands**: `/yzwc event laowu enable [true|false]` / `settings cd [seconds]` (global toggle & cooldown)
-- **Config**: `config/youzaiworldcore/laowu_meme.json` (`LaowuMemeConfig`)
+- **Config**: `global_settings.json` → `laowu_meme_module` (`LaowuMemeConfig`)
 
 ### 26. Double Doors System
 
@@ -326,7 +395,7 @@ A streamlined implementation that supports click-to-open only for "same-material
 - **Pairing Rule**: Searches adjacent, same-type (both `DoorBlock` or both `FenceGateBlock`), same display-name (material) partner doors within a 3×3 horizontal area and synchronizes them to the clicked door's open/closed state; no recursion (adjacent pairs only)
 - **Supported Scope**: Wooden doors (including double doors), fence gates (auto-aligned facing); iron doors (not hand-openable), trapdoors, redstone triggers, villager AI, and chain opening are out of scope
 - **Per-Player Toggle**: `/yzwc function double_doors [true|false]` (**client command**) controls the player's own setting; omitting the argument queries the player's own status; new players enabled by default
-- **Persistence**: `config/youzaiworldcore/double_doors_players.json`, storing only players explicitly set via command (`DoubleDoorsState`; unset players fall back to the default enabled state)
+- **Persistence**: the `double_doors_module` section of `yzwc/server/config/user_settings/<UUID>.json`, storing only players explicitly set via command (`DoubleDoorsState`; unset players fall back to the default enabled state)
 - **Client Forwarding Architecture**: The `/yzwc` root command is registered on the client (for `/yzwc settings` and forwarding-type subcommands), so double doors and invisibility only parse and forward on the client; the authoritative state is held by the server via `DoubleDoorsTogglePayload` / `InvisibilityPayload` (C→S)
 
 ### 27. Pet System
@@ -339,7 +408,7 @@ A tamed-wolf (Wolf) tracking and management system that registers tamed wolves a
 - **Ownership Ops**: `rename`, `transfer <newOwner>` (transfers ownership; former owner auto-added to trust list), `release_life [force]` (release, requires confirmation)
 - **Quick Locate**: `highlight <internalName>` applies a 5-second Glowing effect to the target wolf for easy spotting
 - **Admin Ops**: `admin restore` (restore from latest backup), `admin backup_list` (list backups), `admin backup_interval <seconds>` (set scheduled backup interval, 60–3600s)
-- **Persistence**: `config/youzaiworldcore/pet_module/settings.json` + scheduled backups `pet_module/pet_backup_<timestamp>.json`
+- **Persistence**: config in `global_settings.json` → `pet_module`; scheduled backups at `yzwc/server/backup/pet_module/pet_backup_<timestamp>.zip` (containing a `.json` of the same name)
 - **Command Architecture**: `/yzwc pet` is a **client command** that forwards its full argument string via `PetCommandPayload` (C→S); the server-side `PetCommand` holds the complete Brigadier tree and permission checks
 
 ### 28. Item Highlight System
@@ -361,7 +430,7 @@ A purely client-side feature that renders an outline around the held or targeted
 
 Reads player behavior data from the vanilla `Stats` system, persists it, and supports querying and leaderboard export.
 
-- **Entry**: `status/StatsManager`; data persisted to `<world>/youzaiworldcore/status/data.json`
+- **Entry**: `status/StatsManager`; data persisted to `<world>/data/yzwc/data/status_module/data.json` (per-save, with daily snapshots for day/week/month/year deltas; corrupt files auto-backup to zip); leaderboard export in the sibling `rank_export/`
 - **Metrics**: **21 metrics** in total — play time, jumps, deaths, mob/player kills, damage dealt/taken, walk/sprint/elytra/fall distance, fish caught, villager trades, items dropped, sleep-in-bed, enchantments, raid wins, animals bred, bell rings, cake eaten, and an aggregated "redstone placement" leaderboard
 - **Commands** (server-side):
   - `/yzwc status <player> list` — view a player's stats (perm `youzaiworldcore.command.status.query`)
@@ -390,7 +459,7 @@ A one-way **admin → player** server mailbox / announcement box (not player-to-
   - `/yzwc mail purge [player|all]` —— purge expired mail
   - `/yzwc mail list [player]` —— view a player's mailbox
 - **Permission**: `youzaiworldcore.mail` (default OP 4); falls back to `mail_permission_level` when LuckPerms is absent
-- **Storage**: Global repo `config/youzaiworldcore/mail/sent.json` + per-player index `config/youzaiworldcore/mail/box/<uuid>.json` + settings `mail_settings.json`; cross-world consistent, bound to the account system (offline accounts also indexed, visible on login)
+- **Storage**: Global repo `yzwc/server/data/mail_module/data.json` + per-player index `yzwc/server/data/mail_module/box/<uuid>.json` + settings in `global_settings.json` → `mail_module`; cross-world consistent, bound to the account system (offline accounts also indexed, visible on login)
 - **Network**: 18 dedicated packets (C→S `mail_compose_open` / `mail_open` / `mail_sent_list_request` / `mail_recall` / `mail_purge` / `mail_list_request` / `mail_fetch` / `mail_action` / `mail_admin_send` / `mail_admin_edit` / `mail_player_list_request`; S→C `open_mail_compose` / `mail_list` / `mail_sent_list` / `mail_update` / `mail_op_result` / `mail_unread_count` / `mail_player_list`)
 
 ### 31. Custom Enchantments
@@ -407,15 +476,15 @@ The mod registers **12 data-driven enchantments** (defined in `data/youzaiworldc
 | Enchantment             | ID              | Applies to | Effect                                                |
 | ----------------------- | --------------- | ---------- | ----------------------------------------------------- |
 | **Leeching**            | `leeching`      | Weapons    | Heal on kill                                          |
-| **Poison Puff**         | `poison_puff`   | Weapons    | Release poison cloud on attack                        |
-| **Fire Charge**         | `fire_charge`   | Crossbow   | Shoot fire charges                                    |
-| **Sonic Charge**        | `sonic_charge`  | Crossbow   | Shoot warden sonic booms                              |
-| **Cowardice**           | `cowardice`     | Armor      | Speed boost at low health                             |
-| **Wind Charge**         | `wind_charge`   | Armor      | Release wind burst on hurt (WindChargeHandler)        |
-| **Spikes**              | `spikes`        | Shield     | Reflect damage to attackers                           |
-| **Bounce**              | `bounce`        | Shield     | Knock back attackers on block                         |
-| **Smelting**            | `smelting`      | Tools      | Auto-smelt mined blocks (SmeltingHandler)             |
-| **Meteor Smash**        | `meteor_smash`  | Mace       | Summon meteor on smash attack                         |
+| **Poison Puff**         | `poison_puff`   | Trident    | Release poison cloud on attack (`post_attack` → `apply_mob_effect`, poison 60s×level) |
+| **Fire Charge**         | `fire_charge`   | Crossbow   | Shoot fire charges (`projectile_spawned` → `ignite` 100 ticks) |
+| **Sonic Charge**        | `sonic_charge`  | Crossbow   | Shoot warden sonic booms (`damage` → `add`, base 10 +2/level; recoil handled in Java) |
+| **Cowardice**           | `cowardice`     | Leggings   | Speed boost at full health (Java-side)                |
+| **Wind Charge**         | `wind_charge`   | Chest/Elytra | Continuous acceleration while elytra gliding (Java-side, cap 1.5 blocks/tick) |
+| **Spikes**              | `spikes`        | Shield     | Reflect damage to attackers (`post_attack` → `damage_entity`, 3 dmg/level, 40%+30%/level chance) |
+| **Bounce**              | `bounce`        | Shield     | Knock back attackers on block (Java-side)             |
+| **Smelting**            | `smelting`      | Tools      | Auto-smelt mined blocks (Java-side)                   |
+| **Meteor Smash**        | `meteor_smash`  | Mace       | Summon meteor on smash attack (Java-side, 3-block AoE ignite for 10s) |
 
 > These 10 ported enchantments are inspired by Raiyon's More Enchantments, reimplemented natively with no external dependency.
 
@@ -461,6 +530,7 @@ Each slot has a custom icon and the `trinkets:default` validator; `order` contro
 A new "Export/Import Config" sidebar in client settings (YZUI). Based on 26.2 Headless limits (AWT/file dialogs unavailable), it uses automatic paths + backups instead of external file pickers:
 
 - **Export**: Packages `config/youzaiworldcore/` and `options.txt` into a ZIP saved locally (manual path on PC; auto-saved to `config_backups` on Android, keeping the latest 5)
+- ⚠️ **Client config only**: server-side config now lives under `yzwc/server/` and is deliberately out of scope here (this feature exists for players to back up their own UI/control settings)
 - **Import**: Restores config from a ZIP; requires a client restart to take effect (auto-backs up current config to `config_backups` for rollback on failure)
 - **Entry**: `screen.youzaiworldcore.settings.sidebar_config_io`; `ConfigIOManager` self-heals at client startup by detecting and restoring orphaned `config_bak_*` backups left from an interrupted import
 
@@ -469,7 +539,7 @@ A new "Export/Import Config" sidebar in client settings (YZUI). Based on 26.2 He
 Asynchronously detects new mod versions, prompting for online or forced updates.
 
 - **Entry**: `update/UpdateChecker` (shared by client and server); fetches `https://mcyzw.top/yzwc/version.json` at runtime and compares via `SemanticVersion`
-- **Config**: `config/youzaiworldcore/update_checker.json` (`UpdateCheckerConfig`, toggleable)
+- **Config**: `global_settings.json` → `update_module` (`UpdateCheckerConfig`, toggleable)
 - **Command** (server-side): `/yzwc update [check]` — trigger an immediate check and report result (normal/forced update notice + clickable download link); perm `youzaiworldcore.command.update` (OP 4)
 - **Client**: `client/update/ClientUpdateState` + `client/screen/ForcedUpdateScreen` provide the forced-update screen
 
@@ -488,7 +558,7 @@ A purely client-side, whole-interface restyle that replaces the vanilla inventor
 
 #### 37.2 HUD Components
 
-`HealthBarMixin` cancels four vanilla renders — `Hud#extractPlayerHealth` / `extractFood` / `extractArmor` / `extractAirBubbles` — delegating to custom renderers under `client/hud/` that draw long progress bars:
+`HealthBarMixin` cancels four vanilla renders — `Hud#extractPlayerHealth` / `extractFood` / `extractArmor` / `extractAirBubbles` — delegating to custom renderers under `client/hud/` that draw long progress bars; `HotbarMixin` cancels `extractItemHotbar` and delegates to `HotbarRenderer` for the YZUI hotbar (184×24 rounded panel + nine 18×18 rounded slots + number-key labels + smoothly animated selection highlight + brown offhand slot + attack-cooldown indicator; scroll direction is fed via `ScrollHotbarInputMixin` to support wraparound animation):
 
 | Renderer            | Replaces          | Features                                                                                                                                                                                                               |
 | ------------------- | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -546,11 +616,17 @@ Music disc items implemented using MC 26.2's new `JUKEBOX_PLAYABLE` DataComponen
 
 ### 42. Tool HUD Overlay ★NEW
 
-Client-side HUD enhancement (`client/hud/ToolInfoOverlay`). When holding a tool or weapon, displays a floating panel showing current durability, enchantment levels, and other key information at a designated screen position — allowing players to quickly check equipment status without opening the inventory.
+Client-side HUD enhancement (`client/hud/ToolInfoOverlay`). Every 10 ticks (0.5s) it shows a line of tool info in the action bar, auto-refreshing with the held item:
+
+- **Clock**: in-game time + day count
+- **Compass**: 8-direction heading
+- **Recovery Compass**: last death coordinates + dimension
+
+Controlled by the `tool_info_overlay` per-player toggle (default on, server-authoritative, synced via `FunctionToggleSyncPayload`).
 
 ### 43. Per-Player Function Toggle System ★NEW
 
-Server-authoritative per-player toggles for preference features such as damage numbers, tool information, and block animations. `FunctionToggleManager` persists UUID-keyed state in `config/youzaiworldcore/function_toggles.json`; client-rendered feature toggles are synchronized through `FunctionToggleSyncPayload` (S→C). Damage numbers are filtered per recipient on the server, so disabled players no longer receive `DamageNumberPayload`.
+Server-authoritative per-player toggles for preference features. `FunctionToggleManager` persists UUID-keyed state in the `function_module` section of `yzwc/server/config/user_settings/<UUID>.json` — 7 keys total (all default on): `ladder_extend_downward` (sneak-place ladder extension), `crop_xp_drop` (crop XP), `tool_info_overlay` (tool info HUD), `block_animation` (block environment particles), `crafting_sound` (crafting sound), `item_sparkle` (item spark particles), `damage_numbers` (damage numbers). Client-rendered feature toggles are synchronized through `FunctionToggleSyncPayload` (S→C); damage numbers are filtered per recipient on the server, so disabled players no longer receive `DamageNumberPayload`. Command `/yzwc function <key> [true|false]` (omit to query); `damage_numbers` is self-service, the rest require `function.set` (OP 4).
 
 ---
 
@@ -586,7 +662,13 @@ All commands use `/yzwc` as the root command. Subcommands marked **(client comma
 │   │   └── enable [true|false]           → Enable/disable unlimited trial vault rewards (omit to query)
 │   ├── laowu
 │   │   ├── enable [true|false]           → Enable/disable Laowu Meme global toggle (omit to query)
-│   │   └── settings cd [seconds]         → Set/query Laowu Meme cooldown
+│   │   └── settings cd [seconds]         → Set/query Laowu Meme cooldown (≥60s)
+│   ├── death_sound enable [true|false]       → Death sound (omit to query)
+│   ├── jukebox_loop enable [true|false]      → Jukebox loop (omit to query)
+│   ├── baby_zombie_weak enable [true|false]  → Baby zombie nerf (omit to query)
+│   ├── wither_skull_drop enable [true|false] → Wither skull guaranteed drop (omit to query)
+│   ├── trident_void_protect enable [true|false] → Trident void protection (omit to query)
+│   ├── crop_xp_drop enable [true|false]      → Crop XP drop (omit to query)
 │   └── Permissions: .query (everyone) / .set (OP 4)
 │
 ├── pet <args...>                         ← (client command, forwarded to server)
@@ -613,6 +695,12 @@ All commands use `/yzwc` as the root command. Subcommands marked **(client comma
 ├── function double_doors <true/false>    ← (client command)
 │   ├── Permission: youzaiworldcore.command.function.double_doors (self, everyone can run)
 │   └── Omit to query own status; new players enabled by default; state persisted to double_doors_players.json
+│
+├── function ladder_extend_downward [true|false]  ← sneak-place ladder extension downward (per-player, default on)
+├── function tool_info_overlay [true|false]       ← tool info HUD (clock/compass/recovery compass, default on)
+├── function block_animation [true|false]         ← block environment particles (beacon/brewing/enchanting/dragon egg, default on)
+├── function crafting_sound [true|false]          ← crafting sound (default on)
+├── function item_sparkle [true|false]            ← item entity spark particles (default on)
 │
 ├── function damage_numbers [true|false]
 │   ├── Permission: youzaiworldcore.command.function.damage_numbers (self, everyone can run)
@@ -672,9 +760,11 @@ All commands use `/yzwc` as the root command. Subcommands marked **(client comma
 | `youzaiworldcore.command.function.double_doors`             | Double Doors function (self toggle / query)       | Everyone (self-only)     |
 | `youzaiworldcore.command.function.damage_numbers`           | Damage number display (self toggle / query)       | Everyone (self-only)     |
 | `youzaiworldcore.command.function.afk`                     | AFK self toggle                                   | Everyone (self-only)     |
-| `youzaiworldcore.command.afk.admin`                        | AFK admin (status/list/settings)                  | OP 4                     |
+| `youzaiworldcore.command.admin.afk`                        | AFK admin (status/list/settings)                  | OP 4                     |
 | `youzaiworldcore.command.event.query`                       | Event management query (omit arg = query)         | Everyone                 |
 | `youzaiworldcore.command.event.set`                         | Event management modify (enable / settings)       | OP 4                     |
+| `youzaiworldcore.command.function.query`                    | Per-player function toggle query (omit arg = query) | Everyone               |
+| `youzaiworldcore.command.function.set`                      | Per-player function toggle modify (enable, etc.)  | OP 4                     |
 | `youzaiworldcore.command.pet.list`                          | View pet list                                     | Everyone                 |
 | `youzaiworldcore.command.pet.set`                           | Pet settings (rename/mode/trust/release/transfer) | Everyone (own pets)      |
 | `youzaiworldcore.command.pet.highlight`                     | Highlight pet                                     | Everyone (owner/trusted) |
@@ -797,52 +887,53 @@ All commands use `/yzwc` as the root command. Subcommands marked **(client comma
 ## 🏗️ Project Structure
 
 ```
-src/                                       # 411 Java source files (main 252 / client 159)
+src/                                       # 452 Java source files (main 273 / client 179)
 ├── main/java/top/csituka/youzaiworldcore/
 │   ├── YouzaiworldCore.java              # Main entry point
 │   ├── account/                          # Account auth (data/command/mixin/util subpackages)
 │   ├── block/ + entity/                  # Custom blocks & block entities
-│   ├── command/                          # Command registration (TeleportAnchor / Reload / Event / Mail client-forward)
+│   ├── command/                          # Command registration (Afk/Event/Function/Reload/TeleportAnchor/Update/Status)
 │   ├── component/                        # Data components
-│   ├── config/                           # Server external settings (charged creeper / end portal / double doors / pet / mail config)
+│   ├── config/                           # Server external settings (global/per-player/event + per-module config, 17 sections)
 │   ├── data/                             # Teleport anchor SavedData
 │   ├── dimensionalinventories/           # Dimension pool system (incl. WorldPoolTeleportPayload)
 │   ├── enchantment/                      # Custom enchantment ResourceKey registration (ModEnchantments, 12)
 │   ├── enchlevellangpatch/               # Enchantment-level language patch (api + impl)
-│   ├── event/                            # Event handlers (30+: fly beacon, double doors, end portal, void staff, dragon, chorus, charged creeper, decompose, sit, warden, stonecutter, anvil repair, sun repair, spirit turbo, bone meal sugar cane, concrete solidify, baby zombie, jukebox loop, craft sound, painting drop, etc.)
+│   ├── event/                            # Event handlers (31: end portal, double doors, Laowu Meme, void staff, bone-meal sugar cane, charged creeper, warden, stonecutter, teleport-stone charge, leeching, wind charge, smelting, sun repair, spirit turbo, baby zombie, jukebox loop, craft sound, painting drop, anvil repair, death sound, etc.)
 │   ├── entity/seat/                      # Seat entity system
 │   ├── invisibility/                     # Invisibility system
 │   ├── item/                             # Items, tools, creative tabs (7), presets (9), invisible item frames
 │   ├── luckperms/                        # LuckPerms integration (LuckPermsHelper unified auth)
 │   ├── mail/                             # Mail system (Mail / MailManager / SentMailRepository / MailDataStorage / MailSettings / MailPermissionHelper)
 │   ├── mana/                             # Mana system
-│   ├── mixin/                            # Mixins (subpackages: afk / babyzombie / chargedcreeper / craftsound / damagenumber / doubledoors / invisibility / jukebox / painting / pet / seat / skill / trialvault)
-│   ├── network/                          # Network packets (47 Payload classes + ModNetworking)
+│   ├── mixin/                            # Mixins (35; subpackages: afk / babyzombie / chargedcreeper / craftsound / damagenumber / doubledoors / invisibility / jukebox / painting / pet / seat / skill / trialvault)
+│   ├── network/                          # Network packets (48 Payload classes + ModNetworking)
 │   ├── pet/                              # Pet system (config/command/event subpackages + PetGlobalState/PetEntry)
 │   ├── placeholders/                     # Placeholder API (32 placeholders)
+│   ├── respawn/                          # In-place respawn (InPlaceRespawnManager)
 │   ├── screen/                           # Container menus
 │   ├── skill/                            # Adventure level + attribute system
 │   ├── sound/                            # Custom SoundEvent (1: cloud_genshin)
 │   ├── status/                           # Stats system (StatsManager, 21 metrics + commands)
 │   ├── trialvault/                       # Unlimited trial vault reward config (TrialVaultConfig)
-│   ├── update/                           # Update checker (UpdateChecker + 4 supporting files)
-│   ├── util/                             # DebugLogger, TrinketHelper, etc.
+│   ├── update/                           # Update checker (UpdateChecker + 5 supporting files)
+│   ├── util/                             # DebugLogger, TrinketHelper, BackupArchive, etc.
 │   └── worldgen/                         # World generation (VillageStructureInjector)
 │
 ├── client/java/top/csituka/youzaiworldcore/
 │   ├── client/Client.java                # Client entry (registers highlight/border/anvil/mail commands, etc.)
-│   ├── command/                          # Client commands (Invisibility / DoubleDoors / Pet / Mail forwarding)
-│   ├── config/                           # Client external settings (incl. yzuiEnabled) + ConfigIOManager (config import/export)
+│   ├── command/                          # Client commands (Invisibility / DoubleDoors / Pet / Mail forwarding + YzwcServerMirrorCommand placeholder mirror)
+│   ├── config/                           # Client external settings (incl. yzuiEnabled) + ConfigIOManager (config import/export) + PlatformDetector
 │   ├── effect/                           # Teleport FOV effect
-│   ├── higherchat/                       # Simple Voice Chat integration (HUD icon position tracking)
+│   ├── higherchat/                       # Chat box position optimization (HUD icon position tracking)
 │   ├── highlightitem/                    # Item highlight (HighlightItemClient / HighLightCommands / Configurator / Colors / ItemComparator)
 │   ├── itemborder/                       # Item border (ItemBorderClient / ItemBorderConfig / ItemBorderRenderer)
 │   ├── anviluses/                        # Anvil use-count display (AnvilUsesClient)
-│   ├── client/accessor/                  # Render accessors (RenderCrownDuck)
-│   ├── hud/                              # Mana / adventure-level HUDs / YZUI inventory·equipment·status-effect·health·food·armor·oxygen HUDs / ToolInfoOverlay
+│   ├── client/accessor/                  # Render accessors (RenderCrownDuck, ConnectScreenCancelAccess)
+│   ├── hud/                              # Mana / adventure-level HUDs / YZUI inventory·equipment·status-effect·health·food·armor·oxygen HUDs / hotbar / ToolInfoOverlay
 │   ├── skill/                            # Client adventure level / attribute data (ClientAttributeData)
 │   ├── update/                           # Update checker client state (ClientUpdateState)
-│   ├── mixin/client/                     # Client Mixins (54: title, options, button, pause, chat, loading, seat, rendering, pickup, enchant-patch, itemborder, YZUI inventory·health bar·contextual bar·recipe book, technocrown, AFK input, experimental warning skip, etc.)
+│   ├── mixin/client/                     # Client Mixins (60: title, options, button, pause, chat, loading, seat, rendering, pickup, enchant-patch, itemborder, YZUI inventory·health bar·contextual bar·recipe book, technocrown, AFK input, experimental warning skip, etc.)
 │   ├── network/                          # Client network handling (ClientNetworking)
 │   ├── laowumeme/                        # Laowu Meme client (Geo model/render/audio pool)
 │   ├── particle/                         # Particle rendering (block animation / item sparkle)
@@ -851,9 +942,9 @@ src/                                       # 411 Java source files (main 252 / c
 │   └── screen/                           # GUI screens (MenuScreen, Login/Register, YzuInventoryScreen/YzuCreativeInventoryScreen, MailScreen/MailComposeScreen/MailSentScreen, element/widget/block subpackages)
 │
 └── main/resources/
-    ├── assets/youzaiworldcore/           # Textures, models, language files (10 languages), sounds (4 .ogg), painting textures (12 meme paintings)
-    ├── data/                             # Advancements (31, incl. deep_dark branch), recipes (20), loot tables, dimensions (login_hall), structures (4, incl. cloud_genshin_ruins), structure sets, template pools, enchantments (12 JSON), beginner tutorial functions (19), jukebox_song (1), trinkets slots
-    └── fabric.mod.json                   # Mod metadata (declares moogs_structures / trinkets_updated / modmenu / placeholder-api as hard dependencies)
+    ├── assets/youzaiworldcore/           # Textures, models, language files (10 languages × 736 keys), sounds (4 .ogg: cloud_genshin + laowu2/qiliang/zhanhou), painting textures (12 meme paintings)
+    ├── data/                             # Advancements (31), recipes (20), loot tables (6 block + 4 chest), dimensions (login_hall), structures (9: 5 village variants + 3 ruins + cloud_genshin_ruins), structure sets, template pools, enchantments (12 JSON), beginner tutorial functions (19), jukebox_song (1), trinkets slots
+    └── fabric.mod.json                   # Mod metadata (declares fabric-api / placeholder-api / modmenu / moogs_structures / trinkets_updated / geckolib as hard dependencies)
 
 .github/workflows/
 └── build.yml                             # CI/CD build workflow

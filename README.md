@@ -20,7 +20,7 @@
 
 ## 📖 项目概述
 
-**YouzaiWorldCore** 是悠哉世界（Youzai World）Minecraft 多人服务器的核心玩法模组，基于 **Fabric** 框架开发，深度集成 **LuckPerms** 权限系统与 **Placeholder API**。模组为服务器提供完整的基础设施，涵盖账户认证、GUI 菜单、YZUI 界面系统（物品栏 / HUD / 配方书全面重绘）、自定义物品与方块、坐姿交互、维度池、传送锚点与传送卷轴、魔力系统、AFK 挂机检测、隐身管理、冒险等级与属性成长、附魔等级语言补丁、拾取显示、世界增强（带电苦力怕 / 末影龙掉鞘翅 / 末地传送门 / 监守者战利品 / 切石机伤害 / 试炼宝库无限领奖等）、宠物系统、物品高亮与边框、邮件信箱、自定附魔（12 个）、饰品槽集成与 YZUI 饰品交互、音乐唱片、Meme 画作、老吴贴贴彩蛋、Technoblade 纪念皇冠、配置导入导出、新手教程、语音聊天集成等 40 余项核心能力。
+**YouzaiWorldCore** 是悠哉世界（Youzai World）Minecraft 多人服务器的核心玩法模组，基于 **Fabric** 框架开发，深度集成 **LuckPerms** 权限系统与 **Placeholder API**。模组为服务器提供完整的基础设施，涵盖账户认证、GUI 菜单、YZUI 界面系统（物品栏 / HUD / 配方书全面重绘）、自定义物品与方块、坐姿交互、维度池、传送锚点与传送卷轴、魔力系统、AFK 挂机检测、隐身管理、冒险等级与属性成长、附魔等级语言补丁、拾取显示、世界增强（带电苦力怕 / 末影龙掉鞘翅 / 末地传送门 / 监守者战利品 / 切石机伤害 / 试炼宝库无限领奖等）、宠物系统、物品高亮与边框、邮件信箱、自定附魔（12 个）、饰品槽集成与 YZUI 饰品交互、音乐唱片、Meme 画作、老吴贴贴彩蛋、Technoblade 纪念皇冠、配置导入导出、新手教程、聊天框位置优化等 40 余项核心能力。
 
 ### 目标用户群体
 
@@ -45,6 +45,7 @@
 - **会话管理**：可配置的会话超时，支持同 IP 自动恢复
 - **位置保存/恢复**：登出时保存位置 → 传送至末地虚空；登录后精确保留位置恢复
 - **登录大厅**：未认证玩家被限制在 `youzaiworldcore:login_hall` 自定义维度，Mixin 阻止移动、交互、攻击、聊天
+- **登录/注册 GUI**：未认证玩家进入登录大厅时客户端自动弹出注册/登录界面（`RegisterScreen` / `LoginScreen`，用户名只读预填，支持 Enter 登入与断开连接），服务端经 `OpenAuthScreenPayload` 推送
 - **隐身联动**：隐身状态下禁止执行登出、注销、改密等敏感操作
 - **账户注销联动**：账户注销/删除时同时清空其邮件信箱（`MailManager.onAccountDeleted`）
 
@@ -63,13 +64,14 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 
 ### 3. 标题界面改造
 
-通过 `TitleScreenMixin` 对 Minecraft 主菜单进行了全面改造：自定义按钮（加入服务器/选项/退出）、公告横幅（含淡入动画）、渐变背景（`GradientBackgroundUtil`）、Mojang Logo 替换为自定义资源，以及开发者模式下的测试页按钮。
+通过 `TitleScreenMixin` 对 Minecraft 主菜单进行了全面改造：左侧面板自定义按钮（加入服务器 `play.mcyzw.top` / 选项 / 退出游戏）、右侧公告 + 更新信息块（标题/版本/时间/内容/下载/忽略按钮，含淡入动画）、渐变背景（`GradientBackgroundUtil`）、Mojang Logo 替换为自定义资源，以及开发者模式下的测试页按钮。「加入服务器」在检测到强制更新时拦截并弹出 `ForcedUpdateScreen`。
 
 ### 4. 窗口定制化
 
 - **自定义窗口图标**：运行时通过 Java ImageIO 加载 `jar_icon.png` 替换任务栏与标题栏图标
-- **自定义窗口标题**：`WindowTitleMixin` 拦截 `Window.setTitle()`，标题替换为"悠哉世界"
-- **原地重生**：死亡界面将原版重生按钮拆分为左右两半；配置允许的维度可消耗原版经验等级在死亡坐标复活，保留物品栏、不消耗守护之心并获得 10 秒抗性 V。费用按账户累计成功次数计算：`floor(log2(本次累计次数 + 1)) + 5`，首次为 6 级。配置文件为 `config/youzaiworldcore/in_place_respawn.json`，默认仅对 `survival_world_pool` 维度池开启
+- **自定义窗口标题**：`WindowTitleMixin` 拦截 `Window.setTitle()`，标题替换为 `Youzai World Server · Wanderer v<版本> | [Minecraft JAVA 26.2]`
+- **退出确认**：`MinecraftQuitMixin` 劫持窗口关闭事件，点击标题屏「退出游戏」或窗口 X / Alt+F4 时弹出确认对话框（`QuitConfirmationScreen`），确认后才真正退出
+- **原地重生**：死亡界面将原版重生按钮拆分为左右两半；配置允许的维度可消耗原版经验等级在死亡坐标复活，保留物品栏、不消耗守护之心并获得 10 秒抗性 V。费用按账户累计成功次数计算：`floor(log2(本次累计次数 + 1)) + 5`，首次为 6 级。配置位于 `yzwc/server/config/global_settings.json` 的 `respawn_module` 分节，默认仅对 `survival_world_pool` 维度池开启
 
 ### 5. 悠哉系列工具与物品
 
@@ -143,7 +145,7 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 - **池切换流程**：检查目标池 → 保存当前状态到源池 → 清空背包 + 移除效果 → 加载目标池历史状态 → 传送 → 强制游戏模式
 - **默认出生点**：每个池可配置玩家死亡后首次传送回的降落坐标
 - **跨池传送**：支持维度传送门、命令传送、复活事件等多种触发
-- **数据存储**：池配置 `config/youzaiworldcore/dimensional_inventories/pool_settings.json`，玩家状态 `<world>/youzaiworldcore/dimensional_inventories/data/<pool-id>/<uuid>.json`
+- **数据存储**：池配置在 `yzwc/server/config/global_settings.json` 的 `dimensional_inventories_module.pools`，玩家状态 `<world_name>/data/yzwc/data/dimensional_inventories_module/<pool-id>/<uuid>.json`
 
 ### 11. 隐身系统
 
@@ -166,7 +168,7 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
   - 升级获得的属性点可通过 `/yzwc` 属性菜单（GUI 元素）分配，映射到 10 项原版属性：`MAX_HEALTH`、`MOVEMENT_SPEED`、`JUMP_STRENGTH`、`LUCK`、`ATTACK_DAMAGE`、`BLOCK_BREAK_SPEED` 等
   - **客户端 HUD**：`AdventureLevelHudRenderer` 渲染等级与属性
   - **网络同步**：`AttributeSyncPayload`（S→C）同步属性数据；`AttributeUpgradePayload`（C→S）请求加点
-  - **存储**：`config/youzaiworldcore/skill_module/player_level_data.json` 与 `player_attributes_data.json`（按玩家持久化）
+  - **存储**：`yzwc/server/data/skill_module/data.json` 的 `levels` 与 `attributes` 两块（按玩家 UUID 持久化）
 
 ### 13. 占位符系统
 
@@ -208,32 +210,93 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 
 ### 17. 成就系统
 
-两大进度分支，共 **32 个**成就：
+两大进度分支，共 **31 个**成就（`data/youzaiworldcore/advancement/`）：
 
-- **悠哉世界**（主进度）：获取悠哉系列材料、制作工具、使用分解台/飞行信标/守护之心/凭虚法杖
-- **趣味小挑战**：蛋糕是谎言、美食家、最大幸运、回家之路、我成了建材（站在切石机上死亡）等
-- **深暗之域（Deep Dark）**：新增专属分支，共 6 个进度：
-  - `visit_deep_dark` — 进入深暗之域
-  - `enter_ancient_city` — 踏入远古城市
-  - `loot_ancient_city` — 开启远古城市战利品箱
-  - `hold_recovery_compass` — 获得回收罗盘
-  - `use_disc_5`（城市回响）— 获得唱片 5
-  - `kill_warden`（监守者之陨）— 击败监守者
+- **悠哉世界**（`youzaiworld/`，21 个）：获取悠哉系列材料（`have_raw_yz` / `have_yz_ore` / `have_yz_ingot` / `have_yz_block`）、制作工具（`have_yz_series_tool` / `have_yz_series_all_tools`）、使用分解台 / 飞行信标 / 守护之心 / 凭虚法杖（`used_*` / `have_*`）、发现传送锚点与传送网络（`discover_teleport_anchor` / `teleport_network` / `village_teleport_network`）、探索云原神遗迹与远古遗迹（`discover_cloud_genshin_ruins` / `ancient_ruins`）、完成全部新手教程（`complete_the_tutorials`）
+- **趣味小挑战**（`fun_little_challenge/`，10 个）：`cake_is_a_lie`（蛋糕是谎言）、`foodie`（美食家）、`get_emerald_blocks`（绿宝石块）、`like_cows_and_pigs`（像牛和猪）、`max_luck`（最大幸运）、`stuck_in_cobweb`（蜘蛛网）、`tested_stonecutter`（我成了建材——站在切石机上死亡）、`way_home`（回家之路）、`wearing_copper_armor`（铜盔甲）
 
 ### 18. 调试与配置
 
-| 配置           | 文件位置                                                    | 内容                                                                                     |
-| -------------- | ----------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| 服务端外部设置 | `config/youzaiworldcore/server_external_settings.json`      | `devModeEnabled`、`logToFile`（双开关控制 DebugLogger）                                  |
-| 客户端外部设置 | `config/youzaiworldcore/client_external_settings.json`      | `devModeEnabled`、`logLevel`（0-3）、`yzuiEnabled`（YZUI 界面总开关）、调试地址/端口     |
-| DebugLogger    | `util/DebugLogger`                                          | 四级日志（OFF/BASIC/DETAILED/DEBUG），entering/exiting/branch/stateChange/exception 追踪 |
-| 更新检查设置   | `config/youzaiworldcore/update_checker.json`                | `enabled`（开关更新检查，UpdateCheckerConfig）                                           |
-| 试炼宝库设置   | `config/youzaiworldcore/trial_vault.json`                   | `enabled`（无限领奖开关，TrialVaultConfig，默认 true）                                   |
-| 邮件设置       | `config/youzaiworldcore/mail_settings.json`                 | 过期策略、权限节点/等级、附件上限等                                                      |
-| 宠物设置       | `config/youzaiworldcore/pet_module/settings.json`           | 宠物备份间隔等                                                                          |
-| AFK 设置       | `config/youzaiworldcore/afk.json`                           | 检测阈值、前缀/广播/无敌/自动踢出等                                                     |
-| 老吴贴贴设置   | `config/youzaiworldcore/laowu_meme.json`                    | 全局开关、冷却时间等                                                                    |
-| 玩家统计数据   | `<world>/youzaiworldcore/status/data.json` + `rank_export/` | StatsManager 持久化统计与排行榜导出目录                                                  |
+#### 18.1 文件存放布局（服务端）
+
+从本版本起，服务端所有配置 / 数据 / 备份 / 缓存文件统一收拢到游戏根目录下的 `yzwc/server/`，
+需要随存档走的内容则放在 `<world_name>/data/yzwc/`。路径一律由 `config/ModPaths` 解析，
+模块内不再手写散装路径。
+
+```
+<游戏根目录>/yzwc/server/
+├── config/
+│   ├── global_settings.json                # 全局配置（与世界无关），按功能模块分节
+│   ├── account_module/
+│   │   └── registerd_users_data.json       # 玩家代号 / 密码 / UUID（注册时写入）
+│   └── user_settings/
+│       └── <玩家UUID>.json                 # 玩家个人配置（注册时创建，注销时删除）
+├── data/
+│   └── <模块名>/data.json                  # 各模块数据文件
+├── backup/
+│   └── <模块名>/*.zip                      # 各模块备份压缩包
+└── temp/
+    └── <模块名>/                           # 各模块缓存 / 临时文件（每次开服清空）
+
+<存档目录>/data/yzwc/
+├── config/ · data/<模块名>/ · backup/<模块名>/ · temp/<模块名>/
+```
+
+**JSON 结构约定**：所有配置文件都是「先按功能模块分类，再写该模块的配置项」：
+
+```json
+{
+  "pet_module": {
+    "auto_backup_enabled": true,
+    "backup_interval_seconds": 600
+  },
+  "afk_module": {
+    "enabled": true,
+    "threshold_seconds": 300
+  }
+}
+```
+
+**新开服自动生成**：首次启动（文件不存在）时会直接写出一份**包含全部模块默认值**的完整
+`global_settings.json`，以及空的账户凭据表与各模块数据文件，并建好
+`config/ data/ backup/ temp/` 四层目录骨架 —— 不需要先跑一遍服务器才知道有哪些配置项。
+玩家个人配置文件在账户注册时创建，同样带上全部个人设置的默认值。
+
+**错误处理**：不做配置迁移或容错回退。一旦读到结构 / 类型非法的配置：
+
+1. 把出错文件改名隔离为 `<原文件名>.error`（已存在则追加时间戳，绝不覆盖旧的隔离文件）；
+2. 在原路径**重新生成一份默认配置**，给管理员一个正确格式的参照；
+3. 控制台打印「文件 / 位置 / 原因 / 隔离到哪 / 已重建哪个」；
+4. **直接崩溃退出**，由管理员对照 `.error` 把改动搬回新文件后再启动。
+
+若第 1 步改名失败（文件被占用等），则跳过第 2 步，绝不覆盖现场。
+
+#### 18.2 配置一览
+
+| 配置           | 存放位置                                                                  | 内容                                                                                     |
+| -------------- | ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| 模组核心       | `yzwc/server/config/global_settings.json` → `core_module`                 | `dev_mode_enabled`、`log_to_file`（双开关控制 DebugLogger）                             |
+| 账户设置       | `global_settings.json` → `account_module`                                 | `session_timeout`、`login_cooldown`                                                     |
+| 账户凭据       | `yzwc/server/config/account_module/registerd_users_data.json`             | 玩家代号 / 小写名 / 密码哈希 / UUID / 登录状态                                          |
+| 玩家个人配置   | `yzwc/server/config/user_settings/<UUID>.json`                            | `double_doors_module`、`function_module`（7 个个人功能开关：梯子延展/作物经验/工具信息/方块动画/合成音效/物品闪光/伤害跳字） |
+| 客户端外部设置 | `config/youzaiworldcore/client_external_settings.json`（客户端，未迁移）  | `devModeEnabled`、`logLevel`（0-3）、`yzuiEnabled`（YZUI 界面总开关）、调试地址/端口     |
+| DebugLogger    | `util/DebugLogger`                                                        | 四级日志（OFF/BASIC/DETAILED/DEBUG），entering/exiting/branch/stateChange/exception 追踪 |
+| 更新检查设置   | `global_settings.json` → `update_module`                                  | `enabled`（开关更新检查，UpdateCheckerConfig）                                           |
+| 试炼宝库设置   | `global_settings.json` → `trial_vault_module`                             | `enabled`（无限领奖开关，TrialVaultConfig，默认 true）                                   |
+| 邮件设置       | `global_settings.json` → `mail_module`                                    | 过期策略、权限节点/等级、附件上限等                                                      |
+| 宠物设置       | `global_settings.json` → `pet_module`                                     | 宠物备份间隔、保留份数、自动备份开关                                                     |
+| AFK 设置       | `global_settings.json` → `afk_module`                                     | 检测阈值、前缀/广播/无敌/自动踢出等                                                     |
+| 老吴贴贴设置   | `global_settings.json` → `laowu_meme_module`                              | 全局开关、冷却时间等                                                                    |
+| 全局事件开关   | `global_settings.json` → `event_module`                                   | 死亡音效 / 唱片机循环 / 幼年僵尸削弱 / 凋零头颅 / 三叉戟虚空保护 / 作物经验              |
+| 带电苦力怕     | `global_settings.json` → `charged_creeper_module`                         | `enabled`、`chance`                                                                     |
+| 末地传送门     | `global_settings.json` → `end_portal_module`                              | 精准采集要求 / 直接入背包 / 龙蛋提示                                                    |
+| 原地重生       | `global_settings.json` → `respawn_module`                                 | 启用的维度池与独立维度列表                                                              |
+| 维度池         | `global_settings.json` → `dimensional_inventories_module`                 | `pools` 池定义列表                                                                      |
+| 冒险等级/属性  | `yzwc/server/data/skill_module/data.json`                                 | `levels` / `attributes` 两块，按玩家 UUID 持久化                                         |
+| 邮件数据       | `yzwc/server/data/mail_module/data.json` + `box/<uuid>.json`              | 全局正文仓库 + 每玩家收件箱索引                                                         |
+| 宠物备份       | `yzwc/server/backup/pet_module/pet_backup_<时间戳>.zip`                   | 定时备份压缩包（内含同名 `.json`）                                                      |
+| 玩家统计数据   | `<world_name>/data/yzwc/data/status_module/data.json` + `rank_export/`    | StatsManager 持久化统计与排行榜导出目录                                                  |
+| 维度池玩家状态 | `<world_name>/data/yzwc/data/dimensional_inventories_module/<池>/<uuid>.json` | 各池内玩家的独立背包与状态                                                          |
 
 ### 19. 附魔等级语言补丁系统
 
@@ -250,23 +313,23 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 客户端即时反馈：拾取物品与经验时显示获得条目，实体受伤时在受击位置显示实际伤害跳字。
 
 - **处理链路**：`AddEntriesHandler` 接收拾取事件并加入队列 → `PendingPickupQueue` 维护待显示条目 → `DrawEntriesHandler` 逐帧绘制
-- **条目类型**：`DisplayEntry` 抽象基类，具体实现 `ItemDisplayEntry`（物品，含数量/堆叠信息）与 `ExperienceDisplayEntry`（经验值）
+- **条目类型**：`DisplayEntry` 抽象基类，具体实现 `ItemDisplayEntry`（物品，含数量/堆叠信息）、`ExperienceDisplayEntry`（经验值）与 `SubtitleDisplayEntry`（字幕文本 + 方向指示，由 `SubtitleCaptureHandler` 捕获原版字幕事件后与拾取提示共享渲染区域）
 - **客户端接入**：`PickUpNotifyMixin` 拦截拾取通知驱动显示；`ClientNetworking` 处理客户端网络相关逻辑
 - **伤害跳字**：`DamageNumberLivingEntityMixin` 比较 `LivingEntity#hurtServer` 前后的生命值与吸收生命值，得到护甲、附魔、抗性和护盾结算后的实际损失；服务端经 `DamageNumberPayload`（S→C）同步受击位置，客户端 `DamageNumberRenderer` 使用 26.2 提交式世界渲染管线绘制上浮、横移并淡出的红色数字
-- **个人开关**：`/yzwc function damage_numbers [true|false]` 控制自己是否接收伤害跳字，省略参数时查询；新玩家默认开启，状态按 UUID 持久化至 `config/youzaiworldcore/function_toggles.json`
+- **个人开关**：`/yzwc function damage_numbers [true|false]` 控制自己是否接收伤害跳字，省略参数时查询；新玩家默认开启，状态按 UUID 持久化至 `yzwc/server/config/user_settings/<UUID>.json` 的 `function_module` 分节
 - **可见性与性能**：仅向已开启且正在追踪目标的玩家同步；隐身目标不会向无关旁观者暴露位置。客户端最多保留 256 条跳字，并只渲染 64 格内的数字
 
 ### 21. 世界增强功能
 
 一组原生集成、不依赖外部库的"世界微调"增强（灵感来自社区经典玩法），覆盖生物行为、掉落归集、末地机制、试炼密室与农业自动化：
 
-- **天然带电苦力怕（Naturally Charged Creepers）**：苦力怕进入服务端世界时，以可配置概率（`chance`，默认 0.1 / 10%）标记为带电状态。通过 Mixin 暴露的 `DATA_IS_POWERED` 实体数据写入，确保客户端闪电光环正确同步；数据标签去重避免区块重载重复判定。配置 `config/youzaiworldcore/charged_creeper.json`（`enabled` 默认 true、`chance` 默认 0.1，自动钳制 [0,1]）。命令：`/yzwc event naturally_charged_creepers enable [true|false]` / `settings chance [double]`
+- **天然带电苦力怕（Naturally Charged Creepers）**：苦力怕进入服务端世界时，以可配置概率（`chance`，默认 0.1 / 10%）标记为带电状态。通过 Mixin 暴露的 `DATA_IS_POWERED` 实体数据写入，确保客户端闪电光环正确同步；数据标签去重避免区块重载重复判定。配置在 `global_settings.json` 的 `charged_creeper_module` 分节（`enabled` 默认 true、`chance` 默认 0.1，超出 [0,1] 直接报错退出）。命令：`/yzwc event naturally_charged_creepers enable [true|false]` / `settings chance [double]`
 - **紫颂果就近掉落（Chorus Fruit Drops Nearby）**：破坏紫颂植物后，其掉落的紫颂果会被就近传送至最近被破坏的紫颂植物位置（水平距离 < 20 格、2 秒时间窗内），避免果实散落满地
 - **末影龙鞘翅掉落（Dragon Drops Elytra）**：末影龙被击杀时额外掉落一个鞘翅并广播提示；击杀归属优先级：直接玩家 → 弹射物发射者（弓/弩/三叉戟）→ 30 格半径内最近玩家
-- **末地传送门增强**：① 末地传送门框可被精准采集镐破坏并掉落（含已嵌末影之眼），同时清除激活的传送门方块；② 末影龙被击杀时向附近玩家额外给予一个龙蛋；③ 新增合成配方 `craftable_end_portal`（末影之眼 + 龙蛋 + 末地石 → 12 个末地传送门框）。配置 `config/youzaiworldcore/end_portal_settings.json` 三项开关（精准采集要求 / 直接入背包 / 龙蛋提示）
+- **末地传送门增强**：① 末地传送门框可被精准采集镐破坏并掉落（含已嵌末影之眼），同时清除激活的传送门方块；② 末影龙被击杀时向附近玩家额外给予一个龙蛋；③ 新增合成配方 `craftable_end_portal`（末影之眼 + 龙蛋 + 末地石 → 12 个末地传送门框）。配置在 `global_settings.json` 的 `end_portal_module` 分节，三项开关（精准采集要求 / 直接入背包 / 龙蛋提示）
 - **监守者战利品（Warden Loot）**：玩家击杀监守者时直接发放 300 经验，并掉落 bundle 战利品（含尖啸催生体、下界合金碎片/钻石/金锭等随机池、远古城市风格物品、附魔书——50% 迅捷潜行 I–III / 50% 灵魂疾行 I–III，受抢夺附魔加成）。由 `WardenDeathHandler`（`ServerLivingEntityEvents.AFTER_DEATH`）实现，取代脆弱的数据包 tick 扫描
 - **切石机伤害（Stonecutter Damage）**：站在切石机方块上会受到持续伤害——首次站上立即造成 1 颗心伤害，之后每 1.5 秒（30 tick）一次，直至离开；死亡显示自定义消息"尝试用身体测试切石机的锋利度"，并授予「我成了建材」成就。创造/旁观模式免疫。由 `StonecutterDamageHandler`（分时扫描 + 独立计时器，性能优先）实现
-- **试炼宝库无限领奖（Trial Vault）★新增**：移除试炼宝库「每玩家仅可领奖一次」的限制，同一玩家可对同一宝库反复插钥匙领奖。由 `VaultServerDataMixin` 精确注入 `VaultServerData#hasRewardedPlayer`（恒返回 false）与 `#addToRewardedPlayers`（取消写入）实现，而非通配 Redirect。配置 `config/youzaiworldcore/trial_vault.json`（`enabled` 默认 true）。命令：`/yzwc event trial_vault enable [true|false]`。参考 trial-chamber-time-removal 设计思路，原生重写、无前置依赖
+- **试炼宝库无限领奖（Trial Vault）★新增**：移除试炼宝库「每玩家仅可领奖一次」的限制，同一玩家可对同一宝库反复插钥匙领奖。由 `VaultServerDataMixin` 精确注入 `VaultServerData#hasRewardedPlayer`（恒返回 false）与 `#addToRewardedPlayers`（取消写入）实现，而非通配 Redirect。配置在 `global_settings.json` 的 `trial_vault_module` 分节（`enabled` 默认 true）。命令：`/yzwc event trial_vault enable [true|false]`。参考 trial-chamber-time-removal 设计思路，原生重写、无前置依赖
 - **骨粉催熟甘蔗（Bone Meal Sugar Cane）★新增**：手持骨粉右键甘蔗可将其催熟一格（上限 3 格高）；同时注册**发射器行为**（`BoneMealSugarCaneDispenserBehavior`），发射器装骨粉亦可催熟正对的甘蔗，便于自动化农场
 - **混凝土粉末遇水固化（Concrete Powder Solidify）★新增**：混凝土粉末以**掉落物实体**形式落入水中时自动固化为对应颜色的混凝土物品实体（原版仅方块形态固化）。`ConcretePowderSolidifyHandler` 每 20 tick（1 秒）扫描一次以控制性能，颜色映射表在初始化时由注册表构建
 - **幼年僵尸削弱（Baby Zombie Weakening）★新增**：降低幼年僵尸的生成速度与最大生命值，`ZombieFinalizeSpawnMixin` 在实体生成时削减属性
@@ -274,6 +337,8 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 - **合成音效（Craft Sound）★新增**：从合成结果槽取出成品时播放对应物品的合成音效，替代原版静默取出。`ResultSlotOnTakeMixin` 在物品被取走时注入音效
 - **Meme 画作掉落（Painting Drop）★新增**：破坏本模组自定义 Meme 画作时掉落对应的画作物品（原版画作破坏后不掉落物品）。`MemePaintingDropMixin` 在画作实体被破坏时注入掉落逻辑
 - **跳过实验性警告（Experimental Warning Skip）★新增**：创建世界时自动跳过"实验性玩法"警告弹窗，提升开发/测试效率。`ExperimentalWarningSkipMixin` 拦截对应屏幕
+- **铁锭修复铁砧（Anvil Repair）★新增**：潜行手持铁锭右键铁砧，消耗 1 个铁锭将铁砧按「严重破损 → 损坏 → 正常」逐级修复，保持朝向。由 `AnvilRepairHandler`（`UseBlockCallback`）实现
+- **死亡音效（Death Sound）★新增**：玩家死亡时在原版音效之外叠加播放随机全局音效，从 10 种变体（玩家死亡 / 通用死亡 / 末影龙死亡 / 雷声 / 钟声 / 监守者死亡 / 传送门等）中随机。由 `DeathSoundHandler`（`ServerLivingEntityEvents.AFTER_DEATH`）实现，可在 `event_module` 中开关
 
 ### 22. AFK 挂机检测系统
 
@@ -288,7 +353,7 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
   - `/yzwc afk status [player]` —— 查询自身/他人 AFK 状态
   - `/yzwc afk list` —— 列出所有 AFK 玩家（需管理权限）
   - `/yzwc afk settings <key> <value>` —— 运行时修改 AFK 配置（需管理权限）
-- **配置**：`config/youzaiworldcore/afk.json`（`AfkConfig`，含 enabled/detect_mode/threshold/tab_prefix/broadcast/invulnerable/auto_kick/manual_toggle）
+- **配置**：`global_settings.json` → `afk_module`（`AfkConfig`，含 enabled/detect_mode/threshold_seconds/tab_prefix_enabled/broadcast_enabled/invulnerable_enabled/auto_kick_seconds/manual_toggle_enabled）
 
 ### 23. 传送卷轴系统 ★新增
 
@@ -312,11 +377,11 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 
 服务器娱乐彩蛋——两只猫在特定条件下触发贴贴动画、音效与全服粒子特效。
 
-- **触发条件**：两只已驯服的猫在一定距离内，且有随机冷却（可配置）
-- **效果**：Geo 骨骼动画、自定义音效（`laowu2.ogg` / `qiliang.ogg` / `zhanhou.ogg`）、全服粒子广播
-- **实现**：`LaowuMemeHandler` 每 tick 扫描 + `SoundBufferLibraryLaowuMixin` 自定义音效加载 + 客户端 Geo 模型渲染
+- **触发条件**：两只已驯服的猫（其中一只精确命名为「老吴」）在 6 格内，且有随机冷却（默认 180 秒，可配置）
+- **效果**：Geo 骨骼动画、自定义音效（`laowu2.ogg` / `qiliang.ogg` / `zhanhou.ogg` 随机三选一）、全服粒子广播；右键任一只可提前释放配对（恢复 AI + 进入冷却）
+- **实现**：`LaowuMemeHandler` 每 10 tick 扫描 + `SoundBufferLibraryLaowuMixin` 自定义音效加载（含 `config/youzaiworldcore/laowu_meme/sounds/` 用户导入曲）+ 客户端 Geo 模型渲染
 - **命令**：`/yzwc event laowu enable [true|false]` / `settings cd [seconds]`（全局开关与冷却）
-- **配置**：`config/youzaiworldcore/laowu_meme.json`（`LaowuMemeConfig`）
+- **配置**：`global_settings.json` → `laowu_meme_module`（`LaowuMemeConfig`）
 
 ### 26. 双开门系统
 
@@ -326,7 +391,7 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 - **配对规则**：在 3×3 水平范围内搜索相邻、同类型（同为 `DoorBlock` 或同为 `FenceGateBlock`）、显示名（材质）相同的配对门，统一同步为被点击门的开合状态；不做递归（仅相邻双开）
 - **支持范围**：木门（含双层）、栅栏门（自动对齐朝向）；铁门等无法徒手开启的方块、活板门、红石触发、村民 AI、连锁开门均不在范围内
 - **玩家独立开关**：`/yzwc function double_doors [true|false]`（**客户端命令**）控制自身，缺省（不带参数）查询自身状态，新玩家默认开启
-- **数据持久化**：`config/youzaiworldcore/double_doors_players.json`，仅保存被指令显式设置过的玩家（`DoubleDoorsState`，未设置者回退默认启用）
+- **数据持久化**：`yzwc/server/config/user_settings/<UUID>.json` 的 `double_doors_module` 分节，仅保存被指令显式设置过的玩家（`DoubleDoorsState`，未设置者回退默认启用）
 - **客户端转发架构**：`/yzwc` 根命令已在客户端注册（用于 `/yzwc settings` 及转发型子命令），故双开门、隐身等命令在客户端仅做解析与转发，权威状态由服务端通过 `DoubleDoorsTogglePayload` / `InvisibilityPayload`（C→S）承载
 
 ### 27. 宠物系统
@@ -339,7 +404,7 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 - **归属操作**：`rename`（重命名）、`transfer <新主人>`（转让所有权，原主人自动进入信任列表）、`release_life [force]`（放生，需二次确认）
 - **快速定位**：`highlight <内部名>` 对目标狼施加 5 秒发光效果，便于在群体中定位
 - **管理员运维**：`admin restore`（从最新备份恢复）、`admin backup_list`（列出备份）、`admin backup_interval <秒>`（设置定时备份间隔，60–3600 秒）
-- **持久化**：`config/youzaiworldcore/pet_module/settings.json` + 定时备份 `pet_module/pet_backup_<时间戳>.json`
+- **持久化**：配置在 `global_settings.json` → `pet_module`；定时备份为 `yzwc/server/backup/pet_module/pet_backup_<时间戳>.zip`（压缩包内是同名 `.json`）
 - **命令架构**：`/yzwc pet` 为**客户端命令**，客户端将参数经 `PetCommandPayload`（C→S）整体转发，服务端 `PetCommand` 持有完整 Brigadier 命令树与权限校验
 
 ### 28. 物品高亮系统
@@ -361,7 +426,7 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 
 读取原版统计系统（`Stats`）的玩家行为数据，持久化保存并支持查询与排行榜导出。
 
-- **入口**：`status/StatsManager`；数据持久化于 `<world>/youzaiworldcore/status/data.json`
+- **入口**：`status/StatsManager`；数据持久化于 `<world_name>/data/yzwc/data/status_module/data.json`，排行榜导出与损坏备份分别在同级 `rank_export/` 与 `<world_name>/data/yzwc/backup/status_module/`
 - **指标**：共 **21 项**，涵盖在线时间、跳跃/死亡/击杀、伤害、步行/疾跑/鞘翅/坠落距离、钓鱼、交易、丢弃、睡觉、附魔、袭击、繁殖、敲钟、吃蛋糕，以及「红石大蛇榜」汇总的红石放置量
 - **命令**（服务端）：
   - `/yzwc status <player> list` —— 查看该玩家各项统计（权限 `youzaiworldcore.command.status.query`）
@@ -390,7 +455,7 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
   - `/yzwc mail purge [player|all]` —— 清理过期邮件
   - `/yzwc mail list [player]` —— 查看指定玩家信箱
 - **权限**：`youzaiworldcore.mail`（默认 OP 4）；未装 LuckPerms 时以 `mail_permission_level` 回退
-- **存储**：全局仓库 `config/youzaiworldcore/mail/sent.json` + 每玩家索引 `config/youzaiworldcore/mail/box/<uuid>.json` + 设置 `mail_settings.json`；跨世界一致，绑定账户系统（离线账户同样入索引，登录可见）
+- **存储**：全局仓库 `yzwc/server/data/mail_module/data.json` + 每玩家索引 `yzwc/server/data/mail_module/box/<uuid>.json` + 设置 `global_settings.json` → `mail_module`；跨世界一致，绑定账户系统（离线账户同样入索引，登录可见）
 - **网络**：共 18 个专用数据包（C2S `mail_compose_open` / `mail_open` / `mail_sent_list_request` / `mail_recall` / `mail_purge` / `mail_list_request` / `mail_fetch` / `mail_action` / `mail_admin_send` / `mail_admin_edit` / `mail_player_list_request`；S2C `open_mail_compose` / `mail_list` / `mail_sent_list` / `mail_update` / `mail_op_result` / `mail_unread_count` / `mail_player_list`）
 
 ### 31. 自定义附魔
@@ -407,15 +472,15 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 | 附魔                   | ID              | 适用物品 | 效果                                                     |
 | ---------------------- | --------------- | -------- | -------------------------------------------------------- |
 | **生命汲取（Leeching）**   | `leeching`      | 武器     | 击杀目标回复生命值                                       |
-| **毒雾（Poison Puff）**   | `poison_puff`   | 武器     | 攻击时释放毒雾效果                                       |
-| **火焰弹（Fire Charge）**  | `fire_charge`   | 弩       | 弩射出火焰弹                                             |
-| **音爆弹（Sonic Charge）** | `sonic_charge`  | 弩       | 弩射出监守者音爆                                         |
-| **懦弱（Cowardice）**      | `cowardice`     | 护甲     | 低生命值时提升速度                                       |
-| **风弹（Wind Charge）**    | `wind_charge`   | 护甲     | 受伤时释放风弹击退周围实体，由 `WindChargeHandler` 处理  |
-| **尖刺（Spikes）**         | `spikes`        | 盾牌     | 反弹攻击者伤害                                           |
-| **弹跳（Bounce）**         | `bounce`        | 盾牌     | 格挡时弹飞攻击者                                         |
-| **熔炼（Smelting）**       | `smelting`      | 工具     | 挖掘方块时自动熔炼掉落物，由 `SmeltingHandler` 处理      |
-| **陨星重击（Meteor Smash）** | `meteor_smash` | 重锤     | 重锤砸地时召唤陨石                                       |
+| **毒雾（Poison Puff）**   | `poison_puff`   | 三叉戟   | 攻击时释放毒雾效果（`post_attack` → `apply_mob_effect` 中毒 60 秒×级） |
+| **火焰弹（Fire Charge）**  | `fire_charge`   | 弩       | 弩射出火焰弹（`projectile_spawned` → `ignite` 100 tick） |
+| **音爆弹（Sonic Charge）** | `sonic_charge`  | 弩       | 弩射出监守者音爆（`damage` → `add`，基础 10 +2/级，Java 侧附加后坐力） |
+| **懦弱（Cowardice）**      | `cowardice`     | 护腿     | 满血时提升移动速度（Java 侧实现）                       |
+| **风弹（Wind Charge）**    | `wind_charge`   | 胸甲/鞘翅 | 鞘翅滑翔时持续加速（Java 侧实现，速度上限 1.5 blocks/tick） |
+| **尖刺（Spikes）**         | `spikes`        | 盾牌     | 反弹攻击者伤害（`post_attack` → `damage_entity`，3 伤害/级，40%+30%/级 概率） |
+| **弹跳（Bounce）**         | `bounce`        | 盾牌     | 格挡时弹飞攻击者（Java 侧实现）                         |
+| **熔炼（Smelting）**       | `smelting`      | 工具     | 挖掘方块时自动熔炼掉落物（Java 侧实现）                  |
+| **陨星重击（Meteor Smash）** | `meteor_smash` | 重锤     | 重锤砸地时召唤陨石（Java 侧实现，3 格 AoE 点燃 10 秒）  |
 
 > 以上 10 个移植附魔源自 Raiyon's More Enchantments，本项目参考其设计理念并原生重写，无外部依赖。
 
@@ -461,6 +526,7 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 客户端设置中新增「导出/导入配置」侧栏（YZUI）。基于 26.2 Headless 限制（AWT/文件对话框不可用），采用自动路径 + 备份策略，不依赖外部文件选择器：
 
 - **导出**：将 `config/youzaiworldcore/` 与 `options.txt` 打包为 ZIP 并保存到本地（PC 端手动选择路径；Android 端自动存入 `config_backups`，保留最近 5 份）
+- ⚠️ **范围仅限客户端配置**：服务端配置已迁至 `yzwc/server/`，不在本功能的打包范围内（本功能本就面向客户端玩家备份自己的界面/操作设置）
 - **导入**：从 ZIP 还原配置，要求客户端重启生效（自动备份当前配置至 `config_backups` 以防失败回滚）
 - **入口**：`screen.youzaiworldcore.settings.sidebar_config_io`；`ConfigIOManager` 在客户端启动时自愈检测上次导入中断遗留的孤立 `config_bak_*` 备份并恢复
 
@@ -469,7 +535,7 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 异步检测模组新版本，提示在线更新或强制更新。
 
 - **入口**：`update/UpdateChecker`（客户端与服务端共用）；运行时从 `https://mcyzw.top/yzwc/version.json` 拉取版本信息，基于 `SemanticVersion` 比较
-- **配置**：`config/youzaiworldcore/update_checker.json`（`UpdateCheckerConfig`，可开关检查）
+- **配置**：`global_settings.json` → `update_module`（`UpdateCheckerConfig`，可开关检查）
 - **命令**（服务端）：`/yzwc update [check]` —— 触发一次即时检查并反馈结果（普通/强制更新提示 + 可点击下载链接），权限 `youzaiworldcore.command.update`（OP 4）
 - **客户端**：`client/update/ClientUpdateState` + `client/screen/ForcedUpdateScreen` 提供强制更新界面
 
@@ -488,7 +554,7 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 
 #### 37.2 HUD 组件
 
-`HealthBarMixin` 取消原版 `Hud#extractPlayerHealth` / `extractFood` / `extractArmor` / `extractAirBubbles` 四项渲染，改由 `client/hud/` 下的自定义渲染器绘制长条状进度条：
+`HealthBarMixin` 取消原版 `Hud#extractPlayerHealth` / `extractFood` / `extractArmor` / `extractAirBubbles` 四项渲染，改由 `client/hud/` 下的自定义渲染器绘制长条状进度条；`HotbarMixin` 取消原版 `extractItemHotbar`，改由 `HotbarRenderer` 绘制 YZUI 热键栏（184×24 圆角面板 + 9 个 18×18 圆角槽位 + 数字键编号 + 平滑动画选中高亮框 + 褐色副手槽 + 攻击冷却指示器，滚轮方向经 `ScrollHotbarInputMixin` 传入支持跨边界包装动画）：
 
 | 渲染器              | 替换对象   | 特性                                                                                                                                        |
 | ------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -546,11 +612,17 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 
 ### 42. 工具信息覆盖（Tool HUD Overlay）★新增
 
-客户端 HUD 增强（`client/hud/ToolInfoOverlay`）。当手持工具/武器时，在屏幕指定区域显示其当前耐久度、附魔等级等关键信息的浮动面板，方便玩家快速了解装备状态，无需打开物品栏。
+客户端 HUD 增强（`client/hud/ToolInfoOverlay`）。每 10 tick（0.5s）在动作栏显示一行工具信息，随手持状态自动刷新：
+
+- **时钟**：游戏时间 + 天数
+- **指南针**：8 方向方位指示
+- **追溯指针**：上次死亡坐标 + 维度
+
+由 `FunctionToggleClientState` 的 `tool_info_overlay` 个人开关控制（默认开启，服务端权威经 `FunctionToggleSyncPayload` 同步）。
 
 ### 43. 单玩家功能开关系统 ★新增
 
-为伤害跳字、工具信息、方块动画等玩家偏好功能提供服务端权威的个人开关。状态由 `FunctionToggleManager` 按 UUID 持久化至 `config/youzaiworldcore/function_toggles.json`；客户端渲染类开关经 `FunctionToggleSyncPayload`（S→C）同步。伤害跳字直接在服务端按接收玩家过滤，关闭者不再收到 `DamageNumberPayload`。
+为偏好功能提供服务端权威的个人开关，状态由 `FunctionToggleManager` 按 UUID 持久化至 `yzwc/server/config/user_settings/<UUID>.json` 的 `function_module` 分节，共 7 个键（默认全开）：`ladder_extend_downward`（潜行放梯子向下延展）、`crop_xp_drop`（作物经验）、`tool_info_overlay`（工具信息 HUD）、`block_animation`（方块环境粒子）、`crafting_sound`（合成音效）、`item_sparkle`（掉落物电火花）、`damage_numbers`（伤害跳字）。客户端渲染类开关经 `FunctionToggleSyncPayload`（S→C）同步；伤害跳字直接在服务端按接收玩家过滤，关闭者不再收到 `DamageNumberPayload`。命令 `/yzwc function <key> [true|false]`（缺省查询），`damage_numbers` 为自助开关，其余需 `function.set`（OP 4）。
 
 ---
 
@@ -586,7 +658,13 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 │   │   └── enable [true|false]           → 开启/关闭试炼宝库无限领奖（缺省查询）
 │   ├── laowu
 │   │   ├── enable [true|false]           → 开启/关闭老吴贴贴全局开关（缺省查询）
-│   │   └── settings cd [seconds]         → 设置/查询老吴贴贴冷却时间
+│   │   └── settings cd [seconds]         → 设置/查询老吴贴贴冷却时间（≥60s）
+│   ├── death_sound enable [true|false]       → 死亡音效（缺省查询）
+│   ├── jukebox_loop enable [true|false]      → 唱片机循环（缺省查询）
+│   ├── baby_zombie_weak enable [true|false]  → 幼年僵尸弱化（缺省查询）
+│   ├── wither_skull_drop enable [true|false] → 凋零头颅必定掉落（缺省查询）
+│   ├── trident_void_protect enable [true|false] → 三叉戟虚空保护（缺省查询）
+│   ├── crop_xp_drop enable [true|false]      → 作物经验掉落（缺省查询）
 │   └── 权限：.query（所有人）/ .set（OP 4）
 │
 ├── pet <args...>                         ← （客户端命令，整体转发至服务端）
@@ -613,6 +691,12 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 ├── function double_doors <true|false>    ← （客户端命令）
 │   ├── 权限：youzaiworldcore.command.function.double_doors（玩家自身，所有人可执行）
 │   └── 缺省查询自身状态；新玩家默认启用，状态持久化至 double_doors_players.json
+│
+├── function ladder_extend_downward [true|false]  ← 潜行放梯子向下延展（个人开关，默认开启）
+├── function tool_info_overlay [true|false]       ← 工具信息 HUD（时钟/指南针/追溯指针，默认开启）
+├── function block_animation [true|false]         ← 方块环境粒子（信标/酿造台/附魔台/龙蛋，默认开启）
+├── function crafting_sound [true|false]          ← 合成音效（默认开启）
+├── function item_sparkle [true|false]            ← 掉落物电火花粒子（默认开启）
 │
 ├── function damage_numbers [true|false]
 │   ├── 权限：youzaiworldcore.command.function.damage_numbers（玩家自身，所有人可执行）
@@ -672,9 +756,11 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 | `youzaiworldcore.command.function.double_doors`             | 双开门功能（自身开关 / 查询）          | 所有人（仅自身）        |
 | `youzaiworldcore.command.function.damage_numbers`           | 伤害跳字显示（自身开关 / 查询）        | 所有人（仅自身）        |
 | `youzaiworldcore.command.function.afk`                     | AFK 自身切换                           | 所有人（仅自身）        |
-| `youzaiworldcore.command.afk.admin`                        | AFK 管理（status/list/settings）       | OP 4                    |
+| `youzaiworldcore.command.admin.afk`                        | AFK 管理（status/list/settings）       | OP 4                    |
 | `youzaiworldcore.command.event.query`                       | 事件管理查询（省略参数即为查询）       | 所有人                  |
 | `youzaiworldcore.command.event.set`                         | 事件管理修改（enable / settings）      | OP 4                    |
+| `youzaiworldcore.command.function.query`                    | 个人功能开关查询（省略参数即为查询）   | 所有人                  |
+| `youzaiworldcore.command.function.set`                      | 个人功能开关修改（enable 等）          | OP 4                    |
 | `youzaiworldcore.command.pet.list`                          | 查看宠物列表                           | 所有人                  |
 | `youzaiworldcore.command.pet.set`                           | 宠物设置（重命名/模式/信任/放生/转让） | 所有人（仅自身宠物）    |
 | `youzaiworldcore.command.pet.highlight`                     | 高亮宠物                               | 所有人（主人/信任玩家） |
@@ -797,63 +883,64 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 ## 🏗️ 项目结构
 
 ```
-src/                                       # 411 个 Java 源文件（main 252 / client 159）
+src/                                       # 452 个 Java 源文件（main 273 / client 179）
 ├── main/java/top/csituka/youzaiworldcore/
 │   ├── YouzaiworldCore.java              # 主入口
 │   ├── account/                          # 账户认证（data/command/mixin/util 子包）
 │   ├── block/ + entity/                  # 自定义方块与方块实体
-│   ├── command/                          # 命令注册（TeleportAnchor / Reload / Event / Mail 客户端转发）
+│   ├── command/                          # 命令注册（Afk/Event/Function/Reload/TeleportAnchor/Update/Status）
 │   ├── component/                        # 数据组件
-│   ├── config/                           # 服务端外部设置（带电苦力怕 / 末地传送门 / 双开门 / 宠物 / 邮件 配置）
+│   ├── config/                           # 服务端外部设置（全局/个人/事件/各模块配置，17 个分节）
 │   ├── data/                             # 传送锚点 SavedData
 │   ├── dimensionalinventories/           # 维度池系统（含 WorldPoolTeleportPayload）
 │   ├── enchantment/                      # 自定义附魔 ResourceKey 注册（ModEnchantments，12 个）
 │   ├── enchlevellangpatch/               # 附魔等级语言补丁（api + impl）
-│   ├── event/                            # 事件处理器（30+ 个：飞行信标/双开门/末地门/虚空杖/龙翼/chorus/带电苦力怕/分解/坐姿/监守者/切石机/铁砧修复/阳光修复/乐魂涡轮/骨粉甘蔗/混凝土固化/幼年僵尸/唱片机循环/合成音效/Meme画作掉落 等）
+│   ├── event/                            # 事件处理器（31 个：末地门/双开门/老吴贴贴/虚空杖/骨粉甘蔗/带电苦力怕/监守者/切石机/传送卷轴蓄力/生命汲取/风弹/熔炼/阳光修复/乐魂涡轮/幼年僵尸/唱片机循环/合成音效/Meme画作掉落/铁锭修铁砧/死亡音效 等）
 │   ├── entity/seat/                      # 座椅实体系统
 │   ├── invisibility/                     # 隐身系统
 │   ├── item/                             # 物品、工具、创造标签页（7 个）、预设（9 个）、隐形展示框
 │   ├── luckperms/                        # LuckPerms 集成（LuckPermsHelper 统一鉴权）
 │   ├── mail/                             # 邮件系统（Mail / MailManager / SentMailRepository / MailDataStorage / MailSettings / MailPermissionHelper）
 │   ├── mana/                             # 魔力系统
-│   ├── mixin/                            # Mixin（含子包 afk / babyzombie / chargedcreeper / craftsound / damagenumber / doubledoors / invisibility / jukebox / painting / pet / seat / skill / trialvault）
-│   ├── network/                          # 网络数据包（47 个 Payload 类 + ModNetworking）
+│   ├── mixin/                            # Mixin（35 个，含子包 afk / babyzombie / chargedcreeper / craftsound / damagenumber / doubledoors / invisibility / jukebox / painting / pet / seat / skill / trialvault）
+│   ├── network/                          # 网络数据包（48 个 Payload 类 + ModNetworking）
 │   ├── pet/                              # 宠物系统（config/command/event 子包 + PetGlobalState/PetEntry）
 │   ├── placeholders/                     # Placeholder API 集成（32 个占位符）
+│   ├── respawn/                          # 原地重生（InPlaceRespawnManager）
 │   ├── screen/                           # 容器菜单
 │   ├── skill/                            # 冒险等级 + 属性系统
 │   ├── sound/                            # 自定义 SoundEvent（1 个：cloud_genshin）
 │   ├── status/                           # 统计系统（StatsManager，21 项指标 + 命令）
 │   ├── trialvault/                       # 试炼宝库无限领奖配置（TrialVaultConfig）
-│   ├── update/                           # 更新检查（UpdateChecker 等 5 文件）
-│   ├── util/                             # DebugLogger、TrinketHelper 等工具
+│   ├── update/                           # 更新检查（UpdateChecker 等 6 文件）
+│   ├── util/                             # DebugLogger、TrinketHelper、BackupArchive 等工具
 │   └── worldgen/                         # 世界生成（VillageStructureInjector 村庄结构注入）
 
 ├── client/java/top/csituka/youzaiworldcore/
 │   ├── client/Client.java                # 客户端入口（注册高亮/边框/铁砧/邮件命令等）
-│   ├── command/                          # 客户端命令（Invisibility / DoubleDoors / Pet / Mail 转发）
-│   ├── config/                           # 客户端外部设置（含 yzuiEnabled）+ ConfigIOManager（配置导入导出）
+│   ├── command/                          # 客户端命令（Invisibility / DoubleDoors / Pet / Mail 转发 + YzwcServerMirrorCommand 占位镜像）
+│   ├── config/                           # 客户端外部设置（含 yzuiEnabled）+ ConfigIOManager（配置导入导出）+ PlatformDetector
 │   ├── effect/                           # 传送 FOV 效果
-│   ├── higherchat/                       # Simple Voice Chat 集成（HUD 图标位置跟踪，优化聊天框位置避免遮挡）
+│   ├── higherchat/                       # 聊天框位置优化（HUD 图标位置追踪）
 │   ├── highlightitem/                    # 物品高亮（HighlightItemClient / HighLightCommands / Configurator / Colors / ItemComparator）
 │   ├── itemborder/                       # 物品边框（ItemBorderClient / ItemBorderConfig / ItemBorderRenderer）
 │   ├── anviluses/                        # 铁砧使用次数显示（AnvilUsesClient）
-│   ├── client/accessor/                  # 渲染访问器（RenderCrownDuck）
-│   ├── hud/                              # 魔力条 / 冒险等级 HUD / YZUI 物品栏·装备·状态效果·生命·饥饿·盔甲·氧气条 / 工具信息覆盖
+│   ├── client/accessor/                  # 渲染访问器（RenderCrownDuck、ConnectScreenCancelAccess）
+│   ├── hud/                              # 魔力条 / 冒险等级 HUD / YZUI 物品栏·装备·状态效果·生命·饥饿·盔甲·氧气条 / 热键栏 / 工具信息覆盖
 │   ├── skill/                            # 客户端冒险等级/属性数据（ClientAttributeData）
 │   ├── update/                           # 更新检查客户端状态（ClientUpdateState）
 │   ├── laowumeme/                        # 老吴贴贴客户端（Geo 模型/渲染/音效池）
 │   ├── particle/                         # 粒子渲染（方块动画/物品闪光）
 │   ├── pickup/                           # 拾取显示（item/XP 浮动提示 + 字幕捕获）
-│   ├── mixin/client/                     # 客户端 Mixin（54 个：标题/选项/按钮/暂停/聊天/加载/座椅/渲染/拾取/附魔补丁/itemborder/YZUI 物品栏·血条·上下文栏·配方书/technocrown/AFK 输入/实验性警告跳过 等）
+│   ├── mixin/client/                     # 客户端 Mixin（60 个：标题/选项/按钮/暂停/聊天/加载/座椅/渲染/拾取/附魔补丁/itemborder/YZUI 物品栏·血条·上下文栏·配方书/technocrown/AFK 输入/实验性警告跳过 等）
 │   ├── network/                          # 客户端网络处理（ClientNetworking）
 │   ├── renderer/                         # 方块/实体渲染器（含传送锚点 BER、飞行信标 BER、feature/TechnoCrownFeatureRenderer）
 │   └── screen/                           # GUI 屏幕（MenuScreen、Login/Register、YzuInventoryScreen/YzuCreativeInventoryScreen、MailScreen/MailComposeScreen/MailSentScreen、element/widget/block 子包）
 
 └── main/resources/
-    ├── assets/youzaiworldcore/           # 纹理、模型、语言文件（10 种语言）、音效（4 个 .ogg：cloud_genshin + laowu2/qiliang/zhanhou）、画作纹理（12 张 Meme 画作）
-    ├── data/                             # 成就（31 个，含 deep_dark 分支）、配方（20 个）、战利品表、维度（login_hall）、结构（4 个，含 cloud_genshin_ruins）、结构集、模板池、附魔（12 个 JSON）、新手教程函数（19 个）、jukebox_song（1 个）、trinkets 饰品槽
-    └── fabric.mod.json                   # 模组元数据（声明 moogs_structures / trinkets_updated / modmenu / placeholder-api 为硬依赖）
+    ├── assets/youzaiworldcore/           # 纹理、模型、语言文件（10 种语言 × 736 键）、音效（4 个 .ogg：cloud_genshin + laowu2/qiliang/zhanhou）、画作纹理（12 张 Meme 画作）
+    ├── data/                             # 成就（31 个）、配方（20 个）、战利品表（方块 6 + 箱子 4）、维度（login_hall）、结构（9 个，含 5 种村庄变体 + 3 遗迹 + cloud_genshin_ruins）、结构集、模板池、附魔（12 个 JSON）、新手教程函数（19 个）、jukebox_song（1 个）、trinkets 饰品槽
+    └── fabric.mod.json                   # 模组元数据（声明 fabric-api / placeholder-api / modmenu / moogs_structures / trinkets_updated / geckolib 为硬依赖）
 
 .github/workflows/
 └── build.yml                             # CI/CD 构建工作流
