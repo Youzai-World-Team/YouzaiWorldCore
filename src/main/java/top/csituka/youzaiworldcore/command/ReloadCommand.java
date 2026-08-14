@@ -80,6 +80,9 @@ public class ReloadCommand {
         // 重载 Tab 列表抬头 / 页脚定制（重新解析模板帧）
         top.csituka.youzaiworldcore.tablist.TabListManager.reload();
 
+        // 重载侧边栏定制（重新解析模板帧并重置动画计数）
+        top.csituka.youzaiworldcore.sidebar.SidebarManager.reload();
+
         // === 预留扩展点 ===
         // 后续如需重载其他模块（如自定义配置文件、缓存等），在此添加调用：
         // ConfigManager.reload();

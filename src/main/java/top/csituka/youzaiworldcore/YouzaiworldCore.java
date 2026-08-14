@@ -248,6 +248,12 @@ public class YouzaiworldCore implements ModInitializer {
         LOGGER.info("Tab 列表抬头 / 页脚定制已初始化");
         DebugLogger.exiting("YouzaiworldCore", "TabListSystem.init");
 
+        // ===== 初始化侧边栏定制（仿 Styled Sidebars 精简版，计分板驱动） =====
+        DebugLogger.entering("YouzaiworldCore", "SidebarSystem.init");
+        top.csituka.youzaiworldcore.sidebar.SidebarManager.initialize();
+        LOGGER.info("侧边栏定制已初始化");
+        DebugLogger.exiting("YouzaiworldCore", "SidebarSystem.init");
+
         // ===== 加载单玩家功能开关配置 =====
         // 玩家个人配置按 UUID 存在 yzwc/server/config/user_settings/ 下，按需惰性读取，无需在此预加载
 

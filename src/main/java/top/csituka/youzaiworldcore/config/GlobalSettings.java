@@ -73,6 +73,8 @@ public final class GlobalSettings {
     public static final String CHAT_FORMAT_MODULE = "chat_format_module";
     /** Tab 列表抬头 / 页脚定制（仿 Styled Player List 精简版，仅 Header/Footer） */
     public static final String TABLIST_MODULE = "tablist_module";
+    /** 侧边栏定制（仿 Styled Sidebars 精简版，计分板驱动，单一全局样式） */
+    public static final String SIDEBAR_MODULE = "sidebar_module";
 
     private static final JsonFileStore STORE = new JsonFileStore(ModPaths.globalSettingsFile());
 
