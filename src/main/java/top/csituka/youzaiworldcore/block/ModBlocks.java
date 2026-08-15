@@ -117,6 +117,25 @@ public class ModBlocks {
             true
     );
 
+    /**
+     * 生物感压板：仅非玩家的 {@link net.minecraft.world.entity.LivingEntity}
+     * （动物、怪物、Boss 等）能够触发，向相邻方块输出强度 15 的红石信号。
+     * <p>
+     * 玩家踩踏不触发；掉落物 / 经验球 / 投射物等不是 {@code LivingEntity}，
+     * 自动不会触发。
+     *
+     * @see MobPressurePlateBlock
+     */
+    public static final MobPressurePlateBlock MOB_PRESSURE_PLATE = register(
+            "mob_pressure_plate",
+            MobPressurePlateBlock::new,
+            BlockBehaviour.Properties.of()
+                    .strength(0.5f, 0.5f) // 与原版压力板一致：低硬度易碎但不可爆炸
+                    .sound(SoundType.STONE)
+                    .noCollision(), // 压力板不能用普通碰撞（26.2 修正了原版 noCollission 拼写）
+            true
+    );
+
     private static <T extends Block> T register(String name, Function<BlockBehaviour.Properties, T> blockFactory, BlockBehaviour.Properties settings, boolean shouldRegisterItem) {
         ResourceKey<Block> blockKey = ResourceKey.create(Registries.BLOCK, Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, name));
         T block = blockFactory.apply(settings.setId(blockKey));

@@ -5,7 +5,9 @@ import net.minecraft.client.gui.navigation.ScreenPosition;
 import net.minecraft.client.gui.screens.inventory.AbstractRecipeBookScreen;
 import net.minecraft.client.gui.screens.recipebook.CraftingRecipeBookComponent;
 import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.CraftingMenu;
 import net.minecraft.world.inventory.Slot;
@@ -67,16 +69,14 @@ public class YzuCraftingScreen extends AbstractRecipeBookScreen<CraftingMenu> {
 
     private static final int LABEL_COLOR = 0xCC404040;
 
-    // ========== 装饰符号（→） ==========
+    // ========== 装饰符号（→，自定义贴图，复用铁砧箭头） ==========
 
-    private static final String ARROW_GLYPH = "\u2192"; // →
-    private static final int OPERATOR_COLOR = 0xFF604018;
-    private static final int OPERATOR_BG = 0x30000000;
-    private static final int OPERATOR_BG_W = 22;
-    private static final int OPERATOR_BG_H = 14;
-    /** "→" 中心坐标（3×3 合成格(82) 与 结果槽(124) 之间） */
-    private static final int ARROW_CENTER_X = 103;
-    private static final int ARROW_CENTER_Y = 43;
+    /** → 装饰贴图（anvil_arrow.png 22×15，与铁砧/锻造台共用；位于 textures/gui/sprites，atlas id 无前缀） */
+    private static final Identifier ARROW_SPRITE = Identifier.fromNamespaceAndPath("youzaiworldcore", "anvil_arrow");
+    /** "→" 绘制位置（相对面板）：3×3 合成格右缘 82 与结果槽左缘 124 之间水平居中、
+     *  与输出槽垂直居中 */
+    private static final int ARROW_X = 92, ARROW_Y = 36, ARROW_W = 22, ARROW_H = 15;
+
     // ========== 关闭按钮 ==========
 
     private static final int CLOSE_SIZE = 14;
@@ -103,7 +103,7 @@ public class YzuCraftingScreen extends AbstractRecipeBookScreen<CraftingMenu> {
     private static final int ACCENT_BAR_COLOR = 0xB0C8A05C;
     private static final ItemStack ICON = new ItemStack(Items.CRAFTING_TABLE);
 
-    /** 合成箭头位置（已移除，使用 drawOperatorGlyph 字符代替） */
+    /** 合成箭头区域（常量见上方装饰符号节，使用原版纹理裁剪 blitSprite） */
 
     // ========== 构造 ==========
 
@@ -219,16 +219,11 @@ public class YzuCraftingScreen extends AbstractRecipeBookScreen<CraftingMenu> {
         g.text(this.font, CLOSE_GLYPH, tx, ty, hovered ? CLOSE_ICON_HOVER : CLOSE_ICON, false);
     }
 
-    /** 合成箭头：3×3 合成格与结果槽之间的"→"（YZUI 字符风格；原版 trade_arrow
-     * sprite 在白底面板上几乎不可见，故改用文字字符 + 圆角小框，与浅木棕主题呼应）。 */
+    /** 合成箭头：3×3 合成格与结果槽之间的"→"（自定义贴图 anvil_arrow.png 复用，
+     * 透明背景，居中于合成格右缘 82 与结果槽左缘 124 之间的间隙）。 */
     private void drawCraftOperator(GuiGraphicsExtractor g) {
-        int bgLeft = this.leftPos + ARROW_CENTER_X - OPERATOR_BG_W / 2;
-        int bgTop = this.topPos + ARROW_CENTER_Y - OPERATOR_BG_H / 2;
-        fillR(g, bgLeft, bgTop, OPERATOR_BG_W, OPERATOR_BG_H, 3, OPERATOR_BG);
-        int textY = bgTop + (OPERATOR_BG_H - this.font.lineHeight) / 2;
-        g.text(this.font, ARROW_GLYPH,
-                this.leftPos + ARROW_CENTER_X - this.font.width(ARROW_GLYPH) / 2, textY,
-                OPERATOR_COLOR, false);
+        g.blitSprite(RenderPipelines.GUI_TEXTURED, ARROW_SPRITE,
+                this.leftPos + ARROW_X, this.topPos + ARROW_Y, ARROW_W, ARROW_H);
     }
 
     /** 槽位背景：每个活动槽绘制主题色圆角矩形，悬浮提亮；结果槽额外提亮。 */

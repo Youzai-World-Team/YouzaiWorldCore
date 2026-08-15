@@ -107,17 +107,12 @@ public class YzuSmithingScreen extends ItemCombinerScreen<SmithingMenu> {
     private static final int ACCENT_BAR_COLOR = 0xB0A8854F;
     private static final ItemStack ICON = new ItemStack(Items.SMITHING_TABLE);
 
-    // ========== 装饰符号（→） ==========
+    // ========== 装饰符号（→，自定义贴图，复用铁砧箭头） ==========
 
-    private static final String ARROW_GLYPH = "\u2192"; // →
-    private static final int OPERATOR_COLOR = 0xFF604838;
-    private static final int OPERATOR_BG = 0x30000000;
-    private static final int OPERATOR_BG_W = 14;
-    private static final int OPERATOR_BG_H = 12;
-    /** "→" 中心坐标（附加(60) 与 结果(98) 之间） */
-    private static final int ARROW_CENTER_X = 79;
-    /** 装饰符号垂直中心（与槽位 y=48..64 行对齐） */
-    private static final int OPERATOR_CENTER_Y = 56;
+    /** → 装饰贴图（anvil_arrow.png 22×15，与铁砧/工作台共用；位于 textures/gui/sprites，atlas id 无前缀） */
+    private static final Identifier ARROW_SPRITE = Identifier.fromNamespaceAndPath("youzaiworldcore", "anvil_arrow");
+    /** "→" 绘制位置（相对面板，附加槽与结果槽之间） */
+    private static final int ARROW_X = 68, ARROW_Y = 49, ARROW_W = 22, ARROW_H = 15;
 
     // ========== 原版资源（复用，零新增纹理） ==========
 
@@ -427,19 +422,13 @@ public class YzuSmithingScreen extends ItemCombinerScreen<SmithingMenu> {
     }
 
     /**
-     * 补画锻造台装饰符号（与原版 smithing.png 纹理对应）：
+     * 补画锻造台装饰符号（自定义贴图 blitSprite）：
      * <ul>
-     *   <li>{@code →} 在附加槽与结果槽之间（中心 x=79）。</li>
+     *   <li>{@code →}（anvil_arrow.png）在附加槽与结果槽之间 @ (68,49,22,15)。</li>
      * </ul>
-     * YZUI 字符风格：圆角小框 + 深棕灰文字无阴影（与暗木棕主题呼应）。
      */
     private void drawOperators(GuiGraphicsExtractor g) {
-        int bgTop = this.topPos + OPERATOR_CENTER_Y - OPERATOR_BG_H / 2;
-        int bgLeft = this.leftPos + ARROW_CENTER_X - OPERATOR_BG_W / 2;
-        fillR(g, bgLeft, bgTop, OPERATOR_BG_W, OPERATOR_BG_H, 3, OPERATOR_BG);
-        int textY = bgTop + (OPERATOR_BG_H - this.font.lineHeight) / 2;
-        g.text(this.font, ARROW_GLYPH,
-                this.leftPos + ARROW_CENTER_X - this.font.width(ARROW_GLYPH) / 2, textY,
-                OPERATOR_COLOR, false);
+        g.blitSprite(RenderPipelines.GUI_TEXTURED, ARROW_SPRITE,
+                this.leftPos + ARROW_X, this.topPos + ARROW_Y, ARROW_W, ARROW_H);
     }
 }

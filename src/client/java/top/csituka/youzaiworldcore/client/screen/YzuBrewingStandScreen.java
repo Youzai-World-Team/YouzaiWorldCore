@@ -3,7 +3,9 @@ package top.csituka.youzaiworldcore.client.screen;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.BrewingStandMenu;
@@ -66,16 +68,12 @@ public class YzuBrewingStandScreen extends AbstractContainerScreen<BrewingStandM
 
     private static final int LABEL_COLOR = 0xCC404040;
 
-    // ========== 装饰符号（↓ 材料→药水方向指示） ==========
+    // ========== 装饰符号（↓，自定义贴图） ==========
 
-    private static final String ARROW_DOWN_GLYPH = "\u2193"; // ↓
-    private static final int OPERATOR_COLOR = 0xFF1F5E5E;
-    private static final int OPERATOR_BG = 0x30000000;
-    private static final int OPERATOR_BG_W = 12;
-    private static final int OPERATOR_BG_H = 12;
-    /** "↓" 中心坐标（材料槽(79,17) 下方到药水槽之间，水平居中） */
-    private static final int ARROW_DOWN_CENTER_X = 79;
-    private static final int ARROW_DOWN_CENTER_Y = 42;
+    /** ↓ 装饰贴图（brewing_down.png 22×17，透明背景，手绘；位于 textures/gui/sprites，atlas id 无前缀） */
+    private static final Identifier ARROW_DOWN_SPRITE = Identifier.fromNamespaceAndPath("youzaiworldcore", "brewing_down");
+    /** "↓" 绘制位置（相对面板）：材料槽(79,17) 下方到药水槽之间，水平居中 */
+    private static final int ARROW_DOWN_X = 69, ARROW_DOWN_Y = 33, ARROW_DOWN_W = 22, ARROW_DOWN_H = 17;
 
     // ========== 关闭按钮 ==========
 
@@ -323,19 +321,14 @@ public class YzuBrewingStandScreen extends AbstractContainerScreen<BrewingStandM
     }
 
     /**
-     * 补画酿造台装饰符号（与原版 brewing_stand.png 纹理对应）：
+     * 补画酿造台装饰符号（自定义贴图 blitSprite）：
      * <ul>
-     *   <li>{@code ↓} 在材料槽与药水槽之间（中心 (79, 42)），表示材料流向药水的方向。</li>
+     *   <li>{@code ↓}（brewing_down.png 22×17）在材料槽与药水槽之间，表示材料流向药水。</li>
      * </ul>
-     * YZUI 字符风格：圆角小框 + 深青文字无阴影（与暗青主题呼应）。
      */
     private void drawOperator(GuiGraphicsExtractor g) {
-        int bgLeft = this.leftPos + ARROW_DOWN_CENTER_X - OPERATOR_BG_W / 2;
-        int bgTop = this.topPos + ARROW_DOWN_CENTER_Y - OPERATOR_BG_H / 2;
-        fillR(g, bgLeft, bgTop, OPERATOR_BG_W, OPERATOR_BG_H, 3, OPERATOR_BG);
-        int textY = bgTop + (OPERATOR_BG_H - this.font.lineHeight) / 2;
-        g.text(this.font, ARROW_DOWN_GLYPH,
-                this.leftPos + ARROW_DOWN_CENTER_X - this.font.width(ARROW_DOWN_GLYPH) / 2, textY,
-                OPERATOR_COLOR, false);
+        g.blitSprite(RenderPipelines.GUI_TEXTURED, ARROW_DOWN_SPRITE,
+                this.leftPos + ARROW_DOWN_X, this.topPos + ARROW_DOWN_Y,
+                ARROW_DOWN_W, ARROW_DOWN_H);
     }
 }

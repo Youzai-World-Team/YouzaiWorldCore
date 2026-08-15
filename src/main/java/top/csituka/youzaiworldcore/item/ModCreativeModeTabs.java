@@ -39,6 +39,7 @@ public class ModCreativeModeTabs {
                                 output.accept(ModBlocks.FLY_BEACON);
                                 output.accept(ModBlocks.TP_ANCHOR);
                                 output.accept(ModBlocks.MAGIC_TABLE);
+                                output.accept(ModBlocks.MOB_PRESSURE_PLATE);
                         })
                         .build();
 

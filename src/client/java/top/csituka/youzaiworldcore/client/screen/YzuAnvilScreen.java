@@ -107,21 +107,16 @@ public class YzuAnvilScreen extends ItemCombinerScreen<AnvilMenu> {
     private static final int ACCENT_BAR_COLOR = 0xB09A9A9A;
     private static final ItemStack ICON = new ItemStack(Items.ANVIL);
 
-    // ========== 装饰符号（+/→） ==========
+    // ========== 装饰符号（+/→，自定义贴图 blitSprite） ==========
 
-    private static final String PLUS_GLYPH = "+";
-    private static final String ARROW_GLYPH = "\u2192"; // →
-    private static final int OPERATOR_COLOR = 0xFF606060;
-    private static final int OPERATOR_BG = 0x30000000;
-    /** 装饰符号底衬宽高（圆角小框包裹符号） */
-    private static final int OPERATOR_BG_W = 12;
-    private static final int OPERATOR_BG_H = 12;
-    /** "+" 中心坐标（输入1 与输入2 之间） */
-    private static final int PLUS_CENTER_X = 59;
-    /** "→" 中心坐标（输入2 与结果之间） */
-    private static final int ARROW_CENTER_X = 109;
-    /** 装饰符号垂直中心（与槽位 y=47..63 行对齐） */
-    private static final int OPERATOR_CENTER_Y = 55;
+    /** 铁砧 + 装饰贴图（13×13，透明背景，手绘；位于 textures/gui/sprites，atlas id 无前缀） */
+    private static final Identifier PLUS_SPRITE = Identifier.fromNamespaceAndPath("youzaiworldcore", "anvil_plus");
+    /** 铁砧 → 装饰贴图（22×15，透明背景，手绘；锻造台/工作台复用同一张贴图） */
+    private static final Identifier ARROW_SPRITE = Identifier.fromNamespaceAndPath("youzaiworldcore", "anvil_arrow");
+    /** "+" 绘制位置（相对面板，与槽位行对齐） */
+    private static final int PLUS_X = 53, PLUS_Y = 49, PLUS_W = 13, PLUS_H = 13;
+    /** "→" 绘制位置（相对面板） */
+    private static final int ARROW_X = 102, ARROW_Y = 48, ARROW_W = 22, ARROW_H = 15;
 
     // ========== 原版资源（复用，零新增纹理） ==========
 
@@ -270,25 +265,17 @@ public class YzuAnvilScreen extends ItemCombinerScreen<AnvilMenu> {
     }
 
     /**
-     * 补画铁砧两个装饰符号（与原版 anvil.png 纹理对应）：
+     * 补画铁砧两个装饰符号（自定义贴图 blitSprite）：
      * <ul>
-     *   <li>{@code +} 在两个输入槽之间（中心 x=59）；</li>
-     *   <li>{@code →} 在输入2 与结果槽之间（中心 x=109）。</li>
+     *   <li>{@code +}（anvil_plus.png）在两个输入槽之间 @ (53,49,13,13)；</li>
+     *   <li>{@code →}（anvil_arrow.png）在输入2 与结果槽之间 @ (102,48,22,15)。</li>
      * </ul>
-     * YZUI 字符风格：圆角小框 + 深灰文字无阴影。
      */
     private void drawOperators(GuiGraphicsExtractor g) {
-        int bgTop = this.topPos + OPERATOR_CENTER_Y - OPERATOR_BG_H / 2;
-        drawOperatorGlyph(g, PLUS_GLYPH, this.leftPos + PLUS_CENTER_X, bgTop);
-        drawOperatorGlyph(g, ARROW_GLYPH, this.leftPos + ARROW_CENTER_X, bgTop);
-    }
-
-    private void drawOperatorGlyph(GuiGraphicsExtractor g, String glyph, int centerX, int bgTop) {
-        int bgLeft = centerX - OPERATOR_BG_W / 2;
-        fillR(g, bgLeft, bgTop, OPERATOR_BG_W, OPERATOR_BG_H, 3, OPERATOR_BG);
-        // 文字水平居中：x = centerX - width/2；y = 字符顶部（与槽位中心对齐）
-        int textY = bgTop + (OPERATOR_BG_H - this.font.lineHeight) / 2;
-        g.text(this.font, glyph, centerX - this.font.width(glyph) / 2, textY, OPERATOR_COLOR, false);
+        g.blitSprite(RenderPipelines.GUI_TEXTURED, PLUS_SPRITE,
+                this.leftPos + PLUS_X, this.topPos + PLUS_Y, PLUS_W, PLUS_H);
+        g.blitSprite(RenderPipelines.GUI_TEXTURED, ARROW_SPRITE,
+                this.leftPos + ARROW_X, this.topPos + ARROW_Y, ARROW_W, ARROW_H);
     }
 
     @Override
