@@ -355,8 +355,7 @@ public class YouzaiworldCore implements ModInitializer {
         ServerLifecycleEvents.SERVER_STARTED.register(server -> {
             if (UpdateCheckerConfig.isEnabled() && UpdateCheckerConfig.isCheckOnStartupServer()) {
                 DebugLogger.info("YouzaiworldCore", "服务器启动后异步检查更新...");
-                UpdateChecker.AddressPair addrs = UpdateChecker.resolveServerAddresses(server);
-                UpdateChecker.checkAsync(addrs.checkBase, addrs.jumpBase)
+                UpdateChecker.checkAsync()
                         .thenAccept(YouzaiworldCore::youzaiworldcore$logUpdate);
             }
         });

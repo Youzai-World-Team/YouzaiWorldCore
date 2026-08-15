@@ -5,7 +5,7 @@ import top.csituka.youzaiworldcore.update.UpdateResult;
 /**
  * 客户端更新检查结果持有者。
  * <p>
- * 由客户端启动时异步 {@link top.csituka.youzaiworldcore.update.UpdateChecker#checkAsync(String)}
+ * 由客户端启动时异步 {@link top.csituka.youzaiworldcore.update.UpdateChecker#checkAsync()}
  * 填充，供 {@code TitleScreenMixin} 在每一帧读取以决定标题界面右侧面板是否显示更新信息。
  * 使用 {@code volatile} 保证异步写入对渲染线程的可见性。
  * </p>

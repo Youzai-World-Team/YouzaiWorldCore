@@ -27,9 +27,7 @@ import top.csituka.youzaiworldcore.client.screen.block.DecompositionTableScreen;
 import top.csituka.youzaiworldcore.client.screen.block.FlyBeaconScreen;
 import top.csituka.youzaiworldcore.client.screen.MenuScreen;
 import top.csituka.youzaiworldcore.client.screen.element.MainMenuElements;
-import top.csituka.youzaiworldcore.client.config.ClientExternalSettings;
 import top.csituka.youzaiworldcore.update.UpdateChecker;
-import top.csituka.youzaiworldcore.update.UpdateAddressState;
 import top.csituka.youzaiworldcore.config.UpdateCheckerConfig;
 import top.csituka.youzaiworldcore.client.update.ClientUpdateState;
 import top.csituka.youzaiworldcore.screen.ModMenuTypes;
@@ -49,7 +47,6 @@ import top.csituka.youzaiworldcore.client.event.MemePaintingClickHandler;
 import top.csituka.youzaiworldcore.client.particle.BlockAnimationRenderer;
 import top.csituka.youzaiworldcore.client.particle.ItemSparkleRenderer;
 import top.csituka.youzaiworldcore.client.render.DamageNumberRenderer;
-
 
 public class Client implements ClientModInitializer {
 
@@ -109,28 +106,23 @@ public class Client implements ClientModInitializer {
         // 单人模式集成服务器：遵照客户端设置覆盖 logToFile 标志
         boolean clientLogToFile = top.csituka.youzaiworldcore.client.config.ClientExternalSettings.getLogLevel() > 0;
         top.csituka.youzaiworldcore.YouzaiworldCore.logToFile = clientLogToFile;
-        top.csituka.youzaiworldcore.YouzaiworldCore.devModeEnabled =
-                top.csituka.youzaiworldcore.client.config.ClientExternalSettings.isDevModeEnabled();
+        top.csituka.youzaiworldcore.YouzaiworldCore.devModeEnabled = top.csituka.youzaiworldcore.client.config.ClientExternalSettings
+                .isDevModeEnabled();
 
-        // 加载更新检查器配置（客户端独立直连 version.json，用于标题界面公告）
+        // 加载更新检查器配置（客户端独立直连更新 API，用于标题界面公告）
         DebugLogger.info("Client", "加载更新检查器配置...");
         UpdateCheckerConfig.load();
 
-        // 客户端（含内嵌服务端）更新地址：开发者模式启用时采用自定义基址，否则使用系统默认
-        boolean clientDevMode = ClientExternalSettings.isDevModeEnabled();
-        String checkBase = clientDevMode ? ClientExternalSettings.getUpdateCheckAddress() : "";
-        String jumpBase = clientDevMode ? ClientExternalSettings.getUpdateJumpAddress() : "";
-        // 推送到共享状态，供内嵌（集成）服务端使用
-        UpdateAddressState.pushClientState(clientDevMode, checkBase, jumpBase);
-
-        // 客户端启动时异步检查更新（与服务端解耦，标题界面尚未连服，无法依赖 S2C 推送）
+        // 客户端启动时异步检查更新（与服务端解耦，标题界面尚未连服，无法依赖 S2C 推送；
+        // 检查地址固定为可选 / 强制两个 API 端点，见 UpdateChecker）
         if (UpdateCheckerConfig.isEnabled() && UpdateCheckerConfig.isCheckOnStartupClient()) {
             DebugLogger.info("Client", "启动时异步检查更新...");
-            UpdateChecker.checkAsync(checkBase, jumpBase).thenAccept(result -> {
+            UpdateChecker.checkAsync().thenAccept(result -> {
                 if (result != null) {
                     ClientUpdateState.set(result);
-                    DebugLogger.info("Client", "更新检查完成: updateAvailable=%s, latest=%s, error=%s",
-                            result.updateAvailable(), result.latestVersion(), result.errorMessage());
+                    DebugLogger.info("Client", "更新检查完成: updateAvailable=%s, latest=%s, forced=%s, error=%s",
+                            result.updateAvailable(), result.latestVersion(), result.forcedUpdate(),
+                            result.errorMessage());
                 }
             });
         }
@@ -268,9 +260,9 @@ public class Client implements ClientModInitializer {
                 for (int x = 0; x < width; x++) {
                     int argb = image.getRGB(x, y);
                     buffer.put((byte) ((argb >> 16) & 0xFF)); // R
-                    buffer.put((byte) ((argb >> 8) & 0xFF));  // G
-                    buffer.put((byte) (argb & 0xFF));          // B
-                    buffer.put((byte) ((argb >> 24) & 0xFF));  // A
+                    buffer.put((byte) ((argb >> 8) & 0xFF)); // G
+                    buffer.put((byte) (argb & 0xFF)); // B
+                    buffer.put((byte) ((argb >> 24) & 0xFF)); // A
                 }
             }
             buffer.flip();

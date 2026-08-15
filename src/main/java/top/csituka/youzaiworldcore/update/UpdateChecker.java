@@ -7,7 +7,6 @@ import com.google.gson.JsonObject;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.SemanticVersion;
 import top.csituka.youzaiworldcore.YouzaiworldCore;
-import top.csituka.youzaiworldcore.config.UpdateCheckerConfig;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
 import java.net.URI;
@@ -28,10 +27,18 @@ import java.util.concurrent.Executors;
  * 职责：
  * <ul>
  *   <li>读取当前模组版本（来自 Fabric 元数据，不硬编码）</li>
- *   <li>异步拉取远程 {@code version.json} 并解析为 {@link RemoteVersionInfo}</li>
+ *   <li>异步拉取固定更新 API 并解析为 {@link RemoteVersionInfo}</li>
  *   <li>基于 {@link SemanticVersion} 比较当前与最新版本，得到 {@link UpdateResult}</li>
  *   <li>构造下载页地址 {@code https://mcyzw.top/yzwc?version=<当前版本数字>&type=<当前类型>}</li>
  * </ul>
+ * 检查采用双端点（均为固定地址，不再支持自定义）：
+ * <ul>
+ *   <li>{@link #API_OPTIONAL_URL}：可选更新端点（强制标记 false）</li>
+ *   <li>{@link #API_FORCED_URL}：强制更新端点（强制标记 true）</li>
+ * </ul>
+ * 合并规则：任一端点成功且存在新版本即视为有更新；强制端点优先（有强制更新时
+ * 以强制端点的数据为准）。仅当两个端点均拉取失败时才返回错误。
+ * <p>
  * 所有网络请求在独立守护线程执行，绝不阻塞主线程 / 渲染线程；任何异常均被捕获并
  * 以 {@link UpdateResult#errorMessage()} 形式返回，保证不影响服务器或客户端运行。
  */
@@ -40,7 +47,13 @@ public final class UpdateChecker {
 
     public static final String MODULE = "UpdateChecker";
 
-    /** 检查 / 下载地址默认基址（版本号与类型作为查询参数附加） */
+    /** 可选更新 API（固定端点） */
+    public static final String API_OPTIONAL_URL = "https://api.mcyzw.top/api/update/core";
+
+    /** 强制更新 API（固定端点） */
+    public static final String API_FORCED_URL = "https://api.mcyzw.top/api/update/core_force";
+
+    /** 下载页地址默认基址（版本号与类型作为查询参数附加） */
     public static final String DEFAULT_BASE = "https://mcyzw.top/yzwc";
 
     private static final Gson GSON = new GsonBuilder().create();
@@ -72,50 +85,19 @@ public final class UpdateChecker {
     }
 
     /**
-     * 构造检查更新地址。
-     * <p>若提供了自定义基址（非空且不等于 {@link #DEFAULT_BASE}），直接原样使用
-     * （仅补充可能的 scheme 前缀）；否则回退默认并自动附加 {@code /version.json}。</p>
-     */
-    public static String buildCheckUrl(String checkBase) {
-        if (checkBase == null || checkBase.isEmpty() || checkBase.trim().equals(DEFAULT_BASE)) {
-            return DEFAULT_BASE + "/version.json";
-        }
-        String base = checkBase.trim();
-        // 用户自定义的地址可能不含协议前缀（如 "127.0.0.1:5500/yzwc"），补上 http://
-        if (!base.startsWith("http://") && !base.startsWith("https://")) {
-            base = "http://" + base;
-        }
-        return base;
-    }
-
-    /**
      * 构造下载页（跳转）地址。
-     * <p>若提供了自定义基址（非空且不等于 {@link #DEFAULT_BASE}），直接原样使用
-     * （仅做 {@code @version} / {@code @type} 占位符替换和 scheme 补全）；
-     * 否则回退默认并自动附加 {@code ?version=<数字>&type=<类型>}。</p>
+     * <p>固定使用 {@link #DEFAULT_BASE}，自动附加 {@code ?version=<数字>&type=<类型>}。</p>
      */
-    public static String buildJumpUrl(String jumpBase, String fullVersion) {
+    public static String buildJumpUrl(String fullVersion) {
         // 统一从 fullVersion 提取数字和类型
         int dash = fullVersion.indexOf('-');
         String number = dash >= 0 ? fullVersion.substring(0, dash) : fullVersion;
         String type = dash >= 0 ? fullVersion.substring(dash + 1) : "release";
-
-        if (jumpBase == null || jumpBase.isEmpty() || jumpBase.trim().equals(DEFAULT_BASE)) {
-            String base = DEFAULT_BASE;
-            if (base.endsWith("/")) {
-                base = base.substring(0, base.length() - 1);
-            }
-            return base + "?version=" + number + "&type=" + type;
+        String base = DEFAULT_BASE;
+        if (base.endsWith("/")) {
+            base = base.substring(0, base.length() - 1);
         }
-
-        String base = jumpBase.trim()
-                .replace("@version", number)
-                .replace("@type", type);
-        // 用户自定义的地址可能不含协议前缀，补上 http://
-        if (!base.startsWith("http://") && !base.startsWith("https://")) {
-            base = "http://" + base;
-        }
-        return base;
+        return base + "?version=" + number + "&type=" + type;
     }
 
     // ==================== 远程拉取 ====================
@@ -141,7 +123,7 @@ public final class UpdateChecker {
         return client.send(request, HttpResponse.BodyHandlers.ofString());
     }
 
-    /** 同步拉取并解析远程 version.json（调用方需确保不在主线程执行） */
+    /** 同步拉取并解析远程更新 JSON（调用方需确保不在主线程执行） */
     public static RemoteVersionInfo fetchRemoteVersion(String url) throws Exception {
         DebugLogger.entering(MODULE, "fetchRemoteVersion", "url=" + url);
 
@@ -189,40 +171,79 @@ public final class UpdateChecker {
     // ==================== 检查主流程 ====================
 
     /**
+     * 判断 {@code latest} 是否严格新于 {@code current}（版本号比较失败时视为无更新）。
+     */
+    private static boolean isNewerThan(String current, String latest) {
+        if (current == null || latest == null || latest.isEmpty()) {
+            return false;
+        }
+        try {
+            SemanticVersion currentVersion = SemanticVersion.parse(current);
+            SemanticVersion latestVersion = SemanticVersion.parse(latest);
+            @SuppressWarnings("deprecation")
+            int cmp = currentVersion.compareTo(latestVersion);
+            return cmp < 0;
+        } catch (Exception e) {
+            DebugLogger.warn(MODULE, "版本号比较失败（%s vs %s）: %s",
+                    current, latest, e.getMessage());
+            return false;
+        }
+    }
+
+    /**
      * 执行一次完整的更新检查（同步，应在异步线程调用）。
+     * <p>固定请求两个端点（可选 / 强制），合并规则见类注释。</p>
      *
-     * @param checkBase 检查更新基址（自动附加 /version.json）；空值回退默认
-     * @param jumpBase  下载页（跳转）基址（自动附加 ?version=&type=）；空值回退默认
      * @return 检查结果；任何失败均以 {@link UpdateResult#errorMessage()} 体现，不会抛出异常
      */
-    public static UpdateResult check(String checkBase, String jumpBase) {
-        String checkUrl = buildCheckUrl(checkBase);
-        DebugLogger.info(MODULE, "开始检查更新: checkUrl=%s", checkUrl);
-        DebugLogger.entering(MODULE, "check", "checkUrl=" + checkUrl);
+    public static UpdateResult check() {
+        DebugLogger.entering(MODULE, "check",
+                "optional=" + API_OPTIONAL_URL + ", forced=" + API_FORCED_URL);
         String current = getCurrentVersionString();
-        String downloadUrl = buildJumpUrl(jumpBase, current);
+        String downloadUrl = buildJumpUrl(current);
 
-        RemoteVersionInfo remote;
+        // 1. 先查强制更新端点（更关键，优先）
+        RemoteVersionInfo forced = null;
         try {
-            remote = fetchRemoteVersion(checkUrl);
+            forced = fetchRemoteVersion(API_FORCED_URL);
         } catch (Exception e) {
-            DebugLogger.exception(MODULE, "fetchRemoteVersion", e);
+            DebugLogger.exception(MODULE, "check:forced-endpoint", e);
+        }
+
+        // 2. 再查可选更新端点
+        RemoteVersionInfo optional = null;
+        try {
+            optional = fetchRemoteVersion(API_OPTIONAL_URL);
+        } catch (Exception e) {
+            DebugLogger.exception(MODULE, "check:optional-endpoint", e);
+        }
+
+        // 两个端点均失败 → 返回错误结果
+        if (forced == null && optional == null) {
+            DebugLogger.warn(MODULE, "更新检查失败：可选与强制更新端点均不可用");
             UpdateResult failed = new UpdateResult(false, current, null, null, false,
-                    null, null, List.of(), downloadUrl, "拉取失败: " + e.getMessage());
-            DebugLogger.exiting(MODULE, "check", "fetch-error");
+                    null, null, List.of(), downloadUrl,
+                    "拉取失败: 可选与强制更新端点均不可用");
+            DebugLogger.exiting(MODULE, "check", "both-endpoints-failed");
             return failed;
         }
 
-        boolean updateAvailable = false;
-        try {
-            SemanticVersion currentVersion = SemanticVersion.parse(current);
-            SemanticVersion latestVersion = SemanticVersion.parse(remote.latestVersion());
-            @SuppressWarnings("deprecation")
-            int cmp = currentVersion.compareTo(latestVersion);
-            updateAvailable = cmp < 0;
-        } catch (Exception e) {
-            DebugLogger.warn(MODULE, "版本号比较失败（%s vs %s）: %s",
-                    current, remote.latestVersion(), e.getMessage());
+        // 3. 合并判定：强制端点有更新 > 可选端点有更新 > 无更新
+        boolean forcedAvailable = forced != null && isNewerThan(current, forced.latestVersion());
+        boolean optionalAvailable = optional != null && isNewerThan(current, optional.latestVersion());
+        boolean updateAvailable = forcedAvailable || optionalAvailable;
+
+        RemoteVersionInfo remote;
+        if (forcedAvailable) {
+            remote = forced;
+            DebugLogger.info(MODULE, "存在强制更新: %s -> %s", current, forced.latestVersion());
+        } else if (optionalAvailable) {
+            remote = optional;
+            DebugLogger.info(MODULE, "存在可选更新: %s -> %s", current, optional.latestVersion());
+        } else {
+            // 无更新：展示任一成功拉取的端点信息（优先可选端点）
+            remote = optional != null ? optional : forced;
+            DebugLogger.info(MODULE, "已是最新版本 (%s)", current);
         }
 
         UpdateResult result = new UpdateResult(
@@ -237,46 +258,17 @@ public final class UpdateChecker {
                 downloadUrl,
                 null
         );
-        DebugLogger.exiting(MODULE, "check", "updateAvailable=" + updateAvailable);
+        DebugLogger.exiting(MODULE, "check", "updateAvailable=" + updateAvailable
+                + ", latest=" + remote.latestVersion() + ", forced=" + remote.forcedUpdate());
         return result;
     }
 
     /**
      * 异步执行检查（在专用守护线程池中运行），通过 {@link CompletableFuture} 返回结果。
      *
-     * @param checkBase 检查更新基址（自动附加 /version.json）；空值回退默认
-     * @param jumpBase  下载页（跳转）基址（自动附加 ?version=&type=）；空值回退默认
      * @return 承载 {@link UpdateResult} 的 Future；回调中始终会收到一个结果对象
      */
-    public static CompletableFuture<UpdateResult> checkAsync(String checkBase, String jumpBase) {
-        return CompletableFuture.supplyAsync(() -> check(checkBase, jumpBase), EXECUTOR);
-    }
-
-    /**
-     * 根据服务端类型解析实际使用的检查 / 跳转基址。
-     * <ul>
-     *   <li>专用服务端（dedicated）：使用配置文件 {@link UpdateCheckerConfig} 中的基址</li>
-     *   <li>内嵌（集成）服务端：跟随客户端设置 {@link UpdateAddressState}，
-     *       且仅在开发者模式启用时生效（否则回退默认）</li>
-     * </ul>
-     */
-    public static final class AddressPair {
-        public final String checkBase;
-        public final String jumpBase;
-
-        public AddressPair(String checkBase, String jumpBase) {
-            this.checkBase = checkBase;
-            this.jumpBase = jumpBase;
-        }
-    }
-
-    public static AddressPair resolveServerAddresses(net.minecraft.server.MinecraftServer server) {
-        if (server.isDedicatedServer()) {
-            return new AddressPair(UpdateCheckerConfig.getCheckAddress(), UpdateCheckerConfig.getJumpAddress());
-        }
-        if (UpdateAddressState.isClientDevMode()) {
-            return new AddressPair(UpdateAddressState.getClientCheckBase(), UpdateAddressState.getClientJumpBase());
-        }
-        return new AddressPair("", "");
+    public static CompletableFuture<UpdateResult> checkAsync() {
+        return CompletableFuture.supplyAsync(UpdateChecker::check, EXECUTOR);
     }
 }

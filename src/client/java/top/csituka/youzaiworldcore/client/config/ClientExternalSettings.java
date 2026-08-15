@@ -26,8 +26,6 @@ import java.nio.file.Path;
  *   <li>{@code debugAddress} — 调试服务器地址（专用服务端）</li>
  *   <li>{@code debugPort} — 调试服务器端口（专用服务端）</li>
  *   <li>{@code ignoredUpdateVersion} — 已忽略提示的更新版本号</li>
- *   <li>{@code updateCheckAddress} — 自定义检查更新基址（空 = 系统默认，仅开发者模式生效）</li>
- *   <li>{@code updateJumpAddress} — 自定义下载页（跳转）基址（空 = 系统默认，仅开发者模式生效）</li>
  *   <li>{@code yzuiEnabled} — 是否启用 YZUI 自定义 UI 样式</li>
  *   <li>{@code autoSkipExperimentalWarning} — 是否自动跳过实验性设置警告屏幕</li>
  * </ul>
@@ -50,12 +48,6 @@ public final class ClientExternalSettings {
 
     /** 已忽略提示的更新版本号（非空表示不再在标题界面提示该版本）；仅非强制更新时可忽略 */
     private static String ignoredUpdateVersion = "";
-
-    /** 自定义检查更新基址（空串 = 使用系统默认）；仅开发者模式启用时生效 */
-    private static String updateCheckAddress = "";
-
-    /** 自定义下载页（跳转）基址（空串 = 使用系统默认）；仅开发者模式启用时生效 */
-    private static String updateJumpAddress = "";
 
     /** 是否启用 YZUI（自定义 UI 样式），关闭则回退到原版 UI 供资源包替换 */
     private static boolean yzuiEnabled = true;
@@ -102,16 +94,6 @@ public final class ClientExternalSettings {
         return ignoredUpdateVersion;
     }
 
-    /** @return 自定义检查更新基址（空串表示使用系统默认） */
-    public static String getUpdateCheckAddress() {
-        return updateCheckAddress;
-    }
-
-    /** @return 自定义下载页（跳转）基址（空串表示使用系统默认） */
-    public static String getUpdateJumpAddress() {
-        return updateJumpAddress;
-    }
-
     /** @return 是否启用 YZUI 自定义 UI 样式 */
     public static boolean isYzuiEnabled() {
         return yzuiEnabled;
@@ -135,18 +117,6 @@ public final class ClientExternalSettings {
     /** 设置被忽略的更新版本号（空值将忽略为 ""）并持久化 */
     public static void setIgnoredUpdateVersion(String value) {
         ignoredUpdateVersion = (value == null) ? "" : value;
-        save();
-    }
-
-    /** 设置自定义检查更新基址（null 视为空串）并持久化 */
-    public static void setUpdateCheckAddress(String value) {
-        updateCheckAddress = (value == null) ? "" : value;
-        save();
-    }
-
-    /** 设置自定义下载页（跳转）基址（null 视为空串）并持久化 */
-    public static void setUpdateJumpAddress(String value) {
-        updateJumpAddress = (value == null) ? "" : value;
         save();
     }
 
@@ -247,12 +217,6 @@ public final class ClientExternalSettings {
             if (root.has("ignoredUpdateVersion") && !root.get("ignoredUpdateVersion").isJsonNull())
                 ignoredUpdateVersion = root.get("ignoredUpdateVersion").getAsString();
 
-            if (root.has("updateCheckAddress") && !root.get("updateCheckAddress").isJsonNull())
-                updateCheckAddress = root.get("updateCheckAddress").getAsString();
-
-            if (root.has("updateJumpAddress") && !root.get("updateJumpAddress").isJsonNull())
-                updateJumpAddress = root.get("updateJumpAddress").getAsString();
-
             if (root.has("yzuiEnabled") && !root.get("yzuiEnabled").isJsonNull())
                 yzuiEnabled = root.get("yzuiEnabled").getAsBoolean();
 
@@ -287,8 +251,6 @@ public final class ClientExternalSettings {
             root.addProperty("debugAddress", debugAddress);
             root.addProperty("debugPort", debugPort);
             root.addProperty("ignoredUpdateVersion", ignoredUpdateVersion);
-            root.addProperty("updateCheckAddress", updateCheckAddress);
-            root.addProperty("updateJumpAddress", updateJumpAddress);
             root.addProperty("yzuiEnabled", yzuiEnabled);
             root.addProperty("autoSkipExperimentalWarning", autoSkipExperimentalWarning);
             root.addProperty("experimentalWarningSkipAction", experimentalWarningSkipAction);

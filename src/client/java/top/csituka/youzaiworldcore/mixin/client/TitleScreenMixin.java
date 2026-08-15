@@ -307,10 +307,8 @@ public class TitleScreenMixin {
 
         // 每次进入标题界面（含从服务器断开后）重新检查更新
         if (UpdateCheckerConfig.isCheckOnStartupClient()) {
-            boolean clientDevMode = ClientExternalSettings.isDevModeEnabled();
-            String checkBase = clientDevMode ? ClientExternalSettings.getUpdateCheckAddress() : "";
-            String jumpBase = clientDevMode ? ClientExternalSettings.getUpdateJumpAddress() : "";
-            UpdateChecker.checkAsync(checkBase, jumpBase).thenAccept(result -> {
+            // 检查地址固定为可选 / 强制两个 API 端点，见 UpdateChecker
+            UpdateChecker.checkAsync().thenAccept(result -> {
                 if (result != null) {
                     ClientUpdateState.set(result);
                 }
@@ -602,19 +600,9 @@ public class TitleScreenMixin {
 
     /** 点击「前往下载更新」：在默认浏览器打开构造好的下载页地址 */
     private void youzaiworldcore$openDownloadPage() {
-        String url;
-        if (ClientExternalSettings.isDevModeEnabled()
-                && ClientExternalSettings.getUpdateJumpAddress() != null
-                && !ClientExternalSettings.getUpdateJumpAddress().isEmpty()) {
-            // 开发者模式 + 自定义跳转地址：实时按客户端设置构造（自动附加 ?version=&type=）
-            url = UpdateChecker.buildJumpUrl(
-                    ClientExternalSettings.getUpdateJumpAddress(),
-                    UpdateChecker.getCurrentVersionString());
-        } else {
-            // 否则使用检查结果中的下载地址（含系统默认，或内嵌服务端依客户端设置解析）
-            UpdateResult r = ClientUpdateState.get();
-            url = (r != null) ? r.downloadUrl() : null;
-        }
+        // 下载地址固定取自检查结果（系统默认下载页，不再支持自定义跳转地址）
+        UpdateResult r = ClientUpdateState.get();
+        String url = (r != null) ? r.downloadUrl() : null;
         if (url == null || url.isEmpty()) return;
         DebugLogger.entering("TitleScreenMixin", "openDownloadPage", url);
         try {

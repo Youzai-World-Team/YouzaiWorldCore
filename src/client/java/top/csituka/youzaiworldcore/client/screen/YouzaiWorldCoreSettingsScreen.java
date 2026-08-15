@@ -14,7 +14,6 @@ import net.minecraft.resources.Identifier;
 import top.csituka.youzaiworldcore.YouzaiworldCore;
 import top.csituka.youzaiworldcore.client.config.ClientExternalSettings;
 import top.csituka.youzaiworldcore.client.screen.widget.CheckboxButton;
-import top.csituka.youzaiworldcore.update.UpdateAddressState;
 import top.csituka.youzaiworldcore.update.UpdateChecker;
 import top.csituka.youzaiworldcore.client.screen.widget.DropdownButton;
 import top.csituka.youzaiworldcore.client.screen.widget.TitleScreenTextButton;
@@ -95,18 +94,12 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
     private EditBox debugAddressInput;
     private EditBox debugPortInput;
 
-    // ===== 更新服务器区域（开发者模式下显示） =====
-    private EditBox updateCheckInput;
-    private EditBox updateJumpInput;
-
     // ===== 设置状态（通过 ClientExternalSettings 持久化） =====
     private boolean devModeEnabled;
     private int logLevel; // 0=关闭, 1=基本, 2=详细, 3=调试
     private String debugModeType; // "embedded" 或 "dedicated"
     private String debugAddress;
     private String debugPort;
-    private String updateCheckAddress;
-    private String updateJumpAddress;
     /** 是否启用 YZUI 自定义 UI 样式 */
     private boolean yzuiEnabled;
 
@@ -145,12 +138,6 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
     /** "重启客户端后生效" 提示文字 Y */
     private int restartHintY;
 
-    // ===== 更新服务器区域标签 Y 坐标 =====
-    /** "更新服务器" 子分栏标题 Y */
-    private int updateSectionLabelY;
-    private int updateCheckLabelY;
-    private int updateJumpLabelY;
-
     /** 内容区底部的最大 Y 值（由 buildContentWidgets 追踪） */
     private int maxContentY = 0;
 
@@ -180,13 +167,9 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
         this.debugModeType = ClientExternalSettings.getDebugModeType();
         this.debugAddress = ClientExternalSettings.getDebugAddress();
         this.debugPort = ClientExternalSettings.getDebugPort();
-        this.updateCheckAddress = ClientExternalSettings.getUpdateCheckAddress();
-        this.updateJumpAddress = ClientExternalSettings.getUpdateJumpAddress();
         this.yzuiEnabled = ClientExternalSettings.isYzuiEnabled();
         this.autoSkipExperimentalWarning = ClientExternalSettings.isAutoSkipExperimentalWarning();
         this.experimentalWarningSkipAction = ClientExternalSettings.getExperimentalWarningSkipAction();
-        // 打开设置界面时，将当前（持久化）客户端更新地址推送到共享状态，供内嵌服务端使用
-        pushUpdateState();
     }
 
     @Override
@@ -333,10 +316,6 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
             return true;
         if (debugPortInput != null && debugPortInput.isFocused() && debugPortInput.keyPressed(keyEvent))
             return true;
-        if (updateCheckInput != null && updateCheckInput.isFocused() && updateCheckInput.keyPressed(keyEvent))
-            return true;
-        if (updateJumpInput != null && updateJumpInput.isFocused() && updateJumpInput.keyPressed(keyEvent))
-            return true;
         return super.keyPressed(keyEvent);
     }
 
@@ -345,10 +324,6 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
         if (debugAddressInput != null && debugAddressInput.isFocused() && debugAddressInput.charTyped(characterEvent))
             return true;
         if (debugPortInput != null && debugPortInput.isFocused() && debugPortInput.charTyped(characterEvent))
-            return true;
-        if (updateCheckInput != null && updateCheckInput.isFocused() && updateCheckInput.charTyped(characterEvent))
-            return true;
-        if (updateJumpInput != null && updateJumpInput.isFocused() && updateJumpInput.charTyped(characterEvent))
             return true;
         return super.charTyped(characterEvent);
     }
@@ -413,19 +388,6 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
 
         // ===== 右侧设置内容 =====
         buildContentWidgets();
-    }
-
-    /**
-     * 将当前开发者模式下自定义更新地址推送到共享状态，供内嵌（集成）服务端使用。
-     * 仅开发者模式启用时，自定义基址才对外生效；否则推送空串（使用系统默认）。
-     */
-    private void pushUpdateState() {
-        boolean dev = ClientExternalSettings.isDevModeEnabled();
-        UpdateAddressState.pushClientState(
-                dev,
-                dev ? updateCheckAddress : "",
-                dev ? updateJumpAddress : ""
-        );
     }
 
     /**
@@ -607,8 +569,6 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
                         devModeEnabled = !devModeEnabled;
                         // 同步到全局标志
                         top.csituka.youzaiworldcore.YouzaiworldCore.devModeEnabled = devModeEnabled;
-                        // 开发者模式变更影响更新地址是否生效，推送到共享状态
-                        pushUpdateState();
                         rebuildWidgets();
                     }
             );
@@ -735,51 +695,12 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
                 debugPortInput.setVisible(isDedicated);
                 addRenderableWidget(debugPortInput);
                 y += (isDedicated ? 26 : 0);
-
-                // ===== 更新服务器区域（位于调试服务器区域下方） =====
-                // 专用模式：从调试端口输入框底部向下间隔；内嵌模式：紧接调试方式下拉框（跳过调试服务器→无空白）
-                y += (isDedicated ? 12 : 4);
-                updateSectionLabelY = y;
-                y += 12;
-
-                // 检查更新地址 输入框 + 标签
-                updateCheckLabelY = y;
-                y += 10;
-                updateCheckInput = new EditBox(
-                        this.font, baseX, y, CONTENT_WIDTH, 20,
-                        Component.translatable("screen.youzaiworldcore.settings.label_update_check_address")
-                );
-                updateCheckInput.setValue(updateCheckAddress);
-                updateCheckInput.setResponder(s -> {
-                    updateCheckAddress = s;
-                    ClientExternalSettings.setUpdateCheckAddress(s);
-                    pushUpdateState();
-                });
-                addRenderableWidget(updateCheckInput);
-                y += 26;
-
-                // 跳转地址 输入框 + 标签
-                updateJumpLabelY = y;
-                y += 10;
-                updateJumpInput = new EditBox(
-                        this.font, baseX, y, CONTENT_WIDTH, 20,
-                        Component.translatable("screen.youzaiworldcore.settings.label_update_jump_address")
-                );
-                updateJumpInput.setValue(updateJumpAddress);
-                updateJumpInput.setResponder(s -> {
-                    updateJumpAddress = s;
-                    ClientExternalSettings.setUpdateJumpAddress(s);
-                    pushUpdateState();
-                });
-                addRenderableWidget(updateJumpInput);
             } else {
                 logLevelDropdown = null;
                 debugModeDropdown = null;
                 skipActionDropdown = null;
                 debugAddressInput = null;
                 debugPortInput = null;
-                updateCheckInput = null;
-                updateJumpInput = null;
             }
 
             // 追踪实际内容底部 Y（最后一个输入框底部 + 余量）
@@ -948,14 +869,6 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
                     guiGraphics.text(this.font, Component.translatable("screen.youzaiworldcore.settings.label_port"),
                             baseX, debugPortLabelY, 0xB0FFFFFF, false);
                 }
-
-                // 更新服务器区域标签
-                guiGraphics.text(this.font, Component.translatable("screen.youzaiworldcore.settings.label_update_server_section"),
-                        baseX, updateSectionLabelY, 0xFFFFCC88, false);
-                guiGraphics.text(this.font, Component.translatable("screen.youzaiworldcore.settings.label_update_check_address"),
-                        baseX, updateCheckLabelY, 0xB0FFFFFF, false);
-                guiGraphics.text(this.font, Component.translatable("screen.youzaiworldcore.settings.label_update_jump_address"),
-                        baseX, updateJumpLabelY, 0xB0FFFFFF, false);
             }
         } else if (selectedSection == 1) {
             // 导出/导入配置分栏文本

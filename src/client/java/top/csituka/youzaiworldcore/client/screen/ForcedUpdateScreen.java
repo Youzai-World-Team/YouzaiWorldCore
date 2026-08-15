@@ -9,10 +9,8 @@ import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import top.csituka.youzaiworldcore.client.config.ClientExternalSettings;
 import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
 import top.csituka.youzaiworldcore.client.update.ClientUpdateState;
-import top.csituka.youzaiworldcore.update.UpdateChecker;
 import top.csituka.youzaiworldcore.update.UpdateResult;
 
 import java.awt.Desktop;
@@ -236,17 +234,9 @@ public class ForcedUpdateScreen extends Screen {
 
     private void onDownload() {
         if (exiting) return;
-        String url;
-        if (ClientExternalSettings.isDevModeEnabled()
-                && ClientExternalSettings.getUpdateJumpAddress() != null
-                && !ClientExternalSettings.getUpdateJumpAddress().isEmpty()) {
-            url = UpdateChecker.buildJumpUrl(
-                    ClientExternalSettings.getUpdateJumpAddress(),
-                    UpdateChecker.getCurrentVersionString());
-        } else {
-            UpdateResult r = ClientUpdateState.get();
-            url = (r != null) ? r.downloadUrl() : null;
-        }
+        // 下载地址固定取自检查结果（系统默认下载页，不再支持自定义跳转地址）
+        UpdateResult r = ClientUpdateState.get();
+        String url = (r != null) ? r.downloadUrl() : null;
         if (url == null || url.isEmpty()) {
             LOGGER.warn("下载地址为空，无法打开下载页");
             return;

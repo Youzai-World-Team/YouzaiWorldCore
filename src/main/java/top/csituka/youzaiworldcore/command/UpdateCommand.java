@@ -52,10 +52,9 @@ public class UpdateCommand {
         }
 
         source.sendSuccess(() -> Component.translatable("youzaiworldcore.message.command.update.checking"), false);
-        UpdateChecker.AddressPair addrs = UpdateChecker.resolveServerAddresses(source.getServer());
         CommandSourceStack finalSource = source;
 
-        UpdateChecker.checkAsync(addrs.checkBase, addrs.jumpBase).thenAccept(result -> finalSource.getServer().execute(() -> {
+        UpdateChecker.checkAsync().thenAccept(result -> finalSource.getServer().execute(() -> {
             if (result == null || result.errorMessage() != null) {
                 finalSource.sendFailure(Component.translatable(
                         "youzaiworldcore.message.command.update.failed",

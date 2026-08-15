@@ -3,17 +3,17 @@ package top.csituka.youzaiworldcore.update;
 import java.util.List;
 
 /**
- * 远程 {@code version.json} 的原始解析结果。
+ * 远程更新 API 的原始解析结果。
  * <p>
- * Schema（{@code https://mcyzw.top/yzwc/version.json}）：
+ * Schema（{@code https://api.mcyzw.top/api/update/core} 与 {@code .../core_force}，二者同构）：
  * <pre>{@code
  * {
- *   "latestVersion": "1.20.1",
+ *   "latestVersion": "1.6.3.4",
  *   "type": "indev",
- *   "forcedUpdate": true,
- *   "release_date": "2026.7.19",
- *   "release_time": "22:19:30",
- *   "changelog": ["修复了一些已知问题，提升稳定性。", "所有用户都必须更新！"]
+ *   "forcedUpdate": false,
+ *   "release_date": "2026.8.15",
+ *   "release_time": "23:22:15",
+ *   "changelog": ["1"]
  * }
  * }</pre>
  * </p>
