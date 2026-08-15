@@ -131,8 +131,10 @@ public final class StatusEffectHudRenderer {
     /**
      * 绘制状态效果 HUD。没有状态效果时不会创建或绘制面板。
      *
+     * <p>坐标与尺寸均为 GUI 单位，随 MC 的界面缩放（GUI 比例）自然缩放。</p>
+     *
      * @param graphics HUD 绘制上下文
-     * @param guiHeight 当前缩放矩阵内的设计坐标高度
+     * @param guiHeight 当前 GUI 高度（屏幕坐标）
      */
     public static void render(GuiGraphicsExtractor graphics, int guiHeight) {
         Minecraft client = Minecraft.getInstance();

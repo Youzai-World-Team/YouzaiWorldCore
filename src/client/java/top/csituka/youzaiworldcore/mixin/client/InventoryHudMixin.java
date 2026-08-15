@@ -10,7 +10,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import top.csituka.youzaiworldcore.client.config.ClientExternalSettings;
 import top.csituka.youzaiworldcore.client.hud.ArmorHudRenderer;
-import top.csituka.youzaiworldcore.client.hud.HudResponsiveScaler;
 import top.csituka.youzaiworldcore.client.hud.InventoryHudRenderer;
 import top.csituka.youzaiworldcore.client.hud.StatusEffectHudRenderer;
 import top.csituka.youzaiworldcore.util.DebugLogger;
@@ -19,8 +18,11 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
  * YZUI 物品栏、装备耐久与状态效果 HUD Mixin。
  *
  * <p>在 {@link Hud#extractRenderState} 的 {@code extractHotbarAndDecorations}
- * 调用之后注入，使三个 HUD 与热键栏处于同一渲染层级，并在共同的响应式缩放
- * 矩阵中绘制。仅当 YZUI 启用时生效。</p>
+ * 调用之后注入，使三个 HUD 与热键栏处于同一渲染层级。仅当 YZUI 启用时生效。</p>
+ *
+ * <p>三个 HUD 直接以 GUI 单位坐标绘制（不做额外的响应式缩放），因此会像原版
+ * 热键栏一样随 MC「界面缩放」设置等比例缩放，在不同 GUI 比例下保持与
+ * 原版界面一致的大小。</p>
  */
 @SuppressWarnings("null")
 @Mixin(Hud.class)
@@ -43,18 +45,15 @@ public abstract class InventoryHudMixin {
             return;
         }
 
-        float scale = HudResponsiveScaler.calculateScale(graphics);
-        int logicalGuiHeight = HudResponsiveScaler.logicalGuiHeight(graphics, scale);
-        graphics.pose().pushMatrix();
+        // 直接使用当前 GUI 高度（GUI 单位坐标），三个 HUD 随界面缩放自然缩放，
+        // 与 HotbarRenderer 保持一致。
+        int guiHeight = graphics.guiHeight();
         try {
-            graphics.pose().scale(scale, scale);
-            InventoryHudRenderer.render(graphics, logicalGuiHeight);
-            ArmorHudRenderer.render(graphics, logicalGuiHeight);
-            StatusEffectHudRenderer.render(graphics, logicalGuiHeight);
+            InventoryHudRenderer.render(graphics, guiHeight);
+            ArmorHudRenderer.render(graphics, guiHeight);
+            StatusEffectHudRenderer.render(graphics, guiHeight);
         } catch (Exception e) {
             DebugLogger.exception(LOG_TAG, "renderYzuiHud", e);
-        } finally {
-            graphics.pose().popMatrix();
         }
     }
 
