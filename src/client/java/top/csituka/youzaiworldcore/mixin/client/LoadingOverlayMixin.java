@@ -1,9 +1,9 @@
 package top.csituka.youzaiworldcore.mixin.client;
 
-import net.minecraft.util.Util;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.LoadingOverlay;
 import net.minecraft.util.Mth;
+import net.minecraft.util.Util;
 import org.joml.Vector4f;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -16,7 +16,7 @@ import top.csituka.youzaiworldcore.client.GradientBackgroundUtil;
 import top.csituka.youzaiworldcore.client.render.LoadingCircleRenderer;
 
 /**
- * 为 Mojang 加载页面背景添加 135° 对角线渐变，
+ * 为 Mojang 加载页面和后续资源重载页面添加 135° 对角线渐变，
  * 并使渐变跟随加载页面的淡入/淡出动画（替换纯色品牌背景的淡出效果）；
  * 同时在启动进度条上方接入独立的 8-bit 加载圈组件。
  * <p>
@@ -44,7 +44,9 @@ public class LoadingOverlayMixin {
      * alpha 计算与 {@code extractRenderState} 中的品牌背景填充逻辑一致。
      */
     @Inject(method = "extractRenderState", at = @At("HEAD"))
-    private void youzaiworldcore$drawGradientBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick, CallbackInfo ci) {
+    private void youzaiworldcore$drawGradientBackground(GuiGraphicsExtractor graphics,
+                                                        int mouseX, int mouseY,
+                                                        float partialTick, CallbackInfo ci) {
         int width = graphics.guiWidth();
         int height = graphics.guiHeight();
         int alpha = computeFadeAlpha();

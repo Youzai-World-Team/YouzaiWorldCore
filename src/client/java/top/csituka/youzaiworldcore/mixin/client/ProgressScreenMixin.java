@@ -14,13 +14,12 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import top.csituka.youzaiworldcore.client.GradientBackgroundUtil;
 import top.csituka.youzaiworldcore.client.render.LoadingCircleRenderer;
 
 /**
- * 为资源重载界面（ProgressScreen）的内容层绘制 135° 对角线渐变背景。
- * <p>
- * 背景层由 {@link ScreenMixinForProgressBg} 拦截处理。
+ * 将资源重载界面（ProgressScreen）改为左下角加载圈与状态文字布局。
+ * 背景继续使用原版 {@link ProgressScreen} 继承的屏幕背景；进入世界前会显示
+ * 标题界面的旋转全景，而不会切换到启动阶段的淡绿色渐变。
  */
 @Mixin(ProgressScreen.class)
 public class ProgressScreenMixin {
@@ -33,17 +32,6 @@ public class ProgressScreenMixin {
     @Shadow private int progress;
 
     @Unique private LoadingCircleRenderer youzaiworldcore$loadingCircleRenderer;
-
-    /**
-     * 在 extractRenderState 头部绘制渐变，覆盖渲染管线中背景层之后的 UI 内容层，
-     * 确保渐变在所有 UI 元素之下正确显示。
-     */
-    @Inject(method = "extractRenderState", at = @At("HEAD"))
-    private void youzaiworldcore$drawGradientBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick, CallbackInfo ci) {
-        int width = graphics.guiWidth();
-        int height = graphics.guiHeight();
-        GradientBackgroundUtil.drawDiagonalGradient(graphics, width, height, 255);
-    }
 
     /** 屏蔽原版居中的标题和阶段文字，改由左下角状态组件统一绘制。 */
     @Redirect(

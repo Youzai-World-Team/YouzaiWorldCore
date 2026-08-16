@@ -5,6 +5,7 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.ImageButton;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.inventory.AbstractRecipeBookScreen;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -21,23 +22,27 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
 
 /**
  * Mixin 为 YZUI 物品栏屏幕中的 {@link ImageButton} 添加 YZUI 样式。
- * <p>YZUI 物品栏屏幕中的配方书开关按钮（20×18，由 AbstractRecipeBookScreen.init 创建）
- * 使用自定义 20×20 贴图（绿勾/红 X）替换原版纹理。</p>
- * <p>⚠️ 注意：配方书翻页按钮（{@code RecipeBookPage.forwardButton/backButton}，12×17）
+ * <p>
+ * YZUI 物品栏屏幕中的配方书开关按钮（20×18，由 AbstractRecipeBookScreen.init 创建）
+ * 使用自定义 20×20 贴图（绿勾/红 X）替换原版纹理。
+ * </p>
+ * <p>
+ * ⚠️ 注意：配方书翻页按钮（{@code RecipeBookPage.forwardButton/backButton}，12×17）
  * 同样继承 {@link ImageButton}，不能走原版贴图渲染，须绘制 YZUI 风格按钮
  * （半透明圆角矩形背景 + 居中 {@code '<'}/{@code '>'} 文本，与创造屏翻页按钮同一视觉语言）。
  * 判定依据为尺寸（12×17 与开关按钮 20×18 互斥），前后翻页方向
- * 通过按钮 message（原版构造时传入的 {@code gui.recipebook.next_page/previous_page}）区分。</p>
+ * 通过按钮 message（原版构造时传入的 {@code gui.recipebook.next_page/previous_page}）区分。
+ * </p>
  */
 @Mixin(ImageButton.class)
 public class ImageButtonYzuiMixin {
 
     @Unique
-    private static final @NonNull Identifier YZWC_RECIPE_BOOK_SHOW =
-            Identifier.fromNamespaceAndPath("youzaiworldcore", "textures/gui/recipe_book_show.png");
+    private static final @NonNull Identifier YZWC_RECIPE_BOOK_SHOW = Identifier.fromNamespaceAndPath("youzaiworldcore",
+            "textures/gui/recipe_book_show.png");
     @Unique
-    private static final @NonNull Identifier YZWC_RECIPE_BOOK_HIDE =
-            Identifier.fromNamespaceAndPath("youzaiworldcore", "textures/gui/recipe_book_hide.png");
+    private static final @NonNull Identifier YZWC_RECIPE_BOOK_HIDE = Identifier.fromNamespaceAndPath("youzaiworldcore",
+            "textures/gui/recipe_book_hide.png");
     /** 配方书翻页按钮尺寸（RecipeBookPage.init 中 forwardButton/backButton 为 12×17） */
     @Unique
     private static final int YZWC_PAGE_BTN_W = 12;
@@ -60,19 +65,20 @@ public class ImageButtonYzuiMixin {
     /**
      * 「下一页」按钮的 message，用于区分翻页方向。
      * <p>
-     * 提为常量：原先写成 {@code Component.translatable("gui.recipebook.next_page").equals(msg)}，
+     * 提为常量：原先写成
+     * {@code Component.translatable("gui.recipebook.next_page").equals(msg)}，
      * 每次比较都要新建一个 {@code MutableComponent} + {@code TranslatableContents}，
      * 而这段代码在<b>每个翻页按钮、每帧</b>都会执行。常量与临时对象的
      * {@code equals} 结果完全一致（比较 contents / style / siblings）。
      * </p>
      */
     @Unique
-    private static final Component YZWC_NEXT_PAGE_MSG =
-            Component.translatable("gui.recipebook.next_page");
+    private static final Component YZWC_NEXT_PAGE_MSG = Component.translatable("gui.recipebook.next_page");
 
     @Inject(method = "extractContents", at = @At("HEAD"), cancellable = true)
     private void yzwc$imageButton(GuiGraphicsExtractor g, int mx, int my, float pt, CallbackInfo ci) {
-        if (!yzwc$shouldApplyYzui()) return;
+        if (!yzwc$shouldApplyYzui())
+            return;
 
         ImageButton self = (ImageButton) (Object) this;
         int x = self.getX(), y = self.getY(), w = self.getWidth(), h = self.getHeight();
@@ -87,9 +93,10 @@ public class ImageButtonYzuiMixin {
 
         // 配方书关闭时显示红 X（表示配方书当前是"隐藏"状态），打开时显示绿勾（表示"显示"状态）
         LocalPlayer player = Minecraft.getInstance().player;
-        boolean bookOpen = player != null
-                && player.getRecipeBook().isOpen(RecipeBookType.CRAFTING);
-        @NonNull Identifier tex = bookOpen ? YZWC_RECIPE_BOOK_SHOW : YZWC_RECIPE_BOOK_HIDE;
+        @NonNull
+        Identifier tex = (player != null && yzwc$isRecipeBookOpen(player))
+                ? YZWC_RECIPE_BOOK_SHOW
+                : YZWC_RECIPE_BOOK_HIDE;
 
         // 悬浮高亮
         if (hovered) {
@@ -147,8 +154,32 @@ public class ImageButtonYzuiMixin {
 
     @Unique
     private static boolean yzwc$shouldApplyYzui() {
-        if (!ClientExternalSettings.isYzuiEnabled()) return false;
+        if (!ClientExternalSettings.isYzuiEnabled())
+            return false;
         Screen screen = Minecraft.getInstance().gui.screen();
         return screen != null && screen.getClass().getName().startsWith("top.csituka.youzaiworldcore");
+    }
+
+    /**
+     * 判定当前配方书开关按钮对应的配方书是否处于"打开"状态。
+     * <p>
+     * 26.2 中 {@code RecipeBook.isOpen(RecipeBookType)} 按<b>配方书类型</b>区分开合状态，
+     * 而每种 RecipeBookMenu 的类型不同：工作台/物品栏 = {@link RecipeBookType#CRAFTING}、
+     * 熔炉 = {@link RecipeBookType#FURNACE}、高炉 =
+     * {@link RecipeBookType#BLAST_FURNACE}、
+     * 烟熏炉 = {@link RecipeBookType#SMOKER}。此前硬编码 CRAFTING 导致熔炉类屏幕打开
+     * 配方书后按钮贴图不变（始终红 X），这里改为从当前屏幕菜单动态获取类型。
+     * <p>
+     * 兜底：当前屏幕不是 {@link AbstractRecipeBookScreen} 时按 CRAFTING 处理
+     * （非配方书屏幕不存在该按钮，仅防御未知调用路径）。
+     */
+    @SuppressWarnings("null")
+    @Unique
+    private static boolean yzwc$isRecipeBookOpen(LocalPlayer player) {
+        Screen screen = Minecraft.getInstance().gui.screen();
+        if (screen instanceof AbstractRecipeBookScreen<?> arb) {
+            return player.getRecipeBook().isOpen(arb.getMenu().getRecipeBookType());
+        }
+        return player.getRecipeBook().isOpen(RecipeBookType.CRAFTING);
     }
 }
