@@ -51,9 +51,10 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
  *   <tr><td>结果</td><td>(134, 47)</td><td>合成结果</td></tr>
  *   <tr><td>玩家背包</td><td>起点 (8, 84)</td><td>36 格</td></tr>
  * </table>
- * 面板尺寸 176×166；重命名输入框（{@link MultiLineEditBox}）位于
- * <b>(59, 18, 110, 28)</b>，与原版 sprite 位置完全对齐（避免"输入框向右偏移"问题），
- * 支持 2 行显示（{@code setLineLimit(2)}）。
+ * 面板尺寸 176×166；重命名输入框（{@link MultiLineEditBox}）组件位于
+ * <b>(8, 18, 161, 28)</b>（占用原版 anvil.png 左上角锤子图案的空间，左缘对齐面板边距 8，
+ * 右缘保持原 sprite 右缘 169），背景框 = 组件区域；文本经 {@code innerPadding(4)}
+ * 在框内左右各留 4px 间距（12..165）。支持 2 行显示（{@code setLineLimit(2)}）。
  * <p>
  * 主题色：<b>铁砧钢灰</b> —— 标题 {@code 0xFF6A6A6A}、强调条 {@code 0xB09A9A9A}、
  * 槽位 {@code 0x40FFFFFF / 悬停 0x60FFFFFF}（统一白色系派生，与
@@ -164,11 +165,25 @@ public class YzuAnvilScreen extends ItemCombinerScreen<AnvilMenu> {
     /**
      * 创建重命名输入框（{@link MultiLineEditBox}，2 行高）。
      * <p>
-     * 位置与原版 anvil.png 文本域 sprite <b>(59,20,110,16)</b> 完全对齐，
-     * 解决"输入框向右偏移"问题（EditBox 自身矩形 (62,24,103,12) 比 sprite
-     * 向右下各偏 3/4px，导致 YZUI 圆角框与原版 sprite 视觉位置不一致）。
-     * 高度扩到 28 支持 2 行（{@code setLineLimit(2)}），允许在物品名中
+     * <b>占用原版锤子图案空间：</b>原版 {@code anvil.png} 左上角绘制大锤子图案
+     * （{@code x≈8..47, y≈7..46}），其右侧才是文本域 sprite
+     * {@code (59, 20, 110, 16)}——锤子占据了 51px 宽的左侧空间。
+     * YZUI 面板是纯色圆角矩形（无锤子），因此这里将输入框<b>向左扩展占用</b>锤子区域：
+     * 视觉背景框 <b>(8, 18, 161, 28)</b>——左缘对齐 YZUI 面板内边距 <b>8</b>
+     * （与标题图标 / 背包标签左缘一致），右缘保持原 sprite 右缘 <b>169</b>。
+     * </p>
+     * <p>
+     * <b>内边距：</b>{@code AbstractTextAreaWidget.innerPadding() = 4}，
+     * 文本/占位符/光标渲染起点 = {@code getX() + 4}。组件 x 直接设为
+     * {@code leftPos + 8}（背景框 = 组件区域，Mixin 无需补偿），于是：
+     * <ul>
+     *   <li>文本起点 = {@code 8 + 4 = 12}，距背景框左缘 4px；</li>
+     *   <li>文本宽度 = {@code 161 - totalInnerPadding(8) = 153}，右缘 = {@code 12 + 153 = 165}，
+     *       距背景框右缘 4px——文字与边框左右各留 4px 间距（对称），不再贴边。</li>
+     * </ul>
+     * 高度 28 支持 2 行（{@code setLineLimit(2)}），允许在物品名中
      * 输入 {@code \\n} 实现多行显示（{@code item_name} 组件支持多行）。
+     * </p>
      */
     @Override
     protected void subInit() {
@@ -178,8 +193,10 @@ public class YzuAnvilScreen extends ItemCombinerScreen<AnvilMenu> {
 
         // 26.2 MultiLineEditBox.Builder：仅配置 x/y/颜色/背景，尺寸与监听在
         // build(font, width, height, label) 之后通过实例方法设置（Builder 无 setWidth/setHeight）。
+        // x = leftPos+8、width = 161：背景框 = 组件区域 (8..169)，
+        // 文本经 innerPadding(4) 自动留出左右 4px 间距（12..165）。
         this.name = new MultiLineEditBox.Builder()
-                .setX(this.leftPos + 59)
+                .setX(this.leftPos + 8)
                 .setY(this.topPos + 18)
                 .setPlaceholder(Component.translatable("container.repair"))
                 .setTextColor(0xFF404040)
@@ -187,14 +204,15 @@ public class YzuAnvilScreen extends ItemCombinerScreen<AnvilMenu> {
                 .setCursorColor(0xFF000000)
                 .setShowBackground(false)
                 .setShowDecorations(true)
-                .build(this.font, 110, 28, Component.empty());
+                .build(this.font, 161, 28, Component.empty());
         this.name.setLineLimit(2);
         this.name.setCharacterLimit(AnvilMenu.MAX_NAME_LENGTH);
         this.name.setValueListener(this::onNameChanged);
         this.name.setValue(initialValue);
         this.addRenderableWidget(this.name);
-        DebugLogger.info("YzuAnvilScreen", "重命名输入框初始化完成 @ (%d,%d) 110x28 multiLine=true",
-                this.leftPos + 59, this.topPos + 18);
+        DebugLogger.info("YzuAnvilScreen", "重命名输入框初始化完成 @ (%d,%d) 161x28 multiLine=true"
+                        + "（视觉背景框 8..169，文本 12..165 与边框各留 4px 间距）",
+                this.leftPos + 8, this.topPos + 18);
     }
 
     // ========== 渲染管线 ==========

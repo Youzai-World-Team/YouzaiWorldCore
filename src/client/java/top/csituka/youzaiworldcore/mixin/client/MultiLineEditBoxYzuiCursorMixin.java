@@ -9,9 +9,12 @@ import net.minecraft.network.chat.FormattedText;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
 import org.spongepowered.asm.mixin.injection.Redirect;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import top.csituka.youzaiworldcore.client.config.ClientExternalSettings;
+import top.csituka.youzaiworldcore.client.screen.YzuAnvilScreen;
 
 /**
  * 将 {@link MultiLineEditBox} 的光标与占位符样式替换为 YZUI 风格。
@@ -33,6 +36,9 @@ import top.csituka.youzaiworldcore.client.config.ClientExternalSettings;
  * {@code PLACEHOLDER_TEXT_COLOR} 为
  * {@code ARGB.color(204, 0xFFE0E0E0)}（浅灰，为黑底设计），
  * 在 YZUI 半透明白背景上几乎不可见；阴影则因原版调用固定 {@code shadow = true} 的重载而无法关闭。</li>
+ * <li><b>字符计数标签</b>：铁砧屏（{@link YzuAnvilScreen}）隐藏
+ * {@code gui.multiLineEditBox.character_limit} 计数——其绘制位置与结果槽重叠，
+ * 且原版铁砧（{@code EditBox}）本无此标签（见 {@code yzwc$hideCharLimitOnAnvil}）。</li>
  * </ol>
  * <p>
  * 仅对包名以 {@code top.csituka.youzaiworldcore} 开头的屏幕生效。
@@ -118,6 +124,24 @@ public class MultiLineEditBoxYzuiCursorMixin {
             return;
         }
         graphics.textWithWordWrap(font, text, x, y, width, color);
+    }
+
+    /**
+     * 铁砧屏隐藏字符计数标签（"当前 / 上限"）。
+     * <p>
+     * {@code MultiLineEditBox.extractDecorations} 在调用了 {@code setCharacterLimit} 后
+     * 会绘制 {@code gui.multiLineEditBox.character_limit}（浅灰文本），位置在
+     * {@code (getX()+width-文本宽, getY()+height+4)} —— 铁砧面板坐标约 (129..139, 50)，
+     * 与结果槽 (134..150, 47..63) 重叠，属视觉缺陷。原版铁砧用 {@code EditBox}（无计数标签），
+     * YZUI 亦不应显示；字符输入上限本身仍由 {@code setCharacterLimit} 保留。
+     * </p>
+     */
+    @Inject(method = "extractDecorations(Lnet/minecraft/client/gui/GuiGraphicsExtractor;)V",
+            at = @At("HEAD"), cancellable = true)
+    private void yzwc$hideCharLimitOnAnvil(GuiGraphicsExtractor graphics, CallbackInfo ci) {
+        if (yzwc$shouldApply() && Minecraft.getInstance().gui.screen() instanceof YzuAnvilScreen) {
+            ci.cancel();
+        }
     }
 
     /**

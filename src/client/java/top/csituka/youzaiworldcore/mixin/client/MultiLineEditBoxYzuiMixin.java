@@ -31,6 +31,9 @@ import top.csituka.youzaiworldcore.client.render.RoundedRect;
  *
  * <h3>光标说明</h3>
  * <p>光标样式（高度 9px + 闪烁周期 500ms）由 {@code MultiLineEditBoxYzuiCursorMixin} 处理。</p>
+ * <p>背景框始终等于组件区域（{@code getX()..getX()+getWidth()}）；铁砧屏输入框
+ * 的框内间距由 {@code AbstractTextAreaWidget.innerPadding() = 4} 天然提供
+ * （组件坐标见 {@code YzuAnvilScreen.subInit}），本 Mixin 无需额外补偿。</p>
  */
 @Mixin(AbstractTextAreaWidget.class)
 @SuppressWarnings("null")
@@ -46,6 +49,9 @@ public class MultiLineEditBoxYzuiMixin {
     /**
      * 在 {@code extractWidgetRenderState} 头部：强制关闭原版背景，绘制 YZUI 半透明白色圆角矩形。
      * <p>无论原版 {@code showBackground} 是 true 还是 false，{@code widget/text_field} 精灵都不会被绘制。</p>
+     * <p>背景框绘制在组件区域 {@code getX()..getX()+getWidth()}（与其它 YZUI 输入框一致）；
+     * 铁砧屏输入框的框内文字间距由 {@code AbstractTextAreaWidget.innerPadding() = 4}
+     * 天然提供，无需在此补偿。</p>
      */
     @Inject(method = "extractWidgetRenderState(Lnet/minecraft/client/gui/GuiGraphicsExtractor;IIF)V",
             at = @At("HEAD"))
