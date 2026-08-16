@@ -58,6 +58,11 @@ public class Client implements ClientModInitializer {
     public void onInitializeClient() {
         DebugLogger.entering("Client", "onInitializeClient");
 
+        // 加载客户端全局配置（yzwc/client/global_settings.json）
+        // 必须最先执行：其余所有客户端模块的配置都从这份文件的各自分节里读
+        // 文件不存在（首次安装）时会直接写出一份含全部模块默认值的完整配置
+        top.csituka.youzaiworldcore.client.config.ClientGlobalSettings.load();
+
         // 配置文件导入崩溃自愈：检测并恢复孤立的 config_bak_* 备份
         DebugLogger.info("Client", "检查上次导入中断后的配置恢复...");
         ConfigIOManager.recoverIfNeeded(Minecraft.getInstance().gameDirectory);

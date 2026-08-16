@@ -34,6 +34,13 @@ import java.util.UUID;
  *     └── &lt;模块名&gt;/                          # 各模块缓存 / 临时文件（每次开服清空）
  * </pre>
  *
+ * <h2>目录布局（客户端，相对游戏根目录）</h2>
+ *
+ * <pre>
+ * &lt;gameDir&gt;/yzwc/client/
+ * └── global_settings.json                    # 客户端全部配置，按模块分节（就这一个文件，无子目录）
+ * </pre>
+ *
  * <h2>目录布局（世界侧，随存档走）</h2>
  *
  * <pre>
@@ -62,6 +69,8 @@ public final class ModPaths {
 
     /** 全局配置文件名 */
     public static final String GLOBAL_SETTINGS_FILE_NAME = "global_settings.json";
+    /** 客户端存放目录名（{@code yzwc/client}） */
+    public static final String CLIENT_DIR_NAME = "client";
     /** 玩家个人配置目录名 */
     public static final String USER_SETTINGS_DIR_NAME = "user_settings";
     /** 账户模块目录名（同时也是账户模块在配置里的分节名） */
@@ -149,8 +158,28 @@ public final class ModPaths {
         return serverTempRoot().resolve(module);
     }
 
-    // ===== 世界侧（<world_name>/data/yzwc） =====
+    // ===== 客户端侧（<gameDir>/yzwc/client） =====
 
+    /**
+     * 客户端存放根：{@code <gameDir>/yzwc/client}。
+     * <p>
+     * 与服务端不同，客户端<b>只有一个扁平的配置文件</b>，不分 config / data / backup / temp
+     * —— 客户端没有需要跨端保管的数据、备份或缓存，多套目录纯属负担。
+     * </p>
+     */
+    public static Path clientRoot() {
+        return FabricLoader.getInstance().getGameDir()
+                .resolve(ROOT_DIR_NAME)
+                .resolve(CLIENT_DIR_NAME)
+                .normalize();
+    }
+
+    /** 客户端唯一的配置文件：{@code <gameDir>/yzwc/client/global_settings.json} */
+    public static Path clientSettingsFile() {
+        return clientRoot().resolve(GLOBAL_SETTINGS_FILE_NAME);
+    }
+
+    // ===== 世界侧（<world_name>/data/yzwc） =====
     /** 世界存放根：{@code <world_name>/data/yzwc} */
     public static Path worldRoot(MinecraftServer server) {
         return server.getWorldPath(LevelResource.ROOT)
