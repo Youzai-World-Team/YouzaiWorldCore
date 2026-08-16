@@ -378,10 +378,10 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 服务器娱乐彩蛋——两只猫在特定条件下触发贴贴动画、音效与全服粒子特效。
 
 - **触发条件**：两只已驯服的猫（其中一只精确命名为「老吴」）在 6 格内，且有随机冷却（默认 180 秒，可配置）
-- **效果**：Geo 骨骼动画、自定义音效（`laowu2.ogg` / `qiliang.ogg` / `zhanhou.ogg` 随机三选一）、全服粒子广播；右键任一只可提前释放配对（恢复 AI + 进入冷却）
-- **实现**：`LaowuMemeHandler` 每 10 tick 扫描 + `SoundBufferLibraryLaowuMixin` 自定义音效加载（含 `config/youzaiworldcore/laowu_meme/sounds/` 用户导入曲）+ 客户端 Geo 模型渲染
+- **效果**：Geo 骨骼动画、三首内置音效（`laowu2.ogg` / `qiliang.ogg` / `zhanhou.ogg`）随机播放、全服粒子广播；右键任一只可提前释放配对（恢复 AI + 进入冷却）
+- **实现**：`LaowuMemeHandler` 每 10 tick 扫描 + 客户端 Geo 模型渲染；服务端选曲确保全体玩家同听（避免各播各的）
 - **命令**：`/yzwc event laowu enable [true|false]` / `settings cd [seconds]`（全局开关与冷却）
-- **配置**：`global_settings.json` → `laowu_meme_module`（`LaowuMemeConfig`）
+- **配置**：`yzwc/server/config/global_settings.json` → `laowu_meme_module`（`LaowuMemeConfig`）；客户端音频启用状态存于 `yzwc/client/global_settings.json` → `laowu_meme_module.disabled_sounds`
 
 ### 26. 双开门系统
 
@@ -525,10 +525,10 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 
 客户端设置中新增「导出/导入配置」侧栏（YZUI）。基于 26.2 Headless 限制（AWT/文件对话框不可用），采用自动路径 + 备份策略，不依赖外部文件选择器：
 
-- **导出**：将 `config/youzaiworldcore/` 与 `options.txt` 打包为 ZIP 并保存到本地（PC 端手动选择路径；Android 端自动存入 `config_backups`，保留最近 5 份）
-- ⚠️ **范围仅限客户端配置**：服务端配置已迁至 `yzwc/server/`，不在本功能的打包范围内（本功能本就面向客户端玩家备份自己的界面/操作设置）
-- **导入**：从 ZIP 还原配置，要求客户端重启生效（自动备份当前配置至 `config_backups` 以防失败回滚）
-- **入口**：`screen.youzaiworldcore.settings.sidebar_config_io`；`ConfigIOManager` 在客户端启动时自愈检测上次导入中断遗留的孤立 `config_bak_*` 备份并恢复
+- **导出**：将 `config/` 目录（Fabric 与模组通用配置）、`options.txt`（原版游戏设置）、`yzwc/client/global_settings.json`（YouzaiWorldCore 客户端配置）三者打包为 ZIP 并保存到本地（PC 端手动选择路径；Android 端自动存入 `config_backups`，保留最近 5 份）
+- **导入**：从 ZIP 还原上述三项配置，要求客户端重启生效（自动备份当前配置至游戏根目录的时间戳备份文件以防失败回滚）
+- **入口**：`screen.youzaiworldcore.settings.sidebar_config_io`；`ConfigIOManager` 在客户端启动时自愈检测上次导入中断遗留的孤立 `config_bak_*` / `options_bak_*` / `yzwc_client_bak_*` 备份并恢复
+- ⚠️ **范围仅限客户端配置**：服务端配置（`yzwc/server/` 与世界数据目录）不在本功能的打包范围内（本功能面向客户端玩家备份自己的界面/操作设置）
 
 ### 36. 更新检查系统（Update Checker）
 

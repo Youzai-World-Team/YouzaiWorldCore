@@ -179,11 +179,15 @@ DebugLogger.exiting("ModuleName", "methodName", "result=" + r);
 
 ### 4.3 文件存放规范（强制）
 
-服务端所有配置 / 数据 / 备份 / 缓存文件**只能**通过 `config/ModPaths` 取路径，禁止手写
+所有配置 / 数据 / 备份 / 缓存文件**只能**通过 `config/ModPaths` 取路径，禁止手写
 `getConfigDir().resolve("youzaiworldcore")` 之类的散装路径。目录布局：
 
 ```
-<gameDir>/yzwc/server/                       # 与世界无关的内容
+<gameDir>/yzwc/client/                       # 客户端配置（纯本机，不跨端同步）
+└── global_settings.json                     # 客户端全部配置，按功能模块分节
+                                             # 就这一个文件，无子目录
+
+<gameDir>/yzwc/server/                       # 服务端配置（与世界无关的内容）
 ├── config/
 │   ├── global_settings.json                 # 全局配置，按功能模块分节
 │   ├── account_module/registerd_users_data.json   # 玩家代号 / 密码 / UUID
@@ -196,12 +200,25 @@ DebugLogger.exiting("ModuleName", "methodName", "result=" + r);
 └── config/ · data/<模块名>/ · backup/<模块名>/ · temp/<模块名>/
 ```
 
+**客户端 vs 服务端**：
+
+- **客户端配置**（`yzwc/client/global_settings.json`）：纯本机生效、不涉及服务端权威逻辑的设置
+  （开发者模式、日志级别、YZUI 开关、物品高亮颜色、音频启用状态等）。
+  客户端没有 data / backup / temp 子目录 —— 客户端不存在需要长期保管的数据、备份或缓存，
+  多套目录纯属负担。由 `ClientGlobalSettings.load()` 在 `Client.onInitializeClient()` 最开头加载。
+- **服务端配置**（`yzwc/server/` 与 `<world_name>/data/yzwc/`）：涉及游戏逻辑、需要服务端权威保存的设置
+  （账号系统、维度池、宠物数据、传送锚点坐标等）。由 `GlobalSettings.load()` 在服务端启动时加载。
+
 **五条硬规则：**
 
-1. **先分类再写配置**：所有 `.json` 配置文件的根节点是「模块名 → 该模块配置对象」，禁止在根节点直接写配置项。模块名统一登记在 `GlobalSettings` 的常量里（`AFK_MODULE`、`PET_MODULE` …），并与 `data/` `backup/` `temp/` 下的文件夹名保持一致。
-2. **全局 vs 个人**：与世界无关、对所有人生效的配置写 `GlobalSettings.section(模块名)`；每位玩家各自一份的**且必须由服务端保存**的设置写 `UserSettings.section(uuid, 模块名)`（纯客户端功能的配置不放这里）。个人配置文件在账户注册时由 `AccountDataStorage.register` 创建、注销/删号时删除。
+1. **先分类再写配置**：所有 `.json` 配置文件的根节点是「模块名 → 该模块配置对象」，禁止在根节点直接写配置项。模块名统一登记在 `GlobalSettings` / `ClientGlobalSettings` 的常量里（`AFK_MODULE`、`PET_MODULE`、`CORE_MODULE` …），并与服务端的 `data/` `backup/` `temp/` 下的文件夹名保持一致。
+2. **全局 vs 个人 vs 客户端**：
+   - 与世界无关、对所有人生效的服务端配置写 `GlobalSettings.section(模块名)`；
+   - 每位玩家各自一份的**且必须由服务端保存**的设置写 `UserSettings.section(uuid, 模块名)`；
+   - 纯本机生效的客户端配置写 `ClientGlobalSettings.section(模块名)`。
+   个人配置文件在账户注册时由 `AccountDataStorage.register` 创建、注销/删号时删除。
 3. **读配置用强类型 getter**：`ConfigSection.getBoolean/getInt/getDouble/getString/getEnum/getStringList` 等。键缺失回落默认值；类型不符或越界一律走下面第 5 条的失败流程。本项目不做配置迁移，也不做静默降级。
-4. **每个模块都要能生成自己的默认值**：模块配置类必须提供 `public static void writeDefaults()`（把字段**重置为 `DEFAULT_*` 常量**再 `save()`），并在 `DefaultSettingsWriter.writeAllDefaults()` 里登记一行。新开服（文件不存在）时 `GlobalSettings.load()` 会直接写出一份含全部模块默认值的完整配置，而不是等各模块 `load()` 零散补齐。非全局的文件（个人配置 / 账户凭据 / 各模块 `data.json`）通过 `JsonFileStore.setDefaultsWriter(...)` 注册自己的默认内容，再用 `loadOrCreateDefaults()` 读取。
+4. **每个模块都要能生成自己的默认值**：模块配置类必须提供 `public static void writeDefaults()`（把字段**重置为 `DEFAULT_*` 常量**再 `save()`），并在 `DefaultSettingsWriter.writeAllDefaults()` / `ClientDefaultSettingsWriter.writeAllDefaults()` 里登记一行。新开服（文件不存在）时 `GlobalSettings.load()` / `ClientGlobalSettings.load()` 会直接写出一份含全部模块默认值的完整配置，而不是等各模块 `load()` 零散补齐。非全局的文件（个人配置 / 账户凭据 / 各模块 `data.json`）通过 `JsonFileStore.setDefaultsWriter(...)` 注册自己的默认内容，再用 `loadOrCreateDefaults()` 读取。
 5. **备份必须是 zip**：用 `util/BackupArchive` 写 `backup/<模块名>/xxx.zip`（压缩包内放同名 `.json`）。临时文件用 `TempManager.serverTempDir(模块名)` / `worldTempDir(server, 模块名)`，并且不得假设能跨重启存活。
 
 **读到坏配置时的固定流程**（`JsonFileStore.fail` → `ConfigCrash`）：
@@ -213,7 +230,9 @@ DebugLogger.exiting("ModuleName", "methodName", "result=" + r);
 
 若第 1 步改名失败（文件被占用等），则**跳过第 2 步**，绝不覆盖管理员的现场。
 
-新增模块时：在 `GlobalSettings` 加一个模块名常量 → 写 `writeDefaults()` 并登记进 `DefaultSettingsWriter` → 配置走 `GlobalSettings.section(...)` / `UserSettings.section(...)` → 数据走 `ModPaths.serverData(模块名)` 或 `ModPaths.worldData(server, 模块名)`。
+新增模块时：
+- **客户端模块**：在 `ClientGlobalSettings` 加一个模块名常量 → 写 `writeDefaults()` 并登记进 `ClientDefaultSettingsWriter` → 配置走 `ClientGlobalSettings.section(...)`。
+- **服务端模块**：在 `GlobalSettings` 加一个模块名常量 → 写 `writeDefaults()` 并登记进 `DefaultSettingsWriter` → 配置走 `GlobalSettings.section(...)` / `UserSettings.section(...)` → 数据走 `ModPaths.serverData(模块名)` 或 `ModPaths.worldData(server, 模块名)`。
 
 ### 4.4 代码风格
 

@@ -2,6 +2,7 @@ package top.csituka.youzaiworldcore.client.config;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import top.csituka.youzaiworldcore.config.ModPaths;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
 import java.io.File;
@@ -143,11 +144,14 @@ public final class ConfigIOManager {
         Path root = gameDir.toPath();
         Path configDir = root.resolve("config");
         Path optionsFile = root.resolve("options.txt");
+        Path clientSettings = ModPaths.clientSettingsFile();
 
         // 查找所有 config_bak_* 目录
         List<File> configBaks = new ArrayList<>();
         // 查找所有 options_bak_*.txt 文件
         List<File> optionsBaks = new ArrayList<>();
+        // 查找所有 yzwc_client_bak_*.json 文件
+        List<File> clientBaks = new ArrayList<>();
 
         File[] entries = gameDir.listFiles();
         if (entries == null) {
@@ -160,14 +164,17 @@ public final class ConfigIOManager {
                 configBaks.add(f);
             } else if (f.isFile() && name.startsWith("options_bak_") && name.endsWith(".txt")) {
                 optionsBaks.add(f);
+            } else if (f.isFile() && name.startsWith("yzwc_client_bak_") && name.endsWith(".json")) {
+                clientBaks.add(f);
             }
         }
 
         boolean configMissing = !Files.isDirectory(configDir);
         boolean optionsMissing = !Files.isRegularFile(optionsFile);
+        boolean clientMissing = !Files.isRegularFile(clientSettings);
 
-        if (!configMissing && !optionsMissing) {
-            DebugLogger.debug(DEBUG_TAG, "自愈无需执行：config 和 options.txt 均存在");
+        if (!configMissing && !optionsMissing && !clientMissing) {
+            DebugLogger.debug(DEBUG_TAG, "自愈无需执行：config / options.txt / client_settings 均存在");
             return;
         }
 
@@ -211,8 +218,28 @@ public final class ConfigIOManager {
             }
         }
 
-        DebugLogger.info(DEBUG_TAG, "启动自愈流程完成 (configMissing=%s, optionsMissing=%s)",
-                configMissing, optionsMissing);
+        if (clientMissing) {
+            if (clientBaks.isEmpty()) {
+                DebugLogger.warn(DEBUG_TAG, "客户端配置缺失但未找到 yzwc_client_bak_* 备份，无法自愈");
+            } else {
+                clientBaks.sort(Comparator.comparingLong((File f) -> f.lastModified()).reversed());
+                File newest = clientBaks.get(0);
+                try {
+                    Files.createDirectories(clientSettings.getParent());
+                    Files.move(newest.toPath(), clientSettings);
+                    DebugLogger.info(DEBUG_TAG, "已恢复客户端配置备份: %s", newest.getName());
+                } catch (IOException e) {
+                    LOGGER.error("恢复客户端配置备份失败: {}", newest.getName(), e);
+                    DebugLogger.exception(DEBUG_TAG, "恢复客户端配置备份", e);
+                }
+                for (int i = 1; i < clientBaks.size(); i++) {
+                    deleteQuietly(clientBaks.get(i).toPath());
+                }
+            }
+        }
+
+        DebugLogger.info(DEBUG_TAG, "启动自愈流程完成 (configMissing=%s, optionsMissing=%s, clientMissing=%s)",
+                configMissing, optionsMissing, clientMissing);
     }
 
     // ========================================================================
@@ -234,8 +261,10 @@ public final class ConfigIOManager {
     }
 
     private static void performExport(Path zipPath, File gameDir, ProgressCallback callback) throws IOException {
+        Path root = gameDir.toPath().normalize();
         File configDir = new File(gameDir, "config");
         File optionsFile = new File(gameDir, "options.txt");
+        Path clientSettings = ModPaths.clientSettingsFile();
 
         // 统计待打包文件数
         List<Path> configFiles = new ArrayList<>();
@@ -246,8 +275,9 @@ public final class ConfigIOManager {
         }
         int totalFiles = configFiles.size();
         if (optionsFile.isFile()) totalFiles++;
+        if (Files.isRegularFile(clientSettings)) totalFiles++;
 
-        DebugLogger.debug(DEBUG_TAG, "待打包文件: config(%d) + options.txt(%d)", totalFiles, totalFiles);
+        DebugLogger.debug(DEBUG_TAG, "待打包文件: config(%d) + options.txt + client_settings", configFiles.size());
 
         try (ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(zipPath.toFile()))) {
             int processed = 0;
@@ -271,6 +301,16 @@ public final class ConfigIOManager {
                 zos.closeEntry();
                 processed++;
                 lastReportTime = reportProgress(callback, processed, totalFiles, "exporting", processed, lastReportTime);
+            }
+
+            // 添加客户端配置 yzwc/client/global_settings.json
+            if (Files.isRegularFile(clientSettings)) {
+                String entryName = root.relativize(clientSettings).toString().replace('\\', '/');
+                zos.putNextEntry(new ZipEntry(entryName));
+                Files.copy(clientSettings, zos);
+                zos.closeEntry();
+                processed++;
+                reportProgress(callback, processed, totalFiles, "exporting", processed, lastReportTime);
             }
         }
     }
@@ -298,13 +338,16 @@ public final class ConfigIOManager {
         Path root = gameDir.toPath().normalize();
         Path configDir = root.resolve("config");
         Path optionsFile = root.resolve("options.txt");
+        Path clientSettings = ModPaths.clientSettingsFile();
 
         String bakSuffix = "_bak_" + timestamp;
         Path bakConfigDir = root.resolve("config" + bakSuffix);
         Path bakOptionsFile = root.resolve("options_bak_" + timestamp + ".txt");
+        Path bakClientSettings = root.resolve("yzwc_client_bak_" + timestamp + ".json");
 
         boolean hasConfigBackup = false;
         boolean hasOptionsBackup = false;
+        boolean hasClientSettingsBackup = false;
 
         if (Files.isDirectory(configDir)) {
             try {
@@ -336,7 +379,28 @@ public final class ConfigIOManager {
             }
         }
 
-        DebugLogger.branch(DEBUG_TAG, "备份结果", hasConfigBackup, "config=" + hasConfigBackup + " options=" + hasOptionsBackup);
+        if (Files.isRegularFile(clientSettings)) {
+            try {
+                Files.move(clientSettings, bakClientSettings);
+                hasClientSettingsBackup = true;
+                DebugLogger.stateChange(DEBUG_TAG, "client_settings", "renamed", clientSettings, bakClientSettings);
+            } catch (IOException e) {
+                LOGGER.error("备份客户端配置失败（文件被占用？）", e);
+                DebugLogger.exception(DEBUG_TAG, "备份 client_settings", e);
+                // 回滚 config 和 options
+                if (hasConfigBackup) {
+                    try { Files.move(bakConfigDir, configDir); } catch (IOException ignored) {}
+                }
+                if (hasOptionsBackup) {
+                    try { Files.move(bakOptionsFile, optionsFile); } catch (IOException ignored) {}
+                }
+                isImporting.set(false);
+                throw new IOException("导入失败：检测到配置文件被外部程序占用，请关闭相关软件后重试。", e);
+            }
+        }
+
+        DebugLogger.branch(DEBUG_TAG, "备份结果", hasConfigBackup,
+                "config=" + hasConfigBackup + " options=" + hasOptionsBackup + " client=" + hasClientSettingsBackup);
 
         // === 第二步：执行解压（带路径校验 + ZIP 炸弹防御） ===
         long totalBytes = 0;
@@ -410,6 +474,15 @@ public final class ConfigIOManager {
                 DebugLogger.exception(DEBUG_TAG, "删除备份", e);
             }
         }
+        if (hasClientSettingsBackup) {
+            try {
+                Files.deleteIfExists(bakClientSettings);
+                DebugLogger.debug(DEBUG_TAG, "已删除备份: %s", bakClientSettings);
+            } catch (IOException e) {
+                LOGGER.warn("删除客户端配置备份失败（无害）: {}", bakClientSettings, e);
+                DebugLogger.exception(DEBUG_TAG, "删除备份", e);
+            }
+        }
 
         DebugLogger.info(DEBUG_TAG, "=== 导入流程成功完成 ===");
         LOGGER.info("配置导入成功");
@@ -425,6 +498,7 @@ public final class ConfigIOManager {
         // 查找当前存在的备份
         Path latestConfigBak = null;
         Path latestOptionsBak = null;
+        Path latestClientBak = null;
         long latestTime = 0;
 
         File[] entries = gameDir.listFiles();
@@ -441,6 +515,11 @@ public final class ConfigIOManager {
                 if (f.lastModified() > latestTime) {
                     latestTime = f.lastModified();
                     latestOptionsBak = f.toPath();
+                }
+            } else if (name.startsWith("yzwc_client_bak_") && name.endsWith(".json") && f.isFile()) {
+                if (f.lastModified() > latestTime) {
+                    latestTime = f.lastModified();
+                    latestClientBak = f.toPath();
                 }
             }
         }
@@ -480,6 +559,22 @@ public final class ConfigIOManager {
             }
         }
 
+        // 恢复客户端配置备份
+        Path clientSettings = ModPaths.clientSettingsFile();
+        if (latestClientBak != null) {
+            try {
+                // 删除半成品客户端配置
+                Files.deleteIfExists(clientSettings);
+                // 恢复备份
+                Files.createDirectories(clientSettings.getParent());
+                Files.move(latestClientBak, clientSettings);
+                DebugLogger.info(DEBUG_TAG, "回滚：已恢复客户端配置备份");
+            } catch (IOException e) {
+                LOGGER.error("回滚恢复客户端配置失败！请手动恢复", e);
+                DebugLogger.exception(DEBUG_TAG, "回滚恢复 client_settings", e);
+            }
+        }
+
         // 尝试重载 options 内存状态
         try {
             net.minecraft.client.Minecraft.getInstance().options.load();
@@ -496,6 +591,7 @@ public final class ConfigIOManager {
     /** 路径安全校验 */
     private static boolean isPathAllowed(Path root, Path targetPath) {
         Path configDir = root.resolve("config").normalize();
+        Path clientSettings = ModPaths.clientSettingsFile().normalize();
 
         // 条件 A：在 config/ 目录内（且不是 config/ 目录本身）
         if (targetPath.startsWith(configDir) && !targetPath.equals(configDir)) {
@@ -506,6 +602,11 @@ public final class ConfigIOManager {
         if ("options.txt".equals(targetPath.getFileName().toString())
                 && targetPath.getParent() != null
                 && targetPath.getParent().equals(root)) {
+            return true;
+        }
+
+        // 条件 C：客户端配置 yzwc/client/global_settings.json
+        if (targetPath.equals(clientSettings)) {
             return true;
         }
 
