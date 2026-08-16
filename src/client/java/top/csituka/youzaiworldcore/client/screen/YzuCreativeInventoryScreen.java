@@ -1086,14 +1086,19 @@ public class YzuCreativeInventoryScreen extends Screen {
 
     @Override
     public boolean mouseClicked(@NonNull MouseButtonEvent ev, boolean real) {
-        // 点击搜索框 → 立即切换到全部物品模式（让 EditBox 接管焦点）
+        // 点击搜索框 → 切换到全部模式并显式聚焦
+        // 26.2 中 keyPressed/charTyped 经 ContainerEventHandler.getFocused() 路由，
+        // 必须显式 setFocused(searchBox) 设置屏幕级焦点，否则无法输入
         int sbx = lp + SX, sby = tp + SY;
         if (searchBox != null && ev.x() >= sbx && ev.x() < sbx + SW && ev.y() >= sby && ev.y() < sby + SH) {
             if (selTab != null) {
                 selTab = null;
                 rebuildVis();
             }
-            return super.mouseClicked(ev, real);
+            searchBox.mouseClicked(ev, real);
+            setFocused(searchBox);
+            searchBox.setFocused(true);
+            return true;
         }
 
         // 点击搜索框外任意 GUI 元素 → 搜索框失去焦点
