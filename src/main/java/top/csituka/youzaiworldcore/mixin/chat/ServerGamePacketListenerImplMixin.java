@@ -43,8 +43,11 @@ public abstract class ServerGamePacketListenerImplMixin {
         if (!ChatFormatSettings.isEnabled() || player == null) {
             return text;
         }
-        DebugLogger.trace(MODULE, "replaceDecorator player={} text={}", player.getName().getString(), text.getString());
-        return ChatFormatHelper.formatMessageContent(player, text.getString());
+        String input = text.getString();
+        if (DebugLogger.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+            DebugLogger.trace(MODULE, "replaceDecorator player={} text={}", player.getName().getString(), input);
+        }
+        return ChatFormatHelper.formatMessageContent(player, input);
     }
 
     @Inject(method = "broadcastChatMessage", at = @At("HEAD"))
@@ -64,7 +67,9 @@ public abstract class ServerGamePacketListenerImplMixin {
         if (!ChatFormatSettings.isEnabled()) {
             return text;
         }
-        DebugLogger.trace(MODULE, "replaceLeaveMessage player={}", this.player.getName().getString());
+        if (DebugLogger.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+            DebugLogger.trace(MODULE, "replaceLeaveMessage player={}", this.player.getName().getString());
+        }
         return ChatFormatHelper.formatLeft(this.player);
     }
 }

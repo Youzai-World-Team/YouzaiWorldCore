@@ -96,7 +96,9 @@ public final class ChatFormatHelper {
      * 返回的 TextNode 在 {@code toComponent(context)} 时才求值占位符。
      */
     public static TextNode parseMessageText(ServerPlayer player, String input) {
-        DebugLogger.trace(MODULE, "parseMessageText player={} input={}", player.getName().getString(), input);
+        if (DebugLogger.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+            DebugLogger.trace(MODULE, "parseMessageText player={} input={}", player.getName().getString(), input);
+        }
         return PARSER.parseNode(TextNode.of(input));
     }
 
@@ -138,18 +140,21 @@ public final class ChatFormatHelper {
     /** 按配置模板组合完整聊天消息（含玩家名），返回 {@code override} */
     public static Component formatChat(ServerPlayer player, PlayerChatMessage message) {
         var context = ServerPlaceholderContext.of(player);
-        TextNode messageNode = parseMessageText(player, message.signedContent());
         var papiContext = context.asParserContext();
+        Component displayName = player.getDisplayName();
+        Component messageContent = message.decoratedContent();
 
         var value = getFormatNode(ChatFormatSettings.getChatFormat()).toComponent(
                 papiContext.with(DYN_KEY, Map.of(
-                        "player", (Component) player.getDisplayName(),
-                        "default", (Component) player.getDisplayName(),
+                        "player", displayName,
+                        "default", displayName,
                         "name", player.getName(),
-                        "message", (Component) messageNode.toComponent(papiContext)
+                        "message", messageContent
                 )::get));
 
-        DebugLogger.debug(MODULE, "formatChat player={} -> {}", player.getName().getString(), value.getString());
+        if (DebugLogger.isEnabled(DebugLogger.LEVEL_DETAILED)) {
+            DebugLogger.debug(MODULE, "formatChat player={} -> {}", player.getName().getString(), value.getString());
+        }
         return value;
     }
 
@@ -203,7 +208,9 @@ public final class ChatFormatHelper {
         try {
             ExtPlayerChatMessage.setArg(message, "override", formatChat(player, message));
             server = player.level().getServer();
-            DebugLogger.trace(MODULE, "modifyForSending player={} override set", player.getName().getString());
+            if (DebugLogger.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+                DebugLogger.trace(MODULE, "modifyForSending player={} override set", player.getName().getString());
+            }
         } catch (Exception e) {
             DebugLogger.exception(MODULE, "modifyForSending", e);
         }

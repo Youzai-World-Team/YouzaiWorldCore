@@ -52,7 +52,9 @@ public abstract class MsgCommandMixin {
                     ? ChatFormatHelper.formatMessageContent(sender, signedMessage.signedContent())
                     : Component.literal(signedMessage.signedContent());
             ExtPlayerChatMessage.setArg(signedMessage, "base_input", baseInput);
-            DebugLogger.trace(MODULE, "base_input set for /msg by {}", source.getTextName());
+            if (DebugLogger.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+                DebugLogger.trace(MODULE, "base_input set for /msg by {}", source.getTextName());
+            }
         } catch (Exception e) {
             DebugLogger.exception(MODULE, "setBaseInput", e);
         }
@@ -108,8 +110,10 @@ public abstract class MsgCommandMixin {
                     receiver.createCommandSourceStack(), senderName, receiverName, baseInput);
             receiver.sendChatMessage(message, bl, ChatType.bind(ChatFormatHelper.MESSAGE_TYPE_ID, registry, received));
 
-            DebugLogger.debug(MODULE, "formatted /msg sender={} receiver={}", senderName.getString(),
-                    receiverName.getString());
+            if (DebugLogger.isEnabled(DebugLogger.LEVEL_DETAILED)) {
+                DebugLogger.debug(MODULE, "formatted /msg sender={} receiver={}", senderName.getString(),
+                        receiverName.getString());
+            }
         } catch (Exception e) {
             DebugLogger.exception(MODULE, "formatPrivateMessage", e);
             receiver.sendChatMessage(message, bl, parameters);

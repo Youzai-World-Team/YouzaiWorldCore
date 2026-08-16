@@ -31,6 +31,7 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -40,9 +41,9 @@ import java.util.concurrent.ConcurrentHashMap;
  * <p>
  * 实现方式（零 Mixin、零额外依赖，全部走 Fabric 事件 + 原生计分板数据包）：
  * <ol>
- * <li>{@code ServerTickEvents.END_SERVER_TICK}：每个 {@code update_tick_time} tick
- *     对每个在线玩家重算并发送一次侧边栏（标题 CHANGE + 行 SetScore），
- *     占位符按每个玩家分别求值（支持 {@code %player:ping%} 等个人占位符）；</li>
+ * <li>{@code ServerTickEvents.END_SERVER_TICK}：按玩家错峰执行刷新，只求值当前可见窗口，
+ *     并仅发送发生变化的标题 / 行；占位符按每个玩家分别求值
+ *     （支持 {@code %player:ping%} 等个人占位符）；</li>
  * <li>{@code ServerPlayConnectionEvents.JOIN}：玩家加入时立即发送初始帧
  *     （ADD objective + 绑定 SIDEBAR 槽位 + 行）；</li>
  * <li>{@code ServerPlayConnectionEvents.DISCONNECT}：移除玩家动画状态；</li>
@@ -155,6 +156,7 @@ public final class SidebarManager {
             state.pos = 0;
             state.page = 0;
             state.title = 0;
+            state.dirty = true;
         }
         DebugLogger.info(MODULE,
                 "侧边栏已重载：enabled=%s, updateTickTime=%d, titleFrames=%d, lines=%s, pages=%d",
@@ -181,14 +183,22 @@ public final class SidebarManager {
 
         int tick = server.getTickCount();
         int rate = SidebarSettings.getUpdateTickTime();
-        if (tick % rate != 0) {
-            return;
-        }
-
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+            if (!isRefreshTick(player, tick, rate)) {
+                continue;
+            }
             PlayerState state = STATES.computeIfAbsent(player.getUUID(), u -> new PlayerState());
             render(player, state);
         }
+    }
+
+    /**
+     * 按玩家 UUID 把刷新均匀分散到周期内，避免所有在线玩家在同一个 tick 集中求值和发包。
+     */
+    private static boolean isRefreshTick(ServerPlayer player, int tick, int rate) {
+        int safeRate = Math.max(rate, 1);
+        int playerPhase = Math.floorMod(player.getUUID().hashCode(), safeRate);
+        return Math.floorMod(tick, safeRate) == playerPhase;
     }
 
     // ===== 渲染 =====
@@ -197,15 +207,16 @@ public final class SidebarManager {
      * 向单个玩家发送当前帧的侧边栏。
      * <ol>
      * <li>标题：按 {@code title} 计数轮播取帧，ADD 时建目标 + 绑定 SIDEBAR 槽位，
-     *     之后每次 CHANGE 更新标题（保证标题内占位符刷新）；</li>
+     *     之后仅在标题变化时发送 CHANGE；</li>
      * <li>行：{@code lines} 或 {@code pages}（按 {@code page} 计数分页），
-     *     权限过滤后按玩家求值，超过窗口大小进入滚动模式；</li>
+     *     权限过滤并截取滚动窗口后，再按玩家求值可见行；</li>
      * <li>清理：上一帧行数多于当前帧时对超出槽位补发 ResetScore。</li>
      * </ol>
      */
     private static void render(ServerPlayer player, PlayerState state) {
         try {
             var ctx = ServerPlaceholderContext.of(player).asParserContext();
+            boolean forceUpdate = state.dirty;
 
             // ===== 标题帧（每次刷新推进计数） =====
             int titleChange = SidebarSettings.getTitleChange();
@@ -213,52 +224,61 @@ public final class SidebarManager {
             state.title++;
             Component titleComp = titles.get(titleIndex).toComponent(ctx);
 
-            Objective objective = newObjective(titleComp);
             if (!state.added) {
+                Objective objective = newObjective(titleComp);
                 player.connection.send(new ClientboundSetObjectivePacket(objective,
                         ClientboundSetObjectivePacket.METHOD_ADD));
                 player.connection.send(new ClientboundSetDisplayObjectivePacket(DisplaySlot.SIDEBAR, objective));
                 state.added = true;
-            } else {
-                player.connection.send(new ClientboundSetObjectivePacket(objective,
+            } else if (forceUpdate || !Objects.equals(state.lastTitle, titleComp)) {
+                player.connection.send(new ClientboundSetObjectivePacket(newObjective(titleComp),
                         ClientboundSetObjectivePacket.METHOD_CHANGE));
             }
+            state.lastTitle = titleComp;
 
             // ===== 行：lines 或 pages 分页 =====
             List<ParsedLine> source = currentLines(state);
 
-            // 权限过滤 + 占位符求值
-            List<Pair<Component, Component>> visible = new ArrayList<>();
+            // 权限过滤：先保留 TextNode，滚动窗口确定后再求值可见行
+            List<Pair<TextNode, TextNode>> visible = new ArrayList<>();
             for (ParsedLine line : source) {
                 if (!hasPermission(player, line.permission)) {
                     continue;
                 }
-                for (Pair<TextNode, TextNode> pair : line.values) {
-                    visible.add(new Pair<>(pair.getFirst().toComponent(ctx), pair.getSecond().toComponent(ctx)));
-                }
+                visible.addAll(line.values);
             }
 
             // ===== 滚动窗口 =====
-            List<Pair<Component, Component>> window = applyScroll(state, visible);
+            List<Pair<TextNode, TextNode>> window = applyScroll(state, visible);
 
-            // ===== 发送行（分数高者在上，第 0 行赋最高分） =====
+            // ===== 求值并差量发送行（分数高者在上，第 0 行赋最高分） =====
             int rows = window.size();
+            List<RowSnapshot> currentRows = new ArrayList<>(rows);
             for (int i = 0; i < rows; i++) {
-                Pair<Component, Component> pair = window.get(i);
-                Component left = pair.getFirst();
-                Component right = pair.getSecond();
+                Pair<TextNode, TextNode> pair = window.get(i);
+                Component left = pair.getFirst().toComponent(ctx);
+                Component right = pair.getSecond().toComponent(ctx);
+                int score = rows - i;
+                RowSnapshot current = new RowSnapshot(left, right, score);
+                currentRows.add(current);
+
+                RowSnapshot previous = i < state.lastRows.size() ? state.lastRows.get(i) : null;
+                if (!forceUpdate && Objects.equals(previous, current)) {
+                    continue;
+                }
                 NumberFormat numberFormat = (right == null || right.getString().isEmpty())
                         ? BlankFormat.INSTANCE
                         : new FixedFormat(right);
                 player.connection.send(new ClientboundSetScorePacket(SLOT_PREFIX + i, OBJECTIVE_NAME,
-                        rows - i, Optional.of(left), Optional.of(numberFormat)));
+                        score, Optional.of(left), Optional.of(numberFormat)));
             }
 
             // ===== 清理上一帧多余行 =====
-            for (int i = rows; i < state.lastRows; i++) {
+            for (int i = rows; i < state.lastRows.size(); i++) {
                 player.connection.send(new ClientboundResetScorePacket(SLOT_PREFIX + i, OBJECTIVE_NAME));
             }
-            state.lastRows = rows;
+            state.lastRows = List.copyOf(currentRows);
+            state.dirty = false;
         } catch (Exception e) {
             DebugLogger.exception(MODULE, "render(" + player.getName().getString() + ")", e);
         }
@@ -286,8 +306,7 @@ public final class SidebarManager {
      * <li>非循环模式：滚到底后重置回开头。</li>
      * </ul>
      */
-    private static List<Pair<Component, Component>> applyScroll(PlayerState state,
-                                                                List<Pair<Component, Component>> visible) {
+    private static <T> List<T> applyScroll(PlayerState state, List<T> visible) {
         if (visible.size() <= WINDOW_SIZE) {
             return visible;
         }
@@ -300,10 +319,11 @@ public final class SidebarManager {
                 state.pos = 0;
                 index = 0;
             }
-            List<Pair<Component, Component>> doubled = new ArrayList<>(visible.size() * 2);
-            doubled.addAll(visible);
-            doubled.addAll(visible);
-            return doubled.subList(index, index + WINDOW_SIZE);
+            List<T> window = new ArrayList<>(WINDOW_SIZE);
+            for (int i = 0; i < WINDOW_SIZE; i++) {
+                window.add(visible.get((index + i) % visible.size()));
+            }
+            return window;
         } else {
             if (index + WINDOW_SIZE > visible.size()) {
                 state.pos = 0;
@@ -340,7 +360,9 @@ public final class SidebarManager {
         player.connection.send(new ClientboundSetObjectivePacket(newObjective(Component.empty()),
                 ClientboundSetObjectivePacket.METHOD_REMOVE));
         state.added = false;
-        state.lastRows = 0;
+        state.lastTitle = null;
+        state.lastRows = List.of();
+        state.dirty = true;
     }
 
     /** 向全部在线玩家广播计分板移除包（功能关闭时清除残留） */
@@ -529,17 +551,26 @@ public final class SidebarManager {
     record ParsedLine(List<Pair<TextNode, TextNode>> values, @Nullable String permission) {
     }
 
+    /** 上一次已发送的行内容，用于跳过完全相同的计分板更新包。 */
+    record RowSnapshot(Component left, Component right, int score) {
+    }
+
     /** 每玩家动画状态（JOIN 创建、DISCONNECT 移除，ConcurrentHashMap 保证并发安全） */
     static final class PlayerState {
         /** 是否已发送 ADD（此后走 CHANGE 更新标题） */
         boolean added = false;
+        /** 模板重载后强制完整同步一次，同时保留旧行数量用于清理。 */
+        boolean dirty = true;
         /** 滚动位置计数（每次刷新推进，除以 scrollSpeed 得行偏移） */
         int pos = 0;
         /** 分页计数（每次刷新推进，除以 pageChange 得页码） */
         int page = 0;
         /** 标题帧计数（每次刷新推进，除以 titleChange 得帧号） */
         int title = 0;
-        /** 上一帧发送的行数（用于清理多余槽位） */
-        int lastRows = 0;
+        /** 上一次已发送的标题。 */
+        @Nullable
+        Component lastTitle = null;
+        /** 上一次已发送的行快照（用于差量更新与清理多余槽位）。 */
+        List<RowSnapshot> lastRows = List.of();
     }
 }

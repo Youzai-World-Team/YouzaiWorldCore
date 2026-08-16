@@ -33,7 +33,9 @@ public abstract class ServerPlayerChatMixin {
         if (!ChatFormatSettings.isEnabled()) {
             return instance.getDeathMessage();
         }
-        DebugLogger.trace(MODULE, "replaceDeathMessage player={}", player.getName().getString());
+        if (DebugLogger.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+            DebugLogger.trace(MODULE, "replaceDeathMessage player={}", player.getName().getString());
+        }
         return ChatFormatHelper.formatDeath(player, instance.getDeathMessage());
     }
 }

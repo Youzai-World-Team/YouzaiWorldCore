@@ -17,15 +17,19 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Tab 列表抬头 / 页脚定制核心（仿 Styled Player List 精简版，仅 Header/Footer）。
  * <p>
  * 实现方式（去依赖化、零 Mixin，全部走 Fabric 事件）：
  * <ol>
- * <li>{@code ServerTickEvents.END_SERVER_TICK}：每个 {@code update_tick_time} tick
- * 向全部在线玩家广播一次 {@link ClientboundTabListPacket}（抬头 / 页脚），
- * 占位符按每个玩家分别求值（支持 {@code %player:ping%} 等个人占位符）；</li>
+ * <li>{@code ServerTickEvents.END_SERVER_TICK}：按玩家错峰求值抬头 / 页脚，
+ * 仅在内容变化时发送 {@link ClientboundTabListPacket}；占位符按每个玩家分别求值
+ * （支持 {@code %player:ping%} 等个人占位符）；</li>
  * <li>{@code ServerPlayConnectionEvents.JOIN}：玩家加入时立即发送一次当前帧；</li>
  * <li>配置重载（{@code /yzwc reload} 或 {@link #reload()}）时重新解析模板；
  * 功能被关闭时向在线玩家广播一次空抬头 / 页脚，清除客户端残留。</li>
@@ -50,6 +54,9 @@ public final class TabListManager {
     private static FrameSet header = FrameSet.empty();
     private static FrameSet footer = FrameSet.empty();
 
+    /** 每名玩家上一次发送的 Header/Footer，用于跳过无变化的网络包。 */
+    private static final Map<UUID, PlayerState> STATES = new ConcurrentHashMap<>();
+
     /** 上一次的开关状态，用于检测「开启 → 关闭」切换并清除客户端残留 */
     private static boolean lastEnabled = false;
 
@@ -71,9 +78,13 @@ public final class TabListManager {
             }
             if (handler.getPlayer() instanceof ServerPlayer sp && sp.connection != null) {
                 DebugLogger.trace(MODULE, "玩家加入，立即发送 Tab 抬头 / 页脚: %s", sp.getName().getString());
-                sendTo(sp, server.getTickCount());
+                PlayerState state = STATES.computeIfAbsent(sp.getUUID(), u -> new PlayerState());
+                sendTo(sp, server.getTickCount(), state);
             }
         });
+
+        ServerPlayConnectionEvents.DISCONNECT.register((handler, server) ->
+                STATES.remove(handler.getPlayer().getUUID()));
 
         DebugLogger.exiting(MODULE, "initialize");
     }
@@ -83,6 +94,9 @@ public final class TabListManager {
         TabListSettings.load();
         header = parseFrames(TabListSettings.getHeader(), "list_header");
         footer = parseFrames(TabListSettings.getFooter(), "list_footer");
+        for (PlayerState state : STATES.values()) {
+            state.dirty = true;
+        }
         DebugLogger.info(MODULE, "TabList 抬头 / 页脚已重载：enabled=%s, updateTickTime=%d, headerFrames=%d, footerFrames=%d",
                 TabListSettings.isEnabled(), TabListSettings.getUpdateTickTime(),
                 header.frames().size(), footer.frames().size());
@@ -106,23 +120,38 @@ public final class TabListManager {
 
         int tick = server.getTickCount();
         int rate = TabListSettings.getUpdateTickTime();
-        if (tick % rate != 0) {
-            return;
-        }
-
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
-            sendTo(player, tick);
+            if (!isRefreshTick(player, tick, rate)) {
+                continue;
+            }
+            PlayerState state = STATES.computeIfAbsent(player.getUUID(), u -> new PlayerState());
+            sendTo(player, tick, state);
         }
     }
 
-    /** 向单个玩家发送当前帧的抬头 / 页脚 */
-    private static void sendTo(ServerPlayer player, int tick) {
+    /** TabList 使用与侧边栏错开的玩家相位；默认相同周期下不会在同一 tick 刷新同一玩家。 */
+    private static boolean isRefreshTick(ServerPlayer player, int tick, int rate) {
+        int safeRate = Math.max(rate, 1);
+        int phaseOffset = Math.max(1, safeRate / 2);
+        int playerPhase = Math.floorMod(player.getUUID().hashCode() + phaseOffset, safeRate);
+        return Math.floorMod(tick, safeRate) == playerPhase;
+    }
+
+    /** 向单个玩家发送当前帧的抬头 / 页脚（内容未变化时跳过发包）。 */
+    private static void sendTo(ServerPlayer player, int tick, PlayerState state) {
         try {
             int rate = TabListSettings.getUpdateTickTime();
             var context = ServerPlaceholderContext.of(player).asParserContext();
             Component h = header.getForTick(tick, rate).toComponent(context);
             Component f = footer.getForTick(tick, rate).toComponent(context);
+
+            if (!state.dirty && Objects.equals(state.lastHeader, h) && Objects.equals(state.lastFooter, f)) {
+                return;
+            }
             player.connection.send(new ClientboundTabListPacket(h, f));
+            state.lastHeader = h;
+            state.lastFooter = f;
+            state.dirty = false;
         } catch (Exception e) {
             DebugLogger.exception(MODULE, "sendTo(" + player.getName().getString() + ")", e);
         }
@@ -134,6 +163,12 @@ public final class TabListManager {
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
             if (player.connection != null) {
                 player.connection.send(empty);
+            }
+            PlayerState state = STATES.get(player.getUUID());
+            if (state != null) {
+                state.lastHeader = Component.empty();
+                state.lastFooter = Component.empty();
+                state.dirty = false;
             }
         }
         DebugLogger.info(MODULE, "TabList 功能已关闭，已向 %d 名在线玩家清除抬头 / 页脚",
@@ -265,5 +300,14 @@ public final class TabListManager {
             int sendCount = tick / Math.max(updateTickTime, 1);
             return frames.get((sendCount / Math.max(changeRate, 1)) % frames.size());
         }
+    }
+
+    /** 每名玩家的 TabList 差量状态。 */
+    private static final class PlayerState {
+        @Nullable
+        private Component lastHeader;
+        @Nullable
+        private Component lastFooter;
+        private boolean dirty = true;
     }
 }

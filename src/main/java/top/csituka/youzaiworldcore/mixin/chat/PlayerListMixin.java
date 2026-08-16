@@ -59,16 +59,22 @@ public abstract class PlayerListMixin {
 
         // 从未离开过服务器（LEAVE_GAME 统计为 0）→ 首次加入
         if (player.getStats().getValue(Stats.CUSTOM.get(Stats.LEAVE_GAME)) == 0) {
-            DebugLogger.trace(MODULE, "replaceJoin first_time player={}", player.getName().getString());
+            if (DebugLogger.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+                DebugLogger.trace(MODULE, "replaceJoin first_time player={}", player.getName().getString());
+            }
             return ChatFormatHelper.formatJoinFirstTime(player);
         }
 
         Object[] args = ((TranslatableContents) text.getContents()).getArgs();
         if (args.length == 1) {
-            DebugLogger.trace(MODULE, "replaceJoin normal player={}", player.getName().getString());
+            if (DebugLogger.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+                DebugLogger.trace(MODULE, "replaceJoin normal player={}", player.getName().getString());
+            }
             return ChatFormatHelper.formatJoin(player);
         } else {
-            DebugLogger.trace(MODULE, "replaceJoin renamed player={}", player.getName().getString());
+            if (DebugLogger.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+                DebugLogger.trace(MODULE, "replaceJoin renamed player={}", player.getName().getString());
+            }
             return ChatFormatHelper.formatJoinRenamed(player, (String) args[1]);
         }
     }
