@@ -1,6 +1,7 @@
 package top.csituka.youzaiworldcore.client.screen.widget;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
@@ -42,6 +43,10 @@ public class DropdownButton extends AbstractWidget {
     private final IntConsumer onSelectionChanged;
     private final Runnable onToggleOpen;
     private int hoveredOption = -1;
+    private int popupLeft;
+    private int popupTop;
+    private int popupRenderWidth;
+    private int popupRenderHeight;
 
     // ===== 弹窗淡入淡出动画 =====
     /** 当前动画进度 0.0 ~ 1.0 */
@@ -67,6 +72,10 @@ public class DropdownButton extends AbstractWidget {
         this.open = open;
         this.onSelectionChanged = onSelectionChanged;
         this.onToggleOpen = onToggleOpen;
+        this.popupLeft = x + width - popupWidth;
+        this.popupTop = y + height;
+        this.popupRenderWidth = popupWidth;
+        this.popupRenderHeight = options.size() * height;
     }
 
     public int getSelectedIndex() {
@@ -94,9 +103,11 @@ public class DropdownButton extends AbstractWidget {
         if (!open) return false;
         int bx = this.getX();
         int by = this.getY();
-        int totalH = closedHeight + options.size() * closedHeight;
-        return mouseX >= bx && mouseX < bx + this.width
-                && mouseY >= by && mouseY < by + totalH;
+        boolean insideButton = mouseX >= bx && mouseX < bx + this.width
+                && mouseY >= by && mouseY < by + closedHeight;
+        boolean insidePopup = mouseX >= popupLeft && mouseX < popupLeft + popupRenderWidth
+                && mouseY >= popupTop && mouseY < popupTop + popupRenderHeight;
+        return insideButton || insidePopup;
     }
 
     public void setExternalAlpha(float alpha) {
@@ -119,14 +130,21 @@ public class DropdownButton extends AbstractWidget {
 
         int textY = y + (h - 8) / 2;
 
-        // 渲染按钮标签（左对齐）
-        guiGraphics.text(font, this.getMessage(), x + 4, textY, textColor, false);
-
         // 渲染当前值 + 箭头（右对齐）
         String currentValue = selectedIndex >= 0 && selectedIndex < options.size() ? options.get(selectedIndex) : "";
         String arrow = open ? "▲" : "▼";
-        String displayText = currentValue + " " + arrow;
+        int availableWidth = Math.max(1, w - 12);
+        int valueMaxWidth = Math.max(36, availableWidth * 3 / 5);
+        String displayText = ellipsize(font, currentValue + " " + arrow, valueMaxWidth);
         int displayWidth = font.width(displayText);
+
+        // 标签与当前值分别限制宽度，避免长语言文本相互覆盖。
+        int labelMaxWidth = Math.max(0, availableWidth - displayWidth - 8);
+        String label = ellipsize(font, this.getMessage().getString(), labelMaxWidth);
+        if (!label.isEmpty()) {
+            guiGraphics.text(font, Component.literal(label).withStyle(this.getMessage().getStyle()),
+                    x + 4, textY, textColor, false);
+        }
         guiGraphics.text(font, Component.literal(displayText), x + w - displayWidth - 4, textY, arrowColor, false);
 
         // 注意：弹窗渲染不在此处进行（由上层 Screen 在更高 stratum 上调用 renderPopup）
@@ -140,6 +158,15 @@ public class DropdownButton extends AbstractWidget {
      * 同一 stratum 后渲染即在上层，无需切换 stratum。
      */
     public void renderPopup(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
+        int screenHeight = Minecraft.getInstance().getWindow().getGuiScaledHeight();
+        renderPopup(guiGraphics, mouseX, mouseY, partialTick, 0, screenHeight, 0.0);
+    }
+
+    /**
+     * 在给定视口内渲染弹窗。空间不足时自动改为向上展开。
+     */
+    public void renderPopup(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick,
+                            int viewportTop, int viewportBottom, double scrollOffset) {
         // 更新淡入淡出动画
         popupAnimAlpha = lerp(popupAnimAlpha, open ? 1f : 0f, POPUP_ANIM_SPEED);
         // 淡出接近完成时直接归零，避免残留渲染
@@ -150,14 +177,26 @@ public class DropdownButton extends AbstractWidget {
         int bx = this.getX();         // 按钮 X
         int y = this.getY();
         int bw = this.width;          // 按钮宽度
-        int pw = this.popupWidth;     // 弹窗宽度
+        int screenWidth = Minecraft.getInstance().getWindow().getGuiScaledWidth();
+        int pw = Math.min(this.popupWidth, Math.max(1, screenWidth - 8));
         int h = closedHeight;
-        int dropdownY = y + h;
         int popupH = options.size() * h;
         int r = CORNER_RADIUS;
 
         // 弹窗靠右对齐于按钮下方（对齐倒三角箭头）
-        int px = bx + bw - pw;
+        int px = Math.max(4, Math.min(bx + bw - pw, screenWidth - pw - 4));
+        int screenButtonY = y - (int) Math.round(scrollOffset);
+        boolean openUpward = screenButtonY + h + popupH > viewportBottom
+                && screenButtonY - popupH >= viewportTop;
+        int desiredScreenY = openUpward ? screenButtonY - popupH : screenButtonY + h;
+        int maxScreenY = Math.max(viewportTop, viewportBottom - popupH);
+        int screenPopupY = Math.max(viewportTop, Math.min(desiredScreenY, maxScreenY));
+        int dropdownY = screenPopupY + (int) Math.round(scrollOffset);
+
+        popupLeft = px;
+        popupTop = dropdownY;
+        popupRenderWidth = pw;
+        popupRenderHeight = popupH;
 
         // 插值：背景色从深色 (0x282828) 到白色 (0xE8E8E8)
         int interpR = lerpInt(0x28, 0xE8, popupAnimAlpha);
@@ -206,8 +245,24 @@ public class DropdownButton extends AbstractWidget {
 
             int optColor = (i == selectedIndex) ? OPTION_SELECTED_COLOR : OPTION_TEXT_COLOR;
             int fadedColor = (textAlpha << 24) | (optColor & 0x00FFFFFF);
-            guiGraphics.text(font, Component.literal(options.get(i)), px + 10, optTextY, fadedColor, false);
+            String optionText = ellipsize(font, options.get(i), Math.max(1, pw - 20));
+            guiGraphics.text(font, Component.literal(optionText), px + 10, optTextY, fadedColor, false);
         }
+    }
+
+    private static String ellipsize(Font font, String text, int maxWidth) {
+        if (maxWidth <= 0 || text.isEmpty()) return "";
+        if (font.width(text) <= maxWidth) return text;
+
+        String ellipsis = "...";
+        int ellipsisWidth = font.width(ellipsis);
+        if (ellipsisWidth > maxWidth) return "";
+
+        int end = text.length();
+        while (end > 0 && font.width(text.substring(0, end)) + ellipsisWidth > maxWidth) {
+            end--;
+        }
+        return text.substring(0, end) + ellipsis;
     }
 
     // ========== 动画工具 ==========
@@ -255,14 +310,33 @@ public class DropdownButton extends AbstractWidget {
             return;
         }
 
-        if (hoveredOption >= 0 && hoveredOption < options.size()) {
-            selectedIndex = hoveredOption;
+        int clickedOption = -1;
+        if (event.x() >= popupLeft && event.x() < popupLeft + popupRenderWidth
+                && event.y() >= popupTop && event.y() < popupTop + popupRenderHeight) {
+            clickedOption = (int) ((event.y() - popupTop) / closedHeight);
+        }
+
+        if (clickedOption >= 0 && clickedOption < options.size()) {
+            selectedIndex = clickedOption;
             if (onSelectionChanged != null) onSelectionChanged.accept(selectedIndex);
         }
 
         open = false;
         this.height = closedHeight;
         if (onToggleOpen != null) onToggleOpen.run();
+    }
+
+    @Override
+    public boolean isMouseOver(double mouseX, double mouseY) {
+        if (!this.active || !this.visible) return false;
+        int bx = this.getX();
+        int by = this.getY();
+        boolean insideButton = mouseX >= bx && mouseX < bx + this.width
+                && mouseY >= by && mouseY < by + closedHeight;
+        boolean insidePopup = open
+                && mouseX >= popupLeft && mouseX < popupLeft + popupRenderWidth
+                && mouseY >= popupTop && mouseY < popupTop + popupRenderHeight;
+        return insideButton || insidePopup;
     }
 
     @Override
