@@ -14,6 +14,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.util.FormattedCharSequence;
 import top.csituka.youzaiworldcore.YouzaiworldCore;
 import top.csituka.youzaiworldcore.client.config.ClientExternalSettings;
+import top.csituka.youzaiworldcore.client.resource.CustomFontResourcePack;
 import top.csituka.youzaiworldcore.client.screen.widget.CheckboxButton;
 import top.csituka.youzaiworldcore.update.UpdateChecker;
 import top.csituka.youzaiworldcore.client.screen.widget.DropdownButton;
@@ -111,6 +112,8 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
     private String debugPort;
     /** 是否启用 YZUI 自定义 UI 样式 */
     private boolean yzuiEnabled;
+    /** 是否启用模组内置的自定义字体资源包 */
+    private boolean customFontEnabled;
 
     /** 是否自动跳过实验性设置警告屏幕 */
     private boolean autoSkipExperimentalWarning;
@@ -177,6 +180,7 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
         this.debugAddress = ClientExternalSettings.getDebugAddress();
         this.debugPort = ClientExternalSettings.getDebugPort();
         this.yzuiEnabled = ClientExternalSettings.isYzuiEnabled();
+        this.customFontEnabled = ClientExternalSettings.isCustomFontEnabled();
         this.autoSkipExperimentalWarning = ClientExternalSettings.isAutoSkipExperimentalWarning();
         this.experimentalWarningSkipAction = ClientExternalSettings.getExperimentalWarningSkipAction();
     }
@@ -786,7 +790,23 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
                 }
         ).setWrapMessage(true);
         addRenderableWidget(yzuiToggle);
-        maxContentY = y + toggleHeight + 6;
+        y += toggleHeight + 6;
+
+        Component fontToggleMessage =
+                Component.translatable("screen.youzaiworldcore.settings.toggle_custom_font");
+        int fontToggleHeight = checkboxHeight(fontToggleMessage);
+        CheckboxButton customFontToggle = new CheckboxButton(
+                contentLeft, y, contentWidth, fontToggleHeight, fontToggleMessage, customFontEnabled,
+                () -> {
+                    boolean newVal = !customFontEnabled;
+                    customFontEnabled = newVal;
+                    ClientExternalSettings.setCustomFontEnabled(newVal);
+                    CustomFontResourcePack.setEnabled(newVal);
+                    DebugLogger.info("SettingsScreen", "自定义字体资源包已" + (newVal ? "启用" : "禁用"));
+                }
+        ).setWrapMessage(true);
+        addRenderableWidget(customFontToggle);
+        maxContentY = y + fontToggleHeight + 6;
     }
 
     private void buildAboutSection() {

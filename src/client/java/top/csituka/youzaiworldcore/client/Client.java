@@ -23,6 +23,7 @@ import top.csituka.youzaiworldcore.block.entity.ModBlockEntities;
 import top.csituka.youzaiworldcore.client.renderer.block.FlyBeaconBlockEntityRenderer;
 import top.csituka.youzaiworldcore.client.renderer.block.TeleportAnchorBlockEntityRenderer;
 import top.csituka.youzaiworldcore.client.resource.ItemModelDefinitionValidator;
+import top.csituka.youzaiworldcore.client.resource.CustomFontResourcePack;
 import top.csituka.youzaiworldcore.client.screen.block.DecompositionTableScreen;
 import top.csituka.youzaiworldcore.client.screen.block.FlyBeaconScreen;
 import top.csituka.youzaiworldcore.client.screen.MenuScreen;
@@ -113,6 +114,9 @@ public class Client implements ClientModInitializer {
         top.csituka.youzaiworldcore.YouzaiworldCore.logToFile = clientLogToFile;
         top.csituka.youzaiworldcore.YouzaiworldCore.devModeEnabled = top.csituka.youzaiworldcore.client.config.ClientExternalSettings
                 .isDevModeEnabled();
+
+        DebugLogger.info("Client", "注册自定义字体内置资源包...");
+        CustomFontResourcePack.register();
 
         // 加载更新检查器配置（客户端独立直连更新 API，用于标题界面公告）
         DebugLogger.info("Client", "加载更新检查器配置...");
