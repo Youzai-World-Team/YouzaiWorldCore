@@ -60,7 +60,6 @@
     "MultiLineEditBoxYzuiMixin",
     "MultiLineEditBoxYzuiCursorMixin",
     "ScrollAreaYzuiMixin",
-    "laowumeme.SoundBufferLibraryLaowuMixin",
     "afk.AfkKeyboardHandlerMixin",
     "afk.AfkMouseHandlerMixin",
     "ExperimentalWarningSkipMixin",

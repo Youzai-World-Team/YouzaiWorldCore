@@ -154,23 +154,16 @@ public final class LaowuMemeClientState {
         if (old != null) {
             mc.getSoundManager().stop(old);
         }
-        LaowuAudioPool.refreshImported();
         // 服务端选曲：按 soundId 播放对应内置曲（多人同听）；不可用时回退本地随机
-        LaowuAudioPool.PlayTarget target = LaowuAudioPool.pickForSoundId(soundId);
-        if (target == null) {
-            DebugLogger.info(MODULE, "音频池为空，跳过播放（所有音频均被禁用或无可用曲目）");
+        net.minecraft.sounds.SoundEvent event = LaowuAudioPool.pickForSoundId(soundId);
+        if (event == null) {
+            DebugLogger.info(MODULE, "音频池为空，跳过播放（所有音频均被禁用）");
             return;
         }
-        SoundInstance inst;
-        if (target.isImported()) {
-            inst = new LaowuImportedSoundInstance(target.importedName, catAId, catBId);
-        } else {
-            inst = new LaowuSoundInstance(target.event, catAId, catBId);
-        }
+        SoundInstance inst = new LaowuSoundInstance(event, catAId, catBId);
         sounds.put(key(catAId, catBId), inst);
         mc.getSoundManager().play(inst);
-        DebugLogger.info(MODULE, "播放音频: %s (服务端 soundId=%d)",
-                target.isImported() ? "imported:" + target.importedName : target.event.location(), soundId);
+        DebugLogger.info(MODULE, "播放音频: %s (服务端 soundId=%d)", event.location(), soundId);
     }
 
     private void stopSound(int catAId, int catBId) {

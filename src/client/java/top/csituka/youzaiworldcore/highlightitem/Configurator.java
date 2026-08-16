@@ -1,7 +1,7 @@
 package top.csituka.youzaiworldcore.highlightitem;
 
+import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.toasts.SystemToast;
@@ -10,23 +10,20 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.util.ARGB;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import top.csituka.youzaiworldcore.client.config.ClientGlobalSettings;
+import top.csituka.youzaiworldcore.config.ConfigSection;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.Properties;
 
 /**
  * 高亮物品功能配置单例（参考 HighLightItem，适配 YouzaiWorldCore 26.2）。
  * <p>
- * 配置文件位于 {@code config/youzaiworldcore/highlight_item.properties}。
+ * 存放位置：{@code yzwc/client/global_settings.json} 的 {@code highlight_item_module} 分节。
  * 所有运行时状态（开关、颜色、比较模式、通知偏好）均持久化于此。
  */
 public class Configurator {
+
     private static final Logger LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/HighlightItem");
 
     public static boolean TOGGLE;
@@ -34,14 +31,7 @@ public class Configurator {
     public static ItemComparator.Comparators COMPARATOR;
     public static NotificationPreference NOTIFICATION_PREFERENCE;
 
-    private final Path currentDirectory;
-    private final Properties properties = new Properties();
-    private final String CONFIG = "highlight_item";
-
     public Configurator() throws IOException {
-        currentDirectory = FabricLoader.getInstance().getConfigDir().resolve("youzaiworldcore");
-        Files.createDirectories(currentDirectory);
-        DebugLogger.info("HighlightItem", "配置目录: %s", currentDirectory);
         loadOrGenerateConfig();
     }
 
@@ -71,73 +61,65 @@ public class Configurator {
         }
     }
 
+    /** 分节内的配置键 */
     public enum Config {
-        COLOR("color", Colors.HighLightColor.DEFAULT.json().toString()),
-        TOGGLE("toggle", "true"),
-        COMPARATOR("comparator", ItemComparator.Comparators.ITEM_ONLY.name()),
-        NOTIFICATION_PREFERENCE("notif-preference", NotificationPreference.NONE.name());
+        COLOR("color"),
+        TOGGLE("toggle"),
+        COMPARATOR("comparator"),
+        NOTIFICATION_PREFERENCE("notif_preference");
 
         private final String key;
-        private final String def;
 
-        Config(String key, String def) {
+        Config(String key) {
             this.key = key;
-            this.def = def;
         }
 
         public String getKey() {
             return key;
         }
-
-        public String getDefault() {
-            return def;
-        }
     }
 
+    // ===== 默认值 =====
+
+    private static final boolean DEFAULT_TOGGLE = true;
+    private static final ItemComparator.Comparators DEFAULT_COMPARATOR = ItemComparator.Comparators.ITEM_ONLY;
+    private static final NotificationPreference DEFAULT_NOTIFICATION_PREFERENCE = NotificationPreference.NONE;
+
+    /** @return 该模块的配置分节 */
+    private static ConfigSection section() {
+        return ClientGlobalSettings.section(ClientGlobalSettings.HIGHLIGHT_ITEM_MODULE);
+    }
+
+    /**
+     * 从 {@code highlight_item_module} 分节加载；分节缺失时写入默认值。
+     *
+     * @throws IOException 保留签名以兼容调用方的异常处理；实际错误走配置崩溃流程
+     */
     public void loadOrGenerateConfig() throws IOException {
-        Path configPath = getConfigPath();
-        if (Files.exists(configPath)) {
-            try (InputStream input = new FileInputStream(configPath.toString())) {
-                properties.load(input);
-            }
-            DebugLogger.info("HighlightItem", "已加载配置文件: %s", configPath);
-        } else {
-            try (var stream = new FileOutputStream(configPath.toString())) {
-                for (Config value : Config.values()) {
-                    properties.setProperty(value.getKey(), value.getDefault());
-                }
-                properties.store(stream, null);
-            }
-            DebugLogger.info("HighlightItem", "已生成默认配置文件: %s", configPath);
+        ConfigSection section = section();
+        if (section.isEmpty()) {
+            writeDefaults();
+            DebugLogger.info("HighlightItem", "highlight_item_module 分节不存在，已写入默认配置");
+            return;
         }
 
-        TOGGLE = Boolean.parseBoolean(properties.getProperty(Config.TOGGLE.getKey(), Config.TOGGLE.getDefault()));
+        TOGGLE = section.getBoolean(Config.TOGGLE.getKey(), DEFAULT_TOGGLE);
 
+        JsonObject jsonColor = section.getObject(Config.COLOR.getKey());
         float[] colors;
-        if (properties.containsKey("color")) {
-            var jsonColor = JsonParser.parseString(properties.getProperty(Config.COLOR.getKey())).getAsJsonObject();
-            if (jsonColor.has("default")) {
-                colors = Colors.HighLightColor.fromJson(jsonColor).getShaderColor();
-            } else {
-                colors = Colors.customFromJson(jsonColor);
-            }
+        if (jsonColor == null) {
+            colors = Colors.HighLightColor.DEFAULT.getShaderColor();
+        } else if (jsonColor.has("default")) {
+            colors = Colors.HighLightColor.fromJson(jsonColor).getShaderColor();
         } else {
-            var highlightColor = Colors.HighLightColor.valueOf(
-                    properties.getProperty("highlight-color", Colors.HighLightColor.DEFAULT.name()));
-            colors = highlightColor.getShaderColor();
-            removeFromConfig("highlight-color"); // 颜色系统已变更
-            updateConfig(Config.COLOR, highlightColor.json().toString());
+            colors = Colors.customFromJson(jsonColor);
         }
+        applyShaderColor(colors);
 
-        COLOR = ARGB.color(
-                (int) (colors[3] * 255),
-                (int) (colors[0] * 255),
-                (int) (colors[1] * 255),
-                (int) (colors[2] * 255));
-        COMPARATOR = ItemComparator.Comparators.valueOf(
-                properties.getProperty(Config.COMPARATOR.getKey(), Config.COMPARATOR.getDefault()));
-        NOTIFICATION_PREFERENCE = NotificationPreference.valueOf(
-                properties.getProperty(Config.NOTIFICATION_PREFERENCE.getKey(), Config.NOTIFICATION_PREFERENCE.getDefault()));
+        COMPARATOR = section.getEnum(Config.COMPARATOR.getKey(), DEFAULT_COMPARATOR,
+                ItemComparator.Comparators.class);
+        NOTIFICATION_PREFERENCE = section.getEnum(Config.NOTIFICATION_PREFERENCE.getKey(),
+                DEFAULT_NOTIFICATION_PREFERENCE, NotificationPreference.class);
 
         DebugLogger.stateChange("HighlightItem", "config", "toggle", TOGGLE);
         DebugLogger.stateChange("HighlightItem", "config", "color", COLOR);
@@ -145,22 +127,45 @@ public class Configurator {
         DebugLogger.stateChange("HighlightItem", "config", "notif", NOTIFICATION_PREFERENCE.name());
     }
 
-    public Path getConfigPath() {
-        return currentDirectory.resolve(CONFIG);
+    /** 重置为默认值并写入 {@code highlight_item_module} 分节（首次安装 / 坏文件恢复用） */
+    public static void writeDefaults() {
+        TOGGLE = DEFAULT_TOGGLE;
+        COMPARATOR = DEFAULT_COMPARATOR;
+        NOTIFICATION_PREFERENCE = DEFAULT_NOTIFICATION_PREFERENCE;
+        applyShaderColor(Colors.HighLightColor.DEFAULT.getShaderColor());
+
+        ConfigSection section = section();
+        section.set(Config.TOGGLE.getKey(), DEFAULT_TOGGLE);
+        section.set(Config.COLOR.getKey(), Colors.HighLightColor.DEFAULT.json());
+        section.set(Config.COMPARATOR.getKey(), DEFAULT_COMPARATOR);
+        section.set(Config.NOTIFICATION_PREFERENCE.getKey(), DEFAULT_NOTIFICATION_PREFERENCE);
+        ClientGlobalSettings.save();
     }
 
+    /**
+     * 写入单项配置并落盘。
+     *
+     * @param config 配置键
+     * @param value  取值；{@link Config#COLOR} 传 JSON 文本，{@link Config#TOGGLE} 传 "true"/"false"
+     * @throws IOException 保留签名以兼容调用方的异常处理；实际错误走配置崩溃流程
+     */
     public void updateConfig(Config config, String value) throws IOException {
-        try (var stream = new FileOutputStream(getConfigPath().toString())) {
-            properties.setProperty(config.getKey(), value);
-            properties.store(stream, null);
+        ConfigSection section = section();
+        switch (config) {
+            case COLOR -> section.set(config.getKey(), JsonParser.parseString(value));
+            case TOGGLE -> section.set(config.getKey(), Boolean.parseBoolean(value));
+            default -> section.set(config.getKey(), value);
         }
+        ClientGlobalSettings.save();
     }
 
-    public void removeFromConfig(String key) throws IOException {
-        try (var stream = new FileOutputStream(getConfigPath().toString())) {
-            properties.remove(key);
-            properties.store(stream, null);
-        }
+    /** 把着色器色值（rgba，0~1）应用到运行时的 {@link #COLOR} */
+    private static void applyShaderColor(float[] rgba) {
+        COLOR = ARGB.color(
+                (int) (rgba[3] * 255),
+                (int) (rgba[0] * 255),
+                (int) (rgba[1] * 255),
+                (int) (rgba[2] * 255));
     }
 
     /** 切换高亮总开关。 */
@@ -222,11 +227,7 @@ public class Configurator {
 
     /** 仅更新运行时颜色（不写文件），用于配置界面拖动滑块时的实时预览。 */
     public void setColorLive(float[] rgba) {
-        COLOR = ARGB.color(
-                (int) (rgba[3] * 255f),
-                (int) (rgba[0] * 255f),
-                (int) (rgba[1] * 255f),
-                (int) (rgba[2] * 255f));
+        applyShaderColor(rgba);
     }
 
     /** 更新颜色并持久化到配置文件。 */
