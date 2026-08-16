@@ -102,6 +102,10 @@ public class YzuCreativeInventoryScreen extends Screen {
     private float xm, ym;
     private int lp, tp;
     private int tabPage;
+    /** 创造物品网格滚动条是否正在拖动。 */
+    private boolean scrollBarDragging;
+    /** 鼠标按下位置相对滚动条 thumb 顶部的偏移，避免拖动时 thumb 跳动。 */
+    private int scrollBarDragOffset;
     // 拖拽 / pending 状态
     private boolean isDragInProgress;
     private int dragButton;
@@ -768,8 +772,70 @@ public class YzuCreativeInventoryScreen extends Screen {
         int thumbH = Math.max(6, (int) ((float) VROWS / rows * SCROLL_H));
         int trackH = SCROLL_H - thumbH;
         int thumbY = by + (int) ((float) Math.round(soff) / maxS * trackH);
-        boolean hov = mx >= bx - 1 && mx < bx + SCROLL_W + 1 && my >= by && my < by + SCROLL_H;
+        boolean hov = scrollBarDragging
+                || (mx >= bx - 4 && mx < bx + SCROLL_W + 4 && my >= by && my < by + SCROLL_H);
         g.fill(bx, thumbY, bx + SCROLL_W, thumbY + thumbH, hov ? 0xCCFFFFFF : 0x80FFFFFF);
+    }
+
+    /** 返回当前创造物品网格允许的最大滚动行数。 */
+    private int getGridMaxScroll() {
+        int rows = (vis.size() + COLS - 1) / COLS;
+        return Math.max(0, rows - VROWS);
+    }
+
+    /** 处理滚动条按下，支持点击 thumb 或轨道后直接跳转并开始拖动。 */
+    private boolean beginScrollBarDrag(double mouseX, double mouseY) {
+        int maxS = getGridMaxScroll();
+        if (maxS <= 0) {
+            return false;
+        }
+
+        int bx = lp + SCROLL_X;
+        int by = tp + SCROLL_Y;
+        if (mouseX < bx - 4 || mouseX >= bx + SCROLL_W + 4
+                || mouseY < by || mouseY >= by + SCROLL_H) {
+            return false;
+        }
+
+        int rows = (vis.size() + COLS - 1) / COLS;
+        int thumbH = Math.max(6, (int) ((float) VROWS / rows * SCROLL_H));
+        int trackH = SCROLL_H - thumbH;
+        int thumbY = by + (int) ((float) Math.round(soff) / maxS * trackH);
+        if (mouseY < thumbY || mouseY >= thumbY + thumbH) {
+            // 点击轨道时把 thumb 中心对准鼠标位置，再进入拖动状态。
+            int targetThumbY = (int) Math.round(mouseY - thumbH / 2.0);
+            int minThumbY = by;
+            int maxThumbY = by + trackH;
+            targetThumbY = Math.max(minThumbY, Math.min(maxThumbY, targetThumbY));
+            soff = (float) (targetThumbY - by) / trackH * maxS;
+            scrollBarDragOffset = thumbH / 2;
+        } else {
+            scrollBarDragOffset = (int) Math.round(mouseY - thumbY);
+        }
+        scrollBarDragging = true;
+        DebugLogger.info("YzuCreativeInventoryScreen", "开始拖动创造物品滚动条，scroll=%.2f/%d", soff, maxS);
+        return true;
+    }
+
+    /** 根据鼠标位置更新滚动条及物品网格的滚动行数。 */
+    private void dragScrollBar(double mouseY) {
+        int maxS = getGridMaxScroll();
+        if (maxS <= 0) {
+            return;
+        }
+        int rows = (vis.size() + COLS - 1) / COLS;
+        int thumbH = Math.max(6, (int) ((float) VROWS / rows * SCROLL_H));
+        int trackH = SCROLL_H - thumbH;
+        if (trackH <= 0) {
+            soff = 0;
+            return;
+        }
+        int by = tp + SCROLL_Y;
+        int thumbY = (int) Math.round(mouseY - scrollBarDragOffset);
+        int minThumbY = by;
+        int maxThumbY = by + trackH;
+        thumbY = Math.max(minThumbY, Math.min(maxThumbY, thumbY));
+        soff = (float) (thumbY - by) / trackH * maxS;
     }
 
     private void pickupItem(ItemStack stack, int count) {
@@ -823,6 +889,8 @@ public class YzuCreativeInventoryScreen extends Screen {
     private void resetDragState() {
         pendingDrag = false;
         isDragInProgress = false;
+        scrollBarDragging = false;
+        scrollBarDragOffset = 0;
         draggedSlots.clear();
         yzwcDragMode = 0;
         shiftDragFilter = ItemStack.EMPTY;
@@ -1136,6 +1204,11 @@ public class YzuCreativeInventoryScreen extends Screen {
             return true;
         }
 
+        // 创造物品网格滚动条：左键按下 thumb 或轨道后进入拖动状态。
+        if (ev.button() == 0 && beginScrollBarDrag(ev.x(), ev.y())) {
+            return true;
+        }
+
         // 右侧面板（装备/副手/物品栏/热栏）
         int rpSlot = getRightPanelSlotAt((int) ev.x(), (int) ev.y());
         if (rpSlot >= 0) {
@@ -1268,6 +1341,10 @@ public class YzuCreativeInventoryScreen extends Screen {
 
     @Override
     public boolean mouseDragged(@NonNull MouseButtonEvent ev, double dx, double dy) {
+        if (scrollBarDragging && ev.button() == 0) {
+            dragScrollBar(ev.y());
+            return true;
+        }
         if (pendingDrag && ev.button() == dragButton) {
             // 鼠标真正移动了 → 从 pending 转为实际手势拖拽
             pendingDrag = false;
@@ -1295,6 +1372,14 @@ public class YzuCreativeInventoryScreen extends Screen {
 
     @Override
     public boolean mouseReleased(@NonNull MouseButtonEvent ev) {
+        if (scrollBarDragging && ev.button() == 0) {
+            scrollBarDragging = false;
+            scrollBarDragOffset = 0;
+            DebugLogger.info("YzuCreativeInventoryScreen", "结束拖动创造物品滚动条，scroll=%.2f/%d",
+                    soff, getGridMaxScroll());
+            return true;
+        }
+
         // 拖拽物品从创造栏移到面板外后，释放事件是主要处理路径；按原版方式生成掉落物。
         if (dropCreativeCarriedOutside(ev.x(), ev.y())) {
             return true;
