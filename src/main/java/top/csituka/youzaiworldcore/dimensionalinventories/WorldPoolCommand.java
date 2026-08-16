@@ -72,8 +72,11 @@ public final class WorldPoolCommand {
                                         String poolId) {
         DebugLogger.entering("WorldPoolCmd", "executeTeleport", "poolId=" + poolId + ", targets=" + targets.size());
         DimensionPool pool = DimensionPoolSettings.getPool(poolId);
-        if (pool == null) {
-            DebugLogger.branch("WorldPoolCmd", "pool found", false, "poolId=" + poolId + " 不存在");
+        // 隐藏池（内部使用）对管理员命令不可见，视为不存在
+        boolean hiddenPool = DimensionPoolSettings.isHiddenPool(poolId);
+        if (pool == null || hiddenPool) {
+            DebugLogger.branch("WorldPoolCmd", "pool found", false,
+                    "poolId=" + poolId + " 不存在" + (hiddenPool ? "（隐藏池不可用）" : ""));
             source.sendFailure(Component.translatable(
                     "youzaiworldcore.message.diminv.pool_not_found", poolId));
             DebugLogger.exiting("WorldPoolCmd", "executeTeleport", "pool not found, return 0");

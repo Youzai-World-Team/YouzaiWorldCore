@@ -31,6 +31,15 @@ public final class DimensionPoolSettings {
     /** 池列表在分节里的键名 */
     private static final String KEY_POOLS = "pools";
 
+    /** 隐藏池：登录大厅池 ID（内部使用，不写入配置文件） */
+    private static final String HIDDEN_LOGIN_HALL_POOL_ID = "_hide_login_hall";
+
+    /** 隐藏池：登录大厅池包含的维度（本项目注册的账号隔离维度） */
+    private static final String LOGIN_HALL_DIMENSION = "youzaiworldcore:login_hall";
+
+    /** 隐藏池 ID 集合：这些池仅存在于内存（内部使用），不写入配置文件、不出现在命令列表/补全中 */
+    private static final Set<String> HIDDEN_POOL_IDS = Set.of(HIDDEN_LOGIN_HALL_POOL_ID);
+
     private static final Gson GSON = new GsonBuilder()
             .setPrettyPrinting()
             .registerTypeAdapter(GameType.class, new GameTypeSerializer())
@@ -46,10 +55,15 @@ public final class DimensionPoolSettings {
 
     // ===== 公共 API =====
 
-    /** 获取所有维度池 */
+    /**
+     * 获取所有可见（非隐藏）维度池。
+     * <p>隐藏池（内部使用）不会出现在结果中，见 {@link #isHiddenPool(String)}。</p>
+     */
     public static Collection<DimensionPool> getAllPools() {
         DebugLogger.entering("DimPoolSettings", "getAllPools");
-        Collection<DimensionPool> result = Collections.unmodifiableCollection(POOLS.values());
+        Collection<DimensionPool> result = POOLS.values().stream()
+                .filter(pool -> !isHiddenPool(pool.id()))
+                .toList();
         DebugLogger.exiting("DimPoolSettings", "getAllPools", "size=" + result.size());
         return result;
     }
@@ -158,8 +172,12 @@ public final class DimensionPoolSettings {
             }
         }
 
-        LOGGER.info("已加载 {} 个维度池", POOLS.size());
-        DebugLogger.info("DimPoolSettings", "已加载 %d 个维度池", POOLS.size());
+        // 注册隐藏池（内部使用，不写入配置文件），必须在配置池加载完成后执行
+        registerHiddenPools();
+
+        LOGGER.info("已加载 {} 个维度池（含隐藏池 {} 个）", POOLS.size(), HIDDEN_POOL_IDS.size());
+        DebugLogger.info("DimPoolSettings", "已加载 %d 个维度池（含隐藏池 %d 个）",
+                POOLS.size(), HIDDEN_POOL_IDS.size());
         DebugLogger.exiting("DimPoolSettings", "load");
     }
 
@@ -173,12 +191,16 @@ public final class DimensionPoolSettings {
     public static void save() {
         DebugLogger.entering("DimPoolSettings", "save");
         ConfigSection section = GlobalSettings.section(GlobalSettings.DIMENSIONAL_INVENTORIES_MODULE);
-        List<DimensionPool> poolList = new ArrayList<>(POOLS.values());
+        // 隐藏池（内部使用）不写入配置文件
+        List<DimensionPool> poolList = POOLS.values().stream()
+                .filter(pool -> !isHiddenPool(pool.id()))
+                .toList();
         section.set(KEY_POOLS, GSON.toJsonTree(poolList));
         GlobalSettings.save();
-        LOGGER.info("维度池配置已保存");
-        DebugLogger.info("DimPoolSettings", "维度池配置已保存到 %s, 共 %d 个池",
-                GlobalSettings.file(), POOLS.size());
+        LOGGER.info("维度池配置已保存（{} 个可见池，{} 个隐藏池不写入）",
+                poolList.size(), POOLS.size() - poolList.size());
+        DebugLogger.info("DimPoolSettings", "维度池配置已保存到 %s, 可见池 %d 个（隐藏池 %d 个不写入）",
+                GlobalSettings.file(), poolList.size(), POOLS.size() - poolList.size());
         DebugLogger.exiting("DimPoolSettings", "save");
     }
 
@@ -262,7 +284,73 @@ public final class DimensionPoolSettings {
                 DIMENSION_TO_POOL.put(dim, pool.id());
             }
         }
-        DebugLogger.exiting("DimPoolSettings", "createDefaultConfig", "共创建 " + POOLS.size() + " 个维度池");
+
+        // 注册隐藏池（内部使用，不写入配置文件）
+        registerHiddenPools();
+
+        DebugLogger.exiting("DimPoolSettings", "createDefaultConfig",
+                "共创建 " + POOLS.size() + " 个维度池（含隐藏池 " + HIDDEN_POOL_IDS.size() + " 个）");
+    }
+
+    // ===== 隐藏池（内部使用，不写入配置文件） =====
+
+    /**
+     * 注册隐藏维度池（仅存在于内存，不写入配置文件）。
+     * <p>
+     * 当前隐藏池 {@code _hide_login_hall} 仅包含 {@code youzaiworldcore:login_hall}，
+     * 用于把未认证玩家的登录大厅纳入维度池体系：
+     * <ul>
+     *   <li>玩家进出登录大厅自动触发跨池状态保存/加载（背包、经验等与其余世界隔离）</li>
+     *   <li>登录大厅强制冒险模式，禁止推进度与统计</li>
+     *   <li>若管理员在配置文件中手动把 {@code youzaiworldcore:login_hall} 配给了某个可见池，
+     *       以隐藏池为准（覆盖归属并告警）</li>
+     * </ul>
+     * 该方法幂等，在 {@link #load()}（配置池加载完成后）与 {@link #createDefaultConfig()} 末尾调用，
+     * 保证无论配置文件是否存在、是否经 /yzwc reload 重载，隐藏池始终注册在内存中。
+     */
+    private static void registerHiddenPools() {
+        DebugLogger.entering("DimPoolSettings", "registerHiddenPools");
+        DimensionPool loginHallPool = new DimensionPool(
+                HIDDEN_LOGIN_HALL_POOL_ID,
+                "Login Hall",
+                GameType.ADVENTURE,
+                false, // 不允许推进度
+                false  // 不允许统计
+        );
+        loginHallPool.addDimension(LOGIN_HALL_DIMENSION);
+        loginHallPool.setDefaultSpawn(new DimensionPool.DefaultSpawn(
+                LOGIN_HALL_DIMENSION, 0.0, 0.0, 0.0, 90.0f, 0.0f));
+
+        // 若配置文件中恰好存在同名池，覆盖并清理其残留维度归属（避免残留维度错误指向隐藏池）
+        DimensionPool previousPool = POOLS.put(loginHallPool.id(), loginHallPool);
+        if (previousPool != null) {
+            LOGGER.warn("隐藏池 {} 覆盖了配置中的同名可见池，该配置将被忽略且不会写回文件",
+                    loginHallPool.id());
+            DebugLogger.warn("DimPoolSettings",
+                    "隐藏池 %s 覆盖了配置中的同名可见池，该配置将被忽略且不会写回文件",
+                    loginHallPool.id());
+            DIMENSION_TO_POOL.entrySet().removeIf(e -> loginHallPool.id().equals(e.getValue()));
+        }
+
+        // 隐藏池维度归属（若被其他可见池占用，隐藏池优先级更高）
+        String previous = DIMENSION_TO_POOL.put(LOGIN_HALL_DIMENSION, loginHallPool.id());
+        if (previous != null && !previous.equals(loginHallPool.id())) {
+            LOGGER.warn("维度 {} 原本属于可见池 {}，隐藏池 {} 优先级更高，已覆盖该归属",
+                    LOGIN_HALL_DIMENSION, previous, loginHallPool.id());
+            DebugLogger.warn("DimPoolSettings",
+                    "维度 %s 原本属于可见池 %s，隐藏池 %s 优先级更高，已覆盖该归属",
+                    LOGIN_HALL_DIMENSION, previous, loginHallPool.id());
+        }
+        DebugLogger.info("DimPoolSettings", "已注册隐藏池 %s（维度 %s，不写入配置文件）",
+                HIDDEN_LOGIN_HALL_POOL_ID, LOGIN_HALL_DIMENSION);
+        DebugLogger.exiting("DimPoolSettings", "registerHiddenPools");
+    }
+
+    /** 判断指定池是否为隐藏池（内部使用：不写入配置文件、不出现在命令列表/补全中） */
+    public static boolean isHiddenPool(String poolId) {
+        boolean result = HIDDEN_POOL_IDS.contains(poolId);
+        DebugLogger.trace("DimPoolSettings", "isHiddenPool: poolId=%s, result=%s", poolId, result);
+        return result;
     }
 
     // ===== 管理操作（供指令使用） =====

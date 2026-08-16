@@ -139,13 +139,16 @@ public final class DimensionPoolManager {
                 "player=" + player.getName().getString() + ", targetPoolId=" + targetPoolId);
         MinecraftServer server = getServer(player);
 
-        // 1. 查找目标池
+        // 1. 查找目标池（隐藏池视为不存在，防止恶意客户端伪造隐藏池 ID 传送）
         DimensionPool targetPool = DimensionPoolSettings.getPool(targetPoolId);
-        DebugLogger.branch("DimensionPoolManager", "目标池是否存在", targetPool == null, "poolId=" + targetPoolId);
-        if (targetPool == null) {
+        boolean hiddenPool = DimensionPoolSettings.isHiddenPool(targetPoolId);
+        DebugLogger.branch("DimensionPoolManager", "目标池是否存在",
+                targetPool == null || hiddenPool, "poolId=" + targetPoolId + ", hidden=" + hiddenPool);
+        if (targetPool == null || hiddenPool) {
             player.sendSystemMessage(Component.translatable(
                     "youzaiworldcore.message.diminv.pool_not_found", targetPoolId));
-            DebugLogger.exiting("DimensionPoolManager", "teleportToPool", "result=false (pool_not_found)");
+            DebugLogger.exiting("DimensionPoolManager", "teleportToPool",
+                    "result=false (pool_not_found" + (hiddenPool ? " / hidden_pool" : "") + ")");
             return false;
         }
 
