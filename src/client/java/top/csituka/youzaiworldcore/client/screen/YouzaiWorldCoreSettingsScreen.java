@@ -58,6 +58,8 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
             Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "textures/mod_icon.png");
     /** 图标边长（像素） */
     private static final int ABOUT_ICON_SIZE = 64;
+    /** 标题字体缩放比例（相对默认字号） */
+    private static final float ABOUT_TITLE_SCALE = 1.5f;
     /** 标题颜色（金橙） */
     private static final int ABOUT_TITLE_COLOR = 0xFFFFCC88;
     /** 图标圆角半径（像素） */
@@ -680,7 +682,7 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
 
         int skipActionIndex = "backup".equals(experimentalWarningSkipAction) ? 0 : 1;
         skipActionDropdown = new DropdownButton(
-                contentLeft, y, contentWidth, contentWidth, 20,
+                contentLeft, y, contentWidth, SIDEBAR_WIDTH, 20,
                 Component.translatable("screen.youzaiworldcore.settings.dropdown_experimental_skip_action"),
                 EXPERIMENTAL_SKIP_ACTION_OPTIONS, skipActionIndex, false,
                 idx -> {
@@ -696,7 +698,7 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
 
         if (devModeEnabled) {
             logLevelDropdown = new DropdownButton(
-                    contentLeft, y, contentWidth, contentWidth, 20,
+                    contentLeft, y, contentWidth, SIDEBAR_WIDTH, 20,
                     Component.translatable("screen.youzaiworldcore.settings.dropdown_log_level"),
                     LOG_LEVEL_OPTIONS, logLevel, false,
                     idx -> {
@@ -716,7 +718,7 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
             boolean isDedicated = "dedicated".equals(debugModeType);
             int debugModeIndex = isDedicated ? 1 : 0;
             debugModeDropdown = new DropdownButton(
-                    contentLeft, y, contentWidth, contentWidth, 20,
+                    contentLeft, y, contentWidth, SIDEBAR_WIDTH, 20,
                     Component.translatable("screen.youzaiworldcore.settings.dropdown_debug_mode"),
                     DEBUG_MODE_OPTIONS, debugModeIndex, false,
                     idx -> {
@@ -788,16 +790,14 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
     }
 
     private void buildAboutSection() {
-        int buttonY = aboutIntroBottomY() + 8;
-        int buttonWidth = Math.min(180, contentWidth);
-        int buttonX = contentLeft + (contentWidth - buttonWidth) / 2;
+        int buttonY = contentTop + ABOUT_ICON_SIZE + 8;
         ossNoticeButton = new TransparentButton(
-                buttonX, buttonY, buttonWidth, 22,
+                contentLeft, buttonY, ABOUT_ICON_SIZE, 22,
                 Component.translatable("screen.youzaiworldcore.settings.about_license_btn_notice"),
                 this::openOssNotice
         );
         addRenderableWidget(ossNoticeButton);
-        maxContentY = aboutDetailsEndY(buttonY + 30) + 6;
+        maxContentY = Math.max(buttonY + 22, originalAboutTextEndY()) + 6;
     }
 
     private int checkboxHeight(Component message) {
@@ -805,54 +805,49 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
         return Math.max(20, wrappedTextHeight(message, maxTextWidth) + 6);
     }
 
-    private boolean isAboutSideBySide() {
-        return contentWidth >= ABOUT_ICON_SIZE + 10 + 120;
+    private int originalAboutTextEndY() {
+        int wrapWidth = Math.max(1, contentWidth - ABOUT_ICON_SIZE - 10);
+        int y = contentTop + 30;
+        y = nextAboutTextY(y,
+                Component.translatable("screen.youzaiworldcore.settings.about_desc_line1"), wrapWidth);
+        y = nextAboutTextY(y,
+                Component.translatable("screen.youzaiworldcore.settings.about_desc_line2"), wrapWidth);
+        y += 4;
+        y = nextAboutTextY(y,
+                Component.translatable("screen.youzaiworldcore.settings.about_website"), wrapWidth);
+        y += 4;
+        y = nextAboutTextY(y,
+                Component.translatable("screen.youzaiworldcore.settings.about_authors"), wrapWidth);
+        y += 4;
+        y = nextAboutTextY(y,
+                Component.translatable("screen.youzaiworldcore.settings.about_license"), wrapWidth);
+        y += 20;
+        y = nextAboutTextY(y,
+                Component.translatable("screen.youzaiworldcore.settings.about_credit_why"), wrapWidth);
+        y += 4;
+        y = nextAboutTextY(y,
+                Component.translatable("screen.youzaiworldcore.settings.about_credit_byzzdemy"), wrapWidth);
+        y += 4;
+        y = nextAboutTextY(y,
+                Component.translatable("screen.youzaiworldcore.settings.about_credit_zhongend"), wrapWidth);
+        y += 4;
+        y = nextAboutTextY(y,
+                Component.translatable("screen.youzaiworldcore.settings.about_credit_testers"), wrapWidth);
+        y += 20;
+        return nextAboutTextY(y,
+                Component.translatable("screen.youzaiworldcore.settings.about_credit_oss"), wrapWidth);
     }
 
-    private int aboutIntroBottomY() {
-        boolean sideBySide = isAboutSideBySide();
-        int textWidth = sideBySide ? contentWidth - ABOUT_ICON_SIZE - 10 : contentWidth;
-        int y = sideBySide ? contentTop : contentTop + ABOUT_ICON_SIZE + 8;
-        y += wrappedTextHeight(
-                Component.translatable("screen.youzaiworldcore.settings.about_title"), textWidth) + 4;
-        y += wrappedTextHeight(Component.translatable(
-                "screen.youzaiworldcore.settings.about_version", UpdateChecker.getCurrentVersionString()), textWidth) + 4;
-        y += wrappedTextHeight(
-                Component.translatable("screen.youzaiworldcore.settings.about_desc_line1"), textWidth) + 2;
-        y += wrappedTextHeight(
-                Component.translatable("screen.youzaiworldcore.settings.about_desc_line2"), textWidth);
-        return Math.max(contentTop + ABOUT_ICON_SIZE, y);
-    }
-
-    private int aboutDetailsEndY(int startY) {
-        int y = startY;
-        y += wrappedTextHeight(Component.translatable(
-                "screen.youzaiworldcore.settings.about_website"), contentWidth) + 4;
-        y += wrappedTextHeight(Component.translatable(
-                "screen.youzaiworldcore.settings.about_authors"), contentWidth) + 4;
-        y += wrappedTextHeight(Component.translatable(
-                "screen.youzaiworldcore.settings.about_license"), contentWidth) + 16;
-        y += wrappedTextHeight(Component.translatable(
-                "screen.youzaiworldcore.settings.about_credit_why"), contentWidth) + 4;
-        y += wrappedTextHeight(Component.translatable(
-                "screen.youzaiworldcore.settings.about_credit_byzzdemy"), contentWidth) + 4;
-        y += wrappedTextHeight(Component.translatable(
-                "screen.youzaiworldcore.settings.about_credit_zhongend"), contentWidth) + 4;
-        y += wrappedTextHeight(Component.translatable(
-                "screen.youzaiworldcore.settings.about_credit_testers"), contentWidth) + 16;
-        y += wrappedTextHeight(Component.translatable(
-                "screen.youzaiworldcore.settings.about_credit_oss"), contentWidth);
-        return y;
+    private int nextAboutTextY(int y, Component text, int width) {
+        return y + wrappedTextHeight(text, width) + 2;
     }
 
     private void renderAboutContent(GuiGraphicsExtractor guiGraphics) {
-        boolean sideBySide = isAboutSideBySide();
-        int iconX = sideBySide
-                ? contentLeft
-                : contentLeft + (contentWidth - ABOUT_ICON_SIZE) / 2;
+        String version = UpdateChecker.getCurrentVersionString();
+        int iconX = contentLeft;
         int iconY = contentTop;
-        int textX = sideBySide ? contentLeft + ABOUT_ICON_SIZE + 10 : contentLeft;
-        int textWidth = sideBySide ? contentWidth - ABOUT_ICON_SIZE - 10 : contentWidth;
+        int textX = contentLeft + ABOUT_ICON_SIZE + 10;
+        int wrapWidth = Math.max(1, contentWidth - ABOUT_ICON_SIZE - 10);
 
         guiGraphics.blit(RenderPipelines.GUI_TEXTURED, MOD_ICON_TEXTURE,
                 iconX, iconY, 0, 0,
@@ -861,56 +856,62 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
         clipRoundedCorners(guiGraphics, iconX, iconY,
                 ABOUT_ICON_SIZE, ABOUT_ICON_SIZE, ICON_CORNER_RADIUS);
 
-        int y = sideBySide ? contentTop : contentTop + ABOUT_ICON_SIZE + 8;
-        y = drawWrappedText(guiGraphics,
-                Component.translatable("screen.youzaiworldcore.settings.about_title"),
-                textX, y, textWidth, ABOUT_TITLE_COLOR, false);
-        y += 4;
-        y = drawWrappedText(guiGraphics, Component.translatable(
-                        "screen.youzaiworldcore.settings.about_version",
-                        UpdateChecker.getCurrentVersionString()),
-                textX, y, textWidth, 0xFFFFFFFF, false);
-        y += 4;
-        y = drawWrappedText(guiGraphics,
-                Component.translatable("screen.youzaiworldcore.settings.about_desc_line1"),
-                textX, y, textWidth, 0xA0FFFFFF, false);
-        y += 2;
-        drawWrappedText(guiGraphics,
-                Component.translatable("screen.youzaiworldcore.settings.about_desc_line2"),
-                textX, y, textWidth, 0xA0FFFFFF, false);
+        guiGraphics.pose().pushMatrix();
+        guiGraphics.pose().scale(ABOUT_TITLE_SCALE, ABOUT_TITLE_SCALE);
+        guiGraphics.text(this.font, Component.translatable("screen.youzaiworldcore.settings.about_title"),
+                Math.round(textX / ABOUT_TITLE_SCALE),
+                Math.round((float) contentTop / ABOUT_TITLE_SCALE),
+                ABOUT_TITLE_COLOR, false);
+        guiGraphics.pose().popMatrix();
 
-        y = aboutIntroBottomY() + 38;
-        y = drawWrappedText(guiGraphics,
+        guiGraphics.text(this.font, Component.translatable(
+                        "screen.youzaiworldcore.settings.about_version", version),
+                textX, contentTop + 18, 0xFFFFFFFF, false);
+
+        int y = contentTop + 30;
+        y = drawAboutWrappedText(guiGraphics,
+                Component.translatable("screen.youzaiworldcore.settings.about_desc_line1"),
+                textX, y, wrapWidth, 0xA0FFFFFF, false);
+        y = drawAboutWrappedText(guiGraphics,
+                Component.translatable("screen.youzaiworldcore.settings.about_desc_line2"),
+                textX, y, wrapWidth, 0xA0FFFFFF, false);
+        y += 4;
+        y = drawAboutWrappedText(guiGraphics,
                 Component.translatable("screen.youzaiworldcore.settings.about_website"),
-                contentLeft, y, contentWidth, 0xFFFFFFFF, false);
+                textX, y, wrapWidth, 0xFFFFFFFF, false);
         y += 4;
-        y = drawWrappedText(guiGraphics,
+        y = drawAboutWrappedText(guiGraphics,
                 Component.translatable("screen.youzaiworldcore.settings.about_authors"),
-                contentLeft, y, contentWidth, 0x80FFFFFF, false);
+                textX, y, wrapWidth, 0x80FFFFFF, false);
         y += 4;
-        y = drawWrappedText(guiGraphics,
+        y = drawAboutWrappedText(guiGraphics,
                 Component.translatable("screen.youzaiworldcore.settings.about_license"),
-                contentLeft, y, contentWidth, 0x80FFFFFF, false);
-        y += 16;
-        y = drawWrappedText(guiGraphics,
+                textX, y, wrapWidth, 0x80FFFFFF, false);
+        y += 20;
+        y = drawAboutWrappedText(guiGraphics,
                 Component.translatable("screen.youzaiworldcore.settings.about_credit_why"),
-                contentLeft, y, contentWidth, 0x80FFFFFF, false);
+                textX, y, wrapWidth, 0x80FFFFFF, false);
         y += 4;
-        y = drawWrappedText(guiGraphics,
+        y = drawAboutWrappedText(guiGraphics,
                 Component.translatable("screen.youzaiworldcore.settings.about_credit_byzzdemy"),
-                contentLeft, y, contentWidth, 0x80FFFFFF, false);
+                textX, y, wrapWidth, 0x80FFFFFF, false);
         y += 4;
-        y = drawWrappedText(guiGraphics,
+        y = drawAboutWrappedText(guiGraphics,
                 Component.translatable("screen.youzaiworldcore.settings.about_credit_zhongend"),
-                contentLeft, y, contentWidth, 0x80FFFFFF, false);
+                textX, y, wrapWidth, 0x80FFFFFF, false);
         y += 4;
-        y = drawWrappedText(guiGraphics,
+        y = drawAboutWrappedText(guiGraphics,
                 Component.translatable("screen.youzaiworldcore.settings.about_credit_testers"),
-                contentLeft, y, contentWidth, 0x80FFFFFF, false);
-        y += 16;
-        drawWrappedText(guiGraphics,
+                textX, y, wrapWidth, 0x80FFFFFF, false);
+        y += 20;
+        drawAboutWrappedText(guiGraphics,
                 Component.translatable("screen.youzaiworldcore.settings.about_credit_oss"),
-                contentLeft, y, contentWidth, 0xA0FFFFFF, false);
+                textX, y, wrapWidth, 0xA0FFFFFF, false);
+    }
+
+    private int drawAboutWrappedText(GuiGraphicsExtractor guiGraphics, Component text,
+                                     int x, int y, int maxWidth, int color, boolean shadow) {
+        return drawWrappedText(guiGraphics, text, x, y, maxWidth, color, shadow) + 2;
     }
 
     private void openOssNotice() {
