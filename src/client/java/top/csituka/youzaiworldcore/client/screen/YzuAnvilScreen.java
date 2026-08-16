@@ -223,8 +223,11 @@ public class YzuAnvilScreen extends ItemCombinerScreen<AnvilMenu> {
         drawTitle(g);
         drawInventoryLabel(g);
         drawCloseButton(g, mouseX, mouseY);
-        drawErrorIcon(g);
+        // 顺序敏感：先画装饰符（+/→），再画错误图标（X）。
+        // 两者区域重叠（X: 99..127×45..66，→: 102..124×48..63），
+        // 延迟渲染按提交顺序合成，后画者在上；X 必须盖住箭头（与原版语义一致）。
         drawOperators(g);
+        drawErrorIcon(g);
 
         super.extractRenderState(g, mouseX, mouseY, partialTick);
     }
