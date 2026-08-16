@@ -7,7 +7,6 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
-import net.minecraft.client.renderer.Panorama;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -66,7 +65,8 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
     /** 图标圆角半径（像素） */
     private static final int ICON_CORNER_RADIUS = 6;
 
-    private final Panorama panorama;
+    /** 打开本页的上级屏幕，用于 Esc/关闭按钮返回。 */
+    private final Screen parentScreen;
 
     /** 当前选中的分栏索引：0 = 视觉, 1 = 导出/导入配置, 2 = 关于, 3 = 开发者 */
     private int selectedSection = 0;
@@ -172,7 +172,7 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
 
     public YouzaiWorldCoreSettingsScreen(Screen parent) {
         super(Component.translatable("screen.youzaiworldcore.settings.title"));
-        this.panorama = new Panorama();
+        this.parentScreen = parent;
         // 从持久化配置读取初始状态
         this.devModeEnabled = ClientExternalSettings.isDevModeEnabled();
         this.logLevel = ClientExternalSettings.getLogLevel();
@@ -188,7 +188,6 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
     @Override
     protected void init() {
         super.init();
-        this.panorama.startSpin();
         calculateLayout();
         rebuildWidgets();
     }
@@ -1004,7 +1003,6 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
-        this.panorama.extractRenderState(guiGraphics, this.width, this.height);
         guiGraphics.fill(0, 0, this.width, this.height, 0x60_00_00_00);
 
         int cx = this.width / 2;
@@ -1182,6 +1180,9 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
 
     @Override
     public void extractBackground(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
+        // 复用原版 Screen 背景管线：使用 GameRenderer 的全局全景图实例，
+        // 同时保留主菜单子页面应有的模糊效果与菜单背景遮罩。
+        super.extractBackground(guiGraphics, mouseX, mouseY, partialTick);
     }
 
     @Override
@@ -1192,6 +1193,8 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
     @Override
     public void onClose() {
         if (configOpActive) return; // 操作进行中不可关闭
-        Minecraft.getInstance().gui.setScreen(null);
+        DebugLogger.info("SettingsScreen", "返回上级屏幕: %s",
+                parentScreen == null ? "默认屏幕" : parentScreen.getClass().getSimpleName());
+        Minecraft.getInstance().gui.setScreen(parentScreen);
     }
 }
