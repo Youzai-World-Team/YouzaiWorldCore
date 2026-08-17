@@ -10,6 +10,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import top.csituka.youzaiworldcore.client.config.ClientExternalSettings;
 import top.csituka.youzaiworldcore.client.render.RoundedRect;
+import top.csituka.youzaiworldcore.client.screen.widget.YzuiStyleOverride;
 
 /**
  * 替换原版按钮样式，使其与项目自定义 {@code TransparentButton} 视觉一致。
@@ -197,7 +198,10 @@ public class AbstractButtonMixin {
      * 因为这些屏幕的视觉设计以 YZUI 白底样式为前提。</p>
      */
     @Unique
-    private static boolean youzaiworldcore$shouldApplyYzui() {
+    private boolean youzaiworldcore$shouldApplyYzui() {
+        int styleOverride = YzuiStyleOverride.get(this$youzaiworldcore$self());
+        if (styleOverride == YzuiStyleOverride.STYLE_VANILLA) return false;
+        if (styleOverride == YzuiStyleOverride.STYLE_YZUI) return true;
         if (ClientExternalSettings.isYzuiEnabled()) return true;
         var screen = Minecraft.getInstance().gui.screen();
         return screen != null && screen.getClass().getName().startsWith("top.csituka.youzaiworldcore");

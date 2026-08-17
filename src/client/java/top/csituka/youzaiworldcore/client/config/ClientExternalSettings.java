@@ -21,6 +21,7 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
  *   <li>{@code ignored_update_version} — 已忽略提示的更新版本号</li>
  *   <li>{@code yzui_enabled} — 是否启用 YZUI 自定义 UI 样式</li>
  *   <li>{@code custom_font_enabled} — 是否启用模组内置的自定义字体资源包</li>
+ *   <li>{@code welcome_guide_completed} — 是否已经完成首次启动欢迎导览</li>
  *   <li>{@code auto_skip_experimental_warning} — 是否自动跳过实验性设置警告屏幕</li>
  *   <li>{@code experimental_warning_skip_action} — 自动跳过时的操作（skip / backup）</li>
  * </ul>
@@ -43,6 +44,7 @@ public final class ClientExternalSettings {
     private static final String DEFAULT_IGNORED_UPDATE_VERSION = "";
     private static final boolean DEFAULT_YZUI_ENABLED = true;
     private static final boolean DEFAULT_CUSTOM_FONT_ENABLED = true;
+    private static final boolean DEFAULT_WELCOME_GUIDE_COMPLETED = false;
     private static final boolean DEFAULT_AUTO_SKIP_EXPERIMENTAL_WARNING = false;
     private static final String DEFAULT_EXPERIMENTAL_WARNING_SKIP_ACTION = "skip";
 
@@ -62,6 +64,9 @@ public final class ClientExternalSettings {
 
     /** 是否启用模组内置的自定义字体资源包 */
     private static boolean customFontEnabled = DEFAULT_CUSTOM_FONT_ENABLED;
+
+    /** 是否已经完成首次启动欢迎导览 */
+    private static boolean welcomeGuideCompleted = DEFAULT_WELCOME_GUIDE_COMPLETED;
 
     /** 是否自动跳过"使用实验性设置的世界不受支持"屏幕 */
     private static boolean autoSkipExperimentalWarning = DEFAULT_AUTO_SKIP_EXPERIMENTAL_WARNING;
@@ -113,6 +118,11 @@ public final class ClientExternalSettings {
     /** @return 是否启用模组内置的自定义字体资源包 */
     public static boolean isCustomFontEnabled() {
         return customFontEnabled;
+    }
+
+    /** @return 是否已经完成首次启动欢迎导览 */
+    public static boolean isWelcomeGuideCompleted() {
+        return welcomeGuideCompleted;
     }
 
     /** @return 是否自动跳过实验性设置警告屏幕 */
@@ -188,6 +198,39 @@ public final class ClientExternalSettings {
         save();
     }
 
+    /**
+     * 完成首次启动欢迎导览，并一次性保存导览中选择的视觉设置。
+     *
+     * @param yzuiEnabledValue 是否启用 YZUI
+     * @param customFontEnabledValue 是否启用 MCsans 字体
+     */
+    public static void completeWelcomeGuide(boolean yzuiEnabledValue, boolean customFontEnabledValue) {
+        boolean oldYzuiEnabled = yzuiEnabled;
+        boolean oldCustomFontEnabled = customFontEnabled;
+        boolean oldWelcomeGuideCompleted = welcomeGuideCompleted;
+        yzuiEnabled = yzuiEnabledValue;
+        customFontEnabled = customFontEnabledValue;
+        welcomeGuideCompleted = true;
+        DebugLogger.stateChange(MODULE, "welcome_guide", "yzui_enabled",
+                oldYzuiEnabled, yzuiEnabled);
+        DebugLogger.stateChange(MODULE, "welcome_guide", "custom_font_enabled",
+                oldCustomFontEnabled, customFontEnabled);
+        DebugLogger.stateChange(MODULE, "welcome_guide", "completed",
+                oldWelcomeGuideCompleted, welcomeGuideCompleted);
+        DebugLogger.info(MODULE, "首次启动欢迎导览已完成");
+        save();
+    }
+
+    /** 重置欢迎导览完成状态，以便从开发者页面重新进行 OOBE 流程。 */
+    public static void resetWelcomeGuide() {
+        boolean oldWelcomeGuideCompleted = welcomeGuideCompleted;
+        welcomeGuideCompleted = false;
+        DebugLogger.stateChange(MODULE, "welcome_guide", "completed",
+                oldWelcomeGuideCompleted, welcomeGuideCompleted);
+        DebugLogger.info(MODULE, "欢迎导览完成状态已重置");
+        save();
+    }
+
     /** 设置是否自动跳过实验性设置警告并持久化 */
     public static void setAutoSkipExperimentalWarning(boolean value) {
         autoSkipExperimentalWarning = value;
@@ -221,6 +264,7 @@ public final class ClientExternalSettings {
         ignoredUpdateVersion = section.getString("ignored_update_version", ignoredUpdateVersion);
         yzuiEnabled = section.getBoolean("yzui_enabled", yzuiEnabled);
         customFontEnabled = section.getBoolean("custom_font_enabled", customFontEnabled);
+        welcomeGuideCompleted = section.getBoolean("welcome_guide_completed", welcomeGuideCompleted);
         autoSkipExperimentalWarning =
                 section.getBoolean("auto_skip_experimental_warning", autoSkipExperimentalWarning);
 
@@ -247,6 +291,7 @@ public final class ClientExternalSettings {
         ignoredUpdateVersion = DEFAULT_IGNORED_UPDATE_VERSION;
         yzuiEnabled = DEFAULT_YZUI_ENABLED;
         customFontEnabled = DEFAULT_CUSTOM_FONT_ENABLED;
+        welcomeGuideCompleted = DEFAULT_WELCOME_GUIDE_COMPLETED;
         autoSkipExperimentalWarning = DEFAULT_AUTO_SKIP_EXPERIMENTAL_WARNING;
         experimentalWarningSkipAction = DEFAULT_EXPERIMENTAL_WARNING_SKIP_ACTION;
         save();
@@ -264,6 +309,7 @@ public final class ClientExternalSettings {
         section.set("ignored_update_version", ignoredUpdateVersion);
         section.set("yzui_enabled", yzuiEnabled);
         section.set("custom_font_enabled", customFontEnabled);
+        section.set("welcome_guide_completed", welcomeGuideCompleted);
         section.set("auto_skip_experimental_warning", autoSkipExperimentalWarning);
         section.set("experimental_warning_skip_action", experimentalWarningSkipAction);
         ClientGlobalSettings.save();

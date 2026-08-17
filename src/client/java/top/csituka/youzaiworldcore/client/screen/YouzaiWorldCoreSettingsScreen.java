@@ -188,6 +188,16 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
     @Override
     protected void init() {
         super.init();
+        // 返回已存在的设置屏幕实例时，重新同步 OOBE 中刚保存的选择。
+        this.devModeEnabled = ClientExternalSettings.isDevModeEnabled();
+        this.logLevel = ClientExternalSettings.getLogLevel();
+        this.debugModeType = ClientExternalSettings.getDebugModeType();
+        this.debugAddress = ClientExternalSettings.getDebugAddress();
+        this.debugPort = ClientExternalSettings.getDebugPort();
+        this.yzuiEnabled = ClientExternalSettings.isYzuiEnabled();
+        this.customFontEnabled = ClientExternalSettings.isCustomFontEnabled();
+        this.autoSkipExperimentalWarning = ClientExternalSettings.isAutoSkipExperimentalWarning();
+        this.experimentalWarningSkipAction = ClientExternalSettings.getExperimentalWarningSkipAction();
         calculateLayout();
         rebuildWidgets();
     }
@@ -699,6 +709,14 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
         addRenderableWidget(skipActionDropdown);
         y += 30;
 
+        TransparentButton rerunOobeButton = new TransparentButton(
+                contentLeft, y, contentWidth, 22,
+                Component.translatable("screen.youzaiworldcore.settings.rerun_oobe"),
+                this::rerunWelcomeGuide
+        );
+        addRenderableWidget(rerunOobeButton);
+        y += 28;
+
         if (devModeEnabled) {
             logLevelDropdown = new DropdownButton(
                     contentLeft, y, contentWidth, SIDEBAR_WIDTH, 20,
@@ -772,6 +790,13 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
         }
 
         maxContentY = y + 6;
+    }
+
+    /** 重置完成标记并从当前设置页重新打开欢迎导览。 */
+    private void rerunWelcomeGuide() {
+        DebugLogger.info("SettingsScreen", "从开发者页面重新进行 OOBE 流程");
+        ClientExternalSettings.resetWelcomeGuide();
+        Minecraft.getInstance().gui.setScreen(new WelcomeGuideScreen(this));
     }
 
     private void buildVisualSection() {
