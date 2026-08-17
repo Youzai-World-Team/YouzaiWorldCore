@@ -762,5 +762,21 @@
   "screen.youzaiworldcore.welcome_guide.disabled": "Deaktiviert",
   "screen.youzaiworldcore.welcome_guide.back": "Zurück",
   "screen.youzaiworldcore.welcome_guide.next": "Weiter",
-  "screen.youzaiworldcore.welcome_guide.close": "Schließen"
+  "screen.youzaiworldcore.welcome_guide.close": "Schließen",
+  "screen.youzaiworldcore.brewing.guide": "Brauanleitung",
+  "screen.youzaiworldcore.brewing.search": "Trank oder Zutat suchen",
+  "screen.youzaiworldcore.brewing.fuel": "Lohenstaub",
+  "screen.youzaiworldcore.brewing.fuel_level": "Lohenstaub: %s/20",
+  "screen.youzaiworldcore.brewing.brew_progress": "Braufortschritt: %s%%",
+  "screen.youzaiworldcore.brewing.toggle_guide": "Brauanleitung öffnen oder schließen",
+  "screen.youzaiworldcore.brewing.page": "%s/%s",
+  "screen.youzaiworldcore.brewing.input": "Basis: %s",
+  "screen.youzaiworldcore.brewing.ingredient": "Zutat: %s",
+  "screen.youzaiworldcore.brewing.output": "Ergebnis: %s",
+  "screen.youzaiworldcore.brewing.effect": "Effekt: %s",
+  "screen.youzaiworldcore.brewing.any_potion": "Beliebiger Trank",
+  "screen.youzaiworldcore.brewing.any_splash_potion": "Beliebiger Wurftrank",
+  "screen.youzaiworldcore.brewing.any_lingering_potion": "Beliebiger Verweiltrank",
+  "screen.youzaiworldcore.brewing.effect_preserved": "Behält den ursprünglichen Effekt",
+  "screen.youzaiworldcore.brewing.no_effect": "Kein Statuseffekt"
 }

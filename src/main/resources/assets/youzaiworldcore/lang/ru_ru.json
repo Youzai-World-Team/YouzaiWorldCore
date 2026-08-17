@@ -762,5 +762,21 @@
   "screen.youzaiworldcore.welcome_guide.disabled": "Отключено",
   "screen.youzaiworldcore.welcome_guide.back": "Назад",
   "screen.youzaiworldcore.welcome_guide.next": "Далее",
-  "screen.youzaiworldcore.welcome_guide.close": "Закрыть"
+  "screen.youzaiworldcore.welcome_guide.close": "Закрыть",
+  "screen.youzaiworldcore.brewing.guide": "Руководство по зельям",
+  "screen.youzaiworldcore.brewing.search": "Поиск зелья или ингредиента",
+  "screen.youzaiworldcore.brewing.fuel": "Огненный порошок",
+  "screen.youzaiworldcore.brewing.fuel_level": "Огненный порошок: %s/20",
+  "screen.youzaiworldcore.brewing.brew_progress": "Варка: %s%%",
+  "screen.youzaiworldcore.brewing.toggle_guide": "Открыть или закрыть руководство",
+  "screen.youzaiworldcore.brewing.page": "%s/%s",
+  "screen.youzaiworldcore.brewing.input": "Основа: %s",
+  "screen.youzaiworldcore.brewing.ingredient": "Ингредиент: %s",
+  "screen.youzaiworldcore.brewing.output": "Результат: %s",
+  "screen.youzaiworldcore.brewing.effect": "Эффект: %s",
+  "screen.youzaiworldcore.brewing.any_potion": "Любое зелье",
+  "screen.youzaiworldcore.brewing.any_splash_potion": "Любое взрывное зелье",
+  "screen.youzaiworldcore.brewing.any_lingering_potion": "Любое туманное зелье",
+  "screen.youzaiworldcore.brewing.effect_preserved": "Сохраняет исходный эффект",
+  "screen.youzaiworldcore.brewing.no_effect": "Нет эффекта"
 }

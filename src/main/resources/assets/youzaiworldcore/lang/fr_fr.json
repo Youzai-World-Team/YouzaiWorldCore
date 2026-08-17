@@ -762,5 +762,21 @@
   "screen.youzaiworldcore.welcome_guide.disabled": "Désactivé",
   "screen.youzaiworldcore.welcome_guide.back": "Retour",
   "screen.youzaiworldcore.welcome_guide.next": "Suivant",
-  "screen.youzaiworldcore.welcome_guide.close": "Fermer"
+  "screen.youzaiworldcore.welcome_guide.close": "Fermer",
+  "screen.youzaiworldcore.brewing.guide": "Guide d'alchimie",
+  "screen.youzaiworldcore.brewing.search": "Rechercher une potion ou un ingrédient",
+  "screen.youzaiworldcore.brewing.fuel": "Poudre de Blaze",
+  "screen.youzaiworldcore.brewing.fuel_level": "Poudre de Blaze : %s/20",
+  "screen.youzaiworldcore.brewing.brew_progress": "Préparation : %s%%",
+  "screen.youzaiworldcore.brewing.toggle_guide": "Ouvrir ou fermer le guide d'alchimie",
+  "screen.youzaiworldcore.brewing.page": "%s/%s",
+  "screen.youzaiworldcore.brewing.input": "Base : %s",
+  "screen.youzaiworldcore.brewing.ingredient": "Ingrédient : %s",
+  "screen.youzaiworldcore.brewing.output": "Résultat : %s",
+  "screen.youzaiworldcore.brewing.effect": "Effet : %s",
+  "screen.youzaiworldcore.brewing.any_potion": "N'importe quelle potion",
+  "screen.youzaiworldcore.brewing.any_splash_potion": "N'importe quelle potion jetable",
+  "screen.youzaiworldcore.brewing.any_lingering_potion": "N'importe quelle potion persistante",
+  "screen.youzaiworldcore.brewing.effect_preserved": "Conserve l'effet d'origine",
+  "screen.youzaiworldcore.brewing.no_effect": "Aucun effet d'état"
 }

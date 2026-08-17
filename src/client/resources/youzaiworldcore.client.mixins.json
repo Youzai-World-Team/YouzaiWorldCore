@@ -19,6 +19,7 @@
     "ScreenMixinForLoadingStatus",
     "AccessibilityOptionsScreenMixin",
     "ScreenAccessor",
+    "SlotPositionAccessor",
     "WindowTitleMixin",
     "GameRendererMixin",
     "seat.EntityRenderDispatcherMixin",

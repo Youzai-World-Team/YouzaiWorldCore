@@ -762,5 +762,21 @@
   "screen.youzaiworldcore.welcome_guide.disabled": "Disabled",
   "screen.youzaiworldcore.welcome_guide.back": "Back",
   "screen.youzaiworldcore.welcome_guide.next": "Next",
-  "screen.youzaiworldcore.welcome_guide.close": "Close"
+  "screen.youzaiworldcore.welcome_guide.close": "Close",
+  "screen.youzaiworldcore.brewing.guide": "Brewing Guide",
+  "screen.youzaiworldcore.brewing.search": "Search potion or ingredient",
+  "screen.youzaiworldcore.brewing.fuel": "Blaze Powder",
+  "screen.youzaiworldcore.brewing.fuel_level": "Blaze powder: %s/20",
+  "screen.youzaiworldcore.brewing.brew_progress": "Brewing: %s%%",
+  "screen.youzaiworldcore.brewing.toggle_guide": "Open or close brewing guide",
+  "screen.youzaiworldcore.brewing.page": "%s/%s",
+  "screen.youzaiworldcore.brewing.input": "Base: %s",
+  "screen.youzaiworldcore.brewing.ingredient": "Ingredient: %s",
+  "screen.youzaiworldcore.brewing.output": "Result: %s",
+  "screen.youzaiworldcore.brewing.effect": "Effect: %s",
+  "screen.youzaiworldcore.brewing.any_potion": "Any potion",
+  "screen.youzaiworldcore.brewing.any_splash_potion": "Any splash potion",
+  "screen.youzaiworldcore.brewing.any_lingering_potion": "Any lingering potion",
+  "screen.youzaiworldcore.brewing.effect_preserved": "Keeps the original effect",
+  "screen.youzaiworldcore.brewing.no_effect": "No status effect"
 }
