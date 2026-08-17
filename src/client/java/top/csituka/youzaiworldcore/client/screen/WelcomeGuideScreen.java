@@ -258,24 +258,33 @@ public final class WelcomeGuideScreen extends Screen {
                 panelX + panelWidth - 14 - font.width(progress), panelY + 15,
                 MUTED_TEXT_COLOR, false);
 
-        drawCentered(graphics, page.title(), pageTitleY, TEXT_COLOR);
-        drawCenteredWrapped(graphics, pageBody(), bodyY, panelWidth - 48, bodyMaxLines, MUTED_TEXT_COLOR);
-
         if (page == Page.WELCOME) {
             drawWelcomeContent(graphics);
-        } else if (page == Page.COMPLETE) {
-            drawCompleteContent(graphics);
+        } else {
+            drawCentered(graphics, page.title(), pageTitleY, TEXT_COLOR);
+            drawCenteredWrapped(graphics, pageBody(), bodyY,
+                    panelWidth - 48, bodyMaxLines, MUTED_TEXT_COLOR);
+            if (page == Page.COMPLETE) {
+                drawCompleteContent(graphics);
+            }
         }
 
         super.extractRenderState(graphics, mouseX, mouseY, partialTick);
     }
 
     private void drawWelcomeContent(GuiGraphicsExtractor graphics) {
-        int centerY = bodyY + Math.max(38, (panelHeight - 150) / 2);
-        RoundedRect.fill(graphics, panelX + panelWidth / 2 - 38, centerY - 22,
-                76, 44, 8, 0x8078D89A);
-        Component brand = Component.literal("YZWC");
-        drawCentered(graphics, brand, centerY - 4, 0xFFFFFFFF);
+        Component body = pageBody();
+        int maxWidth = panelWidth - 48;
+        int bodyLines = Math.min(bodyMaxLines, font.split(body, maxWidth).size());
+        int textGroupHeight = font.lineHeight + 10 + bodyLines * 10;
+        int contentTop = panelY + 35;
+        int contentBottom = panelY + panelHeight - BUTTON_HEIGHT - 24;
+        int titleY = contentTop + Math.max(0,
+                (contentBottom - contentTop - textGroupHeight) / 2);
+
+        drawCentered(graphics, page.title(), titleY, TEXT_COLOR);
+        drawCenteredWrapped(graphics, body, titleY + font.lineHeight + 10,
+                maxWidth, bodyMaxLines, MUTED_TEXT_COLOR);
     }
 
     private void drawCompleteContent(GuiGraphicsExtractor graphics) {
