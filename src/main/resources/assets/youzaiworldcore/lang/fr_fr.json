@@ -348,7 +348,7 @@
   "screen.youzaiworldcore.settings.sidebar_visual": "Visuel",
   "screen.youzaiworldcore.settings.title": "Paramètres YouzaiWorldCore",
   "screen.youzaiworldcore.settings.toggle_custom_font": "Utiliser la police MCsans",
-  "screen.youzaiworldcore.settings.toggle_left_hud": "Afficher à gauche l’inventaire, l’équipement et les effets",
+  "screen.youzaiworldcore.settings.toggle_left_hud": "Afficher YZHUD",
   "screen.youzaiworldcore.settings.toggle_yzui": "Activer YZUI",
   "screen.youzaiworldcore.teleport_anchor.back": "Retour",
   "screen.youzaiworldcore.teleport_anchor.cost_durability_prefix": "Coûtera ",

@@ -348,7 +348,7 @@
   "screen.youzaiworldcore.settings.sidebar_visual": "Visuell",
   "screen.youzaiworldcore.settings.title": "YouzaiWorldCore Einstellungen",
   "screen.youzaiworldcore.settings.toggle_custom_font": "MCsans-Schrift verwenden",
-  "screen.youzaiworldcore.settings.toggle_left_hud": "Linke Inventar-, Ausrüstungs- und Effektlisten anzeigen",
+  "screen.youzaiworldcore.settings.toggle_left_hud": "YZHUD anzeigen",
   "screen.youzaiworldcore.settings.toggle_yzui": "YZUI aktivieren",
   "screen.youzaiworldcore.teleport_anchor.back": "Zurück",
   "screen.youzaiworldcore.teleport_anchor.cost_durability_prefix": "Kostet ",

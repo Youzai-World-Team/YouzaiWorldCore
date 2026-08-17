@@ -348,7 +348,7 @@
   "screen.youzaiworldcore.settings.sidebar_visual": "Визуал",
   "screen.youzaiworldcore.settings.title": "Настройки YouzaiWorldCore",
   "screen.youzaiworldcore.settings.toggle_custom_font": "Использовать шрифт MCsans",
-  "screen.youzaiworldcore.settings.toggle_left_hud": "Показывать слева инвентарь, экипировку и эффекты",
+  "screen.youzaiworldcore.settings.toggle_left_hud": "Показывать YZHUD",
   "screen.youzaiworldcore.settings.toggle_yzui": "Включить YZUI",
   "screen.youzaiworldcore.teleport_anchor.back": "Назад",
   "screen.youzaiworldcore.teleport_anchor.cost_durability_prefix": "Будет потрачено ",
