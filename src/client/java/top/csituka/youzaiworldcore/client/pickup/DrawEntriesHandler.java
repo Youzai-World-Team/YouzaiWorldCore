@@ -124,7 +124,8 @@ public final class DrawEntriesHandler {
      * 每帧渲染所有条目。
      * <p>
      * 条目从屏幕右下角开始向上排列，
-     * 支持缩放和淡出动画。
+     * 支持缩放和淡出动画。调用方在 HUD 提取开始阶段提交这些条目，
+     * 使拾取信息和声音字幕位于所有 HUD 组件下方。
      * </p>
      *
      * @param graphics GUI 渲染上下文

@@ -35,12 +35,16 @@ import top.csituka.youzaiworldcore.client.pickup.DrawEntriesHandler;
 public abstract class HudMixin {
 
     /**
-     * Resets icon position tracking at the start of each render frame.
+     * 在每帧 HUD 提取开始时重置图标位置，并优先提交拾取信息与声音字幕。
+     *
+     * <p>拾取提示在原版及 YZUI HUD 之前进入渲染队列，因此始终位于所有 HUD
+     * 组件下方，不会遮挡热键栏、状态栏、记分板或其他叠加信息。</p>
      */
     @Inject(method = "extractRenderState(Lnet/minecraft/client/gui/GuiGraphicsExtractor;Lnet/minecraft/client/DeltaTracker;)V",
             at = @At("HEAD"))
     private void onExtractRenderState(GuiGraphicsExtractor graphics, DeltaTracker deltaTracker, CallbackInfo ci) {
         SharedStorage.resetData();
+        DrawEntriesHandler.INSTANCE.render(graphics);
     }
 
     /**
@@ -51,7 +55,6 @@ public abstract class HudMixin {
     private void onRenderManaBar(GuiGraphicsExtractor graphics, DeltaTracker deltaTracker, CallbackInfo ci) {
         ManaHudRenderer.render(graphics);
         AdventureLevelHudRenderer.render(graphics);
-        DrawEntriesHandler.INSTANCE.render(graphics);
     }
 
     /**
