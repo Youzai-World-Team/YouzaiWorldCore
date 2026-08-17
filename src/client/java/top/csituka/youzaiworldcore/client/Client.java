@@ -7,6 +7,7 @@ import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.MenuScreens;
+import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.world.entity.EntityTypes;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.glfw.GLFWImage;
@@ -23,9 +24,11 @@ import top.csituka.youzaiworldcore.block.entity.ModBlockEntities;
 import top.csituka.youzaiworldcore.client.renderer.block.FlyBeaconBlockEntityRenderer;
 import top.csituka.youzaiworldcore.client.renderer.block.TeleportAnchorBlockEntityRenderer;
 import top.csituka.youzaiworldcore.client.resource.ItemModelDefinitionValidator;
+import top.csituka.youzaiworldcore.client.resource.CustomFontResourcePack;
 import top.csituka.youzaiworldcore.client.screen.block.DecompositionTableScreen;
 import top.csituka.youzaiworldcore.client.screen.block.FlyBeaconScreen;
 import top.csituka.youzaiworldcore.client.screen.MenuScreen;
+import top.csituka.youzaiworldcore.client.screen.WelcomeGuideScreen;
 import top.csituka.youzaiworldcore.client.screen.element.MainMenuElements;
 import top.csituka.youzaiworldcore.update.UpdateChecker;
 import top.csituka.youzaiworldcore.config.UpdateCheckerConfig;
@@ -114,6 +117,9 @@ public class Client implements ClientModInitializer {
         top.csituka.youzaiworldcore.YouzaiworldCore.logToFile = clientLogToFile;
         top.csituka.youzaiworldcore.YouzaiworldCore.devModeEnabled = top.csituka.youzaiworldcore.client.config.ClientExternalSettings
                 .isDevModeEnabled();
+
+        DebugLogger.info("Client", "注册自定义字体内置资源包...");
+        CustomFontResourcePack.register();
 
         DebugLogger.info("Client", "初始化自定义皮肤与披风客户端管理器...");
         CosmeticClientManager.initialize();
@@ -224,6 +230,16 @@ public class Client implements ClientModInitializer {
                 setWindowIcon(handle);
                 windowIconSet = true;
             }
+        }
+
+        // 首次启动导览必须复用已经存在的标题屏幕实例，关闭后返回原屏幕，
+        // 避免重新创建 TitleScreen 导致全景旋转进度重置。
+        if (!top.csituka.youzaiworldcore.client.config.ClientExternalSettings.isWelcomeGuideCompleted()
+                && client.player == null
+                && client.gui.screen() instanceof TitleScreen titleScreen) {
+            DebugLogger.info("Client", "首次启动欢迎导览尚未完成，打开导览界面");
+            client.gui.setScreen(new WelcomeGuideScreen(titleScreen));
+            return;
         }
 
         if (client.player == null || client.gui.screen() != null) {

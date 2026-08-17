@@ -7,13 +7,13 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
-import net.minecraft.client.renderer.Panorama;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.FormattedCharSequence;
 import top.csituka.youzaiworldcore.YouzaiworldCore;
 import top.csituka.youzaiworldcore.client.config.ClientExternalSettings;
+import top.csituka.youzaiworldcore.client.resource.CustomFontResourcePack;
 import top.csituka.youzaiworldcore.client.screen.widget.CheckboxButton;
 import top.csituka.youzaiworldcore.update.UpdateChecker;
 import top.csituka.youzaiworldcore.client.screen.widget.DropdownButton;
@@ -65,7 +65,8 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
     /** 图标圆角半径（像素） */
     private static final int ICON_CORNER_RADIUS = 6;
 
-    private final Panorama panorama;
+    /** 打开本页的上级屏幕，用于 Esc/关闭按钮返回。 */
+    private final Screen parentScreen;
 
     /** 当前选中的分栏索引：0 = 视觉, 1 = 导出/导入配置, 2 = 关于, 3 = 开发者 */
     private int selectedSection = 0;
@@ -111,6 +112,10 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
     private String debugPort;
     /** 是否启用 YZUI 自定义 UI 样式 */
     private boolean yzuiEnabled;
+    /** 是否显示游戏内左侧背包、装备栏与状态效果列表 */
+    private boolean leftHudEnabled;
+    /** 是否启用模组内置的自定义字体资源包 */
+    private boolean customFontEnabled;
 
     /** 是否自动跳过实验性设置警告屏幕 */
     private boolean autoSkipExperimentalWarning;
@@ -169,7 +174,7 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
 
     public YouzaiWorldCoreSettingsScreen(Screen parent) {
         super(Component.translatable("screen.youzaiworldcore.settings.title"));
-        this.panorama = new Panorama();
+        this.parentScreen = parent;
         // 从持久化配置读取初始状态
         this.devModeEnabled = ClientExternalSettings.isDevModeEnabled();
         this.logLevel = ClientExternalSettings.getLogLevel();
@@ -177,6 +182,8 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
         this.debugAddress = ClientExternalSettings.getDebugAddress();
         this.debugPort = ClientExternalSettings.getDebugPort();
         this.yzuiEnabled = ClientExternalSettings.isYzuiEnabled();
+        this.leftHudEnabled = ClientExternalSettings.isLeftHudEnabled();
+        this.customFontEnabled = ClientExternalSettings.isCustomFontEnabled();
         this.autoSkipExperimentalWarning = ClientExternalSettings.isAutoSkipExperimentalWarning();
         this.experimentalWarningSkipAction = ClientExternalSettings.getExperimentalWarningSkipAction();
     }
@@ -184,7 +191,17 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
     @Override
     protected void init() {
         super.init();
-        this.panorama.startSpin();
+        // 返回已存在的设置屏幕实例时，重新同步 OOBE 中刚保存的选择。
+        this.devModeEnabled = ClientExternalSettings.isDevModeEnabled();
+        this.logLevel = ClientExternalSettings.getLogLevel();
+        this.debugModeType = ClientExternalSettings.getDebugModeType();
+        this.debugAddress = ClientExternalSettings.getDebugAddress();
+        this.debugPort = ClientExternalSettings.getDebugPort();
+        this.yzuiEnabled = ClientExternalSettings.isYzuiEnabled();
+        this.leftHudEnabled = ClientExternalSettings.isLeftHudEnabled();
+        this.customFontEnabled = ClientExternalSettings.isCustomFontEnabled();
+        this.autoSkipExperimentalWarning = ClientExternalSettings.isAutoSkipExperimentalWarning();
+        this.experimentalWarningSkipAction = ClientExternalSettings.getExperimentalWarningSkipAction();
         calculateLayout();
         rebuildWidgets();
     }
@@ -696,6 +713,14 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
         addRenderableWidget(skipActionDropdown);
         y += 30;
 
+        TransparentButton rerunOobeButton = new TransparentButton(
+                contentLeft, y, contentWidth, 22,
+                Component.translatable("screen.youzaiworldcore.settings.rerun_oobe"),
+                this::rerunWelcomeGuide
+        );
+        addRenderableWidget(rerunOobeButton);
+        y += 28;
+
         if (devModeEnabled) {
             logLevelDropdown = new DropdownButton(
                     contentLeft, y, contentWidth, SIDEBAR_WIDTH, 20,
@@ -771,6 +796,13 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
         maxContentY = y + 6;
     }
 
+    /** 重置完成标记并从当前设置页重新打开欢迎导览。 */
+    private void rerunWelcomeGuide() {
+        DebugLogger.info("SettingsScreen", "从开发者页面重新进行 OOBE 流程");
+        ClientExternalSettings.resetWelcomeGuide();
+        Minecraft.getInstance().gui.setScreen(new WelcomeGuideScreen(this));
+    }
+
     private void buildVisualSection() {
         Component title = Component.translatable("screen.youzaiworldcore.settings.sidebar_visual");
         int y = contentTop + wrappedTextHeight(title, contentWidth) + 8;
@@ -786,7 +818,40 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
                 }
         ).setWrapMessage(true);
         addRenderableWidget(yzuiToggle);
-        maxContentY = y + toggleHeight + 6;
+        y += toggleHeight + 6;
+
+        Component leftHudToggleMessage =
+                Component.translatable("screen.youzaiworldcore.settings.toggle_left_hud");
+        int leftHudToggleHeight = checkboxHeight(leftHudToggleMessage);
+        CheckboxButton leftHudToggle = new CheckboxButton(
+                contentLeft, y, contentWidth, leftHudToggleHeight,
+                leftHudToggleMessage, leftHudEnabled,
+                () -> {
+                    boolean newVal = !leftHudEnabled;
+                    leftHudEnabled = newVal;
+                    ClientExternalSettings.setLeftHudEnabled(newVal);
+                    DebugLogger.info("SettingsScreen", "游戏内左侧 HUD 已"
+                            + (newVal ? "启用" : "禁用"));
+                }
+        ).setWrapMessage(true);
+        addRenderableWidget(leftHudToggle);
+        y += leftHudToggleHeight + 6;
+
+        Component fontToggleMessage =
+                Component.translatable("screen.youzaiworldcore.settings.toggle_custom_font");
+        int fontToggleHeight = checkboxHeight(fontToggleMessage);
+        CheckboxButton customFontToggle = new CheckboxButton(
+                contentLeft, y, contentWidth, fontToggleHeight, fontToggleMessage, customFontEnabled,
+                () -> {
+                    boolean newVal = !customFontEnabled;
+                    customFontEnabled = newVal;
+                    ClientExternalSettings.setCustomFontEnabled(newVal);
+                    CustomFontResourcePack.setEnabled(newVal);
+                    DebugLogger.info("SettingsScreen", "自定义字体资源包已" + (newVal ? "启用" : "禁用"));
+                }
+        ).setWrapMessage(true);
+        addRenderableWidget(customFontToggle);
+        maxContentY = y + fontToggleHeight + 6;
     }
 
     private void buildAboutSection() {
@@ -984,7 +1049,6 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
-        this.panorama.extractRenderState(guiGraphics, this.width, this.height);
         guiGraphics.fill(0, 0, this.width, this.height, 0x60_00_00_00);
 
         int cx = this.width / 2;
@@ -1162,6 +1226,9 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
 
     @Override
     public void extractBackground(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
+        // 复用原版 Screen 背景管线：使用 GameRenderer 的全局全景图实例，
+        // 同时保留主菜单子页面应有的模糊效果与菜单背景遮罩。
+        super.extractBackground(guiGraphics, mouseX, mouseY, partialTick);
     }
 
     @Override
@@ -1172,6 +1239,8 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
     @Override
     public void onClose() {
         if (configOpActive) return; // 操作进行中不可关闭
-        Minecraft.getInstance().gui.setScreen(null);
+        DebugLogger.info("SettingsScreen", "返回上级屏幕: %s",
+                parentScreen == null ? "默认屏幕" : parentScreen.getClass().getSimpleName());
+        Minecraft.getInstance().gui.setScreen(parentScreen);
     }
 }

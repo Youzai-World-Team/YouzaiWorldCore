@@ -11,6 +11,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import top.csituka.youzaiworldcore.client.config.ClientExternalSettings;
 import top.csituka.youzaiworldcore.client.render.RoundedRect;
+import top.csituka.youzaiworldcore.client.screen.widget.YzuiStyleOverride;
 
 /**
  * 替换原版滑动条样式，使其与项目自定义 {@code TransparentButton} 视觉一致。
@@ -205,7 +206,11 @@ public class AbstractSliderButtonMixin {
      * 但模组自定义屏幕（包名以 {@code top.csituka.youzaiworldcore} 开头）始终使用 YZUI。</p>
      */
     @Unique
-    private static boolean yzwc$shouldApplyYzui() {
+    private boolean yzwc$shouldApplyYzui() {
+        AbstractSliderButton self = (AbstractSliderButton) (Object) this;
+        int styleOverride = YzuiStyleOverride.get(self);
+        if (styleOverride == YzuiStyleOverride.STYLE_VANILLA) return false;
+        if (styleOverride == YzuiStyleOverride.STYLE_YZUI) return true;
         if (ClientExternalSettings.isYzuiEnabled()) return true;
         var screen = Minecraft.getInstance().gui.screen();
         return screen != null && screen.getClass().getName().startsWith("top.csituka.youzaiworldcore");
