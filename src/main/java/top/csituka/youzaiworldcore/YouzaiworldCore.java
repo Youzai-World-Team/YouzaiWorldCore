@@ -36,6 +36,7 @@ import top.csituka.youzaiworldcore.command.ReloadCommand;
 import top.csituka.youzaiworldcore.config.AfkConfig;
 import top.csituka.youzaiworldcore.config.ChatFormatSettings;
 import top.csituka.youzaiworldcore.config.ChargedCreeperConfig;
+import top.csituka.youzaiworldcore.config.CosmeticModuleSettings;
 import top.csituka.youzaiworldcore.config.EndPortalConfig;
 import top.csituka.youzaiworldcore.config.EventSettings;
 import top.csituka.youzaiworldcore.config.GlobalSettings;
@@ -62,6 +63,7 @@ import top.csituka.youzaiworldcore.dimensionalinventories.DimensionPoolSettings;
 import top.csituka.youzaiworldcore.dimensionalinventories.DimensionPoolManager;
 import top.csituka.youzaiworldcore.dimensionalinventories.WorldPoolCommand;
 import top.csituka.youzaiworldcore.damagenumber.DamageNumberHandler;
+import top.csituka.youzaiworldcore.cosmetic.CosmeticManager;
 import top.csituka.youzaiworldcore.respawn.InPlaceRespawnConfig;
 import top.csituka.youzaiworldcore.respawn.InPlaceRespawnManager;
 import top.csituka.youzaiworldcore.entity.seat.ModSeatEntities;
@@ -286,6 +288,14 @@ public class YouzaiworldCore implements ModInitializer {
         LOGGER.info("账户系统已初始化");
         DebugLogger.exiting("YouzaiworldCore", "AccountSystem.init");
 
+        // ===== 初始化自定义皮肤与披风模块 =====
+        DebugLogger.entering("YouzaiworldCore", "CosmeticSystem.init");
+        CosmeticModuleSettings.load();
+        CosmeticManager.initialize();
+        ServerLifecycleEvents.SERVER_STOPPING.register(server -> CosmeticManager.shutdown());
+        LOGGER.info("自定义皮肤与披风模块已初始化");
+        DebugLogger.exiting("YouzaiworldCore", "CosmeticSystem.init");
+
         // ===== 初始化冒险等级系统 =====
         DebugLogger.entering("YouzaiworldCore", "AdventureLevelSystem.init");
         AdventureLevelManager.initialize();
@@ -371,6 +381,7 @@ public class YouzaiworldCore implements ModInitializer {
                 InvisibilityManager.onPlayerDisconnect(serverPlayer);
                 DimensionPoolManager.onPlayerDisconnect(serverPlayer);
                 AfkManager.onDisconnect(serverPlayer);
+                CosmeticManager.onPlayerDisconnect(serverPlayer);
             }
         });
         LOGGER.info("隐身功能已初始化");

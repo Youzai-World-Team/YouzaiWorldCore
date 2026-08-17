@@ -15,6 +15,7 @@ import top.csituka.youzaiworldcore.client.screen.element.SettingsMenuElements;
 import top.csituka.youzaiworldcore.client.screen.element.SwitchWorldMenuElements;
 import top.csituka.youzaiworldcore.client.FunctionToggleClientState;
 import top.csituka.youzaiworldcore.client.InPlaceRespawnClientState;
+import top.csituka.youzaiworldcore.client.cosmetic.CosmeticClientManager;
 import top.csituka.youzaiworldcore.client.hud.AdventureLevelHudRenderer;
 import top.csituka.youzaiworldcore.client.render.DamageNumberRenderer;
 import top.csituka.youzaiworldcore.client.skill.ClientAttributeData;
@@ -38,6 +39,22 @@ public class ClientNetworking {
 
     public static void initialize() {
         DebugLogger.entering("ClientNetworking", "initialize");
+
+        ClientPlayNetworking.registerGlobalReceiver(CosmeticReadyPayload.ID, (payload, context) ->
+                context.client().execute(() -> CosmeticClientManager.onReady(payload)));
+        DebugLogger.info("ClientNetworking", "Registered receiver: CosmeticReadyPayload");
+
+        ClientPlayNetworking.registerGlobalReceiver(CosmeticUploadResultPayload.ID, (payload, context) ->
+                context.client().execute(() -> CosmeticClientManager.onUploadResult(payload)));
+        DebugLogger.info("ClientNetworking", "Registered receiver: CosmeticUploadResultPayload");
+
+        ClientPlayNetworking.registerGlobalReceiver(CosmeticInfoPayload.ID, (payload, context) ->
+                context.client().execute(() -> CosmeticClientManager.onInfo(payload)));
+        DebugLogger.info("ClientNetworking", "Registered receiver: CosmeticInfoPayload");
+
+        ClientPlayNetworking.registerGlobalReceiver(CosmeticDataPayload.ID, (payload, context) ->
+                context.client().execute(() -> CosmeticClientManager.onData(payload)));
+        DebugLogger.info("ClientNetworking", "Registered receiver: CosmeticDataPayload");
 
         ClientPlayNetworking.registerGlobalReceiver(InPlaceRespawnInfoPayload.ID, (payload, context) ->
                 context.client().execute(() -> InPlaceRespawnClientState.updateInfo(

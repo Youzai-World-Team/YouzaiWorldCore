@@ -27,6 +27,7 @@ import top.csituka.youzaiworldcore.screen.DecompositionTableMenu;
 import top.csituka.youzaiworldcore.screen.FlyBeaconMenu;
 import top.csituka.youzaiworldcore.skill.AttributeManager;
 import top.csituka.youzaiworldcore.respawn.InPlaceRespawnManager;
+import top.csituka.youzaiworldcore.cosmetic.CosmeticManager;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 import eu.pb4.trinkets.api.TrinketsApi;
 import eu.pb4.trinkets.api.TrinketAttachment;
@@ -120,7 +121,32 @@ public class ModNetworking {
         PayloadTypeRegistry.serverboundPlay().register(AfkHeartbeatPayload.ID, AfkHeartbeatPayload.STREAM_CODEC);
         DebugLogger.info("ModNetworking", "Registered serverbound packet: AfkHeartbeatPayload");
 
+        // ===== 自定义皮肤与披风 =====
+        PayloadTypeRegistry.serverboundPlay().register(CosmeticUploadPayload.ID, CosmeticUploadPayload.STREAM_CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(CosmeticRequestPayload.ID, CosmeticRequestPayload.STREAM_CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(CosmeticReadyPayload.ID, CosmeticReadyPayload.STREAM_CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(CosmeticInfoPayload.ID, CosmeticInfoPayload.STREAM_CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(CosmeticDataPayload.ID, CosmeticDataPayload.STREAM_CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(
+                CosmeticUploadResultPayload.ID, CosmeticUploadResultPayload.STREAM_CODEC);
+        DebugLogger.info("ModNetworking", "Registered cosmetic payloads");
+
         // ===== 服务端接收处理器 =====
+        ServerPlayNetworking.registerGlobalReceiver(CosmeticUploadPayload.ID, (payload, context) -> {
+            var player = context.player();
+            var server = player.level().getServer();
+            if (server != null) {
+                server.execute(() -> CosmeticManager.applySnapshot(player, payload));
+            }
+        });
+        ServerPlayNetworking.registerGlobalReceiver(CosmeticRequestPayload.ID, (payload, context) -> {
+            var player = context.player();
+            var server = player.level().getServer();
+            if (server != null) {
+                server.execute(() -> CosmeticManager.handleRequest(player, payload.targetUuid()));
+            }
+        });
+
         ServerPlayNetworking.registerGlobalReceiver(DecomposeItemPayload.ID, (payload, context) -> {
             DebugLogger.entering("ModNetworking", "DecomposeItemPayload handler");
             boolean isDecompositionTable = context.player().containerMenu instanceof DecompositionTableMenu;

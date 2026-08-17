@@ -49,6 +49,7 @@ public final class DefaultSettingsWriter {
             TrialVaultConfig.writeDefaults();
             InPlaceRespawnConfig.writeDefaults();
             PetModuleConfig.writeDefaults();
+            CosmeticModuleSettings.writeDefaults();
             MailSettings.writeDefaults();
             DimensionPoolSettings.writeDefaults();
             // 运营

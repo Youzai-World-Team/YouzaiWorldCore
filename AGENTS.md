@@ -184,8 +184,8 @@ DebugLogger.exiting("ModuleName", "methodName", "result=" + r);
 
 ```
 <gameDir>/yzwc/client/                       # 客户端配置（纯本机，不跨端同步）
-└── global_settings.json                     # 客户端全部配置，按功能模块分节
-                                             # 就这一个文件，无子目录
+├── global_settings.json                     # 客户端全部结构化配置，按功能模块分节
+└── config/<模块名>/                         # 玩家直接提供的外部资源例外（如 cosmetic_module PNG）
 
 <gameDir>/yzwc/server/                       # 服务端配置（与世界无关的内容）
 ├── config/
@@ -204,8 +204,9 @@ DebugLogger.exiting("ModuleName", "methodName", "result=" + r);
 
 - **客户端配置**（`yzwc/client/global_settings.json`）：纯本机生效、不涉及服务端权威逻辑的设置
   （开发者模式、日志级别、YZUI 开关、物品高亮颜色、音频启用状态等）。
-  客户端没有 data / backup / temp 子目录 —— 客户端不存在需要长期保管的数据、备份或缓存，
-  多套目录纯属负担。由 `ClientGlobalSettings.load()` 在 `Client.onInitializeClient()` 最开头加载。
+  客户端没有 data / backup / temp 子目录；需要玩家直接放置资源文件的模块可使用
+  `yzwc/client/config/<模块名>/`，但结构化设置仍必须写入唯一的 `global_settings.json`。
+  由 `ClientGlobalSettings.load()` 在 `Client.onInitializeClient()` 最开头加载。
 - **服务端配置**（`yzwc/server/` 与 `<world_name>/data/yzwc/`）：涉及游戏逻辑、需要服务端权威保存的设置
   （账号系统、维度池、宠物数据、传送锚点坐标等）。由 `GlobalSettings.load()` 在服务端启动时加载。
 

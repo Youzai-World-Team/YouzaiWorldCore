@@ -38,7 +38,8 @@ import java.util.UUID;
  *
  * <pre>
  * &lt;gameDir&gt;/yzwc/client/
- * └── global_settings.json                    # 客户端全部配置，按模块分节（就这一个文件，无子目录）
+ * ├── global_settings.json                    # 客户端全部结构化配置，按模块分节
+ * └── config/&lt;模块名&gt;/                       # 少数模块需要的玩家外部文件（如自定义皮肤 PNG）
  * </pre>
  *
  * <h2>目录布局（世界侧，随存档走）</h2>
@@ -138,6 +139,11 @@ public final class ModPaths {
         return serverData(module).resolve(DEFAULT_DATA_FILE_NAME);
     }
 
+    /** 某模块下按玩家 UUID 分隔的数据目录。 */
+    public static Path serverPlayerData(String module, UUID playerUuid) {
+        return serverData(module).resolve(playerUuid.toString());
+    }
+
     /** 服务端备份根：{@code <gameDir>/yzwc/server/backup} */
     public static Path serverBackupRoot() {
         return serverRoot().resolve(BACKUP_DIR_NAME);
@@ -163,8 +169,8 @@ public final class ModPaths {
     /**
      * 客户端存放根：{@code <gameDir>/yzwc/client}。
      * <p>
-     * 与服务端不同，客户端<b>只有一个扁平的配置文件</b>，不分 config / data / backup / temp
-     * —— 客户端没有需要跨端保管的数据、备份或缓存，多套目录纯属负担。
+     * 与服务端不同，客户端结构化设置集中在一个扁平配置文件中，不建立 data / backup / temp。
+     * 少数需要玩家直接放置资源文件的模块可通过 {@link #clientConfig(String)} 使用 config 子目录。
      * </p>
      */
     public static Path clientRoot() {
@@ -177,6 +183,11 @@ public final class ModPaths {
     /** 客户端唯一的配置文件：{@code <gameDir>/yzwc/client/global_settings.json} */
     public static Path clientSettingsFile() {
         return clientRoot().resolve(GLOBAL_SETTINGS_FILE_NAME);
+    }
+
+    /** 客户端模块外部文件目录：{@code <gameDir>/yzwc/client/config/<module>}。 */
+    public static Path clientConfig(String module) {
+        return clientRoot().resolve(CONFIG_DIR_NAME).resolve(module);
     }
 
     // ===== 世界侧（<world_name>/data/yzwc） =====

@@ -20,6 +20,7 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
  *   <li>{@code debug_port} — 调试服务器端口（专用服务端）</li>
  *   <li>{@code ignored_update_version} — 已忽略提示的更新版本号</li>
  *   <li>{@code yzui_enabled} — 是否启用 YZUI 自定义 UI 样式</li>
+ *   <li>{@code cosmetic_enabled} — 是否启用自定义皮肤与披风</li>
  *   <li>{@code auto_skip_experimental_warning} — 是否自动跳过实验性设置警告屏幕</li>
  *   <li>{@code experimental_warning_skip_action} — 自动跳过时的操作（skip / backup）</li>
  * </ul>
@@ -41,6 +42,7 @@ public final class ClientExternalSettings {
     private static final String DEFAULT_DEBUG_PORT = "25565";
     private static final String DEFAULT_IGNORED_UPDATE_VERSION = "";
     private static final boolean DEFAULT_YZUI_ENABLED = true;
+    private static final boolean DEFAULT_COSMETIC_ENABLED = true;
     private static final boolean DEFAULT_AUTO_SKIP_EXPERIMENTAL_WARNING = false;
     private static final String DEFAULT_EXPERIMENTAL_WARNING_SKIP_ACTION = "skip";
 
@@ -57,6 +59,7 @@ public final class ClientExternalSettings {
 
     /** 是否启用 YZUI（自定义 UI 样式），关闭则回退到原版 UI 供资源包替换 */
     private static boolean yzuiEnabled = DEFAULT_YZUI_ENABLED;
+    private static boolean cosmeticEnabled = DEFAULT_COSMETIC_ENABLED;
 
     /** 是否自动跳过"使用实验性设置的世界不受支持"屏幕 */
     private static boolean autoSkipExperimentalWarning = DEFAULT_AUTO_SKIP_EXPERIMENTAL_WARNING;
@@ -103,6 +106,11 @@ public final class ClientExternalSettings {
     /** @return 是否启用 YZUI 自定义 UI 样式 */
     public static boolean isYzuiEnabled() {
         return yzuiEnabled;
+    }
+
+    /** @return 是否启用自定义皮肤与披风 */
+    public static boolean isCosmeticEnabled() {
+        return cosmeticEnabled;
     }
 
     /** @return 是否自动跳过实验性设置警告屏幕 */
@@ -171,6 +179,13 @@ public final class ClientExternalSettings {
         save();
     }
 
+    /** 设置自定义皮肤与披风启用状态并持久化。 */
+    public static void setCosmeticEnabled(boolean value) {
+        cosmeticEnabled = value;
+        DebugLogger.info(MODULE, "自定义皮肤与披风已" + (value ? "启用" : "禁用"));
+        save();
+    }
+
     /** 设置是否自动跳过实验性设置警告并持久化 */
     public static void setAutoSkipExperimentalWarning(boolean value) {
         autoSkipExperimentalWarning = value;
@@ -203,6 +218,7 @@ public final class ClientExternalSettings {
         debugPort = section.getString("debug_port", debugPort);
         ignoredUpdateVersion = section.getString("ignored_update_version", ignoredUpdateVersion);
         yzuiEnabled = section.getBoolean("yzui_enabled", yzuiEnabled);
+        cosmeticEnabled = section.getBoolean("cosmetic_enabled", cosmeticEnabled);
         autoSkipExperimentalWarning =
                 section.getBoolean("auto_skip_experimental_warning", autoSkipExperimentalWarning);
 
@@ -228,6 +244,7 @@ public final class ClientExternalSettings {
         debugPort = DEFAULT_DEBUG_PORT;
         ignoredUpdateVersion = DEFAULT_IGNORED_UPDATE_VERSION;
         yzuiEnabled = DEFAULT_YZUI_ENABLED;
+        cosmeticEnabled = DEFAULT_COSMETIC_ENABLED;
         autoSkipExperimentalWarning = DEFAULT_AUTO_SKIP_EXPERIMENTAL_WARNING;
         experimentalWarningSkipAction = DEFAULT_EXPERIMENTAL_WARNING_SKIP_ACTION;
         save();
@@ -244,6 +261,7 @@ public final class ClientExternalSettings {
         section.set("debug_port", debugPort);
         section.set("ignored_update_version", ignoredUpdateVersion);
         section.set("yzui_enabled", yzuiEnabled);
+        section.set("cosmetic_enabled", cosmeticEnabled);
         section.set("auto_skip_experimental_warning", autoSkipExperimentalWarning);
         section.set("experimental_warning_skip_action", experimentalWarningSkipAction);
         ClientGlobalSettings.save();

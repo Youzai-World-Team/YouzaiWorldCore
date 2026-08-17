@@ -48,6 +48,7 @@
 - **登录/注册 GUI**：未认证玩家进入登录大厅时客户端自动弹出注册/登录界面（`RegisterScreen` / `LoginScreen`，用户名只读预填，支持 Enter 登入与断开连接），服务端经 `OpenAuthScreenPayload` 推送
 - **隐身联动**：隐身状态下禁止执行登出、注销、改密等敏感操作
 - **账户注销联动**：账户注销/删除时同时清空其邮件信箱（`MailManager.onAccountDeleted`）
+- **自定义皮肤与披风**：离线账户可从 `yzwc/client/config/cosmetic_module/` 上传标准 PNG，服务端按账户保存并同步给其他在线玩家；正版账户保持 Mojang 外观
 
 ### 2. GUI 菜单系统
 
