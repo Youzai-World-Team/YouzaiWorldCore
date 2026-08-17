@@ -3,20 +3,19 @@ package top.csituka.youzaiworldcore.client.pickup.display;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.renderer.RenderPipelines;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 import org.jspecify.annotations.NonNull;
+import top.csituka.youzaiworldcore.client.hud.CachedItemRenderer;
 
 /**
  * 物品拾取通知的显示条目。
  * <p>
  * 显示物品图标、名称（按稀有度着色）和数量。
  * 支持同类物品合并以及拾取瞬间的弹出动画。
- * 图标渲染：通过物品 ID 推导贴图路径，用 blit + ARGB 颜色实现真 alpha 透明度淡出。
+ * 图标复用 YZHUD 物品栏的物品模型渲染器，完整保留资源包模型、
+ * 方块物品、附魔光效与透明度淡出。
  * </p>
  */
 @SuppressWarnings("null")
@@ -30,6 +29,9 @@ public class ItemDisplayEntry extends DisplayEntry<ItemStack> {
 
     /** 文字与图标间距 */
     private static final int TEXT_ICON_MARGIN = 2;
+
+    /** 与 YZHUD 物品栏一致的缓存物品模型渲染器。 */
+    private final CachedItemRenderer itemRenderer = new CachedItemRenderer();
 
     private final ChatFormatting rarityFormat;
 
@@ -87,9 +89,7 @@ public class ItemDisplayEntry extends DisplayEntry<ItemStack> {
     @Override
     protected void renderSprite(GuiGraphicsExtractor graphics, int x, int y, int alpha) {
         if (data.isEmpty()) return;
-        int argb = (Math.min(255, Math.max(0, alpha)) << 24) | 0xFFFFFF;
-
-        Identifier texId = resolveTexture(); // 找可用的贴图
+        float opacity = Math.clamp(alpha / 255.0F, 0.0F, 1.0F);
 
         if (popTime > 0) {
             float popScale = 1.0f + popTime / (float) POP_TIME * 0.3f;
@@ -97,40 +97,10 @@ public class ItemDisplayEntry extends DisplayEntry<ItemStack> {
             graphics.pose().translate(x + ICON_SIZE / 2.0f, y + ICON_SIZE / 2.0f);
             graphics.pose().scale(popScale, popScale);
             graphics.pose().translate(-ICON_SIZE / 2.0f, -ICON_SIZE / 2.0f);
-            if (texId != null) {
-                graphics.blit(RenderPipelines.GUI_TEXTURED, texId, 0, 0, 0, 0, ICON_SIZE, ICON_SIZE, ICON_SIZE, ICON_SIZE, argb);
-            } else {
-                graphics.item(data, 0, 0);
-                if (alpha < 255) graphics.fill(0, 0, ICON_SIZE, ICON_SIZE, ((255 - alpha) << 24));
-            }
+            itemRenderer.render(graphics, data, 0, 0, opacity);
             graphics.pose().popMatrix();
         } else {
-            if (texId != null) {
-                graphics.blit(RenderPipelines.GUI_TEXTURED, texId, x, y, 0, 0, ICON_SIZE, ICON_SIZE, ICON_SIZE, ICON_SIZE, argb);
-            } else {
-                graphics.item(data, x, y);
-                if (alpha < 255) graphics.fill(x, y, x + ICON_SIZE, y + ICON_SIZE, ((255 - alpha) << 24));
-            }
-        }
-    }
-
-    /** 查找可用的贴图路径：先找 item 贴图，没有则试 block 贴图 */
-    private Identifier resolveTexture() {
-        Identifier itemId = BuiltInRegistries.ITEM.getKey(data.getItem());
-        // 试 item 贴图
-        Identifier tex = Identifier.fromNamespaceAndPath(itemId.getNamespace(), "textures/item/" + itemId.getPath() + ".png");
-        if (resourceExists(tex)) return tex;
-        // 试 block 贴图（方块类物品常用）
-        tex = Identifier.fromNamespaceAndPath(itemId.getNamespace(), "textures/block/" + itemId.getPath() + ".png");
-        if (resourceExists(tex)) return tex;
-        return null; // 都没有 → 回退 item()
-    }
-
-    private static boolean resourceExists(Identifier texId) {
-        try {
-            return Minecraft.getInstance().getResourceManager().getResource(texId).isPresent();
-        } catch (Exception e) {
-            return false;
+            itemRenderer.render(graphics, data, x, y, opacity);
         }
     }
 
