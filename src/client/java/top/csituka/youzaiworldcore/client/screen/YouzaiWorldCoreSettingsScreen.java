@@ -3,6 +3,7 @@ package top.csituka.youzaiworldcore.client.screen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.screens.ConfirmLinkScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.KeyEvent;
@@ -23,9 +24,7 @@ import top.csituka.youzaiworldcore.client.config.ConfigIOManager;
 import top.csituka.youzaiworldcore.client.config.PlatformDetector;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
-import java.awt.Desktop;
 import java.io.File;
-import java.net.URI;
 import java.util.List;
 
 /**
@@ -988,18 +987,9 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
     }
 
     private void openOssNotice() {
-        DebugLogger.info("SettingsScreen", "打开开源许可页");
-        try {
-            URI uri = new URI(
-                    "https://github.com/Youzai-World-Team/YouzaiWorldCore/blob/main/NOTICE.txt");
-            if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
-                Desktop.getDesktop().browse(uri);
-            } else {
-                DebugLogger.warn("SettingsScreen", "当前环境不支持打开浏览器");
-            }
-        } catch (Exception e) {
-            DebugLogger.exception("SettingsScreen", "openOssNotice", e);
-        }
+        String url = "https://github.com/Youzai-World-Team/YouzaiWorldCore/blob/main/NOTICE.txt";
+        DebugLogger.info("SettingsScreen", "显示开源许可链接确认: %s", url);
+        ConfirmLinkScreen.confirmLinkNow(this, url);
     }
 
     // ========== 换行文本渲染辅助 ==========

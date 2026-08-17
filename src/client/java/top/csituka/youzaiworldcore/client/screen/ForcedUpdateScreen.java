@@ -2,6 +2,7 @@ package top.csituka.youzaiworldcore.client.screen;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.screens.ConfirmLinkScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
@@ -9,13 +10,11 @@ import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import top.csituka.youzaiworldcore.client.render.RoundedRect;
 import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
 import top.csituka.youzaiworldcore.client.update.ClientUpdateState;
 import top.csituka.youzaiworldcore.update.UpdateResult;
-
-import java.awt.Desktop;
-import java.net.URI;
-import top.csituka.youzaiworldcore.client.render.RoundedRect;
+import top.csituka.youzaiworldcore.util.DebugLogger;
 
 /**
  * 强制更新弹窗——与 {@link QuitConfirmationScreen} 样式完全一致。
@@ -241,17 +240,8 @@ public class ForcedUpdateScreen extends Screen {
             LOGGER.warn("下载地址为空，无法打开下载页");
             return;
         }
-        LOGGER.info("打开下载页: {}", url);
-        try {
-            URI uri = new URI(url);
-            if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
-                Desktop.getDesktop().browse(uri);
-            } else {
-                LOGGER.warn("当前环境不支持打开浏览器");
-            }
-        } catch (Exception e) {
-            LOGGER.error("打开下载页失败", e);
-        }
+        DebugLogger.info("ForcedUpdateScreen", "显示下载页链接确认: %s", url);
+        ConfirmLinkScreen.confirmLinkNow(this, url);
     }
 
     private void onBack() {

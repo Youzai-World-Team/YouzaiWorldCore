@@ -3,6 +3,7 @@ package top.csituka.youzaiworldcore.client.screen.element;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.client.gui.screens.ConfirmLinkScreen;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.resources.Identifier;
 import top.csituka.youzaiworldcore.client.render.RoundedRect;
@@ -11,8 +12,6 @@ import top.csituka.youzaiworldcore.client.screen.MenuScreen;
 import top.csituka.youzaiworldcore.client.screen.widget.ConfirmationDialog;
 import top.csituka.youzaiworldcore.client.screen.widget.TextureTileButton;
 
-import java.awt.Desktop;
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -215,20 +214,11 @@ public class MainMenuElements implements MenuElementGroup {
                 onClick = () -> screen.startExit(() -> Minecraft.getInstance()
                         .setScreenAndShow(new top.csituka.youzaiworldcore.client.screen.MailScreen()));
             } else if (i == 2) {
-                // 官方网站 — 在默认浏览器打开 https://mcyzw.top
+                // 官方网站
                 onClick = () -> {
                     DebugLogger.entering("MainMenuElements", "openWebsite");
-                    try {
-                        URI uri = new URI("https://mcyzw.top");
-                        if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
-                            Desktop.getDesktop().browse(uri);
-                            DebugLogger.info("MainMenuElements", "已在浏览器打开官网: https://mcyzw.top");
-                        } else {
-                            DebugLogger.warn("MainMenuElements", "当前环境不支持打开浏览器");
-                        }
-                    } catch (Exception e) {
-                        DebugLogger.exception("MainMenuElements", "openWebsite", e);
-                    }
+                    DebugLogger.info("MainMenuElements", "显示官网链接确认: https://mcyzw.top");
+                    ConfirmLinkScreen.confirmLinkNow(screen, "https://mcyzw.top");
                 };
             } else {
                 onClick = () -> showNotImplementedDialog(screen);

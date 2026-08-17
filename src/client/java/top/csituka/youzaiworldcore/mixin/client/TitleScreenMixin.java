@@ -7,6 +7,7 @@ import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.components.SplashRenderer;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.narration.NarratableEntry;
+import net.minecraft.client.gui.screens.ConfirmLinkScreen;
 import net.minecraft.client.gui.screens.ConnectScreen;
 import net.minecraft.client.gui.screens.options.OptionsScreen;
 import net.minecraft.client.gui.screens.TitleScreen;
@@ -34,8 +35,6 @@ import top.csituka.youzaiworldcore.update.UpdateChecker;
 import top.csituka.youzaiworldcore.update.UpdateResult;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
-import java.awt.Desktop;
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -598,24 +597,15 @@ public class TitleScreenMixin {
         return r != null && r.updateAvailable() && r.forcedUpdate();
     }
 
-    /** 点击「前往下载更新」：在默认浏览器打开构造好的下载页地址 */
+    /** 点击「前往下载更新」：显示原版链接确认界面 */
     private void youzaiworldcore$openDownloadPage() {
         // 下载地址固定取自检查结果（系统默认下载页，不再支持自定义跳转地址）
         UpdateResult r = ClientUpdateState.get();
         String url = (r != null) ? r.downloadUrl() : null;
         if (url == null || url.isEmpty()) return;
         DebugLogger.entering("TitleScreenMixin", "openDownloadPage", url);
-        try {
-            URI uri = new URI(url);
-            if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
-                Desktop.getDesktop().browse(uri);
-                DebugLogger.info("TitleScreenMixin", "已在浏览器打开更新下载页: %s", url);
-            } else {
-                DebugLogger.warn("TitleScreenMixin", "当前环境不支持打开浏览器，下载地址: %s", url);
-            }
-        } catch (Exception e) {
-            DebugLogger.exception("TitleScreenMixin", "openDownloadPage", e);
-        }
+        DebugLogger.info("TitleScreenMixin", "显示更新下载链接确认: %s", url);
+        ConfirmLinkScreen.confirmLinkNow((TitleScreen) (Object) this, url);
     }
 
     /** 点击「不再提示此版本」：记住当前最新版本号，重启后仍不再提示（强制更新除外） */
