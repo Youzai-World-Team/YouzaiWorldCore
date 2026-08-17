@@ -20,6 +20,7 @@ import top.csituka.youzaiworldcore.account.util.AuthHelper;
 import top.csituka.youzaiworldcore.account.util.AuthLocationData;
 import top.csituka.youzaiworldcore.account.util.AuthPlayerHelper;
 import top.csituka.youzaiworldcore.account.util.PasswordHasher;
+import top.csituka.youzaiworldcore.cosmetic.CosmeticManager;
 import top.csituka.youzaiworldcore.invisibility.InvisibilityManager;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
@@ -228,6 +229,7 @@ public class AccountCommands {
 
         // 标记已认证
         authPlayer.yzwc$setAuthenticated(true);
+        CosmeticManager.onAuthenticated(player);
 
         // 传送到原位置（如果有有效位置且不在虚空）
         AuthLocationData savedLoc = authPlayer.yzwc$getLastLocation();
@@ -323,6 +325,7 @@ public class AccountCommands {
             case CORRECT -> {
                 DebugLogger.branch("AccountCommands", "password check result", true, "CORRECT");
                 authPlayer.yzwc$setAuthenticated(true);
+                CosmeticManager.onAuthenticated(player);
                 account.lastAuthenticatedDate = ZonedDateTime.now();
                 account.lastIp = authPlayer.yzwc$getIpAddress();
                 account.loginTries = 0;
@@ -401,6 +404,7 @@ public class AccountCommands {
 
         // 标记未认证
         authPlayer.yzwc$setAuthenticated(false);
+        CosmeticManager.onDeauthenticated(player);
 
         // 清除会话数据，防止重连时自动恢复
         PlayerAccount account = authPlayer.yzwc$getAccount();
@@ -488,7 +492,9 @@ public class AccountCommands {
         DebugLogger.branch("AccountCommands", "password is correct", true);
 
         // 删除账户
-        AccountDataStorage.delete(player.getScoreboardName());
+        if (AccountDataStorage.delete(player.getScoreboardName())) {
+            CosmeticManager.deletePlayerData(source.getServer(), player.getUUID());
+        }
         authPlayer.yzwc$setAuthenticated(false);
         authPlayer.yzwc$setAccount(new PlayerAccount(player.getScoreboardName()));
 
@@ -671,6 +677,7 @@ public class AccountCommands {
             DebugLogger.branch("AccountCommands", "player is online, forcing re-auth", true);
             PlayerAuthAccess authPlayer = (PlayerAuthAccess) (Object) onlinePlayer;
             authPlayer.yzwc$setAuthenticated(false);
+            CosmeticManager.onDeauthenticated(onlinePlayer);
             onlinePlayer.sendSystemMessage(Component.translatable("youzaiworldcore.message.account.admin_reset_notification"));
         } else {
             DebugLogger.branch("AccountCommands", "player is online, forcing re-auth", false);
@@ -707,6 +714,7 @@ public class AccountCommands {
             return 0;
         }
         DebugLogger.branch("AccountCommands", "delete succeeded", true);
+        CosmeticManager.deletePlayerData(source.getServer(), account.uuid);
 
         // 如果玩家在线，使其断开连接
         ServerPlayer onlinePlayer = source.getServer().getPlayerList().getPlayerByName(playerName);
@@ -714,6 +722,7 @@ public class AccountCommands {
             DebugLogger.branch("AccountCommands", "player is online, disconnecting", true);
             PlayerAuthAccess authPlayer = (PlayerAuthAccess) (Object) onlinePlayer;
             authPlayer.yzwc$setAuthenticated(false);
+            CosmeticManager.onDeauthenticated(onlinePlayer);
             authPlayer.yzwc$setAccount(new PlayerAccount(playerName));
             onlinePlayer.connection.disconnect(Component.translatable("youzaiworldcore.message.account.admin_deleted"));
         } else {

@@ -9,10 +9,12 @@ import top.csituka.youzaiworldcore.YouzaiworldCore;
 import top.csituka.youzaiworldcore.account.data.AccountDataStorage;
 import top.csituka.youzaiworldcore.luckperms.LuckPermsHelper;
 import top.csituka.youzaiworldcore.config.ChatFormatSettings;
+import top.csituka.youzaiworldcore.config.CosmeticModuleSettings;
 import top.csituka.youzaiworldcore.config.GlobalSettings;
 import top.csituka.youzaiworldcore.config.ServerExternalSettings;
 import top.csituka.youzaiworldcore.config.UpdateCheckerConfig;
 import top.csituka.youzaiworldcore.dimensionalinventories.DimensionPoolSettings;
+import top.csituka.youzaiworldcore.cosmetic.CosmeticManager;
 import top.csituka.youzaiworldcore.respawn.InPlaceRespawnConfig;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
@@ -76,6 +78,10 @@ public class ReloadCommand {
 
         // 重载聊天消息格式化配置（模板缓存随 load 自动失效重解析）
         ChatFormatSettings.load();
+
+        // 重载自定义皮肤与披风配置，并把启用状态重新同步给在线玩家
+        CosmeticModuleSettings.load();
+        CosmeticManager.reload(source.getServer());
 
         // 重载 Tab 列表抬头 / 页脚定制（重新解析模板帧）
         top.csituka.youzaiworldcore.tablist.TabListManager.reload();

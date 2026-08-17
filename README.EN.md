@@ -48,6 +48,7 @@ Complete password authentication for offline-mode servers, with Mixin-based rest
 - **Login/Register GUI**: On entering the login hall, the client auto-opens the register/login screens (`RegisterScreen` / `LoginScreen`, read-only pre-filled username, Enter to log in, Disconnect button), pushed by the server via `OpenAuthScreenPayload`
 - **Invisibility Integration**: Sensitive operations (logout, deactivate, password change) blocked while invisible
 - **Account Deletion Integration**: Deactivating/deleting an account also clears its mailbox (`MailManager.onAccountDeleted`)
+- **Custom Skins & Capes**: Offline accounts can upload standard PNG files from `yzwc/client/config/cosmetic_module/`; the server stores them per account and syncs them to other online players, while online-mode accounts keep their Mojang appearance
 
 ### 2. GUI Menu System
 

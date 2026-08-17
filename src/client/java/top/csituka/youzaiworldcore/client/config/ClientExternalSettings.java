@@ -13,18 +13,20 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
  * <p>
  * 保存设置：
  * <ul>
- *   <li>{@code dev_mode_enabled} — 启用开发者模式</li>
- *   <li>{@code log_level} — 日志输出丰富度（0=关闭, 1=基本, 2=详细, 3=调试）</li>
- *   <li>{@code debug_mode_type} — 调试方式 ("embedded" 内嵌服务端 / "dedicated" 专用服务端)</li>
- *   <li>{@code debug_address} — 调试服务器地址（专用服务端）</li>
- *   <li>{@code debug_port} — 调试服务器端口（专用服务端）</li>
- *   <li>{@code ignored_update_version} — 已忽略提示的更新版本号</li>
- *   <li>{@code yzui_enabled} — 是否启用 YZUI 自定义 UI 样式</li>
- *   <li>{@code left_hud_enabled} — 是否显示左侧背包、装备栏与状态效果列表</li>
- *   <li>{@code custom_font_enabled} — 是否启用模组内置的自定义字体资源包</li>
- *   <li>{@code welcome_guide_completed} — 是否已经完成首次启动欢迎导览</li>
- *   <li>{@code auto_skip_experimental_warning} — 是否自动跳过实验性设置警告屏幕</li>
- *   <li>{@code experimental_warning_skip_action} — 自动跳过时的操作（skip / backup）</li>
+ * <li>{@code dev_mode_enabled} — 启用开发者模式</li>
+ * <li>{@code log_level} — 日志输出丰富度（0=关闭, 1=基本, 2=详细, 3=调试）</li>
+ * <li>{@code debug_mode_type} — 调试方式 ("embedded" 内嵌服务端 / "dedicated"
+ * 专用服务端)</li>
+ * <li>{@code debug_address} — 调试服务器地址（专用服务端）</li>
+ * <li>{@code debug_port} — 调试服务器端口（专用服务端）</li>
+ * <li>{@code ignored_update_version} — 已忽略提示的更新版本号</li>
+ * <li>{@code yzui_enabled} — 是否启用 YZUI 自定义 UI 样式</li>
+ * <li>{@code left_hud_enabled} — 是否显示左侧背包、装备栏与状态效果列表</li>
+ * <li>{@code custom_font_enabled} — 是否启用模组内置的自定义字体资源包</li>
+ * <li>{@code welcome_guide_completed} — 是否已经完成首次启动欢迎导览</li>
+ * <li>{@code cosmetic_enabled} — 是否启用自定义皮肤与披风</li>
+ * <li>{@code auto_skip_experimental_warning} — 是否自动跳过实验性设置警告屏幕</li>
+ * <li>{@code experimental_warning_skip_action} — 自动跳过时的操作（skip / backup）</li>
  * </ul>
  */
 public final class ClientExternalSettings {
@@ -47,6 +49,7 @@ public final class ClientExternalSettings {
     private static final boolean DEFAULT_LEFT_HUD_ENABLED = true;
     private static final boolean DEFAULT_CUSTOM_FONT_ENABLED = true;
     private static final boolean DEFAULT_WELCOME_GUIDE_COMPLETED = false;
+    private static final boolean DEFAULT_COSMETIC_ENABLED = true;
     private static final boolean DEFAULT_AUTO_SKIP_EXPERIMENTAL_WARNING = false;
     private static final String DEFAULT_EXPERIMENTAL_WARNING_SKIP_ACTION = "skip";
 
@@ -72,6 +75,7 @@ public final class ClientExternalSettings {
 
     /** 是否已经完成首次启动欢迎导览 */
     private static boolean welcomeGuideCompleted = DEFAULT_WELCOME_GUIDE_COMPLETED;
+    private static boolean cosmeticEnabled = DEFAULT_COSMETIC_ENABLED;
 
     /** 是否自动跳过"使用实验性设置的世界不受支持"屏幕 */
     private static boolean autoSkipExperimentalWarning = DEFAULT_AUTO_SKIP_EXPERIMENTAL_WARNING;
@@ -79,7 +83,8 @@ public final class ClientExternalSettings {
     /** 自动跳过时执行的操作：{@code "skip"} = 我知道我在做什么（不备份），{@code "backup"} = 创建备份并进入 */
     private static String experimentalWarningSkipAction = DEFAULT_EXPERIMENTAL_WARNING_SKIP_ACTION;
 
-    private ClientExternalSettings() {}
+    private ClientExternalSettings() {
+    }
 
     // ===== 读取 =====
 
@@ -133,6 +138,11 @@ public final class ClientExternalSettings {
     /** @return 是否已经完成首次启动欢迎导览 */
     public static boolean isWelcomeGuideCompleted() {
         return welcomeGuideCompleted;
+    }
+
+    /** @return 是否启用自定义皮肤与披风 */
+    public static boolean isCosmeticEnabled() {
+        return cosmeticEnabled;
     }
 
     /** @return 是否自动跳过实验性设置警告屏幕 */
@@ -218,7 +228,7 @@ public final class ClientExternalSettings {
     /**
      * 完成首次启动欢迎导览，并一次性保存导览中选择的视觉设置。
      *
-     * @param yzuiEnabledValue 是否启用 YZUI
+     * @param yzuiEnabledValue       是否启用 YZUI
      * @param customFontEnabledValue 是否启用 MCsans 字体
      */
     public static void completeWelcomeGuide(boolean yzuiEnabledValue, boolean customFontEnabledValue) {
@@ -245,6 +255,13 @@ public final class ClientExternalSettings {
         DebugLogger.stateChange(MODULE, "welcome_guide", "completed",
                 oldWelcomeGuideCompleted, welcomeGuideCompleted);
         DebugLogger.info(MODULE, "欢迎导览完成状态已重置");
+        save();
+    }
+
+    /** 设置自定义皮肤与披风启用状态并持久化。 */
+    public static void setCosmeticEnabled(boolean value) {
+        cosmeticEnabled = value;
+        DebugLogger.info(MODULE, "自定义皮肤与披风已" + (value ? "启用" : "禁用"));
         save();
     }
 
@@ -283,8 +300,8 @@ public final class ClientExternalSettings {
         leftHudEnabled = section.getBoolean("left_hud_enabled", leftHudEnabled);
         customFontEnabled = section.getBoolean("custom_font_enabled", customFontEnabled);
         welcomeGuideCompleted = section.getBoolean("welcome_guide_completed", welcomeGuideCompleted);
-        autoSkipExperimentalWarning =
-                section.getBoolean("auto_skip_experimental_warning", autoSkipExperimentalWarning);
+        cosmeticEnabled = section.getBoolean("cosmetic_enabled", cosmeticEnabled);
+        autoSkipExperimentalWarning = section.getBoolean("auto_skip_experimental_warning", autoSkipExperimentalWarning);
 
         String action = section.getString("experimental_warning_skip_action", experimentalWarningSkipAction);
         if (!"skip".equals(action) && !"backup".equals(action)) {
@@ -311,6 +328,7 @@ public final class ClientExternalSettings {
         leftHudEnabled = DEFAULT_LEFT_HUD_ENABLED;
         customFontEnabled = DEFAULT_CUSTOM_FONT_ENABLED;
         welcomeGuideCompleted = DEFAULT_WELCOME_GUIDE_COMPLETED;
+        cosmeticEnabled = DEFAULT_COSMETIC_ENABLED;
         autoSkipExperimentalWarning = DEFAULT_AUTO_SKIP_EXPERIMENTAL_WARNING;
         experimentalWarningSkipAction = DEFAULT_EXPERIMENTAL_WARNING_SKIP_ACTION;
         save();
@@ -330,6 +348,7 @@ public final class ClientExternalSettings {
         section.set("left_hud_enabled", leftHudEnabled);
         section.set("custom_font_enabled", customFontEnabled);
         section.set("welcome_guide_completed", welcomeGuideCompleted);
+        section.set("cosmetic_enabled", cosmeticEnabled);
         section.set("auto_skip_experimental_warning", autoSkipExperimentalWarning);
         section.set("experimental_warning_skip_action", experimentalWarningSkipAction);
         ClientGlobalSettings.save();

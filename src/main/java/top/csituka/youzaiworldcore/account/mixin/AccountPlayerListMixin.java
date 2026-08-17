@@ -24,6 +24,7 @@ import top.csituka.youzaiworldcore.account.data.PlayerAccount;
 import top.csituka.youzaiworldcore.account.util.AuthHelper;
 import top.csituka.youzaiworldcore.account.util.AuthLocationData;
 import top.csituka.youzaiworldcore.account.util.AuthPlayerHelper;
+import top.csituka.youzaiworldcore.cosmetic.CosmeticManager;
 
 import java.net.SocketAddress;
 import java.time.ZonedDateTime;
@@ -90,6 +91,7 @@ public abstract class AccountPlayerListMixin {
 
         if (AuthPlayerHelper.isAuthenticated(player)) {
             AuthPlayerHelper.restoreLocation(player);
+            CosmeticManager.onAuthenticated(player);
             player.sendSystemMessage(Component.translatable("youzaiworldcore.message.account.session_restored"));
             return;
         }

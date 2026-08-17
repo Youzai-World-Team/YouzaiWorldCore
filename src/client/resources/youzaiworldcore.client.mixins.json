@@ -64,7 +64,8 @@
     "afk.AfkKeyboardHandlerMixin",
     "afk.AfkMouseHandlerMixin",
     "ExperimentalWarningSkipMixin",
-    "DeathScreenMixin"
+    "DeathScreenMixin",
+    "PlayerInfoSkinMixin"
   ],
   "injectors": {
     "defaultRequire": 1

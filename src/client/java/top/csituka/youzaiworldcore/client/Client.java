@@ -50,6 +50,7 @@ import top.csituka.youzaiworldcore.client.event.MemePaintingClickHandler;
 import top.csituka.youzaiworldcore.client.particle.BlockAnimationRenderer;
 import top.csituka.youzaiworldcore.client.particle.ItemSparkleRenderer;
 import top.csituka.youzaiworldcore.client.render.DamageNumberRenderer;
+import top.csituka.youzaiworldcore.client.cosmetic.CosmeticClientManager;
 
 public class Client implements ClientModInitializer {
 
@@ -121,6 +122,9 @@ public class Client implements ClientModInitializer {
 
         DebugLogger.info("Client", "注册自定义字体内置资源包...");
         CustomFontResourcePack.register();
+
+        DebugLogger.info("Client", "初始化自定义皮肤与披风客户端管理器...");
+        CosmeticClientManager.initialize();
 
         // 加载更新检查器配置（客户端独立直连更新 API，用于标题界面公告）
         DebugLogger.info("Client", "加载更新检查器配置...");
