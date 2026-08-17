@@ -136,12 +136,28 @@ public final class ItemBorderRenderer {
      * @param item 目标物品
      */
     public static void renderBorder(GuiGraphicsExtractor gui, int x, int y, ItemStack item) {
+        renderBorder(gui, x, y, item, 1.0F);
+    }
+
+    /**
+     * 为 HUD 物品绘制可调透明度边框。
+     *
+     * @param gui 当前 GUI 绘制上下文
+     * @param x 物品图标左上角 X
+     * @param y 物品图标左上角 Y
+     * @param item 目标物品
+     * @param opacity 边框透明度，范围 0..1
+     */
+    public static void renderBorder(GuiGraphicsExtractor gui, int x, int y,
+            ItemStack item, float opacity) {
         if (!isRenderable(item)) return;
         if (!ItemBorderConfig.HOTBAR) return;
 
         int startColor = resolveBorderColor(item);
         if (startColor == 0) return;
 
+        int alpha = Math.round((startColor >>> 24) * Math.clamp(opacity, 0.0F, 1.0F));
+        startColor = (alpha << 24) | (startColor & 0x00FFFFFF);
         drawBorder(gui, x, y, startColor, startColor);
     }
 

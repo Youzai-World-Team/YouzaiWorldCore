@@ -837,6 +837,14 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
         addRenderableWidget(leftHudToggle);
         y += leftHudToggleHeight + 6;
 
+        TransparentButton yzhudSettingsButton = new TransparentButton(
+                contentLeft, y, contentWidth, 22,
+                Component.translatable("screen.youzaiworldcore.settings.yzhud_customize"),
+                () -> Minecraft.getInstance().gui.setScreen(new YzHudSettingsScreen(this))
+        );
+        addRenderableWidget(yzhudSettingsButton);
+        y += 28;
+
         Component fontToggleMessage =
                 Component.translatable("screen.youzaiworldcore.settings.toggle_custom_font");
         int fontToggleHeight = checkboxHeight(fontToggleMessage);

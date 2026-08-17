@@ -40,6 +40,7 @@ public final class AfkInputTracker {
      * 包下，但从游戏外入口打开，操作不应算活动。
      * <ul>
      *   <li>{@code YouzaiWorldCoreSettingsScreen} — ModMenu 配置屏（暂停菜单进入）；</li>
+     *   <li>{@code YzHudSettingsScreen} — YZHUD 位置与透明度编辑页；</li>
      *   <li>{@code ConfigBackupListScreen} / {@code ConfigImportSuccessScreen} —
      *       配置备份/导入链（设置屏内打开）；</li>
      *   <li>{@code QuitConfirmationScreen} — 退出确认（系统级）；</li>
@@ -49,6 +50,7 @@ public final class AfkInputTracker {
      */
     private static final java.util.Set<String> OUT_OF_GAME_MOD_SCREENS = java.util.Set.of(
             "top.csituka.youzaiworldcore.client.screen.YouzaiWorldCoreSettingsScreen",
+            "top.csituka.youzaiworldcore.client.screen.YzHudSettingsScreen",
             "top.csituka.youzaiworldcore.client.screen.ConfigBackupListScreen",
             "top.csituka.youzaiworldcore.client.screen.ConfigImportSuccessScreen",
             "top.csituka.youzaiworldcore.client.screen.QuitConfirmationScreen",

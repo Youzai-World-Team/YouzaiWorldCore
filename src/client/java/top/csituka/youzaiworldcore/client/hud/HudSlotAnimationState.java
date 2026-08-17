@@ -154,21 +154,21 @@ public final class HudSlotAnimationState {
                     * Math.abs((float) Math.sin(enter * Math.PI * 3.0));
             int alpha = Math.round((1.0f - enter) * flicker * 155.0f);
             graphics.fill(x, y, x + width, y + height,
-                    ARGB.color(alpha, 255, 255, 255));
+                    YzHudLayout.applyOpacity(ARGB.color(alpha, 255, 255, 255)));
         }
 
         float countPulse = progress(countPulseStartedAt, COUNT_PULSE_DURATION_MS, nowMillis);
         if (countPulse < 1.0f) {
             int alpha = Math.round((float) Math.sin(countPulse * Math.PI) * 105.0f);
             graphics.fill(x, y, x + width, y + height,
-                    ARGB.color(alpha, 125, 255, 145));
+                    YzHudLayout.applyOpacity(ARGB.color(alpha, 125, 255, 145)));
         }
 
         float repairPulse = progress(repairPulseStartedAt, REPAIR_PULSE_DURATION_MS, nowMillis);
         if (repairPulse < 1.0f) {
             int alpha = Math.round((float) Math.sin(repairPulse * Math.PI) * 85.0f);
             graphics.fill(x, y, x + width, y + height,
-                    ARGB.color(alpha, 100, 235, 255));
+                    YzHudLayout.applyOpacity(ARGB.color(alpha, 100, 235, 255)));
         }
 
         float danger = durabilityDanger(stack);
@@ -177,7 +177,7 @@ public final class HudSlotAnimationState {
                     * Math.abs((float) Math.sin(nowMillis * 0.008));
             int alpha = Math.round((18.0f + danger * 42.0f) * pulse);
             graphics.fill(x, y, x + width, y + height,
-                    ARGB.color(alpha, 255, 55, 55));
+                    YzHudLayout.applyOpacity(ARGB.color(alpha, 255, 55, 55)));
         }
     }
 
@@ -187,7 +187,7 @@ public final class HudSlotAnimationState {
         float p = progress(exitStartedAt, EXIT_DURATION_MS, nowMillis);
         int alpha = Math.round(easeInCubic(p) * 190.0f);
         graphics.fill(x, y, x + width, y + height,
-                ARGB.color(alpha, 255, 255, 255));
+                YzHudLayout.applyOpacity(ARGB.color(alpha, 255, 255, 255)));
     }
 
     private void beginExit(long nowMillis) {

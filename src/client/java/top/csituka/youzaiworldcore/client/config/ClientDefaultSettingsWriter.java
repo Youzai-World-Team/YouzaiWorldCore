@@ -31,6 +31,7 @@ public final class ClientDefaultSettingsWriter {
         DebugLogger.entering(MODULE, "writeAllDefaults");
         ClientGlobalSettings.runBatched(() -> {
             ClientExternalSettings.writeDefaults();
+            YzHudSettings.writeDefaults();
             Configurator.writeDefaults();
             LaowuAudioPool.writeDefaults();
         });

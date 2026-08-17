@@ -14,6 +14,7 @@ import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffectUtil;
 import net.minecraft.world.entity.player.Player;
+import top.csituka.youzaiworldcore.client.config.YzHudSettings;
 import top.csituka.youzaiworldcore.client.render.RoundedRect;
 import top.csituka.youzaiworldcore.enchlevellangpatch.impl.NumberFormatUtil;
 import top.csituka.youzaiworldcore.util.DebugLogger;
@@ -252,7 +253,7 @@ public final class StatusEffectHudRenderer {
         }
         int panelHeight = Math.max(1, panelBottom - panelTop);
         RoundedRect.fillOrSquare(graphics, panelX, panelTop, panelWidth, panelHeight,
-                BASE_PANEL_RADIUS, PANEL_BG);
+                BASE_PANEL_RADIUS, YzHudLayout.applyOpacity(PANEL_BG));
 
         for (StatusEffectHudAnimationState state : renderStates) {
             drawAnimatedEffect(graphics, font, client, state,
@@ -415,7 +416,8 @@ public final class StatusEffectHudRenderer {
             Minecraft client, MobEffectInstance instance,
             int cellX, int cellY, int cellWidth, int cellHeight,
             int iconSize, long nowMillis, float animationAlpha) {
-        float alpha = flashAlpha(instance, nowMillis) * animationAlpha;
+        float alpha = flashAlpha(instance, nowMillis) * animationAlpha
+                * YzHudSettings.getOpacity();
         graphics.fill(cellX, cellY, cellX + cellWidth, cellY + cellHeight,
                 ARGB.multiplyAlpha(ROW_BG, alpha));
 
@@ -439,7 +441,8 @@ public final class StatusEffectHudRenderer {
             Minecraft client, MobEffectInstance instance,
             int rowX, int rowY, int rowWidth, int rowHeight,
             int iconSize, int textGap, long nowMillis, float animationAlpha) {
-        float alpha = flashAlpha(instance, nowMillis) * animationAlpha;
+        float alpha = flashAlpha(instance, nowMillis) * animationAlpha
+                * YzHudSettings.getOpacity();
         graphics.fill(rowX, rowY, rowX + rowWidth, rowY + rowHeight,
                 ARGB.multiplyAlpha(ROW_BG, alpha));
 

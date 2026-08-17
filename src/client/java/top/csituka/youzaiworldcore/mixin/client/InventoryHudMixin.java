@@ -9,9 +9,12 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import top.csituka.youzaiworldcore.client.config.ClientExternalSettings;
+import top.csituka.youzaiworldcore.client.config.YzHudComponent;
+import top.csituka.youzaiworldcore.client.config.YzHudSettings;
 import top.csituka.youzaiworldcore.client.hud.ArmorHudRenderer;
 import top.csituka.youzaiworldcore.client.hud.InventoryHudRenderer;
 import top.csituka.youzaiworldcore.client.hud.StatusEffectHudRenderer;
+import top.csituka.youzaiworldcore.client.hud.YzHudLayout;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
 /**
@@ -45,16 +48,39 @@ public abstract class InventoryHudMixin {
         if (!ClientExternalSettings.isLeftHudEnabled()) {
             return;
         }
+        if (YzHudSettings.getOpacity() <= 0.0F) {
+            return;
+        }
 
-        // 直接使用当前 GUI 高度（GUI 单位坐标），三个 HUD 随界面缩放自然缩放，
-        // 与 HotbarRenderer 保持一致。
+        // 直接使用当前 GUI 尺寸（GUI 单位坐标），三个 HUD 随界面缩放自然缩放，
+        // 并分别应用自己的位置变换。
+        int guiWidth = graphics.guiWidth();
         int guiHeight = graphics.guiHeight();
+        youzaiworldcore$renderComponent(
+                graphics, guiWidth, guiHeight, YzHudComponent.INVENTORY);
+        youzaiworldcore$renderComponent(
+                graphics, guiWidth, guiHeight, YzHudComponent.ARMOR);
+        youzaiworldcore$renderComponent(
+                graphics, guiWidth, guiHeight, YzHudComponent.EFFECTS);
+    }
+
+    private static void youzaiworldcore$renderComponent(
+            GuiGraphicsExtractor graphics, int guiWidth, int guiHeight,
+            YzHudComponent component) {
         try {
-            InventoryHudRenderer.render(graphics, guiHeight);
-            ArmorHudRenderer.render(graphics, guiHeight);
-            StatusEffectHudRenderer.render(graphics, guiHeight);
+            graphics.pose().pushMatrix();
+            graphics.pose().translate(
+                    YzHudLayout.translationX(component, guiWidth),
+                    YzHudLayout.translationY(component, guiHeight));
+            switch (component) {
+                case INVENTORY -> InventoryHudRenderer.render(graphics, guiHeight);
+                case ARMOR -> ArmorHudRenderer.render(graphics, guiHeight);
+                case EFFECTS -> StatusEffectHudRenderer.render(graphics, guiHeight);
+            }
         } catch (Exception e) {
-            DebugLogger.exception(LOG_TAG, "renderYzuiHud", e);
+            DebugLogger.exception(LOG_TAG, "render" + component.name(), e);
+        } finally {
+            graphics.pose().popMatrix();
         }
     }
 

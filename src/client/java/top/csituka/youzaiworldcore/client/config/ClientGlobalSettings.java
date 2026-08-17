@@ -45,6 +45,8 @@ public final class ClientGlobalSettings {
     public static final String HIGHLIGHT_ITEM_MODULE = "highlight_item_module";
     /** 老吴贴贴（音频启用状态） */
     public static final String LAOWU_MEME_MODULE = "laowu_meme_module";
+    /** YZHUD（位置与透明度） */
+    public static final String YZHUD_MODULE = "yzhud_module";
 
     private static final JsonFileStore STORE = new JsonFileStore(ModPaths.clientSettingsFile());
 
