@@ -29,6 +29,7 @@
     "AbstractSliderButtonMixin",
     "HealthBarMixin",
     "HotbarMixin",
+    "ScoreboardSidebarMixin",
     "InventoryHudMixin",
     "GuiItemRenderStateMixin",
     "GuiRendererYzHudOpacityMixin",

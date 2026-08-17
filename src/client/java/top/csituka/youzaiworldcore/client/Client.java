@@ -18,6 +18,7 @@ import java.awt.image.BufferedImage;
 import java.nio.ByteBuffer;
 import top.csituka.youzaiworldcore.client.hud.ManaHudRenderer;
 import top.csituka.youzaiworldcore.client.hud.AdventureLevelHudRenderer;
+import top.csituka.youzaiworldcore.client.hud.ScoreboardSidebarRenderer;
 import top.csituka.youzaiworldcore.client.pickup.AddEntriesHandler;
 import top.csituka.youzaiworldcore.client.pickup.DrawEntriesHandler;
 import top.csituka.youzaiworldcore.block.entity.ModBlockEntities;
@@ -114,6 +115,8 @@ public class Client implements ClientModInitializer {
         top.csituka.youzaiworldcore.client.config.ClientExternalSettings.load();
         DebugLogger.info("Client", "加载 YZHUD 设置...");
         top.csituka.youzaiworldcore.client.config.YzHudSettings.load();
+        DebugLogger.info("Client", "初始化 YZUI 记分板侧边栏渲染...");
+        ScoreboardSidebarRenderer.initialize();
         // 单人模式集成服务器：遵照客户端设置覆盖 logToFile 标志
         boolean clientLogToFile = top.csituka.youzaiworldcore.client.config.ClientExternalSettings.getLogLevel() > 0;
         top.csituka.youzaiworldcore.YouzaiworldCore.logToFile = clientLogToFile;
