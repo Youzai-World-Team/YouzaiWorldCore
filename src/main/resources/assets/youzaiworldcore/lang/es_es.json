@@ -777,7 +777,7 @@
   "screen.youzaiworldcore.brewing.fuel_level": "Polvo de blaze: %s/20",
   "screen.youzaiworldcore.brewing.brew_progress": "Elaboración: %s%%",
   "screen.youzaiworldcore.brewing.toggle_guide": "Abrir o cerrar la guía de pociones",
-  "screen.youzaiworldcore.brewing.page": "%s/%s",
+  "screen.youzaiworldcore.brewing.page": "Página %s/%s",
   "screen.youzaiworldcore.brewing.input": "Base: %s",
   "screen.youzaiworldcore.brewing.ingredient": "Ingrediente: %s",
   "screen.youzaiworldcore.brewing.output": "Resultado: %s",
@@ -786,5 +786,6 @@
   "screen.youzaiworldcore.brewing.any_splash_potion": "Cualquier poción arrojadiza",
   "screen.youzaiworldcore.brewing.any_lingering_potion": "Cualquier poción persistente",
   "screen.youzaiworldcore.brewing.effect_preserved": "Conserva el efecto original",
+  "screen.youzaiworldcore.brewing.no_results": "No se encontraron recetas de pociones",
   "screen.youzaiworldcore.brewing.no_effect": "Sin efecto de estado"
 }

@@ -777,7 +777,7 @@
   "screen.youzaiworldcore.brewing.fuel_level": "Lohenstaub: %s/20",
   "screen.youzaiworldcore.brewing.brew_progress": "Braufortschritt: %s%%",
   "screen.youzaiworldcore.brewing.toggle_guide": "Brauanleitung öffnen oder schließen",
-  "screen.youzaiworldcore.brewing.page": "%s/%s",
+  "screen.youzaiworldcore.brewing.page": "Seite %s/%s",
   "screen.youzaiworldcore.brewing.input": "Basis: %s",
   "screen.youzaiworldcore.brewing.ingredient": "Zutat: %s",
   "screen.youzaiworldcore.brewing.output": "Ergebnis: %s",
@@ -786,5 +786,6 @@
   "screen.youzaiworldcore.brewing.any_splash_potion": "Beliebiger Wurftrank",
   "screen.youzaiworldcore.brewing.any_lingering_potion": "Beliebiger Verweiltrank",
   "screen.youzaiworldcore.brewing.effect_preserved": "Behält den ursprünglichen Effekt",
+  "screen.youzaiworldcore.brewing.no_results": "Keine Braurezepte gefunden",
   "screen.youzaiworldcore.brewing.no_effect": "Kein Statuseffekt"
 }

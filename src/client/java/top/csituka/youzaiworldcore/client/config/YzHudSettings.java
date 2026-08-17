@@ -9,9 +9,11 @@ import java.util.EnumMap;
 /**
  * YZHUD 客户端显示设置。
  *
- * <p>配置存放于 {@code yzwc/client/global_settings.json} 的
+ * <p>
+ * 配置存放于 {@code yzwc/client/global_settings.json} 的
  * {@code yzhud_module} 分节。三个组件分别使用 -1..1 的归一化位移，
- * {@code 0} 保持组件原有默认位置，避免窗口尺寸或 GUI 缩放变化后跑出屏幕。</p>
+ * {@code 0} 保持组件原有默认位置，避免窗口尺寸或 GUI 缩放变化后跑出屏幕。
+ * </p>
  */
 public final class YzHudSettings {
 
@@ -20,8 +22,8 @@ public final class YzHudSettings {
     private static final double DEFAULT_POSITION = 0.0D;
     private static final double DEFAULT_OPACITY = 1.0D;
 
-    private static final EnumMap<YzHudComponent, Position> POSITIONS =
-            new EnumMap<>(YzHudComponent.class);
+    @SuppressWarnings("null")
+    private static final EnumMap<YzHudComponent, Position> POSITIONS = new EnumMap<>(YzHudComponent.class);
     private static double opacity = DEFAULT_OPACITY;
 
     static {

@@ -345,14 +345,11 @@ public class YzuBrewingStandScreen extends AbstractContainerScreen<BrewingStandM
                     centerX + 1, y + BOTTLE_Y[index], FLOW_LINE_COLOR);
         }
 
-        int brewPercent = ticks <= 0 ? 0 : Mth.clamp((int) (100.0F * (1.0F - ticks / BREW_TIME_TICKS)), 0, 100);
-        Component progressText = Component.translatable(
-                "screen.youzaiworldcore.brewing.brew_progress", brewPercent);
-        graphics.text(this.font, ellipsize(progressText, 66),
-                x + 103, y + 34, MUTED_COLOR, false);
+        int brewPercent = ticks <= 0
+                ? 0
+                : Mth.clamp((int) (100.0F * (1.0F - ticks / BREW_TIME_TICKS)), 0, 100);
 
-        if (isInside(mouseX, mouseY, x + FUEL_BAR_X, y + FUEL_BAR_Y, FUEL_BAR_W, FUEL_BAR_H)
-                || isInside(mouseX, mouseY, x + FUEL_SLOT_X, y + FUEL_SLOT_Y, SLOT_SIZE, SLOT_SIZE)) {
+        if (isInside(mouseX, mouseY, x + FUEL_BAR_X, y + FUEL_BAR_Y, FUEL_BAR_W, FUEL_BAR_H)) {
             graphics.setTooltipForNextFrame(
                     Component.translatable("screen.youzaiworldcore.brewing.fuel_level", this.menu.getFuel()),
                     mouseX, mouseY);
@@ -364,8 +361,6 @@ public class YzuBrewingStandScreen extends AbstractContainerScreen<BrewingStandM
     }
 
     private void drawInventoryArea(GuiGraphicsExtractor graphics) {
-        graphics.fill(this.leftPos + 7, this.topPos + 102,
-                this.leftPos + this.imageWidth - 7, this.topPos + 103, DIVIDER_COLOR);
         graphics.text(this.font, this.playerInventoryTitle,
                 this.leftPos + 7, this.topPos + 94, LABEL_COLOR, false);
     }
@@ -409,9 +404,11 @@ public class YzuBrewingStandScreen extends AbstractContainerScreen<BrewingStandM
 
         int start = this.guidePage * ROWS_PER_PAGE;
         int end = Math.min(start + ROWS_PER_PAGE, this.filteredRecipes.size());
-        if (start >= end) {
-            Component noRecipes = Component.translatable("gui.recipebook.noRecipes");
-            graphics.centeredText(this.font, noRecipes, x + GUIDE_WIDTH / 2, y + 96, MUTED_COLOR);
+        if (this.filteredRecipes.isEmpty()) {
+            String noRecipes = ellipsize(
+                    Component.translatable("screen.youzaiworldcore.brewing.no_results"), GUIDE_WIDTH - 12);
+            drawCenteredTextWithoutShadow(
+                    graphics, noRecipes, x + GUIDE_WIDTH / 2, y + 96, MUTED_COLOR);
         } else {
             for (int index = start; index < end; index++) {
                 int row = index - start;
@@ -453,19 +450,27 @@ public class YzuBrewingStandScreen extends AbstractContainerScreen<BrewingStandM
     private void drawPageControls(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
         int x = guideLeft();
         int y = this.topPos + PAGE_Y;
-        int pageCount = pageCount();
+        int totalPages = pageCount();
+        int currentPage = totalPages == 0 ? 0 : this.guidePage + 1;
+        boolean canGoPrevious = this.guidePage > 0;
+        boolean canGoNext = this.guidePage + 1 < totalPages;
 
-        boolean previousHovered = isInside(mouseX, mouseY, x + 5, y, PAGE_BUTTON_W, PAGE_BUTTON_H);
-        boolean nextHovered = isInside(mouseX, mouseY,
+        boolean previousHovered = canGoPrevious
+                && isInside(mouseX, mouseY, x + 5, y, PAGE_BUTTON_W, PAGE_BUTTON_H);
+        boolean nextHovered = canGoNext && isInside(mouseX, mouseY,
                 x + GUIDE_WIDTH - 5 - PAGE_BUTTON_W, y, PAGE_BUTTON_W, PAGE_BUTTON_H);
         fillRounded(graphics, x + 5, y, PAGE_BUTTON_W, PAGE_BUTTON_H, 4,
                 previousHovered ? ROW_HOVER_BG : ROW_BG);
         fillRounded(graphics, x + GUIDE_WIDTH - 5 - PAGE_BUTTON_W, y,
                 PAGE_BUTTON_W, PAGE_BUTTON_H, 4, nextHovered ? ROW_HOVER_BG : ROW_BG);
-        graphics.centeredText(this.font, "<", x + 5 + PAGE_BUTTON_W / 2, y + 3, TITLE_COLOR);
-        graphics.centeredText(this.font, ">", x + GUIDE_WIDTH - 5 - PAGE_BUTTON_W / 2, y + 3, TITLE_COLOR);
+        drawCenteredTextWithoutShadow(graphics, "<",
+                x + 5 + PAGE_BUTTON_W / 2, y + 3,
+                canGoPrevious ? TITLE_COLOR : MUTED_COLOR);
+        drawCenteredTextWithoutShadow(graphics, ">",
+                x + GUIDE_WIDTH - 5 - PAGE_BUTTON_W / 2, y + 3,
+                canGoNext ? TITLE_COLOR : MUTED_COLOR);
         graphics.centeredText(this.font,
-                Component.translatable("screen.youzaiworldcore.brewing.page", this.guidePage + 1, pageCount),
+                Component.translatable("screen.youzaiworldcore.brewing.page", currentPage, totalPages),
                 x + GUIDE_WIDTH / 2, y + 3, MUTED_COLOR);
     }
 
@@ -479,7 +484,7 @@ public class YzuBrewingStandScreen extends AbstractContainerScreen<BrewingStandM
                 this.filteredRecipes.add(recipe);
             }
         }
-        this.guidePage = Mth.clamp(this.guidePage, 0, pageCount() - 1);
+        this.guidePage = Mth.clamp(this.guidePage, 0, Math.max(0, pageCount() - 1));
     }
 
     private boolean matchesQuery(BrewingGuideRecipe recipe, String query) {
@@ -552,12 +557,17 @@ public class YzuBrewingStandScreen extends AbstractContainerScreen<BrewingStandM
     }
 
     private int pageCount() {
-        return Math.max(1, (this.filteredRecipes.size() + ROWS_PER_PAGE - 1) / ROWS_PER_PAGE);
+        return (this.filteredRecipes.size() + ROWS_PER_PAGE - 1) / ROWS_PER_PAGE;
     }
 
     private void changePage(int delta) {
+        int totalPages = pageCount();
+        if (totalPages == 0) {
+            this.guidePage = 0;
+            return;
+        }
         int oldPage = this.guidePage;
-        this.guidePage = Mth.clamp(this.guidePage + delta, 0, pageCount() - 1);
+        this.guidePage = Mth.clamp(this.guidePage + delta, 0, totalPages - 1);
         if (oldPage != this.guidePage) {
             DebugLogger.debug(MODULE, "切换酿造指南页码: %d -> %d", oldPage + 1, this.guidePage + 1);
         }
@@ -570,6 +580,11 @@ public class YzuBrewingStandScreen extends AbstractContainerScreen<BrewingStandM
         int mouseX = (int) event.x();
         int mouseY = (int) event.y();
         if (event.button() == 0) {
+            if (this.guideOpen && this.guideSearchBox != null
+                    && isInside(mouseX, mouseY,
+                            this.guideSearchBox.getX(), this.guideSearchBox.getY(), SEARCH_W, SEARCH_H)) {
+                return super.mouseClicked(event, isActuallyClick);
+            }
             if (isInside(mouseX, mouseY,
                     this.leftPos + CLOSE_X, this.topPos + BUTTON_TOP, BUTTON_SIZE, BUTTON_SIZE)) {
                 DebugLogger.info(MODULE, "点击关闭按钮，关闭酿造台: %s", this.title.getString());
@@ -671,6 +686,11 @@ public class YzuBrewingStandScreen extends AbstractContainerScreen<BrewingStandM
         }
         String suffix = "...";
         return this.font.plainSubstrByWidth(value, Math.max(0, maxWidth - this.font.width(suffix))) + suffix;
+    }
+
+    private void drawCenteredTextWithoutShadow(
+            GuiGraphicsExtractor graphics, String text, int centerX, int y, int color) {
+        graphics.text(this.font, text, centerX - this.font.width(text) / 2, y, color, false);
     }
 
     private static boolean isInside(double mouseX, double mouseY, int x, int y, int width, int height) {

@@ -777,7 +777,7 @@
   "screen.youzaiworldcore.brewing.fuel_level": "烈焰粉儲量：%s/20",
   "screen.youzaiworldcore.brewing.brew_progress": "釀造進度：%s%%",
   "screen.youzaiworldcore.brewing.toggle_guide": "開啟或關閉釀造指南",
-  "screen.youzaiworldcore.brewing.page": "%s/%s",
+  "screen.youzaiworldcore.brewing.page": "第 %s/%s 頁",
   "screen.youzaiworldcore.brewing.input": "基底：%s",
   "screen.youzaiworldcore.brewing.ingredient": "材料：%s",
   "screen.youzaiworldcore.brewing.output": "產物：%s",
@@ -786,5 +786,6 @@
   "screen.youzaiworldcore.brewing.any_splash_potion": "任意飛濺藥水",
   "screen.youzaiworldcore.brewing.any_lingering_potion": "任意滯留藥水",
   "screen.youzaiworldcore.brewing.effect_preserved": "保留原有效果",
+  "screen.youzaiworldcore.brewing.no_results": "找不到釀造配方",
   "screen.youzaiworldcore.brewing.no_effect": "無狀態效果"
 }

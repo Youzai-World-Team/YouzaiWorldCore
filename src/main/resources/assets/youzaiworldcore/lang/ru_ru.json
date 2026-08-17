@@ -777,7 +777,7 @@
   "screen.youzaiworldcore.brewing.fuel_level": "Огненный порошок: %s/20",
   "screen.youzaiworldcore.brewing.brew_progress": "Варка: %s%%",
   "screen.youzaiworldcore.brewing.toggle_guide": "Открыть или закрыть руководство",
-  "screen.youzaiworldcore.brewing.page": "%s/%s",
+  "screen.youzaiworldcore.brewing.page": "Страница %s/%s",
   "screen.youzaiworldcore.brewing.input": "Основа: %s",
   "screen.youzaiworldcore.brewing.ingredient": "Ингредиент: %s",
   "screen.youzaiworldcore.brewing.output": "Результат: %s",
@@ -786,5 +786,6 @@
   "screen.youzaiworldcore.brewing.any_splash_potion": "Любое взрывное зелье",
   "screen.youzaiworldcore.brewing.any_lingering_potion": "Любое туманное зелье",
   "screen.youzaiworldcore.brewing.effect_preserved": "Сохраняет исходный эффект",
+  "screen.youzaiworldcore.brewing.no_results": "Рецепты зелий не найдены",
   "screen.youzaiworldcore.brewing.no_effect": "Нет эффекта"
 }
