@@ -20,6 +20,7 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
  *   <li>{@code debug_port} — 调试服务器端口（专用服务端）</li>
  *   <li>{@code ignored_update_version} — 已忽略提示的更新版本号</li>
  *   <li>{@code yzui_enabled} — 是否启用 YZUI 自定义 UI 样式</li>
+ *   <li>{@code left_hud_enabled} — 是否显示左侧背包、装备栏与状态效果列表</li>
  *   <li>{@code custom_font_enabled} — 是否启用模组内置的自定义字体资源包</li>
  *   <li>{@code welcome_guide_completed} — 是否已经完成首次启动欢迎导览</li>
  *   <li>{@code auto_skip_experimental_warning} — 是否自动跳过实验性设置警告屏幕</li>
@@ -43,6 +44,7 @@ public final class ClientExternalSettings {
     private static final String DEFAULT_DEBUG_PORT = "25565";
     private static final String DEFAULT_IGNORED_UPDATE_VERSION = "";
     private static final boolean DEFAULT_YZUI_ENABLED = true;
+    private static final boolean DEFAULT_LEFT_HUD_ENABLED = true;
     private static final boolean DEFAULT_CUSTOM_FONT_ENABLED = true;
     private static final boolean DEFAULT_WELCOME_GUIDE_COMPLETED = false;
     private static final boolean DEFAULT_AUTO_SKIP_EXPERIMENTAL_WARNING = false;
@@ -61,6 +63,9 @@ public final class ClientExternalSettings {
 
     /** 是否启用 YZUI（自定义 UI 样式），关闭则回退到原版 UI 供资源包替换 */
     private static boolean yzuiEnabled = DEFAULT_YZUI_ENABLED;
+
+    /** 是否显示游戏内左侧背包、装备栏与状态效果列表 */
+    private static boolean leftHudEnabled = DEFAULT_LEFT_HUD_ENABLED;
 
     /** 是否启用模组内置的自定义字体资源包 */
     private static boolean customFontEnabled = DEFAULT_CUSTOM_FONT_ENABLED;
@@ -113,6 +118,11 @@ public final class ClientExternalSettings {
     /** @return 是否启用 YZUI 自定义 UI 样式 */
     public static boolean isYzuiEnabled() {
         return yzuiEnabled;
+    }
+
+    /** @return 是否显示游戏内左侧背包、装备栏与状态效果列表 */
+    public static boolean isLeftHudEnabled() {
+        return leftHudEnabled;
     }
 
     /** @return 是否启用模组内置的自定义字体资源包 */
@@ -191,6 +201,13 @@ public final class ClientExternalSettings {
         save();
     }
 
+    /** 设置左侧背包、装备栏与状态效果列表的显示状态并持久化 */
+    public static void setLeftHudEnabled(boolean value) {
+        leftHudEnabled = value;
+        DebugLogger.info(MODULE, "游戏内左侧 HUD 已" + (value ? "启用" : "禁用"));
+        save();
+    }
+
     /** 设置自定义字体资源包启用状态并持久化 */
     public static void setCustomFontEnabled(boolean value) {
         customFontEnabled = value;
@@ -263,6 +280,7 @@ public final class ClientExternalSettings {
         debugPort = section.getString("debug_port", debugPort);
         ignoredUpdateVersion = section.getString("ignored_update_version", ignoredUpdateVersion);
         yzuiEnabled = section.getBoolean("yzui_enabled", yzuiEnabled);
+        leftHudEnabled = section.getBoolean("left_hud_enabled", leftHudEnabled);
         customFontEnabled = section.getBoolean("custom_font_enabled", customFontEnabled);
         welcomeGuideCompleted = section.getBoolean("welcome_guide_completed", welcomeGuideCompleted);
         autoSkipExperimentalWarning =
@@ -290,6 +308,7 @@ public final class ClientExternalSettings {
         debugPort = DEFAULT_DEBUG_PORT;
         ignoredUpdateVersion = DEFAULT_IGNORED_UPDATE_VERSION;
         yzuiEnabled = DEFAULT_YZUI_ENABLED;
+        leftHudEnabled = DEFAULT_LEFT_HUD_ENABLED;
         customFontEnabled = DEFAULT_CUSTOM_FONT_ENABLED;
         welcomeGuideCompleted = DEFAULT_WELCOME_GUIDE_COMPLETED;
         autoSkipExperimentalWarning = DEFAULT_AUTO_SKIP_EXPERIMENTAL_WARNING;
@@ -308,6 +327,7 @@ public final class ClientExternalSettings {
         section.set("debug_port", debugPort);
         section.set("ignored_update_version", ignoredUpdateVersion);
         section.set("yzui_enabled", yzuiEnabled);
+        section.set("left_hud_enabled", leftHudEnabled);
         section.set("custom_font_enabled", customFontEnabled);
         section.set("welcome_guide_completed", welcomeGuideCompleted);
         section.set("auto_skip_experimental_warning", autoSkipExperimentalWarning);

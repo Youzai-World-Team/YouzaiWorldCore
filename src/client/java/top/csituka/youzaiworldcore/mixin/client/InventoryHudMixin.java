@@ -15,10 +15,11 @@ import top.csituka.youzaiworldcore.client.hud.StatusEffectHudRenderer;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
 /**
- * YZUI 物品栏、装备耐久与状态效果 HUD Mixin。
+ * 游戏内左侧物品栏、装备耐久与状态效果 HUD Mixin。
  *
  * <p>在 {@link Hud#extractRenderState} 的 {@code extractHotbarAndDecorations}
- * 调用之后注入，使三个 HUD 与热键栏处于同一渲染层级。仅当 YZUI 启用时生效。</p>
+ * 调用之后注入，使三个 HUD 与热键栏处于同一渲染层级。其显示状态由独立的
+ * {@code left_hud_enabled} 客户端配置控制，不跟随 YZUI 总开关。</p>
  *
  * <p>三个 HUD 直接以 GUI 单位坐标绘制（不做额外的响应式缩放），因此会像原版
  * 热键栏一样随 MC「界面缩放」设置等比例缩放，在不同 GUI 比例下保持与
@@ -41,7 +42,7 @@ public abstract class InventoryHudMixin {
                     shift = At.Shift.AFTER))
     private void yzwc$afterExtractHotbarAndDecorations(GuiGraphicsExtractor graphics,
             DeltaTracker deltaTracker, CallbackInfo ci) {
-        if (!ClientExternalSettings.isYzuiEnabled()) {
+        if (!ClientExternalSettings.isLeftHudEnabled()) {
             return;
         }
 
@@ -58,7 +59,7 @@ public abstract class InventoryHudMixin {
     }
 
     /**
-     * YZUI 已提供完整的状态效果面板时，停用右上角原版效果图标，避免重复显示。
+     * 左侧状态效果列表启用时，停用右上角原版效果图标，避免重复显示。
      */
     @Inject(
             method = "extractEffects(Lnet/minecraft/client/gui/GuiGraphicsExtractor;"
@@ -67,7 +68,7 @@ public abstract class InventoryHudMixin {
             cancellable = true)
     private void yzwc$hideVanillaEffects(GuiGraphicsExtractor graphics,
             DeltaTracker deltaTracker, CallbackInfo ci) {
-        if (ClientExternalSettings.isYzuiEnabled()) {
+        if (ClientExternalSettings.isLeftHudEnabled()) {
             ci.cancel();
         }
     }

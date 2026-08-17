@@ -348,6 +348,7 @@
   "screen.youzaiworldcore.settings.sidebar_visual": "视觉",
   "screen.youzaiworldcore.settings.title": "YouzaiWorldCore 设置",
   "screen.youzaiworldcore.settings.toggle_custom_font": "使用MCsans字体",
+  "screen.youzaiworldcore.settings.toggle_left_hud": "显示左侧背包、装备栏和 Buff 列表",
   "screen.youzaiworldcore.settings.toggle_yzui": "启用 YZUI",
   "screen.youzaiworldcore.teleport_anchor.back": "返回",
   "screen.youzaiworldcore.teleport_anchor.cost_durability_prefix": "将消耗 ",

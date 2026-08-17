@@ -112,6 +112,8 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
     private String debugPort;
     /** 是否启用 YZUI 自定义 UI 样式 */
     private boolean yzuiEnabled;
+    /** 是否显示游戏内左侧背包、装备栏与状态效果列表 */
+    private boolean leftHudEnabled;
     /** 是否启用模组内置的自定义字体资源包 */
     private boolean customFontEnabled;
 
@@ -180,6 +182,7 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
         this.debugAddress = ClientExternalSettings.getDebugAddress();
         this.debugPort = ClientExternalSettings.getDebugPort();
         this.yzuiEnabled = ClientExternalSettings.isYzuiEnabled();
+        this.leftHudEnabled = ClientExternalSettings.isLeftHudEnabled();
         this.customFontEnabled = ClientExternalSettings.isCustomFontEnabled();
         this.autoSkipExperimentalWarning = ClientExternalSettings.isAutoSkipExperimentalWarning();
         this.experimentalWarningSkipAction = ClientExternalSettings.getExperimentalWarningSkipAction();
@@ -195,6 +198,7 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
         this.debugAddress = ClientExternalSettings.getDebugAddress();
         this.debugPort = ClientExternalSettings.getDebugPort();
         this.yzuiEnabled = ClientExternalSettings.isYzuiEnabled();
+        this.leftHudEnabled = ClientExternalSettings.isLeftHudEnabled();
         this.customFontEnabled = ClientExternalSettings.isCustomFontEnabled();
         this.autoSkipExperimentalWarning = ClientExternalSettings.isAutoSkipExperimentalWarning();
         this.experimentalWarningSkipAction = ClientExternalSettings.getExperimentalWarningSkipAction();
@@ -815,6 +819,23 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
         ).setWrapMessage(true);
         addRenderableWidget(yzuiToggle);
         y += toggleHeight + 6;
+
+        Component leftHudToggleMessage =
+                Component.translatable("screen.youzaiworldcore.settings.toggle_left_hud");
+        int leftHudToggleHeight = checkboxHeight(leftHudToggleMessage);
+        CheckboxButton leftHudToggle = new CheckboxButton(
+                contentLeft, y, contentWidth, leftHudToggleHeight,
+                leftHudToggleMessage, leftHudEnabled,
+                () -> {
+                    boolean newVal = !leftHudEnabled;
+                    leftHudEnabled = newVal;
+                    ClientExternalSettings.setLeftHudEnabled(newVal);
+                    DebugLogger.info("SettingsScreen", "游戏内左侧 HUD 已"
+                            + (newVal ? "启用" : "禁用"));
+                }
+        ).setWrapMessage(true);
+        addRenderableWidget(leftHudToggle);
+        y += leftHudToggleHeight + 6;
 
         Component fontToggleMessage =
                 Component.translatable("screen.youzaiworldcore.settings.toggle_custom_font");

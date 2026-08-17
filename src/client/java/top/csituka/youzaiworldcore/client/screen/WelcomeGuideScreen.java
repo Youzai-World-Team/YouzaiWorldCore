@@ -335,7 +335,7 @@ public final class WelcomeGuideScreen extends Screen {
                 || widget.previewSlider.isHoveredOrFocused());
         boolean highlighted = widget.isHoveredOrFocused() || childHighlighted;
         int border = selected ? ACCENT_COLOR : (highlighted ? 0xC0FFFFFF : 0x50FFFFFF);
-        int fill = selected ? 0xC8FFFFFF : (highlighted ? 0x3CFFFFFF : 0x26FFFFFF);
+        int fill = selected ? 0xC8FFFFFF : (highlighted ? 0x88FFFFFF : 0x26FFFFFF);
         RoundedRect.fillWithBorder(graphics, widget.getX(), widget.getY(),
                 widget.getWidth(), widget.getHeight(), 7, 6, border, fill);
 
@@ -343,7 +343,7 @@ public final class WelcomeGuideScreen extends Screen {
         int innerWidth = widget.getWidth() - 16;
         List<FormattedCharSequence> labelLines = font.split(widget.getMessage(), innerWidth);
         int labelCount = Math.min(2, labelLines.size());
-        int labelColor = selected ? 0xFF202020 : TEXT_COLOR;
+        int labelColor = selected || highlighted ? 0xFF202020 : TEXT_COLOR;
         for (int i = 0; i < labelCount; i++) {
             FormattedCharSequence line = labelLines.get(i);
             graphics.text(font, line,
