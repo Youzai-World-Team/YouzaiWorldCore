@@ -24,6 +24,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import top.csituka.youzaiworldcore.client.config.ClientExternalSettings;
+import top.csituka.youzaiworldcore.util.DebugLogger;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -33,6 +34,7 @@ import java.util.List;
 /**
  * 修改「选项」页面：
  * - 删除「在线选项...」（{@code options.online}）和「视场角选项」（{@code options.fov}）
+ * - 在表头添加「YouzaiWorldCore 设置...」，游戏内与「世界选项」并排显示
  * - 将「遥测数据...」按钮替换为「已安装的模组...」，打开 ModMenu 主界面
  * <p>
  * 注意：替换按钮时也会将其注册到 {@link GridLayout} 的 children 列表中，
@@ -50,7 +52,6 @@ public class OptionsScreenMixin {
      * 缓存反射 Field，避免每次 init() 都重复查找
      */
     private static Field optionsScreenLayoutField;
-    private static Field optionsScreenInWorldField;
     private static Field headerFooterContentsField;
     private static Field headerFooterHeaderField;
     private static Field frameLayoutChildrenField;
@@ -80,6 +81,7 @@ public class OptionsScreenMixin {
             "options.resourcepack",
             "options.accessibility",
             "options.credits_and_attribution",
+            "options.worldOptions.button",
             "options.youzaiworldcore.installed_mods",
             "options.youzaiworldcore.settings"
     );
@@ -113,11 +115,9 @@ public class OptionsScreenMixin {
     private static void initReflection() {
         if (reflectionReady) return;
         try {
-            // 1. OptionsScreen.layout / inWorld → HeaderAndFooterLayout, boolean
+            // 1. OptionsScreen.layout → HeaderAndFooterLayout
             optionsScreenLayoutField = OptionsScreen.class.getDeclaredField("layout");
             optionsScreenLayoutField.setAccessible(true);
-            optionsScreenInWorldField = OptionsScreen.class.getDeclaredField("inWorld");
-            optionsScreenInWorldField.setAccessible(true);
 
             // 2. HeaderAndFooterLayout.headerFrame / contentsFrame → FrameLayout
             headerFooterHeaderField = HeaderAndFooterLayout.class.getDeclaredField("headerFrame");
@@ -250,7 +250,7 @@ public class OptionsScreenMixin {
     /**
      * 遍历 OptionsScreen 的表头布局层级，在 HeaderAndFooterLayout 的 headerFrame 中
      * 找到水平 LinearLayout，移除其中所有 {@link #isWidgetToRemove} 匹配的子元素
-     *（FOV 滑块和在线选项按钮），使剩余按钮独占整行宽度。
+     *（FOV 滑块和在线选项按钮），为 YouzaiWorldCore 设置按钮腾出位置。
      * <p>
      * 路径：OptionsScreen.layout → HeaderAndFooterLayout.headerFrame → FrameLayout
      *   → 垂直 LinearLayout → .wrapped(GridLayout) → 子[1] = 水平 LinearLayout
@@ -318,7 +318,9 @@ public class OptionsScreenMixin {
 
     /**
      * 在 OptionsScreen 表头水平布局中添加「YouzaiWorldCore 设置...」按钮。
-     * 仅适用于 {@code inWorld == false}（从标题屏幕打开选项）的情况。
+     * <p>
+     * 标题菜单中替代被移除的 FOV/在线选项位置；游戏内则与「世界选项」并排显示。
+     * </p>
      * <p>
      * 按钮点击后打开 {@link top.csituka.youzaiworldcore.client.screen.YouzaiWorldCoreSettingsScreen}。
      *
@@ -364,6 +366,7 @@ public class OptionsScreenMixin {
             if (ClientExternalSettings.getLogLevel() > 0) {
                 LOGGER.debug("Added YouzaiWorldCore settings button to header");
             }
+            DebugLogger.info("OptionsScreenMixin", "已在选项页表头添加 YouzaiWorldCore 设置按钮");
             return settingsButton;
         } catch (ReflectiveOperationException e) {
             LOGGER.error("Failed to add settings button to header", e);
@@ -396,28 +399,21 @@ public class OptionsScreenMixin {
             narratables.remove((Object) child);
         }
 
-        // ============ 2. 展开表头「世界选项」按钮（移除 FOV 滑块占位） ============
-        // FOV 滑块虽从 Screen 渲染/事件列表中移除，但仍在表头 HorizontalLayout 中占位，
-        // 导致「世界选项」按钮偏右。需要从布局中移除滑块以腾出整行宽度。
+        // ============ 2. 移除表头 FOV/在线选项的布局占位 ============
+        // 这些组件虽已从 Screen 渲染/事件列表中移除，但仍在 HorizontalLayout 中占位，
+        // 需要同时从布局中移除，为 YouzaiWorldCore 设置按钮腾出位置。
         boolean headerFixed = removeFovSliderFromHeader(screen);
 
-        // ============ 3. 标题屏幕选项：添加「YouzaiWorldCore 设置」按钮 ============
-        // 从标题屏幕打开选项时（inWorld == false），表头中 FOV 滑块和在线选项均被移除，
-        // 整行留空。在此位置添加一个 YouzaiWorldCore 设置按钮。
+        // ============ 3. 添加「YouzaiWorldCore 设置」按钮 ============
+        // 标题菜单中替代被移除的 FOV/在线选项；游戏内替代 FOV 并与「世界选项」并排显示。
         boolean settingsAdded = false;
-        try {
-            if (!optionsScreenInWorldField.getBoolean(screen)) {
-                Minecraft mc = accessor.youzaiworldcore$getMinecraft();
-                Button settingsBtn = addSettingsButtonToHeader(screen, mc);
-                if (settingsBtn != null) {
-                    childrenList.add(settingsBtn);
-                    renderables.add(settingsBtn);
-                    narratables.add(settingsBtn);
-                    settingsAdded = true;
-                }
-            }
-        } catch (ReflectiveOperationException e) {
-            LOGGER.error("Failed to check inWorld field", e);
+        Minecraft mc = accessor.youzaiworldcore$getMinecraft();
+        Button settingsBtn = addSettingsButtonToHeader(screen, mc);
+        if (settingsBtn != null) {
+            childrenList.add(settingsBtn);
+            renderables.add(settingsBtn);
+            narratables.add(settingsBtn);
+            settingsAdded = true;
         }
 
         // ============ 4. 替换遥测按钮为已安装的模组 ============
