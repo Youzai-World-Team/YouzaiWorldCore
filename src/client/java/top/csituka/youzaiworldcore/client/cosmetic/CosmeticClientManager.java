@@ -530,14 +530,37 @@ public final class CosmeticClientManager {
             boolean skinConflict) {
     }
 
-    private record CachedAppearance(
-            String snapshotHash,
-            ClientAsset.Texture skinWide,
-            ClientAsset.Texture skinSlim,
-            ClientAsset.Texture cloak,
-            List<Identifier> textureIds) {
+    private static final class CachedAppearance {
+        private final String snapshotHash;
+        private final ClientAsset.Texture skinWide;
+        private final ClientAsset.Texture skinSlim;
+        private final ClientAsset.Texture cloak;
+        private final List<Identifier> textureIds;
+        private PlayerSkin lastOriginal;
+        private PlayerSkin lastApplied;
+
+        private CachedAppearance(String snapshotHash, ClientAsset.Texture skinWide,
+                                 ClientAsset.Texture skinSlim, ClientAsset.Texture cloak,
+                                 List<Identifier> textureIds) {
+            this.snapshotHash = snapshotHash;
+            this.skinWide = skinWide;
+            this.skinSlim = skinSlim;
+            this.cloak = cloak;
+            this.textureIds = textureIds;
+        }
+
+        private String snapshotHash() {
+            return snapshotHash;
+        }
+
+        private List<Identifier> textureIds() {
+            return textureIds;
+        }
 
         private PlayerSkin apply(PlayerSkin original) {
+            if (original.equals(lastOriginal)) {
+                return lastApplied;
+            }
             ClientAsset.Texture body = skinWide != null
                     ? skinWide
                     : skinSlim != null ? skinSlim : original.body();
@@ -545,7 +568,9 @@ public final class CosmeticClientManager {
                     ? PlayerModelType.WIDE
                     : skinSlim != null ? PlayerModelType.SLIM : original.model();
             ClientAsset.Texture cape = cloak != null ? cloak : original.cape();
-            return PlayerSkin.insecure(body, cape, original.elytra(), model);
+            lastOriginal = original;
+            lastApplied = PlayerSkin.insecure(body, cape, original.elytra(), model);
+            return lastApplied;
         }
     }
 

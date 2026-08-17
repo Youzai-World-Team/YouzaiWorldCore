@@ -380,6 +380,7 @@ public class YouzaiworldCore implements ModInitializer {
                         serverPlayer.getName().getString());
                 InvisibilityManager.onPlayerDisconnect(serverPlayer);
                 DimensionPoolManager.onPlayerDisconnect(serverPlayer);
+                top.csituka.youzaiworldcore.mail.MailDataStorage.invalidate(serverPlayer.getUUID());
                 AfkManager.onDisconnect(serverPlayer);
                 CosmeticManager.onPlayerDisconnect(serverPlayer);
             }

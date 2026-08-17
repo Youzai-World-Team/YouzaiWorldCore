@@ -48,14 +48,20 @@ public class CowardiceHandler {
                 AttributeInstance inst = player.getAttribute(Attributes.MOVEMENT_SPEED);
                 if (inst == null) continue;
 
-                // 先移除旧修饰符
-                inst.removeModifier(MODIFIER_ID);
-
                 boolean fullHealth = player.getHealth() >= player.getMaxHealth();
                 if (level > 0 && fullHealth) {
                     double amount = 0.05 + (level - 1) * 0.05;
-                    inst.addPermanentModifier(new AttributeModifier(
-                            MODIFIER_ID, amount, AttributeModifier.Operation.ADD_VALUE));
+                    AttributeModifier current = inst.getModifier(MODIFIER_ID);
+                    if (current == null || Double.compare(current.amount(), amount) != 0
+                            || current.operation() != AttributeModifier.Operation.ADD_VALUE) {
+                        if (current != null) {
+                            inst.removeModifier(MODIFIER_ID);
+                        }
+                        inst.addPermanentModifier(new AttributeModifier(
+                                MODIFIER_ID, amount, AttributeModifier.Operation.ADD_VALUE));
+                    }
+                } else if (inst.hasModifier(MODIFIER_ID)) {
+                    inst.removeModifier(MODIFIER_ID);
                 }
             }
         });

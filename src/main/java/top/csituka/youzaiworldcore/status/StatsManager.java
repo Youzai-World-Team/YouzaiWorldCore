@@ -618,12 +618,14 @@ public final class StatsManager {
     }
 
     static void save(MinecraftServer server) {
-        writeJson(getDataFile(server), serializeRoot(), CACHE.size(), SNAPSHOTS.size());
+        StatsSnapshot snapshot = createSnapshot();
+        writeJson(getDataFile(server), serializeRoot(snapshot),
+                snapshot.players().size(), snapshot.snapshots().size());
     }
 
     /**
-     * 周期性落盘：序列化仍在服务端线程完成（读取实时的 {@code CACHE} / {@code SNAPSHOTS}，
-     * 必须与 tick 同线程以保证快照一致），仅把<b>阻塞写盘</b>挪到后台单线程。
+     * 周期性落盘：服务端线程只制作与实时缓存脱离的深快照，JSON 序列化和阻塞写盘
+     * 都交给后台单线程，以同时保证快照一致性和写入顺序。
      * <p>
      * 原实现每 6000 tick 在 {@code END_SERVER_TICK} 里同步执行
      * {@code GSON.toJson(全部玩家 + 365 天快照)} 加 {@code Files.writeString}，
@@ -635,33 +637,50 @@ public final class StatsManager {
      * </p>
      */
     static void saveAsync(MinecraftServer server) {
-        String json = serializeRoot();
+        StatsSnapshot snapshot = createSnapshot();
         Path target = getDataFile(server);
-        // 统计数量在本线程读取后按值传入：CACHE / SNAPSHOTS 由服务端线程持续改写，
-        // 后台线程直接读取会构成数据竞争
-        int playerCount = CACHE.size();
-        int snapshotCount = SNAPSHOTS.size();
         try {
-            IO_EXECUTOR.execute(() -> writeJson(target, json, playerCount, snapshotCount));
+            IO_EXECUTOR.execute(() -> writeJson(target, serializeRoot(snapshot),
+                    snapshot.players().size(), snapshot.snapshots().size()));
         } catch (RejectedExecutionException e) {
             // executor 已关闭（关服流程中）：退化为同步写，绝不丢数据
-            writeJson(target, json, playerCount, snapshotCount);
+            writeJson(target, serializeRoot(snapshot),
+                    snapshot.players().size(), snapshot.snapshots().size());
         }
     }
 
-    /** 把当前缓存序列化为 JSON 字符串（调用方须在服务端线程）。 */
-    private static String serializeRoot() {
+    /** 在服务端线程制作不再引用共享可变数据的深快照。 */
+    private static StatsSnapshot createSnapshot() {
+        Map<String, PlayerStats> players = new LinkedHashMap<>();
+        for (Map.Entry<String, PlayerStats> entry : CACHE.entrySet()) {
+            PlayerStats value = entry.getValue();
+            players.put(entry.getKey(), new PlayerStats(
+                    value.getUuid(), value.getName(), value.getLastUpdated(), value.getStats()));
+        }
+
+        Map<String, Map<String, Map<String, Long>>> snapshots = new LinkedHashMap<>();
+        for (Map.Entry<LocalDate, Map<String, Map<String, Long>>> dayEntry : SNAPSHOTS.entrySet()) {
+            Map<String, Map<String, Long>> day = new LinkedHashMap<>();
+            for (Map.Entry<String, Map<String, Long>> playerEntry : dayEntry.getValue().entrySet()) {
+                day.put(playerEntry.getKey(), new LinkedHashMap<>(playerEntry.getValue()));
+            }
+            snapshots.put(dayEntry.getKey().toString(), day);
+        }
+        return new StatsSnapshot(players, snapshots);
+    }
+
+    /** 把不可变工作快照序列化为 JSON 字符串，可在后台 IO 线程调用。 */
+    private static String serializeRoot(StatsSnapshot snapshot) {
         Map<String, Object> root = new LinkedHashMap<>();
         root.put("version", 2);
-        root.put("players", CACHE);
-
-        // 保存快照
-        Map<String, Map<String, Map<String, Long>>> snapshotsData = new LinkedHashMap<>();
-        for (Map.Entry<LocalDate, Map<String, Map<String, Long>>> se : SNAPSHOTS.entrySet()) {
-            snapshotsData.put(se.getKey().toString(), se.getValue());
-        }
-        root.put("snapshots", snapshotsData);
+        root.put("players", snapshot.players());
+        root.put("snapshots", snapshot.snapshots());
         return GSON.toJson(root);
+    }
+
+    private record StatsSnapshot(
+            Map<String, PlayerStats> players,
+            Map<String, Map<String, Map<String, Long>>> snapshots) {
     }
 
     /** 实际写盘。可能运行在后台 IO 线程，因此不读取任何共享可变状态。 */

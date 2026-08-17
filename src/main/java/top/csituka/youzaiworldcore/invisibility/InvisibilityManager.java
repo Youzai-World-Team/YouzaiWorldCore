@@ -41,6 +41,7 @@ public final class InvisibilityManager {
 
     /** 隐身在线的玩家 UUID 集合 */
     private static final Set<UUID> INVISIBLE_PLAYERS = new HashSet<>();
+    private static final Set<UUID> INVISIBLE_PLAYERS_VIEW = Collections.unmodifiableSet(INVISIBLE_PLAYERS);
 
     /** 每个隐身玩家对应的 Boss 栏 */
     private static final Map<UUID, ServerBossEvent> BOSS_BARS = new HashMap<>();
@@ -64,6 +65,16 @@ public final class InvisibilityManager {
         boolean result = INVISIBLE_PLAYERS.contains(player.getUUID());
         DebugLogger.exiting("InvisibilityManager", "isInvisible", String.valueOf(result));
         return result;
+    }
+
+    /** 无分配地检查当前是否存在隐身玩家，供粒子广播热路径使用。 */
+    public static boolean hasInvisiblePlayers() {
+        return !INVISIBLE_PLAYERS.isEmpty();
+    }
+
+    /** 按 UUID 检查隐身状态，避免粒子广播路径反复构造玩家名称日志参数。 */
+    public static boolean isInvisible(UUID playerUuid) {
+        return INVISIBLE_PLAYERS.contains(playerUuid);
     }
 
     /**
@@ -337,7 +348,7 @@ public final class InvisibilityManager {
      */
     public static Set<UUID> getInvisiblePlayers() {
         DebugLogger.entering("InvisibilityManager", "getInvisiblePlayers");
-        Set<UUID> result = Collections.unmodifiableSet(INVISIBLE_PLAYERS);
+        Set<UUID> result = INVISIBLE_PLAYERS_VIEW;
         DebugLogger.exiting("InvisibilityManager", "getInvisiblePlayers", "size=" + result.size());
         return result;
     }

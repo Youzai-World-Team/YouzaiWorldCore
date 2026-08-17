@@ -71,6 +71,8 @@ public final class LaowuMemeHandler {
      * <p>仅在服务端主线程的 tick 回调中使用，每次使用前 clear，无跨调用状态。</p>
      */
     private static final Set<UUID> SCAN_USED = new HashSet<>();
+    /** 当前老吴猫附近的候选猫列表，复用以避免全猫集合的二次遍历。 */
+    private static final List<Cat> SCAN_PARTNERS = new ArrayList<>();
     private static boolean registered = false;
 
     private LaowuMemeHandler() {
@@ -175,7 +177,10 @@ public final class LaowuMemeHandler {
 
                 Cat partner = null;
                 double best = TRIGGER_DISTANCE * TRIGGER_DISTANCE;
-                for (Cat c : cats) {
+                SCAN_PARTNERS.clear();
+                level.getEntities(CAT_TEST, laowu.getBoundingBox().inflate(TRIGGER_DISTANCE),
+                        c -> c != laowu, SCAN_PARTNERS);
+                for (Cat c : SCAN_PARTNERS) {
                     if (c == laowu) {
                         continue;
                     }

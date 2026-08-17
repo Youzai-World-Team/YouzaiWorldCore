@@ -7,6 +7,7 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.arrow.ThrownTrident;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.entity.EntityTypeTest;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,6 +30,8 @@ public class TridentVoidHandler {
 
     /** 扫描间隔（tick），避免每tick全实体遍历。三叉戟是低频事件，20tick（1秒）足够。 */
     private static final int SCAN_INTERVAL = 20;
+    private static final EntityTypeTest<Entity, ThrownTrident> TRIDENT_TEST =
+            EntityTypeTest.forClass(ThrownTrident.class);
     private int tickCounter = 0;
 
     private TridentVoidHandler() {
@@ -37,12 +40,9 @@ public class TridentVoidHandler {
     private void onServerTick(ServerLevel level) {
         if (!EventSettings.isTridentVoidProtectEnabled()) return;
 
-        // 遍历所有三叉戟实体
-        for (Entity entity : level.getAllEntities()) {
-            if (!(entity instanceof ThrownTrident trident)) {
-                continue;
-            }
-
+        // 直接从实体索引取三叉戟，避免每秒遍历本维度的全部实体。
+        for (ThrownTrident trident : level.getEntities(TRIDENT_TEST, entity -> true)) {
+            Entity entity = trident;
             // 检查是否低于世界最低高度
             if (entity.getY() > level.getMinY() - 10) {
                 continue;

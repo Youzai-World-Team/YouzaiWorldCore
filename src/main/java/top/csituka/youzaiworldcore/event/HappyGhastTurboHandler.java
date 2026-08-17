@@ -11,6 +11,7 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.animal.happyghast.HappyGhast;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.level.entity.EntityTypeTest;
 import top.csituka.youzaiworldcore.YouzaiworldCore;
 import top.csituka.youzaiworldcore.enchantment.ModEnchantments;
 
@@ -25,6 +26,8 @@ public class HappyGhastTurboHandler {
     private static final Identifier MODIFIER_ID = Identifier.fromNamespaceAndPath(
             YouzaiworldCore.MOD_ID, "spirit_turbo_speed");
     private static final int INTERVAL = 20;
+    private static final EntityTypeTest<net.minecraft.world.entity.Entity, HappyGhast> HAPPY_GHAST_TEST =
+            EntityTypeTest.forClass(HappyGhast.class);
     private static int tickCounter = 0;
     private static Holder<Enchantment> cachedEnchantment;
 
@@ -41,10 +44,8 @@ public class HappyGhastTurboHandler {
             }
 
             for (ServerLevel level : server.getAllLevels()) {
-                for (net.minecraft.world.entity.Entity entity : level.getAllEntities()) {
-                    if (entity instanceof HappyGhast ghast) {
-                        applySpeedModifier(ghast);
-                    }
+                for (HappyGhast ghast : level.getEntities(HAPPY_GHAST_TEST, entity -> true)) {
+                    applySpeedModifier(ghast);
                 }
             }
         });
@@ -58,13 +59,19 @@ public class HappyGhastTurboHandler {
         var instance = ghast.getAttribute(Attributes.FLYING_SPEED);
         if (instance == null) return;
 
-        // 先移除旧修饰符
-        instance.removeModifier(MODIFIER_ID);
-
         if (level > 0) {
             double bonus = level * 0.20; // 每级 +20%
-            instance.addPermanentModifier(new AttributeModifier(
-                    MODIFIER_ID, bonus, AttributeModifier.Operation.ADD_MULTIPLIED_BASE));
+            AttributeModifier current = instance.getModifier(MODIFIER_ID);
+            if (current == null || Double.compare(current.amount(), bonus) != 0
+                    || current.operation() != AttributeModifier.Operation.ADD_MULTIPLIED_BASE) {
+                if (current != null) {
+                    instance.removeModifier(MODIFIER_ID);
+                }
+                instance.addPermanentModifier(new AttributeModifier(
+                        MODIFIER_ID, bonus, AttributeModifier.Operation.ADD_MULTIPLIED_BASE));
+            }
+        } else if (instance.hasModifier(MODIFIER_ID)) {
+            instance.removeModifier(MODIFIER_ID);
         }
     }
 }

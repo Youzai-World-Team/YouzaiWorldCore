@@ -5,7 +5,6 @@ import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.state.EntityRenderState;
-import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.Entity;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -29,10 +28,6 @@ import top.csituka.youzaiworldcore.client.render.PingDisplayRender;
 @SuppressWarnings("null")
 @Mixin(EntityRenderer.class)
 public abstract class EntityRendererMixin {
-
-    /** 缓存的括号组件，避免每帧每实体重新分配。 */
-    private static final Component PING_PREFIX = Component.literal(" (").withStyle(style -> style.withColor(0xAAAAAA));
-    private static final Component PING_SUFFIX = Component.literal(")").withStyle(style -> style.withColor(0xAAAAAA));
 
     /**
      * 在 {@code extractRenderState} 尾部注入，若玩家头顶名字牌非空则在末尾追加 ping 文字。
@@ -58,10 +53,7 @@ public abstract class EntityRendererMixin {
 
         int ping = info.getLatency();
 
-        // 在原始名字牌后追加 " (ping)"，括号与 ping 段均复用缓存组件
-        state.nameTag = Component.literal(state.nameTag.getString())
-                .append(PING_PREFIX)
-                .append(PingDisplayRender.getStyledPingComponent(player.getUUID(), ping))
-                .append(PING_SUFFIX);
+        // 在原始名字牌后追加 " (ping)"；名字文本和 ping 未变时复用整条组件。
+        state.nameTag = PingDisplayRender.getNameTagComponent(player.getUUID(), state.nameTag, ping);
     }
 }

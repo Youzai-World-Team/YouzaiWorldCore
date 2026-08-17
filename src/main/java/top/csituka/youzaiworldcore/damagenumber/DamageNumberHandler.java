@@ -9,8 +9,7 @@ import top.csituka.youzaiworldcore.config.FunctionToggleManager;
 import top.csituka.youzaiworldcore.network.DamageNumberPayload;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.Collection;
 
 /**
  * 服务端伤害跳字处理器。
@@ -43,41 +42,54 @@ public final class DamageNumberHandler {
             return;
         }
 
-        Set<ServerPlayer> recipients = new HashSet<>(PlayerLookup.tracking(target));
         ServerPlayer damagedPlayer = target instanceof ServerPlayer player ? player : null;
-        if (damagedPlayer != null) {
-            recipients.add(damagedPlayer);
-        }
-
         ServerPlayer attackingPlayer = source.getEntity() instanceof ServerPlayer player ? player : null;
-        if (attackingPlayer != null && attackingPlayer.level() == target.level()) {
-            recipients.add(attackingPlayer);
-        }
 
         DamageNumberPayload payload = new DamageNumberPayload(
                 target.getX(), target.getY(), target.getZ(), target.getBbHeight(), damage);
         int sentCount = 0;
-        for (ServerPlayer recipient : recipients) {
-            if (!FunctionToggleManager.isEnabled(
-                    recipient.getUUID(), FunctionToggleManager.KEY_DAMAGE_NUMBERS)) {
-                continue;
+        boolean damagedIncluded = false;
+        boolean attackingIncluded = false;
+        Collection<ServerPlayer> tracking = PlayerLookup.tracking(target);
+        for (ServerPlayer recipient : tracking) {
+            if (recipient == damagedPlayer) {
+                damagedIncluded = true;
             }
-            boolean maySeeInvisibleTarget = recipient == damagedPlayer
-                    || recipient == attackingPlayer;
-            if (target.isInvisibleTo(recipient) && !maySeeInvisibleTarget) {
-                continue;
+            if (recipient == attackingPlayer) {
+                attackingIncluded = true;
             }
-            if (!ServerPlayNetworking.canSend(recipient, DamageNumberPayload.ID)) {
-                continue;
-            }
-            ServerPlayNetworking.send(recipient, payload);
-            sentCount++;
+            sentCount += sendTo(recipient, target, damagedPlayer, attackingPlayer, payload) ? 1 : 0;
+        }
+        if (damagedPlayer != null && !damagedIncluded) {
+            sentCount += sendTo(damagedPlayer, target, damagedPlayer, attackingPlayer, payload) ? 1 : 0;
+        }
+        if (attackingPlayer != null && attackingPlayer.level() == target.level()
+                && !attackingIncluded && attackingPlayer != damagedPlayer) {
+            sentCount += sendTo(attackingPlayer, target, damagedPlayer, attackingPlayer, payload) ? 1 : 0;
         }
 
         if (DebugLogger.isEnabled(DebugLogger.LEVEL_DEBUG)) {
             DebugLogger.trace(MODULE, "已广播伤害跳字: target=%s, damage=%.2f, recipients=%d",
                     target.getName().getString(), damage, sentCount);
         }
+    }
+
+    private static boolean sendTo(ServerPlayer recipient, LivingEntity target,
+                                  ServerPlayer damagedPlayer, ServerPlayer attackingPlayer,
+                                  DamageNumberPayload payload) {
+        if (!FunctionToggleManager.isEnabled(
+                recipient.getUUID(), FunctionToggleManager.KEY_DAMAGE_NUMBERS)) {
+            return false;
+        }
+        boolean maySeeInvisibleTarget = recipient == damagedPlayer || recipient == attackingPlayer;
+        if (target.isInvisibleTo(recipient) && !maySeeInvisibleTarget) {
+            return false;
+        }
+        if (!ServerPlayNetworking.canSend(recipient, DamageNumberPayload.ID)) {
+            return false;
+        }
+        ServerPlayNetworking.send(recipient, payload);
+        return true;
     }
 
 }

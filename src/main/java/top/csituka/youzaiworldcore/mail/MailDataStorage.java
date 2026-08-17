@@ -94,10 +94,20 @@ public class MailDataStorage {
     public static PlayerMailbox load(UUID playerUuid) {
         DebugLogger.entering(MODULE, "load", "playerUuid=" + playerUuid);
 
+        PlayerMailbox box = loadInternal(playerUuid, true);
+        DebugLogger.exiting(MODULE, "load", "mails=" + box.getMails().size());
+        return box;
+    }
+
+    /**
+     * 加载指定玩家的收件箱，但不把此前未缓存的离线邮箱留在内存中。
+     * 群发邮件使用此路径，避免一次操作把所有离线账户都加入缓存。
+     */
+    private static PlayerMailbox loadInternal(UUID playerUuid, boolean cacheResult) {
+
         // 先查内存缓存
         PlayerMailbox cached = CACHE.get(playerUuid);
         if (cached != null) {
-            DebugLogger.exiting(MODULE, "load", "cache hit, mails=" + cached.getMails().size());
             return cached;
         }
 
@@ -108,12 +118,18 @@ public class MailDataStorage {
             try {
                 String json = Files.readString(file);
                 box = GSON.fromJson(json, PlayerMailbox.class);
+                if (box == null) {
+                    box = new PlayerMailbox(playerUuid);
+                }
             } catch (IOException e) {
                 YouzaiworldCore.LOGGER.error("读取玩家收件箱失败 [{}]: {}", playerUuid, e.getMessage());
                 box = new PlayerMailbox(playerUuid);
             }
         } else {
             box = new PlayerMailbox(playerUuid);
+        }
+        if (box.getMails() == null) {
+            box.setMails(new ArrayList<>());
         }
 
         // 加载时清理：剔除正文不存在（已撤回）与过期未星标
@@ -136,11 +152,12 @@ public class MailDataStorage {
         int removed = before - box.getMails().size();
         if (removed > 0) {
             DebugLogger.info(MODULE, "加载清理: 移除了 %d 个引用 (playerUuid=%s)", removed, playerUuid);
-            save(playerUuid, box);
+            saveInternal(playerUuid, box, cacheResult);
         }
         // 放入缓存
-        CACHE.put(playerUuid, box);
-        DebugLogger.exiting(MODULE, "load", "mails=" + box.getMails().size());
+        if (cacheResult) {
+            CACHE.put(playerUuid, box);
+        }
         return box;
     }
 
@@ -152,8 +169,15 @@ public class MailDataStorage {
      */
     public static void save(UUID playerUuid, PlayerMailbox box) {
         DebugLogger.entering(MODULE, "save", "playerUuid=" + playerUuid + ", mails=" + box.getMails().size());
-        // 更新缓存
-        CACHE.put(playerUuid, box);
+        saveInternal(playerUuid, box, true);
+        DebugLogger.exiting(MODULE, "save");
+    }
+
+    private static void saveInternal(UUID playerUuid, PlayerMailbox box, boolean cacheResult) {
+        // 已经存在的在线缓存必须保持更新；纯离线操作则不创建新缓存。
+        if (cacheResult || CACHE.containsKey(playerUuid)) {
+            CACHE.put(playerUuid, box);
+        }
         Path file = getPlayerFile(playerUuid);
         try {
             Files.createDirectories(file.getParent());
@@ -161,7 +185,6 @@ public class MailDataStorage {
         } catch (IOException e) {
             YouzaiworldCore.LOGGER.error("保存玩家收件箱失败 [{}]: {}", playerUuid, e.getMessage());
         }
-        DebugLogger.exiting(MODULE, "save");
     }
 
     /**
@@ -172,18 +195,32 @@ public class MailDataStorage {
      */
     public static void addRef(UUID playerUuid, MailRef ref) {
         DebugLogger.entering(MODULE, "addRef", "playerUuid=" + playerUuid + ", mailId=" + ref.getMailId());
-        PlayerMailbox box = load(playerUuid);
+        addRefInternal(playerUuid, ref, true);
+        DebugLogger.exiting(MODULE, "addRef");
+    }
+
+    /** 为离线玩家添加邮件引用，不创建新的长期缓存条目。 */
+    public static void addRefUncached(UUID playerUuid, MailRef ref) {
+        addRefInternal(playerUuid, ref, false);
+    }
+
+    private static void addRefInternal(UUID playerUuid, MailRef ref, boolean cacheResult) {
+        PlayerMailbox box = loadInternal(playerUuid, cacheResult);
         // 避免重复添加
         boolean exists = box.getMails().stream()
                 .anyMatch(r -> r.getMailId().equals(ref.getMailId()));
         if (!exists) {
             box.getMails().add(ref);
-            save(playerUuid, box);
+            saveInternal(playerUuid, box, cacheResult);
             DebugLogger.info(MODULE, "已添加邮件引用: playerUuid=%s, mailId=%s", playerUuid, ref.getMailId());
         } else {
             DebugLogger.info(MODULE, "邮件引用已存在，跳过: playerUuid=%s, mailId=%s", playerUuid, ref.getMailId());
         }
-        DebugLogger.exiting(MODULE, "addRef");
+    }
+
+    /** 玩家断开后释放其邮箱缓存；磁盘内容已在每次变更时保存。 */
+    public static void invalidate(UUID playerUuid) {
+        CACHE.remove(playerUuid);
     }
 
     /**
@@ -314,7 +351,7 @@ public class MailDataStorage {
                 boolean removed = box.getMails().removeIf(ref ->
                         ref.getMailId() == null || SentMailRepository.get(ref.getMailId()) == null);
                 if (removed) {
-                    save(box.getPlayerUuid(), box);
+                    saveInternal(box.getPlayerUuid(), box, false);
                     changed++;
                 }
             }

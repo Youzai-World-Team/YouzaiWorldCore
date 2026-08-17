@@ -113,6 +113,35 @@ public class SentMailRepository {
     }
 
     /**
+     * 批量删除邮件正文，并在整批操作完成后只重写一次仓库文件。
+     *
+     * @param mailIds 待删除的邮件 ID
+     * @return 实际删除数量
+     */
+    public static int removeAll(Collection<UUID> mailIds) {
+        if (mailIds.isEmpty()) {
+            return 0;
+        }
+        DebugLogger.entering(MODULE, "removeAll", "count=" + mailIds.size());
+        LOCK.writeLock().lock();
+        try {
+            int removed = 0;
+            for (UUID mailId : mailIds) {
+                if (REPO.remove(mailId) != null) {
+                    removed++;
+                }
+            }
+            if (removed > 0) {
+                saveToDisk();
+            }
+            DebugLogger.exiting(MODULE, "removeAll", "removed=" + removed);
+            return removed;
+        } finally {
+            LOCK.writeLock().unlock();
+        }
+    }
+
+    /**
      * 检查邮件是否存在。
      *
      * @param mailId 邮件 ID

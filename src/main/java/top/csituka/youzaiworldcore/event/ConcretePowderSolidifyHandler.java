@@ -18,6 +18,7 @@ import org.jspecify.annotations.NonNull;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
 import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -54,6 +55,8 @@ public class ConcretePowderSolidifyHandler implements ServerTickEvents.StartTick
      */
     private static final EntityTypeTest<net.minecraft.world.entity.Entity, ItemEntity> ITEM_ENTITY_TEST =
             EntityTypeTest.forClass(ItemEntity.class);
+    /** 服务端主线程复用，避免每秒每个维度创建新的结果列表。 */
+    private static final List<ItemEntity> MATCHED_ITEMS = new ArrayList<>();
 
     private ConcretePowderSolidifyHandler() {
     }
@@ -129,20 +132,22 @@ public class ConcretePowderSolidifyHandler implements ServerTickEvents.StartTick
         // 原先谓词只过滤「存活且在水中」，于是水里的每个掉落物（养鱼场 / 水流运输带
         // 场景下可能成百上千）都会被收集进列表，之后才逐个查映射表丢弃。
         // 现在结果列表只包含真正需要转换的实体，绝大多数 tick 直接是空列表。
-        List<? extends ItemEntity> itemsInWater = level.getEntities(
+        MATCHED_ITEMS.clear();
+        level.getEntities(
                 ITEM_ENTITY_TEST,
                 entity -> entity.isAlive() && entity.isInWater()
-                        && POWDER_TO_CONCRETE.containsKey(entity.getItem().getItem()));
+                        && POWDER_TO_CONCRETE.containsKey(entity.getItem().getItem()),
+                MATCHED_ITEMS);
 
-        if (itemsInWater.isEmpty())
+        if (MATCHED_ITEMS.isEmpty())
             return;
 
         DebugLogger.trace("ConcretePowderSolidifyHandler",
                 "维度 %s 中有 %d 个混凝土粉末掉落物待固化",
-                level.dimension().identifier(), itemsInWater.size());
+                level.dimension().identifier(), MATCHED_ITEMS.size());
 
         int converted = 0;
-        for (ItemEntity itemEntity : itemsInWater) {
+        for (ItemEntity itemEntity : MATCHED_ITEMS) {
             ItemStack stack = itemEntity.getItem();
             Item item = stack.getItem();
             Item concreteItem = POWDER_TO_CONCRETE.get(item);

@@ -88,9 +88,9 @@ public final class PingDisplayRender {
      * 而 ping 大约每秒才变一次，这三者在两次变化之间完全可以复用。
      * </p>
      * <p>
-     * <b>为什么不缓存整条名字牌：</b>{@code EntityRenderState.nameTag} 由原版每帧通过
-     * {@code getDisplayName()} 重新构造（队伍前缀、称号等都在其中），对象身份逐帧变化，
-     * 整条缓存永远命不中，反而会白白多出一次查表。因此只缓存真正稳定的这一段。
+     * 原版每帧通过 {@code getDisplayName()} 重新构造 {@code EntityRenderState.nameTag}
+     * （队伍前缀、称号等都在其中），所以缓存键使用纯文本内容而不是组件对象身份；名字文本
+     * 稳定时可以复用整条结果，发生变化时仍按原有纯文本语义重新构造。
      * </p>
      * <p>
      * 仅在渲染线程调用，无需同步。放在本类而非 Mixin 内：Mixin 类里的嵌套类型会被
@@ -119,11 +119,36 @@ public final class PingDisplayRender {
         return built;
     }
 
+    /**
+     * 获取带 ping 的名字牌组件。名字文本和 ping 都未变化时直接复用整条组件，
+     * 保留现有“按纯文本重建名字牌”的显示语义。
+     */
+    public static Component getNameTagComponent(UUID playerId, Component original, int ping) {
+        String baseText = original.getString();
+        NameTagEntry cached = NAME_TAG_CACHE.get(playerId);
+        if (cached != null && cached.ping == ping && cached.baseText.equals(baseText)) {
+            return cached.component;
+        }
+        if (NAME_TAG_CACHE.size() > CACHE_LIMIT) {
+            NAME_TAG_CACHE.clear();
+        }
+        Component built = Component.literal(baseText)
+                .append(PING_PREFIX)
+                .append(getStyledPingComponent(playerId, ping))
+                .append(PING_SUFFIX);
+        NAME_TAG_CACHE.put(playerId, new NameTagEntry(baseText, ping, built));
+        return built;
+    }
+
     /** 名字牌 ping 组件缓存上限。 */
     private static final int CACHE_LIMIT = 256;
 
+    private static final Component PING_PREFIX = Component.literal(" (").withColor(0xAAAAAA);
+    private static final Component PING_SUFFIX = Component.literal(")").withColor(0xAAAAAA);
+
     /** 玩家 UUID → 已着色 ping 组件。 */
     private static final Map<UUID, Entry> PING_CACHE = new HashMap<>();
+    private static final Map<UUID, NameTagEntry> NAME_TAG_CACHE = new HashMap<>();
 
     /** 缓存条目：ping 数值 + 对应的已着色组件。 */
     private static final class Entry {
@@ -131,6 +156,18 @@ public final class PingDisplayRender {
         final Component component;
 
         Entry(int ping, Component component) {
+            this.ping = ping;
+            this.component = component;
+        }
+    }
+
+    private static final class NameTagEntry {
+        final String baseText;
+        final int ping;
+        final Component component;
+
+        NameTagEntry(String baseText, int ping, Component component) {
+            this.baseText = baseText;
             this.ping = ping;
             this.component = component;
         }

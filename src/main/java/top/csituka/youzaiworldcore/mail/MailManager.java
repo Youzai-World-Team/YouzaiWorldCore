@@ -183,11 +183,15 @@ public class MailManager {
 
         for (UUID uuid : resolved.allUuids()) {
             MailRef ref = new MailRef(mailId);
-            MailDataStorage.addRef(uuid, ref);
-
             // 在线推送
+            var online = server != null ? server.getPlayerList().getPlayer(uuid) : null;
+            if (online == null) {
+                // 离线收件人只需更新磁盘，不创建新的长期内存缓存。
+                MailDataStorage.addRefUncached(uuid, ref);
+            } else {
+                MailDataStorage.addRef(uuid, ref);
+            }
             if (server != null) {
-                var online = server.getPlayerList().getPlayer(uuid);
                 if (online != null) {
                     net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(online,
                             new top.csituka.youzaiworldcore.network.MailUpdatePayload(
@@ -382,16 +386,14 @@ public class MailManager {
                 expiredIds.add(mail.getId());
             }
         }
-        for (UUID mailId : expiredIds) {
-            SentMailRepository.remove(mailId);
-        }
-        if (!expiredIds.isEmpty()) {
+        int removed = SentMailRepository.removeAll(expiredIds);
+        if (removed > 0) {
             DebugLogger.info(MODULE, "清理过期邮件: 移除 %d 封 (保留星标 %d 封)",
-                    expiredIds.size(), starredIds.size());
+                    removed, starredIds.size());
         }
         // 收件箱清理在 MailDataStorage.load 时按需进行
-        DebugLogger.exiting(MODULE, "purge", "removed=" + expiredIds.size());
-        return expiredIds.size();
+        DebugLogger.exiting(MODULE, "purge", "removed=" + removed);
+        return removed;
     }
 
     /**
@@ -413,17 +415,15 @@ public class MailManager {
                 removedIds.add(mail.getId());
             }
         }
-        for (UUID mailId : removedIds) {
-            SentMailRepository.remove(mailId);
-        }
+        int removed = SentMailRepository.removeAll(removedIds);
 
         // 清理收件箱内指向已删除邮件的悬空引用
         int cleanedBoxes = MailDataStorage.pruneDanglingRefs();
 
         YouzaiworldCore.LOGGER.info("邮件启动清理：删除过期且无人星标的邮件 {} 封，整理收件箱 {} 个",
-                removedIds.size(), cleanedBoxes);
+                removed, cleanedBoxes);
         DebugLogger.info(MODULE, "启动清理完成: removed=%d, starredKept=%d, boxes=%d",
-                removedIds.size(), starredIds.size(), cleanedBoxes);
+                removed, starredIds.size(), cleanedBoxes);
         DebugLogger.exiting(MODULE, "purgeOnServerStart");
     }
 
