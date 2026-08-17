@@ -30,6 +30,8 @@
     "HealthBarMixin",
     "HotbarMixin",
     "InventoryHudMixin",
+    "GuiItemRenderStateMixin",
+    "GuiRendererYzHudOpacityMixin",
     "StatusEffectOrderMixin",
     "food.FoodDataExhaustionAccessor",
     "EditBoxMixin",

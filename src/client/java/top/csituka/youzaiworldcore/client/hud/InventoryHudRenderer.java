@@ -3,8 +3,12 @@ package top.csituka.youzaiworldcore.client.hud;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.util.ARGB;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import top.csituka.youzaiworldcore.client.config.YzHudSettings;
 import top.csituka.youzaiworldcore.client.render.RoundedRect;
 import top.csituka.youzaiworldcore.itemborder.ItemBorderRenderer;
 
@@ -110,7 +114,7 @@ public final class InventoryHudRenderer {
         Font font = client.font;
 
         RoundedRect.fillOrSquare(graphics, panelX, panelY, panelW, panelH,
-                BASE_PANEL_RADIUS, PANEL_BG);
+                BASE_PANEL_RADIUS, YzHudLayout.applyOpacity(PANEL_BG));
 
         long nowMillis = System.currentTimeMillis();
 
@@ -122,7 +126,8 @@ public final class InventoryHudRenderer {
 
                 ItemStack stack = cached[ci];
                 int slotBg = stack.isEmpty() ? SLOT_EMPTY_COLOR : SLOT_FILLED_COLOR;
-                graphics.fill(slotX, slotY, slotX + slotSize, slotY + slotSize, slotBg);
+                graphics.fill(slotX, slotY, slotX + slotSize, slotY + slotSize,
+                        YzHudLayout.applyOpacity(slotBg));
 
                 HudSlotAnimationState animation = slotAnimations[ci];
                 ItemStack outgoing = animation.outgoingStack(nowMillis);
@@ -150,14 +155,17 @@ public final class InventoryHudRenderer {
 
         if (outgoing) {
             animation.pushOutgoingTransform(graphics, centerX, centerY, nowMillis);
-            animation.outgoingRenderer().render(graphics, stack, itemX, itemY);
+            animation.outgoingRenderer().render(graphics, stack, itemX, itemY,
+                    YzHudSettings.getOpacity());
         } else {
             animation.pushCurrentTransform(graphics, stack, centerX, centerY, nowMillis);
-            itemRenderers[rendererIndex].render(graphics, stack, itemX, itemY);
+            itemRenderers[rendererIndex].render(graphics, stack, itemX, itemY,
+                    YzHudSettings.getOpacity());
         }
 
-        graphics.itemDecorations(font, stack, itemX, itemY);
-        ItemBorderRenderer.renderBorder(graphics, itemX, itemY, stack);
+        drawItemDecorations(graphics, font, stack, itemX, itemY);
+        ItemBorderRenderer.renderBorder(graphics, itemX, itemY, stack,
+                YzHudSettings.getOpacity());
         if (outgoing) {
             animation.drawOutgoingOverlay(graphics, itemX, itemY, 16, 16, nowMillis);
         } else {
@@ -165,6 +173,42 @@ public final class InventoryHudRenderer {
                     itemX, itemY, 16, 16, nowMillis);
         }
         animation.popTransform(graphics);
+    }
+
+    /** 绘制遵循 YZHUD 透明度的数量、耐久条与冷却遮罩。 */
+    private static void drawItemDecorations(GuiGraphicsExtractor graphics, Font font,
+            ItemStack stack, int x, int y) {
+        float opacity = YzHudSettings.getOpacity();
+
+        if (stack.getCount() != 1) {
+            String countText = Integer.toString(stack.getCount());
+            graphics.text(font, countText,
+                    x + 17 - font.width(countText), y + 9,
+                    YzHudLayout.applyOpacity(0xFFFFFFFF, opacity), true);
+        }
+
+        if (stack.isBarVisible()) {
+            int barX = x + 2;
+            int barY = y + 13;
+            graphics.fill(RenderPipelines.GUI, barX, barY, barX + 13, barY + 2,
+                    YzHudLayout.applyOpacity(0xFF000000, opacity));
+            graphics.fill(RenderPipelines.GUI, barX, barY,
+                    barX + stack.getBarWidth(), barY + 1,
+                    YzHudLayout.applyOpacity(ARGB.opaque(stack.getBarColor()), opacity));
+        }
+
+        Minecraft client = Minecraft.getInstance();
+        if (client.player == null) {
+            return;
+        }
+        float cooldown = client.player.getCooldowns().getCooldownPercent(
+                stack, client.getDeltaTracker().getGameTimeDeltaPartialTick(true));
+        if (cooldown > 0.0F) {
+            int cooldownTop = y + Mth.floor(16.0F * (1.0F - cooldown));
+            int cooldownBottom = cooldownTop + Mth.ceil(16.0F * cooldown);
+            graphics.fill(RenderPipelines.GUI, x, cooldownTop, x + 16, cooldownBottom,
+                    YzHudLayout.applyOpacity(0x7FFFFFFF, opacity));
+        }
     }
 
 }

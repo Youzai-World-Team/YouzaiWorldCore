@@ -112,6 +112,8 @@ public class Client implements ClientModInitializer {
         // 加载客户端外部设置
         DebugLogger.info("Client", "加载客户端外部设置...");
         top.csituka.youzaiworldcore.client.config.ClientExternalSettings.load();
+        DebugLogger.info("Client", "加载 YZHUD 设置...");
+        top.csituka.youzaiworldcore.client.config.YzHudSettings.load();
         // 单人模式集成服务器：遵照客户端设置覆盖 logToFile 标志
         boolean clientLogToFile = top.csituka.youzaiworldcore.client.config.ClientExternalSettings.getLogLevel() > 0;
         top.csituka.youzaiworldcore.YouzaiworldCore.logToFile = clientLogToFile;

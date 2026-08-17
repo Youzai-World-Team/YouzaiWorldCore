@@ -11,6 +11,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import top.csituka.youzaiworldcore.client.config.YzHudSettings;
 import top.csituka.youzaiworldcore.client.render.RoundedRect;
 import top.csituka.youzaiworldcore.itemborder.ItemBorderRenderer;
 import top.csituka.youzaiworldcore.util.DebugLogger;
@@ -239,7 +240,7 @@ public final class ArmorHudRenderer {
         Font font = client.font;
 
         RoundedRect.fillOrSquare(graphics, panelX, panelY, panelW, panelH,
-                BASE_PANEL_RADIUS, PANEL_BG);
+                BASE_PANEL_RADIUS, YzHudLayout.applyOpacity(PANEL_BG));
 
         int iconSize = 16;
 
@@ -275,11 +276,12 @@ public final class ArmorHudRenderer {
         boolean hasItem = entry.stack != null && !entry.stack.isEmpty();
 
         g.fill(slotX, slotY, slotX + slotSize, slotY + slotSize,
-                hasItem ? SLOT_FILLED_COLOR : SLOT_EMPTY_COLOR);
+                YzHudLayout.applyOpacity(hasItem ? SLOT_FILLED_COLOR : SLOT_EMPTY_COLOR));
 
         if (!hasItem && entry.placeholderIcon != null) {
             g.blitSprite(RenderPipelines.GUI_TEXTURED, entry.placeholderIcon,
-                    slotX + itemInset, slotY + itemInset, iconSize, iconSize);
+                    slotX + itemInset, slotY + itemInset, iconSize, iconSize,
+                    YzHudLayout.applyOpacity(0xFFFFFFFF));
         }
 
         HudSlotAnimationState animation = equipAnimations[index];
@@ -311,12 +313,15 @@ public final class ArmorHudRenderer {
 
         if (outgoing) {
             animation.pushOutgoingTransform(g, centerX, centerY, nowMillis);
-            animation.outgoingRenderer().render(g, stack, itemX, itemY);
+            animation.outgoingRenderer().render(g, stack, itemX, itemY,
+                    YzHudSettings.getOpacity());
         } else {
             animation.pushCurrentTransform(g, stack, centerX, centerY, nowMillis);
-            itemRenderers[rendererIndex].render(g, stack, itemX, itemY);
+            itemRenderers[rendererIndex].render(g, stack, itemX, itemY,
+                    YzHudSettings.getOpacity());
         }
-        ItemBorderRenderer.renderBorder(g, itemX, itemY, stack);
+        ItemBorderRenderer.renderBorder(g, itemX, itemY, stack,
+                YzHudSettings.getOpacity());
 
         int textX = slotX + slotSize + textGap;
         int textY = slotY + (slotSize - font.lineHeight) / 2;
@@ -325,7 +330,8 @@ public final class ArmorHudRenderer {
         int color = showDurability
                 ? durabilityColor(shownValue, stack)
                 : COLOR_WHITE;
-        g.text(font, Integer.toString(shownValue), textX, textY, color, true);
+        g.text(font, Integer.toString(shownValue), textX, textY,
+                YzHudLayout.applyOpacity(color), true);
 
         if (outgoing) {
             animation.drawOutgoingOverlay(g, slotX, slotY,
@@ -343,7 +349,8 @@ public final class ArmorHudRenderer {
     private static void drawArrowIndicator(GuiGraphicsExtractor g, Font font,
             int slotX, int slotY, int slotSize, int itemInset, int textGap,
             long nowMillis) {
-        g.fill(slotX, slotY, slotX + slotSize, slotY + slotSize, SLOT_FILLED_COLOR);
+        g.fill(slotX, slotY, slotX + slotSize, slotY + slotSize,
+                YzHudLayout.applyOpacity(SLOT_FILLED_COLOR));
 
         int animatedWidth = slotSize + textGap + BASE_TEXT_WIDTH;
         float centerX = slotX + animatedWidth / 2.0f;
@@ -352,7 +359,8 @@ public final class ArmorHudRenderer {
                 centerX, centerY, nowMillis);
 
         // 原版普通箭物品模型图标（缓存解析，外观与物品栏一致）
-        arrowRenderer.render(g, ARROW_STACK, slotX + itemInset, slotY + itemInset);
+        arrowRenderer.render(g, ARROW_STACK, slotX + itemInset, slotY + itemInset,
+                YzHudSettings.getOpacity());
 
         // 箭矢总数文字
         int count = cachedArrowCount;
@@ -367,7 +375,8 @@ public final class ArmorHudRenderer {
 
         int textX = slotX + slotSize + textGap;
         int textY = slotY + (slotSize - font.lineHeight) / 2;
-        g.text(font, Integer.toString(count), textX, textY, color, true);
+        g.text(font, Integer.toString(count), textX, textY,
+                YzHudLayout.applyOpacity(color), true);
         arrowAnimation.drawCurrentOverlay(g, ARROW_STACK,
                 slotX, slotY, animatedWidth, slotSize, nowMillis);
         arrowAnimation.popTransform(g);
@@ -379,7 +388,8 @@ public final class ArmorHudRenderer {
     private static void drawFireworkIndicator(GuiGraphicsExtractor g, Font font,
             int slotX, int slotY, int slotSize, int itemInset, int textGap,
             long nowMillis) {
-        g.fill(slotX, slotY, slotX + slotSize, slotY + slotSize, SLOT_FILLED_COLOR);
+        g.fill(slotX, slotY, slotX + slotSize, slotY + slotSize,
+                YzHudLayout.applyOpacity(SLOT_FILLED_COLOR));
 
         int animatedWidth = slotSize + textGap + BASE_TEXT_WIDTH;
         float centerX = slotX + animatedWidth / 2.0f;
@@ -388,7 +398,7 @@ public final class ArmorHudRenderer {
                 centerX, centerY, nowMillis);
 
         fireworkRenderer.render(g, FIREWORK_STACK,
-                slotX + itemInset, slotY + itemInset);
+                slotX + itemInset, slotY + itemInset, YzHudSettings.getOpacity());
 
         int count = cachedFireworkCount;
         int color;
@@ -402,7 +412,8 @@ public final class ArmorHudRenderer {
 
         int textX = slotX + slotSize + textGap;
         int textY = slotY + (slotSize - font.lineHeight) / 2;
-        g.text(font, Integer.toString(count), textX, textY, color, true);
+        g.text(font, Integer.toString(count), textX, textY,
+                YzHudLayout.applyOpacity(color), true);
         fireworkAnimation.drawCurrentOverlay(g, FIREWORK_STACK,
                 slotX, slotY, animatedWidth, slotSize, nowMillis);
         fireworkAnimation.popTransform(g);
@@ -414,7 +425,8 @@ public final class ArmorHudRenderer {
     private static void drawEmptySlotsIndicator(GuiGraphicsExtractor g, Font font,
             int slotX, int slotY, int slotSize, int itemInset, int textGap,
             int iconSize, long nowMillis) {
-        g.fill(slotX, slotY, slotX + slotSize, slotY + slotSize, SLOT_FILLED_COLOR);
+        g.fill(slotX, slotY, slotX + slotSize, slotY + slotSize,
+                YzHudLayout.applyOpacity(SLOT_FILLED_COLOR));
 
         int animatedWidth = slotSize + textGap + BASE_TEXT_WIDTH;
         float centerX = slotX + animatedWidth / 2.0f;
@@ -424,7 +436,8 @@ public final class ArmorHudRenderer {
 
         // 贴图占位图标
         g.blitSprite(RenderPipelines.GUI_TEXTURED, EMPTY_SLOTS_ICON,
-                slotX + itemInset, slotY + itemInset, iconSize, iconSize);
+                slotX + itemInset, slotY + itemInset, iconSize, iconSize,
+                YzHudLayout.applyOpacity(0xFFFFFFFF));
 
         // 空位数文字
         int empty = cachedEmptySlots;
@@ -439,7 +452,8 @@ public final class ArmorHudRenderer {
 
         int textX = slotX + slotSize + textGap;
         int textY = slotY + (slotSize - font.lineHeight) / 2;
-        g.text(font, Integer.toString(empty), textX, textY, color, true);
+        g.text(font, Integer.toString(empty), textX, textY,
+                YzHudLayout.applyOpacity(color), true);
         emptySlotsAnimation.drawCurrentOverlay(g, ItemStack.EMPTY,
                 slotX, slotY, animatedWidth, slotSize, nowMillis);
         emptySlotsAnimation.popTransform(g);

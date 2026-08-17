@@ -39,6 +39,19 @@ public final class CachedItemRenderer {
      * @param y     屏幕 Y 坐标
      */
     public void render(GuiGraphicsExtractor g, ItemStack stack, int x, int y) {
+        render(g, stack, x, y, 1.0F);
+    }
+
+    /**
+     * 渲染一个带透明度的物品图标。
+     *
+     * @param g GuiGraphicsExtractor 实例
+     * @param stack 要渲染的物品（非空）
+     * @param x 屏幕 X 坐标
+     * @param y 屏幕 Y 坐标
+     * @param opacity 最终透明度，范围 0..1
+     */
+    public void render(GuiGraphicsExtractor g, ItemStack stack, int x, int y, float opacity) {
         if (stack.isEmpty())
             return;
 
@@ -47,7 +60,7 @@ public final class CachedItemRenderer {
             resolve(stack);
         }
 
-        submit(g, x, y);
+        submit(g, x, y, opacity);
     }
 
     /**
@@ -70,13 +83,15 @@ public final class CachedItemRenderer {
         resolvedStack = stack.copy();
     }
 
-    private void submit(GuiGraphicsExtractor g, int x, int y) {
+    private void submit(GuiGraphicsExtractor g, int x, int y, float opacity) {
         GuiRenderState renderState = g.guiRenderState;
         GuiItemRenderState itemState = new GuiItemRenderState(
                 new Matrix3x2f(g.pose()),
                 state,
                 x, y,
                 g.scissorStack.peek());
+        ((YzHudItemOpacityAccess) (Object) itemState)
+                .youzaiworldcore$setOpacity(opacity);
         renderState.addItem(itemState);
     }
 
