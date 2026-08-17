@@ -21,8 +21,7 @@ import java.nio.file.Path;
  * <pre>
  * {
  *   "core_module":           { "dev_mode_enabled": false, "log_level": 0, "yzui_enabled": true, ... },
- *   "highlight_item_module": { "toggle": true, "color": 16755200, "comparator": "ITEM_ONLY", ... },
- *   "laowu_meme_module":     { "disabled_sounds": [] }
+ *   "highlight_item_module": { "toggle": true, "color": 16755200, "comparator": "ITEM_ONLY", ... }
  * }
  * </pre>
  *
@@ -43,8 +42,6 @@ public final class ClientGlobalSettings {
     public static final String CORE_MODULE = "core_module";
     /** 物品高亮 */
     public static final String HIGHLIGHT_ITEM_MODULE = "highlight_item_module";
-    /** 老吴贴贴（音频启用状态） */
-    public static final String LAOWU_MEME_MODULE = "laowu_meme_module";
     /** YZHUD（位置与透明度） */
     public static final String YZHUD_MODULE = "yzhud_module";
 

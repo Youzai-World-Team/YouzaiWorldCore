@@ -154,10 +154,10 @@ public final class LaowuMemeClientState {
         if (old != null) {
             mc.getSoundManager().stop(old);
         }
-        // 服务端选曲：按 soundId 播放对应内置曲（多人同听）；不可用时回退本地随机
+        // 服务端选曲：按 soundId 播放对应内置曲（多人同听）；soundId 越界时回退本地随机
         net.minecraft.sounds.SoundEvent event = LaowuAudioPool.pickForSoundId(soundId);
         if (event == null) {
-            DebugLogger.info(MODULE, "音频池为空，跳过播放（所有音频均被禁用）");
+            DebugLogger.info(MODULE, "音频池为空（未初始化），跳过播放");
             return;
         }
         SoundInstance inst = new LaowuSoundInstance(event, catAId, catBId);

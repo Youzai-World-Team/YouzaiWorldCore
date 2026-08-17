@@ -1,6 +1,5 @@
 package top.csituka.youzaiworldcore.client.config;
 
-import top.csituka.youzaiworldcore.client.laowumeme.LaowuAudioPool;
 import top.csituka.youzaiworldcore.highlightitem.Configurator;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
@@ -33,7 +32,6 @@ public final class ClientDefaultSettingsWriter {
             ClientExternalSettings.writeDefaults();
             YzHudSettings.writeDefaults();
             Configurator.writeDefaults();
-            LaowuAudioPool.writeDefaults();
         });
         DebugLogger.exiting(MODULE, "writeAllDefaults");
     }
