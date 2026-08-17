@@ -45,18 +45,17 @@ public final class CosmeticManager {
     private static final String MODULE = "CosmeticManager";
     private static final String SKIN_WIDE_FILE = "skin.png";
     private static final String SKIN_SLIM_FILE = "skin_slim.png";
-    private static final String CLOAK_WIDE_FILE = "cloak.png";
-    private static final String CLOAK_SLIM_FILE = "cloak_slim.png";
+    private static final String CLOAK_FILE = "cloak.png";
     private static final String SERVER_INSTANCE_ID_KEY = "server_instance_id";
     private static final int MAX_REQUEST_TARGETS_PER_PLAYER = 128;
     private static final byte[] EMPTY = new byte[0];
-    private static final String EMPTY_SNAPSHOT_HASH = CosmeticSnapshotHasher.hash(EMPTY, EMPTY, EMPTY, EMPTY);
+    private static final String EMPTY_SNAPSHOT_HASH = CosmeticSnapshotHasher.hash(EMPTY, EMPTY, EMPTY);
 
     private static final Map<UUID, Long> LAST_UPLOAD_NANOS = new HashMap<>();
     private static final Map<UUID, LinkedHashMap<UUID, Long>> LAST_REQUEST_NANOS = new HashMap<>();
     private static final Set<UUID> ONLINE_COSMETIC_OWNERS = new HashSet<>();
-    private static final JsonFileStore METADATA_STORE =
-            new JsonFileStore(ModPaths.serverDataFile(GlobalSettings.COSMETIC_MODULE));
+    private static final JsonFileStore METADATA_STORE = new JsonFileStore(
+            ModPaths.serverDataFile(GlobalSettings.COSMETIC_MODULE));
 
     private static UUID serverInstanceId;
 
@@ -126,10 +125,6 @@ public final class CosmeticManager {
      */
     public static void onAuthenticated(ServerPlayer player) {
         MinecraftServer server = player.level().getServer();
-        if (server == null || server.isSingleplayer()) {
-            return;
-        }
-
         if (!isServerActive(server)) {
             ServerPlayNetworking.send(player, CosmeticReadyPayload.disabled());
             return;
@@ -178,9 +173,6 @@ public final class CosmeticManager {
     /** 玩家主动登出或被要求重新认证时，关闭本人链路并通知其他客户端释放纹理。 */
     public static void onDeauthenticated(ServerPlayer player) {
         MinecraftServer server = player.level().getServer();
-        if (server == null || server.isSingleplayer()) {
-            return;
-        }
         ServerPlayNetworking.send(player, CosmeticReadyPayload.disabled());
         LAST_UPLOAD_NANOS.remove(player.getUUID());
         clearRequestCooldowns(player.getUUID());
@@ -209,19 +201,25 @@ public final class CosmeticManager {
             sendUploadResult(player, payload.snapshotHash(), false, 0);
             return;
         }
+        if (payload.skinWide().length > 0 && payload.skinSlim().length > 0) {
+            DebugLogger.warn(MODULE, "拒绝玩家 %s 的外观上传：skin.png 与 skin_slim.png 不得同时启用",
+                    player.getScoreboardName());
+            sendUploadResult(player, payload.snapshotHash(), false, 0);
+            return;
+        }
 
         SlotData[] slots = {
-                new SlotData(SKIN_WIDE_FILE, payload.skinWide()),
-                new SlotData(SKIN_SLIM_FILE, payload.skinSlim()),
-                new SlotData(CLOAK_WIDE_FILE, payload.cloakWide()),
-                new SlotData(CLOAK_SLIM_FILE, payload.cloakSlim())
+                new SlotData(SKIN_WIDE_FILE, payload.skinWide(), false),
+                new SlotData(SKIN_SLIM_FILE, payload.skinSlim(), false),
+                new SlotData(CLOAK_FILE, payload.cloak(), true)
         };
         for (SlotData slot : slots) {
             if (slot.data().length == 0) {
                 continue;
             }
-            CosmeticPngValidator.Validation validation = CosmeticPngValidator.validate(
-                    slot.data(), CosmeticModuleSettings.getMaxFileBytes());
+            CosmeticPngValidator.Validation validation = slot.cloak()
+                    ? CosmeticPngValidator.validateCloak(slot.data(), CosmeticModuleSettings.getMaxFileBytes())
+                    : CosmeticPngValidator.validateSkin(slot.data(), CosmeticModuleSettings.getMaxFileBytes());
             if (!validation.valid()) {
                 DebugLogger.warn(MODULE, "拒绝玩家 %s 的 %s：%s",
                         player.getScoreboardName(), slot.fileName(), validation.reason());
@@ -231,7 +229,7 @@ public final class CosmeticManager {
         }
 
         String actualSnapshotHash = CosmeticSnapshotHasher.hash(
-                payload.skinWide(), payload.skinSlim(), payload.cloakWide(), payload.cloakSlim());
+                payload.skinWide(), payload.skinSlim(), payload.cloak());
         if (!payload.snapshotHash().equals(actualSnapshotHash)) {
             DebugLogger.warn(MODULE, "拒绝玩家 %s 的外观上传：快照哈希不匹配", player.getScoreboardName());
             sendUploadResult(player, payload.snapshotHash(), false, 0);
@@ -343,7 +341,7 @@ public final class CosmeticManager {
         }
         ServerPlayNetworking.send(requester,
                 new CosmeticDataPayload(targetUuid, snapshot.snapshotHash(),
-                        snapshot.skinWide(), snapshot.skinSlim(), snapshot.cloakWide(), snapshot.cloakSlim()));
+                        snapshot.skinWide(), snapshot.skinSlim(), snapshot.cloak()));
     }
 
     /** 删除指定账户的全部自定义外观数据并广播清除。 */
@@ -391,8 +389,7 @@ public final class CosmeticManager {
 
     private static boolean isServerActive(MinecraftServer server) {
         return CosmeticModuleSettings.isEnabled()
-                && !server.isSingleplayer()
-                && !server.usesAuthentication();
+                && (server.isSingleplayer() || !server.usesAuthentication());
     }
 
     private static boolean isAuthenticated(ServerPlayer player) {
@@ -443,19 +440,17 @@ public final class CosmeticManager {
     }
 
     private static CosmeticSnapshot readSnapshot(UUID playerUuid) {
-        byte[] skinWide = readSlot(playerUuid, SKIN_WIDE_FILE);
-        byte[] skinSlim = readSlot(playerUuid, SKIN_SLIM_FILE);
-        byte[] cloakWide = readSlot(playerUuid, CLOAK_WIDE_FILE);
-        byte[] cloakSlim = readSlot(playerUuid, CLOAK_SLIM_FILE);
+        byte[] skinWide = readSlot(playerUuid, SKIN_WIDE_FILE, false);
+        byte[] skinSlim = skinWide.length > 0 ? EMPTY : readSlot(playerUuid, SKIN_SLIM_FILE, false);
+        byte[] cloak = readSlot(playerUuid, CLOAK_FILE, true);
         return new CosmeticSnapshot(
                 skinWide,
                 skinSlim,
-                cloakWide,
-                cloakSlim,
-                CosmeticSnapshotHasher.hash(skinWide, skinSlim, cloakWide, cloakSlim));
+                cloak,
+                CosmeticSnapshotHasher.hash(skinWide, skinSlim, cloak));
     }
 
-    private static byte[] readSlot(UUID playerUuid, String fileName) {
+    private static byte[] readSlot(UUID playerUuid, String fileName, boolean cloak) {
         Path file = playerDataDir(playerUuid).resolve(fileName);
         if (!Files.isRegularFile(file)) {
             return EMPTY;
@@ -467,8 +462,9 @@ public final class CosmeticManager {
                 return EMPTY;
             }
             byte[] data = Files.readAllBytes(file);
-            CosmeticPngValidator.Validation validation = CosmeticPngValidator.validate(
-                    data, CosmeticModuleSettings.getMaxFileBytes());
+            CosmeticPngValidator.Validation validation = cloak
+                    ? CosmeticPngValidator.validateCloak(data, CosmeticModuleSettings.getMaxFileBytes())
+                    : CosmeticPngValidator.validateSkin(data, CosmeticModuleSettings.getMaxFileBytes());
             if (!validation.valid()) {
                 DebugLogger.warn(MODULE, "跳过内容非法的服务端外观文件 %s：%s", file, validation.reason());
                 return EMPTY;
@@ -512,7 +508,7 @@ public final class CosmeticManager {
     }
 
     private static CosmeticSnapshot emptySnapshot() {
-        return new CosmeticSnapshot(EMPTY, EMPTY, EMPTY, EMPTY, EMPTY_SNAPSHOT_HASH);
+        return new CosmeticSnapshot(EMPTY, EMPTY, EMPTY, EMPTY_SNAPSHOT_HASH);
     }
 
     private static void clearRequestCooldowns(UUID playerUuid) {
@@ -538,12 +534,12 @@ public final class CosmeticManager {
             LAST_REQUEST_NANOS.clear();
             return;
         }
-        LAST_REQUEST_NANOS.values().forEach(requests ->
-                requests.entrySet().removeIf(entry -> now - entry.getValue() >= cooldownNanos));
+        LAST_REQUEST_NANOS.values()
+                .forEach(requests -> requests.entrySet().removeIf(entry -> now - entry.getValue() >= cooldownNanos));
         LAST_REQUEST_NANOS.values().removeIf(Map::isEmpty);
     }
 
-    private record SlotData(String fileName, byte[] data) {
+    private record SlotData(String fileName, byte[] data, boolean cloak) {
     }
 
     private record CosmeticState(boolean hasSkin, boolean hasCloak) {
@@ -552,17 +548,16 @@ public final class CosmeticManager {
     private record CosmeticSnapshot(
             byte[] skinWide,
             byte[] skinSlim,
-            byte[] cloakWide,
-            byte[] cloakSlim,
+            byte[] cloak,
             String snapshotHash) {
 
         private boolean hasAny() {
-            return skinWide.length > 0 || skinSlim.length > 0 || cloakWide.length > 0 || cloakSlim.length > 0;
+            return skinWide.length > 0 || skinSlim.length > 0 || cloak.length > 0;
         }
 
         private CosmeticState state() {
             return new CosmeticState(skinWide.length > 0 || skinSlim.length > 0,
-                    cloakWide.length > 0 || cloakSlim.length > 0);
+                    cloak.length > 0);
         }
     }
 }

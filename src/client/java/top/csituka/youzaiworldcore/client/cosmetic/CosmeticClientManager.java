@@ -4,9 +4,12 @@ import com.mojang.blaze3d.platform.NativeImage;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.User;
 import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.core.ClientAsset;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.PlayerModelType;
 import net.minecraft.world.entity.player.PlayerSkin;
@@ -41,7 +44,7 @@ import java.util.UUID;
 /**
  * 自定义皮肤与披风客户端管理器。
  * <p>
- * 负责扫描 {@code yzwc/client/config/cosmetic_module/} 下的四个 PNG、上传去重、按需下载、
+ * 负责扫描 {@code yzwc/client/config/cosmetic_module/} 下的两个皮肤候选与单一披风 PNG、上传去重、按需下载、
  * 动态纹理注册以及最多 64 名玩家的 LRU 缓存。
  * </p>
  */
@@ -54,11 +57,9 @@ public final class CosmeticClientManager {
     private static final int UPLOAD_ACK_TIMEOUT_SECONDS = 10;
     private static final byte[] EMPTY = new byte[0];
 
-    private static final Slot SKIN_WIDE = new Slot("skin.png", "skin", "wide");
-    private static final Slot SKIN_SLIM = new Slot("skin_slim.png", "skin", "slim");
-    private static final Slot CLOAK_WIDE = new Slot("cloak.png", "cloak", "wide");
-    private static final Slot CLOAK_SLIM = new Slot("cloak_slim.png", "cloak", "slim");
-    private static final List<Slot> SLOTS = List.of(SKIN_WIDE, SKIN_SLIM, CLOAK_WIDE, CLOAK_SLIM);
+    private static final Slot SKIN_WIDE = new Slot("skin.png", "skin", "wide", false);
+    private static final Slot SKIN_SLIM = new Slot("skin_slim.png", "skin", "slim", false);
+    private static final Slot CLOAK = new Slot("cloak.png", "cloak", "default", true);
 
     private static final LinkedHashMap<UUID, CachedAppearance> CACHE =
             new LinkedHashMap<>(16, 0.75F, true);
@@ -70,6 +71,7 @@ public final class CosmeticClientManager {
     private static int requestRetrySeconds = 11;
     private static PendingUpload pendingUpload;
     private static long nextUploadRetryNanos;
+    private static boolean skinConflictNotified;
 
     private CosmeticClientManager() {
     }
@@ -81,7 +83,8 @@ public final class CosmeticClientManager {
         }
         initialized = true;
         ModPaths.ensureDir(ModPaths.clientConfig(GlobalSettings.COSMETIC_MODULE));
-        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> clearSession());
+        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) ->
+                client.execute(CosmeticClientManager::clearSession));
         ClientTickEvents.END_CLIENT_TICK.register(client -> tick());
         DebugLogger.info(MODULE, "客户端自定义皮肤与披风管理器已初始化");
     }
@@ -94,6 +97,7 @@ public final class CosmeticClientManager {
             PENDING_REQUESTS.clear();
             pendingUpload = null;
             serverInstanceId = null;
+            skinConflictNotified = false;
             releaseAll();
             DebugLogger.exiting(MODULE, "onReady", "disabled");
             return;
@@ -118,9 +122,16 @@ public final class CosmeticClientManager {
             return;
         }
 
+        if (snapshot.skinConflict() && !skinConflictNotified) {
+            client.player.sendSystemMessage(Component.translatable(
+                    "youzaiworldcore.message.cosmetic.skin_conflict").withStyle(ChatFormatting.YELLOW));
+            skinConflictNotified = true;
+            DebugLogger.info(MODULE, "同时检测到 skin.png 和 skin_slim.png，已优先使用 skin.png");
+        }
+
         release(selfUuid);
         cacheSnapshot(selfUuid, snapshot.snapshotHash(), snapshot.skinWide(), snapshot.skinSlim(),
-                snapshot.cloakWide(), snapshot.cloakSlim());
+                snapshot.cloak());
 
         Map<String, CosmeticUploadState.FileState> previous =
                 CosmeticUploadState.load(serverInstanceId, selfUuid);
@@ -183,7 +194,7 @@ public final class CosmeticClientManager {
             return;
         }
         String actualHash = CosmeticSnapshotHasher.hash(
-                payload.skinWide(), payload.skinSlim(), payload.cloakWide(), payload.cloakSlim());
+                payload.skinWide(), payload.skinSlim(), payload.cloak());
         if (!actualHash.equals(payload.snapshotHash())) {
             DebugLogger.warn(MODULE, "丢弃玩家 %s 的外观数据：快照哈希不匹配", ownerUuid);
             scheduleRequestRetry(ownerUuid, pending.snapshotHash());
@@ -196,7 +207,7 @@ public final class CosmeticClientManager {
         }
 
         if (cacheSnapshot(ownerUuid, payload.snapshotHash(), payload.skinWide(), payload.skinSlim(),
-                payload.cloakWide(), payload.cloakSlim())) {
+                payload.cloak())) {
             PENDING_REQUESTS.remove(ownerUuid);
         } else {
             scheduleRequestRetry(ownerUuid, payload.snapshotHash());
@@ -247,33 +258,36 @@ public final class CosmeticClientManager {
         serverInstanceId = null;
         pendingUpload = null;
         nextUploadRetryNanos = 0L;
+        skinConflictNotified = false;
         PENDING_REQUESTS.clear();
         releaseAll();
     }
 
     private static LocalSnapshot scanLocalFiles() {
         Path directory = ModPaths.clientConfig(GlobalSettings.COSMETIC_MODULE);
+        Path wideSkinPath = directory.resolve(SKIN_WIDE.fileName());
+        Path slimSkinPath = directory.resolve(SKIN_SLIM.fileName());
+        boolean skinConflict = Files.isRegularFile(wideSkinPath) && Files.isRegularFile(slimSkinPath);
+
+        ScannedFile wideSkin = scanFile(wideSkinPath, SKIN_WIDE);
+        ScannedFile slimSkin = scanFile(slimSkinPath, SKIN_SLIM);
+        ScannedFile cloak = scanFile(directory.resolve(CLOAK.fileName()), CLOAK);
         Map<String, CosmeticUploadState.FileState> states = new LinkedHashMap<>();
-        Map<String, byte[]> data = new LinkedHashMap<>();
-        for (Slot slot : SLOTS) {
-            ScannedFile scanned = scanFile(directory.resolve(slot.fileName()));
-            states.put(slot.fileName(), scanned.state());
-            data.put(slot.fileName(), scanned.data());
-        }
+        states.put(SKIN_WIDE.fileName(), wideSkin.state());
+        states.put(SKIN_SLIM.fileName(), slimSkin.state());
+        states.put(CLOAK.fileName(), cloak.state());
+
+        byte[] selectedSlimSkin = skinConflict ? EMPTY : slimSkin.data();
         return new LocalSnapshot(
-                data.get(SKIN_WIDE.fileName()),
-                data.get(SKIN_SLIM.fileName()),
-                data.get(CLOAK_WIDE.fileName()),
-                data.get(CLOAK_SLIM.fileName()),
-                CosmeticSnapshotHasher.hash(
-                        data.get(SKIN_WIDE.fileName()),
-                        data.get(SKIN_SLIM.fileName()),
-                        data.get(CLOAK_WIDE.fileName()),
-                        data.get(CLOAK_SLIM.fileName())),
-                states);
+                wideSkin.data(),
+                selectedSlimSkin,
+                cloak.data(),
+                CosmeticSnapshotHasher.hash(wideSkin.data(), selectedSlimSkin, cloak.data()),
+                states,
+                skinConflict);
     }
 
-    private static ScannedFile scanFile(Path file) {
+    private static ScannedFile scanFile(Path file, Slot slot) {
         if (!Files.isRegularFile(file)) {
             return new ScannedFile(EMPTY, new CosmeticUploadState.FileState("", 0L, false));
         }
@@ -286,8 +300,9 @@ public final class CosmeticClientManager {
 
             byte[] bytes = Files.readAllBytes(file);
             String sha256 = sha256(bytes);
-            CosmeticPngValidator.Validation validation = CosmeticPngValidator.validate(
-                    bytes, CosmeticModuleSettings.ABSOLUTE_MAX_FILE_BYTES);
+            CosmeticPngValidator.Validation validation = slot.cloak()
+                    ? CosmeticPngValidator.validateCloak(bytes, CosmeticModuleSettings.ABSOLUTE_MAX_FILE_BYTES)
+                    : CosmeticPngValidator.validateSkin(bytes, CosmeticModuleSettings.ABSOLUTE_MAX_FILE_BYTES);
             if (!validation.valid()) {
                 DebugLogger.warn(MODULE, "忽略不合法的本地外观文件 %s：%s", file, validation.reason());
                 return new ScannedFile(EMPTY,
@@ -314,26 +329,23 @@ public final class CosmeticClientManager {
             String snapshotHash,
             byte[] skinWide,
             byte[] skinSlim,
-            byte[] cloakWide,
-            byte[] cloakSlim) {
-        List<Identifier> textureIds = new ArrayList<>(4);
+            byte[] cloak) {
+        List<Identifier> textureIds = new ArrayList<>(3);
         ClientAsset.Texture wideSkin = registerTexture(ownerUuid, snapshotHash, SKIN_WIDE, skinWide, textureIds);
         ClientAsset.Texture slimSkin = registerTexture(ownerUuid, snapshotHash, SKIN_SLIM, skinSlim, textureIds);
-        ClientAsset.Texture wideCloak = registerTexture(ownerUuid, snapshotHash, CLOAK_WIDE, cloakWide, textureIds);
-        ClientAsset.Texture slimCloak = registerTexture(ownerUuid, snapshotHash, CLOAK_SLIM, cloakSlim, textureIds);
+        ClientAsset.Texture cloakTexture = registerTexture(ownerUuid, snapshotHash, CLOAK, cloak, textureIds);
         if (registrationFailed(skinWide, wideSkin)
                 || registrationFailed(skinSlim, slimSkin)
-                || registrationFailed(cloakWide, wideCloak)
-                || registrationFailed(cloakSlim, slimCloak)) {
+                || registrationFailed(cloak, cloakTexture)) {
             releaseTextureIds(textureIds);
             return false;
         }
-        if (wideSkin == null && slimSkin == null && wideCloak == null && slimCloak == null) {
+        if (wideSkin == null && slimSkin == null && cloakTexture == null) {
             return false;
         }
 
         CachedAppearance previous = CACHE.put(ownerUuid,
-                new CachedAppearance(snapshotHash, wideSkin, slimSkin, wideCloak, slimCloak, textureIds));
+                new CachedAppearance(snapshotHash, wideSkin, slimSkin, cloakTexture, textureIds));
         if (previous != null) {
             releaseTextures(previous);
         }
@@ -347,8 +359,9 @@ public final class CosmeticClientManager {
             return null;
         }
 
-        CosmeticPngValidator.Validation validation = CosmeticPngValidator.validate(
-                data, CosmeticModuleSettings.ABSOLUTE_MAX_FILE_BYTES);
+        CosmeticPngValidator.Validation validation = slot.cloak()
+                ? CosmeticPngValidator.validateCloak(data, CosmeticModuleSettings.ABSOLUTE_MAX_FILE_BYTES)
+                : CosmeticPngValidator.validateSkin(data, CosmeticModuleSettings.ABSOLUTE_MAX_FILE_BYTES);
         if (!validation.valid()) {
             DebugLogger.warn(MODULE, "丢弃玩家 %s 的非法 %s：%s", ownerUuid, slot.fileName(), validation.reason());
             return null;
@@ -386,8 +399,13 @@ public final class CosmeticClientManager {
     }
 
     private static boolean isOfflineSession() {
-        String accessToken = Minecraft.getInstance().getUser().getAccessToken();
-        return "0".equals(accessToken);
+        User user = Minecraft.getInstance().getUser();
+        String accessToken = user.getAccessToken();
+        return accessToken == null
+                || accessToken.isBlank()
+                || "0".equals(accessToken)
+                || "FabricMC".equalsIgnoreCase(accessToken)
+                || user.getXuid().isEmpty() && user.getClientId().isEmpty();
     }
 
     private static boolean isOnlineLocalPlayer(UUID ownerUuid) {
@@ -442,8 +460,7 @@ public final class CosmeticClientManager {
                 snapshot.snapshotHash(),
                 snapshot.skinWide(),
                 snapshot.skinSlim(),
-                snapshot.cloakWide(),
-                snapshot.cloakSlim()));
+                snapshot.cloak()));
         nextUploadRetryNanos = System.nanoTime() + UPLOAD_ACK_TIMEOUT_SECONDS * 1_000_000_000L;
         DebugLogger.info(MODULE, "本地外观快照已发送，等待服务端确认");
     }
@@ -498,7 +515,7 @@ public final class CosmeticClientManager {
         textureIds.forEach(textureManager::release);
     }
 
-    private record Slot(String fileName, String category, String model) {
+    private record Slot(String fileName, String category, String model, boolean cloak) {
     }
 
     private record ScannedFile(byte[] data, CosmeticUploadState.FileState state) {
@@ -507,38 +524,28 @@ public final class CosmeticClientManager {
     private record LocalSnapshot(
             byte[] skinWide,
             byte[] skinSlim,
-            byte[] cloakWide,
-            byte[] cloakSlim,
+            byte[] cloak,
             String snapshotHash,
-            Map<String, CosmeticUploadState.FileState> states) {
+            Map<String, CosmeticUploadState.FileState> states,
+            boolean skinConflict) {
     }
 
     private record CachedAppearance(
             String snapshotHash,
             ClientAsset.Texture skinWide,
             ClientAsset.Texture skinSlim,
-            ClientAsset.Texture cloakWide,
-            ClientAsset.Texture cloakSlim,
+            ClientAsset.Texture cloak,
             List<Identifier> textureIds) {
 
         private PlayerSkin apply(PlayerSkin original) {
-            ClientAsset.Texture body = skinSlim != null
-                    ? skinSlim
-                    : skinWide != null ? skinWide : original.body();
-            PlayerModelType model = skinSlim != null
-                    ? PlayerModelType.SLIM
-                    : skinWide != null ? PlayerModelType.WIDE : original.model();
-
-            ClientAsset.Texture customCape = model == PlayerModelType.SLIM
-                    ? firstNonNull(cloakSlim, cloakWide)
-                    : firstNonNull(cloakWide, cloakSlim);
-            ClientAsset.Texture cape = customCape != null ? customCape : original.cape();
+            ClientAsset.Texture body = skinWide != null
+                    ? skinWide
+                    : skinSlim != null ? skinSlim : original.body();
+            PlayerModelType model = skinWide != null
+                    ? PlayerModelType.WIDE
+                    : skinSlim != null ? PlayerModelType.SLIM : original.model();
+            ClientAsset.Texture cape = cloak != null ? cloak : original.cape();
             return PlayerSkin.insecure(body, cape, original.elytra(), model);
-        }
-
-        private static ClientAsset.Texture firstNonNull(
-                ClientAsset.Texture preferred, ClientAsset.Texture fallback) {
-            return preferred != null ? preferred : fallback;
         }
     }
 

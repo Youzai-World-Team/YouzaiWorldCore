@@ -787,5 +787,6 @@
   "screen.youzaiworldcore.brewing.any_lingering_potion": "Beliebiger Verweiltrank",
   "screen.youzaiworldcore.brewing.effect_preserved": "Behält den ursprünglichen Effekt",
   "screen.youzaiworldcore.brewing.no_results": "Keine Braurezepte gefunden",
-  "screen.youzaiworldcore.brewing.no_effect": "Kein Statuseffekt"
+  "screen.youzaiworldcore.brewing.no_effect": "Kein Statuseffekt",
+  "youzaiworldcore.message.cosmetic.skin_conflict": "skin.png und skin_slim.png wurden gleichzeitig gefunden. skin.png wird bevorzugt verwendet."
 }

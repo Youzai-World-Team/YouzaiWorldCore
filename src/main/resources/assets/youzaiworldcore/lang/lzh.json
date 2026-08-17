@@ -787,5 +787,6 @@
   "screen.youzaiworldcore.brewing.any_lingering_potion": "諸滯藥",
   "screen.youzaiworldcore.brewing.effect_preserved": "其效如故",
   "screen.youzaiworldcore.brewing.no_results": "未得釀方",
-  "screen.youzaiworldcore.brewing.no_effect": "無狀效"
+  "screen.youzaiworldcore.brewing.no_effect": "無狀效",
+  "youzaiworldcore.message.cosmetic.skin_conflict": "兼得 skin.png 與 skin_slim.png，先用 skin.png。"
 }

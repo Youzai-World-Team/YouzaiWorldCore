@@ -16,8 +16,7 @@ public record CosmeticDataPayload(
         String snapshotHash,
         byte[] skinWide,
         byte[] skinSlim,
-        byte[] cloakWide,
-        byte[] cloakSlim) implements CustomPacketPayload {
+        byte[] cloak) implements CustomPacketPayload {
 
     private static final byte[] EMPTY = new byte[0];
 
@@ -25,8 +24,7 @@ public record CosmeticDataPayload(
         snapshotHash = snapshotHash == null ? "" : snapshotHash;
         skinWide = nonNull(skinWide);
         skinSlim = nonNull(skinSlim);
-        cloakWide = nonNull(cloakWide);
-        cloakSlim = nonNull(cloakSlim);
+        cloak = nonNull(cloak);
     }
 
     public static final Identifier IDENTIFIER = Identifier.fromNamespaceAndPath(
@@ -39,13 +37,11 @@ public record CosmeticDataPayload(
                         buf.writeUtf(payload.snapshotHash(), 64);
                         buf.writeByteArray(payload.skinWide());
                         buf.writeByteArray(payload.skinSlim());
-                        buf.writeByteArray(payload.cloakWide());
-                        buf.writeByteArray(payload.cloakSlim());
+                        buf.writeByteArray(payload.cloak());
                     },
                     buf -> new CosmeticDataPayload(
                             buf.readUUID(),
                             buf.readUtf(64),
-                            buf.readByteArray(CosmeticModuleSettings.ABSOLUTE_MAX_FILE_BYTES),
                             buf.readByteArray(CosmeticModuleSettings.ABSOLUTE_MAX_FILE_BYTES),
                             buf.readByteArray(CosmeticModuleSettings.ABSOLUTE_MAX_FILE_BYTES),
                             buf.readByteArray(CosmeticModuleSettings.ABSOLUTE_MAX_FILE_BYTES)));

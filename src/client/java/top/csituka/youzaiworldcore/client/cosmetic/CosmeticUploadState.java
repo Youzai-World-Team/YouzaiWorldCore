@@ -19,7 +19,7 @@ import java.util.Objects;
 import java.util.UUID;
 
 /**
- * 按服务器实例和玩家 UUID 保存四个本地外观文件的已确认哈希快照。
+ * 按服务器实例和玩家 UUID 保存三个本地外观文件的已确认哈希快照。
  * <p>
  * 文件位于 {@code yzwc/client/config/cosmetic_module/upload_state.json}。
  * </p>

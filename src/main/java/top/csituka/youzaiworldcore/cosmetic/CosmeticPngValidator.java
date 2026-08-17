@@ -17,13 +17,28 @@ public final class CosmeticPngValidator {
     }
 
     /**
-     * 校验一份皮肤或披风 PNG。
+     * 校验一份皮肤 PNG，允许 64x32 或 64x64。
      *
      * @param data 文件字节
      * @param maxFileBytes 允许的最大字节数
      * @return 校验结果
      */
-    public static Validation validate(byte[] data, int maxFileBytes) {
+    public static Validation validateSkin(byte[] data, int maxFileBytes) {
+        return validate(data, maxFileBytes, false);
+    }
+
+    /**
+     * 校验一份披风 PNG，披风固定为 64x32。
+     *
+     * @param data 文件字节
+     * @param maxFileBytes 允许的最大字节数
+     * @return 校验结果
+     */
+    public static Validation validateCloak(byte[] data, int maxFileBytes) {
+        return validate(data, maxFileBytes, true);
+    }
+
+    private static Validation validate(byte[] data, int maxFileBytes, boolean cloak) {
         if (data == null || data.length == 0) {
             return Validation.invalid("文件为空");
         }
@@ -44,8 +59,9 @@ public final class CosmeticPngValidator {
 
         int width = readInt(data, 16);
         int height = readInt(data, 20);
-        if (width != 64 || (height != 32 && height != 64)) {
-            return Validation.invalid("图片尺寸必须为 64x32 或 64x64，实际为 " + width + "x" + height);
+        if (width != 64 || (cloak ? height != 32 : height != 32 && height != 64)) {
+            String expected = cloak ? "64x32" : "64x32 或 64x64";
+            return Validation.invalid("图片尺寸必须为 " + expected + "，实际为 " + width + "x" + height);
         }
         return new Validation(true, "", width, height);
     }
