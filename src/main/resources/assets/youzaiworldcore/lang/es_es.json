@@ -356,6 +356,7 @@
   "screen.youzaiworldcore.yzhud.component.inventory": "Inventario",
   "screen.youzaiworldcore.yzhud.component.armor": "Equipo",
   "screen.youzaiworldcore.yzhud.component.effects": "Efectos",
+  "screen.youzaiworldcore.yzhud.component.scoreboard": "Marcador",
   "screen.youzaiworldcore.yzhud.reset": "Restablecer",
   "screen.youzaiworldcore.yzhud.done": "Listo",
   "screen.youzaiworldcore.teleport_anchor.back": "Volver",

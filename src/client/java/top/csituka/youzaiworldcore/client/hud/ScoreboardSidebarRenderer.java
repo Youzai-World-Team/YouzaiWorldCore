@@ -15,6 +15,7 @@ import net.minecraft.world.scores.PlayerTeam;
 import net.minecraft.world.scores.Scoreboard;
 
 import top.csituka.youzaiworldcore.client.render.RoundedRect;
+import top.csituka.youzaiworldcore.client.config.YzHudComponent;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
 import java.util.ArrayList;
@@ -110,13 +111,10 @@ public final class ScoreboardSidebarRenderer {
         int contentWidth = Math.max(1, Math.min(desiredContentWidth, maxContentWidth));
         int panelWidth = contentWidth + PANEL_PADDING_X * 2;
         int panelHeight = minimumPanelHeight + entries.size() * rowHeight;
-        int panelTop = Math.max(SCREEN_MARGIN,
-                (graphics.guiHeight() - panelHeight) / 2);
-        if (panelTop + panelHeight > graphics.guiHeight() - SCREEN_MARGIN) {
-            panelTop = Math.max(SCREEN_MARGIN,
-                    graphics.guiHeight() - SCREEN_MARGIN - panelHeight);
-        }
-        int panelX = graphics.guiWidth() - SCREEN_MARGIN - panelWidth;
+        int panelX = YzHudLayout.componentLeft(
+                YzHudComponent.SCOREBOARD, graphics.guiWidth(), panelWidth);
+        int panelTop = YzHudLayout.componentTop(
+                YzHudComponent.SCOREBOARD, graphics.guiHeight(), panelHeight);
 
         int rowTextWidth = Math.max(1, contentWidth - ROW_TEXT_INSET * 2);
         int scoreColumnWidth = Math.min(maxScoreWidth,

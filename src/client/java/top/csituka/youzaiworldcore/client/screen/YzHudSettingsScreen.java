@@ -18,8 +18,8 @@ import java.util.EnumMap;
 /**
  * YZHUD 位置与透明度编辑页面。
  *
- * <p>画布按比例展示完整 GUI 视口，物品栏、装备栏和状态效果列表可分别选中并拖拽。
- * 三组位置以归一化位移保存到 {@code yzwc/client/global_settings.json} 的
+ * <p>画布按比例展示完整 GUI 视口，物品栏、装备栏、状态效果列表和记分板
+ * 可分别选中并拖拽。四组位置以归一化位移保存到 {@code yzwc/client/global_settings.json} 的
  * {@code yzhud_module} 分节。</p>
  */
 @SuppressWarnings("null")
@@ -89,10 +89,13 @@ public final class YzHudSettingsScreen extends Screen {
                 controlX, 30, controlWidth, CONTROL_HEIGHT, YzHudSettings.getOpacity()));
 
         int selectorWidth = Math.max(1, Math.min(SELECTOR_WIDTH, width - PAGE_MARGIN * 2));
+        YzHudComponent[] components = YzHudComponent.values();
+        int selectorGapWidth = SELECTOR_GAP * Math.max(0, components.length - 1);
         int selectorButtonWidth = Math.max(1,
-                (selectorWidth - SELECTOR_GAP * 2) / YzHudComponent.values().length);
-        int selectorX = (width - (selectorButtonWidth * 3 + SELECTOR_GAP * 2)) / 2;
-        for (YzHudComponent component : YzHudComponent.values()) {
+                (selectorWidth - selectorGapWidth) / components.length);
+        int selectorActualWidth = selectorButtonWidth * components.length + selectorGapWidth;
+        int selectorX = (width - selectorActualWidth) / 2;
+        for (YzHudComponent component : components) {
             int componentX = selectorX
                     + component.ordinal() * (selectorButtonWidth + SELECTOR_GAP);
             TransparentButton button = new TransparentButton(
@@ -171,6 +174,7 @@ public final class YzHudSettingsScreen extends Screen {
                 case INVENTORY -> drawInventoryPreview(graphics, panelColor, slotColor);
                 case ARMOR -> drawArmorPreview(graphics, panelColor, slotColor);
                 case EFFECTS -> drawEffectsPreview(graphics, panelColor, slotColor);
+                case SCOREBOARD -> drawScoreboardPreview(graphics, panelColor, slotColor);
             }
             graphics.pose().popMatrix();
         }
@@ -204,6 +208,21 @@ public final class YzHudSettingsScreen extends Screen {
             int rowY = 3 + row * 20;
             graphics.fill(3, rowY, 129, rowY + 18, slotColor);
             graphics.fill(6, rowY + 1, 22, rowY + 17, panelColor);
+        }
+    }
+
+    private static void drawScoreboardPreview(
+            GuiGraphicsExtractor graphics, int panelColor, int slotColor) {
+        RoundedRect.fillOrSquare(graphics, 0, 0, 180, 221, 6, panelColor);
+        RoundedRect.fillOrSquare(graphics, 2, 2, 176, 12, 4, slotColor);
+        graphics.fill(54, 7, 126, 9, panelColor);
+        graphics.fill(6, 18, 174, 19, slotColor);
+
+        for (int row = 0; row < 15; row++) {
+            int rowY = 22 + row * 13;
+            RoundedRect.fillOrSquare(graphics, 6, rowY, 168, 12, 3, slotColor);
+            graphics.fill(10, rowY + 5, 112, rowY + 7, panelColor);
+            graphics.fill(146, rowY + 5, 170, rowY + 7, panelColor);
         }
     }
 

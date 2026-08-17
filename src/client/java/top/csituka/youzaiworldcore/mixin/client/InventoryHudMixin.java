@@ -76,6 +76,9 @@ public abstract class InventoryHudMixin {
                 case INVENTORY -> InventoryHudRenderer.render(graphics, guiHeight);
                 case ARMOR -> ArmorHudRenderer.render(graphics, guiHeight);
                 case EFFECTS -> StatusEffectHudRenderer.render(graphics, guiHeight);
+                case SCOREBOARD -> {
+                    // 记分板由 ScoreboardSidebarMixin 在原版侧边栏阶段独立渲染。
+                }
             }
         } catch (Exception e) {
             DebugLogger.exception(LOG_TAG, "render" + component.name(), e);

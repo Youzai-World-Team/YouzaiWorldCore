@@ -11,7 +11,7 @@ import java.util.EnumMap;
  *
  * <p>
  * 配置存放于 {@code yzwc/client/global_settings.json} 的
- * {@code yzhud_module} 分节。三个组件分别使用 -1..1 的归一化位移，
+ * {@code yzhud_module} 分节。四个组件分别使用 -1..1 的归一化位移，
  * {@code 0} 保持组件原有默认位置，避免窗口尺寸或 GUI 缩放变化后跑出屏幕。
  * </p>
  */
@@ -80,10 +80,11 @@ public final class YzHudSettings {
         ClientGlobalSettings.save();
         DebugLogger.info(MODULE,
                 "已保存 YZHUD 设置: inventory=(%.3f, %.3f), armor=(%.3f, %.3f), "
-                        + "effects=(%.3f, %.3f), opacity=%.2f",
+                        + "effects=(%.3f, %.3f), scoreboard=(%.3f, %.3f), opacity=%.2f",
                 getPositionX(YzHudComponent.INVENTORY), getPositionY(YzHudComponent.INVENTORY),
                 getPositionX(YzHudComponent.ARMOR), getPositionY(YzHudComponent.ARMOR),
                 getPositionX(YzHudComponent.EFFECTS), getPositionY(YzHudComponent.EFFECTS),
+                getPositionX(YzHudComponent.SCOREBOARD), getPositionY(YzHudComponent.SCOREBOARD),
                 opacity);
     }
 
@@ -111,10 +112,11 @@ public final class YzHudSettings {
         opacity = section.getDouble("opacity", DEFAULT_OPACITY, 0.0D, 1.0D);
         DebugLogger.info(MODULE,
                 "已加载 YZHUD 设置: inventory=(%.3f, %.3f), armor=(%.3f, %.3f), "
-                        + "effects=(%.3f, %.3f), opacity=%.2f",
+                        + "effects=(%.3f, %.3f), scoreboard=(%.3f, %.3f), opacity=%.2f",
                 getPositionX(YzHudComponent.INVENTORY), getPositionY(YzHudComponent.INVENTORY),
                 getPositionX(YzHudComponent.ARMOR), getPositionY(YzHudComponent.ARMOR),
                 getPositionX(YzHudComponent.EFFECTS), getPositionY(YzHudComponent.EFFECTS),
+                getPositionX(YzHudComponent.SCOREBOARD), getPositionY(YzHudComponent.SCOREBOARD),
                 opacity);
     }
 

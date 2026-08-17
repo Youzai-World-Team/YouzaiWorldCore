@@ -356,6 +356,7 @@
   "screen.youzaiworldcore.yzhud.component.inventory": "Inventar",
   "screen.youzaiworldcore.yzhud.component.armor": "Ausrüstung",
   "screen.youzaiworldcore.yzhud.component.effects": "Effekte",
+  "screen.youzaiworldcore.yzhud.component.scoreboard": "Punkte",
   "screen.youzaiworldcore.yzhud.reset": "Zurücksetzen",
   "screen.youzaiworldcore.yzhud.done": "Fertig",
   "screen.youzaiworldcore.teleport_anchor.back": "Zurück",

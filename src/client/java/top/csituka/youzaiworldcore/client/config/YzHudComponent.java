@@ -6,7 +6,8 @@ package top.csituka.youzaiworldcore.client.config;
 public enum YzHudComponent {
     INVENTORY("inventory"),
     ARMOR("armor"),
-    EFFECTS("effects");
+    EFFECTS("effects"),
+    SCOREBOARD("scoreboard");
 
     private final String configPrefix;
 
