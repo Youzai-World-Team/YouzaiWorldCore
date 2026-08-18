@@ -2,15 +2,17 @@
   "type": "minecraft:crafting_shaped",
   "category": "redstone",
   "key": {
-    "S": "minecraft:stone_pressure_plate",
-    "I": "minecraft:iron_pressure_plate",
-    "R": "minecraft:redstone"
+    "!": "minecraft:bamboo_planks",
+    "@": "minecraft:redstone",
+    "#": "minecraft:string"
   },
   "pattern": [
-    "SIR"
+    "!",
+    "@",
+    "#"
   ],
   "result": {
     "id": "youzaiworldcore:mob_pressure_plate",
-    "count": 1
+    "count": 4
   }
 }
