@@ -40,6 +40,7 @@ public class ModCreativeModeTabs {
                                 output.accept(ModBlocks.TP_ANCHOR);
                                 output.accept(ModBlocks.MAGIC_TABLE);
                                 output.accept(ModBlocks.MOB_PRESSURE_PLATE);
+                                output.accept(ModBlocks.DUPLICATE_BLOCK);
                         })
                         .build();
 

@@ -6,6 +6,7 @@
     "youzaiworldcore:raw_yz_block",
     "youzaiworldcore:yz_block",
     "youzaiworldcore:fly_beacon",
-    "youzaiworldcore:decomposition_table"
+    "youzaiworldcore:decomposition_table",
+    "youzaiworldcore:duplicate_block"
   ]
 }

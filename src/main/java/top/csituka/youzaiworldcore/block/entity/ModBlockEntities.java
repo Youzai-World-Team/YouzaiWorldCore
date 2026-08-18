@@ -28,6 +28,11 @@ public class ModBlockEntities {
             FabricBlockEntityTypeBuilder.create(TeleportAnchorBlockEntity::new, ModBlocks.TP_ANCHOR).build()
     );
 
+    public static final BlockEntityType<DuplicateBlockEntity> DUPLICATE_BLOCK = register(
+            "duplicate_block",
+            FabricBlockEntityTypeBuilder.create(DuplicateBlockEntity::new, ModBlocks.DUPLICATE_BLOCK).build()
+    );
+
     private static <T extends BlockEntityType<?>> T register(String name, T blockEntityType) {
         ResourceKey<BlockEntityType<?>> key = ResourceKey.create(Registries.BLOCK_ENTITY_TYPE, Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, name));
         return Registry.register(BuiltInRegistries.BLOCK_ENTITY_TYPE, key, blockEntityType);

@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "active=false": {
+      "model": "youzaiworldcore:block/duplicate_block"
+    },
+    "active=true": {
+      "model": "youzaiworldcore:block/duplicate_block_active"
+    }
+  }
+}

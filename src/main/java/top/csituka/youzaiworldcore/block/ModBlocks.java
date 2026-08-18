@@ -136,6 +136,22 @@ public class ModBlocks {
             true
     );
 
+    /**
+     * 复制方块：创造模式工具方块。
+     * <p>
+     * 放置后记录放置者 UUID；正上方有目标方块时切换为激活态，
+     * 同玩家在 16 格内放置另一个复制方块会以最近激活方块为起点填充矩形区域。
+     */
+    public static final DuplicateBlock DUPLICATE_BLOCK = register(
+            "duplicate_block",
+            DuplicateBlock::new,
+            BlockBehaviour.Properties.of()
+                    .strength(3.0f, 6.0f)
+                    .sound(SoundType.STONE)
+                    .requiresCorrectToolForDrops(),
+            true
+    );
+
     private static <T extends Block> T register(String name, Function<BlockBehaviour.Properties, T> blockFactory, BlockBehaviour.Properties settings, boolean shouldRegisterItem) {
         ResourceKey<Block> blockKey = ResourceKey.create(Registries.BLOCK, Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, name));
         T block = blockFactory.apply(settings.setId(blockKey));
