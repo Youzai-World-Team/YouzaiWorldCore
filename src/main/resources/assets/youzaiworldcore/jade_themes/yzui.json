@@ -1,0 +1,71 @@
+{
+	"version": 200,
+	"autoEnable": false,
+	"styleName": "youzaiworldcore.yzui",
+	"lightColorScheme": true,
+	"tooltipStyle": {
+		"sprite": "youzaiworldcore:yzui",
+		"padding": [
+			6,
+			6,
+			6,
+			6
+		],
+		"borderWidth": 1,
+		"boxProgressColors": {
+			"normal": "#8A8A8A",
+			"info": "#1565C0",
+			"title": "#333333",
+			"success": "#2E7D32",
+			"warning": "#B08930",
+			"danger": "#C62828",
+			"failure": "#8B0000"
+		}
+	},
+	"nestedBoxStyle": {
+		"sprite": "youzaiworldcore:yzui_nested",
+		"padding": [
+			4,
+			4,
+			4,
+			4
+		]
+	},
+	"viewGroupStyle": {
+		"sprite": "youzaiworldcore:yzui_group",
+		"padding": [
+			2,
+			2,
+			2,
+			2
+		]
+	},
+	"text": {
+		"colors": {
+			"normal": "#505050",
+			"info": "#404040",
+			"title": "#333333",
+			"success": "#2E7D32",
+			"warning": "#B08930",
+			"danger": "#C62828",
+			"failure": "#8B0000"
+		},
+		"shadow": false,
+		"modNameStyle": {
+			"color": "#8A8A8A",
+			"italic": true
+		},
+		"itemAmountColor": "#555555"
+	},
+	"iconSlotSprite": "youzaiworldcore:yzui_slot",
+	"iconSlotInflation": 0,
+	"progressColors": {
+		"normal": "#8A8A8A",
+		"info": "#1565C0",
+		"title": "#333333",
+		"success": "#2E7D32",
+		"warning": "#B08930",
+		"danger": "#C62828",
+		"failure": "#8B0000"
+	}
+}

@@ -789,5 +789,7 @@
   "screen.youzaiworldcore.brewing.effect_preserved": "保留原有效果",
   "screen.youzaiworldcore.brewing.no_results": "找不到釀造配方",
   "screen.youzaiworldcore.brewing.no_effect": "無狀態效果",
+  "youzaiworldcore.yzui": "悠哉世界 · YZUI",
+  "jade.theme.youzaiworldcore.yzui": "悠哉世界 · YZUI",
   "youzaiworldcore.message.cosmetic.skin_conflict": "同時偵測到 skin.png 和 skin_slim.png，已優先使用 skin.png。"
 }

@@ -63,7 +63,8 @@
     "luckperms": "*",
     "advancementplaques": "*",
     "EnchantmentDescriptions": "*",
-    "sophisticatedbackpacks": "*"
+    "sophisticatedbackpacks": "*",
+    "jade": "*"
   },
   "custom": {
     "modmenu": {

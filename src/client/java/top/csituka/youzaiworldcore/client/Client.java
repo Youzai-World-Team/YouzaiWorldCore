@@ -192,6 +192,9 @@ public class Client implements ClientModInitializer {
         DebugLogger.info("Client", "注册工具信息 HUD 叠加层...");
         ToolInfoOverlay.register();
 
+        DebugLogger.info("Client", "初始化 YZUI × Jade 样式桥接（Jade 主题注入）...");
+        top.csituka.youzaiworldcore.client.jade.YzuiJadeStyleManager.initialize();
+
         DebugLogger.info("Client", "注册方块动画粒子渲染器...");
         BlockAnimationRenderer.register();
 
@@ -210,6 +213,10 @@ public class Client implements ClientModInitializer {
     }
 
     private void onClientTick(Minecraft client) {
+        // YZUI × Jade 样式桥接：维持/切换 Jade 活动主题（需在任何早退判断之前，
+        // 保证无论是否打开界面、开关状态都持续同步；Jade 未安装时零开销短路）
+        top.csituka.youzaiworldcore.client.jade.YzuiJadeStyleManager.onClientTick();
+
         // AFK 心跳：需在 GUI 打开早退之前发送（任何界面状态下都要维持心跳）
         top.csituka.youzaiworldcore.client.afk.AfkInputTracker.onClientTick(client);
 

@@ -789,5 +789,7 @@
   "screen.youzaiworldcore.brewing.effect_preserved": "Сохраняет исходный эффект",
   "screen.youzaiworldcore.brewing.no_results": "Рецепты зелий не найдены",
   "screen.youzaiworldcore.brewing.no_effect": "Нет эффекта",
+  "youzaiworldcore.yzui": "Youzai World · YZUI",
+  "jade.theme.youzaiworldcore.yzui": "Youzai World · YZUI",
   "youzaiworldcore.message.cosmetic.skin_conflict": "Одновременно обнаружены skin.png и skin_slim.png. Приоритет отдан skin.png."
 }

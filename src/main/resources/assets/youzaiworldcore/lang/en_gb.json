@@ -789,5 +789,7 @@
   "screen.youzaiworldcore.brewing.effect_preserved": "Keeps the original effect",
   "screen.youzaiworldcore.brewing.no_results": "No brewing recipes found",
   "screen.youzaiworldcore.brewing.no_effect": "No status effect",
+  "youzaiworldcore.yzui": "Youzai World · YZUI",
+  "jade.theme.youzaiworldcore.yzui": "Youzai World · YZUI",
   "youzaiworldcore.message.cosmetic.skin_conflict": "Both skin.png and skin_slim.png were detected. skin.png will be used with priority."
 }

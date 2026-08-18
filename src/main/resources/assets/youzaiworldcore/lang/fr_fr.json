@@ -789,5 +789,7 @@
   "screen.youzaiworldcore.brewing.effect_preserved": "Conserve l'effet d'origine",
   "screen.youzaiworldcore.brewing.no_results": "Aucune recette d'alchimie trouvée",
   "screen.youzaiworldcore.brewing.no_effect": "Aucun effet d'état",
+  "youzaiworldcore.yzui": "Youzai World · YZUI",
+  "jade.theme.youzaiworldcore.yzui": "Youzai World · YZUI",
   "youzaiworldcore.message.cosmetic.skin_conflict": "skin.png et skin_slim.png ont été détectés simultanément. skin.png sera utilisé en priorité."
 }

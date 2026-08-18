@@ -103,6 +103,11 @@ dependencies {
     // 文档写的是 modImplementation，但 Loom 1.16.3 已移除 mod* 配置（26.x 起不再需要重映射），
     // 故与本文件其它 mod 依赖一致用 implementation。
     implementation "com.geckolib:geckolib-fabric-${project.minecraft_version}:${project.geckolib_version}"
+
+    // Jade（可选集成：仅用于向 Jade 注入 YZUI 主题，compileOnly 不打包、不强制依赖；
+    // 运行时玩家需自行安装 Jade，未安装时 YzuiJadeStyleManager 短路跳过。
+    // 若该版本号在 Modrinth Maven 解析失败，可用版本 ID 替代：maven.modrinth:jade:ue8CO97w）
+    compileOnly "maven.modrinth:jade:26.2.11+fabric"
 }
 
 processResources {
