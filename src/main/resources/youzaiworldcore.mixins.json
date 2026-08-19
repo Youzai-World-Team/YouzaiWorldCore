@@ -48,7 +48,8 @@
     "ChestBlockEntityCopperTitleMixin",
     "ShulkerBoxBlockEntityNameMixin",
     "sign.SignBlockEntityMixin",
-    "sign.InkSacItemMixin"
+    "sign.InkSacItemMixin",
+    "RedStoneWireBlockMixin"
   ],
   "injectors": {
     "defaultRequire": 1

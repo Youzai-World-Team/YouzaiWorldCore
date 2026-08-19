@@ -152,6 +152,27 @@ public class ModBlocks {
             true
     );
 
+    /**
+     * 非门红石中继器（NOT Gate Redstone Repeater）：
+     * 一个纯垂直（输入下、输出上）的红石逻辑元件。
+     * <p>
+     * 物理特性沿用原版红石中继器族：硬度 3.0、爆炸抗性 6.0、石头音效，
+     * 需要用稿子才能无损拆除。
+     * <p>
+     * 逻辑由 {@link NotGateRedstoneRepeaterBlock} 自身的覆写处理，无 BlockEntity、无 GUI。
+     *
+     * @see NotGateRedstoneRepeaterBlock
+     */
+    public static final NotGateRedstoneRepeaterBlock NOT_GATE_REDSTONE_REPEATER = register(
+            "not_gate_redstone_repeater",
+            NotGateRedstoneRepeaterBlock::new,
+            BlockBehaviour.Properties.of()
+                    .strength(3.0f, 6.0f)
+                    .sound(SoundType.STONE)
+                    .requiresCorrectToolForDrops(),
+            true
+    );
+
     // ===== 大字牌系列 =====
     //
     // 与原版墙上告示牌同为 2 像素厚的薄板，但铺满整个侧面（16×16×2），

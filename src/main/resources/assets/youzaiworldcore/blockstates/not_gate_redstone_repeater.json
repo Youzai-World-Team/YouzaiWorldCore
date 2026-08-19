@@ -1,0 +1,34 @@
+{
+  "variants": {
+    "facing=east,powered=false": {
+      "model": "youzaiworldcore:block/not_gate_redstone_repeater",
+      "y": 270
+    },
+    "facing=east,powered=true": {
+      "model": "youzaiworldcore:block/not_gate_redstone_repeater_active",
+      "y": 270
+    },
+    "facing=north,powered=false": {
+      "model": "youzaiworldcore:block/not_gate_redstone_repeater",
+      "y": 180
+    },
+    "facing=north,powered=true": {
+      "model": "youzaiworldcore:block/not_gate_redstone_repeater_active",
+      "y": 180
+    },
+    "facing=south,powered=false": {
+      "model": "youzaiworldcore:block/not_gate_redstone_repeater"
+    },
+    "facing=south,powered=true": {
+      "model": "youzaiworldcore:block/not_gate_redstone_repeater_active"
+    },
+    "facing=west,powered=false": {
+      "model": "youzaiworldcore:block/not_gate_redstone_repeater",
+      "y": 90
+    },
+    "facing=west,powered=true": {
+      "model": "youzaiworldcore:block/not_gate_redstone_repeater_active",
+      "y": 90
+    }
+  }
+}

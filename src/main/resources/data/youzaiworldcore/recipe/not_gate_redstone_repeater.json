@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "redstone",
+  "key": {
+    "R": "minecraft:redstone",
+    "T": "minecraft:redstone_torch"
+  },
+  "pattern": [
+    " R ",
+    "RTR",
+    " R "
+  ],
+  "result": {
+    "id": "youzaiworldcore:not_gate_redstone_repeater",
+    "count": 1
+  }
+}
