@@ -27,13 +27,9 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
  * 牌板本身是普通方块模型（可被区块网格烘焙），不在这里画，
  * 因此本渲染器每个字牌每帧只提交一次文本绘制，开销极低。
  * <p>
- * <b>排版规则</b>：文字被等比缩放后放进牌面正中的 14×14 像素框内
- * （方块面为 16×16 像素，四周各留 1 像素边距）：
- * <ul>
- *   <li>1 个中文 / 中文标点：原始尺寸 8×8 → 放大 1.75 倍，正好铺满 14×14；</li>
- *   <li>2 个英文 / 数字：受宽度约束，铺满 14 像素宽后按比例定高，不做拉伸变形；</li>
- *   <li>表情符号：字形本身比普通文字高（12 像素），同样按「等比塞进 14×14」处理。</li>
- * </ul>
+ * <b>排版规则</b>：文字根据当前字体烘焙后的实际字形边界等比缩放，放进牌面正中的
+ * 14×14 像素框内（方块面为 16×16 像素，四周各留 1 像素边距）；切换原版字体、
+ * MCsans 或包含表情符号的字形时，宽高都不会超过该上限。
  * <b>颜色与发光</b>完全对齐原版告示牌：不发光时用染色的 40% 暗色并吃方块光照；
  * 发光时用染色原色 + 满亮度，近距离额外描一圈暗色边。
  *
@@ -45,9 +41,6 @@ public class LargeSignBlockEntityRenderer
 
     /** 牌面可用的文字边长（方块像素）。 */
     private static final float TEXT_BOX_SIZE = 14.0f;
-
-    /** 原版默认字体的字形盒高度（行高 9 中去掉 1 像素行间距）。 */
-    private static final int GLYPH_HEIGHT = 8;
 
     /** 方块像素 → 方块局部坐标的换算：1 像素 = 1/16 格。 */
     private static final float PIXEL = 1.0f / 16.0f;
@@ -115,14 +108,30 @@ public class LargeSignBlockEntityRenderer
         }
 
         // ── 排版：等比塞进 14×14 像素框并居中 ──
-        // font.width 返回的是「步进宽度」，每个字形都含 1 像素字间距，
-        // 末尾那 1 像素不属于可见字形，量尺寸时要去掉。
-        float visualWidth = Math.max(1.0f, font.width(state.text) - 1.0f);
-        float fit = Math.min(TEXT_BOX_SIZE / visualWidth, TEXT_BOX_SIZE / GLYPH_HEIGHT);
+        // 使用字体烘焙后的实际字形边界计算，覆盖不同字体资源包、表情符号
+        // 和字形自身超出标准行高的情况。空白字形没有边界时回退到步进宽度 / 行高。
+        var textBounds = font.prepareText(state.text, 0.0f, 0.0f,
+                0xFFFFFFFF, false, false, 0).bounds();
+        float textWidth;
+        float textHeight;
+        float textLeft;
+        float textTop;
+        if (textBounds == null) {
+            textWidth = Math.max(1.0f, font.width(state.text));
+            textHeight = Math.max(1.0f, font.lineHeight);
+            textLeft = 0.0f;
+            textTop = 0.0f;
+        } else {
+            textWidth = Math.max(1.0f, textBounds.width());
+            textHeight = Math.max(1.0f, textBounds.height());
+            textLeft = textBounds.left();
+            textTop = textBounds.top();
+        }
+        float fit = Math.min(TEXT_BOX_SIZE / textWidth, TEXT_BOX_SIZE / textHeight);
 
         state.scale = fit * PIXEL;
-        state.offsetX = -visualWidth / 2.0f;
-        state.offsetY = -GLYPH_HEIGHT / 2.0f;
+        state.offsetX = -(textLeft + textWidth / 2.0f);
+        state.offsetY = -(textTop + textHeight / 2.0f);
     }
 
     @Override
