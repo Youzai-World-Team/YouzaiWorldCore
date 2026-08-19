@@ -4,6 +4,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.font.TextRenderable;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
@@ -109,9 +110,10 @@ public class LargeSignBlockEntityRenderer
 
         // ── 排版：等比塞进 14×14 像素框并居中 ──
         // 使用字体烘焙后的实际字形边界计算，覆盖不同字体资源包、表情符号
-        // 和字形自身超出标准行高的情况。空白字形没有边界时回退到步进宽度 / 行高。
-        var textBounds = font.prepareText(state.text, 0.0f, 0.0f,
-                0xFFFFFFFF, false, false, 0).bounds();
+        // 和字形自身超出标准行高的情况。不能使用 PreparedText.bounds()，
+        // 它会把边界取整，缩放后会造成上下或左右偏半像素。
+        TextBounds textBounds = measureTextBounds(font.prepareText(state.text, 0.0f, 0.0f,
+                0xFFFFFFFF, false, false, 0));
         float textWidth;
         float textHeight;
         float textLeft;
@@ -122,8 +124,8 @@ public class LargeSignBlockEntityRenderer
             textLeft = 0.0f;
             textTop = 0.0f;
         } else {
-            textWidth = Math.max(1.0f, textBounds.width());
-            textHeight = Math.max(1.0f, textBounds.height());
+            textWidth = Math.max(1.0f, textBounds.right() - textBounds.left());
+            textHeight = Math.max(1.0f, textBounds.bottom() - textBounds.top());
             textLeft = textBounds.left();
             textTop = textBounds.top();
         }
@@ -132,6 +134,35 @@ public class LargeSignBlockEntityRenderer
         state.scale = fit * PIXEL;
         state.offsetX = -(textLeft + textWidth / 2.0f);
         state.offsetY = -(textTop + textHeight / 2.0f);
+    }
+
+    /**
+     * 读取已烘焙文本中每个字形的浮点边界，用于精确居中和尺寸限制。
+     *
+     * @param preparedText 原版已完成字形布局的文本
+     * @return 所有可绘制字形的外接矩形；文本没有可绘制字形时返回 null
+     */
+    private static TextBounds measureTextBounds(Font.PreparedText preparedText) {
+        float[] bounds = {
+                Float.POSITIVE_INFINITY,
+                Float.POSITIVE_INFINITY,
+                Float.NEGATIVE_INFINITY,
+                Float.NEGATIVE_INFINITY
+        };
+
+        preparedText.visit(new Font.GlyphVisitor() {
+            @Override
+            public void acceptGlyph(TextRenderable.Styled glyph) {
+                bounds[0] = Math.min(bounds[0], glyph.left());
+                bounds[1] = Math.min(bounds[1], glyph.top());
+                bounds[2] = Math.max(bounds[2], glyph.right());
+                bounds[3] = Math.max(bounds[3], glyph.bottom());
+            }
+        });
+
+        return Float.isInfinite(bounds[0])
+                ? null
+                : new TextBounds(bounds[0], bounds[1], bounds[2], bounds[3]);
     }
 
     @Override
@@ -210,5 +241,9 @@ public class LargeSignBlockEntityRenderer
         Vec3 signCenter = Vec3.atCenterOf(entity.getBlockPos());
         Vec3 reference = camera != null ? camera.position() : cameraPos;
         return reference.distanceToSqr(signCenter) < OUTLINE_RENDER_DISTANCE_SQR;
+    }
+
+    /** 已烘焙字形在文本空间中的浮点外接矩形。 */
+    private record TextBounds(float left, float top, float right, float bottom) {
     }
 }
