@@ -4,6 +4,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.font.EmptyArea;
 import net.minecraft.client.gui.font.TextRenderable;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
@@ -20,6 +21,7 @@ import net.minecraft.world.phys.Vec3;
 
 import top.csituka.youzaiworldcore.block.LargeSignBlock;
 import top.csituka.youzaiworldcore.block.entity.LargeSignBlockEntity;
+import top.csituka.youzaiworldcore.client.config.ClientExternalSettings;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
 /**
@@ -28,11 +30,11 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
  * 牌板本身是普通方块模型（可被区块网格烘焙），不在这里画，
  * 因此本渲染器每个字牌每帧只提交一次文本绘制，开销极低。
  * <p>
- * <b>排版规则</b>：文字根据当前字体烘焙后的实际字形边界等比缩放，放进牌面正中的
+ * <b>排版规则</b>：文字根据当前字体烘焙后的实际内容边界等比缩放，放进牌面正中的
  * 14×14 像素框内（方块面为 16×16 像素，四周各留 1 像素边距）；切换原版字体、
  * MCsans 或包含表情符号的字形时，宽高都不会超过该上限。
- * <b>颜色与发光</b>完全对齐原版告示牌：不发光时用染色的 40% 暗色并吃方块光照；
- * 发光时用染色原色 + 满亮度，近距离额外描一圈暗色边。
+ * <b>颜色与发光</b>：不发光时用染色的 40% 暗色并吃方块光照；发光时使用染色原色
+ * 和满亮度。原版字体沿用告示牌的近距离描边，MCsans 则关闭不兼容的八方向描边。
  *
  * @see LargeSignBlockEntity
  */
@@ -98,8 +100,14 @@ public class LargeSignBlockEntityRenderer
         state.glowing = entity.isGlowing();
         if (state.glowing) {
             int bright = color.getTextColor();
-            boolean outline = bright != DyeColor.BLACK.getTextColor() || isOutlineVisible(entity, cameraPos);
-            state.textColor = bright;
+            boolean customFont = ClientExternalSettings.isCustomFontEnabled();
+            boolean outline = !customFont
+                    && (bright != DyeColor.BLACK.getTextColor() || isOutlineVisible(entity, cameraPos));
+            // MCsans 的 12 像素位图字形不兼容原版八方向描边，会出现字形重叠。
+            // 黑色发光字失去浅色描边后改用原版描边色作为正文，避免完全看不清。
+            state.textColor = customFont && bright == DyeColor.BLACK.getTextColor()
+                    ? GLOWING_BLACK_TEXT_COLOR
+                    : bright;
             state.outlineColor = outline ? darkColor : 0;
             state.textLightCoords = LightCoordsUtil.FULL_BRIGHT;
         } else {
@@ -109,11 +117,11 @@ public class LargeSignBlockEntityRenderer
         }
 
         // ── 排版：等比塞进 14×14 像素框并居中 ──
-        // 使用字体烘焙后的实际字形边界计算，覆盖不同字体资源包、表情符号
-        // 和字形自身超出标准行高的情况。不能使用 PreparedText.bounds()，
+        // 使用字体烘焙后的实际内容边界计算，覆盖不同字体资源包、表情符号、
+        // 空格和字形自身超出标准行高的情况。不能使用 PreparedText.bounds()，
         // 它会把边界取整，缩放后会造成上下或左右偏半像素。
         TextBounds textBounds = measureTextBounds(font.prepareText(state.text, 0.0f, 0.0f,
-                0xFFFFFFFF, false, false, 0));
+                0xFFFFFFFF, false, true, 0));
         float textWidth;
         float textHeight;
         float textLeft;
@@ -129,7 +137,10 @@ public class LargeSignBlockEntityRenderer
             textLeft = textBounds.left();
             textTop = textBounds.top();
         }
-        float fit = Math.min(TEXT_BOX_SIZE / textWidth, TEXT_BOX_SIZE / textHeight);
+        // 空格在 MCsans 中比普通半角字符窄。字号计算时用同一文本中的可见半角字符
+        // 替代空格占位，使 "a " 与 "aa" 使用相同的宽度约束；实际绘制仍保留空格。
+        float sizingWidth = Math.max(textWidth, font.width(expandSpacesForSizing(rawText)));
+        float fit = Math.min(TEXT_BOX_SIZE / sizingWidth, TEXT_BOX_SIZE / textHeight);
 
         state.scale = fit * PIXEL;
         state.offsetX = -(textLeft + textWidth / 2.0f);
@@ -137,10 +148,10 @@ public class LargeSignBlockEntityRenderer
     }
 
     /**
-     * 读取已烘焙文本中每个字形的浮点边界，用于精确居中和尺寸限制。
+     * 读取已烘焙文本中字形与空白区域的浮点边界，用于精确居中和尺寸限制。
      *
      * @param preparedText 原版已完成字形布局的文本
-     * @return 所有可绘制字形的外接矩形；文本没有可绘制字形时返回 null
+     * @return 所有文本内容的外接矩形；文本没有任何内容时返回 null
      */
     private static TextBounds measureTextBounds(Font.PreparedText preparedText) {
         float[] bounds = {
@@ -153,16 +164,49 @@ public class LargeSignBlockEntityRenderer
         preparedText.visit(new Font.GlyphVisitor() {
             @Override
             public void acceptGlyph(TextRenderable.Styled glyph) {
-                bounds[0] = Math.min(bounds[0], glyph.left());
-                bounds[1] = Math.min(bounds[1], glyph.top());
-                bounds[2] = Math.max(bounds[2], glyph.right());
-                bounds[3] = Math.max(bounds[3], glyph.bottom());
+                includeBounds(bounds, glyph.left(), glyph.top(), glyph.right(), glyph.bottom());
+            }
+
+            @Override
+            public void acceptEmptyArea(EmptyArea area) {
+                includeBounds(bounds,
+                        area.activeLeft(), area.activeTop(), area.activeRight(), area.activeBottom());
             }
         });
 
         return Float.isInfinite(bounds[0])
                 ? null
                 : new TextBounds(bounds[0], bounds[1], bounds[2], bounds[3]);
+    }
+
+    /** 把一块文本区域合并进当前浮点外接矩形。 */
+    private static void includeBounds(float[] bounds, float left, float top, float right, float bottom) {
+        bounds[0] = Math.min(bounds[0], left);
+        bounds[1] = Math.min(bounds[1], top);
+        bounds[2] = Math.max(bounds[2], right);
+        bounds[3] = Math.max(bounds[3], bottom);
+    }
+
+    /**
+     * 为字号计算扩展半角空格的占位宽度。
+     * <p>
+     * 优先复用文本中已有的 ASCII 可见字符；文本全为空格时使用数字 {@code 0}。
+     * 该字符串只参与宽度测量，不会改变字牌实际显示内容。
+     */
+    private static String expandSpacesForSizing(String text) {
+        if (text.indexOf(' ') < 0) {
+            return text;
+        }
+
+        char replacement = '0';
+        for (int i = 0; i < text.length(); i++) {
+            char value = text.charAt(i);
+            if (value >= 0x21 && value <= 0x7E) {
+                replacement = value;
+                break;
+            }
+        }
+        return text.replace(' ', replacement);
     }
 
     @Override
@@ -243,7 +287,7 @@ public class LargeSignBlockEntityRenderer
         return reference.distanceToSqr(signCenter) < OUTLINE_RENDER_DISTANCE_SQR;
     }
 
-    /** 已烘焙字形在文本空间中的浮点外接矩形。 */
+    /** 已布局文本内容在文本空间中的浮点外接矩形。 */
     private record TextBounds(float left, float top, float right, float bottom) {
     }
 }
