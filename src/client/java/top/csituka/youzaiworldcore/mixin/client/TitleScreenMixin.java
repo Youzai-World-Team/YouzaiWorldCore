@@ -190,6 +190,14 @@ public class TitleScreenMixin {
                             new top.csituka.youzaiworldcore.client.screen.ForcedUpdateScreen());
                     return;
                 }
+                // 开发版（版本号含 indev）+ Player<数字> 账号：阻止进入服务器，显示弹窗
+                if (top.csituka.youzaiworldcore.client.screen.JoinBlockedScreen.isBlocked()) {
+                    DebugLogger.info("TitleScreenMixin",
+                            "开发版 + Player数字账号命中限制，阻止加入服务器并显示弹窗");
+                    Minecraft.getInstance().gui.setScreen(
+                            new top.csituka.youzaiworldcore.client.screen.JoinBlockedScreen());
+                    return;
+                }
                 ServerData serverData = new ServerData("Youzai World", "play.mcyzw.top", ServerData.Type.OTHER);
                 ServerAddress address = ServerAddress.parseString("play.mcyzw.top");
                 ConnectScreen.startConnecting(screen, minecraft, address, serverData, false, null);
