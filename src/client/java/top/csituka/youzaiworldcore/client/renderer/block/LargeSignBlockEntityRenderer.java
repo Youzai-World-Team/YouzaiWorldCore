@@ -136,12 +136,14 @@ public class LargeSignBlockEntityRenderer
 
         matrices.pushPose();
 
-        // 1) 移到牌面正中，并沿法线往外抬一点点
-        float out = FACE_OFFSET + TEXT_LIFT;
+        // 1) 牌板位于朝向的反方向（靠着支撑方块），先移到可见牌面，
+        //    再沿牌面朝向往外抬一点点，避免与模型共面导致 Z-fighting。
         matrices.translate(
-                0.5f + state.facing.getStepX() * out,
+                0.5f - state.facing.getStepX() * FACE_OFFSET
+                        + state.facing.getStepX() * TEXT_LIFT,
                 0.5f,
-                0.5f + state.facing.getStepZ() * out);
+                0.5f - state.facing.getStepZ() * FACE_OFFSET
+                        + state.facing.getStepZ() * TEXT_LIFT);
 
         // 2) 绕 Y 轴转到该朝向。取负是因为文本空间的 +X 要落在「读牌人的右手边」，
         //    而 Direction.toYRot() 描述的是朝向本身的偏航角，两者旋向相反。
