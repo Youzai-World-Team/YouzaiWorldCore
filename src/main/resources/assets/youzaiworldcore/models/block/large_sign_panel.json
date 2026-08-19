@@ -1,0 +1,21 @@
+{
+  "__comment": "大字牌牌板（放置态）：16x16、厚 2 像素，贴在支撑方块一侧，可见牌面朝北。四个朝向由 blockstate 绕 Y 轴旋转得到。",
+  "parent": "minecraft:block/block",
+  "textures": {
+    "particle": "#all"
+  },
+  "elements": [
+    {
+      "from": [0, 0, 14],
+      "to": [16, 16, 16],
+      "faces": {
+        "north": { "uv": [0, 0, 16, 16], "texture": "#all" },
+        "south": { "uv": [0, 0, 16, 16], "texture": "#all", "cullface": "south" },
+        "up":    { "uv": [0, 14, 16, 16], "texture": "#all" },
+        "down":  { "uv": [0, 14, 16, 16], "texture": "#all" },
+        "west":  { "uv": [14, 0, 16, 16], "texture": "#all" },
+        "east":  { "uv": [0, 0, 2, 16], "texture": "#all" }
+      }
+    }
+  ]
+}

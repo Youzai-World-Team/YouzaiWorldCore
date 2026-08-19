@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "group": "large_sign",
+  "key": {
+    "#": "minecraft:diamond"
+  },
+  "pattern": [
+    "##",
+    "##"
+  ],
+  "result": {
+    "id": "youzaiworldcore:diamond_block_large_sign",
+    "count": 1
+  }
+}

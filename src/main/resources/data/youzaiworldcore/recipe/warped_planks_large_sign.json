@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "group": "large_sign",
+  "key": {
+    "#": "minecraft:warped_planks"
+  },
+  "pattern": [
+    "##",
+    "##"
+  ],
+  "result": {
+    "id": "youzaiworldcore:warped_planks_large_sign",
+    "count": 1
+  }
+}

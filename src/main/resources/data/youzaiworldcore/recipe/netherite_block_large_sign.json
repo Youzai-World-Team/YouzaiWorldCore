@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "group": "large_sign",
+  "key": {
+    "#": "minecraft:netherite_ingot"
+  },
+  "pattern": [
+    "##",
+    "##"
+  ],
+  "result": {
+    "id": "youzaiworldcore:netherite_block_large_sign",
+    "count": 1
+  }
+}

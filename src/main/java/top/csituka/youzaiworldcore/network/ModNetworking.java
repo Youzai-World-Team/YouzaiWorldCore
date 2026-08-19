@@ -12,6 +12,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import top.csituka.youzaiworldcore.block.TeleportAnchorBlock;
 import top.csituka.youzaiworldcore.block.entity.FlyBeaconBlockEntity;
+import top.csituka.youzaiworldcore.block.entity.LargeSignBlockEntity;
 import top.csituka.youzaiworldcore.block.entity.TeleportAnchorBlockEntity;
 import top.csituka.youzaiworldcore.data.TeleportAnchorManager;
 import top.csituka.youzaiworldcore.data.TeleportAnchorData;
@@ -29,6 +30,7 @@ import top.csituka.youzaiworldcore.skill.AttributeManager;
 import top.csituka.youzaiworldcore.respawn.InPlaceRespawnManager;
 import top.csituka.youzaiworldcore.cosmetic.CosmeticManager;
 import top.csituka.youzaiworldcore.util.DebugLogger;
+import top.csituka.youzaiworldcore.util.LargeSignTextRules;
 import eu.pb4.trinkets.api.TrinketsApi;
 import eu.pb4.trinkets.api.TrinketAttachment;
 import eu.pb4.trinkets.api.TrinketInventory;
@@ -72,6 +74,12 @@ public class ModNetworking {
         DebugLogger.info("ModNetworking", "Registered clientbound packet: TeleportAnchorListPayload");
         PayloadTypeRegistry.clientboundPlay().register(TeleportAnchorOpenNamePayload.TYPE, TeleportAnchorOpenNamePayload.STREAM_CODEC);
         DebugLogger.info("ModNetworking", "Registered clientbound packet: TeleportAnchorOpenNamePayload");
+
+        // ===== 大字牌编辑界面数据包 =====
+        PayloadTypeRegistry.clientboundPlay().register(LargeSignOpenEditPayload.TYPE, LargeSignOpenEditPayload.STREAM_CODEC);
+        DebugLogger.info("ModNetworking", "Registered clientbound packet: LargeSignOpenEditPayload");
+        PayloadTypeRegistry.serverboundPlay().register(LargeSignSetTextPayload.TYPE, LargeSignSetTextPayload.STREAM_CODEC);
+        DebugLogger.info("ModNetworking", "Registered serverbound packet: LargeSignSetTextPayload");
         PayloadTypeRegistry.clientboundPlay().register(TeleportStoneInterruptPayload.TYPE, TeleportStoneInterruptPayload.STREAM_CODEC);
         DebugLogger.info("ModNetworking", "Registered clientbound packet: TeleportStoneInterruptPayload");
         PayloadTypeRegistry.clientboundPlay().register(LevelExpSyncPayload.ID, LevelExpSyncPayload.STREAM_CODEC);
@@ -389,6 +397,45 @@ public class ModNetworking {
                     manager.removePointByPos((net.minecraft.server.level.ServerPlayer) player, payload.pos(), payload.dimension());
                 });
             }
+        });
+
+        // ===== 大字牌文本提交处理器 =====
+        // 客户端只能「请求」写入，是否放行完全由这里判定：
+        // 方块仍是大字牌 → 未涂蜡 → 该玩家确实是本次被授权的编辑者（含 8 格距离校验）
+        // → 文本符合 LargeSignTextRules。任一条不满足即静默丢弃。
+        ServerPlayNetworking.registerGlobalReceiver(LargeSignSetTextPayload.TYPE, (payload, context) -> {
+            var player = context.player();
+            var server = player.level().getServer();
+            if (server == null) {
+                return;
+            }
+            server.execute(() -> {
+                BlockPos pos = payload.pos();
+                String text = payload.text();
+
+                if (!(player.level().getBlockEntity(pos) instanceof LargeSignBlockEntity sign)) {
+                    DebugLogger.branch("ModNetworking", "大字牌文本提交：目标不是大字牌", false);
+                    return;
+                }
+                if (!player.mayBuild() || !sign.mayEdit(player)) {
+                    DebugLogger.warn("ModNetworking",
+                            "拒绝大字牌文本提交（无权限 / 非授权编辑者 / 距离过远）：player=%s, pos=%s",
+                            player.getName().getString(), pos.toShortString());
+                    return;
+                }
+                if (!LargeSignTextRules.isValid(text)) {
+                    DebugLogger.warn("ModNetworking",
+                            "拒绝大字牌文本提交（内容不合法）：player=%s, pos=%s, text=%s",
+                            player.getName().getString(), pos.toShortString(), text);
+                    return;
+                }
+
+                sign.setText(text);
+                // 一次授权只用一次，提交后立即失效
+                sign.setAllowedPlayerEditor(null);
+                DebugLogger.info("ModNetworking", "玩家 %s 写入大字牌文本：pos=%s, text=%s",
+                        player.getName().getString(), pos.toShortString(), text);
+            });
         });
 
         // ===== 传送锚点重命名处理器 =====

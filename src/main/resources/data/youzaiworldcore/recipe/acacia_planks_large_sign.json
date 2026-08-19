@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "group": "large_sign",
+  "key": {
+    "#": "minecraft:acacia_planks"
+  },
+  "pattern": [
+    "##",
+    "##"
+  ],
+  "result": {
+    "id": "youzaiworldcore:acacia_planks_large_sign",
+    "count": 1
+  }
+}

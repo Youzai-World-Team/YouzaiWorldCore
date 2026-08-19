@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "group": "large_sign",
+  "key": {
+    "#": "minecraft:dark_oak_planks"
+  },
+  "pattern": [
+    "##",
+    "##"
+  ],
+  "result": {
+    "id": "youzaiworldcore:dark_oak_planks_large_sign",
+    "count": 1
+  }
+}

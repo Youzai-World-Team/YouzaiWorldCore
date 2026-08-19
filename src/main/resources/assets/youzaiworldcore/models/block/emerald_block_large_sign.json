@@ -1,0 +1,6 @@
+{
+  "parent": "youzaiworldcore:block/large_sign_panel",
+  "textures": {
+    "all": "youzaiworldcore:block/emerald_block_large_sign"
+  }
+}

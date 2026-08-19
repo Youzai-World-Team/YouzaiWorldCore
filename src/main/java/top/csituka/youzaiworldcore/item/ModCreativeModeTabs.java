@@ -41,6 +41,10 @@ public class ModCreativeModeTabs {
                                 output.accept(ModBlocks.MAGIC_TABLE);
                                 output.accept(ModBlocks.MOB_PRESSURE_PLATE);
                                 output.accept(ModBlocks.DUPLICATE_BLOCK);
+                                // 大字牌系列（12 木质 + 7 矿物），顺序见 ModBlocks.LARGE_SIGNS
+                                for (var largeSign : ModBlocks.LARGE_SIGNS) {
+                                        output.accept(largeSign);
+                                }
                         })
                         .build();
 

@@ -1,0 +1,21 @@
+{
+  "__comment": "大字牌牌板（物品栏 / 手持态）：与放置态同为 16x16x2，但挪到方块正中，避免图标偏向一角。",
+  "parent": "minecraft:block/block",
+  "textures": {
+    "particle": "#all"
+  },
+  "elements": [
+    {
+      "from": [0, 0, 7],
+      "to": [16, 16, 9],
+      "faces": {
+        "north": { "uv": [0, 0, 16, 16], "texture": "#all" },
+        "south": { "uv": [0, 0, 16, 16], "texture": "#all" },
+        "up":    { "uv": [0, 7, 16, 9], "texture": "#all" },
+        "down":  { "uv": [0, 7, 16, 9], "texture": "#all" },
+        "west":  { "uv": [7, 0, 9, 16], "texture": "#all" },
+        "east":  { "uv": [0, 0, 2, 16], "texture": "#all" }
+      }
+    }
+  ]
+}

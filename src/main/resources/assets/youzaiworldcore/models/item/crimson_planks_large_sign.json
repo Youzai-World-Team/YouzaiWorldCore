@@ -1,0 +1,6 @@
+{
+  "parent": "youzaiworldcore:block/large_sign_panel_inventory",
+  "textures": {
+    "all": "youzaiworldcore:block/crimson_planks_large_sign"
+  }
+}

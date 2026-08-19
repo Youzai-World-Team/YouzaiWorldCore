@@ -7,6 +7,13 @@
     "youzaiworldcore:yz_block",
     "youzaiworldcore:fly_beacon",
     "youzaiworldcore:decomposition_table",
-    "youzaiworldcore:duplicate_block"
+    "youzaiworldcore:duplicate_block",
+    "youzaiworldcore:copper_block_large_sign",
+    "youzaiworldcore:iron_block_large_sign",
+    "youzaiworldcore:gold_block_large_sign",
+    "youzaiworldcore:diamond_block_large_sign",
+    "youzaiworldcore:emerald_block_large_sign",
+    "youzaiworldcore:netherite_block_large_sign",
+    "youzaiworldcore:yz_block_large_sign"
   ]
 }

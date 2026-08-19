@@ -1,0 +1,6 @@
+{
+  "parent": "youzaiworldcore:block/large_sign_panel",
+  "textures": {
+    "all": "youzaiworldcore:block/dark_oak_planks_large_sign"
+  }
+}

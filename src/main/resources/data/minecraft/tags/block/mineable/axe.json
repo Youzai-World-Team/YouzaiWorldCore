@@ -1,0 +1,17 @@
+{
+  "replace": false,
+  "values": [
+    "youzaiworldcore:oak_planks_large_sign",
+    "youzaiworldcore:spruce_planks_large_sign",
+    "youzaiworldcore:birch_planks_large_sign",
+    "youzaiworldcore:jungle_planks_large_sign",
+    "youzaiworldcore:acacia_planks_large_sign",
+    "youzaiworldcore:dark_oak_planks_large_sign",
+    "youzaiworldcore:mangrove_planks_large_sign",
+    "youzaiworldcore:pale_oak_planks_large_sign",
+    "youzaiworldcore:cherry_planks_large_sign",
+    "youzaiworldcore:bamboo_planks_large_sign",
+    "youzaiworldcore:crimson_planks_large_sign",
+    "youzaiworldcore:warped_planks_large_sign"
+  ]
+}

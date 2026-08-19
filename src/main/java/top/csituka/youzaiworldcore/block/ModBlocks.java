@@ -152,6 +152,114 @@ public class ModBlocks {
             true
     );
 
+    // ===== 大字牌系列 =====
+    //
+    // 与原版墙上告示牌同为 2 像素厚的薄板，但铺满整个侧面（16×16×2），
+    // 右键可编辑一个大字，支持染料染色 / 荧光墨囊发光 / 蜜脾涂蜡。
+    // 全系列共用一个 LargeSignBlock 类与一个方块实体类型
+    // （见 ModBlockEntities.LARGE_SIGN），彼此只有材质与音效不同。
+    //
+    // 新增变体时：在此加一行 registerWoodLargeSign / registerMineralLargeSign，
+    // 再补齐 blockstates / models(block+item) / items / loot_table / recipe 各一个 JSON，
+    // 以及 10 个语言文件里的 block.youzaiworldcore.<id> 键与对应的挖掘工具 tag。
+
+    // ── 木质：12 种木板（音效沿用各自木材在原版里的 SoundType）──
+    public static final LargeSignBlock OAK_PLANKS_LARGE_SIGN = registerWoodLargeSign("oak_planks_large_sign", SoundType.WOOD, true);
+    public static final LargeSignBlock SPRUCE_PLANKS_LARGE_SIGN = registerWoodLargeSign("spruce_planks_large_sign", SoundType.WOOD, true);
+    public static final LargeSignBlock BIRCH_PLANKS_LARGE_SIGN = registerWoodLargeSign("birch_planks_large_sign", SoundType.WOOD, true);
+    public static final LargeSignBlock JUNGLE_PLANKS_LARGE_SIGN = registerWoodLargeSign("jungle_planks_large_sign", SoundType.WOOD, true);
+    public static final LargeSignBlock ACACIA_PLANKS_LARGE_SIGN = registerWoodLargeSign("acacia_planks_large_sign", SoundType.WOOD, true);
+    public static final LargeSignBlock DARK_OAK_PLANKS_LARGE_SIGN = registerWoodLargeSign("dark_oak_planks_large_sign", SoundType.WOOD, true);
+    public static final LargeSignBlock MANGROVE_PLANKS_LARGE_SIGN = registerWoodLargeSign("mangrove_planks_large_sign", SoundType.WOOD, true);
+    public static final LargeSignBlock PALE_OAK_PLANKS_LARGE_SIGN = registerWoodLargeSign("pale_oak_planks_large_sign", SoundType.WOOD, true);
+    public static final LargeSignBlock CHERRY_PLANKS_LARGE_SIGN = registerWoodLargeSign("cherry_planks_large_sign", SoundType.CHERRY_WOOD, true);
+    public static final LargeSignBlock BAMBOO_PLANKS_LARGE_SIGN = registerWoodLargeSign("bamboo_planks_large_sign", SoundType.BAMBOO_WOOD, true);
+    /** 绯红大字牌：下界木不可燃，故 ignitedByLava 传 false。 */
+    public static final LargeSignBlock CRIMSON_PLANKS_LARGE_SIGN = registerWoodLargeSign("crimson_planks_large_sign", SoundType.NETHER_WOOD, false);
+    /** 诡异大字牌：下界木不可燃，故 ignitedByLava 传 false。 */
+    public static final LargeSignBlock WARPED_PLANKS_LARGE_SIGN = registerWoodLargeSign("warped_planks_large_sign", SoundType.NETHER_WOOD, false);
+
+    // ── 矿物：7 种金属 / 宝石方块 ──
+    public static final LargeSignBlock COPPER_BLOCK_LARGE_SIGN = registerMineralLargeSign("copper_block_large_sign");
+    public static final LargeSignBlock IRON_BLOCK_LARGE_SIGN = registerMineralLargeSign("iron_block_large_sign");
+    public static final LargeSignBlock GOLD_BLOCK_LARGE_SIGN = registerMineralLargeSign("gold_block_large_sign");
+    public static final LargeSignBlock DIAMOND_BLOCK_LARGE_SIGN = registerMineralLargeSign("diamond_block_large_sign");
+    public static final LargeSignBlock EMERALD_BLOCK_LARGE_SIGN = registerMineralLargeSign("emerald_block_large_sign");
+    public static final LargeSignBlock NETHERITE_BLOCK_LARGE_SIGN = registerMineralLargeSign("netherite_block_large_sign");
+    public static final LargeSignBlock YZ_BLOCK_LARGE_SIGN = registerMineralLargeSign("yz_block_large_sign");
+
+    /**
+     * 全部大字牌，按创造物品栏展示顺序排列。
+     * <p>
+     * 供 {@code ModBlockEntities} 一次性绑定方块实体类型、
+     * 以及 {@code ModCreativeModeTabs} 批量加入物品栏使用；
+     * 新增变体后只需把它补进这个数组。
+     */
+    public static final LargeSignBlock[] LARGE_SIGNS = {
+            OAK_PLANKS_LARGE_SIGN,
+            SPRUCE_PLANKS_LARGE_SIGN,
+            BIRCH_PLANKS_LARGE_SIGN,
+            JUNGLE_PLANKS_LARGE_SIGN,
+            ACACIA_PLANKS_LARGE_SIGN,
+            DARK_OAK_PLANKS_LARGE_SIGN,
+            MANGROVE_PLANKS_LARGE_SIGN,
+            PALE_OAK_PLANKS_LARGE_SIGN,
+            CHERRY_PLANKS_LARGE_SIGN,
+            BAMBOO_PLANKS_LARGE_SIGN,
+            CRIMSON_PLANKS_LARGE_SIGN,
+            WARPED_PLANKS_LARGE_SIGN,
+            COPPER_BLOCK_LARGE_SIGN,
+            IRON_BLOCK_LARGE_SIGN,
+            GOLD_BLOCK_LARGE_SIGN,
+            DIAMOND_BLOCK_LARGE_SIGN,
+            EMERALD_BLOCK_LARGE_SIGN,
+            NETHERITE_BLOCK_LARGE_SIGN,
+            YZ_BLOCK_LARGE_SIGN,
+    };
+
+    /**
+     * 注册一块木质大字牌。
+     * <p>
+     * {@code noCollision} 与原版告示牌一致（薄板不阻挡移动），
+     * 硬度沿用原版告示牌的 1.0，方便快速拆改。
+     *
+     * @param name          方块 ID（同时也是材质名，如 {@code oak_planks_large_sign}）
+     * @param soundType     该木材在原版里的音效类型
+     * @param ignitedByLava 是否可被岩浆点燃（下界木材传 false）
+     * @return 已注册的方块
+     */
+    private static LargeSignBlock registerWoodLargeSign(String name, SoundType soundType, boolean ignitedByLava) {
+        BlockBehaviour.Properties properties = BlockBehaviour.Properties.of()
+                .strength(1.0f)
+                .sound(soundType)
+                .noCollision();
+        if (ignitedByLava) {
+            properties = properties.ignitedByLava();
+        }
+        return register(name, LargeSignBlock::new, properties, true);
+    }
+
+    /**
+     * 注册一块矿物大字牌（铜 / 铁 / 金 / 钻石 / 绿宝石 / 下界合金 / 悠哉）。
+     * <p>
+     * 需要正确工具（稿子）才掉落，硬度与爆炸抗性略高于木质版本。
+     *
+     * @param name 方块 ID（同时也是材质名，如 {@code iron_block_large_sign}）
+     * @return 已注册的方块
+     */
+    private static LargeSignBlock registerMineralLargeSign(String name) {
+        return register(
+                name,
+                LargeSignBlock::new,
+                BlockBehaviour.Properties.of()
+                        .strength(3.0f, 6.0f)
+                        .sound(SoundType.METAL)
+                        .noCollision()
+                        .requiresCorrectToolForDrops(),
+                true
+        );
+    }
+
     private static <T extends Block> T register(String name, Function<BlockBehaviour.Properties, T> blockFactory, BlockBehaviour.Properties settings, boolean shouldRegisterItem) {
         ResourceKey<Block> blockKey = ResourceKey.create(Registries.BLOCK, Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, name));
         T block = blockFactory.apply(settings.setId(blockKey));

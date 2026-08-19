@@ -33,6 +33,15 @@ public class ModBlockEntities {
             FabricBlockEntityTypeBuilder.create(DuplicateBlockEntity::new, ModBlocks.DUPLICATE_BLOCK).build()
     );
 
+    /**
+     * 大字牌方块实体类型：全部 {@link ModBlocks#LARGE_SIGNS} 变体共用同一个类型，
+     * 它们的差异只在材质与音效，牌面数据结构完全一致。
+     */
+    public static final BlockEntityType<LargeSignBlockEntity> LARGE_SIGN = register(
+            "large_sign",
+            FabricBlockEntityTypeBuilder.create(LargeSignBlockEntity::new, ModBlocks.LARGE_SIGNS).build()
+    );
+
     private static <T extends BlockEntityType<?>> T register(String name, T blockEntityType) {
         ResourceKey<BlockEntityType<?>> key = ResourceKey.create(Registries.BLOCK_ENTITY_TYPE, Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, name));
         return Registry.register(BuiltInRegistries.BLOCK_ENTITY_TYPE, key, blockEntityType);

@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "youzaiworldcore:block/spruce_planks_large_sign"
+    },
+    "facing=east": {
+      "model": "youzaiworldcore:block/spruce_planks_large_sign",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "youzaiworldcore:block/spruce_planks_large_sign",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "youzaiworldcore:block/spruce_planks_large_sign",
+      "y": 270
+    }
+  }
+}

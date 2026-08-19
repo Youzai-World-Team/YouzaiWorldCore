@@ -6,6 +6,7 @@ import net.minecraft.client.gui.screens.Screen;
 import top.csituka.youzaiworldcore.client.screen.LoginScreen;
 import top.csituka.youzaiworldcore.client.screen.MenuScreen;
 import top.csituka.youzaiworldcore.client.screen.RegisterScreen;
+import top.csituka.youzaiworldcore.client.screen.block.LargeSignEditScreen;
 import top.csituka.youzaiworldcore.client.screen.block.TeleportAnchorNameScreen;
 import top.csituka.youzaiworldcore.client.screen.block.TeleportAnchorScreen;
 import top.csituka.youzaiworldcore.client.screen.element.AboutMeMenuElements;
@@ -142,6 +143,17 @@ public class ClientNetworking {
             DebugLogger.exiting("ClientNetworking", "TeleportAnchorOpenNamePayload handler");
         });
         DebugLogger.info("ClientNetworking", "Registered receiver: TeleportAnchorOpenNamePayload");
+
+        // 注册大字牌编辑界面处理器（服务端已校验未涂蜡且玩家有建造权限）
+        ClientPlayNetworking.registerGlobalReceiver(LargeSignOpenEditPayload.TYPE, (payload, context) -> {
+            DebugLogger.entering("ClientNetworking", "LargeSignOpenEditPayload handler");
+            context.client().execute(() -> {
+                context.client().setScreenAndShow(
+                        new LargeSignEditScreen(payload.pos(), payload.currentText()));
+            });
+            DebugLogger.exiting("ClientNetworking", "LargeSignOpenEditPayload handler");
+        });
+        DebugLogger.info("ClientNetworking", "Registered receiver: LargeSignOpenEditPayload");
 
         // 注册传送石蓄力打断处理器：服务端已停止使用物品，客户端同步停手，避免一直保持蓄力动作
         ClientPlayNetworking.registerGlobalReceiver(TeleportStoneInterruptPayload.TYPE, (payload, context) -> {
