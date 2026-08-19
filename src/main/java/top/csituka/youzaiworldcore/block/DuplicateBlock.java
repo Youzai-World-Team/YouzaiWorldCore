@@ -86,18 +86,19 @@ public class DuplicateBlock extends BaseEntityBlock {
             return;
         }
 
-        // 沿复制方块顶面四条边均匀布点，粒子贴着边缘，不留明显空隙。
-        final int segments = 4;
+        // 沿复制方块顶面四条边均匀布点，角点只生成一次，减少粒子实体数量。
+        final int segments = 3;
         final double y = pos.getY() + 1.015;
-        for (int i = 0; i <= segments; i++) {
+        for (int i = 0; i < segments; i++) {
             double t = i / (double) segments;
             double x = pos.getX() + 0.04 + t * 0.92;
-            double z = pos.getZ() + 0.04;
-            level.addParticle(EDGE_PARTICLE, x, y, z, 0.0, 0.008, 0.0);
-            level.addParticle(EDGE_PARTICLE, x, y, pos.getZ() + 0.96, 0.0, 0.008, 0.0);
-            level.addParticle(EDGE_PARTICLE, pos.getX() + 0.04, y, pos.getZ() + 0.04 + t * 0.92,
+            double z = pos.getZ() + 0.04 + t * 0.92;
+
+            level.addParticle(EDGE_PARTICLE, x, y, pos.getZ() + 0.04, 0.0, 0.008, 0.0);
+            level.addParticle(EDGE_PARTICLE, pos.getX() + 0.96, y, z, 0.0, 0.008, 0.0);
+            level.addParticle(EDGE_PARTICLE, pos.getX() + 0.96 - t * 0.92, y, pos.getZ() + 0.96,
                     0.0, 0.008, 0.0);
-            level.addParticle(EDGE_PARTICLE, pos.getX() + 0.96, y, pos.getZ() + 0.04 + t * 0.92,
+            level.addParticle(EDGE_PARTICLE, pos.getX() + 0.04, y, pos.getZ() + 0.96 - t * 0.92,
                     0.0, 0.008, 0.0);
         }
     }
