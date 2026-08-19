@@ -24,6 +24,7 @@ import top.csituka.youzaiworldcore.client.pickup.DrawEntriesHandler;
 import top.csituka.youzaiworldcore.block.entity.ModBlockEntities;
 import top.csituka.youzaiworldcore.client.renderer.block.FlyBeaconBlockEntityRenderer;
 import top.csituka.youzaiworldcore.client.renderer.block.TeleportAnchorBlockEntityRenderer;
+import top.csituka.youzaiworldcore.client.renderer.block.DuplicateBlockEntityRenderer;
 import top.csituka.youzaiworldcore.client.resource.ItemModelDefinitionValidator;
 import top.csituka.youzaiworldcore.client.resource.CustomFontResourcePack;
 import top.csituka.youzaiworldcore.client.screen.block.DecompositionTableScreen;
@@ -91,6 +92,8 @@ public class Client implements ClientModInitializer {
         BlockEntityRenderers.register(ModBlockEntities.FLY_BEACON, FlyBeaconBlockEntityRenderer::new);
         DebugLogger.info("Client", "注册传送锚点方块实体渲染器...");
         BlockEntityRenderers.register(ModBlockEntities.TELEPORT_ANCHOR, TeleportAnchorBlockEntityRenderer::new);
+        DebugLogger.info("Client", "注册复制方块方块实体渲染器...");
+        BlockEntityRenderers.register(ModBlockEntities.DUPLICATE_BLOCK, DuplicateBlockEntityRenderer::new);
 
         // 猫渲染器：用 GeckoLib 模型整体接管原版 CatRenderer（正常态 idle/sit/running，对峙态 ha_qi）。
         // EntityRendererRegistry 虽被标记 @Deprecated（官方建议改用 EntityRenderers.register），

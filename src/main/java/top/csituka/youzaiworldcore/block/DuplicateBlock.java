@@ -42,7 +42,7 @@ public class DuplicateBlock extends BaseEntityBlock {
     public static final MapCodec<DuplicateBlock> CODEC = simpleCodec(DuplicateBlock::new);
 
     private static final int RANGE = 16;
-    private static final DustParticleOptions NORMAL_PARTICLE = new DustParticleOptions(0x4DA3FF, 0.85f);
+    private static final DustParticleOptions EDGE_PARTICLE = new DustParticleOptions(0xA8E6CF, 0.65f);
 
     public DuplicateBlock(BlockBehaviour.Properties properties) {
         super(properties);
@@ -81,14 +81,25 @@ public class DuplicateBlock extends BaseEntityBlock {
             return;
         }
 
-        if (random.nextFloat() > 0.35f) {
+        // 每 10 tick 切换一次粒子显示状态；关闭阶段不生成新粒子。
+        if ((level.getGameTime() / 10L) % 2L != 0L) {
             return;
         }
 
-        double x = pos.getX() + 0.5 + (random.nextDouble() - 0.5) * 0.45;
-        double y = pos.getY() + 1.03 + random.nextDouble() * 0.08;
-        double z = pos.getZ() + 0.5 + (random.nextDouble() - 0.5) * 0.45;
-        level.addParticle(NORMAL_PARTICLE, x, y, z, 0.0, 0.025, 0.0);
+        // 沿复制方块顶面四条边均匀布点，粒子贴着边缘，不留明显空隙。
+        final int segments = 4;
+        final double y = pos.getY() + 1.015;
+        for (int i = 0; i <= segments; i++) {
+            double t = i / (double) segments;
+            double x = pos.getX() + 0.04 + t * 0.92;
+            double z = pos.getZ() + 0.04;
+            level.addParticle(EDGE_PARTICLE, x, y, z, 0.0, 0.008, 0.0);
+            level.addParticle(EDGE_PARTICLE, x, y, pos.getZ() + 0.96, 0.0, 0.008, 0.0);
+            level.addParticle(EDGE_PARTICLE, pos.getX() + 0.04, y, pos.getZ() + 0.04 + t * 0.92,
+                    0.0, 0.008, 0.0);
+            level.addParticle(EDGE_PARTICLE, pos.getX() + 0.96, y, pos.getZ() + 0.04 + t * 0.92,
+                    0.0, 0.008, 0.0);
+        }
     }
 
     @Override
