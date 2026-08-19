@@ -22,6 +22,7 @@ import net.minecraft.world.phys.Vec3;
 import top.csituka.youzaiworldcore.block.LargeSignBlock;
 import top.csituka.youzaiworldcore.block.entity.LargeSignBlockEntity;
 import top.csituka.youzaiworldcore.client.config.ClientExternalSettings;
+import top.csituka.youzaiworldcore.client.renderer.sign.FlashingSignAnimation;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
 /**
@@ -114,6 +115,13 @@ public class LargeSignBlockEntityRenderer
             state.textColor = darkColor;
             state.outlineColor = 0;
             state.textLightCoords = state.lightCoords;
+        }
+
+        if (entity.isFlashing() && entity.getLevel() != null) {
+            float flashingAlpha = FlashingSignAnimation.alpha(
+                    entity.getLevel().getGameTime(), tickProgress);
+            state.textColor = FlashingSignAnimation.applyAlpha(state.textColor, flashingAlpha);
+            state.outlineColor = FlashingSignAnimation.applyAlpha(state.outlineColor, flashingAlpha);
         }
 
         // ── 排版：等比塞进 14×14 像素框并居中 ──

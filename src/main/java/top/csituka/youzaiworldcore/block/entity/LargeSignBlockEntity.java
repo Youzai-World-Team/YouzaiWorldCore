@@ -20,6 +20,7 @@ import org.jspecify.annotations.NonNull;
 
 import top.csituka.youzaiworldcore.util.DebugLogger;
 import top.csituka.youzaiworldcore.util.LargeSignTextRules;
+import top.csituka.youzaiworldcore.sign.FlashingSign;
 
 import java.util.UUID;
 
@@ -39,7 +40,7 @@ import java.util.UUID;
  * @see top.csituka.youzaiworldcore.block.LargeSignBlock
  */
 @SuppressWarnings("null")
-public class LargeSignBlockEntity extends BlockEntity {
+public class LargeSignBlockEntity extends BlockEntity implements FlashingSign {
 
     /** 允许编辑的最远距离（平方值），与原版告示牌一致（8 格）。 */
     private static final double MAX_EDIT_DISTANCE_SQR = 64.0;
@@ -50,6 +51,7 @@ public class LargeSignBlockEntity extends BlockEntity {
     private DyeColor color = DyeColor.WHITE;
     private boolean glowing;
     private boolean waxed;
+    private boolean flashing;
 
     /** 当前被允许提交文本的玩家；不持久化，随方块实体卸载而失效。 */
     @Nullable
@@ -89,6 +91,29 @@ public class LargeSignBlockEntity extends BlockEntity {
      */
     public boolean isWaxed() {
         return waxed;
+    }
+
+    /** @return 大字牌文字是否处于闪烁状态 */
+    public boolean isFlashing() {
+        return flashing;
+    }
+
+    @Override
+    public boolean youzaiworldcore$isFlashing(boolean front) {
+        return flashing;
+    }
+
+    @Override
+    public boolean youzaiworldcore$setFlashing(boolean front, boolean newFlashing) {
+        if (waxed || flashing == newFlashing) {
+            return false;
+        }
+        boolean oldFlashing = flashing;
+        flashing = newFlashing;
+        markUpdated();
+        DebugLogger.stateChange(MODULE, "largeSign@" + worldPosition.toShortString(),
+                "flashing", oldFlashing, newFlashing);
+        return true;
     }
 
     // ===== 状态变更（全部会同步到客户端） =====
@@ -209,6 +234,15 @@ public class LargeSignBlockEntity extends BlockEntity {
         return player.distanceToSqr(Vec3.atCenterOf(worldPosition)) <= MAX_EDIT_DISTANCE_SQR;
     }
 
+    /** 检查物品是否可以修改大字牌，避免覆盖另一名玩家正在编辑的牌面。 */
+    public boolean mayApply(Player player) {
+        if (waxed || player == null || !player.mayBuild()) {
+            return false;
+        }
+        return playerWhoMayEdit == null
+                || playerWhoMayEdit.equals(player.getUUID());
+    }
+
     // ===== 同步与持久化 =====
 
     /**
@@ -233,6 +267,7 @@ public class LargeSignBlockEntity extends BlockEntity {
         output.putString("Color", color.getName());
         output.putBoolean("Glowing", glowing);
         output.putBoolean("Waxed", waxed);
+        output.putBoolean("Flashing", flashing);
     }
 
     @Override
@@ -244,6 +279,7 @@ public class LargeSignBlockEntity extends BlockEntity {
         color = DyeColor.byName(input.getStringOr("Color", DyeColor.WHITE.getName()), DyeColor.WHITE);
         glowing = input.getBooleanOr("Glowing", false);
         waxed = input.getBooleanOr("Waxed", false);
+        flashing = input.getBooleanOr("Flashing", false);
         playerWhoMayEdit = null;
     }
 

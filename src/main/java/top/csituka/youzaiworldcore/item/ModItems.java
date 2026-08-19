@@ -50,6 +50,12 @@ public class ModItems {
             new Item.Properties()
     );
 
+    /** 闪烁墨染：使告示牌与大字牌文字按 20 tick 周期闪烁。 */
+    public static final Item FLASHING_INK_SAC = registerFlashingInkSac(
+            "glow_ink_sac",
+            new Item.Properties()
+    );
+
     public static final Item YZ_SHOVEL = registerShovel(
             "yz_shovel",
             YZ_TOOL_MATERIAL, 1.5F, -3.0F
@@ -185,6 +191,14 @@ public class ModItems {
     private static Item register(String name, Item.Properties settings) {
         ResourceKey<Item> itemKey = ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, name));
         Item item = new Item(settings.setId(itemKey));
+        return Registry.register(BuiltInRegistries.ITEM, itemKey, item);
+    }
+
+    private static Item registerFlashingInkSac(String name, Item.Properties settings) {
+        ResourceKey<Item> itemKey = ResourceKey.create(Registries.ITEM,
+                Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, name));
+        Item item = new FlashingInkSacItem(settings.setId(itemKey));
+        DebugLogger.info("ModItems", "注册物品 %s (FlashingInkSac)".formatted(itemKey.identifier()));
         return Registry.register(BuiltInRegistries.ITEM, itemKey, item);
     }
 

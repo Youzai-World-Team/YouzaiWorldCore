@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    " ! ",
+    "!#!",
+    " ! "
+  ],
+  "key": {
+    "!": "minecraft:glow_ink_sac",
+    "#": "minecraft:amethyst_shard"
+  },
+  "result": {
+    "id": "youzaiworldcore:glow_ink_sac",
+    "count": 1
+  }
+}

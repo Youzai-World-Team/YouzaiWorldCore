@@ -67,7 +67,9 @@
     "afk.AfkMouseHandlerMixin",
     "ExperimentalWarningSkipMixin",
     "DeathScreenMixin",
-    "PlayerInfoSkinMixin"
+    "PlayerInfoSkinMixin",
+    "sign.AbstractSignRendererMixin",
+    "sign.SignRenderStateMixin"
   ],
   "injectors": {
     "defaultRequire": 1

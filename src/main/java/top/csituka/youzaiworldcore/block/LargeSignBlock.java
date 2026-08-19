@@ -49,6 +49,7 @@ import org.jetbrains.annotations.Nullable;
 import org.jspecify.annotations.NonNull;
 
 import top.csituka.youzaiworldcore.block.entity.LargeSignBlockEntity;
+import top.csituka.youzaiworldcore.item.ModItems;
 import top.csituka.youzaiworldcore.network.LargeSignOpenEditPayload;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
@@ -259,7 +260,7 @@ public class LargeSignBlock extends BaseEntityBlock implements SimpleWaterlogged
         }
 
         Applicator applicator = Applicator.of(stack);
-        boolean canApply = applicator != null && player.mayBuild();
+        boolean canApply = applicator != null && sign.mayApply(player);
 
         if (!(level instanceof ServerLevel serverLevel)) {
             // 客户端不知道涂蜡与否也无所谓：涂蜡时同样交给 useWithoutItem 播放失败音效
@@ -299,6 +300,8 @@ public class LargeSignBlock extends BaseEntityBlock implements SimpleWaterlogged
         DYE,
         /** 荧光墨囊：文字发光。 */
         GLOW,
+        /** 闪烁墨染：让文字按 20 tick 周期闪烁。 */
+        FLASHING,
         /** 墨囊：取消发光。 */
         UNGLOW,
         /** 蜜脾：涂蜡。 */
@@ -317,6 +320,9 @@ public class LargeSignBlock extends BaseEntityBlock implements SimpleWaterlogged
             }
             if (stack.is(Items.GLOW_INK_SAC)) {
                 return GLOW;
+            }
+            if (stack.is(ModItems.FLASHING_INK_SAC)) {
+                return FLASHING;
             }
             if (stack.is(Items.INK_SAC)) {
                 return UNGLOW;
@@ -353,8 +359,17 @@ public class LargeSignBlock extends BaseEntityBlock implements SimpleWaterlogged
                     level.playSound(null, pos, SoundEvents.GLOW_INK_SAC_USE, SoundSource.BLOCKS, 1.0f, 1.0f);
                     return true;
                 }
+                case FLASHING -> {
+                    if (!sign.youzaiworldcore$setFlashing(true, true)) {
+                        return false;
+                    }
+                    level.playSound(null, pos, SoundEvents.GLOW_INK_SAC_USE, SoundSource.BLOCKS, 1.0f, 1.0f);
+                    return true;
+                }
                 case UNGLOW -> {
-                    if (!sign.setGlowing(false)) {
+                    boolean changed = sign.youzaiworldcore$setFlashing(true, false)
+                            | sign.setGlowing(false);
+                    if (!changed) {
                         return false;
                     }
                     level.playSound(null, pos, SoundEvents.INK_SAC_USE, SoundSource.BLOCKS, 1.0f, 1.0f);
