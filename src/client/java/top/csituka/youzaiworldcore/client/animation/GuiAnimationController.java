@@ -27,6 +27,8 @@ public final class GuiAnimationController {
     private static long exitStartedAt;
     private static boolean transitionPending;
     private static boolean bypassSetScreen;
+    private static boolean contentTransformActive;
+    private static float contentTransformDisplacement;
 
     private GuiAnimationController() {
     }
@@ -120,8 +122,8 @@ public final class GuiAnimationController {
     }
 
     /**
-     * 返回指定页面当前帧的纵向位移。正值表示从屏幕下方进入，负值表示向上退出。
-     * 页面变换由调用方通过 {@code pose()} 压入，因此背景和页面内容保持一致。
+     * 返回指定页面当前帧的纵向位移。正值表示页面位于正常位置下方：
+     * 页面进入时从下方上移到原位，退出时从原位向下移出。
      */
     public static float getDisplacement(Screen screen, int height) {
         if (!isFull() || screen == null) {
@@ -130,7 +132,7 @@ public final class GuiAnimationController {
 
         if (transitionPending && screen == exitingScreen) {
             float progress = progress(exitStartedAt, EXIT_DURATION_MS);
-            return -height * MAX_OFFSET_RATIO * easeInCubic(progress);
+            return height * MAX_OFFSET_RATIO * easeInCubic(progress);
         }
 
         if (screen == currentScreen) {
@@ -139,6 +141,38 @@ public final class GuiAnimationController {
         }
 
         return 0.0F;
+    }
+
+    /**
+     * 返回当前页面在进入或退出阶段的可见度，供固定遮罩执行淡入淡出。
+     */
+    public static float getScreenOpacity() {
+        if (!isFull() || currentScreen == null) {
+            return 1.0F;
+        }
+
+        if (transitionPending && currentScreen == exitingScreen) {
+            return 1.0F - easeInCubic(progress(exitStartedAt, EXIT_DURATION_MS));
+        }
+
+        return easeOutCubic(progress(enterStartedAt, ENTER_DURATION_MS));
+    }
+
+    /** 登记当前正在使用位移矩阵提取页面内容，供全屏遮罩抵消该位移。 */
+    public static void beginContentTransform(float displacement) {
+        contentTransformActive = true;
+        contentTransformDisplacement = displacement;
+    }
+
+    /** 结束当前页面内容的位移矩阵。 */
+    public static void endContentTransform() {
+        contentTransformActive = false;
+        contentTransformDisplacement = 0.0F;
+    }
+
+    /** @return 当前页面内容矩阵的纵向位移；未应用矩阵时返回零 */
+    public static float getContentTransformDisplacement() {
+        return contentTransformActive ? contentTransformDisplacement : 0.0F;
     }
 
     /** 页面渲染动画期间的鼠标 Y 偏移，供输入层反向换算使用。 */

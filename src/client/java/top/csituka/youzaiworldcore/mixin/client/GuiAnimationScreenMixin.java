@@ -46,6 +46,7 @@ public abstract class GuiAnimationScreenMixin {
 
         graphics.pose().pushMatrix();
         graphics.pose().translate(0.0F, displacement);
+        GuiAnimationController.beginContentTransform(displacement);
         this.youzaiworldcore$animationTransformApplied = true;
     }
 
@@ -55,6 +56,7 @@ public abstract class GuiAnimationScreenMixin {
         if (!this.youzaiworldcore$animationTransformApplied) {
             return;
         }
+        GuiAnimationController.endContentTransform();
         graphics.pose().popMatrix();
         this.youzaiworldcore$animationTransformApplied = false;
     }

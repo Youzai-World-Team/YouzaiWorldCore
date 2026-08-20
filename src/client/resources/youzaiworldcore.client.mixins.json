@@ -21,6 +21,7 @@
     "ScreenAccessor",
     "GuiAnimationScreenMixin",
     "GuiAnimationGuiMixin",
+    "GuiAnimationGuiGraphicsExtractorMixin",
     "GuiAnimationMouseHandlerMixin",
     "SlotPositionAccessor",
     "WindowTitleMixin",

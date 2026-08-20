@@ -101,6 +101,7 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
     private DropdownButton logLevelDropdown;
     private DropdownButton debugModeDropdown;
     private DropdownButton skipActionDropdown;
+    private DropdownButton guiAnimationDropdown;
     private EditBox debugAddressInput;
     private EditBox debugPortInput;
 
@@ -352,6 +353,10 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
                 && !skipActionDropdown.isPositionInsidePopup(event.x(), adjustedY)) {
             skipActionDropdown.closePopup();
         }
+        if (guiAnimationDropdown != null && guiAnimationDropdown.isOpen()
+                && !guiAnimationDropdown.isPositionInsidePopup(event.x(), adjustedY)) {
+            guiAnimationDropdown.closePopup();
+        }
         // 向子组件传递修正后的坐标（super 靠 adjustedEvent.y 匹配自然 Y 的 widget）
         MouseButtonEvent adjustedEvent = new MouseButtonEvent(
                 event.x(), adjustedY, event.buttonInfo()
@@ -412,6 +417,7 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
         sidebarVisual = null;
         sidebarAbout = null;
         sectionDropdown = null;
+        guiAnimationDropdown = null;
         ossNoticeButton = null;
         devModeToggle = null;
         logLevelDropdown = null;
@@ -852,7 +858,7 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
             case BASIC -> 1;
             case FULL -> 2;
         };
-        DropdownButton guiAnimationDropdown = new DropdownButton(
+        guiAnimationDropdown = new DropdownButton(
                 contentLeft, y, contentWidth, SIDEBAR_WIDTH, 20,
                 Component.translatable("screen.youzaiworldcore.settings.dropdown_gui_animation"),
                 GUI_ANIMATION_OPTIONS, animationIndex, false,
@@ -1189,6 +1195,10 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
         }
         if (skipActionDropdown != null) {
             skipActionDropdown.renderPopup(guiGraphics, mouseX, (int) (mouseY + scrollOffset), partialTick,
+                    contentTop, contentBottom, scrollOffset);
+        }
+        if (guiAnimationDropdown != null) {
+            guiAnimationDropdown.renderPopup(guiGraphics, mouseX, (int) (mouseY + scrollOffset), partialTick,
                     contentTop, contentBottom, scrollOffset);
         }
 
