@@ -7,6 +7,7 @@ import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 import top.csituka.youzaiworldcore.client.render.RoundedRect;
+import top.csituka.youzaiworldcore.client.animation.GuiAnimationController;
 
 @SuppressWarnings("null")
 public class TransparentButton extends AbstractWidget {
@@ -48,7 +49,9 @@ public class TransparentButton extends AbstractWidget {
     @Override
     protected void extractWidgetRenderState(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
         targetAlpha = this.isHovered() ? 0.69f : 0.5f;
-        currentAlpha = lerp(currentAlpha, targetAlpha, LERP_SPEED);
+        currentAlpha = GuiAnimationController.isEnabled()
+                ? lerp(currentAlpha, targetAlpha, LERP_SPEED)
+                : targetAlpha;
 
         float finalAlpha = currentAlpha * externalAlpha;
         int backgroundColor = colorWithAlpha(BACKGROUND_COLOR, finalAlpha);

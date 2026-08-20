@@ -7,6 +7,7 @@ import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
+import top.csituka.youzaiworldcore.client.animation.GuiAnimationController;
 
 /**
  * 无背景文字按钮，鼠标悬浮时文字向右平滑滑动，下方从左往右延伸出一条横线。
@@ -71,7 +72,8 @@ public class TitleScreenTextButton extends AbstractWidget {
             shiftProgress = 1.0f;
         } else {
             float target = this.isHovered() ? 1.0f : 0.0f;
-            if (Math.abs(underlineProgress - target) < 0.001f) {
+            if (!GuiAnimationController.isEnabled()
+                    || Math.abs(underlineProgress - target) < 0.001f) {
                 underlineProgress = target;
                 shiftProgress = target;
             } else {

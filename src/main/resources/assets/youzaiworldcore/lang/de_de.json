@@ -820,5 +820,9 @@
   "screen.youzaiworldcore.brewing.no_effect": "Kein Statuseffekt",
   "youzaiworldcore.yzui": "Youzai World · YZUI",
   "jade.theme.youzaiworldcore.yzui": "Youzai World · YZUI",
-  "youzaiworldcore.message.cosmetic.skin_conflict": "skin.png und skin_slim.png wurden gleichzeitig gefunden. skin.png wird bevorzugt verwendet."
+  "youzaiworldcore.message.cosmetic.skin_conflict": "skin.png und skin_slim.png wurden gleichzeitig gefunden. skin.png wird bevorzugt verwendet.",
+  "screen.youzaiworldcore.settings.dropdown_gui_animation": "Oberflächenanimation",
+  "screen.youzaiworldcore.settings.gui_animation_off": "Aus",
+  "screen.youzaiworldcore.settings.gui_animation_basic": "Einfach",
+  "screen.youzaiworldcore.settings.gui_animation_full": "Vollständig"
 }

@@ -3,6 +3,7 @@ package top.csituka.youzaiworldcore.client.hud;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.world.entity.player.Player;
+import top.csituka.youzaiworldcore.client.animation.GuiAnimationController;
 
 /**
  * 冒险等级 HUD 渲染器。
@@ -109,8 +110,16 @@ public class AdventureLevelHudRenderer {
         float deltaMs = Math.min(now - prevFrameTime, 100);
         prevFrameTime = now;
 
-        // 动画状态机
-        switch (animState) {
+        if (!GuiAnimationController.isEnabled()) {
+            if (lastExpGainTime == 0 || now - lastExpGainTime > DISPLAY_DURATION_MS) {
+                animState = AnimState.HIDDEN;
+                animProgress = 0.0f;
+                smoothDisplayExp = 0.0f;
+                return;
+            }
+            animState = AnimState.VISIBLE;
+            animProgress = 1.0f;
+        } else switch (animState) {
             case SHOWING:
                 animProgress += deltaMs / SHOW_MS;
                 if (animProgress >= 1.0f) {

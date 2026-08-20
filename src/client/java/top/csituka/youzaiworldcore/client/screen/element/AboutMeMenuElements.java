@@ -8,6 +8,7 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.stats.Stats;
 import top.csituka.youzaiworldcore.client.screen.MenuScreen;
+import top.csituka.youzaiworldcore.client.animation.GuiAnimationController;
 
 import java.time.Instant;
 import java.time.ZoneId;
@@ -64,7 +65,9 @@ public class AboutMeMenuElements implements MenuElementGroup {
 
         long elapsed = System.currentTimeMillis() - firstRenderTime;
         float modelAlpha;
-        if (elapsed < DELAY_MS) {
+        if (!GuiAnimationController.isEnabled()) {
+            modelAlpha = 1.0f;
+        } else if (elapsed < DELAY_MS) {
             modelAlpha = 0f;
         } else if (elapsed < DELAY_MS + FADE_DURATION_MS) {
             float t = (float) (elapsed - DELAY_MS) / FADE_DURATION_MS;

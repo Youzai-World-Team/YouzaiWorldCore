@@ -18,6 +18,7 @@ import top.csituka.youzaiworldcore.client.config.YzHudSettings;
 import top.csituka.youzaiworldcore.client.render.RoundedRect;
 import top.csituka.youzaiworldcore.enchlevellangpatch.impl.NumberFormatUtil;
 import top.csituka.youzaiworldcore.util.DebugLogger;
+import top.csituka.youzaiworldcore.client.animation.GuiAnimationController;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -265,6 +266,7 @@ public final class StatusEffectHudRenderer {
             Map<Holder<MobEffect>, MobEffectInstance> activeEffects,
             Map<Holder<MobEffect>, StatusEffectHudAnimationState.Target> targets,
             long nowMillis) {
+        boolean animate = GuiAnimationController.isEnabled();
         Iterator<Map.Entry<Holder<MobEffect>, StatusEffectHudAnimationState>> iterator =
                 animationStates.entrySet().iterator();
         while (iterator.hasNext()) {
@@ -278,7 +280,11 @@ public final class StatusEffectHudRenderer {
                 // 超出 52 个时直接隐藏较旧效果，确保面板容量与最新效果优先级稳定。
                 iterator.remove();
             } else {
-                entry.getValue().beginExit(nowMillis);
+                if (animate) {
+                    entry.getValue().beginExit(nowMillis);
+                } else {
+                    iterator.remove();
+                }
             }
         }
 
@@ -292,11 +298,11 @@ public final class StatusEffectHudRenderer {
             StatusEffectHudAnimationState state = animationStates.get(effect);
             if (state == null) {
                 state = new StatusEffectHudAnimationState(effect, instance,
-                        entry.getValue(), nowMillis, animationsInitialized);
+                        entry.getValue(), nowMillis, animationsInitialized && animate);
                 animationStates.put(effect, state);
             } else {
                 state.synchronize(instance, entry.getValue(),
-                        nowMillis, animationsInitialized);
+                        nowMillis, animationsInitialized && animate);
             }
         }
 

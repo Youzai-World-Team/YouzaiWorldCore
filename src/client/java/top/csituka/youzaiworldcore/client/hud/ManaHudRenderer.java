@@ -3,6 +3,7 @@ package top.csituka.youzaiworldcore.client.hud;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import top.csituka.youzaiworldcore.client.config.ClientExternalSettings;
+import top.csituka.youzaiworldcore.client.animation.GuiAnimationController;
 import top.csituka.youzaiworldcore.item.ModItems;
 import top.csituka.youzaiworldcore.item.tool.FlameStaffItem;
 import top.csituka.youzaiworldcore.mana.ManaManager;
@@ -62,22 +63,29 @@ public final class ManaHudRenderer {
         boolean show = isHoldingAnyStaff(client) || actualMana < 100;
 
         // 蓝条显隐动画
-        if (show && animState == AnimState.HIDDEN) {
-            animState = AnimState.SHOWING;
-            animProgress = 0.0f;
-        } else if (!show && animState == AnimState.VISIBLE) {
-            animState = AnimState.HIDEING;
-        }
-        if (animState == AnimState.SHOWING) {
-            animProgress += deltaMs / SHOW_MS;
-            if (animProgress >= 1.0f) { animProgress = 1.0f; animState = AnimState.VISIBLE; }
-        } else if (animState == AnimState.HIDEING) {
-            animProgress -= deltaMs / HIDE_MS;
-            if (animProgress <= 0.0f) { animProgress = 0.0f; animState = AnimState.HIDDEN; }
+        if (!GuiAnimationController.isEnabled()) {
+            animProgress = show ? 1.0f : 0.0f;
+            animState = show ? AnimState.VISIBLE : AnimState.HIDDEN;
+            displayMana = actualMana;
+            lastManaDecreaseTime = 0;
+        } else {
+            if (show && animState == AnimState.HIDDEN) {
+                animState = AnimState.SHOWING;
+                animProgress = 0.0f;
+            } else if (!show && animState == AnimState.VISIBLE) {
+                animState = AnimState.HIDEING;
+            }
+            if (animState == AnimState.SHOWING) {
+                animProgress += deltaMs / SHOW_MS;
+                if (animProgress >= 1.0f) { animProgress = 1.0f; animState = AnimState.VISIBLE; }
+            } else if (animState == AnimState.HIDEING) {
+                animProgress -= deltaMs / HIDE_MS;
+                if (animProgress <= 0.0f) { animProgress = 0.0f; animState = AnimState.HIDDEN; }
+            }
         }
 
         // 魔力消耗缓动
-        if (actualMana < displayMana) {
+        if (GuiAnimationController.isEnabled() && actualMana < displayMana) {
             if (lastManaDecreaseTime == 0) lastManaDecreaseTime = now;
             long elapsed = now - lastManaDecreaseTime;
             if (elapsed > LOSS_DELAY_MS) {
@@ -85,7 +93,7 @@ public final class ManaHudRenderer {
                 displayMana = actualMana + (displayMana - actualMana) * (1.0f - t);
                 if (displayMana <= actualMana + 0.5f) displayMana = actualMana;
             }
-        } else if (actualMana > displayMana) {
+        } else if (!GuiAnimationController.isEnabled() || actualMana > displayMana) {
             displayMana = actualMana;
             lastManaDecreaseTime = 0;
         } else {

@@ -17,6 +17,7 @@ import top.csituka.youzaiworldcore.client.screen.widget.ConfirmationDialog;
 import top.csituka.youzaiworldcore.client.screen.widget.DropdownButton;
 import top.csituka.youzaiworldcore.client.screen.widget.TextureTileButton;
 import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
+import top.csituka.youzaiworldcore.client.animation.GuiAnimationController;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -69,6 +70,10 @@ public class MenuScreen extends Screen {
     public void switchTo(MenuElementGroup newGroup) {
         if (targetGroup != null) return;
         history.push(currentGroup);
+        if (GuiAnimationController.isDisabled()) {
+            currentGroup = newGroup;
+            return;
+        }
         this.targetGroup = newGroup;
         this.transitionReverse = false;
         this.transitionProgress = 0f;
@@ -79,6 +84,10 @@ public class MenuScreen extends Screen {
         if (targetGroup != null) return;
         if (history.isEmpty()) return;
         MenuElementGroup previous = history.pop();
+        if (GuiAnimationController.isDisabled()) {
+            currentGroup = previous;
+            return;
+        }
         this.targetGroup = previous;
         this.transitionReverse = true;
         this.transitionProgress = 0f;
@@ -88,7 +97,8 @@ public class MenuScreen extends Screen {
     @Override
     protected void init() {
         super.init();
-        this.entryProgress = 0f;
+        this.entryProgress = GuiAnimationController.isFull() || GuiAnimationController.isDisabled()
+                ? 1.0f : 0.0f;
         this.entryStartTime = System.currentTimeMillis();
         if (currentDialog != null) {
             currentDialog.init(this.width, this.height);
@@ -114,6 +124,10 @@ public class MenuScreen extends Screen {
     @Override
     public void onClose() {
         if (exiting) return;
+        if (GuiAnimationController.isFull() || GuiAnimationController.isDisabled()) {
+            Minecraft.getInstance().setScreenAndShow(null);
+            return;
+        }
         startExit(() -> Minecraft.getInstance().setScreenAndShow(null));
     }
 
@@ -127,7 +141,7 @@ public class MenuScreen extends Screen {
 
     @Override
     public boolean keyPressed(net.minecraft.client.input.KeyEvent keyEvent) {
-        if (exiting) return true;
+        if (exiting && !GuiAnimationController.isFull() && !GuiAnimationController.isDisabled()) return true;
         if (keyEvent.key() == 256) { // GLFW_KEY_ESCAPE
             onClose();
             return true;
@@ -137,6 +151,10 @@ public class MenuScreen extends Screen {
 
     public void startExit(Runnable onComplete) {
         if (exiting) return;
+        if (GuiAnimationController.isFull() || GuiAnimationController.isDisabled()) {
+            onComplete.run();
+            return;
+        }
         this.exiting = true;
         this.exitProgress = 0f;
         this.exitStartTime = System.currentTimeMillis();
@@ -201,7 +219,9 @@ public class MenuScreen extends Screen {
 
         boolean hasDialog = currentDialog != null && currentDialog.isFullyVisible();
         float targetDialogProgress = hasDialog ? 1f : 0f;
-        dialogAnimProgress = lerp(dialogAnimProgress, targetDialogProgress, DIALOG_ANIM_SPEED);
+        dialogAnimProgress = GuiAnimationController.isEnabled()
+                ? lerp(dialogAnimProgress, targetDialogProgress, DIALOG_ANIM_SPEED)
+                : targetDialogProgress;
 
         float menuAlpha = easedEntry * (1f - dialogAnimProgress * 0.7f);
         float menuScale = 1f - dialogAnimProgress * 0.05f;

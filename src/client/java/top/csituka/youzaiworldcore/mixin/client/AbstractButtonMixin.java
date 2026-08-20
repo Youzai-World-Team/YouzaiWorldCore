@@ -9,6 +9,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import top.csituka.youzaiworldcore.client.config.ClientExternalSettings;
+import top.csituka.youzaiworldcore.client.animation.GuiAnimationController;
 import top.csituka.youzaiworldcore.client.render.RoundedRect;
 import top.csituka.youzaiworldcore.client.screen.widget.YzuiStyleOverride;
 
@@ -99,7 +100,8 @@ public class AbstractButtonMixin {
         }
 
         // 平滑过渡（与 TransparentButton 一致的 lerp 逻辑）
-        if (Math.abs(youzaiworldcore$currentHoverAlpha - targetAlpha) < 0.001f) {
+        if (!GuiAnimationController.isEnabled()
+                || Math.abs(youzaiworldcore$currentHoverAlpha - targetAlpha) < 0.001f) {
             youzaiworldcore$currentHoverAlpha = targetAlpha;
         } else {
             youzaiworldcore$currentHoverAlpha +=

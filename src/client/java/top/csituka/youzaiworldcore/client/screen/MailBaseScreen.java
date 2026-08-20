@@ -7,6 +7,7 @@ import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 import top.csituka.youzaiworldcore.client.screen.element.MainMenuElements;
+import top.csituka.youzaiworldcore.client.animation.GuiAnimationController;
 
 /**
  * 三个邮件界面的公共基类。
@@ -83,7 +84,8 @@ public abstract class MailBaseScreen extends Screen {
         viewport.push(graphics);
         // 进出场的轻微缩放：幅度仅 2%，动画结束后恒为 1，
         // 故点击判定沿用未缩放的设计坐标即可（过渡期内的 1~2px 偏差不影响使用）。
-        float animationScale = 0.98f + 0.02f * animationProgress;
+        float animationScale = GuiAnimationController.isBasic()
+                ? 0.98f + 0.02f * animationProgress : 1.0f;
         graphics.pose().pushMatrix();
         graphics.pose().translate(MailViewport.DESIGN_WIDTH / 2f, MailViewport.DESIGN_HEIGHT / 2f);
         graphics.pose().scale(animationScale, animationScale);
@@ -96,7 +98,8 @@ public abstract class MailBaseScreen extends Screen {
         viewport.pop(graphics);
 
         // 淡入淡出遮罩（屏幕空间全屏）
-        int fadeAlpha = (int) ((1f - animationProgress) * 255f);
+        int fadeAlpha = GuiAnimationController.isBasic()
+                ? (int) ((1f - animationProgress) * 255f) : 0;
         if (fadeAlpha > 0) {
             graphics.fill(0, 0, width, height, fadeAlpha << 24);
         }
@@ -112,6 +115,10 @@ public abstract class MailBaseScreen extends Screen {
     }
 
     private void updateAnimation() {
+        if (!GuiAnimationController.isBasic()) {
+            animationProgress = 1.0f;
+            return;
+        }
         float elapsed = (System.currentTimeMillis() - animationStart) / (ANIMATION_DURATION * 1000f);
         float raw = Math.max(0f, Math.min(1f, elapsed));
         animationProgress = exiting ? 1f - easeInOutCubic(raw) : easeOutCubic(raw);
@@ -137,6 +144,10 @@ public abstract class MailBaseScreen extends Screen {
         if (exiting) {
             return;
         }
+        if (!GuiAnimationController.isBasic()) {
+            action.run();
+            return;
+        }
         exiting = true;
         animationStart = System.currentTimeMillis();
         onExitComplete = action;
@@ -154,7 +165,7 @@ public abstract class MailBaseScreen extends Screen {
         startExit(() -> Minecraft.getInstance().setScreenAndShow(null));
     }
 
-    /** 切换到另一个邮件界面：不播放淡出，由目标界面自己淡入，避免两段动画叠加显得拖沓。 */
+    /** 切换到另一个邮件界面；完整模式由统一页面动画负责切换。 */
     protected void switchTo(Screen screen) {
         Minecraft.getInstance().setScreenAndShow(screen);
     }

@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import top.csituka.youzaiworldcore.config.ConfigSection;
+import top.csituka.youzaiworldcore.client.animation.GuiAnimationController;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
 /**
@@ -27,6 +28,7 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
  * <li>{@code cosmetic_enabled} — 是否启用自定义皮肤与披风</li>
  * <li>{@code auto_skip_experimental_warning} — 是否自动跳过实验性设置警告屏幕</li>
  * <li>{@code experimental_warning_skip_action} — 自动跳过时的操作（skip / backup）</li>
+ * <li>{@code gui_animation_mode} — 界面动画作用范围（OFF / BASIC / FULL）</li>
  * </ul>
  */
 public final class ClientExternalSettings {
@@ -52,6 +54,7 @@ public final class ClientExternalSettings {
     private static final boolean DEFAULT_COSMETIC_ENABLED = true;
     private static final boolean DEFAULT_AUTO_SKIP_EXPERIMENTAL_WARNING = false;
     private static final String DEFAULT_EXPERIMENTAL_WARNING_SKIP_ACTION = "skip";
+    private static final GuiAnimationMode DEFAULT_GUI_ANIMATION_MODE = GuiAnimationMode.FULL;
 
     // ===== 运行时状态 =====
     private static boolean devModeEnabled = DEFAULT_DEV_MODE_ENABLED;
@@ -82,6 +85,9 @@ public final class ClientExternalSettings {
 
     /** 自动跳过时执行的操作：{@code "skip"} = 我知道我在做什么（不备份），{@code "backup"} = 创建备份并进入 */
     private static String experimentalWarningSkipAction = DEFAULT_EXPERIMENTAL_WARNING_SKIP_ACTION;
+
+    /** 界面动画作用范围，默认完整动画。 */
+    private static GuiAnimationMode guiAnimationMode = DEFAULT_GUI_ANIMATION_MODE;
 
     private ClientExternalSettings() {
     }
@@ -158,6 +164,11 @@ public final class ClientExternalSettings {
     /** @return 自动跳过时是否应创建备份 */
     public static boolean isExperimentalWarningSkipBackup() {
         return "backup".equals(experimentalWarningSkipAction);
+    }
+
+    /** @return 界面动画作用范围 */
+    public static GuiAnimationMode getGuiAnimationMode() {
+        return guiAnimationMode;
     }
 
     /** 设置被忽略的更新版本号（空值将忽略为 ""）并持久化 */
@@ -279,6 +290,15 @@ public final class ClientExternalSettings {
         save();
     }
 
+    /** 设置界面动画作用范围并持久化。 */
+    public static void setGuiAnimationMode(GuiAnimationMode value) {
+        GuiAnimationMode old = guiAnimationMode;
+        guiAnimationMode = value == null ? DEFAULT_GUI_ANIMATION_MODE : value;
+        DebugLogger.stateChange(MODULE, "visual", "gui_animation_mode", old, guiAnimationMode);
+        GuiAnimationController.onModeChanged(guiAnimationMode);
+        save();
+    }
+
     // ===== 持久化 =====
 
     /** 从客户端配置的 {@code core_module} 分节加载（分节缺失则写入默认值） */
@@ -302,6 +322,8 @@ public final class ClientExternalSettings {
         welcomeGuideCompleted = section.getBoolean("welcome_guide_completed", welcomeGuideCompleted);
         cosmeticEnabled = section.getBoolean("cosmetic_enabled", cosmeticEnabled);
         autoSkipExperimentalWarning = section.getBoolean("auto_skip_experimental_warning", autoSkipExperimentalWarning);
+        guiAnimationMode = section.getEnum("gui_animation_mode", DEFAULT_GUI_ANIMATION_MODE,
+                GuiAnimationMode.class);
 
         String action = section.getString("experimental_warning_skip_action", experimentalWarningSkipAction);
         if (!"skip".equals(action) && !"backup".equals(action)) {
@@ -331,6 +353,7 @@ public final class ClientExternalSettings {
         cosmeticEnabled = DEFAULT_COSMETIC_ENABLED;
         autoSkipExperimentalWarning = DEFAULT_AUTO_SKIP_EXPERIMENTAL_WARNING;
         experimentalWarningSkipAction = DEFAULT_EXPERIMENTAL_WARNING_SKIP_ACTION;
+        guiAnimationMode = DEFAULT_GUI_ANIMATION_MODE;
         save();
         syncRuntimeFlags();
     }
@@ -351,6 +374,7 @@ public final class ClientExternalSettings {
         section.set("cosmetic_enabled", cosmeticEnabled);
         section.set("auto_skip_experimental_warning", autoSkipExperimentalWarning);
         section.set("experimental_warning_skip_action", experimentalWarningSkipAction);
+        section.set("gui_animation_mode", guiAnimationMode.name());
         ClientGlobalSettings.save();
     }
 

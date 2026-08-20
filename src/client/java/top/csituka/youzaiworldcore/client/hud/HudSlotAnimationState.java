@@ -4,6 +4,7 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.util.ARGB;
 import net.minecraft.world.item.ItemStack;
 import top.csituka.youzaiworldcore.util.DebugLogger;
+import top.csituka.youzaiworldcore.client.animation.GuiAnimationController;
 
 /**
  * 装备栏与物品栏共用的槽位动画状态。
@@ -45,6 +46,7 @@ public final class HudSlotAnimationState {
      */
     public void synchronize(ItemStack stack, int displayCount,
             long nowMillis, boolean animate) {
+        animate = animate && GuiAnimationController.isEnabled();
         ItemStack current = stack == null ? ItemStack.EMPTY : stack;
         if (!initialized || !animate) {
             observedStack = current.copy();

@@ -15,6 +15,7 @@ import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
 import top.csituka.youzaiworldcore.client.update.ClientUpdateState;
 import top.csituka.youzaiworldcore.update.UpdateResult;
 import top.csituka.youzaiworldcore.util.DebugLogger;
+import top.csituka.youzaiworldcore.client.animation.GuiAnimationController;
 
 /**
  * 强制更新弹窗——与 {@link QuitConfirmationScreen} 样式完全一致。
@@ -59,9 +60,9 @@ public class ForcedUpdateScreen extends Screen {
         super.init();
         LOGGER.debug("Initializing ForcedUpdateScreen");
 
-        entering = true;
+        entering = GuiAnimationController.isBasic();
         entryStartTime = System.currentTimeMillis();
-        entryProgress = 0f;
+        entryProgress = entering ? 0f : 1f;
 
         int dialogX = (this.width - DIALOG_WIDTH) / 2;
         int dialogY = (this.height - DIALOG_HEIGHT) / 2;
@@ -253,6 +254,10 @@ public class ForcedUpdateScreen extends Screen {
 
     private void startExitAnimation(Runnable onComplete) {
         if (exiting) return;
+        if (!GuiAnimationController.isBasic()) {
+            onComplete.run();
+            return;
+        }
         this.exiting = true;
         this.exitStartTime = System.currentTimeMillis();
         this.exitProgress = 0f;

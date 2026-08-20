@@ -12,6 +12,7 @@ import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import top.csituka.youzaiworldcore.client.render.RoundedRect;
+import top.csituka.youzaiworldcore.client.animation.GuiAnimationController;
 import top.csituka.youzaiworldcore.itemborder.ItemBorderRenderer;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
@@ -193,6 +194,12 @@ public final class HotbarRenderer {
         }
 
         // === 动画更新（连续空间循环包装，仅滚轮触发） ===
+        if (!GuiAnimationController.isEnabled()) {
+            animSelectedSlot = currentSlot;
+            virtualTarget = currentSlot;
+            lastKnownSelectedSlot = currentSlot;
+            scrollDirectionThisFrame = 0;
+        }
         if (currentSlot != lastKnownSelectedSlot) {
             int scrollDir = scrollDirectionThisFrame;
             scrollDirectionThisFrame = 0; // 消费
@@ -229,8 +236,12 @@ public final class HotbarRenderer {
 
         // 时间驱动平滑插值
         float deltaSec = deltaTracker.getGameTimeDeltaTicks() / 20.0f;
-        float animT = 1.0f - (float) Math.exp(-ANIM_SPEED * deltaSec);
-        animSelectedSlot += (virtualTarget - animSelectedSlot) * animT;
+        if (GuiAnimationController.isEnabled()) {
+            float animT = 1.0f - (float) Math.exp(-ANIM_SPEED * deltaSec);
+            animSelectedSlot += (virtualTarget - animSelectedSlot) * animT;
+        } else {
+            animSelectedSlot = currentSlot;
+        }
 
         // 包装瞬移：高亮滑出屏幕边缘后瞬间跳到对侧，virtualTarget 同步偏移
         if (virtualTarget > 8.0f && animSelectedSlot > 8.8f) {
@@ -276,8 +287,12 @@ public final class HotbarRenderer {
 
         // 指数衰减动画（与选中槽位动画共用 animT）
         float offhandTarget = offhandHasItem ? 1.0f : 0.0f;
-        float offhandT = 1.0f - (float) Math.exp(-OFFHAND_ANIM_SPEED * deltaSec);
-        offhandAnimProgress += (offhandTarget - offhandAnimProgress) * offhandT;
+        if (GuiAnimationController.isEnabled()) {
+            float offhandT = 1.0f - (float) Math.exp(-OFFHAND_ANIM_SPEED * deltaSec);
+            offhandAnimProgress += (offhandTarget - offhandAnimProgress) * offhandT;
+        } else {
+            offhandAnimProgress = offhandTarget;
+        }
         if (Math.abs(offhandAnimProgress - offhandTarget) < 0.005f) {
             offhandAnimProgress = offhandTarget;
         }

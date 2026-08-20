@@ -27,6 +27,7 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import top.csituka.youzaiworldcore.YouzaiworldCore;
 import top.csituka.youzaiworldcore.client.config.ClientExternalSettings;
+import top.csituka.youzaiworldcore.client.animation.GuiAnimationController;
 import top.csituka.youzaiworldcore.client.screen.widget.TitleScreenTextButton;
 import top.csituka.youzaiworldcore.client.update.ClientUpdateState;
 import top.csituka.youzaiworldcore.config.UpdateCheckerConfig;
@@ -634,6 +635,10 @@ public class TitleScreenMixin {
      */
     @Unique
     private float youzaiworldcore$computeFadeAlpha() {
+        if (!GuiAnimationController.isBasic()) {
+            youzaiworldcore$fadeCompleted = true;
+            return 1.0f;
+        }
         // 淡入已完成：后续返回主界面时不再重复播放
         if (youzaiworldcore$fadeCompleted) {
             return 1.0f;
