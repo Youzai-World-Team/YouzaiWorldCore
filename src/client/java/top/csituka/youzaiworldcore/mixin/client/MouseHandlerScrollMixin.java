@@ -12,6 +12,7 @@ import top.csituka.youzaiworldcore.config.UpdateCheckerConfig;
 import top.csituka.youzaiworldcore.update.TitleScreenScrollState;
 import top.csituka.youzaiworldcore.update.UpdateResult;
 import top.csituka.youzaiworldcore.client.config.ClientExternalSettings;
+import top.csituka.youzaiworldcore.client.animation.GuiAnimationController;
 
 /**
  * 在 {@link MouseHandler#onScroll} 阶段截获滚轮事件，
@@ -45,7 +46,8 @@ public class MouseHandlerScrollMixin {
         MouseHandler self = (MouseHandler) (Object) this;
         com.mojang.blaze3d.platform.Window win = mc.getWindow();
         double scaledX = MouseHandler.getScaledXPos(win, self.xpos());
-        double scaledY = MouseHandler.getScaledYPos(win, self.ypos());
+        double scaledY = MouseHandler.getScaledYPos(win, self.ypos())
+                - GuiAnimationController.getInputYOffset(mc.gui.screen());
 
         // 检查鼠标是否在右面板区域内
         var screen = mc.gui.screen();

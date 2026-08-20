@@ -820,5 +820,9 @@
   "screen.youzaiworldcore.brewing.no_effect": "无状态效果",
   "youzaiworldcore.yzui": "悠哉世界 · YZUI",
   "jade.theme.youzaiworldcore.yzui": "悠哉世界 · YZUI",
-  "youzaiworldcore.message.cosmetic.skin_conflict": "同时检测到 skin.png 和 skin_slim.png，已优先使用 skin.png。"
+  "youzaiworldcore.message.cosmetic.skin_conflict": "同时检测到 skin.png 和 skin_slim.png，已优先使用 skin.png。",
+  "screen.youzaiworldcore.settings.dropdown_gui_animation": "界面动画",
+  "screen.youzaiworldcore.settings.gui_animation_off": "关闭",
+  "screen.youzaiworldcore.settings.gui_animation_basic": "基本",
+  "screen.youzaiworldcore.settings.gui_animation_full": "完全"
 }

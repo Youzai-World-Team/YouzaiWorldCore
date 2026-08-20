@@ -14,6 +14,7 @@ import top.csituka.youzaiworldcore.client.render.RoundedRect;
 import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
 import top.csituka.youzaiworldcore.update.UpdateChecker;
 import top.csituka.youzaiworldcore.util.DebugLogger;
+import top.csituka.youzaiworldcore.client.animation.GuiAnimationController;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -107,9 +108,9 @@ public class JoinBlockedScreen extends Screen {
         super.init();
         LOGGER.debug("Initializing JoinBlockedScreen");
 
-        entering = true;
+        entering = GuiAnimationController.isBasic();
         entryStartTime = System.currentTimeMillis();
-        entryProgress = 0f;
+        entryProgress = entering ? 0f : 1f;
 
         int dialogX = (this.width - DIALOG_WIDTH) / 2;
         int dialogY = (this.height - DIALOG_HEIGHT) / 2;
@@ -274,6 +275,10 @@ public class JoinBlockedScreen extends Screen {
 
     private void startExitAnimation(Runnable onComplete) {
         if (exiting) return;
+        if (!GuiAnimationController.isBasic()) {
+            onComplete.run();
+            return;
+        }
         this.exiting = true;
         this.exitStartTime = System.currentTimeMillis();
         this.exitProgress = 0f;

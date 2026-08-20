@@ -14,6 +14,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.util.FormattedCharSequence;
 import top.csituka.youzaiworldcore.YouzaiworldCore;
 import top.csituka.youzaiworldcore.client.config.ClientExternalSettings;
+import top.csituka.youzaiworldcore.client.config.GuiAnimationMode;
 import top.csituka.youzaiworldcore.client.resource.CustomFontResourcePack;
 import top.csituka.youzaiworldcore.client.screen.widget.CheckboxButton;
 import top.csituka.youzaiworldcore.update.UpdateChecker;
@@ -115,6 +116,8 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
     private boolean leftHudEnabled;
     /** 是否启用模组内置的自定义字体资源包 */
     private boolean customFontEnabled;
+    /** 界面动画作用范围。 */
+    private GuiAnimationMode guiAnimationMode;
 
     /** 是否自动跳过实验性设置警告屏幕 */
     private boolean autoSkipExperimentalWarning;
@@ -171,6 +174,12 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
             Component.translatable("screen.youzaiworldcore.settings.experimental_skip_action_skip").getString()
     );
 
+    private static final List<String> GUI_ANIMATION_OPTIONS = List.of(
+            Component.translatable("screen.youzaiworldcore.settings.gui_animation_off").getString(),
+            Component.translatable("screen.youzaiworldcore.settings.gui_animation_basic").getString(),
+            Component.translatable("screen.youzaiworldcore.settings.gui_animation_full").getString()
+    );
+
     public YouzaiWorldCoreSettingsScreen(Screen parent) {
         super(Component.translatable("screen.youzaiworldcore.settings.title"));
         this.parentScreen = parent;
@@ -183,6 +192,7 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
         this.yzuiEnabled = ClientExternalSettings.isYzuiEnabled();
         this.leftHudEnabled = ClientExternalSettings.isLeftHudEnabled();
         this.customFontEnabled = ClientExternalSettings.isCustomFontEnabled();
+        this.guiAnimationMode = ClientExternalSettings.getGuiAnimationMode();
         this.autoSkipExperimentalWarning = ClientExternalSettings.isAutoSkipExperimentalWarning();
         this.experimentalWarningSkipAction = ClientExternalSettings.getExperimentalWarningSkipAction();
     }
@@ -199,6 +209,7 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
         this.yzuiEnabled = ClientExternalSettings.isYzuiEnabled();
         this.leftHudEnabled = ClientExternalSettings.isLeftHudEnabled();
         this.customFontEnabled = ClientExternalSettings.isCustomFontEnabled();
+        this.guiAnimationMode = ClientExternalSettings.getGuiAnimationMode();
         this.autoSkipExperimentalWarning = ClientExternalSettings.isAutoSkipExperimentalWarning();
         this.experimentalWarningSkipAction = ClientExternalSettings.getExperimentalWarningSkipAction();
         calculateLayout();
@@ -835,6 +846,29 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
         ).setWrapMessage(true);
         addRenderableWidget(leftHudToggle);
         y += leftHudToggleHeight + 6;
+
+        int animationIndex = switch (guiAnimationMode) {
+            case OFF -> 0;
+            case BASIC -> 1;
+            case FULL -> 2;
+        };
+        DropdownButton guiAnimationDropdown = new DropdownButton(
+                contentLeft, y, contentWidth, SIDEBAR_WIDTH, 20,
+                Component.translatable("screen.youzaiworldcore.settings.dropdown_gui_animation"),
+                GUI_ANIMATION_OPTIONS, animationIndex, false,
+                index -> {
+                    guiAnimationMode = switch (index) {
+                        case 0 -> GuiAnimationMode.OFF;
+                        case 1 -> GuiAnimationMode.BASIC;
+                        default -> GuiAnimationMode.FULL;
+                    };
+                    ClientExternalSettings.setGuiAnimationMode(guiAnimationMode);
+                    DebugLogger.info("SettingsScreen", "界面动画作用范围已设为：%s", guiAnimationMode);
+                },
+                null
+        );
+        addRenderableWidget(guiAnimationDropdown);
+        y += 30;
 
         TransparentButton yzhudSettingsButton = new TransparentButton(
                 contentLeft, y, contentWidth, 22,

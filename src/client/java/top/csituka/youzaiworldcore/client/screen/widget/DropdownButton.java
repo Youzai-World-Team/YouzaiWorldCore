@@ -11,6 +11,7 @@ import net.minecraft.network.chat.Component;
 import java.util.List;
 import java.util.function.IntConsumer;
 import top.csituka.youzaiworldcore.client.render.RoundedRect;
+import top.csituka.youzaiworldcore.client.animation.GuiAnimationController;
 
 @SuppressWarnings("null")
 public class DropdownButton extends AbstractWidget {
@@ -168,7 +169,9 @@ public class DropdownButton extends AbstractWidget {
     public void renderPopup(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick,
                             int viewportTop, int viewportBottom, double scrollOffset) {
         // 更新淡入淡出动画
-        popupAnimAlpha = lerp(popupAnimAlpha, open ? 1f : 0f, POPUP_ANIM_SPEED);
+        popupAnimAlpha = GuiAnimationController.isEnabled()
+                ? lerp(popupAnimAlpha, open ? 1f : 0f, POPUP_ANIM_SPEED)
+                : (open ? 1f : 0f);
         // 淡出接近完成时直接归零，避免残留渲染
         if (!open && popupAnimAlpha < 0.1f) popupAnimAlpha = 0f;
         if (popupAnimAlpha < 0.005f || options.isEmpty()) return;

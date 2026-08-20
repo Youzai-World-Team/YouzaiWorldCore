@@ -15,6 +15,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import top.csituka.youzaiworldcore.client.config.ClientExternalSettings;
+import top.csituka.youzaiworldcore.client.animation.GuiAnimationController;
 import top.csituka.youzaiworldcore.client.render.RoundedRect;
 
 /**
@@ -74,7 +75,9 @@ public class EditBoxMixin {
 
         float target = !self.isActive() ? DISABLED_ALPHA
                 : self.isFocused() ? FOCUSED_ALPHA : NORMAL_ALPHA;
-        yzwc$bgAlpha = yzwc$lerp(yzwc$bgAlpha, target);
+        yzwc$bgAlpha = GuiAnimationController.isEnabled()
+                ? yzwc$lerp(yzwc$bgAlpha, target)
+                : target;
 
         int x = self.getX(), y = self.getY(), w = self.getWidth(), h = self.getHeight();
         int bg = yzwc$color(yzwc$bgAlpha * self.getAlpha());

@@ -16,6 +16,7 @@ import net.minecraft.world.level.Level;
 import org.jspecify.annotations.Nullable;
 import top.csituka.youzaiworldcore.YouzaiworldCore;
 import top.csituka.youzaiworldcore.client.effect.TeleportFovEffect;
+import top.csituka.youzaiworldcore.client.animation.GuiAnimationController;
 import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
 import top.csituka.youzaiworldcore.data.TeleportAnchorData;
 import top.csituka.youzaiworldcore.item.tool.TeleportStoneItem;
@@ -417,14 +418,14 @@ public class TeleportAnchorScreen extends Screen {
     private void enterEditMode() {
         if (editMode) return;
         editMode = true;
-        editModeProgress = 1f;
+        editModeProgress = GuiAnimationController.isEnabled() ? 0f : 1f;
         rebuildWidgets();
     }
 
     private void exitEditMode() {
         if (!editMode) return;
         editMode = false;
-        editModeProgress = 0f;
+        editModeProgress = GuiAnimationController.isEnabled() ? 1f : 0f;
         rebuildWidgets();
     }
 
@@ -974,6 +975,14 @@ public class TeleportAnchorScreen extends Screen {
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
+        if (GuiAnimationController.isDisabled()) {
+            editModeProgress = editMode ? 1.0F : 0.0F;
+        } else if (editMode && editModeProgress < 1.0F) {
+            editModeProgress = Math.min(1.0F, editModeProgress + 0.12F);
+        } else if (!editMode && editModeProgress > 0.0F) {
+            editModeProgress = Math.max(0.0F, editModeProgress - 0.12F);
+        }
+
         // 经验等级 / 传送石耐久 / 卷轴数量都可能在界面打开期间变化，每帧刷新传送按钮状态
         if (!confirmingDelete && !renameMode) {
             refreshTeleportAffordability();

@@ -10,6 +10,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import top.csituka.youzaiworldcore.client.config.ClientExternalSettings;
+import top.csituka.youzaiworldcore.client.animation.GuiAnimationController;
 import top.csituka.youzaiworldcore.client.render.RoundedRect;
 import top.csituka.youzaiworldcore.client.screen.widget.YzuiStyleOverride;
 
@@ -112,7 +113,9 @@ public class AbstractSliderButtonMixin {
         }
 
         // ---- 2. 平滑 lerp 动画 ----
-        yzwc$currentHandleAlpha = yzwc$lerp(yzwc$currentHandleAlpha, targetHandle);
+        yzwc$currentHandleAlpha = GuiAnimationController.isEnabled()
+                ? yzwc$lerp(yzwc$currentHandleAlpha, targetHandle)
+                : targetHandle;
 
         int x = self.getX();
         int y = self.getY();

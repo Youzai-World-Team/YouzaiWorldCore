@@ -5,6 +5,7 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 import top.csituka.youzaiworldcore.client.render.RoundedRect;
+import top.csituka.youzaiworldcore.client.animation.GuiAnimationController;
 
 @SuppressWarnings("null")
 public class ConfirmationDialog {
@@ -71,10 +72,16 @@ public class ConfirmationDialog {
         this.fadingOut = false;
         this.showTime = System.currentTimeMillis();
         this.hideTime = -1;
-        this.alpha = 0f;
+        this.alpha = GuiAnimationController.isEnabled() ? 0f : 1f;
     }
 
     public void hide() {
+        if (!GuiAnimationController.isEnabled()) {
+            this.visible = false;
+            this.fadingOut = false;
+            this.alpha = 0f;
+            return;
+        }
         this.fadingOut = true;
         this.hideTime = System.currentTimeMillis();
     }
@@ -137,7 +144,9 @@ public class ConfirmationDialog {
     public void render(GuiGraphicsExtractor guiGraphics, int screenWidth, int screenHeight) {
         if (!visible && !fadingOut) return;
 
-        if (fadingOut && hideTime != -1) {
+        if (!GuiAnimationController.isEnabled()) {
+            alpha = 1.0f;
+        } else if (fadingOut && hideTime != -1) {
             long elapsed = System.currentTimeMillis() - hideTime;
             alpha = Math.max(0f, 1f - elapsed / (float) FADE_DURATION_MS);
             if (alpha <= 0f) {

@@ -3,6 +3,7 @@ package top.csituka.youzaiworldcore.client.screen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import top.csituka.youzaiworldcore.client.animation.GuiAnimationController;
 
 /**
  * 邮件界面顶部的浮动提示条。
@@ -95,6 +96,13 @@ public final class MailToast {
         long elapsed = System.currentTimeMillis() - shownAt;
         if (elapsed < 0) {
             return 0f;
+        }
+        if (!GuiAnimationController.isEnabled()) {
+            if (elapsed < HOLD_MS) {
+                return 1.0f;
+            }
+            shownAt = -1L;
+            return 0.0f;
         }
         if (elapsed < FADE_IN_MS) {
             return elapsed / (float) FADE_IN_MS;

@@ -4,6 +4,7 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.util.ARGB;
 import net.minecraft.util.Util;
 import top.csituka.youzaiworldcore.util.DebugLogger;
+import top.csituka.youzaiworldcore.client.animation.GuiAnimationController;
 
 /**
  * 加载界面的 8-bit 加载圈组件。
@@ -51,8 +52,9 @@ public final class LoadingCircleRenderer {
         }
 
         long elapsedMillis = Math.max(0L, now - this.animationStartMillis);
+        boolean animate = GuiAnimationController.isEnabled();
         for (int index = 0; index < BLOCK_COUNT; index++) {
-            float blockOpacity = opacityAt(elapsedMillis, index);
+            float blockOpacity = animate ? opacityAt(elapsedMillis, index) : 1.0f;
             int blockAlpha = Math.round(overlayAlpha * blockOpacity);
             if (blockAlpha == 0) {
                 continue;

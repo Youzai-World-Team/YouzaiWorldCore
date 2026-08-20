@@ -14,6 +14,7 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import top.csituka.youzaiworldcore.client.GradientBackgroundUtil;
 import top.csituka.youzaiworldcore.client.render.LoadingCircleRenderer;
+import top.csituka.youzaiworldcore.client.animation.GuiAnimationController;
 
 /**
  * 为 Mojang 加载页面和后续资源重载页面添加 135° 对角线渐变，
@@ -58,6 +59,9 @@ public class LoadingOverlayMixin {
      * 品牌背景填充 alpha 保持一致。
      */
     private int computeFadeAlpha() {
+        if (!GuiAnimationController.isEnabled()) {
+            return 255;
+        }
         long now = Util.getMillis();
 
         // 淡出阶段（加载完成后触发）
