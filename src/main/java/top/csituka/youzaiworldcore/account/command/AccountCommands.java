@@ -5,6 +5,7 @@ import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
@@ -21,6 +22,7 @@ import top.csituka.youzaiworldcore.account.util.AuthLocationData;
 import top.csituka.youzaiworldcore.account.util.AuthPlayerHelper;
 import top.csituka.youzaiworldcore.cosmetic.CosmeticManager;
 import top.csituka.youzaiworldcore.invisibility.InvisibilityManager;
+import top.csituka.youzaiworldcore.network.OpenAuthScreenPayload;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
 import java.time.ZonedDateTime;
@@ -343,7 +345,11 @@ public class AccountCommands {
             source.sendFailure(Component.literal(remote.message()));
             return 0;
         }
-        if (remote.account() != null) AccountDataStorage.acceptRemoteAccount(remote.account(), false);
+        if (remote.account() != null) {
+            AccountDataStorage.acceptRemoteAccount(remote.account(), false);
+            // 以 Api 返回的账户状态为准，避免旧的未注册缓存导致下一次认证界面误开注册页。
+            authPlayer.yzwc$setAccount(remote.account());
+        }
         authPlayer.yzwc$setSessionToken(null);
         authPlayer.yzwc$setAuthenticated(false);
         CosmeticManager.onDeauthenticated(player);
@@ -361,6 +367,7 @@ public class AccountCommands {
             player.teleportTo(finalLoginHall, AuthPlayerHelper.LOGIN_HALL_X, AuthPlayerHelper.LOGIN_HALL_Y,
                     AuthPlayerHelper.LOGIN_HALL_Z, Set.of(), 0, 0, true);
         }
+        sendAuthScreen(player, "login");
 
         source.sendSuccess(() -> Component.translatable("youzaiworldcore.message.account.logout_success"), true);
         DebugLogger.info("AccountCommands", "玩家 %s 登出", player.getScoreboardName());
@@ -607,10 +614,21 @@ public class AccountCommands {
         if (onlinePlayer != null) {
             DebugLogger.branch("AccountCommands", "player is online, forcing re-auth", true);
             PlayerAuthAccess authPlayer = (PlayerAuthAccess) (Object) onlinePlayer;
+            // 保存重置前的位置，随后把玩家送回登录大厅，登录成功后恢复该位置。
+            authPlayer.yzwc$saveLocation();
             if (resetAccount != null) authPlayer.yzwc$setAccount(resetAccount);
             authPlayer.yzwc$setAuthenticated(false);
             authPlayer.yzwc$setSessionToken(null);
             CosmeticManager.onDeauthenticated(onlinePlayer);
+            ResourceKey<Level> loginHallKey = AuthPlayerHelper.LOGIN_HALL_KEY;
+            ServerLevel loginHall = source.getServer().getLevel(loginHallKey);
+            if (loginHall == null) {
+                loginHall = source.getServer().overworld();
+                DebugLogger.warn("AccountCommands", "登录大厅维度不存在，管理员重置密码时回退到主世界");
+            }
+            onlinePlayer.teleportTo(loginHall, AuthPlayerHelper.LOGIN_HALL_X, AuthPlayerHelper.LOGIN_HALL_Y,
+                    AuthPlayerHelper.LOGIN_HALL_Z, Set.of(), 0, 0, true);
+            sendAuthScreen(onlinePlayer, "login");
             onlinePlayer.sendSystemMessage(Component.translatable("youzaiworldcore.message.account.admin_reset_notification"));
         } else {
             DebugLogger.branch("AccountCommands", "player is online, forcing re-auth", false);
@@ -621,6 +639,16 @@ public class AccountCommands {
         YouzaiworldCore.LOGGER.info("管理员重置了玩家 {} 的密码", playerName);
         DebugLogger.exiting("AccountCommands", "executeAdminResetPassword", "1 (success)");
         return 1;
+    }
+
+    /** 立即通知客户端打开指定认证界面，不等待未认证 tick 的周期性重发。 */
+    private static void sendAuthScreen(ServerPlayer player, String screenType) {
+        if (player.connection == null || !player.connection.isAcceptingMessages()) return;
+        try {
+            ServerPlayNetworking.send(player, new OpenAuthScreenPayload(screenType, player.getScoreboardName()));
+        } catch (RuntimeException e) {
+            DebugLogger.exception("AccountCommands", "sendAuthScreen", e);
+        }
     }
 
     /**

@@ -97,23 +97,26 @@ public class ClientNetworking {
             DebugLogger.entering("ClientNetworking", "OpenAuthScreenPayload handler");
             Minecraft client = context.client();
             client.execute(() -> {
-                // 如果当前已经是认证界面，不重复打开
+                // 只有目标界面已经打开时才跳过；登出或管理员重置密码时，必须允许登录界面替换旧的注册界面。
                 Screen currentScreen = client.gui.screen();
                 boolean isRegisterScreen = currentScreen instanceof RegisterScreen;
                 boolean isLoginScreen = currentScreen instanceof LoginScreen;
                 DebugLogger.branch("ClientNetworking", "currentScreen instanceof RegisterScreen", isRegisterScreen);
                 DebugLogger.branch("ClientNetworking", "currentScreen instanceof LoginScreen", isLoginScreen);
-                if (isRegisterScreen || isLoginScreen) {
-                    DebugLogger.exiting("ClientNetworking", "OpenAuthScreenPayload handler (skipped, screen already open)");
-                    return;
-                }
                 String type = payload.screenType();
                 String username = payload.username();
                 boolean isRegister = "register".equals(type);
                 DebugLogger.branch("ClientNetworking", "screenType == register", isRegister);
+                boolean isLogin = "login".equals(type);
+                boolean targetScreenAlreadyOpen = (isRegister && isRegisterScreen) || (isLogin && isLoginScreen);
+                DebugLogger.branch("ClientNetworking", "target auth screen already open", targetScreenAlreadyOpen);
+                if (targetScreenAlreadyOpen) {
+                    DebugLogger.exiting("ClientNetworking", "OpenAuthScreenPayload handler (skipped, target screen already open)");
+                    return;
+                }
                 if (isRegister) {
                     client.setScreenAndShow(new RegisterScreen(username));
-                } else if ("login".equals(type)) {
+                } else if (isLogin) {
                     client.setScreenAndShow(new LoginScreen(username));
                 }
             });
