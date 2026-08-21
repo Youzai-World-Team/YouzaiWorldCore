@@ -42,6 +42,8 @@ public class ModCreativeModeTabs {
                                 output.accept(ModBlocks.MOB_PRESSURE_PLATE);
                                 output.accept(ModBlocks.DUPLICATE_BLOCK);
                                 output.accept(ModBlocks.NOT_GATE_REDSTONE_REPEATER);
+                                output.accept(ModBlocks.WIRELESS_REDSTONE_TRANSMITTER);
+                                output.accept(ModBlocks.WIRELESS_REDSTONE_RECEIVER);
                                 // 大字牌系列（12 木质 + 7 矿物），顺序见 ModBlocks.LARGE_SIGNS
                                 for (var largeSign : ModBlocks.LARGE_SIGNS) {
                                         output.accept(largeSign);

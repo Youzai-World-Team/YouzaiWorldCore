@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "#": "minecraft:chiseled_stone_bricks",
+    "@": "youzaiworldcore:yz_ingot",
+    "E": "minecraft:ender_eye",
+    "P": "minecraft:ender_pearl"
+  },
+  "pattern": [
+    "PEP",
+    "@#@",
+    "###"
+  ],
+  "result": {
+    "id": "youzaiworldcore:tp_anchor"
+  }
+}

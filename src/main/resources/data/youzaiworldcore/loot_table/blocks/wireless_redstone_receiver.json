@@ -2,6 +2,7 @@
   "type": "minecraft:block",
   "pools": [
     {
+      "bonus_rolls": 0,
       "conditions": [
         {
           "condition": "minecraft:survives_explosion"
@@ -10,11 +11,11 @@
       "entries": [
         {
           "type": "minecraft:item",
-          "name": "youzaiworldcore:mob_pressure_plate"
+          "name": "youzaiworldcore:wireless_redstone_receiver"
         }
       ],
-      "rolls": 1.0
+      "rolls": 1
     }
   ],
-  "random_sequence": "youzaiworldcore:blocks/mob_pressure_plate"
+  "random_sequence": "youzaiworldcore:blocks/wireless_redstone_receiver"
 }

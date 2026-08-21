@@ -42,6 +42,25 @@ public class ModBlockEntities {
             FabricBlockEntityTypeBuilder.create(LargeSignBlockEntity::new, ModBlocks.LARGE_SIGNS).build()
     );
 
+    /**
+     * 无线红石发射器方块实体类型：存频道号，并维护自己在
+     * {@link top.csituka.youzaiworldcore.redstone.WirelessRedstoneNetwork} 索引中的登记。
+     */
+    public static final BlockEntityType<WirelessRedstoneTransmitterBlockEntity> WIRELESS_REDSTONE_TRANSMITTER = register(
+            "wireless_redstone_transmitter",
+            FabricBlockEntityTypeBuilder.create(WirelessRedstoneTransmitterBlockEntity::new,
+                    ModBlocks.WIRELESS_REDSTONE_TRANSMITTER).build()
+    );
+
+    /**
+     * 无线红石接收器方块实体类型：存频道号，并每 tick 轮询无线索引以刷新自身通电状态。
+     */
+    public static final BlockEntityType<WirelessRedstoneReceiverBlockEntity> WIRELESS_REDSTONE_RECEIVER = register(
+            "wireless_redstone_receiver",
+            FabricBlockEntityTypeBuilder.create(WirelessRedstoneReceiverBlockEntity::new,
+                    ModBlocks.WIRELESS_REDSTONE_RECEIVER).build()
+    );
+
     private static <T extends BlockEntityType<?>> T register(String name, T blockEntityType) {
         ResourceKey<BlockEntityType<?>> key = ResourceKey.create(Registries.BLOCK_ENTITY_TYPE, Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, name));
         return Registry.register(BuiltInRegistries.BLOCK_ENTITY_TYPE, key, blockEntityType);

@@ -1,0 +1,43 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_ingredients": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "minecraft:chiseled_stone_bricks"
+            ]
+          },
+          {
+            "items": [
+              "minecraft:ender_pearl"
+            ]
+          },
+          {
+            "items": [
+              "minecraft:ender_eye"
+            ]
+          },
+          {
+            "items": [
+              "youzaiworldcore:yz_ingot"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "has_ingredients"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "youzaiworldcore:tp_anchor"
+    ]
+  },
+  "hidden": true
+}

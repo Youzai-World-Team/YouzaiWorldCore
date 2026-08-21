@@ -14,6 +14,7 @@ import top.csituka.youzaiworldcore.block.TeleportAnchorBlock;
 import top.csituka.youzaiworldcore.block.entity.FlyBeaconBlockEntity;
 import top.csituka.youzaiworldcore.block.entity.LargeSignBlockEntity;
 import top.csituka.youzaiworldcore.block.entity.TeleportAnchorBlockEntity;
+import top.csituka.youzaiworldcore.block.entity.WirelessRedstoneBlockEntity;
 import top.csituka.youzaiworldcore.data.TeleportAnchorManager;
 import top.csituka.youzaiworldcore.data.TeleportAnchorData;
 import top.csituka.youzaiworldcore.item.tool.TeleportStoneItem;
@@ -24,6 +25,7 @@ import top.csituka.youzaiworldcore.afk.AfkManager;
 import top.csituka.youzaiworldcore.dimensionalinventories.DimensionPoolManager;
 import top.csituka.youzaiworldcore.dimensionalinventories.WorldPoolTeleportPayload;
 import top.csituka.youzaiworldcore.invisibility.InvisibilityManager;
+import top.csituka.youzaiworldcore.redstone.WirelessRedstoneChannel;
 import top.csituka.youzaiworldcore.screen.DecompositionTableMenu;
 import top.csituka.youzaiworldcore.screen.FlyBeaconMenu;
 import top.csituka.youzaiworldcore.skill.AttributeManager;
@@ -82,6 +84,12 @@ public class ModNetworking {
         DebugLogger.info("ModNetworking", "Registered clientbound packet: LargeSignOpenEditPayload");
         PayloadTypeRegistry.serverboundPlay().register(LargeSignSetTextPayload.TYPE, LargeSignSetTextPayload.STREAM_CODEC);
         DebugLogger.info("ModNetworking", "Registered serverbound packet: LargeSignSetTextPayload");
+
+        // ===== 无线红石频道设置数据包 =====
+        PayloadTypeRegistry.clientboundPlay().register(WirelessRedstoneOpenChannelPayload.TYPE, WirelessRedstoneOpenChannelPayload.STREAM_CODEC);
+        DebugLogger.info("ModNetworking", "Registered clientbound packet: WirelessRedstoneOpenChannelPayload");
+        PayloadTypeRegistry.serverboundPlay().register(WirelessRedstoneSetChannelPayload.TYPE, WirelessRedstoneSetChannelPayload.STREAM_CODEC);
+        DebugLogger.info("ModNetworking", "Registered serverbound packet: WirelessRedstoneSetChannelPayload");
         PayloadTypeRegistry.clientboundPlay().register(TeleportStoneInterruptPayload.TYPE, TeleportStoneInterruptPayload.STREAM_CODEC);
         DebugLogger.info("ModNetworking", "Registered clientbound packet: TeleportStoneInterruptPayload");
         PayloadTypeRegistry.clientboundPlay().register(LevelExpSyncPayload.ID, LevelExpSyncPayload.STREAM_CODEC);
@@ -456,6 +464,46 @@ public class ModNetworking {
                 sign.setAllowedPlayerEditor(null);
                 DebugLogger.info("ModNetworking", "玩家 %s 写入大字牌文本：pos=%s, text=%s",
                         player.getName().getString(), pos.toShortString(), text);
+            });
+        });
+
+        // ===== 无线红石频道提交处理器 =====
+        // 客户端只能「请求」写入，是否放行完全由这里判定：
+        // 目标仍是无线红石元件 → 该玩家确实是本次被授权的设置者（含 8 格距离校验）
+        // → 频道号在合法区间内。任一条不满足即静默丢弃。
+        ServerPlayNetworking.registerGlobalReceiver(WirelessRedstoneSetChannelPayload.TYPE, (payload, context) -> {
+            var player = context.player();
+            var server = player.level().getServer();
+            if (server == null) {
+                return;
+            }
+            server.execute(() -> {
+                BlockPos pos = payload.pos();
+                int channel = payload.channel();
+
+                if (!(player.level().getBlockEntity(pos) instanceof WirelessRedstoneBlockEntity component)) {
+                    DebugLogger.branch("ModNetworking", "无线红石频道提交：目标不是无线红石元件", false);
+                    return;
+                }
+                if (!player.mayBuild() || !component.mayEdit(player)) {
+                    DebugLogger.warn("ModNetworking",
+                            "拒绝无线红石频道提交（无权限 / 非授权设置者 / 距离过远）：player=%s, pos=%s",
+                            player.getName().getString(), pos.toShortString());
+                    return;
+                }
+                if (!WirelessRedstoneChannel.isValid(channel)) {
+                    DebugLogger.warn("ModNetworking",
+                            "拒绝无线红石频道提交（频道号越界）：player=%s, pos=%s, channel=%d",
+                            player.getName().getString(), pos.toShortString(), channel);
+                    return;
+                }
+
+                component.setChannel(channel);
+                // 一次授权只用一次，提交后立即失效
+                component.setAllowedPlayerEditor(null);
+                DebugLogger.info("ModNetworking", "玩家 %s 设置无线红石%s频道：pos=%s, channel=%d",
+                        player.getName().getString(), component.isTransmitter() ? "发射器" : "接收器",
+                        pos.toShortString(), channel);
             });
         });
 

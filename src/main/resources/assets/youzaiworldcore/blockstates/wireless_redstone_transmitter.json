@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "powered=false": {
+      "model": "youzaiworldcore:block/wireless_redstone_transmitter"
+    },
+    "powered=true": {
+      "model": "youzaiworldcore:block/wireless_redstone_transmitter_active"
+    }
+  }
+}

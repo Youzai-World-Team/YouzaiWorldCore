@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:block",
+  "pools": [
+    {
+      "bonus_rolls": 0,
+      "conditions": [
+        {
+          "condition": "minecraft:survives_explosion"
+        }
+      ],
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "youzaiworldcore:wireless_redstone_transmitter"
+        }
+      ],
+      "rolls": 1
+    }
+  ],
+  "random_sequence": "youzaiworldcore:blocks/wireless_redstone_transmitter"
+}

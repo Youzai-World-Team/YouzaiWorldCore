@@ -96,6 +96,7 @@ import top.csituka.youzaiworldcore.item.ModItems;
 import top.csituka.youzaiworldcore.item.tool.YzChainMiningTool;
 import top.csituka.youzaiworldcore.network.ModNetworking;
 import top.csituka.youzaiworldcore.network.OpenMenuPayload;
+import top.csituka.youzaiworldcore.redstone.WirelessRedstoneNetwork;
 import top.csituka.youzaiworldcore.sound.ModSoundEvents;
 import top.csituka.youzaiworldcore.pet.PetBackupManager;
 import top.csituka.youzaiworldcore.pet.command.PetCommand;
@@ -184,6 +185,8 @@ public class YouzaiworldCore implements ModInitializer {
         ModBlocks.initialize();
         DebugLogger.info("YouzaiworldCore", "初始化方块实体...");
         ModBlockEntities.initialize();
+        DebugLogger.info("YouzaiworldCore", "初始化无线红石网络索引...");
+        WirelessRedstoneNetwork.initialize();
         DebugLogger.info("YouzaiworldCore", "初始化物品...");
         ModItems.initialize();
         DebugLogger.info("YouzaiworldCore", "初始化自定义 SoundEvent...");

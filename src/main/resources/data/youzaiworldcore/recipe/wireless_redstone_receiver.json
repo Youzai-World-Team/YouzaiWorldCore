@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "redstone",
+  "key": {
+    "A": "minecraft:amethyst_shard",
+    "R": "minecraft:redstone",
+    "S": "minecraft:smooth_stone",
+    "T": "minecraft:redstone_torch"
+  },
+  "pattern": [
+    " A ",
+    "RTR",
+    "SSS"
+  ],
+  "result": {
+    "id": "youzaiworldcore:wireless_redstone_receiver",
+    "count": 1
+  }
+}

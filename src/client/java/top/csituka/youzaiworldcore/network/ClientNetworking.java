@@ -9,6 +9,7 @@ import top.csituka.youzaiworldcore.client.screen.RegisterScreen;
 import top.csituka.youzaiworldcore.client.screen.block.LargeSignEditScreen;
 import top.csituka.youzaiworldcore.client.screen.block.TeleportAnchorNameScreen;
 import top.csituka.youzaiworldcore.client.screen.block.TeleportAnchorScreen;
+import top.csituka.youzaiworldcore.client.screen.block.WirelessRedstoneChannelScreen;
 import top.csituka.youzaiworldcore.client.screen.element.AboutMeMenuElements;
 import top.csituka.youzaiworldcore.client.screen.element.MainMenuElements;
 import top.csituka.youzaiworldcore.client.screen.element.MenuElementGroup;
@@ -157,6 +158,17 @@ public class ClientNetworking {
             DebugLogger.exiting("ClientNetworking", "LargeSignOpenEditPayload handler");
         });
         DebugLogger.info("ClientNetworking", "Registered receiver: LargeSignOpenEditPayload");
+
+        // 注册无线红石频道设置界面处理器（服务端已校验方块实体存在且玩家有建造权限）
+        ClientPlayNetworking.registerGlobalReceiver(WirelessRedstoneOpenChannelPayload.TYPE, (payload, context) -> {
+            DebugLogger.entering("ClientNetworking", "WirelessRedstoneOpenChannelPayload handler");
+            context.client().execute(() -> {
+                context.client().setScreenAndShow(new WirelessRedstoneChannelScreen(
+                        payload.pos(), payload.currentChannel(), payload.transmitter()));
+            });
+            DebugLogger.exiting("ClientNetworking", "WirelessRedstoneOpenChannelPayload handler");
+        });
+        DebugLogger.info("ClientNetworking", "Registered receiver: WirelessRedstoneOpenChannelPayload");
 
         // 注册传送石蓄力打断处理器：服务端已停止使用物品，客户端同步停手，避免一直保持蓄力动作
         ClientPlayNetworking.registerGlobalReceiver(TeleportStoneInterruptPayload.TYPE, (payload, context) -> {

@@ -1,0 +1,38 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_ingredients": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "minecraft:amethyst_shard"
+            ]
+          },
+          {
+            "items": [
+              "minecraft:redstone_torch"
+            ]
+          },
+          {
+            "items": [
+              "minecraft:smooth_stone"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "has_ingredients"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "youzaiworldcore:wireless_redstone_receiver"
+    ]
+  },
+  "hidden": true
+}

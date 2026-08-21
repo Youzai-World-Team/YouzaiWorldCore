@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "redstone",
+  "key": {
+    "E": "minecraft:ender_pearl",
+    "R": "minecraft:redstone",
+    "S": "minecraft:smooth_stone",
+    "T": "minecraft:redstone_torch"
+  },
+  "pattern": [
+    " E ",
+    "RTR",
+    "SSS"
+  ],
+  "result": {
+    "id": "youzaiworldcore:wireless_redstone_transmitter",
+    "count": 1
+  }
+}
