@@ -34,6 +34,7 @@ import top.csituka.youzaiworldcore.command.EventCommand;
 import top.csituka.youzaiworldcore.command.FunctionCommand;
 import top.csituka.youzaiworldcore.command.ReloadCommand;
 import top.csituka.youzaiworldcore.config.AfkConfig;
+import top.csituka.youzaiworldcore.config.ApiModuleSettings;
 import top.csituka.youzaiworldcore.config.ChatFormatSettings;
 import top.csituka.youzaiworldcore.config.ChargedCreeperConfig;
 import top.csituka.youzaiworldcore.config.CosmeticModuleSettings;
@@ -284,6 +285,7 @@ public class YouzaiworldCore implements ModInitializer {
 
         // ===== 初始化账户系统 =====
         DebugLogger.entering("YouzaiworldCore", "AccountSystem.init");
+        ApiModuleSettings.load();
         AccountDataStorage.initialize();
         LOGGER.info("账户系统已初始化");
         DebugLogger.exiting("YouzaiworldCore", "AccountSystem.init");

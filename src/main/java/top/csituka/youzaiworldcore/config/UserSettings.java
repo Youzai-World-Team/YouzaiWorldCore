@@ -13,7 +13,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * 玩家个人配置（每位注册玩家一个文件，强关联账户系统）。
  * <p>
  * 文件位置：{@code <gameDir>/yzwc/server/config/user_settings/<玩家UUID>.json}，
- * 其中的 UUID 与 {@code account_module/registerd_users_data.json} 里该玩家记录的 UUID 一一对应。
+ * 其中的 UUID 与 Api 服务端游戏账户记录的 UUID 一一对应。
  * </p>
  * <p>
  * 文件内部同样先按<b>功能模块</b>分节：

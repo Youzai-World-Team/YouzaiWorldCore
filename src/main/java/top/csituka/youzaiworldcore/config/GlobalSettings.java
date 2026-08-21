@@ -12,7 +12,7 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
  * <pre>
  * {
  *   "core_module":   { "dev_mode_enabled": false, "log_to_file": false },
- *   "account_module":{ "session_timeout": 0, "login_cooldown": 300 },
+ *   "api_module":    { "base_url": "http://localhost:3000", ... },
  *   "afk_module":    { "enabled": true, "threshold_seconds": 300, ... },
  *   ...
  * }
@@ -37,8 +37,6 @@ public final class GlobalSettings {
 
     /** 模组核心（开发者模式 / 日志开关） */
     public static final String CORE_MODULE = "core_module";
-    /** 账户系统（会话超时 / 登录冷却） */
-    public static final String ACCOUNT_MODULE = "account_module";
     /** AFK 挂机检测 */
     public static final String AFK_MODULE = "afk_module";
     /** 全局事件开关 */
@@ -77,6 +75,8 @@ public final class GlobalSettings {
     public static final String TABLIST_MODULE = "tablist_module";
     /** 侧边栏定制（仿 Styled Sidebars 精简版，计分板驱动，单一全局样式） */
     public static final String SIDEBAR_MODULE = "sidebar_module";
+    /** Api 服务端账户与装扮网桥配置 */
+    public static final String API_MODULE = "api_module";
 
     private static final JsonFileStore STORE = new JsonFileStore(ModPaths.globalSettingsFile());
 

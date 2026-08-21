@@ -45,7 +45,7 @@ public class MailManager {
         Set<UUID> allUuids = new HashSet<>();
         Map<UUID, ServerPlayer> onlinePlayers = new HashMap<>();
 
-        // 获取全部已注册账户（离线覆盖：AccountDataStorage.initialize() 启动时 loadFromDisk）
+        // 获取 Api 中的全部已注册账户（包含离线账户）
         Map<String, PlayerAccount> accounts = AccountDataStorage.getAll();
         Set<UUID> allAccountUuids = accounts.values().stream()
                 .map(acc -> acc.uuid)

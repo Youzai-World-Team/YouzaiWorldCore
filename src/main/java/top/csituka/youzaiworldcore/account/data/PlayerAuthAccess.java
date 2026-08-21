@@ -15,6 +15,8 @@ public interface PlayerAuthAccess {
     void yzwc$setAccount(PlayerAccount account);
     String yzwc$getIpAddress();
     void yzwc$setIpAddress(String ip);
+    String yzwc$getSessionToken();
+    void yzwc$setSessionToken(String token);
     AuthLocationData yzwc$getLastLocation();
     void yzwc$setLastLocation(AuthLocationData loc);
     void yzwc$saveLocation();

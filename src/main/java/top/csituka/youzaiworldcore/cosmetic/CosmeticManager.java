@@ -4,6 +4,7 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import top.csituka.youzaiworldcore.account.util.AuthPlayerHelper;
+import top.csituka.youzaiworldcore.api.ApiServiceClient;
 import top.csituka.youzaiworldcore.config.CosmeticModuleSettings;
 import top.csituka.youzaiworldcore.config.ConfigSection;
 import top.csituka.youzaiworldcore.config.GlobalSettings;
@@ -16,27 +17,17 @@ import top.csituka.youzaiworldcore.network.CosmeticUploadPayload;
 import top.csituka.youzaiworldcore.network.CosmeticUploadResultPayload;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
-import java.io.IOException;
-import java.nio.file.AtomicMoveNotSupportedException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
-import java.nio.file.StandardOpenOption;
-import java.util.Arrays;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Stream;
 
 /**
  * 自定义皮肤与披风服务端权威管理器。
  * <p>
- * 数据存放在 {@code yzwc/server/data/cosmetic_module/<UUID>/}，负责上传校验、快照对齐、
- * 请求冷却、状态广播以及账户删除联动。
+ * 文件由 Api 服务端持久化，本类负责上传校验、快照同步、请求冷却和状态广播。
  * </p>
  */
 @SuppressWarnings("null")
@@ -256,26 +247,18 @@ public final class CosmeticManager {
             return;
         }
 
-        Path playerDir = playerDataDir(player.getUUID());
         boolean changed = false;
-        try {
-            for (SlotData slot : slots) {
-                changed |= alignSlot(playerDir, slot.fileName(), slot.data());
-            }
-            removeDirectoryIfEmpty(playerDir);
-            LAST_UPLOAD_NANOS.put(player.getUUID(), now);
-        } catch (IOException e) {
-            DebugLogger.exception(MODULE, "applySnapshot", e);
+        if (!ApiServiceClient.uploadCosmeticSnapshot(
+                player.getUUID(), payload.skinWide(), payload.skinSlim(), payload.cloak())) {
+            DebugLogger.warn(MODULE, "玩家 %s 的外观上传未被 Api 接受", player.getScoreboardName());
             CosmeticSnapshot actualSnapshot = readSnapshot(player.getUUID());
             trackOnlineSnapshot(player.getUUID(), actualSnapshot);
-            if (!actualSnapshot.snapshotHash().equals(beforeSnapshot.snapshotHash())) {
-                clearTargetRequestCooldowns(player.getUUID());
-                broadcastInfo(server, player.getUUID(), actualSnapshot, null);
-            }
             sendUploadResult(player, payload.snapshotHash(), false,
                     Math.max(1, CosmeticModuleSettings.getUploadCooldownSeconds()));
             return;
         }
+        changed = !beforeSnapshot.snapshotHash().equals(payload.snapshotHash());
+        LAST_UPLOAD_NANOS.put(player.getUUID(), now);
 
         CosmeticSnapshot storedSnapshot = readSnapshot(player.getUUID());
         trackOnlineSnapshot(player.getUUID(), storedSnapshot);
@@ -359,32 +342,15 @@ public final class CosmeticManager {
 
     /** 删除指定 UUID 的全部自定义外观数据并广播清除。 */
     public static void deletePlayerData(MinecraftServer server, UUID playerUuid) {
-        Path moduleRoot = ModPaths.serverData(GlobalSettings.COSMETIC_MODULE)
-                .toAbsolutePath().normalize();
-        Path target = playerDataDir(playerUuid).toAbsolutePath().normalize();
-        if (!target.startsWith(moduleRoot) || target.equals(moduleRoot)) {
-            DebugLogger.error(MODULE, "拒绝删除未通过路径校验的外观目录：%s", target);
+        if (!ApiServiceClient.deleteCosmetics(playerUuid)) {
+            DebugLogger.warn(MODULE, "Api 删除玩家 %s 的外观数据失败", playerUuid);
             return;
         }
-
-        try {
-            if (Files.exists(target)) {
-                try (Stream<Path> paths = Files.walk(target)) {
-                    for (Path path : paths.sorted(Comparator.reverseOrder()).toList()) {
-                        Files.deleteIfExists(path);
-                    }
-                }
-            }
-            LAST_UPLOAD_NANOS.remove(playerUuid);
-            clearRequestCooldowns(playerUuid);
-            ONLINE_COSMETIC_OWNERS.remove(playerUuid);
-            if (server != null) {
-                broadcastInfo(server, playerUuid, emptySnapshot(), null);
-            }
-            DebugLogger.info(MODULE, "已删除玩家 %s 的自定义外观数据", playerUuid);
-        } catch (IOException e) {
-            DebugLogger.exception(MODULE, "deletePlayerData", e);
-        }
+        LAST_UPLOAD_NANOS.remove(playerUuid);
+        clearRequestCooldowns(playerUuid);
+        ONLINE_COSMETIC_OWNERS.remove(playerUuid);
+        if (server != null) broadcastInfo(server, playerUuid, emptySnapshot(), null);
+        DebugLogger.info(MODULE, "已删除玩家 %s 的自定义外观数据", playerUuid);
     }
 
     private static boolean isServerActive(MinecraftServer server) {
@@ -396,84 +362,15 @@ public final class CosmeticManager {
         return AuthPlayerHelper.isAuthenticated(player) || AuthPlayerHelper.canSkipAuth(player);
     }
 
-    private static Path playerDataDir(UUID playerUuid) {
-        return ModPaths.serverPlayerData(GlobalSettings.COSMETIC_MODULE, playerUuid);
-    }
-
-    private static boolean alignSlot(Path playerDir, String fileName, byte[] data) throws IOException {
-        Path target = playerDir.resolve(fileName);
-        if (data.length == 0) {
-            return Files.deleteIfExists(target);
-        }
-        if (Files.isRegularFile(target)
-                && Files.size(target) == data.length
-                && Arrays.equals(Files.readAllBytes(target), data)) {
-            return false;
-        }
-
-        Files.createDirectories(playerDir);
-        Path temp = playerDir.resolve(fileName + ".tmp");
-        try {
-            Files.write(temp, data,
-                    StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE);
-            try {
-                Files.move(temp, target,
-                        StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
-            } catch (AtomicMoveNotSupportedException e) {
-                Files.move(temp, target, StandardCopyOption.REPLACE_EXISTING);
-            }
-        } finally {
-            Files.deleteIfExists(temp);
-        }
-        return true;
-    }
-
-    private static void removeDirectoryIfEmpty(Path directory) throws IOException {
-        if (!Files.isDirectory(directory)) {
-            return;
-        }
-        try (Stream<Path> children = Files.list(directory)) {
-            if (children.findAny().isEmpty()) {
-                Files.deleteIfExists(directory);
-            }
-        }
-    }
-
     private static CosmeticSnapshot readSnapshot(UUID playerUuid) {
-        byte[] skinWide = readSlot(playerUuid, SKIN_WIDE_FILE, false);
-        byte[] skinSlim = skinWide.length > 0 ? EMPTY : readSlot(playerUuid, SKIN_SLIM_FILE, false);
-        byte[] cloak = readSlot(playerUuid, CLOAK_FILE, true);
-        return new CosmeticSnapshot(
-                skinWide,
-                skinSlim,
-                cloak,
-                CosmeticSnapshotHasher.hash(skinWide, skinSlim, cloak));
-    }
-
-    private static byte[] readSlot(UUID playerUuid, String fileName, boolean cloak) {
-        Path file = playerDataDir(playerUuid).resolve(fileName);
-        if (!Files.isRegularFile(file)) {
-            return EMPTY;
+        var remote = ApiServiceClient.fetchCosmeticSnapshot(playerUuid);
+        if (remote.isPresent()) {
+            ApiServiceClient.CosmeticSnapshot snapshot = remote.get();
+            return new CosmeticSnapshot(snapshot.skinWide(), snapshot.skinSlim(), snapshot.cloak(),
+                    CosmeticSnapshotHasher.hash(snapshot.skinWide(), snapshot.skinSlim(), snapshot.cloak()));
         }
-        try {
-            long size = Files.size(file);
-            if (size <= 0 || size > CosmeticModuleSettings.getMaxFileBytes()) {
-                DebugLogger.warn(MODULE, "跳过大小非法的服务端外观文件：%s", file);
-                return EMPTY;
-            }
-            byte[] data = Files.readAllBytes(file);
-            CosmeticPngValidator.Validation validation = cloak
-                    ? CosmeticPngValidator.validateCloak(data, CosmeticModuleSettings.getMaxFileBytes())
-                    : CosmeticPngValidator.validateSkin(data, CosmeticModuleSettings.getMaxFileBytes());
-            if (!validation.valid()) {
-                DebugLogger.warn(MODULE, "跳过内容非法的服务端外观文件 %s：%s", file, validation.reason());
-                return EMPTY;
-            }
-            return data;
-        } catch (IOException e) {
-            DebugLogger.exception(MODULE, "readSlot", e);
-            return EMPTY;
-        }
+        DebugLogger.warn(MODULE, "Api 无法读取玩家 %s 的外观数据", playerUuid);
+        return emptySnapshot();
     }
 
     private static void broadcastInfo(

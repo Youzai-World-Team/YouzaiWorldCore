@@ -19,8 +19,10 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import top.csituka.youzaiworldcore.YouzaiworldCore;
+import top.csituka.youzaiworldcore.api.ApiServiceClient;
 import top.csituka.youzaiworldcore.account.data.AccountDataStorage;
 import top.csituka.youzaiworldcore.account.data.PlayerAccount;
+import top.csituka.youzaiworldcore.account.data.PlayerAuthAccess;
 import top.csituka.youzaiworldcore.account.util.AuthHelper;
 import top.csituka.youzaiworldcore.account.util.AuthLocationData;
 import top.csituka.youzaiworldcore.account.util.AuthPlayerHelper;
@@ -51,8 +53,7 @@ public abstract class AccountPlayerListMixin {
         String username = player.getScoreboardName();
         YouzaiworldCore.LOGGER.info("玩家 {} 正在加入服务器...", username);
 
-        AccountDataStorage.getOrCreate(username, player.getUUID());
-        PlayerAccount account = AccountDataStorage.get(username);
+        PlayerAccount account = AccountDataStorage.ensureRemoteAccount(username, player.getUUID());
         AuthPlayerHelper.setAccount(player, account != null ? account : new PlayerAccount(username));
         AuthPlayerHelper.setIpAddress(player, AuthHelper.getIp(connection.getRemoteAddress()));
         AuthPlayerHelper.setCanSkipAuth(player, player.getClass() != ServerPlayer.class);
@@ -69,16 +70,18 @@ public abstract class AccountPlayerListMixin {
             AuthPlayerHelper.saveLocation(player);
         }
 
-        if (!AuthPlayerHelper.canSkipAuth(player) && account != null && account.isRegistered()
-                && !account.lastIp.isEmpty()
-                && AuthHelper.sameIp(account.lastIp, AuthPlayerHelper.getIpAddress(player))
-                && AccountDataStorage.getSessionTimeout() > 0
-                && account.lastAuthenticatedDate.plusSeconds(AccountDataStorage.getSessionTimeout()).isAfter(ZonedDateTime.now())) {
-            YouzaiworldCore.LOGGER.info("玩家 {} 通过会话自动登录", username);
-            AuthPlayerHelper.setAuthenticated(player, true);
-            account.lastAuthenticatedDate = ZonedDateTime.now();
-            account.lastIp = AuthPlayerHelper.getIpAddress(player);
-            AccountDataStorage.update(account);
+        if (!AuthPlayerHelper.canSkipAuth(player) && account != null && account.isRegistered()) {
+            ApiServiceClient.restoreSession(username, AuthPlayerHelper.getIpAddress(player)).ifPresent(result -> {
+                if (result.restored() && result.token() != null && !result.token().isBlank()) {
+                    YouzaiworldCore.LOGGER.info("玩家 {} 通过 Api 会话自动登录", username);
+                    AuthPlayerHelper.setAuthenticated(player, true);
+                    ((PlayerAuthAccess) (Object) player).yzwc$setSessionToken(result.token());
+                    if (result.account() != null) {
+                        AuthPlayerHelper.setAccount(player, result.account());
+                        AccountDataStorage.acceptRemoteAccount(result.account(), false);
+                    }
+                }
+            });
         }
     }
 
@@ -99,6 +102,7 @@ public abstract class AccountPlayerListMixin {
         teleportToVoid(player);
 
         PlayerAccount account = AuthPlayerHelper.getAccount(player);
+        ((PlayerAuthAccess) (Object) player).yzwc$setSessionToken(null);
         if (account != null && account.isRegistered()) {
             player.sendSystemMessage(Component.translatable("youzaiworldcore.message.account.auth_header"));
             player.sendSystemMessage(Component.translatable("youzaiworldcore.message.account.prompt_login"));
@@ -117,26 +121,27 @@ public abstract class AccountPlayerListMixin {
 
         PlayerAccount account = AuthPlayerHelper.getAccount(player);
 
+        if (account == null) return;
+        AuthLocationData loc;
         if (AuthPlayerHelper.isAuthenticated(player)) {
-            if (account != null) {
-                account.lastAuthenticatedDate = ZonedDateTime.now();
-                account.lastIp = AuthPlayerHelper.getIpAddress(player);
-                // 保存玩家当前位置（从实体坐标读取，不是从 mixin 缓存，因为玩家可能已经移动过）
-                AuthLocationData loc = new AuthLocationData();
-                loc.position = player.position();
-                loc.dimension = player.level().dimension();
-                loc.yaw = player.getYRot();
-                loc.pitch = player.getXRot();
-                account.lastPositionJson = loc.toJson();
-                AccountDataStorage.update(account);
-            }
+            loc = new AuthLocationData();
+            loc.position = player.position();
+            loc.dimension = player.level().dimension();
+            loc.yaw = player.getYRot();
+            loc.pitch = player.getXRot();
         } else {
-            // 未认证玩家断开时，如果 mixin 中有有效位置（来自上次登录或首次加入），持久化保存
-            AuthLocationData loc = AuthPlayerHelper.getLastLocation(player);
-            if (loc != null && loc.position != null && account != null && !AuthPlayerHelper.isVoidLocation(loc)) {
+            loc = AuthPlayerHelper.getLastLocation(player);
+        }
+        if (AuthPlayerHelper.isAuthenticated(player)) {
+            if (loc != null && loc.position != null && !AuthPlayerHelper.isVoidLocation(loc)) {
                 account.lastPositionJson = loc.toJson();
-                AccountDataStorage.update(account);
             }
+            account.lastIp = AuthPlayerHelper.getIpAddress(player);
+            account.lastAuthenticatedDate = ZonedDateTime.now();
+            AccountDataStorage.updateForDisconnect(account);
+        } else if (loc != null && loc.position != null && !AuthPlayerHelper.isVoidLocation(loc)) {
+            account.lastPositionJson = loc.toJson();
+            AccountDataStorage.updatePosition(account);
         }
     }
 

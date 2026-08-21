@@ -190,7 +190,6 @@ DebugLogger.exiting("ModuleName", "methodName", "result=" + r);
 <gameDir>/yzwc/server/                       # 服务端配置（与世界无关的内容）
 ├── config/
 │   ├── global_settings.json                 # 全局配置，按功能模块分节
-│   ├── account_module/registerd_users_data.json   # 玩家代号 / 密码 / UUID
 │   └── user_settings/<玩家UUID>.json        # 玩家个人配置，按功能模块分节
 ├── data/<模块名>/data.json                  # 各模块数据
 ├── backup/<模块名>/*.zip                    # 各模块备份（必须是 zip）
@@ -217,9 +216,9 @@ DebugLogger.exiting("ModuleName", "methodName", "result=" + r);
    - 与世界无关、对所有人生效的服务端配置写 `GlobalSettings.section(模块名)`；
    - 每位玩家各自一份的**且必须由服务端保存**的设置写 `UserSettings.section(uuid, 模块名)`；
    - 纯本机生效的客户端配置写 `ClientGlobalSettings.section(模块名)`。
-   个人配置文件在账户注册时由 `AccountDataStorage.register` 创建、注销/删号时删除。
+   个人配置文件在 Api 确认账户注册时由 `AccountDataStorage` 创建、注销/删号成功后删除。
 3. **读配置用强类型 getter**：`ConfigSection.getBoolean/getInt/getDouble/getString/getEnum/getStringList` 等。键缺失回落默认值；类型不符或越界一律走下面第 5 条的失败流程。本项目不做配置迁移，也不做静默降级。
-4. **每个模块都要能生成自己的默认值**：模块配置类必须提供 `public static void writeDefaults()`（把字段**重置为 `DEFAULT_*` 常量**再 `save()`），并在 `DefaultSettingsWriter.writeAllDefaults()` / `ClientDefaultSettingsWriter.writeAllDefaults()` 里登记一行。新开服（文件不存在）时 `GlobalSettings.load()` / `ClientGlobalSettings.load()` 会直接写出一份含全部模块默认值的完整配置，而不是等各模块 `load()` 零散补齐。非全局的文件（个人配置 / 账户凭据 / 各模块 `data.json`）通过 `JsonFileStore.setDefaultsWriter(...)` 注册自己的默认内容，再用 `loadOrCreateDefaults()` 读取。
+4. **每个模块都要能生成自己的默认值**：模块配置类必须提供 `public static void writeDefaults()`（把字段**重置为 `DEFAULT_*` 常量**再 `save()`），并在 `DefaultSettingsWriter.writeAllDefaults()` / `ClientDefaultSettingsWriter.writeAllDefaults()` 里登记一行。新开服（文件不存在）时 `GlobalSettings.load()` / `ClientGlobalSettings.load()` 会直接写出一份含全部模块默认值的完整配置，而不是等各模块 `load()` 零散补齐。非全局的文件（玩家个人配置 / 各模块 `data.json`）通过 `JsonFileStore.setDefaultsWriter(...)` 注册自己的默认内容，再用 `loadOrCreateDefaults()` 读取。
 5. **备份必须是 zip**：用 `util/BackupArchive` 写 `backup/<模块名>/xxx.zip`（压缩包内放同名 `.json`）。临时文件用 `TempManager.serverTempDir(模块名)` / `worldTempDir(server, 模块名)`，并且不得假设能跨重启存活。
 
 **读到坏配置时的固定流程**（`JsonFileStore.fail` → `ConfigCrash`）：
@@ -378,7 +377,7 @@ YouzaiworldCore.onInitialize()
 
 ### 6.4 关键设计决策
 
-1. **配置全部为 JSON + Gson，且集中收拢**（详见 [§4.3](#43-文件存放规范强制)）。服务端只有三类配置文件：全局 `yzwc/server/config/global_settings.json`、账户凭据 `yzwc/server/config/account_module/registerd_users_data.json`、玩家个人 `yzwc/server/config/user_settings/<UUID>.json`；全部按功能模块分节。数据 / 备份 / 缓存分别在 `yzwc/server/` 下的 `data/` `backup/` `temp/`，随存档走的同结构放在 `<world_name>/data/yzwc/`。各配置类仍是静态单例 `load()` / `save()`，但读写都走 `GlobalSettings` / `UserSettings`，分节缺失时自动写出默认值，格式非法则崩溃退出。**客户端配置尚未迁移**，仍在 `config/youzaiworldcore/`（`client_external_settings.json`、`item_borders.json`、`fancy_tooltips.json`、`highlight_item/` 等）。
+1. **配置全部为 JSON + Gson，且集中收拢**（详见 [§4.3](#43-文件存放规范强制)）。服务端本地配置包括全局 `yzwc/server/config/global_settings.json` 与玩家个人 `yzwc/server/config/user_settings/<UUID>.json`；游戏账户凭据、认证会话、登录冷却以及皮肤/披风由 Api 服务端 SQLite 权威保存，模组不生成账户凭据 JSON，也不保存外观 PNG。数据 / 备份 / 缓存分别在 `yzwc/server/` 下的 `data/` `backup/` `temp/`，随存档走的同结构放在 `<world_name>/data/yzwc/`。各配置类仍是静态单例 `load()` / `save()`，但本地配置读写都走 `GlobalSettings` / `UserSettings`，分节缺失时自动写出默认值，格式非法则崩溃退出。**客户端配置尚未迁移**，仍在 `config/youzaiworldcore/`（`client_external_settings.json`、`item_borders.json`、`fancy_tooltips.json`、`highlight_item/` 等）。
 2. **网络层集中注册**：所有 Payload 的 `PayloadTypeRegistry` 注册与服务端接收器都写在 `ModNetworking.initialize()`，客户端接收器写在 `ClientNetworking`。Payload 一律用 `record` + `CustomPacketPayload.Type ID` + `StreamCodec STREAM_CODEC`。
 3. **权限双轨制**：`LuckPermsHelper` 暴露权限节点常量与 `checkPermission(...)`；LuckPerms 未安装时**不抛异常**，自动回退到原版 OP 等级（`Commands.LEVEL_ADMINS` = 4）。新增命令请在此类中补充节点常量并同步更新 README 权限表。
 4. **Mixin 三配置分离**：`youzaiworldcore.mixins.json`（服务端/通用）、`youzaiworldcore.account.mixins.json`（账户系统独立）、`youzaiworldcore.client.mixins.json`（客户端，`environment: client`）。新增 Mixin 必须登记进对应 JSON，否则不生效；`compatibilityLevel` 均为 `JAVA_25`，`injectors.defaultRequire = 1`，通用与客户端配置还开启了 `overwrites.requireAnnotations`。

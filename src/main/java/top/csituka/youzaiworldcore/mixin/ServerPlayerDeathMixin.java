@@ -29,6 +29,8 @@ import top.csituka.youzaiworldcore.skill.AdventureLevelManager;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 import top.csituka.youzaiworldcore.util.TrinketHelper;
 
+import java.util.OptionalInt;
+
 /**
  * 混合注入 {@link ServerPlayer} 的死亡与状态恢复流程。
  * <p>
@@ -74,8 +76,14 @@ public class ServerPlayerDeathMixin implements InPlaceRespawnPlayerAccess {
 
         boolean eligibleDeath = !player.isSpectator() && !server.isHardcore();
         youzaiworldcore$inPlaceRespawnEnabled = eligibleDeath && InPlaceRespawnConfig.isEnabled(player);
-        youzaiworldcore$inPlaceRespawnCost = youzaiworldcore$inPlaceRespawnEnabled
-                ? InPlaceRespawnManager.getRequiredLevel(player) : 0;
+        OptionalInt requiredLevel = youzaiworldcore$inPlaceRespawnEnabled
+                ? InPlaceRespawnManager.getRequiredLevel(player) : OptionalInt.empty();
+        if (requiredLevel.isEmpty()) {
+            youzaiworldcore$inPlaceRespawnEnabled = false;
+            youzaiworldcore$inPlaceRespawnCost = 0;
+        } else {
+            youzaiworldcore$inPlaceRespawnCost = requiredLevel.getAsInt();
+        }
 
         boolean keepInventory = server.getGameRules().get(GameRules.KEEP_INVENTORY);
         youzaiworldcore$deferredExperienceReward = !keepInventory && !player.isSpectator()

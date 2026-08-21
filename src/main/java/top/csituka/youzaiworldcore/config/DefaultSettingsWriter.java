@@ -35,8 +35,8 @@ public final class DefaultSettingsWriter {
         GlobalSettings.runBatched(() -> {
             // 核心
             ServerExternalSettings.writeDefaults();
-            // 账户
-            top.csituka.youzaiworldcore.account.data.AccountDataStorage.writeDefaultSettings();
+            // Api 网桥
+            ApiModuleSettings.writeDefaults();
             // 玩法
             AfkConfig.writeDefaults();
             EventSettings.writeDefaults();

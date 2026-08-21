@@ -40,7 +40,7 @@
 
 为离线模式服务器提供完整的密码认证，通过 Mixin 拦截实现未认证行为的全面限制。
 
-- **密码安全**：BCrypt 加盐哈希（兼容旧版 SHA-256），5 次登录尝试上限
+- **密码安全**：Api 服务端使用 PBKDF2-HMAC-SHA256 加盐哈希，模组不保存或验证密码；5 次登录尝试上限
 - **登录冷却/锁定**：失败 5 次后触发，默认冷却 300 秒（5 分钟）；支持永久锁定、限时冷却、永不锁定三种模式，管理员可通过命令解锁
 - **会话管理**：可配置的会话超时，支持同 IP 自动恢复
 - **位置保存/恢复**：登出时保存位置 → 传送至末地虚空；登录后精确保留位置恢复
@@ -48,7 +48,7 @@
 - **登录/注册 GUI**：未认证玩家进入登录大厅时客户端自动弹出注册/登录界面（`RegisterScreen` / `LoginScreen`，用户名只读预填，支持 Enter 登入与断开连接），服务端经 `OpenAuthScreenPayload` 推送
 - **隐身联动**：隐身状态下禁止执行登出、注销、改密等敏感操作
 - **账户注销联动**：账户注销/删除时同时清空其邮件信箱（`MailManager.onAccountDeleted`）
-- **自定义皮肤与披风**：离线账户可从 `yzwc/client/config/cosmetic_module/` 上传 `skin.png`（宽模型）、`skin_slim.png`（细模型）和 64×32 的 `cloak.png`；两种皮肤同时存在时优先使用 `skin.png` 并在登录后提示，服务端按账户保存并同步给其他在线玩家；正版账户保持 Mojang 外观
+- **自定义皮肤与披风**：离线账户可从 `yzwc/client/config/cosmetic_module/` 上传 `skin.png`（宽模型）、`skin_slim.png`（细模型）和 64×32 的 `cloak.png`；模组校验后上传到 Api 服务端保存并同步给其他在线玩家，不在 Minecraft 服务端保留文件回退；正版账户保持 Mojang 外观
 
 ### 2. GUI 菜单系统
 
@@ -228,8 +228,6 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 <游戏根目录>/yzwc/server/
 ├── config/
 │   ├── global_settings.json                # 全局配置（与世界无关），按功能模块分节
-│   ├── account_module/
-│   │   └── registerd_users_data.json       # 玩家代号 / 密码 / UUID（注册时写入）
 │   └── user_settings/
 │       └── <玩家UUID>.json                 # 玩家个人配置（注册时创建，注销时删除）
 ├── data/
@@ -259,7 +257,7 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 ```
 
 **新开服自动生成**：首次启动（文件不存在）时会直接写出一份**包含全部模块默认值**的完整
-`global_settings.json`，以及空的账户凭据表与各模块数据文件，并建好
+`global_settings.json`，以及各模块数据文件，并建好
 `config/ data/ backup/ temp/` 四层目录骨架 —— 不需要先跑一遍服务器才知道有哪些配置项。
 玩家个人配置文件在账户注册时创建，同样带上全部个人设置的默认值。
 
@@ -277,8 +275,9 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 | 配置           | 存放位置                                                                  | 内容                                                                                     |
 | -------------- | ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
 | 模组核心       | `yzwc/server/config/global_settings.json` → `core_module`                 | `dev_mode_enabled`、`log_to_file`（双开关控制 DebugLogger）                             |
-| 账户设置       | `global_settings.json` → `account_module`                                 | `session_timeout`、`login_cooldown`                                                     |
-| 账户凭据       | `yzwc/server/config/account_module/registerd_users_data.json`             | 玩家代号 / 小写名 / 密码哈希 / UUID / 登录状态                                          |
+| Api 网桥       | `global_settings.json` → `api_module`                                     | Api 地址（开发期默认 `http://localhost:3000`）、服务器密钥、请求超时                    |
+| 账户与认证     | Api 服务端 SQLite `game_accounts` / `game_sessions`                       | 玩家代号、密码哈希、UUID、会话、登录冷却；模组仅保留运行期非凭据缓存                    |
+| 自定义外观     | Api 服务端 SQLite `game_cosmetics`                                        | 皮肤和披风二进制数据；Minecraft 服务端不保存 PNG 文件                                   |
 | 玩家个人配置   | `yzwc/server/config/user_settings/<UUID>.json`                            | `double_doors_module`、`function_module`（7 个个人功能开关：梯子延展/作物经验/工具信息/方块动画/合成音效/物品闪光/伤害跳字） |
 | 客户端外部设置 | `config/youzaiworldcore/client_external_settings.json`（客户端，未迁移）  | `devModeEnabled`、`logLevel`（0-3）、`yzuiEnabled`（YZUI 界面总开关）、调试地址/端口     |
 | DebugLogger    | `util/DebugLogger`                                                        | 四级日志（OFF/BASIC/DETAILED/DEBUG），entering/exiting/branch/stateChange/exception 追踪 |

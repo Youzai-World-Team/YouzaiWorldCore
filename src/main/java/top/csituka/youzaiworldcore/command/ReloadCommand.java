@@ -9,6 +9,7 @@ import top.csituka.youzaiworldcore.YouzaiworldCore;
 import top.csituka.youzaiworldcore.account.data.AccountDataStorage;
 import top.csituka.youzaiworldcore.luckperms.LuckPermsHelper;
 import top.csituka.youzaiworldcore.config.ChatFormatSettings;
+import top.csituka.youzaiworldcore.config.ApiModuleSettings;
 import top.csituka.youzaiworldcore.config.CosmeticModuleSettings;
 import top.csituka.youzaiworldcore.config.GlobalSettings;
 import top.csituka.youzaiworldcore.config.ServerExternalSettings;
@@ -49,7 +50,7 @@ public class ReloadCommand {
     /**
      * 执行重载逻辑：
      * <ul>
-     *   <li>重新加载 AccountDataStorage（账户数据 + 配置）</li>
+     *   <li>从 Api 服务端重新加载 AccountDataStorage 运行期缓存</li>
      *   <li>预留扩展点：后续可在此添加配置文件、占位符等模块的重载</li>
      * </ul>
      */
@@ -65,8 +66,9 @@ public class ReloadCommand {
         // 先重读全局配置文件，后续各模块 reload 都从新内容里取分节
         GlobalSettings.load();
         ServerExternalSettings.load();
+        ApiModuleSettings.load();
 
-        // 重载账户数据存储（账户凭据 + 个人配置缓存）
+        // 从 Api 重载账户运行期缓存
         int accountCount = AccountDataStorage.reload();
 
         // 重载更新检查器配置

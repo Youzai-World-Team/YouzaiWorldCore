@@ -11,7 +11,7 @@ import java.time.format.DateTimeFormatter;
 
 /**
  * 玩家账户数据模型
- * 使用 Gson 序列化/反序列化，存储在 JSON 文件中
+ * 使用 Gson 序列化/反序列化 Api 服务端返回的账户状态。
  */
 @SuppressWarnings("null")
 public class PlayerAccount {
@@ -35,9 +35,9 @@ public class PlayerAccount {
     @Expose
     public String uuid;
 
-    /** BCrypt 哈希后的密码（空串表示未注册） */
+    /** Api 返回的注册状态；模组不保存密码或密码哈希。 */
     @Expose
-    public String password = "";
+    public boolean registered = false;
 
     /** 最后登录 IP */
     @Expose
@@ -91,7 +91,7 @@ public class PlayerAccount {
         this.uuid = uuid;
 
         if (parsed != null) {
-            this.password = parsed.password != null ? parsed.password : "";
+            this.registered = parsed.registered;
             this.lastIp = parsed.lastIp != null ? parsed.lastIp : "";
             this.lastAuthenticatedDate = parsed.lastAuthenticatedDate != null ? parsed.lastAuthenticatedDate : EPOCH;
             this.registrationDate = parsed.registrationDate != null ? parsed.registrationDate : EPOCH;
@@ -117,9 +117,9 @@ public class PlayerAccount {
      * 创建新账户（名称 + UUID）
      */
     public PlayerAccount(String username, java.util.UUID uuid) {
+        this(username);
         DebugLogger.entering("PlayerAccount", "PlayerAccount(name,uuid)",
                 "username=" + username + ", uuid=" + uuid);
-        this(username);
         this.uuid = uuid != null ? uuid.toString() : null;
         DebugLogger.exiting("PlayerAccount", "PlayerAccount(name,uuid)");
     }
@@ -135,11 +135,11 @@ public class PlayerAccount {
     }
 
     /**
-     * 是否已注册（有密码）
+     * 是否已注册（由 Api 服务端返回的状态决定）
      */
     public boolean isRegistered() {
         DebugLogger.entering("PlayerAccount", "isRegistered", "username=" + username);
-        boolean result = password != null && !password.isEmpty();
+        boolean result = registered;
         DebugLogger.exiting("PlayerAccount", "isRegistered", String.valueOf(result));
         return result;
     }

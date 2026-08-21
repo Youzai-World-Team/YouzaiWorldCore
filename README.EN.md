@@ -40,7 +40,7 @@
 
 Complete password authentication for offline-mode servers, with Mixin-based restrictions on unauthenticated behavior.
 
-- **Password Security**: BCrypt salted hash (legacy SHA-256 compatible), 5-attempt login limit
+- **Password Security**: The Api service uses salted PBKDF2-HMAC-SHA256; the mod never stores or verifies passwords, with a 5-attempt login limit
 - **Login Cooldown/Lock**: Triggers after 5 failures, default 300s (5 min) cooldown; supports permanent lock, timed cooldown, and never-lock modes; admin unlock available
 - **Session Management**: Configurable session timeout with same-IP auto-recovery
 - **Position Save/Restore**: Saves position on logout → teleports to End void; restores precisely on login
@@ -48,7 +48,7 @@ Complete password authentication for offline-mode servers, with Mixin-based rest
 - **Login/Register GUI**: On entering the login hall, the client auto-opens the register/login screens (`RegisterScreen` / `LoginScreen`, read-only pre-filled username, Enter to log in, Disconnect button), pushed by the server via `OpenAuthScreenPayload`
 - **Invisibility Integration**: Sensitive operations (logout, deactivate, password change) blocked while invisible
 - **Account Deletion Integration**: Deactivating/deleting an account also clears its mailbox (`MailManager.onAccountDeleted`)
-- **Custom Skins & Capes**: Offline accounts can upload `skin.png` (wide model), `skin_slim.png` (slim model), and a single 64×32 `cloak.png` from `yzwc/client/config/cosmetic_module/`; when both skin files exist, `skin.png` takes priority and a login notice is shown. The server stores cosmetics per account and syncs them to other online players, while online-mode accounts keep their Mojang appearance
+- **Custom Skins & Capes**: Offline accounts can upload `skin.png` (wide model), `skin_slim.png` (slim model), and a single 64×32 `cloak.png` from `yzwc/client/config/cosmetic_module/`; after validation, the mod uploads them to the Api service for storage and syncs them to other online players, with no PNG fallback on the Minecraft server. Online-mode accounts keep their Mojang appearance
 
 ### 2. GUI Menu System
 
@@ -228,8 +228,6 @@ All paths are resolved through `config/ModPaths` — modules no longer hand-roll
 <game root>/yzwc/server/
 ├── config/
 │   ├── global_settings.json                # Global config (world-independent), sectioned per module
-│   ├── account_module/
-│   │   └── registerd_users_data.json       # Player name / password / UUID (written on registration)
 │   └── user_settings/
 │       └── <player UUID>.json              # Per-player config (created on register, deleted on deactivate)
 ├── data/
@@ -260,8 +258,8 @@ that module's settings:
 ```
 
 **Generated on first run**: on a fresh server (file absent) the mod writes a complete
-`global_settings.json` **containing every module's default values**, plus empty account-credential and
-per-module data files, and creates the `config/ data/ backup/ temp/` skeleton — you never have to boot
+`global_settings.json` **containing every module's default values**, plus per-module data files, and
+creates the `config/ data/ backup/ temp/` skeleton — you never have to boot
 once just to discover which keys exist. A player's personal config file is created at registration,
 likewise pre-filled with the defaults for every personal setting.
 
@@ -281,8 +279,9 @@ If step 1 fails (file locked, etc.) step 2 is skipped so the original is never c
 | Config                   | Location                                                                       | Contents                                                                                             |
 | ------------------------ | ------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
 | Mod Core                 | `yzwc/server/config/global_settings.json` → `core_module`                      | `dev_mode_enabled`, `log_to_file` (dual-toggle for DebugLogger)                                      |
-| Account Settings         | `global_settings.json` → `account_module`                                      | `session_timeout`, `login_cooldown`                                                                  |
-| Account Credentials      | `yzwc/server/config/account_module/registerd_users_data.json`                  | Player name / lowercase name / password hash / UUID / login state                                    |
+| Api Bridge               | `global_settings.json` → `api_module`                                          | Api URL (development default `http://localhost:3000`), server key, request timeout                   |
+| Accounts & Authentication| Api-side SQLite `game_accounts` / `game_sessions`                              | Player name, password hash, UUID, sessions and login cooldown; the mod only keeps a runtime non-credential cache |
+| Custom Cosmetics         | Api-side SQLite `game_cosmetics`                                               | Skin and cape bytes; no PNG files are stored on the Minecraft server                                 |
 | Per-Player Config        | `yzwc/server/config/user_settings/<UUID>.json`                                 | `double_doors_module`, `function_module` (7 per-player toggles: ladder extend / crop XP / tool info / block animation / craft sound / item sparkle / damage numbers) |
 | Client External Settings | `config/youzaiworldcore/client_external_settings.json` (client, not migrated)  | `devModeEnabled`, `logLevel` (0–3), `yzuiEnabled` (YZUI interface master toggle), debug address/port |
 | DebugLogger              | `util/DebugLogger`                                                             | 4 log levels (OFF/BASIC/DETAILED/DEBUG), entering/exiting/branch/stateChange/exception tracing       |

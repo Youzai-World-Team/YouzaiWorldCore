@@ -13,13 +13,12 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
 import top.csituka.youzaiworldcore.YouzaiworldCore;
+import top.csituka.youzaiworldcore.api.ApiServiceClient;
 import top.csituka.youzaiworldcore.account.data.AccountDataStorage;
 import top.csituka.youzaiworldcore.account.data.PlayerAccount;
 import top.csituka.youzaiworldcore.account.data.PlayerAuthAccess;
-import top.csituka.youzaiworldcore.account.util.AuthHelper;
 import top.csituka.youzaiworldcore.account.util.AuthLocationData;
 import top.csituka.youzaiworldcore.account.util.AuthPlayerHelper;
-import top.csituka.youzaiworldcore.account.util.PasswordHasher;
 import top.csituka.youzaiworldcore.cosmetic.CosmeticManager;
 import top.csituka.youzaiworldcore.invisibility.InvisibilityManager;
 import top.csituka.youzaiworldcore.util.DebugLogger;
@@ -202,30 +201,17 @@ public class AccountCommands {
         }
         DebugLogger.branch("AccountCommands", "password length <= 128", true);
 
-        PlayerAccount account = AccountDataStorage.get(player.getScoreboardName());
-        if (account == null) {
-            DebugLogger.branch("AccountCommands", "account exists in storage", false);
-            source.sendFailure(Component.translatable("youzaiworldcore.message.account.account_not_found"));
-            DebugLogger.exiting("AccountCommands", "executeRegister", "0 (account not found in storage)");
+        ApiServiceClient.AccountResult remote = ApiServiceClient.registerAccount(
+                player.getScoreboardName(), player.getUUID(), password, authPlayer.yzwc$getIpAddress(), true);
+        if (!remote.success() || remote.account() == null || remote.token() == null || remote.token().isBlank()) {
+            source.sendFailure(remote.statusCode() == 409
+                    ? Component.translatable("youzaiworldcore.message.account.already_registered")
+                    : Component.literal(remote.message()));
             return 0;
         }
-        DebugLogger.branch("AccountCommands", "account exists in storage", true);
-
-        if (account.isRegistered()) {
-            DebugLogger.branch("AccountCommands", "account already registered", true);
-            source.sendFailure(Component.translatable("youzaiworldcore.message.account.already_registered"));
-            DebugLogger.exiting("AccountCommands", "executeRegister", "0 (already registered)");
-            return 0;
-        }
-        DebugLogger.branch("AccountCommands", "account already registered", false);
-
-        // 哈希密码并保存
-        String hashed = PasswordHasher.hash(password);
-        account.password = hashed;
-        account.registrationDate = ZonedDateTime.now();
-        account.lastAuthenticatedDate = ZonedDateTime.now();
-        account.lastIp = authPlayer.yzwc$getIpAddress();
-        AccountDataStorage.update(account);
+        PlayerAccount account = remote.account();
+        AccountDataStorage.acceptRemoteAccount(account, true);
+        authPlayer.yzwc$setSessionToken(remote.token());
 
         // 标记已认证
         authPlayer.yzwc$setAuthenticated(true);
@@ -277,100 +263,43 @@ public class AccountCommands {
         String password = StringArgumentType.getString(ctx, "password");
         PlayerAccount account = authPlayer.yzwc$getAccount();
 
-        if (account == null || !account.isRegistered()) {
-            DebugLogger.branch("AccountCommands", "account exists and registered", false);
-            source.sendFailure(Component.translatable("youzaiworldcore.message.account.not_registered"));
-            DebugLogger.exiting("AccountCommands", "executeLogin", "0 (not registered)");
-            return 0;
-        }
-        DebugLogger.branch("AccountCommands", "account exists and registered", true);
+        ApiServiceClient.LoginResult result = ApiServiceClient.login(
+                player.getScoreboardName(), password, authPlayer.yzwc$getIpAddress());
+        if (result.success() && result.account() != null && result.token() != null && !result.token().isBlank()) {
+            account = result.account();
+            authPlayer.yzwc$setSessionToken(result.token());
+            authPlayer.yzwc$setAuthenticated(true);
+            CosmeticManager.onAuthenticated(player);
+            AccountDataStorage.acceptRemoteAccount(account, false);
 
-        long cooldownSeconds = AccountDataStorage.getLoginCooldown();
-
-        // ===== 登录尝试冷却/锁定检查 =====
-        // cooldownSeconds == -1 : 永不锁定，跳过检查
-        if (cooldownSeconds != -1 && account.loginTries >= 5) {
-            DebugLogger.branch("AccountCommands", "login cooldown active", true, "tries=" + account.loginTries + ", cooldown=" + cooldownSeconds);
-            if (cooldownSeconds > 0) {
-                DebugLogger.branch("AccountCommands", "cooldown > 0 (timed)", true);
-                // 限时冷却
-                long elapsedSeconds = java.time.Duration.between(account.lastKickedDate, ZonedDateTime.now()).getSeconds();
-                if (elapsedSeconds < cooldownSeconds) {
-                    DebugLogger.branch("AccountCommands", "cooldown elapsed >= required", false, "elapsed=" + elapsedSeconds + ", required=" + cooldownSeconds);
-                    long remaining = cooldownSeconds - elapsedSeconds;
-                    source.sendFailure(Component.translatable(
-                        "youzaiworldcore.message.account.cooldown_wait", formatCooldown(remaining)));
-                    DebugLogger.exiting("AccountCommands", "executeLogin", "0 (cooldown active)");
-                    return 0;
-                }
-                DebugLogger.branch("AccountCommands", "cooldown elapsed >= required", true, "elapsed=" + elapsedSeconds + ", required=" + cooldownSeconds);
-                // 冷却已过 → 重置计数，允许重试
-                account.loginTries = 0;
-                account.lastKickedDate = java.time.ZonedDateTime.of(1970, 1, 1, 0, 0, 0, 0, java.time.ZoneOffset.UTC);
+            // 传送回原位置
+            AuthPlayerHelper.restoreLocation(player);
+            // 清除持久化的位置缓存
+            if (account.lastPositionJson != null) {
+                DebugLogger.branch("AccountCommands", "lastPositionJson not null, clearing", true);
+                account.lastPositionJson = null;
                 AccountDataStorage.update(account);
-                source.sendSuccess(() -> Component.translatable("youzaiworldcore.message.account.cooldown_expired"), false);
             } else {
-                DebugLogger.branch("AccountCommands", "cooldown > 0 (timed)", false);
-                // cooldownSeconds == 0 : 永久锁定
-                source.sendFailure(Component.translatable("youzaiworldcore.message.account.cooldown_permanent"));
-                DebugLogger.exiting("AccountCommands", "executeLogin", "0 (permanently locked)");
-                return 0;
+                DebugLogger.branch("AccountCommands", "lastPositionJson not null", false);
             }
+
+            source.sendSuccess(() -> Component.translatable("youzaiworldcore.message.account.login_success"), true);
+            DebugLogger.info("AccountCommands", "玩家 %s 登录成功", player.getScoreboardName());
+            YouzaiworldCore.LOGGER.info("玩家 {} 登录成功", player.getScoreboardName());
+            DebugLogger.exiting("AccountCommands", "executeLogin", "1 (success)");
+            return 1;
+        }
+        if (result.statusCode() == 423) {
+            source.sendFailure(result.retryAfterSeconds() > 0
+                    ? Component.translatable("youzaiworldcore.message.account.cooldown_wait", formatCooldown(result.retryAfterSeconds()))
+                    : Component.translatable("youzaiworldcore.message.account.cooldown_permanent"));
+        } else if (result.statusCode() == 401 && "wrong_password".equals(result.reason())) {
+            source.sendFailure(Component.translatable("youzaiworldcore.message.account.wrong_password", result.remainingTries()));
+        } else if (result.statusCode() == 401 && "not_registered".equals(result.reason())) {
+            source.sendFailure(Component.translatable("youzaiworldcore.message.account.not_registered"));
         } else {
-            DebugLogger.branch("AccountCommands", "login cooldown active", false, "tries=" + account.loginTries + ", cooldown=" + cooldownSeconds);
+            source.sendFailure(Component.literal(result.message()));
         }
-
-        AuthHelper.PasswordResult result = AuthHelper.checkPassword(account, password);
-        switch (result) {
-            case CORRECT -> {
-                DebugLogger.branch("AccountCommands", "password check result", true, "CORRECT");
-                authPlayer.yzwc$setAuthenticated(true);
-                CosmeticManager.onAuthenticated(player);
-                account.lastAuthenticatedDate = ZonedDateTime.now();
-                account.lastIp = authPlayer.yzwc$getIpAddress();
-                account.loginTries = 0;
-                AccountDataStorage.update(account);
-
-                // 传送回原位置
-                AuthPlayerHelper.restoreLocation(player);
-                // 清除持久化的位置缓存
-                if (account.lastPositionJson != null) {
-                    DebugLogger.branch("AccountCommands", "lastPositionJson not null, clearing", true);
-                    account.lastPositionJson = null;
-                    AccountDataStorage.update(account);
-                } else {
-                    DebugLogger.branch("AccountCommands", "lastPositionJson not null", false);
-                }
-
-                source.sendSuccess(() -> Component.translatable("youzaiworldcore.message.account.login_success"), true);
-                DebugLogger.info("AccountCommands", "玩家 %s 登录成功", player.getScoreboardName());
-                YouzaiworldCore.LOGGER.info("玩家 {} 登录成功", player.getScoreboardName());
-                DebugLogger.exiting("AccountCommands", "executeLogin", "1 (success)");
-                return 1;
-            }
-            case WRONG -> {
-                DebugLogger.branch("AccountCommands", "password check result", false, "WRONG");
-                account.loginTries++;
-                // 刚达到 5 次 → 记录锁定时间，以便冷却计时
-                if (account.loginTries >= 5) {
-                    DebugLogger.branch("AccountCommands", "login tries >= 5, recording lock time", true, "tries=" + account.loginTries);
-                    account.lastKickedDate = ZonedDateTime.now();
-                } else {
-                    DebugLogger.branch("AccountCommands", "login tries >= 5", false, "tries=" + account.loginTries);
-                }
-                AccountDataStorage.update(account);
-                source.sendFailure(Component.translatable("youzaiworldcore.message.account.wrong_password", 5 - account.loginTries));
-                DebugLogger.exiting("AccountCommands", "executeLogin", "0 (wrong password, tries left=" + (5 - account.loginTries) + ")");
-                return 0;
-            }
-            case NOT_REGISTERED -> {
-                DebugLogger.branch("AccountCommands", "password check result", false, "NOT_REGISTERED");
-                source.sendFailure(Component.translatable("youzaiworldcore.message.account.not_registered"));
-                DebugLogger.exiting("AccountCommands", "executeLogin", "0 (not registered)");
-                return 0;
-            }
-        }
-        DebugLogger.exiting("AccountCommands", "executeLogin", "0 (fallthrough)");
         return 0;
     }
 
@@ -402,28 +331,22 @@ public class AccountCommands {
         // 保存当前位置到 mixin 内存
         authPlayer.yzwc$saveLocation();
 
-        // 标记未认证
+        PlayerAccount account = authPlayer.yzwc$getAccount();
+        if (account == null) {
+            source.sendFailure(Component.translatable("youzaiworldcore.message.account.account_not_found"));
+            return 0;
+        }
+        AuthLocationData savedLoc = authPlayer.yzwc$getLastLocation();
+        ApiServiceClient.AccountResult remote = ApiServiceClient.logout(
+                account.username, savedLoc == null ? null : savedLoc.toJson());
+        if (!remote.success()) {
+            source.sendFailure(Component.literal(remote.message()));
+            return 0;
+        }
+        if (remote.account() != null) AccountDataStorage.acceptRemoteAccount(remote.account(), false);
+        authPlayer.yzwc$setSessionToken(null);
         authPlayer.yzwc$setAuthenticated(false);
         CosmeticManager.onDeauthenticated(player);
-
-        // 清除会话数据，防止重连时自动恢复
-        PlayerAccount account = authPlayer.yzwc$getAccount();
-        if (account != null) {
-            DebugLogger.branch("AccountCommands", "account is null", false);
-            account.lastIp = "";
-            account.lastAuthenticatedDate = java.time.ZonedDateTime.of(1970, 1, 1, 0, 0, 0, 0, java.time.ZoneOffset.UTC);
-            // 将保存的位置持久化到磁盘，防止重连后被 void 坐标覆盖
-            AuthLocationData savedLoc = authPlayer.yzwc$getLastLocation();
-            if (savedLoc != null) {
-                DebugLogger.branch("AccountCommands", "saved location exists", true);
-                account.lastPositionJson = savedLoc.toJson();
-            } else {
-                DebugLogger.branch("AccountCommands", "saved location exists", false);
-            }
-            AccountDataStorage.update(account);
-        } else {
-            DebugLogger.branch("AccountCommands", "account is null", true);
-        }
 
         // 传送到登录大厅
         ResourceKey<Level> loginHallKey = AuthPlayerHelper.LOGIN_HALL_KEY;
@@ -472,29 +395,20 @@ public class AccountCommands {
         DebugLogger.branch("AccountCommands", "player is authenticated", true);
 
         String password = StringArgumentType.getString(ctx, "password");
-        PlayerAccount account = authPlayer.yzwc$getAccount();
-
-        if (account == null || !account.isRegistered()) {
-            DebugLogger.branch("AccountCommands", "account exists and registered", false);
-            source.sendFailure(Component.translatable("youzaiworldcore.message.account.account_not_exist"));
-            DebugLogger.exiting("AccountCommands", "executeDeactivate", "0 (account not exist)");
-            return 0;
-        }
-        DebugLogger.branch("AccountCommands", "account exists and registered", true);
-
-        AuthHelper.PasswordResult result = AuthHelper.checkPassword(account, password);
-        if (result != AuthHelper.PasswordResult.CORRECT) {
-            DebugLogger.branch("AccountCommands", "password is correct", false);
-            source.sendFailure(Component.translatable("youzaiworldcore.message.account.wrong_password_simple"));
+        ApiServiceClient.AccountResult remote = ApiServiceClient.deactivate(player.getScoreboardName(), password);
+        if (!remote.success()) {
+            source.sendFailure(remote.statusCode() == 401
+                    ? Component.translatable("youzaiworldcore.message.account.wrong_password_simple")
+                    : remote.statusCode() == 404
+                    ? Component.translatable("youzaiworldcore.message.account.account_not_exist")
+                    : Component.literal(remote.message()));
             DebugLogger.exiting("AccountCommands", "executeDeactivate", "0 (wrong password)");
             return 0;
         }
         DebugLogger.branch("AccountCommands", "password is correct", true);
 
-        // 删除账户
-        if (AccountDataStorage.delete(player.getScoreboardName())) {
-            CosmeticManager.deletePlayerData(source.getServer(), player.getUUID());
-        }
+        AccountDataStorage.removeRemoteAccount(player.getScoreboardName());
+        authPlayer.yzwc$setSessionToken(null);
         authPlayer.yzwc$setAuthenticated(false);
         authPlayer.yzwc$setAccount(new PlayerAccount(player.getScoreboardName()));
 
@@ -533,16 +447,6 @@ public class AccountCommands {
         String oldPassword = StringArgumentType.getString(ctx, "oldPassword");
         String newPassword = StringArgumentType.getString(ctx, "newPassword");
         String confirmPassword = StringArgumentType.getString(ctx, "confirmPassword");
-        PlayerAccount account = authPlayer.yzwc$getAccount();
-
-        if (account == null || !account.isRegistered()) {
-            DebugLogger.branch("AccountCommands", "account exists and registered", false);
-            source.sendFailure(Component.translatable("youzaiworldcore.message.account.account_not_exist"));
-            DebugLogger.exiting("AccountCommands", "executeChangePassword", "0 (account not exist)");
-            return 0;
-        }
-        DebugLogger.branch("AccountCommands", "account exists and registered", true);
-
         if (!newPassword.equals(confirmPassword)) {
             DebugLogger.branch("AccountCommands", "new passwords match", false);
             source.sendFailure(Component.translatable("youzaiworldcore.message.account.new_password_mismatch"));
@@ -550,15 +454,6 @@ public class AccountCommands {
             return 0;
         }
         DebugLogger.branch("AccountCommands", "new passwords match", true);
-
-        AuthHelper.PasswordResult result = AuthHelper.checkPassword(account, oldPassword);
-        if (result != AuthHelper.PasswordResult.CORRECT) {
-            DebugLogger.branch("AccountCommands", "old password check", false);
-            source.sendFailure(Component.translatable("youzaiworldcore.message.account.old_password_wrong"));
-            DebugLogger.exiting("AccountCommands", "executeChangePassword", "0 (old password wrong)");
-            return 0;
-        }
-        DebugLogger.branch("AccountCommands", "old password check", true);
 
         if (newPassword.length() < 4) {
             DebugLogger.branch("AccountCommands", "new password length >= 4", false);
@@ -568,8 +463,46 @@ public class AccountCommands {
         }
         DebugLogger.branch("AccountCommands", "new password length >= 4", true);
 
-        account.password = PasswordHasher.hash(newPassword);
-        AccountDataStorage.update(account);
+        if (newPassword.length() > 128) {
+            source.sendFailure(Component.translatable("youzaiworldcore.message.account.password_too_long"));
+            return 0;
+        }
+        ApiServiceClient.AccountResult result = ApiServiceClient.changePassword(
+                player.getScoreboardName(), oldPassword, newPassword);
+        if (!result.success()) {
+            source.sendFailure(result.statusCode() == 401
+                    ? Component.translatable("youzaiworldcore.message.account.old_password_wrong")
+                    : Component.literal(result.message()));
+            return 0;
+        }
+
+        // Api 改密会主动清除旧认证状态；模组同步撤销当前在线状态并回到登录大厅。
+        authPlayer.yzwc$saveLocation();
+        PlayerAccount account = authPlayer.yzwc$getAccount();
+        if (account != null) {
+            AuthLocationData savedLoc = authPlayer.yzwc$getLastLocation();
+            if (savedLoc != null && savedLoc.position != null && !AuthPlayerHelper.isVoidLocation(savedLoc)) {
+                account.lastPositionJson = savedLoc.toJson();
+            }
+            account.lastIp = "";
+            account.lastAuthenticatedDate = ZonedDateTime.of(1970, 1, 1, 0, 0, 0, 0,
+                    java.time.ZoneOffset.UTC);
+            AccountDataStorage.update(account);
+        }
+        authPlayer.yzwc$setAuthenticated(false);
+        authPlayer.yzwc$setSessionToken(null);
+        CosmeticManager.onDeauthenticated(player);
+        ResourceKey<Level> loginHallKey = AuthPlayerHelper.LOGIN_HALL_KEY;
+        ServerLevel loginHall = player.level().getServer() != null
+                ? player.level().getServer().getLevel(loginHallKey)
+                : null;
+        if (loginHall == null && player.level().getServer() != null) {
+            loginHall = player.level().getServer().overworld();
+        }
+        if (loginHall != null) {
+            player.teleportTo(loginHall, AuthPlayerHelper.LOGIN_HALL_X, AuthPlayerHelper.LOGIN_HALL_Y,
+                    AuthPlayerHelper.LOGIN_HALL_Z, Set.of(), 0, 0, true);
+        }
 
         source.sendSuccess(() -> Component.translatable("youzaiworldcore.message.account.change_password_success"), true);
         DebugLogger.info("AccountCommands", "玩家 %s 修改了密码", player.getScoreboardName());
@@ -606,22 +539,19 @@ public class AccountCommands {
             return 0;
         }
         DebugLogger.branch("AccountCommands", "password length >= 4", true);
-
-        // 检查是否已存在
-        PlayerAccount existing = AccountDataStorage.get(playerName);
-        if (existing != null && existing.isRegistered()) {
-            DebugLogger.branch("AccountCommands", "player already has account", true);
-            source.sendFailure(Component.translatable("youzaiworldcore.message.account.player_already_has_account", playerName));
-            DebugLogger.exiting("AccountCommands", "executeAdminCreate", "0 (already exists)");
+        if (newPassword.length() > 128) {
+            source.sendFailure(Component.translatable("youzaiworldcore.message.account.password_too_long"));
             return 0;
         }
-        DebugLogger.branch("AccountCommands", "player already has account", false);
 
-        // 创建账户并设置密码
-        PlayerAccount account = AccountDataStorage.getOrCreate(playerName, null);
-        account.password = PasswordHasher.hash(newPassword);
-        account.registrationDate = ZonedDateTime.now();
-        AccountDataStorage.update(account);
+        ApiServiceClient.AccountResult result = ApiServiceClient.registerAccount(playerName, null, newPassword, "", false);
+        if (!result.success() || result.account() == null) {
+            source.sendFailure(result.statusCode() == 409
+                    ? Component.translatable("youzaiworldcore.message.account.player_already_has_account", playerName)
+                    : Component.literal(result.message()));
+            return 0;
+        }
+        AccountDataStorage.acceptRemoteAccount(result.account(), true);
         source.sendSuccess(() ->
                 Component.translatable("youzaiworldcore.message.account.admin_create_success", playerName),
                 true
@@ -657,26 +587,29 @@ public class AccountCommands {
             return 0;
         }
         DebugLogger.branch("AccountCommands", "password length >= 4", true);
-
-        PlayerAccount account = AccountDataStorage.get(playerName);
-        if (account == null) {
-            DebugLogger.branch("AccountCommands", "account exists", false);
-            source.sendFailure(Component.translatable("youzaiworldcore.message.account.player_no_account", playerName));
-            DebugLogger.exiting("AccountCommands", "executeAdminResetPassword", "0 (no account)");
+        if (newPassword.length() > 128) {
+            source.sendFailure(Component.translatable("youzaiworldcore.message.account.password_too_long"));
             return 0;
         }
-        DebugLogger.branch("AccountCommands", "account exists", true);
 
-        // 重置密码
-        account.password = PasswordHasher.hash(newPassword);
-        AccountDataStorage.update(account);
+        ApiServiceClient.AccountResult result = ApiServiceClient.resetPassword(playerName, newPassword);
+        if (!result.success()) {
+            source.sendFailure(result.statusCode() == 404
+                    ? Component.translatable("youzaiworldcore.message.account.player_no_account", playerName)
+                    : Component.literal(result.message()));
+            return 0;
+        }
+        PlayerAccount resetAccount = result.account();
+        if (resetAccount != null) AccountDataStorage.acceptRemoteAccount(resetAccount, false);
 
         // 如果玩家在线，使其重新认证
         ServerPlayer onlinePlayer = source.getServer().getPlayerList().getPlayerByName(playerName);
         if (onlinePlayer != null) {
             DebugLogger.branch("AccountCommands", "player is online, forcing re-auth", true);
             PlayerAuthAccess authPlayer = (PlayerAuthAccess) (Object) onlinePlayer;
+            if (resetAccount != null) authPlayer.yzwc$setAccount(resetAccount);
             authPlayer.yzwc$setAuthenticated(false);
+            authPlayer.yzwc$setSessionToken(null);
             CosmeticManager.onDeauthenticated(onlinePlayer);
             onlinePlayer.sendSystemMessage(Component.translatable("youzaiworldcore.message.account.admin_reset_notification"));
         } else {
@@ -698,13 +631,17 @@ public class AccountCommands {
         CommandSourceStack source = ctx.getSource();
         String playerName = StringArgumentType.getString(ctx, "player");
 
-        PlayerAccount account = AccountDataStorage.get(playerName);
-        if (account == null) {
+        ApiServiceClient.AccountResult lookup = ApiServiceClient.getAccount(playerName);
+        if (!lookup.success() || lookup.account() == null) {
             DebugLogger.branch("AccountCommands", "account exists", false);
-            source.sendFailure(Component.translatable("youzaiworldcore.message.account.player_no_account", playerName));
+            source.sendFailure(lookup.statusCode() == 404
+                    ? Component.translatable("youzaiworldcore.message.account.player_no_account", playerName)
+                    : Component.literal(lookup.message()));
             DebugLogger.exiting("AccountCommands", "executeAdminDelete", "0 (no account)");
             return 0;
         }
+        PlayerAccount account = lookup.account();
+        AccountDataStorage.acceptRemoteAccount(account, false);
         DebugLogger.branch("AccountCommands", "account exists", true);
 
         if (!AccountDataStorage.delete(playerName)) {
@@ -714,14 +651,13 @@ public class AccountCommands {
             return 0;
         }
         DebugLogger.branch("AccountCommands", "delete succeeded", true);
-        CosmeticManager.deletePlayerData(source.getServer(), account.uuid);
-
         // 如果玩家在线，使其断开连接
         ServerPlayer onlinePlayer = source.getServer().getPlayerList().getPlayerByName(playerName);
         if (onlinePlayer != null) {
             DebugLogger.branch("AccountCommands", "player is online, disconnecting", true);
             PlayerAuthAccess authPlayer = (PlayerAuthAccess) (Object) onlinePlayer;
             authPlayer.yzwc$setAuthenticated(false);
+            authPlayer.yzwc$setSessionToken(null);
             CosmeticManager.onDeauthenticated(onlinePlayer);
             authPlayer.yzwc$setAccount(new PlayerAccount(playerName));
             onlinePlayer.connection.disconnect(Component.translatable("youzaiworldcore.message.account.admin_deleted"));
@@ -765,7 +701,10 @@ public class AccountCommands {
             return 1;
         }
 
-        AccountDataStorage.setSessionTimeout(seconds);
+        if (!AccountDataStorage.setSessionTimeout(seconds)) {
+            source.sendFailure(Component.literal("Api 服务端不可用，未修改会话超时设置"));
+            return 0;
+        }
 
         if (seconds == 0) {
             DebugLogger.branch("AccountCommands", "setting timeout to 0 (disabled)", true);
@@ -810,7 +749,10 @@ public class AccountCommands {
         DebugLogger.entering("AccountCommands", "executeAdminLoginCooldownSet");
         CommandSourceStack source = ctx.getSource();
         int seconds = IntegerArgumentType.getInteger(ctx, "seconds");
-        AccountDataStorage.setLoginCooldown(seconds);
+        if (!AccountDataStorage.setLoginCooldown(seconds)) {
+            source.sendFailure(Component.literal("Api 服务端不可用，未修改登录冷却设置"));
+            return 0;
+        }
 
         if (seconds == -1) {
             DebugLogger.branch("AccountCommands", "cooldown set to -1 (never lock)", true);
@@ -837,13 +779,17 @@ public class AccountCommands {
         CommandSourceStack source = ctx.getSource();
         String playerName = StringArgumentType.getString(ctx, "player");
 
-        PlayerAccount account = AccountDataStorage.get(playerName);
-        if (account == null) {
+        ApiServiceClient.AccountResult lookup = ApiServiceClient.getAccount(playerName);
+        if (!lookup.success() || lookup.account() == null) {
             DebugLogger.branch("AccountCommands", "account exists", false);
-            source.sendFailure(Component.translatable("youzaiworldcore.message.account.admin_player_no_account", playerName));
+            source.sendFailure(lookup.statusCode() == 404
+                    ? Component.translatable("youzaiworldcore.message.account.admin_player_no_account", playerName)
+                    : Component.literal(lookup.message()));
             DebugLogger.exiting("AccountCommands", "executeAdminLoginCooldownStatus", "0 (no account)");
             return 0;
         }
+        PlayerAccount account = lookup.account();
+        AccountDataStorage.acceptRemoteAccount(account, false);
         DebugLogger.branch("AccountCommands", "account exists", true);
 
         int cooldownGlobal = AccountDataStorage.getLoginCooldown();
@@ -889,13 +835,17 @@ public class AccountCommands {
         CommandSourceStack source = ctx.getSource();
         String playerName = StringArgumentType.getString(ctx, "player");
 
-        PlayerAccount account = AccountDataStorage.get(playerName);
-        if (account == null) {
+        ApiServiceClient.AccountResult lookup = ApiServiceClient.getAccount(playerName);
+        if (!lookup.success() || lookup.account() == null) {
             DebugLogger.branch("AccountCommands", "account exists", false);
-            source.sendFailure(Component.translatable("youzaiworldcore.message.account.admin_player_no_account", playerName));
+            source.sendFailure(lookup.statusCode() == 404
+                    ? Component.translatable("youzaiworldcore.message.account.admin_player_no_account", playerName)
+                    : Component.literal(lookup.message()));
             DebugLogger.exiting("AccountCommands", "executeAdminLoginCooldownUnlock", "0 (no account)");
             return 0;
         }
+        PlayerAccount account = lookup.account();
+        AccountDataStorage.acceptRemoteAccount(account, false);
         DebugLogger.branch("AccountCommands", "account exists", true);
 
         if (account.loginTries < 5) {
@@ -906,9 +856,12 @@ public class AccountCommands {
         }
         DebugLogger.branch("AccountCommands", "account is locked (tries >= 5)", true, "tries=" + account.loginTries);
 
-        account.loginTries = 0;
-        account.lastKickedDate = java.time.ZonedDateTime.of(1970, 1, 1, 0, 0, 0, 0, java.time.ZoneOffset.UTC);
-        AccountDataStorage.update(account);
+        ApiServiceClient.AccountResult unlock = ApiServiceClient.unlockAccount(playerName);
+        if (!unlock.success()) {
+            source.sendFailure(Component.literal("Api 服务端解锁账户失败"));
+            return 0;
+        }
+        if (unlock.account() != null) AccountDataStorage.acceptRemoteAccount(unlock.account(), false);
 
         // 如果玩家在线，通知他
         ServerPlayer onlinePlayer = source.getServer().getPlayerList().getPlayerByName(playerName);

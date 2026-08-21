@@ -22,8 +22,6 @@ import java.util.UUID;
  * &lt;gameDir&gt;/yzwc/server/
  * ├── config/
  * │   ├── global_settings.json                # 全局配置（与世界无关），按模块分节
- * │   ├── account_module/
- * │   │   └── registerd_users_data.json       # 玩家代号 / 密码 / UUID
  * │   └── user_settings/
  * │       └── &lt;玩家 UUID&gt;.json               # 玩家个人配置，按模块分节
  * ├── data/
@@ -74,10 +72,6 @@ public final class ModPaths {
     public static final String CLIENT_DIR_NAME = "client";
     /** 玩家个人配置目录名 */
     public static final String USER_SETTINGS_DIR_NAME = "user_settings";
-    /** 账户模块目录名（同时也是账户模块在配置里的分节名） */
-    public static final String ACCOUNT_MODULE_DIR_NAME = "account_module";
-    /** 注册用户凭据文件名（拼写沿用需求文档，勿改） */
-    public static final String REGISTERED_USERS_FILE_NAME = "registerd_users_data.json";
     /** 各模块数据文件的默认文件名 */
     public static final String DEFAULT_DATA_FILE_NAME = "data.json";
 
@@ -112,16 +106,6 @@ public final class ModPaths {
     /** 单个玩家的个人配置文件：{@code .../user_settings/<UUID>.json} */
     public static Path userSettingsFile(UUID playerUuid) {
         return userSettingsDir().resolve(playerUuid.toString() + ".json");
-    }
-
-    /** 账户模块配置目录：{@code <gameDir>/yzwc/server/config/account_module} */
-    public static Path accountModuleDir() {
-        return serverConfigRoot().resolve(ACCOUNT_MODULE_DIR_NAME);
-    }
-
-    /** 注册用户凭据文件：{@code .../account_module/registerd_users_data.json} */
-    public static Path registeredUsersFile() {
-        return accountModuleDir().resolve(REGISTERED_USERS_FILE_NAME);
     }
 
     /** 服务端数据根：{@code <gameDir>/yzwc/server/data} */
@@ -247,7 +231,6 @@ public final class ModPaths {
      */
     public static void bootstrapServerLayout() {
         ensureDir(serverConfigRoot());
-        ensureDir(accountModuleDir());
         ensureDir(userSettingsDir());
         ensureDir(serverDataRoot());
         ensureDir(serverBackupRoot());
