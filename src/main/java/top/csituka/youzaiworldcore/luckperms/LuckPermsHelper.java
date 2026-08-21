@@ -99,9 +99,6 @@ public final class LuckPermsHelper {
     /** 管理：删除玩家账户 */
     public static final String PERMISSION_ACCOUNT_MGR_DELETE = "youzaiworldcore.command.account.mgr.delete";
 
-    /** 管理：查看/设置会话超时时间 */
-    public static final String PERMISSION_ACCOUNT_MGR_SESSION_TIMEOUT = "youzaiworldcore.command.account.mgr.session_timeout";
-
     /** 管理：查看/设置登录锁定冷却时间 */
     public static final String PERMISSION_ACCOUNT_MGR_LOGIN_COOLDOWN = "youzaiworldcore.command.account.mgr.login_cooldown";
 

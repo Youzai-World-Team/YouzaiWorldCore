@@ -17,15 +17,9 @@ public final class AccountDataStorage {
     private static final String MODULE = "AccountDataStorage";
     private static final ReadWriteLock LOCK = new ReentrantReadWriteLock();
     private static final ConcurrentHashMap<String, PlayerAccount> CACHE = new ConcurrentHashMap<>();
-    private static volatile int sessionTimeout;
     private static volatile int loginCooldown = 300;
 
     private AccountDataStorage() {
-    }
-
-    public static int getSessionTimeout() {
-        refreshSettings();
-        return sessionTimeout;
     }
 
     public static int getLoginCooldown() {
@@ -36,24 +30,14 @@ public final class AccountDataStorage {
     public static void initialize() {
         DebugLogger.entering(MODULE, "initialize");
         ApiServiceClient.getAccountSettings().ifPresentOrElse(settings -> {
-            sessionTimeout = settings.sessionTimeout();
             loginCooldown = settings.loginCooldown();
         }, () -> DebugLogger.warn(MODULE, "无法从 Api 加载账户设置，账户认证操作将继续以 Api 可达性为准"));
         reload();
         DebugLogger.exiting(MODULE, "initialize", "accounts=" + CACHE.size());
     }
 
-    public static boolean setSessionTimeout(int seconds) {
-        return ApiServiceClient.setSessionTimeout(seconds).map(settings -> {
-            sessionTimeout = settings.sessionTimeout();
-            loginCooldown = settings.loginCooldown();
-            return true;
-        }).orElse(false);
-    }
-
     public static boolean setLoginCooldown(int seconds) {
         return ApiServiceClient.setLoginCooldown(seconds).map(settings -> {
-            sessionTimeout = settings.sessionTimeout();
             loginCooldown = settings.loginCooldown();
             return true;
         }).orElse(false);
@@ -111,7 +95,7 @@ public final class AccountDataStorage {
                 () -> DebugLogger.warn(MODULE, "Api 更新账户失败：%s", account.username));
     }
 
-    /** 玩家断线时同步账户状态，并在 Api 建立限时自动恢复窗口。 */
+    /** 玩家断线时同步账户状态；再次加入服务器仍需重新输入密码。 */
     public static void updateForDisconnect(PlayerAccount account) {
         if (account == null)
             return;
@@ -217,7 +201,6 @@ public final class AccountDataStorage {
 
     private static void refreshSettings() {
         ApiServiceClient.getAccountSettings().ifPresent(settings -> {
-            sessionTimeout = settings.sessionTimeout();
             loginCooldown = settings.loginCooldown();
         });
     }

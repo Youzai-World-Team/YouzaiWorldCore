@@ -42,7 +42,7 @@ Complete password authentication for offline-mode servers, with Mixin-based rest
 
 - **Password Security**: The Api service uses salted PBKDF2-HMAC-SHA256; the mod never stores or verifies passwords, with a 5-attempt login limit
 - **Login Cooldown/Lock**: Triggers after 5 failures, default 300s (5 min) cooldown; supports permanent lock, timed cooldown, and never-lock modes; admin unlock available
-- **Session Management**: Configurable session timeout with same-IP auto-recovery
+- **Connection Authentication**: Players must enter their password on every server join; the short-lived token after login is only validated for the current connection and is revoked on disconnect
 - **Position Save/Restore**: Saves position on logout → teleports to End void; restores precisely on login
 - **Login Hall**: Unauthenticated players confined to `youzaiworldcore:login_hall` custom dimension; Mixin blocks movement, interaction, attacking, and chat
 - **Login/Register GUI**: On entering the login hall, the client auto-opens the register/login screens (`RegisterScreen` / `LoginScreen`, read-only pre-filled username, Enter to log in, Disconnect button), pushed by the server via `OpenAuthScreenPayload`
@@ -279,7 +279,7 @@ If step 1 fails (file locked, etc.) step 2 is skipped so the original is never c
 | Config                   | Location                                                                       | Contents                                                                                             |
 | ------------------------ | ------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
 | Mod Core                 | `yzwc/server/config/global_settings.json` → `core_module`                      | `dev_mode_enabled`, `log_to_file` (dual-toggle for DebugLogger)                                      |
-| Api Bridge               | `global_settings.json` → `api_module`                                          | Api URL (development default `http://localhost:3000`), server key, request timeout                   |
+| Api Bridge               | `global_settings.json` → `api_module`                                          | Api URL (production: `https://api.mcyzw.top`), HMAC shared key, request timeout                   |
 | Accounts & Authentication| Api-side SQLite `game_accounts` / `game_sessions`                              | Player name, password hash, UUID, sessions and login cooldown; the mod only keeps a runtime non-credential cache |
 | Custom Cosmetics         | Api-side SQLite `game_cosmetics`                                               | Skin and cape bytes; no PNG files are stored on the Minecraft server                                 |
 | Per-Player Config        | `yzwc/server/config/user_settings/<UUID>.json`                                 | `double_doors_module`, `function_module` (7 per-player toggles: ladder extend / crop XP / tool info / block animation / craft sound / item sparkle / damage numbers) |
@@ -731,7 +731,6 @@ All commands use `/yzwc` as the root command. Subcommands marked **(client comma
         ├── mgr create <player> <pass> <confirm>         ← Create offline account
         ├── mgr reset_password <player> <pass> <confirm> ← Reset password
         ├── mgr delete <player>                          ← Delete account
-        ├── mgr session_timeout [seconds]                ← Session timeout (0=disabled)
         └── mgr login_cooldown
             ├── (no args)        ← Display setting
             ├── set <seconds>    ← Set (-1=never, 0=permanent, >0=timed)
@@ -780,7 +779,6 @@ All commands use `/yzwc` as the root command. Subcommands marked **(client comma
 | `youzaiworldcore.command.account.mgr.create`                | Create account                                    | OP 4                     |
 | `youzaiworldcore.command.account.mgr.reset_password`        | Reset password                                    | OP 4                     |
 | `youzaiworldcore.command.account.mgr.delete`                | Delete account                                    | OP 4                     |
-| `youzaiworldcore.command.account.mgr.session_timeout`       | Session timeout                                   | OP 4                     |
 | `youzaiworldcore.command.account.mgr.login_cooldown`        | Login cooldown                                    | OP 4                     |
 | `youzaiworldcore.command.account.mgr.login_cooldown.status` | Lock status query                                 | OP 4                     |
 | `youzaiworldcore.command.account.mgr.login_cooldown.unlock` | Unlock                                            | OP 4                     |

@@ -42,7 +42,7 @@
 
 - **密码安全**：Api 服务端使用 PBKDF2-HMAC-SHA256 加盐哈希，模组不保存或验证密码；5 次登录尝试上限
 - **登录冷却/锁定**：失败 5 次后触发，默认冷却 300 秒（5 分钟）；支持永久锁定、限时冷却、永不锁定三种模式，管理员可通过命令解锁
-- **会话管理**：可配置的会话超时，支持同 IP 自动恢复
+- **连接认证**：玩家每次加入服务器都必须重新输入密码；登录后的短期令牌仅用于当前连接校验，断线即撤销
 - **位置保存/恢复**：登出时保存位置 → 传送至末地虚空；登录后精确保留位置恢复
 - **登录大厅**：未认证玩家被限制在 `youzaiworldcore:login_hall` 自定义维度，Mixin 阻止移动、交互、攻击、聊天
 - **登录/注册 GUI**：未认证玩家进入登录大厅时客户端自动弹出注册/登录界面（`RegisterScreen` / `LoginScreen`，用户名只读预填，支持 Enter 登入与断开连接），服务端经 `OpenAuthScreenPayload` 推送
@@ -275,7 +275,7 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 | 配置           | 存放位置                                                                  | 内容                                                                                     |
 | -------------- | ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
 | 模组核心       | `yzwc/server/config/global_settings.json` → `core_module`                 | `dev_mode_enabled`、`log_to_file`（双开关控制 DebugLogger）                             |
-| Api 网桥       | `global_settings.json` → `api_module`                                     | Api 地址（开发期默认 `http://localhost:3000`）、服务器密钥、请求超时                    |
+| Api 网桥       | `global_settings.json` → `api_module`                                     | Api 地址（生产环境为 `https://api.mcyzw.top`）、HMAC 共享密钥、请求超时                    |
 | 账户与认证     | Api 服务端 SQLite `game_accounts` / `game_sessions`                       | 玩家代号、密码哈希、UUID、会话、登录冷却；模组仅保留运行期非凭据缓存                    |
 | 自定义外观     | Api 服务端 SQLite `game_cosmetics`                                        | 皮肤和披风二进制数据；Minecraft 服务端不保存 PNG 文件                                   |
 | 玩家个人配置   | `yzwc/server/config/user_settings/<UUID>.json`                            | `double_doors_module`、`function_module`（7 个个人功能开关：梯子延展/作物经验/工具信息/方块动画/合成音效/物品闪光/伤害跳字） |
@@ -727,7 +727,6 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
         ├── mgr create <player> <pass> <confirm>         ← 创建离线账户
         ├── mgr reset_password <player> <pass> <confirm> ← 重置密码
         ├── mgr delete <player>                          ← 删除账户
-        ├── mgr session_timeout [seconds]                ← 会话超时（0=关闭）
         └── mgr login_cooldown
             ├── (无参数)         ← 显示当前冷却设置
             ├── set <seconds>    ← 设置（-1=永不，0=永久，>0=秒数）
@@ -776,7 +775,6 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 | `youzaiworldcore.command.account.mgr.create`                | 创建账户                               | OP 4                    |
 | `youzaiworldcore.command.account.mgr.reset_password`        | 重置密码                               | OP 4                    |
 | `youzaiworldcore.command.account.mgr.delete`                | 删除账户                               | OP 4                    |
-| `youzaiworldcore.command.account.mgr.session_timeout`       | 会话超时                               | OP 4                    |
 | `youzaiworldcore.command.account.mgr.login_cooldown`        | 登录冷却                               | OP 4                    |
 | `youzaiworldcore.command.account.mgr.login_cooldown.status` | 锁定状态查询                           | OP 4                    |
 | `youzaiworldcore.command.account.mgr.login_cooldown.unlock` | 解锁                                   | OP 4                    |

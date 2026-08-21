@@ -10,9 +10,10 @@ import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.protocol.game.ServerboundChatCommandPacket;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import top.csituka.youzaiworldcore.client.screen.widget.ConfirmationDialog;
 import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
+import top.csituka.youzaiworldcore.network.AuthRequestPayload;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -304,10 +305,8 @@ public class RegisterScreen extends Screen {
             return;
         }
 
-        // 发送注册命令
         processing = true;
-        String command = "yzwc account register " + password + " " + confirm;
-        sendCommand(command);
+        sendAuthRequest(new AuthRequestPayload(AuthRequestPayload.Action.REGISTER, password, confirm));
     }
 
     private void onDisconnectClick() {
@@ -320,11 +319,10 @@ public class RegisterScreen extends Screen {
 
     // ===== 工具方法 =====
 
-    private void sendCommand(String command) {
+    private void sendAuthRequest(AuthRequestPayload payload) {
         var player = Minecraft.getInstance().player;
         if (player != null && player.connection != null) {
-            player.connection.send(
-                    new ServerboundChatCommandPacket(command));
+            ClientPlayNetworking.send(payload);
         }
         // 命令已发送，关闭当前 GUI，等待服务器处理
         if (Minecraft.getInstance().gui.screen() == this) {

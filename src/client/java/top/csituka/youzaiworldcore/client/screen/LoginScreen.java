@@ -10,9 +10,10 @@ import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.protocol.game.ServerboundChatCommandPacket;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import top.csituka.youzaiworldcore.client.screen.widget.ConfirmationDialog;
 import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
+import top.csituka.youzaiworldcore.network.AuthRequestPayload;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -259,8 +260,7 @@ public class LoginScreen extends Screen {
         }
 
         processing = true;
-        String command = "yzwc account login " + password;
-        sendCommand(command);
+        sendAuthRequest(new AuthRequestPayload(AuthRequestPayload.Action.LOGIN, password, ""));
     }
 
     private void onDisconnectClick() {
@@ -272,11 +272,10 @@ public class LoginScreen extends Screen {
 
     // ===== 工具方法 =====
 
-    private void sendCommand(String command) {
+    private void sendAuthRequest(AuthRequestPayload payload) {
         var player = Minecraft.getInstance().player;
         if (player != null && player.connection != null) {
-            player.connection.send(
-                    new ServerboundChatCommandPacket(command));
+            ClientPlayNetworking.send(payload);
         }
         if (Minecraft.getInstance().gui.screen() == this) {
             Minecraft.getInstance().setScreenAndShow(null);

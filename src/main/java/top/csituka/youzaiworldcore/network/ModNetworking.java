@@ -49,6 +49,8 @@ public class ModNetworking {
         // ===== 注册数据包类型 =====
         PayloadTypeRegistry.serverboundPlay().register(DecomposeItemPayload.ID, DecomposeItemPayload.STREAM_CODEC);
         DebugLogger.info("ModNetworking", "Registered serverbound packet: DecomposeItemPayload");
+        PayloadTypeRegistry.serverboundPlay().register(AuthRequestPayload.ID, AuthRequestPayload.STREAM_CODEC);
+        DebugLogger.info("ModNetworking", "Registered serverbound packet: AuthRequestPayload");
         PayloadTypeRegistry.serverboundPlay().register(FlyBeaconActivePayload.ID, FlyBeaconActivePayload.STREAM_CODEC);
         DebugLogger.info("ModNetworking", "Registered serverbound packet: FlyBeaconActivePayload");
         PayloadTypeRegistry.serverboundPlay().register(WorldPoolTeleportPayload.ID, WorldPoolTeleportPayload.STREAM_CODEC);
@@ -140,6 +142,25 @@ public class ModNetworking {
         DebugLogger.info("ModNetworking", "Registered cosmetic payloads");
 
         // ===== 服务端接收处理器 =====
+        ServerPlayNetworking.registerGlobalReceiver(AuthRequestPayload.ID, (payload, context) -> {
+            var player = context.player();
+            var server = player.level().getServer();
+            if (server == null) return;
+            server.execute(() -> {
+                if (((top.csituka.youzaiworldcore.account.data.PlayerAuthAccess) (Object) player)
+                        .yzwc$canSkipAuth()) {
+                    return;
+                }
+                if (payload.action() == AuthRequestPayload.Action.LOGIN) {
+                    top.csituka.youzaiworldcore.account.command.AccountCommands.executeLoginPayload(
+                            player, payload.password());
+                } else {
+                    top.csituka.youzaiworldcore.account.command.AccountCommands.executeRegisterPayload(
+                            player, payload.password(), payload.confirmation());
+                }
+            });
+        });
+
         ServerPlayNetworking.registerGlobalReceiver(CosmeticUploadPayload.ID, (payload, context) -> {
             var player = context.player();
             var server = player.level().getServer();

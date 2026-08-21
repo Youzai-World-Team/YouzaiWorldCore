@@ -26,7 +26,6 @@ import top.csituka.youzaiworldcore.account.data.PlayerAuthAccess;
 import top.csituka.youzaiworldcore.account.util.AuthHelper;
 import top.csituka.youzaiworldcore.account.util.AuthLocationData;
 import top.csituka.youzaiworldcore.account.util.AuthPlayerHelper;
-import top.csituka.youzaiworldcore.cosmetic.CosmeticManager;
 
 import java.net.SocketAddress;
 import java.time.ZonedDateTime;
@@ -70,19 +69,7 @@ public abstract class AccountPlayerListMixin {
             AuthPlayerHelper.saveLocation(player);
         }
 
-        if (!AuthPlayerHelper.canSkipAuth(player) && account != null && account.isRegistered()) {
-            ApiServiceClient.restoreSession(username, AuthPlayerHelper.getIpAddress(player)).ifPresent(result -> {
-                if (result.restored() && result.token() != null && !result.token().isBlank()) {
-                    YouzaiworldCore.LOGGER.info("玩家 {} 通过 Api 会话自动登录", username);
-                    AuthPlayerHelper.setAuthenticated(player, true);
-                    ((PlayerAuthAccess) (Object) player).yzwc$setSessionToken(result.token());
-                    if (result.account() != null) {
-                        AuthPlayerHelper.setAccount(player, result.account());
-                        AccountDataStorage.acceptRemoteAccount(result.account(), false);
-                    }
-                }
-            });
-        }
+        // 每次加入服务器都必须重新输入密码。
     }
 
     /**
@@ -91,13 +78,6 @@ public abstract class AccountPlayerListMixin {
     @Inject(method = "placeNewPlayer", at = @At("RETURN"))
     private void onPlayerPostJoin(Connection connection, ServerPlayer player, CommonListenerCookie cookie, CallbackInfo ci) {
         if (AuthPlayerHelper.canSkipAuth(player)) return;
-
-        if (AuthPlayerHelper.isAuthenticated(player)) {
-            AuthPlayerHelper.restoreLocation(player);
-            CosmeticManager.onAuthenticated(player);
-            player.sendSystemMessage(Component.translatable("youzaiworldcore.message.account.session_restored"));
-            return;
-        }
 
         teleportToVoid(player);
 
@@ -119,6 +99,9 @@ public abstract class AccountPlayerListMixin {
     private void onPlayerLeave(ServerPlayer player, CallbackInfo ci) {
         if (AuthPlayerHelper.canSkipAuth(player)) return;
 
+        PlayerAuthAccess authPlayer = (PlayerAuthAccess) (Object) player;
+        ApiServiceClient.deleteSession(authPlayer.yzwc$getSessionToken());
+        authPlayer.yzwc$setSessionToken(null);
         PlayerAccount account = AuthPlayerHelper.getAccount(player);
 
         if (account == null) return;

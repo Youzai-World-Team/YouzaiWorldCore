@@ -107,14 +107,6 @@ public class AccountCommands {
                                                 .executes(ctx -> executeAdminDelete(ctx))
                                         )
                                 )
-                                .then(Commands.literal("session_timeout")
-                                        // 无参数：显示当前值
-                                        .executes(ctx -> executeAdminSessionTimeout(ctx))
-                                        // 有参数：设置新值
-                                        .then(Commands.argument("seconds", com.mojang.brigadier.arguments.IntegerArgumentType.integer(0, 86400))
-                                                .executes(ctx -> executeAdminSessionTimeout(ctx))
-                                        )
-                                )
                                 .then(Commands.literal("login_cooldown")
                                         // 无参数：显示当前冷却设置
                                         .executes(ctx -> executeAdminLoginCooldownDisplay(ctx))
@@ -151,8 +143,6 @@ public class AccountCommands {
                                 ctx.getSource().sendSuccess(() -> Component.translatable("youzaiworldcore.message.account.help_admin_create"), false);
                                 ctx.getSource().sendSuccess(() -> Component.translatable("youzaiworldcore.message.account.help_admin_reset_password"), false);
                                 ctx.getSource().sendSuccess(() -> Component.translatable("youzaiworldcore.message.account.help_admin_delete"), false);
-                                ctx.getSource().sendSuccess(() -> Component.translatable("youzaiworldcore.message.account.help_admin_session_timeout"), false);
-                                ctx.getSource().sendSuccess(() -> Component.translatable("youzaiworldcore.message.account.current_timeout", AccountDataStorage.getSessionTimeout()), false);
                                 ctx.getSource().sendSuccess(() -> Component.translatable("youzaiworldcore.message.account.help_admin_login_cooldown"), false);
                                 ctx.getSource().sendSuccess(() -> Component.translatable("youzaiworldcore.message.account.help_admin_login_cooldown_status"), false);
                                 ctx.getSource().sendSuccess(() -> Component.translatable("youzaiworldcore.message.account.help_admin_login_cooldown_unlock"), false);
@@ -171,13 +161,22 @@ public class AccountCommands {
      * 注册
      */
     private static int executeRegister(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
-        DebugLogger.entering("AccountCommands", "executeRegister");
         CommandSourceStack source = ctx.getSource();
         ServerPlayer player = source.getPlayerOrException();
-        PlayerAuthAccess authPlayer = (PlayerAuthAccess) (Object) player;
-
         String password = StringArgumentType.getString(ctx, "password");
         String confirm = StringArgumentType.getString(ctx, "confirm");
+        return executeRegister(source, player, password, confirm);
+    }
+
+    /** 处理客户端认证界面的注册请求，密码不进入聊天命令字符串。 */
+    public static int executeRegisterPayload(ServerPlayer player, String password, String confirm) {
+        return executeRegister(player.createCommandSourceStack(), player, password, confirm);
+    }
+
+    private static int executeRegister(CommandSourceStack source, ServerPlayer player,
+                                       String password, String confirm) {
+        DebugLogger.entering("AccountCommands", "executeRegister");
+        PlayerAuthAccess authPlayer = (PlayerAuthAccess) (Object) player;
 
         if (!password.equals(confirm)) {
             DebugLogger.branch("AccountCommands", "password matches confirm", false);
@@ -249,9 +248,19 @@ public class AccountCommands {
      * 登录
      */
     private static int executeLogin(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
-        DebugLogger.entering("AccountCommands", "executeLogin");
         CommandSourceStack source = ctx.getSource();
         ServerPlayer player = source.getPlayerOrException();
+        String password = StringArgumentType.getString(ctx, "password");
+        return executeLogin(source, player, password);
+    }
+
+    /** 处理客户端认证界面的登录请求，密码不进入聊天命令字符串。 */
+    public static int executeLoginPayload(ServerPlayer player, String password) {
+        return executeLogin(player.createCommandSourceStack(), player, password);
+    }
+
+    private static int executeLogin(CommandSourceStack source, ServerPlayer player, String password) {
+        DebugLogger.entering("AccountCommands", "executeLogin");
         PlayerAuthAccess authPlayer = (PlayerAuthAccess) (Object) player;
 
         if (authPlayer.yzwc$isAuthenticated()) {
@@ -262,7 +271,6 @@ public class AccountCommands {
         }
         DebugLogger.branch("AccountCommands", "player already authenticated", false);
 
-        String password = StringArgumentType.getString(ctx, "password");
         PlayerAccount account = authPlayer.yzwc$getAccount();
 
         ApiServiceClient.LoginResult result = ApiServiceClient.login(
@@ -697,53 +705,6 @@ public class AccountCommands {
         DebugLogger.info("AccountCommands", "管理员删除了玩家 %s 的账户", playerName);
         YouzaiworldCore.LOGGER.info("管理员删除了玩家 {} 的账户", playerName);
         DebugLogger.exiting("AccountCommands", "executeAdminDelete", "1 (success)");
-        return 1;
-    }
-
-    /**
-     * 管理员：查看或设置会话超时时间
-     * /yzwc account mgr session_timeout          — 查看当前值
-     * /yzwc account mgr session_timeout <秒>     — 设置新值
-     */
-    private static int executeAdminSessionTimeout(CommandContext<CommandSourceStack> ctx) {
-        DebugLogger.entering("AccountCommands", "executeAdminSessionTimeout");
-        CommandSourceStack source = ctx.getSource();
-
-        // 尝试获取 seconds 参数（可选）
-        int seconds;
-        try {
-            seconds = IntegerArgumentType.getInteger(ctx, "seconds");
-            DebugLogger.branch("AccountCommands", "seconds argument provided", true, "seconds=" + seconds);
-        } catch (IllegalArgumentException e) {
-            DebugLogger.branch("AccountCommands", "seconds argument provided", false);
-            // 无参数 → 仅显示当前值
-            int current = AccountDataStorage.getSessionTimeout();
-            if (current == 0) {
-                DebugLogger.branch("AccountCommands", "session timeout is disabled", true);
-                source.sendSuccess(() -> Component.translatable("youzaiworldcore.message.account.session_timeout_disabled"), false);
-            } else {
-                DebugLogger.branch("AccountCommands", "session timeout is disabled", false, "current=" + current);
-                source.sendSuccess(() -> Component.translatable("youzaiworldcore.message.account.session_timeout_value", current), false);
-            }
-            DebugLogger.exiting("AccountCommands", "executeAdminSessionTimeout", "1 (display only)");
-            return 1;
-        }
-
-        if (!AccountDataStorage.setSessionTimeout(seconds)) {
-            source.sendFailure(Component.literal("Api 服务端不可用，未修改会话超时设置"));
-            return 0;
-        }
-
-        if (seconds == 0) {
-            DebugLogger.branch("AccountCommands", "setting timeout to 0 (disabled)", true);
-            source.sendSuccess(() -> Component.translatable("youzaiworldcore.message.account.session_timeout_set_disabled"), true);
-        } else {
-            DebugLogger.branch("AccountCommands", "setting timeout to 0 (disabled)", false, "seconds=" + seconds);
-            source.sendSuccess(() -> Component.translatable("youzaiworldcore.message.account.session_timeout_set", seconds), true);
-        }
-        DebugLogger.info("AccountCommands", "管理员将会话超时设为 %d 秒", seconds);
-        YouzaiworldCore.LOGGER.info("管理员将会话超时设为 {} 秒", seconds);
-        DebugLogger.exiting("AccountCommands", "executeAdminSessionTimeout", "1 (set)");
         return 1;
     }
 

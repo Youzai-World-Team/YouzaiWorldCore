@@ -12,7 +12,7 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
  * <pre>
  * {
  *   "core_module":   { "dev_mode_enabled": false, "log_to_file": false },
- *   "api_module":    { "base_url": "http://localhost:3000", ... },
+ *   "api_module":    { "base_url": "https://api.mcyzw.top", ... },
  *   "afk_module":    { "enabled": true, "threshold_seconds": 300, ... },
  *   ...
  * }
