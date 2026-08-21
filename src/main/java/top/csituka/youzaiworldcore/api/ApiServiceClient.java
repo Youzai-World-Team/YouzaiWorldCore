@@ -24,7 +24,12 @@ import java.util.UUID;
 /** Api-only 账户、会话和外观 HTTP 客户端。 */
 public final class ApiServiceClient {
     private static final String MODULE = "ApiServiceClient";
-    private static final HttpClient CLIENT = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(3)).build();
+    // Nuxt/Nitro's local development server does not support Java's cleartext HTTP/2 negotiation.
+    // Pin the game bridge to HTTP/1.1 so localhost requests receive a normal response.
+    private static final HttpClient CLIENT = HttpClient.newBuilder()
+            .connectTimeout(Duration.ofSeconds(3))
+            .version(HttpClient.Version.HTTP_1_1)
+            .build();
 
     private ApiServiceClient() {}
 
@@ -309,6 +314,13 @@ public final class ApiServiceClient {
             if (body == null) builder.method(method, HttpRequest.BodyPublishers.noBody());
             else builder.method(method, HttpRequest.BodyPublishers.ofString(body)).header("Content-Type", "application/json");
             return CLIENT.send(builder.build(), HttpResponse.BodyHandlers.ofString());
-        } catch (Exception e) { DebugLogger.warn(MODULE, "Api 请求失败 %s %s：%s", method, path, e.getMessage()); return null; }
+        } catch (Exception e) {
+            String detail = e.getClass().getSimpleName() + ": " + e.getMessage();
+            if (e.getCause() != null) {
+                detail += " (cause=" + e.getCause().getClass().getSimpleName() + ": " + e.getCause().getMessage() + ")";
+            }
+            DebugLogger.warn(MODULE, "Api 请求失败 %s %s：%s", method, path, detail);
+            return null;
+        }
     }
 }
