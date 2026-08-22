@@ -1,15 +1,16 @@
 {
   "parent": "minecraft:recipes/root",
   "criteria": {
-    "has_ingredients": {
+    "has_the_recipe": {
+      "trigger": "minecraft:recipe_unlocked",
+      "conditions": {
+        "recipe": "youzaiworldcore:not_gate_redstone_repeater"
+      }
+    },
+    "has_redstone_torch": {
       "trigger": "minecraft:inventory_changed",
       "conditions": {
         "items": [
-          {
-            "items": [
-              "minecraft:redstone"
-            ]
-          },
           {
             "items": [
               "minecraft:redstone_torch"
@@ -21,13 +22,13 @@
   },
   "requirements": [
     [
-      "has_ingredients"
+      "has_the_recipe",
+      "has_redstone_torch"
     ]
   ],
   "rewards": {
     "recipes": [
       "youzaiworldcore:not_gate_redstone_repeater"
     ]
-  },
-  "hidden": true
+  }
 }

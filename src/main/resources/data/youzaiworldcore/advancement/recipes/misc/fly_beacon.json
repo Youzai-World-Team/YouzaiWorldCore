@@ -1,15 +1,16 @@
 {
   "parent": "minecraft:recipes/root",
   "criteria": {
-    "has_ingredients": {
+    "has_the_recipe": {
+      "trigger": "minecraft:recipe_unlocked",
+      "conditions": {
+        "recipe": "youzaiworldcore:fly_beacon"
+      }
+    },
+    "has_void_staff": {
       "trigger": "minecraft:inventory_changed",
       "conditions": {
         "items": [
-          {
-            "items": [
-              "minecraft:iron_block"
-            ]
-          },
           {
             "items": [
               "youzaiworldcore:void_staff"
@@ -21,13 +22,13 @@
   },
   "requirements": [
     [
-      "has_ingredients"
+      "has_the_recipe",
+      "has_void_staff"
     ]
   ],
   "rewards": {
     "recipes": [
       "youzaiworldcore:fly_beacon"
     ]
-  },
-  "hidden": true
+  }
 }

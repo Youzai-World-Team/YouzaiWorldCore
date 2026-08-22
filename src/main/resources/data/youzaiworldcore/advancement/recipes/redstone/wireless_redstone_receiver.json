@@ -1,7 +1,13 @@
 {
   "parent": "minecraft:recipes/root",
   "criteria": {
-    "has_ingredients": {
+    "has_the_recipe": {
+      "trigger": "minecraft:recipe_unlocked",
+      "conditions": {
+        "recipe": "youzaiworldcore:wireless_redstone_receiver"
+      }
+    },
+    "has_amethyst_shard": {
       "trigger": "minecraft:inventory_changed",
       "conditions": {
         "items": [
@@ -9,15 +15,17 @@
             "items": [
               "minecraft:amethyst_shard"
             ]
-          },
+          }
+        ]
+      }
+    },
+    "has_redstone_torch": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
           {
             "items": [
               "minecraft:redstone_torch"
-            ]
-          },
-          {
-            "items": [
-              "minecraft:smooth_stone"
             ]
           }
         ]
@@ -26,13 +34,14 @@
   },
   "requirements": [
     [
-      "has_ingredients"
+      "has_the_recipe",
+      "has_amethyst_shard",
+      "has_redstone_torch"
     ]
   ],
   "rewards": {
     "recipes": [
       "youzaiworldcore:wireless_redstone_receiver"
     ]
-  },
-  "hidden": true
+  }
 }

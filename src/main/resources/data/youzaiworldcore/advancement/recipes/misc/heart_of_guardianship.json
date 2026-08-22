@@ -1,23 +1,31 @@
 {
   "parent": "minecraft:recipes/root",
   "criteria": {
-    "has_ingredients": {
+    "has_the_recipe": {
+      "trigger": "minecraft:recipe_unlocked",
+      "conditions": {
+        "recipe": "youzaiworldcore:heart_of_guardianship"
+      }
+    },
+    "has_heart_of_the_sea": {
       "trigger": "minecraft:inventory_changed",
       "conditions": {
         "items": [
           {
             "items": [
-              "minecraft:diamond"
+              "minecraft:heart_of_the_sea"
             ]
-          },
+          }
+        ]
+      }
+    },
+    "has_amethyst_shard": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
           {
             "items": [
               "minecraft:amethyst_shard"
-            ]
-          },
-          {
-            "items": [
-              "minecraft:heart_of_the_sea"
             ]
           }
         ]
@@ -26,13 +34,14 @@
   },
   "requirements": [
     [
-      "has_ingredients"
+      "has_the_recipe",
+      "has_heart_of_the_sea",
+      "has_amethyst_shard"
     ]
   ],
   "rewards": {
     "recipes": [
       "youzaiworldcore:heart_of_guardianship"
     ]
-  },
-  "hidden": true
+  }
 }

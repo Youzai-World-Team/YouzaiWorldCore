@@ -1,20 +1,28 @@
 {
   "parent": "minecraft:recipes/root",
   "criteria": {
-    "has_ingredients": {
+    "has_the_recipe": {
+      "trigger": "minecraft:recipe_unlocked",
+      "conditions": {
+        "recipe": "youzaiworldcore:mob_pressure_plate"
+      }
+    },
+    "has_redstone": {
       "trigger": "minecraft:inventory_changed",
       "conditions": {
         "items": [
           {
             "items": [
-              "minecraft:bamboo_planks"
-            ]
-          },
-          {
-            "items": [
               "minecraft:redstone"
             ]
-          },
+          }
+        ]
+      }
+    },
+    "has_string": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
           {
             "items": [
               "minecraft:string"
@@ -26,13 +34,14 @@
   },
   "requirements": [
     [
-      "has_ingredients"
+      "has_the_recipe",
+      "has_redstone",
+      "has_string"
     ]
   ],
   "rewards": {
     "recipes": [
       "youzaiworldcore:mob_pressure_plate"
     ]
-  },
-  "hidden": true
+  }
 }

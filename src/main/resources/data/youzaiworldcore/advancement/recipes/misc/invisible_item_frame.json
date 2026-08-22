@@ -1,7 +1,13 @@
 {
   "parent": "minecraft:recipes/root",
   "criteria": {
-    "has_ingredients": {
+    "has_the_recipe": {
+      "trigger": "minecraft:recipe_unlocked",
+      "conditions": {
+        "recipe": "youzaiworldcore:invisible_item_frame"
+      }
+    },
+    "has_item_frame": {
       "trigger": "minecraft:inventory_changed",
       "conditions": {
         "items": [
@@ -9,7 +15,14 @@
             "items": [
               "minecraft:item_frame"
             ]
-          },
+          }
+        ]
+      }
+    },
+    "has_phantom_membrane": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
           {
             "items": [
               "minecraft:phantom_membrane"
@@ -21,13 +34,14 @@
   },
   "requirements": [
     [
-      "has_ingredients"
+      "has_the_recipe",
+      "has_item_frame",
+      "has_phantom_membrane"
     ]
   ],
   "rewards": {
     "recipes": [
       "youzaiworldcore:invisible_item_frame"
     ]
-  },
-  "hidden": true
+  }
 }

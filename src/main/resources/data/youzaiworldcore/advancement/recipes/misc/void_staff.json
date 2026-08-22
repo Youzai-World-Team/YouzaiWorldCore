@@ -1,28 +1,31 @@
 {
   "parent": "minecraft:recipes/root",
   "criteria": {
-    "has_ingredients": {
+    "has_the_recipe": {
+      "trigger": "minecraft:recipe_unlocked",
+      "conditions": {
+        "recipe": "youzaiworldcore:void_staff"
+      }
+    },
+    "has_yz_ingot": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "youzaiworldcore:yz_ingot"
+            ]
+          }
+        ]
+      }
+    },
+    "has_phantom_membrane": {
       "trigger": "minecraft:inventory_changed",
       "conditions": {
         "items": [
           {
             "items": [
               "minecraft:phantom_membrane"
-            ]
-          },
-          {
-            "items": [
-              "minecraft:amethyst_shard"
-            ]
-          },
-          {
-            "items": [
-              "minecraft:stick"
-            ]
-          },
-          {
-            "items": [
-              "youzaiworldcore:yz_ingot"
             ]
           }
         ]
@@ -31,13 +34,14 @@
   },
   "requirements": [
     [
-      "has_ingredients"
+      "has_the_recipe",
+      "has_yz_ingot",
+      "has_phantom_membrane"
     ]
   ],
   "rewards": {
     "recipes": [
       "youzaiworldcore:void_staff"
     ]
-  },
-  "hidden": true
+  }
 }
