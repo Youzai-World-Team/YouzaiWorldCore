@@ -24,7 +24,6 @@ import java.util.regex.Pattern;
 /** 已登录玩家的账户管理页面。 */
 @SuppressWarnings("null")
 public class AccountManagementScreen extends Screen {
-    private static final int CONTAINER_WIDTH = 420;
     private static final int CONTAINER_HEIGHT = 280;
     private static final int FIELD_WIDTH = 190;
     private static final int FIELD_HEIGHT = 20;
@@ -117,7 +116,8 @@ public class AccountManagementScreen extends Screen {
                         + payload.resendAfterSeconds() * 1000L;
                 this.statusMessage = Component.translatable(
                         "screen.youzaiworldcore.account_management.status_code_sent").getString();
-                if (this.codeField != null) focus(this.codeField);
+                if (this.codeField != null)
+                    focus(this.codeField);
             }
             case EMAIL_CHANGED -> {
                 this.processing = false;
@@ -145,7 +145,8 @@ public class AccountManagementScreen extends Screen {
                     this.resendAvailableAtMillis = System.currentTimeMillis()
                             + payload.resendAfterSeconds() * 1000L;
                 }
-                if (!this.loaded && this.mode == Mode.HOME) this.loadRequested = false;
+                if (!this.loaded && this.mode == Mode.HOME)
+                    this.loadRequested = false;
                 showError(payload.message());
             }
             case EXPIRED -> {
@@ -172,9 +173,11 @@ public class AccountManagementScreen extends Screen {
             case CHANGE_EMAIL -> initEmailForm();
             case DEACTIVATE -> initDeactivateForm();
         }
-        if (this.currentDialog != null) this.currentDialog.init(this.width, this.height);
+        if (this.currentDialog != null)
+            this.currentDialog.init(this.width, this.height);
         updateButtonState();
-        if (!this.loaded && !this.loadRequested) requestLoad();
+        if (!this.loaded && !this.loadRequested)
+            requestLoad();
     }
 
     private void initHome() {
@@ -293,7 +296,8 @@ public class AccountManagementScreen extends Screen {
             this.emailCodeSent = false;
             this.emailChangeSessionId = "";
             this.emailCodeValue = "";
-            if (this.codeField != null) this.codeField.setValue("");
+            if (this.codeField != null)
+                this.codeField.setValue("");
             showError(Component.translatable(
                     "screen.youzaiworldcore.account_management.email_session_expired").getString());
         }
@@ -401,7 +405,9 @@ public class AccountManagementScreen extends Screen {
                     formatDuration(remainingEmailSessionSeconds())).getString();
             graphics.text(this.font, remaining, centerX - this.font.width(remaining) / 2,
                     top + 178, remainingEmailSessionSeconds() <= 60
-                            ? 0xFFFF8080 : 0xFFAAAAAA, false);
+                            ? 0xFFFF8080
+                            : 0xFFAAAAAA,
+                    false);
         }
         if (!this.statusMessage.isBlank()) {
             graphics.text(this.font, this.statusMessage,
@@ -455,7 +461,8 @@ public class AccountManagementScreen extends Screen {
 
     @Override
     public boolean keyPressed(KeyEvent event) {
-        if (this.currentDialog != null && this.currentDialog.isFullyVisible()) return true;
+        if (this.currentDialog != null && this.currentDialog.isFullyVisible())
+            return true;
         if (event.key() == 256) {
             onBack();
             return true;
@@ -466,8 +473,10 @@ public class AccountManagementScreen extends Screen {
                 }
                 case CHANGE_PASSWORD -> onChangePassword();
                 case CHANGE_EMAIL -> {
-                    if (this.emailCodeSent) onVerifyEmail();
-                    else onSendEmailCode();
+                    if (this.emailCodeSent)
+                        onVerifyEmail();
+                    else
+                        onSendEmailCode();
                 }
                 case DEACTIVATE -> onDeactivate();
             }
@@ -476,7 +485,8 @@ public class AccountManagementScreen extends Screen {
         for (AbstractWidget widget : this.allWidgets) {
             if (widget instanceof EditBox editBox
                     && editBox.isFocused()
-                    && editBox.keyPressed(event)) return true;
+                    && editBox.keyPressed(event))
+                return true;
         }
         return false;
     }
@@ -486,7 +496,8 @@ public class AccountManagementScreen extends Screen {
         for (AbstractWidget widget : this.allWidgets) {
             if (widget instanceof EditBox editBox
                     && editBox.isFocused()
-                    && editBox.charTyped(event)) return true;
+                    && editBox.charTyped(event))
+                return true;
         }
         return false;
     }
@@ -519,7 +530,8 @@ public class AccountManagementScreen extends Screen {
     }
 
     private void onChangePassword() {
-        if (this.processing || !this.loaded) return;
+        if (this.processing || !this.loaded)
+            return;
         captureValues();
         if (this.passwordCurrentValue.isEmpty()
                 || this.passwordNewValue.isEmpty()
@@ -551,7 +563,8 @@ public class AccountManagementScreen extends Screen {
 
     private void onSendEmailCode() {
         if (this.processing || !this.loaded
-                || System.currentTimeMillis() < this.resendAvailableAtMillis) return;
+                || System.currentTimeMillis() < this.resendAvailableAtMillis)
+            return;
         captureValues();
         if (this.emailCurrentPasswordValue.isEmpty()) {
             showError(Component.translatable(
@@ -592,7 +605,8 @@ public class AccountManagementScreen extends Screen {
     }
 
     private void onDeactivate() {
-        if (this.processing || !this.loaded) return;
+        if (this.processing || !this.loaded)
+            return;
         captureValues();
         if (this.deactivatePasswordValue.isEmpty()) {
             showError(Component.translatable(
@@ -602,7 +616,7 @@ public class AccountManagementScreen extends Screen {
         this.currentDialog = new ConfirmationDialog(
                 Component.translatable(
                         "screen.youzaiworldcore.account_management.confirm_deactivate_title").getString(),
-                new String[]{
+                new String[] {
                         Component.translatable(
                                 "screen.youzaiworldcore.account_management.confirm_deactivate_line1").getString(),
                         Component.translatable(
@@ -620,14 +634,18 @@ public class AccountManagementScreen extends Screen {
     }
 
     private void onBack() {
-        if (this.processing || this.completed) return;
-        if (this.mode == Mode.HOME) onClose();
-        else switchMode(Mode.HOME);
+        if (this.processing || this.completed)
+            return;
+        if (this.mode == Mode.HOME)
+            onClose();
+        else
+            switchMode(Mode.HOME);
     }
 
     @Override
     public void onClose() {
-        if (this.processing || this.completed) return;
+        if (this.processing || this.completed)
+            return;
         Minecraft.getInstance().setScreenAndShow(this.parent);
     }
 
@@ -644,10 +662,12 @@ public class AccountManagementScreen extends Screen {
     }
 
     private void switchMode(Mode nextMode) {
-        if (this.processing || this.completed) return;
+        if (this.processing || this.completed)
+            return;
         Mode previousMode = this.mode;
         captureValues();
-        if (previousMode != nextMode) clearFormValues(previousMode);
+        if (previousMode != nextMode)
+            clearFormValues(previousMode);
         clearWidgetReferences();
         this.currentDialog = null;
         this.statusMessage = "";
@@ -660,10 +680,10 @@ public class AccountManagementScreen extends Screen {
         this.currentDialog = new ConfirmationDialog(
                 Component.translatable(
                         "screen.youzaiworldcore.account_management.error_title").getString(),
-                new String[]{message == null || message.isBlank()
+                new String[] { message == null || message.isBlank()
                         ? Component.translatable(
                                 "screen.youzaiworldcore.account_management.error_unknown").getString()
-                        : message},
+                        : message },
                 Component.translatable("screen.youzaiworldcore.login.dialog_ok").getString(),
                 () -> {
                     if (!this.loaded && this.mode == Mode.HOME && !this.loadRequested) {
@@ -680,7 +700,7 @@ public class AccountManagementScreen extends Screen {
         this.currentDialog = new ConfirmationDialog(
                 Component.translatable(
                         "screen.youzaiworldcore.account_management.success_title").getString(),
-                new String[]{message},
+                new String[] { message },
                 Component.translatable("screen.youzaiworldcore.login.dialog_ok").getString(),
                 onConfirm);
         this.currentDialog.init(this.width, this.height);
@@ -700,7 +720,8 @@ public class AccountManagementScreen extends Screen {
         if (this.deactivateModeButton != null) {
             this.deactivateModeButton.active = this.loaded && !this.processing && !this.completed;
         }
-        if (this.closeButton != null) this.closeButton.active = !this.processing && !this.completed;
+        if (this.closeButton != null)
+            this.closeButton.active = !this.processing && !this.completed;
         if (this.submitPasswordButton != null) {
             this.submitPasswordButton.active = this.loaded && !this.processing && !this.completed;
         }
@@ -725,7 +746,8 @@ public class AccountManagementScreen extends Screen {
         if (this.confirmDeactivateButton != null) {
             this.confirmDeactivateButton.active = this.loaded && !this.processing && !this.completed;
         }
-        if (this.backButton != null) this.backButton.active = !this.processing && !this.completed;
+        if (this.backButton != null)
+            this.backButton.active = !this.processing && !this.completed;
     }
 
     private TransparentButton button(
@@ -753,7 +775,8 @@ public class AccountManagementScreen extends Screen {
             if (this.currentPasswordField != null) {
                 this.passwordCurrentValue = this.currentPasswordField.getValue();
             }
-            if (this.newPasswordField != null) this.passwordNewValue = this.newPasswordField.getValue();
+            if (this.newPasswordField != null)
+                this.passwordNewValue = this.newPasswordField.getValue();
             if (this.confirmPasswordField != null) {
                 this.passwordConfirmationValue = this.confirmPasswordField.getValue();
             }
@@ -761,8 +784,10 @@ public class AccountManagementScreen extends Screen {
             if (this.currentPasswordField != null) {
                 this.emailCurrentPasswordValue = this.currentPasswordField.getValue();
             }
-            if (this.emailField != null) this.newEmailValue = this.emailField.getValue();
-            if (this.codeField != null) this.emailCodeValue = this.codeField.getValue();
+            if (this.emailField != null)
+                this.newEmailValue = this.emailField.getValue();
+            if (this.codeField != null)
+                this.emailCodeValue = this.codeField.getValue();
         } else if (this.mode == Mode.DEACTIVATE && this.deactivatePasswordField != null) {
             this.deactivatePasswordValue = this.deactivatePasswordField.getValue();
         }
@@ -807,7 +832,8 @@ public class AccountManagementScreen extends Screen {
 
     private void focus(EditBox target) {
         for (AbstractWidget widget : this.allWidgets) {
-            if (widget instanceof EditBox editBox) editBox.setFocused(editBox == target);
+            if (widget instanceof EditBox editBox)
+                editBox.setFocused(editBox == target);
         }
     }
 
@@ -847,7 +873,8 @@ public class AccountManagementScreen extends Screen {
     }
 
     private String abbreviate(String value, int maxLength) {
-        if (value == null || value.length() <= maxLength) return value == null ? "" : value;
+        if (value == null || value.length() <= maxLength)
+            return value == null ? "" : value;
         return value.substring(0, Math.max(1, maxLength - 3)) + "...";
     }
 }

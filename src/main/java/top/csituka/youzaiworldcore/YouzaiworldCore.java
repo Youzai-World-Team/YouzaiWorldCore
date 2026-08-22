@@ -385,7 +385,6 @@ public class YouzaiworldCore implements ModInitializer {
                         serverPlayer.getName().getString());
                 InvisibilityManager.onPlayerDisconnect(serverPlayer);
                 DimensionPoolManager.onPlayerDisconnect(serverPlayer);
-                top.csituka.youzaiworldcore.mail.MailDataStorage.invalidate(serverPlayer.getUUID());
                 AfkManager.onDisconnect(serverPlayer);
                 CosmeticManager.onPlayerDisconnect(serverPlayer);
             }
@@ -446,42 +445,43 @@ public class YouzaiworldCore implements ModInitializer {
         DebugLogger.exiting("YouzaiworldCore", "DimensionPoolEvents.register");
 
         // ===== 初始化邮件系统 =====
-        // 配置在 global_settings.json 的 mail_module 分节；数据在 yzwc/server/data/mail_module/
+        // 配置在 global_settings.json 的 mail_module 分节；
+        // 邮件正文与每玩家收件箱由 Api 服务端权威保存（见 mail/MailApiClient）
         DebugLogger.entering("YouzaiworldCore", "MailSystem.init");
         top.csituka.youzaiworldcore.mail.MailSettings.initialize();
-        top.csituka.youzaiworldcore.mail.SentMailRepository.initialize();
-        top.csituka.youzaiworldcore.mail.MailDataStorage.initialize();
         LOGGER.info("邮件系统已初始化");
         DebugLogger.exiting("YouzaiworldCore", "MailSystem.init");
 
         // ===== 注册邮件系统事件 =====
         // 服务端启动完成后清理「已过期且没有任何玩家星标过」的邮件
         ServerLifecycleEvents.SERVER_STARTED.register(
-                server -> top.csituka.youzaiworldcore.mail.MailManager.purgeOnServerStart());
+                server -> top.csituka.youzaiworldcore.mail.MailManager.purgeOnServerStart(server));
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
             var player = handler.getPlayer();
             if (player instanceof net.minecraft.server.level.ServerPlayer sp) {
-                // 登录时推动未读数 + 权限
-                int unread = top.csituka.youzaiworldcore.mail.MailDataStorage.getUnreadCount(sp.getUUID());
-                boolean canSend = top.csituka.youzaiworldcore.mail.MailPermissionHelper.hasMailPermission(sp);
-                net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(sp,
-                        new top.csituka.youzaiworldcore.network.MailUnreadCountPayload(unread, canSend));
-                // 触发收件箱清理（从调用 load 时会剔除已撤回/过期条目）
-                top.csituka.youzaiworldcore.mail.MailDataStorage.load(sp.getUUID());
+                // 登录时异步拉取未读数并回推未读数 + 发布权限
+                top.csituka.youzaiworldcore.mail.MailManager.refreshUnread(sp);
             }
         });
-        // 周期性过期清理（默认 3000 tick = 约 2.5 分钟）
+        // 周期性过期清理（默认 3000 tick = 约 2.5 分钟）+ 在线玩家未读徽标刷新
         // 使用 int[] 作为可变计数器，避免每 tick 取模运算
         final int[] purgeCounter = {0};
+        final int[] unreadCounter = {0};
         net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.START_SERVER_TICK.register(server -> {
-            int interval = top.csituka.youzaiworldcore.mail.MailSettings.get().getAutoPurgeIntervalTicks();
-            if (interval <= 0) return;
-            if (++purgeCounter[0] >= interval) {
+            var mailSettings = top.csituka.youzaiworldcore.mail.MailSettings.get();
+            int purgeInterval = mailSettings.getAutoPurgeIntervalTicks();
+            if (purgeInterval > 0 && ++purgeCounter[0] >= purgeInterval) {
                 purgeCounter[0] = 0;
-                top.csituka.youzaiworldcore.mail.MailManager.purge();
+                top.csituka.youzaiworldcore.mail.MailManager.purgeAsync(server);
+            }
+            // 后台管理页发布的邮件没有 S2C 触发点，靠这里周期性点亮在线玩家的红点
+            int unreadInterval = mailSettings.getUnreadRefreshIntervalTicks();
+            if (unreadInterval > 0 && ++unreadCounter[0] >= unreadInterval) {
+                unreadCounter[0] = 0;
+                top.csituka.youzaiworldcore.mail.MailManager.refreshUnreadForOnline(server);
             }
         });
-        LOGGER.info("邮件系统事件（启动清理 / 登录推送 / 过期清理）已注册");
+        LOGGER.info("邮件系统事件（启动清理 / 登录推送 / 过期清理 / 未读刷新）已注册");
         DebugLogger.exiting("YouzaiworldCore", "MailSystem.events");
 
         // ===== 初始化宠物模块 =====

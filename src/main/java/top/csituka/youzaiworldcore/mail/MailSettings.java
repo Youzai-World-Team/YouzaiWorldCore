@@ -14,9 +14,9 @@ import java.util.List;
  * {@code mail_module} 分节。
  * </p>
  * <p>
- * 邮件<b>数据</b>（正文仓库与每玩家收件箱）不在这里，见
- * {@link SentMailRepository} 与 {@link MailDataStorage}，落在
- * {@code yzwc/server/data/mail_module/} 下。
+ * 邮件<b>数据</b>（正文仓库与每玩家收件箱）不在这里，也不再落到本地磁盘：
+ * 由 Api 服务端的 {@code game_mails} / {@code game_mail_refs} 表权威保存，
+ * 模组侧访问入口是 {@link MailApiClient}。
  * </p>
  */
 @SuppressWarnings("null")
@@ -37,6 +37,15 @@ public class MailSettings {
     private int maxMailsPerPlayer = 200;
 
     private int autoPurgeIntervalTicks = 3000;
+
+    /**
+     * 在线玩家未读徽标的周期性刷新间隔（tick），0 表示关闭。
+     * <p>
+     * 游戏内的发布 / 领取 / 撤回都会即时回推未读数，但后台管理页发布的邮件
+     * 没有 S2C 触发点（Api 无法主动通知模组），需要靠这个周期批量刷新点亮红点。
+     * </p>
+     */
+    private int unreadRefreshIntervalTicks = 3000;
 
     private int mailPermissionLevel = 4;
 
@@ -82,6 +91,9 @@ public class MailSettings {
                 section.getInt("max_mails_per_player", loaded.maxMailsPerPlayer, 1, Integer.MAX_VALUE);
         loaded.autoPurgeIntervalTicks =
                 section.getInt("auto_purge_interval_ticks", loaded.autoPurgeIntervalTicks, 0, Integer.MAX_VALUE);
+        loaded.unreadRefreshIntervalTicks =
+                section.getInt("unread_refresh_interval_ticks", loaded.unreadRefreshIntervalTicks,
+                        0, Integer.MAX_VALUE);
         loaded.mailPermissionLevel =
                 section.getInt("mail_permission_level", loaded.mailPermissionLevel, 0, 4);
         loaded.mailPermissionNode = section.getString("mail_permission_node", loaded.mailPermissionNode);
@@ -119,6 +131,7 @@ public class MailSettings {
         section.set("keep_starred_after_expire", current.keepStarredAfterExpire);
         section.set("max_mails_per_player", current.maxMailsPerPlayer);
         section.set("auto_purge_interval_ticks", current.autoPurgeIntervalTicks);
+        section.set("unread_refresh_interval_ticks", current.unreadRefreshIntervalTicks);
         section.set("mail_permission_level", current.mailPermissionLevel);
         section.set("mail_permission_node", current.mailPermissionNode);
         section.set("max_item_attachments", current.maxItemAttachments);
@@ -157,6 +170,10 @@ public class MailSettings {
 
     public int getAutoPurgeIntervalTicks() {
         return autoPurgeIntervalTicks;
+    }
+
+    public int getUnreadRefreshIntervalTicks() {
+        return unreadRefreshIntervalTicks;
     }
 
     public int getMailPermissionLevel() {

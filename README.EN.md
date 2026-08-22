@@ -297,7 +297,7 @@ If step 1 fails (file locked, etc.) step 2 is skipped so the original is never c
 | Respawn Here             | `global_settings.json` → `respawn_module`                                      | Enabled dimension pools and standalone dimensions                                                    |
 | Dimension Pools          | `global_settings.json` → `dimensional_inventories_module`                      | `pools` pool definition list                                                                         |
 | Adventure Level / Attrs  | `yzwc/server/data/skill_module/data.json`                                      | `levels` / `attributes` blocks, keyed by player UUID                                                 |
-| Mail Data                | `yzwc/server/data/mail_module/data.json` + `box/<uuid>.json`                   | Global mail body repository + per-player inbox index                                                 |
+| Mail Data                | Api-side SQLite `game_mails` / `game_mail_refs`                                | Mail bodies (with attachments) + per-player inbox refs; no mail files on the Minecraft server        |
 | Pet Backups              | `yzwc/server/backup/pet_module/pet_backup_<timestamp>.zip`                     | Scheduled backup archives (containing a `.json` of the same name)                                    |
 | Player Stats Data        | `<world_name>/data/yzwc/data/status_module/data.json` + `rank_export/`         | StatsManager persistence & leaderboard export dir                                                    |
 | Dimension Pool State     | `<world_name>/data/yzwc/data/dimensional_inventories_module/<pool>/<uuid>.json`| Per-pool independent inventory and player state                                                      |
@@ -459,7 +459,7 @@ A one-way **admin → player** server mailbox / announcement box (not player-to-
   - `/yzwc mail purge [player|all]` —— purge expired mail
   - `/yzwc mail list [player]` —— view a player's mailbox
 - **Permission**: `youzaiworldcore.mail` (default OP 4); falls back to `mail_permission_level` when LuckPerms is absent
-- **Storage**: Global repo `yzwc/server/data/mail_module/data.json` + per-player index `yzwc/server/data/mail_module/box/<uuid>.json` + settings in `global_settings.json` → `mail_module`; cross-world consistent, bound to the account system (offline accounts also indexed, visible on login)
+- **Storage**: Mail bodies and per-player inbox refs live in the Api server's SQLite (`game_mails` / `game_mail_refs`); only the settings stay local in `global_settings.json` → `mail_module`. The client keeps using the same packets — the Minecraft server checks permissions and then forwards to `/api/game/mail/*` (HMAC-signed), so both fetching and publishing are backed by Api data. Recipient resolution (needs LuckPerms) and reward granting stay on the mod side, and every Api call is async with results applied back on the server main thread. Cross-world consistent, bound to the account system (offline accounts also indexed, visible on login)
 - **Network**: 18 dedicated packets (C→S `mail_compose_open` / `mail_open` / `mail_sent_list_request` / `mail_recall` / `mail_purge` / `mail_list_request` / `mail_fetch` / `mail_action` / `mail_admin_send` / `mail_admin_edit` / `mail_player_list_request`; S→C `open_mail_compose` / `mail_list` / `mail_sent_list` / `mail_update` / `mail_op_result` / `mail_unread_count` / `mail_player_list`)
 
 ### 31. Custom Enchantments
@@ -895,6 +895,7 @@ src/                                       # 452 Java source files (main 273 / c
 │   ├── account/                          # Account auth (data/command/mixin/util subpackages)
 │   ├── block/ + entity/                  # Custom blocks & block entities
 │   ├── command/                          # Command registration (Afk/Event/Function/Reload/TeleportAnchor/Update/Status)
+│   ├── api/                              # Api bridge (ApiHttp shared HMAC transport + ApiServiceClient accounts/cosmetics)
 │   ├── component/                        # Data components
 │   ├── config/                           # Server external settings (global/per-player/event + per-module config, 17 sections)
 │   ├── data/                             # Teleport anchor SavedData
@@ -906,7 +907,7 @@ src/                                       # 452 Java source files (main 273 / c
 │   ├── invisibility/                     # Invisibility system
 │   ├── item/                             # Items, tools, creative tabs (7), presets (9), invisible item frames
 │   ├── luckperms/                        # LuckPerms integration (LuckPermsHelper unified auth)
-│   ├── mail/                             # Mail system (Mail / MailManager / SentMailRepository / MailDataStorage / MailSettings / MailPermissionHelper)
+│   ├── mail/                             # Mail system (Mail / MailManager / MailApiClient / MailSettings / MailPermissionHelper; data lives on the Api server)
 │   ├── mana/                             # Mana system
 │   ├── mixin/                            # Mixins (35; subpackages: afk / babyzombie / chargedcreeper / craftsound / damagenumber / doubledoors / invisibility / jukebox / painting / pet / seat / skill / trialvault)
 │   ├── network/                          # Network packets (48 Payload classes + ModNetworking)

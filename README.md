@@ -279,12 +279,13 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 | Api 网桥       | `global_settings.json` → `api_module`                                     | Api 地址（生产环境为 `https://api.mcyzw.top`）、HMAC 共享密钥、请求超时                    |
 | 账户与认证     | Api 服务端 SQLite `game_accounts` / `game_sessions`                       | 玩家代号、密码哈希、UUID、会话、登录冷却；模组仅保留运行期非凭据缓存                    |
 | 自定义外观     | Api 服务端 SQLite `game_cosmetics`                                        | 皮肤和披风二进制数据；Minecraft 服务端不保存 PNG 文件                                   |
+| 邮件数据       | Api 服务端 SQLite `game_mails` / `game_mail_refs`                         | 邮件正文（含附件）与每玩家收件箱引用；Minecraft 服务端不再保存邮件文件                  |
 | 玩家个人配置   | `yzwc/server/config/user_settings/<UUID>.json`                            | `double_doors_module`、`function_module`（7 个个人功能开关：梯子延展/作物经验/工具信息/方块动画/合成音效/物品闪光/伤害跳字） |
 | 客户端外部设置 | `config/youzaiworldcore/client_external_settings.json`（客户端，未迁移）  | `devModeEnabled`、`logLevel`（0-3）、`yzuiEnabled`（YZUI 界面总开关）、调试地址/端口     |
 | DebugLogger    | `util/DebugLogger`                                                        | 四级日志（OFF/BASIC/DETAILED/DEBUG），entering/exiting/branch/stateChange/exception 追踪 |
 | 更新检查设置   | `global_settings.json` → `update_module`                                  | `enabled`（开关更新检查，UpdateCheckerConfig）                                           |
 | 试炼宝库设置   | `global_settings.json` → `trial_vault_module`                             | `enabled`（无限领奖开关，TrialVaultConfig，默认 true）                                   |
-| 邮件设置       | `global_settings.json` → `mail_module`                                    | 过期策略、权限节点/等级、附件上限等                                                      |
+| 邮件设置       | `global_settings.json` → `mail_module`                                    | 过期策略、权限节点/等级、附件上限、过期清理与未读刷新间隔                                |
 | 宠物设置       | `global_settings.json` → `pet_module`                                     | 宠物备份间隔、保留份数、自动备份开关                                                     |
 | AFK 设置       | `global_settings.json` → `afk_module`                                     | 检测阈值、前缀/广播/无敌/自动踢出等                                                     |
 | 老吴贴贴设置   | `global_settings.json` → `laowu_meme_module`                              | 全局开关、冷却时间等                                                                    |
@@ -294,7 +295,6 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 | 原地重生       | `global_settings.json` → `respawn_module`                                 | 启用的维度池与独立维度列表                                                              |
 | 维度池         | `global_settings.json` → `dimensional_inventories_module`                 | `pools` 池定义列表                                                                      |
 | 冒险等级/属性  | `yzwc/server/data/skill_module/data.json`                                 | `levels` / `attributes` 两块，按玩家 UUID 持久化                                         |
-| 邮件数据       | `yzwc/server/data/mail_module/data.json` + `box/<uuid>.json`              | 全局正文仓库 + 每玩家收件箱索引                                                         |
 | 宠物备份       | `yzwc/server/backup/pet_module/pet_backup_<时间戳>.zip`                   | 定时备份压缩包（内含同名 `.json`）                                                      |
 | 玩家统计数据   | `<world_name>/data/yzwc/data/status_module/data.json` + `rank_export/`    | StatsManager 持久化统计与排行榜导出目录                                                  |
 | 维度池玩家状态 | `<world_name>/data/yzwc/data/dimensional_inventories_module/<池>/<uuid>.json` | 各池内玩家的独立背包与状态                                                          |
@@ -439,6 +439,14 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 
 单向的**管理员 → 玩家**服务器信箱 / 公告箱（非玩家间私聊），由管理员经 GUI 发布，玩家在信箱（Shift+F → 邮件）中查收、领取奖励。
 
+- **数据由 Api 服务端权威保存**：邮件正文与每玩家收件箱存在 Api 的 SQLite（`game_mails` / `game_mail_refs`），
+  Minecraft 服务端不再保存任何邮件文件。客户端仍走原有数据包，由 Minecraft 服务端在判权限后转调
+  `/api/game/mail/*`（HMAC 签名），拉取和发布都以 Api 的数据为准；接收范围解析（需 LuckPerms）与奖励发放留在模组侧。
+  所有 Api 调用都是异步的，结果回到服务端主线程后才推送 S2C 数据包。
+- **后台也可发布公告 / 通知**：Api 管理页 `/mail`（服内邮件）能查看全部邮件与逐收件人状态，并发布公告与通知
+  （奖励邮件、编辑、撤回仍只在游戏内）。后台发布没有 S2C 触发点，因此服务端按
+  `mail_module.unread_refresh_interval_ticks`（默认 3000 tick ≈ 2.5 分钟，0 关闭）周期性批量刷新在线玩家的未读徽标，
+  整批玩家一次 Api 请求；无人在线时不产生请求。
 - **定位**：发送方仅管理员（OP / LuckPerms `youzaiworldcore.mail` 节点）；接收方二选一——全体成员 / 指定玩家（从账户系统已注册名单中勾选）
 - **邮件类型**：公告（ANNOUNCEMENT）、通知（NOTICE）、奖励（REWARD）
 - **奖励载体**（REWARD 类型）：物品（最多 10 个槽位，从管理员物品栏复制为模板，不消耗原物）、命令（以控制台执行，支持 `%player%` / `%uuid%` 占位符）、原版经验值、原版等级、本项目冒险经验值、本项目冒险等级（四项可同时选择）
@@ -452,11 +460,11 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 - **命令**（**客户端命令**，解析后转发；服务端统一鉴权）
   - `/yzwc mail send_mail` —— 打开发布邮件 GUI
   - `/yzwc mail sent` —— 打开已发送邮件管理列表
-  - `/yzwc mail recall <mailId>` —— 撤回已发送邮件（删除仓库条目 + 在线推送移除）
+  - `/yzwc mail recall <mailId>` —— 撤回已发送邮件（Api 删除正文与全部收件箱引用 + 在线推送移除）
   - `/yzwc mail purge [player|all]` —— 清理过期邮件
   - `/yzwc mail list [player]` —— 查看指定玩家信箱
 - **权限**：`youzaiworldcore.mail`（默认 OP 4）；未装 LuckPerms 时以 `mail_permission_level` 回退
-- **存储**：全局仓库 `yzwc/server/data/mail_module/data.json` + 每玩家索引 `yzwc/server/data/mail_module/box/<uuid>.json` + 设置 `global_settings.json` → `mail_module`；跨世界一致，绑定账户系统（离线账户同样入索引，登录可见）
+- **存储**：邮件正文与每玩家收件箱引用在 Api 服务端 SQLite（`game_mails` / `game_mail_refs`），本地只留设置 `global_settings.json` → `mail_module`；跨世界一致，绑定账户系统（离线账户同样入索引，登录可见）
 - **网络**：共 18 个专用数据包（C2S `mail_compose_open` / `mail_open` / `mail_sent_list_request` / `mail_recall` / `mail_purge` / `mail_list_request` / `mail_fetch` / `mail_action` / `mail_admin_send` / `mail_admin_edit` / `mail_player_list_request`；S2C `open_mail_compose` / `mail_list` / `mail_sent_list` / `mail_update` / `mail_op_result` / `mail_unread_count` / `mail_player_list`）
 
 ### 31. 自定义附魔
@@ -894,6 +902,7 @@ src/                                       # 452 个 Java 源文件（main 273 /
 ├── main/java/top/csituka/youzaiworldcore/
 │   ├── YouzaiworldCore.java              # 主入口
 │   ├── account/                          # 账户认证（data/command/mixin/util 子包）
+│   ├── api/                              # Api 网桥（ApiHttp 统一 HMAC 传输 + ApiServiceClient 账户/外观）
 │   ├── block/ + entity/                  # 自定义方块与方块实体
 │   ├── command/                          # 命令注册（Afk/Event/Function/Reload/TeleportAnchor/Update/Status）
 │   ├── component/                        # 数据组件
@@ -907,7 +916,7 @@ src/                                       # 452 个 Java 源文件（main 273 /
 │   ├── invisibility/                     # 隐身系统
 │   ├── item/                             # 物品、工具、创造标签页（7 个）、预设（9 个）、隐形展示框
 │   ├── luckperms/                        # LuckPerms 集成（LuckPermsHelper 统一鉴权）
-│   ├── mail/                             # 邮件系统（Mail / MailManager / SentMailRepository / MailDataStorage / MailSettings / MailPermissionHelper）
+│   ├── mail/                             # 邮件系统（Mail / MailManager / MailApiClient / MailSettings / MailPermissionHelper；数据在 Api 服务端）
 │   ├── mana/                             # 魔力系统
 │   ├── mixin/                            # Mixin（35 个，含子包 afk / babyzombie / chargedcreeper / craftsound / damagenumber / doubledoors / invisibility / jukebox / painting / pet / seat / skill / trialvault）
 │   ├── network/                          # 网络数据包（52 个 Payload 类 + ModNetworking）

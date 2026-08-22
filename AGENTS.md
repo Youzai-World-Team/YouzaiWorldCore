@@ -80,6 +80,7 @@ YouzaiWorldCore/
 │   ├── YouzaiworldCore.java          # ModInitializer 主入口：所有子系统在此按序 initialize()/register()
 │   ├── account/                      # 账户认证（command / data / mixin / util 子包）
 │   ├── afk/                          # AFK 挂机检测
+│   ├── api/                          # ⭐ Api 网桥（ApiHttp 统一 HMAC 签名与传输 + ApiServiceClient 账户/会话/外观）
 │   ├── block/ + block/entity/        # 自定义方块与方块实体（分解台 / 飞行信标 / 传送锚点 / 魔力台）
 │   ├── command/                      # 服务端命令（Afk / Event / Function / Reload / TeleportAnchor / Update）
 │   ├── component/                    # 自定义数据组件（ModDataComponents）
@@ -93,7 +94,7 @@ YouzaiWorldCore/
 │   ├── invisibility/ · mana/ · respawn/ · skill/ · status/ · trialvault/   # 各玩法子系统
 │   ├── item/{,preset,tool}/          # 物品、预设物品、悠哉工具、创造标签页（7 个）
 │   ├── luckperms/LuckPermsHelper.java# 统一鉴权入口（权限节点常量 + OP 回退）
-│   ├── mail/                         # 邮件系统（Mail / MailManager / MailDataStorage …）
+│   ├── mail/                         # 邮件系统（Mail / MailManager / MailApiClient / MailSettings；数据在 Api 服务端）
 │   ├── mixin/                        # 服务端 Mixin（35 个；子包：afk / babyzombie / chargedcreeper / craftsound / damagenumber / doubledoors / invisibility / jukebox / painting / pet / seat / skill / trialvault）
 │   ├── network/                      # 48 个 Payload 记录类 + ModNetworking 统一注册 + MailStreamCodecs
 │   ├── pet/{,command,config,event}/  # 宠物系统
@@ -345,12 +346,12 @@ YouzaiworldCore.onInitialize()
  ├─ DamageNumberHandler.initialize()       # 伤害跳字
  ├─ 各 XxxHandler.register()               # 事件挂载（连锁采集/铁砧修复/坐姿/传送锚点/法杖/信标/切石机/龙翼/监守者/死亡音效/梯子/作物/头颅/三叉戟/紫颂/带电苦力怕/双开门/末地门/骨粉甘蔗/混凝土固化/附魔处理器/老吴贴贴/隐身…）
  ├─ 各 XxxConfig.load()                    # 子系统配置（事件开关/带电苦力怕/末地门/试炼宝库/老吴贴贴/更新检查/AFK/维度池/原地重生）
- ├─ 各子系统 Manager/Storage.initialize()   # 账户 / 冒险等级 / 属性 / 原地重生 / 邮件 / 宠物 / 统计 …
+ ├─ 各子系统 Manager/Storage.initialize()   # 账户 / 冒险等级 / 属性 / 原地重生 / 宠物 / 统计 …（邮件只需 MailSettings.initialize()，数据在 Api）
  ├─ BiomeModifications.addFeature(...)     # 矿物生成
  ├─ ServerLifecycleEvents.SERVER_STARTING  # 村庄结构注入 + 宠物备份
- ├─ ServerLifecycleEvents.SERVER_STARTED   # 异步更新检查 + 邮件过期清理
- ├─ ServerPlayConnectionEvents.JOIN        # AFK 登记 / 功能开关同步 / 邮件未读数推送
- ├─ ServerPlayConnectionEvents.DISCONNECT  # 隐身 / 维度池 / AFK / 邮件收尾
+ ├─ ServerLifecycleEvents.SERVER_STARTED   # 异步更新检查 + 邮件过期清理（异步调 Api）
+ ├─ ServerPlayConnectionEvents.JOIN        # AFK 登记 / 功能开关同步 / 邮件未读数推送（异步调 Api）
+ ├─ ServerPlayConnectionEvents.DISCONNECT  # 隐身 / 维度池 / AFK / 外观收尾
  └─ CommandRegistrationCallback            # /yzwc 命令树注册
 ```
 
@@ -377,13 +378,14 @@ YouzaiworldCore.onInitialize()
 
 ### 6.4 关键设计决策
 
-1. **配置全部为 JSON + Gson，且集中收拢**（详见 [§4.3](#43-文件存放规范强制)）。服务端本地配置包括全局 `yzwc/server/config/global_settings.json` 与玩家个人 `yzwc/server/config/user_settings/<UUID>.json`；游戏账户凭据、认证会话、登录冷却以及皮肤/披风由 Api 服务端 SQLite 权威保存，模组不生成账户凭据 JSON，也不保存外观 PNG。数据 / 备份 / 缓存分别在 `yzwc/server/` 下的 `data/` `backup/` `temp/`，随存档走的同结构放在 `<world_name>/data/yzwc/`。各配置类仍是静态单例 `load()` / `save()`，但本地配置读写都走 `GlobalSettings` / `UserSettings`，分节缺失时自动写出默认值，格式非法则崩溃退出。**客户端配置尚未迁移**，仍在 `config/youzaiworldcore/`（`client_external_settings.json`、`item_borders.json`、`fancy_tooltips.json`、`highlight_item/` 等）。
+1. **配置全部为 JSON + Gson，且集中收拢**（详见 [§4.3](#43-文件存放规范强制)）。服务端本地配置包括全局 `yzwc/server/config/global_settings.json` 与玩家个人 `yzwc/server/config/user_settings/<UUID>.json`；游戏账户凭据、认证会话、登录冷却、皮肤/披风以及**邮件正文与每玩家收件箱**由 Api 服务端 SQLite 权威保存，模组不生成账户凭据 JSON，不保存外观 PNG，也不再保存邮件文件。数据 / 备份 / 缓存分别在 `yzwc/server/` 下的 `data/` `backup/` `temp/`，随存档走的同结构放在 `<world_name>/data/yzwc/`。各配置类仍是静态单例 `load()` / `save()`，但本地配置读写都走 `GlobalSettings` / `UserSettings`，分节缺失时自动写出默认值，格式非法则崩溃退出。**客户端配置尚未迁移**，仍在 `config/youzaiworldcore/`（`client_external_settings.json`、`item_borders.json`、`fancy_tooltips.json`、`highlight_item/` 等）。
 2. **网络层集中注册**：所有 Payload 的 `PayloadTypeRegistry` 注册与服务端接收器都写在 `ModNetworking.initialize()`，客户端接收器写在 `ClientNetworking`。Payload 一律用 `record` + `CustomPacketPayload.Type ID` + `StreamCodec STREAM_CODEC`。
 3. **权限双轨制**：`LuckPermsHelper` 暴露权限节点常量与 `checkPermission(...)`；LuckPerms 未安装时**不抛异常**，自动回退到原版 OP 等级（`Commands.LEVEL_ADMINS` = 4）。新增命令请在此类中补充节点常量并同步更新 README 权限表。
 4. **Mixin 三配置分离**：`youzaiworldcore.mixins.json`（服务端/通用）、`youzaiworldcore.account.mixins.json`（账户系统独立）、`youzaiworldcore.client.mixins.json`（客户端，`environment: client`）。新增 Mixin 必须登记进对应 JSON，否则不生效；`compatibilityLevel` 均为 `JAVA_25`，`injectors.defaultRequire = 1`，通用与客户端配置还开启了 `overwrites.requireAnnotations`。
 5. **AccessWidener 仅客户端**：`src/client/resources/youzaiworldcore.client.accesswidener`，能用 Mixin `Accessor` 解决的优先用 Accessor，避免扩大可见性。
 6. **单一命令根 `/yzwc`**：服务端子命令在 `YouzaiworldCore` 的 `CommandRegistrationCallback` 与 `command/` 包内注册；客户端子命令由 `src/client/.../command/` 下各类通过 `ClientCommandRegistrationCallback` 自行注册，并在 `Client.onInitializeClient()` 中调用其 `register()`。
 7. **移植功能原生重写**：参考其他模组（Double Doors、trial-chamber-time-removal、老吴贴贴等）的功能均为原生实现，不引入其依赖，注释中标注参考来源。
+8. **Api 网桥单向且异步**：客户端**永远不直连 Api**（HMAC 密钥只在服务端的 `api_module.server_key` 里），链路固定为「客户端数据包 → Minecraft 服务端判权限 → `api/ApiHttp` 签名请求 → 回主线程推 S2C」。签名与传输只有 `ApiHttp` 一份实现，账户/外观走 `ApiServiceClient`，邮件走 `mail/MailApiClient`。所有 Api 调用**必须**用 `CompletableFuture.supplyAsync(...).whenComplete((r, e) -> server.execute(...))`，绝不能在主线程同步等 HTTP；回到主线程后先判 `player.hasDisconnected()` 再发包。需要 LuckPerms 或注册表（如邮件的接收范围解析、物品附件 NBT 序列化、奖励发放）的部分留在模组侧，Api 只负责存取。
 
 ---
 

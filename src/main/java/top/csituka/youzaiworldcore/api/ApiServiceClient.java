@@ -3,22 +3,12 @@ package top.csituka.youzaiworldcore.api;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import com.google.gson.reflect.TypeToken;
 import top.csituka.youzaiworldcore.account.data.PlayerAccount;
 import top.csituka.youzaiworldcore.config.ApiModuleSettings;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.SecureRandom;
-import java.time.Duration;
 import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -26,16 +16,11 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
-/** Api-only 账户、会话和外观 HTTP 客户端。 */
+/** Api-only 账户、会话和外观 HTTP 客户端。请求签名与传输由 {@link ApiHttp} 统一处理。 */
 public final class ApiServiceClient {
     private static final String MODULE = "ApiServiceClient";
     // SMTP 投递需要等待远端邮件服务器响应，不能沿用普通 Api 的 3 秒默认超时。
     private static final int EMAIL_REQUEST_TIMEOUT_SECONDS = 30;
-    // Cloudflare 公网 Api 使用 HTTP/1.1，避免不同代理对 HTTP/2 的协商差异。
-    private static final HttpClient CLIENT = HttpClient.newBuilder()
-            .connectTimeout(Duration.ofSeconds(3))
-            .version(HttpClient.Version.HTTP_1_1)
-            .build();
 
     private ApiServiceClient() {
     }
@@ -536,69 +521,31 @@ public final class ApiServiceClient {
     }
 
     private static String responseMessage(JsonObject root) {
-        String message = stringValue(root, "statusMessage");
-        if (!message.isBlank())
-            return message;
-        message = stringValue(root, "message");
-        if (!message.isBlank())
-            return message;
-        message = stringValue(root, "msg");
-        return message.isBlank() ? "Api 请求失败" : message;
+        return ApiHttp.responseMessage(root);
     }
 
     private static boolean booleanValue(JsonObject root, String key, boolean fallback) {
-        JsonElement value = nestedValue(root, key);
-        try {
-            return value == null ? fallback : value.getAsBoolean();
-        } catch (RuntimeException ignored) {
-            return fallback;
-        }
+        return ApiHttp.booleanValue(root, key, fallback);
     }
 
     private static int intValue(JsonObject root, String key, int fallback) {
-        return (int) longValue(root, key, fallback);
+        return ApiHttp.intValue(root, key, fallback);
     }
 
     private static long longValue(JsonObject root, String key, long fallback) {
-        JsonElement value = nestedValue(root, key);
-        try {
-            return value == null ? fallback : value.getAsLong();
-        } catch (RuntimeException ignored) {
-            return fallback;
-        }
-    }
-
-    private static JsonElement nestedValue(JsonObject root, String key) {
-        if (root.has(key))
-            return root.get(key);
-        JsonObject data = root.has("data") && root.get("data").isJsonObject() ? root.getAsJsonObject("data") : null;
-        return data != null && data.has(key) ? data.get(key) : null;
+        return ApiHttp.longValue(root, key, fallback);
     }
 
     private static String stringValue(JsonObject root, String key) {
-        JsonElement value = root.get(key);
-        try {
-            return value == null || value.isJsonNull() ? "" : value.getAsString();
-        } catch (RuntimeException ignored) {
-            return "";
-        }
+        return ApiHttp.stringValue(root, key);
     }
 
     private static String nestedStringValue(JsonObject root, String key) {
-        JsonElement value = nestedValue(root, key);
-        try {
-            return value == null || value.isJsonNull() ? "" : value.getAsString();
-        } catch (RuntimeException ignored) {
-            return "";
-        }
+        return ApiHttp.nestedStringValue(root, key);
     }
 
     private static JsonObject parse(String body) {
-        try {
-            return body == null || body.isBlank() ? new JsonObject() : JsonParser.parseString(body).getAsJsonObject();
-        } catch (RuntimeException e) {
-            return new JsonObject();
-        }
+        return ApiHttp.parse(body);
     }
 
     private static byte[] decode(JsonObject files, String key) {
@@ -607,80 +554,23 @@ public final class ApiServiceClient {
     }
 
     private static String encode(String value) {
-        return java.net.URLEncoder.encode(value, java.nio.charset.StandardCharsets.UTF_8);
+        return ApiHttp.encode(value);
     }
 
     private static boolean successful(HttpResponse<?> response) {
-        return response != null && response.statusCode() / 100 == 2;
+        return ApiHttp.successful(response);
     }
 
     private static HttpResponse<String> request(String method, String path, String body) {
-        return request(method, path, body, null, ApiModuleSettings.getTimeoutSeconds());
+        return ApiHttp.request(method, path, body);
     }
 
     private static HttpResponse<String> request(String method, String path, String body, String sessionToken) {
-        return request(method, path, body, sessionToken, ApiModuleSettings.getTimeoutSeconds());
+        return ApiHttp.request(method, path, body, sessionToken);
     }
 
     private static HttpResponse<String> request(
             String method, String path, String body, String sessionToken, int timeoutSeconds) {
-        if (!ApiModuleSettings.isEnabled()) {
-            DebugLogger.warn(MODULE, "Api 网桥已关闭，拒绝执行 %s %s", method, path);
-            return null;
-        }
-        String key = ApiModuleSettings.getServerKey();
-        if (key == null || key.length() < 32) {
-            DebugLogger.warn(MODULE, "Api 网桥密钥未配置或长度不足，拒绝发送请求");
-            return null;
-        }
-        try {
-            byte[] bodyBytes = body == null ? new byte[0] : body.getBytes(StandardCharsets.UTF_8);
-            String timestamp = Long.toString(java.time.Instant.now().getEpochSecond());
-            String nonce = randomNonce();
-            String bodyHash = hex(MessageDigest.getInstance("SHA-256").digest(bodyBytes));
-            String canonical = timestamp + "." + nonce + "." + method.toUpperCase(java.util.Locale.ROOT)
-                    + "." + path + "." + bodyHash;
-            Mac mac = Mac.getInstance("HmacSHA256");
-            mac.init(new SecretKeySpec(key.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
-            String signature = hex(mac.doFinal(canonical.getBytes(StandardCharsets.UTF_8)));
-            HttpRequest.Builder builder = HttpRequest.newBuilder()
-                    .uri(URI.create(ApiModuleSettings.getBaseUrl() + path))
-                    .timeout(Duration.ofSeconds(timeoutSeconds))
-                    .header("Accept", "application/json")
-                    .header("X-Yzwc-Timestamp", timestamp)
-                    .header("X-Yzwc-Nonce", nonce)
-                    .header("X-Yzwc-Signature", signature);
-            if (sessionToken != null && !sessionToken.isBlank()) {
-                builder.header("Authorization", "Bearer " + sessionToken);
-            }
-            if (body == null)
-                builder.method(method, HttpRequest.BodyPublishers.noBody());
-            else
-                builder.method(method, HttpRequest.BodyPublishers.ofByteArray(bodyBytes)).header("Content-Type",
-                        "application/json");
-            return CLIENT.send(builder.build(), HttpResponse.BodyHandlers.ofString());
-        } catch (Exception e) {
-            String detail = e.getClass().getSimpleName() + ": " + e.getMessage();
-            if (e.getCause() != null) {
-                detail += " (cause=" + e.getCause().getClass().getSimpleName() + ": " + e.getCause().getMessage() + ")";
-            }
-            DebugLogger.warn(MODULE, "Api 请求失败 %s %s：%s", method, path, detail);
-            return null;
-        }
-    }
-
-    private static final SecureRandom NONCE_RANDOM = new SecureRandom();
-
-    private static String randomNonce() {
-        byte[] bytes = new byte[24];
-        NONCE_RANDOM.nextBytes(bytes);
-        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
-    }
-
-    private static String hex(byte[] bytes) {
-        StringBuilder out = new StringBuilder(bytes.length * 2);
-        for (byte value : bytes)
-            out.append(String.format(java.util.Locale.ROOT, "%02x", value & 0xff));
-        return out.toString();
+        return ApiHttp.request(method, path, body, sessionToken, timeoutSeconds);
     }
 }

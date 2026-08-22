@@ -5,8 +5,8 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
 import java.util.UUID;
 
 /**
- * 每玩家邮件引用（存于收件箱索引 box/{@code <uuid>}.json）。
- * <p>只存轻量状态，不含正文；渲染/领取时由 {@code mailId} 从 {@link SentMailRepository} 取完整 {@link Mail}。</p>
+ * 每玩家邮件引用（由 Api 服务端的 {@code game_mail_refs} 表保存）。
+ * <p>只存轻量状态，不含正文；正文与附件随 {@link Mail} 一起由 {@link MailApiClient} 从 Api 取回。</p>
  */
 @SuppressWarnings("null")
 public class MailRef {
