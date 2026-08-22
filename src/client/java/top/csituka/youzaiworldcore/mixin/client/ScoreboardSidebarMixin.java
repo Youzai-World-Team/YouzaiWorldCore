@@ -8,14 +8,14 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import top.csituka.youzaiworldcore.client.config.ClientExternalSettings;
 import top.csituka.youzaiworldcore.client.hud.ScoreboardSidebarRenderer;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
 /**
  * 将原版记分板侧边栏替换为 YZHUD 风格圆角面板。
  *
- * <p>“显示 YZHUD”关闭时完全保留原版记分板，避免影响资源包对原版 HUD 的替换。</p>
+ * <p>「使用 YZUI」或「显示 YZHUD」任一开启时接管渲染；两个开关都关闭时完全保留
+ * 原版记分板（含原版固定位置），避免影响资源包对原版 HUD 的替换。</p>
  */
 @SuppressWarnings("null")
 @Mixin(Hud.class)
@@ -28,7 +28,7 @@ public abstract class ScoreboardSidebarMixin {
             at = @At("HEAD"), cancellable = true)
     private void yzwc$renderScoreboardSidebar(
             GuiGraphicsExtractor graphics, Objective objective, CallbackInfo ci) {
-        if (!ClientExternalSettings.isLeftHudEnabled()) {
+        if (!ScoreboardSidebarRenderer.isYzuiStyleEnabled()) {
             return;
         }
 

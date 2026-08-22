@@ -21,7 +21,7 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
  * <li>{@code debug_address} — 调试服务器地址（专用服务端）</li>
  * <li>{@code debug_port} — 调试服务器端口（专用服务端）</li>
  * <li>{@code ignored_update_version} — 已忽略提示的更新版本号</li>
- * <li>{@code yzui_enabled} — 是否启用 YZUI 自定义 UI 样式</li>
+ * <li>{@code yzui_enabled} — 是否启用 YZUI 自定义 UI 样式（含记分板侧边栏样式）</li>
  * <li>{@code left_hud_enabled} — 是否显示 YZHUD（背包、装备栏、状态效果与自定义记分板样式）</li>
  * <li>{@code custom_font_enabled} — 是否启用模组内置的自定义字体资源包</li>
  * <li>{@code welcome_guide_completed} — 是否已经完成首次启动欢迎导览</li>
@@ -126,7 +126,13 @@ public final class ClientExternalSettings {
         return ignoredUpdateVersion;
     }
 
-    /** @return 是否启用 YZUI 自定义 UI 样式 */
+    /**
+     * 记分板侧边栏样式由本开关与 {@link #isLeftHudEnabled()} 共同决定，任一开启即使用
+     * YZUI 样式，详见
+     * {@code ScoreboardSidebarRenderer.isYzuiStyleEnabled()}。
+     *
+     * @return 是否启用 YZUI 自定义 UI 样式
+     */
     public static boolean isYzuiEnabled() {
         return yzuiEnabled;
     }

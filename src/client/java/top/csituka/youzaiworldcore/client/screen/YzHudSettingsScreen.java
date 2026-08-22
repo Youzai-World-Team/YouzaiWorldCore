@@ -8,6 +8,7 @@ import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 import top.csituka.youzaiworldcore.client.config.YzHudComponent;
 import top.csituka.youzaiworldcore.client.config.YzHudSettings;
+import top.csituka.youzaiworldcore.client.hud.ScoreboardSidebarRenderer;
 import top.csituka.youzaiworldcore.client.hud.YzHudLayout;
 import top.csituka.youzaiworldcore.client.render.RoundedRect;
 import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
@@ -21,6 +22,9 @@ import java.util.EnumMap;
  * <p>画布按比例展示完整 GUI 视口，物品栏、装备栏、状态效果列表和记分板
  * 可分别选中并拖拽。四组位置以归一化位移保存到 {@code yzwc/client/global_settings.json} 的
  * {@code yzhud_module} 分节。</p>
+ *
+ * <p>「使用 YZUI」和「显示 YZHUD」都关闭时记分板回退为原版样式，其位置由原版布局
+ * 固定，此时记分板在本页面中锁定：选择按钮置灰、画布内的占位框变暗且不可拖拽。</p>
  */
 @SuppressWarnings("null")
 public final class YzHudSettingsScreen extends Screen {
@@ -43,8 +47,15 @@ public final class YzHudSettingsScreen extends Screen {
     private static final int VIEWPORT_BORDER = 0x70FFFFFF;
     private static final int FOOTPRINT_BORDER = 0x50FFFFFF;
     private static final int SELECTED_BORDER = 0xE0FFFFFF;
+    private static final int LOCKED_BORDER = 0x28FFFFFF;
+    private static final int LOCKED_HINT_COLOR = 0xC0FFFFFF;
     private static final int PANEL_COLOR = 0x80FFFFFF;
     private static final int SLOT_COLOR = 0x40FFFFFF;
+
+    /** 锁定组件的占位预览相对当前透明度的额外衰减系数。 */
+    private static final float LOCKED_PREVIEW_ALPHA = 0.35F;
+    /** 锁定组件的选择按钮透明度，比选中态更暗以示不可操作。 */
+    private static final float LOCKED_BUTTON_ALPHA = 0.22F;
 
     private final Screen parentScreen;
     private final EnumMap<YzHudComponent, TransparentButton> componentButtons =
@@ -61,6 +72,8 @@ public final class YzHudSettingsScreen extends Screen {
     private int viewportHeight;
 
     private YzHudComponent selectedComponent = YzHudComponent.INVENTORY;
+    /** 记分板是否因回退到原版样式而锁定位置。 */
+    private boolean scoreboardLocked;
     private boolean dragging;
     private double dragOffsetX;
     private double dragOffsetY;
@@ -81,6 +94,10 @@ public final class YzHudSettingsScreen extends Screen {
     protected void rebuildWidgets() {
         clearWidgets();
         componentButtons.clear();
+        scoreboardLocked = !ScoreboardSidebarRenderer.isYzuiStyleEnabled();
+        if (isLocked(selectedComponent)) {
+            selectedComponent = YzHudComponent.INVENTORY;
+        }
         calculateCanvas();
 
         int controlWidth = Math.max(1, Math.min(CONTROL_WIDTH, width - PAGE_MARGIN * 2));
@@ -157,15 +174,25 @@ public final class YzHudSettingsScreen extends Screen {
         drawComponentOutlines(graphics);
         graphics.disableScissor();
 
+        if (scoreboardLocked) {
+            Component hint = Component.translatable(
+                    "screen.youzaiworldcore.yzhud.scoreboard_locked");
+            graphics.text(font, hint, (width - font.width(hint)) / 2,
+                    canvasTop + canvasHeight + 3, LOCKED_HINT_COLOR, false);
+        }
+
         super.extractRenderState(graphics, mouseX, mouseY, partialTick);
     }
 
     private void drawHudPreview(GuiGraphicsExtractor graphics) {
         float opacity = YzHudSettings.getOpacity();
-        int panelColor = YzHudLayout.applyOpacity(PANEL_COLOR, opacity);
-        int slotColor = YzHudLayout.applyOpacity(SLOT_COLOR, opacity);
 
         for (YzHudComponent component : YzHudComponent.values()) {
+            float componentOpacity = isLocked(component)
+                    ? opacity * LOCKED_PREVIEW_ALPHA
+                    : opacity;
+            int panelColor = YzHudLayout.applyOpacity(PANEL_COLOR, componentOpacity);
+            int slotColor = YzHudLayout.applyOpacity(SLOT_COLOR, componentOpacity);
             graphics.pose().pushMatrix();
             graphics.pose().translate(
                     componentPreviewX(component), componentPreviewY(component));
@@ -228,9 +255,14 @@ public final class YzHudSettingsScreen extends Screen {
 
     private void drawComponentOutlines(GuiGraphicsExtractor graphics) {
         for (YzHudComponent component : YzHudComponent.values()) {
-            int color = component == selectedComponent
-                    ? SELECTED_BORDER
-                    : FOOTPRINT_BORDER;
+            int color;
+            if (isLocked(component)) {
+                color = LOCKED_BORDER;
+            } else if (component == selectedComponent) {
+                color = SELECTED_BORDER;
+            } else {
+                color = FOOTPRINT_BORDER;
+            }
             graphics.outline(
                     componentPreviewX(component), componentPreviewY(component),
                     componentPreviewWidth(component), componentPreviewHeight(component),
@@ -297,17 +329,23 @@ public final class YzHudSettingsScreen extends Screen {
     }
 
     private YzHudComponent componentAt(double mouseX, double mouseY) {
-        if (contains(selectedComponent, mouseX, mouseY)) {
+        if (!isLocked(selectedComponent) && contains(selectedComponent, mouseX, mouseY)) {
             return selectedComponent;
         }
         YzHudComponent[] components = YzHudComponent.values();
         for (int i = components.length - 1; i >= 0; i--) {
             if (components[i] != selectedComponent
+                    && !isLocked(components[i])
                     && contains(components[i], mouseX, mouseY)) {
                 return components[i];
             }
         }
         return null;
+    }
+
+    /** @return 指定组件当前是否锁定位置（不可选中、不可拖拽） */
+    private boolean isLocked(YzHudComponent component) {
+        return component == YzHudComponent.SCOREBOARD && scoreboardLocked;
     }
 
     private boolean contains(YzHudComponent component, double x, double y) {
@@ -318,6 +356,9 @@ public final class YzHudSettingsScreen extends Screen {
     }
 
     private void selectComponent(YzHudComponent component) {
+        if (isLocked(component)) {
+            return;
+        }
         selectedComponent = component;
         updateComponentButtons();
     }
@@ -326,6 +367,11 @@ public final class YzHudSettingsScreen extends Screen {
         for (YzHudComponent component : YzHudComponent.values()) {
             TransparentButton button = componentButtons.get(component);
             if (button == null) {
+                continue;
+            }
+            if (isLocked(component)) {
+                button.active = false;
+                button.setExternalAlpha(LOCKED_BUTTON_ALPHA);
                 continue;
             }
             boolean selected = component == selectedComponent;

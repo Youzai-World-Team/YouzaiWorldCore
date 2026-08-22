@@ -15,6 +15,7 @@ import net.minecraft.world.scores.PlayerTeam;
 import net.minecraft.world.scores.Scoreboard;
 
 import top.csituka.youzaiworldcore.client.render.RoundedRect;
+import top.csituka.youzaiworldcore.client.config.ClientExternalSettings;
 import top.csituka.youzaiworldcore.client.config.YzHudComponent;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
@@ -28,6 +29,9 @@ import java.util.List;
  * <p>只替换记分板的视觉表现，目标选择、隐藏条目过滤、队伍名称格式和数字格式
  * 均沿用原版逻辑。面板采用 YZUI 半透明白色圆角容器，标题和每条记分板项目使用
  * 独立的圆角行背景，以便在不同世界背景上保持可读性。</p>
+ *
+ * <p>是否启用由 {@link #isYzuiStyleEnabled()} 决定：「使用 YZUI」和「显示 YZHUD」
+ * 任一开启即采用本渲染器，两者都关闭时回退到原版记分板。</p>
  */
 @SuppressWarnings("null")
 public final class ScoreboardSidebarRenderer {
@@ -63,6 +67,20 @@ public final class ScoreboardSidebarRenderer {
     /** 注册客户端记分板渲染器，并记录初始化里程碑。 */
     public static void initialize() {
         DebugLogger.info(MODULE, "YZUI 记分板侧边栏渲染器已初始化");
+    }
+
+    /**
+     * 判断记分板侧边栏当前是否使用 YZUI 样式。
+     *
+     * <p>「使用 YZUI」或「显示 YZHUD」任一开启时采用 YZUI 圆角面板，位置也可在
+     * YZHUD 自定义页面中调整；两者都关闭时保留原版记分板，位置固定为原版布局
+     * 且不可更改。</p>
+     *
+     * @return YZUI 记分板样式生效时返回 {@code true}
+     */
+    public static boolean isYzuiStyleEnabled() {
+        return ClientExternalSettings.isYzuiEnabled()
+                || ClientExternalSettings.isLeftHudEnabled();
     }
 
     /**

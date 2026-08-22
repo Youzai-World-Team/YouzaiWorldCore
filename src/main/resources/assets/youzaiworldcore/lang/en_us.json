@@ -412,6 +412,7 @@
   "screen.youzaiworldcore.yzhud.component.armor": "Equipment",
   "screen.youzaiworldcore.yzhud.component.effects": "Effects",
   "screen.youzaiworldcore.yzhud.component.scoreboard": "Scoreboard",
+  "screen.youzaiworldcore.yzhud.scoreboard_locked": "Enable YZUI or YZHUD to move the scoreboard",
   "screen.youzaiworldcore.yzhud.reset": "Reset",
   "screen.youzaiworldcore.yzhud.done": "Done",
   "screen.youzaiworldcore.teleport_anchor.back": "Back",

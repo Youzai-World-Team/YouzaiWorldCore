@@ -412,6 +412,7 @@
   "screen.youzaiworldcore.yzhud.component.armor": "Снаряжение",
   "screen.youzaiworldcore.yzhud.component.effects": "Эффекты",
   "screen.youzaiworldcore.yzhud.component.scoreboard": "Счёт",
+  "screen.youzaiworldcore.yzhud.scoreboard_locked": "Включите YZUI или YZHUD, чтобы перемещать счёт",
   "screen.youzaiworldcore.yzhud.reset": "Сбросить",
   "screen.youzaiworldcore.yzhud.done": "Готово",
   "screen.youzaiworldcore.teleport_anchor.back": "Назад",
