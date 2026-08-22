@@ -5,6 +5,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import top.csituka.youzaiworldcore.client.screen.LoginScreen;
 import top.csituka.youzaiworldcore.client.screen.MenuScreen;
+import top.csituka.youzaiworldcore.client.screen.PasswordResetScreen;
 import top.csituka.youzaiworldcore.client.screen.RegisterScreen;
 import top.csituka.youzaiworldcore.client.screen.RegistrationEmailScreen;
 import top.csituka.youzaiworldcore.client.screen.block.LargeSignEditScreen;
@@ -103,6 +104,7 @@ public class ClientNetworking {
                 Screen currentScreen = client.gui.screen();
                 boolean isRegisterScreen = currentScreen instanceof RegisterScreen;
                 boolean isLoginScreen = currentScreen instanceof LoginScreen;
+                boolean isPasswordResetScreen = currentScreen instanceof PasswordResetScreen;
                 DebugLogger.branch("ClientNetworking", "currentScreen instanceof RegisterScreen", isRegisterScreen);
                 DebugLogger.branch("ClientNetworking", "currentScreen instanceof LoginScreen", isLoginScreen);
                 String type = payload.screenType();
@@ -110,7 +112,8 @@ public class ClientNetworking {
                 boolean isRegister = "register".equals(type);
                 DebugLogger.branch("ClientNetworking", "screenType == register", isRegister);
                 boolean isLogin = "login".equals(type);
-                boolean targetScreenAlreadyOpen = (isRegister && isRegisterScreen) || (isLogin && isLoginScreen);
+                boolean targetScreenAlreadyOpen = (isRegister && isRegisterScreen)
+                        || (isLogin && (isLoginScreen || isPasswordResetScreen));
                 DebugLogger.branch("ClientNetworking", "target auth screen already open", targetScreenAlreadyOpen);
                 if (targetScreenAlreadyOpen) {
                     DebugLogger.exiting("ClientNetworking", "OpenAuthScreenPayload handler (skipped, target screen already open)");
@@ -149,6 +152,19 @@ public class ClientNetworking {
             DebugLogger.exiting("ClientNetworking", "RegistrationEmailStatePayload handler");
         });
         DebugLogger.info("ClientNetworking", "Registered receiver: RegistrationEmailStatePayload");
+
+        ClientPlayNetworking.registerGlobalReceiver(PasswordResetStatePayload.ID, (payload, context) -> {
+            DebugLogger.entering("ClientNetworking", "PasswordResetStatePayload handler");
+            Minecraft client = context.client();
+            client.execute(() -> {
+                Screen currentScreen = client.gui.screen();
+                if (currentScreen instanceof PasswordResetScreen resetScreen) {
+                    resetScreen.applyState(payload);
+                }
+            });
+            DebugLogger.exiting("ClientNetworking", "PasswordResetStatePayload handler");
+        });
+        DebugLogger.info("ClientNetworking", "Registered receiver: PasswordResetStatePayload");
 
         // 注册传送锚点列表处理器
         ClientPlayNetworking.registerGlobalReceiver(TeleportAnchorListPayload.TYPE, (payload, context) -> {

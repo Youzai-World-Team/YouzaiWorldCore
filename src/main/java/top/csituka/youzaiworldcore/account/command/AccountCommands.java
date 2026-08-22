@@ -18,12 +18,14 @@ import top.csituka.youzaiworldcore.api.ApiServiceClient;
 import top.csituka.youzaiworldcore.account.data.AccountDataStorage;
 import top.csituka.youzaiworldcore.account.data.PlayerAccount;
 import top.csituka.youzaiworldcore.account.data.PlayerAuthAccess;
+import top.csituka.youzaiworldcore.account.data.PasswordResetSessionStore;
 import top.csituka.youzaiworldcore.account.data.RegistrationEmailSessionStore;
 import top.csituka.youzaiworldcore.account.util.AuthLocationData;
 import top.csituka.youzaiworldcore.account.util.AuthPlayerHelper;
 import top.csituka.youzaiworldcore.cosmetic.CosmeticManager;
 import top.csituka.youzaiworldcore.invisibility.InvisibilityManager;
 import top.csituka.youzaiworldcore.network.OpenAuthScreenPayload;
+import top.csituka.youzaiworldcore.network.PasswordResetStatePayload;
 import top.csituka.youzaiworldcore.network.RegistrationEmailStatePayload;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
@@ -412,6 +414,161 @@ public class AccountCommands {
         return (int) Math.max(0L, Math.min(86_400L, seconds));
     }
 
+    /** 处理客户端找回密码界面的验证码发送请求。 */
+    public static int executePasswordResetSendPayload(ServerPlayer player, String email) {
+        DebugLogger.entering("AccountCommands", "executePasswordResetSendPayload");
+        if (!canStartPasswordReset(player)) {
+            ServerPlayNetworking.send(player, PasswordResetStatePayload.error(
+                    "", "当前账户不能使用邮箱找回密码", 0));
+            DebugLogger.exiting("AccountCommands", "executePasswordResetSendPayload", "0 (unavailable)");
+            return 0;
+        }
+
+        var server = player.level().getServer();
+        if (server == null) {
+            DebugLogger.exiting("AccountCommands", "executePasswordResetSendPayload", "0 (server unavailable)");
+            return 0;
+        }
+        String normalizedEmail = email == null ? "" : email.trim();
+        CompletableFuture.supplyAsync(() -> ApiServiceClient.requestPasswordResetCode(
+                        player.getScoreboardName(), normalizedEmail))
+                .whenComplete((result, error) -> server.execute(() ->
+                        handlePasswordResetSendResult(player, result, error)));
+        DebugLogger.exiting("AccountCommands", "executePasswordResetSendPayload", "1 (queued)");
+        return 1;
+    }
+
+    private static void handlePasswordResetSendResult(
+            ServerPlayer player,
+            ApiServiceClient.PasswordResetCodeResult result,
+            Throwable error) {
+        if (!canStartPasswordReset(player)) {
+            DebugLogger.info("AccountCommands", "忽略玩家 %s 已离开的找回密码发信结果",
+                    player.getScoreboardName());
+            return;
+        }
+        if (error != null || result == null) {
+            if (error != null) {
+                DebugLogger.exception("AccountCommands", "requestPasswordResetCode", error);
+            }
+            ServerPlayNetworking.send(player, PasswordResetStatePayload.error(
+                    "", "验证码发送请求失败，请稍后重试", 0));
+            return;
+        }
+        if (!result.success() || result.sessionId() == null || result.sessionId().isBlank()) {
+            ServerPlayNetworking.send(player, PasswordResetStatePayload.error(
+                    "", result.message(), packetSeconds(result.resendAfterSeconds())));
+            DebugLogger.info("AccountCommands", "玩家 %s 的找回密码发信请求被 Api 拒绝：%s",
+                    player.getScoreboardName(), result.message());
+            return;
+        }
+
+        PasswordResetSessionStore.PendingSession pending = PasswordResetSessionStore.put(
+                player.getUUID(), result.sessionId(), result.expiresInSeconds());
+        PlayerAuthAccess authPlayer = (PlayerAuthAccess) (Object) player;
+        authPlayer.yzwc$setKickTimer(Math.max(
+                authPlayer.yzwc$getKickTimer(), pending.remainingSeconds() * 20));
+        ServerPlayNetworking.send(player, PasswordResetStatePayload.codeSent(
+                pending.sessionId(), result.message(), pending.remainingSeconds(),
+                packetSeconds(result.resendAfterSeconds())));
+        DebugLogger.info("AccountCommands", "已向玩家 %s 的绑定邮箱发送找回密码验证码",
+                player.getScoreboardName());
+    }
+
+    /** 处理客户端找回密码界面的验证码校验和密码重置请求。 */
+    public static int executePasswordResetVerifyPayload(
+            ServerPlayer player, String sessionId, String code, String newPassword) {
+        DebugLogger.entering("AccountCommands", "executePasswordResetVerifyPayload");
+        if (!canUsePasswordResetSession(player, sessionId)) {
+            sendExpiredPasswordResetSession(player, sessionId,
+                    "找回密码会话已失效，请重新发送验证码");
+            DebugLogger.exiting("AccountCommands", "executePasswordResetVerifyPayload", "0 (invalid session)");
+            return 0;
+        }
+
+        var server = player.level().getServer();
+        if (server == null) {
+            DebugLogger.exiting("AccountCommands", "executePasswordResetVerifyPayload", "0 (server unavailable)");
+            return 0;
+        }
+        String normalizedCode = code == null ? "" : code.trim();
+        String password = newPassword == null ? "" : newPassword;
+        CompletableFuture.supplyAsync(() -> ApiServiceClient.resetPasswordWithEmailCode(
+                        sessionId, normalizedCode, password))
+                .whenComplete((result, error) -> server.execute(() ->
+                        handlePasswordResetVerifyResult(player, sessionId, result, error)));
+        DebugLogger.exiting("AccountCommands", "executePasswordResetVerifyPayload", "1 (queued)");
+        return 1;
+    }
+
+    private static void handlePasswordResetVerifyResult(
+            ServerPlayer player,
+            String sessionId,
+            ApiServiceClient.PasswordResetResult result,
+            Throwable error) {
+        if (!canUsePasswordResetSession(player, sessionId)) {
+            DebugLogger.info("AccountCommands", "忽略玩家 %s 已失效找回密码会话的校验结果",
+                    player.getScoreboardName());
+            return;
+        }
+        if (error != null || result == null) {
+            if (error != null) {
+                DebugLogger.exception("AccountCommands", "resetPasswordWithEmailCode", error);
+            }
+            ServerPlayNetworking.send(player, PasswordResetStatePayload.error(
+                    sessionId, "密码重置请求失败，请稍后重试", 0));
+            return;
+        }
+        if (!result.success()) {
+            if (isPasswordResetSessionInvalid(result.statusCode(), result.message())) {
+                sendExpiredPasswordResetSession(player, sessionId, result.message());
+            } else {
+                ServerPlayNetworking.send(player, PasswordResetStatePayload.error(
+                        sessionId, result.message(), 0));
+            }
+            DebugLogger.info("AccountCommands", "玩家 %s 的密码重置请求被 Api 拒绝：%s",
+                    player.getScoreboardName(), result.message());
+            return;
+        }
+
+        PasswordResetSessionStore.clear(player.getUUID());
+        ServerPlayNetworking.send(player, PasswordResetStatePayload.completed(
+                sessionId, result.message()));
+        DebugLogger.info("AccountCommands", "玩家 %s 已通过邮箱重置密码", player.getScoreboardName());
+    }
+
+    private static boolean canStartPasswordReset(ServerPlayer player) {
+        if (player.connection == null || !player.connection.isAcceptingMessages()) return false;
+        PlayerAuthAccess authPlayer = (PlayerAuthAccess) (Object) player;
+        PlayerAccount account = authPlayer.yzwc$getAccount();
+        return !authPlayer.yzwc$isAuthenticated()
+                && !authPlayer.yzwc$canSkipAuth()
+                && account != null
+                && account.isRegistered();
+    }
+
+    private static boolean canUsePasswordResetSession(ServerPlayer player, String sessionId) {
+        return canStartPasswordReset(player)
+                && PasswordResetSessionStore.matches(player.getUUID(), sessionId);
+    }
+
+    private static boolean isPasswordResetSessionInvalid(int statusCode, String message) {
+        return statusCode == 410 || message != null && (message.contains("会话已失效")
+                || message.contains("验证码已过期")
+                || message.contains("错误次数过多")
+                || message.contains("重新发送"));
+    }
+
+    private static void sendExpiredPasswordResetSession(
+            ServerPlayer player, String sessionId, String message) {
+        PasswordResetSessionStore.clear(player.getUUID());
+        ServerPlayNetworking.send(player, PasswordResetStatePayload.expired(
+                sessionId == null ? "" : sessionId,
+                message == null || message.isBlank()
+                        ? "找回密码会话已失效，请重新发送验证码"
+                        : message));
+    }
+
     /**
      * 登录
      */
@@ -444,6 +601,7 @@ public class AccountCommands {
         ApiServiceClient.LoginResult result = ApiServiceClient.login(
                 player.getScoreboardName(), password, authPlayer.yzwc$getIpAddress());
         if (result.success() && result.account() != null && result.token() != null && !result.token().isBlank()) {
+            PasswordResetSessionStore.clear(player.getUUID());
             account = result.account();
             authPlayer.yzwc$setSessionToken(result.token());
             authPlayer.yzwc$setAuthenticated(true);
