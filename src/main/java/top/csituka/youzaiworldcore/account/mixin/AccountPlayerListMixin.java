@@ -23,6 +23,7 @@ import top.csituka.youzaiworldcore.api.ApiServiceClient;
 import top.csituka.youzaiworldcore.account.data.AccountDataStorage;
 import top.csituka.youzaiworldcore.account.data.PlayerAccount;
 import top.csituka.youzaiworldcore.account.data.PlayerAuthAccess;
+import top.csituka.youzaiworldcore.account.data.PasswordResetSessionStore;
 import top.csituka.youzaiworldcore.account.data.RegistrationEmailSessionStore;
 import top.csituka.youzaiworldcore.account.util.AuthHelper;
 import top.csituka.youzaiworldcore.account.util.AuthLocationData;
@@ -52,6 +53,7 @@ public abstract class AccountPlayerListMixin {
     private void onPlayerPreJoin(Connection connection, ServerPlayer player, CommonListenerCookie cookie, CallbackInfo ci) {
         String username = player.getScoreboardName();
         RegistrationEmailSessionStore.clear(player.getUUID());
+        PasswordResetSessionStore.clear(player.getUUID());
         YouzaiworldCore.LOGGER.info("玩家 {} 正在加入服务器...", username);
 
         PlayerAccount account = AccountDataStorage.ensureRemoteAccount(username, player.getUUID());
@@ -103,6 +105,7 @@ public abstract class AccountPlayerListMixin {
 
         PlayerAuthAccess authPlayer = (PlayerAuthAccess) (Object) player;
         RegistrationEmailSessionStore.clear(player.getUUID());
+        PasswordResetSessionStore.clear(player.getUUID());
         ApiServiceClient.deleteSession(authPlayer.yzwc$getSessionToken());
         authPlayer.yzwc$setSessionToken(null);
         PlayerAccount account = AuthPlayerHelper.getAccount(player);

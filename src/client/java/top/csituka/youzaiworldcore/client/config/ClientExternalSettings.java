@@ -22,7 +22,7 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
  * <li>{@code debug_port} — 调试服务器端口（专用服务端）</li>
  * <li>{@code ignored_update_version} — 已忽略提示的更新版本号</li>
  * <li>{@code yzui_enabled} — 是否启用 YZUI 自定义 UI 样式</li>
- * <li>{@code left_hud_enabled} — 是否显示左侧背包、装备栏与状态效果列表</li>
+ * <li>{@code left_hud_enabled} — 是否显示 YZHUD（背包、装备栏、状态效果与自定义记分板样式）</li>
  * <li>{@code custom_font_enabled} — 是否启用模组内置的自定义字体资源包</li>
  * <li>{@code welcome_guide_completed} — 是否已经完成首次启动欢迎导览</li>
  * <li>{@code cosmetic_enabled} — 是否启用自定义皮肤与披风</li>
@@ -70,7 +70,7 @@ public final class ClientExternalSettings {
     /** 是否启用 YZUI（自定义 UI 样式），关闭则回退到原版 UI 供资源包替换 */
     private static boolean yzuiEnabled = DEFAULT_YZUI_ENABLED;
 
-    /** 是否显示游戏内左侧背包、装备栏与状态效果列表 */
+    /** 是否显示 YZHUD（背包、装备栏、状态效果与自定义记分板样式） */
     private static boolean leftHudEnabled = DEFAULT_LEFT_HUD_ENABLED;
 
     /** 是否启用模组内置的自定义字体资源包 */
@@ -131,7 +131,7 @@ public final class ClientExternalSettings {
         return yzuiEnabled;
     }
 
-    /** @return 是否显示游戏内左侧背包、装备栏与状态效果列表 */
+    /** @return 是否显示 YZHUD（背包、装备栏、状态效果与自定义记分板样式） */
     public static boolean isLeftHudEnabled() {
         return leftHudEnabled;
     }
@@ -222,10 +222,10 @@ public final class ClientExternalSettings {
         save();
     }
 
-    /** 设置左侧背包、装备栏与状态效果列表的显示状态并持久化 */
+    /** 设置 YZHUD（背包、装备栏、状态效果与自定义记分板样式）的显示状态并持久化 */
     public static void setLeftHudEnabled(boolean value) {
         leftHudEnabled = value;
-        DebugLogger.info(MODULE, "游戏内左侧 HUD 已" + (value ? "启用" : "禁用"));
+        DebugLogger.info(MODULE, "YZHUD 已" + (value ? "启用" : "禁用"));
         save();
     }
 

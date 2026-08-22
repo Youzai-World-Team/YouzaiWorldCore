@@ -113,7 +113,7 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
     private String debugPort;
     /** 是否启用 YZUI 自定义 UI 样式 */
     private boolean yzuiEnabled;
-    /** 是否显示游戏内左侧背包、装备栏与状态效果列表 */
+    /** 是否显示 YZHUD（背包、装备栏、状态效果与自定义记分板样式） */
     private boolean leftHudEnabled;
     /** 是否启用模组内置的自定义字体资源包 */
     private boolean customFontEnabled;
@@ -846,7 +846,7 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
                     boolean newVal = !leftHudEnabled;
                     leftHudEnabled = newVal;
                     ClientExternalSettings.setLeftHudEnabled(newVal);
-                    DebugLogger.info("SettingsScreen", "游戏内左侧 HUD 已"
+                    DebugLogger.info("SettingsScreen", "YZHUD 已"
                             + (newVal ? "启用" : "禁用"));
                 }
         ).setWrapMessage(true);

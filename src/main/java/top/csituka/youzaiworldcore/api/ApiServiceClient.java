@@ -30,7 +30,7 @@ import java.util.UUID;
 public final class ApiServiceClient {
     private static final String MODULE = "ApiServiceClient";
     // SMTP 投递需要等待远端邮件服务器响应，不能沿用普通 Api 的 3 秒默认超时。
-    private static final int REGISTRATION_EMAIL_REQUEST_TIMEOUT_SECONDS = 30;
+    private static final int EMAIL_REQUEST_TIMEOUT_SECONDS = 30;
     // Cloudflare 公网 Api 使用 HTTP/1.1，避免不同代理对 HTTP/2 的协商差异。
     private static final HttpClient CLIENT = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(3))
@@ -68,6 +68,19 @@ public final class ApiServiceClient {
             long expiresInSeconds,
             long resendAfterSeconds
     ) {
+    }
+
+    public record PasswordResetCodeResult(
+            boolean success,
+            int statusCode,
+            String message,
+            String sessionId,
+            long expiresInSeconds,
+            long resendAfterSeconds
+    ) {
+    }
+
+    public record PasswordResetResult(boolean success, int statusCode, String message) {
     }
 
     public record LoginResult(boolean success, int statusCode, String message, PlayerAccount account,
@@ -167,7 +180,7 @@ public final class ApiServiceClient {
         body.addProperty("session_id", sessionId);
         body.addProperty("email", email);
         int timeoutSeconds = Math.max(
-                ApiModuleSettings.getTimeoutSeconds(), REGISTRATION_EMAIL_REQUEST_TIMEOUT_SECONDS);
+                ApiModuleSettings.getTimeoutSeconds(), EMAIL_REQUEST_TIMEOUT_SECONDS);
         HttpResponse<String> response = request(
                 "POST", "/api/game/account-email/send", body.toString(), null, timeoutSeconds);
         if (response == null) {
@@ -193,6 +206,52 @@ public final class ApiServiceClient {
         body.addProperty("session_id", sessionId);
         body.addProperty("code", code);
         return accountRequest("POST", "/api/game/account-email/verify", body);
+    }
+
+    /** 向当前游戏账户已经绑定的邮箱发送找回密码验证码。 */
+    public static PasswordResetCodeResult requestPasswordResetCode(String username, String email) {
+        JsonObject body = new JsonObject();
+        body.addProperty("username", username);
+        body.addProperty("email", email);
+        int timeoutSeconds = Math.max(ApiModuleSettings.getTimeoutSeconds(), EMAIL_REQUEST_TIMEOUT_SECONDS);
+        HttpResponse<String> response = request(
+                "POST", "/api/game/account-password-reset/send", body.toString(), null, timeoutSeconds);
+        if (response == null) {
+            return new PasswordResetCodeResult(
+                    false, 0, "验证码发送请求未收到响应，请等待一分钟后重试", "", 0, 0);
+        }
+        JsonObject root = parse(response.body());
+        boolean success = response.statusCode() / 100 == 2 && booleanValue(root, "ok", false);
+        long resendAfter = success
+                ? longValue(root, "resend_after", 0)
+                : longValue(root, "retryAfterSeconds", 0);
+        return new PasswordResetCodeResult(
+                success,
+                response.statusCode(),
+                responseMessage(root),
+                stringValue(root, "session_id"),
+                longValue(root, "expires_in", 0),
+                resendAfter);
+    }
+
+    /** 校验找回密码验证码并设置新密码。 */
+    public static PasswordResetResult resetPasswordWithEmailCode(
+            String sessionId, String code, String newPassword) {
+        JsonObject body = new JsonObject();
+        body.addProperty("session_id", sessionId);
+        body.addProperty("code", code);
+        body.addProperty("new_password", newPassword);
+        int timeoutSeconds = Math.max(ApiModuleSettings.getTimeoutSeconds(), EMAIL_REQUEST_TIMEOUT_SECONDS);
+        HttpResponse<String> response = request(
+                "POST", "/api/game/account-password-reset/verify", body.toString(), null, timeoutSeconds);
+        if (response == null) {
+            return new PasswordResetResult(false, 0, "Api 服务端不可用");
+        }
+        JsonObject root = parse(response.body());
+        return new PasswordResetResult(
+                response.statusCode() / 100 == 2 && booleanValue(root, "ok", false),
+                response.statusCode(),
+                responseMessage(root));
     }
 
     public static LoginResult login(String username, String password, String ip) {

@@ -41,6 +41,7 @@ public class LoginScreen extends Screen {
     private EditBox passwordField;
     private TransparentButton loginButton;
     private TransparentButton disconnectButton;
+    private TransparentButton forgotPasswordButton;
 
     private final List<AbstractWidget> allWidgets = new ArrayList<>();
 
@@ -95,12 +96,20 @@ public class LoginScreen extends Screen {
         );
         this.disconnectButton.setTextColor(0xFFFFFF);
 
+        this.forgotPasswordButton = new TransparentButton(
+                centerX - 60, buttonY + 31, 120, 20,
+                Component.translatable("screen.youzaiworldcore.login.button_forgot_password"),
+                this::onForgotPasswordClick
+        );
+        this.forgotPasswordButton.setTextColor(0xFFCCCCCC);
+
         // 收集所有 widget
         this.allWidgets.clear();
         this.allWidgets.add(this.usernameField);
         this.allWidgets.add(this.passwordField);
         this.allWidgets.add(this.loginButton);
         this.allWidgets.add(this.disconnectButton);
+        this.allWidgets.add(this.forgotPasswordButton);
 
         // 默认聚焦密码框
         this.passwordField.setFocused(true);
@@ -194,6 +203,10 @@ public class LoginScreen extends Screen {
             this.disconnectButton.onClick(event, isActuallyClick);
             return true;
         }
+        if (isMouseOverButton(this.forgotPasswordButton, mx, my)) {
+            this.forgotPasswordButton.onClick(event, isActuallyClick);
+            return true;
+        }
 
         return false;
     }
@@ -268,6 +281,11 @@ public class LoginScreen extends Screen {
 
         Minecraft.getInstance().disconnectFromWorld(
                 Component.translatable("screen.youzaiworldcore.login.disconnect_message"));
+    }
+
+    private void onForgotPasswordClick() {
+        if (processing) return;
+        Minecraft.getInstance().setScreenAndShow(new PasswordResetScreen(this.playerName));
     }
 
     // ===== 工具方法 =====
