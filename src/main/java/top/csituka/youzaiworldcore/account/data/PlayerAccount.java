@@ -35,6 +35,10 @@ public class PlayerAccount {
     @Expose
     public String uuid;
 
+    /** 当前唯一绑定邮箱；仅由 Api 返回，模组不会把它写入命令。 */
+    @Expose
+    public String email;
+
     /** Api 返回的注册状态；模组不保存密码或密码哈希。 */
     @Expose
     public boolean registered = false;
@@ -92,6 +96,7 @@ public class PlayerAccount {
 
         if (parsed != null) {
             this.registered = parsed.registered;
+            this.email = parsed.email;
             this.lastIp = parsed.lastIp != null ? parsed.lastIp : "";
             this.lastAuthenticatedDate = parsed.lastAuthenticatedDate != null ? parsed.lastAuthenticatedDate : EPOCH;
             this.registrationDate = parsed.registrationDate != null ? parsed.registrationDate : EPOCH;

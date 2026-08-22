@@ -4,6 +4,7 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import top.csituka.youzaiworldcore.client.screen.LoginScreen;
+import top.csituka.youzaiworldcore.client.screen.AccountManagementScreen;
 import top.csituka.youzaiworldcore.client.screen.MenuScreen;
 import top.csituka.youzaiworldcore.client.screen.PasswordResetScreen;
 import top.csituka.youzaiworldcore.client.screen.RegisterScreen;
@@ -165,6 +166,19 @@ public class ClientNetworking {
             DebugLogger.exiting("ClientNetworking", "PasswordResetStatePayload handler");
         });
         DebugLogger.info("ClientNetworking", "Registered receiver: PasswordResetStatePayload");
+
+        ClientPlayNetworking.registerGlobalReceiver(AccountManagementStatePayload.ID, (payload, context) -> {
+            DebugLogger.entering("ClientNetworking", "AccountManagementStatePayload handler");
+            Minecraft client = context.client();
+            client.execute(() -> {
+                Screen currentScreen = client.gui.screen();
+                if (currentScreen instanceof AccountManagementScreen accountScreen) {
+                    accountScreen.applyState(payload);
+                }
+            });
+            DebugLogger.exiting("ClientNetworking", "AccountManagementStatePayload handler");
+        });
+        DebugLogger.info("ClientNetworking", "Registered receiver: AccountManagementStatePayload");
 
         // 注册传送锚点列表处理器
         ClientPlayNetworking.registerGlobalReceiver(TeleportAnchorListPayload.TYPE, (payload, context) -> {

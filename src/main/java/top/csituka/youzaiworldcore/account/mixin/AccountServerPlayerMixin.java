@@ -12,6 +12,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import top.csituka.youzaiworldcore.YouzaiworldCore;
 import top.csituka.youzaiworldcore.account.data.PlayerAccount;
 import top.csituka.youzaiworldcore.account.data.AccountDataStorage;
+import top.csituka.youzaiworldcore.account.data.EmailChangeSessionStore;
 import top.csituka.youzaiworldcore.account.data.PlayerAuthAccess;
 import top.csituka.youzaiworldcore.account.data.RegistrationEmailSessionStore;
 import top.csituka.youzaiworldcore.account.util.AuthLocationData;
@@ -233,6 +234,7 @@ public abstract class AccountServerPlayerMixin implements PlayerAuthAccess {
                                 yzwc$account = result.account();
                                 AccountDataStorage.acceptRemoteAccount(result.account(), false);
                             }
+                            EmailChangeSessionStore.clear(yzwc$player.getUUID());
                             yzwc$sessionToken = null;
                             yzwc$authenticated = false;
                             CosmeticManager.onDeauthenticated(yzwc$player);

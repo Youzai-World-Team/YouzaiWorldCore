@@ -83,6 +83,16 @@ public final class ApiServiceClient {
     public record PasswordResetResult(boolean success, int statusCode, String message) {
     }
 
+    public record EmailChangeCodeResult(
+            boolean success,
+            int statusCode,
+            String message,
+            String sessionId,
+            long expiresInSeconds,
+            long resendAfterSeconds
+    ) {
+    }
+
     public record LoginResult(boolean success, int statusCode, String message, PlayerAccount account,
             String reason, int loginTries, int remainingTries, long retryAfterSeconds,
             String token) {
@@ -279,19 +289,60 @@ public final class ApiServiceClient {
         return accountRequest("POST", "/api/game/logout", body);
     }
 
-    public static AccountResult changePassword(String username, String oldPassword, String newPassword) {
+    public static AccountResult changePassword(
+            String username, String oldPassword, String newPassword, String sessionToken) {
         JsonObject body = new JsonObject();
         body.addProperty("username", username);
         body.addProperty("oldPassword", oldPassword);
         body.addProperty("newPassword", newPassword);
-        return accountRequest("POST", "/api/game/change-password", body);
+        return accountRequest("POST", "/api/game/change-password", body, sessionToken);
     }
 
-    public static AccountResult deactivate(String username, String password) {
+    public static AccountResult deactivate(String username, String password, String sessionToken) {
         JsonObject body = new JsonObject();
         body.addProperty("username", username);
         body.addProperty("password", password);
-        return accountRequest("POST", "/api/game/deactivate", body);
+        return accountRequest("POST", "/api/game/deactivate", body, sessionToken);
+    }
+
+    /** 向新邮箱发送换绑验证码；当前密码与游戏会话均由 Api 再次校验。 */
+    public static EmailChangeCodeResult requestEmailChangeCode(
+            String sessionToken, String currentPassword, String email) {
+        JsonObject body = new JsonObject();
+        body.addProperty("password", currentPassword);
+        body.addProperty("email", email);
+        int timeoutSeconds = Math.max(ApiModuleSettings.getTimeoutSeconds(), EMAIL_REQUEST_TIMEOUT_SECONDS);
+        HttpResponse<String> response = request(
+                "POST", "/api/game/account-email-change/send",
+                body.toString(), sessionToken, timeoutSeconds);
+        if (response == null) {
+            return new EmailChangeCodeResult(
+                    false, 0, "未收到 Api 响应；若邮件已经到达，请等待一分钟后重新发送", "", 0, 0);
+        }
+        JsonObject root = parse(response.body());
+        boolean success = response.statusCode() / 100 == 2 && booleanValue(root, "ok", false);
+        long resendAfter = success
+                ? longValue(root, "resend_after", 0)
+                : longValue(root, "retryAfterSeconds", 0);
+        return new EmailChangeCodeResult(
+                success,
+                response.statusCode(),
+                responseMessage(root),
+                stringValue(root, "session_id"),
+                longValue(root, "expires_in", 0),
+                resendAfter);
+    }
+
+    /** 校验新邮箱验证码，并读取 Api 返回的已更新账户。 */
+    public static AccountResult verifyEmailChangeCode(
+            String sessionToken, String sessionId, String code) {
+        JsonObject body = new JsonObject();
+        body.addProperty("session_id", sessionId);
+        body.addProperty("code", code);
+        int timeoutSeconds = Math.max(ApiModuleSettings.getTimeoutSeconds(), EMAIL_REQUEST_TIMEOUT_SECONDS);
+        return resultFrom(request(
+                "POST", "/api/game/account-email-change/verify",
+                body.toString(), sessionToken, timeoutSeconds));
     }
 
     public static AccountResult resetPassword(String username, String newPassword) {
@@ -456,6 +507,12 @@ public final class ApiServiceClient {
 
     private static AccountResult accountRequest(String method, String path, JsonObject body) {
         return resultFrom(request(method, path, body == null ? null : body.toString()));
+    }
+
+    private static AccountResult accountRequest(
+            String method, String path, JsonObject body, String sessionToken) {
+        return resultFrom(request(
+                method, path, body == null ? null : body.toString(), sessionToken));
     }
 
     private static AccountResult resultFrom(HttpResponse<String> response) {

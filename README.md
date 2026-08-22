@@ -46,6 +46,7 @@
 - **位置保存/恢复**：登出时保存位置 → 传送至末地虚空；登录后精确保留位置恢复
 - **登录大厅**：未认证玩家被限制在 `youzaiworldcore:login_hall` 自定义维度，Mixin 阻止移动、交互、攻击、聊天
 - **登录/注册 GUI**：未认证玩家进入登录大厅时客户端自动弹出注册/登录界面（`RegisterScreen` / `LoginScreen`，用户名只读预填，支持 Enter 登入与断开连接），服务端经 `OpenAuthScreenPayload` 推送；Api 启用“注册需邮箱验证”后会自动进入 `RegistrationEmailScreen`，完成验证码发送、重发倒计时与校验注册；已绑定邮箱的账户可从登录页进入 `PasswordResetScreen`，验证绑定邮箱后重置密码
+- **暂停菜单账户管理**：暂停菜单右侧玩家模型下方提供“账户管理”入口；`AccountManagementScreen` 可更改密码、通过“当前密码 + 新邮箱验证码”换绑唯一邮箱，或经二次确认永久注销账户。敏感字段通过专用数据包发送且由服务端登录令牌再次鉴权，不进入聊天命令
 - **隐身联动**：隐身状态下禁止执行登出、注销、改密等敏感操作
 - **账户注销联动**：账户注销/删除时同时清空其邮件信箱（`MailManager.onAccountDeleted`）
 - **自定义皮肤与披风**：离线账户可从 `yzwc/client/config/cosmetic_module/` 上传 `skin.png`（宽模型）、`skin_slim.png`（细模型）和 64×32 的 `cloak.png`；模组校验后上传到 Api 服务端保存并同步给其他在线玩家，不在 Minecraft 服务端保留文件回退；正版账户保持 Mojang 外观
@@ -802,9 +803,9 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 | `decomposition_table` | 分解台   |
 | `fly_beacon`          | 飞行信标 |
 
-### 网络数据包（共 52 个）
+### 网络数据包（共 54 个）
 
-> 注：`world_pool_teleport` 数据包类位于 `dimensionalinventories` 包，其余位于 `network` 包；邮件相关 18 个数据包亦位于 `network` 包。方向统计：S→C 23 个，C→S 29 个。
+> 注：`world_pool_teleport` 数据包类位于 `dimensionalinventories` 包，其余位于 `network` 包；邮件相关 18 个数据包亦位于 `network` 包。方向统计：S→C 24 个，C→S 30 个。
 
 | 数据包 ID                   | 方向 | 用途                                                               |
 | --------------------------- | ---- | ------------------------------------------------------------------ |
@@ -812,6 +813,7 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 | `open_auth_screen`          | S→C  | 打开认证界面                                                       |
 | `registration_email_state` | S→C  | 同步邮箱注册步骤、请求结果与倒计时                                 |
 | `password_reset_state`      | S→C  | 同步邮箱找回密码的请求结果、会话与倒计时                           |
+| `account_management_state` | S→C  | 同步账户快照、改密/换绑/注销结果与换绑验证码倒计时                 |
 | `mana_sync`                 | S→C  | 同步魔力值                                                         |
 | `level_exp_sync`            | S→C  | 同步冒险等级经验                                                   |
 | `damage_number`             | S→C  | 同步实体受击位置与实际伤害值，用于客户端世界空间跳字               |
@@ -833,6 +835,7 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 | `in_place_respawn_result`   | S→C  | 返回原地重生申请的批准或拒绝结果                                   |
 | `registration_email_request` | C→S | 提交邮箱地址或邮箱验证码                                           |
 | `password_reset_request`    | C→S  | 提交找回密码邮箱、验证码与新密码                                   |
+| `account_management_request` | C→S | 提交账户快照、改密、换绑邮箱或注销请求                             |
 | `world_pool_teleport`       | C→S  | 请求维度池传送                                                     |
 | `in_place_respawn_request`  | C→S  | 请求消耗等级并在死亡位置重生                                       |
 | `teleport_anchor_activate`  | C→S  | 激活传送锚点                                                       |
@@ -907,7 +910,7 @@ src/                                       # 452 个 Java 源文件（main 273 /
 │   ├── mail/                             # 邮件系统（Mail / MailManager / SentMailRepository / MailDataStorage / MailSettings / MailPermissionHelper）
 │   ├── mana/                             # 魔力系统
 │   ├── mixin/                            # Mixin（35 个，含子包 afk / babyzombie / chargedcreeper / craftsound / damagenumber / doubledoors / invisibility / jukebox / painting / pet / seat / skill / trialvault）
-│   ├── network/                          # 网络数据包（50 个 Payload 类 + ModNetworking）
+│   ├── network/                          # 网络数据包（52 个 Payload 类 + ModNetworking）
 │   ├── pet/                              # 宠物系统（config/command/event 子包 + PetGlobalState/PetEntry）
 │   ├── placeholders/                     # Placeholder API 集成（32 个占位符）
 │   ├── respawn/                          # 原地重生（InPlaceRespawnManager）
@@ -939,10 +942,10 @@ src/                                       # 452 个 Java 源文件（main 273 /
 │   ├── mixin/client/                     # 客户端 Mixin（60 个：标题/选项/按钮/暂停/聊天/加载/座椅/渲染/拾取/附魔补丁/itemborder/YZUI 物品栏·血条·上下文栏·配方书/technocrown/AFK 输入/实验性警告跳过 等）
 │   ├── network/                          # 客户端网络处理（ClientNetworking）
 │   ├── renderer/                         # 方块/实体渲染器（含传送锚点 BER、飞行信标 BER、feature/TechnoCrownFeatureRenderer）
-│   └── screen/                           # GUI 屏幕（MenuScreen、Login/Register/PasswordReset、YzuInventoryScreen/YzuCreativeInventoryScreen、MailScreen/MailComposeScreen/MailSentScreen、element/widget/block 子包）
+│   └── screen/                           # GUI 屏幕（MenuScreen、Login/Register/PasswordReset/AccountManagement、YzuInventoryScreen/YzuCreativeInventoryScreen、MailScreen/MailComposeScreen/MailSentScreen、element/widget/block 子包）
 
 └── main/resources/
-    ├── assets/youzaiworldcore/           # 纹理、模型、语言文件（10 种语言 × 854 键）、音效（4 个 .ogg：cloud_genshin + laowu2/qiliang/zhanhou）、画作纹理（12 张 Meme 画作）
+    ├── assets/youzaiworldcore/           # 纹理、模型、语言文件（10 种语言 × 889 键）、音效（4 个 .ogg：cloud_genshin + laowu2/qiliang/zhanhou）、画作纹理（12 张 Meme 画作）
     ├── data/                             # 成就（31 个）、配方（20 个）、战利品表（方块 6 + 箱子 4）、维度（login_hall）、结构（9 个，含 5 种村庄变体 + 3 遗迹 + cloud_genshin_ruins）、结构集、模板池、附魔（12 个 JSON）、新手教程函数（19 个）、jukebox_song（1 个）、trinkets 饰品槽
     └── fabric.mod.json                   # 模组元数据（声明 fabric-api / placeholder-api / modmenu / moogs_structures / trinkets_updated / geckolib 为硬依赖）
 

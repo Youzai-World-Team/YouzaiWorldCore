@@ -59,6 +59,9 @@ public class ModNetworking {
         PayloadTypeRegistry.serverboundPlay().register(
                 PasswordResetRequestPayload.ID, PasswordResetRequestPayload.STREAM_CODEC);
         DebugLogger.info("ModNetworking", "Registered serverbound packet: PasswordResetRequestPayload");
+        PayloadTypeRegistry.serverboundPlay().register(
+                AccountManagementRequestPayload.ID, AccountManagementRequestPayload.STREAM_CODEC);
+        DebugLogger.info("ModNetworking", "Registered serverbound packet: AccountManagementRequestPayload");
         PayloadTypeRegistry.serverboundPlay().register(FlyBeaconActivePayload.ID, FlyBeaconActivePayload.STREAM_CODEC);
         DebugLogger.info("ModNetworking", "Registered serverbound packet: FlyBeaconActivePayload");
         PayloadTypeRegistry.serverboundPlay().register(WorldPoolTeleportPayload.ID, WorldPoolTeleportPayload.STREAM_CODEC);
@@ -79,6 +82,9 @@ public class ModNetworking {
         PayloadTypeRegistry.clientboundPlay().register(
                 PasswordResetStatePayload.ID, PasswordResetStatePayload.STREAM_CODEC);
         DebugLogger.info("ModNetworking", "Registered clientbound packet: PasswordResetStatePayload");
+        PayloadTypeRegistry.clientboundPlay().register(
+                AccountManagementStatePayload.ID, AccountManagementStatePayload.STREAM_CODEC);
+        DebugLogger.info("ModNetworking", "Registered clientbound packet: AccountManagementStatePayload");
         PayloadTypeRegistry.clientboundPlay().register(InPlaceRespawnInfoPayload.ID,
                 InPlaceRespawnInfoPayload.STREAM_CODEC);
         DebugLogger.info("ModNetworking", "Registered clientbound packet: InPlaceRespawnInfoPayload");
@@ -214,6 +220,14 @@ public class ModNetworking {
                                     player, payload.sessionId(), payload.code(), payload.newPassword());
                 }
             });
+        });
+
+        ServerPlayNetworking.registerGlobalReceiver(AccountManagementRequestPayload.ID, (payload, context) -> {
+            var player = context.player();
+            var server = player.level().getServer();
+            if (server == null) return;
+            server.execute(() -> top.csituka.youzaiworldcore.account.command.AccountCommands
+                    .executeAccountManagementPayload(player, payload));
         });
 
         ServerPlayNetworking.registerGlobalReceiver(CosmeticUploadPayload.ID, (payload, context) -> {

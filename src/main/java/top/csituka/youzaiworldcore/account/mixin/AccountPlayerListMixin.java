@@ -21,6 +21,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import top.csituka.youzaiworldcore.YouzaiworldCore;
 import top.csituka.youzaiworldcore.api.ApiServiceClient;
 import top.csituka.youzaiworldcore.account.data.AccountDataStorage;
+import top.csituka.youzaiworldcore.account.data.EmailChangeSessionStore;
 import top.csituka.youzaiworldcore.account.data.PlayerAccount;
 import top.csituka.youzaiworldcore.account.data.PlayerAuthAccess;
 import top.csituka.youzaiworldcore.account.data.PasswordResetSessionStore;
@@ -54,6 +55,7 @@ public abstract class AccountPlayerListMixin {
         String username = player.getScoreboardName();
         RegistrationEmailSessionStore.clear(player.getUUID());
         PasswordResetSessionStore.clear(player.getUUID());
+        EmailChangeSessionStore.clear(player.getUUID());
         YouzaiworldCore.LOGGER.info("玩家 {} 正在加入服务器...", username);
 
         PlayerAccount account = AccountDataStorage.ensureRemoteAccount(username, player.getUUID());
@@ -106,6 +108,7 @@ public abstract class AccountPlayerListMixin {
         PlayerAuthAccess authPlayer = (PlayerAuthAccess) (Object) player;
         RegistrationEmailSessionStore.clear(player.getUUID());
         PasswordResetSessionStore.clear(player.getUUID());
+        EmailChangeSessionStore.clear(player.getUUID());
         ApiServiceClient.deleteSession(authPlayer.yzwc$getSessionToken());
         authPlayer.yzwc$setSessionToken(null);
         PlayerAccount account = AuthPlayerHelper.getAccount(player);

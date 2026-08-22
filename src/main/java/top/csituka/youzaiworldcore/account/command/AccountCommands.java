@@ -16,6 +16,7 @@ import net.minecraft.world.level.Level;
 import top.csituka.youzaiworldcore.YouzaiworldCore;
 import top.csituka.youzaiworldcore.api.ApiServiceClient;
 import top.csituka.youzaiworldcore.account.data.AccountDataStorage;
+import top.csituka.youzaiworldcore.account.data.EmailChangeSessionStore;
 import top.csituka.youzaiworldcore.account.data.PlayerAccount;
 import top.csituka.youzaiworldcore.account.data.PlayerAuthAccess;
 import top.csituka.youzaiworldcore.account.data.PasswordResetSessionStore;
@@ -24,6 +25,8 @@ import top.csituka.youzaiworldcore.account.util.AuthLocationData;
 import top.csituka.youzaiworldcore.account.util.AuthPlayerHelper;
 import top.csituka.youzaiworldcore.cosmetic.CosmeticManager;
 import top.csituka.youzaiworldcore.invisibility.InvisibilityManager;
+import top.csituka.youzaiworldcore.network.AccountManagementRequestPayload;
+import top.csituka.youzaiworldcore.network.AccountManagementStatePayload;
 import top.csituka.youzaiworldcore.network.OpenAuthScreenPayload;
 import top.csituka.youzaiworldcore.network.PasswordResetStatePayload;
 import top.csituka.youzaiworldcore.network.RegistrationEmailStatePayload;
@@ -569,6 +572,224 @@ public class AccountCommands {
                         : message));
     }
 
+    /** 处理暂停菜单账户管理页面的请求。 */
+    public static int executeAccountManagementPayload(
+            ServerPlayer player, AccountManagementRequestPayload payload) {
+        DebugLogger.entering("AccountCommands", "executeAccountManagementPayload",
+                "action=" + payload.action());
+        if (!canManageCurrentAccount(player)) {
+            sendAccountManagementError(player, "当前登录状态已失效，请重新登录", 0);
+            DebugLogger.exiting("AccountCommands", "executeAccountManagementPayload",
+                    "0 (not authenticated)");
+            return 0;
+        }
+
+        PlayerAuthAccess authPlayer = (PlayerAuthAccess) (Object) player;
+        switch (payload.action()) {
+            case LOAD -> {
+                PlayerAccount account = authPlayer.yzwc$getAccount();
+                ServerPlayNetworking.send(player, AccountManagementStatePayload.loaded(
+                        account == null ? "" : account.email));
+            }
+            case CHANGE_PASSWORD -> queueManagedPasswordChange(
+                    player, payload.currentPassword(), payload.newPassword());
+            case SEND_EMAIL_CODE -> queueEmailChangeCode(
+                    player, payload.currentPassword(), payload.email());
+            case VERIFY_EMAIL_CODE -> queueEmailChangeVerification(
+                    player, payload.sessionId(), payload.code());
+            case DEACTIVATE -> queueManagedDeactivation(player, payload.currentPassword());
+        }
+        DebugLogger.exiting("AccountCommands", "executeAccountManagementPayload", "1 (accepted)");
+        return 1;
+    }
+
+    private static void queueManagedPasswordChange(
+            ServerPlayer player, String currentPassword, String newPassword) {
+        if (InvisibilityManager.isInvisible(player)) {
+            sendAccountManagementError(player, "隐身状态下不能修改账户密码", 0);
+            return;
+        }
+        PlayerAuthAccess authPlayer = (PlayerAuthAccess) (Object) player;
+        String token = authPlayer.yzwc$getSessionToken();
+        var server = player.level().getServer();
+        if (server == null) return;
+        CompletableFuture.supplyAsync(() -> ApiServiceClient.changePassword(
+                        player.getScoreboardName(), currentPassword, newPassword, token))
+                .whenComplete((result, error) -> server.execute(() -> {
+                    if (!isCurrentManagedSession(player, token)) return;
+                    if (error != null || result == null) {
+                        if (error != null) {
+                            DebugLogger.exception("AccountCommands", "managedChangePassword", error);
+                        }
+                        sendAccountManagementError(player, "修改密码请求失败，请稍后重试", 0);
+                        return;
+                    }
+                    if (!result.success()) {
+                        sendAccountManagementError(player, result.message(), 0);
+                        return;
+                    }
+
+                    ServerPlayNetworking.send(player, AccountManagementStatePayload.passwordChanged(
+                            result.message()));
+                    applyPasswordChange(player, result.account());
+                    DebugLogger.info("AccountCommands", "玩家 %s 通过账户管理页面修改了密码",
+                            player.getScoreboardName());
+                }));
+    }
+
+    private static void queueEmailChangeCode(
+            ServerPlayer player, String currentPassword, String email) {
+        PlayerAuthAccess authPlayer = (PlayerAuthAccess) (Object) player;
+        String token = authPlayer.yzwc$getSessionToken();
+        var server = player.level().getServer();
+        if (server == null) return;
+        CompletableFuture.supplyAsync(() -> ApiServiceClient.requestEmailChangeCode(
+                        token, currentPassword, email == null ? "" : email.trim()))
+                .whenComplete((result, error) -> server.execute(() -> {
+                    if (!isCurrentManagedSession(player, token)) return;
+                    if (error != null || result == null) {
+                        if (error != null) {
+                            DebugLogger.exception("AccountCommands", "requestEmailChangeCode", error);
+                        }
+                        sendAccountManagementError(player, "验证码发送请求失败，请稍后重试", 0);
+                        return;
+                    }
+                    if (!result.success() || result.sessionId() == null
+                            || result.sessionId().isBlank()) {
+                        sendAccountManagementError(
+                                player, result.message(), packetSeconds(result.resendAfterSeconds()));
+                        return;
+                    }
+
+                    EmailChangeSessionStore.PendingSession pending = EmailChangeSessionStore.put(
+                            player.getUUID(), result.sessionId(), result.expiresInSeconds());
+                    ServerPlayNetworking.send(player, AccountManagementStatePayload.emailCodeSent(
+                            pending.sessionId(), result.message(), pending.remainingSeconds(),
+                            packetSeconds(result.resendAfterSeconds())));
+                    DebugLogger.info("AccountCommands", "已向玩家 %s 的新邮箱发送换绑验证码",
+                            player.getScoreboardName());
+                }));
+    }
+
+    private static void queueEmailChangeVerification(
+            ServerPlayer player, String sessionId, String code) {
+        if (!EmailChangeSessionStore.matches(player.getUUID(), sessionId)) {
+            EmailChangeSessionStore.clear(player.getUUID());
+            ServerPlayNetworking.send(player, AccountManagementStatePayload.expired(
+                    "换绑邮箱会话已失效，请重新发送验证码"));
+            return;
+        }
+
+        PlayerAuthAccess authPlayer = (PlayerAuthAccess) (Object) player;
+        String token = authPlayer.yzwc$getSessionToken();
+        var server = player.level().getServer();
+        if (server == null) return;
+        CompletableFuture.supplyAsync(() -> ApiServiceClient.verifyEmailChangeCode(
+                        token, sessionId, code == null ? "" : code.trim()))
+                .whenComplete((result, error) -> server.execute(() -> {
+                    if (!isCurrentManagedSession(player, token)
+                            || !EmailChangeSessionStore.matches(player.getUUID(), sessionId)) {
+                        return;
+                    }
+                    if (error != null || result == null) {
+                        if (error != null) {
+                            DebugLogger.exception("AccountCommands", "verifyEmailChangeCode", error);
+                        }
+                        sendAccountManagementError(player, "邮箱换绑请求失败，请稍后重试", 0);
+                        return;
+                    }
+                    if (!result.success()) {
+                        if (isEmailChangeSessionInvalid(result.statusCode(), result.message())) {
+                            EmailChangeSessionStore.clear(player.getUUID());
+                            ServerPlayNetworking.send(player, AccountManagementStatePayload.expired(
+                                    result.message()));
+                        } else {
+                            sendAccountManagementError(player, result.message(), 0);
+                        }
+                        return;
+                    }
+                    if (result.account() == null) {
+                        sendAccountManagementError(player, "Api 未返回更新后的账户状态", 0);
+                        return;
+                    }
+
+                    EmailChangeSessionStore.clear(player.getUUID());
+                    authPlayer.yzwc$setAccount(result.account());
+                    AccountDataStorage.acceptRemoteAccount(result.account(), false);
+                    ServerPlayNetworking.send(player, AccountManagementStatePayload.emailChanged(
+                            result.account().email, result.message()));
+                    DebugLogger.info("AccountCommands", "玩家 %s 已换绑邮箱",
+                            player.getScoreboardName());
+                }));
+    }
+
+    private static void queueManagedDeactivation(ServerPlayer player, String password) {
+        if (InvisibilityManager.isInvisible(player)) {
+            sendAccountManagementError(player, "隐身状态下不能注销账户", 0);
+            return;
+        }
+        PlayerAuthAccess authPlayer = (PlayerAuthAccess) (Object) player;
+        String token = authPlayer.yzwc$getSessionToken();
+        var server = player.level().getServer();
+        if (server == null) return;
+        CompletableFuture.supplyAsync(() -> ApiServiceClient.deactivate(
+                        player.getScoreboardName(), password, token))
+                .whenComplete((result, error) -> server.execute(() -> {
+                    if (!isCurrentManagedSession(player, token)) return;
+                    if (error != null || result == null) {
+                        if (error != null) {
+                            DebugLogger.exception("AccountCommands", "managedDeactivate", error);
+                        }
+                        sendAccountManagementError(player, "注销账户请求失败，请稍后重试", 0);
+                        return;
+                    }
+                    if (!result.success()) {
+                        sendAccountManagementError(player, result.message(), 0);
+                        return;
+                    }
+
+                    ServerPlayNetworking.send(player, AccountManagementStatePayload.deactivated(
+                            result.message()));
+                    applyDeactivation(player);
+                    DebugLogger.info("AccountCommands", "玩家 %s 通过账户管理页面注销了账户",
+                            player.getScoreboardName());
+                }));
+    }
+
+    private static boolean canManageCurrentAccount(ServerPlayer player) {
+        if (player.connection == null || !player.connection.isAcceptingMessages()) return false;
+        PlayerAuthAccess authPlayer = (PlayerAuthAccess) (Object) player;
+        PlayerAccount account = authPlayer.yzwc$getAccount();
+        String token = authPlayer.yzwc$getSessionToken();
+        return authPlayer.yzwc$isAuthenticated()
+                && !authPlayer.yzwc$canSkipAuth()
+                && account != null
+                && account.isRegistered()
+                && token != null
+                && !token.isBlank();
+    }
+
+    private static boolean isCurrentManagedSession(ServerPlayer player, String token) {
+        if (!canManageCurrentAccount(player)) return false;
+        PlayerAuthAccess authPlayer = (PlayerAuthAccess) (Object) player;
+        return token != null && token.equals(authPlayer.yzwc$getSessionToken());
+    }
+
+    private static boolean isEmailChangeSessionInvalid(int statusCode, String message) {
+        return statusCode == 410 || message != null && (message.contains("会话已失效")
+                || message.contains("验证码已过期")
+                || message.contains("错误次数过多")
+                || message.contains("重新发送"));
+    }
+
+    private static void sendAccountManagementError(
+            ServerPlayer player, String message, int resendAfterSeconds) {
+        if (player.connection == null || !player.connection.isAcceptingMessages()) return;
+        ServerPlayNetworking.send(player, AccountManagementStatePayload.error(
+                message == null || message.isBlank() ? "账户管理请求失败" : message,
+                Math.max(0, Math.min(86_400, resendAfterSeconds))));
+    }
+
     /**
      * 登录
      */
@@ -602,6 +823,7 @@ public class AccountCommands {
                 player.getScoreboardName(), password, authPlayer.yzwc$getIpAddress());
         if (result.success() && result.account() != null && result.token() != null && !result.token().isBlank()) {
             PasswordResetSessionStore.clear(player.getUUID());
+            EmailChangeSessionStore.clear(player.getUUID());
             account = result.account();
             authPlayer.yzwc$setSessionToken(result.token());
             authPlayer.yzwc$setAuthenticated(true);
@@ -686,6 +908,7 @@ public class AccountCommands {
         }
         authPlayer.yzwc$setSessionToken(null);
         authPlayer.yzwc$setAuthenticated(false);
+        EmailChangeSessionStore.clear(player.getUUID());
         CosmeticManager.onDeauthenticated(player);
 
         // 传送到登录大厅
@@ -736,7 +959,8 @@ public class AccountCommands {
         DebugLogger.branch("AccountCommands", "player is authenticated", true);
 
         String password = StringArgumentType.getString(ctx, "password");
-        ApiServiceClient.AccountResult remote = ApiServiceClient.deactivate(player.getScoreboardName(), password);
+        ApiServiceClient.AccountResult remote = ApiServiceClient.deactivate(
+                player.getScoreboardName(), password, authPlayer.yzwc$getSessionToken());
         if (!remote.success()) {
             source.sendFailure(remote.statusCode() == 401
                     ? Component.translatable("youzaiworldcore.message.account.wrong_password_simple")
@@ -748,12 +972,7 @@ public class AccountCommands {
         }
         DebugLogger.branch("AccountCommands", "password is correct", true);
 
-        AccountDataStorage.removeRemoteAccount(player.getScoreboardName());
-        authPlayer.yzwc$setSessionToken(null);
-        authPlayer.yzwc$setAuthenticated(false);
-        authPlayer.yzwc$setAccount(new PlayerAccount(player.getScoreboardName()));
-
-        player.connection.disconnect(Component.translatable("youzaiworldcore.message.account.deactivated"));
+        applyDeactivation(player);
         DebugLogger.info("AccountCommands", "玩家 %s 注销了账户", player.getScoreboardName());
         YouzaiworldCore.LOGGER.info("玩家 {} 注销了账户", player.getScoreboardName());
         DebugLogger.exiting("AccountCommands", "executeDeactivate", "1 (success)");
@@ -809,7 +1028,8 @@ public class AccountCommands {
             return 0;
         }
         ApiServiceClient.AccountResult result = ApiServiceClient.changePassword(
-                player.getScoreboardName(), oldPassword, newPassword);
+                player.getScoreboardName(), oldPassword, newPassword,
+                authPlayer.yzwc$getSessionToken());
         if (!result.success()) {
             source.sendFailure(result.statusCode() == 401
                     ? Component.translatable("youzaiworldcore.message.account.old_password_wrong")
@@ -817,21 +1037,36 @@ public class AccountCommands {
             return 0;
         }
 
-        // Api 改密会主动清除旧认证状态；模组同步撤销当前在线状态并回到登录大厅。
+        applyPasswordChange(player, result.account());
+
+        source.sendSuccess(() -> Component.translatable("youzaiworldcore.message.account.change_password_success"), true);
+        DebugLogger.info("AccountCommands", "玩家 %s 修改了密码", player.getScoreboardName());
+        YouzaiworldCore.LOGGER.info("玩家 {} 修改了密码", player.getScoreboardName());
+        DebugLogger.exiting("AccountCommands", "executeChangePassword", "1 (success)");
+        return 1;
+    }
+
+    /** Api 改密会撤销全部令牌；同步保存位置、清理客户端能力并送回登录大厅。 */
+    private static void applyPasswordChange(ServerPlayer player, PlayerAccount remoteAccount) {
+        PlayerAuthAccess authPlayer = (PlayerAuthAccess) (Object) player;
         authPlayer.yzwc$saveLocation();
-        PlayerAccount account = authPlayer.yzwc$getAccount();
+        PlayerAccount account = remoteAccount != null ? remoteAccount : authPlayer.yzwc$getAccount();
         if (account != null) {
             AuthLocationData savedLoc = authPlayer.yzwc$getLastLocation();
             if (savedLoc != null && savedLoc.position != null && !AuthPlayerHelper.isVoidLocation(savedLoc)) {
                 account.lastPositionJson = savedLoc.toJson();
             }
             account.lastIp = "";
-            account.lastAuthenticatedDate = ZonedDateTime.of(1970, 1, 1, 0, 0, 0, 0,
-                    java.time.ZoneOffset.UTC);
+            account.lastAuthenticatedDate = ZonedDateTime.of(
+                    1970, 1, 1, 0, 0, 0, 0, java.time.ZoneOffset.UTC);
+            authPlayer.yzwc$setAccount(account);
             AccountDataStorage.update(account);
         }
+        EmailChangeSessionStore.clear(player.getUUID());
         authPlayer.yzwc$setAuthenticated(false);
         authPlayer.yzwc$setSessionToken(null);
+        // 留出约十秒让成功提示显示；认证 tick 仍会兜底重新打开登录页。
+        authPlayer.yzwc$setKickTimer(5_999);
         CosmeticManager.onDeauthenticated(player);
         ResourceKey<Level> loginHallKey = AuthPlayerHelper.LOGIN_HALL_KEY;
         ServerLevel loginHall = player.level().getServer() != null
@@ -844,12 +1079,21 @@ public class AccountCommands {
             player.teleportTo(loginHall, AuthPlayerHelper.LOGIN_HALL_X, AuthPlayerHelper.LOGIN_HALL_Y,
                     AuthPlayerHelper.LOGIN_HALL_Z, Set.of(), 0, 0, true);
         }
+    }
 
-        source.sendSuccess(() -> Component.translatable("youzaiworldcore.message.account.change_password_success"), true);
-        DebugLogger.info("AccountCommands", "玩家 %s 修改了密码", player.getScoreboardName());
-        YouzaiworldCore.LOGGER.info("玩家 {} 修改了密码", player.getScoreboardName());
-        DebugLogger.exiting("AccountCommands", "executeChangePassword", "1 (success)");
-        return 1;
+    /** 统一清理命令与页面触发的账户注销状态。 */
+    private static void applyDeactivation(ServerPlayer player) {
+        PlayerAuthAccess authPlayer = (PlayerAuthAccess) (Object) player;
+        EmailChangeSessionStore.clear(player.getUUID());
+        AccountDataStorage.removeRemoteAccount(player.getScoreboardName());
+        authPlayer.yzwc$setSessionToken(null);
+        authPlayer.yzwc$setAuthenticated(false);
+        authPlayer.yzwc$setAccount(new PlayerAccount(player.getScoreboardName()));
+        CosmeticManager.onDeauthenticated(player);
+        if (player.connection != null && player.connection.isAcceptingMessages()) {
+            player.connection.disconnect(Component.translatable(
+                    "youzaiworldcore.message.account.deactivated"));
+        }
     }
 
     // ==================== 管理员命令实现 ====================
