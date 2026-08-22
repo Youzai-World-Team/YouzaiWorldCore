@@ -18,11 +18,13 @@ import top.csituka.youzaiworldcore.api.ApiServiceClient;
 import top.csituka.youzaiworldcore.account.data.AccountDataStorage;
 import top.csituka.youzaiworldcore.account.data.PlayerAccount;
 import top.csituka.youzaiworldcore.account.data.PlayerAuthAccess;
+import top.csituka.youzaiworldcore.account.data.RegistrationEmailSessionStore;
 import top.csituka.youzaiworldcore.account.util.AuthLocationData;
 import top.csituka.youzaiworldcore.account.util.AuthPlayerHelper;
 import top.csituka.youzaiworldcore.cosmetic.CosmeticManager;
 import top.csituka.youzaiworldcore.invisibility.InvisibilityManager;
 import top.csituka.youzaiworldcore.network.OpenAuthScreenPayload;
+import top.csituka.youzaiworldcore.network.RegistrationEmailStatePayload;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
 import java.time.ZonedDateTime;
@@ -202,17 +204,111 @@ public class AccountCommands {
         }
         DebugLogger.branch("AccountCommands", "password length <= 128", true);
 
-        ApiServiceClient.AccountResult remote = ApiServiceClient.registerAccount(
+        RegistrationEmailSessionStore.clear(player.getUUID());
+        ApiServiceClient.RegistrationResult remote = ApiServiceClient.registerAccount(
                 player.getScoreboardName(), player.getUUID(), password, authPlayer.yzwc$getIpAddress(), true);
+        if (remote.emailVerificationRequired()) {
+            RegistrationEmailSessionStore.PendingSession pending = RegistrationEmailSessionStore.put(
+                    player.getUUID(), remote.sessionId(), remote.expiresInSeconds());
+            authPlayer.yzwc$setKickTimer(Math.max(
+                    authPlayer.yzwc$getKickTimer(), pending.remainingSeconds() * 20));
+            ServerPlayNetworking.send(player, RegistrationEmailStatePayload.required(
+                    pending.sessionId(), pending.remainingSeconds()));
+            DebugLogger.info("AccountCommands", "玩家 %s 的注册需要邮箱验证", player.getScoreboardName());
+            DebugLogger.exiting("AccountCommands", "executeRegister", "1 (email verification required)");
+            return 1;
+        }
         if (!remote.success() || remote.account() == null || remote.token() == null || remote.token().isBlank()) {
             source.sendFailure(remote.statusCode() == 409
                     ? Component.translatable("youzaiworldcore.message.account.already_registered")
                     : Component.literal(remote.message()));
+            DebugLogger.exiting("AccountCommands", "executeRegister", "0 (Api rejected registration)");
             return 0;
         }
-        PlayerAccount account = remote.account();
+        return completeRegistration(source, player, remote.account(), remote.token());
+    }
+
+    /** 处理客户端邮箱注册界面的验证码发送请求。 */
+    public static int executeRegistrationEmailSendPayload(
+            ServerPlayer player, String sessionId, String email) {
+        DebugLogger.entering("AccountCommands", "executeRegistrationEmailSendPayload");
+        if (!canUseRegistrationEmailSession(player, sessionId)) {
+            sendExpiredRegistrationSession(player, sessionId, "邮箱注册会话已失效，请重新发起注册");
+            DebugLogger.exiting("AccountCommands", "executeRegistrationEmailSendPayload", "0 (invalid session)");
+            return 0;
+        }
+
+        ApiServiceClient.RegistrationEmailCodeResult result = ApiServiceClient.sendRegistrationEmailCode(
+                sessionId, email == null ? "" : email.trim());
+        if (!result.success()) {
+            if (isRegistrationSessionInvalid(result.message())) {
+                sendExpiredRegistrationSession(player, sessionId, result.message());
+            } else {
+                ServerPlayNetworking.send(player, RegistrationEmailStatePayload.error(
+                        sessionId, result.message(), packetSeconds(result.resendAfterSeconds())));
+            }
+            DebugLogger.exiting("AccountCommands", "executeRegistrationEmailSendPayload", "0 (Api rejected send)");
+            return 0;
+        }
+
+        ServerPlayNetworking.send(player, RegistrationEmailStatePayload.codeSent(
+                sessionId,
+                result.message(),
+                packetSeconds(result.expiresInSeconds()),
+                packetSeconds(result.resendAfterSeconds())));
+        DebugLogger.info("AccountCommands", "已向玩家 %s 指定的邮箱发送注册验证码", player.getScoreboardName());
+        DebugLogger.exiting("AccountCommands", "executeRegistrationEmailSendPayload", "1");
+        return 1;
+    }
+
+    /** 处理客户端邮箱注册界面的验证码校验请求。 */
+    public static int executeRegistrationEmailVerifyPayload(
+            ServerPlayer player, String sessionId, String code) {
+        DebugLogger.entering("AccountCommands", "executeRegistrationEmailVerifyPayload");
+        if (!canUseRegistrationEmailSession(player, sessionId)) {
+            sendExpiredRegistrationSession(player, sessionId, "邮箱注册会话已失效，请重新发起注册");
+            DebugLogger.exiting("AccountCommands", "executeRegistrationEmailVerifyPayload", "0 (invalid session)");
+            return 0;
+        }
+
+        ApiServiceClient.AccountResult remote = ApiServiceClient.verifyRegistrationEmailCode(
+                sessionId, code == null ? "" : code.trim());
+        if (!remote.success() || remote.account() == null || remote.token() == null || remote.token().isBlank()) {
+            if (isRegistrationSessionInvalid(remote.message())) {
+                sendExpiredRegistrationSession(player, sessionId, remote.message());
+            } else {
+                ServerPlayNetworking.send(player,
+                        RegistrationEmailStatePayload.error(sessionId, remote.message(), 0));
+            }
+            DebugLogger.exiting("AccountCommands", "executeRegistrationEmailVerifyPayload", "0 (verification failed)");
+            return 0;
+        }
+
+        if (!registrationAccountMatchesPlayer(remote.account(), player)) {
+            RegistrationEmailSessionStore.clear(player.getUUID());
+            ServerPlayNetworking.send(player, RegistrationEmailStatePayload.expired(
+                    sessionId, "邮箱注册账户与当前玩家不匹配，请重新发起注册"));
+            DebugLogger.warn("AccountCommands", "玩家 %s 的邮箱注册结果身份不匹配", player.getScoreboardName());
+            DebugLogger.exiting("AccountCommands", "executeRegistrationEmailVerifyPayload", "0 (identity mismatch)");
+            return 0;
+        }
+
+        int completed = completeRegistration(
+                player.createCommandSourceStack(), player, remote.account(), remote.token());
+        if (completed == 1) {
+            ServerPlayNetworking.send(player, RegistrationEmailStatePayload.completed(sessionId));
+        }
+        DebugLogger.exiting("AccountCommands", "executeRegistrationEmailVerifyPayload", String.valueOf(completed));
+        return completed;
+    }
+
+    private static int completeRegistration(
+            CommandSourceStack source, ServerPlayer player, PlayerAccount account, String token) {
+        PlayerAuthAccess authPlayer = (PlayerAuthAccess) (Object) player;
         AccountDataStorage.acceptRemoteAccount(account, true);
-        authPlayer.yzwc$setSessionToken(remote.token());
+        authPlayer.yzwc$setAccount(account);
+        authPlayer.yzwc$setSessionToken(token);
+        RegistrationEmailSessionStore.clear(player.getUUID());
 
         // 标记已认证
         authPlayer.yzwc$setAuthenticated(true);
@@ -242,6 +338,44 @@ public class AccountCommands {
         YouzaiworldCore.LOGGER.info("玩家 {} 注册成功", player.getScoreboardName());
         DebugLogger.exiting("AccountCommands", "executeRegister", "1 (success)");
         return 1;
+    }
+
+    private static boolean canUseRegistrationEmailSession(ServerPlayer player, String sessionId) {
+        PlayerAuthAccess authPlayer = (PlayerAuthAccess) (Object) player;
+        return !authPlayer.yzwc$isAuthenticated()
+                && !authPlayer.yzwc$canSkipAuth()
+                && RegistrationEmailSessionStore.matches(player.getUUID(), sessionId);
+    }
+
+    private static boolean registrationAccountMatchesPlayer(PlayerAccount account, ServerPlayer player) {
+        if (!account.isRegistered()
+                || account.username == null || !account.username.equalsIgnoreCase(player.getScoreboardName())
+                || account.uuid == null || account.uuid.isBlank()) {
+            return false;
+        }
+        try {
+            return player.getUUID().equals(java.util.UUID.fromString(account.uuid));
+        } catch (IllegalArgumentException ignored) {
+            return false;
+        }
+    }
+
+    private static boolean isRegistrationSessionInvalid(String message) {
+        return message != null && (message.contains("会话已失效")
+                || message.contains("错误次数过多")
+                || message.contains("重新注册"));
+    }
+
+    private static void sendExpiredRegistrationSession(
+            ServerPlayer player, String sessionId, String message) {
+        RegistrationEmailSessionStore.clear(player.getUUID());
+        ServerPlayNetworking.send(player, RegistrationEmailStatePayload.expired(
+                sessionId == null ? "" : sessionId,
+                message == null || message.isBlank() ? "邮箱注册会话已失效，请重新发起注册" : message));
+    }
+
+    private static int packetSeconds(long seconds) {
+        return (int) Math.max(0L, Math.min(86_400L, seconds));
     }
 
     /**
@@ -559,7 +693,21 @@ public class AccountCommands {
             return 0;
         }
 
-        ApiServiceClient.AccountResult result = ApiServiceClient.registerAccount(playerName, null, newPassword, "", false);
+        if (ApiServiceClient.getAccountSettings()
+                .map(ApiServiceClient.AccountSettings::emailVerificationRequired)
+                .orElse(false)) {
+            source.sendFailure(Component.literal("邮箱验证已启用，离线账户必须由玩家本人完成注册"));
+            DebugLogger.exiting("AccountCommands", "executeAdminCreate", "0 (email verification required)");
+            return 0;
+        }
+
+        ApiServiceClient.RegistrationResult result =
+                ApiServiceClient.registerAccount(playerName, null, newPassword, "", false);
+        if (result.emailVerificationRequired()) {
+            source.sendFailure(Component.literal("邮箱验证已启用，离线账户必须由玩家本人完成注册"));
+            DebugLogger.exiting("AccountCommands", "executeAdminCreate", "0 (email verification required)");
+            return 0;
+        }
         if (!result.success() || result.account() == null) {
             source.sendFailure(result.statusCode() == 409
                     ? Component.translatable("youzaiworldcore.message.account.player_already_has_account", playerName)

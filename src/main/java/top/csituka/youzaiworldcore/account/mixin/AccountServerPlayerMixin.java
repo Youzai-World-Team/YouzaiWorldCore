@@ -13,11 +13,13 @@ import top.csituka.youzaiworldcore.YouzaiworldCore;
 import top.csituka.youzaiworldcore.account.data.PlayerAccount;
 import top.csituka.youzaiworldcore.account.data.AccountDataStorage;
 import top.csituka.youzaiworldcore.account.data.PlayerAuthAccess;
+import top.csituka.youzaiworldcore.account.data.RegistrationEmailSessionStore;
 import top.csituka.youzaiworldcore.account.util.AuthLocationData;
 import top.csituka.youzaiworldcore.account.util.AuthPlayerHelper;
 import top.csituka.youzaiworldcore.api.ApiServiceClient;
 import top.csituka.youzaiworldcore.cosmetic.CosmeticManager;
 import top.csituka.youzaiworldcore.network.OpenAuthScreenPayload;
+import top.csituka.youzaiworldcore.network.RegistrationEmailStatePayload;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.Set;
@@ -151,6 +153,19 @@ public abstract class AccountServerPlayerMixin implements PlayerAuthAccess {
         }
     }
 
+    @Unique
+    private void sendRegistrationEmailScreenPacket(
+            RegistrationEmailSessionStore.PendingSession pending) {
+        if (yzwc$player.connection != null && yzwc$player.connection.isAcceptingMessages()) {
+            try {
+                ServerPlayNetworking.send(yzwc$player, RegistrationEmailStatePayload.required(
+                        pending.sessionId(), pending.remainingSeconds()));
+            } catch (Exception e) {
+                YouzaiworldCore.LOGGER.error("发送邮箱注册界面数据包失败: {}", e.getMessage());
+            }
+        }
+    }
+
     // ===== 玩家 tick — 未认证时倒计时并阻止 tick =====
     @Inject(method = "doTick", at = @At("HEAD"), cancellable = true)
     private void onPlayerTick(CallbackInfo ci) {
@@ -175,7 +190,13 @@ public abstract class AccountServerPlayerMixin implements PlayerAuthAccess {
                 if (yzwc$account != null && yzwc$account.isRegistered()) {
                     sendAuthScreenPacket("login");
                 } else {
-                    sendAuthScreenPacket("register");
+                    RegistrationEmailSessionStore.PendingSession pending =
+                            RegistrationEmailSessionStore.get(yzwc$player.getUUID());
+                    if (pending == null) {
+                        sendAuthScreenPacket("register");
+                    } else {
+                        sendRegistrationEmailScreenPacket(pending);
+                    }
                 }
             }
             yzwc$kickTimer--;

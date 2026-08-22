@@ -53,6 +53,9 @@ public class ModNetworking {
         DebugLogger.info("ModNetworking", "Registered serverbound packet: DecomposeItemPayload");
         PayloadTypeRegistry.serverboundPlay().register(AuthRequestPayload.ID, AuthRequestPayload.STREAM_CODEC);
         DebugLogger.info("ModNetworking", "Registered serverbound packet: AuthRequestPayload");
+        PayloadTypeRegistry.serverboundPlay().register(
+                RegistrationEmailRequestPayload.ID, RegistrationEmailRequestPayload.STREAM_CODEC);
+        DebugLogger.info("ModNetworking", "Registered serverbound packet: RegistrationEmailRequestPayload");
         PayloadTypeRegistry.serverboundPlay().register(FlyBeaconActivePayload.ID, FlyBeaconActivePayload.STREAM_CODEC);
         DebugLogger.info("ModNetworking", "Registered serverbound packet: FlyBeaconActivePayload");
         PayloadTypeRegistry.serverboundPlay().register(WorldPoolTeleportPayload.ID, WorldPoolTeleportPayload.STREAM_CODEC);
@@ -67,6 +70,9 @@ public class ModNetworking {
         DebugLogger.info("ModNetworking", "Registered clientbound packet: ManaSyncPayload");
         PayloadTypeRegistry.clientboundPlay().register(OpenAuthScreenPayload.ID, OpenAuthScreenPayload.STREAM_CODEC);
         DebugLogger.info("ModNetworking", "Registered clientbound packet: OpenAuthScreenPayload");
+        PayloadTypeRegistry.clientboundPlay().register(
+                RegistrationEmailStatePayload.ID, RegistrationEmailStatePayload.STREAM_CODEC);
+        DebugLogger.info("ModNetworking", "Registered clientbound packet: RegistrationEmailStatePayload");
         PayloadTypeRegistry.clientboundPlay().register(InPlaceRespawnInfoPayload.ID,
                 InPlaceRespawnInfoPayload.STREAM_CODEC);
         DebugLogger.info("ModNetworking", "Registered clientbound packet: InPlaceRespawnInfoPayload");
@@ -165,6 +171,23 @@ public class ModNetworking {
                 } else {
                     top.csituka.youzaiworldcore.account.command.AccountCommands.executeRegisterPayload(
                             player, payload.password(), payload.confirmation());
+                }
+            });
+        });
+
+        ServerPlayNetworking.registerGlobalReceiver(RegistrationEmailRequestPayload.ID, (payload, context) -> {
+            var player = context.player();
+            var server = player.level().getServer();
+            if (server == null) return;
+            server.execute(() -> {
+                var authPlayer = (top.csituka.youzaiworldcore.account.data.PlayerAuthAccess) (Object) player;
+                if (authPlayer.yzwc$canSkipAuth() || authPlayer.yzwc$isAuthenticated()) return;
+                if (payload.action() == RegistrationEmailRequestPayload.Action.SEND_CODE) {
+                    top.csituka.youzaiworldcore.account.command.AccountCommands
+                            .executeRegistrationEmailSendPayload(player, payload.sessionId(), payload.value());
+                } else {
+                    top.csituka.youzaiworldcore.account.command.AccountCommands
+                            .executeRegistrationEmailVerifyPayload(player, payload.sessionId(), payload.value());
                 }
             });
         });

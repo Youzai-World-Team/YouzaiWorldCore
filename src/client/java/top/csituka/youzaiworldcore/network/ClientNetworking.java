@@ -6,6 +6,7 @@ import net.minecraft.client.gui.screens.Screen;
 import top.csituka.youzaiworldcore.client.screen.LoginScreen;
 import top.csituka.youzaiworldcore.client.screen.MenuScreen;
 import top.csituka.youzaiworldcore.client.screen.RegisterScreen;
+import top.csituka.youzaiworldcore.client.screen.RegistrationEmailScreen;
 import top.csituka.youzaiworldcore.client.screen.block.LargeSignEditScreen;
 import top.csituka.youzaiworldcore.client.screen.block.TeleportAnchorNameScreen;
 import top.csituka.youzaiworldcore.client.screen.block.TeleportAnchorScreen;
@@ -124,6 +125,30 @@ public class ClientNetworking {
             DebugLogger.exiting("ClientNetworking", "OpenAuthScreenPayload handler");
         });
         DebugLogger.info("ClientNetworking", "Registered receiver: OpenAuthScreenPayload");
+
+        ClientPlayNetworking.registerGlobalReceiver(RegistrationEmailStatePayload.ID, (payload, context) -> {
+            DebugLogger.entering("ClientNetworking", "RegistrationEmailStatePayload handler");
+            Minecraft client = context.client();
+            client.execute(() -> {
+                Screen currentScreen = client.gui.screen();
+                if (currentScreen instanceof RegistrationEmailScreen emailScreen
+                        && emailScreen.matchesSession(payload.sessionId())) {
+                    emailScreen.applyState(payload);
+                    return;
+                }
+                if (payload.state() == RegistrationEmailStatePayload.State.REQUIRED) {
+                    String username = client.player == null ? "" : client.player.getScoreboardName();
+                    client.setScreenAndShow(new RegistrationEmailScreen(
+                            username, payload.sessionId(), payload.expiresInSeconds()));
+                } else if (payload.state() == RegistrationEmailStatePayload.State.EXPIRED
+                        && currentScreen instanceof RegisterScreen) {
+                    String username = client.player == null ? "" : client.player.getScoreboardName();
+                    client.setScreenAndShow(new RegisterScreen(username));
+                }
+            });
+            DebugLogger.exiting("ClientNetworking", "RegistrationEmailStatePayload handler");
+        });
+        DebugLogger.info("ClientNetworking", "Registered receiver: RegistrationEmailStatePayload");
 
         // 注册传送锚点列表处理器
         ClientPlayNetworking.registerGlobalReceiver(TeleportAnchorListPayload.TYPE, (payload, context) -> {

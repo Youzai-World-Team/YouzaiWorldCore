@@ -45,7 +45,7 @@ Complete password authentication for offline-mode servers, with Mixin-based rest
 - **Connection Authentication**: Players must enter their password on every server join; the short-lived token after login is only validated for the current connection and is revoked on disconnect
 - **Position Save/Restore**: Saves position on logout → teleports to End void; restores precisely on login
 - **Login Hall**: Unauthenticated players confined to `youzaiworldcore:login_hall` custom dimension; Mixin blocks movement, interaction, attacking, and chat
-- **Login/Register GUI**: On entering the login hall, the client auto-opens the register/login screens (`RegisterScreen` / `LoginScreen`, read-only pre-filled username, Enter to log in, Disconnect button), pushed by the server via `OpenAuthScreenPayload`
+- **Login/Register GUI**: On entering the login hall, the client auto-opens the register/login screens (`RegisterScreen` / `LoginScreen`, read-only pre-filled username, Enter to log in, Disconnect button), pushed by the server via `OpenAuthScreenPayload`. When the Api setting “email verification required for registration” is enabled, the flow automatically continues in `RegistrationEmailScreen` with code delivery, resend cooldown, and verification
 - **Invisibility Integration**: Sensitive operations (logout, deactivate, password change) blocked while invisible
 - **Account Deletion Integration**: Deactivating/deleting an account also clears its mailbox (`MailManager.onAccountDeleted`)
 - **Custom Skins & Capes**: Offline accounts can upload `skin.png` (wide model), `skin_slim.png` (slim model), and a single 64×32 `cloak.png` from `yzwc/client/config/cosmetic_module/`; after validation, the mod uploads them to the Api service for storage and syncs them to other online players, with no PNG fallback on the Minecraft server. Online-mode accounts keep their Mojang appearance
@@ -806,14 +806,15 @@ All commands use `/yzwc` as the root command. Subcommands marked **(client comma
 | `decomposition_table` | Decomposition Table |
 | `fly_beacon`          | Fly Beacon          |
 
-### Network Packets (48 total)
+### Network Packets (50 total)
 
-> Note: the `world_pool_teleport` packet class lives in the `dimensionalinventories` package; the rest (including the 18 mail packets) are in the `network` package. Direction split: 21 S→C, 27 C→S.
+> Note: the `world_pool_teleport` packet class lives in the `dimensionalinventories` package; the rest (including the 18 mail packets) are in the `network` package. Direction split: 22 S→C, 28 C→S.
 
 | Packet ID                   | Direction | Purpose                                                                                       |
 | --------------------------- | --------- | --------------------------------------------------------------------------------------------- |
 | `open_menu`                 | S→C       | Open GUI menu                                                                                 |
 | `open_auth_screen`          | S→C       | Open auth screen                                                                              |
+| `registration_email_state` | S→C       | Sync email-registration steps, request results, and countdowns                                |
 | `mana_sync`                 | S→C       | Sync mana values                                                                              |
 | `level_exp_sync`            | S→C       | Sync adventure level XP                                                                       |
 | `damage_number`             | S→C       | Sync the hit position and actual damage for client-side world-space numbers                   |
@@ -833,6 +834,7 @@ All commands use `/yzwc` as the root command. Subcommands marked **(client comma
 | `teleport_stone_interrupt`  | S→C       | Interrupt teleport stone/scroll charge                                                       |
 | `in_place_respawn_info`     | S→C       | Sync whether the death dimension allows respawning here and its level cost                    |
 | `in_place_respawn_result`   | S→C       | Return approval or rejection for a respawn-here request                                       |
+| `registration_email_request` | C→S      | Submit an email address or email verification code                                             |
 | `world_pool_teleport`       | C→S       | Request dimension pool teleport                                                               |
 | `in_place_respawn_request`  | C→S       | Request a level-paid respawn at the death position                                             |
 | `teleport_anchor_activate`  | C→S       | Activate anchor                                                                               |

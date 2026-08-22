@@ -41,10 +41,31 @@ public final class ApiServiceClient {
     public record CosmeticSnapshot(byte[] skinWide, byte[] skinSlim, byte[] cloak) {
     }
 
-    public record AccountSettings(int loginCooldown) {
+    public record AccountSettings(int loginCooldown, boolean emailVerificationRequired) {
     }
 
     public record AccountResult(boolean success, int statusCode, String message, PlayerAccount account, String token) {
+    }
+
+    public record RegistrationResult(
+            boolean success,
+            boolean emailVerificationRequired,
+            int statusCode,
+            String message,
+            PlayerAccount account,
+            String token,
+            String sessionId,
+            long expiresInSeconds
+    ) {
+    }
+
+    public record RegistrationEmailCodeResult(
+            boolean success,
+            int statusCode,
+            String message,
+            long expiresInSeconds,
+            long resendAfterSeconds
+    ) {
     }
 
     public record LoginResult(boolean success, int statusCode, String message, PlayerAccount account,
@@ -106,7 +127,7 @@ public final class ApiServiceClient {
         return accountRequest("POST", "/api/game/account-ensure", body);
     }
 
-    public static AccountResult registerAccount(String username, UUID uuid, String password, String ip,
+    public static RegistrationResult registerAccount(String username, UUID uuid, String password, String ip,
             boolean startSession) {
         JsonObject body = new JsonObject();
         body.addProperty("username", username);
@@ -115,7 +136,57 @@ public final class ApiServiceClient {
         body.addProperty("password", password);
         body.addProperty("last_ip", ip == null ? "" : ip);
         body.addProperty("start_session", startSession);
-        return accountRequest("POST", "/api/game/account", body);
+        HttpResponse<String> response = request("POST", "/api/game/account", body.toString());
+        if (response == null) {
+            return new RegistrationResult(
+                    false, false, 0, "Api 服务端不可用", null, null, "", 0);
+        }
+        JsonObject root = parse(response.body());
+        boolean httpSuccess = response.statusCode() / 100 == 2;
+        boolean accepted = httpSuccess && booleanValue(root, "ok", true);
+        String sessionId = stringValue(root, "session_id");
+        String message = responseMessage(root);
+        boolean emailRequired = httpSuccess && !accepted && !sessionId.isBlank()
+                && "需要邮箱注册".equals(message);
+        return new RegistrationResult(
+                accepted,
+                emailRequired,
+                response.statusCode(),
+                message,
+                parseAccount(root),
+                stringValue(root, "token"),
+                sessionId,
+                longValue(root, "expires_in", 900));
+    }
+
+    /** 请求 Api 向指定邮箱发送注册验证码。 */
+    public static RegistrationEmailCodeResult sendRegistrationEmailCode(String sessionId, String email) {
+        JsonObject body = new JsonObject();
+        body.addProperty("session_id", sessionId);
+        body.addProperty("email", email);
+        HttpResponse<String> response = request("POST", "/api/game/account-email/send", body.toString());
+        if (response == null) {
+            return new RegistrationEmailCodeResult(false, 0, "Api 服务端不可用", 0, 0);
+        }
+        JsonObject root = parse(response.body());
+        boolean success = response.statusCode() / 100 == 2 && booleanValue(root, "ok", false);
+        long resendAfter = success
+                ? longValue(root, "resend_after", 0)
+                : longValue(root, "retryAfterSeconds", 0);
+        return new RegistrationEmailCodeResult(
+                success,
+                response.statusCode(),
+                responseMessage(root),
+                longValue(root, "expires_in", 0),
+                resendAfter);
+    }
+
+    /** 校验邮箱验证码并取得最终创建的账户和当前连接令牌。 */
+    public static AccountResult verifyRegistrationEmailCode(String sessionId, String code) {
+        JsonObject body = new JsonObject();
+        body.addProperty("session_id", sessionId);
+        body.addProperty("code", code);
+        return accountRequest("POST", "/api/game/account-email/verify", body);
     }
 
     public static LoginResult login(String username, String password, String ip) {
@@ -266,7 +337,9 @@ public final class ApiServiceClient {
         if (!successful(response))
             return Optional.empty();
         JsonObject root = parse(response.body());
-        return Optional.of(new AccountSettings(intValue(root, "loginCooldown", 300)));
+        return Optional.of(new AccountSettings(
+                intValue(root, "loginCooldown", 300),
+                booleanValue(root, "emailVerificationRequired", false)));
     }
 
     public static Optional<AccountSettings> setLoginCooldown(int seconds) {
@@ -311,7 +384,9 @@ public final class ApiServiceClient {
         if (!successful(response))
             return Optional.empty();
         JsonObject root = parse(response.body());
-        return Optional.of(new AccountSettings(intValue(root, "loginCooldown", 300)));
+        return Optional.of(new AccountSettings(
+                intValue(root, "loginCooldown", 300),
+                booleanValue(root, "emailVerificationRequired", false)));
     }
 
     private static AccountResult accountRequest(String method, String path, JsonObject body) {
@@ -343,7 +418,19 @@ public final class ApiServiceClient {
         if (!message.isBlank())
             return message;
         message = stringValue(root, "message");
+        if (!message.isBlank())
+            return message;
+        message = stringValue(root, "msg");
         return message.isBlank() ? "Api 请求失败" : message;
+    }
+
+    private static boolean booleanValue(JsonObject root, String key, boolean fallback) {
+        JsonElement value = nestedValue(root, key);
+        try {
+            return value == null ? fallback : value.getAsBoolean();
+        } catch (RuntimeException ignored) {
+            return fallback;
+        }
     }
 
     private static int intValue(JsonObject root, String key, int fallback) {
