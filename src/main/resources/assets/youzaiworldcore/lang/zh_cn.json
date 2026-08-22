@@ -412,6 +412,7 @@
   "screen.youzaiworldcore.yzhud.component.armor": "装备栏",
   "screen.youzaiworldcore.yzhud.component.effects": "状态效果",
   "screen.youzaiworldcore.yzhud.component.scoreboard": "记分板",
+  "screen.youzaiworldcore.yzhud.scoreboard_locked": "启用 YZUI 或 YZHUD 后才能移动记分板",
   "screen.youzaiworldcore.yzhud.reset": "重置",
   "screen.youzaiworldcore.yzhud.done": "完成",
   "screen.youzaiworldcore.teleport_anchor.back": "返回",

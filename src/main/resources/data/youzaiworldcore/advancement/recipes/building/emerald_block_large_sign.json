@@ -1,7 +1,13 @@
 {
   "parent": "minecraft:recipes/root",
   "criteria": {
-    "has_ingredients": {
+    "has_the_recipe": {
+      "trigger": "minecraft:recipe_unlocked",
+      "conditions": {
+        "recipe": "youzaiworldcore:emerald_block_large_sign"
+      }
+    },
+    "has_emerald": {
       "trigger": "minecraft:inventory_changed",
       "conditions": {
         "items": [
@@ -16,13 +22,13 @@
   },
   "requirements": [
     [
-      "has_ingredients"
+      "has_the_recipe",
+      "has_emerald"
     ]
   ],
   "rewards": {
     "recipes": [
       "youzaiworldcore:emerald_block_large_sign"
     ]
-  },
-  "hidden": true
+  }
 }

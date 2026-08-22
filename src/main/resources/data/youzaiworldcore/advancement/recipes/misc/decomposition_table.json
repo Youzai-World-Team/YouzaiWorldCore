@@ -1,18 +1,19 @@
 {
   "parent": "minecraft:recipes/root",
   "criteria": {
-    "has_ingredients": {
+    "has_the_recipe": {
+      "trigger": "minecraft:recipe_unlocked",
+      "conditions": {
+        "recipe": "youzaiworldcore:decomposition_table"
+      }
+    },
+    "has_yz_ingot": {
       "trigger": "minecraft:inventory_changed",
       "conditions": {
         "items": [
           {
             "items": [
               "youzaiworldcore:yz_ingot"
-            ]
-          },
-          {
-            "items": [
-              "minecraft:crafting_table"
             ]
           }
         ]
@@ -21,13 +22,13 @@
   },
   "requirements": [
     [
-      "has_ingredients"
+      "has_the_recipe",
+      "has_yz_ingot"
     ]
   ],
   "rewards": {
     "recipes": [
       "youzaiworldcore:decomposition_table"
     ]
-  },
-  "hidden": true
+  }
 }

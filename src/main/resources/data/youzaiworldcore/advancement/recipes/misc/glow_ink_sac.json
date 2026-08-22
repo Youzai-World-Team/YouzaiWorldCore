@@ -1,7 +1,13 @@
 {
   "parent": "minecraft:recipes/root",
   "criteria": {
-    "has_ingredients": {
+    "has_the_recipe": {
+      "trigger": "minecraft:recipe_unlocked",
+      "conditions": {
+        "recipe": "youzaiworldcore:glow_ink_sac"
+      }
+    },
+    "has_glow_ink_sac": {
       "trigger": "minecraft:inventory_changed",
       "conditions": {
         "items": [
@@ -9,7 +15,14 @@
             "items": [
               "minecraft:glow_ink_sac"
             ]
-          },
+          }
+        ]
+      }
+    },
+    "has_amethyst_shard": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
           {
             "items": [
               "minecraft:amethyst_shard"
@@ -21,13 +34,14 @@
   },
   "requirements": [
     [
-      "has_ingredients"
+      "has_the_recipe",
+      "has_glow_ink_sac",
+      "has_amethyst_shard"
     ]
   ],
   "rewards": {
     "recipes": [
       "youzaiworldcore:glow_ink_sac"
     ]
-  },
-  "hidden": true
+  }
 }

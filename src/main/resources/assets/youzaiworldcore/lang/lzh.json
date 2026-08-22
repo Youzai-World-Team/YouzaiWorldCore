@@ -412,6 +412,7 @@
   "screen.youzaiworldcore.yzhud.component.armor": "裝具",
   "screen.youzaiworldcore.yzhud.component.effects": "效狀",
   "screen.youzaiworldcore.yzhud.component.scoreboard": "計分榜",
+  "screen.youzaiworldcore.yzhud.scoreboard_locked": "啟 YZUI 或 YZHUD，方可移計分榜",
   "screen.youzaiworldcore.yzhud.reset": "復初",
   "screen.youzaiworldcore.yzhud.done": "畢",
   "screen.youzaiworldcore.teleport_anchor.back": "返回",

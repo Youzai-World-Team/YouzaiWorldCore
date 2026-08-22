@@ -1,7 +1,13 @@
 {
   "parent": "minecraft:recipes/root",
   "criteria": {
-    "has_ingredients": {
+    "has_the_recipe": {
+      "trigger": "minecraft:recipe_unlocked",
+      "conditions": {
+        "recipe": "youzaiworldcore:yz_nugget_from_ingot"
+      }
+    },
+    "has_yz_ingot": {
       "trigger": "minecraft:inventory_changed",
       "conditions": {
         "items": [
@@ -16,13 +22,13 @@
   },
   "requirements": [
     [
-      "has_ingredients"
+      "has_the_recipe",
+      "has_yz_ingot"
     ]
   ],
   "rewards": {
     "recipes": [
       "youzaiworldcore:yz_nugget_from_ingot"
     ]
-  },
-  "hidden": true
+  }
 }

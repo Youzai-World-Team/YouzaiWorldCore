@@ -1,15 +1,16 @@
 {
   "parent": "minecraft:recipes/root",
   "criteria": {
-    "has_ingredients": {
+    "has_the_recipe": {
+      "trigger": "minecraft:recipe_unlocked",
+      "conditions": {
+        "recipe": "youzaiworldcore:birch_planks_large_sign"
+      }
+    },
+    "has_planks": {
       "trigger": "minecraft:inventory_changed",
       "conditions": {
         "items": [
-          {
-            "items": [
-              "minecraft:stick"
-            ]
-          },
           {
             "items": [
               "minecraft:birch_planks"
@@ -21,13 +22,13 @@
   },
   "requirements": [
     [
-      "has_ingredients"
+      "has_the_recipe",
+      "has_planks"
     ]
   ],
   "rewards": {
     "recipes": [
       "youzaiworldcore:birch_planks_large_sign"
     ]
-  },
-  "hidden": true
+  }
 }

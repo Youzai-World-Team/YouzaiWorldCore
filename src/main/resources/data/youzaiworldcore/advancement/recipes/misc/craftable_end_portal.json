@@ -1,7 +1,13 @@
 {
   "parent": "minecraft:recipes/root",
   "criteria": {
-    "has_ingredients": {
+    "has_the_recipe": {
+      "trigger": "minecraft:recipe_unlocked",
+      "conditions": {
+        "recipe": "youzaiworldcore:craftable_end_portal"
+      }
+    },
+    "has_ender_eye": {
       "trigger": "minecraft:inventory_changed",
       "conditions": {
         "items": [
@@ -9,15 +15,17 @@
             "items": [
               "minecraft:ender_eye"
             ]
-          },
+          }
+        ]
+      }
+    },
+    "has_dragon_egg": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
           {
             "items": [
               "minecraft:dragon_egg"
-            ]
-          },
-          {
-            "items": [
-              "minecraft:end_stone"
             ]
           }
         ]
@@ -26,13 +34,14 @@
   },
   "requirements": [
     [
-      "has_ingredients"
+      "has_the_recipe",
+      "has_ender_eye",
+      "has_dragon_egg"
     ]
   ],
   "rewards": {
     "recipes": [
       "youzaiworldcore:craftable_end_portal"
     ]
-  },
-  "hidden": true
+  }
 }
