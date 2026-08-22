@@ -29,6 +29,7 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
 
 import java.time.ZonedDateTime;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * 账户管理命令
@@ -238,8 +239,42 @@ public class AccountCommands {
             return 0;
         }
 
-        ApiServiceClient.RegistrationEmailCodeResult result = ApiServiceClient.sendRegistrationEmailCode(
-                sessionId, email == null ? "" : email.trim());
+        var server = player.level().getServer();
+        if (server == null) {
+            DebugLogger.exiting("AccountCommands", "executeRegistrationEmailSendPayload", "0 (server unavailable)");
+            return 0;
+        }
+
+        String normalizedEmail = email == null ? "" : email.trim();
+        CompletableFuture.supplyAsync(() ->
+                        ApiServiceClient.sendRegistrationEmailCode(sessionId, normalizedEmail))
+                .whenComplete((result, error) -> server.execute(() ->
+                        handleRegistrationEmailSendResult(player, sessionId, result, error)));
+        DebugLogger.exiting("AccountCommands", "executeRegistrationEmailSendPayload", "1 (queued)");
+        return 1;
+    }
+
+    private static void handleRegistrationEmailSendResult(
+            ServerPlayer player,
+            String sessionId,
+            ApiServiceClient.RegistrationEmailCodeResult result,
+            Throwable error) {
+        if (!canUseRegistrationEmailSession(player, sessionId)) {
+            DebugLogger.info("AccountCommands", "忽略玩家 %s 已失效邮箱注册会话的发信结果",
+                    player.getScoreboardName());
+            return;
+        }
+        if (error != null || result == null) {
+            if (error != null) {
+                DebugLogger.exception("AccountCommands", "sendRegistrationEmailCode", error);
+            } else {
+                DebugLogger.warn("AccountCommands", "玩家 %s 的验证码发送请求未返回结果",
+                        player.getScoreboardName());
+            }
+            ServerPlayNetworking.send(player, RegistrationEmailStatePayload.error(
+                    sessionId, "验证码发送请求失败，请稍后重试", 0));
+            return;
+        }
         if (!result.success()) {
             if (isRegistrationSessionInvalid(result.message())) {
                 sendExpiredRegistrationSession(player, sessionId, result.message());
@@ -247,8 +282,9 @@ public class AccountCommands {
                 ServerPlayNetworking.send(player, RegistrationEmailStatePayload.error(
                         sessionId, result.message(), packetSeconds(result.resendAfterSeconds())));
             }
-            DebugLogger.exiting("AccountCommands", "executeRegistrationEmailSendPayload", "0 (Api rejected send)");
-            return 0;
+            DebugLogger.info("AccountCommands", "玩家 %s 的验证码发送请求被 Api 拒绝：%s",
+                    player.getScoreboardName(), result.message());
+            return;
         }
 
         ServerPlayNetworking.send(player, RegistrationEmailStatePayload.codeSent(
@@ -257,8 +293,6 @@ public class AccountCommands {
                 packetSeconds(result.expiresInSeconds()),
                 packetSeconds(result.resendAfterSeconds())));
         DebugLogger.info("AccountCommands", "已向玩家 %s 指定的邮箱发送注册验证码", player.getScoreboardName());
-        DebugLogger.exiting("AccountCommands", "executeRegistrationEmailSendPayload", "1");
-        return 1;
     }
 
     /** 处理客户端邮箱注册界面的验证码校验请求。 */

@@ -29,6 +29,8 @@ import java.util.UUID;
 /** Api-only 账户、会话和外观 HTTP 客户端。 */
 public final class ApiServiceClient {
     private static final String MODULE = "ApiServiceClient";
+    // SMTP 投递需要等待远端邮件服务器响应，不能沿用普通 Api 的 3 秒默认超时。
+    private static final int REGISTRATION_EMAIL_REQUEST_TIMEOUT_SECONDS = 30;
     // Cloudflare 公网 Api 使用 HTTP/1.1，避免不同代理对 HTTP/2 的协商差异。
     private static final HttpClient CLIENT = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(3))
@@ -164,9 +166,13 @@ public final class ApiServiceClient {
         JsonObject body = new JsonObject();
         body.addProperty("session_id", sessionId);
         body.addProperty("email", email);
-        HttpResponse<String> response = request("POST", "/api/game/account-email/send", body.toString());
+        int timeoutSeconds = Math.max(
+                ApiModuleSettings.getTimeoutSeconds(), REGISTRATION_EMAIL_REQUEST_TIMEOUT_SECONDS);
+        HttpResponse<String> response = request(
+                "POST", "/api/game/account-email/send", body.toString(), null, timeoutSeconds);
         if (response == null) {
-            return new RegistrationEmailCodeResult(false, 0, "Api 服务端不可用", 0, 0);
+            return new RegistrationEmailCodeResult(
+                    false, 0, "验证码发送请求未收到响应；若邮件已到达，可直接输入验证码", 0, 0);
         }
         JsonObject root = parse(response.body());
         boolean success = response.statusCode() / 100 == 2 && booleanValue(root, "ok", false);
@@ -493,10 +499,15 @@ public final class ApiServiceClient {
     }
 
     private static HttpResponse<String> request(String method, String path, String body) {
-        return request(method, path, body, null);
+        return request(method, path, body, null, ApiModuleSettings.getTimeoutSeconds());
     }
 
     private static HttpResponse<String> request(String method, String path, String body, String sessionToken) {
+        return request(method, path, body, sessionToken, ApiModuleSettings.getTimeoutSeconds());
+    }
+
+    private static HttpResponse<String> request(
+            String method, String path, String body, String sessionToken, int timeoutSeconds) {
         if (!ApiModuleSettings.isEnabled()) {
             DebugLogger.warn(MODULE, "Api 网桥已关闭，拒绝执行 %s %s", method, path);
             return null;
@@ -518,7 +529,7 @@ public final class ApiServiceClient {
             String signature = hex(mac.doFinal(canonical.getBytes(StandardCharsets.UTF_8)));
             HttpRequest.Builder builder = HttpRequest.newBuilder()
                     .uri(URI.create(ApiModuleSettings.getBaseUrl() + path))
-                    .timeout(Duration.ofSeconds(ApiModuleSettings.getTimeoutSeconds()))
+                    .timeout(Duration.ofSeconds(timeoutSeconds))
                     .header("Accept", "application/json")
                     .header("X-Yzwc-Timestamp", timestamp)
                     .header("X-Yzwc-Nonce", nonce)
