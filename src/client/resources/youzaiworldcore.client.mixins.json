@@ -25,6 +25,7 @@
     "GuiAnimationMouseHandlerMixin",
     "SlotPositionAccessor",
     "WindowTitleMixin",
+    "MinecraftStartupSplashMixin",
     "GameRendererMixin",
     "seat.EntityRenderDispatcherMixin",
     "PickUpNotifyMixin",

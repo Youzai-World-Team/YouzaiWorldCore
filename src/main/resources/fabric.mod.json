@@ -27,6 +27,9 @@
   "icon": "icon.png",
   "environment": "*",
   "entrypoints": {
+    "preLaunch": [
+      "top.csituka.youzaiworldcore.startup.StartupSplashPreLaunch"
+    ],
     "fabric-datagen": [
       "top.csituka.youzaiworldcore.client.DataGenerator"
     ],
