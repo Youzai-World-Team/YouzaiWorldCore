@@ -48,6 +48,9 @@ public final class StartupSplashWindow {
     private static final int CORNER_ARC = 32;
     private static final int LOGO_WIDTH = 320;
     private static final int LOGO_LEFT_MARGIN = 24;
+    private static final int LOADING_LEFT_MARGIN = 34;
+    private static final int LOADING_BOTTOM_MARGIN = 34;
+    private static final int LOADING_TEXT_LEFT_MARGIN = 16;
     private static final float LOADING_FONT_SIZE = 16.0F;
     private static final String LOGO_RESOURCE =
             "/assets/youzaiworldcore/textures/gui/startup/logo.png";
@@ -174,9 +177,14 @@ public final class StartupSplashWindow {
             JPanel loadingRow = new JPanel();
             loadingRow.setOpaque(false);
             loadingRow.setLayout(new BoxLayout(loadingRow, BoxLayout.X_AXIS));
-            loadingRow.setBorder(BorderFactory.createEmptyBorder(0, 28, 24, 0));
+            loadingRow.setBorder(BorderFactory.createEmptyBorder(
+                    0,
+                    LOADING_LEFT_MARGIN,
+                    LOADING_BOTTOM_MARGIN,
+                    0
+            ));
             loadingRow.add(indicator);
-            loadingRow.add(Box.createHorizontalStrut(8));
+            loadingRow.add(Box.createHorizontalStrut(LOADING_TEXT_LEFT_MARGIN));
             loadingRow.add(loadingLabel);
             content.add(loadingRow, BorderLayout.PAGE_END);
 
