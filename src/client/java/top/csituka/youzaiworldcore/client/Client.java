@@ -54,6 +54,7 @@ import top.csituka.youzaiworldcore.client.particle.BlockAnimationRenderer;
 import top.csituka.youzaiworldcore.client.particle.ItemSparkleRenderer;
 import top.csituka.youzaiworldcore.client.render.DamageNumberRenderer;
 import top.csituka.youzaiworldcore.client.cosmetic.CosmeticClientManager;
+import top.csituka.youzaiworldcore.startup.StartupLoadingStatus;
 
 public class Client implements ClientModInitializer {
 
@@ -64,7 +65,9 @@ public class Client implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         DebugLogger.entering("Client", "onInitializeClient");
+        StartupLoadingStatus.beginPhase("客户端初始化", 10);
 
+        StartupLoadingStatus.beginStage("客户端配置");
         // 加载客户端全局配置（yzwc/client/global_settings.json）
         // 必须最先执行：其余所有客户端模块的配置都从这份文件的各自分节里读
         // 文件不存在（首次安装）时会直接写出一份含全部模块默认值的完整配置
@@ -74,6 +77,7 @@ public class Client implements ClientModInitializer {
         DebugLogger.info("Client", "检查上次导入中断后的配置恢复...");
         ConfigIOManager.recoverIfNeeded(Minecraft.getInstance().gameDirectory);
 
+        StartupLoadingStatus.beginStage("基础 HUD 与 Tick");
         DebugLogger.info("Client", "注册客户端 Tick 事件...");
         ClientTickEvents.END_CLIENT_TICK.register(this::onClientTick);
 
@@ -88,6 +92,7 @@ public class Client implements ClientModInitializer {
         DrawEntriesHandler.INSTANCE.setEnabled(true);
         DebugLogger.info("Client", "拾取通知系统已初始化");
 
+        StartupLoadingStatus.beginStage("方块与实体渲染器");
         // 方块实体渲染器注册
         DebugLogger.info("Client", "注册飞行信标方块实体渲染器...");
         BlockEntityRenderers.register(ModBlockEntities.FLY_BEACON, FlyBeaconBlockEntityRenderer::new);
@@ -105,6 +110,7 @@ public class Client implements ClientModInitializer {
         DebugLogger.info("Client", "注册猫 GeckoLib 渲染器（老吴对峙）...");
         EntityRendererRegistry.register(EntityTypes.CAT, LaowuCatRenderer::new);
 
+        StartupLoadingStatus.beginStage("资源与菜单");
         // 物品模型定义自检：资源重载后校验模组物品是否都有 assets/youzaiworldcore/items/*.json
         // （缺失会导致该物品在物品栏/手持时渲染为黑紫丢失材质）
         DebugLogger.info("Client", "注册物品模型定义自检...");
@@ -117,6 +123,7 @@ public class Client implements ClientModInitializer {
         DebugLogger.info("Client", "初始化客户端网络...");
         top.csituka.youzaiworldcore.network.ClientNetworking.initialize();
 
+        StartupLoadingStatus.beginStage("客户端外部设置与 YZUI");
         // 加载客户端外部设置
         DebugLogger.info("Client", "加载客户端外部设置...");
         top.csituka.youzaiworldcore.client.config.ClientExternalSettings.load();
@@ -133,6 +140,7 @@ public class Client implements ClientModInitializer {
         DebugLogger.info("Client", "注册自定义字体内置资源包...");
         CustomFontResourcePack.register();
 
+        StartupLoadingStatus.beginStage("外观与更新检查");
         DebugLogger.info("Client", "初始化自定义皮肤与披风客户端管理器...");
         CosmeticClientManager.initialize();
 
@@ -154,6 +162,7 @@ public class Client implements ClientModInitializer {
             });
         }
 
+        StartupLoadingStatus.beginStage("语言与视觉增强");
         // LangPatch init
         LangPatchImpl.init();
 
@@ -169,6 +178,7 @@ public class Client implements ClientModInitializer {
         DebugLogger.info("Client", "初始化铁砧使用次数显示功能...");
         AnvilUsesClient.initialize();
 
+        StartupLoadingStatus.beginStage("客户端命令");
         // 双开门功能客户端命令（解析后转发至服务端数据包）
         DebugLogger.info("Client", "注册双开门客户端命令...");
         DoubleDoorsClientCommand.register();
@@ -191,6 +201,7 @@ public class Client implements ClientModInitializer {
         DebugLogger.info("Client", "注册服务端 /yzwc 子命令占位镜像...");
         top.csituka.youzaiworldcore.command.YzwcServerMirrorCommand.register();
 
+        StartupLoadingStatus.beginStage("音频与粒子效果");
         // 老吴贴贴事件：注册内置曲目 SoundEvent + 初始化本地音频池
         DebugLogger.info("Client", "初始化老吴贴贴音频系统...");
         top.csituka.youzaiworldcore.client.laowumeme.LaowuModSounds.init();
@@ -212,9 +223,11 @@ public class Client implements ClientModInitializer {
         DebugLogger.info("Client", "注册 MemePaintingClickHandler...");
         MemePaintingClickHandler.register();
 
+        StartupLoadingStatus.beginStage("完成客户端扩展");
         DebugLogger.info("Client", "客户端初始化完成 (devMode=%s, logToFile=%s)",
                 top.csituka.youzaiworldcore.YouzaiworldCore.devModeEnabled,
                 clientLogToFile);
+        StartupLoadingStatus.completeStage();
 
         DebugLogger.exiting("Client", "onInitializeClient");
     }

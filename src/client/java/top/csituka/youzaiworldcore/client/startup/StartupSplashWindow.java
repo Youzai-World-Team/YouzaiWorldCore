@@ -9,8 +9,10 @@ import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JProgressBar;
 import javax.swing.JWindow;
 import javax.swing.SwingConstants;
+import javax.swing.Timer;
 import java.awt.AlphaComposite;
 import java.awt.AWTError;
 import java.awt.BorderLayout;
@@ -32,12 +34,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import top.csituka.youzaiworldcore.startup.StartupLoadingStatus;
 
 /**
  * Minecraft 主窗口显示前使用的轻量启动窗口。
  * <p>
  * 窗口固定为浅绿色圆角无边框样式，左上角显示悠哉世界标志，
- * 左下角显示 8-bit 加载动画与“加载中”文字。
+ * 左下角显示 8-bit 加载动画、当前初始化阶段与总体进度条。
  * 所有 Swing 生命周期操作都在 AWT 事件调度线程执行。
  * </p>
  */
@@ -52,6 +55,7 @@ public final class StartupSplashWindow {
     private static final int LOADING_BOTTOM_MARGIN = 34;
     private static final int LOADING_TEXT_LEFT_MARGIN = 16;
     private static final float LOADING_FONT_SIZE = 16.0F;
+    private static final float PHASE_FONT_SIZE = 12.0F;
     private static final String LOGO_RESOURCE =
             "/assets/youzaiworldcore/textures/gui/startup/logo.png";
     private static final String LOADING_FONT_RESOURCE =
@@ -63,6 +67,10 @@ public final class StartupSplashWindow {
 
     private static volatile JWindow window;
     private static volatile StartupLoadingIndicator loadingIndicator;
+    private static volatile JLabel phaseLabel;
+    private static volatile JLabel loadingLabel;
+    private static volatile JProgressBar progressBar;
+    private static volatile Timer statusRefreshTimer;
 
     private StartupSplashWindow() {}
 
@@ -169,10 +177,38 @@ public final class StartupSplashWindow {
             indicator = new StartupLoadingIndicator(TEXT_COLOR);
             indicator.setAlignmentY(Component.CENTER_ALIGNMENT);
 
-            JLabel loadingLabel = new JLabel("加载中", SwingConstants.LEFT);
-            loadingLabel.setForeground(TEXT_COLOR);
-            loadingLabel.setFont(createLoadingFont());
-            loadingLabel.setAlignmentY(Component.CENTER_ALIGNMENT);
+            Font loadingFont = createLoadingFont();
+            JLabel currentPhaseLabel = new JLabel("启动", SwingConstants.LEFT);
+            currentPhaseLabel.setForeground(new Color(0x5E7C6B));
+            currentPhaseLabel.setFont(loadingFont.deriveFont(PHASE_FONT_SIZE));
+            currentPhaseLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+            JLabel currentLoadingLabel = new JLabel("正在启动 Fabric 模组加载器", SwingConstants.LEFT);
+            currentLoadingLabel.setForeground(TEXT_COLOR);
+            currentLoadingLabel.setFont(loadingFont);
+            currentLoadingLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+            JProgressBar currentProgressBar = new JProgressBar(0, 100);
+            currentProgressBar.setValue(0);
+            currentProgressBar.setStringPainted(false);
+            currentProgressBar.setBorderPainted(false);
+            currentProgressBar.setOpaque(true);
+            currentProgressBar.setForeground(TEXT_COLOR);
+            currentProgressBar.setBackground(new Color(0xB9D8C2));
+            currentProgressBar.setAlignmentX(Component.LEFT_ALIGNMENT);
+            currentProgressBar.setPreferredSize(new java.awt.Dimension(360, 6));
+            currentProgressBar.setMinimumSize(new java.awt.Dimension(180, 6));
+            currentProgressBar.setMaximumSize(new java.awt.Dimension(360, 6));
+
+            JPanel statusText = new JPanel();
+            statusText.setOpaque(false);
+            statusText.setLayout(new BoxLayout(statusText, BoxLayout.Y_AXIS));
+            statusText.setAlignmentY(Component.CENTER_ALIGNMENT);
+            statusText.add(currentPhaseLabel);
+            statusText.add(Box.createVerticalStrut(2));
+            statusText.add(currentLoadingLabel);
+            statusText.add(Box.createVerticalStrut(6));
+            statusText.add(currentProgressBar);
 
             JPanel loadingRow = new JPanel();
             loadingRow.setOpaque(false);
@@ -185,7 +221,7 @@ public final class StartupSplashWindow {
             ));
             loadingRow.add(indicator);
             loadingRow.add(Box.createHorizontalStrut(LOADING_TEXT_LEFT_MARGIN));
-            loadingRow.add(loadingLabel);
+            loadingRow.add(statusText);
             content.add(loadingRow, BorderLayout.PAGE_END);
 
             splash.setContentPane(content);
@@ -202,8 +238,12 @@ public final class StartupSplashWindow {
 
             window = splash;
             loadingIndicator = indicator;
+            phaseLabel = currentPhaseLabel;
+            loadingLabel = currentLoadingLabel;
+            progressBar = currentProgressBar;
             splash.setVisible(true);
             indicator.startAnimation();
+            startStatusRefreshTimer();
             DebugLogger.info("StartupSplash", "启动加载窗口已显示");
 
             if (CLOSE_REQUESTED.get()) {
@@ -224,6 +264,9 @@ public final class StartupSplashWindow {
                 if (loadingIndicator == indicator) {
                     loadingIndicator = null;
                 }
+                phaseLabel = null;
+                loadingLabel = null;
+                progressBar = null;
             }
             throw e;
         }
@@ -386,6 +429,12 @@ public final class StartupSplashWindow {
     }
 
     private static void disposeOnEventThread() {
+        Timer refreshTimer = statusRefreshTimer;
+        statusRefreshTimer = null;
+        if (refreshTimer != null) {
+            refreshTimer.stop();
+        }
+
         StartupLoadingIndicator indicator = loadingIndicator;
         loadingIndicator = null;
         if (indicator != null) {
@@ -414,7 +463,38 @@ public final class StartupSplashWindow {
                 indicator.stopAnimation();
             }
             window = null;
+            phaseLabel = null;
+            loadingLabel = null;
+            progressBar = null;
         }
+    }
+
+    /** 启动 Swing 定时器，将入口点线程发布的状态刷新到窗口。 */
+    private static void startStatusRefreshTimer() {
+        Timer timer = new Timer(50, event -> refreshStatusOnEventThread());
+        timer.setCoalesce(true);
+        timer.setRepeats(true);
+        statusRefreshTimer = timer;
+        refreshStatusOnEventThread();
+        timer.start();
+    }
+
+    /** 仅在 AWT 事件线程读取状态并更新组件，避免跨线程操作 Swing。 */
+    private static void refreshStatusOnEventThread() {
+        JLabel currentPhaseLabel = phaseLabel;
+        JLabel currentLoadingLabel = loadingLabel;
+        JProgressBar currentProgressBar = progressBar;
+        if (currentPhaseLabel == null || currentLoadingLabel == null || currentProgressBar == null) {
+            return;
+        }
+
+        StartupLoadingStatus.Snapshot snapshot = StartupLoadingStatus.snapshot();
+        currentPhaseLabel.setText(snapshot.stageCount() > 0
+                ? snapshot.phase() + "  " + snapshot.stageIndex() + "/" + snapshot.stageCount()
+                : snapshot.phase());
+        currentLoadingLabel.setText(snapshot.stage());
+        int percent = Math.round(snapshot.overallRatio() * 100.0F);
+        currentProgressBar.setValue(Math.max(0, Math.min(100, percent)));
     }
 
     private static void startCleanupGuard(Thread startupThread) {

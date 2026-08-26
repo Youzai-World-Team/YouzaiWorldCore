@@ -26,9 +26,15 @@
   "license": "Apache-2.0",
   "icon": "icon.png",
   "environment": "*",
+  "languageAdapters": {
+    "youzaiworldcore:startup_loading": "top.csituka.youzaiworldcore.startup.StartupLoadingLanguageAdapter"
+  },
   "entrypoints": {
     "preLaunch": [
-      "top.csituka.youzaiworldcore.startup.StartupSplashPreLaunch"
+      {
+        "adapter": "youzaiworldcore:startup_loading",
+        "value": "top.csituka.youzaiworldcore.startup.StartupSplashPreLaunch"
+      }
     ],
     "fabric-datagen": [
       "top.csituka.youzaiworldcore.client.DataGenerator"

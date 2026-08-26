@@ -23,6 +23,7 @@ public final class StartupSplashPreLaunch implements PreLaunchEntrypoint {
     @Override
     public void onPreLaunch() {
         DebugLogger.entering("StartupSplash", "onPreLaunch");
+        StartupLoadingStatus.reset("正在启动 Fabric 模组加载器");
 
         boolean clientEnvironment = FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT;
         DebugLogger.branch("StartupSplash", "当前为客户端环境", clientEnvironment);

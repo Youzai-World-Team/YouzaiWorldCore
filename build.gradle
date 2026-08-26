@@ -81,6 +81,11 @@ dependencies {
     implementation "net.fabricmc:fabric-loader:${project.loader_version}"
     implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
+    // 启动阶段获取 JVM Instrumentation，用于读取 Fabric Loader 的真实入口点进度。
+    include(implementation('net.lenni0451:Reflect:1.4.0'))
+    include(implementation('org.ow2.asm:asm:9.10.1'))
+    include(implementation('org.ow2.asm:asm-tree:9.10.1'))
+
     // Placeholder API
     implementation('eu.pb4:placeholder-api:3.1.0-beta.1+26.2')
 

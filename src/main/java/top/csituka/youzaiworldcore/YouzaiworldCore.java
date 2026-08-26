@@ -107,6 +107,7 @@ import top.csituka.youzaiworldcore.pet.config.PetModuleConfig;
 import top.csituka.youzaiworldcore.pet.event.PetEventHandlers;
 import top.csituka.youzaiworldcore.screen.ModMenuTypes;
 import top.csituka.youzaiworldcore.worldgen.VillageStructureInjector;
+import top.csituka.youzaiworldcore.startup.StartupLoadingStatus;
 
 import java.util.Collection;
 import java.util.Set;
@@ -176,25 +177,36 @@ public class YouzaiworldCore implements ModInitializer {
      */
     private static void initializeCommonRegistrations() {
         DebugLogger.entering("YouzaiworldCore", "initializeCommonRegistrations");
+        StartupLoadingStatus.beginPhase("公共注册", 9);
 
+        StartupLoadingStatus.beginStage("数据组件");
         DebugLogger.info("YouzaiworldCore", "初始化数据组件...");
         ModDataComponents.initialize();
+        StartupLoadingStatus.beginStage("方块");
         DebugLogger.info("YouzaiworldCore", "初始化方块...");
         ModBlocks.initialize();
+        StartupLoadingStatus.beginStage("方块实体");
         DebugLogger.info("YouzaiworldCore", "初始化方块实体...");
         ModBlockEntities.initialize();
+        StartupLoadingStatus.beginStage("物品");
         DebugLogger.info("YouzaiworldCore", "初始化物品...");
         ModItems.initialize();
+        StartupLoadingStatus.beginStage("自定义音效");
         DebugLogger.info("YouzaiworldCore", "初始化自定义 SoundEvent...");
         ModSoundEvents.initialize();
+        StartupLoadingStatus.beginStage("创造模式标签页");
         DebugLogger.info("YouzaiworldCore", "初始化创造模式标签页...");
         ModCreativeModeTabs.initialize();
+        StartupLoadingStatus.beginStage("菜单类型");
         DebugLogger.info("YouzaiworldCore", "初始化菜单类型...");
         ModMenuTypes.initialize();
+        StartupLoadingStatus.beginStage("网络 Payload 类型");
         DebugLogger.info("YouzaiworldCore", "初始化公共网络 Payload 类型...");
         ModPayloadTypes.initialize();
+        StartupLoadingStatus.beginStage("座椅实体");
         DebugLogger.info("YouzaiworldCore", "注册座椅实体...");
         ModSeatEntities.initialize();
+        StartupLoadingStatus.completeStage();
 
         DebugLogger.exiting("YouzaiworldCore", "initializeCommonRegistrations");
     }
