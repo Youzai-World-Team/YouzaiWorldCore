@@ -20,15 +20,15 @@ import java.util.concurrent.ConcurrentHashMap;
  * <p>
  * <b>生命周期（全部由方块实体驱动，纯内存、不写存档）</b>：
  * <ul>
- *   <li>入索引：{@code WirelessRedstoneTransmitterBlockEntity.setLevel} —— 放置与区块加载
- *       都会走到，且原版在此之前已完成 NBT 读档（{@code BlockEntity.loadStatic} 先于
- *       {@code setLevel}），因此拿到的频道号是存档里的真实值；</li>
- *   <li>出索引：{@code setRemoved()} —— 破坏方块与<b>区块卸载</b>共用这一个钩子
- *       （{@code LevelChunk.clearAllBlockEntities} 会逐个调用），所以
- *       「发射器所在区块被卸载 → 索引条目消失 → 范围内接收器下一 tick 自动断电」，
- *       与原版红石「不加载就不工作」的直觉一致；</li>
- *   <li>状态/频道变化：由发射器方块的 {@code tick} 与频道设置流程调用
- *       {@link #setTransmitterActive}。</li>
+ * <li>入索引：{@code WirelessRedstoneTransmitterBlockEntity.setLevel} —— 放置与区块加载
+ * 都会走到，且原版在此之前已完成 NBT 读档（{@code BlockEntity.loadStatic} 先于
+ * {@code setLevel}），因此拿到的频道号是存档里的真实值；</li>
+ * <li>出索引：{@code setRemoved()} —— 破坏方块与<b>区块卸载</b>共用这一个钩子
+ * （{@code LevelChunk.clearAllBlockEntities} 会逐个调用），所以
+ * 「发射器所在区块被卸载 → 索引条目消失 → 范围内接收器下一 tick 自动断电」，
+ * 与原版红石「不加载就不工作」的直觉一致；</li>
+ * <li>状态/频道变化：由发射器方块的 {@code tick} 与频道设置流程调用
+ * {@link #setTransmitterActive}。</li>
  * </ul>
  * 索引不需要持久化：世界重新加载时每个发射器方块实体都会重新走一遍 {@code setLevel}。
  * <p>
@@ -163,11 +163,12 @@ public final class WirelessRedstoneNetwork {
      * 常见的「附近没有任何同频道发射器」情况只需一次哈希查表即可返回，
      * 因此可以放心地每 tick 调用。
      *
-     * @param level         接收器所在世界
-     * @param receiverPos   接收器坐标
-     * @param channel       接收器频道
+     * @param level       接收器所在世界
+     * @param receiverPos 接收器坐标
+     * @param channel     接收器频道
      * @return 范围内存在同频道的激活发射器时返回 true
      */
+    @SuppressWarnings("null")
     public static boolean hasActiveTransmitterInRange(Level level, BlockPos receiverPos, int channel) {
         if (level == null || level.isClientSide()) {
             return false;
@@ -205,8 +206,8 @@ public final class WirelessRedstoneNetwork {
      * <p>
      * 同时维护两个方向的映射：
      * <ul>
-     *   <li>{@code byChannel}：频道 → 坐标集合，供接收器只遍历同频道的发射器；</li>
-     *   <li>{@code channelOfPos}：坐标 → 频道，使「摘除某坐标」不必扫遍所有频道。</li>
+     * <li>{@code byChannel}：频道 → 坐标集合，供接收器只遍历同频道的发射器；</li>
+     * <li>{@code channelOfPos}：坐标 → 频道，使「摘除某坐标」不必扫遍所有频道。</li>
      * </ul>
      */
     private static final class LevelIndex {

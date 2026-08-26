@@ -15,12 +15,12 @@ import java.util.List;
 /**
  * 酿造指南中的一条原版药水配方。
  *
- * @param input            基底药水
- * @param inputContainer   基底容器
- * @param ingredient       酿造材料
- * @param output           产物药水
- * @param outputContainer  产物容器
- * @param containerMix     是否为“任意药水更换容器”配方
+ * @param input           基底药水
+ * @param inputContainer  基底容器
+ * @param ingredient      酿造材料
+ * @param output          产物药水
+ * @param outputContainer 产物容器
+ * @param containerMix    是否为“任意药水更换容器”配方
  */
 public record BrewingGuideRecipe(
         Holder<Potion> input,
@@ -44,16 +44,19 @@ public record BrewingGuideRecipe(
     }
 
     /** 创建用于指南渲染的基底药水物品。 */
+    @SuppressWarnings("null")
     public ItemStack inputStack() {
         return PotionContents.createItemStack(this.inputContainer, this.input);
     }
 
     /** 创建用于指南渲染的材料物品。 */
+    @SuppressWarnings("null")
     public ItemStack ingredientStack() {
         return new ItemStack(this.ingredient);
     }
 
     /** 创建用于指南渲染的产物药水物品。 */
+    @SuppressWarnings("null")
     public ItemStack outputStack() {
         return PotionContents.createItemStack(this.outputContainer, this.output);
     }

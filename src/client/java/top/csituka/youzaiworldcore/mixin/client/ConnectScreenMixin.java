@@ -24,15 +24,22 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
 @Mixin(ConnectScreen.class)
 public class ConnectScreenMixin implements ConnectScreenCancelAccess {
 
-    @Unique private static final int youzaiworldcore$LOADING_MARGIN = 16;
-    @Unique private static final int youzaiworldcore$TEXT_GAP = 12;
+    @Unique
+    private static final int youzaiworldcore$LOADING_MARGIN = 16;
+    @Unique
+    private static final int youzaiworldcore$TEXT_GAP = 12;
 
-    @Shadow private Component status;
-    @Shadow private volatile Connection connection;
-    @Shadow private ChannelFuture channelFuture;
-    @Shadow private boolean aborted;
+    @Shadow
+    private Component status;
+    @Shadow
+    private volatile Connection connection;
+    @Shadow
+    private ChannelFuture channelFuture;
+    @Shadow
+    private boolean aborted;
 
-    @Unique private LoadingCircleRenderer youzaiworldcore$loadingCircleRenderer;
+    @Unique
+    private LoadingCircleRenderer youzaiworldcore$loadingCircleRenderer;
 
     /** 移除原版居中的取消按钮，连接状态改由 ESC 操作。 */
     @Inject(method = "init", at = @At("HEAD"), cancellable = true)
@@ -47,24 +54,19 @@ public class ConnectScreenMixin implements ConnectScreenCancelAccess {
     }
 
     /** 屏蔽连接界面原版的居中状态文字。 */
-    @Redirect(
-            method = "extractRenderState",
-            at = @At(
-                    value = "INVOKE",
-                    target = "Lnet/minecraft/client/gui/GuiGraphicsExtractor;centeredText(Lnet/minecraft/client/gui/Font;Lnet/minecraft/network/chat/Component;III)V"
-            )
-    )
+    @Redirect(method = "extractRenderState", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/GuiGraphicsExtractor;centeredText(Lnet/minecraft/client/gui/Font;Lnet/minecraft/network/chat/Component;III)V"))
     private void youzaiworldcore$suppressCenteredStatus(GuiGraphicsExtractor graphics,
-                                                         Font font, Component text,
-                                                         int x, int y, int color) {
+            Font font, Component text,
+            int x, int y, int color) {
         // 左下角组件会绘制连接状态。
     }
 
     /** 在连接等待界面左下角绘制加载圈与实时状态。 */
+    @SuppressWarnings("null")
     @Inject(method = "extractRenderState", at = @At("TAIL"))
     private void youzaiworldcore$drawLoadingStatus(GuiGraphicsExtractor graphics,
-                                                    int mouseX, int mouseY, float partialTick,
-                                                    CallbackInfo ci) {
+            int mouseX, int mouseY, float partialTick,
+            CallbackInfo ci) {
         if (this.youzaiworldcore$loadingCircleRenderer == null) {
             this.youzaiworldcore$loadingCircleRenderer = new LoadingCircleRenderer();
         }

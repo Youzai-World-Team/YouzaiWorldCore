@@ -13,17 +13,18 @@ public record InPlaceRespawnResultPayload(
 
     public static final Identifier IDENTIFIER = Identifier.fromNamespaceAndPath(
             YouzaiworldCore.MOD_ID, "in_place_respawn_result");
+    @SuppressWarnings("null")
     public static final Type<InPlaceRespawnResultPayload> ID = new Type<>(IDENTIFIER);
-    public static final StreamCodec<RegistryFriendlyByteBuf, InPlaceRespawnResultPayload> STREAM_CODEC =
-            StreamCodec.of(
-                    (buf, payload) -> {
-                        buf.writeBoolean(payload.approved());
-                        buf.writeUtf(payload.reason());
-                        buf.writeVarInt(payload.requiredLevel());
-                        buf.writeVarInt(payload.currentLevel());
-                    },
-                    buf -> new InPlaceRespawnResultPayload(
-                            buf.readBoolean(), buf.readUtf(), buf.readVarInt(), buf.readVarInt()));
+    @SuppressWarnings("null")
+    public static final StreamCodec<RegistryFriendlyByteBuf, InPlaceRespawnResultPayload> STREAM_CODEC = StreamCodec.of(
+            (buf, payload) -> {
+                buf.writeBoolean(payload.approved());
+                buf.writeUtf(payload.reason());
+                buf.writeVarInt(payload.requiredLevel());
+                buf.writeVarInt(payload.currentLevel());
+            },
+            buf -> new InPlaceRespawnResultPayload(
+                    buf.readBoolean(), buf.readUtf(), buf.readVarInt(), buf.readVarInt()));
 
     @Override
     @SuppressWarnings("null")

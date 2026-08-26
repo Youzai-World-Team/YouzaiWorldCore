@@ -74,9 +74,10 @@ public final class DamageNumberHandler {
         }
     }
 
+    @SuppressWarnings("null")
     private static boolean sendTo(ServerPlayer recipient, LivingEntity target,
-                                  ServerPlayer damagedPlayer, ServerPlayer attackingPlayer,
-                                  DamageNumberPayload payload) {
+            ServerPlayer damagedPlayer, ServerPlayer attackingPlayer,
+            DamageNumberPayload payload) {
         if (!FunctionToggleManager.isEnabled(
                 recipient.getUUID(), FunctionToggleManager.KEY_DAMAGE_NUMBERS)) {
             return false;

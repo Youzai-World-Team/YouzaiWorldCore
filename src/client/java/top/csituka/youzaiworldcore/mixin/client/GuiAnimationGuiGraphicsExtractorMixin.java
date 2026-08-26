@@ -2,6 +2,8 @@ package top.csituka.youzaiworldcore.mixin.client;
 
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+
+import org.jspecify.annotations.NonNull;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
@@ -13,15 +15,9 @@ import top.csituka.youzaiworldcore.client.animation.GuiAnimationController;
 @Mixin(GuiGraphicsExtractor.class)
 public abstract class GuiAnimationGuiGraphicsExtractorMixin {
 
-    @Redirect(
-            method = "fill(IIIII)V",
-            at = @At(
-                    value = "INVOKE",
-                    target = "Lnet/minecraft/client/gui/GuiGraphicsExtractor;fill(Lcom/mojang/blaze3d/pipeline/RenderPipeline;IIIII)V"
-            )
-    )
+    @Redirect(method = "fill(IIIII)V", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/GuiGraphicsExtractor;fill(Lcom/mojang/blaze3d/pipeline/RenderPipeline;IIIII)V"))
     private void youzaiworldcore$stabilizeFullscreenOverlay(
-            GuiGraphicsExtractor graphics, RenderPipeline pipeline,
+            GuiGraphicsExtractor graphics, @NonNull RenderPipeline pipeline,
             int x1, int y1, int x2, int y2, int color) {
         if (!GuiAnimationController.isFull()
                 || !youzaiworldcore$isFullscreenBlackOverlay(graphics, x1, y1, x2, y2, color)) {

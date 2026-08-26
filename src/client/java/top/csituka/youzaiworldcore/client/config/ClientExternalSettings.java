@@ -308,6 +308,7 @@ public final class ClientExternalSettings {
     // ===== 持久化 =====
 
     /** 从客户端配置的 {@code core_module} 分节加载（分节缺失则写入默认值） */
+    @SuppressWarnings("null")
     public static void load() {
         ConfigSection section = ClientGlobalSettings.section(ClientGlobalSettings.CORE_MODULE);
         if (section.isEmpty()) {

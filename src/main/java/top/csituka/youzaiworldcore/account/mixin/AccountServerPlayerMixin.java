@@ -154,6 +154,7 @@ public abstract class AccountServerPlayerMixin implements PlayerAuthAccess {
         }
     }
 
+    @SuppressWarnings("null")
     @Unique
     private void sendRegistrationEmailScreenPacket(
             RegistrationEmailSessionStore.PendingSession pending) {
@@ -182,8 +183,7 @@ public abstract class AccountServerPlayerMixin implements PlayerAuthAccess {
         if (yzwc$kickTimer <= 0) {
             if (yzwc$player.connection != null && yzwc$player.connection.isAcceptingMessages()) {
                 yzwc$player.connection.disconnect(
-                        Component.translatable("youzaiworldcore.message.account.auth_timeout")
-                );
+                        Component.translatable("youzaiworldcore.message.account.auth_timeout"));
             }
         } else {
             // 每 10 秒发送一次 GUI 打开数据包（聊天提示已由 GUI 替代，不再重复发送）
@@ -191,8 +191,8 @@ public abstract class AccountServerPlayerMixin implements PlayerAuthAccess {
                 if (yzwc$account != null && yzwc$account.isRegistered()) {
                     sendAuthScreenPacket("login");
                 } else {
-                    RegistrationEmailSessionStore.PendingSession pending =
-                            RegistrationEmailSessionStore.get(yzwc$player.getUUID());
+                    RegistrationEmailSessionStore.PendingSession pending = RegistrationEmailSessionStore
+                            .get(yzwc$player.getUUID());
                     if (pending == null) {
                         sendAuthScreenPacket("register");
                     } else {
@@ -205,6 +205,7 @@ public abstract class AccountServerPlayerMixin implements PlayerAuthAccess {
         ci.cancel();
     }
 
+    @SuppressWarnings("null")
     @Unique
     private void validateApiSessionIfDue() {
         if (yzwc$sessionToken == null || yzwc$sessionCheckPending || --yzwc$sessionCheckTimer > 0) {
@@ -214,16 +215,13 @@ public abstract class AccountServerPlayerMixin implements PlayerAuthAccess {
         yzwc$sessionCheckPending = true;
         String token = yzwc$sessionToken;
         MinecraftServer server = yzwc$player.level().getServer();
-        if (server == null) {
-            yzwc$sessionCheckPending = false;
-            return;
-        }
         String username = yzwc$player.getScoreboardName();
         CompletableFuture.supplyAsync(() -> ApiServiceClient.validateSession(token, username))
                 .whenComplete((result, error) -> {
                     server.execute(() -> {
                         yzwc$sessionCheckPending = false;
-                        if (!token.equals(yzwc$sessionToken)) return;
+                        if (!token.equals(yzwc$sessionToken))
+                            return;
                         if (error != null || result == null
                                 || result.state() != ApiServiceClient.SessionValidationState.VALID) {
                             yzwc$saveLocation();
@@ -238,8 +236,10 @@ public abstract class AccountServerPlayerMixin implements PlayerAuthAccess {
                             yzwc$sessionToken = null;
                             yzwc$authenticated = false;
                             CosmeticManager.onDeauthenticated(yzwc$player);
+                            @SuppressWarnings("null")
                             var loginHall = server.getLevel(AuthPlayerHelper.LOGIN_HALL_KEY);
-                            if (loginHall == null) loginHall = server.overworld();
+                            if (loginHall == null)
+                                loginHall = server.overworld();
                             yzwc$player.teleportTo(loginHall,
                                     AuthPlayerHelper.LOGIN_HALL_X, AuthPlayerHelper.LOGIN_HALL_Y,
                                     AuthPlayerHelper.LOGIN_HALL_Z, Set.of(), 0, 0, true);
@@ -252,9 +252,9 @@ public abstract class AccountServerPlayerMixin implements PlayerAuthAccess {
     // ===== 未认证时无敌 — 拦截伤害（ServerPlayer.hurtServer 是具体方法） =====
     @Inject(method = "hurtServer", at = @At("HEAD"), cancellable = true)
     private void onHurtServer(net.minecraft.server.level.ServerLevel level,
-                              net.minecraft.world.damagesource.DamageSource source,
-                              float amount,
-                              org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable<Boolean> cir) {
+            net.minecraft.world.damagesource.DamageSource source,
+            float amount,
+            org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable<Boolean> cir) {
         if (!yzwc$authenticated && !yzwc$canSkipAuth) {
             cir.setReturnValue(false); // 未认证时不受伤害
         }

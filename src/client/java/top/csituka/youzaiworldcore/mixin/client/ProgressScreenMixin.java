@@ -24,34 +24,35 @@ import top.csituka.youzaiworldcore.client.render.LoadingCircleRenderer;
 @Mixin(ProgressScreen.class)
 public class ProgressScreenMixin {
 
-    @Unique private static final int youzaiworldcore$LOADING_MARGIN = 16;
-    @Unique private static final int youzaiworldcore$TEXT_GAP = 12;
+    @Unique
+    private static final int youzaiworldcore$LOADING_MARGIN = 16;
+    @Unique
+    private static final int youzaiworldcore$TEXT_GAP = 12;
 
-    @Shadow private Component header;
-    @Shadow private Component stage;
-    @Shadow private int progress;
+    @Shadow
+    private Component header;
+    @Shadow
+    private Component stage;
+    @Shadow
+    private int progress;
 
-    @Unique private LoadingCircleRenderer youzaiworldcore$loadingCircleRenderer;
+    @Unique
+    private LoadingCircleRenderer youzaiworldcore$loadingCircleRenderer;
 
     /** 屏蔽原版居中的标题和阶段文字，改由左下角状态组件统一绘制。 */
-    @Redirect(
-            method = "extractRenderState",
-            at = @At(
-                    value = "INVOKE",
-                    target = "Lnet/minecraft/client/gui/GuiGraphicsExtractor;centeredText(Lnet/minecraft/client/gui/Font;Lnet/minecraft/network/chat/Component;III)V"
-            )
-    )
+    @Redirect(method = "extractRenderState", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/GuiGraphicsExtractor;centeredText(Lnet/minecraft/client/gui/Font;Lnet/minecraft/network/chat/Component;III)V"))
     private void youzaiworldcore$suppressCenteredLoadingText(GuiGraphicsExtractor graphics,
-                                                              Font font, Component text,
-                                                              int x, int y, int color) {
+            Font font, Component text,
+            int x, int y, int color) {
         // 左下角组件会绘制同一份状态信息。
     }
 
     /** 在资源准备、保存世界等通用进度屏幕左下角绘制加载组件。 */
+    @SuppressWarnings("null")
     @Inject(method = "extractRenderState", at = @At("TAIL"))
     private void youzaiworldcore$drawLoadingStatus(GuiGraphicsExtractor graphics,
-                                                    int mouseX, int mouseY, float partialTick,
-                                                    CallbackInfo ci) {
+            int mouseX, int mouseY, float partialTick,
+            CallbackInfo ci) {
         if (this.youzaiworldcore$loadingCircleRenderer == null) {
             this.youzaiworldcore$loadingCircleRenderer = new LoadingCircleRenderer();
         }
@@ -86,6 +87,7 @@ public class ProgressScreenMixin {
             return null;
         }
 
+        @SuppressWarnings("null")
         MutableComponent result = Component.empty().append(this.stage);
         if (this.progress != 0) {
             result.append(" " + this.progress + "%");

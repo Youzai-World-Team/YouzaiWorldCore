@@ -14,8 +14,7 @@ public record AccountManagementStatePayload(
         String email,
         String sessionId,
         int expiresInSeconds,
-        int resendAfterSeconds
-) implements CustomPacketPayload {
+        int resendAfterSeconds) implements CustomPacketPayload {
 
     public enum State {
         LOADED,
@@ -30,8 +29,9 @@ public record AccountManagementStatePayload(
     public static final Type<AccountManagementStatePayload> ID = new Type<>(
             Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "account_management_state"));
 
-    public static final StreamCodec<RegistryFriendlyByteBuf, AccountManagementStatePayload> STREAM_CODEC =
-            StreamCodec.of(
+    @SuppressWarnings("null")
+    public static final StreamCodec<RegistryFriendlyByteBuf, AccountManagementStatePayload> STREAM_CODEC = StreamCodec
+            .of(
                     (buf, payload) -> {
                         buf.writeEnum(payload.state);
                         buf.writeUtf(payload.message, 512);
@@ -49,7 +49,8 @@ public record AccountManagementStatePayload(
                             buf.readVarInt()));
 
     public AccountManagementStatePayload {
-        if (state == null) throw new IllegalArgumentException("账户管理状态不能为空");
+        if (state == null)
+            throw new IllegalArgumentException("账户管理状态不能为空");
         if (message == null || message.length() > 512) {
             throw new IllegalArgumentException("账户管理状态消息无效");
         }
@@ -102,6 +103,7 @@ public record AccountManagementStatePayload(
         return email == null ? "" : email;
     }
 
+    @SuppressWarnings("null")
     @Override
     public @NonNull Type<? extends CustomPacketPayload> type() {
         return ID;

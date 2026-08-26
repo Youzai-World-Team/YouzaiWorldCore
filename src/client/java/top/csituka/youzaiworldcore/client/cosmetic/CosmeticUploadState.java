@@ -120,6 +120,7 @@ public final class CosmeticUploadState {
 
     private static void trimScopes(StoredState stored) {
         while (stored.scopes.size() > MAX_SCOPES) {
+            @SuppressWarnings("null")
             String oldestKey = stored.scopes.entrySet().stream()
                     .min((left, right) -> Long.compare(
                             left.getValue().updatedAtEpochMillis,

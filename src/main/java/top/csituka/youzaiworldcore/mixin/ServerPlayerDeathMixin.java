@@ -77,7 +77,8 @@ public class ServerPlayerDeathMixin implements InPlaceRespawnPlayerAccess {
         boolean eligibleDeath = !player.isSpectator() && !server.isHardcore();
         youzaiworldcore$inPlaceRespawnEnabled = eligibleDeath && InPlaceRespawnConfig.isEnabled(player);
         OptionalInt requiredLevel = youzaiworldcore$inPlaceRespawnEnabled
-                ? InPlaceRespawnManager.getRequiredLevel(player) : OptionalInt.empty();
+                ? InPlaceRespawnManager.getRequiredLevel(player)
+                : OptionalInt.empty();
         if (requiredLevel.isEmpty()) {
             youzaiworldcore$inPlaceRespawnEnabled = false;
             youzaiworldcore$inPlaceRespawnCost = 0;
@@ -87,7 +88,8 @@ public class ServerPlayerDeathMixin implements InPlaceRespawnPlayerAccess {
 
         boolean keepInventory = server.getGameRules().get(GameRules.KEEP_INVENTORY);
         youzaiworldcore$deferredExperienceReward = !keepInventory && !player.isSpectator()
-                ? Math.min(player.experienceLevel * 7, 100) : 0;
+                ? Math.min(player.experienceLevel * 7, 100)
+                : 0;
         youzaiworldcore$hadHeartBeforeDeath = !keepInventory
                 && !player.isSpectator() && hasHeartInInventory(player);
 
@@ -157,9 +159,7 @@ public class ServerPlayerDeathMixin implements InPlaceRespawnPlayerAccess {
             player.sendSystemMessage(
                     Component.translatable("youzaiworldcore.tellraw.format")
                             .append(Component.translatable(
-                                    "youzaiworldcore.heart_of_guardianship.warning." + count
-                            ))
-            );
+                                    "youzaiworldcore.heart_of_guardianship.warning." + count)));
         }
     }
 
@@ -179,6 +179,7 @@ public class ServerPlayerDeathMixin implements InPlaceRespawnPlayerAccess {
         }
     }
 
+    @SuppressWarnings("null")
     @Inject(method = "restoreFrom", at = @At("RETURN"))
     private void youzaiworldcore$restoreInventory(ServerPlayer oldPlayer, boolean alive, CallbackInfo ci) {
         if (alive) {
@@ -233,12 +234,10 @@ public class ServerPlayerDeathMixin implements InPlaceRespawnPlayerAccess {
     private void handleHeartUsed(ServerPlayer player, int remaining) {
         player.sendSystemMessage(
                 Component.translatable("youzaiworldcore.tellraw.format")
-                        .append(Component.translatable("item.youzaiworldcore.heart_of_guardianship.consumed"))
-        );
+                        .append(Component.translatable("item.youzaiworldcore.heart_of_guardianship.consumed")));
 
         AdvancementHolder advancement = server.getAdvancements().get(
-                Identifier.fromNamespaceAndPath("youzaiworldcore", "youzaiworld/used_heart_of_guardianship")
-        );
+                Identifier.fromNamespaceAndPath("youzaiworldcore", "youzaiworld/used_heart_of_guardianship"));
         if (advancement != null) {
             player.getAdvancements().award(advancement, "manual_grant");
         }

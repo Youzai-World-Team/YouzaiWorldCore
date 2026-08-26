@@ -19,8 +19,9 @@ public record RegistrationEmailRequestPayload(Action action, String sessionId, S
     public static final Type<RegistrationEmailRequestPayload> ID = new Type<>(Identifier.fromNamespaceAndPath(
             YouzaiworldCore.MOD_ID, "registration_email_request"));
 
-    public static final StreamCodec<RegistryFriendlyByteBuf, RegistrationEmailRequestPayload> STREAM_CODEC =
-            StreamCodec.of(
+    @SuppressWarnings("null")
+    public static final StreamCodec<RegistryFriendlyByteBuf, RegistrationEmailRequestPayload> STREAM_CODEC = StreamCodec
+            .of(
                     (buf, payload) -> {
                         buf.writeEnum(payload.action);
                         buf.writeUtf(payload.sessionId, 128);
@@ -30,7 +31,8 @@ public record RegistrationEmailRequestPayload(Action action, String sessionId, S
                             buf.readEnum(Action.class), buf.readUtf(128), buf.readUtf(254)));
 
     public RegistrationEmailRequestPayload {
-        if (action == null) throw new IllegalArgumentException("邮箱注册动作不能为空");
+        if (action == null)
+            throw new IllegalArgumentException("邮箱注册动作不能为空");
         if (sessionId == null || sessionId.isBlank() || sessionId.length() > 128) {
             throw new IllegalArgumentException("邮箱注册会话 ID 无效");
         }
@@ -39,6 +41,7 @@ public record RegistrationEmailRequestPayload(Action action, String sessionId, S
         }
     }
 
+    @SuppressWarnings("null")
     @Override
     public @NonNull Type<? extends CustomPacketPayload> type() {
         return ID;

@@ -35,6 +35,7 @@ public class WindChargeHandler {
         DebugLogger.info(MODULE, "附魔注册表缓存已标记失效，下次 tick 将重新查询");
     }
 
+    @SuppressWarnings("null")
     public static void register() {
         DebugLogger.entering(MODULE, "register");
 
@@ -52,6 +53,7 @@ public class WindChargeHandler {
                 if (!player.isFallFlying())
                     continue;
 
+                @SuppressWarnings("null")
                 int level = player.getItemBySlot(EquipmentSlot.CHEST).getEnchantments()
                         .getLevel(holder);
                 if (level <= 0)

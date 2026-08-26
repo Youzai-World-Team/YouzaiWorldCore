@@ -16,7 +16,8 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
  * 流星猛击 (Meteor Smash) 附魔: 重锤附魔，猛击（mace_smash）时点燃被击目标周围的生物。
  * 等级 1: 点燃范围 3 格内生物 10 秒。
  * <p>
- * 监听 {@link ServerLivingEntityEvents#AFTER_DAMAGE}：伤害源带 {@link DamageTypeTags#IS_MACE_SMASH}
+ * 监听 {@link ServerLivingEntityEvents#AFTER_DAMAGE}：伤害源带
+ * {@link DamageTypeTags#IS_MACE_SMASH}
  * 标签且攻击者主手重锤带流星猛击附魔时，以被击目标为中心 AoE 点燃（含被击目标本身）。
  */
 public class MeteorSmashHandler {
@@ -41,6 +42,7 @@ public class MeteorSmashHandler {
 
             ServerLevel level = (ServerLevel) entity.level();
             var reg = level.registryAccess().lookupOrThrow(Registries.ENCHANTMENT);
+            @SuppressWarnings("null")
             Holder<Enchantment> holder = reg.getOrThrow(ModEnchantments.METEOR_SMASH_KEY);
             int enchantLevel = player.getMainHandItem().getEnchantments().getLevel(holder);
             if (enchantLevel <= 0)

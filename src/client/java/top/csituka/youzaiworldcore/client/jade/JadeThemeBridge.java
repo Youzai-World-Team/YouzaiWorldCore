@@ -12,10 +12,10 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
  * <h3>机制</h3>
  * <ol>
  * <li>本模组在 {@code assets/youzaiworldcore/jade_themes/yzui.json} 注册了一个
- *     名为 {@code youzaiworldcore:yzui} 的 Jade 数据驱动主题（纯资源注入，无代码）；</li>
+ * 名为 {@code youzaiworldcore:yzui} 的 Jade 数据驱动主题（纯资源注入，无代码）；</li>
  * <li>本类在「使用 YZUI」开关开启时调用
- *     {@link IWailaConfig.Overlay#applyTheme(Identifier)} 把 Jade 的活动主题
- *     切换为该主题；关闭时调用 {@link IWailaConfig#save()} 前先恢复用户原主题。</li>
+ * {@link IWailaConfig.Overlay#applyTheme(Identifier)} 把 Jade 的活动主题
+ * 切换为该主题；关闭时调用 {@link IWailaConfig#save()} 前先恢复用户原主题。</li>
  * </ol>
  *
  * <p>
@@ -37,12 +37,10 @@ public final class JadeThemeBridge {
     private static final String MODULE = "JadeThemeBridge";
 
     /** 本模组注册的 YZUI 主题 ID（与 jade_themes/yzui.json 对应） */
-    public static final Identifier YZUI_THEME_ID =
-            Identifier.fromNamespaceAndPath("youzaiworldcore", "yzui");
+    public static final Identifier YZUI_THEME_ID = Identifier.fromNamespaceAndPath("youzaiworldcore", "yzui");
 
     /** Jade 自带默认主题（暗色），用于恢复兜底 */
-    private static final Identifier DEFAULT_THEME_ID =
-            Identifier.fromNamespaceAndPath("jade", "dark");
+    private static final Identifier DEFAULT_THEME_ID = Identifier.fromNamespaceAndPath("jade", "dark");
 
     /** 是否正处于「由本模组强制 YZUI 主题」状态 */
     private static boolean forcing;
@@ -58,6 +56,7 @@ public final class JadeThemeBridge {
      *
      * @param yzuiEnabled 是否启用 YZUI（来自 {@code ClientExternalSettings}）
      */
+    @SuppressWarnings("null")
     public static void tick(boolean yzuiEnabled) {
         IThemeHelper helper = IThemeHelper.get();
         // 主题数据尚未加载（资源重载未完成 / 未进入存档）时直接跳过，
@@ -103,6 +102,7 @@ public final class JadeThemeBridge {
      * 捕获用户当前主题。若当前恰为 YZUI（可能是上次残留），则视为用户未自定义，
      * 兜底为 Jade 默认主题。
      */
+    @SuppressWarnings("null")
     private static Identifier captureUserTheme(IThemeHelper helper) {
         Identifier id;
         try {

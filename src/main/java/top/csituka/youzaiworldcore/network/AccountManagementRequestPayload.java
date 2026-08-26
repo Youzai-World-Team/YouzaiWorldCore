@@ -14,8 +14,7 @@ public record AccountManagementRequestPayload(
         String newPassword,
         String email,
         String sessionId,
-        String code
-) implements CustomPacketPayload {
+        String code) implements CustomPacketPayload {
 
     public enum Action {
         LOAD,
@@ -28,8 +27,9 @@ public record AccountManagementRequestPayload(
     public static final Type<AccountManagementRequestPayload> ID = new Type<>(
             Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "account_management_request"));
 
-    public static final StreamCodec<RegistryFriendlyByteBuf, AccountManagementRequestPayload> STREAM_CODEC =
-            StreamCodec.of(
+    @SuppressWarnings("null")
+    public static final StreamCodec<RegistryFriendlyByteBuf, AccountManagementRequestPayload> STREAM_CODEC = StreamCodec
+            .of(
                     (buf, payload) -> {
                         buf.writeEnum(payload.action);
                         buf.writeUtf(payload.currentPassword, 128);
@@ -47,7 +47,8 @@ public record AccountManagementRequestPayload(
                             buf.readUtf(6)));
 
     public AccountManagementRequestPayload {
-        if (action == null) throw new IllegalArgumentException("账户管理动作不能为空");
+        if (action == null)
+            throw new IllegalArgumentException("账户管理动作不能为空");
         if (currentPassword == null || currentPassword.length() > 128) {
             throw new IllegalArgumentException("当前密码长度无效");
         }
@@ -115,6 +116,7 @@ public record AccountManagementRequestPayload(
                 Action.DEACTIVATE, currentPassword, "", "", "", "");
     }
 
+    @SuppressWarnings("null")
     @Override
     public @NonNull Type<? extends CustomPacketPayload> type() {
         return ID;

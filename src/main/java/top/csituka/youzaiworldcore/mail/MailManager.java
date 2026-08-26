@@ -32,9 +32,9 @@ import java.util.stream.Collectors;
  * 本类负责三件仍然只能在 Minecraft 服务端做的事：
  * </p>
  * <ol>
- *   <li><b>接收范围解析</b> —— NONADMIN / ROLE 需要 LuckPerms，Api 拿不到权限数据；</li>
- *   <li><b>奖励发放</b> —— 物品 / 指令 / 经验都要落到在线玩家身上；</li>
- *   <li><b>在线推送</b> —— 未读徽标与列表更新走 S2C 数据包。</li>
+ * <li><b>接收范围解析</b> —— NONADMIN / ROLE 需要 LuckPerms，Api 拿不到权限数据；</li>
+ * <li><b>奖励发放</b> —— 物品 / 指令 / 经验都要落到在线玩家身上；</li>
+ * <li><b>在线推送</b> —— 未读徽标与列表更新走 S2C 数据包。</li>
  * </ol>
  * <p>
  * 所有 Api 调用一律 {@code CompletableFuture.supplyAsync} 后
@@ -158,10 +158,6 @@ public class MailManager {
         DebugLogger.entering(MODULE, "applyAttachments",
                 "player=" + player.getScoreboardName() + ", mailId=" + mail.getId());
         MinecraftServer server = player.level().getServer();
-        if (server == null) {
-            DebugLogger.exiting(MODULE, "applyAttachments", "server unavailable");
-            return;
-        }
         var lookup = server.registryAccess();
         List<MailAttachment> attachments = mail.getAttachments();
         if (attachments == null) {
@@ -254,9 +250,6 @@ public class MailManager {
     /** 异步拉取并回推单个玩家的未读数（玩家加入服务器时使用）。 */
     public static void refreshUnread(ServerPlayer player) {
         MinecraftServer server = player.level().getServer();
-        if (server == null) {
-            return;
-        }
         UUID uuid = player.getUUID();
         CompletableFuture.supplyAsync(() -> MailApiClient.fetchUnread(uuid))
                 .whenComplete((result, error) -> server.execute(() -> {
@@ -278,7 +271,9 @@ public class MailManager {
 
     /**
      * 异步批量刷新一批收件人中「当前在线」玩家的未读徽标。
-     * <p>群发、撤回、编辑与过期清理之后调用，一次 Api 请求覆盖全部在线玩家。</p>
+     * <p>
+     * 群发、撤回、编辑与过期清理之后调用，一次 Api 请求覆盖全部在线玩家。
+     * </p>
      *
      * @param server     服务端实例
      * @param recipients 受影响的收件人（离线的会被忽略）
@@ -322,7 +317,9 @@ public class MailManager {
      * 通知模组。因此按 {@link MailSettings#getUnreadRefreshIntervalTicks()} 周期性
      * 批量拉一次，让红点最迟在一个周期内自动点亮。
      * </p>
-     * <p>整批玩家只发一次 Api 请求；没有在线玩家时直接返回，不产生任何请求。</p>
+     * <p>
+     * 整批玩家只发一次 Api 请求；没有在线玩家时直接返回，不产生任何请求。
+     * </p>
      *
      * @param server 服务端实例
      */

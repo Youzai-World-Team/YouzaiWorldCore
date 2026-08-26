@@ -23,14 +23,14 @@ public final class PingDisplayRender {
     }
 
     // ===== 颜色常量（ARGB int，alpha 固定 0xFF） =====
-    private static final int COLOR_GOOD    = 0xFF55FF55; // < 50ms  绿
-    private static final int COLOR_OK      = 0xFFFFFF55; // 50-99ms 黄
-    private static final int COLOR_BAD     = 0xFFFFAA00; // 100-199ms橙
-    private static final int COLOR_TERRIBLE= 0xFFFF5555; // ≥ 200ms 红
-    private static final int COLOR_UNKNOWN = 0xFFAAAAAA; // 未知   灰
+    private static final int COLOR_GOOD = 0xFF55FF55; // < 50ms 绿
+    private static final int COLOR_OK = 0xFFFFFF55; // 50-99ms 黄
+    private static final int COLOR_BAD = 0xFFFFAA00; // 100-199ms橙
+    private static final int COLOR_TERRIBLE = 0xFFFF5555; // ≥ 200ms 红
+    private static final int COLOR_UNKNOWN = 0xFFAAAAAA; // 未知 灰
 
     // ===== 显示选项 =====
-    private static final boolean SHOW_MS   = true;  // 显示 "ms" 后缀
+    private static final boolean SHOW_MS = true; // 显示 "ms" 后缀
     private static final boolean TEXT_SHADOW = true; // 文字阴影
 
     /**
@@ -38,7 +38,7 @@ public final class PingDisplayRender {
      */
     @SuppressWarnings("null")
     public static void renderPingText(Minecraft mc, GuiGraphicsExtractor context,
-                                      int slotWidth, int x, int y, PlayerInfo entry) {
+            int slotWidth, int x, int y, PlayerInfo entry) {
         int ping = entry.getLatency();
         String pingText = getPingText(ping);
         int color = getPingColor(ping);
@@ -55,7 +55,8 @@ public final class PingDisplayRender {
      * @return 要显示的字符串，如 "45ms" 或 "N/A"
      */
     public static String getPingText(int ping) {
-        if (ping < 0) return "N/A";
+        if (ping < 0)
+            return "N/A";
         return SHOW_MS ? ping + "ms" : String.valueOf(ping);
     }
 
@@ -114,6 +115,7 @@ public final class PingDisplayRender {
         }
 
         // withColor(int) 直接写入 Style，避免 withStyle(UnaryOperator) 的捕获型 lambda 分配
+        @SuppressWarnings("null")
         Component built = Component.literal(getPingText(ping)).withColor(getPingColor(ping));
         PING_CACHE.put(playerId, new Entry(ping, built));
         return built;
@@ -132,6 +134,7 @@ public final class PingDisplayRender {
         if (NAME_TAG_CACHE.size() > CACHE_LIMIT) {
             NAME_TAG_CACHE.clear();
         }
+        @SuppressWarnings("null")
         Component built = Component.literal(baseText)
                 .append(PING_PREFIX)
                 .append(getStyledPingComponent(playerId, ping))

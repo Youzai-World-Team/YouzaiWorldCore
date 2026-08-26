@@ -13,8 +13,7 @@ public record PasswordResetStatePayload(
         String sessionId,
         String message,
         int expiresInSeconds,
-        int resendAfterSeconds
-) implements CustomPacketPayload {
+        int resendAfterSeconds) implements CustomPacketPayload {
 
     public enum State {
         CODE_SENT,
@@ -26,24 +25,25 @@ public record PasswordResetStatePayload(
     public static final Type<PasswordResetStatePayload> ID = new Type<>(Identifier.fromNamespaceAndPath(
             YouzaiworldCore.MOD_ID, "password_reset_state"));
 
-    public static final StreamCodec<RegistryFriendlyByteBuf, PasswordResetStatePayload> STREAM_CODEC =
-            StreamCodec.of(
-                    (buf, payload) -> {
-                        buf.writeEnum(payload.state);
-                        buf.writeUtf(payload.sessionId, 128);
-                        buf.writeUtf(payload.message, 512);
-                        buf.writeVarInt(payload.expiresInSeconds);
-                        buf.writeVarInt(payload.resendAfterSeconds);
-                    },
-                    buf -> new PasswordResetStatePayload(
-                            buf.readEnum(State.class),
-                            buf.readUtf(128),
-                            buf.readUtf(512),
-                            buf.readVarInt(),
-                            buf.readVarInt()));
+    @SuppressWarnings("null")
+    public static final StreamCodec<RegistryFriendlyByteBuf, PasswordResetStatePayload> STREAM_CODEC = StreamCodec.of(
+            (buf, payload) -> {
+                buf.writeEnum(payload.state);
+                buf.writeUtf(payload.sessionId, 128);
+                buf.writeUtf(payload.message, 512);
+                buf.writeVarInt(payload.expiresInSeconds);
+                buf.writeVarInt(payload.resendAfterSeconds);
+            },
+            buf -> new PasswordResetStatePayload(
+                    buf.readEnum(State.class),
+                    buf.readUtf(128),
+                    buf.readUtf(512),
+                    buf.readVarInt(),
+                    buf.readVarInt()));
 
     public PasswordResetStatePayload {
-        if (state == null) throw new IllegalArgumentException("找回密码状态不能为空");
+        if (state == null)
+            throw new IllegalArgumentException("找回密码状态不能为空");
         if (sessionId == null || sessionId.length() > 128) {
             throw new IllegalArgumentException("找回密码会话 ID 无效");
         }
@@ -75,6 +75,7 @@ public record PasswordResetStatePayload(
         return new PasswordResetStatePayload(State.EXPIRED, sessionId, message, 0, 0);
     }
 
+    @SuppressWarnings("null")
     @Override
     public @NonNull Type<? extends CustomPacketPayload> type() {
         return ID;

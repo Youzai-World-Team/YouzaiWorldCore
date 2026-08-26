@@ -31,6 +31,7 @@ public class BounceHandler {
                 return;
 
             var reg = player.registryAccess().lookupOrThrow(Registries.ENCHANTMENT);
+            @SuppressWarnings("null")
             Holder<Enchantment> holder = reg.getOrThrow(ModEnchantments.BOUNCE_KEY);
 
             // 检查副手盾牌的弹跳附魔等级

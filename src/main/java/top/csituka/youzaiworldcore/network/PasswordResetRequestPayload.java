@@ -13,8 +13,7 @@ public record PasswordResetRequestPayload(
         String sessionId,
         String email,
         String code,
-        String newPassword
-) implements CustomPacketPayload {
+        String newPassword) implements CustomPacketPayload {
 
     public enum Action {
         SEND_CODE,
@@ -24,24 +23,25 @@ public record PasswordResetRequestPayload(
     public static final Type<PasswordResetRequestPayload> ID = new Type<>(Identifier.fromNamespaceAndPath(
             YouzaiworldCore.MOD_ID, "password_reset_request"));
 
-    public static final StreamCodec<RegistryFriendlyByteBuf, PasswordResetRequestPayload> STREAM_CODEC =
-            StreamCodec.of(
-                    (buf, payload) -> {
-                        buf.writeEnum(payload.action);
-                        buf.writeUtf(payload.sessionId, 128);
-                        buf.writeUtf(payload.email, 254);
-                        buf.writeUtf(payload.code, 6);
-                        buf.writeUtf(payload.newPassword, 128);
-                    },
-                    buf -> new PasswordResetRequestPayload(
-                            buf.readEnum(Action.class),
-                            buf.readUtf(128),
-                            buf.readUtf(254),
-                            buf.readUtf(6),
-                            buf.readUtf(128)));
+    @SuppressWarnings("null")
+    public static final StreamCodec<RegistryFriendlyByteBuf, PasswordResetRequestPayload> STREAM_CODEC = StreamCodec.of(
+            (buf, payload) -> {
+                buf.writeEnum(payload.action);
+                buf.writeUtf(payload.sessionId, 128);
+                buf.writeUtf(payload.email, 254);
+                buf.writeUtf(payload.code, 6);
+                buf.writeUtf(payload.newPassword, 128);
+            },
+            buf -> new PasswordResetRequestPayload(
+                    buf.readEnum(Action.class),
+                    buf.readUtf(128),
+                    buf.readUtf(254),
+                    buf.readUtf(6),
+                    buf.readUtf(128)));
 
     public PasswordResetRequestPayload {
-        if (action == null) throw new IllegalArgumentException("找回密码动作不能为空");
+        if (action == null)
+            throw new IllegalArgumentException("找回密码动作不能为空");
         if (sessionId == null || sessionId.length() > 128) {
             throw new IllegalArgumentException("找回密码会话 ID 无效");
         }
@@ -73,6 +73,7 @@ public record PasswordResetRequestPayload(
                 Action.RESET_PASSWORD, sessionId, "", code, newPassword);
     }
 
+    @SuppressWarnings("null")
     @Override
     public @NonNull Type<? extends CustomPacketPayload> type() {
         return ID;

@@ -30,6 +30,7 @@ public class LeechingHandler {
 
             ServerLevel level = (ServerLevel) entity.level();
             var reg = level.registryAccess().lookupOrThrow(Registries.ENCHANTMENT);
+            @SuppressWarnings("null")
             Holder<Enchantment> holder = reg.getOrThrow(ModEnchantments.LEECHING_KEY);
 
             // 仅查主手武器（与 slots:[mainhand] 定义一致）

@@ -12,14 +12,14 @@ public record InPlaceRespawnInfoPayload(boolean enabled, int requiredLevel)
 
     public static final Identifier IDENTIFIER = Identifier.fromNamespaceAndPath(
             YouzaiworldCore.MOD_ID, "in_place_respawn_info");
+    @SuppressWarnings("null")
     public static final Type<InPlaceRespawnInfoPayload> ID = new Type<>(IDENTIFIER);
-    public static final StreamCodec<RegistryFriendlyByteBuf, InPlaceRespawnInfoPayload> STREAM_CODEC =
-            StreamCodec.of(
-                    (buf, payload) -> {
-                        buf.writeBoolean(payload.enabled());
-                        buf.writeVarInt(payload.requiredLevel());
-                    },
-                    buf -> new InPlaceRespawnInfoPayload(buf.readBoolean(), buf.readVarInt()));
+    public static final StreamCodec<RegistryFriendlyByteBuf, InPlaceRespawnInfoPayload> STREAM_CODEC = StreamCodec.of(
+            (buf, payload) -> {
+                buf.writeBoolean(payload.enabled());
+                buf.writeVarInt(payload.requiredLevel());
+            },
+            buf -> new InPlaceRespawnInfoPayload(buf.readBoolean(), buf.readVarInt()));
 
     @Override
     @SuppressWarnings("null")

@@ -13,8 +13,7 @@ public record RegistrationEmailStatePayload(
         String sessionId,
         String message,
         int expiresInSeconds,
-        int resendAfterSeconds
-) implements CustomPacketPayload {
+        int resendAfterSeconds) implements CustomPacketPayload {
 
     public enum State {
         REQUIRED,
@@ -27,8 +26,9 @@ public record RegistrationEmailStatePayload(
     public static final Type<RegistrationEmailStatePayload> ID = new Type<>(Identifier.fromNamespaceAndPath(
             YouzaiworldCore.MOD_ID, "registration_email_state"));
 
-    public static final StreamCodec<RegistryFriendlyByteBuf, RegistrationEmailStatePayload> STREAM_CODEC =
-            StreamCodec.of(
+    @SuppressWarnings("null")
+    public static final StreamCodec<RegistryFriendlyByteBuf, RegistrationEmailStatePayload> STREAM_CODEC = StreamCodec
+            .of(
                     (buf, payload) -> {
                         buf.writeEnum(payload.state);
                         buf.writeUtf(payload.sessionId, 128);
@@ -44,7 +44,8 @@ public record RegistrationEmailStatePayload(
                             buf.readVarInt()));
 
     public RegistrationEmailStatePayload {
-        if (state == null) throw new IllegalArgumentException("邮箱注册状态不能为空");
+        if (state == null)
+            throw new IllegalArgumentException("邮箱注册状态不能为空");
         if (sessionId == null || sessionId.length() > 128) {
             throw new IllegalArgumentException("邮箱注册会话 ID 无效");
         }
@@ -80,6 +81,7 @@ public record RegistrationEmailStatePayload(
         return new RegistrationEmailStatePayload(State.EXPIRED, sessionId, message, 0, 0);
     }
 
+    @SuppressWarnings("null")
     @Override
     public @NonNull Type<? extends CustomPacketPayload> type() {
         return ID;

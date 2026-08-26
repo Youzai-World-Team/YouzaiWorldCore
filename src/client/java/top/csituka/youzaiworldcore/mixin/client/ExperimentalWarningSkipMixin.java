@@ -6,6 +6,8 @@ import net.minecraft.client.gui.screens.worldselection.CreateWorldScreen;
 import net.minecraft.client.gui.screens.worldselection.EditWorldScreen;
 import net.minecraft.client.gui.screens.worldselection.WorldOpenFlows;
 import net.minecraft.world.level.storage.LevelStorageSource;
+
+import org.jspecify.annotations.NonNull;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -57,14 +59,14 @@ public abstract class ExperimentalWarningSkipMixin {
      * 当打开已有世界检测到实验性设置（isOldCustomized == false）且自动跳过开关启用时，
      * 根据 {@code experimentalWarningSkipAction} 执行对应操作：
      * <ul>
-     *   <li>{@code "skip"}：直接调用 onProceed（等效于"我知道我在做什么"）</li>
-     *   <li>{@code "backup"}：先创建备份，完成后调用 onProceed（等效于"创建备份并进入"）</li>
+     * <li>{@code "skip"}：直接调用 onProceed（等效于"我知道我在做什么"）</li>
+     * <li>{@code "backup"}：先创建备份，完成后调用 onProceed（等效于"创建备份并进入"）</li>
      * </ul>
      * 自定义旧世界（isOldCustomized == true）不受影响，仍正常弹出。
      */
     @Inject(method = "askForBackup", at = @At("HEAD"), cancellable = true)
     private void skipAskForBackup(
-            LevelStorageSource.LevelStorageAccess access,
+            LevelStorageSource.@NonNull LevelStorageAccess access,
             boolean isOldCustomized,
             Runnable onProceed,
             Runnable onCancel,

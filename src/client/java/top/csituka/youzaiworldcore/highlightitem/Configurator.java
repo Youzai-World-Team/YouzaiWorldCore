@@ -19,7 +19,8 @@ import java.io.IOException;
 /**
  * 高亮物品功能配置单例（参考 HighLightItem，适配 YouzaiWorldCore 26.2）。
  * <p>
- * 存放位置：{@code yzwc/client/global_settings.json} 的 {@code highlight_item_module} 分节。
+ * 存放位置：{@code yzwc/client/global_settings.json} 的 {@code highlight_item_module}
+ * 分节。
  * 所有运行时状态（开关、颜色、比较模式、通知偏好）均持久化于此。
  */
 public class Configurator {
@@ -95,6 +96,7 @@ public class Configurator {
      *
      * @throws IOException 保留签名以兼容调用方的异常处理；实际错误走配置崩溃流程
      */
+    @SuppressWarnings("null")
     public void loadOrGenerateConfig() throws IOException {
         ConfigSection section = section();
         if (section.isEmpty()) {
@@ -146,7 +148,8 @@ public class Configurator {
      * 写入单项配置并落盘。
      *
      * @param config 配置键
-     * @param value  取值；{@link Config#COLOR} 传 JSON 文本，{@link Config#TOGGLE} 传 "true"/"false"
+     * @param value  取值；{@link Config#COLOR} 传 JSON 文本，{@link Config#TOGGLE} 传
+     *               "true"/"false"
      * @throws IOException 保留签名以兼容调用方的异常处理；实际错误走配置崩溃流程
      */
     public void updateConfig(Config config, String value) throws IOException {
@@ -184,7 +187,8 @@ public class Configurator {
             DebugLogger.stateChange("HighlightItem", "toggle", "value", TOGGLE);
         } catch (IOException e) {
             notify(notification,
-                    Component.translatable("youzaiworldcore.highlight.config.update.fail").withStyle(ChatFormatting.RED),
+                    Component.translatable("youzaiworldcore.highlight.config.update.fail")
+                            .withStyle(ChatFormatting.RED),
                     player);
             LOGGER.error("[HighlightItem] 无法更新配置文件", e);
         }
@@ -212,14 +216,15 @@ public class Configurator {
             updateConfig(Config.COMPARATOR, mode.name());
             notify(notification,
                     Component.translatable("youzaiworldcore.highlight.comparator.change",
-                                    Component.translatable(mode.translationKey())
-                                            .append(Component.literal(" (" + mode.name() + ")")))
+                            Component.translatable(mode.translationKey())
+                                    .append(Component.literal(" (" + mode.name() + ")")))
                             .withStyle(ChatFormatting.GRAY),
                     player);
             DebugLogger.stateChange("HighlightItem", "comparator", "value", mode.name());
         } catch (IOException e) {
             notify(notification,
-                    Component.translatable("youzaiworldcore.highlight.config.update.fail").withStyle(ChatFormatting.RED),
+                    Component.translatable("youzaiworldcore.highlight.config.update.fail")
+                            .withStyle(ChatFormatting.RED),
                     player);
             LOGGER.error("[HighlightItem] 无法更新配置文件", e);
         }
@@ -236,7 +241,8 @@ public class Configurator {
         try {
             updateConfig(Config.COLOR, Colors.customToJson(rgba).toString());
             if (player != null) {
-                player.sendSystemMessage(Component.translatable("youzaiworldcore.highlight.color").withStyle(ChatFormatting.GRAY));
+                player.sendSystemMessage(
+                        Component.translatable("youzaiworldcore.highlight.color").withStyle(ChatFormatting.GRAY));
             }
             DebugLogger.stateChange("HighlightItem", "color", "value", COLOR);
         } catch (IOException e) {

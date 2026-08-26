@@ -24,28 +24,26 @@ import top.csituka.youzaiworldcore.client.render.LoadingCircleRenderer;
 @Mixin(LevelLoadingScreen.class)
 public class LevelLoadingScreenMixin {
 
-    @Unique private static final int youzaiworldcore$LOADING_MARGIN = 16;
-    @Unique private static final int youzaiworldcore$TEXT_GAP = 12;
+    @Unique
+    private static final int youzaiworldcore$LOADING_MARGIN = 16;
+    @Unique
+    private static final int youzaiworldcore$TEXT_GAP = 12;
 
-    @Shadow private LevelLoadTracker loadTracker;
+    @Shadow
+    private LevelLoadTracker loadTracker;
 
-    @Unique private LoadingCircleRenderer youzaiworldcore$loadingCircleRenderer;
+    @Unique
+    private LoadingCircleRenderer youzaiworldcore$loadingCircleRenderer;
 
     /**
      * 在原版开始绘制区块状态前切换为左下角加载组件。
      * 该注入点位于 Screen 背景和旁白状态之后，因此不会破坏背景及无障碍播报。
      */
-    @Inject(
-            method = "extractRenderState",
-            at = @At(
-                    value = "INVOKE",
-                    target = "Lnet/minecraft/client/multiplayer/LevelLoadTracker;statusView()Lnet/minecraft/server/level/progress/ChunkLoadStatusView;"
-            ),
-            cancellable = true
-    )
+    @SuppressWarnings("null")
+    @Inject(method = "extractRenderState", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/multiplayer/LevelLoadTracker;statusView()Lnet/minecraft/server/level/progress/ChunkLoadStatusView;"), cancellable = true)
     private void youzaiworldcore$drawLoadingStatus(GuiGraphicsExtractor graphics,
-                                                    int mouseX, int mouseY, float partialTick,
-                                                    CallbackInfo ci) {
+            int mouseX, int mouseY, float partialTick,
+            CallbackInfo ci) {
         if (this.youzaiworldcore$loadingCircleRenderer == null) {
             this.youzaiworldcore$loadingCircleRenderer = new LoadingCircleRenderer();
         }
@@ -63,8 +61,7 @@ public class LevelLoadingScreenMixin {
                 textX,
                 textY,
                 ARGB.white(255),
-                true
-        );
+                true);
 
         // 阻止原版继续绘制中央区块地图、提示文字和进度条。
         ci.cancel();

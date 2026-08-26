@@ -23,10 +23,10 @@ import java.util.Map;
  * <p>
  * 烧炼分两条路径：
  * <ul>
- *   <li>物品映射：扫描破坏后掉落的物品实体，按 {@link #ITEM_SMELTING_MAP} 转换
- *       （铁/金/铜矿石掉落的粗矿、粘土球、沙子、远古残骸等）。</li>
- *   <li>方块映射：原矿块（粗铁/铜/金块）精准采集时掉落物不在物品映射中，
- *       由 {@link #SMELTING_MAP} 直接生成产物（并清除原掉落物避免重复）。</li>
+ * <li>物品映射：扫描破坏后掉落的物品实体，按 {@link #ITEM_SMELTING_MAP} 转换
+ * （铁/金/铜矿石掉落的粗矿、粘土球、沙子、远古残骸等）。</li>
+ * <li>方块映射：原矿块（粗铁/铜/金块）精准采集时掉落物不在物品映射中，
+ * 由 {@link #SMELTING_MAP} 直接生成产物（并清除原掉落物避免重复）。</li>
  * </ul>
  */
 public class SmeltingHandler {
@@ -57,6 +57,7 @@ public class SmeltingHandler {
                 return;
 
             var reg = world.registryAccess().lookupOrThrow(Registries.ENCHANTMENT);
+            @SuppressWarnings("null")
             Holder<Enchantment> holder = reg.getOrThrow(ModEnchantments.SMELTING_KEY);
 
             int enchantLevel = player.getMainHandItem().getEnchantments().getLevel(holder);
@@ -67,7 +68,7 @@ public class SmeltingHandler {
                     new AABB(pos).inflate(2.0));
 
             // 1. 独立扫描掉落物，按物品映射烧炼
-            //    （核心修复：铁/金/铜矿石掉落的粗矿在此转换，不再被方块映射判空挡住）
+            // （核心修复：铁/金/铜矿石掉落的粗矿在此转换，不再被方块映射判空挡住）
             boolean replaced = false;
             for (ItemEntity itemEntity : items) {
                 Item smeltedItem = ITEM_SMELTING_MAP.get(itemEntity.getItem().getItem());

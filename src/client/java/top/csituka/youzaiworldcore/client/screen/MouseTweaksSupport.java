@@ -40,6 +40,7 @@ final class MouseTweaksSupport {
      * @param scrollDelta 正数为向上拉入悬停槽位，负数为向下从悬停槽位推出
      * @return 是否成功移动了一个物品
      */
+    @SuppressWarnings("null")
     static boolean scrollOne(InventoryMenu menu, Player player, int hoveredSlot,
             double scrollDelta, SlotClicker clicker) {
         if (!isStorageSlot(hoveredSlot) || scrollDelta == 0.0 || !menu.getCarried().isEmpty()) {
@@ -77,6 +78,7 @@ final class MouseTweaksSupport {
     }
 
     /** 默认按 Mouse Tweaks 的 WheelSearchOrder=1，从最后一个槽位向前查找。 */
+    @SuppressWarnings("null")
     private static int findTargetSlot(InventoryMenu menu, ItemStack source, int start, int end) {
         int emptySlot = -1;
         for (int i = end; i >= start; i--) {
@@ -97,6 +99,7 @@ final class MouseTweaksSupport {
         return emptySlot;
     }
 
+    @SuppressWarnings("null")
     private static int findMatchingSource(InventoryMenu menu, Player player, ItemStack target, int start, int end) {
         for (int i = end; i >= start; i--) {
             Slot source = menu.getSlot(i);
@@ -109,6 +112,7 @@ final class MouseTweaksSupport {
     }
 
     /** 通过标准左取、右放一件、左键归还余量的序列移动一个物品。 */
+    @SuppressWarnings("null")
     private static boolean moveOne(InventoryMenu menu, Player player, int sourceIndex, int targetIndex,
             SlotClicker clicker) {
         Slot source = menu.getSlot(sourceIndex);

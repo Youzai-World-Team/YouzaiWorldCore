@@ -47,6 +47,7 @@ public class SonicChargeHandler {
                 return;
 
             var reg = world.registryAccess().lookupOrThrow(Registries.ENCHANTMENT);
+            @SuppressWarnings("null")
             Holder<Enchantment> holder = reg.getOrThrow(ModEnchantments.SONIC_CHARGE_KEY);
             int level = mainHand.getEnchantments().getLevel(holder);
             if (level <= 0)

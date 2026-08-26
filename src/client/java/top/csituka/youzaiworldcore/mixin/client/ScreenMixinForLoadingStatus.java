@@ -29,17 +29,22 @@ import top.csituka.youzaiworldcore.client.render.LoadingCircleRenderer;
 @Mixin(Screen.class)
 public class ScreenMixinForLoadingStatus {
 
-    @Unique private static final int youzaiworldcore$LOADING_MARGIN = 16;
-    @Unique private static final int youzaiworldcore$TEXT_GAP = 12;
+    @Unique
+    private static final int youzaiworldcore$LOADING_MARGIN = 16;
+    @Unique
+    private static final int youzaiworldcore$TEXT_GAP = 12;
 
-    @Shadow @Final protected Component title;
+    @Shadow
+    @Final
+    protected Component title;
 
-    @Unique private LoadingCircleRenderer youzaiworldcore$loadingCircleRenderer;
+    @Unique
+    private LoadingCircleRenderer youzaiworldcore$loadingCircleRenderer;
 
     /** 将连接界面的 ESC 输入转发到原版取消连接逻辑，并消费该按键。 */
     @Inject(method = "keyPressed", at = @At("HEAD"), cancellable = true)
     private void youzaiworldcore$cancelConnectionOnEscape(KeyEvent keyEvent,
-                                                          CallbackInfoReturnable<Boolean> cir) {
+            CallbackInfoReturnable<Boolean> cir) {
         if (!keyEvent.isEscape() || !((Object) this instanceof ConnectScreenCancelAccess access)) {
             return;
         }
@@ -49,10 +54,11 @@ public class ScreenMixinForLoadingStatus {
     }
 
     /** 在保存世界或准备资源的通用提示屏上绘制左下角加载圈与文字。 */
+    @SuppressWarnings("null")
     @Inject(method = "extractRenderState", at = @At("HEAD"), cancellable = true)
     private void youzaiworldcore$drawLoadingStatus(GuiGraphicsExtractor graphics,
-                                                    int mouseX, int mouseY, float partialTick,
-                                                    CallbackInfo ci) {
+            int mouseX, int mouseY, float partialTick,
+            CallbackInfo ci) {
         if (!((Object) this instanceof GenericMessageScreen)
                 || !youzaiworldcore$isLoadingMessage()) {
             return;

@@ -30,12 +30,14 @@ public class CowardiceHandler {
     private static int tickCounter = 0;
     private static Holder<Enchantment> cached;
 
+    @SuppressWarnings("null")
     public static void register() {
         DebugLogger.entering(MODULE, "register");
 
         ServerTickEvents.END_SERVER_TICK.register(server -> {
             tickCounter++;
-            if (tickCounter < INTERVAL) return;
+            if (tickCounter < INTERVAL)
+                return;
             tickCounter = 0;
 
             if (cached == null) {
@@ -44,13 +46,16 @@ public class CowardiceHandler {
             }
 
             for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+                @SuppressWarnings("null")
                 int level = player.getItemBySlot(EquipmentSlot.LEGS).getEnchantments().getLevel(cached);
                 AttributeInstance inst = player.getAttribute(Attributes.MOVEMENT_SPEED);
-                if (inst == null) continue;
+                if (inst == null)
+                    continue;
 
                 boolean fullHealth = player.getHealth() >= player.getMaxHealth();
                 if (level > 0 && fullHealth) {
                     double amount = 0.05 + (level - 1) * 0.05;
+                    @SuppressWarnings("null")
                     AttributeModifier current = inst.getModifier(MODIFIER_ID);
                     if (current == null || Double.compare(current.amount(), amount) != 0
                             || current.operation() != AttributeModifier.Operation.ADD_VALUE) {

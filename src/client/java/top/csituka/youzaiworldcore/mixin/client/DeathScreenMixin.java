@@ -49,8 +49,8 @@ public abstract class DeathScreenMixin extends Screen {
         Button vanillaRespawnButton = exitButtons.getFirst();
         vanillaRespawnButton.setWidth(HALF_BUTTON_WIDTH);
         youzaiworldcore$inPlaceRespawnButton = Button.builder(
-                        Component.translatable("youzaiworldcore.respawn.in_place.button"),
-                        button -> youzaiworldcore$requestInPlaceRespawn())
+                Component.translatable("youzaiworldcore.respawn.in_place.button"),
+                button -> youzaiworldcore$requestInPlaceRespawn())
                 .bounds(vanillaRespawnButton.getX() + HALF_BUTTON_WIDTH + BUTTON_GAP,
                         vanillaRespawnButton.getY(), HALF_BUTTON_WIDTH, 20)
                 .build();
@@ -80,6 +80,7 @@ public abstract class DeathScreenMixin extends Screen {
         }
     }
 
+    @SuppressWarnings("null")
     @Inject(method = "visitText", at = @At("TAIL"))
     private void youzaiworldcore$renderRequiredLevel(ActiveTextCollector collector, CallbackInfo ci) {
         if (youzaiworldcore$inPlaceRespawnButton == null) {
