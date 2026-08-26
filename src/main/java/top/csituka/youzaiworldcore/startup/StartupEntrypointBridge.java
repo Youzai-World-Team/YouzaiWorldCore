@@ -128,7 +128,7 @@ public final class StartupEntrypointBridge {
 
             String safeId = normalize(modId, "unknown");
             String safeName = normalize(modName, safeId);
-            publishEntrypointState(safeName + "  [" + safeId + "]");
+            publishEntrypointState(safeName);
         }
     }
 

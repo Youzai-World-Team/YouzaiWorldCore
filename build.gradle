@@ -83,8 +83,10 @@ dependencies {
 
     // 启动阶段获取 JVM Instrumentation，用于读取 Fabric Loader 的真实入口点进度。
     include(implementation('net.lenni0451:Reflect:1.4.0'))
-    include(implementation('org.ow2.asm:asm:9.10.1'))
-    include(implementation('org.ow2.asm:asm-tree:9.10.1'))
+    // Fabric Loader/Mixin 已在启动器类路径提供 ASM。这里只参与编译，禁止嵌入模组，
+    // 否则 Knot 与 app 类加载器会各自加载 ClassNode，破坏其它模组的 Mixin 插件。
+    compileOnly('org.ow2.asm:asm:9.10.1')
+    compileOnly('org.ow2.asm:asm-tree:9.10.1')
 
     // Placeholder API
     implementation('eu.pb4:placeholder-api:3.1.0-beta.1+26.2')
