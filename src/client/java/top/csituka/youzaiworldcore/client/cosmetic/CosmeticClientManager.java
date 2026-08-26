@@ -15,10 +15,9 @@ import net.minecraft.world.entity.player.PlayerModelType;
 import net.minecraft.world.entity.player.PlayerSkin;
 import top.csituka.youzaiworldcore.YouzaiworldCore;
 import top.csituka.youzaiworldcore.client.config.ClientExternalSettings;
-import top.csituka.youzaiworldcore.config.CosmeticModuleSettings;
-import top.csituka.youzaiworldcore.config.GlobalSettings;
-import top.csituka.youzaiworldcore.config.ModPaths;
+import top.csituka.youzaiworldcore.client.config.ClientGlobalSettings;
 import top.csituka.youzaiworldcore.cosmetic.CosmeticPngValidator;
+import top.csituka.youzaiworldcore.config.ModPaths;
 import top.csituka.youzaiworldcore.cosmetic.CosmeticSnapshotHasher;
 import top.csituka.youzaiworldcore.network.CosmeticDataPayload;
 import top.csituka.youzaiworldcore.network.CosmeticInfoPayload;
@@ -82,7 +81,7 @@ public final class CosmeticClientManager {
             return;
         }
         initialized = true;
-        ModPaths.ensureDir(ModPaths.clientConfig(GlobalSettings.COSMETIC_MODULE));
+        ModPaths.ensureDir(ModPaths.clientConfig(ClientGlobalSettings.COSMETIC_MODULE));
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) ->
                 client.execute(CosmeticClientManager::clearSession));
         ClientTickEvents.END_CLIENT_TICK.register(client -> tick());
@@ -264,7 +263,7 @@ public final class CosmeticClientManager {
     }
 
     private static LocalSnapshot scanLocalFiles() {
-        Path directory = ModPaths.clientConfig(GlobalSettings.COSMETIC_MODULE);
+        Path directory = ModPaths.clientConfig(ClientGlobalSettings.COSMETIC_MODULE);
         Path wideSkinPath = directory.resolve(SKIN_WIDE.fileName());
         Path slimSkinPath = directory.resolve(SKIN_SLIM.fileName());
         boolean skinConflict = Files.isRegularFile(wideSkinPath) && Files.isRegularFile(slimSkinPath);
@@ -293,7 +292,7 @@ public final class CosmeticClientManager {
         }
         try {
             long size = Files.size(file);
-            if (size <= 0 || size > CosmeticModuleSettings.ABSOLUTE_MAX_FILE_BYTES) {
+            if (size <= 0 || size > CosmeticPngValidator.ABSOLUTE_MAX_FILE_BYTES) {
                 DebugLogger.warn(MODULE, "忽略大小不合法的本地外观文件：%s（%d 字节）", file, size);
                 return new ScannedFile(EMPTY, new CosmeticUploadState.FileState("", size, false));
             }
@@ -301,8 +300,8 @@ public final class CosmeticClientManager {
             byte[] bytes = Files.readAllBytes(file);
             String sha256 = sha256(bytes);
             CosmeticPngValidator.Validation validation = slot.cloak()
-                    ? CosmeticPngValidator.validateCloak(bytes, CosmeticModuleSettings.ABSOLUTE_MAX_FILE_BYTES)
-                    : CosmeticPngValidator.validateSkin(bytes, CosmeticModuleSettings.ABSOLUTE_MAX_FILE_BYTES);
+                    ? CosmeticPngValidator.validateCloak(bytes, CosmeticPngValidator.ABSOLUTE_MAX_FILE_BYTES)
+                    : CosmeticPngValidator.validateSkin(bytes, CosmeticPngValidator.ABSOLUTE_MAX_FILE_BYTES);
             if (!validation.valid()) {
                 DebugLogger.warn(MODULE, "忽略不合法的本地外观文件 %s：%s", file, validation.reason());
                 return new ScannedFile(EMPTY,
@@ -360,8 +359,8 @@ public final class CosmeticClientManager {
         }
 
         CosmeticPngValidator.Validation validation = slot.cloak()
-                ? CosmeticPngValidator.validateCloak(data, CosmeticModuleSettings.ABSOLUTE_MAX_FILE_BYTES)
-                : CosmeticPngValidator.validateSkin(data, CosmeticModuleSettings.ABSOLUTE_MAX_FILE_BYTES);
+                ? CosmeticPngValidator.validateCloak(data, CosmeticPngValidator.ABSOLUTE_MAX_FILE_BYTES)
+                : CosmeticPngValidator.validateSkin(data, CosmeticPngValidator.ABSOLUTE_MAX_FILE_BYTES);
         if (!validation.valid()) {
             DebugLogger.warn(MODULE, "丢弃玩家 %s 的非法 %s：%s", ownerUuid, slot.fileName(), validation.reason());
             return null;

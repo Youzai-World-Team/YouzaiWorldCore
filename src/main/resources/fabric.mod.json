@@ -37,8 +37,7 @@
       "top.csituka.youzaiworldcore.client.Client"
     ],
     "main": [
-      "top.csituka.youzaiworldcore.YouzaiworldCore",
-      "top.csituka.youzaiworldcore.placeholders.LuckPermsFabricPlaceholders"
+      "top.csituka.youzaiworldcore.YouzaiworldCore"
     ],
     "modmenu": [
       "top.csituka.youzaiworldcore.client.ModMenuIntegration"
@@ -46,7 +45,14 @@
   },
   "mixins": [
     "youzaiworldcore.mixins.json",
-    "youzaiworldcore.account.mixins.json",
+    {
+      "config": "youzaiworldcore.server.mixins.json",
+      "environment": "server"
+    },
+    {
+      "config": "youzaiworldcore.account.mixins.json",
+      "environment": "server"
+    },
     {
       "config": "youzaiworldcore.client.mixins.json",
       "environment": "client"

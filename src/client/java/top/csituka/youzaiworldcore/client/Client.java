@@ -34,7 +34,7 @@ import top.csituka.youzaiworldcore.client.screen.MenuScreen;
 import top.csituka.youzaiworldcore.client.screen.WelcomeGuideScreen;
 import top.csituka.youzaiworldcore.client.screen.element.MainMenuElements;
 import top.csituka.youzaiworldcore.update.UpdateChecker;
-import top.csituka.youzaiworldcore.config.UpdateCheckerConfig;
+import top.csituka.youzaiworldcore.client.config.ClientUpdateCheckerConfig;
 import top.csituka.youzaiworldcore.client.update.ClientUpdateState;
 import top.csituka.youzaiworldcore.screen.ModMenuTypes;
 import top.csituka.youzaiworldcore.util.DebugLogger;
@@ -138,11 +138,11 @@ public class Client implements ClientModInitializer {
 
         // 加载更新检查器配置（客户端独立直连更新 API，用于标题界面公告）
         DebugLogger.info("Client", "加载更新检查器配置...");
-        UpdateCheckerConfig.load();
+        ClientUpdateCheckerConfig.load();
 
         // 客户端启动时异步检查更新（与服务端解耦，标题界面尚未连服，无法依赖 S2C 推送；
         // 检查地址固定为可选 / 强制两个 API 端点，见 UpdateChecker）
-        if (UpdateCheckerConfig.isEnabled() && UpdateCheckerConfig.isCheckOnStartupClient()) {
+        if (ClientUpdateCheckerConfig.isEnabled() && ClientUpdateCheckerConfig.isCheckOnStartup()) {
             DebugLogger.info("Client", "启动时异步检查更新...");
             UpdateChecker.checkAsync().thenAccept(result -> {
                 if (result != null) {

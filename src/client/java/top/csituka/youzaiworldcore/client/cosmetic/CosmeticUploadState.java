@@ -2,7 +2,7 @@ package top.csituka.youzaiworldcore.client.cosmetic;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import top.csituka.youzaiworldcore.config.GlobalSettings;
+import top.csituka.youzaiworldcore.client.config.ClientGlobalSettings;
 import top.csituka.youzaiworldcore.config.ModPaths;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
@@ -87,7 +87,7 @@ public final class CosmeticUploadState {
     }
 
     private static Path stateFile() {
-        return ModPaths.clientConfig(GlobalSettings.COSMETIC_MODULE).resolve(FILE_NAME);
+        return ModPaths.clientConfig(ClientGlobalSettings.COSMETIC_MODULE).resolve(FILE_NAME);
     }
 
     @SuppressWarnings("null")

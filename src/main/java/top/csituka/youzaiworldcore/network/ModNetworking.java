@@ -1,6 +1,5 @@
 package top.csituka.youzaiworldcore.network;
 
-import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.advancements.triggers.CriteriaTriggers;
 import net.minecraft.core.BlockPos;
@@ -64,125 +63,6 @@ public class ModNetworking {
     
     public static void initialize() {
         DebugLogger.entering("ModNetworking", "initialize");
-
-        // ===== 注册数据包类型 =====
-        PayloadTypeRegistry.serverboundPlay().register(DecomposeItemPayload.ID, DecomposeItemPayload.STREAM_CODEC);
-        DebugLogger.info("ModNetworking", "Registered serverbound packet: DecomposeItemPayload");
-        PayloadTypeRegistry.serverboundPlay().register(AuthRequestPayload.ID, AuthRequestPayload.STREAM_CODEC);
-        DebugLogger.info("ModNetworking", "Registered serverbound packet: AuthRequestPayload");
-        PayloadTypeRegistry.serverboundPlay().register(
-                RegistrationEmailRequestPayload.ID, RegistrationEmailRequestPayload.STREAM_CODEC);
-        DebugLogger.info("ModNetworking", "Registered serverbound packet: RegistrationEmailRequestPayload");
-        PayloadTypeRegistry.serverboundPlay().register(
-                PasswordResetRequestPayload.ID, PasswordResetRequestPayload.STREAM_CODEC);
-        DebugLogger.info("ModNetworking", "Registered serverbound packet: PasswordResetRequestPayload");
-        PayloadTypeRegistry.serverboundPlay().register(
-                AccountManagementRequestPayload.ID, AccountManagementRequestPayload.STREAM_CODEC);
-        DebugLogger.info("ModNetworking", "Registered serverbound packet: AccountManagementRequestPayload");
-        PayloadTypeRegistry.serverboundPlay().register(FlyBeaconActivePayload.ID, FlyBeaconActivePayload.STREAM_CODEC);
-        DebugLogger.info("ModNetworking", "Registered serverbound packet: FlyBeaconActivePayload");
-        PayloadTypeRegistry.serverboundPlay().register(WorldPoolTeleportPayload.ID, WorldPoolTeleportPayload.STREAM_CODEC);
-        DebugLogger.info("ModNetworking", "Registered serverbound packet: WorldPoolTeleportPayload");
-        PayloadTypeRegistry.serverboundPlay().register(InPlaceRespawnRequestPayload.ID,
-                InPlaceRespawnRequestPayload.STREAM_CODEC);
-        DebugLogger.info("ModNetworking", "Registered serverbound packet: InPlaceRespawnRequestPayload");
-
-        PayloadTypeRegistry.clientboundPlay().register(OpenMenuPayload.ID, OpenMenuPayload.STREAM_CODEC);
-        DebugLogger.info("ModNetworking", "Registered clientbound packet: OpenMenuPayload");
-        PayloadTypeRegistry.clientboundPlay().register(ManaSyncPayload.ID, ManaSyncPayload.STREAM_CODEC);
-        DebugLogger.info("ModNetworking", "Registered clientbound packet: ManaSyncPayload");
-        PayloadTypeRegistry.clientboundPlay().register(OpenAuthScreenPayload.ID, OpenAuthScreenPayload.STREAM_CODEC);
-        DebugLogger.info("ModNetworking", "Registered clientbound packet: OpenAuthScreenPayload");
-        PayloadTypeRegistry.clientboundPlay().register(
-                RegistrationEmailStatePayload.ID, RegistrationEmailStatePayload.STREAM_CODEC);
-        DebugLogger.info("ModNetworking", "Registered clientbound packet: RegistrationEmailStatePayload");
-        PayloadTypeRegistry.clientboundPlay().register(
-                PasswordResetStatePayload.ID, PasswordResetStatePayload.STREAM_CODEC);
-        DebugLogger.info("ModNetworking", "Registered clientbound packet: PasswordResetStatePayload");
-        PayloadTypeRegistry.clientboundPlay().register(
-                AccountManagementStatePayload.ID, AccountManagementStatePayload.STREAM_CODEC);
-        DebugLogger.info("ModNetworking", "Registered clientbound packet: AccountManagementStatePayload");
-        PayloadTypeRegistry.clientboundPlay().register(InPlaceRespawnInfoPayload.ID,
-                InPlaceRespawnInfoPayload.STREAM_CODEC);
-        DebugLogger.info("ModNetworking", "Registered clientbound packet: InPlaceRespawnInfoPayload");
-        PayloadTypeRegistry.clientboundPlay().register(InPlaceRespawnResultPayload.ID,
-                InPlaceRespawnResultPayload.STREAM_CODEC);
-        DebugLogger.info("ModNetworking", "Registered clientbound packet: InPlaceRespawnResultPayload");
-
-        PayloadTypeRegistry.clientboundPlay().register(TeleportAnchorListPayload.TYPE, TeleportAnchorListPayload.STREAM_CODEC);
-        DebugLogger.info("ModNetworking", "Registered clientbound packet: TeleportAnchorListPayload");
-        PayloadTypeRegistry.clientboundPlay().register(TeleportAnchorOpenNamePayload.TYPE, TeleportAnchorOpenNamePayload.STREAM_CODEC);
-        DebugLogger.info("ModNetworking", "Registered clientbound packet: TeleportAnchorOpenNamePayload");
-
-        // ===== 大字牌编辑界面数据包 =====
-        PayloadTypeRegistry.clientboundPlay().register(LargeSignOpenEditPayload.TYPE, LargeSignOpenEditPayload.STREAM_CODEC);
-        DebugLogger.info("ModNetworking", "Registered clientbound packet: LargeSignOpenEditPayload");
-        PayloadTypeRegistry.serverboundPlay().register(LargeSignSetTextPayload.TYPE, LargeSignSetTextPayload.STREAM_CODEC);
-        DebugLogger.info("ModNetworking", "Registered serverbound packet: LargeSignSetTextPayload");
-
-        // ===== 无线红石频道设置数据包 =====
-        PayloadTypeRegistry.clientboundPlay().register(WirelessRedstoneOpenChannelPayload.TYPE, WirelessRedstoneOpenChannelPayload.STREAM_CODEC);
-        DebugLogger.info("ModNetworking", "Registered clientbound packet: WirelessRedstoneOpenChannelPayload");
-        PayloadTypeRegistry.serverboundPlay().register(WirelessRedstoneSetChannelPayload.TYPE, WirelessRedstoneSetChannelPayload.STREAM_CODEC);
-        DebugLogger.info("ModNetworking", "Registered serverbound packet: WirelessRedstoneSetChannelPayload");
-        PayloadTypeRegistry.clientboundPlay().register(TeleportStoneInterruptPayload.TYPE, TeleportStoneInterruptPayload.STREAM_CODEC);
-        DebugLogger.info("ModNetworking", "Registered clientbound packet: TeleportStoneInterruptPayload");
-        PayloadTypeRegistry.clientboundPlay().register(LevelExpSyncPayload.ID, LevelExpSyncPayload.STREAM_CODEC);
-        DebugLogger.info("ModNetworking", "Registered clientbound packet: LevelExpSyncPayload");
-        PayloadTypeRegistry.clientboundPlay().register(DamageNumberPayload.ID, DamageNumberPayload.STREAM_CODEC);
-        DebugLogger.info("ModNetworking", "Registered clientbound packet: DamageNumberPayload");
-        PayloadTypeRegistry.clientboundPlay().register(FunctionToggleSyncPayload.TYPE, FunctionToggleSyncPayload.STREAM_CODEC);
-        DebugLogger.info("ModNetworking", "Registered clientbound packet: FunctionToggleSyncPayload");
-        PayloadTypeRegistry.serverboundPlay().register(TeleportAnchorTeleportPayload.TYPE, TeleportAnchorTeleportPayload.STREAM_CODEC);
-        DebugLogger.info("ModNetworking", "Registered serverbound packet: TeleportAnchorTeleportPayload");
-        PayloadTypeRegistry.serverboundPlay().register(TeleportAnchorDeletePayload.TYPE, TeleportAnchorDeletePayload.STREAM_CODEC);
-        DebugLogger.info("ModNetworking", "Registered serverbound packet: TeleportAnchorDeletePayload");
-        PayloadTypeRegistry.serverboundPlay().register(TeleportAnchorRenamePayload.TYPE, TeleportAnchorRenamePayload.STREAM_CODEC);
-        DebugLogger.info("ModNetworking", "Registered serverbound packet: TeleportAnchorRenamePayload");
-        PayloadTypeRegistry.serverboundPlay().register(TeleportAnchorActivatePayload.TYPE, TeleportAnchorActivatePayload.STREAM_CODEC);
-        DebugLogger.info("ModNetworking", "Registered serverbound packet: TeleportAnchorActivatePayload");
-        PayloadTypeRegistry.serverboundPlay().register(TeleportAnchorReorderPayload.TYPE, TeleportAnchorReorderPayload.STREAM_CODEC);
-        DebugLogger.info("ModNetworking", "Registered serverbound packet: TeleportAnchorReorderPayload");
-
-        // ===== 双开门功能切换 / 查询数据包 =====
-        PayloadTypeRegistry.serverboundPlay().register(DoubleDoorsTogglePayload.ID, DoubleDoorsTogglePayload.STREAM_CODEC);
-        DebugLogger.info("ModNetworking", "Registered serverbound packet: DoubleDoorsTogglePayload");
-
-        // ===== 隐身功能切换数据包 =====
-        PayloadTypeRegistry.serverboundPlay().register(InvisibilityPayload.ID, InvisibilityPayload.STREAM_CODEC);
-        DebugLogger.info("ModNetworking", "Registered serverbound packet: InvisibilityPayload");
-
-        // ===== 老吴贴贴事件 S2C 数据包（trigger / stop） =====
-        PayloadTypeRegistry.clientboundPlay().register(LaowuMemeTriggerPayload.ID, LaowuMemeTriggerPayload.STREAM_CODEC);
-        DebugLogger.info("ModNetworking", "Registered clientbound packet: LaowuMemeTriggerPayload");
-        PayloadTypeRegistry.clientboundPlay().register(LaowuMemeStopPayload.ID, LaowuMemeStopPayload.STREAM_CODEC);
-        DebugLogger.info("ModNetworking", "Registered clientbound packet: LaowuMemeStopPayload");
-
-        // ===== 宠物管理命令转发数据包 =====
-        PayloadTypeRegistry.serverboundPlay().register(PetCommandPayload.ID, PetCommandPayload.STREAM_CODEC);
-        DebugLogger.info("ModNetworking", "Registered serverbound packet: PetCommandPayload");
-
-        // ===== Trinkets 饰品槽交互数据包 =====
-        PayloadTypeRegistry.serverboundPlay().register(TrinketInteractPayload.ID, TrinketInteractPayload.STREAM_CODEC);
-        DebugLogger.info("ModNetworking", "Registered serverbound packet: TrinketInteractPayload");
-
-        // ===== YZUI 物品栏 Mouse Tweaks 数据包 =====
-        PayloadTypeRegistry.serverboundPlay().register(InventoryCollectPayload.ID, InventoryCollectPayload.STREAM_CODEC);
-        DebugLogger.info("ModNetworking", "Registered serverbound packet: InventoryCollectPayload");
-
-        // ===== AFK 客户端心跳数据包 =====
-        PayloadTypeRegistry.serverboundPlay().register(AfkHeartbeatPayload.ID, AfkHeartbeatPayload.STREAM_CODEC);
-        DebugLogger.info("ModNetworking", "Registered serverbound packet: AfkHeartbeatPayload");
-
-        // ===== 自定义皮肤与披风 =====
-        PayloadTypeRegistry.serverboundPlay().register(CosmeticUploadPayload.ID, CosmeticUploadPayload.STREAM_CODEC);
-        PayloadTypeRegistry.serverboundPlay().register(CosmeticRequestPayload.ID, CosmeticRequestPayload.STREAM_CODEC);
-        PayloadTypeRegistry.clientboundPlay().register(CosmeticReadyPayload.ID, CosmeticReadyPayload.STREAM_CODEC);
-        PayloadTypeRegistry.clientboundPlay().register(CosmeticInfoPayload.ID, CosmeticInfoPayload.STREAM_CODEC);
-        PayloadTypeRegistry.clientboundPlay().register(CosmeticDataPayload.ID, CosmeticDataPayload.STREAM_CODEC);
-        PayloadTypeRegistry.clientboundPlay().register(
-                CosmeticUploadResultPayload.ID, CosmeticUploadResultPayload.STREAM_CODEC);
-        DebugLogger.info("ModNetworking", "Registered cosmetic payloads");
 
         // ===== 服务端接收处理器 =====
         ServerPlayNetworking.registerGlobalReceiver(AuthRequestPayload.ID, (payload, context) -> {
@@ -749,12 +629,6 @@ public class ModNetworking {
             DebugLogger.exiting("ModNetworking", "InvisibilityPayload handler");
         });
 
-        // ===== 属性加点系统数据包 =====
-        PayloadTypeRegistry.clientboundPlay().register(AttributeSyncPayload.TYPE, AttributeSyncPayload.STREAM_CODEC);
-        DebugLogger.info("ModNetworking", "Registered clientbound packet: AttributeSyncPayload");
-        PayloadTypeRegistry.serverboundPlay().register(AttributeUpgradePayload.TYPE, AttributeUpgradePayload.STREAM_CODEC);
-        DebugLogger.info("ModNetworking", "Registered serverbound packet: AttributeUpgradePayload");
-
         // ===== 属性加点 C2S 处理器 =====
         ServerPlayNetworking.registerGlobalReceiver(AttributeUpgradePayload.TYPE, (payload, context) -> {
             var player = (net.minecraft.server.level.ServerPlayer) context.player();
@@ -1025,50 +899,6 @@ public class ModNetworking {
             });
             DebugLogger.exiting("ModNetworking", "TrinketInteractPayload handler");
         });
-
-        // ======================================================================
-        // 邮件系统（Mail）—— 数据包注册
-        // ======================================================================
-
-        // C2S 注册
-        PayloadTypeRegistry.serverboundPlay().register(MailComposeOpenPayload.ID, MailComposeOpenPayload.STREAM_CODEC);
-        DebugLogger.info("ModNetworking", "Registered serverbound packet: MailComposeOpenPayload");
-        PayloadTypeRegistry.serverboundPlay().register(MailOpenPayload.ID, MailOpenPayload.STREAM_CODEC);
-        DebugLogger.info("ModNetworking", "Registered serverbound packet: MailOpenPayload");
-        PayloadTypeRegistry.serverboundPlay().register(MailSentListRequestPayload.ID, MailSentListRequestPayload.STREAM_CODEC);
-        DebugLogger.info("ModNetworking", "Registered serverbound packet: MailSentListRequestPayload");
-        PayloadTypeRegistry.serverboundPlay().register(MailRecallPayload.ID, MailRecallPayload.STREAM_CODEC);
-        DebugLogger.info("ModNetworking", "Registered serverbound packet: MailRecallPayload");
-        PayloadTypeRegistry.serverboundPlay().register(MailPurgePayload.ID, MailPurgePayload.STREAM_CODEC);
-        DebugLogger.info("ModNetworking", "Registered serverbound packet: MailPurgePayload");
-        PayloadTypeRegistry.serverboundPlay().register(MailListRequestPayload.ID, MailListRequestPayload.STREAM_CODEC);
-        DebugLogger.info("ModNetworking", "Registered serverbound packet: MailListRequestPayload");
-        PayloadTypeRegistry.serverboundPlay().register(MailFetchPayload.ID, MailFetchPayload.STREAM_CODEC);
-        DebugLogger.info("ModNetworking", "Registered serverbound packet: MailFetchPayload");
-        PayloadTypeRegistry.serverboundPlay().register(MailActionPayload.ID, MailActionPayload.STREAM_CODEC);
-        DebugLogger.info("ModNetworking", "Registered serverbound packet: MailActionPayload");
-        PayloadTypeRegistry.serverboundPlay().register(MailAdminSendPayload.ID, MailAdminSendPayload.STREAM_CODEC);
-        DebugLogger.info("ModNetworking", "Registered serverbound packet: MailAdminSendPayload");
-        PayloadTypeRegistry.serverboundPlay().register(MailAdminEditPayload.ID, MailAdminEditPayload.STREAM_CODEC);
-        DebugLogger.info("ModNetworking", "Registered serverbound packet: MailAdminEditPayload");
-        PayloadTypeRegistry.serverboundPlay().register(MailPlayerListRequestPayload.ID, MailPlayerListRequestPayload.STREAM_CODEC);
-        DebugLogger.info("ModNetworking", "Registered serverbound packet: MailPlayerListRequestPayload");
-
-        // S2C 注册
-        PayloadTypeRegistry.clientboundPlay().register(OpenMailComposePayload.ID, OpenMailComposePayload.STREAM_CODEC);
-        DebugLogger.info("ModNetworking", "Registered clientbound packet: OpenMailComposePayload");
-        PayloadTypeRegistry.clientboundPlay().register(MailListPayload.ID, MailListPayload.STREAM_CODEC);
-        DebugLogger.info("ModNetworking", "Registered clientbound packet: MailListPayload");
-        PayloadTypeRegistry.clientboundPlay().register(MailSentListPayload.ID, MailSentListPayload.STREAM_CODEC);
-        DebugLogger.info("ModNetworking", "Registered clientbound packet: MailSentListPayload");
-        PayloadTypeRegistry.clientboundPlay().register(MailUpdatePayload.ID, MailUpdatePayload.STREAM_CODEC);
-        DebugLogger.info("ModNetworking", "Registered clientbound packet: MailUpdatePayload");
-        PayloadTypeRegistry.clientboundPlay().register(MailOpResultPayload.ID, MailOpResultPayload.STREAM_CODEC);
-        DebugLogger.info("ModNetworking", "Registered clientbound packet: MailOpResultPayload");
-        PayloadTypeRegistry.clientboundPlay().register(MailUnreadCountPayload.ID, MailUnreadCountPayload.STREAM_CODEC);
-        DebugLogger.info("ModNetworking", "Registered clientbound packet: MailUnreadCountPayload");
-        PayloadTypeRegistry.clientboundPlay().register(MailPlayerListPayload.ID, MailPlayerListPayload.STREAM_CODEC);
-        DebugLogger.info("ModNetworking", "Registered clientbound packet: MailPlayerListPayload");
 
         // ======================================================================
         // 邮件系统（Mail）—— 服务端接收处理器

@@ -30,7 +30,6 @@ import eu.pb4.placeholders.api.Placeholders;
 import eu.pb4.placeholders.api.ServerPlaceholderContext;
 import eu.pb4.placeholders.api.node.TextNode;
 import eu.pb4.placeholders.api.parsers.LegacyFormattingParser;
-import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.loader.api.FabricLoader;
 import net.luckperms.api.LuckPerms;
@@ -45,21 +44,22 @@ import net.minecraft.server.level.ServerPlayer;
 import java.util.Map;
 
 @SuppressWarnings("null")
-public class LuckPermsFabricPlaceholders implements ModInitializer, PlaceholderPlatform {
+public class LuckPermsFabricPlaceholders implements PlaceholderPlatform {
 
-    @Override
-    public void onInitialize() {
+    /** 注册专用服务端启动后的 LuckPerms Placeholder。 */
+    public static void initialize() {
         ServerLifecycleEvents.SERVER_STARTED.register(server -> registerPlaceholders());
     }
 
-    private void registerPlaceholders() {
+    private static void registerPlaceholders() {
         // 检查 LuckPerms 是否已加载，如未加载则跳过注册
         if (!FabricLoader.getInstance().isModLoaded("luckperms")) {
             return;
         }
 
         LuckPerms luckPerms = LuckPermsProvider.get();
-        PlaceholderProvider provider = new LPPlaceholderProvider(this, luckPerms);
+        LuckPermsFabricPlaceholders platform = new LuckPermsFabricPlaceholders();
+        PlaceholderProvider provider = new LPPlaceholderProvider(platform, luckPerms);
         Map<String, Placeholder> placeholders = provider.getPlaceholders();
 
         placeholders.forEach((s, placeholder) -> {
@@ -91,7 +91,7 @@ public class LuckPermsFabricPlaceholders implements ModInitializer, PlaceholderP
                     }
 
                     if (result instanceof Boolean) {
-                        result = this.formatBoolean((boolean) result);
+                        result = platform.formatBoolean((boolean) result);
                     }
 
                     return result == null ? PlaceholderResult.invalid() : PlaceholderResult.value(parseText(result.toString()));
@@ -115,7 +115,7 @@ public class LuckPermsFabricPlaceholders implements ModInitializer, PlaceholderP
                     Object result = sp.handle(player, user, data, queryOptions);
 
                     if (result instanceof Boolean) {
-                        result = this.formatBoolean((boolean) result);
+                        result = platform.formatBoolean((boolean) result);
                     }
 
                     return result == null ? PlaceholderResult.invalid() : PlaceholderResult.value(parseText(result.toString()));
@@ -124,7 +124,7 @@ public class LuckPermsFabricPlaceholders implements ModInitializer, PlaceholderP
         });
     }
 
-    private Component parseText(String input) {
+    private static Component parseText(String input) {
         return TextNode.asSingle(LegacyFormattingParser.ALL.parseNodes(TextNode.of(input))).toComponent();
     }
 }

@@ -30,7 +30,7 @@ import top.csituka.youzaiworldcore.client.config.ClientExternalSettings;
 import top.csituka.youzaiworldcore.client.animation.GuiAnimationController;
 import top.csituka.youzaiworldcore.client.screen.widget.TitleScreenTextButton;
 import top.csituka.youzaiworldcore.client.update.ClientUpdateState;
-import top.csituka.youzaiworldcore.config.UpdateCheckerConfig;
+import top.csituka.youzaiworldcore.client.config.ClientUpdateCheckerConfig;
 import top.csituka.youzaiworldcore.update.TitleScreenScrollState;
 import top.csituka.youzaiworldcore.update.UpdateChecker;
 import top.csituka.youzaiworldcore.update.UpdateResult;
@@ -314,7 +314,7 @@ public class TitleScreenMixin {
         }
 
         // 每次进入标题界面（含从服务器断开后）重新检查更新
-        if (UpdateCheckerConfig.isCheckOnStartupClient()) {
+        if (ClientUpdateCheckerConfig.isCheckOnStartup()) {
             // 检查地址固定为可选 / 强制两个 API 端点，见 UpdateChecker
             UpdateChecker.checkAsync().thenAccept(result -> {
                 if (result != null) {
@@ -587,7 +587,7 @@ public class TitleScreenMixin {
      * <p>规则：开启显示 + 存在可用更新 + （非强制更新时未被忽略）。</p>
      */
     private static boolean youzaiworldcore$shouldShowUpdate() {
-        if (!UpdateCheckerConfig.isShowOnTitleScreen()) return false;
+        if (!ClientUpdateCheckerConfig.isShowOnTitleScreen()) return false;
         UpdateResult r = ClientUpdateState.get();
         if (r == null || !r.updateAvailable()) return false;
         if (!r.forcedUpdate()) {
@@ -601,7 +601,7 @@ public class TitleScreenMixin {
 
     /** 强制更新状态下阻止进入服务器 */
     private static boolean youzaiworldcore$isForcedUpdateBlocking() {
-        if (!UpdateCheckerConfig.isShowOnTitleScreen()) return false;
+        if (!ClientUpdateCheckerConfig.isShowOnTitleScreen()) return false;
         UpdateResult r = ClientUpdateState.get();
         return r != null && r.updateAvailable() && r.forcedUpdate();
     }

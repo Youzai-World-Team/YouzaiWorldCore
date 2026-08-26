@@ -8,7 +8,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import top.csituka.youzaiworldcore.client.update.ClientUpdateState;
-import top.csituka.youzaiworldcore.config.UpdateCheckerConfig;
+import top.csituka.youzaiworldcore.client.config.ClientUpdateCheckerConfig;
 import top.csituka.youzaiworldcore.update.TitleScreenScrollState;
 import top.csituka.youzaiworldcore.update.UpdateResult;
 import top.csituka.youzaiworldcore.client.config.ClientExternalSettings;
@@ -34,7 +34,7 @@ public class MouseHandlerScrollMixin {
     private void youzaiworldcore$onMouseScroll(long window, double horizontal, double vertical, CallbackInfo ci) {
         Minecraft mc = Minecraft.getInstance();
         if (!(mc.gui.screen() instanceof TitleScreen)) return;
-        if (!UpdateCheckerConfig.isShowOnTitleScreen()) return;
+        if (!ClientUpdateCheckerConfig.isShowOnTitleScreen()) return;
         UpdateResult r = ClientUpdateState.get();
         if (r == null || !r.updateAvailable()) return;
         if (!r.forcedUpdate()) {

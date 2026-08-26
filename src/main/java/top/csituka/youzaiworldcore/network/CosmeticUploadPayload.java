@@ -5,7 +5,7 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
 import top.csituka.youzaiworldcore.YouzaiworldCore;
-import top.csituka.youzaiworldcore.config.CosmeticModuleSettings;
+import top.csituka.youzaiworldcore.cosmetic.CosmeticPngValidator;
 
 /**
  * C2S：离线会话玩家上传当前自定义外观快照；空数组表示删除对应服务端文件。
@@ -42,9 +42,9 @@ public record CosmeticUploadPayload(
                     buf -> new CosmeticUploadPayload(
                             buf.readBoolean(),
                             buf.readUtf(64),
-                            buf.readByteArray(CosmeticModuleSettings.ABSOLUTE_MAX_FILE_BYTES),
-                            buf.readByteArray(CosmeticModuleSettings.ABSOLUTE_MAX_FILE_BYTES),
-                            buf.readByteArray(CosmeticModuleSettings.ABSOLUTE_MAX_FILE_BYTES)));
+                            buf.readByteArray(CosmeticPngValidator.ABSOLUTE_MAX_FILE_BYTES),
+                            buf.readByteArray(CosmeticPngValidator.ABSOLUTE_MAX_FILE_BYTES),
+                            buf.readByteArray(CosmeticPngValidator.ABSOLUTE_MAX_FILE_BYTES)));
 
     private static byte[] nonNull(byte[] data) {
         return data == null ? EMPTY : data;

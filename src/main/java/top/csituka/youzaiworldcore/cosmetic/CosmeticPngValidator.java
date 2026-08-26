@@ -9,6 +9,9 @@ package top.csituka.youzaiworldcore.cosmetic;
  */
 public final class CosmeticPngValidator {
 
+    /** 网络解码和客户端本地校验共同使用的绝对文件大小上限。 */
+    public static final int ABSOLUTE_MAX_FILE_BYTES = 512 * 1024;
+
     private static final byte[] PNG_MAGIC = {
             (byte) 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A
     };

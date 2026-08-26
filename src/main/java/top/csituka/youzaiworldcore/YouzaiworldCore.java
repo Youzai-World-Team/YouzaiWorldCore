@@ -4,6 +4,7 @@ import com.mojang.brigadier.arguments.FloatArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.api.EnvType;
 import net.fabricmc.fabric.api.biome.v1.BiomeModifications;
 import net.fabricmc.fabric.api.biome.v1.BiomeSelectors;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
@@ -22,6 +23,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.levelgen.GenerationStep;
 import net.minecraft.world.level.levelgen.placement.PlacedFeature;
+import net.fabricmc.loader.api.FabricLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -95,6 +97,7 @@ import top.csituka.youzaiworldcore.item.ModCreativeModeTabs;
 import top.csituka.youzaiworldcore.item.ModItems;
 import top.csituka.youzaiworldcore.item.tool.YzChainMiningTool;
 import top.csituka.youzaiworldcore.network.ModNetworking;
+import top.csituka.youzaiworldcore.network.ModPayloadTypes;
 import top.csituka.youzaiworldcore.network.OpenMenuPayload;
 import top.csituka.youzaiworldcore.redstone.WirelessRedstoneNetwork;
 import top.csituka.youzaiworldcore.sound.ModSoundEvents;
@@ -152,6 +155,52 @@ public class YouzaiworldCore implements ModInitializer {
 
     @Override
     public void onInitialize() {
+        // ===== 公共注册必须在客户端和专用服务端都执行 =====
+        // 客户端需要这些注册表对象来解析服务端同步过来的物品、方块、菜单和实体；
+        // 专用服务端则在此基础上继续执行权威玩法、账户和 Api 初始化。
+        initializeCommonRegistrations();
+
+        // Fabric 的 main 入口在两种物理环境都会调用。
+        // 客户端不能读取 yzwc/server 配置，也不能触发账户 / Api 的服务端密钥校验。
+        if (FabricLoader.getInstance().getEnvironmentType() != EnvType.SERVER) {
+            DebugLogger.info("YouzaiworldCore", "检测到客户端环境，已跳过服务端专用初始化");
+            return;
+        }
+
+        initializeServer();
+    }
+
+    /**
+     * 初始化客户端与服务端共同需要的注册表内容。
+     * <p>此方法禁止读取服务端配置、账户数据或调用 Api。</p>
+     */
+    private static void initializeCommonRegistrations() {
+        DebugLogger.entering("YouzaiworldCore", "initializeCommonRegistrations");
+
+        DebugLogger.info("YouzaiworldCore", "初始化数据组件...");
+        ModDataComponents.initialize();
+        DebugLogger.info("YouzaiworldCore", "初始化方块...");
+        ModBlocks.initialize();
+        DebugLogger.info("YouzaiworldCore", "初始化方块实体...");
+        ModBlockEntities.initialize();
+        DebugLogger.info("YouzaiworldCore", "初始化物品...");
+        ModItems.initialize();
+        DebugLogger.info("YouzaiworldCore", "初始化自定义 SoundEvent...");
+        ModSoundEvents.initialize();
+        DebugLogger.info("YouzaiworldCore", "初始化创造模式标签页...");
+        ModCreativeModeTabs.initialize();
+        DebugLogger.info("YouzaiworldCore", "初始化菜单类型...");
+        ModMenuTypes.initialize();
+        DebugLogger.info("YouzaiworldCore", "初始化公共网络 Payload 类型...");
+        ModPayloadTypes.initialize();
+        DebugLogger.info("YouzaiworldCore", "注册座椅实体...");
+        ModSeatEntities.initialize();
+
+        DebugLogger.exiting("YouzaiworldCore", "initializeCommonRegistrations");
+    }
+
+    /** 初始化仅专用服务端运行的权威逻辑、配置、事件与命令。 */
+    private void initializeServer() {
         // ===== 建立服务端存放目录骨架（config / data / backup / temp） =====
         ModPaths.bootstrapServerLayout();
 
@@ -179,28 +228,14 @@ public class YouzaiworldCore implements ModInitializer {
             TempManager.clearOnServerStart(server);
         });
 
-        DebugLogger.info("YouzaiworldCore", "初始化数据组件...");
-        ModDataComponents.initialize();
-        DebugLogger.info("YouzaiworldCore", "初始化方块...");
-        ModBlocks.initialize();
-        DebugLogger.info("YouzaiworldCore", "初始化方块实体...");
-        ModBlockEntities.initialize();
         DebugLogger.info("YouzaiworldCore", "初始化无线红石网络索引...");
         WirelessRedstoneNetwork.initialize();
-        DebugLogger.info("YouzaiworldCore", "初始化物品...");
-        ModItems.initialize();
-        DebugLogger.info("YouzaiworldCore", "初始化自定义 SoundEvent...");
-        ModSoundEvents.initialize();
-        DebugLogger.info("YouzaiworldCore", "初始化创造模式标签页...");
-        ModCreativeModeTabs.initialize();
-        DebugLogger.info("YouzaiworldCore", "初始化菜单类型...");
-        ModMenuTypes.initialize();
-        DebugLogger.info("YouzaiworldCore", "初始化网络注册...");
-        ModNetworking.initialize();
         DebugLogger.info("YouzaiworldCore", "初始化伤害跳字处理器...");
         DamageNumberHandler.initialize();
-        DebugLogger.info("YouzaiworldCore", "注册座椅实体...");
-        ModSeatEntities.initialize();
+        DebugLogger.info("YouzaiworldCore", "初始化服务端网络接收器...");
+        ModNetworking.initialize();
+        initializeLuckPermsPlaceholders();
+
         DebugLogger.info("YouzaiworldCore", "注册连锁采集事件...");
         YzChainMiningTool.registerChainMiningEvent();
         DebugLogger.info("YouzaiworldCore", "注册铁砧修复事件...");
@@ -664,6 +699,32 @@ public class YouzaiworldCore implements ModInitializer {
 
         DebugLogger.exiting("YouzaiworldCore", "onInitialize",
                 "devMode=" + devModeEnabled + ", logToFile=" + logToFile);
+    }
+
+    /**
+     * 仅在 LuckPerms 已安装时加载可选的 Placeholder 集成。
+     * <p>
+     * LuckPerms API 是 {@code compileOnly} 依赖；不能在未安装 LuckPerms 的服务端，
+     * 或客户端环境中通过直接类引用触发其类解析。
+     * </p>
+     */
+    private static void initializeLuckPermsPlaceholders() {
+        if (!FabricLoader.getInstance().isModLoaded("luckperms")) {
+            DebugLogger.info("YouzaiworldCore", "未检测到 LuckPerms，跳过 Placeholder 集成");
+            return;
+        }
+
+        DebugLogger.info("YouzaiworldCore", "注册 LuckPerms Placeholder 服务端入口...");
+        try {
+            Class<?> entrypoint = Class.forName(
+                    "top.csituka.youzaiworldcore.placeholders.LuckPermsFabricPlaceholders",
+                    true,
+                    YouzaiworldCore.class.getClassLoader());
+            entrypoint.getMethod("initialize").invoke(null);
+        } catch (ReflectiveOperationException | LinkageError | SecurityException e) {
+            // 可选集成失败不能阻止核心服务端启动。
+            DebugLogger.exception("YouzaiworldCore", "加载 LuckPerms Placeholder 集成", e);
+        }
     }
 
     // ==================== 命令执行方法 ====================

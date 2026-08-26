@@ -32,6 +32,7 @@ public final class ClientDefaultSettingsWriter {
             ClientExternalSettings.writeDefaults();
             YzHudSettings.writeDefaults();
             Configurator.writeDefaults();
+            ClientUpdateCheckerConfig.writeDefaults();
         });
         DebugLogger.exiting(MODULE, "writeAllDefaults");
     }
