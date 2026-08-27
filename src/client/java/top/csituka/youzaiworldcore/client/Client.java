@@ -65,22 +65,24 @@ public class Client implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         DebugLogger.entering("Client", "onInitializeClient");
-        StartupLoadingStatus.beginPhase("客户端初始化", 10);
+        StartupLoadingStatus.beginPhase("客户端初始化", 27);
 
-        StartupLoadingStatus.beginStage("客户端配置");
+        StartupLoadingStatus.beginStage("客户端全局配置");
         // 加载客户端全局配置（yzwc/client/global_settings.json）
         // 必须最先执行：其余所有客户端模块的配置都从这份文件的各自分节里读
         // 文件不存在（首次安装）时会直接写出一份含全部模块默认值的完整配置
         top.csituka.youzaiworldcore.client.config.ClientGlobalSettings.load();
 
+        StartupLoadingStatus.beginStage("配置恢复检查");
         // 配置文件导入崩溃自愈：检测并恢复孤立的 config_bak_* 备份
         DebugLogger.info("Client", "检查上次导入中断后的配置恢复...");
         ConfigIOManager.recoverIfNeeded(Minecraft.getInstance().gameDirectory);
 
-        StartupLoadingStatus.beginStage("基础 HUD 与 Tick");
+        StartupLoadingStatus.beginStage("客户端 Tick 事件");
         DebugLogger.info("Client", "注册客户端 Tick 事件...");
         ClientTickEvents.END_CLIENT_TICK.register(this::onClientTick);
 
+        StartupLoadingStatus.beginStage("基础 HUD 渲染");
         DebugLogger.info("Client", "注册魔力条 HUD 渲染...");
         ManaHudRenderer.register();
         DebugLogger.info("Client", "注册冒险等级 HUD 渲染...");
@@ -88,11 +90,12 @@ public class Client implements ClientModInitializer {
         DebugLogger.info("Client", "初始化伤害跳字渲染器...");
         DamageNumberRenderer.initialize();
 
+        StartupLoadingStatus.beginStage("拾取通知系统");
         DebugLogger.info("Client", "初始化拾取通知系统...");
         DrawEntriesHandler.INSTANCE.setEnabled(true);
         DebugLogger.info("Client", "拾取通知系统已初始化");
 
-        StartupLoadingStatus.beginStage("方块与实体渲染器");
+        StartupLoadingStatus.beginStage("方块实体渲染器");
         // 方块实体渲染器注册
         DebugLogger.info("Client", "注册飞行信标方块实体渲染器...");
         BlockEntityRenderers.register(ModBlockEntities.FLY_BEACON, FlyBeaconBlockEntityRenderer::new);
@@ -104,31 +107,36 @@ public class Client implements ClientModInitializer {
         DebugLogger.info("Client", "注册大字牌方块实体渲染器...");
         BlockEntityRenderers.register(ModBlockEntities.LARGE_SIGN, LargeSignBlockEntityRenderer::new);
 
+        StartupLoadingStatus.beginStage("生物渲染器");
         // 猫渲染器：用 GeckoLib 模型整体接管原版 CatRenderer（正常态 idle/sit/running，对峙态 ha_qi）。
         // EntityRendererRegistry 虽被标记 @Deprecated（官方建议改用 EntityRenderers.register），
         // 但 26.2 的 EntityRenderers.register 是 private 且未被 Fabric TAW 放开，故仍用此入口。
         DebugLogger.info("Client", "注册猫 GeckoLib 渲染器（老吴对峙）...");
         EntityRendererRegistry.register(EntityTypes.CAT, LaowuCatRenderer::new);
 
-        StartupLoadingStatus.beginStage("资源与菜单");
+        StartupLoadingStatus.beginStage("物品模型定义自检");
         // 物品模型定义自检：资源重载后校验模组物品是否都有 assets/youzaiworldcore/items/*.json
         // （缺失会导致该物品在物品栏/手持时渲染为黑紫丢失材质）
         DebugLogger.info("Client", "注册物品模型定义自检...");
         ItemModelDefinitionValidator.register();
 
+        StartupLoadingStatus.beginStage("菜单屏幕");
         DebugLogger.info("Client", "注册菜单屏幕...");
         MenuScreens.register(ModMenuTypes.DECOMPOSITION_TABLE, DecompositionTableScreen::new);
         MenuScreens.register(ModMenuTypes.FLY_BEACON, FlyBeaconScreen::new);
 
+        StartupLoadingStatus.beginStage("客户端网络");
         DebugLogger.info("Client", "初始化客户端网络...");
         top.csituka.youzaiworldcore.network.ClientNetworking.initialize();
 
-        StartupLoadingStatus.beginStage("客户端外部设置与 YZUI");
+        StartupLoadingStatus.beginStage("客户端外部设置");
         // 加载客户端外部设置
         DebugLogger.info("Client", "加载客户端外部设置...");
         top.csituka.youzaiworldcore.client.config.ClientExternalSettings.load();
+        StartupLoadingStatus.beginStage("YZHUD 设置");
         DebugLogger.info("Client", "加载 YZHUD 设置...");
         top.csituka.youzaiworldcore.client.config.YzHudSettings.load();
+        StartupLoadingStatus.beginStage("YZUI 侧边栏");
         DebugLogger.info("Client", "初始化 YZUI 记分板侧边栏渲染...");
         ScoreboardSidebarRenderer.initialize();
         // 单人模式集成服务器：遵照客户端设置覆盖 logToFile 标志
@@ -137,20 +145,25 @@ public class Client implements ClientModInitializer {
         top.csituka.youzaiworldcore.YouzaiworldCore.devModeEnabled = top.csituka.youzaiworldcore.client.config.ClientExternalSettings
                 .isDevModeEnabled();
 
+        StartupLoadingStatus.beginStage("自定义字体资源包");
         DebugLogger.info("Client", "注册自定义字体内置资源包...");
         CustomFontResourcePack.register();
 
-        StartupLoadingStatus.beginStage("外观与更新检查");
+        StartupLoadingStatus.beginStage("外观管理器");
         DebugLogger.info("Client", "初始化自定义皮肤与披风客户端管理器...");
         CosmeticClientManager.initialize();
 
+        StartupLoadingStatus.beginStage("更新检查器配置");
         // 加载更新检查器配置（客户端独立直连更新 API，用于标题界面公告）
         DebugLogger.info("Client", "加载更新检查器配置...");
         ClientUpdateCheckerConfig.load();
 
         // 客户端启动时异步检查更新（与服务端解耦，标题界面尚未连服，无法依赖 S2C 推送；
         // 检查地址固定为可选 / 强制两个 API 端点，见 UpdateChecker）
-        if (ClientUpdateCheckerConfig.isEnabled() && ClientUpdateCheckerConfig.isCheckOnStartup()) {
+        boolean checkUpdateOnStartup = ClientUpdateCheckerConfig.isEnabled()
+                && ClientUpdateCheckerConfig.isCheckOnStartup();
+        StartupLoadingStatus.beginStage(checkUpdateOnStartup ? "检查更新中" : "已跳过更新检查");
+        if (checkUpdateOnStartup) {
             DebugLogger.info("Client", "启动时异步检查更新...");
             UpdateChecker.checkAsync().thenAccept(result -> {
                 if (result != null) {
@@ -162,10 +175,11 @@ public class Client implements ClientModInitializer {
             });
         }
 
-        StartupLoadingStatus.beginStage("语言与视觉增强");
+        StartupLoadingStatus.beginStage("语言补丁");
         // LangPatch init
         LangPatchImpl.init();
 
+        StartupLoadingStatus.beginStage("视觉增强");
         // 高亮物品功能初始化（配置加载、键位注册、客户端命令、延迟调度器）
         DebugLogger.info("Client", "初始化高亮物品功能...");
         HighlightItemClient.initialize();
@@ -201,24 +215,29 @@ public class Client implements ClientModInitializer {
         DebugLogger.info("Client", "注册服务端 /yzwc 子命令占位镜像...");
         top.csituka.youzaiworldcore.command.YzwcServerMirrorCommand.register();
 
-        StartupLoadingStatus.beginStage("音频与粒子效果");
+        StartupLoadingStatus.beginStage("音频系统");
         // 老吴贴贴事件：注册内置曲目 SoundEvent + 初始化本地音频池
         DebugLogger.info("Client", "初始化老吴贴贴音频系统...");
         top.csituka.youzaiworldcore.client.laowumeme.LaowuModSounds.init();
         top.csituka.youzaiworldcore.client.laowumeme.LaowuAudioPool.init();
 
+        StartupLoadingStatus.beginStage("工具信息 HUD");
         DebugLogger.info("Client", "注册工具信息 HUD 叠加层...");
         ToolInfoOverlay.register();
 
+        StartupLoadingStatus.beginStage("YZUI × Jade 样式桥接");
         DebugLogger.info("Client", "初始化 YZUI × Jade 样式桥接（Jade 主题注入）...");
         top.csituka.youzaiworldcore.client.jade.YzuiJadeStyleManager.initialize();
 
+        StartupLoadingStatus.beginStage("方块动画粒子");
         DebugLogger.info("Client", "注册方块动画粒子渲染器...");
         BlockAnimationRenderer.register();
 
+        StartupLoadingStatus.beginStage("物品闪烁粒子");
         DebugLogger.info("Client", "注册物品闪烁粒子渲染器...");
         ItemSparkleRenderer.register();
 
+        StartupLoadingStatus.beginStage("Meme 画作交互");
         // meme_12（派蒙画）右键点击打开外部链接
         DebugLogger.info("Client", "注册 MemePaintingClickHandler...");
         MemePaintingClickHandler.register();

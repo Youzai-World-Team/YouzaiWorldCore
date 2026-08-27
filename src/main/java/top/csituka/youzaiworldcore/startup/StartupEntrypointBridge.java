@@ -17,6 +17,7 @@ public final class StartupEntrypointBridge {
     private static int stageCount;
     private static int progress;
     private static int maximum = 1;
+    private static boolean failed;
 
     private static String activeEntrypointKey = "";
     private static String activeEntrypointType = "";
@@ -35,6 +36,7 @@ public final class StartupEntrypointBridge {
             stageCount = 0;
             progress = 0;
             maximum = 1;
+            failed = false;
             activeEntrypointKey = "";
             activeEntrypointType = "";
             activeEntrypointIndex = 0;
@@ -51,6 +53,7 @@ public final class StartupEntrypointBridge {
             stageCount = Math.max(0, totalStages);
             progress = 0;
             maximum = 1;
+            failed = false;
         }
     }
 
@@ -85,6 +88,16 @@ public final class StartupEntrypointBridge {
     public static void setStage(String stageName) {
         synchronized (LOCK) {
             stage = normalize(stageName, "正在加载");
+        }
+    }
+
+    /** 标记启动失败，供 Fabric Loader 错误窗口显示前通知加载窗口。 */
+    public static void markFailed(String failureMessage) {
+        synchronized (LOCK) {
+            phase = "启动失败";
+            stage = normalize(failureMessage, "启动失败，请查看日志以获取更多信息。");
+            progress = maximum;
+            failed = true;
         }
     }
 
@@ -149,7 +162,7 @@ public final class StartupEntrypointBridge {
      */
     public static Object[] snapshot() {
         synchronized (LOCK) {
-            return new Object[] {phase, stage, stageIndex, stageCount, progress, maximum};
+            return new Object[] {phase, stage, stageIndex, stageCount, progress, maximum, failed};
         }
     }
 

@@ -42,8 +42,7 @@ public final class ApiServiceClient {
             PlayerAccount account,
             String token,
             String sessionId,
-            long expiresInSeconds
-    ) {
+            long expiresInSeconds) {
     }
 
     public record RegistrationEmailCodeResult(
@@ -51,8 +50,7 @@ public final class ApiServiceClient {
             int statusCode,
             String message,
             long expiresInSeconds,
-            long resendAfterSeconds
-    ) {
+            long resendAfterSeconds) {
     }
 
     public record PasswordResetCodeResult(
@@ -61,8 +59,7 @@ public final class ApiServiceClient {
             String message,
             String sessionId,
             long expiresInSeconds,
-            long resendAfterSeconds
-    ) {
+            long resendAfterSeconds) {
     }
 
     public record PasswordResetResult(boolean success, int statusCode, String message) {
@@ -74,8 +71,7 @@ public final class ApiServiceClient {
             String message,
             String sessionId,
             long expiresInSeconds,
-            long resendAfterSeconds
-    ) {
+            long resendAfterSeconds) {
     }
 
     public record LoginResult(boolean success, int statusCode, String message, PlayerAccount account,
@@ -121,6 +117,7 @@ public final class ApiServiceClient {
             return new AccountResult(false, response.statusCode(), responseMessage(root), null, null);
         }
         try {
+            @SuppressWarnings("null")
             PlayerAccount account = PlayerAccount.GSON.fromJson(root, PlayerAccount.class);
             return new AccountResult(true, response.statusCode(), "", account, stringValue(root, "token"));
         } catch (RuntimeException e) {
@@ -409,6 +406,7 @@ public final class ApiServiceClient {
         HttpResponse<String> response = request("GET", "/api/game/session", null, token);
         if (successful(response)) {
             try {
+                @SuppressWarnings("null")
                 PlayerAccount account = PlayerAccount.GSON.fromJson(parse(response.body()), PlayerAccount.class);
                 return new SessionValidationResult(SessionValidationState.VALID, account);
             } catch (RuntimeException e) {
@@ -433,6 +431,7 @@ public final class ApiServiceClient {
         request("DELETE", "/api/game/session", null, token);
     }
 
+    @SuppressWarnings("null")
     public static Optional<AccountSettings> getAccountSettings() {
         HttpResponse<String> response = request("GET", "/api/game/account-settings", null);
         if (!successful(response))
@@ -449,6 +448,7 @@ public final class ApiServiceClient {
         return updateSettings(body);
     }
 
+    @SuppressWarnings("null")
     public static Optional<CosmeticSnapshot> fetchCosmeticSnapshot(UUID uuid) {
         HttpResponse<String> response = request("GET", "/api/game/cosmetic-snapshot?uuid=" + encode(uuid.toString()),
                 null);
@@ -480,6 +480,7 @@ public final class ApiServiceClient {
         return successful(request("DELETE", "/api/game/cosmetic?uuid=" + encode(uuid.toString()), null));
     }
 
+    @SuppressWarnings("null")
     private static Optional<AccountSettings> updateSettings(JsonObject body) {
         HttpResponse<String> response = request("PATCH", "/api/game/account-settings", body.toString());
         if (!successful(response))

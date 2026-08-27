@@ -7,20 +7,24 @@ import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
-import javax.swing.JWindow;
 import javax.swing.SwingConstants;
 import javax.swing.Timer;
+import javax.swing.WindowConstants;
 import java.awt.AlphaComposite;
 import java.awt.AWTError;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.Font;
 import java.awt.FontFormatException;
+import java.awt.FontMetrics;
+import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GraphicsConfiguration;
@@ -28,6 +32,7 @@ import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
 import java.awt.Image;
 import java.awt.RenderingHints;
+import java.awt.Window;
 import java.awt.geom.RoundRectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
@@ -39,8 +44,9 @@ import top.csituka.youzaiworldcore.startup.StartupLoadingStatus;
 /**
  * Minecraft 主窗口显示前使用的轻量启动窗口。
  * <p>
- * 窗口固定为浅绿色圆角无边框样式，左上角显示悠哉世界标志，
- * 左下角显示 8-bit 加载动画、当前初始化阶段与总体进度条。
+ * 窗口默认使用浅绿色圆角无边框样式，左上角显示悠哉世界标志，
+ * 左下角显示 8-bit 加载动画、当前初始化阶段与总体进度条；启动失败时切换为红色提示样式。
+ * 窗口使用独立任务栏入口，方便玩家在启动期间点击恢复或切回窗口。
  * 所有 Swing 生命周期操作都在 AWT 事件调度线程执行。
  * </p>
  */
@@ -54,23 +60,33 @@ public final class StartupSplashWindow {
     private static final int LOADING_LEFT_MARGIN = 34;
     private static final int LOADING_BOTTOM_MARGIN = 34;
     private static final int LOADING_TEXT_LEFT_MARGIN = 16;
+    /** 状态文字与进度条共用的最大显示宽度（像素）。 */
+    private static final int STATUS_TEXT_WIDTH = 360;
     private static final float LOADING_FONT_SIZE = 16.0F;
     private static final float PHASE_FONT_SIZE = 12.0F;
     private static final String LOGO_RESOURCE =
             "/assets/youzaiworldcore/textures/gui/startup/logo.png";
+    private static final String TASKBAR_ICON_RESOURCE =
+            "/assets/youzaiworldcore/jar_icon.png";
     private static final String LOADING_FONT_RESOURCE =
             "/assets/youzaiworldcore/font/opposans_bold.ttf";
     private static final Color BACKGROUND_COLOR = new Color(0xDDF2E1);
     private static final Color TEXT_COLOR = new Color(0x385246);
+    private static final Color FAILURE_BACKGROUND_COLOR = new Color(0xF5DDDD);
+    private static final Color FAILURE_TEXT_COLOR = new Color(0xA33A3A);
+    private static final Color FAILURE_BAR_BACKGROUND_COLOR = new Color(0xDFB8B8);
+    private static final String FAILURE_MESSAGE = "启动失败，请查看日志以获取更多信息。";
     private static final AtomicBoolean SHOW_REQUESTED = new AtomicBoolean(false);
     private static final AtomicBoolean CLOSE_REQUESTED = new AtomicBoolean(false);
 
-    private static volatile JWindow window;
+    private static volatile JFrame window;
+    private static volatile JPanel contentPanel;
     private static volatile StartupLoadingIndicator loadingIndicator;
     private static volatile JLabel phaseLabel;
     private static volatile JLabel loadingLabel;
     private static volatile JProgressBar progressBar;
     private static volatile Timer statusRefreshTimer;
+    private static boolean failureStyleApplied;
 
     private StartupSplashWindow() {}
 
@@ -153,11 +169,15 @@ public final class StartupSplashWindow {
             return;
         }
 
-        JWindow splash = createTranslucencyAwareWindow();
+        JFrame splash = createTranslucencyAwareWindow();
         StartupLoadingIndicator indicator = null;
         try {
-            splash.setFocusableWindowState(false);
+            splash.setTitle("YouzaiWorldCore 启动中");
+            splash.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
+            splash.setResizable(false);
+            splash.setFocusableWindowState(true);
             splash.setAutoRequestFocus(false);
+            applyTaskbarIcon(splash);
 
             boolean antialiasedCorners = enableAntialiasedCorners(splash);
             JPanel content;
@@ -182,11 +202,13 @@ public final class StartupSplashWindow {
             currentPhaseLabel.setForeground(new Color(0x5E7C6B));
             currentPhaseLabel.setFont(loadingFont.deriveFont(PHASE_FONT_SIZE));
             currentPhaseLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+            configureFixedWidthLabel(currentPhaseLabel, STATUS_TEXT_WIDTH);
 
             JLabel currentLoadingLabel = new JLabel("正在启动 Fabric 模组加载器", SwingConstants.LEFT);
             currentLoadingLabel.setForeground(TEXT_COLOR);
             currentLoadingLabel.setFont(loadingFont);
             currentLoadingLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+            configureFixedWidthLabel(currentLoadingLabel, STATUS_TEXT_WIDTH);
 
             JProgressBar currentProgressBar = new JProgressBar(0, 100);
             currentProgressBar.setValue(0);
@@ -196,9 +218,9 @@ public final class StartupSplashWindow {
             currentProgressBar.setForeground(TEXT_COLOR);
             currentProgressBar.setBackground(new Color(0xB9D8C2));
             currentProgressBar.setAlignmentX(Component.LEFT_ALIGNMENT);
-            currentProgressBar.setPreferredSize(new java.awt.Dimension(360, 6));
-            currentProgressBar.setMinimumSize(new java.awt.Dimension(180, 6));
-            currentProgressBar.setMaximumSize(new java.awt.Dimension(360, 6));
+            currentProgressBar.setPreferredSize(new Dimension(STATUS_TEXT_WIDTH, 6));
+            currentProgressBar.setMinimumSize(new Dimension(180, 6));
+            currentProgressBar.setMaximumSize(new Dimension(STATUS_TEXT_WIDTH, 6));
 
             JPanel statusText = new JPanel();
             statusText.setOpaque(false);
@@ -237,6 +259,8 @@ public final class StartupSplashWindow {
             }
 
             window = splash;
+            contentPanel = content;
+            failureStyleApplied = false;
             loadingIndicator = indicator;
             phaseLabel = currentPhaseLabel;
             loadingLabel = currentLoadingLabel;
@@ -267,12 +291,13 @@ public final class StartupSplashWindow {
                 phaseLabel = null;
                 loadingLabel = null;
                 progressBar = null;
+                contentPanel = null;
             }
             throw e;
         }
     }
 
-    private static JWindow createTranslucencyAwareWindow() {
+    private static JFrame createTranslucencyAwareWindow() {
         try {
             GraphicsDevice device = GraphicsEnvironment
                     .getLocalGraphicsEnvironment()
@@ -281,17 +306,21 @@ public final class StartupSplashWindow {
                     GraphicsDevice.WindowTranslucency.PERPIXEL_TRANSLUCENT)) {
                 for (GraphicsConfiguration configuration : device.getConfigurations()) {
                     if (configuration.isTranslucencyCapable()) {
-                        return new JWindow(configuration);
+                        JFrame splash = new JFrame(configuration);
+                        splash.setUndecorated(true);
+                        return splash;
                     }
                 }
             }
         } catch (RuntimeException | AWTError e) {
             DebugLogger.exception("StartupSplash", "选择逐像素透明图形配置", e);
         }
-        return new JWindow();
+        JFrame splash = new JFrame();
+        splash.setUndecorated(true);
+        return splash;
     }
 
-    private static boolean enableAntialiasedCorners(JWindow splash) {
+    private static boolean enableAntialiasedCorners(JFrame splash) {
         try {
             GraphicsConfiguration configuration = splash.getGraphicsConfiguration();
             GraphicsDevice device = configuration.getDevice();
@@ -362,7 +391,27 @@ public final class StartupSplashWindow {
         }
     }
 
-    private static void applyNativeRoundedShape(JWindow splash) {
+    /** 为无边框启动窗口设置 Windows 任务栏图标。 */
+    private static void applyTaskbarIcon(JFrame splash) {
+        try (InputStream stream = StartupSplashWindow.class.getResourceAsStream(TASKBAR_ICON_RESOURCE)) {
+            if (stream == null) {
+                DebugLogger.warn("StartupSplash", "启动窗口任务栏图标未找到：" + TASKBAR_ICON_RESOURCE);
+                return;
+            }
+
+            BufferedImage icon = ImageIO.read(stream);
+            if (icon == null) {
+                DebugLogger.warn("StartupSplash", "启动窗口任务栏图标无法解码：" + TASKBAR_ICON_RESOURCE);
+                return;
+            }
+            splash.setIconImage(icon);
+            DebugLogger.info("StartupSplash", "启动窗口任务栏图标已设置");
+        } catch (IOException | RuntimeException e) {
+            DebugLogger.exception("StartupSplash", "读取启动窗口任务栏图标", e);
+        }
+    }
+
+    private static void applyNativeRoundedShape(JFrame splash) {
         GraphicsDevice device = splash.getGraphicsConfiguration().getDevice();
         if (!device.isWindowTranslucencySupported(GraphicsDevice.WindowTranslucency.PERPIXEL_TRANSPARENT)) {
             DebugLogger.warn("StartupSplash", "当前窗口系统不支持圆角窗口，已使用矩形外观");
@@ -391,6 +440,7 @@ public final class StartupSplashWindow {
         private AntialiasedRoundedPanel() {
             super(new BorderLayout());
             setOpaque(false);
+            setBackground(BACKGROUND_COLOR);
         }
 
         @Override
@@ -413,7 +463,7 @@ public final class StartupSplashWindow {
                         RenderingHints.KEY_ALPHA_INTERPOLATION,
                         RenderingHints.VALUE_ALPHA_INTERPOLATION_QUALITY
                 );
-                roundedGraphics.setColor(BACKGROUND_COLOR);
+                roundedGraphics.setColor(getBackground());
                 roundedGraphics.fill(new RoundRectangle2D.Double(
                         0.5,
                         0.5,
@@ -441,7 +491,7 @@ public final class StartupSplashWindow {
             indicator.stopAnimation();
         }
 
-        JWindow splash = window;
+        JFrame splash = window;
         if (splash == null) {
             return;
         }
@@ -466,6 +516,8 @@ public final class StartupSplashWindow {
             phaseLabel = null;
             loadingLabel = null;
             progressBar = null;
+            contentPanel = null;
+            failureStyleApplied = false;
         }
     }
 
@@ -489,12 +541,135 @@ public final class StartupSplashWindow {
         }
 
         StartupLoadingStatus.Snapshot snapshot = StartupLoadingStatus.snapshot();
-        currentPhaseLabel.setText(snapshot.stageCount() > 0
+        if (!snapshot.failed() && isFabricErrorWindowVisible()) {
+            StartupLoadingStatus.markFailed(FAILURE_MESSAGE);
+            snapshot = StartupLoadingStatus.snapshot();
+        }
+        if (snapshot.failed()) {
+            applyFailureStyle(currentPhaseLabel, currentLoadingLabel, currentProgressBar);
+            return;
+        }
+        String phaseText = snapshot.stageCount() > 0
                 ? snapshot.phase() + "  " + snapshot.stageIndex() + "/" + snapshot.stageCount()
-                : snapshot.phase());
-        currentLoadingLabel.setText(snapshot.stage());
+                : snapshot.phase();
+        int textWidth = currentProgressBar.getWidth();
+        if (textWidth <= 0) {
+            textWidth = currentProgressBar.getPreferredSize().width;
+        }
+        currentPhaseLabel.setText(truncateWithEllipsis(
+                phaseText,
+                currentPhaseLabel.getFontMetrics(currentPhaseLabel.getFont()),
+                textWidth
+        ));
+        currentLoadingLabel.setText(truncateWithEllipsis(
+                snapshot.stage(),
+                currentLoadingLabel.getFontMetrics(currentLoadingLabel.getFont()),
+                textWidth
+        ));
         int percent = Math.round(snapshot.overallRatio() * 100.0F);
         currentProgressBar.setValue(Math.max(0, Math.min(100, percent)));
+    }
+
+    /** 检测 Fabric Loader 已经显示的错误窗口，作为字节码回调之外的兜底。 */
+    private static boolean isFabricErrorWindowVisible() {
+        JFrame splash = window;
+        for (Window candidate : Window.getWindows()) {
+            if (candidate == splash || !candidate.isVisible()) {
+                continue;
+            }
+            if (candidate instanceof Frame frame) {
+                String title = frame.getTitle();
+                if (title != null && title.startsWith("Fabric Loader ")) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /** 切换为启动失败样式，并停止继续旋转的加载动画。 */
+    private static void applyFailureStyle(
+            JLabel currentPhaseLabel,
+            JLabel currentLoadingLabel,
+            JProgressBar currentProgressBar
+    ) {
+        if (failureStyleApplied) {
+            return;
+        }
+        failureStyleApplied = true;
+
+        StartupLoadingIndicator indicator = loadingIndicator;
+        if (indicator != null) {
+            indicator.stopAnimation();
+            indicator.setForeground(FAILURE_TEXT_COLOR);
+            indicator.repaint();
+        }
+
+        JPanel content = contentPanel;
+        if (content != null && !FAILURE_BACKGROUND_COLOR.equals(content.getBackground())) {
+            content.setBackground(FAILURE_BACKGROUND_COLOR);
+            content.repaint();
+        }
+
+        JFrame splash = window;
+        if (splash != null) {
+            splash.setTitle("YouzaiWorldCore 启动失败");
+        }
+
+        int textWidth = currentProgressBar.getWidth();
+        if (textWidth <= 0) {
+            textWidth = currentProgressBar.getPreferredSize().width;
+        }
+        currentPhaseLabel.setForeground(FAILURE_TEXT_COLOR.darker());
+        currentPhaseLabel.setText("启动失败");
+        currentLoadingLabel.setForeground(FAILURE_TEXT_COLOR);
+        currentLoadingLabel.setText(truncateWithEllipsis(
+                FAILURE_MESSAGE,
+                currentLoadingLabel.getFontMetrics(currentLoadingLabel.getFont()),
+                textWidth
+        ));
+        currentProgressBar.setForeground(FAILURE_TEXT_COLOR);
+        currentProgressBar.setBackground(FAILURE_BAR_BACKGROUND_COLOR);
+        currentProgressBar.setValue(100);
+        DebugLogger.error("StartupSplash", FAILURE_MESSAGE);
+    }
+
+    /** 将状态文字限制在进度条右端以内，超出时保留前缀并追加省略号。 */
+    private static String truncateWithEllipsis(String value, FontMetrics metrics, int maxWidth) {
+        if (value == null || value.isEmpty() || maxWidth <= 0) {
+            return "";
+        }
+        if (metrics.stringWidth(value) <= maxWidth) {
+            return value;
+        }
+
+        String ellipsis = "…";
+        int ellipsisWidth = metrics.stringWidth(ellipsis);
+        if (ellipsisWidth > maxWidth) {
+            return "";
+        }
+
+        int low = 0;
+        int high = value.codePointCount(0, value.length());
+        while (low < high) {
+            int middle = (low + high + 1) >>> 1;
+            int end = value.offsetByCodePoints(0, middle);
+            if (metrics.stringWidth(value.substring(0, end) + ellipsis) <= maxWidth) {
+                low = middle;
+            } else {
+                high = middle - 1;
+            }
+        }
+        return value.substring(0, value.offsetByCodePoints(0, low)) + ellipsis;
+    }
+
+    /** 固定状态标签宽度，保证其右边界与进度条对齐。 */
+    private static void configureFixedWidthLabel(JLabel label, int width) {
+        Dimension preferred = label.getPreferredSize();
+        Dimension fixed = new Dimension(width, Math.max(1, preferred.height));
+        label.setMinimumSize(fixed);
+        label.setPreferredSize(fixed);
+        label.setMaximumSize(fixed);
     }
 
     private static void startCleanupGuard(Thread startupThread) {
@@ -506,7 +681,10 @@ public final class StartupSplashWindow {
                     Thread.currentThread().interrupt();
                     DebugLogger.exception("StartupSplash", "等待游戏启动线程结束", e);
                 } finally {
-                    close();
+                    // 非正常异常可能会让 Fabric 错误窗口以非退出模式停留；此时保留本窗口的失败提示。
+                    if (!StartupLoadingStatus.snapshot().failed()) {
+                        close();
+                    }
                 }
             }, "YouzaiWorldCore-StartupSplashGuard");
             cleanupGuard.setDaemon(true);

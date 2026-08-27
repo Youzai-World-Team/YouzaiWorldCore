@@ -16,6 +16,8 @@ public final class StartupSplashPreLaunch implements PreLaunchEntrypoint {
     private static final String CLIENT_SPLASH_CLASS =
             "top.csituka.youzaiworldcore.client.startup.StartupSplashWindow";
     private static final String DATA_GENERATION_PROPERTY = "fabric-api.datagen";
+    /** 仅用于验证启动失败界面的 JVM 开关，默认关闭。 */
+    private static final String TEST_FAILURE_PROPERTY = "youzaiworldcore.test.startup_failure";
 
     /**
      * 在 Minecraft 主入口运行前显示客户端启动窗口。
@@ -46,6 +48,11 @@ public final class StartupSplashPreLaunch implements PreLaunchEntrypoint {
                     StartupSplashPreLaunch.class.getClassLoader()
             );
             splashClass.getMethod("show").invoke(null);
+
+            if (Boolean.parseBoolean(System.getProperty(TEST_FAILURE_PROPERTY, "false"))) {
+                DebugLogger.warn("StartupSplash", "已触发启动失败界面测试开关：" + TEST_FAILURE_PROPERTY);
+                throw new IllegalStateException("YouzaiWorldCore 启动失败界面测试异常");
+            }
         } catch (ReflectiveOperationException | LinkageError | SecurityException e) {
             // 启动窗口属于非关键界面，创建失败时不能阻止游戏继续启动。
             DebugLogger.exception("StartupSplash", "加载客户端启动窗口", e);

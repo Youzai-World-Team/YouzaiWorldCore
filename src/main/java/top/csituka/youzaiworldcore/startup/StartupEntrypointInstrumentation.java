@@ -20,6 +20,7 @@ import java.security.ProtectionDomain;
 final class StartupEntrypointInstrumentation {
 
     private static final String TARGET_CLASS_NAME = StartupEntrypointTransformer.TARGET_CLASS.replace('/', '.');
+    private static final String ERROR_GUI_CLASS_NAME = StartupEntrypointTransformer.ERROR_GUI_CLASS.replace('/', '.');
     private static final String BRIDGE_CLASS_NAME = StartupEntrypointTransformer.BRIDGE_CLASS.replace('/', '.');
 
     private static boolean installed;
@@ -64,6 +65,20 @@ final class StartupEntrypointInstrumentation {
             };
             instrumentation.addTransformer(installedTransformer, true);
             instrumentation.retransformClasses(loaderClass);
+
+            Class<?> errorGuiClass = findLoadedClass(instrumentation, ERROR_GUI_CLASS_NAME);
+            if (errorGuiClass != null) {
+                try {
+                    if (instrumentation.isModifiableClass(errorGuiClass)) {
+                        instrumentation.retransformClasses(errorGuiClass);
+                    } else {
+                        DebugLogger.warn("StartupLoading", "Fabric 错误窗口类不支持重新转换");
+                    }
+                } catch (Throwable throwable) {
+                    // 错误提示属于附加能力，不能因其安装失败撤销已经生效的模组进度追踪。
+                    DebugLogger.exception("StartupLoading", "接入 Fabric 错误窗口", throwable);
+                }
+            }
 
             installed = true;
             DebugLogger.info("StartupLoading", "Fabric Loader 实时模组进度追踪已启用");

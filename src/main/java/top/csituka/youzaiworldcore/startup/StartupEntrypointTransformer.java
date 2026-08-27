@@ -5,6 +5,7 @@ import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.InsnList;
+import org.objectweb.asm.tree.LdcInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.tree.VarInsnNode;
@@ -19,18 +20,22 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
 final class StartupEntrypointTransformer {
 
     static final String TARGET_CLASS = "net/fabricmc/loader/impl/FabricLoaderImpl";
+    static final String ERROR_GUI_CLASS = "net/fabricmc/loader/impl/gui/FabricGuiEntry";
     static final String BRIDGE_CLASS =
             "top/csituka/youzaiworldcore/startup/StartupEntrypointBridge";
 
     private static final String INVOKE_ENTRYPOINTS_DESCRIPTOR =
             "(Ljava/lang/String;Ljava/lang/Class;Ljava/util/function/Consumer;)V";
+    private static final String DISPLAY_ERROR_DESCRIPTOR =
+            "(Ljava/lang/String;Ljava/lang/Throwable;Ljava/util/function/Consumer;Z)V";
+    private static final String FAILURE_MESSAGE = "启动失败，请查看日志以获取更多信息。";
 
     private StartupEntrypointTransformer() {
     }
 
     /** 转换目标 Loader 类；其它类返回 {@code null} 表示保持原样。 */
     static byte[] transform(String className, byte[] classBytes) {
-        if (!TARGET_CLASS.equals(className)) {
+        if (!TARGET_CLASS.equals(className) && !ERROR_GUI_CLASS.equals(className)) {
             return null;
         }
 
@@ -38,6 +43,10 @@ final class StartupEntrypointTransformer {
             ClassReader reader = new ClassReader(classBytes);
             org.objectweb.asm.tree.ClassNode classNode = new org.objectweb.asm.tree.ClassNode();
             reader.accept(classNode, 0);
+
+            if (ERROR_GUI_CLASS.equals(className)) {
+                return transformErrorGui(reader, classNode);
+            }
 
             MethodNode method = classNode.methods.stream()
                     .filter(candidate -> "invokeEntrypoints".equals(candidate.name))
@@ -63,9 +72,42 @@ final class StartupEntrypointTransformer {
             DebugLogger.info("StartupLoading", "已接入 Fabric Loader 模组入口点进度");
             return writer.toByteArray();
         } catch (Throwable throwable) {
-            DebugLogger.exception("StartupLoading", "转换 Fabric Loader 入口点调用", throwable);
+            DebugLogger.exception("StartupLoading", "转换 Fabric Loader 启动状态回调", throwable);
             return null;
         }
+    }
+
+    /** 在 Fabric 错误窗口显示前发布明确的启动失败状态。 */
+    private static byte[] transformErrorGui(
+            ClassReader reader,
+            org.objectweb.asm.tree.ClassNode classNode
+    ) {
+        MethodNode method = classNode.methods.stream()
+                .filter(candidate -> "displayError".equals(candidate.name))
+                .filter(candidate -> DISPLAY_ERROR_DESCRIPTOR.equals(candidate.desc))
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException(
+                        "FabricGuiEntry.displayError 签名不匹配"
+                ));
+
+        InsnList instructions = new InsnList();
+        instructions.add(new LdcInsnNode(FAILURE_MESSAGE));
+        instructions.add(new MethodInsnNode(
+                Opcodes.INVOKESTATIC,
+                BRIDGE_CLASS,
+                "markFailed",
+                "(Ljava/lang/String;)V",
+                false
+        ));
+        method.instructions.insert(instructions);
+
+        ClassWriter writer = new ClassWriter(
+                reader,
+                ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES
+        );
+        classNode.accept(writer);
+        DebugLogger.info("StartupLoading", "已接入 Fabric Loader 启动失败提示");
+        return writer.toByteArray();
     }
 
     private static AbstractInsnNode findVariableStore(MethodNode method, int variableIndex) {

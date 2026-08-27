@@ -21,6 +21,7 @@ public final class StartupLoadingStatus {
     private static int stageCount;
     private static int progress;
     private static int maximum = 1;
+    private static boolean failed;
 
     private StartupLoadingStatus() {
     }
@@ -42,6 +43,7 @@ public final class StartupLoadingStatus {
             stageCount = 0;
             progress = 0;
             maximum = 1;
+            failed = false;
         }
         DebugLogger.info("StartupLoadingStatus", "启动状态已重置：%s", initialStage);
     }
@@ -58,6 +60,7 @@ public final class StartupLoadingStatus {
             stageCount = Math.max(0, totalStages);
             progress = 0;
             maximum = 1;
+            failed = false;
         }
         DebugLogger.info(
                 "StartupLoadingStatus",
@@ -114,15 +117,30 @@ public final class StartupLoadingStatus {
         }
     }
 
+    /** 标记启动失败，并保留窗口等待用户查看 Fabric 错误信息。 */
+    public static void markFailed(String failureMessage) {
+        if (invokeBridge("markFailed", new Class<?>[]{String.class}, failureMessage)) {
+            return;
+        }
+        synchronized (LOCK) {
+            phase = "启动失败";
+            stage = normalize(failureMessage, "启动失败，请查看日志以获取更多信息。");
+            progress = maximum;
+            failed = true;
+        }
+        DebugLogger.error("StartupLoadingStatus", "启动失败：%s", stage);
+    }
+
     /** 返回供界面线程读取的不可变状态快照。 */
     public static Snapshot snapshot() {
         Object[] values = invokeSnapshotBridge();
         if (values != null && values.length >= 6) {
             return new Snapshot((String) values[0], (String) values[1],
-                    (int) values[2], (int) values[3], (int) values[4], (int) values[5]);
+                    (int) values[2], (int) values[3], (int) values[4], (int) values[5],
+                    values.length >= 7 && (boolean) values[6]);
         }
         synchronized (LOCK) {
-            return new Snapshot(phase, stage, stageIndex, stageCount, progress, maximum);
+            return new Snapshot(phase, stage, stageIndex, stageCount, progress, maximum, failed);
         }
     }
 
@@ -166,7 +184,8 @@ public final class StartupLoadingStatus {
             int stageIndex,
             int stageCount,
             int progress,
-            int maximum
+            int maximum,
+            boolean failed
     ) {
         /** 当前项目进度（0.0 ~ 1.0）。 */
         public float progressRatio() {
