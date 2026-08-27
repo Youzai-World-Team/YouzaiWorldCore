@@ -528,7 +528,7 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 - **四种操作**：`ACTION_PLACE`（光标→槽，0）、`ACTION_TAKE`（槽→光标，1）、`ACTION_SWAP`（互换，2）、`ACTION_QUICK_MOVE`（Shift+左键，槽→主物品栏 0–35，3）
 - **光标校验**：数据包携带客户端当前鼠标物品（`cursor`）。生存模式只信任服务端 `containerMenu.getCarried()`，创造模式才使用客户端生成的虚拟光标物品；槽位状态、堆叠上限与校验器始终以服务端为准
 - **本地预览**：客户端在收到服务端确认前先行本地预览，消除交互延迟感
-- **原生槽位屏蔽**：`SurvivalTrinketSlotYzuiMixin` 在 YZUI 屏幕下强制 Trinkets 的 `SurvivalTrinketSlot#isActive()` 返回 `false`，避免其注入槽位在装备位两侧渲染出"无用格子"并与 YZUI 指示器坐标重叠误触；YZUI 关闭时不拦截，Trinkets 原生物品栏行为不受影响（该 Mixin 以 `targets = "eu.pb4.trinkets.impl.SurvivalTrinketSlot"` 字符串声明，避免编译期强依赖实现包）
+- **原生槽位屏蔽**：`SurvivalTrinketSlotYzuiMixin` 在 YZUI 屏幕下强制 Trinkets 的 `SurvivalTrinketSlot#isActive()` 返回 `false`，避免其注入槽位在装备位两侧渲染出"无用格子"并与 YZUI 指示器坐标重叠误触；YZUI 关闭时不拦截，Trinkets 原生物品栏行为不受影响（该 Mixin 以 `targets = "eu.pb4.trinkets.impl.slots.SurvivalTrinketSlot"` 字符串声明，适配 Trinkets 4.1.0-rc.1 的实现包结构）
 
 ### 35. 配置导入/导出
 
@@ -883,7 +883,7 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 | Fabric API             | 0.154.0+26.2                            | Fabric 标准 API                        |
 | ModMenu                | 20.0.0-beta.4                           | 模组菜单集成                           |
 | Placeholder API        | 3.1.0-beta.1+26.2                       | 文本占位符                             |
-| Trinkets               | 4.1.0-beta.2+26.2（`trinkets_updated`） | 饰品槽系统（第 34 项功能依赖，硬依赖） |
+| Trinkets               | 精确匹配 4.1.0-rc.1+26.2（`trinkets_updated`） | 饰品槽系统（第 34 项功能依赖，硬依赖；不再兼容 beta.2 旧接口） |
 | GeckoLib               | 5.5.3+                                  | 实体动画与模型渲染（硬依赖）           |
 | Moog's Structure Lib   | 3.0.4                                   | 声明依赖（村庄结构注入所引用）         |
 | Fabric Permissions API | 0.6.1（内置）                           | 跨模组权限 API                         |

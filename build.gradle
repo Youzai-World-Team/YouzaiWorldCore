@@ -104,7 +104,7 @@ dependencies {
     implementation "maven.modrinth:moogs-structure-lib:3.0.4"
 
     // Trinkets API
-    implementation "eu.pb4:trinkets:4.1.0-beta.2+26.2"
+    implementation "eu.pb4:trinkets:${project.trinkets_version}"
 
     // GeckoLib（老吴对峙态猫模型/动画）
     // 文档写的是 modImplementation，但 Loom 1.16.3 已移除 mod* 配置（26.x 起不再需要重映射），
@@ -121,12 +121,14 @@ processResources {
     inputs.property "version", project.version
     inputs.property "minecraft_version", project.minecraft_version
     inputs.property "loader_version", project.loader_version
+    inputs.property "trinkets_version", project.trinkets_version
     filteringCharset "UTF-8"
 
     filesMatching("fabric.mod.json") {
         expand "version": project.version,
                 "minecraft_version": project.minecraft_version,
-                "loader_version": project.loader_version
+                "loader_version": project.loader_version,
+                "trinkets_version": project.trinkets_version
     }
 }
 

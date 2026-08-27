@@ -31,8 +31,6 @@ import top.csituka.youzaiworldcore.network.TrinketInteractPayload;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 import top.csituka.youzaiworldcore.util.TrinketHelper;
 
-import eu.pb4.trinkets.impl.TrinketSlot;
-
 /**
  * YZUI 生存模式物品栏屏幕。
  * <p>
@@ -627,10 +625,8 @@ public class YzuInventoryScreen extends AbstractRecipeBookScreen<InventoryMenu> 
     /**
      * Shift+左键点击指示器：将饰品槽内物品快捷移动到主物品栏/快捷栏（槽位 9..45，不含副手）。
      * <p>
-     * 通过标准容器点击协议发送 QUICK_MOVE：客户端与服务端均由 Trinkets 的
-     * InventoryMenuMixin.quickMove 拦截 trinket 槽索引并执行
-     * {@code moveItemStackTo(stack, 9, 45, false)}，与原版 shift+点击 trinket 槽行为完全一致，
-     * 槽位内容与物品栏槽位由标准菜单同步广播校正。
+     * 发送 {@link TrinketInteractPayload#ACTION_QUICK_MOVE}，由服务端权威处理背包转移，
+     * 饰品槽状态通过 Trinkets 网络层同步。客户端同时执行本地预览，服务端广播到达后最终校正。
      */
     private void trinketQuickMove(TrinketHelper.TrinketSlotInfo tsi) {
         if (this.minecraft == null || this.minecraft.player == null)
@@ -642,25 +638,34 @@ public class YzuInventoryScreen extends AbstractRecipeBookScreen<InventoryMenu> 
                     tsi.groupKey(), tsi.slotIndex());
             return;
         }
-        // 在 menu.slots 中定位该 trinket 槽对应的真实 Slot 索引（Trinkets 注入在菜单末尾）
-        int slotIdx = -1;
-        var slots = player.containerMenu.slots;
-        for (int i = 0; i < slots.size(); i++) {
-            Slot s = slots.get(i);
-            if (s instanceof TrinketSlot ts && ts.getAccess() != null
-                    && ts.getAccess().getAsIdentifierPath().equals(tsi.groupKey() + "/" + tsi.slotIndex())) {
-                slotIdx = i;
-                break;
+        DebugLogger.info("TrinketClick", "Shift-click on %s[%d] -> QUICK_MOVE to inventory",
+                tsi.groupKey(), tsi.slotIndex());
+        ClientPlayNetworking.send(new TrinketInteractPayload(tsi.groupKey(), tsi.slotIndex(),
+                TrinketInteractPayload.ACTION_QUICK_MOVE));
+        try {
+            net.minecraft.world.entity.player.Inventory clientInv = player.getInventory();
+            ItemStack toMove = slotStack.copy();
+            for (int i = 0; i < clientInv.getContainerSize(); i++) {
+                ItemStack existing = clientInv.getItem(i);
+                if (existing.isEmpty()) {
+                    clientInv.setItem(i, toMove);
+                    toMove = ItemStack.EMPTY;
+                    break;
+                } else if (ItemStack.isSameItemSameComponents(existing, toMove)
+                        && existing.getCount() < existing.getMaxStackSize()) {
+                    int space = existing.getMaxStackSize() - existing.getCount();
+                    int take = Math.min(space, toMove.getCount());
+                    existing.grow(take);
+                    toMove.shrink(take);
+                    if (toMove.isEmpty()) {
+                        break;
+                    }
+                }
             }
+            TrinketHelper.setSlotStack(tsi, toMove.isEmpty() ? ItemStack.EMPTY : toMove);
+        } catch (Exception e) {
+            DebugLogger.warn("TrinketClick", "Local preview failed: %s", e.getMessage());
         }
-        if (slotIdx < 0) {
-            DebugLogger.info("TrinketClick", "Shift-click on %s[%d]: matching menu slot not found",
-                    tsi.groupKey(), tsi.slotIndex());
-            return;
-        }
-        DebugLogger.info("TrinketClick", "Shift-click on %s[%d] -> QUICK_MOVE to inventory (menu slot %d)",
-                tsi.groupKey(), tsi.slotIndex(), slotIdx);
-        clickMenuSlot(slotIdx, 0, ContainerInput.QUICK_MOVE);
         // 让下一次 tick 重新查询
         trinketSourceSlot = -1;
         activeTrinketSlots = List.of();

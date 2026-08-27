@@ -523,7 +523,7 @@ Each slot has a custom icon and the `trinkets:default` validator; `order` contro
 - **Four actions**: `ACTION_PLACE` (cursor → slot, 0), `ACTION_TAKE` (slot → cursor, 1), `ACTION_SWAP` (2), `ACTION_QUICK_MOVE` (Shift + left click, slot → main inventory 0–35, 3)
 - **Cursor validation**: The packet carries the client's current cursor stack (`cursor`). Survival trusts only the server's `containerMenu.getCarried()`, while creative may use its client-generated virtual cursor; slot state, stack limits, and validators always remain server-authoritative
 - **Local preview**: The client previews the result locally before the server confirmation arrives, removing perceived interaction latency
-- **Native slot suppression**: `SurvivalTrinketSlotYzuiMixin` forces Trinkets' `SurvivalTrinketSlot#isActive()` to return `false` while a YZUI screen is open, preventing its injected slots from rendering as "useless cells" beside the armor slots and from overlapping the YZUI indicator coordinates. With YZUI off nothing is intercepted, so the native Trinkets inventory behaves normally (the mixin declares `targets = "eu.pb4.trinkets.impl.SurvivalTrinketSlot"` as a string to avoid a compile-time dependency on the implementation package)
+- **Native slot suppression**: `SurvivalTrinketSlotYzuiMixin` forces Trinkets' `SurvivalTrinketSlot#isActive()` to return `false` while a YZUI screen is open, preventing its injected slots from rendering as "useless cells" beside the armor slots and from overlapping the YZUI indicator coordinates. With YZUI off nothing is intercepted, so the native Trinkets inventory behaves normally (the mixin targets `eu.pb4.trinkets.impl.slots.SurvivalTrinketSlot`, matching the implementation package in Trinkets 4.1.0-rc.1)
 
 ### 35. Config Import/Export
 
@@ -874,7 +874,7 @@ All commands use `/yzwc` as the root command. Subcommands marked **(client comma
 | Fabric API             | 0.154.0+26.2                           | Standard API                                                    |
 | ModMenu                | 20.0.0-beta.4                          | Mod menu integration                                            |
 | Placeholder API        | 3.1.0-beta.1+26.2                      | Text placeholders                                               |
-| Trinkets               | 4.1.0-beta.2+26.2 (`trinkets_updated`) | Trinket slot system (Feature 34 depends on it; hard dependency) |
+| Trinkets               | Exactly 4.1.0-rc.1+26.2 (`trinkets_updated`) | Trinket slot system (Feature 34 depends on it; hard dependency; beta.2 APIs are no longer supported) |
 | GeckoLib               | 5.5.3+                                 | Entity animation & model rendering (hard dependency)            |
 | Moog's Structure Lib   | 3.0.4                                  | Declared dependency (referenced by village structure injection) |
 | Fabric Permissions API | 0.6.1 (bundled)                        | Cross-mod permission API                                        |

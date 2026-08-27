@@ -40,7 +40,7 @@
 | Fabric Loader | 0.19.3 | — |
 | Fabric API | 0.154.0+26.2 | 事件 / 网络 / 命令 / 生物群系修改 |
 | Placeholder API (eu.pb4) | 3.1.0-beta.1+26.2 | 文本占位符（硬依赖） |
-| Trinkets (eu.pb4) | 4.1.0-beta.2+26.2（模组 ID `trinkets_updated`） | 饰品槽（硬依赖） |
+| Trinkets (eu.pb4) | 4.1.0-rc.1+26.2（模组 ID `trinkets_updated`） | 饰品槽（硬依赖） |
 | GeckoLib | 5.5.3+ | 实体动画与模型渲染（硬依赖，老吴贴贴 Geo 模型等） |
 | Moog's Structure Lib | 3.0.4（Modrinth Maven） | 结构注入相关（硬依赖） |
 | ModMenu | 20.0.0-beta.4 | `compileOnly`，配置入口（硬依赖声明） |
@@ -51,7 +51,7 @@
 
 模组版本：`mod_version = 1.20.5-indev`，`maven_group = top.csituka`，`archives_base_name = YouzaiWorldCore`。
 
-**`fabric.mod.json` 依赖声明**：`depends`（缺失则加载器拒绝启动，共 7 项）— `fabric-api`（>=0.154.0+26.2）、`minecraft`、`placeholder-api`（>=3.0.0）、`modmenu`（>=20.0.0-beta.4）、`moogs_structures`（>=3.0.4）、`trinkets_updated`（>=4.1.0-beta.2+26.2）、`geckolib`（>=5.5.3）；`suggests`（可缺失，4 项）— `luckperms`、`advancementplaques`、`EnchantmentDescriptions`、`sophisticatedbackpacks`。
+**`fabric.mod.json` 依赖声明**：`depends`（缺失则加载器拒绝启动，共 7 项）— `fabric-api`（>=0.154.0+26.2）、`minecraft`、`placeholder-api`（>=3.0.0）、`modmenu`（>=20.0.0-beta.4）、`moogs_structures`（>=3.0.4）、`trinkets_updated`（精确匹配 4.1.0-rc.1+26.2，不再兼容 beta.2 旧接口）、`geckolib`（>=5.5.3）；`suggests`（可缺失，4 项）— `luckperms`、`advancementplaques`、`EnchantmentDescriptions`、`sophisticatedbackpacks`。
 
 **Maven 仓库**：mavenCentral、mavenLocal、`maven.nucleoid.xyz`（eu.pb4）、`maven.lucko.me`（LuckPerms）、`maven.terraformersmc.com`（ModMenu）、`api.modrinth.com/maven`（Moog's Structure Lib）；插件仓库额外含 `maven.fabricmc.net` 与 SpongePowered。
 
@@ -415,7 +415,7 @@ YouzaiworldCore.onInitialize()
 
 ### 目录与版本控制
 - `run/`、`bin/`、`build/`、`.gradle/`、`minecraft_jar/`、`.idea/`、`.vscode/`、`.claude/`、`.workbuddy/`、`logo.txt` 均已 gitignore，勿提交。
-- 版本号只改 `gradle.properties`；`fabric.mod.json` 中的 `${version}` / `${minecraft_version}` / `${loader_version}` 由 `processResources` 自动展开。
+- 版本号只改 `gradle.properties`；`fabric.mod.json` 中的 `${version}` / `${minecraft_version}` / `${loader_version}` / `${trinkets_version}` 由 `processResources` 自动展开。
 - 根目录 `config/` 为空占位目录；服务端运行期文件实际生成在 `run/yzwc/server/`（开发期）与 `run/<world>/data/yzwc/`，客户端配置仍在 `run/config/youzaiworldcore/`。
 
 ---

@@ -71,7 +71,7 @@
     "placeholder-api": ">=3.0.0",
     "modmenu": ">=20.0.0-beta.4",
     "moogs_structures": ">=3.0.4",
-    "trinkets_updated": ">=4.1.0-beta.2+26.2",
+    "trinkets_updated": "=${trinkets_version}",
     "geckolib": ">=5.5.3"
   },
   "suggests": {

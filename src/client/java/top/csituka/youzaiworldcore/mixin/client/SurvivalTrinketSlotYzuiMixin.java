@@ -26,10 +26,11 @@ import top.csituka.youzaiworldcore.client.screen.YzuInventoryScreen;
  * 点击不会误命中注入槽位（其坐标恰与 YZUI 指示器重叠）；</li>
  * <li>Trinkets 原生物品栏（yzuiEnabled 关闭时）不受影响——屏幕不是 YZUI 子类，不拦截。</li>
  * </ul>
- * 目标类通过 {@code @Mixin(targets = ...)} 字符串形式声明（eu.pb4.trinkets.impl.SurvivalTrinketSlot），
+ * 目标类通过 {@code @Mixin(targets = ...)} 字符串形式声明
+ * （eu.pb4.trinkets.impl.slots.SurvivalTrinketSlot），
  * 避免编译期强依赖 Trinkets 实现包，运行时由 Mixin 系统按类名解析。
  */
-@Mixin(targets = "eu.pb4.trinkets.impl.SurvivalTrinketSlot")
+@Mixin(targets = "eu.pb4.trinkets.impl.slots.SurvivalTrinketSlot")
 public abstract class SurvivalTrinketSlotYzuiMixin {
 
     @Inject(method = "isActive", at = @At("HEAD"), cancellable = true)
