@@ -49,6 +49,10 @@ public class ClientNetworking {
                 context.client().execute(() -> CosmeticClientManager.onReady(payload)));
         DebugLogger.info("ClientNetworking", "Registered receiver: CosmeticReadyPayload");
 
+        ClientPlayNetworking.registerGlobalReceiver(MojangAuthChallengePayload.ID, (payload, context) ->
+                context.client().execute(() -> CosmeticClientManager.onMojangAuthChallenge(payload)));
+        DebugLogger.info("ClientNetworking", "Registered receiver: MojangAuthChallengePayload");
+
         ClientPlayNetworking.registerGlobalReceiver(CosmeticUploadResultPayload.ID, (payload, context) ->
                 context.client().execute(() -> CosmeticClientManager.onUploadResult(payload)));
         DebugLogger.info("ClientNetworking", "Registered receiver: CosmeticUploadResultPayload");
@@ -60,6 +64,10 @@ public class ClientNetworking {
         ClientPlayNetworking.registerGlobalReceiver(CosmeticDataPayload.ID, (payload, context) ->
                 context.client().execute(() -> CosmeticClientManager.onData(payload)));
         DebugLogger.info("ClientNetworking", "Registered receiver: CosmeticDataPayload");
+
+        ClientPlayNetworking.registerGlobalReceiver(MojangSkinPayload.ID, (payload, context) ->
+                context.client().execute(() -> CosmeticClientManager.onMojangSkin(payload)));
+        DebugLogger.info("ClientNetworking", "Registered receiver: MojangSkinPayload");
 
         ClientPlayNetworking.registerGlobalReceiver(InPlaceRespawnInfoPayload.ID, (payload, context) ->
                 context.client().execute(() -> InPlaceRespawnClientState.updateInfo(

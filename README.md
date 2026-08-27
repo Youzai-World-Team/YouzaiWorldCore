@@ -49,7 +49,7 @@
 - **暂停菜单账户管理**：暂停菜单右侧玩家模型下方提供“账户管理”入口；`AccountManagementScreen` 可更改密码、通过“当前密码 + 新邮箱验证码”换绑唯一邮箱，或经二次确认永久注销账户。敏感字段通过专用数据包发送且由服务端登录令牌再次鉴权，不进入聊天命令
 - **隐身联动**：隐身状态下禁止执行登出、注销、改密等敏感操作
 - **账户注销联动**：账户注销/删除时同时清空其邮件信箱（`MailManager.onAccountDeleted`）
-- **自定义皮肤与披风**：离线账户可从 `yzwc/client/config/cosmetic_module/` 上传 `skin.png`（宽模型）、`skin_slim.png`（细模型）和 64×32 的 `cloak.png`；模组校验后上传到 Api 服务端保存并同步给其他在线玩家，不在 Minecraft 服务端保留文件回退；正版账户保持 Mojang 外观
+- **自定义皮肤与披风**：离线账户可从 `yzwc/client/config/cosmetic_module/` 上传 `skin.png`（宽模型）、`skin_slim.png`（细模型）和 64×32 的 `cloak.png`；模组校验后上传到 Api 服务端保存并同步给其他在线玩家，不在 Minecraft 服务端保留文件回退；正版账户通过 Mojang 会话挑战核验后自动使用其正版皮肤与披风，并忽略本地外观文件上传
 
 ### 2. GUI 菜单系统
 

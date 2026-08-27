@@ -141,6 +141,13 @@ public class ModNetworking {
                 server.execute(() -> CosmeticManager.handleRequest(player, payload.targetUuid()));
             }
         });
+        ServerPlayNetworking.registerGlobalReceiver(MojangProfileRequestPayload.ID, (payload, context) -> {
+            var player = context.player();
+            var server = player.level().getServer();
+            if (server != null) {
+                server.execute(() -> CosmeticManager.handleMojangProfileRequest(player, payload));
+            }
+        });
 
         ServerPlayNetworking.registerGlobalReceiver(DecomposeItemPayload.ID, (payload, context) -> {
             DebugLogger.entering("ModNetworking", "DecomposeItemPayload handler");

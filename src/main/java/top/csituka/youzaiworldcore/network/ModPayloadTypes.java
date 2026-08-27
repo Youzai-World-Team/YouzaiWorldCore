@@ -68,6 +68,8 @@ public final class ModPayloadTypes {
                                 CosmeticUploadPayload.STREAM_CODEC);
                 PayloadTypeRegistry.serverboundPlay().register(CosmeticRequestPayload.ID,
                                 CosmeticRequestPayload.STREAM_CODEC);
+                PayloadTypeRegistry.serverboundPlay().register(MojangProfileRequestPayload.ID,
+                                MojangProfileRequestPayload.STREAM_CODEC);
                 PayloadTypeRegistry.serverboundPlay().register(AttributeUpgradePayload.TYPE,
                                 AttributeUpgradePayload.STREAM_CODEC);
                 PayloadTypeRegistry.serverboundPlay().register(MailComposeOpenPayload.ID,
@@ -126,10 +128,14 @@ public final class ModPayloadTypes {
                                 LaowuMemeStopPayload.STREAM_CODEC);
                 PayloadTypeRegistry.clientboundPlay().register(CosmeticReadyPayload.ID,
                                 CosmeticReadyPayload.STREAM_CODEC);
+                PayloadTypeRegistry.clientboundPlay().register(MojangAuthChallengePayload.ID,
+                                MojangAuthChallengePayload.STREAM_CODEC);
                 PayloadTypeRegistry.clientboundPlay().register(CosmeticInfoPayload.ID,
                                 CosmeticInfoPayload.STREAM_CODEC);
                 PayloadTypeRegistry.clientboundPlay().register(CosmeticDataPayload.ID,
                                 CosmeticDataPayload.STREAM_CODEC);
+                PayloadTypeRegistry.clientboundPlay().register(MojangSkinPayload.ID,
+                                MojangSkinPayload.STREAM_CODEC);
                 PayloadTypeRegistry.clientboundPlay().register(
                                 CosmeticUploadResultPayload.ID, CosmeticUploadResultPayload.STREAM_CODEC);
                 PayloadTypeRegistry.clientboundPlay().register(AttributeSyncPayload.TYPE,

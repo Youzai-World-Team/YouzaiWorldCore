@@ -15,14 +15,25 @@ import top.csituka.youzaiworldcore.network.CosmeticInfoPayload;
 import top.csituka.youzaiworldcore.network.CosmeticReadyPayload;
 import top.csituka.youzaiworldcore.network.CosmeticUploadPayload;
 import top.csituka.youzaiworldcore.network.CosmeticUploadResultPayload;
+import top.csituka.youzaiworldcore.network.MojangAuthChallengePayload;
+import top.csituka.youzaiworldcore.network.MojangProfileRequestPayload;
+import top.csituka.youzaiworldcore.network.MojangSkinPayload;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
+import com.mojang.authlib.GameProfile;
+import com.mojang.authlib.properties.Property;
+
+import java.util.Collection;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 自定义皮肤与披风服务端权威管理器。
@@ -39,12 +50,17 @@ public final class CosmeticManager {
     private static final String CLOAK_FILE = "cloak.png";
     private static final String SERVER_INSTANCE_ID_KEY = "server_instance_id";
     private static final int MAX_REQUEST_TARGETS_PER_PLAYER = 128;
+    private static final int MOJANG_VERIFICATION_TIMEOUT_SECONDS = 10;
     private static final byte[] EMPTY = new byte[0];
     private static final String EMPTY_SNAPSHOT_HASH = CosmeticSnapshotHasher.hash(EMPTY, EMPTY, EMPTY);
 
     private static final Map<UUID, Long> LAST_UPLOAD_NANOS = new HashMap<>();
     private static final Map<UUID, LinkedHashMap<UUID, Long>> LAST_REQUEST_NANOS = new HashMap<>();
     private static final Set<UUID> ONLINE_COSMETIC_OWNERS = new HashSet<>();
+    private static final Map<UUID, MojangChallenge> PENDING_MOJANG_CHALLENGES = new HashMap<>();
+    private static final Map<UUID, String> VERIFYING_MOJANG_PROFILES = new HashMap<>();
+    private static final Map<UUID, MojangProfile> VERIFIED_MOJANG_PROFILES = new HashMap<>();
+    private static final Map<UUID, String> ACTIVE_APPEARANCE_SESSIONS = new HashMap<>();
     private static final JsonFileStore METADATA_STORE = new JsonFileStore(
             ModPaths.serverDataFile(GlobalSettings.COSMETIC_MODULE));
 
@@ -78,6 +94,10 @@ public final class CosmeticManager {
         LAST_UPLOAD_NANOS.clear();
         LAST_REQUEST_NANOS.clear();
         ONLINE_COSMETIC_OWNERS.clear();
+        PENDING_MOJANG_CHALLENGES.clear();
+        VERIFYING_MOJANG_PROFILES.clear();
+        VERIFIED_MOJANG_PROFILES.clear();
+        ACTIVE_APPEARANCE_SESSIONS.clear();
         DebugLogger.exiting(MODULE, "initialize", "serverInstanceId=" + serverInstanceId);
     }
 
@@ -86,6 +106,10 @@ public final class CosmeticManager {
         LAST_UPLOAD_NANOS.clear();
         LAST_REQUEST_NANOS.clear();
         ONLINE_COSMETIC_OWNERS.clear();
+        PENDING_MOJANG_CHALLENGES.clear();
+        VERIFYING_MOJANG_PROFILES.clear();
+        VERIFIED_MOJANG_PROFILES.clear();
+        ACTIVE_APPEARANCE_SESSIONS.clear();
     }
 
     /** 配置重载后清空旧冷却并重新向在线玩家同步链路状态。 */
@@ -93,6 +117,10 @@ public final class CosmeticManager {
         LAST_UPLOAD_NANOS.clear();
         LAST_REQUEST_NANOS.clear();
         ONLINE_COSMETIC_OWNERS.clear();
+        PENDING_MOJANG_CHALLENGES.clear();
+        VERIFYING_MOJANG_PROFILES.clear();
+        VERIFIED_MOJANG_PROFILES.clear();
+        ACTIVE_APPEARANCE_SESSIONS.clear();
         if (server == null) {
             return;
         }
@@ -121,32 +149,13 @@ public final class CosmeticManager {
             return;
         }
 
-        CosmeticSnapshot ownSnapshot = readSnapshot(player.getUUID());
-        trackOnlineSnapshot(player.getUUID(), ownSnapshot);
-        ServerPlayNetworking.send(player, new CosmeticReadyPayload(
-                true,
-                serverInstanceId,
-                ownSnapshot.snapshotHash(),
-                CosmeticModuleSettings.getRequestCooldownSeconds()));
-
-        for (ServerPlayer online : server.getPlayerList().getPlayers()) {
-            if (!isAuthenticated(online)) {
-                continue;
-            }
-            CosmeticSnapshot snapshot = readSnapshot(online.getUUID());
-            trackOnlineSnapshot(online.getUUID(), snapshot);
-            CosmeticState state = snapshot.state();
-            if (snapshot.hasAny()) {
-                ServerPlayNetworking.send(player,
-                        new CosmeticInfoPayload(
-                                online.getUUID(), state.hasSkin(), state.hasCloak(), snapshot.snapshotHash()));
-            }
-        }
-
-        if (ownSnapshot.hasAny()) {
-            broadcastInfo(server, player.getUUID(), ownSnapshot, player.getUUID());
-        }
-        DebugLogger.info(MODULE, "已向玩家 %s 下发自定义外观就绪状态", player.getScoreboardName());
+        VERIFIED_MOJANG_PROFILES.remove(player.getUUID());
+        PENDING_MOJANG_CHALLENGES.remove(player.getUUID());
+        VERIFYING_MOJANG_PROFILES.remove(player.getUUID());
+        ONLINE_COSMETIC_OWNERS.remove(player.getUUID());
+        ServerPlayNetworking.send(player, CosmeticReadyPayload.disabled());
+        requestMojangVerification(player);
+        DebugLogger.info(MODULE, "已向玩家 %s 发起 Mojang 正版外观核验", player.getScoreboardName());
     }
 
     /** 玩家离线时通知其他客户端释放其动态纹理，但保留服务端文件。 */
@@ -156,8 +165,13 @@ public final class CosmeticManager {
         LAST_UPLOAD_NANOS.remove(playerUuid);
         clearRequestCooldowns(playerUuid);
         ONLINE_COSMETIC_OWNERS.remove(playerUuid);
+        PENDING_MOJANG_CHALLENGES.remove(playerUuid);
+        VERIFYING_MOJANG_PROFILES.remove(playerUuid);
+        VERIFIED_MOJANG_PROFILES.remove(playerUuid);
+        ACTIVE_APPEARANCE_SESSIONS.remove(playerUuid);
         if (server != null && isServerActive(server)) {
             broadcastInfo(server, playerUuid, emptySnapshot(), playerUuid);
+            broadcastMojang(server, MojangSkinPayload.disabled(playerUuid));
         }
     }
 
@@ -168,9 +182,58 @@ public final class CosmeticManager {
         LAST_UPLOAD_NANOS.remove(player.getUUID());
         clearRequestCooldowns(player.getUUID());
         ONLINE_COSMETIC_OWNERS.remove(player.getUUID());
+        PENDING_MOJANG_CHALLENGES.remove(player.getUUID());
+        VERIFYING_MOJANG_PROFILES.remove(player.getUUID());
+        VERIFIED_MOJANG_PROFILES.remove(player.getUUID());
+        ACTIVE_APPEARANCE_SESSIONS.remove(player.getUUID());
         if (isServerActive(server)) {
             broadcastInfo(server, player.getUUID(), emptySnapshot(), player.getUUID());
+            broadcastMojang(server, MojangSkinPayload.disabled(player.getUUID()));
         }
+    }
+
+    /** 处理客户端完成 Mojang joinServer 后提交的档案标识。 */
+    public static void handleMojangProfileRequest(ServerPlayer player, MojangProfileRequestPayload payload) {
+        MinecraftServer server = player.level().getServer();
+        if (server == null || !isServerActive(server) || !isAuthenticated(player)) {
+            return;
+        }
+        MojangChallenge pending = PENDING_MOJANG_CHALLENGES.get(player.getUUID());
+        if (pending == null
+                || pending.expiresAtNanos() < System.nanoTime()
+                || !pending.challenge().equals(payload.challenge())) {
+            DebugLogger.warn(MODULE, "忽略玩家 %s 的过期 Mojang 外观核验响应", player.getScoreboardName());
+            return;
+        }
+        PENDING_MOJANG_CHALLENGES.remove(player.getUUID(), pending);
+        if (payload.profileId().equals(new UUID(0L, 0L)) || payload.profileName().isBlank()) {
+            handleMojangVerificationFailed(player, "客户端档案标识为空");
+            return;
+        }
+        if (!payload.profileName().equalsIgnoreCase(player.getScoreboardName())) {
+            handleMojangVerificationFailed(player, "Mojang 档案名与当前玩家名不一致");
+            return;
+        }
+
+        UUID playerUuid = player.getUUID();
+        String challenge = pending.challenge();
+        VERIFYING_MOJANG_PROFILES.put(playerUuid, challenge);
+        CompletableFuture
+                .supplyAsync(() -> verifyMojangProfile(server, challenge, payload))
+                .orTimeout(MOJANG_VERIFICATION_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+                .whenComplete((profile, error) -> server.execute(() -> {
+                    if (!VERIFYING_MOJANG_PROFILES.remove(playerUuid, challenge)) {
+                        DebugLogger.debug(MODULE, "忽略玩家 %s 的旧 Mojang 外观核验结果",
+                                player.getScoreboardName());
+                        return;
+                    }
+                    if (error != null || profile == null) {
+                        handleMojangVerificationFailed(player,
+                                error == null ? "Mojang 未返回匹配档案" : error.getClass().getSimpleName());
+                    } else {
+                        handleMojangVerificationSucceeded(player, profile);
+                    }
+                }));
     }
 
     /** 校验并应用客户端上传的完整外观快照。 */
@@ -185,6 +248,13 @@ public final class CosmeticManager {
         if (CosmeticModuleSettings.isRequireAuthenticated() && !isAuthenticated(player)) {
             DebugLogger.warn(MODULE, "拒绝未认证玩家 %s 的外观上传", player.getScoreboardName());
             sendUploadResult(player, payload.snapshotHash(), false, 0);
+            return;
+        }
+        if (VERIFIED_MOJANG_PROFILES.containsKey(player.getUUID())
+                || PENDING_MOJANG_CHALLENGES.containsKey(player.getUUID())
+                || VERIFYING_MOJANG_PROFILES.containsKey(player.getUUID())) {
+            DebugLogger.info(MODULE, "忽略正版玩家 %s 的本地自定义外观上传请求", player.getScoreboardName());
+            sendUploadResult(player, payload.snapshotHash(), true, 0);
             return;
         }
         if (!payload.offlineSession()) {
@@ -349,13 +419,218 @@ public final class CosmeticManager {
         LAST_UPLOAD_NANOS.remove(playerUuid);
         clearRequestCooldowns(playerUuid);
         ONLINE_COSMETIC_OWNERS.remove(playerUuid);
-        if (server != null) broadcastInfo(server, playerUuid, emptySnapshot(), null);
+        if (server != null)
+            broadcastInfo(server, playerUuid, emptySnapshot(), null);
         DebugLogger.info(MODULE, "已删除玩家 %s 的自定义外观数据", playerUuid);
     }
 
     private static boolean isServerActive(MinecraftServer server) {
         return CosmeticModuleSettings.isEnabled()
                 && (server.isSingleplayer() || !server.usesAuthentication());
+    }
+
+    private static void requestMojangVerification(ServerPlayer player) {
+        MinecraftServer server = player.level().getServer();
+        String challenge = UUID.randomUUID().toString().replace("-", "");
+        ACTIVE_APPEARANCE_SESSIONS.put(player.getUUID(), challenge);
+        PENDING_MOJANG_CHALLENGES.put(player.getUUID(), new MojangChallenge(
+                challenge, System.nanoTime() + MOJANG_VERIFICATION_TIMEOUT_SECONDS * 1_000_000_000L));
+        ServerPlayNetworking.send(player, new MojangAuthChallengePayload(challenge));
+        CompletableFuture.delayedExecutor(MOJANG_VERIFICATION_TIMEOUT_SECONDS, TimeUnit.SECONDS).execute(
+                () -> server.execute(() -> {
+                    MojangChallenge pending = PENDING_MOJANG_CHALLENGES.get(player.getUUID());
+                    if (pending == null || !pending.challenge().equals(challenge)) {
+                        return;
+                    }
+                    PENDING_MOJANG_CHALLENGES.remove(player.getUUID());
+                    if (player.hasDisconnected() || !isAuthenticated(player)) {
+                        return;
+                    }
+                    handleMojangVerificationFailed(player, "客户端未完成 Mojang 会话核验");
+                }));
+    }
+
+    private static MojangProfile verifyMojangProfile(
+            MinecraftServer server, String challenge, MojangProfileRequestPayload payload) {
+        try {
+            var sessionService = server.services().sessionService();
+            var result = sessionService.hasJoinedServer(payload.profileName(), challenge, null);
+            if (result == null || result.profile() == null
+                    || !payload.profileId().equals(result.profile().id())
+                    || !payload.profileName().equalsIgnoreCase(result.profile().name())) {
+                return null;
+            }
+            Property textures = findTexturesProperty(result.profile());
+            String textureValue = textures == null ? "" : sessionService.getSecurePropertyValue(textures);
+            return new MojangProfile(result.profile().id(), result.profile().name(),
+                    textureValue,
+                    textures == null ? "" : textures.signature());
+        } catch (Exception e) {
+            DebugLogger.warn(MODULE, "Mojang 正版外观核验失败：%s", e.getClass().getSimpleName());
+            return null;
+        }
+    }
+
+    private static Property findTexturesProperty(GameProfile profile) {
+        Collection<Property> properties = profile.properties().get("textures");
+        for (Property property : properties) {
+            if (property != null && !property.value().isBlank()) {
+                return property;
+            }
+        }
+        return null;
+    }
+
+    private static void handleMojangVerificationSucceeded(ServerPlayer player, MojangProfile profile) {
+        MinecraftServer server = player.level().getServer();
+        if (server == null || player.hasDisconnected() || !isAuthenticated(player)) {
+            return;
+        }
+        VERIFIED_MOJANG_PROFILES.put(player.getUUID(), profile);
+        VERIFYING_MOJANG_PROFILES.remove(player.getUUID());
+        ONLINE_COSMETIC_OWNERS.remove(player.getUUID());
+        broadcastInfo(server, player.getUUID(), emptySnapshot(), null);
+        broadcastMojang(server, new MojangSkinPayload(player.getUUID(), profile.profileId(),
+                profile.profileName(), profile.textureValue(), profile.textureSignature()));
+        ServerPlayNetworking.send(player, new CosmeticReadyPayload(
+                true, serverInstanceId, EMPTY_SNAPSHOT_HASH, CosmeticModuleSettings.getRequestCooldownSeconds()));
+        sendVerifiedMojangAppearances(player);
+        sendOnlineCustomAppearances(player);
+        DebugLogger.info(MODULE, "玩家 %s 已核验为 Mojang 正版账户，已启用正版皮肤与披风",
+                player.getScoreboardName());
+    }
+
+    private static void handleMojangVerificationFailed(ServerPlayer player, String reason) {
+        if (player.hasDisconnected() || !isAuthenticated(player)) {
+            return;
+        }
+        VERIFIED_MOJANG_PROFILES.remove(player.getUUID());
+        VERIFYING_MOJANG_PROFILES.remove(player.getUUID());
+        DebugLogger.info(MODULE, "玩家 %s 未通过 Mojang 正版核验（%s），启用离线自定义外观",
+                player.getScoreboardName(), reason);
+        syncCustomAppearance(player);
+    }
+
+    private static void syncCustomAppearance(ServerPlayer player) {
+        MinecraftServer server = player.level().getServer();
+        if (server == null || !isServerActive(server) || VERIFIED_MOJANG_PROFILES.containsKey(player.getUUID())) {
+            return;
+        }
+        UUID playerUuid = player.getUUID();
+        String appearanceSessionId = ACTIVE_APPEARANCE_SESSIONS.get(playerUuid);
+        if (appearanceSessionId == null) {
+            return;
+        }
+        CompletableFuture
+                .supplyAsync(() -> readSnapshot(playerUuid))
+                .whenComplete((snapshot, error) -> server.execute(() -> {
+                    CosmeticSnapshot resolvedSnapshot = snapshot;
+                    if (error != null) {
+                        DebugLogger.exception(MODULE, "读取离线外观快照", error);
+                        resolvedSnapshot = emptySnapshot();
+                    }
+                    if (player.hasDisconnected()
+                            || server.getPlayerList().getPlayer(playerUuid) != player
+                            || !appearanceSessionId.equals(ACTIVE_APPEARANCE_SESSIONS.get(playerUuid))
+                            || !isAuthenticated(player)
+                            || VERIFIED_MOJANG_PROFILES.containsKey(playerUuid)
+                            || PENDING_MOJANG_CHALLENGES.containsKey(playerUuid)
+                            || VERIFYING_MOJANG_PROFILES.containsKey(playerUuid)) {
+                        return;
+                    }
+                    syncCustomAppearanceReady(player,
+                            resolvedSnapshot == null ? emptySnapshot() : resolvedSnapshot);
+                }));
+    }
+
+    private static void syncCustomAppearanceReady(ServerPlayer player, CosmeticSnapshot ownSnapshot) {
+        MinecraftServer server = player.level().getServer();
+        if (server == null || !isServerActive(server) || VERIFIED_MOJANG_PROFILES.containsKey(player.getUUID())) {
+            return;
+        }
+        trackOnlineSnapshot(player.getUUID(), ownSnapshot);
+        ServerPlayNetworking.send(player, new CosmeticReadyPayload(
+                true, serverInstanceId, ownSnapshot.snapshotHash(),
+                CosmeticModuleSettings.getRequestCooldownSeconds()));
+
+        sendOnlineCustomAppearances(player);
+        sendVerifiedMojangAppearances(player);
+        if (ownSnapshot.hasAny()) {
+            broadcastInfo(server, player.getUUID(), ownSnapshot, player.getUUID());
+        }
+    }
+
+    private static void sendOnlineCustomAppearances(ServerPlayer receiver) {
+        MinecraftServer server = receiver.level().getServer();
+        UUID receiverUuid = receiver.getUUID();
+        String appearanceSessionId = ACTIVE_APPEARANCE_SESSIONS.get(receiverUuid);
+        if (appearanceSessionId == null) {
+            return;
+        }
+        List<UUID> ownerUuids = new ArrayList<>();
+        for (ServerPlayer online : server.getPlayerList().getPlayers()) {
+            if (isAuthenticated(online)
+                    && !VERIFIED_MOJANG_PROFILES.containsKey(online.getUUID())
+                    && !online.getUUID().equals(receiverUuid)) {
+                ownerUuids.add(online.getUUID());
+            }
+        }
+        CompletableFuture
+                .supplyAsync(() -> readSnapshots(ownerUuids))
+                .whenComplete((snapshots, error) -> server.execute(() -> {
+                    if (error != null) {
+                        DebugLogger.exception(MODULE, "读取在线玩家外观快照", error);
+                        return;
+                    }
+                    if (receiver.hasDisconnected()
+                            || server.getPlayerList().getPlayer(receiverUuid) != receiver
+                            || !appearanceSessionId.equals(ACTIVE_APPEARANCE_SESSIONS.get(receiverUuid))
+                            || !isAuthenticated(receiver)) {
+                        return;
+                    }
+                    for (Map.Entry<UUID, CosmeticSnapshot> entry : snapshots.entrySet()) {
+                        ServerPlayer owner = server.getPlayerList().getPlayer(entry.getKey());
+                        if (owner == null || !isAuthenticated(owner)
+                                || VERIFIED_MOJANG_PROFILES.containsKey(entry.getKey())) {
+                            continue;
+                        }
+                        CosmeticSnapshot snapshot = entry.getValue();
+                        trackOnlineSnapshot(entry.getKey(), snapshot);
+                        if (snapshot.hasAny()) {
+                            CosmeticState state = snapshot.state();
+                            ServerPlayNetworking.send(receiver, new CosmeticInfoPayload(
+                                    entry.getKey(), state.hasSkin(), state.hasCloak(), snapshot.snapshotHash()));
+                        }
+                    }
+                }));
+    }
+
+    private static Map<UUID, CosmeticSnapshot> readSnapshots(List<UUID> ownerUuids) {
+        Map<UUID, CosmeticSnapshot> snapshots = new LinkedHashMap<>();
+        for (UUID ownerUuid : ownerUuids) {
+            snapshots.put(ownerUuid, readSnapshot(ownerUuid));
+        }
+        return snapshots;
+    }
+
+    private static void sendVerifiedMojangAppearances(ServerPlayer receiver) {
+        for (Map.Entry<UUID, MojangProfile> entry : VERIFIED_MOJANG_PROFILES.entrySet()) {
+            if (entry.getKey().equals(receiver.getUUID())) {
+                continue;
+            }
+            MojangProfile profile = entry.getValue();
+            ServerPlayNetworking.send(receiver, new MojangSkinPayload(
+                    entry.getKey(), profile.profileId(), profile.profileName(),
+                    profile.textureValue(), profile.textureSignature()));
+        }
+    }
+
+    private static void broadcastMojang(MinecraftServer server, MojangSkinPayload payload) {
+        for (ServerPlayer online : server.getPlayerList().getPlayers()) {
+            if (isAuthenticated(online)) {
+                ServerPlayNetworking.send(online, payload);
+            }
+        }
     }
 
     private static boolean isAuthenticated(ServerPlayer player) {
@@ -382,7 +657,8 @@ public final class CosmeticManager {
             if (excludedUuid != null && online.getUUID().equals(excludedUuid)) {
                 continue;
             }
-            if (isAuthenticated(online)) {
+            if (isAuthenticated(online)
+                    && (!VERIFIED_MOJANG_PROFILES.containsKey(ownerUuid) || !snapshot.hasAny())) {
                 ServerPlayNetworking.send(online, payload);
             }
         }
@@ -437,6 +713,12 @@ public final class CosmeticManager {
     }
 
     private record SlotData(String fileName, byte[] data, boolean cloak) {
+    }
+
+    private record MojangChallenge(String challenge, long expiresAtNanos) {
+    }
+
+    private record MojangProfile(UUID profileId, String profileName, String textureValue, String textureSignature) {
     }
 
     private record CosmeticState(boolean hasSkin, boolean hasCloak) {

@@ -48,7 +48,7 @@ Complete password authentication for offline-mode servers, with Mixin-based rest
 - **Login/Register GUI**: On entering the login hall, the client auto-opens the register/login screens (`RegisterScreen` / `LoginScreen`, read-only pre-filled username, Enter to log in, Disconnect button), pushed by the server via `OpenAuthScreenPayload`. When the Api setting “email verification required for registration” is enabled, the flow automatically continues in `RegistrationEmailScreen` with code delivery, resend cooldown, and verification
 - **Invisibility Integration**: Sensitive operations (logout, deactivate, password change) blocked while invisible
 - **Account Deletion Integration**: Deactivating/deleting an account also clears its mailbox (`MailManager.onAccountDeleted`)
-- **Custom Skins & Capes**: Offline accounts can upload `skin.png` (wide model), `skin_slim.png` (slim model), and a single 64×32 `cloak.png` from `yzwc/client/config/cosmetic_module/`; after validation, the mod uploads them to the Api service for storage and syncs them to other online players, with no PNG fallback on the Minecraft server. Online-mode accounts keep their Mojang appearance
+- **Custom Skins & Capes**: Offline accounts can upload `skin.png` (wide model), `skin_slim.png` (slim model), and a single 64×32 `cloak.png` from `yzwc/client/config/cosmetic_module/`; after validation, the mod uploads them to the Api service for storage and syncs them to other online players, with no PNG fallback on the Minecraft server. Accounts verified through a Mojang session challenge automatically use their official skin and cape, and local cosmetic uploads are ignored
 
 ### 2. GUI Menu System
 
