@@ -19,7 +19,7 @@ import java.util.UUID;
 /** Api-only 账户、会话和外观 HTTP 客户端。请求签名与传输由 {@link ApiHttp} 统一处理。 */
 public final class ApiServiceClient {
     private static final String MODULE = "ApiServiceClient";
-    // SMTP 投递需要等待远端邮件服务器响应，不能沿用普通 Api 的 3 秒默认超时。
+    // SMTP 投递需要等待远端邮件服务器响应，不能沿用普通 Api 的 10 秒默认超时。
     private static final int EMAIL_REQUEST_TIMEOUT_SECONDS = 30;
 
     private ApiServiceClient() {
@@ -111,7 +111,7 @@ public final class ApiServiceClient {
     public static AccountResult getAccount(String username) {
         HttpResponse<String> response = request("GET", "/api/game/account?username=" + encode(username), null);
         if (response == null)
-            return new AccountResult(false, 0, "Api 服务端不可用", null, null);
+            return new AccountResult(false, 0, ApiHttp.failureMessage(), null, null);
         JsonObject root = parse(response.body());
         if (response.statusCode() / 100 != 2) {
             return new AccountResult(false, response.statusCode(), responseMessage(root), null, null);
@@ -146,7 +146,7 @@ public final class ApiServiceClient {
         HttpResponse<String> response = request("POST", "/api/game/account", body.toString());
         if (response == null) {
             return new RegistrationResult(
-                    false, false, 0, "Api 服务端不可用", null, null, "", 0);
+                    false, false, 0, ApiHttp.failureMessage(), null, null, "", 0);
         }
         JsonObject root = parse(response.body());
         boolean httpSuccess = response.statusCode() / 100 == 2;
@@ -237,7 +237,7 @@ public final class ApiServiceClient {
         HttpResponse<String> response = request(
                 "POST", "/api/game/account-password-reset/verify", body.toString(), null, timeoutSeconds);
         if (response == null) {
-            return new PasswordResetResult(false, 0, "Api 服务端不可用");
+            return new PasswordResetResult(false, 0, ApiHttp.failureMessage());
         }
         JsonObject root = parse(response.body());
         return new PasswordResetResult(
@@ -253,7 +253,7 @@ public final class ApiServiceClient {
         body.addProperty("ip", ip == null ? "" : ip);
         HttpResponse<String> response = request("POST", "/api/game/login", body.toString());
         if (response == null)
-            return new LoginResult(false, 0, "Api 服务端不可用", null, "", 0, 0, 0, null);
+            return new LoginResult(false, 0, ApiHttp.failureMessage(), null, "", 0, 0, 0, null);
         JsonObject root = parse(response.body());
         return new LoginResult(response.statusCode() / 100 == 2, response.statusCode(), responseMessage(root),
                 parseAccount(root), nestedStringValue(root, "reason"), intValue(root, "loginTries", 0),
@@ -503,7 +503,7 @@ public final class ApiServiceClient {
 
     private static AccountResult resultFrom(HttpResponse<String> response) {
         if (response == null)
-            return new AccountResult(false, 0, "Api 服务端不可用", null, null);
+            return new AccountResult(false, 0, ApiHttp.failureMessage(), null, null);
         JsonObject root = parse(response.body());
         return new AccountResult(response.statusCode() / 100 == 2, response.statusCode(), responseMessage(root),
                 parseAccount(root), stringValue(root, "token"));

@@ -621,7 +621,7 @@ public final class MailApiClient {
     }
 
     private static String message(HttpResponse<String> response, JsonObject root) {
-        return response == null ? "Api 服务端不可用" : ApiHttp.responseMessage(root);
+        return response == null ? ApiHttp.failureMessage() : ApiHttp.responseMessage(root);
     }
 
     private static JsonArray array(JsonObject root, String key) {

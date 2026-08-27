@@ -11,7 +11,7 @@ public final class ApiModuleSettings {
     private static final String MODULE = "ApiModuleSettings";
     private static final String DEFAULT_BASE_URL = "https://api.mcyzw.top";
     private static final String DEFAULT_SERVER_KEY = "";
-    private static final int DEFAULT_TIMEOUT_SECONDS = 3;
+    private static final int DEFAULT_TIMEOUT_SECONDS = 10;
 
     private static boolean enabled = true;
     private static String baseUrl = DEFAULT_BASE_URL;
@@ -40,8 +40,9 @@ public final class ApiModuleSettings {
             ConfigCrash.fail(GlobalSettings.file(), GlobalSettings.API_MODULE + ".server_key",
                     "公网 Api HMAC 密钥必须配置为至少 32 位，并与 YZWC_GAME_API_KEY 保持一致");
         }
-        DebugLogger.info(MODULE, "Api 网桥已加载: enabled=%s, baseUrl=%s, serverKeyConfigured=%s",
-                enabled, baseUrl, serverKey.length() >= 32);
+        DebugLogger.info(MODULE,
+                "Api 网桥已加载: enabled=%s, baseUrl=%s, serverKeyConfigured=%s, timeoutSeconds=%d",
+                enabled, baseUrl, serverKey.length() >= 32, timeoutSeconds);
     }
 
     public static void writeDefaults() {

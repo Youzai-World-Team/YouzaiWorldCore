@@ -12,6 +12,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.net.http.HttpTimeoutException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
@@ -34,14 +35,16 @@ import java.util.Base64;
 public final class ApiHttp {
 
     private static final String MODULE = "ApiHttp";
+    private static final int CONNECT_TIMEOUT_SECONDS = 10;
 
     // Cloudflare 公网 Api 使用 HTTP/1.1，避免不同代理对 HTTP/2 的协商差异。
     private static final HttpClient CLIENT = HttpClient.newBuilder()
-            .connectTimeout(Duration.ofSeconds(3))
+            .connectTimeout(Duration.ofSeconds(CONNECT_TIMEOUT_SECONDS))
             .version(HttpClient.Version.HTTP_1_1)
             .build();
 
     private static final SecureRandom NONCE_RANDOM = new SecureRandom();
+    private static final ThreadLocal<String> LAST_FAILURE_MESSAGE = new ThreadLocal<>();
 
     private ApiHttp() {
     }
@@ -68,12 +71,15 @@ public final class ApiHttp {
      */
     public static HttpResponse<String> request(
             String method, String path, String body, String sessionToken, int timeoutSeconds) {
+        LAST_FAILURE_MESSAGE.remove();
         if (!ApiModuleSettings.isEnabled()) {
+            LAST_FAILURE_MESSAGE.set("Api 网桥已关闭");
             DebugLogger.warn(MODULE, "Api 网桥已关闭，拒绝执行 %s %s", method, path);
             return null;
         }
         String key = ApiModuleSettings.getServerKey();
         if (key == null || key.length() < 32) {
+            LAST_FAILURE_MESSAGE.set("Api 网桥密钥未配置");
             DebugLogger.warn(MODULE, "Api 网桥密钥未配置或长度不足，拒绝发送请求");
             return null;
         }
@@ -103,7 +109,18 @@ public final class ApiHttp {
                 builder.method(method, HttpRequest.BodyPublishers.ofByteArray(bodyBytes)).header("Content-Type",
                         "application/json");
             return CLIENT.send(builder.build(), HttpResponse.BodyHandlers.ofString());
+        } catch (HttpTimeoutException e) {
+            LAST_FAILURE_MESSAGE.set("Api 请求超时（" + timeoutSeconds + " 秒）");
+            DebugLogger.warn(MODULE, "Api 请求超时 %s %s：超过 %d 秒未收到响应",
+                    method, path, timeoutSeconds);
+            return null;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            LAST_FAILURE_MESSAGE.set("Api 请求被中断");
+            DebugLogger.warn(MODULE, "Api 请求被中断 %s %s", method, path);
+            return null;
         } catch (Exception e) {
+            LAST_FAILURE_MESSAGE.set("Api 服务端不可用");
             String detail = e.getClass().getSimpleName() + ": " + e.getMessage();
             if (e.getCause() != null) {
                 detail += " (cause=" + e.getCause().getClass().getSimpleName() + ": " + e.getCause().getMessage() + ")";
@@ -114,6 +131,12 @@ public final class ApiHttp {
     }
 
     // ===== 响应读取 =====
+
+    /** 返回当前线程最近一次请求失败的用户可见原因。 */
+    public static String failureMessage() {
+        String message = LAST_FAILURE_MESSAGE.get();
+        return message == null || message.isBlank() ? "Api 服务端不可用" : message;
+    }
 
     public static boolean successful(HttpResponse<?> response) {
         return response != null && response.statusCode() / 100 == 2;

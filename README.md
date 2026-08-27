@@ -276,7 +276,7 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 | 配置           | 存放位置                                                                  | 内容                                                                                     |
 | -------------- | ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
 | 模组核心       | `yzwc/server/config/global_settings.json` → `core_module`                 | `dev_mode_enabled`、`log_to_file`（双开关控制 DebugLogger）                             |
-| Api 网桥       | `global_settings.json` → `api_module`                                     | Api 地址（生产环境为 `https://api.mcyzw.top`）、HMAC 共享密钥、请求超时                    |
+| Api 网桥       | `global_settings.json` → `api_module`                                     | Api 地址（生产环境为 `https://api.mcyzw.top`）、HMAC 共享密钥、请求超时（默认 10 秒）       |
 | 账户与认证     | Api 服务端 SQLite `game_accounts` / `game_sessions`                       | 玩家代号、密码哈希、UUID、会话、登录冷却；模组仅保留运行期非凭据缓存                    |
 | 自定义外观     | Api 服务端 SQLite `game_cosmetics`                                        | 皮肤和披风二进制数据；Minecraft 服务端不保存 PNG 文件                                   |
 | 邮件数据       | Api 服务端 SQLite `game_mails` / `game_mail_refs`                         | 邮件正文（含附件）与每玩家收件箱引用；Minecraft 服务端不再保存邮件文件                  |
