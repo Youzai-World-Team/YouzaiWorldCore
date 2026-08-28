@@ -72,20 +72,43 @@ public final class AccountDataStorage {
         return result.account();
     }
 
-    public static PlayerAccount ensureRemoteAccount(String username, UUID uuid) {
+    /**
+     * 读取账户并在可信正版登录时固定账户 UUID。
+     * <p>只有登录阶段已经由 Mojang/online-mode 证明身份时才允许修正旧离线 UUID；
+     * 普通离线登录永远不会覆盖现有绑定，避免同名离线客户端把账户身份改回去。</p>
+     */
+    public static PlayerAccount ensureRemoteAccount(String username, UUID uuid, boolean trustedOnlineIdentity) {
         PlayerAccount previous = get(username);
         ApiServiceClient.AccountResult result = ApiServiceClient.ensureAccount(username, uuid);
         if (!result.success() || result.account() == null) {
             DebugLogger.warn(MODULE, "Api 创建/读取账户失败：%s (%d)", result.message(), result.statusCode());
             return null;
         }
-        cache(result.account());
-        UUID remoteUuid = parseUuid(result.account());
-        if (!result.account().isRegistered() && remoteUuid != null
-                && ((previous != null && previous.isRegistered()) || UserSettings.exists(remoteUuid))) {
-            deleteLinkedLocalData(previous != null ? previous : result.account());
+        PlayerAccount account = result.account();
+        UUID remoteUuid = parseUuid(account);
+        if (trustedOnlineIdentity && uuid != null
+                && (remoteUuid == null || !uuid.equals(remoteUuid))) {
+            String previousUuid = account.uuid;
+            account.uuid = uuid.toString();
+            DebugLogger.warn(MODULE,
+                    "正版登录发现账户 %s 的 UUID 不一致：Api=%s，Mojang=%s；正在固定为 Mojang UUID。"
+                            + " 旧 UUID 关联的外观/个人数据不会自动迁移。",
+                    username, previousUuid, uuid);
+            account = ApiServiceClient.updateAccount(account).orElse(account);
         }
-        return result.account();
+        cache(account);
+        remoteUuid = parseUuid(account);
+        if (!account.isRegistered() && remoteUuid != null
+                && ((previous != null && previous.isRegistered()) || UserSettings.exists(remoteUuid))) {
+            deleteLinkedLocalData(previous != null ? previous : account);
+        }
+        return account;
+    }
+
+    /** 判断 Api 账户当前绑定的 UUID 是否与玩家实体一致。 */
+    public static boolean matchesUuid(PlayerAccount account, UUID uuid) {
+        UUID accountUuid = parseUuid(account);
+        return accountUuid == null || accountUuid.equals(uuid);
     }
 
     public static void update(PlayerAccount account) {

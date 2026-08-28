@@ -152,7 +152,8 @@ public class MainMenuElements implements MenuElementGroup {
                 TextureTileButton titleBtn = new TextureTileButton(
                                 c4, row0Y, tile, tile,
                                 TITLE_TEXTURE,
-                                () -> showNotImplementedDialog(screen));
+                                () -> screen.startExit(() -> Minecraft.getInstance().setScreenAndShow(
+                                                new top.csituka.youzaiworldcore.client.screen.TitleManagementScreen(screen))));
                 titleBtn.setExternalAlpha(alpha);
                 buttons.add(titleBtn);
 

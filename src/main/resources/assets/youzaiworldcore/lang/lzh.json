@@ -888,5 +888,10 @@
   "screen.youzaiworldcore.account_management.deactivated": "帳戶已銷，方斷連……",
   "screen.youzaiworldcore.account_management.error_send_first": "請先寄驗碼於新郵箱。",
   "screen.youzaiworldcore.account_management.error_unknown": "帳戶管理之請未成，請稍後復試。",
-  "screen.youzaiworldcore.account_management.no_connection": "今連接不可用，請復入伺服器。"
+  "screen.youzaiworldcore.account_management.no_connection": "今連接不可用，請復入伺服器。",
+  "screen.youzaiworldcore.title_management.title": "稱號之治",
+  "screen.youzaiworldcore.title_management.current": "今所佩：%s",
+  "screen.youzaiworldcore.title_management.none": "不佩稱號",
+  "screen.youzaiworldcore.title_management.loading": "方同步…",
+  "screen.youzaiworldcore.title_management.empty": "尚無可佩之稱號"
 }

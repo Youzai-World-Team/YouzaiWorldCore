@@ -43,6 +43,8 @@ Complete password authentication for offline-mode servers, with Mixin-based rest
 - **Password Security**: The Api service uses salted PBKDF2-HMAC-SHA256; the mod never stores or verifies passwords, with a 5-attempt login limit
 - **Login Cooldown/Lock**: Triggers after 5 failures, default 300s (5 min) cooldown; supports permanent lock, timed cooldown, and never-lock modes; admin unlock available
 - **Connection Authentication**: Players must enter their password on every server join; the short-lived token after login is only validated for the current connection and is revoked on disconnect
+- **Mojang UUID Login**: With `online-mode=false`, a genuine account using the modded client completes a Mojang session challenge during login; after verification, the player entity, account data, world saves, and other UUID-keyed state use Mojang's assigned UUID. Offline clients, clients without this mod, or unavailable Mojang services continue with the offline UUID. With `online-mode=true`, vanilla online authentication is used and this query is skipped
+- **UUID Binding**: After successful Mojang verification, the Api account is fixed to the Mojang UUID. An account name already bound to a Mojang UUID cannot be entered by a different offline UUID, preventing identity data from oscillating. Cosmetics, mail references, per-player settings, and world data linked to the old offline UUID are not migrated automatically; back up and handle them manually before switching
 - **Position Save/Restore**: Saves position on logout → teleports to End void; restores precisely on login
 - **Login Hall**: Unauthenticated players confined to `youzaiworldcore:login_hall` custom dimension; Mixin blocks movement, interaction, attacking, and chat
 - **Login/Register GUI**: On entering the login hall, the client auto-opens the register/login screens (`RegisterScreen` / `LoginScreen`, read-only pre-filled username, Enter to log in, Disconnect button), pushed by the server via `OpenAuthScreenPayload`. When the Api setting “email verification required for registration” is enabled, the flow automatically continues in `RegistrationEmailScreen` with code delivery, resend cooldown, and verification
@@ -62,6 +64,15 @@ Windows 10 Start Menu-style tile layout with page switching and animated transit
 | `about_me`     | About Me     | 3D player model render, ID, join/playtime                              |
 
 **Shortcut**: `Shift + F` to open the main menu.
+
+#### Title System
+
+- **Player management**: The Title button in the main menu opens a management screen where players can view owned titles, page through them, equip one, or unequip the current title; page size adapts to the window height
+- **Registration default**: Accounts that complete registration after the feature is deployed automatically receive and equip "Newbie Plea." Existing accounts are not backfilled, and ordinary account updates do not restore a title after an administrator revokes it
+- **Administrator titles**: LuckPerms nodes `youzaiworldcore.admin.junior`, `.middle`, and `.senior` map to junior, middle, and senior administrator titles. Only the highest matching tier is granted. Without LuckPerms, players with vanilla administrator permission receive all three tiers. Titles are cosmetic and never grant command permissions
+- **Display positions**: With styled chat disabled, the title appears to the right of the sender name. With styled chat enabled, `${title}` can be placed anywhere in the chat template. The Tab list places the title before the AFK marker and player name. Entity nameplates render it on the line below without creating or modifying a vanilla scoreboard objective
+- **Text and textures**: Definitions support text, bitmap-font glyphs, or combined text + texture titles. Built-in images use the `youzaiworldcore:title` bitmap font; a forced server resource pack can keep client assets consistent
+- **Api-authoritative data**: The title catalog, per-player grant sources, and equipped selection are stored in the Api server's SQLite database. The Minecraft server synchronizes through HMAC endpoints on login, after registration, on manual refresh, and every 60 seconds. The "Player Titles" admin page can create/edit/enable/disable definitions, grant or revoke titles, and change equipped selections; registration, manual, and permission grants remain independent sources
 
 ### 3. Title Screen Overhaul
 
@@ -772,6 +783,9 @@ All commands use `/yzwc` as the root command. Subcommands marked **(client comma
 | `youzaiworldcore.command.pet.admin`                         | Pet admin (backup/restore/interval)               | OP 4                     |
 | `youzaiworldcore.command.pet`                               | Pet module parent permission (base)               | OP 4                     |
 | `youzaiworldcore.mail`                                      | Mail system (compose/sent/recall/purge/list)      | OP 4                     |
+| `youzaiworldcore.admin.junior`                              | Junior administrator cosmetic title              | Without LuckPerms, OP admins unlock all three tiers |
+| `youzaiworldcore.admin.middle`                              | Middle administrator cosmetic title              | Without LuckPerms, OP admins unlock all three tiers |
+| `youzaiworldcore.admin.senior`                              | Senior administrator cosmetic title              | Without LuckPerms, OP admins unlock all three tiers |
 | `youzaiworldcore.command.status.query`                      | View stats                                        | OP 4                     |
 | `youzaiworldcore.command.status.delete`                     | Delete stats                                      | OP 4                     |
 | `youzaiworldcore.command.status.export`                     | Export stats leaderboard                          | OP 4                     |
@@ -806,9 +820,9 @@ All commands use `/yzwc` as the root command. Subcommands marked **(client comma
 | `decomposition_table` | Decomposition Table |
 | `fly_beacon`          | Fly Beacon          |
 
-### Network Packets (50 total)
+### Network Packets (71 total)
 
-> Note: the `world_pool_teleport` packet class lives in the `dimensionalinventories` package; the rest (including the 18 mail packets) are in the `network` package. Direction split: 22 S→C, 28 C→S.
+> Note: the `world_pool_teleport` packet class lives in the `dimensionalinventories` package; the rest (including the 18 mail packets) are in the `network` package. Direction split: 33 S→C, 38 C→S.
 
 | Packet ID                   | Direction | Purpose                                                                                       |
 | --------------------------- | --------- | --------------------------------------------------------------------------------------------- |
@@ -834,6 +848,7 @@ All commands use `/yzwc` as the root command. Subcommands marked **(client comma
 | `teleport_stone_interrupt`  | S→C       | Interrupt teleport stone/scroll charge                                                       |
 | `in_place_respawn_info`     | S→C       | Sync whether the death dimension allows respawning here and its level cost                    |
 | `in_place_respawn_result`   | S→C       | Return approval or rejection for a respawn-here request                                       |
+| `title_state`               | S→C       | Sync the title catalog, this player's grants, and online equipped-title snapshots              |
 | `registration_email_request` | C→S      | Submit an email address or email verification code                                             |
 | `world_pool_teleport`       | C→S       | Request dimension pool teleport                                                               |
 | `in_place_respawn_request`  | C→S       | Request a level-paid respawn at the death position                                             |
@@ -862,6 +877,8 @@ All commands use `/yzwc` as the root command. Subcommands marked **(client comma
 | `mail_admin_edit`           | C→S       | Edit/cancel-edit mail                                                                         |
 | `mail_player_list_request`  | C→S       | Request the registered player-name list                                                       |
 | `afk_heartbeat`             | C→S       | AFK heartbeat packet (client reports input activity)                                         |
+| `title_state_request`       | C→S       | Request a refresh of the current player's title state                                          |
+| `title_equip`               | C→S       | Request equipping a title; an empty ID unequips the current title                              |
 
 ---
 
@@ -910,7 +927,7 @@ src/                                       # 452 Java source files (main 273 / c
 │   ├── mail/                             # Mail system (Mail / MailManager / MailApiClient / MailSettings / MailPermissionHelper; data lives on the Api server)
 │   ├── mana/                             # Mana system
 │   ├── mixin/                            # Mixins (35; subpackages: afk / babyzombie / chargedcreeper / craftsound / damagenumber / doubledoors / invisibility / jukebox / painting / pet / seat / skill / trialvault)
-│   ├── network/                          # Network packets (48 Payload classes + ModNetworking)
+│   ├── network/                          # Network packets (70 Payload classes + ModNetworking)
 │   ├── pet/                              # Pet system (config/command/event subpackages + PetGlobalState/PetEntry)
 │   ├── placeholders/                     # Placeholder API (32 placeholders)
 │   ├── respawn/                          # In-place respawn (InPlaceRespawnManager)

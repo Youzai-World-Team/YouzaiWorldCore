@@ -352,6 +352,7 @@ public class AccountCommands {
         // 标记已认证
         authPlayer.yzwc$setAuthenticated(true);
         CosmeticManager.onAuthenticated(player);
+        top.csituka.youzaiworldcore.title.TitleManager.refreshPlayer(player, false);
 
         // 传送到原位置（如果有有效位置且不在虚空）
         AuthLocationData savedLoc = authPlayer.yzwc$getLastLocation();

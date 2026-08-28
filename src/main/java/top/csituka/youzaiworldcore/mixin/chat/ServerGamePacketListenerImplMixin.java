@@ -52,10 +52,8 @@ public abstract class ServerGamePacketListenerImplMixin {
 
     @Inject(method = "broadcastChatMessage", at = @At("HEAD"))
     private void youzaiworldcore$setFormattedMessage(PlayerChatMessage signedMessage, CallbackInfo ci) {
-        if (!ChatFormatSettings.isEnabled()) {
-            return;
-        }
-        ChatFormatHelper.modifyForSending(signedMessage, this.player);
+        if (ChatFormatSettings.isEnabled()) ChatFormatHelper.modifyForSending(signedMessage, this.player);
+        else ChatFormatHelper.modifyVanillaTitleForSending(signedMessage, this.player);
     }
 
     @ModifyArg(

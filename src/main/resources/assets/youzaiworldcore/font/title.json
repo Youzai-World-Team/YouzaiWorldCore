@@ -1,0 +1,43 @@
+{
+  "providers": [
+    {
+      "type": "bitmap",
+      "file": "youzaiworldcore:gui/title/new.png",
+      "height": 10,
+      "ascent": 8,
+      "chars": ["\uE100"]
+    },
+    {
+      "type": "bitmap",
+      "file": "youzaiworldcore:gui/title/junior_administrator.png",
+      "height": 10,
+      "ascent": 8,
+      "chars": ["\uE101"]
+    },
+    {
+      "type": "bitmap",
+      "file": "youzaiworldcore:gui/title/middle_administrator.png",
+      "height": 10,
+      "ascent": 8,
+      "chars": ["\uE102"]
+    },
+    {
+      "type": "bitmap",
+      "file": "youzaiworldcore:gui/title/senior_administrator.png",
+      "height": 10,
+      "ascent": 8,
+      "chars": ["\uE103"]
+    },
+    {
+      "type": "bitmap",
+      "file": "youzaiworldcore:gui/title/gay.png",
+      "height": 10,
+      "ascent": 8,
+      "chars": ["\uE104"]
+    },
+    {
+      "type": "reference",
+      "id": "minecraft:include/default"
+    }
+  ]
+}

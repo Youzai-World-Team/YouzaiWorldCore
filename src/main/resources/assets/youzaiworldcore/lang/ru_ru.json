@@ -888,5 +888,10 @@
   "screen.youzaiworldcore.account_management.deactivated": "Аккаунт удалён. Отключение...",
   "screen.youzaiworldcore.account_management.error_send_first": "Сначала отправьте код подтверждения на новую почту.",
   "screen.youzaiworldcore.account_management.error_unknown": "Запрос аккаунта не выполнен. Повторите позже.",
-  "screen.youzaiworldcore.account_management.no_connection": "Текущее соединение недоступно. Перезайдите на сервер."
+  "screen.youzaiworldcore.account_management.no_connection": "Текущее соединение недоступно. Перезайдите на сервер.",
+  "screen.youzaiworldcore.title_management.title": "Управление титулами",
+  "screen.youzaiworldcore.title_management.current": "Надет: %s",
+  "screen.youzaiworldcore.title_management.none": "Без титула",
+  "screen.youzaiworldcore.title_management.loading": "Синхронизация…",
+  "screen.youzaiworldcore.title_management.empty": "У вас пока нет титулов"
 }

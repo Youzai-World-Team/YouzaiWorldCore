@@ -29,7 +29,7 @@ public final class ChatFormatSettings {
 
     /** 默认聊天消息模板（全功能示例：颜色枚举 / 渐变 / hex / 彩虹 / 格式标签 / 模板变量 / %papi%） */
     public static final String DEFAULT_CHAT_FORMAT =
-            "<dark_gray>[</dark_gray><gradient:#ff5555:#55ff55>${player}</gradient><dark_gray>]</dark_gray> "
+            "<dark_gray>[</dark_gray><gradient:#ff5555:#55ff55>${player}</gradient> ${title}<dark_gray>]</dark_gray> "
             + "<gold>»</gold> <c:#55ffff>${message}</c> "
             + "<gray>|</gray> <rainbow>%player:name%</rainbow> "
             + "<gray>|</gray> <bold>%player:displayname%</bold> "

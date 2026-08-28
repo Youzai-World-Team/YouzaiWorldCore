@@ -128,6 +128,9 @@ public class Client implements ClientModInitializer {
         StartupLoadingStatus.beginStage("客户端网络");
         DebugLogger.info("Client", "初始化客户端网络...");
         top.csituka.youzaiworldcore.network.ClientNetworking.initialize();
+        top.csituka.youzaiworldcore.client.title.TitleClientState.initialize();
+        DebugLogger.info("Client", "初始化 Mojang UUID 登录认证响应器...");
+        top.csituka.youzaiworldcore.client.account.OnlineUuidLoginClient.initialize();
 
         StartupLoadingStatus.beginStage("客户端外部设置");
         // 加载客户端外部设置

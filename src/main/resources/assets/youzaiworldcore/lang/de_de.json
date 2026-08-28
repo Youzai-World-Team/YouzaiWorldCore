@@ -888,5 +888,10 @@
   "screen.youzaiworldcore.account_management.deactivated": "Das Konto wurde gelöscht. Verbindung wird getrennt...",
   "screen.youzaiworldcore.account_management.error_send_first": "Sende zuerst einen Bestätigungscode an die neue E-Mail.",
   "screen.youzaiworldcore.account_management.error_unknown": "Die Kontoanfrage ist fehlgeschlagen. Versuche es später erneut.",
-  "screen.youzaiworldcore.account_management.no_connection": "Die aktuelle Verbindung ist nicht verfügbar. Tritt dem Server erneut bei."
+  "screen.youzaiworldcore.account_management.no_connection": "Die aktuelle Verbindung ist nicht verfügbar. Tritt dem Server erneut bei.",
+  "screen.youzaiworldcore.title_management.title": "Titelverwaltung",
+  "screen.youzaiworldcore.title_management.current": "Ausgerüstet: %s",
+  "screen.youzaiworldcore.title_management.none": "Kein Titel",
+  "screen.youzaiworldcore.title_management.loading": "Synchronisierung…",
+  "screen.youzaiworldcore.title_management.empty": "Du besitzt noch keine Titel"
 }

@@ -26,9 +26,11 @@ import top.csituka.youzaiworldcore.account.data.PlayerAccount;
 import top.csituka.youzaiworldcore.account.data.PlayerAuthAccess;
 import top.csituka.youzaiworldcore.account.data.PasswordResetSessionStore;
 import top.csituka.youzaiworldcore.account.data.RegistrationEmailSessionStore;
+import top.csituka.youzaiworldcore.account.OnlineUuidLoginManager;
 import top.csituka.youzaiworldcore.account.util.AuthHelper;
 import top.csituka.youzaiworldcore.account.util.AuthLocationData;
 import top.csituka.youzaiworldcore.account.util.AuthPlayerHelper;
+import top.csituka.youzaiworldcore.util.DebugLogger;
 
 import java.net.SocketAddress;
 import java.time.ZonedDateTime;
@@ -50,7 +52,7 @@ public abstract class AccountPlayerListMixin {
     /**
      * 玩家加入前检查
      */
-    @Inject(method = "placeNewPlayer", at = @At("HEAD"))
+    @Inject(method = "placeNewPlayer", at = @At("HEAD"), cancellable = true)
     private void onPlayerPreJoin(Connection connection, ServerPlayer player, CommonListenerCookie cookie, CallbackInfo ci) {
         String username = player.getScoreboardName();
         RegistrationEmailSessionStore.clear(player.getUUID());
@@ -58,7 +60,21 @@ public abstract class AccountPlayerListMixin {
         EmailChangeSessionStore.clear(player.getUUID());
         YouzaiworldCore.LOGGER.info("玩家 {} 正在加入服务器...", username);
 
-        PlayerAccount account = AccountDataStorage.ensureRemoteAccount(username, player.getUUID());
+        boolean trustedOnlineIdentity = OnlineUuidLoginManager.isTrustedOnlineIdentity(server, player.getUUID());
+        PlayerAccount account = AccountDataStorage.ensureRemoteAccount(
+                username,
+                player.getUUID(),
+                trustedOnlineIdentity);
+        if (account != null
+                && !trustedOnlineIdentity
+                && !AccountDataStorage.matchesUuid(account, player.getUUID())) {
+            DebugLogger.warn("AccountPlayerListMixin",
+                    "已拒绝离线 UUID %s 使用已绑定正版 UUID 的账户名 %s",
+                    player.getUUID(), username);
+            connection.disconnect(Component.literal("该账户名已绑定正版 Mojang UUID，请使用对应正版账户进入服务器"));
+            ci.cancel();
+            return;
+        }
         AuthPlayerHelper.setAccount(player, account != null ? account : new PlayerAccount(username));
         AuthPlayerHelper.setIpAddress(player, AuthHelper.getIp(connection.getRemoteAddress()));
         AuthPlayerHelper.setCanSkipAuth(player, player.getClass() != ServerPlayer.class);

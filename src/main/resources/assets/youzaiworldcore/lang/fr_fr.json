@@ -888,5 +888,10 @@
   "screen.youzaiworldcore.account_management.deactivated": "Le compte a été supprimé. Déconnexion...",
   "screen.youzaiworldcore.account_management.error_send_first": "Envoyez d'abord un code de vérification au nouvel e-mail.",
   "screen.youzaiworldcore.account_management.error_unknown": "La requête du compte a échoué. Réessayez plus tard.",
-  "screen.youzaiworldcore.account_management.no_connection": "La connexion actuelle est indisponible. Rejoignez à nouveau le serveur."
+  "screen.youzaiworldcore.account_management.no_connection": "La connexion actuelle est indisponible. Rejoignez à nouveau le serveur.",
+  "screen.youzaiworldcore.title_management.title": "Gestion des titres",
+  "screen.youzaiworldcore.title_management.current": "Équipé : %s",
+  "screen.youzaiworldcore.title_management.none": "Aucun titre",
+  "screen.youzaiworldcore.title_management.loading": "Synchronisation…",
+  "screen.youzaiworldcore.title_management.empty": "Vous ne possédez encore aucun titre"
 }

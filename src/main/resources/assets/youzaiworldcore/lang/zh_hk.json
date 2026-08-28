@@ -888,5 +888,10 @@
   "screen.youzaiworldcore.account_management.deactivated": "帳戶已註銷，正在中斷連線……",
   "screen.youzaiworldcore.account_management.error_send_first": "請先向新電郵發送驗證碼。",
   "screen.youzaiworldcore.account_management.error_unknown": "帳戶管理請求失敗，請稍後再試。",
-  "screen.youzaiworldcore.account_management.no_connection": "目前連線不可用，請重新進入伺服器。"
+  "screen.youzaiworldcore.account_management.no_connection": "目前連線不可用，請重新進入伺服器。",
+  "screen.youzaiworldcore.title_management.title": "稱號管理",
+  "screen.youzaiworldcore.title_management.current": "目前佩戴：%s",
+  "screen.youzaiworldcore.title_management.none": "不佩戴任何稱號",
+  "screen.youzaiworldcore.title_management.loading": "正在同步…",
+  "screen.youzaiworldcore.title_management.empty": "你還沒有可佩戴的稱號"
 }

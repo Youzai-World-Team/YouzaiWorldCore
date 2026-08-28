@@ -43,6 +43,8 @@
 - **密码安全**：Api 服务端使用 PBKDF2-HMAC-SHA256 加盐哈希，模组不保存或验证密码；5 次登录尝试上限
 - **登录冷却/锁定**：失败 5 次后触发，默认冷却 300 秒（5 分钟）；支持永久锁定、限时冷却、永不锁定三种模式，管理员可通过命令解锁
 - **连接认证**：玩家每次加入服务器都必须重新输入密码；登录后的短期令牌仅用于当前连接校验，断线即撤销
+- **正版 UUID 登录**：服务器 `online-mode=false` 时，安装本模组的正版客户端会在登录阶段使用 Mojang 会话挑战完成验证；验证成功后玩家实体、账户数据、世界存档和其他按 UUID 保存的数据均使用 Mojang 分配的 UUID。离线客户端、未安装客户端模组或 Mojang 服务不可用时继续使用离线 UUID；服务器 `online-mode=true` 时沿用原版在线认证，不重复发起本模组查询
+- **UUID 绑定规则**：正版验证成功后，Api 账户会固定为 Mojang UUID；已绑定正版 UUID 的账户名不会允许其他离线 UUID 登录，以避免账户数据在两种 UUID 之间来回漂移。旧离线 UUID 关联的外观、邮件引用、个人配置和世界数据不会自动迁移，请管理员在切换前自行备份并处理
 - **位置保存/恢复**：登出时保存位置 → 传送至末地虚空；登录后精确保留位置恢复
 - **登录大厅**：未认证玩家被限制在 `youzaiworldcore:login_hall` 自定义维度，Mixin 阻止移动、交互、攻击、聊天
 - **登录/注册 GUI**：未认证玩家进入登录大厅时客户端自动弹出注册/登录界面（`RegisterScreen` / `LoginScreen`，用户名只读预填，支持 Enter 登入与断开连接），服务端经 `OpenAuthScreenPayload` 推送；Api 启用“注册需邮箱验证”后会自动进入 `RegistrationEmailScreen`，完成验证码发送、重发倒计时与校验注册；已绑定邮箱的账户可从登录页进入 `PasswordResetScreen`，验证绑定邮箱后重置密码
@@ -63,6 +65,15 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 | `about_me`     | 关于我   | 3D 玩家模型渲染、ID、加入/游玩时间                   |
 
 **快捷键**：`Shift + F` 打开主菜单。
+
+#### 称号系统
+
+- **玩家管理**：主菜单「称号」按钮打开称号管理页，可查看已拥有称号、分页选择佩戴或卸下；列表会随窗口高度自动调整每页数量
+- **注册默认称号**：新开服后首次完成注册的账户自动获得并佩戴「萌新求饶」；已有账户不回填，管理员回收后也不会因普通账户更新而重新发放
+- **管理员称号**：LuckPerms 节点 `youzaiworldcore.admin.junior` / `.middle` / `.senior` 分别对应初级、中级、高级管理员称号，只授予玩家命中的最高一级；未安装 LuckPerms 时，原版管理员权限等级玩家获得全部三级管理员称号。称号仅为外观，不会反向授予任何命令权限
+- **显示位置**：样式化聊天关闭时显示在聊天发送者名称右侧；开启时可在聊天模板中使用 `${title}` 自定义位置；Tab 玩家列表显示在 AFK 标记与玩家名左侧；玩家实体名称牌下方使用独立渲染状态显示，不创建或修改原版记分板目标
+- **文字与贴图**：称号定义支持文字、贴图字体字符及文字 + 贴图组合；内置贴图通过 `youzaiworldcore:title` 位图字体加载，服务器可通过强制资源包确保客户端资源一致
+- **Api 权威数据**：称号目录、玩家授权来源与当前佩戴状态保存在 Api 服务端 SQLite；Minecraft 服务端通过 HMAC 接口在登录、注册完成、手动刷新和每 60 秒周期同步。后台「玩家称号」页可创建/编辑/启停称号、手动给予或回收，以及修改玩家佩戴状态；注册、手动、权限三种授权来源相互独立
 
 ### 3. 标题界面改造
 
@@ -777,6 +788,9 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 | `youzaiworldcore.command.pet.admin`                         | 宠物管理员（备份/恢复/间隔）           | OP 4                    |
 | `youzaiworldcore.command.pet`                               | 宠物模块父权限（基础）                 | OP 4                    |
 | `youzaiworldcore.mail`                                      | 邮件系统（发布/已发送/撤回/清理/查看） | OP 4                    |
+| `youzaiworldcore.admin.junior`                              | 初级管理员外观称号                     | 无 LuckPerms 时 OP 管理员解锁全部三级 |
+| `youzaiworldcore.admin.middle`                              | 中级管理员外观称号                     | 无 LuckPerms 时 OP 管理员解锁全部三级 |
+| `youzaiworldcore.admin.senior`                              | 高级管理员外观称号                     | 无 LuckPerms 时 OP 管理员解锁全部三级 |
 | `youzaiworldcore.command.status.query`                      | 查看统计                               | OP 4                    |
 | `youzaiworldcore.command.status.delete`                     | 删除统计                               | OP 4                    |
 | `youzaiworldcore.command.status.export`                     | 导出统计排行榜                         | OP 4                    |
@@ -811,9 +825,9 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 | `decomposition_table` | 分解台   |
 | `fly_beacon`          | 飞行信标 |
 
-### 网络数据包（共 54 个）
+### 网络数据包（共 71 个）
 
-> 注：`world_pool_teleport` 数据包类位于 `dimensionalinventories` 包，其余位于 `network` 包；邮件相关 18 个数据包亦位于 `network` 包。方向统计：S→C 24 个，C→S 30 个。
+> 注：`world_pool_teleport` 数据包类位于 `dimensionalinventories` 包，其余位于 `network` 包；邮件相关 18 个数据包亦位于 `network` 包。方向统计：S→C 33 个，C→S 38 个。
 
 | 数据包 ID                   | 方向 | 用途                                                               |
 | --------------------------- | ---- | ------------------------------------------------------------------ |
@@ -841,6 +855,7 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 | `teleport_stone_interrupt`  | S→C  | 传送石/传送卷轴蓄力中断                                           |
 | `in_place_respawn_info`     | S→C  | 同步死亡维度是否允许原地重生及本次等级费用                         |
 | `in_place_respawn_result`   | S→C  | 返回原地重生申请的批准或拒绝结果                                   |
+| `title_state`               | S→C  | 同步称号目录、本玩家授权与在线玩家佩戴快照                         |
 | `registration_email_request` | C→S | 提交邮箱地址或邮箱验证码                                           |
 | `password_reset_request`    | C→S  | 提交找回密码邮箱、验证码与新密码                                   |
 | `account_management_request` | C→S | 提交账户快照、改密、换绑邮箱或注销请求                             |
@@ -871,6 +886,8 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 | `mail_admin_edit`           | C→S  | 编辑/取消编辑邮件                                                  |
 | `mail_player_list_request`  | C→S  | 请求已注册玩家代号名单                                             |
 | `afk_heartbeat`             | C→S  | AFK 心跳包（客户端上报输入活动状态）                               |
+| `title_state_request`       | C→S  | 请求刷新当前玩家称号数据                                           |
+| `title_equip`               | C→S  | 请求佩戴指定称号；空 ID 表示卸下                                   |
 
 ---
 
@@ -919,7 +936,7 @@ src/                                       # 452 个 Java 源文件（main 273 /
 │   ├── mail/                             # 邮件系统（Mail / MailManager / MailApiClient / MailSettings / MailPermissionHelper；数据在 Api 服务端）
 │   ├── mana/                             # 魔力系统
 │   ├── mixin/                            # Mixin（35 个，含子包 afk / babyzombie / chargedcreeper / craftsound / damagenumber / doubledoors / invisibility / jukebox / painting / pet / seat / skill / trialvault）
-│   ├── network/                          # 网络数据包（52 个 Payload 类 + ModNetworking）
+│   ├── network/                          # 网络数据包（70 个 Payload 类 + ModNetworking）
 │   ├── pet/                              # 宠物系统（config/command/event 子包 + PetGlobalState/PetEntry）
 │   ├── placeholders/                     # Placeholder API 集成（32 个占位符）
 │   ├── respawn/                          # 原地重生（InPlaceRespawnManager）

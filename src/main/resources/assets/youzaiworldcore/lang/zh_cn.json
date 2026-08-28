@@ -888,5 +888,10 @@
   "screen.youzaiworldcore.account_management.deactivated": "账户已注销，正在断开连接……",
   "screen.youzaiworldcore.account_management.error_send_first": "请先向新邮箱发送验证码。",
   "screen.youzaiworldcore.account_management.error_unknown": "账户管理请求失败，请稍后重试。",
-  "screen.youzaiworldcore.account_management.no_connection": "当前连接不可用，请重新进入服务器。"
+  "screen.youzaiworldcore.account_management.no_connection": "当前连接不可用，请重新进入服务器。",
+  "screen.youzaiworldcore.title_management.title": "称号管理",
+  "screen.youzaiworldcore.title_management.current": "当前佩戴：%s",
+  "screen.youzaiworldcore.title_management.none": "不佩戴任何称号",
+  "screen.youzaiworldcore.title_management.loading": "正在同步…",
+  "screen.youzaiworldcore.title_management.empty": "你还没有可佩戴的称号"
 }

@@ -135,6 +135,15 @@ public final class LuckPermsHelper {
     /** AFK 管理权限：/yzwc afk list、/yzwc afk status [他人]、/yzwc afk settings */
     public static final String PERMISSION_AFK_ADMIN = "youzaiworldcore.command.admin.afk";
 
+    /** 初级管理员身份节点，只用于自动授予外观称号。 */
+    public static final String PERMISSION_ADMIN_JUNIOR = "youzaiworldcore.admin.junior";
+
+    /** 中级管理员身份节点，只用于自动授予外观称号。 */
+    public static final String PERMISSION_ADMIN_MIDDLE = "youzaiworldcore.admin.middle";
+
+    /** 高级管理员身份节点，只用于自动授予外观称号。 */
+    public static final String PERMISSION_ADMIN_SENIOR = "youzaiworldcore.admin.senior";
+
     /** 所有命令的通配符 */
     public static final String PERMISSION_COMMAND_WILDCARD = "youzaiworldcore.command.*";
 

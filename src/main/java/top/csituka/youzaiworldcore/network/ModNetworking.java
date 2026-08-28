@@ -149,6 +149,18 @@ public class ModNetworking {
             }
         });
 
+        ServerPlayNetworking.registerGlobalReceiver(TitleStateRequestPayload.ID, (payload, context) -> {
+            var player = context.player();
+            player.level().getServer().execute(() ->
+                    top.csituka.youzaiworldcore.title.TitleManager.refreshPlayer(player, true));
+        });
+
+        ServerPlayNetworking.registerGlobalReceiver(TitleEquipPayload.ID, (payload, context) -> {
+            var player = context.player();
+            player.level().getServer().execute(() ->
+                    top.csituka.youzaiworldcore.title.TitleManager.requestEquip(player, payload.titleId()));
+        });
+
         ServerPlayNetworking.registerGlobalReceiver(DecomposeItemPayload.ID, (payload, context) -> {
             DebugLogger.entering("ModNetworking", "DecomposeItemPayload handler");
             boolean isDecompositionTable = context.player().containerMenu instanceof DecompositionTableMenu;

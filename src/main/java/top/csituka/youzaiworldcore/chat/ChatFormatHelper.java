@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.function.Function;
 
 import top.csituka.youzaiworldcore.config.ChatFormatSettings;
+import top.csituka.youzaiworldcore.title.TitleManager;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
 /**
@@ -118,10 +119,11 @@ public final class ChatFormatHelper {
     }
 
     private static Map<String, Component> playerVars(ServerPlayer player) {
-        Map<String, Component> vars = new HashMap<>(4);
+        Map<String, Component> vars = new HashMap<>(5);
         vars.put("player", player.getDisplayName());
         vars.put("default", player.getDisplayName());
         vars.put("name", player.getName());
+        vars.put("title", TitleManager.getEquippedComponent(player));
         return vars;
     }
 
@@ -149,6 +151,7 @@ public final class ChatFormatHelper {
                         "player", displayName,
                         "default", displayName,
                         "name", player.getName(),
+                        "title", TitleManager.getEquippedComponent(player),
                         "message", messageContent
                 )::get));
 
@@ -213,6 +216,22 @@ public final class ChatFormatHelper {
             }
         } catch (Exception e) {
             DebugLogger.exception(MODULE, "modifyForSending", e);
+        }
+    }
+
+    /** 样式化聊天关闭时，仅在原版发送者名称右侧追加称号。 */
+    public static void modifyVanillaTitleForSending(PlayerChatMessage message, ServerPlayer player) {
+        Component title = TitleManager.getEquippedComponent(player);
+        if (title.getString().isBlank()) return;
+        try {
+            Component sender = player.getDisplayName().copy()
+                    .append(Component.literal(" "))
+                    .append(title);
+            Component override = Component.translatable("chat.type.text", sender, message.decoratedContent());
+            ExtPlayerChatMessage.setArg(message, "override", override);
+            server = player.level().getServer();
+        } catch (Exception e) {
+            DebugLogger.exception(MODULE, "modifyVanillaTitleForSending", e);
         }
     }
 

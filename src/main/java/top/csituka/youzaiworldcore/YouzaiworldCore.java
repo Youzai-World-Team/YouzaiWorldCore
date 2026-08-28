@@ -246,6 +246,10 @@ public class YouzaiworldCore implements ModInitializer {
         DamageNumberHandler.initialize();
         DebugLogger.info("YouzaiworldCore", "初始化服务端网络接收器...");
         ModNetworking.initialize();
+        DebugLogger.info("YouzaiworldCore", "初始化混合正版 UUID 登录认证...");
+        top.csituka.youzaiworldcore.account.OnlineUuidLoginManager.initialize();
+        ServerLifecycleEvents.SERVER_STOPPING.register(
+                server -> top.csituka.youzaiworldcore.account.OnlineUuidLoginManager.shutdown());
         initializeLuckPermsPlaceholders();
 
         DebugLogger.info("YouzaiworldCore", "注册连锁采集事件...");
@@ -337,6 +341,7 @@ public class YouzaiworldCore implements ModInitializer {
         DebugLogger.entering("YouzaiworldCore", "AccountSystem.init");
         ApiModuleSettings.load();
         AccountDataStorage.initialize();
+        top.csituka.youzaiworldcore.title.TitleManager.initialize();
         LOGGER.info("账户系统已初始化");
         DebugLogger.exiting("YouzaiworldCore", "AccountSystem.init");
 

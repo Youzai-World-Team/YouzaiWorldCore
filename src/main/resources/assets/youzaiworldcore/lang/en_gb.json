@@ -888,5 +888,10 @@
   "screen.youzaiworldcore.account_management.deactivated": "The account was deleted. Disconnecting...",
   "screen.youzaiworldcore.account_management.error_send_first": "Send a verification code to the new email first.",
   "screen.youzaiworldcore.account_management.error_unknown": "The account request failed. Try again later.",
-  "screen.youzaiworldcore.account_management.no_connection": "The current connection is unavailable. Rejoin the server."
+  "screen.youzaiworldcore.account_management.no_connection": "The current connection is unavailable. Rejoin the server.",
+  "screen.youzaiworldcore.title_management.title": "Title Management",
+  "screen.youzaiworldcore.title_management.current": "Equipped: %s",
+  "screen.youzaiworldcore.title_management.none": "No title",
+  "screen.youzaiworldcore.title_management.loading": "Syncing…",
+  "screen.youzaiworldcore.title_management.empty": "You do not own any titles yet"
 }

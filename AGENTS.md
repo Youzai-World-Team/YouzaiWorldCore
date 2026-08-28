@@ -96,7 +96,7 @@ YouzaiWorldCore/
 │   ├── luckperms/LuckPermsHelper.java# 统一鉴权入口（权限节点常量 + OP 回退）
 │   ├── mail/                         # 邮件系统（Mail / MailManager / MailApiClient / MailSettings；数据在 Api 服务端）
 │   ├── mixin/                        # 服务端 Mixin（35 个；子包：afk / babyzombie / chargedcreeper / craftsound / damagenumber / doubledoors / invisibility / jukebox / painting / pet / seat / skill / trialvault）
-│   ├── network/                      # 48 个 Payload 记录类 + ModNetworking 统一注册 + MailStreamCodecs
+│   ├── network/                      # 70 个 Payload 记录类 + ModNetworking 统一注册 + MailStreamCodecs
 │   ├── pet/{,command,config,event}/  # 宠物系统
 │   ├── placeholders/                 # Placeholder API 占位符（32 个）
 │   ├── screen/{,slot}/               # 容器菜单（AbstractContainerMenu）

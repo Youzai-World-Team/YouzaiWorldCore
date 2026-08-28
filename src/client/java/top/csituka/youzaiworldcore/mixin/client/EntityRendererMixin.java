@@ -12,6 +12,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import top.csituka.youzaiworldcore.client.render.PingDisplayRender;
+import top.csituka.youzaiworldcore.client.title.TitleClientState;
 
 /**
  * 在实体名字牌（nametag）上追加显示延迟（ping）。
@@ -44,6 +45,13 @@ public abstract class EntityRendererMixin {
 
         if (!(entity instanceof AbstractClientPlayer player)) return;
         if (state.nameTag == null) return;
+
+        var title = TitleClientState.equippedComponent(player.getUUID());
+        if (!title.getString().isBlank()) {
+            // scoreText 是 EntityRenderer 的独立第二行渲染状态；这里只复用渲染槽位，
+            // 不创建或修改任何原版记分板目标。
+            state.scoreText = title;
+        }
 
         var connection = Minecraft.getInstance().getConnection();
         if (connection == null) return;

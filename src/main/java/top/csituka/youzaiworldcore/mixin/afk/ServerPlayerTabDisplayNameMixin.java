@@ -8,6 +8,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import top.csituka.youzaiworldcore.afk.AfkManager;
 import top.csituka.youzaiworldcore.config.AfkConfig;
+import top.csituka.youzaiworldcore.title.TitleManager;
 
 /**
  * 为 AFK 玩家的 Tab 列表显示名添加 {@code [AFK]} 前缀。
@@ -29,17 +30,17 @@ public abstract class ServerPlayerTabDisplayNameMixin {
             cancellable = true
     )
     private void youzaiworldcore$appendAfkPrefix(CallbackInfoReturnable<Component> cir) {
-        if (!AfkConfig.isTabPrefixEnabled()) {
-            return;
-        }
         ServerPlayer self = (ServerPlayer) (Object) this;
-        if (!AfkManager.isAfk(self)) {
-            return;
-        }
         Component original = cir.getReturnValue();
-        if (original == null) {
-            return;
+        if (original == null) original = self.getDisplayName();
+        Component result = original;
+        if (AfkConfig.isTabPrefixEnabled() && AfkManager.isAfk(self)) {
+            result = Component.literal("§7[AFK] ").append(result);
         }
-        cir.setReturnValue(Component.literal("§7[AFK] ").append(original));
+        Component title = TitleManager.getEquippedComponent(self);
+        if (!title.getString().isBlank()) {
+            result = title.copy().append(Component.literal(" ")).append(result);
+        }
+        if (result != original) cir.setReturnValue(result);
     }
 }

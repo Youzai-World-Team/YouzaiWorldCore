@@ -7,7 +7,8 @@
     "AccountServerPlayerMixin",
     "AccountPlayerListMixin",
     "AccountPacketHandlerMixin",
-    "AccountEntityMixin"
+    "AccountEntityMixin",
+    "OnlineUuidLoginAccessor"
   ],
   "injectors": {
     "defaultRequire": 1

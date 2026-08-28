@@ -89,6 +89,9 @@ public final class ModPayloadTypes {
                                 MailAdminEditPayload.STREAM_CODEC);
                 PayloadTypeRegistry.serverboundPlay().register(
                                 MailPlayerListRequestPayload.ID, MailPlayerListRequestPayload.STREAM_CODEC);
+                PayloadTypeRegistry.serverboundPlay().register(
+                                TitleStateRequestPayload.ID, TitleStateRequestPayload.STREAM_CODEC);
+                PayloadTypeRegistry.serverboundPlay().register(TitleEquipPayload.ID, TitleEquipPayload.STREAM_CODEC);
 
                 // ===== S2C =====
                 PayloadTypeRegistry.clientboundPlay().register(OpenMenuPayload.ID, OpenMenuPayload.STREAM_CODEC);
@@ -152,6 +155,7 @@ public final class ModPayloadTypes {
                                 MailUnreadCountPayload.STREAM_CODEC);
                 PayloadTypeRegistry.clientboundPlay().register(MailPlayerListPayload.ID,
                                 MailPlayerListPayload.STREAM_CODEC);
+                PayloadTypeRegistry.clientboundPlay().register(TitleStatePayload.ID, TitleStatePayload.STREAM_CODEC);
 
                 DebugLogger.info(MODULE, "全部网络 Payload 类型已注册");
                 DebugLogger.exiting(MODULE, "initialize");

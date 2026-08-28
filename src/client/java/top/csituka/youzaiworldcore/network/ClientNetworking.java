@@ -69,6 +69,11 @@ public class ClientNetworking {
                 context.client().execute(() -> CosmeticClientManager.onMojangSkin(payload)));
         DebugLogger.info("ClientNetworking", "Registered receiver: MojangSkinPayload");
 
+        ClientPlayNetworking.registerGlobalReceiver(TitleStatePayload.ID, (payload, context) ->
+                context.client().execute(() ->
+                        top.csituka.youzaiworldcore.client.title.TitleClientState.apply(payload)));
+        DebugLogger.info("ClientNetworking", "Registered receiver: TitleStatePayload");
+
         ClientPlayNetworking.registerGlobalReceiver(InPlaceRespawnInfoPayload.ID, (payload, context) ->
                 context.client().execute(() -> InPlaceRespawnClientState.updateInfo(
                         payload.enabled(), payload.requiredLevel())));
