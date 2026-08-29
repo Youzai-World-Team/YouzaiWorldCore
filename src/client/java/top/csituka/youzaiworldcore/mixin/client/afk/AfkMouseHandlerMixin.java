@@ -18,7 +18,7 @@ import top.csituka.youzaiworldcore.client.afk.AfkInputTracker;
  *       使用 / 拿取物品 / 操作容器 / 合成 / 界面按钮，都是真实操作；</li>
  *   <li>{@link MouseHandler#onScroll}（滚轮）：聊天框滚动记录不算，其余（热栏
  *       切换、容器滚动）算活动；</li>
- *   <li>{@link MouseHandler#onMove}（移动）：<b>不算活动</b>——「打开物品栏但
+ *   <li>{@link MouseHandler#onMove}（移动）：仅世界内视角移动算活动；「打开物品栏但
  *       未操作」时鼠标悬停 / 晃动不应恢复 AFK。</li>
  * </ul>
  * 全部在窗口聚焦时判定。
@@ -64,6 +64,21 @@ public class AfkMouseHandlerMixin {
         }
         AfkInputTracker.markInput();
     }
-    // 注意：onMove（鼠标移动）不注入——移动鼠标不算操作活动，
-    // 「打开物品栏但未操作」时悬停/晃动鼠标不应恢复 AFK。
+
+    @Inject(
+            method = "onMove(JDD)V",
+            at = @At("HEAD")
+    )
+    private void youzaiworldcore$onMove(long window, double x, double y, CallbackInfo ci) {
+        Minecraft mc = Minecraft.getInstance();
+        if (!mc.getWindow().isFocused()) {
+            return;
+        }
+        // 仅世界内视角移动计为活动；界面内的鼠标悬停不应自动退出 AFK。
+        if (mc.gui.screen() == null) {
+            AfkInputTracker.markInput();
+        }
+    }
+    // 界面内的 onMove 不计为活动，避免打开物品栏后仅悬停/晃动鼠标恢复 AFK；
+    // 世界内视角移动由上面的 onMove 注入计为活动。
 }

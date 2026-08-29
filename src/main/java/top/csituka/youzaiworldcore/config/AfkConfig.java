@@ -29,7 +29,7 @@ public final class AfkConfig {
         CLIENT,
         /** 仅服务端近似检测（位置/视角变化） */
         SERVER,
-        /** 双通道：任一通道判定活动即不算 AFK（默认） */
+        /** 双通道：客户端心跳存活时优先使用客户端，失效后回退服务端检测（默认） */
         BOTH
     }
 
@@ -117,7 +117,7 @@ public final class AfkConfig {
 
     // ===== 运行时修改（供 /yzwc afk settings 命令调用）=====
 
-    /** 设置功能总开关并持久化（disabled 时立即清除全部 AFK 状态） */
+    /** 设置功能总开关并持久化（命令层关闭时会同步清除在线 AFK 状态） */
     public static void setEnabled(boolean value) {
         DebugLogger.entering(MODULE, "setEnabled", "value=" + value);
         if (enabled == value) {

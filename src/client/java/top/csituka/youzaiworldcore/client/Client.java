@@ -3,6 +3,7 @@ package top.csituka.youzaiworldcore.client;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
 import net.minecraft.client.Minecraft;
@@ -81,6 +82,10 @@ public class Client implements ClientModInitializer {
         StartupLoadingStatus.beginStage("客户端 Tick 事件");
         DebugLogger.info("Client", "注册客户端 Tick 事件...");
         ClientTickEvents.END_CLIENT_TICK.register(this::onClientTick);
+        ClientPlayConnectionEvents.JOIN.register((handler, sender, client) ->
+                top.csituka.youzaiworldcore.client.afk.AfkInputTracker.reset());
+        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) ->
+                top.csituka.youzaiworldcore.client.afk.AfkInputTracker.reset());
 
         StartupLoadingStatus.beginStage("基础 HUD 渲染");
         DebugLogger.info("Client", "注册魔力条 HUD 渲染...");
@@ -128,6 +133,7 @@ public class Client implements ClientModInitializer {
         StartupLoadingStatus.beginStage("客户端网络");
         DebugLogger.info("Client", "初始化客户端网络...");
         top.csituka.youzaiworldcore.network.ClientNetworking.initialize();
+        top.csituka.youzaiworldcore.client.afk.AfkClientState.initialize();
         top.csituka.youzaiworldcore.client.title.TitleClientState.initialize();
         DebugLogger.info("Client", "初始化 Mojang UUID 登录认证响应器...");
         top.csituka.youzaiworldcore.client.account.OnlineUuidLoginClient.initialize();

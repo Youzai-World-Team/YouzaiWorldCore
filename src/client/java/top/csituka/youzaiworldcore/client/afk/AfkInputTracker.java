@@ -69,6 +69,13 @@ public final class AfkInputTracker {
         lastInputNanos = System.nanoTime();
     }
 
+    /** 重置连接会话的输入基线，避免标题界面的空闲时间带入新服务器。 */
+    public static void reset() {
+        lastInputNanos = System.nanoTime();
+        tickCounter = 0;
+        DebugLogger.trace(MODULE, "已重置客户端 AFK 输入基线");
+    }
+
     /**
      * 判断当前所在界面是否属于「游戏内」活动场景。
      * <p>

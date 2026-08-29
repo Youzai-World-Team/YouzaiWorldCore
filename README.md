@@ -455,9 +455,9 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
   `/api/game/mail/*`（HMAC 签名），拉取和发布都以 Api 的数据为准；接收范围解析（需 LuckPerms）与奖励发放留在模组侧。
   所有 Api 调用都是异步的，结果回到服务端主线程后才推送 S2C 数据包。
 - **后台也可发布公告 / 通知**：Api 管理页 `/mail`（服内邮件）能查看全部邮件与逐收件人状态，并发布公告与通知
-  （奖励邮件、编辑、撤回仍只在游戏内）。后台发布没有 S2C 触发点，因此服务端按
-  `mail_module.unread_refresh_interval_ticks`（默认 3000 tick ≈ 2.5 分钟，0 关闭）周期性批量刷新在线玩家的未读徽标，
-  整批玩家一次 Api 请求；无人在线时不产生请求。
+  （奖励邮件、编辑、撤回仍只在游戏内）。发布成功后后台通过 MCSM 向选中的运行中实例发送
+  `yzwc mail pull <mailId>`，模组主动拉取单封正文、在线收件人引用与未读数，并用现有 S2C 增量包即时更新客户端。
+  `mail_module.unread_refresh_interval_ticks`（默认 3000 tick ≈ 2.5 分钟，0 关闭）保留为面板通知失败或网络抖动时的兜底校准。
 - **定位**：发送方仅管理员（OP / LuckPerms `youzaiworldcore.mail` 节点）；接收方二选一——全体成员 / 指定玩家（从账户系统已注册名单中勾选）
 - **邮件类型**：公告（ANNOUNCEMENT）、通知（NOTICE）、奖励（REWARD）
 - **奖励载体**（REWARD 类型）：物品（最多 10 个槽位，从管理员物品栏复制为模板，不消耗原物）、命令（以控制台执行，支持 `%player%` / `%uuid%` 占位符）、原版经验值、原版等级、本项目冒险经验值、本项目冒险等级（四项可同时选择）
@@ -474,6 +474,7 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
   - `/yzwc mail recall <mailId>` —— 撤回已发送邮件（Api 删除正文与全部收件箱引用 + 在线推送移除）
   - `/yzwc mail purge [player|all]` —— 清理过期邮件
   - `/yzwc mail list [player]` —— 查看指定玩家信箱
+  - `yzwc mail pull <mailId>` —— 服务端控制台拉取后台新邮件（Api 后台通过 MCSM 自动执行）
 - **权限**：`youzaiworldcore.mail`（默认 OP 4）；未装 LuckPerms 时以 `mail_permission_level` 回退
 - **存储**：邮件正文与每玩家收件箱引用在 Api 服务端 SQLite（`game_mails` / `game_mail_refs`），本地只留设置 `global_settings.json` → `mail_module`；跨世界一致，绑定账户系统（离线账户同样入索引，登录可见）
 - **网络**：共 18 个专用数据包（C2S `mail_compose_open` / `mail_open` / `mail_sent_list_request` / `mail_recall` / `mail_purge` / `mail_list_request` / `mail_fetch` / `mail_action` / `mail_admin_send` / `mail_admin_edit` / `mail_player_list_request`；S2C `open_mail_compose` / `mail_list` / `mail_sent_list` / `mail_update` / `mail_op_result` / `mail_unread_count` / `mail_player_list`）
@@ -704,7 +705,8 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 │   ├── sent                                        → 打开已发送邮件管理列表
 │   ├── recall <mailId>                             → 撤回已发送邮件
 │   ├── purge [player|all]                          → 清理过期邮件
-│   └── list [player]                               → 查看指定玩家信箱
+│   ├── list [player]                               → 查看指定玩家信箱
+│   └── pull <mailId>                               → 服务端控制台从 Api 拉取后台新邮件（MCSM 自动执行）
 │
 ├── function invisibility <true/false>    ← （客户端命令）
 │   ├── 权限：youzaiworldcore.command.function.invisibility（OP 4）

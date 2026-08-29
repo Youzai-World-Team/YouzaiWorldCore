@@ -63,7 +63,7 @@ public class MailPermissionHelper {
 
     /**
      * 判断命令执行源是否有邮件系统权限（Brigadier {@code .requires()} 使用，
-     * 但邮件均为客户端命令，此方法预留供服务端命令上下文使用）。
+     * 当前用于后台通过 MCSM 触发的 {@code /yzwc mail pull} 服务端命令）。
      *
      * @param source 命令执行源
      * @return true 如果执行者有邮件系统权限

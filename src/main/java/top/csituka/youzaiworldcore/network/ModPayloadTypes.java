@@ -123,6 +123,8 @@ public final class ModPayloadTypes {
                                 LevelExpSyncPayload.STREAM_CODEC);
                 PayloadTypeRegistry.clientboundPlay().register(DamageNumberPayload.ID,
                                 DamageNumberPayload.STREAM_CODEC);
+                PayloadTypeRegistry.clientboundPlay().register(AfkStatePayload.ID,
+                                AfkStatePayload.STREAM_CODEC);
                 PayloadTypeRegistry.clientboundPlay().register(
                                 FunctionToggleSyncPayload.TYPE, FunctionToggleSyncPayload.STREAM_CODEC);
                 PayloadTypeRegistry.clientboundPlay().register(

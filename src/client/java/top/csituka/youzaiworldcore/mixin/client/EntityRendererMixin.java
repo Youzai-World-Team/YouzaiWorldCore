@@ -11,15 +11,17 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import top.csituka.youzaiworldcore.client.afk.AfkClientState;
 import top.csituka.youzaiworldcore.client.render.PingDisplayRender;
 import top.csituka.youzaiworldcore.client.title.TitleClientState;
 
 /**
- * 在实体名字牌（nametag）上追加显示延迟（ping）。
+ * 在玩家头顶名字牌（nametag）上显示 AFK 前缀、称号和延迟（ping）。
  * <p>
  * 在 {@code EntityRenderer.extractRenderState} 的 TAIL 注入，
  * 若实体为 AbstractClientPlayer 且名字牌非空，
- * 则在 {@code state.nameTag} 末尾追加形如 " (45ms)" 的延迟文本。
+ * AFK 时在名称左侧添加灰色 {@code [AFK]}，并在末尾追加形如
+ * {@code " (45ms)"} 的延迟文本。
  * </p>
  * <p>
  * ping 段的组件构造与缓存放在 {@link PingDisplayRender}——本注入点每帧每玩家都会执行，
@@ -61,7 +63,8 @@ public abstract class EntityRendererMixin {
 
         int ping = info.getLatency();
 
-        // 在原始名字牌后追加 " (ping)"；名字文本和 ping 未变时复用整条组件。
-        state.nameTag = PingDisplayRender.getNameTagComponent(player.getUUID(), state.nameTag, ping);
+        // 最终顺序为 "[AFK] 玩家名 (ping)"；内容未变时复用整条组件。
+        state.nameTag = PingDisplayRender.getNameTagComponent(
+                player.getUUID(), state.nameTag, ping, AfkClientState.isAfk(player.getUUID()));
     }
 }

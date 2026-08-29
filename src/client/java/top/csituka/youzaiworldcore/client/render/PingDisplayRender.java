@@ -5,6 +5,7 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -122,30 +123,34 @@ public final class PingDisplayRender {
     }
 
     /**
-     * 获取带 ping 的名字牌组件。名字文本和 ping 都未变化时直接复用整条组件，
-     * 保留现有“按纯文本重建名字牌”的显示语义。
+     * 获取带 AFK 前缀和 ping 的名字牌组件。名字文本、ping 和 AFK 状态都未变化时
+     * 直接复用整条组件，保留现有“按纯文本重建名字牌”的显示语义。
      */
-    public static Component getNameTagComponent(UUID playerId, Component original, int ping) {
+    @SuppressWarnings("null")
+    public static Component getNameTagComponent(UUID playerId, Component original, int ping, boolean afk) {
         String baseText = original.getString();
         NameTagEntry cached = NAME_TAG_CACHE.get(playerId);
-        if (cached != null && cached.ping == ping && cached.baseText.equals(baseText)) {
+        if (cached != null && cached.ping == ping && cached.afk == afk
+                && cached.baseText.equals(baseText)) {
             return cached.component;
         }
         if (NAME_TAG_CACHE.size() > CACHE_LIMIT) {
             NAME_TAG_CACHE.clear();
         }
         @SuppressWarnings("null")
-        Component built = Component.literal(baseText)
+        MutableComponent built = afk ? AFK_PREFIX.copy() : Component.empty();
+        built.append(Component.literal(baseText))
                 .append(PING_PREFIX)
                 .append(getStyledPingComponent(playerId, ping))
                 .append(PING_SUFFIX);
-        NAME_TAG_CACHE.put(playerId, new NameTagEntry(baseText, ping, built));
+        NAME_TAG_CACHE.put(playerId, new NameTagEntry(baseText, ping, afk, built));
         return built;
     }
 
     /** 名字牌 ping 组件缓存上限。 */
     private static final int CACHE_LIMIT = 256;
 
+    private static final Component AFK_PREFIX = Component.literal("[AFK] ").withColor(0xAAAAAA);
     private static final Component PING_PREFIX = Component.literal(" (").withColor(0xAAAAAA);
     private static final Component PING_SUFFIX = Component.literal(")").withColor(0xAAAAAA);
 
@@ -167,11 +172,13 @@ public final class PingDisplayRender {
     private static final class NameTagEntry {
         final String baseText;
         final int ping;
+        final boolean afk;
         final Component component;
 
-        NameTagEntry(String baseText, int ping, Component component) {
+        NameTagEntry(String baseText, int ping, boolean afk, Component component) {
             this.baseText = baseText;
             this.ping = ping;
+            this.afk = afk;
             this.component = component;
         }
     }

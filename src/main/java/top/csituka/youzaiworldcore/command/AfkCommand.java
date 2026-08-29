@@ -76,7 +76,7 @@ public class AfkCommand {
         DebugLogger.entering(MODULE, "toggle");
         ServerPlayer player = ctx.getSource().getPlayerOrException();
 
-        if (!AfkConfig.isManualToggleEnabled()) {
+        if (!AfkConfig.isEnabled() || !AfkConfig.isManualToggleEnabled()) {
             player.sendSystemMessage(Component.translatable(
                     "youzaiworldcore.message.afk.command.manual_disabled"));
             DebugLogger.exiting(MODULE, "toggle", "manual-disabled");
@@ -160,6 +160,9 @@ public class AfkCommand {
                 case "enabled" -> {
                     boolean v = parseBool(value);
                     AfkConfig.setEnabled(v);
+                    if (!v) {
+                        AfkManager.disableAll(ctx.getSource().getServer());
+                    }
                     ctx.getSource().sendSuccess(() -> Component.translatable(
                             "youzaiworldcore.message.afk.command.settings_updated", key, v), true);
                 }
@@ -171,6 +174,10 @@ public class AfkCommand {
                 }
                 case "threshold" -> {
                     int seconds = Integer.parseInt(value);
+                    if (seconds < AfkConfig.MIN_THRESHOLD_SECONDS) {
+                        throw new IllegalArgumentException("threshold must be >= "
+                                + AfkConfig.MIN_THRESHOLD_SECONDS);
+                    }
                     AfkConfig.setThresholdSeconds(seconds);
                     ctx.getSource().sendSuccess(() -> Component.translatable(
                             "youzaiworldcore.message.afk.command.settings_updated", key, seconds), true);
@@ -178,6 +185,7 @@ public class AfkCommand {
                 case "tab_prefix" -> {
                     boolean v = parseBool(value);
                     AfkConfig.setTabPrefixEnabled(v);
+                    AfkManager.refreshAllTabDisplays(ctx.getSource().getServer());
                     ctx.getSource().sendSuccess(() -> Component.translatable(
                             "youzaiworldcore.message.afk.command.settings_updated", key, v), true);
                 }
@@ -190,11 +198,15 @@ public class AfkCommand {
                 case "invulnerable" -> {
                     boolean v = parseBool(value);
                     AfkConfig.setInvulnerableEnabled(v);
+                    AfkManager.syncInvulnerability(ctx.getSource().getServer());
                     ctx.getSource().sendSuccess(() -> Component.translatable(
                             "youzaiworldcore.message.afk.command.settings_updated", key, v), true);
                 }
                 case "auto_kick" -> {
                     int seconds = Integer.parseInt(value);
+                    if (seconds < 0 || (seconds > 0 && seconds < AfkConfig.getThresholdSeconds())) {
+                        throw new IllegalArgumentException("auto_kick must be 0 or >= threshold");
+                    }
                     AfkConfig.setAutoKickSeconds(seconds);
                     ctx.getSource().sendSuccess(() -> Component.translatable(
                             "youzaiworldcore.message.afk.command.settings_updated", key, seconds), true);

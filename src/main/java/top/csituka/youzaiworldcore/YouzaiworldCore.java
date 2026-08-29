@@ -34,6 +34,7 @@ import top.csituka.youzaiworldcore.afk.AfkTickHandler;
 import top.csituka.youzaiworldcore.command.AfkCommand;
 import top.csituka.youzaiworldcore.command.EventCommand;
 import top.csituka.youzaiworldcore.command.FunctionCommand;
+import top.csituka.youzaiworldcore.command.MailCommand;
 import top.csituka.youzaiworldcore.command.ReloadCommand;
 import top.csituka.youzaiworldcore.config.AfkConfig;
 import top.csituka.youzaiworldcore.config.ApiModuleSettings;
@@ -515,7 +516,7 @@ public class YouzaiworldCore implements ModInitializer {
                 top.csituka.youzaiworldcore.mail.MailManager.refreshUnread(sp);
             }
         });
-        // 周期性过期清理（默认 3000 tick = 约 2.5 分钟）+ 在线玩家未读徽标刷新
+        // 周期性过期清理（默认 3000 tick = 约 2.5 分钟）+ 在线玩家未读徽标兜底刷新
         // 使用 int[] 作为可变计数器，避免每 tick 取模运算
         final int[] purgeCounter = {0};
         final int[] unreadCounter = {0};
@@ -526,7 +527,7 @@ public class YouzaiworldCore implements ModInitializer {
                 purgeCounter[0] = 0;
                 top.csituka.youzaiworldcore.mail.MailManager.purgeAsync(server);
             }
-            // 后台管理页发布的邮件没有 S2C 触发点，靠这里周期性点亮在线玩家的红点
+            // 后台通常通过 MCSM 命令即时拉取；这里处理命令发送失败或网络抖动的兜底校准
             int unreadInterval = mailSettings.getUnreadRefreshIntervalTicks();
             if (unreadInterval > 0 && ++unreadCounter[0] >= unreadInterval) {
                 unreadCounter[0] = 0;
@@ -702,6 +703,10 @@ public class YouzaiworldCore implements ModInitializer {
             // ===== 注册更新检查命令 =====
             DebugLogger.info("YouzaiworldCore", "注册命令: UpdateCommand");
             UpdateCommand.register(dispatcher);
+
+            // ===== 注册后台邮件拉取命令 =====
+            DebugLogger.info("YouzaiworldCore", "注册命令: MailCommand");
+            MailCommand.register(dispatcher);
 
             // ===== 注册宠物管理命令 =====
             DebugLogger.info("YouzaiworldCore", "注册命令: PetCommand");

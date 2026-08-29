@@ -9,6 +9,7 @@ import top.csituka.youzaiworldcore.YouzaiworldCore;
 import top.csituka.youzaiworldcore.account.data.AccountDataStorage;
 import top.csituka.youzaiworldcore.account.data.PlayerAccount;
 import top.csituka.youzaiworldcore.luckperms.LuckPermsHelper;
+import top.csituka.youzaiworldcore.network.MailUpdatePayload;
 import top.csituka.youzaiworldcore.network.MailUnreadCountPayload;
 import top.csituka.youzaiworldcore.skill.AdventureLevelManager;
 import top.csituka.youzaiworldcore.skill.PlayerLevelData;
@@ -23,6 +24,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 /**
@@ -45,6 +47,14 @@ import java.util.stream.Collectors;
 public class MailManager {
 
     private static final String MODULE = "MailManager";
+
+    /** 后台触发单封邮件拉取后的执行结果。 */
+    public record PullResult(boolean success, String message, int pushedRecipients) {
+    }
+
+    private record PullData(MailApiClient.DetailResult detail, Map<UUID, MailRef> refs,
+            Map<UUID, Integer> unreadCounts) {
+    }
 
     // ========================================================================
     // 接收范围解析（依赖 LuckPerms，必须留在模组侧）
@@ -312,10 +322,9 @@ public class MailManager {
     /**
      * 异步刷新<b>全部在线玩家</b>的未读徽标。
      * <p>
-     * 游戏内的发布 / 领取 / 撤回都会即时回推未读数，但后台管理页
-     * （{@code POST /api/admin/mails}）发布的邮件没有 S2C 触发点 —— Api 无法主动
-     * 通知模组。因此按 {@link MailSettings#getUnreadRefreshIntervalTicks()} 周期性
-     * 批量拉一次，让红点最迟在一个周期内自动点亮。
+     * 游戏内操作与后台 MCSM 拉取命令都会即时回推；这里按
+     * {@link MailSettings#getUnreadRefreshIntervalTicks()} 周期性批量拉一次，作为
+     * 面板通知失败或网络抖动时的最终一致性兜底。
      * </p>
      * <p>
      * 整批玩家只发一次 Api 请求；没有在线玩家时直接返回，不产生任何请求。
@@ -336,6 +345,80 @@ public class MailManager {
         }
         DebugLogger.trace(MODULE, "周期刷新未读徽标: online=%d", online.size());
         refreshUnreadFor(server, online);
+    }
+
+    /**
+     * 响应后台通过 MCSM 发来的指令，从 Api 拉取一封新邮件并即时推给在线收件人。
+     * <p>
+     * 邮件正文只拉一次，收件箱引用与未读数都使用批量接口。HTTP 全程在异步线程执行，
+     * S2C 推送与命令回执通过 {@code server.execute(...)} 回到服务端主线程。
+     * </p>
+     *
+     * @param server     服务端实例
+     * @param mailId     后台刚发布的邮件 ID
+     * @param completion 主线程上的完成回调
+     */
+    public static void pullAndPushMail(MinecraftServer server, UUID mailId, Consumer<PullResult> completion) {
+        if (server == null || mailId == null) {
+            if (completion != null) {
+                completion.accept(new PullResult(false, "服务端或邮件 ID 无效", 0));
+            }
+            return;
+        }
+
+        List<UUID> online = server.getPlayerList().getPlayers().stream()
+                .map(ServerPlayer::getUUID)
+                .toList();
+        DebugLogger.info(MODULE, "后台触发邮件拉取: mailId=%s, online=%d", mailId, online.size());
+
+        CompletableFuture.supplyAsync(() -> {
+            MailApiClient.DetailResult detail = MailApiClient.fetchDetail(mailId, null);
+            if (detail == null || !detail.success() || detail.mail() == null) {
+                return new PullData(detail, Map.of(), Map.of());
+            }
+            Map<UUID, MailRef> refs = MailApiClient.fetchRefs(mailId, online);
+            Map<UUID, Integer> unreadCounts = MailApiClient.fetchUnreadBatch(refs.keySet());
+            return new PullData(detail, refs, unreadCounts);
+        }).whenComplete((data, error) -> server.execute(() -> {
+            if (error != null) {
+                DebugLogger.exception(MODULE, "pullAndPushMail", error);
+                completePull(completion, new PullResult(false, "拉取邮件时发生异常", 0));
+                return;
+            }
+            if (data == null || data.detail() == null || !data.detail().success()
+                    || data.detail().mail() == null) {
+                String message = data == null || data.detail() == null || data.detail().message().isBlank()
+                        ? "Api 未返回有效邮件"
+                        : data.detail().message();
+                DebugLogger.warn(MODULE, "后台邮件拉取失败: mailId=%s, %s", mailId, message);
+                completePull(completion, new PullResult(false, message, 0));
+                return;
+            }
+
+            int pushed = 0;
+            for (Map.Entry<UUID, MailRef> entry : data.refs().entrySet()) {
+                ServerPlayer player = server.getPlayerList().getPlayer(entry.getKey());
+                if (player == null || player.hasDisconnected()) {
+                    continue;
+                }
+                ServerPlayNetworking.send(player,
+                        MailUpdatePayload.createUpdate(entry.getValue(), data.detail().mail()));
+                Integer unread = data.unreadCounts().get(entry.getKey());
+                if (unread != null) {
+                    sendUnread(player, unread);
+                }
+                pushed++;
+            }
+
+            DebugLogger.info(MODULE, "后台邮件拉取完成: mailId=%s, pushed=%d", mailId, pushed);
+            completePull(completion, new PullResult(true, "邮件数据已拉取", pushed));
+        }));
+    }
+
+    private static void completePull(Consumer<PullResult> completion, PullResult result) {
+        if (completion != null) {
+            completion.accept(result);
+        }
     }
 
     // ========================================================================

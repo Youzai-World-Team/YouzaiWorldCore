@@ -74,6 +74,11 @@ public class ClientNetworking {
                         top.csituka.youzaiworldcore.client.title.TitleClientState.apply(payload)));
         DebugLogger.info("ClientNetworking", "Registered receiver: TitleStatePayload");
 
+        ClientPlayNetworking.registerGlobalReceiver(AfkStatePayload.ID, (payload, context) ->
+                context.client().execute(() ->
+                        top.csituka.youzaiworldcore.client.afk.AfkClientState.apply(payload)));
+        DebugLogger.info("ClientNetworking", "Registered receiver: AfkStatePayload");
+
         ClientPlayNetworking.registerGlobalReceiver(InPlaceRespawnInfoPayload.ID, (payload, context) ->
                 context.client().execute(() -> InPlaceRespawnClientState.updateInfo(
                         payload.enabled(), payload.requiredLevel())));

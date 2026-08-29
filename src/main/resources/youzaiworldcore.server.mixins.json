@@ -35,6 +35,7 @@
     "pet.TargetGoalAccessor",
     "trialvault.VaultServerDataMixin",
     "afk.ServerPlayerTabDisplayNameMixin",
+    "afk.ServerGamePacketListenerImplMixin",
     "babyzombie.ZombieFinalizeSpawnMixin",
     "craftsound.ResultSlotOnTakeMixin",
     "jukebox.JukeboxLoopMixin",

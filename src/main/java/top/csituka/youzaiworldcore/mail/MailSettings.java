@@ -39,10 +39,10 @@ public class MailSettings {
     private int autoPurgeIntervalTicks = 3000;
 
     /**
-     * 在线玩家未读徽标的周期性刷新间隔（tick），0 表示关闭。
+     * 在线玩家未读徽标的兜底刷新间隔（tick），0 表示关闭。
      * <p>
-     * 游戏内的发布 / 领取 / 撤回都会即时回推未读数，但后台管理页发布的邮件
-     * 没有 S2C 触发点（Api 无法主动通知模组），需要靠这个周期批量刷新点亮红点。
+     * 后台管理页正常会通过 MCSM 执行 {@code /yzwc mail pull <mailId>}，由模组即时
+     * 拉取并推送新邮件；本周期仅用于面板通知失败、网络抖动等情况下最终校准红点。
      * </p>
      */
     private int unreadRefreshIntervalTicks = 3000;
