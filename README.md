@@ -307,7 +307,7 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 | 维度池         | `global_settings.json` → `dimensional_inventories_module`                 | `pools` 池定义列表                                                                      |
 | 冒险等级/属性  | `yzwc/server/data/skill_module/data.json`                                 | `levels` / `attributes` 两块，按玩家 UUID 持久化                                         |
 | 宠物备份       | `yzwc/server/backup/pet_module/pet_backup_<时间戳>.zip`                   | 定时备份压缩包（内含同名 `.json`）                                                      |
-| 玩家统计数据   | `<world_name>/data/yzwc/data/status_module/data.json` + `rank_export/`    | StatsManager 持久化统计与排行榜导出目录                                                  |
+| 玩家统计数据   | `<world_name>/data/yzwc/data/status_module/data.json` + Api `game_player_stats` | 本地按月重置并保留待上传批次；首次上传完整快照，之后仅上传变化玩家和统计字段；Api 服务端按游戏 UUID 累计保存，不因本地月度重置而清零 |
 | 维度池玩家状态 | `<world_name>/data/yzwc/data/dimensional_inventories_module/<池>/<uuid>.json` | 各池内玩家的独立背包与状态                                                          |
 
 ### 19. 附魔等级语言补丁系统
@@ -436,15 +436,14 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 
 ### 29. 统计系统（Status）
 
-读取原版统计系统（`Stats`）的玩家行为数据，持久化保存并支持查询与排行榜导出。
+读取原版统计系统（`Stats`）的玩家行为数据，持久化保存并定期上传到 Api 服务端。
 
-- **入口**：`status/StatsManager`；数据持久化于 `<world_name>/data/yzwc/data/status_module/data.json`，排行榜导出与损坏备份分别在同级 `rank_export/` 与 `<world_name>/data/yzwc/backup/status_module/`
-- **指标**：共 **21 项**，涵盖在线时间、跳跃/死亡/击杀、伤害、步行/疾跑/鞘翅/坠落距离、钓鱼、交易、丢弃、睡觉、附魔、袭击、繁殖、敲钟、吃蛋糕，以及「红石大蛇榜」汇总的红石放置量
+- **入口**：`status/StatsManager`；本地最新副本位于 `<world_name>/data/yzwc/data/status_module/data.json`，损坏文件备份到 `<world_name>/data/yzwc/backup/status_module/`。每月首次 tick 自动重置原版 `stats` 文件、在线玩家统计和模组缓存；重置前快照以批次形式落盘并上传，Api 端通过批次编号幂等地累加到云端总量。平时每 6 小时仅增量上传变化字段；按游戏 UUID 与 `game_accounts` 绑定。后台页面可通过 MCSM 触发一次立即上传。
+- **指标**：共 **77 项**，涵盖在线与世界时间、距死亡/休息时间、潜行、跳跃/死亡/击杀、造成/承受/盾牌格挡/吸收/抵抗伤害、步行/潜行/疾跑/水面与水下行走/攀爬/飞行/游泳/鞘翅/矿车/船/猪/快乐恶魂/马/炽足兽/鹦鹉螺/坠落距离、钓鱼、村民交谈与交易、丢弃、睡觉、附魔、炼药锅、盔甲/旗帜/潜影盒清洗、酿造台/信标/工作站与容器交互、音符盒与唱片、袭击触发与胜利、靶子命中、繁殖、敲钟、吃蛋糕，以及原版红石相关物品使用量汇总
 - **命令**（服务端）：
   - `/yzwc status <player> list` —— 查看该玩家各项统计（权限 `youzaiworldcore.command.status.query`）
-  - `/yzwc status <player> delete` —— 删除该玩家统计记录（权限 `youzaiworldcore.command.status.delete`）
-  - `/yzwc status rank_export <day|week|month|year|all> [name]` —— 导出排行榜至 `rank_export/<name>.json`（权限 `youzaiworldcore.command.status.export`）
-- **权限**：`status.query` / `status.delete` / `status.export`（默认 OP 4）
+  - `/yzwc status upload` —— 触发一次统计上传（仅服务器后台终端可执行，供 MCSM 使用）
+- **权限**：`status.query`（默认 OP 4）
 
 ### 30. 邮件系统（Mailbox）
 
@@ -756,9 +755,8 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
             └── unlock <player>  ← 解锁账户
 ├── status
 │   ├── <player> list                          → 查看该玩家统计（权限 .query）
-│   ├── <player> delete                        → 删除该玩家统计（权限 .delete）
-│   ├── rank_export <day|week|month|year|all> [name] → 导出排行榜（权限 .export）
-│   └── 权限：.query / .delete / .export（OP 4）
+│   ├── upload                                  → 触发统计上传（仅服务器后台终端）
+│   └── 权限：.query（OP 4；upload 仅后台终端）
 └── update [check]
     ├── 权限：youzaiworldcore.command.update（OP 4）
     └── 检查模组更新（拉取远程版本信息，反馈普通/强制更新与下载链接）
@@ -794,8 +792,6 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 | `youzaiworldcore.admin.middle`                              | 中级管理员外观称号                     | 无 LuckPerms 时 OP 管理员解锁全部三级 |
 | `youzaiworldcore.admin.senior`                              | 高级管理员外观称号                     | 无 LuckPerms 时 OP 管理员解锁全部三级 |
 | `youzaiworldcore.command.status.query`                      | 查看统计                               | OP 4                    |
-| `youzaiworldcore.command.status.delete`                     | 删除统计                               | OP 4                    |
-| `youzaiworldcore.command.status.export`                     | 导出统计排行榜                         | OP 4                    |
 | `youzaiworldcore.command.update`                            | 更新检查                               | OP 4                    |
 | `youzaiworldcore.command.account.mgr.create`                | 创建账户                               | OP 4                    |
 | `youzaiworldcore.command.account.mgr.reset_password`        | 重置密码                               | OP 4                    |
@@ -945,7 +941,7 @@ src/                                       # 452 个 Java 源文件（main 273 /
 │   ├── screen/                           # 容器菜单
 │   ├── skill/                            # 冒险等级 + 属性系统
 │   ├── sound/                            # 自定义 SoundEvent（1 个：cloud_genshin）
-│   ├── status/                           # 统计系统（StatsManager，21 项指标 + 命令）
+│   ├── status/                           # 统计系统（StatsManager，77 项指标 + 命令）
 │   ├── trialvault/                       # 试炼宝库无限领奖配置（TrialVaultConfig）
 │   ├── update/                           # 更新检查（UpdateChecker 等 6 文件）
 │   ├── util/                             # DebugLogger、TrinketHelper、BackupArchive 等工具

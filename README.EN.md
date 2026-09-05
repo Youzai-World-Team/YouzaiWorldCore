@@ -310,7 +310,7 @@ If step 1 fails (file locked, etc.) step 2 is skipped so the original is never c
 | Adventure Level / Attrs  | `yzwc/server/data/skill_module/data.json`                                      | `levels` / `attributes` blocks, keyed by player UUID                                                 |
 | Mail Data                | Api-side SQLite `game_mails` / `game_mail_refs`                                | Mail bodies (with attachments) + per-player inbox refs; no mail files on the Minecraft server        |
 | Pet Backups              | `yzwc/server/backup/pet_module/pet_backup_<timestamp>.zip`                     | Scheduled backup archives (containing a `.json` of the same name)                                    |
-| Player Stats Data        | `<world_name>/data/yzwc/data/status_module/data.json` + `rank_export/`         | StatsManager persistence & leaderboard export dir                                                    |
+| Player Stats Data        | `<world_name>/data/yzwc/data/status_module/data.json` + Api `game_player_stats` | Local data resets monthly and keeps pending reset batches; first upload is a full snapshot, then only changed players and metrics are sent; Api keeps cumulative totals by game UUID |
 | Dimension Pool State     | `<world_name>/data/yzwc/data/dimensional_inventories_module/<pool>/<uuid>.json`| Per-pool independent inventory and player state                                                      |
 
 ### 19. Enchantment Level Language Patch System
@@ -439,15 +439,14 @@ A purely client-side feature that renders an outline around the held or targeted
 
 ### 29. Stats System (Status)
 
-Reads player behavior data from the vanilla `Stats` system, persists it, and supports querying and leaderboard export.
+Reads player behavior data from the vanilla `Stats` system, persists a latest local copy, and periodically uploads it to the Api service.
 
-- **Entry**: `status/StatsManager`; data persisted to `<world>/data/yzwc/data/status_module/data.json` (per-save, with daily snapshots for day/week/month/year deltas; corrupt files auto-backup to zip); leaderboard export in the sibling `rank_export/`
-- **Metrics**: **21 metrics** in total — play time, jumps, deaths, mob/player kills, damage dealt/taken, walk/sprint/elytra/fall distance, fish caught, villager trades, items dropped, sleep-in-bed, enchantments, raid wins, animals bred, bell rings, cake eaten, and an aggregated "redstone placement" leaderboard
+- **Entry**: `status/StatsManager`; the latest local copy is `<world>/data/yzwc/data/status_module/data.json` (corrupt files auto-backup to zip). At the first tick of each new month, the mod resets vanilla `stats` files, online player counters, and the local cache; the pre-reset snapshot is persisted as a retryable batch and accumulated server-side with an idempotent batch ID. Normal incremental uploads run every six hours, with records bound to `game_accounts` by game UUID. The admin page can trigger an immediate upload through MCSM.
+- **Metrics**: **77 metrics** in total — play/world time, time since death/rest, sneaking, jumps, deaths, mob/player kills, damage dealt/taken/blocked by shield/absorbed/resisted, walking/crouching/sprinting/water-walking/underwater-walking/climbing/flying/swimming/elytra/minecart/boat/pig/happy ghast/horse/strider/nautilus/fall distance, fish caught, villager conversations and trades, items dropped, sleep-in-bed, enchantments, cauldron use, armor/banner/shulker-box cleaning, brewing stand/beacon/workstation and container interactions, note blocks and records, raid triggers and wins, target hits, animals bred, bell rings, cake eaten, and aggregated use of vanilla redstone-related items
 - **Commands** (server-side):
   - `/yzwc status <player> list` — view a player's stats (perm `youzaiworldcore.command.status.query`)
-  - `/yzwc status <player> delete` — delete a player's stats (perm `youzaiworldcore.command.status.delete`)
-  - `/yzwc status rank_export <day|week|month|year|all> [name]` — export leaderboard to `rank_export/<name>.json` (perm `youzaiworldcore.command.status.export`)
-- **Permissions**: `status.query` / `status.delete` / `status.export` (default OP 4)
+  - `/yzwc status upload` — trigger one stats upload (server console only; used by MCSM)
+- **Permissions**: `status.query` (default OP 4)
 
 ### 30. Mailbox
 
@@ -749,9 +748,8 @@ All commands use `/yzwc` as the root command. Subcommands marked **(client comma
             └── unlock <player>  ← Unlock account
 ├── status
 │   ├── <player> list                          → View player's stats (perm .query)
-│   ├── <player> delete                        → Delete player's stats (perm .delete)
-│   ├── rank_export <day|week|month|year|all> [name] → Export leaderboard (perm .export)
-│   └── Permissions: .query / .delete / .export (OP 4)
+│   ├── upload                                  → Trigger stats upload (server console only)
+│   └── Permissions: .query (OP 4; upload is console-only)
 └── update [check]
     ├── Permission: youzaiworldcore.command.update (OP 4)
     └── Check for mod updates (fetches remote version info, reports normal/forced update + download link)
@@ -787,8 +785,6 @@ All commands use `/yzwc` as the root command. Subcommands marked **(client comma
 | `youzaiworldcore.admin.middle`                              | Middle administrator cosmetic title              | Without LuckPerms, OP admins unlock all three tiers |
 | `youzaiworldcore.admin.senior`                              | Senior administrator cosmetic title              | Without LuckPerms, OP admins unlock all three tiers |
 | `youzaiworldcore.command.status.query`                      | View stats                                        | OP 4                     |
-| `youzaiworldcore.command.status.delete`                     | Delete stats                                      | OP 4                     |
-| `youzaiworldcore.command.status.export`                     | Export stats leaderboard                          | OP 4                     |
 | `youzaiworldcore.command.update`                            | Update check                                      | OP 4                     |
 | `youzaiworldcore.command.account.mgr.create`                | Create account                                    | OP 4                     |
 | `youzaiworldcore.command.account.mgr.reset_password`        | Reset password                                    | OP 4                     |
@@ -934,7 +930,7 @@ src/                                       # 452 Java source files (main 273 / c
 │   ├── screen/                           # Container menus
 │   ├── skill/                            # Adventure level + attribute system
 │   ├── sound/                            # Custom SoundEvent (1: cloud_genshin)
-│   ├── status/                           # Stats system (StatsManager, 21 metrics + commands)
+│   ├── status/                           # Stats system (StatsManager, 77 metrics + commands)
 │   ├── trialvault/                       # Unlimited trial vault reward config (TrialVaultConfig)
 │   ├── update/                           # Update checker (UpdateChecker + 5 supporting files)
 │   ├── util/                             # DebugLogger, TrinketHelper, BackupArchive, etc.
