@@ -16,6 +16,7 @@ import java.util.UUID;
 /** 称号模块专用的 HMAC Api 客户端。调用方必须在异步线程执行。 */
 public final class TitleApiClient {
     private static final String MODULE = "TitleApiClient";
+    private static final int MAX_SYNC_PLAYERS = 200;
 
     private TitleApiClient() {
     }
@@ -50,6 +51,28 @@ public final class TitleApiClient {
         JsonObject body = new JsonObject();
         body.add("players", players);
         return parse(ApiHttp.request("POST", "/api/game/titles/sync", body.toString()), true);
+    }
+
+    /**
+     * 同步任意数量的在线玩家。Api 为单次请求设置了 200 人上限，
+     * 因此这里按上限分批请求，再合并称号目录和玩家快照。
+     */
+    public static Result syncBatched(List<SyncRequest> requests) {
+        if (requests == null || requests.isEmpty()) return sync(List.of());
+        Map<String, TitleDefinition> definitions = new LinkedHashMap<>();
+        Map<String, PlayerSnapshot> players = new LinkedHashMap<>();
+        for (int start = 0; start < requests.size(); start += MAX_SYNC_PLAYERS) {
+            int end = Math.min(requests.size(), start + MAX_SYNC_PLAYERS);
+            Result result = sync(requests.subList(start, end));
+            if (result == null || !result.success()) {
+                return result == null
+                        ? new Result(false, ApiHttp.failureMessage(), Map.of(), Map.of())
+                        : result;
+            }
+            if (result.definitions() != null) definitions.putAll(result.definitions());
+            if (result.players() != null) players.putAll(result.players());
+        }
+        return new Result(true, "", definitions, players);
     }
 
     public static Result equip(String username, String titleId) {

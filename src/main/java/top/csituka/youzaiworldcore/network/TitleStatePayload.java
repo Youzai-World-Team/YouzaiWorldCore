@@ -19,6 +19,13 @@ public record TitleStatePayload(
         List<EquippedPlayer> equippedPlayers,
         String message) implements CustomPacketPayload {
 
+    // 编解码两端必须使用相同上限；否则截断读取后会把后续字段当成错误类型解析。
+    private static final int MAX_DEFINITIONS = 512;
+    private static final int MAX_OWNED_TITLE_IDS = 512;
+    private static final int MAX_EQUIPPED_PLAYERS = 1024;
+    private static final int MAX_TITLE_ID_LENGTH = 64;
+    private static final int MAX_FONT_ID_LENGTH = 128;
+
     public record EquippedPlayer(UUID playerUuid, String titleId) {
     }
 
@@ -39,51 +46,61 @@ public record TitleStatePayload(
 
     @SuppressWarnings("null")
     private static void encode(RegistryFriendlyByteBuf buf, TitleStatePayload payload) {
-        buf.writeVarInt(payload.definitions().size());
-        for (TitleDefinition title : payload.definitions()) {
-            buf.writeUtf(title.id(), 64);
-            buf.writeUtf(title.displayName(), 64);
+        int definitionCount = Math.min(MAX_DEFINITIONS, payload.definitions().size());
+        buf.writeVarInt(definitionCount);
+        for (int i = 0; i < definitionCount; i++) {
+            TitleDefinition title = payload.definitions().get(i);
+            buf.writeUtf(limitUtf(title.id(), MAX_TITLE_ID_LENGTH), MAX_TITLE_ID_LENGTH);
+            buf.writeUtf(limitUtf(title.displayName(), 64), 64);
             buf.writeEnum(title.renderType());
-            buf.writeUtf(title.textContent(), 128);
+            buf.writeUtf(limitUtf(title.textContent(), 128), 128);
             buf.writeInt(title.textColor());
             buf.writeBoolean(title.bold());
             buf.writeBoolean(title.italic());
-            buf.writeUtf(title.textureKey(), 128);
-            buf.writeUtf(title.fontId(), 128);
-            buf.writeUtf(title.glyph(), 16);
+            buf.writeUtf(limitUtf(title.textureKey(), 128), 128);
+            buf.writeUtf(limitUtf(title.fontId(), MAX_FONT_ID_LENGTH), MAX_FONT_ID_LENGTH);
+            buf.writeUtf(limitUtf(title.glyph(), 16), 16);
             buf.writeVarInt(title.sortOrder());
         }
-        buf.writeVarInt(payload.ownedTitleIds().size());
-        for (String id : payload.ownedTitleIds())
-            buf.writeUtf(id, 64);
-        buf.writeUtf(payload.equippedTitleId(), 64);
-        buf.writeVarInt(payload.equippedPlayers().size());
-        for (EquippedPlayer entry : payload.equippedPlayers()) {
+        int ownedCount = Math.min(MAX_OWNED_TITLE_IDS, payload.ownedTitleIds().size());
+        buf.writeVarInt(ownedCount);
+        for (int i = 0; i < ownedCount; i++)
+            buf.writeUtf(limitUtf(payload.ownedTitleIds().get(i), MAX_TITLE_ID_LENGTH), MAX_TITLE_ID_LENGTH);
+        buf.writeUtf(limitUtf(payload.equippedTitleId(), MAX_TITLE_ID_LENGTH), MAX_TITLE_ID_LENGTH);
+        int equippedCount = Math.min(MAX_EQUIPPED_PLAYERS, payload.equippedPlayers().size());
+        buf.writeVarInt(equippedCount);
+        for (int i = 0; i < equippedCount; i++) {
+            EquippedPlayer entry = payload.equippedPlayers().get(i);
             buf.writeUUID(entry.playerUuid());
-            buf.writeUtf(entry.titleId(), 64);
+            buf.writeUtf(limitUtf(entry.titleId(), MAX_TITLE_ID_LENGTH), MAX_TITLE_ID_LENGTH);
         }
-        buf.writeUtf(payload.message(), 256);
+        buf.writeUtf(limitUtf(payload.message(), 256), 256);
     }
 
     private static TitleStatePayload decode(RegistryFriendlyByteBuf buf) {
-        int titleCount = Math.min(512, Math.max(0, buf.readVarInt()));
+        int titleCount = Math.min(MAX_DEFINITIONS, Math.max(0, buf.readVarInt()));
         List<TitleDefinition> definitions = new ArrayList<>(titleCount);
         for (int i = 0; i < titleCount; i++) {
             definitions.add(new TitleDefinition(
-                    buf.readUtf(64), buf.readUtf(64), buf.readEnum(TitleDefinition.RenderType.class),
+                    buf.readUtf(MAX_TITLE_ID_LENGTH), buf.readUtf(64), buf.readEnum(TitleDefinition.RenderType.class),
                     buf.readUtf(128), buf.readInt(), buf.readBoolean(), buf.readBoolean(),
                     buf.readUtf(128), buf.readUtf(128), buf.readUtf(16), buf.readVarInt()));
         }
-        int ownedCount = Math.min(512, Math.max(0, buf.readVarInt()));
+        int ownedCount = Math.min(MAX_OWNED_TITLE_IDS, Math.max(0, buf.readVarInt()));
         List<String> owned = new ArrayList<>(ownedCount);
         for (int i = 0; i < ownedCount; i++)
-            owned.add(buf.readUtf(64));
-        String equipped = buf.readUtf(64);
-        int playerCount = Math.min(1024, Math.max(0, buf.readVarInt()));
+            owned.add(buf.readUtf(MAX_TITLE_ID_LENGTH));
+        String equipped = buf.readUtf(MAX_TITLE_ID_LENGTH);
+        int playerCount = Math.min(MAX_EQUIPPED_PLAYERS, Math.max(0, buf.readVarInt()));
         List<EquippedPlayer> players = new ArrayList<>(playerCount);
         for (int i = 0; i < playerCount; i++)
-            players.add(new EquippedPlayer(buf.readUUID(), buf.readUtf(64)));
+            players.add(new EquippedPlayer(buf.readUUID(), buf.readUtf(MAX_TITLE_ID_LENGTH)));
         return new TitleStatePayload(definitions, owned, equipped, players, buf.readUtf(256));
+    }
+
+    private static String limitUtf(String value, int maxLength) {
+        if (value == null || value.length() <= maxLength) return value == null ? "" : value;
+        return value.substring(0, maxLength);
     }
 
     @SuppressWarnings("null")
