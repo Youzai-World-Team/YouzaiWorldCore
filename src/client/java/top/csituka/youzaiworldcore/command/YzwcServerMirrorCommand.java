@@ -73,7 +73,7 @@ public final class YzwcServerMirrorCommand {
             root.then(literal("teleport_world").then(greedyArgs()));
             // /yzwc open_menu <menu_name> [target]
             root.then(literal("open_menu").then(greedyArgs()));
-            // /yzwc status <player> list|delete | /yzwc status rank_export <day|week|month|year|all> [name]
+            // /yzwc status <player> list
             // 下一级是 <player> 参数而非字面量，故挂一级兜底
             root.then(literal("status").then(greedyArgs()));
 

@@ -1,6 +1,7 @@
 package top.csituka.youzaiworldcore.api;
 
 import com.google.gson.JsonElement;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
@@ -32,6 +33,13 @@ public final class ApiServiceClient {
     }
 
     public record AccountResult(boolean success, int statusCode, String message, PlayerAccount account, String token) {
+    }
+
+    /** 一次统计上传中的单个玩家记录。统计值均为累计的非负整数。 */
+    public record StatsUploadEntry(UUID uuid, String username, long lastUpdated, Map<String, Long> stats) {
+    }
+
+    public record StatsUploadResult(boolean success, int statusCode, String message, int accepted) {
     }
 
     public record RegistrationResult(
@@ -489,6 +497,46 @@ public final class ApiServiceClient {
         return Optional.of(new AccountSettings(
                 intValue(root, "loginCooldown", 300),
                 booleanValue(root, "emailVerificationRequired", false)));
+    }
+
+    /** 批量上传玩家统计增量；请求签名和 API 密钥由 ApiHttp 统一处理。 */
+    public static StatsUploadResult uploadStats(List<StatsUploadEntry> entries) {
+        return uploadStats(entries, "delta", null);
+    }
+
+    /** 上传月度重置前快照；Api 使用 resetId 保证重试不会重复累计。 */
+    public static StatsUploadResult uploadStats(List<StatsUploadEntry> entries, String mode, String resetId) {
+        JsonArray players = new JsonArray();
+        if (entries != null) {
+            for (StatsUploadEntry entry : entries) {
+                if (entry == null || entry.uuid() == null) continue;
+                JsonObject player = new JsonObject();
+                player.addProperty("uuid", entry.uuid().toString());
+                player.addProperty("username", entry.username() == null ? "" : entry.username());
+                player.addProperty("last_updated", Math.max(0L, entry.lastUpdated()));
+                JsonObject stats = new JsonObject();
+                if (entry.stats() != null) {
+                    for (Map.Entry<String, Long> stat : entry.stats().entrySet()) {
+                        if (stat.getKey() == null || stat.getKey().isBlank() || stat.getValue() == null) continue;
+                        stats.addProperty(stat.getKey(), Math.max(0L, stat.getValue()));
+                    }
+                }
+                player.add("stats", stats);
+                players.add(player);
+            }
+        }
+        JsonObject body = new JsonObject();
+        body.addProperty("mode", mode == null || mode.isBlank() ? "delta" : mode);
+        if (resetId != null && !resetId.isBlank()) body.addProperty("reset_id", resetId);
+        body.add("players", players);
+        HttpResponse<String> response = request("POST", "/api/game/stats", body.toString());
+        if (response == null) {
+            return new StatsUploadResult(false, 0, ApiHttp.failureMessage(), 0);
+        }
+        JsonObject root = parse(response.body());
+        boolean success = response.statusCode() / 100 == 2 && booleanValue(root, "ok", false);
+        return new StatsUploadResult(success, response.statusCode(), responseMessage(root),
+                intValue(root, "accepted", success ? players.size() : 0));
     }
 
     private static AccountResult accountRequest(String method, String path, JsonObject body) {
