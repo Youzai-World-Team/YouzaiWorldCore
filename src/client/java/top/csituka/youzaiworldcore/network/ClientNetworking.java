@@ -5,6 +5,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import top.csituka.youzaiworldcore.client.screen.LoginScreen;
 import top.csituka.youzaiworldcore.client.screen.AccountManagementScreen;
+import top.csituka.youzaiworldcore.account.util.AuthPlayerHelper;
 import top.csituka.youzaiworldcore.client.screen.MenuScreen;
 import top.csituka.youzaiworldcore.client.screen.PasswordResetScreen;
 import top.csituka.youzaiworldcore.client.screen.RegisterScreen;
@@ -128,6 +129,12 @@ public class ClientNetworking {
                 DebugLogger.branch("ClientNetworking", "currentScreen instanceof LoginScreen", isLoginScreen);
                 String type = payload.screenType();
                 String username = payload.username();
+                if (client.hasSingleplayerServer()
+                        && top.csituka.youzaiworldcore.client.config.ClientExternalSettings.isDevModeEnabled()
+                        && AuthPlayerHelper.isDeveloperPlayerName(username)) {
+                    DebugLogger.info("ClientNetworking", "开发者单人测试玩家 %s 忽略账户认证界面请求", username);
+                    return;
+                }
                 boolean isRegister = "register".equals(type);
                 DebugLogger.branch("ClientNetworking", "screenType == register", isRegister);
                 boolean isLogin = "login".equals(type);

@@ -59,6 +59,7 @@ public class AccountCommands {
         // /yzwc account 根命令
         dispatcher.register(Commands.literal("yzwc")
                 .then(Commands.literal("account")
+                        .requires(src -> !isDeveloperSingleplayerSource(src))
                         // ===== 玩家命令 =====
                         .then(Commands.literal("register")
                                 .then(Commands.argument("password", StringArgumentType.string())
@@ -184,6 +185,10 @@ public class AccountCommands {
     private static int executeRegister(CommandSourceStack source, ServerPlayer player,
                                        String password, String confirm) {
         DebugLogger.entering("AccountCommands", "executeRegister");
+        if (isDeveloperSingleplayerPlayer(player)) {
+            sendDeveloperSingleplayerBlocked(source);
+            return 0;
+        }
         PlayerAuthAccess authPlayer = (PlayerAuthAccess) (Object) player;
 
         if (!password.equals(confirm)) {
@@ -578,7 +583,7 @@ public class AccountCommands {
             ServerPlayer player, AccountManagementRequestPayload payload) {
         DebugLogger.entering("AccountCommands", "executeAccountManagementPayload",
                 "action=" + payload.action());
-        if (!canManageCurrentAccount(player)) {
+        if (isDeveloperSingleplayerPlayer(player) || !canManageCurrentAccount(player)) {
             sendAccountManagementError(player, "当前登录状态已失效，请重新登录", 0);
             DebugLogger.exiting("AccountCommands", "executeAccountManagementPayload",
                     "0 (not authenticated)");
@@ -770,6 +775,19 @@ public class AccountCommands {
                 && !token.isBlank();
     }
 
+    private static boolean isDeveloperSingleplayerPlayer(ServerPlayer player) {
+        return AuthPlayerHelper.isDeveloperSingleplayerPlayer(player);
+    }
+
+    private static boolean isDeveloperSingleplayerSource(CommandSourceStack source) {
+        return source.getEntity() instanceof ServerPlayer player && isDeveloperSingleplayerPlayer(player);
+    }
+
+    private static void sendDeveloperSingleplayerBlocked(CommandSourceStack source) {
+        DebugLogger.info("AccountCommands", "拒绝开发者单人测试玩家执行账户命令");
+        source.sendFailure(Component.literal("开发者单人测试玩家不支持账户命令"));
+    }
+
     private static boolean isCurrentManagedSession(ServerPlayer player, String token) {
         if (!canManageCurrentAccount(player)) return false;
         PlayerAuthAccess authPlayer = (PlayerAuthAccess) (Object) player;
@@ -808,6 +826,10 @@ public class AccountCommands {
 
     private static int executeLogin(CommandSourceStack source, ServerPlayer player, String password) {
         DebugLogger.entering("AccountCommands", "executeLogin");
+        if (isDeveloperSingleplayerPlayer(player)) {
+            sendDeveloperSingleplayerBlocked(source);
+            return 0;
+        }
         PlayerAuthAccess authPlayer = (PlayerAuthAccess) (Object) player;
 
         if (authPlayer.yzwc$isAuthenticated()) {
@@ -869,6 +891,10 @@ public class AccountCommands {
         DebugLogger.entering("AccountCommands", "executeLogout");
         CommandSourceStack source = ctx.getSource();
         ServerPlayer player = source.getPlayerOrException();
+        if (isDeveloperSingleplayerPlayer(player)) {
+            sendDeveloperSingleplayerBlocked(source);
+            return 0;
+        }
         PlayerAuthAccess authPlayer = (PlayerAuthAccess) (Object) player;
 
         if (InvisibilityManager.isInvisible(player)) {
@@ -941,6 +967,10 @@ public class AccountCommands {
         DebugLogger.entering("AccountCommands", "executeDeactivate");
         CommandSourceStack source = ctx.getSource();
         ServerPlayer player = source.getPlayerOrException();
+        if (isDeveloperSingleplayerPlayer(player)) {
+            sendDeveloperSingleplayerBlocked(source);
+            return 0;
+        }
         PlayerAuthAccess authPlayer = (PlayerAuthAccess) (Object) player;
 
         if (InvisibilityManager.isInvisible(player)) {
@@ -987,6 +1017,10 @@ public class AccountCommands {
         DebugLogger.entering("AccountCommands", "executeChangePassword");
         CommandSourceStack source = ctx.getSource();
         ServerPlayer player = source.getPlayerOrException();
+        if (isDeveloperSingleplayerPlayer(player)) {
+            sendDeveloperSingleplayerBlocked(source);
+            return 0;
+        }
         PlayerAuthAccess authPlayer = (PlayerAuthAccess) (Object) player;
 
         if (InvisibilityManager.isInvisible(player)) {

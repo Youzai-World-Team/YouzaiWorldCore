@@ -22,6 +22,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import top.csituka.youzaiworldcore.client.screen.AccountManagementScreen;
 import top.csituka.youzaiworldcore.client.config.ClientExternalSettings;
+import top.csituka.youzaiworldcore.account.util.AuthPlayerHelper;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
 import java.util.ArrayList;
@@ -193,6 +194,10 @@ public class PauseScreenMixin {
         // ============ 3. 紧凑居中排列保留的按钮（整列左移，为右侧模型区让位） ============
         // 屏幕过窄时不左移（模型区禁用），按钮保持居中
         boolean modelAllowed = screen.width >= MIN_SCREEN_W;
+        boolean accountManagementAllowed = !youzaiworldcore$isDeveloperSingleplayerPlayer();
+        if (!accountManagementAllowed) {
+            DebugLogger.info("PauseScreen", "开发者单人测试玩家隐藏暂停菜单账户管理入口");
+        }
         int centerX = screen.width / 2 - (modelAllowed ? MODEL_SHIFT : 0);
 
         // 垂直起始位置：约 25% 高度（与原版一致）
@@ -273,11 +278,13 @@ public class PauseScreenMixin {
             this.youzaiworldcore$playerName =
                     mc.player != null ? mc.player.getName().getString() : null;
 
-            youzaiworldcore$addAccountManagementButton(
-                    screen, accessor,
-                    this.youzaiworldcore$modelX0,
-                    this.youzaiworldcore$modelY1 + ACCOUNT_BUTTON_GAP,
-                    MODEL_RECT_W);
+            if (accountManagementAllowed) {
+                youzaiworldcore$addAccountManagementButton(
+                        screen, accessor,
+                        this.youzaiworldcore$modelX0,
+                        this.youzaiworldcore$modelY1 + ACCOUNT_BUTTON_GAP,
+                        MODEL_RECT_W);
+            }
 
             DebugLogger.info("PauseScreen",
                     "暂停菜单布局: 按钮左移 %dpx, 模型区=(%d,%d)-(%d,%d) 尺寸=%dx%d 缩放比=%d, 名字+模型组合=%dpx(名字行高%d+间距%d+模型区%d) 居中于按钮列高%dpx, 玩家名=%s",
@@ -290,11 +297,13 @@ public class PauseScreenMixin {
             this.youzaiworldcore$modelReady = false;
             this.youzaiworldcore$playerName = null;
             // 窄屏没有右侧模型时仍保留入口，作为菜单末尾的全宽按钮显示。
-            youzaiworldcore$addAccountManagementButton(
-                    screen, accessor,
-                    centerX - FULL_W / 2,
-                    row3Y + BTN_H + GAP,
-                    FULL_W);
+            if (accountManagementAllowed) {
+                youzaiworldcore$addAccountManagementButton(
+                        screen, accessor,
+                        centerX - FULL_W / 2,
+                        row3Y + BTN_H + GAP,
+                        FULL_W);
+            }
             DebugLogger.warn("PauseScreen",
                     "屏幕过窄 (%dpx < %dpx)，禁用玩家模型，按钮列不左移", screen.width, MIN_SCREEN_W);
         }
@@ -317,6 +326,15 @@ public class PauseScreenMixin {
         accessor.youzaiworldcore$getChildren().add(accountButton);
         accessor.youzaiworldcore$getRenderables().add(accountButton);
         accessor.youzaiworldcore$getNarratables().add(accountButton);
+    }
+
+    @Unique
+    private boolean youzaiworldcore$isDeveloperSingleplayerPlayer() {
+        Minecraft mc = Minecraft.getInstance();
+        return mc.hasSingleplayerServer()
+                && ClientExternalSettings.isDevModeEnabled()
+                && mc.player != null
+                && AuthPlayerHelper.isDeveloperPlayerName(mc.player.getScoreboardName());
     }
 
     /**

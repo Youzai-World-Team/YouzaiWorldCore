@@ -60,6 +60,15 @@ public abstract class AccountPlayerListMixin {
         EmailChangeSessionStore.clear(player.getUUID());
         YouzaiworldCore.LOGGER.info("玩家 {} 正在加入服务器...", username);
 
+        // 开发者模式下的单人测试玩家不连接 Api，也不进入登录大厅。
+        if (AuthPlayerHelper.isDeveloperSingleplayerPlayer(player)) {
+            AuthPlayerHelper.setAccount(player, new PlayerAccount(username));
+            AuthPlayerHelper.setCanSkipAuth(player, true);
+            AuthPlayerHelper.setAuthenticated(player, true);
+            DebugLogger.info("AccountPlayerListMixin", "开发者单人测试玩家 %s 跳过账户登录/注册流程", username);
+            return;
+        }
+
         boolean trustedOnlineIdentity = OnlineUuidLoginManager.isTrustedOnlineIdentity(server, player.getUUID());
         PlayerAccount account = AccountDataStorage.ensureRemoteAccount(
                 username,

@@ -48,6 +48,19 @@ public class AuthPlayerHelper {
         return access(player).yzwc$canSkipAuth();
     }
 
+    /** 判断是否为开发者模式下的单人测试玩家。 */
+    public static boolean isDeveloperSingleplayerPlayer(ServerPlayer player) {
+        if (player == null || !YouzaiworldCore.devModeEnabled) return false;
+        MinecraftServer server = player.level().getServer();
+        return server != null && server.isSingleplayer()
+                && isDeveloperPlayerName(player.getScoreboardName());
+    }
+
+    /** 判断用户名是否为开发者单人测试用户名（不区分大小写）。 */
+    public static boolean isDeveloperPlayerName(String username) {
+        return username != null && username.regionMatches(true, 0, "player", 0, "player".length());
+    }
+
     public static boolean shouldBlockActions(ServerPlayer player) {
         PlayerAuthAccess a = access(player);
         return !a.yzwc$isAuthenticated() && !a.yzwc$canSkipAuth();
