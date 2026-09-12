@@ -378,6 +378,9 @@ public class OptionsScreenMixin {
 
     @Inject(method = "init", at = @At("TAIL"))
     private void youzaiworldcore$reworkOptionsScreen(CallbackInfo ci) {
+        // YZUI 使用独立屏幕；原版实例仅提供原生操作与第三方入口，保留其完整内容。
+        // 关闭 YZUI 时继续使用以下既有布局规则。
+        if (ClientExternalSettings.isYzuiEnabled()) return;
         OptionsScreen screen = (OptionsScreen) (Object) this;
         ScreenAccessor accessor = (ScreenAccessor) screen;
         List<Renderable> renderables = accessor.youzaiworldcore$getRenderables();

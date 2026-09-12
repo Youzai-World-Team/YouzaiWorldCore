@@ -145,6 +145,8 @@ public class Client implements ClientModInitializer {
         StartupLoadingStatus.beginStage("YZHUD 设置");
         DebugLogger.info("Client", "加载 YZHUD 设置...");
         top.csituka.youzaiworldcore.client.config.YzHudSettings.load();
+        StartupLoadingStatus.beginStage("创造物品分组设置");
+        top.csituka.youzaiworldcore.client.config.InventoryItemGroupsConfig.load();
         StartupLoadingStatus.beginStage("YZUI 侧边栏");
         DebugLogger.info("Client", "初始化 YZUI 记分板侧边栏渲染...");
         ScoreboardSidebarRenderer.initialize();

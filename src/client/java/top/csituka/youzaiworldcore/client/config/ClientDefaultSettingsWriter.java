@@ -33,6 +33,7 @@ public final class ClientDefaultSettingsWriter {
             YzHudSettings.writeDefaults();
             Configurator.writeDefaults();
             ClientUpdateCheckerConfig.writeDefaults();
+            InventoryItemGroupsConfig.writeDefaults();
         });
         DebugLogger.exiting(MODULE, "writeAllDefaults");
     }

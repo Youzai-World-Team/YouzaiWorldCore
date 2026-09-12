@@ -31,6 +31,7 @@ public class ChatOptionsMixin {
             Options options,
             CallbackInfoReturnable<OptionInstance<?>[]> cir
     ) {
+        if (top.csituka.youzaiworldcore.client.config.ClientExternalSettings.isYzuiEnabled()) return;
         OptionInstance<?>[] original = cir.getReturnValue();
 
         // 过滤掉索引 15 和 16

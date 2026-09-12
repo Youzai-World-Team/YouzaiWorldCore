@@ -1,6 +1,8 @@
 package top.csituka.youzaiworldcore.client.screen;
 
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
+import top.csituka.youzaiworldcore.client.inventory.CreativeItemGroupRenderer;
+import top.csituka.youzaiworldcore.client.inventory.CreativeItemGroups;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -95,6 +97,10 @@ public class YzuCreativeInventoryScreen extends Screen {
     /** 与 {@link #allItems} 一一对应的小写名称，供搜索直接比对 */
     private List<String> allItemNames = List.of();
     private List<ItemStack> tabItems;
+    /** 与原版创造界面共用模型，展开状态仅属于当前屏幕。 */
+    private final CreativeItemGroups itemGroups = new CreativeItemGroups();
+    /** 组头按钮消费整次鼠标手势，防止松开时误触发背包拖拽或界外丢弃。 */
+    private int groupClickButton = -1;
     private final List<Integer> vis = new ArrayList<>();
     private float soff;
     private float xm, ym;
@@ -183,6 +189,8 @@ public class YzuCreativeInventoryScreen extends Screen {
         // YZUI 复用了长期存在的 InventoryMenu，因此必须显式清空，避免下次打开残留隐藏光标物品。
         player.inventoryMenu.setCarried(ItemStack.EMPTY);
         resetDragState();
+        itemGroups.clear();
+        groupClickButton = -1;
         if (creativeInventoryListener != null) {
             player.inventoryMenu.removeSlotListener(creativeInventoryListener);
             creativeInventoryListener = null;
@@ -256,6 +264,7 @@ public class YzuCreativeInventoryScreen extends Screen {
         vis.clear();
         if (selTab == null) {
             tabItems = null;
+            itemGroups.clear();
             // 搜索/全部模式：按搜索文本过滤预先算好的小写名称索引
             String q = searchBox != null ? searchBox.getValue().toLowerCase(Locale.ROOT).trim() : "";
             int n = allItems.size();
@@ -269,9 +278,10 @@ public class YzuCreativeInventoryScreen extends Screen {
                 }
             }
         } else {
-            // 分类模式：直接使用该分类原版的物品列表及其排列顺序（不通过 Set 过滤，保留 tab 内部顺序）
+            // 分类模式：以原版列表为源构建分组，保留所有组件变体及未分组物品的相对顺序。
             Collection<ItemStack> tabColl = selTab.getDisplayItems();
-            tabItems = tabColl != null ? List.copyOf(tabColl) : List.of();
+            itemGroups.rebuild(selTab, tabColl != null ? tabColl : List.of());
+            tabItems = itemGroups.items();
             for (int i = 0; i < tabItems.size(); i++) {
                 if (!tabItems.get(i).isEmpty())
                     vis.add(i);
@@ -310,6 +320,31 @@ public class YzuCreativeInventoryScreen extends Screen {
         return ItemStack.EMPTY;
     }
 
+    /** 分组命中只用于左侧分类网格，搜索和真实背包不会返回组头。 */
+    private CreativeItemGroups.Entry getGroupEntry(int index) {
+        return selTab != null ? itemGroups.entry(index) : null;
+    }
+
+    /** 开始分组过渡；收起成员由动画完成时统一移除。 */
+    private void toggleGroup(int index) {
+        if (!itemGroups.toggle(index)) {
+            return;
+        }
+        syncGroupItems();
+    }
+
+    /** 同步分组展示列表，保留当前顶行，并把滚动位置限制到新的有效范围。 */
+    private void syncGroupItems() {
+        tabItems = itemGroups.items();
+        vis.clear();
+        for (int i = 0; i < tabItems.size(); i++) {
+            if (!tabItems.get(i).isEmpty()) {
+                vis.add(i);
+            }
+        }
+        soff = Math.clamp(soff, 0, getGridMaxScroll());
+    }
+
     private void renderSlot(GuiGraphicsExtractor g, ItemStack st, int x, int y, int seed) {
         if (st != null && !st.isEmpty()) {
             g.item(st, x, y, seed);
@@ -319,6 +354,9 @@ public class YzuCreativeInventoryScreen extends Screen {
 
     @Override
     public void extractRenderState(@NonNull GuiGraphicsExtractor g, int mx, int my, float pt) {
+        if (itemGroups.advanceAnimations()) {
+            syncGroupItems();
+        }
         YzuiTheme.card(g, lp, tp, PW, PH);
         drawTabs(g, mx, my);
         drawGrid(g, mx, my);
@@ -426,7 +464,11 @@ public class YzuCreativeInventoryScreen extends Screen {
             if (hov >= 0 && hov < vis.size()) {
                 int vi = vis.get(hov);
                 ItemStack st = getItemForVis(vi);
-                if (!st.isEmpty())
+                CreativeItemGroups.Entry entry = getGroupEntry(vi);
+                if (entry != null && entry.header()) {
+                    g.setTooltipForNextFrame(font, CreativeItemGroupRenderer.tooltip(entry),
+                            java.util.Optional.empty(), mx, my, null);
+                } else if (!st.isEmpty() && (entry == null || entry.canTake()))
                     g.setTooltipForNextFrame(font, Screen.getTooltipFromItem(minecraft, st), st.getTooltipImage(), mx,
                             my, null);
             }
@@ -756,11 +798,21 @@ public class YzuCreativeInventoryScreen extends Screen {
                 boolean h = mx >= gx && mx < gx + SS && my >= gy && my < gy + SS;
                 fillR(g, gx, gy, SS, SS, 3, h ? YzuiTheme.slotHover() : YzuiTheme.slot());
                 int vi = vis.get(idx);
-                ItemStack st = getItemForVis(vi);
-                if (!st.isEmpty()) {
-                    g.item(st, gx, gy, vi);
-                    g.itemDecorations(font, st, gx, gy, null);
-                    ItemBorderRenderer.renderBorder(g, gx, gy, st);
+                CreativeItemGroups.Entry entry = getGroupEntry(vi);
+                if (!CreativeItemGroupRenderer.beginSlot(g, entry, gx, gy)) {
+                    continue;
+                }
+                try {
+                    CreativeItemGroupRenderer.background(g, entry, gx, gy, true);
+                    ItemStack st = entry != null ? CreativeItemGroupRenderer.displayStack(entry) : getItemForVis(vi);
+                    if (!st.isEmpty()) {
+                        g.item(st, gx, gy, vi);
+                        g.itemDecorations(font, st, gx, gy, null);
+                        ItemBorderRenderer.renderBorder(g, gx, gy, st);
+                    }
+                    CreativeItemGroupRenderer.badge(g, entry, gx, gy, true);
+                } finally {
+                    CreativeItemGroupRenderer.endSlot(g);
                 }
             }
     }
@@ -1293,6 +1345,14 @@ public class YzuCreativeInventoryScreen extends Screen {
         int hov = getHoveredGridIndex((int) ev.x(), (int) ev.y());
         if (hov >= 0 && hov < vis.size()) {
             int vi = vis.get(hov);
+            CreativeItemGroups.Entry entry = getGroupEntry(vi);
+            if (entry != null && !entry.canTake()) {
+                if (entry.header() && (ev.button() == 0 || ev.button() == 1)) {
+                    toggleGroup(vi);
+                }
+                groupClickButton = ev.button();
+                return true;
+            }
             ItemStack cl = getItemForVis(vi);
             if (cl.isEmpty())
                 return false;
@@ -1344,6 +1404,9 @@ public class YzuCreativeInventoryScreen extends Screen {
 
     @Override
     public boolean mouseDragged(@NonNull MouseButtonEvent ev, double dx, double dy) {
+        if (ev.button() == groupClickButton) {
+            return true;
+        }
         if (scrollBarDragging && ev.button() == 0) {
             dragScrollBar(ev.y());
             return true;
@@ -1375,6 +1438,10 @@ public class YzuCreativeInventoryScreen extends Screen {
 
     @Override
     public boolean mouseReleased(@NonNull MouseButtonEvent ev) {
+        if (ev.button() == groupClickButton) {
+            groupClickButton = -1;
+            return true;
+        }
         if (scrollBarDragging && ev.button() == 0) {
             scrollBarDragging = false;
             scrollBarDragOffset = 0;
@@ -1505,7 +1572,13 @@ public class YzuCreativeInventoryScreen extends Screen {
         int gridHov = getHoveredGridIndex((int) xm, (int) ym);
         if (gridHov >= 0 && gridHov < vis.size()) {
             int vi = vis.get(gridHov);
-            ItemStack gridItem = getItemForVis(vi);
+            CreativeItemGroups.Entry entry = getGroupEntry(vi);
+            boolean groupHeader = entry != null && entry.header();
+            if (groupHeader && !searchBox.isFocused() && (ev.key() == 257 || ev.key() == 335 || ev.key() == 32)) {
+                toggleGroup(vi);
+                return true;
+            }
+            ItemStack gridItem = entry != null && !entry.canTake() ? ItemStack.EMPTY : getItemForVis(vi);
             if (!gridItem.isEmpty()) {
                 // Q → 丢弃 1 个；Ctrl+Q → 丢弃 1 组
                 if (minecraft.options.keyDrop.matches(ev)) {

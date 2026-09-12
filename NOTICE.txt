@@ -83,3 +83,11 @@ Mojang Studios for API compatibility. Minecraft is proprietary software governed
 by the Minecraft End User License Agreement; no Minecraft code or assets are
 redistributed by this product.
 https://www.minecraft.net/eula
+
+This product implements creative inventory grouping inspired by Inventory Item
+Groups by Bizarre Cube. Default grouping rules and selected translations are
+adapted from that project, Copyright (c) 2026 Bizarre Cube, under the MIT License.
+The runtime grouping model, input handling, settings UI and drawing are native
+implementations for YouzaiWorldCore; no dependency on the original mod is added.
+https://github.com/bizcub/inventory-item-groups
+The full license is bundled at META-INF/licenses/inventory-item-groups.txt.

@@ -33,6 +33,7 @@ public class AccessibilityOptionsScreenMixin {
         index = 0
     )
     private OptionInstance<?>[] youzaiworldcore$removeOptionsFromArray(OptionInstance<?>[] options) {
+        if (top.csituka.youzaiworldcore.client.config.ClientExternalSettings.isYzuiEnabled()) return options;
         Minecraft mc = Minecraft.getInstance();
         return Arrays.stream(options)
                 .filter(opt -> opt != mc.options.darkMojangStudiosBackground()
@@ -53,6 +54,9 @@ public class AccessibilityOptionsScreenMixin {
         at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/components/OptionsList;addSmall(Lnet/minecraft/client/gui/components/AbstractWidget;Lnet/minecraft/client/OptionInstance;Lnet/minecraft/client/gui/components/AbstractWidget;)V")
     )
     private void youzaiworldcore$skipNarratorAndControls(OptionsList list, AbstractWidget narratorWidget, OptionInstance<?> option, AbstractWidget controlsButton) {
-        // no-op：跳过整对，不再添加任何按钮
+        if (top.csituka.youzaiworldcore.client.config.ClientExternalSettings.isYzuiEnabled()) {
+            list.addSmall(narratorWidget, option, controlsButton);
+        }
+        // 关闭 YZUI 时沿用既有规则，跳过这一对按钮。
     }
 }

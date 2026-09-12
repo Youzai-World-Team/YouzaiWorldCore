@@ -242,6 +242,27 @@ public final class ConfigSection {
         return e.getAsJsonArray();
     }
 
+    /**
+     * 读对象数组，并为每个元素保留完整的配置错误路径。
+     * <p>缺失返回 null；元素可继续使用本类的强类型 getter，报错位置形如 {@code groups[2].tab_id}。</p>
+     */
+    public List<ConfigSection> getObjectList(String key) {
+        JsonArray array = getArray(key);
+        if (array == null) {
+            return null;
+        }
+        List<ConfigSection> result = new ArrayList<>(array.size());
+        for (int i = 0; i < array.size(); i++) {
+            JsonElement element = array.get(i);
+            if (!element.isJsonObject()) {
+                fail(key + "[" + i + "]", "数组元素必须是 JSON 对象，实际是 " + JsonFileStore.describe(element));
+            }
+            result.add(new ConfigSection(owner, moduleName + "." + key + "[" + i + "]",
+                    element.getAsJsonObject()));
+        }
+        return result;
+    }
+
     // ===== 写入（内存，需调用所属 JsonFileStore.save() 落盘）=====
 
     public void set(String key, boolean value) {

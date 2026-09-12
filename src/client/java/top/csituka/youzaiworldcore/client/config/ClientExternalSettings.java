@@ -45,7 +45,7 @@ public final class ClientExternalSettings {
     private static final int DEFAULT_LOG_LEVEL = 0;
     private static final String DEFAULT_DEBUG_MODE_TYPE = "embedded";
     private static final String DEFAULT_DEBUG_ADDRESS = "localhost";
-    private static final String DEFAULT_DEBUG_PORT = "25565";
+    private static final String DEFAULT_DEBUG_PORT = "25703";
     private static final String DEFAULT_IGNORED_UPDATE_VERSION = "";
     private static final boolean DEFAULT_YZUI_ENABLED = true;
     private static final boolean DEFAULT_LEFT_HUD_ENABLED = true;

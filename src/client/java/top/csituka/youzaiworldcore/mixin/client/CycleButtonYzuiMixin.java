@@ -66,6 +66,9 @@ public class CycleButtonYzuiMixin {
     private static boolean yzwc$shouldApplyYzui() {
         if (!ClientExternalSettings.isYzuiEnabled()) return false;
         Screen screen = Minecraft.getInstance().gui.screen();
+        // 设置页的布尔选项必须显示名称和值，交给通用 MD3 按钮绘制文字。
+        if (screen instanceof top.csituka.youzaiworldcore.client.screen.options.YzuiOptionsScreen
+                || screen instanceof top.csituka.youzaiworldcore.client.screen.options.YzuiGameRulesScreen) return false;
         return screen != null && screen.getClass().getName().startsWith("top.csituka.youzaiworldcore");
     }
 }

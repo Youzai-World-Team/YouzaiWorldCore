@@ -39,7 +39,17 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
  */
 @Mixin(ImageButton.class)
 public class ImageButtonYzuiMixin {
-    @Unique private final YzuiHover youzaiworldcore$hover = new YzuiHover();
+    @Unique private YzuiHover youzaiworldcore$imageButtonHover;
+
+    /** 配方书按钮首次绘制时初始化，避免依赖 Mixin 字段初始化覆盖全部构造路径。 */
+    @Unique
+    private YzuiHover youzaiworldcore$getImageButtonHover() {
+        if (youzaiworldcore$imageButtonHover == null) {
+            youzaiworldcore$imageButtonHover = new YzuiHover();
+            DebugLogger.debug("ImageButtonYzui", "初始化配方书按钮悬停动画");
+        }
+        return youzaiworldcore$imageButtonHover;
+    }
 
     @Unique
     private static final @NonNull Identifier YZWC_RECIPE_BOOK_SHOW = Identifier.fromNamespaceAndPath("youzaiworldcore",
@@ -87,7 +97,7 @@ public class ImageButtonYzuiMixin {
         ImageButton self = (ImageButton) (Object) this;
         int x = self.getX(), y = self.getY(), w = self.getWidth(), h = self.getHeight();
         boolean hovered = self.isHovered();
-        float hover = youzaiworldcore$hover.sample(self.active && hovered);
+        float hover = youzaiworldcore$getImageButtonHover().sample(self.active && hovered);
 
         // 配方书翻页按钮：绘制 YZUI 风格 '<' '>' 按钮（圆角矩形 + 居中文本），不走原版贴图
         if (w == YZWC_PAGE_BTN_W && h == YZWC_PAGE_BTN_H) {

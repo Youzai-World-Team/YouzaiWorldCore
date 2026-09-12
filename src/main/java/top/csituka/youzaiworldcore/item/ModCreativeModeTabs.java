@@ -9,197 +9,187 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.EnchantmentInstance;
-
 import top.csituka.youzaiworldcore.YouzaiworldCore;
 import top.csituka.youzaiworldcore.block.ModBlocks;
 import top.csituka.youzaiworldcore.enchantment.ModEnchantments;
 import top.csituka.youzaiworldcore.item.preset.PresetItems;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.function.Consumer;
+
+/**
+ * 注册唯一的「悠哉世界」创造标签页，按七类依次收录全部物品。
+ * <p>填充标签页时同步生成内置分组索引，供客户端折叠展示复用；
+ * 完整物品栈仍交给原版管理，搜索及关闭分组时均可直接取用全部变体。</p>
+ */
 @SuppressWarnings("null")
-public class ModCreativeModeTabs {
+public final class ModCreativeModeTabs {
 
-        // ── 悠哉世界 - 方块 ──
-        public static final ResourceKey<CreativeModeTab> YOUZAI_BLOCKS_KEY = ResourceKey.create(
-                        Registries.CREATIVE_MODE_TAB,
-                        Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "youzai_blocks"));
+    private static final String MODULE = "ModCreativeModeTabs";
 
-        public static final CreativeModeTab YOUZAI_BLOCKS = FabricCreativeModeTab.builder()
-                        .icon(() -> new ItemStack(ModBlocks.YZ_BLOCK))
-                        .title(Component.translatable("itemGroup.youzaiworldcore.youzai_blocks"))
-                        .displayItems((params, output) -> {
-                                output.accept(ModBlocks.YZ_ORE);
-                                output.accept(ModBlocks.DEEPSLATE_YZ_ORE);
-                                output.accept(ModBlocks.RAW_YZ_BLOCK);
-                                output.accept(ModBlocks.YZ_BLOCK);
-                                output.accept(ModBlocks.DECOMPOSITION_TABLE);
-                                output.accept(ModBlocks.FLY_BEACON);
-                                output.accept(ModBlocks.TP_ANCHOR);
-                                output.accept(ModBlocks.MAGIC_TABLE);
-                                output.accept(ModBlocks.MOB_PRESSURE_PLATE);
-                                output.accept(ModBlocks.DUPLICATE_BLOCK);
-                                output.accept(ModBlocks.NOT_GATE_REDSTONE_REPEATER);
-                                output.accept(ModBlocks.WIRELESS_REDSTONE_TRANSMITTER);
-                                output.accept(ModBlocks.WIRELESS_REDSTONE_RECEIVER);
-                                // 大字牌系列（12 木质 + 7 矿物），顺序见 ModBlocks.LARGE_SIGNS
-                                for (var largeSign : ModBlocks.LARGE_SIGNS) {
-                                        output.accept(largeSign);
-                                }
-                        })
-                        .build();
+    public static final ResourceKey<CreativeModeTab> YOUZAI_WORLD_KEY = ResourceKey.create(
+            Registries.CREATIVE_MODE_TAB,
+            Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "youzai_world"));
 
-        // ── 悠哉世界 - 工具&武器 ──
-        public static final ResourceKey<CreativeModeTab> YOUZAI_TOOLS_WEAPONS_KEY = ResourceKey.create(
-                        Registries.CREATIVE_MODE_TAB,
-                        Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "youzai_tools_weapons"));
+    public static final CreativeModeTab YOUZAI_WORLD = FabricCreativeModeTab.builder()
+            .icon(() -> new ItemStack(ModBlocks.YZ_BLOCK))
+            .title(Component.translatable("itemGroup.youzaiworldcore.youzai_world"))
+            .displayItems(ModCreativeModeTabs::displayItems)
+            .build();
 
-        public static final CreativeModeTab YOUZAI_TOOLS_WEAPONS = FabricCreativeModeTab.builder()
-                        .icon(() -> new ItemStack(ModItems.YZ_SWORD))
-                        .title(Component.translatable("itemGroup.youzaiworldcore.youzai_tools_weapons"))
-                        .displayItems((params, output) -> {
-                                output.accept(ModItems.YZ_SHOVEL);
-                                output.accept(ModItems.YZ_PICKAXE);
-                                output.accept(ModItems.YZ_HOE);
-                                output.accept(ModItems.YZ_SWORD);
-                                output.accept(ModItems.YZ_AXE);
-                                output.accept(ModItems.VOID_STAFF);
-                                output.accept(ModItems.FLAME_STAFF);
-                                output.accept(ModItems.SKY_STAR_STAFF);
-                        })
-                        .build();
+    private static List<ItemGroup> itemGroups = List.of();
 
-        // ── 悠哉世界 - 原材料 ──
-        public static final ResourceKey<CreativeModeTab> YOUZAI_MATERIALS_KEY = ResourceKey.create(
-                        Registries.CREATIVE_MODE_TAB,
-                        Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "youzai_materials"));
+    private ModCreativeModeTabs() {
+    }
 
-        public static final CreativeModeTab YOUZAI_MATERIALS = FabricCreativeModeTab.builder()
-                        .icon(() -> new ItemStack(ModItems.RAW_YZ))
-                        .title(Component.translatable("itemGroup.youzaiworldcore.youzai_materials"))
-                        .displayItems((params, output) -> {
-                                output.accept(ModItems.RAW_YZ);
-                                output.accept(ModItems.YZ_INGOT);
-                                output.accept(ModItems.YZ_NUGGET);
-                                // Genshin 主题物品：原石 / 甜甜玛德琳
-                                output.accept(ModItems.PRIMOGEM);
-                                output.accept(ModItems.SWEET_MADAME);
-                        })
-                        .build();
-
-        // ── 悠哉世界 - 实用物品 ──
-        public static final ResourceKey<CreativeModeTab> YOUZAI_UTILITIES_KEY = ResourceKey.create(
-                        Registries.CREATIVE_MODE_TAB,
-                        Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "youzai_utilities"));
-
-        public static final CreativeModeTab YOUZAI_UTILITIES = FabricCreativeModeTab.builder()
-                        .icon(() -> new ItemStack(ModItems.HEART_OF_GUARDIANSHIP))
-                        .title(Component.translatable("itemGroup.youzaiworldcore.youzai_utilities"))
-                        .displayItems((params, output) -> {
-                                output.accept(ModItems.HEART_OF_GUARDIANSHIP);
-                                output.accept(ModItems.INVISIBLE_ITEM_FRAME);
-                                output.accept(ModItems.INVISIBLE_GLOW_ITEM_FRAME);
-                                output.accept(ModItems.TELEPORT_STONE);
-                                output.accept(ModItems.WARP_SCROLL);
-                                output.accept(ModItems.RETURN_SCROLL);
-                                output.accept(ModItems.FLASHING_INK_SAC);
-                                // 《云·原神》音乐唱片（Epic 稀有度、由 datapack 注入 JukeboxPlayable）
-                                output.accept(ModItems.MUSIC_DISC_CLOUD_GENSHIN);
-                        })
-                        .build();
-
-        // ── 悠哉世界 - 画 ──
-        public static final ResourceKey<CreativeModeTab> YOUZAI_PAINTINGS_KEY = ResourceKey.create(
-                        Registries.CREATIVE_MODE_TAB,
-                        Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "youzai_paintings"));
-
-        public static final CreativeModeTab YOUZAI_PAINTINGS = FabricCreativeModeTab.builder()
-                        // 用 meme_01 作为标签页图标贴图
-                        .icon(() -> new ItemStack(ModItems.MEME_PAINTING_01))
-                        .title(Component.translatable("itemGroup.youzaiworldcore.youzai_paintings"))
-                        .displayItems((params, output) -> {
-                                output.accept(ModItems.MEME_PAINTING_01);
-                                output.accept(ModItems.MEME_PAINTING_02);
-                                output.accept(ModItems.MEME_PAINTING_03);
-                                output.accept(ModItems.MEME_PAINTING_04);
-                                output.accept(ModItems.MEME_PAINTING_05);
-                                output.accept(ModItems.MEME_PAINTING_06);
-                                output.accept(ModItems.MEME_PAINTING_07);
-                                output.accept(ModItems.MEME_PAINTING_08);
-                                output.accept(ModItems.MEME_PAINTING_09);
-                                output.accept(ModItems.MEME_PAINTING_10);
-                                output.accept(ModItems.MEME_PAINTING_11);
-                                output.accept(ModItems.MEME_PAINTING_12);
-                        })
-                        .build();
-
-        // ── 悠哉世界 - 工具包 ──
-        public static final ResourceKey<CreativeModeTab> YOUZAI_KITS_KEY = ResourceKey.create(
-                        Registries.CREATIVE_MODE_TAB,
-                        Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "youzai_kits"));
-
-        public static final CreativeModeTab YOUZAI_KITS = FabricCreativeModeTab.builder()
-                        .icon(() -> new ItemStack(Items.SHULKER_BOX))
-                        .title(Component.translatable("itemGroup.youzaiworldcore.youzai_kits"))
-                        .displayItems((params, output) -> {
-                                var holders = params.holders();
-                                output.accept(PresetItems.createPreset01(holders));
-                                output.accept(PresetItems.createPreset02(holders));
-                                output.accept(PresetItems.createPreset03(holders));
-                                output.accept(PresetItems.createPreset04(holders));
-                                output.accept(PresetItems.createPreset05(holders));
-                                output.accept(PresetItems.createPreset06(holders));
-                                output.accept(PresetItems.createPreset07(holders));
-                                output.accept(PresetItems.createPreset08(holders));
-                                output.accept(PresetItems.createPreset09(holders));
-                        })
-                        .build();
-
-        // ── 悠哉世界 - 附魔 ──
-        public static final ResourceKey<CreativeModeTab> YOUZAI_ENCHANTMENTS_KEY = ResourceKey.create(
-                        Registries.CREATIVE_MODE_TAB,
-                        Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "youzai_enchantments"));
-
-        public static final CreativeModeTab YOUZAI_ENCHANTMENTS = FabricCreativeModeTab.builder()
-                        .icon(() -> new ItemStack(Items.ENCHANTED_BOOK))
-                        .title(Component.translatable("itemGroup.youzaiworldcore.youzai_enchantments"))
-                        .displayItems((params, output) -> {
-                                var enchantmentRegistry = params.holders().lookupOrThrow(Registries.ENCHANTMENT);
-                                int total = 0;
-                                for (var key : ModEnchantments.ALL) {
-                                        var holderOpt = enchantmentRegistry.get(key);
-                                        if (holderOpt.isPresent()) {
-                                                var holder = holderOpt.get();
-                                                int maxLevel = holder.value().getMaxLevel();
-                                                for (int level = 1; level <= maxLevel; level++) {
-                                                        output.accept(EnchantmentHelper.createBook(new EnchantmentInstance(holder, level)));
-                                                        total++;
-                                                }
-                                                DebugLogger.debug("ModCreativeModeTabs",
-                                                                "YOUZAI_ENCHANTMENTS: added enchantment %s (max level %d)",
-                                                                key.identifier(), maxLevel);
-                                        } else {
-                                                DebugLogger.warn("ModCreativeModeTabs",
-                                                                "YOUZAI_ENCHANTMENTS: enchantment %s not found in registry, skipped",
-                                                                key.identifier());
-                                        }
-                                }
-                                DebugLogger.info("ModCreativeModeTabs",
-                                                "YOUZAI_ENCHANTMENTS tab populated with %d enchanted book(s)", total);
-                        })
-                        .build();
-
-        public static void initialize() {
-                Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, YOUZAI_BLOCKS_KEY, YOUZAI_BLOCKS);
-                Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, YOUZAI_TOOLS_WEAPONS_KEY, YOUZAI_TOOLS_WEAPONS);
-                Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, YOUZAI_MATERIALS_KEY, YOUZAI_MATERIALS);
-                Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, YOUZAI_UTILITIES_KEY, YOUZAI_UTILITIES);
-                Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, YOUZAI_KITS_KEY, YOUZAI_KITS);
-                Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, YOUZAI_PAINTINGS_KEY, YOUZAI_PAINTINGS);
-                Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, YOUZAI_ENCHANTMENTS_KEY, YOUZAI_ENCHANTMENTS);
-                DebugLogger.info("ModCreativeModeTabs", "Registered YOUZAI_ENCHANTMENTS creative tab (%s)",
-                                YOUZAI_ENCHANTMENTS_KEY.identifier());
+    /** 内置分类的组名与物品 ID；只用于匹配，不替代包含组件的原始物品栈。 */
+    public record ItemGroup(String groupName, List<String> itemIds) {
+        public ItemGroup {
+            itemIds = List.copyOf(itemIds);
         }
+    }
+
+    /** 返回最近一次标签页内容生成时的分类索引，保持与物品清单相同的顺序。 */
+    public static List<ItemGroup> getItemGroups() {
+        return itemGroups;
+    }
+
+    /** 注册一个创造标签页；七个分类由客户端共用的物品分组模型展示。 */
+    public static void initialize() {
+        DebugLogger.entering(MODULE, "initialize");
+        Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, YOUZAI_WORLD_KEY, YOUZAI_WORLD);
+        DebugLogger.info(MODULE, "已注册悠哉世界创造标签页：%s", YOUZAI_WORLD_KEY.identifier());
+        DebugLogger.exiting(MODULE, "initialize");
+    }
+
+    private static void displayItems(CreativeModeTab.ItemDisplayParameters params, CreativeModeTab.Output output) {
+        List<ItemGroup> rebuilt = new ArrayList<>();
+
+        // ===== 方块 =====
+        addGroup(rebuilt, "youzai_blocks", output, items -> {
+            items.accept(ModBlocks.YZ_ORE);
+            items.accept(ModBlocks.DEEPSLATE_YZ_ORE);
+            items.accept(ModBlocks.RAW_YZ_BLOCK);
+            items.accept(ModBlocks.YZ_BLOCK);
+            items.accept(ModBlocks.DECOMPOSITION_TABLE);
+            items.accept(ModBlocks.FLY_BEACON);
+            items.accept(ModBlocks.TP_ANCHOR);
+            items.accept(ModBlocks.MAGIC_TABLE);
+            items.accept(ModBlocks.MOB_PRESSURE_PLATE);
+            items.accept(ModBlocks.DUPLICATE_BLOCK);
+            items.accept(ModBlocks.NOT_GATE_REDSTONE_REPEATER);
+            items.accept(ModBlocks.WIRELESS_REDSTONE_TRANSMITTER);
+            items.accept(ModBlocks.WIRELESS_REDSTONE_RECEIVER);
+            // 大字牌系列（12 木质 + 7 矿物），顺序见 ModBlocks.LARGE_SIGNS。
+            for (var largeSign : ModBlocks.LARGE_SIGNS) {
+                items.accept(largeSign);
+            }
+        });
+
+        // ===== 工具与武器 =====
+        addGroup(rebuilt, "youzai_tools_weapons", output, items -> {
+            items.accept(ModItems.YZ_SHOVEL);
+            items.accept(ModItems.YZ_PICKAXE);
+            items.accept(ModItems.YZ_HOE);
+            items.accept(ModItems.YZ_SWORD);
+            items.accept(ModItems.YZ_AXE);
+            items.accept(ModItems.VOID_STAFF);
+            items.accept(ModItems.FLAME_STAFF);
+            items.accept(ModItems.SKY_STAR_STAFF);
+        });
+
+        // ===== 材料 =====
+        addGroup(rebuilt, "youzai_materials", output, items -> {
+            items.accept(ModItems.RAW_YZ);
+            items.accept(ModItems.YZ_INGOT);
+            items.accept(ModItems.YZ_NUGGET);
+            items.accept(ModItems.PRIMOGEM);
+            items.accept(ModItems.SWEET_MADAME);
+        });
+
+        // ===== 实用物品 =====
+        addGroup(rebuilt, "youzai_utilities", output, items -> {
+            items.accept(ModItems.HEART_OF_GUARDIANSHIP);
+            items.accept(ModItems.INVISIBLE_ITEM_FRAME);
+            items.accept(ModItems.INVISIBLE_GLOW_ITEM_FRAME);
+            items.accept(ModItems.TELEPORT_STONE);
+            items.accept(ModItems.WARP_SCROLL);
+            items.accept(ModItems.RETURN_SCROLL);
+            items.accept(ModItems.FLASHING_INK_SAC);
+            items.accept(ModItems.MUSIC_DISC_CLOUD_GENSHIN);
+        });
+
+        // ===== 画作 =====
+        addGroup(rebuilt, "youzai_paintings", output, items -> {
+            items.accept(ModItems.MEME_PAINTING_01);
+            items.accept(ModItems.MEME_PAINTING_02);
+            items.accept(ModItems.MEME_PAINTING_03);
+            items.accept(ModItems.MEME_PAINTING_04);
+            items.accept(ModItems.MEME_PAINTING_05);
+            items.accept(ModItems.MEME_PAINTING_06);
+            items.accept(ModItems.MEME_PAINTING_07);
+            items.accept(ModItems.MEME_PAINTING_08);
+            items.accept(ModItems.MEME_PAINTING_09);
+            items.accept(ModItems.MEME_PAINTING_10);
+            items.accept(ModItems.MEME_PAINTING_11);
+            items.accept(ModItems.MEME_PAINTING_12);
+        });
+
+        // ===== 工具包 =====
+        addGroup(rebuilt, "youzai_kits", output, items -> {
+            var holders = params.holders();
+            items.accept(PresetItems.createPreset01(holders));
+            items.accept(PresetItems.createPreset02(holders));
+            items.accept(PresetItems.createPreset03(holders));
+            items.accept(PresetItems.createPreset04(holders));
+            items.accept(PresetItems.createPreset05(holders));
+            items.accept(PresetItems.createPreset06(holders));
+            items.accept(PresetItems.createPreset07(holders));
+            items.accept(PresetItems.createPreset08(holders));
+            items.accept(PresetItems.createPreset09(holders));
+        });
+
+        // ===== 附魔书 =====
+        addGroup(rebuilt, "youzai_enchantments", output, items -> {
+            var enchantmentRegistry = params.holders().lookupOrThrow(Registries.ENCHANTMENT);
+            int total = 0;
+            for (var key : ModEnchantments.ALL) {
+                var holderOpt = enchantmentRegistry.get(key);
+                if (holderOpt.isPresent()) {
+                    var holder = holderOpt.get();
+                    int maxLevel = holder.value().getMaxLevel();
+                    for (int level = 1; level <= maxLevel; level++) {
+                        items.accept(EnchantmentHelper.createBook(new EnchantmentInstance(holder, level)));
+                        total++;
+                    }
+                    DebugLogger.debug(MODULE, "已加入附魔 %s 的全部等级（最高 %d 级）", key.identifier(), maxLevel);
+                } else {
+                    DebugLogger.warn(MODULE, "注册表中未找到附魔 %s，跳过对应附魔书", key.identifier());
+                }
+            }
+            DebugLogger.debug(MODULE, "附魔分类已加入 %d 本附魔书", total);
+        });
+
+        itemGroups = List.copyOf(rebuilt);
+        DebugLogger.debug(MODULE, "已生成悠哉世界创造标签页及 %d 个内置分类", itemGroups.size());
+    }
+
+    private static void addGroup(List<ItemGroup> groups, String groupName, CreativeModeTab.Output output,
+                                 Consumer<CreativeModeTab.Output> generator) {
+        Set<String> itemIds = new LinkedHashSet<>();
+        generator.accept((stack, visibility) -> {
+            // 原样传递组件与可见范围，索引仅记录可在当前标签页展示的物品类型。
+            output.accept(stack, visibility);
+            if (visibility != CreativeModeTab.TabVisibility.SEARCH_TAB_ONLY) {
+                itemIds.add(BuiltInRegistries.ITEM.getKey(stack.getItem()).toString());
+            }
+        });
+        groups.add(new ItemGroup(groupName, List.copyOf(itemIds)));
+    }
 }

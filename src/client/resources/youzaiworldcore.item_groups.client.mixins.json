@@ -1,0 +1,17 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "top.csituka.youzaiworldcore.mixin.client.inventory",
+  "compatibilityLevel": "JAVA_25",
+  "client": [
+    "CreativeModeInventoryScreenMixin",
+    "AbstractContainerScreenMixin",
+    "ItemGroupsSettingsEntryMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "overwrites": {
+    "requireAnnotations": true
+  }
+}

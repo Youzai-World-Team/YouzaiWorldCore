@@ -9,6 +9,7 @@
     "HudMixin",
     "TitleScreenMixin",
     "OptionsScreenMixin",
+    "YzuiSettingsScreenSwitchMixin",
     "ChatOptionsMixin",
     "PauseScreenMixin",
     "LoadingOverlayMixin",

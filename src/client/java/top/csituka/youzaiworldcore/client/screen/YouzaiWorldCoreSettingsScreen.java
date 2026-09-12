@@ -4,6 +4,7 @@ import top.csituka.youzaiworldcore.client.render.YzuiTheme;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.ConfirmLinkScreen;
 import net.minecraft.client.gui.screens.Screen;
@@ -28,6 +29,7 @@ import top.csituka.youzaiworldcore.client.config.PlatformDetector;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -72,6 +74,81 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
 
     /** 当前选中的分栏索引：0 = 视觉, 1 = 导出/导入配置, 2 = 关于, 3 = 开发者 */
     private int selectedSection = 0;
+
+    /** 独立设置中心复用内容区；默认构造方式仍保留 ModMenu 使用的完整页面。 */
+    private boolean embedded;
+    private int embeddedX, embeddedY, embeddedWidth, embeddedHeight;
+
+    /** 设置嵌入视口；首次进入选择指定分栏，后续缩放保留用户当前分栏。 */
+    public void configureEmbedded(int x, int y, int width, int height, int section) {
+        if (!embedded) selectedSection = Math.clamp(section, 0, 3);
+        embedded = true;
+        embeddedX = x;
+        embeddedY = y;
+        embeddedWidth = width;
+        embeddedHeight = height;
+        calculateLayout();
+    }
+
+    /** 在嵌入模式中切换内容，导入/导出时保持操作锁定。 */
+    public void setEmbeddedSection(int section) {
+        if (!embedded || configOpActive) return;
+        selectedSection = Math.clamp(section, 0, 3);
+        rebuildWidgets();
+    }
+
+    /** 当前内容分栏，用于统一设置中心的导航状态。 */
+    public int getSelectedSection() { return selectedSection; }
+
+    /** 导入或导出期间，外层设置中心也应锁定导航与关闭操作。 */
+    public boolean isConfigOperationActive() { return configOpActive; }
+
+    /** 供统一设置列表使用的内容项；控件继续执行本页面的原有配置回调。 */
+    public record EmbeddedOption(Component label, Component description, AbstractWidget control) { }
+
+    /** 展开当前分区的控件与说明，不包含独立页面的标题和分区导航。 */
+    public List<EmbeddedOption> embeddedOptions() {
+        if (!embedded) return List.of();
+        List<EmbeddedOption> entries = new ArrayList<>();
+        if (selectedSection == 3) {
+            entries.add(new EmbeddedOption(Component.translatable("screen.youzaiworldcore.settings.dev_warning"),
+                    Component.empty(), null));
+        } else if (selectedSection == 2) {
+            entries.add(new EmbeddedOption(Component.literal("YouzaiWorldCore"),
+                    Component.translatable("screen.youzaiworldcore.settings.about_version", UpdateChecker.getCurrentVersionString()), null));
+            for (String key : List.of("about_desc_line1", "about_desc_line2", "about_website", "about_authors", "about_license",
+                    "about_credit_why", "about_credit_byzzdemy", "about_credit_zhongend", "about_credit_testers", "about_credit_oss")) {
+                entries.add(new EmbeddedOption(Component.translatable("screen.youzaiworldcore.settings." + key), Component.empty(), null));
+            }
+        }
+        for (var child : children()) {
+            if (!(child instanceof AbstractWidget widget) || !widget.visible) continue;
+            Component label = widget instanceof EditBox ? widget.getMessage() : Component.empty();
+            Component description = Component.empty();
+            if (widget == configExportButton) {
+                description = Component.translatable(isAndroidPlatform
+                        ? "screen.youzaiworldcore.settings.config_io_export_hint_android"
+                        : "screen.youzaiworldcore.settings.config_io_export_hint_pc");
+            } else if (widget == configImportButton) {
+                description = Component.translatable("screen.youzaiworldcore.settings.config_io_import_hint");
+            } else if (widget == logLevelDropdown) {
+                description = Component.translatable("screen.youzaiworldcore.settings.log_level_restart_hint");
+            } else if (widget == debugAddressInput) {
+                description = Component.translatable("screen.youzaiworldcore.settings.label_debug_section");
+            }
+            entries.add(new EmbeddedOption(label, description, widget));
+        }
+        if (selectedSection == 1) {
+            entries.add(new EmbeddedOption(Component.translatable("screen.youzaiworldcore.settings.config_io_bottom_hint_line1"),
+                    Component.translatable("screen.youzaiworldcore.settings.config_io_bottom_hint_line2"), null));
+        }
+        return entries;
+    }
+
+    /** 外层页面在导出期间展示同一份进度，并锁定退出和其他配置修改。 */
+    public Component embeddedOperationMessage() {
+        return configOpActive ? Component.literal(configOpProgressText) : null;
+    }
 
     // ===== 滚动状态 =====
     /** 当前垂直滚动偏移量（像素） */
@@ -224,6 +301,15 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
      * 宽屏使用两列布局，窄屏将分栏导航收拢为顶部下拉框。
      */
     private void calculateLayout() {
+        if (embedded) {
+            compactLayout = false;
+            contentWidth = Math.max(1, Math.min(540, embeddedWidth));
+            contentLeft = embeddedX + (embeddedWidth - contentWidth) / 2;
+            contentTop = embeddedY;
+            contentBottom = embeddedY + Math.max(1, embeddedHeight);
+            viewportHeight = contentBottom - contentTop;
+            return;
+        }
         int textWidth = Math.max(1, this.width - PAGE_MARGIN * 2);
         Component desc = Component.translatable("screen.youzaiworldcore.settings.desc_line1");
         Component desc2 = Component.translatable("screen.youzaiworldcore.settings.desc_line2");
@@ -445,6 +531,12 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
         debugPortInput = null;
         configExportButton = null;
         configImportButton = null;
+
+        closeButton = null;
+        if (embedded) {
+            buildContentWidgets();
+            return;
+        }
 
         // ===== 关闭按钮（右上角） =====
         closeButton = new TransparentButton(
@@ -1111,35 +1203,36 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
     @Override
     public void extractRenderState(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
 
+        if (!embedded) {
+            int cx = this.width / 2;
+            var titleText = Component.translatable("screen.youzaiworldcore.settings.title");
+            int titleWidth = this.font.width(titleText);
+            guiGraphics.text(this.font, titleText, cx - titleWidth / 2, 12, YzuiTheme.text(), false);
 
-        int cx = this.width / 2;
-        var titleText = Component.translatable("screen.youzaiworldcore.settings.title");
-        int titleWidth = this.font.width(titleText);
-        guiGraphics.text(this.font, titleText, cx - titleWidth / 2, 12, YzuiTheme.text(), false);
+            var desc = Component.translatable("screen.youzaiworldcore.settings.desc_line1");
+            var desc2 = Component.translatable("screen.youzaiworldcore.settings.desc_line2");
+            int descColor = YzuiTheme.text();
+            int headerWidth = Math.max(1, this.width - PAGE_MARGIN * 2);
+            drawCenteredWrappedText(guiGraphics, desc, headerDesc1Y, headerWidth, descColor, false);
+            drawCenteredWrappedText(guiGraphics, desc2, headerDesc2Y, headerWidth, descColor, false);
 
-        var desc = Component.translatable("screen.youzaiworldcore.settings.desc_line1");
-        var desc2 = Component.translatable("screen.youzaiworldcore.settings.desc_line2");
-        int descColor = YzuiTheme.text();
-        int headerWidth = Math.max(1, this.width - PAGE_MARGIN * 2);
-        drawCenteredWrappedText(guiGraphics, desc, headerDesc1Y, headerWidth, descColor, false);
-        drawCenteredWrappedText(guiGraphics, desc2, headerDesc2Y, headerWidth, descColor, false);
-
-        // 固定位置组件必须在滚动裁剪外渲染。
-        if (closeButton != null) closeButton.extractRenderState(guiGraphics, mouseX, mouseY, partialTick);
-        if (compactLayout) {
-            if (sectionDropdown != null) {
-                sectionDropdown.extractRenderState(guiGraphics, mouseX, mouseY, partialTick);
-            }
-        } else {
-            if (sidebarDev != null) sidebarDev.extractRenderState(guiGraphics, mouseX, mouseY, partialTick);
-            if (sidebarConfigIo != null) {
-                sidebarConfigIo.extractRenderState(guiGraphics, mouseX, mouseY, partialTick);
-            }
-            if (sidebarVisual != null) {
-                sidebarVisual.extractRenderState(guiGraphics, mouseX, mouseY, partialTick);
-            }
-            if (sidebarAbout != null) {
-                sidebarAbout.extractRenderState(guiGraphics, mouseX, mouseY, partialTick);
+            // 固定位置组件必须在滚动裁剪外渲染。
+            if (closeButton != null) closeButton.extractRenderState(guiGraphics, mouseX, mouseY, partialTick);
+            if (compactLayout) {
+                if (sectionDropdown != null) {
+                    sectionDropdown.extractRenderState(guiGraphics, mouseX, mouseY, partialTick);
+                }
+            } else {
+                if (sidebarDev != null) sidebarDev.extractRenderState(guiGraphics, mouseX, mouseY, partialTick);
+                if (sidebarConfigIo != null) {
+                    sidebarConfigIo.extractRenderState(guiGraphics, mouseX, mouseY, partialTick);
+                }
+                if (sidebarVisual != null) {
+                    sidebarVisual.extractRenderState(guiGraphics, mouseX, mouseY, partialTick);
+                }
+                if (sidebarAbout != null) {
+                    sidebarAbout.extractRenderState(guiGraphics, mouseX, mouseY, partialTick);
+                }
             }
         }
 

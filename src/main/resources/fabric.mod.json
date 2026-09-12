@@ -62,6 +62,10 @@
     {
       "config": "youzaiworldcore.client.mixins.json",
       "environment": "client"
+    },
+    {
+      "config": "youzaiworldcore.item_groups.client.mixins.json",
+      "environment": "client"
     }
   ],
   "accessWidener": "youzaiworldcore.client.accesswidener",

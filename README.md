@@ -101,9 +101,9 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 | **烈焰法杖**        | 蓄力发射火焰激光，消耗 10 魔力                                               |
 | **天星法杖**        | 召唤陨石攻击，10 方块半径，消耗 60 魔力                                      |
 | **传送石**          | 右键打开传送列表（与传送锚点共用 GUI），传送消耗经验/耐久                    |
-| **原石 / 甜甜玛德琳** | Genshin 主题材料（`primogem` / `sweet_madame`），收录于「悠哉材料」标签页   |
+| **原石 / 甜甜玛德琳** | Genshin 主题材料（`primogem` / `sweet_madame`），收录于「悠哉世界 → 材料」分组 |
 | **《云·原神》音乐唱片** | Epic 稀有度，47 秒宣传曲，基于 MC 26.2 `JUKEBOX_PLAYABLE` 数据组件 + `JukeboxSong` datapack 注册表实现 |
-| **Meme 画作（×12）** | 12 张自定义画作（`meme_01`–`meme_12`），Uncommon 稀有度，收录于「悠哉世界 - 画」标签页 |
+| **Meme 画作（×12）** | 12 张自定义画作（`meme_01`–`meme_12`），Uncommon 稀有度，收录于「悠哉世界 → 画作」分组 |
 
 ### 6. 自定义方块
 
@@ -193,21 +193,33 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 
 ### 15. 创造模式标签页
 
-创造模式物品栏重新组织为 **7 个独立标签页**：
+本模组的物品统一收录于 **「悠哉世界」一个创造标签页**（`youzaiworldcore:youzai_world`），内部按七类折叠展示：
 
-| 标签页 ID              | 名称              | 内容                                                                          |
-| ---------------------- | ----------------- | ----------------------------------------------------------------------------- |
-| `youzai_blocks`        | 悠哉方块          | 8 个自定义方块                                                                |
-| `youzai_tools_weapons` | 悠哉工具与武器    | 5 个悠哉系列工具 + 3 个法杖                                                   |
-| `youzai_materials`     | 悠哉材料          | 原矿、锭、粒、原石、甜甜玛德琳                                                |
-| `youzai_utilities`     | 悠哉实用物品      | 守护之心、隐形物品展示框、隐形发光物品展示框、传送石、传送/返回卷轴、音乐唱片 |
-| `youzai_paintings`     | 悠哉世界 - 画     | 12 张自定义 Meme 画作（meme_01–meme_12）                                      |
-| `youzai_kits`          | 悠哉工具包        | 9 个预设潜影盒                                                                |
-| `youzai_enchantments`  | 悠哉世界 - 附魔   | 本模组自定义附魔的附魔书，按 `ModEnchantments.ALL` 遍历并为每个等级各生成一本 |
+| 分组 | 内容 |
+| --- | --- |
+| 方块 | 悠哉矿物、功能方块、红石装置及全部大字牌 |
+| 工具与武器 | 5 个悠哉系列工具 + 3 个法杖 |
+| 材料 | 原矿、锭、粒、原石、甜甜玛德琳 |
+| 实用物品 | 守护之心、隐形展示框、传送石、传送/返回卷轴、墨囊、音乐唱片 |
+| 画作 | 12 张自定义 Meme 画作（meme_01–meme_12） |
+| 工具包 | 9 个预设潜影盒，保留名称、颜色和完整内容 |
+| 附魔书 | 遍历 `ModEnchantments.ALL`，保留每种附魔的全部等级 |
+
+七类分组从标签页的物品清单自动生成，已有客户端配置无需重置。为 `youzaiworldcore:youzai_world` 新增的自定义规则优先生效，剩余物品再按内置分类分组；关闭分组后，全部物品仍在这一个标签页中平铺显示。
+
+#### 创造物品分组
+
+参考 Inventory Item Groups 实现可折叠分组，同时支持原版和 YZUI 创造物品栏。默认提供 **102 条可编辑原版规则**，另有上述 **7 个悠哉世界内置分类**及 **4 条精妙背包兼容规则**。点击带 `+` / `−` 的组头展开或收起，也可悬停后按回车或空格操作；展开后点击具体物品取用。
+
+精妙背包（Sophisticated Backpacks）的 `sophisticatedbackpacks:main` 分栏按 **背包、升级背包、堆叠升级、堆叠升级转换** 分组。普通背包保留各染色变体，堆叠升级排除 `_conversion`，转换类单独匹配；已有配置无需重置，自定义规则优先。
+
+展开与收起带约 **200 毫秒**的缩放和轻微位移过渡，组头略微放大、加减标记旋转切换；连续点击可从当前进度反向播放。收起中的成员只用于展示，动画结束后再移除并更新滚动范围。
+
+在 **YouzaiWorldCore 设置 → 视觉 → 创造物品分组** 中可启用或停用、切换原序 / 物品 ID 排序、开启每秒轮播预览，以及新增、编辑、删除、调整规则优先级。规则支持标签页 ID、精确物品 ID、包含片段和排除片段。配置写入 `yzwc/client/global_settings.json` 的 `inventory_item_groups_module`；仅影响本机显示，保留药水、附魔书等全部组件变体，搜索、快捷栏预设和真实背包不折叠。详见 [功能分析与配置说明](docs/创造物品分组.md)。
 
 ### 16. 预设物品系统
 
-创造模式「悠哉工具包」标签页中的九大预设潜影盒（`PresetItems.createPreset01`–`createPreset09`）：
+创造模式「悠哉世界 → 工具包」分组中的九大预设潜影盒（`PresetItems.createPreset01`–`createPreset09`）：
 
 | 预设       | 颜色   | 内容                                      |
 | ---------- | ------ | ----------------------------------------- |
@@ -383,7 +395,7 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 
 - **外观**：四面自定义贴图，自发光 2 级（`RenderShape.MODEL`）
 - **属性**：硬度 5.0，爆炸抗性 1200（对齐原版附魔台），需用镐挖掘
-- **用途**：纯装饰，无可交互 GUI；收录于「悠哉方块」创造标签页
+- **用途**：纯装饰，无可交互 GUI；收录于创造标签页的「悠哉世界 → 方块」分组
 
 ### 25. 老吴贴贴彩蛋系统 ★新增
 
@@ -606,7 +618,7 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 | **隐形物品展示框**（`invisible_item_frame`）          | 物品展示框 + 幻翼膜（无序合成）     |
 | **隐形发光物品展示框**（`invisible_glow_item_frame`） | 发光物品展示框 + 幻翼膜（无序合成） |
 
-由 `InvisibleItemFrameItem` / `InvisibleGlowItemFrameItem` 重写 `useOn`，自行完成放置位置校验、附着面计算与实体生成，并在生成后设置隐形标记；收录于「悠哉实用物品」创造标签页。
+由 `InvisibleItemFrameItem` / `InvisibleGlowItemFrameItem` 重写 `useOn`，自行完成放置位置校验、附着面计算与实体生成，并在生成后设置隐形标记；收录于创造标签页的「悠哉世界 → 实用物品」分组。
 
 ### 39. Technoblade 纪念皇冠 ★新增
 
@@ -622,11 +634,11 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 
 - **唱片**：`music_disc_cloud_genshin`（《云·原神》宣传曲），Epic 稀有度，时长约 47 秒
 - **实现**：物品通过 `Item.Properties.jukeboxPlayable(ResourceKey<JukeboxSong>)` 注入播放能力；`JukeboxSong` 定义于 `data/youzaiworldcore/jukebox_song/cloud_genshin.json`；对应的 `SoundEvent`（`youzaiworldcore:cloud_genshin`）由 `ModSoundEvents` 在模组初始化时注册到 `BuiltInRegistries.SOUND_EVENT`
-- **收录**：位于「悠哉实用物品」创造标签页
+- **收录**：位于创造标签页的「悠哉世界 → 实用物品」分组
 
 ### 41. Meme 画作系统 ★新增
 
-12 张自定义画作，收录于独立的「悠哉世界 - 画」创造标签页（`youzai_paintings`）。
+12 张自定义画作，收录于统一创造标签页（`youzaiworldcore:youzai_world`）中的「画作」分组。
 
 - **画作**：`meme_01`–`meme_12`，Uncommon 稀有度，每张 1×1 至 4×4 不等
 - **注册**：通过 `PaintingVariant` 在 `data/youzaiworldcore/painting_variant/` 下定义，纹理位于 `assets/youzaiworldcore/textures/painting/`
@@ -929,7 +941,7 @@ src/                                       # 452 个 Java 源文件（main 273 /
 │   ├── event/                            # 事件处理器（31 个：末地门/双开门/老吴贴贴/虚空杖/骨粉甘蔗/带电苦力怕/监守者/切石机/传送卷轴蓄力/生命汲取/风弹/熔炼/阳光修复/乐魂涡轮/幼年僵尸/唱片机循环/合成音效/Meme画作掉落/铁锭修铁砧/死亡音效 等）
 │   ├── entity/seat/                      # 座椅实体系统
 │   ├── invisibility/                     # 隐身系统
-│   ├── item/                             # 物品、工具、创造标签页（7 个）、预设（9 个）、隐形展示框
+│   ├── item/                             # 物品、工具、创造标签页（1 个，内含 7 类分组）、预设（9 个）、隐形展示框
 │   ├── luckperms/                        # LuckPerms 集成（LuckPermsHelper 统一鉴权）
 │   ├── mail/                             # 邮件系统（Mail / MailManager / MailApiClient / MailSettings / MailPermissionHelper；数据在 Api 服务端）
 │   ├── mana/                             # 魔力系统

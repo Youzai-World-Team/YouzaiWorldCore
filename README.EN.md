@@ -100,9 +100,9 @@ A new mineral and tool set equivalent to diamond tier (durability 1800, speed 8.
 | **Flame Staff**           | Charged fire laser, costs 10 mana                                                                                 |
 | **Sky Star Staff**        | Meteor attack, 10-block radius, costs 60 mana                                                                     |
 | **Teleport Stone**        | Right-click to open teleport list (shared GUI with anchors), costs XP/durability                                  |
-| **Primogem / Sweet Madame** | Genshin-themed materials (`primogem` / `sweet_madame`), in the "Youzai Materials" tab                           |
+| **Primogem / Sweet Madame** | Genshin-themed materials (`primogem` / `sweet_madame`), in the "Youzai World → Materials" group |
 | **Cloud Genshin Music Disc** | Epic rarity, 47s promotional track, based on MC 26.2 `JUKEBOX_PLAYABLE` data component + `JukeboxSong` datapack registry |
-| **Meme Paintings (×12)**  | 12 custom paintings (`meme_01`–`meme_12`), Uncommon rarity, in the "Youzai World - Paintings" tab                |
+| **Meme Paintings (×12)**  | 12 custom paintings (`meme_01`–`meme_12`), Uncommon rarity, in the "Youzai World → Paintings" group |
 
 ### 6. Custom Blocks
 
@@ -192,21 +192,33 @@ Fine-grained LuckPerms-based permission control with automatic OP-level fallback
 
 ### 15. Creative Mode Tabs
 
-The creative menu has been reorganized into **7 independent tabs**:
+All mod items share **one "Youzai World" creative tab** (`youzaiworldcore:youzai_world`), with seven collapsible groups:
 
-| Tab ID                 | Name                        | Contents                                                                                                       |
-| ---------------------- | --------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| `youzai_blocks`        | Youzai Blocks               | 8 custom blocks                                                                                                |
-| `youzai_tools_weapons` | Youzai Tools & Weapons      | 5 tools + 3 staves                                                                                             |
-| `youzai_materials`     | Youzai Materials            | Raw ore, ingot, nugget, primogem, sweet madame                                                                 |
-| `youzai_utilities`     | Youzai Utilities            | Heart of Guardianship, Invisible Item Frame, Invisible Glow Item Frame, Teleport Stone, Warp/Return Scrolls, Music Disc |
-| `youzai_paintings`     | Youzai World - Paintings    | 12 custom meme paintings (meme_01–meme_12)                                                                     |
-| `youzai_kits`          | Youzai Kits                 | 9 preset shulker boxes                                                                                         |
-| `youzai_enchantments`  | Youzai World - Enchantments | Enchanted books for the mod's custom enchantments; iterates `ModEnchantments.ALL` and emits one book per level |
+| Group | Contents |
+| --- | --- |
+| Blocks | Youzai ores, functional blocks, redstone devices and all large signs |
+| Tools & Weapons | 5 Youzai tools + 3 staves |
+| Materials | Raw ore, ingot, nugget, primogem and sweet madame |
+| Utilities | Heart of Guardianship, invisible item frames, teleport stone, warp/return scrolls, ink sac and music disc |
+| Paintings | 12 custom meme paintings (meme_01–meme_12) |
+| Kits | 9 preset shulker boxes, retaining their names, colours and full contents |
+| Enchanted Books | Every level of every enchantment in `ModEnchantments.ALL` |
+
+These groups are generated from the tab's item list, so existing client settings need no reset. Custom rules targeting `youzaiworldcore:youzai_world` take priority; remaining items use the built-in groups. Disabling grouping shows all items in the same tab as a flat list.
+
+#### Creative Item Groups
+
+Collapsible groups inspired by Inventory Item Groups work in both vanilla and YZUI creative inventories. **102 editable default rules** cover vanilla categories, alongside the **7 built-in Youzai World groups** above and **4 Sophisticated Backpacks compatibility rules**. Click a `+` / `−` group header, or hover over it and press Enter or Space, to expand or collapse it. Expanded item entries retain normal creative pickup behavior.
+
+The Sophisticated Backpacks tab (`sophisticatedbackpacks:main`) groups items into **Backpacks, Upgraded Backpacks, Stack Upgrades and Stack Upgrade Conversions**. Dyed backpack variants are retained; stack upgrades exclude `_conversion` items, which match the separate conversion group. Existing settings need no reset, and custom rules take priority.
+
+Expanding and collapsing use a **200 ms** scale and slide transition, with a subtle header pulse and a rotating plus/minus stroke. Clicking again reverses the current transition. Collapsing items remain visible but cannot be picked up; they are removed and the scroll range updates when the animation finishes.
+
+Open **YouzaiWorldCore Settings → Visual → Creative item groups** to enable groups, choose original or item ID order, cycle previews once per second, and add, edit, delete or reorder rules. Rules support creative tab IDs, exact item IDs, include fragments and exclude fragments. Settings are stored locally under `inventory_item_groups_module` in `yzwc/client/global_settings.json`. All potion, enchanted-book and other component variants are preserved; search results, saved hotbars and real inventory slots remain ungrouped. See the [analysis and configuration guide (Chinese)](docs/创造物品分组.md).
 
 ### 16. Preset Item System
 
-Nine preset shulker boxes in the "Youzai Kits" creative tab (`PresetItems.createPreset01`–`createPreset09`):
+Nine preset shulker boxes in the "Youzai World → Kits" creative group (`PresetItems.createPreset01`–`createPreset09`):
 
 | Preset                | Color      | Contents                                                  |
 | --------------------- | ---------- | --------------------------------------------------------- |
@@ -386,7 +398,7 @@ A decorative block (`magic_table`) serving as a visual centerpiece for server lo
 
 - **Appearance**: Custom textures on all 4 sides, emissive level 2 (`RenderShape.MODEL`)
 - **Properties**: Hardness 5.0, blast resistance 1200 (matches vanilla enchanting table), requires pickaxe
-- **Usage**: Purely decorative, no interactive GUI; listed in the "Youzai Blocks" creative tab
+- **Usage**: Purely decorative, no interactive GUI; listed in the "Youzai World → Blocks" creative group
 
 ### 25. Laowu Meme Easter Egg ★NEW
 
@@ -600,7 +612,7 @@ Two custom items whose placed frame entity is invisible (only the displayed item
 | **Invisible Item Frame** (`invisible_item_frame`)           | Item Frame + Phantom Membrane (shapeless)      |
 | **Invisible Glow Item Frame** (`invisible_glow_item_frame`) | Glow Item Frame + Phantom Membrane (shapeless) |
 
-`InvisibleItemFrameItem` / `InvisibleGlowItemFrameItem` override `useOn` to perform their own placement validation, attachment-face computation, and entity spawning, marking the entity invisible after spawn. Both appear in the "Youzai Utilities" creative tab.
+`InvisibleItemFrameItem` / `InvisibleGlowItemFrameItem` override `useOn` to perform their own placement validation, attachment-face computation, and entity spawning, marking the entity invisible after spawn. Both appear in the "Youzai World → Utilities" creative group.
 
 ### 39. Technoblade Memorial Crown ★NEW
 
@@ -616,11 +628,11 @@ Music disc items implemented using MC 26.2's new `JUKEBOX_PLAYABLE` DataComponen
 
 - **Disc**: `music_disc_cloud_genshin` (Cloud Genshin promotional track), Epic rarity, ~47s duration
 - **Implementation**: The item uses `Item.Properties.jukeboxPlayable(ResourceKey<JukeboxSong>)` to inject playback capability; the `JukeboxSong` is defined in `data/youzaiworldcore/jukebox_song/cloud_genshin.json`; the corresponding `SoundEvent` (`youzaiworldcore:cloud_genshin`) is registered by `ModSoundEvents` during mod init into `BuiltInRegistries.SOUND_EVENT`
-- **Tab**: Located in the "Youzai Utilities" creative tab
+- **Group**: Located under "Youzai World → Utilities" in the creative inventory
 
 ### 41. Meme Painting System ★NEW
 
-12 custom paintings in a dedicated "Youzai World - Paintings" creative tab (`youzai_paintings`).
+12 custom paintings in the "Paintings" group of the shared Youzai World creative tab (`youzaiworldcore:youzai_world`).
 
 - **Paintings**: `meme_01`–`meme_12`, Uncommon rarity, sizes from 1×1 to 4×4
 - **Registration**: Defined via `PaintingVariant` in `data/youzaiworldcore/painting_variant/`, textures in `assets/youzaiworldcore/textures/painting/`
@@ -918,7 +930,7 @@ src/                                       # 452 Java source files (main 273 / c
 │   ├── event/                            # Event handlers (31: end portal, double doors, Laowu Meme, void staff, bone-meal sugar cane, charged creeper, warden, stonecutter, teleport-stone charge, leeching, wind charge, smelting, sun repair, spirit turbo, baby zombie, jukebox loop, craft sound, painting drop, anvil repair, death sound, etc.)
 │   ├── entity/seat/                      # Seat entity system
 │   ├── invisibility/                     # Invisibility system
-│   ├── item/                             # Items, tools, creative tabs (7), presets (9), invisible item frames
+│   ├── item/                             # Items, tools, creative tab (1, with 7 groups), presets (9), invisible item frames
 │   ├── luckperms/                        # LuckPerms integration (LuckPermsHelper unified auth)
 │   ├── mail/                             # Mail system (Mail / MailManager / MailApiClient / MailSettings / MailPermissionHelper; data lives on the Api server)
 │   ├── mana/                             # Mana system

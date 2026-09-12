@@ -48,6 +48,8 @@ public final class ClientGlobalSettings {
     public static final String COSMETIC_MODULE = "cosmetic_module";
     /** 客户端更新检查（仅本机标题界面公告） */
     public static final String UPDATE_MODULE = "update_module";
+    /** 创造物品栏的折叠分组 */
+    public static final String INVENTORY_ITEM_GROUPS_MODULE = "inventory_item_groups_module";
 
     private static final JsonFileStore STORE = new JsonFileStore(ModPaths.clientSettingsFile());
 
