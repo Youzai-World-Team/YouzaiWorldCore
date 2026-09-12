@@ -1,6 +1,8 @@
 package top.csituka.youzaiworldcore.client.render;
 
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.resources.Identifier;
 
 /**
  * 圆角矩形绘制工具（行扫描实现）。
@@ -55,6 +57,34 @@ public final class RoundedRect {
     private static final int[][] SPAN_CACHE = new int[MAX_CACHED_RADIUS + 1][];
 
     private RoundedRect() {
+    }
+
+    /** 整张图片等比覆盖圆角区域；非目标比例只裁切边缘，各条带互不重叠。 */
+    public static void texture(GuiGraphicsExtractor g, Identifier texture,
+            int x, int y, int w, int h, int radius, int imageWidth, int imageHeight, int tint) {
+        if (w <= 0 || h <= 0 || imageWidth <= 0 || imageHeight <= 0) return;
+        double scale = Math.max(w / (double) imageWidth, h / (double) imageHeight);
+        int textureWidth = Math.max(w, (int) Math.ceil(imageWidth * scale));
+        int textureHeight = Math.max(h, (int) Math.ceil(imageHeight * scale));
+        float u = (textureWidth - w) / 2f, v = (textureHeight - h) / 2f;
+        int r = Math.clamp(radius, 0, Math.min(w, h) / 2);
+        blitBand(g, texture, x, y + r, w, h - 2 * r, u, v + r, textureWidth, textureHeight, tint);
+        if (r == 0) return;
+        int[] spans = spansFor(r);
+        for (int row = 0; row < r; row++) {
+            int inset = r - spans[row];
+            int top = r - 1 - row, bottom = h - r + row;
+            blitBand(g, texture, x + inset, y + top, w - 2 * inset, 1,
+                    u + inset, v + top, textureWidth, textureHeight, tint);
+            blitBand(g, texture, x + inset, y + bottom, w - 2 * inset, 1,
+                    u + inset, v + bottom, textureWidth, textureHeight, tint);
+        }
+    }
+
+    private static void blitBand(GuiGraphicsExtractor g, Identifier texture,
+            int x, int y, int w, int h, float u, float v, int textureWidth, int textureHeight, int tint) {
+        if (w > 0 && h > 0) g.blit(RenderPipelines.GUI_TEXTURED, texture,
+                x, y, u, v, w, h, textureWidth, textureHeight, tint);
     }
 
     /**

@@ -6,6 +6,8 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import org.jspecify.annotations.NonNull;
+import top.csituka.youzaiworldcore.client.animation.GuiAnimationController;
+import top.csituka.youzaiworldcore.client.render.YzuiTheme;
 
 /**
  * 拾取通知显示条目的抽象基类。
@@ -148,7 +150,7 @@ public abstract class DisplayEntry<T> {
      * 判断此条目是否应该被移除。
      */
     public boolean shouldDiscard() {
-        return remainingTicks <= 0 && moveOutProgress >= 1.0f;
+        return remainingTicks <= 0 && (!GuiAnimationController.isEnabled() || moveOutProgress >= 1.0f);
     }
 
     /**
@@ -196,6 +198,7 @@ public abstract class DisplayEntry<T> {
      * </ul>
      */
     public float getFadeAlpha() {
+        if (!GuiAnimationController.isEnabled()) return 1f;
         // 淡入阶段
         if (fadeInTime > 0) {
             return (float) (FADE_IN_DURATION - fadeInTime) / FADE_IN_DURATION;
@@ -213,10 +216,10 @@ public abstract class DisplayEntry<T> {
      * 使用 ease-in 曲线（由慢到快），让滑出动画更自然。
      */
     public int getMoveOffset() {
-        if (!isMovingOut) return 0;
+        if (!isMovingOut || !GuiAnimationController.isEnabled()) return 0;
         // ease-in: moveOutProgress²，开始时缓慢，后面加速
         float eased = moveOutProgress * moveOutProgress;
-        return (int) (eased * 30); // 向右移出 30 像素
+        return (int) (eased * (YzuiTheme.frosted() ? 30 : 8));
     }
 
     /**
@@ -228,28 +231,15 @@ public abstract class DisplayEntry<T> {
      * @param alpha    透明度 [0, 255]
      */
     public void render(GuiGraphicsExtractor graphics, int x, int y, int alpha) {
-        // 弹出动画缩放
-        float popScale = 1.0f;
-        if (popTime > 0) {
-            popScale = 1.0f + popTime / 10.0f;
-        }
+        YzuiTheme.hudCard(graphics, x, y, getWidth(), ELEMENT_HEIGHT - 1, alpha / 255f);
+        // 图标自身负责缩放，避免重复偏移导致图标跳动。
+        renderSprite(graphics, x + 1, y + 1, alpha);
 
-        // 图标
-        if (popScale > 1.0f) {
-            // 弹出动画期间，图标放大
-            int iconSize = (int) (16 * popScale);
-            int iconX = x + (16 - iconSize) / 2;
-            int iconY = y + (ELEMENT_HEIGHT - iconSize) / 2;
-            renderSprite(graphics, iconX, iconY, alpha);
-        } else {
-            renderSprite(graphics, x + 1, y + 1, alpha);
-        }
-
-        // 文字（无背景，常规字体）
+        // 名称和数量沿用原有坐标，并保留稀有度色相。
         int textX = x + 18 + TEXT_ICON_MARGIN;
         int textY = y + (ELEMENT_HEIGHT - Minecraft.getInstance().font.lineHeight) / 2;
-        graphics.text(Minecraft.getInstance().font, displayComponent, textX, textY,
-                0xFFFFFF | (alpha << 24), false);
+        YzuiTheme.hudLabel(graphics, Minecraft.getInstance().font, displayComponent.getVisualOrderText(),
+                textX, textY, YzuiTheme.text(), alpha / 255f);
     }
 
     /**

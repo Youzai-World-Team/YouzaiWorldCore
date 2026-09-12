@@ -1,0 +1,71 @@
+{
+  "version": 200,
+  "autoEnable": false,
+  "styleName": "jade.theme.youzaiworldcore.yzui_dark_minimal",
+  "lightColorScheme": false,
+  "tooltipStyle": {
+    "sprite": "youzaiworldcore:yzui_dark_minimal",
+    "padding": [
+      6,
+      6,
+      6,
+      6
+    ],
+    "borderWidth": 1,
+    "boxProgressColors": {
+      "normal": "#B8CCBF",
+      "info": "#A5D5F1",
+      "title": "#A8E6CF",
+      "success": "#9ED9B1",
+      "warning": "#E4C46C",
+      "danger": "#FFB4AB",
+      "failure": "#FFB4AB"
+    }
+  },
+  "nestedBoxStyle": {
+    "sprite": "youzaiworldcore:yzui_dark_minimal_nested",
+    "padding": [
+      4,
+      4,
+      4,
+      4
+    ]
+  },
+  "viewGroupStyle": {
+    "sprite": "youzaiworldcore:yzui_dark_minimal_group",
+    "padding": [
+      2,
+      2,
+      2,
+      2
+    ]
+  },
+  "text": {
+    "colors": {
+      "normal": "#E3F0E7",
+      "title": "#E3F0E7",
+      "info": "#BDE0F5",
+      "success": "#BEE4CB",
+      "warning": "#ECD9A6",
+      "danger": "#FFD0CB",
+      "failure": "#FFD0CB"
+    },
+    "shadow": false,
+    "modNameStyle": {
+      "color": "#D3DED6",
+      "italic": true
+    },
+    "itemAmountColor": "#E3F0E7"
+  },
+  "iconSlotSprite": "youzaiworldcore:yzui_dark_minimal_slot",
+  "iconSlotInflation": 0,
+  "progressColors": {
+    "normal": "#B8CCBF",
+    "info": "#A5D5F1",
+    "title": "#A8E6CF",
+    "success": "#9ED9B1",
+    "warning": "#E4C46C",
+    "danger": "#FFB4AB",
+    "failure": "#FFB4AB"
+  }
+}

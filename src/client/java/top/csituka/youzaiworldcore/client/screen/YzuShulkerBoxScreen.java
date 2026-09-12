@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.client.screen;
 
+import top.csituka.youzaiworldcore.client.render.YzuiTheme;
+
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.input.MouseButtonEvent;
@@ -29,13 +31,12 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
  * <h3>颜色跟随</h3>
  * 服务端 {@code ShulkerBoxBlockEntityNameMixin} 将潜影盒标题修正为方块名称
  * （{@code block.minecraft.<color>_shulker_box}），客户端据此解析 {@link DyeColor}，
- * 使<b>标题图标与主题色跟随潜影盒实际颜色</b>：
+ * 使<b>标题图标跟随潜影盒实际颜色，界面使用统一薄荷主题</b>：
  * <ul>
  * <li>图标：{@code Items.DYED_SHULKER_BOX.asList().get(dyeColor.ordinal())}
  *     （16 色物品，ColorCollection 顺序与 DyeColor.values() 一致）；未染色/自定义
  *     命名无法解析 → {@link Items#SHULKER_BOX}（默认紫色）；</li>
- * <li>主题色：由 {@code DyeColor.getTextColor()}（0xRRGGBB）派生——
- *     标题 100% 不透明、强调条 ~69% alpha、槽位底 ~31%/悬停 ~44% alpha；</li>
+ * <li>主题色：即时读取当前浅色或深色 MD3 语义色；</li>
  * <li>布局：顶部留白 5px、文字与图标顶部对齐、强调条 15..17、关闭按钮 14×14
  *     距格子 2px（与 YzuContainerScreen 同一套设计语言）。</li>
  * </ul>
@@ -51,14 +52,14 @@ public class YzuShulkerBoxScreen extends AbstractContainerScreen<ShulkerBoxMenu>
     // ========== YZUI 统一设计常量（与 YzuContainerScreen 一致） ==========
 
     /** 面板背景：半透明白 */
-    private static final int PANEL_BG = 0x80FFFFFF;
+    private static int panelBg() { return YzuiTheme.surface(); }
     private static final int PANEL_RADIUS = 6;
 
     private static final int SLOT_SIZE = 16;
     private static final int SLOT_RADIUS = 3; // r≤3 走矩形快速路径，等价实心矩形
 
     /** 玩家背包标题（深灰，白底可读，无阴影） */
-    private static final int LABEL_COLOR = 0xCC404040;
+    private static int labelColor() { return YzuiTheme.text(); }
 
     // ========== 关闭按钮 ==========
 
@@ -68,10 +69,10 @@ public class YzuShulkerBoxScreen extends AbstractContainerScreen<ShulkerBoxMenu>
     private static final int CLOSE_MARGIN = 6;
     /** 距面板上缘的间距（底部 ≤16，与容器格 y=18 保持 2px 间隙） */
     private static final int CLOSE_TOP = 2;
-    private static final int CLOSE_BG = 0x40FFFFFF;
-    private static final int CLOSE_BG_HOVER = 0x80FFFFFF;
-    private static final int CLOSE_ICON = 0xCC404040;
-    private static final int CLOSE_ICON_HOVER = 0xFF000000;
+    private static int closeBg() { return YzuiTheme.surface(); }
+    private static int closeBgHover() { return YzuiTheme.surfaceHigh(); }
+    private static int closeIcon() { return YzuiTheme.text(); }
+    private static int closeIconHover() { return YzuiTheme.text(); }
     private static final String CLOSE_GLYPH = "\u00d7"; // ×
 
     // ========== 标题区 ==========
@@ -85,16 +86,16 @@ public class YzuShulkerBoxScreen extends AbstractContainerScreen<ShulkerBoxMenu>
     /** 未染色/无法解析颜色时的默认染料（紫色潜影盒） */
     private static final DyeColor DEFAULT_DYE = DyeColor.PURPLE;
 
-    // ========== 实例主题（按潜影盒颜色派生） ==========
+    // ========== 主题色与潜影盒图标 ==========
 
     /** 标题文字色（100% 不透明） */
-    private final int titleColor;
+    private static int titleColor() { return YzuiTheme.primary(); }
     /** 槽位常态底色（~31% alpha） */
-    private final int slotColor;
+    private static int slotColor() { return YzuiTheme.slot(); }
     /** 槽位悬停底色（~44% alpha） */
-    private final int slotHoverColor;
+    private static int slotHoverColor() { return YzuiTheme.slotHover(); }
     /** 标题下方强调条色（~69% alpha） */
-    private final int accentBarColor;
+    private static int accentBarColor() { return YzuiTheme.primary(); }
     /** 标题区图标（跟随潜影盒颜色） */
     private final ItemStack icon;
 
@@ -106,10 +107,6 @@ public class YzuShulkerBoxScreen extends AbstractContainerScreen<ShulkerBoxMenu>
 
         DyeColor dye = resolveDyeColor(title);
         int base = (dye != null ? dye : DEFAULT_DYE).getTextColor() & 0xFFFFFF;
-        this.titleColor = 0xFF000000 | base;
-        this.accentBarColor = 0xB0000000 | base;
-        this.slotColor = 0x50000000 | base;
-        this.slotHoverColor = 0x70000000 | base;
         this.icon = dye != null
                 ? new ItemStack(Items.DYED_SHULKER_BOX.asList().get(dye.ordinal()))
                 : new ItemStack(Items.SHULKER_BOX);
@@ -165,7 +162,7 @@ public class YzuShulkerBoxScreen extends AbstractContainerScreen<ShulkerBoxMenu>
     @Override
     public void extractBackground(@NonNull GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY,
             float partialTick) {
-        // no-op — YZUI 面板在 extractRenderState 中绘制（与 YzuContainerScreen 一致）
+        // 背景由共用屏幕入口在内容变换之前绘制，避免重复模糊与叠加遮罩。
     }
 
     @Override
@@ -195,7 +192,7 @@ public class YzuShulkerBoxScreen extends AbstractContainerScreen<ShulkerBoxMenu>
 
     /** 面板背景：半透明白圆角矩形。 */
     private void drawMainPanel(GuiGraphicsExtractor g) {
-        fillR(g, this.leftPos, this.topPos, this.imageWidth, this.imageHeight, PANEL_RADIUS, PANEL_BG);
+        YzuiTheme.card(g, this.leftPos, this.topPos, this.imageWidth, this.imageHeight);
     }
 
     /**
@@ -210,7 +207,7 @@ public class YzuShulkerBoxScreen extends AbstractContainerScreen<ShulkerBoxMenu>
         int iy = this.topPos + 5;
 
         // 图标底衬 12×12（物品模型缩放 0.75 → 12×12 居中覆盖）
-        fillR(g, ix, iy, ICON_SIZE, ICON_SIZE, 3, slotColor);
+        fillR(g, ix, iy, ICON_SIZE, ICON_SIZE, 3, slotColor());
         if (!this.icon.isEmpty()) {
             g.pose().pushMatrix();
             g.pose().translate(ix, iy);
@@ -221,17 +218,17 @@ public class YzuShulkerBoxScreen extends AbstractContainerScreen<ShulkerBoxMenu>
 
         int tx = ix + ICON_SIZE + TITLE_ICON_GAP;
         int ty = this.topPos + 5; // 文字顶部（字形 5..14），与图标行顶部对齐
-        g.text(this.font, this.title, tx, ty, titleColor, false);
+        g.text(this.font, this.title, tx, ty, titleColor(), false);
 
         // 强调条：位于标题下方（字形底 14 + 1 → 15..17），不压容器格
         int titleWidth = Math.min(this.font.width(this.title), this.imageWidth - 8 - ICON_SIZE - TITLE_ICON_GAP - 8);
-        fillR(g, tx, ty + 10, titleWidth, 2, 1, accentBarColor);
+        fillR(g, tx, ty + 10, titleWidth, 2, 1, accentBarColor());
     }
 
     /** 玩家背包区域标签（沿用原版标签坐标 imageHeight-94，无阴影）。 */
     private void drawInventoryLabel(GuiGraphicsExtractor g) {
         g.text(this.font, this.playerInventoryTitle,
-                this.leftPos + 8, this.topPos + this.imageHeight - 94, LABEL_COLOR, false);
+                this.leftPos + 8, this.topPos + this.imageHeight - 94, labelColor(), false);
     }
 
     /** 关闭按钮：圆角矩形 + × 图标，悬停提亮。 */
@@ -239,10 +236,10 @@ public class YzuShulkerBoxScreen extends AbstractContainerScreen<ShulkerBoxMenu>
         int cx = this.leftPos + this.imageWidth - CLOSE_SIZE - CLOSE_MARGIN;
         int cy = this.topPos + CLOSE_TOP;
         boolean hovered = isOverCloseButton(mouseX, mouseY);
-        fillR(g, cx, cy, CLOSE_SIZE, CLOSE_SIZE, CLOSE_RADIUS, hovered ? CLOSE_BG_HOVER : CLOSE_BG);
+        fillR(g, cx, cy, CLOSE_SIZE, CLOSE_SIZE, CLOSE_RADIUS, hovered ? closeBgHover() : closeBg());
         int tx = cx + (CLOSE_SIZE - this.font.width(CLOSE_GLYPH)) / 2;
         int ty = cy + (CLOSE_SIZE - this.font.lineHeight) / 2;
-        g.text(this.font, CLOSE_GLYPH, tx, ty, hovered ? CLOSE_ICON_HOVER : CLOSE_ICON, false);
+        g.text(this.font, CLOSE_GLYPH, tx, ty, hovered ? closeIconHover() : closeIcon(), false);
     }
 
     /** 槽位背景：每个活动槽绘制主题色圆角矩形，悬浮提亮。 */
@@ -253,7 +250,7 @@ public class YzuShulkerBoxScreen extends AbstractContainerScreen<ShulkerBoxMenu>
             boolean hovered = mouseX >= this.leftPos + slot.x && mouseX < this.leftPos + slot.x + SLOT_SIZE
                     && mouseY >= this.topPos + slot.y && mouseY < this.topPos + slot.y + SLOT_SIZE;
             fillR(g, slot.x, slot.y, SLOT_SIZE, SLOT_SIZE, SLOT_RADIUS,
-                    hovered ? slotHoverColor : slotColor);
+                    hovered ? slotHoverColor() : slotColor());
         }
     }
 

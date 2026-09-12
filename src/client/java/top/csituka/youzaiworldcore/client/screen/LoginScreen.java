@@ -1,5 +1,8 @@
 package top.csituka.youzaiworldcore.client.screen;
 
+import top.csituka.youzaiworldcore.client.render.YzuiTheme;
+import top.csituka.youzaiworldcore.client.screen.widget.WidgetFocus;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -25,6 +28,8 @@ import java.util.List;
  */
 @SuppressWarnings("null")
 public class LoginScreen extends Screen {
+    private static final int CARD_WIDTH = 400;
+    private static final int CARD_HEIGHT = 288;
 
     private static final int CONTAINER_WIDTH = 280;
     private static final int CONTAINER_HEIGHT = 200;
@@ -56,6 +61,8 @@ public class LoginScreen extends Screen {
     @Override
     protected void init() {
         super.init();
+        String savedPassword = passwordField == null ? "" : passwordField.getValue();
+
 
         int centerX = this.width / 2;
         int containerTop = (this.height - CONTAINER_HEIGHT) / 2;
@@ -68,7 +75,7 @@ public class LoginScreen extends Screen {
         this.usernameField.setValue(this.playerName);
         this.usernameField.setEditable(false);
         this.usernameField.setCanLoseFocus(false);
-        this.usernameField.setTextColor(0xAAAAAA);
+        this.usernameField.setTextColor(YzuiTheme.textMuted());
 
         // 密码输入框
         this.passwordField = new EditBox(this.font, fieldX, containerTop + 55 + ROW_SPACING, FIELD_WIDTH, FIELD_HEIGHT,
@@ -101,7 +108,7 @@ public class LoginScreen extends Screen {
                 Component.translatable("screen.youzaiworldcore.login.button_forgot_password"),
                 this::onForgotPasswordClick
         );
-        this.forgotPasswordButton.setTextColor(0xFFCCCCCC);
+        this.forgotPasswordButton.setTextColor(YzuiTheme.textMuted());
 
         // 收集所有 widget
         this.allWidgets.clear();
@@ -112,69 +119,38 @@ public class LoginScreen extends Screen {
         this.allWidgets.add(this.forgotPasswordButton);
 
         // 默认聚焦密码框
+        passwordField.setValue(savedPassword);
+        arrangeForm();
+        if (currentDialog != null) currentDialog.init(width, height);
         this.passwordField.setFocused(true);
     }
 
     @Override
-    public void extractRenderState(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
-        // 绘制全屏半透明背景
-        guiGraphics.fill(0, 0, this.width, this.height, 0x80000000);
+    public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
+        int cardWidth = Math.min(CARD_WIDTH, width - 40);
+        int x = (width - cardWidth) / 2, y = (height - CARD_HEIGHT) / 2;
+        YzuiTheme.card(g, x, y, cardWidth, CARD_HEIGHT);
+        YzuiTheme.label(g, font, title, x + 24, y + 20, cardWidth - 48, YzuiTheme.text(), false);
+        YzuiTheme.wrapped(g, font, Component.translatable("screen.youzaiworldcore.login.subtitle"), x + 24, y + 42, cardWidth - 48, 2, YzuiTheme.textMuted());
 
-        int centerX = this.width / 2;
-        int containerTop = (this.height - CONTAINER_HEIGHT) / 2;
-        int leftColX = centerX - CONTAINER_WIDTH / 2 + 10;
-
-        // 绘制标题
-        String titleText = Component.translatable("screen.youzaiworldcore.login.title").getString();
-        float titleScale = 1.3f;
-        int titleWidth = (int) (this.font.width(titleText) * titleScale);
-        int titleX = (centerX - titleWidth / 2);
-        guiGraphics.pose().pushMatrix();
-        guiGraphics.pose().scale(titleScale, titleScale);
-        guiGraphics.text(this.font, titleText,
-                (int) (titleX / titleScale),
-                (int) ((containerTop + 10) / titleScale),
-                0xFFFFFFFF, false);
-        guiGraphics.pose().popMatrix();
-
-        // 绘制副标题
-        String subtitleText = Component.translatable("screen.youzaiworldcore.login.subtitle").getString();
-        int subtitleWidth = this.font.width(subtitleText);
-        guiGraphics.text(this.font, subtitleText,
-                centerX - subtitleWidth / 2,
-                containerTop + 35,
-                0xFFCCCCCC, false);
-
-        // 绘制标签
-        drawLabel(guiGraphics, this.font,
-                Component.translatable("screen.youzaiworldcore.login.label_username").getString(),
-                leftColX, containerTop + 58);
-        drawLabel(guiGraphics, this.font,
-                Component.translatable("screen.youzaiworldcore.login.label_password").getString(),
-                leftColX, containerTop + 58 + ROW_SPACING);
-
-        // 手动渲染所有 widget
-        for (AbstractWidget widget : this.allWidgets) {
-            if (widget instanceof EditBox editBox) {
-                editBox.extractWidgetRenderState(guiGraphics, mouseX, mouseY, partialTick);
-            } else if (widget instanceof TransparentButton button) {
-                button.render(guiGraphics, mouseX, mouseY, partialTick);
+        for (AbstractWidget widget : allWidgets) {
+            if (widget instanceof EditBox input) {
+                YzuiTheme.label(g, font, input.getMessage(), input.getX(), input.getY() - 12,
+                        input.getWidth(), YzuiTheme.textMuted(), false);
             }
+            widget.extractRenderState(g, mouseX, mouseY, partialTick);
         }
-
-        // 渲染弹窗
         if (currentDialog != null && currentDialog.isVisible()) {
-            currentDialog.render(guiGraphics, this.width, this.height);
-            currentDialog.renderButtons(guiGraphics, mouseX, mouseY, partialTick);
-        } else if (currentDialog != null && !currentDialog.isVisible()) {
-            currentDialog = null;
-        }
+            currentDialog.render(g, width, height);
+            currentDialog.renderButtons(g, mouseX, mouseY, partialTick);
+        } else if (currentDialog != null) currentDialog = null;
     }
 
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean isActuallyClick) {
+        if (currentDialog == null || !currentDialog.isVisible()) WidgetFocus.mouseFocus(event.x(), event.y(), List.of(passwordField, loginButton, disconnectButton, forgotPasswordButton));
         // 弹窗优先
-        if (currentDialog != null && currentDialog.isFullyVisible()) {
+        if (currentDialog != null && currentDialog.isVisible()) {
             return currentDialog.mouseClicked(event.x(), event.y());
         }
 
@@ -213,7 +189,10 @@ public class LoginScreen extends Screen {
 
     @Override
     public boolean keyPressed(KeyEvent keyEvent) {
-        if (currentDialog != null && currentDialog.isFullyVisible()) {
+        if (currentDialog != null && currentDialog.isVisible()) return currentDialog.keyPressed(keyEvent);
+        if (currentDialog != null && currentDialog.isVisible()) return true;
+        if (WidgetFocus.keyPressed(keyEvent, List.of(passwordField, loginButton, disconnectButton, forgotPasswordButton))) return true;
+        if (currentDialog != null && currentDialog.isVisible()) {
             return true;
         }
 
@@ -236,6 +215,7 @@ public class LoginScreen extends Screen {
 
     @Override
     public boolean charTyped(CharacterEvent charEvent) {
+        if (currentDialog != null && currentDialog.isVisible()) return true;
         if (this.passwordField.isFocused() && this.passwordField.charTyped(charEvent)) return true;
         return false;
     }
@@ -316,7 +296,7 @@ public class LoginScreen extends Screen {
 
     private void drawLabel(GuiGraphicsExtractor guiGraphics, Font font, String text, int x, int y) {
         int labelY = y + (FIELD_HEIGHT - font.lineHeight) / 2;
-        guiGraphics.text(font, text, x, labelY, 0xFFFFFFFF, false);
+        guiGraphics.text(font, text, x, labelY, YzuiTheme.text(), false);
     }
 
     private boolean isMouseOverButton(TransparentButton button, double mx, double my) {
@@ -327,5 +307,24 @@ public class LoginScreen extends Screen {
     private boolean isMouseOverEditBox(EditBox box, double mx, double my) {
         return mx >= box.getX() && mx < box.getX() + box.getWidth()
                 && my >= box.getY() && my < box.getY() + box.getHeight();
+    }
+
+    private void arrangeForm() {
+        int cardWidth = Math.min(CARD_WIDTH, width - 40);
+        int x = (width - cardWidth) / 2 + 24, y = (height - CARD_HEIGHT) / 2;
+        int w = cardWidth - 48;
+        usernameField.setRectangle(w, 24, x, y + 84);
+        passwordField.setRectangle(w, 24, x, y + 132);
+        loginButton.setRectangle((w - 12) / 2, 28, x, y + 188);
+        disconnectButton.setRectangle((w - 12) / 2, 28, x + (w + 12) / 2, y + 188);
+        forgotPasswordButton.setRectangle(w, 24, x, y + 228);
+        loginButton.setStyle(YzuiTheme.ButtonStyle.FILLED);
+        forgotPasswordButton.setStyle(YzuiTheme.ButtonStyle.TEXT);
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+        if (currentDialog != null && currentDialog.isVisible()) return currentDialog.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
+        return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
     }
 }

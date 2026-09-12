@@ -3,6 +3,8 @@ package top.csituka.youzaiworldcore.client.pickup.display;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import top.csituka.youzaiworldcore.client.animation.GuiAnimationController;
+import top.csituka.youzaiworldcore.client.render.YzuiTheme;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -92,8 +94,8 @@ public class ExperienceDisplayEntry extends DisplayEntry<Void> {
     @Override
     protected void renderSprite(GuiGraphicsExtractor graphics, int x, int y, int alpha) {
         int argb = (alpha << 24) | 0xFFFFFF;
-        if (popTime > 0) {
-            float popScale = 1.0f + popTime / 5.0f * 0.3f;
+        if (GuiAnimationController.isEnabled() && popTime > 0) {
+            float popScale = 1.0f + popTime / 5.0f * (YzuiTheme.frosted() ? 0.3f : 0.08f);
             graphics.pose().pushMatrix();
             graphics.pose().translate(x + ICON_SIZE / 2.0f, y + ICON_SIZE / 2.0f);
             graphics.pose().scale(popScale, popScale);

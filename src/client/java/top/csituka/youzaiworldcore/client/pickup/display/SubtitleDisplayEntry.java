@@ -3,6 +3,7 @@ package top.csituka.youzaiworldcore.client.pickup.display;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import top.csituka.youzaiworldcore.client.render.YzuiTheme;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import top.csituka.youzaiworldcore.client.pickup.SubtitleCaptureHandler;
@@ -93,11 +94,12 @@ public class SubtitleDisplayEntry extends DisplayEntry<Void> {
 
     @Override
     public void render(GuiGraphicsExtractor graphics, int x, int y, int alpha) {
-        // 字幕无图标，直接渲染文字（无偏移）
+        // 字幕与拾取通知共用主题卡片，保留方向标记。
+        YzuiTheme.hudCard(graphics, x, y, getWidth(), ELEMENT_HEIGHT - 1, alpha / 255f);
         int textX = x + 4;
         int textY = y + (ELEMENT_HEIGHT - Minecraft.getInstance().font.lineHeight) / 2;
-        graphics.text(Minecraft.getInstance().font, displayComponent, textX, textY,
-                0xFFFFFF | (alpha << 24), false);
+        YzuiTheme.hudLabel(graphics, Minecraft.getInstance().font, displayComponent.getVisualOrderText(),
+                textX, textY, YzuiTheme.text(), alpha / 255f);
     }
 
     @Override

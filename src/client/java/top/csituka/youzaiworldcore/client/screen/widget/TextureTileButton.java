@@ -1,121 +1,49 @@
 package top.csituka.youzaiworldcore.client.screen.widget;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.gui.components.AbstractWidget;
-import net.minecraft.client.gui.narration.NarrationElementOutput;
-import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
-import net.minecraft.client.renderer.RenderPipelines;
+import top.csituka.youzaiworldcore.client.animation.YzuiHover;
+import top.csituka.youzaiworldcore.client.render.RoundedRect;
+import top.csituka.youzaiworldcore.client.render.YzuiTheme;
 
-/**
- * A textured button with rounded corners and fade animation support.
- *
- * Fade technique: Use blitSprite(float) to render the texture with actual alpha
- * transparency, so the image genuinely fades in/out together with the menu.
- */
-@SuppressWarnings("null")
-public class TextureTileButton extends AbstractWidget {
-
-    private static final int CORNER_RADIUS = 6;
-
+/** 整图导航按钮：图片覆盖全部按钮，名称仅用于悬停提示和无障碍朗读。 */
+public class TextureTileButton extends TransparentButton {
     private final Identifier texture;
-    private final Runnable onPress;
-    private float externalAlpha = 1f;
+    private final YzuiHover hoverState = new YzuiHover();
 
     public TextureTileButton(int x, int y, int width, int height, Identifier texture, Runnable onPress) {
-        super(x, y, width, height, Component.empty());
+        super(x, y, width, height, label(texture), onPress);
         this.texture = texture;
-        this.onPress = onPress;
-    }
-
-    public void setExternalAlpha(float alpha) {
-        this.externalAlpha = alpha;
+        setTooltip(Tooltip.create(getMessage()));
     }
 
     @Override
-    protected void extractWidgetRenderState(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
-        float vis = Math.min(1f, Math.max(0f, externalAlpha * getAlpha()));
-        if (vis < 0.001f) return;
-
-        int x = this.getX();
-        int y = this.getY();
-        int w = this.width;
-        int h = this.height;
-        int r = CORNER_RADIUS;
-
-        // Draw textured background with actual alpha transparency,
-        // so the image genuinely fades in/out with the menu
-        // 11-param blit: last arg is ARGB color (-1 = fully opaque, alpha controls fade)
-        int visArgb = ((int) (vis * 255) << 24) | 0xFFFFFF;
-        guiGraphics.blit(RenderPipelines.GUI_TEXTURED, texture,
-                x, y, 0, 0,
-                w, h, w, h, visArgb);
-
-        // Clip corners — scale clipping alpha with vis so corners fade too
-        int clipAlpha = (int) (0.45f * vis * 255);
-        if (clipAlpha > 0) {
-            int clipColor = (clipAlpha << 24);
-            for (int i = 0; i < r; i++) {
-                for (int j = 0; j < r; j++) {
-                    int dx = r - 1 - i;
-                    int dy = r - 1 - j;
-                    if (dx * dx + dy * dy >= r * r) {
-                        guiGraphics.fill(x + i, y + j, x + i + 1, y + j + 1, clipColor);
-                        guiGraphics.fill(x + w - 1 - i, y + j, x + w - i, y + j + 1, clipColor);
-                        guiGraphics.fill(x + i, y + h - 1 - j, x + i + 1, y + h - j, clipColor);
-                        guiGraphics.fill(x + w - 1 - i, y + h - 1 - j, x + w - i, y + h - j, clipColor);
-                    }
-                }
-            }
+    protected void extractWidgetRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
+        if (!visible) return;
+        int x = getX(), y = getY(), w = getWidth(), h = getHeight();
+        isHovered = mouseX >= x && mouseX < x + w && mouseY >= y && mouseY < y + h;
+        float hover = hoverState.sample(active && isHovered);
+        float opacity = externalAlpha() * getAlpha() * (active ? 1f : 0.45f);
+        int radius = Math.min(12, h / 4);
+        var image = Minecraft.getInstance().getTextureManager().getTexture(texture).getTexture();
+        RoundedRect.texture(g, texture, x, y, w, h, radius, image.getWidth(0), image.getHeight(0),
+                YzuiTheme.alpha(0xFFFFFFFF, opacity));
+        if (active && (hover > 0f || isFocused())) {
+            RoundedRect.fill(g, x, y, w, h, radius,
+                    YzuiTheme.alpha(0xFFFFFFFF, opacity * (0.08f * hover + (isFocused() ? 0.04f : 0f))));
         }
-
-        // Hover highlight
-        if (this.isHovered()) {
-            int hlA = (int) (0.15f * vis * 255);
-            int hlC = (hlA << 24) | 0xFFFFFF;
-            for (int row = 0; row < h; row++) {
-                for (int col = 0; col < w; col++) {
-                    // Check if pixel is inside the rounded rect
-                    boolean inside = true;
-                    if (col < r && row < r) {
-                        int dx = r - 1 - col;
-                        int dy = r - 1 - row;
-                        inside = dx * dx + dy * dy < r * r;
-                    } else if (col < r && row >= h - r) {
-                        int dx = r - 1 - col;
-                        int dy = h - 1 - row;
-                        inside = dx * dx + dy * dy < r * r;
-                    } else if (col >= w - r && row < r) {
-                        int dx = w - 1 - col;
-                        int dy = r - 1 - row;
-                        inside = dx * dx + dy * dy < r * r;
-                    } else if (col >= w - r && row >= h - r) {
-                        int dx = w - 1 - col;
-                        int dy = h - 1 - row;
-                        inside = dx * dx + dy * dy < r * r;
-                    }
-                    if (inside) {
-                        guiGraphics.fill(x + col, y + row, x + col + 1, y + row + 1, hlC);
-                    }
-                }
-            }
-        }
+        YzuiTheme.border(g, x, y, w, h, radius,
+                YzuiTheme.alpha(isFocused() ? YzuiTheme.primary() : YzuiTheme.outlineVariant(),
+                        opacity * (isFocused() ? 1f : 0.35f + hover * 0.25f)));
     }
 
-    public void render(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
-        this.extractWidgetRenderState(guiGraphics, mouseX, mouseY, partialTick);
-    }
 
-    @Override
-    public void onClick(MouseButtonEvent event, boolean isActuallyClick) {
-        if (this.onPress != null) {
-            this.onPress.run();
-        }
-    }
-
-    @Override
-    protected void updateWidgetNarration(NarrationElementOutput narrationElementOutput) {
-        this.defaultButtonNarrationText(narrationElementOutput);
+    private static Component label(Identifier texture) {
+        String path = texture.getPath();
+        String name = path.substring(path.lastIndexOf('/') + 1).replace(".png", "").replace('-', '_');
+        return Component.translatable("screen.youzaiworldcore.navigation." + name);
     }
 }

@@ -55,6 +55,8 @@ public final class ClientExternalSettings {
     private static final boolean DEFAULT_AUTO_SKIP_EXPERIMENTAL_WARNING = false;
     private static final String DEFAULT_EXPERIMENTAL_WARNING_SKIP_ACTION = "skip";
     private static final GuiAnimationMode DEFAULT_GUI_ANIMATION_MODE = GuiAnimationMode.FULL;
+    private static final YzuiThemeMode DEFAULT_YZUI_THEME = YzuiThemeMode.LIGHT;
+    private static final YzuiVisualStyle DEFAULT_YZUI_VISUAL_STYLE = YzuiVisualStyle.STANDARD;
 
     // ===== 运行时状态 =====
     private static boolean devModeEnabled = DEFAULT_DEV_MODE_ENABLED;
@@ -88,6 +90,8 @@ public final class ClientExternalSettings {
 
     /** 界面动画作用范围，默认完整动画。 */
     private static GuiAnimationMode guiAnimationMode = DEFAULT_GUI_ANIMATION_MODE;
+    private static YzuiThemeMode yzuiTheme = DEFAULT_YZUI_THEME;
+    private static YzuiVisualStyle yzuiVisualStyle = DEFAULT_YZUI_VISUAL_STYLE;
 
     private ClientExternalSettings() {
     }
@@ -175,6 +179,33 @@ public final class ClientExternalSettings {
     /** @return 界面动画作用范围 */
     public static GuiAnimationMode getGuiAnimationMode() {
         return guiAnimationMode;
+    }
+
+    /** 当前明暗主题；与原有 YZUI 开关、字体和 HUD 布局分别保存。 */
+    public static YzuiThemeMode getYzuiTheme() {
+        return yzuiTheme;
+    }
+
+    /** 当前视觉效果预设。 */
+    public static YzuiVisualStyle getYzuiVisualStyle() {
+        return yzuiVisualStyle;
+    }
+
+    /** 即时切换明暗主题并保存到客户端 core_module.yzui_theme。 */
+    public static void setYzuiTheme(YzuiThemeMode value) {
+        java.util.Objects.requireNonNull(value, "YZUI 主题");
+        DebugLogger.stateChange(MODULE, "yzui", "theme", yzuiTheme, value);
+        yzuiTheme = value;
+        save();
+    }
+
+    /** 即时切换效果，并完成可能正在等待的页面退出动画。 */
+    public static void setYzuiVisualStyle(YzuiVisualStyle value) {
+        java.util.Objects.requireNonNull(value, "YZUI 视觉效果");
+        DebugLogger.stateChange(MODULE, "yzui", "visual_style", yzuiVisualStyle, value);
+        yzuiVisualStyle = value;
+        GuiAnimationController.onModeChanged(GuiAnimationController.getMode());
+        save();
     }
 
     /** 设置被忽略的更新版本号（空值将忽略为 ""）并持久化 */
@@ -331,6 +362,8 @@ public final class ClientExternalSettings {
         autoSkipExperimentalWarning = section.getBoolean("auto_skip_experimental_warning", autoSkipExperimentalWarning);
         guiAnimationMode = section.getEnum("gui_animation_mode", DEFAULT_GUI_ANIMATION_MODE,
                 GuiAnimationMode.class);
+        yzuiTheme = section.getEnum("yzui_theme", DEFAULT_YZUI_THEME, YzuiThemeMode.class);
+        yzuiVisualStyle = section.getEnum("yzui_visual_style", DEFAULT_YZUI_VISUAL_STYLE, YzuiVisualStyle.class);
 
         String action = section.getString("experimental_warning_skip_action", experimentalWarningSkipAction);
         if (!"skip".equals(action) && !"backup".equals(action)) {
@@ -361,6 +394,8 @@ public final class ClientExternalSettings {
         autoSkipExperimentalWarning = DEFAULT_AUTO_SKIP_EXPERIMENTAL_WARNING;
         experimentalWarningSkipAction = DEFAULT_EXPERIMENTAL_WARNING_SKIP_ACTION;
         guiAnimationMode = DEFAULT_GUI_ANIMATION_MODE;
+        yzuiTheme = DEFAULT_YZUI_THEME;
+        yzuiVisualStyle = DEFAULT_YZUI_VISUAL_STYLE;
         save();
         syncRuntimeFlags();
     }
@@ -382,6 +417,8 @@ public final class ClientExternalSettings {
         section.set("auto_skip_experimental_warning", autoSkipExperimentalWarning);
         section.set("experimental_warning_skip_action", experimentalWarningSkipAction);
         section.set("gui_animation_mode", guiAnimationMode.name());
+        section.set("yzui_theme", yzuiTheme.name());
+        section.set("yzui_visual_style", yzuiVisualStyle.name());
         ClientGlobalSettings.save();
     }
 

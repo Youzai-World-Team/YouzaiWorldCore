@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.client.hud;
 
+import top.csituka.youzaiworldcore.client.render.YzuiTheme;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -70,10 +72,10 @@ public final class StatusEffectHudRenderer {
     private static final int MAX_VISIBLE_EFFECTS = MAX_ROWS * MAX_COLUMNS;
 
     // ===== 颜色与闪烁 =====
-    private static final int PANEL_BG = 0x80FFFFFF;
-    private static final int ROW_BG = 0x40FFFFFF;
-    private static final int COLOR_PRIMARY = 0xFFFFFFFF;
-    private static final int COLOR_SECONDARY = 0xFFD0D0D0;
+    private static int panelBg() { return YzuiTheme.hudSurface(); }
+    private static int rowBg() { return YzuiTheme.hudRow(); }
+    private static int colorPrimary() { return YzuiTheme.text(); }
+    private static int colorSecondary() { return YzuiTheme.textMuted(); }
     private static final int FLASH_THRESHOLD_TICKS = 10 * 20;
     private static final long FLASH_INTERVAL_MILLIS = 250L;
     private static final float FLASH_DIM_ALPHA = 0.35f;
@@ -254,7 +256,7 @@ public final class StatusEffectHudRenderer {
         }
         int panelHeight = Math.max(1, panelBottom - panelTop);
         RoundedRect.fillOrSquare(graphics, panelX, panelTop, panelWidth, panelHeight,
-                BASE_PANEL_RADIUS, YzHudLayout.applyOpacity(PANEL_BG));
+                BASE_PANEL_RADIUS, YzHudLayout.applyOpacity(panelBg()));
 
         for (StatusEffectHudAnimationState state : renderStates) {
             drawAnimatedEffect(graphics, font, client, state,
@@ -425,7 +427,7 @@ public final class StatusEffectHudRenderer {
         float alpha = flashAlpha(instance, nowMillis) * animationAlpha
                 * YzHudSettings.getOpacity();
         graphics.fill(cellX, cellY, cellX + cellWidth, cellY + cellHeight,
-                ARGB.multiplyAlpha(ROW_BG, alpha));
+                ARGB.multiplyAlpha(rowBg(), alpha));
 
         int iconX = cellX + Math.max(0, (cellWidth - iconSize) / 2);
         int iconY = cellY + Math.max(0, (cellHeight - iconSize) / 2);
@@ -439,8 +441,7 @@ public final class StatusEffectHudRenderer {
         int durationX = Math.max(cellX + 1,
                 iconX + iconSize - font.width(clippedDuration));
         int durationY = iconY + iconSize - font.lineHeight + 1;
-        graphics.text(font, clippedDuration, durationX, durationY,
-                ARGB.multiplyAlpha(COLOR_PRIMARY, alpha), true);
+        YzuiTheme.hudLabel(graphics, font, clippedDuration, durationX, durationY, colorPrimary(), alpha);
     }
 
     private static void drawEffectRow(GuiGraphicsExtractor graphics, Font font,
@@ -450,7 +451,7 @@ public final class StatusEffectHudRenderer {
         float alpha = flashAlpha(instance, nowMillis) * animationAlpha
                 * YzHudSettings.getOpacity();
         graphics.fill(rowX, rowY, rowX + rowWidth, rowY + rowHeight,
-                ARGB.multiplyAlpha(ROW_BG, alpha));
+                ARGB.multiplyAlpha(rowBg(), alpha));
 
         int iconX = rowX + Math.max(0, (rowHeight - iconSize) / 2);
         int iconY = rowY + Math.max(0, (rowHeight - iconSize) / 2);
@@ -471,12 +472,11 @@ public final class StatusEffectHudRenderer {
                 .append(romanLevel);
         FormattedCharSequence clippedName = clipWithoutEllipsis(
                 nameAndLevel, font, textWidth);
-        graphics.text(font, clippedName, textX, textBlockY,
-                ARGB.multiplyAlpha(COLOR_PRIMARY, alpha), true);
+        YzuiTheme.hudLabel(graphics, font, clippedName, textX, textBlockY, colorPrimary(), alpha);
 
         Component duration = formatDuration(client, instance);
-        graphics.text(font, duration, textX, textBlockY + font.lineHeight,
-                ARGB.multiplyAlpha(COLOR_SECONDARY, alpha), true);
+        YzuiTheme.hudLabel(graphics, font, duration.getVisualOrderText(), textX, textBlockY + font.lineHeight,
+                colorSecondary(), alpha);
     }
 
     private static Component formatDuration(Minecraft client, MobEffectInstance instance) {

@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.client.hud;
 
+import top.csituka.youzaiworldcore.client.render.YzuiTheme;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -17,6 +19,7 @@ import net.minecraft.world.scores.Scoreboard;
 import top.csituka.youzaiworldcore.client.render.RoundedRect;
 import top.csituka.youzaiworldcore.client.config.ClientExternalSettings;
 import top.csituka.youzaiworldcore.client.config.YzHudComponent;
+import top.csituka.youzaiworldcore.client.config.YzHudSettings;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
 import java.util.ArrayList;
@@ -50,13 +53,13 @@ public final class ScoreboardSidebarRenderer {
     private static final int ROW_TEXT_INSET = 3;
     private static final int COLUMN_GAP = 5;
 
-    private static final int PANEL_BACKGROUND = 0x80FFFFFF;
-    private static final int PANEL_SHADOW = 0x30000000;
-    private static final int HEADER_BACKGROUND = 0x58FFFFFF;
-    private static final int ROW_BACKGROUND = 0x32FFFFFF;
-    private static final int ROW_BACKGROUND_ALT = 0x22FFFFFF;
-    private static final int DIVIDER_COLOR = 0x68FFFFFF;
-    private static final int TEXT_COLOR = 0xFFFFFFFF;
+    private static int panelBackground() { return YzuiTheme.hudSurface(); }
+    private static int panelShadow() { return YzuiTheme.minimal() ? 0 : 0x0C000000; }
+    private static int headerBackground() { return YzuiTheme.hudRow(); }
+    private static int rowBackground() { return YzuiTheme.hudRow(); }
+    private static int rowBackgroundAlt() { return YzuiTheme.hudSlot(); }
+    private static int dividerColor() { return YzuiTheme.alpha(YzuiTheme.outlineVariant(), 0.35f); }
+    private static int textColor() { return YzuiTheme.text(); }
 
     private static String lastObjectiveName;
     private static int lastEntryCount = -1;
@@ -141,12 +144,12 @@ public final class ScoreboardSidebarRenderer {
                 ? Math.max(1, rowTextWidth - COLUMN_GAP - scoreColumnWidth)
                 : rowTextWidth;
 
-        RoundedRect.fillOrSquare(graphics, panelX + 1, panelTop + 2,
+        if (!YzuiTheme.minimal()) RoundedRect.fillOrSquare(graphics, panelX + 1, panelTop + 2,
                 panelWidth, panelHeight, PANEL_RADIUS,
-                YzHudLayout.applyOpacity(PANEL_SHADOW));
+                YzHudLayout.applyOpacity(panelShadow()));
         RoundedRect.fillOrSquare(graphics, panelX, panelTop,
                 panelWidth, panelHeight, PANEL_RADIUS,
-                YzHudLayout.applyOpacity(PANEL_BACKGROUND));
+                YzHudLayout.applyOpacity(panelBackground()));
 
         int headerX = panelX + 2;
         int headerY = panelTop + 2;
@@ -154,39 +157,38 @@ public final class ScoreboardSidebarRenderer {
         int headerInnerHeight = Math.max(1, headerHeight - 1);
         RoundedRect.fillOrSquare(graphics, headerX, headerY,
                 headerWidth, headerInnerHeight, HEADER_RADIUS,
-                YzHudLayout.applyOpacity(HEADER_BACKGROUND));
+                YzHudLayout.applyOpacity(headerBackground()));
 
         FormattedCharSequence clippedTitle = clip(objective.getDisplayName(), font, contentWidth);
         int titleX = panelX + (panelWidth - font.width(clippedTitle)) / 2;
         int titleY = headerY + Math.max(0, (headerInnerHeight - font.lineHeight) / 2);
-        graphics.text(font, clippedTitle, titleX, titleY,
-                YzHudLayout.applyOpacity(TEXT_COLOR), true);
+        YzuiTheme.hudLabel(graphics, font, clippedTitle, titleX, titleY, textColor(), YzHudSettings.getOpacity());
 
         int dividerY = panelTop + PANEL_PADDING_Y + headerHeight + HEADER_GAP / 2;
         graphics.fill(panelX + PANEL_PADDING_X, dividerY,
                 panelX + panelWidth - PANEL_PADDING_X, dividerY + 1,
-                YzHudLayout.applyOpacity(DIVIDER_COLOR));
+                YzHudLayout.applyOpacity(dividerColor()));
 
         int rowX = panelX + PANEL_PADDING_X;
         int rowWidth = Math.max(1, panelWidth - PANEL_PADDING_X * 2);
         int rowStartY = panelTop + PANEL_PADDING_Y + headerHeight + HEADER_GAP;
-        int textColor = YzHudLayout.applyOpacity(TEXT_COLOR);
+        int textColor = textColor();
 
         for (int index = 0; index < entries.size(); index++) {
             DisplayEntry entry = entries.get(index);
             int rowY = rowStartY + index * rowHeight;
-            int rowColor = (index & 1) == 0 ? ROW_BACKGROUND : ROW_BACKGROUND_ALT;
+            int rowColor = (index & 1) == 0 ? rowBackground() : rowBackgroundAlt();
             RoundedRect.fillOrSquare(graphics, rowX, rowY, rowWidth, rowHeight,
                     ROW_RADIUS, YzHudLayout.applyOpacity(rowColor));
 
             int textY = rowY + Math.max(0, (rowHeight - font.lineHeight) / 2);
             FormattedCharSequence name = clip(entry.name(), font, nameColumnWidth);
-            graphics.text(font, name, rowX + ROW_TEXT_INSET, textY, textColor, true);
+            YzuiTheme.hudLabel(graphics, font, name, rowX + ROW_TEXT_INSET, textY, textColor, YzHudSettings.getOpacity());
 
             if (scoreColumnWidth > 0 && !entry.score().getString().isEmpty()) {
                 FormattedCharSequence score = clip(entry.score(), font, scoreColumnWidth);
                 int scoreX = rowX + rowWidth - ROW_TEXT_INSET - font.width(score);
-                graphics.text(font, score, scoreX, textY, textColor, true);
+                YzuiTheme.hudLabel(graphics, font, score, scoreX, textY, textColor, YzHudSettings.getOpacity());
             }
         }
 
@@ -218,8 +220,8 @@ public final class ScoreboardSidebarRenderer {
 
     /** 按最大宽度截断文字并保留原有队伍颜色、前缀与数字格式。 */
     private static FormattedCharSequence clip(FormattedText text, Font font, int maxWidth) {
-        return Language.getInstance().getVisualOrder(
-                font.substrByWidth(text, Math.max(0, maxWidth)));
+        return YzuiTheme.readableText(Language.getInstance().getVisualOrder(
+                font.substrByWidth(text, Math.max(0, maxWidth))), textColor(), YzuiTheme.palette().surfaceHigh());
     }
 
     private record DisplayEntry(Component name, Component score) {

@@ -2,119 +2,26 @@ package top.csituka.youzaiworldcore.client.screen.widget;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.gui.components.AbstractWidget;
-import net.minecraft.client.gui.narration.NarrationElementOutput;
-import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
-import net.minecraft.util.Mth;
-import top.csituka.youzaiworldcore.client.animation.GuiAnimationController;
+import top.csituka.youzaiworldcore.client.render.YzuiTheme;
 
-/**
- * 无背景文字按钮，鼠标悬浮时文字向右平滑滑动，下方从左往右延伸出一条横线。
- */
-@SuppressWarnings("null")
-public class TitleScreenTextButton extends AbstractWidget {
-
-    private static final int TEXT_COLOR = 0xFFE0E0E0;
-    private static final int TEXT_COLOR_HOVER = 0xFFFFFFFF;
-    private static final int UNDERLINE_COLOR = 0xFF88FF88;
-    private static final float ANIM_SPEED = 0.25f;
-    /** 悬浮时文字向右偏移的像素 */
-    private static final int HOVER_SHIFT = 6;
-
-    /** 外部淡入透明度（0~1），由父级（TitleScreen）控制 */
-    private float renderAlpha = 1.0f;
-
-    /** 是否处于选中状态（选中时保持悬浮态外观：高亮文字 + 显示下划线） */
-    private boolean selected = false;
-
-    private final Runnable onPress;
-    private float underlineProgress = 0f; // 0.0 ~ 1.0
-    private float shiftProgress = 0f;     // 0.0 ~ 1.0，向右滑动的动画进度
+/** 侧栏导航项，选中态使用填充胶囊；原版标题页保留原有按钮位置。 */
+public class TitleScreenTextButton extends TransparentButton {
+    private boolean selected;
 
     public TitleScreenTextButton(int x, int y, int width, int height, Component message, Runnable onPress) {
-        super(x, y, width, height, message);
-        this.onPress = onPress;
+        super(x, y, width, height, message, onPress);
+        setTextLeftAligned(true);
     }
 
-    /**
-     * 设置外部淡入透明度，由父级屏幕在每一帧调用。
-     *
-     * @param alpha 0.0（完全透明）~ 1.0（完全不透明）
-     */
-    public void setRenderAlpha(float alpha) {
-        this.renderAlpha = Mth.clamp(alpha, 0.0f, 1.0f);
-    }
-
-    /**
-     * 设置选中状态。选中时保持悬浮态外观（高亮文字 + 显示下划线），
-     * 用于设置页侧边栏等需要标记当前激活项的场景。
-     */
-    public void setSelected(boolean selected) {
-        this.selected = selected;
-    }
+    public void setRenderAlpha(float alpha) { setExternalAlpha(alpha); }
+    public void setSelected(boolean value) { selected = value; }
 
     @Override
-    protected void extractWidgetRenderState(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
-        var font = Minecraft.getInstance().font;
-        String text = this.getMessage().getString();
-        int textWidth = font.width(text);
-
-        // 选中状态视为持续悬浮，使下划线和文字高亮始终生效
-        boolean hovered = this.isHovered() || this.selected;
-
-        // 动画逻辑：
-        // - 选中时：立即展开下划线（不重新播放动画）
-        // - 取消选中时：平滑收回下划线（带动画）
-        // - 常规悬浮/离开：正常动画
-        if (this.selected) {
-            underlineProgress = 1.0f;
-            shiftProgress = 1.0f;
-        } else {
-            float target = this.isHovered() ? 1.0f : 0.0f;
-            if (!GuiAnimationController.isEnabled()
-                    || Math.abs(underlineProgress - target) < 0.001f) {
-                underlineProgress = target;
-                shiftProgress = target;
-            } else {
-                underlineProgress += (target - underlineProgress) * ANIM_SPEED;
-                shiftProgress += (target - shiftProgress) * ANIM_SPEED;
-            }
-        }
-
-        // 文字位置（左对齐，垂直居中；shiftProgress 控制平滑右移）
-        int textX = this.getX() + Math.round(shiftProgress * HOVER_SHIFT);
-        int textY = this.getY() + (this.height - 8) / 2;
-
-        // 文字颜色（悬浮或选中时变亮），同时叠加外部淡入透明度
-        int baseColor = hovered ? TEXT_COLOR_HOVER : TEXT_COLOR;
-        int textAlpha = (int) (renderAlpha * 255);
-        int color = (textAlpha << 24) | (baseColor & 0x00FFFFFF);
-        guiGraphics.text(font, this.getMessage(), textX, textY, color, false);
-
-        // 下划线（从左往右延伸；位置跟随文字偏移）
-        if (underlineProgress > 0.001f) {
-            int underlineY = textY + 8 + 2; // 文字底部 + 2px 间距
-            int underlineWidth = (int) (textWidth * underlineProgress);
-            int underlineEndX = textX + underlineWidth;
-
-            double smoothProgress = Mth.clamp(underlineProgress * 1.2, 0.0, 1.0);
-            int alpha = (int) (smoothProgress * 255 * renderAlpha);
-            int lineColor = (alpha << 24) | (UNDERLINE_COLOR & 0x00FFFFFF);
-
-            guiGraphics.fill(textX, underlineY, underlineEndX, underlineY + 1, lineColor);
-        }
-    }
-
-    @Override
-    public void onClick(MouseButtonEvent event, boolean isActuallyClick) {
-        if (this.onPress != null) {
-            this.onPress.run();
-        }
-    }
-
-    @Override
-    protected void updateWidgetNarration(NarrationElementOutput narrationElementOutput) {
-        this.defaultButtonNarrationText(narrationElementOutput);
+    protected void extractWidgetRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
+        setStyle(selected ? YzuiTheme.ButtonStyle.FILLED
+                : YzuiTheme.isCustomScreen(Minecraft.getInstance().gui.screen())
+                        ? YzuiTheme.ButtonStyle.TEXT : YzuiTheme.ButtonStyle.TONAL);
+        super.extractWidgetRenderState(g, mouseX, mouseY, partialTick);
     }
 }

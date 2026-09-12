@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.client.screen;
 
+import top.csituka.youzaiworldcore.client.render.YzuiTheme;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.EditBox;
@@ -53,23 +55,19 @@ public class YzuCreativeInventoryScreen extends Screen {
     private static final Logger LOG = LoggerFactory.getLogger("YzuCreativeInventoryScreen");
 
     // layout
-    private static final int PW = 356, PH = 168, PR = 6;
+    private static final int PW = 356, PH = 168, PR = 10;
     private static final int TY = 4, TW = 28, TH = 22, TG = 2, TR = 4;
     private static final int SX = 250, SY = 6, SW = 96, SH = 16; // 搜索框右缘 ≤ 物品栏右缘 (x=346)
     private static final int GX = 10, GY = 34, SS = 16, SG = 2, COLS = 9, VROWS = 7;
     private static final int SCROLL_X = 174, SCROLL_Y = 34, SCROLL_W = 4, SCROLL_H = 124; // 网格右侧滚动条
-    // 右侧面板：玩家模型（左上）+ 装备+副手（右上）/ 生存物品栏3×9（中）/ 快捷栏（底，与网格底对齐）
-    private static final int PM_X = 184, PM_Y = 34, PM_W = 30, PM_H = 50, PM_SCALE = 22;
+    // 右侧面板：装备和副手（左上）+ 玩家模型（右上）/ 生存物品栏3×9（中）/ 快捷栏（底）
+    // 独立预览区与副手槽横向隔开，并与下方背包保留 8px 间距。
+    private static final int PM_X = 294, PM_Y = 30, PM_W = 50, PM_H = 48, PM_SCALE = 20;
     private static final int ARM_X = 222, ARM_Y = 34; // 装备 2×2（slots 5-8）
     private static final int OFF_X = 264, OFF_Y = 46; // 副手槽（slot 45）
     private static final int INV_X = 184, INV_Y = 86, INV_ROWS = 3, INV_COLS = 9; // 生存物品栏 3×9（slots 9-35）
     private static final int HB_X = 184, HB_Y = 140; // 1×9 快捷栏（底部对齐网格底 y=158）
     private static final int MAX_VIS = 6;
-
-    // colors
-    private static final int BG = 0x80FFFFFF, SC = 0x40FFFFFF, SHV = 0x60FFFFFF, TA = 0x90FFFFFF;
-    private static final int[] TC = { 0x60CC8866, 0x6099CCFF, 0x6066AA44, 0x60AA66CC, 0x60FF6644, 0x604488CC,
-            0x60FF8844, 0x60FFCC44, 0x60CCAACC, 0x60FFAAAA, 0x60FF66AA };
 
     private static final String YZWC_SEARCH_HINT = "搜索物品...";
 
@@ -197,7 +195,7 @@ public class YzuCreativeInventoryScreen extends Screen {
         searchBox.setMaxLength(50);
         searchBox.setBordered(false);
         searchBox.setVisible(true);
-        searchBox.setTextColor(0xFFFFFFFF);
+        searchBox.setTextColor(YzuiTheme.text());
         searchBox.setHint(Component.literal(YZWC_SEARCH_HINT));
         searchBox.setResponder(this::onSearch);
         addRenderableWidget(searchBox);
@@ -321,7 +319,7 @@ public class YzuCreativeInventoryScreen extends Screen {
 
     @Override
     public void extractRenderState(@NonNull GuiGraphicsExtractor g, int mx, int my, float pt) {
-        fillR(g, lp, tp, PW, PH, PR, BG);
+        YzuiTheme.card(g, lp, tp, PW, PH);
         drawTabs(g, mx, my);
         drawGrid(g, mx, my);
         drawScroll(g, mx, my);
@@ -329,8 +327,13 @@ public class YzuCreativeInventoryScreen extends Screen {
         var slots = player.inventoryMenu.slots;
         // 玩家模型 3D 渲染（原版 InventoryScreen 风格，鼠标跟随旋转）
         if (player != null) {
-            InventoryScreen.extractEntityInInventoryFollowsMouse(g, lp + PM_X, tp + PM_Y, lp + PM_X + PM_W,
-                    tp + PM_Y + PM_H, PM_SCALE, 0.0625f, xm, ym, player);
+            g.enableScissor(lp + PM_X, tp + PM_Y, lp + PM_X + PM_W, tp + PM_Y + PM_H);
+            try {
+                InventoryScreen.extractEntityInInventoryFollowsMouse(g, lp + PM_X, tp + PM_Y, lp + PM_X + PM_W,
+                        tp + PM_Y + PM_H, PM_SCALE, 0.0625f, mx, my, player);
+            } finally {
+                g.disableScissor();
+            }
         }
 
         // 装备 2×2（slots 5-8：helmet/chest/legs/boots）
@@ -338,7 +341,7 @@ public class YzuCreativeInventoryScreen extends Screen {
         for (int r = 0; r < 2; r++)
             for (int c = 0; c < 2; c++) {
                 int sx = ax + c * (SS + SG), sy = ay + r * (SS + SG);
-                fillR(g, sx, sy, SS, SS, 3, mx >= sx && mx < sx + SS && my >= sy && my < sy + SS ? SHV : SC);
+                fillR(g, sx, sy, SS, SS, 3, mx >= sx && mx < sx + SS && my >= sy && my < sy + SS ? YzuiTheme.slotHover() : YzuiTheme.slot());
                 int slotIdx = 5 + r * 2 + c;
                 ItemStack ast = slots.get(slotIdx).getItem();
                 // 空槽绘制原版占位图标（通过 Slot.getNoItemIcon() 获取对应 sprite）
@@ -354,7 +357,7 @@ public class YzuCreativeInventoryScreen extends Screen {
 
         // 副手（slot 45）
         int ox = lp + OFF_X, oy = tp + OFF_Y;
-        fillR(g, ox, oy, SS, SS, 3, mx >= ox && mx < ox + SS && my >= oy && my < oy + SS ? SHV : SC);
+        fillR(g, ox, oy, SS, SS, 3, mx >= ox && mx < ox + SS && my >= oy && my < oy + SS ? YzuiTheme.slotHover() : YzuiTheme.slot());
         ItemStack ost = slots.get(45).getItem();
         if (ost.isEmpty()) {
             Identifier offId = slots.get(45).getNoItemIcon();
@@ -370,7 +373,7 @@ public class YzuCreativeInventoryScreen extends Screen {
         for (int r = 0; r < INV_ROWS; r++)
             for (int c = 0; c < INV_COLS; c++) {
                 int sx = invX + c * (SS + SG), sy = invY + r * (SS + SG);
-                fillR(g, sx, sy, SS, SS, 3, mx >= sx && mx < sx + SS && my >= sy && my < sy + SS ? SHV : SC);
+                fillR(g, sx, sy, SS, SS, 3, mx >= sx && mx < sx + SS && my >= sy && my < sy + SS ? YzuiTheme.slotHover() : YzuiTheme.slot());
                 ItemStack ist = slots.get(9 + r * INV_COLS + c).getItem();
                 renderSlot(g, ist, sx, sy, 220 + r * INV_COLS + c);
                 ItemBorderRenderer.renderBorder(g, sx, sy, ist);
@@ -380,7 +383,7 @@ public class YzuCreativeInventoryScreen extends Screen {
         int hbx = lp + HB_X, hby = tp + HB_Y;
         for (int c = 0; c < 9; c++) {
             int sx = hbx + c * (SS + SG);
-            fillR(g, sx, hby, SS, SS, 3, mx >= sx && mx < sx + SS && my >= hby && my < hby + SS ? SHV : SC);
+            fillR(g, sx, hby, SS, SS, 3, mx >= sx && mx < sx + SS && my >= hby && my < hby + SS ? YzuiTheme.slotHover() : YzuiTheme.slot());
             ItemStack hst = slots.get(36 + c).getItem();
             renderSlot(g, hst, sx, hby, c);
             ItemBorderRenderer.renderBorder(g, sx, hby, hst);
@@ -487,7 +490,7 @@ public class YzuCreativeInventoryScreen extends Screen {
             int baseY = getSlotScreenY(trinketSourceSlot);
             int indStartX = baseX + SS + SG;
             int indW = activeTrinketSlots.size() * (SS + SG) - SG;
-            fillR(g, indStartX - 2, baseY - 2, indW + 4, SS + 4, 4, 0x50000000);
+            fillR(g, indStartX - 2, baseY - 2, indW + 4, SS + 4, 4, YzuiTheme.surfaceLow());
             for (int i = 0; i < activeTrinketSlots.size(); i++) {
                 int sx = indStartX + i * (SS + SG);
                 TrinketHelper.TrinketSlotInfo slotInfo = activeTrinketSlots.get(i);
@@ -498,13 +501,13 @@ public class YzuCreativeInventoryScreen extends Screen {
                     // 空槽：绘制 Trinkets 自定义占位图标
                     Identifier iconId = TrinketHelper.getSlotIcon(slotInfo);
                     if (iconId != null) {
-                        fillR(g, sx, baseY, SS, SS, 3, 0xFFFFFFFF);
+                        fillR(g, sx, baseY, SS, SS, 3, YzuiTheme.surfaceHigh());
                         g.blitSprite(RenderPipelines.GUI_TEXTURED, iconId, sx, baseY, SS, SS);
                     } else {
-                        fillR(g, sx, baseY, SS, SS, 3, 0xFFFFFFFF);
+                        fillR(g, sx, baseY, SS, SS, 3, YzuiTheme.surfaceHigh());
                     }
                 } else {
-                    fillR(g, sx, baseY, SS, SS, 3, 0xFFFFFFFF);
+                    fillR(g, sx, baseY, SS, SS, 3, YzuiTheme.surfaceHigh());
                     g.fakeItem(ti, sx, baseY);
                 }
             }
@@ -709,10 +712,10 @@ public class YzuCreativeInventoryScreen extends Screen {
         int leftX = lp + 3;
         boolean canLeft = tabPage > 0;
         boolean lh = canLeft && mx >= leftX && mx < leftX + TW && my >= arrowY && my < arrowY + TH;
-        fillR(g, leftX, arrowY, TW, TH, TR, lh ? 0x80FFFFFF : (canLeft ? 0x60FFFFFF : 0x30FFFFFF));
+        fillR(g, leftX, arrowY, TW, TH, TR, lh ? YzuiTheme.primaryContainer() : YzuiTheme.surfaceLow());
         int ltx = leftX + (TW - font.width("<")) / 2;
         int lty = arrowY + (TH - font.lineHeight) / 2;
-        g.text(font, "<", ltx, lty, canLeft ? 0xCCFFFFFF : 0x60FFFFFF, true);
+        g.text(font, "<", ltx, lty, canLeft ? YzuiTheme.text() : YzuiTheme.outline(), false);
 
         // Tab
         int tx = leftX + TW + TG;
@@ -720,7 +723,7 @@ public class YzuCreativeInventoryScreen extends Screen {
             CreativeModeTab t = tabs.get(i);
             boolean sel = selTab != null && t == selTab;
             boolean h = mx >= tx && mx < tx + TW && my >= arrowY && my < arrowY + TH;
-            fillR(g, tx, arrowY, TW, TH, TR, sel ? TA : (h ? 0x70FFFFFF : TC[i % TC.length]));
+            fillR(g, tx, arrowY, TW, TH, TR, sel ? YzuiTheme.primaryContainer() : (h ? YzuiTheme.surfaceHigh() : YzuiTheme.surfaceLow()));
             ItemStack icon = t.getIconItem();
             if (!icon.isEmpty())
                 g.item(icon, tx + (TW - 16) / 2, arrowY + (TH - 16) / 2, 0);
@@ -733,10 +736,10 @@ public class YzuCreativeInventoryScreen extends Screen {
         int rightX = lp + 3 + TW + TG + MAX_VIS * (TW + TG);
         boolean canRight = tabPage < pc - 1;
         boolean rh = canRight && mx >= rightX && mx < rightX + TW && my >= arrowY && my < arrowY + TH;
-        fillR(g, rightX, arrowY, TW, TH, TR, rh ? 0x80FFFFFF : (canRight ? 0x60FFFFFF : 0x30FFFFFF));
+        fillR(g, rightX, arrowY, TW, TH, TR, rh ? YzuiTheme.primaryContainer() : YzuiTheme.surfaceLow());
         int rtx = rightX + (TW - font.width(">")) / 2;
         int rty = arrowY + (TH - font.lineHeight) / 2;
-        g.text(font, ">", rtx, rty, canRight ? 0xCCFFFFFF : 0x60FFFFFF, true);
+        g.text(font, ">", rtx, rty, canRight ? YzuiTheme.text() : YzuiTheme.outline(), false);
     }
 
     private void drawGrid(GuiGraphicsExtractor g, int mx, int my) {
@@ -751,7 +754,7 @@ public class YzuCreativeInventoryScreen extends Screen {
                     break;
                 int gx = sx + c * (SS + SG), gy = sy + r * (SS + SG);
                 boolean h = mx >= gx && mx < gx + SS && my >= gy && my < gy + SS;
-                fillR(g, gx, gy, SS, SS, 3, h ? SHV : SC);
+                fillR(g, gx, gy, SS, SS, 3, h ? YzuiTheme.slotHover() : YzuiTheme.slot());
                 int vi = vis.get(idx);
                 ItemStack st = getItemForVis(vi);
                 if (!st.isEmpty()) {
@@ -766,7 +769,7 @@ public class YzuCreativeInventoryScreen extends Screen {
         int rows = (vis.size() + COLS - 1) / COLS, maxS = Math.max(0, rows - VROWS);
         int bx = lp + SCROLL_X, by = tp + SCROLL_Y;
         // 背景槽
-        g.fill(bx, by, bx + SCROLL_W, by + SCROLL_H, 0x30FFFFFF);
+        g.fill(bx, by, bx + SCROLL_W, by + SCROLL_H, YzuiTheme.surfaceHigh());
         if (maxS <= 0)
             return; // 无可滚动时不绘制 thumb
         int thumbH = Math.max(6, (int) ((float) VROWS / rows * SCROLL_H));
@@ -774,7 +777,7 @@ public class YzuCreativeInventoryScreen extends Screen {
         int thumbY = by + (int) ((float) Math.round(soff) / maxS * trackH);
         boolean hov = scrollBarDragging
                 || (mx >= bx - 4 && mx < bx + SCROLL_W + 4 && my >= by && my < by + SCROLL_H);
-        g.fill(bx, thumbY, bx + SCROLL_W, thumbY + thumbH, hov ? 0xCCFFFFFF : 0x80FFFFFF);
+        g.fill(bx, thumbY, bx + SCROLL_W, thumbY + thumbH, hov ? YzuiTheme.primary() : YzuiTheme.outline());
     }
 
     /** 返回当前创造物品网格允许的最大滚动行数。 */

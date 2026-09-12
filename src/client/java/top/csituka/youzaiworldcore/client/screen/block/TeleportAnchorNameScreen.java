@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.client.screen.block;
 
+import top.csituka.youzaiworldcore.client.render.YzuiTheme;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.EditBox;
@@ -21,10 +23,10 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 @SuppressWarnings("null")
 public class TeleportAnchorNameScreen extends Screen {
 
-    private static final int PANEL_WIDTH = 280;
-    private static final int PANEL_HEIGHT = 90;
-    private static final int BUTTON_WIDTH = 80;
-    private static final int BUTTON_HEIGHT = 20;
+    private static final int PANEL_WIDTH = 400;
+    private static final int PANEL_HEIGHT = 220;
+    private static final int BUTTON_WIDTH = 128;
+    private static final int BUTTON_HEIGHT = 28;
 
     private final BlockPos anchorPos;
     private final ResourceKey<Level> anchorDim;
@@ -40,26 +42,28 @@ public class TeleportAnchorNameScreen extends Screen {
     @Override
     protected void init() {
         super.init();
+        String savedValue = nameInput == null ? "" : nameInput.getValue();
 
         int panelX = (this.width - PANEL_WIDTH) / 2;
         int panelY = (this.height - PANEL_HEIGHT) / 2;
 
         // 命名输入框
         nameInput = new EditBox(this.font,
-                panelX + 12, panelY + 30,
-                PANEL_WIDTH - 24, 18,
+                panelX + 24, panelY + 100,
+                PANEL_WIDTH - 48, 26,
                 Component.translatable("screen.youzaiworldcore.teleport_anchor_name.hint"));
         nameInput.setMaxLength(32);
+        nameInput.setValue(savedValue);
         nameInput.setFocused(true);
         addRenderableWidget(nameInput);
 
         // 确认按钮 — 使用 TransparentButton
         confirmButton = new TransparentButton(
-                panelX + (PANEL_WIDTH / 2) - (BUTTON_WIDTH / 2), panelY + 58,
+                panelX + (PANEL_WIDTH / 2) - (BUTTON_WIDTH / 2), panelY + 162,
                 BUTTON_WIDTH, BUTTON_HEIGHT,
                 Component.translatable("screen.youzaiworldcore.teleport_anchor_name.confirm"),
                 this::confirmName);
-        confirmButton.setTextColor(0xFFFFFF);
+        confirmButton.setStyle(YzuiTheme.ButtonStyle.FILLED);
         addRenderableWidget(confirmButton);
     }
 
@@ -74,16 +78,11 @@ public class TeleportAnchorNameScreen extends Screen {
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
-        // 半透明背景
-        guiGraphics.fill(0, 0, this.width, this.height, 0x80000000);
-
-        // 标题
-        var font = net.minecraft.client.Minecraft.getInstance().font;
-        String title = this.getTitle().getString();
-        int titleWidth = font.width(title);
-        guiGraphics.text(font, title, (this.width - titleWidth) / 2,
-                (this.height - PANEL_HEIGHT) / 2 + 10, 0xFFFFFFFF, false);
-
+        int x = (width - PANEL_WIDTH) / 2, y = (height - PANEL_HEIGHT) / 2;
+        YzuiTheme.card(guiGraphics, x, y, PANEL_WIDTH, PANEL_HEIGHT);
+        YzuiTheme.label(guiGraphics, font, title, x + 24, y + 24, PANEL_WIDTH - 48, YzuiTheme.text(), false);
+        YzuiTheme.wrapped(guiGraphics, font, Component.translatable("screen.youzaiworldcore.teleport_anchor_name.hint"),
+                x + 24, y + 54, PANEL_WIDTH - 48, 3, YzuiTheme.textMuted());
         super.extractRenderState(guiGraphics, mouseX, mouseY, partialTick);
     }
 
@@ -126,6 +125,7 @@ public class TeleportAnchorNameScreen extends Screen {
 
     @Override
     public void extractBackground(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
+        // 背景由共用屏幕入口在内容变换之前绘制，避免重复模糊与叠加遮罩。
     }
 
     @Override

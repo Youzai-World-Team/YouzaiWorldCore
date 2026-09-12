@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.client.screen;
 
+import top.csituka.youzaiworldcore.client.render.YzuiTheme;
+
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.navigation.ScreenPosition;
 import net.minecraft.client.gui.screens.inventory.AbstractRecipeBookScreen;
@@ -62,13 +64,8 @@ import java.util.List;
  * 面板尺寸 176×166（沿用 {@code AbstractContainerScreen} 4 参构造默认）；
  * 火焰区域 {@code (56, 36, 14, 14)}、进度箭头 {@code (79, 34, 24, 16)}。
  * <p>
- * <h3>主题色（三类容器差异化设计语言）</h3>
- * <table>
- *   <tr><th>容器</th><th>标题色</th><th>槽位色</th><th>强调条色</th><th>图标</th></tr>
- *   <tr><td>熔炉</td><td>{@code 0xFF505050} 中性灰</td><td>白色系 {@code 0x40FFFFFF / 0x60FFFFFF}</td><td>{@code 0x80A0A0A0}</td><td>{@link Items#FURNACE}</td></tr>
- *   <tr><td>高炉</td><td>{@code 0xFF6A6A6A} 钢灰（与铁砧同系）</td><td>白色系</td><td>{@code 0xB09A9A9A}</td><td>{@link Items#BLAST_FURNACE}</td></tr>
- *   <tr><td>烟熏炉</td><td>{@code 0xFF8B6F47} 浅木棕（与工作台同系）</td><td>白色系</td><td>{@code 0xB0C8A05C}</td><td>{@link Items#SMOKER}</td></tr>
- * </table>
+ * 三类容器共用 {@link YzuiTheme} 的卡片、槽位、标题与强调色，随明暗主题和效果预设切换。
+ * 类型通过熔炉、高炉、烟熏炉各自的物品图标与标题区分。
  * <p>
  * 开关机制：{@code YzuContainerScreenSwitchMixin} 在 {@code Gui.setScreen}
  * 拦截原版 {@code FurnaceScreen} / {@code BlastFurnaceScreen} / {@code SmokerScreen}，
@@ -82,13 +79,13 @@ public class YzuFurnaceScreen extends AbstractRecipeBookScreen<AbstractFurnaceMe
 
     // ========== YZUI 统一设计常量（与 YzuContainerScreen / YzuBrewingStandScreen 一致） ==========
 
-    private static final int PANEL_BG = 0x80FFFFFF;
+    private static int panelBg() { return YzuiTheme.surface(); }
     private static final int PANEL_RADIUS = 6;
 
     private static final int SLOT_SIZE = 16;
     private static final int SLOT_RADIUS = 3;
 
-    private static final int LABEL_COLOR = 0xCC404040;
+    private static int labelColor() { return YzuiTheme.text(); }
 
     // ========== 关闭按钮（与现有 YZUI 容器屏一致） ==========
 
@@ -96,10 +93,10 @@ public class YzuFurnaceScreen extends AbstractRecipeBookScreen<AbstractFurnaceMe
     private static final int CLOSE_RADIUS = 4;
     private static final int CLOSE_MARGIN = 6;
     private static final int CLOSE_TOP = 2;
-    private static final int CLOSE_BG = 0x40FFFFFF;
-    private static final int CLOSE_BG_HOVER = 0x80FFFFFF;
-    private static final int CLOSE_ICON = 0xCC404040;
-    private static final int CLOSE_ICON_HOVER = 0xFF000000;
+    private static int closeBg() { return YzuiTheme.surface(); }
+    private static int closeBgHover() { return YzuiTheme.surfaceHigh(); }
+    private static int closeIcon() { return YzuiTheme.text(); }
+    private static int closeIconHover() { return YzuiTheme.text(); }
     private static final String CLOSE_GLYPH = "\u00d7"; // ×
 
     // ========== 标题区（与现有 YZUI 容器屏一致） ==========
@@ -125,8 +122,8 @@ public class YzuFurnaceScreen extends AbstractRecipeBookScreen<AbstractFurnaceMe
     private static final int ARROW_Y = 34;
     private static final int ARROW_W = 24;
     private static final int ARROW_H = 16;
-    private static final int ARROW_BG = 0x30000000;       // 半透明深灰底槽
-    private static final int ARROW_FILL = 0xC0C8E068;     // 黄绿色填充（与酿造台进度条同色）
+    private static int arrowBg() { return YzuiTheme.surfaceLow(); }       // 半透明深灰底槽
+    private static int arrowFill() { return YzuiTheme.primary(); }     // 黄绿色填充（与酿造台进度条同色）
     /** 烧制进度上限（原版 24px） */
     private static final int ARROW_FULL = 24;
 
@@ -181,7 +178,7 @@ public class YzuFurnaceScreen extends AbstractRecipeBookScreen<AbstractFurnaceMe
     @Override
     public void extractBackground(@NonNull GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY,
             float partialTick) {
-        // no-op — YZUI 面板在 extractRenderState 中绘制
+        // 背景由共用屏幕入口在内容变换之前绘制，避免重复模糊与叠加遮罩。
     }
 
     @Override
@@ -225,10 +222,10 @@ public class YzuFurnaceScreen extends AbstractRecipeBookScreen<AbstractFurnaceMe
         int oy = this.topPos;
 
         // 1. 进度箭头底槽（常显）+ 填充（按比例）
-        fillR(g, ox + ARROW_X, oy + ARROW_Y, ARROW_W, ARROW_H, 2, ARROW_BG);
+        fillR(g, ox + ARROW_X, oy + ARROW_Y, ARROW_W, ARROW_H, 2, arrowBg());
         int burned = Mth.ceil(ARROW_FULL * this.menu.getBurnProgress());
         if (burned > 0) {
-            fillR(g, ox + ARROW_X, oy + ARROW_Y, burned, ARROW_H, 2, ARROW_FILL);
+            fillR(g, ox + ARROW_X, oy + ARROW_Y, burned, ARROW_H, 2, arrowFill());
         }
 
         // 2. 火焰（仅燃烧时显示，沿用 26.2 原版 10 参 blitSprite 截取逻辑）
@@ -245,7 +242,7 @@ public class YzuFurnaceScreen extends AbstractRecipeBookScreen<AbstractFurnaceMe
     // ========== YZUI 面板绘制 ==========
 
     private void drawMainPanel(GuiGraphicsExtractor g) {
-        fillR(g, this.leftPos, this.topPos, this.imageWidth, this.imageHeight, PANEL_RADIUS, PANEL_BG);
+        YzuiTheme.card(g, this.leftPos, this.topPos, this.imageWidth, this.imageHeight);
     }
 
     /** 标题区：容器图标（12×12 底衬 + 缩放物品）+ 标题文字 + 类型强调条。 */
@@ -254,7 +251,7 @@ public class YzuFurnaceScreen extends AbstractRecipeBookScreen<AbstractFurnaceMe
         int iy = this.topPos + 5;
 
         // 图标底衬 12×12
-        fillR(g, ix, iy, ICON_SIZE, ICON_SIZE, 3, kind.slotColor);
+        fillR(g, ix, iy, ICON_SIZE, ICON_SIZE, 3, YzuiTheme.slot());
         ItemStack icon = kind.icon;
         if (!icon.isEmpty()) {
             g.pose().pushMatrix();
@@ -266,18 +263,18 @@ public class YzuFurnaceScreen extends AbstractRecipeBookScreen<AbstractFurnaceMe
 
         int tx = ix + ICON_SIZE + TITLE_ICON_GAP;
         int ty = this.topPos + 5;
-        g.text(this.font, this.title, tx, ty, kind.titleColor, false);
+        g.text(this.font, this.title, tx, ty, YzuiTheme.primary(), false);
 
         // 强调条：标题下方，字形底 14 + 1 → 15..17
         int titleWidth = Math.min(this.font.width(this.title),
                 this.imageWidth - 8 - ICON_SIZE - TITLE_ICON_GAP - 8);
-        fillR(g, tx, ty + 10, titleWidth, 2, 1, kind.accentBarColor);
+        fillR(g, tx, ty + 10, titleWidth, 2, 1, YzuiTheme.primary());
     }
 
     /** 玩家背包区域标签（沿用原版标签坐标 imageHeight-94，无阴影）。 */
     private void drawInventoryLabel(GuiGraphicsExtractor g) {
         g.text(this.font, this.playerInventoryTitle,
-                this.leftPos + 8, this.topPos + this.imageHeight - 94, LABEL_COLOR, false);
+                this.leftPos + 8, this.topPos + this.imageHeight - 94, labelColor(), false);
     }
 
     /** 关闭按钮：圆角矩形 + × 图标，悬停提亮。 */
@@ -285,10 +282,10 @@ public class YzuFurnaceScreen extends AbstractRecipeBookScreen<AbstractFurnaceMe
         int cx = this.leftPos + this.imageWidth - CLOSE_SIZE - CLOSE_MARGIN;
         int cy = this.topPos + CLOSE_TOP;
         boolean hovered = isOverCloseButton(mouseX, mouseY);
-        fillR(g, cx, cy, CLOSE_SIZE, CLOSE_SIZE, CLOSE_RADIUS, hovered ? CLOSE_BG_HOVER : CLOSE_BG);
+        fillR(g, cx, cy, CLOSE_SIZE, CLOSE_SIZE, CLOSE_RADIUS, hovered ? closeBgHover() : closeBg());
         int tx = cx + (CLOSE_SIZE - this.font.width(CLOSE_GLYPH)) / 2;
         int ty = cy + (CLOSE_SIZE - this.font.lineHeight) / 2;
-        g.text(this.font, CLOSE_GLYPH, tx, ty, hovered ? CLOSE_ICON_HOVER : CLOSE_ICON, false);
+        g.text(this.font, CLOSE_GLYPH, tx, ty, hovered ? closeIconHover() : closeIcon(), false);
     }
 
     /** 槽位背景：每个活动槽绘制主题色圆角矩形，悬浮提亮（与 YzuContainerScreen 同款）。 */
@@ -299,7 +296,7 @@ public class YzuFurnaceScreen extends AbstractRecipeBookScreen<AbstractFurnaceMe
             boolean hovered = mouseX >= this.leftPos + slot.x && mouseX < this.leftPos + slot.x + SLOT_SIZE
                     && mouseY >= this.topPos + slot.y && mouseY < this.topPos + slot.y + SLOT_SIZE;
             fillR(g, slot.x, slot.y, SLOT_SIZE, SLOT_SIZE, SLOT_RADIUS,
-                    hovered ? kind.slotHoverColor : kind.slotColor);
+                    hovered ? YzuiTheme.slotHover() : YzuiTheme.slot());
         }
     }
 
@@ -351,7 +348,7 @@ public class YzuFurnaceScreen extends AbstractRecipeBookScreen<AbstractFurnaceMe
     public enum FurnaceKind {
         /** 普通熔炉：中性灰标题，3 类配方（FOOD/BLOCKS/MISC） */
         FURNACE(MenuType.FURNACE, "gui.recipebook.toggleRecipes.smeltable",
-                0xFF505050, 0x40FFFFFF, 0x60FFFFFF, 0x80A0A0A0, Items.FURNACE,
+                Items.FURNACE,
                 Identifier.withDefaultNamespace("container/furnace/lit_progress"),
                 List.of(
                         new RecipeBookComponent.TabInfo(SearchRecipeBookCategory.FURNACE),
@@ -361,7 +358,7 @@ public class YzuFurnaceScreen extends AbstractRecipeBookScreen<AbstractFurnaceMe
                                 RecipeBookCategories.FURNACE_MISC))),
         /** 高炉：钢灰标题（与铁砧同系），2 类配方（BLOCKS/MISC） */
         BLAST_FURNACE(MenuType.BLAST_FURNACE, "gui.recipebook.toggleRecipes.blastable",
-                0xFF6A6A6A, 0x40FFFFFF, 0x60FFFFFF, 0xB09A9A9A, Items.BLAST_FURNACE,
+                Items.BLAST_FURNACE,
                 Identifier.withDefaultNamespace("container/blast_furnace/lit_progress"),
                 List.of(
                         new RecipeBookComponent.TabInfo(SearchRecipeBookCategory.BLAST_FURNACE),
@@ -370,7 +367,7 @@ public class YzuFurnaceScreen extends AbstractRecipeBookScreen<AbstractFurnaceMe
                                 RecipeBookCategories.BLAST_FURNACE_MISC))),
         /** 烟熏炉：浅木棕标题（与工作台同系），1 类配方（FOOD） */
         SMOKER(MenuType.SMOKER, "gui.recipebook.toggleRecipes.smokable",
-                0xFF8B6F47, 0x40FFFFFF, 0x60FFFFFF, 0xB0C8A05C, Items.SMOKER,
+                Items.SMOKER,
                 Identifier.withDefaultNamespace("container/smoker/lit_progress"),
                 List.of(
                         new RecipeBookComponent.TabInfo(SearchRecipeBookCategory.SMOKER),
@@ -379,14 +376,6 @@ public class YzuFurnaceScreen extends AbstractRecipeBookScreen<AbstractFurnaceMe
         private final MenuType<?> menuType;
         /** 配方书过滤器名称（用于 FurnaceRecipeBookComponent 构造） */
         private final String filterNameKey;
-        /** 标题文字色 */
-        private final int titleColor;
-        /** 槽位常态底色 */
-        private final int slotColor;
-        /** 槽位悬停底色 */
-        private final int slotHoverColor;
-        /** 标题下方强调条色 */
-        private final int accentBarColor;
         /** 标题区容器图标 */
         private final ItemStack icon;
         /** 燃料燃烧 sprite（{@code container/{kind}/lit_progress}） */
@@ -395,16 +384,11 @@ public class YzuFurnaceScreen extends AbstractRecipeBookScreen<AbstractFurnaceMe
         private final List<RecipeBookComponent.TabInfo> tabs;
 
         FurnaceKind(MenuType<?> menuType, String filterNameKey,
-                int titleColor, int slotColor, int slotHoverColor, int accentBarColor,
                 net.minecraft.world.item.Item icon,
                 Identifier litProgressSprite,
                 List<RecipeBookComponent.TabInfo> tabs) {
             this.menuType = menuType;
             this.filterNameKey = filterNameKey;
-            this.titleColor = titleColor;
-            this.slotColor = slotColor;
-            this.slotHoverColor = slotHoverColor;
-            this.accentBarColor = accentBarColor;
             this.icon = new ItemStack(icon);
             this.litProgressSprite = litProgressSprite;
             this.tabs = tabs;

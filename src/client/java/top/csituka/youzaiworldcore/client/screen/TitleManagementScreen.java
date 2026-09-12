@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.client.screen;
 
+import top.csituka.youzaiworldcore.client.render.YzuiTheme;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
@@ -15,11 +17,11 @@ import java.util.List;
 /** Shift+F 主菜单中的玩家称号管理页。 */
 @SuppressWarnings("null")
 public final class TitleManagementScreen extends Screen {
-    private static final int PANEL_WIDTH = 430;
-    private static final int PANEL_HEIGHT = 300;
+    private static final int PANEL_WIDTH = 520;
+    private static final int PANEL_HEIGHT = 420;
     private static final int LIST_TOP = 62;
-    private static final int ROW_HEIGHT = 24;
-    private static final int ROW_STRIDE = 29;
+    private static final int ROW_HEIGHT = 28;
+    private static final int ROW_STRIDE = 34;
     private static final int PAGINATION_BOTTOM = 50;
     private final Screen parent;
     private int page;
@@ -69,7 +71,7 @@ public final class TitleManagementScreen extends Screen {
                     ROW_HEIGHT,
                     label,
                     () -> TitleClientState.equip(title.id()));
-            button.setTextColor(equipped ? 0xFF106B35 : 0xFF202020);
+            button.setTextColor(equipped ? YzuiTheme.primary() : YzuiTheme.textMuted());
             button.active = !TitleClientState.loading();
             addRenderableWidget(button);
         }
@@ -79,7 +81,7 @@ public final class TitleManagementScreen extends Screen {
                 buttonWidth, ROW_HEIGHT,
                 Component.translatable("screen.youzaiworldcore.title_management.none"),
                 () -> TitleClientState.equip(""));
-        none.setTextColor(TitleClientState.equippedTitleId().isBlank() ? 0xFF106B35 : 0xFF202020);
+        none.setTextColor(TitleClientState.equippedTitleId().isBlank() ? YzuiTheme.primary() : YzuiTheme.textMuted());
         none.active = !TitleClientState.loading();
         addRenderableWidget(none);
 
@@ -99,7 +101,7 @@ public final class TitleManagementScreen extends Screen {
         TransparentButton close = new TransparentButton(
                 panelX + panelWidth - 42, panelY + 12, 26, 20,
                 Component.literal("×"), this::onClose);
-        close.setTextColor(0xFFFFFFFF);
+        close.setTextColor(YzuiTheme.text());
         close.setBackgroundVisible(false);
         addRenderableWidget(close);
     }
@@ -120,36 +122,35 @@ public final class TitleManagementScreen extends Screen {
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
-        graphics.fill(0, 0, width, height, 0x99000000);
+
         int panelWidth = Math.min(PANEL_WIDTH, width - 24);
         int panelHeight = panelHeight();
         int panelX = (width - panelWidth) / 2;
         int panelY = (height - panelHeight) / 2;
-        RoundedRect.fillWithBorder(graphics, panelX, panelY, panelWidth, panelHeight,
-                8, 1, 0x60FFFFFF, 0xE6171717);
+        YzuiTheme.card(graphics, panelX, panelY, panelWidth, panelHeight);
         Component title = Component.translatable("screen.youzaiworldcore.title_management.title");
-        graphics.text(font, title, panelX + 24, panelY + 18, 0xFFFFFFFF, false);
+        graphics.text(font, title, panelX + 24, panelY + 18, YzuiTheme.text(), false);
         Component current = Component.translatable("screen.youzaiworldcore.title_management.current",
                 currentTitleLabel());
         graphics.enableScissor(panelX + 24, panelY + 35, panelX + panelWidth - 24, panelY + 51);
-        graphics.text(font, current, panelX + 24, panelY + 39, 0xFFB8B8B8, false);
+        graphics.text(font, current, panelX + 24, panelY + 39, YzuiTheme.textMuted(), false);
         graphics.disableScissor();
         if (TitleClientState.loading()) {
             Component loading = Component.translatable("screen.youzaiworldcore.title_management.loading");
-            graphics.text(font, loading, panelX + 24, panelY + panelHeight - 16, 0xFFFFAA00, false);
+            graphics.text(font, loading, panelX + 24, panelY + panelHeight - 16, YzuiTheme.warning(), false);
         } else if (!TitleClientState.message().isBlank()) {
             String message = font.plainSubstrByWidth(TitleClientState.message(), panelWidth - 48);
-            graphics.text(font, message, panelX + 24, panelY + panelHeight - 16, 0xFFAAAAAA, false);
+            graphics.text(font, message, panelX + 24, panelY + panelHeight - 16, YzuiTheme.textMuted(), false);
         } else if (TitleClientState.ownedDefinitions().isEmpty()) {
             Component empty = Component.translatable("screen.youzaiworldcore.title_management.empty");
             graphics.text(font, empty, panelX + (panelWidth - font.width(empty)) / 2,
-                    panelY + panelHeight / 2, 0xFFAAAAAA, false);
+                    panelY + panelHeight / 2, YzuiTheme.textMuted(), false);
         }
         int pageCount = pageCount();
         if (pageCount > 1) {
             Component pageLabel = Component.literal((page + 1) + " / " + pageCount);
             graphics.text(font, pageLabel, panelX + (panelWidth - font.width(pageLabel)) / 2,
-                    panelY + panelHeight - PAGINATION_BOTTOM + 6, 0xFFB8B8B8, false);
+                    panelY + panelHeight - PAGINATION_BOTTOM + 6, YzuiTheme.textMuted(), false);
         }
         super.extractRenderState(graphics, mouseX, mouseY, partialTick);
     }

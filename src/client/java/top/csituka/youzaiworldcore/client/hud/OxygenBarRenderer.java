@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.client.hud;
 
+import top.csituka.youzaiworldcore.client.render.YzuiTheme;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -18,8 +20,7 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
 public final class OxygenBarRenderer {
 
     private static final int TEXT_OFFSET_ABOVE_BAR = 10;
-    private static final int TEXT_SHADOW_OFFSET = 1;
-    private static final int BG_COLOR = 0xAA333333;
+    private static int bgColor() { return YzuiTheme.hudSurface(); }
     /** 氧气填充色（蓝色系） */
     private static final int COLOR_OXYGEN = 0xFF44AAFF;
     /** 氧气不足警告色（红色） */
@@ -68,7 +69,7 @@ public final class OxygenBarRenderer {
         }
 
         // === 1. 背景（圆角） ===
-        HealthBarRenderer.fillBarBg(graphics, barX, barY, BG_COLOR);
+        HealthBarRenderer.fillBarBg(graphics, barX, barY, bgColor());
 
         // === 2. 填充（左侧圆角；氧气低时显示红色警告） ===
         int fillWidth = (int) (fillRatio * bw);
@@ -83,8 +84,7 @@ public final class OxygenBarRenderer {
         int textWidth = font.width(text);
         int textX = barX + (bw - textWidth) / 2;
         int textY = barY - TEXT_OFFSET_ABOVE_BAR;
-        graphics.text(font, text, textX + TEXT_SHADOW_OFFSET, textY + TEXT_SHADOW_OFFSET,
-                0xFF000000, false);
-        graphics.text(font, text, textX, textY, 0xFFFFFFFF, false);
+        YzuiTheme.hudLabel(graphics, font, text, textX, textY,
+                fillRatio <= LOW_OXYGEN_RATIO ? YzuiTheme.error() : YzuiTheme.text(), 1f);
     }
 }

@@ -1,143 +1,103 @@
 package top.csituka.youzaiworldcore.client.screen.widget;
 
+import java.util.function.IntSupplier;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
-import top.csituka.youzaiworldcore.client.render.RoundedRect;
-import top.csituka.youzaiworldcore.client.animation.GuiAnimationController;
+import net.minecraft.resources.Identifier;
+import top.csituka.youzaiworldcore.client.render.YzuiTheme;
+import top.csituka.youzaiworldcore.client.animation.YzuiHover;
 
-@SuppressWarnings("null")
+/** 共用 MD3 按钮，支持实时主题、键盘焦点、禁用状态和可选图标。 */
 public class TransparentButton extends AbstractWidget {
-
-    private static final int BACKGROUND_COLOR = 0xFFFFFF;
-    private static final int TEXT_COLOR = 0xFF000000;
-    private static final int CORNER_RADIUS = 6;
-
     private final Runnable onPress;
-    private float currentAlpha = 0.5f;
-    private float targetAlpha = 0.5f;
     private float externalAlpha = 1f;
     private boolean backgroundVisible = true;
-    private int textColorRgb = TEXT_COLOR & 0x00FFFFFF;
-    private boolean textLeftAligned = false;
-    private static final float LERP_SPEED = 0.15f;
+    private boolean textLeftAligned;
+    private int textInsetLeft = -1;
+    private int textInsetRight = -1;
+    private IntSupplier textColor;
+    private Identifier icon;
+    private final YzuiHover hoverState = new YzuiHover();
+    private YzuiTheme.ButtonStyle style = YzuiTheme.ButtonStyle.TONAL;
 
     public TransparentButton(int x, int y, int width, int height, Component message, Runnable onPress) {
         super(x, y, width, height, message);
         this.onPress = onPress;
     }
 
-    public void setExternalAlpha(float alpha) {
-        this.externalAlpha = alpha;
+    public void setExternalAlpha(float alpha) { externalAlpha = Math.clamp(alpha, 0f, 1f); }
+    protected float externalAlpha() { return externalAlpha; }
+    public void setBackgroundVisible(boolean visible) { backgroundVisible = visible; }
+    public void setTextLeftAligned(boolean aligned) { textLeftAligned = aligned; }
+    /** 为行内状态、距离等附加信息留出独立空间。 */
+    public void setTextInsets(int left, int right) {
+        textInsetLeft = Math.max(0, left);
+        textInsetRight = Math.max(0, right);
     }
-
-    public void setBackgroundVisible(boolean visible) {
-        this.backgroundVisible = visible;
-    }
-
-    public void setTextColor(int rgb) {
-        this.textColorRgb = rgb & 0x00FFFFFF;
-    }
-
-    public void setTextLeftAligned(boolean leftAligned) {
-        this.textLeftAligned = leftAligned;
-    }
+    public void setTextColor(int color) { textColor = () -> YzuiTheme.legacyText(color); }
+    public void setTextColor(IntSupplier color) { textColor = color; }
+    public TransparentButton setStyle(YzuiTheme.ButtonStyle value) { style = value; textColor = null; return this; }
+    public void setIcon(Identifier value) { icon = value; }
 
     @Override
-    protected void extractWidgetRenderState(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
-        targetAlpha = this.isHovered() ? 0.69f : 0.5f;
-        currentAlpha = GuiAnimationController.isEnabled()
-                ? lerp(currentAlpha, targetAlpha, LERP_SPEED)
-                : targetAlpha;
+    protected void extractWidgetRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
+        if (!visible) return;
+        int x = getX(), y = getY(), w = getWidth(), h = getHeight();
+        isHovered = mouseX >= x && mouseX < x + w && mouseY >= y && mouseY < y + h;
+        float hover = hoverState.sample(active && isHovered);
+        float opacity = externalAlpha * getAlpha();
+        YzuiTheme.ButtonStyle actualStyle = backgroundVisible ? style : YzuiTheme.ButtonStyle.TEXT;
+        YzuiTheme.button(g, x, y, w, h, hover, isFocused(), active, opacity, actualStyle);
 
-        float finalAlpha = currentAlpha * externalAlpha;
-        int backgroundColor = colorWithAlpha(BACKGROUND_COLOR, finalAlpha);
-
-        int x = this.getX();
-        int y = this.getY();
-        int width = this.width;
-        int height = this.height;
-        int r = CORNER_RADIUS;
-
-        if (backgroundVisible) {
-            fillRoundedRect(guiGraphics, x, y, width, height, r, backgroundColor);
+        int foreground = textColor == null ? YzuiTheme.buttonText(actualStyle, active) : textColor.getAsInt();
+        if (!active) foreground = YzuiTheme.textMuted();
+        foreground = YzuiTheme.alpha(foreground, opacity * (active ? 1f : 0.68f));
+        int padding = w < 30 ? 2 : 8;
+        int leftInset = textInsetLeft < 0 ? padding : textInsetLeft;
+        int rightInset = textInsetRight < 0 ? padding : textInsetRight;
+        int textX = x + leftInset;
+        int available = Math.max(0, w - leftInset - rightInset);
+        if (icon != null) {
+            int size = Math.max(1, Math.min(24, Math.min(h - 8, w - 8)));
+            boolean iconOnly = w < 76;
+            int iconX = iconOnly ? x + (w - size) / 2 : x + 8;
+            int iconY = y + (h - size) / 2;
+            g.blit(RenderPipelines.GUI_TEXTURED, icon, iconX, iconY, 0, 0,
+                    size, size, size, size, YzuiTheme.alpha(0xFFFFFFFF, opacity));
+            if (iconOnly) return;
+            textX += size + 6;
+            available -= size + 6;
         }
-
-        int textColor = colorWithAlpha(textColorRgb, externalAlpha);
         var font = Minecraft.getInstance().font;
-        Component msg = this.getMessage();
-        int textWidth = font.width(msg);
-        int availW = width - 8;  // 两侧 4px 边距后可用宽度
-        int textY = y + (height - 8) / 2;
-
-        if (textWidth > availW) {
-            // 文字超宽 → 裁剪到按钮边界，悬停时横向滚动
-            int textX = x + 4;
-            // 始终往返滚动，头尾各停顿 2 秒
-            int scrollRange = textWidth - availW;  // 恰好滚完多余部分，不附加空白
-            int period = Math.max(2000, scrollRange * 30);
-            int pauseMs = 2000;
-            long cycle = period * 2 + pauseMs * 2;
-            long t = System.currentTimeMillis() % cycle;
-            int scrollPx;
-            if (t < period) {
-                // 前滚：0 → range
-                scrollPx = (int)((float)t / period * scrollRange);
-            } else if (t < period + pauseMs) {
-                // 尾停顿：range
-                scrollPx = scrollRange;
-            } else if (t < period * 2 + pauseMs) {
-                // 回滚：range → 0
-                float p = (float)(t - period - pauseMs) / period;
-                scrollPx = (int)((1.0f - p) * scrollRange);
-            } else {
-                // 头停顿：0
-                scrollPx = 0;
-            }
-            guiGraphics.enableScissor(x, y, x + width, y + height);
-            guiGraphics.text(font, msg, textX - scrollPx, textY, textColor, false);
-            guiGraphics.disableScissor();
-        } else {
-            int textX = textLeftAligned ? x + 4 : x + (width - textWidth) / 2;
-            guiGraphics.text(font, msg, textX, textY, textColor, false);
-        }
+        YzuiTheme.label(g, font, getMessage(), textX, y + (h - font.lineHeight) / 2,
+                available, foreground, icon == null && !textLeftAligned);
     }
 
-    private void fillRoundedRect(GuiGraphicsExtractor g, int x, int y, int w, int h, int r, int color) {
-        // 圆角绘制统一走 RoundedRect（行扫描：r=6 时 135 次 fill -> 13 次）。
-        // 点亮像素与原逐像素实现一致（45253 组尺寸/半径已逐一比对）；
-        // 原实现未做尺寸校验，r > min(w,h)/2 时会画出坐标反转/重叠的结果，此处会钳制半径。
-        RoundedRect.fill(g, x, y, w, h, r, color);
-    }
-
-    private int colorWithAlpha(int color, float alpha) {
-        int a = (int) (Math.max(0, Math.min(255, alpha * 255)));
-        return (a << 24) | (color & 0x00FFFFFF);
-    }
-
-    private float lerp(float current, float target, float speed) {
-        if (Math.abs(current - target) < 0.001f) {
-            return target;
-        }
-        return current + (target - current) * speed;
-    }
-
-    public void render(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
-        this.extractWidgetRenderState(guiGraphics, mouseX, mouseY, partialTick);
+    public void render(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
+        extractWidgetRenderState(g, mouseX, mouseY, partialTick);
     }
 
     @Override
     public void onClick(MouseButtonEvent event, boolean isActuallyClick) {
-        if (this.onPress != null) {
-            this.onPress.run();
-        }
+        if (active && visible && onPress != null) onPress.run();
     }
 
     @Override
-    protected void updateWidgetNarration(NarrationElementOutput narrationElementOutput) {
-        this.defaultButtonNarrationText(narrationElementOutput);
+    public boolean keyPressed(net.minecraft.client.input.KeyEvent event) {
+        if (!active || !visible || !isFocused()) return false;
+        if (event.key() != 257 && event.key() != 335 && event.key() != 32) return false;
+        playDownSound(Minecraft.getInstance().getSoundManager());
+        if (onPress != null) onPress.run();
+        return true;
+    }
+
+    @Override
+    protected void updateWidgetNarration(NarrationElementOutput output) {
+        defaultButtonNarrationText(output);
     }
 }

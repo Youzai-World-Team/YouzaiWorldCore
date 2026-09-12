@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.client.screen;
 
+import top.csituka.youzaiworldcore.client.render.YzuiTheme;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractSliderButton;
@@ -42,15 +44,15 @@ public final class YzHudSettingsScreen extends Screen {
     private static final int CANVAS_TOP = 82;
     private static final int CANVAS_BOTTOM_SPACE = 44;
 
-    private static final int CANVAS_COLOR = 0x28000000;
-    private static final int CANVAS_BORDER = 0x50FFFFFF;
-    private static final int VIEWPORT_BORDER = 0x70FFFFFF;
-    private static final int FOOTPRINT_BORDER = 0x50FFFFFF;
-    private static final int SELECTED_BORDER = 0xE0FFFFFF;
-    private static final int LOCKED_BORDER = 0x28FFFFFF;
-    private static final int LOCKED_HINT_COLOR = 0xC0FFFFFF;
-    private static final int PANEL_COLOR = 0x80FFFFFF;
-    private static final int SLOT_COLOR = 0x40FFFFFF;
+    private static int canvasColor() { return YzuiTheme.surfaceLow(); }
+    private static int canvasBorder() { return YzuiTheme.outlineVariant(); }
+    private static int viewportBorder() { return YzuiTheme.outlineVariant(); }
+    private static int footprintBorder() { return YzuiTheme.outlineVariant(); }
+    private static int selectedBorder() { return YzuiTheme.primary(); }
+    private static int lockedBorder() { return YzuiTheme.outlineVariant(); }
+    private static int lockedHintColor() { return YzuiTheme.textMuted(); }
+    private static int panelColor() { return YzuiTheme.surface(); }
+    private static int slotColor() { return YzuiTheme.slot(); }
 
     /** 锁定组件的占位预览相对当前透明度的额外衰减系数。 */
     private static final float LOCKED_PREVIEW_ALPHA = 0.35F;
@@ -70,6 +72,8 @@ public final class YzHudSettingsScreen extends Screen {
     private int viewportTop;
     private int viewportWidth;
     private int viewportHeight;
+    private int hudViewportWidth;
+    private int hudViewportHeight;
 
     private YzHudComponent selectedComponent = YzHudComponent.INVENTORY;
     /** 记分板是否因回退到原版样式而锁定位置。 */
@@ -144,11 +148,13 @@ public final class YzHudSettingsScreen extends Screen {
         canvasWidth = Math.max(1, width - PAGE_MARGIN * 2);
         canvasHeight = Math.max(1, height - canvasTop - CANVAS_BOTTOM_SPACE);
 
-        float scaleX = canvasWidth / (float) Math.max(1, width);
-        float scaleY = canvasHeight / (float) Math.max(1, height);
+        hudViewportWidth = Minecraft.getInstance().getWindow().getGuiScaledWidth();
+        hudViewportHeight = Minecraft.getInstance().getWindow().getGuiScaledHeight();
+        float scaleX = canvasWidth / (float) Math.max(1, hudViewportWidth);
+        float scaleY = canvasHeight / (float) Math.max(1, hudViewportHeight);
         previewScale = Math.min(scaleX, scaleY);
-        viewportWidth = Math.max(1, Math.round(width * previewScale));
-        viewportHeight = Math.max(1, Math.round(height * previewScale));
+        viewportWidth = Math.max(1, Math.round(hudViewportWidth * previewScale));
+        viewportHeight = Math.max(1, Math.round(hudViewportHeight * previewScale));
         viewportLeft = canvasLeft + (canvasWidth - viewportWidth) / 2;
         viewportTop = canvasTop + (canvasHeight - viewportHeight) / 2;
     }
@@ -156,17 +162,17 @@ public final class YzHudSettingsScreen extends Screen {
     @Override
     public void extractRenderState(GuiGraphicsExtractor graphics,
             int mouseX, int mouseY, float partialTick) {
-        graphics.fill(0, 0, width, height, 0x60000000);
+
 
         Component title = Component.translatable("screen.youzaiworldcore.yzhud.title");
         graphics.text(font, title, (width - font.width(title)) / 2, 10,
-                0xFFFFFFFF, false);
+                YzuiTheme.text(), false);
 
         RoundedRect.fillOrSquare(graphics, canvasLeft, canvasTop,
-                canvasWidth, canvasHeight, 6, CANVAS_COLOR);
-        graphics.outline(canvasLeft, canvasTop, canvasWidth, canvasHeight, CANVAS_BORDER);
+                canvasWidth, canvasHeight, 6, canvasColor());
+        graphics.outline(canvasLeft, canvasTop, canvasWidth, canvasHeight, canvasBorder());
         graphics.outline(viewportLeft, viewportTop,
-                viewportWidth, viewportHeight, VIEWPORT_BORDER);
+                viewportWidth, viewportHeight, viewportBorder());
 
         graphics.enableScissor(viewportLeft, viewportTop,
                 viewportLeft + viewportWidth, viewportTop + viewportHeight);
@@ -178,7 +184,7 @@ public final class YzHudSettingsScreen extends Screen {
             Component hint = Component.translatable(
                     "screen.youzaiworldcore.yzhud.scoreboard_locked");
             graphics.text(font, hint, (width - font.width(hint)) / 2,
-                    canvasTop + canvasHeight + 3, LOCKED_HINT_COLOR, false);
+                    canvasTop + canvasHeight + 3, lockedHintColor(), false);
         }
 
         super.extractRenderState(graphics, mouseX, mouseY, partialTick);
@@ -191,8 +197,8 @@ public final class YzHudSettingsScreen extends Screen {
             float componentOpacity = isLocked(component)
                     ? opacity * LOCKED_PREVIEW_ALPHA
                     : opacity;
-            int panelColor = YzHudLayout.applyOpacity(PANEL_COLOR, componentOpacity);
-            int slotColor = YzHudLayout.applyOpacity(SLOT_COLOR, componentOpacity);
+            int panelColor = YzHudLayout.applyOpacity(panelColor(), componentOpacity);
+            int slotColor = YzHudLayout.applyOpacity(slotColor(), componentOpacity);
             graphics.pose().pushMatrix();
             graphics.pose().translate(
                     componentPreviewX(component), componentPreviewY(component));
@@ -257,11 +263,11 @@ public final class YzHudSettingsScreen extends Screen {
         for (YzHudComponent component : YzHudComponent.values()) {
             int color;
             if (isLocked(component)) {
-                color = LOCKED_BORDER;
+                color = lockedBorder();
             } else if (component == selectedComponent) {
-                color = SELECTED_BORDER;
+                color = selectedBorder();
             } else {
-                color = FOOTPRINT_BORDER;
+                color = footprintBorder();
             }
             graphics.outline(
                     componentPreviewX(component), componentPreviewY(component),
@@ -272,12 +278,12 @@ public final class YzHudSettingsScreen extends Screen {
 
     private int componentPreviewX(YzHudComponent component) {
         return viewportLeft + Math.round(
-                YzHudLayout.componentLeft(component, width) * previewScale);
+                YzHudLayout.componentLeft(component, hudViewportWidth) * previewScale);
     }
 
     private int componentPreviewY(YzHudComponent component) {
         return viewportTop + Math.round(
-                YzHudLayout.componentTop(component, height) * previewScale);
+                YzHudLayout.componentTop(component, hudViewportHeight) * previewScale);
     }
 
     private int componentPreviewWidth(YzHudComponent component) {
@@ -313,8 +319,8 @@ public final class YzHudSettingsScreen extends Screen {
         double targetTop = (event.y() - dragOffsetY - viewportTop) / previewScale;
         YzHudSettings.setPositionPreview(
                 selectedComponent,
-                YzHudLayout.positionXFromLeft(selectedComponent, width, targetLeft),
-                YzHudLayout.positionYFromTop(selectedComponent, height, targetTop));
+                YzHudLayout.positionXFromLeft(selectedComponent, hudViewportWidth, targetLeft),
+                YzHudLayout.positionYFromTop(selectedComponent, hudViewportHeight, targetTop));
         return true;
     }
 
@@ -329,6 +335,7 @@ public final class YzHudSettingsScreen extends Screen {
     }
 
     private YzHudComponent componentAt(double mouseX, double mouseY) {
+        if (mouseX < viewportLeft || mouseX >= viewportLeft + viewportWidth || mouseY < viewportTop || mouseY >= viewportTop + viewportHeight) return null;
         if (!isLocked(selectedComponent) && contains(selectedComponent, mouseX, mouseY)) {
             return selectedComponent;
         }
@@ -376,7 +383,8 @@ public final class YzHudSettingsScreen extends Screen {
             }
             boolean selected = component == selectedComponent;
             button.active = !selected;
-            button.setExternalAlpha(selected ? 0.4F : 1.0F);
+            button.setExternalAlpha(1.0F);
+            button.setStyle(selected ? YzuiTheme.ButtonStyle.FILLED : YzuiTheme.ButtonStyle.TONAL);
         }
     }
 

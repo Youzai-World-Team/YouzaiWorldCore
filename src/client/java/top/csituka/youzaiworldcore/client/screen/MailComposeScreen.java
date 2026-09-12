@@ -1,5 +1,8 @@
 package top.csituka.youzaiworldcore.client.screen;
 
+import top.csituka.youzaiworldcore.client.render.YzuiTheme;
+import top.csituka.youzaiworldcore.client.animation.YzuiPopupAnimation;
+
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -92,7 +95,7 @@ public class MailComposeScreen extends MailBaseScreen {
     private final ItemStack[] itemSlots = new ItemStack[ITEM_SLOTS];
     private final MailUi.Rect[] slotRects = new MailUi.Rect[ITEM_SLOTS];
     private int selectedItemSlot;
-    private boolean inventoryPickerOpen;
+    private final YzuiPopupAnimation inventoryPicker = new YzuiPopupAnimation();
 
     private MailUi.Rect pageRect = new MailUi.Rect(0, 0, 0, 0);
     private MailUi.Rect formRect = new MailUi.Rect(0, 0, 0, 0);
@@ -193,12 +196,14 @@ public class MailComposeScreen extends MailBaseScreen {
                 ignored -> syncAttachmentState(), () -> {
                 });
         addRenderableWidget(typeDropdown);
+        typeDropdown.setCanvasSize(MailViewport.DESIGN_WIDTH, MailViewport.DESIGN_HEIGHT);
         expireDropdown = new DropdownButton(formRect.x() + 168, rowY, DROPDOWN_WIDTH, DROPDOWN_WIDTH, 18,
                 Component.literal(""), EXPIRE_OPTIONS, prefill.expireIndex(), false,
                 ignored -> {
                 }, () -> {
                 });
         addRenderableWidget(expireDropdown);
+        expireDropdown.setCanvasSize(MailViewport.DESIGN_WIDTH, MailViewport.DESIGN_HEIGHT);
 
         int titleX = formRect.x() + 268;
         titleInput = createEditBox(titleX, rowY, Math.max(80, formRect.right() - titleX - 12), 18,
@@ -211,9 +216,9 @@ public class MailComposeScreen extends MailBaseScreen {
                 .setX(formRect.x() + 12)
                 .setY(bodyY)
                 .setPlaceholder(Component.literal("请输入邮件正文..."))
-                .setTextColor(0xFF404040)        // YZUI 风格深色文字
+                .setTextColor(YzuiTheme.text())        // YZUI 风格深色文字
                 .setTextShadow(false)
-                .setCursorColor(0xFF000000)      // YZUI 风格黑色光标
+                .setCursorColor(YzuiTheme.primary())
                 .setShowBackground(true)         // 启用背景，由 Mixin 替换为 YZUI 样式
                 .setShowDecorations(false)
                 .build(font, formRect.width() - 24, 45, Component.literal("邮件正文"));
@@ -280,8 +285,8 @@ public class MailComposeScreen extends MailBaseScreen {
     private EditBox createEditBox(int x, int y, int width, int height, String hint, int maxLength) {
         EditBox input = new EditBox(font, x, y, Math.max(20, width), height, Component.literal(""));
         input.setBordered(false);
-        input.setTextColor(0xFFE6E6E6);
-        input.setTextColorUneditable(0xFF888888);
+        input.setTextColor(YzuiTheme.textMuted());
+        input.setTextColorUneditable(YzuiTheme.textMuted());
         input.setTextShadow(false);
         input.setHint(Component.literal(hint));
         input.setMaxLength(maxLength);
@@ -292,14 +297,17 @@ public class MailComposeScreen extends MailBaseScreen {
 
     @Override
     protected void renderMailContent(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+        boolean modal = inventoryPicker.isVisible() || playerPicker.isOpen();
+        int contentX = modal ? -10000 : mouseX;
+        int contentY = modal ? -10000 : mouseY;
         MailUi.drawPage(graphics, pageRect);
-        renderHeader(graphics, mouseX, mouseY);
-        renderFormBackground(graphics, mouseX, mouseY);
-        renderWidgets(graphics, mouseX, mouseY, partialTick);
+        renderHeader(graphics, contentX, contentY);
+        renderFormBackground(graphics, contentX, contentY);
+        renderWidgets(graphics, contentX, contentY, partialTick);
 
-        typeDropdown.renderPopup(graphics, mouseX, mouseY, partialTick);
-        expireDropdown.renderPopup(graphics, mouseX, mouseY, partialTick);
-        if (inventoryPickerOpen) {
+        typeDropdown.renderPopup(graphics, contentX, contentY, partialTick);
+        expireDropdown.renderPopup(graphics, contentX, contentY, partialTick);
+        if (inventoryPicker.isVisible()) {
             renderInventoryPicker(graphics, mouseX, mouseY);
         }
         if (playerPicker.isOpen()) {
@@ -312,43 +320,43 @@ public class MailComposeScreen extends MailBaseScreen {
     private void renderHeader(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
         int titleX = pageRect.x() + 24;
         int titleY = pageRect.y() + 18;
-        graphics.text(font, "✎", titleX, titleY + 2, MailUi.TEXT_PRIMARY, false);
+        graphics.text(font, "✎", titleX, titleY + 2, MailUi.textPrimary(), false);
         graphics.pose().pushMatrix();
         graphics.pose().scale(1.35f, 1.35f);
         String heading = editMode ? "编辑邮件" : "发布邮件";
         graphics.text(font, heading, (int) ((titleX + 22) / 1.35f), (int) (titleY / 1.35f),
-                MailUi.TEXT_PRIMARY, false);
+                MailUi.textPrimary(), false);
         graphics.pose().popMatrix();
 
         publishRect = new MailUi.Rect(pageRect.right() - 60, pageRect.y() + 16, 38, 22);
         cancelRect = new MailUi.Rect(publishRect.x() - 50, publishRect.y(), 42, 22);
-        MailUi.button(graphics, font, cancelRect, "取消", 0xFF9A9A9A, 0xFF111111,
+        MailUi.button(graphics, font, cancelRect, "取消", YzuiTheme.primaryContainer(), YzuiTheme.onPrimaryContainer(),
                 cancelRect.contains(mouseX, mouseY), true);
-        MailUi.button(graphics, font, publishRect, editMode ? "保存" : "发布", 0xFF9A9A9A, 0xFF111111,
+        MailUi.button(graphics, font, publishRect, editMode ? "保存" : "发布", YzuiTheme.primaryContainer(), YzuiTheme.onPrimaryContainer(),
                 publishRect.contains(mouseX, mouseY), true);
 
         if (!validationMessage.isBlank()) {
             int maxWidth = Math.max(20, cancelRect.x() - titleX - 130);
             String message = MailUi.ellipsize(font, validationMessage, maxWidth);
-            graphics.text(font, message, titleX + 128, titleY + 4, MailUi.RED, false);
+            graphics.text(font, message, titleX + 128, titleY + 4, MailUi.red(), false);
         }
     }
 
     private void renderFormBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
         MailUi.roundedRect(graphics, formRect.x(), formRect.y(), formRect.width(), formRect.height(), 5,
-                MailUi.PANEL_BACKGROUND);
+                MailUi.panelBackground());
         int x = formRect.x() + 12;
-        graphics.text(font, "接收范围（二选一）", x, formRect.y() + 9, MailUi.TEXT_PRIMARY, false);
+        graphics.text(font, "接收范围（二选一）", x, formRect.y() + 9, MailUi.textPrimary(), false);
         if (!legacyTargets.isEmpty()) {
             String hint = "含 " + legacyTargets.size() + " 项旧版范围，保存时原样保留";
             graphics.text(font, hint, formRect.right() - font.width(hint) - 12, formRect.y() + 9,
-                    MailUi.TEXT_MUTED, false);
+                    MailUi.textMuted(), false);
         }
 
         // ===== 指定玩家：只读展示 + 选取按钮 =====
         if (cbPlayer.isChecked()) {
             int fieldY = formRect.y() + 42;
-            graphics.text(font, "玩家", formRect.x() + 12, fieldY + 4, MailUi.TEXT_SECONDARY, false);
+            graphics.text(font, "玩家", formRect.x() + 12, fieldY + 4, MailUi.textSecondary(), false);
             pickPlayersRect = new MailUi.Rect(formRect.right() - 84, fieldY - 2, 72, 20);
             String counter = "已选 " + selectedPlayers.size() + " 人";
             int counterWidth = font.width(counter);
@@ -359,41 +367,41 @@ public class MailComposeScreen extends MailBaseScreen {
             String display = selectedPlayers.isEmpty() ? "尚未选取玩家" : String.join(", ", selectedPlayers);
             graphics.text(font, MailUi.ellipsize(font, display, playerFieldRect.width() - 8),
                     playerFieldRect.x() + 4, playerFieldRect.y() + 4,
-                    selectedPlayers.isEmpty() ? MailUi.TEXT_MUTED : 0xFFE6E6E6, false);
+                    selectedPlayers.isEmpty() ? MailUi.textMuted() : YzuiTheme.textMuted(), false);
             graphics.text(font, counter, playerFieldRect.right() + 8, playerFieldRect.y() + 4,
-                    MailUi.TEXT_SECONDARY, false);
-            MailUi.button(graphics, font, pickPlayersRect, "选取玩家", 0xFF858585, 0xFF111111,
+                    MailUi.textSecondary(), false);
+            MailUi.button(graphics, font, pickPlayersRect, "选取玩家", YzuiTheme.primaryContainer(), YzuiTheme.onPrimaryContainer(),
                     pickPlayersRect.contains(mouseX, mouseY), true);
         } else {
             pickPlayersRect = new MailUi.Rect(0, 0, 0, 0);
             playerFieldRect = new MailUi.Rect(0, 0, 0, 0);
             graphics.text(font, "邮件将发送给全部已注册玩家", formRect.x() + 42, formRect.y() + 46,
-                    MailUi.TEXT_MUTED, false);
+                    MailUi.textMuted(), false);
         }
 
         graphics.fill(formRect.x() + 12, formRect.y() + 63, formRect.right() - 12,
-                formRect.y() + 64, MailUi.DIVIDER);
-        graphics.text(font, "类型", formRect.x() + 12, formRect.y() + 76, MailUi.TEXT_PRIMARY, false);
-        graphics.text(font, "过期时间", formRect.x() + 108, formRect.y() + 76, MailUi.TEXT_PRIMARY, false);
-        graphics.text(font, "主题", formRect.x() + 236, formRect.y() + 76, MailUi.TEXT_PRIMARY, false);
+                formRect.y() + 64, MailUi.divider());
+        graphics.text(font, "类型", formRect.x() + 12, formRect.y() + 76, MailUi.textPrimary(), false);
+        graphics.text(font, "过期时间", formRect.x() + 108, formRect.y() + 76, MailUi.textPrimary(), false);
+        graphics.text(font, "主题", formRect.x() + 236, formRect.y() + 76, MailUi.textPrimary(), false);
         drawInputBackground(graphics, typeDropdown.getX(), typeDropdown.getY(), typeDropdown.getWidth(), 18, true);
         drawInputBackground(graphics, expireDropdown.getX(), expireDropdown.getY(), expireDropdown.getWidth(), 18, true);
         drawInputBackground(graphics, titleInput.getX(), titleInput.getY(), titleInput.getWidth(),
                 titleInput.getHeight(), true);
 
-        graphics.text(font, "文本正文", x, formRect.y() + 94, MailUi.TEXT_PRIMARY, false);
+        graphics.text(font, "文本正文", x, formRect.y() + 94, MailUi.textPrimary(), false);
         // MultiLineEditBox 背景由 MultiLineEditBoxYzuiMixin 统一绘制 YZUI 风格
         graphics.fill(formRect.x() + 12, formRect.y() + 159, formRect.right() - 12,
-                formRect.y() + 160, MailUi.DIVIDER);
-        graphics.text(font, "附加附件", x, formRect.y() + 166, MailUi.TEXT_PRIMARY, false);
+                formRect.y() + 160, MailUi.divider());
+        graphics.text(font, "附加附件", x, formRect.y() + 166, MailUi.textPrimary(), false);
 
         boolean itemEnabled = cbItem != null && cbItem.active && cbItem.isChecked();
         for (int i = 0; i < ITEM_SLOTS; i++) {
             MailUi.Rect slot = slotRects[i];
-            int border = i == selectedItemSlot && itemEnabled ? MailUi.YELLOW : 0xFF7C7C7C;
+            int border = i == selectedItemSlot && itemEnabled ? MailUi.yellow() : YzuiTheme.outline();
             graphics.fill(slot.x(), slot.y(), slot.right(), slot.bottom(), border);
             graphics.fill(slot.x() + 1, slot.y() + 1, slot.right() - 1, slot.bottom() - 1,
-                    itemEnabled ? 0xFF3F3F3F : 0xFF4B4B4B);
+                    itemEnabled ? YzuiTheme.slot() : YzuiTheme.surfaceLow());
             ItemStack stack = itemSlots[i];
             if (stack != null && !stack.isEmpty()) {
                 graphics.item(stack, slot.x() + 1, slot.y() + 1, i);
@@ -405,10 +413,10 @@ public class MailComposeScreen extends MailBaseScreen {
             }
         }
         graphics.text(font, "数量", itemAmountInput.getX() - 25, itemAmountInput.getY() + 5,
-                itemEnabled ? MailUi.TEXT_SECONDARY : MailUi.TEXT_MUTED, false);
+                itemEnabled ? MailUi.textSecondary() : MailUi.textMuted(), false);
         drawInputBackground(graphics, itemAmountInput.getX(), itemAmountInput.getY(), itemAmountInput.getWidth(),
                 itemAmountInput.getHeight(), itemEnabled);
-        MailUi.button(graphics, font, pickItemRect, "从物品栏选取", 0xFF858585, 0xFF111111,
+        MailUi.button(graphics, font, pickItemRect, "从物品栏选取", YzuiTheme.primaryContainer(), YzuiTheme.onPrimaryContainer(),
                 pickItemRect.contains(mouseX, mouseY), itemEnabled);
 
         drawInputBackground(graphics, commandInput.getX(), commandInput.getY(), commandInput.getWidth(),
@@ -428,48 +436,61 @@ public class MailComposeScreen extends MailBaseScreen {
         if (editMode) {
             String hint = "编辑期间接收者暂不可见，保存或取消后恢复";
             graphics.text(font, hint, formRect.right() - font.width(hint) - 12, formRect.bottom() - 14,
-                    MailUi.TEXT_MUTED, false);
+                    MailUi.textMuted(), false);
         }
     }
 
     private void drawInputBackground(GuiGraphicsExtractor graphics, int x, int y, int width, int height,
                                      boolean enabled) {
         MailUi.roundedRect(graphics, x, y, width, height, 2,
-                enabled ? MailUi.INPUT_BACKGROUND : 0xFF505050);
+                enabled ? MailUi.inputBackground() : YzuiTheme.surfaceHigh());
     }
 
     private void renderInventoryPicker(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
-        graphics.fill(0, 0, MailViewport.DESIGN_WIDTH, MailViewport.DESIGN_HEIGHT, 0x99000000);
-        int pickerWidth = 202;
-        int pickerHeight = 112;
+        if (!inventoryPicker.update(MailViewport.DESIGN_WIDTH, MailViewport.DESIGN_HEIGHT)) return;
+        inventoryPicker.scrim(graphics);
+        int localX = (int) Math.floor(inventoryPicker.toLocalX(mouseX));
+        int localY = (int) Math.floor(inventoryPicker.toLocalY(mouseY));
+        var previous = inventoryPicker.begin(graphics);
+        try {
+            renderInventoryPickerPanel(graphics, inventoryPicker.acceptsInput() ? localX : -10000,
+                    inventoryPicker.acceptsInput() ? localY : -10000, mouseX, mouseY);
+        } finally {
+            inventoryPicker.end(graphics, previous);
+        }
+    }
+
+    private void renderInventoryPickerPanel(GuiGraphicsExtractor graphics, int mouseX, int mouseY,
+                                          int tooltipX, int tooltipY) {
+        int pickerWidth = 320;
+        int pickerHeight = 160;
         pickerRect = new MailUi.Rect((MailViewport.DESIGN_WIDTH - pickerWidth) / 2,
                 (MailViewport.DESIGN_HEIGHT - pickerHeight) / 2, pickerWidth, pickerHeight);
-        MailUi.roundedRect(graphics, pickerRect.x(), pickerRect.y(), pickerRect.width(), pickerRect.height(), 6,
-                0xFF2F2F2F);
-        graphics.text(font, "选择要复制到附件槽的物品", pickerRect.x() + 11, pickerRect.y() + 9,
-                MailUi.TEXT_PRIMARY, false);
-        graphics.text(font, "点击空白处取消", pickerRect.right() - font.width("点击空白处取消") - 11,
-                pickerRect.y() + 9, MailUi.TEXT_MUTED, false);
+        YzuiTheme.card(graphics, pickerRect.x(), pickerRect.y(), pickerRect.width(), pickerRect.height());
+        graphics.text(font, "选择要复制到附件槽的物品", pickerRect.x() + 16, pickerRect.y() + 16,
+                MailUi.textPrimary(), false);
+        graphics.text(font, "点击空白处取消", pickerRect.x() + 16,
+                pickerRect.bottom() - 20, MailUi.textMuted(), false);
 
         if (Minecraft.getInstance().player == null) {
             return;
         }
-        int gridX = pickerRect.x() + 11;
-        int gridY = pickerRect.y() + 28;
+        int gridX = pickerRect.x() + (pickerRect.width() - 180) / 2;
+        int gridY = pickerRect.y() + 40;
         var inventory = Minecraft.getInstance().player.getInventory();
         for (int i = 0; i < 36; i++) {
             int slotX = gridX + i % 9 * 20;
             int slotY = gridY + i / 9 * 20;
             MailUi.Rect sourceRect = new MailUi.Rect(slotX, slotY, 18, 18);
             graphics.fill(slotX, slotY, slotX + 18, slotY + 18,
-                    sourceRect.contains(mouseX, mouseY) ? 0xFF777777 : 0xFF4B4B4B);
+                    sourceRect.contains(mouseX, mouseY) ? YzuiTheme.slotHover() : YzuiTheme.slot());
             ItemStack stack = inventory.getItem(i);
             if (!stack.isEmpty()) {
                 graphics.item(stack, slotX + 1, slotY + 1, i + 100);
                 ItemBorderRenderer.renderSlotBorder(graphics, slotX + 1, slotY + 1, stack);
                 graphics.itemDecorations(font, stack, slotX + 1, slotY + 1);
                 if (sourceRect.contains(mouseX, mouseY)) {
-                    showItemTooltip(graphics, stack, mouseX, mouseY);
+                    showItemTooltip(graphics, stack, tooltipX, tooltipY);
                 }
             }
         }
@@ -489,6 +510,7 @@ public class MailComposeScreen extends MailBaseScreen {
 
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean isActuallyClick) {
+        if (isExiting()) return true;
         double mouseX = viewport.toDesignX(event.x());
         double mouseY = viewport.toDesignY(event.y());
 
@@ -496,9 +518,17 @@ public class MailComposeScreen extends MailBaseScreen {
             playerPicker.mouseClicked(mouseX, mouseY);
             return true;
         }
-        if (inventoryPickerOpen) {
-            handleInventoryPickerClick(mouseX, mouseY);
+        if (inventoryPicker.isVisible()) {
+            if (inventoryPicker.acceptsInput()) handleInventoryPickerClick(
+                    inventoryPicker.toLocalX(mouseX), inventoryPicker.toLocalY(mouseY));
             return true;
+        }
+        // 已展开的下拉菜单优先接收输入，避免点中下面的附件或提交按钮。
+        for (DropdownButton dropdown : new DropdownButton[] {typeDropdown, expireDropdown}) {
+            if (dropdown.isOpen()) {
+                if (!dropdown.mouseClicked(viewport.toDesignEvent(event), isActuallyClick)) dropdown.closePopup();
+                return true;
+            }
         }
         if (cancelRect.contains(mouseX, mouseY)) {
             onClose();
@@ -528,7 +558,8 @@ public class MailComposeScreen extends MailBaseScreen {
             }
         }
         if (pickItemRect.contains(mouseX, mouseY) && cbItem.active && cbItem.isChecked()) {
-            inventoryPickerOpen = true;
+            setFocused(null);
+            inventoryPicker.show(MailViewport.DESIGN_WIDTH, MailViewport.DESIGN_HEIGHT);
             return true;
         }
 
@@ -542,14 +573,35 @@ public class MailComposeScreen extends MailBaseScreen {
     }
 
     @Override
+    public boolean mouseReleased(MouseButtonEvent event) {
+        if (playerPicker.isOpen() || inventoryPicker.isVisible()) return true;
+        return super.mouseReleased(event);
+    }
+
+    @Override
+    public boolean mouseDragged(MouseButtonEvent event, double dragX, double dragY) {
+        if (playerPicker.isOpen() || inventoryPicker.isVisible()) return true;
+        return super.mouseDragged(event, dragX, dragY);
+    }
+
+    @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+        if (isExiting()) return true;
         if (playerPicker.isOpen()) {
             return playerPicker.mouseScrolled(viewport.toDesignX(mouseX), viewport.toDesignY(mouseY), scrollY);
+        }
+        if (inventoryPicker.isVisible()) return true;
+        for (DropdownButton dropdown : new DropdownButton[] {typeDropdown, expireDropdown}) {
+            if (dropdown.isOpen()) {
+                dropdown.mouseScrolled(viewport.toDesignX(mouseX), viewport.toDesignY(mouseY), scrollX, scrollY);
+                return true;
+            }
         }
         return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
     }
 
     private void openPlayerPicker() {
+        setFocused(null);
         playerSearchText = "";
         if (MailClientState.registeredPlayers.isEmpty()) {
             // 名单尚未到达（如刚进界面就点开），补发一次请求
@@ -565,13 +617,13 @@ public class MailComposeScreen extends MailBaseScreen {
 
     private void handleInventoryPickerClick(double mouseX, double mouseY) {
         if (Minecraft.getInstance().player == null || !pickerRect.contains(mouseX, mouseY)) {
-            inventoryPickerOpen = false;
+            inventoryPicker.hide();
             return;
         }
-        int gridX = pickerRect.x() + 11;
-        int gridY = pickerRect.y() + 28;
+        int gridX = pickerRect.x() + (pickerRect.width() - 180) / 2;
+        int gridY = pickerRect.y() + 40;
         if (mouseX < gridX || mouseX >= gridX + 180 || mouseY < gridY || mouseY >= gridY + 80) {
-            inventoryPickerOpen = false;
+            inventoryPicker.hide();
             return;
         }
         int column = (int) ((mouseX - gridX) / 20);
@@ -589,11 +641,12 @@ public class MailComposeScreen extends MailBaseScreen {
             DebugLogger.info(MODULE, "已选取物品附件: slot=%d, item=%s, count=%d",
                     selectedItemSlot, copy.getDisplayName().getString(), copy.getCount());
         }
-        inventoryPickerOpen = false;
+        inventoryPicker.hide();
     }
 
     @Override
     public boolean keyPressed(KeyEvent event) {
+        if (isExiting()) return true;
         if (playerPicker.isOpen()) {
             // ESC / 回车由弹窗处理，其余按键处理搜索输入
             if (playerPicker.keyPressed(event.key())) {
@@ -617,16 +670,25 @@ public class MailComposeScreen extends MailBaseScreen {
             }
             return true;
         }
-        if (inventoryPickerOpen && event.key() == 256) {
-            inventoryPickerOpen = false;
+        if (inventoryPicker.isVisible()) {
+            if (event.key() == 256) inventoryPicker.hide();
             return true;
+        }
+        for (DropdownButton dropdown : new DropdownButton[] {typeDropdown, expireDropdown}) {
+            if (dropdown.isOpen()) {
+                if (event.key() == 258) dropdown.closePopup();
+                else { dropdown.keyPressed(event); return true; }
+            }
         }
         return super.keyPressed(event);
     }
 
     @Override
     public boolean charTyped(CharacterEvent event) {
+        if (isExiting()) return true;
+        if (inventoryPicker.isVisible() || typeDropdown.isOpen() || expireDropdown.isOpen()) return true;
         if (playerPicker.isOpen()) {
+            if (!playerPicker.acceptsInput()) return true;
             String text = new String(Character.toChars(event.codepoint()));
             // 过滤控制字符
             if (!text.isEmpty() && event.codepoint() >= 32) {
@@ -673,7 +735,7 @@ public class MailComposeScreen extends MailBaseScreen {
         adventureExpInput.setEditable(reward && cbAdventureExp.isChecked());
         adventureLevelInput.setEditable(reward && cbAdventureLevel.isChecked());
         if (!reward || !cbItem.isChecked()) {
-            inventoryPickerOpen = false;
+            inventoryPicker.hide();
         }
     }
 
@@ -918,8 +980,8 @@ public class MailComposeScreen extends MailBaseScreen {
             playerPicker.close();
             return;
         }
-        if (inventoryPickerOpen) {
-            inventoryPickerOpen = false;
+        if (inventoryPicker.isVisible()) {
+            inventoryPicker.hide();
             return;
         }
         if (editMode && editMailId != null && !finished && !cancelPacketSent) {

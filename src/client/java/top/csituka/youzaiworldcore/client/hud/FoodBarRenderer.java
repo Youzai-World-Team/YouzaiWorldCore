@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.client.hud;
 
+import top.csituka.youzaiworldcore.client.render.YzuiTheme;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -26,8 +28,7 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
 public final class FoodBarRenderer {
 
     private static final int TEXT_OFFSET_ABOVE_BAR = 10;
-    private static final int TEXT_SHADOW_OFFSET = 1;
-    private static final int BG_COLOR = 0xAA333333;
+    private static int bgColor() { return YzuiTheme.hudSurface(); }
     /** 消耗度底色（浅灰色，绘制在食物填充下方） */
     private static final int COLOR_EXHAUSTION = 0x88AAAAAA;
     /** 饱和度叠加层（橙色，半透明） */
@@ -112,7 +113,7 @@ public final class FoodBarRenderer {
         //   5. 文字
 
         // === 1. 背景（圆角） ===
-        HealthBarRenderer.fillBarBg(graphics, barX, barY, BG_COLOR);
+        HealthBarRenderer.fillBarBg(graphics, barX, barY, bgColor());
 
         // === 2. 消耗度底色（绘制在食物填充下方，从右侧延伸） ===
         //    参考 AppleSkin：底色在食物条背后，宽度 = exhaustionRatio * BAR_WIDTH
@@ -155,20 +156,25 @@ public final class FoodBarRenderer {
         int textColor;
 
         if (isPredicted) {
-            // 预测模式：始终显示绿色闪烁文字（脉冲不切换回白色），alpha 随 flashAlpha 波动
-            int alpha = Math.min(255, Math.max(60, (int) ((flashAlpha * 0.6f + 0.4f) * 255)));
+            // 预测模式用绿色强调，保持浅色和深色主题下的数值对比度。
             text = String.format("%d(+%d)/%d", foodLevel, predictedNutrition, maxFood);
-            textColor = (alpha << 24) | 0x88FF88;
-            drawText(graphics, font, text, barX, barY, textColor, true);
+            textColor = YzuiTheme.mix(YzuiTheme.text(), YzuiTheme.success(),
+                    YzuiTheme.minimal() ? 1f : 0.7f + flashAlpha * 0.3f);
+            drawText(graphics, font, text, barX, barY, textColor);
         } else {
             text = String.format("%d/%d", displayFood, maxFood);
-            drawText(graphics, font, text, barX, barY, 0xFFFFFFFF, false);
+            drawText(graphics, font, text, barX, barY, YzuiTheme.text());
         }
     }
 
     // ===== 闪烁系统 =====
 
     public static void updateFlash(int guiTicks, boolean hasFood) {
+        if (YzuiTheme.minimal()) {
+            unclampedFlashAlpha = hasFood ? 1f : 0f;
+            flashAlpha = hasFood ? 0.65f : 0f;
+            return;
+        }
         if (!hasFood) {
             unclampedFlashAlpha = 0f;
             flashAlpha = 0f;
@@ -221,14 +227,10 @@ public final class FoodBarRenderer {
     }
 
     private static void drawText(GuiGraphicsExtractor graphics, Font font,
-                                  String text, int barX, int barY, int color, boolean alwaysShadow) {
+                                  String text, int barX, int barY, int color) {
         int textWidth = font.width(text);
         int textX = barX + (HealthBarRenderer.BAR_WIDTH - textWidth) / 2;
         int textY = barY - TEXT_OFFSET_ABOVE_BAR;
-        if (alwaysShadow || (color & 0xFF000000) != 0) {
-            graphics.text(font, text, textX + TEXT_SHADOW_OFFSET, textY + TEXT_SHADOW_OFFSET,
-                    0xFF000000, false);
-        }
-        graphics.text(font, text, textX, textY, color, false);
+        YzuiTheme.hudLabel(graphics, font, text, textX, textY, color, 1f);
     }
 }

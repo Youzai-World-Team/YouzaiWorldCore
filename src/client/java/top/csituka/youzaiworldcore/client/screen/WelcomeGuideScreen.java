@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.client.screen;
 
+import top.csituka.youzaiworldcore.client.render.YzuiTheme;
+
 import java.util.List;
 import java.util.function.BooleanSupplier;
 
@@ -43,9 +45,9 @@ public final class WelcomeGuideScreen extends Screen {
     private static final int CARD_GAP = 10;
     private static final int BUTTON_WIDTH = 110;
     private static final int BUTTON_HEIGHT = 24;
-    private static final int TEXT_COLOR = 0xFFF4F4F4;
-    private static final int MUTED_TEXT_COLOR = 0xFFC8C8C8;
-    private static final int ACCENT_COLOR = 0xFF78D89A;
+    private static int textColor() { return YzuiTheme.text(); }
+    private static int mutedTextColor() { return YzuiTheme.textMuted(); }
+    private static int accentColor() { return YzuiTheme.primary(); }
 
     private static final FontDescription.Resource VANILLA_PREVIEW_FONT = new FontDescription.Resource(
             Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "vanilla_preview"));
@@ -248,22 +250,21 @@ public final class WelcomeGuideScreen extends Screen {
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
-        RoundedRect.fillWithBorder(graphics, panelX, panelY, panelWidth, panelHeight,
-                PANEL_RADIUS, PANEL_RADIUS - 1, 0x70FFFFFF, 0xD0181B20);
+        YzuiTheme.card(graphics, panelX, panelY, panelWidth, panelHeight);
 
-        drawCentered(graphics, title, panelY + 14, TEXT_COLOR);
+        drawCentered(graphics, title, panelY + 14, textColor());
         Component progress = Component.translatable(
                 "screen.youzaiworldcore.welcome_guide.progress", page.index, Page.values().length);
         graphics.text(font, progress,
                 panelX + panelWidth - 14 - font.width(progress), panelY + 15,
-                MUTED_TEXT_COLOR, false);
+                mutedTextColor(), false);
 
         if (page == Page.WELCOME) {
             drawWelcomeContent(graphics);
         } else {
-            drawCentered(graphics, page.title(), pageTitleY, TEXT_COLOR);
+            drawCentered(graphics, page.title(), pageTitleY, textColor());
             drawCenteredWrapped(graphics, pageBody(), bodyY,
-                    panelWidth - 48, bodyMaxLines, MUTED_TEXT_COLOR);
+                    panelWidth - 48, bodyMaxLines, mutedTextColor());
             if (page == Page.COMPLETE) {
                 drawCompleteContent(graphics);
             }
@@ -282,16 +283,16 @@ public final class WelcomeGuideScreen extends Screen {
         int titleY = contentTop + Math.max(0,
                 (contentBottom - contentTop - textGroupHeight) / 2);
 
-        drawCentered(graphics, page.title(), titleY, TEXT_COLOR);
+        drawCentered(graphics, page.title(), titleY, textColor());
         drawCenteredWrapped(graphics, body, titleY + font.lineHeight + 10,
-                maxWidth, bodyMaxLines, MUTED_TEXT_COLOR);
+                maxWidth, bodyMaxLines, mutedTextColor());
     }
 
     private void drawCompleteContent(GuiGraphicsExtractor graphics) {
         int summaryWidth = Math.min(360, panelWidth - 48);
         int summaryX = panelX + (panelWidth - summaryWidth) / 2;
         int summaryY = bodyY + 38;
-        RoundedRect.fill(graphics, summaryX, summaryY, summaryWidth, 62, 6, 0x35FFFFFF);
+        RoundedRect.fill(graphics, summaryX, summaryY, summaryWidth, 62, 6, YzuiTheme.surfaceHigh());
 
         Component yzuiSummary = Component.translatable(
                 "screen.youzaiworldcore.welcome_guide.summary_yzui",
@@ -299,14 +300,14 @@ public final class WelcomeGuideScreen extends Screen {
         Component fontSummary = Component.translatable(
                 "screen.youzaiworldcore.welcome_guide.summary_font",
                 settingState(customFontEnabled));
-        graphics.text(font, yzuiSummary, summaryX + 12, summaryY + 15, TEXT_COLOR, false);
-        graphics.text(font, fontSummary, summaryX + 12, summaryY + 38, TEXT_COLOR, false);
+        graphics.text(font, yzuiSummary, summaryX + 12, summaryY + 15, textColor(), false);
+        graphics.text(font, fontSummary, summaryX + 12, summaryY + 38, textColor(), false);
     }
 
     private Component settingState(boolean enabled) {
         String suffix = enabled ? "enabled" : "disabled";
         return Component.translatable("screen.youzaiworldcore.welcome_guide." + suffix)
-                .withStyle(style -> style.withColor(enabled ? 0x78D89A : 0xB8B8B8));
+                .withStyle(style -> style.withColor(enabled ? YzuiTheme.success() : YzuiTheme.textMuted()));
     }
 
     private Component pageBody() {
@@ -334,8 +335,8 @@ public final class WelcomeGuideScreen extends Screen {
                 && (widget.previewButton.isHoveredOrFocused()
                 || widget.previewSlider.isHoveredOrFocused());
         boolean highlighted = widget.isHoveredOrFocused() || childHighlighted;
-        int border = selected ? ACCENT_COLOR : (highlighted ? 0xC0FFFFFF : 0x50FFFFFF);
-        int fill = selected ? 0xC8FFFFFF : (highlighted ? 0x88FFFFFF : 0x26FFFFFF);
+        int border = selected || highlighted ? accentColor() : YzuiTheme.outlineVariant();
+        int fill = selected ? YzuiTheme.primaryContainer() : YzuiTheme.surfaceLow();
         RoundedRect.fillWithBorder(graphics, widget.getX(), widget.getY(),
                 widget.getWidth(), widget.getHeight(), 7, 6, border, fill);
 
@@ -343,7 +344,7 @@ public final class WelcomeGuideScreen extends Screen {
         int innerWidth = widget.getWidth() - 16;
         List<FormattedCharSequence> labelLines = font.split(widget.getMessage(), innerWidth);
         int labelCount = Math.min(2, labelLines.size());
-        int labelColor = selected || highlighted ? 0xFF202020 : TEXT_COLOR;
+        int labelColor = selected ? YzuiTheme.onPrimaryContainer() : textColor();
         for (int i = 0; i < labelCount; i++) {
             FormattedCharSequence line = labelLines.get(i);
             graphics.text(font, line,
@@ -370,14 +371,14 @@ public final class WelcomeGuideScreen extends Screen {
     private void drawUiPreview(GuiGraphicsExtractor graphics, int x, int y, int w, int h,
             PreviewOptionWidget widget, int mouseX, int mouseY, float partialTick) {
         // 两侧使用相同的预览容器，仅由真实按钮和滑块呈现原版/YZUI差异。
-        RoundedRect.fill(graphics, x, y, w, h, 5, 0xD0202020);
+        RoundedRect.fill(graphics, x, y, w, h, 5, YzuiTheme.surfaceHigh());
         widget.previewButton.extractRenderState(graphics, mouseX, mouseY, partialTick);
         widget.previewSlider.extractRenderState(graphics, mouseX, mouseY, partialTick);
     }
 
     private void drawFontPreview(GuiGraphicsExtractor graphics, int x, int y, int w, int h,
             FontDescription.Resource previewFont) {
-        RoundedRect.fill(graphics, x, y, w, h, 5, 0xB0181818);
+        RoundedRect.fill(graphics, x, y, w, h, 5, YzuiTheme.surfaceHigh());
         Component sample = Component.translatable("screen.youzaiworldcore.welcome_guide.font_sample")
                 .withStyle(style -> style.withFont(previewFont));
         Component emojiSample = Component.translatable(
@@ -388,16 +389,15 @@ public final class WelcomeGuideScreen extends Screen {
         int firstLineY = y + Math.max(3, (h - totalHeight) / 2);
         graphics.enableScissor(x + 3, y + 2, x + w - 3, y + h - 2);
         graphics.text(font, sample, x + Math.max(5, (w - font.width(sample)) / 2),
-                firstLineY, 0xFFFFFFFF, false);
+                firstLineY, YzuiTheme.text(), false);
         graphics.text(font, emojiSample, x + Math.max(5, (w - font.width(emojiSample)) / 2),
-                firstLineY + font.lineHeight + lineGap, 0xFFFFFFFF, false);
+                firstLineY + font.lineHeight + lineGap, YzuiTheme.text(), false);
         graphics.disableScissor();
     }
 
     @Override
     public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
-        super.extractBackground(graphics, mouseX, mouseY, partialTick);
-        graphics.fill(0, 0, width, height, 0x35000000);
+        // 背景由共用屏幕入口在内容变换之前绘制，避免重复模糊与叠加遮罩。
     }
 
     @Override

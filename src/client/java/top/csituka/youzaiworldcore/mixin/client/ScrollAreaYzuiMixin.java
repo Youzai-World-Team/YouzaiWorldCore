@@ -1,36 +1,29 @@
 package top.csituka.youzaiworldcore.mixin.client;
 
-import net.minecraft.client.Minecraft;
+import com.mojang.blaze3d.pipeline.RenderPipeline;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractScrollArea;
+import net.minecraft.resources.Identifier;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.Redirect;
+import top.csituka.youzaiworldcore.client.render.RoundedRect;
+import top.csituka.youzaiworldcore.client.render.YzuiTheme;
 
-/**
- * 在悠哉模组屏幕中跳过 AbstractScrollArea 的滚动条绘制，
- * 避免小输入框（如邮件正文的 MultiLineEditBox）上出现灰色滚动条背景。
- */
+/** 以细圆角轨道替换滚动条纹理，保留原版滚动、拖拽和鼠标提示区域。 */
 @Mixin(AbstractScrollArea.class)
-@SuppressWarnings("null")
 public class ScrollAreaYzuiMixin {
-
-    @Inject(method = "extractScrollbar(Lnet/minecraft/client/gui/GuiGraphicsExtractor;II)V",
-            at = @At("HEAD"), cancellable = true)
-    private void yzwc$skipScrollbar(GuiGraphicsExtractor graphics, int mouseX, int mouseY, CallbackInfo ci) {
-        if (yzwc$shouldApply()) {
-            ci.cancel();
+    @Redirect(method = "extractScrollbar", at = @At(value = "INVOKE",
+            target = "Lnet/minecraft/client/gui/GuiGraphicsExtractor;blitSprite(Lcom/mojang/blaze3d/pipeline/RenderPipeline;Lnet/minecraft/resources/Identifier;IIII)V"))
+    private void youzaiworldcore$scrollbar(GuiGraphicsExtractor g, RenderPipeline pipeline, Identifier sprite,
+            int x, int y, int width, int height) {
+        if (!YzuiTheme.enabled()) {
+            g.blitSprite(pipeline, sprite, x, y, width, height);
+            return;
         }
-    }
-
-    @Unique
-    private static boolean yzwc$shouldApply() {
-        var screen = Minecraft.getInstance().gui.screen();
-        if (screen == null) {
-            return false;
-        }
-        return screen.getClass().getName().startsWith("top.csituka.youzaiworldcore");
+        boolean background = sprite.getPath().contains("background");
+        int color = background ? YzuiTheme.outlineVariant() : YzuiTheme.primary();
+        int thickness = Math.min(width, background ? 2 : 3);
+        RoundedRect.fill(g, x + (width - thickness) / 2, y, thickness, height, 1, color);
     }
 }

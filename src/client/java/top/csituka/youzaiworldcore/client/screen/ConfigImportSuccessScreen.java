@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.client.screen;
 
+import top.csituka.youzaiworldcore.client.render.YzuiTheme;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
@@ -25,8 +27,8 @@ public class ConfigImportSuccessScreen extends Screen {
     private static final String LOG_MODULE = "ConfigImportSuccessScreen";
 
     // ============ 布局常量 ============
-    private static final int DIALOG_WIDTH = 260;
-    private static final int DIALOG_HEIGHT = 120;
+    private static final int DIALOG_WIDTH = 400;
+    private static final int DIALOG_HEIGHT = 208;
     private static final int CORNER_RADIUS = 6;
     private static final int BUTTON_WIDTH = 120;
     private static final int BUTTON_HEIGHT = 24;
@@ -54,47 +56,25 @@ public class ConfigImportSuccessScreen extends Screen {
                 Component.translatable("screen.youzaiworldcore.config_io.import_success_quit"),
                 this::onQuit
         );
-        this.quitButton.setTextColor(0x000000);
+        this.quitButton.setStyle(YzuiTheme.ButtonStyle.FILLED);
+        addRenderableWidget(quitButton);
     }
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
-        // 全屏半透明黑色遮罩
-        guiGraphics.fill(0, 0, this.width, this.height, 0x80000000);
-
-        int dialogX = (this.width - DIALOG_WIDTH) / 2;
-        int dialogY = (this.height - DIALOG_HEIGHT) / 2;
-
-        // 白色圆角背景
-        fillRoundedRect(guiGraphics, dialogX, dialogY, DIALOG_WIDTH, DIALOG_HEIGHT, CORNER_RADIUS, 0xBFFFFFFF);
-
-        // 标题
-        String title = Component.translatable("screen.youzaiworldcore.config_io.import_success_title").getString();
-        int titleWidth = this.font.width(title);
-        guiGraphics.text(this.font, title,
-                dialogX + (DIALOG_WIDTH - titleWidth) / 2,
-                dialogY + 18, 0xFF000000, false);
-
-        // 提示文本
-        String hint1 = Component.translatable("screen.youzaiworldcore.config_io.import_success_hint1").getString();
-        String hint2 = Component.translatable("screen.youzaiworldcore.config_io.import_success_hint2").getString();
-        int hint1Width = this.font.width(hint1);
-        int hint2Width = this.font.width(hint2);
-        guiGraphics.text(this.font, hint1,
-                dialogX + (DIALOG_WIDTH - hint1Width) / 2,
-                dialogY + 45, 0xFF000000, false);
-        guiGraphics.text(this.font, hint2,
-                dialogX + (DIALOG_WIDTH - hint2Width) / 2,
-                dialogY + 58, 0xFF000000, false);
-
-        // 按钮
-        if (this.quitButton != null) {
-            this.quitButton.extractRenderState(guiGraphics, mouseX, mouseY, partialTick);
-        }
+        int x = (width - DIALOG_WIDTH) / 2, y = (height - DIALOG_HEIGHT) / 2;
+        YzuiTheme.card(guiGraphics, x, y, DIALOG_WIDTH, DIALOG_HEIGHT);
+        YzuiTheme.label(guiGraphics, font, title, x + 24, y + 24, DIALOG_WIDTH - 48, YzuiTheme.text(), false);
+        YzuiTheme.wrapped(guiGraphics, font, Component.translatable("screen.youzaiworldcore.config_io.import_success_hint1"),
+                x + 24, y + 58, DIALOG_WIDTH - 48, 3, YzuiTheme.textMuted());
+        YzuiTheme.wrapped(guiGraphics, font, Component.translatable("screen.youzaiworldcore.config_io.import_success_hint2"),
+                x + 24, y + 98, DIALOG_WIDTH - 48, 3, YzuiTheme.textMuted());
+        super.extractRenderState(guiGraphics, mouseX, mouseY, partialTick);
     }
 
     @Override
     public void extractBackground(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
+        // 背景由共用屏幕入口在内容变换之前绘制，避免重复模糊与叠加遮罩。
     }
 
     @Override
@@ -111,8 +91,7 @@ public class ConfigImportSuccessScreen extends Screen {
 
     @Override
     public boolean keyPressed(KeyEvent keyEvent) {
-        // ESC 无响应 — 必须点击按钮关闭
-        return true;
+        return keyEvent.key() == 256 || super.keyPressed(keyEvent);
     }
 
     @Override

@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.client.screen.element;
 
+import top.csituka.youzaiworldcore.client.render.YzuiTheme;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractWidget;
@@ -8,29 +10,15 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.stats.Stats;
 import top.csituka.youzaiworldcore.client.screen.MenuScreen;
-import top.csituka.youzaiworldcore.client.animation.GuiAnimationController;
 
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.List;
 
 public class AboutMeMenuElements implements MenuElementGroup {
 
-    private static final int CONTENT_WIDTH = 300;
-    private static final int CONTENT_HEIGHT = 120;
-    private static final int MODEL_SIZE = 100;
-    private static final int MODEL_OFFSET_X = 15;
-    private static final int MODEL_OFFSET_Y = 30;
-    private static final int DIVIDER_MARGIN = 10;
-    private static final int TEXT_OFFSET_X = 0;
-    private static final long DELAY_MS = 300;
-    private static final long FADE_DURATION_MS = 600;
-
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy/MM/dd");
-
-    private long firstRenderTime = -1;
 
     @Override
     public String getTitleText() {
@@ -49,7 +37,14 @@ public class AboutMeMenuElements implements MenuElementGroup {
 
     @Override
     public List<AbstractWidget> createButtons(MenuScreen screen, int screenWidth, int screenHeight, float scale, float alpha) {
-        return new ArrayList<>();
+        int w = new MenuLayout(screenWidth, screenHeight).contentWidth(560);
+        int top = new MenuLayout(screenWidth, screenHeight).centeredTop(238);
+        var button = new top.csituka.youzaiworldcore.client.screen.widget.TransparentButton(
+                (screenWidth - w) / 2, top + 210, w, 28,
+                net.minecraft.network.chat.Component.translatable("screen.youzaiworldcore.account_management.title"),
+                () -> Minecraft.getInstance().setScreenAndShow(new top.csituka.youzaiworldcore.client.screen.AccountManagementScreen(screen)));
+        button.setExternalAlpha(alpha);
+        return List.of(button);
     }
 
     @SuppressWarnings("null")
@@ -58,99 +53,32 @@ public class AboutMeMenuElements implements MenuElementGroup {
         Minecraft client = Minecraft.getInstance();
         if (client.player == null) return;
         var player = client.player;
-
-        if (firstRenderTime == -1) {
-            firstRenderTime = System.currentTimeMillis();
-        }
-
-        long elapsed = System.currentTimeMillis() - firstRenderTime;
-        float modelAlpha;
-        if (!GuiAnimationController.isEnabled()) {
-            modelAlpha = 1.0f;
-        } else if (elapsed < DELAY_MS) {
-            modelAlpha = 0f;
-        } else if (elapsed < DELAY_MS + FADE_DURATION_MS) {
-            float t = (float) (elapsed - DELAY_MS) / FADE_DURATION_MS;
-            modelAlpha = easeOutCubic(t);
-        } else {
-            modelAlpha = 1f;
-        }
-        modelAlpha *= alpha;
-
-        int textAlpha = (int) (alpha * 255);
-        int textColor = (textAlpha << 24) | 0xFFFFFF;
-        int dividerAlpha = (int) (alpha * 80);
-        int dividerColor = (dividerAlpha << 24) | 0xFFFFFF;
-
-        float scaledLargeH = LARGE_BUTTON_HEIGHT;
-        float scaledRowSpacing = ROW_SPACING;
-        int baseY = (int) (screenHeight / 2 - scaledLargeH / 2 - scaledRowSpacing - 15);
-
-        int contentX = screenWidth / 2 - CONTENT_WIDTH / 2;
-        int contentY = baseY;
-
-        int leftWidth = CONTENT_WIDTH / 2 - DIVIDER_MARGIN;
-        int rightX = screenWidth / 2 + DIVIDER_MARGIN;
-
-        int modelCenterX = contentX + leftWidth / 2 + MODEL_OFFSET_X;
-        int modelCenterY = contentY + CONTENT_HEIGHT / 2 + MODEL_OFFSET_Y;
-
-        if (modelAlpha > 0.01f) {
-            int currentSize = Math.max(1, (int) (MODEL_SIZE * modelAlpha));
-            int halfSize = Math.max(1, currentSize / 2);
-
-            int modelX1 = modelCenterX - halfSize;
-            int modelY1 = modelCenterY - currentSize;
-            int modelX2 = modelCenterX + halfSize;
-            int modelY2 = modelCenterY + halfSize / 2;
-
-            InventoryScreen.extractEntityInInventoryFollowsMouse(
-                    guiGraphics,
-                    modelX1, modelY1,
-                    modelX2, modelY2,
-                    30,
-                    0.0625f,
-                    mouseX, mouseY,
-                    player
-            );
-        }
-
-        int dividerX = (int) (screenWidth / 2 + xOffset);
-        guiGraphics.fill(dividerX, contentY, dividerX + 1, contentY + CONTENT_HEIGHT, dividerColor);
-
         var font = client.font;
-        int labelColor = (textAlpha << 24) | 0xAAAAAA;
-
-        String playerName = player.getName().getString();
-        String firstJoinDate = getFirstJoinDate(player);
-        String lastJoinDate = getLastJoinDate(client);
-        String playTimeStr = getPlayTime(player);
-
-        String[][] infoItems = {
-                {I18n.get("youzaiworldcore.message.gui.label_player_id"), playerName},
-                {I18n.get("youzaiworldcore.message.gui.label_first_join"), firstJoinDate},
-                {I18n.get("youzaiworldcore.message.gui.label_last_join"), lastJoinDate},
-                {I18n.get("youzaiworldcore.message.gui.label_play_time"), playTimeStr}
-        };
-
-        int maxLabelWidth = 0;
-        int maxValueWidth = 0;
-        for (String[] item : infoItems) {
-            int lw = font.width(item[0]);
-            int vw = font.width(item[1]);
-            if (lw > maxLabelWidth) maxLabelWidth = lw;
-            if (vw > maxValueWidth) maxValueWidth = vw;
+        int w = new MenuLayout(screenWidth, screenHeight).contentWidth(560);
+        int top = new MenuLayout(screenWidth, screenHeight).centeredTop(238);
+        int x = (screenWidth - w) / 2 + (int) xOffset;
+        int modelWidth = Math.min(144, w / 3);
+        guiGraphics.enableScissor(x + 8, top + 8, x + modelWidth - 8, top + 186);
+        try {
+            InventoryScreen.extractEntityInInventoryFollowsMouse(guiGraphics,
+                    x + 10, top + 10, x + modelWidth - 10, top + 182,
+                    52, 0.0625f, mouseX, mouseY, player);
+        } finally {
+            guiGraphics.disableScissor();
         }
-
-        int textX = (int) (rightX + TEXT_OFFSET_X + xOffset);
-
-        int totalTextHeight = font.lineHeight * infoItems.length + 4 * (infoItems.length - 1);
-        int textStartY = contentY + CONTENT_HEIGHT / 2 - totalTextHeight / 2;
-
-        for (int i = 0; i < infoItems.length; i++) {
-            int y = textStartY + i * (font.lineHeight + 4);
-            guiGraphics.text(font, infoItems[i][0], textX, y, labelColor, false);
-            guiGraphics.text(font, infoItems[i][1], textX + maxLabelWidth, y, textColor, false);
+        String[][] info = {
+                {I18n.get("youzaiworldcore.message.gui.label_player_id"), player.getName().getString()},
+                {I18n.get("youzaiworldcore.message.gui.label_first_join"), getFirstJoinDate(player)},
+                {I18n.get("youzaiworldcore.message.gui.label_last_join"), getLastJoinDate(client)},
+                {I18n.get("youzaiworldcore.message.gui.label_play_time"), getPlayTime(player)}
+        };
+        int textX = x + modelWidth + 24;
+        for (int row = 0; row < info.length; row++) {
+            int y = top + 14 + row * 44;
+            YzuiTheme.label(guiGraphics, font, net.minecraft.network.chat.Component.literal(info[row][0]),
+                    textX, y, w - modelWidth - 40, YzuiTheme.alpha(YzuiTheme.textMuted(), alpha), false);
+            YzuiTheme.label(guiGraphics, font, net.minecraft.network.chat.Component.literal(info[row][1]),
+                    textX, y + 15, w - modelWidth - 40, YzuiTheme.alpha(YzuiTheme.text(), alpha), false);
         }
     }
 
@@ -192,7 +120,11 @@ public class AboutMeMenuElements implements MenuElementGroup {
         return I18n.get("youzaiworldcore.message.gui.unknown");
     }
 
-    private float easeOutCubic(float t) {
-        return 1.0f - (float) Math.pow(1.0f - t, 3);
+    @Override
+    public void renderCustomBackground(GuiGraphicsExtractor g, int width, int height, float alpha, float xOffset) {
+        int w = new MenuLayout(width, height).contentWidth(560), x = (width - w) / 2 + (int) xOffset;
+        int y = new MenuLayout(width, height).centeredTop(238), modelWidth = Math.min(144, w / 3);
+        YzuiTheme.card(g, x, y, modelWidth, 194, alpha);
+        YzuiTheme.card(g, x + modelWidth + 10, y, w - modelWidth - 10, 194, alpha);
     }
 }

@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.client.screen.block;
 
+import top.csituka.youzaiworldcore.client.render.YzuiTheme;
+
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
@@ -20,12 +22,12 @@ import top.csituka.youzaiworldcore.screen.DecompositionTableMenu;
 public class DecompositionTableScreen extends AbstractContainerScreen<DecompositionTableMenu> {
 
     private static final Identifier DECOMPOSITION_BUTTON_TEXTURE = Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "textures/gui/decomposition_button.png");
-    private static final int BACKGROUND_COLOR = 0x80FFFFFF;
-    private static final int SLOT_COLOR = 0x40FFFFFF;
-    private static final int SLOT_HOVER_COLOR = 0x60FFFFFF;
-    private static final int BUTTON_COLOR = 0x40FFFFFF;
-    private static final int BUTTON_HOVER_COLOR = 0x80FFFFFF;
-    private static final int BUTTON_DISABLED_COLOR = 0x20FFFFFF;
+    private static int backgroundColor() { return YzuiTheme.surface(); }
+    private static int slotColor() { return YzuiTheme.slot(); }
+    private static int slotHoverColor() { return YzuiTheme.slotHover(); }
+    private static int buttonColor() { return YzuiTheme.primaryContainer(); }
+    private static int buttonHoverColor() { return YzuiTheme.surfaceHigh(); }
+    private static int buttonDisabledColor() { return YzuiTheme.surfaceHigh(); }
     private static final int CORNER_RADIUS = 6;
     private static final int INPUT_SLOT_X = 49;
     private static final int INPUT_SLOT_Y = 35;
@@ -73,10 +75,7 @@ public class DecompositionTableScreen extends AbstractContainerScreen<Decomposit
     }
 
     private void drawBackground(GuiGraphicsExtractor guiGraphics) {
-        int x = this.leftPos;
-        int y = this.topPos;
-
-        fillRoundedRect(guiGraphics, x, y, this.imageWidth, this.imageHeight, CORNER_RADIUS, BACKGROUND_COLOR);
+        YzuiTheme.card(guiGraphics, leftPos, topPos, imageWidth, imageHeight);
     }
 
     boolean canDecompose() {
@@ -111,7 +110,7 @@ public class DecompositionTableScreen extends AbstractContainerScreen<Decomposit
         int slotEndY = slotY + SLOT_SIZE;
 
         boolean isHovered = mouseX >= slotX && mouseX < slotEndX && mouseY >= slotY && mouseY < slotEndY;
-        int color = isHovered ? SLOT_HOVER_COLOR : SLOT_COLOR;
+        int color = isHovered ? slotHoverColor() : slotColor();
 
         fillRoundedRect(guiGraphics, slotX, slotY, SLOT_SIZE, SLOT_SIZE, 3, color);
     }
@@ -126,7 +125,7 @@ public class DecompositionTableScreen extends AbstractContainerScreen<Decomposit
             int slotEndY = slotY + SLOT_SIZE;
 
             boolean isHovered = mouseX >= slotX && mouseX < slotEndX && mouseY >= slotY && mouseY < slotEndY;
-            int color = isHovered ? SLOT_HOVER_COLOR : SLOT_COLOR;
+            int color = isHovered ? slotHoverColor() : slotColor();
 
             fillRoundedRect(guiGraphics, slotX, slotY, SLOT_SIZE, SLOT_SIZE, 3, color);
         }
@@ -145,7 +144,7 @@ public class DecompositionTableScreen extends AbstractContainerScreen<Decomposit
                 int slotEndY = slotY + SLOT_SIZE;
 
                 boolean isHovered = mouseX >= slotX && mouseX < slotEndX && mouseY >= slotY && mouseY < slotEndY;
-                int color = isHovered ? SLOT_HOVER_COLOR : SLOT_COLOR;
+                int color = isHovered ? slotHoverColor() : slotColor();
 
                 fillRoundedRect(guiGraphics, slotX, slotY, SLOT_SIZE, SLOT_SIZE, 3, color);
             }
@@ -158,7 +157,7 @@ public class DecompositionTableScreen extends AbstractContainerScreen<Decomposit
             int slotEndY = slotY + SLOT_SIZE;
 
             boolean isHovered = mouseX >= slotX && mouseX < slotEndX && mouseY >= slotY && mouseY < slotEndY;
-            int color = isHovered ? SLOT_HOVER_COLOR : SLOT_COLOR;
+            int color = isHovered ? slotHoverColor() : slotColor();
 
             fillRoundedRect(guiGraphics, slotX, slotY, SLOT_SIZE, SLOT_SIZE, 3, color);
         }
@@ -186,11 +185,11 @@ public class DecompositionTableScreen extends AbstractContainerScreen<Decomposit
 
             int color;
             if (!canDecompose) {
-                color = BUTTON_DISABLED_COLOR;
+                color = buttonDisabledColor();
             } else if (isHovered) {
-                color = BUTTON_HOVER_COLOR;
+                color = buttonHoverColor();
             } else {
-                color = BUTTON_COLOR;
+                color = buttonColor();
             }
 
             int x = this.getX();
@@ -215,5 +214,13 @@ public class DecompositionTableScreen extends AbstractContainerScreen<Decomposit
         @Override
         protected void updateWidgetNarration(@NonNull NarrationElementOutput narrationElementOutput) {
         }
+    }
+
+    @Override
+    protected void extractLabels(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
+        YzuiTheme.label(graphics, font, title, titleLabelX, titleLabelY,
+                imageWidth - titleLabelX - 8, YzuiTheme.primary(), false);
+        YzuiTheme.label(graphics, font, playerInventoryTitle, inventoryLabelX, inventoryLabelY,
+                imageWidth - inventoryLabelX - 8, YzuiTheme.textMuted(), false);
     }
 }

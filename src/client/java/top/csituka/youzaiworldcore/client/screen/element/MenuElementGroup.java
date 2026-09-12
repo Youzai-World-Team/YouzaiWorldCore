@@ -26,6 +26,12 @@ public interface MenuElementGroup {
 
     List<AbstractWidget> createButtons(MenuScreen screen, int screenWidth, int screenHeight, float scale, float alpha);
 
+    /** 复用控件时只刷新动态状态，不重新创建布局、悬停动画或下拉选择。 */
+    default void updateButtons(List<AbstractWidget> buttons) { }
+
     default void renderCustomContent(GuiGraphicsExtractor guiGraphics, int screenWidth, int screenHeight, float alpha, float xOffset, int mouseX, int mouseY) {
     }
+
+    /** 在控件之前绘制页面卡片，避免遮挡可点击控件。 */
+    default void renderCustomBackground(GuiGraphicsExtractor graphics, int width, int height, float alpha, float xOffset) { }
 }

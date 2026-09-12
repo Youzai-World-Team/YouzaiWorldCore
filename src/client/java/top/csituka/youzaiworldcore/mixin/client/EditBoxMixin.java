@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.mixin.client;
 
+import top.csituka.youzaiworldcore.client.render.YzuiTheme;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.EditBox;
@@ -17,6 +19,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import top.csituka.youzaiworldcore.client.config.ClientExternalSettings;
 import top.csituka.youzaiworldcore.client.animation.GuiAnimationController;
 import top.csituka.youzaiworldcore.client.render.RoundedRect;
+import top.csituka.youzaiworldcore.client.animation.YzuiHover;
 
 /**
  * 完全替换原版输入框渲染，使其与 {@code TransparentButton} 视觉一致。
@@ -26,19 +29,14 @@ import top.csituka.youzaiworldcore.client.render.RoundedRect;
 @SuppressWarnings("null")
 public class EditBoxMixin {
 
-    private static final int CORNER_RADIUS = 6;
-    private static final float NORMAL_ALPHA = 0.50f;
-    private static final float FOCUSED_ALPHA = 0.69f;
-    private static final float DISABLED_ALPHA = 0.25f;
-    private static final float LERP_SPEED = 0.15f;
-    private static final int TEXT_COLOR = 0x404040;
-    private static final int TEXT_COLOR_DISABLED = 0x808080;
-    private static final int CURSOR_COLOR = 0xFF000000;
+    private static int textColor() { return YzuiTheme.text(); }
+    private static int textColorDisabled() { return YzuiTheme.textMuted(); }
+    private static int cursorColor() { return YzuiTheme.primary(); }
     /** 选中文本高亮色：半透明蓝（ARGB），适配 YZUI 白色背景（原版 0xFF0000FF 不透明蓝会完全盖住白底） */
-    private static final int HIGHLIGHT_COLOR = 0x660000FF;
+    private static int highlightColor() { return YzuiTheme.selection(); }
     private static final int PADDING = 4;
 
-    @Unique private float yzwc$bgAlpha = NORMAL_ALPHA;
+    @Unique private final YzuiHover yzwc$hover = new YzuiHover();
 
     @Shadow private String value;
     @Shadow private net.minecraft.client.gui.Font font;
@@ -73,17 +71,11 @@ public class EditBoxMixin {
             return;
         }
 
-        float target = !self.isActive() ? DISABLED_ALPHA
-                : self.isFocused() ? FOCUSED_ALPHA : NORMAL_ALPHA;
-        yzwc$bgAlpha = GuiAnimationController.isEnabled()
-                ? yzwc$lerp(yzwc$bgAlpha, target)
-                : target;
-
         int x = self.getX(), y = self.getY(), w = self.getWidth(), h = self.getHeight();
-        int bg = yzwc$color(yzwc$bgAlpha * self.getAlpha());
-        yzwc$fillRoundedRect(gfx, x, y, w, h, CORNER_RADIUS, bg);
+        YzuiTheme.field(gfx, x, y, w, h, yzwc$hover.sample(self.isActive() && self.isMouseOver(mx, my)),
+                self.isFocused(), self.isActive(), self.getAlpha());
 
-        int fg = self.isActive() ? TEXT_COLOR : TEXT_COLOR_DISABLED;
+        int fg = self.isActive() ? textColor() : textColorDisabled();
         int a = (int) (self.getAlpha() * 255);
         int textColor = (a << 24) | (fg & 0x00FFFFFF);
 
@@ -108,7 +100,7 @@ public class EditBoxMixin {
                 int hlX2 = textX + this.font.width(text.substring(this.displayPos, visEnd));
                 int hx1 = Math.min(hlX1, textX + w);
                 int hx2 = Math.min(hlX2, textX + w);
-                gfx.fill(RenderPipelines.GUI_TEXT_HIGHLIGHT, hx1, textY - 1, hx2 - 1, textY + 9, HIGHLIGHT_COLOR);
+                gfx.fill(RenderPipelines.GUI_TEXT_HIGHLIGHT, hx1, textY - 1, hx2 - 1, textY + 9, highlightColor());
             }
         }
 
@@ -118,7 +110,7 @@ public class EditBoxMixin {
 
         // ---- 占位提示 ----
         if (clipped.isEmpty() && this.hint != null && !self.isFocused()) {
-            int hintColor = (a << 24) | 0x666666; // 深灰（避免与白底背景混色）
+            int hintColor = (a << 24) | (YzuiTheme.textMuted() & 0xFFFFFF); // 深灰（避免与白底背景混色）
             String hintStr = this.hint.getString();
             String hintClipped = this.font.plainSubstrByWidth(hintStr, maxW);
             gfx.text(this.font, hintClipped, textX, textY, hintColor, false);
@@ -128,13 +120,13 @@ public class EditBoxMixin {
         if (self.isFocused() && cursorVisible()) {
             int relCursor = Mth.clamp(this.cursorPos - this.displayPos, 0, clipped.length());
             int cursorX = textX + (relCursor > 0 ? this.font.width(clipped.substring(0, relCursor)) : 0);
-            gfx.fill(cursorX, textY - 1, cursorX + 1, textY + 8, CURSOR_COLOR);
+            gfx.fill(cursorX, textY - 1, cursorX + 1, textY + 8, cursorColor());
         }
 
         // ---- 补全建议 ----
         if (this.suggestion != null && !this.suggestion.isEmpty() && !text.isEmpty()) {
             int sugX = textX + this.font.width(clipped);
-            int sugColor = (a << 24) | 0x888888;
+            int sugColor = (a << 24) | (YzuiTheme.textMuted() & 0xFFFFFF);
             String sugClipped = this.font.plainSubstrByWidth(this.suggestion, maxW - this.font.width(clipped));
             if (!sugClipped.isEmpty()) {
                 gfx.text(this.font, sugClipped, sugX, textY, sugColor, false);
@@ -154,23 +146,6 @@ public class EditBoxMixin {
     @Unique
     private boolean cursorVisible() {
         return (net.minecraft.util.Util.getMillis() - this.focusedTime) / 500L % 2L == 0L;
-    }
-
-    @Unique private static float yzwc$lerp(float c, float t) {
-        if (Math.abs(c - t) < 0.001f) return t;
-        return c + (t - c) * LERP_SPEED;
-    }
-
-    @Unique private static int yzwc$color(float a) {
-        return ((int) (Mth.clamp(a, 0, 1) * 255) << 24) | 0x00FFFFFF;
-    }
-
-    @Unique
-    private static void yzwc$fillRoundedRect(GuiGraphicsExtractor g, int x, int y, int w, int h, int r, int c) {
-        // 圆角绘制统一走 RoundedRect（行扫描：r=6 时 135 次 fill -> 13 次）。
-        // 点亮像素与原逐像素实现一致（45253 组尺寸/半径已逐一比对）；
-        // 原实现未做尺寸校验，r > min(w,h)/2 时会画出坐标反转/重叠的结果，此处会钳制半径。
-        RoundedRect.fill(g, x, y, w, h, r, c);
     }
 
     /**

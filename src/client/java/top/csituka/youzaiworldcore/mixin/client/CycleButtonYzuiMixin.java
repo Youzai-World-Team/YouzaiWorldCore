@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.mixin.client;
 
+import top.csituka.youzaiworldcore.client.render.YzuiTheme;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.CycleButton;
@@ -39,32 +41,16 @@ public class CycleButtonYzuiMixin {
     @Inject(method = "extractContents", at = @At("HEAD"), cancellable = true)
     private void yzwc$cycleButton(GuiGraphicsExtractor g, int mx, int my, float pt, CallbackInfo ci) {
         if (!yzwc$shouldApplyYzui()) return;
-
         CycleButton<?> self = (CycleButton<?>) (Object) this;
+        if (!(self.getValue() instanceof Boolean selected)) return;
         int x = self.getX(), y = self.getY(), w = self.getWidth(), h = self.getHeight();
-        boolean hovered = self.isHovered();
-        Object val = self.getValue();
-        boolean selected = val instanceof Boolean && (Boolean) val;
-
-        @NonNull Identifier tex = selected ? YZWC_FILTER_CRAFTABLE : YZWC_FILTER_ALL;
-
-        // 计算居中缩放：贴图比按钮略小一些（避免贴图贴到按钮边缘）
-        int drawW = YZWC_TEX_W;
-        int drawH = YZWC_TEX_H;
-        int offsetX = (w - drawW) / 2;
-        int offsetY = (h - drawH) / 2;
-        int drawX = x + offsetX;
-        int drawY = y + offsetY;
-
-        // 悬浮时稍微提高亮度（在纹理下方铺一层浅色填充）
-        if (hovered) {
-            yzwc$fillRoundedRect(g, x, y, w, h, 4, 0x60FFFFFF);
-        }
-
-        // 绘制 32×16 贴图（按钮在贴图上比贴图大约大几像素用于"按钮>贴图"边距）
-        g.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, tex,
-                drawX, drawY, 0f, 0f, drawW, drawH, YZWC_TEX_W, YZWC_TEX_H);
-
+        YzuiTheme.button(g, x, y, w, h, self.isHoveredOrFocused() ? 1f : 0f,
+                self.isFocused(), self.active, self.getAlpha(),
+                selected ? YzuiTheme.ButtonStyle.FILLED : YzuiTheme.ButtonStyle.TONAL);
+        String label = selected ? "✓" : "≡";
+        var font = Minecraft.getInstance().font;
+        g.text(font, label, x + (w - font.width(label)) / 2, y + (h - font.lineHeight) / 2,
+                selected ? YzuiTheme.onPrimary() : YzuiTheme.onPrimaryContainer(), false);
         ci.cancel();
     }
 

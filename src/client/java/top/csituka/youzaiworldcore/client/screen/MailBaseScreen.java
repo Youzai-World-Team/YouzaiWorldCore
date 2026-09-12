@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.client.screen;
 
+import top.csituka.youzaiworldcore.client.render.YzuiTheme;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
@@ -17,23 +19,14 @@ import top.csituka.youzaiworldcore.client.animation.GuiAnimationController;
  * <ol>
  *   <li><b>缩放适配</b>——界面坐标一律写在 {@link MailViewport} 的设计空间里，
  *       由本类在渲染前压入缩放矩阵、在输入事件里反向换算，从而适配任意分辨率与界面尺寸。</li>
- *   <li><b>进出场动画</b>——与 {@code MenuScreen} 一致的缓动曲线，进入时淡入、
- *       返回/关闭时淡出后再切屏。</li>
+ *   <li><b>进出场动画</b>——所有动画范围使用统一页面过渡，
+ *       返回/关闭时完成过渡再切屏，绘制与点击使用同一坐标变换。</li>
  * </ol>
  */
 @SuppressWarnings("null")
 public abstract class MailBaseScreen extends Screen {
 
-    /** 进出场动画时长（秒） */
-    private static final float ANIMATION_DURATION = 0.22f;
-
     protected final MailViewport viewport = new MailViewport();
-
-    private long animationStart = System.currentTimeMillis();
-    private boolean exiting;
-    private Runnable onExitComplete;
-    /** 0=完全透明（黑屏），1=完全显示 */
-    private float animationProgress;
 
     protected MailBaseScreen(Component title) {
         super(title);
@@ -68,89 +61,31 @@ public abstract class MailBaseScreen extends Screen {
     @Override
     public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         viewport.update(width, height);
-        updateAnimation();
-
-        extractBackground(graphics, mouseX, mouseY, partialTick);
-
-        // 暗色遮罩层：与主菜单一致，游戏画面 + 半透明暗色叠加
-        int overlayAlpha = (int) (animationProgress * 128);
-        if (overlayAlpha > 0) {
-            graphics.fill(0, 0, width, height, overlayAlpha << 24);
-        }
-
+        viewport.setTransitionOffsetY(0f);
         int designMouseX = (int) viewport.toDesignX(mouseX);
         int designMouseY = (int) viewport.toDesignY(mouseY);
-
         viewport.push(graphics);
-        // 进出场的轻微缩放：幅度仅 2%，动画结束后恒为 1，
-        // 故点击判定沿用未缩放的设计坐标即可（过渡期内的 1~2px 偏差不影响使用）。
-        float animationScale = GuiAnimationController.isBasic()
-                ? 0.98f + 0.02f * animationProgress : 1.0f;
-        graphics.pose().pushMatrix();
-        graphics.pose().translate(MailViewport.DESIGN_WIDTH / 2f, MailViewport.DESIGN_HEIGHT / 2f);
-        graphics.pose().scale(animationScale, animationScale);
-        graphics.pose().translate(-MailViewport.DESIGN_WIDTH / 2f, -MailViewport.DESIGN_HEIGHT / 2f);
-
-        renderMailContent(graphics, designMouseX, designMouseY, partialTick);
-        MailToast.render(graphics, font, MailViewport.DESIGN_WIDTH);
-
-        graphics.pose().popMatrix();
-        viewport.pop(graphics);
-
-        // 淡入淡出遮罩（屏幕空间全屏）
-        int fadeAlpha = GuiAnimationController.isBasic()
-                ? (int) ((1f - animationProgress) * 255f) : 0;
-        if (fadeAlpha > 0) {
-            graphics.fill(0, 0, width, height, fadeAlpha << 24);
-        }
-
-        if (exiting && animationProgress <= 0f) {
-            Runnable callback = onExitComplete;
-            exiting = false;
-            onExitComplete = null;
-            if (callback != null) {
-                callback.run();
+        try {
+            renderMailContent(graphics, designMouseX, designMouseY, partialTick);
+            if (!GuiAnimationController.isBackgroundRendering()) {
+                MailToast.render(graphics, font, MailViewport.DESIGN_WIDTH);
             }
+        } finally {
+            viewport.pop(graphics);
         }
     }
 
-    private void updateAnimation() {
-        if (!GuiAnimationController.isBasic()) {
-            animationProgress = 1.0f;
-            return;
-        }
-        float elapsed = (System.currentTimeMillis() - animationStart) / (ANIMATION_DURATION * 1000f);
-        float raw = Math.max(0f, Math.min(1f, elapsed));
-        animationProgress = exiting ? 1f - easeInOutCubic(raw) : easeOutCubic(raw);
-    }
-
-    private static float easeOutCubic(float t) {
-        return 1f - (float) Math.pow(1f - t, 3);
-    }
-
-    private static float easeInOutCubic(float t) {
-        return t < 0.5f ? 4f * t * t * t : 1f - (float) Math.pow(-2f * t + 2f, 3) / 2f;
-    }
 
     @Override
     public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
-        // 透明背景：不绘制遮罩，让玩家看到游戏画面
+        // 背景由共用屏幕入口在内容变换之前绘制，避免重复模糊与叠加遮罩。
     }
 
     // ===== 页面切换 =====
 
     /** 播放淡出动画，结束后执行 {@code action}。 */
     protected void startExit(Runnable action) {
-        if (exiting) {
-            return;
-        }
-        if (!GuiAnimationController.isBasic()) {
-            action.run();
-            return;
-        }
-        exiting = true;
-        animationStart = System.currentTimeMillis();
-        onExitComplete = action;
+        if (!isExiting()) action.run();
     }
 
     /** 返回主菜单（带过渡动画）。 */
@@ -165,7 +100,7 @@ public abstract class MailBaseScreen extends Screen {
         startExit(() -> Minecraft.getInstance().setScreenAndShow(null));
     }
 
-    /** 切换到另一个邮件界面；完整模式由统一页面动画负责切换。 */
+    /** 切换到另一个邮件界面；由统一页面动画负责切换。 */
     protected void switchTo(Screen screen) {
         Minecraft.getInstance().setScreenAndShow(screen);
     }
@@ -175,11 +110,14 @@ public abstract class MailBaseScreen extends Screen {
         closeToGame();
     }
 
+    /** 供子类的手动列表、附件与收件人选择器阻止退出期间重复操作。 */
+    protected final boolean isExiting() { return GuiAnimationController.isExiting(this); }
+
     // ===== 输入（统一换算到设计空间） =====
 
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean isActuallyClick) {
-        if (exiting) {
+        if (isExiting()) {
             return true;
         }
         return super.mouseClicked(viewport.toDesignEvent(event), isActuallyClick);
@@ -187,23 +125,26 @@ public abstract class MailBaseScreen extends Screen {
 
     @Override
     public boolean mouseReleased(MouseButtonEvent event) {
+        if (isExiting()) return true;
         return super.mouseReleased(viewport.toDesignEvent(event));
     }
 
     @Override
     public boolean mouseDragged(MouseButtonEvent event, double dragX, double dragY) {
+        if (isExiting()) return true;
         return super.mouseDragged(viewport.toDesignEvent(event), dragX / viewport.scale(),
                 dragY / viewport.scale());
     }
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+        if (isExiting()) return true;
         return super.mouseScrolled(viewport.toDesignX(mouseX), viewport.toDesignY(mouseY), scrollX, scrollY);
     }
 
     @Override
     public boolean keyPressed(KeyEvent event) {
-        if (exiting) {
+        if (isExiting()) {
             return true;
         }
         return super.keyPressed(event);

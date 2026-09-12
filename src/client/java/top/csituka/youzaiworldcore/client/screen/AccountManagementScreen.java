@@ -1,8 +1,10 @@
 package top.csituka.youzaiworldcore.client.screen;
 
+import top.csituka.youzaiworldcore.client.render.YzuiTheme;
+import top.csituka.youzaiworldcore.client.screen.widget.WidgetFocus;
+
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.EditBox;
@@ -24,7 +26,7 @@ import java.util.regex.Pattern;
 /** 已登录玩家的账户管理页面。 */
 @SuppressWarnings("null")
 public class AccountManagementScreen extends Screen {
-    private static final int CONTAINER_HEIGHT = 280;
+    private static final int CONTAINER_HEIGHT = 336;
     private static final int FIELD_WIDTH = 190;
     private static final int FIELD_HEIGHT = 20;
     private static final int BUTTON_WIDTH = 120;
@@ -173,6 +175,7 @@ public class AccountManagementScreen extends Screen {
             case CHANGE_EMAIL -> initEmailForm();
             case DEACTIVATE -> initDeactivateForm();
         }
+        arrangeForm();
         if (this.currentDialog != null)
             this.currentDialog.init(this.width, this.height);
         updateButtonState();
@@ -197,7 +200,7 @@ public class AccountManagementScreen extends Screen {
                 x, top + 150, width,
                 "screen.youzaiworldcore.account_management.button_deactivate",
                 () -> switchMode(Mode.DEACTIVATE));
-        this.deactivateModeButton.setTextColor(0xFFFF8080);
+        this.deactivateModeButton.setTextColor(YzuiTheme.error());
         this.closeButton = button(
                 centerX - BUTTON_WIDTH / 2, top + 205, BUTTON_WIDTH,
                 "screen.youzaiworldcore.account_management.button_close", this::onClose);
@@ -280,7 +283,7 @@ public class AccountManagementScreen extends Screen {
                 centerX - BUTTON_WIDTH - 6, buttonY, BUTTON_WIDTH,
                 "screen.youzaiworldcore.account_management.button_deactivate_confirm",
                 this::onDeactivate);
-        this.confirmDeactivateButton.setTextColor(0xFFFF8080);
+        this.confirmDeactivateButton.setTextColor(YzuiTheme.error());
         this.backButton = button(
                 centerX + 6, buttonY, BUTTON_WIDTH,
                 "screen.youzaiworldcore.account_management.button_back", this::onBack);
@@ -307,140 +310,55 @@ public class AccountManagementScreen extends Screen {
     public void extractRenderState(
             GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         updateButtonState();
-        graphics.fill(0, 0, this.width, this.height, 0xB0000000);
-        int centerX = this.width / 2;
-        int top = containerTop();
-
-        String title = Component.translatable(
-                "screen.youzaiworldcore.account_management.title").getString();
-        float titleScale = 1.3F;
-        int titleWidth = (int) (this.font.width(title) * titleScale);
-        graphics.pose().pushMatrix();
-        graphics.pose().scale(titleScale, titleScale);
-        graphics.text(this.font, title,
-                (int) ((centerX - titleWidth / 2) / titleScale),
-                (int) ((top + 8) / titleScale), 0xFFFFFFFF, false);
-        graphics.pose().popMatrix();
-
-        String subtitle = Component.translatable(
-                "screen.youzaiworldcore.account_management.subtitle", this.playerName).getString();
-        graphics.text(this.font, subtitle, centerX - this.font.width(subtitle) / 2,
-                top + 34, 0xFFCCCCCC, false);
-
-        switch (this.mode) {
-            case HOME -> renderHome(graphics, centerX, top);
-            case CHANGE_PASSWORD -> renderPasswordForm(graphics, centerX, top);
-            case CHANGE_EMAIL -> renderEmailForm(graphics, centerX, top);
-            case DEACTIVATE -> renderDeactivateForm(graphics, centerX, top);
-        }
-
-        for (AbstractWidget widget : this.allWidgets) {
-            if (widget instanceof EditBox editBox) {
-                editBox.extractWidgetRenderState(graphics, mouseX, mouseY, partialTick);
-            } else if (widget instanceof TransparentButton transparentButton) {
-                transparentButton.render(graphics, mouseX, mouseY, partialTick);
+        int w = Math.min(440, width - 40), x = (width - w) / 2, y = containerTop();
+        YzuiTheme.card(graphics, x, y, w, CONTAINER_HEIGHT);
+        YzuiTheme.label(graphics, font, title, x + 24, y + 20, w - 48, YzuiTheme.text(), false);
+        YzuiTheme.wrapped(graphics, font, Component.translatable("screen.youzaiworldcore.account_management.subtitle", playerName),
+                x + 24, y + 42, w - 48, 2, YzuiTheme.textMuted());
+        if (mode == Mode.HOME) {
+            String email = !loaded ? Component.translatable("screen.youzaiworldcore.account_management.email_loading").getString()
+                    : Component.translatable("screen.youzaiworldcore.account_management.current_email",
+                        currentEmail.isBlank() ? Component.translatable("screen.youzaiworldcore.account_management.email_unbound").getString() : currentEmail).getString();
+            YzuiTheme.wrapped(graphics, font, Component.literal(email), x + 24, y + 76, w - 48, 3, YzuiTheme.textMuted());
+        } else {
+            String key = switch (mode) {
+                case CHANGE_PASSWORD -> "change_password_title";
+                case CHANGE_EMAIL -> "change_email_title";
+                case DEACTIVATE -> "deactivate_title";
+                default -> "title";
+            };
+            YzuiTheme.label(graphics, font, Component.translatable("screen.youzaiworldcore.account_management." + key),
+                    x + 24, y + 70, w - 48, YzuiTheme.primary(), false);
+            if (mode == Mode.DEACTIVATE) {
+                YzuiTheme.wrapped(graphics, font, Component.translatable("screen.youzaiworldcore.account_management.deactivate_warning"),
+                        x + 24, y + 96, w - 48, 5, YzuiTheme.error());
+            }
+            if (mode == Mode.CHANGE_EMAIL) {
+                if (emailCodeSent) YzuiTheme.label(graphics, font, Component.translatable(
+                        "screen.youzaiworldcore.account_management.email_session_remaining", formatDuration(remainingEmailSessionSeconds())),
+                        x + 24, y + 233, w - 48, remainingEmailSessionSeconds() <= 60 ? YzuiTheme.error() : YzuiTheme.textMuted(), false);
+                YzuiTheme.wrapped(graphics, font, Component.literal(statusMessage), x + 24, y + 248, w - 48, 2, YzuiTheme.success());
             }
         }
-        if (this.currentDialog != null && this.currentDialog.isVisible()) {
-            this.currentDialog.render(graphics, this.width, this.height);
-            this.currentDialog.renderButtons(graphics, mouseX, mouseY, partialTick);
-        } else if (this.currentDialog != null) {
-            this.currentDialog = null;
+        for (AbstractWidget widget : allWidgets) {
+            if (widget instanceof EditBox field) {
+                YzuiTheme.label(graphics, font, field.getMessage(), field.getX(), field.getY() - 12,
+                        field.getWidth(), YzuiTheme.textMuted(), false);
+            }
+            widget.extractRenderState(graphics, mouseX, mouseY, partialTick);
         }
-    }
-
-    private void renderHome(GuiGraphicsExtractor graphics, int centerX, int top) {
-        String emailText;
-        if (!this.loaded) {
-            emailText = Component.translatable(
-                    "screen.youzaiworldcore.account_management.email_loading").getString();
-        } else {
-            String email = this.currentEmail.isBlank()
-                    ? Component.translatable(
-                            "screen.youzaiworldcore.account_management.email_unbound").getString()
-                    : abbreviate(this.currentEmail, 48);
-            emailText = Component.translatable(
-                    "screen.youzaiworldcore.account_management.current_email", email).getString();
-        }
-        graphics.text(this.font, emailText, centerX - this.font.width(emailText) / 2,
-                top + 59, 0xFFAAAAAA, false);
-    }
-
-    private void renderPasswordForm(GuiGraphicsExtractor graphics, int centerX, int top) {
-        renderModeTitle(graphics, centerX, top,
-                "screen.youzaiworldcore.account_management.change_password_title");
-        int fieldX = centerX - FIELD_WIDTH / 2 + 35;
-        int labelX = fieldX - 104;
-        int firstY = top + 77;
-        drawLabel(graphics, this.font,
-                "screen.youzaiworldcore.account_management.label_current_password",
-                labelX, firstY);
-        drawLabel(graphics, this.font,
-                "screen.youzaiworldcore.account_management.label_new_password",
-                labelX, firstY + ROW_SPACING);
-        drawLabel(graphics, this.font,
-                "screen.youzaiworldcore.register.label_confirm_password",
-                labelX, firstY + ROW_SPACING * 2);
-    }
-
-    private void renderEmailForm(GuiGraphicsExtractor graphics, int centerX, int top) {
-        renderModeTitle(graphics, centerX, top,
-                "screen.youzaiworldcore.account_management.change_email_title");
-        int fieldX = centerX - FIELD_WIDTH / 2 + 15;
-        int labelX = fieldX - 104;
-        int firstY = top + 73;
-        drawLabel(graphics, this.font,
-                "screen.youzaiworldcore.account_management.label_current_password",
-                labelX, firstY);
-        drawLabel(graphics, this.font,
-                "screen.youzaiworldcore.account_management.label_new_email",
-                labelX, firstY + ROW_SPACING);
-        drawLabel(graphics, this.font,
-                "screen.youzaiworldcore.register_email.label_code",
-                labelX, firstY + ROW_SPACING * 2);
-
-        if (this.emailCodeSent) {
-            String remaining = Component.translatable(
-                    "screen.youzaiworldcore.account_management.email_session_remaining",
-                    formatDuration(remainingEmailSessionSeconds())).getString();
-            graphics.text(this.font, remaining, centerX - this.font.width(remaining) / 2,
-                    top + 178, remainingEmailSessionSeconds() <= 60
-                            ? 0xFFFF8080
-                            : 0xFFAAAAAA,
-                    false);
-        }
-        if (!this.statusMessage.isBlank()) {
-            graphics.text(this.font, this.statusMessage,
-                    centerX - this.font.width(this.statusMessage) / 2,
-                    top + 192, 0xFF80E080, false);
-        }
-    }
-
-    private void renderDeactivateForm(GuiGraphicsExtractor graphics, int centerX, int top) {
-        renderModeTitle(graphics, centerX, top,
-                "screen.youzaiworldcore.account_management.deactivate_title");
-        String warning = Component.translatable(
-                "screen.youzaiworldcore.account_management.deactivate_warning").getString();
-        graphics.text(this.font, warning, centerX - this.font.width(warning) / 2,
-                top + 82, 0xFFFF8080, false);
-        int fieldX = centerX - FIELD_WIDTH / 2 + 35;
-        drawLabel(graphics, this.font,
-                "screen.youzaiworldcore.account_management.label_current_password",
-                fieldX - 104, top + 128);
-    }
-
-    private void renderModeTitle(
-            GuiGraphicsExtractor graphics, int centerX, int top, String translationKey) {
-        String modeTitle = Component.translatable(translationKey).getString();
-        graphics.text(this.font, modeTitle, centerX - this.font.width(modeTitle) / 2,
-                top + 52, 0xFFFFFFFF, false);
+        if (currentDialog != null && currentDialog.isVisible()) {
+            currentDialog.render(graphics, width, height);
+            currentDialog.renderButtons(graphics, mouseX, mouseY, partialTick);
+        } else if (currentDialog != null) currentDialog = null;
     }
 
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean isActuallyClick) {
-        if (this.currentDialog != null && this.currentDialog.isFullyVisible()) {
+        if (this.currentDialog != null && this.currentDialog.isVisible()) {
             return this.currentDialog.mouseClicked(event.x(), event.y());
         }
+        WidgetFocus.mouseFocus(event.x(), event.y(), allWidgets);
         for (AbstractWidget widget : this.allWidgets) {
             if (widget instanceof EditBox editBox
                     && editBox.mouseClicked(event, isActuallyClick)) {
@@ -461,8 +379,8 @@ public class AccountManagementScreen extends Screen {
 
     @Override
     public boolean keyPressed(KeyEvent event) {
-        if (this.currentDialog != null && this.currentDialog.isFullyVisible())
-            return true;
+        if (currentDialog != null && currentDialog.isVisible()) return currentDialog.keyPressed(event);
+        if (WidgetFocus.keyPressed(event, allWidgets)) return true;
         if (event.key() == 256) {
             onBack();
             return true;
@@ -493,6 +411,7 @@ public class AccountManagementScreen extends Screen {
 
     @Override
     public boolean charTyped(CharacterEvent event) {
+        if (currentDialog != null && currentDialog.isVisible()) return true;
         for (AbstractWidget widget : this.allWidgets) {
             if (widget instanceof EditBox editBox
                     && editBox.isFocused()
@@ -754,7 +673,7 @@ public class AccountManagementScreen extends Screen {
             int x, int y, int width, String translationKey, Runnable onClick) {
         TransparentButton button = new TransparentButton(
                 x, y, width, BUTTON_HEIGHT, Component.translatable(translationKey), onClick);
-        button.setTextColor(0xFFFFFFFF);
+        button.setTextColor(YzuiTheme.text());
         this.allWidgets.add(button);
         return button;
     }
@@ -832,8 +751,7 @@ public class AccountManagementScreen extends Screen {
 
     private void focus(EditBox target) {
         for (AbstractWidget widget : this.allWidgets) {
-            if (widget instanceof EditBox editBox)
-                editBox.setFocused(editBox == target);
+            widget.setFocused(widget == target);
         }
     }
 
@@ -844,13 +762,6 @@ public class AccountManagementScreen extends Screen {
                 return;
             }
         }
-    }
-
-    private void drawLabel(
-            GuiGraphicsExtractor graphics, Font font, String translationKey, int x, int y) {
-        String text = Component.translatable(translationKey).getString();
-        graphics.text(font, text, x, y + (FIELD_HEIGHT - font.lineHeight) / 2,
-                0xFFFFFFFF, false);
     }
 
     private boolean isMouseOverButton(
@@ -872,9 +783,45 @@ public class AccountManagementScreen extends Screen {
         return String.format(Locale.ROOT, "%d:%02d", seconds / 60, seconds % 60);
     }
 
-    private String abbreviate(String value, int maxLength) {
-        if (value == null || value.length() <= maxLength)
-            return value == null ? "" : value;
-        return value.substring(0, Math.max(1, maxLength - 3)) + "...";
+    private void arrangeForm() {
+        int w = Math.min(440, width - 40) - 48, x = (width - w) / 2, y = containerTop();
+        switch (mode) {
+            case HOME -> {
+                changePasswordButton.setRectangle(w, 30, x, y + 120);
+                changeEmailButton.setRectangle(w, 30, x, y + 162);
+                deactivateModeButton.setRectangle(w, 30, x, y + 204);
+                deactivateModeButton.setStyle(YzuiTheme.ButtonStyle.DANGER);
+                closeButton.setRectangle(w, 28, x, y + 278);
+            }
+            case CHANGE_PASSWORD -> {
+                currentPasswordField.setRectangle(w, 24, x, y + 102);
+                newPasswordField.setRectangle(w, 24, x, y + 150);
+                confirmPasswordField.setRectangle(w, 24, x, y + 198);
+                submitPasswordButton.setRectangle((w - 12) / 2, 28, x, y + 278);
+                submitPasswordButton.setStyle(YzuiTheme.ButtonStyle.FILLED);
+                backButton.setRectangle((w - 12) / 2, 28, x + (w + 12) / 2, y + 278);
+            }
+            case CHANGE_EMAIL -> {
+                currentPasswordField.setRectangle(w, 24, x, y + 102);
+                emailField.setRectangle(w, 24, x, y + 150);
+                codeField.setRectangle(w - 120, 24, x, y + 198);
+                sendCodeButton.setRectangle(112, 24, x + w - 112, y + 198);
+                verifyEmailButton.setRectangle((w - 12) / 2, 28, x, y + 282);
+                verifyEmailButton.setStyle(YzuiTheme.ButtonStyle.FILLED);
+                backButton.setRectangle((w - 12) / 2, 28, x + (w + 12) / 2, y + 282);
+            }
+            case DEACTIVATE -> {
+                deactivatePasswordField.setRectangle(w, 24, x, y + 184);
+                confirmDeactivateButton.setRectangle((w - 12) / 2, 28, x, y + 270);
+                confirmDeactivateButton.setStyle(YzuiTheme.ButtonStyle.DANGER);
+                backButton.setRectangle((w - 12) / 2, 28, x + (w + 12) / 2, y + 270);
+            }
+        }
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+        if (currentDialog != null && currentDialog.isVisible()) return currentDialog.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
+        return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
     }
 }

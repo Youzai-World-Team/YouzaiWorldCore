@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.client.screen;
 
+import top.csituka.youzaiworldcore.client.render.YzuiTheme;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -73,19 +75,21 @@ public final class MailToast {
         }
 
         int textWidth = font.width(message);
-        int boxWidth = textWidth + 46;
-        int boxHeight = 24;
+        int boxWidth = Math.min(designWidth - 24, Math.max(160, textWidth + 46));
+        var lines = font.split(net.minecraft.network.chat.Component.literal(message), boxWidth - 48);
+        int boxHeight = 16 + Math.min(3, lines.size()) * 11;
         int x = (designWidth - boxWidth) / 2;
         int y = 12;
 
-        int accent = success ? MailUi.GREEN : MailUi.RED;
-        MailUi.roundedRect(graphics, x, y, boxWidth, boxHeight, 6, withAlpha(0xFF1E1E1E, alpha * 0.95f));
+        int accent = success ? MailUi.green() : MailUi.red();
+        YzuiTheme.card(graphics, x, y, boxWidth, boxHeight, alpha);
         // 左侧色条标示成败
         MailUi.roundedRect(graphics, x, y, 4, boxHeight, 2, withAlpha(accent, alpha));
         graphics.text(font, success ? "✔" : "✖", x + 14, y + (boxHeight - font.lineHeight) / 2,
                 withAlpha(accent, alpha), false);
-        graphics.text(font, message, x + 32, y + (boxHeight - font.lineHeight) / 2,
-                withAlpha(0xFFFFFFFF, alpha), false);
+        for (int row = 0; row < Math.min(3, lines.size()); row++) {
+            graphics.text(font, lines.get(row), x + 32, y + 8 + row * 11, withAlpha(YzuiTheme.text(), alpha), false);
+        }
     }
 
     /** 按「淡入 / 停留 / 淡出」三段计算当前透明度。 */

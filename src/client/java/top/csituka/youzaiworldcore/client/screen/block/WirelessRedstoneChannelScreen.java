@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.client.screen.block;
 
+import top.csituka.youzaiworldcore.client.render.YzuiTheme;
+
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -30,10 +32,10 @@ import top.csituka.youzaiworldcore.redstone.WirelessRedstoneNetwork;
 @SuppressWarnings("null")
 public class WirelessRedstoneChannelScreen extends Screen {
 
-    private static final int PANEL_WIDTH = 280;
-    private static final int PANEL_HEIGHT = 110;
-    private static final int BUTTON_WIDTH = 80;
-    private static final int BUTTON_HEIGHT = 20;
+    private static final int PANEL_WIDTH = 400;
+    private static final int PANEL_HEIGHT = 220;
+    private static final int BUTTON_WIDTH = 128;
+    private static final int BUTTON_HEIGHT = 28;
 
     private final BlockPos componentPos;
     private final int initialChannel;
@@ -54,27 +56,28 @@ public class WirelessRedstoneChannelScreen extends Screen {
     @Override
     protected void init() {
         super.init();
+        String savedValue = channelInput == null ? Integer.toString(initialChannel) : channelInput.getValue();
 
         int panelX = (this.width - PANEL_WIDTH) / 2;
         int panelY = (this.height - PANEL_HEIGHT) / 2;
 
         channelInput = new EditBox(this.font,
-                panelX + 12, panelY + 40,
-                PANEL_WIDTH - 24, 18,
+                panelX + 24, panelY + 100,
+                PANEL_WIDTH - 48, 26,
                 Component.translatable("screen.youzaiworldcore.wireless_redstone_channel.hint"));
         channelInput.setMaxLength(WirelessRedstoneChannel.MAX_DIGITS);
         channelInput.setResponder(this::onChannelTextChanged);
-        channelInput.setValue(Integer.toString(initialChannel));
+        channelInput.setValue(savedValue);
         channelInput.moveCursorToEnd(false);
         channelInput.setFocused(true);
         addRenderableWidget(channelInput);
 
         TransparentButton confirmButton = new TransparentButton(
-                panelX + (PANEL_WIDTH / 2) - (BUTTON_WIDTH / 2), panelY + 76,
+                panelX + (PANEL_WIDTH / 2) - (BUTTON_WIDTH / 2), panelY + 162,
                 BUTTON_WIDTH, BUTTON_HEIGHT,
                 Component.translatable("screen.youzaiworldcore.wireless_redstone_channel.confirm"),
                 this::confirm);
-        confirmButton.setTextColor(0xFFFFFF);
+        confirmButton.setStyle(YzuiTheme.ButtonStyle.FILLED);
         addRenderableWidget(confirmButton);
     }
 
@@ -115,18 +118,11 @@ public class WirelessRedstoneChannelScreen extends Screen {
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
-        guiGraphics.fill(0, 0, this.width, this.height, 0x80000000);
-
-        int panelY = (this.height - PANEL_HEIGHT) / 2;
-        int centerX = this.width / 2;
-
-        guiGraphics.centeredText(this.font, this.getTitle(), centerX, panelY + 12, 0xFFFFFFFF);
-        guiGraphics.centeredText(this.font,
-                Component.translatable("screen.youzaiworldcore.wireless_redstone_channel.rule",
-                        WirelessRedstoneChannel.MIN, WirelessRedstoneChannel.MAX,
-                        WirelessRedstoneNetwork.RANGE),
-                centerX, panelY + 26, 0xFFA0A0A0);
-
+        int x = (width - PANEL_WIDTH) / 2, y = (height - PANEL_HEIGHT) / 2;
+        YzuiTheme.card(guiGraphics, x, y, PANEL_WIDTH, PANEL_HEIGHT);
+        YzuiTheme.label(guiGraphics, font, title, x + 24, y + 24, PANEL_WIDTH - 48, YzuiTheme.text(), false);
+        YzuiTheme.wrapped(guiGraphics, font, Component.translatable("screen.youzaiworldcore.wireless_redstone_channel.rule", WirelessRedstoneChannel.MIN, WirelessRedstoneChannel.MAX, WirelessRedstoneNetwork.RANGE),
+                x + 24, y + 54, PANEL_WIDTH - 48, 3, YzuiTheme.textMuted());
         super.extractRenderState(guiGraphics, mouseX, mouseY, partialTick);
     }
 
@@ -166,6 +162,7 @@ public class WirelessRedstoneChannelScreen extends Screen {
 
     @Override
     public void extractBackground(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
+        // 背景由共用屏幕入口在内容变换之前绘制，避免重复模糊与叠加遮罩。
     }
 
     @Override

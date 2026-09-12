@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.client.screen;
 
+import top.csituka.youzaiworldcore.client.render.YzuiTheme;
+
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.EditBox;
@@ -45,24 +47,24 @@ public class YzuBrewingStandScreen extends AbstractContainerScreen<BrewingStandM
     private static final int GUIDE_GAP = 6;
     private static final int PANEL_RADIUS = 6;
 
-    private static final int MAIN_BG = 0xA8FFFFFF;
-    private static final int GUIDE_BG = 0xB8F6F4FA;
-    private static final int DIVIDER_COLOR = 0x30405050;
-    private static final int TITLE_COLOR = 0xFF315F62;
-    private static final int LABEL_COLOR = 0xCC404040;
-    private static final int MUTED_COLOR = 0xAA505050;
-    private static final int ACCENT_COLOR = 0xC05BB4A8;
-    private static final int GUIDE_ACCENT = 0xC07B6BA8;
+    private static int mainBg() { return YzuiTheme.surface(); }
+    private static int guideBg() { return YzuiTheme.surface(); }
+    private static int dividerColor() { return YzuiTheme.outlineVariant(); }
+    private static int titleColor() { return YzuiTheme.primary(); }
+    private static int labelColor() { return YzuiTheme.text(); }
+    private static int mutedColor() { return YzuiTheme.textMuted(); }
+    private static int accentColor() { return YzuiTheme.primary(); }
+    private static int guideAccent() { return YzuiTheme.primary(); }
 
     // ===== 槽位布局 =====
 
     private static final int SLOT_SIZE = 16;
     private static final int SLOT_RADIUS = 3;
-    private static final int POTION_SLOT_COLOR = 0x506FC8D0;
-    private static final int INGREDIENT_SLOT_COLOR = 0x507AAE72;
-    private static final int FUEL_SLOT_COLOR = 0x60E0A34B;
-    private static final int INVENTORY_SLOT_COLOR = 0x40FFFFFF;
-    private static final int SLOT_HOVER_COLOR = 0x78FFFFFF;
+    private static int potionSlotColor() { return YzuiTheme.slot(); }
+    private static int ingredientSlotColor() { return YzuiTheme.primaryContainer(); }
+    private static int fuelSlotColor() { return YzuiTheme.slot(); }
+    private static int inventorySlotColor() { return YzuiTheme.slot(); }
+    private static int slotHoverColor() { return YzuiTheme.slotHover(); }
 
     private static final int[] BOTTLE_X = { 49, 80, 111 };
     private static final int[] BOTTLE_Y = { 71, 75, 71 };
@@ -80,16 +82,16 @@ public class YzuBrewingStandScreen extends AbstractContainerScreen<BrewingStandM
     private static final int FUEL_BAR_Y = 64;
     private static final int FUEL_BAR_W = 34;
     private static final int FUEL_BAR_H = 5;
-    private static final int FUEL_BAR_BG = 0x30000000;
-    private static final int FUEL_BAR_FILL = 0xE0E6A23C;
+    private static int fuelBarBg() { return YzuiTheme.surface(); }
+    private static int fuelBarFill() { return YzuiTheme.warning(); }
 
     private static final int BREW_BAR_X = 53;
     private static final int BREW_BAR_Y = 55;
     private static final int BREW_BAR_W = 70;
     private static final int BREW_BAR_H = 6;
-    private static final int BREW_BAR_BG = 0x30000000;
-    private static final int BREW_BAR_FILL = 0xE064B9AE;
-    private static final int FLOW_LINE_COLOR = 0x8064A6A0;
+    private static int brewBarBg() { return YzuiTheme.surface(); }
+    private static int brewBarFill() { return YzuiTheme.primary(); }
+    private static int flowLineColor() { return YzuiTheme.outlineVariant(); }
     private static final float BREW_TIME_TICKS = 400.0F;
 
     // ===== 标题按钮 =====
@@ -99,10 +101,10 @@ public class YzuBrewingStandScreen extends AbstractContainerScreen<BrewingStandM
     private static final int BUTTON_TOP = 2;
     private static final int CLOSE_X = MAIN_WIDTH - 20;
     private static final int GUIDE_TOGGLE_X = MAIN_WIDTH - 39;
-    private static final int BUTTON_BG = 0x40FFFFFF;
-    private static final int BUTTON_BG_HOVER = 0x80FFFFFF;
-    private static final int BUTTON_ICON = 0xCC404040;
-    private static final int BUTTON_ICON_HOVER = 0xFF111111;
+    private static int buttonBg() { return YzuiTheme.surface(); }
+    private static int buttonBgHover() { return YzuiTheme.surfaceHigh(); }
+    private static int buttonIcon() { return YzuiTheme.text(); }
+    private static int buttonIconHover() { return YzuiTheme.text(); }
     private static final String CLOSE_GLYPH = "\u00d7";
     private static final ItemStack TITLE_ICON = new ItemStack(Items.BREWING_STAND);
     private static final ItemStack GUIDE_ICON = new ItemStack(Items.KNOWLEDGE_BOOK);
@@ -121,8 +123,8 @@ public class YzuBrewingStandScreen extends AbstractContainerScreen<BrewingStandM
     private static final int PAGE_Y = 169;
     private static final int PAGE_BUTTON_W = 16;
     private static final int PAGE_BUTTON_H = 14;
-    private static final int ROW_BG = 0x28FFFFFF;
-    private static final int ROW_HOVER_BG = 0x58FFFFFF;
+    private static int rowBg() { return YzuiTheme.surfaceLow(); }
+    private static int rowHoverBg() { return YzuiTheme.surfaceHigh(); }
 
     private final List<BrewingGuideRecipe> filteredRecipes = new ArrayList<>();
 
@@ -214,7 +216,7 @@ public class YzuBrewingStandScreen extends AbstractContainerScreen<BrewingStandM
                 Component.translatable("screen.youzaiworldcore.brewing.search"));
         this.guideSearchBox.setMaxLength(40);
         this.guideSearchBox.setBordered(false);
-        this.guideSearchBox.setTextColor(0xFF303030);
+        this.guideSearchBox.setTextColor(YzuiTheme.textMuted());
         this.guideSearchBox.setHint(Component.translatable("screen.youzaiworldcore.brewing.search"));
         this.guideSearchBox.setResponder(query -> {
             this.guidePage = 0;
@@ -244,7 +246,7 @@ public class YzuBrewingStandScreen extends AbstractContainerScreen<BrewingStandM
 
     @Override
     public void extractBackground(@NonNull GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
-        // YZUI 面板在 extractRenderState 中绘制。
+        // 背景由共用屏幕入口在内容变换之前绘制，避免重复模糊与叠加遮罩。
     }
 
     @Override
@@ -259,14 +261,13 @@ public class YzuBrewingStandScreen extends AbstractContainerScreen<BrewingStandM
     }
 
     private void drawMainPanel(GuiGraphicsExtractor graphics) {
-        fillRounded(graphics, this.leftPos, this.topPos, this.imageWidth, this.imageHeight,
-                PANEL_RADIUS, MAIN_BG);
+        YzuiTheme.card(graphics, this.leftPos, this.topPos, this.imageWidth, this.imageHeight);
     }
 
     private void drawTitle(GuiGraphicsExtractor graphics) {
         int iconX = this.leftPos + 8;
         int iconY = this.topPos + 5;
-        fillRounded(graphics, iconX, iconY, 12, 12, 3, POTION_SLOT_COLOR);
+        fillRounded(graphics, iconX, iconY, 12, 12, 3, potionSlotColor());
 
         graphics.pose().pushMatrix();
         graphics.pose().translate(iconX, iconY);
@@ -277,9 +278,9 @@ public class YzuBrewingStandScreen extends AbstractContainerScreen<BrewingStandM
         int titleX = iconX + 16;
         int titleMaxWidth = this.leftPos + GUIDE_TOGGLE_X - titleX - 3;
         String titleText = ellipsize(this.title, titleMaxWidth);
-        graphics.text(this.font, titleText, titleX, this.topPos + 5, TITLE_COLOR, false);
+        graphics.text(this.font, titleText, titleX, this.topPos + 5, titleColor(), false);
         fillRounded(graphics, titleX, this.topPos + 15,
-                Math.min(this.font.width(titleText), 80), 2, 1, ACCENT_COLOR);
+                Math.min(this.font.width(titleText), 80), 2, 1, accentColor());
     }
 
     private void drawHeaderButtons(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
@@ -287,7 +288,7 @@ public class YzuBrewingStandScreen extends AbstractContainerScreen<BrewingStandM
         int buttonY = this.topPos + BUTTON_TOP;
         boolean guideHovered = isInside(mouseX, mouseY, guideX, buttonY, BUTTON_SIZE, BUTTON_SIZE);
         fillRounded(graphics, guideX, buttonY, BUTTON_SIZE, BUTTON_SIZE, BUTTON_RADIUS,
-                guideHovered ? BUTTON_BG_HOVER : BUTTON_BG);
+                guideHovered ? buttonBgHover() : buttonBg());
         graphics.pose().pushMatrix();
         graphics.pose().translate(guideX + 1, buttonY + 1);
         graphics.pose().scale(0.75F, 0.75F);
@@ -301,48 +302,48 @@ public class YzuBrewingStandScreen extends AbstractContainerScreen<BrewingStandM
         int closeX = this.leftPos + CLOSE_X;
         boolean closeHovered = isInside(mouseX, mouseY, closeX, buttonY, BUTTON_SIZE, BUTTON_SIZE);
         fillRounded(graphics, closeX, buttonY, BUTTON_SIZE, BUTTON_SIZE, BUTTON_RADIUS,
-                closeHovered ? BUTTON_BG_HOVER : BUTTON_BG);
+                closeHovered ? buttonBgHover() : buttonBg());
         int textX = closeX + (BUTTON_SIZE - this.font.width(CLOSE_GLYPH)) / 2;
         int textY = buttonY + (BUTTON_SIZE - this.font.lineHeight) / 2;
         graphics.text(this.font, CLOSE_GLYPH, textX, textY,
-                closeHovered ? BUTTON_ICON_HOVER : BUTTON_ICON, false);
+                closeHovered ? buttonIconHover() : buttonIcon(), false);
     }
 
     private void drawBrewingWorkspace(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
         int x = this.leftPos;
         int y = this.topPos;
 
-        graphics.fill(x + 45, y + 25, x + 46, y + 89, DIVIDER_COLOR);
+        graphics.fill(x + 45, y + 25, x + 46, y + 89, dividerColor());
         graphics.text(this.font, ellipsize(Component.translatable("screen.youzaiworldcore.brewing.fuel"), 35),
-                x + 7, y + 27, MUTED_COLOR, false);
+                x + 7, y + 27, mutedColor(), false);
 
         int fuelWidth = Mth.clamp((FUEL_BAR_W * this.menu.getFuel() + 19) / 20, 0, FUEL_BAR_W);
         fillRounded(graphics, x + FUEL_BAR_X, y + FUEL_BAR_Y,
-                FUEL_BAR_W, FUEL_BAR_H, 2, FUEL_BAR_BG);
+                FUEL_BAR_W, FUEL_BAR_H, 2, fuelBarBg());
         if (fuelWidth > 0) {
             fillRounded(graphics, x + FUEL_BAR_X, y + FUEL_BAR_Y,
-                    fuelWidth, FUEL_BAR_H, 2, FUEL_BAR_FILL);
+                    fuelWidth, FUEL_BAR_H, 2, fuelBarFill());
         }
 
         int ticks = this.menu.getBrewingTicks();
         int brewWidth = ticks <= 0 ? 0
                 : Mth.clamp((int) (BREW_BAR_W * (1.0F - ticks / BREW_TIME_TICKS)), 0, BREW_BAR_W);
         fillRounded(graphics, x + BREW_BAR_X, y + BREW_BAR_Y,
-                BREW_BAR_W, BREW_BAR_H, 3, BREW_BAR_BG);
+                BREW_BAR_W, BREW_BAR_H, 3, brewBarBg());
         if (brewWidth > 0) {
             fillRounded(graphics, x + BREW_BAR_X, y + BREW_BAR_Y,
-                    brewWidth, BREW_BAR_H, 3, BREW_BAR_FILL);
+                    brewWidth, BREW_BAR_H, 3, brewBarFill());
         }
 
         // 原料槽到三瓶药水槽的流向线。
-        graphics.fill(x + 87, y + 47, x + 89, y + BREW_BAR_Y, FLOW_LINE_COLOR);
+        graphics.fill(x + 87, y + 47, x + 89, y + BREW_BAR_Y, flowLineColor());
         graphics.fill(x + 87, y + BREW_BAR_Y + BREW_BAR_H,
-                x + 89, y + 67, FLOW_LINE_COLOR);
-        graphics.fill(x + 57, y + 66, x + 120, y + 68, FLOW_LINE_COLOR);
+                x + 89, y + 67, flowLineColor());
+        graphics.fill(x + 57, y + 66, x + 120, y + 68, flowLineColor());
         for (int index = 0; index < BOTTLE_X.length; index++) {
             int centerX = x + BOTTLE_X[index] + 8;
             graphics.fill(centerX - 1, y + 67,
-                    centerX + 1, y + BOTTLE_Y[index], FLOW_LINE_COLOR);
+                    centerX + 1, y + BOTTLE_Y[index], flowLineColor());
         }
 
         int brewPercent = ticks <= 0
@@ -362,7 +363,7 @@ public class YzuBrewingStandScreen extends AbstractContainerScreen<BrewingStandM
 
     private void drawInventoryArea(GuiGraphicsExtractor graphics) {
         graphics.text(this.font, this.playerInventoryTitle,
-                this.leftPos + 7, this.topPos + 94, LABEL_COLOR, false);
+                this.leftPos + 7, this.topPos + 94, labelColor(), false);
     }
 
     private void drawSlotBackgrounds(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
@@ -376,15 +377,15 @@ public class YzuBrewingStandScreen extends AbstractContainerScreen<BrewingStandM
                     this.leftPos + slot.x, this.topPos + slot.y, SLOT_SIZE, SLOT_SIZE);
             int color;
             if (hovered) {
-                color = SLOT_HOVER_COLOR;
+                color = slotHoverColor();
             } else if (index <= 2) {
-                color = POTION_SLOT_COLOR;
+                color = potionSlotColor();
             } else if (index == 3) {
-                color = INGREDIENT_SLOT_COLOR;
+                color = ingredientSlotColor();
             } else if (index == 4) {
-                color = FUEL_SLOT_COLOR;
+                color = fuelSlotColor();
             } else {
-                color = INVENTORY_SLOT_COLOR;
+                color = inventorySlotColor();
             }
             fillRounded(graphics, slot.x, slot.y, SLOT_SIZE, SLOT_SIZE, SLOT_RADIUS, color);
         }
@@ -395,12 +396,12 @@ public class YzuBrewingStandScreen extends AbstractContainerScreen<BrewingStandM
     private void drawGuide(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
         int x = guideLeft();
         int y = this.topPos;
-        fillRounded(graphics, x, y, GUIDE_WIDTH, this.imageHeight, PANEL_RADIUS, GUIDE_BG);
+        YzuiTheme.card(graphics, x, y, GUIDE_WIDTH, this.imageHeight);
 
         graphics.text(this.font,
                 ellipsize(Component.translatable("screen.youzaiworldcore.brewing.guide"), GUIDE_WIDTH - 14),
-                x + 7, y + 7, TITLE_COLOR, false);
-        fillRounded(graphics, x + 7, y + 17, GUIDE_WIDTH - 14, 2, 1, GUIDE_ACCENT);
+                x + 7, y + 7, titleColor(), false);
+        fillRounded(graphics, x + 7, y + 17, GUIDE_WIDTH - 14, 2, 1, guideAccent());
 
         int start = this.guidePage * ROWS_PER_PAGE;
         int end = Math.min(start + ROWS_PER_PAGE, this.filteredRecipes.size());
@@ -408,7 +409,7 @@ public class YzuBrewingStandScreen extends AbstractContainerScreen<BrewingStandM
             String noRecipes = ellipsize(
                     Component.translatable("screen.youzaiworldcore.brewing.no_results"), GUIDE_WIDTH - 12);
             drawCenteredTextWithoutShadow(
-                    graphics, noRecipes, x + GUIDE_WIDTH / 2, y + 96, MUTED_COLOR);
+                    graphics, noRecipes, x + GUIDE_WIDTH / 2, y + 96, mutedColor());
         } else {
             for (int index = start; index < end; index++) {
                 int row = index - start;
@@ -424,23 +425,23 @@ public class YzuBrewingStandScreen extends AbstractContainerScreen<BrewingStandM
         int x = guideLeft() + LIST_X;
         int y = this.topPos + LIST_Y + row * ROW_H;
         boolean hovered = isInside(mouseX, mouseY, x, y, ROW_W, ROW_H - 1);
-        fillRounded(graphics, x, y, ROW_W, ROW_H - 1, 3, hovered ? ROW_HOVER_BG : ROW_BG);
+        fillRounded(graphics, x, y, ROW_W, ROW_H - 1, 3, hovered ? rowHoverBg() : rowBg());
 
         ItemStack input = recipe.inputStack();
         ItemStack ingredient = recipe.ingredientStack();
         ItemStack output = recipe.outputStack();
         graphics.item(input, x + 2, y + 3, 0);
-        graphics.text(this.font, "+", x + 20, y + 7, MUTED_COLOR, false);
+        graphics.text(this.font, "+", x + 20, y + 7, mutedColor(), false);
         graphics.item(ingredient, x + 27, y + 3, 0);
-        graphics.text(this.font, ">", x + 45, y + 7, MUTED_COLOR, false);
+        graphics.text(this.font, ">", x + 45, y + 7, mutedColor(), false);
         graphics.item(output, x + 52, y + 3, 0);
 
         int textX = x + 72;
         int textWidth = ROW_W - 75;
         graphics.text(this.font, ellipsize(recipe.outputName(), textWidth),
-                textX, y + 3, TITLE_COLOR, false);
+                textX, y + 3, titleColor(), false);
         graphics.text(this.font, ellipsize(effectSummary(recipe), textWidth),
-                textX, y + 13, MUTED_COLOR, false);
+                textX, y + 13, mutedColor(), false);
 
         if (hovered) {
             graphics.setComponentTooltipForNextFrame(this.font, recipeTooltip(recipe), mouseX, mouseY);
@@ -460,18 +461,18 @@ public class YzuBrewingStandScreen extends AbstractContainerScreen<BrewingStandM
         boolean nextHovered = canGoNext && isInside(mouseX, mouseY,
                 x + GUIDE_WIDTH - 5 - PAGE_BUTTON_W, y, PAGE_BUTTON_W, PAGE_BUTTON_H);
         fillRounded(graphics, x + 5, y, PAGE_BUTTON_W, PAGE_BUTTON_H, 4,
-                previousHovered ? ROW_HOVER_BG : ROW_BG);
+                previousHovered ? rowHoverBg() : rowBg());
         fillRounded(graphics, x + GUIDE_WIDTH - 5 - PAGE_BUTTON_W, y,
-                PAGE_BUTTON_W, PAGE_BUTTON_H, 4, nextHovered ? ROW_HOVER_BG : ROW_BG);
+                PAGE_BUTTON_W, PAGE_BUTTON_H, 4, nextHovered ? rowHoverBg() : rowBg());
         drawCenteredTextWithoutShadow(graphics, "<",
                 x + 5 + PAGE_BUTTON_W / 2, y + 3,
-                canGoPrevious ? TITLE_COLOR : MUTED_COLOR);
+                canGoPrevious ? titleColor() : mutedColor());
         drawCenteredTextWithoutShadow(graphics, ">",
                 x + GUIDE_WIDTH - 5 - PAGE_BUTTON_W / 2, y + 3,
-                canGoNext ? TITLE_COLOR : MUTED_COLOR);
+                canGoNext ? titleColor() : mutedColor());
         graphics.centeredText(this.font,
                 Component.translatable("screen.youzaiworldcore.brewing.page", currentPage, totalPages),
-                x + GUIDE_WIDTH / 2, y + 3, MUTED_COLOR);
+                x + GUIDE_WIDTH / 2, y + 3, mutedColor());
     }
 
     private void rebuildFilteredRecipes() {

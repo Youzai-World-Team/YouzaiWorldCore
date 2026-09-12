@@ -4,6 +4,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import top.csituka.youzaiworldcore.client.config.ClientExternalSettings;
 import top.csituka.youzaiworldcore.client.animation.GuiAnimationController;
+import top.csituka.youzaiworldcore.client.render.YzuiTheme;
 import top.csituka.youzaiworldcore.item.ModItems;
 import top.csituka.youzaiworldcore.item.tool.FlameStaffItem;
 import top.csituka.youzaiworldcore.mana.ManaManager;
@@ -155,11 +156,12 @@ public final class ManaHudRenderer {
             int barWidth, int barHeight, int alpha, int mana, boolean yzuiStyle) {
         long elapsed = System.currentTimeMillis() - ManaManager.getLastInsufficientManaTime();
         boolean flash = elapsed < 1500;
-        boolean flashOn = flash && ((elapsed / 200) % 2 == 0);
+        boolean flashOn = flash && (!GuiAnimationController.isEnabled() || (elapsed / 200) % 2 == 0);
+        float opacity = alpha / 255f;
 
         // 背景
         fillManaBarLayer(g, x, y, 0, barWidth, barWidth, barHeight,
-                packARGB(0x22, 0x22, 0x22, alpha), yzuiStyle, true);
+                YzuiTheme.multiplyAlpha(YzuiTheme.hudSurface(), opacity), yzuiStyle, true);
 
         int actualW = (int) ((mana / 100.0f) * barWidth);
         int displayW = (int) ((displayMana / 100.0f) * barWidth);
@@ -173,15 +175,15 @@ public final class ManaHudRenderer {
                 ya = (int) (alpha * Math.max(0.3f, 1.0f - ratio * 0.5f));
             }
             fillManaBarLayer(g, x, y, actualW, displayW, barWidth, barHeight,
-                    packARGB(0xFF, 0xD7, 0x00, ya), yzuiStyle,
+                    YzuiTheme.alpha(YzuiTheme.warning(), ya / 255f), yzuiStyle,
                     displayW >= barWidth - 1);
         }
 
-        // 蓝色实际填充
+        // 魔力使用主题的信息色，魔力不足保留红色反馈。
         int color;
-        if (flash && flashOn) color = packARGB(0xFF, 0x44, 0x44, alpha);
-        else if (flash)        color = packARGB(0x88, 0x22, 0x22, alpha);
-        else                   color = packColorWithAlpha(getManaColor(mana), alpha);
+        if (flash && flashOn) color = YzuiTheme.alpha(YzuiTheme.error(), opacity);
+        else if (flash) color = YzuiTheme.alpha(YzuiTheme.mix(YzuiTheme.error(), YzuiTheme.surfaceHigh(), 0.35f), opacity);
+        else color = YzuiTheme.alpha(getManaColor(mana), opacity);
         if (actualW > 0) {
             fillManaBarLayer(g, x, y, 0, actualW, barWidth, barHeight,
                     color, yzuiStyle, !hasLossTrail && actualW >= barWidth - 1);
@@ -190,21 +192,9 @@ public final class ManaHudRenderer {
         // 文字
         var font = Minecraft.getInstance().font;
         int ty = y - 10;
-        String t = mana + " / 100";
-        if (flash) {
-            String warning = "魔力不足";
-            int tw = font.width(t);
-            int textX = yzuiStyle
-                    ? x + (barWidth - tw - 4 - font.width(warning)) / 2
-                    : x;
-            g.text(font, t, textX, ty, packARGB(0xFF, 0xFF, 0xFF, alpha), false);
-            g.text(font, warning, textX + tw + 4, ty,
-                    packARGB(0xFF, 0x55, 0x55, alpha), false);
-        } else {
-            int textX = yzuiStyle ? x + (barWidth - font.width(t)) / 2 : x;
-            g.text(font, t, textX + 1, ty + 1, packARGB(0x00, 0x00, 0x00, alpha), false);
-            g.text(font, t, textX, ty, packARGB(0xFF, 0xFF, 0xFF, alpha), false);
-        }
+        String t = mana + " / 100" + (flash ? " 魔力不足" : "");
+        int textX = yzuiStyle ? x + (barWidth - font.width(t)) / 2 : x;
+        YzuiTheme.hudLabel(g, font, t, textX, ty, flash ? YzuiTheme.error() : YzuiTheme.text(), opacity);
     }
 
     /**
@@ -256,36 +246,26 @@ public final class ManaHudRenderer {
                 : 0.0f;
         float f = charging ? CHG_GROW : CHG_SHRINK;
         float t = 1.0f - (float) Math.pow(1.0 - f, dt / 16.67);
-        chargeDisplay += (target - chargeDisplay) * t;
+        chargeDisplay = GuiAnimationController.isEnabled() ? chargeDisplay + (target - chargeDisplay) * t : target;
         if (Math.abs(chargeDisplay) < 0.001f) chargeDisplay = 0.0f;
         if (chargeDisplay <= 0.001f) return;
 
         int bx = (sw - CHG_W) / 2, by = sh / 2 + 15;
-        g.fill(bx, by, bx + CHG_W, by + CHG_H, packARGB(0x33, 0x33, 0x33, 0xFF));
+        g.fill(bx, by, bx + CHG_W, by + CHG_H, YzuiTheme.hudSurface());
         int fw = (int) (chargeDisplay * CHG_W);
         if (fw > 0) g.fill(bx, by, bx + fw, by + CHG_H,
-                packARGB(0xFF, Math.max(0, 0xFF - (int) (chargeDisplay * 0xAA)), 0x00, 0xFF));
+                YzuiTheme.mix(YzuiTheme.primary(), YzuiTheme.warning(), chargeDisplay));
     }
 
     // 颜色工具
     private static int getManaColor(int mana) {
-        if (mana >= 70) return 0xFF00BFFF;
-        else if (mana >= 30) return 0xFF1E90FF;
-        else return 0xFF4169E1;
-    }
-
-    private static int packColorWithAlpha(int argb, int alpha) {
-        return packARGB((argb >> 16) & 0xFF, (argb >> 8) & 0xFF, argb & 0xFF, alpha);
-    }
-
-    private static int packARGB(int r, int g, int b, int a) {
-        return (a << 24) | ((r & 0xFF) << 16) | ((g & 0xFF) << 8) | (b & 0xFF);
+        return YzuiTheme.mix(YzuiTheme.info(), YzuiTheme.primary(), Math.clamp(mana / 100f, 0f, 1f));
     }
 
     /**
      * 注册客户端魔力 HUD。
      */
     public static void register() {
-        DebugLogger.info("ManaHudRenderer", "魔力条已启用 YZUI 状态栏缺角样式与居中布局");
+        DebugLogger.info("ManaHudRenderer", "魔力条已接入 YZUI 主题，保留状态栏布局与左下角回退位置");
     }
 }

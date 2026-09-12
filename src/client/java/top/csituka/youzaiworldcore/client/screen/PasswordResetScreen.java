@@ -1,5 +1,8 @@
 package top.csituka.youzaiworldcore.client.screen;
 
+import top.csituka.youzaiworldcore.client.render.YzuiTheme;
+import top.csituka.youzaiworldcore.client.screen.widget.WidgetFocus;
+
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -24,6 +27,8 @@ import java.util.regex.Pattern;
 /** 登录前通过已绑定邮箱重置当前游戏账户密码。 */
 @SuppressWarnings("null")
 public class PasswordResetScreen extends Screen {
+    private static final int CARD_WIDTH = 440;
+    private static final int CARD_HEIGHT = 336;
     private static final int CONTAINER_WIDTH = 380;
     private static final int CONTAINER_HEIGHT = 270;
     private static final int LABEL_WIDTH = 65;
@@ -161,6 +166,7 @@ public class PasswordResetScreen extends Screen {
         this.allWidgets.add(this.resetButton);
         this.allWidgets.add(this.backButton);
 
+        arrangeForm();
         focus(this.codeSent ? this.codeField : this.emailField);
         if (this.currentDialog != null) this.currentDialog.init(this.width, this.height);
         updateButtonState();
@@ -178,86 +184,36 @@ public class PasswordResetScreen extends Screen {
     }
 
     @Override
-    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+    public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
+        int cardWidth = Math.min(CARD_WIDTH, width - 40);
+        int x = (width - cardWidth) / 2, y = (height - CARD_HEIGHT) / 2;
+        YzuiTheme.card(g, x, y, cardWidth, CARD_HEIGHT);
+        YzuiTheme.label(g, font, title, x + 24, y + 20, cardWidth - 48, YzuiTheme.text(), false);
+        YzuiTheme.wrapped(g, font, Component.translatable("screen.youzaiworldcore.password_reset.subtitle", playerName), x + 24, y + 42, cardWidth - 48, 2, YzuiTheme.textMuted());
         updateButtonState();
-        graphics.fill(0, 0, this.width, this.height, 0x80000000);
-
-        int centerX = this.width / 2;
-        int containerTop = (this.height - CONTAINER_HEIGHT) / 2;
-        int leftColX = centerX - CONTAINER_WIDTH / 2 + 10;
-        int emailY = containerTop + 65;
-        int codeY = emailY + ROW_SPACING;
-        int passwordY = codeY + ROW_SPACING;
-        int confirmY = passwordY + ROW_SPACING;
-
-        String titleText = Component.translatable(
-                "screen.youzaiworldcore.password_reset.title").getString();
-        float titleScale = 1.3F;
-        int titleWidth = (int) (this.font.width(titleText) * titleScale);
-        graphics.pose().pushMatrix();
-        graphics.pose().scale(titleScale, titleScale);
-        graphics.text(this.font, titleText,
-                (int) ((centerX - titleWidth / 2) / titleScale),
-                (int) ((containerTop + 5) / titleScale), 0xFFFFFFFF, false);
-        graphics.pose().popMatrix();
-
-        String subtitle = Component.translatable(
-                "screen.youzaiworldcore.password_reset.subtitle", this.playerName).getString();
-        graphics.text(this.font, subtitle, centerX - this.font.width(subtitle) / 2,
-                containerTop + 29, 0xFFCCCCCC, false);
-
-        if (this.codeSent) {
-            String remaining = Component.translatable(
-                    "screen.youzaiworldcore.password_reset.session_remaining",
-                    formatDuration(remainingSessionSeconds())).getString();
-            int color = remainingSessionSeconds() <= 60 ? 0xFFFF8080 : 0xFFAAAAAA;
-            graphics.text(this.font, remaining, centerX - this.font.width(remaining) / 2,
-                    containerTop + 44, color, false);
-        }
-
-        drawLabel(graphics, this.font,
-                Component.translatable("screen.youzaiworldcore.register_email.label_email").getString(),
-                leftColX, emailY + 3);
-        drawLabel(graphics, this.font,
-                Component.translatable("screen.youzaiworldcore.register_email.label_code").getString(),
-                leftColX, codeY + 3);
-        drawLabel(graphics, this.font,
-                Component.translatable("screen.youzaiworldcore.register.label_password").getString(),
-                leftColX, passwordY + 3);
-        drawLabel(graphics, this.font,
-                Component.translatable("screen.youzaiworldcore.register.label_confirm_password").getString(),
-                leftColX, confirmY + 3);
-
-        if (!this.statusMessage.isBlank()) {
-            graphics.text(this.font, this.statusMessage,
-                    centerX - this.font.width(this.statusMessage) / 2,
-                    containerTop + 191, 0xFF80E080, false);
-        }
-
-        String hint = Component.translatable(
-                "screen.youzaiworldcore.password_reset.hint_line").getString();
-        graphics.text(this.font, hint, centerX - this.font.width(hint) / 2,
-                containerTop + 242, 0xFFAAAAAA, false);
-
-        for (AbstractWidget widget : this.allWidgets) {
-            if (widget instanceof EditBox editBox) {
-                editBox.extractWidgetRenderState(graphics, mouseX, mouseY, partialTick);
-            } else if (widget instanceof TransparentButton button) {
-                button.render(graphics, mouseX, mouseY, partialTick);
+        if (codeSent) YzuiTheme.label(g, font, Component.translatable("screen.youzaiworldcore.password_reset.session_remaining",
+                formatDuration(remainingSessionSeconds())), x + 24, y + 65, cardWidth - 48,
+                remainingSessionSeconds() <= 60 ? YzuiTheme.error() : YzuiTheme.textMuted(), false);
+        YzuiTheme.wrapped(g, font, Component.literal(statusMessage), x + 24, y + 227, cardWidth - 48, 2, YzuiTheme.success());
+        YzuiTheme.wrapped(g, font, Component.translatable("screen.youzaiworldcore.password_reset.hint_line"),
+                x + 24, y + 304, cardWidth - 48, 2, YzuiTheme.textMuted());
+        for (AbstractWidget widget : allWidgets) {
+            if (widget instanceof EditBox input) {
+                YzuiTheme.label(g, font, input.getMessage(), input.getX(), input.getY() - 12,
+                        input.getWidth(), YzuiTheme.textMuted(), false);
             }
+            widget.extractRenderState(g, mouseX, mouseY, partialTick);
         }
-
-        if (this.currentDialog != null && this.currentDialog.isVisible()) {
-            this.currentDialog.render(graphics, this.width, this.height);
-            this.currentDialog.renderButtons(graphics, mouseX, mouseY, partialTick);
-        } else if (this.currentDialog != null) {
-            this.currentDialog = null;
-        }
+        if (currentDialog != null && currentDialog.isVisible()) {
+            currentDialog.render(g, width, height);
+            currentDialog.renderButtons(g, mouseX, mouseY, partialTick);
+        } else if (currentDialog != null) currentDialog = null;
     }
 
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean isActuallyClick) {
-        if (this.currentDialog != null && this.currentDialog.isFullyVisible()) {
+        if (currentDialog == null || !currentDialog.isVisible()) WidgetFocus.mouseFocus(event.x(), event.y(), allWidgets);
+        if (this.currentDialog != null && this.currentDialog.isVisible()) {
             return this.currentDialog.mouseClicked(event.x(), event.y());
         }
         if (this.emailField.mouseClicked(event, isActuallyClick)) {
@@ -296,7 +252,10 @@ public class PasswordResetScreen extends Screen {
 
     @Override
     public boolean keyPressed(KeyEvent keyEvent) {
-        if (this.currentDialog != null && this.currentDialog.isFullyVisible()) return true;
+        if (currentDialog != null && currentDialog.isVisible()) return currentDialog.keyPressed(keyEvent);
+        if (currentDialog != null && currentDialog.isVisible()) return true;
+        if (WidgetFocus.keyPressed(keyEvent, List.of(emailField, codeField, sendCodeButton, passwordField, confirmPasswordField, resetButton, backButton))) return true;
+        if (this.currentDialog != null && this.currentDialog.isVisible()) return true;
         if (keyEvent.key() == 256) {
             onBackClick();
             return true;
@@ -316,6 +275,7 @@ public class PasswordResetScreen extends Screen {
 
     @Override
     public boolean charTyped(CharacterEvent event) {
+        if (currentDialog != null && currentDialog.isVisible()) return true;
         if (this.emailField.isFocused() && this.emailField.charTyped(event)) return true;
         if (this.codeField.isFocused() && this.codeField.charTyped(event)) return true;
         if (this.passwordField.isFocused() && this.passwordField.charTyped(event)) return true;
@@ -488,11 +448,31 @@ public class PasswordResetScreen extends Screen {
 
     private void drawLabel(GuiGraphicsExtractor graphics, Font font, String text, int x, int y) {
         graphics.text(font, text, x, y + (FIELD_HEIGHT - font.lineHeight) / 2,
-                0xFFFFFFFF, false);
+                YzuiTheme.text(), false);
     }
 
     private boolean isMouseOverButton(TransparentButton button, double mouseX, double mouseY) {
         return mouseX >= button.getX() && mouseX < button.getX() + button.getWidth()
                 && mouseY >= button.getY() && mouseY < button.getY() + button.getHeight();
+    }
+
+    private void arrangeForm() {
+        int cardWidth = Math.min(CARD_WIDTH, width - 40);
+        int x = (width - cardWidth) / 2 + 24, y = (height - CARD_HEIGHT) / 2;
+        int w = cardWidth - 48;
+        emailField.setRectangle(w, 24, x, y + 90);
+        codeField.setRectangle(w - 120, 24, x, y + 140);
+        sendCodeButton.setRectangle(112, 24, x + w - 112, y + 140);
+        passwordField.setRectangle((w - 12) / 2, 24, x, y + 190);
+        confirmPasswordField.setRectangle((w - 12) / 2, 24, x + (w + 12) / 2, y + 190);
+        resetButton.setRectangle((w - 12) / 2, 28, x, y + 258);
+        backButton.setRectangle((w - 12) / 2, 28, x + (w + 12) / 2, y + 258);
+        resetButton.setStyle(YzuiTheme.ButtonStyle.FILLED);
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+        if (currentDialog != null && currentDialog.isVisible()) return currentDialog.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
+        return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
     }
 }

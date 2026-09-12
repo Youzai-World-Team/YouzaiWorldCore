@@ -1,5 +1,8 @@
 package top.csituka.youzaiworldcore.client.screen.widget;
 
+import top.csituka.youzaiworldcore.client.render.YzuiTheme;
+import top.csituka.youzaiworldcore.client.animation.YzuiHover;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractWidget;
@@ -14,6 +17,7 @@ import net.minecraft.network.chat.Component;
 public class MailCheckboxButton extends AbstractWidget {
 
     private boolean checked;
+    private final YzuiHover hoverState = new YzuiHover();
     private final Runnable onToggle;
 
     public MailCheckboxButton(int x, int y, int width, Component message, boolean checked, Runnable onToggle) {
@@ -32,16 +36,18 @@ public class MailCheckboxButton extends AbstractWidget {
 
     @Override
     protected void extractWidgetRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
-        int boxColor = active ? 0xFFE6E6E6 : 0xFF777777;
-        int fillColor = checked && active ? 0xFFF2F2F2 : 0xFF555555;
-        graphics.fill(getX(), getY() + 2, getX() + 10, getY() + 12, boxColor);
-        graphics.fill(getX() + 1, getY() + 3, getX() + 9, getY() + 11, fillColor);
-        if (checked) {
-            graphics.text(Minecraft.getInstance().font, "✓", getX() + 1, getY() + 1,
-                    active ? 0xFF222222 : 0xFF555555, false);
-        }
-        graphics.text(Minecraft.getInstance().font, getMessage(), getX() + 14, getY() + 3,
-                active ? 0xFFFFFFFF : 0xFF888888, false);
+        if (!visible) return;
+        YzuiTheme.button(graphics, getX() - 2, getY(), getWidth() + 4, getHeight(),
+                hoverState.sample(active && isMouseOver(mouseX, mouseY)), isFocused(), active, getAlpha(),
+                YzuiTheme.ButtonStyle.TEXT);
+        int fill = checked ? YzuiTheme.primary() : YzuiTheme.surfaceHigh();
+        if (!active) fill = YzuiTheme.surfaceHigh();
+        top.csituka.youzaiworldcore.client.render.RoundedRect.fill(graphics, getX(), getY() + 2, 10, 10, 2, fill);
+        YzuiTheme.border(graphics, getX(), getY() + 2, 10, 10, 2, active ? YzuiTheme.primary() : YzuiTheme.outline());
+        if (checked) graphics.text(Minecraft.getInstance().font, "✓", getX() + 1, getY() + 1,
+                active ? YzuiTheme.onPrimary() : YzuiTheme.textMuted(), false);
+        YzuiTheme.label(graphics, Minecraft.getInstance().font, getMessage(), getX() + 14, getY() + 3,
+                getWidth() - 14, active ? YzuiTheme.text() : YzuiTheme.textMuted(), false);
     }
 
     @Override
@@ -58,5 +64,12 @@ public class MailCheckboxButton extends AbstractWidget {
     @Override
     protected void updateWidgetNarration(NarrationElementOutput narrationElementOutput) {
         defaultButtonNarrationText(narrationElementOutput);
+    }
+
+    @Override
+    public boolean keyPressed(net.minecraft.client.input.KeyEvent event) {
+        if (!active || !visible || !isFocused() || (event.key() != 32 && event.key() != 257 && event.key() != 335)) return false;
+        onClick(null, false);
+        return true;
     }
 }

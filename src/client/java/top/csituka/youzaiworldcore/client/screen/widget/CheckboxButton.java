@@ -6,16 +6,14 @@ import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
-import net.minecraft.util.FormattedCharSequence;
+import top.csituka.youzaiworldcore.client.render.RoundedRect;
+import top.csituka.youzaiworldcore.client.render.YzuiTheme;
+import top.csituka.youzaiworldcore.client.animation.YzuiHover;
 
-import java.util.List;
-
-@SuppressWarnings("null")
+/** 设置行开关：清晰区分启用、禁用、键盘焦点与鼠标悬停。 */
 public class CheckboxButton extends AbstractWidget {
-
-    private static final int TEXT_COLOR = 0x00FFFFFF;
-
     private boolean checked;
+    private final YzuiHover hoverState = new YzuiHover();
     private final Runnable onToggle;
     private float externalAlpha = 1f;
     private boolean wrapMessage;
@@ -26,72 +24,67 @@ public class CheckboxButton extends AbstractWidget {
         this.onToggle = onToggle;
     }
 
-    public boolean isChecked() {
-        return checked;
-    }
-
-    public void setExternalAlpha(float alpha) {
-        this.externalAlpha = alpha;
-    }
-
-    /**
-     * 启用标签自动换行。调用方应同时给控件提供足够的高度。
-     */
-    public CheckboxButton setWrapMessage(boolean wrapMessage) {
-        this.wrapMessage = wrapMessage;
-        return this;
-    }
+    public boolean isChecked() { return checked; }
+    public void setExternalAlpha(float alpha) { externalAlpha = Math.clamp(alpha, 0f, 1f); }
+    public CheckboxButton setWrapMessage(boolean value) { wrapMessage = value; return this; }
 
     @Override
-    protected void extractWidgetRenderState(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
-        int alpha = (int) (externalAlpha * 255);
-        int textColor = (alpha << 24) | TEXT_COLOR;
+    protected void extractWidgetRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
+        if (!visible) return;
+        int x = getX(), y = getY(), w = getWidth(), h = getHeight();
+        boolean hovered = mouseX >= x && mouseX < x + w && mouseY >= y && mouseY < y + h;
+        float opacity = externalAlpha * getAlpha() * (active ? 1f : 0.6f);
+        YzuiTheme.field(g, x, y, w, h, hoverState.sample(active && hovered), isFocused(), active, opacity);
+        int trackW = Math.min(28, w / 3), trackH = Math.min(14, h - 4);
+        int trackX = x + w - trackW - 6, trackY = y + (h - trackH) / 2;
+        int track = checked ? YzuiTheme.primary() : YzuiTheme.outlineVariant();
+        RoundedRect.fill(g, trackX, trackY, trackW, trackH, trackH / 2, YzuiTheme.alpha(track, opacity));
+        int thumb = Math.max(2, trackH - 4);
+        int thumbX = checked ? trackX + trackW - thumb - 2 : trackX + 2;
+        RoundedRect.fill(g, thumbX, trackY + 2, thumb, thumb, thumb / 2,
+                YzuiTheme.alpha(checked ? YzuiTheme.onPrimary() : YzuiTheme.textMuted(), opacity));
 
         var font = Minecraft.getInstance().font;
-        int x = this.getX();
-        int y = this.getY();
-        int w = this.width;
-        int h = this.height;
-
-        String box = checked ? "☑" : "☐";
-        int boxWidth = font.width(box);
-        int boxX = x + w - boxWidth - 4;
-
-        if (!wrapMessage) {
-            int textY = y + (h - 8) / 2;
-            guiGraphics.text(font, this.getMessage(), x + 4, textY, textColor, false);
-            guiGraphics.text(font, Component.literal(box), boxX, textY, textColor, false);
-            return;
+        int available = Math.max(1, trackX - x - 14);
+        int textColor = YzuiTheme.alpha(YzuiTheme.text(), opacity);
+        if (wrapMessage) {
+            var lines = font.split(getMessage(), available);
+            int lineHeight = font.lineHeight + 2;
+            int textY = y + Math.max(0, (h - lines.size() * lineHeight + 2) / 2);
+            for (var line : lines) {
+                if (textY + font.lineHeight > y + h) break;
+                g.text(font, line, x + 6, textY, textColor, false);
+                textY += lineHeight;
+            }
+        } else {
+            YzuiTheme.label(g, font, getMessage(), x + 6, y + (h - font.lineHeight) / 2,
+                    available, textColor, false);
         }
-
-        int maxTextWidth = Math.max(1, boxX - x - 8);
-        List<FormattedCharSequence> lines = font.split(this.getMessage(), maxTextWidth);
-        int lineHeight = font.lineHeight;
-        int totalHeight = lines.size() * lineHeight + Math.max(0, lines.size() - 1) * 2;
-        int textY = y + Math.max(0, (h - totalHeight) / 2);
-        for (FormattedCharSequence line : lines) {
-            guiGraphics.text(font, line, x + 4, textY, textColor, false);
-            textY += lineHeight + 2;
-        }
-
-        int boxY = y + Math.max(0, (h - 8) / 2);
-        guiGraphics.text(font, Component.literal(box), boxX, boxY, textColor, false);
     }
 
-    public void render(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
-        this.extractWidgetRenderState(guiGraphics, mouseX, mouseY, partialTick);
+    public void render(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
+        extractWidgetRenderState(g, mouseX, mouseY, partialTick);
     }
 
     @Override
     public void onClick(MouseButtonEvent event, boolean isActuallyClick) {
+        if (!active || !visible) return;
         checked = !checked;
-        if (onToggle != null) {
-            onToggle.run();
-        }
+        if (onToggle != null) onToggle.run();
     }
 
     @Override
-    protected void updateWidgetNarration(NarrationElementOutput narrationElementOutput) {
-        this.defaultButtonNarrationText(narrationElementOutput);
+    public boolean keyPressed(net.minecraft.client.input.KeyEvent event) {
+        if (!active || !visible || !isFocused()) return false;
+        if (event.key() != 257 && event.key() != 335 && event.key() != 32) return false;
+        playDownSound(Minecraft.getInstance().getSoundManager());
+        checked = !checked;
+        if (onToggle != null) onToggle.run();
+        return true;
+    }
+
+    @Override
+    protected void updateWidgetNarration(NarrationElementOutput output) {
+        defaultButtonNarrationText(output);
     }
 }

@@ -1,5 +1,8 @@
 package top.csituka.youzaiworldcore.client.screen;
 
+import top.csituka.youzaiworldcore.client.render.YzuiTheme;
+import top.csituka.youzaiworldcore.client.screen.widget.WidgetFocus;
+
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -24,6 +27,8 @@ import java.util.regex.Pattern;
 /** 邮箱注册 GUI：发送验证码并完成账户注册。 */
 @SuppressWarnings("null")
 public class RegistrationEmailScreen extends Screen {
+    private static final int CARD_WIDTH = 440;
+    private static final int CARD_HEIGHT = 312;
     private static final int CONTAINER_WIDTH = 360;
     private static final int CONTAINER_HEIGHT = 245;
     private static final int LABEL_WIDTH = 50;
@@ -152,6 +157,7 @@ public class RegistrationEmailScreen extends Screen {
         this.allWidgets.add(this.verifyButton);
         this.allWidgets.add(this.disconnectButton);
 
+        arrangeForm();
         focus(this.codeSent ? this.codeField : this.emailField);
         if (this.currentDialog != null) this.currentDialog.init(this.width, this.height);
         updateButtonState();
@@ -168,74 +174,36 @@ public class RegistrationEmailScreen extends Screen {
     }
 
     @Override
-    public void extractRenderState(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
+    public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
+        int cardWidth = Math.min(CARD_WIDTH, width - 40);
+        int x = (width - cardWidth) / 2, y = (height - CARD_HEIGHT) / 2;
+        YzuiTheme.card(g, x, y, cardWidth, CARD_HEIGHT);
+        YzuiTheme.label(g, font, title, x + 24, y + 20, cardWidth - 48, YzuiTheme.text(), false);
+        YzuiTheme.wrapped(g, font, Component.translatable("screen.youzaiworldcore.register_email.subtitle"), x + 24, y + 42, cardWidth - 48, 2, YzuiTheme.textMuted());
         updateButtonState();
-        guiGraphics.fill(0, 0, this.width, this.height, 0x80000000);
-
-        int centerX = this.width / 2;
-        int containerTop = (this.height - CONTAINER_HEIGHT) / 2;
-        int leftColX = centerX - CONTAINER_WIDTH / 2 + 10;
-        int emailY = containerTop + 70;
-        int codeY = emailY + ROW_SPACING;
-
-        String titleText = Component.translatable("screen.youzaiworldcore.register.title").getString();
-        float titleScale = 1.3f;
-        int titleWidth = (int) (this.font.width(titleText) * titleScale);
-        guiGraphics.pose().pushMatrix();
-        guiGraphics.pose().scale(titleScale, titleScale);
-        guiGraphics.text(this.font, titleText,
-                (int) ((centerX - titleWidth / 2) / titleScale),
-                (int) ((containerTop + 8) / titleScale), 0xFFFFFFFF, false);
-        guiGraphics.pose().popMatrix();
-
-        String subtitle = Component.translatable(
-                "screen.youzaiworldcore.register_email.subtitle").getString();
-        guiGraphics.text(this.font, subtitle, centerX - this.font.width(subtitle) / 2,
-                containerTop + 33, 0xFFCCCCCC, false);
-
-        String remaining = Component.translatable(
-                "screen.youzaiworldcore.register_email.session_remaining",
-                formatDuration(remainingSessionSeconds())).getString();
-        int remainingColor = remainingSessionSeconds() <= 60 ? 0xFFFF8080 : 0xFFAAAAAA;
-        guiGraphics.text(this.font, remaining, centerX - this.font.width(remaining) / 2,
-                containerTop + 48, remainingColor, false);
-
-        drawLabel(guiGraphics, this.font,
-                Component.translatable("screen.youzaiworldcore.register_email.label_email").getString(),
-                leftColX, emailY + 3);
-        drawLabel(guiGraphics, this.font,
-                Component.translatable("screen.youzaiworldcore.register_email.label_code").getString(),
-                leftColX, codeY + 3);
-
-        if (!this.statusMessage.isBlank()) {
-            guiGraphics.text(this.font, this.statusMessage,
-                    centerX - this.font.width(this.statusMessage) / 2,
-                    codeY + 27, 0xFF80E080, false);
-        }
-
-        String hint = Component.translatable("screen.youzaiworldcore.register_email.hint_line").getString();
-        guiGraphics.text(this.font, hint, centerX - this.font.width(hint) / 2,
-                containerTop + 205, 0xFFAAAAAA, false);
-
-        for (AbstractWidget widget : this.allWidgets) {
-            if (widget instanceof EditBox editBox) {
-                editBox.extractWidgetRenderState(guiGraphics, mouseX, mouseY, partialTick);
-            } else if (widget instanceof TransparentButton button) {
-                button.render(guiGraphics, mouseX, mouseY, partialTick);
+        YzuiTheme.label(g, font, Component.translatable("screen.youzaiworldcore.register_email.session_remaining",
+                formatDuration(remainingSessionSeconds())), x + 24, y + 69, cardWidth - 48,
+                remainingSessionSeconds() <= 60 ? YzuiTheme.error() : YzuiTheme.textMuted(), false);
+        YzuiTheme.wrapped(g, font, Component.literal(statusMessage), x + 24, y + 195, cardWidth - 48, 2, YzuiTheme.success());
+        YzuiTheme.wrapped(g, font, Component.translatable("screen.youzaiworldcore.register_email.hint_line"),
+                x + 24, y + 278, cardWidth - 48, 2, YzuiTheme.textMuted());
+        for (AbstractWidget widget : allWidgets) {
+            if (widget instanceof EditBox input) {
+                YzuiTheme.label(g, font, input.getMessage(), input.getX(), input.getY() - 12,
+                        input.getWidth(), YzuiTheme.textMuted(), false);
             }
+            widget.extractRenderState(g, mouseX, mouseY, partialTick);
         }
-
-        if (this.currentDialog != null && this.currentDialog.isVisible()) {
-            this.currentDialog.render(guiGraphics, this.width, this.height);
-            this.currentDialog.renderButtons(guiGraphics, mouseX, mouseY, partialTick);
-        } else if (this.currentDialog != null) {
-            this.currentDialog = null;
-        }
+        if (currentDialog != null && currentDialog.isVisible()) {
+            currentDialog.render(g, width, height);
+            currentDialog.renderButtons(g, mouseX, mouseY, partialTick);
+        } else if (currentDialog != null) currentDialog = null;
     }
 
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean isActuallyClick) {
-        if (this.currentDialog != null && this.currentDialog.isFullyVisible()) {
+        if (currentDialog == null || !currentDialog.isVisible()) WidgetFocus.mouseFocus(event.x(), event.y(), allWidgets);
+        if (this.currentDialog != null && this.currentDialog.isVisible()) {
             return this.currentDialog.mouseClicked(event.x(), event.y());
         }
 
@@ -267,7 +235,10 @@ public class RegistrationEmailScreen extends Screen {
 
     @Override
     public boolean keyPressed(KeyEvent keyEvent) {
-        if (this.currentDialog != null && this.currentDialog.isFullyVisible()) return true;
+        if (currentDialog != null && currentDialog.isVisible()) return currentDialog.keyPressed(keyEvent);
+        if (currentDialog != null && currentDialog.isVisible()) return true;
+        if (WidgetFocus.keyPressed(keyEvent, List.of(emailField, codeField, sendCodeButton, verifyButton, disconnectButton))) return true;
+        if (this.currentDialog != null && this.currentDialog.isVisible()) return true;
         if (keyEvent.key() == 256) return true;
         if (keyEvent.key() == 257 || keyEvent.key() == 335) {
             if (this.codeField.isFocused() || !this.codeField.getValue().isBlank()) {
@@ -284,6 +255,7 @@ public class RegistrationEmailScreen extends Screen {
 
     @Override
     public boolean charTyped(CharacterEvent charEvent) {
+        if (currentDialog != null && currentDialog.isVisible()) return true;
         if (this.emailField.isFocused() && this.emailField.charTyped(charEvent)) return true;
         if (this.codeField.isFocused() && this.codeField.charTyped(charEvent)) return true;
         return false;
@@ -417,11 +389,29 @@ public class RegistrationEmailScreen extends Screen {
 
     private void drawLabel(GuiGraphicsExtractor guiGraphics, Font font, String text, int x, int y) {
         guiGraphics.text(font, text, x, y + (FIELD_HEIGHT - font.lineHeight) / 2,
-                0xFFFFFFFF, false);
+                YzuiTheme.text(), false);
     }
 
     private boolean isMouseOverButton(TransparentButton button, double mouseX, double mouseY) {
         return mouseX >= button.getX() && mouseX < button.getX() + button.getWidth()
                 && mouseY >= button.getY() && mouseY < button.getY() + button.getHeight();
+    }
+
+    private void arrangeForm() {
+        int cardWidth = Math.min(CARD_WIDTH, width - 40);
+        int x = (width - cardWidth) / 2 + 24, y = (height - CARD_HEIGHT) / 2;
+        int w = cardWidth - 48;
+        emailField.setRectangle(w, 24, x, y + 102);
+        codeField.setRectangle(w - 120, 24, x, y + 154);
+        sendCodeButton.setRectangle(112, 24, x + w - 112, y + 154);
+        verifyButton.setRectangle((w - 12) / 2, 28, x, y + 228);
+        disconnectButton.setRectangle((w - 12) / 2, 28, x + (w + 12) / 2, y + 228);
+        verifyButton.setStyle(YzuiTheme.ButtonStyle.FILLED);
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+        if (currentDialog != null && currentDialog.isVisible()) return currentDialog.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
+        return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
     }
 }

@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.client.screen.block;
 
+import top.csituka.youzaiworldcore.client.render.YzuiTheme;
+
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
@@ -13,9 +15,9 @@ import top.csituka.youzaiworldcore.screen.FlyBeaconMenu;
 
 public class FlyBeaconScreen extends AbstractContainerScreen<FlyBeaconMenu> {
 
-    private static final int BACKGROUND_COLOR = 0x80FFFFFF;
-    private static final int SLOT_COLOR = 0x40FFFFFF;
-    private static final int SLOT_HOVER_COLOR = 0x60FFFFFF;
+    private static int backgroundColor() { return YzuiTheme.surface(); }
+    private static int slotColor() { return YzuiTheme.slot(); }
+    private static int slotHoverColor() { return YzuiTheme.slotHover(); }
     private static final int CORNER_RADIUS = 6;
     private static final int SLOT_SIZE = 16;
     private static final int SLOT_SPACING = 2;
@@ -29,8 +31,8 @@ public class FlyBeaconScreen extends AbstractContainerScreen<FlyBeaconMenu> {
     private static final int FUEL_SLOT_X = 80;
     private static final int FUEL_SLOT_Y = 53;
 
-    private static final int ENERGY_BAR_BG_COLOR = 0x40000000;
-    private static final int ENERGY_BAR_BORDER_COLOR = 0xA0FFFFFF;
+    private static int energyBarBgColor() { return YzuiTheme.surface(); }
+    private static int energyBarBorderColor() { return YzuiTheme.outlineVariant(); }
 
     private static final int TOGGLE_BUTTON_X = 154;
     private static final int TOGGLE_BUTTON_Y = 30;
@@ -75,17 +77,14 @@ public class FlyBeaconScreen extends AbstractContainerScreen<FlyBeaconMenu> {
     }
 
     private void drawBackground(GuiGraphicsExtractor guiGraphics) {
-        int x = this.leftPos;
-        int y = this.topPos;
-
-        fillRoundedRect(guiGraphics, x, y, this.imageWidth, this.imageHeight, CORNER_RADIUS, BACKGROUND_COLOR);
+        YzuiTheme.card(guiGraphics, leftPos, topPos, imageWidth, imageHeight);
     }
 
     private void drawEnergyBar(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY) {
         int barX = this.leftPos + ENERGY_BAR_X;
         int barY = this.topPos + ENERGY_BAR_Y;
 
-        fillRoundedRect(guiGraphics, barX, barY, ENERGY_BAR_WIDTH, ENERGY_BAR_HEIGHT, ENERGY_BAR_CORNER_RADIUS, ENERGY_BAR_BG_COLOR);
+        fillRoundedRect(guiGraphics, barX, barY, ENERGY_BAR_WIDTH, ENERGY_BAR_HEIGHT, ENERGY_BAR_CORNER_RADIUS, energyBarBgColor());
 
         float ratio = this.menu.getEnergyRatio();
         if (ratio > 0) {
@@ -95,7 +94,7 @@ public class FlyBeaconScreen extends AbstractContainerScreen<FlyBeaconMenu> {
             fillRoundedRect(guiGraphics, barX, barY, fillWidth, ENERGY_BAR_HEIGHT, fillRadius, energyColor);
         }
 
-        drawRoundedBorder(guiGraphics, barX, barY, ENERGY_BAR_WIDTH, ENERGY_BAR_HEIGHT, ENERGY_BAR_CORNER_RADIUS, ENERGY_BAR_BORDER_COLOR);
+        drawRoundedBorder(guiGraphics, barX, barY, ENERGY_BAR_WIDTH, ENERGY_BAR_HEIGHT, ENERGY_BAR_CORNER_RADIUS, energyBarBorderColor());
 
         int energy = this.menu.getEnergy();
         int maxEnergy = this.menu.getMaxEnergy();
@@ -104,16 +103,16 @@ public class FlyBeaconScreen extends AbstractContainerScreen<FlyBeaconMenu> {
         int textX = barX + (ENERGY_BAR_WIDTH - textWidth) / 2;
         int textY = barY + (ENERGY_BAR_HEIGHT - 8) / 2;
 
-        guiGraphics.text(this.font, energyText, textX, textY, 0xFFFFFFFF, true);
+        guiGraphics.text(this.font, energyText, textX, textY, YzuiTheme.text(), false);
     }
 
     private int getEnergyColor(float ratio) {
         if (ratio > 0.6f) {
-            return 0xC04CAF50;
+            return YzuiTheme.primaryContainer();
         } else if (ratio > 0.3f) {
-            return 0xC0FFC107;
+            return YzuiTheme.secondaryContainer();
         } else {
-            return 0xC0F44336;
+            return YzuiTheme.errorContainer();
         }
     }
 
@@ -124,7 +123,7 @@ public class FlyBeaconScreen extends AbstractContainerScreen<FlyBeaconMenu> {
         int slotEndY = slotY + SLOT_SIZE;
 
         boolean isHovered = mouseX >= slotX && mouseX < slotEndX && mouseY >= slotY && mouseY < slotEndY;
-        int color = isHovered ? SLOT_HOVER_COLOR : SLOT_COLOR;
+        int color = isHovered ? slotHoverColor() : slotColor();
 
         fillRoundedRect(guiGraphics, slotX, slotY, SLOT_SIZE, SLOT_SIZE, 3, color);
     }
@@ -142,7 +141,7 @@ public class FlyBeaconScreen extends AbstractContainerScreen<FlyBeaconMenu> {
                 int slotEndY = slotY + SLOT_SIZE;
 
                 boolean isHovered = mouseX >= slotX && mouseX < slotEndX && mouseY >= slotY && mouseY < slotEndY;
-                int color = isHovered ? SLOT_HOVER_COLOR : SLOT_COLOR;
+                int color = isHovered ? slotHoverColor() : slotColor();
 
                 fillRoundedRect(guiGraphics, slotX, slotY, SLOT_SIZE, SLOT_SIZE, 3, color);
             }
@@ -155,7 +154,7 @@ public class FlyBeaconScreen extends AbstractContainerScreen<FlyBeaconMenu> {
             int slotEndY = slotY + SLOT_SIZE;
 
             boolean isHovered = mouseX >= slotX && mouseX < slotEndX && mouseY >= slotY && mouseY < slotEndY;
-            int color = isHovered ? SLOT_HOVER_COLOR : SLOT_COLOR;
+            int color = isHovered ? slotHoverColor() : slotColor();
 
             fillRoundedRect(guiGraphics, slotX, slotY, SLOT_SIZE, SLOT_SIZE, 3, color);
         }
@@ -207,5 +206,13 @@ public class FlyBeaconScreen extends AbstractContainerScreen<FlyBeaconMenu> {
                 g.fill(x + w - 1, y + j, x + w, y + j + 1, color);
             }
         }
+    }
+
+    @Override
+    protected void extractLabels(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
+        YzuiTheme.label(graphics, font, title, titleLabelX, titleLabelY,
+                imageWidth - titleLabelX - 8, YzuiTheme.primary(), false);
+        YzuiTheme.label(graphics, font, playerInventoryTitle, inventoryLabelX, inventoryLabelY,
+                imageWidth - inventoryLabelX - 8, YzuiTheme.textMuted(), false);
     }
 }

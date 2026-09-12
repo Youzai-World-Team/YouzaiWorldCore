@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.client.screen;
 
+import top.csituka.youzaiworldcore.client.render.YzuiTheme;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
@@ -32,8 +34,9 @@ public class ConfigBackupListScreen extends Screen {
     private static final String LOG_MODULE = "ConfigBackupListScreen";
 
     private static final int LIST_START_Y = 60;
-    private static final int ENTRY_HEIGHT = 22;
-    private static final int LIST_WIDTH = 300;
+    private static final int ENTRY_HEIGHT = 28;
+    private static final int LIST_WIDTH = 640;
+    private int page;
 
     private final Screen parentScreen;
     private final File gameDir;
@@ -54,18 +57,8 @@ public class ConfigBackupListScreen extends Screen {
     protected void init() {
         super.init();
         DebugLogger.entering(LOG_MODULE, "init");
-
         scanBackupFiles();
         rebuildEntryWidgets();
-
-        // 返回按钮
-        int backBtnX = (this.width - 100) / 2;
-        this.backButton = new TransparentButton(
-                backBtnX, this.height - 40, 100, 20,
-                Component.translatable("screen.youzaiworldcore.config_io.backup_list_back"),
-                this::onBack
-        );
-        this.backButton.setTextColor(0xFFFFFFFF);
     }
 
     private void scanBackupFiles() {
@@ -90,78 +83,73 @@ public class ConfigBackupListScreen extends Screen {
     }
 
     private void rebuildEntryWidgets() {
-        // 清除旧的按钮
-        for (TransparentButton btn : entryButtons) {
-            removeWidget(btn);
-        }
+        clearWidgets();
         entryButtons.clear();
-
-        int listX = (this.width - LIST_WIDTH) / 2;
-        int y = LIST_START_Y;
-
-        for (File file : backupFiles) {
-            String display = file.getName();
-            // 添加时间信息
-            long time = file.lastModified();
-            if (time > 0) {
-                java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm");
-                display = sdf.format(new java.util.Date(time)) + "  " + file.getName();
-            }
-
-            TransparentButton btn = new TransparentButton(
-                    listX, y, LIST_WIDTH, ENTRY_HEIGHT,
-                    Component.literal(display),
-                    () -> onEntryClick(file.toPath())
-            );
-            btn.setTextColor(0xFFFFFFFF);
-            btn.setBackgroundVisible(true);
-            entryButtons.add(btn);
-            addRenderableWidget(btn);
-            y += ENTRY_HEIGHT + 2;
+        int listWidth = Math.min(LIST_WIDTH, width - 64);
+        int listX = (width - listWidth) / 2;
+        int pageSize = Math.max(1, (height - 130) / (ENTRY_HEIGHT + 6));
+        int pageCount = Math.max(1, (backupFiles.size() + pageSize - 1) / pageSize);
+        page = Math.clamp(page, 0, pageCount - 1);
+        int first = page * pageSize, last = Math.min(backupFiles.size(), first + pageSize);
+        for (int index = first; index < last; index++) {
+            File file = backupFiles.get(index);
+            String display = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm").format(new java.util.Date(file.lastModified()))
+                    + "   " + file.getName();
+            TransparentButton button = new TransparentButton(listX, LIST_START_Y + (index - first) * (ENTRY_HEIGHT + 6),
+                    listWidth, ENTRY_HEIGHT, Component.literal(display), () -> onEntryClick(file.toPath()));
+            button.setTextLeftAligned(true);
+            button.setTooltip(net.minecraft.client.gui.components.Tooltip.create(Component.literal(file.getName())));
+            button.active = !importInProgress;
+            entryButtons.add(button);
+            addRenderableWidget(button);
+        }
+        backButton = new TransparentButton((width - 124) / 2, height - 42, 124, 26,
+                Component.translatable("screen.youzaiworldcore.config_io.backup_list_back"), this::onBack);
+        addRenderableWidget(backButton);
+        if (pageCount > 1) {
+            TransparentButton previous = new TransparentButton(listX, height - 42, 72, 26,
+                    Component.literal("←"), () -> { page--; rebuildEntryWidgets(); });
+            previous.active = page > 0 && !importInProgress;
+            addRenderableWidget(previous);
+            TransparentButton next = new TransparentButton(listX + listWidth - 72, height - 42, 72, 26,
+                    Component.literal("→"), () -> { page++; rebuildEntryWidgets(); });
+            next.active = page < pageCount - 1 && !importInProgress;
+            addRenderableWidget(next);
         }
     }
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
-        // 背景
-        guiGraphics.fill(0, 0, this.width, this.height, 0x80000000);
-
-        int cx = this.width / 2;
-
-        // 标题
-        String title = Component.translatable("screen.youzaiworldcore.config_io.backup_list_title").getString();
-        int titleWidth = this.font.width(title);
-        guiGraphics.text(this.font, title, cx - titleWidth / 2, 20, 0xFFFFFFFF, false);
-
+        int listWidth = Math.min(LIST_WIDTH, width - 64);
+        YzuiTheme.label(guiGraphics, font, title, (width - listWidth) / 2, 24, listWidth, YzuiTheme.text(), false);
         if (backupFiles.isEmpty()) {
-            // 空状态
-            String emptyText = Component.translatable("screen.youzaiworldcore.config_io.backup_list_empty").getString();
-            int emptyWidth = this.font.width(emptyText);
-            guiGraphics.text(this.font, emptyText, cx - emptyWidth / 2, LIST_START_Y, 0x80FFFFFF, false);
-        } else {
-            // 列表
-            super.extractRenderState(guiGraphics, mouseX, mouseY, partialTick);
+            YzuiTheme.wrapped(guiGraphics, font, Component.translatable("screen.youzaiworldcore.config_io.backup_list_empty"),
+                    (width - listWidth) / 2, LIST_START_Y + 20, listWidth, 4, YzuiTheme.textMuted());
         }
-
-        // 返回按钮
-        if (backButton != null) {
-            backButton.extractRenderState(guiGraphics, mouseX, mouseY, partialTick);
+        super.extractRenderState(guiGraphics, mouseX, mouseY, partialTick);
+        int pageSize = Math.max(1, (height - 130) / (ENTRY_HEIGHT + 6));
+        int pageCount = Math.max(1, (backupFiles.size() + pageSize - 1) / pageSize);
+        if (pageCount > 1) {
+            YzuiTheme.label(guiGraphics, font, Component.literal((page + 1) + " / " + pageCount),
+                    (width - listWidth) / 2, height - 64, listWidth, YzuiTheme.textMuted(), true);
         }
-
-        // 导入进行中提示
         if (importInProgress) {
-            String progressText = Component.translatable("screen.youzaiworldcore.config_io.importing_hint").getString();
-            int pw = this.font.width(progressText);
-            guiGraphics.text(this.font, progressText, cx - pw / 2, this.height / 2, 0xFFFFAA00, false);
+            guiGraphics.nextStratum();
+            guiGraphics.fill(0, 0, width, height, YzuiTheme.scrim());
+            YzuiTheme.card(guiGraphics, width / 2 - 180, height / 2 - 32, 360, 64);
+            YzuiTheme.wrapped(guiGraphics, font, Component.translatable("screen.youzaiworldcore.config_io.importing_hint"),
+                    width / 2 - 160, height / 2 - 8, 320, 3, YzuiTheme.text());
         }
     }
 
     @Override
     public void extractBackground(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
+        // 背景由共用屏幕入口在内容变换之前绘制，避免重复模糊与叠加遮罩。
     }
 
     @Override
     public boolean keyPressed(KeyEvent keyEvent) {
+        if (importInProgress) return true;
         if (keyEvent.key() == 256) { // ESC
             onBack();
             return true;
@@ -230,4 +218,12 @@ public class ConfigBackupListScreen extends Screen {
             return null;
         });
     }
+
+    @Override
+    public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event, boolean doubleClick) {
+        return importInProgress || super.mouseClicked(event, doubleClick);
+    }
+
+    @Override
+    public void onClose() { onBack(); }
 }

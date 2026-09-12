@@ -22,6 +22,10 @@ final class MailViewport {
     private float scale = 1f;
     private float offsetX;
     private float offsetY;
+    private float transitionOffsetY;
+
+    /** 基础过渡的设计空间位移，同时用于绘制、点击与延迟提示定位。 */
+    void setTransitionOffsetY(float offset) { transitionOffsetY = offset; }
 
     /**
      * 按当前屏幕尺寸重新计算缩放系数与居中偏移。
@@ -45,7 +49,7 @@ final class MailViewport {
     /** 压入「平移 + 缩放」矩阵，之后即可直接用设计坐标绘制。 */
     void push(GuiGraphicsExtractor graphics) {
         graphics.pose().pushMatrix();
-        graphics.pose().translate(offsetX, offsetY);
+        graphics.pose().translate(offsetX, offsetY + transitionOffsetY * scale);
         graphics.pose().scale(scale, scale);
     }
 
@@ -61,7 +65,7 @@ final class MailViewport {
 
     /** 屏幕 Y → 设计空间 Y。 */
     double toDesignY(double screenY) {
-        return (screenY - offsetY) / scale;
+        return (screenY - offsetY) / scale - transitionOffsetY;
     }
 
     /**
@@ -75,7 +79,7 @@ final class MailViewport {
 
     /** 设计空间 Y → 屏幕 Y。 */
     int toScreenY(double designY) {
-        return (int) Math.round(designY * scale + offsetY);
+        return (int) Math.round((designY + transitionOffsetY) * scale + offsetY);
     }
 
     /** 复制一份坐标已换算到设计空间的鼠标事件，用于转发给原版组件。 */

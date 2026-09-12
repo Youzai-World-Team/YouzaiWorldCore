@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.client.screen;
 
+import top.csituka.youzaiworldcore.client.render.YzuiTheme;
+
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.navigation.ScreenPosition;
 import net.minecraft.client.gui.screens.inventory.AbstractRecipeBookScreen;
@@ -58,16 +60,16 @@ public class YzuCraftingScreen extends AbstractRecipeBookScreen<CraftingMenu> {
 
     // ========== YZUI 统一设计常量（与 YzuContainerScreen 一致） ==========
 
-    private static final int PANEL_BG = 0x80FFFFFF;
+    private static int panelBg() { return YzuiTheme.surface(); }
     private static final int PANEL_RADIUS = 6;
 
     private static final int SLOT_SIZE = 16;
     private static final int SLOT_RADIUS = 3;
 
     /** 合成结果槽底色（比普通槽位更亮，突出输出位） */
-    private static final int CRAFT_RESULT_BG = 0x60FFFFFF;
+    private static int craftResultBg() { return YzuiTheme.primaryContainer(); }
 
-    private static final int LABEL_COLOR = 0xCC404040;
+    private static int labelColor() { return YzuiTheme.text(); }
 
     // ========== 装饰符号（→，自定义贴图，复用铁砧箭头） ==========
 
@@ -83,10 +85,10 @@ public class YzuCraftingScreen extends AbstractRecipeBookScreen<CraftingMenu> {
     private static final int CLOSE_RADIUS = 4;
     private static final int CLOSE_MARGIN = 6;
     private static final int CLOSE_TOP = 2;
-    private static final int CLOSE_BG = 0x40FFFFFF;
-    private static final int CLOSE_BG_HOVER = 0x80FFFFFF;
-    private static final int CLOSE_ICON = 0xCC404040;
-    private static final int CLOSE_ICON_HOVER = 0xFF000000;
+    private static int closeBg() { return YzuiTheme.surface(); }
+    private static int closeBgHover() { return YzuiTheme.surfaceHigh(); }
+    private static int closeIcon() { return YzuiTheme.text(); }
+    private static int closeIconHover() { return YzuiTheme.text(); }
     private static final String CLOSE_GLYPH = "\u00d7"; // ×
 
     // ========== 标题区 ==========
@@ -97,10 +99,10 @@ public class YzuCraftingScreen extends AbstractRecipeBookScreen<CraftingMenu> {
 
     // ========== 工作台主题（浅木棕） ==========
 
-    private static final int TITLE_COLOR = 0xFF8B6F47;
-    private static final int SLOT_COLOR = 0x40FFFFFF;
-    private static final int SLOT_HOVER_COLOR = 0x60FFFFFF;
-    private static final int ACCENT_BAR_COLOR = 0xB0C8A05C;
+    private static int titleColor() { return YzuiTheme.primary(); }
+    private static int slotColor() { return YzuiTheme.slot(); }
+    private static int slotHoverColor() { return YzuiTheme.slotHover(); }
+    private static int accentBarColor() { return YzuiTheme.primary(); }
     private static final ItemStack ICON = new ItemStack(Items.CRAFTING_TABLE);
 
     /** 合成箭头区域（常量见上方装饰符号节，使用原版纹理裁剪 blitSprite） */
@@ -146,7 +148,7 @@ public class YzuCraftingScreen extends AbstractRecipeBookScreen<CraftingMenu> {
     @Override
     public void extractBackground(@NonNull GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY,
             float partialTick) {
-        // no-op — YZUI 面板在 extractRenderState 中绘制
+        // 背景由共用屏幕入口在内容变换之前绘制，避免重复模糊与叠加遮罩。
     }
 
     @Override
@@ -177,7 +179,7 @@ public class YzuCraftingScreen extends AbstractRecipeBookScreen<CraftingMenu> {
     // ========== YZUI 面板绘制 ==========
 
     private void drawMainPanel(GuiGraphicsExtractor g) {
-        fillR(g, this.leftPos, this.topPos, this.imageWidth, this.imageHeight, PANEL_RADIUS, PANEL_BG);
+        YzuiTheme.card(g, this.leftPos, this.topPos, this.imageWidth, this.imageHeight);
     }
 
     /** 标题区：工作台图标（12×12 底衬 + 缩放物品）+ 标题文字 + 强调条。 */
@@ -185,7 +187,7 @@ public class YzuCraftingScreen extends AbstractRecipeBookScreen<CraftingMenu> {
         int ix = this.leftPos + 8;
         int iy = this.topPos + 5;
 
-        fillR(g, ix, iy, ICON_SIZE, ICON_SIZE, 3, SLOT_COLOR);
+        fillR(g, ix, iy, ICON_SIZE, ICON_SIZE, 3, slotColor());
         if (!ICON.isEmpty()) {
             g.pose().pushMatrix();
             g.pose().translate(ix, iy);
@@ -196,16 +198,16 @@ public class YzuCraftingScreen extends AbstractRecipeBookScreen<CraftingMenu> {
 
         int tx = ix + ICON_SIZE + TITLE_ICON_GAP;
         int ty = this.topPos + 5;
-        g.text(this.font, this.title, tx, ty, TITLE_COLOR, false);
+        g.text(this.font, this.title, tx, ty, titleColor(), false);
 
         int titleWidth = Math.min(this.font.width(this.title), this.imageWidth - 8 - ICON_SIZE - TITLE_ICON_GAP - 8);
-        fillR(g, tx, ty + 10, titleWidth, 2, 1, ACCENT_BAR_COLOR);
+        fillR(g, tx, ty + 10, titleWidth, 2, 1, accentBarColor());
     }
 
     /** 玩家背包区域标签（沿用原版标签坐标 imageHeight-94，无阴影）。 */
     private void drawInventoryLabel(GuiGraphicsExtractor g) {
         g.text(this.font, this.playerInventoryTitle,
-                this.leftPos + 8, this.topPos + this.imageHeight - 94, LABEL_COLOR, false);
+                this.leftPos + 8, this.topPos + this.imageHeight - 94, labelColor(), false);
     }
 
     /** 关闭按钮：圆角矩形 + × 图标，悬停提亮。 */
@@ -213,10 +215,10 @@ public class YzuCraftingScreen extends AbstractRecipeBookScreen<CraftingMenu> {
         int cx = this.leftPos + this.imageWidth - CLOSE_SIZE - CLOSE_MARGIN;
         int cy = this.topPos + CLOSE_TOP;
         boolean hovered = isOverCloseButton(mouseX, mouseY);
-        fillR(g, cx, cy, CLOSE_SIZE, CLOSE_SIZE, CLOSE_RADIUS, hovered ? CLOSE_BG_HOVER : CLOSE_BG);
+        fillR(g, cx, cy, CLOSE_SIZE, CLOSE_SIZE, CLOSE_RADIUS, hovered ? closeBgHover() : closeBg());
         int tx = cx + (CLOSE_SIZE - this.font.width(CLOSE_GLYPH)) / 2;
         int ty = cy + (CLOSE_SIZE - this.font.lineHeight) / 2;
-        g.text(this.font, CLOSE_GLYPH, tx, ty, hovered ? CLOSE_ICON_HOVER : CLOSE_ICON, false);
+        g.text(this.font, CLOSE_GLYPH, tx, ty, hovered ? closeIconHover() : closeIcon(), false);
     }
 
     /** 合成箭头：3×3 合成格与结果槽之间的"→"（自定义贴图 anvil_arrow.png 复用，
@@ -235,7 +237,7 @@ public class YzuCraftingScreen extends AbstractRecipeBookScreen<CraftingMenu> {
             }
             boolean hovered = mouseX >= this.leftPos + slot.x && mouseX < this.leftPos + slot.x + SLOT_SIZE
                     && mouseY >= this.topPos + slot.y && mouseY < this.topPos + slot.y + SLOT_SIZE;
-            int color = (i == 0) ? CRAFT_RESULT_BG : (hovered ? SLOT_HOVER_COLOR : SLOT_COLOR);
+            int color = (i == 0) ? craftResultBg() : (hovered ? slotHoverColor() : slotColor());
             fillR(g, slot.x, slot.y, SLOT_SIZE, SLOT_SIZE, SLOT_RADIUS, color);
         }
     }

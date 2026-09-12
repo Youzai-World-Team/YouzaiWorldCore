@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.client.screen;
 
+import top.csituka.youzaiworldcore.client.render.YzuiTheme;
+
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.CyclingSlotBackground;
 import net.minecraft.client.gui.screens.inventory.ItemCombinerScreen;
@@ -73,13 +75,13 @@ public class YzuSmithingScreen extends ItemCombinerScreen<SmithingMenu> {
 
     // ========== YZUI 统一设计常量（与 YzuContainerScreen 一致） ==========
 
-    private static final int PANEL_BG = 0x80FFFFFF;
+    private static int panelBg() { return YzuiTheme.surface(); }
     private static final int PANEL_RADIUS = 6;
 
     private static final int SLOT_SIZE = 16;
     private static final int SLOT_RADIUS = 3;
 
-    private static final int LABEL_COLOR = 0xCC404040;
+    private static int labelColor() { return YzuiTheme.text(); }
 
     // ========== 关闭按钮 ==========
 
@@ -87,10 +89,10 @@ public class YzuSmithingScreen extends ItemCombinerScreen<SmithingMenu> {
     private static final int CLOSE_RADIUS = 4;
     private static final int CLOSE_MARGIN = 6;
     private static final int CLOSE_TOP = 2;
-    private static final int CLOSE_BG = 0x40FFFFFF;
-    private static final int CLOSE_BG_HOVER = 0x80FFFFFF;
-    private static final int CLOSE_ICON = 0xCC404040;
-    private static final int CLOSE_ICON_HOVER = 0xFF000000;
+    private static int closeBg() { return YzuiTheme.surface(); }
+    private static int closeBgHover() { return YzuiTheme.surfaceHigh(); }
+    private static int closeIcon() { return YzuiTheme.text(); }
+    private static int closeIconHover() { return YzuiTheme.text(); }
     private static final String CLOSE_GLYPH = "\u00d7"; // ×
 
     // ========== 标题区 ==========
@@ -101,10 +103,10 @@ public class YzuSmithingScreen extends ItemCombinerScreen<SmithingMenu> {
 
     // ========== 锻造台主题（暗木棕） ==========
 
-    private static final int TITLE_COLOR = 0xFF7A5C3E;
-    private static final int SLOT_COLOR = 0x40FFFFFF;
-    private static final int SLOT_HOVER_COLOR = 0x60FFFFFF;
-    private static final int ACCENT_BAR_COLOR = 0xB0A8854F;
+    private static int titleColor() { return YzuiTheme.primary(); }
+    private static int slotColor() { return YzuiTheme.slot(); }
+    private static int slotHoverColor() { return YzuiTheme.slotHover(); }
+    private static int accentBarColor() { return YzuiTheme.primary(); }
     private static final ItemStack ICON = new ItemStack(Items.SMITHING_TABLE);
 
     // ========== 装饰符号（→，自定义贴图，复用铁砧箭头） ==========
@@ -209,7 +211,7 @@ public class YzuSmithingScreen extends ItemCombinerScreen<SmithingMenu> {
     @Override
     public void extractBackground(@NonNull GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY,
             float partialTick) {
-        // no-op — YZUI 面板在 extractRenderState 中绘制
+        // 背景由共用屏幕入口在内容变换之前绘制，避免重复模糊与叠加遮罩。
     }
 
     @Override
@@ -340,7 +342,7 @@ public class YzuSmithingScreen extends ItemCombinerScreen<SmithingMenu> {
     // ========== YZUI 面板绘制 ==========
 
     private void drawMainPanel(GuiGraphicsExtractor g) {
-        fillR(g, this.leftPos, this.topPos, this.imageWidth, this.imageHeight, PANEL_RADIUS, PANEL_BG);
+        YzuiTheme.card(g, this.leftPos, this.topPos, this.imageWidth, this.imageHeight);
     }
 
     /** 标题区：锻造台图标（12×12 底衬 + 缩放物品）+ 标题文字 + 强调条。 */
@@ -348,7 +350,7 @@ public class YzuSmithingScreen extends ItemCombinerScreen<SmithingMenu> {
         int ix = this.leftPos + 8;
         int iy = this.topPos + 5;
 
-        fillR(g, ix, iy, ICON_SIZE, ICON_SIZE, 3, SLOT_COLOR);
+        fillR(g, ix, iy, ICON_SIZE, ICON_SIZE, 3, slotColor());
         if (!ICON.isEmpty()) {
             g.pose().pushMatrix();
             g.pose().translate(ix, iy);
@@ -359,25 +361,25 @@ public class YzuSmithingScreen extends ItemCombinerScreen<SmithingMenu> {
 
         int tx = ix + ICON_SIZE + TITLE_ICON_GAP;
         int ty = this.topPos + 5;
-        g.text(this.font, this.title, tx, ty, TITLE_COLOR, false);
+        g.text(this.font, this.title, tx, ty, titleColor(), false);
 
         int titleWidth = Math.min(this.font.width(this.title), this.imageWidth - 8 - ICON_SIZE - TITLE_ICON_GAP - 8);
-        fillR(g, tx, ty + 10, titleWidth, 2, 1, ACCENT_BAR_COLOR);
+        fillR(g, tx, ty + 10, titleWidth, 2, 1, accentBarColor());
     }
 
     private void drawInventoryLabel(GuiGraphicsExtractor g) {
         g.text(this.font, this.playerInventoryTitle,
-                this.leftPos + 8, this.topPos + this.imageHeight - 94, LABEL_COLOR, false);
+                this.leftPos + 8, this.topPos + this.imageHeight - 94, labelColor(), false);
     }
 
     private void drawCloseButton(GuiGraphicsExtractor g, int mouseX, int mouseY) {
         int cx = this.leftPos + this.imageWidth - CLOSE_SIZE - CLOSE_MARGIN;
         int cy = this.topPos + CLOSE_TOP;
         boolean hovered = isOverCloseButton(mouseX, mouseY);
-        fillR(g, cx, cy, CLOSE_SIZE, CLOSE_SIZE, CLOSE_RADIUS, hovered ? CLOSE_BG_HOVER : CLOSE_BG);
+        fillR(g, cx, cy, CLOSE_SIZE, CLOSE_SIZE, CLOSE_RADIUS, hovered ? closeBgHover() : closeBg());
         int tx = cx + (CLOSE_SIZE - this.font.width(CLOSE_GLYPH)) / 2;
         int ty = cy + (CLOSE_SIZE - this.font.lineHeight) / 2;
-        g.text(this.font, CLOSE_GLYPH, tx, ty, hovered ? CLOSE_ICON_HOVER : CLOSE_ICON, false);
+        g.text(this.font, CLOSE_GLYPH, tx, ty, hovered ? closeIconHover() : closeIcon(), false);
     }
 
     private void drawSlotBackgrounds(GuiGraphicsExtractor g, int mouseX, int mouseY) {
@@ -388,7 +390,7 @@ public class YzuSmithingScreen extends ItemCombinerScreen<SmithingMenu> {
             boolean hovered = mouseX >= this.leftPos + slot.x && mouseX < this.leftPos + slot.x + SLOT_SIZE
                     && mouseY >= this.topPos + slot.y && mouseY < this.topPos + slot.y + SLOT_SIZE;
             fillR(g, slot.x, slot.y, SLOT_SIZE, SLOT_SIZE, SLOT_RADIUS,
-                    hovered ? SLOT_HOVER_COLOR : SLOT_COLOR);
+                    hovered ? slotHoverColor() : slotColor());
         }
     }
 

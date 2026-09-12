@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.client.hud;
 
+import top.csituka.youzaiworldcore.client.render.YzuiTheme;
+
 import eu.pb4.trinkets.api.TrinketAttachment;
 import eu.pb4.trinkets.api.TrinketInventory;
 import eu.pb4.trinkets.api.TrinketsApi;
@@ -43,9 +45,9 @@ public final class ArmorHudRenderer {
     private static final int BASE_TEXT_WIDTH = 22;
     private static final int BASE_BOTTOM_OFFSET = 70;
 
-    private static final int SLOT_EMPTY_COLOR = 0x40FFFFFF;
-    private static final int SLOT_FILLED_COLOR = 0x5AFFFFFF;
-    private static final int PANEL_BG = 0x80FFFFFF;
+    private static int slotEmptyColor() { return YzuiTheme.hudSlot(); }
+    private static int slotFilledColor() { return YzuiTheme.hudSlot(); }
+    private static int panelBg() { return YzuiTheme.hudSurface(); }
 
     /** 装备槽位数（含主手） */
     private static final int EQUIP_SLOT_COUNT = 9;
@@ -55,9 +57,9 @@ public final class ArmorHudRenderer {
     private static final int TOTAL_SLOT_COUNT = EQUIP_SLOT_COUNT + INDICATOR_SLOT_COUNT;
 
     // ===== 颜色 =====
-    private static final int COLOR_WHITE = 0xFFFFFFFF;
-    private static final int COLOR_GREEN = 0xFF55FF55;
-    private static final int COLOR_RED = 0xFFFF5555;
+    private static int colorWhite() { return YzuiTheme.text(); }
+    private static int colorGreen() { return YzuiTheme.success(); }
+    private static int colorRed() { return YzuiTheme.error(); }
 
     private static final String TRINKET_TOTEM = "offhand/totem";
     private static final String TRINKET_HEART = "offhand/heart";
@@ -240,7 +242,7 @@ public final class ArmorHudRenderer {
         Font font = client.font;
 
         RoundedRect.fillOrSquare(graphics, panelX, panelY, panelW, panelH,
-                BASE_PANEL_RADIUS, YzHudLayout.applyOpacity(PANEL_BG));
+                BASE_PANEL_RADIUS, YzHudLayout.applyOpacity(panelBg()));
 
         int iconSize = 16;
 
@@ -276,7 +278,7 @@ public final class ArmorHudRenderer {
         boolean hasItem = entry.stack != null && !entry.stack.isEmpty();
 
         g.fill(slotX, slotY, slotX + slotSize, slotY + slotSize,
-                YzHudLayout.applyOpacity(hasItem ? SLOT_FILLED_COLOR : SLOT_EMPTY_COLOR));
+                YzHudLayout.applyOpacity(hasItem ? slotFilledColor() : slotEmptyColor()));
 
         if (!hasItem && entry.placeholderIcon != null) {
             g.blitSprite(RenderPipelines.GUI_TEXTURED, entry.placeholderIcon,
@@ -329,9 +331,8 @@ public final class ArmorHudRenderer {
         int shownValue = showDurability ? durabilityRemaining(stack) : displayCount;
         int color = showDurability
                 ? durabilityColor(shownValue, stack)
-                : COLOR_WHITE;
-        g.text(font, Integer.toString(shownValue), textX, textY,
-                YzHudLayout.applyOpacity(color), true);
+                : colorWhite();
+        YzuiTheme.hudLabel(g, font, Integer.toString(shownValue), textX, textY, color, YzHudSettings.getOpacity());
 
         if (outgoing) {
             animation.drawOutgoingOverlay(g, slotX, slotY,
@@ -350,7 +351,7 @@ public final class ArmorHudRenderer {
             int slotX, int slotY, int slotSize, int itemInset, int textGap,
             long nowMillis) {
         g.fill(slotX, slotY, slotX + slotSize, slotY + slotSize,
-                YzHudLayout.applyOpacity(SLOT_FILLED_COLOR));
+                YzHudLayout.applyOpacity(slotFilledColor()));
 
         int animatedWidth = slotSize + textGap + BASE_TEXT_WIDTH;
         float centerX = slotX + animatedWidth / 2.0f;
@@ -366,17 +367,16 @@ public final class ArmorHudRenderer {
         int count = cachedArrowCount;
         int color;
         if (count >= 64) {
-            color = COLOR_GREEN;
+            color = colorGreen();
         } else if (count <= 20) {
-            color = COLOR_RED;
+            color = colorRed();
         } else {
-            color = COLOR_WHITE;
+            color = colorWhite();
         }
 
         int textX = slotX + slotSize + textGap;
         int textY = slotY + (slotSize - font.lineHeight) / 2;
-        g.text(font, Integer.toString(count), textX, textY,
-                YzHudLayout.applyOpacity(color), true);
+        YzuiTheme.hudLabel(g, font, Integer.toString(count), textX, textY, color, YzHudSettings.getOpacity());
         arrowAnimation.drawCurrentOverlay(g, ARROW_STACK,
                 slotX, slotY, animatedWidth, slotSize, nowMillis);
         arrowAnimation.popTransform(g);
@@ -389,7 +389,7 @@ public final class ArmorHudRenderer {
             int slotX, int slotY, int slotSize, int itemInset, int textGap,
             long nowMillis) {
         g.fill(slotX, slotY, slotX + slotSize, slotY + slotSize,
-                YzHudLayout.applyOpacity(SLOT_FILLED_COLOR));
+                YzHudLayout.applyOpacity(slotFilledColor()));
 
         int animatedWidth = slotSize + textGap + BASE_TEXT_WIDTH;
         float centerX = slotX + animatedWidth / 2.0f;
@@ -403,17 +403,16 @@ public final class ArmorHudRenderer {
         int count = cachedFireworkCount;
         int color;
         if (count >= 64) {
-            color = COLOR_GREEN;
+            color = colorGreen();
         } else if (count <= 20) {
-            color = COLOR_RED;
+            color = colorRed();
         } else {
-            color = COLOR_WHITE;
+            color = colorWhite();
         }
 
         int textX = slotX + slotSize + textGap;
         int textY = slotY + (slotSize - font.lineHeight) / 2;
-        g.text(font, Integer.toString(count), textX, textY,
-                YzHudLayout.applyOpacity(color), true);
+        YzuiTheme.hudLabel(g, font, Integer.toString(count), textX, textY, color, YzHudSettings.getOpacity());
         fireworkAnimation.drawCurrentOverlay(g, FIREWORK_STACK,
                 slotX, slotY, animatedWidth, slotSize, nowMillis);
         fireworkAnimation.popTransform(g);
@@ -426,7 +425,7 @@ public final class ArmorHudRenderer {
             int slotX, int slotY, int slotSize, int itemInset, int textGap,
             int iconSize, long nowMillis) {
         g.fill(slotX, slotY, slotX + slotSize, slotY + slotSize,
-                YzHudLayout.applyOpacity(SLOT_FILLED_COLOR));
+                YzHudLayout.applyOpacity(slotFilledColor()));
 
         int animatedWidth = slotSize + textGap + BASE_TEXT_WIDTH;
         float centerX = slotX + animatedWidth / 2.0f;
@@ -443,17 +442,16 @@ public final class ArmorHudRenderer {
         int empty = cachedEmptySlots;
         int color;
         if (empty >= 27) {
-            color = COLOR_GREEN;
+            color = colorGreen();
         } else if (empty <= 5) {
-            color = COLOR_RED;
+            color = colorRed();
         } else {
-            color = COLOR_WHITE;
+            color = colorWhite();
         }
 
         int textX = slotX + slotSize + textGap;
         int textY = slotY + (slotSize - font.lineHeight) / 2;
-        g.text(font, Integer.toString(empty), textX, textY,
-                YzHudLayout.applyOpacity(color), true);
+        YzuiTheme.hudLabel(g, font, Integer.toString(empty), textX, textY, color, YzHudSettings.getOpacity());
         emptySlotsAnimation.drawCurrentOverlay(g, ItemStack.EMPTY,
                 slotX, slotY, animatedWidth, slotSize, nowMillis);
         emptySlotsAnimation.popTransform(g);
@@ -618,12 +616,12 @@ public final class ArmorHudRenderer {
     private static int durabilityColor(int remaining, ItemStack stack) {
         int max = stack.getMaxDamage();
         if (max <= 0)
-            return COLOR_WHITE;
+            return colorWhite();
         if (remaining >= max)
-            return COLOR_GREEN; // 满耐久
+            return colorGreen(); // 满耐久
         if (remaining * 10 <= max)
-            return COLOR_RED; // 剩余 ≤10%
-        return COLOR_WHITE;
+            return colorRed(); // 剩余 ≤10%
+        return colorWhite();
     }
 
     private static int countInInventory(Player player, ItemStack ref, int exclude) {

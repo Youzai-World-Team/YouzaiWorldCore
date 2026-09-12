@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.client.screen;
 
+import top.csituka.youzaiworldcore.client.render.YzuiTheme;
+
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.MultiLineEditBox;
 import net.minecraft.client.gui.screens.inventory.ItemCombinerScreen;
@@ -73,14 +75,14 @@ public class YzuAnvilScreen extends ItemCombinerScreen<AnvilMenu> {
     // ========== YZUI 统一设计常量（与 YzuContainerScreen 一致） ==========
 
     /** 面板背景：半透明白 */
-    private static final int PANEL_BG = 0x80FFFFFF;
+    private static int panelBg() { return YzuiTheme.surface(); }
     private static final int PANEL_RADIUS = 6;
 
     private static final int SLOT_SIZE = 16;
     private static final int SLOT_RADIUS = 3; // r≤3 走矩形快速路径
 
     /** 玩家背包标题（深灰，白底可读，无阴影） */
-    private static final int LABEL_COLOR = 0xCC404040;
+    private static int labelColor() { return YzuiTheme.text(); }
 
     // ========== 关闭按钮 ==========
 
@@ -88,10 +90,10 @@ public class YzuAnvilScreen extends ItemCombinerScreen<AnvilMenu> {
     private static final int CLOSE_RADIUS = 4;
     private static final int CLOSE_MARGIN = 6;
     private static final int CLOSE_TOP = 2;
-    private static final int CLOSE_BG = 0x40FFFFFF;
-    private static final int CLOSE_BG_HOVER = 0x80FFFFFF;
-    private static final int CLOSE_ICON = 0xCC404040;
-    private static final int CLOSE_ICON_HOVER = 0xFF000000;
+    private static int closeBg() { return YzuiTheme.surface(); }
+    private static int closeBgHover() { return YzuiTheme.surfaceHigh(); }
+    private static int closeIcon() { return YzuiTheme.text(); }
+    private static int closeIconHover() { return YzuiTheme.text(); }
     private static final String CLOSE_GLYPH = "\u00d7"; // ×
 
     // ========== 标题区 ==========
@@ -102,10 +104,10 @@ public class YzuAnvilScreen extends ItemCombinerScreen<AnvilMenu> {
 
     // ========== 铁砧主题（钢灰） ==========
 
-    private static final int TITLE_COLOR = 0xFF6A6A6A;
-    private static final int SLOT_COLOR = 0x40FFFFFF;
-    private static final int SLOT_HOVER_COLOR = 0x60FFFFFF;
-    private static final int ACCENT_BAR_COLOR = 0xB09A9A9A;
+    private static int titleColor() { return YzuiTheme.primary(); }
+    private static int slotColor() { return YzuiTheme.slot(); }
+    private static int slotHoverColor() { return YzuiTheme.slotHover(); }
+    private static int accentBarColor() { return YzuiTheme.primary(); }
     private static final ItemStack ICON = new ItemStack(Items.ANVIL);
 
     // ========== 装饰符号（+/→，自定义贴图 blitSprite） ==========
@@ -126,9 +128,9 @@ public class YzuAnvilScreen extends ItemCombinerScreen<AnvilMenu> {
     // ========== 铁砧特有 ==========
 
     private static final Component TOO_EXPENSIVE_TEXT = Component.translatable("container.repair.expensive");
-    private static final int COST_COLOR_OK = 0xFF80FF20;
-    private static final int COST_COLOR_BAD = 0xFFFF6060;
-    private static final int COST_BG = 0x4F000000;
+    private static int costColorOk() { return YzuiTheme.success(); }
+    private static int costColorBad() { return YzuiTheme.error(); }
+    private static int costBg() { return YzuiTheme.surfaceHigh(); }
     private static final int COST_Y = 69;
     private static final int COST_BG_TOP = 67;
     private static final int COST_BG_BOTTOM = 79;
@@ -199,11 +201,11 @@ public class YzuAnvilScreen extends ItemCombinerScreen<AnvilMenu> {
                 .setX(this.leftPos + 8)
                 .setY(this.topPos + 18)
                 .setPlaceholder(Component.translatable("container.repair"))
-                .setTextColor(0xFF404040)
+                .setTextColor(YzuiTheme.text())
                 .setTextShadow(false)
-                .setCursorColor(0xFF000000)
+                .setCursorColor(YzuiTheme.primary())
                 .setShowBackground(false)
-                .setShowDecorations(true)
+                .setShowDecorations(false)
                 .build(this.font, 161, 28, Component.empty());
         this.name.setLineLimit(2);
         this.name.setCharacterLimit(AnvilMenu.MAX_NAME_LENGTH);
@@ -235,7 +237,7 @@ public class YzuAnvilScreen extends ItemCombinerScreen<AnvilMenu> {
     @Override
     public void extractBackground(@NonNull GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY,
             float partialTick) {
-        // no-op — YZUI 面板在 extractRenderState 中绘制
+        // 背景由共用屏幕入口在内容变换之前绘制，避免重复模糊与叠加遮罩。
     }
 
     @Override
@@ -255,16 +257,16 @@ public class YzuAnvilScreen extends ItemCombinerScreen<AnvilMenu> {
         int color;
         if (cost >= 40 && !this.player.hasInfiniteMaterials()) {
             text = TOO_EXPENSIVE_TEXT;
-            color = COST_COLOR_BAD;
+            color = costColorBad();
         } else {
             Slot resultSlot = this.menu.getSlot(2);
             if (!resultSlot.hasItem()) {
                 return;
             }
             text = Component.translatable("container.repair.cost", cost);
-            color = COST_COLOR_OK;
+            color = costColorOk();
             if (!resultSlot.mayPickup(this.player)) {
-                color = COST_COLOR_BAD;
+                color = costColorBad();
             }
         }
         if (text == null) {
@@ -273,7 +275,7 @@ public class YzuAnvilScreen extends ItemCombinerScreen<AnvilMenu> {
 
         int x = this.imageWidth - 8 - this.font.width(text) - 2;
         fillR(g, x - 2, COST_BG_TOP, (this.imageWidth - 8) - (x - 2),
-                COST_BG_BOTTOM - COST_BG_TOP, 1, COST_BG);
+                COST_BG_BOTTOM - COST_BG_TOP, 1, costBg());
         g.text(this.font, text, x, COST_Y, color, false);
     }
 
@@ -379,14 +381,14 @@ public class YzuAnvilScreen extends ItemCombinerScreen<AnvilMenu> {
     // ========== YZUI 面板绘制 ==========
 
     private void drawMainPanel(GuiGraphicsExtractor g) {
-        fillR(g, this.leftPos, this.topPos, this.imageWidth, this.imageHeight, PANEL_RADIUS, PANEL_BG);
+        YzuiTheme.card(g, this.leftPos, this.topPos, this.imageWidth, this.imageHeight);
     }
 
     private void drawTitle(GuiGraphicsExtractor g) {
         int ix = this.leftPos + 8;
         int iy = this.topPos + 5;
 
-        fillR(g, ix, iy, ICON_SIZE, ICON_SIZE, 3, SLOT_COLOR);
+        fillR(g, ix, iy, ICON_SIZE, ICON_SIZE, 3, slotColor());
         if (!ICON.isEmpty()) {
             g.pose().pushMatrix();
             g.pose().translate(ix, iy);
@@ -397,25 +399,25 @@ public class YzuAnvilScreen extends ItemCombinerScreen<AnvilMenu> {
 
         int tx = ix + ICON_SIZE + TITLE_ICON_GAP;
         int ty = this.topPos + 5;
-        g.text(this.font, this.title, tx, ty, TITLE_COLOR, false);
+        g.text(this.font, this.title, tx, ty, titleColor(), false);
 
         int titleWidth = Math.min(this.font.width(this.title), this.imageWidth - 8 - ICON_SIZE - TITLE_ICON_GAP - 8);
-        fillR(g, tx, ty + 10, titleWidth, 2, 1, ACCENT_BAR_COLOR);
+        fillR(g, tx, ty + 10, titleWidth, 2, 1, accentBarColor());
     }
 
     private void drawInventoryLabel(GuiGraphicsExtractor g) {
         g.text(this.font, this.playerInventoryTitle,
-                this.leftPos + 8, this.topPos + this.imageHeight - 94, LABEL_COLOR, false);
+                this.leftPos + 8, this.topPos + this.imageHeight - 94, labelColor(), false);
     }
 
     private void drawCloseButton(GuiGraphicsExtractor g, int mouseX, int mouseY) {
         int cx = this.leftPos + this.imageWidth - CLOSE_SIZE - CLOSE_MARGIN;
         int cy = this.topPos + CLOSE_TOP;
         boolean hovered = isOverCloseButton(mouseX, mouseY);
-        fillR(g, cx, cy, CLOSE_SIZE, CLOSE_SIZE, CLOSE_RADIUS, hovered ? CLOSE_BG_HOVER : CLOSE_BG);
+        fillR(g, cx, cy, CLOSE_SIZE, CLOSE_SIZE, CLOSE_RADIUS, hovered ? closeBgHover() : closeBg());
         int tx = cx + (CLOSE_SIZE - this.font.width(CLOSE_GLYPH)) / 2;
         int ty = cy + (CLOSE_SIZE - this.font.lineHeight) / 2;
-        g.text(this.font, CLOSE_GLYPH, tx, ty, hovered ? CLOSE_ICON_HOVER : CLOSE_ICON, false);
+        g.text(this.font, CLOSE_GLYPH, tx, ty, hovered ? closeIconHover() : closeIcon(), false);
     }
 
     private void drawSlotBackgrounds(GuiGraphicsExtractor g, int mouseX, int mouseY) {
@@ -426,7 +428,7 @@ public class YzuAnvilScreen extends ItemCombinerScreen<AnvilMenu> {
             boolean hovered = mouseX >= this.leftPos + slot.x && mouseX < this.leftPos + slot.x + SLOT_SIZE
                     && mouseY >= this.topPos + slot.y && mouseY < this.topPos + slot.y + SLOT_SIZE;
             fillR(g, slot.x, slot.y, SLOT_SIZE, SLOT_SIZE, SLOT_RADIUS,
-                    hovered ? SLOT_HOVER_COLOR : SLOT_COLOR);
+                    hovered ? slotHoverColor() : slotColor());
         }
     }
 

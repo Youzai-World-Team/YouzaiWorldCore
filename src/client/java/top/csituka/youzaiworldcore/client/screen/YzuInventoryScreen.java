@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.client.screen;
 
+import top.csituka.youzaiworldcore.client.render.YzuiTheme;
+
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.AbstractRecipeBookScreen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
@@ -55,12 +57,12 @@ public class YzuInventoryScreen extends AbstractRecipeBookScreen<InventoryMenu> 
     private static final Logger LOGGER = LoggerFactory.getLogger("YzuInventoryScreen");
 
     // ========== YZUI 配色常量 ==========
-    private static final int PANEL_BG = 0x80FFFFFF;
-    private static final int SLOT_COLOR = 0x40FFFFFF;
-    private static final int SLOT_HOVER_COLOR = 0x60FFFFFF;
-    private static final int CRAFT_RESULT_BG = 0x60FFFFFF;
+    private static int panelBg() { return YzuiTheme.surface(); }
+    private static int slotColor() { return YzuiTheme.slot(); }
+    private static int slotHoverColor() { return YzuiTheme.slotHover(); }
+    private static int craftResultBg() { return YzuiTheme.primaryContainer(); }
     /** 副手槽背景色（褐色块） */
-    private static final int OFFHAND_SLOT_COLOR = 0x60A08050;
+    private static int offhandSlotColor() { return YzuiTheme.primaryContainer(); }
 
     private static final int PANEL_RADIUS = 6;
     private static final int SLOT_RADIUS = 3;
@@ -144,7 +146,7 @@ public class YzuInventoryScreen extends AbstractRecipeBookScreen<InventoryMenu> 
     @Override
     public void extractBackground(@NonNull GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY,
             float partialTick) {
-        // no-op — YZUI 面板在 extractRenderState 中绘制
+        // 背景由共用屏幕入口在内容变换之前绘制，避免重复模糊与叠加遮罩。
     }
 
     @Override
@@ -360,8 +362,7 @@ public class YzuInventoryScreen extends AbstractRecipeBookScreen<InventoryMenu> 
     // ========== YZUI 面板绘制方法 ==========
 
     private void drawMainPanel(GuiGraphicsExtractor g) {
-        fillRoundedRect(g, this.leftPos, this.topPos, this.imageWidth, this.imageHeight,
-                PANEL_RADIUS, PANEL_BG);
+        YzuiTheme.card(g, this.leftPos, this.topPos, this.imageWidth, this.imageHeight);
     }
 
     /** 在 2×2 合成格与输出槽之间绘制原版交易箭头贴图。 */
@@ -407,9 +408,9 @@ public class YzuInventoryScreen extends AbstractRecipeBookScreen<InventoryMenu> 
             // 副手槽使用褐色背景
             int color;
             if (getSlotIndex(slot) == 45) {
-                color = isHovered ? 0x80A08050 : OFFHAND_SLOT_COLOR;
+                color = isHovered ? YzuiTheme.slotHover() : offhandSlotColor();
             } else {
-                color = isHovered ? SLOT_HOVER_COLOR : SLOT_COLOR;
+                color = isHovered ? slotHoverColor() : slotColor();
             }
 
             fillRoundedRect(guiGraphics, sx, sy, SLOT_SIZE, SLOT_SIZE, SLOT_RADIUS, color);
@@ -421,7 +422,7 @@ public class YzuInventoryScreen extends AbstractRecipeBookScreen<InventoryMenu> 
             if (resultSlot.isActive()) {
                 fillRoundedRect(guiGraphics,
                         resultSlot.x, resultSlot.y,
-                        SLOT_SIZE, SLOT_SIZE, SLOT_RADIUS, CRAFT_RESULT_BG);
+                        SLOT_SIZE, SLOT_SIZE, SLOT_RADIUS, craftResultBg());
             }
         }
     }
@@ -542,7 +543,7 @@ public class YzuInventoryScreen extends AbstractRecipeBookScreen<InventoryMenu> 
             int baseY = src.y + this.topPos;
             int indW = activeTrinketSlots.size() * 18 - 2;
             // 与创造模式保持一致：用半径 4 的圆角矩形保留四角灰色阴影。
-            fillRoundedRect(g, baseX - 2, baseY - 2, indW + 4, 16 + 4, 4, 0x50000000);
+            fillRoundedRect(g, baseX - 2, baseY - 2, indW + 4, 16 + 4, 4, YzuiTheme.surfaceLow());
             for (int i = 0; i < activeTrinketSlots.size(); i++) {
                 int sx = baseX + i * 18;
                 TrinketHelper.TrinketSlotInfo slotInfo = activeTrinketSlots.get(i);
@@ -550,13 +551,13 @@ public class YzuInventoryScreen extends AbstractRecipeBookScreen<InventoryMenu> 
                 if (ti.isEmpty()) {
                     Identifier iconId = TrinketHelper.getSlotIcon(slotInfo);
                     if (iconId != null) {
-                        g.fill(sx, baseY, sx + 16, baseY + 16, 0xFFFFFFFF);
+                        g.fill(sx, baseY, sx + 16, baseY + 16, YzuiTheme.surfaceHigh());
                         g.blitSprite(RenderPipelines.GUI_TEXTURED, Objects.requireNonNull(iconId), sx, baseY, 16, 16);
                     } else {
-                        g.fill(sx, baseY, sx + 16, baseY + 16, 0xFFFFFFFF);
+                        g.fill(sx, baseY, sx + 16, baseY + 16, YzuiTheme.surfaceHigh());
                     }
                 } else {
-                    g.fill(sx, baseY, sx + 16, baseY + 16, 0xFFFFFFFF);
+                    g.fill(sx, baseY, sx + 16, baseY + 16, YzuiTheme.surfaceHigh());
                     g.fakeItem(ti, sx, baseY);
                 }
             }

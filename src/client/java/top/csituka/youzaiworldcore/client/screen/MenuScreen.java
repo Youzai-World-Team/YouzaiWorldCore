@@ -1,567 +1,298 @@
 package top.csituka.youzaiworldcore.client.screen;
 
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Deque;
+import java.util.IdentityHashMap;
+import java.util.List;
+import java.util.Map;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
-import net.minecraft.client.renderer.RenderPipelines;
 import top.csituka.youzaiworldcore.YouzaiworldCore;
+import top.csituka.youzaiworldcore.client.animation.GuiAnimationController;
+import top.csituka.youzaiworldcore.client.animation.YzuiMotion;
+import top.csituka.youzaiworldcore.client.render.YzuiTheme;
 import top.csituka.youzaiworldcore.client.screen.element.MenuElementGroup;
-import top.csituka.youzaiworldcore.client.screen.widget.CheckboxButton;
+import top.csituka.youzaiworldcore.client.screen.element.MenuLayout;
 import top.csituka.youzaiworldcore.client.screen.widget.ConfirmationDialog;
 import top.csituka.youzaiworldcore.client.screen.widget.DropdownButton;
-import top.csituka.youzaiworldcore.client.screen.widget.TextureTileButton;
 import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
-import top.csituka.youzaiworldcore.client.animation.GuiAnimationController;
+import top.csituka.youzaiworldcore.client.screen.widget.WidgetFocus;
+import top.csituka.youzaiworldcore.util.DebugLogger;
 
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Deque;
-import java.util.List;
-
+/** Shift+F 菜单：页面控件按视口复用，标题、内容与页脚各自保留边界。 */
 @SuppressWarnings("null")
 public class MenuScreen extends Screen {
-
-    private static final float ENTRY_ANIMATION_DURATION = 0.5f;
-    private static final float TRANSITION_DURATION = 0.4f;
-    private static final int CLOSE_BUTTON_SIZE = 14;
-    private static final int TITLE_BUTTON_OFFSET = 90;
-
-    private static final float EXIT_ANIMATION_DURATION = 0.25f;
-
+    private static final Identifier VERSION_ICON =
+            Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "textures/gui/icon.png");
+    private final Deque<MenuElementGroup> history = new ArrayDeque<>();
+    private final Map<MenuElementGroup, List<AbstractWidget>> pageButtons = new IdentityHashMap<>();
+    private final List<AbstractWidget> currentButtons = new ArrayList<>();
     private MenuElementGroup currentGroup;
     private MenuElementGroup targetGroup;
-    private boolean transitionReverse = false;
-    private final Deque<MenuElementGroup> history = new ArrayDeque<>();
-
-    private float entryProgress = 0f;
-    private long entryStartTime = 0;
-
-    private float transitionProgress = -1f;
-    private long transitionStartTime = 0;
-
-    private float backButtonAlpha = 0f;
-
-    private boolean exiting = false;
-    private float exitProgress = 0f;
-    private long exitStartTime = 0;
-    private Runnable onExitComplete;
-
-    private int mouseX = 0;
-    private int mouseY = 0;
-
+    private boolean transitionReverse;
+    private long transitionStartTime;
     private ConfirmationDialog currentDialog;
-
-    private float dialogAnimProgress = 0f;
-    private static final float DIALOG_ANIM_SPEED = 0.08f;
-
-    private List<AbstractWidget> currentButtons = new ArrayList<>();
+    private TransparentButton backButton;
+    private TransparentButton closeButton;
 
     public MenuScreen(MenuElementGroup elementGroup) {
         super(Component.translatable("screen.youzaiworldcore.menu.title"));
-        this.currentGroup = elementGroup;
-    }
-
-    public void switchTo(MenuElementGroup newGroup) {
-        if (targetGroup != null) return;
-        history.push(currentGroup);
-        if (GuiAnimationController.isDisabled()) {
-            currentGroup = newGroup;
-            return;
-        }
-        this.targetGroup = newGroup;
-        this.transitionReverse = false;
-        this.transitionProgress = 0f;
-        this.transitionStartTime = System.currentTimeMillis();
-    }
-
-    public void goBack() {
-        if (targetGroup != null) return;
-        if (history.isEmpty()) return;
-        MenuElementGroup previous = history.pop();
-        if (GuiAnimationController.isDisabled()) {
-            currentGroup = previous;
-            return;
-        }
-        this.targetGroup = previous;
-        this.transitionReverse = true;
-        this.transitionProgress = 0f;
-        this.transitionStartTime = System.currentTimeMillis();
+        currentGroup = elementGroup;
     }
 
     @Override
     protected void init() {
         super.init();
-        this.entryProgress = GuiAnimationController.isFull() || GuiAnimationController.isDisabled()
-                ? 1.0f : 0.0f;
-        this.entryStartTime = System.currentTimeMillis();
-        if (currentDialog != null) {
-            currentDialog.init(this.width, this.height);
+        pageButtons.clear();
+        var layout = new MenuLayout(width, height);
+        backButton = new TransparentButton(layout.backX(), 18, MenuLayout.NAVIGATION_SIZE, MenuLayout.NAVIGATION_SIZE,
+                Component.translatable("youzaiworldcore.message.gui.back_button"), this::goBack);
+        closeButton = new TransparentButton(layout.closeX(), 18, MenuLayout.NAVIGATION_SIZE, MenuLayout.NAVIGATION_SIZE,
+                Component.translatable("youzaiworldcore.message.gui.close_button"), this::onClose);
+        backButton.setBackgroundVisible(false);
+        closeButton.setBackgroundVisible(false);
+        activateCurrentGroup();
+        if (currentDialog != null) currentDialog.init(width, height);
+        DebugLogger.debug("MenuScreen", "菜单布局更新：%d×%d，当前页面 %s", width, height,
+                currentGroup.getClass().getSimpleName());
+    }
+
+    public void switchTo(MenuElementGroup newGroup) {
+        if (targetGroup != null || GuiAnimationController.isExiting(this)) return;
+        history.push(currentGroup);
+        navigate(newGroup, false);
+    }
+
+    public void goBack() {
+        if (targetGroup != null || history.isEmpty() || GuiAnimationController.isExiting(this)) return;
+        navigate(history.pop(), true);
+    }
+
+    private void navigate(MenuElementGroup next, boolean reverse) {
+        for (AbstractWidget button : currentButtons) {
+            button.setFocused(false);
+            if (button instanceof DropdownButton dropdown) dropdown.closePopup();
+        }
+        DebugLogger.debug("MenuScreen", "菜单切换：%s → %s", currentGroup.getClass().getSimpleName(),
+                next.getClass().getSimpleName());
+        if (GuiAnimationController.isDisabled()) {
+            currentGroup = next;
+            activateCurrentGroup();
+        } else {
+            targetGroup = next;
+            transitionReverse = reverse;
+            transitionStartTime = System.currentTimeMillis();
         }
     }
 
+    private List<AbstractWidget> buttonsFor(MenuElementGroup group) {
+        return pageButtons.computeIfAbsent(group, page -> page.createButtons(this, width, height, 1f, 1f));
+    }
+
+    private void activateCurrentGroup() {
+        pageButtons.keySet().removeIf(page -> page != currentGroup && !history.contains(page));
+        clearWidgets();
+        currentButtons.clear();
+        currentButtons.addAll(buttonsFor(currentGroup));
+        if (!currentGroup.isRoot()) currentButtons.add(backButton);
+        currentButtons.add(closeButton);
+        for (AbstractWidget button : currentButtons) addWidget(button);
+        currentGroup.updateButtons(buttonsFor(currentGroup));
+    }
+
     public void showDialog(ConfirmationDialog dialog) {
-        this.currentDialog = dialog;
-        dialog.init(this.width, this.height);
+        currentDialog = dialog;
+        dialog.init(width, height);
         dialog.show();
     }
 
     public void closeDialog() {
-        if (this.currentDialog != null) {
-            this.currentDialog.hide();
-        }
+        if (currentDialog != null) currentDialog.hide();
     }
 
     public boolean hasDialog() {
-        return currentDialog != null && currentDialog.isFullyVisible();
+        return currentDialog != null && currentDialog.isVisible();
     }
 
     @Override
     public void onClose() {
-        if (exiting) return;
-        if (GuiAnimationController.isFull() || GuiAnimationController.isDisabled()) {
-            Minecraft.getInstance().setScreenAndShow(null);
-            return;
-        }
         startExit(() -> Minecraft.getInstance().setScreenAndShow(null));
     }
 
-    @Override
-    public void removed() {
-        super.removed();
-        exiting = false;
-        exitProgress = 0f;
-        onExitComplete = null;
-    }
-
-    @Override
-    public boolean keyPressed(net.minecraft.client.input.KeyEvent keyEvent) {
-        if (exiting && !GuiAnimationController.isFull() && !GuiAnimationController.isDisabled()) return true;
-        if (keyEvent.key() == 256) { // GLFW_KEY_ESCAPE
-            onClose();
-            return true;
-        }
-        return super.keyPressed(keyEvent);
-    }
-
     public void startExit(Runnable onComplete) {
-        if (exiting) return;
-        if (GuiAnimationController.isFull() || GuiAnimationController.isDisabled()) {
-            onComplete.run();
-            return;
-        }
-        this.exiting = true;
-        this.exitProgress = 0f;
-        this.exitStartTime = System.currentTimeMillis();
-        this.onExitComplete = onComplete;
+        if (!GuiAnimationController.isExiting(this)) onComplete.run();
     }
 
     @Override
-    public void extractRenderState(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
-        this.mouseX = mouseX;
-        this.mouseY = mouseY;
-
-        if (exiting) {
-            long elapsed = System.currentTimeMillis() - exitStartTime;
-            exitProgress = Math.min(1f, elapsed / (EXIT_ANIMATION_DURATION * 1000f));
-
-            float easedExit = easeInOutCubic(exitProgress);
-            int bgAlpha = (int) ((1f - easedExit) * 128);
-            guiGraphics.fill(0, 0, this.width, this.height, (bgAlpha << 24));
-
-            renderVersionText(guiGraphics, 1f - easedExit);
-
-            float menuAlpha = 1f - easedExit;
-
-            currentButtons.clear();
-            renderSingleGroup(guiGraphics, currentGroup, menuAlpha);
-            createCloseButton(menuAlpha);
-
-            for (AbstractWidget button : currentButtons) {
-                if (button instanceof TransparentButton tb) {
-                    tb.render(guiGraphics, mouseX, mouseY, partialTick);
-                } else if (button instanceof CheckboxButton cb) {
-                    cb.render(guiGraphics, mouseX, mouseY, partialTick);
-                } else if (button instanceof DropdownButton db) {
-                    db.render(guiGraphics, mouseX, mouseY, partialTick);
-                } else if (button instanceof TextureTileButton ttb) {
-                    ttb.render(guiGraphics, mouseX, mouseY, partialTick);
-                }
-            }
-
-            if (exitProgress >= 1f) {
-                Runnable callback = onExitComplete;
-                exiting = false;
-                exitProgress = 0f;
-                onExitComplete = null;
-                if (callback != null) {
-                    callback.run();
-                }
-            }
-            return;
+    public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
+        float progress = targetGroup == null ? 1f : YzuiMotion.progress(
+                System.currentTimeMillis() - transitionStartTime, YzuiMotion.switchDuration(YzuiTheme.visualStyle()));
+        if (targetGroup != null && (GuiAnimationController.isDisabled() || progress >= 1f)) {
+            currentGroup = targetGroup;
+            targetGroup = null;
+            activateCurrentGroup();
         }
 
-        if (entryProgress < 1f) {
-            long elapsed = System.currentTimeMillis() - entryStartTime;
-            entryProgress = Math.min(1f, elapsed / (ENTRY_ANIMATION_DURATION * 1000f));
-        }
-
-        float easedEntry = easeOutCubic(entryProgress);
-        int bgAlpha = (int) (easedEntry * 128);
-        guiGraphics.fill(0, 0, this.width, this.height, (bgAlpha << 24));
-
-        renderVersionText(guiGraphics, easedEntry);
-
-        boolean hasDialog = currentDialog != null && currentDialog.isFullyVisible();
-        float targetDialogProgress = hasDialog ? 1f : 0f;
-        dialogAnimProgress = GuiAnimationController.isEnabled()
-                ? lerp(dialogAnimProgress, targetDialogProgress, DIALOG_ANIM_SPEED)
-                : targetDialogProgress;
-
-        float menuAlpha = easedEntry * (1f - dialogAnimProgress * 0.7f);
-        float menuScale = 1f - dialogAnimProgress * 0.05f;
-
-        currentButtons.clear();
-
-        if (dialogAnimProgress > 0.001f) {
-            guiGraphics.pose().pushMatrix();
-            guiGraphics.pose().translate(this.width / 2f, this.height / 2f);
-            guiGraphics.pose().scale(menuScale, menuScale);
-            guiGraphics.pose().translate(-this.width / 2f, -this.height / 2f);
-        }
-
+        boolean interactive = targetGroup == null && !hasDialog() && !GuiAnimationController.isExiting(this)
+                && !GuiAnimationController.isBackgroundRendering();
+        MenuElementGroup displayedGroup = currentGroup;
+        float opacity = 1f, offset = 0f;
         if (targetGroup != null) {
-            renderTransition(guiGraphics, menuAlpha);
-        } else {
-            renderSingleGroup(guiGraphics, currentGroup, menuAlpha);
-        }
-
-        float targetBackAlpha = currentGroup.isRoot() ? 0f : 1f;
-        backButtonAlpha = lerp(backButtonAlpha, targetBackAlpha, 0.12f);
-        if (backButtonAlpha > 0.01f) {
-            createBackButton(menuAlpha);
-        }
-
-        createCloseButton(menuAlpha);
-
-        int transformedMouseX = (int) ((mouseX - this.width / 2.0) / menuScale + this.width / 2.0);
-        int transformedMouseY = (int) ((mouseY - this.height / 2.0) / menuScale + this.height / 2.0);
-
-        for (AbstractWidget button : currentButtons) {
-            if (button instanceof TransparentButton tb) {
-                tb.render(guiGraphics, transformedMouseX, transformedMouseY, partialTick);
-            } else if (button instanceof CheckboxButton cb) {
-                cb.render(guiGraphics, transformedMouseX, transformedMouseY, partialTick);
-            } else if (button instanceof DropdownButton db) {
-                db.render(guiGraphics, transformedMouseX, transformedMouseY, partialTick);
-            } else if (button instanceof TextureTileButton ttb) {
-                ttb.render(guiGraphics, transformedMouseX, transformedMouseY, partialTick);
-            }
-        }
-
-        // 自定义覆盖层（角标等）渲染在按钮之上，确保不被按钮贴图遮挡
-        if (targetGroup != null) {
-            float eased = easeInOutCubic(transitionProgress);
-            float outAlpha = (1f - eased) * menuAlpha;
-            float inAlpha = eased * menuAlpha;
+            // MD3 依次淡出、淡入；同一位置的标题、模型和按钮不会互相叠印。
+            boolean outgoing = progress < 0.4f;
+            displayedGroup = outgoing ? currentGroup : targetGroup;
+            float phase = outgoing ? progress / 0.4f : (progress - 0.4f) / 0.6f;
+            opacity = outgoing ? 1f - YzuiMotion.accelerate(phase) : YzuiMotion.decelerate(phase);
+            float distance = YzuiTheme.frosted() ? 18f : 10f;
             float direction = transitionReverse ? 1f : -1f;
-            float outOffset = direction * eased * (this.width * 0.12f);
-            float inOffset = -direction * (1f - eased) * (this.width * 0.12f);
-            currentGroup.renderCustomContent(guiGraphics, this.width, this.height, outAlpha, outOffset, this.mouseX, this.mouseY);
-            targetGroup.renderCustomContent(guiGraphics, this.width, this.height, inAlpha, inOffset, this.mouseX, this.mouseY);
-        } else {
-            currentGroup.renderCustomContent(guiGraphics, this.width, this.height, menuAlpha, 0f, this.mouseX, this.mouseY);
+            offset = (outgoing ? direction : -direction) * (1f - opacity) * distance;
         }
+        renderPage(g, displayedGroup, opacity, offset, mouseX, mouseY, partialTick, interactive);
+        if (!displayedGroup.isRoot()) renderWidget(backButton, g, mouseX, mouseY, partialTick, interactive);
+        renderWidget(closeButton, g, mouseX, mouseY, partialTick, interactive);
+        renderVersionText(g);
 
-        if (dialogAnimProgress > 0.001f) {
-            guiGraphics.pose().popMatrix();
+        if (interactive) {
+            var layout = new MenuLayout(width, height);
+            for (AbstractWidget button : currentButtons) {
+                if (button instanceof DropdownButton dropdown) {
+                    dropdown.renderPopup(g, mouseX, mouseY, partialTick,
+                            MenuLayout.CONTENT_TOP, layout.contentBottom(), 0);
+                }
+            }
         }
-
-        if (currentDialog != null && currentDialog.isVisible()) {
-            currentDialog.render(guiGraphics, this.width, this.height);
-            currentDialog.renderButtons(guiGraphics, mouseX, mouseY, partialTick);
-        } else if (currentDialog != null && !currentDialog.isVisible()) {
+        if (hasDialog()) {
+            currentDialog.render(g, width, height);
+            currentDialog.renderButtons(g, mouseX, mouseY, partialTick);
+        } else if (currentDialog != null) {
             currentDialog = null;
         }
     }
 
+    private void renderPage(GuiGraphicsExtractor g, MenuElementGroup group, float opacity, float offset,
+            int mouseX, int mouseY, float partialTick, boolean interactive) {
+        var previous = GuiAnimationController.pushContent(new YzuiMotion.Frame(opacity, 1f, 0f));
+        try {
+            renderTitle(g, group);
+            var layout = new MenuLayout(width, height);
+            g.enableScissor(layout.shellLeft() + 12, 68, width - layout.shellLeft() - 12, layout.contentBottom());
+            g.pose().pushMatrix();
+            try {
+                g.pose().translate(offset, 0f);
+                group.renderCustomBackground(g, width, height, 1f, 0f);
+                List<AbstractWidget> buttons = buttonsFor(group);
+                group.updateButtons(buttons);
+                int localMouseX = (int) Math.floor(mouseX - offset);
+                for (AbstractWidget button : buttons) {
+                    renderWidget(button, g, localMouseX, mouseY, partialTick, interactive);
+                }
+                group.renderCustomContent(g, width, height, 1f, 0f,
+                        interactive ? localMouseX : width / 2, interactive ? mouseY : height / 2);
+            } finally {
+                g.pose().popMatrix();
+                g.disableScissor();
+            }
+        } finally {
+            GuiAnimationController.restoreContent(previous);
+        }
+    }
+
+    private void renderWidget(AbstractWidget button, GuiGraphicsExtractor g, int mouseX, int mouseY,
+            float partialTick, boolean interactive) {
+        boolean focused = button.isFocused();
+        if (!interactive) button.setFocused(false);
+        try {
+            // 原版入口同时维护提示计时和焦点朗读，不再绕过它直接画控件。
+            button.extractRenderState(g, interactive ? mouseX : -1, interactive ? mouseY : -1, partialTick);
+        } finally {
+            if (!interactive) button.setFocused(focused);
+        }
+    }
+
+    private void renderTitle(GuiGraphicsExtractor g, MenuElementGroup group) {
+        var layout = new MenuLayout(width, height);
+        YzuiTheme.label(g, font, Component.literal(group.getTitleText()),
+                layout.titleX(), 24, layout.titleWidth(), YzuiTheme.text(), false);
+        String subtitle = group.getSubtitleText();
+        if (subtitle != null) {
+            YzuiTheme.label(g, font, Component.literal(subtitle),
+                    layout.titleX(), 43, layout.titleWidth(), YzuiTheme.textMuted(), false);
+        }
+        g.fill(layout.left(640), 61, width - layout.left(640), 62, YzuiTheme.outlineVariant());
+    }
+
+    private void renderVersionText(GuiGraphicsExtractor g) {
+        String version = FabricLoader.getInstance().getModContainer(YouzaiworldCore.MOD_ID)
+                .map(container -> container.getMetadata().getVersion().getFriendlyString()).orElse("unknown");
+        int x = new MenuLayout(width, height).shellLeft() + 16, y = height - 17;
+        g.pose().pushMatrix();
+        g.pose().scale(0.5f, 0.5f);
+        int iconSize = font.lineHeight * 2;
+        g.blit(RenderPipelines.GUI_TEXTURED, VERSION_ICON, x * 2, y * 2 - font.lineHeight / 2,
+                0, 0, iconSize, iconSize, iconSize, iconSize);
+        g.text(font, I18n.get("youzaiworldcore.message.gui.version_text", version),
+                x * 2 + iconSize + 4, y * 2, YzuiTheme.textMuted(), false);
+        g.pose().popMatrix();
+    }
+
+    @Override
+    public boolean keyPressed(KeyEvent event) {
+        if (hasDialog()) return currentDialog.keyPressed(event);
+        if (GuiAnimationController.isExiting(this) || targetGroup != null) return true;
+        currentGroup.updateButtons(buttonsFor(currentGroup));
+        for (AbstractWidget button : currentButtons) {
+            if (button instanceof DropdownButton dropdown && dropdown.isOpen() && dropdown.keyPressed(event)) return true;
+        }
+        if (event.key() == 256) { onClose(); return true; }
+        return WidgetFocus.keyPressed(event, currentButtons) || super.keyPressed(event);
+    }
+
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean isActuallyClick) {
-        if (currentDialog != null && currentDialog.isFullyVisible()) {
-            return currentDialog.mouseClicked(event.x(), event.y());
-        }
-
-        double mouseX = event.x();
-        double mouseY = event.y();
-
-        float menuScale = 1f - dialogAnimProgress * 0.05f;
-
-        double transformedMouseX = (mouseX - this.width / 2.0) / menuScale + this.width / 2.0;
-        double transformedMouseY = (mouseY - this.height / 2.0) / menuScale + this.height / 2.0;
-
-        for (AbstractWidget widget : currentButtons) {
-            if (widget instanceof TransparentButton button) {
-                if (transformedMouseX >= button.getX() && transformedMouseX < button.getX() + button.getWidth() &&
-                    transformedMouseY >= button.getY() && transformedMouseY < button.getY() + button.getHeight()) {
-                    button.onClick(event, isActuallyClick);
-                    return true;
-                }
-            } else if (widget instanceof CheckboxButton button) {
-                if (transformedMouseX >= button.getX() && transformedMouseX < button.getX() + button.getWidth() &&
-                    transformedMouseY >= button.getY() && transformedMouseY < button.getY() + button.getHeight()) {
-                    button.onClick(event, isActuallyClick);
-                    return true;
-                }
-            } else if (widget instanceof DropdownButton button) {
-                if (transformedMouseX >= button.getX() && transformedMouseX < button.getX() + button.getWidth() &&
-                    transformedMouseY >= button.getY() && transformedMouseY < button.getY() + button.getHeight()) {
-                    button.onClick(event, isActuallyClick);
-                    return true;
-                }
-            } else if (widget instanceof TextureTileButton button) {
-                if (transformedMouseX >= button.getX() && transformedMouseX < button.getX() + button.getWidth() &&
-                    transformedMouseY >= button.getY() && transformedMouseY < button.getY() + button.getHeight()) {
-                    button.onClick(event, isActuallyClick);
-                    return true;
-                }
+        if (GuiAnimationController.isExiting(this) || targetGroup != null || event.button() != 0) return true;
+        if (hasDialog()) return currentDialog.mouseClicked(event.x(), event.y());
+        currentGroup.updateButtons(buttonsFor(currentGroup));
+        for (AbstractWidget button : currentButtons) {
+            if (button instanceof DropdownButton dropdown && dropdown.isOpen()) {
+                if (!dropdown.mouseClicked(event, isActuallyClick)) dropdown.closePopup();
+                return true;
             }
+        }
+        WidgetFocus.mouseFocus(event.x(), event.y(), currentButtons);
+        for (AbstractWidget button : currentButtons) {
+            if (button.active && button.visible && button.mouseClicked(event, isActuallyClick)) return true;
         }
         return false;
     }
 
-    private void renderTransition(GuiGraphicsExtractor guiGraphics, float baseAlpha) {
-        if (transitionProgress < 1f) {
-            long elapsed = System.currentTimeMillis() - transitionStartTime;
-            transitionProgress = Math.min(1f, elapsed / (TRANSITION_DURATION * 1000f));
-        }
-
-        float eased = easeInOutCubic(transitionProgress);
-        float slideDistance = this.width * 0.12f;
-
-        float direction = transitionReverse ? 1f : -1f;
-
-        float outAlpha = (1f - eased) * baseAlpha;
-        float outOffset = direction * eased * slideDistance;
-
-        float inAlpha = eased * baseAlpha;
-        float inOffset = -direction * (1f - eased) * slideDistance;
-
-        // Use raw (unmapped) alpha in transition, because outAlpha ranges from baseAlpha→0
-        // and inAlpha ranges from 0→baseAlpha — no mapping needed for proper fade.
-        renderGroupButtonsRaw(currentGroup, outAlpha, outOffset);
-        renderGroupButtonsRaw(targetGroup, inAlpha, inOffset);
-
-        renderTitleRaw(guiGraphics, currentGroup, outAlpha);
-        renderTitleRaw(guiGraphics, targetGroup, inAlpha);
-
-        if (transitionProgress >= 1f) {
-            currentGroup = targetGroup;
-            targetGroup = null;
-            transitionProgress = -1f;
-        }
-    }
-
-    private void renderSingleGroup(GuiGraphicsExtractor guiGraphics, MenuElementGroup group, float entryAlpha) {
-        renderGroupButtons(group, entryAlpha, 0f);
-        renderTitle(guiGraphics, group, entryAlpha);
-    }
-
-    private void createCloseButton(float alpha) {
-        int baseY = (int) (this.height / 2 - 140);
-        int titleY = baseY;
-
-        int closeX = this.width / 2 + TITLE_BUTTON_OFFSET;
-        int closeY = titleY + (int) ((this.font.lineHeight * 1.3f - CLOSE_BUTTON_SIZE) / 2f);
-
-        TransparentButton closeBtn = new TransparentButton(
-                closeX, closeY, CLOSE_BUTTON_SIZE, CLOSE_BUTTON_SIZE,
-                Component.translatable("youzaiworldcore.message.gui.close_button"),
-                () -> startExit(() -> Minecraft.getInstance().setScreenAndShow(null))
-        );
-        closeBtn.setBackgroundVisible(false);
-        closeBtn.setTextColor(0xFFFFFF);
-        closeBtn.setExternalAlpha(alpha);
-        currentButtons.add(closeBtn);
-    }
-
-    private void createBackButton(float alpha) {
-        int baseY = (int) (this.height / 2 - 140);
-        int titleY = baseY;
-
-        int backX = this.width / 2 - TITLE_BUTTON_OFFSET - CLOSE_BUTTON_SIZE;
-        int backY = titleY + (int) ((this.font.lineHeight * 1.3f - CLOSE_BUTTON_SIZE) / 2f);
-
-        TransparentButton backBtn = new TransparentButton(
-                backX, backY, CLOSE_BUTTON_SIZE, CLOSE_BUTTON_SIZE,
-                Component.translatable("youzaiworldcore.message.gui.back_button"),
-                this::goBack
-        );
-        backBtn.setBackgroundVisible(false);
-        backBtn.setTextColor(0xFFFFFF);
-        backBtn.setExternalAlpha(alpha * backButtonAlpha);
-        currentButtons.add(backBtn);
-    }
-
-    private void renderGroupButtons(MenuElementGroup group, float alpha, float xOffset) {
-        List<AbstractWidget> buttons = group.createButtons(this, this.width, this.height, 1f, alpha);
-        for (AbstractWidget button : buttons) {
-            button.setX(button.getX() + (int) xOffset);
-            currentButtons.add(button);
-        }
-    }
-
-    private void renderGroupButtonsRaw(MenuElementGroup group, float alpha, float xOffset) {
-        List<AbstractWidget> buttons = group.createButtons(this, this.width, this.height, 1f, alpha);
-        for (AbstractWidget button : buttons) {
-            button.setX(button.getX() + (int) xOffset);
-            currentButtons.add(button);
-        }
-    }
-
-    private void renderTitle(GuiGraphicsExtractor guiGraphics, MenuElementGroup group, float alpha) {
-        String titleText = group.getTitleText();
-        String subtitleText = group.getSubtitleText();
-
-        int textAlpha = (int) (alpha * 255);
-        int textColor = (textAlpha << 24) | 0xFFFFFF;
-
-        int baseY = (int) (this.height / 2 - 140);
-
-        float titleScale = 1.15f;
-        int letterSpacing = 3;
-        int titleWidth = calculateTextWidthWithSpacing(titleText, letterSpacing);
-        float titleX = (this.width - titleWidth * titleScale) / 2f / titleScale;
-        int titleY = baseY;
-
-        guiGraphics.pose().pushMatrix();
-        guiGraphics.pose().scale(titleScale, titleScale);
-        drawTextWithSpacing(guiGraphics, this.font, titleText, (int) titleX, (int) (titleY / titleScale), textColor, letterSpacing);
-        guiGraphics.pose().popMatrix();
-
-        if (subtitleText != null) {
-            int subtitleWidth = this.font.width(subtitleText);
-            int subtitleX = (this.width - subtitleWidth) / 2;
-            int subtitleY = baseY + 25;
-
-            guiGraphics.text(this.font, subtitleText, subtitleX, subtitleY, textColor, false);
-        }
-    }
-
-    private void renderTitleRaw(GuiGraphicsExtractor guiGraphics, MenuElementGroup group, float alpha) {
-        String titleText = group.getTitleText();
-        String subtitleText = group.getSubtitleText();
-
-        // Use original alpha (0-1 range) without mapping, for transition animation
-        int textAlpha = (int) (alpha * 255);
-        int textColor = (textAlpha << 24) | 0xFFFFFF;
-
-        int baseY = (int) (this.height / 2 - 140);
-
-        float titleScale = 1.15f;
-        int letterSpacing = 3;
-        int titleWidth = calculateTextWidthWithSpacing(titleText, letterSpacing);
-        float titleX = (this.width - titleWidth * titleScale) / 2f / titleScale;
-        int titleY = baseY;
-
-        guiGraphics.pose().pushMatrix();
-        guiGraphics.pose().scale(titleScale, titleScale);
-        drawTextWithSpacing(guiGraphics, this.font, titleText, (int) titleX, (int) (titleY / titleScale), textColor, letterSpacing);
-        guiGraphics.pose().popMatrix();
-
-        if (subtitleText != null) {
-            int subtitleWidth = this.font.width(subtitleText);
-            int subtitleX = (this.width - subtitleWidth) / 2;
-            int subtitleY = baseY + 25;
-
-            guiGraphics.text(this.font, subtitleText, subtitleX, subtitleY, textColor, false);
-        }
-    }
-
-    private static final Identifier VERSION_ICON = Identifier.fromNamespaceAndPath(
-            YouzaiworldCore.MOD_ID, "textures/gui/icon.png");
-    
-    private void renderVersionText(GuiGraphicsExtractor guiGraphics, float alpha) {
-        String version = FabricLoader.getInstance()
-                .getModContainer("youzaiworldcore")
-                .map(container -> container.getMetadata().getVersion().getFriendlyString())
-                .orElse("unknown");
-        String versionText = I18n.get("youzaiworldcore.message.gui.version_text", version);
-
-        int textAlpha = (int) (alpha * 180);
-        int textColor = (textAlpha << 24) | 0xAAAAAA;
-
-        float scale = 0.5f;
-        int marginX = 10;
-        int marginY = 10;
-
-        guiGraphics.pose().pushMatrix();
-        guiGraphics.pose().scale(scale, scale);
-
-        int scaledMarginX = (int) (marginX / scale);
-        int scaledMarginY = (int) (marginY / scale);
-
-        // Draw icon before text; icon is ~4x larger than the scaled text
-        int iconSize = this.font.lineHeight * 2;
-        int iconY = scaledMarginY + (int) ((this.font.lineHeight - iconSize) / 2f);
-        guiGraphics.blit(RenderPipelines.GUI_TEXTURED, VERSION_ICON,
-                scaledMarginX, iconY,
-                0, 0,
-                iconSize, iconSize, iconSize, iconSize);
-
-        // Draw version text next to the icon
-        int textX = scaledMarginX + iconSize + 4;
-        guiGraphics.text(this.font, versionText, textX, scaledMarginY, textColor, false);
-        guiGraphics.pose().popMatrix();
-    }
-
-    private int calculateTextWidthWithSpacing(String text, int letterSpacing) {
-        int width = 0;
-        for (int i = 0; i < text.length(); i++) {
-            width += this.font.width(String.valueOf(text.charAt(i)));
-            if (i < text.length() - 1) {
-                width += letterSpacing;
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+        if (hasDialog()) return currentDialog.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
+        if (GuiAnimationController.isExiting(this) || targetGroup != null) return true;
+        for (AbstractWidget button : currentButtons) {
+            if (button instanceof DropdownButton dropdown && dropdown.isOpen()) {
+                dropdown.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
+                return true;
             }
         }
-        return width;
-    }
-
-    private void drawTextWithSpacing(GuiGraphicsExtractor guiGraphics, net.minecraft.client.gui.Font font, String text, int x, int y, int color, int letterSpacing) {
-        int currentX = x;
-        for (int i = 0; i < text.length(); i++) {
-            String ch = String.valueOf(text.charAt(i));
-            guiGraphics.text(font, ch, currentX, y, color, false);
-            currentX += font.width(ch) + letterSpacing;
-        }
+        return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
     }
 
     @Override
-    public void extractBackground(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
-    }
-
-    private float easeOutCubic(float t) {
-        return 1f - (float) Math.pow(1f - t, 3);
-    }
-
-    private float easeInOutCubic(float t) {
-        return t < 0.5f
-                ? 4f * t * t * t
-                : 1f - (float) Math.pow(-2f * t + 2f, 3) / 2f;
-    }
-
-    private float lerp(float current, float target, float speed) {
-        if (Math.abs(current - target) < 0.001f) {
-            return target;
-        }
-        return current + (target - current) * speed;
+    public void extractBackground(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
+        // 背景由共用屏幕入口在内容变换之前绘制。
     }
 
     @Override
-    public boolean isPauseScreen() {
-        return false;
-    }
+    public boolean isPauseScreen() { return false; }
 }

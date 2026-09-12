@@ -4,6 +4,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.world.entity.player.Player;
 import top.csituka.youzaiworldcore.client.animation.GuiAnimationController;
+import top.csituka.youzaiworldcore.client.render.YzuiTheme;
 
 /**
  * 冒险等级 HUD 渲染器。
@@ -65,7 +66,7 @@ public class AdventureLevelHudRenderer {
     private static int cachedLevel = -1;
     private static int cachedCurrentExp = -1;
     private static int cachedNeededExp = -1;
-    private static final int LEVEL_UP_TOTAL_MS = LEVEL_UP_CROSSFADE_MS * 2 + LEVEL_UP_HOLD_MS; // = 2200ms
+    private static final int LEVEL_UP_TOTAL_MS = LEVEL_UP_CROSSFADE_MS * 2 + LEVEL_UP_HOLD_MS;
 
     // ─── 平滑经验条 ───
     private static float smoothDisplayExp = 0.0f;
@@ -88,12 +89,10 @@ public class AdventureLevelHudRenderer {
 
         // 触发滑入动画
         if (animState == AnimState.HIDDEN || animState == AnimState.HIDING) {
-            animState = AnimState.SHOWING;
-            if (animState == AnimState.HIDING) {
-                // 从当前进度继续
-            } else {
+            if (animState == AnimState.HIDDEN) {
                 animProgress = 0.0f;
             }
+            animState = AnimState.SHOWING;
         }
         // 如果已经可见，重置隐藏倒计时
     }
@@ -154,7 +153,9 @@ public class AdventureLevelHudRenderer {
         smoothLastUpdate = now;
         float targetExp = displayNeededExp > 0 ? (float) displayCurrentExp / displayNeededExp : 0.0f;
         // 快速逼近（体验优于缓动，但保留平滑感）
-        smoothDisplayExp += (targetExp - smoothDisplayExp) * Math.min(1.0f, smoothDelta * 8.0f);
+        smoothDisplayExp = GuiAnimationController.isEnabled()
+                ? smoothDisplayExp + (targetExp - smoothDisplayExp) * Math.min(1.0f, smoothDelta * 8.0f)
+                : targetExp;
         if (Math.abs(smoothDisplayExp - targetExp) < 0.001f) smoothDisplayExp = targetExp;
 
         int alpha = Math.min(255, Math.max(0, (int) (animProgress * 255)));
@@ -197,14 +198,14 @@ public class AdventureLevelHudRenderer {
         int barX = (sw - BAR_WIDTH) / 2;
         int barY = yzuiTextTop - 2 - BAR_HEIGHT + slide;
 
-        // ─── 背景（纯色，无描边） ───
+        // ─── 主题轨道 ───
         g.fill(barX, barY, barX + BAR_WIDTH, barY + BAR_HEIGHT,
-                packARGB(40, 40, 40, alpha));
+                YzuiTheme.multiplyAlpha(YzuiTheme.hudSurface(), alpha / 255f));
 
         // ─── 经验填充条 ───
         int fillWidth = (int) (smoothDisplayExp * BAR_WIDTH);
         if (fillWidth > 0) {
-            int fillColor = packARGB(255, 200 + (int) (55 * smoothDisplayExp), 50, alpha);
+            int fillColor = YzuiTheme.alpha(YzuiTheme.primary(), alpha / 255f);
             g.fill(barX, barY, barX + fillWidth, barY + BAR_HEIGHT, fillColor);
         }
 
@@ -233,6 +234,9 @@ public class AdventureLevelHudRenderer {
             // 不在升级窗口 → 只显示普通文字
             normalAlpha = 1.0f;
             levelUpAlpha = 0.0f;
+        } else if (!GuiAnimationController.isEnabled()) {
+            normalAlpha = 0.0f;
+            levelUpAlpha = 1.0f;
         } else if (elapsed < LEVEL_UP_CROSSFADE_MS) {
             // 阶段1：淡出普通 → 淡入升级
             float t = (float) elapsed / LEVEL_UP_CROSSFADE_MS;
@@ -249,26 +253,28 @@ public class AdventureLevelHudRenderer {
             levelUpAlpha = 1.0f - t;
         }
 
+        // 两段交叉淡入淡出的文字共用一块底色，避免叠加半透明卡片。
+        int labelWidth = Math.max(normalAlpha > 0.01f ? client.font.width(normalText) : 0,
+                levelUpAlpha > 0.01f ? client.font.width(levelUpText) : 0);
+        YzuiTheme.hudLabelBackground(g, client.font, labelWidth,
+                barX + (BAR_WIDTH - labelWidth) / 2, textY, alpha / 255f);
+
         // 渲染普通文字（带透明度）
         if (normalAlpha > 0.01f) {
             int normalTextWidth = client.font.width(normalText);
             int normalTextX = barX + (BAR_WIDTH - normalTextWidth) / 2;
             int na = (int) (alpha * normalAlpha);
-            g.text(client.font, normalText, normalTextX + 1, textY + 1,
-                    packARGB(0, 0, 0, na), false);
-            g.text(client.font, normalText, normalTextX, textY,
-                    packARGB(255, 255, 255, na), false);
+            YzuiTheme.hudText(g, client.font, normalText, normalTextX, textY,
+                    YzuiTheme.text(), na / 255f);
         }
 
-        // 渲染升级文字（带透明度，金色）
+        // 渲染升级文字（带透明度，主题强调色）
         if (levelUpAlpha > 0.01f) {
             int levelUpTextWidth = client.font.width(levelUpText);
             int levelUpTextX = barX + (BAR_WIDTH - levelUpTextWidth) / 2;
             int la = (int) (alpha * levelUpAlpha);
-            g.text(client.font, levelUpText, levelUpTextX + 1, textY + 1,
-                    packARGB(0, 0, 0, la), false);
-            g.text(client.font, levelUpText, levelUpTextX, textY,
-                    packARGB(255, 215, 0, la), false);
+            YzuiTheme.hudText(g, client.font, levelUpText, levelUpTextX, textY,
+                    YzuiTheme.primary(), la / 255f);
         }
 
         // ─── 获得经验飘字 ───
@@ -278,25 +284,16 @@ public class AdventureLevelHudRenderer {
                 String gainText = "+" + lastGainedExp + " 冒险经验";
                 int gainAlpha = alpha;
                 // 渐隐
-                if (elapsedSinceGain > 1000) {
+                if (GuiAnimationController.isEnabled() && elapsedSinceGain > 1000) {
                     gainAlpha = (int) (alpha * (1.0f - (elapsedSinceGain - 1000) / 1000.0f));
                 }
                 int gainWidth = client.font.width(gainText);
                 int gainX = barX + (BAR_WIDTH - gainWidth) / 2;
                 int gainY = textY - 12;
-                g.text(client.font, gainText, gainX, gainY,
-                        packARGB(100, 255, 100, Math.max(0, gainAlpha)), false);
+                YzuiTheme.hudLabel(g, client.font, gainText, gainX, gainY,
+                        YzuiTheme.success(), Math.max(0, gainAlpha) / 255f);
             }
         }
-    }
-
-    // ─── 颜色工具 ───
-
-    private static int packARGB(int r, int g, int b, int a) {
-        return (Math.max(0, Math.min(255, a)) << 24)
-                | ((r & 0xFF) << 16)
-                | ((g & 0xFF) << 8)
-                | (b & 0xFF);
     }
 
     @SuppressWarnings("EmptyMethod")

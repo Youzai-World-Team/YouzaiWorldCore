@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.client.hud;
 
+import top.csituka.youzaiworldcore.client.render.YzuiTheme;
+
 import net.minecraft.client.AttackIndicatorStatus;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
@@ -49,7 +51,7 @@ public final class HotbarRenderer {
     /** 面板圆角半径 */
     private static final int PANEL_RADIUS = 6;
     /** 面板背景色（50% 白色） */
-    private static final int PANEL_BG = 0x80FFFFFF;
+    private static int panelBg() { return YzuiTheme.hudSurface(); }
     /** 面板距屏幕底部偏移 */
     private static final int PANEL_BOTTOM_OFFSET = 2;
 
@@ -59,9 +61,9 @@ public final class HotbarRenderer {
     /** 槽位圆角半径 */
     private static final int SLOT_RADIUS = 3;
     /** 槽位默认背景色（25% 白色） */
-    private static final int SLOT_COLOR = 0x40FFFFFF;
+    private static int slotColor() { return YzuiTheme.hudSlot(); }
     /** 槽位选中背景色（50% 白色，足够覆盖底层高亮） */
-    private static final int SLOT_SELECTED_COLOR = 0x80FFFFFF;
+    private static int slotSelectedColor() { return YzuiTheme.hudSelected(); }
     /** 槽位距面板左边缘的水平内边距 */
     private static final int SLOT_PADDING_X = 2;
     /** 槽位距面板上边缘的垂直内边距 */
@@ -79,9 +81,9 @@ public final class HotbarRenderer {
     /** 高亮框内圆角半径（内填充尺寸恒为外框 -2，由 RoundedRect.fillWithBorder 推导） */
     private static final int SELECTION_INNER_RADIUS = 3;
     /** 高亮框边框颜色（不透明白色，清晰勾勒边缘） */
-    private static final int SELECTION_BORDER_COLOR = 0xFFFFFFFF;
+    private static int selectionBorderColor() { return YzuiTheme.primary(); }
     /** 高亮框填充颜色（69% 白色，对齐 YZUI 按钮悬停态） */
-    private static final int SELECTION_FILL_COLOR = 0xB0FFFFFF;
+    private static int selectionFillColor() { return YzuiTheme.hudSelected(); }
 
     // ===== 副手槽常量 =====
     /** 副手槽外尺寸（外框） */
@@ -91,9 +93,9 @@ public final class HotbarRenderer {
     /** 副手槽内圆角半径（内填充尺寸恒为外框 -2，由 RoundedRect.fillWithBorder 推导） */
     private static final int OFFHAND_INNER_RADIUS = 3;
     /** 副手槽背景色（褐色调） */
-    private static final int OFFHAND_FILL_COLOR = 0x60A08050;
+    private static int offhandFillColor() { return YzuiTheme.hudSelected(); }
     /** 副手槽边框色（半透明白色，清晰勾勒圆角边缘） */
-    private static final int OFFHAND_BORDER_COLOR = 0xB0CCBBAA;
+    private static int offhandBorderColor() { return YzuiTheme.outlineVariant(); }
     /** 副手槽与面板的间距 */
     private static final int OFFHAND_GAP = 3;
     /** 物品在副手槽内的偏移 */
@@ -123,9 +125,9 @@ public final class HotbarRenderer {
 
     // ===== 数字指示器常量 =====
     /** 非选中槽位数字颜色（淡半透明，不喧宾夺主） */
-    private static final int NUM_COLOR_NORMAL = 0x60FFFFFF;
+    private static int numColorNormal() { return YzuiTheme.textMuted(); }
     /** 选中槽位数字颜色（半透明白色） */
-    private static final int NUM_COLOR_SELECTED = 0xA0FFFFFF;
+    private static int numColorSelected() { return YzuiTheme.onPrimaryContainer(); }
     /** 数字 X 偏移（槽位内左上角，尽可能靠边） */
     private static final int NUM_OFFSET_X = 1;
     /** 数字 Y 偏移（槽位内左上角） */
@@ -266,7 +268,7 @@ public final class HotbarRenderer {
         }
 
         // === 1. 面板背景 ===
-        RoundedRect.fillOrSquare(graphics, panelX, panelY, PANEL_WIDTH, PANEL_HEIGHT, PANEL_RADIUS, PANEL_BG);
+        RoundedRect.fillOrSquare(graphics, panelX, panelY, PANEL_WIDTH, PANEL_HEIGHT, PANEL_RADIUS, panelBg());
 
         // === 2. 副手槽（带滑入滑出动画） ===
         ItemStack offhandItem = player.getOffhandItem();
@@ -329,7 +331,7 @@ public final class HotbarRenderer {
             RoundedRect.fillWithBorder(graphics, selOuterX, selOuterY,
                     SELECTION_OUTER_SIZE, SELECTION_OUTER_SIZE,
                     SELECTION_OUTER_RADIUS, SELECTION_INNER_RADIUS,
-                    SELECTION_BORDER_COLOR, SELECTION_FILL_COLOR);
+                    selectionBorderColor(), selectionFillColor());
         } finally {
             graphics.disableScissor();
         }
@@ -351,7 +353,7 @@ public final class HotbarRenderer {
             int slotX = panelX + SLOT_PADDING_X + i * SLOT_SPACING;
             int slotY = panelY + SLOT_PADDING_Y;
 
-            int slotBg = (i == highlightedSlot) ? SLOT_SELECTED_COLOR : SLOT_COLOR;
+            int slotBg = (i == highlightedSlot) ? slotSelectedColor() : slotColor();
             RoundedRect.fillOrSquare(graphics, slotX, slotY, SLOT_SIZE, SLOT_SIZE, SLOT_RADIUS, slotBg);
 
             // 物品
@@ -363,10 +365,9 @@ public final class HotbarRenderer {
             }
 
             // 数字指示器（复用常量字符串，避免每帧 9 次 String 分配）
-            int numColor = (i == currentSlot) ? NUM_COLOR_SELECTED : NUM_COLOR_NORMAL;
-            graphics.text(font, SLOT_NUMBERS[i],
-                    slotX + NUM_OFFSET_X, slotY + NUM_OFFSET_Y,
-                    numColor, false);
+            int numColor = (i == currentSlot) ? numColorSelected() : numColorNormal();
+            YzuiTheme.hudLabel(graphics, font, SLOT_NUMBERS[i],
+                    slotX + NUM_OFFSET_X, slotY + NUM_OFFSET_Y, numColor, 1f);
         }
 
         // === 5. 攻击冷却指示器（当选项设为「热键栏」时显示） ===
@@ -378,10 +379,10 @@ public final class HotbarRenderer {
     private static void drawOffhandSlot(GuiGraphicsExtractor graphics, Player player,
             ItemStack offhandStack, int x, int y, float alpha) {
         // 外框（颜色 alpha 通道乘以动画进度）
-        int borderAlpha = (int) ((OFFHAND_BORDER_COLOR >>> 24) * alpha);
-        int fillAlpha = (int) ((OFFHAND_FILL_COLOR >>> 24) * alpha);
-        int animBorderColor = (borderAlpha << 24) | (OFFHAND_BORDER_COLOR & 0x00FFFFFF);
-        int animFillColor = (fillAlpha << 24) | (OFFHAND_FILL_COLOR & 0x00FFFFFF);
+        int borderAlpha = (int) ((offhandBorderColor() >>> 24) * alpha);
+        int fillAlpha = (int) ((offhandFillColor() >>> 24) * alpha);
+        int animBorderColor = (borderAlpha << 24) | (offhandBorderColor() & 0x00FFFFFF);
+        int animFillColor = (fillAlpha << 24) | (offhandFillColor() & 0x00FFFFFF);
 
         RoundedRect.fillWithBorder(graphics, x, y,
                 OFFHAND_OUTER_SIZE, OFFHAND_OUTER_SIZE,

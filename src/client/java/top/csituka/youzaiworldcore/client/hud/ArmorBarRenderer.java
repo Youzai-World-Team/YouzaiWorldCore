@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.client.hud;
 
+import top.csituka.youzaiworldcore.client.render.YzuiTheme;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -18,8 +20,7 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
 public final class ArmorBarRenderer {
 
     private static final int TEXT_OFFSET_ABOVE_BAR = 10;
-    private static final int TEXT_SHADOW_OFFSET = 1;
-    private static final int BG_COLOR = 0xAA333333;
+    private static int bgColor() { return YzuiTheme.hudSurface(); }
     /** 盔甲填充色（钢蓝色系） */
     private static final int COLOR_ARMOR = 0xFF6A8FBF;
     /** 满盔甲模拟参考值（原版最多 20 点 = 10 个图标） */
@@ -61,7 +62,7 @@ public final class ArmorBarRenderer {
         }
 
         // === 1. 背景（圆角） ===
-        HealthBarRenderer.fillBarBg(graphics, barX, barY, BG_COLOR);
+        HealthBarRenderer.fillBarBg(graphics, barX, barY, bgColor());
 
         // === 2. 填充（左侧圆角） ===
         int fillWidth = (int) (fillRatio * bw);
@@ -75,8 +76,6 @@ public final class ArmorBarRenderer {
         int textWidth = font.width(text);
         int textX = barX + (bw - textWidth) / 2;
         int textY = barY - TEXT_OFFSET_ABOVE_BAR;
-        graphics.text(font, text, textX + TEXT_SHADOW_OFFSET, textY + TEXT_SHADOW_OFFSET,
-                0xFF000000, false);
-        graphics.text(font, text, textX, textY, 0xFFFFFFFF, false);
+        YzuiTheme.hudLabel(graphics, font, text, textX, textY, YzuiTheme.text(), 1f);
     }
 }

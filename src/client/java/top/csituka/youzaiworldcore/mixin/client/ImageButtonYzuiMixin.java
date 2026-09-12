@@ -1,5 +1,8 @@
 package top.csituka.youzaiworldcore.mixin.client;
 
+import top.csituka.youzaiworldcore.client.render.YzuiTheme;
+import top.csituka.youzaiworldcore.client.animation.YzuiHover;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -36,6 +39,7 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
  */
 @Mixin(ImageButton.class)
 public class ImageButtonYzuiMixin {
+    @Unique private final YzuiHover youzaiworldcore$hover = new YzuiHover();
 
     @Unique
     private static final @NonNull Identifier YZWC_RECIPE_BOOK_SHOW = Identifier.fromNamespaceAndPath("youzaiworldcore",
@@ -53,12 +57,12 @@ public class ImageButtonYzuiMixin {
     private static final int YZWC_PAGE_BTN_RADIUS = 4;
     /** 翻页按钮背景色（常态 / 悬浮） */
     @Unique
-    private static final int YZWC_PAGE_BTN_BG = 0x60FFFFFF;
+    private static int yzwcPageBtnBg() { return YzuiTheme.surface(); }
     @Unique
-    private static final int YZWC_PAGE_BTN_BG_HOVER = 0x80FFFFFF;
+    private static int yzwcPageBtnBgHover() { return YzuiTheme.surfaceHigh(); }
     /** 翻页箭头文本色 */
     @Unique
-    private static final int YZWC_PAGE_BTN_TEXT = 0xCCFFFFFF;
+    private static int yzwcPageBtnText() { return YzuiTheme.text(); }
     /** Debug 模块名 */
     @Unique
     private static final String YZWC_PAGE_BTN_DBG = "ImageButtonYzui";
@@ -83,10 +87,11 @@ public class ImageButtonYzuiMixin {
         ImageButton self = (ImageButton) (Object) this;
         int x = self.getX(), y = self.getY(), w = self.getWidth(), h = self.getHeight();
         boolean hovered = self.isHovered();
+        float hover = youzaiworldcore$hover.sample(self.active && hovered);
 
         // 配方书翻页按钮：绘制 YZUI 风格 '<' '>' 按钮（圆角矩形 + 居中文本），不走原版贴图
         if (w == YZWC_PAGE_BTN_W && h == YZWC_PAGE_BTN_H) {
-            yzwc$renderPageButton(self, g, x, y, w, h, hovered);
+            yzwc$renderPageButton(self, g, x, y, w, h, hover);
             ci.cancel();
             return;
         }
@@ -99,9 +104,7 @@ public class ImageButtonYzuiMixin {
                 : YZWC_RECIPE_BOOK_HIDE;
 
         // 悬浮高亮
-        if (hovered) {
-            yzwc$fillRoundedRect(g, x, y, w, h, 4, 0x60FFFFFF);
-        }
+        YzuiTheme.button(g, x, y, w, h, hover, self.isFocused(), self.active, self.getAlpha(), YzuiTheme.ButtonStyle.TEXT);
 
         // 居中绘制 20×20 贴图（按钮 20×18，贴图略高 2px 容许）
         g.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, tex,
@@ -119,20 +122,19 @@ public class ImageButtonYzuiMixin {
      */
     @Unique
     private static void yzwc$renderPageButton(ImageButton self, GuiGraphicsExtractor g,
-            int x, int y, int w, int h, boolean hovered) {
+            int x, int y, int w, int h, float hover) {
         // 原版构造翻页按钮时第 7 参传入 NEXT_PAGE_TEXT / PREVIOUS_PAGE_TEXT 作为 message
         boolean forward = YZWC_NEXT_PAGE_MSG.equals(self.getMessage());
         String arrow = forward ? ">" : "<";
 
         // 半透明圆角矩形背景
-        yzwc$fillRoundedRect(g, x, y, w, h, YZWC_PAGE_BTN_RADIUS,
-                hovered ? YZWC_PAGE_BTN_BG_HOVER : YZWC_PAGE_BTN_BG);
+        YzuiTheme.button(g, x, y, w, h, hover, self.isFocused(), self.active, self.getAlpha(), YzuiTheme.ButtonStyle.TONAL);
 
         // 居中绘制箭头文本
         Font font = Minecraft.getInstance().font;
         int tx = x + (w - font.width(arrow)) / 2;
         int ty = y + (h - font.lineHeight) / 2;
-        g.text(font, arrow, tx, ty, YZWC_PAGE_BTN_TEXT, true);
+        g.text(font, arrow, tx, ty, yzwcPageBtnText(), true);
 
         // 先判等级再取参数：本方法每个翻页按钮每帧各跑一次，
         // 4 个 int + 2 个 boolean 装箱与 varargs 数组在日志关闭时是白扔的垃圾。
@@ -140,7 +142,7 @@ public class ImageButtonYzuiMixin {
         if (DebugLogger.isEnabled(DebugLogger.LEVEL_DEBUG)) {
             DebugLogger.trace(YZWC_PAGE_BTN_DBG,
                     "YZUI page button at (%d,%d) %dx%d forward=%s hovered=%s",
-                    x, y, w, h, forward, hovered);
+                    x, y, w, h, forward, hover > 0f);
         }
     }
 

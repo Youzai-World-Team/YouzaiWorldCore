@@ -3,6 +3,8 @@ package top.csituka.youzaiworldcore.client.pickup.display;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import top.csituka.youzaiworldcore.client.animation.GuiAnimationController;
+import top.csituka.youzaiworldcore.client.render.YzuiTheme;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.item.ItemStack;
@@ -91,8 +93,8 @@ public class ItemDisplayEntry extends DisplayEntry<ItemStack> {
         if (data.isEmpty()) return;
         float opacity = Math.clamp(alpha / 255.0F, 0.0F, 1.0F);
 
-        if (popTime > 0) {
-            float popScale = 1.0f + popTime / (float) POP_TIME * 0.3f;
+        if (GuiAnimationController.isEnabled() && popTime > 0) {
+            float popScale = 1.0f + popTime / (float) POP_TIME * (YzuiTheme.frosted() ? 0.3f : 0.08f);
             graphics.pose().pushMatrix();
             graphics.pose().translate(x + ICON_SIZE / 2.0f, y + ICON_SIZE / 2.0f);
             graphics.pose().scale(popScale, popScale);

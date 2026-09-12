@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.client.hud;
 
+import top.csituka.youzaiworldcore.client.render.YzuiTheme;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -32,9 +34,9 @@ public final class InventoryHudRenderer {
     private static final int BASE_BOTTOM_OFFSET = 2;
     private static final int BASE_LEFT_OFFSET = 2;
 
-    private static final int SLOT_EMPTY_COLOR = 0x40FFFFFF;
-    private static final int SLOT_FILLED_COLOR = 0x5AFFFFFF;
-    private static final int PANEL_BG = 0x80FFFFFF;
+    private static int slotEmptyColor() { return YzuiTheme.hudSlot(); }
+    private static int slotFilledColor() { return YzuiTheme.hudSlot(); }
+    private static int panelBg() { return YzuiTheme.hudSurface(); }
     private static final int COLS = 9;
     private static final int ROWS = 3;
     private static final int INVENTORY_START_SLOT = 9;
@@ -114,7 +116,7 @@ public final class InventoryHudRenderer {
         Font font = client.font;
 
         RoundedRect.fillOrSquare(graphics, panelX, panelY, panelW, panelH,
-                BASE_PANEL_RADIUS, YzHudLayout.applyOpacity(PANEL_BG));
+                BASE_PANEL_RADIUS, YzHudLayout.applyOpacity(panelBg()));
 
         long nowMillis = System.currentTimeMillis();
 
@@ -125,7 +127,7 @@ public final class InventoryHudRenderer {
                 int slotY = panelY + padding + row * slotSpacing;
 
                 ItemStack stack = cached[ci];
-                int slotBg = stack.isEmpty() ? SLOT_EMPTY_COLOR : SLOT_FILLED_COLOR;
+                int slotBg = stack.isEmpty() ? slotEmptyColor() : slotFilledColor();
                 graphics.fill(slotX, slotY, slotX + slotSize, slotY + slotSize,
                         YzHudLayout.applyOpacity(slotBg));
 

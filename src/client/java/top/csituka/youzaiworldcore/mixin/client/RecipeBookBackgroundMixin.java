@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.mixin.client;
 
+import top.csituka.youzaiworldcore.client.render.YzuiTheme;
+
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -31,7 +33,7 @@ import top.csituka.youzaiworldcore.client.render.RoundedRect;
 public class RecipeBookBackgroundMixin {
 
     @Unique
-    private static final int YZWC_RECIPE_BOOK_BG = 0x80FFFFFF;
+    private static int yzwcRecipeBookBg() { return YzuiTheme.surface(); }
     @Unique
     private static final int YZWC_TAB_STRIP_W = 39;
     @Unique
@@ -64,7 +66,7 @@ public class RecipeBookBackgroundMixin {
         // 方法后续的搜索框/Tab/配方网格渲染正常继续。
         int combX = x - YZWC_TAB_STRIP_W;
         int combW = 147 + YZWC_TAB_STRIP_W;
-        yzwc$fillRoundedRect(g, combX, y, combW, 166, YZWC_RECIPE_BG_RADIUS, YZWC_RECIPE_BOOK_BG);
+        yzwc$fillRoundedRect(g, combX, y, combW, 166, YZWC_RECIPE_BG_RADIUS, yzwcRecipeBookBg());
         DebugLogger.info(YZWC_BG_DBG,
                 "YZUI recipe book bg at (%d, %d) %dx%d (controls still render)", combX, y, combW, 166);
     }

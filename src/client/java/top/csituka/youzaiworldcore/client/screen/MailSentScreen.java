@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.client.screen;
 
+import top.csituka.youzaiworldcore.client.render.YzuiTheme;
+
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.input.MouseButtonEvent;
@@ -56,22 +58,22 @@ public class MailSentScreen extends MailBaseScreen {
     private void renderHeader(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
         int titleX = pageRect.x() + 34;
         int titleY = pageRect.y() + 34;
-        graphics.text(font, "➤", titleX, titleY + 3, MailUi.TEXT_PRIMARY, false);
+        graphics.text(font, "➤", titleX, titleY + 3, MailUi.textPrimary(), false);
         graphics.pose().pushMatrix();
         graphics.pose().scale(1.45f, 1.45f);
         graphics.text(font, "已发送邮件", (int) ((titleX + 28) / 1.45f), (int) (titleY / 1.45f),
-                MailUi.TEXT_PRIMARY, false);
+                MailUi.textPrimary(), false);
         graphics.pose().popMatrix();
 
         int buttonY = pageRect.y() + 34;
         closeRect = new MailUi.Rect(pageRect.right() - 80, buttonY, 46, 22);
         backRect = new MailUi.Rect(closeRect.x() - 54, buttonY, 46, 22);
         refreshRect = new MailUi.Rect(backRect.x() - 56, buttonY, 48, 22);
-        MailUi.button(graphics, font, refreshRect, "刷新", 0xFF9A9A9A, 0xFF111111,
+        MailUi.button(graphics, font, refreshRect, "刷新", YzuiTheme.primaryContainer(), YzuiTheme.onPrimaryContainer(),
                 refreshRect.contains(mouseX, mouseY), true);
-        MailUi.button(graphics, font, backRect, "返回", 0xFF9A9A9A, 0xFF111111,
+        MailUi.button(graphics, font, backRect, "返回", YzuiTheme.primaryContainer(), YzuiTheme.onPrimaryContainer(),
                 backRect.contains(mouseX, mouseY), true);
-        MailUi.button(graphics, font, closeRect, "关闭", 0xFF9A9A9A, 0xFF111111,
+        MailUi.button(graphics, font, closeRect, "关闭", YzuiTheme.primaryContainer(), YzuiTheme.onPrimaryContainer(),
                 closeRect.contains(mouseX, mouseY), true);
     }
 
@@ -79,8 +81,8 @@ public class MailSentScreen extends MailBaseScreen {
         tableRect = new MailUi.Rect(pageRect.x() + 34, pageRect.y() + 76,
                 pageRect.width() - 68, pageRect.height() - 104);
         MailUi.roundedRect(graphics, tableRect.x(), tableRect.y(), tableRect.width(), tableRect.height(), 5,
-                MailUi.PANEL_BACKGROUND);
-        graphics.fill(tableRect.x(), tableRect.y(), tableRect.right(), tableRect.y() + 30, MailUi.PANEL_HEADER);
+                MailUi.panelBackground());
+        graphics.fill(tableRect.x(), tableRect.y(), tableRect.right(), tableRect.y() + 30, MailUi.panelHeader());
 
         int subjectX = tableRect.x() + 14;
         int scopeX = tableRect.x() + tableRect.width() * 29 / 100;
@@ -88,17 +90,17 @@ public class MailSentScreen extends MailBaseScreen {
         int expireX = tableRect.x() + tableRect.width() * 68 / 100;
         int actionX = tableRect.x() + tableRect.width() * 80 / 100;
         int headerY = tableRect.y() + 10;
-        graphics.text(font, "主题", subjectX, headerY, MailUi.TEXT_SECONDARY, false);
-        graphics.text(font, "接收范围", scopeX, headerY, MailUi.TEXT_SECONDARY, false);
-        graphics.text(font, "发送时间", sentTimeX, headerY, MailUi.TEXT_SECONDARY, false);
-        graphics.text(font, "到期", expireX, headerY, MailUi.TEXT_SECONDARY, false);
-        graphics.text(font, "操作", actionX, headerY, MailUi.TEXT_SECONDARY, false);
+        graphics.text(font, "主题", subjectX, headerY, MailUi.textSecondary(), false);
+        graphics.text(font, "接收范围", scopeX, headerY, MailUi.textSecondary(), false);
+        graphics.text(font, "发送时间", sentTimeX, headerY, MailUi.textSecondary(), false);
+        graphics.text(font, "到期", expireX, headerY, MailUi.textSecondary(), false);
+        graphics.text(font, "操作", actionX, headerY, MailUi.textSecondary(), false);
 
         List<MailStreamCodecs.MailSummary> entries = sortedEntries();
         if (entries.isEmpty()) {
             MailUi.centeredText(graphics, font, Component.literal("暂未发送邮件"),
                     new MailUi.Rect(tableRect.x(), tableRect.y() + 30, tableRect.width(), tableRect.height() - 30),
-                    MailUi.TEXT_MUTED);
+                    MailUi.textMuted());
             return;
         }
 
@@ -110,38 +112,38 @@ public class MailSentScreen extends MailBaseScreen {
             int rowY = tableRect.y() + 30 + (i - scrollOffset) * ROW_HEIGHT;
             MailUi.Rect rowRect = new MailUi.Rect(tableRect.x(), rowY, tableRect.width(), ROW_HEIGHT);
             boolean hovered = rowRect.contains(mouseX, mouseY);
-            int background = hovered ? MailUi.ROW_HOVERED
-                    : (i % 2 == 0 ? MailUi.PANEL_BACKGROUND : MailUi.ROW_ALTERNATE);
+            int background = hovered ? MailUi.rowHovered()
+                    : (i % 2 == 0 ? MailUi.panelBackground() : MailUi.rowAlternate());
             graphics.fill(rowRect.x(), rowRect.y(), rowRect.right(), rowRect.bottom(), background);
 
             int textY = rowY + 18;
             graphics.text(font, MailUi.ellipsize(font, summary.title(), scopeX - subjectX - 18),
-                    subjectX, textY, MailUi.TEXT_PRIMARY, false);
+                    subjectX, textY, MailUi.textPrimary(), false);
             graphics.text(font, MailUi.ellipsize(font, summary.scopeSummary(), sentTimeX - scopeX - 18),
-                    scopeX, textY, 0xFFE0E0E0, false);
+                    scopeX, textY, YzuiTheme.textMuted(), false);
             String sentAt = new SimpleDateFormat("MM/dd HH:mm").format(new Date(summary.sentTime()));
-            graphics.text(font, sentAt, sentTimeX, textY, MailUi.TEXT_SECONDARY, false);
+            graphics.text(font, sentAt, sentTimeX, textY, MailUi.textSecondary(), false);
 
             boolean expired = isExpired(summary);
             if (summary.expireTime() == null) {
-                graphics.text(font, "永久", expireX, textY, MailUi.GREEN, false);
+                graphics.text(font, "永久", expireX, textY, MailUi.green(), false);
             } else if (expired) {
-                graphics.text(font, "已过期", expireX, textY, MailUi.RED, false);
+                graphics.text(font, "已过期", expireX, textY, MailUi.red(), false);
             } else {
                 long remain = summary.expireTime() - System.currentTimeMillis();
                 long days = Math.max(1, (remain + 86_399_999L) / 86_400_000L);
-                graphics.text(font, "剩余 " + days + "d", expireX, textY, MailUi.GREEN, false);
+                graphics.text(font, "剩余 " + days + "d", expireX, textY, MailUi.green(), false);
             }
 
             if (expired) {
                 // 已过期：不提供编辑与撤回，仅提示状态
-                graphics.text(font, "已过期，不可操作", actionX, textY, MailUi.TEXT_MUTED, false);
+                graphics.text(font, "已过期，不可操作", actionX, textY, MailUi.textMuted(), false);
             } else {
                 MailUi.Rect edit = editRect(rowY, actionX);
                 MailUi.Rect recall = recallRect(rowY, actionX);
-                MailUi.button(graphics, font, edit, "编辑", 0xFF8A7540, MailUi.YELLOW,
+                MailUi.button(graphics, font, edit, "编辑", YzuiTheme.secondaryContainer(), MailUi.yellow(),
                         edit.contains(mouseX, mouseY), true);
-                MailUi.button(graphics, font, recall, "撤回", 0xFF8A4A4A, 0xFFFF7777,
+                MailUi.button(graphics, font, recall, "撤回", YzuiTheme.errorContainer(), YzuiTheme.error(),
                         recall.contains(mouseX, mouseY), true);
             }
         }
@@ -152,16 +154,17 @@ public class MailSentScreen extends MailBaseScreen {
             int thumbHeight = Math.max(18, trackHeight * visibleRows / entries.size());
             int maxOffset = entries.size() - visibleRows;
             int thumbY = trackY + (trackHeight - thumbHeight) * scrollOffset / Math.max(1, maxOffset);
-            graphics.fill(tableRect.right() - 4, trackY, tableRect.right() - 2, trackY + trackHeight, 0x66404040);
-            graphics.fill(tableRect.right() - 4, thumbY, tableRect.right() - 2, thumbY + thumbHeight, 0xFFD0D0D0);
+            graphics.fill(tableRect.right() - 4, trackY, tableRect.right() - 2, trackY + trackHeight, YzuiTheme.surfaceHigh());
+            graphics.fill(tableRect.right() - 4, thumbY, tableRect.right() - 2, thumbY + thumbHeight, YzuiTheme.surfaceHigh());
         }
 
         graphics.text(font, "已领取奖励附件的邮件不可编辑；已过期的邮件不再提供编辑与撤回",
-                tableRect.x() + 14, tableRect.bottom() - 18, MailUi.TEXT_MUTED, false);
+                tableRect.x() + 14, tableRect.bottom() - 18, MailUi.textMuted(), false);
     }
 
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean isActuallyClick) {
+        if (isExiting()) return true;
         double mouseX = viewport.toDesignX(event.x());
         double mouseY = viewport.toDesignY(event.y());
         if (refreshRect.contains(mouseX, mouseY)) {
@@ -208,6 +211,7 @@ public class MailSentScreen extends MailBaseScreen {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+        if (isExiting()) return true;
         double designX = viewport.toDesignX(mouseX);
         double designY = viewport.toDesignY(mouseY);
         if (!tableRect.contains(designX, designY)) {

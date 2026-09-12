@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.client.screen;
 
+import top.csituka.youzaiworldcore.client.render.YzuiTheme;
+
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
@@ -11,34 +13,28 @@ import top.csituka.youzaiworldcore.client.render.RoundedRect;
 @SuppressWarnings("null")
 final class MailUi {
 
-    static final int PAGE_BACKGROUND = 0x00000000; // 透明：游戏画面通过暗色遮罩层可见
-    static final int PANEL_BACKGROUND = 0xC8404040;
-    static final int PANEL_HEADER = 0xFF666666;
-    static final int ROW_SELECTED = 0xFF999999;
-    static final int ROW_HOVERED = 0xFF6A6A6A;
-    static final int ROW_ALTERNATE = 0xFF595959;
-    static final int INPUT_BACKGROUND = 0xFF4C4C4C;
-    static final int YZUI_INPUT_BG_ALPHA = 0x80;       // YZUI 风格输入框背景 alpha
-    static final int DIVIDER = 0xFF707070;
-    static final int TEXT_PRIMARY = 0xFFFFFFFF;
-    static final int TEXT_SECONDARY = 0xFFB8B8B8;
-    static final int TEXT_MUTED = 0xFF888888;
-    static final int GREEN = 0xFF55FF55;
-    static final int YELLOW = 0xFFFFD800;
-    static final int RED = 0xFFFF5555;
-    static final int ORANGE = 0xFFFFB000;
+    static int pageBackground() { return YzuiTheme.surface(); }
+    static int panelBackground() { return YzuiTheme.surface(); }
+    static int panelHeader() { return YzuiTheme.surfaceLow(); }
+    static int rowSelected() { return YzuiTheme.primaryContainer(); }
+    static int rowHovered() { return YzuiTheme.surfaceHigh(); }
+    static int rowAlternate() { return YzuiTheme.surfaceLow(); }
+    static int inputBackground() { return YzuiTheme.slot(); }
+    static int divider() { return YzuiTheme.outlineVariant(); }
+    static int textPrimary() { return YzuiTheme.text(); }
+    static int textSecondary() { return YzuiTheme.textMuted(); }
+    static int textMuted() { return YzuiTheme.textMuted(); }
+    static int green() { return YzuiTheme.success(); }
+    static int yellow() { return YzuiTheme.warning(); }
+    static int red() { return YzuiTheme.error(); }
+    static int orange() { return YzuiTheme.warning(); }
 
     private MailUi() {
     }
 
-    /** 绘制覆盖游戏画面的深色背景。 */
-    static void drawBackdrop(GuiGraphicsExtractor graphics, int width, int height) {
-        graphics.fill(0, 0, width, height, 0xE8202020);
-    }
-
-    /** 绘制参考稿中的深色页面容器。 */
+    /** 绘制主题页面容器。 */
     static void drawPage(GuiGraphicsExtractor graphics, Rect page) {
-        graphics.fill(page.x(), page.y(), page.right(), page.bottom(), PAGE_BACKGROUND);
+        YzuiTheme.card(graphics, page.x(), page.y(), page.width(), page.height());
     }
 
     /**
@@ -61,7 +57,7 @@ final class MailUi {
      * <p>三块矩形必须互不重叠：中间列 + 左右侧条。若改用「整宽横条 + 竖条」两块写法，
      * 二者会在中央重叠，半透明色被混合两次，呈现「中心偏实、四周偏透」的假边框
      * （宽度恰为 {@code radius}）。多数调用使用不透明色看不出差异，但
-     * {@link #PANEL_BACKGROUND}、邮件类型标签（alpha {@code 0x55}）、
+     * {@link #panelBackground()}、邮件类型标签（alpha {@code 0x55}）、
      * {@link MailToast} 与 {@link #yzuiInputBackground} 均为半透明，必须避免重叠。</p>
      */
     static void roundedRect(GuiGraphicsExtractor graphics, int x, int y, int width, int height, int radius, int color) {
@@ -74,15 +70,16 @@ final class MailUi {
     /** 绘制手动交互按钮。 */
     static void button(GuiGraphicsExtractor graphics, Font font, Rect rect, String label,
                        int background, int textColor, boolean hovered, boolean enabled) {
-        int color = enabled ? background : 0xFF4C4C4C;
-        if (hovered && enabled) {
-            color = brighten(color, 22);
-        }
-        roundedRect(graphics, rect.x(), rect.y(), rect.width(), rect.height(), 5, color);
-        int labelColor = enabled ? textColor : TEXT_MUTED;
-        int textX = rect.x() + (rect.width() - font.width(label)) / 2;
-        int textY = rect.y() + (rect.height() - font.lineHeight) / 2;
-        graphics.text(font, label, textX, textY, labelColor, false);
+        int color = enabled ? background : YzuiTheme.surfaceHigh();
+        int foreground = enabled ? textColor : textMuted();
+        if (hovered && enabled) color = YzuiTheme.mix(color, foreground, 0.08f);
+        boolean filled = enabled && (background & 0xFFFFFF) == (YzuiTheme.primary() & 0xFFFFFF);
+        RoundedRect.fill(graphics, rect.x(), rect.y(), rect.width(), rect.height(),
+                Math.min(10, rect.height() / 2), YzuiTheme.multiplyAlpha(color, filled ? 1f : YzuiTheme.visualStyle().controlOpacity()));
+        if (hovered && enabled) YzuiTheme.border(graphics, rect.x(), rect.y(), rect.width(), rect.height(),
+                Math.min(10, rect.height() / 2), YzuiTheme.alpha(filled ? YzuiTheme.onPrimary() : YzuiTheme.primary(), 0.32f));
+        YzuiTheme.label(graphics, font, Component.literal(label), rect.x() + 8,
+                rect.y() + (rect.height() - font.lineHeight) / 2, rect.width() - 16, foreground, true);
     }
 
     /** 将文本裁剪为指定宽度并追加省略号。 */
@@ -102,19 +99,10 @@ final class MailUi {
         graphics.text(font, text, x, y, color, false);
     }
 
-    private static int brighten(int color, int amount) {
-        int alpha = color >>> 24;
-        int red = Math.min(255, ((color >> 16) & 0xFF) + amount);
-        int green = Math.min(255, ((color >> 8) & 0xFF) + amount);
-        int blue = Math.min(255, (color & 0xFF) + amount);
-        return (alpha << 24) | (red << 16) | (green << 8) | blue;
-    }
-
-    /** 绘制 YZUI 风格圆角半透明白色输入框背景。 */
+    /** 绘制 YZUI 风格圆角输入框背景。 */
     static void yzuiInputBackground(GuiGraphicsExtractor graphics, int x, int y, int width, int height,
                                     boolean enabled) {
-        int color = enabled ? (YZUI_INPUT_BG_ALPHA << 24 | 0x00FFFFFF) : (0x40 << 24 | 0x00FFFFFF);
-        roundedRect(graphics, x, y, width, height, 6, color);
+        YzuiTheme.field(graphics, x, y, width, height, false, enabled, enabled ? 1f : 0.65f);
     }
 
     /** 简单的不可变界面矩形。 */

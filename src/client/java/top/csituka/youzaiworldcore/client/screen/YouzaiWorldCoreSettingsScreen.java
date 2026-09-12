@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.client.screen;
 
+import top.csituka.youzaiworldcore.client.render.YzuiTheme;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.EditBox;
@@ -61,7 +63,7 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
     /** 标题字体缩放比例（相对默认字号） */
     private static final float ABOUT_TITLE_SCALE = 1.5f;
     /** 标题颜色（金橙） */
-    private static final int ABOUT_TITLE_COLOR = 0xFFFFCC88;
+    private static int aboutTitleColor() { return YzuiTheme.primary(); }
     /** 图标圆角半径（像素） */
     private static final int ICON_CORNER_RADIUS = 6;
 
@@ -278,6 +280,11 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+        if (configOpActive) return true;
+        if (sectionDropdown != null && sectionDropdown.mouseScrolled(mouseX, mouseY, scrollX, scrollY)) return true;
+        for (DropdownButton popup : new DropdownButton[]{debugModeDropdown, logLevelDropdown, skipActionDropdown, guiAnimationDropdown}) {
+            if (popup != null && popup.mouseScrolled(mouseX, mouseY + scrollOffset, scrollX, scrollY)) return true;
+        }
         int maxScroll = getMaxScroll();
         if (maxScroll <= 0) return false;
         // 仅当鼠标在内容区范围内时才响应滚动
@@ -311,7 +318,7 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
         }
         if (sectionDropdown != null) {
             if (sectionDropdown.isMouseOver(mx, my)) {
-                sectionDropdown.onClick(event, bl);
+                sectionDropdown.mouseClicked(event, bl);
                 return true;
             }
             if (sectionDropdown.isOpen()) {
@@ -357,6 +364,13 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
                 && !guiAnimationDropdown.isPositionInsidePopup(event.x(), adjustedY)) {
             guiAnimationDropdown.closePopup();
         }
+        // 弹出菜单优先命中，避免点到其下方的设置项。
+        for (DropdownButton popup : new DropdownButton[]{debugModeDropdown, logLevelDropdown, skipActionDropdown, guiAnimationDropdown}) {
+            if (popup != null && popup.isOpen() && popup.isMouseOver(mx, adjustedY)) {
+                return popup.mouseClicked(new MouseButtonEvent(mx, adjustedY, event.buttonInfo()), bl);
+            }
+        }
+        if (mx < contentLeft || mx > contentLeft + contentWidth || my < contentTop || my > contentBottom) return false;
         // 向子组件传递修正后的坐标（super 靠 adjustedEvent.y 匹配自然 Y 的 widget）
         MouseButtonEvent adjustedEvent = new MouseButtonEvent(
                 event.x(), adjustedY, event.buttonInfo()
@@ -385,6 +399,9 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
         // 操作进行中时屏蔽键盘事件
         if (configOpActive) return true;
 
+        for (DropdownButton popup : new DropdownButton[]{sectionDropdown, debugModeDropdown, logLevelDropdown, skipActionDropdown, guiAnimationDropdown}) {
+            if (popup != null && popup.isOpen() && popup.keyPressed(keyEvent)) return true;
+        }
         if (keyEvent.key() == 256) { // ESC
             onClose();
             return true;
@@ -398,6 +415,7 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
 
     @Override
     public boolean charTyped(CharacterEvent characterEvent) {
+        if (configOpActive) return true;
         if (debugAddressInput != null && debugAddressInput.isFocused() && debugAddressInput.charTyped(characterEvent))
             return true;
         if (debugPortInput != null && debugPortInput.isFocused() && debugPortInput.charTyped(characterEvent))
@@ -435,7 +453,7 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
                 this::onClose
         );
         closeButton.setBackgroundVisible(false);
-        closeButton.setTextColor(0xFFFFFFFF);
+        closeButton.setTextColor(YzuiTheme.text());
         closeButton.setTextLeftAligned(true);
         addRenderableWidget(closeButton);
 
@@ -517,7 +535,7 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
                 this::onConfigExport
         );
         configExportButton.active = !configOpActive;
-        configExportButton.setTextColor(0xFFFFFFFF);
+        configExportButton.setTextColor(YzuiTheme.text());
         addRenderableWidget(configExportButton);
         y += 24;
 
@@ -539,7 +557,7 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
                 this::onConfigImport
         );
         configImportButton.active = !configOpActive;
-        configImportButton.setTextColor(0xFFFFFFFF);
+        configImportButton.setTextColor(YzuiTheme.text());
         addRenderableWidget(configImportButton);
         y += 24;
 
@@ -822,6 +840,11 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
     private void buildVisualSection() {
         Component title = Component.translatable("screen.youzaiworldcore.settings.sidebar_visual");
         int y = contentTop + wrappedTextHeight(title, contentWidth) + 8;
+        addRenderableWidget(new TransparentButton(contentLeft, y, contentWidth, 26,
+                Component.translatable("screen.youzaiworldcore.appearance.title"),
+                () -> Minecraft.getInstance().gui.setScreen(new YzuiAppearanceScreen(this)))
+                .setStyle(top.csituka.youzaiworldcore.client.render.YzuiTheme.ButtonStyle.FILLED));
+        y += 36;
         Component toggleMessage = Component.translatable("screen.youzaiworldcore.settings.toggle_yzui");
         int toggleHeight = checkboxHeight(toggleMessage);
         CheckboxButton yzuiToggle = new CheckboxButton(
@@ -973,52 +996,52 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
         guiGraphics.text(this.font, Component.translatable("screen.youzaiworldcore.settings.about_title"),
                 Math.round(textX / ABOUT_TITLE_SCALE),
                 Math.round((float) contentTop / ABOUT_TITLE_SCALE),
-                ABOUT_TITLE_COLOR, false);
+                aboutTitleColor(), false);
         guiGraphics.pose().popMatrix();
 
         guiGraphics.text(this.font, Component.translatable(
                         "screen.youzaiworldcore.settings.about_version", version),
-                textX, contentTop + 18, 0xFFFFFFFF, false);
+                textX, contentTop + 18, YzuiTheme.text(), false);
 
         int y = contentTop + 30;
         y = drawAboutWrappedText(guiGraphics,
                 Component.translatable("screen.youzaiworldcore.settings.about_desc_line1"),
-                textX, y, wrapWidth, 0xA0FFFFFF, false);
+                textX, y, wrapWidth, YzuiTheme.text(), false);
         y = drawAboutWrappedText(guiGraphics,
                 Component.translatable("screen.youzaiworldcore.settings.about_desc_line2"),
-                textX, y, wrapWidth, 0xA0FFFFFF, false);
+                textX, y, wrapWidth, YzuiTheme.text(), false);
         y += 4;
         y = drawAboutWrappedText(guiGraphics,
                 Component.translatable("screen.youzaiworldcore.settings.about_website"),
-                textX, y, wrapWidth, 0xFFFFFFFF, false);
+                textX, y, wrapWidth, YzuiTheme.text(), false);
         y += 4;
         y = drawAboutWrappedText(guiGraphics,
                 Component.translatable("screen.youzaiworldcore.settings.about_authors"),
-                textX, y, wrapWidth, 0x80FFFFFF, false);
+                textX, y, wrapWidth, YzuiTheme.text(), false);
         y += 4;
         y = drawAboutWrappedText(guiGraphics,
                 Component.translatable("screen.youzaiworldcore.settings.about_license"),
-                textX, y, wrapWidth, 0x80FFFFFF, false);
+                textX, y, wrapWidth, YzuiTheme.text(), false);
         y += 20;
         y = drawAboutWrappedText(guiGraphics,
                 Component.translatable("screen.youzaiworldcore.settings.about_credit_why"),
-                textX, y, wrapWidth, 0x80FFFFFF, false);
+                textX, y, wrapWidth, YzuiTheme.text(), false);
         y += 4;
         y = drawAboutWrappedText(guiGraphics,
                 Component.translatable("screen.youzaiworldcore.settings.about_credit_byzzdemy"),
-                textX, y, wrapWidth, 0x80FFFFFF, false);
+                textX, y, wrapWidth, YzuiTheme.text(), false);
         y += 4;
         y = drawAboutWrappedText(guiGraphics,
                 Component.translatable("screen.youzaiworldcore.settings.about_credit_zhongend"),
-                textX, y, wrapWidth, 0x80FFFFFF, false);
+                textX, y, wrapWidth, YzuiTheme.text(), false);
         y += 4;
         y = drawAboutWrappedText(guiGraphics,
                 Component.translatable("screen.youzaiworldcore.settings.about_credit_testers"),
-                textX, y, wrapWidth, 0x80FFFFFF, false);
+                textX, y, wrapWidth, YzuiTheme.text(), false);
         y += 20;
         drawAboutWrappedText(guiGraphics,
                 Component.translatable("screen.youzaiworldcore.settings.about_credit_oss"),
-                textX, y, wrapWidth, 0xA0FFFFFF, false);
+                textX, y, wrapWidth, YzuiTheme.text(), false);
     }
 
     private int drawAboutWrappedText(GuiGraphicsExtractor guiGraphics, Component text,
@@ -1064,7 +1087,7 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
      */
     private void clipRoundedCorners(GuiGraphicsExtractor guiGraphics, int x, int y, int w, int h, int r) {
         // 背景覆盖色 = 0x60000000（与内容区的半透明黑色遮罩一致）
-        int bgColor = 0x60000000;
+        int bgColor = YzuiTheme.surface();
         for (int i = 0; i < r; i++) {
             for (int j = 0; j < r; j++) {
                 int dx = r - 1 - i;
@@ -1087,16 +1110,16 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
-        guiGraphics.fill(0, 0, this.width, this.height, 0x60_00_00_00);
+
 
         int cx = this.width / 2;
         var titleText = Component.translatable("screen.youzaiworldcore.settings.title");
         int titleWidth = this.font.width(titleText);
-        guiGraphics.text(this.font, titleText, cx - titleWidth / 2, 12, 0xFFFFFFFF, false);
+        guiGraphics.text(this.font, titleText, cx - titleWidth / 2, 12, YzuiTheme.text(), false);
 
         var desc = Component.translatable("screen.youzaiworldcore.settings.desc_line1");
         var desc2 = Component.translatable("screen.youzaiworldcore.settings.desc_line2");
-        int descColor = 0xB0FFFFFF;
+        int descColor = YzuiTheme.text();
         int headerWidth = Math.max(1, this.width - PAGE_MARGIN * 2);
         drawCenteredWrappedText(guiGraphics, desc, headerDesc1Y, headerWidth, descColor, false);
         drawCenteredWrappedText(guiGraphics, desc2, headerDesc2Y, headerWidth, descColor, false);
@@ -1129,55 +1152,55 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
             Component developerTitle = Component.translatable(
                     "screen.youzaiworldcore.settings.sidebar_developer");
             drawWrappedText(guiGraphics, developerTitle,
-                    contentLeft, contentTop, contentWidth, 0xFFFFFFFF, false);
+                    contentLeft, contentTop, contentWidth, YzuiTheme.text(), false);
             int warningY = contentTop + wrappedTextHeight(developerTitle, contentWidth) + 4;
             drawWrappedText(guiGraphics, Component.translatable("screen.youzaiworldcore.settings.dev_warning"),
-                    contentLeft, warningY, contentWidth, 0x80FFFFFF, false);
+                    contentLeft, warningY, contentWidth, YzuiTheme.text(), false);
 
             if (devModeEnabled) {
                 var restartHint = Component.translatable("screen.youzaiworldcore.settings.log_level_restart_hint");
                 drawWrappedText(guiGraphics, restartHint,
-                        contentLeft, restartHintY, contentWidth, 0x80FFFFFF, false);
+                        contentLeft, restartHintY, contentWidth, YzuiTheme.text(), false);
 
                 if ("dedicated".equals(debugModeType)) {
                     drawWrappedText(guiGraphics,
                             Component.translatable("screen.youzaiworldcore.settings.label_debug_section"),
-                            contentLeft, debugSectionLabelY, contentWidth, 0xFFFFCC88, false);
+                            contentLeft, debugSectionLabelY, contentWidth, YzuiTheme.warning(), false);
                     drawWrappedText(guiGraphics,
                             Component.translatable("screen.youzaiworldcore.settings.label_address"),
-                            contentLeft, debugAddrLabelY, contentWidth, 0xB0FFFFFF, false);
+                            contentLeft, debugAddrLabelY, contentWidth, YzuiTheme.text(), false);
                     drawWrappedText(guiGraphics,
                             Component.translatable("screen.youzaiworldcore.settings.label_port"),
-                            contentLeft, debugPortLabelY, contentWidth, 0xB0FFFFFF, false);
+                            contentLeft, debugPortLabelY, contentWidth, YzuiTheme.text(), false);
                 }
             }
         } else if (selectedSection == 1) {
             drawWrappedText(guiGraphics,
                     Component.translatable("screen.youzaiworldcore.settings.sidebar_config_io"),
-                    contentLeft, contentTop, contentWidth, 0xFFFFFFFF, false);
+                    contentLeft, contentTop, contentWidth, YzuiTheme.text(), false);
 
             String exportHintKey = isAndroidPlatform
                     ? "screen.youzaiworldcore.settings.config_io_export_hint_android"
                     : "screen.youzaiworldcore.settings.config_io_export_hint_pc";
             drawWrappedText(guiGraphics, Component.translatable(exportHintKey),
-                    contentLeft, configExportHintY, contentWidth, 0x80FFFFFF, false);
+                    contentLeft, configExportHintY, contentWidth, YzuiTheme.text(), false);
 
             drawWrappedText(guiGraphics,
                     Component.translatable("screen.youzaiworldcore.settings.config_io_import_hint"),
-                    contentLeft, configImportHintY, contentWidth, 0x80FFFFFF, false);
+                    contentLeft, configImportHintY, contentWidth, YzuiTheme.text(), false);
 
             Component bottomLine1 = Component.translatable(
                     "screen.youzaiworldcore.settings.config_io_bottom_hint_line1");
             drawWrappedText(guiGraphics, bottomLine1,
-                    contentLeft, configBottomHintY, contentWidth, 0x60FFFFFF, false);
+                    contentLeft, configBottomHintY, contentWidth, YzuiTheme.text(), false);
             int bottomLine2Y = configBottomHintY + wrappedTextHeight(bottomLine1, contentWidth) + 2;
             drawWrappedText(guiGraphics,
                     Component.translatable("screen.youzaiworldcore.settings.config_io_bottom_hint_line2"),
-                    contentLeft, bottomLine2Y, contentWidth, 0x60FFFFFF, false);
+                    contentLeft, bottomLine2Y, contentWidth, YzuiTheme.text(), false);
         } else if (selectedSection == 0) {
             drawWrappedText(guiGraphics,
                     Component.translatable("screen.youzaiworldcore.settings.sidebar_visual"),
-                    contentLeft, contentTop, contentWidth, 0xFFFFFFFF, false);
+                    contentLeft, contentTop, contentWidth, YzuiTheme.text(), false);
         } else if (selectedSection == 2) {
             renderAboutContent(guiGraphics);
         }
@@ -1216,13 +1239,13 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
             int scrollbarTop = contentTop;
             int scrollbarBottom = contentBottom;
 
-            guiGraphics.fill(scrollbarLeft, scrollbarTop, scrollbarRight, scrollbarBottom, 0x30FFFFFF);
+            guiGraphics.fill(scrollbarLeft, scrollbarTop, scrollbarRight, scrollbarBottom, YzuiTheme.surfaceHigh());
 
             int contentHeight = Math.max(1, maxContentY - contentTop);
             double ratio = Math.min(1.0, (double) viewportHeight / contentHeight);
             int thumbHeight = Math.min(viewportHeight, Math.max(12, (int) (ratio * viewportHeight)));
             int thumbY = scrollbarTop + (int) ((scrollOffset / maxScroll) * (viewportHeight - thumbHeight));
-            guiGraphics.fill(scrollbarLeft, thumbY, scrollbarRight, thumbY + thumbHeight, 0x80FFFFFF);
+            guiGraphics.fill(scrollbarLeft, thumbY, scrollbarRight, thumbY + thumbHeight, YzuiTheme.surfaceHigh());
         }
 
         // ===================================================================
@@ -1232,7 +1255,7 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
             long elapsed = System.currentTimeMillis() - configOpStartTime;
             if (elapsed > 5000) {
                 // 半透明遮罩
-                guiGraphics.fill(0, 0, this.width, this.height, 0x80000000);
+
 
                 // 进度条背景
                 int barWidth = 200;
@@ -1241,12 +1264,12 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
                 int barY = this.height / 2;
 
                 // 背景矩形
-                guiGraphics.fill(barX, barY, barX + barWidth, barY + barHeight, 0xFFFFFFFF);
+                guiGraphics.fill(barX, barY, barX + barWidth, barY + barHeight, YzuiTheme.surfaceHigh());
 
                 // 前景进度（模拟，仅使用简单动画）
                 float progress = Math.min(1f, (elapsed - 5000) / 30000f); // 0→1 over 30 seconds
                 int fillWidth = (int) (barWidth * progress);
-                guiGraphics.fill(barX, barY, barX + fillWidth, barY + barHeight, 0xFF00AAFF);
+                guiGraphics.fill(barX, barY, barX + fillWidth, barY + barHeight, YzuiTheme.primary());
 
                 // 操作提示文字
                 String opLabel = "import".equals(configOpType)
@@ -1254,13 +1277,13 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
                         : Component.translatable("screen.youzaiworldcore.settings.config_io_exporting_mask").getString();
                 int opLabelWidth = this.font.width(opLabel);
                 guiGraphics.text(this.font, opLabel,
-                        (this.width - opLabelWidth) / 2, barY - 16, 0xFFFFFFFF, false);
+                        (this.width - opLabelWidth) / 2, barY - 16, YzuiTheme.text(), false);
 
                 // 当前进度文本
                 if (configOpProgressText != null && !configOpProgressText.isEmpty()) {
                     int progWidth = this.font.width(configOpProgressText);
                     guiGraphics.text(this.font, configOpProgressText,
-                            (this.width - progWidth) / 2, barY + barHeight + 6, 0xB0FFFFFF, false);
+                            (this.width - progWidth) / 2, barY + barHeight + 6, YzuiTheme.text(), false);
                 }
             }
         }
@@ -1268,9 +1291,7 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
 
     @Override
     public void extractBackground(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
-        // 复用原版 Screen 背景管线：使用 GameRenderer 的全局全景图实例，
-        // 同时保留主菜单子页面应有的模糊效果与菜单背景遮罩。
-        super.extractBackground(guiGraphics, mouseX, mouseY, partialTick);
+        // 背景由共用屏幕入口在内容变换之前绘制，避免重复模糊与叠加遮罩。
     }
 
     @Override

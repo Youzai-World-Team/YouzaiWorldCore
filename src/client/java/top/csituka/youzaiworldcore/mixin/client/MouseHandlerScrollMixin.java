@@ -33,7 +33,7 @@ public class MouseHandlerScrollMixin {
     @Inject(method = "onScroll(JDD)V", at = @At("HEAD"))
     private void youzaiworldcore$onMouseScroll(long window, double horizontal, double vertical, CallbackInfo ci) {
         Minecraft mc = Minecraft.getInstance();
-        if (!(mc.gui.screen() instanceof TitleScreen)) return;
+        if (!(mc.gui.screen() instanceof TitleScreen screen) || GuiAnimationController.isExiting(screen)) return;
         if (!ClientUpdateCheckerConfig.isShowOnTitleScreen()) return;
         UpdateResult r = ClientUpdateState.get();
         if (r == null || !r.updateAvailable()) return;
@@ -45,13 +45,11 @@ public class MouseHandlerScrollMixin {
         // 通过 this 获取鼠标位置（注入后运行在 MouseHandler 实例中）
         MouseHandler self = (MouseHandler) (Object) this;
         com.mojang.blaze3d.platform.Window win = mc.getWindow();
-        double scaledX = MouseHandler.getScaledXPos(win, self.xpos());
-        double scaledY = MouseHandler.getScaledYPos(win, self.ypos())
-                - GuiAnimationController.getInputYOffset(mc.gui.screen());
+        var frame = GuiAnimationController.inputFrame(screen);
+        double scaledX = frame.toLocalX(MouseHandler.getScaledXPos(win, self.xpos()), screen.width);
+        double scaledY = frame.toLocalY(MouseHandler.getScaledYPos(win, self.ypos()), screen.height);
 
         // 检查鼠标是否在右面板区域内
-        var screen = mc.gui.screen();
-        if (screen == null) return;
         int width = screen.width;
         int height = screen.height;
         int totalGroupWidth = PANEL_WIDTH * 2 + PANEL_GAP;

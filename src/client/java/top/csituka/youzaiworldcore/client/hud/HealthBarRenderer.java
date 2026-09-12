@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.client.hud;
 
+import top.csituka.youzaiworldcore.client.render.YzuiTheme;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -36,8 +38,7 @@ public final class HealthBarRenderer {
     public static final int Y_OFFSET_FROM_BOTTOM = 45;
 
     private static final int TEXT_OFFSET_ABOVE_BAR = 10;
-    private static final int TEXT_SHADOW_OFFSET = 1;
-    private static final int BG_COLOR = 0xAA333333;
+    private static int bgColor() { return YzuiTheme.hudSurface(); }
     private static final int COLOR_ABSORPTION = 0x88FFDD00;
 
     // === 状态效果指示器 ===
@@ -92,7 +93,7 @@ public final class HealthBarRenderer {
 
 
         // === 1. 背景（圆角） ===
-        fillBarBg(graphics, barX, barY, BG_COLOR);
+        fillBarBg(graphics, barX, barY, bgColor());
 
         // === 2. 血条填充（左侧圆角） ===
         int fillWidth = (int) (fillRatio * BAR_WIDTH);
@@ -147,10 +148,10 @@ public final class HealthBarRenderer {
         String text;
 
         if (showHealOverlay) {
-            // 预测模式：始终显示绿色闪烁文字（脉冲，不切换回白色）
-            int alpha = Math.min(255, Math.max(60, (int) ((FoodBarRenderer.flashAlpha * 0.6f + 0.4f) * 255)));
+            // 预测模式用绿色强调，脉冲只调整色相，保持数值清晰。
             text = healthText(displayHealth, predictedHeal, displayMax);
-            int textColor = (alpha << 24) | 0x88FF88;
+            int textColor = YzuiTheme.mix(YzuiTheme.text(), YzuiTheme.success(),
+                    YzuiTheme.minimal() ? 1f : 0.7f + FoodBarRenderer.flashAlpha * 0.3f);
             drawTextWithAlpha(graphics, font, text, barX, barY, textColor);
         } else {
             // 普通模式
@@ -276,7 +277,7 @@ public final class HealthBarRenderer {
 
         // 脉冲动画：基于游戏刻的慢速三角波
         int phase = (guiTicks / 2) & 7; // 0~7 循环
-        boolean flash = phase < 4;       // 4/8 占空比
+        boolean flash = YzuiTheme.minimal() || phase < 4; // 低特效保留静态效果条纹
 
         if (hasPoison) {
             // === 中毒：垂直交替竖条 ===
@@ -361,15 +362,13 @@ public final class HealthBarRenderer {
         return Math.max(0, maxRegen);
     }
 
-    /** 在血条上方居中绘制文字，带阴影。 */
+    /** 在血条上方居中绘制带主题底色的文字。 */
     public static void drawTextCentered(GuiGraphicsExtractor graphics, Font font,
             String text, int barX, int barY) {
         int textWidth = font.width(text);
         int textX = barX + (BAR_WIDTH - textWidth) / 2;
         int textY = barY - TEXT_OFFSET_ABOVE_BAR;
-        graphics.text(font, text, textX + TEXT_SHADOW_OFFSET, textY + TEXT_SHADOW_OFFSET,
-                0xFF000000, false);
-        graphics.text(font, text, textX, textY, 0xFFFFFFFF, false);
+        YzuiTheme.hudLabel(graphics, font, text, textX, textY, YzuiTheme.text(), 1f);
     }
 
     /** 在血条上方居中绘制带透明度的文字。 */
@@ -378,10 +377,7 @@ public final class HealthBarRenderer {
         int textWidth = font.width(text);
         int textX = barX + (BAR_WIDTH - textWidth) / 2;
         int textY = barY - TEXT_OFFSET_ABOVE_BAR;
-        // 阴影始终全不透明
-        graphics.text(font, text, textX + TEXT_SHADOW_OFFSET, textY + TEXT_SHADOW_OFFSET,
-                0xFF000000, false);
-        graphics.text(font, text, textX, textY, color, false);
+        YzuiTheme.hudLabel(graphics, font, text, textX, textY, color, 1f);
     }
 
     /**

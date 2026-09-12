@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.mixin.client;
 
+import top.csituka.youzaiworldcore.client.render.YzuiTheme;
+
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -31,7 +33,7 @@ import top.csituka.youzaiworldcore.client.render.RoundedRect;
 public class RecipeButtonMixin {
 
     @Unique
-    private static final int YZWC_SLOT_BG = 0x50FFFFFF;
+    private static int yzwcSlotBg() { return YzuiTheme.slot(); }
 
     @Redirect(
             method = "extractWidgetRenderState",
@@ -54,7 +56,7 @@ public class RecipeButtonMixin {
 
         // YZUI 开启：绘制圆角背景。@Redirect 只替换 blitSprite，
         // 方法后续的物品图标（fakeItem）渲染正常继续。
-        yzwc$fillRoundedRect(g, x, y, w, h, 3, YZWC_SLOT_BG);
+        yzwc$fillRoundedRect(g, x, y, w, h, 3, yzwcSlotBg());
     }
 
     @Unique

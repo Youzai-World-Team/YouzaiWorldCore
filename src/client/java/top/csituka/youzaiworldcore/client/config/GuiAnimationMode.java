@@ -8,8 +8,8 @@ package top.csituka.youzaiworldcore.client.config;
 public enum GuiAnimationMode {
     /** 关闭所有界面动画。 */
     OFF,
-    /** 保留项目原有的控件、弹窗与局部界面动画。 */
+    /** 模组页面、控件与弹窗的统一动画。 */
     BASIC,
-    /** 在基本动画之上启用所有页面的进入、退出和切换动画。 */
+    /** 在基础范围之上，为原版页面也启用进入、退出和切换动画。 */
     FULL
 }

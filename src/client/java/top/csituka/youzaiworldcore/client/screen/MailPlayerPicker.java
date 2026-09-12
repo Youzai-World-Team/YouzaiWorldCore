@@ -1,5 +1,9 @@
 package top.csituka.youzaiworldcore.client.screen;
 
+import top.csituka.youzaiworldcore.client.render.YzuiTheme;
+import top.csituka.youzaiworldcore.client.animation.YzuiHover;
+import top.csituka.youzaiworldcore.client.animation.YzuiPopupAnimation;
+
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import top.csituka.youzaiworldcore.client.MailClientState;
@@ -31,7 +35,8 @@ final class MailPlayerPicker {
     private static final int PANEL_HEIGHT = 252;
     private static final int ROW_HEIGHT = 17;
 
-    private boolean open;
+    private final YzuiPopupAnimation animation = new YzuiPopupAnimation();
+    private final YzuiHover searchHover = new YzuiHover();
     private String query = "";
     private int scrollOffset;
     private final Set<String> selected = new LinkedHashSet<>();
@@ -46,8 +51,10 @@ final class MailPlayerPicker {
     private MailUi.Rect confirmRect = new MailUi.Rect(0, 0, 0, 0);
 
     boolean isOpen() {
-        return open;
+        return animation.isVisible();
     }
+
+    boolean acceptsInput() { return animation.acceptsInput(); }
 
     /**
      * 打开弹窗。
@@ -56,7 +63,7 @@ final class MailPlayerPicker {
      * @param onConfirm   点击「确定」后的回调，参数为最终选中的玩家代号列表
      */
     void open(Collection<String> preselected, Consumer<List<String>> onConfirm) {
-        this.open = true;
+        animation.show(MailViewport.DESIGN_WIDTH, MailViewport.DESIGN_HEIGHT);
         this.query = "";
         this.scrollOffset = 0;
         this.onConfirm = onConfirm;
@@ -68,7 +75,7 @@ final class MailPlayerPicker {
                 this.selected.size(), MailClientState.registeredPlayers.size());
     }
     void close() {
-        open = false;
+        animation.hide();
         onConfirm = null;
     }
 
@@ -82,41 +89,51 @@ final class MailPlayerPicker {
      */
     void render(GuiGraphicsExtractor graphics, Font font, int mouseX, int mouseY,
                 int designWidth, int designHeight) {
-        if (!open) {
-            return;
+        if (!animation.update(designWidth, designHeight)) return;
+        animation.scrim(graphics);
+        int localX = (int) Math.floor(animation.toLocalX(mouseX));
+        int localY = (int) Math.floor(animation.toLocalY(mouseY));
+        var previous = animation.begin(graphics);
+        try {
+            renderPanel(graphics, font, acceptsInput() ? localX : -10000,
+                    acceptsInput() ? localY : -10000, designWidth, designHeight);
+        } finally {
+            animation.end(graphics, previous);
         }
-        graphics.fill(0, 0, designWidth, designHeight, 0x99000000);
+    }
+
+    private void renderPanel(GuiGraphicsExtractor graphics, Font font, int mouseX, int mouseY,
+                             int designWidth, int designHeight) {
         panelRect = new MailUi.Rect((designWidth - PANEL_WIDTH) / 2, (designHeight - PANEL_HEIGHT) / 2,
                 PANEL_WIDTH, PANEL_HEIGHT);
-        MailUi.roundedRect(graphics, panelRect.x(), panelRect.y(), panelRect.width(), panelRect.height(), 6,
-                0xFF2F2F2F);
+        YzuiTheme.card(graphics, panelRect.x(), panelRect.y(), panelRect.width(), panelRect.height());
 
         int x = panelRect.x() + 12;
-        graphics.text(font, "选取玩家", x, panelRect.y() + 11, MailUi.TEXT_PRIMARY, false);
+        graphics.text(font, "选取玩家", x, panelRect.y() + 11, MailUi.textPrimary(), false);
         String counter = "已选 " + selected.size() + " 人";
         graphics.text(font, counter, panelRect.right() - font.width(counter) - 12, panelRect.y() + 11,
-                MailUi.TEXT_SECONDARY, false);
+                MailUi.textSecondary(), false);
 
         // ===== 搜索框 =====
         searchRect = new MailUi.Rect(x, panelRect.y() + 28, panelRect.width() - 24, 18);
-        MailUi.roundedRect(graphics, searchRect.x(), searchRect.y(), searchRect.width(), searchRect.height(), 3,
-                MailUi.INPUT_BACKGROUND);
-        graphics.text(font, "🔍", searchRect.x() + 5, searchRect.y() + 5, MailUi.TEXT_MUTED, false);
+        YzuiTheme.field(graphics, searchRect.x(), searchRect.y(), searchRect.width(), searchRect.height(),
+                searchHover.sample(searchRect.contains(mouseX, mouseY)), acceptsInput(), true, 1f);
+        graphics.text(font, "🔍", searchRect.x() + 5, searchRect.y() + 5, MailUi.textMuted(), false);
         String shown = query.isEmpty() ? "搜索玩家代号..." : query;
-        int queryColor = query.isEmpty() ? MailUi.TEXT_MUTED : 0xFFE6E6E6;
+        int queryColor = query.isEmpty() ? MailUi.textMuted() : YzuiTheme.text();
         graphics.text(font, MailUi.ellipsize(font, shown, searchRect.width() - 34), searchRect.x() + 18,
                 searchRect.y() + 5, queryColor, false);
         // 光标闪烁：约 1.3Hz，始终显示以指示输入焦点
         if (System.currentTimeMillis() / 400 % 2 == 0) {
             int cursorX = searchRect.x() + 18
                     + (query.isEmpty() ? 0 : Math.min(font.width(query), searchRect.width() - 34));
-            graphics.fill(cursorX + 1, searchRect.y() + 4, cursorX + 2, searchRect.y() + 14, 0xFFE6E6E6);
+            graphics.fill(cursorX + 1, searchRect.y() + 4, cursorX + 2, searchRect.y() + 14, YzuiTheme.primary());
         }
 
         // ===== 名单列表 =====
         listRect = new MailUi.Rect(x, searchRect.bottom() + 8, panelRect.width() - 24, 140);
         MailUi.roundedRect(graphics, listRect.x(), listRect.y(), listRect.width(), listRect.height(), 4,
-                0xFF3C3C3C);
+                YzuiTheme.surfaceLow());
 
         List<String> filtered = filteredNames();
         int visibleRows = Math.max(1, listRect.height() / ROW_HEIGHT);
@@ -124,10 +141,10 @@ final class MailPlayerPicker {
 
         if (MailClientState.registeredPlayers.isEmpty()) {
             MailUi.centeredText(graphics, font, net.minecraft.network.chat.Component.literal("正在加载玩家名单..."),
-                    listRect, MailUi.TEXT_MUTED);
+                    listRect, MailUi.textMuted());
         } else if (filtered.isEmpty()) {
             MailUi.centeredText(graphics, font, net.minecraft.network.chat.Component.literal("没有匹配的玩家代号"),
-                    listRect, MailUi.TEXT_MUTED);
+                    listRect, MailUi.textMuted());
         } else {
             int end = Math.min(filtered.size(), scrollOffset + visibleRows);
             for (int i = scrollOffset; i < end; i++) {
@@ -136,18 +153,18 @@ final class MailPlayerPicker {
                 MailUi.Rect rowRect = new MailUi.Rect(listRect.x(), rowY, listRect.width(), ROW_HEIGHT);
                 boolean hovered = rowRect.contains(mouseX, mouseY);
                 if (hovered) {
-                    graphics.fill(rowRect.x(), rowRect.y(), rowRect.right(), rowRect.bottom(), 0xFF565656);
+                    graphics.fill(rowRect.x(), rowRect.y(), rowRect.right(), rowRect.bottom(), YzuiTheme.surfaceHigh());
                 }
                 boolean checked = selected.contains(name);
                 int boxX = rowRect.x() + 8;
                 int boxY = rowRect.y() + 4;
-                graphics.fill(boxX, boxY, boxX + 10, boxY + 10, 0xFFE6E6E6);
-                graphics.fill(boxX + 1, boxY + 1, boxX + 9, boxY + 9, checked ? 0xFFF2F2F2 : 0xFF555555);
+                graphics.fill(boxX, boxY, boxX + 10, boxY + 10, checked ? YzuiTheme.primary() : YzuiTheme.outline());
+                graphics.fill(boxX + 1, boxY + 1, boxX + 9, boxY + 9, checked ? YzuiTheme.primary() : YzuiTheme.surface());
                 if (checked) {
-                    graphics.text(font, "✓", boxX + 1, boxY - 1, 0xFF222222, false);
+                    graphics.text(font, "✓", boxX + 1, boxY - 1, YzuiTheme.onPrimary(), false);
                 }
                 graphics.text(font, MailUi.ellipsize(font, name, rowRect.width() - 36), rowRect.x() + 24,
-                        rowRect.y() + 5, checked ? MailUi.TEXT_PRIMARY : 0xFFD0D0D0, false);
+                        rowRect.y() + 5, checked ? MailUi.textPrimary() : YzuiTheme.textMuted(), false);
             }
 
             if (filtered.size() > visibleRows) {
@@ -156,8 +173,8 @@ final class MailPlayerPicker {
                 int thumbHeight = Math.max(16, trackHeight * visibleRows / filtered.size());
                 int maxOffset = filtered.size() - visibleRows;
                 int thumbY = trackY + (trackHeight - thumbHeight) * scrollOffset / Math.max(1, maxOffset);
-                graphics.fill(listRect.right() - 5, trackY, listRect.right() - 3, trackY + trackHeight, 0x66202020);
-                graphics.fill(listRect.right() - 5, thumbY, listRect.right() - 3, thumbY + thumbHeight, 0xFFD0D0D0);
+                graphics.fill(listRect.right() - 5, trackY, listRect.right() - 3, trackY + trackHeight, YzuiTheme.surfaceHigh());
+                graphics.fill(listRect.right() - 5, thumbY, listRect.right() - 3, thumbY + thumbHeight, YzuiTheme.outline());
             }
         }
 
@@ -167,13 +184,13 @@ final class MailPlayerPicker {
         clearRect = new MailUi.Rect(invertRect.right() + 8, buttonY, 50, 22);
         confirmRect = new MailUi.Rect(panelRect.right() - 62, buttonY, 50, 22);
         cancelRect = new MailUi.Rect(confirmRect.x() - 58, buttonY, 50, 22);
-        MailUi.button(graphics, font, invertRect, "反选", 0xFF7A7A7A, 0xFF111111,
+        MailUi.button(graphics, font, invertRect, "反选", YzuiTheme.primaryContainer(), YzuiTheme.onPrimaryContainer(),
                 invertRect.contains(mouseX, mouseY), !filtered.isEmpty());
-        MailUi.button(graphics, font, clearRect, "清空", 0xFF7A7A7A, 0xFF111111,
+        MailUi.button(graphics, font, clearRect, "清空", YzuiTheme.primaryContainer(), YzuiTheme.onPrimaryContainer(),
                 clearRect.contains(mouseX, mouseY), !selected.isEmpty());
-        MailUi.button(graphics, font, cancelRect, "取消", 0xFF9A9A9A, 0xFF111111,
+        MailUi.button(graphics, font, cancelRect, "取消", YzuiTheme.primaryContainer(), YzuiTheme.onPrimaryContainer(),
                 cancelRect.contains(mouseX, mouseY), true);
-        MailUi.button(graphics, font, confirmRect, "确定", 0xFF4DA346, 0xFFB9FFB9,
+        MailUi.button(graphics, font, confirmRect, "确定", YzuiTheme.primary(), YzuiTheme.onPrimary(),
                 confirmRect.contains(mouseX, mouseY), true);
     }
 
@@ -181,9 +198,12 @@ final class MailPlayerPicker {
 
     /** 处理点击；弹窗打开时始终吞掉事件（模态）。 */
     boolean mouseClicked(double mouseX, double mouseY) {
-        if (!open) {
+        if (!isOpen()) {
             return false;
         }
+        if (!acceptsInput()) return true;
+        mouseX = animation.toLocalX(mouseX);
+        mouseY = animation.toLocalY(mouseY);
         if (confirmRect.contains(mouseX, mouseY)) {
             List<String> result = new ArrayList<>(selected);
             Consumer<List<String>> callback = onConfirm;
@@ -230,9 +250,12 @@ final class MailPlayerPicker {
     }
 
     boolean mouseScrolled(double mouseX, double mouseY, double delta) {
-        if (!open) {
+        if (!isOpen()) {
             return false;
         }
+        if (!acceptsInput()) return true;
+        mouseX = animation.toLocalX(mouseX);
+        mouseY = animation.toLocalY(mouseY);
         if (listRect.contains(mouseX, mouseY)) {
             int visibleRows = Math.max(1, listRect.height() / ROW_HEIGHT);
             int maxOffset = Math.max(0, filteredNames().size() - visibleRows);
@@ -243,9 +266,10 @@ final class MailPlayerPicker {
 
     /** 处理按键：ESC 关闭、回车确认；其余按键交由调用方转发给搜索输入框。 */
     boolean keyPressed(int key) {
-        if (!open) {
+        if (!isOpen()) {
             return false;
         }
+        if (!acceptsInput()) return true;
         switch (key) {
             case 256 -> close();                                   // GLFW_KEY_ESCAPE
             case 257, 335 -> {                                     // GLFW_KEY_ENTER / KP_ENTER
@@ -265,8 +289,7 @@ final class MailPlayerPicker {
 
     /**
      * 更新搜索词。
-     * <p>文本编辑本身交给调用方持有的原版 {@code EditBox}（可正常使用输入法、粘贴与光标移动），
-     * 本弹窗只负责按其当前值过滤与展示。</p>
+     * <p>文本编辑交给发布页的键盘与字符事件，本弹窗负责过滤与展示。</p>
      */
     void setQuery(String value) {
         String next = value == null ? "" : value;
