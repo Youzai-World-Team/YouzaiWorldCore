@@ -22,6 +22,7 @@ import top.csituka.youzaiworldcore.map.MapDrawing;
 import top.csituka.youzaiworldcore.map.MapTile;
 import top.csituka.youzaiworldcore.map.MapTileKey;
 import top.csituka.youzaiworldcore.map.MapVertex;
+import top.csituka.youzaiworldcore.network.MapSessionPayload;
 import top.csituka.youzaiworldcore.network.MapViewRequestPayload;
 
 import java.util.ArrayList;
@@ -148,7 +149,7 @@ public final class YzWorldMapScreen extends Screen {
         YzuiTheme.label(g, font, detail, left + 4, height - 63, mapWidth - 8, YzuiTheme.text(), false);
         Component secondary = MapTexts.text("map_status", MapClient.cache().size(), MapClient.receivedTiles(), String.format(Locale.ROOT, "%.2f", scale));
         if (MapSettings.overlay() == MapSettings.Overlay.LOAD_STATE) secondary = MapTexts.text(MapClient.session() != null
-                && MapClient.session().allows(top.csituka.youzaiworldcore.network.MapSessionPayload.LOAD_STATE) ? "load_legend" : "load_unavailable");
+                && MapClient.session().allows(MapSessionPayload.LOAD_STATE) ? "load_legend" : "load_unavailable");
         YzuiTheme.label(g, font, secondary,
                 left + 4, height - 49, mapWidth - 8, YzuiTheme.textMuted(), false);
         super.extractRenderState(g, mx, my, delta);

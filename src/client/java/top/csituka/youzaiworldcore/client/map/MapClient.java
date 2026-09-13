@@ -376,7 +376,7 @@ public final class MapClient {
 
     public static void message(String key, Object... args) {
         var player = Minecraft.getInstance().player;
-        if (player != null) player.displayClientMessage(MapTexts.text(key, args), false);
+        if (player != null) player.sendSystemMessage(MapTexts.text(key, args));
     }
 
     private static void reset() {

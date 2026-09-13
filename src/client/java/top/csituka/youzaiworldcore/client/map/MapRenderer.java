@@ -9,6 +9,7 @@ import org.joml.Vector4f;
 import top.csituka.youzaiworldcore.client.config.MapSettings;
 import top.csituka.youzaiworldcore.client.config.YzHudComponent;
 import top.csituka.youzaiworldcore.client.config.YzHudSettings;
+import top.csituka.youzaiworldcore.client.hud.ScoreboardSidebarRenderer;
 import top.csituka.youzaiworldcore.client.hud.YzHudLayout;
 import top.csituka.youzaiworldcore.client.render.RoundedRect;
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
@@ -57,7 +58,7 @@ public final class MapRenderer {
         int top = Math.clamp(YzHudLayout.componentTop(YzHudComponent.MINIMAP, g.guiHeight(), h), 2, g.guiHeight() - h - 2);
         if (MapSettings.enabled(MapSettings.Toggle.AVOID_HUD) && YzHudSettings.getPositionX(YzHudComponent.MINIMAP) == 0
                 && YzHudSettings.getPositionY(YzHudComponent.MINIMAP) == 0) {
-            int[] occupied = top.csituka.youzaiworldcore.client.hud.ScoreboardSidebarRenderer.mapAvoidanceBounds();
+            int[] occupied = ScoreboardSidebarRenderer.mapAvoidanceBounds();
             if (occupied != null && left < occupied[0] + occupied[2] && left + w > occupied[0]
                     && top < occupied[1] + occupied[3] && top + h > occupied[1]) {
                 if (occupied[1] - h - 4 >= 2) top = occupied[1] - h - 4;
