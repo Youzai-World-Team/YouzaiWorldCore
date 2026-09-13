@@ -64,6 +64,16 @@ public class ModNetworking {
     public static void initialize() {
         DebugLogger.entering("ModNetworking", "initialize");
 
+        ServerPlayNetworking.registerGlobalReceiver(MapViewRequestPayload.ID, (payload, context) -> {
+            var player = context.player(); var server = player.level().getServer();
+            if (server != null) server.execute(() -> top.csituka.youzaiworldcore.map.MapServerManager.request(player, payload));
+        });
+        ServerPlayNetworking.registerGlobalReceiver(MapActionPayload.ID, (payload, context) -> {
+            var player = context.player(); var server = player.level().getServer();
+            if (server != null) server.execute(() -> top.csituka.youzaiworldcore.map.MapServerManager.receiveAction(player, payload));
+        });
+        DebugLogger.info("ModNetworking", "已注册地图订阅与公共操作接收器");
+
         // ===== 服务端接收处理器 =====
         ServerPlayNetworking.registerGlobalReceiver(AuthRequestPayload.ID, (payload, context) -> {
             var player = context.player();

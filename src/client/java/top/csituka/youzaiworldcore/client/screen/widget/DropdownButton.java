@@ -16,12 +16,13 @@ import top.csituka.youzaiworldcore.client.animation.YzuiHover;
 
 /** MD3 下拉选择：逻辑视口边界、向上展开、滚动长列表和键盘操作共用同一命中区域。 */
 public class DropdownButton extends AbstractWidget {
-    private final List<String> options;
+    private List<String> options;
     private final int rowHeight;
     private final int requestedPopupWidth;
     private final IntConsumer onSelectionChanged;
     private final Runnable onToggleOpen;
     private int selectedIndex;
+    private String currentValueLabel;
     private int keyboardIndex;
     private int firstVisible;
     private int visibleRows = 1;
@@ -48,6 +49,19 @@ public class DropdownButton extends AbstractWidget {
     }
 
     public int getSelectedIndex() { return selectedIndex; }
+    /** 同步外部选项，不触发选择回调；当前自定义值可以不在可选列表中。 */
+    public void updateOptions(List<String> options, int selectedIndex, String currentValueLabel) {
+        List<String> replacement = List.copyOf(options);
+        int index = selectedIndex >= 0 && selectedIndex < replacement.size() ? selectedIndex : -1;
+        if (!this.options.equals(replacement) || this.selectedIndex != index) {
+            closePopup();
+            this.options = replacement;
+            this.selectedIndex = index;
+            keyboardIndex = Math.max(0, index);
+            keepVisible();
+        }
+        this.currentValueLabel = currentValueLabel;
+    }
     public boolean isOpen() { return open; }
     public void setExternalAlpha(float value) { externalAlpha = Math.clamp(value, 0f, 1f); }
     /** 邮件等独立设计视口显式提供边界，避免把物理宽高误用为设计坐标。 */
@@ -73,6 +87,7 @@ public class DropdownButton extends AbstractWidget {
     private void choose(int index) {
         if (index < 0 || index >= options.size()) return;
         selectedIndex = index;
+        currentValueLabel = null;
         closePopup();
         if (onSelectionChanged != null) onSelectionChanged.accept(index);
     }
@@ -90,7 +105,8 @@ public class DropdownButton extends AbstractWidget {
         int foreground = YzuiTheme.alpha(active ? YzuiTheme.onPrimaryContainer() : YzuiTheme.textMuted(), opacity);
         int arrowX = x + width - 12;
         g.text(font, open ? "▴" : "▾", arrowX, textY, foreground, false);
-        String value = selectedIndex >= 0 && selectedIndex < options.size() ? options.get(selectedIndex) : "";
+        String value = currentValueLabel != null ? currentValueLabel
+                : selectedIndex >= 0 && selectedIndex < options.size() ? options.get(selectedIndex) : "";
         boolean hasLabel = !getMessage().getString().isEmpty();
         int valueWidth = hasLabel ? Math.max(32, (width - 36) / 2) : Math.max(0, width - 30);
         if (hasLabel) {

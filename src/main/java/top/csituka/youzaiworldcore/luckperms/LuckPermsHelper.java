@@ -166,6 +166,13 @@ public final class LuckPermsHelper {
     private LuckPermsHelper() {
     }
 
+    /** 公共路径点发布：无 LuckPerms 时已认证玩家可用，仍受地图配置限制。 */
+    public static final String PERMISSION_MAP_SHARED = "youzaiworldcore.command.map.shared";
+    /** 管理公共点与锁定服务器点：无 LuckPerms 时回退 OP 4。 */
+    public static final String PERMISSION_MAP_MANAGE = "youzaiworldcore.command.map.manage";
+    /** 地图坐标传送：默认配置关闭，开启后仍需此权限或 OP 4。 */
+    public static final String PERMISSION_MAP_TELEPORT = "youzaiworldcore.command.map.teleport";
+
     // ==================== 基础状态检查 ====================
 
     /**

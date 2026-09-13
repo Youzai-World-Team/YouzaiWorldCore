@@ -247,6 +247,7 @@ public class YouzaiworldCore implements ModInitializer {
         DamageNumberHandler.initialize();
         DebugLogger.info("YouzaiworldCore", "初始化服务端网络接收器...");
         ModNetworking.initialize();
+        top.csituka.youzaiworldcore.map.MapServerManager.initialize();
         DebugLogger.info("YouzaiworldCore", "初始化混合正版 UUID 登录认证...");
         top.csituka.youzaiworldcore.account.OnlineUuidLoginManager.initialize();
         ServerLifecycleEvents.SERVER_STOPPING.register(
@@ -560,6 +561,7 @@ public class YouzaiworldCore implements ModInitializer {
         // ===== 注册所有 /yzwc 命令 =====
         DebugLogger.entering("YouzaiworldCore", "CommandRegistration");
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
+            top.csituka.youzaiworldcore.command.MapCommand.register(dispatcher);
             DebugLogger.info("YouzaiworldCore", "注册命令: WorldPoolCommand");
             WorldPoolCommand.register(dispatcher);
 

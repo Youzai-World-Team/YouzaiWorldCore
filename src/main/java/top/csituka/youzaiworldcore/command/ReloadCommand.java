@@ -66,6 +66,7 @@ public class ReloadCommand {
         // 先重读全局配置文件，后续各模块 reload 都从新内容里取分节
         GlobalSettings.load();
         ServerExternalSettings.load();
+        top.csituka.youzaiworldcore.map.MapServerManager.reload();
         ApiModuleSettings.load();
 
         // 从 Api 重载账户运行期缓存

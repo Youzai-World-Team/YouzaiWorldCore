@@ -660,12 +660,35 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 
 ---
 
+### 44. 悠哉地图（YZMAP）
+
+参考 Conflux Map 的功能说明独立实现游戏内地图，不引入其代码、资源或依赖。
+
+- **小地图与全屏地图**：圆形、方形、圆角边框，旋转、缩放、拖动、区块网格、坐标与群系信息。
+- **主题适配**：跟随 YZUI 明暗主题和视觉风格；小地图接入 YZHUD 拖拽布局与透明度，默认位置可避让 YZUI 记分板。
+- **地图图层**：地表、自动洞穴、固定高度、顶层/下界顶板，以及群系和服务端区块加载状态叠加。
+- **路径点与导航**：私人/公共点、搜索与分组、死亡记录、主世界/下界 1:8 坐标投影、世界内距离标签与边缘方向提示。
+- **雷达与绘图**：玩家头像、按类别开关实体雷达、点击跟踪、移动足迹；画笔、直线、矩形、椭圆、文字标签，以及移动、改色、删除、撤销/重做。
+- **导入导出**：复制坐标或路径点 JSON；预览导入本模组格式、Xaero `waypoint:` 行、VoxelMap `name:` 行；后台导出选区 PNG，可取消，保存至 `screenshots/yzwc_maps/`。
+- **服务端共享**：已探索地形随存档保存，提供公共点、可关闭的玩家位置共享和已加载区块中发现的结构标记；所有公共修改校验认证、所有权与权限，地图传送默认关闭。
+
+默认快捷键：`M` 地图、`H` 小地图开关、`N` 建点、`U` 路径点、`J` 路径点显隐、`Y` 图层、`[`/`]` 缩放、`,` 设置、`F9` 刷新，均可在控制设置中重绑。
+
+客户端设置、私人点与绘图保存在 `yzwc/client/global_settings.json` 的 `map_module`；服务端共享配置使用同名模块，地形与公共点位于 `<world>/data/yzwc/data/map_module/`。本期不包含种子预测、结构预测和独立网页地图。完整配置、数据边界及联机验收步骤见 [悠哉地图说明](docs/YZMAP.md)。
+
+---
+
 ## 📜 指令树
 
 所有指令以 `/yzwc` 为根命令。标注 **（客户端命令）** 的子命令仅做参数解析与转发，权威逻辑由服务端数据包接收器执行。
 
 ```
 /yzwc
+├── map [settings|waypoints|add|import|refresh]  # 本机地图入口
+│   ├── shared [list|add <名称>|delete <UUID>|lock <UUID>|unlock <UUID>]
+│   ├── position <show|hide>
+│   └── stats
+│
 ├── teleport_world <targets> <dimension> [x] [y] [z] [yRot] [xRot]
 │   ├── 权限：youzaiworldcore.command.teleport_world（OP 4）
 │   └── 示例：/yzwc teleport_world @p minecraft:overworld 0 64 0
@@ -785,6 +808,9 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 | `youzaiworldcore.command.reload`                            | 模组重载                               | OP 4                    |
 | `youzaiworldcore.command.world_pool`                        | 维度池管理                             | OP 4                    |
 | `youzaiworldcore.command.teleport_anchor`                   | 传送锚点管理                           | OP 4                    |
+| `youzaiworldcore.command.map.shared` | 发布/维护自己的公共地图点 | 已认证玩家，受服务端开关限制 |
+| `youzaiworldcore.command.map.manage` | 管理、锁定/解锁公共地图点 | OP 4 |
+| `youzaiworldcore.command.map.teleport` | 地图坐标传送 | OP 4，且配置开启 |
 | `youzaiworldcore.command.function.invisibility`             | 隐身功能                               | OP 4                    |
 | `youzaiworldcore.command.function.double_doors`             | 双开门功能（自身开关 / 查询）          | 所有人（仅自身）        |
 | `youzaiworldcore.command.function.damage_numbers`           | 伤害跳字显示（自身开关 / 查询）        | 所有人（仅自身）        |
@@ -835,7 +861,7 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 | `decomposition_table` | 分解台   |
 | `fly_beacon`          | 飞行信标 |
 
-### 网络数据包（共 71 个）
+### 网络数据包
 
 > 注：`world_pool_teleport` 数据包类位于 `dimensionalinventories` 包，其余位于 `network` 包；邮件相关 18 个数据包亦位于 `network` 包。方向统计：S→C 33 个，C→S 38 个。
 
@@ -898,6 +924,13 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 | `afk_heartbeat`             | C→S  | AFK 心跳包（客户端上报输入活动状态）                               |
 | `title_state_request`       | C→S  | 请求刷新当前玩家称号数据                                           |
 | `title_equip`               | C→S  | 请求佩戴指定称号；空 ID 表示卸下                                   |
+| `map_view_request` | C→S | 订阅指定维度/图层/高度的有限地图视口 |
+| `map_action` | C→S | 公共点操作、位置共享开关或受权限保护的传送 |
+| `map_session` | S→C | 稳定存档 UUID、地图能力与维度高度信息 |
+| `map_tile` | S→C | 一个实际探索区块的颜色、高度、光照与群系快照 |
+| `map_waypoints` | S→C | 经服务端过滤的公共点列表 |
+| `map_live` | S→C | 允许共享的在线玩家位置和可选区块加载等级 |
+| `map_action_result` | S→C | 公共操作确认；失败时保留客户端输入 |
 
 ---
 
@@ -946,7 +979,7 @@ src/                                       # 452 个 Java 源文件（main 273 /
 │   ├── mail/                             # 邮件系统（Mail / MailManager / MailApiClient / MailSettings / MailPermissionHelper；数据在 Api 服务端）
 │   ├── mana/                             # 魔力系统
 │   ├── mixin/                            # Mixin（35 个，含子包 afk / babyzombie / chargedcreeper / craftsound / damagenumber / doubledoors / invisibility / jukebox / painting / pet / seat / skill / trialvault）
-│   ├── network/                          # 网络数据包（70 个 Payload 类 + ModNetworking）
+│   ├── network/                          # 网络数据包（Payload + ModPayloadTypes + ModNetworking）
 │   ├── pet/                              # 宠物系统（config/command/event 子包 + PetGlobalState/PetEntry）
 │   ├── placeholders/                     # Placeholder API 集成（32 个占位符）
 │   ├── respawn/                          # 原地重生（InPlaceRespawnManager）

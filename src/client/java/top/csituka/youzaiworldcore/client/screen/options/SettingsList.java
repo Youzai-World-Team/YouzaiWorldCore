@@ -21,12 +21,14 @@ import top.csituka.youzaiworldcore.client.render.RoundedRect;
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
 import top.csituka.youzaiworldcore.client.screen.widget.CheckboxButton;
 import top.csituka.youzaiworldcore.client.screen.widget.DropdownButton;
+import top.csituka.youzaiworldcore.util.DebugLogger;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 
 /** MD3 设置列表；使用原版列表的滚动、键盘焦点和旁白机制，行内控件随布局同步移动。 */
 final class SettingsList extends ContainerObjectSelectionList<SettingsList.Row> {
     private final List<Row> allRows = new ArrayList<>();
+    private Row revealedSection;
 
     SettingsList(int x, int y, int width, int height) {
         super(Minecraft.getInstance(), width, height, y, 40);
@@ -45,13 +47,16 @@ final class SettingsList extends ContainerObjectSelectionList<SettingsList.Row> 
         setFocused(null);
         setDragging(false);
         clearEntries();
-        String section = "", group = "";
+        Row section = null;
+        String group = "";
         for (Row row : allRows) {
             if (row.navigation) {
-                section = row.label.getString();
+                section = row;
                 group = "";
             } else if (row.heading) group = row.label.getString();
-            if (query.isBlank() || !row.heading && matches(query, section + " " + group + " " + row.searchText())) {
+            row.section = section;
+            String sectionText = section == null ? "" : section.label.getString();
+            if (query.isBlank() || !row.heading && matches(query, sectionText + " " + group + " " + row.searchText())) {
                 addEntry(row, row.heightFor(getRowWidth()));
             }
         }
@@ -70,10 +75,44 @@ final class SettingsList extends ContainerObjectSelectionList<SettingsList.Row> 
         return Normalizer.normalize(value, Normalizer.Form.NFKC).toLowerCase(Locale.ROOT).strip();
     }
 
-    void reveal(Row row) { scrollToEntry(row); }
+    /** 按当前布局的实际行高把分组标题对齐顶部，原版 scrollToEntry 只保证标题可见。 */
+    void reveal(Row row) {
+        int offset = 0;
+        for (Row entry : children()) {
+            if (entry == row) {
+                closePopups();
+                setScrollAmount(offset);
+                // 末尾分组不足一屏时会被原版滚动上限截断，仍选中用户实际点击的可见分组。
+                if (scrollAmount() < offset) revealedSection = row.section;
+                DebugLogger.debug("YzuiSettings", "定位设置分组：%s，滚动位置 %.0f", row.label.getString(), scrollAmount());
+                return;
+            }
+            offset += entry.getHeight();
+        }
+    }
+
+    /** 侧栏跟随内容高亮时只做最小滚动，不改变右侧或抢走键盘焦点。 */
+    void ensureVisible(Row row) { if (children().contains(row)) scrollToEntry(row); }
+
+    /** 搜索隐藏标题后仍按结果所属分组高亮；滚动到底部时选中最后一个分组。 */
+    Row activeSection() {
+        if (children().isEmpty()) return null;
+        if (revealedSection != null) return revealedSection;
+        if (scrollAmount() > 0 && scrollAmount() >= maxScrollAmount()) return children().getLast().section;
+        for (Row row : children()) {
+            if (row.getY() + row.getHeight() > getY() + 2) return row.section;
+        }
+        return children().getLast().section;
+    }
+
+    @Override
+    public void setScrollAmount(double amount) {
+        revealedSection = null;
+        super.setScrollAmount(amount);
+    }
 
     private List<DropdownButton> dropdowns() {
-        return children().stream().flatMap(row -> row.widgets.stream())
+        return children().stream().flatMap(row -> row.children().stream())
                 .filter(DropdownButton.class::isInstance).map(DropdownButton.class::cast).toList();
     }
 
@@ -142,6 +181,9 @@ final class SettingsList extends ContainerObjectSelectionList<SettingsList.Row> 
         final List<AbstractWidget> widgets;
         final boolean heading;
         boolean navigation;
+        /** 在对应侧栏按钮上方显示的纯文本分组标题。 */
+        Component navigationGroup;
+        private Row section;
         private final Identifier icon;
         private String keywords;
 
@@ -149,7 +191,7 @@ final class SettingsList extends ContainerObjectSelectionList<SettingsList.Row> 
                     boolean heading, Identifier icon, String keywords) {
             this.label = label;
             this.detail = detail;
-            this.widgets = List.copyOf(widgets);
+            this.widgets = widgets.stream().map(SettingsChoiceControl::adapt).toList();
             this.heading = heading;
             this.navigation = heading;
             this.icon = icon;
@@ -187,7 +229,7 @@ final class SettingsList extends ContainerObjectSelectionList<SettingsList.Row> 
         private String searchText() {
             StringBuilder text = new StringBuilder(label.getString()).append(' ').append(detail.getString())
                     .append(' ').append(keywords);
-            for (AbstractWidget widget : widgets) text.append(' ').append(widget.getMessage().getString());
+            for (AbstractWidget widget : widgets) text.append(' ').append(SettingsChoiceControl.searchText(widget));
             return text.toString();
         }
 
@@ -244,6 +286,7 @@ final class SettingsList extends ContainerObjectSelectionList<SettingsList.Row> 
 
         @Override
         public void extractContent(GuiGraphicsExtractor g, int mouseX, int mouseY, boolean hovered, float tick) {
+            widgets.forEach(SettingsChoiceControl::synchronize);
             positionWidgets();
             var font = Minecraft.getInstance().font;
             int x = getX(), y = getY(), width = getWidth();
@@ -275,7 +318,10 @@ final class SettingsList extends ContainerObjectSelectionList<SettingsList.Row> 
             for (AbstractWidget widget : widgets) widget.extractRenderState(g, mouseX, mouseY, tick);
         }
 
-        @Override public List<? extends GuiEventListener> children() { return widgets; }
+        @Override public List<? extends GuiEventListener> children() {
+            widgets.forEach(SettingsChoiceControl::synchronize);
+            return widgets;
+        }
         @Override public List<? extends NarratableEntry> narratables() { return widgets; }
 
     }

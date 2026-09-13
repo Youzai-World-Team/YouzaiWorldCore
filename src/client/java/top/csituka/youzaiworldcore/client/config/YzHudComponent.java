@@ -7,7 +7,8 @@ public enum YzHudComponent {
     INVENTORY("inventory"),
     ARMOR("armor"),
     EFFECTS("effects"),
-    SCOREBOARD("scoreboard");
+    SCOREBOARD("scoreboard"),
+    MINIMAP("minimap");
 
     private final String configPrefix;
 

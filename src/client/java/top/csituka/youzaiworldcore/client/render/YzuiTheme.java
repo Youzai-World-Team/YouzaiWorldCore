@@ -120,6 +120,7 @@ public final class YzuiTheme {
     /** 尚无独立容器外壳的功能屏幕使用统一页面卡片，控件坐标由各屏幕管理。 */
     public static void screenCard(GuiGraphicsExtractor g, Screen screen) {
         if (!isCustomScreen(screen)) return;
+        if (screen.getClass().getPackageName().equals("top.csituka.youzaiworldcore.client.screen.map")) return;
         String name = screen.getClass().getSimpleName();
         if (name.startsWith("Yzu") || name.startsWith("Mail") || name.equals("YzuiAppearanceScreen")
                 || name.equals("FlyBeaconScreen") || name.equals("DecompositionTableScreen")

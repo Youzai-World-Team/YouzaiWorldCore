@@ -13,20 +13,22 @@ gradle-app.setting
 !gradle-wrapper.properties
 
 # Cache of project
-.gradletasknamecache
+/.gradletasknamecache
 
 # Eclipse Gradle plugin generated files
 # Eclipse Core
-.project
+/.project
 # JDT-specific (Eclipse Java Development Tools)
-.classpath
+/.classpath
 
-run
-bin
-.idea
-.vscode
-.workbuddy
-.claude
-minecraft_jar
-.workbuddy/memory
-logo.txt
+/run
+/bin
+/.idea
+/.vscode
+/.workbuddy
+/.claude
+/minecraft_jar
+/.workbuddy/memory
+/logo.txt
+/.tmp_decompile
+*.py

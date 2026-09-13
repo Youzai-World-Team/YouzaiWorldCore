@@ -16,6 +16,8 @@ import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
 
 /** 设置页面共用外壳。宽屏显示分组导航，窄屏保留完整搜索、内容与操作区。 */
 final class SettingsFrame {
+    private record NavigationEntry(SettingsList.Row target, SettingsList.Row row, TransparentButton button) { }
+
     final int bodyX, bodyY, bodyWidth, bodyHeight;
     final SettingsList content;
     final EditBox search;
@@ -24,6 +26,9 @@ final class SettingsFrame {
     private final List<AbstractWidget> chrome = new ArrayList<>();
     private final Consumer<AbstractWidget> addWidget;
     private SettingsList navigation;
+    private final List<NavigationEntry> navigationEntries = new ArrayList<>();
+    private SettingsList.Row activeSection;
+    private boolean navigationInitialized;
     private final List<AbstractWidget> footer;
     private final TransparentButton back;
 
@@ -84,27 +89,44 @@ final class SettingsFrame {
         if (navigationWidth == 0) return;
         navigation = new SettingsList(x + 12, bodyY, navigationWidth, bodyHeight);
         List<SettingsList.Row> navigationRows = new ArrayList<>();
-        TransparentButton all = new TransparentButton(0, 0, 100, 24, YzuiOptionsScreen.text("all"), () -> {
-            search.setValue("");
-            content.setScrollAmount(0);
-        });
-        all.setStyle(YzuiTheme.ButtonStyle.FILLED);
-        navigationRows.add(SettingsList.Row.widget(all));
         for (SettingsList.Row row : rows) {
             if (!row.navigation) continue;
+            if (row.navigationGroup != null) {
+                navigationRows.add(SettingsList.Row.subheading(row.navigationGroup));
+            }
             TransparentButton button = new TransparentButton(0, 0, 100, 24, row.label, () -> {
                 search.setValue("");
                 content.reveal(row);
+                updateNavigation();
             });
             button.setStyle(YzuiTheme.ButtonStyle.TEXT);
             button.setTextLeftAligned(true);
-            navigationRows.add(SettingsList.Row.widget(button));
+            button.setTooltip(Tooltip.create(row.label));
+            SettingsList.Row navigationRow = SettingsList.Row.widget(button);
+            navigationRows.add(navigationRow);
+            navigationEntries.add(new NavigationEntry(row, navigationRow, button));
         }
         navigation.setRows(navigationRows, "");
         addWidget.accept(navigation);
+        updateNavigation();
+    }
+
+    private void updateNavigation() {
+        if (navigation == null) return;
+        SettingsList.Row current = content.activeSection();
+        if (navigationInitialized && current == activeSection) return;
+        activeSection = current;
+        navigationInitialized = true;
+        for (NavigationEntry entry : navigationEntries) {
+            boolean selected = entry.target == current;
+            entry.button.setStyle(selected ? YzuiTheme.ButtonStyle.FILLED : YzuiTheme.ButtonStyle.TEXT);
+            if (selected) navigation.ensureVisible(entry.row);
+        }
     }
 
     void render(GuiGraphicsExtractor g) {
+        // 统一读取滚动后的布局，覆盖滚轮、拖动滚动条、键盘导航、搜索和页面恢复。
+        updateNavigation();
         YzuiTheme.card(g, x, y, width, height);
         var font = Minecraft.getInstance().font;
         YzuiTheme.label(g, font, screen.getTitle(), x + 48, y + 19, width - 140, YzuiTheme.text(), false);
@@ -147,11 +169,13 @@ final class SettingsFrame {
             return;
         }
         for (SettingsList.Row row : content.children()) {
-            if (row.widgets.contains(widget)) {
-                screen.setFocused(content);
-                content.setFocused(row);
-                row.setFocused(widget);
-                return;
+            for (AbstractWidget control : row.widgets) {
+                if (SettingsChoiceControl.source(control) == SettingsChoiceControl.source(widget)) {
+                    screen.setFocused(content);
+                    content.setFocused(row);
+                    row.setFocused(control);
+                    return;
+                }
             }
         }
     }

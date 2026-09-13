@@ -50,6 +50,8 @@ public final class ClientGlobalSettings {
     public static final String UPDATE_MODULE = "update_module";
     /** 创造物品栏的折叠分组 */
     public static final String INVENTORY_ITEM_GROUPS_MODULE = "inventory_item_groups_module";
+    /** 地图显示、私人路径点与绘图 */
+    public static final String MAP_MODULE = "map_module";
 
     private static final JsonFileStore STORE = new JsonFileStore(ModPaths.clientSettingsFile());
 

@@ -63,6 +63,13 @@ public final class ScoreboardSidebarRenderer {
 
     private static String lastObjectiveName;
     private static int lastEntryCount = -1;
+    private static int[] mapBounds;
+    private static long mapBoundsTime;
+
+    /** 当前实际记分板边界，供默认位置的小地图避让；过期边界不参与布局。 */
+    public static int[] mapAvoidanceBounds() {
+        return System.nanoTime() - mapBoundsTime < 200_000_000L ? mapBounds : null;
+    }
 
     private ScoreboardSidebarRenderer() {
     }
@@ -136,6 +143,8 @@ public final class ScoreboardSidebarRenderer {
                 YzHudComponent.SCOREBOARD, graphics.guiWidth(), panelWidth);
         int panelTop = YzHudLayout.componentTop(
                 YzHudComponent.SCOREBOARD, graphics.guiHeight(), panelHeight);
+        mapBounds = new int[] {panelX, panelTop, panelWidth, panelHeight};
+        mapBoundsTime = System.nanoTime();
 
         int rowTextWidth = Math.max(1, contentWidth - ROW_TEXT_INSET * 2);
         int scoreColumnWidth = Math.min(maxScoreWidth,

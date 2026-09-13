@@ -14,6 +14,7 @@ import net.minecraft.client.gui.screens.multiplayer.RestrictionsScreen;
 import net.minecraft.client.gui.screens.options.InWorldGameRulesScreen;
 import net.minecraft.client.gui.screens.options.OptionsScreen;
 import net.minecraft.client.gui.screens.options.OptionsSubScreen;
+import net.minecraft.client.gui.screens.options.VideoSettingsScreen;
 import net.minecraft.client.gui.screens.options.WorldOptionsScreen;
 import net.minecraft.client.gui.screens.options.UnsupportedGraphicsWarningScreen;
 import net.minecraft.client.gui.screens.packs.PackSelectionScreen;
@@ -52,6 +53,9 @@ public final class YzuiSettingsRouter {
                 && !(target instanceof TitleScreen) && !(target instanceof PauseScreen)) {
             COMPATIBILITY.put(target, COMPATIBILITY.get(current));
             return target;
+        }
+        if (target.getClass() == VideoSettingsScreen.class && SettingsCompatibility.sodiumAvailable()) {
+            return SettingsCompatibility.createSodiumScreen(SettingsWidgets.read(target, "lastScreen", Screen.class));
         }
         HostLink link = HOSTS.get(target);
         if (link != null) {

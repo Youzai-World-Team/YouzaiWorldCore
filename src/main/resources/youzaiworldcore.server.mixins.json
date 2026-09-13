@@ -4,6 +4,7 @@
   "package": "top.csituka.youzaiworldcore.mixin",
   "compatibilityLevel": "JAVA_25",
   "mixins": [
+    "map.ChunkMapAccessor",
     "LivingEntityDamageMixin",
     "damagenumber.DamageNumberLivingEntityMixin",
     "PlayerDropEquipmentMixin",

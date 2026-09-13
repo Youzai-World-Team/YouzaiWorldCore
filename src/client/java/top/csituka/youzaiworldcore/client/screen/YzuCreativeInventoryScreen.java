@@ -803,14 +803,14 @@ public class YzuCreativeInventoryScreen extends Screen {
                     continue;
                 }
                 try {
-                    CreativeItemGroupRenderer.background(g, entry, gx, gy, true);
+                    CreativeItemGroupRenderer.background(g, entry, gx, gy);
                     ItemStack st = entry != null ? CreativeItemGroupRenderer.displayStack(entry) : getItemForVis(vi);
                     if (!st.isEmpty()) {
                         g.item(st, gx, gy, vi);
                         g.itemDecorations(font, st, gx, gy, null);
                         ItemBorderRenderer.renderBorder(g, gx, gy, st);
                     }
-                    CreativeItemGroupRenderer.badge(g, entry, gx, gy, true);
+                    CreativeItemGroupRenderer.badge(g, entry, gx, gy, h);
                 } finally {
                     CreativeItemGroupRenderer.endSlot(g);
                 }

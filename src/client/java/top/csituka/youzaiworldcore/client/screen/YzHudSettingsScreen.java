@@ -22,7 +22,7 @@ import java.util.EnumMap;
  * YZHUD 位置与透明度编辑页面。
  *
  * <p>画布按比例展示完整 GUI 视口，物品栏、装备栏、状态效果列表和记分板
- * 可分别选中并拖拽。四组位置以归一化位移保存到 {@code yzwc/client/global_settings.json} 的
+ * 以及小地图可分别选中并拖拽。各组位置以归一化位移保存到 {@code yzwc/client/global_settings.json} 的
  * {@code yzhud_module} 分节。</p>
  *
  * <p>「使用 YZUI」和「显示 YZHUD」都关闭时记分板回退为原版样式，其位置由原版布局
@@ -208,9 +208,24 @@ public final class YzHudSettingsScreen extends Screen {
                 case ARMOR -> drawArmorPreview(graphics, panelColor, slotColor);
                 case EFFECTS -> drawEffectsPreview(graphics, panelColor, slotColor);
                 case SCOREBOARD -> drawScoreboardPreview(graphics, panelColor, slotColor);
+                case MINIMAP -> drawMinimapPreview(graphics, panelColor, slotColor);
             }
             graphics.pose().popMatrix();
         }
+    }
+
+    private static void drawMinimapPreview(GuiGraphicsExtractor graphics, int panelColor, int slotColor) {
+        int size = top.csituka.youzaiworldcore.client.map.MapRenderer.layoutSize();
+        int radius = switch (top.csituka.youzaiworldcore.client.config.MapSettings.shape()) {
+            case CIRCLE -> size / 2; case SQUARE -> 0; case ROUNDED -> 10;
+        };
+        RoundedRect.fill(graphics, 0, 0, size + 8,
+                size + 8 + top.csituka.youzaiworldcore.client.map.MapRenderer.informationHeight(), 8, panelColor);
+        RoundedRect.fill(graphics, 4, 4, size, size, radius, slotColor);
+        YzuiTheme.border(graphics, 3, 3, size + 2, size + 2, radius == 0 ? 0 : radius + 1,
+                YzHudLayout.applyOpacity(YzuiTheme.primary()));
+        graphics.fill(size / 2 + 2, size / 2 - 2, size / 2 + 6, size / 2 + 10,
+                YzHudLayout.applyOpacity(YzuiTheme.primary()));
     }
 
     private static void drawInventoryPreview(

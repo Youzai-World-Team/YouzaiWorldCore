@@ -91,8 +91,12 @@ final class UnifiedSettingsPage {
     private void initialize() {
         if (fresh) {
             pages.clear();
-            video = new VideoSettingsScreen(host, minecraft, minecraft.options);
-            add(video);
+            video = null;
+            // Sodium 与附属模组自己管理视频控件及应用流程，不创建另一套原版视频模型。
+            if (!SettingsCompatibility.sodiumAvailable()) {
+                video = new VideoSettingsScreen(host, minecraft, minecraft.options);
+                add(video);
+            }
             add(new SoundOptionsScreen(host, minecraft.options));
             add(new ControlsScreen(host, minecraft.options));
             add(new MouseSettingsScreen(host, minecraft.options));
@@ -109,8 +113,7 @@ final class UnifiedSettingsPage {
             for (int section : new int[]{0, 3, 1, 2}) {
                 YouzaiWorldCoreSettingsScreen core = new YouzaiWorldCoreSettingsScreen(host);
                 core.configureEmbedded(0, 0, Math.max(100, host.width - 80), Math.max(40, host.height), section);
-                add(core, Component.literal("YouzaiWorldCore · ")
-                        .append(Component.translatable("screen.youzaiworldcore.settings.sidebar_" + names[section])));
+                add(core, Component.translatable("screen.youzaiworldcore.settings.sidebar_" + names[section]));
             }
             fresh = false;
             refreshWorld = false;
@@ -145,7 +148,7 @@ final class UnifiedSettingsPage {
         List<AbstractWidget> resources = new ArrayList<>();
         AbstractWidget language = null;
 
-        heading(rows, anchor(home), YzuiOptionsScreen.text("game"));
+        heading(rows, anchor(home), YzuiOptionsScreen.text("game")).navigationGroup = Component.literal("Minecraft");
         for (AbstractWidget widget : SettingsWidgets.flatten(home)) {
             if (isTitle(home, widget)) continue;
             if (isFooter(widget)) { footer.add(widget); continue; }
@@ -155,14 +158,15 @@ final class UnifiedSettingsPage {
             else rows.add(SettingsList.Row.widget(widget));
         }
 
+        if (SettingsCompatibility.sodiumAvailable()) {
+            heading(rows, VideoSettingsScreen.class.getName(), Component.translatable("options.video"));
+            rows.add(SettingsList.Row.controls(YzuiOptionsScreen.text("sodium"), YzuiOptionsScreen.text("sodium.description"),
+                    button(YzuiOptionsScreen.text("open"), () -> SettingsCompatibility.openSodium(host))));
+        }
         for (Page page : pages) {
             if (page.screen instanceof YouzaiWorldCoreSettingsScreen || page.screen == telemetry) continue;
             heading(rows, anchor(page.screen), page.title);
             if (page.screen instanceof FontOptionsScreen && language != null) rows.add(SettingsList.Row.widget(language));
-            if (page.screen == video && SettingsCompatibility.sodiumAvailable()) {
-                rows.add(SettingsList.Row.controls(YzuiOptionsScreen.text("sodium"), YzuiOptionsScreen.text("sodium.description"),
-                        button(YzuiOptionsScreen.text("open"), () -> SettingsCompatibility.openSodium(host))));
-            }
             appendNative(page, rows, primary);
         }
 
@@ -177,9 +181,14 @@ final class UnifiedSettingsPage {
             values.put(option, option.get());
         }
         for (AbstractWidget widget : resources) rows.add(SettingsList.Row.widget(widget));
+        boolean firstCoreSection = true;
         for (Page page : pages) {
             if (!(page.screen instanceof YouzaiWorldCoreSettingsScreen core)) continue;
-            heading(rows, anchor(core), page.title);
+            SettingsList.Row section = heading(rows, anchor(core), page.title);
+            if (firstCoreSection) {
+                section.navigationGroup = Component.literal("YouzaiWorldCore");
+                firstCoreSection = false;
+            }
             for (var option : core.embeddedOptions()) {
                 rows.add(option.control() == null ? SettingsList.Row.text(option.label(), option.description())
                         : SettingsList.Row.controls(option.label(), option.description(), option.control()));
@@ -219,10 +228,11 @@ final class UnifiedSettingsPage {
         }
     }
 
-    private void heading(List<SettingsList.Row> rows, String anchor, Component title) {
+    private SettingsList.Row heading(List<SettingsList.Row> rows, String anchor, Component title) {
         SettingsList.Row row = SettingsList.Row.heading(title);
         anchors.put(anchor, row);
         rows.add(row);
+        return row;
     }
 
     private static boolean isTitle(Screen screen, AbstractWidget widget) {

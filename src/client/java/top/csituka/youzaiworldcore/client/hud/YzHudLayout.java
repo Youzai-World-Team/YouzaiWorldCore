@@ -175,6 +175,7 @@ public final class YzHudLayout {
     private static int defaultTop(
             Geometry geometry, int guiHeight, int componentHeight) {
         return switch (geometry.verticalAnchor()) {
+            case TOP -> geometry.verticalOffset();
             case BOTTOM -> guiHeight - geometry.verticalOffset() - componentHeight;
             case CENTER -> (guiHeight - componentHeight) / 2 + geometry.verticalOffset();
         };
@@ -186,6 +187,10 @@ public final class YzHudLayout {
             case ARMOR -> ARMOR;
             case EFFECTS -> EFFECTS;
             case SCOREBOARD -> SCOREBOARD;
+            case MINIMAP -> new Geometry(top.csituka.youzaiworldcore.client.map.MapRenderer.layoutSize() + 8,
+                    top.csituka.youzaiworldcore.client.map.MapRenderer.layoutSize() + 8
+                            + top.csituka.youzaiworldcore.client.map.MapRenderer.informationHeight(),
+                    6, 6, HorizontalAnchor.RIGHT, VerticalAnchor.TOP);
         };
     }
 
@@ -195,6 +200,7 @@ public final class YzHudLayout {
     }
 
     private enum VerticalAnchor {
+        TOP,
         BOTTOM,
         CENTER
     }

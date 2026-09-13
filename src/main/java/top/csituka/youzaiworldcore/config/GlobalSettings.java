@@ -37,6 +37,8 @@ public final class GlobalSettings {
 
     /** 模组核心（开发者模式 / 日志开关） */
     public static final String CORE_MODULE = "core_module";
+    /** 游戏内地图、公共路径点与地形共享 */
+    public static final String MAP_MODULE = "map_module";
     /** AFK 挂机检测 */
     public static final String AFK_MODULE = "afk_module";
     /** 全局事件开关 */

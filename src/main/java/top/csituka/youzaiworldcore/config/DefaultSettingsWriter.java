@@ -35,6 +35,7 @@ public final class DefaultSettingsWriter {
         GlobalSettings.runBatched(() -> {
             // 核心
             ServerExternalSettings.writeDefaults();
+            top.csituka.youzaiworldcore.map.MapServerSettings.writeDefaults();
             // Api 网桥
             ApiModuleSettings.writeDefaults();
             // 玩法

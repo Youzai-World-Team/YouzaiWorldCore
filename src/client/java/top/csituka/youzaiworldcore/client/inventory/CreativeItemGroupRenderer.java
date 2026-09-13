@@ -2,16 +2,25 @@ package top.csituka.youzaiworldcore.client.inventory;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
+import top.csituka.youzaiworldcore.client.config.ClientExternalSettings;
 import top.csituka.youzaiworldcore.client.config.InventoryItemGroupsConfig;
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
 
 import java.util.List;
 
-/** 分组的缩放过渡、槽位底色、加减标记和悬停说明；不依赖外部模组或纹理。 */
+/** 分组的缩放过渡、主题底色、加减标记和悬停说明。 */
 @SuppressWarnings("null")
 public final class CreativeItemGroupRenderer {
+
+    // 原版按钮的九宫格边缘占三像素，内侧预留 5×5 的符号区域。
+    private static final int BADGE_SIZE = 11;
+    private static final int BADGE_OFFSET = 6;
+    private static final Identifier VANILLA_BUTTON = Identifier.withDefaultNamespace("widget/button");
+    private static final Identifier VANILLA_BUTTON_HIGHLIGHTED = Identifier.withDefaultNamespace("widget/button_highlighted");
 
     private CreativeItemGroupRenderer() {
     }
@@ -57,13 +66,13 @@ public final class CreativeItemGroupRenderer {
         return entry.stack();
     }
 
-    /** 绘制组头边框和展开成员的底色；原版界面使用固定配色，YZUI 跟随当前主题。 */
+    /** 绘制组头边框和展开成员的底色；随 YZUI 开关使用主题色或原版灰色。 */
     public static void background(GuiGraphicsExtractor graphics, CreativeItemGroups.Entry entry,
-                                  int x, int y, boolean themed) {
+                                  int x, int y) {
         if (entry == null || entry.group() == null) {
             return;
         }
-        int accent = themed ? YzuiTheme.primary() : 0xFF4C7446;
+        int accent = ClientExternalSettings.isYzuiEnabled() ? YzuiTheme.primary() : 0xFF8B8B8B;
         float openness = entry.group().openness();
         int alpha = entry.header() ? 0x50 + Math.round(0x20 * (float) Math.sin(Math.PI * openness))
                 : Math.round(0x28 * openness);
@@ -76,21 +85,34 @@ public final class CreativeItemGroupRenderer {
         }
     }
 
-    /** 在物品图标之后绘制加减标记，竖笔画随展开比例旋转为横笔画。 */
+    /** 按 YZUI 开关绘制带悬停反馈的加减标记，竖笔画随展开比例旋转为横笔画。 */
     public static void badge(GuiGraphicsExtractor graphics, CreativeItemGroups.Entry entry,
-                             int x, int y, boolean themed) {
+                             int x, int y, boolean hovered) {
         if (entry == null || !entry.header()) {
             return;
         }
-        int accent = themed ? YzuiTheme.primary() : 0xFF4C7446;
-        int foreground = themed ? YzuiTheme.onPrimary() : 0xFFFFFFFF;
-        graphics.fill(x + 9, y + 9, x + 17, y + 17, accent);
-        graphics.fill(x + 10, y + 12, x + 16, y + 14, foreground);
+        int badgeX = x + BADGE_OFFSET;
+        int badgeY = y + BADGE_OFFSET;
+        int foreground;
+        if (ClientExternalSettings.isYzuiEnabled()) {
+            YzuiTheme.button(graphics, badgeX, badgeY, BADGE_SIZE, BADGE_SIZE,
+                    hovered ? 1.0F : 0.0F, false, true, 1.0F, YzuiTheme.ButtonStyle.TONAL);
+            foreground = YzuiTheme.buttonText(YzuiTheme.ButtonStyle.TONAL, true);
+        } else {
+            graphics.blitSprite(RenderPipelines.GUI_TEXTURED,
+                    hovered ? VANILLA_BUTTON_HIGHLIGHTED : VANILLA_BUTTON,
+                    badgeX, badgeY, BADGE_SIZE, BADGE_SIZE);
+            foreground = 0xFFFFFFFF;
+        }
+        int symbolX = badgeX + BADGE_SIZE / 2;
+        int symbolY = badgeY + BADGE_SIZE / 2;
+        graphics.fill(symbolX - 2, symbolY, symbolX + 3, symbolY + 1, foreground);
         graphics.pose().pushMatrix();
         try {
-            graphics.pose().translate(x + 13.0F, y + 13.0F);
+            graphics.pose().translate(symbolX + 0.5F, symbolY + 0.5F);
             graphics.pose().rotate(entry.group().openness() * (float) (Math.PI / 2.0));
-            graphics.fill(-1, -3, 1, 3, foreground);
+            graphics.pose().translate(-symbolX - 0.5F, -symbolY - 0.5F);
+            graphics.fill(symbolX, symbolY - 2, symbolX + 1, symbolY + 3, foreground);
         } finally {
             graphics.pose().popMatrix();
         }

@@ -24,17 +24,22 @@ final class SettingsCompatibility {
     static boolean sodiumAvailable() { return FabricLoader.getInstance().isModLoaded("sodium"); }
 
     static void openSodium(Screen parent) {
+        Minecraft.getInstance().gui.setScreen(createSodiumScreen(parent));
+    }
+
+    /** 创建页面与切换页面分开，屏幕路由可直接返回 Sodium 页面，避免嵌套 setScreen。 */
+    static Screen createSodiumScreen(Screen parent) {
         try {
             // 走公开工厂与原生初始化流程，Reese、Extra、Iris 可继续替换页面或添加选项。
             Screen screen = (Screen) Class.forName(SODIUM_SCREEN).getMethod("createScreen", Screen.class)
                     .invoke(null, parent);
-            Minecraft.getInstance().gui.setScreen(screen);
             DebugLogger.info("YzuiSettings", "打开 Sodium 及附属模组设置");
+            return screen;
         } catch (ReflectiveOperationException | LinkageError exception) {
             Throwable cause = exception instanceof InvocationTargetException invocation
                     ? invocation.getTargetException() : exception;
             DebugLogger.exception("YzuiSettings", "openSodium", cause);
-            Minecraft.getInstance().gui.setScreen(new ModsScreen(parent));
+            return new ModsScreen(parent);
         }
     }
 

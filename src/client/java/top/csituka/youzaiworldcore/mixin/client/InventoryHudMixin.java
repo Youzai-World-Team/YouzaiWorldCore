@@ -76,8 +76,8 @@ public abstract class InventoryHudMixin {
                 case INVENTORY -> InventoryHudRenderer.render(graphics, guiHeight);
                 case ARMOR -> ArmorHudRenderer.render(graphics, guiHeight);
                 case EFFECTS -> StatusEffectHudRenderer.render(graphics, guiHeight);
-                case SCOREBOARD -> {
-                    // 记分板由 ScoreboardSidebarMixin 在原版侧边栏阶段独立渲染。
+                case SCOREBOARD, MINIMAP -> {
+                    // 记分板和地图由各自的 Mixin 在独立阶段渲染。
                 }
             }
         } catch (Exception e) {

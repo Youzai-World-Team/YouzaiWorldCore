@@ -45,6 +45,17 @@ public class ClientNetworking {
 
     public static void initialize() {
         DebugLogger.entering("ClientNetworking", "initialize");
+        ClientPlayNetworking.registerGlobalReceiver(MapSessionPayload.ID, (payload, context) ->
+                top.csituka.youzaiworldcore.client.map.MapClient.receive(context.client(), () -> top.csituka.youzaiworldcore.client.map.MapClient.session(payload)));
+        ClientPlayNetworking.registerGlobalReceiver(MapTilePayload.ID, (payload, context) ->
+                top.csituka.youzaiworldcore.client.map.MapClient.receive(context.client(), () -> top.csituka.youzaiworldcore.client.map.MapClient.tile(payload)));
+        ClientPlayNetworking.registerGlobalReceiver(MapWaypointsPayload.ID, (payload, context) ->
+                top.csituka.youzaiworldcore.client.map.MapClient.receive(context.client(), () -> top.csituka.youzaiworldcore.client.map.MapClient.waypoints(payload)));
+        ClientPlayNetworking.registerGlobalReceiver(MapLivePayload.ID, (payload, context) ->
+                top.csituka.youzaiworldcore.client.map.MapClient.receive(context.client(), () -> top.csituka.youzaiworldcore.client.map.MapClient.live(payload)));
+        ClientPlayNetworking.registerGlobalReceiver(MapActionResultPayload.ID, (payload, context) ->
+                top.csituka.youzaiworldcore.client.map.MapClient.receive(context.client(), () -> top.csituka.youzaiworldcore.client.map.MapClient.actionResult(payload)));
+        DebugLogger.info("ClientNetworking", "已注册地图会话、地形、路径点、雷达及操作确认接收器");
 
         ClientPlayNetworking.registerGlobalReceiver(CosmeticReadyPayload.ID, (payload, context) ->
                 context.client().execute(() -> CosmeticClientManager.onReady(payload)));

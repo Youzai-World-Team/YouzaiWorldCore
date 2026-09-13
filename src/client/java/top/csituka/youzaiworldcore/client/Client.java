@@ -145,6 +145,7 @@ public class Client implements ClientModInitializer {
         StartupLoadingStatus.beginStage("YZHUD 设置");
         DebugLogger.info("Client", "加载 YZHUD 设置...");
         top.csituka.youzaiworldcore.client.config.YzHudSettings.load();
+        top.csituka.youzaiworldcore.client.map.MapClient.initialize();
         StartupLoadingStatus.beginStage("创造物品分组设置");
         top.csituka.youzaiworldcore.client.config.InventoryItemGroupsConfig.load();
         StartupLoadingStatus.beginStage("YZUI 侧边栏");

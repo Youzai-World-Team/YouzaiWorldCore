@@ -25,6 +25,8 @@ public class CheckboxButton extends AbstractWidget {
     }
 
     public boolean isChecked() { return checked; }
+    /** 仅同步外部配置的显示状态，不触发点击回调。 */
+    public void setChecked(boolean checked) { this.checked = checked; }
     public void setExternalAlpha(float alpha) { externalAlpha = Math.clamp(alpha, 0f, 1f); }
     public CheckboxButton setWrapMessage(boolean value) { wrapMessage = value; return this; }
 

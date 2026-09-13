@@ -78,6 +78,11 @@ public final class ModPaths {
     private ModPaths() {
     }
 
+    /** 玩家主动导出的地图图片属于截图产物，不写入客户端配置或缓存目录。 */
+    public static Path mapExports() {
+        return FabricLoader.getInstance().getGameDir().resolve("screenshots").resolve("yzwc_maps");
+    }
+
     // ===== 服务端侧（<gameDir>/yzwc/server） =====
 
     /** 服务端存放根：{@code <gameDir>/yzwc/server} */

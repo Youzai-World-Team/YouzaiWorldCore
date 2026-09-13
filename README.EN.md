@@ -654,12 +654,35 @@ Server-authoritative per-player toggles for preference features. `FunctionToggle
 
 ---
 
+### 44. Youzai Map (YZMAP)
+
+An independent implementation based on Conflux Map's documented features, without its source, assets or dependencies.
+
+- **Minimap and fullscreen map:** circular, square or rounded borders, rotation, zoom, panning, chunk grid, coordinates and biome information.
+- **YZUI / YZHUD:** live theme and visual-style colors, draggable minimap placement, shared HUD opacity and optional avoidance of the YZUI scoreboard.
+- **Layers:** surface, automatic caves, fixed height, top/Nether roof, biome colors and optional server chunk-load information.
+- **Waypoints:** private and shared points, search/groups, death markers, Overworld/Nether 1:8 projection and in-world navigation with distance and edge indicators.
+- **Radar and drawing:** player heads, entity-category toggles, click-to-track and movement trails; pen, line, rectangle, ellipse, labels, move/recolor/delete and undo/redo.
+- **Import/export:** copy coordinates or waypoint JSON; preview this mod's format, Xaero `waypoint:` lines and VoxelMap `name:` lines before import. Export a selected area to PNG asynchronously with cancellation, under `screenshots/yzwc_maps/`.
+- **Server sharing:** persistent explored terrain, public waypoints, optional player position sharing and structure markers from already loaded chunks. Authentication, ownership and permission checks run on the server; map teleport is disabled by default.
+
+Default keys: `M` map, `H` minimap, `N` new waypoint, `U` waypoint list, `J` waypoint visibility, `Y` layer, `[`/`]` zoom, `,` settings, `F9` refresh. All are rebindable.
+
+Local settings, private waypoints and drawings use `map_module` in `yzwc/client/global_settings.json`. Shared data lives under `<world>/data/yzwc/data/map_module/`, with server settings in its global `map_module` section. This release excludes seed prediction, structure prediction and a standalone web map. See the [map guide and dedicated-server acceptance steps](docs/YZMAP.md).
+
+---
+
 ## 📜 Command Tree
 
 All commands use `/yzwc` as the root command. Subcommands marked **(client command)** only parse arguments and forward them; the authoritative logic runs in the server-side packet receiver.
 
 ```
 /yzwc
+├── map [settings|waypoints|add|import|refresh]  # Local map UI
+│   ├── shared [list|add <name>|delete <UUID>|lock <UUID>|unlock <UUID>]
+│   ├── position <show|hide>
+│   └── stats
+│
 ├── teleport_world <targets> <dimension> [x] [y] [z] [yRot] [xRot]
 │   ├── Permission: youzaiworldcore.command.teleport_world (OP 4)
 │   └── Example: /yzwc teleport_world @p minecraft:overworld 0 64 0
@@ -778,6 +801,9 @@ All commands use `/yzwc` as the root command. Subcommands marked **(client comma
 | `youzaiworldcore.command.reload`                            | Mod reload                                        | OP 4                     |
 | `youzaiworldcore.command.world_pool`                        | Dimension pool management                         | OP 4                     |
 | `youzaiworldcore.command.teleport_anchor`                   | Teleport anchor management                        | OP 4                     |
+| `youzaiworldcore.command.map.shared` | Publish/manage owned public waypoints | Authenticated players, subject to server settings |
+| `youzaiworldcore.command.map.manage` | Manage, lock/unlock public waypoints | OP 4 |
+| `youzaiworldcore.command.map.teleport` | Teleport to a map coordinate | OP 4 and explicitly enabled in config |
 | `youzaiworldcore.command.function.invisibility`             | Invisibility function                             | OP 4                     |
 | `youzaiworldcore.command.function.double_doors`             | Double Doors function (self toggle / query)       | Everyone (self-only)     |
 | `youzaiworldcore.command.function.damage_numbers`           | Damage number display (self toggle / query)       | Everyone (self-only)     |
@@ -828,7 +854,7 @@ All commands use `/yzwc` as the root command. Subcommands marked **(client comma
 | `decomposition_table` | Decomposition Table |
 | `fly_beacon`          | Fly Beacon          |
 
-### Network Packets (71 total)
+### Network Packets
 
 > Note: the `world_pool_teleport` packet class lives in the `dimensionalinventories` package; the rest (including the 18 mail packets) are in the `network` package. Direction split: 33 S→C, 38 C→S.
 
@@ -887,6 +913,13 @@ All commands use `/yzwc` as the root command. Subcommands marked **(client comma
 | `afk_heartbeat`             | C→S       | AFK heartbeat packet (client reports input activity)                                         |
 | `title_state_request`       | C→S       | Request a refresh of the current player's title state                                          |
 | `title_equip`               | C→S       | Request equipping a title; an empty ID unequips the current title                              |
+| `map_view_request` | C→S | Subscribe to a bounded viewport in a dimension/layer/height |
+| `map_action` | C→S | Public waypoint action, position visibility or authorized teleport |
+| `map_session` | S→C | Stable world UUID, capabilities and dimension height limits |
+| `map_tile` | S→C | Explored chunk colors, heights, lighting and biomes |
+| `map_waypoints` | S→C | Server-filtered public waypoints |
+| `map_live` | S→C | Shared online player locations and optional chunk-load levels |
+| `map_action_result` | S→C | Action confirmation; rejected edits keep their input |
 
 ---
 
@@ -935,7 +968,7 @@ src/                                       # 452 Java source files (main 273 / c
 │   ├── mail/                             # Mail system (Mail / MailManager / MailApiClient / MailSettings / MailPermissionHelper; data lives on the Api server)
 │   ├── mana/                             # Mana system
 │   ├── mixin/                            # Mixins (35; subpackages: afk / babyzombie / chargedcreeper / craftsound / damagenumber / doubledoors / invisibility / jukebox / painting / pet / seat / skill / trialvault)
-│   ├── network/                          # Network packets (70 Payload classes + ModNetworking)
+│   ├── network/                          # Network packets (Payload + ModPayloadTypes + ModNetworking)
 │   ├── pet/                              # Pet system (config/command/event subpackages + PetGlobalState/PetEntry)
 │   ├── placeholders/                     # Placeholder API (32 placeholders)
 │   ├── respawn/                          # In-place respawn (InPlaceRespawnManager)

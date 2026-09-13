@@ -49,9 +49,9 @@ public abstract class AbstractContainerScreenMixin extends Screen {
             return;
         }
         try {
-            CreativeItemGroupRenderer.background(graphics, entry, slot.x, slot.y, false);
+            CreativeItemGroupRenderer.background(graphics, entry, slot.x, slot.y);
             original.call(graphics, slot, x, y);
-            CreativeItemGroupRenderer.badge(graphics, entry, slot.x, slot.y, false);
+            CreativeItemGroupRenderer.badge(graphics, entry, slot.x, slot.y, hoveredSlot == slot);
         } finally {
             CreativeItemGroupRenderer.endSlot(graphics);
         }

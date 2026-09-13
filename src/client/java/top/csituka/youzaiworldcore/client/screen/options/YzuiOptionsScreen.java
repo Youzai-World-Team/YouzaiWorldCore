@@ -150,10 +150,6 @@ public final class YzuiOptionsScreen extends Screen implements HasDifficultyReac
                 if (source instanceof LanguageSelectScreen) buildLanguages(rows);
                 if (source instanceof PackSelectionScreen) buildPacks(rows);
                 if (source instanceof TelemetryInfoScreen) buildTelemetry(rows);
-                if (source instanceof VideoSettingsScreen && SettingsCompatibility.sodiumAvailable()) {
-                    rows.addFirst(SettingsList.Row.controls(text("sodium"), text("sodium.description"),
-                            action(text("open"), () -> SettingsCompatibility.openSodium(this))));
-                }
             }
             if (footer.isEmpty()) footer.add(action(Component.translatable("gui.done"), this::onClose));
             boolean searchable = !(source instanceof ConfirmScreen || source instanceof UnsupportedGraphicsWarningScreen);
