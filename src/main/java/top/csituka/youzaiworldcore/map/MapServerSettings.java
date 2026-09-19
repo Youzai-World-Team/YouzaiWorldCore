@@ -7,14 +7,16 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
 public final class MapServerSettings {
     public static final boolean DEFAULT_ENABLED = true, DEFAULT_SHARE_TERRAIN = true,
             DEFAULT_SHARE_PLAYERS = true, DEFAULT_SHARE_WAYPOINTS = true, DEFAULT_SHARE_STRUCTURES = true,
-            DEFAULT_SHARE_LOAD_STATE = false, DEFAULT_ALLOW_TELEPORT = false, DEFAULT_ALLOW_PUBLISH = true;
+            DEFAULT_SHARE_LOAD_STATE = false, DEFAULT_ALLOW_TELEPORT = false, DEFAULT_ALLOW_PUBLISH = true,
+            DEFAULT_API_UPLOAD = true, DEFAULT_CAPTURE_UNDERGROUND = true;
     public static final int DEFAULT_MAX_SHARED = 512, DEFAULT_MAX_PER_PLAYER = 32,
             DEFAULT_COLUMNS = 256, DEFAULT_BUDGET_MICROS = 2000, DEFAULT_BANDWIDTH = 131072,
             DEFAULT_CACHE_TILES = 8192, DEFAULT_CAPTURE_RADIUS = 8;
     public static boolean enabled = DEFAULT_ENABLED, shareTerrain = DEFAULT_SHARE_TERRAIN,
             sharePlayers = DEFAULT_SHARE_PLAYERS, shareWaypoints = DEFAULT_SHARE_WAYPOINTS,
             shareStructures = DEFAULT_SHARE_STRUCTURES, shareLoadState = DEFAULT_SHARE_LOAD_STATE,
-            allowTeleport = DEFAULT_ALLOW_TELEPORT, allowPublish = DEFAULT_ALLOW_PUBLISH;
+            allowTeleport = DEFAULT_ALLOW_TELEPORT, allowPublish = DEFAULT_ALLOW_PUBLISH,
+            apiUpload = DEFAULT_API_UPLOAD, captureUnderground = DEFAULT_CAPTURE_UNDERGROUND;
     public static int maxShared = DEFAULT_MAX_SHARED, maxPerPlayer = DEFAULT_MAX_PER_PLAYER,
             columns = DEFAULT_COLUMNS, budgetMicros = DEFAULT_BUDGET_MICROS, bandwidth = DEFAULT_BANDWIDTH,
             cacheTiles = DEFAULT_CACHE_TILES, captureRadius = DEFAULT_CAPTURE_RADIUS;
@@ -31,6 +33,8 @@ public final class MapServerSettings {
         shareLoadState = section.getBoolean("share_load_state", DEFAULT_SHARE_LOAD_STATE);
         allowTeleport = section.getBoolean("allow_teleport", DEFAULT_ALLOW_TELEPORT);
         allowPublish = section.getBoolean("allow_publish", DEFAULT_ALLOW_PUBLISH);
+        apiUpload = section.getBoolean("api_upload", DEFAULT_API_UPLOAD);
+        captureUnderground = section.getBoolean("capture_underground", DEFAULT_CAPTURE_UNDERGROUND);
         maxShared = section.getInt("max_shared_waypoints", DEFAULT_MAX_SHARED, 1, 512);
         maxPerPlayer = section.getInt("max_waypoints_per_player", DEFAULT_MAX_PER_PLAYER, 1, 128);
         columns = section.getInt("columns_per_tick", DEFAULT_COLUMNS, 16, 2048);
@@ -53,6 +57,8 @@ public final class MapServerSettings {
         section.set("share_load_state", shareLoadState);
         section.set("allow_teleport", allowTeleport);
         section.set("allow_publish", allowPublish);
+        section.set("api_upload", apiUpload);
+        section.set("capture_underground", captureUnderground);
         section.set("max_shared_waypoints", maxShared);
         section.set("max_waypoints_per_player", maxPerPlayer);
         section.set("columns_per_tick", columns);
@@ -68,6 +74,7 @@ public final class MapServerSettings {
         enabled = DEFAULT_ENABLED; shareTerrain = DEFAULT_SHARE_TERRAIN; sharePlayers = DEFAULT_SHARE_PLAYERS;
         shareWaypoints = DEFAULT_SHARE_WAYPOINTS; shareStructures = DEFAULT_SHARE_STRUCTURES;
         shareLoadState = DEFAULT_SHARE_LOAD_STATE; allowTeleport = DEFAULT_ALLOW_TELEPORT; allowPublish = DEFAULT_ALLOW_PUBLISH;
+        apiUpload = DEFAULT_API_UPLOAD; captureUnderground = DEFAULT_CAPTURE_UNDERGROUND;
         maxShared = DEFAULT_MAX_SHARED; maxPerPlayer = DEFAULT_MAX_PER_PLAYER; columns = DEFAULT_COLUMNS;
         budgetMicros = DEFAULT_BUDGET_MICROS; bandwidth = DEFAULT_BANDWIDTH;
         cacheTiles = DEFAULT_CACHE_TILES; captureRadius = DEFAULT_CAPTURE_RADIUS;

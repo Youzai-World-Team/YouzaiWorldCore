@@ -1122,5 +1122,11 @@
   "map.youzaiworldcore.load_legend": "Grün: Objekte · Blau: Blöcke · Gelb: Rand · Violett: andere Stufen",
   "map.youzaiworldcore.x": "X",
   "map.youzaiworldcore.y": "Y",
-  "map.youzaiworldcore.z": "Z"
+  "map.youzaiworldcore.z": "Z",
+  "title.youzaiworldcore.subtitle": "Entdecke die Welt. Fühl dich zu Hause.",
+  "title.youzaiworldcore.play": "Dein nächstes Abenteuer",
+  "title.youzaiworldcore.theme_dark": "Dunkles Design",
+  "title.youzaiworldcore.theme_light": "Helles Design",
+  "map.youzaiworldcore.upload_started": "Karten-Upload geplant. Aktualisiere in Kürze die Serverkartenseite im Dashboard.",
+  "map.youzaiworldcore.upload_unavailable": "Karten-Upload nicht möglich: Karten oder API-Brücke deaktiviert, Dienst nicht bereit oder Upload läuft bereits."
 }

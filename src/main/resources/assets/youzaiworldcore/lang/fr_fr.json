@@ -1122,5 +1122,11 @@
   "map.youzaiworldcore.load_legend": "Vert : entités · Bleu : blocs · Jaune : bordure · Violet : autres niveaux",
   "map.youzaiworldcore.x": "X",
   "map.youzaiworldcore.y": "Y",
-  "map.youzaiworldcore.z": "Z"
+  "map.youzaiworldcore.z": "Z",
+  "title.youzaiworldcore.subtitle": "Explorez à votre rythme. Bienvenue chez vous.",
+  "title.youzaiworldcore.play": "Votre prochaine aventure",
+  "title.youzaiworldcore.theme_dark": "Thème sombre",
+  "title.youzaiworldcore.theme_light": "Thème clair",
+  "map.youzaiworldcore.upload_started": "Envoi de la carte planifié. Actualisez bientôt la page des cartes du serveur dans le tableau de bord.",
+  "map.youzaiworldcore.upload_unavailable": "Impossible de démarrer : cartes ou liaison API désactivées, service indisponible ou envoi déjà en cours."
 }

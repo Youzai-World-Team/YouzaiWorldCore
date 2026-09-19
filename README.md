@@ -674,7 +674,7 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 
 默认快捷键：`M` 地图、`H` 小地图开关、`N` 建点、`U` 路径点、`J` 路径点显隐、`Y` 图层、`[`/`]` 缩放、`,` 设置、`F9` 刷新，均可在控制设置中重绑。
 
-客户端设置、私人点与绘图保存在 `yzwc/client/global_settings.json` 的 `map_module`；服务端共享配置使用同名模块，地形与公共点位于 `<world>/data/yzwc/data/map_module/`。本期不包含种子预测、结构预测和独立网页地图。完整配置、数据边界及联机验收步骤见 [悠哉地图说明](docs/YZMAP.md)。
+客户端设置、私人点与绘图保存在 `yzwc/client/global_settings.json` 的 `map_module`；服务端共享配置使用同名模块，地形与公共点位于 `<world>/data/yzwc/data/map_module/`。服务端每 48 小时通过 Api 网桥增量上传已保存地图，后台「服务器地图」支持地表、顶板和每 8 格地下切片浏览；首次启动约 60 秒后上传，可用 `/yzwc map upload` 手动触发。区块按采样预算逐步补齐，历史未重载区域不会自动回填。本期不包含种子预测与结构预测。完整配置、数据边界及联机验收步骤见 [悠哉地图说明](docs/YZMAP.md)。
 
 ---
 
@@ -687,7 +687,8 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 ├── map [settings|waypoints|add|import|refresh]  # 本机地图入口
 │   ├── shared [list|add <名称>|delete <UUID>|lock <UUID>|unlock <UUID>]
 │   ├── position <show|hide>
-│   └── stats
+│   ├── stats
+│   └── upload  # 管理员手动上传后台地图
 │
 ├── teleport_world <targets> <dimension> [x] [y] [z] [yRot] [xRot]
 │   ├── 权限：youzaiworldcore.command.teleport_world（OP 4）
@@ -809,7 +810,7 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 | `youzaiworldcore.command.world_pool`                        | 维度池管理                             | OP 4                    |
 | `youzaiworldcore.command.teleport_anchor`                   | 传送锚点管理                           | OP 4                    |
 | `youzaiworldcore.command.map.shared` | 发布/维护自己的公共地图点 | 已认证玩家，受服务端开关限制 |
-| `youzaiworldcore.command.map.manage` | 管理、锁定/解锁公共地图点 | OP 4 |
+| `youzaiworldcore.command.map.manage` | 管理、锁定/解锁公共地图点，上传后台地图 | OP 4 |
 | `youzaiworldcore.command.map.teleport` | 地图坐标传送 | OP 4，且配置开启 |
 | `youzaiworldcore.command.function.invisibility`             | 隐身功能                               | OP 4                    |
 | `youzaiworldcore.command.function.double_doors`             | 双开门功能（自身开关 / 查询）          | 所有人（仅自身）        |

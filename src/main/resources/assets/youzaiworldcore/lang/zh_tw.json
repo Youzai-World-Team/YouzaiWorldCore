@@ -1122,5 +1122,11 @@
   "map.youzaiworldcore.load_legend": "绿：實體刻 · 蓝：方塊刻 · 黄：邊界 · 紫：其他加載等級",
   "map.youzaiworldcore.x": "X",
   "map.youzaiworldcore.y": "Y",
-  "map.youzaiworldcore.z": "Z"
+  "map.youzaiworldcore.z": "Z",
+  "title.youzaiworldcore.subtitle": "悠然探索，自在生活。",
+  "title.youzaiworldcore.play": "開始旅程",
+  "title.youzaiworldcore.theme_dark": "切換深色",
+  "title.youzaiworldcore.theme_light": "切換淺色",
+  "map.youzaiworldcore.upload_started": "已安排地圖上傳到後台，請稍後重新整理後台的伺服器地圖頁面。",
+  "map.youzaiworldcore.upload_unavailable": "無法開始地圖上傳：地圖或 Api 網橋已關閉、服務尚未就緒，或已有上傳正在進行。"
 }

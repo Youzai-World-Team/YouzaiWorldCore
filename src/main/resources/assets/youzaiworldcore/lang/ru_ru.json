@@ -1122,5 +1122,11 @@
   "map.youzaiworldcore.load_legend": "Зелёный: сущности · Синий: блоки · Жёлтый: граница · Фиолетовый: прочие уровни",
   "map.youzaiworldcore.x": "X",
   "map.youzaiworldcore.y": "Y",
-  "map.youzaiworldcore.z": "Z"
+  "map.youzaiworldcore.z": "Z",
+  "title.youzaiworldcore.subtitle": "Исследуйте мир. Чувствуйте себя дома.",
+  "title.youzaiworldcore.play": "Навстречу приключениям",
+  "title.youzaiworldcore.theme_dark": "Тёмная тема",
+  "title.youzaiworldcore.theme_light": "Светлая тема",
+  "map.youzaiworldcore.upload_started": "Загрузка карты запланирована. Вскоре обновите страницу карт сервера в панели управления.",
+  "map.youzaiworldcore.upload_unavailable": "Не удалось начать загрузку: карты или API отключены, служба не готова либо загрузка уже выполняется."
 }

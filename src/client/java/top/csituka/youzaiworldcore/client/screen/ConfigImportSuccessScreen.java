@@ -21,7 +21,7 @@ import top.csituka.youzaiworldcore.client.render.RoundedRect;
  * </p>
  */
 @SuppressWarnings("null")
-public class ConfigImportSuccessScreen extends Screen {
+public class ConfigImportSuccessScreen extends Screen implements YzuiPopupScreen {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/ConfigImportSuccessScreen");
     private static final String LOG_MODULE = "ConfigImportSuccessScreen";

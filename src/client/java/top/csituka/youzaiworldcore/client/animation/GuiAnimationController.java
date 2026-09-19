@@ -117,7 +117,7 @@ public final class GuiAnimationController {
             return true;
         }
 
-        // 打开子层时父页面仍在背景中，直接让新卡片进入，避免父页面先消失再出现。
+        // 只有弹窗保留父页面，直接让新卡片进入；普通页面继续完成前一页的退出动画。
         if (YzuiBackdrop.willLayer(oldScreen, newScreen)) return false;
 
         pendingGui = gui;

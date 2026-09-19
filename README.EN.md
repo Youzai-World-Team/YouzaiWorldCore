@@ -668,7 +668,7 @@ An independent implementation based on Conflux Map's documented features, withou
 
 Default keys: `M` map, `H` minimap, `N` new waypoint, `U` waypoint list, `J` waypoint visibility, `Y` layer, `[`/`]` zoom, `,` settings, `F9` refresh. All are rebindable.
 
-Local settings, private waypoints and drawings use `map_module` in `yzwc/client/global_settings.json`. Shared data lives under `<world>/data/yzwc/data/map_module/`, with server settings in its global `map_module` section. This release excludes seed prediction, structure prediction and a standalone web map. See the [map guide and dedicated-server acceptance steps](docs/YZMAP.md).
+Local settings, private waypoints and drawings use `map_module` in `yzwc/client/global_settings.json`. Shared data lives under `<world>/data/yzwc/data/map_module/`, with server settings in its global `map_module` section. The dedicated server uploads saved terrain through the API bridge every 48 hours. The dashboard server-map page supports surface, roof and underground slices every 8 blocks. The first upload starts about 60 seconds after startup; administrators can trigger `/yzwc map upload`. Capture is progressive within the sampling budget and does not backfill unloaded historical chunks. Seed and structure prediction remain excluded. See the [map guide and dedicated-server acceptance steps](docs/YZMAP.md).
 
 ---
 
@@ -681,7 +681,8 @@ All commands use `/yzwc` as the root command. Subcommands marked **(client comma
 ├── map [settings|waypoints|add|import|refresh]  # Local map UI
 │   ├── shared [list|add <name>|delete <UUID>|lock <UUID>|unlock <UUID>]
 │   ├── position <show|hide>
-│   └── stats
+│   ├── stats
+│   └── upload  # Administrator upload to the dashboard
 │
 ├── teleport_world <targets> <dimension> [x] [y] [z] [yRot] [xRot]
 │   ├── Permission: youzaiworldcore.command.teleport_world (OP 4)
@@ -802,7 +803,7 @@ All commands use `/yzwc` as the root command. Subcommands marked **(client comma
 | `youzaiworldcore.command.world_pool`                        | Dimension pool management                         | OP 4                     |
 | `youzaiworldcore.command.teleport_anchor`                   | Teleport anchor management                        | OP 4                     |
 | `youzaiworldcore.command.map.shared` | Publish/manage owned public waypoints | Authenticated players, subject to server settings |
-| `youzaiworldcore.command.map.manage` | Manage, lock/unlock public waypoints | OP 4 |
+| `youzaiworldcore.command.map.manage` | Manage, lock/unlock public waypoints and upload maps | OP 4 |
 | `youzaiworldcore.command.map.teleport` | Teleport to a map coordinate | OP 4 and explicitly enabled in config |
 | `youzaiworldcore.command.function.invisibility`             | Invisibility function                             | OP 4                     |
 | `youzaiworldcore.command.function.double_doors`             | Double Doors function (self toggle / query)       | Everyone (self-only)     |

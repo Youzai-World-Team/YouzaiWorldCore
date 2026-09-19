@@ -179,6 +179,22 @@ public final class MapTerrainStore implements AutoCloseable {
         }
     }
 
+    /** 后台上传线程流式读取已保存瓦片，不触碰主线程缓存或世界对象。 */
+    public void visitSaved(long modifiedSince, java.util.function.Consumer<MapTile> visitor) throws IOException {
+        try (var files = Files.walk(directory)) {
+            var iterator = files.filter(file -> file.getFileName().toString().endsWith(".gz")
+                    && Files.isRegularFile(file, java.nio.file.LinkOption.NOFOLLOW_LINKS)).iterator();
+            while (iterator.hasNext()) {
+                if (closed || Thread.currentThread().isInterrupted()) throw new IOException("地图服务已停止");
+                Path file = iterator.next();
+                if (Files.getLastModifiedTime(file).toMillis() < modifiedSince) continue;
+                MapTile tile = read(file);
+                if (!path(tile.key()).equals(file)) throw new IOException("地形文件坐标与保存路径不一致");
+                visitor.accept(tile);
+            }
+        }
+    }
+
     /** 关服时排空最后一批地形写入；此时没有正在运行的游戏 Tick。 */
     @Override public void close() {
         closed = true;

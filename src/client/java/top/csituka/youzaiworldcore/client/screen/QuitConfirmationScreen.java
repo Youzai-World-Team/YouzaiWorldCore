@@ -31,7 +31,7 @@ import top.csituka.youzaiworldcore.client.animation.GuiAnimationController;
  * </ul>
  */
 @SuppressWarnings("null")
-public class QuitConfirmationScreen extends Screen {
+public class QuitConfirmationScreen extends Screen implements YzuiPopupScreen {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/QuitConfirmationScreen");
 

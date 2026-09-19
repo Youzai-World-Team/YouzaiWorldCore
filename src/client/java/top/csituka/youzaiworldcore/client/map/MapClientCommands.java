@@ -14,7 +14,7 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
 import static net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal;
 import static net.fabricmc.fabric.api.client.command.v2.ClientCommands.argument;
 
-/** 本机地图界面命令；shared、position、stats 仅转发服务端，客户端不判定权威权限。 */
+/** 本机地图界面命令；shared、position、stats、upload 仅转发服务端，客户端不判定权威权限。 */
 public final class MapClientCommands {
     private MapClientCommands() { }
     public static void register() {
@@ -30,7 +30,7 @@ public final class MapClientCommands {
                     .then(literal("refresh").executes(command -> { MapClient.refresh(); return 1; }));
             // 沿用项目的无执行器镜像节点：Fabric 会把它们原样交给服务端。
             // 在客户端执行器中再次调用 sendCommand 会被 Fabric 再次拦截并递归执行。
-            for (String name : new String[] {"shared", "position", "stats"}) map.then(literal(name)
+            for (String name : new String[] {"shared", "position", "stats", "upload"}) map.then(literal(name)
                     .then(argument("args", StringArgumentType.greedyString())));
             dispatcher.register(literal("yzwc").then(map));
         });

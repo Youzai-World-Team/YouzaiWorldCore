@@ -35,7 +35,7 @@ import java.util.regex.Pattern;
  * 带 共用的缩放、位移与淡入淡出动画。
  */
 @SuppressWarnings("null")
-public class JoinBlockedScreen extends Screen {
+public class JoinBlockedScreen extends Screen implements YzuiPopupScreen {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/JoinBlockedScreen");
 

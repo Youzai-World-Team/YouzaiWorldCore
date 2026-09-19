@@ -24,7 +24,7 @@ import top.csituka.youzaiworldcore.client.animation.GuiAnimationController;
  * 玩家只能「前往下载」或「返回」，无法跳过。</p>
  */
 @SuppressWarnings("null")
-public class ForcedUpdateScreen extends Screen {
+public class ForcedUpdateScreen extends Screen implements YzuiPopupScreen {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/ForcedUpdateScreen");
 

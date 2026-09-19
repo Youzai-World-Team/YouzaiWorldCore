@@ -1122,5 +1122,11 @@
   "map.youzaiworldcore.load_legend": "绿：實體刻 · 蓝：方塊刻 · 黄：邊界 · 紫：其他加載等級",
   "map.youzaiworldcore.x": "X",
   "map.youzaiworldcore.y": "Y",
-  "map.youzaiworldcore.z": "Z"
+  "map.youzaiworldcore.z": "Z",
+  "title.youzaiworldcore.subtitle": "悠遊天地，自在此間。",
+  "title.youzaiworldcore.play": "啟程",
+  "title.youzaiworldcore.theme_dark": "用玄色",
+  "title.youzaiworldcore.theme_light": "用素色",
+  "map.youzaiworldcore.upload_started": "輿圖已排程上傳，稍後可於後台閱之。",
+  "map.youzaiworldcore.upload_unavailable": "輿圖未能上傳：功能未啟、服務未備，或傳輸未畢。"
 }

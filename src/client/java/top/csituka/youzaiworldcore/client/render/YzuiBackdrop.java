@@ -5,6 +5,7 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import top.csituka.youzaiworldcore.client.animation.GuiAnimationController;
+import top.csituka.youzaiworldcore.client.screen.YzuiPopupScreen;
 
 /** 绘制世界/原版全景图以及弹窗后面的页面，不重建父页面，也不转发父页面的输入。 */
 public final class YzuiBackdrop {
@@ -13,14 +14,18 @@ public final class YzuiBackdrop {
 
     private YzuiBackdrop() { }
 
+    /** 只为明确声明的弹窗保留父页面，不能按自定义屏幕或类名推断。 */
+    public static boolean isPopup(Screen screen) {
+        return screen instanceof YzuiPopupScreen popup && popup.isPopup();
+    }
+
     public static boolean isReturning(Screen previous, Screen next) {
         return next != null && HISTORY.parents(previous).stream()
-                .anyMatch(parent -> parent == next || parent.getClass() == next.getClass());
+                .anyMatch(parent -> parent == next);
     }
 
     public static boolean willLayer(Screen previous, Screen next) {
-        return previous != null && YzuiTheme.isCustomScreen(next)
-                && previous.getClass() != next.getClass() && !isReturning(previous, next);
+        return previous != null && previous != next && isPopup(next) && !isReturning(previous, next);
     }
 
     public static Screen parent(Screen screen) { return HISTORY.parent(screen); }
@@ -32,8 +37,8 @@ public final class YzuiBackdrop {
             previous = null;
             scene = nextScene;
         }
-        HISTORY.change(previous, next, YzuiTheme.isCustomScreen(next),
-                (first, second) -> first.getClass() == second.getClass());
+        // 普通页面开始新的背景层；同类弹窗也可能嵌套，返回必须按窗口实例识别。
+        HISTORY.change(previous, next, isPopup(next), (first, second) -> first == second);
     }
 
     /** 调用方已经恢复物理 GUI 坐标；遮罩和全景图不参与卡片的位移与缩放。 */
@@ -46,10 +51,12 @@ public final class YzuiBackdrop {
         if (client.level == null) {
             client.gameRenderer.panorama().extractRenderState(g, g.guiWidth(), g.guiHeight());
         }
-        for (Screen parent : HISTORY.parents(screen)) {
-            if (parent.width <= 0 || parent.height <= 0) continue;
-            if (client.player == null && parent instanceof AbstractContainerScreen<?>) continue;
-            renderParent(g, parent, partialTick);
+        if (isPopup(screen)) {
+            for (Screen parent : HISTORY.parents(screen)) {
+                if (parent.width <= 0 || parent.height <= 0) continue;
+                if (client.player == null && parent instanceof AbstractContainerScreen<?>) continue;
+                renderParent(g, parent, partialTick);
+            }
         }
         g.nextStratum();
         if (YzuiTheme.frosted()) g.blurBeforeThisStratum();

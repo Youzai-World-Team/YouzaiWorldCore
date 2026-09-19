@@ -40,6 +40,7 @@ import net.minecraft.util.FormattedCharSequence;
 import top.csituka.youzaiworldcore.client.config.ClientExternalSettings;
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
 import top.csituka.youzaiworldcore.client.screen.YouzaiWorldCoreSettingsScreen;
+import top.csituka.youzaiworldcore.client.screen.YzuiPopupScreen;
 import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
@@ -48,7 +49,7 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
  * 客户端配置仍使用原版 options.txt 和 YZUI 已有的 yzwc/client/global_settings.json。
  */
 @SuppressWarnings("null")
-public final class YzuiOptionsScreen extends Screen implements HasDifficultyReaction, HasGamemasterPermissionReaction {
+public final class YzuiOptionsScreen extends Screen implements HasDifficultyReaction, HasGamemasterPermissionReaction, YzuiPopupScreen {
     private final Screen source;
     private final Screen origin;
     private final Screen back;
@@ -100,6 +101,13 @@ public final class YzuiOptionsScreen extends Screen implements HasDifficultyReac
     Screen origin() { return origin; }
     boolean inWorld() { return inWorld; }
     boolean isUnified() { return unified != null; }
+
+    /** 仅确认框与显卡警告属于弹窗，普通设置页使用场景背景。 */
+    @Override
+    public boolean isPopup() {
+        return source instanceof ConfirmScreen || source instanceof UnsupportedGraphicsWarningScreen;
+    }
+
     YzuiOptionsScreen rootSettings() { return isUnified() ? this : settingsRoot; }
     void reveal(String anchor) { pendingAnchor = anchor; }
     Screen legacyScreen() { return new OptionsScreen(origin, minecraft.options, inWorld); }
@@ -140,7 +148,7 @@ public final class YzuiOptionsScreen extends Screen implements HasDifficultyReac
                 SettingsCompatibility.addModRows(this, rows);
             } else if (source instanceof OptionsScreen) {
                 buildHome(rows, footer);
-            } else if (source instanceof ConfirmScreen || source instanceof UnsupportedGraphicsWarningScreen) {
+            } else if (isPopup()) {
                 buildDialog(rows, footer);
             } else if (source instanceof WinScreen) {
                 buildCredits(rows);
@@ -152,7 +160,7 @@ public final class YzuiOptionsScreen extends Screen implements HasDifficultyReac
                 if (source instanceof TelemetryInfoScreen) buildTelemetry(rows);
             }
             if (footer.isEmpty()) footer.add(action(Component.translatable("gui.done"), this::onClose));
-            boolean searchable = !(source instanceof ConfirmScreen || source instanceof UnsupportedGraphicsWarningScreen);
+            boolean searchable = !isPopup();
             frame = new SettingsFrame(this, rows, footer, this::addRenderableWidget, query, scroll, searchable);
             if (source != null) captured = SettingsWidgets.flatten(source);
             if (videoPage() != null) videoPreset = minecraft.options.graphicsPreset().get();

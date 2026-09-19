@@ -59,11 +59,14 @@ public final class MapServerManager {
     private static int playerCursor;
     private static long pointsRevision;
     private static boolean metadataDirty;
+    private static MapApiUploader uploader;
+    private static boolean loadedCaptureTurn;
     private MapServerManager() { }
 
     /** 在服务端初始化阶段注册生命周期，不启动额外端口或网页服务。 */
     public static void initialize() {
         MapServerSettings.load();
+        MapLoadedCapture.initialize();
         ServerLifecycleEvents.SERVER_STARTED.register(MapServerManager::start);
         ServerLifecycleEvents.SERVER_STOPPING.register(MapServerManager::stop);
         ServerTickEvents.END_SERVER_TICK.register(MapServerManager::tick);
@@ -77,6 +80,7 @@ public final class MapServerManager {
             var section = metadata.section(GlobalSettings.MAP_MODULE);
             section.set("world_id", UUID.randomUUID().toString());
             section.set("waypoints", new JsonArray());
+            section.set("api_last_success", 0L); section.set("api_cutoff", 0L); section.set("api_destination", "");
         });
         metadata.loadOrCreateDefaults();
         var section = metadata.section(GlobalSettings.MAP_MODULE);
@@ -93,12 +97,15 @@ public final class MapServerManager {
             }
         }
         terrain = new MapTerrainStore(instance);
+        uploader = new MapApiUploader(instance, terrain, metadata, worldId);
         pointsRevision++;
         DebugLogger.info("MapServerManager", "地图存档已打开：%s，公共点=%d", worldId, POINTS.size());
     }
 
     private static void stop(MinecraftServer instance) {
         if (server != instance) return;
+        if (uploader != null) uploader.stop();
+        uploader = null; MapLoadedCapture.clear();
         if (metadataDirty) savePoints();
         if (terrain != null) terrain.close();
         CLIENTS.clear(); CAPTURES.clear(); VISIBILITY.clear(); SAMPLED.clear(); POINTS.clear();
@@ -139,7 +146,7 @@ public final class MapServerManager {
         CLIENTS.keySet().removeIf(id -> instance.getPlayerList().getPlayer(id) == null);
         CAPTURES.keySet().removeIf(id -> instance.getPlayerList().getPlayer(id) == null);
         VISIBILITY.keySet().removeIf(id -> instance.getPlayerList().getPlayer(id) == null);
-        if (MapServerSettings.enabled && MapServerSettings.shareTerrain && terrain.acceptsSamples()) capture();
+        if (MapServerSettings.enabled && (MapServerSettings.shareTerrain || MapServerSettings.apiUpload) && terrain.acceptsSamples()) capture();
         var subscribers = new ArrayList<>(CLIENTS.entrySet());
         for (int index = 0; index < subscribers.size(); index++) {
             var entry = subscribers.get((index + tick) % subscribers.size());
@@ -179,8 +186,13 @@ public final class MapServerManager {
     }
 
     private static MapSampler.Job nextSample() {
+        loadedCaptureTurn = !loadedCaptureTurn;
+        if (loadedCaptureTurn) {
+            var loaded = MapLoadedCapture.next(server.getTickCount());
+            if (loaded != null) return loaded;
+        }
         var players = server.getPlayerList().getPlayers();
-        if (players.isEmpty()) return null;
+        if (players.isEmpty()) return MapLoadedCapture.next(server.getTickCount());
         var offsets = MapScanPattern.offsets(MapServerSettings.captureRadius);
         for (int attempt = 0; attempt < 32; attempt++) {
             ServerPlayer player = players.get(Math.floorMod(playerCursor++, players.size()));
@@ -205,8 +217,11 @@ public final class MapServerManager {
             if (server.getTickCount() - SAMPLED.getOrDefault(key, -1000) < 100) continue;
             return MapSampler.start(player.level(), chunk, key);
         }
-        return null;
+        return MapLoadedCapture.next(server.getTickCount());
     }
+
+    /** 管理员命令触发异步上传，实际权限由命令入口核验。 */
+    public static boolean uploadToApi() { return uploader != null && uploader.upload(); }
 
     private static void stream(ServerPlayer player, Subscription state) {
         if (!ServerPlayNetworking.canSend(player, MapTilePayload.ID)) return;

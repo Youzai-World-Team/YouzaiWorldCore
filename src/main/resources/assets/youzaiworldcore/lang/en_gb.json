@@ -1122,5 +1122,11 @@
   "map.youzaiworldcore.load_legend": "Green: entities · Blue: blocks · Yellow: border · Purple: other levels",
   "map.youzaiworldcore.x": "X",
   "map.youzaiworldcore.y": "Y",
-  "map.youzaiworldcore.z": "Z"
+  "map.youzaiworldcore.z": "Z",
+  "title.youzaiworldcore.subtitle": "Explore freely. Make yourself at home.",
+  "title.youzaiworldcore.play": "Your next adventure",
+  "title.youzaiworldcore.theme_dark": "Dark theme",
+  "title.youzaiworldcore.theme_light": "Light theme",
+  "map.youzaiworldcore.upload_started": "Map upload scheduled. Refresh the server maps page in the dashboard shortly.",
+  "map.youzaiworldcore.upload_unavailable": "Cannot start map upload: maps or the API bridge are disabled, the service is not ready, or an upload is already running."
 }
