@@ -3,7 +3,7 @@ package top.csituka.youzaiworldcore.client.screen.title;
 import top.csituka.youzaiworldcore.client.render.YzuiBrandLogo;
 
 /** 标题页统一布局；坐标为 GUI 像素，绘制、按钮与滚动命中共用同一份结果。 */
-public record TitleMenuLayout(Rect logo, Rect subtitle, Rect theme, Rect navigation, Rect news,
+public record TitleMenuLayout(Rect logo, Rect subtitle, Rect navigation, Rect news,
                               Rect join, Rect options, Rect quit, Rect test, int padding) {
     public record Rect(int x, int y, int width, int height) {
         public int right() { return x + width; }
@@ -24,9 +24,7 @@ public record TitleMenuLayout(Rect logo, Rect subtitle, Rect theme, Rect navigat
         int navWidth = compact ? (total - gap) * 44 / 100 : Math.min(248, total * 38 / 100);
         Rect navigation = new Rect(startX, startY + header, navWidth, cardHeight);
         Rect news = new Rect(navigation.right() + gap, navigation.y(), total - navWidth - gap, cardHeight);
-        int themeWidth = compact ? 104 : 132;
-        Rect theme = new Rect(startX + total - themeWidth, startY + 2, themeWidth, compact ? 24 : 28);
-        int logoWidth = Math.min(compact ? 184 : 260, theme.x() - startX - 14);
+        int logoWidth = Math.min(compact ? 184 : 260, total - 14);
         Rect logo = new Rect(startX, startY, logoWidth, YzuiBrandLogo.heightForWidth(logoWidth));
         Rect subtitle = new Rect(startX, logo.bottom() + 7, total, 10);
         int rows = developer ? 4 : 3;
@@ -40,7 +38,7 @@ public record TitleMenuLayout(Rect logo, Rect subtitle, Rect theme, Rect navigat
         Rect options = new Rect(buttonX, join.bottom() + buttonGap, buttonWidth, buttonHeight);
         Rect quit = new Rect(buttonX, options.bottom() + buttonGap, buttonWidth, buttonHeight);
         Rect test = new Rect(buttonX, quit.bottom() + buttonGap, buttonWidth, developer ? buttonHeight : 0);
-        return new TitleMenuLayout(logo, subtitle, theme, navigation, news, join, options, quit, test, padding);
+        return new TitleMenuLayout(logo, subtitle, navigation, news, join, options, quit, test, padding);
     }
 
     /** 公告正文与底部操作区分离；长更新日志只滚动正文，不遮挡下载按钮。 */

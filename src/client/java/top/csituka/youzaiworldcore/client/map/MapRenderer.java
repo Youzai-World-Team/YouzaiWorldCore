@@ -25,21 +25,51 @@ import java.util.List;
 /** 悠哉地图的 HUD、覆盖标记与世界导航。参考 Conflux 的功能说明独立设计，不使用其代码或资源。 */
 @SuppressWarnings("null")
 public final class MapRenderer {
+    /** 小地图设计基准（GUI 单位）：960×540 时 {@link MapSettings#size()} 即为实际显示边长。 */
+    private static final float DESIGN_WIDTH = 960f, DESIGN_HEIGHT = 540f;
+
     private static final MapCanvas MINIMAP = new MapCanvas();
     private MapRenderer() { }
 
-    /** @return 小地图底部信息栏高度，YZHUD 拖拽预览使用同一尺寸 */
-    public static int informationHeight() {
+    // ===== 设计基准缩放 =====
+
+    /** @return 设计→GUI 单位比例；不设下限，小窗口由 {@link #designSize()} 钳制以保证占屏比例恒定 */
+    public static float hudScale() {
+        var window = Minecraft.getInstance().getWindow();
+        return Math.min(window.getGuiScaledWidth() / DESIGN_WIDTH, window.getGuiScaledHeight() / DESIGN_HEIGHT);
+    }
+
+    /** @return 设计空间里的信息栏高度（行数 × 11 + 4），仅 pose 内部绘制使用 */
+    private static int designInformationHeight() {
         int rows = 0;
         for (var option : new MapSettings.Toggle[] {MapSettings.Toggle.COORDINATES, MapSettings.Toggle.BIOME_LABEL, MapSettings.Toggle.LAYER_LABEL}) if (MapSettings.enabled(option)) rows++;
         return rows == 0 ? 0 : rows * 11 + 4;
     }
 
-    /** 当前 GUI 缩放下能完整容纳的地图边长，渲染与布局编辑器共用。 */
-    public static int layoutSize() {
+    /** @return 适配屏幕后的设计边长（设计单位），地图视口与服务端同步半径共用 */
+    public static int designSize() {
         var window = Minecraft.getInstance().getWindow();
-        return Math.max(1, Math.min(MapSettings.size(), Math.min(window.getGuiScaledWidth() - 12,
-                window.getGuiScaledHeight() - informationHeight() - 12)));
+        float scale = hudScale();
+        int size = Math.min(MapSettings.size(),
+                (int) Math.floor((window.getGuiScaledWidth() - 12) / scale) - 8);
+        size = Math.min(size,
+                (int) Math.floor((window.getGuiScaledHeight() - 12) / scale) - 8 - designInformationHeight());
+        return Math.max(1, size);
+    }
+
+    /** @return 地图在屏幕上实际占用的边长（GUI 单位） */
+    public static int layoutSize() {
+        return Math.max(1, Math.round(designSize() * hudScale()));
+    }
+
+    /** @return 小地图卡片在屏幕上实际占用的宽度（GUI 单位） */
+    public static int cardWidth() {
+        return Math.round((designSize() + 8) * hudScale());
+    }
+
+    /** @return 小地图卡片在屏幕上实际占用的高度（GUI 单位） */
+    public static int cardHeight() {
+        return Math.round((designSize() + 8 + designInformationHeight()) * hudScale());
     }
 
     /** 由 HUD 提取尾部调用，尊重 F1、死亡界面、服务器地图开关和 YZHUD 透明度。 */
@@ -51,42 +81,52 @@ public final class MapRenderer {
         if (opacity <= 0) return;
         if (MapSettings.enabled(MapSettings.Toggle.WAYPOINT_HUD) && MapSettings.enabled(MapSettings.Toggle.WAYPOINTS)) navigation(g, opacity);
         if (!MapSettings.enabled(MapSettings.Toggle.MINIMAP)) return;
-        int size = layoutSize();
+        // 整块小地图在 960×540 设计空间排版，再按界面尺寸等比缩放到屏幕，占屏比例恒定。
+        float scale = hudScale();
+        int size = designSize();
         if (size < 40) return;
-        int w = size + 8, h = size + informationHeight() + 8;
-        int left = Math.clamp(YzHudLayout.componentLeft(YzHudComponent.MINIMAP, g.guiWidth(), w), 2, g.guiWidth() - w - 2);
-        int top = Math.clamp(YzHudLayout.componentTop(YzHudComponent.MINIMAP, g.guiHeight(), h), 2, g.guiHeight() - h - 2);
+        int cardW = cardWidth(), cardH = cardHeight();
+        // 定位使用真实 GUI 单位；拖拽编辑器共用同一套卡片尺寸。
+        int left = Math.clamp(YzHudLayout.componentLeft(YzHudComponent.MINIMAP, g.guiWidth(), cardW), 2, g.guiWidth() - cardW - 2);
+        int top = Math.clamp(YzHudLayout.componentTop(YzHudComponent.MINIMAP, g.guiHeight(), cardH), 2, g.guiHeight() - cardH - 2);
         if (MapSettings.enabled(MapSettings.Toggle.AVOID_HUD) && YzHudSettings.getPositionX(YzHudComponent.MINIMAP) == 0
                 && YzHudSettings.getPositionY(YzHudComponent.MINIMAP) == 0) {
             int[] occupied = ScoreboardSidebarRenderer.mapAvoidanceBounds();
-            if (occupied != null && left < occupied[0] + occupied[2] && left + w > occupied[0]
-                    && top < occupied[1] + occupied[3] && top + h > occupied[1]) {
-                if (occupied[1] - h - 4 >= 2) top = occupied[1] - h - 4;
-                else if (occupied[0] - w - 4 >= 2) left = occupied[0] - w - 4;
+            if (occupied != null && left < occupied[0] + occupied[2] && left + cardW > occupied[0]
+                    && top < occupied[1] + occupied[3] && top + cardH > occupied[1]) {
+                if (occupied[1] - cardH - 4 >= 2) top = occupied[1] - cardH - 4;
+                else if (occupied[0] - cardW - 4 >= 2) left = occupied[0] - cardW - 4;
             }
         }
-        YzuiTheme.hudCard(g, left, top, w, h, opacity);
+        g.pose().pushMatrix();
+        g.pose().translate(left, top);
+        g.pose().scale(scale, scale);
+        // ===== 以下坐标均为设计单位，由上面的 pose 统一缩放 =====
+        int information = designInformationHeight();
+        YzuiTheme.hudCard(g, 0, 0, size + 8, size + 8 + information, opacity);
         int radius = switch (MapSettings.shape()) { case CIRCLE -> size / 2; case SQUARE -> 0; case ROUNDED -> 10; };
         double angle = MapSettings.enabled(MapSettings.Toggle.ROTATE) ? Math.toRadians(client.player.getYRot()) + Math.PI : 0;
         MapView view = new MapView(client.player.getX(), client.player.getZ(), MapSettings.zoom(), angle, size, size);
         String dimension = MapClient.dimension(); var layer = MapClient.layer(dimension);
-        MapView displayed = MINIMAP.draw(g, view, dimension, layer, MapClient.height(layer), left + 4, top + 4, radius, opacity);
-        overlay(g, displayed, dimension, left + 4, top + 4, radius, opacity, false);
-        YzuiTheme.border(g, left + 3, top + 3, size + 2, size + 2, radius == 0 ? 0 : radius + 1,
+        MapView displayed = MINIMAP.draw(g, view, dimension, layer, MapClient.height(layer), 4, 4, radius, opacity,
+                scale * client.getWindow().getGuiScale());
+        overlay(g, displayed, dimension, 4, 4, radius, opacity, false);
+        YzuiTheme.border(g, 3, 3, size + 2, size + 2, radius == 0 ? 0 : radius + 1,
                 YzuiTheme.alpha(YzuiTheme.primary(), 0.75f * opacity));
-        int y = top + size + 8;
+        int y = size + 8;
         if (MapSettings.enabled(MapSettings.Toggle.COORDINATES)) {
-            info(g, client.player.getBlockX() + "  /  " + client.player.getBlockY() + "  /  " + client.player.getBlockZ(), left + 7, y, w - 14, opacity); y += 11;
+            info(g, client.player.getBlockX() + "  /  " + client.player.getBlockY() + "  /  " + client.player.getBlockZ(), 7, y, size - 6, opacity); y += 11;
         }
         if (MapSettings.enabled(MapSettings.Toggle.BIOME_LABEL)) {
             int cx = Math.floorDiv(client.player.getBlockX(), 16), cz = Math.floorDiv(client.player.getBlockZ(), 16);
             var tile = Math.abs((long) cx) > MapTileKey.CHUNK_LIMIT || Math.abs((long) cz) > MapTileKey.CHUNK_LIMIT ? null
                     : MapClient.cache().get(new MapTileKey(dimension, layer, MapClient.height(layer), cx, cz));
             String name = tile == null ? MapTexts.text("unknown").getString() : MapTexts.biome(tile.biome(MapTileKey.pixelIndex(client.player.getBlockX(), client.player.getBlockZ()))).getString();
-            info(g, name, left + 7, y, w - 14, opacity); y += 11;
+            info(g, name, 7, y, size - 6, opacity); y += 11;
         }
         if (MapSettings.enabled(MapSettings.Toggle.LAYER_LABEL)) info(g, MapTexts.text("layer." + layer.name().toLowerCase(java.util.Locale.ROOT)).getString()
-                + (layer.hasHeight() ? " Y " + MapClient.height(layer) : "") + "  ×" + String.format(java.util.Locale.ROOT, "%.2g", MapSettings.zoom()), left + 7, y, w - 14, opacity);
+                + (layer.hasHeight() ? " Y " + MapClient.height(layer) : "") + "  ×" + String.format(java.util.Locale.ROOT, "%.2g", MapSettings.zoom()), 7, y, size - 6, opacity);
+        g.pose().popMatrix();
     }
 
     private static void info(GuiGraphicsExtractor g, String value, int x, int y, int width, float opacity) {

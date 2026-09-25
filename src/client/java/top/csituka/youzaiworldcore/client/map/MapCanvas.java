@@ -28,23 +28,29 @@ public final class MapCanvas implements AutoCloseable {
     private volatile Ready ready;
     private volatile boolean pending;
     private volatile long epoch;
-    private record Frame(MapView view, String dimension, MapLayer layer, int height, long revision, MapRaster.Style style) { }
+    private record Frame(MapView view, String dimension, MapLayer layer, int height, long revision, MapRaster.Style style, float pixelScale) { }
     private record Ready(long epoch, Frame frame, int width, int height, int[] pixels) { }
 
-    /** 绘制圆形或圆角地图，边框与标记由地图渲染器统一处理。 */
+    /**
+     * 绘制圆形或圆角地图，边框与标记由地图渲染器统一处理。
+     *
+     * @param pixelScale 视口设计单位到物理像素的比例，纹理按此提高分辨率避免缩放后发虚
+     */
     public MapView draw(GuiGraphicsExtractor graphics, MapView view, String dimension, MapLayer layer, int height,
-                     int left, int top, int radius, float opacity) {
-        double resolution = Math.min(1, 768.0 / Math.max(view.width(), view.height()));
+                     int left, int top, int radius, float opacity, float pixelScale) {
+        double resolution = Math.min(pixelScale, 768.0 / Math.max(view.width(), view.height()));
         int tw = Math.max(1, (int) Math.ceil(view.width() * resolution));
         int th = Math.max(1, (int) Math.ceil(view.height() * resolution));
         if (texture != null && (textureWidth != tw || textureHeight != th
                 || displayed != null && (!displayed.dimension.equals(dimension) || displayed.layer != layer || displayed.height != height
-                || displayed.view.width() != view.width() || displayed.view.height() != view.height()))) close();
+                || displayed.view.width() != view.width() || displayed.view.height() != view.height()
+                || Float.compare(displayed.pixelScale, pixelScale) != 0))) close();
         Ready result = ready;
         if (result != null) {
             ready = null;
             if (result.epoch == epoch && result.width == tw && result.height == th && result.frame.dimension.equals(dimension)
-                    && result.frame.layer == layer && result.frame.height == height) {
+                    && result.frame.layer == layer && result.frame.height == height
+                    && Float.compare(result.frame.pixelScale, pixelScale) == 0) {
                 if (texture == null) {
                     textureWidth = tw; textureHeight = th;
                     texture = new DynamicTexture("悠哉地图", tw, th, false);
@@ -57,7 +63,7 @@ public final class MapCanvas implements AutoCloseable {
                 }
             }
         }
-        var frame = new Frame(view, dimension, layer, height, MapClient.cache().revision(), MapClient.rasterStyle(dimension));
+        var frame = new Frame(view, dimension, layer, height, MapClient.cache().revision(), MapClient.rasterStyle(dimension), pixelScale);
         long now = System.nanoTime();
         if (!pending && !frame.equals(displayed) && (displayed == null || now - lastRequest >= 100_000_000L)) {
             var tiles = MapClient.cache().snapshot(dimension, layer, height);

@@ -219,8 +219,9 @@ public final class YzHudSettingsScreen extends Screen {
         int radius = switch (top.csituka.youzaiworldcore.client.config.MapSettings.shape()) {
             case CIRCLE -> size / 2; case SQUARE -> 0; case ROUNDED -> 10;
         };
-        RoundedRect.fill(graphics, 0, 0, size + 8,
-                size + 8 + top.csituka.youzaiworldcore.client.map.MapRenderer.informationHeight(), 8, panelColor);
+        RoundedRect.fill(graphics, 0, 0,
+                top.csituka.youzaiworldcore.client.map.MapRenderer.cardWidth(),
+                top.csituka.youzaiworldcore.client.map.MapRenderer.cardHeight(), 8, panelColor);
         RoundedRect.fill(graphics, 4, 4, size, size, radius, slotColor);
         YzuiTheme.border(graphics, 3, 3, size + 2, size + 2, radius == 0 ? 0 : radius + 1,
                 YzHudLayout.applyOpacity(YzuiTheme.primary()));

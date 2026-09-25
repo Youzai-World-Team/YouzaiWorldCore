@@ -187,9 +187,9 @@ public final class YzHudLayout {
             case ARMOR -> ARMOR;
             case EFFECTS -> EFFECTS;
             case SCOREBOARD -> SCOREBOARD;
-            case MINIMAP -> new Geometry(top.csituka.youzaiworldcore.client.map.MapRenderer.layoutSize() + 8,
-                    top.csituka.youzaiworldcore.client.map.MapRenderer.layoutSize() + 8
-                            + top.csituka.youzaiworldcore.client.map.MapRenderer.informationHeight(),
+            case MINIMAP -> new Geometry(
+                    top.csituka.youzaiworldcore.client.map.MapRenderer.cardWidth(),
+                    top.csituka.youzaiworldcore.client.map.MapRenderer.cardHeight(),
                     6, 6, HorizontalAnchor.RIGHT, VerticalAnchor.TOP);
         };
     }

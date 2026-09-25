@@ -122,7 +122,7 @@ public final class YzWorldMapScreen extends Screen {
         }
         YzuiTheme.card(g, left - 3, top - 3, mapWidth + 6, mapHeight + 6);
         var layer = MapClient.layer(dimension);
-        displayed = canvas.draw(g, view(), dimension, layer, MapClient.height(dimension, layer), left, top, 10, 1);
+        displayed = canvas.draw(g, view(), dimension, layer, MapClient.height(dimension, layer), left, top, 10, 1, 1);
         MapRenderer.overlay(g, displayed, dimension, left, top, 10, 1, true);
         g.enableScissor(left, top, left + mapWidth, top + mapHeight);
         var selectedDrawing = selectedDrawing();

@@ -6,6 +6,7 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import top.csituka.youzaiworldcore.client.config.MapSettings;
 import top.csituka.youzaiworldcore.client.map.MapClient;
+import top.csituka.youzaiworldcore.client.map.MapRenderer;
 import top.csituka.youzaiworldcore.client.map.MapTexts;
 import top.csituka.youzaiworldcore.client.screen.YzHudSettingsScreen;
 import top.csituka.youzaiworldcore.network.MapActionPayload;
@@ -25,7 +26,12 @@ public final class MapSettingsScreen extends MapScreen {
         super.init();
         var options = new ArrayList<Option>();
         option(options, "shape", () -> name("shape.", MapSettings.shape()), () -> MapSettings.setShape(next(MapSettings.Shape.values(), MapSettings.shape())));
-        option(options, "size", () -> Component.literal(Integer.toString(MapSettings.size())), () -> MapSettings.setSize(MapSettings.size() >= 240 ? 80 : MapSettings.size() + 16));
+        option(options, "size", () -> {
+            int design = MapSettings.size(), displayed = MapRenderer.layoutSize();
+            // 设计值为 960×540 基准下的边长；界面尺寸不同时同时显示实际显示尺寸。
+            return Component.literal(design == displayed ? Integer.toString(design)
+                    : design + " → " + displayed);
+        }, () -> MapSettings.setSize(MapSettings.size() >= 240 ? 80 : MapSettings.size() + 16));
         option(options, "zoom", () -> Component.literal(String.format(Locale.ROOT, "%.2f×", MapSettings.zoom())), () -> MapSettings.setZoom(MapSettings.zoom() >= 8 ? 0.25 : MapSettings.zoom() * 2));
         option(options, "layer", () -> name("layer.", MapSettings.layer()), MapClient::cycleLayer);
         option(options, "overlay", () -> name("overlay.", MapSettings.overlay()), () -> MapSettings.setOverlay(next(MapSettings.Overlay.values(), MapSettings.overlay())));

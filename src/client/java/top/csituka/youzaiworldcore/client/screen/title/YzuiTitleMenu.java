@@ -17,7 +17,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.util.FormattedCharSequence;
 import top.csituka.youzaiworldcore.client.config.ClientExternalSettings;
 import top.csituka.youzaiworldcore.client.config.ClientUpdateCheckerConfig;
-import top.csituka.youzaiworldcore.client.config.YzuiThemeMode;
 import top.csituka.youzaiworldcore.client.render.RoundedRect;
 import top.csituka.youzaiworldcore.client.render.YzuiBrandLogo;
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
@@ -40,7 +39,6 @@ public final class YzuiTitleMenu {
     private final Font font;
     private final TitleMenuLayout layout;
     private final List<TransparentButton> buttons = new ArrayList<>();
-    private final TransparentButton themeButton;
     private final TransparentButton downloadButton;
     private final TransparentButton ignoreButton;
     private UpdateResult displayedUpdate;
@@ -65,13 +63,11 @@ public final class YzuiTitleMenu {
         if (ClientExternalSettings.isDevModeEnabled()) {
             add(layout.test(), "title.youzaiworldcore.test_page", this::test, YzuiTheme.ButtonStyle.TEXT);
         }
-        themeButton = add(layout.theme(), "title.youzaiworldcore.theme_dark", this::toggleTheme, YzuiTheme.ButtonStyle.TONAL);
         downloadButton = add(layout.download(false), "title.youzaiworldcore.update_download_btn",
                 this::download, YzuiTheme.ButtonStyle.FILLED);
         ignoreButton = add(layout.ignore(), "title.youzaiworldcore.update_ignore_btn",
                 this::ignore, YzuiTheme.ButtonStyle.TEXT);
         downloadButton.visible = ignoreButton.visible = false;
-        updateThemeLabel();
         DebugLogger.info("YzuiTitleMenu", "标题页已初始化，尺寸 %d×%d，主题 %s",
                 screen.width, screen.height, ClientExternalSettings.getYzuiTheme());
         if (ClientUpdateCheckerConfig.isCheckOnStartup()) {
@@ -96,10 +92,8 @@ public final class YzuiTitleMenu {
     /** 在原版全景之后、按钮之前绘制；透明度共用原版标题淡入值。 */
     public void render(GuiGraphicsExtractor g, float alpha) {
         var p = YzuiTheme.palette();
-        g.fill(0, 0, screen.width, screen.height, YzuiTheme.alpha(p.background(), 0.72f * alpha));
         for (TransparentButton button : buttons) button.setAlpha(alpha);
         if (alpha <= 0.01f) return;
-        updateThemeLabel();
         var logo = layout.logo();
         YzuiBrandLogo.render(g, YzuiBrandLogo.TEXTURE, logo.x(), logo.y(), logo.width(), alpha);
         label(g, Component.translatable("title.youzaiworldcore.subtitle"), layout.subtitle(),
@@ -233,21 +227,6 @@ public final class YzuiTitleMenu {
     private void connect(String name, String address) {
         ConnectScreen.startConnecting(screen, minecraft, ServerAddress.parseString(address),
                 new ServerData(name, address, ServerData.Type.OTHER), false, null);
-    }
-
-    private void toggleTheme() {
-        ClientExternalSettings.setYzuiTheme(ClientExternalSettings.getYzuiTheme() == YzuiThemeMode.DARK
-                ? YzuiThemeMode.LIGHT : YzuiThemeMode.DARK);
-        updateThemeLabel();
-    }
-
-    private void updateThemeLabel() {
-        Component message = Component.translatable("title.youzaiworldcore.theme_"
-                + (ClientExternalSettings.getYzuiTheme() == YzuiThemeMode.DARK ? "light" : "dark"));
-        if (!message.equals(themeButton.getMessage())) {
-            themeButton.setMessage(message);
-            themeButton.setTooltip(Tooltip.create(message));
-        }
     }
 
     private void download() {

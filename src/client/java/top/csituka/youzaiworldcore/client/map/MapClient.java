@@ -204,7 +204,8 @@ public final class MapClient {
             MapViewRequestPayload request;
             if (client.gui.screen() instanceof YzWorldMapScreen map) request = map.subscription();
             else {
-                double radius = MapSettings.size() / MapSettings.zoom() * 0.75;
+                // 小地图视口按设计单位绘制，世界跨度取决于设计边长而非屏幕显示尺寸。
+                double radius = MapRenderer.designSize() / MapSettings.zoom() * 0.75;
                 request = viewRequest(dimension(), layer(dimension()), height(layer(dimension())),
                         client.player.getX() - radius, client.player.getZ() - radius,
                         client.player.getX() + radius, client.player.getZ() + radius);
