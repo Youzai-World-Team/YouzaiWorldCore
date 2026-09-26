@@ -159,15 +159,17 @@ final class UnifiedSettingsPage {
         }
 
         if (SettingsCompatibility.sodiumAvailable()) {
-            heading(rows, VideoSettingsScreen.class.getName(), Component.translatable("options.video"));
+            SettingsList.Row videoHeading = heading(rows, VideoSettingsScreen.class.getName(), Component.translatable("options.video"));
             rows.add(SettingsList.Row.controls(YzuiOptionsScreen.text("sodium"), YzuiOptionsScreen.text("sodium.description"),
                     button(YzuiOptionsScreen.text("open"), () -> SettingsCompatibility.openSodium(host))));
+            appendVisualOptions(rows, videoHeading);
         }
         for (Page page : pages) {
             if (page.screen instanceof YouzaiWorldCoreSettingsScreen || page.screen == telemetry) continue;
-            heading(rows, anchor(page.screen), page.title);
+            SettingsList.Row section = heading(rows, anchor(page.screen), page.title);
             if (page.screen instanceof FontOptionsScreen && language != null) rows.add(SettingsList.Row.widget(language));
             appendNative(page, rows, primary);
+            if (page.screen == video) appendVisualOptions(rows, section);
         }
 
         heading(rows, "resources", YzuiOptionsScreen.text("resources"));
@@ -184,15 +186,13 @@ final class UnifiedSettingsPage {
         boolean firstCoreSection = true;
         for (Page page : pages) {
             if (!(page.screen instanceof YouzaiWorldCoreSettingsScreen core)) continue;
+            if (core.getSelectedSection() == 0) continue;
             SettingsList.Row section = heading(rows, anchor(core), page.title);
             if (firstCoreSection) {
                 section.navigationGroup = Component.literal("YouzaiWorldCore");
                 firstCoreSection = false;
             }
-            for (var option : core.embeddedOptions()) {
-                rows.add(option.control() == null ? SettingsList.Row.text(option.label(), option.description())
-                        : SettingsList.Row.controls(option.label(), option.description(), option.control()));
-            }
+            appendCoreOptions(rows, core);
         }
         heading(rows, "mods", YzuiOptionsScreen.text("mods"));
         SettingsCompatibility.addModRows(host, rows);
@@ -200,6 +200,24 @@ final class UnifiedSettingsPage {
                 button(YzuiOptionsScreen.text("open"), () -> YzuiSettingsRouter.openCompatibility(host))));
         for (Page page : pages) captured.put(page.screen, SettingsWidgets.flatten(page.screen));
         displayed = rows.stream().flatMap(row -> row.widgets.stream()).toList();
+    }
+
+    private void appendVisualOptions(List<SettingsList.Row> rows, SettingsList.Row videoHeading) {
+        for (Page page : pages) {
+            if (page.screen instanceof YouzaiWorldCoreSettingsScreen core && core.getSelectedSection() == 0) {
+                anchors.put(anchor(core), videoHeading);
+                rows.add(SettingsList.Row.subheading(page.title));
+                appendCoreOptions(rows, core);
+                return;
+            }
+        }
+    }
+
+    private static void appendCoreOptions(List<SettingsList.Row> rows, YouzaiWorldCoreSettingsScreen core) {
+        for (var option : core.embeddedOptions()) {
+            rows.add(option.control() == null ? SettingsList.Row.text(option.label(), option.description())
+                    : SettingsList.Row.controls(option.label(), option.description(), option.control()));
+        }
     }
 
     private void appendNative(Page page, List<SettingsList.Row> rows, Map<OptionInstance<?>, SettingsList.Row> primary) {

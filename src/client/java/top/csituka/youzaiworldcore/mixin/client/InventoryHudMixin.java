@@ -48,9 +48,6 @@ public abstract class InventoryHudMixin {
         if (!ClientExternalSettings.isLeftHudEnabled()) {
             return;
         }
-        if (YzHudSettings.getOpacity() <= 0.0F) {
-            return;
-        }
 
         // 直接使用当前 GUI 尺寸（GUI 单位坐标），三个 HUD 随界面缩放自然缩放，
         // 并分别应用自己的位置变换。
@@ -67,11 +64,25 @@ public abstract class InventoryHudMixin {
     private static void youzaiworldcore$renderComponent(
             GuiGraphicsExtractor graphics, int guiWidth, int guiHeight,
             YzHudComponent component) {
+        boolean pushed = false;
         try {
+            if (!YzHudSettings.isEnabled(component) || YzHudSettings.getOpacity(component) <= 0.0F) return;
+            float scale = YzHudSettings.getScale(component);
+            int baseWidth = YzHudLayout.componentWidth(component);
+            int baseHeight = YzHudLayout.componentHeight(component);
+            int scaledWidth = Math.max(1, Math.round(baseWidth * scale));
+            int scaledHeight = Math.max(1, Math.round(baseHeight * scale));
+            int baseLeft = YzHudLayout.defaultLeft(component, guiWidth, baseWidth);
+            int baseTop = YzHudLayout.defaultTop(component, guiHeight, baseHeight);
+            int targetLeft = YzHudLayout.componentLeft(component, guiWidth, scaledWidth);
+            int targetTop = YzHudLayout.componentTop(component, guiHeight, scaledHeight);
+            YzHudSettings.beginRender(component);
             graphics.pose().pushMatrix();
+            pushed = true;
             graphics.pose().translate(
-                    YzHudLayout.translationX(component, guiWidth),
-                    YzHudLayout.translationY(component, guiHeight));
+                    targetLeft - baseLeft * scale,
+                    targetTop - baseTop * scale);
+            graphics.pose().scale(scale, scale);
             switch (component) {
                 case INVENTORY -> InventoryHudRenderer.render(graphics, guiHeight);
                 case ARMOR -> ArmorHudRenderer.render(graphics, guiHeight);
@@ -83,7 +94,10 @@ public abstract class InventoryHudMixin {
         } catch (Exception e) {
             DebugLogger.exception(LOG_TAG, "render" + component.name(), e);
         } finally {
-            graphics.pose().popMatrix();
+            if (pushed) {
+                graphics.pose().popMatrix();
+            }
+            YzHudSettings.endRender();
         }
     }
 
@@ -97,7 +111,8 @@ public abstract class InventoryHudMixin {
             cancellable = true)
     private void yzwc$hideVanillaEffects(GuiGraphicsExtractor graphics,
             DeltaTracker deltaTracker, CallbackInfo ci) {
-        if (ClientExternalSettings.isLeftHudEnabled()) {
+        if (ClientExternalSettings.isLeftHudEnabled()
+                && YzHudSettings.isEnabled(YzHudComponent.EFFECTS)) {
             ci.cancel();
         }
     }

@@ -10,6 +10,7 @@ import top.csituka.youzaiworldcore.client.config.GuiAnimationMode;
 import top.csituka.youzaiworldcore.client.config.YzuiVisualStyle;
 import top.csituka.youzaiworldcore.client.render.YzuiBackdrop;
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
+import top.csituka.youzaiworldcore.client.screen.YzHudSettingsScreen;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
 /**
@@ -61,7 +62,7 @@ public final class GuiAnimationController {
     /** 基础范围覆盖模组页面，完整范围还覆盖原版页面；两者共用同一套动效。 */
     public static boolean animates(Screen screen) {
         var mode = getMode();
-        return screen != null && (mode == GuiAnimationMode.FULL
+        return screen != null && !(screen instanceof YzHudSettingsScreen) && (mode == GuiAnimationMode.FULL
                 || mode == GuiAnimationMode.BASIC && YzuiTheme.isCustomScreen(screen));
     }
 

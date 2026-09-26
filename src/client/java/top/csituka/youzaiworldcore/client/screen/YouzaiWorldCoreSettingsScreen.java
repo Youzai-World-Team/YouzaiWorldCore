@@ -932,9 +932,10 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
     private void buildVisualSection() {
         Component title = Component.translatable("screen.youzaiworldcore.settings.sidebar_visual");
         int y = contentTop + wrappedTextHeight(title, contentWidth) + 8;
+        Screen returnScreen = embedded ? parentScreen : this;
         addRenderableWidget(new TransparentButton(contentLeft, y, contentWidth, 26,
                 Component.translatable("screen.youzaiworldcore.appearance.title"),
-                () -> Minecraft.getInstance().gui.setScreen(new YzuiAppearanceScreen(this)))
+                () -> Minecraft.getInstance().gui.setScreen(new YzuiAppearanceScreen(returnScreen)))
                 .setStyle(top.csituka.youzaiworldcore.client.render.YzuiTheme.ButtonStyle.FILLED));
         y += 36;
         Component toggleMessage = Component.translatable("screen.youzaiworldcore.settings.toggle_yzui");
@@ -994,14 +995,14 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
         TransparentButton yzhudSettingsButton = new TransparentButton(
                 contentLeft, y, contentWidth, 22,
                 Component.translatable("screen.youzaiworldcore.settings.yzhud_customize"),
-                () -> Minecraft.getInstance().gui.setScreen(new YzHudSettingsScreen(this))
+                () -> Minecraft.getInstance().gui.setScreen(new YzHudSettingsScreen(returnScreen))
         );
         addRenderableWidget(yzhudSettingsButton);
         y += 28;
 
         addRenderableWidget(new TransparentButton(contentLeft, y, contentWidth, 22,
                 top.csituka.youzaiworldcore.client.map.MapTexts.text("settings"),
-                () -> Minecraft.getInstance().gui.setScreen(new top.csituka.youzaiworldcore.client.screen.map.MapSettingsScreen(this))));
+                () -> Minecraft.getInstance().gui.setScreen(new top.csituka.youzaiworldcore.client.screen.map.MapSettingsScreen(returnScreen))));
         y += 28;
 
         Component fontToggleMessage =
