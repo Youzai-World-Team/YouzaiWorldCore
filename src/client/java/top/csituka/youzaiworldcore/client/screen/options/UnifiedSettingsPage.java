@@ -34,7 +34,7 @@ import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
 /**
- * 把普通设置子页的实际控件汇总到一个连续列表中。原版页面只作为选项与回调模型存在。
+ * 汇总普通设置子页的实际控件，供外壳按分区展示和全局搜索。原版页面只作为选项与回调模型存在。
  * 页面离开时统一提交延迟滑条和视频设置；返回后重新读取最新配置。
  */
 @SuppressWarnings("null")
@@ -76,6 +76,10 @@ final class UnifiedSettingsPage {
     }
 
     SettingsList.Row anchorRow(String anchor) { return anchors.get(anchor); }
+    String anchorKey(SettingsList.Row row) {
+        return anchors.entrySet().stream().filter(entry -> entry.getValue() == row)
+                .map(Map.Entry::getKey).findFirst().orElse(null);
+    }
     VideoSettingsScreen video() { return video; }
 
     void added() { fresh = true; }
@@ -117,7 +121,7 @@ final class UnifiedSettingsPage {
             }
             fresh = false;
             refreshWorld = false;
-            DebugLogger.info("YzuiSettings", "已将 %d 个设置分区展开到同一页面", pages.size());
+            DebugLogger.info("YzuiSettings", "已加载 %d 个设置分区，按选中分区独立展示", pages.size());
         } else if (refreshWorld) {
             for (int index = 0; index < pages.size(); index++) {
                 Page previous = pages.get(index);

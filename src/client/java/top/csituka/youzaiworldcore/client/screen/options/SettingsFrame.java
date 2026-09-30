@@ -14,7 +14,7 @@ import top.csituka.youzaiworldcore.client.render.RoundedRect;
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
 import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
 
-/** 设置页面共用外壳。宽屏显示分组导航，窄屏保留完整搜索、内容与操作区。 */
+/** 设置页面共用外壳。统一设置按分区切换内容，窄屏使用紧凑侧栏保留所有分区入口。 */
 final class SettingsFrame {
     private record NavigationEntry(SettingsList.Row target, SettingsList.Row row, TransparentButton button) { }
 
@@ -34,6 +34,12 @@ final class SettingsFrame {
 
     SettingsFrame(Screen screen, List<SettingsList.Row> rows, List<AbstractWidget> footer,
                   Consumer<AbstractWidget> addWidget, String query, double scroll, boolean searchable) {
+        this(screen, rows, footer, addWidget, query, scroll, searchable, null);
+    }
+
+    SettingsFrame(Screen screen, List<SettingsList.Row> rows, List<AbstractWidget> footer,
+                  Consumer<AbstractWidget> addWidget, String query, double scroll, boolean searchable,
+                  SettingsList.Row selectedSection) {
         this.screen = screen;
         this.addWidget = addWidget;
         this.footer = List.copyOf(footer);
@@ -41,7 +47,9 @@ final class SettingsFrame {
         height = screen.height - 20;
         x = (screen.width - width) / 2;
         y = 10;
-        navigationWidth = searchable && width >= 620 && rows.stream().anyMatch(row -> row.navigation) ? 126 : 0;
+        boolean separateSections = screen instanceof YzuiOptionsScreen options && options.isUnified();
+        navigationWidth = searchable && (separateSections || width >= 620) && rows.stream().anyMatch(row -> row.navigation)
+                ? Math.min(126, Math.max(88, width / 4)) : 0;
         bodyX = x + 12 + (navigationWidth == 0 ? 0 : navigationWidth + 12);
         bodyY = y + 72;
         bodyWidth = width - 24 - (navigationWidth == 0 ? 0 : navigationWidth + 12);
@@ -52,7 +60,7 @@ final class SettingsFrame {
         back.setTooltip(Tooltip.create(Component.translatable("gui.back")));
         back.active = screen.shouldCloseOnEsc();
         addChrome(back);
-        Component searchLabel = screen instanceof YzuiOptionsScreen options && options.isUnified()
+        Component searchLabel = separateSections
                 ? YzuiOptionsScreen.text("search.all") : YzuiOptionsScreen.text("search");
         search = new EditBox(Minecraft.getInstance().font, bodyX + 2, y + 43,
                 Math.max(30, bodyWidth - 4), 20, searchLabel);
@@ -64,7 +72,7 @@ final class SettingsFrame {
         if (searchable) addChrome(search);
 
         content = new SettingsList(bodyX, bodyY, bodyWidth, bodyHeight);
-        content.setRows(rows, query);
+        content.setRows(rows, query, separateSections, selectedSection);
         content.setScrollAmount(scroll);
         addWidget.accept(content);
         search.setResponder(content::filter);
@@ -129,9 +137,7 @@ final class SettingsFrame {
         updateNavigation();
         YzuiTheme.card(g, x, y, width, height);
         var font = Minecraft.getInstance().font;
-        YzuiTheme.label(g, font, screen.getTitle(), x + 48, y + 19, width - 140, YzuiTheme.text(), false);
-        RoundedRect.fill(g, x + width - 66, y + 14, 50, 19, 9, YzuiTheme.primaryContainer());
-        g.text(font, "YZUI", x + width - 55, y + 19, YzuiTheme.onPrimaryContainer(), false);
+        YzuiTheme.label(g, font, screen.getTitle(), x + 48, y + 19, width - 64, YzuiTheme.text(), false);
         if (navigationWidth > 0) {
             g.text(font, YzuiOptionsScreen.text("sections"), x + 20, y + 49, YzuiTheme.textMuted(), false);
             RoundedRect.fill(g, x + 12, bodyY, navigationWidth, bodyHeight, 10, YzuiTheme.surfaceLow());
