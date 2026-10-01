@@ -1128,5 +1128,12 @@
   "title.youzaiworldcore.theme_dark": "Dunkles Design",
   "title.youzaiworldcore.theme_light": "Helles Design",
   "map.youzaiworldcore.upload_started": "Karten-Upload geplant. Aktualisiere in Kürze die Serverkartenseite im Dashboard.",
-  "map.youzaiworldcore.upload_unavailable": "Karten-Upload nicht möglich: Karten oder API-Brücke deaktiviert, Dienst nicht bereit oder Upload läuft bereits."
+  "map.youzaiworldcore.upload_unavailable": "Karten-Upload nicht möglich: Karten oder API-Brücke deaktiviert, Dienst nicht bereit oder Upload läuft bereits.",
+  "map.youzaiworldcore.zoom_in": "Vergrößern",
+  "map.youzaiworldcore.zoom_out": "Verkleinern",
+  "map.youzaiworldcore.fullscreen_zoom": "Kartenzoom: %s×",
+  "map.youzaiworldcore.players": "Spieler",
+  "map.youzaiworldcore.radar": "Radar",
+  "map.youzaiworldcore.drawing_tools": "Zeichenwerkzeuge",
+  "map.youzaiworldcore.no_visible_players": "Keine sichtbaren Spieler"
 }

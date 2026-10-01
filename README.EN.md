@@ -659,6 +659,7 @@ Server-authoritative per-player toggles for preference features. `FunctionToggle
 An independent implementation based on Conflux Map's documented features, without its source, assets or dependencies.
 
 - **Minimap and fullscreen map:** circular, square or rounded borders, rotation, zoom, panning, chunk grid, coordinates and biome information.
+- **Fullscreen layout:** edge-to-edge terrain with zoom buttons, a vertical zoom slider and recenter control on the left; settings, drawing, waypoints, players and radar along the lower left; surface and Y=53/23/-7/-37 shortcuts on the right; coordinates, layer, dimension, biome and a dimension picker at the lower right. Player heads show facing direction. With the selection tool, left-click a waypoint for its actions or right-click empty terrain to create one. The drawing panel retains all tools, undo/redo and export. Esc closes the panel before closing the map.
 - **YZUI / YZHUD:** live theme and visual-style colors, draggable minimap placement, shared HUD opacity and optional avoidance of the YZUI scoreboard.
 - **Layers:** surface, automatic caves, fixed height, top/Nether roof, biome colors and optional server chunk-load information.
 - **Waypoints:** private and shared points, search/groups, death markers, Overworld/Nether 1:8 projection and in-world navigation with distance and edge indicators.

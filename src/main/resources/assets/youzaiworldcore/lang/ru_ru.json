@@ -1128,5 +1128,12 @@
   "title.youzaiworldcore.theme_dark": "Тёмная тема",
   "title.youzaiworldcore.theme_light": "Светлая тема",
   "map.youzaiworldcore.upload_started": "Загрузка карты запланирована. Вскоре обновите страницу карт сервера в панели управления.",
-  "map.youzaiworldcore.upload_unavailable": "Не удалось начать загрузку: карты или API отключены, служба не готова либо загрузка уже выполняется."
+  "map.youzaiworldcore.upload_unavailable": "Не удалось начать загрузку: карты или API отключены, служба не готова либо загрузка уже выполняется.",
+  "map.youzaiworldcore.zoom_in": "Приблизить карту",
+  "map.youzaiworldcore.zoom_out": "Отдалить карту",
+  "map.youzaiworldcore.fullscreen_zoom": "Масштаб карты: %s×",
+  "map.youzaiworldcore.players": "Игроки",
+  "map.youzaiworldcore.radar": "Радар",
+  "map.youzaiworldcore.drawing_tools": "Инструменты рисования",
+  "map.youzaiworldcore.no_visible_players": "Нет видимых игроков"
 }

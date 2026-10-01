@@ -166,7 +166,12 @@ public final class MapRenderer {
             int x = left + (int) p.x(), y = top + (int) p.y();
             int color = YzuiTheme.alpha(point.color(), opacity);
             String symbol = point.kind() == MapWaypoint.Kind.DEATH ? "×" : point.kind() == MapWaypoint.Kind.STRUCTURE ? "◆" : point.shared() ? "▣" : "●";
-            infoColored(g, symbol, x - 3, y - 4, color);
+            if (labels && point.kind() != MapWaypoint.Kind.DEATH && point.kind() != MapWaypoint.Kind.STRUCTURE) {
+                RoundedRect.fill(g, x - 5, y - 7, 11, 11, 5, color);
+                MapShapes.rawLine(g, x - 4, y + 1, x, y + 7, color, 2);
+                MapShapes.rawLine(g, x + 4, y + 1, x, y + 7, color, 2);
+                RoundedRect.fill(g, x - 1, y - 3, 3, 3, 1, YzuiTheme.background());
+            } else infoColored(g, symbol, x - 3, y - 4, color);
             if (point.id().equals(MapClient.navigation())) g.outline(x - 6, y - 6, 13, 13, color);
             if (labels && MapShapes.contains(view, p.x(), p.y(), radius, 18)) info(g, MapTexts.waypoint(point).getString()
                     + (point.dimension().equals(dimension) ? "" : " ↔"), x + 8, y - 4, Math.max(0, view.width() - (int) p.x() - 20), opacity);
@@ -176,6 +181,8 @@ public final class MapRenderer {
             var p = view.screen(radar.x(), radar.z());
             if (!MapShapes.contains(view, p.x(), p.y(), radius, 8)) continue;
             int x = left + (int) p.x(), y = top + (int) p.y();
+            if (labels && radar.player()) playerDirection(g, x, y, Math.toRadians(radar.yaw()) + Math.PI - view.angle(),
+                    YzuiTheme.alpha(radar.color(), opacity));
             boolean head = false;
             if (radar.player() && MapSettings.enabled(MapSettings.Toggle.RADAR_ICONS)) {
                 var client = Minecraft.getInstance();
@@ -195,14 +202,24 @@ public final class MapRenderer {
         var player = Minecraft.getInstance().player;
         if (player != null && dimension.equals(MapClient.dimension())) {
             var p = view.screen(player.getX(), player.getZ());
-            if (MapShapes.contains(view, p.x(), p.y(), radius, 8)) arrow(g, left + p.x(), top + p.y(), Math.toRadians(player.getYRot()) + Math.PI - view.angle(), YzuiTheme.alpha(0xFFFFFFFF, opacity));
+            if (MapShapes.contains(view, p.x(), p.y(), radius, labels ? 16 : 8)) {
+                int x = left + (int) p.x(), y = top + (int) p.y();
+                double angle = Math.toRadians(player.getYRot()) + Math.PI - view.angle();
+                if (labels && MapSettings.enabled(MapSettings.Toggle.RADAR_ICONS)) {
+                    playerDirection(g, x, y, angle, YzuiTheme.alpha(YzuiTheme.primary(), opacity));
+                    var texture = player.getSkin().body().texturePath();
+                    int tint = YzuiTheme.alpha(0xFFFFFFFF, opacity);
+                    g.blit(RenderPipelines.GUI_TEXTURED, texture, x - 4, y - 4, 8, 8, 8, 8, 64, 64, tint);
+                    g.blit(RenderPipelines.GUI_TEXTURED, texture, x - 4, y - 4, 40, 8, 8, 8, 64, 64, tint);
+                } else arrow(g, x, y, angle, YzuiTheme.alpha(0xFFFFFFFF, opacity));
+            }
         }
         // 方位字母位于地图轮廓内部，旋转模式下同步旋转方位。
         String[] directions = {"N", "E", "S", "W"};
         for (int i = 0; i < 4; i++) {
             double a = i * Math.PI / 2 - view.angle();
-            double x = view.width() / 2.0 + Math.sin(a) * (Math.min(view.width(), view.height()) / 2.0 - 12);
-            double y = view.height() / 2.0 - Math.cos(a) * (Math.min(view.width(), view.height()) / 2.0 - 12);
+            double x = view.width() / 2.0 + Math.sin(a) * ((labels ? view.width() : Math.min(view.width(), view.height())) / 2.0 - 12);
+            double y = view.height() / 2.0 - Math.cos(a) * ((labels ? view.height() : Math.min(view.width(), view.height())) / 2.0 - 12);
             info(g, directions[i], left + (int) x - 3, top + (int) y - 4, 10, opacity);
         }
         g.disableScissor();
@@ -239,6 +256,15 @@ public final class MapRenderer {
         double fx = Math.sin(angle), fy = -Math.cos(angle);
         MapShapes.rawLine(g, x + fx * 6, y + fy * 6, x - fx * 4 + fy * 4, y - fy * 4 - fx * 4, color, 2);
         MapShapes.rawLine(g, x + fx * 6, y + fy * 6, x - fx * 4 - fy * 4, y - fy * 4 + fx * 4, color, 2);
+    }
+
+    /** 全屏地图的头像圆框与朝向箭头，自己的标记和其他玩家保持一致。 */
+    private static void playerDirection(GuiGraphicsExtractor g, int x, int y, double angle, int color) {
+        double fx = Math.sin(angle), fy = -Math.cos(angle);
+        MapShapes.rawLine(g, x + fx * 15, y + fy * 15, x + fx * 6 + fy * 5, y + fy * 6 - fx * 5, color, 2);
+        MapShapes.rawLine(g, x + fx * 15, y + fy * 15, x + fx * 6 - fy * 5, y + fy * 6 + fx * 5, color, 2);
+        RoundedRect.fill(g, x - 7, y - 7, 15, 15, 7, color);
+        RoundedRect.fill(g, x - 5, y - 5, 11, 11, 5, YzuiTheme.background());
     }
 
     private static void navigation(GuiGraphicsExtractor g, float opacity) {

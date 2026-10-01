@@ -1128,5 +1128,12 @@
   "title.youzaiworldcore.theme_dark": "切换深色",
   "title.youzaiworldcore.theme_light": "切换浅色",
   "map.youzaiworldcore.upload_started": "已安排地图上传到后台，请稍后刷新后台的服务器地图页面。",
-  "map.youzaiworldcore.upload_unavailable": "无法开始地图上传：地图或 Api 网桥已关闭、服务尚未就绪，或已有上传正在进行。"
+  "map.youzaiworldcore.upload_unavailable": "无法开始地图上传：地图或 Api 网桥已关闭、服务尚未就绪，或已有上传正在进行。",
+  "map.youzaiworldcore.zoom_in": "放大地图",
+  "map.youzaiworldcore.zoom_out": "缩小地图",
+  "map.youzaiworldcore.fullscreen_zoom": "地图缩放：%s×",
+  "map.youzaiworldcore.players": "玩家",
+  "map.youzaiworldcore.radar": "雷达",
+  "map.youzaiworldcore.drawing_tools": "绘图工具",
+  "map.youzaiworldcore.no_visible_players": "当前没有可见玩家"
 }

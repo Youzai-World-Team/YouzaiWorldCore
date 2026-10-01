@@ -1128,5 +1128,12 @@
   "title.youzaiworldcore.theme_dark": "Thème sombre",
   "title.youzaiworldcore.theme_light": "Thème clair",
   "map.youzaiworldcore.upload_started": "Envoi de la carte planifié. Actualisez bientôt la page des cartes du serveur dans le tableau de bord.",
-  "map.youzaiworldcore.upload_unavailable": "Impossible de démarrer : cartes ou liaison API désactivées, service indisponible ou envoi déjà en cours."
+  "map.youzaiworldcore.upload_unavailable": "Impossible de démarrer : cartes ou liaison API désactivées, service indisponible ou envoi déjà en cours.",
+  "map.youzaiworldcore.zoom_in": "Zoom avant",
+  "map.youzaiworldcore.zoom_out": "Zoom arrière",
+  "map.youzaiworldcore.fullscreen_zoom": "Zoom de la carte : %s×",
+  "map.youzaiworldcore.players": "Joueurs",
+  "map.youzaiworldcore.radar": "Radar",
+  "map.youzaiworldcore.drawing_tools": "Outils de dessin",
+  "map.youzaiworldcore.no_visible_players": "Aucun joueur visible"
 }

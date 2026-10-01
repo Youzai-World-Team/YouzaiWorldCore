@@ -1128,5 +1128,12 @@
   "title.youzaiworldcore.theme_dark": "Tema oscuro",
   "title.youzaiworldcore.theme_light": "Tema claro",
   "map.youzaiworldcore.upload_started": "Se ha programado la subida del mapa. Actualiza pronto la página de mapas del servidor en el panel.",
-  "map.youzaiworldcore.upload_unavailable": "No se puede iniciar la subida: los mapas o el enlace API están desactivados, el servicio no está listo o ya hay una subida en curso."
+  "map.youzaiworldcore.upload_unavailable": "No se puede iniciar la subida: los mapas o el enlace API están desactivados, el servicio no está listo o ya hay una subida en curso.",
+  "map.youzaiworldcore.zoom_in": "Acercar mapa",
+  "map.youzaiworldcore.zoom_out": "Alejar mapa",
+  "map.youzaiworldcore.fullscreen_zoom": "Zoom del mapa: %s×",
+  "map.youzaiworldcore.players": "Jugadores",
+  "map.youzaiworldcore.radar": "Radar",
+  "map.youzaiworldcore.drawing_tools": "Herramientas de dibujo",
+  "map.youzaiworldcore.no_visible_players": "No hay jugadores visibles"
 }

@@ -1128,5 +1128,12 @@
   "title.youzaiworldcore.theme_dark": "切換深色",
   "title.youzaiworldcore.theme_light": "切換淺色",
   "map.youzaiworldcore.upload_started": "已安排地圖上傳到後台，請稍後重新整理後台的伺服器地圖頁面。",
-  "map.youzaiworldcore.upload_unavailable": "無法開始地圖上傳：地圖或 Api 網橋已關閉、服務尚未就緒，或已有上傳正在進行。"
+  "map.youzaiworldcore.upload_unavailable": "無法開始地圖上傳：地圖或 Api 網橋已關閉、服務尚未就緒，或已有上傳正在進行。",
+  "map.youzaiworldcore.zoom_in": "放大地圖",
+  "map.youzaiworldcore.zoom_out": "縮小地圖",
+  "map.youzaiworldcore.fullscreen_zoom": "地圖縮放：%s×",
+  "map.youzaiworldcore.players": "玩家",
+  "map.youzaiworldcore.radar": "雷達",
+  "map.youzaiworldcore.drawing_tools": "繪圖工具",
+  "map.youzaiworldcore.no_visible_players": "目前沒有可見玩家"
 }

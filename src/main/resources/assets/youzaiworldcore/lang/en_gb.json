@@ -1128,5 +1128,12 @@
   "title.youzaiworldcore.theme_dark": "Dark theme",
   "title.youzaiworldcore.theme_light": "Light theme",
   "map.youzaiworldcore.upload_started": "Map upload scheduled. Refresh the server maps page in the dashboard shortly.",
-  "map.youzaiworldcore.upload_unavailable": "Cannot start map upload: maps or the API bridge are disabled, the service is not ready, or an upload is already running."
+  "map.youzaiworldcore.upload_unavailable": "Cannot start map upload: maps or the API bridge are disabled, the service is not ready, or an upload is already running.",
+  "map.youzaiworldcore.zoom_in": "Zoom in",
+  "map.youzaiworldcore.zoom_out": "Zoom out",
+  "map.youzaiworldcore.fullscreen_zoom": "Map zoom: %s×",
+  "map.youzaiworldcore.players": "Players",
+  "map.youzaiworldcore.radar": "Radar",
+  "map.youzaiworldcore.drawing_tools": "Drawing tools",
+  "map.youzaiworldcore.no_visible_players": "No visible players"
 }
