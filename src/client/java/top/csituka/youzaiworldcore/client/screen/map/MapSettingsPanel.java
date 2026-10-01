@@ -122,8 +122,8 @@ final class MapSettingsPanel extends AbstractContainerEventHandler implements Re
             YzuiTheme.label(g, font, label, getX() + indent, getY() + 7, getWidth() - indent - 42, YzuiTheme.text(), false);
             int x = getX() + getWidth() - 34, y = getY() + 4;
             RoundedRect.fill(g, x, y, 32, 14, 7, on ? YzuiTheme.primary() : YzuiTheme.outlineVariant());
-            // 蓝图约定：左侧为启用，右侧为禁用。
-            RoundedRect.fill(g, x + (on ? 2 : 18), y + 2, 10, 10, 5, on ? YzuiTheme.onPrimary() : YzuiTheme.textMuted());
+            // 开启时滑块在右侧并使用主题色，关闭时滑块在左侧并置灰。
+            RoundedRect.fill(g, x + (on ? 18 : 2), y + 2, 10, 10, 5, on ? YzuiTheme.onPrimary() : YzuiTheme.textMuted());
         }
     }
 

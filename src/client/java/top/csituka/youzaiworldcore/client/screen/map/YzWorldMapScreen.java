@@ -317,7 +317,8 @@ public final class YzWorldMapScreen extends Screen {
     }
 
     private MapView view() { return new MapView(centerX, centerZ, scale, 0, mapWidth, mapHeight); }
-    private MapView shown() { return displayed == null ? view() : displayed; }
+    // 输入可能在同一渲染帧内连续到达，始终从最新视口计算，不能沿用上一帧缩放中心。
+    private MapView shown() { return view(); }
 
     /** 主线程 Tick 读取当前可视区域，服务端只返回已记录的区块。 */
     public MapViewRequestPayload subscription() {
@@ -339,7 +340,7 @@ public final class YzWorldMapScreen extends Screen {
             else if (MapClient.trackedId() == null && dimension.equals(MapClient.dimension())) { centerX = player.getX(); centerZ = player.getZ(); }
         }
         var layer = currentLayer();
-        displayed = canvas.draw(g, view(), dimension, layer, currentHeight(layer), left, top, 0, 1, Minecraft.getInstance().getWindow().getGuiScale());
+        displayed = canvas.drawInteractive(g, view(), dimension, layer, currentHeight(layer), left, top, Minecraft.getInstance().getWindow().getGuiScale());
         MapRenderer.overlay(g, displayed, dimension, left, top, 0, 1, true);
         g.enableScissor(left, top, left + mapWidth, top + mapHeight);
         var selectedDrawing = selectedDrawing();
