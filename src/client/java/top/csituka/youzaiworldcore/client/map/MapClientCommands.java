@@ -5,7 +5,6 @@ import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallba
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import top.csituka.youzaiworldcore.client.screen.map.MapImportScreen;
-import top.csituka.youzaiworldcore.client.screen.map.MapSettingsScreen;
 import top.csituka.youzaiworldcore.client.screen.map.MapWaypointEditScreen;
 import top.csituka.youzaiworldcore.client.screen.map.MapWaypointListScreen;
 import top.csituka.youzaiworldcore.client.screen.map.YzWorldMapScreen;
@@ -20,7 +19,7 @@ public final class MapClientCommands {
     public static void register() {
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, context) -> {
             var map = literal("map").executes(command -> open(new YzWorldMapScreen(null)))
-                    .then(literal("settings").executes(command -> open(new MapSettingsScreen(null))))
+                    .then(literal("settings").executes(command -> open(YzWorldMapScreen.withSettings(null))))
                     .then(literal("waypoints").executes(command -> open(new MapWaypointListScreen(null))))
                     .then(literal("import").executes(command -> open(new MapImportScreen(null))))
                     .then(literal("add").executes(command -> {

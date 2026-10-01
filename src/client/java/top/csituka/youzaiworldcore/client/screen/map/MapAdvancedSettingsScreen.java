@@ -17,10 +17,10 @@ import java.util.Locale;
 import java.util.function.Supplier;
 
 /** 地图显示、图层、雷达与隐私设置；设置实时写入客户端统一 map_module。 */
-public final class MapSettingsScreen extends MapScreen {
+public final class MapAdvancedSettingsScreen extends MapScreen {
     private record Option(Supplier<Component> label, Runnable action) { }
     private int page, pages;
-    public MapSettingsScreen(Screen parent) { super(parent, "settings"); }
+    public MapAdvancedSettingsScreen(Screen parent) { super(parent, "more_settings"); }
 
     @Override protected void init() {
         super.init();
@@ -38,6 +38,7 @@ public final class MapSettingsScreen extends MapScreen {
         option(options, "fixed_height", () -> Component.literal(Integer.toString(MapSettings.fixedHeight())), () -> Minecraft.getInstance().gui.setScreen(new MapTextScreen(this, "fixed_height", Integer.toString(MapSettings.fixedHeight()), 5,
                 value -> { try { int y = Integer.parseInt(value); return y >= -4096 && y <= 4095; } catch (NumberFormatException ignored) { return false; } },
                 value -> MapSettings.setFixedHeight(Integer.parseInt(value)))));
+        option(options, "label_position", () -> name("label_position.", MapSettings.labelPosition()), () -> MapSettings.setLabelPosition(next(MapSettings.LabelPosition.values(), MapSettings.labelPosition())));
         option(options, "death_limit", () -> Component.literal(Integer.toString(MapSettings.deathLimit())), () -> MapSettings.setDeathLimit(MapSettings.deathLimit() >= 50 ? 0 : MapSettings.deathLimit() + 5));
         option(options, "waypoint_distance", () -> Component.literal(MapSettings.waypointDistance() + "m"), () -> MapSettings.setWaypointDistance(MapSettings.waypointDistance() >= 100000 ? 1000 : MapSettings.waypointDistance() * 2));
         for (var toggle : MapSettings.Toggle.values()) option(options, "option." + toggle.key(), () -> MapTexts.text(MapSettings.enabled(toggle) ? "on" : "off"), () -> MapSettings.toggle(toggle));

@@ -19,7 +19,6 @@ import net.minecraft.world.level.storage.LevelResource;
 import org.lwjgl.glfw.GLFW;
 import top.csituka.youzaiworldcore.client.config.MapSettings;
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
-import top.csituka.youzaiworldcore.client.screen.map.MapSettingsScreen;
 import top.csituka.youzaiworldcore.client.screen.map.MapWaypointEditScreen;
 import top.csituka.youzaiworldcore.client.screen.map.MapWaypointListScreen;
 import top.csituka.youzaiworldcore.client.screen.map.YzWorldMapScreen;
@@ -46,6 +45,9 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import net.minecraft.world.entity.TamableAnimal;
+import net.minecraft.world.entity.animal.equine.AbstractHorse;
 import java.util.UUID;
 
 /** 客户端地图装配、采样与连接状态。客户端只接收共享地形，不上传地形或直连 Api。 */
@@ -66,7 +68,8 @@ public final class MapClient {
     private static ClientLevel level;
     private static MapSampler.Job sampling;
     private static MapSessionPayload session;
-    private static List<MapWaypoint> shared = List.of();
+    private static List<MapWaypoint> shared = List.of(), anchors = List.of();
+    private static Set<UUID> anchorIds = Set.of();
     private static List<MapLivePayload.Player> remotePlayers = List.of();
     private static Map<Long, Integer> loadLevels = Map.of();
     private static String loadDimension = "";
@@ -115,8 +118,16 @@ public final class MapClient {
     /** 合并私人点与服务端公共点，公共点不能被本地配置覆盖。 */
     public static List<MapWaypoint> waypoints() {
         var points = new LinkedHashMap<UUID, MapWaypoint>();
-        MapPersonalData.points().forEach(point -> points.put(point.id(), point)); shared.forEach(point -> points.put(point.id(), point));
+        MapPersonalData.points().forEach(point -> points.put(point.id(), point)); shared.forEach(point -> points.put(point.id(), point)); anchors.forEach(point -> points.put(point.id(), point));
         return List.copyOf(points.values());
+    }
+
+    /** 服务端单独发送的本人锚点只读投影，不属于可编辑的公共点。 */
+    public static boolean isAnchor(MapWaypoint point) { return anchorIds.contains(point.id()); }
+
+    /** 路径点与已激活锚点分别受本机显示开关控制。 */
+    public static boolean visibleWaypoint(MapWaypoint point) {
+        return point.enabled() && MapSettings.enabled(isAnchor(point) ? MapSettings.Toggle.ANCHORS : MapSettings.Toggle.WAYPOINTS);
     }
 
     public static List<String> dimensions() {
@@ -191,6 +202,7 @@ public final class MapClient {
         if (alive && !living) MapPersonalData.death(client.player.getUUID(), dimension(), client.player.getBlockX(), client.player.getBlockY(), client.player.getBlockZ());
         alive = living;
         if (living) {
+            if (ticks % 20 == 0) recordExploration(client);
             sample(client);
             if (ticks % 5 == 0) {
                 var point = new MapVertex(Math.clamp(client.player.getX(), -MapTileKey.WORLD_LIMIT, MapTileKey.WORLD_LIMIT),
@@ -199,6 +211,7 @@ public final class MapClient {
                 while (TRAIL.size() > 256) TRAIL.removeFirst();
             }
         }
+        if (ticks % 200 == 0) MapPersonalData.flushExploration();
         if (ticks % 5 == 0) updateRadar(client);
         if (ticks % 20 == 0 && MapSettings.enabled(MapSettings.Toggle.SERVER_SYNC) && ClientPlayNetworking.canSend(MapViewRequestPayload.ID)) {
             MapViewRequestPayload request;
@@ -216,8 +229,26 @@ public final class MapClient {
         else for (var key : KEYS) while (key.consumeClick()) { }
     }
 
+    /** 根据真实所在区块和地下高度解锁地图层，不使用当前选中的浏览图层。 */
+    private static void recordExploration(Minecraft client) {
+        int x = client.player.getBlockX(), z = client.player.getBlockZ();
+        int cx = Math.floorDiv(x, 16), cz = Math.floorDiv(z, 16);
+        if (Math.abs((long) cx) > MapTileKey.CHUNK_LIMIT || Math.abs((long) cz) > MapTileKey.CHUNK_LIMIT) return;
+        var chunk = level.getChunkSource().getChunk(cx, cz, ChunkStatus.FULL, false);
+        if (chunk == null) return;
+        int surface = chunk.getHeight(Heightmap.Types.WORLD_SURFACE, x, z);
+        if (client.player.getY() + 6 < surface || level.dimensionType().hasCeiling() && client.player.getY() < surface) {
+            int height = Math.clamp(Math.floorDiv(client.player.getBlockY(), 8) * 8 + 7, level.getMinY(), level.getMaxY());
+            if (height >= -4096 && height <= 4095) MapPersonalData.explore(dimension(), cx, cz, height);
+        }
+    }
+
     private static void sample(Minecraft client) {
         MapLayer layer = layer(dimension()); int height = height(layer);
+        if (client.gui.screen() instanceof YzWorldMapScreen map) {
+            var view = map.subscription();
+            if (view.dimension().equals(dimension())) { layer = view.layer(); height = view.height(); }
+        }
         int cx = Math.floorDiv(client.player.getBlockX(), 16), cz = Math.floorDiv(client.player.getBlockZ(), 16);
         if (cx != scanX || cz != scanZ) { scanX = cx; scanZ = cz; scanCursor = 0; }
         if (sampling != null && (sampling.key().layer() != layer || sampling.key().height() != height
@@ -254,7 +285,7 @@ public final class MapClient {
         if (OPEN.consumeClick()) client.gui.setScreen(new YzWorldMapScreen(null));
         else if (POINTS_KEY.consumeClick()) client.gui.setScreen(new MapWaypointListScreen(null));
         else if (ADD.consumeClick()) client.gui.setScreen(new MapWaypointEditScreen(null, newPoint(dimension(), client.player.getBlockX(), client.player.getBlockY(), client.player.getBlockZ()), false));
-        else if (SETTINGS.consumeClick()) client.gui.setScreen(new MapSettingsScreen(null));
+        else if (SETTINGS.consumeClick()) client.gui.setScreen(YzWorldMapScreen.withSettings(null));
     }
 
     public static void cycleLayer() {
@@ -295,7 +326,9 @@ public final class MapClient {
             boolean player = entity instanceof Player;
             if (player && (session != null || !MapSettings.enabled(MapSettings.Toggle.RADAR_PLAYERS))) continue;
             var category = entity.getType().getCategory();
-            var toggle = player ? MapSettings.Toggle.RADAR_PLAYERS : category == MobCategory.MONSTER ? MapSettings.Toggle.RADAR_HOSTILE
+            boolean tame = entity instanceof TamableAnimal animal && animal.isTame()
+                    || entity instanceof AbstractHorse horse && horse.isTamed();
+            var toggle = player ? MapSettings.Toggle.RADAR_PLAYERS : tame ? MapSettings.Toggle.RADAR_TAMED : category == MobCategory.MONSTER ? MapSettings.Toggle.RADAR_HOSTILE
                     : category == MobCategory.MISC ? MapSettings.Toggle.RADAR_OTHER : MapSettings.Toggle.RADAR_FRIENDLY;
             if (!MapSettings.enabled(toggle)) continue;
             int color = player ? 0xFF79BDEB : category == MobCategory.MONSTER ? 0xFFF08B87 : category == MobCategory.MISC ? 0xFFE3C17A : 0xFF86CF9E;
@@ -327,13 +360,13 @@ public final class MapClient {
 
     public static void session(MapSessionPayload value) {
         if (session == null || !session.worldId().equals(value.worldId())) {
-            CACHE.clear(); SAMPLED.clear(); shared = List.of(); remotePlayers = List.of(); loadLevels = Map.of();
+            CACHE.clear(); SAMPLED.clear(); shared = List.of(); anchors = List.of(); anchorIds = Set.of(); remotePlayers = List.of(); loadLevels = Map.of();
             sampling = null; scanCursor = 0;
             MapPersonalData.selectWorld(value.worldId().toString(), "服务器地图");
         }
         session = value;
         if (!value.allows(MapSessionPayload.RADAR)) { remotePlayers = List.of(); radar = List.of(); TRACKED_HISTORY.clear(); }
-        if (!value.allows(MapSessionPayload.WAYPOINTS)) shared = List.of();
+        if (!value.allows(MapSessionPayload.WAYPOINTS)) { shared = List.of(); anchors = List.of(); anchorIds = Set.of(); }
         if (!value.allows(MapSessionPayload.LOAD_STATE)) loadLevels = Map.of();
         DebugLogger.info("MapClient", "地图服务已连接：%s，能力=%d", value.worldId(), value.flags());
     }
@@ -344,7 +377,7 @@ public final class MapClient {
     }
 
     public static void waypoints(MapWaypointsPayload value) {
-        if (session != null && session.worldId().equals(value.worldId()) && session.allows(MapSessionPayload.WAYPOINTS)) shared = value.points();
+        if (session != null && session.worldId().equals(value.worldId()) && session.allows(MapSessionPayload.WAYPOINTS)) { shared = value.points(); anchors = value.anchors(); anchorIds = anchors.stream().map(MapWaypoint::id).collect(java.util.stream.Collectors.toUnmodifiableSet()); }
     }
 
     public static void live(MapLivePayload value) {
@@ -382,7 +415,7 @@ public final class MapClient {
 
     private static void reset() {
         MapRenderer.reset(); CACHE.clear(); SAMPLED.clear(); TRAIL.clear(); TRACKED_HISTORY.clear();
-        sampling = null; session = null; level = null; shared = List.of(); remotePlayers = List.of(); radar = List.of();
+        sampling = null; session = null; level = null; shared = List.of(); anchors = List.of(); anchorIds = Set.of(); remotePlayers = List.of(); radar = List.of();
         loadLevels = Map.of(); loadDimension = ""; liveAt = 0; ticks = 0; receivedTiles = 0; tracked = null; navigation = null;
         MapPersonalData.disconnect();
         PENDING.clear(); nextScreen = null; shortcutsAfter = 0;

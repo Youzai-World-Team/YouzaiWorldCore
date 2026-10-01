@@ -1002,7 +1002,7 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
 
         addRenderableWidget(new TransparentButton(contentLeft, y, contentWidth, 22,
                 top.csituka.youzaiworldcore.client.map.MapTexts.text("settings"),
-                () -> Minecraft.getInstance().gui.setScreen(new top.csituka.youzaiworldcore.client.screen.map.MapSettingsScreen(returnScreen))));
+                () -> Minecraft.getInstance().gui.setScreen(top.csituka.youzaiworldcore.client.screen.map.YzWorldMapScreen.withSettings(returnScreen))));
         y += 28;
 
         Component fontToggleMessage =

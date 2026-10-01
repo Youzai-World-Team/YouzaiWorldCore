@@ -19,7 +19,7 @@ public final class MapWaypointActionsScreen extends MapScreen {
     @Override protected void init() {
         point = MapClient.waypoints().stream().filter(value -> value.id().equals(point.id())).findFirst().orElse(point);
         super.init(); int x = panelX + 14, y = panelY + 68, w = (panelWidth - 36) / 2;
-        button(x, y, w, MapTexts.text("edit_point"), () -> Minecraft.getInstance().gui.setScreen(new MapWaypointEditScreen(this, point, true)));
+        button(x, y, w, MapTexts.text("edit_point"), () -> Minecraft.getInstance().gui.setScreen(new MapWaypointEditScreen(this, point, true))).active = !MapClient.isAnchor(point);
         button(x + w + 8, y, w, MapTexts.text("navigate"), () -> { MapClient.navigate(point.id()); Minecraft.getInstance().gui.setScreen(null); });
         button(x, y + 28, w, MapTexts.text("locate"), () -> Minecraft.getInstance().gui.setScreen(new YzWorldMapScreen(parent, point.dimension(), point.x(), point.z())));
         button(x + w + 8, y + 28, w, MapTexts.text("copy"), () -> { Minecraft.getInstance().keyboardHandler.setClipboard(MapTransfer.coordinate(point)); error = MapTexts.text("copied"); });
@@ -29,11 +29,11 @@ public final class MapWaypointActionsScreen extends MapScreen {
         }).active = !point.shared();
         var session = MapClient.session(); boolean manage = session != null && session.allows(MapSessionPayload.MANAGE);
         button(x, y + 84, w, MapTexts.text(point.kind() == MapWaypoint.Kind.SERVER ? "unlock_point" : "lock_point"), () ->
-                action(point.kind() == MapWaypoint.Kind.SERVER ? MapActionPayload.Action.UNLOCK : MapActionPayload.Action.LOCK)).active = point.shared() && manage && !pending;
+                action(point.kind() == MapWaypoint.Kind.SERVER ? MapActionPayload.Action.UNLOCK : MapActionPayload.Action.LOCK)).active = point.shared() && !MapClient.isAnchor(point) && manage && !pending;
         button(x + w + 8, y + 84, w, MapTexts.text("teleport"), () -> action(MapActionPayload.Action.TELEPORT)).active = session != null && session.allows(MapSessionPayload.TELEPORT) && !pending;
         button(x, panelY + panelHeight - 34, w, MapTexts.text("delete"), () -> {
             if (point.shared()) action(MapActionPayload.Action.DELETE); else { MapPersonalData.remove(point.id()); onClose(); }
-        }).active = !pending && (!point.shared() || manage || Minecraft.getInstance().player != null
+        }).active = !pending && !MapClient.isAnchor(point) && (!point.shared() || manage || Minecraft.getInstance().player != null
                 && point.owner().equals(Minecraft.getInstance().player.getUUID()) && point.kind() == MapWaypoint.Kind.NORMAL);
         button(x + w + 8, panelY + panelHeight - 34, w, MapTexts.text("done"), this::onClose);
     }

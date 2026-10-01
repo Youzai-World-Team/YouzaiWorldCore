@@ -55,6 +55,7 @@ public final class MapWaypointEditScreen extends MapScreen {
     }
 
     private boolean editable() {
+        if (MapClient.isAnchor(original)) return false;
         if (!original.shared()) return true;
         var session = MapClient.session(); var player = Minecraft.getInstance().player;
         return session != null && (session.allows(MapSessionPayload.MANAGE)

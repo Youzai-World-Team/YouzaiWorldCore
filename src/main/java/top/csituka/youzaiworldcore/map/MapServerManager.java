@@ -29,6 +29,8 @@ import top.csituka.youzaiworldcore.network.MapTilePayload;
 import top.csituka.youzaiworldcore.network.MapViewRequestPayload;
 import top.csituka.youzaiworldcore.network.MapWaypointsPayload;
 import top.csituka.youzaiworldcore.util.DebugLogger;
+import top.csituka.youzaiworldcore.data.TeleportAnchorManager;
+import top.csituka.youzaiworldcore.data.TeleportAnchorData;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -156,7 +158,7 @@ public final class MapServerManager {
             state.credit = Math.min(Math.max(MapServerSettings.bandwidth, 106496), state.credit + MapServerSettings.bandwidth / 20.0);
             if (tick % 20 == 0) {
                 sendSession(player, state);
-                if (state.pointsRevision != pointsRevision) sendPoints(player, state);
+                if (state.pointsRevision != pointsRevision || !state.anchors.equals(TeleportAnchorManager.get(server).getPointsForPlayer(player))) sendPoints(player, state);
                 if (state.view != null && tick - state.lastRequest <= 100) sendLive(player, state);
             }
             if (MapServerSettings.enabled && MapServerSettings.shareTerrain && state.view != null && tick - state.lastRequest <= 100) {
@@ -273,7 +275,23 @@ public final class MapServerManager {
         var points = MapServerSettings.enabled && MapServerSettings.shareWaypoints
                 ? POINTS.stream().filter(value -> value.kind() != MapWaypoint.Kind.STRUCTURE || MapServerSettings.shareStructures).toList()
                 : List.<MapWaypoint>of();
-        ServerPlayNetworking.send(player, new MapWaypointsPayload(worldId, points));
+        // 只发送接收者自己的激活记录；不读取远处区块，不创建区块加载票。
+        state.anchors = List.copyOf(TeleportAnchorManager.get(server).getPointsForPlayer(player));
+        var anchors = new ArrayList<MapWaypoint>();
+        if (MapServerSettings.enabled && MapServerSettings.shareWaypoints) for (var anchor : state.anchors) {
+            if (anchors.size() >= 512) break;
+            String dimension = anchor.dimension().identifier().toString();
+            var pos = anchor.pos();
+            if (dimension.length() > 128 || Math.abs((long) pos.getX()) > MapTileKey.WORLD_LIMIT
+                    || Math.abs((long) pos.getY()) > MapTileKey.WORLD_LIMIT || Math.abs((long) pos.getZ()) > MapTileKey.WORLD_LIMIT) continue;
+            String identity = "map-anchor:" + player.getUUID() + ":" + dimension + ":" + pos.asLong();
+            String name = anchor.name().isBlank() ? "传送锚点" : anchor.name();
+            anchors.add(new MapWaypoint(UUID.nameUUIDFromBytes(identity.getBytes(StandardCharsets.UTF_8)), player.getUUID(),
+                    name.substring(0, Math.min(64, name.length())), "已激活传送锚点", dimension, pos.getX(), pos.getY(), pos.getZ(),
+                    0xFF87CDA3, true, true, MapWaypoint.Kind.SERVER, 0));
+        }
+        ServerPlayNetworking.send(player, new MapWaypointsPayload(worldId, points, List.copyOf(anchors)));
+        DebugLogger.debug("MapServerManager", "同步地图路径点：公共点=%d，本人锚点=%d", points.size(), anchors.size());
         state.pointsRevision = pointsRevision;
     }
 
@@ -469,6 +487,7 @@ public final class MapServerManager {
     private static final class Subscription {
         private MapViewRequestPayload view;
         private int cursor, flags = -1, lastRequest = -1000, lastAction = -1000;
+        private List<TeleportAnchorData> anchors = List.of();
         private long pointsRevision = -1, bytes, tiles;
         private double credit = MapServerSettings.bandwidth;
         private String lastResult = "denied";

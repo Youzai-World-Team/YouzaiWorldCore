@@ -4,6 +4,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
@@ -51,6 +52,12 @@ public final class YzWorldMapScreen extends Screen {
     private int unit, inset, panelX, panelY, panelWidth, panelHeight, page;
     private int zoomTop, zoomBottom, infoX, infoY, infoWidth;
     private boolean zoomDragging;
+    private MapSettingsPanel settingsPanel;
+    private final List<TransparentButton> layerControls = new ArrayList<>();
+    private List<Integer> exploredLayers = List.of();
+    private Integer exploredHeight;
+    private MapLayer overviewLayer;
+    private int layerPage;
     private final List<AbstractWidget> controls = new ArrayList<>();
     private Tool tool = Tool.SELECT;
     private UUID selected;
@@ -64,6 +71,10 @@ public final class YzWorldMapScreen extends Screen {
         super(MapTexts.text("title")); this.parent = parent; dimension = MapClient.dimension();
         var player = Minecraft.getInstance().player;
         if (player != null) { centerX = player.getX(); centerZ = player.getZ(); }
+        var previous = MapPersonalData.lastView();
+        if (MapSettings.enabled(MapSettings.Toggle.REMEMBER_VIEW) && previous != null && MapClient.dimensions().contains(previous.dimension())) {
+            dimension = previous.dimension(); centerX = previous.x(); centerZ = previous.z(); scale = previous.zoom(); follow = false;
+        }
     }
     public YzWorldMapScreen(Screen parent, String dimension, double x, double z) {
         this(parent); this.dimension = dimension; centerX = x; centerZ = z; follow = false;
@@ -89,16 +100,16 @@ public final class YzWorldMapScreen extends Screen {
         icon(inset, zoomY, MapIconButton.Icon.PLUS, "zoom_in", () -> zoom(scale * 1.25));
         icon(inset, zoomBottom + 10, MapIconButton.Icon.MINUS, "zoom_out", () -> zoom(scale / 1.25));
         icon(inset, bottom - unit - 6, MapIconButton.Icon.CENTER, "recenter", this::recenter);
-        icon(inset, bottom, MapIconButton.Icon.SETTINGS, "settings", () -> Minecraft.getInstance().gui.setScreen(new MapSettingsScreen(this)));
+        icon(inset, bottom, MapIconButton.Icon.SETTINGS, "settings", this::openSettings);
         icon(inset + (unit + 8) * 2, bottom, MapIconButton.Icon.PIN, "waypoints", () -> Minecraft.getInstance().gui.setScreen(new MapWaypointListScreen(this)));
         icon(inset + (unit + 8) * 3, bottom, MapIconButton.Icon.PLAYERS, "players", () -> togglePanel(Panel.PLAYERS));
         icon(inset + (unit + 8) * 4, bottom, MapIconButton.Icon.RADAR, "radar", () -> togglePanel(Panel.RADAR));
         icon(inset + unit + 8, bottom, MapIconButton.Icon.PEN, "drawing_tools", () -> togglePanel(Panel.TOOLS));
 
-        int layerY = Math.max(inset + unit + 8, (height - 5 * (unit + 3)) / 2);
-        layerButton(right, layerY, Component.literal("≋"), MapLayer.SURFACE, 0);
-        int[] slices = {53, 23, -7, -37};
-        for (int i = 0; i < slices.length; i++) layerButton(right, layerY + (i + 1) * (unit + 3), Component.literal(Integer.toString(slices[i])), MapLayer.FIXED, slices[i]);
+        layerControls.clear();
+        exploredLayers = availableLayers();
+        if (exploredHeight != null && !exploredLayers.contains(exploredHeight)) exploredHeight = null;
+        rebuildLayerControls();
         icon(right, bottom, MapIconButton.Icon.MAP, "dimension", () -> togglePanel(Panel.DIMENSIONS));
         infoWidth = Math.min(260, Math.max(100, width / 3));
         infoX = right - infoWidth - 8;
@@ -106,7 +117,37 @@ public final class YzWorldMapScreen extends Screen {
         // 窄屏底部入口与坐标卡片错行，避免相互遮挡。
         if (infoX < inset + (unit + 8) * 6) infoY = bottom - 50;
         buildPanel();
+        if (settingsPanel != null) { settingsPanel.layout(width, height); addWidget(settingsPanel); }
         DebugLogger.debug("WorldMap", "全屏地图布局：%dx%d，面板=%s", width, height, panel);
+    }
+
+    /** 非地图入口也直接打开带左侧覆盖设置的地图。 */
+    public static YzWorldMapScreen withSettings(Screen parent) {
+        var map = new YzWorldMapScreen(parent);
+        map.settingsPanel = new MapSettingsPanel(map);
+        return map;
+    }
+
+    private void openSettings() {
+        if (settingsPanel != null) { closeSettings(); return; }
+        if (panel != Panel.NONE) { panel = Panel.NONE; init(); }
+        dragging = false; zoomDragging = false; moving = null; stroke.clear();
+        settingsPanel = new MapSettingsPanel(this);
+        settingsPanel.layout(width, height); addWidget(settingsPanel);
+        clearFocus(); setFocused(settingsPanel);
+    }
+
+    /** 只移除覆盖控件，保留当前地图画布、位置与缩放。 */
+    void closeSettings() {
+        if (settingsPanel == null) return;
+        clearFocus(); removeWidget(settingsPanel); settingsPanel = null;
+    }
+
+    /** 被覆盖的地图按钮不参与键盘焦点和鼠标命中。 */
+    @Override public List<? extends GuiEventListener> children() {
+        if (settingsPanel == null) return super.children();
+        return super.children().stream().filter(child -> !(child instanceof AbstractWidget widget)
+                || !settingsPanel.covers(widget)).toList();
     }
 
     private MapIconButton icon(int x, int y, MapIconButton.Icon icon, String key, Runnable action) {
@@ -119,18 +160,71 @@ public final class YzWorldMapScreen extends Screen {
         button.setTooltip(Tooltip.create(text)); controls.add(button); return button;
     }
 
-    private void layerButton(int x, int y, Component label, MapLayer layer, int elevation) {
-        var button = button(x, y, unit, label, () -> {
-            MapSettings.setLayer(layer);
-            if (layer.hasHeight()) MapSettings.setFixedHeight(elevation);
-            canvas.close(); init();
-            DebugLogger.debug("WorldMap", "切换图层：%s，高度=%d", layer, elevation);
-        });
-        button.setHeight(unit);
-        button.setTextInsets(0, 0);
-        button.setTooltip(Tooltip.create(MapTexts.text("layer." + layer.name().toLowerCase(Locale.ROOT))
-                .copy().append(layer.hasHeight() ? " Y " + elevation : "")));
-        if (MapSettings.layer() == layer && (!layer.hasHeight() || MapSettings.fixedHeight() == elevation)) button.setStyle(YzuiTheme.ButtonStyle.FILLED);
+    /** 只在玩家当前区块且地图仍以该区块为中心时提供已探索层。 */
+    private List<Integer> availableLayers() {
+        var player = Minecraft.getInstance().player;
+        if (player == null || !dimension.equals(MapClient.dimension())) return List.of();
+        int x = Math.floorDiv(player.getBlockX(), 16), z = Math.floorDiv(player.getBlockZ(), 16);
+        if (Math.floorDiv(bounded(centerX), 16) != x || Math.floorDiv(bounded(centerZ), 16) != z) return List.of();
+        return MapPersonalData.exploredHeights(dimension, x, z);
+    }
+
+    private MapLayer currentLayer() {
+        if (exploredHeight != null) return MapLayer.CAVE;
+        if (overviewLayer != null) return overviewLayer;
+        var layer = MapClient.layer(dimension);
+        if (layer == MapLayer.FIXED || layer == MapLayer.CAVE && !exploredLayers.contains(MapClient.height(dimension, layer))) return MapLayer.SURFACE;
+        return layer;
+    }
+
+    private int currentHeight(MapLayer layer) {
+        return exploredHeight != null && layer == MapLayer.CAVE ? exploredHeight : MapClient.height(dimension, layer);
+    }
+
+    private void rebuildLayerControls() {
+        for (var control : layerControls) { removeWidget(control); controls.remove(control); }
+        layerControls.clear();
+        if (exploredLayers.isEmpty()) return;
+        int right = width - inset - unit;
+        int visible = Math.max(1, Math.min(5, (height - 2 * inset - 4 * unit - 32) / (unit + 3)));
+        int pages = Math.max(1, Math.ceilDiv(exploredLayers.size(), visible));
+        layerPage = Math.clamp(layerPage, 0, pages - 1);
+        int count = Math.min(visible, exploredLayers.size() - layerPage * visible);
+        int y = (height - (count + (pages > 1 ? 3 : 1)) * (unit + 3)) / 2;
+        addLayerControl(right, y, Component.literal("≋"), MapTexts.text("layer.surface"), exploredHeight == null && currentLayer() == MapLayer.SURFACE,
+                () -> { exploredHeight = null; overviewLayer = MapLayer.SURFACE; canvas.close(); rebuildLayerControls(); });
+        for (int i = 0; i < count; i++) {
+            int index = layerPage * visible + i, elevation = exploredLayers.get(index);
+            Component name = MapTexts.text("explored_floor", index + 1, elevation);
+            addLayerControl(right, y + (i + 1) * (unit + 3), Component.literal(Integer.toString(elevation)), name,
+                    currentLayer() == MapLayer.CAVE && currentHeight(MapLayer.CAVE) == elevation, () -> {
+                        exploredHeight = elevation; overviewLayer = null; canvas.close(); rebuildLayerControls();
+                        DebugLogger.debug("WorldMap", "查看已探索地下层：%s Y=%d", dimension, elevation);
+                    });
+        }
+        if (pages > 1) {
+            addLayerControl(right, y + (count + 1) * (unit + 3), Component.literal("↑"), MapTexts.text("previous"), false,
+                    () -> { layerPage = Math.floorMod(layerPage - 1, pages); rebuildLayerControls(); });
+            addLayerControl(right, y + (count + 2) * (unit + 3), Component.literal("↓"), MapTexts.text("next"), false,
+                    () -> { layerPage = (layerPage + 1) % pages; rebuildLayerControls(); });
+        }
+    }
+
+    private void addLayerControl(int x, int y, Component label, Component tooltip, boolean selected, Runnable action) {
+        int buttonWidth = Math.max(unit, font.width(label) + 4);
+        var control = button(x + unit - buttonWidth, y, buttonWidth, label, action);
+        control.setHeight(unit); control.setTextInsets(0, 0); control.setTooltip(Tooltip.create(tooltip));
+        if (selected) control.setStyle(YzuiTheme.ButtonStyle.FILLED);
+        layerControls.add(control);
+    }
+
+    @Override public void tick() {
+        var available = availableLayers();
+        if (!available.equals(exploredLayers)) {
+            exploredLayers = available; layerPage = 0;
+            if (exploredHeight != null && !available.contains(exploredHeight)) { exploredHeight = null; canvas.close(); }
+            rebuildLayerControls();
+        }
     }
 
     private void togglePanel(Panel next) {
@@ -138,7 +232,7 @@ public final class YzWorldMapScreen extends Screen {
     }
 
     private void recenter() {
-        follow = true; MapClient.track(null);
+        follow = true; MapClient.track(null); exploredHeight = null; overviewLayer = null;
         if (!dimension.equals(MapClient.dimension())) { selected = null; area = null; }
         dimension = MapClient.dimension();
         var player = Minecraft.getInstance().player;
@@ -171,13 +265,17 @@ public final class YzWorldMapScreen extends Screen {
             button(x + cell + 4, y + 52, cell, MapTexts.text("redo"), MapPersonalData::redo);
             button(x + (cell + 4) * 2, y + 52, cell, MapTexts.text("delete"), this::deleteDrawing);
             button(x + (cell + 4) * 3, y + 52, cell, MapTexts.text("export"), () -> {
-                var layer = MapClient.layer(dimension);
-                Minecraft.getInstance().gui.setScreen(new MapExportScreen(this, dimension, layer, MapClient.height(dimension, layer), area == null ? visibleArea() : area));
+                var layer = currentLayer();
+                Minecraft.getInstance().gui.setScreen(new MapExportScreen(this, dimension, layer, currentHeight(layer), area == null ? visibleArea() : area));
             });
             button(x, y + 78, w, MapTexts.text("overlay." + MapSettings.overlay().name().toLowerCase(Locale.ROOT)), () -> {
                 var values = MapSettings.Overlay.values(); MapSettings.setOverlay(values[(MapSettings.overlay().ordinal() + 1) % values.length]); init();
             });
-            button(x, y + 104, w, MapTexts.text("layer." + MapSettings.layer().name().toLowerCase(Locale.ROOT)), () -> { MapClient.cycleLayer(); init(); });
+            button(x, y + 104, w, MapTexts.text("layer." + (overviewLayer == null ? MapLayer.AUTO : overviewLayer).name().toLowerCase(Locale.ROOT)), () -> {
+                exploredHeight = null;
+                overviewLayer = overviewLayer == null ? MapLayer.SURFACE : overviewLayer == MapLayer.SURFACE ? MapLayer.ROOF : null;
+                canvas.close(); init();
+            });
         } else if (panel == Panel.RADAR) {
             var options = new MapSettings.Toggle[] {MapSettings.Toggle.RADAR_PLAYERS, MapSettings.Toggle.RADAR_HOSTILE, MapSettings.Toggle.RADAR_FRIENDLY, MapSettings.Toggle.RADAR_OTHER, MapSettings.Toggle.RADAR_ICONS};
             for (int i = 0; i < options.length; i++) {
@@ -223,8 +321,8 @@ public final class YzWorldMapScreen extends Screen {
 
     /** 主线程 Tick 读取当前可视区域，服务端只返回已记录的区块。 */
     public MapViewRequestPayload subscription() {
-        var area = visibleArea(); var layer = MapClient.layer(dimension);
-        return MapClient.viewRequest(dimension, layer, MapClient.height(dimension, layer), area.minX(), area.minZ(), area.maxX(), area.maxZ());
+        var area = visibleArea(); var layer = currentLayer();
+        return MapClient.viewRequest(dimension, layer, currentHeight(layer), area.minX(), area.minZ(), area.maxX(), area.maxZ());
     }
 
     private MapExport.Area visibleArea() {
@@ -240,8 +338,8 @@ public final class YzWorldMapScreen extends Screen {
             if (tracked != null) { centerX = tracked.x(); centerZ = tracked.z(); }
             else if (MapClient.trackedId() == null && dimension.equals(MapClient.dimension())) { centerX = player.getX(); centerZ = player.getZ(); }
         }
-        var layer = MapClient.layer(dimension);
-        displayed = canvas.draw(g, view(), dimension, layer, MapClient.height(dimension, layer), left, top, 0, 1, Minecraft.getInstance().getWindow().getGuiScale());
+        var layer = currentLayer();
+        displayed = canvas.draw(g, view(), dimension, layer, currentHeight(layer), left, top, 0, 1, Minecraft.getInstance().getWindow().getGuiScale());
         MapRenderer.overlay(g, displayed, dimension, left, top, 0, 1, true);
         g.enableScissor(left, top, left + mapWidth, top + mapHeight);
         var selectedDrawing = selectedDrawing();
@@ -258,7 +356,7 @@ public final class YzWorldMapScreen extends Screen {
         g.nextStratum();
         // 信息与工具浮在地形上；鼠标悬停信息不覆盖玩家坐标。
         int positionX = bounded(shown().centerX()), positionZ = bounded(shown().centerZ());
-        var positionTile = MapClient.cache().get(new MapTileKey(dimension, layer, MapClient.height(dimension, layer),
+        var positionTile = MapClient.cache().get(new MapTileKey(dimension, layer, currentHeight(layer),
                 Math.floorDiv(positionX, 16), Math.floorDiv(positionZ, 16)));
         int positionPixel = MapTileKey.pixelIndex(positionX, positionZ);
         String elevationAtCenter = positionTile == null || positionTile.heights()[positionPixel] == MapTile.VOID_HEIGHT
@@ -267,7 +365,7 @@ public final class YzWorldMapScreen extends Screen {
         YzuiTheme.card(g, infoX, infoY, infoWidth, 40);
         YzuiTheme.label(g, font, Component.literal(coordinates), infoX + 7, infoY + 7, infoWidth - 14, YzuiTheme.text(), false);
         Component location = MapTexts.text("layer." + layer.name().toLowerCase(Locale.ROOT)).copy()
-                .append(layer.hasHeight() ? " Y " + MapClient.height(dimension, layer) : "").append(" / ").append(MapTexts.dimension(dimension));
+                .append(layer.hasHeight() ? " Y " + currentHeight(layer) : "").append(" / ").append(MapTexts.dimension(dimension));
         if (positionTile != null) location = location.copy().append(" / ").append(MapTexts.biome(positionTile.biome(positionPixel)));
         YzuiTheme.label(g, font, location, infoX + 7, infoY + 24, infoWidth - 14, YzuiTheme.textMuted(), false);
         int railX = inset + unit / 2;
@@ -285,7 +383,7 @@ public final class YzWorldMapScreen extends Screen {
         }
         if (panel == Panel.NONE && inside(mx, my)) {
             var world = shown().world(mx - left, my - top); int x = bounded(world.x()), z = bounded(world.y());
-            var tile = MapClient.cache().get(new MapTileKey(dimension, layer, MapClient.height(dimension, layer), Math.floorDiv(x, 16), Math.floorDiv(z, 16)));
+            var tile = MapClient.cache().get(new MapTileKey(dimension, layer, currentHeight(layer), Math.floorDiv(x, 16), Math.floorDiv(z, 16)));
             int pixel = MapTileKey.pixelIndex(x, z);
             String elevation = tile == null || tile.heights()[pixel] == MapTile.VOID_HEIGHT ? "?" : Short.toString(tile.heights()[pixel]);
             Component detail = Component.literal("X: " + x + "  Y: " + elevation + "  Z: " + z + " · ")
@@ -305,7 +403,9 @@ public final class YzWorldMapScreen extends Screen {
             YzuiTheme.card(g, (width - hintWidth) / 2 - 6, inset + 28, hintWidth + 12, 22);
             YzuiTheme.label(g, font, hint, (width - hintWidth) / 2, inset + 35, hintWidth, YzuiTheme.text(), false);
         }
-        super.extractRenderState(g, mx, my, delta);
+        boolean covered = settingsPanel != null && settingsPanel.isMouseOver(mx, my);
+        super.extractRenderState(g, covered ? -100 : mx, covered ? -100 : my, delta);
+        if (settingsPanel != null) settingsPanel.extractRenderState(g, mx, my, delta);
     }
 
     private boolean inside(double x, double y) {
@@ -313,7 +413,7 @@ public final class YzWorldMapScreen extends Screen {
     }
     private boolean overZoom(double x, double y) { return x >= inset && x < inset + unit && y >= zoomTop - 5 && y <= zoomBottom + 5; }
     private boolean overControls(double x, double y) {
-        return controls.stream().anyMatch(widget -> widget.visible && widget.isMouseOver(x, y)) || overZoom(x, y)
+        return settingsPanel != null && settingsPanel.isMouseOver(x, y) || controls.stream().anyMatch(widget -> widget.visible && widget.isMouseOver(x, y)) || overZoom(x, y)
                 || x >= infoX && x < infoX + infoWidth && y >= infoY && y < infoY + 40
                 || panel != Panel.NONE && x >= panelX && x < panelX + panelWidth && y >= panelY && y < panelY + panelHeight;
     }
@@ -328,6 +428,11 @@ public final class YzWorldMapScreen extends Screen {
     private MapVertex world(double x, double y) { var point = shown().world(x - left, y - top); return new MapVertex(bounded(point.x()), bounded(point.y())); }
 
     @Override public boolean mouseClicked(MouseButtonEvent event, boolean actual) {
+        if (settingsPanel != null && settingsPanel.isMouseOver(event.x(), event.y())) {
+            var overlay = settingsPanel;
+            clearFocus(); setFocused(overlay);
+            overlay.mouseClicked(event, actual); return true;
+        }
         if (super.mouseClicked(event, actual)) return true;
         if (overZoom(event.x(), event.y()) && event.button() == 0) { zoomDragging = true; slideZoom(event.y()); return true; }
         if (overControls(event.x(), event.y())) return true;
@@ -335,8 +440,8 @@ public final class YzWorldMapScreen extends Screen {
         if (!inside(event.x(), event.y())) return false;
         var hit = world(event.x(), event.y());
         if (event.button() == 1) {
-            if (MapSettings.enabled(MapSettings.Toggle.WAYPOINTS)) for (var point : MapClient.waypoints()) {
-                if (!point.enabled()) continue;
+            for (var point : MapClient.waypoints()) {
+                if (!MapClient.visibleWaypoint(point) || !MapSettings.enabled(MapSettings.Toggle.MARKER_ICONS) && !MapSettings.enabled(MapSettings.Toggle.MARKER_LABELS)) continue;
                 var position = point.projected(dimension, MapSettings.enabled(MapSettings.Toggle.PORTAL_PROJECTION));
                 if (position != null && Math.hypot(position.x() - hit.x(), position.z() - hit.z()) * shown().scale() < 10) {
                     Minecraft.getInstance().gui.setScreen(new MapWaypointActionsScreen(this, point)); return true;
@@ -347,14 +452,14 @@ public final class YzWorldMapScreen extends Screen {
                 Minecraft.getInstance().gui.setScreen(new MapTextScreen(this, "tool.label", drawing.label(), 96,
                         value -> MapPersonalData.putDrawing(new MapDrawing(drawing.id(), dimension, drawing.kind(), drawing.vertices(), drawing.color(), value)))); return true;
             }
-            var layer = MapClient.layer(dimension); int y = playerHeight();
-            var tile = MapClient.cache().get(new MapTileKey(dimension, layer, MapClient.height(dimension, layer), Math.floorDiv((int) hit.x(), 16), Math.floorDiv((int) hit.z(), 16)));
+            var layer = currentLayer(); int y = playerHeight();
+            var tile = MapClient.cache().get(new MapTileKey(dimension, layer, currentHeight(layer), Math.floorDiv((int) hit.x(), 16), Math.floorDiv((int) hit.z(), 16)));
             if (tile != null && tile.heights()[MapTileKey.pixelIndex((int) hit.x(), (int) hit.z())] != MapTile.VOID_HEIGHT) y = tile.heights()[MapTileKey.pixelIndex((int) hit.x(), (int) hit.z())] + 1;
             Minecraft.getInstance().gui.setScreen(new MapWaypointEditScreen(this, MapClient.newPoint(dimension, (int) hit.x(), Math.clamp(y, -4096, 4095), (int) hit.z()), false)); return true;
         }
         if (event.button() != 0) return false;
-        if (tool == Tool.SELECT && MapSettings.enabled(MapSettings.Toggle.WAYPOINTS)) for (var point : MapClient.waypoints()) {
-            if (!point.enabled()) continue;
+        if (tool == Tool.SELECT) for (var point : MapClient.waypoints()) {
+            if (!MapClient.visibleWaypoint(point) || !MapSettings.enabled(MapSettings.Toggle.MARKER_ICONS) && !MapSettings.enabled(MapSettings.Toggle.MARKER_LABELS)) continue;
             var position = point.projected(dimension, MapSettings.enabled(MapSettings.Toggle.PORTAL_PROJECTION));
             if (position != null && Math.hypot(position.x() - hit.x(), position.z() - hit.z()) * shown().scale() < 10) {
                 Minecraft.getInstance().gui.setScreen(new MapWaypointActionsScreen(this, point)); return true;
@@ -364,7 +469,7 @@ public final class YzWorldMapScreen extends Screen {
             Minecraft.getInstance().gui.setScreen(new MapTextScreen(this, "tool.label", "", 96, value -> save(new MapDrawing(UUID.randomUUID(), dimension, MapDrawing.Kind.LABEL, List.of(hit), COLORS[color], value)))); return true;
         }
         if (tool == Tool.SELECT) {
-            for (var radar : MapClient.radar()) if (radar.dimension().equals(dimension)
+            for (var radar : MapClient.radar()) if ((MapSettings.enabled(MapSettings.Toggle.MARKER_ICONS) || MapSettings.enabled(MapSettings.Toggle.MARKER_LABELS)) && radar.dimension().equals(dimension)
                     && Math.hypot(radar.x() - hit.x(), radar.z() - hit.z()) * shown().scale() < 8) {
                 MapClient.track(radar.id()); follow = true; status = MapTexts.text("tracking", radar.name()); return true;
             }
@@ -421,6 +526,9 @@ public final class YzWorldMapScreen extends Screen {
     private int playerHeight() { var player = Minecraft.getInstance().player; return player == null ? 64 : player.getBlockY(); }
 
     @Override public boolean mouseScrolled(double x, double y, double horizontal, double vertical) {
+        if (settingsPanel != null && settingsPanel.isMouseOver(x, y)) {
+            settingsPanel.mouseScrolled(x, y, horizontal, vertical); return true;
+        }
         if (vertical == 0) return false;
         if (overZoom(x, y)) { zoom(scale * Math.pow(1.25, vertical)); return true; }
         if (!inside(x, y)) return super.mouseScrolled(x, y, horizontal, vertical);
@@ -429,6 +537,7 @@ public final class YzWorldMapScreen extends Screen {
         centerZ = Math.clamp(zoomed.centerZ(), -MapTileKey.WORLD_LIMIT, MapTileKey.WORLD_LIMIT); follow = false; return true;
     }
     @Override public boolean keyPressed(KeyEvent event) {
+        if (settingsPanel != null && event.key() == GLFW.GLFW_KEY_ESCAPE) return settingsPanel.keyPressed(event);
         if (event.key() == GLFW.GLFW_KEY_ESCAPE && panel != Panel.NONE) { panel = Panel.NONE; init(); return true; }
         if (event.key() == GLFW.GLFW_KEY_ESCAPE || MapClient.OPEN.matches(event)) { onClose(); return true; }
         if (event.key() == GLFW.GLFW_KEY_EQUAL || event.key() == GLFW.GLFW_KEY_KP_ADD) { zoom(scale * 1.25); return true; }
@@ -440,6 +549,9 @@ public final class YzWorldMapScreen extends Screen {
         return super.keyPressed(event);
     }
     @Override public boolean isPauseScreen() { return false; }
-    @Override public void onClose() { MapClient.suppressShortcuts(); Minecraft.getInstance().gui.setScreen(parent); }
+    @Override public void onClose() {
+        if (MapSettings.enabled(MapSettings.Toggle.REMEMBER_VIEW)) MapPersonalData.rememberView(dimension, centerX, centerZ, scale);
+        MapClient.suppressShortcuts(); Minecraft.getInstance().gui.setScreen(parent);
+    }
     @Override public void removed() { canvas.close(); displayed = null; zoomDragging = false; dragging = false; moving = null; stroke.clear(); super.removed(); }
 }
