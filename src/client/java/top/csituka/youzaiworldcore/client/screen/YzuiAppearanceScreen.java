@@ -4,15 +4,18 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.client.input.KeyEvent;
 import top.csituka.youzaiworldcore.client.config.ClientExternalSettings;
 import top.csituka.youzaiworldcore.client.config.YzuiThemeMode;
 import top.csituka.youzaiworldcore.client.config.YzuiVisualStyle;
 import top.csituka.youzaiworldcore.client.render.RoundedRect;
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
+import top.csituka.youzaiworldcore.client.render.YzuiMenuPanel;
+import top.csituka.youzaiworldcore.client.screen.widget.MenuCloseButton;
 import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
 
 /** 界面外观设置与实时预览，所有选择仅保存在本机。 */
-public final class YzuiAppearanceScreen extends Screen {
+public final class YzuiAppearanceScreen extends Screen implements YzuiMenuScreen {
     private final Screen parent;
     private int panelX, panelY, panelWidth, panelHeight;
 
@@ -27,6 +30,7 @@ public final class YzuiAppearanceScreen extends Screen {
         panelHeight = 284;
         panelX = (width - panelWidth) / 2;
         panelY = (height - panelHeight) / 2;
+        if (usesMenuOverlay()) addRenderableWidget(new MenuCloseButton(panelX + panelWidth - 40, panelY + 8, this));
         int gap = 8, inner = panelWidth - 32;
         int themeWidth = (inner - gap) / 2;
         for (YzuiThemeMode mode : YzuiThemeMode.values()) {
@@ -55,8 +59,9 @@ public final class YzuiAppearanceScreen extends Screen {
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
-        YzuiTheme.card(g, panelX, panelY, panelWidth, panelHeight);
-        g.text(font, getTitle(), panelX + 16, panelY + 16, YzuiTheme.text(), false);
+        if (usesMenuOverlay()) YzuiMenuPanel.card(g, panelX, panelY, panelWidth, panelHeight);
+        else YzuiTheme.card(g, panelX, panelY, panelWidth, panelHeight);
+        YzuiTheme.label(g, font, getTitle(), panelX + 16, panelY + 16, panelWidth - 68, YzuiTheme.text(), false);
         g.text(font, text("theme"), panelX + 16, panelY + 34, YzuiTheme.textMuted(), false);
         g.text(font, text("effects"), panelX + 16, panelY + 81, YzuiTheme.textMuted(), false);
         String selected = ClientExternalSettings.getYzuiVisualStyle().name().toLowerCase(java.util.Locale.ROOT);
@@ -78,6 +83,14 @@ public final class YzuiAppearanceScreen extends Screen {
 
     @Override
     public void onClose() { Minecraft.getInstance().gui.setScreen(parent); }
+
+    @Override
+    public boolean usesMenuOverlay() { return Minecraft.getInstance().level != null; }
+
+    @Override
+    public boolean keyPressed(KeyEvent event) {
+        return YzuiMenuScreen.handleEscape(this, event) || super.keyPressed(event);
+    }
 
     @Override
     public boolean isPauseScreen() { return false; }

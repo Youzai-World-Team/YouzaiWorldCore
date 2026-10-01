@@ -1167,5 +1167,11 @@
   "map.youzaiworldcore.option.anchors": "Aktivierte Teleportanker",
   "map.youzaiworldcore.option.radar_tamed": "Gezähmte Tiere",
   "map.youzaiworldcore.option.quick_locate": "Navigationsmarkierungen anzeigen",
-  "map.youzaiworldcore.option.remember_view": "Letzte Kartenansicht merken"
+  "map.youzaiworldcore.option.remember_view": "Letzte Kartenansicht merken",
+  "screen.youzaiworldcore.test.login": "Anmeldung ansehen",
+  "screen.youzaiworldcore.test.register": "Registrierung ansehen",
+  "screen.youzaiworldcore.test.environment": "Testumgebung öffnen",
+  "screen.youzaiworldcore.test.description": "Kontoseiten lokal ansehen oder die Testumgebung öffnen.",
+  "screen.youzaiworldcore.test.local_notice": "Lokale Vorschau · Keine Anfragen",
+  "screen.youzaiworldcore.test.local_result": "Schaltfläche betätigt. Nur lokale Rückmeldung; keine Anfrage gesendet."
 }

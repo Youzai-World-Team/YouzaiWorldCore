@@ -1167,5 +1167,11 @@
   "map.youzaiworldcore.option.anchors": "Активированные якоря телепортации",
   "map.youzaiworldcore.option.radar_tamed": "Приручённые животные",
   "map.youzaiworldcore.option.quick_locate": "Выделять цели навигации",
-  "map.youzaiworldcore.option.remember_view": "Запоминать последний вид карты"
+  "map.youzaiworldcore.option.remember_view": "Запоминать последний вид карты""map.youzaiworldcore.upload_unavailable": "Не удалось начать загрузку: карты или API отключены, служба не готова либо загрузка уже выполняется.",
+  "screen.youzaiworldcore.test.login": "Просмотр входа",
+  "screen.youzaiworldcore.test.register": "Просмотр регистрации",
+  "screen.youzaiworldcore.test.environment": "Открыть тестовую среду",
+  "screen.youzaiworldcore.test.description": "Локальный просмотр экранов аккаунта или переход в тестовую среду.",
+  "screen.youzaiworldcore.test.local_notice": "Локальный просмотр · Без запросов",
+  "screen.youzaiworldcore.test.local_result": "Кнопка нажата. Только локальный отклик, запросы не отправлены."
 }

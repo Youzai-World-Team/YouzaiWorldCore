@@ -698,7 +698,7 @@ public class ModNetworking {
                 return;
             }
             server.execute(() -> {
-                AfkManager.onHeartbeat(player, server.getTickCount(), payload.idleTicks());
+                AfkManager.onHeartbeat(player, server.getTickCount(), payload.idleTicks(), payload.inputSequence());
             });
         });
         DebugLogger.info("ModNetworking", "Registered receiver: AfkHeartbeatPayload");

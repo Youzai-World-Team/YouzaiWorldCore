@@ -12,6 +12,8 @@ import top.csituka.youzaiworldcore.config.ChatFormatSettings;
 import top.csituka.youzaiworldcore.config.ApiModuleSettings;
 import top.csituka.youzaiworldcore.config.CosmeticModuleSettings;
 import top.csituka.youzaiworldcore.config.GlobalSettings;
+import top.csituka.youzaiworldcore.config.AfkConfig;
+import top.csituka.youzaiworldcore.afk.AfkManager;
 import top.csituka.youzaiworldcore.config.ServerExternalSettings;
 import top.csituka.youzaiworldcore.config.UpdateCheckerConfig;
 import top.csituka.youzaiworldcore.dimensionalinventories.DimensionPoolSettings;
@@ -64,7 +66,12 @@ public class ReloadCommand {
         DebugLogger.info("ReloadCommand", "管理员 %s 正在重载模组", source.getTextName());
 
         // 先重读全局配置文件，后续各模块 reload 都从新内容里取分节
+        boolean afkWasEnabled = AfkConfig.isEnabled();
+        var previousAfkMode = AfkConfig.getDetectMode();
         GlobalSettings.load();
+        AfkConfig.load();
+        AfkManager.applyConfiguration(source.getServer(),
+                afkWasEnabled != AfkConfig.isEnabled() || previousAfkMode != AfkConfig.getDetectMode());
         ServerExternalSettings.load();
         top.csituka.youzaiworldcore.map.MapServerManager.reload();
         ApiModuleSettings.load();

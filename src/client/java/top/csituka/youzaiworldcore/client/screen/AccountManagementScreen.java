@@ -1,6 +1,7 @@
 package top.csituka.youzaiworldcore.client.screen;
 
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
+import top.csituka.youzaiworldcore.client.render.YzuiMenuPanel;
 import top.csituka.youzaiworldcore.client.screen.widget.WidgetFocus;
 
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
@@ -15,6 +16,7 @@ import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 import top.csituka.youzaiworldcore.client.screen.widget.ConfirmationDialog;
 import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
+import top.csituka.youzaiworldcore.client.screen.widget.MenuCloseButton;
 import top.csituka.youzaiworldcore.network.AccountManagementRequestPayload;
 import top.csituka.youzaiworldcore.network.AccountManagementStatePayload;
 
@@ -25,7 +27,7 @@ import java.util.regex.Pattern;
 
 /** 已登录玩家的账户管理页面。 */
 @SuppressWarnings("null")
-public class AccountManagementScreen extends Screen {
+public class AccountManagementScreen extends Screen implements YzuiMenuScreen {
     private static final int CONTAINER_HEIGHT = 336;
     private static final int FIELD_WIDTH = 190;
     private static final int FIELD_HEIGHT = 20;
@@ -76,6 +78,7 @@ public class AccountManagementScreen extends Screen {
     private TransparentButton changeEmailButton;
     private TransparentButton deactivateModeButton;
     private TransparentButton closeButton;
+    private MenuCloseButton windowCloseButton;
     private TransparentButton submitPasswordButton;
     private TransparentButton sendCodeButton;
     private TransparentButton verifyEmailButton;
@@ -176,6 +179,9 @@ public class AccountManagementScreen extends Screen {
             case DEACTIVATE -> initDeactivateForm();
         }
         arrangeForm();
+        int cardWidth = Math.min(440, width - 40);
+        windowCloseButton = new MenuCloseButton((width + cardWidth) / 2 - 40, containerTop() + 14, this);
+        allWidgets.add(windowCloseButton);
         if (this.currentDialog != null)
             this.currentDialog.init(this.width, this.height);
         updateButtonState();
@@ -203,7 +209,7 @@ public class AccountManagementScreen extends Screen {
         this.deactivateModeButton.setTextColor(YzuiTheme.error());
         this.closeButton = button(
                 centerX - BUTTON_WIDTH / 2, top + 205, BUTTON_WIDTH,
-                "screen.youzaiworldcore.account_management.button_close", this::onClose);
+                "gui.back", () -> Minecraft.getInstance().setScreenAndShow(parent));
     }
 
     private void initPasswordForm() {
@@ -311,10 +317,9 @@ public class AccountManagementScreen extends Screen {
             GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         updateButtonState();
         int w = Math.min(440, width - 40), x = (width - w) / 2, y = containerTop();
-        YzuiTheme.card(graphics, x, y, w, CONTAINER_HEIGHT);
-        YzuiTheme.label(graphics, font, title, x + 24, y + 20, w - 48, YzuiTheme.text(), false);
-        YzuiTheme.wrapped(graphics, font, Component.translatable("screen.youzaiworldcore.account_management.subtitle", playerName),
-                x + 24, y + 42, w - 48, 2, YzuiTheme.textMuted());
+        YzuiMenuPanel.card(graphics, x, y, w, CONTAINER_HEIGHT);
+        YzuiMenuPanel.header(graphics, font, title,
+                Component.translatable("screen.youzaiworldcore.account_management.subtitle", playerName), x, y, w);
         if (mode == Mode.HOME) {
             String email = !loaded ? Component.translatable("screen.youzaiworldcore.account_management.email_loading").getString()
                     : Component.translatable("screen.youzaiworldcore.account_management.current_email",
@@ -379,6 +384,7 @@ public class AccountManagementScreen extends Screen {
 
     @Override
     public boolean keyPressed(KeyEvent event) {
+        if (YzuiMenuScreen.handleEscape(this, event)) return true;
         if (currentDialog != null && currentDialog.isVisible()) return currentDialog.keyPressed(event);
         if (WidgetFocus.keyPressed(event, allWidgets)) return true;
         if (event.key() == 256) {
@@ -423,7 +429,7 @@ public class AccountManagementScreen extends Screen {
 
     @Override
     public boolean shouldCloseOnEsc() {
-        return false;
+        return !processing && !completed;
     }
 
     @Override
@@ -563,9 +569,7 @@ public class AccountManagementScreen extends Screen {
 
     @Override
     public void onClose() {
-        if (this.processing || this.completed)
-            return;
-        Minecraft.getInstance().setScreenAndShow(this.parent);
+        closeMenu();
     }
 
     private boolean send(AccountManagementRequestPayload payload) {
@@ -640,7 +644,8 @@ public class AccountManagementScreen extends Screen {
             this.deactivateModeButton.active = this.loaded && !this.processing && !this.completed;
         }
         if (this.closeButton != null)
-            this.closeButton.active = !this.processing && !this.completed;
+            this.closeButton.active = this.closeButton.visible = canCloseMenu();
+        if (windowCloseButton != null) windowCloseButton.refresh();
         if (this.submitPasswordButton != null) {
             this.submitPasswordButton.active = this.loaded && !this.processing && !this.completed;
         }

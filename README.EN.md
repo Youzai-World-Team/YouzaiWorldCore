@@ -369,18 +369,22 @@ A set of native, dependency-free "world tweak" enhancements (inspired by classic
 
 ### 22. AFK Detection System
 
-Server-side automatic AFK (Away From Keyboard) detection that marks idle players and supports configurable automated actions.
+The server checks player activity every 20 ticks and marks players AFK after 300 seconds by default. State belongs to the current connection and is cleared on disconnect.
 
-- **Detection**: Checks mouse/keyboard input and view angle every 20 ticks, configurable threshold (default 300s)
-- **AFK Marking**: Prepends a configurable prefix (e.g. `[AFK]`) to the player's tab-list name via `ServerPlayerTabDisplayNameMixin` + `AfkKeyboardHandlerMixin` / `AfkMouseHandlerMixin`
-- **Automation**: Configurable invulnerability (`invulnerable`), auto-kick (`auto_kick`), and broadcast on AFK state change
-- **Manual Toggle**: Players can toggle AFK manually via `/yzwc afk`
-- **Commands** (server-side):
-  - `/yzwc afk` — toggle AFK state
-  - `/yzwc afk status [player]` — query own/other's AFK status
-  - `/yzwc afk list` — list all AFK players (admin)
-  - `/yzwc afk settings <key> <value>` — modify AFK config at runtime (admin)
-- **Config**: `global_settings.json` → `afk_module` (`AfkConfig`: enabled/detect_mode/threshold_seconds/tab_prefix_enabled/broadcast_enabled/invulnerable_enabled/auto_kick_seconds/manual_toggle_enabled)
+- **Detection modes**: `BOTH` prefers client input and falls back to position/view sampling after 100 ticks without a heartbeat. `SERVER` uses server sampling; `CLIENT` does not automatically mark players without a live heartbeat. Sent chat and commands count in every mode.
+- **Consistent recovery**: Entry and recovery use the same channel. Water currents or minecarts do not cancel AFK while the client channel is live. Server fallback cannot distinguish voluntary movement from external movement.
+- **Input**: New key presses, mouse presses/scrolls and actual mouse movement in the world count. Key repeat, releases, hovering over GUI screens, unsent chat text and mouse recapture do not. Inventory/chat opening, screenshots and perspective switching respect the player's key bindings.
+- **Manual toggle**: Before `/yzwc afk` is sent, the client flushes its input sequence. Old heartbeats and releasing Enter cannot immediately cancel the new state; a new action can resume activity without a fixed grace period. Leaving AFK restarts the full idle timer.
+- **Display**: `prefix` is shared by Tab and nameplates (default `"[AFK] "`, up to 64 characters, no line breaks). `tab_prefix_enabled` and `nametag_prefix_enabled` independently control visibility and default to true. Changes, joins and config reloads synchronize the display.
+- **Invulnerability**: Disabled by default. When enabled, the server blocks damage to AFK players, including starvation, void and `/kill` damage, without adding/removing resistance effects. Leaving AFK or disabling the setting ends protection immediately.
+- **Kick and broadcast**: Broadcasts default to enabled. `auto_kick_seconds` defaults to 0 (disabled) and starts **when AFK begins**. A 300-second idle threshold plus 900-second AFK timeout means about 20 minutes since the last action at 20 TPS. A positive kick timeout must be at least the idle threshold. Lower TPS increases real waiting time.
+- **Commands**:
+  - `/yzwc afk` — toggle your state; available to all players by default.
+  - `/yzwc afk status` — query yourself; `status <player>` and `list` require admin permission.
+  - `/yzwc afk settings <key> <value>` — change and save settings as an admin. `/yzwc reload` also reloads AFK settings and updates online players.
+- **Config**: `yzwc/server/config/global_settings.json` → `afk_module`: `enabled`, `detect_mode`, `threshold_seconds`, `tab_prefix_enabled`, `nametag_prefix_enabled`, `prefix`, `broadcast_enabled`, `invulnerable_enabled`, `auto_kick_seconds`, `manual_toggle_enabled`. Commands accept full JSON keys as well as `threshold`, `tab_prefix`, `nametag_prefix`, `broadcast`, `invulnerable`, `auto_kick`, and `manual_toggle` aliases. The remaining text of a `prefix` command is stored literally; do not add quotes.
+- **Updates and limits**: Update both client and server for the sequenced `afk_heartbeat_v2` and configurable-nameplate `afk_state_v2` channels. Sending checks peer support. Client activity is self-reported; this is not an anti-cheat guarantee.
+- **Regression check**: `python3 tools/verify_afk.py --java-home <JDK25-path>` runs the state, configuration and input checks in a temporary directory. Multiplayer checks are listed in [AFK verification notes](docs/AFK.md).
 
 ### 23. Warp Scroll System ★NEW
 
@@ -915,7 +919,8 @@ All commands use `/yzwc` as the root command. Subcommands marked **(client comma
 | `mail_admin_send`           | C→S       | Publish mail                                                                                  |
 | `mail_admin_edit`           | C→S       | Edit/cancel-edit mail                                                                         |
 | `mail_player_list_request`  | C→S       | Request the registered player-name list                                                       |
-| `afk_heartbeat`             | C→S       | AFK heartbeat packet (client reports input activity)                                         |
+| `afk_heartbeat_v2` | C→S | AFK input sequence and idle duration; flushed before sending commands |
+| `afk_state_v2` | S→C | AFK state and configured nameplate prefix |
 | `title_state_request`       | C→S       | Request a refresh of the current player's title state                                          |
 | `title_equip`               | C→S       | Request equipping a title; an empty ID unequips the current title                              |
 | `map_view_request` | C→S | Subscribe to a bounded viewport in a dimension/layer/height |

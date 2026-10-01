@@ -9,17 +9,8 @@ import top.csituka.youzaiworldcore.network.AfkHeartbeatPayload;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
 /**
- * 客户端 AFK 输入追踪器。
- * <p>
- * 由 mixin（{@code AfkKeyboardHandlerMixin} / {@code AfkMouseHandlerMixin}）
- * 在每次键盘 / 鼠标输入时调用 {@link #markInput()} 刷新最后输入时间；
- * 本类在客户端 tick 中每 20 tick（约 1 秒）向服务端发送
- * {@link AfkHeartbeatPayload}，携带「距最后输入的 tick 差值」（单调时钟差值，
- * 与服务端时钟无同步依赖）。服务端据此维护客户端精确检测通道的活动时间。
- * </p>
- * <p>
- * 窗口失焦时 GLFW 输入回调不触发 → 不刷新最后输入时间 → 心跳差值持续增长 →
- * 服务端判定 AFK，符合「人离开电脑即 AFK」的语义。</p>
+ * 客户端输入追踪：每 20 tick 发送空闲时间和输入序号，所有读写均在客户端主线程。
+ * 只有真实操作递增序号；重复心跳、按键释放、键盘自动重复和鼠标重新捕获不算新输入。
  */
 @SuppressWarnings("null")
 public final class AfkInputTracker {
@@ -56,8 +47,9 @@ public final class AfkInputTracker {
             "top.csituka.youzaiworldcore.client.screen.QuitConfirmationScreen",
             "top.csituka.youzaiworldcore.client.screen.ForcedUpdateScreen");
 
-    /** 最后输入时间（nanoTime 单调时钟，跨线程可见） */
-    private static volatile long lastInputNanos = System.nanoTime();
+    /** 最后一次真实操作的单调时钟时间。 */
+    private static long lastInputNanos = System.nanoTime();
+    private static long inputSequence;
 
     private static int tickCounter = 0;
 
@@ -66,6 +58,7 @@ public final class AfkInputTracker {
 
     /** 记录一次输入活动（由 mixin 在键盘/鼠标事件中调用） */
     public static void markInput() {
+        inputSequence++;
         lastInputNanos = System.nanoTime();
     }
 
@@ -73,6 +66,7 @@ public final class AfkInputTracker {
     public static void reset() {
         lastInputNanos = System.nanoTime();
         tickCounter = 0;
+        inputSequence = 0;
         DebugLogger.trace(MODULE, "已重置客户端 AFK 输入基线");
     }
 
@@ -108,31 +102,28 @@ public final class AfkInputTracker {
         return false;
     }
 
-    /**
-     * 客户端 tick 驱动：节流发送心跳包。
-     * <p>
-     * 需在 {@code client.player != null} 时发送；连接断开（返回标题界面）时
-     * 静默跳过。应放在客户端主 tick 处理器最前部调用（不受 GUI 打开早退影响）。</p>
-     *
-     * @param client 客户端实例
-     */
+    /** 消息/命令实际发送前，先同步本次输入，使服务端能建立精确的手动 AFK 基线。 */
+    public static void onChatSent() {
+        markInput();
+        sendHeartbeat(Minecraft.getInstance());
+    }
+
+    /** GUI 打开时仍继续发送保活心跳。 */
     public static void onClientTick(Minecraft client) {
-        tickCounter++;
-        if (tickCounter < HEARTBEAT_INTERVAL) {
-            return;
+        if (++tickCounter >= HEARTBEAT_INTERVAL) {
+            sendHeartbeat(client);
         }
+    }
+
+    private static void sendHeartbeat(Minecraft client) {
         tickCounter = 0;
-
-        if (client.player == null || client.getConnection() == null) {
+        if (client.player == null || client.getConnection() == null
+                || !ClientPlayNetworking.canSend(AfkHeartbeatPayload.ID)) {
             return;
         }
-
-        long idleNanos = System.nanoTime() - lastInputNanos;
-        int idleTicks = (int) (idleNanos / NANOS_PER_TICK);
-        if (idleTicks < 0) {
-            idleTicks = 0;
-        }
-        ClientPlayNetworking.send(new AfkHeartbeatPayload(idleTicks));
-        DebugLogger.trace(MODULE, "发送 AFK 心跳: idleTicks=%d", idleTicks);
+        long idleNanos = Math.max(0L, System.nanoTime() - lastInputNanos);
+        int idleTicks = (int) Math.min(Integer.MAX_VALUE, idleNanos / NANOS_PER_TICK);
+        ClientPlayNetworking.send(new AfkHeartbeatPayload(idleTicks, inputSequence));
+        DebugLogger.trace(MODULE, "发送 AFK 心跳: idleTicks=%d, sequence=%d", idleTicks, inputSequence);
     }
 }

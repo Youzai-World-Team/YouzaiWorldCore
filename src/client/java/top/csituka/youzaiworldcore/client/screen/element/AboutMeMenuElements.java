@@ -1,6 +1,7 @@
 package top.csituka.youzaiworldcore.client.screen.element;
 
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
+import top.csituka.youzaiworldcore.client.render.YzuiMenuPanel;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -124,7 +125,7 @@ public class AboutMeMenuElements implements MenuElementGroup {
     public void renderCustomBackground(GuiGraphicsExtractor g, int width, int height, float alpha, float xOffset) {
         int w = new MenuLayout(width, height).contentWidth(560), x = (width - w) / 2 + (int) xOffset;
         int y = new MenuLayout(width, height).centeredTop(238), modelWidth = Math.min(144, w / 3);
-        YzuiTheme.card(g, x, y, modelWidth, 194, alpha);
-        YzuiTheme.card(g, x + modelWidth + 10, y, w - modelWidth - 10, 194, alpha);
+        YzuiMenuPanel.card(g, x, y, modelWidth, 194);
+        YzuiMenuPanel.card(g, x + modelWidth + 10, y, w - modelWidth - 10, 194);
     }
 }

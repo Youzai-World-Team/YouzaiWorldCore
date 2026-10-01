@@ -1167,5 +1167,11 @@
   "map.youzaiworldcore.option.anchors": "已啟用的傳送錨點",
   "map.youzaiworldcore.option.radar_tamed": "已馴服的生物",
   "map.youzaiworldcore.option.quick_locate": "顯示快速定位標記",
-  "map.youzaiworldcore.option.remember_view": "記住上次檢視的位置"
+  "map.youzaiworldcore.option.remember_view": "記住上次檢視的位置""map.youzaiworldcore.upload_unavailable": "無法開始地圖上傳：地圖或 Api 網橋已關閉、服務尚未就緒，或已有上傳正在進行。",
+  "screen.youzaiworldcore.test.login": "登入頁面預覽",
+  "screen.youzaiworldcore.test.register": "註冊頁面預覽",
+  "screen.youzaiworldcore.test.environment": "進入測試環境",
+  "screen.youzaiworldcore.test.description": "本機預覽帳戶介面，或進入原有測試環境。",
+  "screen.youzaiworldcore.test.local_notice": "本機預覽 · 不傳送請求",
+  "screen.youzaiworldcore.test.local_result": "按鈕已觸發，僅顯示本機回饋，未傳送任何請求。"
 }

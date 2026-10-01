@@ -24,7 +24,7 @@ import top.csituka.youzaiworldcore.client.animation.GuiAnimationController;
  * </ol>
  */
 @SuppressWarnings("null")
-public abstract class MailBaseScreen extends Screen {
+public abstract class MailBaseScreen extends Screen implements YzuiMenuScreen {
 
     protected final MailViewport viewport = new MailViewport();
 
@@ -94,10 +94,10 @@ public abstract class MailBaseScreen extends Screen {
         startExit(() -> Minecraft.getInstance().setScreenAndShow(new MenuScreen(new MainMenuElements())));
     }
 
-    /** 关闭界面回到游戏（带过渡动画）。 */
+    /** 关闭界面立即回到游戏。 */
     protected void closeToGame() {
         MailToast.clear();
-        startExit(() -> Minecraft.getInstance().setScreenAndShow(null));
+        closeMenu();
     }
 
     /** 切换到另一个邮件界面；由统一页面动画负责切换。 */
@@ -112,6 +112,12 @@ public abstract class MailBaseScreen extends Screen {
 
     /** 供子类的手动列表、附件与收件人选择器阻止退出期间重复操作。 */
     protected final boolean isExiting() { return GuiAnimationController.isExiting(this); }
+
+    @Override
+    public void closeMenu() {
+        MailToast.clear();
+        YzuiMenuScreen.super.closeMenu();
+    }
 
     // ===== 输入（统一换算到设计空间） =====
 
@@ -144,6 +150,7 @@ public abstract class MailBaseScreen extends Screen {
 
     @Override
     public boolean keyPressed(KeyEvent event) {
+        if (YzuiMenuScreen.handleEscape(this, event)) return true;
         if (isExiting()) {
             return true;
         }

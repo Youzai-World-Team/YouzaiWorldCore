@@ -1,6 +1,7 @@
 package top.csituka.youzaiworldcore.client.screen;
 
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
+import top.csituka.youzaiworldcore.client.render.YzuiMenuPanel;
 import top.csituka.youzaiworldcore.client.screen.widget.WidgetFocus;
 
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
@@ -26,7 +27,7 @@ import java.util.regex.Pattern;
 
 /** 邮箱注册 GUI：发送验证码并完成账户注册。 */
 @SuppressWarnings("null")
-public class RegistrationEmailScreen extends Screen {
+public class RegistrationEmailScreen extends Screen implements YzuiMenuScreen {
     private static final int CARD_WIDTH = 440;
     private static final int CARD_HEIGHT = 312;
     private static final int CONTAINER_WIDTH = 360;
@@ -177,9 +178,9 @@ public class RegistrationEmailScreen extends Screen {
     public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
         int cardWidth = Math.min(CARD_WIDTH, width - 40);
         int x = (width - cardWidth) / 2, y = (height - CARD_HEIGHT) / 2;
-        YzuiTheme.card(g, x, y, cardWidth, CARD_HEIGHT);
-        YzuiTheme.label(g, font, title, x + 24, y + 20, cardWidth - 48, YzuiTheme.text(), false);
-        YzuiTheme.wrapped(g, font, Component.translatable("screen.youzaiworldcore.register_email.subtitle"), x + 24, y + 42, cardWidth - 48, 2, YzuiTheme.textMuted());
+        YzuiMenuPanel.card(g, x, y, cardWidth, CARD_HEIGHT);
+        YzuiMenuPanel.header(g, font, title,
+                Component.translatable("screen.youzaiworldcore.register_email.subtitle"), x, y, cardWidth);
         updateButtonState();
         YzuiTheme.label(g, font, Component.translatable("screen.youzaiworldcore.register_email.session_remaining",
                 formatDuration(remainingSessionSeconds())), x + 24, y + 69, cardWidth - 48,
@@ -236,7 +237,6 @@ public class RegistrationEmailScreen extends Screen {
     @Override
     public boolean keyPressed(KeyEvent keyEvent) {
         if (currentDialog != null && currentDialog.isVisible()) return currentDialog.keyPressed(keyEvent);
-        if (currentDialog != null && currentDialog.isVisible()) return true;
         if (WidgetFocus.keyPressed(keyEvent, List.of(emailField, codeField, sendCodeButton, verifyButton, disconnectButton))) return true;
         if (this.currentDialog != null && this.currentDialog.isVisible()) return true;
         if (keyEvent.key() == 256) return true;
@@ -260,6 +260,9 @@ public class RegistrationEmailScreen extends Screen {
         if (this.codeField.isFocused() && this.codeField.charTyped(charEvent)) return true;
         return false;
     }
+
+    @Override
+    public void onClose() { }
 
     @Override
     public boolean shouldCloseOnEsc() {

@@ -1167,5 +1167,11 @@
   "map.youzaiworldcore.option.anchors": "Anclas de teletransporte activadas",
   "map.youzaiworldcore.option.radar_tamed": "Animales domesticados",
   "map.youzaiworldcore.option.quick_locate": "Resaltar objetivos de navegación",
-  "map.youzaiworldcore.option.remember_view": "Recordar la última vista del mapa"
+  "map.youzaiworldcore.option.remember_view": "Recordar la última vista del mapa""map.youzaiworldcore.upload_unavailable": "No se puede iniciar la subida: los mapas o el enlace API están desactivados, el servicio no está listo o ya hay una subida en curso.",
+  "screen.youzaiworldcore.test.login": "Vista previa del inicio de sesión",
+  "screen.youzaiworldcore.test.register": "Vista previa del registro",
+  "screen.youzaiworldcore.test.environment": "Abrir entorno de pruebas",
+  "screen.youzaiworldcore.test.description": "Previsualiza las pantallas de cuenta o abre el entorno de pruebas.",
+  "screen.youzaiworldcore.test.local_notice": "Vista local · Sin solicitudes",
+  "screen.youzaiworldcore.test.local_result": "Botón activado. Respuesta local; no se ha enviado ninguna solicitud."
 }

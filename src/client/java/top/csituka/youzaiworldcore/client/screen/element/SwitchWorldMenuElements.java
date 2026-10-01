@@ -8,14 +8,13 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
-import top.csituka.youzaiworldcore.YouzaiworldCore;
 import top.csituka.youzaiworldcore.client.screen.MenuScreen;
 import top.csituka.youzaiworldcore.client.screen.widget.ConfirmationDialog;
-import top.csituka.youzaiworldcore.client.screen.widget.TextureTileButton;
+import top.csituka.youzaiworldcore.client.screen.widget.MenuNavigationButton;
+import top.csituka.youzaiworldcore.client.render.MenuIcon;
 import top.csituka.youzaiworldcore.dimensionalinventories.WorldPoolTeleportPayload;
 
-/** 世界入口共用主菜单的整图网格；保留七个维度池与三个旧入口的操作。 */
+/** 世界入口共用主菜单的通透卡片网格；保留七个维度池与三个旧入口的操作。 */
 public class SwitchWorldMenuElements implements MenuElementGroup {
     private static final Map<String, String> POOL_MAP = Map.of(
             "survival", "survival_world_pool",
@@ -27,15 +26,17 @@ public class SwitchWorldMenuElements implements MenuElementGroup {
             "marketplace", "tutorial_world_pool"
     );
 
-    private static final Identifier[] TEXTURES = {
-            texture("survival_world"), texture("kingdom"), texture("gameplay"), texture("creative"),
-            texture("building"), texture("tutorials_world"), texture("the_nether"), texture("the_end"),
-            texture("command_zone"), texture("overworld")
+    private static final String[] ENTRIES = {
+            "survival_world", "kingdom", "gameplay", "creative",
+            "building", "tutorials_world", "the_nether", "the_end",
+            "command_zone", "overworld"
     };
 
-    private static Identifier texture(String name) {
-        return Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "textures/gui/" + name + ".png");
-    }
+    private static final MenuIcon[] ICONS = {
+            MenuIcon.WORLD, MenuIcon.HOME, MenuIcon.GAME, MenuIcon.CROWN,
+            MenuIcon.BUILD, MenuIcon.BOOK, MenuIcon.PORTAL, MenuIcon.PORTAL,
+            MenuIcon.COMMAND, MenuIcon.WORLD
+    };
 
     @Override
     public String getTitleText() {
@@ -68,12 +69,12 @@ public class SwitchWorldMenuElements implements MenuElementGroup {
                 () -> requestPoolTeleport(screen, "command"),
                 () -> showTeleportDialog(screen, "overworld")
         };
-        var grid = new MenuLayout(screenWidth, screenHeight).navigation(TEXTURES.length);
+        var grid = new MenuLayout(screenWidth, screenHeight).navigation(ENTRIES.length);
         List<AbstractWidget> buttons = new ArrayList<>();
-        for (int i = 0; i < TEXTURES.length; i++) {
+        for (int i = 0; i < ENTRIES.length; i++) {
             var bounds = grid.tile(i);
-            var button = new TextureTileButton(bounds.x(), bounds.y(), bounds.width(), bounds.height(),
-                    TEXTURES[i], actions[i]);
+            var button = new MenuNavigationButton(bounds.x(), bounds.y(), bounds.width(), bounds.height(),
+                    ENTRIES[i], ICONS[i], actions[i]);
             button.setExternalAlpha(alpha);
             buttons.add(button);
         }

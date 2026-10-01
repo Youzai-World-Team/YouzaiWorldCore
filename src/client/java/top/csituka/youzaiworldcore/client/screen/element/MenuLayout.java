@@ -4,7 +4,7 @@ package top.csituka.youzaiworldcore.client.screen.element;
 public record MenuLayout(int width, int height) {
     public static final int CONTENT_TOP = 76;
     public static final int FOOTER_MARGIN = 28;
-    public static final int NAVIGATION_SIZE = 24;
+    public static final int NAVIGATION_SIZE = 28;
     public static final int TILE_ASPECT = 2;
     private static final int GRID_GAP = 10;
 

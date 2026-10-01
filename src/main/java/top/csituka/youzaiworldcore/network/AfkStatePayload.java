@@ -10,18 +10,19 @@ import java.util.UUID;
 
 /** S2C：同步单个玩家的 AFK 状态，供客户端名字牌渲染使用。 */
 @SuppressWarnings("null")
-public record AfkStatePayload(UUID playerUuid, boolean afk) implements CustomPacketPayload {
+public record AfkStatePayload(UUID playerUuid, boolean afk, String prefix) implements CustomPacketPayload {
 
     public static final Identifier IDENTIFIER = Identifier.fromNamespaceAndPath(
-            YouzaiworldCore.MOD_ID, "afk_state");
+            YouzaiworldCore.MOD_ID, "afk_state_v2");
     public static final Type<AfkStatePayload> ID = new Type<>(IDENTIFIER);
     public static final StreamCodec<RegistryFriendlyByteBuf, AfkStatePayload> STREAM_CODEC =
             StreamCodec.of(
                     (buf, payload) -> {
                         buf.writeUUID(payload.playerUuid());
                         buf.writeBoolean(payload.afk());
+                        buf.writeUtf(payload.prefix(), 64);
                     },
-                    buf -> new AfkStatePayload(buf.readUUID(), buf.readBoolean()));
+                    buf -> new AfkStatePayload(buf.readUUID(), buf.readBoolean(), buf.readUtf(64)));
 
     @Override
     public Type<? extends CustomPacketPayload> type() {

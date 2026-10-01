@@ -2,6 +2,7 @@ package top.csituka.youzaiworldcore.client.animation;
 
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.screens.Screen;
+import org.jspecify.annotations.Nullable;
 import java.util.Collections;
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -212,6 +213,23 @@ public final class GuiAnimationController {
     }
 
     public static boolean isExiting(Screen screen) { return transitionPending && exitingScreen == screen; }
+
+    /** 主动关闭菜单时取消延迟切换；next 为 null 表示回到游戏，防止旧目标在下一帧重新打开。 */
+    public static void setScreenImmediately(Gui gui, @Nullable Screen next) {
+        if (isBackgroundRendering()) return;
+        transitionPending = false;
+        pendingGui = null;
+        pendingScreen = null;
+        exitingScreen = null;
+        lastRenderedScreen = null;
+        boolean oldBypass = bypassSetScreen;
+        bypassSetScreen = true;
+        try {
+            gui.setScreen(next);
+        } finally {
+            bypassSetScreen = oldBypass;
+        }
+    }
 
     public static void capturePictureOpacity(Object state) {
         if (content.opacity() < 1f) PICTURE_OPACITY.put(state, content.opacity());

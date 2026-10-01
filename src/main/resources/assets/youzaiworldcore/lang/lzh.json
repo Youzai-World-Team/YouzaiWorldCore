@@ -1167,5 +1167,11 @@
   "map.youzaiworldcore.option.anchors": "已啟之傳送錨",
   "map.youzaiworldcore.option.radar_tamed": "已馴之物",
   "map.youzaiworldcore.option.quick_locate": "顯示定位之記",
-  "map.youzaiworldcore.option.remember_view": "記上次所觀之處"
+  "map.youzaiworldcore.option.remember_view": "記上次所觀之處""map.youzaiworldcore.upload_unavailable": "輿圖未能上傳：功能未啟、服務未備，或傳輸未畢。",
+  "screen.youzaiworldcore.test.login": "預覽登入",
+  "screen.youzaiworldcore.test.register": "預覽註冊",
+  "screen.youzaiworldcore.test.environment": "進入試驗之境",
+  "screen.youzaiworldcore.test.description": "可於本機預覽帳戶頁，亦可入試驗之境。",
+  "screen.youzaiworldcore.test.local_notice": "本機預覽 · 不傳請求",
+  "screen.youzaiworldcore.test.local_result": "按鈕已應，僅示本機結果，未傳請求。"
 }

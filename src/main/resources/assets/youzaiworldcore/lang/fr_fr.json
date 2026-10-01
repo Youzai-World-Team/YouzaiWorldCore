@@ -1167,5 +1167,11 @@
   "map.youzaiworldcore.option.anchors": "Ancres de téléportation activées",
   "map.youzaiworldcore.option.radar_tamed": "Animaux apprivoisés",
   "map.youzaiworldcore.option.quick_locate": "Afficher les repères de navigation",
-  "map.youzaiworldcore.option.remember_view": "Mémoriser la dernière vue"
+  "map.youzaiworldcore.option.remember_view": "Mémoriser la dernière vue""map.youzaiworldcore.upload_unavailable": "Impossible de démarrer : cartes ou liaison API désactivées, service indisponible ou envoi déjà en cours.",
+  "screen.youzaiworldcore.test.login": "Aperçu de la connexion",
+  "screen.youzaiworldcore.test.register": "Aperçu de l’inscription",
+  "screen.youzaiworldcore.test.environment": "Ouvrir l’environnement de test",
+  "screen.youzaiworldcore.test.description": "Aperçu local des écrans de compte ou accès à l’environnement de test.",
+  "screen.youzaiworldcore.test.local_notice": "Aperçu local · Aucune requête",
+  "screen.youzaiworldcore.test.local_result": "Bouton activé. Réponse locale ; aucune requête n’a été envoyée."
 }
