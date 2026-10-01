@@ -15,12 +15,15 @@ import top.csituka.youzaiworldcore.YouzaiworldCore;
  * {@code clientLastActivityTick = serverTick - idleTicks}。
  * </p>
  *
+ * 同一输入序号的重复心跳只保活；命令发送前先发心跳，建立切换命令的输入边界。
+ *
+ * @param inputSequence 当前会话的真实输入序号，仅有新操作时递增
  * @param idleTicks 客户端自最后一次输入以来经过的 tick 数（>= 0）
  */
-public record AfkHeartbeatPayload(int idleTicks) implements CustomPacketPayload {
+public record AfkHeartbeatPayload(int idleTicks, long inputSequence) implements CustomPacketPayload {
 
     public static final Identifier IDENTIFIER = Identifier.fromNamespaceAndPath(
-            YouzaiworldCore.MOD_ID, "afk_heartbeat");
+            YouzaiworldCore.MOD_ID, "afk_heartbeat_v2");
 
     @SuppressWarnings("null")
     public static final Type<AfkHeartbeatPayload> ID = new Type<>(IDENTIFIER);
@@ -28,8 +31,11 @@ public record AfkHeartbeatPayload(int idleTicks) implements CustomPacketPayload 
     @SuppressWarnings("null")
     public static final StreamCodec<RegistryFriendlyByteBuf, AfkHeartbeatPayload> STREAM_CODEC =
             StreamCodec.of(
-                    (buf, p) -> buf.writeVarInt(p.idleTicks()),
-                    buf -> new AfkHeartbeatPayload(buf.readVarInt())
+                    (buf, p) -> {
+                        buf.writeVarInt(p.idleTicks());
+                        buf.writeVarLong(p.inputSequence());
+                    },
+                    buf -> new AfkHeartbeatPayload(buf.readVarInt(), buf.readVarLong())
             );
 
     @Override

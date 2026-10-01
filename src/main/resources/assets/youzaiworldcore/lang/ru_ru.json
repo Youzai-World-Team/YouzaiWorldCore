@@ -1186,5 +1186,11 @@
   "map.youzaiworldcore.share_block": "Заблокировать",
   "map.youzaiworldcore.share_no_match": "Нет подходящих игроков в сети",
   "map.youzaiworldcore.blacklist_mode": "Режим чёрного списка",
-  "map.youzaiworldcore.sharing_mode_hint": "Вкл.: делиться со всеми, кроме заблокированных. Выкл.: только с получателями из списка."
+  "map.youzaiworldcore.sharing_mode_hint": "Вкл.: делиться со всеми, кроме заблокированных. Выкл.: только с получателями из списка.",
+  "screen.youzaiworldcore.test.login": "Просмотр входа",
+  "screen.youzaiworldcore.test.register": "Просмотр регистрации",
+  "screen.youzaiworldcore.test.environment": "Открыть тестовую среду",
+  "screen.youzaiworldcore.test.description": "Локальный просмотр экранов аккаунта или переход в тестовую среду.",
+  "screen.youzaiworldcore.test.local_notice": "Локальный просмотр · Без запросов",
+  "screen.youzaiworldcore.test.local_result": "Кнопка нажата. Только локальный отклик, запросы не отправлены."
 }

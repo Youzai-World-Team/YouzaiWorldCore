@@ -115,8 +115,7 @@ public class ClientNetworking {
             DebugLogger.entering("ClientNetworking", "OpenMenuPayload handler");
             Minecraft client = context.client();
             client.execute(() -> {
-                // 打开本项目任何屏幕视为玩家活动（服务端 /yzwc open_menu 或管理员远程触发）
-                top.csituka.youzaiworldcore.client.afk.AfkInputTracker.markInput();
+                // 服务端远程打开菜单不代表玩家产生输入，实际操作由输入追踪器记录。
                 MenuElementGroup element = MENU_MAP.get(payload.menuName());
                 boolean hasElement = element != null;
                 DebugLogger.branch("ClientNetworking", "MENU_MAP contains menuName", hasElement, "menuName=" + payload.menuName());

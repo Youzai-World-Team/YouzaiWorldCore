@@ -1186,5 +1186,11 @@
   "map.youzaiworldcore.share_block": "Block player",
   "map.youzaiworldcore.share_no_match": "No matching online players",
   "map.youzaiworldcore.blacklist_mode": "Blacklist mode",
-  "map.youzaiworldcore.sharing_mode_hint": "On: share with everyone except blocked players. Off: share only with listed recipients."
+  "map.youzaiworldcore.sharing_mode_hint": "On: share with everyone except blocked players. Off: share only with listed recipients.",
+  "screen.youzaiworldcore.test.login": "Preview login page",
+  "screen.youzaiworldcore.test.register": "Preview registration page",
+  "screen.youzaiworldcore.test.environment": "Enter test environment",
+  "screen.youzaiworldcore.test.description": "Preview account screens locally or enter the test environment.",
+  "screen.youzaiworldcore.test.local_notice": "Local preview · No requests sent",
+  "screen.youzaiworldcore.test.local_result": "Button activated. This is local feedback; no requests were sent."
 }

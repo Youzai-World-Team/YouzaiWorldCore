@@ -5,6 +5,8 @@ import net.minecraft.client.MouseHandler;
 import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.client.input.MouseButtonInfo;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
+import org.lwjgl.glfw.GLFW;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -26,6 +28,10 @@ import top.csituka.youzaiworldcore.client.afk.AfkInputTracker;
  */
 @Mixin(MouseHandler.class)
 public class AfkMouseHandlerMixin {
+    @Shadow private boolean ignoreFirstMove;
+    @Shadow private double xpos;
+    @Shadow private double ypos;
+
 
     @Inject(
             method = "onButton(JLnet/minecraft/client/input/MouseButtonInfo;I)V",
@@ -34,7 +40,10 @@ public class AfkMouseHandlerMixin {
     private void youzaiworldcore$onButton(long window, MouseButtonInfo button,
             int action, CallbackInfo ci) {
         Minecraft mc = Minecraft.getInstance();
-        if (!mc.getWindow().isFocused()) {
+        if (window != mc.getWindow().handle() || !mc.getWindow().isFocused() || mc.player == null) {
+            return;
+        }
+        if (action != GLFW.GLFW_PRESS) {
             return;
         }
         // 游戏外屏幕（暂停菜单 / 设置 / ModMenu 等）点击不算活动；
@@ -52,7 +61,7 @@ public class AfkMouseHandlerMixin {
     private void youzaiworldcore$onScroll(long window, double horizontal,
             double vertical, CallbackInfo ci) {
         Minecraft mc = Minecraft.getInstance();
-        if (!mc.getWindow().isFocused()) {
+        if (window != mc.getWindow().handle() || !mc.getWindow().isFocused() || mc.player == null) {
             return;
         }
         if (mc.gui.screen() instanceof ChatScreen) {
@@ -71,11 +80,12 @@ public class AfkMouseHandlerMixin {
     )
     private void youzaiworldcore$onMove(long window, double x, double y, CallbackInfo ci) {
         Minecraft mc = Minecraft.getInstance();
-        if (!mc.getWindow().isFocused()) {
+        if (window != mc.getWindow().handle() || !mc.getWindow().isFocused() || mc.player == null) {
             return;
         }
-        // 仅世界内视角移动计为活动；界面内的鼠标悬停不应自动退出 AFK。
-        if (mc.gui.screen() == null) {
+        // 关闭聊天框后重新捕获鼠标的首个移动由原版丢弃，此处同样忽略。
+        if (!ignoreFirstMove && mc.mouseHandler.isMouseGrabbed()
+                && (x != xpos || y != ypos) && mc.gui.screen() == null) {
             AfkInputTracker.markInput();
         }
     }

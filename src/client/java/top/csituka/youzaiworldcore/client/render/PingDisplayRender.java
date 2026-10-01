@@ -127,10 +127,10 @@ public final class PingDisplayRender {
      * 直接复用整条组件，保留现有“按纯文本重建名字牌”的显示语义。
      */
     @SuppressWarnings("null")
-    public static Component getNameTagComponent(UUID playerId, Component original, int ping, boolean afk) {
+    public static Component getNameTagComponent(UUID playerId, Component original, int ping, String afkPrefix) {
         String baseText = original.getString();
         NameTagEntry cached = NAME_TAG_CACHE.get(playerId);
-        if (cached != null && cached.ping == ping && cached.afk == afk
+        if (cached != null && cached.ping == ping && cached.afkPrefix.equals(afkPrefix)
                 && cached.baseText.equals(baseText)) {
             return cached.component;
         }
@@ -138,19 +138,19 @@ public final class PingDisplayRender {
             NAME_TAG_CACHE.clear();
         }
         @SuppressWarnings("null")
-        MutableComponent built = afk ? AFK_PREFIX.copy() : Component.empty();
+        MutableComponent built = afkPrefix.isEmpty() ? Component.empty()
+                : Component.literal(afkPrefix).withColor(0xAAAAAA);
         built.append(Component.literal(baseText))
                 .append(PING_PREFIX)
                 .append(getStyledPingComponent(playerId, ping))
                 .append(PING_SUFFIX);
-        NAME_TAG_CACHE.put(playerId, new NameTagEntry(baseText, ping, afk, built));
+        NAME_TAG_CACHE.put(playerId, new NameTagEntry(baseText, ping, afkPrefix, built));
         return built;
     }
 
     /** 名字牌 ping 组件缓存上限。 */
     private static final int CACHE_LIMIT = 256;
 
-    private static final Component AFK_PREFIX = Component.literal("[AFK] ").withColor(0xAAAAAA);
     private static final Component PING_PREFIX = Component.literal(" (").withColor(0xAAAAAA);
     private static final Component PING_SUFFIX = Component.literal(")").withColor(0xAAAAAA);
 
@@ -172,13 +172,13 @@ public final class PingDisplayRender {
     private static final class NameTagEntry {
         final String baseText;
         final int ping;
-        final boolean afk;
+        final String afkPrefix;
         final Component component;
 
-        NameTagEntry(String baseText, int ping, boolean afk, Component component) {
+        NameTagEntry(String baseText, int ping, String afkPrefix, Component component) {
             this.baseText = baseText;
             this.ping = ping;
-            this.afk = afk;
+            this.afkPrefix = afkPrefix;
             this.component = component;
         }
     }

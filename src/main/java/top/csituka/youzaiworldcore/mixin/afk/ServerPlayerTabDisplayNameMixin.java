@@ -35,7 +35,7 @@ public abstract class ServerPlayerTabDisplayNameMixin {
         if (original == null) original = self.getDisplayName();
         Component result = original;
         if (AfkConfig.isTabPrefixEnabled() && AfkManager.isAfk(self)) {
-            result = Component.literal("§7[AFK] ").append(result);
+            result = Component.literal(AfkConfig.getPrefix()).withColor(0xAAAAAA).append(result);
         }
         Component title = TitleManager.getEquippedComponent(self);
         if (!title.getString().isBlank()) {

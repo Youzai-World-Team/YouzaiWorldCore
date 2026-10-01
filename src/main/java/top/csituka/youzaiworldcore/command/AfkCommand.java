@@ -10,9 +10,12 @@ import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import top.csituka.youzaiworldcore.afk.AfkManager;
+import top.csituka.youzaiworldcore.afk.AfkActivityState.DetectMode;
 import top.csituka.youzaiworldcore.config.AfkConfig;
 import top.csituka.youzaiworldcore.luckperms.LuckPermsHelper;
 import top.csituka.youzaiworldcore.util.DebugLogger;
+
+import java.util.Locale;
 
 /**
  * AFK 管理命令：{@code /yzwc afk ...}
@@ -159,20 +162,21 @@ public class AfkCommand {
             switch (key) {
                 case "enabled" -> {
                     boolean v = parseBool(value);
+                    boolean changed = AfkConfig.isEnabled() != v;
                     AfkConfig.setEnabled(v);
-                    if (!v) {
-                        AfkManager.disableAll(ctx.getSource().getServer());
-                    }
+                    AfkManager.applyConfiguration(ctx.getSource().getServer(), changed);
                     ctx.getSource().sendSuccess(() -> Component.translatable(
                             "youzaiworldcore.message.afk.command.settings_updated", key, v), true);
                 }
                 case "detect_mode" -> {
-                    AfkConfig.DetectMode mode = AfkConfig.DetectMode.valueOf(value.toUpperCase());
+                    DetectMode mode = DetectMode.valueOf(value.toUpperCase(Locale.ROOT));
+                    boolean changed = AfkConfig.getDetectMode() != mode;
                     AfkConfig.setDetectMode(mode);
+                    AfkManager.applyConfiguration(ctx.getSource().getServer(), changed);
                     ctx.getSource().sendSuccess(() -> Component.translatable(
                             "youzaiworldcore.message.afk.command.settings_updated", key, mode), true);
                 }
-                case "threshold" -> {
+                case "threshold", "threshold_seconds" -> {
                     int seconds = Integer.parseInt(value);
                     if (seconds < AfkConfig.MIN_THRESHOLD_SECONDS) {
                         throw new IllegalArgumentException("threshold must be >= "
@@ -182,27 +186,40 @@ public class AfkCommand {
                     ctx.getSource().sendSuccess(() -> Component.translatable(
                             "youzaiworldcore.message.afk.command.settings_updated", key, seconds), true);
                 }
-                case "tab_prefix" -> {
+                case "tab_prefix", "tab_prefix_enabled" -> {
                     boolean v = parseBool(value);
                     AfkConfig.setTabPrefixEnabled(v);
                     AfkManager.refreshAllTabDisplays(ctx.getSource().getServer());
                     ctx.getSource().sendSuccess(() -> Component.translatable(
                             "youzaiworldcore.message.afk.command.settings_updated", key, v), true);
                 }
-                case "broadcast" -> {
+                case "nametag_prefix", "nametag_prefix_enabled" -> {
+                    boolean v = parseBool(value);
+                    AfkConfig.setNametagPrefixEnabled(v);
+                    AfkManager.applyConfiguration(ctx.getSource().getServer(), false);
+                    ctx.getSource().sendSuccess(() -> Component.translatable(
+                            "youzaiworldcore.message.afk.command.settings_updated", key, v), true);
+                }
+                case "prefix" -> {
+                    AfkConfig.setPrefix(value);
+                    AfkManager.applyConfiguration(ctx.getSource().getServer(), false);
+                    ctx.getSource().sendSuccess(() -> Component.translatable(
+                            "youzaiworldcore.message.afk.command.settings_updated", key, value), true);
+                }
+                case "broadcast", "broadcast_enabled" -> {
                     boolean v = parseBool(value);
                     AfkConfig.setBroadcastEnabled(v);
                     ctx.getSource().sendSuccess(() -> Component.translatable(
                             "youzaiworldcore.message.afk.command.settings_updated", key, v), true);
                 }
-                case "invulnerable" -> {
+                case "invulnerable", "invulnerable_enabled" -> {
                     boolean v = parseBool(value);
                     AfkConfig.setInvulnerableEnabled(v);
-                    AfkManager.syncInvulnerability(ctx.getSource().getServer());
+                    // 伤害入口直接读取当前配置，无需修改药水效果。
                     ctx.getSource().sendSuccess(() -> Component.translatable(
                             "youzaiworldcore.message.afk.command.settings_updated", key, v), true);
                 }
-                case "auto_kick" -> {
+                case "auto_kick", "auto_kick_seconds" -> {
                     int seconds = Integer.parseInt(value);
                     if (seconds < 0 || (seconds > 0 && seconds < AfkConfig.getThresholdSeconds())) {
                         throw new IllegalArgumentException("auto_kick must be 0 or >= threshold");
@@ -211,7 +228,7 @@ public class AfkCommand {
                     ctx.getSource().sendSuccess(() -> Component.translatable(
                             "youzaiworldcore.message.afk.command.settings_updated", key, seconds), true);
                 }
-                case "manual_toggle" -> {
+                case "manual_toggle", "manual_toggle_enabled" -> {
                     boolean v = parseBool(value);
                     AfkConfig.setManualToggleEnabled(v);
                     ctx.getSource().sendSuccess(() -> Component.translatable(
@@ -237,7 +254,7 @@ public class AfkCommand {
     }
 
     private static boolean parseBool(String value) {
-        return switch (value.toLowerCase()) {
+        return switch (value.toLowerCase(Locale.ROOT)) {
             case "true", "1", "yes", "on" -> true;
             case "false", "0", "no", "off" -> false;
             default -> throw new IllegalArgumentException("invalid boolean: " + value);

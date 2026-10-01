@@ -7,8 +7,6 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.screens.ConfirmLinkScreen;
 import net.minecraft.client.resources.language.I18n;
-import net.minecraft.resources.Identifier;
-import top.csituka.youzaiworldcore.YouzaiworldCore;
 import top.csituka.youzaiworldcore.client.MailClientState;
 import top.csituka.youzaiworldcore.client.render.RoundedRect;
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
@@ -16,19 +14,22 @@ import top.csituka.youzaiworldcore.client.screen.MailScreen;
 import top.csituka.youzaiworldcore.client.screen.MenuScreen;
 import top.csituka.youzaiworldcore.client.screen.TitleManagementScreen;
 import top.csituka.youzaiworldcore.client.screen.widget.ConfirmationDialog;
-import top.csituka.youzaiworldcore.client.screen.widget.TextureTileButton;
+import top.csituka.youzaiworldcore.client.screen.widget.MenuNavigationButton;
+import top.csituka.youzaiworldcore.client.render.MenuIcon;
 
-/** 主菜单整图网格；各按钮共用 2:1 比例，邮件角标限制在对应按钮内。 */
+/** 主菜单通透卡片网格；各按钮共用 2:1 比例，邮件角标限制在对应按钮内。 */
 public class MainMenuElements implements MenuElementGroup {
-    private static final Identifier[] TEXTURES = {
-            texture("switch-worlds"), texture("mail"), texture("level"), texture("about-me"),
-            texture("title"), texture("settings"), texture("website"), texture("tutorial_center"),
-            texture("events"), texture("questionnaire_application_and_survey"), texture("report"), texture("management")
+    private static final String[] ENTRIES = {
+            "switch_worlds", "mail", "level", "about_me",
+            "title", "settings", "website", "tutorial_center",
+            "events", "questionnaire_application_and_survey", "report", "management"
     };
 
-    private static Identifier texture(String name) {
-        return Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "textures/gui/" + name + ".png");
-    }
+    private static final MenuIcon[] ICONS = {
+            MenuIcon.WORLD, MenuIcon.MAIL, MenuIcon.LEVEL, MenuIcon.ACCOUNT,
+            MenuIcon.CROWN, MenuIcon.SETTINGS, MenuIcon.WEBSITE, MenuIcon.BOOK,
+            MenuIcon.EVENTS, MenuIcon.SURVEY, MenuIcon.REPORT, MenuIcon.ADMIN
+    };
 
     @Override
     public String getTitleText() {
@@ -60,12 +61,12 @@ public class MainMenuElements implements MenuElementGroup {
                 () -> showNotImplementedDialog(screen), () -> showNotImplementedDialog(screen),
                 () -> showNotImplementedDialog(screen)
         };
-        var grid = new MenuLayout(screenWidth, screenHeight).navigation(TEXTURES.length);
+        var grid = new MenuLayout(screenWidth, screenHeight).navigation(ENTRIES.length);
         List<AbstractWidget> buttons = new ArrayList<>();
-        for (int i = 0; i < TEXTURES.length; i++) {
+        for (int i = 0; i < ENTRIES.length; i++) {
             var bounds = grid.tile(i);
-            var button = new TextureTileButton(bounds.x(), bounds.y(), bounds.width(), bounds.height(),
-                    TEXTURES[i], actions[i]);
+            var button = new MenuNavigationButton(bounds.x(), bounds.y(), bounds.width(), bounds.height(),
+                    ENTRIES[i], ICONS[i], actions[i]);
             button.setExternalAlpha(alpha);
             buttons.add(button);
         }
@@ -84,7 +85,7 @@ public class MainMenuElements implements MenuElementGroup {
             float alpha, float xOffset, int mouseX, int mouseY) {
         int unread = MailClientState.unreadCount;
         if (unread <= 0) return;
-        var tile = new MenuLayout(width, height).navigation(TEXTURES.length).tile(1);
+        var tile = new MenuLayout(width, height).navigation(ENTRIES.length).tile(1);
         String count = unread > 99 ? "99+" : Integer.toString(unread);
         var font = Minecraft.getInstance().font;
         int badgeWidth = Math.max(16, font.width(count) + 8);

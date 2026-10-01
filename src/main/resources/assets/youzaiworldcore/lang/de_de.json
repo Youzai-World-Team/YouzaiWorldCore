@@ -1186,5 +1186,11 @@
   "map.youzaiworldcore.share_block": "Spieler blockieren",
   "map.youzaiworldcore.share_no_match": "Keine passenden Spieler online",
   "map.youzaiworldcore.blacklist_mode": "Sperrlistenmodus",
-  "map.youzaiworldcore.sharing_mode_hint": "An: mit allen außer blockierten Spielern teilen. Aus: nur mit eingetragenen Empfängern teilen."
+  "map.youzaiworldcore.sharing_mode_hint": "An: mit allen außer blockierten Spielern teilen. Aus: nur mit eingetragenen Empfängern teilen.",
+  "screen.youzaiworldcore.test.login": "Anmeldung ansehen",
+  "screen.youzaiworldcore.test.register": "Registrierung ansehen",
+  "screen.youzaiworldcore.test.environment": "Testumgebung öffnen",
+  "screen.youzaiworldcore.test.description": "Kontoseiten lokal ansehen oder die Testumgebung öffnen.",
+  "screen.youzaiworldcore.test.local_notice": "Lokale Vorschau · Keine Anfragen",
+  "screen.youzaiworldcore.test.local_result": "Schaltfläche betätigt. Nur lokale Rückmeldung; keine Anfrage gesendet."
 }

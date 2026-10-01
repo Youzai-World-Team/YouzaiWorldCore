@@ -71,7 +71,7 @@ public final class YzuiTheme {
     public static int primaryContainer() { return palette().primaryContainer(); }
     public static int onPrimaryContainer() { return palette().onPrimaryContainer(); }
     public static int secondaryContainer() { return palette().secondaryContainer(); }
-    public static int text() { return palette().text(); }
+    public static int text() { return menuContext() ? surfaceText(palette().text()) : palette().text(); }
     public static int textMuted() { return surfaceText(palette().textMuted()); }
     public static int outline() { return palette().outline(); }
     public static int outlineVariant() { return palette().outlineVariant(); }
@@ -86,13 +86,20 @@ public final class YzuiTheme {
     public static int scrim() { return frosted() ? 0x280B1912 : 0x480B1912; }
 
     private static int surfaceText(int color) {
-        return palette().translucentText(color, visualStyle().surfaceOpacity());
+        return palette().translucentText(color, menuContext() ? YzuiMenuPanel.opacity() : visualStyle().surfaceOpacity());
+    }
+
+    /** 仅菜单绘制期间减轻控件底色，标题页、设置与物品栏继续使用原有样式。 */
+    private static boolean menuContext() {
+        return YzuiViewport.renderingScreen() instanceof top.csituka.youzaiworldcore.client.screen.YzuiMenuScreen menu
+                && menu.usesMenuOverlay();
     }
 
     /** 卡片上最不利的世界底色，供带独立颜色样式的文字统一校正。 */
     private static int textBackground() {
         int behind = YzuiPalette.luminance(palette().surface()) < 0.18 ? 0xFFFFFF : 0;
-        return YzuiPalette.composite(palette().surface(), behind, visualStyle().surfaceOpacity());
+        return YzuiPalette.composite(palette().surface(), behind,
+                menuContext() ? YzuiMenuPanel.opacity() : visualStyle().surfaceOpacity());
     }
 
     public static int hudSurface() { return alpha(palette().surface(), visualStyle().hudPanelOpacity()); }
@@ -123,6 +130,7 @@ public final class YzuiTheme {
         if (screen instanceof top.csituka.youzaiworldcore.client.screen.YzHudSettingsScreen) return;
         if (screen.getClass().getPackageName().equals("top.csituka.youzaiworldcore.client.screen.map")) return;
         String name = screen.getClass().getSimpleName();
+        if (name.equals("MenuScreen") || name.equals("YouzaiWorldCoreTestScreen")) return;
         if (name.startsWith("Yzu") || name.startsWith("Mail") || name.equals("YzuiAppearanceScreen")
                 || name.equals("FlyBeaconScreen") || name.equals("DecompositionTableScreen")
                 || name.equals("WelcomeGuideScreen") || name.equals("TitleManagementScreen")
@@ -276,7 +284,7 @@ public final class YzuiTheme {
         int radius = Math.min(12, h / 2);
         if (style != ButtonStyle.TEXT || hover > 0f || focused) {
             float a = style == ButtonStyle.TEXT ? state * 0.14f + (focused ? 0.08f : 0f)
-                    : style == ButtonStyle.FILLED ? 1f : visualStyle().controlOpacity();
+                    : style == ButtonStyle.FILLED ? 1f : menuContext() ? 0.38f : visualStyle().controlOpacity();
             RoundedRect.fill(g, x, y, w, h, radius, alpha(color, opacity * a));
         }
         if (state > 0f && enabled && !focused) {
@@ -295,10 +303,12 @@ public final class YzuiTheme {
     public static void field(GuiGraphicsExtractor g, int x, int y, int w, int h,
             float hover, boolean focused, boolean enabled, float opacity) {
         float state = enabled ? Math.clamp(hover, 0f, 1f) : 0f;
-        RoundedRect.fill(g, x, y, w, h, 5,
-                multiplyAlpha(mix(surfaceHigh(), alpha(primaryContainer(), visualStyle().layerOpacity()), state * 0.20f), opacity));
+        int radius = menuContext() ? 8 : 5;
+        float layerOpacity = menuContext() ? 0.24f : visualStyle().layerOpacity();
+        RoundedRect.fill(g, x, y, w, h, radius,
+                multiplyAlpha(mix(alpha(palette().surfaceHigh(), layerOpacity), alpha(primaryContainer(), layerOpacity), state * 0.20f), opacity));
         int line = enabled && focused ? primary() : mix(outlineVariant(), primary(), state * 0.5f);
-        border(g, x, y, w, h, 5, alpha(line, opacity * (focused && enabled ? 0.9f : 0.28f + state * 0.22f)));
+        border(g, x, y, w, h, radius, alpha(line, opacity * (focused && enabled ? 0.9f : 0.28f + state * 0.22f)));
     }
 
     /** 按行显示描述文字，超过可用行数时保留省略提示。 */

@@ -1,6 +1,7 @@
 package top.csituka.youzaiworldcore.client.screen;
 
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
+import top.csituka.youzaiworldcore.client.render.YzuiMenuPanel;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -9,6 +10,7 @@ import net.minecraft.client.input.KeyEvent;
 import net.minecraft.network.chat.Component;
 import top.csituka.youzaiworldcore.client.render.RoundedRect;
 import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
+import top.csituka.youzaiworldcore.client.screen.widget.MenuCloseButton;
 import top.csituka.youzaiworldcore.client.title.TitleClientState;
 import top.csituka.youzaiworldcore.title.TitleDefinition;
 
@@ -16,7 +18,7 @@ import java.util.List;
 
 /** Shift+F 主菜单中的玩家称号管理页。 */
 @SuppressWarnings("null")
-public final class TitleManagementScreen extends Screen {
+public final class TitleManagementScreen extends Screen implements YzuiMenuScreen {
     private static final int PANEL_WIDTH = 520;
     private static final int PANEL_HEIGHT = 420;
     private static final int LIST_TOP = 62;
@@ -98,12 +100,10 @@ public final class TitleManagementScreen extends Screen {
             addRenderableWidget(next);
         }
 
-        TransparentButton close = new TransparentButton(
-                panelX + panelWidth - 42, panelY + 12, 26, 20,
-                Component.literal("×"), this::onClose);
-        close.setTextColor(YzuiTheme.text());
-        close.setBackgroundVisible(false);
-        addRenderableWidget(close);
+        addRenderableWidget(new MenuCloseButton(panelX + panelWidth - 40, panelY + 10, this));
+        addRenderableWidget(new TransparentButton(panelX + 12, panelY + 10, 28, 28,
+                Component.literal("‹"), () -> Minecraft.getInstance().setScreenAndShow(parent))
+                .setStyle(YzuiTheme.ButtonStyle.TEXT));
     }
 
     private int panelHeight() {
@@ -127,9 +127,9 @@ public final class TitleManagementScreen extends Screen {
         int panelHeight = panelHeight();
         int panelX = (width - panelWidth) / 2;
         int panelY = (height - panelHeight) / 2;
-        YzuiTheme.card(graphics, panelX, panelY, panelWidth, panelHeight);
+        YzuiMenuPanel.card(graphics, panelX, panelY, panelWidth, panelHeight);
         Component title = Component.translatable("screen.youzaiworldcore.title_management.title");
-        graphics.text(font, title, panelX + 24, panelY + 18, YzuiTheme.text(), false);
+        YzuiTheme.label(graphics, font, title, panelX + 48, panelY + 18, panelWidth - 100, YzuiTheme.text(), false);
         Component current = Component.translatable("screen.youzaiworldcore.title_management.current",
                 currentTitleLabel());
         graphics.enableScissor(panelX + 24, panelY + 35, panelX + panelWidth - 24, panelY + 51);
@@ -167,7 +167,7 @@ public final class TitleManagementScreen extends Screen {
 
     @Override
     public void onClose() {
-        Minecraft.getInstance().setScreenAndShow(parent);
+        closeMenu();
     }
 
     @Override

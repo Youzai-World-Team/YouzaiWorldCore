@@ -65,6 +65,6 @@ public abstract class EntityRendererMixin {
 
         // 最终顺序为 "[AFK] 玩家名 (ping)"；内容未变时复用整条组件。
         state.nameTag = PingDisplayRender.getNameTagComponent(
-                player.getUUID(), state.nameTag, ping, AfkClientState.isAfk(player.getUUID()));
+                player.getUUID(), state.nameTag, ping, AfkClientState.getPrefix(player.getUUID()));
     }
 }

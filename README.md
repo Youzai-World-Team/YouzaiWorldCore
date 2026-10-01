@@ -366,18 +366,22 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 
 ### 22. AFK 挂机检测系统
 
-服务端自动检测玩家挂机状态，为长时间无操作的玩家标记 AFK 前缀并支持多种自动化处理。
+服务端每 20 tick 检查玩家活动，默认无操作 300 秒进入 AFK。状态只在本次连接中保存，掉线即清理。
 
-- **检测机制**：每 20 tick 检查玩家鼠标移动/键盘输入/视角变化，可配置检测阈值（默认 300 秒）
-- **AFK 标记**：Tab 列表昵称前方追加可配置前缀（如 `[AFK]`），由 `ServerPlayerTabDisplayNameMixin` + `AfkKeyboardHandlerMixin` / `AfkMouseHandlerMixin` 双向追踪
-- **自动化处理**：可配置无敌模式（invulnerable）、自动踢出（auto_kick），AFK 期间广播提示
-- **手动切换**：玩家可通过 `/yzwc afk` 手动进入/退出 AFK 状态
+- **检测模式**：`BOTH` 默认优先采用客户端输入，超过 100 tick 没有心跳时回退位置/视角采样；`SERVER` 只用服务端采样；`CLIENT` 无心跳时不自动判定。聊天与命令在所有模式中都算活动。
+- **一致的恢复规则**：进入与退出使用同一检测通道。客户端通道有效时，流水、矿车等被动移动不会反复触发挂机/返回；无客户端通道时，服务端仍无法区分主动与被动移动。
+- **输入判定**：只记录新的按键按下、鼠标点击/滚轮和世界内实际鼠标移动；长按重复、按键释放、界面内悬停、聊天框未发送的文字及鼠标重新捕获不算活动。打开物品栏/聊天框、截图、切换视角按当前键位绑定排除。
+- **手动切换**：`/yzwc afk` 发送前先同步输入序号，切换后旧心跳和回车释放不会立即取消 AFK。新的有效操作仍可恢复，无固定等待期。退出后重新开始完整的空闲计时。
+- **显示**：`prefix` 为 Tab 与头顶共用文本（默认 `"[AFK] "`，最多 64 字符，不允许换行）；`tab_prefix_enabled` 和 `nametag_prefix_enabled` 分别控制两处显示，均默认开启。状态变化、加入服务器和配置重载时同步。
+- **无敌**：`invulnerable_enabled` 默认关闭。开启后直接拦截 AFK 玩家的伤害（包括饥饿、虚空与 `/kill` 的伤害），不添加、删除或覆盖原有抗性药水；退出或关闭配置后立即失效。
+- **踢出与广播**：`broadcast_enabled` 默认开启；`auto_kick_seconds` 默认 0（关闭），从**进入 AFK**开始计时。例如阈值 300 秒、踢出 900 秒，正常 20 TPS 下约在最后活动后 20 分钟踢出。正数须不小于检测阈值；低 TPS 时按服务端 tick 延长实际等待时间。
 - **命令**（服务端）：
-  - `/yzwc afk` —— 手动切换 AFK
-  - `/yzwc afk status [player]` —— 查询自身/他人 AFK 状态
-  - `/yzwc afk list` —— 列出所有 AFK 玩家（需管理权限）
-  - `/yzwc afk settings <key> <value>` —— 运行时修改 AFK 配置（需管理权限）
-- **配置**：`global_settings.json` → `afk_module`（`AfkConfig`，含 enabled/detect_mode/threshold_seconds/tab_prefix_enabled/broadcast_enabled/invulnerable_enabled/auto_kick_seconds/manual_toggle_enabled）
+  - `/yzwc afk` —— 手动切换自身 AFK，默认所有人可用。
+  - `/yzwc afk status` —— 查询自身；`status <player>` 和 `list` 需要管理权限。
+  - `/yzwc afk settings <key> <value>` —— 管理员运行时修改并保存；`/yzwc reload` 同样会重载 AFK 配置并同步在线状态。
+- **配置**：`yzwc/server/config/global_settings.json` → `afk_module`，字段包含 `enabled`、`detect_mode`、`threshold_seconds`、`tab_prefix_enabled`、`nametag_prefix_enabled`、`prefix`、`broadcast_enabled`、`invulnerable_enabled`、`auto_kick_seconds`、`manual_toggle_enabled`。命令接受这些完整键名，也保留 `threshold`、`tab_prefix`、`nametag_prefix`、`broadcast`、`invulnerable`、`auto_kick`、`manual_toggle` 简写。`prefix` 命令的剩余文本按原样保存，不额外添加引号。
+- **更新与检测边界**：两端应同时更新，以使用带输入序号的 `afk_heartbeat_v2` 和带名字牌前缀的 `afk_state_v2`；发送前会检查对端通道支持。客户端活动仍属于自报信号，本功能不提供反作弊保证。
+- **回归检查**：`python3 tools/verify_afk.py --java-home <JDK25路径>` 在临时目录执行状态机、配置及输入过滤检查；联机验证步骤见 [AFK 验证说明](docs/AFK.md)。
 
 ### 23. 传送卷轴系统 ★新增
 
@@ -929,7 +933,8 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 | `mail_admin_send`           | C→S  | 发布邮件                                                           |
 | `mail_admin_edit`           | C→S  | 编辑/取消编辑邮件                                                  |
 | `mail_player_list_request`  | C→S  | 请求已注册玩家代号名单                                             |
-| `afk_heartbeat`             | C→S  | AFK 心跳包（客户端上报输入活动状态）                               |
+| `afk_heartbeat_v2`          | C→S  | AFK 心跳（输入序号与空闲时间；命令发送前同步基线）                  |
+| `afk_state_v2`              | S→C  | AFK 状态与服务端配置的头顶前缀                                    |
 | `title_state_request`       | C→S  | 请求刷新当前玩家称号数据                                           |
 | `title_equip`               | C→S  | 请求佩戴指定称号；空 ID 表示卸下                                   |
 | `map_view_request` | C→S | 订阅指定维度/图层/高度的有限地图视口 |

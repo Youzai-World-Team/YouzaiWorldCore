@@ -4,15 +4,16 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import top.csituka.youzaiworldcore.network.AfkStatePayload;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 /** 客户端只读 AFK 状态缓存，仅用于玩家头顶名字牌渲染。 */
 public final class AfkClientState {
 
     private static final String MODULE = "AfkClientState";
-    private static final Set<UUID> AFK_PLAYERS = new HashSet<>();
+    private static final Map<UUID, String> AFK_PLAYERS = new HashMap<>();
 
     private AfkClientState() {
     }
@@ -27,19 +28,24 @@ public final class AfkClientState {
     public static void apply(AfkStatePayload payload) {
         boolean changed;
         if (payload.afk()) {
-            changed = AFK_PLAYERS.add(payload.playerUuid());
+            changed = !Objects.equals(AFK_PLAYERS.put(payload.playerUuid(), payload.prefix()), payload.prefix());
         } else {
-            changed = AFK_PLAYERS.remove(payload.playerUuid());
+            changed = AFK_PLAYERS.remove(payload.playerUuid()) != null;
         }
         if (changed) {
-            DebugLogger.stateChange(MODULE, payload.playerUuid().toString(),
-                    "afk", !payload.afk(), payload.afk());
+            DebugLogger.trace(MODULE, "AFK 显示更新: player=%s, afk=%s, prefix=%s",
+                    payload.playerUuid(), payload.afk(), payload.prefix());
         }
     }
 
     /** @return 指定玩家是否处于 AFK 状态。 */
     public static boolean isAfk(UUID playerUuid) {
-        return AFK_PLAYERS.contains(playerUuid);
+        return AFK_PLAYERS.containsKey(playerUuid);
+    }
+
+    /** 服务端已应用名字牌开关后的前缀；关闭显示或非 AFK 时返回空串。 */
+    public static String getPrefix(UUID playerUuid) {
+        return AFK_PLAYERS.getOrDefault(playerUuid, "");
     }
 
     private static void clear() {

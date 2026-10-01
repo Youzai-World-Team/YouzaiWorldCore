@@ -1,9 +1,7 @@
 package top.csituka.youzaiworldcore.config;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import top.csituka.youzaiworldcore.util.DebugLogger;
+import top.csituka.youzaiworldcore.afk.AfkActivityState.DetectMode;
 
 /**
  * AFK（挂机）功能配置。
@@ -21,18 +19,6 @@ public final class AfkConfig {
 
     public static final String MODULE = "AfkConfig";
 
-    private static final Logger LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/AfkConfig");
-
-    /** AFK 检测模式 */
-    public enum DetectMode {
-        /** 仅客户端心跳检测（原版客户端玩家永不判定 AFK） */
-        CLIENT,
-        /** 仅服务端近似检测（位置/视角变化） */
-        SERVER,
-        /** 双通道：客户端心跳存活时优先使用客户端，失效后回退服务端检测（默认） */
-        BOTH
-    }
-
     /** 触发阈值下限（秒）：至少 30 秒 */
     public static final int MIN_THRESHOLD_SECONDS = 30;
 
@@ -44,6 +30,9 @@ public final class AfkConfig {
     private static final int DEFAULT_THRESHOLD_SECONDS = 300;
     /** 默认值：显示 Tab 前缀 */
     private static final boolean DEFAULT_TAB_PREFIX_ENABLED = true;
+    private static final boolean DEFAULT_NAMETAG_PREFIX_ENABLED = true;
+    private static final String DEFAULT_PREFIX = "[AFK] ";
+    public static final int MAX_PREFIX_LENGTH = 64;
     /** 默认值：进入 / 退出 AFK 广播 */
     private static final boolean DEFAULT_BROADCAST_ENABLED = true;
     /** 默认值：AFK 期间不无敌 */
@@ -61,9 +50,11 @@ public final class AfkConfig {
     private static int thresholdSeconds = DEFAULT_THRESHOLD_SECONDS;
     /** 是否在 Tab 列表显示 [AFK] 前缀，默认 true */
     private static boolean tabPrefixEnabled = DEFAULT_TAB_PREFIX_ENABLED;
+    private static boolean nametagPrefixEnabled = DEFAULT_NAMETAG_PREFIX_ENABLED;
+    private static String prefix = DEFAULT_PREFIX;
     /** 进入/退出 AFK 是否向全体广播，默认 true */
     private static boolean broadcastEnabled = DEFAULT_BROADCAST_ENABLED;
-    /** AFK 期间是否无敌（无限时长的抗性提升 V），默认 false */
+    /** AFK 期间是否在服务端伤害入口免疫伤害，默认 false */
     private static boolean invulnerableEnabled = DEFAULT_INVULNERABLE_ENABLED;
     /** 超过该时长（秒）自动踢出，0 = 禁用（默认），须 >= 触发阈值 */
     private static int autoKickSeconds = DEFAULT_AUTO_KICK_SECONDS;
@@ -93,6 +84,33 @@ public final class AfkConfig {
     /** @return 是否在 Tab 列表显示 [AFK] 前缀 */
     public static boolean isTabPrefixEnabled() {
         return tabPrefixEnabled;
+    }
+
+    /** @return 是否在头顶名字牌显示前缀（独立于 Tab 开关） */
+    public static boolean isNametagPrefixEnabled() {
+        return nametagPrefixEnabled;
+    }
+
+    /** @return Tab 和头顶共用的前缀文本，空白和间距按原样保留 */
+    public static String getPrefix() {
+        return prefix;
+    }
+
+    /** 设置名字牌前缀开关并持久化。 */
+    public static void setNametagPrefixEnabled(boolean value) {
+        DebugLogger.stateChange(MODULE, "AfkConfig", "nametagPrefixEnabled", nametagPrefixEnabled, value);
+        nametagPrefixEnabled = value;
+        save();
+    }
+
+    /** 设置共用前缀，最多 64 字符且不允许换行。 */
+    public static void setPrefix(String value) {
+        if (value == null || value.length() > MAX_PREFIX_LENGTH || value.contains("\n") || value.contains("\r")) {
+            throw new IllegalArgumentException("invalid AFK prefix");
+        }
+        DebugLogger.stateChange(MODULE, "AfkConfig", "prefix", prefix, value);
+        prefix = value;
+        save();
     }
 
     /** @return 进入/退出 AFK 是否广播 */
@@ -254,25 +272,30 @@ public final class AfkConfig {
         if (section.isEmpty()) {
             DebugLogger.info(MODULE, "afk_module 分节不存在，写入默认配置 (enabled=%s, mode=%s, threshold=%ds)",
                     enabled, detectMode, thresholdSeconds);
-            save();
+            writeDefaults();
             DebugLogger.exiting(MODULE, "load", "created default");
             return;
         }
 
-        enabled = section.getBoolean("enabled", enabled);
-        detectMode = section.getEnum("detect_mode", detectMode, DetectMode.class);
-        thresholdSeconds = section.getInt("threshold_seconds", thresholdSeconds,
+        enabled = section.getBoolean("enabled", DEFAULT_ENABLED);
+        detectMode = section.getEnum("detect_mode", DEFAULT_DETECT_MODE, DetectMode.class);
+        thresholdSeconds = section.getInt("threshold_seconds", DEFAULT_THRESHOLD_SECONDS,
                 MIN_THRESHOLD_SECONDS, Integer.MAX_VALUE);
-        tabPrefixEnabled = section.getBoolean("tab_prefix_enabled", tabPrefixEnabled);
-        broadcastEnabled = section.getBoolean("broadcast_enabled", broadcastEnabled);
-        invulnerableEnabled = section.getBoolean("invulnerable_enabled", invulnerableEnabled);
-        autoKickSeconds = section.getInt("auto_kick_seconds", autoKickSeconds, 0, Integer.MAX_VALUE);
+        tabPrefixEnabled = section.getBoolean("tab_prefix_enabled", DEFAULT_TAB_PREFIX_ENABLED);
+        nametagPrefixEnabled = section.getBoolean("nametag_prefix_enabled", DEFAULT_NAMETAG_PREFIX_ENABLED);
+        prefix = section.getString("prefix", DEFAULT_PREFIX);
+        if (prefix.length() > MAX_PREFIX_LENGTH || prefix.contains("\n") || prefix.contains("\r")) {
+            section.fail("prefix", "AFK 前缀最多 64 字符且不允许换行");
+        }
+        broadcastEnabled = section.getBoolean("broadcast_enabled", DEFAULT_BROADCAST_ENABLED);
+        invulnerableEnabled = section.getBoolean("invulnerable_enabled", DEFAULT_INVULNERABLE_ENABLED);
+        autoKickSeconds = section.getInt("auto_kick_seconds", DEFAULT_AUTO_KICK_SECONDS, 0, Integer.MAX_VALUE);
         if (autoKickSeconds > 0 && autoKickSeconds < thresholdSeconds) {
             section.fail("auto_kick_seconds",
                     "自动踢出时长 " + autoKickSeconds + " 秒必须为 0（禁用）或不小于触发阈值 "
                             + thresholdSeconds + " 秒");
         }
-        manualToggleEnabled = section.getBoolean("manual_toggle_enabled", manualToggleEnabled);
+        manualToggleEnabled = section.getBoolean("manual_toggle_enabled", DEFAULT_MANUAL_TOGGLE_ENABLED);
 
         DebugLogger.info(MODULE,
                 "已加载配置: enabled=%s, detect_mode=%s, threshold_seconds=%d, tab_prefix=%s, "
@@ -289,6 +312,8 @@ public final class AfkConfig {
         detectMode = DEFAULT_DETECT_MODE;
         thresholdSeconds = DEFAULT_THRESHOLD_SECONDS;
         tabPrefixEnabled = DEFAULT_TAB_PREFIX_ENABLED;
+        nametagPrefixEnabled = DEFAULT_NAMETAG_PREFIX_ENABLED;
+        prefix = DEFAULT_PREFIX;
         broadcastEnabled = DEFAULT_BROADCAST_ENABLED;
         invulnerableEnabled = DEFAULT_INVULNERABLE_ENABLED;
         autoKickSeconds = DEFAULT_AUTO_KICK_SECONDS;
@@ -303,6 +328,8 @@ public final class AfkConfig {
         section.set("detect_mode", detectMode);
         section.set("threshold_seconds", thresholdSeconds);
         section.set("tab_prefix_enabled", tabPrefixEnabled);
+        section.set("nametag_prefix_enabled", nametagPrefixEnabled);
+        section.set("prefix", prefix);
         section.set("broadcast_enabled", broadcastEnabled);
         section.set("invulnerable_enabled", invulnerableEnabled);
         section.set("auto_kick_seconds", autoKickSeconds);

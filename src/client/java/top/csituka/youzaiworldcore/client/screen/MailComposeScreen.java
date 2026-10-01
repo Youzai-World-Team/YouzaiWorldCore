@@ -129,6 +129,8 @@ public class MailComposeScreen extends MailBaseScreen {
     protected void init() {
         super.init();
         pageRect = MailUi.centeredPage(620, 360);
+        addRenderableWidget(new top.csituka.youzaiworldcore.client.screen.widget.MenuCloseButton(
+                pageRect.right() - 46, pageRect.y() + 10, this));
         formRect = new MailUi.Rect(pageRect.x() + 22, pageRect.y() + 50,
                 pageRect.width() - 44, pageRect.height() - 68);
         if (editMode && editSource == null && MailClientState.pendingEditData != null) {
@@ -328,7 +330,7 @@ public class MailComposeScreen extends MailBaseScreen {
                 MailUi.textPrimary(), false);
         graphics.pose().popMatrix();
 
-        publishRect = new MailUi.Rect(pageRect.right() - 60, pageRect.y() + 16, 38, 22);
+        publishRect = new MailUi.Rect(pageRect.right() - 96, pageRect.y() + 16, 38, 22);
         cancelRect = new MailUi.Rect(publishRect.x() - 50, publishRect.y(), 42, 22);
         MailUi.button(graphics, font, cancelRect, "取消", YzuiTheme.primaryContainer(), YzuiTheme.onPrimaryContainer(),
                 cancelRect.contains(mouseX, mouseY), true);
@@ -646,6 +648,7 @@ public class MailComposeScreen extends MailBaseScreen {
 
     @Override
     public boolean keyPressed(KeyEvent event) {
+        if (YzuiMenuScreen.handleEscape(this, event)) return true;
         if (isExiting()) return true;
         if (playerPicker.isOpen()) {
             // ESC / 回车由弹窗处理，其余按键处理搜索输入
@@ -984,6 +987,17 @@ public class MailComposeScreen extends MailBaseScreen {
             inventoryPicker.hide();
             return;
         }
+        cancelEditing();
+        navigateBack();
+    }
+
+    @Override
+    public void closeMenu() {
+        cancelEditing();
+        super.closeMenu();
+    }
+
+    private void cancelEditing() {
         if (editMode && editMailId != null && !finished && !cancelPacketSent) {
             cancelPacketSent = true;
             ClientPlayNetworking.send(new MailAdminEditPayload(editMailId, true, List.of(),
@@ -991,7 +1005,6 @@ public class MailComposeScreen extends MailBaseScreen {
             DebugLogger.info(MODULE, "已取消邮件编辑: mailId=%s", editMailId);
         }
         finished = true;
-        navigateBack();
     }
 
     private void navigateBack() {

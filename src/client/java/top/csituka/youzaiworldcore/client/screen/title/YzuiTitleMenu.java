@@ -24,6 +24,7 @@ import top.csituka.youzaiworldcore.client.render.YzuiTheme;
 import top.csituka.youzaiworldcore.client.screen.ForcedUpdateScreen;
 import top.csituka.youzaiworldcore.client.screen.JoinBlockedScreen;
 import top.csituka.youzaiworldcore.client.screen.QuitConfirmationScreen;
+import top.csituka.youzaiworldcore.client.screen.YouzaiWorldCoreTestScreen;
 import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
 import top.csituka.youzaiworldcore.client.update.ClientUpdateState;
 import top.csituka.youzaiworldcore.mixin.client.ScreenAccessor;
@@ -217,6 +218,10 @@ public final class YzuiTitleMenu {
     }
 
     private void test() {
+        minecraft.gui.setScreen(new YouzaiWorldCoreTestScreen(screen, this::testEnvironment));
+    }
+
+    private void testEnvironment() {
         if ("dedicated".equals(ClientExternalSettings.getDebugModeType())) {
             connect("Debug Server", ClientExternalSettings.getDebugAddress() + ":" + ClientExternalSettings.getDebugPort());
         } else {

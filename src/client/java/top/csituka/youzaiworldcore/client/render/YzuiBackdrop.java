@@ -6,6 +6,7 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import top.csituka.youzaiworldcore.client.animation.GuiAnimationController;
 import top.csituka.youzaiworldcore.client.screen.YzuiPopupScreen;
+import top.csituka.youzaiworldcore.client.screen.YzuiMenuScreen;
 
 /** 绘制世界/原版全景图以及弹窗后面的页面，不重建父页面，也不转发父页面的输入。 */
 public final class YzuiBackdrop {
@@ -59,9 +60,10 @@ public final class YzuiBackdrop {
             }
         }
         g.nextStratum();
-        if (YzuiTheme.frosted()) g.blurBeforeThisStratum();
+        boolean menu = screen instanceof YzuiMenuScreen page && page.usesMenuOverlay();
+        if (!menu && YzuiTheme.frosted()) g.blurBeforeThisStratum();
         g.fill(0, 0, g.guiWidth(), g.guiHeight(),
-                YzuiTheme.multiplyAlpha(YzuiTheme.scrim(), GuiAnimationController.getScreenOpacity()));
+                YzuiTheme.multiplyAlpha(menu ? 0x0C0B1912 : YzuiTheme.scrim(), GuiAnimationController.getScreenOpacity()));
     }
 
     private static void renderParent(GuiGraphicsExtractor g, Screen parent, float partialTick) {

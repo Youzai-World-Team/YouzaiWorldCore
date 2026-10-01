@@ -1186,5 +1186,11 @@
   "map.youzaiworldcore.share_block": "列入拒冊",
   "map.youzaiworldcore.share_no_match": "未尋得在線之人",
   "map.youzaiworldcore.blacklist_mode": "拒冊模式",
-  "map.youzaiworldcore.sharing_mode_hint": "啟則共享予拒冊外之人；停則僅共享予允冊中之人。"
+  "map.youzaiworldcore.sharing_mode_hint": "啟則共享予拒冊外之人；停則僅共享予允冊中之人。",
+  "screen.youzaiworldcore.test.login": "預覽登入",
+  "screen.youzaiworldcore.test.register": "預覽註冊",
+  "screen.youzaiworldcore.test.environment": "進入試驗之境",
+  "screen.youzaiworldcore.test.description": "可於本機預覽帳戶頁，亦可入試驗之境。",
+  "screen.youzaiworldcore.test.local_notice": "本機預覽 · 不傳請求",
+  "screen.youzaiworldcore.test.local_result": "按鈕已應，僅示本機結果，未傳請求。"
 }

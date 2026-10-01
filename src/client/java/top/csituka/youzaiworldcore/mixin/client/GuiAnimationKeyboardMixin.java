@@ -9,6 +9,7 @@ import net.minecraft.client.input.KeyEvent;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import top.csituka.youzaiworldcore.client.animation.GuiAnimationController;
+import top.csituka.youzaiworldcore.client.screen.YzuiMenuScreen;
 
 /** 只拦截正在退出的页面输入，保留原版键盘状态更新与全局快捷键。 */
 @Mixin(KeyboardHandler.class)
@@ -16,6 +17,7 @@ public class GuiAnimationKeyboardMixin {
     @WrapOperation(method = "keyPress", at = @At(value = "INVOKE",
             target = "Lnet/minecraft/client/gui/screens/Screen;keyPressed(Lnet/minecraft/client/input/KeyEvent;)Z"))
     private boolean youzaiworldcore$blockExitKey(Screen screen, KeyEvent event, Operation<Boolean> original) {
+        if (YzuiMenuScreen.handleEscape(screen, event)) return true;
         return GuiAnimationController.isExiting(screen) || original.call(screen, event);
     }
 

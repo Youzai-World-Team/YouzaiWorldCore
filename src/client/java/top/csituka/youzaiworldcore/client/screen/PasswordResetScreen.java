@@ -1,6 +1,7 @@
 package top.csituka.youzaiworldcore.client.screen;
 
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
+import top.csituka.youzaiworldcore.client.render.YzuiMenuPanel;
 import top.csituka.youzaiworldcore.client.screen.widget.WidgetFocus;
 
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
@@ -26,7 +27,7 @@ import java.util.regex.Pattern;
 
 /** 登录前通过已绑定邮箱重置当前游戏账户密码。 */
 @SuppressWarnings("null")
-public class PasswordResetScreen extends Screen {
+public class PasswordResetScreen extends Screen implements YzuiMenuScreen {
     private static final int CARD_WIDTH = 440;
     private static final int CARD_HEIGHT = 336;
     private static final int CONTAINER_WIDTH = 380;
@@ -187,9 +188,9 @@ public class PasswordResetScreen extends Screen {
     public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
         int cardWidth = Math.min(CARD_WIDTH, width - 40);
         int x = (width - cardWidth) / 2, y = (height - CARD_HEIGHT) / 2;
-        YzuiTheme.card(g, x, y, cardWidth, CARD_HEIGHT);
-        YzuiTheme.label(g, font, title, x + 24, y + 20, cardWidth - 48, YzuiTheme.text(), false);
-        YzuiTheme.wrapped(g, font, Component.translatable("screen.youzaiworldcore.password_reset.subtitle", playerName), x + 24, y + 42, cardWidth - 48, 2, YzuiTheme.textMuted());
+        YzuiMenuPanel.card(g, x, y, cardWidth, CARD_HEIGHT);
+        YzuiMenuPanel.header(g, font, title,
+                Component.translatable("screen.youzaiworldcore.password_reset.subtitle", playerName), x, y, cardWidth);
         updateButtonState();
         if (codeSent) YzuiTheme.label(g, font, Component.translatable("screen.youzaiworldcore.password_reset.session_remaining",
                 formatDuration(remainingSessionSeconds())), x + 24, y + 65, cardWidth - 48,
@@ -253,7 +254,6 @@ public class PasswordResetScreen extends Screen {
     @Override
     public boolean keyPressed(KeyEvent keyEvent) {
         if (currentDialog != null && currentDialog.isVisible()) return currentDialog.keyPressed(keyEvent);
-        if (currentDialog != null && currentDialog.isVisible()) return true;
         if (WidgetFocus.keyPressed(keyEvent, List.of(emailField, codeField, sendCodeButton, passwordField, confirmPasswordField, resetButton, backButton))) return true;
         if (this.currentDialog != null && this.currentDialog.isVisible()) return true;
         if (keyEvent.key() == 256) {
@@ -281,6 +281,9 @@ public class PasswordResetScreen extends Screen {
         if (this.passwordField.isFocused() && this.passwordField.charTyped(event)) return true;
         return this.confirmPasswordField.isFocused() && this.confirmPasswordField.charTyped(event);
     }
+
+    @Override
+    public void onClose() { }
 
     @Override
     public boolean shouldCloseOnEsc() {

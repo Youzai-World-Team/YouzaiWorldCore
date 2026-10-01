@@ -21,6 +21,11 @@ import top.csituka.youzaiworldcore.YouzaiworldCore;
 import top.csituka.youzaiworldcore.client.animation.GuiAnimationController;
 import top.csituka.youzaiworldcore.client.animation.YzuiMotion;
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
+import top.csituka.youzaiworldcore.client.render.YzuiMenuPanel;
+import top.csituka.youzaiworldcore.client.render.MenuIcon;
+import top.csituka.youzaiworldcore.client.screen.element.SwitchWorldMenuElements;
+import top.csituka.youzaiworldcore.client.screen.element.AboutMeMenuElements;
+import top.csituka.youzaiworldcore.client.screen.widget.MenuCloseButton;
 import top.csituka.youzaiworldcore.client.screen.element.MenuElementGroup;
 import top.csituka.youzaiworldcore.client.screen.element.MenuLayout;
 import top.csituka.youzaiworldcore.client.screen.widget.ConfirmationDialog;
@@ -31,7 +36,7 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
 
 /** Shift+F 菜单：页面控件按视口复用，标题、内容与页脚各自保留边界。 */
 @SuppressWarnings("null")
-public class MenuScreen extends Screen {
+public class MenuScreen extends Screen implements YzuiMenuScreen {
     private static final Identifier VERSION_ICON =
             Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "textures/gui/icon.png");
     private final Deque<MenuElementGroup> history = new ArrayDeque<>();
@@ -57,8 +62,7 @@ public class MenuScreen extends Screen {
         var layout = new MenuLayout(width, height);
         backButton = new TransparentButton(layout.backX(), 18, MenuLayout.NAVIGATION_SIZE, MenuLayout.NAVIGATION_SIZE,
                 Component.translatable("youzaiworldcore.message.gui.back_button"), this::goBack);
-        closeButton = new TransparentButton(layout.closeX(), 18, MenuLayout.NAVIGATION_SIZE, MenuLayout.NAVIGATION_SIZE,
-                Component.translatable("youzaiworldcore.message.gui.close_button"), this::onClose);
+        closeButton = new MenuCloseButton(layout.closeX(), 18, this);
         backButton.setBackgroundVisible(false);
         closeButton.setBackgroundVisible(false);
         activateCurrentGroup();
@@ -126,7 +130,7 @@ public class MenuScreen extends Screen {
 
     @Override
     public void onClose() {
-        startExit(() -> Minecraft.getInstance().setScreenAndShow(null));
+        closeMenu();
     }
 
     public void startExit(Runnable onComplete) {
@@ -157,13 +161,19 @@ public class MenuScreen extends Screen {
             float direction = transitionReverse ? 1f : -1f;
             offset = (outgoing ? direction : -direction) * (1f - opacity) * distance;
         }
+        var layout = new MenuLayout(width, height);
+        YzuiMenuPanel.card(g, layout.shellLeft(), 8, width - layout.shellLeft() * 2, 56);
+        if (!displayedGroup.isRoot() && !(displayedGroup instanceof SwitchWorldMenuElements)
+                && !(displayedGroup instanceof AboutMeMenuElements)) {
+            YzuiMenuPanel.card(g, layout.shellLeft(), 70, width - layout.shellLeft() * 2,
+                    layout.contentBottom() - 70);
+        }
         renderPage(g, displayedGroup, opacity, offset, mouseX, mouseY, partialTick, interactive);
         if (!displayedGroup.isRoot()) renderWidget(backButton, g, mouseX, mouseY, partialTick, interactive);
         renderWidget(closeButton, g, mouseX, mouseY, partialTick, interactive);
         renderVersionText(g);
 
         if (interactive) {
-            var layout = new MenuLayout(width, height);
             for (AbstractWidget button : currentButtons) {
                 if (button instanceof DropdownButton dropdown) {
                     dropdown.renderPopup(g, mouseX, mouseY, partialTick,
@@ -221,6 +231,7 @@ public class MenuScreen extends Screen {
 
     private void renderTitle(GuiGraphicsExtractor g, MenuElementGroup group) {
         var layout = new MenuLayout(width, height);
+        if (group.isRoot()) MenuIcon.WORLD.render(g, layout.backX() + 4, 27, YzuiTheme.primary());
         YzuiTheme.label(g, font, Component.literal(group.getTitleText()),
                 layout.titleX(), 24, layout.titleWidth(), YzuiTheme.text(), false);
         String subtitle = group.getSubtitleText();
@@ -228,7 +239,6 @@ public class MenuScreen extends Screen {
             YzuiTheme.label(g, font, Component.literal(subtitle),
                     layout.titleX(), 43, layout.titleWidth(), YzuiTheme.textMuted(), false);
         }
-        g.fill(layout.left(640), 61, width - layout.left(640), 62, YzuiTheme.outlineVariant());
     }
 
     private void renderVersionText(GuiGraphicsExtractor g) {
@@ -238,15 +248,18 @@ public class MenuScreen extends Screen {
         g.pose().pushMatrix();
         g.pose().scale(0.5f, 0.5f);
         int iconSize = font.lineHeight * 2;
+        String versionText = I18n.get("youzaiworldcore.message.gui.version_text", version);
+        YzuiMenuPanel.card(g, x * 2 - 8, y * 2 - 10, font.width(versionText) + iconSize + 20, 28);
         g.blit(RenderPipelines.GUI_TEXTURED, VERSION_ICON, x * 2, y * 2 - font.lineHeight / 2,
                 0, 0, iconSize, iconSize, iconSize, iconSize);
-        g.text(font, I18n.get("youzaiworldcore.message.gui.version_text", version),
+        g.text(font, versionText,
                 x * 2 + iconSize + 4, y * 2, YzuiTheme.textMuted(), false);
         g.pose().popMatrix();
     }
 
     @Override
     public boolean keyPressed(KeyEvent event) {
+        if (YzuiMenuScreen.handleEscape(this, event)) return true;
         if (hasDialog()) return currentDialog.keyPressed(event);
         if (GuiAnimationController.isExiting(this) || targetGroup != null) return true;
         currentGroup.updateButtons(buttonsFor(currentGroup));
@@ -259,6 +272,7 @@ public class MenuScreen extends Screen {
 
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean isActuallyClick) {
+        if (event.button() == 0 && closeButton.mouseClicked(event, isActuallyClick)) return true;
         if (GuiAnimationController.isExiting(this) || targetGroup != null || event.button() != 0) return true;
         if (hasDialog()) return currentDialog.mouseClicked(event.x(), event.y());
         currentGroup.updateButtons(buttonsFor(currentGroup));

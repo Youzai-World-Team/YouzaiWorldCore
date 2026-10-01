@@ -76,6 +76,7 @@
     "ClientTextTooltipYzuiMixin",
     "ScrollAreaYzuiMixin",
     "afk.AfkKeyboardHandlerMixin",
+    "afk.AfkChatSendMixin",
     "afk.AfkMouseHandlerMixin",
     "ExperimentalWarningSkipMixin",
     "DeathScreenMixin",

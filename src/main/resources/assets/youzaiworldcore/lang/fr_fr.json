@@ -1186,5 +1186,11 @@
   "map.youzaiworldcore.share_block": "Bloquer le joueur",
   "map.youzaiworldcore.share_no_match": "Aucun joueur connecté correspondant",
   "map.youzaiworldcore.blacklist_mode": "Mode liste noire",
-  "map.youzaiworldcore.sharing_mode_hint": "Activé : partager sauf avec les joueurs bloqués. Désactivé : seulement avec les destinataires listés."
+  "map.youzaiworldcore.sharing_mode_hint": "Activé : partager sauf avec les joueurs bloqués. Désactivé : seulement avec les destinataires listés.",
+  "screen.youzaiworldcore.test.login": "Aperçu de la connexion",
+  "screen.youzaiworldcore.test.register": "Aperçu de l’inscription",
+  "screen.youzaiworldcore.test.environment": "Ouvrir l’environnement de test",
+  "screen.youzaiworldcore.test.description": "Aperçu local des écrans de compte ou accès à l’environnement de test.",
+  "screen.youzaiworldcore.test.local_notice": "Aperçu local · Aucune requête",
+  "screen.youzaiworldcore.test.local_result": "Bouton activé. Réponse locale ; aucune requête n’a été envoyée."
 }

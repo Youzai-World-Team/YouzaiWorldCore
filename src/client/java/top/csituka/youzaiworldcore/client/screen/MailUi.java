@@ -1,6 +1,7 @@
 package top.csituka.youzaiworldcore.client.screen;
 
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
+import top.csituka.youzaiworldcore.client.render.YzuiMenuPanel;
 
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -14,7 +15,7 @@ import top.csituka.youzaiworldcore.client.render.RoundedRect;
 final class MailUi {
 
     static int pageBackground() { return YzuiTheme.surface(); }
-    static int panelBackground() { return YzuiTheme.surface(); }
+    static int panelBackground() { return YzuiTheme.alpha(YzuiTheme.palette().surfaceLow(), 0.18f); }
     static int panelHeader() { return YzuiTheme.surfaceLow(); }
     static int rowSelected() { return YzuiTheme.primaryContainer(); }
     static int rowHovered() { return YzuiTheme.surfaceHigh(); }
@@ -34,7 +35,7 @@ final class MailUi {
 
     /** 绘制主题页面容器。 */
     static void drawPage(GuiGraphicsExtractor graphics, Rect page) {
-        YzuiTheme.card(graphics, page.x(), page.y(), page.width(), page.height());
+        YzuiMenuPanel.card(graphics, page.x(), page.y(), page.width(), page.height());
     }
 
     /**

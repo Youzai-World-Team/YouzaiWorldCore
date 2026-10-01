@@ -1186,5 +1186,11 @@
   "map.youzaiworldcore.share_block": "加入黑名單",
   "map.youzaiworldcore.share_no_match": "找不到相關線上玩家",
   "map.youzaiworldcore.blacklist_mode": "黑名單模式",
-  "map.youzaiworldcore.sharing_mode_hint": "開啟：向黑名單以外的玩家共享；關閉：僅向共享名單中的玩家共享。"
+  "map.youzaiworldcore.sharing_mode_hint": "開啟：向黑名單以外的玩家共享；關閉：僅向共享名單中的玩家共享。",
+  "screen.youzaiworldcore.test.login": "登入頁面預覽",
+  "screen.youzaiworldcore.test.register": "註冊頁面預覽",
+  "screen.youzaiworldcore.test.environment": "進入測試環境",
+  "screen.youzaiworldcore.test.description": "本機預覽帳戶介面，或進入原有測試環境。",
+  "screen.youzaiworldcore.test.local_notice": "本機預覽 · 不傳送請求",
+  "screen.youzaiworldcore.test.local_result": "按鈕已觸發，僅顯示本機回饋，未傳送任何請求。"
 }

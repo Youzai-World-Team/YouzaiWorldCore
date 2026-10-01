@@ -1,6 +1,10 @@
 package top.csituka.youzaiworldcore.client.screen;
 
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
+import top.csituka.youzaiworldcore.client.animation.GuiAnimationController;
+import top.csituka.youzaiworldcore.client.screen.widget.MenuCloseButton;
+import top.csituka.youzaiworldcore.util.DebugLogger;
+import top.csituka.youzaiworldcore.client.render.YzuiMenuPanel;
 import top.csituka.youzaiworldcore.client.screen.widget.WidgetFocus;
 
 import net.minecraft.client.Minecraft;
@@ -24,10 +28,10 @@ import java.util.List;
 /**
  * 账户注册 GUI
  * 在玩家传送到虚空维度且未注册时显示。
- * 无返回按钮、无关闭按钮、不能使用 ESC 键关闭。
+ * 正式认证时不能关闭；显式创建的本地预览不发包，可通过 ESC 返回测试页。
  */
 @SuppressWarnings("null")
-public class RegisterScreen extends Screen {
+public class RegisterScreen extends Screen implements YzuiMenuScreen {
     private static final int CARD_WIDTH = 420;
     private static final int CARD_HEIGHT = 336;
 
@@ -41,6 +45,8 @@ public class RegisterScreen extends Screen {
     private static final int ROW_SPACING = 28;
 
     private final String playerName;
+    private final Screen previewParent;
+    private MenuCloseButton previewCloseButton;
 
     private EditBox usernameField;
     private EditBox passwordField;
@@ -54,8 +60,18 @@ public class RegisterScreen extends Screen {
     private boolean processing = false;
 
     public RegisterScreen(String playerName) {
+        this(playerName, null);
+    }
+
+    /** 使用真实表单的本地预览；预览实例不会发送账户请求或断开连接。 */
+    public static RegisterScreen preview(String playerName, Screen parent) {
+        return new RegisterScreen(playerName, java.util.Objects.requireNonNull(parent));
+    }
+
+    private RegisterScreen(String playerName, Screen previewParent) {
         super(Component.translatable("screen.youzaiworldcore.register.title"));
         this.playerName = playerName;
+        this.previewParent = previewParent;
     }
 
     @Override
@@ -122,6 +138,12 @@ public class RegisterScreen extends Screen {
         passwordField.setValue(savedPassword);
         confirmPasswordField.setValue(savedConfirmation);
         arrangeForm();
+        if (previewParent != null) {
+            int cardWidth = Math.min(CARD_WIDTH, width - 40);
+            previewCloseButton = new MenuCloseButton((width + cardWidth) / 2 - 40,
+                    (height - CARD_HEIGHT) / 2 + 14, this);
+            allWidgets.add(previewCloseButton);
+        }
         if (currentDialog != null) currentDialog.init(width, height);
         this.passwordField.setFocused(true);
     }
@@ -130,13 +152,17 @@ public class RegisterScreen extends Screen {
     public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
         int cardWidth = Math.min(CARD_WIDTH, width - 40);
         int x = (width - cardWidth) / 2, y = (height - CARD_HEIGHT) / 2;
-        YzuiTheme.card(g, x, y, cardWidth, CARD_HEIGHT);
-        YzuiTheme.label(g, font, title, x + 24, y + 20, cardWidth - 48, YzuiTheme.text(), false);
-        YzuiTheme.wrapped(g, font, Component.translatable("screen.youzaiworldcore.register.subtitle"), x + 24, y + 42, cardWidth - 48, 2, YzuiTheme.textMuted());
+        YzuiMenuPanel.card(g, x, y, cardWidth, CARD_HEIGHT);
+        YzuiMenuPanel.header(g, font, title,
+                Component.translatable("screen.youzaiworldcore.register.subtitle"), x, y, cardWidth);
         YzuiTheme.wrapped(g, font, Component.translatable("screen.youzaiworldcore.register.hint_line1"),
                 x + 24, y + 214, cardWidth - 48, 2, YzuiTheme.textMuted());
         YzuiTheme.wrapped(g, font, Component.translatable("screen.youzaiworldcore.register.hint_line2"),
                 x + 24, y + 240, cardWidth - 48, 2, YzuiTheme.textMuted());
+        if (previewParent != null) {
+            YzuiTheme.label(g, font, Component.translatable("screen.youzaiworldcore.test.local_notice"),
+                    x + 24, y + CARD_HEIGHT - 18, cardWidth - 48, YzuiTheme.textMuted(), true);
+        }
         for (AbstractWidget widget : allWidgets) {
             if (widget instanceof EditBox input) {
                 YzuiTheme.label(g, font, input.getMessage(), input.getX(), input.getY() - 12,
@@ -152,7 +178,9 @@ public class RegisterScreen extends Screen {
 
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean isActuallyClick) {
-        if (currentDialog == null || !currentDialog.isVisible()) WidgetFocus.mouseFocus(event.x(), event.y(), List.of(passwordField, confirmPasswordField, registerButton, disconnectButton));
+        if (event.button() == 0 && previewCloseButton != null
+                && previewCloseButton.mouseClicked(event, isActuallyClick)) return true;
+        if (currentDialog == null || !currentDialog.isVisible()) WidgetFocus.mouseFocus(event.x(), event.y(), interactiveWidgets());
         // 弹窗优先处理点击
         if (currentDialog != null && currentDialog.isVisible()) {
             return currentDialog.mouseClicked(event.x(), event.y());
@@ -197,9 +225,9 @@ public class RegisterScreen extends Screen {
 
     @Override
     public boolean keyPressed(KeyEvent keyEvent) {
+        if (YzuiMenuScreen.handleEscape(this, keyEvent)) return true;
         if (currentDialog != null && currentDialog.isVisible()) return currentDialog.keyPressed(keyEvent);
-        if (currentDialog != null && currentDialog.isVisible()) return true;
-        if (WidgetFocus.keyPressed(keyEvent, List.of(passwordField, confirmPasswordField, registerButton, disconnectButton))) return true;
+        if (WidgetFocus.keyPressed(keyEvent, interactiveWidgets())) return true;
         if (currentDialog != null && currentDialog.isVisible()) {
             return true;
         }
@@ -226,8 +254,16 @@ public class RegisterScreen extends Screen {
     }
 
     @Override
+    public void onClose() { closeMenu(); }
+
+    @Override
+    public void closeMenu() {
+        if (previewParent != null) GuiAnimationController.setScreenImmediately(Minecraft.getInstance().gui, previewParent);
+    }
+
+    @Override
     public boolean shouldCloseOnEsc() {
-        return false;
+        return previewParent != null;
     }
 
     @Override
@@ -278,6 +314,7 @@ public class RegisterScreen extends Screen {
     }
 
     private void onDisconnectClick() {
+        if (previewParent != null) { closeMenu(); return; }
         if (processing) return;
 
         // 断开连接
@@ -288,6 +325,10 @@ public class RegisterScreen extends Screen {
     // ===== 工具方法 =====
 
     private void sendAuthRequest(AuthRequestPayload payload) {
+        if (previewParent != null) {
+            showPreviewResult();
+            return;
+        }
         var player = Minecraft.getInstance().player;
         if (player != null && player.connection != null) {
             ClientPlayNetworking.send(payload);
@@ -296,6 +337,17 @@ public class RegisterScreen extends Screen {
         if (Minecraft.getInstance().gui.screen() == this) {
             Minecraft.getInstance().setScreenAndShow(null);
         }
+    }
+
+    private List<AbstractWidget> interactiveWidgets() {
+        return allWidgets.stream().filter(widget -> widget != usernameField).toList();
+    }
+
+    private void showPreviewResult() {
+        processing = false;
+        DebugLogger.debug("AuthPreview", "本地预览按钮反馈：%s", getClass().getSimpleName());
+        showErrorDialog(Component.translatable("screen.youzaiworldcore.test.local_notice").getString(),
+                new String[]{Component.translatable("screen.youzaiworldcore.test.local_result").getString()});
     }
 
     private void showErrorDialog(String title, String[] messages) {
