@@ -31,7 +31,7 @@ import java.util.stream.Collectors;
 
 /** 全屏路径点管理：维度分类树、创建时间和坐标表格，以及悬停操作栏。私人分类存于客户端 map_module。 */
 @SuppressWarnings("null")
-public final class MapWaypointListScreen extends MapScreen {
+final class MapWaypointPanel extends MapOverlayPanel {
     private enum Filter { ALL, ANCHORS, DEATH, STRUCTURE, SHARED, GROUP }
     private record Branch(String dimension, Filter filter, String group, Component label, boolean root) { }
     private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
@@ -45,17 +45,29 @@ public final class MapWaypointListScreen extends MapScreen {
     private int page, rows, treeOffset, sidebar, tableX, tableWidth, listY, listBottom, rowHeight;
     private int actionX, actionY, actionWidth, actionSize;
     private UUID selected, actionId;
-    private boolean dirty, pending;
+    private boolean dirty, pending, categoryEditing, categoryMove;
+    private String categoryValue = "";
     private TransparentButton previous, next;
 
     /** 从地图或命令打开当前服务器存档的路径点管理页。 */
-    public MapWaypointListScreen(Screen parent) {
-        super(parent, "waypoints"); expanded.add(dimension);
+    public MapWaypointPanel(YzWorldMapScreen owner) {
+        super(owner, "waypoints"); expanded.add(dimension);
     }
 
     @Override protected void init() {
         clearFocus(); super.init(); tableControls.clear(); treeControls.clear(); actions.clear(); actionId = null;
-        panelX = 8; panelWidth = width - 16; panelY = 8; panelHeight = height - 16;
+        panelX = 8; panelWidth = Math.min(width - 16, Math.max(304, width * 3 / 4)); panelY = 8; panelHeight = height - 16;
+        if (categoryEditing) {
+            field(panelX + 12, panelY + 52, panelWidth - 24, "new_category", categoryValue, 32, value -> categoryValue = value);
+            int half = (panelWidth - 30) / 2;
+            button(panelX + 12, panelY + panelHeight - 34, half, MapTexts.text("save"), () -> {
+                if (!MapPersonalData.addCategory(dimension, categoryValue)) { error = MapTexts.text("limit"); return; }
+                if (categoryMove) MapPersonalData.group(filtered().stream().filter(point -> !point.shared()).map(MapWaypoint::id).collect(Collectors.toSet()), categoryValue);
+                group = categoryValue.strip(); filter = Filter.GROUP; expanded.add(dimension); page = 0; categoryEditing = false; init();
+            });
+            button(panelX + 18 + half, panelY + panelHeight - 34, half, MapTexts.text("cancel"), () -> { categoryEditing = false; init(); });
+            return;
+        }
         sidebar = Math.clamp(panelWidth / 3, 94, 260);
         tableX = panelX + sidebar + 12; tableWidth = panelWidth - sidebar - 22;
         listY = panelY + 65; listBottom = panelY + panelHeight - 58;
@@ -79,9 +91,9 @@ public final class MapWaypointListScreen extends MapScreen {
             if (player == null) return;
             var point = MapClient.newPoint(MapClient.dimension(), player.getBlockX(), player.getBlockY(), player.getBlockZ());
             if (dimension.equals(MapClient.dimension()) && filter == Filter.GROUP) point = point.withGroup(group);
-            Minecraft.getInstance().gui.setScreen(new MapWaypointEditScreen(this, point, false));
+            owner.openPoint(point, true);
         });
-        control(tableX + (bw + 4) * 2, footer, bw, "↓", "import", () -> Minecraft.getInstance().gui.setScreen(new MapImportScreen(this)));
+        control(tableX + (bw + 4) * 2, footer, bw, "↓", "import", () -> Minecraft.getInstance().gui.setScreen(new MapImportScreen(owner)));
         control(tableX + (bw + 4) * 3, footer, bw, "▣", "copy_list", () -> {
             Minecraft.getInstance().keyboardHandler.setClipboard(MapTransfer.encode(filtered())); error = MapTexts.text("copied");
         });
@@ -167,24 +179,14 @@ public final class MapWaypointListScreen extends MapScreen {
         }
     }
 
-    private void newCategory() {
-        Minecraft.getInstance().gui.setScreen(new MapTextScreen(this, "new_category", "", 32,
-                name -> MapPersonalData.addCategory(dimension, name), name -> {
-                    group = name; filter = Filter.GROUP; expanded.add(dimension); page = 0; dirty = true;
-                }));
-    }
+    private void newCategory() { categoryEditing = true; categoryMove = false; categoryValue = ""; init(); }
+    private void moveCategory() { categoryEditing = true; categoryMove = true; categoryValue = filter == Filter.GROUP ? group : ""; init(); }
+    @Override public void onClose() { if (categoryEditing) { categoryEditing = false; init(); } else super.onClose(); }
 
-    private void moveCategory() {
-        var ids = filtered().stream().filter(point -> !point.shared()).map(MapWaypoint::id).collect(Collectors.toSet());
-        Minecraft.getInstance().gui.setScreen(new MapTextScreen(this, "rename_group", filter == Filter.GROUP ? group : "", 32,
-                name -> MapPersonalData.addCategory(dimension, name), name -> {
-                    MapPersonalData.group(ids, name); group = name; filter = Filter.GROUP; page = 0; dirty = true;
-                }));
-    }
-
-    @Override public void tick() { if (dirty || !snapshot.equals(MapClient.waypoints())) refresh(); }
+    @Override public void tick() { if (!categoryEditing && (dirty || !snapshot.equals(MapClient.waypoints()))) refresh(); }
 
     @Override protected void content(GuiGraphicsExtractor g, int mx, int my, float delta) {
+        if (categoryEditing) { label(g, MapTexts.text(categoryMove ? "rename_group" : "new_category"), panelX + 12, panelY + 36, panelWidth - 24); return; }
         g.fill(panelX + sidebar + 3, panelY + 40, panelX + sidebar + 4, listBottom, YzuiTheme.outlineVariant());
         label(g, MapTexts.text("name"), tableX + 6, panelY + 45, nameWidth());
         if (tableWidth >= 340) label(g, MapTexts.text("created_at"), tableX + nameWidth(), panelY + 45, dateWidth());
@@ -246,7 +248,7 @@ public final class MapWaypointListScreen extends MapScreen {
             }
         };
         actions.add(addRenderableWidget(background));
-        action(0, "⌖", "locate", () -> Minecraft.getInstance().gui.setScreen(new YzWorldMapScreen(this, point.dimension(), point.x(), point.z())), true);
+        action(0, "⌖", "locate", () -> owner.locatePoint(point), true);
         var session = MapClient.session();
         action(1, "↗", "teleport", () -> request(MapActionPayload.Action.TELEPORT, point), session != null && session.allows(MapSessionPayload.TELEPORT));
         action(2, "↪", "share_chat", () -> MapTransfer.share(point), true);
@@ -255,7 +257,7 @@ public final class MapWaypointListScreen extends MapScreen {
         action(4, "↑", "move_up", () -> { MapPersonalData.swap(point.id(), privatePoints.get(index - 1).id()); dirty = true; }, index > 0);
         action(5, "↓", "move_down", () -> { MapPersonalData.swap(point.id(), privatePoints.get(index + 1).id()); dirty = true; }, index >= 0 && index + 1 < privatePoints.size());
         action(6, "◉", point.enabled() ? "hide_point" : "show_point", () -> { MapPersonalData.put(point.withEnabled(!point.enabled())); dirty = true; }, !point.shared());
-        action(7, "✎", "edit_point", () -> Minecraft.getInstance().gui.setScreen(new MapWaypointEditScreen(this, point, true)), editable(point));
+        action(7, "✎", "edit_point", () -> owner.openPoint(point, false), editable(point));
         action(8, "×", "delete", () -> { if (point.shared()) request(MapActionPayload.Action.DELETE, point); else { MapPersonalData.remove(point.id()); selected = null; dirty = true; } }, editable(point));
     }
 
@@ -288,17 +290,17 @@ public final class MapWaypointListScreen extends MapScreen {
             for (int i = actions.size() - 1; i >= 0; i--) if (actions.get(i).mouseClicked(event, actual)) return true;
             return true;
         }
-        if (event.button() == 1 && event.x() >= tableX && event.x() < tableX + tableWidth && event.y() >= listY) {
+        if (!categoryEditing && event.button() == 1 && event.x() >= tableX && event.x() < tableX + tableWidth && event.y() >= listY) {
             int row = (int) (event.y() - listY) / rowHeight;
             if (row >= 0 && row < visiblePoints.size()) {
-                Minecraft.getInstance().gui.setScreen(new MapWaypointActionsScreen(this, visiblePoints.get(row))); return true;
+                owner.openPoint(visiblePoints.get(row), false); return true;
             }
         }
         return super.mouseClicked(event, actual);
     }
 
     @Override public boolean mouseScrolled(double x, double y, double horizontal, double vertical) {
-        if (vertical == 0 || y < panelY + 40 || y >= listBottom) return false;
+        if (categoryEditing || vertical == 0 || y < panelY + 40 || y >= listBottom) return false;
         if (x >= panelX && x < panelX + sidebar) { treeOffset = Math.max(0, treeOffset + (vertical > 0 ? -1 : 1)); dirty = true; return true; }
         if (x >= tableX && x < tableX + tableWidth) { page = Math.clamp(page + (vertical > 0 ? -1 : 1), 0, maxPage()); dirty = true; return true; }
         return false;

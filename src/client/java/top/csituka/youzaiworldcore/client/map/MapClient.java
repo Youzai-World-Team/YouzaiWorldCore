@@ -19,8 +19,6 @@ import net.minecraft.world.level.storage.LevelResource;
 import org.lwjgl.glfw.GLFW;
 import top.csituka.youzaiworldcore.client.config.MapSettings;
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
-import top.csituka.youzaiworldcore.client.screen.map.MapWaypointEditScreen;
-import top.csituka.youzaiworldcore.client.screen.map.MapWaypointListScreen;
 import top.csituka.youzaiworldcore.client.screen.map.YzWorldMapScreen;
 import top.csituka.youzaiworldcore.map.MapLayer;
 import top.csituka.youzaiworldcore.map.MapSampler;
@@ -80,6 +78,18 @@ public final class MapClient {
     private static boolean alive;
     private static UUID tracked;
     private static UUID navigation;
+    private static top.csituka.youzaiworldcore.network.MapSocialPayload social;
+    /** 当前玩家收到的服务端共享规则快照。 */
+    public static top.csituka.youzaiworldcore.network.MapSocialPayload social() { return social; }
+    /** 只接收服务端状态，断线时随地图会话清空。 */
+    public static void receiveSocial(top.csituka.youzaiworldcore.network.MapSocialPayload value) {
+        if (value.action() == top.csituka.youzaiworldcore.network.MapSocialPayload.Action.STATE) social = value;
+    }
+    /** 提交共享动作，名单与授权结果以服务端回传为准。 */
+    public static void social(top.csituka.youzaiworldcore.network.MapSocialPayload.Action action, UUID target, boolean mode) {
+        if (ClientPlayNetworking.canSend(top.csituka.youzaiworldcore.network.MapSocialPayload.ID))
+            ClientPlayNetworking.send(top.csituka.youzaiworldcore.network.MapSocialPayload.request(action, target, mode));
+    }
     private static net.minecraft.client.gui.screens.Screen nextScreen;
     private static long receivedTiles;
     private record Pending(MapActionPayload.Action action, long deadline, java.util.function.BiConsumer<Boolean, String> callback) { }
@@ -283,8 +293,8 @@ public final class MapClient {
         if (LAYER.consumeClick()) cycleLayer();
         if (REFRESH.consumeClick()) refresh();
         if (OPEN.consumeClick()) client.gui.setScreen(new YzWorldMapScreen(null));
-        else if (POINTS_KEY.consumeClick()) client.gui.setScreen(new MapWaypointListScreen(null));
-        else if (ADD.consumeClick()) client.gui.setScreen(new MapWaypointEditScreen(null, newPoint(dimension(), client.player.getBlockX(), client.player.getBlockY(), client.player.getBlockZ()), false));
+        else if (POINTS_KEY.consumeClick()) client.gui.setScreen(YzWorldMapScreen.withWaypoints(null));
+        else if (ADD.consumeClick()) client.gui.setScreen(YzWorldMapScreen.withPoint(null, newPoint(dimension(), client.player.getBlockX(), client.player.getBlockY(), client.player.getBlockZ()), true));
         else if (SETTINGS.consumeClick()) client.gui.setScreen(YzWorldMapScreen.withSettings(null));
     }
 
@@ -415,7 +425,7 @@ public final class MapClient {
 
     private static void reset() {
         MapRenderer.reset(); CACHE.clear(); SAMPLED.clear(); TRAIL.clear(); TRACKED_HISTORY.clear();
-        sampling = null; session = null; level = null; shared = List.of(); anchors = List.of(); anchorIds = Set.of(); remotePlayers = List.of(); radar = List.of();
+        social = null; sampling = null; session = null; level = null; shared = List.of(); anchors = List.of(); anchorIds = Set.of(); remotePlayers = List.of(); radar = List.of();
         loadLevels = Map.of(); loadDimension = ""; liveAt = 0; ticks = 0; receivedTiles = 0; tracked = null; navigation = null;
         MapPersonalData.disconnect();
         PENDING.clear(); nextScreen = null; shortcutsAfter = 0;

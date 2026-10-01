@@ -68,6 +68,13 @@ public class ModNetworking {
             var player = context.player(); var server = player.level().getServer();
             if (server != null) server.execute(() -> top.csituka.youzaiworldcore.map.MapServerManager.request(player, payload));
         });
+        ServerPlayNetworking.registerGlobalReceiver(MapSocialPayload.ID, (payload, context) -> {
+            var player = context.player(); var server = player.level().getServer();
+            if (server != null) server.execute(() -> {
+                if (top.csituka.youzaiworldcore.map.MapServerManager.socialEligible(player))
+                    top.csituka.youzaiworldcore.map.MapSocialManager.handle(player, payload);
+            });
+        });
         ServerPlayNetworking.registerGlobalReceiver(MapActionPayload.ID, (payload, context) -> {
             var player = context.player(); var server = player.level().getServer();
             if (server != null) server.execute(() -> top.csituka.youzaiworldcore.map.MapServerManager.receiveAction(player, payload));

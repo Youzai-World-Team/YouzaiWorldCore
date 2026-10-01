@@ -39,6 +39,7 @@ public final class MapPersonalData {
     /** 当前存档上次关闭地图时的视角，不影响其他服务器。 */
     public record LastView(String dimension, double x, double z, double zoom) { }
     private static LastView lastView;
+    private static final java.util.Map<UUID, String> NOTES = new java.util.LinkedHashMap<>();
     private static boolean explorationDirty;
     private static String world = "", worldName = "";
     private static boolean writableWorld;
@@ -49,7 +50,7 @@ public final class MapPersonalData {
         if (world.equals(identity)) return;
         flushExploration();
         world = identity; worldName = label; lastView = null;
-        POINTS.clear(); DRAWINGS.clear(); UNDO.clear(); REDO.clear(); CATEGORIES.clear(); EXPLORED.clear(); explorationDirty = false;
+        POINTS.clear(); DRAWINGS.clear(); UNDO.clear(); REDO.clear(); CATEGORIES.clear(); EXPLORED.clear(); NOTES.clear(); explorationDirty = false;
         var section = ClientGlobalSettings.section(ClientGlobalSettings.MAP_MODULE);
         var worlds = section.getObjectList("worlds");
         writableWorld = worlds == null || worlds.size() < 512;
@@ -75,6 +76,16 @@ public final class MapPersonalData {
                     if (!Double.isFinite(z) || Math.abs(z) > MapTileKey.WORLD_LIMIT) view.fail("z", "地图坐标越界");
                     if (!Double.isFinite(zoom) || zoom < 0.125 || zoom > 16) view.fail("zoom", "缩放应介于 0.125 和 16 之间");
                     lastView = new LastView(dimension, x, z, zoom);
+                }
+                var notes = entry.getObjectList("point_notes");
+                if (notes != null) {
+                    if (notes.size() > 2048) entry.fail("point_notes", "描述数量不可超过 2048");
+                    for (var note : notes) {
+                        UUID id = MapDataCodec.uuid(note, "id");
+                        String text = note.getString("text", "");
+                        if (text.length() > 1024) note.fail("text", "描述不可超过 1024 字");
+                        if (NOTES.putIfAbsent(id, text) != null) note.fail("id", "描述身份重复");
+                    }
                 }
                 var categories = entry.getObjectList("categories");
                 if (categories != null) {
@@ -198,8 +209,19 @@ public final class MapPersonalData {
         return true;
     }
 
+    /** 私人描述按存档和标记身份保存，公共点与锚点的描述也仅本人可见。 */
+    public static String note(UUID id) { return NOTES.getOrDefault(id, ""); }
+
+    /** 保存私人描述；不修改服务端标记。 */
+    public static boolean note(UUID id, String text) {
+        if (world.isEmpty() || !writableWorld || text.length() > 1024
+                || !text.isBlank() && !NOTES.containsKey(id) && NOTES.size() >= 2048) return false;
+        if (text.isBlank()) NOTES.remove(id); else NOTES.put(id, text);
+        save(); DebugLogger.debug("MapPersonalData", "保存标记私人描述：%s", id); return true;
+    }
+
     /** 删除私人点。 */
-    public static void remove(UUID id) { if (POINTS.removeIf(point -> point.id().equals(id))) save(); }
+    public static void remove(UUID id) { if (POINTS.removeIf(point -> point.id().equals(id))) { NOTES.remove(id); save(); } }
 
     /** 批量移动选中的私人点到指定分组。 */
     public static void group(Set<UUID> ids, String group) {
@@ -298,6 +320,9 @@ public final class MapPersonalData {
             view.addProperty("x", lastView.x()); view.addProperty("z", lastView.z()); view.addProperty("zoom", lastView.zoom()); views.add(view);
         }
         entry.add("last_view", views);
+        JsonArray notes = new JsonArray();
+        NOTES.forEach((id, text) -> { JsonObject note = new JsonObject(); note.addProperty("id", id.toString()); note.addProperty("text", text); notes.add(note); });
+        entry.add("point_notes", notes);
         JsonArray categories = new JsonArray(), explored = new JsonArray();
         for (var category : CATEGORIES) {
             JsonObject value = new JsonObject(); value.addProperty("dimension", category.dimension()); value.addProperty("name", category.name()); categories.add(value);
@@ -318,5 +343,5 @@ public final class MapPersonalData {
     }
 
     /** 断线时清空当前身份，重连会重新核验配置。 */
-    public static void disconnect() { flushExploration(); lastView = null; CATEGORIES.clear(); EXPLORED.clear(); explorationDirty = false; world = ""; writableWorld = false; POINTS.clear(); DRAWINGS.clear(); UNDO.clear(); REDO.clear(); }
+    public static void disconnect() { flushExploration(); lastView = null; CATEGORIES.clear(); EXPLORED.clear(); NOTES.clear(); explorationDirty = false; world = ""; writableWorld = false; POINTS.clear(); DRAWINGS.clear(); UNDO.clear(); REDO.clear(); }
 }

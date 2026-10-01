@@ -51,6 +51,8 @@ public class ClientNetworking {
                 top.csituka.youzaiworldcore.client.map.MapClient.receive(context.client(), () -> top.csituka.youzaiworldcore.client.map.MapClient.tile(payload)));
         ClientPlayNetworking.registerGlobalReceiver(MapWaypointsPayload.ID, (payload, context) ->
                 top.csituka.youzaiworldcore.client.map.MapClient.receive(context.client(), () -> top.csituka.youzaiworldcore.client.map.MapClient.waypoints(payload)));
+        ClientPlayNetworking.registerGlobalReceiver(MapSocialPayload.ID, (payload, context) ->
+                context.client().execute(() -> top.csituka.youzaiworldcore.client.map.MapClient.receiveSocial(payload)));
         ClientPlayNetworking.registerGlobalReceiver(MapLivePayload.ID, (payload, context) ->
                 top.csituka.youzaiworldcore.client.map.MapClient.receive(context.client(), () -> top.csituka.youzaiworldcore.client.map.MapClient.live(payload)));
         ClientPlayNetworking.registerGlobalReceiver(MapActionResultPayload.ID, (payload, context) ->

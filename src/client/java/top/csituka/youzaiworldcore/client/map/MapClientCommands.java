@@ -5,8 +5,6 @@ import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallba
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import top.csituka.youzaiworldcore.client.screen.map.MapImportScreen;
-import top.csituka.youzaiworldcore.client.screen.map.MapWaypointEditScreen;
-import top.csituka.youzaiworldcore.client.screen.map.MapWaypointListScreen;
 import top.csituka.youzaiworldcore.client.screen.map.YzWorldMapScreen;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
@@ -20,11 +18,11 @@ public final class MapClientCommands {
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, context) -> {
             var map = literal("map").executes(command -> open(new YzWorldMapScreen(null)))
                     .then(literal("settings").executes(command -> open(YzWorldMapScreen.withSettings(null))))
-                    .then(literal("waypoints").executes(command -> open(new MapWaypointListScreen(null))))
+                    .then(literal("waypoints").executes(command -> open(YzWorldMapScreen.withWaypoints(null))))
                     .then(literal("import").executes(command -> open(new MapImportScreen(null))))
                     .then(literal("add").executes(command -> {
                         var player = Minecraft.getInstance().player;
-                        return player == null ? 0 : open(new MapWaypointEditScreen(null, MapClient.newPoint(MapClient.dimension(), player.getBlockX(), player.getBlockY(), player.getBlockZ()), false));
+                        return player == null ? 0 : open(YzWorldMapScreen.withPoint(null, MapClient.newPoint(MapClient.dimension(), player.getBlockX(), player.getBlockY(), player.getBlockZ()), true));
                     }))
                     .then(literal("refresh").executes(command -> { MapClient.refresh(); return 1; }));
             // 沿用项目的无执行器镜像节点：Fabric 会把它们原样交给服务端。

@@ -110,7 +110,7 @@ public final class MapServerManager {
         uploader = null; MapLoadedCapture.clear();
         if (metadataDirty) savePoints();
         if (terrain != null) terrain.close();
-        CLIENTS.clear(); CAPTURES.clear(); VISIBILITY.clear(); SAMPLED.clear(); POINTS.clear();
+        MapSocialManager.clear(); CLIENTS.clear(); CAPTURES.clear(); VISIBILITY.clear(); SAMPLED.clear(); POINTS.clear();
         sampling = null; terrain = null; metadata = null; server = null; worldId = null; playerCursor = 0;
         DebugLogger.info("MapServerManager", "地图共享服务已关闭");
     }
@@ -264,7 +264,10 @@ public final class MapServerManager {
         var dimensions = server.levelKeys().stream().sorted(java.util.Comparator.comparing(value -> value.identifier().toString()))
                 .limit(128).map(key -> {
                     var level = server.getLevel(key);
-                    return new MapSessionPayload.Dimension(key.identifier().toString(), level.getMinY(), level.getMaxY());
+                    var pool = top.csituka.youzaiworldcore.dimensionalinventories.DimensionPoolSettings
+                            .getPoolByDimension(key.identifier().toString()).orElse(null);
+                    return new MapSessionPayload.Dimension(key.identifier().toString(), level.getMinY(), level.getMaxY(),
+                            pool == null ? "" : pool.id(), pool == null ? "" : pool.displayName());
                 }).toList();
         ServerPlayNetworking.send(player, new MapSessionPayload(worldId, flags, dimensions));
         sendPoints(player, state);
@@ -302,7 +305,8 @@ public final class MapServerManager {
             for (ServerPlayer player : server.getPlayerList().getPlayers()) {
                 if (players.size() >= 256) break;
                 if (!eligible(player) || !player.isAlive() || player.isSpectator() || player.isInvisible()
-                        || InvisibilityManager.isInvisible(player.getUUID()) || !visible(player)) continue;
+                        || InvisibilityManager.isInvisible(player.getUUID()) || !visible(player)
+                        || !MapSocialManager.visibleTo(player.getUUID(), receiver.getUUID())) continue;
                 players.add(new MapLivePayload.Player(player.getUUID(), player.getName().getString(),
                         player.level().dimension().identifier().toString(), player.getX(), player.getY(), player.getZ(), player.getYRot()));
             }
@@ -324,6 +328,9 @@ public final class MapServerManager {
         }
         ServerPlayNetworking.send(receiver, new MapLivePayload(worldId, view.dimension(), List.copyOf(players), List.copyOf(chunks)));
     }
+
+    /** 共享管理沿用地图认证与服务端功能开关。 */
+    public static boolean socialEligible(ServerPlayer player) { return eligible(player) && MapServerSettings.enabled && MapServerSettings.sharePlayers; }
 
     private static boolean visible(ServerPlayer player) {
         return VISIBILITY.computeIfAbsent(player.getUUID(), id -> UserSettings.section(id, GlobalSettings.MAP_MODULE)
