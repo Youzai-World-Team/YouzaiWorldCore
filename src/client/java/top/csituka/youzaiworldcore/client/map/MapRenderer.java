@@ -77,25 +77,33 @@ public final class MapRenderer {
         var client = Minecraft.getInstance();
         if (client.player == null || client.level == null || !client.player.isAlive() || client.gui.hud.isHidden()
                 || client.gui.screen() != null || MapClient.dimension().equals("youzaiworldcore:login_hall")) return;
-        float opacity = YzHudSettings.getOpacity();
+        float globalOpacity = YzHudSettings.getGlobalOpacity();
+        if (MapSettings.enabled(MapSettings.Toggle.WAYPOINT_HUD) && MapSettings.enabled(MapSettings.Toggle.WAYPOINTS)
+                && globalOpacity > 0.0F) navigation(g, globalOpacity);
+        if (!YzHudSettings.isEnabled(YzHudComponent.MINIMAP)) return;
+        float opacity = YzHudSettings.getOpacity(YzHudComponent.MINIMAP);
         if (opacity <= 0) return;
-        if (MapSettings.enabled(MapSettings.Toggle.WAYPOINT_HUD) && MapSettings.enabled(MapSettings.Toggle.WAYPOINTS)) navigation(g, opacity);
         if (!MapSettings.enabled(MapSettings.Toggle.MINIMAP)) return;
         // 整块小地图在 960×540 设计空间排版，再按界面尺寸等比缩放到屏幕，占屏比例恒定。
-        float scale = hudScale();
+        float scale = hudScale() * YzHudSettings.getScale(YzHudComponent.MINIMAP);
         int size = designSize();
         if (size < 40) return;
         int cardW = cardWidth(), cardH = cardHeight();
         // 定位使用真实 GUI 单位；拖拽编辑器共用同一套卡片尺寸。
-        int left = Math.clamp(YzHudLayout.componentLeft(YzHudComponent.MINIMAP, g.guiWidth(), cardW), 2, g.guiWidth() - cardW - 2);
-        int top = Math.clamp(YzHudLayout.componentTop(YzHudComponent.MINIMAP, g.guiHeight(), cardH), 2, g.guiHeight() - cardH - 2);
+        float componentScale = YzHudSettings.getScale(YzHudComponent.MINIMAP);
+        int scaledCardW = Math.max(1, Math.round(cardW * componentScale));
+        int scaledCardH = Math.max(1, Math.round(cardH * componentScale));
+        int left = Math.clamp(YzHudLayout.componentLeft(YzHudComponent.MINIMAP, g.guiWidth(), scaledCardW),
+                2, Math.max(2, g.guiWidth() - scaledCardW - 2));
+        int top = Math.clamp(YzHudLayout.componentTop(YzHudComponent.MINIMAP, g.guiHeight(), scaledCardH),
+                2, Math.max(2, g.guiHeight() - scaledCardH - 2));
         if (MapSettings.enabled(MapSettings.Toggle.AVOID_HUD) && YzHudSettings.getPositionX(YzHudComponent.MINIMAP) == 0
                 && YzHudSettings.getPositionY(YzHudComponent.MINIMAP) == 0) {
             int[] occupied = ScoreboardSidebarRenderer.mapAvoidanceBounds();
-            if (occupied != null && left < occupied[0] + occupied[2] && left + cardW > occupied[0]
-                    && top < occupied[1] + occupied[3] && top + cardH > occupied[1]) {
-                if (occupied[1] - cardH - 4 >= 2) top = occupied[1] - cardH - 4;
-                else if (occupied[0] - cardW - 4 >= 2) left = occupied[0] - cardW - 4;
+            if (occupied != null && left < occupied[0] + occupied[2] && left + scaledCardW > occupied[0]
+                    && top < occupied[1] + occupied[3] && top + scaledCardH > occupied[1]) {
+                if (occupied[1] - scaledCardH - 4 >= 2) top = occupied[1] - scaledCardH - 4;
+                else if (occupied[0] - scaledCardW - 4 >= 2) left = occupied[0] - scaledCardW - 4;
             }
         }
         g.pose().pushMatrix();

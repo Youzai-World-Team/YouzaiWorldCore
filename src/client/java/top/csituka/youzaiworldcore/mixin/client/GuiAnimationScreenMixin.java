@@ -13,6 +13,8 @@ import top.csituka.youzaiworldcore.client.animation.GuiAnimationController;
 import top.csituka.youzaiworldcore.client.render.YzuiBackdrop;
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
 import top.csituka.youzaiworldcore.client.render.YzuiViewport;
+import top.csituka.youzaiworldcore.client.screen.YzHudSettingsScreen;
+import net.minecraft.client.Minecraft;
 
 /** 页面内容、提示框和输入使用同一个变换；背景固定在物理 GUI 坐标中。 */
 @Mixin(Screen.class)
@@ -55,7 +57,13 @@ public abstract class GuiAnimationScreenMixin {
         Screen previousViewport = YzuiViewport.beginRendering(null);
         var previousContent = GuiAnimationController.suspendContent(false);
         try {
-            if (YzuiTheme.isCustomScreen(screen)) YzuiBackdrop.render(g, screen, tick);
+            if (screen instanceof YzHudSettingsScreen) {
+                Minecraft client = Minecraft.getInstance();
+                if (client.level == null) {
+                    client.gameRenderer.panorama().extractRenderState(g, g.guiWidth(), g.guiHeight());
+                    g.nextStratum();
+                }
+            } else if (YzuiTheme.isCustomScreen(screen)) YzuiBackdrop.render(g, screen, tick);
             else screen.extractBackground(g, x, y, tick);
         } finally {
             GuiAnimationController.restoreContent(previousContent);

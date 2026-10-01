@@ -65,6 +65,11 @@ public final class ScoreboardSidebarRenderer {
     private static int lastEntryCount = -1;
     private static int[] mapBounds;
     private static long mapBoundsTime;
+    private static int previewWidth = 180;
+    private static int previewHeight = 221;
+
+    public static int previewWidth() { return previewWidth; }
+    public static int previewHeight() { return previewHeight; }
 
     /** 当前实际记分板边界，供默认位置的小地图避让；过期边界不参与布局。 */
     public static int[] mapAvoidanceBounds() {
@@ -100,7 +105,8 @@ public final class ScoreboardSidebarRenderer {
      * @param objective 当前侧边栏显示目标
      */
     public static void render(GuiGraphicsExtractor graphics, Objective objective) {
-        if (objective == null) {
+        if (objective == null || !YzHudSettings.isEnabled(YzHudComponent.SCOREBOARD)
+                || YzHudSettings.getOpacity(YzHudComponent.SCOREBOARD) <= 0.0F) {
             return;
         }
 
@@ -139,12 +145,22 @@ public final class ScoreboardSidebarRenderer {
         int contentWidth = Math.max(1, Math.min(desiredContentWidth, maxContentWidth));
         int panelWidth = contentWidth + PANEL_PADDING_X * 2;
         int panelHeight = minimumPanelHeight + entries.size() * rowHeight;
-        int panelX = YzHudLayout.componentLeft(
-                YzHudComponent.SCOREBOARD, graphics.guiWidth(), panelWidth);
-        int panelTop = YzHudLayout.componentTop(
-                YzHudComponent.SCOREBOARD, graphics.guiHeight(), panelHeight);
-        mapBounds = new int[] {panelX, panelTop, panelWidth, panelHeight};
+        previewWidth = panelWidth;
+        previewHeight = panelHeight;
+        float componentScale = YzHudSettings.getScale(YzHudComponent.SCOREBOARD);
+        int scaledWidth = Math.max(1, Math.round(panelWidth * componentScale));
+        int scaledHeight = Math.max(1, Math.round(panelHeight * componentScale));
+        int panelX = YzHudLayout.componentLeft(YzHudComponent.SCOREBOARD, graphics.guiWidth(), scaledWidth);
+        int panelTop = YzHudLayout.componentTop(YzHudComponent.SCOREBOARD, graphics.guiHeight(), scaledHeight);
+        mapBounds = new int[] {panelX, panelTop, scaledWidth, scaledHeight};
         mapBoundsTime = System.nanoTime();
+
+        YzHudSettings.beginRender(YzHudComponent.SCOREBOARD);
+        graphics.pose().pushMatrix();
+        graphics.pose().translate(panelX * (1.0F - componentScale),
+                panelTop * (1.0F - componentScale));
+        graphics.pose().scale(componentScale, componentScale);
+        try {
 
         int rowTextWidth = Math.max(1, contentWidth - ROW_TEXT_INSET * 2);
         int scoreColumnWidth = Math.min(maxScoreWidth,
@@ -206,6 +222,10 @@ public final class ScoreboardSidebarRenderer {
                     objective.getName(), entries.size(), panelWidth, panelHeight);
             lastObjectiveName = objective.getName();
             lastEntryCount = entries.size();
+        }
+        } finally {
+            graphics.pose().popMatrix();
+            YzHudSettings.endRender();
         }
     }
 

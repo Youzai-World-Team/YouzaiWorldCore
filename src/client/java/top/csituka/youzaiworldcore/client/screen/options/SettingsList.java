@@ -29,6 +29,9 @@ import net.minecraft.client.input.MouseButtonEvent;
 final class SettingsList extends ContainerObjectSelectionList<SettingsList.Row> {
     private final List<Row> allRows = new ArrayList<>();
     private Row revealedSection;
+    private Row selectedSection;
+    private boolean separateSections;
+    private String query = "";
 
     SettingsList(int x, int y, int width, int height) {
         super(Minecraft.getInstance(), width, height, y, 40);
@@ -37,12 +40,20 @@ final class SettingsList extends ContainerObjectSelectionList<SettingsList.Row> 
     }
 
     void setRows(List<Row> rows, String query) {
+        setRows(rows, query, false, null);
+    }
+
+    void setRows(List<Row> rows, String query, boolean separateSections, Row selectedSection) {
         allRows.clear();
         allRows.addAll(rows);
+        this.separateSections = separateSections;
+        this.selectedSection = selectedSection != null && selectedSection.navigation && rows.contains(selectedSection) ? selectedSection
+                : rows.stream().filter(row -> row.navigation).findFirst().orElse(null);
         filter(query);
     }
 
     void filter(String query) {
+        this.query = query;
         closePopups();
         setFocused(null);
         setDragging(false);
@@ -56,7 +67,10 @@ final class SettingsList extends ContainerObjectSelectionList<SettingsList.Row> 
             } else if (row.heading) group = row.label.getString();
             row.section = section;
             String sectionText = section == null ? "" : section.label.getString();
-            if (query.isBlank() || !row.heading && matches(query, sectionText + " " + group + " " + row.searchText())) {
+            // 普通浏览只装入当前分区，滚动范围和键盘焦点都不会越过分区边界；搜索仍覆盖全部设置。
+            boolean shown = query.isBlank() ? !separateSections || section == selectedSection
+                    : !row.heading && matches(query, sectionText + " " + group + " " + row.searchText());
+            if (shown) {
                 addEntry(row, row.heightFor(getRowWidth()));
             }
         }
@@ -75,8 +89,14 @@ final class SettingsList extends ContainerObjectSelectionList<SettingsList.Row> 
         return Normalizer.normalize(value, Normalizer.Form.NFKC).toLowerCase(Locale.ROOT).strip();
     }
 
-    /** 按当前布局的实际行高把分组标题对齐顶部，原版 scrollToEntry 只保证标题可见。 */
+    Row selectedSection() { return selectedSection; }
+
+    /** 独立分区切换内容并回到顶部；普通列表仍按实际行高定位标题。 */
     void reveal(Row row) {
+        if (separateSections && allRows.contains(row)) {
+            selectedSection = row.section;
+            filter("");
+        }
         int offset = 0;
         for (Row entry : children()) {
             if (entry == row) {
@@ -96,6 +116,7 @@ final class SettingsList extends ContainerObjectSelectionList<SettingsList.Row> 
 
     /** 搜索隐藏标题后仍按结果所属分组高亮；滚动到底部时选中最后一个分组。 */
     Row activeSection() {
+        if (separateSections && query.isBlank()) return selectedSection;
         if (children().isEmpty()) return null;
         if (revealedSection != null) return revealedSection;
         if (scrollAmount() > 0 && scrollAmount() >= maxScrollAmount()) return children().getLast().section;

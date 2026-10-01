@@ -9,6 +9,8 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import top.csituka.youzaiworldcore.client.hud.ScoreboardSidebarRenderer;
+import top.csituka.youzaiworldcore.client.config.YzHudComponent;
+import top.csituka.youzaiworldcore.client.config.YzHudSettings;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
 /**
@@ -29,6 +31,11 @@ public abstract class ScoreboardSidebarMixin {
     private void yzwc$renderScoreboardSidebar(
             GuiGraphicsExtractor graphics, Objective objective, CallbackInfo ci) {
         if (!ScoreboardSidebarRenderer.isYzuiStyleEnabled()) {
+            return;
+        }
+        if (!YzHudSettings.isEnabled(YzHudComponent.SCOREBOARD)
+                || YzHudSettings.getOpacity(YzHudComponent.SCOREBOARD) <= 0.0F) {
+            ci.cancel();
             return;
         }
 

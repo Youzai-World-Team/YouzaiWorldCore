@@ -26,18 +26,32 @@ public final class YzHudLayout {
 
     /** @return 指定组件的最大布局宽度 */
     public static int componentWidth(YzHudComponent component) {
+        if (component == YzHudComponent.SCOREBOARD) return ScoreboardSidebarRenderer.previewWidth();
         return geometry(component).width();
+    }
+
+    public static float componentScale(YzHudComponent component) {
+        return YzHudSettings.getScale(component);
+    }
+
+    public static int scaledWidth(YzHudComponent component) {
+        return Math.max(1, Math.round(componentWidth(component) * componentScale(component)));
+    }
+
+    public static int scaledHeight(YzHudComponent component) {
+        return Math.max(1, Math.round(componentHeight(component) * componentScale(component)));
     }
 
     /** @return 指定组件的最大布局高度 */
     public static int componentHeight(YzHudComponent component) {
+        if (component == YzHudComponent.SCOREBOARD) return ScoreboardSidebarRenderer.previewHeight();
         return geometry(component).height();
     }
 
     /** @return 指定组件在当前 GUI 中的实际左边界 */
     public static int componentLeft(YzHudComponent component, int guiWidth) {
         Geometry geometry = geometry(component);
-        return componentLeft(component, guiWidth, geometry.width());
+        return componentLeft(component, guiWidth, scaledWidth(component));
     }
 
     /**
@@ -50,6 +64,10 @@ public final class YzHudLayout {
      */
     public static int componentLeft(
             YzHudComponent component, int guiWidth, int componentWidth) {
+        if (YzHudSettings.isScaleLocked(component)) {
+            return Math.clamp(YzHudSettings.lockedLeft(component), SCREEN_MARGIN,
+                    Math.max(SCREEN_MARGIN, guiWidth - componentWidth - SCREEN_MARGIN));
+        }
         Geometry geometry = geometry(component);
         return defaultLeft(geometry, guiWidth, componentWidth)
                 + translationX(component, guiWidth, componentWidth);
@@ -58,7 +76,7 @@ public final class YzHudLayout {
     /** @return 指定组件在当前 GUI 中的实际上边界 */
     public static int componentTop(YzHudComponent component, int guiHeight) {
         Geometry geometry = geometry(component);
-        return componentTop(component, guiHeight, geometry.height());
+        return componentTop(component, guiHeight, scaledHeight(component));
     }
 
     /**
@@ -71,6 +89,10 @@ public final class YzHudLayout {
      */
     public static int componentTop(
             YzHudComponent component, int guiHeight, int componentHeight) {
+        if (YzHudSettings.isScaleLocked(component)) {
+            return Math.clamp(YzHudSettings.lockedTop(component), SCREEN_MARGIN,
+                    Math.max(SCREEN_MARGIN, guiHeight - componentHeight - SCREEN_MARGIN));
+        }
         Geometry geometry = geometry(component);
         return defaultTop(geometry, guiHeight, componentHeight)
                 + translationY(component, guiHeight, componentHeight);
@@ -115,11 +137,15 @@ public final class YzHudLayout {
     /** 把目标左边界换算为指定组件的归一化水平位移。 */
     public static double positionXFromLeft(
             YzHudComponent component, int guiWidth, double targetLeft) {
+        return positionXFromLeft(component, guiWidth, scaledWidth(component), targetLeft);
+    }
+
+    public static double positionXFromLeft(
+            YzHudComponent component, int guiWidth, int componentWidth, double targetLeft) {
         Geometry geometry = geometry(component);
-        int defaultLeft = defaultLeft(geometry, guiWidth, geometry.width());
+        int defaultLeft = defaultLeft(geometry, guiWidth, componentWidth);
         int leftDistance = Math.max(0, defaultLeft - SCREEN_MARGIN);
-        int rightDistance = Math.max(0, guiWidth - SCREEN_MARGIN
-                - geometry.width() - defaultLeft);
+        int rightDistance = Math.max(0, guiWidth - SCREEN_MARGIN - componentWidth - defaultLeft);
         return normalizedPosition(targetLeft - defaultLeft,
                 leftDistance, rightDistance);
     }
@@ -127,11 +153,15 @@ public final class YzHudLayout {
     /** 把目标上边界换算为指定组件的归一化垂直位移。 */
     public static double positionYFromTop(
             YzHudComponent component, int guiHeight, double targetTop) {
+        return positionYFromTop(component, guiHeight, scaledHeight(component), targetTop);
+    }
+
+    public static double positionYFromTop(
+            YzHudComponent component, int guiHeight, int componentHeight, double targetTop) {
         Geometry geometry = geometry(component);
-        int defaultTop = defaultTop(geometry, guiHeight, geometry.height());
+        int defaultTop = defaultTop(geometry, guiHeight, componentHeight);
         int topDistance = Math.max(0, defaultTop - SCREEN_MARGIN);
-        int bottomDistance = Math.max(0, guiHeight - SCREEN_MARGIN
-                - geometry.height() - defaultTop);
+        int bottomDistance = Math.max(0, guiHeight - SCREEN_MARGIN - componentHeight - defaultTop);
         return normalizedPosition(targetTop - defaultTop,
                 topDistance, bottomDistance);
     }
@@ -164,12 +194,20 @@ public final class YzHudLayout {
                 : Mth.clamp(translation / positiveDistance, 0.0D, 1.0D);
     }
 
+    public static int defaultLeft(YzHudComponent component, int guiWidth, int componentWidth) {
+        return defaultLeft(geometry(component), guiWidth, componentWidth);
+    }
+
     private static int defaultLeft(
             Geometry geometry, int guiWidth, int componentWidth) {
         return switch (geometry.horizontalAnchor()) {
             case LEFT -> geometry.horizontalOffset();
             case RIGHT -> guiWidth - geometry.horizontalOffset() - componentWidth;
         };
+    }
+
+    public static int defaultTop(YzHudComponent component, int guiHeight, int componentHeight) {
+        return defaultTop(geometry(component), guiHeight, componentHeight);
     }
 
     private static int defaultTop(

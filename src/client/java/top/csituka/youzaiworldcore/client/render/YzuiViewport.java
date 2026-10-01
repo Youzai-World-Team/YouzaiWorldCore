@@ -4,6 +4,7 @@ import java.util.Map;
 import java.util.WeakHashMap;
 import net.minecraft.client.gui.screens.Screen;
 import top.csituka.youzaiworldcore.client.screen.MailBaseScreen;
+import top.csituka.youzaiworldcore.client.screen.YzHudSettingsScreen;
 
 /** 自定义屏幕的适配状态；弱引用不延长关闭屏幕的生命周期，HUD 不参与变换。 */
 public final class YzuiViewport {
@@ -14,7 +15,8 @@ public final class YzuiViewport {
 
     /** 在原版写入真实宽高后、子类布局之前调用。邮件继续使用自己的设计视口。 */
     public static void configure(Screen screen, int width, int height) {
-        if (!YzuiTheme.isCustomScreen(screen) || screen instanceof MailBaseScreen) return;
+        if (!YzuiTheme.isCustomScreen(screen) || screen instanceof MailBaseScreen
+                || screen instanceof YzHudSettingsScreen) return;
         boolean container = screen instanceof net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?>;
         YzuiLayout layout = YzuiLayout.fit(width, height, container ? 380 : 480, container ? 280 : 360);
         LAYOUTS.put(screen, layout);

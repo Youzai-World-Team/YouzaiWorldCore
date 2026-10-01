@@ -128,6 +128,8 @@ public final class YzuiOptionsScreen extends Screen implements HasDifficultyReac
         rebuilding = true;
         try {
             if (unified != null) unified.flush();
+            String sectionAnchor = unified != null && frame != null
+                    ? unified.anchorKey(frame.content.selectedSection()) : null;
             AbstractWidget focused = SettingsWidgets.focused(this);
             boolean searchFocused = frame != null && frame.search.isFocused();
             if (frame != null) {
@@ -161,20 +163,22 @@ public final class YzuiOptionsScreen extends Screen implements HasDifficultyReac
             }
             if (footer.isEmpty()) footer.add(action(Component.translatable("gui.done"), this::onClose));
             boolean searchable = !isPopup();
-            frame = new SettingsFrame(this, rows, footer, this::addRenderableWidget, query, scroll, searchable);
+            SettingsList.Row selectedSection = unified == null ? null : unified.anchorRow(sectionAnchor);
+            if (pendingAnchor != null && unified != null) {
+                SettingsList.Row target = unified.anchorRow(pendingAnchor);
+                if (target != null) {
+                    selectedSection = target;
+                    query = "";
+                    scroll = 0;
+                }
+                pendingAnchor = null;
+            }
+            frame = new SettingsFrame(this, rows, footer, this::addRenderableWidget, query, scroll, searchable, selectedSection);
             if (source != null) captured = SettingsWidgets.flatten(source);
             if (videoPage() != null) videoPreset = minecraft.options.graphicsPreset().get();
             refreshKeyLabels();
             if (searchFocused && searchable) setInitialFocus(frame.search);
             else frame.restoreFocus(focused);
-            if (pendingAnchor != null && unified != null) {
-                SettingsList.Row target = unified.anchorRow(pendingAnchor);
-                if (target != null) {
-                    frame.search.setValue("");
-                    frame.content.reveal(target);
-                }
-                pendingAnchor = null;
-            }
         } finally {
             rebuilding = false;
         }

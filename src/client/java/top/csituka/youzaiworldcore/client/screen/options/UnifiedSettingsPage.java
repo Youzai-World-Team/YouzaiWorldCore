@@ -34,7 +34,7 @@ import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
 /**
- * 把普通设置子页的实际控件汇总到一个连续列表中。原版页面只作为选项与回调模型存在。
+ * 汇总普通设置子页的实际控件，供外壳按分区展示和全局搜索。原版页面只作为选项与回调模型存在。
  * 页面离开时统一提交延迟滑条和视频设置；返回后重新读取最新配置。
  */
 @SuppressWarnings("null")
@@ -76,6 +76,10 @@ final class UnifiedSettingsPage {
     }
 
     SettingsList.Row anchorRow(String anchor) { return anchors.get(anchor); }
+    String anchorKey(SettingsList.Row row) {
+        return anchors.entrySet().stream().filter(entry -> entry.getValue() == row)
+                .map(Map.Entry::getKey).findFirst().orElse(null);
+    }
     VideoSettingsScreen video() { return video; }
 
     void added() { fresh = true; }
@@ -117,7 +121,7 @@ final class UnifiedSettingsPage {
             }
             fresh = false;
             refreshWorld = false;
-            DebugLogger.info("YzuiSettings", "已将 %d 个设置分区展开到同一页面", pages.size());
+            DebugLogger.info("YzuiSettings", "已加载 %d 个设置分区，按选中分区独立展示", pages.size());
         } else if (refreshWorld) {
             for (int index = 0; index < pages.size(); index++) {
                 Page previous = pages.get(index);
@@ -159,15 +163,17 @@ final class UnifiedSettingsPage {
         }
 
         if (SettingsCompatibility.sodiumAvailable()) {
-            heading(rows, VideoSettingsScreen.class.getName(), Component.translatable("options.video"));
+            SettingsList.Row videoHeading = heading(rows, VideoSettingsScreen.class.getName(), Component.translatable("options.video"));
             rows.add(SettingsList.Row.controls(YzuiOptionsScreen.text("sodium"), YzuiOptionsScreen.text("sodium.description"),
                     button(YzuiOptionsScreen.text("open"), () -> SettingsCompatibility.openSodium(host))));
+            appendVisualOptions(rows, videoHeading);
         }
         for (Page page : pages) {
             if (page.screen instanceof YouzaiWorldCoreSettingsScreen || page.screen == telemetry) continue;
-            heading(rows, anchor(page.screen), page.title);
+            SettingsList.Row section = heading(rows, anchor(page.screen), page.title);
             if (page.screen instanceof FontOptionsScreen && language != null) rows.add(SettingsList.Row.widget(language));
             appendNative(page, rows, primary);
+            if (page.screen == video) appendVisualOptions(rows, section);
         }
 
         heading(rows, "resources", YzuiOptionsScreen.text("resources"));
@@ -184,15 +190,13 @@ final class UnifiedSettingsPage {
         boolean firstCoreSection = true;
         for (Page page : pages) {
             if (!(page.screen instanceof YouzaiWorldCoreSettingsScreen core)) continue;
+            if (core.getSelectedSection() == 0) continue;
             SettingsList.Row section = heading(rows, anchor(core), page.title);
             if (firstCoreSection) {
                 section.navigationGroup = Component.literal("YouzaiWorldCore");
                 firstCoreSection = false;
             }
-            for (var option : core.embeddedOptions()) {
-                rows.add(option.control() == null ? SettingsList.Row.text(option.label(), option.description())
-                        : SettingsList.Row.controls(option.label(), option.description(), option.control()));
-            }
+            appendCoreOptions(rows, core);
         }
         heading(rows, "mods", YzuiOptionsScreen.text("mods"));
         SettingsCompatibility.addModRows(host, rows);
@@ -200,6 +204,24 @@ final class UnifiedSettingsPage {
                 button(YzuiOptionsScreen.text("open"), () -> YzuiSettingsRouter.openCompatibility(host))));
         for (Page page : pages) captured.put(page.screen, SettingsWidgets.flatten(page.screen));
         displayed = rows.stream().flatMap(row -> row.widgets.stream()).toList();
+    }
+
+    private void appendVisualOptions(List<SettingsList.Row> rows, SettingsList.Row videoHeading) {
+        for (Page page : pages) {
+            if (page.screen instanceof YouzaiWorldCoreSettingsScreen core && core.getSelectedSection() == 0) {
+                anchors.put(anchor(core), videoHeading);
+                rows.add(SettingsList.Row.subheading(page.title));
+                appendCoreOptions(rows, core);
+                return;
+            }
+        }
+    }
+
+    private static void appendCoreOptions(List<SettingsList.Row> rows, YouzaiWorldCoreSettingsScreen core) {
+        for (var option : core.embeddedOptions()) {
+            rows.add(option.control() == null ? SettingsList.Row.text(option.label(), option.description())
+                    : SettingsList.Row.controls(option.label(), option.description(), option.control()));
+        }
     }
 
     private void appendNative(Page page, List<SettingsList.Row> rows, Map<OptionInstance<?>, SettingsList.Row> primary) {

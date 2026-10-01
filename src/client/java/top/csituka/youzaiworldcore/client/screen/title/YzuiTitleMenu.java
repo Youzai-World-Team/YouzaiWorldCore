@@ -17,6 +17,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.util.FormattedCharSequence;
 import top.csituka.youzaiworldcore.client.config.ClientExternalSettings;
 import top.csituka.youzaiworldcore.client.config.ClientUpdateCheckerConfig;
+import top.csituka.youzaiworldcore.client.config.YzuiThemeMode;
 import top.csituka.youzaiworldcore.client.render.RoundedRect;
 import top.csituka.youzaiworldcore.client.render.YzuiBrandLogo;
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
@@ -96,8 +97,7 @@ public final class YzuiTitleMenu {
         if (alpha <= 0.01f) return;
         var logo = layout.logo();
         YzuiBrandLogo.render(g, YzuiBrandLogo.TEXTURE, logo.x(), logo.y(), logo.width(), alpha);
-        label(g, Component.translatable("title.youzaiworldcore.subtitle"), layout.subtitle(),
-                p.translucentText(p.textMuted(), 0.72f), alpha);
+        renderSubtitle(g, alpha);
         card(g, layout.navigation(), alpha);
         card(g, layout.news(), alpha);
         int pad = layout.padding();
@@ -245,6 +245,23 @@ public final class YzuiTitleMenu {
 
     private static void card(GuiGraphicsExtractor g, TitleMenuLayout.Rect rect, float alpha) {
         YzuiTheme.card(g, rect.x(), rect.y(), rect.width(), rect.height(), alpha);
+    }
+
+    private void renderSubtitle(GuiGraphicsExtractor g, float alpha) {
+        var rect = layout.subtitle();
+        String text = font.plainSubstrByWidth(Component.translatable("title.youzaiworldcore.subtitle").getString(),
+                Math.max(0, rect.width() - 2));
+        if (text.isEmpty()) return;
+        boolean light = ClientExternalSettings.getYzuiTheme() == YzuiThemeMode.LIGHT;
+        int outline = YzuiTheme.alpha(light ? 0xFFFFFFFF : 0xFF101B17, alpha * 0.9f);
+        int foreground = YzuiTheme.alpha(light ? 0xFF1C3028 : 0xFFE3F0E7, alpha);
+        int x = rect.x() + 1, y = rect.y();
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dy = -1; dy <= 1; dy++) {
+                if (dx != 0 || dy != 0) g.text(font, text, x + dx, y + dy, outline, false);
+            }
+        }
+        g.text(font, text, x, y, foreground, false);
     }
 
     private void label(GuiGraphicsExtractor g, Component text, TitleMenuLayout.Rect rect, int color, float alpha) {
