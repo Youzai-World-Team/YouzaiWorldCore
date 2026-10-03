@@ -45,6 +45,8 @@ abstract class MapOverlayPanel extends AbstractContainerEventHandler implements 
     }
     protected void label(GuiGraphicsExtractor g, Component text, int x, int y, int available) { YzuiTheme.label(g, font, text, x, y, available, YzuiTheme.text(), false); }
     protected void content(GuiGraphicsExtractor g, int mx, int my, float delta) { }
+    protected int titleWidth() { return panelWidth - 44; }
+    protected void renderError(GuiGraphicsExtractor g) { label(g, error, panelX + 12, panelY + panelHeight - 48, panelWidth - 24); }
     public void tick() { }
     public void onClose() { owner.closeOverlay(this); }
     @Override public List<? extends GuiEventListener> children() { return List.copyOf(widgets); }
@@ -58,9 +60,9 @@ abstract class MapOverlayPanel extends AbstractContainerEventHandler implements 
     }
     @Override public void extractRenderState(GuiGraphicsExtractor g, int mx, int my, float delta) {
         g.nextStratum(); YzuiTheme.card(g, panelX, panelY, panelWidth, panelHeight);
-        label(g, title, panelX + 12, panelY + 14, panelWidth - 44);
+        label(g, title, panelX + 12, panelY + 14, titleWidth());
         content(g, mx, my, delta);
-        if (!error.getString().isEmpty()) label(g, error, panelX + 12, panelY + panelHeight - 48, panelWidth - 24);
+        if (!error.getString().isEmpty()) renderError(g);
         for (var widget : List.copyOf(widgets)) widget.extractRenderState(g, mx, my, delta);
     }
     @Override public boolean keyPressed(KeyEvent event) { if (event.key() == GLFW.GLFW_KEY_ESCAPE) { onClose(); return true; } return super.keyPressed(event); }

@@ -298,6 +298,10 @@ public final class MapPersonalData {
         restore(REDO, UNDO);
     }
 
+    /** 管理器按实际历史启用撤销、重做按钮。 */
+    public static boolean canUndo() { return !UNDO.isEmpty(); }
+    public static boolean canRedo() { return !REDO.isEmpty(); }
+
     private static void remember() {
         UNDO.push(List.copyOf(DRAWINGS));
         while (UNDO.size() > 32)

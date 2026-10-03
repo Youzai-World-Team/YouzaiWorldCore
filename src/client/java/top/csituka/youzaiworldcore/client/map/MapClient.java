@@ -5,31 +5,22 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
-import net.fabricmc.fabric.api.tag.convention.v2.ConventionalBlockTags;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.core.BlockPos;
-import net.minecraft.tags.BlockTags;
-import net.minecraft.tags.FluidTags;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.chunk.status.ChunkStatus;
-import net.minecraft.world.level.chunk.LevelChunk;
-import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.StainedGlassBlock;
-import net.minecraft.world.level.block.StainedGlassPaneBlock;
-import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.storage.LevelResource;
 import org.lwjgl.glfw.GLFW;
 import top.csituka.youzaiworldcore.client.config.MapSettings;
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
 import top.csituka.youzaiworldcore.client.screen.map.YzWorldMapScreen;
 import top.csituka.youzaiworldcore.map.MapLayer;
+import top.csituka.youzaiworldcore.map.MapEntityLayer;
 import top.csituka.youzaiworldcore.map.MapSampler;
 import top.csituka.youzaiworldcore.map.MapScanPattern;
 import top.csituka.youzaiworldcore.map.MapTileKey;
@@ -119,9 +110,10 @@ public final class MapClient {
     }
 
     public record Radar(UUID id, String name, String dimension, double x, double y, double z,
-            float yaw, int color, boolean player, Entity entity, net.minecraft.world.entity.EntityType<?> entityType) {
+            float yaw, int color, boolean player, Entity entity, net.minecraft.world.entity.EntityType<?> entityType, int layer) {
         public Radar(UUID id, String name, String dimension, double x, double y, double z, float yaw, int color, boolean player, Entity entity) {
-            this(id, name, dimension, x, y, z, yaw, color, player, entity, entity == null ? null : entity.getType());
+            this(id, name, dimension, x, y, z, yaw, color, player, entity, entity == null ? null : entity.getType(),
+                    entity instanceof Mob ? MapEntityLayer.of(entity) : MapEntityLayer.UNKNOWN);
         }
     }
 
@@ -156,7 +148,7 @@ public final class MapClient {
     }
 
     public static List<Radar> radar() {
-        return radar;
+        return radar.stream().filter(MapMobRadar::visibleMarker).toList();
     }
 
     /** 管理界面读取服务端实际授权的位置；显示开关不改变共享名单，过期位置不参与定位。 */
@@ -249,31 +241,8 @@ public final class MapClient {
             return MapLayer.SURFACE;
         var chunk = level.getChunkSource().getChunk(Math.floorDiv(player.getBlockX(), 16),
                 Math.floorDiv(player.getBlockZ(), 16), ChunkStatus.FULL, false);
-        return chunk != null && beneathSurface(chunk, player.getBlockX(), player.getBlockZ(), player.getBoundingBox().maxY)
+        return chunk != null && MapEntityLayer.beneathSurface(level, chunk, player.getBlockX(), player.getBlockZ(), player.getBoundingBox().maxY)
                 ? MapLayer.CAVE : MapLayer.SURFACE;
-    }
-
-    /** 自动切层与探索记录共用顶板判定，只读取玩家所在的已加载区块。 */
-    private static boolean beneathSurface(LevelChunk chunk, int x, int z, double headY) {
-        int surface = chunk.getHeight(Heightmap.Types.WORLD_SURFACE, x, z);
-        int minimum = Math.max(level.getMinY(), (int) Math.floor(headY));
-        int obstructionCount = 0;
-        var pos = new BlockPos.MutableBlockPos();
-        // 统计整列头顶上方的有效遮挡；空气间隔和树叶/玻璃/水不计数，也不重置累计值。
-        for (int y = surface; y >= minimum; y--) {
-            pos.set(x, y, z);
-            if (!surfaceCover(chunk.getBlockState(pos), pos) && ++obstructionCount > 4) return true;
-        }
-        return false;
-    }
-
-    private static boolean surfaceCover(BlockState state, BlockPos pos) {
-        if (state.isAir() || state.is(BlockTags.LEAVES) || state.is(Blocks.LILY_PAD)) return true;
-        if (state.is(Blocks.GLASS) || state.is(Blocks.GLASS_PANE) || state.is(Blocks.TINTED_GLASS)
-                || state.getBlock() instanceof StainedGlassBlock || state.getBlock() instanceof StainedGlassPaneBlock
-                || state.is(ConventionalBlockTags.GLASS_BLOCKS) || state.is(ConventionalBlockTags.GLASS_PANES)) return true;
-        // 放行水与水草，不把含水的石阶、楼梯等实体顶板当成露天水面。
-        return state.getFluidState().is(FluidTags.WATER) && state.getCollisionShape(level, pos).isEmpty();
     }
 
     /** 洞穴按八格高度分段，固定高度使用玩家配置。 */
@@ -397,7 +366,7 @@ public final class MapClient {
         var chunk = level.getChunkSource().getChunk(cx, cz, ChunkStatus.FULL, false);
         if (chunk == null)
             return;
-        if (beneathSurface(chunk, x, z, client.player.getBoundingBox().maxY)) {
+        if (MapEntityLayer.beneathSurface(level, chunk, x, z, client.player.getBoundingBox().maxY)) {
             int height = Math.clamp(Math.floorDiv(client.player.getBlockY(), 8) * 8 + 7, level.getMinY(),
                     level.getMaxY());
             if (height >= -4096 && height <= 4095)
@@ -534,6 +503,9 @@ public final class MapClient {
 
     private static void updateRadar(Minecraft client) {
         var markers = new LinkedHashMap<UUID, Radar>();
+        // 生物跟踪仅沿用本次可见快照；跨层或离开查询范围后不能继续追踪历史坐标。
+        TRACKED_HISTORY.values().removeIf(value -> value.marker.entity() instanceof Mob
+                || !value.marker.player() && value.marker.entity() == null && value.marker.entityType() != null);
         for (Entity entity : client.level.entitiesForRendering()) {
             if (entity == client.player || !entity.isAlive() || entity.isInvisibleTo(client.player))
                 continue;
@@ -583,7 +555,7 @@ public final class MapClient {
 
     public static Radar tracked(String dimension) {
         Seen seen = TRACKED_HISTORY.get(dimension);
-        return seen == null || System.currentTimeMillis() - seen.time > 10000 ? null : seen.marker;
+        return seen == null || System.currentTimeMillis() - seen.time > 10000 || !MapMobRadar.visibleMarker(seen.marker) ? null : seen.marker;
     }
 
     /** 接收器执行前绑定当前连接，断线后的旧任务不能污染新服务器的数据。 */

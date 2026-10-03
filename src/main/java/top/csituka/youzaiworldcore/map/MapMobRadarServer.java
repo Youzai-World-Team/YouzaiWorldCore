@@ -33,7 +33,8 @@ public final class MapMobRadarServer {
         var targets = level.getEntitiesOfClass(Mob.class, bounds, mob -> mob.getType() == type && mob.isAlive()
                 && !mob.isInvisibleTo(player) && Math.abs(mob.chunkPosition().x() - cx) <= radius
                 && Math.abs(mob.chunkPosition().z() - cz) <= radius).stream()
-                .map(mob -> new MapMobSnapshotPayload.Target(mob.getUUID(), mob.getX(), mob.getY(), mob.getZ())).toList();
+                .map(mob -> new MapMobSnapshotPayload.Target(mob.getUUID(), mob.getX(), mob.getY(), mob.getZ(), MapEntityLayer.of(mob)))
+                .filter(target -> target.layer() != MapEntityLayer.UNKNOWN).toList();
         int parts = Math.max(1, Math.ceilDiv(targets.size(), MapMobSnapshotPayload.BATCH_SIZE));
         // 网络解码有总量边界；超出边界拒绝此次快照，不能把截断数据冒充完整查询。
         if (parts > MapMobSnapshotPayload.MAX_PARTS) { DebugLogger.warn("MapMobRadar", "生物雷达快照过大：%d", targets.size()); return; }

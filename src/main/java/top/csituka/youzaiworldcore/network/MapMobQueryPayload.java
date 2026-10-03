@@ -8,7 +8,8 @@ import java.util.UUID;
 
 /** C2S：按生物种类查询玩家周围的模拟区块；中心与维度始终由服务端确定。 */
 public record MapMobQueryPayload(UUID request, Identifier entityType, int radius) implements CustomPacketPayload {
-    public static final Type<MapMobQueryPayload> ID = new Type<>(Identifier.fromNamespaceAndPath("youzaiworldcore", "map_mob_query"));
+    // 图层元数据使用独立的 v2 通道，旧服务端自动回落本机查询，避免按旧格式解码快照。
+    public static final Type<MapMobQueryPayload> ID = new Type<>(Identifier.fromNamespaceAndPath("youzaiworldcore", "map_mob_query_v2"));
     public static final StreamCodec<RegistryFriendlyByteBuf, MapMobQueryPayload> STREAM_CODEC = new StreamCodec<>() {
         @Override public MapMobQueryPayload decode(RegistryFriendlyByteBuf buf) {
             UUID request = buf.readUUID(); Identifier type = Identifier.parse(buf.readUtf(128));

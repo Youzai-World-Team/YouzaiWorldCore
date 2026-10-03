@@ -1,6 +1,5 @@
 package top.csituka.youzaiworldcore.client.screen.map;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.Tooltip;
@@ -13,15 +12,12 @@ import top.csituka.youzaiworldcore.client.render.YzuiTheme;
 import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 
 /** 按生物种类选择的图标目录；选择持续作用于小地图及全屏地图，未发现的种类也可选择。 */
 final class MapRadarPanel extends MapOverlayPanel {
     private final List<TransparentButton> cells = new ArrayList<>();
-    private final Map<EntityType<?>, Integer> counts = new HashMap<>();
     private String query = "";
     private int page, pages = 1, count, capacity, columns, cellWidth, gridTop, footer, ticks;
     private boolean dirty;
@@ -45,13 +41,13 @@ final class MapRadarPanel extends MapOverlayPanel {
         columns = Math.max(1, (panelWidth - 20) / 60); cellWidth = (panelWidth - 24 - (columns - 1) * 4) / columns;
         capacity = Math.max(0, (footer - 46 - gridTop) / 58) * columns;
         int actionWidth = (panelWidth - 28) / 2;
-        clear = button(panelX + 12, footer - 26, actionWidth, MapTexts.text("radar_clear"), () -> { MapMobRadar.select(null); refreshCounts(); });
+        clear = button(panelX + 12, footer - 26, actionWidth, MapTexts.text("radar_clear"), () -> { MapMobRadar.select(null); refreshSelection(); });
         view = button(panelX + 16 + actionWidth, footer - 26, actionWidth, MapTexts.text("radar_view"), owner::showMobRadar);
         view.setStyle(YzuiTheme.ButtonStyle.FILLED);
         previous = button(panelX + 12, footer, 24, Component.literal("‹"), () -> { page--; refreshGrid(); });
         next = button(panelX + panelWidth - 36, footer, 24, Component.literal("›"), () -> { page++; refreshGrid(); });
         previous.setTooltip(Tooltip.create(MapTexts.text("previous"))); next.setTooltip(Tooltip.create(MapTexts.text("next")));
-        refreshGrid(); refreshCounts();
+        refreshGrid(); refreshSelection();
         if (focused) setFocused(search);
     }
     private void refreshGrid() {
@@ -66,7 +62,7 @@ final class MapRadarPanel extends MapOverlayPanel {
             var type = matches.get(page * capacity + i);
             int x = panelX + 12 + (i % columns) * (cellWidth + 4), y = gridTop + (i / columns) * 58;
             var cell = new TransparentButton(x, y, cellWidth, 54, type.getDescription(), () -> {
-                MapMobRadar.select(MapMobRadar.selected() == type ? null : type); refreshCounts();
+                MapMobRadar.select(MapMobRadar.selected() == type ? null : type); refreshSelection();
             }) {
                 @Override protected void extractWidgetRenderState(GuiGraphicsExtractor g, int mx, int my, float delta) {
                     boolean selected = type == MapMobRadar.selected();
@@ -76,30 +72,23 @@ final class MapRadarPanel extends MapOverlayPanel {
                     int color = YzuiTheme.buttonText(style, true);
                     YzuiTheme.label(g, font, type.getDescription(), getX() + 3, getY() + 40, getWidth() - 6, color, true);
                     if (selected) g.outline(getX() + 1, getY() + 1, getWidth() - 2, getHeight() - 2, YzuiTheme.primary());
-                    int found = counts.getOrDefault(type, 0);
-                    if (found > 0) YzuiTheme.label(g, font, Component.literal(Integer.toString(found)), getX() + getWidth() - 22, getY() + 3, 20, color, true);
                 }
             };
             cell.setTooltip(Tooltip.create(type.getDescription().copy().append("\n" + EntityType.getKey(type)).append("\n").append(MapTexts.text("radar_hint"))));
             cells.add(addRenderableWidget(cell));
         }
     }
-    private void refreshCounts() {
-        counts.clear();
-        var client = Minecraft.getInstance();
-        if (client.level != null) for (var entity : client.level.entitiesForRendering())
-            if (MapMobRadar.visible(entity)) counts.merge(entity.getType(), 1, Integer::sum);
-        if (MapMobRadar.selected() != null) counts.put(MapMobRadar.selected(), MapMobRadar.targets().size());
+    private void refreshSelection() {
         clear.active = view.active = MapMobRadar.selected() != null;
         search.setTooltip(Tooltip.create(MapTexts.text(MapMobRadar.serverSearch() ? "radar_hint" : "radar_local_only")));
     }
-    @Override public void tick() { if (dirty) refreshGrid(); if (++ticks % 10 == 0) refreshCounts(); }
+    @Override public void tick() { if (dirty) refreshGrid(); if (++ticks % 10 == 0) refreshSelection(); }
     @Override protected void content(GuiGraphicsExtractor g, int mx, int my, float delta) {
         label(g, MapTexts.text(MapMobRadar.serverSearch() ? "radar_range" : "radar_local_range", MapMobRadar.radius(), count), panelX + 12, panelY + 67, panelWidth - 24);
         if (count == 0) YzuiTheme.wrapped(g, font, MapTexts.text("radar_empty"), panelX + 12, gridTop + 4, panelWidth - 24, 2, YzuiTheme.textMuted());
         var selected = MapMobRadar.selected();
         var status = selected == null ? MapTexts.text("radar_hint") : MapMobRadar.waiting() ? MapTexts.text("radar_waiting", selected.getDescription())
-                : MapTexts.text("radar_selected", selected.getDescription(), counts.getOrDefault(selected, 0));
+                : MapTexts.text("radar_selected", selected.getDescription());
         label(g, status, panelX + 12, footer - 43, panelWidth - 24);
         YzuiTheme.label(g, font, MapTexts.text("page", page + 1, pages), panelX + 42, footer + 7, panelWidth - 84, YzuiTheme.textMuted(), true);
     }
