@@ -7,7 +7,7 @@ import top.csituka.youzaiworldcore.map.MapVertex;
 import java.util.ArrayList;
 import java.util.List;
 
-/** 地图绘图、命中检测与导出共用的几何路径。 */
+/** 地图绘图与命中检测共用的几何路径。 */
 public final class MapShapes {
     private MapShapes() { }
 

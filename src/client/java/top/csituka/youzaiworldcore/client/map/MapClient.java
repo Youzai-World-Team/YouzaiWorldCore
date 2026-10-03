@@ -23,7 +23,6 @@ import top.csituka.youzaiworldcore.map.MapLayer;
 import top.csituka.youzaiworldcore.map.MapSampler;
 import top.csituka.youzaiworldcore.map.MapScanPattern;
 import top.csituka.youzaiworldcore.map.MapTileKey;
-import top.csituka.youzaiworldcore.map.MapVertex;
 import top.csituka.youzaiworldcore.map.MapWaypoint;
 import top.csituka.youzaiworldcore.network.MapActionPayload;
 import top.csituka.youzaiworldcore.network.MapActionResultPayload;
@@ -35,7 +34,6 @@ import top.csituka.youzaiworldcore.network.MapWaypointsPayload;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayDeque;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -61,7 +59,6 @@ public final class MapClient {
             SETTINGS, REFRESH };
     private static final MapTileCache CACHE = new MapTileCache();
     private static final LinkedHashMap<MapTileKey, Integer> SAMPLED = new LinkedHashMap<>();
-    private static final ArrayDeque<MapVertex> TRAIL = new ArrayDeque<>();
     private static final Map<String, Seen> TRACKED_HISTORY = new HashMap<>();
     private static ClientLevel level;
     private static MapSampler.Job sampling;
@@ -124,7 +121,7 @@ public final class MapClient {
         ClientTickEvents.END_CLIENT_TICK.register(MapClient::tick);
         // 断线回调可能来自 Netty 线程，地图状态与 GPU 纹理统一回客户端主线程清理。
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> client.execute(MapClient::reset));
-        ClientLifecycleEvents.CLIENT_STOPPING.register(client -> reset());
+        ClientLifecycleEvents.CLIENT_STOPPING.register(client -> { reset(); CACHE.close(); MapSettings.database().close(); });
         MapClientCommands.register();
         DebugLogger.info("MapClient", "悠哉地图已初始化：M 打开地图，N 新建路径点，U 查看路径点");
     }
@@ -147,10 +144,6 @@ public final class MapClient {
 
     public static List<Radar> radar() {
         return radar;
-    }
-
-    public static List<MapVertex> trail() {
-        return List.copyOf(TRAIL);
     }
 
     public static UUID trackedId() {
@@ -277,6 +270,7 @@ public final class MapClient {
                 reset();
             return;
         }
+        CACHE.checkFailure();
         ticks++;
         if (nextScreen != null) {
             var screen = nextScreen;
@@ -294,7 +288,6 @@ public final class MapClient {
             sampling = null;
             scanCursor = 0;
             scanX = Integer.MIN_VALUE;
-            TRAIL.clear();
             alive = client.player.isAlive();
             if (MapPersonalData.worldId().isEmpty()) {
                 String identity = client.getSingleplayerServer() != null
@@ -317,16 +310,6 @@ public final class MapClient {
             if (ticks % 20 == 0)
                 recordExploration(client);
             sample(client);
-            if (ticks % 5 == 0) {
-                var point = new MapVertex(
-                        Math.clamp(client.player.getX(), -MapTileKey.WORLD_LIMIT, MapTileKey.WORLD_LIMIT),
-                        Math.clamp(client.player.getZ(), -MapTileKey.WORLD_LIMIT, MapTileKey.WORLD_LIMIT));
-                if (TRAIL.isEmpty()
-                        || Math.hypot(point.x() - TRAIL.getLast().x(), point.z() - TRAIL.getLast().z()) >= 1)
-                    TRAIL.add(point);
-                while (TRAIL.size() > 256)
-                    TRAIL.removeFirst();
-            }
         }
         if (ticks % 200 == 0)
             MapPersonalData.flushExploration();
@@ -417,7 +400,7 @@ public final class MapClient {
                 CACHE.put(sampling.finish());
                 SAMPLED.put(sampling.key(), ticks);
                 sampling = null;
-                while (SAMPLED.size() > MapSettings.cacheTiles())
+                while (SAMPLED.size() > 8192)
                     SAMPLED.remove(SAMPLED.keySet().iterator().next());
             }
         }
@@ -455,7 +438,7 @@ public final class MapClient {
 
     /** 刷新只重建本地快照与订阅代号，不删除服务器已经探索的地图。 */
     public static void refresh() {
-        CACHE.clear();
+        CACHE.selectWorld(MapPersonalData.worldId());
         SAMPLED.clear();
         sampling = null;
         scanCursor = 0;
@@ -650,9 +633,7 @@ public final class MapClient {
 
     private static void reset() {
         MapRenderer.reset();
-        CACHE.clear();
         SAMPLED.clear();
-        TRAIL.clear();
         TRACKED_HISTORY.clear();
         social = null;
         sampling = null;
@@ -671,6 +652,7 @@ public final class MapClient {
         tracked = null;
         navigation = null;
         MapPersonalData.disconnect();
+        CACHE.selectWorld("");
         PENDING.clear();
         nextScreen = null;
         shortcutsAfter = 0;

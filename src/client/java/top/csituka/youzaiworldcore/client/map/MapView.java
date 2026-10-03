@@ -1,6 +1,6 @@
 package top.csituka.youzaiworldcore.client.map;
 
-/** 统一的小地图、全屏地图、鼠标交互和导出坐标变换；缩放以光标所在世界坐标为锚点。 */
+/** 统一的小地图、全屏地图、鼠标交互坐标变换；缩放以光标所在世界坐标为锚点。 */
 public record MapView(double centerX, double centerZ, double scale, double angle, int width, int height) {
     public record Point(double x, double y) { }
     public MapView {

@@ -4,7 +4,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * 已完成采样的区块快照。发布后数组只读，后台存盘、导出不再访问世界对象。
+ * 已完成采样的区块快照。发布后数组只读，后台存盘、上传不再访问世界对象。
  * 颜色为 ARGB；光照低四位为方块光，高四位为天空光；透明像素表示虚空。
  */
 public record MapTile(MapTileKey key, long revision, int[] colors, short[] heights,

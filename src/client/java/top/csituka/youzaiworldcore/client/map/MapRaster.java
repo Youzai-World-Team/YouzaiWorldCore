@@ -8,9 +8,9 @@ import top.csituka.youzaiworldcore.map.MapTileKey;
 import java.util.Map;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 
-/** 地图纹理与 PNG 导出共用的纯快照着色逻辑，不访问 Minecraft 世界或 GPU。 */
+/** 地图纹理使用的纯快照着色逻辑，不访问 Minecraft 世界或 GPU。 */
 public final class MapRaster {
-    /** 可安全传入后台导出线程的着色参数。 */
+    /** 可安全传入后台合成线程的着色参数。 */
     public record Style(MapSettings.Overlay overlay, boolean lighting, int skyDarken, double gamma,
                         int unknown, int empty, Map<Long, Integer> loadLevels) { }
     private MapRaster() { }

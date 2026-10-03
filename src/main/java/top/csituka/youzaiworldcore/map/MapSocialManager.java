@@ -1,10 +1,7 @@
 package top.csituka.youzaiworldcore.map;
 
-import com.google.gson.JsonArray;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.server.level.ServerPlayer;
-import top.csituka.youzaiworldcore.config.GlobalSettings;
-import top.csituka.youzaiworldcore.config.UserSettings;
 import top.csituka.youzaiworldcore.network.MapSocialPayload;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 import java.util.HashMap;
@@ -14,7 +11,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-/** 服务端权威的位置共享名单；存于玩家 user_settings 的 map_module 分节，请求仅在本次开服有效。 */
+/** 服务端权威的位置共享名单；存于服务端地图 SQLite，请求仅在本次开服有效。 */
 public final class MapSocialManager {
     private static final Map<UUID, Rules> RULES = new HashMap<>();
     private static final Map<UUID, Integer> LAST = new HashMap<>();
@@ -25,15 +22,16 @@ public final class MapSocialManager {
     private MapSocialManager() { }
     private static Rules rules(UUID id) {
         return RULES.computeIfAbsent(id, key -> {
-            var section = UserSettings.section(key, GlobalSettings.MAP_MODULE); var rules = new Rules();
+            var section = new MapSqlSettings(MapServerSettings.database(), "player:" + key); var rules = new Rules();
             rules.blacklist = section.getBoolean("position_blacklist_mode", true);
             for (String name : List.of("position_allowed", "position_blocked")) {
-                var entries = section.getStringList(name, List.of());
-                if (entries.size() > 256) section.fail(name, "共享名单不可超过 256 人");
+                String saved = section.getString(name, "");
+                var entries = saved.isEmpty() ? List.<String>of() : List.of(saved.split(","));
+                if (entries.size() > 256) fail("共享名单不可超过 256 人");
                 var target = name.equals("position_allowed") ? rules.allowed : rules.blocked;
                 for (String entry : entries) {
-                    try { if (!target.add(UUID.fromString(entry))) section.fail(name, "共享名单身份重复"); }
-                    catch (IllegalArgumentException invalid) { section.fail(name, "玩家身份必须为 UUID"); }
+                    try { if (!target.add(UUID.fromString(entry))) fail("共享名单身份重复"); }
+                    catch (IllegalArgumentException invalid) { fail("玩家身份必须为 UUID"); }
                 }
             }
             return rules;
@@ -45,12 +43,12 @@ public final class MapSocialManager {
         var value = rules(source);
         return !value.blocked.contains(receiver) && (value.blacklist || value.allowed.contains(receiver));
     }
+    private static void fail(String message) { throw new IllegalArgumentException("地图 SQLite 共享规则无效：" + message); }
     private static void save(UUID id, Rules rules) {
-        var section = UserSettings.section(id, GlobalSettings.MAP_MODULE);
-        section.set("position_blacklist_mode", rules.blacklist);
-        JsonArray allowed = new JsonArray(), blocked = new JsonArray();
-        rules.allowed.forEach(value -> allowed.add(value.toString())); rules.blocked.forEach(value -> blocked.add(value.toString()));
-        section.set("position_allowed", allowed); section.set("position_blocked", blocked); UserSettings.save(id);
+        MapServerSettings.database().settings("player:" + id, Map.of(
+                "position_blacklist_mode", Boolean.toString(rules.blacklist),
+                "position_allowed", rules.allowed.stream().map(UUID::toString).collect(java.util.stream.Collectors.joining(",")),
+                "position_blocked", rules.blocked.stream().map(UUID::toString).collect(java.util.stream.Collectors.joining(","))));
     }
     /** 经地图模块认证后执行；不会信任客户端随包携带的名单。 */
     public static void handle(ServerPlayer player, MapSocialPayload payload) {

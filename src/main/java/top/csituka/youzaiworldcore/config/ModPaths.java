@@ -78,10 +78,10 @@ public final class ModPaths {
     private ModPaths() {
     }
 
-    /** 玩家主动导出的地图图片属于截图产物，不写入客户端配置或缓存目录。 */
-    public static Path mapExports() {
-        return FabricLoader.getInstance().getGameDir().resolve("screenshots").resolve("yzwc_maps");
-    }
+    /** 地图是独立 SQLite 数据域，不使用全局 JSON；旧文件不迁移。 */
+    public static Path clientMapDatabase() { return clientRoot().resolve("map_module").resolve("map.db"); }
+    public static Path serverMapDatabase() { return serverData("map_module").resolve("map.db"); }
+    public static Path worldMapDatabase(MinecraftServer server) { return worldData(server, "map_module").resolve("map.db"); }
 
     // ===== 服务端侧（<gameDir>/yzwc/server） =====
 

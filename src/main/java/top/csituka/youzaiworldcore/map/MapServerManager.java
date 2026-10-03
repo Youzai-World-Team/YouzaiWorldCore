@@ -1,6 +1,5 @@
 package top.csituka.youzaiworldcore.map;
 
-import com.google.gson.JsonArray;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
@@ -14,10 +13,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
 import top.csituka.youzaiworldcore.account.util.AuthPlayerHelper;
-import top.csituka.youzaiworldcore.config.GlobalSettings;
-import top.csituka.youzaiworldcore.config.JsonFileStore;
 import top.csituka.youzaiworldcore.config.ModPaths;
-import top.csituka.youzaiworldcore.config.UserSettings;
 import top.csituka.youzaiworldcore.invisibility.InvisibilityManager;
 import top.csituka.youzaiworldcore.luckperms.LuckPermsHelper;
 import top.csituka.youzaiworldcore.mixin.map.ChunkMapAccessor;
@@ -49,26 +45,25 @@ import java.util.UUID;
 public final class MapServerManager {
     private static final UUID SERVER_OWNER = new UUID(0, 0);
     private static final Map<UUID, Subscription> CLIENTS = new LinkedHashMap<>();
-    private static final Map<UUID, Cursor> CAPTURES = new HashMap<>();
     private static final Map<UUID, Boolean> VISIBILITY = new HashMap<>();
-    private static final LinkedHashMap<MapTileKey, Integer> SAMPLED = new LinkedHashMap<>();
     private static final List<MapWaypoint> POINTS = new ArrayList<>();
     private static MinecraftServer server;
     private static MapTerrainStore terrain;
-    private static JsonFileStore metadata;
+    private static MapDatabase metadata;
+    private static MapDiskCapture capture;
     private static UUID worldId;
-    private static MapSampler.Job sampling;
-    private static int playerCursor;
     private static long pointsRevision;
     private static boolean metadataDirty;
     private static MapApiUploader uploader;
-    private static boolean loadedCaptureTurn;
     private MapServerManager() { }
 
     /** 在服务端初始化阶段注册生命周期，不启动额外端口或网页服务。 */
     public static void initialize() {
         MapServerSettings.load();
-        MapLoadedCapture.initialize();
+        net.fabricmc.fabric.api.event.lifecycle.v1.ServerChunkEvents.CHUNK_LOAD.register((level, chunk, generated) -> {
+            if (server == level.getServer() && MapServerSettings.enabled && MapServerSettings.shareStructures
+                    && !level.dimension().identifier().toString().equals("youzaiworldcore:login_hall")) discoverStructures(level, chunk);
+        });
         ServerLifecycleEvents.SERVER_STARTED.register(MapServerManager::start);
         ServerLifecycleEvents.SERVER_STOPPING.register(MapServerManager::stop);
         ServerTickEvents.END_SERVER_TICK.register(MapServerManager::tick);
@@ -77,28 +72,14 @@ public final class MapServerManager {
 
     private static void start(MinecraftServer instance) {
         server = instance;
-        metadata = new JsonFileStore(ModPaths.worldDataFile(instance, GlobalSettings.MAP_MODULE));
-        metadata.setDefaultsWriter(() -> {
-            var section = metadata.section(GlobalSettings.MAP_MODULE);
-            section.set("world_id", UUID.randomUUID().toString());
-            section.set("waypoints", new JsonArray());
-            section.set("api_last_success", 0L); section.set("api_cutoff", 0L); section.set("api_destination", "");
-        });
-        metadata.loadOrCreateDefaults();
-        var section = metadata.section(GlobalSettings.MAP_MODULE);
-        worldId = MapDataCodec.uuid(section, "world_id");
-        var entries = section.getObjectList("waypoints");
+        metadata = new MapDatabase(ModPaths.worldMapDatabase(instance));
+        var identity = metadata.settings("identity");
+        worldId = UUID.fromString(identity.getOrDefault("world_id", UUID.randomUUID().toString()));
+        metadata.settings("identity", Map.of("world_id", worldId.toString()));
         POINTS.clear();
-        if (entries != null) {
-            if (entries.size() > 512) section.fail("waypoints", "公共点数量不能超过 512");
-            Set<UUID> ids = new java.util.HashSet<>();
-            for (var entry : entries) {
-                var point = MapDataCodec.readWaypoint(entry);
-                if (!point.shared() || !ids.add(point.id())) entry.fail("id", "公共路径点身份无效或重复");
-                POINTS.add(point);
-            }
-        }
-        terrain = new MapTerrainStore(instance);
+        metadata.records("shared", "points").values().forEach(bytes -> POINTS.add(MapBinaryCodec.waypoint(bytes)));
+        terrain = new MapTerrainStore(metadata);
+        capture = new MapDiskCapture(instance, terrain);
         uploader = new MapApiUploader(instance, terrain, metadata, worldId);
         pointsRevision++;
         DebugLogger.info("MapServerManager", "地图存档已打开：%s，公共点=%d", worldId, POINTS.size());
@@ -107,11 +88,14 @@ public final class MapServerManager {
     private static void stop(MinecraftServer instance) {
         if (server != instance) return;
         if (uploader != null) uploader.stop();
-        uploader = null; MapLoadedCapture.clear();
+        uploader = null;
+        if (capture != null) capture.close();
+        capture = null;
         if (metadataDirty) savePoints();
         if (terrain != null) terrain.close();
-        MapSocialManager.clear(); CLIENTS.clear(); CAPTURES.clear(); VISIBILITY.clear(); SAMPLED.clear(); POINTS.clear();
-        sampling = null; terrain = null; metadata = null; server = null; worldId = null; playerCursor = 0;
+        MapSocialManager.clear(); CLIENTS.clear(); VISIBILITY.clear(); POINTS.clear();
+        if (metadata != null) metadata.close();
+        terrain = null; metadata = null; server = null; worldId = null;
         DebugLogger.info("MapServerManager", "地图共享服务已关闭");
     }
 
@@ -146,9 +130,7 @@ public final class MapServerManager {
         terrain.tick();
         int tick = instance.getTickCount();
         CLIENTS.keySet().removeIf(id -> instance.getPlayerList().getPlayer(id) == null);
-        CAPTURES.keySet().removeIf(id -> instance.getPlayerList().getPlayer(id) == null);
         VISIBILITY.keySet().removeIf(id -> instance.getPlayerList().getPlayer(id) == null);
-        if (MapServerSettings.enabled && (MapServerSettings.shareTerrain || MapServerSettings.apiUpload) && terrain.acceptsSamples()) capture();
         var subscribers = new ArrayList<>(CLIENTS.entrySet());
         for (int index = 0; index < subscribers.size(); index++) {
             var entry = subscribers.get((index + tick) % subscribers.size());
@@ -168,58 +150,10 @@ public final class MapServerManager {
         if (metadataDirty && tick % 200 == 0) savePoints();
     }
 
-    private static void capture() {
-        long deadline = System.nanoTime() + MapServerSettings.budgetMicros * 1000L;
-        int remaining = MapServerSettings.columns;
-        if (sampling != null && ((ServerLevel) sampling.level()).getChunkSource()
-                .getChunkNow(sampling.key().chunkX(), sampling.key().chunkZ()) != sampling.chunk()) sampling = null;
-        while (remaining > 0 && System.nanoTime() < deadline && terrain.acceptsSamples()) {
-            if (sampling == null) sampling = nextSample();
-            if (sampling == null) return;
-            int done = sampling.step(remaining, deadline);
-            remaining -= done;
-            if (!sampling.complete()) return;
-            terrain.put(sampling.finish());
-            SAMPLED.put(sampling.key(), server.getTickCount());
-            if (MapServerSettings.shareStructures && sampling.key().layer() == MapLayer.SURFACE) discoverStructures(sampling);
-            while (SAMPLED.size() > MapServerSettings.cacheTiles) SAMPLED.remove(SAMPLED.keySet().iterator().next());
-            sampling = null;
-        }
-    }
-
-    private static MapSampler.Job nextSample() {
-        loadedCaptureTurn = !loadedCaptureTurn;
-        if (loadedCaptureTurn) {
-            var loaded = MapLoadedCapture.next(server.getTickCount());
-            if (loaded != null) return loaded;
-        }
-        var players = server.getPlayerList().getPlayers();
-        if (players.isEmpty()) return MapLoadedCapture.next(server.getTickCount());
-        var offsets = MapScanPattern.offsets(MapServerSettings.captureRadius);
-        for (int attempt = 0; attempt < 32; attempt++) {
-            ServerPlayer player = players.get(Math.floorMod(playerCursor++, players.size()));
-            if (!eligible(player) || !player.isAlive()) continue;
-            var cursor = CAPTURES.computeIfAbsent(player.getUUID(), ignored -> new Cursor());
-            int px = Math.floorDiv(player.getBlockX(), 16), pz = Math.floorDiv(player.getBlockZ(), 16);
-            if (px != cursor.x || pz != cursor.z) { cursor.x = px; cursor.z = pz; cursor.index = 0; }
-            int sequence = cursor.index++;
-            var offset = offsets.get(Math.floorMod(sequence / 2, offsets.size()));
-            int x = px + offset.x(), z = pz + offset.z();
-            if (Math.abs((long) x) > MapTileKey.CHUNK_LIMIT || Math.abs((long) z) > MapTileKey.CHUNK_LIMIT) continue;
-            var chunk = player.level().getChunkSource().getChunkNow(x, z);
-            if (chunk == null) continue;
-            MapLayer layer = MapLayer.SURFACE;
-            int height = 0;
-            var subscription = CLIENTS.get(player.getUUID());
-            if ((sequence & 1) != 0 && subscription != null && subscription.view != null
-                    && subscription.view.dimension().equals(player.level().dimension().identifier().toString())) {
-                layer = subscription.view.layer(); height = subscription.view.height();
-            }
-            var key = new MapTileKey(player.level().dimension().identifier().toString(), layer, height, x, z);
-            if (server.getTickCount() - SAMPLED.getOrDefault(key, -1000) < 100) continue;
-            return MapSampler.start(player.level(), chunk, key);
-        }
-        return MapLoadedCapture.next(server.getTickCount());
+    /** 保存事件只安排读取 Minecraft 区块存储，不接收玩家客户端地形。 */
+    public static void chunkSaved(ServerLevel level, net.minecraft.world.level.ChunkPos pos) {
+        var active = capture;
+        if (active != null && level.getServer() == server) active.dirty(level.dimension().identifier().toString(), pos.x(), pos.z());
     }
 
     /** 管理员命令触发异步上传，实际权限由命令入口核验。 */
@@ -233,7 +167,8 @@ public final class MapServerManager {
             int cursor = Math.floorMod(state.cursor++, width * height);
             var key = new MapTileKey(view.dimension(), view.layer(), view.height(), view.minX() + cursor % width, view.minZ() + cursor / width);
             MapTile tile = terrain.get(key);
-            if (tile == null || state.sent.getOrDefault(key, Long.MIN_VALUE) == tile.revision()) continue;
+            if (tile == null) { if (capture != null) capture.request(key); continue; }
+            if (state.sent.getOrDefault(key, Long.MIN_VALUE) == tile.revision()) continue;
             int bytes = 2200 + tile.biomes().stream().mapToInt(value -> value.length() * 3 + 8).sum();
             if (state.credit < bytes) return;
             ServerPlayNetworking.send(player, new MapTilePayload(worldId, tile));
@@ -333,7 +268,7 @@ public final class MapServerManager {
     public static boolean socialEligible(ServerPlayer player) { return eligible(player) && MapServerSettings.enabled && MapServerSettings.sharePlayers; }
 
     private static boolean visible(ServerPlayer player) {
-        return VISIBILITY.computeIfAbsent(player.getUUID(), id -> UserSettings.section(id, GlobalSettings.MAP_MODULE)
+        return VISIBILITY.computeIfAbsent(player.getUUID(), id -> new MapSqlSettings(MapServerSettings.database(), "player:" + id)
                 .getBoolean("share_position", true));
     }
 
@@ -358,8 +293,7 @@ public final class MapServerManager {
         if (request.action() == MapActionPayload.Action.HIDE_POSITION || request.action() == MapActionPayload.Action.SHOW_POSITION) {
             boolean value = request.action() == MapActionPayload.Action.SHOW_POSITION;
             VISIBILITY.put(player.getUUID(), value);
-            UserSettings.section(player.getUUID(), GlobalSettings.MAP_MODULE).set("share_position", value);
-            UserSettings.save(player.getUUID());
+            MapServerSettings.database().settings("player:" + player.getUUID(), Map.of("share_position", Boolean.toString(value)));
             return feedback(player, true, value ? "position_shown" : "position_hidden");
         }
         if (request.action() == MapActionPayload.Action.TELEPORT) {
@@ -446,29 +380,27 @@ public final class MapServerManager {
     }
 
     private static void savePoints() {
-        var values = new JsonArray();
-        POINTS.forEach(value -> values.add(MapDataCodec.writeWaypoint(value)));
-        metadata.section(GlobalSettings.MAP_MODULE).set("waypoints", values);
-        metadata.save(); metadataDirty = false;
+        metadata.transaction(db -> { MapDatabase.records(db, "shared", "points", MapDatabase.points(POINTS)); return null; });
+        metadataDirty = false;
     }
 
-    private static void discoverStructures(MapSampler.Job job) {
+    private static void discoverStructures(ServerLevel level, net.minecraft.world.level.chunk.LevelChunk chunk) {
         int structureLimit = Math.min(256, MapServerSettings.maxShared / 2);
         long structureCount = POINTS.stream().filter(point -> point.kind() == MapWaypoint.Kind.STRUCTURE).count();
         if (POINTS.size() >= MapServerSettings.maxShared || structureCount >= structureLimit) return;
-        for (var entry : job.chunk().getAllStarts().entrySet()) {
+        for (var entry : chunk.getAllStarts().entrySet()) {
             if (!entry.getValue().isValid()) continue;
-            Identifier type = job.level().registryAccess().lookupOrThrow(Registries.STRUCTURE).getKey(entry.getKey());
+            Identifier type = level.registryAccess().lookupOrThrow(Registries.STRUCTURE).getKey(entry.getKey());
             if (type == null) continue;
             var position = entry.getValue().getBoundingBox().getCenter();
             if (Math.abs((long) position.getX()) > MapTileKey.WORLD_LIMIT || Math.abs((long) position.getY()) > MapTileKey.WORLD_LIMIT
                     || Math.abs((long) position.getZ()) > MapTileKey.WORLD_LIMIT) continue;
-            String identity = job.key().dimension() + "/" + type + "/" + job.key().chunkX() + "/" + job.key().chunkZ();
+            String identity = level.dimension().identifier().toString() + "/" + type + "/" + chunk.getPos().x() + "/" + chunk.getPos().z();
             UUID id = UUID.nameUUIDFromBytes(identity.getBytes(StandardCharsets.UTF_8));
             if (POINTS.stream().anyMatch(point -> point.id().equals(id))) continue;
             String name = type.toString();
             if (name.length() > 64) name = name.substring(0, 64);
-            POINTS.add(new MapWaypoint(id, SERVER_OWNER, name, "已探索结构", job.key().dimension(), position.getX(), position.getY(), position.getZ(),
+            POINTS.add(new MapWaypoint(id, SERVER_OWNER, name, "已探索结构", level.dimension().identifier().toString(), position.getX(), position.getY(), position.getZ(),
                     0xFFE8BB68, true, true, MapWaypoint.Kind.STRUCTURE, System.currentTimeMillis()));
             pointsRevision++; metadataDirty = true;
             structureCount++;
@@ -487,7 +419,8 @@ public final class MapServerManager {
 
     /** 重载配置后使能力与公共点推送失效，不删除已探索地形。 */
     public static void reload() {
-        MapServerSettings.load(); pointsRevision++; sampling = null;
+        MapServerSettings.load(); pointsRevision++; VISIBILITY.clear(); MapSocialManager.clear();
+        if (capture != null) capture.configure();
         CLIENTS.values().forEach(state -> { state.flags = -1; state.pointsRevision = -1; });
     }
 
@@ -501,5 +434,4 @@ public final class MapServerManager {
         private final Map<MapTileKey, Long> sent = new LinkedHashMap<>();
     }
 
-    private static final class Cursor { private int x = Integer.MIN_VALUE, z = Integer.MIN_VALUE, index; }
 }

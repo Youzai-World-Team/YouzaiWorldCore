@@ -6,7 +6,7 @@ import net.minecraft.client.gui.screens.Screen;
 import top.csituka.youzaiworldcore.client.map.MapClient;
 import top.csituka.youzaiworldcore.client.map.MapPersonalData;
 import top.csituka.youzaiworldcore.client.map.MapTexts;
-import top.csituka.youzaiworldcore.client.map.MapTransfer;
+import top.csituka.youzaiworldcore.client.map.MapCoordinates;
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
 import top.csituka.youzaiworldcore.map.MapWaypoint;
 import top.csituka.youzaiworldcore.network.MapActionPayload;
@@ -42,7 +42,7 @@ public final class MapWaypointEditScreen extends MapScreen {
         int bw = (w - 12) / 3, footer = panelY + panelHeight - 34;
         button(x, footer, bw, MapTexts.text("save"), this::savePoint).setStyle(YzuiTheme.ButtonStyle.FILLED).active = !pending && editable();
         button(x + bw + 6, footer, bw, MapTexts.text("copy"), () -> {
-            try { Minecraft.getInstance().keyboardHandler.setClipboard(MapTransfer.coordinate(readPoint())); error = MapTexts.text("copied"); }
+            try { Minecraft.getInstance().keyboardHandler.setClipboard(MapCoordinates.coordinate(readPoint())); error = MapTexts.text("copied"); }
             catch (IllegalArgumentException ignored) { error = MapTexts.text("invalid_position"); }
         });
         button(x + (bw + 6) * 2, footer, bw, MapTexts.text("cancel"), this::onClose);

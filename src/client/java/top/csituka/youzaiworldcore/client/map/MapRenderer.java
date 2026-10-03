@@ -143,7 +143,7 @@ public final class MapRenderer {
         YzuiTheme.hudText(g, font, font.plainSubstrByWidth(value, width), x, y, YzuiTheme.text(), opacity);
     }
 
-    /** 绘制地形之上的网格、足迹、绘图、路径点、雷达和自己的方向。 */
+    /** 绘制地形之上的网格、绘图、路径点、雷达和自己的方向。 */
     public static void overlay(GuiGraphicsExtractor g, MapView view, String dimension, int left, int top, int radius, float opacity, boolean labels) {
         g.enableScissor(left, top, left + view.width(), top + view.height());
         if (MapSettings.enabled(MapSettings.Toggle.GRID) && view.scale() >= 0.5) {
@@ -163,7 +163,6 @@ public final class MapRenderer {
                 if (MapShapes.contains(view, p.x(), p.y(), radius, 12)) info(g, Integer.toString(level), left + (int) p.x() - 6, top + (int) p.y() - 4, 30, opacity);
             });
         }
-        if (MapSettings.enabled(MapSettings.Toggle.TRAIL) && dimension.equals(MapClient.dimension())) path(g, view, left, top, radius, MapClient.trail(), YzuiTheme.alpha(YzuiTheme.primary(), 0.7f * opacity), 1);
         if (MapSettings.enabled(MapSettings.Toggle.DRAWINGS)) for (var drawing : MapPersonalData.drawings()) if (drawing.dimension().equals(dimension)) drawing(g, view, left, top, radius, drawing, opacity, false);
         for (var point : MapClient.waypoints()) {
             if (!MapClient.visibleWaypoint(point)) continue;

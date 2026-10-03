@@ -4,7 +4,6 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
-import top.csituka.youzaiworldcore.client.screen.map.MapImportScreen;
 import top.csituka.youzaiworldcore.client.screen.map.YzWorldMapScreen;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
@@ -22,7 +21,6 @@ public final class MapClientCommands {
             var map = literal("map").executes(command -> open(new YzWorldMapScreen(null)))
                     .then(literal("settings").executes(command -> open(YzWorldMapScreen.withSettings(null))))
                     .then(literal("waypoints").executes(command -> open(YzWorldMapScreen.withWaypoints(null))))
-                    .then(literal("import").executes(command -> open(new MapImportScreen(null))))
                     .then(literal("add").executes(command -> {
                         var player = Minecraft.getInstance().player;
                         return player == null ? 0

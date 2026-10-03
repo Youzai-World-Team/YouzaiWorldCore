@@ -9,7 +9,7 @@ import net.minecraft.network.chat.Component;
 import top.csituka.youzaiworldcore.client.map.MapClient;
 import top.csituka.youzaiworldcore.client.map.MapPersonalData;
 import top.csituka.youzaiworldcore.client.map.MapTexts;
-import top.csituka.youzaiworldcore.client.map.MapTransfer;
+import top.csituka.youzaiworldcore.client.map.MapCoordinates;
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
 import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
 import top.csituka.youzaiworldcore.map.MapWaypoint;
@@ -84,7 +84,7 @@ final class MapWaypointPanel extends MapOverlayPanel {
             MapPersonalData.setEnabled(points.stream().map(MapWaypoint::id).collect(Collectors.toSet()), points.stream().anyMatch(point -> !point.enabled()));
             dirty = true;
         });
-        int bw = (tableWidth - 16) / 5;
+        int bw = (tableWidth - 8) / 3;
         previous = control(tableX, footer, bw, "←", "previous", () -> { page--; dirty = true; });
         control(tableX + bw + 4, footer, bw, "+", "new_point", () -> {
             var player = Minecraft.getInstance().player;
@@ -93,11 +93,7 @@ final class MapWaypointPanel extends MapOverlayPanel {
             if (dimension.equals(MapClient.dimension()) && filter == Filter.GROUP) point = point.withGroup(group);
             owner.openPoint(point, true);
         });
-        control(tableX + (bw + 4) * 2, footer, bw, "↓", "import", () -> Minecraft.getInstance().gui.setScreen(new MapImportScreen(owner)));
-        control(tableX + (bw + 4) * 3, footer, bw, "▣", "copy_list", () -> {
-            Minecraft.getInstance().keyboardHandler.setClipboard(MapTransfer.encode(filtered())); error = MapTexts.text("copied");
-        });
-        next = control(tableX + (bw + 4) * 4, footer, bw, "→", "next", () -> { page++; dirty = true; });
+        next = control(tableX + (bw + 4) * 2, footer, bw, "→", "next", () -> { page++; dirty = true; });
         refresh();
         DebugLogger.debug("MapWaypoints", "打开路径点分类表：%s", dimension);
     }
@@ -251,8 +247,8 @@ final class MapWaypointPanel extends MapOverlayPanel {
         action(0, "⌖", "locate", () -> owner.locatePoint(point), true);
         var session = MapClient.session();
         action(1, "↗", "teleport", () -> request(MapActionPayload.Action.TELEPORT, point), session != null && session.allows(MapSessionPayload.TELEPORT));
-        action(2, "↪", "share_chat", () -> MapTransfer.share(point), true);
-        action(3, "▣", "copy", () -> { Minecraft.getInstance().keyboardHandler.setClipboard(MapTransfer.coordinate(point)); error = MapTexts.text("copied"); }, true);
+        action(2, "↪", "share_chat", () -> MapCoordinates.share(point), true);
+        action(3, "▣", "copy", () -> { Minecraft.getInstance().keyboardHandler.setClipboard(MapCoordinates.coordinate(point)); error = MapTexts.text("copied"); }, true);
         var privatePoints = filtered().stream().filter(value -> !value.shared()).toList(); int index = privatePoints.indexOf(point);
         action(4, "↑", "move_up", () -> { MapPersonalData.swap(point.id(), privatePoints.get(index - 1).id()); dirty = true; }, index > 0);
         action(5, "↓", "move_down", () -> { MapPersonalData.swap(point.id(), privatePoints.get(index + 1).id()); dirty = true; }, index >= 0 && index + 1 < privatePoints.size());

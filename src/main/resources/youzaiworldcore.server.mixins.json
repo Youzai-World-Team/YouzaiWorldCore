@@ -5,6 +5,7 @@
   "compatibilityLevel": "JAVA_25",
   "mixins": [
     "map.ChunkMapAccessor",
+    "map.MapChunkSaveMixin",
     "LivingEntityDamageMixin",
     "damagenumber.DamageNumberLivingEntityMixin",
     "PlayerDropEquipmentMixin",

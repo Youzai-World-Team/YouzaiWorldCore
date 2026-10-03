@@ -134,13 +134,13 @@ final class MapDetailPanel extends AbstractContainerEventHandler implements Rend
             button(x + 12, top + row - scroll, inner - (anchor ? 52 : 78), MapTexts.waypoint(point).copy().append("  ✎"),
                     () -> { editing = true; rebuild(); }, true).active = editable() && !pending;
             button(x + width - 58, top + row - scroll, 46, MapTexts.text(confirmingDelete ? "confirm_delete" : "delete"), this::delete, true).active = editable() && !pending;
-            if (!anchor) button(x + width - 84, top + row - scroll, 22, Component.literal("↪"), () -> MapTransfer.share(point), true)
+            if (!anchor) button(x + width - 84, top + row - scroll, 22, Component.literal("↪"), () -> MapCoordinates.share(point), true)
                     .setTooltip(Tooltip.create(MapTexts.text("share_chat")));
             row += 29;
         }
         lines.add(new Line(Component.literal("X " + point.x() + "   Y " + point.y() + "   Z " + point.z()), x + 12, top + row + 6 - scroll, inner - 52));
         button(x + width - 58, top + row - scroll, 46, MapTexts.text("copy"), () -> {
-            Minecraft.getInstance().keyboardHandler.setClipboard(MapTransfer.coordinate(point)); message = MapTexts.text("copied");
+            Minecraft.getInstance().keyboardHandler.setClipboard(MapCoordinates.coordinate(point)); message = MapTexts.text("copied");
         }, true); row += 29;
         line(MapTexts.dimension(point.dimension()), row); row += 20;
         if (!creating) {

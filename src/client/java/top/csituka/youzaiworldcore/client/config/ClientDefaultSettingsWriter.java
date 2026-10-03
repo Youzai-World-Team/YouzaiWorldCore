@@ -34,7 +34,6 @@ public final class ClientDefaultSettingsWriter {
             Configurator.writeDefaults();
             ClientUpdateCheckerConfig.writeDefaults();
             InventoryItemGroupsConfig.writeDefaults();
-            MapSettings.writeDefaults();
         });
         DebugLogger.exiting(MODULE, "writeAllDefaults");
     }

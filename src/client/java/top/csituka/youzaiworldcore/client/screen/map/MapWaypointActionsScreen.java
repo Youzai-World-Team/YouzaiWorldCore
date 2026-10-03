@@ -6,7 +6,7 @@ import net.minecraft.client.gui.screens.Screen;
 import top.csituka.youzaiworldcore.client.map.MapClient;
 import top.csituka.youzaiworldcore.client.map.MapPersonalData;
 import top.csituka.youzaiworldcore.client.map.MapTexts;
-import top.csituka.youzaiworldcore.client.map.MapTransfer;
+import top.csituka.youzaiworldcore.client.map.MapCoordinates;
 import top.csituka.youzaiworldcore.map.MapWaypoint;
 import top.csituka.youzaiworldcore.network.MapActionPayload;
 import top.csituka.youzaiworldcore.network.MapSessionPayload;
@@ -22,8 +22,8 @@ public final class MapWaypointActionsScreen extends MapScreen {
         button(x, y, w, MapTexts.text("edit_point"), () -> Minecraft.getInstance().gui.setScreen(new MapWaypointEditScreen(this, point, true))).active = !MapClient.isAnchor(point);
         button(x + w + 8, y, w, MapTexts.text("navigate"), () -> { MapClient.navigate(point.id()); Minecraft.getInstance().gui.setScreen(null); });
         button(x, y + 28, w, MapTexts.text("locate"), () -> Minecraft.getInstance().gui.setScreen(new YzWorldMapScreen(parent, point.dimension(), point.x(), point.z())));
-        button(x + w + 8, y + 28, w, MapTexts.text("copy"), () -> { Minecraft.getInstance().keyboardHandler.setClipboard(MapTransfer.coordinate(point)); error = MapTexts.text("copied"); });
-        button(x, y + 56, w, MapTexts.text("share_chat"), () -> MapTransfer.share(point));
+        button(x + w + 8, y + 28, w, MapTexts.text("copy"), () -> { Minecraft.getInstance().keyboardHandler.setClipboard(MapCoordinates.coordinate(point)); error = MapTexts.text("copied"); });
+        button(x, y + 56, w, MapTexts.text("share_chat"), () -> MapCoordinates.share(point));
         button(x + w + 8, y + 56, w, MapTexts.text(point.enabled() ? "hide_point" : "show_point"), () -> {
             MapPersonalData.put(point.withEnabled(!point.enabled())); onClose();
         }).active = !point.shared();

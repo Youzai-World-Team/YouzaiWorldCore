@@ -88,6 +88,9 @@ dependencies {
     compileOnly('org.ow2.asm:asm:9.10.1')
     compileOnly('org.ow2.asm:asm-tree:9.10.1')
 
+    // 地图持久化：内嵌 SQLite JDBC 及其各平台原生库。
+    include(implementation("org.xerial:sqlite-jdbc:3.53.4.0"))
+
     // Placeholder API
     implementation('eu.pb4:placeholder-api:3.1.0-beta.1+26.2')
 

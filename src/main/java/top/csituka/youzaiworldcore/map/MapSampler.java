@@ -23,11 +23,33 @@ public final class MapSampler {
     /** 创建需在对应世界主线程上推进的采样任务。 */
     public static Job start(Level level, LevelChunk chunk, MapTileKey key) { return new Job(level, chunk, key); }
 
+    /** 已保存区块由后台线程采样；不构造或加载 LevelChunk。 */
+    public static Job startSaved(Source source, MapTileKey key) { return new Job(null, null, source, key); }
+
+    public interface Source extends net.minecraft.world.level.BlockGetter {
+        int surface(int x, int z);
+        boolean ceiling();
+        net.minecraft.core.Holder<net.minecraft.world.level.biome.Biome> biome(int x, int y, int z);
+        int light(BlockPos pos, boolean sky);
+    }
+    private record LiveSource(Level level, LevelChunk chunk) implements Source {
+        public int getMinY() { return level.getMinY(); }
+        public int getHeight() { return level.getHeight(); }
+        public net.minecraft.world.level.block.entity.BlockEntity getBlockEntity(BlockPos pos) { return chunk.getBlockEntity(pos); }
+        public BlockState getBlockState(BlockPos pos) { return chunk.getBlockState(pos); }
+        public net.minecraft.world.level.material.FluidState getFluidState(BlockPos pos) { return chunk.getFluidState(pos); }
+        public int surface(int x, int z) { return chunk.getHeight(Heightmap.Types.WORLD_SURFACE, x, z); }
+        public boolean ceiling() { return level.dimensionType().hasCeiling(); }
+        public net.minecraft.core.Holder<net.minecraft.world.level.biome.Biome> biome(int x, int y, int z) { return chunk.getNoiseBiome(Math.floorDiv(x, 4), Math.floorDiv(y, 4), Math.floorDiv(z, 4)); }
+        public int light(BlockPos pos, boolean sky) { return level.getLightEngine().getLayerListener(sky ? LightLayer.SKY : LightLayer.BLOCK).getLightValue(pos); }
+    }
+
     /** 同时有列数和纳秒预算的任务；未完成的任务在下一 Tick 继续。 */
     public static final class Job {
         private final Level level;
         private final LevelChunk chunk;
         private final MapTileKey key;
+        private final Source source;
         private final int[] colors = new int[256];
         private final short[] heights = new short[256];
         private final byte[] lights = new byte[256], indices = new byte[256];
@@ -37,7 +59,11 @@ public final class MapSampler {
         private int cursor;
 
         private Job(Level level, LevelChunk chunk, MapTileKey key) {
-            this.level = level; this.chunk = chunk; this.key = key;
+            this(level, chunk, new LiveSource(level, chunk), key);
+        }
+
+        private Job(Level level, LevelChunk chunk, Source source, MapTileKey key) {
+            this.level = level; this.chunk = chunk; this.source = source; this.key = key;
         }
 
         public MapTileKey key() { return key; }
@@ -64,21 +90,21 @@ public final class MapSampler {
 
         private void sample(int index) {
             int x = key.chunkX() * 16 + index % 16, z = key.chunkZ() * 16 + index / 16;
-            int minimum = level.getMinY();
-            int surface = chunk.getHeight(Heightmap.Types.WORLD_SURFACE, x, z);
+            int minimum = source.getMinY();
+            int surface = source.surface(x, z);
             int y = key.layer().hasHeight() ? Math.min(key.height(), surface) : surface;
-            y = Math.clamp(y, minimum, level.getMaxY());
+            y = Math.clamp(y, minimum, source.getMaxY());
             boolean findOpening = key.layer() == MapLayer.CAVE;
-            if (key.layer() == MapLayer.SURFACE && level.dimensionType().hasCeiling()) {
+            if (key.layer() == MapLayer.SURFACE && source.ceiling()) {
                 // 下界地表显示基岩下方；ROOF 单独保留顶层及顶层建筑。
-                y = Math.min(y, Math.min(120, level.getMaxY()));
+                y = Math.min(y, Math.min(120, source.getMaxY()));
                 findOpening = true;
             }
             int searchFloor = findOpening ? Math.max(minimum, y - 256) : minimum;
             if (findOpening) {
                 while (y >= searchFloor) {
                     pos.set(x, y, z);
-                    BlockState state = chunk.getBlockState(pos);
+                    BlockState state = source.getBlockState(pos);
                     if (state.isAir() || !state.getFluidState().isEmpty()) break;
                     y--;
                 }
@@ -87,13 +113,13 @@ public final class MapSampler {
             MapColor color = MapColor.NONE;
             while (y >= searchFloor) {
                 pos.set(x, y, z);
-                state = chunk.getBlockState(pos);
-                color = state.getMapColor(chunk, pos);
+                state = source.getBlockState(pos);
+                color = state.getMapColor(source, pos);
                 if (!state.isAir() && color != MapColor.NONE) break;
                 y--;
             }
-            int biomeY = Math.clamp(y, minimum, level.getMaxY());
-            var holder = chunk.getNoiseBiome(Math.floorDiv(x, 4), Math.floorDiv(biomeY, 4), Math.floorDiv(z, 4));
+            int biomeY = Math.clamp(y, minimum, source.getMaxY());
+            var holder = source.biome(x, biomeY, z);
             var biome = holder.value();
             String biomeName = holder.unwrapKey().map(value -> value.identifier().toString()).orElse("minecraft:plains");
             Integer paletteIndex = palette.get(biomeName);
@@ -115,7 +141,7 @@ public final class MapSampler {
                 int depth = 0;
                 while (depth < 16 && y - depth - 1 >= minimum) {
                     pos.set(x, y - depth - 1, z);
-                    if (chunk.getFluidState(pos).isEmpty()) break;
+                    if (source.getFluidState(pos).isEmpty()) break;
                     depth++;
                 }
                 rgb = shade(0xFF000000 | rgb, 1.0 - depth * 0.025);
@@ -126,9 +152,9 @@ public final class MapSampler {
             }
             colors[index] = 0xFF000000 | rgb;
             heights[index] = (short) y;
-            pos.set(x, Math.min(y + 1, level.getMaxY()), z);
-            int block = Math.max(state.getLightEmission(), level.getLightEngine().getLayerListener(LightLayer.BLOCK).getLightValue(pos));
-            int sky = level.getLightEngine().getLayerListener(LightLayer.SKY).getLightValue(pos);
+            pos.set(x, Math.min(y + 1, source.getMaxY()), z);
+            int block = Math.max(state.getLightEmission(), source.light(pos, false));
+            int sky = source.light(pos, true);
             lights[index] = (byte) ((Math.clamp(sky, 0, 15) << 4) | Math.clamp(block, 0, 15));
         }
     }

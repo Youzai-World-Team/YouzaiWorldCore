@@ -1,14 +1,16 @@
 package top.csituka.youzaiworldcore.client.config;
 
 import org.jspecify.annotations.NonNull;
-import top.csituka.youzaiworldcore.config.ConfigSection;
+import top.csituka.youzaiworldcore.config.ModPaths;
+import top.csituka.youzaiworldcore.map.MapDatabase;
+import top.csituka.youzaiworldcore.map.MapSqlSettings;
 import top.csituka.youzaiworldcore.map.MapLayer;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
 import java.util.EnumMap;
 import java.util.Locale;
 
-/** 地图的本机显示设置，统一存入 yzwc/client/global_settings.json 的 map_module。 */
+/** 地图的本机显示设置，存入 yzwc/client/map_module/map.db。 */
 public final class MapSettings {
     public enum Shape {
         ROUNDED, CIRCLE, SQUARE
@@ -24,7 +26,7 @@ public final class MapSettings {
 
     public enum Toggle {
         MINIMAP(true), ROTATE(false), COORDINATES(true), BIOME_LABEL(true), LAYER_LABEL(true),
-        WAYPOINTS(true), WAYPOINT_HUD(true), PORTAL_PROJECTION(true), TRAIL(true), DRAWINGS(true),
+        WAYPOINTS(true), WAYPOINT_HUD(true), PORTAL_PROJECTION(true), DRAWINGS(true),
         RADAR_PLAYERS(true), RADAR_HOSTILE(true), RADAR_FRIENDLY(true), RADAR_OTHER(false),
         MARKER_ICONS(true), MARKER_LABELS(true), ANCHORS(true), RADAR_TAMED(true), QUICK_LOCATE(true),
         REMEMBER_VIEW(false),
@@ -43,7 +45,7 @@ public final class MapSettings {
     }
 
     public static final int DEFAULT_SIZE = 144, DEFAULT_FIXED_HEIGHT = 64, DEFAULT_DEATH_LIMIT = 5;
-    public static final int DEFAULT_CACHE_TILES = 8192, DEFAULT_COLUMNS_PER_TICK = 256,
+    public static final int DEFAULT_COLUMNS_PER_TICK = 256,
             DEFAULT_WAYPOINT_DISTANCE = 10000;
     public static final double DEFAULT_ZOOM = 1.0;
     public static final LabelPosition DEFAULT_LABEL_POSITION = LabelPosition.BELOW;
@@ -52,7 +54,12 @@ public final class MapSettings {
     public static final @NonNull Overlay DEFAULT_OVERLAY = Overlay.TERRAIN;
     private static final EnumMap<@NonNull Toggle, Boolean> TOGGLES = new EnumMap<>(Toggle.class);
     private static int size = DEFAULT_SIZE, fixedHeight = DEFAULT_FIXED_HEIGHT, deathLimit = DEFAULT_DEATH_LIMIT;
-    private static int cacheTiles = DEFAULT_CACHE_TILES, columnsPerTick = DEFAULT_COLUMNS_PER_TICK;
+    private static int columnsPerTick = DEFAULT_COLUMNS_PER_TICK;
+    private static MapDatabase database;
+    public static MapDatabase database() {
+        if (database == null) database = new MapDatabase(ModPaths.clientMapDatabase());
+        return database;
+    }
     private static int waypointDistance = DEFAULT_WAYPOINT_DISTANCE;
     private static double zoom = DEFAULT_ZOOM;
     private static LabelPosition labelPosition = DEFAULT_LABEL_POSITION;
@@ -81,10 +88,6 @@ public final class MapSettings {
 
     public static int deathLimit() {
         return deathLimit;
-    }
-
-    public static int cacheTiles() {
-        return cacheTiles;
     }
 
     public static int columnsPerTick() {
@@ -170,13 +173,12 @@ public final class MapSettings {
     /** 使用强类型 getter 加载，禁止吞掉配置格式错误。 */
     @SuppressWarnings("null")
     public static void load() {
-        ConfigSection section = ClientGlobalSettings.section(ClientGlobalSettings.MAP_MODULE);
+        MapSqlSettings section = new MapSqlSettings(database(), "display");
         for (Toggle toggle : Toggle.values())
             TOGGLES.put(toggle, section.getBoolean(toggle.key(), toggle.defaultValue));
         size = section.getInt("size", DEFAULT_SIZE, 80, 240);
         fixedHeight = section.getInt("fixed_height", DEFAULT_FIXED_HEIGHT, -4096, 4095);
         deathLimit = section.getInt("death_limit", DEFAULT_DEATH_LIMIT, 0, 50);
-        cacheTiles = section.getInt("cache_tiles", DEFAULT_CACHE_TILES, 256, 16384);
         columnsPerTick = section.getInt("columns_per_tick", DEFAULT_COLUMNS_PER_TICK, 16, 1024);
         waypointDistance = section.getInt("waypoint_distance", DEFAULT_WAYPOINT_DISTANCE, 64, 100000);
         zoom = section.getDouble("zoom", DEFAULT_ZOOM, 0.25, 8);
@@ -188,15 +190,14 @@ public final class MapSettings {
         DebugLogger.info("MapSettings", "地图配置已加载，形状=%s，图层=%s", shape, layer);
     }
 
-    /** 保存显示字段，保留同一分节内按世界隔离的路径点和绘图。 */
+    /** 保存显示设置；私人数据保存在独立的 SQLite 记录中。 */
     public static void save() {
-        ConfigSection section = ClientGlobalSettings.section(ClientGlobalSettings.MAP_MODULE);
+        MapSqlSettings section = new MapSqlSettings(database(), "display");
         for (Toggle option : Toggle.values())
             section.set(option.key(), enabled(option));
         section.set("size", size);
         section.set("fixed_height", fixedHeight);
         section.set("death_limit", deathLimit);
-        section.set("cache_tiles", cacheTiles);
         section.set("columns_per_tick", columnsPerTick);
         section.set("waypoint_distance", waypointDistance);
         section.set("zoom", zoom);
@@ -204,9 +205,7 @@ public final class MapSettings {
         section.set("shape", shape);
         section.set("layer", layer);
         section.set("overlay", overlay);
-        if (!section.has("worlds"))
-            section.set("worlds", new com.google.gson.JsonArray());
-        ClientGlobalSettings.save();
+        section.save();
         DebugLogger.debug("MapSettings", "地图显示设置已保存");
     }
 
@@ -222,7 +221,6 @@ public final class MapSettings {
         size = DEFAULT_SIZE;
         fixedHeight = DEFAULT_FIXED_HEIGHT;
         deathLimit = DEFAULT_DEATH_LIMIT;
-        cacheTiles = DEFAULT_CACHE_TILES;
         columnsPerTick = DEFAULT_COLUMNS_PER_TICK;
         waypointDistance = DEFAULT_WAYPOINT_DISTANCE;
         zoom = DEFAULT_ZOOM;

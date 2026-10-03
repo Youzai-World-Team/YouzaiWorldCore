@@ -13,7 +13,6 @@ import org.lwjgl.glfw.GLFW;
 import top.csituka.youzaiworldcore.client.config.MapSettings;
 import top.csituka.youzaiworldcore.client.map.MapCanvas;
 import top.csituka.youzaiworldcore.client.map.MapClient;
-import top.csituka.youzaiworldcore.client.map.MapExport;
 import top.csituka.youzaiworldcore.client.map.MapPersonalData;
 import top.csituka.youzaiworldcore.client.map.MapRenderer;
 import top.csituka.youzaiworldcore.client.map.MapShapes;
@@ -35,11 +34,11 @@ import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 
-/** 全屏地图：拖动、光标缩放、图层切换、路径点、玩家跟踪、绘图与选区导出。 */
+/** 全屏地图：拖动、光标缩放、图层切换、路径点、玩家跟踪、绘图。 */
 @SuppressWarnings("null")
 public final class YzWorldMapScreen extends Screen {
     private enum Panel { NONE, TOOLS, PLAYERS, RADAR }
-    private enum Tool { SELECT, PEN, LINE, RECTANGLE, ELLIPSE, LABEL, AREA }
+    private enum Tool { SELECT, PEN, LINE, RECTANGLE, ELLIPSE, LABEL }
     private static final int[] COLORS = {0xFF79BDEB, 0xFFE78682, 0xFFE8BF77, 0xFF87CDA3, 0xFFC19CDD, 0xFFFFFFFF};
     private final Screen parent;
     private final MapCanvas canvas = new MapCanvas();
@@ -66,7 +65,6 @@ public final class YzWorldMapScreen extends Screen {
     private MapDrawing moving;
     private MapVertex start;
     private List<MapVertex> stroke = new ArrayList<>();
-    private MapExport.Area area;
     private Component status = Component.empty();
 
     public YzWorldMapScreen(Screen parent) {
@@ -151,7 +149,7 @@ public final class YzWorldMapScreen extends Screen {
     String mapDimension() { return dimension; }
 
     void switchDimension(String target) {
-        dimension = target; follow = false; selected = null; area = null; exploredHeight = null;
+        dimension = target; follow = false; selected = null; exploredHeight = null;
         overviewLayer = null; canvas.close(); init();
         DebugLogger.debug("WorldMap", "地图切换维度：%s", target);
     }
@@ -302,7 +300,7 @@ public final class YzWorldMapScreen extends Screen {
 
     private void recenter() {
         follow = true; MapClient.track(null); exploredHeight = null; overviewLayer = null;
-        if (!dimension.equals(MapClient.dimension())) { selected = null; area = null; }
+        if (!dimension.equals(MapClient.dimension())) { selected = null; }
         dimension = MapClient.dimension();
         var player = Minecraft.getInstance().player;
         if (player != null) { centerX = player.getX(); centerZ = player.getZ(); }
@@ -333,10 +331,6 @@ public final class YzWorldMapScreen extends Screen {
             button(x, y + 52, cell, MapTexts.text("undo"), MapPersonalData::undo);
             button(x + cell + 4, y + 52, cell, MapTexts.text("redo"), MapPersonalData::redo);
             button(x + (cell + 4) * 2, y + 52, cell, MapTexts.text("delete"), this::deleteDrawing);
-            button(x + (cell + 4) * 3, y + 52, cell, MapTexts.text("export"), () -> {
-                var layer = currentLayer();
-                Minecraft.getInstance().gui.setScreen(new MapExportScreen(this, dimension, layer, currentHeight(layer), area == null ? visibleArea() : area));
-            });
             button(x, y + 78, w, MapTexts.text("overlay." + MapSettings.overlay().name().toLowerCase(Locale.ROOT)), () -> {
                 var values = MapSettings.Overlay.values(); MapSettings.setOverlay(values[(MapSettings.overlay().ordinal() + 1) % values.length]); init();
             });
@@ -362,7 +356,7 @@ public final class YzWorldMapScreen extends Screen {
                 var target = players.get(index);
                 button(x, y + i * 26, w, Component.literal(target.name()).append(" · ").append(MapTexts.dimension(target.dimension())), () -> {
                     MapClient.track(target.id());
-                    if (!dimension.equals(target.dimension())) { selected = null; area = null; }
+                    if (!dimension.equals(target.dimension())) { selected = null; }
                     dimension = target.dimension(); centerX = target.x(); centerZ = target.z(); follow = true;
                     status = MapTexts.text("tracking", target.name()); panel = Panel.NONE; canvas.close(); init();
                     DebugLogger.debug("WorldMap", "跟踪玩家：%s", target.name());
@@ -383,13 +377,8 @@ public final class YzWorldMapScreen extends Screen {
 
     /** 主线程 Tick 读取当前可视区域，服务端只返回已记录的区块。 */
     public MapViewRequestPayload subscription() {
-        var area = visibleArea(); var layer = currentLayer();
-        return MapClient.viewRequest(dimension, layer, currentHeight(layer), area.minX(), area.minZ(), area.maxX(), area.maxZ());
-    }
-
-    private MapExport.Area visibleArea() {
-        var view = view(); var a = view.world(0, 0); var b = view.world(mapWidth, mapHeight);
-        return MapExport.Area.of(a.x(), a.y(), b.x(), b.y());
+        var view = view(); var a = view.world(0, 0); var b = view.world(mapWidth, mapHeight); var layer = currentLayer();
+        return MapClient.viewRequest(dimension, layer, currentHeight(layer), a.x(), a.y(), b.x(), b.y());
     }
 
     @Override public void extractBackground(GuiGraphicsExtractor g, int x, int y, float delta) { YzuiTheme.backdrop(g); }
@@ -408,12 +397,9 @@ public final class YzWorldMapScreen extends Screen {
         if (selectedDrawing != null) MapRenderer.drawing(g, displayed, left, top, 0, selectedDrawing, 1, true);
         if (moving != null) MapRenderer.drawing(g, displayed, left, top, 0, moved(), 1, true);
         if (stroke.size() >= 2) {
-            var kind = tool == Tool.AREA ? MapDrawing.Kind.RECTANGLE : drawingKind();
+            var kind = drawingKind();
             if (kind != null) MapRenderer.drawing(g, displayed, left, top, 0, new MapDrawing(new UUID(0, 0), dimension, kind, stroke, COLORS[color], ""), 1, true);
         }
-        if (area != null) MapRenderer.drawing(g, displayed, left, top, 0,
-                new MapDrawing(new UUID(0, 1), dimension, MapDrawing.Kind.RECTANGLE,
-                        List.of(new MapVertex(area.minX(), area.minZ()), new MapVertex(area.maxX(), area.maxZ())), YzuiTheme.primary(), ""), 0.8f, true);
         g.disableScissor();
         g.nextStratum();
         // 信息与工具浮在地形上；鼠标悬停信息不覆盖玩家坐标。
@@ -573,7 +559,6 @@ public final class YzWorldMapScreen extends Screen {
         if (event.button() == 0 && dragging) {
             dragging = false;
             if (moving != null && stroke.size() > 1) save(moved());
-            else if (tool == Tool.AREA && stroke.size() > 1) area = MapExport.Area.of(start.x(), start.z(), stroke.getLast().x(), stroke.getLast().z());
             else if (tool != Tool.SELECT && stroke.size() > 1) save(new MapDrawing(UUID.randomUUID(), dimension, drawingKind(), stroke, COLORS[color], ""));
             moving = null; stroke.clear(); return true;
         }
@@ -591,7 +576,7 @@ public final class YzWorldMapScreen extends Screen {
     }
 
     private MapDrawing.Kind drawingKind() {
-        return switch (tool) { case PEN -> MapDrawing.Kind.PEN; case LINE -> MapDrawing.Kind.LINE; case RECTANGLE, AREA -> MapDrawing.Kind.RECTANGLE; case ELLIPSE -> MapDrawing.Kind.ELLIPSE; case LABEL -> MapDrawing.Kind.LABEL; case SELECT -> null; };
+        return switch (tool) { case PEN -> MapDrawing.Kind.PEN; case LINE -> MapDrawing.Kind.LINE; case RECTANGLE -> MapDrawing.Kind.RECTANGLE; case ELLIPSE -> MapDrawing.Kind.ELLIPSE; case LABEL -> MapDrawing.Kind.LABEL; case SELECT -> null; };
     }
     private MapDrawing selectedDrawing() { return MapPersonalData.drawings().stream().filter(d -> d.id().equals(selected)).findFirst().orElse(null); }
     private MapDrawing hitDrawing(double x, double y) {
@@ -599,7 +584,7 @@ public final class YzWorldMapScreen extends Screen {
         return MapPersonalData.drawings().reversed().stream().filter(d -> d.dimension().equals(dimension) && MapShapes.distance(d, shown(), x, y) <= 8).findFirst().orElse(null);
     }
     private void save(MapDrawing drawing) { if (!MapPersonalData.putDrawing(drawing)) status = MapTexts.text("limit"); else selected = drawing.id(); }
-    private void deleteDrawing() { if (selected != null) MapPersonalData.removeDrawing(selected); selected = null; area = null; }
+    private void deleteDrawing() { if (selected != null) MapPersonalData.removeDrawing(selected); selected = null; }
     private int playerHeight() { var player = Minecraft.getInstance().player; return player == null ? 64 : player.getBlockY(); }
 
     @Override public boolean mouseScrolled(double x, double y, double horizontal, double vertical) {

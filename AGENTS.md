@@ -46,7 +46,8 @@
 | ModMenu | 20.0.0-beta.4 | `compileOnly`，配置入口（硬依赖声明） |
 | Fabric Permissions API | 0.6.1 | `include(implementation(...))`，已内置打包 |
 | LuckPerms API | 5.5 | `compileOnly`，运行时可选，缺失时回退原版 OP 等级 |
-| Gson | 随 MC 提供 | 全部 JSON 配置持久化 |
+| Gson | 随 MC 提供 | 非地图模块 JSON 配置持久化 |
+| SQLite JDBC | 3.53.4.0（内置打包） | YZMAP 配置与数据持久化 |
 | SLF4J | 随 MC 提供 | 日志底座（经 `DebugLogger` 包装） |
 
 模组版本：`mod_version = 1.20.5-indev`，`maven_group = top.csituka`，`archives_base_name = YouzaiWorldCore`。
@@ -179,6 +180,8 @@ DebugLogger.exiting("ModuleName", "methodName", "result=" + r);
 格式固定为 `[yyyy-MM-dd HH:mm:ss.SSS] [LEVEL] [Module] 描述`。模组启动横幅与关键里程碑另用 `YouzaiworldCore.LOGGER`（SLF4J，无条件输出）。
 
 ### 4.3 文件存放规范（强制）
+
+**YZMAP 例外（按用户要求）**：地图显示、布局、私人数据及客户端地形写入 `ModPaths.clientMapDatabase()`；服务端地图设置与玩家共享规则写入 `serverMapDatabase()`；世界地形、公共点与同步游标写入 `worldMapDatabase(server)`。全部使用 SQLite，不接入全局/个人 JSON 默认写入器，不迁移旧地图数据。地形上传只来自 Minecraft 区块文件，协议版本 2；详见 `docs/YZMAP.md`。
 
 所有配置 / 数据 / 备份 / 缓存文件**只能**通过 `config/ModPaths` 取路径，禁止手写
 `getConfigDir().resolve("youzaiworldcore")` 之类的散装路径。目录布局：

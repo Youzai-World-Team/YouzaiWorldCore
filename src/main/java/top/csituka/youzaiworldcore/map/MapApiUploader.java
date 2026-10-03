@@ -5,9 +5,6 @@ import com.google.gson.JsonObject;
 import net.minecraft.server.MinecraftServer;
 import top.csituka.youzaiworldcore.api.ApiHttp;
 import top.csituka.youzaiworldcore.config.ApiModuleSettings;
-import top.csituka.youzaiworldcore.config.ConfigSection;
-import top.csituka.youzaiworldcore.config.GlobalSettings;
-import top.csituka.youzaiworldcore.config.JsonFileStore;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
 import java.nio.ByteBuffer;
@@ -19,18 +16,17 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.TimeUnit;
 
-/** 地图到 YouzaiWorldApi 的 HMAC 网桥；成功后每 48 小时同步增量，HTTP 与文件扫描均在后台。 */
+/** 地图到 YouzaiWorldApi 的 HMAC 网桥；按配置周期同步增量，HTTP 与数据库扫描均在后台。 */
 public final class MapApiUploader {
-    public static final long INTERVAL_MILLIS = TimeUnit.DAYS.toMillis(2);
     private static final long RETRY_MILLIS = TimeUnit.MINUTES.toMillis(10);
     private static final int BATCH_TILES = 128;
     private static final String ENDPOINT = "/api/game/maps/upload";
     private final MinecraftServer server;
     private final MapTerrainStore terrain;
-    private final JsonFileStore metadata;
+    private final MapDatabase metadata;
     private final UUID worldId;
     private final String worldName;
-    private long lastSuccess, cutoff, nextAttempt;
+    private long lastSuccess, cutoff, nextAttempt, configuredInterval;
     private String destination;
     private volatile String configuredDestination;
     private volatile boolean uploadAllowed;
@@ -41,19 +37,19 @@ public final class MapApiUploader {
             Thread.ofPlatform().daemon().name("yzwc-map-clock").factory());
 
     /** 使用世界 map_module 主数据记录同步时间，失败不推进增量基线。 */
-    public MapApiUploader(MinecraftServer server, MapTerrainStore terrain, JsonFileStore metadata, UUID worldId) {
+    public MapApiUploader(MinecraftServer server, MapTerrainStore terrain, MapDatabase metadata, UUID worldId) {
         this.server = server; this.terrain = terrain; this.metadata = metadata; this.worldId = worldId;
         String name = server.getWorldData().getLevelName();
         worldName = name.isBlank() ? "Minecraft" : name.substring(0, Math.min(128, name.length()));
-        var section = metadata.section(GlobalSettings.MAP_MODULE);
-        lastSuccess = section.getLong("api_last_success", 0);
-        cutoff = section.getLong("api_cutoff", 0);
-        destination = section.getString("api_destination", "");
+        var section = new MapSqlSettings(metadata, "upload");
+        lastSuccess = Long.parseLong(section.getString("last_success", "0"));
+        cutoff = Long.parseLong(section.getString("revision", "0"));
+        destination = section.getString("destination", "");
         configuredDestination = ApiModuleSettings.getBaseUrl();
-        if (lastSuccess < 0 || cutoff < 0) section.fail("api_last_success", "地图上传时间不能为负数");
+        if (lastSuccess < 0 || cutoff < 0) invalidProgress();
+        configuredInterval = intervalMillis();
         nextAttempt = Math.max(System.currentTimeMillis() + 60000,
-                destination.equals(configuredDestination) ? lastSuccess + INTERVAL_MILLIS : 0);
-        metadata.save();
+                destination.equals(configuredDestination) ? lastSuccess + intervalMillis() : 0);
         clock.scheduleWithFixedDelay(this::queueCheck, 1, 1, TimeUnit.SECONDS);
     }
 
@@ -72,10 +68,17 @@ public final class MapApiUploader {
     }
 
     /** 仅主线程访问同步进度与世界元数据；排队检查最多保留一个。 */
+    private static long intervalMillis() { return TimeUnit.MINUTES.toMillis(MapServerSettings.uploadIntervalMinutes); }
+    private static void invalidProgress() { throw new IllegalStateException("地图 SQLite 同步进度无效"); }
+
     private void tick() {
         uploadAllowed = MapServerSettings.enabled && MapServerSettings.apiUpload && ApiModuleSettings.isEnabled();
         if (!configuredDestination.equals(ApiModuleSettings.getBaseUrl())) {
             configuredDestination = ApiModuleSettings.getBaseUrl(); nextAttempt = System.currentTimeMillis();
+        }
+        if (configuredInterval != intervalMillis()) {
+            configuredInterval = intervalMillis();
+            nextAttempt = Math.max(System.currentTimeMillis(), lastSuccess + configuredInterval);
         }
         if (System.currentTimeMillis() >= nextAttempt) upload();
     }
@@ -83,7 +86,7 @@ public final class MapApiUploader {
     /** 立即安排上传；返回 false 表示关闭、正在上传或已经关服。 */
     public boolean upload() {
         if (stopped || running || !MapServerSettings.enabled || !MapServerSettings.apiUpload || !ApiModuleSettings.isEnabled()) return false;
-        long started = System.currentTimeMillis();
+        long through = terrain.revision();
         uploadAllowed = true;
         String target = ApiModuleSettings.getBaseUrl();
         configuredDestination = target;
@@ -96,7 +99,7 @@ public final class MapApiUploader {
         }
         running = true;
         DebugLogger.info("MapApiUploader", "开始同步地图 %s 到 Api", worldId);
-        CompletableFuture.supplyAsync(() -> transfer(since, target, dimensions)).whenComplete((count, error) -> server.execute(() -> {
+        CompletableFuture.supplyAsync(() -> transfer(since, through, target, dimensions)).whenComplete((count, error) -> server.execute(() -> {
             if (stopped) return;
             running = false;
             if (!target.equals(ApiModuleSettings.getBaseUrl())) {
@@ -110,33 +113,34 @@ public final class MapApiUploader {
                 return;
             }
             lastSuccess = System.currentTimeMillis();
-            // 与文件时间戳留两秒重叠，避免原子替换落在同步边界而漏传。
-            cutoff = Math.max(0, started - 2000); destination = target;
-            nextAttempt = lastSuccess + INTERVAL_MILLIS;
-            ConfigSection section = metadata.section(GlobalSettings.MAP_MODULE);
-            section.set("api_last_success", lastSuccess); section.set("api_cutoff", cutoff);
-            section.set("api_destination", destination); metadata.save();
-            DebugLogger.info("MapApiUploader", "地图同步完成：%d 个瓦片，下次在 48 小时后", count);
+            cutoff = through; destination = target;
+            nextAttempt = lastSuccess + intervalMillis();
+            metadata.settings("upload", java.util.Map.of("last_success", Long.toString(lastSuccess),
+                    "revision", Long.toString(cutoff), "destination", destination));
+            DebugLogger.info("MapApiUploader", "地图同步完成：%d 个瓦片，修订号=%d", count, cutoff);
         }));
         return true;
     }
 
-    private int transfer(long since, String destination, JsonArray dimensions) {
+    private int transfer(long since, long through, String destination, JsonArray dimensions) {
         var available = new java.util.HashSet<String>();
         dimensions.forEach(value -> available.add(value.getAsJsonObject().get("id").getAsString()));
         UUID run = UUID.randomUUID();
-        var begin = envelope(run, "begin", 0);
+        var begin = envelope(run, "begin", 0, through);
         begin.addProperty("name", worldName); begin.add("dimensions", dimensions);
         JsonObject reply = send(begin, destination);
         if (!reply.has("full_required") || !reply.get("full_required").isJsonPrimitive()
                 || !reply.get("full_required").getAsJsonPrimitive().isBoolean()) throw new IllegalStateException("Api 地图响应格式无效");
-        long baseline = reply.get("full_required").getAsBoolean() ? 0 : since;
+        if (!reply.has("accepted_revision")) throw new IllegalStateException("Api 未返回地图修订进度");
+        long accepted = reply.get("accepted_revision").getAsLong();
+        if (accepted < 0 || accepted > through) throw new IllegalStateException("Api 地图修订进度不一致");
+        long baseline = reply.get("full_required").getAsBoolean() ? 0 : Math.min(since, accepted);
         class Batch {
             private JsonArray tiles = new JsonArray();
             private int sequence, total;
             private void flush() {
                 if (tiles.isEmpty()) return;
-                var body = envelope(run, "tiles", sequence);
+                var body = envelope(run, "tiles", sequence, through);
                 body.add("tiles", tiles); send(body, destination);
                 total += tiles.size(); sequence++; tiles = new JsonArray();
             }
@@ -147,15 +151,16 @@ public final class MapApiUploader {
             }
         }
         var batch = new Batch();
-        try { terrain.visitSaved(baseline, batch::add); }
+        try { terrain.visitSaved(baseline, through, batch::add); }
         catch (java.io.IOException error) { throw new java.io.UncheckedIOException(error); }
         batch.flush();
-        send(envelope(run, "complete", batch.sequence), destination);
+        send(envelope(run, "complete", batch.sequence, through), destination);
         return batch.total;
     }
 
-    private JsonObject envelope(UUID run, String phase, int batch) {
-        JsonObject body = new JsonObject(); body.addProperty("version", 1);
+    private JsonObject envelope(UUID run, String phase, int batch, long revision) {
+        JsonObject body = new JsonObject(); body.addProperty("version", 2);
+        body.addProperty("source", "minecraft_chunk_storage"); body.addProperty("revision", revision);
         body.addProperty("world_id", worldId.toString()); body.addProperty("run_id", run.toString());
         body.addProperty("phase", phase); body.addProperty("batch", batch); return body;
     }
@@ -172,9 +177,10 @@ public final class MapApiUploader {
         return result;
     }
 
-    /** 版本 1：1024 字节 RGBA、512 字节大端有符号高度、256 字节光照，统一 Base64。 */
+    /** 版本 2：1024 字节 RGBA、512 字节大端有符号高度、256 字节光照，统一 Base64。 */
     private static JsonObject encode(MapTile tile) {
         var key = tile.key(); var value = new JsonObject();
+        value.addProperty("revision", tile.revision());
         value.addProperty("dimension", key.dimension()); value.addProperty("layer", key.layer().name());
         value.addProperty("height", key.height()); value.addProperty("x", key.chunkX()); value.addProperty("z", key.chunkZ());
         ByteBuffer bytes = ByteBuffer.allocate(1792);

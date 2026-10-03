@@ -83,6 +83,7 @@ public final class YzHudSettings {
         ConfigSection section = ClientGlobalSettings.section(ClientGlobalSettings.YZHUD_MODULE);
         section.remove("position_x"); section.remove("position_y");
         for (YzHudComponent c : YzHudComponent.values()) {
+            if (c == YzHudComponent.MINIMAP) continue;
             String p = c.configPrefix(); Position pos = POSITIONS.get(c);
             section.set(p + "_position_x", pos.x()); section.set(p + "_position_y", pos.y());
             section.set(p + "_scale", SCALES.get(c)); section.set(p + "_opacity", OPACITIES.get(c)); section.set(p + "_enabled", ENABLED.get(c));
@@ -93,6 +94,7 @@ public final class YzHudSettings {
             section.set(p + "_reference_gui_width", reference.x());
             section.set(p + "_reference_gui_height", reference.y());
         }
+        saveMinimap();
         section.set("opacity", opacity); ClientGlobalSettings.save(); DebugLogger.info(MODULE, "已保存 YZHUD 设置");
     }
     public static void reset() { resetPreview(); save(); }
@@ -101,8 +103,10 @@ public final class YzHudSettings {
         opacity = DEFAULT_OPACITY;
     }
     public static void load() {
+        loadMinimap();
         ConfigSection section = ClientGlobalSettings.section(ClientGlobalSettings.YZHUD_MODULE); if (section.isEmpty()) { save(); return; }
         for (YzHudComponent c : YzHudComponent.values()) {
+            if (c == YzHudComponent.MINIMAP) continue;
             String p = c.configPrefix(); POSITIONS.put(c, new Position(section.getDouble(p + "_position_x", DEFAULT_POSITION, -1, 1), section.getDouble(p + "_position_y", DEFAULT_POSITION, -1, 1)));
             SCALES.put(c, section.getDouble(p + "_scale", DEFAULT_SCALE, 0.25, 4)); OPACITIES.put(c, section.getDouble(p + "_opacity", DEFAULT_OPACITY, 0, 1)); ENABLED.put(c, section.getBoolean(p + "_enabled", DEFAULT_ENABLED)); SCALE_LOCKED.put(c, section.getBoolean(p + "_scale_locked", false)); SCALE_REFERENCE.put(c, section.getDouble(p + "_scale_reference", currentGuiScale(), 0.1, 32));
             LOCKED_PIXEL_POSITIONS.put(c, new Position(section.getDouble(p + "_pixel_x", 0), section.getDouble(p + "_pixel_y", 0)));
@@ -112,7 +116,29 @@ public final class YzHudSettings {
         }
         opacity = section.getDouble("opacity", DEFAULT_OPACITY, 0, 1);
     }
-    public static void writeDefaults() { reset(); }
+    // 全局 JSON 重建不重置独立 SQLite 中的小地图布局。
+    public static void writeDefaults() { resetPreview(); loadMinimap(); save(); }
+    private static void saveMinimap() {
+        var section = new top.csituka.youzaiworldcore.map.MapSqlSettings(MapSettings.database(), "hud");
+        var c = YzHudComponent.MINIMAP;
+        section.set("position_x", POSITIONS.get(c).x()); section.set("position_y", POSITIONS.get(c).y());
+        section.set("scale", SCALES.get(c)); section.set("opacity", OPACITIES.get(c)); section.set("enabled", ENABLED.get(c));
+        section.set("scale_locked", SCALE_LOCKED.get(c)); section.set("scale_reference", SCALE_REFERENCE.get(c));
+        section.set("pixel_x", LOCKED_PIXEL_POSITIONS.get(c).x()); section.set("pixel_y", LOCKED_PIXEL_POSITIONS.get(c).y());
+        section.set("reference_gui_width", REFERENCE_GUI_SIZES.get(c).x()); section.set("reference_gui_height", REFERENCE_GUI_SIZES.get(c).y());
+        section.save();
+    }
+    private static void loadMinimap() {
+        var section = new top.csituka.youzaiworldcore.map.MapSqlSettings(MapSettings.database(), "hud");
+        var c = YzHudComponent.MINIMAP;
+        POSITIONS.put(c, new Position(section.getDouble("position_x", DEFAULT_POSITION, -1, 1), section.getDouble("position_y", DEFAULT_POSITION, -1, 1)));
+        SCALES.put(c, section.getDouble("scale", DEFAULT_SCALE, 0.25, 4));
+        OPACITIES.put(c, section.getDouble("opacity", DEFAULT_OPACITY, 0, 1)); ENABLED.put(c, section.getBoolean("enabled", DEFAULT_ENABLED));
+        SCALE_LOCKED.put(c, section.getBoolean("scale_locked", false)); SCALE_REFERENCE.put(c, section.getDouble("scale_reference", currentGuiScale(), 0.1, 32));
+        LOCKED_PIXEL_POSITIONS.put(c, new Position(section.getDouble("pixel_x", 0, -Double.MAX_VALUE, Double.MAX_VALUE), section.getDouble("pixel_y", 0, -Double.MAX_VALUE, Double.MAX_VALUE)));
+        var size = currentGuiSize();
+        REFERENCE_GUI_SIZES.put(c, new Position(section.getDouble("reference_gui_width", size.x(), 1, Double.MAX_VALUE), section.getDouble("reference_gui_height", size.y(), 1, Double.MAX_VALUE)));
+    }
     private static double currentGuiScale() { try { return Math.max(0.1D, Minecraft.getInstance().getWindow().getGuiScale()); } catch (Exception ignored) { return 1.0D; } }
     private static Position currentGuiSize() { try { var window = Minecraft.getInstance().getWindow(); return new Position(window.getGuiScaledWidth(), window.getGuiScaledHeight()); } catch (Exception ignored) { return new Position(960, 540); } }
     public record Snapshot(EnumMap<YzHudComponent, Position> positions, EnumMap<YzHudComponent, Double> scales, EnumMap<YzHudComponent, Double> opacities, EnumMap<YzHudComponent, Boolean> enabled, EnumMap<YzHudComponent, Boolean> scaleLocked, EnumMap<YzHudComponent, Double> scaleReference, EnumMap<YzHudComponent, Position> lockedPixelPositions, EnumMap<YzHudComponent, Position> referenceGuiSizes, double opacity) { }

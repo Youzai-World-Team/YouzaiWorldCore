@@ -1,14 +1,14 @@
 package top.csituka.youzaiworldcore.client.map;
 
-import com.google.gson.JsonArray;
 import top.csituka.youzaiworldcore.map.MapTileKey;
 import top.csituka.youzaiworldcore.map.MapLayer;
 import net.minecraft.resources.Identifier;
-import com.google.gson.JsonObject;
 import net.minecraft.network.chat.Component;
-import top.csituka.youzaiworldcore.client.config.ClientGlobalSettings;
 import top.csituka.youzaiworldcore.client.config.MapSettings;
-import top.csituka.youzaiworldcore.map.MapDataCodec;
+import top.csituka.youzaiworldcore.map.MapBinaryCodec;
+import top.csituka.youzaiworldcore.map.MapDatabase;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import top.csituka.youzaiworldcore.map.MapDrawing;
 import top.csituka.youzaiworldcore.map.MapWaypoint;
 import top.csituka.youzaiworldcore.util.DebugLogger;
@@ -23,8 +23,8 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * 按服务器存档身份隔离的私人路径点和标注，存入客户端唯一配置文件。
- * 历史操作只保留内存中最近 32 步；移动足迹不落盘。
+ * 按服务器存档身份隔离的私人路径点和标注，存入客户端地图 SQLite。
+ * 历史操作只保留内存中最近 32 步。
  */
 public final class MapPersonalData {
     public static final int MAX_POINTS = 512, MAX_DRAWINGS = 128;
@@ -46,8 +46,9 @@ public final class MapPersonalData {
 
     private static LastView lastView;
     private static final java.util.Map<UUID, String> NOTES = new java.util.LinkedHashMap<>();
+    private static final Set<MapTileKey> PENDING_EXPLORATION = new HashSet<>();
     private static boolean explorationDirty;
-    private static String world = "", worldName = "";
+    private static String world = "";
     private static boolean writableWorld;
 
     private MapPersonalData() {
@@ -59,7 +60,6 @@ public final class MapPersonalData {
             return;
         flushExploration();
         world = identity;
-        worldName = label;
         lastView = null;
         POINTS.clear();
         DRAWINGS.clear();
@@ -67,113 +67,26 @@ public final class MapPersonalData {
         REDO.clear();
         CATEGORIES.clear();
         EXPLORED.clear();
+        PENDING_EXPLORATION.clear();
         NOTES.clear();
         explorationDirty = false;
-        var section = ClientGlobalSettings.section(ClientGlobalSettings.MAP_MODULE);
-        var worlds = section.getObjectList("worlds");
-        writableWorld = worlds == null || worlds.size() < 512;
-        if (worlds != null) {
-            if (worlds.size() > 512)
-                section.fail("worlds", "世界记录数量不可超过 512");
-            boolean found = false;
-            Set<UUID> worldIds = new HashSet<>();
-            for (var entry : worlds) {
-                UUID worldId = MapDataCodec.uuid(entry, "id");
-                if (!worldIds.add(worldId))
-                    entry.fail("id", "世界身份重复");
-                if (!identity.equals(worldId.toString()))
-                    continue;
-                if (found)
-                    entry.fail("id", "世界身份重复");
-                found = true;
-                writableWorld = true;
-                var views = entry.getObjectList("last_view");
-                if (views != null && !views.isEmpty()) {
-                    if (views.size() > 1)
-                        entry.fail("last_view", "上次地图视角只能有一条记录");
-                    var view = views.getFirst();
-                    String dimension = view.getString("dimension", "");
-                    if (dimension.length() > 128 || Identifier.tryParse(dimension) == null)
-                        view.fail("dimension", "维度无效");
-                    double x = view.getDouble("x", 0), z = view.getDouble("z", 0), zoom = view.getDouble("zoom", 1);
-                    if (!Double.isFinite(x) || Math.abs(x) > MapTileKey.WORLD_LIMIT)
-                        view.fail("x", "地图坐标越界");
-                    if (!Double.isFinite(z) || Math.abs(z) > MapTileKey.WORLD_LIMIT)
-                        view.fail("z", "地图坐标越界");
-                    if (!Double.isFinite(zoom) || zoom < 0.125 || zoom > 16)
-                        view.fail("zoom", "缩放应介于 0.125 和 16 之间");
-                    lastView = new LastView(dimension, x, z, zoom);
-                }
-                var notes = entry.getObjectList("point_notes");
-                if (notes != null) {
-                    if (notes.size() > 2048)
-                        entry.fail("point_notes", "描述数量不可超过 2048");
-                    for (var note : notes) {
-                        UUID id = MapDataCodec.uuid(note, "id");
-                        String text = note.getString("text", "");
-                        if (text.length() > 1024)
-                            note.fail("text", "描述不可超过 1024 字");
-                        if (NOTES.putIfAbsent(id, text) != null)
-                            note.fail("id", "描述身份重复");
-                    }
-                }
-                var categories = entry.getObjectList("categories");
-                if (categories != null) {
-                    if (categories.size() > MAX_CATEGORIES)
-                        entry.fail("categories", "分类数量不可超过 128");
-                    for (var category : categories) {
-                        String dimension = category.getString("dimension", ""), name = category.getString("name", "");
-                        if (dimension.length() > 128 || Identifier.tryParse(dimension) == null)
-                            category.fail("dimension", "维度无效");
-                        if (name.isBlank() || name.length() > 32)
-                            category.fail("name", "分类名长度应为 1 至 32");
-                        var value = new Category(dimension, name.strip());
-                        if (CATEGORIES.contains(value))
-                            category.fail("name", "同一维度内分类重复");
-                        CATEGORIES.add(value);
-                    }
-                }
-                var explored = entry.getObjectList("explored_layers");
-                if (explored != null) {
-                    if (explored.size() > MAX_EXPLORED)
-                        entry.fail("explored_layers", "已探索层记录不可超过 65536");
-                    for (var region : explored) {
-                        String dimension = region.getString("dimension", "");
-                        if (dimension.length() > 128 || Identifier.tryParse(dimension) == null)
-                            region.fail("dimension", "维度无效");
-                        var key = new MapTileKey(dimension, MapLayer.CAVE, region.getInt("height", 0, -4096, 4095),
-                                region.getInt("chunk_x", 0, -MapTileKey.CHUNK_LIMIT, MapTileKey.CHUNK_LIMIT),
-                                region.getInt("chunk_z", 0, -MapTileKey.CHUNK_LIMIT, MapTileKey.CHUNK_LIMIT));
-                        if (!EXPLORED.add(key))
-                            region.fail("height", "同一区块的探索层重复");
-                    }
-                }
-                var points = entry.getObjectList("waypoints");
-                var drawings = entry.getObjectList("drawings");
-                if (points != null) {
-                    if (points.size() > MAX_POINTS)
-                        entry.fail("waypoints", "私人路径点数量不可超过 512");
-                    Set<UUID> ids = new HashSet<>();
-                    for (var point : points) {
-                        var value = MapDataCodec.readWaypoint(point);
-                        if (value.shared() || !ids.add(value.id()))
-                            point.fail("id", "私人路径点身份重复或错误地标记为公共点");
-                        POINTS.add(value);
-                    }
-                }
-                if (drawings != null) {
-                    if (drawings.size() > MAX_DRAWINGS)
-                        entry.fail("drawings", "绘图数量不可超过 128");
-                    Set<UUID> ids = new HashSet<>();
-                    for (var drawing : drawings) {
-                        var value = MapDataCodec.readDrawing(drawing);
-                        if (!ids.add(value.id()))
-                            drawing.fail("id", "绘图身份重复");
-                        DRAWINGS.add(value);
-                    }
-                }
+        var database = MapSettings.database();
+        writableWorld = true;
+        database.records(world, "points").values().forEach(bytes -> POINTS.add(MapBinaryCodec.waypoint(bytes)));
+        database.records(world, "drawings").values().forEach(bytes -> DRAWINGS.add(MapBinaryCodec.drawing(bytes)));
+        database.records(world, "categories").values().forEach(bytes -> CATEGORIES.add(MapBinaryCodec.decode(bytes,
+                in -> new Category(in.readUTF(), in.readUTF()))));
+        database.records(world, "notes").forEach((id, bytes) -> NOTES.put(UUID.fromString(id), MapBinaryCodec.decode(bytes, in -> in.readUTF())));
+        var view = database.records(world, "view").get("last");
+        if (view != null) lastView = MapBinaryCodec.decode(view, in -> new LastView(in.readUTF(), in.readDouble(), in.readDouble(), in.readDouble()));
+        database.read(db -> {
+            try (var query = db.prepareStatement("SELECT dimension,x,z,height FROM explored WHERE world=?")) {
+                query.setString(1, world);
+                try (var rows = query.executeQuery()) { while (rows.next()) EXPLORED.add(new MapTileKey(rows.getString(1), MapLayer.CAVE, rows.getInt(4), rows.getInt(2), rows.getInt(3))); }
             }
-        }
+            return null;
+        });
+        MapClient.cache().selectWorld(identity);
         DebugLogger.info("MapPersonalData", "地图私人数据已切换：%s，路径点=%d，绘图=%d", world, POINTS.size(), DRAWINGS.size());
     }
 
@@ -247,6 +160,7 @@ public final class MapPersonalData {
             return;
         if (EXPLORED.add(new MapTileKey(dimension, MapLayer.CAVE, height, chunkX, chunkZ))) {
             explorationDirty = true;
+            PENDING_EXPLORATION.add(new MapTileKey(dimension, MapLayer.CAVE, height, chunkX, chunkZ));
             DebugLogger.debug("MapPersonalData", "发现地下地图层：%s [%d,%d] Y=%d", dimension, chunkX, chunkZ, height);
         }
     }
@@ -261,8 +175,9 @@ public final class MapPersonalData {
 
     /** 到访记录合并写盘，切服及断线前也须调用。 */
     public static void flushExploration() {
-        if (explorationDirty)
-            save();
+        if (!explorationDirty) return;
+        MapSettings.database().transaction(db -> { writeExploration(db); return null; });
+        PENDING_EXPLORATION.clear(); explorationDirty = false;
     }
 
     /** 新增或修改私人点；达到容量时返回 false，原记录保持不变。 */
@@ -321,31 +236,6 @@ public final class MapPersonalData {
     public static void setEnabled(Set<UUID> ids, boolean enabled) {
         POINTS.replaceAll(point -> ids.contains(point.id()) ? point.withEnabled(enabled) : point);
         save();
-    }
-
-    /** 完整预检容量并去除同名同坐标重复点；负数表示未写入任何内容。 */
-    public static int importPoints(List<MapWaypoint> points) {
-        if (world.isEmpty() || !writableWorld)
-            return -1;
-        var additions = new ArrayList<MapWaypoint>();
-        var identities = new HashSet<String>();
-        POINTS.forEach(point -> identities.add(identity(point)));
-        for (var point : points) {
-            if (point.shared())
-                return -1;
-            if (identities.add(identity(point)))
-                additions.add(point);
-        }
-        if (POINTS.size() + additions.size() > MAX_POINTS)
-            return -1;
-        POINTS.addAll(additions);
-        save();
-        DebugLogger.info("MapPersonalData", "已导入 %d 个私人路径点", additions.size());
-        return additions.size();
-    }
-
-    private static String identity(MapWaypoint point) {
-        return point.dimension() + "\u0000" + point.x() + "/" + point.y() + "/" + point.z() + "\u0000" + point.name();
     }
 
     /** 自动记录死亡点，每个维度独立应用保留数量。 */
@@ -424,68 +314,41 @@ public final class MapPersonalData {
         save();
     }
 
-    @SuppressWarnings("null")
+    /** 私人数据用事务写入，探索记录只追加新增行，不重写全局配置。 */
     private static void save() {
-        if (world.isEmpty())
-            return;
-        var section = ClientGlobalSettings.section(ClientGlobalSettings.MAP_MODULE);
-        var worlds = section.getObjectList("worlds");
-        JsonArray replacement = new JsonArray();
-        if (worlds != null)
-            for (var value : worlds) {
-                if (!MapDataCodec.uuid(value, "id").toString().equals(world))
-                    replacement.add(value.raw());
+        if (world.isEmpty() || !writableWorld) return;
+        MapSettings.database().transaction(db -> {
+            MapDatabase.records(db, world, "points", MapDatabase.points(POINTS));
+            var drawings = new LinkedHashMap<String, byte[]>();
+            for (int i = 0; i < DRAWINGS.size(); i++) drawings.put(String.format(java.util.Locale.ROOT, "%04d", i), MapBinaryCodec.drawing(DRAWINGS.get(i)));
+            MapDatabase.records(db, world, "drawings", drawings);
+            var categories = new LinkedHashMap<String, byte[]>();
+            for (int i = 0; i < CATEGORIES.size(); i++) {
+                var category = CATEGORIES.get(i);
+                categories.put(Integer.toString(i), MapBinaryCodec.encode(out -> { out.writeUTF(category.dimension()); out.writeUTF(category.name()); }));
             }
-        JsonObject entry = new JsonObject();
-        entry.addProperty("id", world);
-        entry.addProperty("name", worldName);
-        JsonArray views = new JsonArray();
-        if (lastView != null) {
-            JsonObject view = new JsonObject();
-            view.addProperty("dimension", lastView.dimension());
-            view.addProperty("x", lastView.x());
-            view.addProperty("z", lastView.z());
-            view.addProperty("zoom", lastView.zoom());
-            views.add(view);
-        }
-        entry.add("last_view", views);
-        JsonArray notes = new JsonArray();
-        NOTES.forEach((id, text) -> {
-            JsonObject note = new JsonObject();
-            note.addProperty("id", id.toString());
-            note.addProperty("text", text);
-            notes.add(note);
+            MapDatabase.records(db, world, "categories", categories);
+            var notes = new LinkedHashMap<String, byte[]>();
+            NOTES.forEach((id, text) -> notes.put(id.toString(), MapBinaryCodec.encode(out -> out.writeUTF(text))));
+            MapDatabase.records(db, world, "notes", notes);
+            var view = lastView;
+            MapDatabase.records(db, world, "view", view == null ? Map.of() : Map.of("last", MapBinaryCodec.encode(out -> {
+                out.writeUTF(view.dimension()); out.writeDouble(view.x()); out.writeDouble(view.z()); out.writeDouble(view.zoom());
+            })));
+            writeExploration(db);
+            return null;
         });
-        entry.add("point_notes", notes);
-        JsonArray categories = new JsonArray(), explored = new JsonArray();
-        for (var category : CATEGORIES) {
-            JsonObject value = new JsonObject();
-            value.addProperty("dimension", category.dimension());
-            value.addProperty("name", category.name());
-            categories.add(value);
+        PENDING_EXPLORATION.clear(); explorationDirty = false;
+    }
+
+    private static void writeExploration(java.sql.Connection db) throws java.sql.SQLException {
+        try (var sql = db.prepareStatement("INSERT OR IGNORE INTO explored VALUES(?,?,?,?,?)")) {
+            for (var key : PENDING_EXPLORATION) {
+                sql.setString(1, world); sql.setString(2, key.dimension()); sql.setInt(3, key.chunkX());
+                sql.setInt(4, key.chunkZ()); sql.setInt(5, key.height()); sql.addBatch();
+            }
+            sql.executeBatch();
         }
-        EXPLORED.stream()
-                .sorted(java.util.Comparator.comparing(MapTileKey::dimension).thenComparingInt(MapTileKey::chunkX)
-                        .thenComparingInt(MapTileKey::chunkZ).thenComparingInt(MapTileKey::height))
-                .forEach(key -> {
-                    JsonObject value = new JsonObject();
-                    value.addProperty("dimension", key.dimension());
-                    value.addProperty("chunk_x", key.chunkX());
-                    value.addProperty("chunk_z", key.chunkZ());
-                    value.addProperty("height", key.height());
-                    explored.add(value);
-                });
-        entry.add("categories", categories);
-        entry.add("explored_layers", explored);
-        JsonArray points = new JsonArray(), drawings = new JsonArray();
-        POINTS.forEach(point -> points.add(MapDataCodec.writeWaypoint(point)));
-        DRAWINGS.forEach(drawing -> drawings.add(MapDataCodec.writeDrawing(drawing)));
-        entry.add("waypoints", points);
-        entry.add("drawings", drawings);
-        replacement.add(entry);
-        section.set("worlds", replacement);
-        ClientGlobalSettings.save();
-        explorationDirty = false;
     }
 
     /** 断线时清空当前身份，重连会重新核验配置。 */
@@ -494,6 +357,7 @@ public final class MapPersonalData {
         lastView = null;
         CATEGORIES.clear();
         EXPLORED.clear();
+        PENDING_EXPLORATION.clear();
         NOTES.clear();
         explorationDirty = false;
         world = "";
