@@ -103,7 +103,8 @@ public final class MapClient {
     public static void initialize() {
         MapSettings.load();
         ClientTickEvents.END_CLIENT_TICK.register(MapClient::tick);
-        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> reset());
+        // 断线回调可能来自 Netty 线程，地图状态与 GPU 纹理统一回客户端主线程清理。
+        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> client.execute(MapClient::reset));
         ClientLifecycleEvents.CLIENT_STOPPING.register(client -> reset());
         MapClientCommands.register();
         DebugLogger.info("MapClient", "悠哉地图已初始化：M 打开地图，N 新建路径点，U 查看路径点");

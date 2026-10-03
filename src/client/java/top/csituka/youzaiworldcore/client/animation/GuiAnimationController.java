@@ -113,6 +113,14 @@ public final class GuiAnimationController {
             return false;
         }
 
+        // Mod Menu 在 onClose() 中先释放图标纹理再 setScreen，不能继续绘制退出帧。
+        // 用类名判断避免统一动画控制器直接链接第三方类；目标页仍正常播放进入动画。
+        if (oldScreen.getClass().getName().equals("com.terraformersmc.modmenu.gui.ModsScreen")) {
+            DebugLogger.debug(MODULE, "Mod Menu 退出时立即切页，避免访问已释放的图标纹理");
+            setScreenImmediately(gui, newScreen);
+            return true;
+        }
+
         if (transitionPending) {
             pendingGui = gui;
             pendingScreen = newScreen;
