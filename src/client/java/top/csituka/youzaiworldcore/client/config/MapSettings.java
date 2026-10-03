@@ -47,10 +47,6 @@ public final class MapSettings {
             DEFAULT_WAYPOINT_DISTANCE = 10000;
     public static final double DEFAULT_ZOOM = 1.0;
     public static final LabelPosition DEFAULT_LABEL_POSITION = LabelPosition.BELOW;
-    public static final Shape DEFAULT_SHAPE = Shape.ROUNDED;
-    public static final MapLayer DEFAULT_LAYER = MapLayer.AUTO;
-    public static final Overlay DEFAULT_OVERLAY = Overlay.TERRAIN;
-    private static final EnumMap<Toggle, Boolean> TOGGLES = new EnumMap<>(Toggle.class);
     public static final @NonNull Shape DEFAULT_SHAPE = Shape.ROUNDED;
     public static final @NonNull MapLayer DEFAULT_LAYER = MapLayer.AUTO;
     public static final @NonNull Overlay DEFAULT_OVERLAY = Overlay.TERRAIN;
