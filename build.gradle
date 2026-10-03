@@ -151,10 +151,8 @@ java {
     withSourcesJar()
 }
 
-jar {
-    from("LICENSE") {
-        rename { "${it}_${project.archives_base_name}" }
-    }
+tasks.withType(Jar).configureEach {
+    from("LICENSE.txt", "NOTICE.txt", "LICENSE_of_NotoSans.txt", "LICENSE_of_FluentEmoji.txt")
 }
 
 publishing {

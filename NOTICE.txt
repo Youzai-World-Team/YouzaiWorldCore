@@ -90,4 +90,4 @@ adapted from that project, Copyright (c) 2026 Bizarre Cube, under the MIT Licens
 The runtime grouping model, input handling, settings UI and drawing are native
 implementations for YouzaiWorldCore; no dependency on the original mod is added.
 https://github.com/bizcub/inventory-item-groups
-The full license is bundled at META-INF/licenses/inventory-item-groups.txt.
+For the full license text, see the LICENSE.txt file in this distribution.
