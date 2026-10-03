@@ -32,6 +32,8 @@ public final class ModPayloadTypes {
                 PayloadTypeRegistry.clientboundPlay().register(MapLivePayload.ID, MapLivePayload.STREAM_CODEC);
                 PayloadTypeRegistry.clientboundPlay().register(MapSocialPayload.ID, MapSocialPayload.STREAM_CODEC);
                 PayloadTypeRegistry.serverboundPlay().register(MapSocialPayload.ID, MapSocialPayload.STREAM_CODEC);
+                PayloadTypeRegistry.serverboundPlay().register(MapMobQueryPayload.ID, MapMobQueryPayload.STREAM_CODEC);
+                PayloadTypeRegistry.clientboundPlay().register(MapMobSnapshotPayload.ID, MapMobSnapshotPayload.STREAM_CODEC);
                 PayloadTypeRegistry.clientboundPlay().register(MapActionResultPayload.ID, MapActionResultPayload.STREAM_CODEC);
                 PayloadTypeRegistry.serverboundPlay().register(DecomposeItemPayload.ID,
                                 DecomposeItemPayload.STREAM_CODEC);

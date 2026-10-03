@@ -93,7 +93,7 @@ public final class MapServerManager {
         capture = null;
         if (metadataDirty) savePoints();
         if (terrain != null) terrain.close();
-        MapSocialManager.clear(); CLIENTS.clear(); VISIBILITY.clear(); POINTS.clear();
+        MapSocialManager.clear(); MapMobRadarServer.clear(); CLIENTS.clear(); VISIBILITY.clear(); POINTS.clear();
         if (metadata != null) metadata.close();
         terrain = null; metadata = null; server = null; worldId = null;
         DebugLogger.info("MapServerManager", "地图共享服务已关闭");
@@ -263,6 +263,9 @@ public final class MapServerManager {
         }
         ServerPlayNetworking.send(receiver, new MapLivePayload(worldId, view.dimension(), List.copyOf(players), List.copyOf(chunks)));
     }
+
+    /** 生物查询沿用地图认证及总开关，与玩家位置共享开关独立。 */
+    public static boolean mobRadarEligible(ServerPlayer player) { return eligible(player) && MapServerSettings.enabled; }
 
     /** 共享管理沿用地图认证与服务端功能开关。 */
     public static boolean socialEligible(ServerPlayer player) { return eligible(player) && MapServerSettings.enabled && MapServerSettings.sharePlayers; }

@@ -187,13 +187,33 @@ public final class MapRenderer {
         }
         for (var radar : MapClient.radar()) {
             if (!radar.dimension().equals(dimension)) continue;
+            boolean selected = MapMobRadar.selected(radar);
+            boolean mob = radar.entity() instanceof net.minecraft.world.entity.Mob || !radar.player() && selected;
+            if (mob && !MapMobRadar.withinRange(radar.x(), radar.z())) continue;
             var p = view.screen(radar.x(), radar.z());
-            if (!MapShapes.contains(view, p.x(), p.y(), radius, 8)) continue;
+            boolean edge = !MapShapes.contains(view, p.x(), p.y(), radius, selected ? 10 : 8);
+            if (edge) {
+                if (!selected) continue;
+                p = radarEdge(view, p, radius);
+            }
             int x = left + (int) p.x(), y = top + (int) p.y();
             if (MapSettings.enabled(MapSettings.Toggle.MARKER_ICONS)) {
                 if (labels && radar.player()) playerDirection(g, x, y, Math.toRadians(radar.yaw()) + Math.PI - view.angle(),
                         YzuiTheme.alpha(radar.color(), opacity));
+                if (selected) {
+                    float pulse = 0.7f + 0.3f * (float) Math.sin(System.currentTimeMillis() / 220.0);
+                    RoundedRect.fill(g, x - 9, y - 9, 18, 18, 5, YzuiTheme.alpha(YzuiTheme.primary(), opacity * pulse));
+                    RoundedRect.fill(g, x - 7, y - 7, 14, 14, 4, YzuiTheme.alpha(YzuiTheme.background(), opacity));
+                    if (edge) {
+                        double angle = Math.atan2(p.x() - view.width() / 2.0, -(p.y() - view.height() / 2.0));
+                        arrow(g, x + Math.sin(angle) * 7, y - Math.cos(angle) * 7, angle, YzuiTheme.alpha(YzuiTheme.primary(), opacity));
+                    }
+                }
                 boolean head = false;
+                if (mob) {
+                    int size = selected ? 12 : 10;
+                    MapMobIcons.draw(g, radar.entityType(), x - size / 2, y - size / 2, size, opacity); head = true;
+                }
                 if (radar.player() && MapSettings.enabled(MapSettings.Toggle.RADAR_ICONS)) {
                     var client = Minecraft.getInstance();
                     var info = client.getConnection() == null ? null : client.getConnection().getPlayerInfo(radar.id());
@@ -208,7 +228,7 @@ public final class MapRenderer {
                 if (!head) RoundedRect.fill(g, x - 2, y - 2, 5, 5, radar.player() ? 1 : 2, YzuiTheme.alpha(radar.color(), opacity));
                 if (MapSettings.enabled(MapSettings.Toggle.QUICK_LOCATE) && radar.id().equals(MapClient.trackedId())) g.outline(x - 6, y - 6, 13, 13, YzuiTheme.alpha(YzuiTheme.primary(), opacity));
             }
-            if (labels) markerLabel(g, view, left, top, p.x(), p.y(), radar.name(), opacity);
+            if (labels && !edge) markerLabel(g, view, left, top, p.x(), p.y(), radar.name(), opacity);
         }
         var player = Minecraft.getInstance().player;
         if (player != null && dimension.equals(MapClient.dimension())) {
@@ -236,9 +256,20 @@ public final class MapRenderer {
         g.disableScissor();
     }
 
+    /** 在圆形、圆角及方形小地图上沿目标方向求边界，远处的匹配生物仍有方向提示。 */
+    private static MapView.Point radarEdge(MapView view, MapView.Point target, int radius) {
+        double cx = view.width() / 2.0, cy = view.height() / 2.0, low = 0, high = 1;
+        for (int i = 0; i < 24; i++) {
+            double mid = (low + high) / 2;
+            if (MapShapes.contains(view, cx + (target.x() - cx) * mid, cy + (target.y() - cy) * mid, radius, 18)) low = mid;
+            else high = mid;
+        }
+        return new MapView.Point(cx + (target.x() - cx) * low, cy + (target.y() - cy) * low);
+    }
+
     /** 名称按配置固定在图标四周，避免越过地图边界。 */
     private static void markerLabel(GuiGraphicsExtractor g, MapView view, int left, int top, double x, double y, String name, float opacity) {
-        if (!MapSettings.enabled(MapSettings.Toggle.MARKER_LABELS)) return;
+        if (!MapSettings.enabled(MapSettings.Toggle.MARKER_ICONS) || !MapSettings.enabled(MapSettings.Toggle.MARKER_LABELS)) return;
         var font = Minecraft.getInstance().font;
         int room = switch (MapSettings.labelPosition()) {
             case LEFT -> (int) x - 14;

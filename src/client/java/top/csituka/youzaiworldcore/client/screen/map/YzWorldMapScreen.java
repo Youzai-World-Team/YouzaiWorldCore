@@ -13,6 +13,7 @@ import org.lwjgl.glfw.GLFW;
 import top.csituka.youzaiworldcore.client.config.MapSettings;
 import top.csituka.youzaiworldcore.client.map.MapCanvas;
 import top.csituka.youzaiworldcore.client.map.MapClient;
+import top.csituka.youzaiworldcore.client.map.MapMobRadar;
 import top.csituka.youzaiworldcore.client.map.MapPersonalData;
 import top.csituka.youzaiworldcore.client.map.MapRenderer;
 import top.csituka.youzaiworldcore.client.map.MapShapes;
@@ -37,7 +38,7 @@ import java.util.UUID;
 /** 全屏地图：拖动、光标缩放、图层切换、路径点、玩家跟踪、绘图。 */
 @SuppressWarnings("null")
 public final class YzWorldMapScreen extends Screen {
-    private enum Panel { NONE, TOOLS, PLAYERS, RADAR }
+    private enum Panel { NONE, TOOLS }
     private enum Tool { SELECT, PEN, LINE, RECTANGLE, ELLIPSE, LABEL }
     private static final int[] COLORS = {0xFF79BDEB, 0xFFE78682, 0xFFE8BF77, 0xFF87CDA3, 0xFFC19CDD, 0xFFFFFFFF};
     private final Screen parent;
@@ -48,7 +49,7 @@ public final class YzWorldMapScreen extends Screen {
     private int left, top, mapWidth, mapHeight, color;
     private MapView displayed;
     private Panel panel = Panel.NONE;
-    private int unit, inset, panelX, panelY, panelWidth, panelHeight, page;
+    private int unit, inset, panelX, panelY, panelWidth, panelHeight;
     private int zoomTop, zoomBottom, infoX, infoY, infoWidth;
     private boolean zoomDragging;
     private MapSettingsPanel settingsPanel;
@@ -103,7 +104,7 @@ public final class YzWorldMapScreen extends Screen {
         icon(inset, bottom, MapIconButton.Icon.SETTINGS, "settings", this::openSettings);
         icon(inset + (unit + 8) * 2, bottom, MapIconButton.Icon.PIN, "waypoints", this::openWaypoints);
         icon(inset + (unit + 8) * 3, bottom, MapIconButton.Icon.PLAYERS, "players", () -> openOverlay(new MapPlayersPanel(this)));
-        icon(inset + (unit + 8) * 4, bottom, MapIconButton.Icon.RADAR, "radar", () -> togglePanel(Panel.RADAR));
+        icon(inset + (unit + 8) * 4, bottom, MapIconButton.Icon.RADAR, "radar", () -> openOverlay(new MapRadarPanel(this)));
         icon(inset + unit + 8, bottom, MapIconButton.Icon.PEN, "drawing_tools", () -> togglePanel(Panel.TOOLS));
 
         layerControls.clear();
@@ -194,9 +195,23 @@ public final class YzWorldMapScreen extends Screen {
         dimension = point.dimension(); centerX = point.x(); centerZ = point.z(); follow = false; exploredHeight = null; overviewLayer = null;
         closeOverlay(overlayPanel); canvas.close(); init();
     }
-    void locatePlayer(MapClient.Radar target, boolean track) {
+    /** 展示整片模拟范围；生物种类选择不绑定某个 UUID，也不改变小地图缩放偏好。 */
+    void showMobRadar() {
+        var player = Minecraft.getInstance().player;
+        if (player == null) return;
+        dimension = MapClient.dimension(); centerX = player.getX(); centerZ = player.getZ(); follow = false;
+        exploredHeight = null; overviewLayer = null; tool = Tool.SELECT;
+        MapClient.track(null);
+        double span = (MapMobRadar.radius() * 2 + 1) * 16.0;
+        scale = Math.clamp(Math.min(mapWidth, mapHeight) * 0.8 / span, 0.125, 16.0);
+        status = Component.empty(); closeOverlay(overlayPanel); canvas.close(); init();
+    }
+
+    void locateRadar(MapClient.Radar target, boolean track) {
         dimension = target.dimension(); centerX = target.x(); centerZ = target.z(); follow = track; exploredHeight = null; overviewLayer = null;
-        if (track) MapClient.track(target.id());
+        MapClient.track(track ? target.id() : null);
+        tool = Tool.SELECT;
+        status = track ? MapTexts.text("tracking", target.name()) : Component.empty();
         closeOverlay(overlayPanel); canvas.close(); init();
     }
 
@@ -295,7 +310,7 @@ public final class YzWorldMapScreen extends Screen {
     }
 
     private void togglePanel(Panel next) {
-        panel = panel == next ? Panel.NONE : next; page = 0; init();
+        panel = panel == next ? Panel.NONE : next; init();
     }
 
     private void recenter() {
@@ -338,35 +353,6 @@ public final class YzWorldMapScreen extends Screen {
                 exploredHeight = null;
                 overviewLayer = overviewLayer == null ? MapLayer.SURFACE : overviewLayer == MapLayer.SURFACE ? MapLayer.ROOF : null;
                 canvas.close(); init();
-            });
-        } else if (panel == Panel.RADAR) {
-            var options = new MapSettings.Toggle[] {MapSettings.Toggle.RADAR_PLAYERS, MapSettings.Toggle.RADAR_HOSTILE, MapSettings.Toggle.RADAR_FRIENDLY, MapSettings.Toggle.RADAR_OTHER, MapSettings.Toggle.RADAR_ICONS};
-            for (int i = 0; i < options.length; i++) {
-                var option = options[i];
-                button(x, y + i * 26, w, MapTexts.text("setting_value", MapTexts.text("option." + option.key()),
-                        MapTexts.text(MapSettings.enabled(option) ? "on" : "off")), () -> { MapSettings.toggle(option); init(); });
-            }
-        } else {
-            var players = MapClient.radar().stream().filter(MapClient.Radar::player).toList();
-            int count = players.size();
-            int rows = Math.max(1, (panelHeight - 82) / 26);
-            int pages = Math.max(1, (count + rows - 1) / rows); page = Math.clamp(page, 0, pages - 1);
-            for (int i = 0; i < rows && page * rows + i < count; i++) {
-                int index = page * rows + i;
-                var target = players.get(index);
-                button(x, y + i * 26, w, Component.literal(target.name()).append(" · ").append(MapTexts.dimension(target.dimension())), () -> {
-                    MapClient.track(target.id());
-                    if (!dimension.equals(target.dimension())) { selected = null; }
-                    dimension = target.dimension(); centerX = target.x(); centerZ = target.z(); follow = true;
-                    status = MapTexts.text("tracking", target.name()); panel = Panel.NONE; canvas.close(); init();
-                    DebugLogger.debug("WorldMap", "跟踪玩家：%s", target.name());
-                });
-            }
-            int footer = panelY + panelHeight - 52;
-            button(x, footer, (w - 4) / 2, MapTexts.text("previous"), () -> { page--; init(); }).active = page > 0;
-            button(x + (w + 4) / 2, footer, (w - 4) / 2, MapTexts.text("next"), () -> { page++; init(); }).active = page + 1 < pages;
-            if (panel == Panel.PLAYERS) button(x, footer + 26, w, MapTexts.text("stop_navigation"), () -> {
-                MapClient.navigate(null); MapClient.track(null); follow = false; status = Component.empty(); panel = Panel.NONE; init();
             });
         }
     }
@@ -424,10 +410,8 @@ public final class YzWorldMapScreen extends Screen {
         if (overZoom(mx, my)) g.setTooltipForNextFrame(MapTexts.text("fullscreen_zoom", String.format(Locale.ROOT, "%.2f", scale)), mx, my);
         if (panel != Panel.NONE) {
             YzuiTheme.card(g, panelX, panelY, panelWidth, panelHeight);
-            String key = switch (panel) { case TOOLS -> "drawing_tools"; case PLAYERS -> "players"; case RADAR -> "radar"; default -> "dimension"; };
+            String key = "drawing_tools";
             YzuiTheme.label(g, font, MapTexts.text(key), panelX + 8, panelY + 9, panelWidth - 16, YzuiTheme.primary(), false);
-            if (panel == Panel.PLAYERS && MapClient.radar().stream().noneMatch(MapClient.Radar::player))
-                YzuiTheme.label(g, font, MapTexts.text("no_visible_players"), panelX + 8, panelY + 34, panelWidth - 16, YzuiTheme.textMuted(), false);
         }
         if (panel == Panel.NONE && inside(mx, my)) {
             var world = shown().world(mx - left, my - top); int x = bounded(world.x()), z = bounded(world.y());
@@ -504,7 +488,7 @@ public final class YzWorldMapScreen extends Screen {
         var hit = world(event.x(), event.y());
         if (event.button() == 1) {
             for (var point : MapClient.waypoints()) {
-                if (!MapClient.visibleWaypoint(point) || !MapSettings.enabled(MapSettings.Toggle.MARKER_ICONS) && !MapSettings.enabled(MapSettings.Toggle.MARKER_LABELS)) continue;
+                if (!MapClient.visibleWaypoint(point) || !MapSettings.enabled(MapSettings.Toggle.MARKER_ICONS)) continue;
                 var position = point.projected(dimension, MapSettings.enabled(MapSettings.Toggle.PORTAL_PROJECTION));
                 if (position != null && Math.hypot(position.x() - hit.x(), position.z() - hit.z()) * shown().scale() < 10) {
                     openPoint(point, false); return true;
@@ -522,7 +506,7 @@ public final class YzWorldMapScreen extends Screen {
         }
         if (event.button() != 0) return false;
         if (tool == Tool.SELECT) for (var point : MapClient.waypoints()) {
-            if (!MapClient.visibleWaypoint(point) || !MapSettings.enabled(MapSettings.Toggle.MARKER_ICONS) && !MapSettings.enabled(MapSettings.Toggle.MARKER_LABELS)) continue;
+            if (!MapClient.visibleWaypoint(point) || !MapSettings.enabled(MapSettings.Toggle.MARKER_ICONS)) continue;
             var position = point.projected(dimension, MapSettings.enabled(MapSettings.Toggle.PORTAL_PROJECTION));
             if (position != null && Math.hypot(position.x() - hit.x(), position.z() - hit.z()) * shown().scale() < 10) {
                 openPoint(point, false); return true;
@@ -532,7 +516,7 @@ public final class YzWorldMapScreen extends Screen {
             Minecraft.getInstance().gui.setScreen(new MapTextScreen(this, "tool.label", "", 96, value -> save(new MapDrawing(UUID.randomUUID(), dimension, MapDrawing.Kind.LABEL, List.of(hit), COLORS[color], value)))); return true;
         }
         if (tool == Tool.SELECT) {
-            for (var radar : MapClient.radar()) if ((MapSettings.enabled(MapSettings.Toggle.MARKER_ICONS) || MapSettings.enabled(MapSettings.Toggle.MARKER_LABELS)) && radar.dimension().equals(dimension)
+            for (var radar : MapClient.radar()) if (MapSettings.enabled(MapSettings.Toggle.MARKER_ICONS) && radar.dimension().equals(dimension)
                     && Math.hypot(radar.x() - hit.x(), radar.z() - hit.z()) * shown().scale() < 8) {
                 MapClient.track(radar.id()); follow = true; status = MapTexts.text("tracking", radar.name()); return true;
             }
