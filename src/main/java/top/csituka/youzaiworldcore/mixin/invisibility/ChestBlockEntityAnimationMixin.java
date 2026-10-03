@@ -30,8 +30,6 @@ import top.csituka.youzaiworldcore.invisibility.InvisibilityManager;
 @Mixin(ChestBlockEntity.class)
 public abstract class ChestBlockEntityAnimationMixin {
 
-    // ==================== startOpen ====================
-
     /**
      * 在 {@code startOpen} 中记录隐身玩家与容器的交互关系。
      * 如果是隐身玩家打开：标记到 InvisibilityManager 的跟踪集。
@@ -51,8 +49,6 @@ public abstract class ChestBlockEntityAnimationMixin {
             }
         }
     }
-
-    // ==================== signalOpenCount ====================
 
     /**
      * 在 {@code signalOpenCount} 中拦截 blockEvent 调用。
@@ -79,8 +75,6 @@ public abstract class ChestBlockEntityAnimationMixin {
             InvisibilityManager.clearContainerInteraction(pos);
         }
     }
-
-    // ==================== playSound ====================
 
     /**
      * 在 {@code playSound} 中拦截声音播放。

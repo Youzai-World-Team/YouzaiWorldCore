@@ -55,7 +55,6 @@ public class QuitConfirmationScreen extends Screen implements YzuiPopupScreen {
 
     // ============ 动画状态 ============
 
-
     @Override
     protected void init() {
         super.init();
@@ -71,7 +70,6 @@ public class QuitConfirmationScreen extends Screen implements YzuiPopupScreen {
     }
 
     // ============ 淡入状态 ============
-
 
     // ============ 渲染 ============
 
@@ -112,7 +110,7 @@ public class QuitConfirmationScreen extends Screen implements YzuiPopupScreen {
 
     @Override
     public boolean isPauseScreen() {
-        return false; // 不暂停游戏
+        return false;
     }
 
     @Override
@@ -147,14 +145,9 @@ public class QuitConfirmationScreen extends Screen implements YzuiPopupScreen {
         });
     }
 
-    /**
-     * 启动淡出动画
-     */
     private void startExitAnimation(Runnable onComplete) {
         if (!GuiAnimationController.isExiting(this)) onComplete.run();
     }
-
-    // ========== 工具方法 ==========
 
     /** easeOutCubic：平滑减速 */
 

@@ -68,7 +68,6 @@ public final class MapStreamCodecs {
                 buf.readBoolean(), buf.readBoolean(), buf.readEnum(MapWaypoint.Kind.class), buf.readLong());
     }
 
-    /** 写入路径点。 */
     public static void writeWaypoint(RegistryFriendlyByteBuf buf, MapWaypoint point) {
         buf.writeUUID(point.id());
         buf.writeUUID(point.owner());

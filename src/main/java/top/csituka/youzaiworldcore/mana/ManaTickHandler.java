@@ -18,9 +18,7 @@ public class ManaTickHandler implements ServerTickEvents.StartTick {
 
     private static final ManaTickHandler INSTANCE = new ManaTickHandler();
 
-    /** 恢复计数器 */
     private static int recoverTickCounter = 0;
-    /** 同步计数器 */
     private static int syncTickCounter = 0;
     private static final Map<UUID, Integer> LAST_SYNCED_MANA = new HashMap<>();
 
@@ -34,14 +32,12 @@ public class ManaTickHandler implements ServerTickEvents.StartTick {
 
     @Override
     public void onStartTick(@NonNull MinecraftServer server) {
-        // 魔力恢复（每 2 tick 一次）
         recoverTickCounter++;
         if (recoverTickCounter >= MANA_RECOVER_INTERVAL) {
             recoverTickCounter = 0;
             ManaManager.getInstance().onServerTick();
         }
 
-        // 同步魔力到客户端（每 5 tick 一次）
         syncTickCounter++;
         if (syncTickCounter >= MANA_SYNC_INTERVAL) {
             syncTickCounter = 0;

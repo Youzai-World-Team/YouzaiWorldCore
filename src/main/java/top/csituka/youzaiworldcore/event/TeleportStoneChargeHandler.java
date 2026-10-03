@@ -33,9 +33,6 @@ public final class TeleportStoneChargeHandler {
     private TeleportStoneChargeHandler() {
     }
 
-    /**
-     * 向 Fabric 事件总线注册受伤打断监听。
-     */
     public static void register() {
         DebugLogger.entering("TeleportStoneChargeHandler", "register");
 

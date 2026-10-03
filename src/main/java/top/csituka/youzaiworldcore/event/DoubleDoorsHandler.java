@@ -39,8 +39,6 @@ public class DoubleDoorsHandler {
     private DoubleDoorsHandler() {
     }
 
-    // ===== 注册 =====
-
     /**
      * 注册回调。本类由 Mixin 直接调用，无需向 Fabric 事件系统注册。
      */
@@ -191,7 +189,6 @@ public class DoubleDoorsHandler {
             }
         }
 
-        // 玩家操作时触发挥手动效
         if (player != null) {
             player.swing(InteractionHand.MAIN_HAND);
         }
@@ -216,7 +213,7 @@ public class DoubleDoorsHandler {
             for (int y = -yOffset; y <= yOffset; y++) {
                 for (int z = -1; z <= 1; z++) {
                     if (x == 0 && y == 0 && z == 0) {
-                        continue; // 跳过自身
+                        continue;
                     }
                     BlockPos pos = origin.offset(x, y, z).immutable();
                     BlockState state = level.getBlockState(pos);

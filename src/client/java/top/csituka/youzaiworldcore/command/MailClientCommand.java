@@ -29,7 +29,6 @@ public class MailClientCommand {
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, context) -> dispatcher.register(
                 literal("yzwc")
                         .then(literal("mail")
-                                // send_mail — 打开发布 GUI
                                 .then(literal("send_mail")
                                         .executes(cmdContext -> {
                                             DebugLogger.info(MODULE, "转发命令: send_mail");
@@ -37,7 +36,6 @@ public class MailClientCommand {
                                             return Command.SINGLE_SUCCESS;
                                         })
                                 )
-                                // sent — 打开已发送邮件列表
                                 .then(literal("sent")
                                         .executes(cmdContext -> {
                                             DebugLogger.info(MODULE, "转发命令: sent");
@@ -45,7 +43,6 @@ public class MailClientCommand {
                                             return Command.SINGLE_SUCCESS;
                                         })
                                 )
-                                // recall <mailId> — 撤回邮件
                                 .then(literal("recall")
                                         .then(argument("mailId", StringArgumentType.word())
                                                 .executes(cmdContext -> {
@@ -61,7 +58,6 @@ public class MailClientCommand {
                                                 })
                                         )
                                 )
-                                // purge [player|all] — 清理过期邮件
                                 .then(literal("purge")
                                         .executes(cmdContext -> {
                                             DebugLogger.info(MODULE, "转发命令: purge (default all)");
@@ -77,7 +73,6 @@ public class MailClientCommand {
                                                 })
                                         )
                                 )
-                                // list [player] — 查看信箱
                                 .then(literal("list")
                                         .executes(cmdContext -> {
                                             DebugLogger.info(MODULE, "转发命令: list (self)");

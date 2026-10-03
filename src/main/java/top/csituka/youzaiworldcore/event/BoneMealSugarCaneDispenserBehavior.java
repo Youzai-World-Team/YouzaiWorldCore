@@ -44,7 +44,6 @@ public class BoneMealSugarCaneDispenserBehavior extends DefaultDispenseItemBehav
         DebugLogger.branch("BoneMealSugarCaneDispenserBehavior", "front is sugar cane",
                 true, "pos=" + frontPos);
 
-        // ===== 尝试催熟甘蔗 =====
         boolean grew = BoneMealSugarCaneHandler.tryGrowSugarCane(level, frontPos);
 
         if (!grew) {
@@ -64,9 +63,6 @@ public class BoneMealSugarCaneDispenserBehavior extends DefaultDispenseItemBehav
         return stack;
     }
 
-    /**
-     * 注册此行为到发射器骨粉条目。
-     */
     public static void register() {
         DebugLogger.entering("BoneMealSugarCaneDispenserBehavior", "register");
         DispenserBlock.registerBehavior(Items.BONE_MEAL, new BoneMealSugarCaneDispenserBehavior());

@@ -8,6 +8,5 @@ public interface YzHudItemOpacityAccess {
     /** 设置该物品图标的最终透明度。 */
     void youzaiworldcore$setOpacity(float opacity);
 
-    /** @return 该物品图标的最终透明度 */
     float youzaiworldcore$getOpacity();
 }

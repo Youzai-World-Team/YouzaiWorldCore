@@ -77,7 +77,6 @@ public final class TeleportAnchorCommand {
             return 0;
         }
 
-        // 标题
         source.sendSystemMessage(Component.literal(
                 "§6=== " + targetName + " 的传送锚点（共 " + points.size() + " 个）===§r"));
 

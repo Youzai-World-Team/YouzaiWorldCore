@@ -540,8 +540,6 @@ public final class SidebarManager {
                 : element.isJsonPrimitive() ? element.toString() : "?";
     }
 
-    // ===== 数据结构 =====
-
     /**
      * 预解析行：一组左右文本对 + 可选权限节点。
      *
@@ -567,7 +565,6 @@ public final class SidebarManager {
         int page = 0;
         /** 标题帧计数（每次刷新推进，除以 titleChange 得帧号） */
         int title = 0;
-        /** 上一次已发送的标题。 */
         @Nullable
         Component lastTitle = null;
         /** 上一次已发送的行快照（用于差量更新与清理多余槽位）。 */

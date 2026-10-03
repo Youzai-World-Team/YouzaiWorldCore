@@ -50,7 +50,6 @@ public abstract class ResultSlotOnTakeMixin {
     private static net.minecraft.sounds.SoundEvent getCraftSound(ItemStack stack) {
         var item = stack.getItem();
 
-        // 下界合金物品
         if (item == Items.NETHERITE_INGOT || item == Items.NETHERITE_SCRAP
                 || item == Items.NETHERITE_BLOCK
                 || item == Items.NETHERITE_SWORD || item == Items.NETHERITE_PICKAXE
@@ -61,7 +60,6 @@ public abstract class ResultSlotOnTakeMixin {
             return SoundEvents.ANCIENT_DEBRIS_BREAK;
         }
 
-        // 钻石物品
         if (item == Items.DIAMOND || item == Items.DIAMOND_BLOCK
                 || item == Items.DIAMOND_SWORD || item == Items.DIAMOND_PICKAXE
                 || item == Items.DIAMOND_AXE || item == Items.DIAMOND_SHOVEL
@@ -71,29 +69,24 @@ public abstract class ResultSlotOnTakeMixin {
             return SoundEvents.EXPERIENCE_ORB_PICKUP;
         }
 
-        // 金物品
         if (item == Items.GOLD_INGOT || item == Items.GOLD_BLOCK
                 || item == Items.GOLDEN_APPLE || item == Items.ENCHANTED_GOLDEN_APPLE) {
             return SoundEvents.BELL_BLOCK;
         }
 
-        // 附魔物品
         if (item == Items.ENCHANTING_TABLE || item == Items.ENCHANTED_BOOK) {
             return SoundEvents.ENCHANTMENT_TABLE_USE;
         }
 
-        // 铁砧
         if (item == Items.ANVIL || item == Items.CHIPPED_ANVIL
                 || item == Items.DAMAGED_ANVIL) {
             return SoundEvents.ANVIL_USE;
         }
 
-        // 信标
         if (item == Items.BEACON) {
             return SoundEvents.BEACON_ACTIVATE;
         }
 
-        // 普通铁质物品
         if (item == Items.IRON_INGOT || item == Items.IRON_BLOCK
                 || item == Items.IRON_SWORD || item == Items.IRON_PICKAXE
                 || item == Items.IRON_AXE || item == Items.IRON_SHOVEL
@@ -103,7 +96,6 @@ public abstract class ResultSlotOnTakeMixin {
             return SoundEvents.ANVIL_LAND;
         }
 
-        // 没有特殊音效的物品
         return null;
     }
 }

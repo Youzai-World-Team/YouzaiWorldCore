@@ -83,7 +83,6 @@ public final class CosmeticModuleSettings {
         save();
     }
 
-    /** 保存当前配置。 */
     public static void save() {
         ConfigSection section = GlobalSettings.section(GlobalSettings.COSMETIC_MODULE);
         section.set("enabled", enabled);

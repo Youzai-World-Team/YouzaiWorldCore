@@ -72,7 +72,6 @@ public final class ItemBorderConfig {
 
     // ===== 功能开关 =====
 
-    /** 功能总开关 */
     public static final boolean ENABLED = true;
 
     /** 是否在快捷栏（HUD 热栏）也绘制边框 */

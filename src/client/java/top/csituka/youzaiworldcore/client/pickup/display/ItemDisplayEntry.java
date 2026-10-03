@@ -26,10 +26,8 @@ public class ItemDisplayEntry extends DisplayEntry<ItemStack> {
     /** 弹出动画初始 tick 数 */
     private static final int POP_TIME = 5;
 
-    /** 图标宽高 */
     private static final int ICON_SIZE = 16;
 
-    /** 文字与图标间距 */
     private static final int TEXT_ICON_MARGIN = 2;
 
     /** 与 YZHUD 物品栏一致的缓存物品模型渲染器。 */
@@ -106,9 +104,6 @@ public class ItemDisplayEntry extends DisplayEntry<ItemStack> {
         }
     }
 
-    /**
-     * 获取物品稀有度对应的文字格式。
-     */
     private static ChatFormatting getRarityFormat(ItemStack stack) {
         return switch (stack.getRarity()) {
             case COMMON -> ChatFormatting.WHITE;

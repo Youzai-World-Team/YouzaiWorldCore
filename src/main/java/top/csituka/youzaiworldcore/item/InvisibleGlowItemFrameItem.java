@@ -38,7 +38,6 @@ public class InvisibleGlowItemFrameItem extends Item {
         Player player = context.getPlayer();
         ItemStack stack = context.getItemInHand();
 
-        // ===== 检查放置位置是否可通行 =====
         BlockState placeState = level.getBlockState(placePos);
         if (!placeState.isAir() && !placeState.canBeReplaced()) {
             DebugLogger.branch("InvisibleGlowItemFrameItem", "place pos is replaceable", false,
@@ -46,14 +45,11 @@ public class InvisibleGlowItemFrameItem extends Item {
             return InteractionResult.FAIL;
         }
 
-        // ===== 计算展示框的附着位置 =====
         BlockPos framePos = placePos;
         Direction attachmentDir = clickedFace;
 
-        // ===== 创建发光物品展示框实体 =====
         GlowItemFrame frame = new GlowItemFrame(level, framePos, attachmentDir);
 
-        // ===== 检查实体是否能附着（survives）=====
         if (!frame.survives()) {
             DebugLogger.branch("InvisibleGlowItemFrameItem", "frame survives", false,
                     "pos=" + framePos + ", dir=" + attachmentDir);
@@ -61,7 +57,6 @@ public class InvisibleGlowItemFrameItem extends Item {
             return InteractionResult.FAIL;
         }
 
-        // ===== 检查碰撞（与其他展示框/实体不重叠）=====
         AABB frameBox = frame.getBoundingBox();
         if (!level.getEntities(frame, frameBox).isEmpty()) {
             DebugLogger.branch("InvisibleGlowItemFrameItem", "no collision with other entities", false,
@@ -76,10 +71,8 @@ public class InvisibleGlowItemFrameItem extends Item {
             return InteractionResult.SUCCESS;
         }
 
-        // 设置展示框为隐形
         frame.setInvisible(true);
 
-        // 添加到世界
         boolean added = level.addFreshEntity(frame);
         if (!added) {
             DebugLogger.warn("InvisibleGlowItemFrameItem", "无法将隐形发光展示框添加到世界，pos=%s", framePos);
@@ -90,7 +83,6 @@ public class InvisibleGlowItemFrameItem extends Item {
         // 播放放置音效（使用 GlowItemFrame 自身的 getPlaceSound()）
         frame.playPlacementSound();
 
-        // ===== 消耗物品（非创造模式）=====
         if (player != null && !player.isCreative()) {
             stack.shrink(1);
             player.getInventory().setChanged();

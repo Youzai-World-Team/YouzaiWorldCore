@@ -51,7 +51,6 @@ public class YzuShulkerBoxScreen extends AbstractContainerScreen<ShulkerBoxMenu>
 
     // ========== YZUI 统一设计常量（与 YzuContainerScreen 一致） ==========
 
-    /** 面板背景：半透明白 */
     private static int panelBg() { return YzuiTheme.surface(); }
     private static final int PANEL_RADIUS = 6;
 
@@ -73,11 +72,10 @@ public class YzuShulkerBoxScreen extends AbstractContainerScreen<ShulkerBoxMenu>
     private static int closeBgHover() { return YzuiTheme.surfaceHigh(); }
     private static int closeIcon() { return YzuiTheme.text(); }
     private static int closeIconHover() { return YzuiTheme.text(); }
-    private static final String CLOSE_GLYPH = "\u00d7"; // ×
+    private static final String CLOSE_GLYPH = "\u00d7";
 
     // ========== 标题区 ==========
 
-    /** 标题图标与文字间距 */
     private static final int TITLE_ICON_GAP = 4;
     /** 标题区图标缩放（16px 物品模型 → 12px 显示，为顶部留白腾空间） */
     private static final float ICON_SCALE = 0.75f;
@@ -98,8 +96,6 @@ public class YzuShulkerBoxScreen extends AbstractContainerScreen<ShulkerBoxMenu>
     private static int accentBarColor() { return YzuiTheme.primary(); }
     /** 标题区图标（跟随潜影盒颜色） */
     private final ItemStack icon;
-
-    // ========== 构造 ==========
 
     public YzuShulkerBoxScreen(ShulkerBoxMenu menu, Inventory playerInventory, Component title) {
         // 沿用原版 ShulkerBoxScreen 的面板尺寸：176 × 167
@@ -136,8 +132,6 @@ public class YzuShulkerBoxScreen extends AbstractContainerScreen<ShulkerBoxMenu>
         return null;
     }
 
-    // ========== 初始化 ==========
-
     @Override
     protected void init() {
         this.leftPos = (this.width - this.imageWidth) / 2;
@@ -146,8 +140,6 @@ public class YzuShulkerBoxScreen extends AbstractContainerScreen<ShulkerBoxMenu>
         LOGGER.debug("YzuShulkerBoxScreen.init() — leftPos={} topPos={} image={}x{} title={}",
                 this.leftPos, this.topPos, this.imageWidth, this.imageHeight, this.title.getString());
     }
-
-    // ========== 渲染管线 ==========
 
     @Override
     public void extractRenderState(@NonNull GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
@@ -261,8 +253,6 @@ public class YzuShulkerBoxScreen extends AbstractContainerScreen<ShulkerBoxMenu>
         return mx >= cx && mx < cx + CLOSE_SIZE && my >= cy && my < cy + CLOSE_SIZE;
     }
 
-    // ========== 工具方法 ==========
-
     /**
      * 圆角矩形填充（优化版，与 YzuContainerScreen 一致）。
      * <p>
@@ -287,8 +277,8 @@ public class YzuShulkerBoxScreen extends AbstractContainerScreen<ShulkerBoxMenu>
             while (n < r && n * n + j * j < r * r)
                 n++;
             int x0 = x + r - n, x1 = x + w - r + n;
-            g.fill(x0, y + r - j - 1, x1, y + r - j, c);         // 顶部第 j 行
-            g.fill(x0, y + h - r + j, x1, y + h - r + j + 1, c); // 底部第 j 行
+            g.fill(x0, y + r - j - 1, x1, y + r - j, c);
+            g.fill(x0, y + h - r + j, x1, y + h - r + j + 1, c);
         }
     }
 }

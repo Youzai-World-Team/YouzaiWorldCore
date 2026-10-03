@@ -26,10 +26,8 @@ public final class YzuiJadeStyleManager {
     /** Jade 的 mod id（snownee.jade） */
     private static final String JADE_MOD_ID = "jade";
 
-    /** 是否已完成 Jade 加载状态探测（只探测一次） */
     private static boolean loadedChecked;
 
-    /** Jade 是否已安装 */
     private static boolean jadeLoaded;
 
     private YzuiJadeStyleManager() {
@@ -54,7 +52,6 @@ public final class YzuiJadeStyleManager {
         isJadeLoaded();
     }
 
-    /** 探测 Jade 是否加载（结果缓存）。 */
     private static boolean isJadeLoaded() {
         if (!loadedChecked) {
             loadedChecked = true;

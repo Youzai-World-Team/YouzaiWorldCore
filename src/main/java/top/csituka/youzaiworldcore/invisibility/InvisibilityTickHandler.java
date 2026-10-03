@@ -54,7 +54,6 @@ public class InvisibilityTickHandler implements ServerTickEvents.StartTick {
             }
         }
 
-        // 更新快照
         lastSnapshot.clear();
         lastSnapshot.addAll(current);
     }

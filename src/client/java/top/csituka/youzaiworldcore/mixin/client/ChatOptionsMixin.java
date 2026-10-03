@@ -34,7 +34,6 @@ public class ChatOptionsMixin {
         if (top.csituka.youzaiworldcore.client.config.ClientExternalSettings.isYzuiEnabled()) return;
         OptionInstance<?>[] original = cir.getReturnValue();
 
-        // 过滤掉索引 15 和 16
         int targetLen = original.length - 2;
         OptionInstance<?>[] filtered = new OptionInstance<?>[targetLen];
         for (int src = 0, dst = 0; src < original.length; src++) {

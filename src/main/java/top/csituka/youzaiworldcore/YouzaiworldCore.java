@@ -293,11 +293,9 @@ public class YouzaiworldCore implements ModInitializer {
         DebugLogger.info("YouzaiworldCore", "注册天然带电苦力怕事件...");
         ChargedCreeperHandler.register();
 
-        // ===== 加载全局事件开关配置 =====
         DebugLogger.info("YouzaiworldCore", "加载全局事件开关配置...");
         EventSettings.load();
 
-        // ===== 加载聊天消息格式化配置 =====
         DebugLogger.info("YouzaiworldCore", "加载聊天消息格式化配置...");
         ChatFormatSettings.load();
 
@@ -313,7 +311,6 @@ public class YouzaiworldCore implements ModInitializer {
         LOGGER.info("侧边栏定制已初始化");
         DebugLogger.exiting("YouzaiworldCore", "SidebarSystem.init");
 
-        // ===== 加载单玩家功能开关配置 =====
         // 玩家个人配置按 UUID 存在 yzwc/server/config/user_settings/ 下，按需惰性读取，无需在此预加载
 
         // ===== 初始化老吴贴贴事件（laowu meme 移植，全局开关由 /yzwc event laowu enable 控制） =====
@@ -328,7 +325,6 @@ public class YouzaiworldCore implements ModInitializer {
 
         // ===== 初始化双开门功能（Double Doors，参考 Serilum 的 Double Doors 设计，原生实现，已精简为按玩家开关）
         // 玩家个人开关存在 user_settings/<UUID>.json 的 double_doors_module 分节，按需惰性读取
-        // =====
         DebugLogger.info("YouzaiworldCore", "初始化双开门处理器...");
         DoubleDoorsHandler.register();
 
@@ -339,7 +335,6 @@ public class YouzaiworldCore implements ModInitializer {
         LOGGER.info("末地传送门功能已初始化（可合成 / 可搬运 / 额外龙蛋）");
         DebugLogger.exiting("YouzaiworldCore", "EndPortalSystem.init");
 
-        // ===== 初始化账户系统 =====
         DebugLogger.entering("YouzaiworldCore", "AccountSystem.init");
         ApiModuleSettings.load();
         AccountDataStorage.initialize();
@@ -347,7 +342,6 @@ public class YouzaiworldCore implements ModInitializer {
         LOGGER.info("账户系统已初始化");
         DebugLogger.exiting("YouzaiworldCore", "AccountSystem.init");
 
-        // ===== 初始化自定义皮肤与披风模块 =====
         DebugLogger.entering("YouzaiworldCore", "CosmeticSystem.init");
         CosmeticModuleSettings.load();
         CosmeticManager.initialize();
@@ -355,20 +349,17 @@ public class YouzaiworldCore implements ModInitializer {
         LOGGER.info("自定义皮肤与披风模块已初始化");
         DebugLogger.exiting("YouzaiworldCore", "CosmeticSystem.init");
 
-        // ===== 初始化冒险等级系统 =====
         DebugLogger.entering("YouzaiworldCore", "AdventureLevelSystem.init");
         AdventureLevelManager.initialize();
         LOGGER.info("冒险等级系统已初始化");
         DebugLogger.exiting("YouzaiworldCore", "AdventureLevelSystem.init");
 
-        // ===== 初始化属性加点系统 =====
         DebugLogger.entering("YouzaiworldCore", "AttributeSystem.init");
         PlayerAttributeStorage.initialize();
         AttributeManager.initialize();
         LOGGER.info("属性加点系统已初始化");
         DebugLogger.exiting("YouzaiworldCore", "AttributeSystem.init");
 
-        // ===== 注册阳光修复附魔处理器 =====
         DebugLogger.info("YouzaiworldCore", "注册阳光修复附魔 Tick 事件...");
         top.csituka.youzaiworldcore.event.SunRepairHandler.register();
         DebugLogger.info("YouzaiWorldCore", "注册乐魂涡轮加速器 Tick 事件...");
@@ -389,13 +380,11 @@ public class YouzaiworldCore implements ModInitializer {
         DebugLogger.info("YouzaiWorldCore", "注册流星猛击附魔事件...");
         top.csituka.youzaiworldcore.event.MeteorSmashHandler.register();
 
-        // ===== 注册甘蔗骨粉催熟事件 =====
         DebugLogger.info("YouzaiworldCore", "注册甘蔗骨粉催熟事件...");
         BoneMealSugarCaneHandler.register();
         DebugLogger.info("YouzaiworldCore", "注册发射器骨粉催熟甘蔗行为...");
         BoneMealSugarCaneDispenserBehavior.register();
 
-        // ===== 注册混凝土粉末掉落物遇水固化事件 =====
         DebugLogger.info("YouzaiworldCore", "注册混凝土粉末掉落物遇水固化事件...");
         ConcretePowderSolidifyHandler.initialize();
         ConcretePowderSolidifyHandler.register();
@@ -411,14 +400,12 @@ public class YouzaiworldCore implements ModInitializer {
                 GenerationStep.Decoration.UNDERGROUND_ORES,
                 RAW_YZ_BLOCK_PLACED_KEY);
 
-        // ===== 注册村庄传送锚点结构注入 =====
         DebugLogger.entering("YouzaiworldCore", "VillageStructureInjector.register");
         ServerLifecycleEvents.SERVER_STARTING
                 .register(server -> VillageStructureInjector.inject(server.registryAccess()));
         LOGGER.info("村庄传送锚点结构注入已注册");
         DebugLogger.exiting("YouzaiworldCore", "VillageStructureInjector.register");
 
-        // ===== 初始化更新检查器（UpdateChecker）=====
         DebugLogger.entering("YouzaiworldCore", "UpdateChecker.init");
         UpdateCheckerConfig.load();
         ServerLifecycleEvents.SERVER_STARTED.register(server -> {
@@ -430,7 +417,6 @@ public class YouzaiworldCore implements ModInitializer {
         });
         DebugLogger.exiting("YouzaiworldCore", "UpdateChecker.init");
 
-        // ===== 初始化隐身功能 =====
         DebugLogger.entering("YouzaiworldCore", "InvisibilitySystem.init");
         InvisibilityTickHandler.register();
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
@@ -446,7 +432,6 @@ public class YouzaiworldCore implements ModInitializer {
         LOGGER.info("隐身功能已初始化");
         DebugLogger.exiting("YouzaiworldCore", "InvisibilitySystem.init");
 
-        // ===== 初始化 AFK（挂机）功能 =====
         DebugLogger.entering("YouzaiworldCore", "AfkSystem.init");
         AfkConfig.load();
         AfkTickHandler.register();
@@ -459,20 +444,17 @@ public class YouzaiworldCore implements ModInitializer {
         LOGGER.info("AFK 功能已初始化");
         DebugLogger.exiting("YouzaiworldCore", "AfkSystem.init");
 
-        // ===== 初始化维度池系统 =====
         DebugLogger.entering("YouzaiworldCore", "DimensionPoolSystem.init");
         DimensionPoolSettings.load();
         LOGGER.info("维度池系统已初始化");
         DebugLogger.exiting("YouzaiworldCore", "DimensionPoolSystem.init");
 
-        // ===== 初始化原地重生系统 =====
         DebugLogger.entering("YouzaiworldCore", "InPlaceRespawnSystem.init");
         InPlaceRespawnConfig.load();
         InPlaceRespawnManager.initialize();
         LOGGER.info("原地重生系统已初始化");
         DebugLogger.exiting("YouzaiworldCore", "InPlaceRespawnSystem.init");
 
-        // ===== 注册维度池事件 =====
         DebugLogger.entering("YouzaiworldCore", "DimensionPoolEvents.register");
         net.fabricmc.fabric.api.entity.event.v1.ServerEntityLevelChangeEvents.AFTER_PLAYER_CHANGE_LEVEL.register(
                 (player, origin, destination) -> {
@@ -498,7 +480,6 @@ public class YouzaiworldCore implements ModInitializer {
         LOGGER.info("维度池事件已注册");
         DebugLogger.exiting("YouzaiworldCore", "DimensionPoolEvents.register");
 
-        // ===== 初始化邮件系统 =====
         // 配置在 global_settings.json 的 mail_module 分节；
         // 邮件正文与每玩家收件箱由 Api 服务端权威保存（见 mail/MailApiClient）
         DebugLogger.entering("YouzaiworldCore", "MailSystem.init");
@@ -506,7 +487,6 @@ public class YouzaiworldCore implements ModInitializer {
         LOGGER.info("邮件系统已初始化");
         DebugLogger.exiting("YouzaiworldCore", "MailSystem.init");
 
-        // ===== 注册邮件系统事件 =====
         // 服务端启动完成后清理「已过期且没有任何玩家星标过」的邮件
         ServerLifecycleEvents.SERVER_STARTED.register(
                 server -> top.csituka.youzaiworldcore.mail.MailManager.purgeOnServerStart(server));
@@ -538,7 +518,6 @@ public class YouzaiworldCore implements ModInitializer {
         LOGGER.info("邮件系统事件（启动清理 / 登录推送 / 过期清理 / 未读刷新）已注册");
         DebugLogger.exiting("YouzaiworldCore", "MailSystem.events");
 
-        // ===== 初始化宠物模块 =====
         DebugLogger.entering("YouzaiworldCore", "PetModule.init");
         PetModuleConfig.load();
         PetEventHandlers.register();
@@ -552,7 +531,6 @@ public class YouzaiworldCore implements ModInitializer {
         LOGGER.info("宠物模块已初始化");
         DebugLogger.exiting("YouzaiworldCore", "PetModule.init");
 
-        // ===== 初始化统计模块 =====
         DebugLogger.entering("YouzaiworldCore", "StatsModule.init");
         top.csituka.youzaiworldcore.status.StatsManager.initialize();
         LOGGER.info("统计模块已初始化");
@@ -682,39 +660,30 @@ public class YouzaiworldCore implements ModInitializer {
                         return 1;
                     }));
 
-            // ===== 注册账户管理命令 =====
             DebugLogger.info("YouzaiworldCore", "注册命令: AccountCommands");
             AccountCommands.register(dispatcher);
 
-            // ===== 注册重载命令 =====
             DebugLogger.info("YouzaiworldCore", "注册命令: ReloadCommand");
             ReloadCommand.register(dispatcher);
 
-            // ===== 注册传送锚点管理命令 =====
             DebugLogger.info("YouzaiworldCore", "注册命令: TeleportAnchorCommand");
             TeleportAnchorCommand.register(dispatcher);
 
-            // ===== 注册事件管理命令 =====
             DebugLogger.info("YouzaiworldCore", "注册命令: EventCommand");
             EventCommand.register(dispatcher);
 
-            // ===== 注册功能开关命令 =====
             DebugLogger.info("YouzaiworldCore", "注册命令: FunctionCommand");
             FunctionCommand.register(dispatcher);
 
-            // ===== 注册更新检查命令 =====
             DebugLogger.info("YouzaiworldCore", "注册命令: UpdateCommand");
             UpdateCommand.register(dispatcher);
 
-            // ===== 注册后台邮件拉取命令 =====
             DebugLogger.info("YouzaiworldCore", "注册命令: MailCommand");
             MailCommand.register(dispatcher);
 
-            // ===== 注册宠物管理命令 =====
             DebugLogger.info("YouzaiworldCore", "注册命令: PetCommand");
             PetCommand.register(dispatcher);
 
-            // ===== 注册 AFK 管理命令 =====
             DebugLogger.info("YouzaiworldCore", "注册命令: AfkCommand");
             AfkCommand.register(dispatcher);
 
@@ -753,11 +722,6 @@ public class YouzaiworldCore implements ModInitializer {
 
     // ==================== 命令执行方法 ====================
 
-    // ===== 原有命令 =====
-
-    /**
-     * 执行传送玩家到指定维度的逻辑。
-     */
     private static int executeTeleportWorld(
             CommandSourceStack source,
             Collection<ServerPlayer> players,
@@ -787,9 +751,6 @@ public class YouzaiworldCore implements ModInitializer {
         return finalCount;
     }
 
-    /**
-     * 打开指定玩家的 GUI 菜单。
-     */
     private static int executeOpenMenu(CommandSourceStack source, String menuName, ServerPlayer player) {
         DebugLogger.entering("YouzaiworldCore", "executeOpenMenu",
                 "source=" + source.getTextName() + ", menu=" + menuName + ", player=" + player.getName().getString());

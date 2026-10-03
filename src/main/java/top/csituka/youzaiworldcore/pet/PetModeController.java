@@ -80,7 +80,7 @@ public final class PetModeController {
      * </p>
      */
     public static boolean shouldAllowOwnerHurtTarget(@Nullable PetMode mode) {
-        if (mode == null) return true; // 非宠物，放行
+        if (mode == null) return true;
         return mode == PetMode.ATTACK || mode == PetMode.HUNTING;
     }
 
@@ -93,7 +93,7 @@ public final class PetModeController {
      * </p>
      */
     public static boolean shouldAllowOwnerHurtByTarget(@Nullable PetMode mode) {
-        if (mode == null) return true; // 非宠物，放行
+        if (mode == null) return true;
         return mode == PetMode.ATTACK || mode == PetMode.GUARD;
     }
 
@@ -106,7 +106,7 @@ public final class PetModeController {
      * </p>
      */
     public static boolean shouldAllowHurtByTarget(@Nullable PetMode mode) {
-        if (mode == null) return true; // 非宠物，放行
+        if (mode == null) return true;
         return mode != PetMode.COMPANIONSHIP;
     }
 }

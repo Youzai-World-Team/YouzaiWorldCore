@@ -39,9 +39,6 @@ public class PlayerLevelStorage {
         DebugLogger.exiting("PlayerLevelStorage", "initialize");
     }
 
-    /**
-     * 从磁盘加载所有玩家等级数据。
-     */
     private static void loadFromDisk() {
         DebugLogger.entering("PlayerLevelStorage", "loadFromDisk");
         LOCK.writeLock().lock();
@@ -51,7 +48,7 @@ public class PlayerLevelStorage {
             JsonObject levels = SkillDataStore.read(SkillDataStore.KEY_LEVELS);
             if (levels == null) {
                 DebugLogger.branch("PlayerLevelStorage", "levels 块存在", false);
-                forceSave(); // 创建空数据块
+                forceSave();
                 return;
             }
             DebugLogger.branch("PlayerLevelStorage", "levels 块存在", true);
@@ -68,9 +65,6 @@ public class PlayerLevelStorage {
         }
     }
 
-    /**
-     * 将缓存保存到磁盘。
-     */
     public static void saveToDisk() {
         DebugLogger.entering("PlayerLevelStorage", "saveToDisk");
         LOCK.writeLock().lock();
@@ -83,16 +77,12 @@ public class PlayerLevelStorage {
         }
     }
 
-    /**
-     * 获取或创建玩家等级数据。
-     */
     public static PlayerLevelData getOrCreate(UUID uuid, String username) {
         String key = uuid.toString();
         LOCK.readLock().lock();
         try {
             PlayerLevelData data = CACHE.get(key);
             if (data != null) {
-                // 更新用户名（可能已更改）
                 if (!username.equals(data.username)) {
                     data.username = username;
                 }
@@ -102,14 +92,13 @@ public class PlayerLevelStorage {
             LOCK.readLock().unlock();
         }
 
-        // 需要创建新记录
         LOCK.writeLock().lock();
         try {
             PlayerLevelData data = CACHE.get(key);
             if (data == null) {
                 data = new PlayerLevelData(uuid, username);
                 CACHE.put(key, data);
-                forceSave(); // 新记录立即保存
+                forceSave();
             }
             return data;
         } finally {
@@ -148,9 +137,6 @@ public class PlayerLevelStorage {
         saveToDisk();
     }
 
-    /**
-     * 重新加载所有数据。
-     */
     public static int reload() {
         DebugLogger.entering("PlayerLevelStorage", "reload");
         loadFromDisk();

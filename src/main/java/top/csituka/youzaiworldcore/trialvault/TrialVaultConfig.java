@@ -26,7 +26,6 @@ public final class TrialVaultConfig {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/TrialVaultConfig");
 
-    /** 默认值：启用 */
     private static final boolean DEFAULT_ENABLED = true;
 
     /** 功能总开关，默认 true（启用关闭冷却）。设为 false 时 Mixin 放行原版行为 */

@@ -16,16 +16,12 @@ public class AuthLocationData {
 
     private static final Gson GSON = new Gson();
 
-    /** 维度 */
     public ResourceKey<Level> dimension;
 
-    /** 位置坐标 */
     public Vec3 position;
 
-    /** 水平旋转角 (yaw) */
     public float yaw;
 
-    /** 垂直旋转角 (pitch) */
     public float pitch;
 
     public AuthLocationData() {
@@ -38,7 +34,6 @@ public class AuthLocationData {
         this.pitch = pitch;
     }
 
-    /** 序列化为 JSON 字符串（持久化存储用） */
     public String toJson() {
         return GSON.toJson(new Data(
                 dimension != null ? dimension.identifier().toString() : "",
@@ -47,7 +42,6 @@ public class AuthLocationData {
         ));
     }
 
-    /** 从 JSON 字符串反序列化 */
     public static AuthLocationData fromJson(String json) {
         if (json == null || json.isBlank()) return null;
         try {

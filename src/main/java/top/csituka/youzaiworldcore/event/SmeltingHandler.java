@@ -94,7 +94,6 @@ public class SmeltingHandler {
                 ItemStack drop = resultItem.getDefaultInstance();
                 world.addFreshEntity(new ItemEntity(world,
                         pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, drop));
-                // 额外经验
                 for (int i = 0; i < enchantLevel; i++) {
                     world.addFreshEntity(new ExperienceOrb(world,
                             pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 1));

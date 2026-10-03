@@ -17,10 +17,8 @@ public class LargeSignRenderState extends BlockEntityRenderState {
     /** 牌面文本的可渲染序列；为 null 表示字牌为空、无需绘制。 */
     public FormattedCharSequence text;
 
-    /** 字牌朝向（牌面法线方向）。 */
     public Direction facing = Direction.NORTH;
 
-    /** 文字最终颜色（已按发光 / 不发光算好）。 */
     public int textColor;
 
     /** 描边颜色；0 表示不描边。 */

@@ -78,7 +78,6 @@ public final class ClientExternalSettings {
     /** 是否启用模组内置的自定义字体资源包 */
     private static boolean customFontEnabled = DEFAULT_CUSTOM_FONT_ENABLED;
 
-    /** 是否已经完成首次启动欢迎导览 */
     private static boolean welcomeGuideCompleted = DEFAULT_WELCOME_GUIDE_COMPLETED;
     private static boolean cosmeticEnabled = DEFAULT_COSMETIC_ENABLED;
 
@@ -151,17 +150,14 @@ public final class ClientExternalSettings {
         return customFontEnabled;
     }
 
-    /** @return 是否已经完成首次启动欢迎导览 */
     public static boolean isWelcomeGuideCompleted() {
         return welcomeGuideCompleted;
     }
 
-    /** @return 是否启用自定义皮肤与披风 */
     public static boolean isCosmeticEnabled() {
         return cosmeticEnabled;
     }
 
-    /** @return 是否自动跳过实验性设置警告屏幕 */
     public static boolean isAutoSkipExperimentalWarning() {
         return autoSkipExperimentalWarning;
     }
@@ -176,7 +172,6 @@ public final class ClientExternalSettings {
         return "backup".equals(experimentalWarningSkipAction);
     }
 
-    /** @return 界面动画作用范围 */
     public static GuiAnimationMode getGuiAnimationMode() {
         return guiAnimationMode;
     }
@@ -186,7 +181,6 @@ public final class ClientExternalSettings {
         return yzuiTheme;
     }
 
-    /** 当前视觉效果预设。 */
     public static YzuiVisualStyle getYzuiVisualStyle() {
         return yzuiVisualStyle;
     }

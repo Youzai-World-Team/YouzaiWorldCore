@@ -35,7 +35,6 @@ public final class WorldPoolCommand {
                 .requires(source -> LuckPermsHelper.checkPermission(
                         source, PERMISSION_WORLD_POOL, Commands.LEVEL_ADMINS))
 
-                // === teleport ===
                 .then(Commands.literal("teleport")
                     .then(Commands.argument("targets", EntityArgument.players())
                         .then(Commands.argument(POOL_ARG, StringArgumentType.word())
@@ -54,7 +53,6 @@ public final class WorldPoolCommand {
                     )
                 )
 
-                // === list ===
                 .then(Commands.literal("list")
                     .executes(context -> executeList(context.getSource()))
                 )
@@ -62,11 +60,6 @@ public final class WorldPoolCommand {
         );
     }
 
-    // ===== 执行方法 =====
-
-    /**
-     * 执行传送玩家到指定维度池。
-     */
     private static int executeTeleport(CommandSourceStack source,
                                         Collection<ServerPlayer> targets,
                                         String poolId) {

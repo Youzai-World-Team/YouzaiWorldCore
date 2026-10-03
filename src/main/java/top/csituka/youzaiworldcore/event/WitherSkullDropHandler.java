@@ -53,9 +53,6 @@ public class WitherSkullDropHandler {
                 entity.getX(), entity.getY() + 0.5, entity.getZ());
     }
 
-    /**
-     * 注册事件处理器。
-     */
     public static void register() {
         ServerLivingEntityEvents.AFTER_DEATH.register(INSTANCE::onEntityDeath);
         LOGGER.info("凋零头颅必定掉落事件处理器已注册");

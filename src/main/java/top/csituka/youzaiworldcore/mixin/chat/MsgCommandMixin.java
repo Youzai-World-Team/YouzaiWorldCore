@@ -68,7 +68,6 @@ public abstract class MsgCommandMixin {
     )
     private static void youzaiworldcore$noopSenderFeedback(CommandSourceStack instance, OutgoingChatMessage message,
                                                            boolean bl, ChatType.Bound parameters) {
-        // noop
     }
 
     @Redirect(

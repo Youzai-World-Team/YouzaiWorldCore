@@ -34,7 +34,6 @@ public abstract class AccountServerPlayerMixin implements PlayerAuthAccess {
     @Unique
     private final ServerPlayer yzwc$player = (ServerPlayer) (Object) this;
 
-    /** 是否已通过认证 */
     @Unique
     private volatile boolean yzwc$authenticated = false;
 
@@ -42,11 +41,9 @@ public abstract class AccountServerPlayerMixin implements PlayerAuthAccess {
     @Unique
     private boolean yzwc$canSkipAuth = yzwc$player.getClass() != ServerPlayer.class;
 
-    /** 玩家账户数据 */
     @Unique
     private PlayerAccount yzwc$account = new PlayerAccount(yzwc$player.getScoreboardName());
 
-    /** 玩家的 IP 地址 */
     @Unique
     private String yzwc$ipAddress = null;
 

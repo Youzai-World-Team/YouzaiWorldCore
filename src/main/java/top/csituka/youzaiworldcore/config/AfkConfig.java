@@ -22,29 +22,19 @@ public final class AfkConfig {
     /** 触发阈值下限（秒）：至少 30 秒 */
     public static final int MIN_THRESHOLD_SECONDS = 30;
 
-    /** 默认值：启用 AFK 检测 */
     private static final boolean DEFAULT_ENABLED = true;
-    /** 默认值：双通道检测 */
     private static final DetectMode DEFAULT_DETECT_MODE = DetectMode.BOTH;
-    /** 默认值：无活动 300 秒判定 AFK */
     private static final int DEFAULT_THRESHOLD_SECONDS = 300;
-    /** 默认值：显示 Tab 前缀 */
     private static final boolean DEFAULT_TAB_PREFIX_ENABLED = true;
     private static final boolean DEFAULT_NAMETAG_PREFIX_ENABLED = true;
     private static final String DEFAULT_PREFIX = "[AFK] ";
     public static final int MAX_PREFIX_LENGTH = 64;
-    /** 默认值：进入 / 退出 AFK 广播 */
     private static final boolean DEFAULT_BROADCAST_ENABLED = true;
-    /** 默认值：AFK 期间不无敌 */
     private static final boolean DEFAULT_INVULNERABLE_ENABLED = false;
-    /** 默认值：不自动踢出 */
     private static final int DEFAULT_AUTO_KICK_SECONDS = 0;
-    /** 默认值：允许玩家手动切换 */
     private static final boolean DEFAULT_MANUAL_TOGGLE_ENABLED = true;
 
-    /** 功能总开关，默认 true */
     private static boolean enabled = DEFAULT_ENABLED;
-    /** 检测模式，默认 BOTH */
     private static DetectMode detectMode = DEFAULT_DETECT_MODE;
     /** 触发 AFK 的无活动时长（秒），默认 300，下限 {@link #MIN_THRESHOLD_SECONDS} */
     private static int thresholdSeconds = DEFAULT_THRESHOLD_SECONDS;
@@ -71,7 +61,6 @@ public final class AfkConfig {
         return enabled;
     }
 
-    /** @return 当前检测模式 */
     public static DetectMode getDetectMode() {
         return detectMode;
     }
@@ -113,12 +102,10 @@ public final class AfkConfig {
         save();
     }
 
-    /** @return 进入/退出 AFK 是否广播 */
     public static boolean isBroadcastEnabled() {
         return broadcastEnabled;
     }
 
-    /** @return AFK 期间是否无敌 */
     public static boolean isInvulnerableEnabled() {
         return invulnerableEnabled;
     }

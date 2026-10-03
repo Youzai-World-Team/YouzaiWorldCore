@@ -69,7 +69,6 @@ public abstract class ContextualBarMixin {
         // YZUI 热键栏比原版高 4px（24 vs 22），上移 6px 避免重叠
         int top = bar.top(client.getWindow()) - 6;
 
-        // 绘制圆角背景
         HealthBarRenderer.fillBarBg(graphics, left, top, BAR_WIDTH, BG_COLOR);
 
         if (bar instanceof ExperienceBar) {
@@ -104,9 +103,9 @@ public abstract class ContextualBarMixin {
 
         // 经验数值文字：与血条/饥饿条文本同位置（居中在各自的 85px 区域内）
         int sw = graphics.guiWidth();
-        int yzuiBarWidth = HealthBarRenderer.BAR_WIDTH; // 85
-        int yzuiGap = HealthBarRenderer.BAR_GAP;        // 8
-        int yzuiTotal = yzuiBarWidth * 2 + yzuiGap;     // 178
+        int yzuiBarWidth = HealthBarRenderer.BAR_WIDTH;
+        int yzuiGap = HealthBarRenderer.BAR_GAP;
+        int yzuiTotal = yzuiBarWidth * 2 + yzuiGap;
         int startX = (sw - yzuiTotal) / 2;
 
         Font font = Minecraft.getInstance().font;

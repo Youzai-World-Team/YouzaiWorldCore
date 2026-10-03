@@ -93,7 +93,6 @@ public class MinecraftQuitMixin {
             // 清除 GLFW 关闭标志，防止游戏主循环退出
             GLFW.glfwSetWindowShouldClose(window.handle(), false);
 
-            // 获取当前显示的屏幕
             Minecraft mc = Minecraft.getInstance();
             Screen currentScreen = mc.gui.screen();
 
@@ -118,6 +117,6 @@ public class MinecraftQuitMixin {
             return false; // 阻止原 shouldClose() 返回 true，游戏继续运行
         }
 
-        return false; // 窗口未请求关闭
+        return false;
     }
 }

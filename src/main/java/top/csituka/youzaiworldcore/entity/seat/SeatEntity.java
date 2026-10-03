@@ -200,7 +200,6 @@ public class SeatEntity extends Entity {
      */
     @Override
     protected void readAdditionalSaveData(@NonNull ValueInput input) {
-        // 无需操作
     }
 
     /**
@@ -208,6 +207,5 @@ public class SeatEntity extends Entity {
      */
     @Override
     protected void addAdditionalSaveData(@NonNull ValueOutput output) {
-        // 无需操作
     }
 }

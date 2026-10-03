@@ -56,7 +56,6 @@ public class AccountCommands {
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         DebugLogger.entering("AccountCommands", "register");
-        // /yzwc account 根命令
         dispatcher.register(Commands.literal("yzwc")
                 .then(Commands.literal("account")
                         .requires(src -> !isDeveloperSingleplayerSource(src))
@@ -119,19 +118,16 @@ public class AccountCommands {
                                 .then(Commands.literal("login_cooldown")
                                         // 无参数：显示当前冷却设置
                                         .executes(ctx -> executeAdminLoginCooldownDisplay(ctx))
-                                        // set <秒>：设置冷却时间
                                         .then(Commands.literal("set")
                                                 .then(Commands.argument("seconds", com.mojang.brigadier.arguments.IntegerArgumentType.integer(-1, 86400))
                                                         .executes(ctx -> executeAdminLoginCooldownSet(ctx))
                                                 )
                                         )
-                                        // status <玩家>：查询账户状态
                                         .then(Commands.literal("status")
                                                 .then(Commands.argument("player", StringArgumentType.string())
                                                         .executes(ctx -> executeAdminLoginCooldownStatus(ctx))
                                                 )
                                         )
-                                        // unlock <玩家>：解锁账户
                                         .then(Commands.literal("unlock")
                                                 .then(Commands.argument("player", StringArgumentType.string())
                                                         .executes(ctx -> executeAdminLoginCooldownUnlock(ctx))
@@ -166,9 +162,6 @@ public class AccountCommands {
 
     // ==================== 玩家命令实现 ====================
 
-    /**
-     * 注册
-     */
     private static int executeRegister(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
         CommandSourceStack source = ctx.getSource();
         ServerPlayer player = source.getPlayerOrException();
@@ -354,7 +347,6 @@ public class AccountCommands {
         authPlayer.yzwc$setSessionToken(token);
         RegistrationEmailSessionStore.clear(player.getUUID());
 
-        // 标记已认证
         authPlayer.yzwc$setAuthenticated(true);
         CosmeticManager.onAuthenticated(player);
         top.csituka.youzaiworldcore.title.TitleManager.refreshPlayer(player, false);
@@ -369,7 +361,6 @@ public class AccountCommands {
             // 无有效位置（例如注销后重注册），传送到主世界出生点并清除所有重生点
             teleportToWorldSpawn(player);
         }
-        // 清除持久化的位置缓存
         if (account.lastPositionJson != null) {
             DebugLogger.branch("AccountCommands", "lastPositionJson not null, clearing", true);
             account.lastPositionJson = null;
@@ -809,9 +800,6 @@ public class AccountCommands {
                 Math.max(0, Math.min(86_400, resendAfterSeconds))));
     }
 
-    /**
-     * 登录
-     */
     private static int executeLogin(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
         CommandSourceStack source = ctx.getSource();
         ServerPlayer player = source.getPlayerOrException();
@@ -853,9 +841,7 @@ public class AccountCommands {
             CosmeticManager.onAuthenticated(player);
             AccountDataStorage.acceptRemoteAccount(account, false);
 
-            // 传送回原位置
             AuthPlayerHelper.restoreLocation(player);
-            // 清除持久化的位置缓存
             if (account.lastPositionJson != null) {
                 DebugLogger.branch("AccountCommands", "lastPositionJson not null, clearing", true);
                 account.lastPositionJson = null;
@@ -884,9 +870,6 @@ public class AccountCommands {
         return 0;
     }
 
-    /**
-     * 登出
-     */
     private static int executeLogout(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
         DebugLogger.entering("AccountCommands", "executeLogout");
         CommandSourceStack source = ctx.getSource();
@@ -938,7 +921,6 @@ public class AccountCommands {
         EmailChangeSessionStore.clear(player.getUUID());
         CosmeticManager.onDeauthenticated(player);
 
-        // 传送到登录大厅
         ResourceKey<Level> loginHallKey = AuthPlayerHelper.LOGIN_HALL_KEY;
         ServerLevel loginHall = player.level().getServer() != null
                 ? player.level().getServer().getLevel(loginHallKey)
@@ -960,9 +942,6 @@ public class AccountCommands {
         return 1;
     }
 
-    /**
-     * 注销（删除账户）
-     */
     private static int executeDeactivate(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
         DebugLogger.entering("AccountCommands", "executeDeactivate");
         CommandSourceStack source = ctx.getSource();
@@ -1010,9 +989,6 @@ public class AccountCommands {
         return 1;
     }
 
-    /**
-     * 修改密码
-     */
     private static int executeChangePassword(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
         DebugLogger.entering("AccountCommands", "executeChangePassword");
         CommandSourceStack source = ctx.getSource();
@@ -1489,20 +1465,17 @@ public class AccountCommands {
 
     // ===== 工具方法 =====
 
-
     /**
      * 传送玩家到主世界出生点，并清除所有维度设置的重生点
      */
     private static void teleportToWorldSpawn(ServerPlayer player) {
         var server = player.level().getServer();
-        if (server == null) return; // dead code guard
+        if (server == null) return;
         var overworld = server.overworld();
         var spawnPos = overworld.getRespawnData().pos();
 
-        // 传送到主世界出生点
         player.teleportTo(overworld, spawnPos.getX(), spawnPos.getY(), spawnPos.getZ(), java.util.Set.of(), player.getYRot(), player.getXRot(), true);
 
-        // 清除所有重生点（设为默认）
         player.setRespawnPosition(new net.minecraft.server.level.ServerPlayer.RespawnConfig(
                 net.minecraft.world.level.storage.LevelData.RespawnData.DEFAULT, false
         ), false);

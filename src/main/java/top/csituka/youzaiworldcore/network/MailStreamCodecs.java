@@ -92,7 +92,6 @@ public final class MailStreamCodecs {
                         buf.writeUUID(mail.getId());
                         buf.writeEnum(mail.getType());
                         buf.writeUtf(mail.getSender() != null ? mail.getSender() : "");
-                        // targets
                         buf.writeVarInt(mail.getTargets() != null ? mail.getTargets().size() : 0);
                         if (mail.getTargets() != null) {
                             for (TargetSpec spec : mail.getTargets()) {
@@ -109,7 +108,6 @@ public final class MailStreamCodecs {
                         }
                         buf.writeBoolean(mail.isClaimed());
                         buf.writeBoolean(mail.isHidden());
-                        // attachments
                         buf.writeVarInt(mail.getAttachments() != null ? mail.getAttachments().size() : 0);
                         if (mail.getAttachments() != null) {
                             for (MailAttachment att : mail.getAttachments()) {

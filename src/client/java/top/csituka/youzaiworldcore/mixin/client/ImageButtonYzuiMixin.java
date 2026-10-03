@@ -62,7 +62,6 @@ public class ImageButtonYzuiMixin {
     private static final int YZWC_PAGE_BTN_W = 12;
     @Unique
     private static final int YZWC_PAGE_BTN_H = 17;
-    /** 翻页按钮圆角半径 */
     @Unique
     private static final int YZWC_PAGE_BTN_RADIUS = 4;
     /** 翻页按钮背景色（常态 / 悬浮） */
@@ -70,10 +69,8 @@ public class ImageButtonYzuiMixin {
     private static int yzwcPageBtnBg() { return YzuiTheme.surface(); }
     @Unique
     private static int yzwcPageBtnBgHover() { return YzuiTheme.surfaceHigh(); }
-    /** 翻页箭头文本色 */
     @Unique
     private static int yzwcPageBtnText() { return YzuiTheme.text(); }
-    /** Debug 模块名 */
     @Unique
     private static final String YZWC_PAGE_BTN_DBG = "ImageButtonYzui";
     /**
@@ -113,7 +110,6 @@ public class ImageButtonYzuiMixin {
                 ? YZWC_RECIPE_BOOK_SHOW
                 : YZWC_RECIPE_BOOK_HIDE;
 
-        // 悬浮高亮
         YzuiTheme.button(g, x, y, w, h, hover, self.isFocused(), self.active, self.getAlpha(), YzuiTheme.ButtonStyle.TEXT);
 
         // 居中绘制 20×20 贴图（按钮 20×18，贴图略高 2px 容许）
@@ -137,10 +133,8 @@ public class ImageButtonYzuiMixin {
         boolean forward = YZWC_NEXT_PAGE_MSG.equals(self.getMessage());
         String arrow = forward ? ">" : "<";
 
-        // 半透明圆角矩形背景
         YzuiTheme.button(g, x, y, w, h, hover, self.isFocused(), self.active, self.getAlpha(), YzuiTheme.ButtonStyle.TONAL);
 
-        // 居中绘制箭头文本
         Font font = Minecraft.getInstance().font;
         int tx = x + (w - font.width(arrow)) / 2;
         int ty = y + (h - font.lineHeight) / 2;
@@ -159,7 +153,6 @@ public class ImageButtonYzuiMixin {
     @Unique
     private static void yzwc$fillRoundedRect(GuiGraphicsExtractor g, int x, int y, int w, int h, int r, int color) {
         // 圆角绘制统一走 RoundedRect（行扫描：r=6 时 135 次 fill -> 13 次）。
-        // 点亮像素与原逐像素实现一致（45253 组尺寸/半径已逐一比对）；
         // 原实现未做尺寸校验，r > min(w,h)/2 时会画出坐标反转/重叠的结果，此处会钳制半径。
         RoundedRect.fill(g, x, y, w, h, r, color);
     }

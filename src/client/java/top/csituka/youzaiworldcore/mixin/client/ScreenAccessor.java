@@ -32,7 +32,6 @@ public interface ScreenAccessor {
     @Accessor("minecraft")
     Minecraft youzaiworldcore$getMinecraft();
 
-    /** {@link Font} 实例，用于在标题屏幕上绘制文本 */
     @Accessor("font")
     Font youzaiworldcore$getFont();
 

@@ -28,7 +28,6 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
 public class BoneMealSugarCaneHandler implements UseBlockCallback {
 
     private static final BoneMealSugarCaneHandler INSTANCE = new BoneMealSugarCaneHandler();
-    /** 甘蔗最大高度 */
     private static final int MAX_CANE_HEIGHT = 3;
 
     private BoneMealSugarCaneHandler() {
@@ -44,14 +43,12 @@ public class BoneMealSugarCaneHandler implements UseBlockCallback {
         DebugLogger.entering("BoneMealSugarCaneHandler", "interact",
                 "player=" + player.getName().getString());
 
-        // ===== 条件 1：仅处理主手 =====
         if (hand != InteractionHand.MAIN_HAND) {
             DebugLogger.branch("BoneMealSugarCaneHandler", "hand == MAIN_HAND", false, "副手忽略");
             DebugLogger.exiting("BoneMealSugarCaneHandler", "interact", "PASS (not main hand)");
             return InteractionResult.PASS;
         }
 
-        // ===== 条件 2：手持物品必须是骨粉 =====
         ItemStack stack = player.getItemInHand(hand);
         if (stack.getItem() != Items.BONE_MEAL) {
             DebugLogger.branch("BoneMealSugarCaneHandler", "holding bone meal", false,
@@ -60,7 +57,6 @@ public class BoneMealSugarCaneHandler implements UseBlockCallback {
             return InteractionResult.PASS;
         }
 
-        // ===== 条件 3：目标方块必须是甘蔗 =====
         BlockPos clickedPos = hitResult.getBlockPos();
         BlockState clickedState = level.getBlockState(clickedPos);
 
@@ -84,7 +80,6 @@ public class BoneMealSugarCaneHandler implements UseBlockCallback {
         ServerLevel serverLevel = (ServerLevel) level;
         ServerPlayer serverPlayer = (ServerPlayer) player;
 
-        // 调用共享催熟方法
         boolean grew = tryGrowSugarCane(serverLevel, clickedPos);
 
         if (!grew) {
@@ -92,7 +87,6 @@ public class BoneMealSugarCaneHandler implements UseBlockCallback {
             return InteractionResult.FAIL;
         }
 
-        // ===== 消耗骨粉（非创造模式）=====
         if (!serverPlayer.isCreative()) {
             stack.shrink(1);
             serverPlayer.getInventory().setChanged();
@@ -115,7 +109,6 @@ public class BoneMealSugarCaneHandler implements UseBlockCallback {
      * @return 是否成功催熟
      */
     public static boolean tryGrowSugarCane(ServerLevel level, BlockPos bottomPos) {
-        // 找到甘蔗柱顶部
         BlockPos topPos = bottomPos;
         int caneHeight = 1;
         while (true) {
@@ -132,14 +125,12 @@ public class BoneMealSugarCaneHandler implements UseBlockCallback {
         DebugLogger.info("BoneMealSugarCaneHandler",
                 "甘蔗柱底部=%s, 顶部=%s, 高度=%d", bottomPos, topPos, caneHeight);
 
-        // 条件：检查是否已达到最大高度
         if (caneHeight >= MAX_CANE_HEIGHT) {
             DebugLogger.branch("BoneMealSugarCaneHandler", "cane height < max", false,
                     "height=" + caneHeight + ", max=" + MAX_CANE_HEIGHT);
             return false;
         }
 
-        // 条件：顶部上方必须有空气
         BlockPos aboveTop = topPos.above();
         if (!level.getBlockState(aboveTop).isAir()) {
             DebugLogger.branch("BoneMealSugarCaneHandler", "space above is air", false,
@@ -147,11 +138,9 @@ public class BoneMealSugarCaneHandler implements UseBlockCallback {
             return false;
         }
 
-        // 执行催熟：放置新甘蔗
         BlockState newCaneState = Blocks.SUGAR_CANE.defaultBlockState();
         level.setBlockAndUpdate(aboveTop, newCaneState);
 
-        // 播放骨粉粒子效果
         level.levelEvent(1505, aboveTop, 15);
 
         DebugLogger.info("BoneMealSugarCaneHandler",
@@ -159,9 +148,6 @@ public class BoneMealSugarCaneHandler implements UseBlockCallback {
         return true;
     }
 
-    /**
-     * 向 Fabric 事件总线注册此处理器。
-     */
     public static void register() {
         DebugLogger.entering("BoneMealSugarCaneHandler", "register");
         UseBlockCallback.EVENT.register(INSTANCE);

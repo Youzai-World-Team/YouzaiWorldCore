@@ -81,11 +81,9 @@ public abstract class PlayerDropEquipmentMixin implements DeferredDeathDropAcces
      */
     @Unique
     private static boolean hasHeartInInventory(Player player) {
-        // 检查饰品槽
         if (TrinketHelper.isLoaded() && TrinketHelper.isItemEquipped(player, ModItems.HEART_OF_GUARDIANSHIP)) {
             return true;
         }
-        // 检查背包
         Inventory inventory = player.getInventory();
         for (int i = 0; i < inventory.getContainerSize(); i++) {
             ItemStack stack = inventory.getItem(i);

@@ -130,7 +130,6 @@ public class BlockAnimationRenderer {
                                 BlockState state = section.getBlockState(x & 15, y & 15, z & 15);
                                 var block = state.getBlock();
                                 if (block == Blocks.BEACON) {
-                                    // 信标：小型火焰粒子环绕
                                     if (level.getRandom().nextFloat() < 0.3f) {
                                         double angle = level.getRandom().nextDouble() * Math.PI * 2;
                                         double r = 0.8;
@@ -141,7 +140,6 @@ public class BlockAnimationRenderer {
                                                 0, 0.02, 0);
                                     }
                                 } else if (block == Blocks.BREWING_STAND) {
-                                    // 酿造台：女巫药水粒子
                                     if (level.getRandom().nextFloat() < 0.5f) {
                                         level.addParticle(ParticleTypes.WITCH,
                                                 x + 0.2 + level.getRandom().nextDouble() * 0.6,
@@ -150,7 +148,6 @@ public class BlockAnimationRenderer {
                                                 0, 0.01, 0);
                                     }
                                 } else if (block == Blocks.ENCHANTING_TABLE) {
-                                    // 附魔台：附魔字符粒子
                                     if (level.getRandom().nextFloat() < 0.4f) {
                                         level.addParticle(ParticleTypes.ENCHANT,
                                                 x + 0.2 + level.getRandom().nextDouble() * 0.6,
@@ -159,7 +156,6 @@ public class BlockAnimationRenderer {
                                                 0, 0.03, 0);
                                     }
                                 } else if (block == Blocks.DRAGON_EGG) {
-                                    // 龙蛋：传送门粒子
                                     if (level.getRandom().nextFloat() < 0.6f) {
                                         level.addParticle(ParticleTypes.PORTAL,
                                                 x + 0.1 + level.getRandom().nextDouble() * 0.8,

@@ -37,11 +37,8 @@ public final class ChatFormatSettings {
             + "<gray>|</gray> <underline>HP %player:health%/%player:max_health%</underline>";
     /** 默认加入消息模板（原版翻译键） */
     public static final String DEFAULT_JOINED_FORMAT = "<yellow><lang:multiplayer.player.joined:'${player}'></yellow>";
-    /** 默认首次加入消息模板 */
     public static final String DEFAULT_JOINED_FIRST_TIME_FORMAT = "<yellow><lang:multiplayer.player.joined:'${player}'></yellow>";
-    /** 默认改名后加入消息模板 */
     public static final String DEFAULT_JOINED_RENAMED_FORMAT = "<yellow><lang:multiplayer.player.joined.renamed:'${player}':'${old_name}'></yellow>";
-    /** 默认离开消息模板 */
     public static final String DEFAULT_LEFT_FORMAT = "<yellow><lang:multiplayer.player.left:'${player}'></yellow>";
     /** 默认死亡消息模板（透传原版死亡消息） */
     public static final String DEFAULT_DEATH_FORMAT = "${default_message}";

@@ -34,7 +34,6 @@ public class MailPermissionHelper {
         String node = MailSettings.get().getMailPermissionNode();
         int level = MailSettings.get().getMailPermissionLevel();
 
-        // 1. 检查 LuckPerms 节点
         boolean lpResult = LuckPermsHelper.checkLuckPermsOnly(player.getUUID(), node);
         if (lpResult) {
             DebugLogger.exiting(MODULE, "hasMailPermission", "LP node granted");

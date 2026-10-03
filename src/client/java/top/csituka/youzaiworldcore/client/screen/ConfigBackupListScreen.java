@@ -183,7 +183,6 @@ public class ConfigBackupListScreen extends Screen {
         importInProgress = true;
 
         ConfigIOManager.importConfig(zipPath, gameDir, (processed, total, phase) -> {
-            // 进
         }).thenRun(() -> {
             importInProgress = false;
             Minecraft.getInstance().execute(() -> {
@@ -204,14 +203,12 @@ public class ConfigBackupListScreen extends Screen {
                     errorMsg = Component.translatable("message.youzaiworldcore.config_io.import_failed_disk").getString();
                 }
                 String finalMsg = errorMsg;
-                // 显示错误 Toast
                 var errorToast = new net.minecraft.client.gui.components.toasts.SystemToast(
                         new net.minecraft.client.gui.components.toasts.SystemToast.SystemToastId(),
                         Component.translatable("message.youzaiworldcore.config_io.import_failed_generic"),
                         Component.literal("§e" + finalMsg)
                 );
                 Minecraft.getInstance().gui.toastManager().addToast(errorToast);
-                // 刷新列表
                 scanBackupFiles();
                 rebuildEntryWidgets();
             });

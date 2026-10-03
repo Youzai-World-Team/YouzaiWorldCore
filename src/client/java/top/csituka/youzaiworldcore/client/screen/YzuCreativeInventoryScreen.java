@@ -56,7 +56,6 @@ public class YzuCreativeInventoryScreen extends Screen {
 
     private static final Logger LOG = LoggerFactory.getLogger("YzuCreativeInventoryScreen");
 
-    // layout
     private static final int PW = 356, PH = 168, PR = 10;
     private static final int TY = 4, TW = 28, TH = 22, TG = 2, TR = 4;
     private static final int SX = 250, SY = 6, SW = 96, SH = 16; // 搜索框右缘 ≤ 物品栏右缘 (x=346)
@@ -122,11 +121,9 @@ public class YzuCreativeInventoryScreen extends Screen {
     private ItemStack shiftDragFilter = ItemStack.EMPTY;
     /** 手势拖拽中已处理过的槽位（避免重复处理） */
     private final Set<Integer> processedSlots = new HashSet<>();
-    // 双击检测
     private long lastClickTime;
     private int lastClickSlot = -1;
     private int lastClickButton = -1;
-    // Trinkets 悬停状态
     private int trinketSourceSlot = -1;
     /** 上次向 Trinkets 查询过的槽位（含"查了但没有饰品槽"的结果），避免同一槽位每帧重复查询 */
     private int trinketQueriedSlot = -1;
@@ -155,7 +152,7 @@ public class YzuCreativeInventoryScreen extends Screen {
         // 恢复上次搜索文本，或显示第一个分类
         if (!lastSearch.isEmpty()) {
             searchBox.setValue(lastSearch);
-            selTab = null; // 搜索模式
+            selTab = null;
         } else {
             selTab = tabs.isEmpty() ? null : tabs.get(0);
         }
@@ -759,7 +756,6 @@ public class YzuCreativeInventoryScreen extends Screen {
         int lty = arrowY + (TH - font.lineHeight) / 2;
         g.text(font, "<", ltx, lty, canLeft ? YzuiTheme.text() : YzuiTheme.outline(), false);
 
-        // Tab
         int tx = leftX + TW + TG;
         for (int i = st; i < en; i++) {
             CreativeModeTab t = tabs.get(i);
@@ -820,7 +816,6 @@ public class YzuCreativeInventoryScreen extends Screen {
     private void drawScroll(GuiGraphicsExtractor g, int mx, int my) {
         int rows = (vis.size() + COLS - 1) / COLS, maxS = Math.max(0, rows - VROWS);
         int bx = lp + SCROLL_X, by = tp + SCROLL_Y;
-        // 背景槽
         g.fill(bx, by, bx + SCROLL_W, by + SCROLL_H, YzuiTheme.surfaceHigh());
         if (maxS <= 0)
             return; // 无可滚动时不绘制 thumb
@@ -1232,7 +1227,6 @@ public class YzuCreativeInventoryScreen extends Screen {
         int st = Math.min(tabPage * mv, tabs.size());
         int arrowY = tp + TY;
 
-        // 左翻页
         int leftX = lp + 3;
         if (ev.x() >= leftX && ev.x() < leftX + TW && ev.y() >= arrowY && ev.y() < arrowY + TH) {
             if (ev.button() == 0 && tabPage > 0)
@@ -1240,7 +1234,6 @@ public class YzuCreativeInventoryScreen extends Screen {
             return true;
         }
 
-        // Tab 按钮
         int tx = leftX + TW + TG;
         for (int i = st; i < Math.min(st + mv, tabs.size()); i++) {
             if (ev.x() >= tx && ev.x() < tx + TW && ev.y() >= arrowY && ev.y() < arrowY + TH) {
@@ -1251,7 +1244,6 @@ public class YzuCreativeInventoryScreen extends Screen {
             tx += TW + TG;
         }
 
-        // 右翻页（固定位置）
         int rightX = lp + 3 + TW + TG + MAX_VIS * (TW + TG);
         if (ev.x() >= rightX && ev.x() < rightX + TW && ev.y() >= arrowY && ev.y() < arrowY + TH) {
             if (ev.button() == 0 && tabPage < pc - 1)
@@ -1341,7 +1333,6 @@ public class YzuCreativeInventoryScreen extends Screen {
             return true;
         }
 
-        // 网格
         int hov = getHoveredGridIndex((int) ev.x(), (int) ev.y());
         if (hov >= 0 && hov < vis.size()) {
             int vi = vis.get(hov);
@@ -1476,7 +1467,6 @@ public class YzuCreativeInventoryScreen extends Screen {
                 processGestureSlot(dragOriginSlot);
             } else if (yzwcDragMode == 1) {
                 // 合并手势未拖拽：点击已在 mouseClicked 中由 handleSlotClick 处理完毕，无需重复
-                // no-op
             } else if (ev.button() == 0) {
                 // 标准左键（有携带物）未拖拽：mouseClicked 未处理点击（推迟给 endDrag），
                 // 未拖拽则在此处理（放置/合并/互换）
@@ -1718,8 +1708,8 @@ public class YzuCreativeInventoryScreen extends Screen {
             while (n < r && n * n + j * j < r * r)
                 n++;
             int x0 = x + r - n, x1 = x + w - r + n;
-            g.fill(x0, y + r - j - 1, x1, y + r - j, c);         // 顶部第 j 行
-            g.fill(x0, y + h - r + j, x1, y + h - r + j + 1, c); // 底部第 j 行
+            g.fill(x0, y + r - j - 1, x1, y + r - j, c);
+            g.fill(x0, y + h - r + j, x1, y + h - r + j + 1, c);
         }
     }
 }

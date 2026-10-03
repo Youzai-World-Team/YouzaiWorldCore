@@ -222,7 +222,6 @@ public class OptionsScreenMixin {
                     int occupiedCols = gridChildOccupiedColsField.getInt(container);
                     Object layoutSettings = gridChildSettingsField.get(container);
 
-                    // 创建新的 ChildContainer 包裹 modsButton
                     Object newContainer = gridChildConstructor.newInstance(
                             newWidget, row, col, occupiedRows, occupiedCols, layoutSettings
                     );
@@ -263,11 +262,8 @@ public class OptionsScreenMixin {
             initReflection();
             if (!reflectionReady) return false;
 
-            // 1. Get HeaderAndFooterLayout
             HeaderAndFooterLayout headerFooter = (HeaderAndFooterLayout) optionsScreenLayoutField.get(screen);
-            // 2. Get headerFrame
             FrameLayout headerFrame = (FrameLayout) headerFooterHeaderField.get(headerFooter);
-            // 3. Get FrameLayout's children
             List<?> frameChildren = (List<?>) frameLayoutChildrenField.get(headerFrame);
             if (frameChildren.isEmpty()) return false;
 
@@ -351,7 +347,6 @@ public class OptionsScreenMixin {
 
             GridLayout horizontalGrid = (GridLayout) linearLayoutWrappedField.get(horizontalLayout);
 
-            // 创建按钮（打开 YouzaiWorldCore 设置页面）
             Button settingsButton = Button.builder(
                     Component.translatable("options.youzaiworldcore.settings"),
                     btn -> {
@@ -360,7 +355,6 @@ public class OptionsScreenMixin {
                     }
             ).build();
 
-            // 添加到 GridLayout（列 0，行 0）
             horizontalGrid.addChild(settingsButton, 0, 0);
 
             if (ClientExternalSettings.getLogLevel() > 0) {

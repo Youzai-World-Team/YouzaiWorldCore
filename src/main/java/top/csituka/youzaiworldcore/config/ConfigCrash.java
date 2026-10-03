@@ -33,7 +33,6 @@ public final class ConfigCrash {
     private static final String BORDER =
             "========================================================================";
 
-    /** 隔离文件的后缀 */
     public static final String ERROR_SUFFIX = ".error";
 
     private static final DateTimeFormatter STAMP_FORMATTER =
@@ -116,9 +115,6 @@ public final class ConfigCrash {
         }
     }
 
-    // ===== 内部 =====
-
-    /** 把错误现场打到控制台 */
     private static void report(Path file, String jsonPath, String reason, Throwable cause,
                               Path quarantined, Path regenerated) {
         LOGGER.error(BORDER);
@@ -143,7 +139,6 @@ public final class ConfigCrash {
         LOGGER.error(BORDER);
     }
 
-    /** 构造崩溃用异常 */
     private static ConfigFormatException newException(Path file, String jsonPath, String reason,
                                                       Throwable cause) {
         String message = "配置文件错误 [" + (file == null ? "<未知>" : file.toAbsolutePath()) + "] "

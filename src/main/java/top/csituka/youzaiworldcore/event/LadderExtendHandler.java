@@ -40,9 +40,6 @@ public class LadderExtendHandler {
     private LadderExtendHandler() {
     }
 
-    /**
-     * {@link UseBlockCallback} 回调。
-     */
     private InteractionResult onUseBlock(Player player, Level level, InteractionHand hand,
             BlockHitResult hitResult) {
         if (level.isClientSide()) {
@@ -59,38 +56,31 @@ public class LadderExtendHandler {
         BlockPos pos = hitResult.getBlockPos();
         BlockState state = level.getBlockState(pos);
 
-        // 仅对梯子类型的方块生效
         if (!(state.getBlock() instanceof LadderBlock)) {
             return InteractionResult.PASS;
         }
 
-        // 检查手持物品是否为梯子
         ItemStack heldItem = player.getItemInHand(hand);
         if (!heldItem.is(Items.LADDER)) {
             return InteractionResult.PASS;
         }
 
-        // 确定梯子朝向
         Direction facing = state.getValue(LadderBlock.FACING);
 
-        // 向下延伸梯子
         int placed = 0;
         for (int i = 1; i <= MAX_EXTEND; i++) {
             BlockPos belowPos = pos.below(i);
 
-            // 超出世界底部则停止
             if (belowPos.getY() < level.getMinY()) {
                 break;
             }
 
             BlockState belowState = level.getBlockState(belowPos);
 
-            // 目标位置必须为空气或可替换方块
             if (!belowState.isAir() && !belowState.canBeReplaced()) {
                 break;
             }
 
-            // 消耗物品（生存模式）
             if (!player.getAbilities().instabuild) {
                 if (heldItem.getCount() <= 0) {
                     break;
@@ -98,12 +88,10 @@ public class LadderExtendHandler {
                 heldItem.shrink(1);
             }
 
-            // 放置梯子
             BlockState ladderState = Blocks.LADDER.defaultBlockState()
                     .setValue(LadderBlock.FACING, facing);
             level.setBlock(belowPos, ladderState, Block.UPDATE_ALL_IMMEDIATE);
 
-            // 播放放置音效
             level.playSound(null, belowPos, SoundEvents.LADDER_PLACE,
                     SoundSource.BLOCKS, 1.0f, 1.0f);
 
@@ -118,9 +106,6 @@ public class LadderExtendHandler {
         return InteractionResult.PASS;
     }
 
-    /**
-     * 注册事件处理器。
-     */
     public static void register() {
         UseBlockCallback.EVENT.register(INSTANCE::onUseBlock);
         LOGGER.info("梯子向下延展事件处理器已注册");

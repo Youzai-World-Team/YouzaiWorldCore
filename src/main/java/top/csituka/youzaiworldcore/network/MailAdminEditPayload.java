@@ -49,7 +49,6 @@ public record MailAdminEditPayload(
                         buf.writeUUID(p.mailId());
                         buf.writeBoolean(p.cancel());
                         if (!p.cancel()) {
-                            // targets
                             buf.writeVarInt(p.targets().size());
                             for (TargetSpec spec : p.targets()) {
                                 MailStreamCodecs.TARGET_SPEC.encode(buf, spec);
@@ -58,7 +57,6 @@ public record MailAdminEditPayload(
                             buf.writeUtf(p.title());
                             buf.writeUtf(p.body());
                             buf.writeByte(p.expireOption());
-                            // attachments
                             buf.writeVarInt(p.attachments().size());
                             for (AttachmentData att : p.attachments()) {
                                 AttachmentData.STREAM_CODEC.encode(buf, att);

@@ -66,10 +66,8 @@ public class MemePaintingDropMixin {
         DebugLogger.debug("MemePaintingDropMixin",
                 "自定义画被破坏，掉落专用物品: variant=%s".formatted(key.identifier()));
 
-        // 播放破坏音效
         self.playSound(SoundEvents.PAINTING_BREAK, 1.0F, 1.0F);
 
-        // 检查 doEntityDrops 规则
         if (level.getGameRules().get(GameRules.ENTITY_DROPS)) {
             self.spawnAtLocation(level, customItem.getDefaultInstance(), 0.0F);
         }

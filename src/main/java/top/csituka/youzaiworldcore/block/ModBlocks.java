@@ -221,12 +221,10 @@ public class ModBlocks {
     );
 
     // ===== 大字牌系列 =====
-    //
     // 与原版墙上告示牌同为 2 像素厚的薄板，但铺满整个侧面（16×16×2），
     // 右键可编辑一个大字，支持染料染色 / 荧光墨囊发光 / 蜜脾涂蜡。
     // 全系列共用一个 LargeSignBlock 类与一个方块实体类型
     // （见 ModBlockEntities.LARGE_SIGN），彼此只有材质与音效不同。
-    //
     // 新增变体时：在此加一行 registerWoodLargeSign / registerMineralLargeSign，
     // 再补齐 blockstates / models(block+item) / items / loot_table / recipe 各一个 JSON，
     // 以及 10 个语言文件里的 block.youzaiworldcore.<id> 键与对应的挖掘工具 tag。

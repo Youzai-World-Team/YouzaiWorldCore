@@ -285,7 +285,6 @@ public class ModNetworking {
                     }
                 }
 
-                // 冷却检查
                 long gameTime = serverPlayer.level().getGameTime();
                 if (!manager.canTeleport(serverPlayer, gameTime)) {
                     int remaining = manager.getRemainingCooldownSeconds(serverPlayer, gameTime);
@@ -532,7 +531,7 @@ public class ModNetworking {
                 if (!(be instanceof TeleportAnchorBlockEntity anchorBE)) return;
 
                 UUID playerUuid = player.getUUID();
-                if (anchorBE.isActivatedBy(playerUuid)) return; // 已激活过
+                if (anchorBE.isActivatedBy(playerUuid)) return;
 
                 boolean wasEmpty = anchorBE.addActivator(playerUuid);
                 if (wasEmpty) {
@@ -540,7 +539,6 @@ public class ModNetworking {
                     level.sendBlockUpdated(pos, state, state.setValue(TeleportAnchorBlock.ACTIVE, true), 3);
                 }
 
-                // 粒子效果（仅本人）
                 {
                     var particle = net.minecraft.core.particles.ParticleTypes.END_ROD;
                     var pkt = new net.minecraft.network.protocol.game.ClientboundLevelParticlesPacket(
@@ -603,7 +601,6 @@ public class ModNetworking {
                 }
                 boolean cur = DoubleDoorsState.isEnabled(uuid);
                 if (enabled != null) {
-                    // 设置结果反馈
                     player.sendSystemMessage(Component.translatable(
                             enabled
                                     ? "youzaiworldcore.message.command.function.double_doors.set_enabled"
@@ -632,7 +629,6 @@ public class ModNetworking {
                 return;
             }
             server.execute(() -> {
-                // 权限检查
                 if (!InvisibilityManager.hasPermission(player)) {
                     player.sendSystemMessage(Component.literal("§c你没有权限使用隐身功能"));
                     DebugLogger.exiting("ModNetworking", "InvisibilityPayload handler", "no permission");
@@ -640,7 +636,6 @@ public class ModNetworking {
                 }
                 Boolean enabled = payload.enabled();
                 if (enabled == null) {
-                    // 查询当前状态
                     boolean cur = InvisibilityManager.isInvisible(player);
                     player.sendSystemMessage(Component.translatable(
                             cur
@@ -688,7 +683,6 @@ public class ModNetworking {
             }
             server.execute(() -> {
                 try {
-                    // 重建完整命令字符串：yzwc pet <args>
                     String fullCommand = "yzwc pet " + payload.args();
                     DebugLogger.info("ModNetworking", "执行宠物命令: /%s", fullCommand);
                     server.getCommands().performPrefixedCommand(player.createCommandSourceStack(), fullCommand);
@@ -940,13 +934,10 @@ public class ModNetworking {
             DebugLogger.exiting("ModNetworking", "TrinketInteractPayload handler");
         });
 
-        // ======================================================================
         // 邮件系统（Mail）—— 服务端接收处理器
-        // ----------------------------------------------------------------------
         // 邮件正文与每玩家收件箱由 Api 服务端权威保存（见 MailApiClient）。
         // 这里的职责固定为三步：主线程判权限 → 异步调 Api → 回主线程推 S2C。
         // 所有 Api 调用都必须走 mailApi(...)，绝不能在主线程里同步等 HTTP。
-        // ======================================================================
 
         // 1. 打开发布 GUI（纯权限判定，不需要 Api）
         ServerPlayNetworking.registerGlobalReceiver(MailComposeOpenPayload.ID, (payload, context) -> {
@@ -965,7 +956,6 @@ public class ModNetworking {
             DebugLogger.exiting("ModNetworking", "MailComposeOpenPayload handler");
         });
 
-        // 2. 打开收件箱
         ServerPlayNetworking.registerGlobalReceiver(MailOpenPayload.ID, (payload, context) -> {
             DebugLogger.entering("ModNetworking", "MailOpenPayload handler");
             var player = (ServerPlayer) context.player();
@@ -988,7 +978,6 @@ public class ModNetworking {
             DebugLogger.exiting("ModNetworking", "MailOpenPayload handler");
         });
 
-        // 3. 请求已发送列表
         ServerPlayNetworking.registerGlobalReceiver(MailSentListRequestPayload.ID, (payload, context) -> {
             DebugLogger.entering("ModNetworking", "MailSentListRequestPayload handler");
             var player = (ServerPlayer) context.player();
@@ -1013,7 +1002,6 @@ public class ModNetworking {
             DebugLogger.exiting("ModNetworking", "MailSentListRequestPayload handler");
         });
 
-        // 4. 撤回邮件
         ServerPlayNetworking.registerGlobalReceiver(MailRecallPayload.ID, (payload, context) -> {
             DebugLogger.entering("ModNetworking", "MailRecallPayload handler");
             var player = (ServerPlayer) context.player();
@@ -1047,7 +1035,6 @@ public class ModNetworking {
             DebugLogger.exiting("ModNetworking", "MailRecallPayload handler");
         });
 
-        // 5. 清理过期邮件
         ServerPlayNetworking.registerGlobalReceiver(MailPurgePayload.ID, (payload, context) -> {
             DebugLogger.entering("ModNetworking", "MailPurgePayload handler");
             var player = (ServerPlayer) context.player();
@@ -1074,7 +1061,6 @@ public class ModNetworking {
             DebugLogger.exiting("ModNetworking", "MailPurgePayload handler");
         });
 
-        // 6. 查看指定玩家信箱
         ServerPlayNetworking.registerGlobalReceiver(MailListRequestPayload.ID, (payload, context) -> {
             DebugLogger.entering("ModNetworking", "MailListRequestPayload handler");
             var player = (ServerPlayer) context.player();
@@ -1111,7 +1097,6 @@ public class ModNetworking {
             DebugLogger.exiting("ModNetworking", "MailListRequestPayload handler");
         });
 
-        // 7. 编辑预填
         ServerPlayNetworking.registerGlobalReceiver(MailFetchPayload.ID, (payload, context) -> {
             DebugLogger.entering("ModNetworking", "MailFetchPayload handler");
             var player = (ServerPlayer) context.player();
@@ -1180,7 +1165,6 @@ public class ModNetworking {
             DebugLogger.exiting("ModNetworking", "MailActionPayload handler");
         });
 
-        // 9. 发布邮件
         ServerPlayNetworking.registerGlobalReceiver(MailAdminSendPayload.ID, (payload, context) -> {
             DebugLogger.entering("ModNetworking", "MailAdminSendPayload handler", "title=" + payload.title());
             var player = (ServerPlayer) context.player();
@@ -1192,7 +1176,6 @@ public class ModNetworking {
                     DebugLogger.exiting("ModNetworking", "MailAdminSendPayload handler", "no permission");
                     return;
                 }
-                // 校验必填项
                 if (payload.targets().isEmpty()) {
                     ServerPlayNetworking.send(player, MailOpResultPayload.failure(null, "请至少选择一个接收范围"));
                     DebugLogger.exiting("ModNetworking", "MailAdminSendPayload handler", "no targets");
@@ -1237,7 +1220,6 @@ public class ModNetworking {
             DebugLogger.exiting("ModNetworking", "MailAdminSendPayload handler");
         });
 
-        // 10. 编辑/取消编辑邮件
         ServerPlayNetworking.registerGlobalReceiver(MailAdminEditPayload.ID, (payload, context) -> {
             DebugLogger.entering("ModNetworking", "MailAdminEditPayload handler", "mailId=" + payload.mailId());
             var player = (ServerPlayer) context.player();
@@ -1342,10 +1324,6 @@ public class ModNetworking {
 
         DebugLogger.exiting("ModNetworking", "initialize");
     }
-
-    // ==========================================================================
-    // 邮件系统辅助方法
-    // ==========================================================================
 
     /** 编辑预填的两步结果：详情 + （必要时）隐藏操作。 */
     private record MailEditPrefill(MailApiClient.DetailResult detail, MailApiClient.HiddenResult hidden) {

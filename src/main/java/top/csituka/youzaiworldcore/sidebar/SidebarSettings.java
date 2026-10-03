@@ -56,7 +56,6 @@ public final class SidebarSettings {
     private static final int MAX_UPDATE_TICK_TIME = 1200;
 
     // ===== 默认值（新开服 / 坏文件恢复时写入） =====
-    //
     // 默认配置即「全功能测试模板」：把本功能支持的全部能力集中展示，
     // 供新服 / 调试时一眼对照。覆盖点：
     //   - 标题轮播：title 用 3 帧（渐变 / 彩虹 / 渐变），title_change(5) × update_tick_time(20) = 100 tick = 5 秒切一帧；

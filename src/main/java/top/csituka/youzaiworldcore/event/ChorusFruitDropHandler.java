@@ -59,9 +59,6 @@ public class ChorusFruitDropHandler {
     private ChorusFruitDropHandler() {
     }
 
-    /**
-     * 向 Fabric 事件总线注册紫颂果就近掉落处理器。
-     */
     public static void register() {
         DebugLogger.entering(MODULE, "register");
 

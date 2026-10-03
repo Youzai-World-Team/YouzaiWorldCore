@@ -40,7 +40,6 @@ public final class ClientGlobalSettings {
 
     /** 客户端核心（开发者模式 / 日志级别 / 调试地址 / YZUI 开关等） */
     public static final String CORE_MODULE = "core_module";
-    /** 物品高亮 */
     public static final String HIGHLIGHT_ITEM_MODULE = "highlight_item_module";
     /** YZHUD（位置与透明度） */
     public static final String YZHUD_MODULE = "yzhud_module";
@@ -50,7 +49,6 @@ public final class ClientGlobalSettings {
     public static final String UPDATE_MODULE = "update_module";
     /** 创造物品栏的折叠分组 */
     public static final String INVENTORY_ITEM_GROUPS_MODULE = "inventory_item_groups_module";
-    /** 地图显示、私人路径点与绘图 */
 
     private static final JsonFileStore STORE = new JsonFileStore(ModPaths.clientSettingsFile());
 
@@ -103,7 +101,6 @@ public final class ClientGlobalSettings {
         STORE.save();
     }
 
-    /** @return 客户端配置文件路径 */
     public static Path file() {
         return STORE.file();
     }

@@ -21,15 +21,12 @@ public class SubtitleDisplayEntry extends DisplayEntry<Void> {
 
     private static final int TEXT_ICON_MARGIN = 0;
 
-    /** 方向指示文本 */
     private static final String INDICATOR_LEFT = " <";
     private static final String INDICATOR_RIGHT = "> ";
     private static final String INDICATOR_BEHIND = " ";
 
-    /** 字幕文本 */
     private final Component subtitleText;
 
-    /** 方向指示 */
     private SubtitleCaptureHandler.Direction direction;
 
     /**
@@ -64,7 +61,6 @@ public class SubtitleDisplayEntry extends DisplayEntry<Void> {
     @Override
     public void mergeWith(DisplayEntry<?> other) {
         if (other instanceof SubtitleDisplayEntry otherSub) {
-            // 更新方向指示为最新的
             this.direction = otherSub.direction;
             this.displayComponent = buildDisplayComponent();
             if (otherSub.remainingTicks > this.remainingTicks) {

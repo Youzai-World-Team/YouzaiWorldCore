@@ -34,7 +34,6 @@ public class BounceHandler {
             @SuppressWarnings("null")
             Holder<Enchantment> holder = reg.getOrThrow(ModEnchantments.BOUNCE_KEY);
 
-            // 检查副手盾牌的弹跳附魔等级
             int level = player.getItemBySlot(EquipmentSlot.OFFHAND).getEnchantments().getLevel(holder);
             if (level <= 0)
                 return;

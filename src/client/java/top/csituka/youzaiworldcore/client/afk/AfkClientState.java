@@ -38,7 +38,6 @@ public final class AfkClientState {
         }
     }
 
-    /** @return 指定玩家是否处于 AFK 状态。 */
     public static boolean isAfk(UUID playerUuid) {
         return AFK_PLAYERS.containsKey(playerUuid);
     }

@@ -129,7 +129,6 @@ public class ClientNetworking {
         });
         DebugLogger.info("ClientNetworking", "Registered receiver: OpenMenuPayload");
 
-        // 注册认证界面打开处理器
         ClientPlayNetworking.registerGlobalReceiver(OpenAuthScreenPayload.ID, (payload, context) -> {
             DebugLogger.entering("ClientNetworking", "OpenAuthScreenPayload handler");
             Minecraft client = context.client();
@@ -219,7 +218,6 @@ public class ClientNetworking {
         });
         DebugLogger.info("ClientNetworking", "Registered receiver: AccountManagementStatePayload");
 
-        // 注册传送锚点列表处理器
         ClientPlayNetworking.registerGlobalReceiver(TeleportAnchorListPayload.TYPE, (payload, context) -> {
             DebugLogger.entering("ClientNetworking", "TeleportAnchorListPayload handler");
             context.client().execute(() -> {
@@ -231,7 +229,6 @@ public class ClientNetworking {
         });
         DebugLogger.info("ClientNetworking", "Registered receiver: TeleportAnchorListPayload");
 
-        // 注册传送锚点命名界面处理器
         ClientPlayNetworking.registerGlobalReceiver(TeleportAnchorOpenNamePayload.TYPE, (payload, context) -> {
             DebugLogger.entering("ClientNetworking", "TeleportAnchorOpenNamePayload handler");
             context.client().execute(() -> {
@@ -277,7 +274,6 @@ public class ClientNetworking {
         });
         DebugLogger.info("ClientNetworking", "Registered receiver: TeleportStoneInterruptPayload");
 
-        // 注册魔力同步处理器
         ClientPlayNetworking.registerGlobalReceiver(ManaSyncPayload.ID, (payload, context) -> {
             context.client().execute(() -> {
                 ManaManager.setClientMana(payload.mana());
@@ -285,7 +281,6 @@ public class ClientNetworking {
         });
         DebugLogger.info("ClientNetworking", "Registered receiver: ManaSyncPayload");
 
-        // 注册冒险经验同步处理器
         ClientPlayNetworking.registerGlobalReceiver(LevelExpSyncPayload.ID, (payload, context) -> {
             context.client().execute(() -> {
                 AdventureLevelHudRenderer.onExpGained(
@@ -299,13 +294,11 @@ public class ClientNetworking {
         });
         DebugLogger.info("ClientNetworking", "Registered receiver: LevelExpSyncPayload");
 
-        // 注册伤害跳字处理器
         ClientPlayNetworking.registerGlobalReceiver(DamageNumberPayload.ID, (payload, context) ->
                 context.client().execute(() -> DamageNumberRenderer.add(
                         payload.x(), payload.y(), payload.z(), payload.entityHeight(), payload.damage())));
         DebugLogger.info("ClientNetworking", "Registered receiver: DamageNumberPayload");
 
-        // 注册属性数据同步处理器
         ClientPlayNetworking.registerGlobalReceiver(AttributeSyncPayload.TYPE, (payload, context) -> {
             context.client().execute(() -> {
                 ClientAttributeData.update(payload);
@@ -313,11 +306,8 @@ public class ClientNetworking {
         });
         DebugLogger.info("ClientNetworking", "Registered receiver: AttributeSyncPayload");
 
-        // ======================================================================
         // 邮件系统（Mail）—— 客户端 S2C 接收器
-        // ======================================================================
 
-        // 打开发布 GUI（P5 实现）
         ClientPlayNetworking.registerGlobalReceiver(OpenMailComposePayload.ID, (payload, context) -> {
             DebugLogger.entering("ClientNetworking", "OpenMailComposePayload handler");
             context.client().execute(() -> {
@@ -327,7 +317,6 @@ public class ClientNetworking {
         });
         DebugLogger.info("ClientNetworking", "Registered receiver: OpenMailComposePayload");
 
-        // 收件箱列表
         ClientPlayNetworking.registerGlobalReceiver(MailListPayload.ID, (payload, context) -> {
             DebugLogger.entering("ClientNetworking", "MailListPayload handler", "entries=" + payload.entries().size());
             context.client().execute(() -> {
@@ -340,7 +329,6 @@ public class ClientNetworking {
         });
         DebugLogger.info("ClientNetworking", "Registered receiver: MailListPayload");
 
-        // 已发送邮件摘要列表
         ClientPlayNetworking.registerGlobalReceiver(MailSentListPayload.ID, (payload, context) -> {
             DebugLogger.entering("ClientNetworking", "MailSentListPayload handler", "summaries=" + payload.summaries().size());
             context.client().execute(() -> {
@@ -357,7 +345,6 @@ public class ClientNetworking {
             context.client().execute(() -> {
                 switch (payload.mode()) {
                     case MailUpdatePayload.MODE_UPDATE -> {
-                        // 新增或更新收件箱条目
                         var inbox = top.csituka.youzaiworldcore.client.MailClientState.currentInbox;
                         boolean found = false;
                         for (int i = 0; i < inbox.size(); i++) {
@@ -372,7 +359,6 @@ public class ClientNetworking {
                         }
                     }
                     case MailUpdatePayload.MODE_REMOVE -> {
-                        // 从收件箱移除
                         top.csituka.youzaiworldcore.client.MailClientState.currentInbox
                                 .removeIf(pair -> pair.mail().getId().equals(payload.removedMailId()));
                     }
@@ -407,7 +393,6 @@ public class ClientNetworking {
         });
         DebugLogger.info("ClientNetworking", "Registered receiver: MailOpResultPayload");
 
-        // 已注册玩家名单（发布页「选取玩家」弹窗）
         ClientPlayNetworking.registerGlobalReceiver(MailPlayerListPayload.ID, (payload, context) -> {
             DebugLogger.entering("ClientNetworking", "MailPlayerListPayload handler",
                     "players=" + payload.playerNames().size());
@@ -418,7 +403,6 @@ public class ClientNetworking {
         });
         DebugLogger.info("ClientNetworking", "Registered receiver: MailPlayerListPayload");
 
-        // 未读数量与发布权限同步
         ClientPlayNetworking.registerGlobalReceiver(MailUnreadCountPayload.ID, (payload, context) -> {
             DebugLogger.entering("ClientNetworking", "MailUnreadCountPayload handler", "unread=" + payload.unreadCount());
             context.client().execute(() -> {
@@ -430,10 +414,8 @@ public class ClientNetworking {
         });
         DebugLogger.info("ClientNetworking", "Registered receiver: MailUnreadCountPayload");
 
-        // ======================================================================
         // 老吴贴贴事件（LaowuMeme）—— 客户端 S2C 接收器
         // 服务端权威状态机广播 trigger/stop，客户端只收包驱动渲染与音频。
-        // ======================================================================
 
         ClientPlayNetworking.registerGlobalReceiver(LaowuMemeTriggerPayload.ID, (payload, context) -> {
             context.client().execute(() ->

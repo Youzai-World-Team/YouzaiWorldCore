@@ -39,7 +39,6 @@ public final class UserSettings {
 
     private static final String MODULE = "UserSettings";
 
-    /** 玩家 UUID -> 该玩家的配置文件容器 */
     private static final Map<UUID, JsonFileStore> CACHE = new ConcurrentHashMap<>();
 
     private UserSettings() {
@@ -147,8 +146,6 @@ public final class UserSettings {
             ConfigCrash.fail(dir, "<目录>", "遍历个人配置目录失败：" + e.getMessage(), e);
         }
     }
-
-    // ===== 内部 =====
 
     /** 取（并惰性加载）某玩家的配置容器 */
     private static JsonFileStore store(UUID playerUuid) {

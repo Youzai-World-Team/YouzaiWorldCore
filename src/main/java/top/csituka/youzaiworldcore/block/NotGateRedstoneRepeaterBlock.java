@@ -118,9 +118,7 @@ public class NotGateRedstoneRepeaterBlock extends HorizontalDirectionalBlock {
                 .setValue(FACING, context.getHorizontalDirection());
     }
 
-    // ====================================================================
     // 物理支撑：仅当下方为完整上表面时允许保留
-    // ====================================================================
 
     /**
      * 仅当正下方为刚性支撑时该元件可存活。
@@ -134,9 +132,7 @@ public class NotGateRedstoneRepeaterBlock extends HorizontalDirectionalBlock {
         return level.getBlockState(below).isFaceSturdy(level, below, Direction.UP, SupportType.RIGID);
     }
 
-    // ====================================================================
     // 放置 / 移除 / 邻居通知（只调度，不直接改状态）
-    // ====================================================================
 
     @Override
     protected void onPlace(@NonNull BlockState state, @NonNull Level level, @NonNull BlockPos pos,
@@ -190,9 +186,7 @@ public class NotGateRedstoneRepeaterBlock extends HorizontalDirectionalBlock {
         DebugLogger.exiting("NotGateRedstoneRepeaterBlock", "neighborChanged");
     }
 
-    // ====================================================================
     // 核心：NOT 逻辑的延迟执行（vanilla 调度 tick 模式）
-    // ====================================================================
 
     /**
      * 若当前 {@code POWERED} 与输入侧信号推导出的目标状态不一致，且本 tick 尚无
@@ -230,7 +224,7 @@ public class NotGateRedstoneRepeaterBlock extends HorizontalDirectionalBlock {
         DebugLogger.entering("NotGateRedstoneRepeaterBlock", "tick", "pos=" + pos);
 
         int inputSignal = readInputSignal(level, pos, state);
-        boolean shouldBeActive = inputSignal <= 0;            // NOT 逻辑
+        boolean shouldBeActive = inputSignal <= 0;
         boolean isActive = state.getValue(POWERED);
 
         if (DebugLogger.isEnabled(DebugLogger.LEVEL_DETAILED)) {
@@ -307,9 +301,7 @@ public class NotGateRedstoneRepeaterBlock extends HorizontalDirectionalBlock {
         return signal;
     }
 
-    // ====================================================================
     // 红石信号方法：作为"信号源"仅向贴图上方（FACING）输出
-    // ====================================================================
 
     @Override
     protected boolean isSignalSource(@NonNull BlockState state) {

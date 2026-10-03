@@ -50,21 +50,18 @@ public class SitHandler implements UseBlockCallback {
     ) {
         DebugLogger.entering("SitHandler", "interact", "player=" + player.getName().getString());
 
-        // ===== 条件 1：仅处理主手 =====
         if (hand != InteractionHand.MAIN_HAND) {
             DebugLogger.branch("SitHandler", "hand == MAIN_HAND", false, "副手忽略");
             DebugLogger.exiting("SitHandler", "interact", "PASS (not main hand)");
             return InteractionResult.PASS;
         }
 
-        // ===== 条件 2：主手必须为空 =====
         if (!player.getMainHandItem().isEmpty()) {
             DebugLogger.branch("SitHandler", "main hand empty", false, "持有物品");
             DebugLogger.exiting("SitHandler", "interact", "PASS (holding item)");
             return InteractionResult.PASS;
         }
 
-        // ===== 条件 3：目标方块必须是楼梯或台阶 =====
         BlockPos pos = hitResult.getBlockPos();
         BlockState state = level.getBlockState(pos);
 
@@ -78,7 +75,6 @@ public class SitHandler implements UseBlockCallback {
         DebugLogger.branch("SitHandler", "block is stair or slab", true,
                 "block=" + state.getBlock() + ", pos=" + pos);
 
-        // ===== 条件 4：玩家不能已经在骑乘实体 =====
         if (player.isPassenger()) {
             DebugLogger.branch("SitHandler", "player already seated", true);
             DebugLogger.exiting("SitHandler", "interact", "PASS (already riding)");
@@ -97,14 +93,12 @@ public class SitHandler implements UseBlockCallback {
         ServerLevel serverLevel = (ServerLevel) level;
         ServerPlayer serverPlayer = (ServerPlayer) player;
 
-        // ===== 条件 5：该位置不能已有座椅实体 =====
         if (hasExistingSeat(serverLevel, pos)) {
             DebugLogger.branch("SitHandler", "seat already exists at", false, String.valueOf(pos));
             DebugLogger.exiting("SitHandler", "interact", "PASS (seat exists)");
             return InteractionResult.PASS;
         }
 
-        // ===== 创建座椅实体并让玩家骑乘 =====
         SeatEntity seat = SeatEntity.create(serverLevel, pos);
         if (seat == null) {
             DebugLogger.warn("SitHandler", "Failed to create seat entity at " + pos);
@@ -112,7 +106,6 @@ public class SitHandler implements UseBlockCallback {
             return InteractionResult.FAIL;
         }
 
-        // 将座椅添加到世界
         boolean added = serverLevel.addFreshEntity(seat);
         if (!added) {
             DebugLogger.warn("SitHandler", "Failed to add seat entity to world at " + pos);
@@ -145,9 +138,6 @@ public class SitHandler implements UseBlockCallback {
         ).isEmpty();
     }
 
-    /**
-     * 向 Fabric 事件总线注册此处理器。
-     */
     public static void register() {
         DebugLogger.entering("SitHandler", "register");
         UseBlockCallback.EVENT.register(INSTANCE);

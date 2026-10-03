@@ -54,9 +54,7 @@ public class EndPortalHandler {
 
     private EndPortalHandler() {}
 
-    // ========================================================================
     // 事件 1：方块破坏前置 — 末地传送门框的精准采集破坏
-    // ========================================================================
 
     /**
      * 方块破坏前置回调。当玩家即将破坏传送门框时进行拦截。
@@ -82,7 +80,6 @@ public class EndPortalHandler {
             return true;
         }
 
-        // ===== 条件 1：主手持镐 =====
         ItemStack hand = player.getItemInHand(InteractionHand.MAIN_HAND);
         if (!hand.is(net.minecraft.tags.ItemTags.PICKAXES)) {
             DebugLogger.branch("EndPortalHandler", "holding pickaxe", false);
@@ -104,7 +101,6 @@ public class EndPortalHandler {
             }
         }
 
-        // ===== 条件 3：目标必须是末地传送门框 =====
         if (!state.is(Blocks.END_PORTAL_FRAME)) {
             DebugLogger.branch("EndPortalHandler", "target is END_PORTAL_FRAME", false,
                     "actual=" + state.getBlock());
@@ -115,7 +111,6 @@ public class EndPortalHandler {
         DebugLogger.info("EndPortalHandler", "Breaking portal frame at %s by %s",
                 pos, player.getName().getString());
 
-        // ===== 执行：掉落物品 =====
         ItemStack portalFrameStack = new ItemStack(Blocks.END_PORTAL_FRAME, 1);
         boolean isFilled = state.getValue(EndPortalFrameBlock.HAS_EYE);
 
@@ -126,7 +121,6 @@ public class EndPortalHandler {
                 giveOrDropItemStack(player, new ItemStack(Items.ENDER_EYE, 1));
             }
         } else {
-            // 以掉落物实体形式扔出
             level.addFreshEntity(new ItemEntity(level,
                     pos.getX(), pos.getY() + 1, pos.getZ(), portalFrameStack));
             if (isFilled) {
@@ -155,12 +149,10 @@ public class EndPortalHandler {
         DebugLogger.info("EndPortalHandler", "Cleared %d END_PORTAL blocks around %s", cleared, pos);
 
         DebugLogger.exiting("EndPortalHandler", "onBlockBreak", "SUCCESS (cancelled original break)");
-        return false; // 取消原版破坏行为
+        return false;
     }
 
-    // ========================================================================
     // 事件 2：生物死亡后置 — 末影龙额外龙蛋
-    // ========================================================================
 
     /**
      * 生物死亡后置回调。仅关注末影龙死亡：额外给予附近 50 格范围内的玩家一个龙蛋。
@@ -185,7 +177,6 @@ public class EndPortalHandler {
         if (source instanceof Player player) {
             targetPlayer = player;
         } else {
-            // 寻找 50 格范围内的第一个玩家
             BlockPos pos = entity.blockPosition();
             AABB searchBox = new AABB(
                     pos.getX() - 50, pos.getY() - 50, pos.getZ() - 50,
@@ -206,12 +197,10 @@ public class EndPortalHandler {
             targetPlayer = found;
         }
 
-        // 给予龙蛋（入背包 / 掉落）
         giveOrDropItemStack(targetPlayer, new ItemStack(Blocks.DRAGON_EGG, 1));
         DebugLogger.info("EndPortalHandler", "Extra dragon egg given to %s",
                 targetPlayer.getName().getString());
 
-        // 可选：发送提示消息
         if (EndPortalConfig.isSendMessageOnExtraDragonEggDrop()) {
             targetPlayer.sendSystemMessage(
                     Component.translatable(
@@ -222,10 +211,6 @@ public class EndPortalHandler {
         }
     }
 
-    // ========================================================================
-    // 工具方法
-    // ========================================================================
-
     /**
      * 尝试将物品放入玩家背包；若背包已满则在玩家位置以掉落物实体形式扔出。
      */
@@ -234,10 +219,6 @@ public class EndPortalHandler {
             player.drop(stack, false);
         }
     }
-
-    // ========================================================================
-    // 注册入口
-    // ========================================================================
 
     /**
      * 向 Fabric 事件总线注册所有末地传送门相关回调。
@@ -252,11 +233,9 @@ public class EndPortalHandler {
     public static void register() {
         DebugLogger.entering("EndPortalHandler", "register");
 
-        // 方块破坏前置
         PlayerBlockBreakEvents.BEFORE.register(INSTANCE::onBlockBreak);
         DebugLogger.info("EndPortalHandler", "注册方块破坏前置事件 (PlayerBlockBreakEvents.BEFORE)");
 
-        // 生物死亡后置
         ServerLivingEntityEvents.AFTER_DEATH.register(INSTANCE::onEntityDeath);
         DebugLogger.info("EndPortalHandler", "注册生物死亡后置事件 (ServerLivingEntityEvents.AFTER_DEATH)");
 

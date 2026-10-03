@@ -28,14 +28,13 @@ public abstract class WolfModeAttackMixin {
                                   CallbackInfoReturnable<Boolean> cir) {
         Wolf wolf = (Wolf) (Object) this;
 
-        // 非服务端不处理
         if (wolf.level().isClientSide()) {
             return;
         }
 
         PetMode mode = PetModeController.getMode(wolf);
         if (mode == null) {
-            return; // 非宠物，放行原版
+            return;
         }
 
         // COMPANIONSHIP 模式：不攻击任何目标

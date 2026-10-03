@@ -25,7 +25,7 @@ public abstract class DecoratedPotBlockWobbleMixin {
 
     /** 判定隐身玩家是否触发摇动的邻近距离平方（3.0 格半径）。 */
     @Unique
-    private static final double WOBBLE_PROXIMITY_THRESHOLD_SQ = 9.0; // 3.0^2
+    private static final double WOBBLE_PROXIMITY_THRESHOLD_SQ = 9.0;
 
     /**
      * 在 {@code wobble} 中检查附近是否有隐身玩家，若有则取消广播。
@@ -42,7 +42,6 @@ public abstract class DecoratedPotBlockWobbleMixin {
             return;
         }
 
-        // 检查附近是否有隐身玩家
         for (ServerPlayer player : serverLevel.getPlayers(p -> true)) {
             if (!InvisibilityManager.isInvisible(player)) {
                 continue;

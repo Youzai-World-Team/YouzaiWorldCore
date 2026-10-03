@@ -67,8 +67,6 @@ public final class TempManager {
         return ModPaths.ensureDir(ModPaths.worldTemp(server, module));
     }
 
-    // ===== 内部 =====
-
     /**
      * 递归删除某个临时区下的全部内容，然后重建空的根目录。
      *

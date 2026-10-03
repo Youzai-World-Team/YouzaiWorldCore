@@ -15,13 +15,10 @@ public class Mail {
 
     private static final String MODULE = "Mail";
 
-    /** 邮件唯一标识 */
     private UUID id;
 
-    /** 邮件类型 */
     private MailType type;
 
-    /** 发送者名称 */
     private String sender;
 
     /** 原始接收范围列表（用于编辑预填与范围变更 diff） */
@@ -30,10 +27,8 @@ public class Mail {
     /** 展示用范围摘要（如 "全体+指定 Steve"） */
     private String scopeSummary;
 
-    /** 主题 */
     private String title;
 
-    /** 正文 */
     private String body;
 
     /** 发送时间戳（毫秒） */
@@ -49,14 +44,12 @@ public class Mail {
     /** 编辑中隐藏标志：true 时接收者信箱不渲染该邮件 */
     private boolean hidden;
 
-    /** 附件列表 */
     private List<MailAttachment> attachments;
 
     // ===== 无参构造（Gson） =====
     public Mail() {
     }
 
-    // ===== 全参构造 =====
     public Mail(UUID id, MailType type, String sender, List<TargetSpec> targets,
                 String scopeSummary, String title, String body,
                 long createdTime, @Nullable Long expireTime,
@@ -86,8 +79,6 @@ public class Mail {
                 createdTime, expireTime, false, false, attachments);
     }
 
-    // ===== Getters & Setters =====
-
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
 
@@ -116,12 +107,10 @@ public class Mail {
     public Long getExpireTime() { return expireTime; }
     public void setExpireTime(@Nullable Long expireTime) { this.expireTime = expireTime; }
 
-    /** 是否永久有效（expireTime == null） */
     public boolean isPermanent() {
         return expireTime == null;
     }
 
-    /** 是否已过期 */
     public boolean isExpired() {
         return expireTime != null && System.currentTimeMillis() > expireTime;
     }

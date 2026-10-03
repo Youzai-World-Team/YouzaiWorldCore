@@ -86,24 +86,19 @@ public class YzuInventoryScreen extends AbstractRecipeBookScreen<InventoryMenu> 
     private boolean gesturePending;
     /** 0=无, 1=合并拖拽, 2=Shift批量拖拽 */
     private int gestureMode;
-    /** 手势起点槽位索引 */
     private int gestureOriginSlot;
     /** 手势拖拽中已处理过的槽位（避免重复） */
     private final Set<Integer> gestureProcessed = new HashSet<>();
     /** 是否为实际拖拽（已移动过） */
     private boolean gestureDragging;
-    /** 拖拽经过的槽位列表 */
     private final List<Integer> gestureSlots = new ArrayList<>();
     /** Shift+左键持物拖拽时仅处理与该物品相同的槽位；EMPTY 表示空手批量移动任意物品。 */
     private ItemStack gestureShiftFilter = ItemStack.EMPTY;
-    // Trinkets 悬停状态
     private int trinketSourceSlot = -1;
     private java.util.List<TrinketHelper.TrinketSlotInfo> activeTrinketSlots = java.util.List.of();
     /** 子菜单隐藏宽限期（鼠标离开有效区后仍保留的毫秒数） */
     private static final long TRINKET_HIDE_GRACE_MS = 400;
     private long trinketHideDeadline = -1;
-
-    // ========== 构造 ==========
 
     public YzuInventoryScreen(Player player) {
         super(
@@ -114,8 +109,6 @@ public class YzuInventoryScreen extends AbstractRecipeBookScreen<InventoryMenu> 
         LOGGER.debug("YzuInventoryScreen created for player: {}", player.getName().getString());
     }
 
-    // ========== 初始化 ==========
-
     @Override
     protected void init() {
         this.leftPos = (this.width - this.imageWidth) / 2;
@@ -124,8 +117,6 @@ public class YzuInventoryScreen extends AbstractRecipeBookScreen<InventoryMenu> 
         LOGGER.debug("YzuInventoryScreen.init() — leftPos={} topPos={} imageWidth={} imageHeight={}",
                 this.leftPos, this.topPos, this.imageWidth, this.imageHeight);
     }
-
-    // ========== 渲染管线 ==========
 
     @Override
     public void extractRenderState(@NonNull GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
@@ -427,9 +418,6 @@ public class YzuInventoryScreen extends AbstractRecipeBookScreen<InventoryMenu> 
         }
     }
 
-    /**
-     * 根据 Slot 对象获取其在容器槽位列表中的索引。
-     */
     private int getSlotIndex(Slot slot) {
         return this.menu.slots.indexOf(slot);
     }
@@ -453,10 +441,7 @@ public class YzuInventoryScreen extends AbstractRecipeBookScreen<InventoryMenu> 
 
     @Override
     protected void extractLabels(@NonNull GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY) {
-        // no-op
     }
-
-    // ========== 杂项 ==========
 
     @Override
     public boolean showsActiveEffects() {
@@ -467,8 +452,6 @@ public class YzuInventoryScreen extends AbstractRecipeBookScreen<InventoryMenu> 
     protected boolean isBiggerResultSlot() {
         return false;
     }
-
-    // ========== 工具方法 ==========
 
     /**
      * 圆角矩形填充，r≤3 时走矩形快速路径（无肉眼可见圆角效果），

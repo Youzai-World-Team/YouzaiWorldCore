@@ -33,9 +33,7 @@ import java.util.List;
 @SuppressWarnings("null")
 public class PresetItems {
 
-        // ========================================================================
         // Preset 01 — §c毕业套装 (红色潜影盒)
-        // ========================================================================
 
         /**
          * 创建「毕业套装」潜影盒 — 全套满配战斗/工具/防具/消耗品
@@ -156,9 +154,7 @@ public class PresetItems {
                 return container;
         }
 
-        // ========================================================================
         // Preset 02 — 毕业套补充 (橙色潜影盒)
-        // ========================================================================
 
         /**
          * 创建「毕业套补充」潜影盒 — 实用工具、材料、额外装备
@@ -234,9 +230,7 @@ public class PresetItems {
                 return container;
         }
 
-        // ========================================================================
         // Preset 03 — 不死图腾 (黄色潜影盒)
-        // ========================================================================
 
         /**
          * 创建「不死图腾」潜影盒 — 27 个不死图腾（填满整盒）
@@ -254,9 +248,7 @@ public class PresetItems {
                 return container;
         }
 
-        // ========================================================================
         // Preset 04 — §8炸药包 (灰色潜影盒)
-        // ========================================================================
 
         /**
          * 创建「炸药包」潜影盒 — 27 组 × 64 个 TNT
@@ -274,9 +266,7 @@ public class PresetItems {
                 return container;
         }
 
-        // ========================================================================
         // Preset 05 — 烟花火箭 (粉色潜影盒)
-        // ========================================================================
 
         /**
          * 创建「烟花火箭」潜影盒 — 三种飞行时长各有 9 组 × 64 个
@@ -298,9 +288,7 @@ public class PresetItems {
                 return container;
         }
 
-        // ========================================================================
         // Preset 06 — 重锤套装 (淡蓝色潜影盒)
-        // ========================================================================
 
         /**
          * 创建「重锤套装」潜影盒 — 三种重锤(不同风爆等级) + 钻石套 + 补给品
@@ -321,7 +309,6 @@ public class PresetItems {
                                 Enchantments.DENSITY, 5, Enchantments.BREACH, 4, Enchantments.WIND_BURST, 3,
                                 Enchantments.UNBREAKING, 3, Enchantments.MENDING, 1));
 
-                // 钻石防具
                 items.add(ench(Items.DIAMOND_HELMET, lookup,
                                 Enchantments.PROTECTION, 4, Enchantments.FIRE_PROTECTION, 4,
                                 Enchantments.PROJECTILE_PROTECTION, 4, Enchantments.RESPIRATION, 3,
@@ -345,11 +332,9 @@ public class PresetItems {
                                 Enchantments.SOUL_SPEED, 3,
                                 Enchantments.UNBREAKING, 3, Enchantments.MENDING, 1));
 
-                // 补给品
                 items.add(new ItemStack(Items.COOKED_PORKCHOP, 64));
                 items.add(new ItemStack(Items.ENCHANTED_GOLDEN_APPLE, 64));
 
-                // 风弹
                 for (int i = 0; i < 18; i++) {
                         items.add(new ItemStack(Items.WIND_CHARGE, 64));
                 }
@@ -361,9 +346,7 @@ public class PresetItems {
                 return container;
         }
 
-        // ========================================================================
         // Preset 07 — 附魔之瓶 (黄绿色潜影盒)
-        // ========================================================================
 
         /**
          * 创建「附魔之瓶」潜影盒 — 27 组 × 64 个经验瓶
@@ -381,9 +364,7 @@ public class PresetItems {
                 return container;
         }
 
-        // ========================================================================
         // Preset 08 — 末影珍珠 (绿色潜影盒)
-        // ========================================================================
 
         /**
          * 创建「末影珍珠」潜影盒 — 27 组 × 64 个末影珍珠
@@ -401,9 +382,7 @@ public class PresetItems {
                 return container;
         }
 
-        // ========================================================================
         // Preset 09 — 七彩箭矢 (淡灰色潜影盒)
-        // ========================================================================
 
         /**
          * 创建「七彩箭矢」潜影盒 — 普通箭、光灵箭 + 25 种药水箭
@@ -411,11 +390,9 @@ public class PresetItems {
         public static ItemStack createPreset09(HolderLookup.Provider lookup) {
                 List<ItemStack> items = new ArrayList<>();
 
-                // 基础箭
                 items.add(new ItemStack(Items.ARROW, 64));
                 items.add(new ItemStack(Items.SPECTRAL_ARROW, 64));
 
-                // 25 种药水箭
                 HolderLookup.RegistryLookup<Potion> reg = lookup.lookupOrThrow(Registries.POTION);
                 String[] potionIds = {
                                 "strong_leaping", "strong_swiftness", "strong_slowness", "strong_healing",
@@ -444,10 +421,6 @@ public class PresetItems {
                                 Component.translatable("youzaiworldcore.message.preset.rainbow_arrows"));
                 return container;
         }
-
-        // ========================================================================
-        // 辅助方法
-        // ========================================================================
 
         /**
          * 对指定物品批量附魔。

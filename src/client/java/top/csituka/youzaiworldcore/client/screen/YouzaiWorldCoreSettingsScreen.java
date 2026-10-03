@@ -51,9 +51,7 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
     private static final int COMPACT_LAYOUT_WIDTH = 500;
     /** 内容区底部留白 */
     private static final int CONTENT_BOTTOM_PAD = 10;
-    /** 滚动条宽度 */
     private static final int SCROLLBAR_WIDTH = 4;
-    /** 滚动条距右侧间距 */
     private static final int SCROLLBAR_PAD = 2;
 
     // ===== 关于分栏专用常量 =====
@@ -62,9 +60,7 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
             Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "textures/mod_icon.png");
     /** 图标边长（像素） */
     private static final int ABOUT_ICON_SIZE = 64;
-    /** 标题字体缩放比例（相对默认字号） */
     private static final float ABOUT_TITLE_SCALE = 1.5f;
-    /** 标题颜色（金橙） */
     private static int aboutTitleColor() { return YzuiTheme.primary(); }
     /** 图标圆角半径（像素） */
     private static final int ICON_CORNER_RADIUS = 6;
@@ -153,7 +149,6 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
     // ===== 滚动状态 =====
     /** 当前垂直滚动偏移量（像素） */
     private double scrollOffset = 0.0;
-    /** 内容区视口高度 */
     private int viewportHeight = 0;
     /** 内容区底部边界 Y（视口底部，不含 padding） */
     private int contentBottom = 0;
@@ -196,7 +191,6 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
     private boolean leftHudEnabled;
     /** 是否启用模组内置的自定义字体资源包 */
     private boolean customFontEnabled;
-    /** 界面动画作用范围。 */
     private GuiAnimationMode guiAnimationMode;
 
     /** 是否自动跳过实验性设置警告屏幕 */
@@ -205,25 +199,17 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
     private String experimentalWarningSkipAction;
 
     // ===== 配置导入/导出分栏状态 =====
-    /** 导出按钮（分栏 1） */
     private TransparentButton configExportButton;
-    /** 导入按钮（分栏 2） */
     private TransparentButton configImportButton;
-    /** 配置操作进行中（导出或导入） */
     private boolean configOpActive = false;
     /** 操作开始时间戳（毫秒） */
     private long configOpStartTime = 0;
     /** 操作类型： "export" 或 "import" */
     private String configOpType = "";
-    /** 当前操作进度文本 */
     private String configOpProgressText = "";
-    /** 是否 Android 平台（缓存） */
     private boolean isAndroidPlatform = false;
-    /** 导出提示文字 Y */
     private int configExportHintY;
-    /** 导入提示文字 Y */
     private int configImportHintY;
-    /** 底部通用提示 Y */
     private int configBottomHintY;
 
     // ===== 文本标签 Y 坐标（由 buildContentWidgets 计算，extractRenderState 使用） =====
@@ -263,7 +249,6 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
     public YouzaiWorldCoreSettingsScreen(Screen parent) {
         super(Component.translatable("screen.youzaiworldcore.settings.title"));
         this.parentScreen = parent;
-        // 从持久化配置读取初始状态
         this.devModeEnabled = ClientExternalSettings.isDevModeEnabled();
         this.logLevel = ClientExternalSettings.getLogLevel();
         this.debugModeType = ClientExternalSettings.getDebugModeType();
@@ -631,7 +616,6 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
         addRenderableWidget(configExportButton);
         y += 24;
 
-        // 导出提示
         configExportHintY = y;
         String exportHintKey = isAndroidPlatform
                 ? "screen.youzaiworldcore.settings.config_io_export_hint_android"
@@ -653,12 +637,10 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
         addRenderableWidget(configImportButton);
         y += 24;
 
-        // 导入提示
         configImportHintY = y;
         y += wrappedTextHeight(
                 Component.translatable("screen.youzaiworldcore.settings.config_io_import_hint"), contentWidth);
 
-        // 底部通用提示
         y += 20;
         configBottomHintY = y;
         y += wrappedTextHeight(
@@ -761,7 +743,6 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
         }
         if (msg.contains("磁盘空间")) return Component.translatable("message.youzaiworldcore.config_io.import_failed_disk").getString();
         if (msg.contains("无效")) return Component.translatable("message.youzaiworldcore.config_io.import_invalid_pack").getString();
-        // 通用
         return Component.translatable("message.youzaiworldcore.config_io.import_failed_generic").getString();
     }
 
@@ -1191,13 +1172,9 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
                 int dx = r - 1 - i;
                 int dy = r - 1 - j;
                 if (dx * dx + dy * dy >= r * r) {
-                    // 左上角
                     guiGraphics.fill(x + i, y + j, x + i + 1, y + j + 1, bgColor);
-                    // 右上角
                     guiGraphics.fill(x + w - 1 - i, y + j, x + w - i, y + j + 1, bgColor);
-                    // 左下角
                     guiGraphics.fill(x + i, y + h - 1 - j, x + i + 1, y + h - j, bgColor);
-                    // 右下角
                     guiGraphics.fill(x + w - 1 - i, y + h - 1 - j, x + w - i, y + h - j, bgColor);
                 }
             }
@@ -1347,22 +1324,16 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
             guiGraphics.fill(scrollbarLeft, thumbY, scrollbarRight, thumbY + thumbHeight, YzuiTheme.surfaceHigh());
         }
 
-        // ===================================================================
         // 5. 防 ANR 遮罩（操作耗时 > 5 秒时显示）
-        // ===================================================================
         if (configOpActive) {
             long elapsed = System.currentTimeMillis() - configOpStartTime;
             if (elapsed > 5000) {
-                // 半透明遮罩
 
-
-                // 进度条背景
                 int barWidth = 200;
                 int barHeight = 8;
                 int barX = (this.width - barWidth) / 2;
                 int barY = this.height / 2;
 
-                // 背景矩形
                 guiGraphics.fill(barX, barY, barX + barWidth, barY + barHeight, YzuiTheme.surfaceHigh());
 
                 // 前景进度（模拟，仅使用简单动画）
@@ -1370,7 +1341,6 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
                 int fillWidth = (int) (barWidth * progress);
                 guiGraphics.fill(barX, barY, barX + fillWidth, barY + barHeight, YzuiTheme.primary());
 
-                // 操作提示文字
                 String opLabel = "import".equals(configOpType)
                         ? Component.translatable("screen.youzaiworldcore.settings.config_io_importing_mask").getString()
                         : Component.translatable("screen.youzaiworldcore.settings.config_io_exporting_mask").getString();
@@ -1378,7 +1348,6 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
                 guiGraphics.text(this.font, opLabel,
                         (this.width - opLabelWidth) / 2, barY - 16, YzuiTheme.text(), false);
 
-                // 当前进度文本
                 if (configOpProgressText != null && !configOpProgressText.isEmpty()) {
                     int progWidth = this.font.width(configOpProgressText);
                     guiGraphics.text(this.font, configOpProgressText,

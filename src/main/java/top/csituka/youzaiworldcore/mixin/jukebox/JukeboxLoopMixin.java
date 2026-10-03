@@ -59,7 +59,6 @@ public class JukeboxLoopMixin {
             return;
         }
 
-        // 重新播放
         jukebox.tryForcePlaySong();
         DebugLogger.debug("JukeboxLoop", "唱片机循环播放: {}", pos);
     }

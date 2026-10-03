@@ -80,25 +80,19 @@ public class TeleportAnchorScreen extends Screen {
     /** 空列表提示文本的颜色（灰白，区别于正常条目）。 */
     private static int emptyHintColor() { return YzuiTheme.textMuted(); }
 
-    /** 条目右侧距离文本的颜色。 */
     private static int distanceColor() { return YzuiTheme.textMuted(); }
 
-    /** 底部消耗信息文本的颜色。 */
     private static int costTextColor() { return YzuiTheme.textMuted(); }
 
     /** 消耗不足时的文本颜色（橙红）。 */
     private static int costInsufficientColor() { return YzuiTheme.error(); }
 
-    /** 消耗信息每行占用的高度。 */
     private static final int COST_LINE_HEIGHT = 11;
 
-    /** 底部按钮与第一行消耗信息之间的间距。 */
     private static final int COST_INFO_TOP_GAP = 4;
 
-    /** 耐久消耗行内嵌的传送石图标尺寸。 */
     private static final int STONE_ICON_SIZE = 10;
 
-    /** 卷轴消耗行内嵌的传送卷轴图标尺寸。 */
     private static final int SCROLL_ICON_SIZE = 10;
 
     /** 同维度传送消耗的经验等级，与服务端 {@code ModNetworking} 中的口径保持一致。 */
@@ -204,7 +198,6 @@ public class TeleportAnchorScreen extends Screen {
     /** 列表区域顶部 Y 坐标，供绘制空列表提示时定位。 */
     private int listTopY;
 
-    // UI 组件
     private final List<TransparentButton> pointButtons = new ArrayList<>();
     private final List<TransparentButton> renameConfirmButtons = new ArrayList<>();
     @Nullable
@@ -470,7 +463,6 @@ public class TeleportAnchorScreen extends Screen {
 
             addRenderableWidget(removeButton);
 
-            // 向上移动按钮
             moveUpButton = new TextureIconButton(
                     moveUpX, actionsY, ICON_BUTTON_SIZE, ICON_BUTTON_SIZE,
                     MOVE_UP_ICON,
@@ -486,7 +478,6 @@ public class TeleportAnchorScreen extends Screen {
 
             addRenderableWidget(moveUpButton);
 
-            // 向下移动按钮
             moveDownButton = new TextureIconButton(
                     moveDownX, actionsY, ICON_BUTTON_SIZE, ICON_BUTTON_SIZE,
                     MOVE_DOWN_ICON,
@@ -786,11 +777,9 @@ public class TeleportAnchorScreen extends Screen {
         if (selectedIndex < 0 || selectedIndex >= points.size()) return;
         int newIndex = selectedIndex + delta;
         if (newIndex < 0 || newIndex >= points.size()) return;
-        // 本地 UI 即时交换
         TeleportAnchorData temp = points.get(selectedIndex);
         points.set(selectedIndex, points.get(newIndex));
         points.set(newIndex, temp);
-        // 发送给服务端持久化
         ClientPlayNetworking.send(new TeleportAnchorReorderPayload(selectedIndex, newIndex));
         selectedIndex = newIndex;
         rebuildWidgets();
@@ -1167,7 +1156,6 @@ public class TeleportAnchorScreen extends Screen {
         protected void extractWidgetRenderState(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
             // 先绘制主题容器，再用主题文字色着色图标。
             super.extractWidgetRenderState(guiGraphics, mouseX, mouseY, partialTick);
-            // 叠加贴图
             if (texture == null) return;
             float vis = Math.min(1f, Math.max(0f, this.getAlpha()));
             if (vis < 0.001f) return;

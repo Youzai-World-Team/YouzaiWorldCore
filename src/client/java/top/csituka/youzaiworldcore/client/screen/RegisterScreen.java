@@ -80,7 +80,6 @@ public class RegisterScreen extends Screen implements YzuiMenuScreen {
         String savedPassword = passwordField == null ? "" : passwordField.getValue();
         String savedConfirmation = confirmPasswordField == null ? "" : confirmPasswordField.getValue();
 
-
         int centerX = this.width / 2;
         int containerTop = (this.height - CONTAINER_HEIGHT) / 2;
         int leftColX = centerX - CONTAINER_WIDTH / 2 + 10;
@@ -94,19 +93,16 @@ public class RegisterScreen extends Screen implements YzuiMenuScreen {
         this.usernameField.setCanLoseFocus(false);
         this.usernameField.setTextColor(YzuiTheme.textMuted());
 
-        // 密码输入框
         this.passwordField = new EditBox(this.font, fieldX, containerTop + 55 + ROW_SPACING, FIELD_WIDTH, FIELD_HEIGHT,
                 Component.translatable("screen.youzaiworldcore.register.label_password"));
         this.passwordField.setMaxLength(128);
         this.passwordField.setHint(Component.translatable("screen.youzaiworldcore.register.hint_password"));
 
-        // 确认密码输入框
         this.confirmPasswordField = new EditBox(this.font, fieldX, containerTop + 55 + ROW_SPACING * 2, FIELD_WIDTH, FIELD_HEIGHT,
                 Component.translatable("screen.youzaiworldcore.register.label_confirm_password"));
         this.confirmPasswordField.setMaxLength(128);
         this.confirmPasswordField.setHint(Component.translatable("screen.youzaiworldcore.register.hint_confirm"));
 
-        // 注册按钮
         int buttonY = containerTop + 55 + ROW_SPACING * 3 + 30;
         int totalButtonWidth = BUTTON_WIDTH * 2 + 12;
         int buttonStartX = centerX - totalButtonWidth / 2;
@@ -118,7 +114,6 @@ public class RegisterScreen extends Screen implements YzuiMenuScreen {
         );
         this.registerButton.setTextColor(0xFFFFFF);
 
-        // 断开连接按钮
         this.disconnectButton = new TransparentButton(
                 buttonStartX + BUTTON_WIDTH + 12, buttonY, BUTTON_WIDTH, BUTTON_HEIGHT,
                 Component.translatable("screen.youzaiworldcore.register.button_disconnect"),
@@ -134,7 +129,6 @@ public class RegisterScreen extends Screen implements YzuiMenuScreen {
         this.allWidgets.add(this.registerButton);
         this.allWidgets.add(this.disconnectButton);
 
-        // 默认聚焦到密码框
         passwordField.setValue(savedPassword);
         confirmPasswordField.setValue(savedConfirmation);
         arrangeForm();
@@ -210,7 +204,6 @@ public class RegisterScreen extends Screen implements YzuiMenuScreen {
             return true;
         }
 
-        // 转发点击到按钮
         if (isMouseOverButton(this.registerButton, mx, my)) {
             this.registerButton.onClick(event, isActuallyClick);
             return true;
@@ -247,7 +240,6 @@ public class RegisterScreen extends Screen implements YzuiMenuScreen {
     @Override
     public boolean charTyped(CharacterEvent charEvent) {
         if (currentDialog != null && currentDialog.isVisible()) return true;
-        // 转发字符输入到当前聚焦的 EditBox
         if (this.passwordField.isFocused() && this.passwordField.charTyped(charEvent)) return true;
         if (this.confirmPasswordField.isFocused() && this.confirmPasswordField.charTyped(charEvent)) return true;
         return false;
@@ -317,7 +309,6 @@ public class RegisterScreen extends Screen implements YzuiMenuScreen {
         if (previewParent != null) { closeMenu(); return; }
         if (processing) return;
 
-        // 断开连接
         Minecraft.getInstance().disconnectFromWorld(
                 Component.translatable("screen.youzaiworldcore.register.disconnect_message"));
     }

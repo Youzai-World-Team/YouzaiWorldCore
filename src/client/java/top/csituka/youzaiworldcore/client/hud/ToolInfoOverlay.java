@@ -33,9 +33,6 @@ public class ToolInfoOverlay {
     private ToolInfoOverlay() {
     }
 
-    /**
-     * 注册客户端 Tick 回调。
-     */
     public static void register() {
         if (registered) {
             return;

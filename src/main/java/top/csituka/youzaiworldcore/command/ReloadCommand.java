@@ -32,11 +32,6 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
  */
 public class ReloadCommand {
 
-    /**
-     * 注册 /yzwc reload 命令到调度器。
-     *
-     * @param dispatcher Brigadier 命令调度器
-     */
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         DebugLogger.entering("ReloadCommand", "register");
         dispatcher.register(Commands.literal("yzwc")
@@ -50,11 +45,7 @@ public class ReloadCommand {
     }
 
     /**
-     * 执行重载逻辑：
-     * <ul>
-     *   <li>从 Api 服务端重新加载 AccountDataStorage 运行期缓存</li>
-     *   <li>预留扩展点：后续可在此添加配置文件、占位符等模块的重载</li>
-     * </ul>
+     * 重载各模块配置与账户缓存，并向在线玩家同步受影响的状态。
      */
     private static int executeReload(CommandContext<CommandSourceStack> ctx) {
         CommandSourceStack source = ctx.getSource();
@@ -76,13 +67,10 @@ public class ReloadCommand {
         top.csituka.youzaiworldcore.map.MapServerManager.reload();
         ApiModuleSettings.load();
 
-        // 从 Api 重载账户运行期缓存
         int accountCount = AccountDataStorage.reload();
 
-        // 重载更新检查器配置
         UpdateCheckerConfig.reload();
 
-        // 重载维度池与原地重生配置
         DimensionPoolSettings.reload();
         InPlaceRespawnConfig.reload();
 
@@ -99,10 +87,6 @@ public class ReloadCommand {
         // 重载侧边栏定制（重新解析模板帧并重置动画计数）
         top.csituka.youzaiworldcore.sidebar.SidebarManager.reload();
 
-        // === 预留扩展点 ===
-        // 后续如需重载其他模块（如自定义配置文件、缓存等），在此添加调用：
-        // ConfigManager.reload();
-        // PlaceholderCache.reload();
 
         source.sendSuccess(() ->
                 Component.translatable("youzaiworldcore.message.command.reload_success", accountCount),

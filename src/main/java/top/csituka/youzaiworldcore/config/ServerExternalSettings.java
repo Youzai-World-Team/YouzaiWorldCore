@@ -24,9 +24,7 @@ public final class ServerExternalSettings {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/ServerExternalSettings");
 
-    /** 默认值：关闭开发者模式 */
     private static final boolean DEFAULT_DEV_MODE_ENABLED = false;
-    /** 默认值：不输出详细日志 */
     private static final boolean DEFAULT_LOG_TO_FILE = false;
 
     private static boolean devModeEnabled = DEFAULT_DEV_MODE_ENABLED;
@@ -68,7 +66,6 @@ public final class ServerExternalSettings {
         syncToDebugLogger();
     }
 
-    /** 保存配置到全局配置文件 */
     public static void save() {
         ConfigSection section = GlobalSettings.section(GlobalSettings.CORE_MODULE);
         section.set("dev_mode_enabled", devModeEnabled);
@@ -76,7 +73,6 @@ public final class ServerExternalSettings {
         GlobalSettings.save();
     }
 
-    /** 将当前设置同步到 DebugLogger */
     private static void syncToDebugLogger() {
         DebugLogger.setDevModeEnabled(devModeEnabled);
         DebugLogger.setLogLevel(logToFile ? 1 : 0);

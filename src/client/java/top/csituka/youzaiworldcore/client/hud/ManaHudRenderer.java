@@ -159,7 +159,6 @@ public final class ManaHudRenderer {
         boolean flashOn = flash && (!GuiAnimationController.isEnabled() || (elapsed / 200) % 2 == 0);
         float opacity = alpha / 255f;
 
-        // 背景
         fillManaBarLayer(g, x, y, 0, barWidth, barWidth, barHeight,
                 YzuiTheme.multiplyAlpha(YzuiTheme.hudSurface(), opacity), yzuiStyle, true);
 
@@ -189,7 +188,6 @@ public final class ManaHudRenderer {
                     color, yzuiStyle, !hasLossTrail && actualW >= barWidth - 1);
         }
 
-        // 文字
         var font = Minecraft.getInstance().font;
         int ty = y - 10;
         String t = mana + " / 100" + (flash ? " 魔力不足" : "");
@@ -257,14 +255,10 @@ public final class ManaHudRenderer {
                 YzuiTheme.mix(YzuiTheme.primary(), YzuiTheme.warning(), chargeDisplay));
     }
 
-    // 颜色工具
     private static int getManaColor(int mana) {
         return YzuiTheme.mix(YzuiTheme.info(), YzuiTheme.primary(), Math.clamp(mana / 100f, 0f, 1f));
     }
 
-    /**
-     * 注册客户端魔力 HUD。
-     */
     public static void register() {
         DebugLogger.info("ManaHudRenderer", "魔力条已接入 YZUI 主题，保留状态栏布局与左下角回退位置");
     }

@@ -35,7 +35,6 @@ public final class InPlaceRespawnManager {
     private InPlaceRespawnManager() {
     }
 
-    /** 注册玩家复活完成事件。 */
     public static void initialize() {
         DebugLogger.entering("InPlaceRespawn", "initialize");
         ServerPlayerEvents.AFTER_RESPAWN.register(InPlaceRespawnManager::finishRespawn);

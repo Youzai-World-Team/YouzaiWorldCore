@@ -27,10 +27,8 @@ public record MapTile(MapTileKey key, long revision, int[] colors, short[] heigh
         }
     }
 
-    /** @return 指定像素的群系标识 */
     public String biome(int pixel) { return biomes.get(Byte.toUnsignedInt(biomeIndices[pixel])); }
 
-    /** @return 指定像素的群系图层颜色 */
     public int biomeColor(int pixel) { return biomeColors[Byte.toUnsignedInt(biomeIndices[pixel])]; }
 
     /** 只比较有效内容，未变化的区块不重复写盘、上传纹理或占用同步带宽。 */

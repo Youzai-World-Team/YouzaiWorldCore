@@ -58,10 +58,8 @@ public abstract class HotbarMixin {
             return;
         }
 
-        // 取消原版渲染
         ci.cancel();
 
-        // 渲染 YZUI 热键栏
         try {
             HotbarRenderer.render(graphics, deltaTracker);
         } catch (Exception e) {

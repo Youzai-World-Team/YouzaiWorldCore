@@ -50,9 +50,6 @@ public class PetCommand {
     public static final String PERMISSION_PET_HIGHLIGHT = "youzaiworldcore.command.pet.highlight";
     public static final String PERMISSION_PET_ADMIN = "youzaiworldcore.command.pet.admin";
 
-    /**
-     * 向命令调度器注册宠物管理命令。
-     */
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         DebugLogger.entering(MODULE, "register");
 
@@ -73,17 +70,14 @@ public class PetCommand {
 
         dispatcher.register(Commands.literal("yzwc")
                 .then(Commands.literal("pet")
-                        // ===== list =====
                         .then(Commands.literal("list")
                                 .requires(src -> LuckPermsHelper.checkPermission(
                                         src, PERMISSION_PET_LIST, Commands.LEVEL_ALL))
                                 .executes(PetCommand::executeList)
                         )
-                        // ===== set <内部名称> ... =====
                         .then(Commands.literal("set")
                                 .then(Commands.argument("internalName", StringArgumentType.word())
                                         .suggests(petNameSuggestions)
-                                        // === rename ===
                                         .then(Commands.literal("rename")
                                                 .requires(src -> LuckPermsHelper.checkPermission(
                                                         src, PERMISSION_PET_SET, Commands.LEVEL_ALL))
@@ -91,7 +85,6 @@ public class PetCommand {
                                                         .executes(PetCommand::executeRename)
                                                 )
                                         )
-                                        // === mode ===
                                         .then(Commands.literal("mode")
                                                 .requires(src -> LuckPermsHelper.checkPermission(
                                                         src, PERMISSION_PET_SET, Commands.LEVEL_ALL))
@@ -101,7 +94,6 @@ public class PetCommand {
                                                         .executes(PetCommand::executeSetMode)
                                                 )
                                         )
-                                        // === trust ===
                                         .then(Commands.literal("trust")
                                                 .requires(src -> LuckPermsHelper.checkPermission(
                                                         src, PERMISSION_PET_SET, Commands.LEVEL_ALL))
@@ -119,7 +111,6 @@ public class PetCommand {
                                                         .executes(PetCommand::executeTrustList)
                                                 )
                                         )
-                                        // === release_life [force] ===
                                         .then(Commands.literal("release_life")
                                                 .requires(src -> LuckPermsHelper.checkPermission(
                                                         src, PERMISSION_PET_SET, Commands.LEVEL_ALL))
@@ -129,7 +120,6 @@ public class PetCommand {
                                                                 ctx, BoolArgumentType.getBool(ctx, "force")))
                                                 )
                                         )
-                                        // === transfer ===
                                         .then(Commands.literal("transfer")
                                                 .requires(src -> LuckPermsHelper.checkPermission(
                                                         src, PERMISSION_PET_SET, Commands.LEVEL_ALL))
@@ -139,7 +129,6 @@ public class PetCommand {
                                         )
                                 )
                         )
-                        // ===== highlight <内部名称> =====
                         .then(Commands.literal("highlight")
                                 .requires(src -> LuckPermsHelper.checkPermission(
                                         src, PERMISSION_PET_HIGHLIGHT, Commands.LEVEL_ALL))
@@ -148,7 +137,6 @@ public class PetCommand {
                                         .executes(PetCommand::executeHighlight)
                                 )
                         )
-                        // ===== admin =====
                         .then(Commands.literal("admin")
                                 .requires(src -> LuckPermsHelper.checkPermission(
                                         src, PERMISSION_PET_ADMIN, Commands.LEVEL_ADMINS))
@@ -187,10 +175,8 @@ public class PetCommand {
         ServerPlayer player = source.getPlayerOrException();
         PetGlobalState state = PetGlobalState.get(player.level().getServer());
 
-        // 获取该玩家作为主人的宠物
         List<PetEntry> ownedPets = state.findByOwner(player.getUUID());
 
-        // 获取其他玩家分配给他（他在信任列表中）的宠物
         List<PetEntry> trustedPets = state.getAllPets().stream()
                 .filter(p -> p.trustedPlayers().contains(player.getUUID()))
                 .collect(Collectors.toList());
@@ -264,7 +250,6 @@ public class PetCommand {
 
         PetEntry entry = optEntry.get();
 
-        // 验证是否为该宠物的主人
         if (!entry.isOwner(player.getUUID())) {
             return new ValidationResult(null,
                     "youzaiworldcore.message.pet.not_owner");
@@ -313,7 +298,6 @@ public class PetCommand {
             return 1;
         }
 
-        // 检查其他宠物是否已使用该显示名
         List<PetEntry> ownedPets = state.findByOwner(entry.ownerUUID());
         boolean nameTaken = ownedPets.stream()
                 .anyMatch(p -> !p.entityUUID().equals(entry.entityUUID())
@@ -325,7 +309,6 @@ public class PetCommand {
             return 0;
         }
 
-        // 更新注册表
         PetEntry updated = entry.withDisplayName(newDisplayName);
         state.updatePet(updated);
 
@@ -406,7 +389,6 @@ public class PetCommand {
         PetEntry entry = vr.entry();
         ServerPlayer player = source.getPlayerOrException();
 
-        // 解析目标玩家
         Collection<NameAndId> profiles;
         try {
             profiles = GameProfileArgument.getGameProfiles(ctx, "player");
@@ -427,7 +409,6 @@ public class PetCommand {
         NameAndId targetProfile = profiles.iterator().next();
         UUID targetUUID = targetProfile.id();
 
-        // 禁止添加自己
         if (targetUUID.equals(entry.ownerUUID())) {
             source.sendFailure(Component.translatable(
                     "youzaiworldcore.message.pet.trust.add_owner"));
@@ -435,7 +416,6 @@ public class PetCommand {
             return 0;
         }
 
-        // 检查是否已存在
         if (entry.trustedPlayers().contains(targetUUID)) {
             source.sendFailure(Component.translatable(
                     "youzaiworldcore.message.pet.trust.already_added"));
@@ -443,7 +423,6 @@ public class PetCommand {
             return 0;
         }
 
-        // 更新信任列表
         Set<UUID> newTrust = new HashSet<>(entry.trustedPlayers());
         newTrust.add(targetUUID);
         PetEntry updated = entry.withTrustedPlayers(newTrust);
@@ -495,7 +474,6 @@ public class PetCommand {
         NameAndId targetProfile = profiles.iterator().next();
         UUID targetUUID = targetProfile.id();
 
-        // 禁止移除主人
         if (targetUUID.equals(entry.ownerUUID())) {
             source.sendFailure(Component.translatable(
                     "youzaiworldcore.message.pet.trust.remove_owner"));
@@ -503,7 +481,6 @@ public class PetCommand {
             return 0;
         }
 
-        // 检查是否在信任列表中
         if (!entry.trustedPlayers().contains(targetUUID)) {
             source.sendFailure(Component.translatable(
                     "youzaiworldcore.message.pet.trust.not_found"));
@@ -511,7 +488,6 @@ public class PetCommand {
             return 0;
         }
 
-        // 更新信任列表
         Set<UUID> newTrust = new HashSet<>(entry.trustedPlayers());
         newTrust.remove(targetUUID);
         PetEntry updated = entry.withTrustedPlayers(newTrust);
@@ -623,7 +599,6 @@ public class PetCommand {
             return 0;
         }
 
-        // 实体交互类命令：检查实体是否已加载
         ServerLevel level = player.level();
         Entity entity = level.getEntity(entry.entityUUID());
         if (!(entity instanceof Wolf wolf)) {
@@ -633,7 +608,6 @@ public class PetCommand {
             return 0;
         }
 
-        // 施加发光效果，持续 5 秒（100 ticks）
         wolf.addEffect(new net.minecraft.world.effect.MobEffectInstance(
                 net.minecraft.world.effect.MobEffects.GLOWING, 100, 0, false, false));
 
@@ -665,37 +639,30 @@ public class PetCommand {
         PetGlobalState state = PetGlobalState.get(player.level().getServer());
 
         if (!force) {
-            // 需要确认
             source.sendFailure(Component.translatable(
                     "youzaiworldcore.message.pet.release.confirm", internalName));
             DebugLogger.exiting(MODULE, "executeReleaseLife", "0 (need confirm)");
             return 0;
         }
 
-        // 检查实体是否已加载
         ServerLevel level = player.level();
         Entity entity = level.getEntity(entry.entityUUID());
         boolean entityLoaded = entity instanceof Wolf;
 
         if (entityLoaded) {
             Wolf wolf = (Wolf) entity;
-            // 从注册表删除
             state.removePet(entry.entityUUID());
-            // 清空实体 PersistentData
             wolf.removeTag(PetInternalTags.TAG_PET_MARKER);
             new HashSet<>(wolf.entityTags()).stream()
                     .filter(t -> t.startsWith(PetInternalTags.TAG_INTERNAL_NAME_PREFIX))
                     .forEach(wolf::removeTag);
-            // 重置显示名称
             wolf.setCustomName(null);
             wolf.setCustomNameVisible(false);
-            // 重置愤怒等级
             wolf.setPersistentAngerEndTime(0);
             if (wolf.getPersistentAngerTarget() != null) {
                 wolf.setPersistentAngerTarget(null);
             }
             // ==== 将驯服狗还原为野生狼 ====
-            // 取消坐下状态
             wolf.setOrderedToSit(false);
             // 取消驯服标记并重置属性（setTame(false, true) 会调用 applyTamingSideEffects，
             // 将最大生命值从 40 降回野生狼的 8）
@@ -703,7 +670,6 @@ public class PetCommand {
         } else {
             // 实体未加载：仅从注册表删除
             state.removePet(entry.entityUUID());
-            // 记录运维日志
             DebugLogger.info(MODULE, "离线放生: [%s] UUID=%s (实体未加载)",
                     entry.internalName(), entry.entityUUID());
         }
@@ -735,7 +701,6 @@ public class PetCommand {
         PetEntry entry = vr.entry();
         ServerPlayer player = source.getPlayerOrException();
 
-        // 解析新主人
         Collection<NameAndId> newOwnerProfiles;
         try {
             newOwnerProfiles = GameProfileArgument.getGameProfiles(ctx, "newOwner");
@@ -756,7 +721,6 @@ public class PetCommand {
         NameAndId newOwnerProfile = newOwnerProfiles.iterator().next();
         UUID newOwnerUUID = newOwnerProfile.id();
 
-        // 不能转让给自己
         if (newOwnerUUID.equals(entry.ownerUUID())) {
             source.sendFailure(Component.translatable(
                     "youzaiworldcore.message.pet.transfer.to_self"));
@@ -766,10 +730,6 @@ public class PetCommand {
 
         PetGlobalState state = PetGlobalState.get(player.level().getServer());
 
-        // 执行转让：
-        // 1. 更新主人
-        // 2. 清空信任列表
-        // 3. 将原主人加入信任列表
         Set<UUID> newTrust = new HashSet<>();
         newTrust.add(entry.ownerUUID()); // 原主人成为信任成员
         PetEntry updated = entry.withOwner(newOwnerUUID, newTrust);
@@ -778,12 +738,10 @@ public class PetCommand {
         // 如果实体已加载，同步修改（EntityReference 无法在运行时直接修改）
         // 下次实体加载时会从注册表同步
 
-        // 发送通知
         source.sendSuccess(() -> Component.translatable(
                 "youzaiworldcore.message.pet.transfer.success",
                 internalName, newOwnerProfile.name()), true);
 
-        // 通知新主人
         ServerPlayer newOwner = player.level().getServer().getPlayerList().getPlayer(newOwnerUUID);
         if (newOwner != null && !newOwner.equals(player)) {
             newOwner.sendSystemMessage(Component.translatable(

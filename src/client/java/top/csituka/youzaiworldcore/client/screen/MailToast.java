@@ -18,11 +18,8 @@ import top.csituka.youzaiworldcore.client.animation.GuiAnimationController;
 @SuppressWarnings("null")
 public final class MailToast {
 
-    /** 停留时长（毫秒） */
     private static final long HOLD_MS = 3000L;
-    /** 淡入时长（毫秒） */
     private static final long FADE_IN_MS = 150L;
-    /** 淡出时长（毫秒） */
     private static final long FADE_OUT_MS = 400L;
 
     private static String message = "";

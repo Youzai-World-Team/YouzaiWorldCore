@@ -159,8 +159,6 @@ public class ModItems {
                     )
     );
 
-    // ── Meme 画作（10 张）──
-
     public static final Item MEME_PAINTING_01 = registerMemePainting("meme_01");
     public static final Item MEME_PAINTING_02 = registerMemePainting("meme_02");
     public static final Item MEME_PAINTING_03 = registerMemePainting("meme_03");

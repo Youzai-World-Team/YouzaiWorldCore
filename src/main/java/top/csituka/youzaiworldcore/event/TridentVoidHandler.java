@@ -43,12 +43,10 @@ public class TridentVoidHandler {
         // 直接从实体索引取三叉戟，避免每秒遍历本维度的全部实体。
         for (ThrownTrident trident : level.getEntities(TRIDENT_TEST, entity -> true)) {
             Entity entity = trident;
-            // 检查是否低于世界最低高度
             if (entity.getY() > level.getMinY() - 10) {
                 continue;
             }
 
-            // 获取三叉戟的物品堆
             ItemStack tridentStack = trident.getPickupItemStackOrigin();
 
             // 在投掷者或世界出生点生成掉落物
@@ -75,16 +73,12 @@ public class TridentVoidHandler {
             itemEntity.setNoGravity(false);
             level.addFreshEntity(itemEntity);
 
-            // 移除原三叉戟实体
             trident.discard();
 
             LOGGER.debug("三叉戟已从虚空回收");
         }
     }
 
-    /**
-     * 注册事件处理器。
-     */
     public static void register() {
         ServerTickEvents.START_SERVER_TICK.register(server -> {
             // 节流：每 SCAN_INTERVAL tick 扫描一次，而非每 tick 全维度遍历

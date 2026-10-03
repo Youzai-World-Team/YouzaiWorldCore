@@ -75,7 +75,6 @@ public final class PetEventHandlers {
                 return InteractionResult.PASS;
             }
 
-            // 检查是否使用命名牌
             if (player.getItemInHand(hand).is(Items.NAME_TAG)) {
                 if (PetEventHandler.onNameTagUse(player, wolf)) {
                     return InteractionResult.FAIL;
@@ -110,15 +109,14 @@ public final class PetEventHandlers {
             boolean cancelled = PetEventHandler.onDamage(wolf, source, level);
 
             if (cancelled) {
-                // 强制清空愤怒状态
                 wolf.setPersistentAngerEndTime(0);
                 if (wolf.getPersistentAngerTarget() != null) {
                     wolf.setPersistentAngerTarget(null);
                 }
-                return false; // 取消伤害
+                return false;
             }
 
-            return true; // 允许伤害
+            return true;
         });
     }
 
@@ -158,7 +156,6 @@ public final class PetEventHandlers {
     // ===== 维度变化事件 =====
 
     private static void registerDimensionChangeHandler() {
-        // 玩家维度切换
         ServerEntityLevelChangeEvents.AFTER_PLAYER_CHANGE_LEVEL.register(
                 (ServerPlayer player, ServerLevel origin, ServerLevel destination) -> {
                     PetEventHandler.onChangeDimension(player, destination);

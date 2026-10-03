@@ -37,7 +37,7 @@ public abstract class WolfBreedMixin {
             breeder = otherWolf.getLoveCause();
         }
         if (breeder == null) {
-            return; // 没有触发玩家，跳过
+            return;
         }
 
         PetEventHandler.onBreed(self, otherWolf, babyWolf, breeder, level);

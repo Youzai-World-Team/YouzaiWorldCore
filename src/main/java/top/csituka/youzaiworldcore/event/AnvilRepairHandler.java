@@ -32,7 +32,6 @@ public class AnvilRepairHandler implements UseBlockCallback {
     public @NonNull InteractionResult interact(Player player, @NonNull Level level, @NonNull InteractionHand hand, @NonNull BlockHitResult hitResult) {
         DebugLogger.entering("AnvilRepairHandler", "interact", "player=" + player.getName().getString());
 
-        // 只处理主手
         boolean isMainHand = hand == InteractionHand.MAIN_HAND;
         DebugLogger.branch("AnvilRepairHandler", "hand == MAIN_HAND", isMainHand);
         if (!isMainHand) {
@@ -43,7 +42,6 @@ public class AnvilRepairHandler implements UseBlockCallback {
         BlockPos pos = hitResult.getBlockPos();
         BlockState state = level.getBlockState(pos);
 
-        // 仅当目标是铁砧方块时才处理
         boolean isAnvil = state.getBlock() instanceof AnvilBlock;
         DebugLogger.branch("AnvilRepairHandler", "block instanceof AnvilBlock", isAnvil, "pos=" + pos);
         if (!isAnvil) {
@@ -53,7 +51,6 @@ public class AnvilRepairHandler implements UseBlockCallback {
 
         ItemStack stack = player.getMainHandItem();
 
-        // 检查玩家是否手持铁锭并下蹲
         boolean hasIronIngot = stack.is(Items.IRON_INGOT);
         boolean isCrouching = player.isSteppingCarefully();
         DebugLogger.branch("AnvilRepairHandler", "holding IRON_INGOT", hasIronIngot);
@@ -63,13 +60,11 @@ public class AnvilRepairHandler implements UseBlockCallback {
             return InteractionResult.PASS;
         }
 
-        // 确定要修复到的目标方块状态
         BlockState newState = null;
 
         boolean isDamagedAnvil = state.is(Blocks.DAMAGED_ANVIL);
         DebugLogger.branch("AnvilRepairHandler", "state is DAMAGED_ANVIL", isDamagedAnvil);
         if (isDamagedAnvil) {
-            // 严重破损 → 损坏
             newState = Blocks.CHIPPED_ANVIL.defaultBlockState()
                     .setValue(AnvilBlock.FACING, state.getValue(AnvilBlock.FACING));
         }
@@ -77,7 +72,6 @@ public class AnvilRepairHandler implements UseBlockCallback {
         boolean isChippedAnvil = !isDamagedAnvil && state.is(Blocks.CHIPPED_ANVIL);
         DebugLogger.branch("AnvilRepairHandler", "state is CHIPPED_ANVIL", isChippedAnvil);
         if (isChippedAnvil) {
-            // 损坏 → 正常
             newState = Blocks.ANVIL.defaultBlockState()
                     .setValue(AnvilBlock.FACING, state.getValue(AnvilBlock.FACING));
         }
@@ -102,9 +96,6 @@ public class AnvilRepairHandler implements UseBlockCallback {
         return InteractionResult.PASS;
     }
 
-    /**
-     * 向 Fabric 事件总线注册此处理器。
-     */
     public static void register() {
         DebugLogger.entering("AnvilRepairHandler", "register");
         UseBlockCallback.EVENT.register(INSTANCE);

@@ -170,8 +170,8 @@ public final class RoundedRect {
             int extend = spans[j];
             int left = x + r - extend;
             int right = x + w - r + extend;
-            g.fill(left, y + r - 1 - j, right, y + r - j, color);          // 顶部第 j 行
-            g.fill(left, y + h - r + j, right, y + h - r + j + 1, color);  // 底部第 j 行
+            g.fill(left, y + r - 1 - j, right, y + r - j, color);
+            g.fill(left, y + h - r + j, right, y + h - r + j + 1, color);
         }
     }
 

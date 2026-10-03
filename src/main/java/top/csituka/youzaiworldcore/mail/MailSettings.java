@@ -55,8 +55,6 @@ public class MailSettings {
 
     private int maxAttachmentsPerMail = 16;
 
-    // ===== 初始化 =====
-
     /**
      * 初始化配置：从全局配置的 {@code mail_module} 分节读取；分节缺失时写入默认值。
      */
@@ -141,16 +139,12 @@ public class MailSettings {
         DebugLogger.exiting(MODULE, "save");
     }
 
-    // ===== 单例访问 =====
-
     public static MailSettings get() {
         if (INSTANCE == null) {
             INSTANCE = new MailSettings();
         }
         return INSTANCE;
     }
-
-    // ===== Getters =====
 
     public String getDefaultExpire() {
         return defaultExpire;

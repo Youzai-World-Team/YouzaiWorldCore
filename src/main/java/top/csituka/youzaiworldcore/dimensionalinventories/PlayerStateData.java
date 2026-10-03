@@ -69,7 +69,6 @@ public final class PlayerStateData {
         DebugLogger.entering("PlayerState", "fromPlayer", "player=" + player.getName().getString());
         PlayerStateData data = new PlayerStateData();
 
-        // 位置
         data.dimension = player.level().dimension().identifier().toString();
         Vec3 pos = player.position();
         data.x = pos.x;
@@ -78,14 +77,12 @@ public final class PlayerStateData {
         data.yRot = player.getYRot();
         data.xRot = player.getXRot();
 
-        // 物品栏 — 使用 26.2 API
         HolderLookup.Provider lookup = getLookup(player);
         data.mainInventory = serializeItemList(player.getInventory().getNonEquipmentItems(), lookup);
         data.armorInventory = serializeArmor(player, lookup);
         data.offhandItem = serializeItemStack(player.getItemBySlot(EquipmentSlot.OFFHAND), lookup);
         data.enderChestInventory = serializeItemList(player.getEnderChestInventory().getItems(), lookup);
 
-        // 状态
         data.health = player.getHealth();
         data.foodLevel = player.getFoodData().getFoodLevel();
         data.saturation = player.getFoodData().getSaturationLevel();
@@ -94,7 +91,6 @@ public final class PlayerStateData {
         data.experienceProgress = player.experienceProgress;
         data.score = player.getScore();
 
-        // 状态效果
         data.effects = new ArrayList<>();
         for (MobEffectInstance effect : player.getActiveEffects()) {
             data.effects.add(SavedEffect.fromEffect(effect));
@@ -148,7 +144,6 @@ public final class PlayerStateData {
         DebugLogger.stateChange("PlayerState", player.getName().getString(), "score", this.score);
         player.setScore(this.score);
 
-        // 清除所有现有效果再应用保存的效果
         player.removeAllEffects();
         boolean hasEffects = this.effects != null && !this.effects.isEmpty();
         DebugLogger.branch("PlayerState", "hasSavedEffects", hasEffects);
@@ -166,7 +161,6 @@ public final class PlayerStateData {
         DebugLogger.exiting("PlayerState", "applyToPlayer");
     }
 
-    /** 清空玩家背包 */
     public static void clearPlayerInventory(ServerPlayer player) {
         player.getInventory().clearContent();
         player.getEnderChestInventory().clearContent();

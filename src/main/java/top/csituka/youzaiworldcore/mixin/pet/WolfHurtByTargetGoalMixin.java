@@ -32,7 +32,7 @@ public abstract class WolfHurtByTargetGoalMixin {
     private void onCanUse(CallbackInfoReturnable<Boolean> cir) {
         Mob mob = ((TargetGoalAccessor) this).getMob();
         if (!(mob instanceof Wolf wolf)) {
-            return; // 仅处理狼
+            return;
         }
         if (wolf.level().isClientSide()) {
             return;
@@ -40,7 +40,7 @@ public abstract class WolfHurtByTargetGoalMixin {
 
         PetMode mode = PetModeController.getMode(wolf);
         if (mode == null) {
-            return; // 非宠物，放行
+            return;
         }
 
         // COMPANIONSHIP 模式下不反击

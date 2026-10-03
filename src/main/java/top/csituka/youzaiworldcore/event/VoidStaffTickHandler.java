@@ -35,7 +35,6 @@ import java.util.UUID;
 @SuppressWarnings("null")
 public class VoidStaffTickHandler implements ServerTickEvents.StartTick {
 
-    // 单例实例
     private static final VoidStaffTickHandler INSTANCE = new VoidStaffTickHandler();
 
     // 通用计数器（用于每秒执行一次的手持检查与耐久消耗）
@@ -53,7 +52,6 @@ public class VoidStaffTickHandler implements ServerTickEvents.StartTick {
     // 记录已经授予过“使用凭虚法杖”成就的玩家，避免重复授予
     private static final Set<UUID> grantedAchievementPlayers = new HashSet<>();
 
-    // 私有构造，确保单例
     private VoidStaffTickHandler() {
     }
 
@@ -81,7 +79,7 @@ public class VoidStaffTickHandler implements ServerTickEvents.StartTick {
             DebugLogger.branch("VoidStaffTickHandler", "tickCounter >= TICKS_PER_SECOND (" + TICKS_PER_SECOND + ")", secondElapsed);
         }
         if (secondElapsed) {
-            tickCounter = 0; // 重置计数器，进入下一秒周期
+            tickCounter = 0;
 
             for (ServerPlayer player : server.getPlayerList().getPlayers()) {
                 // 创造模式玩家无需消耗耐久，也不受飞行限制
@@ -97,15 +95,12 @@ public class VoidStaffTickHandler implements ServerTickEvents.StartTick {
                     DebugLogger.branch("VoidStaffTickHandler", "player " + playerId + " is flying", isFlying);
                 }
                 if (isFlying) {
-                    // 情况1：玩家不再手持凭虚法杖
                     boolean hasStaffInHand = VoidStaffItem.hasVoidStaffInHand(player);
                     if (logDetail) {
                         DebugLogger.branch("VoidStaffTickHandler", "player " + playerId + " has void staff in hand", hasStaffInHand);
                     }
                     if (!hasStaffInHand) {
-                        // 关闭飞行标记
                         VoidStaffItem.setFlying(playerId, false);
-                        // 清除背包中所有凭虚法杖的 active 组件
                         clearAllVoidStaffActiveState(player);
                         // 如果玩家同时处于飞行信标的飞行范围内，则恢复普通飞行（由信标接管）
                         boolean isBeaconFlying = FlyBeaconTickHandler.isBeaconFlying(playerId);
@@ -115,7 +110,6 @@ public class VoidStaffTickHandler implements ServerTickEvents.StartTick {
                         if (isBeaconFlying) {
                             VoidStaffItem.disableFlight(player);
                         }
-                        // 发送动作栏提示：法杖已禁用
                         sendActionBar(player,
                                 Component.translatable("item.youzaiworldcore.void_staff.disabled")
                                         .withStyle(ChatFormatting.RED)
@@ -126,7 +120,6 @@ public class VoidStaffTickHandler implements ServerTickEvents.StartTick {
                     else if (player.getAbilities().flying && !player.onGround()) {
                         ItemStack flyCore = VoidStaffItem.getVoidStaffInHand(player);
                         if (flyCore != null) {
-                            // 增加 1 点耐久损耗
                             int newDamage = flyCore.getDamageValue() + 1;
                             boolean durabilityDepleted = newDamage >= flyCore.getMaxDamage();
                             if (logDetail) {
@@ -147,13 +140,11 @@ public class VoidStaffTickHandler implements ServerTickEvents.StartTick {
                                 );
                                 DebugLogger.info("VoidStaffTickHandler", "Void staff depleted for " + player.getName().getString());
                             } else {
-                                // 未耗尽：仅增加损伤值
                                 flyCore.setDamageValue(newDamage);
                             }
                         }
                     }
 
-                    // ***** 新增：首次获得飞行能力时授予成就 *****
                     // 玩家正在飞行且标记为 true，并且尚未授予过成就
                     if (player.getAbilities().flying && !grantedAchievementPlayers.contains(playerId)) {
                         grantUsedVoidStaffAdvancement(player, server);
@@ -170,7 +161,7 @@ public class VoidStaffTickHandler implements ServerTickEvents.StartTick {
             DebugLogger.branch("VoidStaffTickHandler", "hungerTickCounter >= TICKS_PER_HUNGER (" + TICKS_PER_HUNGER + ")", hungerPeriod);
         }
         if (hungerPeriod) {
-            hungerTickCounter = 0; // 重置计数器，进入下一个 5 秒周期
+            hungerTickCounter = 0;
 
             for (ServerPlayer player : server.getPlayerList().getPlayers()) {
                 if (player.isCreative()) {
@@ -192,11 +183,9 @@ public class VoidStaffTickHandler implements ServerTickEvents.StartTick {
                                 "saturation=" + saturation + ", food=" + food);
                     }
 
-                    // 优先扣除饱和度
                     if (saturation > 0) {
                         player.getFoodData().setSaturation(Math.max(0, saturation - 1));
                     }
-                    // 没有饱和度时扣除一点食物值
                     else if (food > 0) {
                         player.getFoodData().setFoodLevel(food - 1);
                     }
@@ -272,7 +261,6 @@ public class VoidStaffTickHandler implements ServerTickEvents.StartTick {
     public static void register() {
         DebugLogger.entering("VoidStaffTickHandler", "register");
 
-        // 注册 tick 处理器
         ServerTickEvents.START_SERVER_TICK.register(INSTANCE);
 
         // 玩家断开连接时清除飞行标记，避免内存泄漏

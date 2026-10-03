@@ -51,9 +51,6 @@ public class PlayerAttributeData {
             "meleeDamage", "rangedDamage", "damageResistance"
     };
 
-    /**
-     * 获取指定 key 的当前点数。
-     */
     public int get(String key) {
         return switch (key) {
             case "maxHealth" -> maxHealth;
@@ -69,9 +66,6 @@ public class PlayerAttributeData {
         };
     }
 
-    /**
-     * 设置指定 key 的点数。
-     */
     public void set(String key, int value) {
         switch (key) {
             case "maxHealth" -> maxHealth = value;

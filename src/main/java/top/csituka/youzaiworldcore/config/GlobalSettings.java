@@ -37,32 +37,19 @@ public final class GlobalSettings {
 
     /** 模组核心（开发者模式 / 日志开关） */
     public static final String CORE_MODULE = "core_module";
-    /** 游戏内地图、公共路径点与地形共享 */
-    /** AFK 挂机检测 */
     public static final String AFK_MODULE = "afk_module";
-    /** 全局事件开关 */
     public static final String EVENT_MODULE = "event_module";
-    /** 天然带电苦力怕 */
     public static final String CHARGED_CREEPER_MODULE = "charged_creeper_module";
-    /** 末地传送门相关功能 */
     public static final String END_PORTAL_MODULE = "end_portal_module";
-    /** 老吴贴贴事件 */
     public static final String LAOWU_MEME_MODULE = "laowu_meme_module";
-    /** 试炼宝库无限领奖 */
     public static final String TRIAL_VAULT_MODULE = "trial_vault_module";
-    /** 更新检查器 */
     public static final String UPDATE_MODULE = "update_module";
-    /** 原地重生 */
     public static final String RESPAWN_MODULE = "respawn_module";
-    /** 邮件系统 */
     public static final String MAIL_MODULE = "mail_module";
-    /** 宠物模块 */
     public static final String PET_MODULE = "pet_module";
-    /** 自定义皮肤与披风 */
     public static final String COSMETIC_MODULE = "cosmetic_module";
     /** 维度池（跨维度独立背包） */
     public static final String DIMENSIONAL_INVENTORIES_MODULE = "dimensional_inventories_module";
-    /** 玩法统计与排行榜 */
     public static final String STATUS_MODULE = "status_module";
     /** 冒险等级与属性加点 */
     public static final String SKILL_MODULE = "skill_module";
@@ -140,7 +127,6 @@ public final class GlobalSettings {
         STORE.writeDefaults();
     }
 
-    /** @return 全局配置文件路径 */
     public static java.nio.file.Path file() {
         return STORE.file();
     }

@@ -16,7 +16,6 @@ public class ManaManager {
     /** 玩家魔力数据，key = UUID，value = 当前魔力值 */
     private final Map<UUID, Integer> playerMana = new HashMap<>();
 
-    /** 最大魔力值 */
     public static final int MAX_MANA = 100;
 
     // ─── 客户端缓存与魔力不足标记（在客户端 use 时使用） ───
@@ -47,7 +46,6 @@ public class ManaManager {
     /** 每 tick 恢复的魔力（每 0.5 秒 = 10 tick 恢复 1 点） */
     private static final int MANA_RECOVER_INTERVAL = 10; // 0.5 秒
 
-    /** 魔力恢复计数器 */
     private int recoverTickCounter = 0;
 
     private ManaManager() {

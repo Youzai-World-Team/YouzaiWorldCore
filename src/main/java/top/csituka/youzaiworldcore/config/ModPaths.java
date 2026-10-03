@@ -66,11 +66,9 @@ public final class ModPaths {
     public static final String BACKUP_DIR_NAME = "backup";
     public static final String TEMP_DIR_NAME = "temp";
 
-    /** 全局配置文件名 */
     public static final String GLOBAL_SETTINGS_FILE_NAME = "global_settings.json";
     /** 客户端存放目录名（{@code yzwc/client}） */
     public static final String CLIENT_DIR_NAME = "client";
-    /** 玩家个人配置目录名 */
     public static final String USER_SETTINGS_DIR_NAME = "user_settings";
     /** 各模块数据文件的默认文件名 */
     public static final String DEFAULT_DATA_FILE_NAME = "data.json";
@@ -227,8 +225,6 @@ public final class ModPaths {
     public static Path worldTemp(MinecraftServer server, String module) {
         return worldTempRoot(server).resolve(module);
     }
-
-    // ===== 工具 =====
 
     /**
      * 新开服时预先建好服务端侧的四层目录骨架，让管理员一眼看清东西该放哪。

@@ -142,7 +142,6 @@ public final class HudSlotAnimationState {
         pushTransform(graphics, centerX, centerY, scale, scale, 0.0f, p * 2.0f);
     }
 
-    /** 弹出由本类压入的物品动画矩阵。 */
     public void popTransform(GuiGraphicsExtractor graphics) {
         graphics.pose().popMatrix();
     }

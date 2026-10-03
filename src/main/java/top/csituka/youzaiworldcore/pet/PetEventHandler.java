@@ -23,9 +23,7 @@ public final class PetEventHandler {
     private PetEventHandler() {
     }
 
-    // ============================
     // 事件 1：驯服时自动注册
-    // ============================
 
     /**
      * 当狼被驯服时调用。
@@ -43,13 +41,10 @@ public final class PetEventHandler {
 
         PetGlobalState state = PetGlobalState.get(level.getServer());
 
-        // 生成唯一内部名称
         String internalName = PetUtils.generateUniqueInternalName(level.getServer());
 
-        // 创建宠物条目
         PetEntry entry = PetEntry.createNew(internalName, wolf.getUUID(), player.getUUID());
 
-        // 写入全局注册表
         try {
             state.addPet(entry);
         } catch (IllegalArgumentException e) {
@@ -57,7 +52,6 @@ public final class PetEventHandler {
             return;
         }
 
-        // 设置显示名称
         @SuppressWarnings("null")
         Component tameName = Component.literal(internalName);
         wolf.setCustomName(tameName);
@@ -71,9 +65,7 @@ public final class PetEventHandler {
         DebugLogger.exiting(MODULE, "onTame");
     }
 
-    // ============================
     // 事件 2：繁殖继承
-    // ============================
 
     /**
      * 当两只宠物狼繁殖时调用。
@@ -93,7 +85,6 @@ public final class PetEventHandler {
 
         PetGlobalState state = PetGlobalState.get(level.getServer());
 
-        // 1. 检查父母双方是否均为宠物
         Optional<PetEntry> p1Opt = state.findByEntityUUID(parent1.getUUID());
         Optional<PetEntry> p2Opt = state.findByEntityUUID(parent2.getUUID());
 
@@ -107,7 +98,6 @@ public final class PetEventHandler {
         PetEntry p1 = p1Opt.get();
         PetEntry p2 = p2Opt.get();
 
-        // 2. 检查触发玩家是否在双亲的有效信任集中
         Set<UUID> effectiveTrust = new HashSet<>();
         effectiveTrust.addAll(p1.getEffectiveTrustSet());
         effectiveTrust.addAll(p2.getEffectiveTrustSet());
@@ -120,7 +110,6 @@ public final class PetEventHandler {
             return;
         }
 
-        // 3. 通过校验 → 创建幼狼条目
         String internalName = PetUtils.generateUniqueInternalName(level.getServer());
 
         // 信任列表并集（不含主人自身）
@@ -156,7 +145,6 @@ public final class PetEventHandler {
             return;
         }
 
-        // 设置显示名称
         @SuppressWarnings("null")
         Component babyName = Component.literal(internalName);
         baby.setCustomName(babyName);
@@ -172,9 +160,7 @@ public final class PetEventHandler {
         DebugLogger.exiting(MODULE, "onBreed");
     }
 
-    // ============================
     // 事件 3：死亡自动移除
-    // ============================
 
     /**
      * 当宠物狼死亡时调用 — 从全局注册表删除。
@@ -195,9 +181,7 @@ public final class PetEventHandler {
         DebugLogger.exiting(MODULE, "onDeath");
     }
 
-    // ============================
     // 事件 5：信任玩家交互
-    // ============================
 
     /**
      * 处理右键点击狼的交互。
@@ -216,25 +200,22 @@ public final class PetEventHandler {
 
         Optional<PetEntry> optEntry = state.findByEntityUUID(wolf.getUUID());
         if (optEntry.isEmpty()) {
-            return false; // 不是宠物，放行原版行为
+            return false;
         }
 
         PetEntry entry = optEntry.get();
 
-        // 检查玩家是否在有效信任集中
         if (!entry.isTrustedOrOwner(player.getUUID())) {
             player.sendSystemMessage(Component.translatable(
                     "youzaiworldcore.message.pet.interact.not_trusted"));
-            return true; // 取消交互
+            return true;
         }
 
         // 信任玩家 → 放行原版交互（坐下/站起、喂食、治疗）
         return false;
     }
 
-    // ============================
     // 事件 6：命名牌拦截
-    // ============================
 
     /**
      * 检查并拦截命名牌使用。
@@ -252,21 +233,18 @@ public final class PetEventHandler {
         PetGlobalState state = PetGlobalState.get(level.getServer());
 
         if (!state.isPet(wolf.getUUID())) {
-            return false; // 野生狼，放行
+            return false;
         }
 
-        // 拦截命名牌
         player.sendSystemMessage(Component.translatable(
                 "youzaiworldcore.message.pet.nametag.blocked"));
         DebugLogger.info(MODULE, "拦截命名牌: 玩家=%s, 宠物=%s",
                 player.getName().getString(), wolf.getUUID());
 
-        return true; // 取消事件
+        return true;
     }
 
-    // ============================
     // 事件 7：实体加载同步与垃圾回收
-    // ============================
 
     /**
      * 实体加载时执行同步与垃圾回收。
@@ -299,7 +277,6 @@ public final class PetEventHandler {
      */
     @SuppressWarnings("null")
     private static void syncRegistryToEntity(Wolf wolf, PetEntry entry) {
-        // 同步显示名称
         @SuppressWarnings("null")
         Component displayName = Component.literal(entry.displayName());
         if (!displayName.equals(wolf.getCustomName())) {
@@ -325,19 +302,15 @@ public final class PetEventHandler {
      */
     @SuppressWarnings("null")
     private static void cleanupEntityData(Wolf wolf) {
-        // 移除宠物标记
         wolf.removeTag(PetInternalTags.TAG_PET_MARKER);
 
-        // 移除所有内部名称标签
         new HashSet<>(wolf.entityTags()).stream()
                 .filter(t -> t.startsWith(PetInternalTags.TAG_INTERNAL_NAME_PREFIX))
                 .forEach(tag -> wolf.removeTag(tag));
 
-        // 重置显示名称
         wolf.setCustomName(null);
         wolf.setCustomNameVisible(false);
 
-        // 还原为野生狼
         wolf.setOrderedToSit(false);
         wolf.setPersistentAngerEndTime(0);
         if (wolf.getPersistentAngerTarget() != null) {
@@ -346,9 +319,7 @@ public final class PetEventHandler {
         wolf.setTame(false, true);
     }
 
-    // ============================
     // 事件 8：伤害拦截
-    // ============================
 
     /**
      * 处理宠物狼受伤事件 — 拦截主人/信任玩家的误伤。
@@ -360,7 +331,6 @@ public final class PetEventHandler {
      */
     public static boolean onDamage(Wolf wolf, net.minecraft.world.damagesource.DamageSource source,
                                     ServerLevel level) {
-        // 非玩家伤害 → 不拦截
         if (!(source.getEntity() instanceof Player damager)) {
             return false;
         }
@@ -368,36 +338,31 @@ public final class PetEventHandler {
         PetGlobalState state = PetGlobalState.get(level.getServer());
         Optional<PetEntry> optEntry = state.findByEntityUUID(wolf.getUUID());
         if (optEntry.isEmpty()) {
-            return false; // 不是宠物，放行
+            return false;
         }
 
         PetEntry entry = optEntry.get();
 
-        // 检查伤害来源是否在有效信任集中
         if (entry.isOwner(damager.getUUID())) {
             // 主人误伤
             damager.sendSystemMessage(Component.translatable(
                     "youzaiworldcore.message.pet.damage.protect_owner"));
-            // 强制清空愤怒状态
             wolf.setPersistentAngerEndTime(0);
             if (wolf.getPersistentAngerTarget() != null) {
                 wolf.setPersistentAngerTarget(null);
             }
-            return true; // 取消伤害
+            return true;
         } else if (entry.isTrustedOrOwner(damager.getUUID())) {
             // 信任玩家误伤
             damager.sendSystemMessage(Component.translatable(
                     "youzaiworldcore.message.pet.damage.protect_trusted"));
-            return true; // 取消伤害
+            return true;
         }
 
-        // 陌生人 → 放行
         return false;
     }
 
-    // ============================
     // 事件 4：跨维度传送跟随
-    // ============================
 
     /**
      * 当玩家切换维度时，传送已加载的宠物跟随。
@@ -419,16 +384,13 @@ public final class PetEventHandler {
 
         int teleported = 0;
         for (PetEntry pet : pets) {
-            // 遍历所有维度查找已加载的宠物
             for (ServerLevel level : player.level().getServer().getAllLevels()) {
                 @SuppressWarnings("null")
                 net.minecraft.world.entity.Entity entity = level.getEntity(pet.entityUUID());
                 if (entity instanceof Wolf wolf) {
-                    // 跳过坐下的狼
                     if (wolf.isInSittingPose()) {
                         continue;
                     }
-                    // 传送至玩家位置
                     @SuppressWarnings("null")
                     java.util.Set<net.minecraft.world.entity.Relative> relativeSet = java.util.Set.of();
                     wolf.teleportTo(destination,

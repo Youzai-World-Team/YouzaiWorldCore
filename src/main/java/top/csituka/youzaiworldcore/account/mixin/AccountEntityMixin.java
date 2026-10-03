@@ -29,7 +29,7 @@ public abstract class AccountEntityMixin {
         Entity self = (Entity) (Object) this;
         if (self instanceof ServerPlayer player) {
             if (AuthPlayerHelper.shouldBlockActions(player)) {
-                cir.setReturnValue(true); // 未认证时隐身
+                cir.setReturnValue(true);
             }
         }
     }

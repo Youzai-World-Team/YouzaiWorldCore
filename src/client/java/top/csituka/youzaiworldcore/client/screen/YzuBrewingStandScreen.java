@@ -133,7 +133,6 @@ public class YzuBrewingStandScreen extends AbstractContainerScreen<BrewingStandM
     private boolean guideInitialized;
     private int guidePage;
 
-    /** 创建酿造台 YZUI 屏幕。 */
     public YzuBrewingStandScreen(BrewingStandMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title, MAIN_WIDTH, MAIN_HEIGHT);
         DebugLogger.info(MODULE, "创建 YZUI 酿造台屏幕: title=%s menuType=%s",

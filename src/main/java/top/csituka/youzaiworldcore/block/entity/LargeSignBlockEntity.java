@@ -71,17 +71,11 @@ public class LargeSignBlockEntity extends BlockEntity implements FlashingSign {
         return text;
     }
 
-    /**
-     * @return 文字染色
-     */
     @NonNull
     public DyeColor getColor() {
         return color;
     }
 
-    /**
-     * @return 文字是否发光
-     */
     public boolean isGlowing() {
         return glowing;
     }
@@ -93,7 +87,6 @@ public class LargeSignBlockEntity extends BlockEntity implements FlashingSign {
         return waxed;
     }
 
-    /** @return 大字牌文字是否处于闪烁状态 */
     public boolean isFlashing() {
         return flashing;
     }

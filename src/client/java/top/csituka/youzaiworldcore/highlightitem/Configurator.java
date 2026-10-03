@@ -62,7 +62,6 @@ public class Configurator {
         }
     }
 
-    /** 分节内的配置键 */
     public enum Config {
         COLOR("color"),
         TOGGLE("toggle"),
@@ -86,7 +85,6 @@ public class Configurator {
     private static final ItemComparator.Comparators DEFAULT_COMPARATOR = ItemComparator.Comparators.ITEM_ONLY;
     private static final NotificationPreference DEFAULT_NOTIFICATION_PREFERENCE = NotificationPreference.NONE;
 
-    /** @return 该模块的配置分节 */
     private static ConfigSection section() {
         return ClientGlobalSettings.section(ClientGlobalSettings.HIGHLIGHT_ITEM_MODULE);
     }
@@ -171,7 +169,6 @@ public class Configurator {
                 (int) (rgba[2] * 255));
     }
 
-    /** 切换高亮总开关。 */
     public void updateToggle(LocalPlayer player, NotificationContext notification) {
         TOGGLE = !TOGGLE;
         try {

@@ -45,17 +45,14 @@ public final class GuiAnimationController {
     private GuiAnimationController() {
     }
 
-    /** 当前是否完全关闭动画。 */
     public static boolean isDisabled() {
         return getMode() == GuiAnimationMode.OFF;
     }
 
-    /** 当前是否启用完整页面动画。 */
     public static boolean isFull() {
         return getMode() == GuiAnimationMode.FULL;
     }
 
-    /** 当前是否仅为模组页面、控件与弹窗启用动画。 */
     public static boolean isBasic() {
         return getMode() == GuiAnimationMode.BASIC;
     }

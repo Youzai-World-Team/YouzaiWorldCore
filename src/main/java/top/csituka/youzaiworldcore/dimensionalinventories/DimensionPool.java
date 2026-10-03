@@ -15,7 +15,6 @@ public final class DimensionPool {
     /** 池的唯一标识符，如 "survival_world_pool" */
     private String id;
 
-    /** 显示名称 */
     private String displayName;
 
     /** 此池包含的维度 ID 集合 */
@@ -48,8 +47,6 @@ public final class DimensionPool {
         this.incrementStatistics = incrementStatistics;
     }
 
-    // ===== Getters =====
-
     public String id() { return id; }
     public String displayName() { return displayName; }
     public TreeSet<String> dimensions() { return dimensions; }
@@ -59,8 +56,6 @@ public final class DimensionPool {
     @Nullable
     public DefaultSpawn defaultSpawn() { return defaultSpawn; }
 
-    // ===== Setters =====
-
     public void setId(String id) { this.id = id; }
     public void setDisplayName(String displayName) { this.displayName = displayName; }
     public void setDimensions(TreeSet<String> dimensions) { this.dimensions = dimensions; }
@@ -68,8 +63,6 @@ public final class DimensionPool {
     public void setProgressAdvancements(boolean progressAdvancements) { this.progressAdvancements = progressAdvancements; }
     public void setIncrementStatistics(boolean incrementStatistics) { this.incrementStatistics = incrementStatistics; }
     public void setDefaultSpawn(@Nullable DefaultSpawn defaultSpawn) { this.defaultSpawn = defaultSpawn; }
-
-    // ===== 操作 =====
 
     public void addDimension(String dimension) {
         DebugLogger.entering("DimPool", "addDimension", "poolId=" + this.id + ", dimension=" + dimension);

@@ -24,7 +24,6 @@ public final class LaowuMemeConfig {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/LaowuMemeConfig");
 
-    /** 默认值：启用 */
     private static final boolean DEFAULT_ENABLED = true;
 
     /** 事件总开关，默认 true（启用）。设为 false 时状态机直接释放全部配对并停止扫描 */

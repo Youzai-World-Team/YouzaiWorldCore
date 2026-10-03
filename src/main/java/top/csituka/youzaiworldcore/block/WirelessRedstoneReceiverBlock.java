@@ -75,9 +75,7 @@ public class WirelessRedstoneReceiverBlock extends WirelessRedstoneComponentBloc
                 WirelessRedstoneReceiverBlockEntity::serverTick);
     }
 
-    // ====================================================================
     // 移除后的收尾
-    // ====================================================================
 
     /**
      * 被破坏后向六向邻居广播一次更新。
@@ -90,9 +88,7 @@ public class WirelessRedstoneReceiverBlock extends WirelessRedstoneComponentBloc
         broadcastNeighborUpdates(level, pos);
     }
 
-    // ====================================================================
     // 红石信号方法：作为信号源仅向四个侧边输出
-    // ====================================================================
 
     @Override
     protected boolean isSignalSource(@NonNull BlockState state) {

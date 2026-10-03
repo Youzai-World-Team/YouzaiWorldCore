@@ -5,7 +5,7 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectLinkedOpenHashMap;
 import java.util.function.IntFunction;
 
 final class NumResultCacheMap extends Int2ObjectLinkedOpenHashMap<String> {
-    private static final int CAPACITY = 32767;  // 32K
+    private static final int CAPACITY = 32767;
 
     NumResultCacheMap() {
         super(1024);

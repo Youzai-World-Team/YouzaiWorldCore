@@ -23,11 +23,9 @@ public class ExperienceDisplayEntry extends DisplayEntry<Void> {
     private static final int ICON_SIZE = 16;
     private static final int TEXT_ICON_MARGIN = 4;
 
-    /** 经验球图标纹理 */
     private static final Identifier XP_ICON_TEXTURE =
             Identifier.fromNamespaceAndPath("youzaiworldcore", "textures/gui/experience_orb.png");
 
-    /** 累计经验值 */
     private int totalXp;
 
     /**

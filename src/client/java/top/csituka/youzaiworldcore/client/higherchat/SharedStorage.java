@@ -28,9 +28,6 @@ public final class SharedStorage {
         throw new UnsupportedOperationException("Utility class");
     }
 
-    /**
-     * Returns the current GUI scaled window height.
-     */
     private static int getWindowHeight() {
         return Minecraft.getInstance().getWindow().getGuiScaledHeight();
     }

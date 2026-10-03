@@ -48,7 +48,6 @@ public class TeleportAnchorNameScreen extends Screen implements YzuiPopupScreen 
         int panelX = (this.width - PANEL_WIDTH) / 2;
         int panelY = (this.height - PANEL_HEIGHT) / 2;
 
-        // 命名输入框
         nameInput = new EditBox(this.font,
                 panelX + 24, panelY + 100,
                 PANEL_WIDTH - 48, 26,
@@ -58,7 +57,6 @@ public class TeleportAnchorNameScreen extends Screen implements YzuiPopupScreen 
         nameInput.setFocused(true);
         addRenderableWidget(nameInput);
 
-        // 确认按钮 — 使用 TransparentButton
         confirmButton = new TransparentButton(
                 panelX + (PANEL_WIDTH / 2) - (BUTTON_WIDTH / 2), panelY + 162,
                 BUTTON_WIDTH, BUTTON_HEIGHT,

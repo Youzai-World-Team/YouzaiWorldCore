@@ -14,9 +14,7 @@ import net.minecraft.client.input.MouseButtonEvent;
  */
 final class MailViewport {
 
-    /** 设计基准宽度（GUI 单位） */
     static final int DESIGN_WIDTH = 960;
-    /** 设计基准高度（GUI 单位） */
     static final int DESIGN_HEIGHT = 540;
 
     private float scale = 1f;

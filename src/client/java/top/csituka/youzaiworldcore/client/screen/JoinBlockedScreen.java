@@ -39,7 +39,6 @@ public class JoinBlockedScreen extends Screen implements YzuiPopupScreen {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/JoinBlockedScreen");
 
-    /** DebugLogger 模块名 */
     public static final String MODULE = "JoinBlockedScreen";
 
     // ============ 布局常量 ============
@@ -142,7 +141,7 @@ public class JoinBlockedScreen extends Screen implements YzuiPopupScreen {
 
     @Override
     public boolean isPauseScreen() {
-        return false; // 不暂停游戏
+        return false;
     }
 
     @Override
@@ -164,8 +163,5 @@ public class JoinBlockedScreen extends Screen implements YzuiPopupScreen {
     private void startExitAnimation(Runnable onComplete) {
         if (!GuiAnimationController.isExiting(this)) onComplete.run();
     }
-
-    // ========== 工具方法 ==========
-
 
 }

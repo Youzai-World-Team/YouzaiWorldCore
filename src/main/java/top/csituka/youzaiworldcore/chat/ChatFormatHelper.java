@@ -161,12 +161,10 @@ public final class ChatFormatHelper {
         return value;
     }
 
-    /** 加入消息 */
     public static Component formatJoin(ServerPlayer player) {
         return applyFormat(player, ChatFormatSettings.getJoinedGameFormat(), playerVars(player));
     }
 
-    /** 首次加入消息 */
     public static Component formatJoinFirstTime(ServerPlayer player) {
         return applyFormat(player, ChatFormatSettings.getJoinedFirstTimeFormat(), playerVars(player));
     }
@@ -178,7 +176,6 @@ public final class ChatFormatHelper {
         return applyFormat(player, ChatFormatSettings.getJoinedRenamedFormat(), vars);
     }
 
-    /** 离开消息 */
     public static Component formatLeft(ServerPlayer player) {
         return applyFormat(player, ChatFormatSettings.getLeftGameFormat(), playerVars(player));
     }

@@ -52,7 +52,6 @@ public abstract class AccountPacketHandlerMixin {
         Long lastTime = lastTeleportTime.get(playerUuid);
 
         if (lastTime == null || now >= lastTime + TELEPORT_COOLDOWN_NS) {
-            // 传送回原位
             ((ServerGamePacketListenerImpl) (Object) this).teleport(
                     player.getX(), player.getY(), player.getZ(),
                     player.getYRot(), player.getXRot()

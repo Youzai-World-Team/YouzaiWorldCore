@@ -35,12 +35,10 @@ public class PetGlobalState extends SavedData {
 
     private static final String MODULE = "PetGlobalState";
 
-    /** 数据存储 ID */
     @SuppressWarnings("null")
     private static final Identifier DATA_ID = Identifier.fromNamespaceAndPath(
             YouzaiworldCore.MOD_ID, "pet_registry");
 
-    /** 序列化 Codec */
     @SuppressWarnings("null")
     private static final Codec<PetGlobalState> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codec.unboundedMap(
@@ -68,8 +66,6 @@ public class PetGlobalState extends SavedData {
 
     /** 所有者 UUID → 该主人的所有宠物实体 UUID 集合（反向索引，未持久化） */
     private final Map<UUID, Set<UUID>> ownerIndex;
-
-    // ===== 构造 =====
 
     private PetGlobalState() {
         this(new HashMap<>());
@@ -100,8 +96,6 @@ public class PetGlobalState extends SavedData {
         DebugLogger.debug(MODULE, "索引重建完成: %d 个名称索引, %d 个所有者索引",
                 nameIndex.size(), ownerIndex.size());
     }
-
-    // ===== 访问方法 =====
 
     /**
      * 获取或创建 PetGlobalState 实例（从主世界数据存储）。
@@ -168,26 +162,13 @@ public class PetGlobalState extends SavedData {
         return List.copyOf(entityMap.values());
     }
 
-    /**
-     * 获取宠物总数。
-     *
-     * @return 宠物数量
-     */
     public int getPetCount() {
         return entityMap.size();
     }
 
-    /**
-     * 检查内部名称是否已被占用。
-     *
-     * @param internalName 内部名称
-     * @return true 如果该名称已被使用
-     */
     public boolean isNameTaken(@NotNull String internalName) {
         return nameIndex.containsKey(internalName);
     }
-
-    // ===== 修改方法 =====
 
     /**
      * 添加一个新宠物到注册表。
@@ -285,12 +266,6 @@ public class PetGlobalState extends SavedData {
         return Optional.of(removed);
     }
 
-    /**
-     * 检查一个实体 UUID 是否为注册表中的宠物。
-     *
-     * @param entityUUID 实体 UUID
-     * @return true 如果该实体是已注册的宠物
-     */
     public boolean isPet(@NotNull UUID entityUUID) {
         return entityMap.containsKey(entityUUID);
     }

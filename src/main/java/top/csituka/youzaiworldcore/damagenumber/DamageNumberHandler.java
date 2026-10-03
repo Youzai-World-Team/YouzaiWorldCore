@@ -25,7 +25,6 @@ public final class DamageNumberHandler {
     private DamageNumberHandler() {
     }
 
-    /** 初始化伤害跳字服务端处理器。 */
     public static void initialize() {
         DebugLogger.info(MODULE, "伤害跳字服务端处理器已初始化");
     }

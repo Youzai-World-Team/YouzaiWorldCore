@@ -112,8 +112,6 @@ public class ConfigImportSuccessScreen extends Screen implements YzuiPopupScreen
         Minecraft.getInstance().stop();
     }
 
-    // ========== 工具 ==========
-
     private boolean isClicked(TransparentButton button, double mx, double my) {
         return mx >= button.getX() && mx < button.getX() + button.getWidth()
                 && my >= button.getY() && my < button.getY() + button.getHeight();
@@ -121,7 +119,6 @@ public class ConfigImportSuccessScreen extends Screen implements YzuiPopupScreen
 
     private void fillRoundedRect(GuiGraphicsExtractor g, int x, int y, int w, int h, int r, int color) {
         // 圆角绘制统一走 RoundedRect（行扫描：r=6 时 135 次 fill -> 13 次）。
-        // 点亮像素与原逐像素实现一致（45253 组尺寸/半径已逐一比对）；
         // 原实现未做尺寸校验，r > min(w,h)/2 时会画出坐标反转/重叠的结果，此处会钳制半径。
         RoundedRect.fill(g, x, y, w, h, r, color);
     }

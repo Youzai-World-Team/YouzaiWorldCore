@@ -31,13 +31,9 @@ import java.time.format.DateTimeFormatter;
  */
 public final class DebugLogger {
 
-    /** 日志级别常量：关闭 */
     public static final int LEVEL_OFF = 0;
-    /** 日志级别常量：基本 */
     public static final int LEVEL_BASIC = 1;
-    /** 日志级别常量：详细 */
     public static final int LEVEL_DETAILED = 2;
-    /** 日志级别常量：调试 */
     public static final int LEVEL_DEBUG = 3;
 
     private static final Logger FALLBACK_LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/Debug");
@@ -53,12 +49,10 @@ public final class DebugLogger {
 
     // ===== 开关控制 =====
 
-    /** 设置开发者模式状态 */
     public static void setDevModeEnabled(boolean enabled) {
         devModeEnabled = enabled;
     }
 
-    /** 获取开发者模式状态 */
     public static boolean isDevModeEnabled() {
         return devModeEnabled;
     }
@@ -68,7 +62,6 @@ public final class DebugLogger {
         logLevel = Math.max(LEVEL_OFF, Math.min(LEVEL_DEBUG, level));
     }
 
-    /** 获取日志输出丰富度等级 */
     public static int getLogLevel() {
         return logLevel;
     }
@@ -125,7 +118,6 @@ public final class DebugLogger {
     }
 
     // ===== 通用日志方法 =====
-    //
     // 关于 varargs 重载：
     // 形如 debug(module, msg, args...) 的可变参数方法，即使日志级别未开启，
     // JVM 也会在<b>调用前</b>先分配一个 Object[] 并把基本类型装箱进去——

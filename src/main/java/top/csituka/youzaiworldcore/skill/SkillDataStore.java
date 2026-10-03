@@ -28,9 +28,7 @@ import java.nio.file.Path;
  */
 final class SkillDataStore {
 
-    /** 冒险等级数据块 */
     static final String KEY_LEVELS = "levels";
-    /** 属性加点数据块 */
     static final String KEY_ATTRIBUTES = "attributes";
 
     private static final JsonFileStore STORE =
@@ -47,7 +45,6 @@ final class SkillDataStore {
     private SkillDataStore() {
     }
 
-    /** @return 数据文件路径 */
     static Path file() {
         return STORE.file();
     }

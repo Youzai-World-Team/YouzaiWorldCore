@@ -52,7 +52,6 @@ public final class MapServerSettings {
         DebugLogger.info("MapServerSettings", "地图共享配置已加载，地形=%s，公共点=%s，玩家=%s", shareTerrain, shareWaypoints, sharePlayers);
     }
 
-    /** 保存全部服务端地图配置。 */
     public static void save() {
         var section = new MapSqlSettings(database(), "server");
         section.set("enabled", enabled);

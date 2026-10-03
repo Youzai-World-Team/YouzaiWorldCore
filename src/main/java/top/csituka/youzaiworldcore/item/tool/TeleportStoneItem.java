@@ -63,7 +63,6 @@ import java.util.function.Consumer;
 @SuppressWarnings("null")
 public class TeleportStoneItem extends Item {
 
-    /** 满耐久值。 */
     public static final int MAX_DURABILITY = 1000;
 
     /** 同维度传送时，每多少格直线距离消耗 1 点耐久。 */

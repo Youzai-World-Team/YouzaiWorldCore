@@ -218,7 +218,7 @@ public class MailComposeScreen extends MailBaseScreen {
                 .setX(formRect.x() + 12)
                 .setY(bodyY)
                 .setPlaceholder(Component.literal("请输入邮件正文..."))
-                .setTextColor(YzuiTheme.text())        // YZUI 风格深色文字
+                .setTextColor(YzuiTheme.text())
                 .setTextShadow(false)
                 .setCursorColor(YzuiTheme.primary())
                 .setShowBackground(true)         // 启用背景，由 Mixin 替换为 YZUI 样式
@@ -662,7 +662,6 @@ public class MailComposeScreen extends MailBaseScreen {
                 }
                 return true;
             }
-            // Ctrl+V 粘贴
             if (event.isPaste()) {
                 String clipboard = Minecraft.getInstance().keyboardHandler.getClipboard();
                 if (clipboard != null && !clipboard.isEmpty()) {
@@ -693,7 +692,6 @@ public class MailComposeScreen extends MailBaseScreen {
         if (playerPicker.isOpen()) {
             if (!playerPicker.acceptsInput()) return true;
             String text = new String(Character.toChars(event.codepoint()));
-            // 过滤控制字符
             if (!text.isEmpty() && event.codepoint() >= 32) {
                 playerSearchText += text;
                 playerPicker.setQuery(playerSearchText);

@@ -53,7 +53,6 @@ public final class ArmorHudRenderer {
     private static final int EQUIP_SLOT_COUNT = 9;
     /** 指示器槽位数（箭矢 + 烟花火箭 + 空位数） */
     private static final int INDICATOR_SLOT_COUNT = 3;
-    /** 总槽位数 = 装备 9 + 指示器 3 = 12 */
     private static final int TOTAL_SLOT_COUNT = EQUIP_SLOT_COUNT + INDICATOR_SLOT_COUNT;
 
     // ===== 颜色 =====
@@ -108,9 +107,7 @@ public final class ArmorHudRenderer {
     /** 每个装备槽位独立的出现、退场、数量与耐久动画状态。 */
     private static final HudSlotAnimationState[] equipAnimations =
             new HudSlotAnimationState[EQUIP_SLOT_COUNT];
-    /** 箭矢指示器图标渲染器（渲染原版箭物品模型） */
     private static final CachedItemRenderer arrowRenderer = new CachedItemRenderer();
-    /** 烟花火箭指示器图标渲染器。 */
     private static final CachedItemRenderer fireworkRenderer = new CachedItemRenderer();
     /** 箭矢、烟花火箭与空位数量指示器动画。 */
     private static final HudSlotAnimationState arrowAnimation = new HudSlotAnimationState();
@@ -344,9 +341,6 @@ public final class ArmorHudRenderer {
         animation.popTransform(g);
     }
 
-    /**
-     * 绘制箭矢数量指示器（槽位 10）。
-     */
     private static void drawArrowIndicator(GuiGraphicsExtractor g, Font font,
             int slotX, int slotY, int slotSize, int itemInset, int textGap,
             long nowMillis) {
@@ -363,7 +357,6 @@ public final class ArmorHudRenderer {
         arrowRenderer.render(g, ARROW_STACK, slotX + itemInset, slotY + itemInset,
                 YzHudSettings.getOpacity());
 
-        // 箭矢总数文字
         int count = cachedArrowCount;
         int color;
         if (count >= 64) {
@@ -382,9 +375,6 @@ public final class ArmorHudRenderer {
         arrowAnimation.popTransform(g);
     }
 
-    /**
-     * 绘制烟花火箭数量指示器（槽位 11）。
-     */
     private static void drawFireworkIndicator(GuiGraphicsExtractor g, Font font,
             int slotX, int slotY, int slotSize, int itemInset, int textGap,
             long nowMillis) {
@@ -418,9 +408,6 @@ public final class ArmorHudRenderer {
         fireworkAnimation.popTransform(g);
     }
 
-    /**
-     * 绘制背包+快捷栏空位数指示器（槽位 12）。
-     */
     private static void drawEmptySlotsIndicator(GuiGraphicsExtractor g, Font font,
             int slotX, int slotY, int slotSize, int itemInset, int textGap,
             int iconSize, long nowMillis) {
@@ -438,7 +425,6 @@ public final class ArmorHudRenderer {
                 slotX + itemInset, slotY + itemInset, iconSize, iconSize,
                 YzHudLayout.applyOpacity(0xFFFFFFFF));
 
-        // 空位数文字
         int empty = cachedEmptySlots;
         int color;
         if (empty >= 27) {
@@ -601,8 +587,6 @@ public final class ArmorHudRenderer {
         return s.isEmpty() ? SlotEntry.empty(emptyIcon) : SlotEntry.of(s, slot, emptyIcon);
     }
 
-    // ===== 辅助 =====
-
     /** 剩余耐久数值（不带单位） */
     private static int durabilityRemaining(ItemStack stack) {
         int max = stack.getMaxDamage();
@@ -618,7 +602,7 @@ public final class ArmorHudRenderer {
         if (max <= 0)
             return colorWhite();
         if (remaining >= max)
-            return colorGreen(); // 满耐久
+            return colorGreen();
         if (remaining * 10 <= max)
             return colorRed(); // 剩余 ≤10%
         return colorWhite();

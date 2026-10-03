@@ -54,7 +54,6 @@ public class ItemSparkleRenderer {
 
         if (!FunctionToggleClientState.isEnabled("item_sparkle")) return;
 
-        // 搜索玩家附近的掉落物
         AABB searchBox = player.getBoundingBox().inflate(RENDER_RADIUS);
         for (ItemEntity itemEntity : level.getEntitiesOfClass(ItemEntity.class, searchBox)) {
             if (itemEntity.isRemoved()) {

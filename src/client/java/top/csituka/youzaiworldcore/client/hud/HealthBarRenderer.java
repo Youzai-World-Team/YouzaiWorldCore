@@ -28,11 +28,8 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
 @SuppressWarnings("null")
 public final class HealthBarRenderer {
 
-    /** 单条血条宽度 */
     public static final int BAR_WIDTH = 85;
-    /** 血条高度 */
     public static final int BAR_HEIGHT = 5;
-    /** 两血条之间的间隔 */
     public static final int BAR_GAP = 8;
     /** 血条距离屏幕底部的垂直偏移（YZUI 热键栏 24+2=26px，上移 6px 避免重叠） */
     public static final int Y_OFFSET_FROM_BOTTOM = 45;
@@ -43,11 +40,11 @@ public final class HealthBarRenderer {
 
     // === 状态效果指示器 ===
     // 中毒条纹色（垂直条纹，高饱和度紫色）
-    private static final int POISON_STRIPE_A = 0x88AA00FF;  // 亮紫
-    private static final int POISON_STRIPE_B = 0x445500AA;  // 暗紫
+    private static final int POISON_STRIPE_A = 0x88AA00FF;
+    private static final int POISON_STRIPE_B = 0x445500AA;
     // 凋零条纹色（水平条纹，灰黑）
-    private static final int WITHER_STRIPE_A = 0x88555555;  // 中灰
-    private static final int WITHER_STRIPE_B = 0x44111111;  // 近黑
+    private static final int WITHER_STRIPE_A = 0x88555555;
+    private static final int WITHER_STRIPE_B = 0x44111111;
 
     private static final String LOG_TAG = "HealthBarRenderer";
 
@@ -90,7 +87,6 @@ public final class HealthBarRenderer {
                     "渲染血条: health=%.1f, max=%.1f, absorb=%.1f, fill=%.2f, pos=(%d,%d)",
                     health, maxHealth, absorption, fillRatio, barX, barY);
         }
-
 
         // === 1. 背景（圆角） ===
         fillBarBg(graphics, barX, barY, bgColor());
@@ -154,10 +150,9 @@ public final class HealthBarRenderer {
                     YzuiTheme.minimal() ? 1f : 0.7f + FoodBarRenderer.flashAlpha * 0.3f);
             drawTextWithAlpha(graphics, font, text, barX, barY, textColor);
         } else {
-            // 普通模式
             if (absorption > 0.0f) {
                 // 有吸收效果时直接合并显示：如 "30/20"（不拼接 +<吸收值>）
-                int totalHealth = Math.min(displayHealth + displayAbsorb, displayMax * 10); // safety cap
+                int totalHealth = Math.min(displayHealth + displayAbsorb, displayMax * 10);
                 text = healthText(totalHealth, -1, displayMax);
             } else {
                 text = healthText(displayHealth, -1, displayMax);
@@ -276,7 +271,7 @@ public final class HealthBarRenderer {
         if (!hasPoison && !hasWither) return;
 
         // 脉冲动画：基于游戏刻的慢速三角波
-        int phase = (guiTicks / 2) & 7; // 0~7 循环
+        int phase = (guiTicks / 2) & 7;
         boolean flash = YzuiTheme.minimal() || phase < 4; // 低特效保留静态效果条纹
 
         if (hasPoison) {
@@ -394,14 +389,14 @@ public final class HealthBarRenderer {
             // 高血量：绿色 → 黄色
             // t: 0(50%) → 1(100%)
             float t = (ratio - 0.5f) * 2.0f;
-            r = (int) (255 * (1.0f - t));  // 255 → 0
-            g = 255;                       // 恒 255
+            r = (int) (255 * (1.0f - t));
+            g = 255;
         } else {
             // 低血量：黄色 → 红色
             // t: 0(0%) → 1(50%)
             float t = ratio * 2.0f;
-            r = 255;                       // 恒 255
-            g = (int) (255 * t);           // 0 → 255
+            r = 255;
+            g = (int) (255 * t);
         }
         return 0xFF000000 | ((r & 0xFF) << 16) | ((g & 0xFF) << 8);
     }

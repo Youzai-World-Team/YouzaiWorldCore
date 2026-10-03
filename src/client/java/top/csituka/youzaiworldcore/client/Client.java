@@ -101,7 +101,6 @@ public class Client implements ClientModInitializer {
         DebugLogger.info("Client", "拾取通知系统已初始化");
 
         StartupLoadingStatus.beginStage("方块实体渲染器");
-        // 方块实体渲染器注册
         DebugLogger.info("Client", "注册飞行信标方块实体渲染器...");
         BlockEntityRenderers.register(ModBlockEntities.FLY_BEACON, FlyBeaconBlockEntityRenderer::new);
         DebugLogger.info("Client", "注册传送锚点方块实体渲染器...");
@@ -139,7 +138,6 @@ public class Client implements ClientModInitializer {
         top.csituka.youzaiworldcore.client.account.OnlineUuidLoginClient.initialize();
 
         StartupLoadingStatus.beginStage("客户端外部设置");
-        // 加载客户端外部设置
         DebugLogger.info("Client", "加载客户端外部设置...");
         top.csituka.youzaiworldcore.client.config.ClientExternalSettings.load();
         StartupLoadingStatus.beginStage("YZHUD 设置");
@@ -188,19 +186,15 @@ public class Client implements ClientModInitializer {
         }
 
         StartupLoadingStatus.beginStage("语言补丁");
-        // LangPatch init
         LangPatchImpl.init();
 
         StartupLoadingStatus.beginStage("视觉增强");
-        // 高亮物品功能初始化（配置加载、键位注册、客户端命令、延迟调度器）
         DebugLogger.info("Client", "初始化高亮物品功能...");
         HighlightItemClient.initialize();
 
-        // 物品边框功能初始化（配置加载）
         DebugLogger.info("Client", "初始化物品边框功能...");
         ItemBorderClient.initialize();
 
-        // 铁砧使用次数显示功能初始化（注册物品悬浮提示回调）
         DebugLogger.info("Client", "初始化铁砧使用次数显示功能...");
         AnvilUsesClient.initialize();
 
@@ -228,7 +222,6 @@ public class Client implements ClientModInitializer {
         top.csituka.youzaiworldcore.command.YzwcServerMirrorCommand.register();
 
         StartupLoadingStatus.beginStage("音频系统");
-        // 老吴贴贴事件：注册内置曲目 SoundEvent + 初始化本地音频池
         DebugLogger.info("Client", "初始化老吴贴贴音频系统...");
         top.csituka.youzaiworldcore.client.laowumeme.LaowuModSounds.init();
         top.csituka.youzaiworldcore.client.laowumeme.LaowuAudioPool.init();
@@ -274,7 +267,6 @@ public class Client implements ClientModInitializer {
         // 消费拾取通知队列（从 Netty 线程捕获的数据在主线程上创建条目）
         AddEntriesHandler.drainQueue();
 
-        // 更新拾取通知条目状态
         DrawEntriesHandler.INSTANCE.tick();
 
         // 更新传送 FOV 动画（在游戏内且不论是否在 GUI 中都持续更新）
@@ -286,7 +278,6 @@ public class Client implements ClientModInitializer {
         // 高亮物品功能：键位处理（即使界面打开也需响应，故置于界面早退判断之前）
         HighlightItemClient.onClientTick(client);
 
-        // 窗口图标设置（仅执行一次）
         if (!windowIconSet) {
             long handle = client.getWindow().handle();
             if (handle != 0) {

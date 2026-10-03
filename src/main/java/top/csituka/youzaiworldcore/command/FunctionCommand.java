@@ -98,7 +98,7 @@ public class FunctionCommand {
         var uuid = player.getUUID();
         ServerPlayNetworking.send(player, new FunctionToggleSyncPayload(
                 FunctionToggleManager.isEnabled(uuid, FunctionToggleManager.KEY_LADDER),
-                false, // crop_xp_drop 已移至全局事件，不再按玩家控制
+                false,
                 FunctionToggleManager.isEnabled(uuid, FunctionToggleManager.KEY_TOOL_INFO),
                 FunctionToggleManager.isEnabled(uuid, FunctionToggleManager.KEY_BLOCK_ANIM),
                 FunctionToggleManager.isEnabled(uuid, FunctionToggleManager.KEY_CRAFT_SOUND),

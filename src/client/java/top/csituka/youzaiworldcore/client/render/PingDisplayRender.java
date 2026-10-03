@@ -31,8 +31,8 @@ public final class PingDisplayRender {
     private static final int COLOR_UNKNOWN = 0xFFAAAAAA; // 未知 灰
 
     // ===== 显示选项 =====
-    private static final boolean SHOW_MS = true; // 显示 "ms" 后缀
-    private static final boolean TEXT_SHADOW = true; // 文字阴影
+    private static final boolean SHOW_MS = true;
+    private static final boolean TEXT_SHADOW = true;
 
     /**
      * 在 Tab 列表中渲染 ping 文字，替代原版信号格图标。
@@ -148,7 +148,6 @@ public final class PingDisplayRender {
         return built;
     }
 
-    /** 名字牌 ping 组件缓存上限。 */
     private static final int CACHE_LIMIT = 256;
 
     private static final Component PING_PREFIX = Component.literal(" (").withColor(0xAAAAAA);

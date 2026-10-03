@@ -44,29 +44,21 @@ public final class HotbarRenderer {
     private static final String LOG_TAG = "HotbarRenderer";
 
     // ===== 面板常量 =====
-    /** 热键栏面板宽度 */
     private static final int PANEL_WIDTH = 184;
-    /** 热键栏面板高度 */
     private static final int PANEL_HEIGHT = 24;
-    /** 面板圆角半径 */
     private static final int PANEL_RADIUS = 6;
     /** 面板背景色（50% 白色） */
     private static int panelBg() { return YzuiTheme.hudSurface(); }
-    /** 面板距屏幕底部偏移 */
     private static final int PANEL_BOTTOM_OFFSET = 2;
 
     // ===== 槽位常量 =====
-    /** 单个槽位尺寸 */
     private static final int SLOT_SIZE = 18;
-    /** 槽位圆角半径 */
     private static final int SLOT_RADIUS = 3;
     /** 槽位默认背景色（25% 白色） */
     private static int slotColor() { return YzuiTheme.hudSlot(); }
     /** 槽位选中背景色（50% 白色，足够覆盖底层高亮） */
     private static int slotSelectedColor() { return YzuiTheme.hudSelected(); }
-    /** 槽位距面板左边缘的水平内边距 */
     private static final int SLOT_PADDING_X = 2;
-    /** 槽位距面板上边缘的垂直内边距 */
     private static final int SLOT_PADDING_Y = 3;
     /** 槽位中心间距（对齐原版 20px 间隔） */
     private static final int SLOT_SPACING = 20;
@@ -74,9 +66,7 @@ public final class HotbarRenderer {
     private static final int ITEM_INSET = 1;
 
     // ===== 选中高亮常量 =====
-    /** 高亮框外尺寸（外框） */
     private static final int SELECTION_OUTER_SIZE = 22;
-    /** 高亮框外圆角半径 */
     private static final int SELECTION_OUTER_RADIUS = 4;
     /** 高亮框内圆角半径（内填充尺寸恒为外框 -2，由 RoundedRect.fillWithBorder 推导） */
     private static final int SELECTION_INNER_RADIUS = 3;
@@ -86,9 +76,7 @@ public final class HotbarRenderer {
     private static int selectionFillColor() { return YzuiTheme.hudSelected(); }
 
     // ===== 副手槽常量 =====
-    /** 副手槽外尺寸（外框） */
     private static final int OFFHAND_OUTER_SIZE = 22;
-    /** 副手槽外圆角半径 */
     private static final int OFFHAND_OUTER_RADIUS = 4;
     /** 副手槽内圆角半径（内填充尺寸恒为外框 -2，由 RoundedRect.fillWithBorder 推导） */
     private static final int OFFHAND_INNER_RADIUS = 3;
@@ -96,20 +84,14 @@ public final class HotbarRenderer {
     private static int offhandFillColor() { return YzuiTheme.hudSelected(); }
     /** 副手槽边框色（半透明白色，清晰勾勒圆角边缘） */
     private static int offhandBorderColor() { return YzuiTheme.outlineVariant(); }
-    /** 副手槽与面板的间距 */
     private static final int OFFHAND_GAP = 3;
-    /** 物品在副手槽内的偏移 */
     private static final int OFFHAND_ITEM_INSET = 3;
 
     // ===== 攻击冷却指示器常量 =====
-    /** 攻击冷却指示器尺寸 */
     private static final int ATTACK_INDICATOR_SIZE = 18;
-    /** 攻击冷却指示器与面板的间距 */
     private static final int ATTACK_INDICATOR_GAP = 3;
-    /** 攻击冷却指示器背景精灵 */
     private static final Identifier ATTACK_INDICATOR_BG =
             Identifier.withDefaultNamespace("hud/hotbar_attack_indicator_background");
-    /** 攻击冷却指示器进度精灵 */
     private static final Identifier ATTACK_INDICATOR_PROGRESS =
             Identifier.withDefaultNamespace("hud/hotbar_attack_indicator_progress");
 
@@ -141,13 +123,11 @@ public final class HotbarRenderer {
     private static float animSelectedSlot = 0f;
     /** 上次检测到的实际选中槽位（用于变更检测） */
     private static int lastKnownSelectedSlot = 0;
-    /** 动画是否已初始化 */
     private static boolean animInitialized = false;
     /** 副手槽动画进度（0.0=隐藏，1.0=完全可见） */
     private static float offhandAnimProgress = 0f;
     /** 上次副手是否有物品（用于检测过渡） */
     private static boolean lastOffhandHasItem = false;
-    /** 副手动画是否已初始化 */
     private static boolean offhandAnimInit = false;
     /** 选中高亮虚拟目标（可超出 0~8，用于循环包装动画） */
     private static float virtualTarget = 0f;
@@ -181,13 +161,11 @@ public final class HotbarRenderer {
         int sw = graphics.guiWidth();
         int sh = graphics.guiHeight();
 
-        // === 计算面板位置 ===
         int panelX = (sw - PANEL_WIDTH) / 2;
         int panelY = sh - PANEL_HEIGHT - PANEL_BOTTOM_OFFSET;
 
         int currentSlot = player.getInventory().getSelectedSlot();
 
-        // === 动画初始化 ===
         if (!animInitialized) {
             animSelectedSlot = currentSlot;
             virtualTarget = currentSlot;
@@ -204,7 +182,7 @@ public final class HotbarRenderer {
         }
         if (currentSlot != lastKnownSelectedSlot) {
             int scrollDir = scrollDirectionThisFrame;
-            scrollDirectionThisFrame = 0; // 消费
+            scrollDirectionThisFrame = 0;
 
             if (scrollDir != 0) {
                 // 滚轮输入：在连续空间中追踪目标，支持跨边界累计滚动
@@ -262,7 +240,6 @@ public final class HotbarRenderer {
                     animSelectedSlot, virtualTarget);
         }
 
-        // 吸附
         if (Math.abs(animSelectedSlot - virtualTarget) < 0.005f) {
             animSelectedSlot = virtualTarget;
         }
@@ -356,7 +333,6 @@ public final class HotbarRenderer {
             int slotBg = (i == highlightedSlot) ? slotSelectedColor() : slotColor();
             RoundedRect.fillOrSquare(graphics, slotX, slotY, SLOT_SIZE, SLOT_SIZE, SLOT_RADIUS, slotBg);
 
-            // 物品
             ItemStack stack = inventory.getItem(i);
             if (!stack.isEmpty()) {
                 graphics.item(stack, slotX + ITEM_INSET, slotY + ITEM_INSET);
@@ -424,7 +400,6 @@ public final class HotbarRenderer {
         int indicatorX = panelX + PANEL_WIDTH + ATTACK_INDICATOR_GAP;
         int indicatorY = panelY + (PANEL_HEIGHT - ATTACK_INDICATOR_SIZE) / 2;
 
-        // 背景
         graphics.blitSprite(RenderPipelines.GUI_TEXTURED,
                 ATTACK_INDICATOR_BG,
                 indicatorX, indicatorY,

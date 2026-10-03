@@ -153,8 +153,6 @@ public final class LaowuMemeHandler {
         return InteractionResult.SUCCESS;
     }
 
-    // ---- 内部 ----
-
     private static void scan(MinecraftServer server) {
         for (ServerLevel level : server.getAllLevels()) {
             // 注意：不能把 isLaowu 下推进筛选谓词。外层要求发起方是「老吴」，

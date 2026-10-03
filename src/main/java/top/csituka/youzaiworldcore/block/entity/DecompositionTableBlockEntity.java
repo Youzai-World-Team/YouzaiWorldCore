@@ -121,7 +121,7 @@ public class DecompositionTableBlockEntity extends BlockEntity implements Contai
         DebugLogger.entering("DecompositionTableBlockEntity", "setItem",
                 "slot=" + slot + ", item=" + stack.getItem());
         items.set(slot, stack);
-        setChanged(); // 标记数据已修改，需要持久化
+        setChanged();
         DebugLogger.exiting("DecompositionTableBlockEntity", "setItem");
     }
 
@@ -168,9 +168,6 @@ public class DecompositionTableBlockEntity extends BlockEntity implements Contai
         return inRange;
     }
 
-    /**
-     * 清空物品栏的所有内容。
-     */
     @Override
     public void clearContent() {
         DebugLogger.entering("DecompositionTableBlockEntity", "clearContent");
@@ -202,7 +199,7 @@ public class DecompositionTableBlockEntity extends BlockEntity implements Contai
     protected void saveAdditional(@NonNull ValueOutput output) {
         DebugLogger.entering("DecompositionTableBlockEntity", "saveAdditional", "pos=" + worldPosition);
         super.saveAdditional(output);
-        ContainerHelper.saveAllItems(output, items); // 保存物品栏所有槽位
+        ContainerHelper.saveAllItems(output, items);
         DebugLogger.exiting("DecompositionTableBlockEntity", "saveAdditional");
     }
 
@@ -216,7 +213,7 @@ public class DecompositionTableBlockEntity extends BlockEntity implements Contai
     protected void loadAdditional(@NonNull ValueInput input) {
         DebugLogger.entering("DecompositionTableBlockEntity", "loadAdditional", "pos=" + worldPosition);
         super.loadAdditional(input);
-        ContainerHelper.loadAllItems(input, items); // 加载物品栏所有槽位
+        ContainerHelper.loadAllItems(input, items);
         DebugLogger.exiting("DecompositionTableBlockEntity", "loadAdditional");
     }
 

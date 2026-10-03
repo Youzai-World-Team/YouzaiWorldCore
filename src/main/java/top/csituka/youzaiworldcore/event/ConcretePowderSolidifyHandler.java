@@ -37,10 +37,8 @@ public class ConcretePowderSolidifyHandler implements ServerTickEvents.StartTick
     /** 检查间隔（tick 数），每 20 tick（1 秒）检查一次 */
     private static final int CHECK_INTERVAL = 20;
 
-    /** 混凝土粉末物品 → 混凝土物品 的映射表 */
     private static final Map<Item, Item> POWDER_TO_CONCRETE = new HashMap<>();
 
-    /** 是否已初始化映射表 */
     private static boolean initialized = false;
 
     /** Tick 计数器，用于间隔检查 */

@@ -76,7 +76,6 @@ public final class CreativeItemGroups {
             return members;
         }
 
-        /** 当前目标是否为展开状态。 */
         public boolean expanded() {
             return expanded;
         }

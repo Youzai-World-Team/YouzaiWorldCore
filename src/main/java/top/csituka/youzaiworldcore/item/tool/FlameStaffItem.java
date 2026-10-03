@@ -24,13 +24,11 @@ import java.util.function.Consumer;
 @SuppressWarnings("null")
 public class FlameStaffItem extends Item {
 
-    /** 火焰法杖消耗魔力 */
     public static final int MANA_COST = 10;
 
     /** 最大蓄力时间（tick），约 3 秒 */
     public static final int MAX_CHARGE_TICKS = 60;
 
-    /** 基础伤害 */
     public static final float BASE_DAMAGE = 5.0f;
 
     /** 每 tick 蓄力增加的伤害 */
@@ -90,16 +88,12 @@ public class FlameStaffItem extends Item {
             return false;
         }
 
-        // 扣除魔力
         ManaManager.getInstance().consumeMana(playerId, MANA_COST);
 
-        // 计算伤害
         float damage = BASE_DAMAGE + (chargeTicks * DAMAGE_PER_TICK);
 
-        // 发射火焰激光
         fireFlameLaser(level, player, damage);
 
-        // 播放音效
         level.playSound(null, player.getX(), player.getY(), player.getZ(),
                 net.minecraft.sounds.SoundEvents.BLAZE_SHOOT,
                 net.minecraft.sounds.SoundSource.PLAYERS, 1.0f, 1.0f);
@@ -135,7 +129,6 @@ public class FlameStaffItem extends Item {
 
         double maxDist = eyePos.distanceTo(endPos);
 
-        // 收集激光路径上的所有实体
         while (distance < maxDist) {
             AABB aabb = new AABB(
                     currentPos.x - LASER_WIDTH, currentPos.y - LASER_WIDTH, currentPos.z - LASER_WIDTH,
@@ -145,7 +138,6 @@ public class FlameStaffItem extends Item {
             List<Entity> entities = level.getEntities(player, aabb, e -> e instanceof LivingEntity && e != player);
             for (Entity entity : entities) {
                 if (entity instanceof LivingEntity target) {
-                    // 造成伤害
                     target.hurt(level.damageSources().playerAttack(player), damage);
                     // 点燃 5 秒
                     target.setRemainingFireTicks(100);
@@ -177,7 +169,6 @@ public class FlameStaffItem extends Item {
             );
         }
     }
-
 
     @SuppressWarnings("deprecation")
     @Override

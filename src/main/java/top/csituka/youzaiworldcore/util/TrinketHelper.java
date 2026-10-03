@@ -37,7 +37,6 @@ public final class TrinketHelper {
         return true;
     }
 
-    /** 饰品槽位信息 */
     public record TrinketSlotInfo(String groupKey, int slotIndex, @org.jspecify.annotations.NonNull ItemStack stack,
             Object access) {
     }

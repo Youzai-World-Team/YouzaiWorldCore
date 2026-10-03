@@ -70,9 +70,7 @@ public class WirelessRedstoneTransmitterBlock extends WirelessRedstoneComponentB
         return new WirelessRedstoneTransmitterBlockEntity(pos, state);
     }
 
-    // ====================================================================
     // 放置 / 邻居通知（只调度，不直接改状态）
-    // ====================================================================
 
     @Override
     protected void onPlace(@NonNull BlockState state, @NonNull Level level, @NonNull BlockPos pos,
@@ -112,9 +110,7 @@ public class WirelessRedstoneTransmitterBlock extends WirelessRedstoneComponentB
         }
     }
 
-    // ====================================================================
     // 核心：侧边输入 → 激活态 → 无线索引
-    // ====================================================================
 
     /**
      * 调度 tick 的处理器：把 {@code POWERED} 收敛到「四个侧边是否有红石信号进入」，
@@ -188,9 +184,7 @@ public class WirelessRedstoneTransmitterBlock extends WirelessRedstoneComponentB
         return false;
     }
 
-    // ====================================================================
     // 红石信号方法：本元件不输出，但必须「看起来像信号源」
-    // ====================================================================
 
     /**
      * 恒为 {@code true}。

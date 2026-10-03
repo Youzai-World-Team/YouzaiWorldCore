@@ -44,7 +44,6 @@ public final class TabListSettings {
     private static final int MAX_UPDATE_TICK_TIME = 1200;
 
     // ===== 默认值（新开服 / 坏文件恢复时写入） =====
-    //
     // 默认配置即「全功能测试模板」：把本功能支持的全部能力集中展示，
     // 供新服 / 调试时一眼对照。覆盖点：
     //   - 写法：header 用「动画对象」，footer 用「多行字符串数组」（顶层字符串写法见类注释）；

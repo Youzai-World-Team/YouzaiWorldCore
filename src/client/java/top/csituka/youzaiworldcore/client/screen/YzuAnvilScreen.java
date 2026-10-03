@@ -74,7 +74,6 @@ public class YzuAnvilScreen extends ItemCombinerScreen<AnvilMenu> {
 
     // ========== YZUI 统一设计常量（与 YzuContainerScreen 一致） ==========
 
-    /** 面板背景：半透明白 */
     private static int panelBg() { return YzuiTheme.surface(); }
     private static final int PANEL_RADIUS = 6;
 
@@ -94,7 +93,7 @@ public class YzuAnvilScreen extends ItemCombinerScreen<AnvilMenu> {
     private static int closeBgHover() { return YzuiTheme.surfaceHigh(); }
     private static int closeIcon() { return YzuiTheme.text(); }
     private static int closeIconHover() { return YzuiTheme.text(); }
-    private static final String CLOSE_GLYPH = "\u00d7"; // ×
+    private static final String CLOSE_GLYPH = "\u00d7";
 
     // ========== 标题区 ==========
 
@@ -142,8 +141,6 @@ public class YzuAnvilScreen extends ItemCombinerScreen<AnvilMenu> {
     private MultiLineEditBox name;
     private final Player player;
 
-    // ========== 构造 ==========
-
     public YzuAnvilScreen(AnvilMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title,
                 Identifier.withDefaultNamespace("textures/gui/container/anvil.png"));
@@ -152,8 +149,6 @@ public class YzuAnvilScreen extends ItemCombinerScreen<AnvilMenu> {
         DebugLogger.info("YzuAnvilScreen", "创建 YZUI 铁砧屏幕: title=%s menuType=%s",
                 title.getString(), menu.getType());
     }
-
-    // ========== 初始化 ==========
 
     @Override
     protected void init() {
@@ -216,8 +211,6 @@ public class YzuAnvilScreen extends ItemCombinerScreen<AnvilMenu> {
                         + "（视觉背景框 8..169，文本 12..165 与边框各留 4px 间距）",
                 this.leftPos + 8, this.topPos + 18);
     }
-
-    // ========== 渲染管线 ==========
 
     @Override
     public void extractRenderState(@NonNull GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
@@ -437,8 +430,6 @@ public class YzuAnvilScreen extends ItemCombinerScreen<AnvilMenu> {
         int cy = this.topPos + CLOSE_TOP;
         return mx >= cx && mx < cx + CLOSE_SIZE && my >= cy && my < cy + CLOSE_SIZE;
     }
-
-    // ========== 工具方法 ==========
 
     private static void fillR(GuiGraphicsExtractor g, int x, int y, int w, int h, int r, int c) {
         if (w <= 0 || h <= 0) {

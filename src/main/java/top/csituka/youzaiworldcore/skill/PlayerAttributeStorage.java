@@ -40,7 +40,7 @@ public class PlayerAttributeStorage {
             SkillDataStore.refresh();
             JsonObject attributes = SkillDataStore.read(SkillDataStore.KEY_ATTRIBUTES);
             if (attributes == null) {
-                forceSave(); // 创建空数据块
+                forceSave();
                 return;
             }
             java.lang.reflect.Type type = new TypeToken<Map<String, PlayerAttributeData>>() {}.getType();

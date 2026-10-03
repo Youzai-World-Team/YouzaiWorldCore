@@ -299,12 +299,9 @@ final class MailPlayerPicker {
         }
     }
 
-    /** 获取当前搜索词。 */
     String getQuery() {
         return query;
     }
-
-    // ===== 工具 =====
 
     /** 按搜索词过滤后的玩家代号列表。 */
     private List<String> filteredNames() {

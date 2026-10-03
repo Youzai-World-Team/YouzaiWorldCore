@@ -17,7 +17,6 @@ package top.csituka.youzaiworldcore.redstone;
  */
 public final class WirelessRedstoneChannel {
 
-    /** 最小频道号。 */
     public static final int MIN = 0;
 
     /** 最大频道号。四位数足够区分，也刚好能在编辑框里一眼看完。 */

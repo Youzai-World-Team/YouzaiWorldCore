@@ -22,7 +22,6 @@ public class PlayerAccount {
             .setPrettyPrinting()
             .create();
 
-    /** 玩家名称 */
     @Expose
     public String username;
 
@@ -43,22 +42,18 @@ public class PlayerAccount {
     @Expose
     public boolean registered = false;
 
-    /** 最后登录 IP */
     @Expose
     @SerializedName("last_ip")
     public String lastIp = "";
 
-    /** 最后认证时间 */
     @Expose
     @SerializedName("last_authenticated_date")
     public ZonedDateTime lastAuthenticatedDate = EPOCH;
 
-    /** 注册时间 */
     @Expose
     @SerializedName("registration_date")
     public ZonedDateTime registrationDate = EPOCH;
 
-    /** 登录尝试次数 */
     @Expose
     @SerializedName("login_tries")
     public int loginTries = 0;
@@ -83,9 +78,6 @@ public class PlayerAccount {
     public PlayerAccount() {
     }
 
-    /**
-     * 从数据库 JSON 数据反序列化
-     */
     public PlayerAccount(String username, String usernameLowerCase, String uuid, String jsonData) {
         DebugLogger.entering("PlayerAccount", "PlayerAccount(json)",
                 "username=" + username + ", usernameLowerCase=" + usernameLowerCase + ", uuid=" + uuid);
@@ -108,9 +100,6 @@ public class PlayerAccount {
         DebugLogger.exiting("PlayerAccount", "PlayerAccount(json)");
     }
 
-    /**
-     * 创建新账户（仅名称）
-     */
     public PlayerAccount(String username) {
         DebugLogger.entering("PlayerAccount", "PlayerAccount(name)", "username=" + username);
         this.username = username;
@@ -118,9 +107,6 @@ public class PlayerAccount {
         DebugLogger.exiting("PlayerAccount", "PlayerAccount(name)");
     }
 
-    /**
-     * 创建新账户（名称 + UUID）
-     */
     public PlayerAccount(String username, java.util.UUID uuid) {
         this(username);
         DebugLogger.entering("PlayerAccount", "PlayerAccount(name,uuid)",
@@ -129,9 +115,6 @@ public class PlayerAccount {
         DebugLogger.exiting("PlayerAccount", "PlayerAccount(name,uuid)");
     }
 
-    /**
-     * 序列化为 JSON
-     */
     public String toJson() {
         DebugLogger.entering("PlayerAccount", "toJson", "username=" + username);
         String json = GSON.toJson(this);

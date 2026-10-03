@@ -52,7 +52,6 @@ public final class ConfigIOManager {
     /** 导出进行中标志 — 用于按钮防并发点击 */
     public static final AtomicBoolean isExporting = new AtomicBoolean(false);
 
-    /** 进度回调接口 */
     @FunctionalInterface
     public interface ProgressCallback {
         /**
@@ -67,9 +66,7 @@ public final class ConfigIOManager {
 
     private ConfigIOManager() {}
 
-    // ========================================================================
     // 公开 API
-    // ========================================================================
 
     /**
      * 导出配置（全平台统一行为：自动保存至 {@code config_backups/} 目录）。
@@ -146,11 +143,8 @@ public final class ConfigIOManager {
         Path optionsFile = root.resolve("options.txt");
         Path clientSettings = ModPaths.clientSettingsFile();
 
-        // 查找所有 config_bak_* 目录
         List<File> configBaks = new ArrayList<>();
-        // 查找所有 options_bak_*.txt 文件
         List<File> optionsBaks = new ArrayList<>();
-        // 查找所有 yzwc_client_bak_*.json 文件
         List<File> clientBaks = new ArrayList<>();
 
         File[] entries = gameDir.listFiles();
@@ -192,7 +186,6 @@ public final class ConfigIOManager {
                     LOGGER.error("恢复 config 备份失败: {}", newest.getName(), e);
                     DebugLogger.exception(DEBUG_TAG, "恢复 config 备份", e);
                 }
-                // 删除其他孤立备份
                 for (int i = 1; i < configBaks.size(); i++) {
                     deleteQuietly(configBaks.get(i).toPath());
                 }
@@ -242,9 +235,7 @@ public final class ConfigIOManager {
                 configMissing, optionsMissing, clientMissing);
     }
 
-    // ========================================================================
     // 内部：导出执行
-    // ========================================================================
 
     private static CompletableFuture<Void> runExport(Path zipPath, File gameDir, ProgressCallback callback) {
         return CompletableFuture.runAsync(() -> {
@@ -266,7 +257,6 @@ public final class ConfigIOManager {
         File optionsFile = new File(gameDir, "options.txt");
         Path clientSettings = ModPaths.clientSettingsFile();
 
-        // 统计待打包文件数
         List<Path> configFiles = new ArrayList<>();
         if (configDir.isDirectory()) {
             try (Stream<Path> walk = Files.walk(configDir.toPath())) {
@@ -283,7 +273,6 @@ public final class ConfigIOManager {
             int processed = 0;
             long lastReportTime = 0L;
 
-            // 添加 config/ 下的文件
             for (Path file : configFiles) {
                 String entryName = "config/" + configDir.toPath().relativize(file)
                         .toString().replace('\\', '/');
@@ -294,7 +283,6 @@ public final class ConfigIOManager {
                 lastReportTime = reportProgress(callback, processed, totalFiles, "exporting", processed, lastReportTime);
             }
 
-            // 添加 options.txt（如果存在）
             if (optionsFile.isFile()) {
                 zos.putNextEntry(new ZipEntry("options.txt"));
                 Files.copy(optionsFile.toPath(), zos);
@@ -303,7 +291,6 @@ public final class ConfigIOManager {
                 lastReportTime = reportProgress(callback, processed, totalFiles, "exporting", processed, lastReportTime);
             }
 
-            // 添加客户端配置 yzwc/client/global_settings.json
             if (Files.isRegularFile(clientSettings)) {
                 String entryName = root.relativize(clientSettings).toString().replace('\\', '/');
                 zos.putNextEntry(new ZipEntry(entryName));
@@ -315,9 +302,7 @@ public final class ConfigIOManager {
         }
     }
 
-    // ========================================================================
     // 内部：导入执行（三步安全写入）
-    // ========================================================================
 
     private static void performImport(Path zipPath, File gameDir, ProgressCallback callback) throws Exception {
         LOGGER.info("开始导入配置: {}", zipPath);
@@ -422,7 +407,6 @@ public final class ConfigIOManager {
 
                 Path targetPath = root.resolve(entry.getName()).normalize();
 
-                // ▸ 路径安全校验
                 if (!isPathAllowed(root, targetPath)) {
                     DebugLogger.debug(DEBUG_TAG, "跳过不允许的条目: %s", entry.getName());
                     zis.closeEntry();
@@ -436,7 +420,6 @@ public final class ConfigIOManager {
                     Files.createDirectories(targetPath.getParent());
                     long bytes;
                     if (entry.getSize() >= 0) {
-                        // 直接复制
                         bytes = Files.copy(zis, targetPath, StandardCopyOption.REPLACE_EXISTING);
                     } else {
                         // 未知大小：手动复制并计数
@@ -488,14 +471,9 @@ public final class ConfigIOManager {
         LOGGER.info("配置导入成功");
     }
 
-    // ========================================================================
-    // 回滚
-    // ========================================================================
-
     private static void rollbackImport(File gameDir) {
         Path root = gameDir.toPath().normalize();
 
-        // 查找当前存在的备份
         Path latestConfigBak = null;
         Path latestOptionsBak = null;
         Path latestClientBak = null;
@@ -536,7 +514,6 @@ public final class ConfigIOManager {
             }
         }
 
-        // 恢复 config 备份
         if (latestConfigBak != null) {
             try {
                 Files.move(latestConfigBak, configDir);
@@ -547,7 +524,6 @@ public final class ConfigIOManager {
             }
         }
 
-        // 恢复 options.txt 备份
         Path optionsFile = root.resolve("options.txt");
         if (latestOptionsBak != null) {
             try {
@@ -559,13 +535,10 @@ public final class ConfigIOManager {
             }
         }
 
-        // 恢复客户端配置备份
         Path clientSettings = ModPaths.clientSettingsFile();
         if (latestClientBak != null) {
             try {
-                // 删除半成品客户端配置
                 Files.deleteIfExists(clientSettings);
-                // 恢复备份
                 Files.createDirectories(clientSettings.getParent());
                 Files.move(latestClientBak, clientSettings);
                 DebugLogger.info(DEBUG_TAG, "回滚：已恢复客户端配置备份");
@@ -584,11 +557,6 @@ public final class ConfigIOManager {
         }
     }
 
-    // ========================================================================
-    // 工具方法
-    // ========================================================================
-
-    /** 路径安全校验 */
     private static boolean isPathAllowed(Path root, Path targetPath) {
         Path configDir = root.resolve("config").normalize();
         Path clientSettings = ModPaths.clientSettingsFile().normalize();
@@ -613,7 +581,6 @@ public final class ConfigIOManager {
         return false;
     }
 
-    /** 统计 ZIP 中的条目数 */
     private static int countZipEntries(Path zipPath) throws IOException {
         int count = 0;
         try (ZipInputStream zis = new ZipInputStream(new FileInputStream(zipPath.toFile()))) {
@@ -669,7 +636,6 @@ public final class ConfigIOManager {
         }
     }
 
-    /** 递归删除目录 */
     private static void deleteRecursively(Path path) throws IOException {
         if (Files.isDirectory(path)) {
             try (Stream<Path> children = Files.list(path)) {

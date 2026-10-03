@@ -26,19 +26,15 @@ import java.util.function.Consumer;
 @SuppressWarnings("null")
 public class SkyStarStaffItem extends Item {
 
-    /** 天星法杖消耗魔力 */
     public static final int MANA_COST = 60;
 
-    /** 陨石影响范围半径 */
     public static final double METEOR_RADIUS = 10.0;
 
     /** 陨石坠落高度（从怪物上方多高落下） */
     public static final double METEOR_FALL_HEIGHT = 25.0;
 
-    /** 陨石伤害 */
     public static final float METEOR_DAMAGE = 15.0f;
 
-    /** 陨石爆炸威力 */
     public static final float METEOR_EXPLOSION_POWER = 2.0f;
 
     public SkyStarStaffItem(Properties properties) {
@@ -61,15 +57,12 @@ public class SkyStarStaffItem extends Item {
             return InteractionResult.FAIL;
         }
 
-        // 扣除魔力
         if (!ManaManager.getInstance().consumeMana(playerId, MANA_COST)) {
             return InteractionResult.FAIL;
         }
 
-        // 召唤陨石
         summonMeteors(level, player);
 
-        // 播放音效
         level.playSound(null, player.getX(), player.getY(), player.getZ(),
                 net.minecraft.sounds.SoundEvents.AMBIENT_CAVE,
                 net.minecraft.sounds.SoundSource.PLAYERS, 1.0f, 0.5f);
@@ -117,7 +110,6 @@ public class SkyStarStaffItem extends Item {
 
         // 在目标位置创建小型爆炸（模拟陨石撞击）
         if (level instanceof ServerLevel serverLevel) {
-            // 创建爆炸效果
             serverLevel.explode(
                     null,
                     meteorX, target.getY(), meteorZ,
@@ -125,13 +117,10 @@ public class SkyStarStaffItem extends Item {
                     Level.ExplosionInteraction.NONE
             );
 
-            // 对目标造成伤害
             target.hurt(level.damageSources().playerAttack(player), METEOR_DAMAGE);
 
-            // 点燃目标
             target.setRemainingFireTicks(100);
 
-            // 在目标位置生成火焰粒子
             spawnMeteorParticles(serverLevel, meteorX, target.getY(), meteorZ);
 
             // 在陨石坠落轨迹上生成烟雾粒子

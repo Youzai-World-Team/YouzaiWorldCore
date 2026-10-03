@@ -160,9 +160,6 @@ public final class LuckPermsHelper {
         }
     }
 
-    /**
-     * 私有构造方法，防止实例化。
-     */
     private LuckPermsHelper() {
     }
 
@@ -366,8 +363,6 @@ public final class LuckPermsHelper {
             return "default";
         }
     }
-
-    // ==================== 工具方法 ====================
 
     /**
      * 构建权限节点字符串。

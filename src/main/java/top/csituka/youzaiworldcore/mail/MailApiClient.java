@@ -54,10 +54,6 @@ public final class MailApiClient {
     private MailApiClient() {
     }
 
-    // ========================================================================
-    // 返回类型
-    // ========================================================================
-
     /** 收件箱：条目已排除隐藏中的邮件，未读数为 Api 权威值。 */
     public record InboxResult(boolean success, int statusCode, String message,
             List<MailStreamCodecs.MailRefAndMail> entries, int unread) {
@@ -99,10 +95,6 @@ public final class MailApiClient {
     public record PurgeResult(boolean success, int statusCode, String message, int removed, int prunedRefs,
             List<UUID> affected) {
     }
-
-    // ========================================================================
-    // 读取
-    // ========================================================================
 
     /**
      * 拉取玩家收件箱。
@@ -290,10 +282,6 @@ public final class MailApiClient {
                 ApiHttp.stringValue(root, "deny_reason"));
     }
 
-    // ========================================================================
-    // 写入
-    // ========================================================================
-
     /**
      * 发布邮件。
      *
@@ -426,7 +414,6 @@ public final class MailApiClient {
                 ApiHttp.intValue(root, "unread", 0));
     }
 
-    /** 清理过期邮件。 */
     public static PurgeResult purge(boolean keepStarred) {
         DebugLogger.entering(MODULE, "purge", "keepStarred=" + keepStarred);
         JsonObject request = new JsonObject();
@@ -457,9 +444,7 @@ public final class MailApiClient {
         return success;
     }
 
-    // ========================================================================
     // JSON 映射
-    // ========================================================================
 
     /** 组装发布 / 编辑共用的邮件字段。 */
     private static JsonObject mailFields(MailType type, String sender, List<TargetSpec> targets,
@@ -607,10 +592,6 @@ public final class MailApiClient {
                 ApiHttp.booleanValue(json, "starred", false),
                 ApiHttp.booleanValue(json, "claimed", false));
     }
-
-    // ========================================================================
-    // 工具方法
-    // ========================================================================
 
     private static JsonObject body(HttpResponse<String> response) {
         return response == null ? new JsonObject() : ApiHttp.parse(response.body());

@@ -70,8 +70,6 @@ public final class CachedItemRenderer {
         resolvedStack = ItemStack.EMPTY;
     }
 
-    // ===== 内部 =====
-
     private void resolve(ItemStack stack) {
         Minecraft mc = Minecraft.getInstance();
         ItemModelResolver resolver = mc.getItemModelResolver();

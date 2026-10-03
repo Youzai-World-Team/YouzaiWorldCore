@@ -49,9 +49,6 @@ public abstract class AccountPlayerListMixin {
     @Shadow @Final
     private MinecraftServer server;
 
-    /**
-     * 玩家加入前检查
-     */
     @Inject(method = "placeNewPlayer", at = @At("HEAD"), cancellable = true)
     private void onPlayerPreJoin(Connection connection, ServerPlayer player, CommonListenerCookie cookie, CallbackInfo ci) {
         String username = player.getScoreboardName();
@@ -103,9 +100,6 @@ public abstract class AccountPlayerListMixin {
         // 每次加入服务器都必须重新输入密码。
     }
 
-    /**
-     * 玩家完全加入后
-     */
     @Inject(method = "placeNewPlayer", at = @At("RETURN"))
     private void onPlayerPostJoin(Connection connection, ServerPlayer player, CommonListenerCookie cookie, CallbackInfo ci) {
         if (AuthPlayerHelper.canSkipAuth(player)) return;
@@ -123,9 +117,6 @@ public abstract class AccountPlayerListMixin {
         }
     }
 
-    /**
-     * 玩家断开连接时
-     */
     @Inject(method = "remove", at = @At("HEAD"))
     private void onPlayerLeave(ServerPlayer player, CallbackInfo ci) {
         if (AuthPlayerHelper.canSkipAuth(player)) return;
@@ -162,9 +153,6 @@ public abstract class AccountPlayerListMixin {
         }
     }
 
-    /**
-     * 检查玩家能否加入
-     */
     @Inject(method = "canPlayerLogin", at = @At("HEAD"), cancellable = true)
     private void onCanPlayerLogin(SocketAddress address, NameAndId profile, CallbackInfoReturnable<Component> cir) {
         String username = profile.name();

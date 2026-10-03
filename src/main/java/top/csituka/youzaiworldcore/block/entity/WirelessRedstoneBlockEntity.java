@@ -47,7 +47,6 @@ public abstract class WirelessRedstoneBlockEntity extends BlockEntity {
     /** 允许设置频道的最远距离（平方值），与原版告示牌编辑距离一致（8 格）。 */
     private static final double MAX_EDIT_DISTANCE_SQR = 64.0;
 
-    /** 存档字段名。 */
     private static final String TAG_CHANNEL = "Channel";
 
     private int channel = WirelessRedstoneChannel.DEFAULT;

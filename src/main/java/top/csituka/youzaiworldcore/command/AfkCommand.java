@@ -47,7 +47,6 @@ public class AfkCommand {
                         .requires(src -> LuckPermsHelper.checkPermission(
                                 src, LuckPermsHelper.PERMISSION_AFK_USE, Commands.LEVEL_ALL))
                         .executes(AfkCommand::toggle)
-                        // /yzwc afk status [player]
                         .then(Commands.literal("status")
                                 .executes(AfkCommand::querySelf)
                                 .then(Commands.argument("player", EntityArgument.player())
@@ -55,7 +54,6 @@ public class AfkCommand {
                                                 src, LuckPermsHelper.PERMISSION_AFK_ADMIN,
                                                 Commands.LEVEL_ADMINS))
                                         .executes(AfkCommand::queryOther)))
-                        // /yzwc afk list
                         .then(Commands.literal("list")
                                 .requires(src -> LuckPermsHelper.checkPermission(
                                         src, LuckPermsHelper.PERMISSION_AFK_ADMIN,

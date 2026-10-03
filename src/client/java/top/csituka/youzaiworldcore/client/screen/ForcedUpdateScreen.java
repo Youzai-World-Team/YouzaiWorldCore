@@ -41,7 +41,6 @@ public class ForcedUpdateScreen extends Screen implements YzuiPopupScreen {
 
     // ============ 动画状态 ============
 
-
     public ForcedUpdateScreen() {
         super(Component.translatable("screen.youzaiworldcore.forced_update.title"));
     }
@@ -131,8 +130,5 @@ public class ForcedUpdateScreen extends Screen implements YzuiPopupScreen {
     private void startExitAnimation(Runnable onComplete) {
         if (!GuiAnimationController.isExiting(this)) onComplete.run();
     }
-
-    // ========== 工具方法 ==========
-
 
 }

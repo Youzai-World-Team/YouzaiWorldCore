@@ -89,7 +89,7 @@ public class YzuCraftingScreen extends AbstractRecipeBookScreen<CraftingMenu> {
     private static int closeBgHover() { return YzuiTheme.surfaceHigh(); }
     private static int closeIcon() { return YzuiTheme.text(); }
     private static int closeIconHover() { return YzuiTheme.text(); }
-    private static final String CLOSE_GLYPH = "\u00d7"; // ×
+    private static final String CLOSE_GLYPH = "\u00d7";
 
     // ========== 标题区 ==========
 
@@ -107,15 +107,11 @@ public class YzuCraftingScreen extends AbstractRecipeBookScreen<CraftingMenu> {
 
     /** 合成箭头区域（常量见上方装饰符号节，使用原版纹理裁剪 blitSprite） */
 
-    // ========== 构造 ==========
-
     public YzuCraftingScreen(CraftingMenu menu, Inventory playerInventory, Component title) {
         super(menu, new CraftingRecipeBookComponent(menu), playerInventory, title);
         DebugLogger.info("YzuCraftingScreen", "创建 YZUI 工作台屏幕: title=%s menuType=%s",
                 title.getString(), menu.getType());
     }
-
-    // ========== 初始化 ==========
 
     @Override
     protected void init() {
@@ -131,8 +127,6 @@ public class YzuCraftingScreen extends AbstractRecipeBookScreen<CraftingMenu> {
     protected @NonNull ScreenPosition getRecipeBookButtonPosition() {
         return new ScreenPosition(this.leftPos + 5, this.height / 2 - 49);
     }
-
-    // ========== 渲染管线 ==========
 
     @Override
     public void extractRenderState(@NonNull GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
@@ -248,8 +242,6 @@ public class YzuCraftingScreen extends AbstractRecipeBookScreen<CraftingMenu> {
         int cy = this.topPos + CLOSE_TOP;
         return mx >= cx && mx < cx + CLOSE_SIZE && my >= cy && my < cy + CLOSE_SIZE;
     }
-
-    // ========== 工具方法 ==========
 
     private static void fillR(GuiGraphicsExtractor g, int x, int y, int w, int h, int r, int c) {
         if (w <= 0 || h <= 0) {

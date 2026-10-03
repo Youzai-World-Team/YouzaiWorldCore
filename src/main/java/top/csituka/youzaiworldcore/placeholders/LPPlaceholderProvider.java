@@ -65,9 +65,6 @@ public class LPPlaceholderProvider implements PlaceholderProvider {
      */
     private final PlaceholderPlatform platform;
 
-    /**
-     * The LuckPerms API instance
-     */
     private final LuckPerms luckPerms;
 
     /**
@@ -79,7 +76,6 @@ public class LPPlaceholderProvider implements PlaceholderProvider {
         this.platform = platform;
         this.luckPerms = luckPerms;
         
-        // register placeholders
         PlaceholderBuilder builder = new PlaceholderBuilder();
         setup(builder);
         this.placeholders = builder.build();
@@ -498,9 +494,6 @@ public class LPPlaceholderProvider implements PlaceholderProvider {
         return groupName;
     }
 
-    /**
-     * Builds a placeholder map
-     */
     private static final class PlaceholderBuilder {
         private final Map<String, Placeholder> placeholders = new LinkedHashMap<>();
 

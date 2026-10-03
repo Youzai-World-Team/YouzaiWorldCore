@@ -19,8 +19,6 @@ import org.jspecify.annotations.NonNull;
  */
 public class ModEnchantments {
 
-        // ========== 原有附魔 ==========
-
         public static final ResourceKey<Enchantment> SUN_REPAIR_KEY = ResourceKey.create(
                         Registries.ENCHANTMENT,
                         Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "sun_repair"));
@@ -57,10 +55,8 @@ public class ModEnchantments {
          * 本项目注册的全部附魔键，供创造模式分类等统一遍历使用。
          */
         public static final List<ResourceKey<Enchantment>> ALL = List.of(
-                        // 原有
                         SUN_REPAIR_KEY,
                         SPIRIT_TURBO_KEY,
-                        // 新增
                         LEECHING_KEY,
                         POISON_PUFF_KEY,
                         FIRE_CHARGE_KEY,

@@ -21,7 +21,6 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
 @SuppressWarnings("null")
 public final class SubtitleCaptureHandler implements SoundEventListener {
 
-    /** 单例实例 */
     public static final SubtitleCaptureHandler INSTANCE = new SubtitleCaptureHandler();
 
     /** 字幕显示时间（毫秒，与原版默认 3000 一致） */
@@ -62,13 +61,11 @@ public final class SubtitleCaptureHandler implements SoundEventListener {
 
     @Override
     public void onPlaySound(SoundInstance sound, WeighedSoundEvents soundEvent, float range) {
-        // 获取字幕文本
         Component text = soundEvent.getSubtitle();
         if (text == null || range <= 0.0f) return;
 
         DebugLogger.info("SubtitleCaptureHandler", "字幕事件: %s (range=%.1f)", text.getString(), range);
 
-        // 获取声音位置
         Vec3 soundPos = new Vec3(sound.getX(), sound.getY(), sound.getZ());
 
         // 计算方向（相对于当前玩家视角）
@@ -78,7 +75,6 @@ public final class SubtitleCaptureHandler implements SoundEventListener {
             dir = computeDirection(client.player.position(), client.player.getYRot(), soundPos);
         }
 
-        // 创建字幕显示条目
         SubtitleDisplayEntry entry = new SubtitleDisplayEntry(text, dir, DISPLAY_TIME_TICKS);
         DrawEntriesHandler.INSTANCE.addEntry(entry.getKey(), entry);
     }
@@ -94,7 +90,7 @@ public final class SubtitleCaptureHandler implements SoundEventListener {
 
         // 计算声音相对于玩家的水平方位角
         double soundAngle = Math.atan2(dz, dx); // 弧度，相对于 X 正轴
-        double playerAngle = Math.toRadians(playerYaw); // 玩家朝向（yaw）
+        double playerAngle = Math.toRadians(playerYaw);
 
         // 计算相对角度（-PI 到 PI）
         double relativeAngle = soundAngle - playerAngle;
@@ -103,19 +99,16 @@ public final class SubtitleCaptureHandler implements SoundEventListener {
         while (relativeAngle <= -Math.PI) relativeAngle += 2 * Math.PI;
 
         if (relativeAngle > Math.PI / 4 && relativeAngle <= Math.PI * 3 / 4) {
-            return Direction.LEFT; // 声音在左侧
+            return Direction.LEFT;
         } else if (relativeAngle > -Math.PI * 3 / 4 && relativeAngle <= -Math.PI / 4) {
-            return Direction.RIGHT; // 声音在右侧
+            return Direction.RIGHT;
         } else if (relativeAngle > -Math.PI / 4 && relativeAngle <= Math.PI / 4) {
-            return Direction.FORWARD; // 声音在前方（视野内）
+            return Direction.FORWARD;
         } else {
-            return Direction.BEHIND; // 声音在后方
+            return Direction.BEHIND;
         }
     }
 
-    /**
-     * 声音方向枚举。
-     */
     public enum Direction {
         NONE,
         FORWARD,

@@ -2,14 +2,8 @@ package top.csituka.youzaiworldcore.account.util;
 
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
-/**
- * 认证辅助方法
- */
 public class AuthHelper {
 
-    /**
-     * 获取客户端的 IP 地址
-     */
     public static String getIp(java.net.SocketAddress socketAddress) {
         DebugLogger.entering("AuthHelper", "getIp",
                 "socketAddress=" + socketAddress);

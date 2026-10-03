@@ -27,13 +27,10 @@ public abstract class DisplayEntry<T> {
     /** 文字与图标之间的间距 */
     protected static final int TEXT_ICON_MARGIN = 4;
 
-    /** 条目携带的数据 */
     protected final T data;
 
-    /** 显示数量 */
     protected int displayAmount;
 
-    /** 已拼装好的显示文本组件 */
     protected Component displayComponent;
 
     /** 剩余 tick 数 */
@@ -45,7 +42,6 @@ public abstract class DisplayEntry<T> {
     /** 移出动画持续时间（tick） */
     protected int moveOutDuration;
 
-    /** 是否正在移出 */
     protected boolean isMovingOut;
 
     /** 当前移动进度 [0.0, 1.0] */
@@ -85,9 +81,6 @@ public abstract class DisplayEntry<T> {
      */
     public abstract Object getKey();
 
-    /**
-     * 获取条目的显示名称。
-     */
     protected abstract Component getEntryName();
 
     /**
@@ -107,9 +100,6 @@ public abstract class DisplayEntry<T> {
      */
     protected abstract void renderSprite(GuiGraphicsExtractor graphics, int x, int y, int alpha);
 
-    /**
-     * 构建显示文本组件。
-     */
     protected Component buildDisplayComponent() {
         MutableComponent text = Component.literal("")
                 .append(getEntryName().copy().withStyle(getNameStyle()))
@@ -125,9 +115,6 @@ public abstract class DisplayEntry<T> {
         return ChatFormatting.WHITE;
     }
 
-    /**
-     * 每 tick 更新。
-     */
     public void tick() {
         if (remainingTicks > 0) {
             remainingTicks--;
@@ -146,16 +133,10 @@ public abstract class DisplayEntry<T> {
         }
     }
 
-    /**
-     * 判断此条目是否应该被移除。
-     */
     public boolean shouldDiscard() {
         return remainingTicks <= 0 && (!GuiAnimationController.isEnabled() || moveOutProgress >= 1.0f);
     }
 
-    /**
-     * 标记该条目开始移出。
-     */
     public void startMovingOut() {
         if (!isMovingOut) {
             isMovingOut = true;
@@ -174,9 +155,6 @@ public abstract class DisplayEntry<T> {
         this.moveOutProgress = 0.0f;
     }
 
-    /**
-     * 判断此条目是否正在移出。
-     */
     public boolean isMovingOut() {
         return isMovingOut;
     }
@@ -207,7 +185,6 @@ public abstract class DisplayEntry<T> {
         if (isMovingOut) {
             return Math.max(0f, 1.0f - moveOutProgress);
         }
-        // 正常显示
         return 1.0f;
     }
 
@@ -242,9 +219,6 @@ public abstract class DisplayEntry<T> {
                 textX, textY, YzuiTheme.text(), alpha / 255f);
     }
 
-    /**
-     * 获取此条目的渲染宽度。
-     */
     public int getWidth() {
         Minecraft client = Minecraft.getInstance();
         int textWidth = client.font.width(displayComponent);
@@ -257,9 +231,6 @@ public abstract class DisplayEntry<T> {
     @Override
     public abstract int hashCode();
 
-    /**
-     * 获取数量描述文本。
-     */
     public String getAmountText() {
         if (displayAmount >= 1_000_000_000) {
             return String.format("%.1fB", displayAmount / 1_000_000_000.0);

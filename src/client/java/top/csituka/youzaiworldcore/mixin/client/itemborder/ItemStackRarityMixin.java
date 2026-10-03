@@ -72,9 +72,9 @@ public abstract class ItemStackRarityMixin {
     @Unique
     private static Rarity colorNameToRarity(String color) {
         return switch (color.toLowerCase()) {
-            case "yellow"       -> Rarity.UNCOMMON;   // name: §e (yellow)
-            case "aqua"         -> Rarity.RARE;        // name: §b (aqua)
-            case "light_purple" -> Rarity.EPIC;        // name: §d (light purple)
+            case "yellow"       -> Rarity.UNCOMMON;
+            case "aqua"         -> Rarity.RARE;
+            case "light_purple" -> Rarity.EPIC;
             default -> null;
         };
     }

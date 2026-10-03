@@ -56,7 +56,6 @@ public final class JsonFileStore {
     /** 正在做错误恢复：此期间的写盘失败只记日志，不再触发新的崩溃流程 */
     private boolean recovering = false;
 
-    /** 最近一次写盘是否成功 */
     private boolean lastWriteOk = false;
 
     /**
@@ -66,7 +65,6 @@ public final class JsonFileStore {
         this.file = file;
     }
 
-    /** @return 该容器对应的文件路径 */
     public Path file() {
         return file;
     }
@@ -309,8 +307,6 @@ public final class JsonFileStore {
     public Set<String> moduleNames() {
         return new LinkedHashSet<>(root.keySet());
     }
-
-    // ===== 内部 =====
 
     /** 人类可读的 JSON 值类型描述，用于报错 */
     static String describe(JsonElement element) {

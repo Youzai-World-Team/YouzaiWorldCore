@@ -43,7 +43,6 @@ public class AdventureLevelManager {
         if (level < 1) level = 1;
         double logVal = Math.log10(2.0 * level);
         double result = 200.0 + 20.0 * Math.pow(logVal, 20.0);
-        // clamp 防止溢出
         if (result > Integer.MAX_VALUE) return Integer.MAX_VALUE;
         return Math.max(1, (int) Math.round(result));
     }
@@ -89,20 +88,18 @@ public class AdventureLevelManager {
 
     // ==================== 事件经验常量 ====================
 
-    public static final int EXP_MINE_BATCH            = 25;   // 挖掘 50 方块
-    public static final int EXP_PLACE_BATCH           = 25;   // 放置 50 方块
-    public static final int EXP_DEATH                 = 10;   // 死亡
-    public static final int EXP_HEART_OF_GUARDIANSHIP = 50;   // 守护之心保护
-    public static final int EXP_TOTEM_OF_UNDYING      = 500;  // 不死图腾
-    public static final int EXP_ADVANCEMENT           = 50;   // 完成进度（成就）
+    public static final int EXP_MINE_BATCH            = 25;
+    public static final int EXP_PLACE_BATCH           = 25;
+    public static final int EXP_DEATH                 = 10;
+    public static final int EXP_HEART_OF_GUARDIANSHIP = 50;
+    public static final int EXP_TOTEM_OF_UNDYING      = 500;
+    public static final int EXP_ADVANCEMENT           = 50;
 
     // ==================== 计数器 ====================
 
     private static final int COUNTER_THRESHOLD = 50;
     private static final Map<UUID, Integer> mineCounters  = new ConcurrentHashMap<>();
     private static final Map<UUID, Integer> placeCounters = new ConcurrentHashMap<>();
-
-    // ==================== 初始化 ====================
 
     public static void initialize() {
         DebugLogger.entering("AdventureLevelManager", "initialize");
@@ -148,12 +145,10 @@ public class AdventureLevelManager {
         int newLevel = data.getLevel();
         boolean leveledUp = oldLevel != newLevel;
 
-        // 升级时发放 1 技能点
         if (leveledUp) {
             for (int lvl = oldLevel; lvl < newLevel; lvl++) {
                 AttributeManager.grantSkillPoint(uuid, player.getName().getString());
             }
-            // 同步属性数据到客户端
             AttributeManager.syncToClient(player);
         }
 

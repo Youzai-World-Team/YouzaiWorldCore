@@ -33,16 +33,10 @@ public class TeleportAnchorBlockEntity extends BlockEntity {
         super(ModBlockEntities.TELEPORT_ANCHOR, pos, state);
     }
 
-    /**
-     * 检查指定玩家是否已激活此锚点。
-     */
     public boolean isActivatedBy(UUID playerUuid) {
         return activators.contains(playerUuid);
     }
 
-    /**
-     * 获取当前激活此锚点的玩家数量。
-     */
     public int getActivatorCount() {
         return activators.size();
     }

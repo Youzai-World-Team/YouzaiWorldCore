@@ -153,9 +153,6 @@ public class TeleportAnchorManager extends SavedData {
                 .toList();
     }
 
-    /**
-     * 获取某个玩家当前已激活的传送锚点数量。
-     */
     public int getPointCount(ServerPlayer player) {
         List<TeleportAnchorData> points = playerPoints.get(player.getUUID());
         return points != null ? points.size() : 0;

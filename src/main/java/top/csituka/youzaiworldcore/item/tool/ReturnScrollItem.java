@@ -51,7 +51,6 @@ import java.util.function.Consumer;
 @SuppressWarnings("null")
 public class ReturnScrollItem extends Item {
 
-    /** 最大叠堆。 */
     public static final int MAX_STACK_SIZE = 16;
 
     /** 传送成功后的冷却时长（tick），1200 tick = 60 秒。 */

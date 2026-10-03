@@ -33,8 +33,6 @@ public class ClientAttributeData {
         playerLevel = p.playerLevel();
     }
 
-    // ---- Getters ----
-
     public static int getSkillPointsAvailable() { return skillPointsAvailable; }
     public static int getMaxHealth() { return maxHealth; }
     public static int getHealingAmplification() { return healingAmplification; }
@@ -47,7 +45,6 @@ public class ClientAttributeData {
     public static int getDamageResistance() { return damageResistance; }
     public static int getPlayerLevel() { return playerLevel; }
 
-    /** 根据属性 key 获取点数 */
     public static int get(String key) {
         return switch (key) {
             case "maxHealth" -> maxHealth;

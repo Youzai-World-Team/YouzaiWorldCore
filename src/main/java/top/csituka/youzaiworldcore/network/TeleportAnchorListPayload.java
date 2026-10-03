@@ -65,7 +65,6 @@ public record TeleportAnchorListPayload(List<TeleportAnchorData> points,
             return idx < vals.length ? vals[idx] : ANCHOR;
         }
 
-        /** 序列化到字节。 */
         public byte toByte() {
             return (byte) ordinal();
         }

@@ -189,7 +189,6 @@ public class MailSentScreen extends MailBaseScreen {
         for (int i = scrollOffset; i < end; i++) {
             MailStreamCodecs.MailSummary summary = entries.get(i);
             if (isExpired(summary)) {
-                // 已过期行没有按钮，直接跳过命中判定
                 continue;
             }
             int rowY = tableRect.y() + 30 + (i - scrollOffset) * ROW_HEIGHT;

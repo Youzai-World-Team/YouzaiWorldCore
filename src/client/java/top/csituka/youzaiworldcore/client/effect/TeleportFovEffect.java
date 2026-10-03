@@ -26,7 +26,6 @@ import top.csituka.youzaiworldcore.network.TeleportAnchorTeleportPayload;
 @SuppressWarnings("null")
 public final class TeleportFovEffect {
 
-    // ===== 枚举：动画阶段 =====
     public enum Phase {
         IDLE,
         ZOOMING_IN,
@@ -47,7 +46,6 @@ public final class TeleportFovEffect {
     /** 当前阶段已完成的完整刻数 */
     private static int tickCounter = 0;
 
-    // 保存传送目标
     private static BlockPos targetPos;
     private static ResourceKey<Level> targetDim;
 
@@ -120,9 +118,6 @@ public final class TeleportFovEffect {
         return computeFovModifier(partialTick);
     }
 
-    /**
-     * 是否处于动画激活状态。
-     */
     public static boolean isActive() {
         return phase != Phase.IDLE;
     }
@@ -206,11 +201,6 @@ public final class TeleportFovEffect {
         return 1.0f - f * f * f * f * f;
     }
 
-    // ===== 内部方法 =====
-
-    /**
-     * 发送传送数据包到服务端。
-     */
     private static void sendTeleportPacket() {
         if (targetPos == null || targetDim == null) return;
 

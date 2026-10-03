@@ -40,7 +40,6 @@ public class InvisibleItemFrameItem extends Item {
         Player player = context.getPlayer();
         ItemStack stack = context.getItemInHand();
 
-        // ===== 检查放置位置是否可通行 =====
         BlockState placeState = level.getBlockState(placePos);
         if (!placeState.isAir() && !placeState.canBeReplaced()) {
             DebugLogger.branch("InvisibleItemFrameItem", "place pos is replaceable", false,
@@ -49,15 +48,12 @@ public class InvisibleItemFrameItem extends Item {
             return InteractionResult.FAIL;
         }
 
-        // ===== 计算展示框的附着位置 =====
         // 展示框的附着面即点击的面，位置在点击面外侧的空气处
         BlockPos framePos = placePos;
         Direction attachmentDir = clickedFace;
 
-        // ===== 创建物品展示框实体 =====
         ItemFrame frame = new ItemFrame(level, framePos, attachmentDir);
 
-        // ===== 检查实体是否能附着（survives）=====
         if (!frame.survives()) {
             DebugLogger.branch("InvisibleItemFrameItem", "frame survives", false,
                     "pos=" + framePos + ", dir=" + attachmentDir);
@@ -65,7 +61,6 @@ public class InvisibleItemFrameItem extends Item {
             return InteractionResult.FAIL;
         }
 
-        // ===== 检查碰撞（与其他展示框/实体不重叠）=====
         AABB frameBox = frame.getBoundingBox();
         if (!level.getEntities(frame, frameBox).isEmpty()) {
             DebugLogger.branch("InvisibleItemFrameItem", "no collision with other entities", false,
@@ -80,10 +75,8 @@ public class InvisibleItemFrameItem extends Item {
             return InteractionResult.SUCCESS;
         }
 
-        // 设置展示框为隐形
         frame.setInvisible(true);
 
-        // 添加到世界
         boolean added = level.addFreshEntity(frame);
         if (!added) {
             DebugLogger.warn("InvisibleItemFrameItem", "无法将隐形展示框添加到世界，pos=%s", framePos);
@@ -91,11 +84,9 @@ public class InvisibleItemFrameItem extends Item {
             return InteractionResult.FAIL;
         }
 
-        // 播放放置音效
         level.playSound(null, framePos, SoundEvents.ITEM_FRAME_PLACE, SoundSource.BLOCKS,
                 1.0F, 1.0F);
 
-        // ===== 消耗物品（非创造模式）=====
         if (player != null && !player.isCreative()) {
             stack.shrink(1);
             player.getInventory().setChanged();

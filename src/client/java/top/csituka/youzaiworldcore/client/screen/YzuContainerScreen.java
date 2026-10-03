@@ -38,7 +38,6 @@ public class YzuContainerScreen extends AbstractContainerScreen<ChestMenu> {
     private static final int SLOT_SIZE = 16;
     private static final int SLOT_RADIUS = 3; // r≤3 走矩形快速路径，等价实心矩形
 
-    /** 玩家背包标题使用主题正文色。 */
     private static int labelColor() { return YzuiTheme.text(); }
 
     // ========== 关闭按钮 ==========
@@ -53,9 +52,8 @@ public class YzuContainerScreen extends AbstractContainerScreen<ChestMenu> {
     private static int closeBgHover() { return YzuiTheme.surfaceHigh(); }
     private static int closeIcon() { return YzuiTheme.text(); }
     private static int closeIconHover() { return YzuiTheme.text(); }
-    private static final String CLOSE_GLYPH = "\u00d7"; // ×
+    private static final String CLOSE_GLYPH = "\u00d7";
 
-    /** 标题图标与文字间距 */
     private static final int TITLE_ICON_GAP = 4;
     /** 标题区图标缩放（16px 物品模型 → 12px 显示，为顶部留白腾空间） */
     private static final float ICON_SCALE = 0.75f;
@@ -63,8 +61,6 @@ public class YzuContainerScreen extends AbstractContainerScreen<ChestMenu> {
 
     private final int containerRows;
     private final Kind kind;
-
-    // ========== 构造 ==========
 
     public YzuContainerScreen(ChestMenu menu, Inventory playerInventory, Component title) {
         // 沿用原版 ContainerScreen 的面板尺寸：176 × (114 + rows*18)
@@ -75,8 +71,6 @@ public class YzuContainerScreen extends AbstractContainerScreen<ChestMenu> {
                 kind, containerRows, title.getString(), menu.getType());
     }
 
-    // ========== 初始化 ==========
-
     @Override
     protected void init() {
         this.leftPos = (this.width - this.imageWidth) / 2;
@@ -86,8 +80,6 @@ public class YzuContainerScreen extends AbstractContainerScreen<ChestMenu> {
                 kind, containerRows, this.leftPos, this.topPos, this.imageWidth, this.imageHeight,
                 this.title.getString());
     }
-
-    // ========== 渲染管线 ==========
 
     @Override
     public void extractRenderState(@NonNull GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
@@ -210,8 +202,6 @@ public class YzuContainerScreen extends AbstractContainerScreen<ChestMenu> {
         return mx >= cx && mx < cx + CLOSE_SIZE && my >= cy && my < cy + CLOSE_SIZE;
     }
 
-    // ========== 工具方法 ==========
-
     /**
      * 圆角矩形填充（优化版，与 YzuCreativeInventoryScreen 一致）。
      * <p>
@@ -239,8 +229,8 @@ public class YzuContainerScreen extends AbstractContainerScreen<ChestMenu> {
             while (n < r && n * n + j * j < r * r)
                 n++;
             int x0 = x + r - n, x1 = x + w - r + n;
-            g.fill(x0, y + r - j - 1, x1, y + r - j, c);         // 顶部第 j 行
-            g.fill(x0, y + h - r + j, x1, y + h - r + j + 1, c); // 底部第 j 行
+            g.fill(x0, y + r - j - 1, x1, y + r - j, c);
+            g.fill(x0, y + h - r + j, x1, y + h - r + j + 1, c);
         }
     }
 
@@ -264,7 +254,6 @@ public class YzuContainerScreen extends AbstractContainerScreen<ChestMenu> {
 
         /** 原版翻译键（仅用于日志/定位） */
         private final String langKey;
-        /** 标题区容器图标 */
         private final ItemStack icon;
 
         Kind(String langKey, Item icon) {

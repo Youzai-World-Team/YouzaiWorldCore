@@ -37,7 +37,6 @@ public class LivingEntityDamageMixin {
 
         // 1. 远程伤害增幅：弹射物攻击增伤
         if (source.getDirectEntity() != null && source.getDirectEntity() != source.getEntity()) {
-            // 检查是谁发射的弹射物
             if (source.getEntity() instanceof Player shooter && shooter.getUUID().equals(uuid)) {
                 float multiplier = AttributeManager.getRangedDamageMultiplier(uuid);
                 amount *= multiplier;

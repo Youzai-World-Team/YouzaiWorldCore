@@ -30,7 +30,6 @@ public final class DoubleDoorsState {
 
     public static final String MODULE = "DoubleDoorsState";
 
-    /** 该玩家是否启用双开门 */
     private static final String KEY_ENABLED = "enabled";
 
     /** 默认状态：新玩家默认开启双开门（与原全局默认一致） */

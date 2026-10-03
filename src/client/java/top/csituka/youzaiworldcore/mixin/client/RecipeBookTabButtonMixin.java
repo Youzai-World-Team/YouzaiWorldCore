@@ -33,7 +33,6 @@ public class RecipeBookTabButtonMixin {
     /** Tab 圆角半径 */
     @Unique
     private static final int YZWC_TR = 4;
-    /** Debug 模块名 */
     @Unique
     private static final String YZWC_TAB_DBG = "RecipeBookTab";
 
@@ -59,7 +58,6 @@ public class RecipeBookTabButtonMixin {
     @Unique
     private static void yzwc$fillRoundedRect(GuiGraphicsExtractor g, int x, int y, int w, int h, int r, int color) {
         // 圆角绘制统一走 RoundedRect（行扫描：r=6 时 135 次 fill -> 13 次）。
-        // 点亮像素与原逐像素实现一致（45253 组尺寸/半径已逐一比对）；
         // 原实现未做尺寸校验，r > min(w,h)/2 时会画出坐标反转/重叠的结果，此处会钳制半径。
         RoundedRect.fill(g, x, y, w, h, r, color);
     }

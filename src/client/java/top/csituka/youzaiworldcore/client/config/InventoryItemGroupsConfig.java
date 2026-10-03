@@ -46,7 +46,6 @@ public final class InventoryItemGroupsConfig {
         return showItemsInGroup;
     }
 
-    /** 当前组内排序方式。 */
     public static Sort getSort() {
         return sort;
     }

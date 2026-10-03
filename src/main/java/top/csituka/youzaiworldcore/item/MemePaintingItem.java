@@ -132,7 +132,6 @@ public class MemePaintingItem extends Item {
                 variantKey.identifier(),
                 holder.value().width(), holder.value().height());
 
-        // ===== 创建 Painting 实体 =====
         Painting painting = new Painting(level, placePos, face, holder);
 
         // 应用物品栈上的实体组件（自定义名等）
@@ -145,7 +144,6 @@ public class MemePaintingItem extends Item {
             return InteractionResult.CONSUME;
         }
 
-        // ===== 检查与其他实体碰撞 =====
         AABB boundingBox = painting.getBoundingBox();
         if (!level.getEntities(painting, boundingBox).isEmpty()) {
             DebugLogger.branch("MemePaintingItem", "no entity collision", false,
@@ -154,7 +152,6 @@ public class MemePaintingItem extends Item {
             return InteractionResult.FAIL;
         }
 
-        // ===== 客户端直接 SUCCESS =====
         if (level.isClientSide()) {
             DebugLogger.branch("MemePaintingItem", "is server side", false, "客户端 SUCCESS");
             DebugLogger.exiting("MemePaintingItem", "useOn", "SUCCESS (client)");

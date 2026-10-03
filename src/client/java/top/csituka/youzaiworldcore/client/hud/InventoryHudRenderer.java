@@ -40,7 +40,7 @@ public final class InventoryHudRenderer {
     private static final int COLS = 9;
     private static final int ROWS = 3;
     private static final int INVENTORY_START_SLOT = 9;
-    private static final int TOTAL = COLS * ROWS; // 27
+    private static final int TOTAL = COLS * ROWS;
 
     /** 缓存的物品栏快照 */
     private static final ItemStack[] cached = new ItemStack[TOTAL];

@@ -43,30 +43,25 @@ public record BrewingGuideRecipe(
                 Potions.WATER, inputContainer, ingredient, Potions.WATER, outputContainer, true);
     }
 
-    /** 创建用于指南渲染的基底药水物品。 */
     @SuppressWarnings("null")
     public ItemStack inputStack() {
         return PotionContents.createItemStack(this.inputContainer, this.input);
     }
 
-    /** 创建用于指南渲染的材料物品。 */
     @SuppressWarnings("null")
     public ItemStack ingredientStack() {
         return new ItemStack(this.ingredient);
     }
 
-    /** 创建用于指南渲染的产物药水物品。 */
     @SuppressWarnings("null")
     public ItemStack outputStack() {
         return PotionContents.createItemStack(this.outputContainer, this.output);
     }
 
-    /** 返回产物药水提供的状态效果。 */
     public List<MobEffectInstance> effects() {
         return this.output.value().getEffects();
     }
 
-    /** 返回指南中显示的基底名称。 */
     public Component inputName() {
         if (!this.containerMix) {
             return inputStack().getHoverName();
@@ -76,7 +71,6 @@ public record BrewingGuideRecipe(
                 : Component.translatable("screen.youzaiworldcore.brewing.any_potion");
     }
 
-    /** 返回指南中显示的产物名称。 */
     public Component outputName() {
         if (!this.containerMix) {
             return outputStack().getHoverName();

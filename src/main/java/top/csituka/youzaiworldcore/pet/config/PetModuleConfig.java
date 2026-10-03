@@ -26,7 +26,6 @@ public final class PetModuleConfig {
     private static final int DEFAULT_BACKUP_INTERVAL_SECONDS = 600;
     /** 默认值：保留 50 份备份 */
     private static final int DEFAULT_BACKUP_RETENTION_COUNT = 50;
-    /** 默认值：启用自动备份 */
     private static final boolean DEFAULT_AUTO_BACKUP_ENABLED = true;
 
     /** 备份间隔（秒），默认 600 秒（10 分钟） */
@@ -35,7 +34,6 @@ public final class PetModuleConfig {
     /** 备份保留数量，默认 50 份 */
     private static int backupRetentionCount = DEFAULT_BACKUP_RETENTION_COUNT;
 
-    /** 是否启用自动备份 */
     private static boolean autoBackupEnabled = DEFAULT_AUTO_BACKUP_ENABLED;
 
     private PetModuleConfig() {
@@ -81,8 +79,6 @@ public final class PetModuleConfig {
         DebugLogger.info(MODULE, "宠物模块配置已保存");
     }
 
-    // ===== Getters =====
-
     public static int getBackupIntervalSeconds() {
         return backupIntervalSeconds;
     }
@@ -94,8 +90,6 @@ public final class PetModuleConfig {
     public static boolean isAutoBackupEnabled() {
         return autoBackupEnabled;
     }
-
-    // ===== Setters =====
 
     public static void setBackupIntervalSeconds(int seconds) {
         backupIntervalSeconds = Math.max(MIN_BACKUP_INTERVAL_SECONDS, seconds);

@@ -21,12 +21,10 @@ public final class UpdateCheckerConfig {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/UpdateCheckerConfig");
 
-    /** 默认值：启用更新检查 */
     private static final boolean DEFAULT_ENABLED = true;
     /** 默认值：各处检查 / 展示开关一律开启 */
     private static final boolean DEFAULT_TOGGLE = true;
 
-    /** 总开关，默认 true */
     private static boolean enabled = DEFAULT_ENABLED;
 
     /** 服务器启动后是否检查（控制台日志） */

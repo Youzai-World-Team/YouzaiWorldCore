@@ -19,7 +19,6 @@ import java.util.List;
  * </p>
  */
 public record RemoteVersionInfo(
-        /** 最新版本号，如 "1.20.1" */
         String latestVersion,
         /** 最新版本类型（indev / release 等），仅作展示 */
         String type,
@@ -29,7 +28,6 @@ public record RemoteVersionInfo(
         String releaseDate,
         /** 发布时间，原样展示，如 "22:19:30" */
         String releaseTime,
-        /** 更新日志（逐行） */
         List<String> changelog
 ) {
 }

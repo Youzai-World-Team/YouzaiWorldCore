@@ -43,9 +43,7 @@ public final class PetBackupManager {
     private static final DateTimeFormatter TIMESTAMP_FORMATTER =
             DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss");
 
-    /** 备份文件名前缀 */
     private static final String BACKUP_PREFIX = "pet_backup_";
-    /** 备份文件扩展名 */
     private static final String BACKUP_SUFFIX = ".zip";
 
     private static final Path BACKUP_DIR = ModPaths.serverBackup(GlobalSettings.PET_MODULE);
@@ -57,11 +55,6 @@ public final class PetBackupManager {
     private PetBackupManager() {
     }
 
-    /**
-     * 初始化备份管理器。
-     *
-     * @param server 当前 Minecraft 服务器实例
-     */
     public static synchronized void initialize(MinecraftServer server) {
         if (initialized) {
             return;
@@ -88,9 +81,6 @@ public final class PetBackupManager {
         initialized = false;
     }
 
-    /**
-     * 启动定时备份任务。
-     */
     private static void startScheduler() {
         if (scheduler != null && !scheduler.isShutdown()) {
             scheduler.shutdown();
@@ -158,7 +148,6 @@ public final class PetBackupManager {
                 String timestamp = LocalDateTime.now().format(TIMESTAMP_FORMATTER);
                 Path backupFile = BACKUP_DIR.resolve(BACKUP_PREFIX + timestamp + BACKUP_SUFFIX);
 
-                // 序列化为 JSON
                 Map<String, PetEntry> serializable = new LinkedHashMap<>();
                 for (Map.Entry<UUID, PetEntry> entry : snapshot.entrySet()) {
                     serializable.put(entry.getKey().toString(), entry.getValue());
@@ -170,7 +159,6 @@ public final class PetBackupManager {
                 DebugLogger.info(MODULE, "备份已保存: %s (%d 条记录, %d 字节)",
                         backupFile.getFileName(), snapshot.size(), json.length());
 
-                // 清理旧备份
                 cleanupOldBackups();
 
             } catch (Exception e) {
@@ -179,9 +167,6 @@ public final class PetBackupManager {
         });
     }
 
-    /**
-     * 清理超过保留数量的旧备份文件。
-     */
     private static void cleanupOldBackups() {
         int retention = PetModuleConfig.getBackupRetentionCount();
         try (Stream<Path> files = Files.list(BACKUP_DIR)) {
@@ -228,7 +213,6 @@ public final class PetBackupManager {
         }
     }
 
-    /** 判断某个文件是否为宠物备份压缩包 */
     private static boolean isBackupFile(Path path) {
         String name = path.getFileName().toString();
         return name.startsWith(BACKUP_PREFIX) && name.endsWith(BACKUP_SUFFIX);

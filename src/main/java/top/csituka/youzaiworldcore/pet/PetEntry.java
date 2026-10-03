@@ -46,7 +46,6 @@ public record PetEntry(
                             try {
                                 set.add(UUID.fromString(s));
                             } catch (IllegalArgumentException ignored) {
-                                // 跳过无法解析的 UUID
                             }
                         }
                         return set;

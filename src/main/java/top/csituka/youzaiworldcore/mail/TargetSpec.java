@@ -23,36 +23,18 @@ public record TargetSpec(
     /** 角色组/权限节点 */
     public static final byte SCOPE_ROLE = 3;
 
-    /**
-     * 创建一个指定玩家类型的 TargetSpec。
-     *
-     * @param playerNames 玩家名称列表
-     * @return TargetSpec
-     */
     public static TargetSpec forPlayers(List<String> playerNames) {
         return new TargetSpec(SCOPE_PLAYER, Collections.unmodifiableList(playerNames));
     }
 
-    /**
-     * 创建一个角色组类型的 TargetSpec。
-     *
-     * @param roleNodes 角色节点列表
-     * @return TargetSpec
-     */
     public static TargetSpec forRoles(List<String> roleNodes) {
         return new TargetSpec(SCOPE_ROLE, Collections.unmodifiableList(roleNodes));
     }
 
-    /**
-     * 创建全体类型 TargetSpec。
-     */
     public static TargetSpec all() {
         return new TargetSpec(SCOPE_ALL, List.of());
     }
 
-    /**
-     * 创建全体非管理类型 TargetSpec。
-     */
     public static TargetSpec nonadmin() {
         return new TargetSpec(SCOPE_NONADMIN, List.of());
     }

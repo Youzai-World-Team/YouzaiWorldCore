@@ -47,7 +47,6 @@ import java.util.UUID;
  */
 public class StonecutterDamageHandler implements ServerTickEvents.StartTick {
 
-    // 单例实例
     private static final StonecutterDamageHandler INSTANCE = new StonecutterDamageHandler();
 
     /** 伤害间隔（游戏刻）：30 tick = 1.5 秒 */
@@ -59,7 +58,6 @@ public class StonecutterDamageHandler implements ServerTickEvents.StartTick {
     /** 新人检测 / 位置校验 间隔（游戏刻）：每 10 tick = 0.5 秒 */
     private static final int SCAN_INTERVAL = 10;
 
-    /** 自定义伤害类型 ResourceKey */
     private static final ResourceKey<DamageType> STONECUTTER_DAMAGE =
             ResourceKey.create(Registries.DAMAGE_TYPE,
                     Identifier.fromNamespaceAndPath("youzaiworldcore", "stonecutter"));
@@ -71,7 +69,6 @@ public class StonecutterDamageHandler implements ServerTickEvents.StartTick {
     // value = 自上次伤害以来经过的 tick 数（或刚入场时的值）
     private static final Map<UUID, Integer> playerTimers = new HashMap<>();
 
-    // 私有构造，确保单例
     private StonecutterDamageHandler() {
     }
 
@@ -105,9 +102,7 @@ public class StonecutterDamageHandler implements ServerTickEvents.StartTick {
 
         DebugLogger.entering("StonecutterDamageHandler", "onStartTick");
 
-        // ============================================================
         // Step 1: 处理已追踪玩家的计时器（每 tick 执行，极轻量）
-        // ============================================================
         Iterator<Map.Entry<UUID, Integer>> it = playerTimers.entrySet().iterator();
         while (it.hasNext()) {
             Map.Entry<UUID, Integer> entry = it.next();
@@ -115,7 +110,6 @@ public class StonecutterDamageHandler implements ServerTickEvents.StartTick {
             @SuppressWarnings("null")
             ServerPlayer player = server.getPlayerList().getPlayer(playerId);
 
-            // 玩家离线或死亡 → 移除追踪
             if (player == null || !player.isAlive()) {
                 DebugLogger.info("StonecutterDamageHandler",
                         "Removing %s from tracker (offline/dead)", playerId);
@@ -123,7 +117,6 @@ public class StonecutterDamageHandler implements ServerTickEvents.StartTick {
                 continue;
             }
 
-            // 计数 + 判断是否达到伤害间隔
             int elapsed = entry.getValue() + 1;
             if (elapsed >= DAMAGE_INTERVAL) {
                 DamageSource damageSource = getStonecutterDamageSource(player);
@@ -142,15 +135,13 @@ public class StonecutterDamageHandler implements ServerTickEvents.StartTick {
                         grantStonecutterAdvancement(player);
                     }
                 }
-                entry.setValue(0); // 重置计时器
+                entry.setValue(0);
             } else {
                 entry.setValue(elapsed);
             }
         }
 
-        // ============================================================
         // Step 2: 位置校验 + 新人入场扫描（每 SCAN_INTERVAL tick 一次）
-        // ============================================================
         if (doScan) {
             DebugLogger.debug("StonecutterDamageHandler", "Running periodic scan (scanTick=%d)", scanTickCounter);
 
@@ -174,17 +165,13 @@ public class StonecutterDamageHandler implements ServerTickEvents.StartTick {
 
             // ---- Step 2b: 扫描新玩家 ----
             for (ServerPlayer player : server.getPlayerList().getPlayers()) {
-                // 创造/旁观模式跳过
                 if (player.isCreative() || player.isSpectator()) {
                     continue;
                 }
-                // 已在追踪中跳过
                 if (playerTimers.containsKey(player.getUUID())) {
                     continue;
                 }
-                // 检测是否站在切石机上
                 if (isStandingOnStonecutter(player)) {
-                    // 新入场 → 立即造成伤害
                     DamageSource damageSource = getStonecutterDamageSource(player);
                     if (damageSource != null) {
                         boolean hurtResult = player.hurtServer(
@@ -201,7 +188,6 @@ public class StonecutterDamageHandler implements ServerTickEvents.StartTick {
                             grantStonecutterAdvancement(player);
                         }
                     }
-                    // 加入追踪映射，计时器从 0 开始
                     playerTimers.put(player.getUUID(), 0);
                     DebugLogger.info("StonecutterDamageHandler",
                             "Player %s started being tracked on stonecutter", player.getName().getString());
@@ -284,9 +270,6 @@ public class StonecutterDamageHandler implements ServerTickEvents.StartTick {
         }
     }
 
-    /**
-     * 向 Fabric 事件总线注册此处理器。
-     */
     public static void register() {
         DebugLogger.entering("StonecutterDamageHandler", "register");
         ServerTickEvents.START_SERVER_TICK.register(INSTANCE);

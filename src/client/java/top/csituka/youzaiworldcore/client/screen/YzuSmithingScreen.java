@@ -93,7 +93,7 @@ public class YzuSmithingScreen extends ItemCombinerScreen<SmithingMenu> {
     private static int closeBgHover() { return YzuiTheme.surfaceHigh(); }
     private static int closeIcon() { return YzuiTheme.text(); }
     private static int closeIconHover() { return YzuiTheme.text(); }
-    private static final String CLOSE_GLYPH = "\u00d7"; // ×
+    private static final String CLOSE_GLYPH = "\u00d7";
 
     // ========== 标题区 ==========
 
@@ -148,8 +148,6 @@ public class YzuSmithingScreen extends ItemCombinerScreen<SmithingMenu> {
     private final CyclingSlotBackground additionalIcon;
     private final ArmorStandRenderState armorStandPreview;
 
-    // ========== 构造 ==========
-
     public YzuSmithingScreen(SmithingMenu menu, Inventory playerInventory, Component title) {
         // 沿用原版 ItemCombinerScreen 构造（menuResource 仅作占位，背景由 YZUI 面板取代）
         super(menu, playerInventory, title,
@@ -171,8 +169,6 @@ public class YzuSmithingScreen extends ItemCombinerScreen<SmithingMenu> {
                 title.getString(), menu.getType());
     }
 
-    // ========== 初始化 ==========
-
     @Override
     protected void init() {
         this.leftPos = (this.width - this.imageWidth) / 2;
@@ -186,8 +182,6 @@ public class YzuSmithingScreen extends ItemCombinerScreen<SmithingMenu> {
     protected void subInit() {
         this.updateArmorStandPreview(this.menu.getSlot(3).getItem());
     }
-
-    // ========== 渲染管线 ==========
 
     @Override
     public void extractRenderState(@NonNull GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
@@ -399,8 +393,6 @@ public class YzuSmithingScreen extends ItemCombinerScreen<SmithingMenu> {
         int cy = this.topPos + CLOSE_TOP;
         return mx >= cx && mx < cx + CLOSE_SIZE && my >= cy && my < cy + CLOSE_SIZE;
     }
-
-    // ========== 工具方法 ==========
 
     private static void fillR(GuiGraphicsExtractor g, int x, int y, int w, int h, int r, int c) {
         if (w <= 0 || h <= 0) {

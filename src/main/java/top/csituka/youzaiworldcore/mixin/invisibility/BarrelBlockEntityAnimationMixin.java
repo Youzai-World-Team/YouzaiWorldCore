@@ -23,8 +23,6 @@ import top.csituka.youzaiworldcore.invisibility.InvisibilityManager;
 @Mixin(BarrelBlockEntity.class)
 public abstract class BarrelBlockEntityAnimationMixin {
 
-    // ==================== startOpen ====================
-
     /**
      * 在 {@code startOpen} 中记录隐身玩家与木桶的交互关系。
      */
@@ -41,8 +39,6 @@ public abstract class BarrelBlockEntityAnimationMixin {
             }
         }
     }
-
-    // ==================== updateBlockState ====================
 
     /**
      * 在 {@code updateBlockState} 中拦截方块状态更新。
@@ -63,8 +59,6 @@ public abstract class BarrelBlockEntityAnimationMixin {
             InvisibilityManager.clearContainerInteraction(pos);
         }
     }
-
-    // ==================== playSound ====================
 
     /**
      * 在 {@code playSound} 中拦截声音播放。

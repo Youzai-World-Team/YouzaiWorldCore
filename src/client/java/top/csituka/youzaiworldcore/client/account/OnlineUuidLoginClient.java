@@ -25,7 +25,6 @@ public final class OnlineUuidLoginClient {
     private OnlineUuidLoginClient() {
     }
 
-    /** 注册登录查询响应器。 */
     @SuppressWarnings("null")
     public static void initialize() {
         ClientLoginNetworking.registerGlobalReceiver(

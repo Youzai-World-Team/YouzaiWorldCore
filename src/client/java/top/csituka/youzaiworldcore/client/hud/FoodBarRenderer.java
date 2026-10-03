@@ -35,7 +35,6 @@ public final class FoodBarRenderer {
     private static final int COLOR_SATURATION = 0x66FFAA44;
     /** 饱和度白色高亮线（1px 在饱和度区域顶部） */
     private static final int COLOR_SAT_HIGHLIGHT = 0xCCFFFFFF;
-    /** 最大消耗度 */
     private static final float MAX_EXHAUSTION = 4.0f;
 
     private static final String LOG_TAG = "FoodBarRenderer";
@@ -60,7 +59,6 @@ public final class FoodBarRenderer {
         int bw = HealthBarRenderer.BAR_WIDTH;
         int bh = HealthBarRenderer.BAR_HEIGHT;
 
-        // === 获取食物数据 ===
         FoodData foodData = player.getFoodData();
         int foodLevel = foodData.getFoodLevel();
         float saturation = foodData.getSaturationLevel();
@@ -68,13 +66,11 @@ public final class FoodBarRenderer {
         int maxFood = FoodConstants.MAX_FOOD;
         if (maxFood <= 0) return;
 
-        // === 检测手持食物 ===
         ItemStack heldItem = findHeldFood(player);
         FoodProperties foodProps = (heldItem != null)
                 ? heldItem.getComponents().getOrDefault(DataComponents.FOOD, null)
                 : null;
 
-        // === 闪烁更新 ===
         Hud hud = client.gui.hud;
         int guiTicks = hud.getGuiTicks();
         boolean hasFood = foodProps != null;

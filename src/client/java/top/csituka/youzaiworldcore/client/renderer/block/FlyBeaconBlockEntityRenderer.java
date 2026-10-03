@@ -28,7 +28,7 @@ public class FlyBeaconBlockEntityRenderer implements BlockEntityRenderer<FlyBeac
 
     // ======================== 几何常量 ========================
     /** 正方形半宽，用于计算 xmin/xmax/zmin/zmax */
-    private static final double HALF_D = 9.0 + 9.0 / 16.0; // 9.5625 双精度版
+    private static final double HALF_D = 9.0 + 9.0 / 16.0;
 
     /** 中心偏移量 */
     private static final double CENTER_OFFSET = 0.5;
@@ -72,8 +72,6 @@ public class FlyBeaconBlockEntityRenderer implements BlockEntityRenderer<FlyBeac
 
     /** 当前帧是否已由某个 BE 打印了调试日志（防刷屏） */
     private boolean debugLoggedThisFrame = false;
-
-    // ======================== 构造 ========================
 
     public FlyBeaconBlockEntityRenderer(BlockEntityRendererProvider.Context ctx) {
     }
@@ -120,7 +118,6 @@ public class FlyBeaconBlockEntityRenderer implements BlockEntityRenderer<FlyBeac
 
         collectingDone = true;
 
-        // 获取当前 BE 的世界坐标
         BlockPos myPos = state.getPos();
         if (myPos == null) {
             return;
@@ -133,7 +130,6 @@ public class FlyBeaconBlockEntityRenderer implements BlockEntityRenderer<FlyBeac
             return;
         }
 
-        // 计算当前信标正方形的可见墙面
         double beaconCenterX = myPos.getX() + CENTER_OFFSET;
         double beaconCenterZ = myPos.getZ() + CENTER_OFFSET;
         Square mySquare = new Square(
@@ -155,7 +151,6 @@ public class FlyBeaconBlockEntityRenderer implements BlockEntityRenderer<FlyBeac
                     myVisibleFaces.size(), myVisibleBottomAreas.size());
         }
 
-        // 渲染
         matrices.pushPose();
         // 将矩阵原点对齐方块中心（原版渲染约定）
         matrices.translate(CENTER_OFFSET, 0.0f, CENTER_OFFSET);
@@ -271,7 +266,7 @@ public class FlyBeaconBlockEntityRenderer implements BlockEntityRenderer<FlyBeac
         // ---- +Z 面（z = zmax），沿 x 方向 ----
         List<Interval> coverage = new ArrayList<>();
         for (Square other : allSquares) {
-            if (other == sq) continue; // 引用比较，同一对象
+            if (other == sq) continue;
             // 条件：other 的 z 区间严格包含 sq.zmax（跨信标判定使用坐标值比较）
             if (other.zmin() < sq.zmax() && sq.zmax() < other.zmax()) {
                 double cStart = Math.max(sq.xmin(), other.xmin());
@@ -421,10 +416,8 @@ public class FlyBeaconBlockEntityRenderer implements BlockEntityRenderer<FlyBeac
             return;
         }
 
-        // 合并覆盖区间
         List<Interval> merged = mergeIntervals(coverage);
 
-        // 区间减法
         double currentStart = edgeMin;
         for (Interval cov : merged) {
             if (currentStart < cov.start()) {
@@ -450,7 +443,6 @@ public class FlyBeaconBlockEntityRenderer implements BlockEntityRenderer<FlyBeac
         for (int i = 1; i < sorted.size(); i++) {
             Interval next = sorted.get(i);
             if (next.start() <= current.end()) {
-                // 重叠 → 合并
                 current = new Interval(current.start(), Math.max(current.end(), next.end()));
             } else {
                 result.add(current);

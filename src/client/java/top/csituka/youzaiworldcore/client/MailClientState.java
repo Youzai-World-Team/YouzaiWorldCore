@@ -11,7 +11,6 @@ import java.util.List;
  */
 public final class MailClientState {
 
-    /** 未读邮件数量 */
     public static int unreadCount = 0;
 
     /** 当前玩家是否可发布邮件（持有邮件权限） */

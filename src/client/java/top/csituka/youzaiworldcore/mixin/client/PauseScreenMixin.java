@@ -70,13 +70,10 @@ public class PauseScreenMixin {
     /** 全宽按钮宽度（与原版保持一致） */
     private static final int FULL_W = 204;
 
-    /** 半宽按钮宽度 */
     private static final int HALF_W = 98;
 
-    /** 按钮高度 */
     private static final int BTN_H = 20;
 
-    /** 按钮间距 */
     private static final int GAP = 4;
 
     // ========== 玩家模型常量 ==========
@@ -87,7 +84,6 @@ public class PauseScreenMixin {
     /** 模型离地偏移（原版物品栏 {@code extractEntityInInventoryFollowsMouse} 数值） */
     private static final float MODEL_LIFT = 0.0625F;
 
-    /** 模型区宽度 */
     private static final int MODEL_RECT_W = 60;
 
     /** 模型区高度（容纳模型本体 54px + 上下余量；组合布局时与按钮列高度无关） */

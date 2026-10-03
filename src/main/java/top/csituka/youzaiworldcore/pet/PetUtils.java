@@ -19,10 +19,8 @@ public final class PetUtils {
     /** Base36 字符集：0-9, A-Z（大写字母 + 数字） */
     private static final char[] BASE36_CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ".toCharArray();
 
-    /** 内部名称前缀 */
     private static final String NAME_PREFIX = "DOG";
 
-    /** 随机后缀长度 */
     private static final int SUFFIX_LENGTH = 6;
 
     private static final Random RANDOM = new Random();

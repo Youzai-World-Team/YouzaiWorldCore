@@ -73,7 +73,6 @@ public final class YzwcServerMirrorCommand {
             root.then(literal("teleport_world").then(greedyArgs()));
             // /yzwc open_menu <menu_name> [target]
             root.then(literal("open_menu").then(greedyArgs()));
-            // /yzwc status <player> list
             // 下一级是 <player> 参数而非字面量，故挂一级兜底
             root.then(literal("status").then(greedyArgs()));
 
@@ -93,7 +92,6 @@ public final class YzwcServerMirrorCommand {
                     .then(literal("change_password").then(greedyArgs()))
                     .then(literal("mgr").then(greedyArgs())));
 
-            // /yzwc reload（无参数）
             root.then(literal("reload"));
 
             // /yzwc teleport_anchor list [player]
@@ -128,7 +126,6 @@ public final class YzwcServerMirrorCommand {
                     .then(literal("double_doors").then(greedyArgs()))
                     .then(literal("invisibility").then(greedyArgs())));
 
-            // /yzwc update [check]
             root.then(literal("update")
                     .then(literal("check").then(greedyArgs())));
 

@@ -33,7 +33,6 @@ public final class ClientUpdateCheckerConfig {
         return showOnTitleScreen;
     }
 
-    /** 从客户端全局配置加载。 */
     public static void load() {
         DebugLogger.entering(MODULE, "load");
         ConfigSection section = ClientGlobalSettings.section(ClientGlobalSettings.UPDATE_MODULE);
@@ -58,7 +57,6 @@ public final class ClientUpdateCheckerConfig {
         save();
     }
 
-    /** 保存到客户端全局配置。 */
     public static void save() {
         ConfigSection section = ClientGlobalSettings.section(ClientGlobalSettings.UPDATE_MODULE);
         section.set("enabled", enabled);

@@ -31,7 +31,6 @@ public class HighlightItemClient {
     public static void initialize() {
         DebugLogger.entering("HighlightItem", "initialize");
 
-        // 加载（或生成）配置文件
         try {
             HighlightItem.configurator = new Configurator();
         } catch (Exception e) {
@@ -41,7 +40,6 @@ public class HighlightItemClient {
         // 键位已通过静态字段创建（无需额外注册）
         DebugLogger.info("HighlightItem", "键位已创建 (category=%s)", CATEGORY);
 
-        // 注册客户端命令
         new HighLightCommands().register();
         DebugLogger.info("HighlightItem", "客户端命令 /yzwc settings highlight_item 已注册");
 

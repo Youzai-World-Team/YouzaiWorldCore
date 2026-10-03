@@ -32,16 +32,10 @@ public final class PendingPickupQueue {
         return QUEUE.poll();
     }
 
-    /**
-     * 检查队列是否为空。
-     */
     public static boolean isEmpty() {
         return QUEUE.isEmpty();
     }
 
-    /**
-     * 获取队列中的事件数。
-     */
     public static int size() {
         return QUEUE.size();
     }

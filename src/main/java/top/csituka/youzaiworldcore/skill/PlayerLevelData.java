@@ -44,17 +44,14 @@ public class PlayerLevelData {
         this.totalExp = (int) Math.min(result, Integer.MAX_VALUE);
     }
 
-    /** 获取当前等级 */
     public int getLevel() {
         return AdventureLevelManager.getLevelFromExp(totalExp);
     }
 
-    /** 获取当前等级已累积的经验 */
     public int getCurrentLevelExp() {
         return AdventureLevelManager.getCurrentLevelExp(totalExp);
     }
 
-    /** 获取升到下一级所需总经验 */
     public int getExpForNextLevel() {
         return AdventureLevelManager.expForNextLevel(getLevel());
     }

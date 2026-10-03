@@ -38,7 +38,6 @@ public final class MapSettings {
             defaultValue = value;
         }
 
-        /** @return 配置键 */
         public String key() {
             return name().toLowerCase(Locale.ROOT);
         }
@@ -73,7 +72,6 @@ public final class MapSettings {
     private MapSettings() {
     }
 
-    /** @return 指定显示开关 */
     public static boolean enabled(Toggle option) {
         return TOGGLES.get(option);
     }

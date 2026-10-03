@@ -33,7 +33,6 @@ final class MailUi {
     private MailUi() {
     }
 
-    /** 绘制主题页面容器。 */
     static void drawPage(GuiGraphicsExtractor graphics, Rect page) {
         YzuiMenuPanel.card(graphics, page.x(), page.y(), page.width(), page.height());
     }
@@ -68,7 +67,6 @@ final class MailUi {
         RoundedRect.fill(graphics, x, y, width, height, radius, color);
     }
 
-    /** 绘制手动交互按钮。 */
     static void button(GuiGraphicsExtractor graphics, Font font, Rect rect, String label,
                        int background, int textColor, boolean hovered, boolean enabled) {
         int color = enabled ? background : YzuiTheme.surfaceHigh();
@@ -93,7 +91,6 @@ final class MailUi {
         return font.plainSubstrByWidth(value, Math.max(0, maxWidth - font.width(suffix))) + suffix;
     }
 
-    /** 在给定矩形中绘制居中文字。 */
     static void centeredText(GuiGraphicsExtractor graphics, Font font, Component text, Rect rect, int color) {
         int x = rect.x() + (rect.width() - font.width(text)) / 2;
         int y = rect.y() + (rect.height() - font.lineHeight) / 2;
@@ -106,7 +103,6 @@ final class MailUi {
         YzuiTheme.field(graphics, x, y, width, height, false, enabled, enabled ? 1f : 0.65f);
     }
 
-    /** 简单的不可变界面矩形。 */
     record Rect(int x, int y, int width, int height) {
         int right() {
             return x + width;

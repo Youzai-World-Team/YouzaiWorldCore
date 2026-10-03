@@ -39,11 +39,9 @@ public final class InvisibilityManager {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/InvisibilityManager");
 
-    /** 隐身在线的玩家 UUID 集合 */
     private static final Set<UUID> INVISIBLE_PLAYERS = new HashSet<>();
     private static final Set<UUID> INVISIBLE_PLAYERS_VIEW = Collections.unmodifiableSet(INVISIBLE_PLAYERS);
 
-    /** 每个隐身玩家对应的 Boss 栏 */
     private static final Map<UUID, ServerBossEvent> BOSS_BARS = new HashMap<>();
 
     /**
@@ -52,14 +50,10 @@ public final class InvisibilityManager {
      */
     private static final Set<BlockPos> INVISIBLE_CONTAINER_INTERACTIONS = ConcurrentHashMap.newKeySet();
 
-    /** 权限节点 */
     public static final String PERMISSION_INVISIBILITY = "youzaiworldcore.command.function.invisibility";
 
     // ==================== 公开 API ====================
 
-    /**
-     * 判断玩家是否处于隐身状态。
-     */
     public static boolean isInvisible(ServerPlayer player) {
         DebugLogger.entering("InvisibilityManager", "isInvisible", "player=" + player.getName().getString());
         boolean result = INVISIBLE_PLAYERS.contains(player.getUUID());
@@ -90,7 +84,6 @@ public final class InvisibilityManager {
             return true;
         }
         DebugLogger.branch("InvisibilityManager", "OP 4级权限检查未通过，检查 LuckPerms", false);
-        // LuckPerms 权限节点检查
         boolean hasLuckPerms = top.csituka.youzaiworldcore.luckperms.LuckPermsHelper.checkLuckPermsOnly(
                 player.getUUID(), PERMISSION_INVISIBILITY
         );
@@ -162,10 +155,8 @@ public final class InvisibilityManager {
             }
         }
 
-        // 5. 给自己发送提示
         player.sendSystemMessage(Component.literal("§7你已进入隐身状态"));
 
-        // 6. 创建 Boss 栏
         ServerBossEvent bossBar = new ServerBossEvent(
                 UUID.randomUUID(),
                 Component.literal("§f隐身中"),
@@ -177,7 +168,6 @@ public final class InvisibilityManager {
         bossBar.addPlayer(player);
         BOSS_BARS.put(uuid, bossBar);
 
-        // 7. 记录状态
         INVISIBLE_PLAYERS.add(uuid);
         DebugLogger.stateChange("InvisibilityManager", String.valueOf(uuid), "INVISIBLE_PLAYERS", "added");
         DebugLogger.stateChange("InvisibilityManager", String.valueOf(uuid), "BOSS_BARS", "created");
@@ -207,7 +197,6 @@ public final class InvisibilityManager {
         PlayerList playerList = server.getPlayerList();
         List<ServerPlayer> allPlayers = playerList.getPlayers();
 
-        // 1. 移除隐身状态效果
         DebugLogger.branch("InvisibilityManager", "步骤1: 移除隐身状态效果", true);
         player.removeEffect(MobEffects.INVISIBILITY);
 
@@ -242,16 +231,13 @@ public final class InvisibilityManager {
             }
         }
 
-        // 5. 给自己发送提示
         player.sendSystemMessage(Component.literal("§7你已退出隐身状态"));
 
-        // 6. 移除 Boss 栏
         ServerBossEvent bossBar = BOSS_BARS.remove(uuid);
         if (bossBar != null) {
             bossBar.removeAllPlayers();
         }
 
-        // 7. 清除状态
         INVISIBLE_PLAYERS.remove(uuid);
         DebugLogger.stateChange("InvisibilityManager", String.valueOf(uuid), "INVISIBLE_PLAYERS", "removed");
         DebugLogger.stateChange("InvisibilityManager", String.valueOf(uuid), "BOSS_BARS", "removed");
@@ -278,7 +264,6 @@ public final class InvisibilityManager {
         PlayerList playerList = server.getPlayerList();
         List<ServerPlayer> allPlayers = playerList.getPlayers();
 
-        // 1. 移除效果
         DebugLogger.branch("InvisibilityManager", "步骤1: 移除隐身效果", true);
         player.removeEffect(MobEffects.INVISIBILITY);
 
@@ -302,13 +287,11 @@ public final class InvisibilityManager {
                 .toList();
         resendPlayerEntity(player, others);
 
-        // 4. 移除 Boss 栏
         ServerBossEvent bossBar = BOSS_BARS.remove(uuid);
         if (bossBar != null) {
             bossBar.removeAllPlayers();
         }
 
-        // 5. 清除状态
         INVISIBLE_PLAYERS.remove(uuid);
         DebugLogger.stateChange("InvisibilityManager", String.valueOf(uuid), "INVISIBLE_PLAYERS", "removed");
         DebugLogger.stateChange("InvisibilityManager", String.valueOf(uuid), "BOSS_BARS", "removed");
@@ -330,7 +313,6 @@ public final class InvisibilityManager {
         }
         DebugLogger.branch("InvisibilityManager", "玩家隐身中，清理隐身状态", false);
 
-        // 移除 Boss 栏
         ServerBossEvent bossBar = BOSS_BARS.remove(uuid);
         if (bossBar != null) {
             bossBar.removeAllPlayers();
@@ -408,7 +390,6 @@ public final class InvisibilityManager {
         float yHeadRot = player.getYHeadRot();
         Vec3 velocity = player.getDeltaMovement();
 
-        // 构造添加实体包
         ClientboundAddEntityPacket addEntityPacket = new ClientboundAddEntityPacket(
                 entityId,
                 uuid,
@@ -420,13 +401,11 @@ public final class InvisibilityManager {
                 yHeadRot
         );
 
-        // 获取实体的非默认同步数据
         List<SynchedEntityData.DataValue<?>> packedData =
                 player.getEntityData().getNonDefaultValues();
 
         for (ServerPlayer target : targets) {
             String targetName = target.getName().getString();
-            // 1. 发送添加实体包
             target.connection.send(addEntityPacket);
             DebugLogger.trace("InvisibilityManager", "发送添加实体包到 %s (entityId=%d)", targetName, entityId);
 
@@ -445,7 +424,6 @@ public final class InvisibilityManager {
             ));
             DebugLogger.trace("InvisibilityManager", "发送位置同步包到 %s (entityId=%d)", targetName, entityId);
 
-            // 4. 发送所有活跃状态效果
             for (MobEffectInstance effect : player.getActiveEffects()) {
                 target.connection.send(new ClientboundUpdateMobEffectPacket(
                         entityId, effect, false

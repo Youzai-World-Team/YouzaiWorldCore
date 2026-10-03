@@ -218,7 +218,6 @@ public final class MapPersonalData {
         return true;
     }
 
-    /** 删除私人点。 */
     public static void remove(UUID id) {
         if (POINTS.removeIf(point -> point.id().equals(id))) {
             NOTES.remove(id);

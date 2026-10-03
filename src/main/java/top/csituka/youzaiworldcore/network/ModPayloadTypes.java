@@ -18,7 +18,6 @@ public final class ModPayloadTypes {
         private ModPayloadTypes() {
         }
 
-        /** 注册全部 C2S 与 S2C Payload 类型。 */
         @SuppressWarnings("null")
         public static void initialize() {
                 DebugLogger.entering(MODULE, "initialize");

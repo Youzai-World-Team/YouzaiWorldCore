@@ -321,12 +321,10 @@ public class MailScreen extends MailBaseScreen {
             int chipY = attachmentY + 13;
             for (MailAttachment attachment : attachments) {
                 if (attachment.type() == AttachmentType.ITEM) {
-                    // ITEM 类型渲染物品贴图
                     ItemStack stack = decodeAttachmentItem(attachment);
                     if (!stack.isEmpty()) {
                         graphics.item(stack, chipX, chipY, 0);
                         graphics.itemDecorations(font, stack, chipX, chipY);
-                        // 悬停显示物品提示
                         if (mouseX >= chipX && mouseX < chipX + 16
                                 && mouseY >= chipY && mouseY < chipY + 16) {
                             graphics.setTooltipForNextFrame(font, stack,

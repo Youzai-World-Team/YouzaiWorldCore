@@ -57,7 +57,6 @@ public final class ConfigSection {
         return e != null && !e.isJsonNull();
     }
 
-    /** 移除指定键。 */
     public void remove(String key) {
         json.remove(key);
     }
@@ -293,7 +292,6 @@ public final class ConfigSection {
         json.add(key, value);
     }
 
-    /** 写入字符串集合。 */
     public void setStringCollection(String key, Iterable<String> values) {
         JsonArray array = new JsonArray();
         for (String value : values) {

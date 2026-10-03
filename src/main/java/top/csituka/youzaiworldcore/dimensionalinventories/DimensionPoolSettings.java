@@ -28,7 +28,6 @@ public final class DimensionPoolSettings {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/DimensionPoolSettings");
 
-    /** 池列表在分节里的键名 */
     private static final String KEY_POOLS = "pools";
 
     /** 隐藏池：登录大厅池 ID（内部使用，不写入配置文件） */
@@ -45,10 +44,8 @@ public final class DimensionPoolSettings {
             .registerTypeAdapter(GameType.class, new GameTypeSerializer())
             .create();
 
-    /** 所有注册的维度池，按 ID 索引 */
     private static final Map<String, DimensionPool> POOLS = new LinkedHashMap<>();
 
-    /** 维度到池的快速查找映射 */
     private static final Map<String, String> DIMENSION_TO_POOL = new HashMap<>();
 
     private DimensionPoolSettings() {}
@@ -68,7 +65,6 @@ public final class DimensionPoolSettings {
         return result;
     }
 
-    /** 按 ID 获取维度池 */
     public static DimensionPool getPool(String poolId) {
         DebugLogger.entering("DimPoolSettings", "getPool", "poolId=" + poolId);
         DimensionPool result = POOLS.get(poolId);
@@ -76,7 +72,6 @@ public final class DimensionPoolSettings {
         return result;
     }
 
-    /** 获取包含指定维度的维度池 */
     public static Optional<DimensionPool> getPoolByDimension(String dimensionId) {
         DebugLogger.entering("DimPoolSettings", "getPoolByDimension", "dimensionId=" + dimensionId);
         String poolId = DIMENSION_TO_POOL.get(dimensionId);
@@ -89,7 +84,6 @@ public final class DimensionPoolSettings {
         return result;
     }
 
-    /** 判断两个维度是否在同一个池中 */
     public static boolean dimensionsInSamePool(String dimA, String dimB) {
         DebugLogger.entering("DimPoolSettings", "dimensionsInSamePool", "dimA=" + dimA + ", dimB=" + dimB);
         if (dimA.equals(dimB)) {
@@ -103,7 +97,6 @@ public final class DimensionPoolSettings {
         return result;
     }
 
-    /** 检查维度是否属于任何池 */
     public static boolean isDimensionInAnyPool(String dimensionId) {
         DebugLogger.entering("DimPoolSettings", "isDimensionInAnyPool", "dimensionId=" + dimensionId);
         boolean result = DIMENSION_TO_POOL.containsKey(dimensionId);
@@ -204,7 +197,6 @@ public final class DimensionPoolSettings {
         DebugLogger.exiting("DimPoolSettings", "save");
     }
 
-    /** 刷新配置（从文件重载） */
     public static void reload() {
         DebugLogger.entering("DimPoolSettings", "reload");
         load();
@@ -222,13 +214,12 @@ public final class DimensionPoolSettings {
         POOLS.clear();
         DIMENSION_TO_POOL.clear();
 
-        // 1. 生存世界 — 包含原版三维度
         DimensionPool survival = new DimensionPool(
                 "survival_world_pool",
                 "生存世界",
                 GameType.SURVIVAL,
-                true,   // 允许进度
-                true    // 允许统计
+                true,
+                true
         );
         survival.addDimension("minecraft:overworld");
         survival.addDimension("minecraft:the_nether");
@@ -236,49 +227,42 @@ public final class DimensionPoolSettings {
         POOLS.put(survival.id(), survival);
         DebugLogger.info("DimPoolSettings", "创建维度池: survival_world_pool (生存世界) 含3维度");
 
-        // 2. 主城（空池）
         POOLS.put("main_city_pool", new DimensionPool(
                 "main_city_pool", "主城",
                 GameType.ADVENTURE, false, false
         ));
         DebugLogger.info("DimPoolSettings", "创建维度池: main_city_pool (主城) 空池");
 
-        // 3. 玩法（空池）
         POOLS.put("gameplay_pool", new DimensionPool(
                 "gameplay_pool", "玩法",
                 GameType.ADVENTURE, false, false
         ));
         DebugLogger.info("DimPoolSettings", "创建维度池: gameplay_pool (玩法) 空池");
 
-        // 4. 创造（空池）
         POOLS.put("creation_pool", new DimensionPool(
                 "creation_pool", "创造",
                 GameType.CREATIVE, false, false
         ));
         DebugLogger.info("DimPoolSettings", "创建维度池: creation_pool (创造) 空池");
 
-        // 5. 建筑（空池）
         POOLS.put("building_pool", new DimensionPool(
                 "building_pool", "建筑",
                 GameType.CREATIVE, false, false
         ));
         DebugLogger.info("DimPoolSettings", "创建维度池: building_pool (建筑) 空池");
 
-        // 6. 指令区（空池）
         POOLS.put("commands_pool", new DimensionPool(
                 "commands_pool", "指令区",
                 GameType.ADVENTURE, false, false
         ));
         DebugLogger.info("DimPoolSettings", "创建维度池: commands_pool (指令区) 空池");
 
-        // 7. 教程世界（空池）
         POOLS.put("tutorial_world_pool", new DimensionPool(
                 "tutorial_world_pool", "教程世界",
                 GameType.ADVENTURE, false, false
         ));
         DebugLogger.info("DimPoolSettings", "创建维度池: tutorial_world_pool (教程世界) 空池");
 
-        // 建立维度->池映射
         for (DimensionPool pool : POOLS.values()) {
             for (String dim : pool.dimensions()) {
                 DIMENSION_TO_POOL.put(dim, pool.id());
@@ -314,8 +298,8 @@ public final class DimensionPoolSettings {
                 HIDDEN_LOGIN_HALL_POOL_ID,
                 "Login Hall",
                 GameType.ADVENTURE,
-                false, // 不允许推进度
-                false  // 不允许统计
+                false,
+                false
         );
         loginHallPool.addDimension(LOGIN_HALL_DIMENSION);
         loginHallPool.setDefaultSpawn(new DimensionPool.DefaultSpawn(

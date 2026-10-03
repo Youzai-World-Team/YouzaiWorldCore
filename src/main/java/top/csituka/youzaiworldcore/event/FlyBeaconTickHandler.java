@@ -21,7 +21,6 @@ import java.util.UUID;
  */
 public class FlyBeaconTickHandler implements ServerTickEvents.StartTick {
 
-    // 单例实例
     private static final FlyBeaconTickHandler INSTANCE = new FlyBeaconTickHandler();
 
     // 信标的有效范围半宽（水平方向，单位：方块），与渲染边界 HALF 一致
@@ -36,7 +35,6 @@ public class FlyBeaconTickHandler implements ServerTickEvents.StartTick {
     // 辅助计次器，用于实现间隔检查
     private static int tickCounter = 0;
 
-    // 私有构造，确保单例
     private FlyBeaconTickHandler() {
     }
 
@@ -49,14 +47,12 @@ public class FlyBeaconTickHandler implements ServerTickEvents.StartTick {
     public void onStartTick(@NonNull MinecraftServer server) {
         DebugLogger.entering("FlyBeaconTickHandler", "onStartTick");
         tickCounter++;
-        // 未达到检查间隔则直接返回
         if (tickCounter < CHECK_INTERVAL) {
             DebugLogger.exiting("FlyBeaconTickHandler", "onStartTick", "skipped (check interval not reached)");
             return;
         }
-        tickCounter = 0; // 重置计数器
+        tickCounter = 0;
 
-        // 获取当前所有已激活信标的方块坐标
         Set<BlockPos> activeBeacons = FlyBeaconBlockEntity.getActiveBeacons();
 
         // 快路径：无激活信标或无在线玩家，跳过 O(P*B) 遍历
@@ -68,7 +64,6 @@ public class FlyBeaconTickHandler implements ServerTickEvents.StartTick {
         // 记录本次 tick 中应被信标赋予飞行的玩家 UUID
         Set<UUID> currentAffected = new HashSet<>();
 
-        // 遍历所有在线玩家
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
             // 创造模式或旁观者模式的玩家不受信标影响
             if (player.isCreative() || player.isSpectator()) {
@@ -78,7 +73,6 @@ public class FlyBeaconTickHandler implements ServerTickEvents.StartTick {
             UUID playerId = player.getUUID();
             boolean inRange = false;
 
-            // 检查玩家是否处于任意激活信标的正方形有效范围内
             for (BlockPos beaconPos : activeBeacons) {
                 // 正方形检测：玩家距信标中心的 X/Z 偏移均不超过半宽（信标中心为 x+0.5, z+0.5）
                 double dx = Math.abs(player.getX() - (beaconPos.getX() + 0.5));
@@ -97,7 +91,6 @@ public class FlyBeaconTickHandler implements ServerTickEvents.StartTick {
                 if (!beaconFlyingPlayers.contains(playerId)) {
                     if (!VoidStaffItem.isFlying(playerId)) {
                         VoidStaffItem.enableFlight(player);
-                        // 授予"区域性飞行"成就
                         grantFlyBeaconAdvancement(player, server);
                     }
                 }
@@ -109,7 +102,6 @@ public class FlyBeaconTickHandler implements ServerTickEvents.StartTick {
             }
         }
 
-        // 更新信标飞行玩家集合为本次检查的结果
         beaconFlyingPlayers.clear();
         beaconFlyingPlayers.addAll(currentAffected);
         DebugLogger.exiting("FlyBeaconTickHandler", "onStartTick");
@@ -152,9 +144,6 @@ public class FlyBeaconTickHandler implements ServerTickEvents.StartTick {
         beaconFlyingPlayers.remove(playerId);
     }
 
-    /**
-     * 向 Fabric 事件总线注册此处理器。
-     */
     public static void register() {
         DebugLogger.entering("FlyBeaconTickHandler", "register");
         ServerTickEvents.START_SERVER_TICK.register(INSTANCE);

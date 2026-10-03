@@ -9,10 +9,8 @@ import net.minecraft.util.ARGB;
  */
 public final class GradientBackgroundUtil {
 
-    /** 起始色（#A8E6CF） */
     private static final int COLOR_START = 0xFFA8E6CF;
 
-    /** 结束色（#DCEDC1） */
     private static final int COLOR_END = 0xFFDCEDC1;
 
     /** 每个垂直条的像素宽度，越小越平滑 */
@@ -37,15 +35,12 @@ public final class GradientBackgroundUtil {
             float centerX = (float) (x + x2) / 2 / width;
 
             // 135° 对角线进度：(x/width + y/height) / 2
-            // 条上边缘进度
             float progressTop = (centerX + 0) / 2.0f;
-            // 条下边缘进度
             float progressBottom = (centerX + 1.0f) / 2.0f;
 
             int topColor = lerpColor(COLOR_START, COLOR_END, progressTop);
             int bottomColor = lerpColor(COLOR_START, COLOR_END, progressBottom);
 
-            // 应用全局透明度
             topColor = applyAlpha(topColor, alpha);
             bottomColor = applyAlpha(bottomColor, alpha);
 

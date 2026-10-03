@@ -139,22 +139,18 @@ public abstract class HealthBarMixin {
             return;
         }
 
-        // 取消原版渲染
         ci.cancel();
 
-        // 检测物品是否变更
         int guiTicks = hud.getGuiTicks();
         if (!ItemStack.isSameItemSameComponents(yzwc$lastHighlightedItem, held)) {
             yzwc$lastHighlightedItem = held.copy();
             yzwc$itemHighlightStartTick = guiTicks;
         }
 
-        // 超时判定
         int elapsed = guiTicks - yzwc$itemHighlightStartTick;
         if (elapsed > HIGHLIGHT_DURATION_TICKS)
             return;
 
-        // 渐隐 alpha
         int alpha = 255;
         if (elapsed > HIGHLIGHT_DURATION_TICKS - FADE_TICKS) {
             alpha = (int) (255 * (HIGHLIGHT_DURATION_TICKS - elapsed) / (float) FADE_TICKS);
@@ -182,10 +178,8 @@ public abstract class HealthBarMixin {
         // 15% 黑色 + 当前 alpha
         int bgAlpha = (int) (0.15f * alpha);
         int bgColor = (bgAlpha << 24); // 0x00BBGGRR 格式
-        // 主体
         graphics.fill(bgX, bgY + 2, bgX + bgW, bgY + bgH - 2, bgColor);
         graphics.fill(bgX + 2, bgY, bgX + bgW - 2, bgY + bgH, bgColor);
-        // 四角
         graphics.fill(bgX + 1, bgY + 1, bgX + 2, bgY + 2, bgColor);
         graphics.fill(bgX + bgW - 2, bgY + 1, bgX + bgW - 1, bgY + 2, bgColor);
         graphics.fill(bgX + 1, bgY + bgH - 2, bgX + 2, bgY + bgH - 1, bgColor);
@@ -193,12 +187,11 @@ public abstract class HealthBarMixin {
 
         // === 文字（带渐隐） ===
         int textColor = (alpha << 24) | 0xFFFFFF;
-        graphics.text(font, text, textX + 1, textY + 1, 0xFF000000, false); // 阴影
+        graphics.text(font, text, textX + 1, textY + 1, 0xFF000000, false);
         graphics.text(font, text, textX, textY, textColor, false);
     }
 
     // ===== 渲染自定义条 =====
-    //
     // 注：注入点使用 HEAD 而非 RETURN，确保 HUD 条的渲染层级低于物品名称等后续元素。
     // 物品名称（extractSelectedItemName）在此之后才执行，自然覆盖在条之上。
 

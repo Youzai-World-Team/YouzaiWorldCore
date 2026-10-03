@@ -41,9 +41,6 @@ public class ChargedCreeperHandler {
     private ChargedCreeperHandler() {
     }
 
-    /**
-     * 向 Fabric 事件总线注册天然带电苦力怕处理器。
-     */
     public static void register() {
         DebugLogger.entering(MODULE, "register");
 

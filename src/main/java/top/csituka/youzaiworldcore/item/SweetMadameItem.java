@@ -62,9 +62,6 @@ public class SweetMadameItem extends Item {
         return result;
     }
 
-    /**
-     * Hover 描述——自定义物品说明。
-     */
     @SuppressWarnings("deprecation")
     @Override
     public void appendHoverText(@NonNull ItemStack stack, @NonNull TooltipContext context,

@@ -6,7 +6,7 @@ import java.util.List;
 /**
  * 原版创造标签页的默认可编辑规则，以及可选模组的内置兼容分组。
  * <p>规则参考 Inventory Item Groups（Copyright (c) 2026 Bizarre Cube，MIT），
- * 完整授权见 META-INF/licenses/inventory-item-groups.txt。</p>
+ * 完整授权见 LICENSE.txt。</p>
  */
 public final class InventoryItemGroupDefaults {
 

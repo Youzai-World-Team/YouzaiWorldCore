@@ -49,12 +49,10 @@ public class CropXpHandler {
 
         Block block = state.getBlock();
 
-        // 检查是否为成熟作物
         if (!isFullyMature(state, block)) {
             return;
         }
 
-        // 掉落经验球
         ServerLevel serverLevel = (ServerLevel) level;
         ExperienceOrb xpOrb = new ExperienceOrb(serverLevel,
                 pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
@@ -90,9 +88,6 @@ public class CropXpHandler {
         return false;
     }
 
-    /**
-     * 注册事件处理器。
-     */
     public static void register() {
         PlayerBlockBreakEvents.AFTER.register(INSTANCE::onBlockBreak);
         LOGGER.info("农作物收获经验掉落事件处理器已注册");

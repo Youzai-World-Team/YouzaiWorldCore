@@ -16,13 +16,10 @@ public class MailRef {
     /** 对应全局仓库的邮件 ID */
     private UUID mailId;
 
-    /** 是否已读 */
     private boolean read;
 
-    /** 是否星标收藏 */
     private boolean starred;
 
-    /** 是否已领取奖励 */  
     private boolean claimed;
 
     // ===== 无参构造（Gson） =====
@@ -44,8 +41,6 @@ public class MailRef {
         this.starred = starred;
         this.claimed = claimed;
     }
-
-    // ===== Getters & Setters =====
 
     public UUID getMailId() { return mailId; }
     public void setMailId(UUID mailId) { this.mailId = mailId; }

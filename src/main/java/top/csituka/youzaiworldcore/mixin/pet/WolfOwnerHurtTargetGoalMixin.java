@@ -31,7 +31,7 @@ public abstract class WolfOwnerHurtTargetGoalMixin {
     @Inject(method = "canUse", at = @At("HEAD"), cancellable = true)
     private void onCanUse(CallbackInfoReturnable<Boolean> cir) {
         if (!(tameAnimal instanceof Wolf wolf)) {
-            return; // 仅处理狼
+            return;
         }
         if (wolf.level().isClientSide()) {
             return;
@@ -39,7 +39,7 @@ public abstract class WolfOwnerHurtTargetGoalMixin {
 
         PetMode mode = PetModeController.getMode(wolf);
         if (mode == null) {
-            return; // 非宠物，放行
+            return;
         }
 
         // COMPANIONSHIP / GUARD / HUNTING 模式下不响应主人主动攻击

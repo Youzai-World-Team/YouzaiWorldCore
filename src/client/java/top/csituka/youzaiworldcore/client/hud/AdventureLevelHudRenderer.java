@@ -58,7 +58,7 @@ public class AdventureLevelHudRenderer {
     // ─── 升级提示动画 ───
     private static long lastLevelUpTime = 0;
     private static final int LEVEL_UP_CROSSFADE_MS = 500;   // 淡入/淡出各 500ms
-    private static final int LEVEL_UP_HOLD_MS = 2000;        // 升级文字保持 2000ms
+    private static final int LEVEL_UP_HOLD_MS = 2000;
 
     // ─── 字符串缓存（避免每帧拼接） ───
     private static String cachedNormalText = "";
@@ -82,12 +82,10 @@ public class AdventureLevelHudRenderer {
         lastGainedExp = gainedExp;
         lastExpGainTime = System.currentTimeMillis();
 
-        // 记录升级时间戳，驱动升级文字动画
         if (leveledUp) {
             lastLevelUpTime = lastExpGainTime;
         }
 
-        // 触发滑入动画
         if (animState == AnimState.HIDDEN || animState == AnimState.HIDING) {
             if (animState == AnimState.HIDDEN) {
                 animProgress = 0.0f;
@@ -127,7 +125,6 @@ public class AdventureLevelHudRenderer {
                 }
                 break;
             case VISIBLE:
-                // 检查是否超时应隐藏
                 if (now - lastExpGainTime > DISPLAY_DURATION_MS) {
                     animState = AnimState.HIDING;
                 }
@@ -170,7 +167,7 @@ public class AdventureLevelHudRenderer {
 
         // 位置：置于 YZUI 状态条之上
         // 计算 YZUI 第一行顶部（参考 HealthBarMixin 的布局逻辑）
-        int row1BarY = sh - HealthBarRenderer.Y_OFFSET_FROM_BOTTOM;        // 第一行条顶 Y
+        int row1BarY = sh - HealthBarRenderer.Y_OFFSET_FROM_BOTTOM;
         // 第一行文字顶部 ≈ 条顶 - 条高(5) - 文字间距(10) - 字高(9)
         int yzuiTextTop = row1BarY - HealthBarRenderer.BAR_HEIGHT - 10 - 9;
 
@@ -222,13 +219,12 @@ public class AdventureLevelHudRenderer {
 
         int textY = barY - 12;
 
-        // 计算升级动画进度
         long now = System.currentTimeMillis();
         long elapsed = now - lastLevelUpTime;
         boolean inLevelUpWindow = elapsed < LEVEL_UP_TOTAL_MS;
 
-        float normalAlpha;  // 普通文字透明度
-        float levelUpAlpha;  // 升级文字透明度
+        float normalAlpha;
+        float levelUpAlpha;
 
         if (!inLevelUpWindow || elapsed < 0) {
             // 不在升级窗口 → 只显示普通文字
@@ -259,7 +255,6 @@ public class AdventureLevelHudRenderer {
         YzuiTheme.hudLabelBackground(g, client.font, labelWidth,
                 barX + (BAR_WIDTH - labelWidth) / 2, textY, alpha / 255f);
 
-        // 渲染普通文字（带透明度）
         if (normalAlpha > 0.01f) {
             int normalTextWidth = client.font.width(normalText);
             int normalTextX = barX + (BAR_WIDTH - normalTextWidth) / 2;

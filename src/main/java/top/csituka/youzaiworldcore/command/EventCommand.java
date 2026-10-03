@@ -158,7 +158,6 @@ public class EventCommand {
         }
 
         // ==================== naturally_charged_creepers enable：查询 / 设置
-        // ====================
 
         private static int nccQueryEnable(CommandContext<CommandSourceStack> ctx) {
                 DebugLogger.entering(MODULE, "nccQueryEnable");
@@ -183,7 +182,6 @@ public class EventCommand {
         }
 
         // ==================== naturally_charged_creepers settings chance：查询 / 设置
-        // ====================
 
         private static int nccQueryChance(CommandContext<CommandSourceStack> ctx) {
                 DebugLogger.entering(MODULE, "nccQueryChance");

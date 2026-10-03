@@ -51,7 +51,6 @@ public final class InPlaceRespawnConfig {
         DebugLogger.exiting(MODULE, "load");
     }
 
-    /** 重新从磁盘加载配置。 */
     public static void reload() {
         load();
     }

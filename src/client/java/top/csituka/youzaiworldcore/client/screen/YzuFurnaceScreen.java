@@ -97,7 +97,7 @@ public class YzuFurnaceScreen extends AbstractRecipeBookScreen<AbstractFurnaceMe
     private static int closeBgHover() { return YzuiTheme.surfaceHigh(); }
     private static int closeIcon() { return YzuiTheme.text(); }
     private static int closeIconHover() { return YzuiTheme.text(); }
-    private static final String CLOSE_GLYPH = "\u00d7"; // ×
+    private static final String CLOSE_GLYPH = "\u00d7";
 
     // ========== 标题区（与现有 YZUI 容器屏一致） ==========
 
@@ -129,8 +129,6 @@ public class YzuFurnaceScreen extends AbstractRecipeBookScreen<AbstractFurnaceMe
 
     private final FurnaceKind kind;
 
-    // ========== 构造 ==========
-
     public YzuFurnaceScreen(AbstractFurnaceMenu menu, Inventory playerInventory, Component title) {
         // AbstractRecipeBookScreen 4 参构造内部调用 AbstractContainerScreen(T,Inv,Title)
         // 默认 imageWidth=176, imageHeight=166（与原版 furnace.png 完全一致）
@@ -144,8 +142,6 @@ public class YzuFurnaceScreen extends AbstractRecipeBookScreen<AbstractFurnaceMe
                 "创建 YZUI 熔炉屏幕: kind=%s title=%s menuType=%s",
                 kind, title.getString(), menu.getType());
     }
-
-    // ========== 初始化 ==========
 
     @Override
     protected void init() {
@@ -161,8 +157,6 @@ public class YzuFurnaceScreen extends AbstractRecipeBookScreen<AbstractFurnaceMe
     protected @NonNull ScreenPosition getRecipeBookButtonPosition() {
         return new ScreenPosition(this.leftPos + 20, this.height / 2 - 49);
     }
-
-    // ========== 渲染管线 ==========
 
     @Override
     public void extractRenderState(@NonNull GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
@@ -232,7 +226,7 @@ public class YzuFurnaceScreen extends AbstractRecipeBookScreen<AbstractFurnaceMe
         if (this.menu.isLit()) {
             int lit = Mth.ceil(13.0F * this.menu.getLitProgress()) + 1; // 1..14
             g.blitSprite(RenderPipelines.GUI_TEXTURED, kind.litProgressSprite,
-                    LIT_W, LIT_H,                  // sprite 全尺寸
+                    LIT_W, LIT_H,
                     0, LIT_H - lit,                // u=0, v=14-l 截取顶部 l 高度
                     ox + LIT_X, oy + LIT_Y + LIT_H - lit,  // 屏幕 (56, 50-l)
                     LIT_W, lit);                   // 区域 14×l
@@ -307,8 +301,6 @@ public class YzuFurnaceScreen extends AbstractRecipeBookScreen<AbstractFurnaceMe
         return mx >= cx && mx < cx + CLOSE_SIZE && my >= cy && my < cy + CLOSE_SIZE;
     }
 
-    // ========== 工具方法 ==========
-
     /**
      * 圆角矩形填充（YZUI 统一实现，与 YzuContainerScreen / YzuBrewingStandScreen 一致）。
      * <ul>
@@ -376,7 +368,6 @@ public class YzuFurnaceScreen extends AbstractRecipeBookScreen<AbstractFurnaceMe
         private final MenuType<?> menuType;
         /** 配方书过滤器名称（用于 FurnaceRecipeBookComponent 构造） */
         private final String filterNameKey;
-        /** 标题区容器图标 */
         private final ItemStack icon;
         /** 燃料燃烧 sprite（{@code container/{kind}/lit_progress}） */
         private final Identifier litProgressSprite;

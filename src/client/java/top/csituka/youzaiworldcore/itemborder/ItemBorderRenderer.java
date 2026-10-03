@@ -51,7 +51,7 @@ public final class ItemBorderRenderer {
 
     /** 全框与辉光的 alpha 值 */
     private static final int BORDER_ALPHA = 0xEE;
-    private static final int GLOW_ALPHA = BORDER_ALPHA / 3;  // ~0x4F
+    private static final int GLOW_ALPHA = BORDER_ALPHA / 3;
 
     /** 标准 Minecraft 颜色名 → RGB 映射（不含 alpha） */
     private static final Map<String, Integer> COLOR_NAME_MAP = new HashMap<>();
@@ -72,7 +72,6 @@ public final class ItemBorderRenderer {
         COLOR_NAME_MAP.put("light_purple", 0xFF55FF);
         COLOR_NAME_MAP.put("yellow",       0xFFFF55);
         COLOR_NAME_MAP.put("white",        0xFFFFFF);
-        // 别名
         COLOR_NAME_MAP.put("dark_grey",    0x555555);
         COLOR_NAME_MAP.put("grey",         0xAAAAAA);
     }
@@ -104,9 +103,7 @@ public final class ItemBorderRenderer {
 
     private ItemBorderRenderer() {}
 
-    // ============================================================
     //  公开渲染入口（容器界面）
-    // ============================================================
 
     /**
      * 为 {@link Slot} 绘制边框（容器界面调用）。
@@ -123,9 +120,7 @@ public final class ItemBorderRenderer {
         drawBorder(gui, slot.x, slot.y, startColor, startColor);
     }
 
-    // ============================================================
     //  公开渲染入口（HUD 热栏）
-    // ============================================================
 
     /**
      * 为 HUD 快捷栏中的物品绘制边框。
@@ -161,9 +156,7 @@ public final class ItemBorderRenderer {
         drawBorder(gui, x, y, startColor, startColor);
     }
 
-    // ============================================================
     //  公开渲染入口（自定义界面的自绘槽位）
-    // ============================================================
 
     /**
      * 为自绘界面中的 16×16 物品槽绘制边框（如邮件附件槽与物品选取弹窗）。
@@ -186,10 +179,6 @@ public final class ItemBorderRenderer {
         drawBorder(gui, x, y, startColor, startColor);
     }
 
-    // ============================================================
-    //  渲染条件判断
-    // ============================================================
-
     /**
      * 检查物品是否可以绘制边框。
      * 规则：功能开启、物品非空。
@@ -200,9 +189,7 @@ public final class ItemBorderRenderer {
         return true;
     }
 
-    // ============================================================
     //  颜色决议（三级优先级）
-    // ============================================================
 
     /**
      * 解析物品的边框颜色。
@@ -234,7 +221,6 @@ public final class ItemBorderRenderer {
 
         int color = fromRarity(item.getRarity());
 
-        // 检查是否有自定义名称颜色
         int nameColor = getCustomNameColor(item);
         if (nameColor != 0) {
             color = nameColor;
@@ -250,9 +236,7 @@ public final class ItemBorderRenderer {
         return color | 0xEE000000;
     }
 
-    // ============================================================
     //  手动规则匹配
-    // ============================================================
 
     /**
      * 在手动配置中查找匹配当前物品的颜色。
@@ -265,9 +249,7 @@ public final class ItemBorderRenderer {
         return MANUAL_BORDER_BY_ID.get(itemId);
     }
 
-    // ============================================================
     //  NBT 颜色覆写读取
-    // ============================================================
 
     /**
      * 从物品的 CUSTOM_DATA 组件中读取 yzwc_border_colors 标签。
@@ -305,9 +287,7 @@ public final class ItemBorderRenderer {
         return parseColorSimple(colorStr);
     }
 
-    // ============================================================
     //  稀有度→颜色映射（硬编码，避免依赖 ChatFormatting 变更）
-    // ============================================================
 
     /**
      * 将 Minecraft 稀有度枚举映射为 RGB 边框颜色值。
@@ -325,9 +305,7 @@ public final class ItemBorderRenderer {
         };
     }
 
-    // ============================================================
     //  自定义名称颜色检测
-    // ============================================================
 
     /**
      * 检查物品是否有自定义名称，且该名称使用了特定的颜色。
@@ -363,10 +341,6 @@ public final class ItemBorderRenderer {
         return null;
     }
 
-    // ============================================================
-    //  颜色解析工具
-    // ============================================================
-
     /**
      * 从字符串解析颜色值。
      * <p>
@@ -394,7 +368,6 @@ public final class ItemBorderRenderer {
             return parsed.get().getValue() & 0x00FFFFFF;
         }
 
-        // 尝试标准颜色名映射
         Integer named = COLOR_NAME_MAP.get(trimmed.toLowerCase());
         if (named != null) return named;
 
@@ -404,7 +377,6 @@ public final class ItemBorderRenderer {
             hex = hex.substring(2);
         }
 
-        // 尝试作为 hex 解析
         if (hex.matches("[0-9A-Fa-f]{6}")) {
             try {
                 return Integer.parseInt(hex, 16) & 0x00FFFFFF;
@@ -415,9 +387,7 @@ public final class ItemBorderRenderer {
         return null;
     }
 
-    // ============================================================
     //  边框绘制核心
-    // ============================================================
 
     /**
      * 绘制 16×16 槽位边框。

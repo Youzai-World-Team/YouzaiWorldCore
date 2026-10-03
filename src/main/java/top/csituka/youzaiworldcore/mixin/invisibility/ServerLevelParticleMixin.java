@@ -28,7 +28,7 @@ public abstract class ServerLevelParticleMixin {
 
     /** 判定粒子是否属于隐身玩家的最大距离平方（2.0 格半径）。 */
     @Unique
-    private static final double PARTICLE_PROXIMITY_THRESHOLD_SQ = 4.0; // 2.0^2
+    private static final double PARTICLE_PROXIMITY_THRESHOLD_SQ = 4.0;
 
     @Shadow
     private List<ServerPlayer> players;
@@ -70,14 +70,12 @@ public abstract class ServerLevelParticleMixin {
             return;
         }
 
-        // 查找粒子位置附近的隐身玩家
         ServerPlayer invisiblePlayer = youzaiworldcore$findInvisiblePlayerAt(x, y, z);
         if (invisiblePlayer == null) {
             // 附近没有隐身玩家，让原逻辑正常广播
             return;
         }
 
-        // 构造粒子数据包
         ClientboundLevelParticlesPacket packet = new ClientboundLevelParticlesPacket(
                 options,
                 longDistance,

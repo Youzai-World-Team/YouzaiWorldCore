@@ -110,7 +110,6 @@ public final class DimensionPoolManager {
         return result;
     }
 
-    /** 从玩家对象获取 MinecraftServer */
     private static MinecraftServer getServer(ServerPlayer player) {
         DebugLogger.entering("DimensionPoolManager", "getServer", "player=" + player.getName().getString());
         MinecraftServer result = player.level().getServer();
@@ -152,7 +151,6 @@ public final class DimensionPoolManager {
             return false;
         }
 
-        // 2. 检查目标池是否为空
         DebugLogger.branch("DimensionPoolManager", "目标池是否为空", targetPool.isEmpty(), "pool=" + targetPool.displayName());
         if (targetPool.isEmpty()) {
             player.sendSystemMessage(Component.translatable(
@@ -197,7 +195,6 @@ public final class DimensionPoolManager {
             return false;
         }
 
-        // 计算传送坐标
         double teleportX = 0.5, teleportY = 100, teleportZ = 0.5;
         float teleportYRot = 90, teleportXRot = 0;
 
@@ -258,23 +255,19 @@ public final class DimensionPoolManager {
         }
 
         // ★★★ 5. 验证通过，现在才修改玩家状态 ★★★
-        // 保存当前状态到源池
         DebugLogger.branch("DimensionPoolManager", "是否有源池需要保存状态", sourcePool != null,
                 "sourcePool=" + (sourcePool != null ? sourcePool.id() : "null"));
         if (sourcePool != null) {
             savePlayerState(player, server, sourcePool.id());
         }
 
-        // 清空背包 + 移除效果
         DebugLogger.stateChange("DimensionPoolManager", player.getName().getString(), "inventory", "preserved", "cleared");
         PlayerStateData.clearPlayerInventory(player);
         DebugLogger.stateChange("DimensionPoolManager", player.getName().getString(), "effects", "present", "removed");
         player.removeAllEffects();
 
-        // 加载目标池的历史状态
         loadPlayerState(player, server, targetPool.id());
 
-        // 6. 执行传送
         TELEPORT_IN_PROGRESS.add(player.getUUID());
         DebugLogger.stateChange("DimensionPoolManager", player.getName().getString(), "TELEPORT_IN_PROGRESS", "false", "true");
         try {
@@ -285,12 +278,10 @@ public final class DimensionPoolManager {
             DebugLogger.stateChange("DimensionPoolManager", player.getName().getString(), "TELEPORT_IN_PROGRESS", "true", "false");
         }
 
-        // 7. 强制设置游戏模式
         DebugLogger.stateChange("DimensionPoolManager", player.getName().getString(), "gameMode",
                 player.gameMode().toString(), targetPool.gameMode().toString());
         player.setGameMode(targetPool.gameMode());
 
-        // 8. 成功消息
         player.sendSystemMessage(Component.translatable(
                 "youzaiworldcore.message.diminv.teleport_success",
                 targetPool.displayName()));
@@ -373,7 +364,6 @@ public final class DimensionPoolManager {
         return null;
     }
 
-    /** 检查指定池是否存在玩家的历史状态数据文件 */
     private static boolean hasSavedPlayerData(ServerPlayer player, MinecraftServer server, String poolId) {
         DebugLogger.entering("DimensionPoolManager", "hasSavedPlayerData",
                 "player=" + player.getName().getString() + ", poolId=" + poolId);
@@ -389,7 +379,6 @@ public final class DimensionPoolManager {
         }
     }
 
-    /** 生成死亡默认出生点标记键 */
     private static String deathSpawnKey(UUID playerUuid, String poolId) {
         DebugLogger.entering("DimensionPoolManager", "deathSpawnKey",
                 "playerUuid=" + playerUuid + ", poolId=" + poolId);

@@ -25,10 +25,8 @@ import java.util.Map;
 @SuppressWarnings("null")
 public final class DrawEntriesHandler {
 
-    /** 单例实例 */
     public static final DrawEntriesHandler INSTANCE = new DrawEntriesHandler();
 
-    /** 最大同时显示条目数 */
     private static final int MAX_ENTRIES = 16;
 
     /** 条目显示时间（tick） */
@@ -40,13 +38,11 @@ public final class DrawEntriesHandler {
     /** 显示位置 Y 偏移 */
     public static int OFFSET_Y = 4;
 
-    /** 默认显示缩放比例 */
     public static float DISPLAY_SCALE = 1.0f;
 
     /** 条目收集器：按插入顺序维护，键用于去重合并 */
     private final LinkedHashMap<Object, DisplayEntry<?>> collector = new LinkedHashMap<>();
 
-    /** 是否启用 */
     private boolean enabled = true;
 
     private DrawEntriesHandler() {
@@ -68,7 +64,6 @@ public final class DrawEntriesHandler {
         DebugLogger.entering("DrawEntriesHandler", "addEntry",
                 "key=" + key + ", type=" + entry.getClass().getSimpleName());
 
-        // 检查是否超出最大容量
         if (collector.size() >= MAX_ENTRIES && !collector.containsKey(key)) {
             Iterator<Map.Entry<Object, DisplayEntry<?>>> it = collector.entrySet().iterator();
             if (it.hasNext()) {
@@ -78,7 +73,6 @@ public final class DrawEntriesHandler {
             }
         }
 
-        // 合并或新增
         DisplayEntry<?> existing = collector.get(key);
         if (existing != null) {
             existing.mergeWith(entry);
@@ -142,7 +136,6 @@ public final class DrawEntriesHandler {
         // 从右下角开始向上绘制
         int currentY = screenHeight - OFFSET_Y;
 
-        // 先计算总高度
         int totalHeight = collector.size() * DisplayEntry.ELEMENT_HEIGHT;
 
         // 从底部向上排列
@@ -158,14 +151,12 @@ public final class DrawEntriesHandler {
                 continue;
             }
 
-            // 移出偏移
             int moveOffset = entry.getMoveOffset();
 
             // X 坐标：右下对齐，减去移出偏移
             int entryX = screenWidth - entryWidth - OFFSET_X + moveOffset;
             int entryY = currentY;
 
-            // 应用整体缩放
             if (DISPLAY_SCALE != 1.0f) {
                 graphics.pose().pushMatrix();
                 graphics.pose().translate(entryX, entryY);
@@ -180,17 +171,11 @@ public final class DrawEntriesHandler {
         }
     }
 
-    /**
-     * 清除所有条目。
-     */
     public void clear() {
         collector.clear();
         DebugLogger.info("DrawEntriesHandler", "Cleared all entries");
     }
 
-    /**
-     * 设置是否启用拾取通知。
-     */
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
         DebugLogger.stateChange("DrawEntriesHandler", "instance", "enabled", enabled);
@@ -199,9 +184,6 @@ public final class DrawEntriesHandler {
         }
     }
 
-    /**
-     * 获取当前是否启用。
-     */
     public boolean isEnabled() {
         return enabled;
     }

@@ -59,10 +59,6 @@ public class WardenDeathHandler {
     private WardenDeathHandler() {
     }
 
-    // ========================================================================
-    // 回调
-    // ========================================================================
-
     private void onEntityDeath(LivingEntity entity, DamageSource damageSource) {
         if (entity.level().isClientSide())
             return;
@@ -82,10 +78,8 @@ public class WardenDeathHandler {
         RandomSource random = level.getRandom();
         RegistryAccess registries = level.registryAccess();
 
-        // 1) 300 经验直接给击杀者
         grantXp(killer, level, pos);
 
-        // 2) 第 1 个 bundle（保证）
         dropItemSafely(level, pos, createWardenBundle(random));
 
         // 3) 第 2 个 bundle（概率 + looting 加成）
@@ -96,18 +90,12 @@ public class WardenDeathHandler {
             LOGGER.debug("额外 bundle 掉落 (chance={})", chance);
         }
 
-        // 4) 远古城市风格物品
         dropAncientCityLoot(level, pos, random);
 
-        // 5) 附魔书
         dropItemSafely(level, pos, createEnchantedBook(registries, random));
 
         LOGGER.info("监守者战利品发放完成");
     }
-
-    // ========================================================================
-    // 经验
-    // ========================================================================
 
     private static void grantXp(Player killer, ServerLevel level, BlockPos pos) {
         if (killer instanceof ServerPlayer sp) {
@@ -117,10 +105,6 @@ public class WardenDeathHandler {
                     pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, XP_AMOUNT));
         }
     }
-
-    // ========================================================================
-    // 抢夺等级
-    // ========================================================================
 
     private static int getLootingLevel(Player player, RegistryAccess registries) {
         ItemStack weapon = player.getMainHandItem();
@@ -132,10 +116,6 @@ public class WardenDeathHandler {
         var holder = enchRegistry.get(lootingKey);
         return holder.map(h -> weapon.getEnchantments().getLevel(h)).orElse(0);
     }
-
-    // ========================================================================
-    // Bundle 生成
-    // ========================================================================
 
     private ItemStack createWardenBundle(RandomSource random) {
         if (lightBlueBundle == null) {
@@ -203,12 +183,8 @@ public class WardenDeathHandler {
         return stack;
     }
 
-    // ========================================================================
-    // 远古城市风格物品
-    // ========================================================================
-
     private static void dropAncientCityLoot(ServerLevel level, BlockPos pos, RandomSource random) {
-        int count = 3 + random.nextInt(4); // 3-6 件
+        int count = 3 + random.nextInt(4);
         for (int i = 0; i < count; i++) {
             ItemStack s = pickCityItem(random);
             if (!s.isEmpty())
@@ -239,10 +215,6 @@ public class WardenDeathHandler {
         };
     }
 
-    // ========================================================================
-    // 附魔书
-    // ========================================================================
-
     /**
      * 50% 迅捷潜行 I-III，50% 灵魂疾行 I-III。
      * 均通过 registryAccess 获取 Holder 构建，避免 API 版本兼容问题。
@@ -266,10 +238,6 @@ public class WardenDeathHandler {
         return book;
     }
 
-    // ========================================================================
-    // 归属查找
-    // ========================================================================
-
     private static Optional<Player> findAttributionPlayer(Warden warden, DamageSource ds) {
         Entity e = ds.getEntity();
         if (e instanceof Player p)
@@ -290,10 +258,6 @@ public class WardenDeathHandler {
         return Optional.of(nearby.getFirst());
     }
 
-    // ========================================================================
-    // 工具
-    // ========================================================================
-
     private static void dropItemSafely(Level level, BlockPos pos, ItemStack stack) {
         if (stack == null || stack.isEmpty())
             return;
@@ -301,10 +265,6 @@ public class WardenDeathHandler {
                 pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
                 stack.copy()));
     }
-
-    // ========================================================================
-    // 注册
-    // ========================================================================
 
     public static void register() {
         ServerLivingEntityEvents.AFTER_DEATH.register(INSTANCE::onEntityDeath);

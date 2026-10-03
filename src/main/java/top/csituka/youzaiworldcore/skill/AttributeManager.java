@@ -54,19 +54,16 @@ public class AttributeManager {
         int playerLevel = AdventureLevelManager.getLevelFromExp(
                 PlayerLevelStorage.getOrCreate(uuid, player.getName().getString()).totalExp);
 
-        // 检查可用技能点
         if (data.skillPointsAvailable <= 0) return false;
 
         // 特殊约束：未满 20 级只能加抗性
         if (playerLevel < 20 && !"damageResistance".equals(attributeKey)) return false;
 
-        // 执行加点
         int current = data.get(attributeKey);
         data.set(attributeKey, current + 1);
         data.skillPointsAvailable--;
         PlayerAttributeStorage.markDirty(uuid);
 
-        // 应用到玩家
         applySingleAttribute(player, attributeKey, data.get(attributeKey));
         syncToClient(player);
 
@@ -131,10 +128,8 @@ public class AttributeManager {
         AttributeInstance instance = player.getAttribute(attribute);
         if (instance == null) return;
 
-        // 移除旧修饰符
         instance.removeModifier(id);
 
-        // 添加新修饰符（仅当点数 > 0）
         if (amount != 0) {
             instance.addPermanentModifier(new AttributeModifier(id, amount, operation));
         }

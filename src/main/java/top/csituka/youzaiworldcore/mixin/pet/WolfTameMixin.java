@@ -24,22 +24,18 @@ public abstract class WolfTameMixin {
     private void onPostTame(Player player, CallbackInfo ci) {
         TamableAnimal self = (TamableAnimal) (Object) this;
 
-        // 仅处理狼的驯服
         if (!(self instanceof Wolf wolf)) {
             return;
         }
 
-        // 仅服务端执行
         if (wolf.level().isClientSide()) {
             return;
         }
 
-        // 确认已驯服
         if (!wolf.isTame()) {
             return;
         }
 
-        // 确认驯服者是 ServerPlayer
         if (!(player instanceof ServerPlayer serverPlayer)) {
             return;
         }

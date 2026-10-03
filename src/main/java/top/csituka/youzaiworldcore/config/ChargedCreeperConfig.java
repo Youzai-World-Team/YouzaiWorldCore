@@ -23,7 +23,6 @@ public final class ChargedCreeperConfig {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/ChargedCreeperConfig");
 
-    /** 默认值：启用 */
     private static final boolean DEFAULT_ENABLED = true;
     /** 默认值：10% 带电概率 */
     private static final double DEFAULT_CHANCE = 0.1;
