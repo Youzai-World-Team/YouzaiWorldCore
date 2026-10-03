@@ -116,6 +116,7 @@ public final class MapSettings {
     }
 
     /** 切换显示开关并保存。 */
+    @SuppressWarnings("null")
     public static void toggle(Toggle option) {
         TOGGLES.put(option, !enabled(option));
         save();
@@ -167,6 +168,7 @@ public final class MapSettings {
     }
 
     /** 使用强类型 getter 加载，禁止吞掉配置格式错误。 */
+    @SuppressWarnings("null")
     public static void load() {
         ConfigSection section = ClientGlobalSettings.section(ClientGlobalSettings.MAP_MODULE);
         for (Toggle toggle : Toggle.values())

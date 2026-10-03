@@ -20,8 +20,10 @@ public final class JadeThemeBridge {
     private static boolean forcing;
     private static Identifier userThemeId;
 
-    private JadeThemeBridge() { }
+    private JadeThemeBridge() {
+    }
 
+    @SuppressWarnings("null")
     private static Identifier id(String path) {
         return Identifier.fromNamespaceAndPath("youzaiworldcore", path);
     }
@@ -41,17 +43,20 @@ public final class JadeThemeBridge {
     }
 
     /** 资源就绪后即时切换；效果预设变化不会覆盖首次记录的原主题。 */
+    @SuppressWarnings("null")
     public static void tick(boolean yzuiEnabled) {
         IThemeHelper helper = IThemeHelper.get();
         // 首个客户端 tick 可能早于资源加载完成。getTheme() 会触发 Jade 懒初始化，
         // 默认主题尚未就绪时其内部会抛空指针；开启、关闭及重载期间都先安全等待。
         // hasTheme() 只查询主题注册表，不会读取或应用主题。
-        if (!helper.hasTheme(DEFAULT_THEME_ID)) return;
+        if (!helper.hasTheme(DEFAULT_THEME_ID))
+            return;
         IWailaConfig.Overlay overlay = IWailaConfig.get().overlay();
         Identifier active = effectiveThemeId(overlay);
         if (yzuiEnabled) {
             Identifier desired = desiredThemeId();
-            if (!helper.hasTheme(desired)) return;
+            if (!helper.hasTheme(desired))
+                return;
             if (!forcing) {
                 userThemeId = isManagedTheme(active) ? DEFAULT_THEME_ID : active;
                 forcing = true;
@@ -63,8 +68,10 @@ public final class JadeThemeBridge {
             }
         } else if (forcing || isManagedTheme(active)) {
             Identifier restore = userThemeId == null ? DEFAULT_THEME_ID : userThemeId;
-            if (!helper.hasTheme(restore)) restore = DEFAULT_THEME_ID;
-            if (!helper.hasTheme(restore)) return;
+            if (!helper.hasTheme(restore))
+                restore = DEFAULT_THEME_ID;
+            if (!helper.hasTheme(restore))
+                return;
             overlay.applyTheme(restore);
             IWailaConfig.get().save();
             forcing = false;

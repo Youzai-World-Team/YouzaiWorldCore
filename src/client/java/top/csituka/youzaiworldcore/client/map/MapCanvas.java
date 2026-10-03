@@ -29,8 +29,13 @@ public final class MapCanvas implements AutoCloseable {
     private volatile Ready ready;
     private volatile boolean pending;
     private volatile long epoch;
-    private record Frame(MapView view, String dimension, MapLayer layer, int height, long revision, MapRaster.Style style, float pixelScale) { }
-    private record Ready(long epoch, Frame frame, int width, int height, byte[] pixels) { }
+
+    private record Frame(MapView view, String dimension, MapLayer layer, int height, long revision,
+            MapRaster.Style style, float pixelScale) {
+    }
+
+    private record Ready(long epoch, Frame frame, int width, int height, byte[] pixels) {
+    }
 
     /**
      * 绘制圆形或圆角地图，边框与标记由地图渲染器统一处理。
@@ -38,33 +43,39 @@ public final class MapCanvas implements AutoCloseable {
      * @param pixelScale 视口设计单位到物理像素的比例，纹理按此提高分辨率避免缩放后发虚
      */
     public MapView draw(GuiGraphicsExtractor graphics, MapView view, String dimension, MapLayer layer, int height,
-                     int left, int top, int radius, float opacity, float pixelScale) {
+            int left, int top, int radius, float opacity, float pixelScale) {
         return draw(graphics, view, dimension, layer, height, left, top, radius, opacity, pixelScale, false);
     }
 
     /** 全屏地图每帧变换已有纹理，交互不等待后台地形重绘；命中和标记使用当前视口。 */
-    public MapView drawInteractive(GuiGraphicsExtractor graphics, MapView view, String dimension, MapLayer layer, int height,
-                                   int left, int top, float pixelScale) {
+    public MapView drawInteractive(GuiGraphicsExtractor graphics, MapView view, String dimension, MapLayer layer,
+            int height,
+            int left, int top, float pixelScale) {
         return draw(graphics, view, dimension, layer, height, left, top, 0, 1, pixelScale, true);
     }
 
+    @SuppressWarnings("null")
     private MapView draw(GuiGraphicsExtractor graphics, MapView view, String dimension, MapLayer layer, int height,
-                         int left, int top, int radius, float opacity, float pixelScale, boolean interactive) {
+            int left, int top, int radius, float opacity, float pixelScale, boolean interactive) {
         double resolution = Math.min(pixelScale, 768.0 / Math.max(view.width(), view.height()));
         int tw = Math.max(1, (int) Math.ceil(view.width() * resolution));
         int th = Math.max(1, (int) Math.ceil(view.height() * resolution));
         if (texture != null && (textureWidth != tw || textureHeight != th
-                || displayed != null && (!displayed.dimension.equals(dimension) || displayed.layer != layer || displayed.height != height
-                || displayed.view.width() != view.width() || displayed.view.height() != view.height()
-                || Float.compare(displayed.pixelScale, pixelScale) != 0))) close();
+                || displayed != null && (!displayed.dimension.equals(dimension) || displayed.layer != layer
+                        || displayed.height != height
+                        || displayed.view.width() != view.width() || displayed.view.height() != view.height()
+                        || Float.compare(displayed.pixelScale, pixelScale) != 0)))
+            close();
         Ready result = ready;
         if (result != null) {
             ready = null;
-            if (result.epoch == epoch && result.width == tw && result.height == th && result.frame.dimension.equals(dimension)
+            if (result.epoch == epoch && result.width == tw && result.height == th
+                    && result.frame.dimension.equals(dimension)
                     && result.frame.layer == layer && result.frame.height == height
                     && Float.compare(result.frame.pixelScale, pixelScale) == 0) {
                 if (texture == null) {
-                    textureWidth = tw; textureHeight = th;
+                    textureWidth = tw;
+                    textureHeight = th;
                     texture = new DynamicTexture("悠哉地图", tw, th, false);
                     Minecraft.getInstance().getTextureManager().register(id, texture);
                 }
@@ -72,16 +83,19 @@ public final class MapCanvas implements AutoCloseable {
                 if (pixels != null) {
                     // NativeImage 使用 RGBA 字节；颜色转换已在后台完成，主线程只做一次连续复制。
                     pixels.getPixelBytes().put(result.pixels);
-                    texture.upload(); displayed = result.frame;
+                    texture.upload();
+                    displayed = result.frame;
                 }
             }
         }
-        var frame = new Frame(view, dimension, layer, height, MapClient.cache().revision(), MapClient.rasterStyle(dimension), pixelScale);
+        var frame = new Frame(view, dimension, layer, height, MapClient.cache().revision(),
+                MapClient.rasterStyle(dimension), pixelScale);
         long now = System.nanoTime();
         if (!pending && !frame.equals(displayed) && (displayed == null || now - lastRequest >= 100_000_000L)) {
             var tiles = MapClient.cache().snapshot(dimension, layer, height);
             long ticket = epoch;
-            pending = true; lastRequest = now;
+            pending = true;
+            lastRequest = now;
             RASTER.execute(() -> {
                 try {
                     byte[] pixels = new byte[tw * th * 4];
@@ -92,7 +106,8 @@ public final class MapCanvas implements AutoCloseable {
                             double dx = ((px + 0.5) / tw * view.width() - view.width() / 2.0) / view.scale();
                             double wx = view.centerX() + dx * cos - dz * sin, wz = view.centerZ() + dx * sin + dz * cos;
                             int color = Math.abs(wx) > MapTileKey.WORLD_LIMIT || Math.abs(wz) > MapTileKey.WORLD_LIMIT
-                                    ? frame.style.empty() : MapRaster.color(tiles, (int) Math.floor(wx), (int) Math.floor(wz), frame.style);
+                                    ? frame.style.empty()
+                                    : MapRaster.color(tiles, (int) Math.floor(wx), (int) Math.floor(wz), frame.style);
                             int offset = (py * tw + px) * 4;
                             pixels[offset] = (byte) (color >>> 16);
                             pixels[offset + 1] = (byte) (color >>> 8);
@@ -100,9 +115,13 @@ public final class MapCanvas implements AutoCloseable {
                             pixels[offset + 3] = (byte) (color >>> 24);
                         }
                     }
-                    if (epoch == ticket) ready = new Ready(ticket, frame, tw, th, pixels);
-                } catch (Exception error) { DebugLogger.exception("MapCanvas", "合成地图纹理", error); }
-                finally { pending = false; }
+                    if (epoch == ticket)
+                        ready = new Ready(ticket, frame, tw, th, pixels);
+                } catch (Exception error) {
+                    DebugLogger.exception("MapCanvas", "合成地图纹理", error);
+                } finally {
+                    pending = false;
+                }
             });
         }
         if (texture != null && displayed != null) {
@@ -119,6 +138,7 @@ public final class MapCanvas implements AutoCloseable {
         return view;
     }
 
+    @SuppressWarnings("null")
     private void drawTransformed(GuiGraphicsExtractor graphics, MapView view, int left, int top, float opacity) {
         // 新露出的区域先铺底色；后台纹理到达后仍按当前视口投影，避免回跳到旧位置。
         graphics.fill(left, top, left + view.width(), top + view.height(),
@@ -143,9 +163,14 @@ public final class MapCanvas implements AutoCloseable {
     }
 
     /** 页面关闭、切服或尺寸变化时释放旧 GPU 纹理与 NativeImage。 */
-    @Override public void close() {
-        epoch++; ready = null;
-        if (texture != null) Minecraft.getInstance().getTextureManager().release(id);
-        texture = null; displayed = null;
+    @SuppressWarnings("null")
+    @Override
+    public void close() {
+        epoch++;
+        ready = null;
+        if (texture != null)
+            Minecraft.getInstance().getTextureManager().release(id);
+        texture = null;
+        displayed = null;
     }
 }

@@ -26,7 +26,8 @@ public final class YzHudLayout {
 
     /** @return 指定组件的最大布局宽度 */
     public static int componentWidth(YzHudComponent component) {
-        if (component == YzHudComponent.SCOREBOARD) return ScoreboardSidebarRenderer.previewWidth();
+        if (component == YzHudComponent.SCOREBOARD)
+            return ScoreboardSidebarRenderer.previewWidth();
         return geometry(component).width();
     }
 
@@ -44,21 +45,21 @@ public final class YzHudLayout {
 
     /** @return 指定组件的最大布局高度 */
     public static int componentHeight(YzHudComponent component) {
-        if (component == YzHudComponent.SCOREBOARD) return ScoreboardSidebarRenderer.previewHeight();
+        if (component == YzHudComponent.SCOREBOARD)
+            return ScoreboardSidebarRenderer.previewHeight();
         return geometry(component).height();
     }
 
     /** @return 指定组件在当前 GUI 中的实际左边界 */
     public static int componentLeft(YzHudComponent component, int guiWidth) {
-        Geometry geometry = geometry(component);
         return componentLeft(component, guiWidth, scaledWidth(component));
     }
 
     /**
      * 按组件当前实际宽度取得左边界，供动态尺寸 HUD 使用。
      *
-     * @param component HUD 组件
-     * @param guiWidth 当前 GUI 宽度
+     * @param component      HUD 组件
+     * @param guiWidth       当前 GUI 宽度
      * @param componentWidth 组件当帧实际宽度
      * @return 应用归一化位置后的左边界
      */
@@ -75,15 +76,14 @@ public final class YzHudLayout {
 
     /** @return 指定组件在当前 GUI 中的实际上边界 */
     public static int componentTop(YzHudComponent component, int guiHeight) {
-        Geometry geometry = geometry(component);
         return componentTop(component, guiHeight, scaledHeight(component));
     }
 
     /**
      * 按组件当前实际高度取得上边界，供动态尺寸 HUD 使用。
      *
-     * @param component HUD 组件
-     * @param guiHeight 当前 GUI 高度
+     * @param component       HUD 组件
+     * @param guiHeight       当前 GUI 高度
      * @param componentHeight 组件当帧实际高度
      * @return 应用归一化位置后的上边界
      */
