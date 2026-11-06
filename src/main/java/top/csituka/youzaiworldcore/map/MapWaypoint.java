@@ -4,7 +4,7 @@ import net.minecraft.resources.Identifier;
 
 import java.util.UUID;
 
-/** 私人、死亡和服务器公共路径点的值对象；公共点的所有者及锁定状态由服务端决定。 */
+/** 私人、死亡和服务器公共路径点；分组字符串保留磁盘和网络布局，新写分组只用固定图标 ID。 */
 public record MapWaypoint(UUID id, UUID owner, String name, String group, String dimension,
                           int x, int y, int z, int color, boolean enabled, boolean shared,
                           Kind kind, long createdAt) {
@@ -45,7 +45,7 @@ public record MapWaypoint(UUID id, UUID owner, String name, String group, String
     }
 
     /** 创建仅改变分组的路径点。 */
-    public MapWaypoint withGroup(String value) {
-        return new MapWaypoint(id, owner, name, value, dimension, x, y, z, color, enabled, shared, kind, createdAt);
+    public MapWaypoint withGroup(MapWaypointGroup value) {
+        return new MapWaypoint(id, owner, name, value.id(), dimension, x, y, z, color, enabled, shared, kind, createdAt);
     }
 }

@@ -2,7 +2,6 @@ package top.csituka.youzaiworldcore.client.map;
 
 import top.csituka.youzaiworldcore.map.MapTileKey;
 import top.csituka.youzaiworldcore.map.MapLayer;
-import net.minecraft.resources.Identifier;
 import net.minecraft.network.chat.Component;
 import top.csituka.youzaiworldcore.client.config.MapSettings;
 import top.csituka.youzaiworldcore.map.MapBinaryCodec;
@@ -11,12 +10,14 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import top.csituka.youzaiworldcore.map.MapDrawing;
 import top.csituka.youzaiworldcore.map.MapWaypoint;
+import top.csituka.youzaiworldcore.map.MapWaypointGroup;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -32,13 +33,9 @@ public final class MapPersonalData {
     private static final List<MapDrawing> DRAWINGS = new ArrayList<>();
     private static final ArrayDeque<List<MapDrawing>> UNDO = new ArrayDeque<>(), REDO = new ArrayDeque<>();
 
-    /** 空分类和真实到访层均随当前服务器存档保存，绝不从服务端批量采样反推。 */
-    public record Category(String dimension, String name) {
-    }
-
-    private static final List<Category> CATEGORIES = new ArrayList<>();
+    /** 真实到访层随当前服务器存档保存，绝不从服务端批量采样反推。 */
     private static final Set<MapTileKey> EXPLORED = new HashSet<>();
-    private static final int MAX_CATEGORIES = 128, MAX_EXPLORED = 65536;
+    private static final int MAX_EXPLORED = 65536;
 
     /** 当前存档上次关闭地图时的视角，不影响其他服务器。 */
     public record LastView(String dimension, double x, double z, double zoom) {
@@ -46,6 +43,7 @@ public final class MapPersonalData {
 
     private static LastView lastView;
     private static final java.util.Map<UUID, String> NOTES = new java.util.LinkedHashMap<>();
+    private static final EnumMap<MapWaypointGroup, String> GROUP_NAMES = new EnumMap<>(MapWaypointGroup.class);
     private static final Set<MapTileKey> PENDING_EXPLORATION = new HashSet<>();
     private static boolean explorationDirty;
     private static String world = "";
@@ -65,18 +63,23 @@ public final class MapPersonalData {
         DRAWINGS.clear();
         UNDO.clear();
         REDO.clear();
-        CATEGORIES.clear();
         EXPLORED.clear();
         PENDING_EXPLORATION.clear();
         NOTES.clear();
+        GROUP_NAMES.clear();
         explorationDirty = false;
         var database = MapSettings.database();
         writableWorld = true;
         database.records(world, "points").values().forEach(bytes -> POINTS.add(MapBinaryCodec.waypoint(bytes)));
         database.records(world, "drawings").values().forEach(bytes -> DRAWINGS.add(MapBinaryCodec.drawing(bytes)));
-        database.records(world, "categories").values().forEach(bytes -> CATEGORIES.add(MapBinaryCodec.decode(bytes,
-                in -> new Category(in.readUTF(), in.readUTF()))));
         database.records(world, "notes").forEach((id, bytes) -> NOTES.put(UUID.fromString(id), MapBinaryCodec.decode(bytes, in -> in.readUTF())));
+        database.records(world, "group_names").forEach((id, bytes) -> {
+            var group = MapWaypointGroup.ALL.stream().filter(value -> value.id().equals(id)).findFirst()
+                    .orElseThrow(() -> new IllegalStateException("地图分组名称的图标 ID 无效：" + id));
+            String name = MapBinaryCodec.decode(bytes, in -> in.readUTF());
+            if (!validGroupName(name)) throw new IllegalStateException("地图分组名称无效：" + id);
+            GROUP_NAMES.put(group, name);
+        });
         var view = database.records(world, "view").get("last");
         if (view != null) lastView = MapBinaryCodec.decode(view, in -> new LastView(in.readUTF(), in.readDouble(), in.readDouble(), in.readDouble()));
         database.read(db -> {
@@ -102,6 +105,31 @@ public final class MapPersonalData {
         return world;
     }
 
+    /** 当前存档的私人分组名称；空串表示使用随语言切换的默认名称，各维度共用。 */
+    public static String groupName(MapWaypointGroup group) {
+        return GROUP_NAMES.getOrDefault(group, "");
+    }
+
+    /** 仅保存固定图标的显示名称；空串恢复默认，不修改路径点归属或其他玩家的数据。 */
+    public static boolean setGroupName(MapWaypointGroup group, String name) {
+        if (world.isEmpty() || !writableWorld || group == null || name == null) return false;
+        String value = name.strip();
+        if (!value.isEmpty() && !validGroupName(value)) return false;
+        var names = new EnumMap<>(GROUP_NAMES);
+        if (value.isEmpty()) names.remove(group); else names.put(group, value);
+        var records = new LinkedHashMap<String, byte[]>();
+        names.forEach((key, label) -> records.put(key.id(), MapBinaryCodec.encode(out -> out.writeUTF(label))));
+        MapSettings.database().transaction(db -> { MapDatabase.records(db, world, "group_names", records); return null; });
+        GROUP_NAMES.clear(); GROUP_NAMES.putAll(names);
+        DebugLogger.debug("MapPersonalData", "修改私人分组显示名称：%s，恢复默认=%s", group.id(), value.isEmpty());
+        return true;
+    }
+
+    private static boolean validGroupName(String name) {
+        return !name.isBlank() && name.length() <= 32 && name.equals(name.strip())
+                && name.codePoints().noneMatch(Character::isISOControl);
+    }
+
     /** 当前存档上次浏览的地图位置；从未保存时返回 null。 */
     public static LastView lastView() {
         return lastView;
@@ -114,28 +142,6 @@ public final class MapPersonalData {
         lastView = new LastView(dimension, x, z, zoom);
         save();
         DebugLogger.debug("MapPersonalData", "保存地图视角：%s %.1f %.1f", dimension, x, z);
-    }
-
-    /** 当前维度内用户建立的分类，允许分类中暂时没有路径点。 */
-    @SuppressWarnings("null")
-    public static List<String> categories(String dimension) {
-        return CATEGORIES.stream().filter(value -> value.dimension().equals(dimension)).map(Category::name).toList();
-    }
-
-    /** 建立可持久保存的空分类。 */
-    public static boolean addCategory(String dimension, String name) {
-        if (world.isEmpty() || !writableWorld || name.isBlank() || name.length() > 32
-                || dimension.length() > 128 || Identifier.tryParse(dimension) == null)
-            return false;
-        var category = new Category(dimension, name.strip());
-        if (CATEGORIES.contains(category))
-            return true;
-        if (CATEGORIES.size() >= MAX_CATEGORIES)
-            return false;
-        CATEGORIES.add(category);
-        save();
-        DebugLogger.info("MapPersonalData", "新建路径点分类：%s / %s", dimension, name);
-        return true;
     }
 
     /** 对同一筛选结果中的两个私人点交换顺序，不改动创建时间及公共数据。 */
@@ -190,6 +196,10 @@ public final class MapPersonalData {
                 index = i;
         if (index < 0 && POINTS.size() >= MAX_POINTS)
             return false;
+        // 旧点可保留原分组做显隐等操作；新增或改变分组必须来自固定图标集合。
+        if (!MapWaypointGroup.isValidId(point.group())
+                && (index < 0 || !POINTS.get(index).group().equals(point.group())))
+            return false;
         if (index < 0)
             POINTS.add(point);
         else
@@ -226,9 +236,10 @@ public final class MapPersonalData {
     }
 
     /** 批量移动选中的私人点到指定分组。 */
-    public static void group(Set<UUID> ids, String group) {
+    public static void group(Set<UUID> ids, MapWaypointGroup group) {
         POINTS.replaceAll(point -> ids.contains(point.id()) ? point.withGroup(group) : point);
         save();
+        DebugLogger.debug("MapPersonalData", "移动私人路径点至图标分组：%s，数量=%d", group.id(), ids.size());
     }
 
     /** 一次写盘批量改变私人分组的显示状态。 */
@@ -261,7 +272,7 @@ public final class MapPersonalData {
         String time = LocalDateTime.now().format(DateTimeFormatter.ofPattern("MM-dd HH:mm"));
         if (!put(new MapWaypoint(UUID.randomUUID(), player,
                 Component.translatable("map.youzaiworldcore.death_name", time).getString(),
-                Component.translatable("map.youzaiworldcore.deaths").getString(), dimension,
+                MapWaypointGroup.DEATH.id(), dimension,
                 x, y, z, 0xFFE47A78, true, false, MapWaypoint.Kind.DEATH, System.currentTimeMillis())))
             MapClient.message("death_limit_reached");
     }
@@ -325,12 +336,6 @@ public final class MapPersonalData {
             var drawings = new LinkedHashMap<String, byte[]>();
             for (int i = 0; i < DRAWINGS.size(); i++) drawings.put(String.format(java.util.Locale.ROOT, "%04d", i), MapBinaryCodec.drawing(DRAWINGS.get(i)));
             MapDatabase.records(db, world, "drawings", drawings);
-            var categories = new LinkedHashMap<String, byte[]>();
-            for (int i = 0; i < CATEGORIES.size(); i++) {
-                var category = CATEGORIES.get(i);
-                categories.put(Integer.toString(i), MapBinaryCodec.encode(out -> { out.writeUTF(category.dimension()); out.writeUTF(category.name()); }));
-            }
-            MapDatabase.records(db, world, "categories", categories);
             var notes = new LinkedHashMap<String, byte[]>();
             NOTES.forEach((id, text) -> notes.put(id.toString(), MapBinaryCodec.encode(out -> out.writeUTF(text))));
             MapDatabase.records(db, world, "notes", notes);
@@ -358,10 +363,10 @@ public final class MapPersonalData {
     public static void disconnect() {
         flushExploration();
         lastView = null;
-        CATEGORIES.clear();
         EXPLORED.clear();
         PENDING_EXPLORATION.clear();
         NOTES.clear();
+        GROUP_NAMES.clear();
         explorationDirty = false;
         world = "";
         writableWorld = false;

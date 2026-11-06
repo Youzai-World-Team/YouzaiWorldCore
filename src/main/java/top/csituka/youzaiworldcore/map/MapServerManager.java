@@ -225,7 +225,7 @@ public final class MapServerManager {
             String identity = "map-anchor:" + player.getUUID() + ":" + dimension + ":" + pos.asLong();
             String name = anchor.name().isBlank() ? "传送锚点" : anchor.name();
             anchors.add(new MapWaypoint(UUID.nameUUIDFromBytes(identity.getBytes(StandardCharsets.UTF_8)), player.getUUID(),
-                    name.substring(0, Math.min(64, name.length())), "已激活传送锚点", dimension, pos.getX(), pos.getY(), pos.getZ(),
+                    name.substring(0, Math.min(64, name.length())), MapWaypointGroup.BUILDINGS.id(), dimension, pos.getX(), pos.getY(), pos.getZ(),
                     0xFF87CDA3, true, true, MapWaypoint.Kind.SERVER, 0));
         }
         ServerPlayNetworking.send(player, new MapWaypointsPayload(worldId, points, List.copyOf(anchors)));
@@ -312,6 +312,7 @@ public final class MapServerManager {
         }
         if (!MapServerSettings.shareWaypoints || !canPublish(player)) return feedback(player, false, "denied");
         if (request.action() == MapActionPayload.Action.ADD || request.action() == MapActionPayload.Action.UPDATE) {
+            if (!MapWaypointGroup.isValidId(input.group())) return feedback(player, false, "invalid_point");
             ServerLevel target = server.getLevel(ResourceKey.create(Registries.DIMENSION, Identifier.parse(input.dimension())));
             if (target == null || input.y() < target.getMinY() || input.y() > target.getMaxY()
                     || !target.getWorldBorder().isWithinBounds(new net.minecraft.core.BlockPos(input.x(), input.y(), input.z()))) return feedback(player, false, "invalid_position");
@@ -403,7 +404,7 @@ public final class MapServerManager {
             if (POINTS.stream().anyMatch(point -> point.id().equals(id))) continue;
             String name = type.toString();
             if (name.length() > 64) name = name.substring(0, 64);
-            POINTS.add(new MapWaypoint(id, SERVER_OWNER, name, "已探索结构", level.dimension().identifier().toString(), position.getX(), position.getY(), position.getZ(),
+            POINTS.add(new MapWaypoint(id, SERVER_OWNER, name, MapWaypointGroup.RUINS.id(), level.dimension().identifier().toString(), position.getX(), position.getY(), position.getZ(),
                     0xFFE8BB68, true, true, MapWaypoint.Kind.STRUCTURE, System.currentTimeMillis()));
             pointsRevision++; metadataDirty = true;
             structureCount++;

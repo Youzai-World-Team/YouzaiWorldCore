@@ -10,11 +10,13 @@ import net.minecraft.network.chat.Component;
 import org.lwjgl.glfw.GLFW;
 import top.csituka.youzaiworldcore.client.map.MapClient;
 import top.csituka.youzaiworldcore.client.map.MapCoordinates;
+import top.csituka.youzaiworldcore.client.map.MapGroupIcons;
 import top.csituka.youzaiworldcore.client.map.MapPersonalData;
 import top.csituka.youzaiworldcore.client.map.MapTexts;
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
 import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
 import top.csituka.youzaiworldcore.map.MapWaypoint;
+import top.csituka.youzaiworldcore.map.MapWaypointGroup;
 import top.csituka.youzaiworldcore.network.MapActionPayload;
 import top.csituka.youzaiworldcore.network.MapSessionPayload;
 import top.csituka.youzaiworldcore.util.DebugLogger;
@@ -30,27 +32,26 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-/** 路径点管理：同页分组树与卡片列表，树形连接线标明父子关系。分类仍存入客户端地图 SQLite。 */
+/** 路径点管理：同页维度树、固定图标分组与卡片列表，私人分组选择存入客户端地图 SQLite。 */
 @SuppressWarnings("null")
 final class MapWaypointPanel extends MapOverlayPanel {
-    private enum Filter { ALL, ANCHORS, DEATH, STRUCTURE, SHARED, GROUP }
-    private enum View { LIST, ACTIONS, CATEGORY }
-    private record Branch(String dimension, Filter filter, String group, Component label, boolean root, boolean last) { }
+    private enum Filter { ALL, ANCHORS, SHARED, GROUP }
+    private enum View { LIST, ACTIONS, CATEGORY, RENAME }
+    private record Branch(String dimension, Filter filter, MapWaypointGroup group, Component label, boolean root, boolean last) { }
     private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
-    private static final String[] GROUPS = {"矿产", "战斗", "遗迹", "星标", "收集物", "建筑", "其他"};
-    private static final String[] GROUP_KEYS = {"minerals", "combat", "ruins", "starred", "collectibles", "buildings", "other"};
     private final Set<String> expanded = new HashSet<>();
     private final List<TransparentButton> rows = new ArrayList<>(), branches = new ArrayList<>(), actions = new ArrayList<>();
     private List<MapWaypoint> snapshot = List.of(), matches = List.of(), visiblePoints = List.of();
-    private String query = "", dimension, group = "", categoryValue = "";
+    private String query = "", dimension, groupNameValue = "";
+    private MapWaypointGroup group = MapWaypointGroup.OTHER, categoryValue = MapWaypointGroup.OTHER;
     private Filter filter = Filter.ALL;
     private View view = View.LIST;
     private int page, capacity, treeOffset, treeCapacity, treeCount, sidebar, treeX, treeTop, treeBottom,
             listX, listWidth, listTop, listBottom, rowHeight, footer, actionTop;
     private UUID selected;
-    private boolean compact, narrow, dirty, pending, categoryMove, deleteArmed;
+    private boolean compact, narrow, dirty, pending, deleteArmed;
     private EditBox searchBox;
-    private TransparentButton previous, next;
+    private TransparentButton previous, next, renameGroupButton;
 
     public MapWaypointPanel(YzWorldMapScreen owner) {
         super(owner, "waypoints"); dimension = owner.mapDimension(); expanded.add(dimension);
@@ -66,12 +67,15 @@ final class MapWaypointPanel extends MapOverlayPanel {
         if (view == View.ACTIONS && selectedPoint() == null) view = View.LIST;
         control(panelX + panelWidth - 32, panelY + 7, 22, Component.literal("×"), "done", this::onClose);
         if (view == View.CATEGORY) { buildCategory(); return; }
+        if (view == View.RENAME) { buildRenameGroup(); return; }
         if (view == View.ACTIONS) { buildActions(); return; }
-        sidebar = Math.clamp((panelWidth - 24) / 3, 100, 260);
+        sidebar = Math.clamp((panelWidth - 24) / 3, 116, 260);
         treeX = panelX + 12;
         listX = treeX + sidebar + 14; listWidth = panelWidth - 24 - sidebar - 14;
         int searchY = panelY + (compact ? 36 : 48);
         int newWidth = narrow ? 24 : 76;
+        renameGroupButton = control(treeX + sidebar - 24, searchY - 1, 24, Component.literal("✎"),
+                "rename_group_name", this::renameGroup);
         searchBox = field(listX, searchY, listWidth - newWidth - 6, "search", query, 128, value -> { query = value; page = 0; dirty = true; });
         searchBox.setHint(MapTexts.text("search"));
         control(listX + listWidth - newWidth, searchY - 1, newWidth, narrow ? Component.literal("+") : MapTexts.text("new_point"), "new_point", this::newPoint);
@@ -91,25 +95,19 @@ final class MapWaypointPanel extends MapOverlayPanel {
         if (view == View.LIST) label(g, error, listX, footer - 12, listWidth);
         else super.renderError(g);
     }
-    private static Component groupLabel(String name) {
-        for (int i = 0; i < GROUPS.length; i++) if (GROUPS[i].equals(name)) return MapTexts.text("category." + GROUP_KEYS[i]);
-        return name.isEmpty() ? MapTexts.text("ungrouped") : Component.literal(name);
-    }
-    private boolean matches(MapWaypoint point, String dim, Filter kind, String category) {
+    private boolean matches(MapWaypoint point, String dim, Filter kind, MapWaypointGroup category) {
         if (!point.dimension().equals(dim)) return false;
         return switch (kind) {
             case ALL -> true;
             case ANCHORS -> MapClient.isAnchor(point);
-            case DEATH -> point.kind() == MapWaypoint.Kind.DEATH;
-            case STRUCTURE -> point.kind() == MapWaypoint.Kind.STRUCTURE;
             case SHARED -> point.shared() && !MapClient.isAnchor(point);
-            case GROUP -> point.group().equals(category) && !MapClient.isAnchor(point);
+            case GROUP -> MapWaypointGroup.of(point) == category && !MapClient.isAnchor(point);
         };
     }
     private List<MapWaypoint> filtered() {
         String search = query.strip().toLowerCase(Locale.ROOT);
         return snapshot.stream().filter(point -> matches(point, dimension, filter, group))
-                .filter(point -> (MapTexts.waypoint(point).getString() + " " + groupLabel(point.group()).getString() + " "
+                .filter(point -> (MapTexts.waypoint(point).getString() + " " + MapGroupIcons.label(MapWaypointGroup.of(point)).getString() + " "
                         + point.dimension() + " " + point.x() + " " + point.y() + " " + point.z()).toLowerCase(Locale.ROOT).contains(search)).toList();
     }
     private List<MapWaypoint> privateMatches() { return filtered().stream().filter(p -> !p.shared() && !MapClient.isAnchor(p)).toList(); }
@@ -123,6 +121,7 @@ final class MapWaypointPanel extends MapOverlayPanel {
         visiblePoints = matches.subList(Math.min(page * capacity, matches.size()), Math.min((page + 1) * capacity, matches.size()));
         for (int i = 0; i < visiblePoints.size(); i++) rows.add(addRenderableWidget(new PointRow(visiblePoints.get(i), listTop + i * rowHeight)));
         previous.active = page > 0; next.active = page < maxPage();
+        renameGroupButton.active = filter == Filter.GROUP;
         buildTree();
         refreshSelection();
     }
@@ -142,16 +141,12 @@ final class MapWaypointPanel extends MapOverlayPanel {
         var entries = new ArrayList<Branch>();
         var dimensions = new LinkedHashSet<>(MapClient.dimensions()); dimensions.add(dimension); snapshot.forEach(point -> dimensions.add(point.dimension()));
         for (String dim : dimensions) {
-            entries.add(new Branch(dim, Filter.ALL, "", MapTexts.dimension(dim), true, false));
+            entries.add(new Branch(dim, Filter.ALL, MapWaypointGroup.OTHER, MapTexts.dimension(dim), true, false));
             if (!expanded.contains(dim)) continue;
-            entries.add(new Branch(dim, Filter.ANCHORS, "", MapTexts.text("activated_anchors"), false, false));
-            entries.add(new Branch(dim, Filter.DEATH, "", MapTexts.text("deaths"), false, false));
-            entries.add(new Branch(dim, Filter.STRUCTURE, "", MapTexts.text("category.structures"), false, false));
-            entries.add(new Branch(dim, Filter.SHARED, "", MapTexts.text("shared_point"), false, false));
-            var groups = new LinkedHashSet<>(List.of(GROUPS)); groups.add(""); groups.addAll(MapPersonalData.categories(dim));
-            snapshot.stream().filter(p -> p.dimension().equals(dim) && !MapClient.isAnchor(p)).forEach(p -> groups.add(p.group()));
-            int groupIndex = 0;
-            for (String value : groups) entries.add(new Branch(dim, Filter.GROUP, value, groupLabel(value), false, ++groupIndex == groups.size()));
+            entries.add(new Branch(dim, Filter.ANCHORS, MapWaypointGroup.OTHER, MapTexts.text("activated_anchors"), false, false));
+            entries.add(new Branch(dim, Filter.SHARED, MapWaypointGroup.OTHER, MapTexts.text("shared_point"), false, false));
+            for (var value : MapWaypointGroup.ALL) entries.add(new Branch(dim, Filter.GROUP, value,
+                    MapGroupIcons.label(value), false, value == MapWaypointGroup.ALL.getLast()));
         }
         treeCount = entries.size(); treeCapacity = Math.max(1, (treeBottom - treeTop) / 24);
         treeOffset = Math.clamp(treeOffset, 0, Math.max(0, treeCount - treeCapacity));
@@ -173,25 +168,42 @@ final class MapWaypointPanel extends MapOverlayPanel {
         for (var row : branches) if (row instanceof BranchRow treeRow && treeRow.branch.equals(branch)) { setFocused(row); break; }
     }
     private void categoryButtons(int x, int y, int width) {
-        int half = (width - 4) / 2;
-        control(x, y, half, narrow ? Component.literal("+") : MapTexts.text("new_category"), "new_category", () -> editCategory(false));
-        control(x + half + 4, y, half, narrow ? Component.literal("→") : MapTexts.text("rename_group"), "rename_group", () -> editCategory(true));
+        control(x, y, width, MapTexts.text("rename_group"), "rename_group", this::editCategory);
         control(x, y + 28, width, MapTexts.text("toggle_group"), "toggle_group", () -> {
             var points = privateMatches();
             MapPersonalData.setEnabled(points.stream().map(MapWaypoint::id).collect(Collectors.toSet()), points.stream().anyMatch(p -> !p.enabled())); dirty = true;
         });
     }
-    private void editCategory(boolean move) { categoryMove = move; categoryValue = move && filter == Filter.GROUP ? group : ""; view = View.CATEGORY; error = Component.empty(); init(); }
+    private void editCategory() { categoryValue = filter == Filter.GROUP ? group : MapWaypointGroup.OTHER; view = View.CATEGORY; error = Component.empty(); init(); }
     private void buildCategory() {
-        var input = field(panelX + 12, panelY + 76, panelWidth - 24, "new_category", categoryValue, 32, value -> categoryValue = value); setFocused(input);
+        MapGroupButton.grid(panelX + 12, panelY + 82, panelWidth - 24, () -> categoryValue,
+                value -> categoryValue = value, this::addRenderableWidget, !pending);
         int half = (panelWidth - 30) / 2;
         button(panelX + 12, footer, half, MapTexts.text("save"), () -> {
-            if (categoryValue.isBlank()) { error = MapTexts.text("invalid_text"); return; }
-            if (!MapPersonalData.addCategory(dimension, categoryValue)) { error = MapTexts.text("limit"); return; }
-            if (categoryMove) MapPersonalData.group(privateMatches().stream().map(MapWaypoint::id).collect(Collectors.toSet()), categoryValue.strip());
-            group = categoryValue.strip(); filter = Filter.GROUP; expanded.add(dimension); page = 0; view = View.LIST; error = Component.empty(); init();
+            MapPersonalData.group(privateMatches().stream().map(MapWaypoint::id).collect(Collectors.toSet()), categoryValue);
+            group = categoryValue; filter = Filter.GROUP; expanded.add(dimension); page = 0; view = View.LIST; error = Component.empty(); init();
         }).setStyle(YzuiTheme.ButtonStyle.FILLED);
         button(panelX + 18 + half, footer, half, MapTexts.text("cancel"), () -> { view = View.LIST; init(); });
+    }
+    private void renameGroup() {
+        if (filter != Filter.GROUP) return;
+        groupNameValue = MapGroupIcons.label(group).getString(); view = View.RENAME; error = Component.empty(); init();
+    }
+    private void buildRenameGroup() {
+        var input = field(panelX + 12, panelY + 82, panelWidth - 24, "group_name", groupNameValue, 32,
+                value -> groupNameValue = value);
+        setFocused(input);
+        button(panelX + 12, panelY + 112, panelWidth - 24, MapTexts.text("reset_group_name"), () -> saveGroupName(""));
+        int half = (panelWidth - 30) / 2;
+        button(panelX + 12, footer, half, MapTexts.text("save"), () -> {
+            if (groupNameValue.isBlank()) { error = MapTexts.text("invalid_text"); return; }
+            saveGroupName(groupNameValue);
+        }).setStyle(YzuiTheme.ButtonStyle.FILLED);
+        button(panelX + 18 + half, footer, half, MapTexts.text("cancel"), () -> { view = View.LIST; error = Component.empty(); init(); });
+    }
+    private void saveGroupName(String value) {
+        if (!MapPersonalData.setGroupName(group, value)) { error = MapTexts.text("invalid_text"); return; }
+        view = View.LIST; error = MapTexts.text("saved"); init();
     }
     private void newPoint() {
         var player = Minecraft.getInstance().player; if (player == null) return;
@@ -234,17 +246,22 @@ final class MapWaypointPanel extends MapOverlayPanel {
     }
     @Override public void onClose() { if (view != View.LIST) { view = View.LIST; error = Component.empty(); init(); } else super.onClose(); }
     @Override public void tick() {
-        if (view != View.CATEGORY && (dirty || !snapshot.equals(MapClient.waypoints()))) {
+        if (view != View.CATEGORY && view != View.RENAME && (dirty || !snapshot.equals(MapClient.waypoints()))) {
             if (view == View.LIST) refresh(); else { dirty = false; init(); }
         }
     }
     @Override protected void content(GuiGraphicsExtractor g, int mx, int my, float delta) {
+        if (view == View.RENAME) {
+            MapGroupIcons.render(g, group, panelX + 12, panelY + 42, 24, YzuiTheme.text());
+            label(g, MapTexts.text("rename_group_name"), panelX + 44, panelY + 49, panelWidth - 56);
+            label(g, MapTexts.text("group_name"), panelX + 12, panelY + 68, panelWidth - 24); return;
+        }
         if (view == View.CATEGORY) {
-            label(g, MapTexts.text(categoryMove ? "rename_group" : "new_category"), panelX + 12, panelY + 42, panelWidth - 24);
-            label(g, categoryMove ? MapTexts.text("waypoints_group_scope", privateMatches().size()) : MapTexts.dimension(dimension), panelX + 12, panelY + 58, panelWidth - 24); return;
+            label(g, MapTexts.text("rename_group"), panelX + 12, panelY + 42, panelWidth - 24);
+            label(g, MapTexts.text("waypoints_group_scope", privateMatches().size()), panelX + 12, panelY + 58, panelWidth - 24); return;
         }
         if (view == View.ACTIONS) { var point = selectedPoint(); if (point != null) label(g, MapTexts.waypoint(point), panelX + 12, panelY + 42, panelWidth - 24); return; }
-        label(g, MapTexts.text("group"), treeX + 4, listTop - 24, sidebar - 8);
+        label(g, MapTexts.text("group"), treeX + 4, listTop - 24, sidebar - 32);
         g.fill(listX - 8, panelY + 36, listX - 7, footer + 22, YzuiTheme.outlineVariant());
         if (treeCount > treeCapacity) {
             int trackHeight = treeCapacity * 24, thumbHeight = Math.max(12, trackHeight * treeCapacity / treeCount);
@@ -299,6 +316,10 @@ final class MapWaypointPanel extends MapOverlayPanel {
             int textX = x + (branch.root() ? 19 : 24), countWidth = font.width(count);
             var name = branch.root() && branch.dimension().equals(MapClient.dimension()) && !narrow
                     ? Component.literal("◆ ").append(branch.label()) : branch.label();
+            if (branch.filter() == Filter.GROUP) {
+                MapGroupIcons.render(g, branch.group(), textX + 2, y + 4, 16, textColor);
+                textX += 22;
+            }
             YzuiTheme.label(g, font, name, textX, y + 8, getWidth() - (textX - x) - countWidth - 10, textColor, false);
             YzuiTheme.label(g, font, Component.literal(count), x + getWidth() - countWidth - 4, y + 8, countWidth, textColor, false);
         }
@@ -307,16 +328,22 @@ final class MapWaypointPanel extends MapOverlayPanel {
         private final MapWaypoint point;
         PointRow(MapWaypoint point, int y) {
             super(listX, y, listWidth, rowHeight - 4, MapTexts.waypoint(point), () -> { selected = point.id(); refreshSelection(); }); this.point = point;
-            setTooltip(Tooltip.create(MapTexts.waypoint(point).copy().append("\n" + point.x() + " / " + point.y() + " / " + point.z() + "\n" + date(point))));
+            setTooltip(Tooltip.create(MapTexts.waypoint(point).copy().append("\n").append(MapGroupIcons.label(MapWaypointGroup.of(point)))
+                    .append("\n" + point.x() + " / " + point.y() + " / " + point.z() + "\n" + date(point))));
         }
         @Override protected void extractWidgetRenderState(GuiGraphicsExtractor g, int mx, int my, float delta) {
             boolean chosen = point.id().equals(selected); var style = chosen ? YzuiTheme.ButtonStyle.FILLED : YzuiTheme.ButtonStyle.TONAL;
             YzuiTheme.button(g, getX(), getY(), getWidth(), getHeight(), isMouseOver(mx, my) ? 1 : 0, isFocused(), true, 1, style);
             int color = chosen ? YzuiTheme.onPrimary() : point.enabled() ? YzuiTheme.text() : YzuiTheme.textMuted();
             g.fill(getX() + 6, getY() + 7, getX() + 9, getY() + getHeight() - 7, point.color());
-            YzuiTheme.label(g, font, MapTexts.waypoint(point), getX() + 16, getY() + (compact ? 4 : 7), getWidth() - 24, color, false);
+            YzuiTheme.label(g, font, MapTexts.waypoint(point), getX() + 16, getY() + (compact ? 4 : 7), getWidth() - (compact ? 44 : 24), color, false);
             YzuiTheme.label(g, font, Component.literal("X " + point.x() + " · Y " + point.y() + " · Z " + point.z()), getX() + 16, getY() + (compact ? 17 : 23), getWidth() - 24, color, false);
-            if (!compact) YzuiTheme.label(g, font, groupLabel(point.group()).copy().append(" · " + date(point)), getX() + 16, getY() + 39, getWidth() - 24, color, false);
+            if (compact) MapGroupIcons.render(g, MapWaypointGroup.of(point), getX() + getWidth() - 21, getY() + 2, 14, color);
+            else {
+                MapGroupIcons.render(g, MapWaypointGroup.of(point), getX() + 16, getY() + 35, 16, color);
+                YzuiTheme.label(g, font, MapGroupIcons.label(MapWaypointGroup.of(point)).copy().append(" · " + date(point)),
+                        getX() + 38, getY() + 39, getWidth() - 46, color, false);
+            }
         }
     }
     private static String date(MapWaypoint point) { return point.createdAt() <= 0 ? "—" : DATE.format(Instant.ofEpochMilli(point.createdAt()).atZone(ZoneId.systemDefault())); }

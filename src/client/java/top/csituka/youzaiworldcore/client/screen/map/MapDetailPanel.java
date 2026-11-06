@@ -27,6 +27,7 @@ import top.csituka.youzaiworldcore.client.map.*;
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
 import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
 import top.csituka.youzaiworldcore.map.MapWaypoint;
+import top.csituka.youzaiworldcore.map.MapWaypointGroup;
 import top.csituka.youzaiworldcore.network.*;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
@@ -47,7 +48,8 @@ final class MapDetailPanel extends AbstractContainerEventHandler implements Rend
     private final boolean anchor;
     private boolean creating, editing, pending, confirmingDelete, editingNote, shared;
     private MapWaypoint point;
-    private String name, group, note, newCategory = "";
+    private String name, note;
+    private MapWaypointGroup group;
     private Component message = Component.empty();
     private final List<AbstractWidget> widgets = new ArrayList<>();
     private final List<AbstractWidget> body = new ArrayList<>();
@@ -61,7 +63,7 @@ final class MapDetailPanel extends AbstractContainerEventHandler implements Rend
     MapDetailPanel(YzWorldMapScreen owner, MapWaypoint point, boolean creating) {
         this.owner = owner; this.point = point; this.creating = creating; shared = point.shared(); dimensions = false;
         anchor = MapClient.isAnchor(point); editing = creating; editingNote = creating;
-        name = MapTexts.waypoint(point).getString(); group = point.group(); note = MapPersonalData.note(point.id());
+        name = MapTexts.waypoint(point).getString(); group = MapWaypointGroup.of(point); note = MapPersonalData.note(point.id());
     }
 
     private void close() { if (owner.isDetails(this)) owner.closeDetails(); }
@@ -148,25 +150,15 @@ final class MapDetailPanel extends AbstractContainerEventHandler implements Rend
             line(MapTexts.text("created_at").copy().append("  " + date), row); row += 24;
         }
         if (!anchor && !editing) {
-            button(x + 12, top + row - scroll, inner, MapTexts.text("group").copy().append(" · " + group + "  ✎"),
-                    () -> { editing = true; rebuild(); }, true).active = editable(); row += 28;
+            line(MapTexts.text("group"), row + 7);
+            var icon = new MapGroupButton(x + width - 44, top + row - scroll, 32, group, () -> false,
+                    () -> { editing = true; rebuild(); });
+            icon.active = editable() && !pending; widgets.add(icon); body.add(icon); row += 28;
         }
         if (!anchor && editing) {
             line(MapTexts.text("group"), row); row += 15;
-            field(x + 12, top + row - scroll, inner, "group", group, 32, value -> group = value).setEditable(!pending); row += 27;
-            var categories = MapPersonalData.categories(point.dimension());
-            int cell = (inner - 8) / 3;
-            for (int i = 0; i < categories.size(); i++) {
-                String category = categories.get(i);
-                button(x + 12 + i % 3 * (cell + 4), top + row + i / 3 * 26 - scroll, cell, Component.literal(category),
-                        () -> { group = category; rebuild(); }, true).setStyle(category.equals(group) ? YzuiTheme.ButtonStyle.FILLED : YzuiTheme.ButtonStyle.TONAL);
-            }
-            row += (categories.size() + 2) / 3 * 26;
-            field(x + 12, top + row - scroll, inner - 30, "new_category", newCategory, 32, value -> newCategory = value);
-            button(x + width - 36, top + row - scroll, 24, Component.literal("+"), () -> {
-                if (MapPersonalData.addCategory(point.dimension(), newCategory)) { group = newCategory.strip(); newCategory = ""; rebuild(); }
-                else message = MapTexts.text("limit");
-            }, true); row += 30;
+            row += MapGroupButton.grid(x + 12, top + row - scroll, inner, () -> group, value -> group = value,
+                    icon -> { widgets.add(icon); body.add(icon); }, editable() && !pending);
         }
         if (creating) {
             button(x + 12, top + row - scroll, inner, MapTexts.text(shared ? "shared_point" : "private_point"),
@@ -210,7 +202,7 @@ final class MapDetailPanel extends AbstractContainerEventHandler implements Rend
         if (editing) {
             button(x + 12, footer, half, MapTexts.text(creating ? "create" : "save"), () -> save(false), false).active = editable() && !pending;
             button(x + 18 + half, footer, half, MapTexts.text(creating ? "create_track" : "cancel"), () -> {
-                if (creating) save(true); else { editing = false; name = MapTexts.waypoint(point).getString(); group = point.group(); rebuild(); }
+                if (creating) save(true); else { editing = false; name = MapTexts.waypoint(point).getString(); group = MapWaypointGroup.of(point); rebuild(); }
             }, false).active = !pending;
         } else {
             if (anchor) button(x + 12, footer, half, MapTexts.text("teleport"), this::teleport, false).active = !pending && (anchor || MapClient.session() != null && MapClient.session().allows(MapSessionPayload.TELEPORT));
@@ -220,7 +212,7 @@ final class MapDetailPanel extends AbstractContainerEventHandler implements Rend
         }
     }
     private MapWaypoint changed() {
-        return new MapWaypoint(point.id(), point.owner(), name, group, point.dimension(), point.x(), point.y(), point.z(),
+        return new MapWaypoint(point.id(), point.owner(), name, group.id(), point.dimension(), point.x(), point.y(), point.z(),
                 point.color(), point.enabled(), shared, point.kind(), point.createdAt());
     }
     private void save(boolean track) {
@@ -259,7 +251,7 @@ final class MapDetailPanel extends AbstractContainerEventHandler implements Rend
         }
     }
     private void copyAsWaypoint() {
-        var copy = new MapWaypoint(UUID.randomUUID(), point.owner(), name, "", point.dimension(), point.x(), point.y(), point.z(),
+        var copy = new MapWaypoint(UUID.randomUUID(), point.owner(), name, MapWaypointGroup.BUILDINGS.id(), point.dimension(), point.x(), point.y(), point.z(),
                 point.color(), true, false, MapWaypoint.Kind.NORMAL, System.currentTimeMillis());
         owner.openPoint(copy, true);
     }

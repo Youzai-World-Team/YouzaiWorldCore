@@ -9,6 +9,7 @@ import top.csituka.youzaiworldcore.client.map.MapTexts;
 import top.csituka.youzaiworldcore.client.map.MapCoordinates;
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
 import top.csituka.youzaiworldcore.map.MapWaypoint;
+import top.csituka.youzaiworldcore.map.MapWaypointGroup;
 import top.csituka.youzaiworldcore.network.MapActionPayload;
 import top.csituka.youzaiworldcore.network.MapSessionPayload;
 
@@ -21,11 +22,13 @@ public final class MapWaypointEditScreen extends MapScreen {
     private final boolean existing;
     private final Map<String, String> values = new LinkedHashMap<>();
     private boolean shared, pending;
-    private int rowHeight;
+    private int rowHeight, groupHeight, groupLabelWidth;
+    private MapWaypointGroup group;
 
     public MapWaypointEditScreen(Screen parent, MapWaypoint point, boolean existing) {
         super(parent, existing ? "edit_point" : "new_point"); original = point; this.existing = existing; shared = point.shared();
-        values.put("name", point.name()); values.put("group", point.group()); values.put("dimension", point.dimension());
+        group = MapWaypointGroup.of(point);
+        values.put("name", point.name()); values.put("dimension", point.dimension());
         values.put("x", Integer.toString(point.x())); values.put("y", Integer.toString(point.y())); values.put("z", Integer.toString(point.z()));
         values.put("color", String.format(java.util.Locale.ROOT, "%06X", point.color() & 0xFFFFFF));
     }
@@ -33,12 +36,16 @@ public final class MapWaypointEditScreen extends MapScreen {
     @Override protected void init() {
         super.init(); rowHeight = Math.max(25, Math.min(38, (panelHeight - 120) / 5));
         int x = panelX + 18, y = panelY + 42, w = panelWidth - 36;
-        edit("name", x, y, w, 64); edit("group", x, y + rowHeight, w, 32);
-        edit("dimension", x, y + rowHeight * 2, w, 128);
+        edit("name", x, y, w, 64);
+        groupLabelWidth = w >= 294 ? 74 : 0;
+        groupHeight = Math.max(rowHeight, MapGroupButton.grid(x + groupLabelWidth, y + rowHeight, w - groupLabelWidth,
+                () -> group, value -> group = value, this::addRenderableWidget, editable() && !pending));
+        int dimensionY = y + rowHeight + groupHeight;
+        edit("dimension", x, dimensionY, w, 128);
         int cw = (w - 12) / 3;
-        edit("x", x, y + rowHeight * 3, cw, 10); edit("y", x + cw + 6, y + rowHeight * 3, cw, 10); edit("z", x + (cw + 6) * 2, y + rowHeight * 3, cw, 10);
-        edit("color", x, y + rowHeight * 4, w / 2 - 4, 7);
-        button(x + w / 2 + 4, y + rowHeight * 4, w / 2 - 4, MapTexts.text(shared ? "shared_point" : "private_point"), () -> { shared = !shared; init(); }).active = !original.shared() && !pending;
+        edit("x", x, dimensionY + rowHeight, cw, 10); edit("y", x + cw + 6, dimensionY + rowHeight, cw, 10); edit("z", x + (cw + 6) * 2, dimensionY + rowHeight, cw, 10);
+        edit("color", x, dimensionY + rowHeight * 2, w / 2 - 4, 7);
+        button(x + w / 2 + 4, dimensionY + rowHeight * 2, w / 2 - 4, MapTexts.text(shared ? "shared_point" : "private_point"), () -> { shared = !shared; init(); }).active = !original.shared() && !pending;
         int bw = (w - 12) / 3, footer = panelY + panelHeight - 34;
         button(x, footer, bw, MapTexts.text("save"), this::savePoint).setStyle(YzuiTheme.ButtonStyle.FILLED).active = !pending && editable();
         button(x + bw + 6, footer, bw, MapTexts.text("copy"), () -> {
@@ -65,7 +72,7 @@ public final class MapWaypointEditScreen extends MapScreen {
     private MapWaypoint readPoint() {
         if (!values.get("color").matches("#?[0-9a-fA-F]{6}")) throw new IllegalArgumentException("颜色必须为六位十六进制");
         int color = Integer.parseInt(values.get("color").replace("#", ""), 16);
-        return new MapWaypoint(original.id(), original.owner(), values.get("name"), values.get("group"), values.get("dimension"),
+        return new MapWaypoint(original.id(), original.owner(), values.get("name"), group.id(), values.get("dimension"),
                 Integer.parseInt(values.get("x")), Integer.parseInt(values.get("y")), Integer.parseInt(values.get("z")), color,
                 original.enabled(), shared, original.kind(), original.createdAt());
     }
@@ -92,12 +99,14 @@ public final class MapWaypointEditScreen extends MapScreen {
 
     @Override protected void content(GuiGraphicsExtractor g, int mx, int my, float delta) {
         int x = panelX + 18, y = panelY + 49, w = panelWidth - 36;
-        label(g, MapTexts.text("name"), x, y, 70); label(g, MapTexts.text("group"), x, y + rowHeight, 70);
-        label(g, MapTexts.text("dimension"), x, y + rowHeight * 2, 70); label(g, MapTexts.text("color"), x, y + rowHeight * 4, 70);
+        label(g, MapTexts.text("name"), x, y, 70);
+        if (groupLabelWidth > 0) label(g, MapTexts.text("group"), x, y + rowHeight, groupLabelWidth - 4);
+        int dimensionY = y + rowHeight + groupHeight;
+        label(g, MapTexts.text("dimension"), x, dimensionY, 70); label(g, MapTexts.text("color"), x, dimensionY + rowHeight * 2, 70);
         int cw = (w - 12) / 3;
-        label(g, net.minecraft.network.chat.Component.literal("X"), x, y + rowHeight * 3, 13);
-        label(g, net.minecraft.network.chat.Component.literal("Y"), x + cw + 6, y + rowHeight * 3, 13);
-        label(g, net.minecraft.network.chat.Component.literal("Z"), x + (cw + 6) * 2, y + rowHeight * 3, 13);
+        label(g, net.minecraft.network.chat.Component.literal("X"), x, dimensionY + rowHeight, 13);
+        label(g, net.minecraft.network.chat.Component.literal("Y"), x + cw + 6, dimensionY + rowHeight, 13);
+        label(g, net.minecraft.network.chat.Component.literal("Z"), x + (cw + 6) * 2, dimensionY + rowHeight, 13);
         if (!editable()) label(g, MapTexts.text("locked_point"), x, panelY + panelHeight - 64, w);
     }
 }

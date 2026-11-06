@@ -17,6 +17,7 @@ import top.csituka.youzaiworldcore.map.MapDrawing;
 import top.csituka.youzaiworldcore.map.MapTileKey;
 import top.csituka.youzaiworldcore.map.MapVertex;
 import top.csituka.youzaiworldcore.map.MapWaypoint;
+import top.csituka.youzaiworldcore.map.MapWaypointGroup;
 
 import java.util.Comparator;
 import java.util.ArrayList;
@@ -169,18 +170,12 @@ public final class MapRenderer {
             var projected = point.projected(dimension, MapSettings.enabled(MapSettings.Toggle.PORTAL_PROJECTION));
             if (projected == null) continue;
             var p = view.screen(projected.x(), projected.z());
-            if (!MapShapes.contains(view, p.x(), p.y(), radius, 7)) continue;
+            if (!MapShapes.contains(view, p.x(), p.y(), radius, 10)) continue;
             int x = left + (int) p.x(), y = top + (int) p.y();
             int color = YzuiTheme.alpha(point.color(), opacity);
             if (MapSettings.enabled(MapSettings.Toggle.MARKER_ICONS)) {
-                String symbol = point.kind() == MapWaypoint.Kind.DEATH ? "×" : point.kind() == MapWaypoint.Kind.STRUCTURE ? "◆" : point.shared() ? "▣" : "●";
-                if (labels && point.kind() != MapWaypoint.Kind.DEATH && point.kind() != MapWaypoint.Kind.STRUCTURE) {
-                    RoundedRect.fill(g, x - 5, y - 7, 11, 11, 5, color);
-                    MapShapes.rawLine(g, x - 4, y + 1, x, y + 7, color, 2);
-                    MapShapes.rawLine(g, x + 4, y + 1, x, y + 7, color, 2);
-                    RoundedRect.fill(g, x - 1, y - 3, 3, 3, 1, YzuiTheme.background());
-                } else infoColored(g, symbol, x - 3, y - 4, color);
-                if (MapSettings.enabled(MapSettings.Toggle.QUICK_LOCATE) && point.id().equals(MapClient.navigation())) g.outline(x - 6, y - 6, 13, 13, color);
+                waypointIcon(g, point, x, y, opacity);
+                if (MapSettings.enabled(MapSettings.Toggle.QUICK_LOCATE) && point.id().equals(MapClient.navigation())) g.outline(x - 10, y - 10, 20, 20, color);
             }
             if (labels) markerLabel(g, view, left, top, p.x(), p.y(), MapTexts.waypoint(point).getString()
                     + (point.dimension().equals(dimension) ? "" : " ↔"), opacity);
@@ -295,6 +290,13 @@ public final class MapRenderer {
         g.text(Minecraft.getInstance().font, text, x, y, color, true);
     }
 
+    /** 地形底色不固定，图标使用主题底板与前景色，原路径点颜色保留在边框。 */
+    private static void waypointIcon(GuiGraphicsExtractor g, MapWaypoint point, int x, int y, float opacity) {
+        RoundedRect.fill(g, x - 9, y - 9, 18, 18, 4, YzuiTheme.alpha(YzuiTheme.background(), opacity));
+        YzuiTheme.border(g, x - 9, y - 9, 18, 18, 4, YzuiTheme.alpha(point.color(), opacity));
+        MapGroupIcons.render(g, MapWaypointGroup.of(point), x - 8, y - 8, 16, YzuiTheme.alpha(YzuiTheme.text(), opacity));
+    }
+
     /** 绘图预览与已保存标注使用相同绘制逻辑。 */
     public static void drawing(GuiGraphicsExtractor g, MapView view, int left, int top, int radius, MapDrawing drawing, float opacity, boolean selected) {
         int color = YzuiTheme.alpha(drawing.color(), opacity);
@@ -368,7 +370,7 @@ public final class MapRenderer {
             text = client.font.plainSubstrByWidth(text, Math.max(50, g.guiWidth() / 3));
             int tx = Math.clamp(x - client.font.width(text) / 2, 6, Math.max(6, g.guiWidth() - client.font.width(text) - 6));
             YzuiTheme.hudLabel(g, client.font, text, tx, y + 9, point.color(), opacity);
-            if (visible) { g.outline(x - 3, y - 3, 7, 7, YzuiTheme.alpha(point.color(), opacity)); }
+            if (visible) waypointIcon(g, point, x, y, opacity);
         }
     }
 

@@ -25,6 +25,7 @@ import top.csituka.youzaiworldcore.map.MapSampler;
 import top.csituka.youzaiworldcore.map.MapScanPattern;
 import top.csituka.youzaiworldcore.map.MapTileKey;
 import top.csituka.youzaiworldcore.map.MapWaypoint;
+import top.csituka.youzaiworldcore.map.MapWaypointGroup;
 import top.csituka.youzaiworldcore.network.MapActionPayload;
 import top.csituka.youzaiworldcore.network.MapActionResultPayload;
 import top.csituka.youzaiworldcore.network.MapLivePayload;
@@ -469,7 +470,7 @@ public final class MapClient {
         y = Math.clamp(y, -MapTileKey.WORLD_LIMIT, MapTileKey.WORLD_LIMIT);
         z = Math.clamp(z, -MapTileKey.WORLD_LIMIT, MapTileKey.WORLD_LIMIT);
         return new MapWaypoint(UUID.randomUUID(), player == null ? new UUID(0, 0) : player.getUUID(),
-                MapTexts.text("new_point").getString(), "", dimension, x, y, z, YzuiTheme.primary(), true, false,
+                MapTexts.text("new_point").getString(), MapWaypointGroup.OTHER.id(), dimension, x, y, z, YzuiTheme.primary(), true, false,
                 MapWaypoint.Kind.NORMAL, System.currentTimeMillis());
     }
 
