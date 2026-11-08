@@ -525,6 +525,7 @@ public final class MailApiClient {
                 json.add("item_nbt", JsonNull.INSTANCE);
             } else {
                 json.addProperty("item_nbt", attachment.itemNbt());
+                json.addProperty("data_version", attachment.effectiveDataVersion());
             }
             array.add(json);
         }
@@ -550,7 +551,8 @@ public final class MailApiClient {
             }
             String itemNbt = ApiHttp.stringValue(json, "item_nbt");
             attachments.add(new MailAttachment(type, ApiHttp.stringValue(json, "data"),
-                    ApiHttp.intValue(json, "amount", 0), itemNbt.isEmpty() ? null : itemNbt));
+                    ApiHttp.intValue(json, "amount", 0), itemNbt.isEmpty() ? null : itemNbt,
+                    ApiHttp.intValue(json, "data_version", 0)));
         }
         return attachments;
     }

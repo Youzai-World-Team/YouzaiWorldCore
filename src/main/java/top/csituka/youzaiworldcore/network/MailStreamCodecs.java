@@ -51,13 +51,15 @@ public final class MailStreamCodecs {
                         if (att.itemNbt() != null) {
                             buf.writeUtf(att.itemNbt());
                         }
+                        buf.writeVarInt(att.dataVersion());
                     },
                     buf -> {
                         AttachmentType type = EnumBufs.read(buf, AttachmentType.class);
                         String data = buf.readUtf();
                         int amount = buf.readVarInt();
                         String itemNbt = buf.readBoolean() ? buf.readUtf() : null;
-                        return new MailAttachment(type, data, amount, itemNbt);
+                        int dataVersion = buf.readVarInt();
+                        return new MailAttachment(type, data, amount, itemNbt, dataVersion);
                     }
             );
 

@@ -1,15 +1,12 @@
 package top.csituka.youzaiworldcore.util;
 
 import com.mojang.datafixers.DataFixer;
-import com.mojang.serialization.DataResult;
 import com.mojang.serialization.Dynamic;
 import net.minecraft.SharedConstants;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.Tag;
-import net.minecraft.resources.RegistryOps;
 import net.minecraft.util.datafix.fixes.References;
-import net.minecraft.world.item.ItemStack;
 
 /**
  * 模组自行持久化的物品 NBT 的版本升级工具。
@@ -47,20 +44,5 @@ public final class ItemStackNbtUpgrader {
         Tag upgraded = fixer.update(References.ITEM_STACK, new Dynamic<>(NbtOps.INSTANCE, tag), fromVersion, current)
                 .getValue();
         return upgraded instanceof CompoundTag compound ? compound : tag;
-    }
-
-    /**
-     * 解析没有版本记录的物品 NBT（如保存在 Api 服务端的邮件附件）。
-     * <p>
-     * 先按当前格式解析；失败时视为 {@link #LEGACY_DATA_VERSION} 写出的数据，升级后重试。
-     * 当前格式的数据不会被升级逻辑改动。
-     */
-    public static DataResult<ItemStack> parseUnversioned(DataFixer fixer, RegistryOps<Tag> ops, CompoundTag tag) {
-        DataResult<ItemStack> result = ItemStack.CODEC.parse(ops, tag);
-        if (result.isSuccess()) {
-            return result;
-        }
-        DataResult<ItemStack> upgraded = ItemStack.CODEC.parse(ops, upgrade(fixer, tag, LEGACY_DATA_VERSION));
-        return upgraded.isSuccess() ? upgraded : result;
     }
 }

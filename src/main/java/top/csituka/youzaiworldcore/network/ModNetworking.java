@@ -1532,7 +1532,8 @@ public class ModNetworking {
                     DebugLogger.error("ModNetworking", "序列化物品附件失败: %s", e.getMessage());
                 }
             }
-            return new MailAttachment(ad.type(), ad.data(), ad.amount(), itemNbt);
+            return new MailAttachment(ad.type(), ad.data(), ad.amount(), itemNbt,
+                    itemNbt == null ? 0 : top.csituka.youzaiworldcore.util.ItemStackNbtUpgrader.currentDataVersion());
         }).collect(java.util.stream.Collectors.toList());
     }
 }

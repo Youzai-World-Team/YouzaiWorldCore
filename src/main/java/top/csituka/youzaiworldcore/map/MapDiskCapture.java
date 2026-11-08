@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.map;
 
+import net.minecraft.SharedConstants;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ChunkMap;
 import net.minecraft.world.level.ChunkPos;
@@ -21,8 +23,9 @@ import java.util.regex.Pattern;
 
 /** 区块文件扫描与保存事件驱动的后台采集；从不加载、生成游戏区块或接收客户端地形。 */
 public final class MapDiskCapture implements AutoCloseable {
+    /** {@code fixContext} 为原版区块 DataFixer 需要的维度与生成器上下文，与 {@code ChunkMap.readChunk} 一致。 */
     private record Dimension(String id, Path directory, ChunkMap storage, LevelHeightAccessor height,
-                             PalettedContainerFactory factory, boolean ceiling, boolean sky) { }
+                             PalettedContainerFactory factory, boolean ceiling, boolean sky, CompoundTag fixContext) { }
     private record Position(String dimension, int x, int z) { }
     private record Region(Dimension dimension, Path file, int x, int z) { }
     private record Candidate(Position position, String stamp) { }
@@ -47,7 +50,8 @@ public final class MapDiskCapture implements AutoCloseable {
             if (id.equals("youzaiworldcore:login_hall")) continue;
             dimensions.put(id, new Dimension(id, DimensionType.getStorageFolder(level.dimension(), server.getWorldPath(LevelResource.ROOT)).resolve("region"),
                     level.getChunkSource().chunkMap, LevelHeightAccessor.create(level.getMinY(), level.getHeight()),
-                    level.palettedContainerFactory(), level.dimensionType().hasCeiling(), level.dimensionType().hasSkyLight()));
+                    level.palettedContainerFactory(), level.dimensionType().hasCeiling(), level.dimensionType().hasSkyLight(),
+                    ChunkMap.getChunkDataFixContextTag(level.dimension(), level.getChunkSource().getGenerator().getTypeNameForDataFixer())));
         }
         configure();
         worker.scheduleWithFixedDelay(this::run, 1, 1, TimeUnit.SECONDS);
@@ -136,7 +140,12 @@ public final class MapDiskCapture implements AutoCloseable {
         // SimpleRegionStorage.read 只返回磁盘或正在保存的 NBT，不进行区块加载/生成。
         var saved = dimension.storage().read(new ChunkPos(position.x(), position.z())).get(30, TimeUnit.SECONDS);
         if (saved.isEmpty() || closed) return true;
-        var data = SerializableChunkData.parse(dimension.height(), dimension.factory(), saved.get());
+        // read 返回的是磁盘原始 NBT；旧版本保存、尚未被游戏重新加载的区块需先按原版流程升级，
+        // 否则方块状态等格式变化（如 26.3 的 Name/Properties → id/properties）会导致解析失败。
+        // 升级结果只用于采集，不写回磁盘；区块下次被游戏加载保存时由原版写出新格式。
+        CompoundTag chunkTag = dimension.storage().upgradeChunkTag(saved.get(), -1, dimension.fixContext(),
+                SharedConstants.getCurrentVersion().dataVersion().version());
+        var data = SerializableChunkData.parse(dimension.height(), dimension.factory(), chunkTag);
         if (data == null || data.chunkStatus() != ChunkStatus.FULL) return true;
         if (data.chunkPos().x() != position.x() || data.chunkPos().z() != position.z()) throw new IOException("区块文件坐标不一致");
         var source = new MapSavedChunk(data, dimension.height().getMinY(), dimension.height().getHeight(), dimension.ceiling(), dimension.sky());

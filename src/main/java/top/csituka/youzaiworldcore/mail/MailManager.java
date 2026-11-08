@@ -179,10 +179,10 @@ public class MailManager {
                         if (att.itemNbt() == null || att.itemNbt().isEmpty())
                             break;
                         var tag = net.minecraft.nbt.TagParser.parseCompoundFully(att.itemNbt());
-                        // 附件没有版本记录：解析失败时按 26.2 数据升级后重试
-                        com.mojang.serialization.DataResult<ItemStack> result = ItemStackNbtUpgrader.parseUnversioned(
-                                server.getFixerUpper(),
-                                lookup.createSerializationContext(net.minecraft.nbt.NbtOps.INSTANCE), tag);
+                        // 按附件记录的数据版本用原版 DataFixer 升级（未记录时按 26.2 旧数据处理）
+                        com.mojang.serialization.DataResult<ItemStack> result = ItemStack.CODEC.parse(
+                                lookup.createSerializationContext(net.minecraft.nbt.NbtOps.INSTANCE),
+                                ItemStackNbtUpgrader.upgrade(server.getFixerUpper(), tag, att.effectiveDataVersion()));
                         result.error().ifPresent(error -> DebugLogger.warn(MODULE,
                                 "邮件物品附件无法解析，已跳过: mailId=%s, %s", mail.getId(), error.message()));
                         ItemStack stack = result.result().orElse(ItemStack.EMPTY);

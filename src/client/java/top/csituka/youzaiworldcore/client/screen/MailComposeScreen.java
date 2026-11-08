@@ -927,9 +927,10 @@ public class MailComposeScreen extends MailBaseScreen {
         try {
             var tag = TagParser.parseCompoundFully(attachment.itemNbt());
             var lookup = Minecraft.getInstance().level.registryAccess();
-            // 附件没有版本记录：解析失败时按 26.2 数据升级后重试
-            ItemStack stack = ItemStackNbtUpgrader.parseUnversioned(Minecraft.getInstance().getFixerUpper(),
-                    lookup.createSerializationContext(NbtOps.INSTANCE), tag)
+            // 按附件记录的数据版本用原版 DataFixer 升级（未记录时按 26.2 旧数据处理）
+            ItemStack stack = ItemStack.CODEC.parse(lookup.createSerializationContext(NbtOps.INSTANCE),
+                    ItemStackNbtUpgrader.upgrade(Minecraft.getInstance().getFixerUpper(), tag,
+                            attachment.effectiveDataVersion()))
                     .result().orElse(ItemStack.EMPTY);
             if (!stack.isEmpty()) {
                 stack.setCount(Math.min(Math.max(1, attachment.amount()), stack.getMaxStackSize()));
