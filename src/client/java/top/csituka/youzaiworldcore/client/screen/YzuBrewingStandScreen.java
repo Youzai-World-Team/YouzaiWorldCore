@@ -1,5 +1,6 @@
 package top.csituka.youzaiworldcore.client.screen;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
 
 import net.minecraft.ChatFormatting;
@@ -579,7 +580,7 @@ public class YzuBrewingStandScreen extends AbstractContainerScreen<BrewingStandM
     public boolean mouseClicked(@NonNull MouseButtonEvent event, boolean isActuallyClick) {
         int mouseX = (int) event.x();
         int mouseY = (int) event.y();
-        if (event.button() == 0) {
+        if (event.button() == InputConstants.MOUSE_BUTTON_LEFT) {
             if (this.guideOpen && this.guideSearchBox != null
                     && isInside(mouseX, mouseY,
                             this.guideSearchBox.getX(), this.guideSearchBox.getY(), SEARCH_W, SEARCH_H)) {

@@ -169,7 +169,7 @@ public class YzuInventoryScreen extends AbstractRecipeBookScreen<InventoryMenu> 
     @Override
     public boolean mouseClicked(@NonNull MouseButtonEvent ev, boolean real) {
         // Shift+左键 → 手势拖拽系统接管（单击=QUICK_MOVE，拖动=批量QUICK_MOVE）
-        if (ev.hasShiftDown() && ev.button() == 0) {
+        if (ev.hasShiftDown() && ContainerMouseButtons.of(ev) == 0) {
             Slot slot = getSlotAt((int) ev.x(), (int) ev.y());
             if (slot != null && getSlotIndex(slot) >= 0) {
                 gesturePending = true;
@@ -184,7 +184,7 @@ public class YzuInventoryScreen extends AbstractRecipeBookScreen<InventoryMenu> 
         }
         // 非Shift左键在槽位上：让标准系统处理点击（PICKUP/quickCraft），
         // 仅当空手拿起物品后进入合并手势待命
-        if (ev.button() == 0 && !ev.hasShiftDown()) {
+        if (ContainerMouseButtons.of(ev) == 0 && !ev.hasShiftDown()) {
             Slot slot = getSlotAt((int) ev.x(), (int) ev.y());
             if (slot != null && getSlotIndex(slot) >= 0) {
                 boolean wasEmpty = this.menu.getCarried().isEmpty();
@@ -212,11 +212,11 @@ public class YzuInventoryScreen extends AbstractRecipeBookScreen<InventoryMenu> 
                 // 先清理残留手势状态，避免与指示器交互互相干扰
                 resetGesture();
                 TrinketHelper.TrinketSlotInfo tsi = activeTrinketSlots.get(ti);
-                if (ev.hasShiftDown() && ev.button() == 0) {
+                if (ev.hasShiftDown() && ContainerMouseButtons.of(ev) == 0) {
                     // Shift+左键点击指示器：快捷移动槽位物品到物品栏
                     trinketQuickMove(tsi);
                 } else {
-                    trinketHandleClick(tsi, ev.button());
+                    trinketHandleClick(tsi, ContainerMouseButtons.of(ev));
                 }
                 return true;
             }
@@ -228,7 +228,7 @@ public class YzuInventoryScreen extends AbstractRecipeBookScreen<InventoryMenu> 
     @Override
     public boolean mouseDragged(@NonNull MouseButtonEvent ev, double dx, double dy) {
         // 仅截获我们自己发起的 gesture 拖拽
-        if (gesturePending && ev.button() == 0) {
+        if (gesturePending && ContainerMouseButtons.of(ev) == 0) {
             gesturePending = false;
             gestureDragging = true;
             gestureSlots.clear();
@@ -245,7 +245,7 @@ public class YzuInventoryScreen extends AbstractRecipeBookScreen<InventoryMenu> 
             }
             return true;
         }
-        if (gestureDragging && ev.button() == 0) {
+        if (gestureDragging && ContainerMouseButtons.of(ev) == 0) {
             Slot slot = getSlotAt((int) ev.x(), (int) ev.y());
             if (slot != null) {
                 int idx = getSlotIndex(slot);
@@ -263,7 +263,7 @@ public class YzuInventoryScreen extends AbstractRecipeBookScreen<InventoryMenu> 
     @Override
     public boolean mouseReleased(@NonNull MouseButtonEvent ev) {
         // 仅清理 gesture 状态后，仍让 super 处理标准系统的 state 重置（如 skipNextRelease）
-        if (ev.button() == 0) {
+        if (ContainerMouseButtons.of(ev) == 0) {
             if (gesturePending) {
                 gesturePending = false;
                 if (gestureMode == 2) {

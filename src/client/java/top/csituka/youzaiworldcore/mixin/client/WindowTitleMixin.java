@@ -21,7 +21,7 @@ public class WindowTitleMixin {
                 .getModContainer("youzaiworldcore")
                 .map(c -> c.getMetadata().getVersion().getFriendlyString())
                 .orElse("unknown");
-        return "Youzai World Server · Wanderer v" + version + " | [Minecraft JAVA 26.2]";
+        return "Youzai World Server · Wanderer v" + version + " | [Minecraft JAVA 26.3]";
     }
 
     /**

@@ -17,16 +17,19 @@ import java.util.List;
  * }
  * }</pre>
  * </p>
+ *
+ * @param latestVersion 最新版本号
+ * @param type          最新版本类型（indev / release 等），仅作展示
+ * @param forcedUpdate  是否强制更新（仅影响呈现严重度，不阻断游戏）
+ * @param releaseDate   发布日期，原样展示，如 "2026.7.19"
+ * @param releaseTime   发布时间，原样展示，如 "22:19:30"
+ * @param changelog     更新日志
  */
 public record RemoteVersionInfo(
         String latestVersion,
-        /** 最新版本类型（indev / release 等），仅作展示 */
         String type,
-        /** 是否强制更新（仅影响呈现严重度，不阻断游戏） */
         boolean forcedUpdate,
-        /** 发布日期，原样展示，如 "2026.7.19" */
         String releaseDate,
-        /** 发布时间，原样展示，如 "22:19:30" */
         String releaseTime,
         List<String> changelog
 ) {

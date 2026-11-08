@@ -1,5 +1,6 @@
 package top.csituka.youzaiworldcore.client.event;
 
+import java.net.URI;
 import net.fabricmc.fabric.api.event.player.UseEntityCallback;
 import net.minecraft.client.gui.screens.ConfirmLinkScreen;
 import net.minecraft.core.Holder;
@@ -24,7 +25,7 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
 public class MemePaintingClickHandler {
 
     /** 右键 meme_12 画时打开的链接 */
-    private static final String PAIMON_LINK = "https://ys.mihoyo.com/cloud";
+    private static final URI PAIMON_LINK = URI.create("https://ys.mihoyo.com/cloud");
 
     /**
      * 在 {@code Client.onInitializeClient()} 中调用一次即可。

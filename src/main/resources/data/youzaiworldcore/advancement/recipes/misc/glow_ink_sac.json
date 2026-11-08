@@ -4,7 +4,7 @@
     "has_the_recipe": {
       "trigger": "minecraft:recipe_unlocked",
       "conditions": {
-        "recipe": "youzaiworldcore:glow_ink_sac"
+        "recipes": "youzaiworldcore:glow_ink_sac"
       }
     },
     "has_glow_ink_sac": {

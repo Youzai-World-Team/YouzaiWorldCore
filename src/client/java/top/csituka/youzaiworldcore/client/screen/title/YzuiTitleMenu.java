@@ -1,5 +1,8 @@
 package top.csituka.youzaiworldcore.client.screen.title;
 
+import net.minecraft.util.Util;
+import java.net.URISyntaxException;
+import com.mojang.blaze3d.platform.InputConstants;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.client.Minecraft;
@@ -59,7 +62,7 @@ public final class YzuiTitleMenu {
 
         add(layout.join(), "title.youzaiworldcore.join_server", this::join, YzuiTheme.ButtonStyle.FILLED);
         add(layout.options(), "menu.options",
-                () -> minecraft.gui.setScreen(new OptionsScreen(screen, minecraft.options, false)), YzuiTheme.ButtonStyle.TONAL);
+                () -> minecraft.gui.setScreen(new OptionsScreen(screen, minecraft.options)), YzuiTheme.ButtonStyle.TONAL);
         add(layout.quit(), "menu.quit",
                 () -> minecraft.gui.setScreen(new QuitConfirmationScreen()), YzuiTheme.ButtonStyle.TEXT);
         if (ClientExternalSettings.isDevModeEnabled()) {
@@ -186,10 +189,10 @@ public final class YzuiTitleMenu {
         double offset = TitleScreenScrollState.getScrollOffset();
         int page = Math.max(12, TitleScreenScrollState.getViewportHeight() - font.lineHeight);
         switch (key) {
-            case 266 -> offset -= page;
-            case 267 -> offset += page;
-            case 268 -> offset = 0;
-            case 269 -> offset = max;
+            case InputConstants.KEY_PAGEUP -> offset -= page;
+            case InputConstants.KEY_PAGEDOWN -> offset += page;
+            case InputConstants.KEY_HOME -> offset = 0;
+            case InputConstants.KEY_END -> offset = max;
             default -> { return false; }
         }
         TitleScreenScrollState.setScrollOffset(offset);
@@ -238,7 +241,11 @@ public final class YzuiTitleMenu {
         UpdateResult result = visibleUpdate();
         if (result == null || result.downloadUrl() == null || result.downloadUrl().isBlank()) return;
         DebugLogger.info("YzuiTitleMenu", "显示更新下载链接确认");
-        ConfirmLinkScreen.confirmLinkNow(screen, result.downloadUrl());
+        try {
+            ConfirmLinkScreen.confirmLinkNow(screen, Util.parseAndValidateUntrustedUri(result.downloadUrl()));
+        } catch (URISyntaxException e) {
+            DebugLogger.warn("YzuiTitleMenu", "更新下载地址无效，已忽略：%s", result.downloadUrl());
+        }
     }
 
     private void ignore() {

@@ -80,7 +80,7 @@ public class DuplicateBlockEntityRenderer
 
         matrices.pushPose();
         matrices.translate(0.5f, INDICATOR_BOTTOM, 0.5f);
-        matrices.mulPose(cameraState.orientation);
+        matrices.rotate(cameraState.orientation);
         matrices.scale(INDICATOR_WIDTH, INDICATOR_HEIGHT, INDICATOR_WIDTH);
 
         // entityCutout 使用无剔除实体渲染状态，单个 billboard 四边形即可双面显示。

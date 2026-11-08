@@ -23,12 +23,12 @@ public record RegistrationEmailRequestPayload(Action action, String sessionId, S
     public static final StreamCodec<RegistryFriendlyByteBuf, RegistrationEmailRequestPayload> STREAM_CODEC = StreamCodec
             .of(
                     (buf, payload) -> {
-                        buf.writeEnum(payload.action);
+                        EnumBufs.write(buf, payload.action);
                         buf.writeUtf(payload.sessionId, 128);
                         buf.writeUtf(payload.value, 254);
                     },
                     buf -> new RegistrationEmailRequestPayload(
-                            buf.readEnum(Action.class), buf.readUtf(128), buf.readUtf(254)));
+                            EnumBufs.read(buf, Action.class), buf.readUtf(128), buf.readUtf(254)));
 
     public RegistrationEmailRequestPayload {
         if (action == null)

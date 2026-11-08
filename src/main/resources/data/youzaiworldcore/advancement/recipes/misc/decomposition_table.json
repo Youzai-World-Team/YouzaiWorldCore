@@ -4,7 +4,7 @@
     "has_the_recipe": {
       "trigger": "minecraft:recipe_unlocked",
       "conditions": {
-        "recipe": "youzaiworldcore:decomposition_table"
+        "recipes": "youzaiworldcore:decomposition_table"
       }
     },
     "has_yz_ingot": {

@@ -1,6 +1,5 @@
 package top.csituka.youzaiworldcore.block;
 
-import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySelector;
@@ -57,8 +56,6 @@ public class MobPressurePlateBlock extends BasePressurePlateBlock {
      */
     public static final BooleanProperty POWERED = BlockStateProperties.POWERED;
 
-    public static final MapCodec<MobPressurePlateBlock> CODEC = simpleCodec(MobPressurePlateBlock::new);
-
     /**
      * 构造生物感压板。
      * <p>
@@ -74,12 +71,6 @@ public class MobPressurePlateBlock extends BasePressurePlateBlock {
                 "type=STONE, sensitivity=MOBS(excluding Player)");
         this.registerDefaultState(this.stateDefinition.any().setValue(POWERED, Boolean.FALSE));
         DebugLogger.exiting("MobPressurePlateBlock", "constructor", "defaultState=powered=false");
-    }
-
-    @Override
-    @NonNull
-    protected MapCodec<? extends BasePressurePlateBlock> codec() {
-        return CODEC;
     }
 
     /**

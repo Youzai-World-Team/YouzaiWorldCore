@@ -4,7 +4,7 @@
     "has_the_recipe": {
       "trigger": "minecraft:recipe_unlocked",
       "conditions": {
-        "recipe": "youzaiworldcore:heart_of_guardianship"
+        "recipes": "youzaiworldcore:heart_of_guardianship"
       }
     },
     "has_heart_of_the_sea": {

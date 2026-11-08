@@ -1,6 +1,5 @@
 package top.csituka.youzaiworldcore.block;
 
-import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -44,20 +43,11 @@ public class WirelessRedstoneTransmitterBlock extends WirelessRedstoneComponentB
 
     private static final String MODULE = "WirelessRedstoneTransmitterBlock";
 
-    public static final MapCodec<WirelessRedstoneTransmitterBlock> CODEC =
-            simpleCodec(WirelessRedstoneTransmitterBlock::new);
-
     /** 响应延迟（tick 数）。1 = 与 vanilla 红石中继器最低档一致。 */
     private static final int TICK_DELAY = 1;
 
     public WirelessRedstoneTransmitterBlock(Properties properties) {
         super(properties);
-    }
-
-    @Override
-    @NonNull
-    protected MapCodec<? extends WirelessRedstoneTransmitterBlock> codec() {
-        return CODEC;
     }
 
     @Override

@@ -24,14 +24,14 @@ public record AttachmentData(
     public static final StreamCodec<RegistryFriendlyByteBuf, AttachmentData> STREAM_CODEC =
             StreamCodec.of(
                     (buf, p) -> {
-                        buf.writeEnum(p.type());
+                        EnumBufs.write(buf, p.type());
                         buf.writeUtf(p.data() != null ? p.data() : "");
                         buf.writeVarInt(p.amount());
                         ItemStack.OPTIONAL_STREAM_CODEC.encode(buf,
                                 p.itemStack() != null ? p.itemStack() : ItemStack.EMPTY);
                     },
                     buf -> {
-                        AttachmentType type = buf.readEnum(AttachmentType.class);
+                        AttachmentType type = EnumBufs.read(buf, AttachmentType.class);
                         String data = buf.readUtf();
                         int amount = buf.readVarInt();
                         ItemStack stack = ItemStack.OPTIONAL_STREAM_CODEC.decode(buf);

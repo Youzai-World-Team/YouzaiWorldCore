@@ -98,7 +98,7 @@ public class SeatEntity extends Entity {
                 .youzaiworldcore$setVehicle(this);
         addPassenger(player);
         // 手动同步乘客数据到客户端（addPassenger 不发送网络包）
-        ((ServerLevel) player.level()).getChunkSource()
+        player.level().getChunkSource()
                 .sendToTrackingPlayersAndSelf(this,
                         new ClientboundSetPassengersPacket(this));
         DebugLogger.info("SeatEntity", "Player %s mounted on seat at %s",

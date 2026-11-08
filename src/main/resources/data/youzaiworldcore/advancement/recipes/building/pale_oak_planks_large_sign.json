@@ -4,7 +4,7 @@
     "has_the_recipe": {
       "trigger": "minecraft:recipe_unlocked",
       "conditions": {
-        "recipe": "youzaiworldcore:pale_oak_planks_large_sign"
+        "recipes": "youzaiworldcore:pale_oak_planks_large_sign"
       }
     },
     "has_planks": {

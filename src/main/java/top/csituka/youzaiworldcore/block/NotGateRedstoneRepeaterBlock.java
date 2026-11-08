@@ -1,6 +1,5 @@
 package top.csituka.youzaiworldcore.block;
 
-import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -11,6 +10,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
+import net.minecraft.world.level.block.RedstoneWireBlock;
 import net.minecraft.world.level.block.SupportType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
@@ -22,6 +22,7 @@ import net.minecraft.world.level.redstone.Orientation;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
 /**
@@ -67,8 +68,6 @@ public class NotGateRedstoneRepeaterBlock extends HorizontalDirectionalBlock {
      */
     public static final BooleanProperty POWERED = BlockStateProperties.POWERED;
 
-    public static final MapCodec<NotGateRedstoneRepeaterBlock> CODEC = simpleCodec(NotGateRedstoneRepeaterBlock::new);
-
     /**
      * 薄板碰撞体积（{@code 16x16x2}），与原版红石中继器一致。
      * <p>
@@ -89,12 +88,6 @@ public class NotGateRedstoneRepeaterBlock extends HorizontalDirectionalBlock {
                 .setValue(POWERED, Boolean.TRUE));
         DebugLogger.exiting("NotGateRedstoneRepeaterBlock", "constructor",
                 "defaultState=facing=north,powered=true");
-    }
-
-    @Override
-    @NonNull
-    protected MapCodec<? extends HorizontalDirectionalBlock> codec() {
-        return CODEC;
     }
 
     @Override
@@ -295,13 +288,26 @@ public class NotGateRedstoneRepeaterBlock extends HorizontalDirectionalBlock {
         }
 
         if (inputState.is(net.minecraft.world.level.block.Blocks.REDSTONE_WIRE)) {
-            int wirePower = inputState.getValue(net.minecraft.world.level.block.RedStoneWireBlock.POWER);
+            int wirePower = inputState.getValue(RedstoneWireBlock.POWER);
             return Math.max(signal, wirePower);
         }
         return signal;
     }
 
     // 红石信号方法：作为"信号源"仅向贴图上方（FACING）输出
+
+    /**
+     * 红石线只连接输入端（{@code FACING} 反方向）与输出端（{@code FACING}）。
+     * <p>
+     * {@code direction == null} 表示上下方向的连接判断，元件只有水平输入输出，因此不连接；
+     * 该写法与原版 {@code RepeaterBlock} 一致。
+     */
+    @Override
+    protected boolean shouldRedstoneWireConnectTo(@NonNull BlockState state, @NonNull BlockGetter level,
+                                                  @NonNull BlockPos pos, @Nullable Direction direction) {
+        Direction facing = state.getValue(FACING);
+        return direction == facing || direction == facing.getOpposite();
+    }
 
     @Override
     protected boolean isSignalSource(@NonNull BlockState state) {

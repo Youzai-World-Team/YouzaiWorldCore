@@ -4,7 +4,7 @@
     "has_the_recipe": {
       "trigger": "minecraft:recipe_unlocked",
       "conditions": {
-        "recipe": "youzaiworldcore:void_staff"
+        "recipes": "youzaiworldcore:void_staff"
       }
     },
     "has_yz_ingot": {

@@ -1,11 +1,29 @@
 {
   "replace": false,
   "values": [
-    "sophisticatedbackpacks:backpack",
-    "sophisticatedbackpacks:copper_backpack",
-    "sophisticatedbackpacks:iron_backpack",
-    "sophisticatedbackpacks:gold_backpack",
-    "sophisticatedbackpacks:diamond_backpack",
-    "sophisticatedbackpacks:netherite_backpack"
+    {
+      "id": "sophisticatedbackpacks:backpack",
+      "required": false
+    },
+    {
+      "id": "sophisticatedbackpacks:copper_backpack",
+      "required": false
+    },
+    {
+      "id": "sophisticatedbackpacks:iron_backpack",
+      "required": false
+    },
+    {
+      "id": "sophisticatedbackpacks:gold_backpack",
+      "required": false
+    },
+    {
+      "id": "sophisticatedbackpacks:diamond_backpack",
+      "required": false
+    },
+    {
+      "id": "sophisticatedbackpacks:netherite_backpack",
+      "required": false
+    }
   ]
 }

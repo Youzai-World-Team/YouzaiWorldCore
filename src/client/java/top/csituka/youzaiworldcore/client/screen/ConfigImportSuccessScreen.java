@@ -1,5 +1,6 @@
 package top.csituka.youzaiworldcore.client.screen;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
 
 import net.minecraft.client.Minecraft;
@@ -91,7 +92,7 @@ public class ConfigImportSuccessScreen extends Screen implements YzuiPopupScreen
 
     @Override
     public boolean keyPressed(KeyEvent keyEvent) {
-        return keyEvent.key() == 256 || super.keyPressed(keyEvent);
+        return keyEvent.key() == InputConstants.KEY_ESCAPE || super.keyPressed(keyEvent);
     }
 
     @Override

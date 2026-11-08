@@ -4,7 +4,7 @@
     "has_the_recipe": {
       "trigger": "minecraft:recipe_unlocked",
       "conditions": {
-        "recipe": "youzaiworldcore:wireless_redstone_receiver"
+        "recipes": "youzaiworldcore:wireless_redstone_receiver"
       }
     },
     "has_amethyst_shard": {

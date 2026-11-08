@@ -1,6 +1,5 @@
 package top.csituka.youzaiworldcore.block;
 
-import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -38,17 +37,8 @@ public class WirelessRedstoneReceiverBlock extends WirelessRedstoneComponentBloc
 
     private static final String MODULE = "WirelessRedstoneReceiverBlock";
 
-    public static final MapCodec<WirelessRedstoneReceiverBlock> CODEC =
-            simpleCodec(WirelessRedstoneReceiverBlock::new);
-
     public WirelessRedstoneReceiverBlock(Properties properties) {
         super(properties);
-    }
-
-    @Override
-    @NonNull
-    protected MapCodec<? extends WirelessRedstoneReceiverBlock> codec() {
-        return CODEC;
     }
 
     @Override

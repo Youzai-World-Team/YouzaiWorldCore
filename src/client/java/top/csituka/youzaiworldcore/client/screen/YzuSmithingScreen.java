@@ -1,5 +1,6 @@
 package top.csituka.youzaiworldcore.client.screen;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
 
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -325,7 +326,7 @@ public class YzuSmithingScreen extends ItemCombinerScreen<SmithingMenu> {
 
     @Override
     public boolean mouseClicked(@NonNull MouseButtonEvent ev, boolean real) {
-        if (ev.button() == 0 && isOverCloseButton((int) ev.x(), (int) ev.y())) {
+        if (ev.button() == InputConstants.MOUSE_BUTTON_LEFT && isOverCloseButton((int) ev.x(), (int) ev.y())) {
             DebugLogger.info("YzuSmithingScreen", "点击关闭按钮，关闭锻造台: %s", this.title.getString());
             this.onClose();
             return true;

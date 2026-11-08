@@ -1,5 +1,6 @@
 package top.csituka.youzaiworldcore.mixin.client.inventory;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -139,7 +140,7 @@ public abstract class CreativeModeInventoryScreenMixin
         for (Slot slot : menu.slots) {
             CreativeItemGroups.Entry entry = youzaiworldcore$getGroupEntry(slot);
             if (entry != null && !entry.canTake() && isHovering(slot.x, slot.y, 16, 16, event.x(), event.y())) {
-                if (entry.header() && (event.button() == 0 || event.button() == 1)) {
+                if (entry.header() && (event.button() == InputConstants.MOUSE_BUTTON_LEFT || event.button() == InputConstants.MOUSE_BUTTON_RIGHT)) {
                     youzaiworldcore$toggleGroup(slot);
                 }
                 youzaiworldcore$consumedButton = event.button();
@@ -177,7 +178,7 @@ public abstract class CreativeModeInventoryScreenMixin
     @Inject(method = "keyPressed", at = @At("HEAD"), cancellable = true)
     private void youzaiworldcore$keyboardToggle(KeyEvent event, CallbackInfoReturnable<Boolean> cir) {
         CreativeItemGroups.Entry entry = youzaiworldcore$getGroupEntry(hoveredSlot);
-        if (entry != null && entry.header() && (event.key() == 257 || event.key() == 335 || event.key() == 32)) {
+        if (entry != null && entry.header() && (event.key() == InputConstants.KEY_RETURN || event.key() == InputConstants.KEY_NUMPADENTER || event.key() == InputConstants.KEY_SPACE)) {
             youzaiworldcore$toggleGroup(hoveredSlot);
             cir.setReturnValue(true);
         }

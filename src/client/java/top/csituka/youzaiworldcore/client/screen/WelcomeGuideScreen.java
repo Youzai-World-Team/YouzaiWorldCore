@@ -1,5 +1,6 @@
 package top.csituka.youzaiworldcore.client.screen;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
 
 import java.util.List;
@@ -402,7 +403,7 @@ public final class WelcomeGuideScreen extends Screen {
 
     @Override
     public boolean keyPressed(KeyEvent event) {
-        if (event.key() == 256) {
+        if (event.key() == InputConstants.KEY_ESCAPE) {
             return true;
         }
         return super.keyPressed(event);

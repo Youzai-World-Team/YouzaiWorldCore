@@ -1,6 +1,6 @@
 package top.csituka.youzaiworldcore.mixin.client;
 
-import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractScrollArea;
 import net.minecraft.resources.Identifier;
@@ -14,7 +14,7 @@ import top.csituka.youzaiworldcore.client.render.YzuiTheme;
 @Mixin(AbstractScrollArea.class)
 public class ScrollAreaYzuiMixin {
     @Redirect(method = "extractScrollbar", at = @At(value = "INVOKE",
-            target = "Lnet/minecraft/client/gui/GuiGraphicsExtractor;blitSprite(Lcom/mojang/blaze3d/pipeline/RenderPipeline;Lnet/minecraft/resources/Identifier;IIII)V"))
+            target = "Lnet/minecraft/client/gui/GuiGraphicsExtractor;blitSprite(Lcom/mojang/renderpearl/api/pipeline/RenderPipeline;Lnet/minecraft/resources/Identifier;IIII)V"))
     private void youzaiworldcore$scrollbar(GuiGraphicsExtractor g, RenderPipeline pipeline, Identifier sprite,
             int x, int y, int width, int height) {
         if (!YzuiTheme.enabled()) {

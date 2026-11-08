@@ -190,7 +190,7 @@ public class DoubleDoorsHandler {
         }
 
         if (player != null) {
-            player.swing(InteractionHand.MAIN_HAND);
+            player.swing(InteractionHand.MAIN_HAND, player.getMainHandItem().getInteractAnimation(), false);
         }
 
         DebugLogger.exiting(MODULE, "processDoor", "true (synced)");

@@ -1,9 +1,9 @@
 package top.csituka.youzaiworldcore.mixin.client;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.KeyboardHandler;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.input.KeyEvent;
-import org.lwjgl.glfw.GLFW;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -27,11 +27,9 @@ public class KeyboardHandlerMixin {
         int key = event.key();
         int action = keyOrAction;
 
-        if (key == GLFW.GLFW_KEY_F && action == GLFW.GLFW_PRESS) {
-            long window = minecraft.getWindow().handle();
-
-            boolean shiftPressed = GLFW.glfwGetKey(window, GLFW.GLFW_KEY_LEFT_SHIFT) == GLFW.GLFW_PRESS
-                    || GLFW.glfwGetKey(window, GLFW.GLFW_KEY_RIGHT_SHIFT) == GLFW.GLFW_PRESS;
+        if (key == InputConstants.KEY_F && action == InputConstants.PRESS) {
+            boolean shiftPressed = InputConstants.isKeyDown(InputConstants.KEY_LSHIFT)
+                    || InputConstants.isKeyDown(InputConstants.KEY_RSHIFT);
 
             if (shiftPressed) {
                 ci.cancel();

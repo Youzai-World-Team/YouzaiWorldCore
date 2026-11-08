@@ -9,12 +9,7 @@
             "items": "youzaiworldcore:fly_beacon"
           }
         ],
-        "player": [
-          {
-            "condition": "minecraft:reference",
-            "name": "youzaiworldcore:not_in_tutorial_dimension"
-          }
-        ]
+        "player": "youzaiworldcore:not_in_tutorial_dimension"
       }
     }
   },

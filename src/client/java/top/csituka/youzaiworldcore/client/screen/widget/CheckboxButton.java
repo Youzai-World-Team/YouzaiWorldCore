@@ -1,5 +1,6 @@
 package top.csituka.youzaiworldcore.client.screen.widget;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractWidget;
@@ -78,7 +79,7 @@ public class CheckboxButton extends AbstractWidget {
     @Override
     public boolean keyPressed(net.minecraft.client.input.KeyEvent event) {
         if (!active || !visible || !isFocused()) return false;
-        if (event.key() != 257 && event.key() != 335 && event.key() != 32) return false;
+        if (event.key() != InputConstants.KEY_RETURN && event.key() != InputConstants.KEY_NUMPADENTER && event.key() != InputConstants.KEY_SPACE) return false;
         playDownSound(Minecraft.getInstance().getSoundManager());
         checked = !checked;
         if (onToggle != null) onToggle.run();

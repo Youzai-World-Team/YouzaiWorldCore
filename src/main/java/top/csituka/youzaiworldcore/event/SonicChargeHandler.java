@@ -65,7 +65,7 @@ public class SonicChargeHandler {
             double strength = (level == 1) ? 0.4 : 0.7;
             Vec3 recoil = new Vec3(-look.x * strength, 0.15, -look.z * strength);
             player.setDeltaMovement(player.getDeltaMovement().add(recoil));
-            player.hurtMarked = true;
+            player.syncVelocity = true;
 
             DebugLogger.info(MODULE, "Sonic Charge Lv%d 后坐力: player=%s, strength=%.2f",
                     level, player.getName().getString(), strength);

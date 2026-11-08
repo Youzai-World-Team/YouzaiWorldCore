@@ -1,5 +1,6 @@
 package top.csituka.youzaiworldcore.client.screen;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
@@ -21,7 +22,7 @@ public interface YzuiMenuScreen {
 
     /** 在动画、下拉框和局部弹窗分发之前处理 Esc；受限页面保留原有流程。 */
     static boolean handleEscape(Screen screen, KeyEvent event) {
-        if (event.key() != 256 || !(screen instanceof YzuiMenuScreen menu)
+        if (event.key() != InputConstants.KEY_ESCAPE || !(screen instanceof YzuiMenuScreen menu)
                 || !menu.usesMenuOverlay() || !menu.canCloseMenu()) return false;
         menu.closeMenu();
         return true;

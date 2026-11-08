@@ -73,14 +73,14 @@ public class TechnoCrownFeatureRenderer<S extends LivingEntityRenderState, RM ex
                     model, state, stack,
                     RenderTypes.entityCutout(this.TEXTURE_BABY),
                     light, OverlayTexture.NO_OVERLAY,
-                    state.outlineColor, null
+                    state.outlineColor
             );
         } else {
             collector.submitModel(
                     model, state, stack,
                     RenderTypes.entityCutout(this.TEXTURE_ADULT),
                     light, OverlayTexture.NO_OVERLAY,
-                    state.outlineColor, null
+                    state.outlineColor
             );
         }
 

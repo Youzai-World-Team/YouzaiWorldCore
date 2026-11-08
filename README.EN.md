@@ -6,7 +6,7 @@
 
 <p align="center">
   <a href="https://github.com/Youzai-World-Team"><img src="https://img.shields.io/badge/Organization-Youzai_World_Team-blue?style=for-the-badge&logo=github" alt="Organization"></a>
-  <a><img src="https://img.shields.io/badge/Minecraft-Java_26.2-brightgreen?style=for-the-badge&logo=minecraft" alt="Minecraft Version"></a>
+  <a><img src="https://img.shields.io/badge/Minecraft-Java_26.3-brightgreen?style=for-the-badge&logo=minecraft" alt="Minecraft Version"></a>
   <a><img src="https://img.shields.io/badge/Mod_Loader-Fabric-orange?style=for-the-badge" alt="Mod Loader"></a>
   <a><img src="https://img.shields.io/badge/License-Apache_2.0-green?style=for-the-badge" alt="License"></a>
   <a href="https://nightly.link/Youzai-World-Team/YouzaiWorldCore/workflows/build/main/youzaiworldcore.zip"><img src="https://img.shields.io/badge/Download-Latest_Build-blue?style=for-the-badge&logo=githubactions" alt="Download Latest Build"></a>
@@ -30,7 +30,7 @@
 | **Survival Players**      | Use Youzai tools, advancement system, teleport anchors, sit interaction, mana staves, pets and attribute growth, the YZUI interface and trinket slots for gameplay |
 | **Mod Developers**        | Understand the mod architecture, extend functionality, or contribute code                                                                                          |
 
-> **Version note**: This mod targets Minecraft **Java 26.2**. From 26.1 onward Mojang adopted new naming/source conventions; the game jar is deobfuscated and can be decompiled directly for reference.
+> **Version note**: This mod targets Minecraft **Java 26.3**. From 26.1 onward Mojang adopted new naming/source conventions; the game jar is deobfuscated and can be decompiled directly for reference.
 
 ---
 
@@ -81,7 +81,7 @@ Fully redesigned Minecraft main menu via `TitleScreenMixin`: a left panel with c
 ### 4. Window Customization
 
 - **Custom Window Icon**: Loads `jar_icon.png` at runtime via Java ImageIO to replace taskbar and title bar icons
-- **Custom Window Title**: `WindowTitleMixin` intercepts `Window.setTitle()`, replacing the title with `Youzai World Server · Wanderer v<version> | [Minecraft JAVA 26.2]`
+- **Custom Window Title**: `WindowTitleMixin` intercepts `Window.setTitle()`, replacing the title with `Youzai World Server · Wanderer v<version> | [Minecraft JAVA 26.3]`
 - **Quit Confirmation**: `MinecraftQuitMixin` hijacks the window close event — clicking "Quit Game" on the title screen or the window X / Alt+F4 shows a confirmation dialog (`QuitConfirmationScreen`); the game only exits after confirmation
 - **Respawn Here**: Splits the vanilla respawn row into two half-width buttons in enabled dimensions. Respawning at the death position preserves inventory, does not consume a Heart of Guardianship, costs vanilla XP levels, and grants Resistance V for 10 seconds. The account-based cost is `floor(log2(current use number + 1)) + 5`, starting at 6 levels. Configure it in the `respawn_module` section of `yzwc/server/config/global_settings.json`; only `survival_world_pool` is enabled by default
 
@@ -943,18 +943,18 @@ All commands use `/yzwc` as the root command. Subcommands marked **(client comma
 
 | Dependency             | Version                                | Purpose                                                         |
 | ---------------------- | -------------------------------------- | --------------------------------------------------------------- |
-| Minecraft              | 26.2                                   | Engine                                                          |
-| Fabric Loader          | 0.19.3                                 | Mod loader                                                      |
-| Fabric API             | 0.154.0+26.2                           | Standard API                                                    |
-| ModMenu                | 20.0.0-beta.4                          | Mod menu integration                                            |
-| Placeholder API        | 3.1.0-beta.1+26.2                      | Text placeholders                                               |
-| Trinkets               | Exactly 4.1.0-rc.1+26.2 (`trinkets_updated`) | Trinket slot system (Feature 34 depends on it; hard dependency; beta.2 APIs are no longer supported) |
-| GeckoLib               | 5.5.3+                                 | Entity animation & model rendering (hard dependency)            |
+| Minecraft              | 26.3                                   | Engine                                                          |
+| Fabric Loader          | 0.20.1                                 | Mod loader                                                      |
+| Fabric API             | 0.165.2+26.3                           | Standard API                                                    |
+| ModMenu                | 21.0.0                                 | Mod menu integration                                            |
+| Placeholder API        | 3.2.0+26.3                             | Text placeholders                                               |
+| Trinkets               | Exactly 4.2.1+26.3 (`trinkets_updated`) | Trinket slot system (Feature 34 depends on it; hard dependency) |
+| GeckoLib               | 5.5.7+                                 | Entity animation & model rendering (hard dependency)            |
 | Moog's Structure Lib   | 3.0.4                                  | Declared dependency (referenced by village structure injection) |
 | Fabric Permissions API | 0.6.1 (bundled)                        | Cross-mod permission API                                        |
 | LuckPerms              | 5.5 (suggested runtime)                | Advanced permission control                                     |
 
-**Build Requirements**: JDK 25+ · Gradle (Fabric Loom 1.16-SNAPSHOT) · Mod version `1.20.5-indev`
+**Build Requirements**: JDK 25+ · Gradle 9.8.2 (Fabric Loom 1.19-SNAPSHOT) · Mod version `1.20.5-indev`
 
 **Build & CI/CD**: GitHub Actions workflow (`.github/workflows/build.yml`) auto-builds on Ubuntu / Windows / macOS with JDK 25, with automatic Linux artifact upload.
 

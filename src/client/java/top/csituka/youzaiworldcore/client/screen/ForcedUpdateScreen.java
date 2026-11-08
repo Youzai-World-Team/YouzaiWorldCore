@@ -1,5 +1,8 @@
 package top.csituka.youzaiworldcore.client.screen;
 
+import net.minecraft.util.Util;
+import java.net.URISyntaxException;
+import com.mojang.blaze3d.platform.InputConstants;
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
 import top.csituka.youzaiworldcore.client.render.YzuiBackdrop;
 
@@ -79,14 +82,14 @@ public class ForcedUpdateScreen extends Screen implements YzuiPopupScreen {
 
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean isActuallyClick) {
-        if (GuiAnimationController.isExiting(this) || event.button() != 0) return true;
+        if (GuiAnimationController.isExiting(this) || event.button() != InputConstants.MOUSE_BUTTON_LEFT) return true;
         return super.mouseClicked(event, isActuallyClick);
     }
 
     @Override
     public boolean keyPressed(KeyEvent keyEvent) {
         if (GuiAnimationController.isExiting(this)) return true;
-        if (keyEvent.key() == 256) { onBack(); return true; }
+        if (keyEvent.key() == InputConstants.KEY_ESCAPE) { onBack(); return true; }
         return super.keyPressed(keyEvent);
     }
 
@@ -117,7 +120,11 @@ public class ForcedUpdateScreen extends Screen implements YzuiPopupScreen {
             return;
         }
         DebugLogger.info("ForcedUpdateScreen", "显示下载页链接确认: %s", url);
-        ConfirmLinkScreen.confirmLinkNow(this, url);
+        try {
+            ConfirmLinkScreen.confirmLinkNow(this, Util.parseAndValidateUntrustedUri(url));
+        } catch (URISyntaxException e) {
+            LOGGER.warn("下载地址无效，已忽略：{}", url);
+        }
     }
 
     private void onBack() {

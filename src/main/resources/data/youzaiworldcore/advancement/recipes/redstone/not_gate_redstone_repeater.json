@@ -4,7 +4,7 @@
     "has_the_recipe": {
       "trigger": "minecraft:recipe_unlocked",
       "conditions": {
-        "recipe": "youzaiworldcore:not_gate_redstone_repeater"
+        "recipes": "youzaiworldcore:not_gate_redstone_repeater"
       }
     },
     "has_redstone_torch": {

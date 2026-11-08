@@ -18,10 +18,10 @@ public record MapSocialPayload(Action action, UUID target, boolean blacklist, Li
     }
     public static final StreamCodec<RegistryFriendlyByteBuf, MapSocialPayload> STREAM_CODEC = new StreamCodec<>() {
         @Override public MapSocialPayload decode(RegistryFriendlyByteBuf buf) {
-            return new MapSocialPayload(buf.readEnum(Action.class), buf.readUUID(), buf.readBoolean(), read(buf), read(buf), read(buf), buf.readUtf(64));
+            return new MapSocialPayload(EnumBufs.read(buf, Action.class), buf.readUUID(), buf.readBoolean(), read(buf), read(buf), read(buf), buf.readUtf(64));
         }
         @Override public void encode(RegistryFriendlyByteBuf buf, MapSocialPayload value) {
-            buf.writeEnum(value.action()); buf.writeUUID(value.target()); buf.writeBoolean(value.blacklist());
+            EnumBufs.write(buf, value.action()); buf.writeUUID(value.target()); buf.writeBoolean(value.blacklist());
             write(buf, value.allowed()); write(buf, value.blocked()); write(buf, value.incoming()); buf.writeUtf(value.result(), 64);
         }
         private List<UUID> read(RegistryFriendlyByteBuf buf) {

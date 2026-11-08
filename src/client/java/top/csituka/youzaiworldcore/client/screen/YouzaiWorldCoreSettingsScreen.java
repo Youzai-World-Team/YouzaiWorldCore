@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.client.screen;
 
+import java.net.URI;
+import com.mojang.blaze3d.platform.InputConstants;
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
 
 import net.minecraft.client.Minecraft;
@@ -473,7 +475,7 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
         for (DropdownButton popup : new DropdownButton[]{sectionDropdown, debugModeDropdown, logLevelDropdown, skipActionDropdown, guiAnimationDropdown}) {
             if (popup != null && popup.isOpen() && popup.keyPressed(keyEvent)) return true;
         }
-        if (keyEvent.key() == 256) { // ESC
+        if (keyEvent.key() == InputConstants.KEY_ESCAPE) { // ESC
             onClose();
             return true;
         }
@@ -1131,7 +1133,7 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
     private void openOssNotice() {
         String url = "https://github.com/Youzai-World-Team/YouzaiWorldCore/blob/main/NOTICE.txt";
         DebugLogger.info("SettingsScreen", "显示开源许可链接确认: %s", url);
-        ConfirmLinkScreen.confirmLinkNow(this, url);
+        ConfirmLinkScreen.confirmLinkNow(this, URI.create(url));
     }
 
     // ========== 换行文本渲染辅助 ==========

@@ -122,7 +122,7 @@ public final class DamageNumberRenderer {
 
             poseStack.pushPose();
             poseStack.translate(deltaX, deltaY, deltaZ);
-            poseStack.mulPose(camera.orientation);
+            poseStack.rotate(camera.orientation);
             poseStack.scale(scale, -scale, scale);
             collector.submitText(
                     poseStack,

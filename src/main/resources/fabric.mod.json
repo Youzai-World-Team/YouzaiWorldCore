@@ -70,13 +70,13 @@
   ],
   "accessWidener": "youzaiworldcore.client.accesswidener",
   "depends": {
-    "fabric-api": ">=0.154.0+26.2",
+    "fabric-api": ">=0.165.2+26.3",
     "minecraft": ">=${minecraft_version}",
-    "placeholder-api": ">=3.0.0",
-    "modmenu": ">=20.0.0-beta.4",
-    "moogs_structures": ">=3.0.4",
+    "placeholder-api": ">=3.2.0",
+    "modmenu": ">=21.0.0",
+    "moogs_structures": ">=3.4.2",
     "trinkets_updated": "=${trinkets_version}",
-    "geckolib": ">=5.5.3"
+    "geckolib": ">=5.5.7"
   },
   "suggests": {
     "luckperms": "*",

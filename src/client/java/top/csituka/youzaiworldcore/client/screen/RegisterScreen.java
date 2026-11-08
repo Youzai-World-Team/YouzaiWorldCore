@@ -1,5 +1,6 @@
 package top.csituka.youzaiworldcore.client.screen;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
 import top.csituka.youzaiworldcore.client.animation.GuiAnimationController;
 import top.csituka.youzaiworldcore.client.screen.widget.MenuCloseButton;
@@ -172,7 +173,7 @@ public class RegisterScreen extends Screen implements YzuiMenuScreen {
 
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean isActuallyClick) {
-        if (event.button() == 0 && previewCloseButton != null
+        if (event.button() == InputConstants.MOUSE_BUTTON_LEFT && previewCloseButton != null
                 && previewCloseButton.mouseClicked(event, isActuallyClick)) return true;
         if (currentDialog == null || !currentDialog.isVisible()) WidgetFocus.mouseFocus(event.x(), event.y(), interactiveWidgets());
         // 弹窗优先处理点击
@@ -226,7 +227,7 @@ public class RegisterScreen extends Screen implements YzuiMenuScreen {
         }
 
         // 拦截 ESC 键
-        if (keyEvent.key() == 256) { // GLFW_KEY_ESCAPE
+        if (keyEvent.key() == InputConstants.KEY_ESCAPE) { // GLFW_KEY_ESCAPE
             return true;
         }
 

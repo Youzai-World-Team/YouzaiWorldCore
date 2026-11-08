@@ -8,7 +8,7 @@
  */
 package top.csituka.youzaiworldcore.mixin.client;
 
-import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.Hud;
@@ -62,7 +62,7 @@ public abstract class HudMixin {
      */
     @Redirect(method = "extractHeart",
             at = @At(value = "INVOKE",
-                    target = "Lnet/minecraft/client/gui/GuiGraphicsExtractor;blitSprite(Lcom/mojang/blaze3d/pipeline/RenderPipeline;Lnet/minecraft/resources/Identifier;IIII)V"))
+                    target = "Lnet/minecraft/client/gui/GuiGraphicsExtractor;blitSprite(Lcom/mojang/renderpearl/api/pipeline/RenderPipeline;Lnet/minecraft/resources/Identifier;IIII)V"))
     private void onExtractHeart(GuiGraphicsExtractor graphics, RenderPipeline renderPipeline,
                                 Identifier icons, int x, int y, int width, int height) {
         SharedStorage.declareIconAt(x, y);
@@ -75,7 +75,7 @@ public abstract class HudMixin {
      */
     @Redirect(method = "extractArmor",
             at = @At(value = "INVOKE",
-                    target = "Lnet/minecraft/client/gui/GuiGraphicsExtractor;blitSprite(Lcom/mojang/blaze3d/pipeline/RenderPipeline;Lnet/minecraft/resources/Identifier;IIII)V"))
+                    target = "Lnet/minecraft/client/gui/GuiGraphicsExtractor;blitSprite(Lcom/mojang/renderpearl/api/pipeline/RenderPipeline;Lnet/minecraft/resources/Identifier;IIII)V"))
     private static void onExtractArmorPiece(GuiGraphicsExtractor graphics, RenderPipeline renderPipeline,
                                              Identifier icons, int x, int y, int width, int height) {
         SharedStorage.declareIconAt(x, y);
@@ -87,7 +87,7 @@ public abstract class HudMixin {
      */
     @Redirect(method = "extractFood",
             at = @At(value = "INVOKE",
-                    target = "Lnet/minecraft/client/gui/GuiGraphicsExtractor;blitSprite(Lcom/mojang/blaze3d/pipeline/RenderPipeline;Lnet/minecraft/resources/Identifier;IIII)V"))
+                    target = "Lnet/minecraft/client/gui/GuiGraphicsExtractor;blitSprite(Lcom/mojang/renderpearl/api/pipeline/RenderPipeline;Lnet/minecraft/resources/Identifier;IIII)V"))
     private void onExtractFoodIcon(GuiGraphicsExtractor graphics, RenderPipeline renderPipeline,
                                    Identifier icons, int x, int y, int width, int height) {
         SharedStorage.declareIconAt(x, y);
@@ -99,7 +99,7 @@ public abstract class HudMixin {
      */
     @Redirect(method = "extractVehicleHealth",
             at = @At(value = "INVOKE",
-                    target = "Lnet/minecraft/client/gui/GuiGraphicsExtractor;blitSprite(Lcom/mojang/blaze3d/pipeline/RenderPipeline;Lnet/minecraft/resources/Identifier;IIII)V"))
+                    target = "Lnet/minecraft/client/gui/GuiGraphicsExtractor;blitSprite(Lcom/mojang/renderpearl/api/pipeline/RenderPipeline;Lnet/minecraft/resources/Identifier;IIII)V"))
     private void onExtractVehicleHeart(GuiGraphicsExtractor graphics, RenderPipeline renderPipeline,
                                        Identifier icons, int x, int y, int width, int height) {
         SharedStorage.declareIconAt(x, y);

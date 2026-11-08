@@ -30,14 +30,14 @@ public record RegistrationEmailStatePayload(
     public static final StreamCodec<RegistryFriendlyByteBuf, RegistrationEmailStatePayload> STREAM_CODEC = StreamCodec
             .of(
                     (buf, payload) -> {
-                        buf.writeEnum(payload.state);
+                        EnumBufs.write(buf, payload.state);
                         buf.writeUtf(payload.sessionId, 128);
                         buf.writeUtf(payload.message, 512);
                         buf.writeVarInt(payload.expiresInSeconds);
                         buf.writeVarInt(payload.resendAfterSeconds);
                     },
                     buf -> new RegistrationEmailStatePayload(
-                            buf.readEnum(State.class),
+                            EnumBufs.read(buf, State.class),
                             buf.readUtf(128),
                             buf.readUtf(512),
                             buf.readVarInt(),

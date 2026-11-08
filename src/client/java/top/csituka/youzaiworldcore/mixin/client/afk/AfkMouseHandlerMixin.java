@@ -1,12 +1,12 @@
 package top.csituka.youzaiworldcore.mixin.client.afk;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.MouseHandler;
 import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.client.input.MouseButtonInfo;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
-import org.lwjgl.glfw.GLFW;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -29,8 +29,6 @@ import top.csituka.youzaiworldcore.client.afk.AfkInputTracker;
 @Mixin(MouseHandler.class)
 public class AfkMouseHandlerMixin {
     @Shadow private boolean ignoreFirstMove;
-    @Shadow private double xpos;
-    @Shadow private double ypos;
 
 
     @Inject(
@@ -43,7 +41,7 @@ public class AfkMouseHandlerMixin {
         if (window != mc.getWindow().handle() || !mc.getWindow().isFocused() || mc.player == null) {
             return;
         }
-        if (action != GLFW.GLFW_PRESS) {
+        if (action != InputConstants.PRESS) {
             return;
         }
         // 游戏外屏幕（暂停菜单 / 设置 / ModMenu 等）点击不算活动；
@@ -75,17 +73,19 @@ public class AfkMouseHandlerMixin {
     }
 
     @Inject(
-            method = "onMove(JDD)V",
+            method = "onMove(JDDDD)V",
             at = @At("HEAD")
     )
-    private void youzaiworldcore$onMove(long window, double x, double y, CallbackInfo ci) {
+    private void youzaiworldcore$onMove(long window, double x, double y,
+            double xrel, double yrel, CallbackInfo ci) {
         Minecraft mc = Minecraft.getInstance();
         if (window != mc.getWindow().handle() || !mc.getWindow().isFocused() || mc.player == null) {
             return;
         }
         // 关闭聊天框后重新捕获鼠标的首个移动由原版丢弃，此处同样忽略。
+        // 26.3 捕获鼠标时使用 SDL 相对模式，视角移动量在 xrel/yrel 中，不能再比较绝对坐标。
         if (!ignoreFirstMove && mc.mouseHandler.isMouseGrabbed()
-                && (x != xpos || y != ypos) && mc.gui.screen() == null) {
+                && (xrel != 0.0 || yrel != 0.0) && mc.gui.screen() == null) {
             AfkInputTracker.markInput();
         }
     }

@@ -1,6 +1,6 @@
 package top.csituka.youzaiworldcore.client.account;
 
-import com.mojang.authlib.minecraft.MinecraftSessionService;
+import com.mojang.authlib.minecraft.SessionService;
 import net.fabricmc.fabric.api.client.networking.v1.ClientLoginNetworking;
 import net.fabricmc.fabric.api.networking.v1.FriendlyByteBufs;
 import net.minecraft.client.Minecraft;
@@ -57,7 +57,7 @@ public final class OnlineUuidLoginClient {
 
         return CompletableFuture.supplyAsync(() -> {
             try {
-                MinecraftSessionService sessionService = client.services().sessionService();
+                SessionService sessionService = client.services().sessionService();
                 sessionService.joinServer(profileId, user.getAccessToken(), challenge);
                 FriendlyByteBuf response = FriendlyByteBufs.create();
                 response.writeUtf(challenge, MAX_TEXT_LENGTH);

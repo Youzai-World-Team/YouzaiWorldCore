@@ -32,7 +32,7 @@ public abstract class GuiRendererYzHudOpacityMixin {
             at = @At(
                     value = "INVOKE",
                     target = "Lnet/minecraft/client/renderer/state/gui/BlitRenderState;<init>"
-                            + "(Lcom/mojang/blaze3d/pipeline/RenderPipeline;"
+                            + "(Lcom/mojang/renderpearl/api/pipeline/RenderPipeline;"
                             + "Lnet/minecraft/client/gui/render/TextureSetup;"
                             + "Lorg/joml/Matrix3x2fc;IIIIFFFFI"
                             + "Lnet/minecraft/client/gui/navigation/ScreenRectangle;"

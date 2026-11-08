@@ -1,5 +1,6 @@
 package top.csituka.youzaiworldcore.client.screen.widget;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.client.Minecraft;
@@ -147,9 +148,9 @@ public class ConfirmationDialog {
 
     public boolean keyPressed(KeyEvent event) {
         if (!isFullyVisible()) return isVisible();
-        if (event.key() == 256 && cancelButton != null) cancelButton.onClick(null, false);
-        else if (event.key() == 264 || event.key() == 265) {
-            scrollLine = Math.clamp(scrollLine + (event.key() == 264 ? 1 : -1), 0, maxScrollLine());
+        if (event.key() == InputConstants.KEY_ESCAPE && cancelButton != null) cancelButton.onClick(null, false);
+        else if (event.key() == InputConstants.KEY_DOWN || event.key() == InputConstants.KEY_UP) {
+            scrollLine = Math.clamp(scrollLine + (event.key() == InputConstants.KEY_DOWN ? 1 : -1), 0, maxScrollLine());
         } else WidgetFocus.keyPressed(event, singleButtonMode ? List.of(confirmButton) : List.of(confirmButton, cancelButton));
         return true;
     }

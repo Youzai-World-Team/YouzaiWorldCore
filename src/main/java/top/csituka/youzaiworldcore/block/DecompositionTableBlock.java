@@ -1,6 +1,5 @@
 package top.csituka.youzaiworldcore.block;
 
-import com.mojang.serialization.MapCodec;
 import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -39,8 +38,6 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
 @SuppressWarnings("null")
 public class DecompositionTableBlock extends BaseEntityBlock {
 
-    public static final MapCodec<DecompositionTableBlock> CODEC = simpleCodec(DecompositionTableBlock::new);
-
     /**
      * 方块朝向属性，值为四个水平方向之一（NORTH / SOUTH / EAST / WEST）。
      * 正面（main_around 贴图）始终朝向该方向。
@@ -52,12 +49,6 @@ public class DecompositionTableBlock extends BaseEntityBlock {
         DebugLogger.entering("DecompositionTableBlock", "constructor");
         this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
         DebugLogger.exiting("DecompositionTableBlock", "constructor");
-    }
-
-    @Override
-    @NonNull
-    protected MapCodec<? extends BaseEntityBlock> codec() {
-        return CODEC;
     }
 
     @Override

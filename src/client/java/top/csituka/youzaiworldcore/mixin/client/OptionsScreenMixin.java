@@ -20,6 +20,7 @@ import net.minecraft.network.chat.contents.TranslatableContents;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -43,7 +44,8 @@ import java.util.List;
 @Mixin(OptionsScreen.class)
 public class OptionsScreenMixin {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/OptionsScreenMixin");
+    @Unique
+    private static final Logger youzaiworldcore$LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/OptionsScreenMixin");
     private static final String MODS_SCREEN_CLASS = "com.terraformersmc.modmenu.gui.ModsScreen";
     private static boolean modMenuChecked = false;
     private static Class<?> modsScreenClass = null;
@@ -164,10 +166,10 @@ public class OptionsScreenMixin {
 
             reflectionReady = true;
             if (ClientExternalSettings.getLogLevel() > 0) {
-                LOGGER.info("Reflection fields initialized for GridLayout manipulation");
+                youzaiworldcore$LOGGER.info("Reflection fields initialized for GridLayout manipulation");
             }
         } catch (ReflectiveOperationException e) {
-            LOGGER.error("Failed to initialize reflection for GridLayout manipulation", e);
+            youzaiworldcore$LOGGER.error("Failed to initialize reflection for GridLayout manipulation", e);
         }
     }
 
@@ -190,9 +192,9 @@ public class OptionsScreenMixin {
                     return grid;
                 }
             }
-            LOGGER.warn("GridLayout not found in layout hierarchy");
+            youzaiworldcore$LOGGER.warn("GridLayout not found in layout hierarchy");
         } catch (ReflectiveOperationException e) {
-            LOGGER.error("Failed to find GridLayout", e);
+            youzaiworldcore$LOGGER.error("Failed to find GridLayout", e);
         }
         return null;
     }
@@ -232,14 +234,14 @@ public class OptionsScreenMixin {
                     gridList.set(i, newContainer);
 
                     if (ClientExternalSettings.getLogLevel() > 0) {
-                        LOGGER.debug("Replaced telemetry button with mods button in GridLayout at (col={}, row={})", col, row);
+                        youzaiworldcore$LOGGER.debug("Replaced telemetry button with mods button in GridLayout at (col={}, row={})", col, row);
                     }
                     return true;
                 }
             }
-            LOGGER.warn("Telemetry button not found in GridLayout children");
+            youzaiworldcore$LOGGER.warn("Telemetry button not found in GridLayout children");
         } catch (ReflectiveOperationException e) {
-            LOGGER.error("Failed to replace button in GridLayout", e);
+            youzaiworldcore$LOGGER.error("Failed to replace button in GridLayout", e);
         }
         return false;
     }
@@ -297,7 +299,7 @@ public class OptionsScreenMixin {
                     it.remove();
                     removed = true;
                     if (ClientExternalSettings.getLogLevel() > 0) {
-                        LOGGER.debug("Removed widget from header horizontal layout: {}",
+                        youzaiworldcore$LOGGER.debug("Removed widget from header horizontal layout: {}",
                                 extractTranslationKey(widget.getMessage()));
                     }
                 }
@@ -305,7 +307,7 @@ public class OptionsScreenMixin {
 
             return removed;
         } catch (ReflectiveOperationException e) {
-            LOGGER.error("Failed to remove widgets from header layout", e);
+            youzaiworldcore$LOGGER.error("Failed to remove widgets from header layout", e);
         }
         return false;
     }
@@ -358,12 +360,12 @@ public class OptionsScreenMixin {
             horizontalGrid.addChild(settingsButton, 0, 0);
 
             if (ClientExternalSettings.getLogLevel() > 0) {
-                LOGGER.debug("Added YouzaiWorldCore settings button to header");
+                youzaiworldcore$LOGGER.debug("Added YouzaiWorldCore settings button to header");
             }
             DebugLogger.info("OptionsScreenMixin", "已在选项页表头添加 YouzaiWorldCore 设置按钮");
             return settingsButton;
         } catch (ReflectiveOperationException e) {
-            LOGGER.error("Failed to add settings button to header", e);
+            youzaiworldcore$LOGGER.error("Failed to add settings button to header", e);
         }
         return null;
     }
@@ -427,7 +429,7 @@ public class OptionsScreenMixin {
         if (telemetryBtn == null) return;
 
         if (!ensureModMenuLoaded()) {
-            LOGGER.warn("ModMenu not found, cannot replace telemetry button with mods button");
+            youzaiworldcore$LOGGER.warn("ModMenu not found, cannot replace telemetry button with mods button");
             return;
         }
 
@@ -476,7 +478,7 @@ public class OptionsScreenMixin {
             narratables.remove((Object) child);
         }
         if (!modAddedToRemove.isEmpty() && ClientExternalSettings.getLogLevel() > 0) {
-            LOGGER.info("Removed {} mod-added option buttons from OptionsScreen", modAddedToRemove.size());
+            youzaiworldcore$LOGGER.info("Removed {} mod-added option buttons from OptionsScreen", modAddedToRemove.size());
         }
 
         // ============ 7. 如果修改了布局，触发重新布局 ============
@@ -500,7 +502,7 @@ public class OptionsScreenMixin {
             modsScreenClass.getConstructor(Screen.class);
             return true;
         } catch (ClassNotFoundException | NoSuchMethodException e) {
-            LOGGER.warn("ModMenu not found: {}", e.getMessage());
+            youzaiworldcore$LOGGER.warn("ModMenu not found: {}", e.getMessage());
             modsScreenClass = null;
             return false;
         }
@@ -513,7 +515,7 @@ public class OptionsScreenMixin {
                     .newInstance(parent);
             minecraft.gui.setScreen(modsScreen);
         } catch (ReflectiveOperationException e) {
-            LOGGER.error("Failed to open ModMenu ModsScreen", e);
+            youzaiworldcore$LOGGER.error("Failed to open ModMenu ModsScreen", e);
         }
     }
 

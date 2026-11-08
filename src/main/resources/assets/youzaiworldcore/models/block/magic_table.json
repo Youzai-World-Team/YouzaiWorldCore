@@ -1,6 +1,7 @@
 {
   "parent": "minecraft:block/cube",
   "textures": {
+    "particle": "youzaiworldcore:block/magic_table_side1",
     "up": "youzaiworldcore:block/magic_table_top",
     "down": "youzaiworldcore:block/magic_table_bottom",
     "north": "youzaiworldcore:block/magic_table_side1",

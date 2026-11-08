@@ -1,5 +1,6 @@
 package top.csituka.youzaiworldcore.client.screen;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
 
 import net.minecraft.client.Minecraft;
@@ -421,8 +422,8 @@ public final class YzHudSettingsScreen extends Screen {
 
     @Override
     public boolean keyPressed(KeyEvent event) {
-        if (event.key() == 257 || event.key() == 335) { saveAndClose(); return true; }
-        if (event.key() == 256) { onClose(); return true; }
+        if (event.key() == InputConstants.KEY_RETURN || event.key() == InputConstants.KEY_NUMPADENTER) { saveAndClose(); return true; }
+        if (event.key() == InputConstants.KEY_ESCAPE) { onClose(); return true; }
         return super.keyPressed(event);
     }
 

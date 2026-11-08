@@ -1,5 +1,6 @@
 package top.csituka.youzaiworldcore.client.screen.element;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.client.Minecraft;
@@ -56,7 +57,7 @@ public class MainMenuElements implements MenuElementGroup {
                 () -> screen.switchTo(new AboutMeMenuElements()),
                 () -> screen.startExit(() -> Minecraft.getInstance().setScreenAndShow(new TitleManagementScreen(screen))),
                 () -> screen.switchTo(new SettingsMenuElements()),
-                () -> ConfirmLinkScreen.confirmLinkNow(screen, "https://mcyzw.top"),
+                () -> ConfirmLinkScreen.confirmLinkNow(screen, URI.create("https://mcyzw.top")),
                 () -> showNotImplementedDialog(screen), () -> showNotImplementedDialog(screen),
                 () -> showNotImplementedDialog(screen), () -> showNotImplementedDialog(screen),
                 () -> showNotImplementedDialog(screen)

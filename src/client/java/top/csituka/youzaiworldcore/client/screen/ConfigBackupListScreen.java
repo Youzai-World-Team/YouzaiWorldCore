@@ -1,5 +1,6 @@
 package top.csituka.youzaiworldcore.client.screen;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
 
 import net.minecraft.client.Minecraft;
@@ -150,7 +151,7 @@ public class ConfigBackupListScreen extends Screen {
     @Override
     public boolean keyPressed(KeyEvent keyEvent) {
         if (importInProgress) return true;
-        if (keyEvent.key() == 256) { // ESC
+        if (keyEvent.key() == InputConstants.KEY_ESCAPE) { // ESC
             onBack();
             return true;
         }

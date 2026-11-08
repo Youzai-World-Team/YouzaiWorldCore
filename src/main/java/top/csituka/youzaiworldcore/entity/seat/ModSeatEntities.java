@@ -52,7 +52,7 @@ public class ModSeatEntities {
         ResourceKey<EntityType<?>> key = ResourceKey.create(Registries.ENTITY_TYPE, id);
         EntityType<T> type = builder.build(key);
         DebugLogger.info("ModSeatEntities", "Registering entity: " + id);
-        return (EntityType<T>) Registry.register(BuiltInRegistries.ENTITY_TYPE, key, type);
+        return Registry.register(BuiltInRegistries.ENTITY_TYPE, key, type);
     }
 
     /**

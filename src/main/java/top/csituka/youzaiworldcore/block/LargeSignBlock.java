@@ -1,6 +1,5 @@
 package top.csituka.youzaiworldcore.block;
 
-import com.mojang.serialization.MapCodec;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.advancements.triggers.CriteriaTriggers;
 import net.minecraft.core.BlockPos;
@@ -81,8 +80,6 @@ import java.util.Map;
 @SuppressWarnings({ "null", "deprecation" })
 public class LargeSignBlock extends BaseEntityBlock implements SimpleWaterloggedBlock {
 
-    public static final MapCodec<LargeSignBlock> CODEC = simpleCodec(LargeSignBlock::new);
-
     /** 字牌朝向：牌面法线方向（背面贴着支撑方块）。 */
     public static final EnumProperty<Direction> FACING = BlockStateProperties.HORIZONTAL_FACING;
 
@@ -105,12 +102,6 @@ public class LargeSignBlock extends BaseEntityBlock implements SimpleWaterlogged
         this.registerDefaultState(this.stateDefinition.any()
                 .setValue(FACING, Direction.NORTH)
                 .setValue(WATERLOGGED, false));
-    }
-
-    @Override
-    @NonNull
-    protected MapCodec<? extends BaseEntityBlock> codec() {
-        return CODEC;
     }
 
     @Override
@@ -379,8 +370,9 @@ public class LargeSignBlock extends BaseEntityBlock implements SimpleWaterlogged
                     if (!sign.setWaxed(true)) {
                         return false;
                     }
-                    // 与原版涂蜡一致：播放蜡层生成的粒子与音效
-                    level.levelEvent(null, LevelEvent.PARTICLES_AND_SOUND_WAX_ON, pos, 0);
+                    // 与原版涂蜡一致：26.3 的 3003 事件只含粒子，音效需单独播放
+                    level.levelEvent(null, LevelEvent.PARTICLES_WAX_ON, pos, 0);
+                    level.playSound(null, pos, SoundEvents.HONEYCOMB_WAX_ON, SoundSource.BLOCKS, 1.0f, 1.0f);
                     return true;
                 }
             }

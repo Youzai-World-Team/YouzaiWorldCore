@@ -1,5 +1,6 @@
 package top.csituka.youzaiworldcore.client.screen.map;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.EditBox;
@@ -7,7 +8,6 @@ import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
-import org.lwjgl.glfw.GLFW;
 import top.csituka.youzaiworldcore.client.map.MapClient;
 import top.csituka.youzaiworldcore.client.map.MapCoordinates;
 import top.csituka.youzaiworldcore.client.map.MapGroupIcons;
@@ -288,8 +288,8 @@ final class MapWaypointPanel extends MapOverlayPanel {
             else super.onClick(event, actual);
         }
         @Override public boolean keyPressed(KeyEvent event) {
-            if (isFocused() && branch.root() && (event.key() == GLFW.GLFW_KEY_LEFT || event.key() == GLFW.GLFW_KEY_RIGHT)) {
-                if (expanded.contains(branch.dimension()) != (event.key() == GLFW.GLFW_KEY_RIGHT)) toggleBranch(branch);
+            if (isFocused() && branch.root() && (event.key() == InputConstants.KEY_LEFT || event.key() == InputConstants.KEY_RIGHT)) {
+                if (expanded.contains(branch.dimension()) != (event.key() == InputConstants.KEY_RIGHT)) toggleBranch(branch);
                 return true;
             }
             return super.keyPressed(event);
@@ -348,7 +348,7 @@ final class MapWaypointPanel extends MapOverlayPanel {
     }
     private static String date(MapWaypoint point) { return point.createdAt() <= 0 ? "—" : DATE.format(Instant.ofEpochMilli(point.createdAt()).atZone(ZoneId.systemDefault())); }
     @Override public boolean mouseClicked(MouseButtonEvent event, boolean actual) {
-        if (view == View.LIST && event.button() == 1 && event.x() >= listX && event.x() < listX + listWidth && event.y() >= listTop && event.y() < listBottom) {
+        if (view == View.LIST && event.button() == InputConstants.MOUSE_BUTTON_RIGHT && event.x() >= listX && event.x() < listX + listWidth && event.y() >= listTop && event.y() < listBottom) {
             int row = (int) (event.y() - listTop) / rowHeight;
             if (row < visiblePoints.size()) { selected = visiblePoints.get(row).id(); view = View.ACTIONS; deleteArmed = false; init(); return true; }
         }

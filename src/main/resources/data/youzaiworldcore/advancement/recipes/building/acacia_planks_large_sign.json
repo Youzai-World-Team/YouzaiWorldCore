@@ -4,7 +4,7 @@
     "has_the_recipe": {
       "trigger": "minecraft:recipe_unlocked",
       "conditions": {
-        "recipe": "youzaiworldcore:acacia_planks_large_sign"
+        "recipes": "youzaiworldcore:acacia_planks_large_sign"
       }
     },
     "has_planks": {

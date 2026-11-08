@@ -1,6 +1,6 @@
 package top.csituka.youzaiworldcore.mixin.client;
 
-import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.LoadingOverlay;
 import net.minecraft.resources.Identifier;
@@ -38,7 +38,7 @@ public class LoadingOverlayMixin {
     }
 
     @Redirect(method = "extractRenderState", at = @At(value = "INVOKE", ordinal = 0,
-            target = "Lnet/minecraft/client/gui/GuiGraphicsExtractor;blit(Lcom/mojang/blaze3d/pipeline/RenderPipeline;Lnet/minecraft/resources/Identifier;IIFFIIIIIII)V"))
+            target = "Lnet/minecraft/client/gui/GuiGraphicsExtractor;blit(Lcom/mojang/renderpearl/api/pipeline/RenderPipeline;Lnet/minecraft/resources/Identifier;IIFFIIIIIII)V"))
     private void youzaiworldcore$loadingCard(GuiGraphicsExtractor g, RenderPipeline pipeline, Identifier logo,
             int x, int y, float u, float v, int width, int height, int sourceWidth, int sourceHeight,
             int textureWidth, int textureHeight, int color) {
@@ -51,7 +51,7 @@ public class LoadingOverlayMixin {
     }
 
     @Redirect(method = "extractRenderState", at = @At(value = "INVOKE", ordinal = 1,
-            target = "Lnet/minecraft/client/gui/GuiGraphicsExtractor;blit(Lcom/mojang/blaze3d/pipeline/RenderPipeline;Lnet/minecraft/resources/Identifier;IIFFIIIIIII)V"))
+            target = "Lnet/minecraft/client/gui/GuiGraphicsExtractor;blit(Lcom/mojang/renderpearl/api/pipeline/RenderPipeline;Lnet/minecraft/resources/Identifier;IIFFIIIIIII)V"))
     private void youzaiworldcore$skipSecondLogo(GuiGraphicsExtractor g, RenderPipeline pipeline, Identifier logo,
             int x, int y, float u, float v, int width, int height, int sourceWidth, int sourceHeight,
             int textureWidth, int textureHeight, int color) {

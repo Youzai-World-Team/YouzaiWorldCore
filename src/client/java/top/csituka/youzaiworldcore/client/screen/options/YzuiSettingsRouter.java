@@ -15,7 +15,7 @@ import net.minecraft.client.gui.screens.options.InWorldGameRulesScreen;
 import net.minecraft.client.gui.screens.options.OptionsScreen;
 import net.minecraft.client.gui.screens.options.OptionsSubScreen;
 import net.minecraft.client.gui.screens.options.VideoSettingsScreen;
-import net.minecraft.client.gui.screens.options.WorldOptionsScreen;
+import net.minecraft.client.gui.screens.WorldOptionsScreen;
 import net.minecraft.client.gui.screens.options.UnsupportedGraphicsWarningScreen;
 import net.minecraft.client.gui.screens.packs.PackSelectionScreen;
 import net.minecraft.client.gui.screens.telemetry.TelemetryInfoScreen;
@@ -41,8 +41,7 @@ public final class YzuiSettingsRouter {
                 OptionsScreen options = (OptionsScreen) target;
                 Screen parent = options.getLastScreen();
                 if (parent instanceof YzuiOptionsScreen settings) parent = settings.origin();
-                return new OptionsScreen(parent, Minecraft.getInstance().options,
-                        SettingsWidgets.read(options, "inWorld", Boolean.class));
+                return new OptionsScreen(parent, Minecraft.getInstance().options);
             }
             return target;
         }
@@ -64,7 +63,7 @@ public final class YzuiSettingsRouter {
             // 第三方页面可能只保存了原版父屏幕；即便旧外壳已被 GC，也恢复到 MD3 页面。
             if (link.options) {
                 Screen source = link.unified && !(target instanceof OptionsScreen)
-                        ? new OptionsScreen(link.origin, Minecraft.getInstance().options, link.inWorld) : target;
+                        ? new OptionsScreen(link.origin, Minecraft.getInstance().options) : target;
                 YzuiOptionsScreen restored = new YzuiOptionsScreen(source, link.origin, link.inWorld);
                 if (link.unified) restored.reveal(link.anchor);
                 return restored;
@@ -73,10 +72,10 @@ public final class YzuiSettingsRouter {
 
         if (target.getClass() == OptionsScreen.class) {
             OptionsScreen original = (OptionsScreen) target;
-            boolean inWorld = SettingsWidgets.read(original, "inWorld", Boolean.class);
+            boolean inWorld = Minecraft.getInstance().level != null;
             // 从 ModMenu 开启 YZUI 后，已初始化的原版首页可能仍缺少旧逻辑隐藏的项目。
             OptionsScreen source = original.children().isEmpty() ? original
-                    : new OptionsScreen(original.getLastScreen(), Minecraft.getInstance().options, inWorld);
+                    : new OptionsScreen(original.getLastScreen(), Minecraft.getInstance().options);
             YzuiOptionsScreen host = new YzuiOptionsScreen(source, original.getLastScreen(), inWorld);
             if (source != original) remember(original, host);
             return host;
@@ -85,7 +84,7 @@ public final class YzuiSettingsRouter {
             if (UnifiedSettingsPage.contains(target)) {
                 YzuiOptionsScreen root = parent.rootSettings();
                 if (root == null) root = new YzuiOptionsScreen(
-                        new OptionsScreen(parent.origin(), Minecraft.getInstance().options, parent.inWorld()), parent.origin(), parent.inWorld());
+                        new OptionsScreen(parent.origin(), Minecraft.getInstance().options), parent.origin(), parent.inWorld());
                 root.reveal(UnifiedSettingsPage.anchor(target));
                 remember(target, root);
                 return root;
@@ -102,7 +101,7 @@ public final class YzuiSettingsRouter {
             Screen origin = SettingsWidgets.read(target, "lastScreen", Screen.class);
             boolean inWorld = Minecraft.getInstance().level != null;
             YzuiOptionsScreen root = origin instanceof YzuiOptionsScreen parent ? parent.rootSettings() : null;
-            if (root == null) root = new YzuiOptionsScreen(new OptionsScreen(origin, Minecraft.getInstance().options, inWorld), origin, inWorld);
+            if (root == null) root = new YzuiOptionsScreen(new OptionsScreen(origin, Minecraft.getInstance().options), origin, inWorld);
             root.reveal(UnifiedSettingsPage.anchor(target));
             remember(target, root);
             return root;
@@ -140,7 +139,7 @@ public final class YzuiSettingsRouter {
 
     static void openCompatibility(YzuiOptionsScreen parent) {
         Minecraft minecraft = Minecraft.getInstance();
-        OptionsScreen screen = new OptionsScreen(parent, minecraft.options, parent.inWorld());
+        OptionsScreen screen = new OptionsScreen(parent, minecraft.options);
         COMPATIBILITY.put(screen, parent.origin());
         DebugLogger.info("YzuiSettings", "打开原版选项兼容入口");
         minecraft.gui.setScreen(screen);

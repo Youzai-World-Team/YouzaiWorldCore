@@ -1,10 +1,10 @@
 package top.csituka.youzaiworldcore.highlightitem;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.resources.Identifier;
-import org.lwjgl.glfw.GLFW;
 import top.csituka.youzaiworldcore.YouzaiworldCore;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
@@ -23,9 +23,9 @@ public class HighlightItemClient {
 
     static {
         TOGGLE_BIND = new KeyMapping("key.youzaiworldcore.highlight.toggle",
-                GLFW.GLFW_KEY_F10, new KeyMapping.Category(CATEGORY));
+                InputConstants.KEY_F10, new KeyMapping.Category(CATEGORY));
         COMPARATOR_BIND = new KeyMapping("key.youzaiworldcore.highlight.comparator",
-                GLFW.GLFW_KEY_B, new KeyMapping.Category(CATEGORY));
+                InputConstants.KEY_B, new KeyMapping.Category(CATEGORY));
     }
 
     public static void initialize() {

@@ -44,7 +44,7 @@ public final class MailStreamCodecs {
     public static final StreamCodec<RegistryFriendlyByteBuf, MailAttachment> MAIL_ATTACHMENT =
             StreamCodec.of(
                     (buf, att) -> {
-                        buf.writeEnum(att.type());
+                        EnumBufs.write(buf, att.type());
                         buf.writeUtf(att.data() != null ? att.data() : "");
                         buf.writeVarInt(att.amount());
                         buf.writeBoolean(att.itemNbt() != null);
@@ -53,7 +53,7 @@ public final class MailStreamCodecs {
                         }
                     },
                     buf -> {
-                        AttachmentType type = buf.readEnum(AttachmentType.class);
+                        AttachmentType type = EnumBufs.read(buf, AttachmentType.class);
                         String data = buf.readUtf();
                         int amount = buf.readVarInt();
                         String itemNbt = buf.readBoolean() ? buf.readUtf() : null;
@@ -90,7 +90,7 @@ public final class MailStreamCodecs {
             StreamCodec.of(
                     (buf, mail) -> {
                         buf.writeUUID(mail.getId());
-                        buf.writeEnum(mail.getType());
+                        EnumBufs.write(buf, mail.getType());
                         buf.writeUtf(mail.getSender() != null ? mail.getSender() : "");
                         buf.writeVarInt(mail.getTargets() != null ? mail.getTargets().size() : 0);
                         if (mail.getTargets() != null) {
@@ -118,7 +118,7 @@ public final class MailStreamCodecs {
                     buf -> {
                         Mail mail = new Mail();
                         mail.setId(buf.readUUID());
-                        mail.setType(buf.readEnum(MailType.class));
+                        mail.setType(EnumBufs.read(buf, MailType.class));
                         mail.setSender(buf.readUtf());
                         int targetsSize = buf.readVarInt();
                         List<TargetSpec> targets = new ArrayList<>(targetsSize);
@@ -165,7 +165,7 @@ public final class MailStreamCodecs {
             StreamCodec.of(
                     (buf, sum) -> {
                         buf.writeUUID(sum.mailId());
-                        buf.writeEnum(sum.type());
+                        EnumBufs.write(buf, sum.type());
                         buf.writeUtf(sum.title() != null ? sum.title() : "");
                         buf.writeUtf(sum.scopeSummary() != null ? sum.scopeSummary() : "");
                         buf.writeVarLong(sum.sentTime());
@@ -177,7 +177,7 @@ public final class MailStreamCodecs {
                     },
                     buf -> {
                         UUID mailId = buf.readUUID();
-                        MailType type = buf.readEnum(MailType.class);
+                        MailType type = EnumBufs.read(buf, MailType.class);
                         String title = buf.readUtf();
                         String scopeSummary = buf.readUtf();
                         long sentTime = buf.readVarLong();

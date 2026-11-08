@@ -21,7 +21,7 @@ public final class MapStreamCodecs {
 
     /** 读取一个不可再修改的地形快照。 */
     public static MapTile readTile(RegistryFriendlyByteBuf buf) {
-        MapTileKey key = new MapTileKey(buf.readUtf(128), buf.readEnum(MapLayer.class),
+        MapTileKey key = new MapTileKey(buf.readUtf(128), EnumBufs.read(buf, MapLayer.class),
                 buf.readInt(), buf.readInt(), buf.readInt());
         long revision = buf.readLong();
         int size = count(buf, 256);
@@ -45,7 +45,7 @@ public final class MapStreamCodecs {
     public static void writeTile(RegistryFriendlyByteBuf buf, MapTile tile) {
         var key = tile.key();
         buf.writeUtf(key.dimension(), 128);
-        buf.writeEnum(key.layer());
+        EnumBufs.write(buf, key.layer());
         buf.writeInt(key.height());
         buf.writeInt(key.chunkX());
         buf.writeInt(key.chunkZ());
@@ -65,7 +65,7 @@ public final class MapStreamCodecs {
     public static MapWaypoint readWaypoint(RegistryFriendlyByteBuf buf) {
         return new MapWaypoint(buf.readUUID(), buf.readUUID(), buf.readUtf(64), buf.readUtf(32),
                 buf.readUtf(128), buf.readInt(), buf.readInt(), buf.readInt(), buf.readInt(),
-                buf.readBoolean(), buf.readBoolean(), buf.readEnum(MapWaypoint.Kind.class), buf.readLong());
+                buf.readBoolean(), buf.readBoolean(), EnumBufs.read(buf, MapWaypoint.Kind.class), buf.readLong());
     }
 
     public static void writeWaypoint(RegistryFriendlyByteBuf buf, MapWaypoint point) {
@@ -80,7 +80,7 @@ public final class MapStreamCodecs {
         buf.writeInt(point.color());
         buf.writeBoolean(point.enabled());
         buf.writeBoolean(point.shared());
-        buf.writeEnum(point.kind());
+        EnumBufs.write(buf, point.kind());
         buf.writeLong(point.createdAt());
     }
 }

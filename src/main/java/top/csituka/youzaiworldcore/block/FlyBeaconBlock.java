@@ -1,6 +1,5 @@
 package top.csituka.youzaiworldcore.block;
 
-import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
@@ -25,8 +24,6 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
 public class FlyBeaconBlock extends BaseEntityBlock {
 
     public static final BooleanProperty ACTIVE = BooleanProperty.create("active");
-    public static final MapCodec<FlyBeaconBlock> CODEC = simpleCodec(FlyBeaconBlock::new);
-
     public FlyBeaconBlock(BlockBehaviour.Properties properties) {
         super(properties);
         DebugLogger.entering("FlyBeaconBlock", "constructor");
@@ -37,12 +34,6 @@ public class FlyBeaconBlock extends BaseEntityBlock {
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<net.minecraft.world.level.block.Block, BlockState> builder) {
         builder.add(ACTIVE);
-    }
-
-    @Override
-    @NonNull
-    protected MapCodec<? extends BaseEntityBlock> codec() {
-        return CODEC;
     }
 
     @Override

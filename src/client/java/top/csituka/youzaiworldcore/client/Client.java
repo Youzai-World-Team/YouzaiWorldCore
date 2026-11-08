@@ -10,8 +10,10 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.world.entity.EntityTypes;
-import org.lwjgl.glfw.GLFW;
-import org.lwjgl.glfw.GLFWImage;
+import org.lwjgl.sdl.SDLPixels;
+import org.lwjgl.sdl.SDLSurface;
+import org.lwjgl.sdl.SDLVideo;
+import org.lwjgl.sdl.SDL_Surface;
 import org.lwjgl.system.MemoryUtil;
 
 import javax.imageio.ImageIO;
@@ -300,10 +302,9 @@ public class Client implements ClientModInitializer {
             return;
         }
 
-        var window = client.getWindow();
-        boolean isShiftPressed = InputConstants.isKeyDown(window, GLFW.GLFW_KEY_LEFT_SHIFT)
-                || InputConstants.isKeyDown(window, GLFW.GLFW_KEY_RIGHT_SHIFT);
-        boolean isFPressed = InputConstants.isKeyDown(window, GLFW.GLFW_KEY_F);
+        boolean isShiftPressed = InputConstants.isKeyDown(InputConstants.KEY_LSHIFT)
+                || InputConstants.isKeyDown(InputConstants.KEY_RSHIFT);
+        boolean isFPressed = InputConstants.isKeyDown(InputConstants.KEY_F);
         boolean isPressed = isShiftPressed && isFPressed;
 
         DebugLogger.branch("Client", "检测 Shift+F 快捷键", isPressed);
@@ -333,29 +334,38 @@ public class Client implements ClientModInitializer {
             int height = image.getHeight();
 
             // BufferedImage.getRGB 返回 ARGB（高位 A，次高 R，次次高 G，低位 B）
-            // GLFW 需要 RGBA，故需转换
+            // SDL 的 ABGR8888 在小端内存中按 R、G、B、A 排列，与原版窗口图标使用的格式相同
             ByteBuffer buffer = MemoryUtil.memAlloc(width * height * 4);
-            for (int y = 0; y < height; y++) {
-                for (int x = 0; x < width; x++) {
-                    int argb = image.getRGB(x, y);
-                    buffer.put((byte) ((argb >> 16) & 0xFF)); // R
-                    buffer.put((byte) ((argb >> 8) & 0xFF)); // G
-                    buffer.put((byte) (argb & 0xFF)); // B
-                    buffer.put((byte) ((argb >> 24) & 0xFF)); // A
+            try {
+                for (int y = 0; y < height; y++) {
+                    for (int x = 0; x < width; x++) {
+                        int argb = image.getRGB(x, y);
+                        buffer.put((byte) ((argb >> 16) & 0xFF)); // R
+                        buffer.put((byte) ((argb >> 8) & 0xFF)); // G
+                        buffer.put((byte) (argb & 0xFF)); // B
+                        buffer.put((byte) ((argb >> 24) & 0xFF)); // A
+                    }
                 }
-            }
-            buffer.flip();
+                buffer.flip();
 
-            try (GLFWImage icon = GLFWImage.malloc()) {
-                icon.set(width, height, buffer);
-                try (GLFWImage.Buffer iconBuffer = GLFWImage.malloc(1)) {
-                    iconBuffer.put(0, icon);
-                    GLFW.glfwSetWindowIcon(windowHandle, iconBuffer);
-                    DebugLogger.info("Client", "窗口图标已设置为 jar_icon.png (%sx%s)", width, height);
+                SDL_Surface surface = SDLSurface.SDL_CreateSurfaceFrom(width, height,
+                        SDLPixels.SDL_PIXELFORMAT_ABGR8888, buffer, width * 4);
+                if (surface == null) {
+                    DebugLogger.warn("Client", "无法创建窗口图标 Surface");
+                    return;
                 }
+                try {
+                    if (SDLVideo.SDL_SetWindowIcon(windowHandle, surface)) {
+                        DebugLogger.info("Client", "窗口图标已设置为 jar_icon.png (%sx%s)", width, height);
+                    } else {
+                        DebugLogger.warn("Client", "设置窗口图标失败");
+                    }
+                } finally {
+                    SDLSurface.SDL_DestroySurface(surface);
+                }
+            } finally {
+                MemoryUtil.memFree(buffer);
             }
-
-            MemoryUtil.memFree(buffer);
         } catch (Exception e) {
             DebugLogger.error("Client", "设置窗口图标时出错", e);
         }

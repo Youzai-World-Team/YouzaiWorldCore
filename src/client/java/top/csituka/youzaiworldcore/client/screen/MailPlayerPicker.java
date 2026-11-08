@@ -1,5 +1,6 @@
 package top.csituka.youzaiworldcore.client.screen;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
 import top.csituka.youzaiworldcore.client.animation.YzuiHover;
 import top.csituka.youzaiworldcore.client.animation.YzuiPopupAnimation;
@@ -271,8 +272,8 @@ final class MailPlayerPicker {
         }
         if (!acceptsInput()) return true;
         switch (key) {
-            case 256 -> close();                                   // GLFW_KEY_ESCAPE
-            case 257, 335 -> {                                     // GLFW_KEY_ENTER / KP_ENTER
+            case InputConstants.KEY_ESCAPE -> close();
+            case InputConstants.KEY_RETURN, InputConstants.KEY_NUMPADENTER -> {
                 List<String> result = new ArrayList<>(selected);
                 Consumer<List<String>> callback = onConfirm;
                 close();

@@ -1,5 +1,6 @@
 package top.csituka.youzaiworldcore.client.screen;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
 
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
@@ -23,6 +24,7 @@ import top.csituka.youzaiworldcore.network.MailOpenPayload;
 import top.csituka.youzaiworldcore.network.MailSentListRequestPayload;
 import top.csituka.youzaiworldcore.network.MailStreamCodecs;
 import top.csituka.youzaiworldcore.util.DebugLogger;
+import top.csituka.youzaiworldcore.util.ItemStackNbtUpgrader;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -451,7 +453,7 @@ public class MailScreen extends MailBaseScreen {
                 int index = scrollOffset + (int) ((mouseY - bodyTop) / ROW_HEIGHT);
                 if (index >= 0 && index < filtered.size()) {
                     MailStreamCodecs.MailRefAndMail pair = filtered.get(index);
-                    if (event.button() == 1) {
+                    if (event.button() == InputConstants.MOUSE_BUTTON_RIGHT) {
                         toggleStar(pair);
                     } else {
                         selectEntry(pair.mail(), pair.ref());
@@ -737,7 +739,8 @@ public class MailScreen extends MailBaseScreen {
         try {
             var tag = TagParser.parseCompoundFully(attachment.itemNbt());
             var lookup = Minecraft.getInstance().level.registryAccess();
-            ItemStack stack = ItemStack.CODEC.parse(
+            // 附件没有版本记录：解析失败时按 26.2 数据升级后重试
+            ItemStack stack = ItemStackNbtUpgrader.parseUnversioned(Minecraft.getInstance().getFixerUpper(),
                     lookup.createSerializationContext(NbtOps.INSTANCE), tag)
                     .result().orElse(ItemStack.EMPTY);
             if (!stack.isEmpty()) {

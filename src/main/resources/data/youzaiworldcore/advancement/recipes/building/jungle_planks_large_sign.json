@@ -4,7 +4,7 @@
     "has_the_recipe": {
       "trigger": "minecraft:recipe_unlocked",
       "conditions": {
-        "recipe": "youzaiworldcore:jungle_planks_large_sign"
+        "recipes": "youzaiworldcore:jungle_planks_large_sign"
       }
     },
     "has_planks": {

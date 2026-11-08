@@ -1,6 +1,5 @@
 package top.csituka.youzaiworldcore.mixin.client;
 
-import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.state.GameRenderState;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
@@ -13,7 +12,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import top.csituka.youzaiworldcore.client.effect.TeleportFovEffect;
 
 /**
- * 修改 {@link GameRenderer#renderLevel(net.minecraft.client.DeltaTracker)} 中的
+ * 修改 {@link GameRenderer#renderLevel()} 使用的
  * 摄像机投影矩阵和 HUD FOV，在传送动画激活时对画面进行平滑缩放，
  * 实现传送前视野快速放大、传送后视野快速缩小的视觉效果。
  * <p>
@@ -24,6 +23,8 @@ import top.csituka.youzaiworldcore.client.effect.TeleportFovEffect;
  *   <li>投影矩阵的 m00 和 m11 控制透视的水平和垂直缩放，
  *       乘以 zoomScale（= 1/fovModifier）实现放大/缩小</li>
  *   <li>由于 extract 阶段每帧会重新创建投影矩阵，此处直接修改是安全的</li>
+ *   <li>26.3 起 renderLevel 不再接收 DeltaTracker，partialTick 取自同帧提取的
+ *       {@code LevelRenderState.worldPartialTicks}（与原先 getGameTimeDeltaPartialTick(false) 相同）</li>
  * </ul>
  */
 @Mixin(GameRenderer.class)
@@ -36,17 +37,17 @@ public class GameRendererMixin {
     /**
      * 在渲染世界前修改投影矩阵和 HUD FOV，实现传送缩放效果。
      * <p>
-     * 传入 DeltaTracker 以获取 partialTick，传递给 FOV 管理器实现逐帧平滑插值。
+     * 使用本帧提取的 partialTick，传递给 FOV 管理器实现逐帧平滑插值。
      */
     @Inject(
-            method = "renderLevel(Lnet/minecraft/client/DeltaTracker;)V",
+            method = "renderLevel()V",
             at = @At("HEAD")
     )
-    private void youzaiworldcore$modifyProjectionForTeleport(DeltaTracker deltaTracker, CallbackInfo ci) {
+    private void youzaiworldcore$modifyProjectionForTeleport(CallbackInfo ci) {
         if (!TeleportFovEffect.isActive()) return;
 
         // 获取带 partialTick 插值的 FOV 倍率（逐帧平滑，无阶跃感）
-        float partialTick = deltaTracker.getGameTimeDeltaPartialTick(false);
+        float partialTick = this.gameRenderState.levelRenderState.worldPartialTicks;
         float modifier = TeleportFovEffect.getFovModifier(partialTick);
         if (modifier >= 1.0f) return;
 

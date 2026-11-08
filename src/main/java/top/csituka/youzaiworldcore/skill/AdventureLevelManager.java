@@ -70,7 +70,7 @@ public class AdventureLevelManager {
         int level = 1;
         while (true) {
             int needed = expForNextLevel(level);
-            if ((long) accumulated + needed > totalExp) break;
+            if (accumulated + needed > totalExp) break;
             accumulated += needed;
             level++;
         }

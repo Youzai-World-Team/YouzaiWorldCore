@@ -1,5 +1,6 @@
 package top.csituka.youzaiworldcore.client.screen.block;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
 
 import net.minecraft.client.Minecraft;
@@ -1050,7 +1051,7 @@ public class TeleportAnchorScreen extends Screen {
     @Override
     public boolean keyPressed(net.minecraft.client.input.KeyEvent keyEvent) {
         if (renameMode && renameEditBox != null && renameEditBox.isFocused()) {
-            if (keyEvent.key() == 257) { // Enter
+            if (keyEvent.key() == InputConstants.KEY_RETURN) { // Enter
                 confirmRename();
                 return true;
             }
@@ -1065,7 +1066,7 @@ public class TeleportAnchorScreen extends Screen {
             }
         }
         // 编辑表单与删除确认优先取消，避免直接关闭整个页面。
-        if (keyEvent.key() == 256) {
+        if (keyEvent.key() == InputConstants.KEY_ESCAPE) {
             if (renameMode) { cancelRename(); return true; }
             if (confirmingDelete) { confirmingDelete = false; rebuildWidgets(); return true; }
             if (searchMode && !renameMode && !confirmingDelete) {

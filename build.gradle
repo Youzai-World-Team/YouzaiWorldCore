@@ -1,5 +1,5 @@
 plugins {
-    id 'net.fabricmc.fabric-loom' version '1.16-SNAPSHOT'
+    id 'net.fabricmc.fabric-loom' version '1.19-SNAPSHOT'
     id 'maven-publish'
 }
 
@@ -92,7 +92,7 @@ dependencies {
     include(implementation("org.xerial:sqlite-jdbc:3.53.4.0"))
 
     // Placeholder API
-    implementation('eu.pb4:placeholder-api:3.1.0-beta.1+26.2')
+    implementation('eu.pb4:placeholder-api:3.2.0+26.3')
 
     // Permissions API
     include(implementation('me.lucko:fabric-permissions-api:0.6.1'))
@@ -104,7 +104,7 @@ dependencies {
     compileOnly "com.terraformersmc:modmenu:${project.modmenu_version}"
 
     // Moog's Structure Lib
-    implementation "maven.modrinth:moogs-structure-lib:3.0.4"
+    implementation "maven.modrinth:moogs-structure-lib:3.4.2-fabric-26.3"
 
     // Trinkets API
     implementation "eu.pb4:trinkets:${project.trinkets_version}"
@@ -116,22 +116,23 @@ dependencies {
 
     // Jade（可选集成：仅用于向 Jade 注入 YZUI 主题，compileOnly 不打包、不强制依赖；
     // 运行时玩家需自行安装 Jade，未安装时 YzuiJadeStyleManager 短路跳过。
-    // 若该版本号在 Modrinth Maven 解析失败，可用版本 ID 替代：maven.modrinth:jade:ue8CO97w）
-    compileOnly "maven.modrinth:jade:26.2.11+fabric"
+    // 若该版本号在 Modrinth Maven 解析失败，可用版本 ID 替代：maven.modrinth:jade:71CTWqdE）
+    compileOnly "maven.modrinth:jade:26.3.5+fabric"
 }
 
 processResources {
-    inputs.property "version", project.version
-    inputs.property "minecraft_version", project.minecraft_version
-    inputs.property "loader_version", project.loader_version
-    inputs.property "trinkets_version", project.trinkets_version
-    filteringCharset "UTF-8"
+    // 在配置阶段取值，执行阶段访问 project 已被 Gradle 废弃
+    def expandProperties = [
+            "version"          : project.version,
+            "minecraft_version": project.minecraft_version,
+            "loader_version"   : project.loader_version,
+            "trinkets_version" : project.trinkets_version
+    ]
+    inputs.properties(expandProperties)
+    filteringCharset = "UTF-8"
 
     filesMatching("fabric.mod.json") {
-        expand "version": project.version,
-                "minecraft_version": project.minecraft_version,
-                "loader_version": project.loader_version,
-                "trinkets_version": project.trinkets_version
+        expand expandProperties
     }
 }
 
@@ -144,10 +145,8 @@ tasks.withType(JavaCompile).configureEach {
 }
 
 java {
-    def javaVersion = JavaVersion.toVersion(targetJavaVersion)
-    if (JavaVersion.current() < javaVersion) {
-        toolchain.languageVersion = JavaLanguageVersion.of(targetJavaVersion)
-    }
+    // 始终声明工具链：默认 java 可能只是 JRE，版本足够却没有 javac
+    toolchain.languageVersion = JavaLanguageVersion.of(targetJavaVersion)
     withSourcesJar()
 }
 

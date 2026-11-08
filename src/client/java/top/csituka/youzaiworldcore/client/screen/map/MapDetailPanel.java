@@ -1,5 +1,6 @@
 package top.csituka.youzaiworldcore.client.screen.map;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -21,7 +22,6 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
-import org.lwjgl.glfw.GLFW;
 import top.csituka.youzaiworldcore.client.effect.TeleportFovEffect;
 import top.csituka.youzaiworldcore.client.map.*;
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
@@ -302,7 +302,7 @@ final class MapDetailPanel extends AbstractContainerEventHandler implements Rend
         scroll = Math.clamp(scroll - (int) (vertical * 24), 0, Math.max(0, contentHeight - (bottom - top))); rebuild(); return true;
     }
     @Override public boolean keyPressed(KeyEvent event) {
-        if (event.key() == GLFW.GLFW_KEY_ESCAPE) { close(); return true; }
+        if (event.key() == InputConstants.KEY_ESCAPE) { close(); return true; }
         return super.keyPressed(event);
     }
 }

@@ -45,7 +45,7 @@ public record MailAdminSendPayload(
                         for (TargetSpec spec : p.targets()) {
                             MailStreamCodecs.TARGET_SPEC.encode(buf, spec);
                         }
-                        buf.writeEnum(p.mailType());
+                        EnumBufs.write(buf, p.mailType());
                         buf.writeUtf(p.title());
                         buf.writeUtf(p.body());
                         buf.writeByte(p.expireOption());
@@ -60,7 +60,7 @@ public record MailAdminSendPayload(
                         for (int i = 0; i < targetsSize; i++) {
                             targets.add(MailStreamCodecs.TARGET_SPEC.decode(buf));
                         }
-                        MailType mailType = buf.readEnum(MailType.class);
+                        MailType mailType = EnumBufs.read(buf, MailType.class);
                         String title = buf.readUtf();
                         String body = buf.readUtf();
                         byte expireOption = buf.readByte();

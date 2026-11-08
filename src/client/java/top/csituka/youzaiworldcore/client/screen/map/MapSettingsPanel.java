@@ -1,5 +1,6 @@
 package top.csituka.youzaiworldcore.client.screen.map;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Tooltip;
@@ -15,7 +16,6 @@ import net.minecraft.client.gui.navigation.ScreenRectangle;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
-import org.lwjgl.glfw.GLFW;
 import top.csituka.youzaiworldcore.client.config.MapSettings;
 import top.csituka.youzaiworldcore.client.map.MapTexts;
 import top.csituka.youzaiworldcore.client.render.RoundedRect;
@@ -178,8 +178,8 @@ final class MapSettingsPanel extends AbstractContainerEventHandler implements Re
     }
 
     @Override public boolean keyPressed(KeyEvent event) {
-        if (choosingPosition && event.key() == GLFW.GLFW_KEY_ESCAPE) { choosingPosition = false; init(); return true; }
-        if (event.key() == GLFW.GLFW_KEY_ESCAPE) { owner.closeSettings(); return true; }
+        if (choosingPosition && event.key() == InputConstants.KEY_ESCAPE) { choosingPosition = false; init(); return true; }
+        if (event.key() == InputConstants.KEY_ESCAPE) { owner.closeSettings(); return true; }
         return super.keyPressed(event);
     }
 

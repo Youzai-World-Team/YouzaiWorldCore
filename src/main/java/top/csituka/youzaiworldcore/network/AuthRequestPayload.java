@@ -21,11 +21,11 @@ public record AuthRequestPayload(Action action, String password, String confirma
     @SuppressWarnings("null")
     public static final StreamCodec<RegistryFriendlyByteBuf, AuthRequestPayload> STREAM_CODEC = StreamCodec.of(
             (buf, payload) -> {
-                buf.writeEnum(payload.action);
+                EnumBufs.write(buf, payload.action);
                 buf.writeUtf(payload.password, 128);
                 buf.writeUtf(payload.confirmation, 128);
             },
-            buf -> new AuthRequestPayload(buf.readEnum(Action.class), buf.readUtf(128), buf.readUtf(128)));
+            buf -> new AuthRequestPayload(EnumBufs.read(buf, Action.class), buf.readUtf(128), buf.readUtf(128)));
 
     public AuthRequestPayload {
         if (action == null)

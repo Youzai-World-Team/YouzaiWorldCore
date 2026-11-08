@@ -8,6 +8,7 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.options.InWorldGameRulesScreen;
+import net.minecraft.client.gui.screens.worldselection.AbstractGameRulesScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.util.FormattedCharSequence;
@@ -53,8 +54,11 @@ public final class YzuiGameRulesScreen extends InWorldGameRulesScreen {
                 rows.add(SettingsList.Row.text(YzuiOptionsScreen.text("rules.loading"), Component.empty()));
             } else {
                 for (var entry : ruleList.children()) {
-                    if (entry.children().isEmpty()) {
-                        rows.add(SettingsList.Row.heading(SettingsWidgets.read(entry, "label", Component.class)));
+                    if (entry instanceof AbstractGameRulesScreen.CategoryRuleEntry) {
+                        // 26.3 起分类标题放在 FocusableTextWidget 子控件中，不再是 label 字段。
+                        Component heading = entry.children().stream().filter(AbstractWidget.class::isInstance)
+                                .map(child -> ((AbstractWidget) child).getMessage()).findFirst().orElse(Component.empty());
+                        rows.add(SettingsList.Row.heading(heading));
                         continue;
                     }
                     Component label = readLines(entry, "label");

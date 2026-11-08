@@ -4,7 +4,7 @@
     "has_the_recipe": {
       "trigger": "minecraft:recipe_unlocked",
       "conditions": {
-        "recipe": "youzaiworldcore:invisible_glow_item_frame"
+        "recipes": "youzaiworldcore:invisible_glow_item_frame"
       }
     },
     "has_glow_item_frame": {

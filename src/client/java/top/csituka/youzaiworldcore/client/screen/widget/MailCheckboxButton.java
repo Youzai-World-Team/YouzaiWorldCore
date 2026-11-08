@@ -1,5 +1,6 @@
 package top.csituka.youzaiworldcore.client.screen.widget;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
 import top.csituka.youzaiworldcore.client.animation.YzuiHover;
 
@@ -68,7 +69,7 @@ public class MailCheckboxButton extends AbstractWidget {
 
     @Override
     public boolean keyPressed(net.minecraft.client.input.KeyEvent event) {
-        if (!active || !visible || !isFocused() || (event.key() != 32 && event.key() != 257 && event.key() != 335)) return false;
+        if (!active || !visible || !isFocused() || (event.key() != InputConstants.KEY_SPACE && event.key() != InputConstants.KEY_RETURN && event.key() != InputConstants.KEY_NUMPADENTER)) return false;
         onClick(null, false);
         return true;
     }

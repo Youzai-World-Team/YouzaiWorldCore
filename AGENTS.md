@@ -33,17 +33,17 @@
 
 | 依赖 | 版本 | 来源 / 用途 |
 |------|------|------------|
-| Minecraft | **26.2** | `gradle.properties: minecraft_version` |
+| Minecraft | **26.3** | `gradle.properties: minecraft_version` |
 | Java | **25**（`targetJavaVersion = 25`，Mixin `compatibilityLevel: JAVA_25`） | 编译与运行均需 JDK 25+ |
-| Gradle | **9.4.0**（wrapper） | `gradle/wrapper/gradle-wrapper.properties` |
-| Fabric Loom | **1.16-SNAPSHOT** | 构建插件，启用 `splitEnvironmentSourceSets()` |
-| Fabric Loader | 0.19.3 | — |
-| Fabric API | 0.154.0+26.2 | 事件 / 网络 / 命令 / 生物群系修改 |
-| Placeholder API (eu.pb4) | 3.1.0-beta.1+26.2 | 文本占位符（硬依赖） |
-| Trinkets (eu.pb4) | 4.1.0-rc.1+26.2（模组 ID `trinkets_updated`） | 饰品槽（硬依赖） |
-| GeckoLib | 5.5.3+ | 实体动画与模型渲染（硬依赖，老吴贴贴 Geo 模型等） |
-| Moog's Structure Lib | 3.0.4（Modrinth Maven） | 结构注入相关（硬依赖） |
-| ModMenu | 20.0.0-beta.4 | `compileOnly`，配置入口（硬依赖声明） |
+| Gradle | **9.8.2**（wrapper） | `gradle/wrapper/gradle-wrapper.properties` |
+| Fabric Loom | **1.19-SNAPSHOT** | 构建插件，启用 `splitEnvironmentSourceSets()` |
+| Fabric Loader | 0.20.1 | — |
+| Fabric API | 0.165.2+26.3 | 事件 / 网络 / 命令 / 生物群系修改 |
+| Placeholder API (eu.pb4) | 3.2.0+26.3 | 文本占位符（硬依赖） |
+| Trinkets (eu.pb4) | 4.2.1+26.3（模组 ID `trinkets_updated`） | 饰品槽（硬依赖） |
+| GeckoLib | 5.5.7+ | 实体动画与模型渲染（硬依赖，老吴贴贴 Geo 模型等） |
+| Moog's Structure Lib | 3.4.2-fabric-26.3（Modrinth Maven） | 结构注入相关（硬依赖） |
+| ModMenu | 21.0.0 | `compileOnly`，配置入口（硬依赖声明） |
 | Fabric Permissions API | 0.6.1 | `include(implementation(...))`，已内置打包 |
 | LuckPerms API | 5.5 | `compileOnly`，运行时可选，缺失时回退原版 OP 等级 |
 | Gson | 随 MC 提供 | 非地图模块 JSON 配置持久化 |
@@ -52,7 +52,7 @@
 
 模组版本：`mod_version = 1.20.5-indev`，`maven_group = top.csituka`，`archives_base_name = YouzaiWorldCore`。
 
-**`fabric.mod.json` 依赖声明**：`depends`（缺失则加载器拒绝启动，共 7 项）— `fabric-api`（>=0.154.0+26.2）、`minecraft`、`placeholder-api`（>=3.0.0）、`modmenu`（>=20.0.0-beta.4）、`moogs_structures`（>=3.0.4）、`trinkets_updated`（精确匹配 4.1.0-rc.1+26.2，不再兼容 beta.2 旧接口）、`geckolib`（>=5.5.3）；`suggests`（可缺失，4 项）— `luckperms`、`advancementplaques`、`EnchantmentDescriptions`、`sophisticatedbackpacks`。
+**`fabric.mod.json` 依赖声明**：`depends`（缺失则加载器拒绝启动，共 7 项）— `fabric-api`（>=0.165.2+26.3）、`minecraft`、`placeholder-api`（>=3.2.0）、`modmenu`（>=21.0.0）、`moogs_structures`（>=3.4.2）、`trinkets_updated`（精确匹配 4.2.1+26.3）、`geckolib`（>=5.5.7）；`suggests`（可缺失，4 项）— `luckperms`、`advancementplaques`、`EnchantmentDescriptions`、`sophisticatedbackpacks`。
 
 **Maven 仓库**：mavenCentral、mavenLocal、`maven.nucleoid.xyz`（eu.pb4）、`maven.lucko.me`（LuckPerms）、`maven.terraformersmc.com`（ModMenu）、`api.modrinth.com/maven`（Moog's Structure Lib）；插件仓库额外含 `maven.fabricmc.net` 与 SpongePowered。
 
@@ -65,13 +65,13 @@
 ```
 YouzaiWorldCore/
 ├── build.gradle / settings.gradle / gradle.properties   # 构建脚本与版本变量（改版本号只改 gradle.properties）
-├── gradlew / gradlew.bat / gradle/wrapper/              # Gradle Wrapper 9.4.0
+├── gradlew / gradlew.bat / gradle/wrapper/              # Gradle Wrapper 9.8.2
 ├── .github/workflows/build.yml                          # CI：JDK 25 + ./gradlew jar，上传 build/libs
 ├── README.md / README.EN.md                             # 面向用户的完整功能文档（含指令树、权限表、数据包表）
 ├── DESIGN.md                                            # 菜单草稿设计 + 固定的 AI 提示词
 ├── 邮件系统规划.md                                       # 邮件系统详细设计文档
 ├── AGENTS.md                                            # 本文件
-├── minecraft_jar/{26.1.1,26.2}/                         # ⚠️ 反编译参考用的原版 jar（已 gitignore）
+├── minecraft_jar/{26.1.1,26.2,26.3}/                    # ⚠️ 反编译参考用的原版 jar（已 gitignore）
 ├── json/                                                # 更新检查器远程 JSON 样例（版本/公告）
 ├── Resources/                                           # 设计源文件（.psd）与截图
 ├── run/                                                 # 开发运行目录（已 gitignore），运行期文件落在 run/yzwc/server/ 与 run/<world>/data/yzwc/
@@ -144,14 +144,20 @@ YouzaiWorldCore/
 
 ## 4. 开发规范
 
-### 4.1 Minecraft 26.2 映射（最重要）
+### 4.1 Minecraft 26.3 映射（最重要）
 
-- 26.1 之后 Mojang 采用**新命名规则且官方 jar 已去混淆**，可直接反编译 `minecraft_jar/26.2/26.2.jar` 查证实现。
+- 26.1 之后 Mojang 采用**新命名规则且官方 jar 已去混淆**，可直接反编译 `minecraft_jar/26.3/26.3.jar` 查证实现。
 - **实现新功能前务必先反编译核验签名**，不要凭旧版本（1.20.x / 1.21.x）记忆写代码，API 变动很大。
 - 已知重命名示例（本项目全量遵循）：
   - `ResourceLocation` → **`net.minecraft.resources.Identifier`**（构造用 `Identifier.fromNamespaceAndPath(MOD_ID, path)`），项目中 `ResourceLocation` 出现次数为 **0**。
   - `RenderType` 迁至 `net.minecraft.client.renderer.rendertype` 包（见 accesswidener）。
   - 权限检查相关：`net.minecraft.server.permissions.PermissionCheck`。
+- 26.2 → 26.3 迁移要点（已全部完成，新代码请沿用）：
+  - 窗口与输入改用 **SDL3**（不再有 `org.lwjgl.glfw`）：`KeyEvent.key()` 是 SDL 扫描码，鼠标左/中/右键为 1/2/3；一律使用 `InputConstants` 常量，不要写数字键码。容器点击协议仍是左 0 / 右 1 / 中 2，换算见 `ContainerMouseButtons`。
+  - `RenderPipeline`、`ColorTargetState`、`GpuTexture` 等渲染类迁至 `com.mojang.renderpearl.api.*`；`PoseStack.mulPose(Quaternion)` 改为 `rotate`。
+  - 方块不再声明 `codec()` / `simpleCodec`；`HoeItem` / `ShovelItem` 已移除，改用 `Item.Properties#hoe/shovel`；红石线连接改为覆写 `shouldRedstoneWireConnectTo`。
+  - 数据包：战利品条件/函数的分派键 `condition` / `function` 统一为 `type`，列表字段 `conditions` / `functions` 改为 `condition` / `modifier`；进度的 `player` 是单个条件（可直接写谓词 ID），`recipe_unlocked` 用 `recipes`；`worldgen/configured_feature` 改为 `worldgen/feature` 且配置平铺；方块状态写作 ID 字符串或 `{"id", "properties"}`。
+  - 模组自行保存的物品 NBT 不经过原版存档升级，读取时用 `util/ItemStackNbtUpgrader` 走 DataFixer。
 - 反编译速查命令见 [§5.3](#53-反编译原版-jar)。
 
 ### 4.2 日志规范（强制）
@@ -307,14 +313,14 @@ git push origin main
 
 ### 5.3 反编译原版 jar
 
-原版 jar 位于 `minecraft_jar/26.2/26.2.jar`（另有 `26.1.1/` 可对比差异）。该目录已 gitignore；**若不存在请直接询问开发者路径**。
+原版 jar 位于 `minecraft_jar/26.3/26.3.jar`（另有 `26.2/`、`26.1.1/` 可对比差异）。该目录已 gitignore；**若不存在请直接询问开发者路径**。
 
 ```bash
 # 列出 jar 内类
-unzip -l minecraft_jar/26.2/26.2.jar | grep -i "ClassName"
+unzip -l minecraft_jar/26.3/26.3.jar | grep -i "ClassName"
 
 # 解出目标类到临时目录后用 javap 查看签名 / 字节码
-unzip -o -q minecraft_jar/26.2/26.2.jar "net/minecraft/<pkg>/<Class>.class" -d .tmp_decompile
+unzip -o -q minecraft_jar/26.3/26.3.jar "net/minecraft/<pkg>/<Class>.class" -d .tmp_decompile
 "/c/Program Files/Java/25/bin/javap" -p .tmp_decompile/net/minecraft/<pkg>/<Class>.class      # 成员签名
 "/c/Program Files/Java/25/bin/javap" -p -c .tmp_decompile/net/minecraft/<pkg>/<Class>.class   # 含字节码，可推断实现
 ```
@@ -408,7 +414,7 @@ YouzaiworldCore.onInitialize()
 
 ### 编码坑点
 - **配置 / 数据文件路径必须走 `ModPaths`**：不要再写 `FabricLoader.getInstance().getConfigDir().resolve("youzaiworldcore")`。新模块的配置分节名同时也是它在 `data/` `backup/` `temp/` 下的文件夹名，先在 `GlobalSettings` 里登记常量。
-- **不要凭旧版本 API 记忆写代码**：26.2 与 1.21.x 差异极大。用 `Identifier` 而非 `ResourceLocation`；不确定的签名一律先 `javap` 核对（[§5.3](#53-反编译原版-jar)）。
+- **不要凭旧版本 API 记忆写代码**：26.x 与 1.21.x 差异极大，26.x 各小版本之间也有破坏性变更。用 `Identifier` 而非 `ResourceLocation`；不确定的签名一律先 `javap` 核对（[§5.3](#53-反编译原版-jar)）。
 - **新增 Mixin 忘记登记 JSON** 是最常见的"改了没反应"原因。
 - **多语言必须同步**：`assets/youzaiworldcore/lang/` 下 10 个文件当前每个均为 738 行 / 736 个键，新增语言键需要 10 个文件全部补齐，否则部分语言下显示原始键名。
 - **硬依赖不可缺**：`fabric-api`、`minecraft`、`placeholder-api`、`modmenu`、`moogs_structures`、`trinkets_updated`、`geckolib` 共 7 项在 `fabric.mod.json` 中声明为 `depends`，缺失会导致加载器直接拒绝启动；LuckPerms、AdvancementPlaques、EnchantmentDescriptions、Sophisticated Backpacks 是 `suggests`，可缺失。

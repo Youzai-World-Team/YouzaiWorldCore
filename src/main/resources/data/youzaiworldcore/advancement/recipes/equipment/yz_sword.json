@@ -4,7 +4,7 @@
     "has_the_recipe": {
       "trigger": "minecraft:recipe_unlocked",
       "conditions": {
-        "recipe": "youzaiworldcore:yz_sword"
+        "recipes": "youzaiworldcore:yz_sword"
       }
     },
     "has_yz_ingot": {

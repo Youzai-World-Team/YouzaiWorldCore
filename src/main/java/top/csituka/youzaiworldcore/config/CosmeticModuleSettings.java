@@ -10,8 +10,10 @@ public final class CosmeticModuleSettings {
 
     private static final String MODULE = "CosmeticModuleSettings";
 
-    /** 网络解码与服务端配置共同使用的硬上限，避免超大数组在进入处理器前分配。 */
-    /** 兼容现有服务端配置调用点；实际公共上限由 {@link top.csituka.youzaiworldcore.cosmetic.CosmeticPngValidator} 持有。 */
+    /**
+     * 网络解码与服务端配置共同使用的硬上限，避免超大数组在进入处理器前分配。
+     * 兼容现有服务端配置调用点；实际公共上限由 {@link top.csituka.youzaiworldcore.cosmetic.CosmeticPngValidator} 持有。
+     */
     public static final int ABSOLUTE_MAX_FILE_BYTES =
             top.csituka.youzaiworldcore.cosmetic.CosmeticPngValidator.ABSOLUTE_MAX_FILE_BYTES;
 

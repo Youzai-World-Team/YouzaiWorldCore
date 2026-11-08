@@ -2,7 +2,7 @@ package top.csituka.youzaiworldcore.mixin.client;
 
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
 
-import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
@@ -38,7 +38,7 @@ public class RecipeButtonMixin {
     @Redirect(
             method = "extractWidgetRenderState",
             at = @At(value = "INVOKE",
-                    target = "Lnet/minecraft/client/gui/GuiGraphicsExtractor;blitSprite(Lcom/mojang/blaze3d/pipeline/RenderPipeline;Lnet/minecraft/resources/Identifier;IIII)V"),
+                    target = "Lnet/minecraft/client/gui/GuiGraphicsExtractor;blitSprite(Lcom/mojang/renderpearl/api/pipeline/RenderPipeline;Lnet/minecraft/resources/Identifier;IIII)V"),
             require = 1
     )
     private void yzwc$recipeSlotBackground(

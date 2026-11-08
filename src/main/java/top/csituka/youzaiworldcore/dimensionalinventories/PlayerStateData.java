@@ -1,5 +1,6 @@
 package top.csituka.youzaiworldcore.dimensionalinventories;
 
+import com.mojang.datafixers.DataFixer;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
@@ -15,14 +16,17 @@ import net.minecraft.world.phys.Vec3;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import top.csituka.youzaiworldcore.util.DebugLogger;
+import top.csituka.youzaiworldcore.util.ItemStackNbtUpgrader;
 
 import java.util.*;
 
 /**
  * 玩家在某个维度池中的完整状态快照。
  * <p>
- * 使用 Minecraft 26.2 的 DataComponent + CODEC 系统进行 ItemStack 序列化，
+ * 使用 Minecraft 的 DataComponent + CODEC 系统进行 ItemStack 序列化，
  * NBT 数据以 SNBT 字符串形式存储以确保 Gson 兼容性。
+ * 文件同时记录写出时的数据版本，读取时先用原版 DataFixer 把物品升级到当前版本再解析，
+ * 避免 Minecraft 更新物品组件格式后旧背包中的物品解析失败而丢失。
  * 包含：物品栏、盔甲、副手、末影箱、生命、饥饿、经验、分数、状态效果、
  * 以及离开时的维度与坐标（用于传送返回）。
  */
@@ -30,6 +34,9 @@ import java.util.*;
 public final class PlayerStateData {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/PlayerStateData");
+
+    // ===== 数据版本（0 表示引入本字段之前写出的文件，按 26.2 处理） =====
+    private int dataVersion;
 
     // ===== 位置信息 =====
     private String dimension;
@@ -68,6 +75,7 @@ public final class PlayerStateData {
     public static PlayerStateData fromPlayer(ServerPlayer player) {
         DebugLogger.entering("PlayerState", "fromPlayer", "player=" + player.getName().getString());
         PlayerStateData data = new PlayerStateData();
+        data.dataVersion = ItemStackNbtUpgrader.currentDataVersion();
 
         data.dimension = player.level().dimension().identifier().toString();
         Vec3 pos = player.position();
@@ -106,7 +114,8 @@ public final class PlayerStateData {
 
     public void applyToPlayer(ServerPlayer player) {
         DebugLogger.entering("PlayerState", "applyToPlayer", "player=" + player.getName().getString());
-        HolderLookup.Provider lookup = getLookup(player);
+        ItemReader lookup = new ItemReader(getLookup(player), player.level().getServer().getFixerUpper(),
+                this.dataVersion > 0 ? this.dataVersion : ItemStackNbtUpgrader.LEGACY_DATA_VERSION);
 
         // — 物品栏 —
         DebugLogger.branch("PlayerState", "mainInventory empty", this.mainInventory == null || this.mainInventory.isEmpty());
@@ -183,9 +192,12 @@ public final class PlayerStateData {
         return (CompoundTag) result.getOrThrow();
     }
 
-    private static ItemStack decodeStack(CompoundTag tag, HolderLookup.Provider lookup) {
+    private static ItemStack decodeStack(CompoundTag tag, ItemReader reader) {
         if (tag == null || tag.isEmpty()) return ItemStack.EMPTY;
-        var result = ItemStack.CODEC.parse(lookup.createSerializationContext(NbtOps.INSTANCE), tag);
+        CompoundTag upgraded = ItemStackNbtUpgrader.upgrade(reader.fixer(), tag, reader.dataVersion());
+        var result = ItemStack.CODEC.parse(reader.lookup().createSerializationContext(NbtOps.INSTANCE), upgraded);
+        result.error().ifPresent(error -> LOGGER.warn("维度池中保存的物品无法解析，已跳过：{}；原始数据：{}",
+                error.message(), tag));
         return result.result().orElse(ItemStack.EMPTY);
     }
 
@@ -206,8 +218,8 @@ public final class PlayerStateData {
         return tagToString(encodeStack(stack, lookup));
     }
 
-    private static ItemStack deserializeItemStack(String str, HolderLookup.Provider lookup) {
-        return decodeStack(stringToTag(str), lookup);
+    private static ItemStack deserializeItemStack(String str, ItemReader reader) {
+        return decodeStack(stringToTag(str), reader);
     }
 
     private static List<String> serializeItemList(NonNullList<ItemStack> items, HolderLookup.Provider lookup) {
@@ -228,14 +240,14 @@ public final class PlayerStateData {
     }
 
     private static void deserializeToItemList(NonNullList<ItemStack> target, List<String> source,
-                                               HolderLookup.Provider lookup) {
+                                               ItemReader lookup) {
         for (int i = 0; i < Math.min(target.size(), source.size()); i++) {
             target.set(i, deserializeItemStack(source.get(i), lookup));
         }
     }
 
     private static void deserializeToMainInventory(ServerPlayer player, List<String> source,
-                                                    HolderLookup.Provider lookup) {
+                                                    ItemReader lookup) {
         NonNullList<ItemStack> items = player.getInventory().getNonEquipmentItems();
         for (int i = 0; i < Math.min(items.size(), source.size()); i++) {
             items.set(i, deserializeItemStack(source.get(i), lookup));
@@ -243,13 +255,17 @@ public final class PlayerStateData {
     }
 
     private static void deserializeArmor(ServerPlayer player, List<String> source,
-                                          HolderLookup.Provider lookup) {
+                                          ItemReader lookup) {
         if (source.size() >= 4) {
             player.setItemSlot(EquipmentSlot.FEET, deserializeItemStack(source.get(0), lookup));
             player.setItemSlot(EquipmentSlot.LEGS, deserializeItemStack(source.get(1), lookup));
             player.setItemSlot(EquipmentSlot.CHEST, deserializeItemStack(source.get(2), lookup));
             player.setItemSlot(EquipmentSlot.HEAD, deserializeItemStack(source.get(3), lookup));
         }
+    }
+
+    /** 读取物品所需的注册表、DataFixer 与数据写出时的版本。 */
+    private record ItemReader(HolderLookup.Provider lookup, DataFixer fixer, int dataVersion) {
     }
 
     // ===== HolderLookup.Provider 获取 =====

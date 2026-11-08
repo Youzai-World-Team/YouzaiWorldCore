@@ -26,14 +26,14 @@ public record PasswordResetRequestPayload(
     @SuppressWarnings("null")
     public static final StreamCodec<RegistryFriendlyByteBuf, PasswordResetRequestPayload> STREAM_CODEC = StreamCodec.of(
             (buf, payload) -> {
-                buf.writeEnum(payload.action);
+                EnumBufs.write(buf, payload.action);
                 buf.writeUtf(payload.sessionId, 128);
                 buf.writeUtf(payload.email, 254);
                 buf.writeUtf(payload.code, 6);
                 buf.writeUtf(payload.newPassword, 128);
             },
             buf -> new PasswordResetRequestPayload(
-                    buf.readEnum(Action.class),
+                    EnumBufs.read(buf, Action.class),
                     buf.readUtf(128),
                     buf.readUtf(254),
                     buf.readUtf(6),

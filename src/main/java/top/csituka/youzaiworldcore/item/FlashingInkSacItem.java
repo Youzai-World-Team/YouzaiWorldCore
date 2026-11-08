@@ -6,6 +6,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.SignApplicator;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.SignBlockEntity;
+import net.minecraft.world.level.block.entity.SignTextSlot;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 
@@ -28,8 +29,9 @@ public class FlashingInkSacItem extends Item implements SignApplicator {
     }
 
     @Override
-    public boolean tryApplyToSign(Level level, SignBlockEntity sign, boolean front,
+    public boolean tryApplyToSign(Level level, SignBlockEntity sign, SignTextSlot slot,
             ItemStack stack, Player player) {
+        boolean front = slot == SignTextSlot.FRONT;
         if (!(sign instanceof FlashingSign flashingSign)
                 || sign.isWaxed()
                 || !player.mayBuild()

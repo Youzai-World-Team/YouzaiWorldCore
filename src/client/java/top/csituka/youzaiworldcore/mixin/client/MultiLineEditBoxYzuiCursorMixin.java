@@ -63,11 +63,11 @@ public class MultiLineEditBoxYzuiCursorMixin {
     }
 
     @Redirect(method = "extractContents", at = @At(value = "INVOKE",
-            target = "Lnet/minecraft/client/gui/GuiGraphicsExtractor;textWithWordWrap(Lnet/minecraft/client/gui/Font;Lnet/minecraft/network/chat/FormattedText;IIII)V"))
-    private void youzaiworldcore$placeholder(GuiGraphicsExtractor g, Font font, FormattedText text,
+            target = "Lnet/minecraft/client/gui/GuiGraphicsExtractor;textWithWordWrap(Lnet/minecraft/client/gui/Font;Lnet/minecraft/network/chat/FormattedText;IIII)I"))
+    private int youzaiworldcore$placeholder(GuiGraphicsExtractor g, Font font, FormattedText text,
             int x, int y, int width, int color) {
-        if (YzuiTheme.enabled()) g.textWithWordWrap(font, text, x, y, width, YzuiTheme.textMuted(), false);
-        else g.textWithWordWrap(font, text, x, y, width, color);
+        if (YzuiTheme.enabled()) return g.textWithWordWrap(font, text, x, y, width, YzuiTheme.textMuted(), false);
+        return g.textWithWordWrap(font, text, x, y, width, color);
     }
 
     @Redirect(method = "extractContents", at = @At(value = "INVOKE",

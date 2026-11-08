@@ -7,6 +7,7 @@ import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -26,7 +27,8 @@ import java.util.Map;
 @Mixin(ClientLanguage.class)
 public class EnchantmentLevelLangPatchMixin {
 
-    private static final Logger LOGGER = LogManager.getLogger();
+    @Unique
+    private static final Logger youzaiworldcore$LOGGER = LogManager.getLogger();
     private static final Marker MARKER = MarkerManager.getMarker("LangPatch/Mixin");
 
     @Shadow
@@ -39,7 +41,7 @@ public class EnchantmentLevelLangPatchMixin {
     private void youzaiworldcore$onGetOrDefault(String key, String fallback, CallbackInfoReturnable<String> cir) {
         String result = LangPatchImpl.hookWithFallback(key, this.storage, fallback);
         if (result != null) {
-            LOGGER.debug(MARKER, "Patched translation: {} -> {}", key, result);
+            youzaiworldcore$LOGGER.debug(MARKER, "Patched translation: {} -> {}", key, result);
             cir.setReturnValue(result);
         }
     }

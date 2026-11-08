@@ -1,5 +1,6 @@
 package top.csituka.youzaiworldcore.client.screen.widget;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import java.util.List;
 import java.util.function.IntConsumer;
 import net.minecraft.client.Minecraft;
@@ -207,7 +208,7 @@ public class DropdownButton extends AbstractWidget {
 
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
-        if (!isMouseOver(event.x(), event.y()) || event.button() != 0) return false;
+        if (!isMouseOver(event.x(), event.y()) || event.button() != InputConstants.MOUSE_BUTTON_LEFT) return false;
         setFocused(true);
         playDownSound(Minecraft.getInstance().getSoundManager());
         onClick(event, doubleClick);
@@ -238,14 +239,14 @@ public class DropdownButton extends AbstractWidget {
     @Override
     public boolean keyPressed(KeyEvent event) {
         if (!active || !visible || (!isFocused() && !open)) return false;
-        if (event.key() == 256 && open) { closePopup(); return true; }
-        if (event.key() == 257 || event.key() == 335 || event.key() == 32) {
+        if (event.key() == InputConstants.KEY_ESCAPE && open) { closePopup(); return true; }
+        if (event.key() == InputConstants.KEY_RETURN || event.key() == InputConstants.KEY_NUMPADENTER || event.key() == InputConstants.KEY_SPACE) {
             if (open) choose(keyboardIndex); else openPopup();
             return true;
         }
-        if (event.key() == 264 || event.key() == 265) {
+        if (event.key() == InputConstants.KEY_DOWN || event.key() == InputConstants.KEY_UP) {
             if (!open) openPopup();
-            else keyboardIndex = Math.clamp(keyboardIndex + (event.key() == 264 ? 1 : -1), 0, options.size() - 1);
+            else keyboardIndex = Math.clamp(keyboardIndex + (event.key() == InputConstants.KEY_DOWN ? 1 : -1), 0, options.size() - 1);
             keepVisible();
             return true;
         }

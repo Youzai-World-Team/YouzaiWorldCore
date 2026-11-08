@@ -1,6 +1,5 @@
 package top.csituka.youzaiworldcore.block;
 
-import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionResult;
@@ -42,16 +41,9 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 public class TeleportAnchorBlock extends BaseEntityBlock {
 
     public static final BooleanProperty ACTIVE = BooleanProperty.create("active");
-    public static final MapCodec<TeleportAnchorBlock> CODEC = simpleCodec(TeleportAnchorBlock::new);
-
     public TeleportAnchorBlock(Properties properties) {
         super(properties);
         this.registerDefaultState(this.stateDefinition.any().setValue(ACTIVE, false));
-    }
-
-    @Override
-    protected MapCodec<? extends BaseEntityBlock> codec() {
-        return CODEC;
     }
 
     @Override

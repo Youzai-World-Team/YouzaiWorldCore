@@ -52,7 +52,7 @@ public record TitleStatePayload(
             TitleDefinition title = payload.definitions().get(i);
             buf.writeUtf(limitUtf(title.id(), MAX_TITLE_ID_LENGTH), MAX_TITLE_ID_LENGTH);
             buf.writeUtf(limitUtf(title.displayName(), 64), 64);
-            buf.writeEnum(title.renderType());
+            EnumBufs.write(buf, title.renderType());
             buf.writeUtf(limitUtf(title.textContent(), 128), 128);
             buf.writeInt(title.textColor());
             buf.writeBoolean(title.bold());
@@ -82,7 +82,7 @@ public record TitleStatePayload(
         List<TitleDefinition> definitions = new ArrayList<>(titleCount);
         for (int i = 0; i < titleCount; i++) {
             definitions.add(new TitleDefinition(
-                    buf.readUtf(MAX_TITLE_ID_LENGTH), buf.readUtf(64), buf.readEnum(TitleDefinition.RenderType.class),
+                    buf.readUtf(MAX_TITLE_ID_LENGTH), buf.readUtf(64), EnumBufs.read(buf, TitleDefinition.RenderType.class),
                     buf.readUtf(128), buf.readInt(), buf.readBoolean(), buf.readBoolean(),
                     buf.readUtf(128), buf.readUtf(128), buf.readUtf(16), buf.readVarInt()));
         }

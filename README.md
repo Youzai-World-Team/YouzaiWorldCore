@@ -6,7 +6,7 @@
 
 <p align="center">
   <a href="https://github.com/Youzai-World-Team"><img src="https://img.shields.io/badge/Organization-Youzai_World_Team-blue?style=for-the-badge&logo=github" alt="Organization"></a>
-  <a><img src="https://img.shields.io/badge/Minecraft-Java_26.2-brightgreen?style=for-the-badge&logo=minecraft" alt="Minecraft Version"></a>
+  <a><img src="https://img.shields.io/badge/Minecraft-Java_26.3-brightgreen?style=for-the-badge&logo=minecraft" alt="Minecraft Version"></a>
   <a><img src="https://img.shields.io/badge/Mod_Loader-Fabric-orange?style=for-the-badge" alt="Mod Loader"></a>
   <a><img src="https://img.shields.io/badge/License-Apache_2.0-green?style=for-the-badge" alt="License"></a>
   <a href="https://nightly.link/Youzai-World-Team/YouzaiWorldCore/workflows/build/main/youzaiworldcore.zip"><img src="https://img.shields.io/badge/下载-最新构建-blue?style=for-the-badge&logo=githubactions" alt="Download Latest Build"></a>
@@ -30,7 +30,7 @@
 | **生存玩家**     | 使用悠哉系列工具、成就系统、传送锚点、坐姿交互、魔力法杖、宠物与属性成长、YZUI 界面与饰品槽进行游戏 |
 | **模组开发者**   | 了解模组架构、扩展功能或贡献代码                                                                    |
 
-> **版本说明**：本模组面向 Minecraft **Java 26.2**。26.1 起 Mojang 采用新的命名/源码规则，游戏 jar 已去除混淆，可直接反编译参考最新实现。
+> **版本说明**：本模组面向 Minecraft **Java 26.3**。26.1 起 Mojang 采用新的命名/源码规则，游戏 jar 已去除混淆，可直接反编译参考最新实现。
 
 ---
 
@@ -82,7 +82,7 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 ### 4. 窗口定制化
 
 - **自定义窗口图标**：运行时通过 Java ImageIO 加载 `jar_icon.png` 替换任务栏与标题栏图标
-- **自定义窗口标题**：`WindowTitleMixin` 拦截 `Window.setTitle()`，标题替换为 `Youzai World Server · Wanderer v<版本> | [Minecraft JAVA 26.2]`
+- **自定义窗口标题**：`WindowTitleMixin` 拦截 `Window.setTitle()`，标题替换为 `Youzai World Server · Wanderer v<版本> | [Minecraft JAVA 26.3]`
 - **退出确认**：`MinecraftQuitMixin` 劫持窗口关闭事件，点击标题屏「退出游戏」或窗口 X / Alt+F4 时弹出确认对话框（`QuitConfirmationScreen`），确认后才真正退出
 - **原地重生**：死亡界面将原版重生按钮拆分为左右两半；配置允许的维度可消耗原版经验等级在死亡坐标复活，保留物品栏、不消耗守护之心并获得 10 秒抗性 V。费用按账户累计成功次数计算：`floor(log2(本次累计次数 + 1)) + 5`，首次为 6 级。配置位于 `yzwc/server/config/global_settings.json` 的 `respawn_module` 分节，默认仅对 `survival_world_pool` 维度池开启
 
@@ -954,18 +954,18 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 
 | 依赖                   | 版本                                    | 用途                                   |
 | ---------------------- | --------------------------------------- | -------------------------------------- |
-| Minecraft              | 26.2                                    | 基础引擎                               |
-| Fabric Loader          | 0.19.3                                  | 模组加载器                             |
-| Fabric API             | 0.154.0+26.2                            | Fabric 标准 API                        |
-| ModMenu                | 20.0.0-beta.4                           | 模组菜单集成                           |
-| Placeholder API        | 3.1.0-beta.1+26.2                       | 文本占位符                             |
-| Trinkets               | 精确匹配 4.1.0-rc.1+26.2（`trinkets_updated`） | 饰品槽系统（第 34 项功能依赖，硬依赖；不再兼容 beta.2 旧接口） |
-| GeckoLib               | 5.5.3+                                  | 实体动画与模型渲染（硬依赖）           |
+| Minecraft              | 26.3                                    | 基础引擎                               |
+| Fabric Loader          | 0.20.1                                  | 模组加载器                             |
+| Fabric API             | 0.165.2+26.3                            | Fabric 标准 API                        |
+| ModMenu                | 21.0.0                                  | 模组菜单集成                           |
+| Placeholder API        | 3.2.0+26.3                              | 文本占位符                             |
+| Trinkets               | 精确匹配 4.2.1+26.3（`trinkets_updated`） | 饰品槽系统（第 34 项功能依赖，硬依赖） |
+| GeckoLib               | 5.5.7+                                  | 实体动画与模型渲染（硬依赖）           |
 | Moog's Structure Lib   | 3.0.4                                   | 声明依赖（村庄结构注入所引用）         |
 | Fabric Permissions API | 0.6.1（内置）                           | 跨模组权限 API                         |
 | LuckPerms              | 5.5（建议运行时）                       | 高级权限控制                           |
 
-**构建要求**：JDK 25+ · Gradle（Fabric Loom 1.16-SNAPSHOT）· 模组版本 `1.20.5-indev`
+**构建要求**：JDK 25+ · Gradle 9.8.2（Fabric Loom 1.19-SNAPSHOT）· 模组版本 `1.20.5-indev`
 
 **构建与 CI/CD**：GitHub Actions 工作流（`.github/workflows/build.yml`）在 Ubuntu / Windows / macOS 三平台使用 JDK 25 自动构建，Linux 构建产物自动上传。
 

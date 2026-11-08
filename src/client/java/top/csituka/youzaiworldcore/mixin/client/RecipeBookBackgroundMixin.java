@@ -2,7 +2,7 @@ package top.csituka.youzaiworldcore.mixin.client;
 
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
 
-import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
@@ -44,7 +44,7 @@ public class RecipeBookBackgroundMixin {
     @Redirect(
             method = "extractRenderState",
             at = @At(value = "INVOKE",
-                    target = "Lnet/minecraft/client/gui/GuiGraphicsExtractor;blit(Lcom/mojang/blaze3d/pipeline/RenderPipeline;Lnet/minecraft/resources/Identifier;IIFFIIII)V"),
+                    target = "Lnet/minecraft/client/gui/GuiGraphicsExtractor;blit(Lcom/mojang/renderpearl/api/pipeline/RenderPipeline;Lnet/minecraft/resources/Identifier;IIFFIIII)V"),
             require = 1
     )
     private void yzwc$recipeBookBackground(

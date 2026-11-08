@@ -1,5 +1,6 @@
 package top.csituka.youzaiworldcore.client.screen;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
 import top.csituka.youzaiworldcore.client.render.YzuiMenuPanel;
 import top.csituka.youzaiworldcore.client.screen.widget.WidgetFocus;
@@ -387,11 +388,11 @@ public class AccountManagementScreen extends Screen implements YzuiMenuScreen {
         if (YzuiMenuScreen.handleEscape(this, event)) return true;
         if (currentDialog != null && currentDialog.isVisible()) return currentDialog.keyPressed(event);
         if (WidgetFocus.keyPressed(event, allWidgets)) return true;
-        if (event.key() == 256) {
+        if (event.key() == InputConstants.KEY_ESCAPE) {
             onBack();
             return true;
         }
-        if (event.key() == 257 || event.key() == 335) {
+        if (event.key() == InputConstants.KEY_RETURN || event.key() == InputConstants.KEY_NUMPADENTER) {
             switch (this.mode) {
                 case HOME -> {
                 }

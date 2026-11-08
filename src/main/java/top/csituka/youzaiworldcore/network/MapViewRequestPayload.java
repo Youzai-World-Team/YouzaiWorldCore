@@ -12,12 +12,12 @@ public record MapViewRequestPayload(String dimension, MapLayer layer, int height
     public static final Type<MapViewRequestPayload> ID = new Type<>(Identifier.fromNamespaceAndPath("youzaiworldcore", "map_view_request"));
     public static final StreamCodec<RegistryFriendlyByteBuf, MapViewRequestPayload> STREAM_CODEC = new StreamCodec<>() {
         @Override public MapViewRequestPayload decode(RegistryFriendlyByteBuf buf) {
-            return new MapViewRequestPayload(buf.readUtf(128), buf.readEnum(MapLayer.class), buf.readInt(),
+            return new MapViewRequestPayload(buf.readUtf(128), EnumBufs.read(buf, MapLayer.class), buf.readInt(),
                     buf.readInt(), buf.readInt(), buf.readInt(), buf.readInt(), buf.readInt());
         }
         @Override public void encode(RegistryFriendlyByteBuf buf, MapViewRequestPayload value) {
             buf.writeUtf(value.dimension(), 128);
-            buf.writeEnum(value.layer());
+            EnumBufs.write(buf, value.layer());
             buf.writeInt(value.height());
             buf.writeInt(value.minX());
             buf.writeInt(value.minZ());

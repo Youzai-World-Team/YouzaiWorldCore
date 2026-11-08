@@ -1,5 +1,6 @@
 package top.csituka.youzaiworldcore.client.screen.map;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -8,7 +9,6 @@ import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
-import org.lwjgl.glfw.GLFW;
 import top.csituka.youzaiworldcore.client.map.MapClient;
 import top.csituka.youzaiworldcore.client.map.MapTexts;
 import top.csituka.youzaiworldcore.client.render.RoundedRect;
@@ -381,7 +381,7 @@ final class MapPlayersPanel extends MapOverlayPanel {
         return true;
     }
     @Override public boolean keyPressed(KeyEvent event) {
-        if (event.key() == GLFW.GLFW_KEY_ESCAPE && (picker != null || choosingMode)) { back(); return true; }
+        if (event.key() == InputConstants.KEY_ESCAPE && (picker != null || choosingMode)) { back(); return true; }
         return super.keyPressed(event);
     }
 }

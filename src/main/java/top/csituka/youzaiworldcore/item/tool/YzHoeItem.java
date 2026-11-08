@@ -5,7 +5,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.HoeItem;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ToolMaterial;
 import net.minecraft.world.item.TooltipFlag;
@@ -19,10 +19,10 @@ import org.jspecify.annotations.NonNull;
 import java.util.function.Consumer;
 
 @SuppressWarnings("null")
-public class YzHoeItem extends HoeItem {
+public class YzHoeItem extends Item {
 
     public YzHoeItem(ToolMaterial material, float attackDamageBaseline, float attackSpeedBaseline, Properties settings) {
-        super(material, attackDamageBaseline, attackSpeedBaseline, settings);
+        super(settings.hoe(material, attackDamageBaseline, attackSpeedBaseline));
     }
 
     @SuppressWarnings("deprecation")

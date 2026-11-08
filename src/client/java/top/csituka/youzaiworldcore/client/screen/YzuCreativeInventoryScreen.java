@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.client.screen;
 
+import net.minecraft.util.Prediction;
+import com.mojang.blaze3d.platform.InputConstants;
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
 import top.csituka.youzaiworldcore.client.inventory.CreativeItemGroupRenderer;
 import top.csituka.youzaiworldcore.client.inventory.CreativeItemGroups;
@@ -895,7 +897,7 @@ public class YzuCreativeInventoryScreen extends Screen {
             minecraft.player.containerMenu.setCarried(stack);
         } catch (Exception e) {
             if (!player.getInventory().add(stack))
-                player.drop(stack, false);
+                player.drop(stack, false, Prediction.PREDICTED);
         }
     }
 
@@ -969,7 +971,7 @@ public class YzuCreativeInventoryScreen extends Screen {
 
         ItemStack toDrop = carried.copy();
         clearCarried();
-        player.drop(toDrop, true);
+        player.drop(toDrop, true, Prediction.PREDICTED);
         minecraft.gameMode.handleCreativeModeItemDrop(toDrop);
         resetDragState();
         DebugLogger.info("YzuCreativeInventoryScreen", "创造模式物品拖出界面，已作为掉落物丢出");
@@ -1082,7 +1084,6 @@ public class YzuCreativeInventoryScreen extends Screen {
         return 0;
     }
 
-    /** 手动收集右侧面板（9-45）中与指定槽位相同类型的物品到光标。 */
     /** 记录拖拽起点（由 {@link #mouseClicked} 设置 pendingDrag，实际拖拽由 mouseDragged 触发）。 */
     private void startDrag(int button, int firstSlot) {
         isDragInProgress = true;
@@ -1229,7 +1230,7 @@ public class YzuCreativeInventoryScreen extends Screen {
 
         int leftX = lp + 3;
         if (ev.x() >= leftX && ev.x() < leftX + TW && ev.y() >= arrowY && ev.y() < arrowY + TH) {
-            if (ev.button() == 0 && tabPage > 0)
+            if (ContainerMouseButtons.of(ev) == 0 && tabPage > 0)
                 tabPage--;
             return true;
         }
@@ -1237,7 +1238,7 @@ public class YzuCreativeInventoryScreen extends Screen {
         int tx = leftX + TW + TG;
         for (int i = st; i < Math.min(st + mv, tabs.size()); i++) {
             if (ev.x() >= tx && ev.x() < tx + TW && ev.y() >= arrowY && ev.y() < arrowY + TH) {
-                if (ev.button() == 0)
+                if (ContainerMouseButtons.of(ev) == 0)
                     selectCategory(tabs.get(i));
                 return true;
             }
@@ -1246,13 +1247,13 @@ public class YzuCreativeInventoryScreen extends Screen {
 
         int rightX = lp + 3 + TW + TG + MAX_VIS * (TW + TG);
         if (ev.x() >= rightX && ev.x() < rightX + TW && ev.y() >= arrowY && ev.y() < arrowY + TH) {
-            if (ev.button() == 0 && tabPage < pc - 1)
+            if (ContainerMouseButtons.of(ev) == 0 && tabPage < pc - 1)
                 tabPage++;
             return true;
         }
 
         // 创造物品网格滚动条：左键按下 thumb 或轨道后进入拖动状态。
-        if (ev.button() == 0 && beginScrollBarDrag(ev.x(), ev.y())) {
+        if (ContainerMouseButtons.of(ev) == 0 && beginScrollBarDrag(ev.x(), ev.y())) {
             return true;
         }
 
@@ -1261,7 +1262,7 @@ public class YzuCreativeInventoryScreen extends Screen {
         if (rpSlot >= 0) {
             // Shift+左键 → 开始手势拖拽（批量快速转移），Shift+其他按钮 → 单格快速转移
             if (ev.hasShiftDown()) {
-                if (ev.button() == 0) {
+                if (ContainerMouseButtons.of(ev) == 0) {
                     pendingDrag = true;
                     dragButton = 0;
                     dragOriginSlot = rpSlot;
@@ -1275,28 +1276,28 @@ public class YzuCreativeInventoryScreen extends Screen {
                 return true;
             }
 
-            if (ev.button() == 2) {
+            if (ContainerMouseButtons.of(ev) == 2) {
                 handleSlotClick(rpSlot, 2);
                 return true;
             }
 
             // 双击检测（优先于任何点击处理，防止第一次点击清空槽位后 PICKUP_ALL 找不到目标）
-            if (ev.button() == 0 || ev.button() == 1) {
+            if (ContainerMouseButtons.of(ev) == 0 || ContainerMouseButtons.of(ev) == 1) {
                 long now = System.currentTimeMillis();
                 boolean doubleClick = (now - lastClickTime < 250L)
-                        && rpSlot == lastClickSlot && ev.button() == lastClickButton;
+                        && rpSlot == lastClickSlot && ContainerMouseButtons.of(ev) == lastClickButton;
                 lastClickTime = now;
                 lastClickSlot = rpSlot;
-                lastClickButton = ev.button();
+                lastClickButton = ContainerMouseButtons.of(ev);
                 if (doubleClick) {
-                    handlePickupAll(rpSlot, ev.button());
+                    handlePickupAll(rpSlot, ContainerMouseButtons.of(ev));
                     return true;
                 }
             }
 
             ItemStack ca = minecraft.player.containerMenu.getCarried();
             if (!ca.isEmpty() && player.isCreative()) {
-                if (ev.button() == 0) {
+                if (ContainerMouseButtons.of(ev) == 0) {
                     // 有携带物左键：不处理点击（推迟到 endDrag 统一分发），仅设标准拖拽待命
                     pendingDrag = true;
                     dragButton = 0;
@@ -1315,7 +1316,7 @@ public class YzuCreativeInventoryScreen extends Screen {
                 return true;
             }
             // 空手左键：先标准取物品，再进入合并拖拽待命
-            if (ev.button() == 0) {
+            if (ContainerMouseButtons.of(ev) == 0) {
                 handleSlotClick(rpSlot, 0);
                 ca = minecraft.player.containerMenu.getCarried();
                 if (!ca.isEmpty()) {
@@ -1329,7 +1330,7 @@ public class YzuCreativeInventoryScreen extends Screen {
                 return true;
             }
             // 空手右键：标准点击
-            handleSlotClick(rpSlot, ev.button());
+            handleSlotClick(rpSlot, ContainerMouseButtons.of(ev));
             return true;
         }
 
@@ -1338,17 +1339,17 @@ public class YzuCreativeInventoryScreen extends Screen {
             int vi = vis.get(hov);
             CreativeItemGroups.Entry entry = getGroupEntry(vi);
             if (entry != null && !entry.canTake()) {
-                if (entry.header() && (ev.button() == 0 || ev.button() == 1)) {
+                if (entry.header() && (ContainerMouseButtons.of(ev) == 0 || ContainerMouseButtons.of(ev) == 1)) {
                     toggleGroup(vi);
                 }
-                groupClickButton = ev.button();
+                groupClickButton = ContainerMouseButtons.of(ev);
                 return true;
             }
             ItemStack cl = getItemForVis(vi);
             if (cl.isEmpty())
                 return false;
-            if (ev.button() >= 0 && ev.button() <= 2) {
-                handleCreativeGridClick(cl, ev.button(), ev.hasShiftDown());
+            if (ContainerMouseButtons.of(ev) >= 0 && ContainerMouseButtons.of(ev) <= 2) {
+                handleCreativeGridClick(cl, ContainerMouseButtons.of(ev), ev.hasShiftDown());
                 return true;
             }
         }
@@ -1358,11 +1359,11 @@ public class YzuCreativeInventoryScreen extends Screen {
             int ti = getTrinketIndicatorAt((int) ev.x(), (int) ev.y());
             if (ti >= 0 && ti < activeTrinketSlots.size()) {
                 TrinketHelper.TrinketSlotInfo tsi = activeTrinketSlots.get(ti);
-                if (ev.hasShiftDown() && ev.button() == 0) {
+                if (ev.hasShiftDown() && ContainerMouseButtons.of(ev) == 0) {
                     // Shift+左键点击指示器：快捷移动槽位物品到物品栏
                     trinketQuickMove(tsi);
                 } else {
-                    trinketHandleClick(tsi, ev.button());
+                    trinketHandleClick(tsi, ContainerMouseButtons.of(ev));
                 }
                 return true;
             }
@@ -1376,15 +1377,15 @@ public class YzuCreativeInventoryScreen extends Screen {
             }
             ItemStack ca = minecraft.player.containerMenu.getCarried();
             if (!ca.isEmpty()) {
-                if (ev.button() == 0) {
-                    player.drop(ca, false);
+                if (ContainerMouseButtons.of(ev) == 0) {
+                    player.drop(ca, false, Prediction.PREDICTED);
                     clearCarried();
-                } else if (ev.button() == 1 && !ca.isEmpty()) {
+                } else if (ContainerMouseButtons.of(ev) == 1 && !ca.isEmpty()) {
                     ItemStack one = ca.copy();
                     one.setCount(1);
                     ca.shrink(1);
                     player.containerMenu.setCarried(ca.isEmpty() ? ItemStack.EMPTY : ca);
-                    player.drop(one, false);
+                    player.drop(one, false, Prediction.PREDICTED);
                 }
                 return true;
             }
@@ -1395,17 +1396,17 @@ public class YzuCreativeInventoryScreen extends Screen {
 
     @Override
     public boolean mouseDragged(@NonNull MouseButtonEvent ev, double dx, double dy) {
-        if (ev.button() == groupClickButton) {
+        if (ContainerMouseButtons.of(ev) == groupClickButton) {
             return true;
         }
-        if (scrollBarDragging && ev.button() == 0) {
+        if (scrollBarDragging && ContainerMouseButtons.of(ev) == 0) {
             dragScrollBar(ev.y());
             return true;
         }
-        if (pendingDrag && ev.button() == dragButton) {
+        if (pendingDrag && ContainerMouseButtons.of(ev) == dragButton) {
             // 鼠标真正移动了 → 从 pending 转为实际手势拖拽
             pendingDrag = false;
-            startDrag(ev.button(), dragOriginSlot);
+            startDrag(ContainerMouseButtons.of(ev), dragOriginSlot);
             // 仅 Shift 手势（模式 2）需要处理起点槽位（左键已在 mouseClicked 处理）
             if (yzwcDragMode == 2)
                 processGestureSlot(dragOriginSlot);
@@ -1416,7 +1417,7 @@ public class YzuCreativeInventoryScreen extends Screen {
             }
             return true;
         }
-        if (isDragInProgress && ev.button() == dragButton) {
+        if (isDragInProgress && ContainerMouseButtons.of(ev) == dragButton) {
             int si = getRightPanelSlotAt((int) ev.x(), (int) ev.y());
             if (si >= 0 && !draggedSlots.contains(si)) {
                 draggedSlots.add(si);
@@ -1429,11 +1430,11 @@ public class YzuCreativeInventoryScreen extends Screen {
 
     @Override
     public boolean mouseReleased(@NonNull MouseButtonEvent ev) {
-        if (ev.button() == groupClickButton) {
+        if (ContainerMouseButtons.of(ev) == groupClickButton) {
             groupClickButton = -1;
             return true;
         }
-        if (scrollBarDragging && ev.button() == 0) {
+        if (scrollBarDragging && ContainerMouseButtons.of(ev) == 0) {
             scrollBarDragging = false;
             scrollBarDragOffset = 0;
             DebugLogger.info("YzuCreativeInventoryScreen", "结束拖动创造物品滚动条，scroll=%.2f/%d",
@@ -1447,7 +1448,7 @@ public class YzuCreativeInventoryScreen extends Screen {
         }
 
         // 右键释放：处理 pending 或 drag 后始终消耗
-        if (ev.button() == 1) {
+        if (ContainerMouseButtons.of(ev) == 1) {
             if (pendingDrag && dragButton == 1) {
                 pendingDrag = false;
                 handleSlotClick(dragOriginSlot, 1);
@@ -1459,7 +1460,7 @@ public class YzuCreativeInventoryScreen extends Screen {
             processedSlots.clear();
             return true;
         }
-        if (pendingDrag && ev.button() == dragButton) {
+        if (pendingDrag && ContainerMouseButtons.of(ev) == dragButton) {
             // 没有拖拽移动 → 视为单格手势点击
             pendingDrag = false;
             if (yzwcDragMode == 2) {
@@ -1467,11 +1468,11 @@ public class YzuCreativeInventoryScreen extends Screen {
                 processGestureSlot(dragOriginSlot);
             } else if (yzwcDragMode == 1) {
                 // 合并手势未拖拽：点击已在 mouseClicked 中由 handleSlotClick 处理完毕，无需重复
-            } else if (ev.button() == 0) {
+            } else if (ContainerMouseButtons.of(ev) == 0) {
                 // 标准左键（有携带物）未拖拽：mouseClicked 未处理点击（推迟给 endDrag），
                 // 未拖拽则在此处理（放置/合并/互换）
                 handleSlotClick(dragOriginSlot, 0);
-            } else if (ev.button() == 1) {
+            } else if (ContainerMouseButtons.of(ev) == 1) {
                 // 普通右键（未设手势）：处理点击（mouseClicked 未处理）
                 handleSlotClick(dragOriginSlot, 1);
             }
@@ -1480,7 +1481,7 @@ public class YzuCreativeInventoryScreen extends Screen {
             processedSlots.clear();
             return true;
         }
-        if (isDragInProgress && ev.button() == dragButton) {
+        if (isDragInProgress && ContainerMouseButtons.of(ev) == dragButton) {
             if (yzwcDragMode > 0) {
                 // 手势拖拽结束：物品已在鼠标拖动时实时处理
                 isDragInProgress = false;
@@ -1553,7 +1554,7 @@ public class YzuCreativeInventoryScreen extends Screen {
 
     @Override
     public boolean keyPressed(@NonNull KeyEvent ev) {
-        if (ev.key() == 256 || minecraft.options.keyInventory.matches(ev)) {
+        if (ev.key() == InputConstants.KEY_ESCAPE || minecraft.options.keyInventory.matches(ev)) {
             minecraft.gui.setScreen(null);
             return true;
         }
@@ -1564,7 +1565,7 @@ public class YzuCreativeInventoryScreen extends Screen {
             int vi = vis.get(gridHov);
             CreativeItemGroups.Entry entry = getGroupEntry(vi);
             boolean groupHeader = entry != null && entry.header();
-            if (groupHeader && !searchBox.isFocused() && (ev.key() == 257 || ev.key() == 335 || ev.key() == 32)) {
+            if (groupHeader && !searchBox.isFocused() && (ev.key() == InputConstants.KEY_RETURN || ev.key() == InputConstants.KEY_NUMPADENTER || ev.key() == InputConstants.KEY_SPACE)) {
                 toggleGroup(vi);
                 return true;
             }
@@ -1577,7 +1578,7 @@ public class YzuCreativeInventoryScreen extends Screen {
                     }
                     ItemStack toDrop = gridItem.copy();
                     toDrop.setCount(ev.hasControlDown() ? toDrop.getMaxStackSize() : 1);
-                    player.drop(toDrop, true);
+                    player.drop(toDrop, true, Prediction.PREDICTED);
                     minecraft.gameMode.handleCreativeModeItemDrop(toDrop);
                     DebugLogger.info("YzuCreativeInventoryScreen",
                             "grid drop: %s x%d (ctrl=%b)", toDrop.getHoverName().getString(),
@@ -1635,7 +1636,7 @@ public class YzuCreativeInventoryScreen extends Screen {
                         int count = ev.hasControlDown() ? slot.getItem().getMaxStackSize() : 1;
                         ItemStack removed = slot.remove(count);
                         ItemStack remaining = slot.getItem();
-                        minecraft.player.drop(removed, true);
+                        minecraft.player.drop(removed, true, Prediction.PREDICTED);
                         minecraft.gameMode.handleCreativeModeItemDrop(removed);
                         minecraft.gameMode.handleCreativeModeItemAdd(
                                 remaining.isEmpty() ? ItemStack.EMPTY : remaining, hovSlot);

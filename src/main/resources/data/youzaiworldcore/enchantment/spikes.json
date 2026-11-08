@@ -23,6 +23,7 @@
         },
         "enchanted": "victim",
         "requirements": {
+          "type": "minecraft:random_chance",
           "chance": {
             "type": "minecraft:enchantment_level",
             "amount": {
@@ -30,8 +31,7 @@
               "base": 0.4,
               "per_level_above_first": 0.3
             }
-          },
-          "condition": "minecraft:random_chance"
+          }
         }
       }
     ]

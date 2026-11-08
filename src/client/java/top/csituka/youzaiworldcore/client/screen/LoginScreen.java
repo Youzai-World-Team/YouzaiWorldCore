@@ -1,5 +1,6 @@
 package top.csituka.youzaiworldcore.client.screen;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
 import top.csituka.youzaiworldcore.client.animation.GuiAnimationController;
 import top.csituka.youzaiworldcore.client.screen.widget.MenuCloseButton;
@@ -168,7 +169,7 @@ public class LoginScreen extends Screen implements YzuiMenuScreen {
 
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean isActuallyClick) {
-        if (event.button() == 0 && previewCloseButton != null
+        if (event.button() == InputConstants.MOUSE_BUTTON_LEFT && previewCloseButton != null
                 && previewCloseButton.mouseClicked(event, isActuallyClick)) return true;
         if (currentDialog == null || !currentDialog.isVisible()) WidgetFocus.mouseFocus(event.x(), event.y(), interactiveWidgets());
         // 弹窗优先
@@ -218,12 +219,12 @@ public class LoginScreen extends Screen implements YzuiMenuScreen {
         }
 
         // 拦截 ESC
-        if (keyEvent.key() == 256) { // GLFW_KEY_ESCAPE
+        if (keyEvent.key() == InputConstants.KEY_ESCAPE) { // GLFW_KEY_ESCAPE
             return true;
         }
 
         // Enter 键触发登入
-        if (keyEvent.key() == 257 || keyEvent.key() == 335) { // GLFW_KEY_ENTER, GLFW_KEY_KP_ENTER
+        if (keyEvent.key() == InputConstants.KEY_RETURN || keyEvent.key() == InputConstants.KEY_NUMPADENTER) { // GLFW_KEY_ENTER, GLFW_KEY_KP_ENTER
             onLoginClick();
             return true;
         }

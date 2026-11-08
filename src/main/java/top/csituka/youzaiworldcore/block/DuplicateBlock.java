@@ -1,6 +1,5 @@
 package top.csituka.youzaiworldcore.block;
 
-import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.DustParticleOptions;
@@ -39,8 +38,6 @@ import java.util.UUID;
 public class DuplicateBlock extends BaseEntityBlock {
 
     public static final BooleanProperty ACTIVE = BooleanProperty.create("active");
-    public static final MapCodec<DuplicateBlock> CODEC = simpleCodec(DuplicateBlock::new);
-
     private static final int RANGE = 16;
     private static final DustParticleOptions EDGE_PARTICLE = new DustParticleOptions(0xA8E6CF, 0.65f);
 
@@ -49,12 +46,6 @@ public class DuplicateBlock extends BaseEntityBlock {
         DebugLogger.entering("DuplicateBlock", "constructor");
         this.registerDefaultState(this.stateDefinition.any().setValue(ACTIVE, false));
         DebugLogger.exiting("DuplicateBlock", "constructor");
-    }
-
-    @Override
-    @NonNull
-    protected MapCodec<? extends BaseEntityBlock> codec() {
-        return CODEC;
     }
 
     @Override

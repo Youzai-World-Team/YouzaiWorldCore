@@ -1,5 +1,6 @@
 package top.csituka.youzaiworldcore.client.screen.options;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import java.util.List;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Renderable;
@@ -51,7 +52,7 @@ final class EmbeddedCoreSettings extends AbstractContainerEventHandler implement
     }
     @Override public boolean keyPressed(KeyEvent event) {
         // Tab 由外层 Screen 沿整个组件树导航，避免内外两层各移动一次焦点。
-        return event.key() != 258 && content.keyPressed(event);
+        return event.key() != InputConstants.KEY_TAB && content.keyPressed(event);
     }
     @Override public boolean charTyped(CharacterEvent event) { return content.charTyped(event); }
 

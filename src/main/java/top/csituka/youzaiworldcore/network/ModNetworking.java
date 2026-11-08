@@ -238,7 +238,7 @@ public class ModNetworking {
             }
             server.execute(() -> {
                 TeleportAnchorManager manager = TeleportAnchorManager.get(server);
-                net.minecraft.server.level.ServerPlayer serverPlayer = (net.minecraft.server.level.ServerPlayer) player;
+                net.minecraft.server.level.ServerPlayer serverPlayer = player;
 
                 // 按坐标查找传送点（不再依赖索引，避免过滤列表与原始列表的索引错位）
                 TeleportAnchorData target =
@@ -420,7 +420,7 @@ public class ModNetworking {
             if (server != null) {
                 server.execute(() -> {
                     TeleportAnchorManager manager = TeleportAnchorManager.get(server);
-                    manager.removePointByPos((net.minecraft.server.level.ServerPlayer) player, payload.pos(), payload.dimension());
+                    manager.removePointByPos(player, payload.pos(), payload.dimension());
                 });
             }
         });
@@ -511,7 +511,7 @@ public class ModNetworking {
             if (server != null) {
                 server.execute(() -> {
                     TeleportAnchorManager manager = TeleportAnchorManager.get(server);
-                    manager.renamePointByPos((net.minecraft.server.level.ServerPlayer) player,
+                    manager.renamePointByPos(player,
                             payload.pos(), payload.dimension(), payload.newName());
                 });
             }
@@ -519,7 +519,7 @@ public class ModNetworking {
 
         // ===== 传送锚点激活处理器（玩家从命名界面确认后） =====
         ServerPlayNetworking.registerGlobalReceiver(TeleportAnchorActivatePayload.TYPE, (payload, context) -> {
-            var player = (net.minecraft.server.level.ServerPlayer) context.player();
+            var player = context.player();
             var server = player.level().getServer();
             if (server == null) return;
             server.execute(() -> {
@@ -578,7 +578,7 @@ public class ModNetworking {
             if (server != null) {
                 server.execute(() -> {
                     TeleportAnchorManager manager = TeleportAnchorManager.get(server);
-                    manager.movePoint((net.minecraft.server.level.ServerPlayer) player,
+                    manager.movePoint(player,
                             payload.fromIndex(), payload.toIndex());
                 });
             }
@@ -587,7 +587,7 @@ public class ModNetworking {
         // ===== 双开门功能切换 / 查询处理器 =====
         ServerPlayNetworking.registerGlobalReceiver(DoubleDoorsTogglePayload.ID, (payload, context) -> {
             DebugLogger.entering("ModNetworking", "DoubleDoorsTogglePayload handler");
-            var player = (net.minecraft.server.level.ServerPlayer) context.player();
+            var player = context.player();
             var server = player.level().getServer();
             if (server == null) {
                 DebugLogger.exiting("ModNetworking", "DoubleDoorsTogglePayload handler", "server is null");
@@ -622,7 +622,7 @@ public class ModNetworking {
         // ===== 隐身功能切换处理器 =====
         ServerPlayNetworking.registerGlobalReceiver(InvisibilityPayload.ID, (payload, context) -> {
             DebugLogger.entering("ModNetworking", "InvisibilityPayload handler");
-            var player = (net.minecraft.server.level.ServerPlayer) context.player();
+            var player = context.player();
             var server = player.level().getServer();
             if (server == null) {
                 DebugLogger.exiting("ModNetworking", "InvisibilityPayload handler", "server is null");
@@ -666,7 +666,7 @@ public class ModNetworking {
 
         // ===== 属性加点 C2S 处理器 =====
         ServerPlayNetworking.registerGlobalReceiver(AttributeUpgradePayload.TYPE, (payload, context) -> {
-            var player = (net.minecraft.server.level.ServerPlayer) context.player();
+            var player = context.player();
             player.level().getServer().execute(() -> {
                 AttributeManager.handleUpgrade(player, payload.attributeKey());
             });
@@ -674,7 +674,7 @@ public class ModNetworking {
 
         // ===== 宠物管理命令 C2S 转发处理器 =====
         ServerPlayNetworking.registerGlobalReceiver(PetCommandPayload.ID, (payload, context) -> {
-            var player = (net.minecraft.server.level.ServerPlayer) context.player();
+            var player = context.player();
             DebugLogger.entering("ModNetworking", "PetCommandPayload handler", "args=" + payload.args());
             var server = player.level().getServer();
             if (server == null) {
@@ -695,7 +695,7 @@ public class ModNetworking {
 
         // ===== AFK 客户端心跳处理器（服务端权威：更新客户端通道活动时间） =====
         ServerPlayNetworking.registerGlobalReceiver(AfkHeartbeatPayload.ID, (payload, context) -> {
-            var player = (net.minecraft.server.level.ServerPlayer) context.player();
+            var player = context.player();
             DebugLogger.trace("ModNetworking", "AfkHeartbeatPayload handler: player=%s, idleTicks=%d",
                     player.getName().getString(), payload.idleTicks());
             var server = player.level().getServer();
@@ -942,7 +942,7 @@ public class ModNetworking {
         // 1. 打开发布 GUI（纯权限判定，不需要 Api）
         ServerPlayNetworking.registerGlobalReceiver(MailComposeOpenPayload.ID, (payload, context) -> {
             DebugLogger.entering("ModNetworking", "MailComposeOpenPayload handler");
-            var player = (ServerPlayer) context.player();
+            var player = context.player();
             var server = player.level().getServer();
             if (server == null) return;
             server.execute(() -> {
@@ -958,7 +958,7 @@ public class ModNetworking {
 
         ServerPlayNetworking.registerGlobalReceiver(MailOpenPayload.ID, (payload, context) -> {
             DebugLogger.entering("ModNetworking", "MailOpenPayload handler");
-            var player = (ServerPlayer) context.player();
+            var player = context.player();
             var server = player.level().getServer();
             if (server == null) return;
             server.execute(() -> {
@@ -980,7 +980,7 @@ public class ModNetworking {
 
         ServerPlayNetworking.registerGlobalReceiver(MailSentListRequestPayload.ID, (payload, context) -> {
             DebugLogger.entering("ModNetworking", "MailSentListRequestPayload handler");
-            var player = (ServerPlayer) context.player();
+            var player = context.player();
             var server = player.level().getServer();
             if (server == null) return;
             server.execute(() -> {
@@ -1004,7 +1004,7 @@ public class ModNetworking {
 
         ServerPlayNetworking.registerGlobalReceiver(MailRecallPayload.ID, (payload, context) -> {
             DebugLogger.entering("ModNetworking", "MailRecallPayload handler");
-            var player = (ServerPlayer) context.player();
+            var player = context.player();
             var server = player.level().getServer();
             if (server == null) return;
             server.execute(() -> {
@@ -1037,7 +1037,7 @@ public class ModNetworking {
 
         ServerPlayNetworking.registerGlobalReceiver(MailPurgePayload.ID, (payload, context) -> {
             DebugLogger.entering("ModNetworking", "MailPurgePayload handler");
-            var player = (ServerPlayer) context.player();
+            var player = context.player();
             var server = player.level().getServer();
             if (server == null) return;
             server.execute(() -> {
@@ -1063,7 +1063,7 @@ public class ModNetworking {
 
         ServerPlayNetworking.registerGlobalReceiver(MailListRequestPayload.ID, (payload, context) -> {
             DebugLogger.entering("ModNetworking", "MailListRequestPayload handler");
-            var player = (ServerPlayer) context.player();
+            var player = context.player();
             var server = player.level().getServer();
             if (server == null) return;
             server.execute(() -> {
@@ -1099,7 +1099,7 @@ public class ModNetworking {
 
         ServerPlayNetworking.registerGlobalReceiver(MailFetchPayload.ID, (payload, context) -> {
             DebugLogger.entering("ModNetworking", "MailFetchPayload handler");
-            var player = (ServerPlayer) context.player();
+            var player = context.player();
             var server = player.level().getServer();
             if (server == null) return;
             server.execute(() -> {
@@ -1147,7 +1147,7 @@ public class ModNetworking {
         // 8. 邮件操作（OPEN/READ/STAR/UNSTAR/CLAIM/DELETE）
         ServerPlayNetworking.registerGlobalReceiver(MailActionPayload.ID, (payload, context) -> {
             DebugLogger.entering("ModNetworking", "MailActionPayload handler", "action=" + payload.action());
-            var player = (ServerPlayer) context.player();
+            var player = context.player();
             var server = player.level().getServer();
             if (server == null) return;
             server.execute(() -> {
@@ -1167,7 +1167,7 @@ public class ModNetworking {
 
         ServerPlayNetworking.registerGlobalReceiver(MailAdminSendPayload.ID, (payload, context) -> {
             DebugLogger.entering("ModNetworking", "MailAdminSendPayload handler", "title=" + payload.title());
-            var player = (ServerPlayer) context.player();
+            var player = context.player();
             var server = player.level().getServer();
             if (server == null) return;
             server.execute(() -> {
@@ -1222,7 +1222,7 @@ public class ModNetworking {
 
         ServerPlayNetworking.registerGlobalReceiver(MailAdminEditPayload.ID, (payload, context) -> {
             DebugLogger.entering("ModNetworking", "MailAdminEditPayload handler", "mailId=" + payload.mailId());
-            var player = (ServerPlayer) context.player();
+            var player = context.player();
             var server = player.level().getServer();
             if (server == null) return;
             server.execute(() -> {
@@ -1299,7 +1299,7 @@ public class ModNetworking {
         // 11. 请求已注册玩家名单（发布页「选取玩家」弹窗）
         ServerPlayNetworking.registerGlobalReceiver(MailPlayerListRequestPayload.ID, (payload, context) -> {
             DebugLogger.entering("ModNetworking", "MailPlayerListRequestPayload handler");
-            var player = (ServerPlayer) context.player();
+            var player = context.player();
             var server = player.level().getServer();
             if (server == null) return;
             server.execute(() -> {

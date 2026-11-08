@@ -52,7 +52,7 @@ public class BounceHandler {
             double strength = (level == 1) ? 0.6 : 0.9;
             Vec3 delta = new Vec3(pushDir.x * strength, 0.35, pushDir.z * strength);
             attacker.setDeltaMovement(attacker.getDeltaMovement().add(delta));
-            attacker.hurtMarked = true;
+            attacker.syncVelocity = true;
 
             DebugLogger.info(MODULE, "Bounce Lv%d 弹开攻击者: player=%s, attacker=%s, strength=%.2f",
                     level, player.getName().getString(), attacker.getName().getString(), strength);

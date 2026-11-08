@@ -30,6 +30,7 @@
     "GuiAnimationKeyboardMixin",
     "SlotPositionAccessor",
     "WindowTitleMixin",
+    "WindowAccessor",
     "MinecraftStartupSplashMixin",
     "GameRendererMixin",
     "seat.EntityRenderDispatcherMixin",

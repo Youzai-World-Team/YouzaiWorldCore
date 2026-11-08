@@ -1,5 +1,6 @@
 package top.csituka.youzaiworldcore.client.screen;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
@@ -266,14 +267,14 @@ public class MenuScreen extends Screen implements YzuiMenuScreen {
         for (AbstractWidget button : currentButtons) {
             if (button instanceof DropdownButton dropdown && dropdown.isOpen() && dropdown.keyPressed(event)) return true;
         }
-        if (event.key() == 256) { onClose(); return true; }
+        if (event.key() == InputConstants.KEY_ESCAPE) { onClose(); return true; }
         return WidgetFocus.keyPressed(event, currentButtons) || super.keyPressed(event);
     }
 
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean isActuallyClick) {
-        if (event.button() == 0 && closeButton.mouseClicked(event, isActuallyClick)) return true;
-        if (GuiAnimationController.isExiting(this) || targetGroup != null || event.button() != 0) return true;
+        if (event.button() == InputConstants.MOUSE_BUTTON_LEFT && closeButton.mouseClicked(event, isActuallyClick)) return true;
+        if (GuiAnimationController.isExiting(this) || targetGroup != null || event.button() != InputConstants.MOUSE_BUTTON_LEFT) return true;
         if (hasDialog()) return currentDialog.mouseClicked(event.x(), event.y());
         currentGroup.updateButtons(buttonsFor(currentGroup));
         for (AbstractWidget button : currentButtons) {

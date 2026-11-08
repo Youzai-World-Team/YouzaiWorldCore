@@ -1,5 +1,6 @@
 package top.csituka.youzaiworldcore.client.screen.block;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
 
 import net.minecraft.client.Minecraft;
@@ -88,7 +89,7 @@ public class TeleportAnchorNameScreen extends Screen implements YzuiPopupScreen 
     @Override
     public boolean keyPressed(net.minecraft.client.input.KeyEvent keyEvent) {
         if (nameInput != null && nameInput.isFocused()) {
-            if (keyEvent.key() == 257) { // Enter
+            if (keyEvent.key() == InputConstants.KEY_RETURN) { // Enter
                 confirmName();
                 return true;
             }

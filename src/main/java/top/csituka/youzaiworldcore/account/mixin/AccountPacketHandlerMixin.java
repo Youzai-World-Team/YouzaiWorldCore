@@ -176,8 +176,8 @@ public abstract class AccountPacketHandlerMixin {
     /**
      * 阻止未认证玩家的揮動（swing）
      */
-    @Inject(method = "handleAnimate", at = @At("HEAD"), cancellable = true)
-    private void onSwing(ServerboundSwingPacket packet, CallbackInfo ci) {
+    @Inject(method = "handlePunch", at = @At("HEAD"), cancellable = true)
+    private void onSwing(ServerboundPunchPacket packet, CallbackInfo ci) {
         if (shouldBlock()) {
             ci.cancel();
         }

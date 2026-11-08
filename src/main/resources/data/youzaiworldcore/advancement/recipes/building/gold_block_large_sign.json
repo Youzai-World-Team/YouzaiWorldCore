@@ -4,7 +4,7 @@
     "has_the_recipe": {
       "trigger": "minecraft:recipe_unlocked",
       "conditions": {
-        "recipe": "youzaiworldcore:gold_block_large_sign"
+        "recipes": "youzaiworldcore:gold_block_large_sign"
       }
     },
     "has_gold_ingot": {

@@ -1,5 +1,6 @@
 package top.csituka.youzaiworldcore.client.screen.block;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
 
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
@@ -131,7 +132,7 @@ public class LargeSignEditScreen extends Screen {
     @Override
     public boolean keyPressed(KeyEvent keyEvent) {
         if (textInput != null && textInput.isFocused()) {
-            if (keyEvent.key() == 257 || keyEvent.key() == 335) { // Enter / 小键盘 Enter
+            if (keyEvent.key() == InputConstants.KEY_RETURN || keyEvent.key() == InputConstants.KEY_NUMPADENTER) { // Enter / 小键盘 Enter
                 confirm();
                 return true;
             }

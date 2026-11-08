@@ -1,5 +1,6 @@
 package top.csituka.youzaiworldcore.client.screen;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
 import top.csituka.youzaiworldcore.client.render.YzuiMenuPanel;
 import top.csituka.youzaiworldcore.client.screen.widget.WidgetFocus;
@@ -239,8 +240,8 @@ public class RegistrationEmailScreen extends Screen implements YzuiMenuScreen {
         if (currentDialog != null && currentDialog.isVisible()) return currentDialog.keyPressed(keyEvent);
         if (WidgetFocus.keyPressed(keyEvent, List.of(emailField, codeField, sendCodeButton, verifyButton, disconnectButton))) return true;
         if (this.currentDialog != null && this.currentDialog.isVisible()) return true;
-        if (keyEvent.key() == 256) return true;
-        if (keyEvent.key() == 257 || keyEvent.key() == 335) {
+        if (keyEvent.key() == InputConstants.KEY_ESCAPE) return true;
+        if (keyEvent.key() == InputConstants.KEY_RETURN || keyEvent.key() == InputConstants.KEY_NUMPADENTER) {
             if (this.codeField.isFocused() || !this.codeField.getValue().isBlank()) {
                 onVerifyClick();
             } else {

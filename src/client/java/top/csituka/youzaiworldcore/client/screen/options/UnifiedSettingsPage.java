@@ -1,5 +1,6 @@
 package top.csituka.youzaiworldcore.client.screen.options;
 
+import net.minecraft.client.gui.narration.NarrationTrigger;
 import java.util.ArrayList;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
@@ -25,7 +26,7 @@ import net.minecraft.client.gui.screens.options.OptionsScreen;
 import net.minecraft.client.gui.screens.options.SkinCustomizationScreen;
 import net.minecraft.client.gui.screens.options.SoundOptionsScreen;
 import net.minecraft.client.gui.screens.options.VideoSettingsScreen;
-import net.minecraft.client.gui.screens.options.WorldOptionsScreen;
+import net.minecraft.client.gui.screens.WorldOptionsScreen;
 import net.minecraft.client.gui.screens.options.controls.ControlsScreen;
 import net.minecraft.client.gui.screens.telemetry.TelemetryInfoScreen;
 import net.minecraft.network.chat.Component;
@@ -321,5 +322,5 @@ final class UnifiedSettingsPage {
 
     void permissionsChanged() { refreshWorld = true; }
 
-    void narratorChanged(boolean active) { for (Page page : pages) page.screen.updateNarratorStatus(active); }
+    void narratorChanged(boolean active, NarrationTrigger trigger) { for (Page page : pages) page.screen.updateNarratorStatus(active, trigger); }
 }

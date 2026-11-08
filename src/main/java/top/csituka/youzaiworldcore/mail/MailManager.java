@@ -15,6 +15,7 @@ import top.csituka.youzaiworldcore.skill.AdventureLevelManager;
 import top.csituka.youzaiworldcore.skill.PlayerLevelData;
 import top.csituka.youzaiworldcore.skill.PlayerLevelStorage;
 import top.csituka.youzaiworldcore.util.DebugLogger;
+import top.csituka.youzaiworldcore.util.ItemStackNbtUpgrader;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -178,16 +179,19 @@ public class MailManager {
                         if (att.itemNbt() == null || att.itemNbt().isEmpty())
                             break;
                         var tag = net.minecraft.nbt.TagParser.parseCompoundFully(att.itemNbt());
-                        com.mojang.serialization.DataResult<ItemStack> result = ItemStack.CODEC.parse(
-                                lookup.createSerializationContext(net.minecraft.nbt.NbtOps.INSTANCE),
-                                (net.minecraft.nbt.Tag) tag);
+                        // 附件没有版本记录：解析失败时按 26.2 数据升级后重试
+                        com.mojang.serialization.DataResult<ItemStack> result = ItemStackNbtUpgrader.parseUnversioned(
+                                server.getFixerUpper(),
+                                lookup.createSerializationContext(net.minecraft.nbt.NbtOps.INSTANCE), tag);
+                        result.error().ifPresent(error -> DebugLogger.warn(MODULE,
+                                "邮件物品附件无法解析，已跳过: mailId=%s, %s", mail.getId(), error.message()));
                         ItemStack stack = result.result().orElse(ItemStack.EMPTY);
                         if (!stack.isEmpty()) {
                             stack.setCount(att.amount() > 0 ? Math.min(att.amount(), stack.getMaxStackSize()) : 1);
                             if (!player.getInventory().add(stack)) {
                                 // 背包满则掉落
                                 var itemEntity = new ItemEntity(player.level(),
-                                        player.getX(), player.getY(), player.getZ(), (ItemStack) stack);
+                                        player.getX(), player.getY(), player.getZ(), stack);
                                 player.level().addFreshEntity(itemEntity);
                                 DebugLogger.info(MODULE, "背包满，物品掉落: %s x%d", stack.getDisplayName().getString(),
                                         stack.getCount());

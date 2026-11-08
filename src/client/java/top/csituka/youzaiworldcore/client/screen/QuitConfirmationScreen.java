@@ -1,5 +1,6 @@
 package top.csituka.youzaiworldcore.client.screen;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
 import top.csituka.youzaiworldcore.client.render.YzuiBackdrop;
 
@@ -92,14 +93,14 @@ public class QuitConfirmationScreen extends Screen implements YzuiPopupScreen {
 
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean isActuallyClick) {
-        if (GuiAnimationController.isExiting(this) || event.button() != 0) return true;
+        if (GuiAnimationController.isExiting(this) || event.button() != InputConstants.MOUSE_BUTTON_LEFT) return true;
         return super.mouseClicked(event, isActuallyClick);
     }
 
     @Override
     public boolean keyPressed(KeyEvent keyEvent) {
         if (GuiAnimationController.isExiting(this)) return true;
-        if (keyEvent.key() == 256) { onCancelQuit(); return true; }
+        if (keyEvent.key() == InputConstants.KEY_ESCAPE) { onCancelQuit(); return true; }
         return super.keyPressed(keyEvent);
     }
 

@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.client.screen.map;
 
+import org.lwjgl.sdl.SDLScancode;
+import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
@@ -9,7 +11,6 @@ import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
-import org.lwjgl.glfw.GLFW;
 import top.csituka.youzaiworldcore.client.config.MapSettings;
 import top.csituka.youzaiworldcore.client.map.MapCanvas;
 import top.csituka.youzaiworldcore.client.map.MapClient;
@@ -467,13 +468,13 @@ public final class YzWorldMapScreen extends Screen {
 
     @Override public boolean mouseClicked(MouseButtonEvent event, boolean actual) {
         if (overlayPanel != null && overlayPanel.isMouseOver(event.x(), event.y())) {
-            var overlay = overlayPanel; clearFocus(); setFocused(overlay); setDragging(event.button() == 0);
+            var overlay = overlayPanel; clearFocus(); setFocused(overlay); setDragging(event.button() == InputConstants.MOUSE_BUTTON_LEFT);
             overlay.mouseClicked(event, actual); return true;
         }
         if (overlayPanel != null) clearFocus();
         if (detailPanel != null && detailPanel.isMouseOver(event.x(), event.y())) {
             var overlay = detailPanel;
-            clearFocus(); setFocused(overlay); setDragging(event.button() == 0);
+            clearFocus(); setFocused(overlay); setDragging(event.button() == InputConstants.MOUSE_BUTTON_LEFT);
             overlay.mouseClicked(event, actual); return true;
         }
         if (detailPanel != null) clearFocus();
@@ -484,11 +485,11 @@ public final class YzWorldMapScreen extends Screen {
         }
         if (panelAnimation.isClosingOver(event.x(), event.y())) return true;
         if (super.mouseClicked(event, actual)) return true;
-        if (overZoom(event.x(), event.y()) && event.button() == 0) { zoomDragging = true; slideZoom(event.y()); return true; }
+        if (overZoom(event.x(), event.y()) && event.button() == InputConstants.MOUSE_BUTTON_LEFT) { zoomDragging = true; slideZoom(event.y()); return true; }
         if (overControls(event.x(), event.y())) return true;
         if (!inside(event.x(), event.y())) return false;
         var hit = world(event.x(), event.y());
-        if (event.button() == 1) {
+        if (event.button() == InputConstants.MOUSE_BUTTON_RIGHT) {
             for (var point : MapClient.waypoints()) {
                 if (!MapClient.visibleWaypoint(point) || !MapSettings.enabled(MapSettings.Toggle.MARKER_ICONS)) continue;
                 var position = point.projected(dimension, MapSettings.enabled(MapSettings.Toggle.PORTAL_PROJECTION));
@@ -506,7 +507,7 @@ public final class YzWorldMapScreen extends Screen {
             if (tile != null && tile.heights()[MapTileKey.pixelIndex((int) hit.x(), (int) hit.z())] != MapTile.VOID_HEIGHT) y = tile.heights()[MapTileKey.pixelIndex((int) hit.x(), (int) hit.z())] + 1;
             openPoint(MapClient.newPoint(dimension, (int) hit.x(), Math.clamp(y, -4096, 4095), (int) hit.z()), true); return true;
         }
-        if (event.button() != 0) return false;
+        if (event.button() != InputConstants.MOUSE_BUTTON_LEFT) return false;
         if (tool == Tool.SELECT) for (var point : MapClient.waypoints()) {
             if (!MapClient.visibleWaypoint(point) || !MapSettings.enabled(MapSettings.Toggle.MARKER_ICONS)) continue;
             var position = point.projected(dimension, MapSettings.enabled(MapSettings.Toggle.PORTAL_PROJECTION));
@@ -530,8 +531,8 @@ public final class YzWorldMapScreen extends Screen {
     }
 
     @Override public boolean mouseDragged(MouseButtonEvent event, double dx, double dy) {
-        if (zoomDragging && event.button() == 0) { slideZoom(event.y()); return true; }
-        if (!dragging || event.button() != 0) return super.mouseDragged(event, dx, dy);
+        if (zoomDragging && event.button() == InputConstants.MOUSE_BUTTON_LEFT) { slideZoom(event.y()); return true; }
+        if (!dragging || event.button() != InputConstants.MOUSE_BUTTON_LEFT) return super.mouseDragged(event, dx, dy);
         if (tool == Tool.SELECT && moving == null) { centerX = Math.clamp(centerX - dx / scale, -MapTileKey.WORLD_LIMIT, MapTileKey.WORLD_LIMIT); centerZ = Math.clamp(centerZ - dy / scale, -MapTileKey.WORLD_LIMIT, MapTileKey.WORLD_LIMIT); return true; }
         MapVertex point = world(event.x(), event.y());
         if (tool == Tool.PEN) {
@@ -541,8 +542,8 @@ public final class YzWorldMapScreen extends Screen {
     }
 
     @Override public boolean mouseReleased(MouseButtonEvent event) {
-        if (event.button() == 0 && zoomDragging) { zoomDragging = false; return true; }
-        if (event.button() == 0 && dragging) {
+        if (event.button() == InputConstants.MOUSE_BUTTON_LEFT && zoomDragging) { zoomDragging = false; return true; }
+        if (event.button() == InputConstants.MOUSE_BUTTON_LEFT && dragging) {
             dragging = false;
             if (moving != null && stroke.size() > 1) save(moved());
             else if (tool != Tool.SELECT && stroke.size() > 1) save(new MapDrawing(UUID.randomUUID(), dimension, drawingKind(), stroke, drawingColor, ""));
@@ -591,22 +592,22 @@ public final class YzWorldMapScreen extends Screen {
         centerZ = Math.clamp(zoomed.centerZ(), -MapTileKey.WORLD_LIMIT, MapTileKey.WORLD_LIMIT); follow = false; return true;
     }
     @Override public boolean keyPressed(KeyEvent event) {
-        if (overlayPanel != null && event.key() == GLFW.GLFW_KEY_ESCAPE) return overlayPanel.keyPressed(event);
-        if (overlayPanel != null && getFocused() == overlayPanel && event.key() != GLFW.GLFW_KEY_TAB) {
+        if (overlayPanel != null && event.key() == InputConstants.KEY_ESCAPE) return overlayPanel.keyPressed(event);
+        if (overlayPanel != null && getFocused() == overlayPanel && event.key() != InputConstants.KEY_TAB) {
             overlayPanel.keyPressed(event); return true;
         }
-        if (detailPanel != null && event.key() == GLFW.GLFW_KEY_ESCAPE) return detailPanel.keyPressed(event);
-        if (detailPanel != null && getFocused() == detailPanel && event.key() != GLFW.GLFW_KEY_TAB) {
+        if (detailPanel != null && event.key() == InputConstants.KEY_ESCAPE) return detailPanel.keyPressed(event);
+        if (detailPanel != null && getFocused() == detailPanel && event.key() != InputConstants.KEY_TAB) {
             detailPanel.keyPressed(event); return true;
         }
-        if (settingsPanel != null && event.key() == GLFW.GLFW_KEY_ESCAPE) return settingsPanel.keyPressed(event);
-        if (event.key() == GLFW.GLFW_KEY_ESCAPE || MapClient.OPEN.matches(event)) { onClose(); return true; }
-        if (event.key() == GLFW.GLFW_KEY_EQUAL || event.key() == GLFW.GLFW_KEY_KP_ADD) { zoom(scale * 1.25); return true; }
-        if (event.key() == GLFW.GLFW_KEY_MINUS || event.key() == GLFW.GLFW_KEY_KP_SUBTRACT) { zoom(scale / 1.25); return true; }
-        boolean control = (event.modifiers() & (GLFW.GLFW_MOD_CONTROL | GLFW.GLFW_MOD_SUPER)) != 0;
-        if (control && event.key() == GLFW.GLFW_KEY_Z) { if ((event.modifiers() & GLFW.GLFW_MOD_SHIFT) != 0) MapPersonalData.redo(); else MapPersonalData.undo(); return true; }
-        if (control && event.key() == GLFW.GLFW_KEY_Y) { MapPersonalData.redo(); return true; }
-        if (event.key() == GLFW.GLFW_KEY_DELETE) { deleteDrawing(); return true; }
+        if (settingsPanel != null && event.key() == InputConstants.KEY_ESCAPE) return settingsPanel.keyPressed(event);
+        if (event.key() == InputConstants.KEY_ESCAPE || MapClient.OPEN.matches(event)) { onClose(); return true; }
+        if (event.key() == InputConstants.KEY_EQUALS || event.key() == InputConstants.KEY_ADD) { zoom(scale * 1.25); return true; }
+        if (event.key() == InputConstants.KEY_MINUS || event.key() == SDLScancode.SDL_SCANCODE_KP_MINUS) { zoom(scale / 1.25); return true; }
+        boolean control = (event.modifiers() & (InputConstants.MOD_CONTROL | InputConstants.MOD_SUPER)) != 0;
+        if (control && event.shortcutKey() == InputConstants.KEYCODE_Z) { if ((event.modifiers() & InputConstants.MOD_SHIFT) != 0) MapPersonalData.redo(); else MapPersonalData.undo(); return true; }
+        if (control && event.shortcutKey() == InputConstants.KEYCODE_Y) { MapPersonalData.redo(); return true; }
+        if (event.key() == InputConstants.KEY_DELETE) { deleteDrawing(); return true; }
         return super.keyPressed(event);
     }
     @Override public boolean isPauseScreen() { return false; }

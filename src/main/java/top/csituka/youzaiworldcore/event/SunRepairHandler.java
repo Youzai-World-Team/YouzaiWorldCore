@@ -4,7 +4,6 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.Enchantment;
@@ -102,7 +101,7 @@ public class SunRepairHandler {
      * </ul>
      */
     private static boolean isInSunlight(ServerPlayer player) {
-        var level = (ServerLevel) player.level();
+        var level = player.level();
         if (!level.dimensionType().hasSkyLight()) return false;
         if (level.isRaining() || level.isThundering()) return false;
         if (level.isDarkOutside()) return false;

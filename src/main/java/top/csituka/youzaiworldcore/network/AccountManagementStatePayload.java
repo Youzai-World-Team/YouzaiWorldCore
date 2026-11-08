@@ -33,7 +33,7 @@ public record AccountManagementStatePayload(
     public static final StreamCodec<RegistryFriendlyByteBuf, AccountManagementStatePayload> STREAM_CODEC = StreamCodec
             .of(
                     (buf, payload) -> {
-                        buf.writeEnum(payload.state);
+                        EnumBufs.write(buf, payload.state);
                         buf.writeUtf(payload.message, 512);
                         buf.writeUtf(payload.email, 254);
                         buf.writeUtf(payload.sessionId, 128);
@@ -41,7 +41,7 @@ public record AccountManagementStatePayload(
                         buf.writeVarInt(payload.resendAfterSeconds);
                     },
                     buf -> new AccountManagementStatePayload(
-                            buf.readEnum(State.class),
+                            EnumBufs.read(buf, State.class),
                             buf.readUtf(512),
                             buf.readUtf(254),
                             buf.readUtf(128),

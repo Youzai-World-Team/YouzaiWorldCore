@@ -239,7 +239,7 @@ public class LargeSignBlockEntityRenderer
 
         // 2) 绕 Y 轴转到该朝向。取负是因为文本空间的 +X 要落在「读牌人的右手边」，
         //    而 Direction.toYRot() 描述的是朝向本身的偏航角，两者旋向相反。
-        matrices.mulPose(Axis.YP.rotationDegrees(-state.facing.toYRot()));
+        matrices.rotate(Axis.YP.rotationDegrees(-state.facing.toYRot()));
 
         // 3) 文本空间 Y 轴朝下（GUI 约定），故 Y 取负；同时缩放到目标字号
         matrices.scale(state.scale, -state.scale, state.scale);

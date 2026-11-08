@@ -7,21 +7,13 @@
                 {
                     "type": "minecraft:item",
                     "name": "minecraft:player_head",
-                    "functions": [
-                        {
-                            "function": "minecraft:set_name",
-                            "entity": "this"
-                        },
-                        {
-                            "function": "minecraft:fill_player_head",
-                            "entity": "this"
-                        }
-                    ],
-                    "conditions": [
-                        {
-                            "condition": "minecraft:killed_by_player"
-                        }
-                    ]
+                    "modifier": {
+                        "type": "minecraft:fill_player_head",
+                        "entity": "this"
+                    },
+                    "condition": {
+                        "type": "minecraft:killed_by_player"
+                    }
                 }
             ]
         }

@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.client.screen.options;
 
+import net.minecraft.client.gui.narration.NarrationTrigger;
+import com.mojang.blaze3d.platform.InputConstants;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -110,7 +112,7 @@ public final class YzuiOptionsScreen extends Screen implements HasDifficultyReac
 
     YzuiOptionsScreen rootSettings() { return isUnified() ? this : settingsRoot; }
     void reveal(String anchor) { pendingAnchor = anchor; }
-    Screen legacyScreen() { return new OptionsScreen(origin, minecraft.options, inWorld); }
+    Screen legacyScreen() { return new OptionsScreen(origin, minecraft.options); }
 
     private VideoSettingsScreen videoPage() {
         return source instanceof VideoSettingsScreen video ? video : unified == null ? null : unified.video();
@@ -466,7 +468,7 @@ public final class YzuiOptionsScreen extends Screen implements HasDifficultyReac
             video.resetOption(minecraft.options.graphicsPreset());
         }
         if (video != null) {
-            video.updateFullscreenButton(minecraft.getWindow().isFullscreen());
+            video.updateFullscreenButton(minecraft.options.fullscreen().get());
             video.updateTransparencyButton();
         }
         frame.updateBackState();
@@ -541,7 +543,7 @@ public final class YzuiOptionsScreen extends Screen implements HasDifficultyReac
     @Override
     public boolean keyPressed(KeyEvent event) {
         if (busy()) return true;
-        if (unified != null && (event.key() == 258 || event.isEscape()
+        if (unified != null && (event.key() == InputConstants.KEY_TAB || event.isEscape()
                 || !(SettingsWidgets.focused(this) instanceof AbstractSliderButton))) unified.flush();
         if (frame.content.popupKeyPressed(event)) return true;
         if (source instanceof ConfirmScreen && event.isEscape()) return source.keyPressed(event);
@@ -550,7 +552,7 @@ public final class YzuiOptionsScreen extends Screen implements HasDifficultyReac
             refreshKeyLabels();
             return handled;
         }
-        if (event.key() == 256 && !frame.search.getValue().isEmpty()) {
+        if (event.key() == InputConstants.KEY_ESCAPE && !frame.search.getValue().isEmpty()) {
             frame.search.setValue("");
             return true;
         }
@@ -580,16 +582,16 @@ public final class YzuiOptionsScreen extends Screen implements HasDifficultyReac
         if (source instanceof YouzaiWorldCoreSettingsScreen core) return !core.isConfigOperationActive();
         return source == null || source.shouldCloseOnEsc();
     }
-    @Override public void updateNarratorStatus(boolean active) {
-        super.updateNarratorStatus(active);
-        if (source != null) source.updateNarratorStatus(active);
-        if (unified != null) unified.narratorChanged(active);
+    @Override public void updateNarratorStatus(boolean active, NarrationTrigger trigger) {
+        super.updateNarratorStatus(active, trigger);
+        if (source != null) source.updateNarratorStatus(active, trigger);
+        if (unified != null) unified.narratorChanged(active, trigger);
     }
 
     @Override
     public void onClose() {
         // ConfirmScreen 的 onClose 会直接离开游戏界面，取消必须走其 Escape 回调及延时校验。
-        if (source instanceof ConfirmScreen) source.keyPressed(new KeyEvent(256, 0, 0));
+        if (source instanceof ConfirmScreen) source.keyPressed(new KeyEvent(InputConstants.KEY_ESCAPE, 0, 0));
         else if (!shouldCloseOnEsc()) return;
         else if (source != null) {
             if (unified != null) unified.flush();

@@ -1,5 +1,6 @@
 package top.csituka.youzaiworldcore.client.screen;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
 import top.csituka.youzaiworldcore.client.animation.YzuiPopupAnimation;
 
@@ -15,7 +16,6 @@ import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.TagParser;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
-import org.lwjgl.glfw.GLFW;
 import top.csituka.youzaiworldcore.client.MailClientState;
 import top.csituka.youzaiworldcore.client.screen.widget.DropdownButton;
 import top.csituka.youzaiworldcore.client.screen.widget.MailCheckboxButton;
@@ -31,6 +31,7 @@ import top.csituka.youzaiworldcore.network.MailAdminSendPayload;
 import top.csituka.youzaiworldcore.network.MailPlayerListRequestPayload;
 import top.csituka.youzaiworldcore.network.MailSentListRequestPayload;
 import top.csituka.youzaiworldcore.util.DebugLogger;
+import top.csituka.youzaiworldcore.util.ItemStackNbtUpgrader;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -549,7 +550,7 @@ public class MailComposeScreen extends MailBaseScreen {
         for (int i = 0; i < ITEM_SLOTS; i++) {
             if (slotRects[i].contains(mouseX, mouseY) && cbItem.active && cbItem.isChecked()) {
                 selectedItemSlot = i;
-                if (event.button() == 1) {
+                if (event.button() == InputConstants.MOUSE_BUTTON_RIGHT) {
                     itemSlots[i] = ItemStack.EMPTY;
                     itemAmountInput.setValue("1");
                 } else {
@@ -655,7 +656,7 @@ public class MailComposeScreen extends MailBaseScreen {
             if (playerPicker.keyPressed(event.key())) {
                 return true;
             }
-            if (event.key() == GLFW.GLFW_KEY_BACKSPACE) {
+            if (event.key() == InputConstants.KEY_BACKSPACE) {
                 if (!playerSearchText.isEmpty()) {
                     playerSearchText = playerSearchText.substring(0, playerSearchText.length() - 1);
                     playerPicker.setQuery(playerSearchText);
@@ -673,12 +674,12 @@ public class MailComposeScreen extends MailBaseScreen {
             return true;
         }
         if (inventoryPicker.isVisible()) {
-            if (event.key() == 256) inventoryPicker.hide();
+            if (event.key() == InputConstants.KEY_ESCAPE) inventoryPicker.hide();
             return true;
         }
         for (DropdownButton dropdown : new DropdownButton[] {typeDropdown, expireDropdown}) {
             if (dropdown.isOpen()) {
-                if (event.key() == 258) dropdown.closePopup();
+                if (event.key() == InputConstants.KEY_TAB) dropdown.closePopup();
                 else { dropdown.keyPressed(event); return true; }
             }
         }
@@ -926,7 +927,8 @@ public class MailComposeScreen extends MailBaseScreen {
         try {
             var tag = TagParser.parseCompoundFully(attachment.itemNbt());
             var lookup = Minecraft.getInstance().level.registryAccess();
-            ItemStack stack = ItemStack.CODEC.parse(
+            // 附件没有版本记录：解析失败时按 26.2 数据升级后重试
+            ItemStack stack = ItemStackNbtUpgrader.parseUnversioned(Minecraft.getInstance().getFixerUpper(),
                     lookup.createSerializationContext(NbtOps.INSTANCE), tag)
                     .result().orElse(ItemStack.EMPTY);
             if (!stack.isEmpty()) {

@@ -1,5 +1,6 @@
 package top.csituka.youzaiworldcore.client.map;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
@@ -15,7 +16,6 @@ import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.chunk.status.ChunkStatus;
 import net.minecraft.world.level.storage.LevelResource;
-import org.lwjgl.glfw.GLFW;
 import top.csituka.youzaiworldcore.client.config.MapSettings;
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
 import top.csituka.youzaiworldcore.client.screen.map.YzWorldMapScreen;
@@ -50,13 +50,13 @@ import java.util.UUID;
 public final class MapClient {
     private static final KeyMapping.Category CATEGORY = KeyMapping.Category
             .register(Identifier.fromNamespaceAndPath("youzaiworldcore", "map"));
-    public static final KeyMapping OPEN = key("open", GLFW.GLFW_KEY_M);
-    private static final KeyMapping TOGGLE = key("toggle", GLFW.GLFW_KEY_H),
-            ZOOM_IN = key("zoom_in", GLFW.GLFW_KEY_RIGHT_BRACKET),
-            ZOOM_OUT = key("zoom_out", GLFW.GLFW_KEY_LEFT_BRACKET), LAYER = key("layer", GLFW.GLFW_KEY_Y),
-            POINTS_KEY = key("waypoints", GLFW.GLFW_KEY_U), ADD = key("add", GLFW.GLFW_KEY_N),
-            TOGGLE_POINTS = key("toggle_points", GLFW.GLFW_KEY_J), SETTINGS = key("settings", GLFW.GLFW_KEY_COMMA),
-            REFRESH = key("refresh", GLFW.GLFW_KEY_F9);
+    public static final KeyMapping OPEN = key("open", InputConstants.KEY_M);
+    private static final KeyMapping TOGGLE = key("toggle", InputConstants.KEY_H),
+            ZOOM_IN = key("zoom_in", InputConstants.KEY_RBRACKET),
+            ZOOM_OUT = key("zoom_out", InputConstants.KEY_LBRACKET), LAYER = key("layer", InputConstants.KEY_Y),
+            POINTS_KEY = key("waypoints", InputConstants.KEY_U), ADD = key("add", InputConstants.KEY_N),
+            TOGGLE_POINTS = key("toggle_points", InputConstants.KEY_J), SETTINGS = key("settings", InputConstants.KEY_COMMA),
+            REFRESH = key("refresh", InputConstants.KEY_F9);
     private static final KeyMapping[] KEYS = { OPEN, TOGGLE, ZOOM_IN, ZOOM_OUT, LAYER, POINTS_KEY, ADD, TOGGLE_POINTS,
             SETTINGS, REFRESH };
     private static final MapTileCache CACHE = new MapTileCache();

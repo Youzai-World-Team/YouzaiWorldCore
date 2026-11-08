@@ -8,7 +8,6 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageType;
@@ -122,7 +121,7 @@ public class StonecutterDamageHandler implements ServerTickEvents.StartTick {
                 DamageSource damageSource = getStonecutterDamageSource(player);
                 if (damageSource != null) {
                     boolean hurtResult = player.hurtServer(
-                            (ServerLevel) player.level(),
+                            player.level(),
                             damageSource,
                             DAMAGE_AMOUNT
                     );
@@ -175,7 +174,7 @@ public class StonecutterDamageHandler implements ServerTickEvents.StartTick {
                     DamageSource damageSource = getStonecutterDamageSource(player);
                     if (damageSource != null) {
                         boolean hurtResult = player.hurtServer(
-                                (ServerLevel) player.level(),
+                                player.level(),
                                 damageSource,
                                 DAMAGE_AMOUNT
                         );

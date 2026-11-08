@@ -4,7 +4,7 @@
     "has_the_recipe": {
       "trigger": "minecraft:recipe_unlocked",
       "conditions": {
-        "recipe": "youzaiworldcore:tp_anchor"
+        "recipes": "youzaiworldcore:tp_anchor"
       }
     },
     "has_yz_ingot": {

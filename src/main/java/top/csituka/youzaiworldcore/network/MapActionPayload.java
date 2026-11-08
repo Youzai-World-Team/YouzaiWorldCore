@@ -12,10 +12,10 @@ public record MapActionPayload(Action action, MapWaypoint point) implements Cust
     public static final Type<MapActionPayload> ID = new Type<>(Identifier.fromNamespaceAndPath("youzaiworldcore", "map_action"));
     public static final StreamCodec<RegistryFriendlyByteBuf, MapActionPayload> STREAM_CODEC = new StreamCodec<>() {
         @Override public MapActionPayload decode(RegistryFriendlyByteBuf buf) {
-            return new MapActionPayload(buf.readEnum(Action.class), MapStreamCodecs.readWaypoint(buf));
+            return new MapActionPayload(EnumBufs.read(buf, Action.class), MapStreamCodecs.readWaypoint(buf));
         }
         @Override public void encode(RegistryFriendlyByteBuf buf, MapActionPayload value) {
-            buf.writeEnum(value.action());
+            EnumBufs.write(buf, value.action());
             MapStreamCodecs.writeWaypoint(buf, value.point());
         }
     };

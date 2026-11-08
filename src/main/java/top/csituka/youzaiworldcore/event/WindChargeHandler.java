@@ -68,7 +68,7 @@ public class WindChargeHandler {
                 var look = player.getLookAngle();
                 double boost = 0.08 + (level - 1) * 0.04;
                 player.push(look.x * boost, Math.max(look.y * boost, -0.05), look.z * boost);
-                player.hurtMarked = true;
+                player.syncVelocity = true;
             }
         });
 

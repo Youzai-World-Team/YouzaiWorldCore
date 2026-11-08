@@ -4,7 +4,7 @@
     "has_the_recipe": {
       "trigger": "minecraft:recipe_unlocked",
       "conditions": {
-        "recipe": "youzaiworldcore:craftable_end_portal"
+        "recipes": "youzaiworldcore:craftable_end_portal"
       }
     },
     "has_ender_eye": {

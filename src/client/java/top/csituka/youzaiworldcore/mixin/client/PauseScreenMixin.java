@@ -37,7 +37,7 @@ import java.util.List;
  *       <li>{@code gui.advancements} — 进度</li>
  *       <li>{@code gui.stats} — 统计信息</li>
  *       <li>{@code menu.options} — 选项</li>
- *       <li>{@code menu.multiplayerOptions.button} — 对局域网开放</li>
+ *       <li>{@code options.worldOptions.button} — 世界选项（26.3 起取代「对局域网开放」，含局域网设置）</li>
  *       <li>{@code menu.returnToMenu} / {@code menu.disconnect} — 保存并退回到标题屏幕</li>
  *     </ul>
  *   </li>
@@ -65,7 +65,8 @@ import java.util.List;
 @SuppressWarnings("null")
 public class PauseScreenMixin {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/PauseScreenMixin");
+    @Unique
+    private static final Logger youzaiworldcore$LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/PauseScreenMixin");
 
     /** 全宽按钮宽度（与原版保持一致） */
     private static final int FULL_W = 204;
@@ -158,7 +159,7 @@ public class PauseScreenMixin {
                         case "gui.advancements"           -> advBtn = widget;
                         case "gui.stats"                  -> statsBtn = widget;
                         case "menu.options"               -> optionsBtn = widget;
-                        case "menu.multiplayerOptions.button" -> mpOptionsBtn = widget;
+                        case "options.worldOptions.button" -> mpOptionsBtn = widget;
                         case "menu.returnToMenu", "menu.disconnect" -> disconnectBtn = widget;
                         default -> toRemove.add(child);
                     }
@@ -229,7 +230,7 @@ public class PauseScreenMixin {
 
         int row2Y = row1Y + BTN_H + GAP;
 
-        // 行 2：选项 | 对局域网开放
+        // 行 2：选项 | 世界选项
         if (optionsBtn != null) {
             optionsBtn.setX(centerX - FULL_W / 2);
             optionsBtn.setY(row2Y);
@@ -305,7 +306,7 @@ public class PauseScreenMixin {
         }
 
         if (ClientExternalSettings.getLogLevel() > 0) {
-            LOGGER.debug("Re-paused pause menu: removed {} unwanted buttons, kept 7, shift={}px, model={}",
+            youzaiworldcore$LOGGER.debug("Re-paused pause menu: removed {} unwanted buttons, kept 7, shift={}px, model={}",
                     toRemove.size(), MODEL_SHIFT, this.youzaiworldcore$modelReady);
         }
     }

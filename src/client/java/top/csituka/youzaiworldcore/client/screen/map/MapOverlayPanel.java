@@ -1,5 +1,6 @@
 package top.csituka.youzaiworldcore.client.screen.map;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -13,7 +14,6 @@ import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.narration.NarratedElementType;
 import net.minecraft.client.gui.navigation.ScreenRectangle;
 import net.minecraft.client.input.KeyEvent;
-import org.lwjgl.glfw.GLFW;
 import net.minecraft.network.chat.Component;
 import top.csituka.youzaiworldcore.client.map.MapTexts;
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
@@ -65,5 +65,5 @@ abstract class MapOverlayPanel extends AbstractContainerEventHandler implements 
         if (!error.getString().isEmpty()) renderError(g);
         for (var widget : List.copyOf(widgets)) widget.extractRenderState(g, mx, my, delta);
     }
-    @Override public boolean keyPressed(KeyEvent event) { if (event.key() == GLFW.GLFW_KEY_ESCAPE) { onClose(); return true; } return super.keyPressed(event); }
+    @Override public boolean keyPressed(KeyEvent event) { if (event.key() == InputConstants.KEY_ESCAPE) { onClose(); return true; } return super.keyPressed(event); }
 }
