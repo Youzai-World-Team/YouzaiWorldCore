@@ -51,10 +51,8 @@
   },
   "mixins": [
     "youzaiworldcore.mixins.json",
-    {
-      "config": "youzaiworldcore.server.mixins.json",
-      "environment": "server"
-    },
+    "youzaiworldcore.server.mixins.json",
+    "youzaiworldcore.account-state.mixins.json",
     {
       "config": "youzaiworldcore.account.mixins.json",
       "environment": "server"

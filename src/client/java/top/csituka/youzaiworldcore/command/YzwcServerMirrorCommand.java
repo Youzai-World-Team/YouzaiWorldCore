@@ -122,9 +122,13 @@ public final class YzwcServerMirrorCommand {
                     .then(literal("block_animation").then(greedyArgs()))
                     .then(literal("crafting_sound").then(greedyArgs()))
                     .then(literal("item_sparkle").then(greedyArgs()))
-                    .then(literal("damage_numbers").then(greedyArgs()))
-                    .then(literal("double_doors").then(greedyArgs()))
-                    .then(literal("invisibility").then(greedyArgs())));
+                    .then(literal("damage_numbers").then(greedyArgs())));
+
+            // double_doors / invisibility 已有客户端 bool 参数执行器，不能再挂
+            // greedyString：它会与 enabled 参数产生歧义并把错误输入转发到服务端。
+            // 邮件的 pull 是服务端命令，其他邮件动作继续由 MailClientCommand 处理。
+            root.then(literal("mail")
+                    .then(literal("pull").then(greedyArgs())));
 
             root.then(literal("update")
                     .then(literal("check").then(greedyArgs())));

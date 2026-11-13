@@ -63,7 +63,7 @@ final class MapDetailPanel extends AbstractContainerEventHandler implements Rend
     MapDetailPanel(YzWorldMapScreen owner, MapWaypoint point, boolean creating) {
         this.owner = owner; this.point = point; this.creating = creating; shared = point.shared(); dimensions = false;
         anchor = MapClient.isAnchor(point); editing = creating; editingNote = creating;
-        name = MapTexts.waypoint(point).getString(); group = MapWaypointGroup.of(point); note = MapPersonalData.note(point.id());
+        name = MapTexts.waypoint(point).getString(); group = MapPersonalData.groupOf(point); note = MapPersonalData.note(point.id());
     }
 
     private void close() { if (owner.isDetails(this)) owner.closeDetails(); }
@@ -149,16 +149,14 @@ final class MapDetailPanel extends AbstractContainerEventHandler implements Rend
             String date = point.createdAt() <= 0 ? "—" : DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm").withZone(ZoneId.systemDefault()).format(Instant.ofEpochMilli(point.createdAt()));
             line(MapTexts.text("created_at").copy().append("  " + date), row); row += 24;
         }
-        if (!anchor && !editing) {
-            line(MapTexts.text("group"), row + 7);
-            var icon = new MapGroupButton(x + width - 44, top + row - scroll, 32, group, () -> false,
-                    () -> { editing = true; rebuild(); });
-            icon.active = editable() && !pending; widgets.add(icon); body.add(icon); row += 28;
-        }
-        if (!anchor && editing) {
+        if (!anchor) {
             line(MapTexts.text("group"), row); row += 15;
-            row += MapGroupButton.grid(x + 12, top + row - scroll, inner, () -> group, value -> group = value,
-                    icon -> { widgets.add(icon); body.add(icon); }, editable() && !pending);
+            row += MapGroupButton.selector(x + 12, top + row - scroll, inner, () -> group, value -> {
+                if (point.shared() && !creating && !editing) {
+                    if (!MapPersonalData.setSharedGroup(point, value)) { message = MapTexts.text("invalid_group"); return; }
+                    group = value;
+                } else { group = value; editing = true; }
+            }, icon -> { widgets.add(icon); body.add(icon); }, !pending && point.kind() != MapWaypoint.Kind.DEATH);
         }
         if (creating) {
             button(x + 12, top + row - scroll, inner, MapTexts.text(shared ? "shared_point" : "private_point"),
@@ -202,7 +200,7 @@ final class MapDetailPanel extends AbstractContainerEventHandler implements Rend
         if (editing) {
             button(x + 12, footer, half, MapTexts.text(creating ? "create" : "save"), () -> save(false), false).active = editable() && !pending;
             button(x + 18 + half, footer, half, MapTexts.text(creating ? "create_track" : "cancel"), () -> {
-                if (creating) save(true); else { editing = false; name = MapTexts.waypoint(point).getString(); group = MapWaypointGroup.of(point); rebuild(); }
+                if (creating) save(true); else { editing = false; name = MapTexts.waypoint(point).getString(); group = MapPersonalData.groupOf(point); rebuild(); }
             }, false).active = !pending;
         } else {
             if (anchor) button(x + 12, footer, half, MapTexts.text("teleport"), this::teleport, false).active = !pending && (anchor || MapClient.session() != null && MapClient.session().allows(MapSessionPayload.TELEPORT));
@@ -212,7 +210,7 @@ final class MapDetailPanel extends AbstractContainerEventHandler implements Rend
         }
     }
     private MapWaypoint changed() {
-        return new MapWaypoint(point.id(), point.owner(), name, group.id(), point.dimension(), point.x(), point.y(), point.z(),
+        return new MapWaypoint(point.id(), point.owner(), name, shared ? MapWaypointGroup.UNGROUPED.id() : point.kind() == MapWaypoint.Kind.DEATH ? MapWaypointGroup.DEATH.id() : group.id(), point.dimension(), point.x(), point.y(), point.z(),
                 point.color(), point.enabled(), shared, point.kind(), point.createdAt());
     }
     private void save(boolean track) {
@@ -227,13 +225,17 @@ final class MapDetailPanel extends AbstractContainerEventHandler implements Rend
                 if (!MapPersonalData.put(value)) { message = MapTexts.text("limit"); return; }
                 finish(value, track); return;
             }
+            if (!creating && point.name().equals(value.name())) {
+                if (!MapPersonalData.setSharedGroup(point, group)) { message = MapTexts.text("invalid_group"); return; }
+                finish(value, track); return;
+            }
             pending = MapClient.send(creating ? MapActionPayload.Action.ADD : MapActionPayload.Action.UPDATE, value, (ok, key) -> {
-                pending = false; message = MapTexts.text(key); if (ok) finish(value, track); else rebuild();
+                pending = false; message = MapTexts.text(key); if (ok) { MapPersonalData.setSharedGroup(value, group); finish(value, track); } else rebuild();
             }); rebuild();
         } catch (IllegalArgumentException invalid) { message = MapTexts.text("invalid_point"); }
     }
     private void finish(MapWaypoint value, boolean track) {
-        point = value; creating = false; editing = false;
+        point = value; creating = false; editing = false; group = MapPersonalData.groupOf(point);
         message = MapTexts.text(MapPersonalData.note(point.id(), note) ? "saved" : "limit");
         if (track && owner.isDetails(this)) { MapClient.navigate(point.id()); close(); } else rebuild();
         DebugLogger.info("WorldMap", "保存地图侧栏标记：%s", point.id());
@@ -251,7 +253,7 @@ final class MapDetailPanel extends AbstractContainerEventHandler implements Rend
         }
     }
     private void copyAsWaypoint() {
-        var copy = new MapWaypoint(UUID.randomUUID(), point.owner(), name, MapWaypointGroup.BUILDINGS.id(), point.dimension(), point.x(), point.y(), point.z(),
+        var copy = new MapWaypoint(UUID.randomUUID(), point.owner(), name, MapWaypointGroup.UNGROUPED.id(), point.dimension(), point.x(), point.y(), point.z(),
                 point.color(), true, false, MapWaypoint.Kind.NORMAL, System.currentTimeMillis());
         owner.openPoint(copy, true);
     }

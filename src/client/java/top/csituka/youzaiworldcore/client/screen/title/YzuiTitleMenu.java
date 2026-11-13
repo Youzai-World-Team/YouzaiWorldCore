@@ -30,6 +30,8 @@ import top.csituka.youzaiworldcore.client.screen.QuitConfirmationScreen;
 import top.csituka.youzaiworldcore.client.screen.YouzaiWorldCoreTestScreen;
 import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
 import top.csituka.youzaiworldcore.client.update.ClientUpdateState;
+import top.csituka.youzaiworldcore.client.update.ClientAnnouncementState;
+import top.csituka.youzaiworldcore.client.update.ClientAnnouncementState.Announcement;
 import top.csituka.youzaiworldcore.mixin.client.ScreenAccessor;
 import top.csituka.youzaiworldcore.update.TitleScreenScrollState;
 import top.csituka.youzaiworldcore.update.UpdateChecker;
@@ -47,6 +49,7 @@ public final class YzuiTitleMenu {
     private final TransparentButton downloadButton;
     private final TransparentButton ignoreButton;
     private UpdateResult displayedUpdate;
+    private Announcement displayedAnnouncement;
     private List<FormattedCharSequence> bodyLines;
 
     public YzuiTitleMenu(TitleScreen screen) {
@@ -59,6 +62,7 @@ public final class YzuiTitleMenu {
         accessor.youzaiworldcore$getRenderables().clear();
         accessor.youzaiworldcore$getNarratables().clear();
         TitleScreenScrollState.reset();
+        ClientAnnouncementState.refreshIfDue();
 
         add(layout.join(), "title.youzaiworldcore.join_server", this::join, YzuiTheme.ButtonStyle.FILLED);
         add(layout.options(), "menu.options",
@@ -115,12 +119,15 @@ public final class YzuiTitleMenu {
     }
 
     private void renderNews(GuiGraphicsExtractor g, float alpha) {
+        ClientAnnouncementState.refreshIfDue();
         UpdateResult update = visibleUpdate();
+        Announcement announcement = update == null ? ClientAnnouncementState.get() : null;
         boolean forced = update != null && update.forcedUpdate();
         var body = layout.body(update != null, forced);
-        if (bodyLines == null || displayedUpdate != update) {
+        if (bodyLines == null || displayedUpdate != update || !java.util.Objects.equals(displayedAnnouncement, announcement)) {
             displayedUpdate = update;
-            bodyLines = wrapBody(update, body.width());
+            displayedAnnouncement = announcement;
+            bodyLines = wrapBody(update, announcement, body.width());
             TitleScreenScrollState.reset();
         }
         downloadButton.visible = update != null;
@@ -129,7 +136,8 @@ public final class YzuiTitleMenu {
         var download = layout.download(forced);
         downloadButton.setY(download.y());
         String heading = update == null ? "announcement_title" : forced ? "update_forced_title" : "update_title";
-        label(g, Component.translatable("title.youzaiworldcore." + heading),
+        label(g, announcement == null ? Component.translatable("title.youzaiworldcore." + heading)
+                        : Component.literal(announcement.title()),
                 new TitleMenuLayout.Rect(body.x(), layout.news().y() + layout.padding(), body.width() + 6, 10),
                 forced ? YzuiTheme.error() : YzuiTheme.primary(), alpha);
         int lineHeight = font.lineHeight + 4;
@@ -157,10 +165,15 @@ public final class YzuiTitleMenu {
         }
     }
 
-    private List<FormattedCharSequence> wrapBody(UpdateResult update, int width) {
+    private List<FormattedCharSequence> wrapBody(UpdateResult update, Announcement announcement, int width) {
         List<Component> paragraphs = new ArrayList<>();
         if (update == null) {
-            for (int i = 1; i <= 4; i++) paragraphs.add(Component.translatable("title.youzaiworldcore.announcement_line" + i));
+            if (announcement != null) {
+                if (!announcement.subtitle().isBlank()) paragraphs.add(Component.literal(announcement.subtitle()));
+                for (String line : announcement.body()) paragraphs.add(Component.literal(line));
+            } else {
+                for (int i = 1; i <= 4; i++) paragraphs.add(Component.translatable("title.youzaiworldcore.announcement_line" + i));
+            }
         } else {
             String type = update.latestType();
             paragraphs.add(Component.translatable("title.youzaiworldcore.update_latest",

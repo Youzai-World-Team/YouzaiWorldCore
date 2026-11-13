@@ -8,6 +8,7 @@ import top.csituka.youzaiworldcore.map.MapLayer;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
 import java.util.EnumMap;
+import java.util.LinkedHashMap;
 import java.util.Locale;
 
 /** 地图的本机显示设置，存入 yzwc/client/map_module/map.db。 */
@@ -16,9 +17,8 @@ public final class MapSettings {
         ROUNDED, CIRCLE, SQUARE
     }
 
-    public enum LabelPosition {
-        BELOW, ABOVE, LEFT, RIGHT
-    }
+    /** 标记图标与文字共用一个显示模式。 */
+    public enum MarkerDisplay { HIDDEN, ICONS, ICONS_AND_LABELS }
 
     public enum Overlay {
         TERRAIN, BIOME, LOAD_STATE
@@ -26,11 +26,11 @@ public final class MapSettings {
 
     public enum Toggle {
         MINIMAP(true), ROTATE(false), COORDINATES(true), BIOME_LABEL(true), LAYER_LABEL(true),
-        WAYPOINTS(true), WAYPOINT_HUD(true), PORTAL_PROJECTION(true), DRAWINGS(true),
+        WAYPOINTS(true), WAYPOINT_HUD(true), PORTAL_PROJECTION(true),
         RADAR_PLAYERS(true), RADAR_HOSTILE(true), RADAR_FRIENDLY(true), RADAR_OTHER(false),
-        MARKER_ICONS(true), MARKER_LABELS(true), ANCHORS(true), RADAR_TAMED(true), QUICK_LOCATE(true),
+        ANCHORS(true),
         REMEMBER_VIEW(false),
-        RADAR_ICONS(true), GRID(false), LIGHTING(true), SERVER_SYNC(true), AVOID_HUD(true), EXACT_LOAD_LEVEL(false);
+        GRID(false), EXACT_LOAD_LEVEL(false);
 
         private final boolean defaultValue;
 
@@ -47,7 +47,7 @@ public final class MapSettings {
     public static final int DEFAULT_COLUMNS_PER_TICK = 256,
             DEFAULT_WAYPOINT_DISTANCE = 10000;
     public static final double DEFAULT_ZOOM = 1.0;
-    public static final LabelPosition DEFAULT_LABEL_POSITION = LabelPosition.BELOW;
+    public static final MarkerDisplay DEFAULT_MARKER_DISPLAY = MarkerDisplay.ICONS_AND_LABELS;
     public static final @NonNull Shape DEFAULT_SHAPE = Shape.ROUNDED;
     public static final @NonNull MapLayer DEFAULT_LAYER = MapLayer.AUTO;
     public static final @NonNull Overlay DEFAULT_OVERLAY = Overlay.TERRAIN;
@@ -61,7 +61,7 @@ public final class MapSettings {
     }
     private static int waypointDistance = DEFAULT_WAYPOINT_DISTANCE;
     private static double zoom = DEFAULT_ZOOM;
-    private static LabelPosition labelPosition = DEFAULT_LABEL_POSITION;
+    private static MarkerDisplay markerDisplay = DEFAULT_MARKER_DISPLAY;
     private static Shape shape = DEFAULT_SHAPE;
     private static MapLayer layer = DEFAULT_LAYER;
     private static Overlay overlay = DEFAULT_OVERLAY;
@@ -100,9 +100,11 @@ public final class MapSettings {
         return zoom;
     }
 
-    public static LabelPosition labelPosition() {
-        return labelPosition;
-    }
+    public static MarkerDisplay markerDisplay() { return markerDisplay; }
+
+    /** 隐藏标记时图标、文字及鼠标命中一同关闭，导航行为独立。 */
+    public static boolean markersVisible() { return markerDisplay != MarkerDisplay.HIDDEN; }
+    public static boolean markerLabels() { return markerDisplay == MarkerDisplay.ICONS_AND_LABELS; }
 
     public static Shape shape() {
         return shape;
@@ -148,9 +150,10 @@ public final class MapSettings {
         save();
     }
 
-    public static void setLabelPosition(LabelPosition value) {
-        labelPosition = value;
-        save();
+    /** 修改统一的标记显示模式，立即持久化。 */
+    public static void setMarkerDisplay(MarkerDisplay value) {
+        var before = markerDisplay; markerDisplay = java.util.Objects.requireNonNull(value); save();
+        DebugLogger.stateChange("MapSettings", "display", "markerDisplay", before, markerDisplay);
     }
 
     public static void setShape(Shape value) {
@@ -180,7 +183,7 @@ public final class MapSettings {
         columnsPerTick = section.getInt("columns_per_tick", DEFAULT_COLUMNS_PER_TICK, 16, 1024);
         waypointDistance = section.getInt("waypoint_distance", DEFAULT_WAYPOINT_DISTANCE, 64, 100000);
         zoom = section.getDouble("zoom", DEFAULT_ZOOM, 0.25, 8);
-        labelPosition = section.getEnum("label_position", DEFAULT_LABEL_POSITION, LabelPosition.class);
+        markerDisplay = section.getEnum("marker_display", DEFAULT_MARKER_DISPLAY, MarkerDisplay.class);
         shape = section.getEnum("shape", DEFAULT_SHAPE, Shape.class);
         layer = section.getEnum("layer", DEFAULT_LAYER, MapLayer.class);
         overlay = section.getEnum("overlay", DEFAULT_OVERLAY, Overlay.class);
@@ -190,24 +193,18 @@ public final class MapSettings {
 
     /** 保存显示设置；私人数据保存在独立的 SQLite 记录中。 */
     public static void save() {
-        MapSqlSettings section = new MapSqlSettings(database(), "display");
-        for (Toggle option : Toggle.values())
-            section.set(option.key(), enabled(option));
-        section.set("size", size);
-        section.set("fixed_height", fixedHeight);
-        section.set("death_limit", deathLimit);
-        section.set("columns_per_tick", columnsPerTick);
-        section.set("waypoint_distance", waypointDistance);
-        section.set("zoom", zoom);
-        section.set("label_position", labelPosition);
-        section.set("shape", shape);
-        section.set("layer", layer);
-        section.set("overlay", overlay);
-        section.save();
+        var values = new LinkedHashMap<String, String>();
+        for (Toggle option : Toggle.values()) values.put(option.key(), Boolean.toString(enabled(option)));
+        values.put("size", Integer.toString(size)); values.put("fixed_height", Integer.toString(fixedHeight));
+        values.put("death_limit", Integer.toString(deathLimit)); values.put("columns_per_tick", Integer.toString(columnsPerTick));
+        values.put("waypoint_distance", Integer.toString(waypointDistance)); values.put("zoom", Double.toString(zoom));
+        values.put("marker_display", markerDisplay.name()); values.put("shape", shape.name());
+        values.put("layer", layer.name()); values.put("overlay", overlay.name());
+        database().settings("display", values);
         DebugLogger.debug("MapSettings", "地图显示设置已保存");
     }
 
-    /** 恢复显示默认值，不删除玩家的路径点与绘图。 */
+    /** 恢复显示默认值，不删除玩家的路径点。 */
     public static void writeDefaults() {
         resetFields();
         save();
@@ -222,7 +219,7 @@ public final class MapSettings {
         columnsPerTick = DEFAULT_COLUMNS_PER_TICK;
         waypointDistance = DEFAULT_WAYPOINT_DISTANCE;
         zoom = DEFAULT_ZOOM;
-        labelPosition = DEFAULT_LABEL_POSITION;
+        markerDisplay = DEFAULT_MARKER_DISPLAY;
         shape = DEFAULT_SHAPE;
         layer = DEFAULT_LAYER;
         overlay = DEFAULT_OVERLAY;

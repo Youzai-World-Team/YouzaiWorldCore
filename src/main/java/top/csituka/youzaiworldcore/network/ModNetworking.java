@@ -702,9 +702,9 @@ public class ModNetworking {
             if (server == null) {
                 return;
             }
-            server.execute(() -> {
-                AfkManager.onHeartbeat(player, server.getTickCount(), payload.idleTicks(), payload.inputSequence());
-            });
+            // Fabric PlayPayloadHandler 已在服务端主线程。再次 execute 会把本次
+            // 输入序号排到后续命令执行之后，导致 /yzwc afk 被自己的心跳取消。
+            AfkManager.onHeartbeat(player, server.getTickCount(), payload.idleTicks(), payload.inputSequence());
         });
         DebugLogger.info("ModNetworking", "Registered receiver: AfkHeartbeatPayload");
 

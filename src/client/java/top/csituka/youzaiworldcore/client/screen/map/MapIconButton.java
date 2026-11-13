@@ -7,9 +7,9 @@ import top.csituka.youzaiworldcore.client.animation.YzuiHover;
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
 import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
 
-/** 全屏地图的线绘图标按钮；保留中文提示、朗读与键盘激活，无额外纹理依赖。 */
+/** 全屏地图的线条图标按钮；保留中文提示、朗读与键盘激活，无额外纹理依赖。 */
 final class MapIconButton extends TransparentButton {
-    enum Icon { MAP, CLOSE, PLUS, MINUS, CENTER, SETTINGS, PIN, PLAYERS, RADAR, PEN }
+    enum Icon { MAP, CLOSE, PLUS, MINUS, CENTER, SETTINGS, PIN, PLAYERS, RADAR }
     private final Icon icon;
     private final YzuiHover hover = new YzuiHover();
 
@@ -59,10 +59,6 @@ final class MapIconButton extends TransparentButton {
                 line(g, 14, 9, 16, 15, color); line(g, 12, 15, 16, 15, color);
             }
             case RADAR -> { circle(g, 8, 8, 7, color); circle(g, 8, 8, 4, color); line(g, 8, 8, 13, 2, color); }
-            case PEN -> {
-                line(g, 2, 14, 4, 9, color); line(g, 4, 9, 12, 1, color); line(g, 12, 1, 15, 4, color);
-                line(g, 15, 4, 7, 12, color); line(g, 7, 12, 2, 14, color); line(g, 10, 3, 13, 6, color);
-            }
         }
         g.pose().popMatrix();
     }

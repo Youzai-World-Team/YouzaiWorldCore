@@ -4,7 +4,6 @@
   "package": "top.csituka.youzaiworldcore.account.mixin",
   "compatibilityLevel": "JAVA_25",
   "mixins": [
-    "AccountServerPlayerMixin",
     "AccountPlayerListMixin",
     "AccountPacketHandlerMixin",
     "AccountEntityMixin",

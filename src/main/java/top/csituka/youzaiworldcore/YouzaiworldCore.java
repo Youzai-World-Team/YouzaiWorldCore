@@ -1,5 +1,6 @@
 package top.csituka.youzaiworldcore;
 
+import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.FloatArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
@@ -155,6 +156,9 @@ public class YouzaiworldCore implements ModInitializer {
             Registries.PLACED_FEATURE,
             Identifier.fromNamespaceAndPath(MOD_ID, "ore_raw_yz_block"));
 
+    /** 防止同一客户端多次进入世界时重复挂载服务端事件。 */
+    private boolean serverInitialized;
+
     @Override
     public void onInitialize() {
         // ===== 公共注册必须在客户端和专用服务端都执行 =====
@@ -162,10 +166,19 @@ public class YouzaiworldCore implements ModInitializer {
         // 专用服务端则在此基础上继续执行权威玩法、账户和 Api 初始化。
         initializeCommonRegistrations();
 
+        // 命令属于逻辑服务端；内置服务器运行在 CLIENT 物理环境，也必须注册。
+        // INTEGRATED 命令树建立时才加载本地玩法，单纯连接远程服务器不读取本地服务端配置。
+        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
+            if (environment == Commands.CommandSelection.INTEGRATED) {
+                initializeServer();
+            }
+            registerServerCommands(dispatcher);
+        });
+
         // Fabric 的 main 入口在两种物理环境都会调用。
-        // 客户端不能读取 yzwc/server 配置，也不能触发账户 / Api 的服务端密钥校验。
+        // 客户端启动时延迟本地服务端初始化；公网账户 / Api 仍仅在专用服务端启用。
         if (FabricLoader.getInstance().getEnvironmentType() != EnvType.SERVER) {
-            DebugLogger.info("YouzaiworldCore", "检测到客户端环境，已跳过服务端专用初始化");
+            DebugLogger.info("YouzaiworldCore", "检测到客户端环境，已延迟内置服务器玩法初始化");
             return;
         }
 
@@ -212,8 +225,13 @@ public class YouzaiworldCore implements ModInitializer {
         DebugLogger.exiting("YouzaiworldCore", "initializeCommonRegistrations");
     }
 
-    /** 初始化仅专用服务端运行的权威逻辑、配置、事件与命令。 */
-    private void initializeServer() {
+    /** 初始化逻辑服务端的玩法、配置与事件；每个进程仅挂载一次。 */
+    private synchronized void initializeServer() {
+        if (serverInitialized) {
+            return;
+        }
+        serverInitialized = true;
+        boolean dedicated = FabricLoader.getInstance().getEnvironmentType() == EnvType.SERVER;
         // ===== 建立服务端存放目录骨架（config / data / backup / temp） =====
         ModPaths.bootstrapServerLayout();
 
@@ -249,10 +267,14 @@ public class YouzaiworldCore implements ModInitializer {
         ModNetworking.initialize();
         top.csituka.youzaiworldcore.map.MapServerManager.initialize();
         DebugLogger.info("YouzaiworldCore", "初始化混合正版 UUID 登录认证...");
-        top.csituka.youzaiworldcore.account.OnlineUuidLoginManager.initialize();
-        ServerLifecycleEvents.SERVER_STOPPING.register(
-                server -> top.csituka.youzaiworldcore.account.OnlineUuidLoginManager.shutdown());
-        initializeLuckPermsPlaceholders();
+        if (dedicated) {
+            top.csituka.youzaiworldcore.account.OnlineUuidLoginManager.initialize();
+            ServerLifecycleEvents.SERVER_STOPPING.register(
+                    server -> top.csituka.youzaiworldcore.account.OnlineUuidLoginManager.shutdown());
+        }
+        if (dedicated) {
+            initializeLuckPermsPlaceholders();
+        }
 
         DebugLogger.info("YouzaiworldCore", "注册连锁采集事件...");
         YzChainMiningTool.registerChainMiningEvent();
@@ -337,15 +359,19 @@ public class YouzaiworldCore implements ModInitializer {
 
         DebugLogger.entering("YouzaiworldCore", "AccountSystem.init");
         ApiModuleSettings.load();
-        AccountDataStorage.initialize();
-        top.csituka.youzaiworldcore.title.TitleManager.initialize();
+        if (dedicated) {
+            AccountDataStorage.initialize();
+            top.csituka.youzaiworldcore.title.TitleManager.initialize();
+        }
         LOGGER.info("账户系统已初始化");
         DebugLogger.exiting("YouzaiworldCore", "AccountSystem.init");
 
         DebugLogger.entering("YouzaiworldCore", "CosmeticSystem.init");
         CosmeticModuleSettings.load();
-        CosmeticManager.initialize();
-        ServerLifecycleEvents.SERVER_STOPPING.register(server -> CosmeticManager.shutdown());
+        if (dedicated) {
+            CosmeticManager.initialize();
+            ServerLifecycleEvents.SERVER_STOPPING.register(server -> CosmeticManager.shutdown());
+        }
         LOGGER.info("自定义皮肤与披风模块已初始化");
         DebugLogger.exiting("YouzaiworldCore", "CosmeticSystem.init");
 
@@ -535,163 +561,161 @@ public class YouzaiworldCore implements ModInitializer {
         top.csituka.youzaiworldcore.status.StatsManager.initialize();
         LOGGER.info("统计模块已初始化");
         DebugLogger.exiting("YouzaiworldCore", "StatsModule.init");
-
-        // ===== 注册所有 /yzwc 命令 =====
-        DebugLogger.entering("YouzaiworldCore", "CommandRegistration");
-        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
-            top.csituka.youzaiworldcore.command.MapCommand.register(dispatcher);
-            DebugLogger.info("YouzaiworldCore", "注册命令: WorldPoolCommand");
-            WorldPoolCommand.register(dispatcher);
-
-            dispatcher.register(Commands.literal("yzwc")
-                    // === teleport_world ===
-                    .then(Commands.literal("teleport_world")
-                            .requires(source -> LuckPermsHelper.checkPermission(source,
-                                    LuckPermsHelper.PERMISSION_TELEPORT_WORLD, Commands.LEVEL_ADMINS))
-                            .then(Commands.argument("targets", EntityArgument.players())
-                                    .then(Commands.argument("dimension", DimensionArgument.dimension())
-                                            .executes(context -> executeTeleportWorld(
-                                                    context.getSource(),
-                                                    EntityArgument.getPlayers(context, "targets"),
-                                                    DimensionArgument.getDimension(context, "dimension"),
-                                                    0, 100, 0, 90.0f, 0.0f))
-                                            .then(Commands.argument("x", IntegerArgumentType.integer())
-                                                    .executes(context -> executeTeleportWorld(
-                                                            context.getSource(),
-                                                            EntityArgument.getPlayers(context, "targets"),
-                                                            DimensionArgument.getDimension(context, "dimension"),
-                                                            IntegerArgumentType.getInteger(context, "x"),
-                                                            100, 0, 90.0f, 0.0f))
-                                                    .then(Commands.argument("y", IntegerArgumentType.integer())
-                                                            .executes(context -> executeTeleportWorld(
-                                                                    context.getSource(),
-                                                                    EntityArgument.getPlayers(context, "targets"),
-                                                                    DimensionArgument.getDimension(context,
-                                                                            "dimension"),
-                                                                    IntegerArgumentType.getInteger(context, "x"),
-                                                                    IntegerArgumentType.getInteger(context, "y"),
-                                                                    0, 90.0f, 0.0f))
-                                                            .then(Commands.argument("z", IntegerArgumentType.integer())
-                                                                    .executes(context -> executeTeleportWorld(
-                                                                            context.getSource(),
-                                                                            EntityArgument.getPlayers(context,
-                                                                                    "targets"),
-                                                                            DimensionArgument.getDimension(context,
-                                                                                    "dimension"),
-                                                                            IntegerArgumentType.getInteger(context,
-                                                                                    "x"),
-                                                                            IntegerArgumentType.getInteger(context,
-                                                                                    "y"),
-                                                                            IntegerArgumentType.getInteger(context,
-                                                                                    "z"),
-                                                                            90.0f, 0.0f))
-                                                                    .then(Commands
-                                                                            .argument("yRot",
-                                                                                    FloatArgumentType.floatArg(-180.0f,
-                                                                                            180.0f))
-                                                                            .executes(context -> executeTeleportWorld(
-                                                                                    context.getSource(),
-                                                                                    EntityArgument.getPlayers(context,
-                                                                                            "targets"),
-                                                                                    DimensionArgument.getDimension(
-                                                                                            context, "dimension"),
-                                                                                    IntegerArgumentType
-                                                                                            .getInteger(context, "x"),
-                                                                                    IntegerArgumentType
-                                                                                            .getInteger(context, "y"),
-                                                                                    IntegerArgumentType
-                                                                                            .getInteger(context, "z"),
-                                                                                    FloatArgumentType.getFloat(context,
-                                                                                            "yRot"),
-                                                                                    0.0f))
-                                                                            .then(Commands
-                                                                                    .argument("xRot",
-                                                                                            FloatArgumentType.floatArg(
-                                                                                                    -90.0f, 90.0f))
-                                                                                    .executes(
-                                                                                            context -> executeTeleportWorld(
-                                                                                                    context.getSource(),
-                                                                                                    EntityArgument
-                                                                                                            .getPlayers(
-                                                                                                                    context,
-                                                                                                                    "targets"),
-                                                                                                    DimensionArgument
-                                                                                                            .getDimension(
-                                                                                                                    context,
-                                                                                                                    "dimension"),
-                                                                                                    IntegerArgumentType
-                                                                                                            .getInteger(
-                                                                                                                    context,
-                                                                                                                    "x"),
-                                                                                                    IntegerArgumentType
-                                                                                                            .getInteger(
-                                                                                                                    context,
-                                                                                                                    "y"),
-                                                                                                    IntegerArgumentType
-                                                                                                            .getInteger(
-                                                                                                                    context,
-                                                                                                                    "z"),
-                                                                                                    FloatArgumentType
-                                                                                                            .getFloat(
-                                                                                                                    context,
-                                                                                                                    "yRot"),
-                                                                                                    FloatArgumentType
-                                                                                                            .getFloat(
-                                                                                                                    context,
-                                                                                                                    "xRot")))))))))))
-                    // === open_menu ===
-                    .then(Commands.literal("open_menu")
-                            .requires(source -> LuckPermsHelper.checkPermission(source,
-                                    LuckPermsHelper.PERMISSION_OPEN_MENU, Commands.LEVEL_ADMINS))
-                            .then(Commands.argument("menu_name", StringArgumentType.word())
-                                    .executes(context -> executeOpenMenu(
-                                            context.getSource(),
-                                            StringArgumentType.getString(context, "menu_name"),
-                                            context.getSource().getPlayerOrException()))
-                                    .then(Commands.argument("target", EntityArgument.player())
-                                            .executes(context -> executeOpenMenu(
-                                                    context.getSource(),
-                                                    StringArgumentType.getString(context, "menu_name"),
-                                                    EntityArgument.getPlayer(context, "target"))))))
-                    .executes(context -> {
-                        DebugLogger.info("YouzaiworldCore", "执行 /yzwc 根命令 (hello)");
-                        context.getSource().sendSuccess(
-                                () -> Component.translatable("youzaiworldcore.message.command.hello_world"), false);
-                        return 1;
-                    }));
-
-            DebugLogger.info("YouzaiworldCore", "注册命令: AccountCommands");
-            AccountCommands.register(dispatcher);
-
-            DebugLogger.info("YouzaiworldCore", "注册命令: ReloadCommand");
-            ReloadCommand.register(dispatcher);
-
-            DebugLogger.info("YouzaiworldCore", "注册命令: TeleportAnchorCommand");
-            TeleportAnchorCommand.register(dispatcher);
-
-            DebugLogger.info("YouzaiworldCore", "注册命令: EventCommand");
-            EventCommand.register(dispatcher);
-
-            DebugLogger.info("YouzaiworldCore", "注册命令: FunctionCommand");
-            FunctionCommand.register(dispatcher);
-
-            DebugLogger.info("YouzaiworldCore", "注册命令: UpdateCommand");
-            UpdateCommand.register(dispatcher);
-
-            DebugLogger.info("YouzaiworldCore", "注册命令: MailCommand");
-            MailCommand.register(dispatcher);
-
-            DebugLogger.info("YouzaiworldCore", "注册命令: PetCommand");
-            PetCommand.register(dispatcher);
-
-            DebugLogger.info("YouzaiworldCore", "注册命令: AfkCommand");
-            AfkCommand.register(dispatcher);
-
-            DebugLogger.info("YouzaiworldCore", "所有 /yzwc 命令注册完成");
-        });
-
         DebugLogger.exiting("YouzaiworldCore", "onInitialize",
                 "devMode=" + devModeEnabled + ", logToFile=" + logToFile);
+    }
+
+    /** 为专用及内置服务器注册同一棵权威命令树。 */
+    private static void registerServerCommands(CommandDispatcher<CommandSourceStack> dispatcher) {
+        top.csituka.youzaiworldcore.command.MapCommand.register(dispatcher);
+        DebugLogger.info("YouzaiworldCore", "注册命令: WorldPoolCommand");
+        WorldPoolCommand.register(dispatcher);
+
+        dispatcher.register(Commands.literal("yzwc")
+                // === teleport_world ===
+                .then(Commands.literal("teleport_world")
+                        .requires(source -> LuckPermsHelper.checkPermission(source,
+                                LuckPermsHelper.PERMISSION_TELEPORT_WORLD, Commands.LEVEL_ADMINS))
+                        .then(Commands.argument("targets", EntityArgument.players())
+                                .then(Commands.argument("dimension", DimensionArgument.dimension())
+                                        .executes(context -> executeTeleportWorld(
+                                                context.getSource(),
+                                                EntityArgument.getPlayers(context, "targets"),
+                                                DimensionArgument.getDimension(context, "dimension"),
+                                                0, 100, 0, 90.0f, 0.0f))
+                                        .then(Commands.argument("x", IntegerArgumentType.integer())
+                                                .executes(context -> executeTeleportWorld(
+                                                        context.getSource(),
+                                                        EntityArgument.getPlayers(context, "targets"),
+                                                        DimensionArgument.getDimension(context, "dimension"),
+                                                        IntegerArgumentType.getInteger(context, "x"),
+                                                        100, 0, 90.0f, 0.0f))
+                                                .then(Commands.argument("y", IntegerArgumentType.integer())
+                                                        .executes(context -> executeTeleportWorld(
+                                                                context.getSource(),
+                                                                EntityArgument.getPlayers(context, "targets"),
+                                                                DimensionArgument.getDimension(context,
+                                                                        "dimension"),
+                                                                IntegerArgumentType.getInteger(context, "x"),
+                                                                IntegerArgumentType.getInteger(context, "y"),
+                                                                0, 90.0f, 0.0f))
+                                                        .then(Commands.argument("z", IntegerArgumentType.integer())
+                                                                .executes(context -> executeTeleportWorld(
+                                                                        context.getSource(),
+                                                                        EntityArgument.getPlayers(context,
+                                                                                "targets"),
+                                                                        DimensionArgument.getDimension(context,
+                                                                                "dimension"),
+                                                                        IntegerArgumentType.getInteger(context,
+                                                                                "x"),
+                                                                        IntegerArgumentType.getInteger(context,
+                                                                                "y"),
+                                                                        IntegerArgumentType.getInteger(context,
+                                                                                "z"),
+                                                                        90.0f, 0.0f))
+                                                                .then(Commands
+                                                                        .argument("yRot",
+                                                                                FloatArgumentType.floatArg(-180.0f,
+                                                                                        180.0f))
+                                                                        .executes(context -> executeTeleportWorld(
+                                                                                context.getSource(),
+                                                                                EntityArgument.getPlayers(context,
+                                                                                        "targets"),
+                                                                                DimensionArgument.getDimension(
+                                                                                        context, "dimension"),
+                                                                                IntegerArgumentType
+                                                                                        .getInteger(context, "x"),
+                                                                                IntegerArgumentType
+                                                                                        .getInteger(context, "y"),
+                                                                                IntegerArgumentType
+                                                                                        .getInteger(context, "z"),
+                                                                                FloatArgumentType.getFloat(context,
+                                                                                        "yRot"),
+                                                                                0.0f))
+                                                                        .then(Commands
+                                                                                .argument("xRot",
+                                                                                        FloatArgumentType.floatArg(
+                                                                                                -90.0f, 90.0f))
+                                                                                .executes(
+                                                                                        context -> executeTeleportWorld(
+                                                                                                context.getSource(),
+                                                                                                EntityArgument
+                                                                                                        .getPlayers(
+                                                                                                                context,
+                                                                                                                "targets"),
+                                                                                                DimensionArgument
+                                                                                                        .getDimension(
+                                                                                                                context,
+                                                                                                                "dimension"),
+                                                                                                IntegerArgumentType
+                                                                                                        .getInteger(
+                                                                                                                context,
+                                                                                                                "x"),
+                                                                                                IntegerArgumentType
+                                                                                                        .getInteger(
+                                                                                                                context,
+                                                                                                                "y"),
+                                                                                                IntegerArgumentType
+                                                                                                        .getInteger(
+                                                                                                                context,
+                                                                                                                "z"),
+                                                                                                FloatArgumentType
+                                                                                                        .getFloat(
+                                                                                                                context,
+                                                                                                                "yRot"),
+                                                                                                FloatArgumentType
+                                                                                                        .getFloat(
+                                                                                                                context,
+                                                                                                                "xRot")))))))))))
+                // === open_menu ===
+                .then(Commands.literal("open_menu")
+                        .requires(source -> LuckPermsHelper.checkPermission(source,
+                                LuckPermsHelper.PERMISSION_OPEN_MENU, Commands.LEVEL_ADMINS))
+                        .then(Commands.argument("menu_name", StringArgumentType.word())
+                                .executes(context -> executeOpenMenu(
+                                        context.getSource(),
+                                        StringArgumentType.getString(context, "menu_name"),
+                                        context.getSource().getPlayerOrException()))
+                                .then(Commands.argument("target", EntityArgument.player())
+                                        .executes(context -> executeOpenMenu(
+                                                context.getSource(),
+                                                StringArgumentType.getString(context, "menu_name"),
+                                                EntityArgument.getPlayer(context, "target"))))))
+                .executes(context -> {
+                    DebugLogger.info("YouzaiworldCore", "执行 /yzwc 根命令 (hello)");
+                    context.getSource().sendSuccess(
+                            () -> Component.translatable("youzaiworldcore.message.command.hello_world"), false);
+                    return 1;
+                }));
+
+        DebugLogger.info("YouzaiworldCore", "注册命令: AccountCommands");
+        AccountCommands.register(dispatcher);
+
+        DebugLogger.info("YouzaiworldCore", "注册命令: ReloadCommand");
+        ReloadCommand.register(dispatcher);
+
+        DebugLogger.info("YouzaiworldCore", "注册命令: TeleportAnchorCommand");
+        TeleportAnchorCommand.register(dispatcher);
+
+        DebugLogger.info("YouzaiworldCore", "注册命令: EventCommand");
+        EventCommand.register(dispatcher);
+
+        DebugLogger.info("YouzaiworldCore", "注册命令: FunctionCommand");
+        FunctionCommand.register(dispatcher);
+
+        DebugLogger.info("YouzaiworldCore", "注册命令: UpdateCommand");
+        UpdateCommand.register(dispatcher);
+
+        DebugLogger.info("YouzaiworldCore", "注册命令: MailCommand");
+        MailCommand.register(dispatcher);
+
+        DebugLogger.info("YouzaiworldCore", "注册命令: PetCommand");
+        PetCommand.register(dispatcher);
+
+        DebugLogger.info("YouzaiworldCore", "注册命令: AfkCommand");
+        AfkCommand.register(dispatcher);
+
+        DebugLogger.info("YouzaiworldCore", "所有 /yzwc 命令注册完成");
     }
 
     /**

@@ -3,6 +3,7 @@ package top.csituka.youzaiworldcore.client.render;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.resources.Identifier;
+import org.joml.Vector2f;
 
 /**
  * 圆角矩形绘制工具（行扫描实现）。
@@ -57,6 +58,46 @@ public final class RoundedRect {
     private static final int[][] SPAN_CACHE = new int[MAX_CACHED_RADIUS + 1][];
 
     private RoundedRect() {
+    }
+
+    /**
+     * 在平移、正向等比缩放的圆角视口内重复提交绘制，各裁切条带互不重叠。
+     * 按实际 GUI 像素划分条带，避免 HUD 缩小后原版整数裁切将一行压成零高度。
+     * 回调可独立变换纹理，裁切轮廓始终保持在视口位置。
+     */
+    public static void clipped(GuiGraphicsExtractor g, int x, int y, int w, int h, int radius, Runnable draw) {
+        if (w <= 0 || h <= 0) return;
+        var pose = g.pose();
+        var start = pose.transformPosition(x, y, new Vector2f());
+        var end = pose.transformPosition(x + w, y + h, new Vector2f());
+        int left = Math.round(start.x), top = Math.round(start.y);
+        int width = Math.round(end.x) - left, height = Math.round(end.y) - top;
+        if (width <= 0 || height <= 0) return;
+        int r = Math.clamp(Math.round(radius * Math.min(pose.m00(), pose.m11())), 0, Math.min(width, height) / 2);
+        clippedBand(g, left, top + r, width, height - 2 * r, draw);
+        if (r == 0) return;
+        int[] spans = spansFor(r);
+        for (int row = 0; row < r; row++) {
+            int inset = r - spans[row];
+            clippedBand(g, left + inset, top + r - 1 - row, width - 2 * inset, 1, draw);
+            clippedBand(g, left + inset, top + height - r + row, width - 2 * inset, 1, draw);
+        }
+    }
+
+    private static void clippedBand(GuiGraphicsExtractor g, int x, int y, int w, int h, Runnable draw) {
+        if (w <= 0 || h <= 0) return;
+        g.pose().pushMatrix();
+        try {
+            g.pose().identity();
+            g.enableScissor(x, y, x + w, y + h);
+        } finally {
+            g.pose().popMatrix();
+        }
+        try {
+            draw.run();
+        } finally {
+            g.disableScissor();
+        }
     }
 
     /** 整张图片等比覆盖圆角区域；非目标比例只裁切边缘，各条带互不重叠。 */

@@ -77,7 +77,7 @@ public final class MapCommand {
     }
 
     private static MapWaypoint here(ServerPlayer player, String name) {
-        return new MapWaypoint(UUID.randomUUID(), player.getUUID(), name, MapWaypointGroup.OTHER.id(), player.level().dimension().identifier().toString(),
+        return new MapWaypoint(UUID.randomUUID(), player.getUUID(), name, MapWaypointGroup.UNGROUPED.id(), player.level().dimension().identifier().toString(),
                 player.getBlockX(), player.getBlockY(), player.getBlockZ(), 0xFF79BDEB, true, true, MapWaypoint.Kind.NORMAL, System.currentTimeMillis());
     }
     private static Component text(String key, Object... arguments) { return Component.translatable("map.youzaiworldcore." + key, arguments); }

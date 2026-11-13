@@ -225,7 +225,7 @@ public final class MapServerManager {
             String identity = "map-anchor:" + player.getUUID() + ":" + dimension + ":" + pos.asLong();
             String name = anchor.name().isBlank() ? "传送锚点" : anchor.name();
             anchors.add(new MapWaypoint(UUID.nameUUIDFromBytes(identity.getBytes(StandardCharsets.UTF_8)), player.getUUID(),
-                    name.substring(0, Math.min(64, name.length())), MapWaypointGroup.BUILDINGS.id(), dimension, pos.getX(), pos.getY(), pos.getZ(),
+                    name.substring(0, Math.min(64, name.length())), MapWaypointGroup.UNGROUPED.id(), dimension, pos.getX(), pos.getY(), pos.getZ(),
                     0xFF87CDA3, true, true, MapWaypoint.Kind.SERVER, 0));
         }
         ServerPlayNetworking.send(player, new MapWaypointsPayload(worldId, points, List.copyOf(anchors)));
@@ -240,7 +240,7 @@ public final class MapServerManager {
             for (ServerPlayer player : server.getPlayerList().getPlayers()) {
                 if (players.size() >= 256) break;
                 if (!eligible(player) || !player.isAlive() || player.isSpectator() || player.isInvisible()
-                        || InvisibilityManager.isInvisible(player.getUUID()) || !visible(player)
+                        || InvisibilityManager.isInvisible(player.getUUID()) || !positionShared(player)
                         || !MapSocialManager.visibleTo(player.getUUID(), receiver.getUUID())) continue;
                 players.add(new MapLivePayload.Player(player.getUUID(), player.getName().getString(),
                         player.level().dimension().identifier().toString(), player.getX(), player.getY(), player.getZ(), player.getYRot()));
@@ -270,7 +270,8 @@ public final class MapServerManager {
     /** 共享管理沿用地图认证与服务端功能开关。 */
     public static boolean socialEligible(ServerPlayer player) { return eligible(player) && MapServerSettings.enabled && MapServerSettings.sharePlayers; }
 
-    private static boolean visible(ServerPlayer player) {
+    /** 读取服务端保存的位置共享总开关，客户端显示开关不影响此值。 */
+    public static boolean positionShared(ServerPlayer player) {
         return VISIBILITY.computeIfAbsent(player.getUUID(), id -> new MapSqlSettings(MapServerSettings.database(), "player:" + id)
                 .getBoolean("share_position", true));
     }
@@ -295,8 +296,10 @@ public final class MapServerManager {
         var input = request.point();
         if (request.action() == MapActionPayload.Action.HIDE_POSITION || request.action() == MapActionPayload.Action.SHOW_POSITION) {
             boolean value = request.action() == MapActionPayload.Action.SHOW_POSITION;
-            VISIBILITY.put(player.getUUID(), value);
             MapServerSettings.database().settings("player:" + player.getUUID(), Map.of("share_position", Boolean.toString(value)));
+            VISIBILITY.put(player.getUUID(), value);
+            MapSocialManager.refresh(player);
+            DebugLogger.info("MapServerManager", "玩家位置共享：%s = %s", player.getUUID(), value);
             return feedback(player, true, value ? "position_shown" : "position_hidden");
         }
         if (request.action() == MapActionPayload.Action.TELEPORT) {
@@ -312,7 +315,6 @@ public final class MapServerManager {
         }
         if (!MapServerSettings.shareWaypoints || !canPublish(player)) return feedback(player, false, "denied");
         if (request.action() == MapActionPayload.Action.ADD || request.action() == MapActionPayload.Action.UPDATE) {
-            if (!MapWaypointGroup.isValidId(input.group())) return feedback(player, false, "invalid_point");
             ServerLevel target = server.getLevel(ResourceKey.create(Registries.DIMENSION, Identifier.parse(input.dimension())));
             if (target == null || input.y() < target.getMinY() || input.y() > target.getMaxY()
                     || !target.getWorldBorder().isWithinBounds(new net.minecraft.core.BlockPos(input.x(), input.y(), input.z()))) return feedback(player, false, "invalid_position");
@@ -323,7 +325,7 @@ public final class MapServerManager {
                     || (!canManage(player) && POINTS.stream().filter(value -> value.owner().equals(player.getUUID())).count() >= MapServerSettings.maxPerPlayer)) {
                 return feedback(player, false, "limit");
             }
-            POINTS.add(new MapWaypoint(input.id(), player.getUUID(), input.name(), input.group(), input.dimension(),
+            POINTS.add(new MapWaypoint(input.id(), player.getUUID(), input.name(), MapWaypointGroup.UNGROUPED.id(), input.dimension(),
                     input.x(), input.y(), input.z(), input.color(), true, true, MapWaypoint.Kind.NORMAL, System.currentTimeMillis()));
         } else {
             if (existing == null) return feedback(player, false, "missing");
@@ -340,7 +342,7 @@ public final class MapServerManager {
                     case LOCK, UNLOCK -> new MapWaypoint(existing.id(), existing.owner(), existing.name(), existing.group(), existing.dimension(),
                             existing.x(), existing.y(), existing.z(), existing.color(), true, true,
                             request.action() == MapActionPayload.Action.LOCK ? MapWaypoint.Kind.SERVER : MapWaypoint.Kind.NORMAL, existing.createdAt());
-                    case UPDATE -> new MapWaypoint(existing.id(), existing.owner(), input.name(), input.group(), input.dimension(),
+                    case UPDATE -> new MapWaypoint(existing.id(), existing.owner(), input.name(), MapWaypointGroup.UNGROUPED.id(), input.dimension(),
                             input.x(), input.y(), input.z(), input.color(), true, true, existing.kind(), existing.createdAt());
                     default -> null;
                 };
@@ -404,7 +406,7 @@ public final class MapServerManager {
             if (POINTS.stream().anyMatch(point -> point.id().equals(id))) continue;
             String name = type.toString();
             if (name.length() > 64) name = name.substring(0, 64);
-            POINTS.add(new MapWaypoint(id, SERVER_OWNER, name, MapWaypointGroup.RUINS.id(), level.dimension().identifier().toString(), position.getX(), position.getY(), position.getZ(),
+            POINTS.add(new MapWaypoint(id, SERVER_OWNER, name, MapWaypointGroup.UNGROUPED.id(), level.dimension().identifier().toString(), position.getX(), position.getY(), position.getZ(),
                     0xFFE8BB68, true, true, MapWaypoint.Kind.STRUCTURE, System.currentTimeMillis()));
             pointsRevision++; metadataDirty = true;
             structureCount++;

@@ -9,19 +9,15 @@ import org.joml.Vector4f;
 import top.csituka.youzaiworldcore.client.config.MapSettings;
 import top.csituka.youzaiworldcore.client.config.YzHudComponent;
 import top.csituka.youzaiworldcore.client.config.YzHudSettings;
-import top.csituka.youzaiworldcore.client.hud.ScoreboardSidebarRenderer;
 import top.csituka.youzaiworldcore.client.hud.YzHudLayout;
 import top.csituka.youzaiworldcore.client.render.RoundedRect;
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
-import top.csituka.youzaiworldcore.map.MapDrawing;
 import top.csituka.youzaiworldcore.map.MapTileKey;
 import top.csituka.youzaiworldcore.map.MapVertex;
 import top.csituka.youzaiworldcore.map.MapWaypoint;
-import top.csituka.youzaiworldcore.map.MapWaypointGroup;
 
 import java.util.Comparator;
 import java.util.ArrayList;
-import java.util.List;
 
 /** 悠哉地图的 HUD、覆盖标记与世界导航。参考 Conflux 的功能说明独立设计，不使用其代码或资源。 */
 @SuppressWarnings("null")
@@ -98,15 +94,6 @@ public final class MapRenderer {
                 2, Math.max(2, g.guiWidth() - scaledCardW - 2));
         int top = Math.clamp(YzHudLayout.componentTop(YzHudComponent.MINIMAP, g.guiHeight(), scaledCardH),
                 2, Math.max(2, g.guiHeight() - scaledCardH - 2));
-        if (MapSettings.enabled(MapSettings.Toggle.AVOID_HUD) && YzHudSettings.getPositionX(YzHudComponent.MINIMAP) == 0
-                && YzHudSettings.getPositionY(YzHudComponent.MINIMAP) == 0) {
-            int[] occupied = ScoreboardSidebarRenderer.mapAvoidanceBounds();
-            if (occupied != null && left < occupied[0] + occupied[2] && left + scaledCardW > occupied[0]
-                    && top < occupied[1] + occupied[3] && top + scaledCardH > occupied[1]) {
-                if (occupied[1] - scaledCardH - 4 >= 2) top = occupied[1] - scaledCardH - 4;
-                else if (occupied[0] - scaledCardW - 4 >= 2) left = occupied[0] - scaledCardW - 4;
-            }
-        }
         g.pose().pushMatrix();
         g.pose().translate(left, top);
         g.pose().scale(scale, scale);
@@ -144,7 +131,7 @@ public final class MapRenderer {
         YzuiTheme.hudText(g, font, font.plainSubstrByWidth(value, width), x, y, YzuiTheme.text(), opacity);
     }
 
-    /** 绘制地形之上的网格、绘图、路径点、雷达和自己的方向。 */
+    /** 绘制地形之上的网格、路径点、雷达和自己的方向。 */
     public static void overlay(GuiGraphicsExtractor g, MapView view, String dimension, int left, int top, int radius, float opacity, boolean labels) {
         g.enableScissor(left, top, left + view.width(), top + view.height());
         if (MapSettings.enabled(MapSettings.Toggle.GRID) && view.scale() >= 0.5) {
@@ -164,7 +151,6 @@ public final class MapRenderer {
                 if (MapShapes.contains(view, p.x(), p.y(), radius, 12)) info(g, Integer.toString(level), left + (int) p.x() - 6, top + (int) p.y() - 4, 30, opacity);
             });
         }
-        if (MapSettings.enabled(MapSettings.Toggle.DRAWINGS)) for (var drawing : MapPersonalData.drawings()) if (drawing.dimension().equals(dimension)) drawing(g, view, left, top, radius, drawing, opacity, false);
         for (var point : MapClient.waypoints()) {
             if (!MapClient.visibleWaypoint(point)) continue;
             var projected = point.projected(dimension, MapSettings.enabled(MapSettings.Toggle.PORTAL_PROJECTION));
@@ -173,9 +159,9 @@ public final class MapRenderer {
             if (!MapShapes.contains(view, p.x(), p.y(), radius, 10)) continue;
             int x = left + (int) p.x(), y = top + (int) p.y();
             int color = YzuiTheme.alpha(point.color(), opacity);
-            if (MapSettings.enabled(MapSettings.Toggle.MARKER_ICONS)) {
+            if (MapSettings.markersVisible()) {
                 waypointIcon(g, point, x, y, opacity);
-                if (MapSettings.enabled(MapSettings.Toggle.QUICK_LOCATE) && point.id().equals(MapClient.navigation())) g.outline(x - 10, y - 10, 20, 20, color);
+                if (point.id().equals(MapClient.navigation())) g.outline(x - 10, y - 10, 20, 20, color);
             }
             if (labels) markerLabel(g, view, left, top, p.x(), p.y(), MapTexts.waypoint(point).getString()
                     + (point.dimension().equals(dimension) ? "" : " ↔"), opacity);
@@ -186,15 +172,15 @@ public final class MapRenderer {
             boolean mob = radar.entity() instanceof net.minecraft.world.entity.Mob || !radar.player() && selected;
             if (mob && !MapMobRadar.withinRange(radar.x(), radar.z())) continue;
             var p = view.screen(radar.x(), radar.z());
-            boolean edge = !MapShapes.contains(view, p.x(), p.y(), radius, selected ? 10 : 8);
+            boolean edge = !MapShapes.contains(view, p.x(), p.y(), radius, radar.player() ? 16 : selected ? 10 : 8);
             if (edge) {
                 if (!selected) continue;
                 p = radarEdge(view, p, radius);
             }
             int x = left + (int) p.x(), y = top + (int) p.y();
-            if (MapSettings.enabled(MapSettings.Toggle.MARKER_ICONS)) {
-                if (labels && radar.player()) playerDirection(g, x, y, Math.toRadians(radar.yaw()) + Math.PI - view.angle(),
-                        YzuiTheme.alpha(radar.color(), opacity));
+            if (MapSettings.markersVisible()) {
+                if (radar.player()) playerDirection(g, x, y, Math.toRadians(radar.yaw()) + Math.PI - view.angle(),
+                        YzuiTheme.alpha(radar.color(), opacity), opacity);
                 if (selected) {
                     float pulse = 0.7f + 0.3f * (float) Math.sin(System.currentTimeMillis() / 220.0);
                     RoundedRect.fill(g, x - 9, y - 9, 18, 18, 5, YzuiTheme.alpha(YzuiTheme.primary(), opacity * pulse));
@@ -209,7 +195,7 @@ public final class MapRenderer {
                     int size = selected ? 12 : 10;
                     MapMobIcons.draw(g, radar.entityType(), x - size / 2, y - size / 2, size, opacity); head = true;
                 }
-                if (radar.player() && MapSettings.enabled(MapSettings.Toggle.RADAR_ICONS)) {
+                if (radar.player()) {
                     var client = Minecraft.getInstance();
                     var info = client.getConnection() == null ? null : client.getConnection().getPlayerInfo(radar.id());
                     var skin = radar.entity() instanceof AbstractClientPlayer player ? player.getSkin() : info == null ? null : info.getSkin();
@@ -221,23 +207,21 @@ public final class MapRenderer {
                     }
                 }
                 if (!head) RoundedRect.fill(g, x - 2, y - 2, 5, 5, radar.player() ? 1 : 2, YzuiTheme.alpha(radar.color(), opacity));
-                if (MapSettings.enabled(MapSettings.Toggle.QUICK_LOCATE) && radar.id().equals(MapClient.trackedId())) g.outline(x - 6, y - 6, 13, 13, YzuiTheme.alpha(YzuiTheme.primary(), opacity));
+                if (radar.id().equals(MapClient.trackedId())) g.outline(x - 6, y - 6, 13, 13, YzuiTheme.alpha(YzuiTheme.primary(), opacity));
             }
             if (labels && !edge) markerLabel(g, view, left, top, p.x(), p.y(), radar.name(), opacity);
         }
         var player = Minecraft.getInstance().player;
         if (player != null && dimension.equals(MapClient.dimension())) {
             var p = view.screen(player.getX(), player.getZ());
-            if (MapShapes.contains(view, p.x(), p.y(), radius, labels ? 16 : 8)) {
+            if (MapShapes.contains(view, p.x(), p.y(), radius, 16)) {
                 int x = left + (int) p.x(), y = top + (int) p.y();
                 double angle = Math.toRadians(player.getYRot()) + Math.PI - view.angle();
-                if (labels && MapSettings.enabled(MapSettings.Toggle.RADAR_ICONS)) {
-                    playerDirection(g, x, y, angle, YzuiTheme.alpha(YzuiTheme.primary(), opacity));
-                    var texture = player.getSkin().body().texturePath();
-                    int tint = YzuiTheme.alpha(0xFFFFFFFF, opacity);
-                    g.blit(RenderPipelines.GUI_TEXTURED, texture, x - 4, y - 4, 8, 8, 8, 8, 64, 64, tint);
-                    g.blit(RenderPipelines.GUI_TEXTURED, texture, x - 4, y - 4, 40, 8, 8, 8, 64, 64, tint);
-                } else arrow(g, x, y, angle, YzuiTheme.alpha(0xFFFFFFFF, opacity));
+                playerDirection(g, x, y, angle, YzuiTheme.alpha(YzuiTheme.primary(), opacity), opacity);
+                var texture = player.getSkin().body().texturePath();
+                int tint = YzuiTheme.alpha(0xFFFFFFFF, opacity);
+                g.blit(RenderPipelines.GUI_TEXTURED, texture, x - 4, y - 4, 8, 8, 8, 8, 64, 64, tint);
+                g.blit(RenderPipelines.GUI_TEXTURED, texture, x - 4, y - 4, 40, 8, 8, 8, 64, 64, tint);
             }
         }
         // 方位字母位于地图轮廓内部，旋转模式下同步旋转方位。
@@ -262,57 +246,24 @@ public final class MapRenderer {
         return new MapView.Point(cx + (target.x() - cx) * low, cy + (target.y() - cy) * low);
     }
 
-    /** 名称按配置固定在图标四周，避免越过地图边界。 */
+    /** 名称固定在图标下方，并裁切到当前地图边界。 */
     private static void markerLabel(GuiGraphicsExtractor g, MapView view, int left, int top, double x, double y, String name, float opacity) {
-        if (!MapSettings.enabled(MapSettings.Toggle.MARKER_ICONS) || !MapSettings.enabled(MapSettings.Toggle.MARKER_LABELS)) return;
+        if (!MapSettings.markerLabels()) return;
         var font = Minecraft.getInstance().font;
-        int room = switch (MapSettings.labelPosition()) {
-            case LEFT -> (int) x - 14;
-            case RIGHT -> view.width() - (int) x - 14;
-            default -> view.width() - 8;
-        };
+        int room = view.width() - 8;
         if (room < 8) return;
         String text = font.plainSubstrByWidth(name, Math.min(180, room));
-        int width = font.width(text);
-        int tx = (int) x - width / 2, ty = (int) y + 10;
-        switch (MapSettings.labelPosition()) {
-            case ABOVE -> ty = (int) y - font.lineHeight - 10;
-            case LEFT -> { tx = (int) x - width - 10; ty = (int) y - font.lineHeight / 2; }
-            case RIGHT -> { tx = (int) x + 10; ty = (int) y - font.lineHeight / 2; }
-            default -> { }
-        }
+        int width = font.width(text), tx = (int) x - width / 2, ty = (int) y + 10;
         if (ty < 2 || ty + font.lineHeight > view.height() - 2) return;
         tx = Math.clamp(tx, 4, Math.max(4, view.width() - width - 4));
         YzuiTheme.hudLabel(g, font, text, left + tx, top + ty, YzuiTheme.text(), opacity);
-    }
-
-    private static void infoColored(GuiGraphicsExtractor g, String text, int x, int y, int color) {
-        g.text(Minecraft.getInstance().font, text, x, y, color, true);
     }
 
     /** 地形底色不固定，图标使用主题底板与前景色，原路径点颜色保留在边框。 */
     private static void waypointIcon(GuiGraphicsExtractor g, MapWaypoint point, int x, int y, float opacity) {
         RoundedRect.fill(g, x - 9, y - 9, 18, 18, 4, YzuiTheme.alpha(YzuiTheme.background(), opacity));
         YzuiTheme.border(g, x - 9, y - 9, 18, 18, 4, YzuiTheme.alpha(point.color(), opacity));
-        MapGroupIcons.render(g, MapWaypointGroup.of(point), x - 8, y - 8, 16, YzuiTheme.alpha(YzuiTheme.text(), opacity));
-    }
-
-    /** 绘图预览与已保存标注使用相同绘制逻辑。 */
-    public static void drawing(GuiGraphicsExtractor g, MapView view, int left, int top, int radius, MapDrawing drawing, float opacity, boolean selected) {
-        int color = YzuiTheme.alpha(drawing.color(), opacity);
-        if (drawing.kind() == MapDrawing.Kind.LABEL) {
-            var vertex = drawing.vertices().getFirst(); var p = view.screen(vertex.x(), vertex.z());
-            if (MapShapes.contains(view, p.x(), p.y(), radius, 10)) {
-                String text = Minecraft.getInstance().font.plainSubstrByWidth(drawing.label(),
-                        MapShapes.textWidth(view, p.x(), p.y(), radius, Minecraft.getInstance().font.lineHeight));
-                infoColored(g, text, left + (int) p.x(), top + (int) p.y(), color);
-                if (selected) g.outline(left + (int) p.x() - 2, top + (int) p.y() - 2, Minecraft.getInstance().font.width(text) + 4, 13, color);
-            }
-        } else path(g, view, left, top, radius, MapShapes.path(drawing), color, selected ? 3 : 2);
-    }
-
-    private static void path(GuiGraphicsExtractor g, MapView view, int left, int top, int radius, List<MapVertex> points, int color, int width) {
-        for (int i = 1; i < points.size(); i++) worldLine(g, view, left, top, radius, points.get(i - 1).x(), points.get(i - 1).z(), points.get(i).x(), points.get(i).z(), color, width);
+        MapGroupIcons.render(g, MapPersonalData.groupOf(point), x - 8, y - 8, 16, YzuiTheme.alpha(YzuiTheme.text(), opacity));
     }
 
     private static void worldLine(GuiGraphicsExtractor g, MapView view, int left, int top, int radius, double x1, double z1, double x2, double z2, int color, int width) {
@@ -326,13 +277,13 @@ public final class MapRenderer {
         MapShapes.rawLine(g, x + fx * 6, y + fy * 6, x - fx * 4 - fy * 4, y - fy * 4 + fx * 4, color, 2);
     }
 
-    /** 全屏地图的头像圆框与朝向箭头，自己的标记和其他玩家保持一致。 */
-    private static void playerDirection(GuiGraphicsExtractor g, int x, int y, double angle, int color) {
+    /** 小地图与全屏地图共用的头像圆框与朝向箭头，随 HUD 透明度显示。 */
+    private static void playerDirection(GuiGraphicsExtractor g, int x, int y, double angle, int color, float opacity) {
         double fx = Math.sin(angle), fy = -Math.cos(angle);
         MapShapes.rawLine(g, x + fx * 15, y + fy * 15, x + fx * 6 + fy * 5, y + fy * 6 - fx * 5, color, 2);
         MapShapes.rawLine(g, x + fx * 15, y + fy * 15, x + fx * 6 - fy * 5, y + fy * 6 + fx * 5, color, 2);
         RoundedRect.fill(g, x - 7, y - 7, 15, 15, 7, color);
-        RoundedRect.fill(g, x - 5, y - 5, 11, 11, 5, YzuiTheme.background());
+        RoundedRect.fill(g, x - 5, y - 5, 11, 11, 5, YzuiTheme.alpha(YzuiTheme.background(), opacity));
     }
 
     private static void navigation(GuiGraphicsExtractor g, float opacity) {

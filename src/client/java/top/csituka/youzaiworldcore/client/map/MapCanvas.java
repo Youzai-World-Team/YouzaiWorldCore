@@ -15,7 +15,7 @@ import java.util.concurrent.Executors;
 
 /**
  * 后台合成地图像素，主线程只上传完成的纹理；每张画布至多一项待处理任务。
- * 普通地图返回纹理对应的视口；交互地图实时投影旧纹理并返回当前视口，保持地形、标记和命中对齐。
+ * 每帧按当前视口投影旧纹理，保持地形、标记和命中对齐，不让后台纹理更新带动玩家标记回跳。
  */
 public final class MapCanvas implements AutoCloseable {
     private static final ExecutorService RASTER = Executors.newSingleThreadExecutor(
@@ -44,19 +44,19 @@ public final class MapCanvas implements AutoCloseable {
      */
     public MapView draw(GuiGraphicsExtractor graphics, MapView view, String dimension, MapLayer layer, int height,
             int left, int top, int radius, float opacity, float pixelScale) {
-        return draw(graphics, view, dimension, layer, height, left, top, radius, opacity, pixelScale, false);
+        return drawFrame(graphics, view, dimension, layer, height, left, top, radius, opacity, pixelScale);
     }
 
     /** 全屏地图每帧变换已有纹理，交互不等待后台地形重绘；命中和标记使用当前视口。 */
     public MapView drawInteractive(GuiGraphicsExtractor graphics, MapView view, String dimension, MapLayer layer,
             int height,
             int left, int top, float pixelScale) {
-        return draw(graphics, view, dimension, layer, height, left, top, 0, 1, pixelScale, true);
+        return draw(graphics, view, dimension, layer, height, left, top, 0, 1, pixelScale);
     }
 
     @SuppressWarnings("null")
-    private MapView draw(GuiGraphicsExtractor graphics, MapView view, String dimension, MapLayer layer, int height,
-            int left, int top, int radius, float opacity, float pixelScale, boolean interactive) {
+    private MapView drawFrame(GuiGraphicsExtractor graphics, MapView view, String dimension, MapLayer layer, int height,
+            int left, int top, int radius, float opacity, float pixelScale) {
         double resolution = Math.min(pixelScale, 768.0 / Math.max(view.width(), view.height()));
         int tw = Math.max(1, (int) Math.ceil(view.width() * resolution));
         int th = Math.max(1, (int) Math.ceil(view.height() * resolution));
@@ -125,13 +125,8 @@ public final class MapCanvas implements AutoCloseable {
             });
         }
         if (texture != null && displayed != null) {
-            if (interactive) {
-                drawTransformed(graphics, view, left, top, opacity);
-                return view;
-            }
-            RoundedRect.texture(graphics, id, left, top, view.width(), view.height(), radius,
-                    textureWidth, textureHeight, YzuiTheme.alpha(0xFFFFFFFF, opacity));
-            return displayed.view;
+            drawTransformed(graphics, view, left, top, radius, opacity);
+            return view;
         }
         RoundedRect.fill(graphics, left, top, view.width(), view.height(), radius,
                 YzuiTheme.multiplyAlpha(YzuiTheme.surface(), opacity));
@@ -139,27 +134,27 @@ public final class MapCanvas implements AutoCloseable {
     }
 
     @SuppressWarnings("null")
-    private void drawTransformed(GuiGraphicsExtractor graphics, MapView view, int left, int top, float opacity) {
+    private void drawTransformed(GuiGraphicsExtractor graphics, MapView view, int left, int top, int radius, float opacity) {
         // 新露出的区域先铺底色；后台纹理到达后仍按当前视口投影，避免回跳到旧位置。
-        graphics.fill(left, top, left + view.width(), top + view.height(),
+        RoundedRect.fill(graphics, left, top, view.width(), view.height(), radius,
                 YzuiTheme.multiplyAlpha(displayed.style.unknown(), opacity));
         MapView source = displayed.view;
         MapView.Point center = view.screen(source.centerX(), source.centerZ());
         float zoom = (float) (view.scale() / source.scale());
-        graphics.enableScissor(left, top, left + view.width(), top + view.height());
-        graphics.pose().pushMatrix();
-        try {
-            graphics.pose().translate((float) (left + center.x()), (float) (top + center.y()));
-            graphics.pose().rotate((float) (source.angle() - view.angle()));
-            graphics.pose().scale(zoom, zoom);
-            graphics.pose().translate(-source.width() / 2f, -source.height() / 2f);
-            graphics.blit(RenderPipelines.GUI_TEXTURED, id, 0, 0, 0, 0,
-                    source.width(), source.height(), textureWidth, textureHeight,
-                    textureWidth, textureHeight, YzuiTheme.alpha(0xFFFFFFFF, opacity));
-        } finally {
-            graphics.pose().popMatrix();
-            graphics.disableScissor();
-        }
+        RoundedRect.clipped(graphics, left, top, view.width(), view.height(), radius, () -> {
+            graphics.pose().pushMatrix();
+            try {
+                graphics.pose().translate((float) (left + center.x()), (float) (top + center.y()));
+                graphics.pose().rotate((float) (source.angle() - view.angle()));
+                graphics.pose().scale(zoom, zoom);
+                graphics.pose().translate(-source.width() / 2f, -source.height() / 2f);
+                graphics.blit(RenderPipelines.GUI_TEXTURED, id, 0, 0, 0, 0,
+                        source.width(), source.height(), textureWidth, textureHeight,
+                        textureWidth, textureHeight, YzuiTheme.alpha(0xFFFFFFFF, opacity));
+            } finally {
+                graphics.pose().popMatrix();
+            }
+        });
     }
 
     /** 页面关闭、切服或尺寸变化时释放旧 GPU 纹理与 NativeImage。 */

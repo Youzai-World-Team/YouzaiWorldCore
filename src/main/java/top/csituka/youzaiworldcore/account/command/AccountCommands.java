@@ -58,7 +58,7 @@ public class AccountCommands {
         DebugLogger.entering("AccountCommands", "register");
         dispatcher.register(Commands.literal("yzwc")
                 .then(Commands.literal("account")
-                        .requires(src -> !isDeveloperSingleplayerSource(src))
+                        .requires(src -> src.getServer().isDedicatedServer())
                         // ===== 玩家命令 =====
                         .then(Commands.literal("register")
                                 .then(Commands.argument("password", StringArgumentType.string())

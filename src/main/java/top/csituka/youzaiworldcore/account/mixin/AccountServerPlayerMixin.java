@@ -79,7 +79,8 @@ public abstract class AccountServerPlayerMixin implements PlayerAuthAccess {
     }
 
     public boolean yzwc$canSkipAuth() {
-        return yzwc$canSkipAuth;
+        // 内置服务器没有公网账户登录流程；对局域网加入者也使用本地玩法状态。
+        return !yzwc$player.level().getServer().isDedicatedServer() || yzwc$canSkipAuth;
     }
 
     public void yzwc$setCanSkipAuth(boolean canSkip) {
@@ -168,7 +169,7 @@ public abstract class AccountServerPlayerMixin implements PlayerAuthAccess {
     // ===== 玩家 tick — 未认证时倒计时并阻止 tick =====
     @Inject(method = "doTick", at = @At("HEAD"), cancellable = true)
     private void onPlayerTick(CallbackInfo ci) {
-        if (yzwc$canSkipAuth) {
+        if (yzwc$canSkipAuth()) {
             return;
         }
 

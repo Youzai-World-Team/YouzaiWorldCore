@@ -34,22 +34,12 @@ public final class MapBinaryCodec {
                 in.readUTF(), in.readInt(), in.readInt(), in.readInt(), in.readInt(), in.readBoolean(), in.readBoolean(),
                 MapWaypoint.Kind.valueOf(in.readUTF()), in.readLong()));
     }
-    public static byte[] drawing(MapDrawing d) {
-        return encode(out -> {
-            out.writeUTF(d.id().toString()); out.writeUTF(d.dimension()); out.writeUTF(d.kind().name()); out.writeInt(d.color());
-            out.writeUTF(d.label()); out.writeInt(d.vertices().size());
-            for (var v : d.vertices()) { out.writeDouble(v.x()); out.writeDouble(v.z()); }
-        });
+    /** 分组名称与图标独立保存，编辑不改变任何路径点身份。 */
+    public static byte[] group(MapWaypointGroup group) {
+        return encode(out -> { out.writeUTF(group.name()); out.writeUTF(group.icon().id()); });
     }
-    public static MapDrawing drawing(byte[] bytes) {
-        return decode(bytes, in -> {
-            UUID id = UUID.fromString(in.readUTF()); String dimension = in.readUTF(); var kind = MapDrawing.Kind.valueOf(in.readUTF());
-            int color = in.readInt(); String label = in.readUTF(); int size = in.readInt();
-            if (size < 1 || size > MapDrawing.MAX_VERTICES) throw new IOException("地图绘图顶点数无效");
-            var vertices = new ArrayList<MapVertex>(size);
-            for (int i = 0; i < size; i++) vertices.add(new MapVertex(in.readDouble(), in.readDouble()));
-            return new MapDrawing(id, dimension, kind, vertices, color, label);
-        });
+    public static MapWaypointGroup group(String id, byte[] bytes) {
+        return decode(bytes, in -> new MapWaypointGroup(id, in.readUTF(), MapWaypointIcon.byId(in.readUTF())));
     }
     public static byte[] tile(MapTile t) {
         return encode(out -> {

@@ -270,7 +270,7 @@ public final class MapClient {
     /** 当前世界的光照和主题底色快照。 */
     public static MapRaster.Style rasterStyle(String dimension) {
         var client = Minecraft.getInstance();
-        return new MapRaster.Style(MapSettings.overlay(), MapSettings.enabled(MapSettings.Toggle.LIGHTING),
+        return new MapRaster.Style(MapSettings.overlay(), true,
                 level == null ? 0 : level.getSkyDarken(), client.options.gamma().get(),
                 YzuiTheme.palette().surfaceLow(), YzuiTheme.palette().background(),
                 loadDimension.equals(dimension) ? liveLoadLevels() : Map.of());
@@ -336,8 +336,8 @@ public final class MapClient {
         MapMobRadar.tick();
         if (ticks % 5 == 0)
             updateRadar(client);
-        if (ticks % 20 == 0 && MapSettings.enabled(MapSettings.Toggle.SERVER_SYNC)
-                && ClientPlayNetworking.canSend(MapViewRequestPayload.ID)) {
+        // 首个视口请求触发服务端会话握手；仅以已协商的数据包通道判断支持情况。
+        if (ticks % 20 == 0 && ClientPlayNetworking.canSend(MapViewRequestPayload.ID)) {
             MapViewRequestPayload request;
             if (client.gui.screen() instanceof YzWorldMapScreen map)
                 request = map.subscription();
@@ -470,7 +470,7 @@ public final class MapClient {
         y = Math.clamp(y, -MapTileKey.WORLD_LIMIT, MapTileKey.WORLD_LIMIT);
         z = Math.clamp(z, -MapTileKey.WORLD_LIMIT, MapTileKey.WORLD_LIMIT);
         return new MapWaypoint(UUID.randomUUID(), player == null ? new UUID(0, 0) : player.getUUID(),
-                MapTexts.text("new_point").getString(), MapWaypointGroup.OTHER.id(), dimension, x, y, z, YzuiTheme.primary(), true, false,
+                MapTexts.text("new_point").getString(), MapWaypointGroup.UNGROUPED.id(), dimension, x, y, z, YzuiTheme.primary(), true, false,
                 MapWaypoint.Kind.NORMAL, System.currentTimeMillis());
     }
 
@@ -525,7 +525,7 @@ public final class MapClient {
             boolean tame = entity instanceof TamableAnimal animal && animal.isTame()
                     || entity instanceof AbstractHorse horse && horse.isTamed();
             var toggle = player ? MapSettings.Toggle.RADAR_PLAYERS
-                    : tame ? MapSettings.Toggle.RADAR_TAMED
+                    : tame ? MapSettings.Toggle.RADAR_FRIENDLY
                             : category == MobCategory.MONSTER ? MapSettings.Toggle.RADAR_HOSTILE
                                     : category == MobCategory.MISC ? MapSettings.Toggle.RADAR_OTHER
                                             : MapSettings.Toggle.RADAR_FRIENDLY;

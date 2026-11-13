@@ -1,30 +1,10 @@
 package top.csituka.youzaiworldcore.client.map;
 
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import top.csituka.youzaiworldcore.map.MapDrawing;
-import top.csituka.youzaiworldcore.map.MapVertex;
 
-import java.util.ArrayList;
-import java.util.List;
-
-/** 地图绘图与命中检测共用的几何路径。 */
+/** 地图视口裁切、标记与导航共用的几何工具。 */
 public final class MapShapes {
     private MapShapes() { }
-
-    /** 将图形转换为世界坐标折线，椭圆使用 64 段闭合路径。 */
-    public static List<MapVertex> path(MapDrawing drawing) {
-        var vertices = drawing.vertices();
-        if (drawing.kind() != MapDrawing.Kind.RECTANGLE && drawing.kind() != MapDrawing.Kind.ELLIPSE) return vertices;
-        var a = vertices.getFirst(); var b = vertices.getLast();
-        if (drawing.kind() == MapDrawing.Kind.RECTANGLE) return List.of(a, new MapVertex(b.x(), a.z()), b, new MapVertex(a.x(), b.z()), a);
-        var points = new ArrayList<MapVertex>(65);
-        double cx = (a.x() + b.x()) / 2, cz = (a.z() + b.z()) / 2;
-        for (int i = 0; i <= 64; i++) {
-            double angle = Math.PI * i / 32;
-            points.add(new MapVertex(cx + (b.x() - a.x()) / 2 * Math.cos(angle), cz + (b.z() - a.z()) / 2 * Math.sin(angle)));
-        }
-        return points;
-    }
 
     /** 测试圆角视口，标记与输入共用同一边界。 */
     public static boolean contains(MapView view, double x, double y, int radius, double margin) {
@@ -75,18 +55,6 @@ public final class MapShapes {
         return true;
     }
 
-    /** 文本整行必须落在圆形/圆角轮廓内，防止标签越过小地图边框。 */
-    public static int textWidth(MapView view, double x, double y, int radius, int textHeight) {
-        double left = 2, right = view.width() - 2;
-        for (double row : new double[] {y - 1, y + textHeight + 1}) {
-            if (row < 2 || row >= view.height() - 2) return 0;
-            double distance = row < radius ? radius - row : row > view.height() - radius ? row - (view.height() - radius) : 0;
-            double inset = radius == 0 ? 0 : radius - Math.sqrt(Math.max(0, radius * radius - distance * distance));
-            left = Math.max(left, inset + 2); right = Math.min(right, view.width() - inset - 2);
-        }
-        return x < left ? 0 : Math.max(0, (int) (right - x));
-    }
-
     /** 已裁切的屏幕线段，用于边界内标记与导航箭头。 */
     public static void rawLine(GuiGraphicsExtractor g, double x1, double y1, double x2, double y2, int color, int width) {
         double length = Math.hypot(x2 - x1, y2 - y1);
@@ -96,20 +64,5 @@ public final class MapShapes {
         g.pose().rotate((float) Math.atan2(y2 - y1, x2 - x1));
         g.fill(0, -width / 2, (int) Math.ceil(length), (width + 1) / 2, color);
         g.pose().popMatrix();
-    }
-
-    /** @return 世界折线距鼠标的最短屏幕距离 */
-    public static double distance(MapDrawing drawing, MapView view, double x, double y) {
-        var points = path(drawing);
-        var first = view.screen(points.getFirst().x(), points.getFirst().z());
-        double distance = Math.hypot(first.x() - x, first.y() - y);
-        for (int i = 1; i < points.size(); i++) {
-            var a = view.screen(points.get(i - 1).x(), points.get(i - 1).z());
-            var b = view.screen(points.get(i).x(), points.get(i).z());
-            double dx = b.x() - a.x(), dy = b.y() - a.y();
-            double t = dx == 0 && dy == 0 ? 0 : Math.clamp(((x - a.x()) * dx + (y - a.y()) * dy) / (dx * dx + dy * dy), 0, 1);
-            distance = Math.min(distance, Math.hypot(a.x() + t * dx - x, a.y() + t * dy - y));
-        }
-        return distance;
     }
 }

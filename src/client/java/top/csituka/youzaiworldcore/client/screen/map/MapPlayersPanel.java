@@ -15,6 +15,7 @@ import top.csituka.youzaiworldcore.client.render.RoundedRect;
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
 import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
 import top.csituka.youzaiworldcore.network.MapSessionPayload;
+import top.csituka.youzaiworldcore.network.MapActionPayload;
 import top.csituka.youzaiworldcore.network.MapSocialPayload;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
@@ -49,14 +50,14 @@ final class MapPlayersPanel extends MapOverlayPanel {
     private Tab tab = Tab.VISIBLE;
     private MapSocialPayload.Action picker;
     private Pending pending;
-    private boolean choosingMode, compact, dirty, refreshRequested, focusSearch;
+    private boolean choosingMode, compact, dirty, refreshRequested, focusSearch, sharingPending;
     private String query = "", pickerQuery = "";
     private int page, pages = 1, count, capacity, listTop, listBottom, rowHeight, footer, searchY, ticks, lastSendTick = -5;
     private Component notice = Component.empty();
     private long noticeUntil;
     private boolean noticeFailure;
     private EditBox search;
-    private TransparentButton scope, previous, next;
+    private TransparentButton scope, sharingSwitch, previous, next;
 
     MapPlayersPanel(YzWorldMapScreen owner) {
         super(owner, "players_title"); state = MapClient.social();
@@ -70,7 +71,7 @@ final class MapPlayersPanel extends MapOverlayPanel {
                 && ClientPlayNetworking.canSend(MapSocialPayload.ID);
     }
     // 服务端限制两次操作至少间隔 4 tick；按钮短暂冷却，已点击的操作立即发出，不依赖面板继续打开。
-    private boolean editable() { return available() && state != null && pending == null && ticks - lastSendTick >= 5; }
+    private boolean editable() { return available() && state != null && pending == null && !sharingPending && ticks - lastSendTick >= 5; }
     private void fetch() {
         if (!available()) return;
         MapClient.social(MapSocialPayload.Action.FETCH, SELF, false); lastSendTick = ticks; refreshRequested = false;
@@ -82,7 +83,7 @@ final class MapPlayersPanel extends MapOverlayPanel {
         panelWidth = Math.min(width - 16, Math.max(280, Math.min(440, width / 2)));
         compact = panelHeight < 340;
         rowWidgets.clear(); rows.clear(); mutations.clear(); tabs.clear(); search = null;
-        scope = null; previous = null; next = null;
+        scope = null; sharingSwitch = null; previous = null; next = null;
         button(panelX + panelWidth - 32, panelY + 7, 22, Component.literal("×"), this::onClose);
         if (picker != null || choosingMode) button(panelX + panelWidth - 58, panelY + 7, 22, Component.literal("←"), this::back)
                 .setTooltip(Tooltip.create(MapTexts.text("players_back")));
@@ -92,7 +93,10 @@ final class MapPlayersPanel extends MapOverlayPanel {
         }
         int y = panelY + (compact ? 36 : 48);
         if (picker == null) {
-            scope = button(panelX + 12, y, panelWidth - 24, scopeLabel(), () -> { choosingMode = true; init(); });
+            int half = (panelWidth - 30) / 2;
+            sharingSwitch = button(panelX + 12, y, half, sharingLabel(), this::toggleSharing);
+            sharingSwitch.setTextLeftAligned(true); sharingSwitch.setTooltip(Tooltip.create(MapTexts.text("position_sharing_hint")));
+            scope = button(panelX + 18 + half, y, half, scopeLabel(), () -> { choosingMode = true; init(); });
             scope.setTextLeftAligned(true); scope.setTooltip(Tooltip.create(MapTexts.text("players_scope")));
             y += 28;
             int cell = (panelWidth - 36) / 4;
@@ -151,6 +155,25 @@ final class MapPlayersPanel extends MapOverlayPanel {
             case BLOCKED -> "players_blocked_hint";
         });
     }
+    private Component sharingLabel() {
+        return MapTexts.text("setting_value", MapTexts.text("position_sharing"),
+                MapTexts.text(sharingPending ? "players_pending" : state == null ? "players_loading" : state.positionShared() ? "on" : "off"));
+    }
+    private void toggleSharing() {
+        if (!editable()) return;
+        var player = Minecraft.getInstance().player; if (player == null) return;
+        boolean show = !state.positionShared();
+        sharingPending = MapClient.send(show ? MapActionPayload.Action.SHOW_POSITION : MapActionPayload.Action.HIDE_POSITION,
+                MapClient.newPoint(MapClient.dimension(), player.getBlockX(), player.getBlockY(), player.getBlockZ()), (success, key) -> {
+                    sharingPending = false; state = MapClient.social();
+                    if (!success) refreshRequested = true;
+                    showNotice(success ? "players_saved" : key, !success); refreshEnabled();
+                });
+        if (sharingPending) { lastSendTick = ticks; showNotice("players_pending", false); }
+        else showNotice("players_denied", true);
+        refreshEnabled();
+        DebugLogger.debug("MapPlayers", "提交位置共享总开关：%s", show);
+    }
     private Component scopeLabel() {
         String key = !available() ? "players_unavailable" : state == null ? "players_loading" : state.blacklist() ? "players_scope_all" : "players_scope_list";
         return MapTexts.text(key).copy().append("  ›");
@@ -203,6 +226,7 @@ final class MapPlayersPanel extends MapOverlayPanel {
             control.setTooltip(Tooltip.create(MapTexts.text(value.label).copy().append(" · " + totals.get(value)).append("\n").append(MapTexts.text(value.description))));
         }
         if (scope != null) scope.setMessage(scopeLabel());
+        if (sharingSwitch != null) sharingSwitch.setMessage(sharingLabel());
         search.setTooltip(Tooltip.create(sectionHint()));
         if (add != null) {
             String key = switch (tab) { case VISIBLE -> "share_request"; case ALLOWED -> "share_add"; case BLOCKED -> "share_block"; case INCOMING -> "share_accept"; };
@@ -315,6 +339,11 @@ final class MapPlayersPanel extends MapOverlayPanel {
         if (choosingMode && state != null && mutations.size() == 2) for (int i = 0; i < 2; i++)
             mutations.get(i).setStyle(state.blacklist() == (i == 1) ? YzuiTheme.ButtonStyle.FILLED : YzuiTheme.ButtonStyle.TONAL);
         if (scope != null) scope.active = editable();
+        if (sharingSwitch != null) {
+            sharingSwitch.active = editable() && ClientPlayNetworking.canSend(MapActionPayload.ID);
+            sharingSwitch.setMessage(sharingLabel());
+            sharingSwitch.setStyle(state != null && state.positionShared() ? YzuiTheme.ButtonStyle.FILLED : YzuiTheme.ButtonStyle.TONAL);
+        }
         var add = rowWidgets.get("add"); if (add != null) add.active = editable() && add.visible;
     }
     private void showNotice(String key, boolean failure) {
@@ -337,7 +366,7 @@ final class MapPlayersPanel extends MapOverlayPanel {
             if (System.currentTimeMillis() - pending.started() > 8000 || !available()) {
                 pending = null; refreshRequested = true; showNotice("players_timeout", true);
             }
-        } else if ((state == null || refreshRequested) && ticks - lastSendTick >= 40) {
+        } else if (!sharingPending && (state == null || refreshRequested) && ticks - lastSendTick >= 40) {
             // 规则修改和收到申请均由服务端主动推送；只在初次加载或超时后补取，避免轮询占用操作限流。
             fetch();
         }

@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.config;
 
+import net.fabricmc.api.EnvType;
+import net.fabricmc.loader.api.FabricLoader;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
 /**
@@ -27,6 +29,16 @@ public final class ApiModuleSettings {
     public static int getTimeoutSeconds() { return timeoutSeconds; }
 
     public static void load() {
+        // 内置服务器仅用于本地玩法；客户端进程不读取公网服的 HMAC 密钥。
+        // 重载也走此分支，避免 /yzwc reload 重新启用公网账户网桥。
+        if (FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT) {
+            enabled = false;
+            baseUrl = DEFAULT_BASE_URL;
+            serverKey = DEFAULT_SERVER_KEY;
+            timeoutSeconds = DEFAULT_TIMEOUT_SECONDS;
+            DebugLogger.info(MODULE, "内置服务器已停用公网 Api 网桥");
+            return;
+        }
         ConfigSection section = GlobalSettings.section(GlobalSettings.API_MODULE);
         if (section.isEmpty()) {
             writeDefaults();

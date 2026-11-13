@@ -91,9 +91,11 @@ public final class MapSocialManager {
     private static void send(ServerPlayer player, String result) {
         if (!ServerPlayNetworking.canSend(player, MapSocialPayload.ID)) return;
         var value = rules(player.getUUID());
-        ServerPlayNetworking.send(player, new MapSocialPayload(MapSocialPayload.Action.STATE, player.getUUID(), value.blacklist,
+        ServerPlayNetworking.send(player, new MapSocialPayload(MapSocialPayload.Action.STATE, player.getUUID(), value.blacklist, MapServerManager.positionShared(player),
                 List.copyOf(value.allowed), List.copyOf(value.blocked), List.copyOf(value.incoming), result));
     }
+    /** 位置共享总开关变更后回传实际状态，命令及界面操作共用此入口。 */
+    public static void refresh(ServerPlayer player) { send(player, ""); }
     /** 停服时清理请求与缓存，防止跨存档串用。 */
     public static void clear() { RULES.clear(); LAST.clear(); }
 }
