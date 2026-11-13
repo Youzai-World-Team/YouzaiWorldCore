@@ -15,9 +15,20 @@ import top.csituka.youzaiworldcore.screen.FlyBeaconMenu;
 
 public class FlyBeaconScreen extends AbstractContainerScreen<FlyBeaconMenu> {
 
-    private static int backgroundColor() { return YzuiTheme.surface(); }
-    private static int slotColor() { return YzuiTheme.slot(); }
-    private static int slotHoverColor() { return YzuiTheme.slotHover(); }
+    @SuppressWarnings("unused")
+    private static int backgroundColor() {
+        return YzuiTheme.surface();
+    }
+
+    private static int slotColor() {
+        return YzuiTheme.slot();
+    }
+
+    private static int slotHoverColor() {
+        return YzuiTheme.slotHover();
+    }
+
+    @SuppressWarnings("unused")
     private static final int CORNER_RADIUS = 6;
     private static final int SLOT_SIZE = 16;
     private static final int SLOT_SPACING = 2;
@@ -31,8 +42,13 @@ public class FlyBeaconScreen extends AbstractContainerScreen<FlyBeaconMenu> {
     private static final int FUEL_SLOT_X = 80;
     private static final int FUEL_SLOT_Y = 53;
 
-    private static int energyBarBgColor() { return YzuiTheme.surface(); }
-    private static int energyBarBorderColor() { return YzuiTheme.outlineVariant(); }
+    private static int energyBarBgColor() {
+        return YzuiTheme.surface();
+    }
+
+    private static int energyBarBorderColor() {
+        return YzuiTheme.outlineVariant();
+    }
 
     private static final int TOGGLE_BUTTON_X = 154;
     private static final int TOGGLE_BUTTON_Y = 30;
@@ -57,15 +73,15 @@ public class FlyBeaconScreen extends AbstractContainerScreen<FlyBeaconMenu> {
                 () -> {
                     boolean newActive = !this.menu.isActive();
                     ClientPlayNetworking.send(new FlyBeaconActivePayload(newActive));
-                }
-        );
+                });
         this.toggleButton.setToggled(this.menu.isActive());
 
         this.addRenderableWidget(this.toggleButton);
     }
 
     @Override
-    public void extractRenderState(@NonNull GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
+    public void extractRenderState(@NonNull GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY,
+            float partialTick) {
         drawBackground(guiGraphics);
         drawEnergyBar(guiGraphics, mouseX, mouseY);
         drawFuelSlot(guiGraphics, mouseX, mouseY);
@@ -84,7 +100,8 @@ public class FlyBeaconScreen extends AbstractContainerScreen<FlyBeaconMenu> {
         int barX = this.leftPos + ENERGY_BAR_X;
         int barY = this.topPos + ENERGY_BAR_Y;
 
-        fillRoundedRect(guiGraphics, barX, barY, ENERGY_BAR_WIDTH, ENERGY_BAR_HEIGHT, ENERGY_BAR_CORNER_RADIUS, energyBarBgColor());
+        fillRoundedRect(guiGraphics, barX, barY, ENERGY_BAR_WIDTH, ENERGY_BAR_HEIGHT, ENERGY_BAR_CORNER_RADIUS,
+                energyBarBgColor());
 
         float ratio = this.menu.getEnergyRatio();
         if (ratio > 0) {
@@ -94,7 +111,8 @@ public class FlyBeaconScreen extends AbstractContainerScreen<FlyBeaconMenu> {
             fillRoundedRect(guiGraphics, barX, barY, fillWidth, ENERGY_BAR_HEIGHT, fillRadius, energyColor);
         }
 
-        drawRoundedBorder(guiGraphics, barX, barY, ENERGY_BAR_WIDTH, ENERGY_BAR_HEIGHT, ENERGY_BAR_CORNER_RADIUS, energyBarBorderColor());
+        drawRoundedBorder(guiGraphics, barX, barY, ENERGY_BAR_WIDTH, ENERGY_BAR_HEIGHT, ENERGY_BAR_CORNER_RADIUS,
+                energyBarBorderColor());
 
         int energy = this.menu.getEnergy();
         int maxEnergy = this.menu.getMaxEnergy();
@@ -174,11 +192,13 @@ public class FlyBeaconScreen extends AbstractContainerScreen<FlyBeaconMenu> {
 
             if (inLeftCorner) {
                 int dx = r - i - 1;
-                if (dx * dx + (r - 1) * (r - 1) >= r * r) skipCorner = true;
+                if (dx * dx + (r - 1) * (r - 1) >= r * r)
+                    skipCorner = true;
             }
             if (inRightCorner) {
                 int dx = i - (w - r);
-                if (dx * dx + (r - 1) * (r - 1) >= r * r) skipCorner = true;
+                if (dx * dx + (r - 1) * (r - 1) >= r * r)
+                    skipCorner = true;
             }
 
             if (!skipCorner) {
@@ -194,11 +214,13 @@ public class FlyBeaconScreen extends AbstractContainerScreen<FlyBeaconMenu> {
 
             if (inTopCorner) {
                 int dy = r - j - 1;
-                if ((r - 1) * (r - 1) + dy * dy >= r * r) skipCorner = true;
+                if ((r - 1) * (r - 1) + dy * dy >= r * r)
+                    skipCorner = true;
             }
             if (inBottomCorner) {
                 int dy = j - (h - r);
-                if ((r - 1) * (r - 1) + dy * dy >= r * r) skipCorner = true;
+                if ((r - 1) * (r - 1) + dy * dy >= r * r)
+                    skipCorner = true;
             }
 
             if (!skipCorner) {
@@ -209,7 +231,7 @@ public class FlyBeaconScreen extends AbstractContainerScreen<FlyBeaconMenu> {
     }
 
     @Override
-    protected void extractLabels(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
+    protected void extractLabels(@NonNull GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
         YzuiTheme.label(graphics, font, title, titleLabelX, titleLabelY,
                 imageWidth - titleLabelX - 8, YzuiTheme.primary(), false);
         YzuiTheme.label(graphics, font, playerInventoryTitle, inventoryLabelX, inventoryLabelY,

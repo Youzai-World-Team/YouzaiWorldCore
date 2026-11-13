@@ -76,17 +76,27 @@ public class TeleportAnchorScreen extends Screen {
     /** 当前锚点定位图标的尺寸（与条目高度对齐）。 */
     private static final int LOCATION_ICON_SIZE = 14;
 
-    private static int buttonTextColor() { return YzuiTheme.text(); }
+    private static int buttonTextColor() {
+        return YzuiTheme.text();
+    }
 
     /** 空列表提示文本的颜色（灰白，区别于正常条目）。 */
-    private static int emptyHintColor() { return YzuiTheme.textMuted(); }
+    private static int emptyHintColor() {
+        return YzuiTheme.textMuted();
+    }
 
-    private static int distanceColor() { return YzuiTheme.textMuted(); }
+    private static int distanceColor() {
+        return YzuiTheme.textMuted();
+    }
 
-    private static int costTextColor() { return YzuiTheme.textMuted(); }
+    private static int costTextColor() {
+        return YzuiTheme.textMuted();
+    }
 
     /** 消耗不足时的文本颜色（橙红）。 */
-    private static int costInsufficientColor() { return YzuiTheme.error(); }
+    private static int costInsufficientColor() {
+        return YzuiTheme.error();
+    }
 
     private static final int COST_LINE_HEIGHT = 11;
 
@@ -148,9 +158,9 @@ public class TeleportAnchorScreen extends Screen {
     /**
      * 入口类型，决定本次列表的代价信息与预判逻辑：
      * <ul>
-     *   <li>{@link EntryType#ANCHOR}：纯锚点入口，仅扣经验 + 维度池/锚点本身校验</li>
-     *   <li>{@link EntryType#STONE}：传送石入口，额外扣耐久 + 60 秒物品冷却</li>
-     *   <li>{@link EntryType#SCROLL}：传送卷轴入口，额外消耗 1 张卷轴 + 120 秒物品冷却，不查耐久/经验</li>
+     * <li>{@link EntryType#ANCHOR}：纯锚点入口，仅扣经验 + 维度池/锚点本身校验</li>
+     * <li>{@link EntryType#STONE}：传送石入口，额外扣耐久 + 60 秒物品冷却</li>
+     * <li>{@link EntryType#SCROLL}：传送卷轴入口，额外消耗 1 张卷轴 + 120 秒物品冷却，不查耐久/经验</li>
      * </ul>
      */
     private final EntryType entryType;
@@ -227,10 +237,10 @@ public class TeleportAnchorScreen extends Screen {
     private int actionsY;
 
     public TeleportAnchorScreen(List<TeleportAnchorData> points,
-                                 @Nullable BlockPos currentAnchorPos,
-                                 @Nullable ResourceKey<Level> currentAnchorDim,
-                                 EntryType entryType,
-                                 @Nullable InteractionHand entryHand) {
+            @Nullable BlockPos currentAnchorPos,
+            @Nullable ResourceKey<Level> currentAnchorDim,
+            EntryType entryType,
+            @Nullable InteractionHand entryHand) {
         super(Component.translatable("screen.youzaiworldcore.teleport_anchor.title"));
         this.points = new ArrayList<>(points);
         this.currentAnchorPos = currentAnchorPos;
@@ -242,7 +252,8 @@ public class TeleportAnchorScreen extends Screen {
     @Override
     protected void init() {
         super.init();
-        if (renameMode && renameEditBox != null) renameDraft = renameEditBox.getValue();
+        if (renameMode && renameEditBox != null)
+            renameDraft = renameEditBox.getValue();
         pointButtons.clear();
         renameConfirmButtons.clear();
         teleportButton = copyButton = editToggleButton = renameButton = removeButton = null;
@@ -292,7 +303,8 @@ public class TeleportAnchorScreen extends Screen {
                 rebuildWidgets();
             });
             addRenderableWidget(searchBox);
-            if (searchBox.active) setFocused(searchBox);
+            if (searchBox.active)
+                setFocused(searchBox);
         }
 
         for (int i = 0; i < visibleCount; i++) {
@@ -301,7 +313,10 @@ public class TeleportAnchorScreen extends Screen {
             boolean selected = pointIndex == selectedIndex;
             TransparentButton button = new TransparentButton(panelX + PANEL_PADDING,
                     listTopY + i * (ITEM_HEIGHT + ITEM_GAP), panelWidth - PANEL_PADDING * 2, ITEM_HEIGHT,
-                    Component.literal(point.name()), () -> { if (!selected) selectPoint(pointIndex); });
+                    Component.literal(point.name()), () -> {
+                        if (!selected)
+                            selectPoint(pointIndex);
+                    });
             button.setStyle(selected ? YzuiTheme.ButtonStyle.TONAL : YzuiTheme.ButtonStyle.TEXT);
             button.setTextLeftAligned(true);
             button.setTextInsets(isCurrentAnchor(point) ? 26 : 10,
@@ -311,9 +326,12 @@ public class TeleportAnchorScreen extends Screen {
             pointButtons.add(button);
             addRenderableWidget(button);
         }
-        if (confirmingDelete) buildDeleteConfirmUI();
-        else if (renameMode) buildRenameUI();
-        else buildBottomButtons();
+        if (confirmingDelete)
+            buildDeleteConfirmUI();
+        else if (renameMode)
+            buildRenameUI();
+        else
+            buildBottomButtons();
     }
 
     @Override
@@ -341,22 +359,28 @@ public class TeleportAnchorScreen extends Screen {
 
     /** 滚动列表使指定索引可见。 */
     private void ensureVisible(int index) {
-        if (index < 0 || index >= points.size()) return;
+        if (index < 0 || index >= points.size())
+            return;
         int displayIndex = displayedPoints.indexOf(points.get(index));
-        if (displayIndex < 0) return;
-        if (displayIndex < scrollOffset) scrollOffset = displayIndex;
-        else if (displayIndex >= scrollOffset + visibleRows) scrollOffset = displayIndex - visibleRows + 1;
+        if (displayIndex < 0)
+            return;
+        if (displayIndex < scrollOffset)
+            scrollOffset = displayIndex;
+        else if (displayIndex >= scrollOffset + visibleRows)
+            scrollOffset = displayIndex - visibleRows + 1;
     }
 
     private void enterEditMode() {
-        if (editMode) return;
+        if (editMode)
+            return;
         editMode = true;
         editModeProgress = GuiAnimationController.isEnabled() ? 0f : 1f;
         rebuildWidgets();
     }
 
     private void exitEditMode() {
-        if (!editMode) return;
+        if (!editMode)
+            return;
         editMode = false;
         editModeProgress = GuiAnimationController.isEnabled() ? 1f : 0f;
         rebuildWidgets();
@@ -411,9 +435,12 @@ public class TeleportAnchorScreen extends Screen {
                 Component.empty(),
                 editTooltip,
                 () -> {
-                    if (!hasSelection) return;
-                    if (editMode) exitEditMode();
-                    else enterEditMode();
+                    if (!hasSelection)
+                        return;
+                    if (editMode)
+                        exitEditMode();
+                    else
+                        enterEditMode();
                 });
         editToggleButton.active = hasSelection;
 
@@ -470,7 +497,8 @@ public class TeleportAnchorScreen extends Screen {
                     Component.empty(),
                     Component.translatable("screen.youzaiworldcore.teleport_anchor.tooltip_move_up"),
                     () -> {
-                        if (!hasSelection) return;
+                        if (!hasSelection)
+                            return;
                         moveSelectedPoint(-1);
                     });
             // 仅在有选中且不是第一项时可点击
@@ -485,7 +513,8 @@ public class TeleportAnchorScreen extends Screen {
                     Component.empty(),
                     Component.translatable("screen.youzaiworldcore.teleport_anchor.tooltip_move_down"),
                     () -> {
-                        if (!hasSelection) return;
+                        if (!hasSelection)
+                            return;
                         moveSelectedPoint(1);
                     });
             // 仅在有选中且不是最后一项时可点击
@@ -520,7 +549,8 @@ public class TeleportAnchorScreen extends Screen {
                 Component.empty(),
                 Component.translatable("screen.youzaiworldcore.teleport_anchor.tooltip_copy"),
                 () -> {
-                    if (!hasSelection) return;
+                    if (!hasSelection)
+                        return;
                     TeleportAnchorData point = points.get(selectedIndex);
                     String dim = point.dimension().identifier().toString();
                     String text = dim + " "
@@ -562,9 +592,9 @@ public class TeleportAnchorScreen extends Screen {
     /**
      * 客户端预判本次传送的所有消耗是否都付得起：
      * <ul>
-     *   <li>经验等级（同维度 1 / 跨维度 2）</li>
-     *   <li>{@link EntryType#STONE} 入口额外检查传送石耐久</li>
-     *   <li>{@link EntryType#SCROLL} 入口额外检查卷轴数量 ≥ 1（与耐久/XP 无关）</li>
+     * <li>经验等级（同维度 1 / 跨维度 2）</li>
+     * <li>{@link EntryType#STONE} 入口额外检查传送石耐久</li>
+     * <li>{@link EntryType#SCROLL} 入口额外检查卷轴数量 ≥ 1（与耐久/XP 无关）</li>
      * </ul>
      * <p>
      * 这只是提前拦截，真正的扣费与校验仍在服务端；创造模式三项都免除，直接放行。
@@ -651,9 +681,9 @@ public class TeleportAnchorScreen extends Screen {
         }
         int lines;
         switch (entryType) {
-            case STONE -> lines = 2;  // 经验 + 耐久
+            case STONE -> lines = 2; // 经验 + 耐久
             case SCROLL -> lines = 1; // 仅卷轴消耗（不扣经验）
-            default -> lines = 1;     // ANCHOR：仅经验
+            default -> lines = 1; // ANCHOR：仅经验
         }
         return COST_INFO_TOP_GAP + lines * COST_LINE_HEIGHT;
     }
@@ -663,9 +693,9 @@ public class TeleportAnchorScreen extends Screen {
      * <p>
      * 按 {@link #entryType} 分类绘制：
      * <ul>
-     *   <li>{@link EntryType#ANCHOR}：仅经验等级</li>
-     *   <li>{@link EntryType#STONE}：经验等级 + 传送石耐久（图嵌数字前）</li>
-     *   <li>{@link EntryType#SCROLL}：卷轴消耗（图嵌数字前），不显示经验等级</li>
+     * <li>{@link EntryType#ANCHOR}：仅经验等级</li>
+     * <li>{@link EntryType#STONE}：经验等级 + 传送石耐久（图嵌数字前）</li>
+     * <li>{@link EntryType#SCROLL}：卷轴消耗（图嵌数字前），不显示经验等级</li>
      * </ul>
      * 任一项不足时该行转为橙红色并追加「不足」标注，与置灰的传送按钮相互印证。
      * 创造模式三项都免除，因此不绘制任何消耗信息。
@@ -772,12 +802,15 @@ public class TeleportAnchorScreen extends Screen {
 
     /**
      * 移动当前选中的传送点。
+     * 
      * @param delta -1 表示向上，+1 表示向下
      */
     private void moveSelectedPoint(int delta) {
-        if (selectedIndex < 0 || selectedIndex >= points.size()) return;
+        if (selectedIndex < 0 || selectedIndex >= points.size())
+            return;
         int newIndex = selectedIndex + delta;
-        if (newIndex < 0 || newIndex >= points.size()) return;
+        if (newIndex < 0 || newIndex >= points.size())
+            return;
         TeleportAnchorData temp = points.get(selectedIndex);
         points.set(selectedIndex, points.get(newIndex));
         points.set(newIndex, temp);
@@ -786,7 +819,8 @@ public class TeleportAnchorScreen extends Screen {
         rebuildWidgets();
         int previousOffset = scrollOffset;
         ensureVisible(newIndex);
-        if (scrollOffset != previousOffset) rebuildWidgets();
+        if (scrollOffset != previousOffset)
+            rebuildWidgets();
     }
 
     private void buildDeleteConfirmUI() {
@@ -884,7 +918,8 @@ public class TeleportAnchorScreen extends Screen {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
-        if (renameMode || confirmingDelete) return true;
+        if (renameMode || confirmingDelete)
+            return true;
         if (mouseX >= panelX && mouseX < panelX + panelWidth && mouseY >= listTopY && mouseY < listBottomY
                 && displayPointCount > visibleRows && scrollY != 0) {
             int next = Math.clamp(scrollOffset + (scrollY < 0 ? 1 : -1), 0, displayPointCount - visibleRows);
@@ -897,6 +932,7 @@ public class TeleportAnchorScreen extends Screen {
         return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
     }
 
+    @SuppressWarnings("unused")
     private static String formatPointLabel(TeleportAnchorData point) {
         return point.name();
     }
@@ -905,18 +941,23 @@ public class TeleportAnchorScreen extends Screen {
     public void extractRenderState(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
         editModeProgress = !GuiAnimationController.isEnabled() ? (editMode ? 1f : 0f)
                 : Math.min(1f, editModeProgress + (YzuiTheme.frosted() ? 0.08f : 0.18f));
-        if (!confirmingDelete && !renameMode) refreshTeleportAffordability();
+        if (!confirmingDelete && !renameMode)
+            refreshTeleportAffordability();
         if (editMode) {
-            for (TextureIconButton button : new TextureIconButton[] {renameButton, removeButton, moveUpButton, moveDownButton}) {
-                if (button != null) button.setAlpha(editModeProgress);
+            for (TextureIconButton button : new TextureIconButton[] { renameButton, removeButton, moveUpButton,
+                    moveDownButton }) {
+                if (button != null)
+                    button.setAlpha(editModeProgress);
             }
         }
         YzuiTheme.card(guiGraphics, panelX, panelY, panelWidth, panelHeight);
         YzuiTheme.label(guiGraphics, font, getTitle(), panelX + PANEL_PADDING, panelY + 16,
                 panelWidth - PANEL_PADDING * 2 - CLOSE_BUTTON_SIZE - 8, YzuiTheme.text(), false);
         if (confirmingDelete) {
-            YzuiTheme.wrapped(guiGraphics, font, Component.translatable("screen.youzaiworldcore.teleport_anchor.delete_hint"),
-                    panelX + PANEL_PADDING, listBottomY + PANEL_PADDING, panelWidth - PANEL_PADDING * 2, 2, YzuiTheme.error());
+            YzuiTheme.wrapped(guiGraphics, font,
+                    Component.translatable("screen.youzaiworldcore.teleport_anchor.delete_hint"),
+                    panelX + PANEL_PADDING, listBottomY + PANEL_PADDING, panelWidth - PANEL_PADDING * 2, 2,
+                    YzuiTheme.error());
         }
         guiGraphics.enableScissor(panelX + PANEL_PADDING, actionsY + BUTTON_HEIGHT,
                 panelX + panelWidth - PANEL_PADDING, panelY + panelHeight);
@@ -954,14 +995,16 @@ public class TeleportAnchorScreen extends Screen {
 
         for (int i = 0; i < pointButtons.size(); i++) {
             int pointIndex = scrollOffset + i;
-            if (pointIndex >= displayedPoints.size()) break;
+            if (pointIndex >= displayedPoints.size())
+                break;
             TeleportAnchorData point = displayedPoints.get(pointIndex);
 
             String text = formatDistance(point);
             TransparentButton btn = pointButtons.get(i);
             int textX = btn.getX() + btn.getWidth() - DISTANCE_PADDING - font.width(text);
             int textY = btn.getY() + (ITEM_HEIGHT - font.lineHeight) / 2;
-            YzuiTheme.label(guiGraphics, font, Component.literal(text), Math.max(btn.getX() + btn.getWidth() * 2 / 3, textX),
+            YzuiTheme.label(guiGraphics, font, Component.literal(text),
+                    Math.max(btn.getX() + btn.getWidth() * 2 / 3, textX),
                     textY, Math.min(btn.getWidth() / 3 - DISTANCE_PADDING, font.width(text)), distanceColor(), false);
         }
     }
@@ -987,7 +1030,8 @@ public class TeleportAnchorScreen extends Screen {
         } else {
             // 传送石 / 卷轴入口：以玩家当前位置为动态起点
             var player = Minecraft.getInstance().player;
-            if (player == null) return "";
+            if (player == null)
+                return "";
             originDim = player.level().dimension();
             originX = player.getX();
             originY = player.getY();
@@ -1032,9 +1076,11 @@ public class TeleportAnchorScreen extends Screen {
     private void drawCurrentAnchorIcons(GuiGraphicsExtractor guiGraphics) {
         for (int i = 0; i < pointButtons.size(); i++) {
             int pointIndex = scrollOffset + i;
-            if (pointIndex >= displayedPoints.size()) break;
+            if (pointIndex >= displayedPoints.size())
+                break;
             TeleportAnchorData point = displayedPoints.get(pointIndex);
-            if (!isCurrentAnchor(point)) continue;
+            if (!isCurrentAnchor(point))
+                continue;
 
             TransparentButton btn = pointButtons.get(i);
             int iconX = btn.getX() + 4;
@@ -1067,8 +1113,15 @@ public class TeleportAnchorScreen extends Screen {
         }
         // 编辑表单与删除确认优先取消，避免直接关闭整个页面。
         if (keyEvent.key() == InputConstants.KEY_ESCAPE) {
-            if (renameMode) { cancelRename(); return true; }
-            if (confirmingDelete) { confirmingDelete = false; rebuildWidgets(); return true; }
+            if (renameMode) {
+                cancelRename();
+                return true;
+            }
+            if (confirmingDelete) {
+                confirmingDelete = false;
+                rebuildWidgets();
+                return true;
+            }
             if (searchMode && !renameMode && !confirmingDelete) {
                 searchMode = false;
                 searchQuery = "";
@@ -1104,18 +1157,16 @@ public class TeleportAnchorScreen extends Screen {
         if (renameMode && renameEditBox != null) {
             renameEditBox.setFocused(
                     mouseButtonEvent.x() >= renameEditBox.getX()
-                    && mouseButtonEvent.x() < renameEditBox.getX() + renameEditBox.getWidth()
-                    && mouseButtonEvent.y() >= renameEditBox.getY()
-                    && mouseButtonEvent.y() < renameEditBox.getY() + renameEditBox.getHeight()
-            );
+                            && mouseButtonEvent.x() < renameEditBox.getX() + renameEditBox.getWidth()
+                            && mouseButtonEvent.y() >= renameEditBox.getY()
+                            && mouseButtonEvent.y() < renameEditBox.getY() + renameEditBox.getHeight());
         }
         if (searchMode && searchBox != null) {
             searchBox.setFocused(
                     mouseButtonEvent.x() >= searchBox.getX()
-                    && mouseButtonEvent.x() < searchBox.getX() + searchBox.getWidth()
-                    && mouseButtonEvent.y() >= searchBox.getY()
-                    && mouseButtonEvent.y() < searchBox.getY() + searchBox.getHeight()
-            );
+                            && mouseButtonEvent.x() < searchBox.getX() + searchBox.getWidth()
+                            && mouseButtonEvent.y() >= searchBox.getY()
+                            && mouseButtonEvent.y() < searchBox.getY() + searchBox.getHeight());
         }
         return super.mouseClicked(mouseButtonEvent, bl);
     }
@@ -1141,10 +1192,10 @@ public class TeleportAnchorScreen extends Screen {
         private final Identifier texture;
 
         TextureIconButton(int x, int y, int width, int height,
-                          @Nullable Identifier texture,
-                          @Nullable Component message,
-                          @Nullable Component tooltip,
-                          Runnable onPress) {
+                @Nullable Identifier texture,
+                @Nullable Component message,
+                @Nullable Component tooltip,
+                Runnable onPress) {
             super(x, y, width, height, message != null ? message : Component.empty(), onPress);
             this.texture = texture;
             this.setStyle(YzuiTheme.ButtonStyle.TONAL);
@@ -1154,19 +1205,23 @@ public class TeleportAnchorScreen extends Screen {
         }
 
         @Override
-        protected void extractWidgetRenderState(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
+        protected void extractWidgetRenderState(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY,
+                float partialTick) {
             // 先绘制主题容器，再用主题文字色着色图标。
             super.extractWidgetRenderState(guiGraphics, mouseX, mouseY, partialTick);
-            if (texture == null) return;
+            if (texture == null)
+                return;
             float vis = Math.min(1f, Math.max(0f, this.getAlpha()));
-            if (vis < 0.001f) return;
+            if (vis < 0.001f)
+                return;
             int x = this.getX();
             int y = this.getY();
             int size = Math.min(20, Math.min(getWidth(), getHeight()) - 6);
             guiGraphics.blit(RenderPipelines.GUI_TEXTURED, texture,
                     x + (getWidth() - size) / 2, y + (getHeight() - size) / 2,
                     0, 0, size, size, size, size,
-                    YzuiTheme.alpha(active ? YzuiTheme.onPrimaryContainer() : YzuiTheme.textMuted(), vis * (active ? 1f : 0.55f)));
+                    YzuiTheme.alpha(active ? YzuiTheme.onPrimaryContainer() : YzuiTheme.textMuted(),
+                            vis * (active ? 1f : 0.55f)));
         }
     }
 }

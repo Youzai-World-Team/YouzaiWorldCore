@@ -21,7 +21,7 @@ public final class InventoryItemGroupDefaults {
                             "sophisticatedbackpacks:stack_upgrade_starter_tier"),
                     List.of("sophisticatedbackpacks:stack_upgrade_tier_"), List.of("_conversion")),
             new InventoryItemGroupRule("stack_upgrade_conversions", BACKPACKS_TAB,
-                    List.of(), List.of("_conversion"), List.of()));
+                    List.of(), List.of("_conversion", "sophisticatedbackpacks:stack_downgrade_tier_"), List.of()));
 
     private InventoryItemGroupDefaults() {
     }

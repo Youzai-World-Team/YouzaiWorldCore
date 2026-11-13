@@ -6,7 +6,8 @@ import top.csituka.youzaiworldcore.map.MapWaypoint;
 
 /** 仅提供人类可读的坐标复制和聊天草稿，不提供地图数据导入、导出。 */
 public final class MapCoordinates {
-    private MapCoordinates() { }
+    private MapCoordinates() {
+    }
 
     public static String coordinate(MapWaypoint point) {
         return "[YZMAP " + point.x() + " " + point.y() + " " + point.z() + " " + point.dimension() + "] "
@@ -14,6 +15,7 @@ public final class MapCoordinates {
     }
 
     /** 玩家自行发送草稿。 */
+    @SuppressWarnings("null")
     public static void share(MapWaypoint point) {
         Minecraft.getInstance().gui.openChatAndAddText(ChatComponent.ChatMethod.MESSAGE, coordinate(point));
     }

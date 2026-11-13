@@ -32,18 +32,19 @@ public class AdventureLevelMenuElements implements MenuElementGroup {
 
     /** 9 项属性的展示配置 */
     private static final AttrDef[] ATTRS = {
-            new AttrDef("maxHealth",               "血量",       "+%d 血量",        1),
-            new AttrDef("healingAmplification",     "恢复",       "+%d%% 倍率",     1),
-            new AttrDef("miningSpeed",             "挖掘",       "+%d%% 倍率",     1),
-            new AttrDef("movementSpeed",           "移速",       "+%d%% 倍率",     1),
-            new AttrDef("jumpAmplitude",           "跳跃",       "+%d%% 倍率",     1),
-            new AttrDef("luck",                     "幸运",       "+%d 幸运",       1),
-            new AttrDef("meleeDamage",              "近战伤害",   "+%d%% 倍率",     2),
-            new AttrDef("rangedDamage",             "远程伤害",   "+%d%% 倍率",     2),
-            new AttrDef("damageResistance",         "抗性",       "-%d%% 伤害",     2),
+            new AttrDef("maxHealth", "血量", "+%d 血量", 1),
+            new AttrDef("healingAmplification", "恢复", "+%d%% 倍率", 1),
+            new AttrDef("miningSpeed", "挖掘", "+%d%% 倍率", 1),
+            new AttrDef("movementSpeed", "移速", "+%d%% 倍率", 1),
+            new AttrDef("jumpAmplitude", "跳跃", "+%d%% 倍率", 1),
+            new AttrDef("luck", "幸运", "+%d 幸运", 1),
+            new AttrDef("meleeDamage", "近战伤害", "+%d%% 倍率", 2),
+            new AttrDef("rangedDamage", "远程伤害", "+%d%% 倍率", 2),
+            new AttrDef("damageResistance", "抗性", "-%d%% 伤害", 2),
     };
 
-    private record AttrDef(String key, String shortName, String format, int stepPercent) {}
+    private record AttrDef(String key, String shortName, String format, int stepPercent) {
+    }
 
     @Override
     public String getTitleText() {
@@ -61,7 +62,8 @@ public class AdventureLevelMenuElements implements MenuElementGroup {
     }
 
     @Override
-    public List<AbstractWidget> createButtons(MenuScreen screen, int screenWidth, int screenHeight, float scale, float alpha) {
+    public List<AbstractWidget> createButtons(MenuScreen screen, int screenWidth, int screenHeight, float scale,
+            float alpha) {
         List<AbstractWidget> buttons = new ArrayList<>();
         int w = new MenuLayout(screenWidth, screenHeight).contentWidth(560);
         int cellWidth = (w - 16) / 3;
@@ -86,15 +88,18 @@ public class AdventureLevelMenuElements implements MenuElementGroup {
         for (int i = 0; i < ATTRS.length; i++) {
             AbstractWidget button = buttons.get(i);
             button.active = points > 0 && (level >= 20 || "damageResistance".equals(ATTRS[i].key));
-            if (!button.active) button.setFocused(false);
+            if (!button.active)
+                button.setFocused(false);
         }
     }
 
+    @SuppressWarnings("null")
     @Override
     public void renderCustomContent(GuiGraphicsExtractor guiGraphics, int screenWidth, int screenHeight,
-                                     float alpha, float xOffset, int mouseX, int mouseY) {
+            float alpha, float xOffset, int mouseX, int mouseY) {
         Minecraft client = Minecraft.getInstance();
-        if (client.player == null) return;
+        if (client.player == null)
+            return;
         var font = client.font;
         int level = AdventureLevelHudRenderer.getLevel();
         int currentExp = AdventureLevelHudRenderer.getCurrentExp();
@@ -137,8 +142,10 @@ public class AdventureLevelMenuElements implements MenuElementGroup {
             int value = ClientAttributeData.get(attr.key);
             YzuiTheme.label(guiGraphics, font, net.minecraft.network.chat.Component.literal(attr.shortName),
                     cellX + 8, cellY + 5, cellWidth - 42, normal, false);
-            YzuiTheme.label(guiGraphics, font, net.minecraft.network.chat.Component.literal(attr.format.formatted(value * attr.stepPercent)),
-                    cellX + 8, cellY + 21, cellWidth - 42, value > 0 ? YzuiTheme.alpha(YzuiTheme.success(), alpha) : muted, false);
+            YzuiTheme.label(guiGraphics, font,
+                    net.minecraft.network.chat.Component.literal(attr.format.formatted(value * attr.stepPercent)),
+                    cellX + 8, cellY + 21, cellWidth - 42,
+                    value > 0 ? YzuiTheme.alpha(YzuiTheme.success(), alpha) : muted, false);
         }
         YzuiTheme.label(guiGraphics, font, net.minecraft.network.chat.Component.translatable(
                 "youzaiworldcore.message.gui.exp_from_activities"), x, top + 244, w, muted, true);
@@ -163,7 +170,8 @@ public class AdventureLevelMenuElements implements MenuElementGroup {
 
     @Override
     public void renderCustomBackground(GuiGraphicsExtractor g, int width, int height, float alpha, float xOffset) {
-        int w = new MenuLayout(width, height).contentWidth(560), x = (width - w) / 2 + (int) xOffset, y = contentTop(width, height);
+        int w = new MenuLayout(width, height).contentWidth(560), x = (width - w) / 2 + (int) xOffset,
+                y = contentTop(width, height);
         YzuiTheme.card(g, x, y, w, HEADER_HEIGHT, alpha);
         int cellWidth = (w - 16) / 3;
         for (int i = 0; i < ATTRS.length; i++) {

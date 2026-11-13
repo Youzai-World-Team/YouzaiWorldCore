@@ -30,6 +30,7 @@ public class ConfigImportSuccessScreen extends Screen implements YzuiPopupScreen
     // ============ 布局常量 ============
     private static final int DIALOG_WIDTH = 400;
     private static final int DIALOG_HEIGHT = 208;
+    @SuppressWarnings("unused")
     private static final int CORNER_RADIUS = 6;
     private static final int BUTTON_WIDTH = 120;
     private static final int BUTTON_HEIGHT = 24;
@@ -55,8 +56,7 @@ public class ConfigImportSuccessScreen extends Screen implements YzuiPopupScreen
         this.quitButton = new TransparentButton(
                 buttonX, buttonY, BUTTON_WIDTH, BUTTON_HEIGHT,
                 Component.translatable("screen.youzaiworldcore.config_io.import_success_quit"),
-                this::onQuit
-        );
+                this::onQuit);
         this.quitButton.setStyle(YzuiTheme.ButtonStyle.FILLED);
         addRenderableWidget(quitButton);
     }
@@ -66,9 +66,11 @@ public class ConfigImportSuccessScreen extends Screen implements YzuiPopupScreen
         int x = (width - DIALOG_WIDTH) / 2, y = (height - DIALOG_HEIGHT) / 2;
         YzuiTheme.card(guiGraphics, x, y, DIALOG_WIDTH, DIALOG_HEIGHT);
         YzuiTheme.label(guiGraphics, font, title, x + 24, y + 24, DIALOG_WIDTH - 48, YzuiTheme.text(), false);
-        YzuiTheme.wrapped(guiGraphics, font, Component.translatable("screen.youzaiworldcore.config_io.import_success_hint1"),
+        YzuiTheme.wrapped(guiGraphics, font,
+                Component.translatable("screen.youzaiworldcore.config_io.import_success_hint1"),
                 x + 24, y + 58, DIALOG_WIDTH - 48, 3, YzuiTheme.textMuted());
-        YzuiTheme.wrapped(guiGraphics, font, Component.translatable("screen.youzaiworldcore.config_io.import_success_hint2"),
+        YzuiTheme.wrapped(guiGraphics, font,
+                Component.translatable("screen.youzaiworldcore.config_io.import_success_hint2"),
                 x + 24, y + 98, DIALOG_WIDTH - 48, 3, YzuiTheme.textMuted());
         super.extractRenderState(guiGraphics, mouseX, mouseY, partialTick);
     }
@@ -118,6 +120,7 @@ public class ConfigImportSuccessScreen extends Screen implements YzuiPopupScreen
                 && my >= button.getY() && my < button.getY() + button.getHeight();
     }
 
+    @SuppressWarnings("unused")
     private void fillRoundedRect(GuiGraphicsExtractor g, int x, int y, int w, int h, int r, int color) {
         // 圆角绘制统一走 RoundedRect（行扫描：r=6 时 135 次 fill -> 13 次）。
         // 原实现未做尺寸校验，r > min(w,h)/2 时会画出坐标反转/重叠的结果，此处会钳制半径。

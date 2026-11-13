@@ -7,6 +7,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.CreditsAndAttributionScreen;
 import net.minecraft.client.gui.screens.ConfirmScreen;
+import net.minecraft.client.gui.screens.ConfirmLinkScreen;
 import net.minecraft.client.gui.screens.PauseScreen;
 import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.client.gui.screens.WinScreen;
@@ -68,6 +69,13 @@ public final class YzuiSettingsRouter {
                 if (link.unified) restored.reveal(link.anchor);
                 return restored;
             }
+        }
+
+        // 链接确认也可来自主菜单、聊天或更新页，统一使用弹窗布局并保留原版回调。
+        if (target.getClass() == ConfirmLinkScreen.class) {
+            YzuiOptionsScreen parent = current instanceof YzuiOptionsScreen settings ? settings : null;
+            return new YzuiOptionsScreen(target, parent == null ? current : parent.origin(),
+                    Minecraft.getInstance().level != null, parent == null ? null : parent.rootSettings());
         }
 
         if (target.getClass() == OptionsScreen.class) {

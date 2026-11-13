@@ -215,6 +215,8 @@ Collapsible groups inspired by Inventory Item Groups work in both vanilla and YZ
 
 The Sophisticated Backpacks tab (`sophisticatedbackpacks:main`) groups items into **Backpacks, Upgraded Backpacks, Stack Upgrades and Stack Upgrade Conversions**. Dyed backpack variants are retained; stack upgrades exclude `_conversion` items, which match the separate conversion group. Existing settings need no reset, and custom rules take priority.
 
+The Fabric 26.3 port **3.24.1.0** also places `stack_downgrade_tier_1/2/3` in the conversion group. Its creative tab and six backpack IDs remain compatible.
+
 Expanding and collapsing use a **200 ms** scale and slide transition, with a subtle header pulse and a rotating plus/minus stroke. Clicking again reverses the current transition. Collapsing items remain visible but cannot be picked up; they are removed and the scroll range updates when the animation finishes.
 
 Open **YouzaiWorldCore Settings → Visual → Creative item groups** to enable groups, choose original or item ID order, cycle previews once per second, and add, edit, delete or reorder rules. Rules support creative tab IDs, exact item IDs, include fragments and exclude fragments. Settings are stored locally under `inventory_item_groups_module` in `yzwc/client/global_settings.json`. All potion, enchanted-book and other component variants are preserved; search results, saved hotbars and real inventory slots remain ungrouped. See the [analysis and configuration guide (Chinese)](docs/创造物品分组.md).
@@ -553,6 +555,10 @@ Each slot has a custom icon and the `trinkets:default` validator; `order` contro
 - **Cursor validation**: The packet carries the client's current cursor stack (`cursor`). Survival trusts only the server's `containerMenu.getCarried()`, while creative may use its client-generated virtual cursor; slot state, stack limits, and validators always remain server-authoritative
 - **Local preview**: The client previews the result locally before the server confirmation arrives, removing perceived interaction latency
 - **Native slot suppression**: `SurvivalTrinketSlotYzuiMixin` forces Trinkets' `SurvivalTrinketSlot#isActive()` to return `false` while a YZUI screen is open, preventing its injected slots from rendering as "useless cells" beside the armor slots and from overlapping the YZUI indicator coordinates. With YZUI off nothing is intercepted, so the native Trinkets inventory behaves normally (the mixin targets `eu.pb4.trinkets.impl.slots.SurvivalTrinketSlot`, matching the implementation package in Trinkets 4.1.0-rc.1)
+
+Sophisticated Backpacks Fabric 26.3 **3.24.1.0** lacks a built-in Trinkets inventory handler. Core provides an optional bridge so equipped backpacks can be opened with the backpack mod's shortcut, participate in upgrade processing, and use its existing backpack renderer. Hiding a trinket affects rendering while its functions remain active. Hovering a vanilla trinket slot and opening it uses the correct trinket inventory identifier instead of a main-inventory slot. The bridge is skipped when the mod is absent or an older version provides native Trinkets compatibility.
+
+Registration IDs and API signatures were checked against the actual jar. Isolated regression: `node tools/verify-backpack-compat.mjs <backpack.jar> <JDK25-directory>`. Full in-game acceptance remains necessary.
 
 ### 35. Config Import/Export
 

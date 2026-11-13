@@ -18,6 +18,7 @@ public class CheckboxButton extends AbstractWidget {
     private final Runnable onToggle;
     private float externalAlpha = 1f;
     private boolean wrapMessage;
+    private boolean labelVisible = true;
 
     public CheckboxButton(int x, int y, int width, int height, Component message, boolean checked, Runnable onToggle) {
         super(x, y, width, height, message);
@@ -30,6 +31,8 @@ public class CheckboxButton extends AbstractWidget {
     public void setChecked(boolean checked) { this.checked = checked; }
     public void setExternalAlpha(float alpha) { externalAlpha = Math.clamp(alpha, 0f, 1f); }
     public CheckboxButton setWrapMessage(boolean value) { wrapMessage = value; return this; }
+    /** 设置行单独绘制名称时隐藏控件内文字，保留原消息供旁白使用。 */
+    public CheckboxButton setLabelVisible(boolean value) { labelVisible = value; return this; }
 
     @Override
     protected void extractWidgetRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
@@ -38,7 +41,7 @@ public class CheckboxButton extends AbstractWidget {
         boolean hovered = mouseX >= x && mouseX < x + w && mouseY >= y && mouseY < y + h;
         float opacity = externalAlpha * getAlpha() * (active ? 1f : 0.6f);
         YzuiTheme.field(g, x, y, w, h, hoverState.sample(active && hovered), isFocused(), active, opacity);
-        int trackW = Math.min(28, w / 3), trackH = Math.min(14, h - 4);
+        int trackW = Math.min(28, labelVisible ? w / 3 : Math.max(2, w - 12)), trackH = Math.min(14, h - 4);
         int trackX = x + w - trackW - 6, trackY = y + (h - trackH) / 2;
         int track = checked ? YzuiTheme.primary() : YzuiTheme.outlineVariant();
         RoundedRect.fill(g, trackX, trackY, trackW, trackH, trackH / 2, YzuiTheme.alpha(track, opacity));
@@ -47,6 +50,7 @@ public class CheckboxButton extends AbstractWidget {
         RoundedRect.fill(g, thumbX, trackY + 2, thumb, thumb, thumb / 2,
                 YzuiTheme.alpha(checked ? YzuiTheme.onPrimary() : YzuiTheme.textMuted(), opacity));
 
+        if (!labelVisible) return;
         var font = Minecraft.getInstance().font;
         int available = Math.max(1, trackX - x - 14);
         int textColor = YzuiTheme.alpha(YzuiTheme.text(), opacity);

@@ -39,7 +39,8 @@ public final class YzuiLoadingRenderer {
         }
     }
 
-    private YzuiLoadingRenderer() { }
+    private YzuiLoadingRenderer() {
+    }
 
     /** 在原版已准备好的背景层绘制，保留其淡入/淡出透明度与绘制顺序。 */
     public static void background(GuiGraphicsExtractor g, float alpha) {
@@ -47,7 +48,8 @@ public final class YzuiLoadingRenderer {
     }
 
     public static void render(GuiGraphicsExtractor g, Identifier earlyLogo, float progress, float alpha) {
-        if (alpha <= 0f) return;
+        if (alpha <= 0f)
+            return;
         Layout l = Layout.of(g.guiWidth(), g.guiHeight());
         var p = YzuiTheme.palette();
         updateAnimation(progress);
@@ -68,7 +70,8 @@ public final class YzuiLoadingRenderer {
         float value = Float.isFinite(progress) ? Math.clamp(progress, 0f, 1f) : 0f;
         RoundedRect.fill(g, l.barX(), l.barY(), l.barWidth(), 6, 3, YzuiTheme.alpha(p.surfaceHigh(), alpha));
         int filled = Math.round(l.barWidth() * value);
-        if (filled > 0) RoundedRect.fill(g, l.barX(), l.barY(), filled, 6, 3, tint);
+        if (filled > 0)
+            RoundedRect.fill(g, l.barX(), l.barY(), filled, 6, 3, tint);
         percentage(g, center, l.barY() + 18, Math.round(value * 100), YzuiTheme.alpha(p.textMuted(), alpha));
     }
 
@@ -84,6 +87,7 @@ public final class YzuiLoadingRenderer {
         }
     }
 
+    @SuppressWarnings("null")
     private static void renderBrandSequence(GuiGraphicsExtractor g, int center, Layout layout, float alpha) {
         int serverWidth = layout.logoWidth();
         int serverHeight = YzuiBrandLogo.heightForWidth(serverWidth);
@@ -101,9 +105,10 @@ public final class YzuiLoadingRenderer {
         Thread soundThread = new Thread(() -> {
             try (InputStream stream = YzuiLoadingRenderer.class.getResourceAsStream(
                     "/assets/youzaiworldcore/sounds/loading_logo.wav")) {
-                if (stream == null) return;
+                if (stream == null)
+                    return;
                 try (BufferedInputStream buffered = new BufferedInputStream(stream);
-                     AudioInputStream audio = AudioSystem.getAudioInputStream(buffered)) {
+                        AudioInputStream audio = AudioSystem.getAudioInputStream(buffered)) {
                     Clip clip = AudioSystem.getClip();
                     clip.open(audio);
                     clip.start();
@@ -127,8 +132,9 @@ public final class YzuiLoadingRenderer {
 
     private static void glyph(GuiGraphicsExtractor g, String bits, int x, int y, int color) {
         for (int i = 0; i < 15; i++) {
-            if (bits.charAt(i) == '1') g.fill(x + i % 3 * 2, y + i / 3 * 2,
-                    x + i % 3 * 2 + 2, y + i / 3 * 2 + 2, color);
+            if (bits.charAt(i) == '1')
+                g.fill(x + i % 3 * 2, y + i / 3 * 2,
+                        x + i % 3 * 2 + 2, y + i / 3 * 2 + 2, color);
         }
     }
 }

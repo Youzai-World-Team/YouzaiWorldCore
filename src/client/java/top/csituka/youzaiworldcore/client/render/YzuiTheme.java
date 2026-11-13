@@ -15,9 +15,12 @@ import top.csituka.youzaiworldcore.client.config.YzuiVisualStyle;
  * 仅提供客户端视觉，不参与网络、权限和物品操作。
  */
 public final class YzuiTheme {
-    public enum ButtonStyle { TONAL, FILLED, TEXT, DANGER }
+    public enum ButtonStyle {
+        TONAL, FILLED, TEXT, DANGER
+    }
 
-    private YzuiTheme() { }
+    private YzuiTheme() {
+    }
 
     /** 共用控件在原版页面遵守总开关，自定义页面始终使用主题。 */
     public static boolean enabled() {
@@ -28,14 +31,17 @@ public final class YzuiTheme {
     public static int tooltipText(int color) {
         int rgb = color & 0xFFFFFF;
         int red = (rgb >>> 16) & 255, green = (rgb >>> 8) & 255, blue = rgb & 255;
-        if (red == green && green == blue) return legacyText(color) & 0xFFFFFF;
+        if (red == green && green == blue)
+            return legacyText(color) & 0xFFFFFF;
         return surfaceText(color) & 0xFFFFFF;
     }
 
     /** 保留文本样式和色相，为服务器提供的有色名称补足卡片上的对比度。 */
     public static FormattedCharSequence readableText(FormattedCharSequence source, int foreground, int background) {
         return sink -> source.accept((index, style, codepoint) -> {
-            if (style.getColor() == null) return sink.accept(index, style, codepoint);
+            if (style.getColor() == null)
+                return sink.accept(index, style, codepoint);
+            @SuppressWarnings("null")
             int color = style.getColor().getValue();
             int red = (color >>> 16) & 255, green = (color >>> 8) & 255, blue = color & 255;
             int adjusted = red == green && green == blue ? foreground : YzuiPalette.readable(color, background);
@@ -45,7 +51,8 @@ public final class YzuiTheme {
 
     public static YzuiPalette palette() {
         return ClientExternalSettings.getYzuiTheme() == YzuiThemeMode.DARK
-                ? YzuiPalette.DARK : YzuiPalette.LIGHT;
+                ? YzuiPalette.DARK
+                : YzuiPalette.LIGHT;
     }
 
     public static boolean frosted() {
@@ -61,32 +68,101 @@ public final class YzuiTheme {
                 .startsWith("top.csituka.youzaiworldcore.client.screen.");
     }
 
-    public static int background() { return palette().background(); }
-    public static YzuiVisualStyle visualStyle() { return ClientExternalSettings.getYzuiVisualStyle(); }
-    public static int surface() { return alpha(palette().surface(), visualStyle().surfaceOpacity()); }
-    public static int surfaceLow() { return alpha(palette().surfaceLow(), visualStyle().layerOpacity()); }
-    public static int surfaceHigh() { return alpha(palette().surfaceHigh(), visualStyle().layerOpacity()); }
-    public static int primary() { return palette().primary(); }
-    public static int onPrimary() { return palette().onPrimary(); }
-    public static int primaryContainer() { return palette().primaryContainer(); }
-    public static int onPrimaryContainer() { return palette().onPrimaryContainer(); }
-    public static int secondaryContainer() { return palette().secondaryContainer(); }
-    public static int text() { return menuContext() ? surfaceText(palette().text()) : palette().text(); }
-    public static int textMuted() { return surfaceText(palette().textMuted()); }
-    public static int outline() { return palette().outline(); }
-    public static int outlineVariant() { return palette().outlineVariant(); }
-    public static int error() { return surfaceText(palette().error()); }
-    public static int errorContainer() { return palette().errorContainer(); }
-    public static int success() { return surfaceText(palette().success()); }
-    public static int warning() { return surfaceText(palette().warning()); }
-    public static int info() { return surfaceText(palette().info()); }
-    public static int slot() { return alpha(palette().surfaceHigh(), visualStyle().layerOpacity()); }
-    public static int slotHover() { return alpha(mix(slot(), primaryContainer(), 0.28f), 0.66f); }
-    public static int selection() { return alpha(primary(), 0.20f); }
-    public static int scrim() { return frosted() ? 0x280B1912 : 0x480B1912; }
+    public static int background() {
+        return palette().background();
+    }
+
+    public static YzuiVisualStyle visualStyle() {
+        return ClientExternalSettings.getYzuiVisualStyle();
+    }
+
+    public static int surface() {
+        return alpha(palette().surface(), visualStyle().surfaceOpacity());
+    }
+
+    public static int surfaceLow() {
+        return alpha(palette().surfaceLow(), visualStyle().layerOpacity());
+    }
+
+    public static int surfaceHigh() {
+        return alpha(palette().surfaceHigh(), visualStyle().layerOpacity());
+    }
+
+    public static int primary() {
+        return palette().primary();
+    }
+
+    public static int onPrimary() {
+        return palette().onPrimary();
+    }
+
+    public static int primaryContainer() {
+        return palette().primaryContainer();
+    }
+
+    public static int onPrimaryContainer() {
+        return palette().onPrimaryContainer();
+    }
+
+    public static int secondaryContainer() {
+        return palette().secondaryContainer();
+    }
+
+    public static int text() {
+        return menuContext() ? surfaceText(palette().text()) : palette().text();
+    }
+
+    public static int textMuted() {
+        return surfaceText(palette().textMuted());
+    }
+
+    public static int outline() {
+        return palette().outline();
+    }
+
+    public static int outlineVariant() {
+        return palette().outlineVariant();
+    }
+
+    public static int error() {
+        return surfaceText(palette().error());
+    }
+
+    public static int errorContainer() {
+        return palette().errorContainer();
+    }
+
+    public static int success() {
+        return surfaceText(palette().success());
+    }
+
+    public static int warning() {
+        return surfaceText(palette().warning());
+    }
+
+    public static int info() {
+        return surfaceText(palette().info());
+    }
+
+    public static int slot() {
+        return alpha(palette().surfaceHigh(), visualStyle().layerOpacity());
+    }
+
+    public static int slotHover() {
+        return alpha(mix(slot(), primaryContainer(), 0.28f), 0.66f);
+    }
+
+    public static int selection() {
+        return alpha(primary(), 0.20f);
+    }
+
+    public static int scrim() {
+        return frosted() ? 0x280B1912 : 0x480B1912;
+    }
 
     private static int surfaceText(int color) {
-        return palette().translucentText(color, menuContext() ? YzuiMenuPanel.opacity() : visualStyle().surfaceOpacity());
+        return palette().translucentText(color,
+                menuContext() ? YzuiMenuPanel.opacity() : visualStyle().surfaceOpacity());
     }
 
     /** 仅菜单绘制期间减轻控件底色，标题页、设置与物品栏继续使用原有样式。 */
@@ -102,35 +178,53 @@ public final class YzuiTheme {
                 menuContext() ? YzuiMenuPanel.opacity() : visualStyle().surfaceOpacity());
     }
 
-    public static int hudSurface() { return alpha(palette().surface(), visualStyle().hudPanelOpacity()); }
-    public static int hudSlot() { return alpha(palette().surfaceHigh(), visualStyle().hudSlotOpacity()); }
-    public static int hudSelected() { return alpha(primaryContainer(), visualStyle().hudSelectionOpacity()); }
-    public static int hudRow() { return alpha(palette().surfaceLow(), visualStyle().hudSlotOpacity()); }
+    public static int hudSurface() {
+        return alpha(palette().surface(), visualStyle().hudPanelOpacity());
+    }
+
+    public static int hudSlot() {
+        return alpha(palette().surfaceHigh(), visualStyle().hudSlotOpacity());
+    }
+
+    public static int hudSelected() {
+        return alpha(primaryContainer(), visualStyle().hudSelectionOpacity());
+    }
+
+    public static int hudRow() {
+        return alpha(palette().surfaceLow(), visualStyle().hudSlotOpacity());
+    }
 
     /** 兼容旧按钮的显式文字色；中性色与状态色仍随主题即时变化。 */
     public static int legacyText(int color) {
         int rgb = color & 0xFFFFFF;
         if (rgb == 0xFFFFFF || rgb == 0 || rgb == 0x333333 || rgb == 0x404040
                 || rgb == (YzuiPalette.LIGHT.text() & 0xFFFFFF)
-                || rgb == (YzuiPalette.DARK.text() & 0xFFFFFF)) return text();
+                || rgb == (YzuiPalette.DARK.text() & 0xFFFFFF))
+            return text();
         if (((rgb >> 16) & 255) == ((rgb >> 8) & 255) && ((rgb >> 8) & 255) == (rgb & 255)) {
             return textMuted();
         }
         if (rgb == 0xFF5555 || rgb == 0xFF4444
                 || rgb == (YzuiPalette.LIGHT.error() & 0xFFFFFF)
-                || rgb == (YzuiPalette.DARK.error() & 0xFFFFFF)) return error();
+                || rgb == (YzuiPalette.DARK.error() & 0xFFFFFF))
+            return error();
         if (rgb == (YzuiPalette.LIGHT.primary() & 0xFFFFFF)
-                || rgb == (YzuiPalette.DARK.primary() & 0xFFFFFF)) return primary();
+                || rgb == (YzuiPalette.DARK.primary() & 0xFFFFFF))
+            return primary();
         return 0xFF000000 | rgb;
     }
 
     /** 尚无独立容器外壳的功能屏幕使用统一页面卡片，控件坐标由各屏幕管理。 */
     public static void screenCard(GuiGraphicsExtractor g, Screen screen) {
-        if (!isCustomScreen(screen)) return;
-        if (screen instanceof top.csituka.youzaiworldcore.client.screen.YzHudSettingsScreen) return;
-        if (screen.getClass().getPackageName().equals("top.csituka.youzaiworldcore.client.screen.map")) return;
+        if (!isCustomScreen(screen))
+            return;
+        if (screen instanceof top.csituka.youzaiworldcore.client.screen.YzHudSettingsScreen)
+            return;
+        if (screen.getClass().getPackageName().equals("top.csituka.youzaiworldcore.client.screen.map"))
+            return;
         String name = screen.getClass().getSimpleName();
-        if (name.equals("MenuScreen") || name.equals("YouzaiWorldCoreTestScreen")) return;
+        if (name.equals("MenuScreen") || name.equals("YouzaiWorldCoreTestScreen"))
+            return;
         if (name.startsWith("Yzu") || name.startsWith("Mail") || name.equals("YzuiAppearanceScreen")
                 || name.equals("FlyBeaconScreen") || name.equals("DecompositionTableScreen")
                 || name.equals("WelcomeGuideScreen") || name.equals("TitleManagementScreen")
@@ -138,8 +232,10 @@ public final class YzuiTheme {
                 || name.equals("RegisterScreen") || name.equals("RegistrationEmailScreen")
                 || name.equals("PasswordResetScreen") || name.equals("AccountManagementScreen")
                 || name.equals("TeleportAnchorNameScreen") || name.equals("WirelessRedstoneChannelScreen")
-                || name.equals("LargeSignEditScreen") || name.equals("TeleportAnchorScreen") || name.equals("QuitConfirmationScreen")
-                || name.equals("ForcedUpdateScreen") || name.equals("JoinBlockedScreen")) return;
+                || name.equals("LargeSignEditScreen") || name.equals("TeleportAnchorScreen")
+                || name.equals("QuitConfirmationScreen")
+                || name.equals("ForcedUpdateScreen") || name.equals("JoinBlockedScreen"))
+            return;
         int w = Math.min(720, screen.width - 20);
         card(g, (screen.width - w) / 2, 8, w, screen.height - 16);
     }
@@ -177,7 +273,8 @@ public final class YzuiTheme {
     }
 
     public static void card(GuiGraphicsExtractor g, int x, int y, int w, int h, float opacity) {
-        if (w <= 0 || h <= 0) return;
+        if (w <= 0 || h <= 0)
+            return;
         int radius = Math.min(12, Math.min(w, h) / 2);
         if (!minimal()) {
             RoundedRect.fill(g, x, y + 2, w, h, radius, alpha(0xFF000000, 0.125f * opacity));
@@ -195,39 +292,48 @@ public final class YzuiTheme {
 
     /** 为状态数值提供紧凑底色，保留文字原坐标与相邻状态行的间距。 */
     public static void hudLabelBackground(GuiGraphicsExtractor g, Font font, int textWidth,
-                                         int textX, int textY, float opacity) {
-        if (opacity <= 0f || textWidth <= 0) return;
+            int textX, int textY, float opacity) {
+        if (opacity <= 0f || textWidth <= 0)
+            return;
         RoundedRect.fill(g, textX - 3, textY - 1, textWidth + 6, font.lineHeight + 1, 3,
                 alpha(palette().surface(), visualStyle().hudLabelOpacity() * opacity));
     }
 
     /** 绘制带主题底色的 HUD 数值；透明度同时作用于文字和底色。 */
+    @SuppressWarnings("null")
     public static void hudLabel(GuiGraphicsExtractor g, Font font, String text,
-                               int textX, int textY, int color, float opacity) {
-        if (opacity <= 0f) return;
+            int textX, int textY, int color, float opacity) {
+        if (opacity <= 0f)
+            return;
         hudLabelBackground(g, font, font.width(text), textX, textY, opacity);
         hudText(g, font, text, textX, textY, color, opacity);
     }
 
+    @SuppressWarnings("null")
     public static void hudLabel(GuiGraphicsExtractor g, Font font, FormattedCharSequence text,
-                               int textX, int textY, int color, float opacity) {
-        if (opacity <= 0f) return;
+            int textX, int textY, int color, float opacity) {
+        if (opacity <= 0f)
+            return;
         hudLabelBackground(g, font, font.width(text), textX, textY, opacity);
         hudText(g, font, text, textX, textY, color, opacity);
     }
 
     /** 只绘制文字及贴合字形的轻微对比色阴影，不额外叠加矩形底色。 */
+    @SuppressWarnings("null")
     public static void hudText(GuiGraphicsExtractor g, Font font, String text,
-                               int textX, int textY, int color, float opacity) {
+            int textX, int textY, int color, float opacity) {
         hudText(g, font, Component.literal(text).getVisualOrderText(), textX, textY, color, opacity);
     }
 
+    @SuppressWarnings("null")
     public static void hudText(GuiGraphicsExtractor g, Font font, FormattedCharSequence text,
-                               int textX, int textY, int color, float opacity) {
-        if (opacity <= 0f) return;
+            int textX, int textY, int color, float opacity) {
+        if (opacity <= 0f)
+            return;
         // 保留原有主题文字与稀有度色相；透景后通过字形阴影辅助阅读，不再提高底衬不透明度。
         var readable = readableText(text, color, palette().surface());
         FormattedCharSequence shaded = sink -> readable.accept((index, style, codepoint) -> {
+            @SuppressWarnings("null")
             int foreground = style.getColor() == null ? color : style.getColor().getValue();
             int shadow = YzuiPalette.luminance(foreground) < 0.18 ? 0xFFFFFFFF : 0xFF000000;
             return sink.accept(index, style.withShadowColor(alpha(shadow, 0.70f)), codepoint);
@@ -237,7 +343,8 @@ public final class YzuiTheme {
 
     /** 圆角描边只绘制边缘，不反复覆盖半透明卡片内部。 */
     public static void border(GuiGraphicsExtractor g, int x, int y, int w, int h, int radius, int color) {
-        if (w < 2 || h < 2) return;
+        if (w < 2 || h < 2)
+            return;
         int r = Math.clamp(radius, 0, Math.min(w, h) / 2);
         if (r == 0) {
             g.outline(x, y, w, h, color);
@@ -259,7 +366,8 @@ public final class YzuiTheme {
     }
 
     public static int buttonText(ButtonStyle style, boolean enabled) {
-        if (!enabled) return textMuted();
+        if (!enabled)
+            return textMuted();
         return switch (style) {
             case FILLED -> onPrimary();
             case DANGER -> error();
@@ -277,7 +385,8 @@ public final class YzuiTheme {
             case DANGER -> errorContainer();
             case TEXT -> surface();
         };
-        if (!enabled) base = surfaceHigh();
+        if (!enabled)
+            base = surfaceHigh();
         int foreground = buttonText(style, enabled);
         float state = enabled ? Math.clamp(hover, 0f, 1f) : 0f;
         int color = mix(base, foreground, state * 0.08f);
@@ -291,7 +400,8 @@ public final class YzuiTheme {
             border(g, x, y, w, h, radius, alpha(style == ButtonStyle.FILLED ? onPrimary() : primary(),
                     opacity * state * 0.32f));
         }
-        if (focused && enabled) border(g, x, y, w, h, radius, alpha(primary(), opacity));
+        if (focused && enabled)
+            border(g, x, y, w, h, radius, alpha(primary(), opacity));
     }
 
     /** 圆角输入容器，通过轻微状态层和描边反馈悬停/焦点，不绘制底部横线。 */
@@ -306,15 +416,19 @@ public final class YzuiTheme {
         int radius = menuContext() ? 8 : 5;
         float layerOpacity = menuContext() ? 0.24f : visualStyle().layerOpacity();
         RoundedRect.fill(g, x, y, w, h, radius,
-                multiplyAlpha(mix(alpha(palette().surfaceHigh(), layerOpacity), alpha(primaryContainer(), layerOpacity), state * 0.20f), opacity));
+                multiplyAlpha(mix(alpha(palette().surfaceHigh(), layerOpacity), alpha(primaryContainer(), layerOpacity),
+                        state * 0.20f), opacity));
         int line = enabled && focused ? primary() : mix(outlineVariant(), primary(), state * 0.5f);
         border(g, x, y, w, h, radius, alpha(line, opacity * (focused && enabled ? 0.9f : 0.28f + state * 0.22f)));
     }
 
     /** 按行显示描述文字，超过可用行数时保留省略提示。 */
+    @SuppressWarnings("null")
     public static void wrapped(GuiGraphicsExtractor g, Font font, Component text,
             int x, int y, int width, int maxLines, int color) {
-        if (width <= 0 || maxLines <= 0) return;
+        if (width <= 0 || maxLines <= 0)
+            return;
+        @SuppressWarnings("null")
         var lines = font.split(text, Math.max(1, width));
         int count = Math.min(maxLines, lines.size());
         for (int row = 0; row < count; row++) {
@@ -326,7 +440,8 @@ public final class YzuiTheme {
                 g.enableScissor(x, lineY - 1, end, lineY + font.lineHeight + 1);
                 g.text(font, line, x, lineY, color, false);
                 g.disableScissor();
-                if (ellipsisWidth <= width) g.text(font, "…", Math.min(end, x + font.width(line)), lineY, color, false);
+                if (ellipsisWidth <= width)
+                    g.text(font, "…", Math.min(end, x + font.width(line)), lineY, color, false);
             } else {
                 g.text(font, line, x, lineY, color, false);
             }
@@ -334,20 +449,24 @@ public final class YzuiTheme {
     }
 
     /** 超长控件文字省略，不越过相邻按钮或输入框。 */
+    @SuppressWarnings("null")
     public static void label(GuiGraphicsExtractor g, Font font, Component label,
             int x, int y, int width, int color, boolean centered) {
         int available = Math.max(0, width);
-        if (available == 0) return;
+        if (available == 0)
+            return;
         int background = (color & 0xFFFFFF) == (onPrimary() & 0xFFFFFF) ? primary()
                 : (color & 0xFFFFFF) == (onPrimaryContainer() & 0xFFFFFF) ? primaryContainer() : palette().surface();
         var text = readableText(label.getVisualOrderText(), color, background);
+        @SuppressWarnings("null")
         int textWidth = font.width(text);
         if (textWidth <= available) {
             g.text(font, text, centered ? x + (available - textWidth) / 2 : x, y, color, false);
             return;
         }
         int ellipsisWidth = font.width("…");
-        if (available < ellipsisWidth) return;
+        if (available < ellipsisWidth)
+            return;
         g.enableScissor(x, y - 1, x + available - ellipsisWidth, y + font.lineHeight + 1);
         g.text(font, text, x, y, color, false);
         g.disableScissor();

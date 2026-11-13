@@ -216,6 +216,8 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 
 精妙背包（Sophisticated Backpacks）的 `sophisticatedbackpacks:main` 分栏按 **背包、升级背包、堆叠升级、堆叠升级转换** 分组。普通背包保留各染色变体，堆叠升级排除 `_conversion`，转换类单独匹配；已有配置无需重置，自定义规则优先。
 
+Fabric 26.3 移植版 **3.24.1.0** 的 `stack_downgrade_tier_1/2/3` 也归入转换组；其标签页和六种背包 ID 保持兼容。
+
 展开与收起带约 **200 毫秒**的缩放和轻微位移过渡，组头略微放大、加减标记旋转切换；连续点击可从当前进度反向播放。收起中的成员只用于展示，动画结束后再移除并更新滚动范围。
 
 在 **YouzaiWorldCore 设置 → 视觉 → 创造物品分组** 中可启用或停用、切换原序 / 物品 ID 排序、开启每秒轮播预览，以及新增、编辑、删除、调整规则优先级。规则支持标签页 ID、精确物品 ID、包含片段和排除片段。配置写入 `yzwc/client/global_settings.json` 的 `inventory_item_groups_module`；仅影响本机显示，保留药水、附魔书等全部组件变体，搜索、快捷栏预设和真实背包不折叠。详见 [功能分析与配置说明](docs/创造物品分组.md)。
@@ -559,6 +561,10 @@ Windows 10 开始菜单风格的磁贴布局，支持页面切换与动画过渡
 - **光标校验**：数据包携带客户端当前鼠标物品（`cursor`）。生存模式只信任服务端 `containerMenu.getCarried()`，创造模式才使用客户端生成的虚拟光标物品；槽位状态、堆叠上限与校验器始终以服务端为准
 - **本地预览**：客户端在收到服务端确认前先行本地预览，消除交互延迟感
 - **原生槽位屏蔽**：`SurvivalTrinketSlotYzuiMixin` 在 YZUI 屏幕下强制 Trinkets 的 `SurvivalTrinketSlot#isActive()` 返回 `false`，避免其注入槽位在装备位两侧渲染出"无用格子"并与 YZUI 指示器坐标重叠误触；YZUI 关闭时不拦截，Trinkets 原生物品栏行为不受影响（该 Mixin 以 `targets = "eu.pb4.trinkets.impl.slots.SurvivalTrinketSlot"` 字符串声明，适配 Trinkets 4.1.0-rc.1 的实现包结构）
+
+精妙背包 Fabric 26.3 **3.24.1.0** 未内置 Trinkets 库存处理器，Core 为其补充可选桥接：饰品槽中的背包可由背包模组快捷键打开并参与升级处理，使用背包自身的背负渲染；隐藏饰品只影响显示，功能继续生效。原版饰品槽上的悬停打开也会使用正确的饰品库存标识，避免误读主物品栏。未安装精妙背包时跳过适配，旧版已有原生 Trinkets 处理器时不重复注册。
+
+已核对新版 jar 的实际注册和接口。隔离回归：`node tools/verify-backpack-compat.mjs <精妙背包.jar> <JDK25目录>`；完整游戏内操作仍需实机验收。
 
 ### 35. 配置导入/导出
 

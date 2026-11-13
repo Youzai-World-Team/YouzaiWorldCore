@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import net.minecraft.client.OptionInstance;
 import net.minecraft.client.gui.components.AbstractWidget;
@@ -14,6 +15,7 @@ import net.minecraft.client.gui.components.events.ContainerEventHandler;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.Style;
 import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.util.FormattedCharSequence;
 
@@ -48,6 +50,31 @@ final class SettingsWidgets {
             }
         }
         return result;
+    }
+
+    /** 识别原版选项列表的分组标题，仅提取文字，避免复用其焦点背景绘制。 */
+    static Set<AbstractWidget> sectionHeaders(Screen screen) {
+        Set<AbstractWidget> result = Collections.newSetFromMap(new IdentityHashMap<>());
+        for (GuiEventListener child : screen.children()) {
+            if (!(child instanceof OptionsList list)) continue;
+            for (Object row : list.children()) {
+                Class<?> type = row.getClass();
+                while (type != null && !type.getName().equals("net.minecraft.client.gui.components.OptionsList$HeaderEntry")) {
+                    type = type.getSuperclass();
+                }
+                if (type == null || !(row instanceof ContainerEventHandler entry)) continue;
+                for (GuiEventListener widget : entry.children()) {
+                    if (widget instanceof AbstractWidget header) result.add(header);
+                }
+            }
+        }
+        return result;
+    }
+
+    /** 检查全部文字片段，包括子组件中的链接，避免把可点击说明当作静态文字。 */
+    static boolean hasClickableText(Component text) {
+        return text.<Boolean>visit((style, content) -> style.getClickEvent() != null
+                ? Optional.of(true) : Optional.empty(), Style.EMPTY).orElse(false);
     }
 
     static AbstractWidget focused(GuiEventListener listener) {

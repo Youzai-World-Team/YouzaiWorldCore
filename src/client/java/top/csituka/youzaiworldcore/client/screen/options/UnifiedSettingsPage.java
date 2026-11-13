@@ -30,6 +30,8 @@ import net.minecraft.client.gui.screens.WorldOptionsScreen;
 import net.minecraft.client.gui.screens.options.controls.ControlsScreen;
 import net.minecraft.client.gui.screens.telemetry.TelemetryInfoScreen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.Style;
+import top.csituka.youzaiworldcore.client.screen.CoreSettingsSection;
 import top.csituka.youzaiworldcore.client.screen.YouzaiWorldCoreSettingsScreen;
 import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
 import top.csituka.youzaiworldcore.util.DebugLogger;
@@ -42,6 +44,7 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
 final class UnifiedSettingsPage {
     private record Page(Screen screen, Component title) { }
 
+    // 在线页仅保留路由别名；外部入口回到设置中心，不创建在线分类或控件。
     private static final Set<Class<? extends Screen>> INLINE_PAGES = Set.of(
             SkinCustomizationScreen.class, SoundOptionsScreen.class, VideoSettingsScreen.class,
             ControlsScreen.class, MouseSettingsScreen.class, FontOptionsScreen.class,
@@ -107,18 +110,16 @@ final class UnifiedSettingsPage {
             add(new MouseSettingsScreen(host, minecraft.options));
             add(new SkinCustomizationScreen(host, minecraft.options));
             FontOptionsScreen fonts = new FontOptionsScreen(host, minecraft.options);
-            add(fonts, Component.translatable("options.language").append(" / ").append(fonts.getTitle()));
+            add(fonts, Component.translatable("options.language"));
             add(new ChatOptionsScreen(host, minecraft.options));
             add(new AccessibilityOptionsScreen(host, minecraft.options));
-            add(new OnlineOptionsScreen(host, minecraft.options));
             if (host.inWorld() && minecraft.level != null) add(new WorldOptionsScreen(host, minecraft.level));
             telemetry = new TelemetryInfoScreen(host, minecraft.options);
             add(telemetry);
-            String[] names = {"visual", "config_io", "about", "developer"};
-            for (int section : new int[]{0, 3, 1, 2}) {
+            for (CoreSettingsSection section : CoreSettingsSection.values()) {
                 YouzaiWorldCoreSettingsScreen core = new YouzaiWorldCoreSettingsScreen(host);
-                core.configureEmbedded(0, 0, Math.max(100, host.width - 80), Math.max(40, host.height), section);
-                add(core, Component.translatable("screen.youzaiworldcore.settings.sidebar_" + names[section]));
+                core.configureEmbedded(0, 0, Math.max(100, host.width - 80), Math.max(40, host.height), section.id());
+                add(core, section.title());
             }
             fresh = false;
             refreshWorld = false;
@@ -157,24 +158,22 @@ final class UnifiedSettingsPage {
         for (AbstractWidget widget : SettingsWidgets.flatten(home)) {
             if (isTitle(home, widget)) continue;
             if (isFooter(widget)) { footer.add(widget); continue; }
-            if (isInlineLink(widget)) continue;
+            if (isInlineLink(widget) || SettingsWidgets.key(widget.getMessage(), "options.telemetry")) continue;
             if (SettingsWidgets.key(widget.getMessage(), "options.language")) language = widget;
             else if (widget instanceof Button) resources.add(widget);
             else rows.add(SettingsList.Row.widget(widget));
         }
 
         if (SettingsCompatibility.sodiumAvailable()) {
-            SettingsList.Row videoHeading = heading(rows, VideoSettingsScreen.class.getName(), Component.translatable("options.video"));
+            heading(rows, VideoSettingsScreen.class.getName(), Component.translatable("options.video"));
             rows.add(SettingsList.Row.controls(YzuiOptionsScreen.text("sodium"), YzuiOptionsScreen.text("sodium.description"),
                     button(YzuiOptionsScreen.text("open"), () -> SettingsCompatibility.openSodium(host))));
-            appendVisualOptions(rows, videoHeading);
         }
         for (Page page : pages) {
             if (page.screen instanceof YouzaiWorldCoreSettingsScreen || page.screen == telemetry) continue;
-            SettingsList.Row section = heading(rows, anchor(page.screen), page.title);
+            heading(rows, anchor(page.screen), page.title);
             if (page.screen instanceof FontOptionsScreen && language != null) rows.add(SettingsList.Row.widget(language));
             appendNative(page, rows, primary);
-            if (page.screen == video) appendVisualOptions(rows, section);
         }
 
         heading(rows, "resources", YzuiOptionsScreen.text("resources"));
@@ -191,7 +190,6 @@ final class UnifiedSettingsPage {
         boolean firstCoreSection = true;
         for (Page page : pages) {
             if (!(page.screen instanceof YouzaiWorldCoreSettingsScreen core)) continue;
-            if (core.getSelectedSection() == 0) continue;
             SettingsList.Row section = heading(rows, anchor(core), page.title);
             if (firstCoreSection) {
                 section.navigationGroup = Component.literal("YouzaiWorldCore");
@@ -207,17 +205,6 @@ final class UnifiedSettingsPage {
         displayed = rows.stream().flatMap(row -> row.widgets.stream()).toList();
     }
 
-    private void appendVisualOptions(List<SettingsList.Row> rows, SettingsList.Row videoHeading) {
-        for (Page page : pages) {
-            if (page.screen instanceof YouzaiWorldCoreSettingsScreen core && core.getSelectedSection() == 0) {
-                anchors.put(anchor(core), videoHeading);
-                rows.add(SettingsList.Row.subheading(page.title));
-                appendCoreOptions(rows, core);
-                return;
-            }
-        }
-    }
-
     private static void appendCoreOptions(List<SettingsList.Row> rows, YouzaiWorldCoreSettingsScreen core) {
         for (var option : core.embeddedOptions()) {
             rows.add(option.control() == null ? SettingsList.Row.text(option.label(), option.description())
@@ -227,17 +214,23 @@ final class UnifiedSettingsPage {
 
     private void appendNative(Page page, List<SettingsList.Row> rows, Map<OptionInstance<?>, SettingsList.Row> primary) {
         Map<AbstractWidget, OptionInstance<?>> options = SettingsWidgets.options(page.screen);
+        Set<AbstractWidget> sectionHeaders = SettingsWidgets.sectionHeaders(page.screen);
         for (var binding : options.entrySet()) {
+            if (isHiddenAccessibilityOption(page.screen, binding.getValue())) continue;
             bindings.computeIfAbsent(binding.getValue(), ignored -> new ArrayList<>()).add(binding.getKey());
             values.put(binding.getValue(), binding.getValue().get());
         }
         for (AbstractWidget widget : SettingsWidgets.flatten(page.screen)) {
             if (isTitle(page.screen, widget) || isFooter(widget) || isInlineLink(widget)) continue;
-            if (widget instanceof StringWidget) {
-                rows.add(SettingsList.Row.subheading(widget.getMessage()));
+            OptionInstance<?> option = options.get(widget);
+            if (isHiddenAccessibilityOption(page.screen, option)
+                    || (page.screen instanceof AccessibilityOptionsScreen
+                    && SettingsWidgets.key(widget.getMessage(), "options.accessibility.link"))) continue;
+            if (widget instanceof StringWidget || sectionHeaders.contains(widget)) {
+                Component title = sectionHeaders.contains(widget) ? widget.getMessage().copy().setStyle(Style.EMPTY) : widget.getMessage();
+                rows.add(SettingsList.Row.subheading(title));
                 continue;
             }
-            OptionInstance<?> option = options.get(widget);
             SettingsList.Row existing = option == null ? null : primary.get(option);
             if (existing != null) {
                 // 原版在声音、控制、辅助功能等页面重复放置的同一选项只显示一次，搜索仍覆盖这些分类。
@@ -249,6 +242,13 @@ final class UnifiedSettingsPage {
             rows.add(row);
             if (option != null) primary.put(option, row);
         }
+    }
+
+    private boolean isHiddenAccessibilityOption(Screen screen, OptionInstance<?> option) {
+        if (!(screen instanceof AccessibilityOptionsScreen) || option == null) return false;
+        // 按原版选项身份过滤，避免译名变化或误删「高对比度方块轮廓」。
+        return option == minecraft.options.highContrast() || option == minecraft.options.darkMojangStudiosBackground()
+                || option == minecraft.options.narrator() || option == minecraft.options.narratorHotkey();
     }
 
     private SettingsList.Row heading(List<SettingsList.Row> rows, String anchor, Component title) {

@@ -5,6 +5,7 @@ import com.terraformersmc.modmenu.gui.ModsScreen;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.ModContainer;
 import net.minecraft.client.Minecraft;
@@ -16,6 +17,7 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
 /** 可选模组的设置入口。Sodium 使用工厂，让 Reese、Extra 与 Iris 继续参加其原生扩展流程。 */
 final class SettingsCompatibility {
     private static final String SODIUM_SCREEN = "net.caffeinemc.mods.sodium.client.gui.VideoSettingsScreen";
+    private static final Set<String> HIDDEN_CONFIGS = Set.of("youzaiworldcore", "minecraft", "moogs_structures");
     private static final List<String> PRIORITY = List.of("modmenu", "sodium", "sodium-extra",
             "reeses-sodium-options", "iris", "sodium-fullbright");
 
@@ -53,7 +55,7 @@ final class SettingsCompatibility {
                     YzuiOptionsScreen.text("sodium.description"), button(YzuiOptionsScreen.text("sodium"), () -> openSodium(parent))));
         }
         FabricLoader.getInstance().getAllMods().stream()
-                .filter(mod -> !mod.getMetadata().getId().equals("youzaiworldcore"))
+                .filter(mod -> !HIDDEN_CONFIGS.contains(mod.getMetadata().getId()))
                 .filter(mod -> ModMenu.hasConfigScreen(mod.getMetadata().getId()))
                 .sorted(Comparator.comparingInt(SettingsCompatibility::priority)
                         .thenComparing(mod -> mod.getMetadata().getName(), String.CASE_INSENSITIVE_ORDER))

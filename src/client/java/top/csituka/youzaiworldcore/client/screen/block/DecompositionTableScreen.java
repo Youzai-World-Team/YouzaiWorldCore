@@ -21,13 +21,35 @@ import top.csituka.youzaiworldcore.screen.DecompositionTableMenu;
 @SuppressWarnings("null")
 public class DecompositionTableScreen extends AbstractContainerScreen<DecompositionTableMenu> {
 
-    private static final Identifier DECOMPOSITION_BUTTON_TEXTURE = Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "textures/gui/decomposition_button.png");
-    private static int backgroundColor() { return YzuiTheme.surface(); }
-    private static int slotColor() { return YzuiTheme.slot(); }
-    private static int slotHoverColor() { return YzuiTheme.slotHover(); }
-    private static int buttonColor() { return YzuiTheme.primaryContainer(); }
-    private static int buttonHoverColor() { return YzuiTheme.surfaceHigh(); }
-    private static int buttonDisabledColor() { return YzuiTheme.surfaceHigh(); }
+    private static final Identifier DECOMPOSITION_BUTTON_TEXTURE = Identifier
+            .fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "textures/gui/decomposition_button.png");
+
+    @SuppressWarnings("unused")
+    private static int backgroundColor() {
+        return YzuiTheme.surface();
+    }
+
+    private static int slotColor() {
+        return YzuiTheme.slot();
+    }
+
+    private static int slotHoverColor() {
+        return YzuiTheme.slotHover();
+    }
+
+    private static int buttonColor() {
+        return YzuiTheme.primaryContainer();
+    }
+
+    private static int buttonHoverColor() {
+        return YzuiTheme.surfaceHigh();
+    }
+
+    private static int buttonDisabledColor() {
+        return YzuiTheme.surfaceHigh();
+    }
+
+    @SuppressWarnings("unused")
     private static final int CORNER_RADIUS = 6;
     private static final int INPUT_SLOT_X = 49;
     private static final int INPUT_SLOT_Y = 35;
@@ -56,13 +78,13 @@ public class DecompositionTableScreen extends AbstractContainerScreen<Decomposit
                 this.topPos + BUTTON_Y,
                 BUTTON_SIZE,
                 BUTTON_SIZE,
-                this
-        );
+                this);
         this.addRenderableWidget(decomposeButton);
     }
 
     @Override
-    public void extractRenderState(@NonNull GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
+    public void extractRenderState(@NonNull GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY,
+            float partialTick) {
         drawBackground(guiGraphics);
 
         drawInputSlot(guiGraphics, mouseX, mouseY);
@@ -179,7 +201,8 @@ public class DecompositionTableScreen extends AbstractContainerScreen<Decomposit
         }
 
         @Override
-        protected void extractWidgetRenderState(@NonNull GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
+        protected void extractWidgetRenderState(@NonNull GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY,
+                float partialTick) {
             boolean canDecompose = screen.canDecompose();
             boolean isHovered = this.isHovered();
 
@@ -197,7 +220,8 @@ public class DecompositionTableScreen extends AbstractContainerScreen<Decomposit
 
             fillRoundedRect(guiGraphics, x, y, this.width, this.height, 3, color);
 
-            guiGraphics.blit(RenderPipelines.GUI_TEXTURED, DECOMPOSITION_BUTTON_TEXTURE, x, y, 0, 0, this.width, this.height, this.width, this.height);
+            guiGraphics.blit(RenderPipelines.GUI_TEXTURED, DECOMPOSITION_BUTTON_TEXTURE, x, y, 0, 0, this.width,
+                    this.height, this.width, this.height);
         }
 
         private void fillRoundedRect(GuiGraphicsExtractor g, int x, int y, int w, int h, int r, int color) {

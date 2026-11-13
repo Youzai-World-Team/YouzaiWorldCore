@@ -19,6 +19,7 @@ import net.minecraft.client.gui.components.StringWidget;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.ConfirmScreen;
+import net.minecraft.client.gui.screens.ConfirmLinkScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.WinScreen;
 import net.minecraft.client.gui.screens.options.HasDifficultyReaction;
@@ -37,10 +38,12 @@ import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.telemetry.TelemetryEventType;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.Style;
 import net.minecraft.sounds.Music;
 import net.minecraft.util.FormattedCharSequence;
 import top.csituka.youzaiworldcore.client.config.ClientExternalSettings;
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
+import top.csituka.youzaiworldcore.client.screen.CoreSettingsSection;
 import top.csituka.youzaiworldcore.client.screen.YouzaiWorldCoreSettingsScreen;
 import top.csituka.youzaiworldcore.client.screen.YzuiPopupScreen;
 import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
@@ -65,6 +68,7 @@ public final class YzuiOptionsScreen extends Screen implements HasDifficultyReac
     private final List<KeyControls> keyControls = new ArrayList<>();
     private List<AbstractWidget> captured = List.of();
     private String query = "";
+    private String pendingLanguageCode;
     private double scroll;
     private List<Object> packEntries = List.of();
     private boolean telemetryOptIn;
@@ -87,7 +91,8 @@ public final class YzuiOptionsScreen extends Screen implements HasDifficultyReac
     }
 
     private YzuiOptionsScreen(Screen source, Screen origin, boolean inWorld, Screen back, int coreSection, YzuiOptionsScreen settingsRoot) {
-        super(source == null ? text("mods") : source instanceof OptionsScreen ? text("title") : source instanceof WinScreen
+        super(source == null ? text("mods") : source instanceof OptionsScreen ? text("title")
+                : source instanceof LanguageSelectScreen ? Component.translatable("options.language") : source instanceof WinScreen
                 ? Component.translatable("credits_and_attribution.button.credits") : source.getTitle());
         this.source = source;
         this.origin = origin;
@@ -103,6 +108,7 @@ public final class YzuiOptionsScreen extends Screen implements HasDifficultyReac
     Screen origin() { return origin; }
     boolean inWorld() { return inWorld; }
     boolean isUnified() { return unified != null; }
+    boolean isLinkConfirmation() { return source != null && source.getClass() == ConfirmLinkScreen.class; }
 
     /** 仅确认框与显卡警告属于弹窗，普通设置页使用场景背景。 */
     @Override
@@ -180,6 +186,7 @@ public final class YzuiOptionsScreen extends Screen implements HasDifficultyReac
             if (videoPage() != null) videoPreset = minecraft.options.graphicsPreset().get();
             refreshKeyLabels();
             if (searchFocused && searchable) setInitialFocus(frame.search);
+            else if (isLinkConfirmation() && focused == null) setInitialFocus(SettingsWidgets.read(source, "noButton", Button.class));
             else frame.restoreFocus(focused);
         } finally {
             rebuilding = false;
@@ -198,6 +205,11 @@ public final class YzuiOptionsScreen extends Screen implements HasDifficultyReac
                 : SettingsWidgets.flatten(source);
         for (AbstractWidget widget : widgets) {
             if (!widget.visible) continue;
+            // 语言页只复用原版完成/返回回调，字体入口与提示不再混入语言列表。
+            if (source instanceof LanguageSelectScreen) {
+                takeFooter(widget, footer);
+                continue;
+            }
             if (widget instanceof AbstractSelectionList<?> || widget instanceof EditBox
                     || widget instanceof TelemetryEventWidget || widget instanceof Checkbox && source instanceof TelemetryInfoScreen) continue;
             if (takeFooter(widget, footer) || isTitle(widget)) continue;
@@ -234,7 +246,9 @@ public final class YzuiOptionsScreen extends Screen implements HasDifficultyReac
         }
         for (AbstractWidget widget : SettingsWidgets.flatten(source)) {
             if (widget instanceof Button) footer.add(widget);
-            else if (!isTitle(widget)) addWidgetRow(rows, widget);
+            else if (isLinkConfirmation() && !isTitle(widget)) {
+                rows.add(SettingsList.Row.text(Component.empty(), widget.getMessage().copy().setStyle(Style.EMPTY)));
+            } else if (!isTitle(widget)) addWidgetRow(rows, widget);
         }
     }
 
@@ -306,18 +320,26 @@ public final class YzuiOptionsScreen extends Screen implements HasDifficultyReac
     @SuppressWarnings({"rawtypes", "unchecked"})
     private void buildLanguages(List<SettingsList.Row> rows) {
         AbstractSelectionList languageList = SettingsWidgets.read(source, "languageSelectionList", AbstractSelectionList.class);
-        rows.add(SettingsList.Row.heading(Component.translatable("options.language")));
+        var choices = new java.util.IdentityHashMap<Object, TransparentButton>();
         for (Object item : languageList.children()) {
             String code = SettingsWidgets.read(item, "code", String.class);
             var language = minecraft.getLanguageManager().getLanguages().get(code);
             if (language == null) continue;
+            if (code.equals(pendingLanguageCode)) SettingsList.selectNativeEntry(languageList, item);
             TransparentButton choose = action(language.toComponent(), () -> {
+                pendingLanguageCode = code;
                 SettingsList.selectNativeEntry(languageList, item);
-                rebuildView();
+                // 只更新选中样式；重建原版页面会丢失尚未应用的语言选择。
+                choices.forEach((entry, button) -> button.setStyle(languageList.getSelected() == entry
+                        ? YzuiTheme.ButtonStyle.FILLED : YzuiTheme.ButtonStyle.TONAL));
             });
-            if (languageList.getSelected() == item) choose.setStyle(YzuiTheme.ButtonStyle.FILLED);
-            rows.add(SettingsList.Row.controls(Component.literal(code), Component.empty(), choose));
+            choices.put(item, choose);
+            SettingsList.Row row = SettingsList.Row.widget(choose);
+            row.addSearchTerms(code);
+            rows.add(row);
         }
+        choices.forEach((entry, button) -> button.setStyle(languageList.getSelected() == entry
+                ? YzuiTheme.ButtonStyle.FILLED : YzuiTheme.ButtonStyle.TONAL));
     }
 
     // ===== 资源包：直接使用原版选择模型，保留固定包、不兼容确认、顺序和提交行为 =====
@@ -391,23 +413,19 @@ public final class YzuiOptionsScreen extends Screen implements HasDifficultyReac
 
     // ===== YouzaiWorldCore：同一内容实现同时用于嵌入页与原有 ModMenu 页面 =====
 
-    private static Component coreTitle(String section) {
-        return Component.translatable("screen.youzaiworldcore.settings.sidebar_" + section);
-    }
-
     private void initCore(YouzaiWorldCoreSettingsScreen core) {
         frame = new SettingsFrame(this, List.of(), List.of(action(Component.translatable("gui.done"), this::onClose)),
                 this::addRenderableWidget, "", 0, false);
         removeWidget(frame.content);
         frame.content.visible = false;
-        String[] titles = {"visual", "config_io", "about", "developer"};
-        int tabWidth = (frame.bodyWidth - 18) / 4;
-        for (int index = 0; index < titles.length; index++) {
-            int section = index;
+        CoreSettingsSection[] sections = CoreSettingsSection.values();
+        int tabWidth = (frame.bodyWidth - (sections.length - 1) * 6) / sections.length;
+        for (int index = 0; index < sections.length; index++) {
+            CoreSettingsSection section = sections[index];
             TransparentButton tab = new TransparentButton(frame.bodyX + index * (tabWidth + 6), frame.bodyY - 29,
-                    tabWidth, 23, coreTitle(titles[index]), () -> {
+                    tabWidth, 23, section.title(), () -> {
                         if (!core.isConfigOperationActive()) {
-                            core.setEmbeddedSection(section);
+                            core.setEmbeddedSection(section.id());
                             initCoreTabs();
                         }
                     });
@@ -427,7 +445,8 @@ public final class YzuiOptionsScreen extends Screen implements HasDifficultyReac
         int index = 0;
         for (GuiEventListener child : children()) {
             if (child instanceof TransparentButton tab && tab.getY() == frame.bodyY - 29) {
-                tab.setStyle(index++ == core.getSelectedSection() ? YzuiTheme.ButtonStyle.FILLED : YzuiTheme.ButtonStyle.TONAL);
+                tab.setStyle(CoreSettingsSection.values()[index++].id() == core.getSelectedSection()
+                        ? YzuiTheme.ButtonStyle.FILLED : YzuiTheme.ButtonStyle.TONAL);
             }
         }
     }

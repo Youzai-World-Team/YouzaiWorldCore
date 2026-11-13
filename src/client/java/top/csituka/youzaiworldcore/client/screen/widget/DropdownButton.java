@@ -29,6 +29,7 @@ public class DropdownButton extends AbstractWidget {
     private int visibleRows = 1;
     private int popupLeft, popupTop, popupRenderWidth, popupRenderHeight;
     private boolean open;
+    private boolean labelVisible = true;
     private float externalAlpha = 1f;
     private final YzuiHover hoverState = new YzuiHover();
     private float popupAlpha;
@@ -64,6 +65,8 @@ public class DropdownButton extends AbstractWidget {
         this.currentValueLabel = currentValueLabel;
     }
     public boolean isOpen() { return open; }
+    /** 设置行单独绘制名称时只展示当前值，保留原消息供旁白使用。 */
+    public DropdownButton setLabelVisible(boolean value) { labelVisible = value; return this; }
     public void setExternalAlpha(float value) { externalAlpha = Math.clamp(value, 0f, 1f); }
     /** 邮件等独立设计视口显式提供边界，避免把物理宽高误用为设计坐标。 */
     public void setCanvasSize(int width, int height) {
@@ -108,7 +111,7 @@ public class DropdownButton extends AbstractWidget {
         g.text(font, open ? "▴" : "▾", arrowX, textY, foreground, false);
         String value = currentValueLabel != null ? currentValueLabel
                 : selectedIndex >= 0 && selectedIndex < options.size() ? options.get(selectedIndex) : "";
-        boolean hasLabel = !getMessage().getString().isEmpty();
+        boolean hasLabel = labelVisible && !getMessage().getString().isEmpty();
         int valueWidth = hasLabel ? Math.max(32, (width - 36) / 2) : Math.max(0, width - 30);
         if (hasLabel) {
             YzuiTheme.label(g, font, getMessage(), x + 8, textY, width - valueWidth - 34, foreground, false);

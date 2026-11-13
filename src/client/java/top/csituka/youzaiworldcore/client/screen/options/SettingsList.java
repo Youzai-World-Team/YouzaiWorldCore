@@ -9,6 +9,7 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.AbstractSelectionList;
 import net.minecraft.client.gui.components.ContainerObjectSelectionList;
+import net.minecraft.client.gui.components.FocusableTextWidget;
 import net.minecraft.client.gui.components.MultiLineTextWidget;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.narration.NarratableEntry;
@@ -16,6 +17,7 @@ import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.narration.NarratedElementType;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.Style;
 import net.minecraft.resources.Identifier;
 import top.csituka.youzaiworldcore.client.render.RoundedRect;
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
@@ -206,13 +208,21 @@ final class SettingsList extends ContainerObjectSelectionList<SettingsList.Row> 
         Component navigationGroup;
         private Row section;
         private final Identifier icon;
+        private final boolean choice;
         private String keywords;
 
         private Row(Component label, Component detail, List<AbstractWidget> widgets,
                     boolean heading, Identifier icon, String keywords) {
-            this.label = label;
             this.detail = detail;
             this.widgets = widgets.stream().map(SettingsChoiceControl::adapt).toList();
+            this.choice = !heading && icon == null && this.widgets.size() == 1
+                    && (this.widgets.getFirst() instanceof CheckboxButton || this.widgets.getFirst() instanceof DropdownButton)
+                    && (!label.getString().isEmpty() || !this.widgets.getFirst().getMessage().getString().isEmpty());
+            this.label = choice && label.getString().isEmpty() ? this.widgets.getFirst().getMessage() : label;
+            if (choice) {
+                if (this.widgets.getFirst() instanceof CheckboxButton checkbox) checkbox.setLabelVisible(false);
+                if (this.widgets.getFirst() instanceof DropdownButton dropdown) dropdown.setLabelVisible(false);
+            }
             this.heading = heading;
             this.navigation = heading;
             this.icon = icon;
@@ -220,6 +230,12 @@ final class SettingsList extends ContainerObjectSelectionList<SettingsList.Row> 
         }
 
         static Row widget(AbstractWidget widget) {
+            if (widget instanceof FocusableTextWidget text && !SettingsWidgets.hasClickableText(text.getMessage())) {
+                Component label = text.getMessage().copy().setStyle(Style.EMPTY);
+                // 世界设置等页面把分类标题直接放在布局里，不经过 OptionsList.HeaderEntry。
+                if (text.getMessage().getStyle().isBold() && text.getMessage().getStyle().isUnderlined()) return subheading(label);
+                return text(label, Component.empty());
+            }
             return new Row(Component.empty(), Component.empty(), List.of(widget), false, null, "");
         }
 
@@ -232,7 +248,7 @@ final class SettingsList extends ContainerObjectSelectionList<SettingsList.Row> 
         }
 
         static Row heading(Component label) {
-            return new Row(label, Component.empty(), List.of(), true, null, "");
+            return new Row(label.copy().setStyle(Style.EMPTY), Component.empty(), List.of(), true, null, "");
         }
 
         static Row subheading(Component label) {
@@ -260,14 +276,28 @@ final class SettingsList extends ContainerObjectSelectionList<SettingsList.Row> 
                 text.setMaxWidth(Math.max(1, width - 24)).setMaxRows(Integer.MAX_VALUE);
                 return Math.max(38, text.getHeight() + 20);
             }
-            int inner = Math.max(20, width - 24 - (icon == null ? 0 : 40));
+            int inner = choice ? choiceTextWidth(width) : Math.max(20, width - 24 - (icon == null ? 0 : 40));
             int textLines = label.getString().isEmpty() ? 0 : Minecraft.getInstance().font.split(label, inner).size();
             int detailLines = detail.getString().isEmpty() ? 0 : Minecraft.getInstance().font.split(detail, inner).size();
             int contentHeight = Math.max(icon == null ? 0 : 32, (textLines + detailLines) * 12);
+            if (choice) return Math.max(40, inlineChoice(width) ? Math.max(contentHeight, 24) + 20 : contentHeight + 48);
             return Math.max(38, 16 + contentHeight + (widgets.isEmpty() ? 0 : controlHeight(width) + 4));
         }
 
+        // 宽屏名称与值分列，窄屏自动上下排列；两种布局共用同一套文字宽度与行高。
+        private boolean inlineChoice(int width) { return choice && width >= 340; }
+
+        private int choiceControlWidth(int width) {
+            return widgets.getFirst() instanceof CheckboxButton ? Math.min(44, Math.max(1, width - 20))
+                    : inlineChoice(width) ? Math.min(216, Math.max(140, (width - 20) / 2)) : Math.max(1, width - 20);
+        }
+
+        private int choiceTextWidth(int width) {
+            return Math.max(1, width - 20 - (inlineChoice(width) ? choiceControlWidth(width) + 16 : 0));
+        }
+
         private int controlHeight(int width) {
+            if (choice) return 24;
             if (widgets.size() == 1 && widgets.getFirst() instanceof CheckboxButton checkbox) {
                 return Math.max(24, Minecraft.getInstance().font.split(checkbox.getMessage(), Math.max(1, width - 50)).size() * 12 + 6);
             }
@@ -276,6 +306,12 @@ final class SettingsList extends ContainerObjectSelectionList<SettingsList.Row> 
 
         private void positionWidgets() {
             if (widgets.isEmpty()) return;
+            if (choice) {
+                int width = choiceControlWidth(getWidth());
+                int y = inlineChoice(getWidth()) ? getY() + (getHeight() - 24) / 2 : getY() + getHeight() - 32;
+                widgets.getFirst().setRectangle(width, 24, getX() + getWidth() - width - 10, y);
+                return;
+            }
             if (widgets.size() == 1 && widgets.getFirst() instanceof MultiLineTextWidget text) {
                 // 保留原生富文本的链接点击与键盘操作，长说明可以完整滚动阅读。
                 text.setMaxWidth(Math.max(1, getWidth() - 24));
@@ -317,7 +353,7 @@ final class SettingsList extends ContainerObjectSelectionList<SettingsList.Row> 
             }
             RoundedRect.fill(g, x, y + 1, width, getHeight() - 5, 10,
                     hovered ? YzuiTheme.surfaceHigh() : YzuiTheme.surfaceLow());
-            int textX = x + 10, textWidth = width - 20;
+            int textX = x + 10, textWidth = choice ? choiceTextWidth(width) : width - 20;
             if (icon != null) {
                 g.blit(RenderPipelines.GUI_TEXTURED, icon, textX, y + 9, 0, 0, 32, 32, 32, 32);
                 textX += 40;
@@ -336,7 +372,13 @@ final class SettingsList extends ContainerObjectSelectionList<SettingsList.Row> 
                     textY += 12;
                 }
             }
-            for (AbstractWidget widget : widgets) widget.extractRenderState(g, mouseX, mouseY, tick);
+            for (AbstractWidget widget : widgets) {
+                if (widget instanceof FocusableTextWidget text) {
+                    // 链接继续使用原版文字布局与命中区域，只绘制文字，绕过焦点背景和黑色边框。
+                    text.visitLines(g.textRendererForWidget(text, text.isMouseOver(mouseX, mouseY)
+                            ? GuiGraphicsExtractor.HoveredTextEffects.TOOLTIP_AND_CURSOR : GuiGraphicsExtractor.HoveredTextEffects.NONE));
+                } else widget.extractRenderState(g, mouseX, mouseY, tick);
+            }
         }
 
         @Override public List<? extends GuiEventListener> children() {

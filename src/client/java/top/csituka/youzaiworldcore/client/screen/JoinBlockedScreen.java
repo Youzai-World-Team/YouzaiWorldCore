@@ -26,8 +26,8 @@ import java.util.regex.Pattern;
  * 当满足以下两个条件时，点击标题屏幕的「加入服务器」按钮会显示本弹窗，
  * 提示玩家更换账户，仅提供「返回」按钮回到标题屏幕：
  * <ol>
- *   <li>本模组为开发版本（版本号内带有 {@code indev}，如 {@code 2.10.6-indev}）</li>
- *   <li>当前登录玩家代号形如 {@code Player<数字>}（如 {@code Player123}）</li>
+ * <li>本模组为开发版本（版本号内带有 {@code indev}，如 {@code 2.10.6-indev}）</li>
+ * <li>当前登录玩家代号形如 {@code Player<数字>}（如 {@code Player123}）</li>
  * </ol>
  * 判断逻辑见 {@link #isBlocked()}。
  * <p>
@@ -38,6 +38,7 @@ import java.util.regex.Pattern;
 @SuppressWarnings("null")
 public class JoinBlockedScreen extends Screen implements YzuiPopupScreen {
 
+    @SuppressWarnings("unused")
     private static final Logger LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/JoinBlockedScreen");
 
     public static final String MODULE = "JoinBlockedScreen";
@@ -64,8 +65,8 @@ public class JoinBlockedScreen extends Screen implements YzuiPopupScreen {
     /**
      * 判断当前是否应阻止加入服务器：
      * <ol>
-     *   <li>模组版本号包含 {@code indev}（开发版本，如 2.10.6-indev）</li>
-     *   <li>当前登录玩家代号匹配 {@code Player<数字>}（如 Player123）</li>
+     * <li>模组版本号包含 {@code indev}（开发版本，如 2.10.6-indev）</li>
+     * <li>当前登录玩家代号匹配 {@code Player<数字>}（如 Player123）</li>
      * </ol>
      * 任一条件不满足则放行。任何异常均视为放行并记录日志，绝不阻塞正常玩家。
      */
@@ -124,14 +125,19 @@ public class JoinBlockedScreen extends Screen implements YzuiPopupScreen {
 
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean isActuallyClick) {
-        if (GuiAnimationController.isExiting(this) || event.button() != InputConstants.MOUSE_BUTTON_LEFT) return true;
+        if (GuiAnimationController.isExiting(this) || event.button() != InputConstants.MOUSE_BUTTON_LEFT)
+            return true;
         return super.mouseClicked(event, isActuallyClick);
     }
 
     @Override
     public boolean keyPressed(KeyEvent keyEvent) {
-        if (GuiAnimationController.isExiting(this)) return true;
-        if (keyEvent.key() == InputConstants.KEY_ESCAPE) { onBack(); return true; }
+        if (GuiAnimationController.isExiting(this))
+            return true;
+        if (keyEvent.key() == InputConstants.KEY_ESCAPE) {
+            onBack();
+            return true;
+        }
         return super.keyPressed(keyEvent);
     }
 
@@ -154,7 +160,8 @@ public class JoinBlockedScreen extends Screen implements YzuiPopupScreen {
     // ========== 按钮回调 ==========
 
     private void onBack() {
-        if (GuiAnimationController.isExiting(this)) return;
+        if (GuiAnimationController.isExiting(this))
+            return;
         DebugLogger.info(MODULE, "玩家点击返回，淡出后回到标题屏幕");
         startExitAnimation(() -> {
             Minecraft.getInstance().setScreenAndShow(YzuiBackdrop.parent(this));
@@ -162,7 +169,8 @@ public class JoinBlockedScreen extends Screen implements YzuiPopupScreen {
     }
 
     private void startExitAnimation(Runnable onComplete) {
-        if (!GuiAnimationController.isExiting(this)) onComplete.run();
+        if (!GuiAnimationController.isExiting(this))
+            onComplete.run();
     }
 
 }

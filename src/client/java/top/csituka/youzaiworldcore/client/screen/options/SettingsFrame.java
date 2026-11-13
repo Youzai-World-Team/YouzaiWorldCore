@@ -22,6 +22,7 @@ final class SettingsFrame {
     final SettingsList content;
     final EditBox search;
     private final Screen screen;
+    private final boolean compactDialog;
     private final int x, y, width, height, navigationWidth;
     private final List<AbstractWidget> chrome = new ArrayList<>();
     private final Consumer<AbstractWidget> addWidget;
@@ -43,23 +44,29 @@ final class SettingsFrame {
         this.screen = screen;
         this.addWidget = addWidget;
         this.footer = List.copyOf(footer);
-        width = Math.min(1000, screen.width - 24);
-        height = screen.height - 20;
+        compactDialog = screen instanceof YzuiOptionsScreen options && options.isLinkConfirmation();
+        width = Math.min(compactDialog ? 400 : 1000, screen.width - (compactDialog ? 32 : 24));
+        var font = Minecraft.getInstance().font;
+        // 标题最多三行，长说明和网址留在可滚动正文中，避免挤出底部操作。
+        int titleHeight = compactDialog ? Math.clamp(font.split(screen.getTitle(), Math.max(1, width - 48)).size(), 1, 3) * (font.lineHeight + 2) : 0;
+        int titleBottom = compactDialog ? 24 + titleHeight + 12 : 72;
+        int messageHeight = compactDialog ? rows.stream().mapToInt(row -> row.heightFor(Math.max(1, width - 36))).sum() + 4 : 0;
+        height = compactDialog ? Math.min(screen.height - 32, Math.max(184, titleBottom + messageHeight + 68)) : screen.height - 20;
         x = (screen.width - width) / 2;
-        y = 10;
+        y = compactDialog ? (screen.height - height) / 2 : 10;
         boolean separateSections = screen instanceof YzuiOptionsScreen options && options.isUnified();
         navigationWidth = searchable && (separateSections || width >= 620) && rows.stream().anyMatch(row -> row.navigation)
                 ? Math.min(126, Math.max(88, width / 4)) : 0;
         bodyX = x + 12 + (navigationWidth == 0 ? 0 : navigationWidth + 12);
-        bodyY = y + 72;
+        bodyY = y + titleBottom;
         bodyWidth = width - 24 - (navigationWidth == 0 ? 0 : navigationWidth + 12);
-        bodyHeight = Math.max(40, height - 116);
+        bodyHeight = Math.max(compactDialog ? 24 : 40, height - titleBottom - (compactDialog ? 68 : 44));
 
         back = new TransparentButton(x + 12, y + 12, 28, 26, Component.literal("‹"), screen::onClose);
         back.setStyle(YzuiTheme.ButtonStyle.TEXT);
         back.setTooltip(Tooltip.create(Component.translatable("gui.back")));
         back.active = screen.shouldCloseOnEsc();
-        addChrome(back);
+        if (!compactDialog) addChrome(back);
         Component searchLabel = separateSections
                 ? YzuiOptionsScreen.text("search.all") : YzuiOptionsScreen.text("search");
         search = new EditBox(Minecraft.getInstance().font, bodyX + 2, y + 43,
@@ -79,11 +86,13 @@ final class SettingsFrame {
         rebuildNavigation(rows);
 
         int total = Math.max(1, footer.size());
-        int buttonWidth = Math.min(170, Math.max(30, (bodyWidth - (total - 1) * 8) / total));
-        int left = bodyX + bodyWidth - (buttonWidth * total + (total - 1) * 8);
+        int footerWidth = compactDialog ? width - 48 : bodyWidth;
+        int buttonWidth = Math.min(170, Math.max(30, (footerWidth - (total - 1) * 8) / total));
+        int left = x + width - (compactDialog ? 24 : 12) - (buttonWidth * total + (total - 1) * 8);
         for (int i = 0; i < footer.size(); i++) {
             AbstractWidget button = footer.get(i);
-            button.setRectangle(buttonWidth, 24, left + i * (buttonWidth + 8), y + height - 34);
+            button.setRectangle(buttonWidth, compactDialog ? 28 : 24, left + i * (buttonWidth + 8),
+                    y + height - (compactDialog ? 52 : 34));
             addChrome(button);
         }
     }
@@ -137,7 +146,10 @@ final class SettingsFrame {
         updateNavigation();
         YzuiTheme.card(g, x, y, width, height);
         var font = Minecraft.getInstance().font;
-        YzuiTheme.label(g, font, screen.getTitle(), x + 48, y + 19, width - 64, YzuiTheme.text(), false);
+        if (compactDialog) {
+            YzuiTheme.wrapped(g, font, screen.getTitle(), x + 24, y + 24, width - 48,
+                    Math.max(1, (bodyY - y - 36) / (font.lineHeight + 2)), YzuiTheme.text());
+        } else YzuiTheme.label(g, font, screen.getTitle(), x + 48, y + 19, width - 64, YzuiTheme.text(), false);
         if (navigationWidth > 0) {
             g.text(font, YzuiOptionsScreen.text("sections"), x + 20, y + 49, YzuiTheme.textMuted(), false);
             RoundedRect.fill(g, x + 12, bodyY, navigationWidth, bodyHeight, 10, YzuiTheme.surfaceLow());

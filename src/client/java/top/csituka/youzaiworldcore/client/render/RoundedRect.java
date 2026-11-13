@@ -15,6 +15,7 @@ import org.joml.Vector2f;
  * {@code fill()}。26.2 的 GUI 是延迟渲染架构，每次 {@code fill()} 都会分配一个
  * render-state 条目入队并参与后续排序合批，于是：
  * </p>
+ * 
  * <pre>
  *   r=3 → 39 次 fill    r=4 → 63 次 fill    r=6 → 135 次 fill
  * </pre>
@@ -66,16 +67,19 @@ public final class RoundedRect {
      * 回调可独立变换纹理，裁切轮廓始终保持在视口位置。
      */
     public static void clipped(GuiGraphicsExtractor g, int x, int y, int w, int h, int radius, Runnable draw) {
-        if (w <= 0 || h <= 0) return;
+        if (w <= 0 || h <= 0)
+            return;
         var pose = g.pose();
         var start = pose.transformPosition(x, y, new Vector2f());
         var end = pose.transformPosition(x + w, y + h, new Vector2f());
         int left = Math.round(start.x), top = Math.round(start.y);
         int width = Math.round(end.x) - left, height = Math.round(end.y) - top;
-        if (width <= 0 || height <= 0) return;
+        if (width <= 0 || height <= 0)
+            return;
         int r = Math.clamp(Math.round(radius * Math.min(pose.m00(), pose.m11())), 0, Math.min(width, height) / 2);
         clippedBand(g, left, top + r, width, height - 2 * r, draw);
-        if (r == 0) return;
+        if (r == 0)
+            return;
         int[] spans = spansFor(r);
         for (int row = 0; row < r; row++) {
             int inset = r - spans[row];
@@ -85,7 +89,8 @@ public final class RoundedRect {
     }
 
     private static void clippedBand(GuiGraphicsExtractor g, int x, int y, int w, int h, Runnable draw) {
-        if (w <= 0 || h <= 0) return;
+        if (w <= 0 || h <= 0)
+            return;
         g.pose().pushMatrix();
         try {
             g.pose().identity();
@@ -103,14 +108,16 @@ public final class RoundedRect {
     /** 整张图片等比覆盖圆角区域；非目标比例只裁切边缘，各条带互不重叠。 */
     public static void texture(GuiGraphicsExtractor g, Identifier texture,
             int x, int y, int w, int h, int radius, int imageWidth, int imageHeight, int tint) {
-        if (w <= 0 || h <= 0 || imageWidth <= 0 || imageHeight <= 0) return;
+        if (w <= 0 || h <= 0 || imageWidth <= 0 || imageHeight <= 0)
+            return;
         double scale = Math.max(w / (double) imageWidth, h / (double) imageHeight);
         int textureWidth = Math.max(w, (int) Math.ceil(imageWidth * scale));
         int textureHeight = Math.max(h, (int) Math.ceil(imageHeight * scale));
         float u = (textureWidth - w) / 2f, v = (textureHeight - h) / 2f;
         int r = Math.clamp(radius, 0, Math.min(w, h) / 2);
         blitBand(g, texture, x, y + r, w, h - 2 * r, u, v + r, textureWidth, textureHeight, tint);
-        if (r == 0) return;
+        if (r == 0)
+            return;
         int[] spans = spansFor(r);
         for (int row = 0; row < r; row++) {
             int inset = r - spans[row];
@@ -122,10 +129,12 @@ public final class RoundedRect {
         }
     }
 
+    @SuppressWarnings("null")
     private static void blitBand(GuiGraphicsExtractor g, Identifier texture,
             int x, int y, int w, int h, float u, float v, int textureWidth, int textureHeight, int tint) {
-        if (w > 0 && h > 0) g.blit(RenderPipelines.GUI_TEXTURED, texture,
-                x, y, u, v, w, h, textureWidth, textureHeight, tint);
+        if (w > 0 && h > 0)
+            g.blit(RenderPipelines.GUI_TEXTURED, texture,
+                    x, y, u, v, w, h, textureWidth, textureHeight, tint);
     }
 
     /**
@@ -161,7 +170,8 @@ public final class RoundedRect {
      * <p>
      * 宽度不足以容纳两端圆角（{@code w <= 2r}）时整体回退为直角矩形。对应原
      * {@code HotbarRenderer} / {@code ConfirmationDialog} / {@code ToggleButton} /
-     * {@code DropdownButton} / {@code FlyBeaconScreen} / {@code DecompositionTableScreen}
+     * {@code DropdownButton} / {@code FlyBeaconScreen} /
+     * {@code DecompositionTableScreen}
      * 这一族实现的既有行为。
      * </p>
      * <p>
