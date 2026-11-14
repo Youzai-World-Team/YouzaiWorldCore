@@ -1,7 +1,9 @@
 package top.csituka.youzaiworldcore.client.cosmetic;
 
+import com.google.common.collect.ImmutableMultimap;
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
+import com.mojang.authlib.properties.PropertyMap;
 import com.mojang.blaze3d.platform.NativeImage;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
@@ -239,11 +241,12 @@ public final class CosmeticClientManager {
         release(ownerUuid);
         long skinEpoch = sessionEpoch;
         try {
-            GameProfile profile = new GameProfile(payload.profileId(), payload.profileName());
-            if (payload.hasTextureProperty()) {
-                profile.properties().put("textures",
-                        new Property("textures", payload.textureValue(), payload.textureSignature()));
-            }
+            // 当前 Authlib 的属性表不可变，必须在构造档案时完整提供签名纹理。
+            PropertyMap properties = payload.hasTextureProperty()
+                    ? new PropertyMap(ImmutableMultimap.of("textures",
+                            new Property("textures", payload.textureValue(), payload.textureSignature())))
+                    : PropertyMap.EMPTY;
+            GameProfile profile = new GameProfile(payload.profileId(), payload.profileName(), properties);
             Minecraft client = Minecraft.getInstance();
             client.getSkinManager().get(profile).whenComplete((skin, error) -> client.execute(() -> {
                 if (skinEpoch != sessionEpoch

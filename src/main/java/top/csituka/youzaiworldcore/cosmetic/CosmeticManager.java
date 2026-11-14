@@ -3,6 +3,7 @@ package top.csituka.youzaiworldcore.cosmetic;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
+import top.csituka.youzaiworldcore.account.OnlineUuidLoginManager;
 import top.csituka.youzaiworldcore.account.util.AuthPlayerHelper;
 import top.csituka.youzaiworldcore.api.ApiServiceClient;
 import top.csituka.youzaiworldcore.config.CosmeticModuleSettings;
@@ -154,6 +155,18 @@ public final class CosmeticManager {
         VERIFYING_MOJANG_PROFILES.remove(player.getUUID());
         ONLINE_COSMETIC_OWNERS.remove(player.getUUID());
         ServerPlayNetworking.send(player, CosmeticReadyPayload.disabled());
+        if (OnlineUuidLoginManager.isTrustedOnlineIdentity(server, player.getUUID())) {
+            // 登录阶段已经证明正版身份，直接复用该连接的完整档案，避免重复挑战失败后回落离线外观。
+            GameProfile profile = player.getGameProfile();
+            Property textures = findTexturesProperty(profile);
+            ACTIVE_APPEARANCE_SESSIONS.put(player.getUUID(), UUID.randomUUID().toString());
+            handleMojangVerificationSucceeded(player, new MojangProfile(
+                    profile.id(), profile.name(),
+                    textures == null ? "" : textures.value(),
+                    textures == null ? "" : textures.signature()));
+            DebugLogger.info(MODULE, "已复用玩家 %s 登录阶段核验的正版外观档案", player.getScoreboardName());
+            return;
+        }
         requestMojangVerification(player);
         DebugLogger.info(MODULE, "已向玩家 %s 发起 Mojang 正版外观核验", player.getScoreboardName());
     }
