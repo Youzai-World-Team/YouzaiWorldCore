@@ -296,7 +296,9 @@ public final class MapRenderer {
             if (!MapClient.visibleWaypoint(point) || MapClient.navigation() != null && !point.id().equals(MapClient.navigation())) continue;
             var target = point.projected(MapClient.dimension(), MapSettings.enabled(MapSettings.Toggle.PORTAL_PROJECTION));
             if (target == null) continue;
-            double distance = Math.hypot(target.x() - player.getX(), target.z() - player.getZ());
+            // 世界导航使用完整三维距离，垂直高差同样参与排序、显示及距离限制。
+            double dx = target.x() - player.getX(), dy = point.y() - player.getY(), dz = target.z() - player.getZ();
+            double distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
             if (distance > MapSettings.waypointDistance()) continue;
             targets.add(new Target(point, target, distance));
         }
@@ -305,8 +307,8 @@ public final class MapRenderer {
         int edgeIndex = 0;
         for (var candidate : targets.subList(0, Math.min(8, targets.size()))) {
             var point = candidate.point(); var target = candidate.position(); double distance = candidate.distance();
-            float targetY = point.dimension().equals(MapClient.dimension()) ? point.y() + 2 : (float) player.getY() + 2;
-            var clip = matrix.transform(new Vector4f((float) (target.x() - origin.x), targetY - (float) origin.y, (float) (target.z() - origin.z), 1));
+            // 标点精确投影到保存的 XYZ；跨维度只换算 X/Z，不跟随玩家高度。
+            var clip = matrix.transform(new Vector4f((float) (target.x() - origin.x), (float) (point.y() - origin.y), (float) (target.z() - origin.z), 1));
             boolean visible = clip.w > 0.01f && Math.abs(clip.x) < clip.w * 0.9f && Math.abs(clip.y) < clip.w * 0.8f;
             if (!visible && MapClient.navigation() == null) continue;
             int x, y;
