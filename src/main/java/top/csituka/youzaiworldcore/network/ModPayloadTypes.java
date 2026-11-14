@@ -70,6 +70,8 @@ public final class ModPayloadTypes {
                                 DoubleDoorsTogglePayload.STREAM_CODEC);
                 PayloadTypeRegistry.serverboundPlay().register(InvisibilityPayload.ID,
                                 InvisibilityPayload.STREAM_CODEC);
+                PayloadTypeRegistry.serverboundPlay().register(PetMenuRequestPayload.ID, PetMenuRequestPayload.STREAM_CODEC);
+                PayloadTypeRegistry.clientboundPlay().register(PetMenuStatePayload.ID, PetMenuStatePayload.STREAM_CODEC);
                 PayloadTypeRegistry.serverboundPlay().register(PetCommandPayload.ID, PetCommandPayload.STREAM_CODEC);
                 PayloadTypeRegistry.serverboundPlay().register(TrinketInteractPayload.ID,
                                 TrinketInteractPayload.STREAM_CODEC);
@@ -83,6 +85,7 @@ public final class ModPayloadTypes {
                                 CosmeticRequestPayload.STREAM_CODEC);
                 PayloadTypeRegistry.serverboundPlay().register(MojangProfileRequestPayload.ID,
                                 MojangProfileRequestPayload.STREAM_CODEC);
+                PayloadTypeRegistry.clientboundPlay().register(AttributeUpgradeResultPayload.ID, AttributeUpgradeResultPayload.STREAM_CODEC);
                 PayloadTypeRegistry.serverboundPlay().register(AttributeUpgradePayload.TYPE,
                                 AttributeUpgradePayload.STREAM_CODEC);
                 PayloadTypeRegistry.serverboundPlay().register(MailComposeOpenPayload.ID,

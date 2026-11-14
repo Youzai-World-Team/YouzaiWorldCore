@@ -233,7 +233,6 @@ final class SettingsList extends ContainerObjectSelectionList<SettingsList.Row> 
         /** 在对应侧栏按钮上方显示的纯文本分组标题。 */
         Component navigationGroup;
         String sectionId;
-        boolean advanced;
         private Component breadcrumb = Component.empty();
         private Row section;
         private final Identifier icon;

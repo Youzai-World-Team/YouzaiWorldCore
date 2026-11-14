@@ -84,31 +84,34 @@ public final class YzWorldMapScreen extends Screen {
         left = 0; top = 0; mapWidth = Math.max(1, width); mapHeight = Math.max(1, height);
         unit = Math.clamp(Math.min(width / 40, height / 25), 18, 36);
         inset = Math.max(6, unit / 2);
-        int right = width - inset - unit, bottom = height - inset - unit;
+        int right = width - inset - unit;
         icon(right, inset, MapIconButton.Icon.CLOSE, "done", this::onClose);
 
-        // 缩放轨道在小窗口中收短，为底部两个入口留出空间。
+        // 缩放轨道在小窗口中收短，为底部文字入口留出空间。
         int zoomY = Math.max(inset + unit + 8, height / 4);
         zoomTop = zoomY + unit + 10;
-        zoomBottom = Math.max(zoomTop + 12, Math.min(height * 2 / 3, bottom - unit * 2 - 24));
+        zoomBottom = Math.max(zoomTop + 12, Math.min(height * 2 / 3, height - inset - 26 - unit * 2 - 26));
         icon(inset, zoomY, MapIconButton.Icon.PLUS, "zoom_in", () -> zoom(scale * 1.25));
         icon(inset, zoomBottom + 10, MapIconButton.Icon.MINUS, "zoom_out", () -> zoom(scale / 1.25));
-        icon(inset, bottom - unit - 6, MapIconButton.Icon.CENTER, "recenter", this::recenter);
-        icon(inset, bottom, MapIconButton.Icon.SETTINGS, "settings", this::openSettings);
-        icon(inset + unit + 8, bottom, MapIconButton.Icon.PIN, "waypoints", this::openWaypoints);
-        icon(inset + (unit + 8) * 2, bottom, MapIconButton.Icon.PLAYERS, "players", () -> openOverlay(new MapPlayersPanel(this)));
-        icon(inset + (unit + 8) * 3, bottom, MapIconButton.Icon.RADAR, "radar", () -> openOverlay(new MapRadarPanel(this)));
+        icon(inset, height - inset - 26 - unit - 8, MapIconButton.Icon.CENTER, "recenter", this::recenter);
+        int entryWidth = Math.min(110, (width - inset * 2 - 24) / 5);
+        int entryY = height - inset - 26;
+        String[] entryKeys = { "settings", "waypoints", "players", "radar", "dimension" };
+        Runnable[] entryActions = { this::openSettings, this::openWaypoints,
+                () -> openOverlay(new MapPlayersPanel(this)), () -> openOverlay(new MapRadarPanel(this)), this::openDimensions };
+        for (int i = 0; i < entryKeys.length; i++) {
+            button(inset + i * (entryWidth + 6), entryY, entryWidth, MapTexts.text(entryKeys[i]), entryActions[i]).setHeight(26);
+        }
 
         layerControls.clear();
         exploredLayers = availableLayers();
         if (exploredHeight != null && !exploredLayers.contains(exploredHeight)) exploredHeight = null;
         rebuildLayerControls();
-        icon(right, bottom, MapIconButton.Icon.MAP, "dimension", this::openDimensions);
+
         infoWidth = Math.min(260, Math.max(100, width / 3));
         infoX = right - infoWidth - 8;
-        infoY = bottom + unit - 40;
-        // 窄屏底部入口与坐标卡片错行，避免相互遮挡。
-        if (infoX < inset + (unit + 8) * 5) infoY = bottom - 50;
+        // 坐标卡片放在底部入口上方，避免窄屏遮挡。
+        infoY = entryY - 48;
         if (settingsPanel != null) { settingsPanel.layout(width, height); addWidget(settingsPanel); panelAnimation.show(settingsPanel); }
         if (detailPanel != null) { detailPanel.layout(width, height); addWidget(detailPanel); panelAnimation.show(detailPanel); }
         if (overlayPanel != null) { overlayPanel.layout(width, height); addWidget(overlayPanel); panelAnimation.show(overlayPanel); }

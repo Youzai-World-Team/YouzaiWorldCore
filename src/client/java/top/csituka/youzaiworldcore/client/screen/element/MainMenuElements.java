@@ -56,13 +56,18 @@ public class MainMenuElements implements MenuElementGroup {
             button.setExternalAlpha(alpha);
             buttons.add(button);
         }
-        var settings = layout.footer(0);
-        buttons.add(new TransparentButton(settings.x(), settings.y(), settings.width(), settings.height(),
-                Component.translatable("screen.youzaiworldcore.navigation.settings"),
-                () -> screen.switchTo(new SettingsMenuElements())));
-        var more = layout.footer(1);
-        buttons.add(new TransparentButton(more.x(), more.y(), more.width(), more.height(),
-                text("more"), () -> screen.switchTo(new MoreMenuElements())));
+        Runnable[] shortcuts = {
+                () -> screen.startExit(() -> Minecraft.getInstance().setScreenAndShow(new top.csituka.youzaiworldcore.client.screen.PetScreen(screen))),
+                () -> screen.startExit(() -> Minecraft.getInstance().setScreenAndShow(YzWorldMapScreen.withWaypoints(screen))),
+                () -> screen.switchTo(new SettingsMenuElements()),
+                () -> screen.switchTo(new MoreMenuElements())
+        };
+        Component[] labels = { text("pets"), text("waypoints"),
+                Component.translatable("screen.youzaiworldcore.navigation.settings"), text("more") };
+        for (int i = 0; i < shortcuts.length; i++) {
+            var bounds = layout.shortcut(i);
+            buttons.add(new TransparentButton(bounds.x(), bounds.y(), bounds.width(), bounds.height(), labels[i], shortcuts[i]));
+        }
         updateButtons(buttons);
         return buttons;
     }

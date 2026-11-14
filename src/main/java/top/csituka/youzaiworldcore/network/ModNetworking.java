@@ -670,9 +670,20 @@ public class ModNetworking {
         // ===== 属性加点 C2S 处理器 =====
         ServerPlayNetworking.registerGlobalReceiver(AttributeUpgradePayload.TYPE, (payload, context) -> {
             var player = context.player();
-            player.level().getServer().execute(() -> {
-                AttributeManager.handleUpgrade(player, payload.attributeKey());
+            var server = player.level().getServer();
+            if (server == null) return;
+            server.execute(() -> {
+                if (player.hasDisconnected()) return;
+                boolean success = !top.csituka.youzaiworldcore.account.util.AuthPlayerHelper.shouldBlockActions(player)
+                        && AttributeManager.handleUpgrade(player, payload.attributeKey());
+                if (!success) AttributeManager.syncToClient(player);
+                ServerPlayNetworking.send(player, new AttributeUpgradeResultPayload(payload.requestId(), success));
             });
+        });
+
+        ServerPlayNetworking.registerGlobalReceiver(PetMenuRequestPayload.ID, (payload, context) -> {
+            var player = context.player(); var server = player.level().getServer();
+            if (server != null) server.execute(() -> top.csituka.youzaiworldcore.pet.PetMenuHandler.handle(player, payload));
         });
 
         // ===== 宠物管理命令 C2S 转发处理器 =====

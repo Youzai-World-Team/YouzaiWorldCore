@@ -51,6 +51,7 @@
     "MinecraftQuitMixin",
     "enchlevellangpatch.EnchantmentLevelLangPatchMixin",
     "highlightitem.AbstractContainerScreenMixin",
+    "OptionsDefaultsMixin",
     "OptionsSaveMixin",
     "MouseHandlerScrollMixin",
     "ScrollHotbarInputMixin",

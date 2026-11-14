@@ -3,7 +3,6 @@ package top.csituka.youzaiworldcore.client.screen.element;
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
 import top.csituka.youzaiworldcore.client.render.RoundedRect;
 
-import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractWidget;
@@ -12,7 +11,11 @@ import top.csituka.youzaiworldcore.client.screen.MenuScreen;
 import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
 import top.csituka.youzaiworldcore.client.hud.AdventureLevelHudRenderer;
 import top.csituka.youzaiworldcore.client.skill.ClientAttributeData;
-import top.csituka.youzaiworldcore.network.AttributeUpgradePayload;
+
+import top.csituka.youzaiworldcore.client.screen.widget.ConfirmationDialog;
+import top.csituka.youzaiworldcore.client.skill.AttributeUpgradeRequests;
+import net.minecraft.client.gui.components.Tooltip;
+import net.minecraft.network.chat.Component;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -73,7 +76,7 @@ public class AdventureLevelMenuElements implements MenuElementGroup {
             AttrDef attr = ATTRS[i];
             PlusButton button = new PlusButton(startX + (i % 3) * (cellWidth + 8) + cellWidth - 28,
                     gridY + (i / 3) * ROW_PITCH + 7, 22, 22,
-                    () -> ClientPlayNetworking.send(new AttributeUpgradePayload(attr.key)));
+                    () -> preview(screen, attr));
             button.setExternalAlpha(alpha);
             buttons.add(button);
         }
@@ -87,7 +90,13 @@ public class AdventureLevelMenuElements implements MenuElementGroup {
         int points = ClientAttributeData.getSkillPointsAvailable();
         for (int i = 0; i < ATTRS.length; i++) {
             AbstractWidget button = buttons.get(i);
-            button.active = points > 0 && (level >= 20 || "damageResistance".equals(ATTRS[i].key));
+            AttrDef attr = ATTRS[i];
+            boolean capped = "damageResistance".equals(attr.key) && ClientAttributeData.get(attr.key) >= 40;
+            button.active = !AttributeUpgradeRequests.waiting() && !capped && points > 0
+                    && (level >= 20 || "damageResistance".equals(attr.key));
+            button.setTooltip(Tooltip.create(Component.translatable("screen.youzaiworldcore.upgrade."
+                    + (capped ? "cap" : points <= 0 ? "no_points" : level < 20 && !"damageResistance".equals(attr.key) ? "locked" : "preview"),
+                    attr.shortName, attr.format.formatted(attr.stepPercent))));
             if (!button.active)
                 button.setFocused(false);
         }
@@ -130,7 +139,9 @@ public class AdventureLevelMenuElements implements MenuElementGroup {
         YzuiTheme.label(guiGraphics, font, net.minecraft.network.chat.Component.translatable(
                 "youzaiworldcore.message.gui.skill_points_available", points),
                 x, top + 78, w, YzuiTheme.alpha(YzuiTheme.primary(), alpha), true);
-        if (ClientAttributeData.getPlayerLevel() < 20) {
+        if (!AttributeUpgradeRequests.status().getString().isBlank()) {
+            YzuiTheme.label(guiGraphics, font, AttributeUpgradeRequests.status(), x, top + 94, w, muted, true);
+        } else if (ClientAttributeData.getPlayerLevel() < 20) {
             YzuiTheme.label(guiGraphics, font, net.minecraft.network.chat.Component.translatable(
                     "youzaiworldcore.message.gui.lock_hint", 20), x, top + 94, w, muted, true);
         }
@@ -143,12 +154,24 @@ public class AdventureLevelMenuElements implements MenuElementGroup {
             YzuiTheme.label(guiGraphics, font, net.minecraft.network.chat.Component.literal(attr.shortName),
                     cellX + 8, cellY + 5, cellWidth - 42, normal, false);
             YzuiTheme.label(guiGraphics, font,
-                    net.minecraft.network.chat.Component.literal(attr.format.formatted(value * attr.stepPercent)),
+                    net.minecraft.network.chat.Component.literal(attr.format.formatted(("damageResistance".equals(attr.key) ? Math.min(40, value) : value) * attr.stepPercent)),
                     cellX + 8, cellY + 21, cellWidth - 42,
                     value > 0 ? YzuiTheme.alpha(YzuiTheme.success(), alpha) : muted, false);
         }
         YzuiTheme.label(guiGraphics, font, net.minecraft.network.chat.Component.translatable(
                 "youzaiworldcore.message.gui.exp_from_activities"), x, top + 244, w, muted, true);
+    }
+
+    private void preview(MenuScreen screen, AttrDef attr) {
+        int value = ClientAttributeData.get(attr.key);
+        if (AttributeUpgradeRequests.waiting()) return;
+        screen.showDialog(new ConfirmationDialog(
+                I18n.get("screen.youzaiworldcore.upgrade.title", attr.shortName),
+                new String[] { I18n.get("screen.youzaiworldcore.upgrade.cost"),
+                        I18n.get("screen.youzaiworldcore.upgrade.change", attr.format.formatted(value * attr.stepPercent),
+                                attr.format.formatted((value + 1) * attr.stepPercent)) },
+                I18n.get("screen.youzaiworldcore.upgrade.confirm"), I18n.get("gui.cancel"),
+                () -> AttributeUpgradeRequests.submit(attr.key), null));
     }
 
     /**

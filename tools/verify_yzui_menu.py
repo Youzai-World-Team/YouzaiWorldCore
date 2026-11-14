@@ -143,6 +143,7 @@ public class Screen {
     public void extractRenderState(GuiGraphicsExtractor g,int x,int y,float tick){}
     public void extractBackground(GuiGraphicsExtractor g,int x,int y,float tick){}
     public void onClose(){}
+    public void removed(){}
     public boolean shouldCloseOnEsc(){return true;}
     public boolean isPauseScreen(){return false;}
     public boolean keyPressed(KeyEvent e){return false;}
@@ -222,6 +223,8 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.resources.Identifier;
 public class Minecraft {
     private static final Minecraft INSTANCE=new Minecraft();
+    public Object connection=new Object();
+    public Object getConnection(){return connection;}
     public final Font font=new Font();
     public LocalPlayer player=new LocalPlayer();
     public Level level=new Level();
@@ -261,8 +264,10 @@ stub("net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking", """
 public class ClientPlayNetworking {public static Object last;public static boolean supported=true;public static boolean canSend(Object id){return supported;}public static void send(Object p){last=p;}}
 """)
 stub(P + ".YouzaiworldCore", """public class YouzaiworldCore {public static final String MOD_ID="youzaiworldcore";}""")
-stub(P + ".util.DebugLogger", """public class DebugLogger {public static void debug(String m,String s,Object...args){}}""")
-stub(P + ".network.AttributeUpgradePayload", """public record AttributeUpgradePayload(String key) {}""")
+stub(P + ".util.DebugLogger", """public class DebugLogger {public static void debug(String m,String s,Object...args){} public static void info(String m,String s,Object...args){}}""")
+stub(P + ".network.AttributeUpgradePayload", """public record AttributeUpgradePayload(String key, long requestId) {}""")
+stub(P + ".network.AttributeUpgradeResultPayload", "public record AttributeUpgradeResultPayload(long requestId,boolean success) {}")
+stub(C + ".screen.PetScreen", "public class PetScreen extends net.minecraft.client.gui.screens.Screen {public PetScreen(net.minecraft.client.gui.screens.Screen p){super(net.minecraft.network.chat.Component.empty());}}")
 stub(P + ".dimensionalinventories.WorldPoolTeleportPayload", """public record WorldPoolTeleportPayload(String poolId) {}""")
 stub(P + ".network.WorldPoolMenuRequestPayload", """
 public record WorldPoolMenuRequestPayload(java.util.UUID requestId, String poolId) { public static final Object ID = new Object(); }
@@ -281,6 +286,7 @@ public class TitleClientState { public static net.minecraft.network.chat.Compone
 stub(C + ".screen.map.YzWorldMapScreen", """
 public class YzWorldMapScreen extends net.minecraft.client.gui.screens.Screen {
     public final net.minecraft.client.gui.screens.Screen parent;
+    public static YzWorldMapScreen withWaypoints(net.minecraft.client.gui.screens.Screen parent){return new YzWorldMapScreen(parent);}
     public YzWorldMapScreen(net.minecraft.client.gui.screens.Screen parent) { super(net.minecraft.network.chat.Component.empty()); this.parent=parent; }
 }
 """)
@@ -294,10 +300,10 @@ public class AdventureLevelHudRenderer {
 """)
 stub(C + ".skill.ClientAttributeData", """
 public class ClientAttributeData {
-    public static int level=19,points=1;
+    public static int level=19,points=1,resistance=0;
     public static int getPlayerLevel(){return level;}
     public static int getSkillPointsAvailable(){return points;}
-    public static int get(String k){return 1000000;}
+    public static int get(String k){return k.equals("damageResistance")?resistance:1000000;}
 }
 """)
 stub(C + ".animation.GuiAnimationController", """
@@ -360,6 +366,7 @@ public class ConfirmationDialog {
     public final Runnable confirm;private boolean visible;
     public ConfirmationDialog(String t,String[] lines,String label,Runnable c){confirm=c;}
     public ConfirmationDialog(String t,String[] lines,Runnable c,Runnable cancel){confirm=c;}
+    public ConfirmationDialog(String t,String[] lines,String yes,String no,Runnable c,Runnable cancel){confirm=c;}
     public void init(int w,int h){} public void show(){visible=true;} public void hide(){visible=false;}
     public boolean isVisible(){return visible;}
     public void render(net.minecraft.client.gui.GuiGraphicsExtractor g,int w,int h){}
@@ -506,7 +513,7 @@ public class MenuChecks {
                 List<AbstractWidget> buttons=group.createButtons(menu,w,h,1,1);
                 widgets(buttons,w,MenuLayout.CONTENT_TOP,layout.contentBottom());
                 if(group instanceof MainMenuElements||group instanceof SwitchWorldMenuElements){
-                    check(buttons.size()==(group instanceof MainMenuElements?8:10),"导航数量不匹配");
+                    check(buttons.size()==10,"导航数量不匹配");
                     if(group instanceof SwitchWorldMenuElements) for(var button:buttons)check(button.getWidth()==button.getHeight()*2,"世界按钮比例变形");
                 }
                 GuiGraphicsExtractor g=new GuiGraphicsExtractor();
@@ -774,8 +781,54 @@ public class MenuChecks {
             }
         }
     }
+    static void keyboard()throws Exception{
+        var home=new MainMenuElements();var menu=new Menu(home);menu.setup(854,480);
+        var client=Minecraft.getInstance();client.gui.setScreen(menu);
+        menu.keyPressed(new KeyEvent(79,false));check(menu.registered.get(0).isFocused(),"方向键未建立初始焦点");
+        menu.keyPressed(new KeyEvent(79,false));check(menu.registered.get(1).isFocused(),"向右未移到下一张卡片");
+        menu.keyPressed(new KeyEvent(81,false));check(menu.registered.get(4).isFocused(),"向下未移到同列卡片");
+        menu.keyPressed(new KeyEvent(80,false));check(menu.registered.get(3).isFocused(),"向左未移到同排卡片");
+        menu.setup(480,360);check(menu.registered.get(3).isFocused(),"窗口重排丢失当前入口焦点");
+        GuiAnimationController.enabled=false;
+        menu.switchTo(new AboutMeMenuElements());menu.onClose();
+        check(menu.registered.get(3).isFocused(),"返回父菜单后焦点未恢复原入口");
+        var plain=new ArrayList<AbstractWidget>();
+        for(int i=0;i<3;i++)plain.add(new TransparentButton(i*60,0,50,24,Component.literal("item"+i),()->{}));
+        plain.get(0).setFocused(true);plain.get(1).active=false;
+        WidgetFocus.moveInGrid(new KeyEvent(79,false),plain);
+        check(plain.get(2).isFocused(),"方向键没有跳过禁用控件");
+        WidgetFocus.moveInGrid(new KeyEvent(79,false),plain);
+        check(plain.get(2).isFocused(),"边缘方向键跳到无关控件");
+        var direct=new Menu(new AboutMeMenuElements());direct.setup(480,360);client.gui.setScreen(direct);
+        var back=MenuScreen.class.getDeclaredField("backButton");back.setAccessible(true);
+        var button=(AbstractWidget)back.get(direct);
+        button.mouseClicked(new MouseButtonEvent(button.getX()+1,button.getY()+1,1),true);
+        check(client.gui.screen==null,"直接打开子页的返回按钮无效");
+        GuiAnimationController.enabled=true;
+    }
+    static void upgrades()throws Exception{
+        var client=Minecraft.getInstance();
+        var data=top.csituka.youzaiworldcore.client.skill.ClientAttributeData.class;
+        var group=new AdventureLevelMenuElements();var menu=new Menu(group);menu.setup(480,360);
+        ClientAttributeData.resistance=40;group.updateButtons(menu.registered);
+        check(!menu.registered.get(8).active,"满抗性仍可消耗点数");ClientAttributeData.resistance=0;
+        top.csituka.youzaiworldcore.client.skill.AttributeUpgradeRequests.submit("damageResistance");
+        var sent=(top.csituka.youzaiworldcore.network.AttributeUpgradePayload)net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.last;
+        check(top.csituka.youzaiworldcore.client.skill.AttributeUpgradeRequests.waiting(),"加点没有等待服务端结果");
+        top.csituka.youzaiworldcore.client.skill.AttributeUpgradeRequests.submit("luck");
+        check(net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.last==sent,"加点等待期间重复提交");
+        top.csituka.youzaiworldcore.client.skill.AttributeUpgradeRequests.receive(new top.csituka.youzaiworldcore.network.AttributeUpgradeResultPayload(sent.requestId()+1,true),client.getConnection());
+        check(top.csituka.youzaiworldcore.client.skill.AttributeUpgradeRequests.waiting(),"迟到加点结果误匹配");
+        top.csituka.youzaiworldcore.client.skill.AttributeUpgradeRequests.receive(new top.csituka.youzaiworldcore.network.AttributeUpgradeResultPayload(sent.requestId(),true),new Object());
+        check(top.csituka.youzaiworldcore.client.skill.AttributeUpgradeRequests.waiting(),"旧连接加点结果误匹配");
+        top.csituka.youzaiworldcore.client.skill.AttributeUpgradeRequests.receive(new top.csituka.youzaiworldcore.network.AttributeUpgradeResultPayload(sent.requestId(),false),client.getConnection());
+        check(!top.csituka.youzaiworldcore.client.skill.AttributeUpgradeRequests.waiting(),"拒绝加点后按钮未恢复");
+        top.csituka.youzaiworldcore.client.skill.AttributeUpgradeRequests.submit("luck");
+        var deadline=top.csituka.youzaiworldcore.client.skill.AttributeUpgradeRequests.class.getDeclaredField("deadline");deadline.setAccessible(true);deadline.setLong(null,0);
+        check(!top.csituka.youzaiworldcore.client.skill.AttributeUpgradeRequests.waiting(),"加点请求未超时");
+    }
     public static void main(String[] args)throws Exception{
-        geometry();forms();images();lifecycle();worldActions();closure();contrast();
+        geometry();forms();images();lifecycle();worldActions();closure();contrast();keyboard();upgrades();
         System.out.println("Shift+F 回归通过："+viewports+" 组页面/窗口组合；表单定位、卡片图标/文字、控件复用、即时关闭/锁定、分区过渡与 7 个维度池入口。");
     }
 }
@@ -811,7 +864,7 @@ def main():
         "render/MenuIcon.java", "render/YzuiMenuPanel.java", "screen/YzuiMenuScreen.java",
         "screen/widget/MenuNavigationButton.java", "screen/widget/MenuCloseButton.java",
         "screen/MenuScreen.java", "screen/widget/TransparentButton.java", "screen/widget/TextureTileButton.java",
-        "screen/widget/WidgetFocus.java",
+        "screen/widget/WidgetFocus.java", "skill/AttributeUpgradeRequests.java",
         *["screen/element/" + name + ".java" for name in (
             "MenuLayout", "MenuElementGroup", "MainMenuElements", "MoreMenuElements", "SwitchWorldMenuElements",
             "AboutMeMenuElements", "AdventureLevelMenuElements", "SettingsMenuElements")],

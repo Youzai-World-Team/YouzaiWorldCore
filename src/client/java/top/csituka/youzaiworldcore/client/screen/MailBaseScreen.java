@@ -17,8 +17,8 @@ import top.csituka.youzaiworldcore.client.animation.GuiAnimationController;
  * 统一负责两件事：
  * </p>
  * <ol>
- *   <li><b>缩放适配</b>——界面坐标一律写在 {@link MailViewport} 的设计空间里，
- *       由本类在渲染前压入缩放矩阵、在输入事件里反向换算，从而适配任意分辨率与界面尺寸。</li>
+ *   <li><b>自适应视口</b>——界面按当前 GUI 宽高排版，普通窗口保留字号；
+ *       极端小窗口由视口统一换算绘制与点击坐标。</li>
  *   <li><b>进出场动画</b>——所有动画范围使用统一页面过渡，
  *       返回/关闭时完成过渡再切屏，绘制与点击使用同一坐标变换。</li>
  * </ol>
@@ -74,7 +74,7 @@ public abstract class MailBaseScreen extends Screen implements YzuiMenuScreen {
         try {
             renderMailContent(graphics, designMouseX, designMouseY, partialTick);
             if (!GuiAnimationController.isBackgroundRendering()) {
-                MailToast.render(graphics, font, MailViewport.DESIGN_WIDTH);
+                MailToast.render(graphics, font, viewport.width());
             }
         } finally {
             viewport.pop(graphics);
@@ -123,6 +123,12 @@ public abstract class MailBaseScreen extends Screen implements YzuiMenuScreen {
 
     /** 供子类的手动列表、附件与收件人选择器阻止退出期间重复操作。 */
     protected final boolean isExiting() { return GuiAnimationController.isExiting(this); }
+
+    @Override
+    public void removed() {
+        MailNavigationRequests.cancel(this);
+        super.removed();
+    }
 
     @Override
     public void closeMenu() {

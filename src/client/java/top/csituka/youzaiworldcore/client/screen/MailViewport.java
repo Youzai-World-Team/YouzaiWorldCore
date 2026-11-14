@@ -3,19 +3,15 @@ package top.csituka.youzaiworldcore.client.screen;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.input.MouseButtonEvent;
 
-/**
- * 邮件界面的等比缩放视口。
- * <p>
- * 三个邮件界面的坐标全部按「设计空间」硬编码：{@value #DESIGN_WIDTH}×{@value #DESIGN_HEIGHT}
- * GUI 单位（即 1920×1080 分辨率 + 界面尺寸 2 时的可用区域）。本类负责把设计空间等比映射到
- * 任意真实屏幕尺寸上：渲染前压入缩放矩阵，输入事件则反向换算回设计坐标，
- * 从而在任何分辨率 / 界面尺寸下都保持相同排版，不会重叠或溢出。
- * </p>
- */
+/** 邮件自适应视口：普通窗口保留 GUI 字号，仅小于 320×240 的极端视口缩放。 */
 final class MailViewport {
 
     static final int DESIGN_WIDTH = 960;
     static final int DESIGN_HEIGHT = 540;
+
+    private int canvasWidth = DESIGN_WIDTH, canvasHeight = DESIGN_HEIGHT;
+    int width() { return canvasWidth; }
+    int height() { return canvasHeight; }
 
     private float scale = 1f;
     private float offsetX;
@@ -32,12 +28,12 @@ final class MailViewport {
      * @param screenHeight 屏幕高（GUI 单位）
      */
     void update(int screenWidth, int screenHeight) {
-        scale = Math.min(screenWidth / (float) DESIGN_WIDTH, screenHeight / (float) DESIGN_HEIGHT);
-        if (scale <= 0f) {
-            scale = 1f;
-        }
-        offsetX = (screenWidth - DESIGN_WIDTH * scale) / 2f;
-        offsetY = (screenHeight - DESIGN_HEIGHT * scale) / 2f;
+        canvasWidth = Math.max(320, screenWidth);
+        canvasHeight = Math.max(240, screenHeight);
+        scale = Math.min(1f, Math.min(screenWidth / (float) canvasWidth, screenHeight / (float) canvasHeight));
+        if (scale <= 0f) scale = 1f;
+        offsetX = (screenWidth - canvasWidth * scale) / 2f;
+        offsetY = (screenHeight - canvasHeight * scale) / 2f;
     }
 
     float scale() {

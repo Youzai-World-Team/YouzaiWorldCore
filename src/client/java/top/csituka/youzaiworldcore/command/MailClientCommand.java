@@ -5,6 +5,7 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import top.csituka.youzaiworldcore.network.*;
+import top.csituka.youzaiworldcore.client.screen.MailNavigationRequests;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
 import java.util.UUID;
@@ -32,14 +33,14 @@ public class MailClientCommand {
                                 .then(literal("send_mail")
                                         .executes(cmdContext -> {
                                             DebugLogger.info(MODULE, "转发命令: send_mail");
-                                            ClientPlayNetworking.send(new MailComposeOpenPayload());
+                                            MailNavigationRequests.compose(null);
                                             return Command.SINGLE_SUCCESS;
                                         })
                                 )
                                 .then(literal("sent")
                                         .executes(cmdContext -> {
                                             DebugLogger.info(MODULE, "转发命令: sent");
-                                            ClientPlayNetworking.send(new MailSentListRequestPayload());
+                                            MailNavigationRequests.sent(null);
                                             return Command.SINGLE_SUCCESS;
                                         })
                                 )

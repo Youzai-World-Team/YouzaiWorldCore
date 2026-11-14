@@ -34,6 +34,10 @@ import top.csituka.youzaiworldcore.network.MailSentListRequestPayload;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 import top.csituka.youzaiworldcore.util.ItemStackNbtUpgrader;
 
+import com.google.gson.Gson;
+import net.minecraft.client.gui.components.AbstractWidget;
+import top.csituka.youzaiworldcore.client.screen.widget.MenuCloseButton;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -116,6 +120,19 @@ public class MailComposeScreen extends MailBaseScreen {
     private Prefill originalPrefill;
     private FormOptions originalOptions;
     private ConfirmationDialog discardDialog;
+    private MenuCloseButton closeButton;
+    private List<AbstractWidget> formWidgets = List.of();
+    private MailUi.Rect formViewport = new MailUi.Rect(0, 0, 0, 0);
+    private MailUi.Rect saveDraftRect = new MailUi.Rect(0, 0, 0, 0), restoreDraftRect = new MailUi.Rect(0, 0, 0, 0);
+    private int formScroll;
+    private String draftKey;
+    private DraftSnapshot restoringDraft;
+    private boolean narrow() { return pageRect.width() < 560; }
+    private int bodyOffset() { return narrow() ? 36 : 0; }
+    private int itemY() { return formRect.y() + 180 + bodyOffset(); }
+    private int commandY() { return itemY() + (narrow() ? 72 : 25); }
+    private int numericY() { return commandY() + 26; }
+
 
     public MailComposeScreen() {
         this(false, null);
@@ -137,11 +154,13 @@ public class MailComposeScreen extends MailBaseScreen {
     @Override
     protected void init() {
         super.init();
-        pageRect = MailUi.centeredPage(620, 360);
-        addRenderableWidget(new top.csituka.youzaiworldcore.client.screen.widget.MenuCloseButton(
-                pageRect.right() - 46, pageRect.y() + 10, this));
-        formRect = new MailUi.Rect(pageRect.x() + 22, pageRect.y() + 50,
-                pageRect.width() - 44, pageRect.height() - 68);
+        pageRect = MailUi.centeredPage(620, 400, viewport.width(), viewport.height());
+        closeButton = addRenderableWidget(new MenuCloseButton(pageRect.right() - 40, pageRect.y() + 42, this));
+        formViewport = new MailUi.Rect(pageRect.x() + 12, pageRect.y() + 78, pageRect.width() - 24, pageRect.height() - 90);
+        int oldScroll = formScroll;
+        formScroll = 0;
+        formRect = new MailUi.Rect(formViewport.x(), formViewport.y(), formViewport.width(), narrow() ? 390 : 274);
+        if (draftKey == null) draftKey = MailDraftStore.key(editMailId);
         if (editMode && editSource == null && MailClientState.pendingEditData != null) {
             editSource = MailClientState.pendingEditData.mail();
             MailClientState.pendingEditData = null;
@@ -151,22 +170,30 @@ public class MailComposeScreen extends MailBaseScreen {
         FormOptions options = initialized ? captureOptions() : null;
         Prefill prefill = initialized ? capturePrefill() : createPrefill(editSource);
 
+        if (restoringDraft != null) {
+            prefill = restoringDraft.form().withItems(restoringDraft.items().stream().map(this::decodeItem).toList());
+            options = restoringDraft.options();
+        }
         createScopeWidgets(prefill);
         createMainFields(prefill);
         createAttachmentWidgets(prefill);
-        if (initialized) {
+        if (initialized || restoringDraft != null) {
             restoreOptions(options);
         } else {
             // 首次进入才拉取已注册玩家名单，打开弹窗时即可直接展示
             ClientPlayNetworking.send(new MailPlayerListRequestPayload());
         }
+        restoringDraft = null;
         initialized = true;
+        formWidgets = super.children().stream().filter(child -> child instanceof AbstractWidget && child != closeButton)
+                .map(child -> (AbstractWidget) child).toList();
+        setFormScroll(oldScroll);
         syncAttachmentState();
         if (originalPrefill == null) {
             originalPrefill = capturePrefill();
             originalOptions = captureOptions();
         }
-        if (discardDialog != null) discardDialog.init(MailViewport.DESIGN_WIDTH, MailViewport.DESIGN_HEIGHT);
+        if (discardDialog != null) discardDialog.init(viewport.width(), viewport.height());
 
         DebugLogger.info(MODULE, "已打开邮件%s页面", editMode ? "编辑" : "发布");
     }
@@ -224,22 +251,22 @@ public class MailComposeScreen extends MailBaseScreen {
                 ignored -> syncAttachmentState(), () -> {
                 });
         addRenderableWidget(typeDropdown);
-        typeDropdown.setCanvasSize(MailViewport.DESIGN_WIDTH, MailViewport.DESIGN_HEIGHT);
+        typeDropdown.setCanvasSize(viewport.width(), viewport.height());
         expireDropdown = new DropdownButton(formRect.x() + 168, rowY, DROPDOWN_WIDTH, DROPDOWN_WIDTH, 18,
                 Component.literal(""), EXPIRE_OPTIONS, prefill.expireIndex(), false,
                 ignored -> {
                 }, () -> {
                 });
         addRenderableWidget(expireDropdown);
-        expireDropdown.setCanvasSize(MailViewport.DESIGN_WIDTH, MailViewport.DESIGN_HEIGHT);
+        expireDropdown.setCanvasSize(viewport.width(), viewport.height());
 
-        int titleX = formRect.x() + 268;
-        titleInput = createEditBox(titleX, rowY, Math.max(80, formRect.right() - titleX - 12), 18,
+        int titleX = formRect.x() + (narrow() ? 40 : 268);
+        titleInput = createEditBox(titleX, rowY + bodyOffset(), Math.max(80, formRect.right() - titleX - 12), 18,
                 "请输入邮件主题", 64);
         titleInput.setValue(prefill.title());
         addRenderableWidget(titleInput);
 
-        int bodyY = formRect.y() + 106;
+        int bodyY = formRect.y() + 106 + bodyOffset();
         bodyInput = MultiLineEditBox.builder()
                 .setX(formRect.x() + 12)
                 .setY(bodyY)
@@ -257,25 +284,27 @@ public class MailComposeScreen extends MailBaseScreen {
 
     private void createAttachmentWidgets(Prefill prefill) {
         int x = formRect.x() + 12;
-        int itemY = formRect.y() + 180;
+        int itemY = itemY();
         cbItem = addRenderableWidget(new MailCheckboxButton(x, itemY, 104,
                 Component.literal("物品附件"), prefill.itemEnabled(), this::syncAttachmentState));
 
-        int slotsX = x + 88;
+        int slotsX = narrow() ? x : x + 88;
+        int slotsY = itemY + (narrow() ? 22 : -2);
         for (int i = 0; i < ITEM_SLOTS; i++) {
-            slotRects[i] = new MailUi.Rect(slotsX + i * (SLOT_SIZE + 2), itemY - 2, SLOT_SIZE, SLOT_SIZE);
+            slotRects[i] = new MailUi.Rect(slotsX + i * (SLOT_SIZE + 2), slotsY, SLOT_SIZE, SLOT_SIZE);
         }
         copyItems(prefill.items());
 
-        int amountX = slotsX + ITEM_SLOTS * (SLOT_SIZE + 2) + 25;
-        itemAmountInput = createEditBox(amountX, itemY - 1, 34, 18, "1", 3);
+        int amountX = narrow() ? x + 30 : slotsX + ITEM_SLOTS * (SLOT_SIZE + 2) + 25;
+        int amountY = itemY + (narrow() ? 44 : -1);
+        itemAmountInput = createEditBox(amountX, amountY, 34, 18, "1", 3);
         itemAmountInput.setValue(itemSlots[selectedItemSlot].isEmpty()
                 ? "1" : String.valueOf(itemSlots[selectedItemSlot].getCount()));
         itemAmountInput.setResponder(this::updateSelectedItemAmount);
         addRenderableWidget(itemAmountInput);
-        pickItemRect = new MailUi.Rect(formRect.right() - 92, itemY - 3, 80, 21);
+        pickItemRect = new MailUi.Rect(formRect.right() - 92, amountY - 2, 80, 21);
 
-        int commandY = formRect.y() + 205;
+        int commandY = commandY();
         cbCommand = addRenderableWidget(new MailCheckboxButton(x, commandY, 94,
                 Component.literal("指令附件"), prefill.commandEnabled(), this::syncAttachmentState));
         commandInput = createEditBox(x + 100, commandY - 1, formRect.width() - 112, 18,
@@ -284,7 +313,7 @@ public class MailComposeScreen extends MailBaseScreen {
         addRenderableWidget(commandInput);
 
         // ===== 经验 / 等级：原版与本项目冒险体系各两项，可同时勾选 =====
-        int numericY = formRect.y() + 231;
+        int numericY = numericY();
         cbVanillaExp = addRenderableWidget(new MailCheckboxButton(x, numericY, 66,
                 Component.literal("原版经验"), prefill.vanillaExpEnabled(), this::syncAttachmentState));
         vanillaExpInput = createEditBox(x + 70, numericY - 1, 38, 18, "0", 9);
@@ -297,15 +326,15 @@ public class MailComposeScreen extends MailBaseScreen {
         vanillaLevelInput.setValue(prefill.vanillaLevelValue());
         addRenderableWidget(vanillaLevelInput);
 
-        cbAdventureExp = addRenderableWidget(new MailCheckboxButton(x + 240, numericY, 66,
+        cbAdventureExp = addRenderableWidget(new MailCheckboxButton(x + (narrow() ? 0 : 240), numericY + (narrow() ? 26 : 0), 66,
                 Component.literal("冒险经验"), prefill.adventureExpEnabled(), this::syncAttachmentState));
-        adventureExpInput = createEditBox(x + 310, numericY - 1, 38, 18, "0", 9);
+        adventureExpInput = createEditBox(x + (narrow() ? 70 : 310), numericY - 1 + (narrow() ? 26 : 0), 38, 18, "0", 9);
         adventureExpInput.setValue(prefill.adventureExpValue());
         addRenderableWidget(adventureExpInput);
 
-        cbAdventureLevel = addRenderableWidget(new MailCheckboxButton(x + 360, numericY, 66,
+        cbAdventureLevel = addRenderableWidget(new MailCheckboxButton(x + (narrow() ? 120 : 360), numericY + (narrow() ? 26 : 0), 66,
                 Component.literal("冒险等级"), prefill.adventureLevelEnabled(), this::syncAttachmentState));
-        adventureLevelInput = createEditBox(x + 430, numericY - 1, 38, 18, "0", 9);
+        adventureLevelInput = createEditBox(x + (narrow() ? 190 : 430), numericY - 1 + (narrow() ? 26 : 0), 38, 18, "0", 9);
         adventureLevelInput.setValue(prefill.adventureLevelValue());
         addRenderableWidget(adventureLevelInput);
     }
@@ -330,8 +359,16 @@ public class MailComposeScreen extends MailBaseScreen {
         int contentY = modal ? -10000 : mouseY;
         MailUi.drawPage(graphics, pageRect);
         renderHeader(graphics, contentX, contentY);
+        graphics.enableScissor(formViewport.x(), formViewport.y(), formViewport.right(), formViewport.bottom());
         renderFormBackground(graphics, contentX, contentY);
-        renderWidgets(graphics, contentX, contentY, partialTick);
+        for (AbstractWidget widget : formWidgets) widget.extractRenderState(graphics, contentX, contentY, partialTick);
+        graphics.disableScissor();
+        closeButton.extractRenderState(graphics, contentX, contentY, partialTick);
+        if (formRect.height() > formViewport.height()) {
+            int thumb = Math.max(12, formViewport.height() * formViewport.height() / formRect.height());
+            int thumbY = formViewport.y() + (formViewport.height() - thumb) * formScroll / Math.max(1, formRect.height() - formViewport.height());
+            graphics.fill(formViewport.right() - 2, thumbY, formViewport.right(), thumbY + thumb, MailUi.textMuted());
+        }
 
         typeDropdown.renderPopup(graphics, contentX, contentY, partialTick);
         expireDropdown.renderPopup(graphics, contentX, contentY, partialTick);
@@ -341,10 +378,10 @@ public class MailComposeScreen extends MailBaseScreen {
         if (playerPicker.isOpen()) {
             playerPicker.setQuery(playerSearchText);
             playerPicker.render(graphics, font, mouseX, mouseY,
-                    MailViewport.DESIGN_WIDTH, MailViewport.DESIGN_HEIGHT);
+                    viewport.width(), viewport.height());
         }
         if (hasDiscardDialog()) {
-            discardDialog.render(graphics, MailViewport.DESIGN_WIDTH, MailViewport.DESIGN_HEIGHT);
+            discardDialog.render(graphics, viewport.width(), viewport.height());
             discardDialog.renderButtons(graphics, mouseX, mouseY, partialTick);
         }
     }
@@ -360,15 +397,17 @@ public class MailComposeScreen extends MailBaseScreen {
                 MailUi.textPrimary(), false);
         graphics.pose().popMatrix();
 
-        publishRect = new MailUi.Rect(pageRect.right() - 96, pageRect.y() + 16, 38, 22);
-        cancelRect = new MailUi.Rect(publishRect.x() - 50, publishRect.y(), 42, 22);
-        MailUi.button(graphics, font, cancelRect, "取消", YzuiTheme.primaryContainer(), YzuiTheme.onPrimaryContainer(),
-                cancelRect.contains(mouseX, mouseY), true);
-        MailUi.button(graphics, font, publishRect, editMode ? "保存" : "发布", YzuiTheme.primaryContainer(), YzuiTheme.onPrimaryContainer(),
-                publishRect.contains(mouseX, mouseY), true);
+        cancelRect = new MailUi.Rect(pageRect.x() + 12, pageRect.y() + 44, 42, 24);
+        publishRect = new MailUi.Rect(cancelRect.right() + 6, cancelRect.y(), 38, 24);
+        saveDraftRect = new MailUi.Rect(publishRect.right() + 6, cancelRect.y(), 66, 24);
+        restoreDraftRect = new MailUi.Rect(saveDraftRect.right() + 6, cancelRect.y(), 54, 24);
+        MailUi.button(graphics, font, cancelRect, "取消", YzuiTheme.primaryContainer(), YzuiTheme.onPrimaryContainer(), cancelRect.contains(mouseX, mouseY), true);
+        MailUi.button(graphics, font, publishRect, editMode ? "保存" : "发布", YzuiTheme.primaryContainer(), YzuiTheme.onPrimaryContainer(), publishRect.contains(mouseX, mouseY), true);
+        MailUi.button(graphics, font, saveDraftRect, text("save_draft"), YzuiTheme.primaryContainer(), YzuiTheme.onPrimaryContainer(), saveDraftRect.contains(mouseX, mouseY), true);
+        MailUi.button(graphics, font, restoreDraftRect, text("restore_draft"), YzuiTheme.primaryContainer(), YzuiTheme.onPrimaryContainer(), restoreDraftRect.contains(mouseX, mouseY), !MailDraftStore.read(draftKey).isBlank());
 
         if (!validationMessage.isBlank()) {
-            int maxWidth = Math.max(20, cancelRect.x() - titleX - 130);
+            int maxWidth = Math.max(20, pageRect.right() - titleX - 132);
             String message = MailUi.ellipsize(font, validationMessage, maxWidth);
             graphics.text(font, message, titleX + 128, titleY + 4, MailUi.red(), false);
         }
@@ -415,17 +454,17 @@ public class MailComposeScreen extends MailBaseScreen {
                 formRect.y() + 64, MailUi.divider());
         graphics.text(font, "类型", formRect.x() + 12, formRect.y() + 76, MailUi.textPrimary(), false);
         graphics.text(font, "过期时间", formRect.x() + 108, formRect.y() + 76, MailUi.textPrimary(), false);
-        graphics.text(font, "主题", formRect.x() + 236, formRect.y() + 76, MailUi.textPrimary(), false);
+        graphics.text(font, "主题", formRect.x() + (narrow() ? 12 : 236), formRect.y() + 76 + bodyOffset(), MailUi.textPrimary(), false);
         drawInputBackground(graphics, typeDropdown.getX(), typeDropdown.getY(), typeDropdown.getWidth(), 18, true);
         drawInputBackground(graphics, expireDropdown.getX(), expireDropdown.getY(), expireDropdown.getWidth(), 18, true);
         drawInputBackground(graphics, titleInput.getX(), titleInput.getY(), titleInput.getWidth(),
                 titleInput.getHeight(), true);
 
-        graphics.text(font, "文本正文", x, formRect.y() + 94, MailUi.textPrimary(), false);
+        graphics.text(font, "文本正文", x, formRect.y() + 94 + bodyOffset(), MailUi.textPrimary(), false);
         // MultiLineEditBox 背景由 MultiLineEditBoxYzuiMixin 统一绘制 YZUI 风格
-        graphics.fill(formRect.x() + 12, formRect.y() + 159, formRect.right() - 12,
-                formRect.y() + 160, MailUi.divider());
-        graphics.text(font, "附加附件", x, formRect.y() + 166, MailUi.textPrimary(), false);
+        graphics.fill(formRect.x() + 12, formRect.y() + 159 + bodyOffset(), formRect.right() - 12,
+                formRect.y() + 160 + bodyOffset(), MailUi.divider());
+        graphics.text(font, "附加附件", x, formRect.y() + 166 + bodyOffset(), MailUi.textPrimary(), false);
 
         boolean itemEnabled = cbItem != null && cbItem.active && cbItem.isChecked();
         for (int i = 0; i < ITEM_SLOTS; i++) {
@@ -479,7 +518,7 @@ public class MailComposeScreen extends MailBaseScreen {
     }
 
     private void renderInventoryPicker(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
-        if (!inventoryPicker.update(MailViewport.DESIGN_WIDTH, MailViewport.DESIGN_HEIGHT)) return;
+        if (!inventoryPicker.update(viewport.width(), viewport.height())) return;
         inventoryPicker.scrim(graphics);
         int localX = (int) Math.floor(inventoryPicker.toLocalX(mouseX));
         int localY = (int) Math.floor(inventoryPicker.toLocalY(mouseY));
@@ -496,8 +535,8 @@ public class MailComposeScreen extends MailBaseScreen {
                                           int tooltipX, int tooltipY) {
         int pickerWidth = 320;
         int pickerHeight = 160;
-        pickerRect = new MailUi.Rect((MailViewport.DESIGN_WIDTH - pickerWidth) / 2,
-                (MailViewport.DESIGN_HEIGHT - pickerHeight) / 2, pickerWidth, pickerHeight);
+        pickerRect = new MailUi.Rect((viewport.width() - pickerWidth) / 2,
+                (viewport.height() - pickerHeight) / 2, pickerWidth, pickerHeight);
         YzuiTheme.card(graphics, pickerRect.x(), pickerRect.y(), pickerRect.width(), pickerRect.height());
         graphics.text(font, "选择要复制到附件槽的物品", pickerRect.x() + 16, pickerRect.y() + 16,
                 MailUi.textPrimary(), false);
@@ -572,6 +611,10 @@ public class MailComposeScreen extends MailBaseScreen {
             onPublish();
             return true;
         }
+        if (saveDraftRect.contains(mouseX, mouseY)) { saveDraft(); return true; }
+        if (restoreDraftRect.contains(mouseX, mouseY)) { restoreDraft(); return true; }
+        if (closeButton.isMouseOver(mouseX, mouseY)) { closeMenu(); return true; }
+        if (!formViewport.contains(mouseX, mouseY)) return false;
         if (cbPlayer.isChecked() && pickPlayersRect.contains(mouseX, mouseY)) {
             openPlayerPicker();
             return true;
@@ -593,7 +636,7 @@ public class MailComposeScreen extends MailBaseScreen {
         }
         if (pickItemRect.contains(mouseX, mouseY) && cbItem.active && cbItem.isChecked()) {
             setFocused(null);
-            inventoryPicker.show(MailViewport.DESIGN_WIDTH, MailViewport.DESIGN_HEIGHT);
+            inventoryPicker.show(viewport.width(), viewport.height());
             return true;
         }
 
@@ -633,7 +676,14 @@ public class MailComposeScreen extends MailBaseScreen {
                 return true;
             }
         }
-        return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
+        if (formViewport.contains(viewport.toDesignX(mouseX), viewport.toDesignY(mouseY))) {
+            if (bodyInput.isMouseOver(viewport.toDesignX(mouseX), viewport.toDesignY(mouseY))
+                    && super.mouseScrolled(mouseX, mouseY, scrollX, scrollY)) return true;
+            setFocused(null);
+            setFormScroll(formScroll - (int) (scrollY * 24));
+            return true;
+        }
+        return false;
     }
 
     private void openPlayerPicker() {
@@ -1010,6 +1060,74 @@ public class MailComposeScreen extends MailBaseScreen {
         return value == null ? "" : value;
     }
 
+    private static String text(String key) { return Component.translatable("screen.youzaiworldcore.mail." + key).getString(); }
+
+    private void setFormScroll(int scroll) {
+        int target = Math.clamp(scroll, 0, Math.max(0, formRect.height() - formViewport.height()));
+        int delta = formScroll - target;
+        formScroll = target;
+        formRect = new MailUi.Rect(formRect.x(), formRect.y() + delta, formRect.width(), formRect.height());
+        for (AbstractWidget widget : formWidgets) widget.setY(widget.getY() + delta);
+        for (int i = 0; i < slotRects.length; i++) if (slotRects[i] != null)
+            slotRects[i] = new MailUi.Rect(slotRects[i].x(), slotRects[i].y() + delta, SLOT_SIZE, SLOT_SIZE);
+        pickItemRect = new MailUi.Rect(pickItemRect.x(), pickItemRect.y() + delta, pickItemRect.width(), pickItemRect.height());
+    }
+
+    @Override public void tick() {
+        super.tick();
+        if (hasDiscardDialog() || playerPicker.isOpen() || inventoryPicker.isVisible()) return;
+        if (getFocused() instanceof AbstractWidget focused && focused != closeButton) {
+            if (focused.getY() < formViewport.y()) setFormScroll(formScroll + focused.getY() - formViewport.y());
+            else if (focused.getBottom() > formViewport.bottom()) setFormScroll(formScroll + focused.getBottom() - formViewport.bottom());
+        }
+    }
+
+    private record DraftSnapshot(Prefill form, FormOptions options, List<MailAttachment> items) { }
+    private static final Gson DRAFT_GSON = new Gson();
+
+    private void saveDraft() {
+        try {
+            List<MailAttachment> items = new ArrayList<>();
+            var lookup = Minecraft.getInstance().level.registryAccess();
+            for (ItemStack stack : itemSlots) if (!stack.isEmpty()) {
+                String nbt = ItemStack.CODEC.encodeStart(lookup.createSerializationContext(NbtOps.INSTANCE), stack).getOrThrow().toString();
+                items.add(new MailAttachment(AttachmentType.ITEM, "", stack.getCount(), nbt, ItemStackNbtUpgrader.currentDataVersion()));
+            }
+            MailDraftStore.save(draftKey, DRAFT_GSON.toJson(new DraftSnapshot(capturePrefill().withoutItems(), captureOptions(), items)));
+            cancelEditing();
+            navigateBack();
+            MailToast.show(text("draft_saved"), true);
+        } catch (Exception e) { validationMessage = text("draft_failed"); DebugLogger.exception(MODULE, "saveDraft", e); }
+    }
+
+    private void restoreDraft() {
+        String saved = MailDraftStore.read(draftKey);
+        if (saved.isBlank()) return;
+        discardDialog = new ConfirmationDialog(text("restore_title"), new String[] { text("restore_body") },
+                text("restore_draft"), Component.translatable("gui.cancel").getString(), () -> {
+                    try {
+                        DraftSnapshot snapshot = DRAFT_GSON.fromJson(saved, DraftSnapshot.class);
+                        if (snapshot == null || snapshot.form() == null || snapshot.options() == null || snapshot.items() == null)
+                            throw new IllegalArgumentException("草稿内容不完整");
+                        Prefill form = snapshot.form();
+                        if (form.players() == null || form.legacyTargets() == null || form.title() == null || form.body() == null
+                                || form.command() == null || form.vanillaExpValue() == null || form.vanillaLevelValue() == null
+                                || form.adventureExpValue() == null || form.adventureLevelValue() == null
+                                || form.typeIndex() < 0 || form.typeIndex() >= TYPE_OPTIONS.size()
+                                || form.expireIndex() < 0 || form.expireIndex() >= EXPIRE_OPTIONS.size()
+                                || snapshot.items().size() > ITEM_SLOTS)
+                            throw new IllegalArgumentException("草稿字段不完整或超出范围");
+                        if (snapshot.items().stream().anyMatch(item -> item == null || item.type() != AttachmentType.ITEM || decodeItem(item).isEmpty()))
+                            throw new IllegalArgumentException("草稿附件无法恢复");
+                        restoringDraft = snapshot;
+                        rebuildWidgets();
+                        validationMessage = text("draft_restored");
+                        DebugLogger.info(MODULE, "已恢复本机草稿");
+                    } catch (Exception e) { validationMessage = text("draft_failed"); DebugLogger.exception(MODULE, "restoreDraft", e); }
+                }, null);
+        discardDialog.init(viewport.width(), viewport.height()); discardDialog.show();
+    }
+
     // ===== 关闭 =====
 
     @Override
@@ -1036,6 +1154,11 @@ public class MailComposeScreen extends MailBaseScreen {
 
     private boolean hasDiscardDialog() { return discardDialog != null && discardDialog.isVisible(); }
 
+    /** 重复预填不能撤销当前正在编辑的同一封邮件。 */
+    public boolean isEditing(UUID mailId) {
+        return editMode && !finished && mailId.equals(editMailId);
+    }
+
     private void requestLeave(Runnable leave) {
         if (hasDiscardDialog()) return;
         if (finished || !hasUnsavedChanges()) { cancelEditing(); leave.run(); return; }
@@ -1048,8 +1171,8 @@ public class MailComposeScreen extends MailBaseScreen {
                 new String[] { Component.translatable("screen.youzaiworldcore.mail.discard_body").getString() },
                 Component.translatable("screen.youzaiworldcore.mail.discard").getString(),
                 Component.translatable("screen.youzaiworldcore.mail.keep_editing").getString(),
-                () -> { cancelEditing(); leave.run(); }, null);
-        discardDialog.init(MailViewport.DESIGN_WIDTH, MailViewport.DESIGN_HEIGHT);
+                () -> { MailDraftStore.delete(draftKey); cancelEditing(); leave.run(); }, null);
+        discardDialog.init(viewport.width(), viewport.height());
         discardDialog.show();
     }
 
@@ -1095,6 +1218,11 @@ public class MailComposeScreen extends MailBaseScreen {
                            int typeIndex, int expireIndex, String title, String body,
                            List<ItemStack> items, String command, String vanillaExpValue,
                            String vanillaLevelValue, String adventureExpValue, String adventureLevelValue) {
+
+        Prefill withItems(List<ItemStack> stacks) {
+            return new Prefill(all, players, legacyTargets, typeIndex, expireIndex, title, body, stacks,
+                    command, vanillaExpValue, vanillaLevelValue, adventureExpValue, adventureLevelValue);
+        }
 
         Prefill withoutItems() {
             return new Prefill(all, players, legacyTargets, typeIndex, expireIndex, title, body,

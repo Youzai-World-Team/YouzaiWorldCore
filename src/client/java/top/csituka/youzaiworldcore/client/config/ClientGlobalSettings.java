@@ -50,6 +50,9 @@ public final class ClientGlobalSettings {
     /** 创造物品栏的折叠分组 */
     public static final String INVENTORY_ITEM_GROUPS_MODULE = "inventory_item_groups_module";
 
+    /** 本机邮件草稿，按服务器与玩家隔离。 */
+    public static final String MAIL_MODULE = "mail_module";
+
     private static final JsonFileStore STORE = new JsonFileStore(ModPaths.clientSettingsFile());
 
     static {

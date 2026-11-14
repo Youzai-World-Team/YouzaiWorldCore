@@ -1253,6 +1253,9 @@ public final class UnifiedSettingsChecks {
                 .equals(List.of("core.0", "core.4", "core.5", "core.1", "core.2", "core.3")),
                 "Core categories have the shared player-first order");
         check(coreHeadings.getFirst().navigationGroup.getString().equals("YouzaiWorldCore"), "Core group starts at appearance");
+        check(rows.indexOf(model.anchorRow("resources")) < rows.indexOf(model.anchorRow("core.0"))
+                && rows.indexOf(model.anchorRow("mods")) < rows.indexOf(model.anchorRow("core.0")),
+                "resources and mod settings belong before the Core group");
         for (CoreSettingsSection section : CoreSettingsSection.values()) {
             var anchor = model.anchorRow("core." + section.id());
             check(anchor != null && anchor.label.equals(section.title()) && anchor != model.anchorRow(VideoSettingsScreen.class.getName()),
@@ -1701,11 +1704,11 @@ public class SettingsUsabilityChecks {
         check(MapSettings.saves == baseline, "closing after a committed field does not save again");
         var mapPage = new YzuiMapSettingsScreen(parent, "APPEARANCE"); mapPage.init(); mapPage.onClose();
         check(net.minecraft.client.Minecraft.getInstance().gui.screen() == parent, "map categories return to their existing parent screen");
-        // Use the real frame and sidebar to exercise position restoration, search transitions and folds.
+        // Use the real frame and sidebar to exercise position restoration and direct categories.
         var host = new YzuiOptionsScreen(new OptionsScreen(parent, null), parent, false); host.width = 800; host.height = 480;
         var navigationRows = new ArrayList<SettingsList.Row>(); var sound = SettingsList.Row.heading(Component.literal("Sound")); sound.sectionId = "sound";
         var video = SettingsList.Row.heading(Component.literal("Video")); video.sectionId = "video";
-        var advanced = SettingsList.Row.heading(Component.literal("Developer")); advanced.sectionId = "dev"; advanced.advanced = true;
+        var advanced = SettingsList.Row.heading(Component.literal("Developer")); advanced.sectionId = "dev";
         for (var category : List.of(sound, video, advanced)) {
             navigationRows.add(category);
             for (int index = 0; index < 30; index++) navigationRows.add(SettingsList.Row.widget(new AbstractWidget(Component.literal(category.label.getString() + " value " + index))));
@@ -1713,7 +1716,9 @@ public class SettingsUsabilityChecks {
         var view = new SettingsViewState(); var widgets = new ArrayList<AbstractWidget>();
         var frame = new SettingsFrame(host, navigationRows, List.of(), widgets::add, "", 0, true, sound, view);
         var sidebar = widgets.stream().filter(SettingsList.class::isInstance).map(SettingsList.class::cast).filter(value -> value != frame.content).findFirst().orElseThrow();
-        check(sidebar.children().stream().flatMap(row -> row.widgets.stream()).noneMatch(widget -> widget.getMessage().getString().equals("Developer")), "low-frequency category is initially folded");
+        check(nav(sidebar, "Developer") != null, "developer category is directly visible");
+        check(sidebar.children().stream().flatMap(row -> row.widgets.stream())
+                .noneMatch(widget -> widget.getMessage().getString().contains("options.more")), "sidebar has no More Settings disclosure");
         frame.content.setScrollAmount(220); nav(sidebar, "Video").action.run(); frame.content.setScrollAmount(75); nav(sidebar, "Sound").action.run();
         check(frame.content.scrollAmount() == 220, "switching back restores Sound's independent scroll position");
         nav(sidebar, "Video").action.run();
@@ -1723,14 +1728,20 @@ public class SettingsUsabilityChecks {
         frame.search.setValue("value");
         check(frame.content.scrollAmount() == 90, "repeating the same query restores its search position");
         frame.search.setValue("Developer"); frame.render(graphics);
-        check(view.moreExpanded && nav(sidebar, "Developer") != null, "search remains global and automatically reveals a folded result's category");
+        check(nav(sidebar, "Developer") != null, "search keeps the direct category entry");
         nav(sidebar, "Developer").action.run();
-        check(frame.content.selectedSection() == advanced && frame.search.getValue().isEmpty(), "folded category remains directly navigable from search");
-        nav(sidebar, "options.more").action.run();
-        check(!view.moreExpanded && sidebar.getFocused() != null && host.getFocused() == sidebar,
-                "folding retains keyboard focus on the disclosure control");
-        nav(sidebar, "options.more").action.run();
-        check(view.moreExpanded && nav(sidebar, "Developer") != null, "disclosure can reopen low-frequency categories");
+        check(frame.content.selectedSection() == advanced && frame.search.getValue().isEmpty(), "direct category navigation clears search");
+        for (int width : new int[]{320, 480, 1000}) {
+            host.width = width;
+            var compactWidgets = new ArrayList<AbstractWidget>();
+            var resized = new SettingsFrame(host, navigationRows, List.of(), compactWidgets::add, "", 0, true, advanced, view);
+            var compactSidebar = compactWidgets.stream().filter(SettingsList.class::isInstance).map(SettingsList.class::cast)
+                    .filter(value -> value != resized.content).findFirst().orElseThrow();
+            check(nav(compactSidebar, "Developer") != null && compactSidebar.children().stream().flatMap(row -> row.widgets.stream())
+                    .noneMatch(widget -> widget.getMessage().getString().contains("options.more")),
+                    "all categories stay directly available at width " + width);
+        }
+        host.width = 800;
         nav(sidebar, "Sound").action.run(); frame.content.setScrollAmount(220); frame.content.rememberView();
         var renamed = SettingsList.Row.heading(Component.literal("声音")); renamed.sectionId = "sound";
         var rebuiltRows = new ArrayList<SettingsList.Row>(); rebuiltRows.add(renamed);

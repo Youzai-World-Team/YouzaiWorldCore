@@ -43,7 +43,8 @@ public class AboutMeMenuElements implements MenuElementGroup {
         var button = new top.csituka.youzaiworldcore.client.screen.widget.TransparentButton(
                 (screenWidth - w) / 2, top + 210, w, 28,
                 net.minecraft.network.chat.Component.translatable("screen.youzaiworldcore.account_management.title"),
-                () -> Minecraft.getInstance().setScreenAndShow(new top.csituka.youzaiworldcore.client.screen.AccountManagementScreen(screen)));
+                () -> screen.startExit(() -> Minecraft.getInstance().setScreenAndShow(
+                        new top.csituka.youzaiworldcore.client.screen.AccountManagementScreen(screen))));
         button.setExternalAlpha(alpha);
         return List.of(button);
     }

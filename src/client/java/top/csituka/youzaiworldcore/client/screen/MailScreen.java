@@ -19,9 +19,7 @@ import top.csituka.youzaiworldcore.mail.AttachmentType;
 import top.csituka.youzaiworldcore.mail.MailRef;
 import top.csituka.youzaiworldcore.mail.MailType;
 import top.csituka.youzaiworldcore.network.MailActionPayload;
-import top.csituka.youzaiworldcore.network.MailComposeOpenPayload;
 import top.csituka.youzaiworldcore.network.MailOpenPayload;
-import top.csituka.youzaiworldcore.network.MailSentListRequestPayload;
 import top.csituka.youzaiworldcore.network.MailStreamCodecs;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 import top.csituka.youzaiworldcore.util.ItemStackNbtUpgrader;
@@ -41,11 +39,14 @@ import java.util.UUID;
 public class MailScreen extends MailBaseScreen {
 
     private static final String MODULE = "MailScreen";
-    private static final int ROW_HEIGHT = 46;
+    private int rowHeight() { return compact() && pageRect.height() < 280 ? 34 : 46; }
 
     private Filter activeFilter = Filter.ALL;
     private UUID selectedMailId;
-    private int scrollOffset;
+    private int scrollOffset, detailScroll, maxDetailScroll;
+    private boolean detailVisible;
+    private boolean compact() { return pageRect.width() < 700 || pageRect.height() < 360; }
+    private int padding() { return compact() ? 12 : 34; }
 
     private MailUi.Rect pageRect = new MailUi.Rect(0, 0, 0, 0);
     private MailUi.Rect listRect = new MailUi.Rect(0, 0, 0, 0);
@@ -78,7 +79,7 @@ public class MailScreen extends MailBaseScreen {
 
     @Override
     protected void renderMailContent(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
-        pageRect = MailUi.centeredPage(822, 464);
+        pageRect = MailUi.centeredPage(822, 464, viewport.width(), viewport.height());
         MailUi.drawPage(graphics, pageRect);
 
         List<MailStreamCodecs.MailRefAndMail> inbox = visibleInbox();
@@ -89,17 +90,18 @@ public class MailScreen extends MailBaseScreen {
             claimRect = starRect = deleteRect = new MailUi.Rect(0, 0, 0, 0);
             deleteReadRect = purgeExpiredRect = new MailUi.Rect(0, 0, 0, 0);
         } else {
-            renderTabs(graphics, mouseX, mouseY, inbox);
+            if (!compact() || !detailVisible) renderTabs(graphics, mouseX, mouseY, inbox);
             renderMailbox(graphics, mouseX, mouseY, inbox);
-            renderBatchActions(graphics, mouseX, mouseY, inbox);
+            if (!compact() || !detailVisible) renderBatchActions(graphics, mouseX, mouseY, inbox);
+            else deleteReadRect = purgeExpiredRect = new MailUi.Rect(0, 0, 0, 0);
         }
         renderWidgets(graphics, mouseX, mouseY, partialTick);
     }
 
     private void renderHeader(GuiGraphicsExtractor graphics, int mouseX, int mouseY,
                               List<MailStreamCodecs.MailRefAndMail> inbox) {
-        int titleX = pageRect.x() + 34;
-        int titleY = pageRect.y() + 34;
+        int titleX = pageRect.x() + padding();
+        int titleY = pageRect.y() + (compact() ? 16 : 34);
         graphics.text(font, "✉", titleX, titleY + 2, MailUi.textPrimary(), false);
 
         graphics.pose().pushMatrix();
@@ -116,10 +118,10 @@ public class MailScreen extends MailBaseScreen {
         }
 
         // ===== 右上角操作区：[发布邮件] [已发送] [返回] [关闭] =====
-        int buttonY = pageRect.y() + 34;
-        closeRect = new MailUi.Rect(pageRect.right() - 80, buttonY, 46, 22);
+        int buttonY = pageRect.y() + (compact() ? 42 : 34);
+        closeRect = new MailUi.Rect(pageRect.right() - padding() - 46, buttonY, 46, 22);
         backRect = new MailUi.Rect(closeRect.x() - 54, buttonY, 46, 22);
-        MailUi.button(graphics, font, backRect, "返回", YzuiTheme.primaryContainer(), YzuiTheme.onPrimaryContainer(),
+        MailUi.button(graphics, font, backRect, compact() && detailVisible ? "列表" : "返回", YzuiTheme.primaryContainer(), YzuiTheme.onPrimaryContainer(),
                 backRect.contains(mouseX, mouseY), true);
         MailUi.button(graphics, font, closeRect, "关闭", YzuiTheme.primaryContainer(), YzuiTheme.onPrimaryContainer(),
                 closeRect.contains(mouseX, mouseY), true);
@@ -142,8 +144,8 @@ public class MailScreen extends MailBaseScreen {
         int unread = (int) inbox.stream().filter(pair -> !pair.ref().isRead()).count();
         int starred = (int) inbox.stream().filter(pair -> pair.ref().isStarred()).count();
         String[] labels = {"全部", "未读 (" + unread + ")", "已收藏 (" + starred + ")"};
-        int x = pageRect.x() + 34;
-        int y = pageRect.y() + 76;
+        int x = pageRect.x() + padding();
+        int y = pageRect.y() + (compact() ? 74 : 76);
         int[] widths = {45, 78, 92};
 
         for (int i = 0; i < labels.length; i++) {
@@ -161,25 +163,33 @@ public class MailScreen extends MailBaseScreen {
 
     private void renderMailbox(GuiGraphicsExtractor graphics, int mouseX, int mouseY,
                                List<MailStreamCodecs.MailRefAndMail> inbox) {
-        int contentX = pageRect.x() + 34;
-        int contentY = pageRect.y() + 108;
-        int contentWidth = pageRect.width() - 68;
-        int contentHeight = Math.max(90, pageRect.height() - 171);
+        int contentX = pageRect.x() + padding();
+        int contentY = pageRect.y() + (compact() && detailVisible ? 74 : 108);
+        int contentWidth = pageRect.width() - padding() * 2;
+        int contentHeight = Math.max(60, pageRect.bottom() - contentY - (compact() ? (detailVisible ? 12 : 40) : 60));
+        List<MailStreamCodecs.MailRefAndMail> filtered = filteredInbox(inbox);
+        MailStreamCodecs.MailRefAndMail selected = resolveSelection(inbox);
+        if (compact()) {
+            var content = new MailUi.Rect(contentX, contentY, contentWidth, contentHeight);
+            if (detailVisible && selected != null) {
+                listRect = new MailUi.Rect(0, 0, 0, 0);
+                detailRect = content;
+                renderDetailPanel(graphics, mouseX, mouseY, selected);
+            } else {
+                detailVisible = false;
+                listRect = content; detailRect = new MailUi.Rect(0, 0, 0, 0);
+                claimRect = starRect = deleteRect = new MailUi.Rect(0, 0, 0, 0);
+                renderListPanel(graphics, mouseX, mouseY, filtered);
+            }
+            return;
+        }
         int listWidth = Math.min(275, Math.max(220, (int) (contentWidth * 0.37f)));
         listRect = new MailUi.Rect(contentX, contentY, listWidth, contentHeight);
-        detailRect = new MailUi.Rect(listRect.right() + 16, contentY,
-                contentWidth - listWidth - 16, contentHeight);
-
-        List<MailStreamCodecs.MailRefAndMail> filtered = filteredInbox(inbox);
-        MailStreamCodecs.MailRefAndMail selected = resolveSelection(filtered);
+        detailRect = new MailUi.Rect(listRect.right() + 16, contentY, contentWidth - listWidth - 16, contentHeight);
         renderListPanel(graphics, mouseX, mouseY, filtered);
-        if (selected != null) {
-            renderDetailPanel(graphics, mouseX, mouseY, selected);
-        } else if (!filtered.isEmpty()) {
-            renderNoSelectionHint(graphics);
-        } else {
-            renderNoFilteredMail(graphics);
-        }
+        if (selected != null) renderDetailPanel(graphics, mouseX, mouseY, selected);
+        else if (!filtered.isEmpty()) renderNoSelectionHint(graphics);
+        else renderNoFilteredMail(graphics);
     }
 
     private void renderListPanel(GuiGraphicsExtractor graphics, int mouseX, int mouseY,
@@ -193,7 +203,7 @@ public class MailScreen extends MailBaseScreen {
                 MailUi.textSecondary(), false);
 
         int bodyTop = listRect.y() + 30;
-        int visibleRows = Math.max(1, (listRect.height() - 30) / ROW_HEIGHT);
+        int visibleRows = Math.max(1, (listRect.height() - 30) / rowHeight());
         scrollOffset = Math.min(scrollOffset, Math.max(0, entries.size() - visibleRows));
         int end = Math.min(entries.size(), scrollOffset + visibleRows);
 
@@ -206,8 +216,8 @@ public class MailScreen extends MailBaseScreen {
 
         for (int i = scrollOffset; i < end; i++) {
             MailStreamCodecs.MailRefAndMail pair = entries.get(i);
-            int rowY = bodyTop + (i - scrollOffset) * ROW_HEIGHT;
-            MailUi.Rect rowRect = new MailUi.Rect(listRect.x(), rowY, listRect.width(), ROW_HEIGHT);
+            int rowY = bodyTop + (i - scrollOffset) * rowHeight();
+            MailUi.Rect rowRect = new MailUi.Rect(listRect.x(), rowY, listRect.width(), rowHeight());
             boolean selected = pair.mail().getId().equals(selectedMailId);
             boolean hovered = rowRect.contains(mouseX, mouseY);
             int background = selected ? MailUi.rowSelected()
@@ -270,86 +280,56 @@ public class MailScreen extends MailBaseScreen {
         MailRef ref = pair.ref();
         MailUi.roundedRect(graphics, detailRect.x(), detailRect.y(), detailRect.width(), detailRect.height(), 5,
                 MailUi.panelBackground());
-        int x = detailRect.x() + 14;
-        int y = detailRect.y() + 14;
+        int x = detailRect.x() + 14, y = detailRect.y() + 14;
         int innerWidth = detailRect.width() - 28;
-
-        String typeLabel = typeLabel(mail.getType());
-        MailUi.Rect typeRect = new MailUi.Rect(x, y, font.width(typeLabel) + 20, 18);
-        MailUi.roundedRect(graphics, typeRect.x(), typeRect.y(), typeRect.width(), typeRect.height(), 4,
-                (typeColor(mail.getType()) & 0x00FFFFFF) | 0x55000000);
-        graphics.text(font, typeIcon(mail.getType()) + " " + typeLabel, typeRect.x() + 6, typeRect.y() + 5,
-                typeColor(mail.getType()), false);
-        y += 27;
-
-        graphics.text(font, MailUi.ellipsize(font, mail.getTitle(), innerWidth), x, y,
-                MailUi.textPrimary(), false);
-        y += 18;
+        int bodyBottom = detailRect.bottom() - 44;
+        int contentMouseY = mouseY + detailScroll;
+        graphics.enableScissor(detailRect.x(), detailRect.y(), detailRect.right(), bodyBottom);
+        graphics.pose().pushMatrix();
+        graphics.pose().translate(0, -detailScroll);
+        graphics.text(font, typeIcon(mail.getType()) + " " + typeLabel(mail.getType()), x, y, typeColor(mail.getType()), false);
+        y += 20;
+        for (FormattedCharSequence line : font.split(Component.literal(mail.getTitle()), innerWidth)) {
+            graphics.text(font, line, x, y, MailUi.textPrimary(), false); y += font.lineHeight + 2;
+        }
+        y += 4;
         String sentAt = new SimpleDateFormat("yyyy-MM-dd HH:mm").format(new Date(mail.getCreatedTime()));
-        graphics.text(font, "发件人: " + safe(mail.getSender(), "系统") + "   时间: " + sentAt,
-                x, y, MailUi.textSecondary(), false);
-        y += 13;
-        if (mail.isExpired()) {
-            graphics.text(font, "已过期", x, y, MailUi.red(), false);
-        } else if (mail.getExpireTime() == null) {
-            graphics.text(font, "永久有效", x, y, MailUi.green(), false);
-        } else {
-            graphics.text(font, "剩余 " + formatRemaining(mail.getExpireTime() - System.currentTimeMillis()),
-                    x, y, MailUi.green(), false);
+        for (FormattedCharSequence line : font.split(Component.literal("发件人: " + safe(mail.getSender(), "系统") + "   " + sentAt), innerWidth)) {
+            graphics.text(font, line, x, y, MailUi.textSecondary(), false); y += font.lineHeight + 2;
         }
-        y += 17;
-        graphics.fill(x, y, x + innerWidth, y + 1, MailUi.divider());
-        y += 12;
-        graphics.text(font, "正文", x, y, MailUi.textPrimary(), false);
-        y += 14;
-
-        String body = safe(mail.getBody(), "（无正文）");
-        List<FormattedCharSequence> lines = font.split(Component.literal(body), innerWidth);
-        int actionsTop = detailRect.bottom() - 54;
-        int maxBodyBottom = Math.max(y + font.lineHeight, actionsTop - 47);
-        for (FormattedCharSequence line : lines) {
-            if (y + font.lineHeight > maxBodyBottom) {
-                graphics.text(font, "...", x, y, MailUi.textSecondary(), false);
-                y += font.lineHeight;
-                break;
-            }
-            graphics.text(font, line, x, y, YzuiTheme.textMuted(), false);
-            y += font.lineHeight + 2;
+        graphics.text(font, mail.isExpired() ? "已过期" : mail.getExpireTime() == null ? "永久有效"
+                : "剩余 " + formatRemaining(mail.getExpireTime() - System.currentTimeMillis()), x, y + 4,
+                mail.isExpired() ? MailUi.red() : MailUi.green(), false);
+        y += 24;
+        graphics.text(font, "正文", x, y, MailUi.textPrimary(), false); y += 16;
+        for (FormattedCharSequence line : font.split(Component.literal(safe(mail.getBody(), "（无正文）")), innerWidth)) {
+            graphics.text(font, line, x, y, MailUi.textSecondary(), false); y += font.lineHeight + 2;
         }
-
         List<MailAttachment> attachments = mail.getAttachments();
         if (attachments != null && !attachments.isEmpty()) {
-            int attachmentY = Math.max(y + 8, actionsTop - 35);
-            graphics.text(font, "附件 (" + attachments.size() + ")", x, attachmentY,
-                    MailUi.textPrimary(), false);
+            y += 12;
+            graphics.text(font, "附件 (" + attachments.size() + ")", x, y, MailUi.textPrimary(), false); y += 18;
             int chipX = x;
-            int chipY = attachmentY + 13;
             for (MailAttachment attachment : attachments) {
-                if (attachment.type() == AttachmentType.ITEM) {
-                    ItemStack stack = decodeAttachmentItem(attachment);
-                    if (!stack.isEmpty()) {
-                        graphics.item(stack, chipX, chipY, 0);
-                        graphics.itemDecorations(font, stack, chipX, chipY);
-                        if (mouseX >= chipX && mouseX < chipX + 16
-                                && mouseY >= chipY && mouseY < chipY + 16) {
-                            graphics.setTooltipForNextFrame(font, stack,
-                                    viewport.toScreenX(mouseX), viewport.toScreenY(mouseY));
-                        }
-                        chipX += 18;
-                    } else {
-                        // 解码失败时回退文字
-                        String label = "物品 ×" + Math.max(1, attachment.amount());
-                        chipX = renderAttachmentChip(graphics, chipX, chipY, x, innerWidth, label);
-                        if (chipX < 0) break;
-                    }
+                ItemStack stack = attachment.type() == AttachmentType.ITEM ? decodeAttachmentItem(attachment) : ItemStack.EMPTY;
+                String label = attachmentLabel(attachment);
+                int chipWidth = stack.isEmpty() ? Math.min(innerWidth, font.width(label) + 12) : 18;
+                if (chipX + chipWidth > x + innerWidth) { chipX = x; y += 22; }
+                if (!stack.isEmpty()) {
+                    graphics.item(stack, chipX, y, 0); graphics.itemDecorations(font, stack, chipX, y);
+                    if (mouseX >= chipX && mouseX < chipX + 16 && contentMouseY >= y && contentMouseY < y + 16
+                            && mouseY >= detailRect.y() && mouseY < bodyBottom)
+                        graphics.setTooltipForNextFrame(font, stack, viewport.toScreenX(mouseX), viewport.toScreenY(mouseY));
                 } else {
-                    String label = attachmentLabel(attachment);
-                    chipX = renderAttachmentChip(graphics, chipX, chipY, x, innerWidth, label);
-                    if (chipX < 0) break;
+                    graphics.text(font, MailUi.ellipsize(font, label, chipWidth - 8), chipX + 4, y + 4, MailUi.textSecondary(), false);
                 }
+                chipX += chipWidth + 6;
             }
+            y += 22;
         }
-
+        maxDetailScroll = Math.max(0, y + 12 - bodyBottom);
+        detailScroll = Math.clamp(detailScroll, 0, maxDetailScroll);
+        graphics.pose().popMatrix(); graphics.disableScissor();
         int buttonY = detailRect.bottom() - 35;
         boolean canClaim = mail.getType() == MailType.REWARD && !mail.isExpired() && !ref.isClaimed();
         boolean canDelete = canDeleteIndividually(pair);
@@ -381,8 +361,8 @@ public class MailScreen extends MailBaseScreen {
 
     private void renderBatchActions(GuiGraphicsExtractor graphics, int mouseX, int mouseY,
                                     List<MailStreamCodecs.MailRefAndMail> inbox) {
-        int y = pageRect.bottom() - 46;
-        deleteReadRect = new MailUi.Rect(pageRect.x() + 34, y, 88, 23);
+        int y = pageRect.bottom() - (compact() ? 32 : 46);
+        deleteReadRect = new MailUi.Rect(pageRect.x() + padding(), y, 88, 23);
         purgeExpiredRect = new MailUi.Rect(deleteReadRect.right() + 8, y, 96, 23);
         boolean hasRead = inbox.stream().anyMatch(pair -> canDeleteByReadFilter(pair));
         boolean hasExpired = inbox.stream().anyMatch(pair -> pair.mail().isExpired() && !pair.ref().isStarred());
@@ -390,7 +370,7 @@ public class MailScreen extends MailBaseScreen {
                 deleteReadRect.contains(mouseX, mouseY), hasRead);
         MailUi.button(graphics, font, purgeExpiredRect, "清理过期邮件", YzuiTheme.primaryContainer(), YzuiTheme.onPrimaryContainer(),
                 purgeExpiredRect.contains(mouseX, mouseY), hasExpired);
-        graphics.text(font, "清理前请确认，已收藏的过期邮件将保留", purgeExpiredRect.right() + 10, y + 7,
+        graphics.text(font, compact() ? "" : "清理前请确认，已收藏的过期邮件将保留", purgeExpiredRect.right() + 10, y + 7,
                 MailUi.textMuted(), false);
     }
 
@@ -407,6 +387,7 @@ public class MailScreen extends MailBaseScreen {
         graphics.text(font, heading, centerX - font.width(heading) / 2, centerY + 15,
                 MailUi.textPrimary(), false);
         String description = "服务器发送的公告、通知与奖励都会显示在这里";
+        description = MailUi.ellipsize(font, description, pageRect.width() - 24);
         graphics.text(font, description, centerX - font.width(description) / 2, centerY + 42,
                 MailUi.textMuted(), false);
         String hint = "新邮件到达时将显示红色未读角标";
@@ -421,7 +402,7 @@ public class MailScreen extends MailBaseScreen {
         double mouseY = viewport.toDesignY(event.y());
 
         if (backRect.contains(mouseX, mouseY)) {
-            backToMenu();
+            onClose();
             return true;
         }
         if (closeRect.contains(mouseX, mouseY)) {
@@ -429,12 +410,12 @@ public class MailScreen extends MailBaseScreen {
             return true;
         }
         if (MailClientState.canSend && composeRect.contains(mouseX, mouseY)) {
-            ClientPlayNetworking.send(new MailComposeOpenPayload());
+            MailNavigationRequests.compose(this);
             DebugLogger.info(MODULE, "请求打开发布邮件页面");
             return true;
         }
         if (MailClientState.canSend && sentRect.contains(mouseX, mouseY)) {
-            ClientPlayNetworking.send(new MailSentListRequestPayload());
+            MailNavigationRequests.sent(this);
             DebugLogger.info(MODULE, "请求打开已发送邮件页面");
             return true;
         }
@@ -445,7 +426,7 @@ public class MailScreen extends MailBaseScreen {
                 if (tabRects[i] != null && tabRects[i].contains(mouseX, mouseY)) {
                     activeFilter = Filter.values()[i];
                     scrollOffset = 0;
-                    selectedMailId = null;
+                    selectedMailId = null; detailVisible = false; detailScroll = 0;
                     return true;
                 }
             }
@@ -453,7 +434,7 @@ public class MailScreen extends MailBaseScreen {
             List<MailStreamCodecs.MailRefAndMail> filtered = filteredInbox(inbox);
             int bodyTop = listRect.y() + 30;
             if (listRect.contains(mouseX, mouseY) && mouseY >= bodyTop) {
-                int index = scrollOffset + (int) ((mouseY - bodyTop) / ROW_HEIGHT);
+                int index = scrollOffset + (int) ((mouseY - bodyTop) / rowHeight());
                 if (index >= 0 && index < filtered.size()) {
                     MailStreamCodecs.MailRefAndMail pair = filtered.get(index);
                     if (event.button() == InputConstants.MOUSE_BUTTON_RIGHT) {
@@ -465,7 +446,7 @@ public class MailScreen extends MailBaseScreen {
                 }
             }
 
-            MailStreamCodecs.MailRefAndMail selected = resolveSelection(filtered);
+            MailStreamCodecs.MailRefAndMail selected = resolveSelection(inbox);
             if (selected != null) {
                 if (claimRect.contains(mouseX, mouseY)) {
                     claim(selected);
@@ -476,7 +457,7 @@ public class MailScreen extends MailBaseScreen {
                     return true;
                 }
                 if (deleteRect.contains(mouseX, mouseY)) {
-                    MailStreamCodecs.MailRefAndMail sel = resolveSelection(filtered);
+                    MailStreamCodecs.MailRefAndMail sel = resolveSelection(inbox);
                     if (sel != null && canDeleteIndividually(sel)) {
                         deleteMail(selected.mail().getId());
                     }
@@ -507,19 +488,30 @@ public class MailScreen extends MailBaseScreen {
         if (isExiting()) return true;
         double designX = viewport.toDesignX(mouseX);
         double designY = viewport.toDesignY(mouseY);
+        if (detailRect.contains(designX, designY)) {
+            detailScroll = Math.clamp(detailScroll - (int) (scrollY * 24), 0, maxDetailScroll);
+            return true;
+        }
         if (!listRect.contains(designX, designY)) {
             return false;
         }
         List<MailStreamCodecs.MailRefAndMail> filtered = filteredInbox(visibleInbox());
-        int visibleRows = Math.max(1, (listRect.height() - 30) / ROW_HEIGHT);
+        int visibleRows = Math.max(1, (listRect.height() - 30) / rowHeight());
         int maxOffset = Math.max(0, filtered.size() - visibleRows);
         scrollOffset = scrollY > 0 ? Math.max(0, scrollOffset - 1) : Math.min(maxOffset, scrollOffset + 1);
         return true;
     }
 
+    @Override public void onClose() {
+        if (compact() && detailVisible) { detailVisible = false; return; }
+        super.onClose();
+    }
+
     /** 选择邮件并在首次展示时标记为已读。 */
     public void selectEntry(Mail mail, MailRef ref) {
+        if (!mail.getId().equals(selectedMailId)) detailScroll = 0;
         selectedMailId = mail.getId();
+        detailVisible = true;
         markRead(ref);
         DebugLogger.info(MODULE, "已选择邮件: mailId=%s", mail.getId());
     }

@@ -187,6 +187,10 @@ final class UnifiedSettingsPage {
             values.put(option, option.get());
         }
         for (AbstractWidget widget : resources) rows.add(SettingsList.Row.widget(widget));
+        heading(rows, "mods", YzuiOptionsScreen.text("mods"));
+        SettingsCompatibility.addModRows(host, rows);
+        rows.add(SettingsList.Row.controls(YzuiOptionsScreen.text("compatibility"), YzuiOptionsScreen.text("compatibility.description"),
+                button(YzuiOptionsScreen.text("open"), () -> YzuiSettingsRouter.openCompatibility(host))));
         boolean firstCoreSection = true;
         for (Page page : pages) {
             if (!(page.screen instanceof YouzaiWorldCoreSettingsScreen core)) continue;
@@ -197,10 +201,6 @@ final class UnifiedSettingsPage {
             }
             appendCoreOptions(rows, core);
         }
-        heading(rows, "mods", YzuiOptionsScreen.text("mods"));
-        SettingsCompatibility.addModRows(host, rows);
-        rows.add(SettingsList.Row.controls(YzuiOptionsScreen.text("compatibility"), YzuiOptionsScreen.text("compatibility.description"),
-                button(YzuiOptionsScreen.text("open"), () -> YzuiSettingsRouter.openCompatibility(host))));
         for (Page page : pages) captured.put(page.screen, SettingsWidgets.flatten(page.screen));
         displayed = rows.stream().flatMap(row -> row.widgets.stream()).toList();
     }
@@ -262,8 +262,6 @@ final class UnifiedSettingsPage {
     private SettingsList.Row heading(List<SettingsList.Row> rows, String anchor, Component title) {
         SettingsList.Row row = SettingsList.Row.heading(title);
         row.sectionId = anchor;
-        row.advanced = anchor.equals("resources") || anchor.equals("mods")
-                || anchor.equals("core.1") || anchor.equals("core.2") || anchor.equals("core.3");
         anchors.put(anchor, row);
         rows.add(row);
         return row;

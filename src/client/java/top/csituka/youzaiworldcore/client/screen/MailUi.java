@@ -37,19 +37,11 @@ final class MailUi {
         YzuiMenuPanel.card(graphics, page.x(), page.y(), page.width(), page.height());
     }
 
-    /**
-     * 在设计空间（{@link MailViewport#DESIGN_WIDTH}×{@link MailViewport#DESIGN_HEIGHT}）内
-     * 计算居中的页面容器。
-     * <p>
-     * 真实屏幕尺寸的适配由 {@link MailViewport} 统一做等比缩放，这里不再参与，
-     * 因此页面尺寸恒定，排版在任何界面尺寸下都保持一致。
-     * </p>
-     */
-    static Rect centeredPage(int maxWidth, int maxHeight) {
-        int pageWidth = Math.min(maxWidth, MailViewport.DESIGN_WIDTH - 28);
-        int pageHeight = Math.min(maxHeight, MailViewport.DESIGN_HEIGHT - 28);
-        return new Rect((MailViewport.DESIGN_WIDTH - pageWidth) / 2,
-                (MailViewport.DESIGN_HEIGHT - pageHeight) / 2, pageWidth, pageHeight);
+    /** 在当前视口内计算页面边界，排版由各页面按可用宽高调整。 */
+    static Rect centeredPage(int maxWidth, int maxHeight, int canvasWidth, int canvasHeight) {
+        int pageWidth = Math.min(maxWidth, canvasWidth - 28);
+        int pageHeight = Math.min(maxHeight, canvasHeight - 28);
+        return new Rect((canvasWidth - pageWidth) / 2, (canvasHeight - pageHeight) / 2, pageWidth, pageHeight);
     }
 
     /**

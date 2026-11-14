@@ -7,7 +7,6 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 import top.csituka.youzaiworldcore.client.MailClientState;
-import top.csituka.youzaiworldcore.network.MailFetchPayload;
 import top.csituka.youzaiworldcore.network.MailRecallPayload;
 import top.csituka.youzaiworldcore.network.MailSentListRequestPayload;
 import top.csituka.youzaiworldcore.network.MailStreamCodecs;
@@ -26,7 +25,9 @@ import java.util.List;
 public class MailSentScreen extends MailBaseScreen {
 
     private static final String MODULE = "MailSentScreen";
-    private static final int ROW_HEIGHT = 46;
+    private boolean compact() { return pageRect.width() < 700; }
+    private int rowHeight() { return compact() ? 62 : 46; }
+    private int actionX() { return compact() ? tableRect.right() - 98 : tableRect.x() + tableRect.width() * 80 / 100; }
 
     private int scrollOffset;
     private MailUi.Rect pageRect = new MailUi.Rect(0, 0, 0, 0);
@@ -51,7 +52,7 @@ public class MailSentScreen extends MailBaseScreen {
 
     @Override
     protected void renderMailContent(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
-        pageRect = MailUi.centeredPage(824, 464);
+        pageRect = MailUi.centeredPage(824, 464, viewport.width(), viewport.height());
         MailUi.drawPage(graphics, pageRect);
         renderHeader(graphics, mouseX, mouseY);
         renderTable(graphics, mouseX, mouseY);
@@ -60,7 +61,7 @@ public class MailSentScreen extends MailBaseScreen {
 
     private void renderHeader(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
         int titleX = pageRect.x() + 34;
-        int titleY = pageRect.y() + 34;
+        int titleY = pageRect.y() + (compact() ? 16 : 34);
         graphics.text(font, "➤", titleX, titleY + 3, MailUi.textPrimary(), false);
         graphics.pose().pushMatrix();
         graphics.pose().scale(1.45f, 1.45f);
@@ -68,8 +69,8 @@ public class MailSentScreen extends MailBaseScreen {
                 MailUi.textPrimary(), false);
         graphics.pose().popMatrix();
 
-        int buttonY = pageRect.y() + 34;
-        closeRect = new MailUi.Rect(pageRect.right() - 80, buttonY, 46, 22);
+        int buttonY = pageRect.y() + (compact() ? 42 : 34);
+        closeRect = new MailUi.Rect(pageRect.right() - (compact() ? 58 : 80), buttonY, 46, 22);
         backRect = new MailUi.Rect(closeRect.x() - 54, buttonY, 46, 22);
         refreshRect = new MailUi.Rect(backRect.x() - 56, buttonY, 48, 22);
         MailUi.button(graphics, font, refreshRect, "刷新", YzuiTheme.primaryContainer(), YzuiTheme.onPrimaryContainer(),
@@ -81,8 +82,8 @@ public class MailSentScreen extends MailBaseScreen {
     }
 
     private void renderTable(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
-        tableRect = new MailUi.Rect(pageRect.x() + 34, pageRect.y() + 76,
-                pageRect.width() - 68, pageRect.height() - 104);
+        tableRect = new MailUi.Rect(pageRect.x() + (compact() ? 12 : 34), pageRect.y() + 76,
+                pageRect.width() - (compact() ? 24 : 68), pageRect.height() - 88);
         MailUi.roundedRect(graphics, tableRect.x(), tableRect.y(), tableRect.width(), tableRect.height(), 5,
                 MailUi.panelBackground());
         graphics.fill(tableRect.x(), tableRect.y(), tableRect.right(), tableRect.y() + 30, MailUi.panelHeader());
@@ -91,12 +92,12 @@ public class MailSentScreen extends MailBaseScreen {
         int scopeX = tableRect.x() + tableRect.width() * 29 / 100;
         int sentTimeX = tableRect.x() + tableRect.width() * 50 / 100;
         int expireX = tableRect.x() + tableRect.width() * 68 / 100;
-        int actionX = tableRect.x() + tableRect.width() * 80 / 100;
+        int actionX = actionX();
         int headerY = tableRect.y() + 10;
         graphics.text(font, "主题", subjectX, headerY, MailUi.textSecondary(), false);
-        graphics.text(font, "接收范围", scopeX, headerY, MailUi.textSecondary(), false);
-        graphics.text(font, "发送时间", sentTimeX, headerY, MailUi.textSecondary(), false);
-        graphics.text(font, "到期", expireX, headerY, MailUi.textSecondary(), false);
+        if (!compact()) graphics.text(font, "接收范围", scopeX, headerY, MailUi.textSecondary(), false);
+        if (!compact()) graphics.text(font, "发送时间", sentTimeX, headerY, MailUi.textSecondary(), false);
+        if (!compact()) graphics.text(font, "到期", expireX, headerY, MailUi.textSecondary(), false);
         graphics.text(font, "操作", actionX, headerY, MailUi.textSecondary(), false);
 
         List<MailStreamCodecs.MailSummary> entries = sortedEntries();
@@ -112,13 +113,24 @@ public class MailSentScreen extends MailBaseScreen {
         int end = Math.min(entries.size(), scrollOffset + visibleRows);
         for (int i = scrollOffset; i < end; i++) {
             MailStreamCodecs.MailSummary summary = entries.get(i);
-            int rowY = tableRect.y() + 30 + (i - scrollOffset) * ROW_HEIGHT;
-            MailUi.Rect rowRect = new MailUi.Rect(tableRect.x(), rowY, tableRect.width(), ROW_HEIGHT);
+            int rowY = tableRect.y() + 30 + (i - scrollOffset) * rowHeight();
+            MailUi.Rect rowRect = new MailUi.Rect(tableRect.x(), rowY, tableRect.width(), rowHeight());
             boolean hovered = rowRect.contains(mouseX, mouseY);
             int background = hovered ? MailUi.rowHovered()
                     : (i % 2 == 0 ? MailUi.panelBackground() : MailUi.rowAlternate());
             graphics.fill(rowRect.x(), rowRect.y(), rowRect.right(), rowRect.bottom(), background);
 
+            if (compact()) {
+                graphics.text(font, MailUi.ellipsize(font, summary.title(), actionX - subjectX - 10), subjectX, rowY + 10, MailUi.textPrimary(), false);
+                String info = summary.scopeSummary() + " · " + new SimpleDateFormat("MM/dd HH:mm").format(new Date(summary.sentTime()));
+                graphics.text(font, MailUi.ellipsize(font, info, tableRect.width() - 28), subjectX, rowY + 40, MailUi.textSecondary(), false);
+                if (isExpired(summary)) graphics.text(font, "已过期", actionX, rowY + 18, MailUi.red(), false);
+                else {
+                    MailUi.button(graphics, font, editRect(rowY, actionX), "编辑", YzuiTheme.secondaryContainer(), MailUi.yellow(), editRect(rowY, actionX).contains(mouseX, mouseY), true);
+                    MailUi.button(graphics, font, recallRect(rowY, actionX), "撤回", YzuiTheme.errorContainer(), YzuiTheme.error(), recallRect(rowY, actionX).contains(mouseX, mouseY), true);
+                }
+                continue;
+            }
             int textY = rowY + 18;
             graphics.text(font, MailUi.ellipsize(font, summary.title(), scopeX - subjectX - 18),
                     subjectX, textY, MailUi.textPrimary(), false);
@@ -161,7 +173,7 @@ public class MailSentScreen extends MailBaseScreen {
             graphics.fill(tableRect.right() - 4, thumbY, tableRect.right() - 2, thumbY + thumbHeight, YzuiTheme.surfaceHigh());
         }
 
-        graphics.text(font, "已领取奖励附件的邮件不可编辑；已过期的邮件不再提供编辑与撤回",
+        if (!compact()) graphics.text(font, "已领取奖励附件的邮件不可编辑；已过期的邮件不再提供编辑与撤回",
                 tableRect.x() + 14, tableRect.bottom() - 18, MailUi.textMuted(), false);
     }
 
@@ -186,7 +198,7 @@ public class MailSentScreen extends MailBaseScreen {
         }
 
         List<MailStreamCodecs.MailSummary> entries = sortedEntries();
-        int actionX = tableRect.x() + tableRect.width() * 80 / 100;
+        int actionX = actionX();
         int visibleRows = visibleRows();
         int end = Math.min(entries.size(), scrollOffset + visibleRows);
         for (int i = scrollOffset; i < end; i++) {
@@ -194,10 +206,9 @@ public class MailSentScreen extends MailBaseScreen {
             if (isExpired(summary)) {
                 continue;
             }
-            int rowY = tableRect.y() + 30 + (i - scrollOffset) * ROW_HEIGHT;
+            int rowY = tableRect.y() + 30 + (i - scrollOffset) * rowHeight();
             if (editRect(rowY, actionX).contains(mouseX, mouseY)) {
-                ClientPlayNetworking.send(new MailFetchPayload(summary.mailId()));
-                MailToast.show("正在加载邮件数据...", true);
+                MailNavigationRequests.edit(this, summary.mailId());
                 DebugLogger.info(MODULE, "已请求编辑邮件: mailId=%s", summary.mailId());
                 return true;
             }
@@ -234,7 +245,7 @@ public class MailSentScreen extends MailBaseScreen {
     }
 
     private int visibleRows() {
-        return Math.max(1, (tableRect.height() - 55) / ROW_HEIGHT);
+        return Math.max(1, (tableRect.height() - (compact() ? 30 : 55)) / rowHeight());
     }
 
     private static boolean isExpired(MailStreamCodecs.MailSummary summary) {
