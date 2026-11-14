@@ -3,6 +3,7 @@ package top.csituka.youzaiworldcore.client.screen;
 import net.minecraft.util.Prediction;
 import com.mojang.blaze3d.platform.InputConstants;
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
+import top.csituka.youzaiworldcore.client.render.MenuIcon;
 import top.csituka.youzaiworldcore.client.screen.widget.YzuiCloseButton;
 import top.csituka.youzaiworldcore.client.inventory.CreativeItemGroupRenderer;
 import top.csituka.youzaiworldcore.client.inventory.CreativeItemGroups;
@@ -766,9 +767,8 @@ public class YzuCreativeInventoryScreen extends Screen {
         boolean canLeft = tabPage > 0;
         boolean lh = canLeft && mx >= leftX && mx < leftX + TW && my >= arrowY && my < arrowY + TH;
         fillR(g, leftX, arrowY, TW, TH, TR, lh ? YzuiTheme.primaryContainer() : YzuiTheme.surfaceLow());
-        int ltx = leftX + (TW - font.width("<")) / 2;
-        int lty = arrowY + (TH - font.lineHeight) / 2;
-        g.text(font, "<", ltx, lty, canLeft ? YzuiTheme.text() : YzuiTheme.outline(), false);
+        MenuIcon.CHEVRON_LEFT.renderCentered(g, leftX, arrowY, TW, TH,
+                canLeft ? YzuiTheme.text() : YzuiTheme.outline());
 
         int tx = leftX + TW + TG;
         for (int i = st; i < en; i++) {
@@ -790,9 +790,8 @@ public class YzuCreativeInventoryScreen extends Screen {
         boolean canRight = tabPage < pc - 1;
         boolean rh = canRight && mx >= rightX && mx < rightX + TW && my >= arrowY && my < arrowY + TH;
         fillR(g, rightX, arrowY, TW, TH, TR, rh ? YzuiTheme.primaryContainer() : YzuiTheme.surfaceLow());
-        int rtx = rightX + (TW - font.width(">")) / 2;
-        int rty = arrowY + (TH - font.lineHeight) / 2;
-        g.text(font, ">", rtx, rty, canRight ? YzuiTheme.text() : YzuiTheme.outline(), false);
+        MenuIcon.CHEVRON_RIGHT.renderCentered(g, rightX, arrowY, TW, TH,
+                canRight ? YzuiTheme.text() : YzuiTheme.outline());
     }
 
     private void drawGrid(GuiGraphicsExtractor g, int mx, int my) {

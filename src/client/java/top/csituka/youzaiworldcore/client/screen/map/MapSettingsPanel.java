@@ -19,6 +19,7 @@ import top.csituka.youzaiworldcore.client.config.MapSettings;
 import top.csituka.youzaiworldcore.client.map.MapTexts;
 import top.csituka.youzaiworldcore.client.render.RoundedRect;
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
+import top.csituka.youzaiworldcore.client.render.MenuIcon;
 import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
 import top.csituka.youzaiworldcore.client.screen.widget.DropdownButton;
 import top.csituka.youzaiworldcore.util.DebugLogger;
@@ -76,8 +77,8 @@ final class MapSettingsPanel extends AbstractContainerEventHandler implements Re
                 @Override protected void extractWidgetRenderState(GuiGraphicsExtractor g, int mx, int my, float delta) {
                     boolean toggle = entry.toggle != null, on = toggle && MapSettings.enabled(entry.toggle);
                     Component value = entry == Entry.MARKERS ? MapSettingsCategoryScreen.markerDisplayLabel()
-                            : toggle ? MapTexts.text(on ? "on" : "off") : Component.literal("›");
-                    setMessage(MapTexts.text("setting_value", MapTexts.text(entry.key), value));
+                            : toggle ? MapTexts.text(on ? "on" : "off") : Component.empty();
+                    setMessage(toggle ? MapTexts.text("setting_value", MapTexts.text(entry.key), value) : MapTexts.text(entry.key));
                     YzuiTheme.button(g, getX(), getY(), getWidth(), getHeight(), isMouseOver(mx, my) ? 1 : 0,
                             isFocused(), true, 1, YzuiTheme.ButtonStyle.TEXT);
                     int valueWidth = toggle ? 38 : entry == Entry.MARKERS ? Math.min(70, getWidth() / 2) : 14;
@@ -87,8 +88,8 @@ final class MapSettingsPanel extends AbstractContainerEventHandler implements Re
                         int x = getX() + getWidth() - 34, y = getY() + 4;
                         RoundedRect.fill(g, x, y, 32, 14, 7, on ? YzuiTheme.primary() : YzuiTheme.outlineVariant());
                         RoundedRect.fill(g, x + (on ? 18 : 2), y + 2, 10, 10, 5, on ? YzuiTheme.onPrimary() : YzuiTheme.textMuted());
-                    } else YzuiTheme.label(g, Minecraft.getInstance().font, value, getX() + getWidth() - valueWidth,
-                            getY() + 7, valueWidth, YzuiTheme.textMuted(), true);
+                    } else MenuIcon.CHEVRON_RIGHT.renderCentered(g, getX() + getWidth() - valueWidth,
+                            getY(), valueWidth, getHeight(), YzuiTheme.textMuted());
                 }
             };
             control.setTooltip(Tooltip.create(MapTexts.text(entry.key))); widgets.add(control);

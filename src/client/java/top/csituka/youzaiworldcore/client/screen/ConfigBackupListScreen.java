@@ -2,6 +2,7 @@ package top.csituka.youzaiworldcore.client.screen;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
+import top.csituka.youzaiworldcore.client.render.MenuIcon;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -109,11 +110,13 @@ public class ConfigBackupListScreen extends Screen {
         addRenderableWidget(backButton);
         if (pageCount > 1) {
             TransparentButton previous = new TransparentButton(listX, height - 42, 72, 26,
-                    Component.literal("←"), () -> { page--; rebuildEntryWidgets(); });
+                    Component.translatable("gui.recipebook.previous_page"), () -> { page--; rebuildEntryWidgets(); })
+                        .setLineIcon(MenuIcon.CHEVRON_LEFT);
             previous.active = page > 0 && !importInProgress;
             addRenderableWidget(previous);
             TransparentButton next = new TransparentButton(listX + listWidth - 72, height - 42, 72, 26,
-                    Component.literal("→"), () -> { page++; rebuildEntryWidgets(); });
+                    Component.translatable("gui.recipebook.next_page"), () -> { page++; rebuildEntryWidgets(); })
+                        .setLineIcon(MenuIcon.CHEVRON_RIGHT);
             next.active = page < pageCount - 1 && !importInProgress;
             addRenderableWidget(next);
         }

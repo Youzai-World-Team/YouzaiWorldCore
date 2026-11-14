@@ -13,6 +13,7 @@ import top.csituka.youzaiworldcore.client.map.MapClient;
 import top.csituka.youzaiworldcore.client.map.MapTexts;
 import top.csituka.youzaiworldcore.client.render.RoundedRect;
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
+import top.csituka.youzaiworldcore.client.render.MenuIcon;
 import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
 import top.csituka.youzaiworldcore.network.MapSessionPayload;
 import top.csituka.youzaiworldcore.network.MapActionPayload;
@@ -118,7 +119,8 @@ final class MapPlayersPanel extends MapOverlayPanel {
         next = null;
         button(panelX + panelWidth - 32, panelY + 7, 22, Component.literal("×"), this::onClose);
         if (picker != null || choosingMode)
-            button(panelX + panelWidth - 58, panelY + 7, 22, Component.literal("←"), this::back)
+            button(panelX + panelWidth - 58, panelY + 7, 22, MapTexts.text("players_back"), this::back)
+                .setLineIcon(MenuIcon.CHEVRON_LEFT)
                     .setTooltip(Tooltip.create(MapTexts.text("players_back")));
         footer = panelY + panelHeight - 32;
         if (choosingMode) {
@@ -137,6 +139,7 @@ final class MapPlayersPanel extends MapOverlayPanel {
                 init();
             });
             scope.setTextLeftAligned(true);
+            scope.setTrailingLineIcon(MenuIcon.CHEVRON_RIGHT);
             scope.setTooltip(Tooltip.create(MapTexts.text("players_scope")));
             y += 28;
             int cell = (panelWidth - 36) / 4;
@@ -203,14 +206,14 @@ final class MapPlayersPanel extends MapOverlayPanel {
         }
         listTop = searchY + (compact ? 28 : 48);
         rowHeight = compact ? 52 : 62;
-        previous = button(panelX + 12, footer, 24, Component.literal("‹"), () -> {
+        previous = button(panelX + 12, footer, 24, MapTexts.text("previous"), () -> {
             page--;
             refreshRows();
-        });
-        next = button(panelX + panelWidth - 36, footer, 24, Component.literal("›"), () -> {
+        }).setLineIcon(MenuIcon.CHEVRON_LEFT);
+        next = button(panelX + panelWidth - 36, footer, 24, MapTexts.text("next"), () -> {
             page++;
             refreshRows();
-        });
+        }).setLineIcon(MenuIcon.CHEVRON_RIGHT);
         previous.setTooltip(Tooltip.create(MapTexts.text("previous")));
         next.setTooltip(Tooltip.create(MapTexts.text("next")));
         refreshRows();
@@ -263,7 +266,7 @@ final class MapPlayersPanel extends MapOverlayPanel {
     private Component scopeLabel() {
         String key = !available() ? "players_unavailable"
                 : state == null ? "players_loading" : state.blacklist() ? "players_scope_all" : "players_scope_list";
-        return MapTexts.text(key).copy().append("  ›");
+        return MapTexts.text(key);
     }
 
     @SuppressWarnings("null")

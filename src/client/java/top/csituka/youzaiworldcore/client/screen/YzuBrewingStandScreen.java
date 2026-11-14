@@ -2,6 +2,7 @@ package top.csituka.youzaiworldcore.client.screen;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
+import top.csituka.youzaiworldcore.client.render.MenuIcon;
 import top.csituka.youzaiworldcore.client.screen.widget.YzuiCloseButton;
 
 import net.minecraft.ChatFormatting;
@@ -425,7 +426,7 @@ public class YzuBrewingStandScreen extends AbstractContainerScreen<BrewingStandM
         graphics.item(input, x + 2, y + 3, 0);
         graphics.text(this.font, "+", x + 20, y + 7, mutedColor(), false);
         graphics.item(ingredient, x + 27, y + 3, 0);
-        graphics.text(this.font, ">", x + 45, y + 7, mutedColor(), false);
+        MenuIcon.CHEVRON_RIGHT.renderCentered(graphics, x + 43, y + 3, 10, 16, mutedColor());
         graphics.item(output, x + 52, y + 3, 0);
 
         int textX = x + 72;
@@ -456,12 +457,10 @@ public class YzuBrewingStandScreen extends AbstractContainerScreen<BrewingStandM
                 previousHovered ? rowHoverBg() : rowBg());
         fillRounded(graphics, x + GUIDE_WIDTH - 5 - PAGE_BUTTON_W, y,
                 PAGE_BUTTON_W, PAGE_BUTTON_H, 4, nextHovered ? rowHoverBg() : rowBg());
-        drawCenteredTextWithoutShadow(graphics, "<",
-                x + 5 + PAGE_BUTTON_W / 2, y + 3,
+        MenuIcon.CHEVRON_LEFT.renderCentered(graphics, x + 5, y, PAGE_BUTTON_W, PAGE_BUTTON_H,
                 canGoPrevious ? titleColor() : mutedColor());
-        drawCenteredTextWithoutShadow(graphics, ">",
-                x + GUIDE_WIDTH - 5 - PAGE_BUTTON_W / 2, y + 3,
-                canGoNext ? titleColor() : mutedColor());
+        MenuIcon.CHEVRON_RIGHT.renderCentered(graphics, x + GUIDE_WIDTH - 5 - PAGE_BUTTON_W, y,
+                PAGE_BUTTON_W, PAGE_BUTTON_H, canGoNext ? titleColor() : mutedColor());
         graphics.centeredText(this.font,
                 Component.translatable("screen.youzaiworldcore.brewing.page", currentPage, totalPages),
                 x + GUIDE_WIDTH / 2, y + 3, mutedColor());

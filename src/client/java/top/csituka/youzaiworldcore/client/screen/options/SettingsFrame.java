@@ -12,6 +12,7 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import top.csituka.youzaiworldcore.client.render.RoundedRect;
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
+import top.csituka.youzaiworldcore.client.render.MenuIcon;
 import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
 
 /** 设置页面共用外壳。统一设置按分区切换内容，窄屏使用紧凑侧栏保留所有分区入口。 */
@@ -79,7 +80,8 @@ final class SettingsFrame {
         bodyWidth = width - 24 - (navigationWidth == 0 ? 0 : navigationWidth + 12);
         bodyHeight = Math.max(compactDialog ? 24 : 40, height - titleBottom - (compactDialog ? 68 : 44));
 
-        back = new TransparentButton(x + 12, y + 12, 28, 26, Component.literal("‹"), screen::onClose);
+        back = new TransparentButton(x + 12, y + 12, 28, 26, Component.translatable("gui.back"), screen::onClose)
+            .setLineIcon(MenuIcon.CHEVRON_LEFT);
         back.setStyle(YzuiTheme.ButtonStyle.TEXT);
         back.setTooltip(Tooltip.create(Component.translatable("gui.back")));
         back.active = screen.shouldCloseOnEsc();

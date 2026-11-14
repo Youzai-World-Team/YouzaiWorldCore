@@ -64,7 +64,7 @@ public class MenuScreen extends Screen implements YzuiMenuScreen {
         pageButtons.clear();
         var layout = new MenuLayout(width, height);
         backButton = new TransparentButton(layout.backX(), 18, MenuLayout.NAVIGATION_SIZE, MenuLayout.NAVIGATION_SIZE,
-                Component.translatable("youzaiworldcore.message.gui.back_button"), this::onClose);
+                Component.translatable("gui.back"), this::onClose).setLineIcon(MenuIcon.CHEVRON_LEFT);
         closeButton = new MenuCloseButton(layout.closeX(), 18, this);
         backButton.setBackgroundVisible(false);
         closeButton.setBackgroundVisible(false);

@@ -14,6 +14,7 @@ import top.csituka.youzaiworldcore.client.map.MapGroupIcons;
 import top.csituka.youzaiworldcore.client.map.MapPersonalData;
 import top.csituka.youzaiworldcore.client.map.MapTexts;
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
+import top.csituka.youzaiworldcore.client.render.MenuIcon;
 import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
 import top.csituka.youzaiworldcore.map.MapWaypoint;
 import top.csituka.youzaiworldcore.map.MapWaypointGroup;
@@ -85,8 +86,10 @@ final class MapWaypointPanel extends MapOverlayPanel {
         listTop = searchY + 30; actionTop = footer - 50; listBottom = actionTop - 6;
         treeTop = listTop; treeBottom = footer - 38;
         rowHeight = compact ? 34 : 58; capacity = Math.max(1, (listBottom - listTop) / rowHeight);
-        previous = control(listX, footer, 24, Component.literal("‹"), "previous", () -> { page--; refresh(); });
-        next = control(listX + listWidth - 24, footer, 24, Component.literal("›"), "next", () -> { page++; refresh(); });
+        previous = control(listX, footer, 24, MapTexts.text("previous"), "previous", () -> { page--; refresh(); })
+            .setLineIcon(MenuIcon.CHEVRON_LEFT);
+        next = control(listX + listWidth - 24, footer, 24, MapTexts.text("next"), "next", () -> { page++; refresh(); })
+            .setLineIcon(MenuIcon.CHEVRON_RIGHT);
         categoryButtons(treeX, footer - 28, sidebar);
         refresh(); if (searchFocused) setFocused(searchBox);
     }

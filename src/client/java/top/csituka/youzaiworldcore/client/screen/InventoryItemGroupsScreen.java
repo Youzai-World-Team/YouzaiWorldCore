@@ -10,6 +10,7 @@ import top.csituka.youzaiworldcore.client.config.InventoryItemGroupsConfig;
 import top.csituka.youzaiworldcore.client.inventory.InventoryItemGroupDefaults;
 import top.csituka.youzaiworldcore.client.inventory.InventoryItemGroupRule;
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
+import top.csituka.youzaiworldcore.client.render.MenuIcon;
 import top.csituka.youzaiworldcore.client.screen.widget.CheckboxButton;
 import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
 
@@ -150,14 +151,14 @@ public final class InventoryItemGroupsScreen extends Screen {
             row(remove);
         }
         TransparentButton previous = new TransparentButton(left, height - 56, 48, 20,
-                Component.literal("←"), () -> { page--; rebuildRows(); });
+                Component.translatable("gui.recipebook.previous_page"), () -> { page--; rebuildRows(); })
+                .setLineIcon(MenuIcon.CHEVRON_LEFT);
         previous.active = page > 0;
-        previous.setTooltip(Tooltip.create(text("previous")));
         row(previous);
         TransparentButton next = new TransparentButton(left + panelWidth - 48, height - 56, 48, 20,
-                Component.literal("→"), () -> { page++; rebuildRows(); });
+                Component.translatable("gui.recipebook.next_page"), () -> { page++; rebuildRows(); })
+                .setLineIcon(MenuIcon.CHEVRON_RIGHT);
         next.active = page < pageCount - 1;
-        next.setTooltip(Tooltip.create(text("next")));
         row(next);
     }
 

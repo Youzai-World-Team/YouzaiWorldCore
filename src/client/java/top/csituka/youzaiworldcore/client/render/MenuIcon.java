@@ -5,7 +5,14 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 /** 菜单的 16×16 线性图标；几何绘制跟随主题，不依赖字体符号或图片内文字。 */
 public enum MenuIcon {
     WORLD, MAIL, LEVEL, ACCOUNT, CROWN, SETTINGS, WEBSITE, BOOK, EVENTS, SURVEY, REPORT, ADMIN,
-    HOME, GAME, BUILD, COMMAND, PORTAL, CLOSE, BACK, MAP, EXIT;
+    HOME, GAME, BUILD, COMMAND, PORTAL, CLOSE, BACK, MAP, EXIT, CHEVRON_LEFT, CHEVRON_RIGHT;
+
+    /** 在按钮区域内居中绘制线条图标，保留窄小翻页按钮的边距。 */
+    public void renderCentered(GuiGraphicsExtractor g, int x, int y, int width, int height, int color) {
+        if (width <= 0 || height <= 0) return;
+        int size = Math.max(1, Math.min(16, Math.min(width, height) - 2));
+        render(g, x + (width - size) / 2, y + (height - size) / 2, size, color);
+    }
 
     /** 固定正方形图标框，横纵使用相同比例缩放，保留调用方的页面变换。 */
     public void render(GuiGraphicsExtractor g, int x, int y, int size, int color) {
@@ -24,6 +31,14 @@ public enum MenuIcon {
     /** 在逻辑 GUI 坐标中绘制图标，颜色已包含调用方的透明度。 */
     public void render(GuiGraphicsExtractor g, int x, int y, int color) {
         switch (this) {
+            case CHEVRON_LEFT -> {
+                line(g, x, y, 10, 3, 5, 8, color);
+                line(g, x, y, 5, 8, 10, 13, color);
+            }
+            case CHEVRON_RIGHT -> {
+                line(g, x, y, 6, 3, 11, 8, color);
+                line(g, x, y, 11, 8, 6, 13, color);
+            }
             case EXIT -> {
                 line(g, x, y, 8, 2, 2, 2, color);
                 line(g, x, y, 2, 2, 2, 14, color);

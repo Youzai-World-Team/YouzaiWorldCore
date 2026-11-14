@@ -4,9 +4,9 @@ import java.util.List;
 import java.util.function.Consumer;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.network.chat.Component;
 import top.csituka.youzaiworldcore.client.map.MapPersonalData;
 import top.csituka.youzaiworldcore.client.map.MapTexts;
+import top.csituka.youzaiworldcore.client.render.MenuIcon;
 import top.csituka.youzaiworldcore.map.MapWaypointGroup;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
@@ -36,8 +36,10 @@ final class MapGroupSelectScreen extends MapScreen {
                     }));
         }
         int footer = panelY + panelHeight - 62;
-        button(x, footer, 30, Component.literal("‹"), () -> { page--; init(); }).active = page > 0;
-        button(x + w - 30, footer, 30, Component.literal("›"), () -> { page++; init(); }).active = page < maxPage();
+        button(x, footer, 30, MapTexts.text("previous"), () -> { page--; init(); })
+            .setLineIcon(MenuIcon.CHEVRON_LEFT).active = page > 0;
+        button(x + w - 30, footer, 30, MapTexts.text("next"), () -> { page++; init(); })
+            .setLineIcon(MenuIcon.CHEVRON_RIGHT).active = page < maxPage();
         button(x, footer + 28, w, MapTexts.text("cancel"), this::onClose);
     }
     private int maxPage() { return Math.max(0, (groups.size() - 1) / capacity); }

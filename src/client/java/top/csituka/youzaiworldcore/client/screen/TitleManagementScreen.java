@@ -2,6 +2,7 @@ package top.csituka.youzaiworldcore.client.screen;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
+import top.csituka.youzaiworldcore.client.render.MenuIcon;
 import top.csituka.youzaiworldcore.client.render.YzuiMenuPanel;
 
 import net.minecraft.client.Minecraft;
@@ -91,25 +92,26 @@ public final class TitleManagementScreen extends Screen implements YzuiMenuScree
         if (pageCount > 1) {
             TransparentButton previous = new TransparentButton(
                     panelX + 24, panelY + panelHeight() - PAGINATION_BOTTOM, 70, 20,
-                    Component.literal("←"), () -> {
+                    Component.translatable("gui.recipebook.previous_page"), () -> {
                         page--;
                         rebuildTitleWidgets();
-                    });
+                    }).setLineIcon(MenuIcon.CHEVRON_LEFT);
             previous.active = page > 0;
             addRenderableWidget(previous);
             TransparentButton next = new TransparentButton(
                     panelX + panelWidth - 94, panelY + panelHeight() - PAGINATION_BOTTOM, 70, 20,
-                    Component.literal("→"), () -> {
+                    Component.translatable("gui.recipebook.next_page"), () -> {
                         page++;
                         rebuildTitleWidgets();
-                    });
+                    }).setLineIcon(MenuIcon.CHEVRON_RIGHT);
             next.active = page < pageCount - 1;
             addRenderableWidget(next);
         }
 
         addRenderableWidget(new MenuCloseButton(panelX + panelWidth - 40, panelY + 10, this));
         addRenderableWidget(new TransparentButton(panelX + 12, panelY + 10, 28, 28,
-                Component.literal("‹"), () -> Minecraft.getInstance().setScreenAndShow(parent))
+                Component.translatable("gui.back"), () -> Minecraft.getInstance().setScreenAndShow(parent))
+                .setLineIcon(MenuIcon.CHEVRON_LEFT)
                 .setStyle(YzuiTheme.ButtonStyle.TEXT));
     }
 

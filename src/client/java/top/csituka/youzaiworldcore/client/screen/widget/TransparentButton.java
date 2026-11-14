@@ -5,12 +5,15 @@ import java.util.function.IntSupplier;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
+import top.csituka.youzaiworldcore.client.render.MenuIcon;
+import top.csituka.youzaiworldcore.util.DebugLogger;
 import top.csituka.youzaiworldcore.client.animation.YzuiHover;
 
 /** 共用 MD3 按钮，支持实时主题、键盘焦点、禁用状态和可选图标。 */
@@ -23,6 +26,8 @@ public class TransparentButton extends AbstractWidget {
     private int textInsetRight = -1;
     private IntSupplier textColor;
     private Identifier icon;
+    private MenuIcon lineIcon;
+    private MenuIcon trailingLineIcon;
     private final YzuiHover hoverState = new YzuiHover();
     private YzuiTheme.ButtonStyle style = YzuiTheme.ButtonStyle.TONAL;
 
@@ -71,6 +76,21 @@ public class TransparentButton extends AbstractWidget {
         icon = value;
     }
 
+    /** 导航按钮只绘制线条图标，保留操作文案作为悬停提示与朗读内容。 */
+    public TransparentButton setLineIcon(MenuIcon value) {
+        lineIcon = value;
+        setTooltip(Tooltip.create(getMessage()));
+        DebugLogger.debug("YzuiButton", "设置线条图标：%s", value);
+        return this;
+    }
+
+    /** 文案右侧绘制线条图标，并从文字可用宽度中预留空间。 */
+    public TransparentButton setTrailingLineIcon(MenuIcon value) {
+        trailingLineIcon = value;
+        DebugLogger.debug("YzuiButton", "设置行尾线条图标：%s", value);
+        return this;
+    }
+
     @SuppressWarnings("null")
     @Override
     protected void extractWidgetRenderState(@SuppressWarnings("null") GuiGraphicsExtractor g, int mouseX, int mouseY,
@@ -88,11 +108,20 @@ public class TransparentButton extends AbstractWidget {
         if (!active)
             foreground = YzuiTheme.textMuted();
         foreground = YzuiTheme.alpha(foreground, opacity * (active ? 1f : 0.68f));
+        if (lineIcon != null) {
+            lineIcon.renderCentered(g, x, y, w, h, foreground);
+            return;
+        }
         int padding = w < 30 ? 2 : 8;
         int leftInset = textInsetLeft < 0 ? padding : textInsetLeft;
         int rightInset = textInsetRight < 0 ? padding : textInsetRight;
         int textX = x + leftInset;
         int available = Math.max(0, w - leftInset - rightInset);
+        if (trailingLineIcon != null) {
+            int size = Math.max(1, Math.min(16, Math.min(h - 4, available)));
+            trailingLineIcon.render(g, x + w - rightInset - size, y + (h - size) / 2, size, foreground);
+            available = Math.max(0, available - size - 6);
+        }
         if (icon != null) {
             int size = Math.max(1, Math.min(24, Math.min(h - 8, w - 8)));
             boolean iconOnly = w < 76;

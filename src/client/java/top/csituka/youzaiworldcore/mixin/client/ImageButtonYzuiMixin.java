@@ -1,10 +1,10 @@
 package top.csituka.youzaiworldcore.mixin.client;
 
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
+import top.csituka.youzaiworldcore.client.render.MenuIcon;
 import top.csituka.youzaiworldcore.client.animation.YzuiHover;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.ImageButton;
 import net.minecraft.client.gui.screens.Screen;
@@ -32,7 +32,7 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
  * <p>
  * ⚠️ 注意：配方书翻页按钮（{@code RecipeBookPage.forwardButton/backButton}，12×17）
  * 同样继承 {@link ImageButton}，不能走原版贴图渲染，须绘制 YZUI 风格按钮
- * （半透明圆角矩形背景 + 居中 {@code '<'}/{@code '>'} 文本，与创造屏翻页按钮同一视觉语言）。
+ * （半透明圆角矩形背景 + 居中线条箭头图标，与创造屏翻页按钮同一视觉语言）。
  * 判定依据为尺寸（12×17 与开关按钮 20×18 互斥），前后翻页方向
  * 通过按钮 message（原版构造时传入的 {@code gui.recipebook.next_page/previous_page}）区分。
  * </p>
@@ -96,7 +96,7 @@ public class ImageButtonYzuiMixin {
         boolean hovered = self.isHovered();
         float hover = youzaiworldcore$getImageButtonHover().sample(self.active && hovered);
 
-        // 配方书翻页按钮：绘制 YZUI 风格 '<' '>' 按钮（圆角矩形 + 居中文本），不走原版贴图
+        // 配方书翻页按钮使用圆角底色与线条箭头图标。
         if (w == YZWC_PAGE_BTN_W && h == YZWC_PAGE_BTN_H) {
             yzwc$renderPageButton(self, g, x, y, w, h, hover);
             ci.cancel();
@@ -120,7 +120,7 @@ public class ImageButtonYzuiMixin {
     }
 
     /**
-     * YZUI 风格配方书翻页按钮：半透明圆角矩形背景 + 居中 '<' / '>' 箭头文本。
+     * YZUI 风格配方书翻页按钮：半透明圆角矩形背景 + 居中线条箭头图标。
      * 前后方向通过按钮 message（原版 NEXT_PAGE_TEXT / PREVIOUS_PAGE_TEXT）区分。
      * <p>
      * 位置与悬浮态由调用方传入，避免重复调用 {@code getX/getY/getWidth/getHeight/isHovered}。
@@ -131,14 +131,11 @@ public class ImageButtonYzuiMixin {
             int x, int y, int w, int h, float hover) {
         // 原版构造翻页按钮时第 7 参传入 NEXT_PAGE_TEXT / PREVIOUS_PAGE_TEXT 作为 message
         boolean forward = YZWC_NEXT_PAGE_MSG.equals(self.getMessage());
-        String arrow = forward ? ">" : "<";
 
         YzuiTheme.button(g, x, y, w, h, hover, self.isFocused(), self.active, self.getAlpha(), YzuiTheme.ButtonStyle.TONAL);
 
-        Font font = Minecraft.getInstance().font;
-        int tx = x + (w - font.width(arrow)) / 2;
-        int ty = y + (h - font.lineHeight) / 2;
-        g.text(font, arrow, tx, ty, yzwcPageBtnText(), true);
+        MenuIcon arrow = forward ? MenuIcon.CHEVRON_RIGHT : MenuIcon.CHEVRON_LEFT;
+        arrow.renderCentered(g, x, y, w, h, YzuiTheme.alpha(yzwcPageBtnText(), self.getAlpha()));
 
         // 先判等级再取参数：本方法每个翻页按钮每帧各跑一次，
         // 4 个 int + 2 个 boolean 装箱与 varargs 数组在日志关闭时是白扔的垃圾。

@@ -9,6 +9,7 @@ import top.csituka.youzaiworldcore.client.map.MapMobIcons;
 import top.csituka.youzaiworldcore.client.map.MapMobRadar;
 import top.csituka.youzaiworldcore.client.map.MapTexts;
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
+import top.csituka.youzaiworldcore.client.render.MenuIcon;
 import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 import java.util.ArrayList;
@@ -56,14 +57,14 @@ final class MapRadarPanel extends MapOverlayPanel {
         view = button(panelX + 16 + actionWidth, footer - 26, actionWidth, MapTexts.text("radar_view"),
                 owner::showMobRadar);
         view.setStyle(YzuiTheme.ButtonStyle.FILLED);
-        previous = button(panelX + 12, footer, 24, Component.literal("‹"), () -> {
+        previous = button(panelX + 12, footer, 24, MapTexts.text("previous"), () -> {
             page--;
             refreshGrid();
-        });
-        next = button(panelX + panelWidth - 36, footer, 24, Component.literal("›"), () -> {
+        }).setLineIcon(MenuIcon.CHEVRON_LEFT);
+        next = button(panelX + panelWidth - 36, footer, 24, MapTexts.text("next"), () -> {
             page++;
             refreshGrid();
-        });
+        }).setLineIcon(MenuIcon.CHEVRON_RIGHT);
         previous.setTooltip(Tooltip.create(MapTexts.text("previous")));
         next.setTooltip(Tooltip.create(MapTexts.text("next")));
         refreshGrid();
