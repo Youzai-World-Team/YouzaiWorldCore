@@ -326,7 +326,7 @@ public class ClientNetworking {
         ClientPlayNetworking.registerGlobalReceiver(PetMenuStatePayload.ID, (payload, context) -> {
             var connection = context.client().getConnection();
             context.client().execute(() -> {
-                if (context.client().gui.screen instanceof top.csituka.youzaiworldcore.client.screen.PetScreen screen)
+                if (context.client().gui.screen() instanceof top.csituka.youzaiworldcore.client.screen.PetScreen screen)
                     screen.receive(payload, connection);
             });
         });

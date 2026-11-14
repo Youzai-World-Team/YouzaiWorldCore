@@ -29,8 +29,8 @@ STUBS[screen] = STUBS[screen].replace("public boolean mouseScrolled", """
 event = "net/minecraft/client/input/MouseButtonEvent.java"
 STUBS[event] = STUBS[event].replace("{}", "{public int buttonInfo(){return button;}}")
 mc = "net/minecraft/client/Minecraft.java"
-STUBS[mc] = STUBS[mc].replace("public final Font font", """
-    public final Font font""").replace("public Screen screen;", "public Screen screen; public Screen screen(){return screen;}")
+# Minecraft 26.3 的 Gui.screen 是私有字段，只能通过 screen() 读取。
+STUBS[mc] = STUBS[mc].replace("public Screen screen;", "private Screen screen; public Screen screen(){return screen;}")
 stub("net.minecraft.network.protocol.common.custom.CustomPacketPayload", """
 public interface CustomPacketPayload {
     record Type<T>(String id){}
@@ -317,26 +317,26 @@ public class MailNavigationChecks {
         check(MailNavigationRequests.compose(origin),"发布请求未发出");
         check(!MailNavigationRequests.compose(origin)&&ClientPlayNetworking.sent.size()==1,"连续点击重复发送");
         MailReceivers.compose(null);
-        check(client.gui.screen instanceof MailComposeScreen,"匹配发布请求未进入编辑");
-        var editor=client.gui.screen;
+        check(client.gui.screen() instanceof MailComposeScreen,"匹配发布请求未进入编辑");
+        var editor=client.gui.screen();
         MailReceivers.sent(new MailSentListPayload(java.util.List.of("latest")));
-        check(client.gui.screen==editor&&top.csituka.youzaiworldcore.client.MailClientState.currentSentList.equals(java.util.List.of("latest")),
+        check(client.gui.screen()==editor&&top.csituka.youzaiworldcore.client.MailClientState.currentSentList.equals(java.util.List.of("latest")),
                 "后台列表刷新替换编辑器或丢失最新列表");
-        MailReceivers.compose(null);check(client.gui.screen==editor,"重复发布响应覆盖编辑器");
+        MailReceivers.compose(null);check(client.gui.screen()==editor,"重复发布响应覆盖编辑器");
         client.gui.setScreen(origin);MailNavigationRequests.sent(origin);origin.removed();client.gui.setScreen(editor);
         MailReceivers.sent(new MailSentListPayload(java.util.List.of("late")));
-        check(client.gui.screen==editor,"离开页面后列表响应强制切页");
+        check(client.gui.screen()==editor,"离开页面后列表响应强制切页");
         var sent=new MailSentScreen();client.gui.setScreen(sent);var id=java.util.UUID.randomUUID();
         MailNavigationRequests.edit(sent,id);sent.removed();client.gui.setScreen(editor);long before=cancels();
         var prefill=new MailUpdatePayload(MailUpdatePayload.MODE_EDIT_PREFILL,new Object(),
                 new top.csituka.youzaiworldcore.mail.Mail(id),null,true);
         MailReceivers.update(prefill);
-        check(client.gui.screen==editor&&cancels()==before+1,"迟到预填覆盖编辑器或未恢复隐藏邮件");
+        check(client.gui.screen()==editor&&cancels()==before+1,"迟到预填覆盖编辑器或未恢复隐藏邮件");
         check(top.csituka.youzaiworldcore.client.MailClientState.pendingEditData==null,"迟到预填污染后续表单");
         var active=new MailComposeScreen(true,id,sent);client.gui.setScreen(active);before=cancels();
-        MailReceivers.update(prefill);check(cancels()==before&&client.gui.screen==active,"重复预填取消了当前编辑");
+        MailReceivers.update(prefill);check(cancels()==before&&client.gui.screen()==active,"重复预填取消了当前编辑");
         client.gui.setScreen(sent);MailNavigationRequests.edit(sent,id);MailReceivers.update(prefill);
-        check(client.gui.screen instanceof MailComposeScreen form&&form.isEditing(id),"匹配编辑请求未打开对应邮件");
+        check(client.gui.screen() instanceof MailComposeScreen form&&form.isEditing(id),"匹配编辑请求未打开对应邮件");
         check(top.csituka.youzaiworldcore.client.MailClientState.pendingEditData.mail().getId().equals(id),"有效预填丢失");
         MailNavigationRequests.clear();client.gui.setScreen(sent);MailNavigationRequests.edit(sent,id);
         MailNavigationRequests.failed(java.util.UUID.randomUUID());
@@ -352,33 +352,33 @@ public class MailNavigationChecks {
         MailNavigationRequests.compose(sent);client.connection=new Object();MailNavigationRequests.tick();
         check(MailNavigationRequests.take(MailNavigationRequests.Kind.COMPOSE,null)==null,"旧连接响应仍可切页");
         client.gui.setScreen(null);check(MailNavigationRequests.compose(null),"游戏内命令请求被禁用");
-        MailReceivers.compose(null);check(client.gui.screen instanceof MailComposeScreen,"命令发起的发布请求未打开");
+        MailReceivers.compose(null);check(client.gui.screen() instanceof MailComposeScreen,"命令发起的发布请求未打开");
         MailNavigationRequests.clear();client.gui.setScreen(null);MailNavigationRequests.sent(null);
         client.gui.setScreen(editor);MailReceivers.sent(new MailSentListPayload(java.util.List.of()));
-        check(client.gui.screen==editor,"命令的迟到响应覆盖新打开的页面");
+        check(client.gui.screen()==editor,"命令的迟到响应覆盖新打开的页面");
         client.connection=null;check(!MailNavigationRequests.compose(null),"断线仍可发请求");
         client.connection=new Object();MailNavigationRequests.clear();
     }
     public static void main(String[] args)throws Exception{
         var mc=Minecraft.getInstance();var parent=new Screen(Component.empty());
         var form=open(parent);check(!form.dirty(),"空表单误报修改");
-        form.onClose();check(mc.gui.screen==parent&&cancels()==1,"未修改表单未返回原父页");
+        form.onClose();check(mc.gui.screen()==parent&&cancels()==1,"未修改表单未返回原父页");
         form.onClose();check(cancels()==1,"重复退出发送重复取消包");
         form=open(parent);form.titleInput.value="邮件主题";form.bodyInput.value="正文";
         check(form.dirty(),"正文修改未识别");long before=cancels();
         form.playerPicker.open=true;form.onClose();check(!form.playerPicker.open&&form.dialog()==null,"Esc 未先关闭玩家选择器");
         form.inventoryPicker.open=true;form.onClose();check(!form.inventoryPicker.open&&form.dialog()==null,"Esc 未先关闭物品选择器");
         form.typeDropdown.open=true;form.onClose();check(!form.typeDropdown.open&&form.dialog()==null,"Esc 未先关闭下拉框");
-        form.onClose();check(form.dialog().isVisible()&&mc.gui.screen==form&&cancels()==before,"显示确认时已丢弃编辑");
-        form.dialog().cancel.run();check(mc.gui.screen==form&&form.bodyInput.value.equals("正文")&&cancels()==before,"继续编辑丢失内容");
+        form.onClose();check(form.dialog().isVisible()&&mc.gui.screen()==form&&cancels()==before,"显示确认时已丢弃编辑");
+        form.dialog().cancel.run();check(mc.gui.screen()==form&&form.bodyInput.value.equals("正文")&&cancels()==before,"继续编辑丢失内容");
         form.onClose();form.keyPressed(new KeyEvent(41,false));
-        check(!form.dialog().isVisible()&&mc.gui.screen==form,"Esc 未取消丢弃提示");
+        check(!form.dialog().isVisible()&&mc.gui.screen()==form,"Esc 未取消丢弃提示");
         form.onClose();form.dialog().confirm.run();
-        check(mc.gui.screen==parent&&cancels()==before+1,"放弃修改未返回原父页/未取消服务端编辑");
+        check(mc.gui.screen()==parent&&cancels()==before+1,"放弃修改未返回原父页/未取消服务端编辑");
         form.closeMenu();check(cancels()==before+1,"再次退出重复取消");
         form=open(parent);form.bodyInput.value="正文";before=cancels();form.closeMenu();
-        check(form.dialog().isVisible()&&mc.gui.screen==form,"关闭按钮绕过丢弃确认");
-        form.dialog().confirm.run();check(mc.gui.screen==null&&cancels()==before+1,"关闭按钮确认后未回到游戏");
+        check(form.dialog().isVisible()&&mc.gui.screen()==form,"关闭按钮绕过丢弃确认");
+        form.dialog().confirm.run();check(mc.gui.screen()==null&&cancels()==before+1,"关闭按钮确认后未回到游戏");
         form=open(parent);form.itemSlots[0]=new ItemStack("diamond",4,"custom-name");form.cbItem.setChecked(true);form.acceptBaseline();
         form.itemSlots[0]=form.itemSlots[0].copy();check(!form.dirty(),"复制物品误判改动");
         form.itemSlots[0]=new ItemStack("diamond",5,"custom-name");check(form.dirty(),"附件数量修改未识别");

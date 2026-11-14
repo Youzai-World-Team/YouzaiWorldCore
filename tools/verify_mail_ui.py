@@ -1,4 +1,5 @@
 """执行实际邮件及宠物页面：小窗口几何、详情滚动、表单恢复、本机草稿与请求隔离。
+原样运行宠物响应接收器的主线程回调，Gui.screen 保持 26.3 的私有可见性。
 游戏绘制、物品注册表、网络及配置使用替身；不启动游戏，不构建模组。
 """
 from pathlib import Path
@@ -162,6 +163,14 @@ STUBS[k]=STUBS[k].replace('public class Minecraft {','public class Minecraft {pu
 k=(C+'.screen.MailPlayerPicker').replace('.','/')+'.java'
 STUBS[k]=STUBS[k].replace('public class MailPlayerPicker {','public class MailPlayerPicker {public boolean acceptsInput(){return true;}')
 
+stub(C+'.screen.PetMenuReceiverChecks','''public class PetMenuReceiverChecks {
+ private record Context(net.minecraft.client.Minecraft client) {}
+ public static void receive(top.csituka.youzaiworldcore.network.PetMenuStatePayload payload,Object connection) {
+  var context=new Context(net.minecraft.client.Minecraft.getInstance());
+'''+nav.receiver_body('PetMenuStatePayload')+'''
+ }
+}''')
+
 CHECK='''package top.csituka.youzaiworldcore.client.screen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -218,8 +227,12 @@ public class MailUiChecks {
   String a=MailDraftStore.key(null);client.serverData.ip="server-b";check(!a.equals(MailDraftStore.key(null)),"跨服务器混用草稿");client.serverData.ip="server-a";
   check(!a.equals(MailDraftStore.key(java.util.UUID.randomUUID())),"不同邮件混用草稿");
   var pet=new PetScreen(null);pet.width=320;pet.height=240;pet.init();var request=(PetMenuRequestPayload)net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.last;
-  pet.receive(new PetMenuStatePayload(request.requestId()+1,true,net.minecraft.network.chat.Component.empty(),java.util.List.of()),client.getConnection());check((long)field(pet,"pending")==request.requestId(),"迟到宠物响应误匹配");
-  pet.receive(new PetMenuStatePayload(request.requestId(),true,net.minecraft.network.chat.Component.empty(),java.util.List.of(new PetMenuStatePayload.Entry("DOG1","Wolf","guard"))),client.getConnection());check((long)field(pet,"pending")==0,"宠物列表未结束等待");
+  var response=new PetMenuStatePayload(request.requestId(),true,net.minecraft.network.chat.Component.empty(),java.util.List.of(new PetMenuStatePayload.Entry("DOG1","Wolf","guard")));
+  client.gui.setScreen(null);PetMenuReceiverChecks.receive(response,client.getConnection());check((long)field(pet,"pending")==request.requestId()&&client.gui.screen()==null,"离开宠物页后响应仍更新页面或强制切页");
+  client.gui.setScreen(pet);
+  PetMenuReceiverChecks.receive(new PetMenuStatePayload(request.requestId()+1,true,net.minecraft.network.chat.Component.empty(),java.util.List.of()),client.getConnection());check((long)field(pet,"pending")==request.requestId(),"迟到宠物响应误匹配");
+  PetMenuReceiverChecks.receive(response,new Object());check((long)field(pet,"pending")==request.requestId(),"旧连接响应更新宠物页面");
+  PetMenuReceiverChecks.receive(response,client.getConnection());check((long)field(pet,"pending")==0,"宠物列表未结束等待");
   value(pet,"deadline",0L);value(pet,"pending",1L);pet.tick();check((long)field(pet,"pending")==0,"宠物请求未超时");
   System.out.println("邮件/宠物界面回归通过："+checks+" 项断言。");
  }
