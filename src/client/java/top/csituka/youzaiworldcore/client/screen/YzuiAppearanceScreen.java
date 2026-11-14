@@ -30,17 +30,20 @@ public final class YzuiAppearanceScreen extends Screen implements YzuiMenuScreen
         panelHeight = 284;
         panelX = (width - panelWidth) / 2;
         panelY = (height - panelHeight) / 2;
-        if (usesMenuOverlay()) addRenderableWidget(new MenuCloseButton(panelX + panelWidth - 40, panelY + 8, this));
+        if (usesMenuOverlay())
+            addRenderableWidget(new MenuCloseButton(panelX + panelWidth - 40, panelY + 8, this));
         int gap = 8, inner = panelWidth - 32;
         int themeWidth = (inner - gap) / 2;
         for (YzuiThemeMode mode : YzuiThemeMode.values()) {
             var button = new TransparentButton(panelX + 16 + mode.ordinal() * (themeWidth + gap),
-                    panelY + 48, themeWidth, 26, text("theme." + mode.name().toLowerCase(java.util.Locale.ROOT)), () -> {
+                    panelY + 48, themeWidth, 26, text("theme." + mode.name().toLowerCase(java.util.Locale.ROOT)),
+                    () -> {
                         ClientExternalSettings.setYzuiTheme(mode);
                         rebuildWidgets();
                     });
             button.setStyle(ClientExternalSettings.getYzuiTheme() == mode
-                    ? YzuiTheme.ButtonStyle.FILLED : YzuiTheme.ButtonStyle.TONAL);
+                    ? YzuiTheme.ButtonStyle.FILLED
+                    : YzuiTheme.ButtonStyle.TONAL);
             addRenderableWidget(button);
         }
         for (YzuiVisualStyle style : YzuiVisualStyle.values()) {
@@ -50,22 +53,28 @@ public final class YzuiAppearanceScreen extends Screen implements YzuiMenuScreen
                         rebuildWidgets();
                     });
             button.setStyle(ClientExternalSettings.getYzuiVisualStyle() == style
-                    ? YzuiTheme.ButtonStyle.FILLED : YzuiTheme.ButtonStyle.TONAL);
+                    ? YzuiTheme.ButtonStyle.FILLED
+                    : YzuiTheme.ButtonStyle.TONAL);
             addRenderableWidget(button);
         }
         addRenderableWidget(new TransparentButton(panelX + panelWidth - 96, panelY + panelHeight - 36,
                 80, 24, Component.translatable("gui.done"), this::onClose));
     }
 
+    @SuppressWarnings("null")
     @Override
-    public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
-        if (usesMenuOverlay()) YzuiMenuPanel.card(g, panelX, panelY, panelWidth, panelHeight);
-        else YzuiTheme.card(g, panelX, panelY, panelWidth, panelHeight);
+    public void extractRenderState(@SuppressWarnings("null") GuiGraphicsExtractor g, int mouseX, int mouseY,
+            float partialTick) {
+        if (usesMenuOverlay())
+            YzuiMenuPanel.card(g, panelX, panelY, panelWidth, panelHeight);
+        else
+            YzuiTheme.card(g, panelX, panelY, panelWidth, panelHeight);
         YzuiTheme.label(g, font, getTitle(), panelX + 16, panelY + 16, panelWidth - 68, YzuiTheme.text(), false);
         g.text(font, text("theme"), panelX + 16, panelY + 34, YzuiTheme.textMuted(), false);
         g.text(font, text("effects"), panelX + 16, panelY + 81, YzuiTheme.textMuted(), false);
         String selected = ClientExternalSettings.getYzuiVisualStyle().name().toLowerCase(java.util.Locale.ROOT);
         int descriptionY = panelY + 188;
+        @SuppressWarnings("null")
         var lines = font.split(text("style." + selected + ".description"), panelWidth - 32);
         for (int i = 0; i < Math.min(3, lines.size()); i++) {
             g.text(font, lines.get(i), panelX + 16, descriptionY + i * 11, YzuiTheme.textMuted(), false);
@@ -82,16 +91,23 @@ public final class YzuiAppearanceScreen extends Screen implements YzuiMenuScreen
     }
 
     @Override
-    public void onClose() { Minecraft.getInstance().gui.setScreen(parent); }
+    public void onClose() {
+        Minecraft.getInstance().gui.setScreen(parent);
+    }
 
     @Override
-    public boolean usesMenuOverlay() { return Minecraft.getInstance().level != null; }
+    public boolean usesMenuOverlay() {
+        return Minecraft.getInstance().level != null;
+    }
 
+    @SuppressWarnings("null")
     @Override
-    public boolean keyPressed(KeyEvent event) {
+    public boolean keyPressed(@SuppressWarnings("null") KeyEvent event) {
         return YzuiMenuScreen.handleEscape(this, event) || super.keyPressed(event);
     }
 
     @Override
-    public boolean isPauseScreen() { return false; }
+    public boolean isPauseScreen() {
+        return false;
+    }
 }

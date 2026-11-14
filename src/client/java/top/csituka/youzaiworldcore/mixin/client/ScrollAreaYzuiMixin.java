@@ -13,8 +13,8 @@ import top.csituka.youzaiworldcore.client.render.YzuiTheme;
 /** 以细圆角轨道替换滚动条纹理，保留原版滚动、拖拽和鼠标提示区域。 */
 @Mixin(AbstractScrollArea.class)
 public class ScrollAreaYzuiMixin {
-    @Redirect(method = "extractScrollbar", at = @At(value = "INVOKE",
-            target = "Lnet/minecraft/client/gui/GuiGraphicsExtractor;blitSprite(Lcom/mojang/renderpearl/api/pipeline/RenderPipeline;Lnet/minecraft/resources/Identifier;IIII)V"))
+    @SuppressWarnings("null")
+    @Redirect(method = "extractScrollbar", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/GuiGraphicsExtractor;blitSprite(Lcom/mojang/renderpearl/api/pipeline/RenderPipeline;Lnet/minecraft/resources/Identifier;IIII)V"))
     private void youzaiworldcore$scrollbar(GuiGraphicsExtractor g, RenderPipeline pipeline, Identifier sprite,
             int x, int y, int width, int height) {
         if (!YzuiTheme.enabled()) {

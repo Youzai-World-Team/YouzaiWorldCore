@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.client.screen.widget;
 
+import org.jspecify.annotations.NonNull;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Tooltip;
@@ -24,8 +26,9 @@ public final class MenuNavigationButton extends TransparentButton {
     }
 
     /** 动态状态同时用于文字和提示，保留完整内容供窄卡片查看。 */
-    public void setDetail(Component detail) {
-        if (this.detail.equals(detail) && getMessage().equals(tooltipTitle)) return;
+    public void setDetail(@NonNull Component detail) {
+        if (this.detail.equals(detail) && getMessage().equals(tooltipTitle))
+            return;
         this.detail = detail;
         tooltipTitle = getMessage();
         setTooltip(Tooltip.create(getMessage().copy().append("\n").append(detail)));

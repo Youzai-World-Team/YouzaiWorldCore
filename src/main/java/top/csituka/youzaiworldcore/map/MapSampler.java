@@ -18,30 +18,70 @@ import java.util.Map;
  * 地表高度使用 26.2 的 ChunkAccess.getHeight 返回值，getMaxY 本身为包含式上界。
  */
 public final class MapSampler {
-    private MapSampler() { }
+    private MapSampler() {
+    }
 
     /** 创建需在对应世界主线程上推进的采样任务。 */
-    public static Job start(Level level, LevelChunk chunk, MapTileKey key) { return new Job(level, chunk, key); }
+    public static Job start(Level level, LevelChunk chunk, MapTileKey key) {
+        return new Job(level, chunk, key);
+    }
 
     /** 已保存区块由后台线程采样；不构造或加载 LevelChunk。 */
-    public static Job startSaved(Source source, MapTileKey key) { return new Job(null, null, source, key); }
+    public static Job startSaved(Source source, MapTileKey key) {
+        return new Job(null, null, source, key);
+    }
 
     public interface Source extends net.minecraft.world.level.BlockGetter {
         int surface(int x, int z);
+
         boolean ceiling();
+
         net.minecraft.core.Holder<net.minecraft.world.level.biome.Biome> biome(int x, int y, int z);
+
         int light(BlockPos pos, boolean sky);
     }
+
     private record LiveSource(Level level, LevelChunk chunk) implements Source {
-        public int getMinY() { return level.getMinY(); }
-        public int getHeight() { return level.getHeight(); }
-        public net.minecraft.world.level.block.entity.BlockEntity getBlockEntity(BlockPos pos) { return chunk.getBlockEntity(pos); }
-        public BlockState getBlockState(BlockPos pos) { return chunk.getBlockState(pos); }
-        public net.minecraft.world.level.material.FluidState getFluidState(BlockPos pos) { return chunk.getFluidState(pos); }
-        public int surface(int x, int z) { return chunk.getHeight(Heightmap.Types.WORLD_SURFACE, x, z); }
-        public boolean ceiling() { return level.dimensionType().hasCeiling(); }
-        public net.minecraft.core.Holder<net.minecraft.world.level.biome.Biome> biome(int x, int y, int z) { return chunk.getNoiseBiome(Math.floorDiv(x, 4), Math.floorDiv(y, 4), Math.floorDiv(z, 4)); }
-        public int light(BlockPos pos, boolean sky) { return level.getLightEngine().getLayerListener(sky ? LightLayer.SKY : LightLayer.BLOCK).getLightValue(pos); }
+        public int getMinY() {
+            return level.getMinY();
+        }
+
+        public int getHeight() {
+            return level.getHeight();
+        }
+
+        @SuppressWarnings("null")
+        public net.minecraft.world.level.block.entity.BlockEntity getBlockEntity(
+                @SuppressWarnings("null") BlockPos pos) {
+            return chunk.getBlockEntity(pos);
+        }
+
+        @SuppressWarnings("null")
+        public BlockState getBlockState(@SuppressWarnings("null") BlockPos pos) {
+            return chunk.getBlockState(pos);
+        }
+
+        @SuppressWarnings("null")
+        public net.minecraft.world.level.material.FluidState getFluidState(@SuppressWarnings("null") BlockPos pos) {
+            return chunk.getFluidState(pos);
+        }
+
+        public int surface(int x, int z) {
+            return chunk.getHeight(Heightmap.Types.WORLD_SURFACE, x, z);
+        }
+
+        public boolean ceiling() {
+            return level.dimensionType().hasCeiling();
+        }
+
+        public net.minecraft.core.Holder<net.minecraft.world.level.biome.Biome> biome(int x, int y, int z) {
+            return chunk.getNoiseBiome(Math.floorDiv(x, 4), Math.floorDiv(y, 4), Math.floorDiv(z, 4));
+        }
+
+        @SuppressWarnings("null")
+        public int light(BlockPos pos, boolean sky) {
+            return level.getLightEngine().getLayerListener(sky ? LightLayer.SKY : LightLayer.BLOCK).getLightValue(pos);
+        }
     }
 
     /** 同时有列数和纳秒预算的任务；未完成的任务在下一 Tick 继续。 */
@@ -63,12 +103,23 @@ public final class MapSampler {
         }
 
         private Job(Level level, LevelChunk chunk, Source source, MapTileKey key) {
-            this.level = level; this.chunk = chunk; this.source = source; this.key = key;
+            this.level = level;
+            this.chunk = chunk;
+            this.source = source;
+            this.key = key;
         }
 
-        public MapTileKey key() { return key; }
-        public LevelChunk chunk() { return chunk; }
-        public Level level() { return level; }
+        public MapTileKey key() {
+            return key;
+        }
+
+        public LevelChunk chunk() {
+            return chunk;
+        }
+
+        public Level level() {
+            return level;
+        }
 
         /** @return 本次实际处理的列数 */
         public int step(int maximumColumns, long deadlineNanos) {
@@ -79,15 +130,20 @@ public final class MapSampler {
             return cursor - start;
         }
 
-        public boolean complete() { return cursor == 256; }
+        public boolean complete() {
+            return cursor == 256;
+        }
 
         /** 仅在完成后发布快照，未探索与真正的虚空不会混为一谈。 */
+        @SuppressWarnings("null")
         public MapTile finish() {
-            if (!complete()) throw new IllegalStateException("地图采样尚未完成");
+            if (!complete())
+                throw new IllegalStateException("地图采样尚未完成");
             return new MapTile(key, System.nanoTime(), colors, heights, lights, indices,
                     new ArrayList<>(palette.keySet()), paletteColors.stream().mapToInt(Integer::intValue).toArray());
         }
 
+        @SuppressWarnings("null")
         private void sample(int index) {
             int x = key.chunkX() * 16 + index % 16, z = key.chunkZ() * 16 + index / 16;
             int minimum = source.getMinY();
@@ -105,7 +161,8 @@ public final class MapSampler {
                 while (y >= searchFloor) {
                     pos.set(x, y, z);
                     BlockState state = source.getBlockState(pos);
-                    if (state.isAir() || !state.getFluidState().isEmpty()) break;
+                    if (state.isAir() || !state.getFluidState().isEmpty())
+                        break;
                     y--;
                 }
             }
@@ -115,13 +172,16 @@ public final class MapSampler {
                 pos.set(x, y, z);
                 state = source.getBlockState(pos);
                 color = state.getMapColor(source, pos);
-                if (!state.isAir() && color != MapColor.NONE) break;
+                if (!state.isAir() && color != MapColor.NONE)
+                    break;
                 y--;
             }
             int biomeY = Math.clamp(y, minimum, source.getMaxY());
             var holder = source.biome(x, biomeY, z);
             var biome = holder.value();
-            String biomeName = holder.unwrapKey().map(value -> value.identifier().toString()).orElse("minecraft:plains");
+            @SuppressWarnings("null")
+            String biomeName = holder.unwrapKey().map(value -> value.identifier().toString())
+                    .orElse("minecraft:plains");
             Integer paletteIndex = palette.get(biomeName);
             if (paletteIndex == null) {
                 paletteIndex = palette.size();
@@ -141,7 +201,8 @@ public final class MapSampler {
                 int depth = 0;
                 while (depth < 16 && y - depth - 1 >= minimum) {
                     pos.set(x, y - depth - 1, z);
-                    if (source.getFluidState(pos).isEmpty()) break;
+                    if (source.getFluidState(pos).isEmpty())
+                        break;
                     depth++;
                 }
                 rgb = shade(0xFF000000 | rgb, 1.0 - depth * 0.025);

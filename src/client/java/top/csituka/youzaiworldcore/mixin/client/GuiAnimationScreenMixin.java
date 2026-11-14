@@ -4,6 +4,8 @@ import com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
+
+import org.jspecify.annotations.NonNull;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -19,8 +21,8 @@ import net.minecraft.client.Minecraft;
 /** 页面内容、提示框和输入使用同一个变换；背景固定在物理 GUI 坐标中。 */
 @Mixin(Screen.class)
 public abstract class GuiAnimationScreenMixin {
-    @Inject(method = { "init(II)V", "resize(II)V" }, at = @At(value = "FIELD",
-            target = "Lnet/minecraft/client/gui/screens/Screen;height:I", opcode = 181, shift = At.Shift.AFTER))
+    @Inject(method = { "init(II)V",
+            "resize(II)V" }, at = @At(value = "FIELD", target = "Lnet/minecraft/client/gui/screens/Screen;height:I", opcode = 181, shift = At.Shift.AFTER))
     private void youzaiworldcore$configureViewport(int width, int height, CallbackInfo ci) {
         YzuiViewport.configure((Screen) (Object) this, width, height);
     }
@@ -49,8 +51,7 @@ public abstract class GuiAnimationScreenMixin {
         }
     }
 
-    @Redirect(method = "extractRenderStateWithTooltipAndSubtitles", at = @At(value = "INVOKE",
-            target = "Lnet/minecraft/client/gui/screens/Screen;extractBackground(Lnet/minecraft/client/gui/GuiGraphicsExtractor;IIF)V"))
+    @Redirect(method = "extractRenderStateWithTooltipAndSubtitles", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/screens/Screen;extractBackground(Lnet/minecraft/client/gui/GuiGraphicsExtractor;IIF)V"))
     private void youzaiworldcore$themeBackground(Screen screen, GuiGraphicsExtractor g, int x, int y, float tick) {
         g.pose().pushMatrix();
         g.pose().identity();
@@ -63,8 +64,10 @@ public abstract class GuiAnimationScreenMixin {
                     client.gameRenderer.panorama().extractRenderState(g, g.guiWidth(), g.guiHeight());
                     g.nextStratum();
                 }
-            } else if (YzuiTheme.isCustomScreen(screen)) YzuiBackdrop.render(g, screen, tick);
-            else screen.extractBackground(g, x, y, tick);
+            } else if (YzuiTheme.isCustomScreen(screen))
+                YzuiBackdrop.render(g, screen, tick);
+            else
+                screen.extractBackground(g, x, y, tick);
         } finally {
             GuiAnimationController.restoreContent(previousContent);
             YzuiViewport.beginRendering(previousViewport);
@@ -72,9 +75,9 @@ public abstract class GuiAnimationScreenMixin {
         }
     }
 
-    @Redirect(method = "extractRenderStateWithTooltipAndSubtitles", at = @At(value = "INVOKE",
-            target = "Lnet/minecraft/client/gui/screens/Screen;extractRenderState(Lnet/minecraft/client/gui/GuiGraphicsExtractor;IIF)V"))
-    private void youzaiworldcore$themeContent(Screen screen, GuiGraphicsExtractor g, int x, int y, float tick) {
+    @Redirect(method = "extractRenderStateWithTooltipAndSubtitles", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/screens/Screen;extractRenderState(Lnet/minecraft/client/gui/GuiGraphicsExtractor;IIF)V"))
+    private void youzaiworldcore$themeContent(Screen screen, @NonNull GuiGraphicsExtractor g, int x, int y,
+            float tick) {
         YzuiTheme.screenCard(g, screen);
         screen.extractRenderState(g, x, y, tick);
     }

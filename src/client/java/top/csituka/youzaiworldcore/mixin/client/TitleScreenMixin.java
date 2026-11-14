@@ -24,17 +24,25 @@ import top.csituka.youzaiworldcore.client.screen.title.YzuiTitleMenu;
 /**
  * 保留原版全景及生命周期，把标题页内容交给统一主题布局。
  *
- * <p>YZUI 禁用时本类所有注入一律放行原版行为，标题页保持原版外观与交互，
- * 不写入任何自定义内容。</p>
+ * <p>
+ * YZUI 禁用时本类所有注入一律放行原版行为，标题页保持原版外观与交互，
+ * 不写入任何自定义内容。
+ * </p>
  */
 @Mixin(TitleScreen.class)
 public abstract class TitleScreenMixin extends Screen {
-    @Shadow private SplashRenderer splash;
-    @Shadow private boolean fading;
-    @Shadow private long fadeInStart;
-    @Unique private YzuiTitleMenu youzaiworldcore$menu;
+    @Shadow
+    private SplashRenderer splash;
+    @Shadow
+    private boolean fading;
+    @Shadow
+    private long fadeInStart;
+    @Unique
+    private YzuiTitleMenu youzaiworldcore$menu;
 
-    protected TitleScreenMixin(Component title) { super(title); }
+    protected TitleScreenMixin(Component title) {
+        super(title);
+    }
 
     @Inject(method = "init", at = @At("TAIL"))
     private void youzaiworldcore$initMenu(CallbackInfo ci) {
@@ -47,15 +55,17 @@ public abstract class TitleScreenMixin extends Screen {
         youzaiworldcore$menu = new YzuiTitleMenu((TitleScreen) (Object) this);
     }
 
-    @Redirect(method = "extractRenderState", at = @At(value = "INVOKE",
-            target = "Lnet/minecraft/client/gui/components/LogoRenderer;extractRenderState(Lnet/minecraft/client/gui/GuiGraphicsExtractor;IF)V"))
-    private void youzaiworldcore$hideVanillaLogo(LogoRenderer renderer, GuiGraphicsExtractor g, int width, float alpha) {
+    @SuppressWarnings("null")
+    @Redirect(method = "extractRenderState", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/components/LogoRenderer;extractRenderState(Lnet/minecraft/client/gui/GuiGraphicsExtractor;IF)V"))
+    private void youzaiworldcore$hideVanillaLogo(LogoRenderer renderer, GuiGraphicsExtractor g, int width,
+            float alpha) {
         // YZUI 禁用时保留原版标志；启用时品牌标志由标题页卡片布局按真实比例绘制。
-        if (!ClientExternalSettings.isYzuiEnabled()) renderer.extractRenderState(g, width, alpha);
+        if (!ClientExternalSettings.isYzuiEnabled())
+            renderer.extractRenderState(g, width, alpha);
     }
 
-    @Redirect(method = "extractRenderState", at = @At(value = "INVOKE",
-            target = "Lnet/minecraft/client/gui/GuiGraphicsExtractor;text(Lnet/minecraft/client/gui/Font;Ljava/lang/String;III)V"))
+    @SuppressWarnings("null")
+    @Redirect(method = "extractRenderState", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/GuiGraphicsExtractor;text(Lnet/minecraft/client/gui/Font;Ljava/lang/String;III)V"))
     private void youzaiworldcore$versionColor(GuiGraphicsExtractor g, Font font, String text, int x, int y, int color) {
         if (!ClientExternalSettings.isYzuiEnabled()) {
             g.text(font, text, x, y, color);
@@ -66,21 +76,24 @@ public abstract class TitleScreenMixin extends Screen {
                 (color >>> 24) / 255f), false);
     }
 
-    @Inject(method = "extractRenderState", at = @At(value = "INVOKE",
-            target = "Lnet/minecraft/client/gui/screens/TitleScreen;extractPanorama(Lnet/minecraft/client/gui/GuiGraphicsExtractor;F)V",
-            shift = At.Shift.AFTER))
-    private void youzaiworldcore$renderMenu(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick, CallbackInfo ci) {
-        if (!ClientExternalSettings.isYzuiEnabled() || youzaiworldcore$menu == null) return;
+    @Inject(method = "extractRenderState", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/screens/TitleScreen;extractPanorama(Lnet/minecraft/client/gui/GuiGraphicsExtractor;F)V", shift = At.Shift.AFTER))
+    private void youzaiworldcore$renderMenu(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick,
+            CallbackInfo ci) {
+        if (!ClientExternalSettings.isYzuiEnabled() || youzaiworldcore$menu == null)
+            return;
         float alpha = !GuiAnimationController.isEnabled() || !fading ? 1f
                 : Math.clamp((Util.getMillis() - fadeInStart) / 1000f - 1f, 0f, 1f);
         youzaiworldcore$menu.render(g, alpha);
     }
 
+    @SuppressWarnings("null")
     @Override
-    public boolean keyPressed(KeyEvent event) {
-        if (!ClientExternalSettings.isYzuiEnabled() || youzaiworldcore$menu == null) return super.keyPressed(event);
+    public boolean keyPressed(@SuppressWarnings("null") KeyEvent event) {
+        if (!ClientExternalSettings.isYzuiEnabled() || youzaiworldcore$menu == null)
+            return super.keyPressed(event);
         if (!GuiAnimationController.isExiting((TitleScreen) (Object) this)
-                && youzaiworldcore$menu.keyPressed(event.key())) return true;
+                && youzaiworldcore$menu.keyPressed(event.key()))
+            return true;
         return super.keyPressed(event);
     }
 }

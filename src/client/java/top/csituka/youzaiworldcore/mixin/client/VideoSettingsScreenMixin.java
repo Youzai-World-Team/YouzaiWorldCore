@@ -22,32 +22,44 @@ import java.util.Locale;
 
 @Mixin(VideoSettingsScreen.class)
 public abstract class VideoSettingsScreenMixin extends OptionsSubScreen {
-    protected VideoSettingsScreenMixin(Screen lastScreen, Options options, Component title) {
-        super(lastScreen, options, title);
-    }
+        protected VideoSettingsScreenMixin(Screen lastScreen, Options options, Component title) {
+                super(lastScreen, options, title);
+        }
 
-    @Inject(method = "addOptions", at = @At("TAIL"))
-    private void youzaiworldcore$addVisualSettings(CallbackInfo ci) {
-        if (ClientExternalSettings.isYzuiEnabled()) return;
-        Screen screen = (Screen) (Object) this;
-        list.addHeader(Component.translatable("screen.youzaiworldcore.settings.sidebar_visual"));
-        list.addSmall(
-                CycleButton.builder((YzuiThemeMode mode) -> Component.translatable(
-                                "screen.youzaiworldcore.appearance.theme." + mode.name().toLowerCase(Locale.ROOT)),
-                        ClientExternalSettings.getYzuiTheme())
-                        .withValues(YzuiThemeMode.values())
-                        .create(Component.translatable("screen.youzaiworldcore.appearance.theme"),
-                                (button, mode) -> ClientExternalSettings.setYzuiTheme(mode)),
-                CycleButton.builder((YzuiVisualStyle style) -> Component.translatable(
-                                "screen.youzaiworldcore.appearance.style." + style.name().toLowerCase(Locale.ROOT)),
-                        ClientExternalSettings.getYzuiVisualStyle())
-                        .withValues(YzuiVisualStyle.values())
-                        .create(Component.translatable("screen.youzaiworldcore.appearance.effects"),
-                                (button, style) -> ClientExternalSettings.setYzuiVisualStyle(style)));
-        list.addSmall(
-                Button.builder(Component.translatable("screen.youzaiworldcore.appearance.title"),
-                        button -> Minecraft.getInstance().gui.setScreen(new YzuiAppearanceScreen(screen))).build(),
-                Button.builder(Component.translatable("options.youzaiworldcore.settings"),
-                        button -> Minecraft.getInstance().gui.setScreen(new YouzaiWorldCoreSettingsScreen(screen))).build());
-    }
+        @SuppressWarnings("null")
+        @Inject(method = "addOptions", at = @At("TAIL"))
+        private void youzaiworldcore$addVisualSettings(CallbackInfo ci) {
+                if (ClientExternalSettings.isYzuiEnabled())
+                        return;
+                Screen screen = (Screen) (Object) this;
+                list.addHeader(Component.translatable("screen.youzaiworldcore.settings.sidebar_visual"));
+                list.addSmall(
+                                CycleButton.builder((YzuiThemeMode mode) -> Component.translatable(
+                                                "screen.youzaiworldcore.appearance.theme."
+                                                                + mode.name().toLowerCase(Locale.ROOT)),
+                                                ClientExternalSettings.getYzuiTheme())
+                                                .withValues(YzuiThemeMode.values())
+                                                .create(Component.translatable(
+                                                                "screen.youzaiworldcore.appearance.theme"),
+                                                                (button, mode) -> ClientExternalSettings
+                                                                                .setYzuiTheme(mode)),
+                                CycleButton.builder((YzuiVisualStyle style) -> Component.translatable(
+                                                "screen.youzaiworldcore.appearance.style."
+                                                                + style.name().toLowerCase(Locale.ROOT)),
+                                                ClientExternalSettings.getYzuiVisualStyle())
+                                                .withValues(YzuiVisualStyle.values())
+                                                .create(Component.translatable(
+                                                                "screen.youzaiworldcore.appearance.effects"),
+                                                                (button, style) -> ClientExternalSettings
+                                                                                .setYzuiVisualStyle(style)));
+                list.addSmall(
+                                Button.builder(Component.translatable("screen.youzaiworldcore.appearance.title"),
+                                                button -> Minecraft.getInstance().gui
+                                                                .setScreen(new YzuiAppearanceScreen(screen)))
+                                                .build(),
+                                Button.builder(Component.translatable("options.youzaiworldcore.settings"),
+                                                button -> Minecraft.getInstance().gui
+                                                                .setScreen(new YouzaiWorldCoreSettingsScreen(screen)))
+                                                .build());
+        }
 }

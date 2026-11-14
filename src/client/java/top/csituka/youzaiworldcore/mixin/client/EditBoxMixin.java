@@ -17,8 +17,6 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import top.csituka.youzaiworldcore.client.config.ClientExternalSettings;
-import top.csituka.youzaiworldcore.client.animation.GuiAnimationController;
-import top.csituka.youzaiworldcore.client.render.RoundedRect;
 import top.csituka.youzaiworldcore.client.animation.YzuiHover;
 
 /**
@@ -29,32 +27,53 @@ import top.csituka.youzaiworldcore.client.animation.YzuiHover;
 @SuppressWarnings("null")
 public class EditBoxMixin {
 
-    private static int textColor() { return YzuiTheme.text(); }
-    private static int textColorDisabled() { return YzuiTheme.textMuted(); }
-    private static int cursorColor() { return YzuiTheme.primary(); }
+    private static int textColor() {
+        return YzuiTheme.text();
+    }
+
+    private static int textColorDisabled() {
+        return YzuiTheme.textMuted();
+    }
+
+    private static int cursorColor() {
+        return YzuiTheme.primary();
+    }
+
     /** 选中文本高亮色：半透明蓝（ARGB），适配 YZUI 白色背景（原版 0xFF0000FF 不透明蓝会完全盖住白底） */
-    private static int highlightColor() { return YzuiTheme.selection(); }
+    private static int highlightColor() {
+        return YzuiTheme.selection();
+    }
+
     private static final int PADDING = 4;
 
-    @Unique private final YzuiHover yzwc$hover = new YzuiHover();
+    @Unique
+    private final YzuiHover yzwc$hover = new YzuiHover();
 
-    @Shadow private String value;
-    @Shadow private net.minecraft.client.gui.Font font;
-    @Shadow private boolean isEditable;
-    @Shadow private int cursorPos;
-    @Shadow private int highlightPos;
-    @Shadow private int displayPos;
-    @Shadow private long focusedTime;
-    @Shadow private String suggestion;
-    @Shadow private net.minecraft.network.chat.Component hint;
+    @Shadow
+    private String value;
+    @Shadow
+    private net.minecraft.client.gui.Font font;
+    @Shadow
+    private boolean isEditable;
+    @Shadow
+    private int cursorPos;
+    @Shadow
+    private int highlightPos;
+    @Shadow
+    private int displayPos;
+    @Shadow
+    private long focusedTime;
+    @Shadow
+    private String suggestion;
+    @Shadow
+    private net.minecraft.network.chat.Component hint;
 
-    @Inject(method = "extractWidgetRenderState(Lnet/minecraft/client/gui/GuiGraphicsExtractor;IIF)V",
-            at = @At("HEAD"), cancellable = true)
+    @Inject(method = "extractWidgetRenderState(Lnet/minecraft/client/gui/GuiGraphicsExtractor;IIF)V", at = @At("HEAD"), cancellable = true)
     private void yzwc$replaceAll(
-            GuiGraphicsExtractor gfx, int mx, int my, float pt, CallbackInfo ci
-    ) {
+            GuiGraphicsExtractor gfx, int mx, int my, float pt, CallbackInfo ci) {
         EditBox self = (EditBox) (Object) this;
-        if (!self.isVisible()) return;
+        if (!self.isVisible())
+            return;
 
         // YZUI 禁用时回退到原版渲染，让资源包可以替换 UI（模组自定义屏幕除外）
         if (!yzwc$shouldApplyYzui()) {
@@ -67,7 +86,7 @@ public class EditBoxMixin {
         if (screen instanceof ChatScreen
                 || screen instanceof CreativeModeInventoryScreen
                 || (screen instanceof AbstractContainerScreen
-                    && !screen.getClass().getName().startsWith("top.csituka.youzaiworldcore"))) {
+                        && !screen.getClass().getName().startsWith("top.csituka.youzaiworldcore"))) {
             return;
         }
 
@@ -89,7 +108,7 @@ public class EditBoxMixin {
         int textX = x + PADDING;
 
         // ---- 选中文本高亮（复刻原版 renderHighlight：选中范围 = cursorPos..highlightPos，
-        //      裁剪到可视区；半透明蓝适配 YZUI 白底，绘制在文本下层） ----
+        // 裁剪到可视区；半透明蓝适配 YZUI 白底，绘制在文本下层） ----
         if (!text.isEmpty() && !clipped.isEmpty()) {
             int selStart = Math.min(this.cursorPos, this.highlightPos);
             int selEnd = Math.max(this.cursorPos, this.highlightPos);
@@ -150,12 +169,15 @@ public class EditBoxMixin {
 
     /**
      * 判断当前是否应应用 YZUI 自定义 UI 渲染。
-     * <p>当用户关闭了 YZUI 全局开关时，原版屏幕回退到原版渲染以允许资源包替换；
-     * 但模组自定义屏幕（包名以 {@code top.csituka.youzaiworldcore} 开头）始终使用 YZUI。</p>
+     * <p>
+     * 当用户关闭了 YZUI 全局开关时，原版屏幕回退到原版渲染以允许资源包替换；
+     * 但模组自定义屏幕（包名以 {@code top.csituka.youzaiworldcore} 开头）始终使用 YZUI。
+     * </p>
      */
     @Unique
     private static boolean yzwc$shouldApplyYzui() {
-        if (ClientExternalSettings.isYzuiEnabled()) return true;
+        if (ClientExternalSettings.isYzuiEnabled())
+            return true;
         var screen = Minecraft.getInstance().gui.screen();
         return screen != null && screen.getClass().getName().startsWith("top.csituka.youzaiworldcore");
     }

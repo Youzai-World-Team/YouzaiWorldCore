@@ -27,33 +27,29 @@ import java.util.Arrays;
 @Mixin(AccessibilityOptionsScreen.class)
 public class AccessibilityOptionsScreenMixin {
 
-    @ModifyArg(
-        method = "addOptions",
-        at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/components/OptionsList;addSmall([Lnet/minecraft/client/OptionInstance;)V"),
-        index = 0
-    )
+    @ModifyArg(method = "addOptions", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/components/OptionsList;addSmall([Lnet/minecraft/client/OptionInstance;)V"), index = 0)
     private OptionInstance<?>[] youzaiworldcore$removeOptionsFromArray(OptionInstance<?>[] options) {
-        if (top.csituka.youzaiworldcore.client.config.ClientExternalSettings.isYzuiEnabled()) return options;
+        if (top.csituka.youzaiworldcore.client.config.ClientExternalSettings.isYzuiEnabled())
+            return options;
         Minecraft mc = Minecraft.getInstance();
         return Arrays.stream(options)
                 .filter(opt -> opt != mc.options.darkMojangStudiosBackground()
-                            && opt != mc.options.highContrast()
-                            && opt != mc.options.chatLineSpacing()
-                            && opt != mc.options.chatDelay()
-                            && opt != mc.options.hideSplashTexts()
-                            && opt != mc.options.narratorHotkey()
-                            && opt != mc.options.textBackgroundOpacity())
+                        && opt != mc.options.highContrast()
+                        && opt != mc.options.chatLineSpacing()
+                        && opt != mc.options.chatDelay()
+                        && opt != mc.options.hideSplashTexts()
+                        && opt != mc.options.narratorHotkey()
+                        && opt != mc.options.textBackgroundOpacity())
                 .toArray(OptionInstance<?>[]::new);
     }
 
     /**
      * 完全跳过 narrator + controls 那对按钮，不再添加。
      */
-    @Redirect(
-        method = "addOptions",
-        at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/components/OptionsList;addSmall(Lnet/minecraft/client/gui/components/AbstractWidget;Lnet/minecraft/client/OptionInstance;Lnet/minecraft/client/gui/components/AbstractWidget;)V")
-    )
-    private void youzaiworldcore$skipNarratorAndControls(OptionsList list, AbstractWidget narratorWidget, OptionInstance<?> option, AbstractWidget controlsButton) {
+    @SuppressWarnings("null")
+    @Redirect(method = "addOptions", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/components/OptionsList;addSmall(Lnet/minecraft/client/gui/components/AbstractWidget;Lnet/minecraft/client/OptionInstance;Lnet/minecraft/client/gui/components/AbstractWidget;)V"))
+    private void youzaiworldcore$skipNarratorAndControls(OptionsList list, AbstractWidget narratorWidget,
+            OptionInstance<?> option, AbstractWidget controlsButton) {
         if (top.csituka.youzaiworldcore.client.config.ClientExternalSettings.isYzuiEnabled()) {
             list.addSmall(narratorWidget, option, controlsButton);
         }

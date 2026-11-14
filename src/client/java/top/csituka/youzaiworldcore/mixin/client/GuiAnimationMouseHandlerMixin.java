@@ -19,48 +19,47 @@ import net.minecraft.client.input.MouseButtonEvent;
 @Mixin(MouseHandler.class)
 public class GuiAnimationMouseHandlerMixin {
 
-    @Redirect(method = { "onButton", "onScroll",
-            "handleAccumulatedMovement" }, at = @At(value = "INVOKE", target = "Lnet/minecraft/client/MouseHandler;getScaledYPos(Lcom/mojang/blaze3d/platform/Window;)D"))
-    private double youzaiworldcore$adjustInputY(MouseHandler handler, @NonNull Window window) {
-        var screen = Minecraft.getInstance().gui.screen();
-        double y = YzuiViewport.toLogical(screen, handler.getScaledYPos(window));
-        return screen == null ? y : GuiAnimationController.inputFrame(screen).toLocalY(y, screen.height);
-    }
+        @Redirect(method = { "onButton", "onScroll",
+                        "handleAccumulatedMovement" }, at = @At(value = "INVOKE", target = "Lnet/minecraft/client/MouseHandler;getScaledYPos(Lcom/mojang/blaze3d/platform/Window;)D"))
+        private double youzaiworldcore$adjustInputY(MouseHandler handler, @NonNull Window window) {
+                var screen = Minecraft.getInstance().gui.screen();
+                double y = YzuiViewport.toLogical(screen, handler.getScaledYPos(window));
+                return screen == null ? y : GuiAnimationController.inputFrame(screen).toLocalY(y, screen.height);
+        }
 
-    @Redirect(method = { "onButton", "onScroll", "handleAccumulatedMovement" },
-            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/MouseHandler;getScaledXPos(Lcom/mojang/blaze3d/platform/Window;)D"))
-    private double youzaiworldcore$adjustInputX(MouseHandler handler, Window window) {
-        var screen = Minecraft.getInstance().gui.screen();
-        double x = YzuiViewport.toLogical(screen, handler.getScaledXPos(window));
-        return screen == null ? x : GuiAnimationController.inputFrame(screen).toLocalX(x, screen.width);
-    }
+        @Redirect(method = { "onButton", "onScroll",
+                        "handleAccumulatedMovement" }, at = @At(value = "INVOKE", target = "Lnet/minecraft/client/MouseHandler;getScaledXPos(Lcom/mojang/blaze3d/platform/Window;)D"))
+        private double youzaiworldcore$adjustInputX(MouseHandler handler, Window window) {
+                var screen = Minecraft.getInstance().gui.screen();
+                @SuppressWarnings("null")
+                double x = YzuiViewport.toLogical(screen, handler.getScaledXPos(window));
+                return screen == null ? x : GuiAnimationController.inputFrame(screen).toLocalX(x, screen.width);
+        }
 
-    @Redirect(method = "handleAccumulatedMovement", at = @At(value = "INVOKE",
-            target = "Lnet/minecraft/client/gui/screens/Screen;mouseDragged(Lnet/minecraft/client/input/MouseButtonEvent;DD)Z"))
-    private boolean youzaiworldcore$scaleDrag(Screen screen, MouseButtonEvent event, double dx, double dy) {
-        if (GuiAnimationController.isExiting(screen)) return true;
-        float scale = YzuiViewport.scale(screen) * GuiAnimationController.inputFrame(screen).scale();
-        return screen.mouseDragged(event, dx / scale, dy / scale);
-    }
+        @SuppressWarnings("null")
+        @Redirect(method = "handleAccumulatedMovement", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/screens/Screen;mouseDragged(Lnet/minecraft/client/input/MouseButtonEvent;DD)Z"))
+        private boolean youzaiworldcore$scaleDrag(Screen screen, MouseButtonEvent event, double dx, double dy) {
+                if (GuiAnimationController.isExiting(screen))
+                        return true;
+                float scale = YzuiViewport.scale(screen) * GuiAnimationController.inputFrame(screen).scale();
+                return screen.mouseDragged(event, dx / scale, dy / scale);
+        }
 
-    @WrapOperation(method = "onButton", at = @At(value = "INVOKE",
-            target = "Lnet/minecraft/client/gui/screens/Screen;mouseClicked(Lnet/minecraft/client/input/MouseButtonEvent;Z)Z"))
-    private boolean youzaiworldcore$blockExitClick(Screen screen, MouseButtonEvent event, boolean click,
-                                                 Operation<Boolean> original) {
-        return GuiAnimationController.isExiting(screen) || original.call(screen, event, click);
-    }
+        @WrapOperation(method = "onButton", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/screens/Screen;mouseClicked(Lnet/minecraft/client/input/MouseButtonEvent;Z)Z"))
+        private boolean youzaiworldcore$blockExitClick(Screen screen, MouseButtonEvent event, boolean click,
+                        Operation<Boolean> original) {
+                return GuiAnimationController.isExiting(screen) || original.call(screen, event, click);
+        }
 
-    @WrapOperation(method = "onButton", at = @At(value = "INVOKE",
-            target = "Lnet/minecraft/client/gui/screens/Screen;mouseReleased(Lnet/minecraft/client/input/MouseButtonEvent;)Z"))
-    private boolean youzaiworldcore$blockExitRelease(Screen screen, MouseButtonEvent event,
-                                                   Operation<Boolean> original) {
-        return GuiAnimationController.isExiting(screen) || original.call(screen, event);
-    }
+        @WrapOperation(method = "onButton", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/screens/Screen;mouseReleased(Lnet/minecraft/client/input/MouseButtonEvent;)Z"))
+        private boolean youzaiworldcore$blockExitRelease(Screen screen, MouseButtonEvent event,
+                        Operation<Boolean> original) {
+                return GuiAnimationController.isExiting(screen) || original.call(screen, event);
+        }
 
-    @WrapOperation(method = "onScroll", at = @At(value = "INVOKE",
-            target = "Lnet/minecraft/client/gui/screens/Screen;mouseScrolled(DDDD)Z"))
-    private boolean youzaiworldcore$blockExitScroll(Screen screen, double x, double y, double dx, double dy,
-                                                  Operation<Boolean> original) {
-        return GuiAnimationController.isExiting(screen) || original.call(screen, x, y, dx, dy);
-    }
+        @WrapOperation(method = "onScroll", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/screens/Screen;mouseScrolled(DDDD)Z"))
+        private boolean youzaiworldcore$blockExitScroll(Screen screen, double x, double y, double dx, double dy,
+                        Operation<Boolean> original) {
+                return GuiAnimationController.isExiting(screen) || original.call(screen, x, y, dx, dy);
+        }
 }

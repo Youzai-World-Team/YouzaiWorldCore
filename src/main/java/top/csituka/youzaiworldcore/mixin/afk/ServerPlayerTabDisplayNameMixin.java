@@ -24,15 +24,13 @@ import top.csituka.youzaiworldcore.title.TitleManager;
 @Mixin(ServerPlayer.class)
 public abstract class ServerPlayerTabDisplayNameMixin {
 
-    @Inject(
-            method = "getTabListDisplayName()Lnet/minecraft/network/chat/Component;",
-            at = @At("RETURN"),
-            cancellable = true
-    )
+    @SuppressWarnings("null")
+    @Inject(method = "getTabListDisplayName()Lnet/minecraft/network/chat/Component;", at = @At("RETURN"), cancellable = true)
     private void youzaiworldcore$appendAfkPrefix(CallbackInfoReturnable<Component> cir) {
         ServerPlayer self = (ServerPlayer) (Object) this;
         Component original = cir.getReturnValue();
-        if (original == null) original = self.getDisplayName();
+        if (original == null)
+            original = self.getDisplayName();
         Component result = original;
         if (AfkConfig.isTabPrefixEnabled() && AfkManager.isAfk(self)) {
             result = Component.literal(AfkConfig.getPrefix()).withColor(0xAAAAAA).append(result);
@@ -41,6 +39,7 @@ public abstract class ServerPlayerTabDisplayNameMixin {
         if (!title.getString().isBlank()) {
             result = title.copy().append(Component.literal(" ")).append(result);
         }
-        if (result != original) cir.setReturnValue(result);
+        if (result != original)
+            cir.setReturnValue(result);
     }
 }

@@ -52,7 +52,11 @@ public final class MapWaypointEditScreen extends MapScreen {
         edit("x", x, dimensionY + rowHeight, cw, 10);
         edit("y", x + cw + 6, dimensionY + rowHeight, cw, 10);
         edit("z", x + (cw + 6) * 2, dimensionY + rowHeight, cw, 10);
-        edit("color", x, dimensionY + rowHeight * 2, w, 7);
+        button(x + 74, dimensionY + rowHeight * 2, w - 74,
+                net.minecraft.network.chat.Component.literal("#" + values.get("color") + "  ✎"),
+                () -> Minecraft.getInstance().gui.setScreen(new MapWaypointColorScreen(this,
+                        MapWaypointColors.parse(values.get("color")), selected ->
+                                values.put("color", MapWaypointColors.hex(selected))))).active = editable();
         int bw = (w - 12) / 3, footer = panelY + panelHeight - 34;
         button(x, footer, bw, MapTexts.text("save"), this::savePoint)
                 .setStyle(YzuiTheme.ButtonStyle.FILLED).active = editable();
@@ -108,7 +112,9 @@ public final class MapWaypointEditScreen extends MapScreen {
             label(g, MapTexts.text("group"), x, y + rowHeight, groupLabelWidth - 4);
         int dimensionY = y + rowHeight + groupHeight;
         label(g, MapTexts.text("dimension"), x, dimensionY, 70);
-        label(g, MapTexts.text("color"), x, dimensionY + rowHeight * 2, 70);
+        label(g, MapTexts.text("color"), x, dimensionY + rowHeight * 2, 48);
+        MapWaypointColors.render(g, MapWaypointColors.parse(values.get("color")),
+                x + 60, dimensionY + rowHeight * 2 + 3, 1.0F);
         int cw = (w - 12) / 3;
         label(g, net.minecraft.network.chat.Component.literal("X"), x, dimensionY + rowHeight, 13);
         label(g, net.minecraft.network.chat.Component.literal("Y"), x + cw + 6, dimensionY + rowHeight, 13);

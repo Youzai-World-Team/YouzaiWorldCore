@@ -40,6 +40,7 @@ public final class YouzaiWorldCoreTestScreen extends Screen implements YzuiMenuS
         addRenderableWidget(new MenuCloseButton(panelX + panelWidth - 40, panelY + 14, this));
     }
 
+    @SuppressWarnings("null")
     private void openPreview(boolean registration) {
         Minecraft client = Minecraft.getInstance();
         String name = client.player == null ? client.getUser().getName() : client.player.getName().getString();
@@ -47,8 +48,10 @@ public final class YouzaiWorldCoreTestScreen extends Screen implements YzuiMenuS
         client.setScreenAndShow(registration ? RegisterScreen.preview(name, this) : LoginScreen.preview(name, this));
     }
 
+    @SuppressWarnings("null")
     @Override
-    public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float tick) {
+    public void extractRenderState(@SuppressWarnings("null") GuiGraphicsExtractor g, int mouseX, int mouseY,
+            float tick) {
         YzuiMenuPanel.card(g, panelX, panelY, panelWidth, PANEL_HEIGHT);
         YzuiMenuPanel.header(g, font, title, text("description"), panelX, panelY, panelWidth);
         super.extractRenderState(g, mouseX, mouseY, tick);
@@ -60,15 +63,20 @@ public final class YouzaiWorldCoreTestScreen extends Screen implements YzuiMenuS
     }
 
     @Override
-    public void onClose() { closeMenu(); }
+    public void onClose() {
+        closeMenu();
+    }
 
+    @SuppressWarnings("null")
     @Override
-    public boolean keyPressed(KeyEvent event) {
+    public boolean keyPressed(@SuppressWarnings("null") KeyEvent event) {
         return YzuiMenuScreen.handleEscape(this, event) || super.keyPressed(event);
     }
 
     @Override
-    public boolean isPauseScreen() { return false; }
+    public boolean isPauseScreen() {
+        return false;
+    }
 
     private static Component text(String suffix) {
         return Component.translatable("screen.youzaiworldcore.test." + suffix);

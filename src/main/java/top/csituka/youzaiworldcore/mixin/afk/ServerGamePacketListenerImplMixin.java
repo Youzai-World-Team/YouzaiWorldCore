@@ -18,9 +18,11 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
 
 /**
  * 捕获客户端发出的聊天和命令数据包，作为 AFK 的明确活动信号。
- * <p>聊天和命令入口可能在网络线程，必须先经 PacketUtils 转交到与客户端心跳
+ * <p>
+ * 聊天和命令入口可能在网络线程，必须先经 PacketUtils 转交到与客户端心跳
  * 相同的主线程数据包队列，再同步记录活动。不能另用 server.execute 排队，
- * 否则命令可能越过它自己的心跳，导致手动 AFK 被误恢复。</p>
+ * 否则命令可能越过它自己的心跳，导致手动 AFK 被误恢复。
+ * </p>
  */
 @Mixin(ServerGamePacketListenerImpl.class)
 public abstract class ServerGamePacketListenerImplMixin {
@@ -45,6 +47,7 @@ public abstract class ServerGamePacketListenerImplMixin {
         markActivity(packet, "带签名命令");
     }
 
+    @SuppressWarnings("null")
     private void markActivity(Packet<ServerGamePacketListener> packet, String source) {
         if (player == null || player.level().getServer() == null) {
             return;

@@ -55,7 +55,8 @@ public final class ClientAnnouncementState {
         }
     }
 
-    private ClientAnnouncementState() { }
+    private ClientAnnouncementState() {
+    }
 
     /** 未获取公告或后台已停用时返回 null，标题页使用内置多语言公告。 */
     public static Announcement get() {
@@ -65,7 +66,8 @@ public final class ClientAnnouncementState {
     /** 可在标题页逐帧调用；限制刷新频率并避免窗口重建产生重复请求。 */
     public static synchronized void refreshIfDue() {
         long now = System.nanoTime();
-        if (loading || (attempted && now - lastAttemptNanos < REFRESH_INTERVAL_NANOS)) return;
+        if (loading || (attempted && now - lastAttemptNanos < REFRESH_INTERVAL_NANOS))
+            return;
         attempted = true;
         loading = true;
         lastAttemptNanos = now;
@@ -98,35 +100,43 @@ public final class ClientAnnouncementState {
                 .GET().build();
         HttpResponse<String> response = HTTP.send(request, HttpResponse.BodyHandlers.limiting(
                 HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8), MAX_RESPONSE_BYTES));
-        if (response.statusCode() != 200) throw new IOException("HTTP " + response.statusCode());
+        if (response.statusCode() != 200)
+            throw new IOException("HTTP " + response.statusCode());
         return parse(response.body());
     }
 
     /** 严格校验公开协议，拒绝错误类型和超限正文，避免接口异常影响标题页。 */
+    @SuppressWarnings("null")
     static Announcement parse(String json) throws IOException {
         JsonElement element = JsonParser.parseString(json);
-        if (!element.isJsonObject()) throw new IOException("公告响应必须是对象");
+        if (!element.isJsonObject())
+            throw new IOException("公告响应必须是对象");
         JsonObject root = element.getAsJsonObject();
         JsonElement enabled = root.get("enabled");
         if (enabled == null || !enabled.isJsonPrimitive() || !enabled.getAsJsonPrimitive().isBoolean()) {
             throw new IOException("公告启用状态格式不正确");
         }
-        if (!enabled.getAsBoolean()) return null;
+        if (!enabled.getAsBoolean())
+            return null;
         String title = readText(root.get("title"), MAX_TITLE_LENGTH).strip();
         String subtitle = readText(root.get("subtitle"), MAX_SUBTITLE_LENGTH).strip();
-        if (title.isBlank()) throw new IOException("公告标题不能为空");
+        if (title.isBlank())
+            throw new IOException("公告标题不能为空");
         JsonElement body = root.get("body");
         if (body == null || !body.isJsonArray() || body.getAsJsonArray().isEmpty()
-                || body.getAsJsonArray().size() > MAX_BODY_LINES) throw new IOException("公告正文行数不正确");
+                || body.getAsJsonArray().size() > MAX_BODY_LINES)
+            throw new IOException("公告正文行数不正确");
         List<String> lines = new ArrayList<>();
         int length = 0;
         for (JsonElement line : body.getAsJsonArray()) {
             String text = readText(line, MAX_LINE_LENGTH);
             length += text.length() + (lines.isEmpty() ? 0 : 1);
-            if (length > MAX_BODY_LENGTH) throw new IOException("公告正文过长");
+            if (length > MAX_BODY_LENGTH)
+                throw new IOException("公告正文过长");
             lines.add(text);
         }
-        if (lines.stream().allMatch(String::isBlank)) throw new IOException("公告正文不能为空");
+        if (lines.stream().allMatch(String::isBlank))
+            throw new IOException("公告正文不能为空");
         return new Announcement(title, subtitle, lines);
     }
 

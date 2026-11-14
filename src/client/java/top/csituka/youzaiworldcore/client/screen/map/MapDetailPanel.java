@@ -163,12 +163,11 @@ final class MapDetailPanel extends AbstractContainerEventHandler implements Rend
         if (!anchor) {
             colorPreviewY = top + row + 10 - scroll;
             lines.add(new Line(MapTexts.text("color"), x + 12, top + row + 6 - scroll, 34));
-            if (editing) {
-                field(x + 68, top + row - scroll, inner - 56, "color", color, 7, value -> color = value).setEditable(!pending);
-            } else {
-                button(x + 68, top + row - scroll, inner - 56, Component.literal("#" + color),
-                        () -> { editing = true; rebuild(); }, true).active = !pending;
-            }
+            button(x + 68, top + row - scroll, inner - 56, Component.literal("#" + color + "  ✎"),
+                    () -> Minecraft.getInstance().gui.setScreen(new MapWaypointColorScreen(owner,
+                            MapWaypointColors.parse(color), selected -> {
+                                color = MapWaypointColors.hex(selected); editing = true;
+                            })), true).active = editable() && !pending;
             row += 28;
             int groupInset = creating ? 56 : 0;
             if (creating) lines.add(new Line(MapTexts.text("group"), x + 12, top + row + 7 - scroll, 50));

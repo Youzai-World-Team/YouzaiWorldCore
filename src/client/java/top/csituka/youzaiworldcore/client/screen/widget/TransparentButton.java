@@ -31,23 +31,52 @@ public class TransparentButton extends AbstractWidget {
         this.onPress = onPress;
     }
 
-    public void setExternalAlpha(float alpha) { externalAlpha = Math.clamp(alpha, 0f, 1f); }
-    protected float externalAlpha() { return externalAlpha; }
-    public void setBackgroundVisible(boolean visible) { backgroundVisible = visible; }
-    public void setTextLeftAligned(boolean aligned) { textLeftAligned = aligned; }
+    public void setExternalAlpha(float alpha) {
+        externalAlpha = Math.clamp(alpha, 0f, 1f);
+    }
+
+    protected float externalAlpha() {
+        return externalAlpha;
+    }
+
+    public void setBackgroundVisible(boolean visible) {
+        backgroundVisible = visible;
+    }
+
+    public void setTextLeftAligned(boolean aligned) {
+        textLeftAligned = aligned;
+    }
+
     /** 为行内状态、距离等附加信息留出独立空间。 */
     public void setTextInsets(int left, int right) {
         textInsetLeft = Math.max(0, left);
         textInsetRight = Math.max(0, right);
     }
-    public void setTextColor(int color) { textColor = () -> YzuiTheme.legacyText(color); }
-    public void setTextColor(IntSupplier color) { textColor = color; }
-    public TransparentButton setStyle(YzuiTheme.ButtonStyle value) { style = value; textColor = null; return this; }
-    public void setIcon(Identifier value) { icon = value; }
 
+    public void setTextColor(int color) {
+        textColor = () -> YzuiTheme.legacyText(color);
+    }
+
+    public void setTextColor(IntSupplier color) {
+        textColor = color;
+    }
+
+    public TransparentButton setStyle(YzuiTheme.ButtonStyle value) {
+        style = value;
+        textColor = null;
+        return this;
+    }
+
+    public void setIcon(Identifier value) {
+        icon = value;
+    }
+
+    @SuppressWarnings("null")
     @Override
-    protected void extractWidgetRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
-        if (!visible) return;
+    protected void extractWidgetRenderState(@SuppressWarnings("null") GuiGraphicsExtractor g, int mouseX, int mouseY,
+            float partialTick) {
+        if (!visible)
+            return;
         int x = getX(), y = getY(), w = getWidth(), h = getHeight();
         isHovered = mouseX >= x && mouseX < x + w && mouseY >= y && mouseY < y + h;
         float hover = hoverState.sample(active && isHovered);
@@ -56,7 +85,8 @@ public class TransparentButton extends AbstractWidget {
         YzuiTheme.button(g, x, y, w, h, hover, isFocused(), active, opacity, actualStyle);
 
         int foreground = textColor == null ? YzuiTheme.buttonText(actualStyle, active) : textColor.getAsInt();
-        if (!active) foreground = YzuiTheme.textMuted();
+        if (!active)
+            foreground = YzuiTheme.textMuted();
         foreground = YzuiTheme.alpha(foreground, opacity * (active ? 1f : 0.68f));
         int padding = w < 30 ? 2 : 8;
         int leftInset = textInsetLeft < 0 ? padding : textInsetLeft;
@@ -70,7 +100,8 @@ public class TransparentButton extends AbstractWidget {
             int iconY = y + (h - size) / 2;
             g.blit(RenderPipelines.GUI_TEXTURED, icon, iconX, iconY, 0, 0,
                     size, size, size, size, YzuiTheme.alpha(0xFFFFFFFF, opacity));
-            if (iconOnly) return;
+            if (iconOnly)
+                return;
             textX += size + 6;
             available -= size + 6;
         }
@@ -84,21 +115,27 @@ public class TransparentButton extends AbstractWidget {
     }
 
     @Override
-    public void onClick(MouseButtonEvent event, boolean isActuallyClick) {
-        if (active && visible && onPress != null) onPress.run();
+    public void onClick(@SuppressWarnings("null") MouseButtonEvent event, boolean isActuallyClick) {
+        if (active && visible && onPress != null)
+            onPress.run();
     }
 
     @Override
-    public boolean keyPressed(net.minecraft.client.input.KeyEvent event) {
-        if (!active || !visible || !isFocused()) return false;
-        if (event.key() != InputConstants.KEY_RETURN && event.key() != InputConstants.KEY_NUMPADENTER && event.key() != InputConstants.KEY_SPACE) return false;
+    public boolean keyPressed(@SuppressWarnings("null") net.minecraft.client.input.KeyEvent event) {
+        if (!active || !visible || !isFocused())
+            return false;
+        if (event.key() != InputConstants.KEY_RETURN && event.key() != InputConstants.KEY_NUMPADENTER
+                && event.key() != InputConstants.KEY_SPACE)
+            return false;
         playDownSound(Minecraft.getInstance().getSoundManager());
-        if (onPress != null) onPress.run();
+        if (onPress != null)
+            onPress.run();
         return true;
     }
 
+    @SuppressWarnings("null")
     @Override
-    protected void updateWidgetNarration(NarrationElementOutput output) {
+    protected void updateWidgetNarration(@SuppressWarnings("null") NarrationElementOutput output) {
         defaultButtonNarrationText(output);
     }
 }

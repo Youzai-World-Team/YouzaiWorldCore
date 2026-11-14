@@ -22,12 +22,14 @@ public class TextureTileButton extends TransparentButton {
 
     @Override
     protected void extractWidgetRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
-        if (!visible) return;
+        if (!visible)
+            return;
         int x = getX(), y = getY(), w = getWidth(), h = getHeight();
         isHovered = mouseX >= x && mouseX < x + w && mouseY >= y && mouseY < y + h;
         float hover = hoverState.sample(active && isHovered);
         float opacity = externalAlpha() * getAlpha() * (active ? 1f : 0.45f);
         int radius = Math.min(12, h / 4);
+        @SuppressWarnings("null")
         var image = Minecraft.getInstance().getTextureManager().getTexture(texture).getTexture();
         RoundedRect.texture(g, texture, x, y, w, h, radius, image.getWidth(0), image.getHeight(0),
                 YzuiTheme.alpha(0xFFFFFFFF, opacity));
@@ -39,7 +41,6 @@ public class TextureTileButton extends TransparentButton {
                 YzuiTheme.alpha(isFocused() ? YzuiTheme.primary() : YzuiTheme.outlineVariant(),
                         opacity * (isFocused() ? 1f : 0.35f + hover * 0.25f)));
     }
-
 
     private static Component label(Identifier texture) {
         String path = texture.getPath();
