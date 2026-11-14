@@ -23,6 +23,9 @@ public final class ModPayloadTypes {
                 DebugLogger.entering(MODULE, "initialize");
 
                 // ===== C2S =====
+                PayloadTypeRegistry.serverboundPlay().register(WorldPoolMenuRequestPayload.ID, WorldPoolMenuRequestPayload.STREAM_CODEC);
+                PayloadTypeRegistry.clientboundPlay().register(WorldPoolMenuStatePayload.ID, WorldPoolMenuStatePayload.STREAM_CODEC);
+                PayloadTypeRegistry.clientboundPlay().register(WorldPoolTeleportResultPayload.ID, WorldPoolTeleportResultPayload.STREAM_CODEC);
                 PayloadTypeRegistry.serverboundPlay().register(MapViewRequestPayload.ID, MapViewRequestPayload.STREAM_CODEC);
                 PayloadTypeRegistry.serverboundPlay().register(MapActionPayload.ID, MapActionPayload.STREAM_CODEC);
                 PayloadTypeRegistry.clientboundPlay().register(MapSessionPayload.ID, MapSessionPayload.STREAM_CODEC);

@@ -36,13 +36,16 @@ public class MailSentScreen extends MailBaseScreen {
     private MailUi.Rect closeRect = new MailUi.Rect(0, 0, 0, 0);
 
     public MailSentScreen() {
-        super(Component.translatable("youzaiworldcore.message.gui.mail.sent.title"));
+        this(null);
+    }
+
+    public MailSentScreen(net.minecraft.client.gui.screens.Screen parent) {
+        super(Component.translatable("youzaiworldcore.message.gui.mail.sent.title"), parent);
     }
 
     @Override
     protected void init() {
         super.init();
-        scrollOffset = 0;
         DebugLogger.info(MODULE, "已打开已发送邮件页面");
     }
 
@@ -248,6 +251,7 @@ public class MailSentScreen extends MailBaseScreen {
     @Override
     public void onClose() {
         MailToast.clear();
-        switchTo(new MailScreen());
+        top.csituka.youzaiworldcore.client.animation.GuiAnimationController.setScreenImmediately(
+                net.minecraft.client.Minecraft.getInstance().gui, parent == null ? new MailScreen() : parent);
     }
 }

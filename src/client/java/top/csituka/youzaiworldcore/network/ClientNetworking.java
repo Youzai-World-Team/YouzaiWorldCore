@@ -45,6 +45,14 @@ public class ClientNetworking {
 
     public static void initialize() {
         DebugLogger.entering("ClientNetworking", "initialize");
+        ClientPlayNetworking.registerGlobalReceiver(WorldPoolMenuStatePayload.ID, (payload, context) ->
+                context.client().execute(() -> {
+                    if (context.client().gui.screen() instanceof MenuScreen menu) menu.applyWorldPoolState(payload);
+                }));
+        ClientPlayNetworking.registerGlobalReceiver(WorldPoolTeleportResultPayload.ID, (payload, context) ->
+                context.client().execute(() -> {
+                    if (context.client().gui.screen() instanceof MenuScreen menu) menu.applyWorldPoolResult(payload);
+                }));
         ClientPlayNetworking.registerGlobalReceiver(MapSessionPayload.ID, (payload, context) ->
                 top.csituka.youzaiworldcore.client.map.MapClient.receive(context.client(), () -> top.csituka.youzaiworldcore.client.map.MapClient.session(payload)));
         ClientPlayNetworking.registerGlobalReceiver(MapTilePayload.ID, (payload, context) ->
@@ -311,7 +319,9 @@ public class ClientNetworking {
         ClientPlayNetworking.registerGlobalReceiver(OpenMailComposePayload.ID, (payload, context) -> {
             DebugLogger.entering("ClientNetworking", "OpenMailComposePayload handler");
             context.client().execute(() -> {
-                context.client().setScreenAndShow(new top.csituka.youzaiworldcore.client.screen.MailComposeScreen());
+                var current = context.client().gui.screen();
+                context.client().setScreenAndShow(new top.csituka.youzaiworldcore.client.screen.MailComposeScreen(
+                        false, null, current instanceof top.csituka.youzaiworldcore.client.screen.MailBaseScreen ? current : null));
             });
             DebugLogger.exiting("ClientNetworking", "OpenMailComposePayload handler");
         });
@@ -333,7 +343,11 @@ public class ClientNetworking {
             DebugLogger.entering("ClientNetworking", "MailSentListPayload handler", "summaries=" + payload.summaries().size());
             context.client().execute(() -> {
                 top.csituka.youzaiworldcore.client.MailClientState.currentSentList = new java.util.ArrayList<>(payload.summaries());
-                context.client().setScreenAndShow(new top.csituka.youzaiworldcore.client.screen.MailSentScreen());
+                var current = context.client().gui.screen();
+                if (!(current instanceof top.csituka.youzaiworldcore.client.screen.MailSentScreen)) {
+                    context.client().setScreenAndShow(new top.csituka.youzaiworldcore.client.screen.MailSentScreen(
+                            current instanceof top.csituka.youzaiworldcore.client.screen.MailBaseScreen ? current : null));
+                }
             });
             DebugLogger.exiting("ClientNetworking", "MailSentListPayload handler");
         });
@@ -370,7 +384,9 @@ public class ClientNetworking {
                                 new MailStreamCodecs.MailRefAndMail(payload.ref(), payload.mail());
                         if (payload.canEdit()) {
                             context.client().setScreenAndShow(
-                                    new top.csituka.youzaiworldcore.client.screen.MailComposeScreen(true, payload.mail().getId()));
+                                    new top.csituka.youzaiworldcore.client.screen.MailComposeScreen(true, payload.mail().getId(),
+                                            context.client().gui.screen() instanceof top.csituka.youzaiworldcore.client.screen.MailBaseScreen
+                                                    ? context.client().gui.screen() : null));
                         } else {
                             notifyMailResult(context.client(), "已有玩家领取过附件，不可编辑，仅可撤回", false);
                         }

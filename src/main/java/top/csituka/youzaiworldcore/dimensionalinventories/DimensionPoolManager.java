@@ -134,6 +134,12 @@ public final class DimensionPoolManager {
      * </ol>
      */
     public static boolean teleportToPool(ServerPlayer player, String targetPoolId) {
+        return teleportToPool(player, targetPoolId, null);
+    }
+
+    /** 菜单可同时接收原有聊天反馈，不改变其他调用者的传送行为。 */
+    public static boolean teleportToPool(ServerPlayer player, String targetPoolId,
+                                         java.util.function.Consumer<Component> feedback) {
         DebugLogger.entering("DimensionPoolManager", "teleportToPool",
                 "player=" + player.getName().getString() + ", targetPoolId=" + targetPoolId);
         MinecraftServer server = getServer(player);
@@ -144,7 +150,7 @@ public final class DimensionPoolManager {
         DebugLogger.branch("DimensionPoolManager", "目标池是否存在",
                 targetPool == null || hiddenPool, "poolId=" + targetPoolId + ", hidden=" + hiddenPool);
         if (targetPool == null || hiddenPool) {
-            player.sendSystemMessage(Component.translatable(
+            sendTeleportMessage(player, feedback, Component.translatable(
                     "youzaiworldcore.message.diminv.pool_not_found", targetPoolId));
             DebugLogger.exiting("DimensionPoolManager", "teleportToPool",
                     "result=false (pool_not_found" + (hiddenPool ? " / hidden_pool" : "") + ")");
@@ -153,7 +159,7 @@ public final class DimensionPoolManager {
 
         DebugLogger.branch("DimensionPoolManager", "目标池是否为空", targetPool.isEmpty(), "pool=" + targetPool.displayName());
         if (targetPool.isEmpty()) {
-            player.sendSystemMessage(Component.translatable(
+            sendTeleportMessage(player, feedback, Component.translatable(
                     "youzaiworldcore.message.diminv.pool_empty", targetPool.displayName()));
             DebugLogger.exiting("DimensionPoolManager", "teleportToPool", "result=false (pool_empty)");
             return false;
@@ -167,7 +173,7 @@ public final class DimensionPoolManager {
         DebugLogger.branch("DimensionPoolManager", "玩家是否已在目标池中", alreadyInTarget,
                 "currentDim=" + currentDimensionId + ", sourcePool=" + (sourcePool != null ? sourcePool.id() : "null"));
         if (alreadyInTarget) {
-            player.sendSystemMessage(Component.translatable(
+            sendTeleportMessage(player, feedback, Component.translatable(
                     "youzaiworldcore.message.diminv.already_in_pool", targetPool.displayName()));
             DebugLogger.exiting("DimensionPoolManager", "teleportToPool", "result=true (already_in_pool)");
             return true;
@@ -177,7 +183,7 @@ public final class DimensionPoolManager {
         ResourceKey<Level> targetDimensionKey = determineTeleportTarget(player, server, targetPool);
         DebugLogger.branch("DimensionPoolManager", "目标维度是否有效", targetDimensionKey == null, "targetPool=" + targetPool.id());
         if (targetDimensionKey == null) {
-            player.sendSystemMessage(Component.translatable(
+            sendTeleportMessage(player, feedback, Component.translatable(
                     "youzaiworldcore.message.diminv.no_valid_dimension",
                     targetPool.displayName()));
             DebugLogger.exiting("DimensionPoolManager", "teleportToPool", "result=false (no_valid_dimension)");
@@ -188,7 +194,7 @@ public final class DimensionPoolManager {
         DebugLogger.branch("DimensionPoolManager", "目标维度是否已加载", targetLevel == null,
                 "dimKey=" + targetDimensionKey.identifier().toString());
         if (targetLevel == null) {
-            player.sendSystemMessage(Component.translatable(
+            sendTeleportMessage(player, feedback, Component.translatable(
                     "youzaiworldcore.message.diminv.dimension_not_found",
                     targetDimensionKey.identifier().toString()));
             DebugLogger.exiting("DimensionPoolManager", "teleportToPool", "result=false (dimension_not_found)");
@@ -282,7 +288,7 @@ public final class DimensionPoolManager {
                 player.gameMode().toString(), targetPool.gameMode().toString());
         player.setGameMode(targetPool.gameMode());
 
-        player.sendSystemMessage(Component.translatable(
+        sendTeleportMessage(player, feedback, Component.translatable(
                 "youzaiworldcore.message.diminv.teleport_success",
                 targetPool.displayName()));
 
@@ -293,6 +299,12 @@ public final class DimensionPoolManager {
         DebugLogger.exiting("DimensionPoolManager", "teleportToPool", "result=true (success)");
         return true;
     }
+    private static void sendTeleportMessage(ServerPlayer player, java.util.function.Consumer<Component> feedback,
+                                            Component message) {
+        player.sendSystemMessage(message);
+        if (feedback != null) feedback.accept(message);
+    }
+
 
     /**
      * 确定传送目标维度键。

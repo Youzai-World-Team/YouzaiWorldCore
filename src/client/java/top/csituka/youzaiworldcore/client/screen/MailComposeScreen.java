@@ -18,6 +18,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import top.csituka.youzaiworldcore.client.MailClientState;
 import top.csituka.youzaiworldcore.client.screen.widget.DropdownButton;
+import top.csituka.youzaiworldcore.client.screen.widget.ConfirmationDialog;
 import top.csituka.youzaiworldcore.client.screen.widget.MailCheckboxButton;
 import top.csituka.youzaiworldcore.itemborder.ItemBorderRenderer;
 import top.csituka.youzaiworldcore.mail.AttachmentType;
@@ -112,15 +113,22 @@ public class MailComposeScreen extends MailBaseScreen {
     private boolean cancelPacketSent;
     /** 是否已完成首次初始化（窗口尺寸变化会再次触发 init，此时要保留已填内容） */
     private boolean initialized;
+    private Prefill originalPrefill;
+    private FormOptions originalOptions;
+    private ConfirmationDialog discardDialog;
 
     public MailComposeScreen() {
         this(false, null);
     }
 
     public MailComposeScreen(boolean editMode, UUID editMailId) {
+        this(editMode, editMailId, null);
+    }
+
+    public MailComposeScreen(boolean editMode, UUID editMailId, net.minecraft.client.gui.screens.Screen parent) {
         super(Component.translatable(editMode
                 ? "youzaiworldcore.message.gui.mail.compose.edit_title"
-                : "youzaiworldcore.message.gui.mail.compose.title"));
+                : "youzaiworldcore.message.gui.mail.compose.title"), parent);
         this.editMode = editMode;
         this.editMailId = editMailId;
         Arrays.fill(itemSlots, ItemStack.EMPTY);
@@ -140,22 +148,25 @@ public class MailComposeScreen extends MailBaseScreen {
         }
 
         // 窗口尺寸变化会再次触发 init：此时从现有控件回捞已填内容，避免表单被清空
-        boolean keepAllChecked = initialized && cbAll.isChecked();
-        boolean keepPlayerChecked = initialized && cbPlayer.isChecked();
+        FormOptions options = initialized ? captureOptions() : null;
         Prefill prefill = initialized ? capturePrefill() : createPrefill(editSource);
 
         createScopeWidgets(prefill);
         createMainFields(prefill);
         createAttachmentWidgets(prefill);
         if (initialized) {
-            cbAll.setChecked(keepAllChecked);
-            cbPlayer.setChecked(keepPlayerChecked);
+            restoreOptions(options);
         } else {
             // 首次进入才拉取已注册玩家名单，打开弹窗时即可直接展示
             ClientPlayNetworking.send(new MailPlayerListRequestPayload());
         }
         initialized = true;
         syncAttachmentState();
+        if (originalPrefill == null) {
+            originalPrefill = capturePrefill();
+            originalOptions = captureOptions();
+        }
+        if (discardDialog != null) discardDialog.init(MailViewport.DESIGN_WIDTH, MailViewport.DESIGN_HEIGHT);
 
         DebugLogger.info(MODULE, "已打开邮件%s页面", editMode ? "编辑" : "发布");
     }
@@ -171,11 +182,25 @@ public class MailComposeScreen extends MailBaseScreen {
         return new Prefill(cbAll.isChecked(), List.copyOf(selectedPlayers), List.copyOf(legacyTargets),
                 typeDropdown.getSelectedIndex(), expireDropdown.getSelectedIndex(),
                 titleInput.getValue(), bodyInput.getValue(), items,
-                cbCommand.isChecked() ? commandInput.getValue() : "",
-                cbVanillaExp.isChecked() ? vanillaExpInput.getValue() : "",
-                cbVanillaLevel.isChecked() ? vanillaLevelInput.getValue() : "",
-                cbAdventureExp.isChecked() ? adventureExpInput.getValue() : "",
-                cbAdventureLevel.isChecked() ? adventureLevelInput.getValue() : "");
+                commandInput.getValue(), vanillaExpInput.getValue(), vanillaLevelInput.getValue(),
+                adventureExpInput.getValue(), adventureLevelInput.getValue());
+    }
+
+    /** 附件勾选与输入值分别保留，取消勾选或调整窗口不会丢失已填内容。 */
+    private FormOptions captureOptions() {
+        return new FormOptions(cbPlayer.isChecked(), cbItem.isChecked(), cbCommand.isChecked(),
+                cbVanillaExp.isChecked(), cbVanillaLevel.isChecked(), cbAdventureExp.isChecked(),
+                cbAdventureLevel.isChecked());
+    }
+
+    private void restoreOptions(FormOptions options) {
+        cbPlayer.setChecked(options.player());
+        cbItem.setChecked(options.item());
+        cbCommand.setChecked(options.command());
+        cbVanillaExp.setChecked(options.vanillaExp());
+        cbVanillaLevel.setChecked(options.vanillaLevel());
+        cbAdventureExp.setChecked(options.adventureExp());
+        cbAdventureLevel.setChecked(options.adventureLevel());
     }
 
     private void createScopeWidgets(Prefill prefill) {
@@ -300,7 +325,7 @@ public class MailComposeScreen extends MailBaseScreen {
 
     @Override
     protected void renderMailContent(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
-        boolean modal = inventoryPicker.isVisible() || playerPicker.isOpen();
+        boolean modal = inventoryPicker.isVisible() || playerPicker.isOpen() || hasDiscardDialog();
         int contentX = modal ? -10000 : mouseX;
         int contentY = modal ? -10000 : mouseY;
         MailUi.drawPage(graphics, pageRect);
@@ -317,6 +342,10 @@ public class MailComposeScreen extends MailBaseScreen {
             playerPicker.setQuery(playerSearchText);
             playerPicker.render(graphics, font, mouseX, mouseY,
                     MailViewport.DESIGN_WIDTH, MailViewport.DESIGN_HEIGHT);
+        }
+        if (hasDiscardDialog()) {
+            discardDialog.render(graphics, MailViewport.DESIGN_WIDTH, MailViewport.DESIGN_HEIGHT);
+            discardDialog.renderButtons(graphics, mouseX, mouseY, partialTick);
         }
     }
 
@@ -517,6 +546,8 @@ public class MailComposeScreen extends MailBaseScreen {
         double mouseX = viewport.toDesignX(event.x());
         double mouseY = viewport.toDesignY(event.y());
 
+        if (hasDiscardDialog()) return discardDialog.mouseClicked(mouseX, mouseY);
+
         if (playerPicker.isOpen()) {
             playerPicker.mouseClicked(mouseX, mouseY);
             return true;
@@ -577,19 +608,21 @@ public class MailComposeScreen extends MailBaseScreen {
 
     @Override
     public boolean mouseReleased(MouseButtonEvent event) {
-        if (playerPicker.isOpen() || inventoryPicker.isVisible()) return true;
+        if (playerPicker.isOpen() || inventoryPicker.isVisible() || hasDiscardDialog()) return true;
         return super.mouseReleased(event);
     }
 
     @Override
     public boolean mouseDragged(MouseButtonEvent event, double dragX, double dragY) {
-        if (playerPicker.isOpen() || inventoryPicker.isVisible()) return true;
+        if (playerPicker.isOpen() || inventoryPicker.isVisible() || hasDiscardDialog()) return true;
         return super.mouseDragged(event, dragX, dragY);
     }
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
         if (isExiting()) return true;
+        if (hasDiscardDialog()) return discardDialog.mouseScrolled(
+                viewport.toDesignX(mouseX), viewport.toDesignY(mouseY), scrollX, scrollY);
         if (playerPicker.isOpen()) {
             return playerPicker.mouseScrolled(viewport.toDesignX(mouseX), viewport.toDesignY(mouseY), scrollY);
         }
@@ -650,6 +683,7 @@ public class MailComposeScreen extends MailBaseScreen {
     @Override
     public boolean keyPressed(KeyEvent event) {
         if (YzuiMenuScreen.handleEscape(this, event)) return true;
+        if (hasDiscardDialog()) return discardDialog.keyPressed(event);
         if (isExiting()) return true;
         if (playerPicker.isOpen()) {
             // ESC / 回车由弹窗处理，其余按键处理搜索输入
@@ -688,7 +722,7 @@ public class MailComposeScreen extends MailBaseScreen {
 
     @Override
     public boolean charTyped(CharacterEvent event) {
-        if (isExiting()) return true;
+        if (isExiting() || hasDiscardDialog()) return true;
         if (inventoryPicker.isVisible() || typeDropdown.isOpen() || expireDropdown.isOpen()) return true;
         if (playerPicker.isOpen()) {
             if (!playerPicker.acceptsInput()) return true;
@@ -980,6 +1014,7 @@ public class MailComposeScreen extends MailBaseScreen {
 
     @Override
     public void onClose() {
+        if (hasDiscardDialog()) { discardDialog.hide(); return; }
         if (playerPicker.isOpen()) {
             playerPicker.close();
             return;
@@ -988,14 +1023,47 @@ public class MailComposeScreen extends MailBaseScreen {
             inventoryPicker.hide();
             return;
         }
-        cancelEditing();
-        navigateBack();
+        for (DropdownButton dropdown : new DropdownButton[] { typeDropdown, expireDropdown }) {
+            if (dropdown != null && dropdown.isOpen()) { dropdown.closePopup(); return; }
+        }
+        requestLeave(this::navigateBack);
     }
 
     @Override
     public void closeMenu() {
-        cancelEditing();
-        super.closeMenu();
+        requestLeave(() -> super.closeMenu());
+    }
+
+    private boolean hasDiscardDialog() { return discardDialog != null && discardDialog.isVisible(); }
+
+    private void requestLeave(Runnable leave) {
+        if (hasDiscardDialog()) return;
+        if (finished || !hasUnsavedChanges()) { cancelEditing(); leave.run(); return; }
+        playerPicker.close();
+        inventoryPicker.hide();
+        typeDropdown.closePopup();
+        expireDropdown.closePopup();
+        discardDialog = new ConfirmationDialog(
+                Component.translatable("screen.youzaiworldcore.mail.discard_title").getString(),
+                new String[] { Component.translatable("screen.youzaiworldcore.mail.discard_body").getString() },
+                Component.translatable("screen.youzaiworldcore.mail.discard").getString(),
+                Component.translatable("screen.youzaiworldcore.mail.keep_editing").getString(),
+                () -> { cancelEditing(); leave.run(); }, null);
+        discardDialog.init(MailViewport.DESIGN_WIDTH, MailViewport.DESIGN_HEIGHT);
+        discardDialog.show();
+    }
+
+    /** 物品按内容比较，避免复制 ItemStack 后把未改动的表单误判为脏数据。 */
+    private boolean hasUnsavedChanges() {
+        if (!initialized || originalPrefill == null) return false;
+        if (!captureOptions().equals(originalOptions)) return true;
+        Prefill current = capturePrefill();
+        if (!current.withoutItems().equals(originalPrefill.withoutItems())) return true;
+        if (current.items().size() != originalPrefill.items().size()) return true;
+        for (int i = 0; i < current.items().size(); i++) {
+            if (!ItemStack.matches(current.items().get(i), originalPrefill.items().get(i))) return true;
+        }
+        return false;
     }
 
     private void cancelEditing() {
@@ -1010,8 +1078,13 @@ public class MailComposeScreen extends MailBaseScreen {
 
     private void navigateBack() {
         MailToast.clear();
-        switchTo(editMode ? new MailSentScreen() : new MailScreen());
+        top.csituka.youzaiworldcore.client.animation.GuiAnimationController.setScreenImmediately(
+                Minecraft.getInstance().gui, parent == null ? (editMode ? new MailSentScreen() : new MailScreen()) : parent);
     }
+
+    /** 表单勾选状态，与输入值分别保存。 */
+    private record FormOptions(boolean player, boolean item, boolean command, boolean vanillaExp,
+                               boolean vanillaLevel, boolean adventureExp, boolean adventureLevel) { }
 
     /**
      * 表单预填数据。
@@ -1022,6 +1095,11 @@ public class MailComposeScreen extends MailBaseScreen {
                            int typeIndex, int expireIndex, String title, String body,
                            List<ItemStack> items, String command, String vanillaExpValue,
                            String vanillaLevelValue, String adventureExpValue, String adventureLevelValue) {
+
+        Prefill withoutItems() {
+            return new Prefill(all, players, legacyTargets, typeIndex, expireIndex, title, body,
+                    List.of(), command, vanillaExpValue, vanillaLevelValue, adventureExpValue, adventureLevelValue);
+        }
 
         static Prefill empty() {
             return new Prefill(true, List.of(), List.of(), 2, 2, "", "", List.of(), "", "", "", "", "");

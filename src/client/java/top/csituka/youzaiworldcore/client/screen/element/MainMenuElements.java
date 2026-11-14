@@ -1,106 +1,100 @@
 package top.csituka.youzaiworldcore.client.screen.element;
 
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractWidget;
-import net.minecraft.client.gui.screens.ConfirmLinkScreen;
 import net.minecraft.client.resources.language.I18n;
+import net.minecraft.network.chat.Component;
 import top.csituka.youzaiworldcore.client.MailClientState;
-import top.csituka.youzaiworldcore.client.render.RoundedRect;
+import top.csituka.youzaiworldcore.client.render.MenuIcon;
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
 import top.csituka.youzaiworldcore.client.screen.MailScreen;
 import top.csituka.youzaiworldcore.client.screen.MenuScreen;
 import top.csituka.youzaiworldcore.client.screen.TitleManagementScreen;
-import top.csituka.youzaiworldcore.client.screen.widget.ConfirmationDialog;
+import top.csituka.youzaiworldcore.client.screen.map.YzWorldMapScreen;
 import top.csituka.youzaiworldcore.client.screen.widget.MenuNavigationButton;
-import top.csituka.youzaiworldcore.client.render.MenuIcon;
+import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
+import top.csituka.youzaiworldcore.client.skill.ClientAttributeData;
+import top.csituka.youzaiworldcore.client.title.TitleClientState;
 
-/** 主菜单通透卡片网格；各按钮共用 2:1 比例，邮件角标限制在对应按钮内。 */
+/** 首页按常用操作与玩家信息分组，状态就地显示，入口保持一键可达。 */
+@SuppressWarnings("null")
 public class MainMenuElements implements MenuElementGroup {
-        private static final String[] ENTRIES = {
-                        "switch_worlds", "mail", "level", "about_me",
-                        "title", "settings", "website", "tutorial_center",
-                        "events", "questionnaire_application_and_survey", "report", "management"
+    private static final String[] ENTRIES = {
+            "switch_worlds", "mail", "map", "about_me", "level", "title"
+    };
+    private static final MenuIcon[] ICONS = {
+            MenuIcon.WORLD, MenuIcon.MAIL, MenuIcon.MAP, MenuIcon.ACCOUNT, MenuIcon.LEVEL, MenuIcon.CROWN
+    };
+
+    @Override public String getTitleText() { return I18n.get("youzaiworldcore.message.gui.title_main_menu"); }
+    @Override public String getSubtitleText() {
+        var player = Minecraft.getInstance().player;
+        return I18n.get("youzaiworldcore.message.gui.subtitle_main_menu",
+                player == null ? "Player" : player.getName().getString());
+    }
+    @Override public boolean isRoot() { return true; }
+
+    @Override
+    public List<AbstractWidget> createButtons(MenuScreen screen, int width, int height, float scale, float alpha) {
+        Runnable[] actions = {
+                () -> screen.switchTo(new SwitchWorldMenuElements()),
+                () -> screen.startExit(() -> Minecraft.getInstance().setScreenAndShow(new MailScreen(screen))),
+                () -> screen.startExit(() -> Minecraft.getInstance().setScreenAndShow(new YzWorldMapScreen(screen))),
+                () -> screen.switchTo(new AboutMeMenuElements()),
+                () -> screen.switchTo(new AdventureLevelMenuElements()),
+                () -> screen.startExit(() -> Minecraft.getInstance().setScreenAndShow(new TitleManagementScreen(screen)))
         };
-
-        private static final MenuIcon[] ICONS = {
-                        MenuIcon.WORLD, MenuIcon.MAIL, MenuIcon.LEVEL, MenuIcon.ACCOUNT,
-                        MenuIcon.CROWN, MenuIcon.SETTINGS, MenuIcon.WEBSITE, MenuIcon.BOOK,
-                        MenuIcon.EVENTS, MenuIcon.SURVEY, MenuIcon.REPORT, MenuIcon.ADMIN
-        };
-
-        @Override
-        public String getTitleText() {
-                return I18n.get("youzaiworldcore.message.gui.title_main_menu");
+        var layout = new MenuLayout(width, height).dashboard();
+        List<AbstractWidget> buttons = new ArrayList<>();
+        for (int i = 0; i < ENTRIES.length; i++) {
+            var bounds = layout.tile(i);
+            var button = new MenuNavigationButton(bounds.x(), bounds.y(), bounds.width(), bounds.height(),
+                    ENTRIES[i], ICONS[i], actions[i]);
+            button.setExternalAlpha(alpha);
+            buttons.add(button);
         }
+        var settings = layout.footer(0);
+        buttons.add(new TransparentButton(settings.x(), settings.y(), settings.width(), settings.height(),
+                Component.translatable("screen.youzaiworldcore.navigation.settings"),
+                () -> screen.switchTo(new SettingsMenuElements())));
+        var more = layout.footer(1);
+        buttons.add(new TransparentButton(more.x(), more.y(), more.width(), more.height(),
+                text("more"), () -> screen.switchTo(new MoreMenuElements())));
+        updateButtons(buttons);
+        return buttons;
+    }
 
-        @Override
-        public String getSubtitleText() {
-                var player = Minecraft.getInstance().player;
-                return I18n.get("youzaiworldcore.message.gui.subtitle_main_menu",
-                                player == null ? "Player" : player.getName().getString());
-        }
+    @Override
+    public void updateButtons(List<AbstractWidget> buttons) {
+        if (buttons.size() < ENTRIES.length) return;
+        ((MenuNavigationButton) buttons.get(0)).setDetail(text("world_hint"));
+        ((MenuNavigationButton) buttons.get(1)).setDetail(MailClientState.unreadCount > 0
+                ? text("mail_pending", MailClientState.unreadCount) : text("mail_clear"));
+        ((MenuNavigationButton) buttons.get(2)).setDetail(text("map_hint"));
+        ((MenuNavigationButton) buttons.get(3)).setDetail(text("account_hint"));
+        ((MenuNavigationButton) buttons.get(4)).setDetail(text("level_state",
+                ClientAttributeData.getPlayerLevel(), ClientAttributeData.getSkillPointsAvailable()));
+        var player = Minecraft.getInstance().player;
+        Component title = player == null ? Component.empty() : TitleClientState.equippedComponent(player.getUUID());
+        ((MenuNavigationButton) buttons.get(5)).setDetail(title.getString().isBlank() ? text("title_none") : title);
+    }
 
-        @Override
-        public boolean isRoot() {
-                return true;
+    @Override
+    public void renderCustomContent(GuiGraphicsExtractor g, int width, int height, float alpha,
+                                    float xOffset, int mouseX, int mouseY) {
+        var layout = new MenuLayout(width, height).dashboard();
+        var font = Minecraft.getInstance().font;
+        for (int group = 0; group < 2; group++) {
+            YzuiTheme.label(g, font, text(group == 0 ? "common" : "player"),
+                    layout.left() + Math.round(xOffset), layout.headingY(group),
+                    layout.tileWidth() * 3 + 20, YzuiTheme.alpha(YzuiTheme.textMuted(), alpha), false);
         }
+    }
 
-        @Override
-        public List<AbstractWidget> createButtons(MenuScreen screen, int screenWidth, int screenHeight,
-                        float scale, float alpha) {
-                @SuppressWarnings("null")
-                Runnable[] actions = {
-                                () -> screen.switchTo(new SwitchWorldMenuElements()),
-                                () -> screen.startExit(
-                                                () -> Minecraft.getInstance().setScreenAndShow(new MailScreen())),
-                                () -> screen.switchTo(new AdventureLevelMenuElements()),
-                                () -> screen.switchTo(new AboutMeMenuElements()),
-                                () -> screen.startExit(() -> Minecraft.getInstance()
-                                                .setScreenAndShow(new TitleManagementScreen(screen))),
-                                () -> screen.switchTo(new SettingsMenuElements()),
-                                () -> ConfirmLinkScreen.confirmLinkNow(screen, URI.create("https://mcyzw.top")),
-                                () -> showNotImplementedDialog(screen), () -> showNotImplementedDialog(screen),
-                                () -> showNotImplementedDialog(screen), () -> showNotImplementedDialog(screen),
-                                () -> showNotImplementedDialog(screen)
-                };
-                var grid = new MenuLayout(screenWidth, screenHeight).navigation(ENTRIES.length);
-                List<AbstractWidget> buttons = new ArrayList<>();
-                for (int i = 0; i < ENTRIES.length; i++) {
-                        var bounds = grid.tile(i);
-                        var button = new MenuNavigationButton(bounds.x(), bounds.y(), bounds.width(), bounds.height(),
-                                        ENTRIES[i], ICONS[i], actions[i]);
-                        button.setExternalAlpha(alpha);
-                        buttons.add(button);
-                }
-                return buttons;
-        }
-
-        private void showNotImplementedDialog(MenuScreen screen) {
-                screen.showDialog(new ConfirmationDialog(
-                                I18n.get("youzaiworldcore.message.gui.not_implemented_title"),
-                                new String[] { I18n.get("youzaiworldcore.message.gui.not_implemented_desc") },
-                                I18n.get("youzaiworldcore.message.gui.confirm_ok"), null));
-        }
-
-        @SuppressWarnings("null")
-        @Override
-        public void renderCustomContent(GuiGraphicsExtractor g, int width, int height,
-                        float alpha, float xOffset, int mouseX, int mouseY) {
-                int unread = MailClientState.unreadCount;
-                if (unread <= 0)
-                        return;
-                var tile = new MenuLayout(width, height).navigation(ENTRIES.length).tile(1);
-                String count = unread > 99 ? "99+" : Integer.toString(unread);
-                var font = Minecraft.getInstance().font;
-                @SuppressWarnings("null")
-                int badgeWidth = Math.max(16, font.width(count) + 8);
-                int x = tile.right() - badgeWidth - 6 + Math.round(xOffset), y = tile.y() + 6;
-                RoundedRect.fill(g, x, y, badgeWidth, 16, 8, YzuiTheme.alpha(YzuiTheme.errorContainer(), alpha));
-                g.text(font, count, x + (badgeWidth - font.width(count)) / 2, y + (16 - font.lineHeight) / 2,
-                                YzuiTheme.alpha(YzuiTheme.error(), alpha), false);
-        }
+    private static Component text(String key, Object... args) {
+        return Component.translatable("screen.youzaiworldcore.home." + key, args);
+    }
 }

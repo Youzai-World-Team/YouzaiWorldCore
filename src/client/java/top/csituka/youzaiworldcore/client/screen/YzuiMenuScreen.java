@@ -20,11 +20,11 @@ public interface YzuiMenuScreen {
         GuiAnimationController.setScreenImmediately(Minecraft.getInstance().gui, null);
     }
 
-    /** 在动画、下拉框和局部弹窗分发之前处理 Esc；受限页面保留原有流程。 */
+    /** Esc 委托页面逐层返回；右上角关闭按钮仍明确退出到游戏。 */
     static boolean handleEscape(Screen screen, KeyEvent event) {
         if (event.key() != InputConstants.KEY_ESCAPE || !(screen instanceof YzuiMenuScreen menu)
                 || !menu.usesMenuOverlay() || !menu.canCloseMenu()) return false;
-        menu.closeMenu();
+        screen.onClose();
         return true;
     }
 }

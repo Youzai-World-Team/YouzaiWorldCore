@@ -560,17 +560,19 @@ public class AccountManagementScreen extends Screen implements YzuiMenuScreen {
     }
 
     private void onBack() {
-        if (this.processing || this.completed)
-            return;
-        if (this.mode == Mode.HOME)
-            onClose();
-        else
-            switchMode(Mode.HOME);
+        onClose();
     }
 
     @Override
     public void onClose() {
-        closeMenu();
+        if (this.processing || this.completed) return;
+        if (currentDialog != null && currentDialog.isVisible()) {
+            currentDialog.hide();
+            return;
+        }
+        if (mode != Mode.HOME) switchMode(Mode.HOME);
+        else top.csituka.youzaiworldcore.client.animation.GuiAnimationController.setScreenImmediately(
+                Minecraft.getInstance().gui, parent);
     }
 
     private boolean send(AccountManagementRequestPayload payload) {

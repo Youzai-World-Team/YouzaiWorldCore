@@ -27,9 +27,15 @@ import top.csituka.youzaiworldcore.client.animation.GuiAnimationController;
 public abstract class MailBaseScreen extends Screen implements YzuiMenuScreen {
 
     protected final MailViewport viewport = new MailViewport();
+    protected final Screen parent;
 
     protected MailBaseScreen(Component title) {
+        this(title, null);
+    }
+
+    protected MailBaseScreen(Component title, Screen parent) {
         super(title);
+        this.parent = parent;
     }
 
     // ===== 渲染 =====
@@ -88,10 +94,11 @@ public abstract class MailBaseScreen extends Screen implements YzuiMenuScreen {
         if (!isExiting()) action.run();
     }
 
-    /** 返回主菜单（带过渡动画）。 */
+    /** 返回打开邮件的父页面；无父页面时回到主菜单。 */
     protected void backToMenu() {
         MailToast.clear();
-        startExit(() -> Minecraft.getInstance().setScreenAndShow(new MenuScreen(new MainMenuElements())));
+        startExit(() -> GuiAnimationController.setScreenImmediately(Minecraft.getInstance().gui,
+                parent == null ? new MenuScreen(new MainMenuElements()) : parent));
     }
 
     /** 关闭界面立即回到游戏。 */
@@ -107,7 +114,11 @@ public abstract class MailBaseScreen extends Screen implements YzuiMenuScreen {
 
     @Override
     public void onClose() {
-        closeToGame();
+        if (parent == null) closeToGame();
+        else {
+            MailToast.clear();
+            GuiAnimationController.setScreenImmediately(Minecraft.getInstance().gui, parent);
+        }
     }
 
     /** 供子类的手动列表、附件与收件人选择器阻止退出期间重复操作。 */

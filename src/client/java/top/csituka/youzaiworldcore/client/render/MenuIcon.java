@@ -5,11 +5,23 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 /** 菜单的 16×16 线性图标；几何绘制跟随主题，不依赖字体符号或图片内文字。 */
 public enum MenuIcon {
     WORLD, MAIL, LEVEL, ACCOUNT, CROWN, SETTINGS, WEBSITE, BOOK, EVENTS, SURVEY, REPORT, ADMIN,
-    HOME, GAME, BUILD, COMMAND, PORTAL, CLOSE, BACK;
+    HOME, GAME, BUILD, COMMAND, PORTAL, CLOSE, BACK, MAP;
 
     /** 在逻辑 GUI 坐标中绘制图标，颜色已包含调用方的透明度。 */
     public void render(GuiGraphicsExtractor g, int x, int y, int color) {
         switch (this) {
+            case MAP -> {
+                line(g, x, y, 1, 3, 5, 1, color);
+                line(g, x, y, 5, 1, 11, 4, color);
+                line(g, x, y, 11, 4, 15, 2, color);
+                line(g, x, y, 1, 3, 1, 14, color);
+                line(g, x, y, 5, 1, 5, 12, color);
+                line(g, x, y, 11, 4, 11, 15, color);
+                line(g, x, y, 15, 2, 15, 13, color);
+                line(g, x, y, 1, 14, 5, 12, color);
+                line(g, x, y, 5, 12, 11, 15, color);
+                line(g, x, y, 11, 15, 15, 13, color);
+            }
             case CLOSE -> {
                 line(g, x, y, 4, 4, 12, 12, color);
                 line(g, x, y, 12, 4, 4, 12, color);

@@ -218,6 +218,9 @@ public class ModNetworking {
         });
 
         // ===== 维度池传送处理器 =====
+        ServerPlayNetworking.registerGlobalReceiver(WorldPoolMenuRequestPayload.ID, (payload, context) ->
+                context.player().level().getServer().execute(() ->
+                        top.csituka.youzaiworldcore.dimensionalinventories.WorldPoolMenuService.handle(context.player(), payload)));
         ServerPlayNetworking.registerGlobalReceiver(WorldPoolTeleportPayload.ID, (payload, context) -> {
             DebugLogger.entering("ModNetworking", "WorldPoolTeleportPayload handler");
             DebugLogger.info("ModNetworking", "Teleporting player to pool: " + payload.poolId());

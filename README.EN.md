@@ -54,16 +54,18 @@ Complete password authentication for offline-mode servers, with Mixin-based rest
 
 ### 2. GUI Menu System
 
-Windows 10 Start Menu-style tile layout with page switching and animated transitions.
+The main menu uses rounded cards and animated transitions, grouped into common actions and player information. Cards show mail, level, and title status.
 
 | Menu ID        | Name         | Description                                                            |
 | -------------- | ------------ | ---------------------------------------------------------------------- |
-| `main`         | Main Menu    | Feature hub: world switching, events, level, tutorials, mail, settings |
-| `switch_world` | Switch World | 11 world buttons; first 7 integrated with dimension pool system        |
+| `main`         | Main Menu    | Worlds, mail, map, player information, level, titles; settings and More in the footer |
+| `switch_world` | Switch World | 10 entries, including 7 dimension pools; server world information and confirmed results |
 | `settings`     | Settings     | Music/sound toggles, PVP/friendly fire, difficulty selection (client)  |
 | `about_me`     | About Me     | 3D player model render, ID, join/playtime                              |
 
 **Shortcut**: `Shift + F` to open the main menu.
+
+**Back and close**: Esc dismisses a popup or returns one level; at the main menu it returns to the game. × exits to the game. Mail edits require discard confirmation, and resizing preserves input. Update both client and server for the new world menu. See the [in-game menu guide](docs/YZUI_INGAME_MENU.md).
 
 #### Title System
 
@@ -878,11 +880,14 @@ All commands use `/yzwc` as the root command. Subcommands marked **(client comma
 
 ### Network Packets
 
-> Note: the `world_pool_teleport` packet class lives in the `dimensionalinventories` package; the rest (including the 18 mail packets) are in the `network` package. Direction split: 33 S→C, 38 C→S.
+> Note: the `world_pool_teleport` packet class lives in the `dimensionalinventories` package; the rest (including the 18 mail packets) are in the `network` package.
 
 | Packet ID                   | Direction | Purpose                                                                                       |
 | --------------------------- | --------- | --------------------------------------------------------------------------------------------- |
 | `open_menu`                 | S→C       | Open GUI menu                                                                                 |
+| `world_pool_menu_request`   | C→S       | Request the public world catalog or a switch, with a request ID                              |
+| `world_pool_menu_state`     | S→C       | Public world names, modes, availability, and the current world                               |
+| `world_pool_teleport_result` | S→C      | Confirmed switch result and original server feedback                                         |
 | `open_auth_screen`          | S→C       | Open auth screen                                                                              |
 | `registration_email_state` | S→C       | Sync email-registration steps, request results, and countdowns                                |
 | `mana_sync`                 | S→C       | Sync mana values                                                                              |

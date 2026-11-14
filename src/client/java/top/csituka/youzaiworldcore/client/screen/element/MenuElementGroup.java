@@ -24,6 +24,9 @@ public interface MenuElementGroup {
 
     boolean isRoot();
 
+    /** 页面显示时刷新数据；逐帧绘制与布局预览不发送请求。 */
+    default void onShown() { }
+
     List<AbstractWidget> createButtons(MenuScreen screen, int screenWidth, int screenHeight, float scale, float alpha);
 
     /** 复用控件时只刷新动态状态，不重新创建布局、悬停动画或下拉选择。 */

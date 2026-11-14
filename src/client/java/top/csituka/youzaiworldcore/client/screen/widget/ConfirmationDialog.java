@@ -26,12 +26,19 @@ public class ConfirmationDialog {
     private final YzuiPopupAnimation animation = new YzuiPopupAnimation();
 
     public ConfirmationDialog(String title, String[] messages, Runnable onConfirm, Runnable onCancel) {
+        this(title, messages, I18n.get("youzaiworldcore.message.gui.confirm_yes"),
+                I18n.get("youzaiworldcore.message.gui.confirm_cancel"), onConfirm, onCancel);
+    }
+
+    /** 危险操作使用具体动作名称，取消按钮可明确表示继续编辑。 */
+    public ConfirmationDialog(String title, String[] messages, String confirmText, String cancelText,
+                              Runnable onConfirm, Runnable onCancel) {
         this.title = title;
         this.messages = messages;
         this.onConfirm = onConfirm;
         this.onCancel = onCancel;
-        confirmButtonText = I18n.get("youzaiworldcore.message.gui.confirm_yes");
-        cancelButtonText = I18n.get("youzaiworldcore.message.gui.confirm_cancel");
+        confirmButtonText = confirmText;
+        cancelButtonText = cancelText;
         singleButtonMode = false;
     }
 

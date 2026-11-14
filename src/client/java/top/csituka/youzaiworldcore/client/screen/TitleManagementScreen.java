@@ -168,7 +168,8 @@ public final class TitleManagementScreen extends Screen implements YzuiMenuScree
 
     @Override
     public void onClose() {
-        closeMenu();
+        top.csituka.youzaiworldcore.client.animation.GuiAnimationController.setScreenImmediately(
+                Minecraft.getInstance().gui, parent);
     }
 
     @Override

@@ -31,4 +31,3 @@ gradle-app.setting
 /.workbuddy/memory
 /logo.txt
 /.tmp_decompile
-*.py

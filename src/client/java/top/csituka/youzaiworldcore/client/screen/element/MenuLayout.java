@@ -21,6 +21,27 @@ public record MenuLayout(int width, int height) {
         return CONTENT_TOP + Math.max(0, (contentHeight() - contentHeight) / 2);
     }
 
+    /** 首页两组常用入口与独立页脚；小视口保留名称和状态的行距。 */
+    public Dashboard dashboard() {
+        int tileWidth = (contentWidth(640) - GRID_GAP * 2) / 3;
+        int tileHeight = Math.min(76, Math.max(1, (contentHeight() - 88) / 2));
+        int totalHeight = tileHeight * 2 + 88;
+        return new Dashboard((width - tileWidth * 3 - GRID_GAP * 2) / 2,
+                centeredTop(totalHeight), tileWidth, tileHeight);
+    }
+
+    public record Dashboard(int left, int top, int tileWidth, int tileHeight) {
+        public int headingY(int group) { return top + group * (tileHeight + 32); }
+        public Rect tile(int index) {
+            return new Rect(left + index % 3 * (tileWidth + GRID_GAP),
+                    headingY(index / 3) + 18, tileWidth, tileHeight);
+        }
+        public Rect footer(int index) {
+            int width = (tileWidth * 3 + GRID_GAP * 2 - 8) / 2;
+            return new Rect(left + index * (width + 8), top + tileHeight * 2 + 62, width, 26);
+        }
+    }
+
     /** 所有导航图片保持 2:1；同时约束行宽和总高度，末行不足时居中。 */
     public Grid navigation(int count) {
         int columns = Math.min(count, width >= 620 ? 4 : 3);

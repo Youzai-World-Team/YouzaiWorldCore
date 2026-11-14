@@ -41,6 +41,7 @@ public class MenuScreen extends Screen implements YzuiMenuScreen {
     private static final Identifier VERSION_ICON =
             Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "textures/gui/icon.png");
     private final Deque<MenuElementGroup> history = new ArrayDeque<>();
+    private MenuElementGroup shownGroup;
     private final Map<MenuElementGroup, List<AbstractWidget>> pageButtons = new IdentityHashMap<>();
     private final List<AbstractWidget> currentButtons = new ArrayList<>();
     private MenuElementGroup currentGroup;
@@ -112,6 +113,10 @@ public class MenuScreen extends Screen implements YzuiMenuScreen {
         if (!currentGroup.isRoot()) currentButtons.add(backButton);
         currentButtons.add(closeButton);
         for (AbstractWidget button : currentButtons) addWidget(button);
+        if (shownGroup != currentGroup) {
+            shownGroup = currentGroup;
+            currentGroup.onShown();
+        }
         currentGroup.updateButtons(buttonsFor(currentGroup));
     }
 
@@ -131,7 +136,32 @@ public class MenuScreen extends Screen implements YzuiMenuScreen {
 
     @Override
     public void onClose() {
-        closeMenu();
+        if (hasDialog()) { closeDialog(); return; }
+        for (AbstractWidget button : currentButtons) {
+            if (button instanceof DropdownButton dropdown && dropdown.isOpen()) {
+                dropdown.closePopup();
+                return;
+            }
+        }
+        if (targetGroup != null) {
+            // 前进途中取消本次前进；返回途中完成本次返回，每次 Esc 只退一层。
+            if (transitionReverse) currentGroup = targetGroup;
+            else if (!history.isEmpty()) history.pop();
+            targetGroup = null;
+            activateCurrentGroup();
+            return;
+        }
+        if (!history.isEmpty()) goBack();
+        else closeMenu();
+    }
+
+    /** 网络结果只交给实际打开的世界页，迟到响应不能关闭其他页面。 */
+    public void applyWorldPoolState(top.csituka.youzaiworldcore.network.WorldPoolMenuStatePayload payload) {
+        if (currentGroup instanceof SwitchWorldMenuElements worlds) worlds.applyState(payload);
+    }
+
+    public void applyWorldPoolResult(top.csituka.youzaiworldcore.network.WorldPoolTeleportResultPayload payload) {
+        if (targetGroup == null && currentGroup instanceof SwitchWorldMenuElements worlds) worlds.applyResult(this, payload);
     }
 
     public void startExit(Runnable onComplete) {

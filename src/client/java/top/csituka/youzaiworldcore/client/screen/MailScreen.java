@@ -62,13 +62,16 @@ public class MailScreen extends MailBaseScreen {
     private final MailUi.Rect[] tabRects = new MailUi.Rect[Filter.values().length];
 
     public MailScreen() {
-        super(Component.translatable("youzaiworldcore.message.gui.mail.title"));
+        this(null);
+    }
+
+    public MailScreen(net.minecraft.client.gui.screens.Screen parent) {
+        super(Component.translatable("youzaiworldcore.message.gui.mail.title"), parent);
     }
 
     @Override
     protected void init() {
         super.init();
-        scrollOffset = 0;
         ClientPlayNetworking.send(new MailOpenPayload());
         DebugLogger.info(MODULE, "已打开玩家信箱");
     }
