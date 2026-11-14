@@ -947,7 +947,6 @@
   "screen.youzaiworldcore.options.open": "打开",
   "screen.youzaiworldcore.options.open_mod": "打开设置",
   "screen.youzaiworldcore.options.mods": "模组设置",
-  "screen.youzaiworldcore.options.game": "通用",
   "screen.youzaiworldcore.options.compatibility": "原版选项（兼容入口）",
   "screen.youzaiworldcore.options.compatibility.description": "访问其他模组添加的选项。返回后继续使用 YZUI。",
   "screen.youzaiworldcore.options.search": "搜索当前页面…",

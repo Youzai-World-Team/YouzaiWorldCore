@@ -1195,6 +1195,12 @@ public final class UnifiedSettingsChecks {
         List<AbstractWidget> widgets = rows.stream().flatMap(row -> row.widgets.stream()).toList();
         check(models.size() == 16 && models.stream().allMatch(screen -> screen.additions == 1), "all vanilla, telemetry and Core models are initialized once");
         check(model.video() != null, "without Sodium a native video model is available");
+        check(model.anchorRow(OptionsScreen.class.getName()) == null
+                && rows.stream().noneMatch(row -> row.navigation && row.label.equals(YzuiOptionsScreen.text("game"))), "empty general category is absent");
+        var initialList = new SettingsList(0, 0, 700, 400);
+        initialList.setRows(rows, "", true, null);
+        check(initialList.selectedSection() == model.anchorRow(VideoSettingsScreen.class.getName())
+                && initialList.selectedSection().navigationGroup.getString().equals("Minecraft"), "settings default to video with the Minecraft group heading");
         check(models.stream().noneMatch(OnlineOptionsScreen.class::isInstance) && model.anchorRow(OnlineOptionsScreen.class.getName()) == null, "online model and category are entirely absent");
         for (String hidden : List.of("hidden.highContrast", "hidden.darkLogo", "hidden.narrator", "hidden.narratorHotkey", "options.accessibility.link", "options.telemetry", "OnlineOptionsScreen")) {
             check(widgets.stream().noneMatch(widget -> widget.getMessage().getString().equals(hidden)), "removed option or entry absent: " + hidden);
@@ -1348,6 +1354,8 @@ public final class UnifiedSettingsChecks {
         var videoAnchor = model.anchorRow(VideoSettingsScreen.class.getName());
         check(videoAnchor != null && rows.contains(videoAnchor) && SettingsWidgets.key(videoAnchor.label, "options.video"),
                 "video navigation still has a section for the Sodium entry");
+        check(model.anchorRow(OptionsScreen.class.getName()) == null && videoAnchor.navigationGroup.getString().equals("Minecraft"),
+                "Sodium also omits general while preserving the Minecraft group heading");
         var sodiumEntries = rows.stream().filter(row -> row.label.equals(YzuiOptionsScreen.text("sodium"))).toList();
         check(sodiumEntries.size() == 1, "video section contains one Sodium entry");
         var sodiumVideoList = new SettingsList(0, 0, 700, 400);

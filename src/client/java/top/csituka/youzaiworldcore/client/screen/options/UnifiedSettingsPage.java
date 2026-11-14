@@ -154,17 +154,15 @@ final class UnifiedSettingsPage {
         List<AbstractWidget> resources = new ArrayList<>();
         AbstractWidget language = null;
 
-        heading(rows, anchor(home), YzuiOptionsScreen.text("game")).navigationGroup = Component.literal("Minecraft");
         for (AbstractWidget widget : SettingsWidgets.flatten(home)) {
             if (isTitle(home, widget)) continue;
-            // 通用分类不显示视场角；按选项实例识别，不依赖语言或滑块当前数值。
+            // 不显示视场角；按选项实例识别，不依赖语言或滑块当前数值。
             if (widget instanceof OptionInstance.OptionInstanceSliderButton<?> slider
                     && SettingsWidgets.read(slider, "instance", OptionInstance.class) == minecraft.options.fov()) continue;
             if (isFooter(widget)) { footer.add(widget); continue; }
             if (isInlineLink(widget) || SettingsWidgets.key(widget.getMessage(), "options.telemetry")) continue;
             if (SettingsWidgets.key(widget.getMessage(), "options.language")) language = widget;
-            else if (widget instanceof Button) resources.add(widget);
-            else rows.add(SettingsList.Row.widget(widget));
+            else resources.add(widget);
         }
 
         if (SettingsCompatibility.sodiumAvailable()) {
@@ -204,6 +202,9 @@ final class UnifiedSettingsPage {
             }
             appendCoreOptions(rows, core);
         }
+        // 空的通用分类已移除，Minecraft 分组标题跟随首个实际分类。
+        rows.stream().filter(row -> row.navigation).findFirst()
+                .ifPresent(row -> row.navigationGroup = Component.literal("Minecraft"));
         for (Page page : pages) captured.put(page.screen, SettingsWidgets.flatten(page.screen));
         displayed = rows.stream().flatMap(row -> row.widgets.stream()).toList();
     }
