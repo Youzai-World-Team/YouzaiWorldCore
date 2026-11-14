@@ -1072,6 +1072,7 @@
   "key.youzaiworldcore.map.waypoints": "路径点列表",
   "key.youzaiworldcore.map.add": "新建地图路径点",
   "key.youzaiworldcore.map.toggle_points": "切换路径点显示",
+  "key.youzaiworldcore.map.toggle_navigation": "切换世界内标点显示",
   "key.youzaiworldcore.map.settings": "地图设置",
   "key.youzaiworldcore.map.refresh": "刷新地图",
   "key.category.youzaiworldcore.map": "悠哉地图",

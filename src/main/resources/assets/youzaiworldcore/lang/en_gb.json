@@ -1072,6 +1072,7 @@
   "key.youzaiworldcore.map.waypoints": "Waypoint list",
   "key.youzaiworldcore.map.add": "New map waypoint",
   "key.youzaiworldcore.map.toggle_points": "Toggle waypoints",
+  "key.youzaiworldcore.map.toggle_navigation": "Toggle in-world waypoint display",
   "key.youzaiworldcore.map.settings": "Map settings",
   "key.youzaiworldcore.map.refresh": "Refresh map",
   "key.category.youzaiworldcore.map": "Youzai Map",

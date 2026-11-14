@@ -49,13 +49,14 @@ final class MapDetailPanel extends AbstractContainerEventHandler implements Rend
     private final boolean dialog;
     private boolean creating, editing, pending, confirmingDelete, editingNote;
     private MapWaypoint point;
-    private String name, note;
+    private String name, note, color;
     private MapWaypointGroup group;
     private Component message = Component.empty();
     private final List<AbstractWidget> widgets = new ArrayList<>();
     private final List<AbstractWidget> body = new ArrayList<>();
     private final List<Line> lines = new ArrayList<>();
     private int x, y, width, height, top, bottom, scroll, contentHeight;
+    private int colorPreviewY = -1;
     private record Line(Component text, int x, int y, int width) { }
 
     MapDetailPanel(YzWorldMapScreen owner) {
@@ -65,6 +66,7 @@ final class MapDetailPanel extends AbstractContainerEventHandler implements Rend
         this.owner = owner; this.point = point; this.creating = creating; dimensions = false;
         anchor = MapClient.isAnchor(point); dialog = creating; editing = creating; editingNote = creating;
         name = MapTexts.waypoint(point).getString(); group = MapPersonalData.groupOf(point); note = MapPersonalData.note(point.id());
+        color = MapWaypointColors.hex(point.color());
     }
 
     private void close() { if (owner.isDetails(this)) owner.closeDetails(); }
@@ -92,7 +94,7 @@ final class MapDetailPanel extends AbstractContainerEventHandler implements Rend
     }
     private void line(Component label, int row) { lines.add(new Line(label, x + 12, top + row - scroll, width - 24)); }
     private void rebuild() {
-        setFocused(null); widgets.clear(); body.clear(); lines.clear();
+        setFocused(null); widgets.clear(); body.clear(); lines.clear(); colorPreviewY = -1;
         button(x + width - 32, y + 7, 22, Component.literal("×"), this::close, false);
         if (dimensions) buildDimensions(); else buildPoint();
         int maxScroll = Math.max(0, contentHeight - (bottom - top));
@@ -159,6 +161,15 @@ final class MapDetailPanel extends AbstractContainerEventHandler implements Rend
             line(MapTexts.text("created_at").copy().append("  " + date), row); row += 24;
         }
         if (!anchor) {
+            colorPreviewY = top + row + 10 - scroll;
+            lines.add(new Line(MapTexts.text("color"), x + 12, top + row + 6 - scroll, 34));
+            if (editing) {
+                field(x + 68, top + row - scroll, inner - 56, "color", color, 7, value -> color = value).setEditable(!pending);
+            } else {
+                button(x + 68, top + row - scroll, inner - 56, Component.literal("#" + color),
+                        () -> { editing = true; rebuild(); }, true).active = !pending;
+            }
+            row += 28;
             int groupInset = creating ? 56 : 0;
             if (creating) lines.add(new Line(MapTexts.text("group"), x + 12, top + row + 7 - scroll, 50));
             else { line(MapTexts.text("group"), row); row += 15; }
@@ -208,7 +219,7 @@ final class MapDetailPanel extends AbstractContainerEventHandler implements Rend
         if (editing) {
             button(x + 12, footer, half, MapTexts.text(creating ? "create" : "save"), () -> save(false), false).active = editable() && !pending;
             button(x + 18 + half, footer, half, MapTexts.text(creating ? "create_track" : "cancel"), () -> {
-                if (creating) save(true); else { editing = false; name = MapTexts.waypoint(point).getString(); group = MapPersonalData.groupOf(point); rebuild(); }
+                if (creating) save(true); else { editing = false; name = MapTexts.waypoint(point).getString(); color = MapWaypointColors.hex(point.color()); group = MapPersonalData.groupOf(point); rebuild(); }
             }, false).active = !pending;
         } else {
             if (anchor) button(x + 12, footer, half, MapTexts.text("teleport"), this::teleport, false).active = !pending && (anchor || MapClient.session() != null && MapClient.session().allows(MapSessionPayload.TELEPORT));
@@ -219,7 +230,7 @@ final class MapDetailPanel extends AbstractContainerEventHandler implements Rend
     }
     private MapWaypoint changed() {
         return new MapWaypoint(point.id(), point.owner(), name, point.kind() == MapWaypoint.Kind.DEATH ? MapWaypointGroup.DEATH.id() : group.id(), point.dimension(), point.x(), point.y(), point.z(),
-                point.color(), point.enabled(), anchor, point.kind(), point.createdAt());
+                anchor ? point.color() : MapWaypointColors.parse(color), point.enabled(), anchor, point.kind(), point.createdAt());
     }
     private void save(boolean track) {
         try {
@@ -234,7 +245,7 @@ final class MapDetailPanel extends AbstractContainerEventHandler implements Rend
         } catch (IllegalArgumentException invalid) { message = MapTexts.text("invalid_point"); }
     }
     private void finish(MapWaypoint value, boolean track) {
-        point = value; creating = false; editing = false; group = MapPersonalData.groupOf(point);
+        point = value; creating = false; editing = false; color = MapWaypointColors.hex(point.color()); group = MapPersonalData.groupOf(point);
         boolean noteSaved = MapPersonalData.note(point.id(), note);
         message = MapTexts.text(noteSaved ? "saved" : "limit");
         if (track && owner.isDetails(this)) { MapClient.navigate(point.id()); close(); }
@@ -251,7 +262,7 @@ final class MapDetailPanel extends AbstractContainerEventHandler implements Rend
     }
     private void copyAsWaypoint() {
         var copy = new MapWaypoint(UUID.randomUUID(), point.owner(), name, MapWaypointGroup.UNGROUPED.id(), point.dimension(), point.x(), point.y(), point.z(),
-                point.color(), true, false, MapWaypoint.Kind.NORMAL, System.currentTimeMillis());
+                MapWaypointColors.nextColor(), true, false, MapWaypoint.Kind.NORMAL, System.currentTimeMillis());
         owner.openPoint(copy, true);
     }
     private void teleport() {
@@ -285,6 +296,11 @@ final class MapDetailPanel extends AbstractContainerEventHandler implements Rend
         YzuiTheme.label(g, Minecraft.getInstance().font, MapTexts.text(dimensions ? "dimension" : creating ? "new_point" : "point_actions"), x + 12, y + 14, width - 48, YzuiTheme.text(), false);
         g.fill(x + 12, top - 7, x + width - 12, top - 6, YzuiTheme.outlineVariant());
         g.enableScissor(x, top, x + width, bottom);
+        if (colorPreviewY >= 0) {
+            int preview = point.color();
+            try { preview = MapWaypointColors.parse(color); } catch (IllegalArgumentException ignored) { }
+            MapWaypointColors.render(g, preview, x + 54, colorPreviewY, 1.0F);
+        }
         for (var line : lines) YzuiTheme.label(g, Minecraft.getInstance().font, line.text, line.x, line.y, line.width, YzuiTheme.text(), false);
         for (var widget : body) if (widget.visible) widget.extractRenderState(g, mx, my, delta);
         g.disableScissor();

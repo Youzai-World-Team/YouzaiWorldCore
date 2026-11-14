@@ -18,6 +18,7 @@ import top.csituka.youzaiworldcore.map.MapWaypoint;
 
 import java.util.Comparator;
 import java.util.ArrayList;
+import java.util.List;
 
 /** 悠哉地图的 HUD、覆盖标记与世界导航。参考 Conflux 的功能说明独立设计，不使用其代码或资源。 */
 @SuppressWarnings("null")
@@ -158,10 +159,10 @@ public final class MapRenderer {
             var p = view.screen(projected.x(), projected.z());
             if (!MapShapes.contains(view, p.x(), p.y(), radius, 10)) continue;
             int x = left + (int) p.x(), y = top + (int) p.y();
-            int color = YzuiTheme.alpha(point.color(), opacity);
             if (MapSettings.markersVisible()) {
+                if (point.id().equals(MapClient.navigation()))
+                    RoundedRect.fill(g, x - 9, y - 9, 18, 18, 9, YzuiTheme.alpha(point.color(), opacity * 0.35F));
                 waypointIcon(g, point, x, y, opacity);
-                if (point.id().equals(MapClient.navigation())) g.outline(x - 10, y - 10, 20, 20, color);
             }
             if (labels) markerLabel(g, view, left, top, p.x(), p.y(), MapTexts.waypoint(point).getString()
                     + (point.dimension().equals(dimension) ? "" : " ↔"), opacity);
@@ -259,11 +260,9 @@ public final class MapRenderer {
         YzuiTheme.hudLabel(g, font, text, left + tx, top + ty, YzuiTheme.text(), opacity);
     }
 
-    /** 地形底色不固定，图标使用主题底板与前景色，原路径点颜色保留在边框。 */
+    /** 地图与世界内共用路径点自身颜色的圆点，黑白轮廓在不同地形底色上保持可辨识。 */
     private static void waypointIcon(GuiGraphicsExtractor g, MapWaypoint point, int x, int y, float opacity) {
-        RoundedRect.fill(g, x - 9, y - 9, 18, 18, 4, YzuiTheme.alpha(YzuiTheme.background(), opacity));
-        YzuiTheme.border(g, x - 9, y - 9, 18, 18, 4, YzuiTheme.alpha(point.color(), opacity));
-        MapGroupIcons.render(g, MapPersonalData.groupOf(point), x - 8, y - 8, 16, YzuiTheme.alpha(YzuiTheme.text(), opacity));
+        MapWaypointColors.render(g, point.color(), x, y, opacity);
     }
 
     private static void worldLine(GuiGraphicsExtractor g, MapView view, int left, int top, int radius, double x1, double z1, double x2, double z2, int color, int width) {
@@ -286,12 +285,22 @@ public final class MapRenderer {
         RoundedRect.fill(g, x - 5, y - 5, 11, 11, 5, YzuiTheme.alpha(YzuiTheme.background(), opacity));
     }
 
-    private static void navigation(GuiGraphicsExtractor g, float opacity) {
+    /** 世界标点与光柱共用显示门槛，F10、F1、界面和 HUD 总透明度同时生效。 */
+    static boolean worldNavigationVisible() {
+        var client = Minecraft.getInstance();
+        return client.player != null && client.level != null && client.player.isAlive()
+                && !client.gui.hud.isHidden() && client.gui.screen() == null
+                && !MapClient.dimension().equals("youzaiworldcore:login_hall")
+                && MapSettings.enabled(MapSettings.Toggle.WAYPOINT_HUD) && YzHudSettings.getGlobalOpacity() > 0.0F;
+    }
+
+    /** 同一份三维筛选规则供世界内标点及光柱使用，最多显示最近八个地点。 */
+    record NavigationTarget(MapWaypoint point, MapVertex position, double distance) { }
+
+    static List<NavigationTarget> navigationTargets() {
         var client = Minecraft.getInstance(); var player = client.player;
-        var camera = client.gameRenderer.mainCamera(); var origin = camera.position();
-        var matrix = camera.getViewRotationProjectionMatrix(new Matrix4f());
-        record Target(MapWaypoint point, MapVertex position, double distance) { }
-        var targets = new ArrayList<Target>();
+        if (player == null) return List.of();
+        var targets = new ArrayList<NavigationTarget>();
         for (var point : MapClient.waypoints()) {
             if (!MapClient.visibleWaypoint(point) || MapClient.navigation() != null && !point.id().equals(MapClient.navigation())) continue;
             var target = point.projected(MapClient.dimension(), MapSettings.enabled(MapSettings.Toggle.PORTAL_PROJECTION));
@@ -300,12 +309,20 @@ public final class MapRenderer {
             double dx = target.x() - player.getX(), dy = point.y() - player.getY(), dz = target.z() - player.getZ();
             double distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
             if (distance > MapSettings.waypointDistance()) continue;
-            targets.add(new Target(point, target, distance));
+            targets.add(new NavigationTarget(point, target, distance));
         }
         // 先换算维度并排除不可显示的点，再选择最近八个，避免其他维度挤占名额。
-        targets.sort(Comparator.comparingDouble(Target::distance));
+        targets.sort(Comparator.comparingDouble(NavigationTarget::distance));
+        return List.copyOf(targets.subList(0, Math.min(8, targets.size())));
+    }
+
+    private static void navigation(GuiGraphicsExtractor g, float opacity) {
+        if (!worldNavigationVisible()) return;
+        var client = Minecraft.getInstance();
+        var camera = client.gameRenderer.mainCamera(); var origin = camera.position();
+        var matrix = camera.getViewRotationProjectionMatrix(new Matrix4f());
         int edgeIndex = 0;
-        for (var candidate : targets.subList(0, Math.min(8, targets.size()))) {
+        for (var candidate : navigationTargets()) {
             var point = candidate.point(); var target = candidate.position(); double distance = candidate.distance();
             // 标点精确投影到保存的 XYZ；跨维度只换算 X/Z，不跟随玩家高度。
             var clip = matrix.transform(new Vector4f((float) (target.x() - origin.x), (float) (point.y() - origin.y), (float) (target.z() - origin.z), 1));

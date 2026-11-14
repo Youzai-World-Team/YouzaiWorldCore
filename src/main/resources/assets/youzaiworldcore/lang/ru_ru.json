@@ -1072,6 +1072,7 @@
   "key.youzaiworldcore.map.waypoints": "Список точек",
   "key.youzaiworldcore.map.add": "Новая точка карты",
   "key.youzaiworldcore.map.toggle_points": "Переключить точки",
+  "key.youzaiworldcore.map.toggle_navigation": "Показать/скрыть метки точек в мире",
   "key.youzaiworldcore.map.settings": "Настройки карты",
   "key.youzaiworldcore.map.refresh": "Обновить карту",
   "key.category.youzaiworldcore.map": "Карта Youzai",

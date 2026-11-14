@@ -33,7 +33,7 @@ public final class MapGroupIcons {
         render(g, group.icon(), x, y, size, color);
     }
 
-    /** 图标库预览与地图使用同一纹理及主题着色。 */
+    /** 图标库预览与分组管理使用同一纹理及主题着色，地图地点标记使用自身颜色圆点。 */
     @SuppressWarnings("null")
     public static void render(GuiGraphicsExtractor g, MapWaypointIcon icon, int x, int y, int size, int color) {
         g.blit(RenderPipelines.GUI_TEXTURED, TEXTURES.get(icon), x, y, 0, 0,

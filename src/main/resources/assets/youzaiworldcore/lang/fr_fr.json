@@ -1072,6 +1072,7 @@
   "key.youzaiworldcore.map.waypoints": "Liste des repères",
   "key.youzaiworldcore.map.add": "Nouveau repère",
   "key.youzaiworldcore.map.toggle_points": "Afficher/masquer les repères",
+  "key.youzaiworldcore.map.toggle_navigation": "Afficher/masquer les repères dans le monde",
   "key.youzaiworldcore.map.settings": "Réglages de la carte",
   "key.youzaiworldcore.map.refresh": "Actualiser la carte",
   "key.category.youzaiworldcore.map": "Carte Youzai",

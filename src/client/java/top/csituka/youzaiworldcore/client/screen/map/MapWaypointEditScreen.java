@@ -7,6 +7,7 @@ import top.csituka.youzaiworldcore.client.map.MapClient;
 import top.csituka.youzaiworldcore.client.map.MapPersonalData;
 import top.csituka.youzaiworldcore.client.map.MapTexts;
 import top.csituka.youzaiworldcore.client.map.MapCoordinates;
+import top.csituka.youzaiworldcore.client.map.MapWaypointColors;
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
 import top.csituka.youzaiworldcore.map.MapWaypoint;
 import top.csituka.youzaiworldcore.map.MapWaypointGroup;
@@ -30,7 +31,7 @@ public final class MapWaypointEditScreen extends MapScreen {
         values.put("x", Integer.toString(point.x()));
         values.put("y", Integer.toString(point.y()));
         values.put("z", Integer.toString(point.z()));
-        values.put("color", String.format(java.util.Locale.ROOT, "%06X", point.color() & 0xFFFFFF));
+        values.put("color", MapWaypointColors.hex(point.color()));
     }
 
     @SuppressWarnings("null")
@@ -77,9 +78,7 @@ public final class MapWaypointEditScreen extends MapScreen {
     }
 
     private MapWaypoint readPoint() {
-        if (!values.get("color").matches("#?[0-9a-fA-F]{6}"))
-            throw new IllegalArgumentException("颜色必须为六位十六进制");
-        int color = Integer.parseInt(values.get("color").replace("#", ""), 16);
+        int color = MapWaypointColors.parse(values.get("color"));
         return new MapWaypoint(original.id(), original.owner(), values.get("name"),
                 original.kind() == MapWaypoint.Kind.DEATH ? MapWaypointGroup.DEATH.id() : group.id(),
                 values.get("dimension"),

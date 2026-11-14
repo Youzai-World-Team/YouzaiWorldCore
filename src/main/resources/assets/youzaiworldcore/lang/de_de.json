@@ -1072,6 +1072,7 @@
   "key.youzaiworldcore.map.waypoints": "Wegpunktliste",
   "key.youzaiworldcore.map.add": "Neuer Kartenwegpunkt",
   "key.youzaiworldcore.map.toggle_points": "Wegpunkte umschalten",
+  "key.youzaiworldcore.map.toggle_navigation": "Wegpunkte in der Welt ein-/ausblenden",
   "key.youzaiworldcore.map.settings": "Karteneinstellungen",
   "key.youzaiworldcore.map.refresh": "Karte aktualisieren",
   "key.category.youzaiworldcore.map": "Youzai-Karte",

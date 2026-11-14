@@ -56,9 +56,10 @@ public final class MapClient {
             ZOOM_OUT = key("zoom_out", InputConstants.KEY_LBRACKET), LAYER = key("layer", InputConstants.KEY_Y),
             POINTS_KEY = key("waypoints", InputConstants.KEY_U), ADD = key("add", InputConstants.KEY_N),
             TOGGLE_POINTS = key("toggle_points", InputConstants.KEY_J), SETTINGS = key("settings", InputConstants.KEY_COMMA),
-            REFRESH = key("refresh", InputConstants.KEY_F9);
+            REFRESH = key("refresh", InputConstants.KEY_F9),
+            TOGGLE_NAVIGATION = key("toggle_navigation", InputConstants.KEY_F10);
     private static final KeyMapping[] KEYS = { OPEN, TOGGLE, ZOOM_IN, ZOOM_OUT, LAYER, POINTS_KEY, ADD, TOGGLE_POINTS,
-            SETTINGS, REFRESH };
+            SETTINGS, REFRESH, TOGGLE_NAVIGATION };
     private static final MapTileCache CACHE = new MapTileCache();
     private static final LinkedHashMap<MapTileKey, Integer> SAMPLED = new LinkedHashMap<>();
     private static final Map<String, Seen> TRACKED_HISTORY = new HashMap<>();
@@ -124,6 +125,7 @@ public final class MapClient {
     /** 注册按键、Tick 和连接生命周期，接收器仍由 ClientNetworking 集中注册。 */
     public static void initialize() {
         MapSettings.load();
+        MapWaypointBeams.initialize();
         ClientTickEvents.END_CLIENT_TICK.register(MapClient::tick);
         // 断线回调可能来自 Netty 线程，地图状态与 GPU 纹理统一回客户端主线程清理。
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> client.execute(MapClient::reset));
@@ -433,6 +435,10 @@ public final class MapClient {
             MapSettings.toggle(MapSettings.Toggle.MINIMAP);
         if (TOGGLE_POINTS.consumeClick())
             MapSettings.toggle(MapSettings.Toggle.WAYPOINTS);
+        if (TOGGLE_NAVIGATION.consumeClick()) {
+            MapSettings.toggle(MapSettings.Toggle.WAYPOINT_HUD);
+            DebugLogger.debug("MapClient", "世界内标点显示：%s", MapSettings.enabled(MapSettings.Toggle.WAYPOINT_HUD));
+        }
         if (ZOOM_IN.consumeClick())
             MapSettings.setZoom(MapSettings.zoom() * 1.25);
         if (ZOOM_OUT.consumeClick())
@@ -477,8 +483,10 @@ public final class MapClient {
         x = Math.clamp(x, -MapTileKey.WORLD_LIMIT, MapTileKey.WORLD_LIMIT);
         y = Math.clamp(y, -MapTileKey.WORLD_LIMIT, MapTileKey.WORLD_LIMIT);
         z = Math.clamp(z, -MapTileKey.WORLD_LIMIT, MapTileKey.WORLD_LIMIT);
+        int color = MapWaypointColors.nextColor();
+        DebugLogger.debug("MapClient", "已为新路径点分配颜色：#%s", MapWaypointColors.hex(color));
         return new MapWaypoint(UUID.randomUUID(), player == null ? new UUID(0, 0) : player.getUUID(),
-                MapTexts.text("new_point").getString(), MapWaypointGroup.UNGROUPED.id(), dimension, x, y, z, YzuiTheme.primary(), true, false,
+                MapTexts.text("new_point").getString(), MapWaypointGroup.UNGROUPED.id(), dimension, x, y, z, color, true, false,
                 MapWaypoint.Kind.NORMAL, System.currentTimeMillis());
     }
 

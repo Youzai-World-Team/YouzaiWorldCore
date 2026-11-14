@@ -1072,6 +1072,7 @@
   "key.youzaiworldcore.map.waypoints": "Lista de puntos",
   "key.youzaiworldcore.map.add": "Nuevo punto de mapa",
   "key.youzaiworldcore.map.toggle_points": "Alternar puntos",
+  "key.youzaiworldcore.map.toggle_navigation": "Alternar marcadores de puntos en el mundo",
   "key.youzaiworldcore.map.settings": "Ajustes del mapa",
   "key.youzaiworldcore.map.refresh": "Actualizar mapa",
   "key.category.youzaiworldcore.map": "Mapa Youzai",
