@@ -15,6 +15,7 @@ import net.minecraft.world.item.ItemStack;
 import org.jspecify.annotations.NonNull;
 import top.csituka.youzaiworldcore.YouzaiworldCore;
 import top.csituka.youzaiworldcore.client.render.RoundedRect;
+import top.csituka.youzaiworldcore.client.screen.widget.YzuiCloseButton;
 import top.csituka.youzaiworldcore.network.ClientNetworking;
 import top.csituka.youzaiworldcore.screen.DecompositionTableMenu;
 
@@ -60,6 +61,7 @@ public class DecompositionTableScreen extends AbstractContainerScreen<Decomposit
     private static final int BUTTON_X = 26;
     private static final int BUTTON_Y = 35;
     private static final int BUTTON_SIZE = 16;
+    private static final int CLOSE_SIZE = 14;
 
     private DecomposeButton decomposeButton;
 
@@ -72,6 +74,8 @@ public class DecompositionTableScreen extends AbstractContainerScreen<Decomposit
         super.init();
         this.leftPos = (this.width - this.imageWidth) / 2;
         this.topPos = (this.height - this.imageHeight) / 2;
+        addRenderableWidget(new YzuiCloseButton(
+                leftPos + imageWidth - CLOSE_SIZE - 6, topPos + 2, CLOSE_SIZE, this::onClose));
 
         decomposeButton = new DecomposeButton(
                 this.leftPos + BUTTON_X,
@@ -243,7 +247,7 @@ public class DecompositionTableScreen extends AbstractContainerScreen<Decomposit
     @Override
     protected void extractLabels(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
         YzuiTheme.label(graphics, font, title, titleLabelX, titleLabelY,
-                imageWidth - titleLabelX - 8, YzuiTheme.primary(), false);
+                imageWidth - titleLabelX - CLOSE_SIZE - 10, YzuiTheme.primary(), false);
         YzuiTheme.label(graphics, font, playerInventoryTitle, inventoryLabelX, inventoryLabelY,
                 imageWidth - inventoryLabelX - 8, YzuiTheme.textMuted(), false);
     }

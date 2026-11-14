@@ -15,6 +15,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 
 import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
+import top.csituka.youzaiworldcore.client.screen.widget.YzuiCloseButton;
 import top.csituka.youzaiworldcore.network.LargeSignSetTextPayload;
 import top.csituka.youzaiworldcore.util.LargeSignTextRules;
 
@@ -66,6 +67,7 @@ public class LargeSignEditScreen extends Screen {
 
         int panelX = (this.width - PANEL_WIDTH) / 2;
         int panelY = (this.height - PANEL_HEIGHT) / 2;
+        addRenderableWidget(new YzuiCloseButton(panelX + PANEL_WIDTH - 40, panelY + 16, 24, this::onClose));
 
         textInput = new EditBox(this.font,
                 panelX + 24, panelY + 100,
@@ -123,7 +125,7 @@ public class LargeSignEditScreen extends Screen {
     public void extractRenderState(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
         int x = (width - PANEL_WIDTH) / 2, y = (height - PANEL_HEIGHT) / 2;
         YzuiTheme.card(guiGraphics, x, y, PANEL_WIDTH, PANEL_HEIGHT);
-        YzuiTheme.label(guiGraphics, font, title, x + 24, y + 24, PANEL_WIDTH - 48, YzuiTheme.text(), false);
+        YzuiTheme.label(guiGraphics, font, title, x + 24, y + 24, PANEL_WIDTH - 72, YzuiTheme.text(), false);
         YzuiTheme.wrapped(guiGraphics, font, Component.translatable("screen.youzaiworldcore.large_sign_edit.rule"),
                 x + 24, y + 54, PANEL_WIDTH - 48, 3, YzuiTheme.textMuted());
         super.extractRenderState(guiGraphics, mouseX, mouseY, partialTick);

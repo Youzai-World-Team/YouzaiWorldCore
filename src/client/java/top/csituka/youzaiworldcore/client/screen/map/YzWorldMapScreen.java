@@ -24,6 +24,7 @@ import top.csituka.youzaiworldcore.client.map.MapTexts;
 import top.csituka.youzaiworldcore.client.map.MapView;
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
 import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
+import top.csituka.youzaiworldcore.client.screen.widget.YzuiCloseButton;
 import top.csituka.youzaiworldcore.map.MapLayer;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 import top.csituka.youzaiworldcore.map.MapTile;
@@ -90,7 +91,8 @@ public final class YzWorldMapScreen extends Screen {
         unit = Math.clamp(Math.min(width / 40, height / 25), 18, 36);
         inset = Math.max(6, unit / 2);
         int right = width - inset - unit;
-        icon(right, inset, MapIconButton.Icon.CLOSE, "done", this::onClose);
+        controls.add(addRenderableWidget(new YzuiCloseButton(
+                right, inset, unit, MapTexts.text("done"), this::onClose)));
 
         String[] entryKeys = { "settings", "waypoints", "players", "radar", "dimension" };
         MapIconButton.Icon[] entryIcons = { MapIconButton.Icon.SETTINGS, MapIconButton.Icon.PIN,

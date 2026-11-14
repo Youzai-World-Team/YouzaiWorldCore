@@ -13,7 +13,7 @@ import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
 /** 全屏地图的线条图标按钮；底部入口可显示图标和文字，保留提示、朗读与键盘激活。 */
 final class MapIconButton extends TransparentButton {
     enum Icon {
-        MAP, CLOSE, PLUS, MINUS, CENTER, SETTINGS, PIN, PLAYERS, RADAR, DIMENSION
+        MAP, PLUS, MINUS, CENTER, SETTINGS, PIN, PLAYERS, RADAR, DIMENSION
     }
 
     private final Icon icon;
@@ -61,10 +61,6 @@ final class MapIconButton extends TransparentButton {
                 line(g, 1, 14, 5, 12, color);
                 line(g, 5, 12, 11, 15, color);
                 line(g, 11, 15, 15, 13, color);
-            }
-            case CLOSE -> {
-                line(g, 3, 3, 13, 13, color);
-                line(g, 3, 13, 13, 3, color);
             }
             case PLUS, MINUS -> {
                 line(g, 2, 8, 14, 8, color);

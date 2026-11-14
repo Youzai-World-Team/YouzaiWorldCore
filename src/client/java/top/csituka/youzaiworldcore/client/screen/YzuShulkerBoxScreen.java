@@ -1,11 +1,10 @@
 package top.csituka.youzaiworldcore.client.screen;
 
-import com.mojang.blaze3d.platform.InputConstants;
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
+import top.csituka.youzaiworldcore.client.screen.widget.YzuiCloseButton;
 
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
-import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.world.entity.player.Inventory;
@@ -64,16 +63,11 @@ public class YzuShulkerBoxScreen extends AbstractContainerScreen<ShulkerBoxMenu>
     // ========== 关闭按钮 ==========
 
     private static final int CLOSE_SIZE = 14;
-    private static final int CLOSE_RADIUS = 4;
     /** 距面板右缘的间距 */
     private static final int CLOSE_MARGIN = 6;
     /** 距面板上缘的间距（底部 ≤16，与容器格 y=18 保持 2px 间隙） */
     private static final int CLOSE_TOP = 2;
-    private static int closeBg() { return YzuiTheme.surface(); }
-    private static int closeBgHover() { return YzuiTheme.surfaceHigh(); }
-    private static int closeIcon() { return YzuiTheme.text(); }
-    private static int closeIconHover() { return YzuiTheme.text(); }
-    private static final String CLOSE_GLYPH = "\u00d7";
+    private YzuiCloseButton closeButton;
 
     // ========== 标题区 ==========
 
@@ -138,6 +132,8 @@ public class YzuShulkerBoxScreen extends AbstractContainerScreen<ShulkerBoxMenu>
         this.leftPos = (this.width - this.imageWidth) / 2;
         this.topPos = (this.height - this.imageHeight) / 2;
         super.init();
+        closeButton = addRenderableWidget(new YzuiCloseButton(
+                leftPos + imageWidth - CLOSE_SIZE - CLOSE_MARGIN, topPos + CLOSE_TOP, CLOSE_SIZE, this::onClose));
         LOGGER.debug("YzuShulkerBoxScreen.init() — leftPos={} topPos={} image={}x{} title={}",
                 this.leftPos, this.topPos, this.imageWidth, this.imageHeight, this.title.getString());
     }
@@ -147,7 +143,6 @@ public class YzuShulkerBoxScreen extends AbstractContainerScreen<ShulkerBoxMenu>
         drawMainPanel(g);
         drawTitle(g);
         drawInventoryLabel(g);
-        drawCloseButton(g, mouseX, mouseY);
 
         super.extractRenderState(g, mouseX, mouseY, partialTick);
     }
@@ -167,18 +162,6 @@ public class YzuShulkerBoxScreen extends AbstractContainerScreen<ShulkerBoxMenu>
     @Override
     protected void extractLabels(@NonNull GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY) {
         // no-op — 标题由 drawTitle 绘制
-    }
-
-    // ========== 鼠标事件（仅关闭按钮，其余交互全部委托原版） ==========
-
-    @Override
-    public boolean mouseClicked(@NonNull MouseButtonEvent ev, boolean real) {
-        if (ev.button() == InputConstants.MOUSE_BUTTON_LEFT && isOverCloseButton((int) ev.x(), (int) ev.y())) {
-            DebugLogger.info("YzuShulkerBoxScreen", "点击关闭按钮，关闭潜影盒: %s", this.title.getString());
-            this.onClose();
-            return true;
-        }
-        return super.mouseClicked(ev, real);
     }
 
     // ========== YZUI 面板绘制 ==========
@@ -211,10 +194,11 @@ public class YzuShulkerBoxScreen extends AbstractContainerScreen<ShulkerBoxMenu>
 
         int tx = ix + ICON_SIZE + TITLE_ICON_GAP;
         int ty = this.topPos + 5; // 文字顶部（字形 5..14），与图标行顶部对齐
-        g.text(this.font, this.title, tx, ty, titleColor(), false);
+        int titleMaxWidth = leftPos + imageWidth - CLOSE_SIZE - CLOSE_MARGIN - tx - 4;
+        YzuiTheme.label(g, this.font, this.title, tx, ty, titleMaxWidth, titleColor(), false);
 
         // 强调条：位于标题下方（字形底 14 + 1 → 15..17），不压容器格
-        int titleWidth = Math.min(this.font.width(this.title), this.imageWidth - 8 - ICON_SIZE - TITLE_ICON_GAP - 8);
+        int titleWidth = Math.min(this.font.width(this.title), titleMaxWidth);
         fillR(g, tx, ty + 10, titleWidth, 2, 1, accentBarColor());
     }
 
@@ -222,17 +206,6 @@ public class YzuShulkerBoxScreen extends AbstractContainerScreen<ShulkerBoxMenu>
     private void drawInventoryLabel(GuiGraphicsExtractor g) {
         g.text(this.font, this.playerInventoryTitle,
                 this.leftPos + 8, this.topPos + this.imageHeight - 94, labelColor(), false);
-    }
-
-    /** 关闭按钮：圆角矩形 + × 图标，悬停提亮。 */
-    private void drawCloseButton(GuiGraphicsExtractor g, int mouseX, int mouseY) {
-        int cx = this.leftPos + this.imageWidth - CLOSE_SIZE - CLOSE_MARGIN;
-        int cy = this.topPos + CLOSE_TOP;
-        boolean hovered = isOverCloseButton(mouseX, mouseY);
-        fillR(g, cx, cy, CLOSE_SIZE, CLOSE_SIZE, CLOSE_RADIUS, hovered ? closeBgHover() : closeBg());
-        int tx = cx + (CLOSE_SIZE - this.font.width(CLOSE_GLYPH)) / 2;
-        int ty = cy + (CLOSE_SIZE - this.font.lineHeight) / 2;
-        g.text(this.font, CLOSE_GLYPH, tx, ty, hovered ? closeIconHover() : closeIcon(), false);
     }
 
     /** 槽位背景：每个活动槽绘制主题色圆角矩形，悬浮提亮。 */
@@ -245,13 +218,6 @@ public class YzuShulkerBoxScreen extends AbstractContainerScreen<ShulkerBoxMenu>
             fillR(g, slot.x, slot.y, SLOT_SIZE, SLOT_SIZE, SLOT_RADIUS,
                     hovered ? slotHoverColor() : slotColor());
         }
-    }
-
-    /** 关闭按钮命中检测（鼠标绝对坐标）。 */
-    private boolean isOverCloseButton(int mx, int my) {
-        int cx = this.leftPos + this.imageWidth - CLOSE_SIZE - CLOSE_MARGIN;
-        int cy = this.topPos + CLOSE_TOP;
-        return mx >= cx && mx < cx + CLOSE_SIZE && my >= cy && my < cy + CLOSE_SIZE;
     }
 
     /**

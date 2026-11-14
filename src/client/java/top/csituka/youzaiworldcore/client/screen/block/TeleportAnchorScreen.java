@@ -21,6 +21,7 @@ import top.csituka.youzaiworldcore.YouzaiworldCore;
 import top.csituka.youzaiworldcore.client.effect.TeleportFovEffect;
 import top.csituka.youzaiworldcore.client.animation.GuiAnimationController;
 import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
+import top.csituka.youzaiworldcore.client.screen.widget.YzuiCloseButton;
 import top.csituka.youzaiworldcore.data.TeleportAnchorData;
 import top.csituka.youzaiworldcore.item.tool.TeleportStoneItem;
 import top.csituka.youzaiworldcore.item.tool.WarpScrollItem;
@@ -228,7 +229,7 @@ public class TeleportAnchorScreen extends Screen {
     @Nullable
     private TextureIconButton searchButton;
     @Nullable
-    private TransparentButton closeButton;
+    private YzuiCloseButton closeButton;
     private EditBox renameEditBox;
 
     private int panelX;
@@ -283,10 +284,9 @@ public class TeleportAnchorScreen extends Screen {
         listBottomY = listTopY + listHeight;
         actionsY = listBottomY + PANEL_PADDING + (confirmingDelete ? 28 : 0);
 
-        closeButton = new TransparentButton(panelX + panelWidth - PANEL_PADDING - CLOSE_BUTTON_SIZE,
-                panelY + 8, CLOSE_BUTTON_SIZE, CLOSE_BUTTON_SIZE,
-                Component.translatable("youzaiworldcore.message.gui.close_button"), this::onClose);
-        closeButton.setBackgroundVisible(false);
+        closeButton = new YzuiCloseButton(
+                panelX + panelWidth - PANEL_PADDING - CLOSE_BUTTON_SIZE,
+                panelY + 8, CLOSE_BUTTON_SIZE, this::onClose);
         addRenderableWidget(closeButton);
 
         if (searchMode) {

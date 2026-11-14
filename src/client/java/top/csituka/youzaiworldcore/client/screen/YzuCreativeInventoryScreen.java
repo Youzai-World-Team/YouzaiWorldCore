@@ -3,6 +3,7 @@ package top.csituka.youzaiworldcore.client.screen;
 import net.minecraft.util.Prediction;
 import com.mojang.blaze3d.platform.InputConstants;
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
+import top.csituka.youzaiworldcore.client.screen.widget.YzuiCloseButton;
 import top.csituka.youzaiworldcore.client.inventory.CreativeItemGroupRenderer;
 import top.csituka.youzaiworldcore.client.inventory.CreativeItemGroups;
 
@@ -59,8 +60,10 @@ public class YzuCreativeInventoryScreen extends Screen {
     private static final Logger LOG = LoggerFactory.getLogger("YzuCreativeInventoryScreen");
 
     private static final int PW = 356, PH = 168;
+    private static final int CLOSE_SIZE = 22;
     private static final int TY = 4, TW = 28, TH = 22, TG = 2, TR = 4;
-    private static final int SX = 250, SY = 6, SW = 96, SH = 16; // 搜索框右缘 ≤ 物品栏右缘 (x=346)
+    // 搜索框与关闭按钮之间保留 6px，分类分页按钮仍使用原有区域。
+    private static final int SX = 250, SY = 6, SW = PW - SX - CLOSE_SIZE - 12, SH = 16;
     private static final int GX = 10, GY = 34, SS = 16, SG = 2, COLS = 9, VROWS = 7;
     private static final int SCROLL_X = 174, SCROLL_Y = 34, SCROLL_W = 4, SCROLL_H = 124; // 网格右侧滚动条
     // 右侧面板：装备和副手（左上）+ 玩家模型（右上）/ 生存物品栏3×9（中）/ 快捷栏（底）
@@ -94,6 +97,7 @@ public class YzuCreativeInventoryScreen extends Screen {
     private final List<CreativeModeTab> tabs = new ArrayList<>();
     private CreativeModeTab selTab;
     private EditBox searchBox;
+    private YzuiCloseButton closeButton;
     private List<ItemStack> allItems = List.of();
     /** 与 {@link #allItems} 一一对应的小写名称，供搜索直接比对 */
     private List<String> allItemNames = List.of();
@@ -150,6 +154,8 @@ public class YzuCreativeInventoryScreen extends Screen {
         forceBuildTabContents();
         populateAll();
         initSearch();
+        closeButton = addRenderableWidget(new YzuiCloseButton(
+                lp + PW - CLOSE_SIZE - 6, tp + TY, CLOSE_SIZE, this::onClose));
 
         // 恢复上次搜索文本，或显示第一个分类
         if (!lastSearch.isEmpty()) {
@@ -1218,6 +1224,10 @@ public class YzuCreativeInventoryScreen extends Screen {
 
     @Override
     public boolean mouseClicked(@NonNull MouseButtonEvent ev, boolean real) {
+        if (ev.button() == InputConstants.MOUSE_BUTTON_LEFT && closeButton.isMouseOver(ev.x(), ev.y())) {
+            if (searchBox != null) searchBox.setFocused(false);
+            return super.mouseClicked(ev, real);
+        }
         // 点击搜索框 → 切换到全部模式并显式聚焦
         // 26.2 中 keyPressed/charTyped 经 ContainerEventHandler.getFocused() 路由，
         // 必须显式 setFocused(searchBox) 设置屏幕级焦点，否则无法输入

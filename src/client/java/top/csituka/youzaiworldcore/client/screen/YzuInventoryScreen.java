@@ -1,6 +1,7 @@
 package top.csituka.youzaiworldcore.client.screen;
 
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
+import top.csituka.youzaiworldcore.client.screen.widget.YzuiCloseButton;
 
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.AbstractRecipeBookScreen;
@@ -68,6 +69,9 @@ public class YzuInventoryScreen extends AbstractRecipeBookScreen<InventoryMenu> 
     private static final int SLOT_RADIUS = 3;
     private static final int SLOT_SIZE = 16;
 
+    private static final int CLOSE_SIZE = 14;
+    private YzuiCloseButton closeButton;
+
     // ========== 配方书布局常量 ==========
 
     /** 玩家模型渲染区域（相对 leftPos/topPos） */
@@ -114,6 +118,8 @@ public class YzuInventoryScreen extends AbstractRecipeBookScreen<InventoryMenu> 
         this.leftPos = (this.width - this.imageWidth) / 2;
         this.topPos = (this.height - this.imageHeight) / 2;
         super.init();
+        closeButton = addRenderableWidget(new YzuiCloseButton(
+                leftPos + imageWidth - CLOSE_SIZE - 6, topPos + 2, CLOSE_SIZE, this::onClose));
         LOGGER.debug("YzuInventoryScreen.init() — leftPos={} topPos={} imageWidth={} imageHeight={}",
                 this.leftPos, this.topPos, this.imageWidth, this.imageHeight);
     }
@@ -435,6 +441,7 @@ public class YzuInventoryScreen extends AbstractRecipeBookScreen<InventoryMenu> 
     protected void onRecipeBookButtonClick() {
         LOGGER.debug("Recipe book button toggled");
         super.onRecipeBookButtonClick();
+        closeButton.setPosition(leftPos + imageWidth - CLOSE_SIZE - 6, topPos + 2);
     }
 
     // ========== 标签 ==========

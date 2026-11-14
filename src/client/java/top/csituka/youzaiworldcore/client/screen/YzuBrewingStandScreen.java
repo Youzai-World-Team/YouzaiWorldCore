@@ -2,6 +2,7 @@ package top.csituka.youzaiworldcore.client.screen;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
+import top.csituka.youzaiworldcore.client.screen.widget.YzuiCloseButton;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -104,9 +105,7 @@ public class YzuBrewingStandScreen extends AbstractContainerScreen<BrewingStandM
     private static final int GUIDE_TOGGLE_X = MAIN_WIDTH - 39;
     private static int buttonBg() { return YzuiTheme.surface(); }
     private static int buttonBgHover() { return YzuiTheme.surfaceHigh(); }
-    private static int buttonIcon() { return YzuiTheme.text(); }
-    private static int buttonIconHover() { return YzuiTheme.text(); }
-    private static final String CLOSE_GLYPH = "\u00d7";
+    private YzuiCloseButton closeButton;
     private static final ItemStack TITLE_ICON = new ItemStack(Items.BREWING_STAND);
     private static final ItemStack GUIDE_ICON = new ItemStack(Items.KNOWLEDGE_BOOK);
 
@@ -154,6 +153,8 @@ public class YzuBrewingStandScreen extends AbstractContainerScreen<BrewingStandM
         }
 
         positionMainPanel();
+        closeButton = addRenderableWidget(new YzuiCloseButton(
+                leftPos + CLOSE_X, topPos + BUTTON_TOP, BUTTON_SIZE, this::onClose));
         positionSlots();
         initGuideSearchBox();
         rebuildFilteredRecipes();
@@ -298,15 +299,6 @@ public class YzuBrewingStandScreen extends AbstractContainerScreen<BrewingStandM
             graphics.setTooltipForNextFrame(
                     Component.translatable("screen.youzaiworldcore.brewing.toggle_guide"), mouseX, mouseY);
         }
-
-        int closeX = this.leftPos + CLOSE_X;
-        boolean closeHovered = isInside(mouseX, mouseY, closeX, buttonY, BUTTON_SIZE, BUTTON_SIZE);
-        fillRounded(graphics, closeX, buttonY, BUTTON_SIZE, BUTTON_SIZE, BUTTON_RADIUS,
-                closeHovered ? buttonBgHover() : buttonBg());
-        int textX = closeX + (BUTTON_SIZE - this.font.width(CLOSE_GLYPH)) / 2;
-        int textY = buttonY + (BUTTON_SIZE - this.font.lineHeight) / 2;
-        graphics.text(this.font, CLOSE_GLYPH, textX, textY,
-                closeHovered ? buttonIconHover() : buttonIcon(), false);
     }
 
     private void drawBrewingWorkspace(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
@@ -587,12 +579,6 @@ public class YzuBrewingStandScreen extends AbstractContainerScreen<BrewingStandM
                 return super.mouseClicked(event, isActuallyClick);
             }
             if (isInside(mouseX, mouseY,
-                    this.leftPos + CLOSE_X, this.topPos + BUTTON_TOP, BUTTON_SIZE, BUTTON_SIZE)) {
-                DebugLogger.info(MODULE, "点击关闭按钮，关闭酿造台: %s", this.title.getString());
-                this.onClose();
-                return true;
-            }
-            if (isInside(mouseX, mouseY,
                     this.leftPos + GUIDE_TOGGLE_X, this.topPos + BUTTON_TOP, BUTTON_SIZE, BUTTON_SIZE)) {
                 toggleGuide();
                 return true;
@@ -662,6 +648,7 @@ public class YzuBrewingStandScreen extends AbstractContainerScreen<BrewingStandM
         boolean oldValue = this.guideOpen;
         this.guideOpen = !this.guideOpen;
         positionMainPanel();
+        closeButton.setPosition(leftPos + CLOSE_X, topPos + BUTTON_TOP);
         if (this.guideSearchBox != null) {
             this.guideSearchBox.setX(guideLeft() + SEARCH_X);
             this.guideSearchBox.setY(this.topPos + SEARCH_Y);

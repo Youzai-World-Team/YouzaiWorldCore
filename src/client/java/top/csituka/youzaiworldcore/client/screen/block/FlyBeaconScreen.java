@@ -10,6 +10,7 @@ import net.minecraft.world.entity.player.Inventory;
 import org.jspecify.annotations.NonNull;
 import top.csituka.youzaiworldcore.client.render.RoundedRect;
 import top.csituka.youzaiworldcore.client.screen.widget.ToggleButton;
+import top.csituka.youzaiworldcore.client.screen.widget.YzuiCloseButton;
 import top.csituka.youzaiworldcore.network.FlyBeaconActivePayload;
 import top.csituka.youzaiworldcore.screen.FlyBeaconMenu;
 
@@ -32,6 +33,7 @@ public class FlyBeaconScreen extends AbstractContainerScreen<FlyBeaconMenu> {
     private static final int CORNER_RADIUS = 6;
     private static final int SLOT_SIZE = 16;
     private static final int SLOT_SPACING = 2;
+    private static final int CLOSE_SIZE = 14;
 
     private static final int ENERGY_BAR_X = 26;
     private static final int ENERGY_BAR_Y = 30;
@@ -65,6 +67,8 @@ public class FlyBeaconScreen extends AbstractContainerScreen<FlyBeaconMenu> {
         super.init();
         this.leftPos = (this.width - this.imageWidth) / 2;
         this.topPos = (this.height - this.imageHeight) / 2;
+        addRenderableWidget(new YzuiCloseButton(
+                leftPos + imageWidth - CLOSE_SIZE - 6, topPos + 2, CLOSE_SIZE, this::onClose));
 
         this.toggleButton = new ToggleButton(
                 this.leftPos + TOGGLE_BUTTON_X,
@@ -233,7 +237,7 @@ public class FlyBeaconScreen extends AbstractContainerScreen<FlyBeaconMenu> {
     @Override
     protected void extractLabels(@NonNull GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
         YzuiTheme.label(graphics, font, title, titleLabelX, titleLabelY,
-                imageWidth - titleLabelX - 8, YzuiTheme.primary(), false);
+                imageWidth - titleLabelX - CLOSE_SIZE - 10, YzuiTheme.primary(), false);
         YzuiTheme.label(graphics, font, playerInventoryTitle, inventoryLabelX, inventoryLabelY,
                 imageWidth - inventoryLabelX - 8, YzuiTheme.textMuted(), false);
     }

@@ -13,6 +13,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
 import top.csituka.youzaiworldcore.client.screen.YzuiPopupScreen;
 import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
+import top.csituka.youzaiworldcore.client.screen.widget.YzuiCloseButton;
 import top.csituka.youzaiworldcore.network.TeleportAnchorActivatePayload;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 
@@ -48,6 +49,7 @@ public class TeleportAnchorNameScreen extends Screen implements YzuiPopupScreen 
 
         int panelX = (this.width - PANEL_WIDTH) / 2;
         int panelY = (this.height - PANEL_HEIGHT) / 2;
+        addRenderableWidget(new YzuiCloseButton(panelX + PANEL_WIDTH - 40, panelY + 16, 24, this::onClose));
 
         nameInput = new EditBox(this.font,
                 panelX + 24, panelY + 100,
@@ -80,7 +82,7 @@ public class TeleportAnchorNameScreen extends Screen implements YzuiPopupScreen 
     public void extractRenderState(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
         int x = (width - PANEL_WIDTH) / 2, y = (height - PANEL_HEIGHT) / 2;
         YzuiTheme.card(guiGraphics, x, y, PANEL_WIDTH, PANEL_HEIGHT);
-        YzuiTheme.label(guiGraphics, font, title, x + 24, y + 24, PANEL_WIDTH - 48, YzuiTheme.text(), false);
+        YzuiTheme.label(guiGraphics, font, title, x + 24, y + 24, PANEL_WIDTH - 72, YzuiTheme.text(), false);
         YzuiTheme.wrapped(guiGraphics, font, Component.translatable("screen.youzaiworldcore.teleport_anchor_name.hint"),
                 x + 24, y + 54, PANEL_WIDTH - 48, 3, YzuiTheme.textMuted());
         super.extractRenderState(guiGraphics, mouseX, mouseY, partialTick);

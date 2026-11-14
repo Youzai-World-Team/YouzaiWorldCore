@@ -1,12 +1,11 @@
 package top.csituka.youzaiworldcore.client.screen;
 
-import com.mojang.blaze3d.platform.InputConstants;
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
+import top.csituka.youzaiworldcore.client.screen.widget.YzuiCloseButton;
 
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.CyclingSlotBackground;
 import net.minecraft.client.gui.screens.inventory.ItemCombinerScreen;
-import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.entity.layers.HumanoidArmorLayer;
 import net.minecraft.client.renderer.entity.state.ArmorStandRenderState;
@@ -87,14 +86,9 @@ public class YzuSmithingScreen extends ItemCombinerScreen<SmithingMenu> {
     // ========== 关闭按钮 ==========
 
     private static final int CLOSE_SIZE = 14;
-    private static final int CLOSE_RADIUS = 4;
     private static final int CLOSE_MARGIN = 6;
     private static final int CLOSE_TOP = 2;
-    private static int closeBg() { return YzuiTheme.surface(); }
-    private static int closeBgHover() { return YzuiTheme.surfaceHigh(); }
-    private static int closeIcon() { return YzuiTheme.text(); }
-    private static int closeIconHover() { return YzuiTheme.text(); }
-    private static final String CLOSE_GLYPH = "\u00d7";
+    private YzuiCloseButton closeButton;
 
     // ========== 标题区 ==========
 
@@ -175,6 +169,8 @@ public class YzuSmithingScreen extends ItemCombinerScreen<SmithingMenu> {
         this.leftPos = (this.width - this.imageWidth) / 2;
         this.topPos = (this.height - this.imageHeight) / 2;
         super.init();
+        closeButton = addRenderableWidget(new YzuiCloseButton(
+                leftPos + imageWidth - CLOSE_SIZE - CLOSE_MARGIN, topPos + CLOSE_TOP, CLOSE_SIZE, this::onClose));
         LOGGER.debug("YzuSmithingScreen.init() — leftPos={} topPos={} image={}x{} title={}",
                 this.leftPos, this.topPos, this.imageWidth, this.imageHeight, this.title.getString());
     }
@@ -189,7 +185,6 @@ public class YzuSmithingScreen extends ItemCombinerScreen<SmithingMenu> {
         drawMainPanel(g);
         drawTitle(g);
         drawInventoryLabel(g);
-        drawCloseButton(g, mouseX, mouseY);
 
         // 空槽位图标循环（原版在 extractBackground 绘制，此处移到面板之上、槽位之下）
         this.templateIcon.extractRenderState(this.menu, g, partialTick, this.leftPos, this.topPos);
@@ -322,18 +317,6 @@ public class YzuSmithingScreen extends ItemCombinerScreen<SmithingMenu> {
         }
     }
 
-    // ========== 鼠标事件（仅关闭按钮，其余交互委托原版） ==========
-
-    @Override
-    public boolean mouseClicked(@NonNull MouseButtonEvent ev, boolean real) {
-        if (ev.button() == InputConstants.MOUSE_BUTTON_LEFT && isOverCloseButton((int) ev.x(), (int) ev.y())) {
-            DebugLogger.info("YzuSmithingScreen", "点击关闭按钮，关闭锻造台: %s", this.title.getString());
-            this.onClose();
-            return true;
-        }
-        return super.mouseClicked(ev, real);
-    }
-
     // ========== YZUI 面板绘制 ==========
 
     private void drawMainPanel(GuiGraphicsExtractor g) {
@@ -356,25 +339,16 @@ public class YzuSmithingScreen extends ItemCombinerScreen<SmithingMenu> {
 
         int tx = ix + ICON_SIZE + TITLE_ICON_GAP;
         int ty = this.topPos + 5;
-        g.text(this.font, this.title, tx, ty, titleColor(), false);
+        int titleMaxWidth = leftPos + imageWidth - CLOSE_SIZE - CLOSE_MARGIN - tx - 4;
+        YzuiTheme.label(g, this.font, this.title, tx, ty, titleMaxWidth, titleColor(), false);
 
-        int titleWidth = Math.min(this.font.width(this.title), this.imageWidth - 8 - ICON_SIZE - TITLE_ICON_GAP - 8);
+        int titleWidth = Math.min(this.font.width(this.title), titleMaxWidth);
         fillR(g, tx, ty + 10, titleWidth, 2, 1, accentBarColor());
     }
 
     private void drawInventoryLabel(GuiGraphicsExtractor g) {
         g.text(this.font, this.playerInventoryTitle,
                 this.leftPos + 8, this.topPos + this.imageHeight - 94, labelColor(), false);
-    }
-
-    private void drawCloseButton(GuiGraphicsExtractor g, int mouseX, int mouseY) {
-        int cx = this.leftPos + this.imageWidth - CLOSE_SIZE - CLOSE_MARGIN;
-        int cy = this.topPos + CLOSE_TOP;
-        boolean hovered = isOverCloseButton(mouseX, mouseY);
-        fillR(g, cx, cy, CLOSE_SIZE, CLOSE_SIZE, CLOSE_RADIUS, hovered ? closeBgHover() : closeBg());
-        int tx = cx + (CLOSE_SIZE - this.font.width(CLOSE_GLYPH)) / 2;
-        int ty = cy + (CLOSE_SIZE - this.font.lineHeight) / 2;
-        g.text(this.font, CLOSE_GLYPH, tx, ty, hovered ? closeIconHover() : closeIcon(), false);
     }
 
     private void drawSlotBackgrounds(GuiGraphicsExtractor g, int mouseX, int mouseY) {
@@ -387,12 +361,6 @@ public class YzuSmithingScreen extends ItemCombinerScreen<SmithingMenu> {
             fillR(g, slot.x, slot.y, SLOT_SIZE, SLOT_SIZE, SLOT_RADIUS,
                     hovered ? slotHoverColor() : slotColor());
         }
-    }
-
-    private boolean isOverCloseButton(int mx, int my) {
-        int cx = this.leftPos + this.imageWidth - CLOSE_SIZE - CLOSE_MARGIN;
-        int cy = this.topPos + CLOSE_TOP;
-        return mx >= cx && mx < cx + CLOSE_SIZE && my >= cy && my < cy + CLOSE_SIZE;
     }
 
     private static void fillR(GuiGraphicsExtractor g, int x, int y, int w, int h, int r, int c) {
