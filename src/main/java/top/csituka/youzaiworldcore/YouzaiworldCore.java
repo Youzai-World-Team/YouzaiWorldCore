@@ -172,7 +172,7 @@ public class YouzaiworldCore implements ModInitializer {
             if (environment == Commands.CommandSelection.INTEGRATED) {
                 initializeServer();
             }
-            registerServerCommands(dispatcher);
+            registerServerCommands(dispatcher, environment);
         });
 
         // Fabric 的 main 入口在两种物理环境都会调用。
@@ -565,8 +565,9 @@ public class YouzaiworldCore implements ModInitializer {
                 "devMode=" + devModeEnabled + ", logToFile=" + logToFile);
     }
 
-    /** 为专用及内置服务器注册同一棵权威命令树。 */
-    private static void registerServerCommands(CommandDispatcher<CommandSourceStack> dispatcher) {
+    /** 注册玩法命令，并按环境启用专用服务器的账户命令。 */
+    private static void registerServerCommands(CommandDispatcher<CommandSourceStack> dispatcher,
+                                               Commands.CommandSelection environment) {
         top.csituka.youzaiworldcore.command.MapCommand.register(dispatcher);
         DebugLogger.info("YouzaiworldCore", "注册命令: WorldPoolCommand");
         WorldPoolCommand.register(dispatcher);
@@ -689,7 +690,7 @@ public class YouzaiworldCore implements ModInitializer {
                 }));
 
         DebugLogger.info("YouzaiworldCore", "注册命令: AccountCommands");
-        AccountCommands.register(dispatcher);
+        AccountCommands.register(dispatcher, environment);
 
         DebugLogger.info("YouzaiworldCore", "注册命令: ReloadCommand");
         ReloadCommand.register(dispatcher);

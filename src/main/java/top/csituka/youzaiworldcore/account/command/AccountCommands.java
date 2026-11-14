@@ -54,11 +54,19 @@ import java.util.concurrent.CompletableFuture;
 @SuppressWarnings({"null", "unused"})
 public class AccountCommands {
 
-    public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
+    /**
+     * 按命令注册环境启用账户命令；内置服务器不注册此分支。
+     * <p>26.3 命令树同步会使用不含服务器的临时命令源，环境判断不能放在 {@code requires} 中。</p>
+     */
+    public static void register(CommandDispatcher<CommandSourceStack> dispatcher,
+                                Commands.CommandSelection environment) {
         DebugLogger.entering("AccountCommands", "register");
+        if (!environment.includeDedicated) {
+            DebugLogger.exiting("AccountCommands", "register", "内置服务器跳过账户命令");
+            return;
+        }
         dispatcher.register(Commands.literal("yzwc")
                 .then(Commands.literal("account")
-                        .requires(src -> src.getServer().isDedicatedServer())
                         // ===== 玩家命令 =====
                         .then(Commands.literal("register")
                                 .then(Commands.argument("password", StringArgumentType.string())
