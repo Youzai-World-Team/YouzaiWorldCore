@@ -29,12 +29,15 @@ public final class YzuiGameRulesScreen extends InWorldGameRulesScreen {
     private boolean updatingPermissions;
 
     YzuiGameRulesScreen(YzuiOptionsScreen parent) {
-        super(Minecraft.getInstance().getConnection(), ignored -> Minecraft.getInstance().gui.setScreen(parent), parent);
+        super(Minecraft.getInstance().getConnection(), ignored -> Minecraft.getInstance().gui.setScreen(parent),
+                parent);
         this.parent = parent;
         DebugLogger.info("YzuiSettings", "创建游戏规则编辑页面");
     }
 
-    YzuiOptionsScreen parent() { return parent; }
+    YzuiOptionsScreen parent() {
+        return parent;
+    }
 
     @Override
     protected void init() {
@@ -43,7 +46,8 @@ public final class YzuiGameRulesScreen extends InWorldGameRulesScreen {
     }
 
     private void installFrame() {
-        if (installing || doneButton == null) return;
+        if (installing || doneButton == null)
+            return;
         installing = true;
         try {
             AbstractWidget focused = SettingsWidgets.focused(this);
@@ -57,7 +61,8 @@ public final class YzuiGameRulesScreen extends InWorldGameRulesScreen {
                     if (entry instanceof AbstractGameRulesScreen.CategoryRuleEntry) {
                         // 26.3 起分类标题放在 FocusableTextWidget 子控件中，不再是 label 字段。
                         Component heading = entry.children().stream().filter(AbstractWidget.class::isInstance)
-                                .map(child -> ((AbstractWidget) child).getMessage()).findFirst().orElse(Component.empty());
+                                .map(child -> ((AbstractWidget) child).getMessage()).findFirst()
+                                .orElse(Component.empty());
                         rows.add(SettingsList.Row.heading(heading));
                         continue;
                     }
@@ -66,15 +71,18 @@ public final class YzuiGameRulesScreen extends InWorldGameRulesScreen {
                     AbstractWidget[] controls = entry.children().stream().filter(AbstractWidget.class::isInstance)
                             .map(AbstractWidget.class::cast).toArray(AbstractWidget[]::new);
                     for (AbstractWidget control : controls) {
-                        if (!description.getString().isEmpty()) control.setTooltip(Tooltip.create(description));
+                        if (!description.getString().isEmpty())
+                            control.setTooltip(Tooltip.create(description));
                     }
                     rows.add(SettingsList.Row.controls(label, description, controls));
                 }
             }
             clearFocus();
             clearWidgets();
-            TransparentButton cancel = new TransparentButton(0, 0, 150, 24, Component.translatable("gui.cancel"), this::onClose);
-            frame = new SettingsFrame(this, rows, List.of(cancel, doneButton), this::addRenderableWidget, query, scroll, true);
+            TransparentButton cancel = new TransparentButton(0, 0, 150, 24, Component.translatable("gui.cancel"),
+                    this::onClose);
+            frame = new SettingsFrame(this, rows, List.of(cancel, doneButton), this::addRenderableWidget, query, scroll,
+                    true);
             frame.restoreFocus(focused);
         } finally {
             installing = false;
@@ -83,10 +91,10 @@ public final class YzuiGameRulesScreen extends InWorldGameRulesScreen {
 
     private static Component readLines(Object entry, String field) {
         List<?> lines = SettingsWidgets.read(entry, field, List.class);
-        if (lines == null) return Component.empty();
         StringBuilder text = new StringBuilder();
         for (Object line : lines) {
-            if (!text.isEmpty()) text.append('\n');
+            if (!text.isEmpty())
+                text.append('\n');
             text.append(SettingsWidgets.plainText((FormattedCharSequence) line));
         }
         return Component.literal(text.toString());
@@ -94,8 +102,10 @@ public final class YzuiGameRulesScreen extends InWorldGameRulesScreen {
 
     @Override
     protected void repositionElements() {
-        if (frame == null) super.repositionElements();
-        else installFrame();
+        if (frame == null)
+            super.repositionElements();
+        else
+            installFrame();
     }
 
     @Override
@@ -108,7 +118,8 @@ public final class YzuiGameRulesScreen extends InWorldGameRulesScreen {
     @Override
     public void onGamemasterPermissionChanged(boolean value) {
         // 动画可能延迟切换屏幕，原版会向当前页再次转发权限事件，避免重复进入。
-        if (updatingPermissions) return;
+        if (updatingPermissions)
+            return;
         updatingPermissions = true;
         try {
             super.onGamemasterPermissionChanged(value);

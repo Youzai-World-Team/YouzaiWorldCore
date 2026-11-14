@@ -9,7 +9,6 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.network.chat.Component;
-import top.csituka.youzaiworldcore.client.render.RoundedRect;
 import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
 import top.csituka.youzaiworldcore.client.screen.widget.MenuCloseButton;
 import top.csituka.youzaiworldcore.client.title.TitleClientState;
@@ -45,7 +44,8 @@ public final class TitleManagementScreen extends Screen implements YzuiMenuScree
     @Override
     public void tick() {
         super.tick();
-        if (observedRevision != TitleClientState.revision()) rebuildTitleWidgets();
+        if (observedRevision != TitleClientState.revision())
+            rebuildTitleWidgets();
     }
 
     private void rebuildTitleWidgets() {
@@ -91,12 +91,18 @@ public final class TitleManagementScreen extends Screen implements YzuiMenuScree
         if (pageCount > 1) {
             TransparentButton previous = new TransparentButton(
                     panelX + 24, panelY + panelHeight() - PAGINATION_BOTTOM, 70, 20,
-                    Component.literal("←"), () -> { page--; rebuildTitleWidgets(); });
+                    Component.literal("←"), () -> {
+                        page--;
+                        rebuildTitleWidgets();
+                    });
             previous.active = page > 0;
             addRenderableWidget(previous);
             TransparentButton next = new TransparentButton(
                     panelX + panelWidth - 94, panelY + panelHeight() - PAGINATION_BOTTOM, 70, 20,
-                    Component.literal("→"), () -> { page++; rebuildTitleWidgets(); });
+                    Component.literal("→"), () -> {
+                        page++;
+                        rebuildTitleWidgets();
+                    });
             next.active = page < pageCount - 1;
             addRenderableWidget(next);
         }
@@ -158,7 +164,8 @@ public final class TitleManagementScreen extends Screen implements YzuiMenuScree
 
     private Component currentTitleLabel() {
         String id = TitleClientState.equippedTitleId();
-        if (id.isBlank()) return Component.translatable("screen.youzaiworldcore.title_management.none");
+        if (id.isBlank())
+            return Component.translatable("screen.youzaiworldcore.title_management.none");
         return TitleClientState.ownedDefinitions().stream()
                 .filter(title -> title.id().equals(id))
                 .findFirst()

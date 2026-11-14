@@ -38,11 +38,17 @@ final class SettingsList extends ContainerObjectSelectionList<SettingsList.Row> 
     private String displayedSection;
     private boolean positioned;
 
-    void useViewState(SettingsViewState state) { viewState = state; }
-    void rememberView() { rememberPosition(); }
+    void useViewState(SettingsViewState state) {
+        viewState = state;
+    }
+
+    void rememberView() {
+        rememberPosition();
+    }
 
     private void rememberPosition() {
-        if (!positioned) return;
+        if (!positioned)
+            return;
         if (!query.isBlank()) {
             viewState.searchQuery = query;
             viewState.searchScroll = scrollAmount();
@@ -65,7 +71,8 @@ final class SettingsList extends ContainerObjectSelectionList<SettingsList.Row> 
         allRows.clear();
         allRows.addAll(rows);
         this.separateSections = separateSections;
-        this.selectedSection = selectedSection != null && selectedSection.navigation && rows.contains(selectedSection) ? selectedSection
+        this.selectedSection = selectedSection != null && selectedSection.navigation && rows.contains(selectedSection)
+                ? selectedSection
                 : rows.stream().filter(row -> row.navigation).findFirst().orElse(null);
         filter(query);
     }
@@ -83,7 +90,8 @@ final class SettingsList extends ContainerObjectSelectionList<SettingsList.Row> 
             if (row.navigation) {
                 section = row;
                 group = "";
-            } else if (row.heading) group = row.label.getString();
+            } else if (row.heading)
+                group = row.label.getString();
             row.section = section;
             row.breadcrumb = query.isBlank() || section == null ? Component.empty()
                     : Component.literal(section.label.getString() + (group.isBlank() ? "" : " › " + group));
@@ -97,7 +105,9 @@ final class SettingsList extends ContainerObjectSelectionList<SettingsList.Row> 
         }
         displayedSection = selectedSection == null ? null : selectedSection.key();
         double restored = !query.isBlank() ? query.equals(viewState.searchQuery) ? viewState.searchScroll : 0
-                : separateSections && displayedSection != null ? viewState.sectionScroll.getOrDefault(displayedSection, 0d) : 0;
+                : separateSections && displayedSection != null
+                        ? viewState.sectionScroll.getOrDefault(displayedSection, 0d)
+                        : 0;
         setScrollAmount(restored);
         positioned = true;
     }
@@ -105,7 +115,8 @@ final class SettingsList extends ContainerObjectSelectionList<SettingsList.Row> 
     static boolean matches(String query, String text) {
         String normalized = normalize(text);
         for (String word : normalize(query).split("\\s+")) {
-            if (!normalized.contains(word)) return false;
+            if (!normalized.contains(word))
+                return false;
         }
         return true;
     }
@@ -114,7 +125,9 @@ final class SettingsList extends ContainerObjectSelectionList<SettingsList.Row> 
         return Normalizer.normalize(value, Normalizer.Form.NFKC).toLowerCase(Locale.ROOT).strip();
     }
 
-    Row selectedSection() { return selectedSection; }
+    Row selectedSection() {
+        return selectedSection;
+    }
 
     /** 独立分区恢复浏览位置；普通列表仍按实际行高定位标题。 */
     void reveal(Row row) {
@@ -122,7 +135,8 @@ final class SettingsList extends ContainerObjectSelectionList<SettingsList.Row> 
             selectedSection = row.section;
             filter("");
             // 点击分类恢复该分类的浏览位置；搜索结果内的具体项目仍可准确定位。
-            if (row.navigation) return;
+            if (row.navigation)
+                return;
         }
         int offset = 0;
         for (Row entry : children()) {
@@ -130,7 +144,8 @@ final class SettingsList extends ContainerObjectSelectionList<SettingsList.Row> 
                 closePopups();
                 setScrollAmount(offset);
                 // 末尾分组不足一屏时会被原版滚动上限截断，仍选中用户实际点击的可见分组。
-                if (scrollAmount() < offset) revealedSection = row.section;
+                if (scrollAmount() < offset)
+                    revealedSection = row.section;
                 DebugLogger.debug("YzuiSettings", "定位设置分组：%s，滚动位置 %.0f", row.label.getString(), scrollAmount());
                 return;
             }
@@ -139,16 +154,24 @@ final class SettingsList extends ContainerObjectSelectionList<SettingsList.Row> 
     }
 
     /** 侧栏跟随内容高亮时只做最小滚动，不改变右侧或抢走键盘焦点。 */
-    void ensureVisible(Row row) { if (children().contains(row)) scrollToEntry(row); }
+    void ensureVisible(Row row) {
+        if (children().contains(row))
+            scrollToEntry(row);
+    }
 
     /** 搜索隐藏标题后仍按结果所属分组高亮；滚动到底部时选中最后一个分组。 */
     Row activeSection() {
-        if (separateSections && query.isBlank()) return selectedSection;
-        if (children().isEmpty()) return null;
-        if (revealedSection != null) return revealedSection;
-        if (scrollAmount() > 0 && scrollAmount() >= maxScrollAmount()) return children().getLast().section;
+        if (separateSections && query.isBlank())
+            return selectedSection;
+        if (children().isEmpty())
+            return null;
+        if (revealedSection != null)
+            return revealedSection;
+        if (scrollAmount() > 0 && scrollAmount() >= maxScrollAmount())
+            return children().getLast().section;
         for (Row row : children()) {
-            if (row.getY() + row.getHeight() > getY() + 2) return row.section;
+            if (row.getY() + row.getHeight() > getY() + 2)
+                return row.section;
         }
         return children().getLast().section;
     }
@@ -159,26 +182,33 @@ final class SettingsList extends ContainerObjectSelectionList<SettingsList.Row> 
         super.setScrollAmount(amount);
     }
 
+    @SuppressWarnings("null")
     private List<DropdownButton> dropdowns() {
         return children().stream().flatMap(row -> row.children().stream())
                 .filter(DropdownButton.class::isInstance).map(DropdownButton.class::cast).toList();
     }
 
-    void closePopups() { dropdowns().forEach(DropdownButton::closePopup); }
+    @SuppressWarnings("null")
+    void closePopups() {
+        dropdowns().forEach(DropdownButton::closePopup);
+    }
 
     /** 下拉菜单在列表裁剪之后绘制，并优先处理覆盖到其他行的点击。 */
     void renderPopups(GuiGraphicsExtractor g, int x, int y, float tick) {
         for (DropdownButton dropdown : dropdowns()) {
             if (dropdown.getY() >= getY() && dropdown.getBottom() <= getBottom()) {
                 dropdown.renderPopup(g, x, y, tick, getY(), getBottom(), 0);
-            } else dropdown.closePopup();
+            } else
+                dropdown.closePopup();
         }
     }
 
     boolean popupClicked(MouseButtonEvent event, boolean doubleClick) {
         for (DropdownButton dropdown : dropdowns()) {
-            if (!dropdown.isOpen()) continue;
-            if (dropdown.isMouseOver(event.x(), event.y())) return dropdown.mouseClicked(event, doubleClick);
+            if (!dropdown.isOpen())
+                continue;
+            if (dropdown.isMouseOver(event.x(), event.y()))
+                return dropdown.mouseClicked(event, doubleClick);
             dropdown.closePopup();
         }
         return false;
@@ -186,7 +216,8 @@ final class SettingsList extends ContainerObjectSelectionList<SettingsList.Row> 
 
     boolean popupKeyPressed(KeyEvent event) {
         for (DropdownButton dropdown : dropdowns()) {
-            if (dropdown.isOpen() && dropdown.keyPressed(event)) return true;
+            if (dropdown.isOpen() && dropdown.keyPressed(event))
+                return true;
         }
         return false;
     }
@@ -194,31 +225,53 @@ final class SettingsList extends ContainerObjectSelectionList<SettingsList.Row> 
     @Override
     public boolean mouseScrolled(double x, double y, double dx, double dy) {
         for (DropdownButton dropdown : dropdowns()) {
-            if (dropdown.isOpen() && dropdown.mouseScrolled(x, y, dx, dy)) return true;
+            if (dropdown.isOpen() && dropdown.mouseScrolled(x, y, dx, dy))
+                return true;
         }
         closePopups();
         return super.mouseScrolled(x, y, dx, dy);
     }
 
     /** 在列表子类中访问原版受保护的 Entry 类型，语言选择仍走其公开 setSelected 方法。 */
-    @SuppressWarnings({"rawtypes", "unchecked"})
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     static void selectNativeEntry(AbstractSelectionList list, Object entry) {
         list.setSelected((AbstractSelectionList.Entry) entry);
     }
 
-    @Override public int getRowWidth() { return Math.max(1, getWidth() - 12); }
-    @Override public int getRowLeft() { return getX() + 2; }
-    @Override protected int scrollBarX() { return getRight() - 5; }
-    @Override protected void extractListBackground(GuiGraphicsExtractor g) { }
-    @Override protected void extractListSeparators(GuiGraphicsExtractor g) { }
+    @Override
+    public int getRowWidth() {
+        return Math.max(1, getWidth() - 12);
+    }
 
     @Override
-    public void updateWidgetNarration(NarrationElementOutput output) {
+    public int getRowLeft() {
+        return getX() + 2;
+    }
+
+    @Override
+    protected int scrollBarX() {
+        return getRight() - 5;
+    }
+
+    @Override
+    protected void extractListBackground(@SuppressWarnings("null") GuiGraphicsExtractor g) {
+    }
+
+    @Override
+    protected void extractListSeparators(@SuppressWarnings("null") GuiGraphicsExtractor g) {
+    }
+
+    @SuppressWarnings("null")
+    @Override
+    public void updateWidgetNarration(@SuppressWarnings("null") NarrationElementOutput output) {
         Row row = getHovered() != null ? getHovered() : getFocused();
         if (row != null) {
-            if (!row.breadcrumb.getString().isEmpty()) output.add(NarratedElementType.HINT, row.breadcrumb);
-            if (!row.label.getString().isEmpty()) output.add(NarratedElementType.TITLE, row.label);
-            if (!row.detail.getString().isEmpty()) output.add(NarratedElementType.HINT, row.detail);
+            if (!row.breadcrumb.getString().isEmpty())
+                output.add(NarratedElementType.HINT, row.breadcrumb);
+            if (!row.label.getString().isEmpty())
+                output.add(NarratedElementType.TITLE, row.label);
+            if (!row.detail.getString().isEmpty())
+                output.add(NarratedElementType.HINT, row.detail);
         }
         super.updateWidgetNarration(output);
     }
@@ -240,16 +293,19 @@ final class SettingsList extends ContainerObjectSelectionList<SettingsList.Row> 
         private String keywords;
 
         private Row(Component label, Component detail, List<AbstractWidget> widgets,
-                    boolean heading, Identifier icon, String keywords) {
+                boolean heading, Identifier icon, String keywords) {
             this.detail = detail;
             this.widgets = widgets.stream().map(SettingsChoiceControl::adapt).toList();
             this.choice = !heading && icon == null && this.widgets.size() == 1
-                    && (this.widgets.getFirst() instanceof CheckboxButton || this.widgets.getFirst() instanceof DropdownButton)
+                    && (this.widgets.getFirst() instanceof CheckboxButton
+                            || this.widgets.getFirst() instanceof DropdownButton)
                     && (!label.getString().isEmpty() || !this.widgets.getFirst().getMessage().getString().isEmpty());
             this.label = choice && label.getString().isEmpty() ? this.widgets.getFirst().getMessage() : label;
             if (choice) {
-                if (this.widgets.getFirst() instanceof CheckboxButton checkbox) checkbox.setLabelVisible(false);
-                if (this.widgets.getFirst() instanceof DropdownButton dropdown) dropdown.setLabelVisible(false);
+                if (this.widgets.getFirst() instanceof CheckboxButton checkbox)
+                    checkbox.setLabelVisible(false);
+                if (this.widgets.getFirst() instanceof DropdownButton dropdown)
+                    dropdown.setLabelVisible(false);
             }
             this.heading = heading;
             this.navigation = heading;
@@ -261,7 +317,8 @@ final class SettingsList extends ContainerObjectSelectionList<SettingsList.Row> 
             if (widget instanceof FocusableTextWidget text && !SettingsWidgets.hasClickableText(text.getMessage())) {
                 Component label = text.getMessage().copy().setStyle(Style.EMPTY);
                 // 世界设置等页面把分类标题直接放在布局里，不经过 OptionsList.HeaderEntry。
-                if (text.getMessage().getStyle().isBold() && text.getMessage().getStyle().isUnderlined()) return subheading(label);
+                if (text.getMessage().getStyle().isBold() && text.getMessage().getStyle().isUnderlined())
+                    return subheading(label);
                 return text(label, Component.empty());
             }
             return new Row(Component.empty(), Component.empty(), List.of(widget), false, null, "");
@@ -285,11 +342,18 @@ final class SettingsList extends ContainerObjectSelectionList<SettingsList.Row> 
             return row;
         }
 
-        void addSearchTerms(String terms) { keywords += " " + terms; }
-        String key() { return sectionId == null ? label.getString() : sectionId; }
+        void addSearchTerms(String terms) {
+            keywords += " " + terms;
+        }
 
+        String key() {
+            return sectionId == null ? label.getString() : sectionId;
+        }
+
+        @SuppressWarnings("null")
         private int breadcrumbHeight(int width) {
-            return breadcrumb.getString().isEmpty() ? 0 : Minecraft.getInstance().font.split(breadcrumb, Math.max(1, width - 20)).size() * 12 + 4;
+            return breadcrumb.getString().isEmpty() ? 0
+                    : Minecraft.getInstance().font.split(breadcrumb, Math.max(1, width - 20)).size() * 12 + 4;
         }
 
         static Row pack(Component label, Component detail, Identifier icon, String id, AbstractWidget... widgets) {
@@ -299,7 +363,8 @@ final class SettingsList extends ContainerObjectSelectionList<SettingsList.Row> 
         private String searchText() {
             StringBuilder text = new StringBuilder(label.getString()).append(' ').append(detail.getString())
                     .append(' ').append(keywords);
-            for (AbstractWidget widget : widgets) text.append(' ').append(SettingsChoiceControl.searchText(widget));
+            for (AbstractWidget widget : widgets)
+                text.append(' ').append(SettingsChoiceControl.searchText(widget));
             return text.toString();
         }
 
@@ -308,21 +373,28 @@ final class SettingsList extends ContainerObjectSelectionList<SettingsList.Row> 
         }
 
         private int baseHeightFor(int width) {
-            if (heading) return 28;
+            if (heading)
+                return 28;
             if (widgets.size() == 1 && widgets.getFirst() instanceof MultiLineTextWidget text) {
                 text.setMaxWidth(Math.max(1, width - 24)).setMaxRows(Integer.MAX_VALUE);
                 return Math.max(38, text.getHeight() + 20);
             }
             int inner = choice ? choiceTextWidth(width) : Math.max(20, width - 24 - (icon == null ? 0 : 40));
+            @SuppressWarnings("null")
             int textLines = label.getString().isEmpty() ? 0 : Minecraft.getInstance().font.split(label, inner).size();
-            int detailLines = detail.getString().isEmpty() ? 0 : Minecraft.getInstance().font.split(detail, inner).size();
+            @SuppressWarnings("null")
+            int detailLines = detail.getString().isEmpty() ? 0
+                    : Minecraft.getInstance().font.split(detail, inner).size();
             int contentHeight = Math.max(icon == null ? 0 : 32, (textLines + detailLines) * 12);
-            if (choice) return Math.max(40, inlineChoice(width) ? Math.max(contentHeight, 24) + 20 : contentHeight + 48);
+            if (choice)
+                return Math.max(40, inlineChoice(width) ? Math.max(contentHeight, 24) + 20 : contentHeight + 48);
             return Math.max(38, 16 + contentHeight + (widgets.isEmpty() ? 0 : controlHeight(width) + 4));
         }
 
         // 宽屏名称与值分列，窄屏自动上下排列；两种布局共用同一套文字宽度与行高。
-        private boolean inlineChoice(int width) { return choice && width >= 340; }
+        private boolean inlineChoice(int width) {
+            return choice && width >= 340;
+        }
 
         private int choiceControlWidth(int width) {
             return widgets.getFirst() instanceof CheckboxButton ? Math.min(44, Math.max(1, width - 20))
@@ -334,19 +406,24 @@ final class SettingsList extends ContainerObjectSelectionList<SettingsList.Row> 
         }
 
         private int controlHeight(int width) {
-            if (choice) return 24;
+            if (choice)
+                return 24;
             if (widgets.size() == 1 && widgets.getFirst() instanceof CheckboxButton checkbox) {
-                return Math.max(24, Minecraft.getInstance().font.split(checkbox.getMessage(), Math.max(1, width - 50)).size() * 12 + 6);
+                return Math.max(24,
+                        Minecraft.getInstance().font.split(checkbox.getMessage(), Math.max(1, width - 50)).size() * 12
+                                + 6);
             }
             return 24;
         }
 
         private void positionWidgets() {
-            if (widgets.isEmpty()) return;
+            if (widgets.isEmpty())
+                return;
             if (choice) {
                 int width = choiceControlWidth(getWidth());
                 int trail = breadcrumbHeight(getWidth());
-                int y = inlineChoice(getWidth()) ? getY() + trail + (getHeight() - trail - 24) / 2 : getY() + getHeight() - 32;
+                int y = inlineChoice(getWidth()) ? getY() + trail + (getHeight() - trail - 24) / 2
+                        : getY() + getHeight() - 32;
                 widgets.getFirst().setRectangle(width, 24, getX() + getWidth() - width - 10, y);
                 return;
             }
@@ -374,13 +451,34 @@ final class SettingsList extends ContainerObjectSelectionList<SettingsList.Row> 
             }
         }
 
-        @Override public void setX(int value) { super.setX(value); positionWidgets(); }
-        @Override public void setY(int value) { super.setY(value); positionWidgets(); }
-        @Override public void setWidth(int value) { super.setWidth(value); positionWidgets(); }
-        @Override public void setHeight(int value) { super.setHeight(value); positionWidgets(); }
+        @Override
+        public void setX(int value) {
+            super.setX(value);
+            positionWidgets();
+        }
 
         @Override
-        public void extractContent(GuiGraphicsExtractor g, int mouseX, int mouseY, boolean hovered, float tick) {
+        public void setY(int value) {
+            super.setY(value);
+            positionWidgets();
+        }
+
+        @Override
+        public void setWidth(int value) {
+            super.setWidth(value);
+            positionWidgets();
+        }
+
+        @Override
+        public void setHeight(int value) {
+            super.setHeight(value);
+            positionWidgets();
+        }
+
+        @SuppressWarnings("null")
+        @Override
+        public void extractContent(@SuppressWarnings("null") GuiGraphicsExtractor g, int mouseX, int mouseY,
+                boolean hovered, float tick) {
             widgets.forEach(SettingsChoiceControl::synchronize);
             positionWidgets();
             var font = Minecraft.getInstance().font;
@@ -421,16 +519,25 @@ final class SettingsList extends ContainerObjectSelectionList<SettingsList.Row> 
                 if (widget instanceof FocusableTextWidget text) {
                     // 链接继续使用原版文字布局与命中区域，只绘制文字，绕过焦点背景和黑色边框。
                     text.visitLines(g.textRendererForWidget(text, text.isMouseOver(mouseX, mouseY)
-                            ? GuiGraphicsExtractor.HoveredTextEffects.TOOLTIP_AND_CURSOR : GuiGraphicsExtractor.HoveredTextEffects.NONE));
-                } else widget.extractRenderState(g, mouseX, mouseY, tick);
+                            ? GuiGraphicsExtractor.HoveredTextEffects.TOOLTIP_AND_CURSOR
+                            : GuiGraphicsExtractor.HoveredTextEffects.NONE));
+                } else
+                    widget.extractRenderState(g, mouseX, mouseY, tick);
             }
         }
 
-        @Override public List<? extends GuiEventListener> children() {
+        @SuppressWarnings("null")
+        @Override
+        public List<? extends GuiEventListener> children() {
             widgets.forEach(SettingsChoiceControl::synchronize);
             return widgets;
         }
-        @Override public List<? extends NarratableEntry> narratables() { return widgets; }
+
+        @SuppressWarnings("null")
+        @Override
+        public List<? extends NarratableEntry> narratables() {
+            return widgets;
+        }
 
     }
 }

@@ -9,7 +9,6 @@ import top.csituka.youzaiworldcore.client.render.YzuiMenuPanel;
 import top.csituka.youzaiworldcore.client.screen.widget.WidgetFocus;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.EditBox;
@@ -105,22 +104,19 @@ public class LoginScreen extends Screen implements YzuiMenuScreen {
         this.loginButton = new TransparentButton(
                 buttonStartX, buttonY, BUTTON_WIDTH, BUTTON_HEIGHT,
                 Component.translatable("screen.youzaiworldcore.login.button_login"),
-                this::onLoginClick
-        );
+                this::onLoginClick);
         this.loginButton.setTextColor(0xFFFFFF);
 
         this.disconnectButton = new TransparentButton(
                 buttonStartX + BUTTON_WIDTH + 12, buttonY, BUTTON_WIDTH, BUTTON_HEIGHT,
                 Component.translatable("screen.youzaiworldcore.login.button_disconnect"),
-                this::onDisconnectClick
-        );
+                this::onDisconnectClick);
         this.disconnectButton.setTextColor(0xFFFFFF);
 
         this.forgotPasswordButton = new TransparentButton(
                 centerX - 60, buttonY + 31, 120, 20,
                 Component.translatable("screen.youzaiworldcore.login.button_forgot_password"),
-                this::onForgotPasswordClick
-        );
+                this::onForgotPasswordClick);
         this.forgotPasswordButton.setTextColor(YzuiTheme.textMuted());
 
         this.allWidgets.clear();
@@ -138,7 +134,8 @@ public class LoginScreen extends Screen implements YzuiMenuScreen {
                     (height - CARD_HEIGHT) / 2 + 14, this);
             allWidgets.add(previewCloseButton);
         }
-        if (currentDialog != null) currentDialog.init(width, height);
+        if (currentDialog != null)
+            currentDialog.init(width, height);
         this.passwordField.setFocused(true);
     }
 
@@ -164,14 +161,17 @@ public class LoginScreen extends Screen implements YzuiMenuScreen {
         if (currentDialog != null && currentDialog.isVisible()) {
             currentDialog.render(g, width, height);
             currentDialog.renderButtons(g, mouseX, mouseY, partialTick);
-        } else if (currentDialog != null) currentDialog = null;
+        } else if (currentDialog != null)
+            currentDialog = null;
     }
 
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean isActuallyClick) {
         if (event.button() == InputConstants.MOUSE_BUTTON_LEFT && previewCloseButton != null
-                && previewCloseButton.mouseClicked(event, isActuallyClick)) return true;
-        if (currentDialog == null || !currentDialog.isVisible()) WidgetFocus.mouseFocus(event.x(), event.y(), interactiveWidgets());
+                && previewCloseButton.mouseClicked(event, isActuallyClick))
+            return true;
+        if (currentDialog == null || !currentDialog.isVisible())
+            WidgetFocus.mouseFocus(event.x(), event.y(), interactiveWidgets());
         // 弹窗优先
         if (currentDialog != null && currentDialog.isVisible()) {
             return currentDialog.mouseClicked(event.x(), event.y());
@@ -211,9 +211,12 @@ public class LoginScreen extends Screen implements YzuiMenuScreen {
 
     @Override
     public boolean keyPressed(KeyEvent keyEvent) {
-        if (YzuiMenuScreen.handleEscape(this, keyEvent)) return true;
-        if (currentDialog != null && currentDialog.isVisible()) return currentDialog.keyPressed(keyEvent);
-        if (WidgetFocus.keyPressed(keyEvent, interactiveWidgets())) return true;
+        if (YzuiMenuScreen.handleEscape(this, keyEvent))
+            return true;
+        if (currentDialog != null && currentDialog.isVisible())
+            return currentDialog.keyPressed(keyEvent);
+        if (WidgetFocus.keyPressed(keyEvent, interactiveWidgets()))
+            return true;
         if (currentDialog != null && currentDialog.isVisible()) {
             return true;
         }
@@ -224,30 +227,37 @@ public class LoginScreen extends Screen implements YzuiMenuScreen {
         }
 
         // Enter 键触发登入
-        if (keyEvent.key() == InputConstants.KEY_RETURN || keyEvent.key() == InputConstants.KEY_NUMPADENTER) { // GLFW_KEY_ENTER, GLFW_KEY_KP_ENTER
+        if (keyEvent.key() == InputConstants.KEY_RETURN || keyEvent.key() == InputConstants.KEY_NUMPADENTER) { // GLFW_KEY_ENTER,
+                                                                                                               // GLFW_KEY_KP_ENTER
             onLoginClick();
             return true;
         }
 
         // 转发到当前聚焦的 EditBox（账户只读，不转发）
-        if (this.passwordField.isFocused() && this.passwordField.keyPressed(keyEvent)) return true;
+        if (this.passwordField.isFocused() && this.passwordField.keyPressed(keyEvent))
+            return true;
 
         return false;
     }
 
     @Override
     public boolean charTyped(CharacterEvent charEvent) {
-        if (currentDialog != null && currentDialog.isVisible()) return true;
-        if (this.passwordField.isFocused() && this.passwordField.charTyped(charEvent)) return true;
+        if (currentDialog != null && currentDialog.isVisible())
+            return true;
+        if (this.passwordField.isFocused() && this.passwordField.charTyped(charEvent))
+            return true;
         return false;
     }
 
     @Override
-    public void onClose() { closeMenu(); }
+    public void onClose() {
+        closeMenu();
+    }
 
     @Override
     public void closeMenu() {
-        if (previewParent != null) GuiAnimationController.setScreenImmediately(Minecraft.getInstance().gui, previewParent);
+        if (previewParent != null)
+            GuiAnimationController.setScreenImmediately(Minecraft.getInstance().gui, previewParent);
     }
 
     @Override
@@ -270,15 +280,15 @@ public class LoginScreen extends Screen implements YzuiMenuScreen {
     // ===== 按钮回调 =====
 
     private void onLoginClick() {
-        if (processing) return;
+        if (processing)
+            return;
 
         String password = this.passwordField.getValue();
 
         if (password.isEmpty()) {
             showErrorDialog(
                     Component.translatable("screen.youzaiworldcore.login.error_title").getString(),
-                    new String[]{Component.translatable("screen.youzaiworldcore.login.error_empty").getString()}
-            );
+                    new String[] { Component.translatable("screen.youzaiworldcore.login.error_empty").getString() });
             return;
         }
 
@@ -287,16 +297,24 @@ public class LoginScreen extends Screen implements YzuiMenuScreen {
     }
 
     private void onDisconnectClick() {
-        if (previewParent != null) { closeMenu(); return; }
-        if (processing) return;
+        if (previewParent != null) {
+            closeMenu();
+            return;
+        }
+        if (processing)
+            return;
 
         Minecraft.getInstance().disconnectFromWorld(
                 Component.translatable("screen.youzaiworldcore.login.disconnect_message"));
     }
 
     private void onForgotPasswordClick() {
-        if (previewParent != null) { showPreviewResult(); return; }
-        if (processing) return;
+        if (previewParent != null) {
+            showPreviewResult();
+            return;
+        }
+        if (processing)
+            return;
         Minecraft.getInstance().setScreenAndShow(new PasswordResetScreen(this.playerName));
     }
 
@@ -324,7 +342,7 @@ public class LoginScreen extends Screen implements YzuiMenuScreen {
         processing = false;
         DebugLogger.debug("AuthPreview", "本地预览按钮反馈：%s", getClass().getSimpleName());
         showErrorDialog(Component.translatable("screen.youzaiworldcore.test.local_notice").getString(),
-                new String[]{Component.translatable("screen.youzaiworldcore.test.local_result").getString()});
+                new String[] { Component.translatable("screen.youzaiworldcore.test.local_result").getString() });
     }
 
     private void showErrorDialog(String title, String[] messages) {
@@ -335,15 +353,9 @@ public class LoginScreen extends Screen implements YzuiMenuScreen {
                 () -> {
                     this.passwordField.setFocused(true);
                     this.processing = false;
-                }
-        );
+                });
         this.currentDialog.init(this.width, this.height);
         this.currentDialog.show();
-    }
-
-    private void drawLabel(GuiGraphicsExtractor guiGraphics, Font font, String text, int x, int y) {
-        int labelY = y + (FIELD_HEIGHT - font.lineHeight) / 2;
-        guiGraphics.text(font, text, x, labelY, YzuiTheme.text(), false);
     }
 
     private boolean isMouseOverButton(TransparentButton button, double mx, double my) {
@@ -371,7 +383,8 @@ public class LoginScreen extends Screen implements YzuiMenuScreen {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
-        if (currentDialog != null && currentDialog.isVisible()) return currentDialog.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
+        if (currentDialog != null && currentDialog.isVisible())
+            return currentDialog.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
         return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
     }
 }

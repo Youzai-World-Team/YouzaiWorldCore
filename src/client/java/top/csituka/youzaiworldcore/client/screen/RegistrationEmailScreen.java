@@ -7,7 +7,6 @@ import top.csituka.youzaiworldcore.client.screen.widget.WidgetFocus;
 
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.EditBox;
@@ -73,7 +72,8 @@ public class RegistrationEmailScreen extends Screen implements YzuiMenuScreen {
 
     /** 应用服务端返回的邮箱注册状态。 */
     public void applyState(RegistrationEmailStatePayload payload) {
-        if (!matchesSession(payload.sessionId())) return;
+        if (!matchesSession(payload.sessionId()))
+            return;
         switch (payload.state()) {
             case REQUIRED -> updateSessionExpiry(payload.expiresInSeconds());
             case CODE_SENT -> {
@@ -161,7 +161,8 @@ public class RegistrationEmailScreen extends Screen implements YzuiMenuScreen {
 
         arrangeForm();
         focus(this.codeSent ? this.codeField : this.emailField);
-        if (this.currentDialog != null) this.currentDialog.init(this.width, this.height);
+        if (this.currentDialog != null)
+            this.currentDialog.init(this.width, this.height);
         updateButtonState();
     }
 
@@ -186,7 +187,8 @@ public class RegistrationEmailScreen extends Screen implements YzuiMenuScreen {
         YzuiTheme.label(g, font, Component.translatable("screen.youzaiworldcore.register_email.session_remaining",
                 formatDuration(remainingSessionSeconds())), x + 24, y + 69, cardWidth - 48,
                 remainingSessionSeconds() <= 60 ? YzuiTheme.error() : YzuiTheme.textMuted(), false);
-        YzuiTheme.wrapped(g, font, Component.literal(statusMessage), x + 24, y + 195, cardWidth - 48, 2, YzuiTheme.success());
+        YzuiTheme.wrapped(g, font, Component.literal(statusMessage), x + 24, y + 195, cardWidth - 48, 2,
+                YzuiTheme.success());
         YzuiTheme.wrapped(g, font, Component.translatable("screen.youzaiworldcore.register_email.hint_line"),
                 x + 24, y + 278, cardWidth - 48, 2, YzuiTheme.textMuted());
         for (AbstractWidget widget : allWidgets) {
@@ -199,12 +201,14 @@ public class RegistrationEmailScreen extends Screen implements YzuiMenuScreen {
         if (currentDialog != null && currentDialog.isVisible()) {
             currentDialog.render(g, width, height);
             currentDialog.renderButtons(g, mouseX, mouseY, partialTick);
-        } else if (currentDialog != null) currentDialog = null;
+        } else if (currentDialog != null)
+            currentDialog = null;
     }
 
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean isActuallyClick) {
-        if (currentDialog == null || !currentDialog.isVisible()) WidgetFocus.mouseFocus(event.x(), event.y(), allWidgets);
+        if (currentDialog == null || !currentDialog.isVisible())
+            WidgetFocus.mouseFocus(event.x(), event.y(), allWidgets);
         if (this.currentDialog != null && this.currentDialog.isVisible()) {
             return this.currentDialog.mouseClicked(event.x(), event.y());
         }
@@ -237,10 +241,15 @@ public class RegistrationEmailScreen extends Screen implements YzuiMenuScreen {
 
     @Override
     public boolean keyPressed(KeyEvent keyEvent) {
-        if (currentDialog != null && currentDialog.isVisible()) return currentDialog.keyPressed(keyEvent);
-        if (WidgetFocus.keyPressed(keyEvent, List.of(emailField, codeField, sendCodeButton, verifyButton, disconnectButton))) return true;
-        if (this.currentDialog != null && this.currentDialog.isVisible()) return true;
-        if (keyEvent.key() == InputConstants.KEY_ESCAPE) return true;
+        if (currentDialog != null && currentDialog.isVisible())
+            return currentDialog.keyPressed(keyEvent);
+        if (WidgetFocus.keyPressed(keyEvent,
+                List.of(emailField, codeField, sendCodeButton, verifyButton, disconnectButton)))
+            return true;
+        if (this.currentDialog != null && this.currentDialog.isVisible())
+            return true;
+        if (keyEvent.key() == InputConstants.KEY_ESCAPE)
+            return true;
         if (keyEvent.key() == InputConstants.KEY_RETURN || keyEvent.key() == InputConstants.KEY_NUMPADENTER) {
             if (this.codeField.isFocused() || !this.codeField.getValue().isBlank()) {
                 onVerifyClick();
@@ -249,21 +258,27 @@ public class RegistrationEmailScreen extends Screen implements YzuiMenuScreen {
             }
             return true;
         }
-        if (this.emailField.isFocused() && this.emailField.keyPressed(keyEvent)) return true;
-        if (this.codeField.isFocused() && this.codeField.keyPressed(keyEvent)) return true;
+        if (this.emailField.isFocused() && this.emailField.keyPressed(keyEvent))
+            return true;
+        if (this.codeField.isFocused() && this.codeField.keyPressed(keyEvent))
+            return true;
         return false;
     }
 
     @Override
     public boolean charTyped(CharacterEvent charEvent) {
-        if (currentDialog != null && currentDialog.isVisible()) return true;
-        if (this.emailField.isFocused() && this.emailField.charTyped(charEvent)) return true;
-        if (this.codeField.isFocused() && this.codeField.charTyped(charEvent)) return true;
+        if (currentDialog != null && currentDialog.isVisible())
+            return true;
+        if (this.emailField.isFocused() && this.emailField.charTyped(charEvent))
+            return true;
+        if (this.codeField.isFocused() && this.codeField.charTyped(charEvent))
+            return true;
         return false;
     }
 
     @Override
-    public void onClose() { }
+    public void onClose() {
+    }
 
     @Override
     public boolean shouldCloseOnEsc() {
@@ -283,7 +298,8 @@ public class RegistrationEmailScreen extends Screen implements YzuiMenuScreen {
     }
 
     private void onSendCodeClick() {
-        if (this.processing || System.currentTimeMillis() < this.resendAvailableAtMillis) return;
+        if (this.processing || System.currentTimeMillis() < this.resendAvailableAtMillis)
+            return;
         String email = this.emailField.getValue().trim();
         if (email.length() > 254 || !EMAIL_PATTERN.matcher(email).matches()) {
             showError(Component.translatable(
@@ -297,7 +313,8 @@ public class RegistrationEmailScreen extends Screen implements YzuiMenuScreen {
     }
 
     private void onVerifyClick() {
-        if (this.processing) return;
+        if (this.processing)
+            return;
         String code = this.codeField.getValue().trim();
         if (!code.matches("\\d{6}")) {
             showError(Component.translatable(
@@ -311,7 +328,8 @@ public class RegistrationEmailScreen extends Screen implements YzuiMenuScreen {
     }
 
     private void onDisconnectClick() {
-        if (this.processing) return;
+        if (this.processing)
+            return;
         Minecraft.getInstance().disconnectFromWorld(
                 Component.translatable("screen.youzaiworldcore.register.disconnect_message"));
     }
@@ -329,7 +347,7 @@ public class RegistrationEmailScreen extends Screen implements YzuiMenuScreen {
         this.processing = false;
         this.currentDialog = new ConfirmationDialog(
                 Component.translatable("screen.youzaiworldcore.register.error_title").getString(),
-                new String[]{message},
+                new String[] { message },
                 Component.translatable("screen.youzaiworldcore.register.dialog_ok").getString(),
                 () -> focus(this.codeSent ? this.codeField : this.emailField));
         this.currentDialog.init(this.width, this.height);
@@ -337,15 +355,16 @@ public class RegistrationEmailScreen extends Screen implements YzuiMenuScreen {
     }
 
     private void showExpired(String message) {
-        if (this.expiryHandled) return;
+        if (this.expiryHandled)
+            return;
         this.expiryHandled = true;
         this.processing = false;
         this.currentDialog = new ConfirmationDialog(
                 Component.translatable("screen.youzaiworldcore.register.error_title").getString(),
-                new String[]{message == null || message.isBlank()
+                new String[] { message == null || message.isBlank()
                         ? Component.translatable(
                                 "screen.youzaiworldcore.register_email.session_expired").getString()
-                        : message},
+                        : message },
                 Component.translatable("screen.youzaiworldcore.register.dialog_ok").getString(),
                 () -> Minecraft.getInstance().setScreenAndShow(new RegisterScreen(this.playerName)));
         this.currentDialog.init(this.width, this.height);
@@ -358,7 +377,8 @@ public class RegistrationEmailScreen extends Screen implements YzuiMenuScreen {
     }
 
     private void updateButtonState() {
-        if (this.sendCodeButton == null || this.verifyButton == null || this.disconnectButton == null) return;
+        if (this.sendCodeButton == null || this.verifyButton == null || this.disconnectButton == null)
+            return;
         long now = System.currentTimeMillis();
         int resendSeconds = (int) Math.max(0L,
                 (this.resendAvailableAtMillis - now + 999L) / 1000L);
@@ -387,13 +407,10 @@ public class RegistrationEmailScreen extends Screen implements YzuiMenuScreen {
     }
 
     private void focus(EditBox target) {
-        if (this.emailField != null) this.emailField.setFocused(target == this.emailField);
-        if (this.codeField != null) this.codeField.setFocused(target == this.codeField);
-    }
-
-    private void drawLabel(GuiGraphicsExtractor guiGraphics, Font font, String text, int x, int y) {
-        guiGraphics.text(font, text, x, y + (FIELD_HEIGHT - font.lineHeight) / 2,
-                YzuiTheme.text(), false);
+        if (this.emailField != null)
+            this.emailField.setFocused(target == this.emailField);
+        if (this.codeField != null)
+            this.codeField.setFocused(target == this.codeField);
     }
 
     private boolean isMouseOverButton(TransparentButton button, double mouseX, double mouseY) {
@@ -415,7 +432,8 @@ public class RegistrationEmailScreen extends Screen implements YzuiMenuScreen {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
-        if (currentDialog != null && currentDialog.isVisible()) return currentDialog.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
+        if (currentDialog != null && currentDialog.isVisible())
+            return currentDialog.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
         return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
     }
 }

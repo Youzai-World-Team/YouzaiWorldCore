@@ -28,73 +28,131 @@ final class MapRadarPanel extends MapOverlayPanel {
         super(owner, "radar");
         DebugLogger.debug("MapRadar", "打开生物种类图标目录");
     }
-    @Override protected void init() {
+
+    @SuppressWarnings("null")
+    @Override
+    protected void init() {
         boolean focused = search != null && getFocused() == search;
-        super.init(); cells.clear();
+        super.init();
+        cells.clear();
         panelWidth = Math.min(width - 16, Math.max(280, Math.min(440, width / 2)));
         button(panelX + panelWidth - 32, panelY + 7, 22, Component.literal("×"), this::onClose);
         search = field(panelX + 12, panelY + 38, panelWidth - 24, "radar_search", query, 64, value -> {
-            query = value; page = 0; dirty = true;
+            query = value;
+            page = 0;
+            dirty = true;
         });
         search.setHint(MapTexts.text("radar_search"));
-        gridTop = panelY + 86; footer = panelY + panelHeight - 32;
-        columns = Math.max(1, (panelWidth - 20) / 60); cellWidth = (panelWidth - 24 - (columns - 1) * 4) / columns;
+        gridTop = panelY + 86;
+        footer = panelY + panelHeight - 32;
+        columns = Math.max(1, (panelWidth - 20) / 60);
+        cellWidth = (panelWidth - 24 - (columns - 1) * 4) / columns;
         capacity = Math.max(0, (footer - 46 - gridTop) / 58) * columns;
         int actionWidth = (panelWidth - 28) / 2;
-        clear = button(panelX + 12, footer - 26, actionWidth, MapTexts.text("radar_clear"), () -> { MapMobRadar.select(null); refreshSelection(); });
-        view = button(panelX + 16 + actionWidth, footer - 26, actionWidth, MapTexts.text("radar_view"), owner::showMobRadar);
+        clear = button(panelX + 12, footer - 26, actionWidth, MapTexts.text("radar_clear"), () -> {
+            MapMobRadar.select(null);
+            refreshSelection();
+        });
+        view = button(panelX + 16 + actionWidth, footer - 26, actionWidth, MapTexts.text("radar_view"),
+                owner::showMobRadar);
         view.setStyle(YzuiTheme.ButtonStyle.FILLED);
-        previous = button(panelX + 12, footer, 24, Component.literal("‹"), () -> { page--; refreshGrid(); });
-        next = button(panelX + panelWidth - 36, footer, 24, Component.literal("›"), () -> { page++; refreshGrid(); });
-        previous.setTooltip(Tooltip.create(MapTexts.text("previous"))); next.setTooltip(Tooltip.create(MapTexts.text("next")));
-        refreshGrid(); refreshSelection();
-        if (focused) setFocused(search);
+        previous = button(panelX + 12, footer, 24, Component.literal("‹"), () -> {
+            page--;
+            refreshGrid();
+        });
+        next = button(panelX + panelWidth - 36, footer, 24, Component.literal("›"), () -> {
+            page++;
+            refreshGrid();
+        });
+        previous.setTooltip(Tooltip.create(MapTexts.text("previous")));
+        next.setTooltip(Tooltip.create(MapTexts.text("next")));
+        refreshGrid();
+        refreshSelection();
+        if (focused)
+            setFocused(search);
     }
+
+    @SuppressWarnings("null")
     private void refreshGrid() {
         dirty = false;
-        cells.forEach(this::removeWidget); cells.clear();
+        cells.forEach(this::removeWidget);
+        cells.clear();
         String filter = query.strip().toLowerCase(Locale.ROOT);
-        var matches = MapMobIcons.types().stream().filter(type -> type.getDescription().getString().toLowerCase(Locale.ROOT).contains(filter)
-                || EntityType.getKey(type).toString().contains(filter)).toList();
-        count = matches.size(); pages = Math.max(1, Math.ceilDiv(count, Math.max(1, capacity))); page = Math.clamp(page, 0, pages - 1);
-        previous.active = capacity > 0 && page > 0; next.active = capacity > 0 && page + 1 < pages;
+        var matches = MapMobIcons.types().stream()
+                .filter(type -> type.getDescription().getString().toLowerCase(Locale.ROOT).contains(filter)
+                        || EntityType.getKey(type).toString().contains(filter))
+                .toList();
+        count = matches.size();
+        pages = Math.max(1, Math.ceilDiv(count, Math.max(1, capacity)));
+        page = Math.clamp(page, 0, pages - 1);
+        previous.active = capacity > 0 && page > 0;
+        next.active = capacity > 0 && page + 1 < pages;
         for (int i = 0; i < capacity && page * capacity + i < count; i++) {
             var type = matches.get(page * capacity + i);
             int x = panelX + 12 + (i % columns) * (cellWidth + 4), y = gridTop + (i / columns) * 58;
             var cell = new TransparentButton(x, y, cellWidth, 54, type.getDescription(), () -> {
-                MapMobRadar.select(MapMobRadar.selected() == type ? null : type); refreshSelection();
+                MapMobRadar.select(MapMobRadar.selected() == type ? null : type);
+                refreshSelection();
             }) {
-                @Override protected void extractWidgetRenderState(GuiGraphicsExtractor g, int mx, int my, float delta) {
+                @Override
+                protected void extractWidgetRenderState(GuiGraphicsExtractor g, int mx, int my, float delta) {
                     boolean selected = type == MapMobRadar.selected();
                     var style = selected ? YzuiTheme.ButtonStyle.FILLED : YzuiTheme.ButtonStyle.TONAL;
-                    YzuiTheme.button(g, getX(), getY(), getWidth(), getHeight(), isMouseOver(mx, my) ? 1 : 0, isFocused(), active, 1, style);
+                    YzuiTheme.button(g, getX(), getY(), getWidth(), getHeight(), isMouseOver(mx, my) ? 1 : 0,
+                            isFocused(), active, 1, style);
                     MapMobIcons.draw(g, type, getX() + (getWidth() - 28) / 2, getY() + 5, 28, 1);
                     int color = YzuiTheme.buttonText(style, true);
-                    YzuiTheme.label(g, font, type.getDescription(), getX() + 3, getY() + 40, getWidth() - 6, color, true);
-                    if (selected) g.outline(getX() + 1, getY() + 1, getWidth() - 2, getHeight() - 2, YzuiTheme.primary());
+                    YzuiTheme.label(g, font, type.getDescription(), getX() + 3, getY() + 40, getWidth() - 6, color,
+                            true);
+                    if (selected)
+                        g.outline(getX() + 1, getY() + 1, getWidth() - 2, getHeight() - 2, YzuiTheme.primary());
                 }
             };
-            cell.setTooltip(Tooltip.create(type.getDescription().copy().append("\n" + EntityType.getKey(type)).append("\n").append(MapTexts.text("radar_hint"))));
+            cell.setTooltip(Tooltip.create(type.getDescription().copy().append("\n" + EntityType.getKey(type))
+                    .append("\n").append(MapTexts.text("radar_hint"))));
             cells.add(addRenderableWidget(cell));
         }
     }
+
+    @SuppressWarnings("null")
     private void refreshSelection() {
         clear.active = view.active = MapMobRadar.selected() != null;
-        search.setTooltip(Tooltip.create(MapTexts.text(MapMobRadar.serverSearch() ? "radar_hint" : "radar_local_only")));
+        search.setTooltip(
+                Tooltip.create(MapTexts.text(MapMobRadar.serverSearch() ? "radar_hint" : "radar_local_only")));
     }
-    @Override public void tick() { if (dirty) refreshGrid(); if (++ticks % 10 == 0) refreshSelection(); }
-    @Override protected void content(GuiGraphicsExtractor g, int mx, int my, float delta) {
-        label(g, MapTexts.text(MapMobRadar.serverSearch() ? "radar_range" : "radar_local_range", MapMobRadar.radius(), count), panelX + 12, panelY + 67, panelWidth - 24);
-        if (count == 0) YzuiTheme.wrapped(g, font, MapTexts.text("radar_empty"), panelX + 12, gridTop + 4, panelWidth - 24, 2, YzuiTheme.textMuted());
+
+    @Override
+    public void tick() {
+        if (dirty)
+            refreshGrid();
+        if (++ticks % 10 == 0)
+            refreshSelection();
+    }
+
+    @Override
+    protected void content(GuiGraphicsExtractor g, int mx, int my, float delta) {
+        label(g, MapTexts.text(MapMobRadar.serverSearch() ? "radar_range" : "radar_local_range", MapMobRadar.radius(),
+                count), panelX + 12, panelY + 67, panelWidth - 24);
+        if (count == 0)
+            YzuiTheme.wrapped(g, font, MapTexts.text("radar_empty"), panelX + 12, gridTop + 4, panelWidth - 24, 2,
+                    YzuiTheme.textMuted());
         var selected = MapMobRadar.selected();
-        var status = selected == null ? MapTexts.text("radar_hint") : MapMobRadar.waiting() ? MapTexts.text("radar_waiting", selected.getDescription())
-                : MapTexts.text("radar_selected", selected.getDescription());
+        var status = selected == null ? MapTexts.text("radar_hint")
+                : MapMobRadar.waiting() ? MapTexts.text("radar_waiting", selected.getDescription())
+                        : MapTexts.text("radar_selected", selected.getDescription());
         label(g, status, panelX + 12, footer - 43, panelWidth - 24);
-        YzuiTheme.label(g, font, MapTexts.text("page", page + 1, pages), panelX + 42, footer + 7, panelWidth - 84, YzuiTheme.textMuted(), true);
+        YzuiTheme.label(g, font, MapTexts.text("page", page + 1, pages), panelX + 42, footer + 7, panelWidth - 84,
+                YzuiTheme.textMuted(), true);
     }
-    @Override public boolean mouseScrolled(double x, double y, double horizontal, double vertical) {
-        if (!isMouseOver(x, y)) return false;
-        if (vertical != 0 && capacity > 0) { page += vertical > 0 ? -1 : 1; refreshGrid(); }
+
+    @Override
+    public boolean mouseScrolled(double x, double y, double horizontal, double vertical) {
+        if (!isMouseOver(x, y))
+            return false;
+        if (vertical != 0 && capacity > 0) {
+            page += vertical > 0 ? -1 : 1;
+            refreshGrid();
+        }
         return true;
     }
 }

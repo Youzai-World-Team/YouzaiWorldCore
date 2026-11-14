@@ -1,7 +1,5 @@
 package top.csituka.youzaiworldcore.client.screen;
 
-import top.csituka.youzaiworldcore.client.render.YzuiTheme;
-
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
@@ -17,10 +15,10 @@ import top.csituka.youzaiworldcore.client.animation.GuiAnimationController;
  * 统一负责两件事：
  * </p>
  * <ol>
- *   <li><b>自适应视口</b>——界面按当前 GUI 宽高排版，普通窗口保留字号；
- *       极端小窗口由视口统一换算绘制与点击坐标。</li>
- *   <li><b>进出场动画</b>——所有动画范围使用统一页面过渡，
- *       返回/关闭时完成过渡再切屏，绘制与点击使用同一坐标变换。</li>
+ * <li><b>自适应视口</b>——界面按当前 GUI 宽高排版，普通窗口保留字号；
+ * 极端小窗口由视口统一换算绘制与点击坐标。</li>
+ * <li><b>进出场动画</b>——所有动画范围使用统一页面过渡，
+ * 返回/关闭时完成过渡再切屏，绘制与点击使用同一坐标变换。</li>
  * </ol>
  */
 @SuppressWarnings("null")
@@ -53,12 +51,14 @@ public abstract class MailBaseScreen extends Screen implements YzuiMenuScreen {
      * @param mouseY 已换算到设计空间的鼠标 Y
      */
     protected abstract void renderMailContent(GuiGraphicsExtractor graphics, int mouseX, int mouseY,
-                                              float partialTick);
+            float partialTick);
 
     /**
      * 渲染原版组件树。
-     * <p>子类在 {@link #renderMailContent} 内调用本方法，而不是直接调用
-     * {@code super.extractRenderState}——后者会打到本类的实现上造成无限递归。</p>
+     * <p>
+     * 子类在 {@link #renderMailContent} 内调用本方法，而不是直接调用
+     * {@code super.extractRenderState}——后者会打到本类的实现上造成无限递归。
+     * </p>
      */
     protected void renderWidgets(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         super.extractRenderState(graphics, mouseX, mouseY, partialTick);
@@ -81,7 +81,6 @@ public abstract class MailBaseScreen extends Screen implements YzuiMenuScreen {
         }
     }
 
-
     @Override
     public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         // 背景由共用屏幕入口在内容变换之前绘制，避免重复模糊与叠加遮罩。
@@ -91,7 +90,8 @@ public abstract class MailBaseScreen extends Screen implements YzuiMenuScreen {
 
     /** 播放淡出动画，结束后执行 {@code action}。 */
     protected void startExit(Runnable action) {
-        if (!isExiting()) action.run();
+        if (!isExiting())
+            action.run();
     }
 
     /** 返回打开邮件的父页面；无父页面时回到主菜单。 */
@@ -114,7 +114,8 @@ public abstract class MailBaseScreen extends Screen implements YzuiMenuScreen {
 
     @Override
     public void onClose() {
-        if (parent == null) closeToGame();
+        if (parent == null)
+            closeToGame();
         else {
             MailToast.clear();
             GuiAnimationController.setScreenImmediately(Minecraft.getInstance().gui, parent);
@@ -122,7 +123,9 @@ public abstract class MailBaseScreen extends Screen implements YzuiMenuScreen {
     }
 
     /** 供子类的手动列表、附件与收件人选择器阻止退出期间重复操作。 */
-    protected final boolean isExiting() { return GuiAnimationController.isExiting(this); }
+    protected final boolean isExiting() {
+        return GuiAnimationController.isExiting(this);
+    }
 
     @Override
     public void removed() {
@@ -148,26 +151,30 @@ public abstract class MailBaseScreen extends Screen implements YzuiMenuScreen {
 
     @Override
     public boolean mouseReleased(MouseButtonEvent event) {
-        if (isExiting()) return true;
+        if (isExiting())
+            return true;
         return super.mouseReleased(viewport.toDesignEvent(event));
     }
 
     @Override
     public boolean mouseDragged(MouseButtonEvent event, double dragX, double dragY) {
-        if (isExiting()) return true;
+        if (isExiting())
+            return true;
         return super.mouseDragged(viewport.toDesignEvent(event), dragX / viewport.scale(),
                 dragY / viewport.scale());
     }
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
-        if (isExiting()) return true;
+        if (isExiting())
+            return true;
         return super.mouseScrolled(viewport.toDesignX(mouseX), viewport.toDesignY(mouseY), scrollX, scrollY);
     }
 
     @Override
     public boolean keyPressed(KeyEvent event) {
-        if (YzuiMenuScreen.handleEscape(this, event)) return true;
+        if (YzuiMenuScreen.handleEscape(this, event))
+            return true;
         if (isExiting()) {
             return true;
         }

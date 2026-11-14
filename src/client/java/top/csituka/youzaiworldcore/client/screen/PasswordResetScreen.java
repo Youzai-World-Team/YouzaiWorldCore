@@ -7,7 +7,6 @@ import top.csituka.youzaiworldcore.client.screen.widget.WidgetFocus;
 
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.EditBox;
@@ -81,7 +80,8 @@ public class PasswordResetScreen extends Screen implements YzuiMenuScreen {
                         + payload.resendAfterSeconds() * 1000L;
                 this.statusMessage = Component.translatable(
                         "screen.youzaiworldcore.password_reset.status_code_sent").getString();
-                if (this.codeField != null) focus(this.codeField);
+                if (this.codeField != null)
+                    focus(this.codeField);
             }
             case ERROR -> {
                 this.processing = false;
@@ -104,7 +104,8 @@ public class PasswordResetScreen extends Screen implements YzuiMenuScreen {
         String code = this.codeField == null ? "" : this.codeField.getValue();
         String password = this.passwordField == null ? "" : this.passwordField.getValue();
         String confirmation = this.confirmPasswordField == null
-                ? "" : this.confirmPasswordField.getValue();
+                ? ""
+                : this.confirmPasswordField.getValue();
 
         int centerX = this.width / 2;
         int containerTop = (this.height - CONTAINER_HEIGHT) / 2;
@@ -170,7 +171,8 @@ public class PasswordResetScreen extends Screen implements YzuiMenuScreen {
 
         arrangeForm();
         focus(this.codeSent ? this.codeField : this.emailField);
-        if (this.currentDialog != null) this.currentDialog.init(this.width, this.height);
+        if (this.currentDialog != null)
+            this.currentDialog.init(this.width, this.height);
         updateButtonState();
     }
 
@@ -193,10 +195,12 @@ public class PasswordResetScreen extends Screen implements YzuiMenuScreen {
         YzuiMenuPanel.header(g, font, title,
                 Component.translatable("screen.youzaiworldcore.password_reset.subtitle", playerName), x, y, cardWidth);
         updateButtonState();
-        if (codeSent) YzuiTheme.label(g, font, Component.translatable("screen.youzaiworldcore.password_reset.session_remaining",
-                formatDuration(remainingSessionSeconds())), x + 24, y + 65, cardWidth - 48,
-                remainingSessionSeconds() <= 60 ? YzuiTheme.error() : YzuiTheme.textMuted(), false);
-        YzuiTheme.wrapped(g, font, Component.literal(statusMessage), x + 24, y + 227, cardWidth - 48, 2, YzuiTheme.success());
+        if (codeSent)
+            YzuiTheme.label(g, font, Component.translatable("screen.youzaiworldcore.password_reset.session_remaining",
+                    formatDuration(remainingSessionSeconds())), x + 24, y + 65, cardWidth - 48,
+                    remainingSessionSeconds() <= 60 ? YzuiTheme.error() : YzuiTheme.textMuted(), false);
+        YzuiTheme.wrapped(g, font, Component.literal(statusMessage), x + 24, y + 227, cardWidth - 48, 2,
+                YzuiTheme.success());
         YzuiTheme.wrapped(g, font, Component.translatable("screen.youzaiworldcore.password_reset.hint_line"),
                 x + 24, y + 304, cardWidth - 48, 2, YzuiTheme.textMuted());
         for (AbstractWidget widget : allWidgets) {
@@ -209,12 +213,14 @@ public class PasswordResetScreen extends Screen implements YzuiMenuScreen {
         if (currentDialog != null && currentDialog.isVisible()) {
             currentDialog.render(g, width, height);
             currentDialog.renderButtons(g, mouseX, mouseY, partialTick);
-        } else if (currentDialog != null) currentDialog = null;
+        } else if (currentDialog != null)
+            currentDialog = null;
     }
 
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean isActuallyClick) {
-        if (currentDialog == null || !currentDialog.isVisible()) WidgetFocus.mouseFocus(event.x(), event.y(), allWidgets);
+        if (currentDialog == null || !currentDialog.isVisible())
+            WidgetFocus.mouseFocus(event.x(), event.y(), allWidgets);
         if (this.currentDialog != null && this.currentDialog.isVisible()) {
             return this.currentDialog.mouseClicked(event.x(), event.y());
         }
@@ -254,37 +260,52 @@ public class PasswordResetScreen extends Screen implements YzuiMenuScreen {
 
     @Override
     public boolean keyPressed(KeyEvent keyEvent) {
-        if (currentDialog != null && currentDialog.isVisible()) return currentDialog.keyPressed(keyEvent);
-        if (WidgetFocus.keyPressed(keyEvent, List.of(emailField, codeField, sendCodeButton, passwordField, confirmPasswordField, resetButton, backButton))) return true;
-        if (this.currentDialog != null && this.currentDialog.isVisible()) return true;
+        if (currentDialog != null && currentDialog.isVisible())
+            return currentDialog.keyPressed(keyEvent);
+        if (WidgetFocus.keyPressed(keyEvent, List.of(emailField, codeField, sendCodeButton, passwordField,
+                confirmPasswordField, resetButton, backButton)))
+            return true;
+        if (this.currentDialog != null && this.currentDialog.isVisible())
+            return true;
         if (keyEvent.key() == InputConstants.KEY_ESCAPE) {
             onBackClick();
             return true;
         }
         if (keyEvent.key() == InputConstants.KEY_RETURN || keyEvent.key() == InputConstants.KEY_NUMPADENTER) {
-            if (this.codeSent) onResetClick();
-            else onSendCodeClick();
+            if (this.codeSent)
+                onResetClick();
+            else
+                onSendCodeClick();
             return true;
         }
-        if (this.emailField.isFocused() && this.emailField.keyPressed(keyEvent)) return true;
-        if (this.codeField.isFocused() && this.codeField.keyPressed(keyEvent)) return true;
-        if (this.passwordField.isFocused() && this.passwordField.keyPressed(keyEvent)) return true;
+        if (this.emailField.isFocused() && this.emailField.keyPressed(keyEvent))
+            return true;
+        if (this.codeField.isFocused() && this.codeField.keyPressed(keyEvent))
+            return true;
+        if (this.passwordField.isFocused() && this.passwordField.keyPressed(keyEvent))
+            return true;
         if (this.confirmPasswordField.isFocused()
-                && this.confirmPasswordField.keyPressed(keyEvent)) return true;
+                && this.confirmPasswordField.keyPressed(keyEvent))
+            return true;
         return false;
     }
 
     @Override
     public boolean charTyped(CharacterEvent event) {
-        if (currentDialog != null && currentDialog.isVisible()) return true;
-        if (this.emailField.isFocused() && this.emailField.charTyped(event)) return true;
-        if (this.codeField.isFocused() && this.codeField.charTyped(event)) return true;
-        if (this.passwordField.isFocused() && this.passwordField.charTyped(event)) return true;
+        if (currentDialog != null && currentDialog.isVisible())
+            return true;
+        if (this.emailField.isFocused() && this.emailField.charTyped(event))
+            return true;
+        if (this.codeField.isFocused() && this.codeField.charTyped(event))
+            return true;
+        if (this.passwordField.isFocused() && this.passwordField.charTyped(event))
+            return true;
         return this.confirmPasswordField.isFocused() && this.confirmPasswordField.charTyped(event);
     }
 
     @Override
-    public void onClose() { }
+    public void onClose() {
+    }
 
     @Override
     public boolean shouldCloseOnEsc() {
@@ -304,7 +325,8 @@ public class PasswordResetScreen extends Screen implements YzuiMenuScreen {
     }
 
     private void onSendCodeClick() {
-        if (this.processing || System.currentTimeMillis() < this.resendAvailableAtMillis) return;
+        if (this.processing || System.currentTimeMillis() < this.resendAvailableAtMillis)
+            return;
         String email = this.emailField.getValue().trim();
         if (email.length() > 254 || !EMAIL_PATTERN.matcher(email).matches()) {
             showError(Component.translatable(
@@ -317,7 +339,8 @@ public class PasswordResetScreen extends Screen implements YzuiMenuScreen {
     }
 
     private void onResetClick() {
-        if (this.processing) return;
+        if (this.processing)
+            return;
         if (!this.codeSent || this.sessionId.isBlank()) {
             showError(Component.translatable(
                     "screen.youzaiworldcore.password_reset.error_send_first").getString());
@@ -352,7 +375,8 @@ public class PasswordResetScreen extends Screen implements YzuiMenuScreen {
     }
 
     private void onBackClick() {
-        if (this.processing) return;
+        if (this.processing)
+            return;
         Minecraft.getInstance().setScreenAndShow(new LoginScreen(this.playerName));
     }
 
@@ -370,7 +394,7 @@ public class PasswordResetScreen extends Screen implements YzuiMenuScreen {
         this.processing = false;
         this.currentDialog = new ConfirmationDialog(
                 Component.translatable("screen.youzaiworldcore.password_reset.error_title").getString(),
-                new String[]{message},
+                new String[] { message },
                 Component.translatable("screen.youzaiworldcore.login.dialog_ok").getString(),
                 () -> focus(this.codeSent ? this.codeField : this.emailField));
         this.currentDialog.init(this.width, this.height);
@@ -378,13 +402,14 @@ public class PasswordResetScreen extends Screen implements YzuiMenuScreen {
     }
 
     private void showCompleted() {
-        if (this.completionHandled) return;
+        if (this.completionHandled)
+            return;
         this.completionHandled = true;
         this.processing = false;
         this.currentDialog = new ConfirmationDialog(
                 Component.translatable("screen.youzaiworldcore.password_reset.success_title").getString(),
-                new String[]{Component.translatable(
-                        "screen.youzaiworldcore.password_reset.success_message").getString()},
+                new String[] { Component.translatable(
+                        "screen.youzaiworldcore.password_reset.success_message").getString() },
                 Component.translatable("screen.youzaiworldcore.login.dialog_ok").getString(),
                 () -> Minecraft.getInstance().setScreenAndShow(new LoginScreen(this.playerName)));
         this.currentDialog.init(this.width, this.height);
@@ -392,15 +417,16 @@ public class PasswordResetScreen extends Screen implements YzuiMenuScreen {
     }
 
     private void showExpired(String message) {
-        if (this.expiryHandled) return;
+        if (this.expiryHandled)
+            return;
         this.expiryHandled = true;
         this.processing = false;
         this.currentDialog = new ConfirmationDialog(
                 Component.translatable("screen.youzaiworldcore.password_reset.error_title").getString(),
-                new String[]{message == null || message.isBlank()
+                new String[] { message == null || message.isBlank()
                         ? Component.translatable(
                                 "screen.youzaiworldcore.password_reset.session_expired").getString()
-                        : message},
+                        : message },
                 Component.translatable("screen.youzaiworldcore.login.dialog_ok").getString(),
                 () -> Minecraft.getInstance().setScreenAndShow(new LoginScreen(this.playerName)));
         this.currentDialog.init(this.width, this.height);
@@ -413,7 +439,8 @@ public class PasswordResetScreen extends Screen implements YzuiMenuScreen {
     }
 
     private void updateButtonState() {
-        if (this.sendCodeButton == null || this.resetButton == null || this.backButton == null) return;
+        if (this.sendCodeButton == null || this.resetButton == null || this.backButton == null)
+            return;
         long now = System.currentTimeMillis();
         int resendSeconds = (int) Math.max(0L,
                 (this.resendAvailableAtMillis - now + 999L) / 1000L);
@@ -442,17 +469,15 @@ public class PasswordResetScreen extends Screen implements YzuiMenuScreen {
     }
 
     private void focus(EditBox target) {
-        if (this.emailField != null) this.emailField.setFocused(target == this.emailField);
-        if (this.codeField != null) this.codeField.setFocused(target == this.codeField);
-        if (this.passwordField != null) this.passwordField.setFocused(target == this.passwordField);
+        if (this.emailField != null)
+            this.emailField.setFocused(target == this.emailField);
+        if (this.codeField != null)
+            this.codeField.setFocused(target == this.codeField);
+        if (this.passwordField != null)
+            this.passwordField.setFocused(target == this.passwordField);
         if (this.confirmPasswordField != null) {
             this.confirmPasswordField.setFocused(target == this.confirmPasswordField);
         }
-    }
-
-    private void drawLabel(GuiGraphicsExtractor graphics, Font font, String text, int x, int y) {
-        graphics.text(font, text, x, y + (FIELD_HEIGHT - font.lineHeight) / 2,
-                YzuiTheme.text(), false);
     }
 
     private boolean isMouseOverButton(TransparentButton button, double mouseX, double mouseY) {
@@ -476,7 +501,8 @@ public class PasswordResetScreen extends Screen implements YzuiMenuScreen {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
-        if (currentDialog != null && currentDialog.isVisible()) return currentDialog.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
+        if (currentDialog != null && currentDialog.isVisible())
+            return currentDialog.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
         return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
     }
 }

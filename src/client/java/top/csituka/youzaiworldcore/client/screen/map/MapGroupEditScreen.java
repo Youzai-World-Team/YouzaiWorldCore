@@ -22,45 +22,85 @@ final class MapGroupEditScreen extends MapScreen {
 
     MapGroupEditScreen(Screen parent, MapWaypointGroup group, Consumer<MapWaypointGroup> changed) {
         super(parent, group == null ? "new_group" : "edit_group");
-        if (group != null && !group.editable()) throw new IllegalArgumentException("内置分组不可编辑");
-        original = group; this.changed = changed;
-        name = group == null ? "" : group.name(); icon = group == null ? MapWaypointIcon.STARRED : group.icon();
+        if (group != null && !group.editable())
+            throw new IllegalArgumentException("内置分组不可编辑");
+        original = group;
+        this.changed = changed;
+        name = group == null ? "" : group.name();
+        icon = group == null ? MapWaypointIcon.STARRED : group.icon();
     }
-    @Override protected void init() {
+
+    @Override
+    protected void init() {
         super.init();
         int x = panelX + 12, w = panelWidth - 24, footer = panelY + panelHeight - 34;
         if (deleting) {
             button(x, footer, (w - 6) / 2, MapTexts.text("confirm_delete"), () -> {
-                if (!sameWorld() || !MapPersonalData.deleteGroup(original.id())) { error = MapTexts.text("invalid_group"); return; }
-                changed.accept(MapWaypointGroup.UNGROUPED); onClose();
+                if (!sameWorld() || !MapPersonalData.deleteGroup(original.id())) {
+                    error = MapTexts.text("invalid_group");
+                    return;
+                }
+                changed.accept(MapWaypointGroup.UNGROUPED);
+                onClose();
             }).setStyle(YzuiTheme.ButtonStyle.FILLED);
-            button(x + (w + 6) / 2, footer, (w - 6) / 2, MapTexts.text("cancel"), () -> { deleting = false; init(); });
+            button(x + (w + 6) / 2, footer, (w - 6) / 2, MapTexts.text("cancel"), () -> {
+                deleting = false;
+                init();
+            });
             return;
         }
         var input = field(x, panelY + 60, w, "group_name", name, 32, value -> name = value);
-        setFocused(input); iconY = panelY + 112;
-        int iconHeight = MapGroupButton.iconGrid(x, iconY, w, () -> icon, value -> icon = value, this::addRenderableWidget);
-        if (original != null) button(x, iconY + iconHeight + 6, w, MapTexts.text("delete_group"), () -> { deleting = true; error = net.minecraft.network.chat.Component.empty(); init(); });
+        setFocused(input);
+        iconY = panelY + 112;
+        int iconHeight = MapGroupButton.iconGrid(x, iconY, w, () -> icon, value -> icon = value,
+                this::addRenderableWidget);
+        if (original != null)
+            button(x, iconY + iconHeight + 6, w, MapTexts.text("delete_group"), () -> {
+                deleting = true;
+                error = net.minecraft.network.chat.Component.empty();
+                init();
+            });
         button(x, footer, (w - 6) / 2, MapTexts.text("save"), this::save).setStyle(YzuiTheme.ButtonStyle.FILLED);
         button(x + (w + 6) / 2, footer, (w - 6) / 2, MapTexts.text("cancel"), this::onClose);
     }
-    private boolean sameWorld() { return world.equals(MapPersonalData.worldId()); }
-    private void save() {
-        if (!sameWorld()) { error = MapTexts.text("invalid_group"); return; }
-        MapWaypointGroup result;
-        if (original == null) result = MapPersonalData.createGroup(name, icon);
-        else result = MapPersonalData.editGroup(original.id(), name, icon) ? MapPersonalData.resolveGroup(original.id()) : null;
-        if (result == null) { error = MapTexts.text("invalid_group"); return; }
-        changed.accept(result); onClose();
+
+    private boolean sameWorld() {
+        return world.equals(MapPersonalData.worldId());
     }
-    @Override protected void content(GuiGraphicsExtractor g, int mx, int my, float delta) {
+
+    private void save() {
+        if (!sameWorld()) {
+            error = MapTexts.text("invalid_group");
+            return;
+        }
+        MapWaypointGroup result;
+        if (original == null)
+            result = MapPersonalData.createGroup(name, icon);
+        else
+            result = MapPersonalData.editGroup(original.id(), name, icon) ? MapPersonalData.resolveGroup(original.id())
+                    : null;
+        if (result == null) {
+            error = MapTexts.text("invalid_group");
+            return;
+        }
+        changed.accept(result);
+        onClose();
+    }
+
+    @SuppressWarnings("null")
+    @Override
+    protected void content(GuiGraphicsExtractor g, int mx, int my, float delta) {
         int x = panelX + 12, w = panelWidth - 24;
         if (deleting) {
             int y = panelY + 60;
             for (var text : font.split(MapTexts.text("delete_group_hint"), w)) {
                 var plain = new StringBuilder();
-                text.accept((index, style, codepoint) -> { plain.appendCodePoint(codepoint); return true; });
-                label(g, net.minecraft.network.chat.Component.literal(plain.toString()), x, y, w); y += 12;
+                text.accept((index, style, codepoint) -> {
+                    plain.appendCodePoint(codepoint);
+                    return true;
+                });
+                label(g, net.minecraft.network.chat.Component.literal(plain.toString()), x, y, w);
+                y += 12;
             }
             return;
         }

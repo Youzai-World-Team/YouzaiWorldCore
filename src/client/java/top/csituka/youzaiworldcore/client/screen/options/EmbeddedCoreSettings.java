@@ -2,6 +2,10 @@ package top.csituka.youzaiworldcore.client.screen.options;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import java.util.List;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.components.events.AbstractContainerEventHandler;
@@ -25,45 +29,76 @@ final class EmbeddedCoreSettings extends AbstractContainerEventHandler implement
         bounds = new ScreenRectangle(x, y, width, height);
     }
 
-    @Override public List<? extends GuiEventListener> children() { return List.of(content); }
-    @Override public ScreenRectangle getRectangle() { return bounds; }
-    @Override public boolean isMouseOver(double x, double y) {
+    @SuppressWarnings("null")
+    @Override
+    public @NonNull List<? extends GuiEventListener> children() {
+        return List.of(content);
+    }
+
+    @SuppressWarnings("null")
+    @Override
+    public @Nullable ScreenRectangle getRectangle() {
+        return bounds;
+    }
+
+    @Override
+    public boolean isMouseOver(double x, double y) {
         return x >= bounds.left() && x < bounds.right() && y >= bounds.top() && y < bounds.bottom();
     }
 
     @Override
-    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
-        if (!isMouseOver(event.x(), event.y())) return false;
-        if (!content.mouseClicked(event, doubleClick)) return false;
+    public boolean mouseClicked(@SuppressWarnings("null") MouseButtonEvent event, boolean doubleClick) {
+        if (!isMouseOver(event.x(), event.y()))
+            return false;
+        if (!content.mouseClicked(event, doubleClick))
+            return false;
         setFocused(content);
         setDragging(true);
         return true;
     }
 
-    @Override public boolean mouseReleased(MouseButtonEvent event) {
+    @Override
+    public boolean mouseReleased(@SuppressWarnings("null") MouseButtonEvent event) {
         setDragging(false);
         return content.mouseReleased(event);
     }
-    @Override public boolean mouseDragged(MouseButtonEvent event, double x, double y) {
+
+    @Override
+    public boolean mouseDragged(@SuppressWarnings("null") MouseButtonEvent event, double x, double y) {
         return content.mouseDragged(event, x, y);
     }
-    @Override public boolean mouseScrolled(double x, double y, double dx, double dy) {
+
+    @Override
+    public boolean mouseScrolled(double x, double y, double dx, double dy) {
         return content.mouseScrolled(x, y, dx, dy);
     }
-    @Override public boolean keyPressed(KeyEvent event) {
+
+    @Override
+    public boolean keyPressed(@SuppressWarnings("null") KeyEvent event) {
         // Tab 由外层 Screen 沿整个组件树导航，避免内外两层各移动一次焦点。
         return event.key() != InputConstants.KEY_TAB && content.keyPressed(event);
     }
-    @Override public boolean charTyped(CharacterEvent event) { return content.charTyped(event); }
 
-    @Override public void extractRenderState(GuiGraphicsExtractor g, int x, int y, float tick) {
+    @Override
+    public boolean charTyped(@SuppressWarnings("null") CharacterEvent event) {
+        return content.charTyped(event);
+    }
+
+    @Override
+    public void extractRenderState(@SuppressWarnings("null") GuiGraphicsExtractor g, int x, int y, float tick) {
         content.extractRenderState(g, x, y, tick);
     }
-    @Override public NarrationPriority narrationPriority() {
+
+    @SuppressWarnings("null")
+    @Override
+    public NarrationPriority narrationPriority() {
         return getFocused() != null ? NarrationPriority.FOCUSED : NarrationPriority.NONE;
     }
-    @Override public void updateNarration(NarrationElementOutput output) {
+
+    @Override
+    public void updateNarration(@SuppressWarnings("null") NarrationElementOutput output) {
         output.add(NarratedElementType.TITLE, content.getTitle());
-        if (content.getFocused() instanceof NarratableEntry entry) entry.updateNarration(output.nest());
+        if (content.getFocused() instanceof NarratableEntry entry)
+            entry.updateNarration(output.nest());
     }
 }

@@ -9,7 +9,6 @@ import top.csituka.youzaiworldcore.YouzaiworldCore;
 import top.csituka.youzaiworldcore.account.data.AccountDataStorage;
 import top.csituka.youzaiworldcore.account.data.PlayerAccount;
 import top.csituka.youzaiworldcore.luckperms.LuckPermsHelper;
-import top.csituka.youzaiworldcore.network.MailUpdatePayload;
 import top.csituka.youzaiworldcore.network.MailUnreadCountPayload;
 import top.csituka.youzaiworldcore.skill.AdventureLevelManager;
 import top.csituka.youzaiworldcore.skill.PlayerLevelData;
@@ -383,8 +382,7 @@ public class MailManager {
                 completePull(completion, new PullResult(false, "拉取邮件时发生异常", 0));
                 return;
             }
-            if (data == null || data.detail() == null || !data.detail().success()
-                    || data.detail().mail() == null) {
+            {
                 String message = data == null || data.detail() == null || data.detail().message().isBlank()
                         ? "Api 未返回有效邮件"
                         : data.detail().message();
@@ -392,24 +390,6 @@ public class MailManager {
                 completePull(completion, new PullResult(false, message, 0));
                 return;
             }
-
-            int pushed = 0;
-            for (Map.Entry<UUID, MailRef> entry : data.refs().entrySet()) {
-                ServerPlayer player = server.getPlayerList().getPlayer(entry.getKey());
-                if (player == null || player.hasDisconnected()) {
-                    continue;
-                }
-                ServerPlayNetworking.send(player,
-                        MailUpdatePayload.createUpdate(entry.getValue(), data.detail().mail()));
-                Integer unread = data.unreadCounts().get(entry.getKey());
-                if (unread != null) {
-                    sendUnread(player, unread);
-                }
-                pushed++;
-            }
-
-            DebugLogger.info(MODULE, "后台邮件拉取完成: mailId=%s, pushed=%d", mailId, pushed);
-            completePull(completion, new PullResult(true, "邮件数据已拉取", pushed));
         }));
     }
 

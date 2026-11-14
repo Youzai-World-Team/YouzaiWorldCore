@@ -12,24 +12,41 @@ public final class MapTextScreen extends MapScreen {
     private final int limit;
     private final Consumer<String> accepted;
     private final java.util.function.Predicate<String> valid;
+
     public MapTextScreen(Screen parent, String title, String initial, int limit, Consumer<String> accepted) {
         this(parent, title, initial, limit, value -> true, accepted);
     }
+
     /** 带值域校验的输入；不合法的值留在本页供玩家修改。 */
-    public MapTextScreen(Screen parent, String title, String initial, int limit, java.util.function.Predicate<String> valid, Consumer<String> accepted) {
-        super(parent, title); value = initial; this.limit = limit; this.accepted = accepted; this.valid = valid;
+    public MapTextScreen(Screen parent, String title, String initial, int limit,
+            java.util.function.Predicate<String> valid, Consumer<String> accepted) {
+        super(parent, title);
+        value = initial;
+        this.limit = limit;
+        this.accepted = accepted;
+        this.valid = valid;
     }
-    @Override protected void init() {
+
+    @SuppressWarnings("null")
+    @Override
+    protected void init() {
         super.init();
         var input = field(panelX + 18, panelY + 65, panelWidth - 36, "text", value, limit, text -> value = text);
         setInitialFocus(input);
         button(panelX + 18, panelY + panelHeight - 34, (panelWidth - 42) / 2, MapTexts.text("save"), () -> {
-            if (value.isBlank() || !valid.test(value.strip())) { error = MapTexts.text("invalid_text"); return; }
-            accepted.accept(value.strip()); onClose();
+            if (value.isBlank() || !valid.test(value.strip())) {
+                error = MapTexts.text("invalid_text");
+                return;
+            }
+            accepted.accept(value.strip());
+            onClose();
         }).setStyle(YzuiTheme.ButtonStyle.FILLED);
-        button(panelX + panelWidth / 2 + 3, panelY + panelHeight - 34, (panelWidth - 42) / 2, MapTexts.text("cancel"), this::onClose);
+        button(panelX + panelWidth / 2 + 3, panelY + panelHeight - 34, (panelWidth - 42) / 2, MapTexts.text("cancel"),
+                this::onClose);
     }
-    @Override protected void content(GuiGraphicsExtractor g, int x, int y, float delta) {
+
+    @Override
+    protected void content(GuiGraphicsExtractor g, int x, int y, float delta) {
         label(g, MapTexts.text("text"), panelX + 18, panelY + 48, panelWidth - 36);
     }
 }

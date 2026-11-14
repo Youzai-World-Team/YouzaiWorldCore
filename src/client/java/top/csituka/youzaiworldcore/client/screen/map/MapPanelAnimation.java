@@ -20,20 +20,25 @@ final class MapPanelAnimation {
 
     /** 同一页面重新布局或刷新时保留进度，窗口尺寸变化时丢弃旧尺寸的退出页。 */
     void layout(int width, int height) {
-        if (this.width != width || this.height != height) exiting.clear();
+        if (this.width != width || this.height != height)
+            exiting.clear();
         this.width = width;
         this.height = height;
     }
 
+    @SuppressWarnings("null")
     <T extends GuiEventListener & Renderable> void show(T panel) {
-        if (current != null && current.panel == panel) return;
-        if (current != null) hide(current.panel);
+        if (current != null && current.panel == panel)
+            return;
+        if (current != null)
+            hide(current.panel);
         current = new Entry(panel, panel);
         DebugLogger.debug("WorldMap", "覆盖页淡入：%s", panel.getClass().getSimpleName());
     }
 
     void hide(GuiEventListener panel) {
-        if (current == null || current.panel != panel) return;
+        if (current == null || current.panel != panel)
+            return;
         panel.setFocused(false);
         if (GuiAnimationController.isEnabled() && current.opacity > 0f) {
             current.closing = true;
@@ -48,8 +53,12 @@ final class MapPanelAnimation {
     /** 绘制前采样一次，命中判断沿用当前可见帧，避免淡出未画完就提前放行鼠标。 */
     void update() {
         long now = System.currentTimeMillis();
-        if (current != null) current.update(now);
-        exiting.removeIf(entry -> { entry.update(now); return entry.opacity <= 0f; });
+        if (current != null)
+            current.update(now);
+        exiting.removeIf(entry -> {
+            entry.update(now);
+            return entry.opacity <= 0f;
+        });
     }
 
     boolean isClosingOver(double x, double y) {
@@ -62,14 +71,19 @@ final class MapPanelAnimation {
     }
 
     void draw(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {
-        for (var entry : exiting) entry.draw(graphics, -100, -100, delta);
-        if (current != null) current.draw(graphics, mouseX, mouseY, delta);
+        for (var entry : exiting)
+            entry.draw(graphics, -100, -100, delta);
+        if (current != null)
+            current.draw(graphics, mouseX, mouseY, delta);
     }
 
     /** 离开地图时结束动效；地图作为子页面背景保留时仍能绘制当前面板。 */
     void finish() {
         exiting.clear();
-        if (current != null) { current.startedAt = 0L; current.opacity = 1f; }
+        if (current != null) {
+            current.startedAt = 0L;
+            current.opacity = 1f;
+        }
     }
 
     private static final class Entry {
@@ -80,7 +94,10 @@ final class MapPanelAnimation {
         float from;
         boolean closing;
 
-        Entry(GuiEventListener panel, Renderable renderer) { this.panel = panel; this.renderer = renderer; }
+        Entry(GuiEventListener panel, Renderable renderer) {
+            this.panel = panel;
+            this.renderer = renderer;
+        }
 
         void update(long now) {
             if (!GuiAnimationController.isEnabled()) {
@@ -94,9 +111,12 @@ final class MapPanelAnimation {
             opacity = closing ? from * (1f - YzuiMotion.accelerate(progress)) : YzuiMotion.decelerate(progress);
         }
 
+        @SuppressWarnings("null")
         void draw(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {
-            if (opacity <= 0f) return;
-            if (closing) panel.setFocused(false);
+            if (opacity <= 0f)
+                return;
+            if (closing)
+                panel.setFocused(false);
             // 只改变透明度，控件与文字、头像共用上下文，命中位置和布局保持一致。
             var previous = GuiAnimationController.pushContent(new YzuiMotion.Frame(opacity, 1f, 0f));
             try {

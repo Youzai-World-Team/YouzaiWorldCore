@@ -16,7 +16,8 @@ import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
 
 /** 设置页面共用外壳。统一设置按分区切换内容，窄屏使用紧凑侧栏保留所有分区入口。 */
 final class SettingsFrame {
-    private record NavigationEntry(SettingsList.Row target, SettingsList.Row row, TransparentButton button) { }
+    private record NavigationEntry(SettingsList.Row target, SettingsList.Row row, TransparentButton button) {
+    }
 
     final int bodyX, bodyY, bodyWidth, bodyHeight;
     final SettingsList content;
@@ -35,19 +36,20 @@ final class SettingsFrame {
     private List<SettingsList.Row> sections = List.of();
 
     SettingsFrame(Screen screen, List<SettingsList.Row> rows, List<AbstractWidget> footer,
-                  Consumer<AbstractWidget> addWidget, String query, double scroll, boolean searchable) {
+            Consumer<AbstractWidget> addWidget, String query, double scroll, boolean searchable) {
         this(screen, rows, footer, addWidget, query, scroll, searchable, null);
     }
 
     SettingsFrame(Screen screen, List<SettingsList.Row> rows, List<AbstractWidget> footer,
-                  Consumer<AbstractWidget> addWidget, String query, double scroll, boolean searchable,
-                  SettingsList.Row selectedSection) {
+            Consumer<AbstractWidget> addWidget, String query, double scroll, boolean searchable,
+            SettingsList.Row selectedSection) {
         this(screen, rows, footer, addWidget, query, scroll, searchable, selectedSection, new SettingsViewState());
     }
 
+    @SuppressWarnings("null")
     SettingsFrame(Screen screen, List<SettingsList.Row> rows, List<AbstractWidget> footer,
-                  Consumer<AbstractWidget> addWidget, String query, double scroll, boolean searchable,
-                  SettingsList.Row selectedSection, SettingsViewState viewState) {
+            Consumer<AbstractWidget> addWidget, String query, double scroll, boolean searchable,
+            SettingsList.Row selectedSection, SettingsViewState viewState) {
         this.screen = screen;
         this.addWidget = addWidget;
         this.footer = List.copyOf(footer);
@@ -55,15 +57,23 @@ final class SettingsFrame {
         width = Math.min(compactDialog ? 400 : 1000, screen.width - (compactDialog ? 32 : 24));
         var font = Minecraft.getInstance().font;
         // 标题最多三行，长说明和网址留在可滚动正文中，避免挤出底部操作。
-        int titleHeight = compactDialog ? Math.clamp(font.split(screen.getTitle(), Math.max(1, width - 48)).size(), 1, 3) * (font.lineHeight + 2) : 0;
+        int titleHeight = compactDialog
+                ? Math.clamp(font.split(screen.getTitle(), Math.max(1, width - 48)).size(), 1, 3)
+                        * (font.lineHeight + 2)
+                : 0;
         int titleBottom = compactDialog ? 24 + titleHeight + 12 : 72;
-        int messageHeight = compactDialog ? rows.stream().mapToInt(row -> row.heightFor(Math.max(1, width - 36))).sum() + 4 : 0;
-        height = compactDialog ? Math.min(screen.height - 32, Math.max(184, titleBottom + messageHeight + 68)) : screen.height - 20;
+        int messageHeight = compactDialog
+                ? rows.stream().mapToInt(row -> row.heightFor(Math.max(1, width - 36))).sum() + 4
+                : 0;
+        height = compactDialog ? Math.min(screen.height - 32, Math.max(184, titleBottom + messageHeight + 68))
+                : screen.height - 20;
         x = (screen.width - width) / 2;
         y = compactDialog ? (screen.height - height) / 2 : 10;
         boolean separateSections = screen instanceof YzuiOptionsScreen options && options.isUnified();
-        navigationWidth = searchable && (separateSections || width >= 620) && rows.stream().anyMatch(row -> row.navigation)
-                ? Math.min(126, Math.max(88, width / 4)) : 0;
+        navigationWidth = searchable && (separateSections || width >= 620)
+                && rows.stream().anyMatch(row -> row.navigation)
+                        ? Math.min(126, Math.max(88, width / 4))
+                        : 0;
         bodyX = x + 12 + (navigationWidth == 0 ? 0 : navigationWidth + 12);
         bodyY = y + titleBottom;
         bodyWidth = width - 24 - (navigationWidth == 0 ? 0 : navigationWidth + 12);
@@ -73,9 +83,11 @@ final class SettingsFrame {
         back.setStyle(YzuiTheme.ButtonStyle.TEXT);
         back.setTooltip(Tooltip.create(Component.translatable("gui.back")));
         back.active = screen.shouldCloseOnEsc();
-        if (!compactDialog) addChrome(back);
+        if (!compactDialog)
+            addChrome(back);
         Component searchLabel = separateSections
-                ? YzuiOptionsScreen.text("search.all") : YzuiOptionsScreen.text("search");
+                ? YzuiOptionsScreen.text("search.all")
+                : YzuiOptionsScreen.text("search");
         search = new EditBox(Minecraft.getInstance().font, bodyX + 2, y + 43,
                 Math.max(30, bodyWidth - 4), 20, searchLabel);
         search.setHint(searchLabel);
@@ -83,12 +95,14 @@ final class SettingsFrame {
         search.setValue(query);
         search.visible = searchable;
         search.active = searchable;
-        if (searchable) addChrome(search);
+        if (searchable)
+            addChrome(search);
 
         content = new SettingsList(bodyX, bodyY, bodyWidth, bodyHeight);
         content.useViewState(viewState);
         content.setRows(rows, query, separateSections, selectedSection);
-        if (scroll > 0) content.setScrollAmount(scroll);
+        if (scroll > 0)
+            content.setScrollAmount(scroll);
         addWidget.accept(content);
         search.setResponder(content::filter);
         rebuildNavigation(rows);
@@ -111,7 +125,8 @@ final class SettingsFrame {
     }
 
     private void rebuildNavigation(List<SettingsList.Row> rows) {
-        if (navigationWidth == 0) return;
+        if (navigationWidth == 0)
+            return;
         sections = rows.stream().filter(row -> row.navigation).toList();
         navigation = new SettingsList(x + 12, bodyY, navigationWidth, bodyHeight);
         fillNavigation();
@@ -128,6 +143,7 @@ final class SettingsFrame {
         navigation.setRows(navigationRows, "");
     }
 
+    @SuppressWarnings("null")
     private void addNavigation(SettingsList.Row row, List<SettingsList.Row> navigationRows) {
         if (row.navigationGroup != null) {
             navigationRows.add(SettingsList.Row.subheading(row.navigationGroup));
@@ -146,18 +162,22 @@ final class SettingsFrame {
     }
 
     private void updateNavigation() {
-        if (navigation == null) return;
+        if (navigation == null)
+            return;
         SettingsList.Row current = content.activeSection();
-        if (navigationInitialized && current == activeSection) return;
+        if (navigationInitialized && current == activeSection)
+            return;
         activeSection = current;
         navigationInitialized = true;
         for (NavigationEntry entry : navigationEntries) {
             boolean selected = entry.target == current;
             entry.button.setStyle(selected ? YzuiTheme.ButtonStyle.FILLED : YzuiTheme.ButtonStyle.TEXT);
-            if (selected) navigation.ensureVisible(entry.row);
+            if (selected)
+                navigation.ensureVisible(entry.row);
         }
     }
 
+    @SuppressWarnings("null")
     void render(GuiGraphicsExtractor g) {
         // 统一读取滚动后的布局，覆盖滚轮、拖动滚动条、键盘导航、搜索和页面恢复。
         updateNavigation();
@@ -166,7 +186,8 @@ final class SettingsFrame {
         if (compactDialog) {
             YzuiTheme.wrapped(g, font, screen.getTitle(), x + 24, y + 24, width - 48,
                     Math.max(1, (bodyY - y - 36) / (font.lineHeight + 2)), YzuiTheme.text());
-        } else YzuiTheme.label(g, font, screen.getTitle(), x + 48, y + 19, width - 64, YzuiTheme.text(), false);
+        } else
+            YzuiTheme.label(g, font, screen.getTitle(), x + 48, y + 19, width - 64, YzuiTheme.text(), false);
         if (navigationWidth > 0) {
             g.text(font, YzuiOptionsScreen.text("sections"), x + 20, y + 49, YzuiTheme.textMuted(), false);
             RoundedRect.fill(g, x + 12, bodyY, navigationWidth, bodyHeight, 10, YzuiTheme.surfaceLow());
@@ -180,13 +201,18 @@ final class SettingsFrame {
     void setChromeActive(boolean active) {
         for (AbstractWidget widget : chrome) {
             // 原版完成按钮的禁用状态由语言、游戏规则等各自维护。
-            if (!footer.contains(widget)) widget.active = active;
+            if (!footer.contains(widget))
+                widget.active = active;
         }
-        if (navigation != null) navigation.active = active;
+        if (navigation != null)
+            navigation.active = active;
     }
 
-    void updateBackState() { back.active = screen.shouldCloseOnEsc(); }
+    void updateBackState() {
+        back.active = screen.shouldCloseOnEsc();
+    }
 
+    @SuppressWarnings("null")
     void setBusy(Component message) {
         boolean active = message == null;
         setChromeActive(active);
@@ -198,7 +224,8 @@ final class SettingsFrame {
     }
 
     void restoreFocus(AbstractWidget widget) {
-        if (widget == null) return;
+        if (widget == null)
+            return;
         if (chrome.contains(widget)) {
             screen.setFocused(widget);
             return;

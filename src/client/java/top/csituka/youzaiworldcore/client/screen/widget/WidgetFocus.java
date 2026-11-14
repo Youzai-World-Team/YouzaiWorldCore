@@ -8,31 +8,42 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
 
 /** 为手动渲染的表单补齐 Tab / Shift+Tab 焦点遍历，不接触输入框中的文本。 */
 public final class WidgetFocus {
-    private WidgetFocus() { }
+    private WidgetFocus() {
+    }
 
+    @SuppressWarnings("null")
     public static boolean keyPressed(KeyEvent event, List<? extends AbstractWidget> widgets) {
         if (event.key() == InputConstants.KEY_TAB) {
+            @SuppressWarnings("null")
             List<? extends AbstractWidget> available = widgets.stream().filter(w -> w.active && w.visible).toList();
-            if (available.isEmpty()) return true;
+            if (available.isEmpty())
+                return true;
             int current = -1;
-            for (int i = 0; i < available.size(); i++) if (available.get(i).isFocused()) current = i;
+            for (int i = 0; i < available.size(); i++)
+                if (available.get(i).isFocused())
+                    current = i;
             int next = current < 0 ? (event.hasShiftDown() ? available.size() - 1 : 0)
                     : Math.floorMod(current + (event.hasShiftDown() ? -1 : 1), available.size());
-            for (AbstractWidget widget : widgets) widget.setFocused(widget == available.get(next));
+            for (AbstractWidget widget : widgets)
+                widget.setFocused(widget == available.get(next));
             return true;
         }
         for (AbstractWidget widget : widgets) {
             if (!(widget instanceof net.minecraft.client.gui.components.EditBox)
-                    && widget.active && widget.visible && widget.isFocused() && widget.keyPressed(event)) return true;
+                    && widget.active && widget.visible && widget.isFocused() && widget.keyPressed(event))
+                return true;
         }
         return false;
     }
 
+    @SuppressWarnings("null")
     public static void mouseFocus(double x, double y, List<? extends AbstractWidget> widgets) {
-        for (AbstractWidget widget : widgets) widget.setFocused(widget.active && widget.visible && widget.isMouseOver(x, y));
+        for (AbstractWidget widget : widgets)
+            widget.setFocused(widget.active && widget.visible && widget.isMouseOver(x, y));
     }
 
     /** 菜单卡片按实际位置用方向键移动；表单和下拉框仍自行处理方向键。 */
+    @SuppressWarnings("null")
     public static boolean moveInGrid(KeyEvent event, List<? extends AbstractWidget> widgets) {
         int dx = switch (event.key()) {
             case InputConstants.KEY_LEFT -> -1;
@@ -44,13 +55,19 @@ public final class WidgetFocus {
             case InputConstants.KEY_DOWN -> 1;
             default -> 0;
         };
-        if (dx == 0 && dy == 0) return false;
+        if (dx == 0 && dy == 0)
+            return false;
+        @SuppressWarnings("null")
         var available = widgets.stream().filter(widget -> widget.active && widget.visible).toList();
+        @SuppressWarnings("null")
         var current = available.stream().filter(AbstractWidget::isFocused).findFirst().orElse(null);
-        if (current instanceof net.minecraft.client.gui.components.EditBox) return false;
-        if (available.isEmpty()) return true;
+        if (current instanceof net.minecraft.client.gui.components.EditBox)
+            return false;
+        if (available.isEmpty())
+            return true;
         if (current == null) {
-            for (AbstractWidget widget : widgets) widget.setFocused(widget == available.getFirst());
+            for (AbstractWidget widget : widgets)
+                widget.setFocused(widget == available.getFirst());
             return true;
         }
         double centerX = current.getX() + current.getWidth() / 2.0;
@@ -59,10 +76,12 @@ public final class WidgetFocus {
         double best = Double.POSITIVE_INFINITY;
         boolean bestAligned = false;
         for (AbstractWidget candidate : available) {
+            @SuppressWarnings("null")
             double x = candidate.getX() + candidate.getWidth() / 2.0 - centerX;
             double y = candidate.getY() + candidate.getHeight() / 2.0 - centerY;
             double forward = dx == 0 ? y * dy : x * dx;
-            if (candidate == current || forward <= 0) continue;
+            if (candidate == current || forward <= 0)
+                continue;
             boolean aligned = dx == 0
                     ? candidate.getX() < current.getRight() && candidate.getRight() > current.getX()
                     : candidate.getY() < current.getBottom() && candidate.getBottom() > current.getY();
@@ -75,7 +94,8 @@ public final class WidgetFocus {
             }
         }
         if (next != null) {
-            for (AbstractWidget widget : widgets) widget.setFocused(widget == next);
+            for (AbstractWidget widget : widgets)
+                widget.setFocused(widget == next);
             DebugLogger.debug("YzuiMenu", "方向键移动焦点：%s", next.getMessage().getString());
         }
         return true;

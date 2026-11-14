@@ -32,7 +32,7 @@ public class ConfirmationDialog {
 
     /** 危险操作使用具体动作名称，取消按钮可明确表示继续编辑。 */
     public ConfirmationDialog(String title, String[] messages, String confirmText, String cancelText,
-                              Runnable onConfirm, Runnable onCancel) {
+            Runnable onConfirm, Runnable onCancel) {
         this.title = title;
         this.messages = messages;
         this.onConfirm = onConfirm;
@@ -52,6 +52,7 @@ public class ConfirmationDialog {
         singleButtonMode = true;
     }
 
+    @SuppressWarnings("null")
     public void init(int screenWidth, int screenHeight) {
         canvasWidth = screenWidth;
         canvasHeight = screenHeight;
@@ -72,14 +73,22 @@ public class ConfirmationDialog {
         int firstX = singleButtonMode ? dialogX + (dialogWidth - buttonWidth) / 2
                 : dialogX + dialogWidth - 24 - buttonWidth * 2 - 8;
         confirmButton = new TransparentButton(firstX, buttonY, buttonWidth, 28, Component.literal(confirmButtonText),
-                () -> { hide(); if (onConfirm != null) onConfirm.run(); });
+                () -> {
+                    hide();
+                    if (onConfirm != null)
+                        onConfirm.run();
+                });
         confirmButton.setStyle(YzuiTheme.ButtonStyle.FILLED);
         if (singleButtonMode) {
             cancelButton = null;
             confirmButton.setFocused(true);
         } else {
             cancelButton = new TransparentButton(firstX + buttonWidth + 8, buttonY, buttonWidth, 28,
-                    Component.literal(cancelButtonText), () -> { hide(); if (onCancel != null) onCancel.run(); });
+                    Component.literal(cancelButtonText), () -> {
+                        hide();
+                        if (onCancel != null)
+                            onCancel.run();
+                    });
             cancelButton.setFocused(true);
         }
     }
@@ -89,12 +98,22 @@ public class ConfirmationDialog {
         animation.show(canvasWidth, canvasHeight);
     }
 
-    public void hide() { animation.hide(); }
-    public boolean isVisible() { return animation.isVisible(); }
-    public boolean isFullyVisible() { return animation.acceptsInput(); }
+    public void hide() {
+        animation.hide();
+    }
 
+    public boolean isVisible() {
+        return animation.isVisible();
+    }
+
+    public boolean isFullyVisible() {
+        return animation.acceptsInput();
+    }
+
+    @SuppressWarnings("null")
     public void render(GuiGraphicsExtractor g, int screenWidth, int screenHeight) {
-        if (!animation.update(screenWidth, screenHeight)) return;
+        if (!animation.update(screenWidth, screenHeight))
+            return;
         animation.scrim(g);
         var previous = animation.begin(g);
         try {
@@ -123,28 +142,34 @@ public class ConfirmationDialog {
     }
 
     public void renderButtons(GuiGraphicsExtractor g, int mouseX, int mouseY, float tick) {
-        if (!isVisible()) return;
+        if (!isVisible())
+            return;
         int x = isFullyVisible() ? (int) Math.floor(animation.toLocalX(mouseX)) : -10000;
         int y = isFullyVisible() ? (int) Math.floor(animation.toLocalY(mouseY)) : -10000;
         var previous = animation.begin(g);
         try {
             confirmButton.render(g, x, y, tick);
-            if (cancelButton != null) cancelButton.render(g, x, y, tick);
+            if (cancelButton != null)
+                cancelButton.render(g, x, y, tick);
         } finally {
             animation.end(g, previous);
         }
     }
 
     public boolean mouseClicked(double mouseX, double mouseY) {
-        if (!isFullyVisible()) return isVisible();
+        if (!isFullyVisible())
+            return isVisible();
         double x = animation.toLocalX(mouseX), y = animation.toLocalY(mouseY);
-        if (confirmButton.isMouseOver(x, y)) confirmButton.onClick(null, true);
-        else if (cancelButton != null && cancelButton.isMouseOver(x, y)) cancelButton.onClick(null, true);
+        if (confirmButton.isMouseOver(x, y))
+            confirmButton.onClick(null, true);
+        else if (cancelButton != null && cancelButton.isMouseOver(x, y))
+            cancelButton.onClick(null, true);
         return true;
     }
 
     public boolean mouseScrolled(double x, double y, double horizontal, double vertical) {
-        if (!isFullyVisible()) return isVisible();
+        if (!isFullyVisible())
+            return isVisible();
         x = animation.toLocalX(x);
         y = animation.toLocalY(y);
         if (x >= dialogX && x < dialogX + dialogWidth && y >= dialogY && y < dialogY + dialogHeight) {
@@ -154,11 +179,15 @@ public class ConfirmationDialog {
     }
 
     public boolean keyPressed(KeyEvent event) {
-        if (!isFullyVisible()) return isVisible();
-        if (event.key() == InputConstants.KEY_ESCAPE && cancelButton != null) cancelButton.onClick(null, false);
+        if (!isFullyVisible())
+            return isVisible();
+        if (event.key() == InputConstants.KEY_ESCAPE && cancelButton != null)
+            cancelButton.onClick(null, false);
         else if (event.key() == InputConstants.KEY_DOWN || event.key() == InputConstants.KEY_UP) {
             scrollLine = Math.clamp(scrollLine + (event.key() == InputConstants.KEY_DOWN ? 1 : -1), 0, maxScrollLine());
-        } else WidgetFocus.keyPressed(event, singleButtonMode ? List.of(confirmButton) : List.of(confirmButton, cancelButton));
+        } else
+            WidgetFocus.keyPressed(event,
+                    singleButtonMode ? List.of(confirmButton) : List.of(confirmButton, cancelButton));
         return true;
     }
 

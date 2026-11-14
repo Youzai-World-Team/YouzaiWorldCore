@@ -26,17 +26,36 @@ public class CheckboxButton extends AbstractWidget {
         this.onToggle = onToggle;
     }
 
-    public boolean isChecked() { return checked; }
-    /** 仅同步外部配置的显示状态，不触发点击回调。 */
-    public void setChecked(boolean checked) { this.checked = checked; }
-    public void setExternalAlpha(float alpha) { externalAlpha = Math.clamp(alpha, 0f, 1f); }
-    public CheckboxButton setWrapMessage(boolean value) { wrapMessage = value; return this; }
-    /** 设置行单独绘制名称时隐藏控件内文字，保留原消息供旁白使用。 */
-    public CheckboxButton setLabelVisible(boolean value) { labelVisible = value; return this; }
+    public boolean isChecked() {
+        return checked;
+    }
 
+    /** 仅同步外部配置的显示状态，不触发点击回调。 */
+    public void setChecked(boolean checked) {
+        this.checked = checked;
+    }
+
+    public void setExternalAlpha(float alpha) {
+        externalAlpha = Math.clamp(alpha, 0f, 1f);
+    }
+
+    public CheckboxButton setWrapMessage(boolean value) {
+        wrapMessage = value;
+        return this;
+    }
+
+    /** 设置行单独绘制名称时隐藏控件内文字，保留原消息供旁白使用。 */
+    public CheckboxButton setLabelVisible(boolean value) {
+        labelVisible = value;
+        return this;
+    }
+
+    @SuppressWarnings("null")
     @Override
-    protected void extractWidgetRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
-        if (!visible) return;
+    protected void extractWidgetRenderState(@SuppressWarnings("null") GuiGraphicsExtractor g, int mouseX, int mouseY,
+            float partialTick) {
+        if (!visible)
+            return;
         int x = getX(), y = getY(), w = getWidth(), h = getHeight();
         boolean hovered = mouseX >= x && mouseX < x + w && mouseY >= y && mouseY < y + h;
         float opacity = externalAlpha * getAlpha() * (active ? 1f : 0.6f);
@@ -50,7 +69,8 @@ public class CheckboxButton extends AbstractWidget {
         RoundedRect.fill(g, thumbX, trackY + 2, thumb, thumb, thumb / 2,
                 YzuiTheme.alpha(checked ? YzuiTheme.onPrimary() : YzuiTheme.textMuted(), opacity));
 
-        if (!labelVisible) return;
+        if (!labelVisible)
+            return;
         var font = Minecraft.getInstance().font;
         int available = Math.max(1, trackX - x - 14);
         int textColor = YzuiTheme.alpha(YzuiTheme.text(), opacity);
@@ -59,7 +79,8 @@ public class CheckboxButton extends AbstractWidget {
             int lineHeight = font.lineHeight + 2;
             int textY = y + Math.max(0, (h - lines.size() * lineHeight + 2) / 2);
             for (var line : lines) {
-                if (textY + font.lineHeight > y + h) break;
+                if (textY + font.lineHeight > y + h)
+                    break;
                 g.text(font, line, x + 6, textY, textColor, false);
                 textY += lineHeight;
             }
@@ -74,24 +95,31 @@ public class CheckboxButton extends AbstractWidget {
     }
 
     @Override
-    public void onClick(MouseButtonEvent event, boolean isActuallyClick) {
-        if (!active || !visible) return;
+    public void onClick(@SuppressWarnings("null") MouseButtonEvent event, boolean isActuallyClick) {
+        if (!active || !visible)
+            return;
         checked = !checked;
-        if (onToggle != null) onToggle.run();
+        if (onToggle != null)
+            onToggle.run();
     }
 
     @Override
-    public boolean keyPressed(net.minecraft.client.input.KeyEvent event) {
-        if (!active || !visible || !isFocused()) return false;
-        if (event.key() != InputConstants.KEY_RETURN && event.key() != InputConstants.KEY_NUMPADENTER && event.key() != InputConstants.KEY_SPACE) return false;
+    public boolean keyPressed(@SuppressWarnings("null") net.minecraft.client.input.KeyEvent event) {
+        if (!active || !visible || !isFocused())
+            return false;
+        if (event.key() != InputConstants.KEY_RETURN && event.key() != InputConstants.KEY_NUMPADENTER
+                && event.key() != InputConstants.KEY_SPACE)
+            return false;
         playDownSound(Minecraft.getInstance().getSoundManager());
         checked = !checked;
-        if (onToggle != null) onToggle.run();
+        if (onToggle != null)
+            onToggle.run();
         return true;
     }
 
+    @SuppressWarnings("null")
     @Override
-    protected void updateWidgetNarration(NarrationElementOutput output) {
+    protected void updateWidgetNarration(@SuppressWarnings("null") NarrationElementOutput output) {
         defaultButtonNarrationText(output);
     }
 }

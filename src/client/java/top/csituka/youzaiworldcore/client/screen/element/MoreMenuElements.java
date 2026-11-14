@@ -19,10 +19,23 @@ public final class MoreMenuElements implements MenuElementGroup {
     private static final MenuIcon[] ICONS = {
             MenuIcon.WEBSITE, MenuIcon.BOOK, MenuIcon.EVENTS, MenuIcon.SURVEY, MenuIcon.REPORT, MenuIcon.ADMIN
     };
-    @Override public String getTitleText() { return I18n.get("screen.youzaiworldcore.home.more"); }
-    @Override public String getSubtitleText() { return null; }
-    @Override public boolean isRoot() { return false; }
 
+    @Override
+    public String getTitleText() {
+        return I18n.get("screen.youzaiworldcore.home.more");
+    }
+
+    @Override
+    public String getSubtitleText() {
+        return null;
+    }
+
+    @Override
+    public boolean isRoot() {
+        return false;
+    }
+
+    @SuppressWarnings("null")
     @Override
     public List<AbstractWidget> createButtons(MenuScreen screen, int width, int height, float scale, float alpha) {
         var grid = new MenuLayout(width, height).navigation(ENTRIES.length);
@@ -32,11 +45,13 @@ public final class MoreMenuElements implements MenuElementGroup {
             var bounds = grid.tile(i);
             var button = new MenuNavigationButton(bounds.x(), bounds.y(), bounds.width(), bounds.height(),
                     ENTRIES[i], ICONS[i], () -> {
-                        if (index == 0) ConfirmLinkScreen.confirmLinkNow(screen, URI.create("https://mcyzw.top"));
-                        else screen.showDialog(new ConfirmationDialog(
-                                I18n.get("youzaiworldcore.message.gui.not_implemented_title"),
-                                new String[] { I18n.get("youzaiworldcore.message.gui.not_implemented_desc") },
-                                I18n.get("youzaiworldcore.message.gui.confirm_ok"), null));
+                        if (index == 0)
+                            ConfirmLinkScreen.confirmLinkNow(screen, URI.create("https://mcyzw.top"));
+                        else
+                            screen.showDialog(new ConfirmationDialog(
+                                    I18n.get("youzaiworldcore.message.gui.not_implemented_title"),
+                                    new String[] { I18n.get("youzaiworldcore.message.gui.not_implemented_desc") },
+                                    I18n.get("youzaiworldcore.message.gui.confirm_ok"), null));
                     });
             button.setExternalAlpha(alpha);
             buttons.add(button);

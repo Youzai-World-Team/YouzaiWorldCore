@@ -54,7 +54,8 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
  * 客户端配置仍使用原版 options.txt 和 YZUI 已有的 yzwc/client/global_settings.json。
  */
 @SuppressWarnings("null")
-public final class YzuiOptionsScreen extends Screen implements HasDifficultyReaction, HasGamemasterPermissionReaction, YzuiPopupScreen {
+public final class YzuiOptionsScreen extends Screen
+        implements HasDifficultyReaction, HasGamemasterPermissionReaction, YzuiPopupScreen {
     private final Screen source;
     private final Screen origin;
     private final Screen back;
@@ -91,10 +92,14 @@ public final class YzuiOptionsScreen extends Screen implements HasDifficultyReac
         this(source, origin, inWorld, back, coreSection, null);
     }
 
-    private YzuiOptionsScreen(Screen source, Screen origin, boolean inWorld, Screen back, int coreSection, YzuiOptionsScreen settingsRoot) {
-        super(source == null ? text("mods") : source instanceof OptionsScreen ? text("title")
-                : source instanceof LanguageSelectScreen ? Component.translatable("options.language") : source instanceof WinScreen
-                ? Component.translatable("credits_and_attribution.button.credits") : source.getTitle());
+    private YzuiOptionsScreen(Screen source, Screen origin, boolean inWorld, Screen back, int coreSection,
+            YzuiOptionsScreen settingsRoot) {
+        super(source == null ? text("mods")
+                : source instanceof OptionsScreen ? text("title")
+                        : source instanceof LanguageSelectScreen ? Component.translatable("options.language")
+                                : source instanceof WinScreen
+                                        ? Component.translatable("credits_and_attribution.button.credits")
+                                        : source.getTitle());
         this.source = source;
         this.origin = origin;
         this.inWorld = inWorld;
@@ -102,14 +107,26 @@ public final class YzuiOptionsScreen extends Screen implements HasDifficultyReac
         this.coreSection = coreSection;
         this.settingsRoot = settingsRoot;
         this.unified = source instanceof OptionsScreen options ? new UnifiedSettingsPage(this, options) : null;
-        if (source != null) YzuiSettingsRouter.remember(source, this);
+        if (source != null)
+            YzuiSettingsRouter.remember(source, this);
         DebugLogger.info("YzuiSettings", "创建设置页面：%s", getTitle().getString());
     }
 
-    Screen origin() { return origin; }
-    boolean inWorld() { return inWorld; }
-    boolean isUnified() { return unified != null; }
-    boolean isLinkConfirmation() { return source != null && source.getClass() == ConfirmLinkScreen.class; }
+    Screen origin() {
+        return origin;
+    }
+
+    boolean inWorld() {
+        return inWorld;
+    }
+
+    boolean isUnified() {
+        return unified != null;
+    }
+
+    boolean isLinkConfirmation() {
+        return source != null && source.getClass() == ConfirmLinkScreen.class;
+    }
 
     /** 仅确认框与显卡警告属于弹窗，普通设置页使用场景背景。 */
     @Override
@@ -117,9 +134,17 @@ public final class YzuiOptionsScreen extends Screen implements HasDifficultyReac
         return source instanceof ConfirmScreen || source instanceof UnsupportedGraphicsWarningScreen;
     }
 
-    YzuiOptionsScreen rootSettings() { return isUnified() ? this : settingsRoot; }
-    void reveal(String anchor) { pendingAnchor = anchor; }
-    Screen legacyScreen() { return new OptionsScreen(origin, minecraft.options); }
+    YzuiOptionsScreen rootSettings() {
+        return isUnified() ? this : settingsRoot;
+    }
+
+    void reveal(String anchor) {
+        pendingAnchor = anchor;
+    }
+
+    Screen legacyScreen() {
+        return new OptionsScreen(origin, minecraft.options);
+    }
 
     private VideoSettingsScreen videoPage() {
         return source instanceof VideoSettingsScreen video ? video : unified == null ? null : unified.video();
@@ -130,15 +155,19 @@ public final class YzuiOptionsScreen extends Screen implements HasDifficultyReac
                 || source instanceof YouzaiWorldCoreSettingsScreen core && core.isConfigOperationActive();
     }
 
-    static Component text(String key, Object... args) { return Component.translatable("screen.youzaiworldcore.options." + key, args); }
+    static Component text(String key, Object... args) {
+        return Component.translatable("screen.youzaiworldcore.options." + key, args);
+    }
 
     @Override
     protected void init() {
         rebuilding = true;
         try {
-            if (unified != null) unified.flush();
+            if (unified != null)
+                unified.flush();
             String sectionAnchor = unified != null && frame != null
-                    ? unified.anchorKey(frame.content.selectedSection()) : null;
+                    ? unified.anchorKey(frame.content.selectedSection())
+                    : null;
             AbstractWidget focused = SettingsWidgets.focused(this);
             boolean searchFocused = frame != null && frame.search.isFocused();
             if (frame != null) {
@@ -153,7 +182,8 @@ public final class YzuiOptionsScreen extends Screen implements HasDifficultyReac
                 initCore(core);
                 return;
             }
-            if (source != null) source.init(width, height);
+            if (source != null)
+                source.init(width, height);
             List<SettingsList.Row> rows = new ArrayList<>();
             List<AbstractWidget> footer = new ArrayList<>();
             if (source == null) {
@@ -166,12 +196,17 @@ public final class YzuiOptionsScreen extends Screen implements HasDifficultyReac
                 buildCredits(rows);
             } else {
                 collectRows(rows, footer);
-                if (source instanceof KeyBindsScreen keys) buildKeys(keys, rows);
-                if (source instanceof LanguageSelectScreen) buildLanguages(rows);
-                if (source instanceof PackSelectionScreen) buildPacks(rows);
-                if (source instanceof TelemetryInfoScreen) buildTelemetry(rows);
+                if (source instanceof KeyBindsScreen keys)
+                    buildKeys(keys, rows);
+                if (source instanceof LanguageSelectScreen)
+                    buildLanguages(rows);
+                if (source instanceof PackSelectionScreen)
+                    buildPacks(rows);
+                if (source instanceof TelemetryInfoScreen)
+                    buildTelemetry(rows);
             }
-            if (footer.isEmpty()) footer.add(action(Component.translatable("gui.done"), this::onClose));
+            if (footer.isEmpty())
+                footer.add(action(Component.translatable("gui.done"), this::onClose));
             boolean searchable = !isPopup();
             SettingsList.Row selectedSection = unified == null ? null : unified.anchorRow(sectionAnchor);
             if (pendingAnchor != null && unified != null) {
@@ -184,15 +219,23 @@ public final class YzuiOptionsScreen extends Screen implements HasDifficultyReac
                 pendingAnchor = null;
             }
             if (source instanceof LanguageSelectScreen) {
-                for (AbstractWidget button : footer) if (SettingsWidgets.key(button.getMessage(), "gui.done")) button.setMessage(text("language.apply"));
+                for (AbstractWidget button : footer)
+                    if (SettingsWidgets.key(button.getMessage(), "gui.done"))
+                        button.setMessage(text("language.apply"));
             }
-            frame = new SettingsFrame(this, rows, footer, this::addRenderableWidget, query, scroll, searchable, selectedSection, viewState);
-            if (source != null) captured = SettingsWidgets.flatten(source);
-            if (videoPage() != null) videoPreset = minecraft.options.graphicsPreset().get();
+            frame = new SettingsFrame(this, rows, footer, this::addRenderableWidget, query, scroll, searchable,
+                    selectedSection, viewState);
+            if (source != null)
+                captured = SettingsWidgets.flatten(source);
+            if (videoPage() != null)
+                videoPreset = minecraft.options.graphicsPreset().get();
             refreshKeyLabels();
-            if (searchFocused && searchable) setInitialFocus(frame.search);
-            else if (isLinkConfirmation() && focused == null) setInitialFocus(SettingsWidgets.read(source, "noButton", Button.class));
-            else frame.restoreFocus(focused);
+            if (searchFocused && searchable)
+                setInitialFocus(frame.search);
+            else if (isLinkConfirmation() && focused == null)
+                setInitialFocus(SettingsWidgets.read(source, "noButton", Button.class));
+            else
+                frame.restoreFocus(focused);
         } finally {
             rebuilding = false;
         }
@@ -206,18 +249,23 @@ public final class YzuiOptionsScreen extends Screen implements HasDifficultyReac
         boolean special = source instanceof KeyBindsScreen || source instanceof LanguageSelectScreen
                 || source instanceof PackSelectionScreen || source instanceof TelemetryInfoScreen;
         List<AbstractWidget> widgets = special
-                ? source.children().stream().filter(AbstractWidget.class::isInstance).map(AbstractWidget.class::cast).toList()
+                ? source.children().stream().filter(AbstractWidget.class::isInstance).map(AbstractWidget.class::cast)
+                        .toList()
                 : SettingsWidgets.flatten(source);
         for (AbstractWidget widget : widgets) {
-            if (!widget.visible) continue;
+            if (!widget.visible)
+                continue;
             // 语言页只复用原版完成/返回回调，字体入口与提示不再混入语言列表。
             if (source instanceof LanguageSelectScreen) {
                 takeFooter(widget, footer);
                 continue;
             }
             if (widget instanceof AbstractSelectionList<?> || widget instanceof EditBox
-                    || widget instanceof TelemetryEventWidget || widget instanceof Checkbox && source instanceof TelemetryInfoScreen) continue;
-            if (takeFooter(widget, footer) || isTitle(widget)) continue;
+                    || widget instanceof TelemetryEventWidget
+                    || widget instanceof Checkbox && source instanceof TelemetryInfoScreen)
+                continue;
+            if (takeFooter(widget, footer) || isTitle(widget))
+                continue;
             addWidgetRow(rows, widget);
         }
     }
@@ -228,8 +276,10 @@ public final class YzuiOptionsScreen extends Screen implements HasDifficultyReac
     }
 
     private static boolean takeFooter(AbstractWidget widget, List<AbstractWidget> footer) {
-        if (!(widget instanceof Button)) return false;
-        for (String key : List.of("gui.done", "gui.back", "gui.cancel", "screen.youzaiworldcore.options.language.apply")) {
+        if (!(widget instanceof Button))
+            return false;
+        for (String key : List.of("gui.done", "gui.back", "gui.cancel",
+                "screen.youzaiworldcore.options.language.apply")) {
             if (SettingsWidgets.key(widget.getMessage(), key)) {
                 footer.add(widget);
                 return true;
@@ -239,8 +289,10 @@ public final class YzuiOptionsScreen extends Screen implements HasDifficultyReac
     }
 
     private static void addWidgetRow(List<SettingsList.Row> rows, AbstractWidget widget) {
-        if (widget instanceof StringWidget) rows.add(SettingsList.Row.heading(widget.getMessage()));
-        else rows.add(SettingsList.Row.widget(widget));
+        if (widget instanceof StringWidget)
+            rows.add(SettingsList.Row.heading(widget.getMessage()));
+        else
+            rows.add(SettingsList.Row.widget(widget));
     }
 
     private void buildDialog(List<SettingsList.Row> rows, List<AbstractWidget> footer) {
@@ -250,10 +302,12 @@ public final class YzuiOptionsScreen extends Screen implements HasDifficultyReac
             }
         }
         for (AbstractWidget widget : SettingsWidgets.flatten(source)) {
-            if (widget instanceof Button) footer.add(widget);
+            if (widget instanceof Button)
+                footer.add(widget);
             else if (isLinkConfirmation() && !isTitle(widget)) {
                 rows.add(SettingsList.Row.text(Component.empty(), widget.getMessage().copy().setStyle(Style.EMPTY)));
-            } else if (!isTitle(widget)) addWidgetRow(rows, widget);
+            } else if (!isTitle(widget))
+                addWidgetRow(rows, widget);
         }
     }
 
@@ -268,18 +322,22 @@ public final class YzuiOptionsScreen extends Screen implements HasDifficultyReac
                     rows.add(SettingsList.Row.text(Component.literal(paragraph.toString()), Component.empty()));
                     paragraph.setLength(0);
                 }
-                if (!line.isBlank()) rows.add(SettingsList.Row.heading(Component.literal(line)));
+                if (!line.isBlank())
+                    rows.add(SettingsList.Row.heading(Component.literal(line)));
             } else {
-                if (!paragraph.isEmpty()) paragraph.append('\n');
+                if (!paragraph.isEmpty())
+                    paragraph.append('\n');
                 paragraph.append(line);
             }
         }
-        if (!paragraph.isEmpty()) rows.add(SettingsList.Row.text(Component.literal(paragraph.toString()), Component.empty()));
+        if (!paragraph.isEmpty())
+            rows.add(SettingsList.Row.text(Component.literal(paragraph.toString()), Component.empty()));
     }
 
     // ===== 键位与语言：新布局保留原版按键捕获、默认值和语言应用流程 =====
 
-    private record KeyControls(KeyMapping key, TransparentButton change, TransparentButton reset) { }
+    private record KeyControls(KeyMapping key, TransparentButton change, TransparentButton reset) {
+    }
 
     private void buildKeys(KeyBindsScreen keys, List<SettingsList.Row> rows) {
         KeyMapping.Category lastCategory = null;
@@ -299,12 +357,14 @@ public final class YzuiOptionsScreen extends Screen implements HasDifficultyReac
                 refreshKeyLabels();
             });
             keyControls.add(new KeyControls(key, change, reset));
-            rows.add(SettingsList.Row.controls(Component.translatable(key.getName()), Component.empty(), change, reset));
+            rows.add(
+                    SettingsList.Row.controls(Component.translatable(key.getName()), Component.empty(), change, reset));
         }
     }
 
     private void refreshKeyLabels() {
-        if (!(source instanceof KeyBindsScreen keys)) return;
+        if (!(source instanceof KeyBindsScreen keys))
+            return;
         SettingsWidgets.read(keys, "resetButton", Button.class).active = Arrays.stream(minecraft.options.keyMappings)
                 .anyMatch(key -> !key.isDefault());
         for (KeyControls control : keyControls) {
@@ -322,21 +382,25 @@ public final class YzuiOptionsScreen extends Screen implements HasDifficultyReac
         }
     }
 
-    @SuppressWarnings({"rawtypes", "unchecked"})
+    @SuppressWarnings({ "rawtypes" })
     private void buildLanguages(List<SettingsList.Row> rows) {
-        AbstractSelectionList languageList = SettingsWidgets.read(source, "languageSelectionList", AbstractSelectionList.class);
+        AbstractSelectionList languageList = SettingsWidgets.read(source, "languageSelectionList",
+                AbstractSelectionList.class);
         var choices = new java.util.IdentityHashMap<Object, TransparentButton>();
         for (Object item : languageList.children()) {
             String code = SettingsWidgets.read(item, "code", String.class);
             var language = minecraft.getLanguageManager().getLanguages().get(code);
-            if (language == null) continue;
-            if (code.equals(pendingLanguageCode)) SettingsList.selectNativeEntry(languageList, item);
+            if (language == null)
+                continue;
+            if (code.equals(pendingLanguageCode))
+                SettingsList.selectNativeEntry(languageList, item);
             TransparentButton choose = action(language.toComponent(), () -> {
                 pendingLanguageCode = code;
                 SettingsList.selectNativeEntry(languageList, item);
                 // 只更新选中样式；重建原版页面会丢失尚未应用的语言选择。
                 choices.forEach((entry, button) -> button.setStyle(languageList.getSelected() == entry
-                        ? YzuiTheme.ButtonStyle.FILLED : YzuiTheme.ButtonStyle.TONAL));
+                        ? YzuiTheme.ButtonStyle.FILLED
+                        : YzuiTheme.ButtonStyle.TONAL));
             });
             choices.put(item, choose);
             SettingsList.Row row = SettingsList.Row.widget(choose);
@@ -344,12 +408,15 @@ public final class YzuiOptionsScreen extends Screen implements HasDifficultyReac
             rows.add(row);
         }
         choices.forEach((entry, button) -> button.setStyle(languageList.getSelected() == entry
-                ? YzuiTheme.ButtonStyle.FILLED : YzuiTheme.ButtonStyle.TONAL));
+                ? YzuiTheme.ButtonStyle.FILLED
+                : YzuiTheme.ButtonStyle.TONAL));
     }
 
     // ===== 资源包：直接使用原版选择模型，保留固定包、不兼容确认、顺序和提交行为 =====
 
-    private PackSelectionModel packModel() { return SettingsWidgets.read(source, "model", PackSelectionModel.class); }
+    private PackSelectionModel packModel() {
+        return SettingsWidgets.read(source, "model", PackSelectionModel.class);
+    }
 
     private void buildPacks(List<SettingsList.Row> rows) {
         PackSelectionModel model = packModel();
@@ -363,22 +430,35 @@ public final class YzuiOptionsScreen extends Screen implements HasDifficultyReac
     private void addPack(List<SettingsList.Row> rows, PackSelectionModel.Entry entry) {
         List<AbstractWidget> buttons = new ArrayList<>();
         if (entry.isSelected()) {
-            TransparentButton remove = action(text("pack.disable"), () -> { entry.unselect(); rebuildView(); });
+            TransparentButton remove = action(text("pack.disable"), () -> {
+                entry.unselect();
+                rebuildView();
+            });
             remove.active = entry.canUnselect();
             buttons.add(remove);
-            TransparentButton up = action(text("pack.up"), () -> { entry.moveUp(); rebuildView(); });
+            TransparentButton up = action(text("pack.up"), () -> {
+                entry.moveUp();
+                rebuildView();
+            });
             up.active = entry.canMoveUp();
             buttons.add(up);
-            TransparentButton down = action(text("pack.down"), () -> { entry.moveDown(); rebuildView(); });
+            TransparentButton down = action(text("pack.down"), () -> {
+                entry.moveDown();
+                rebuildView();
+            });
             down.active = entry.canMoveDown();
             buttons.add(down);
         } else {
             TransparentButton select = action(text("pack.enable"), () -> {
-                if (entry.getCompatibility().isCompatible()) { entry.select(); rebuildView(); }
-                else minecraft.gui.setScreen(new ConfirmScreen(confirmed -> {
-                    if (confirmed) entry.select();
-                    minecraft.gui.setScreen(this);
-                }, Component.translatable("pack.incompatible"), entry.getCompatibility().getConfirmation()));
+                if (entry.getCompatibility().isCompatible()) {
+                    entry.select();
+                    rebuildView();
+                } else
+                    minecraft.gui.setScreen(new ConfirmScreen(confirmed -> {
+                        if (confirmed)
+                            entry.select();
+                        minecraft.gui.setScreen(this);
+                    }, Component.translatable("pack.incompatible"), entry.getCompatibility().getConfirmation()));
             });
             select.active = entry.canSelect();
             buttons.add(select);
@@ -390,7 +470,8 @@ public final class YzuiOptionsScreen extends Screen implements HasDifficultyReac
     private List<Object> nativePackEntries() {
         List<Object> entries = new ArrayList<>();
         for (GuiEventListener child : source.children()) {
-            if (child instanceof AbstractSelectionList<?> list) entries.addAll(list.children());
+            if (child instanceof AbstractSelectionList<?> list)
+                entries.addAll(list.children());
         }
         return entries;
     }
@@ -446,12 +527,14 @@ public final class YzuiOptionsScreen extends Screen implements HasDifficultyReac
     }
 
     private void initCoreTabs() {
-        if (!(source instanceof YouzaiWorldCoreSettingsScreen core)) return;
+        if (!(source instanceof YouzaiWorldCoreSettingsScreen core))
+            return;
         int index = 0;
         for (GuiEventListener child : children()) {
             if (child instanceof TransparentButton tab && tab.getY() == frame.bodyY - 29) {
                 tab.setStyle(CoreSettingsSection.values()[index++].id() == core.getSelectedSection()
-                        ? YzuiTheme.ButtonStyle.FILLED : YzuiTheme.ButtonStyle.TONAL);
+                        ? YzuiTheme.ButtonStyle.FILLED
+                        : YzuiTheme.ButtonStyle.TONAL);
             }
         }
     }
@@ -461,10 +544,14 @@ public final class YzuiOptionsScreen extends Screen implements HasDifficultyReac
     }
 
     private void rebuildView() {
-        if (!rebuilding) init();
+        if (!rebuilding)
+            init();
     }
 
-    @Override protected void repositionElements() { init(); }
+    @Override
+    protected void repositionElements() {
+        init();
+    }
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
@@ -483,8 +570,10 @@ public final class YzuiOptionsScreen extends Screen implements HasDifficultyReac
             return;
         }
         leavingForLegacy = false;
-        if (source != null) source.tick();
-        if (unified != null) unified.tick();
+        if (source != null)
+            source.tick();
+        if (unified != null)
+            unified.tick();
         VideoSettingsScreen video = videoPage();
         if (video != null && videoPreset != minecraft.options.graphicsPreset().get()) {
             // Options 的原版通知只识别 OptionsSubScreen，独立外壳主动同步“自定义”预设标签。
@@ -498,67 +587,85 @@ public final class YzuiOptionsScreen extends Screen implements HasDifficultyReac
         frame.updateBackState();
         if (unified != null) {
             frame.setBusy(unified.busyMessage());
-            if (unified.structureChanged() || !captured.equals(SettingsWidgets.flatten(source))) rebuildView();
-        } else if (source instanceof YouzaiWorldCoreSettingsScreen core) frame.setChromeActive(!core.isConfigOperationActive());
+            if (unified.structureChanged() || !captured.equals(SettingsWidgets.flatten(source)))
+                rebuildView();
+        } else if (source instanceof YouzaiWorldCoreSettingsScreen core)
+            frame.setChromeActive(!core.isConfigOperationActive());
         else if (source instanceof PackSelectionScreen) {
             // 目录内同名包也可能被替换；比较原版行实例，同时识别顺序、元数据和图标更新。
-            if (!packEntries.equals(nativePackEntries())) rebuildView();
-        } else if (source instanceof TelemetryInfoScreen && telemetryOptIn
-                != (minecraft.extraTelemetryAvailable() && minecraft.options.telemetryOptInExtra().get())) {
+            if (!packEntries.equals(nativePackEntries()))
+                rebuildView();
+        } else if (source instanceof TelemetryInfoScreen && telemetryOptIn != (minecraft.extraTelemetryAvailable()
+                && minecraft.options.telemetryOptInExtra().get())) {
             rebuildView();
         } else if (source != null && !(source instanceof KeyBindsScreen) && !(source instanceof LanguageSelectScreen)
-                && !captured.equals(SettingsWidgets.flatten(source))) rebuildView();
+                && !captured.equals(SettingsWidgets.flatten(source)))
+            rebuildView();
         checkGraphicsWarning();
     }
 
     private void checkGraphicsWarning() {
         VideoSettingsScreen video = videoPage();
-        if (video == null || minecraft.gui.screen() != this || showingGraphicsWarning) return;
+        if (video == null || minecraft.gui.screen() != this || showingGraphicsWarning)
+            return;
         var warnings = minecraft.getGpuWarnlistManager();
-        if (!warnings.isShowingWarning()) return;
+        if (!warnings.isShowingWarning())
+            return;
         showingGraphicsWarning = true;
         var message = SettingsWidgets.read(video, "WARNING_MESSAGE", Component.class).copy();
-        if (warnings.getRendererWarnings() != null) message.append("\n\n").append(
-                Component.translatable("options.graphics.warning.renderer", warnings.getRendererWarnings()));
-        if (warnings.getVendorWarnings() != null) message.append("\n\n").append(
-                Component.translatable("options.graphics.warning.vendor", warnings.getVendorWarnings()));
-        if (warnings.getVersionWarnings() != null) message.append("\n\n").append(
-                Component.translatable("options.graphics.warning.version", warnings.getVersionWarnings()));
+        if (warnings.getRendererWarnings() != null)
+            message.append("\n\n").append(
+                    Component.translatable("options.graphics.warning.renderer", warnings.getRendererWarnings()));
+        if (warnings.getVendorWarnings() != null)
+            message.append("\n\n").append(
+                    Component.translatable("options.graphics.warning.vendor", warnings.getVendorWarnings()));
+        if (warnings.getVersionWarnings() != null)
+            message.append("\n\n").append(
+                    Component.translatable("options.graphics.warning.version", warnings.getVersionWarnings()));
         minecraft.gui.setScreen(new ConfirmScreen(accepted -> {
             showingGraphicsWarning = false;
             warnings.dismissWarning();
             minecraft.options.improvedTransparency().set(accepted);
-            if (accepted) minecraft.levelExtractor.allChanged();
+            if (accepted)
+                minecraft.levelExtractor.allChanged();
             video.resetOption(minecraft.options.improvedTransparency());
             minecraft.gui.setScreen(this);
         }, Component.translatable("options.graphics.warning.title"), message,
-                Component.translatable("options.graphics.warning.accept"), Component.translatable("options.graphics.warning.cancel")));
+                Component.translatable("options.graphics.warning.accept"),
+                Component.translatable("options.graphics.warning.cancel")));
     }
 
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
-        if (busy()) return true;
-        if (unified != null) unified.flush();
-        if (frame.content.popupClicked(event, doubleClick)) return true;
+        if (busy())
+            return true;
+        if (unified != null)
+            unified.flush();
+        if (frame.content.popupClicked(event, doubleClick))
+            return true;
         if (source instanceof KeyBindsScreen keys && keys.selectedKey != null) {
             boolean handled = keys.mouseClicked(event, doubleClick);
             refreshKeyLabels();
             return handled;
         }
         boolean handled = super.mouseClicked(event, doubleClick);
-        if (handled) refreshKeyLabels();
+        if (handled)
+            refreshKeyLabels();
         return handled;
     }
 
     @Override
     public boolean mouseScrolled(double x, double y, double dx, double dy) {
-        if (busy()) return true;
-        if (unified != null) unified.flush();
+        if (busy())
+            return true;
+        if (unified != null)
+            unified.flush();
         VideoSettingsScreen video = videoPage();
         if (video != null && minecraft.hasControlDown()) {
             // 保留原版视频设置 Ctrl + 滚轮调整 GUI 比例的快捷操作。
             boolean handled = video.mouseScrolled(x, y, dx, dy);
-            if (handled) rebuildView();
+            if (handled)
+                rebuildView();
             return handled;
         }
         return super.mouseScrolled(x, y, dx, dy);
@@ -566,11 +673,15 @@ public final class YzuiOptionsScreen extends Screen implements HasDifficultyReac
 
     @Override
     public boolean keyPressed(KeyEvent event) {
-        if (busy()) return true;
+        if (busy())
+            return true;
         if (unified != null && (event.key() == InputConstants.KEY_TAB || event.isEscape()
-                || !(SettingsWidgets.focused(this) instanceof AbstractSliderButton))) unified.flush();
-        if (frame.content.popupKeyPressed(event)) return true;
-        if (source instanceof ConfirmScreen && event.isEscape()) return source.keyPressed(event);
+                || !(SettingsWidgets.focused(this) instanceof AbstractSliderButton)))
+            unified.flush();
+        if (frame.content.popupKeyPressed(event))
+            return true;
+        if (source instanceof ConfirmScreen && event.isEscape())
+            return source.keyPressed(event);
         if (source instanceof KeyBindsScreen keys && keys.selectedKey != null) {
             boolean handled = keys.keyPressed(event);
             refreshKeyLabels();
@@ -581,55 +692,93 @@ public final class YzuiOptionsScreen extends Screen implements HasDifficultyReac
             return true;
         }
         boolean handled = super.keyPressed(event);
-        if (handled) refreshKeyLabels();
+        if (handled)
+            refreshKeyLabels();
         return handled;
     }
 
-    @Override public boolean charTyped(CharacterEvent event) { return busy() || super.charTyped(event); }
-    @Override public boolean mouseDragged(MouseButtonEvent event, double x, double y) {
+    @Override
+    public boolean charTyped(CharacterEvent event) {
+        return busy() || super.charTyped(event);
+    }
+
+    @Override
+    public boolean mouseDragged(MouseButtonEvent event, double x, double y) {
         return busy() || super.mouseDragged(event, x, y);
     }
-    @Override public boolean mouseReleased(MouseButtonEvent event) { return busy() || super.mouseReleased(event); }
 
-    @Override public void onFilesDrop(List<java.nio.file.Path> paths) { if (source != null) source.onFilesDrop(paths); }
-    @Override public boolean isPauseScreen() { return source == null || source.isPauseScreen(); }
-    @Override public Music getBackgroundMusic() { return source == null ? super.getBackgroundMusic() : source.getBackgroundMusic(); }
-    @Override public Component getNarrationMessage() {
+    @Override
+    public boolean mouseReleased(MouseButtonEvent event) {
+        return busy() || super.mouseReleased(event);
+    }
+
+    @Override
+    public void onFilesDrop(List<java.nio.file.Path> paths) {
+        if (source != null)
+            source.onFilesDrop(paths);
+    }
+
+    @Override
+    public boolean isPauseScreen() {
+        return source == null || source.isPauseScreen();
+    }
+
+    @Override
+    public Music getBackgroundMusic() {
+        return source == null ? super.getBackgroundMusic() : source.getBackgroundMusic();
+    }
+
+    @Override
+    public Component getNarrationMessage() {
         return source == null ? super.getNarrationMessage() : source.getNarrationMessage();
     }
-    @Override public boolean shouldCloseOnEsc() {
-        if (busy()) return false;
+
+    @Override
+    public boolean shouldCloseOnEsc() {
+        if (busy())
+            return false;
         if (source instanceof ConfirmScreen) {
             Button cancel = SettingsWidgets.read(source, "noButton", Button.class);
             return cancel != null && cancel.active;
         }
-        if (source instanceof YouzaiWorldCoreSettingsScreen core) return !core.isConfigOperationActive();
+        if (source instanceof YouzaiWorldCoreSettingsScreen core)
+            return !core.isConfigOperationActive();
         return source == null || source.shouldCloseOnEsc();
     }
-    @Override public void updateNarratorStatus(boolean active, NarrationTrigger trigger) {
+
+    @Override
+    public void updateNarratorStatus(boolean active, NarrationTrigger trigger) {
         super.updateNarratorStatus(active, trigger);
-        if (source != null) source.updateNarratorStatus(active, trigger);
-        if (unified != null) unified.narratorChanged(active, trigger);
+        if (source != null)
+            source.updateNarratorStatus(active, trigger);
+        if (unified != null)
+            unified.narratorChanged(active, trigger);
     }
 
     @Override
     public void onClose() {
         // ConfirmScreen 的 onClose 会直接离开游戏界面，取消必须走其 Escape 回调及延时校验。
-        if (source instanceof ConfirmScreen) source.keyPressed(new KeyEvent(InputConstants.KEY_ESCAPE, 0, 0));
-        else if (!shouldCloseOnEsc()) return;
+        if (source instanceof ConfirmScreen)
+            source.keyPressed(new KeyEvent(InputConstants.KEY_ESCAPE, 0, 0));
+        else if (!shouldCloseOnEsc())
+            return;
         else if (source != null) {
-            if (unified != null) unified.flush();
+            if (unified != null)
+                unified.flush();
             SettingsWidgets.flush(source);
             source.onClose();
-        }
-        else minecraft.gui.setScreen(back);
+        } else
+            minecraft.gui.setScreen(back);
     }
 
     @Override
     public void removed() {
-        if (frame != null) frame.content.rememberView();
-        if (frame != null) frame.content.closePopups();
-        if (unified != null) unified.removed();
+        if (frame != null)
+            frame.content.rememberView();
+        if (frame != null)
+            frame.content.closePopups();
+        if (unified != null)
+            unified.removed();
         if (source != null) {
             SettingsWidgets.flush(source);
             source.removed();
@@ -637,20 +786,32 @@ public final class YzuiOptionsScreen extends Screen implements HasDifficultyReac
         minecraft.options.save();
     }
 
-    @Override public void added() {
-        if (source != null) source.added();
-        if (unified != null) unified.added();
+    @Override
+    public void added() {
+        if (source != null)
+            source.added();
+        if (unified != null)
+            unified.added();
     }
-    @Override public void onDifficultyChanged() {
-        if (source instanceof HasDifficultyReaction reaction) reaction.onDifficultyChanged();
-        if (unified != null) unified.difficultyChanged();
+
+    @Override
+    public void onDifficultyChanged() {
+        if (source instanceof HasDifficultyReaction reaction)
+            reaction.onDifficultyChanged();
+        if (unified != null)
+            unified.difficultyChanged();
     }
-    @Override public void onGamemasterPermissionChanged(boolean value) {
-        if (updatingPermissions) return;
+
+    @Override
+    public void onGamemasterPermissionChanged(boolean value) {
+        if (updatingPermissions)
+            return;
         updatingPermissions = true;
         try {
-            if (source instanceof HasGamemasterPermissionReaction reaction) reaction.onGamemasterPermissionChanged(value);
-            if (unified != null) unified.permissionsChanged();
+            if (source instanceof HasGamemasterPermissionReaction reaction)
+                reaction.onGamemasterPermissionChanged(value);
+            if (unified != null)
+                unified.permissionsChanged();
         } finally {
             updatingPermissions = false;
         }

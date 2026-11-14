@@ -21,9 +21,12 @@ final class SettingsCompatibility {
     private static final List<String> PRIORITY = List.of("modmenu", "sodium", "sodium-extra",
             "reeses-sodium-options", "iris", "sodium-fullbright");
 
-    private SettingsCompatibility() { }
+    private SettingsCompatibility() {
+    }
 
-    static boolean sodiumAvailable() { return FabricLoader.getInstance().isModLoaded("sodium"); }
+    static boolean sodiumAvailable() {
+        return FabricLoader.getInstance().isModLoaded("sodium");
+    }
 
     static void openSodium(Screen parent) {
         Minecraft.getInstance().gui.setScreen(createSodiumScreen(parent));
@@ -39,20 +42,25 @@ final class SettingsCompatibility {
             return screen;
         } catch (ReflectiveOperationException | LinkageError exception) {
             Throwable cause = exception instanceof InvocationTargetException invocation
-                    ? invocation.getTargetException() : exception;
+                    ? invocation.getTargetException()
+                    : exception;
             DebugLogger.exception("YzuiSettings", "openSodium", cause);
             return new ModsScreen(parent);
         }
     }
 
-    static void openMods(Screen parent) { Minecraft.getInstance().gui.setScreen(new ModsScreen(parent)); }
+    static void openMods(Screen parent) {
+        Minecraft.getInstance().gui.setScreen(new ModsScreen(parent));
+    }
 
+    @SuppressWarnings("null")
     static void addModRows(Screen parent, List<SettingsList.Row> rows) {
         rows.add(SettingsList.Row.widget(button(Component.translatable("options.youzaiworldcore.installed_mods"),
                 () -> openMods(parent))));
         if (sodiumAvailable()) {
             rows.add(SettingsList.Row.controls(Component.literal("Sodium / Sodium Extra / Reese’s Sodium Options"),
-                    YzuiOptionsScreen.text("sodium.description"), button(YzuiOptionsScreen.text("sodium"), () -> openSodium(parent))));
+                    YzuiOptionsScreen.text("sodium.description"),
+                    button(YzuiOptionsScreen.text("sodium"), () -> openSodium(parent))));
         }
         FabricLoader.getInstance().getAllMods().stream()
                 .filter(mod -> !HIDDEN_CONFIGS.contains(mod.getMetadata().getId()))
@@ -72,8 +80,10 @@ final class SettingsCompatibility {
     private static void openConfig(ModContainer mod, Screen parent) {
         try {
             Screen screen = ModMenu.getConfigScreen(mod.getMetadata().getId(), parent);
-            if (screen != null) Minecraft.getInstance().gui.setScreen(screen);
-            else openMods(parent);
+            if (screen != null)
+                Minecraft.getInstance().gui.setScreen(screen);
+            else
+                openMods(parent);
         } catch (RuntimeException | LinkageError exception) {
             DebugLogger.exception("YzuiSettings", "openConfig:" + mod.getMetadata().getId(), exception);
             openMods(parent);

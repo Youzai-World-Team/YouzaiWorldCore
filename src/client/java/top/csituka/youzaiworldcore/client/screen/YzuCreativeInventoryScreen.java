@@ -58,7 +58,7 @@ public class YzuCreativeInventoryScreen extends Screen {
 
     private static final Logger LOG = LoggerFactory.getLogger("YzuCreativeInventoryScreen");
 
-    private static final int PW = 356, PH = 168, PR = 10;
+    private static final int PW = 356, PH = 168;
     private static final int TY = 4, TW = 28, TH = 22, TG = 2, TR = 4;
     private static final int SX = 250, SY = 6, SW = 96, SH = 16; // 搜索框右缘 ≤ 物品栏右缘 (x=346)
     private static final int GX = 10, GY = 34, SS = 16, SG = 2, COLS = 9, VROWS = 7;
@@ -378,7 +378,8 @@ public class YzuCreativeInventoryScreen extends Screen {
         for (int r = 0; r < 2; r++)
             for (int c = 0; c < 2; c++) {
                 int sx = ax + c * (SS + SG), sy = ay + r * (SS + SG);
-                fillR(g, sx, sy, SS, SS, 3, mx >= sx && mx < sx + SS && my >= sy && my < sy + SS ? YzuiTheme.slotHover() : YzuiTheme.slot());
+                fillR(g, sx, sy, SS, SS, 3, mx >= sx && mx < sx + SS && my >= sy && my < sy + SS ? YzuiTheme.slotHover()
+                        : YzuiTheme.slot());
                 int slotIdx = 5 + r * 2 + c;
                 ItemStack ast = slots.get(slotIdx).getItem();
                 // 空槽绘制原版占位图标（通过 Slot.getNoItemIcon() 获取对应 sprite）
@@ -394,7 +395,8 @@ public class YzuCreativeInventoryScreen extends Screen {
 
         // 副手（slot 45）
         int ox = lp + OFF_X, oy = tp + OFF_Y;
-        fillR(g, ox, oy, SS, SS, 3, mx >= ox && mx < ox + SS && my >= oy && my < oy + SS ? YzuiTheme.slotHover() : YzuiTheme.slot());
+        fillR(g, ox, oy, SS, SS, 3,
+                mx >= ox && mx < ox + SS && my >= oy && my < oy + SS ? YzuiTheme.slotHover() : YzuiTheme.slot());
         ItemStack ost = slots.get(45).getItem();
         if (ost.isEmpty()) {
             Identifier offId = slots.get(45).getNoItemIcon();
@@ -410,7 +412,8 @@ public class YzuCreativeInventoryScreen extends Screen {
         for (int r = 0; r < INV_ROWS; r++)
             for (int c = 0; c < INV_COLS; c++) {
                 int sx = invX + c * (SS + SG), sy = invY + r * (SS + SG);
-                fillR(g, sx, sy, SS, SS, 3, mx >= sx && mx < sx + SS && my >= sy && my < sy + SS ? YzuiTheme.slotHover() : YzuiTheme.slot());
+                fillR(g, sx, sy, SS, SS, 3, mx >= sx && mx < sx + SS && my >= sy && my < sy + SS ? YzuiTheme.slotHover()
+                        : YzuiTheme.slot());
                 ItemStack ist = slots.get(9 + r * INV_COLS + c).getItem();
                 renderSlot(g, ist, sx, sy, 220 + r * INV_COLS + c);
                 ItemBorderRenderer.renderBorder(g, sx, sy, ist);
@@ -420,7 +423,8 @@ public class YzuCreativeInventoryScreen extends Screen {
         int hbx = lp + HB_X, hby = tp + HB_Y;
         for (int c = 0; c < 9; c++) {
             int sx = hbx + c * (SS + SG);
-            fillR(g, sx, hby, SS, SS, 3, mx >= sx && mx < sx + SS && my >= hby && my < hby + SS ? YzuiTheme.slotHover() : YzuiTheme.slot());
+            fillR(g, sx, hby, SS, SS, 3,
+                    mx >= sx && mx < sx + SS && my >= hby && my < hby + SS ? YzuiTheme.slotHover() : YzuiTheme.slot());
             ItemStack hst = slots.get(36 + c).getItem();
             renderSlot(g, hst, sx, hby, c);
             ItemBorderRenderer.renderBorder(g, sx, hby, hst);
@@ -453,9 +457,11 @@ public class YzuCreativeInventoryScreen extends Screen {
                 }
             }
             ItemStack cursorDisplay = cursorCount == carried.getCount() ? carried : carried.copy();
-            if (cursorDisplay != carried) cursorDisplay.setCount(cursorCount);
+            if (cursorDisplay != carried)
+                cursorDisplay.setCount(cursorCount);
             g.item(cursorDisplay, mx - 8, my - 8, 0);
-            if (!cursorDisplay.isEmpty()) g.itemDecorations(font, cursorDisplay, mx - 8, my - 8, null);
+            if (!cursorDisplay.isEmpty())
+                g.itemDecorations(font, cursorDisplay, mx - 8, my - 8, null);
         }
         if (carried.isEmpty()) {
             // 左侧网格悬停提示
@@ -763,7 +769,8 @@ public class YzuCreativeInventoryScreen extends Screen {
             CreativeModeTab t = tabs.get(i);
             boolean sel = selTab != null && t == selTab;
             boolean h = mx >= tx && mx < tx + TW && my >= arrowY && my < arrowY + TH;
-            fillR(g, tx, arrowY, TW, TH, TR, sel ? YzuiTheme.primaryContainer() : (h ? YzuiTheme.surfaceHigh() : YzuiTheme.surfaceLow()));
+            fillR(g, tx, arrowY, TW, TH, TR,
+                    sel ? YzuiTheme.primaryContainer() : (h ? YzuiTheme.surfaceHigh() : YzuiTheme.surfaceLow()));
             ItemStack icon = t.getIconItem();
             if (!icon.isEmpty())
                 g.item(icon, tx + (TW - 16) / 2, arrowY + (TH - 16) / 2, 0);
@@ -1094,15 +1101,21 @@ public class YzuCreativeInventoryScreen extends Screen {
 
     /** 返回当前拖拽中有效的槽位数（空格 或 同类型有空位）。用于实时计算鼠标上的预期剩余数量。 */
     private int getDragValidCount(ItemStack carried) {
-        if (carried.isEmpty()) return 0;
+        if (carried.isEmpty())
+            return 0;
         int vc = 0;
         var slots = player.inventoryMenu.slots;
         for (int si : draggedSlots) {
-            if (si < 0 || si >= slots.size()) continue;
+            if (si < 0 || si >= slots.size())
+                continue;
             Slot slot = slots.get(si);
-            if (!slot.mayPlace(carried)) continue;
+            if (!slot.mayPlace(carried))
+                continue;
             ItemStack existing = slot.getItem();
-            if (existing.isEmpty()) { vc++; continue; }
+            if (existing.isEmpty()) {
+                vc++;
+                continue;
+            }
             if (ItemStack.isSameItemSameComponents(carried, existing)
                     && existing.getCount() < slot.getMaxStackSize(carried)) {
                 vc++;
@@ -1512,14 +1525,18 @@ public class YzuCreativeInventoryScreen extends Screen {
         if (yzwcDragMode == 1) {
             // 合并拖拽：将经过的同类型物品合并到光标
             ItemStack ca = minecraft.player.containerMenu.getCarried();
-            if (ca.isEmpty()) return;
+            if (ca.isEmpty())
+                return;
             var slot = player.inventoryMenu.slots.get(si);
             ItemStack siStack = slot.getItem();
-            if (siStack.isEmpty() || !ItemStack.isSameItemSameComponents(ca, siStack)) return;
+            if (siStack.isEmpty() || !ItemStack.isSameItemSameComponents(ca, siStack))
+                return;
             int space = ca.getMaxStackSize() - ca.getCount();
-            if (space <= 0) return;
+            if (space <= 0)
+                return;
             int move = Math.min(space, siStack.getCount());
-            if (move <= 0) return;
+            if (move <= 0)
+                return;
             ca.grow(move);
             siStack.shrink(move);
             slot.setChanged();
@@ -1565,7 +1582,8 @@ public class YzuCreativeInventoryScreen extends Screen {
             int vi = vis.get(gridHov);
             CreativeItemGroups.Entry entry = getGroupEntry(vi);
             boolean groupHeader = entry != null && entry.header();
-            if (groupHeader && !searchBox.isFocused() && (ev.key() == InputConstants.KEY_RETURN || ev.key() == InputConstants.KEY_NUMPADENTER || ev.key() == InputConstants.KEY_SPACE)) {
+            if (groupHeader && !searchBox.isFocused() && (ev.key() == InputConstants.KEY_RETURN
+                    || ev.key() == InputConstants.KEY_NUMPADENTER || ev.key() == InputConstants.KEY_SPACE)) {
                 toggleGroup(vi);
                 return true;
             }

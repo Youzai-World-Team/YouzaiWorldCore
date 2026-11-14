@@ -26,33 +26,54 @@ public final class MapWaypointEditScreen extends MapScreen {
     private MapWaypointGroup group;
 
     public MapWaypointEditScreen(Screen parent, MapWaypoint point, boolean existing) {
-        super(parent, existing ? "edit_point" : "new_point"); original = point; this.existing = existing; shared = point.shared();
+        super(parent, existing ? "edit_point" : "new_point");
+        original = point;
+        this.existing = existing;
+        shared = point.shared();
         group = MapPersonalData.groupOf(point);
-        values.put("name", point.name()); values.put("dimension", point.dimension());
-        values.put("x", Integer.toString(point.x())); values.put("y", Integer.toString(point.y())); values.put("z", Integer.toString(point.z()));
+        values.put("name", point.name());
+        values.put("dimension", point.dimension());
+        values.put("x", Integer.toString(point.x()));
+        values.put("y", Integer.toString(point.y()));
+        values.put("z", Integer.toString(point.z()));
         values.put("color", String.format(java.util.Locale.ROOT, "%06X", point.color() & 0xFFFFFF));
     }
 
-    @Override protected void init() {
-        super.init(); rowHeight = Math.max(25, Math.min(38, (panelHeight - 120) / 5));
+    @SuppressWarnings("null")
+    @Override
+    protected void init() {
+        super.init();
+        rowHeight = Math.max(25, Math.min(38, (panelHeight - 120) / 5));
         int x = panelX + 18, y = panelY + 42, w = panelWidth - 36;
         edit("name", x, y, w, 64);
         groupLabelWidth = w >= 294 ? 74 : 0;
-        groupHeight = Math.max(rowHeight, MapGroupButton.selector(x + groupLabelWidth, y + rowHeight, w - groupLabelWidth,
-                () -> group, value -> group = value, this::addRenderableWidget,
-                !pending && !MapClient.isAnchor(original) && original.kind() != MapWaypoint.Kind.DEATH));
+        groupHeight = Math.max(rowHeight,
+                MapGroupButton.selector(x + groupLabelWidth, y + rowHeight, w - groupLabelWidth,
+                        () -> group, value -> group = value, this::addRenderableWidget,
+                        !pending && !MapClient.isAnchor(original) && original.kind() != MapWaypoint.Kind.DEATH));
         int dimensionY = y + rowHeight + groupHeight;
         edit("dimension", x, dimensionY, w, 128);
         int cw = (w - 12) / 3;
-        edit("x", x, dimensionY + rowHeight, cw, 10); edit("y", x + cw + 6, dimensionY + rowHeight, cw, 10); edit("z", x + (cw + 6) * 2, dimensionY + rowHeight, cw, 10);
+        edit("x", x, dimensionY + rowHeight, cw, 10);
+        edit("y", x + cw + 6, dimensionY + rowHeight, cw, 10);
+        edit("z", x + (cw + 6) * 2, dimensionY + rowHeight, cw, 10);
         edit("color", x, dimensionY + rowHeight * 2, w / 2 - 4, 7);
-        button(x + w / 2 + 4, dimensionY + rowHeight * 2, w / 2 - 4, MapTexts.text(shared ? "shared_point" : "private_point"), () -> { shared = !shared; init(); }).active = !original.shared() && original.kind() != MapWaypoint.Kind.DEATH && !pending;
+        button(x + w / 2 + 4, dimensionY + rowHeight * 2, w / 2 - 4,
+                MapTexts.text(shared ? "shared_point" : "private_point"), () -> {
+                    shared = !shared;
+                    init();
+                }).active = !original.shared() && original.kind() != MapWaypoint.Kind.DEATH && !pending;
         int bw = (w - 12) / 3, footer = panelY + panelHeight - 34;
-        button(x, footer, bw, MapTexts.text("save"), this::savePoint).setStyle(YzuiTheme.ButtonStyle.FILLED).active = !pending
-                && !MapClient.isAnchor(original) && (editable() || original.shared());
+        button(x, footer, bw, MapTexts.text("save"), this::savePoint)
+                .setStyle(YzuiTheme.ButtonStyle.FILLED).active = !pending
+                        && !MapClient.isAnchor(original) && (editable() || original.shared());
         button(x + bw + 6, footer, bw, MapTexts.text("copy"), () -> {
-            try { Minecraft.getInstance().keyboardHandler.setClipboard(MapCoordinates.coordinate(readPoint())); error = MapTexts.text("copied"); }
-            catch (IllegalArgumentException ignored) { error = MapTexts.text("invalid_position"); }
+            try {
+                Minecraft.getInstance().keyboardHandler.setClipboard(MapCoordinates.coordinate(readPoint()));
+                error = MapTexts.text("copied");
+            } catch (IllegalArgumentException ignored) {
+                error = MapTexts.text("invalid_position");
+            }
         });
         button(x + (bw + 6) * 2, footer, bw, MapTexts.text("cancel"), this::onClose);
     }
@@ -64,18 +85,27 @@ public final class MapWaypointEditScreen extends MapScreen {
     }
 
     private boolean editable() {
-        if (MapClient.isAnchor(original)) return false;
-        if (!original.shared()) return true;
-        var session = MapClient.session(); var player = Minecraft.getInstance().player;
+        if (MapClient.isAnchor(original))
+            return false;
+        if (!original.shared())
+            return true;
+        var session = MapClient.session();
+        var player = Minecraft.getInstance().player;
         return session != null && (session.allows(MapSessionPayload.MANAGE)
-                || player != null && original.owner().equals(player.getUUID()) && original.kind() == MapWaypoint.Kind.NORMAL && session.allows(MapSessionPayload.PUBLISH));
+                || player != null && original.owner().equals(player.getUUID())
+                        && original.kind() == MapWaypoint.Kind.NORMAL && session.allows(MapSessionPayload.PUBLISH));
     }
 
     private MapWaypoint readPoint() {
-        if (!values.get("color").matches("#?[0-9a-fA-F]{6}")) throw new IllegalArgumentException("颜色必须为六位十六进制");
+        if (!values.get("color").matches("#?[0-9a-fA-F]{6}"))
+            throw new IllegalArgumentException("颜色必须为六位十六进制");
         int color = Integer.parseInt(values.get("color").replace("#", ""), 16);
-        return new MapWaypoint(original.id(), original.owner(), values.get("name"), shared ? MapWaypointGroup.UNGROUPED.id() : original.kind() == MapWaypoint.Kind.DEATH ? MapWaypointGroup.DEATH.id() : group.id(), values.get("dimension"),
-                Integer.parseInt(values.get("x")), Integer.parseInt(values.get("y")), Integer.parseInt(values.get("z")), color,
+        return new MapWaypoint(original.id(), original.owner(), values.get("name"),
+                shared ? MapWaypointGroup.UNGROUPED.id()
+                        : original.kind() == MapWaypoint.Kind.DEATH ? MapWaypointGroup.DEATH.id() : group.id(),
+                values.get("dimension"),
+                Integer.parseInt(values.get("x")), Integer.parseInt(values.get("y")), Integer.parseInt(values.get("z")),
+                color,
                 original.enabled(), shared, original.kind(), original.createdAt());
     }
 
@@ -83,25 +113,48 @@ public final class MapWaypointEditScreen extends MapScreen {
         try {
             MapWaypoint point = readPoint();
             if (original.shared() && (!editable() || sameContent(point))) {
-                if (!MapPersonalData.setSharedGroup(original, group)) { error = MapTexts.text("invalid_group"); return; }
-                onClose(); return;
+                if (!MapPersonalData.setSharedGroup(original, group)) {
+                    error = MapTexts.text("invalid_group");
+                    return;
+                }
+                onClose();
+                return;
             }
             if (!shared) {
-                if (!MapPersonalData.put(point)) { error = MapTexts.text("limit"); return; }
-                onClose(); return;
+                if (!MapPersonalData.put(point)) {
+                    error = MapTexts.text("limit");
+                    return;
+                }
+                onClose();
+                return;
             }
             var session = MapClient.session();
-            if (session == null || !session.allows(MapSessionPayload.PUBLISH)) { error = MapTexts.text("denied"); return; }
-            pending = MapClient.send(original.shared() ? MapActionPayload.Action.UPDATE : MapActionPayload.Action.ADD, point, (success, message) -> {
-                pending = false;
-                if (success) {
-                    if (existing && !original.shared()) MapPersonalData.remove(original.id());
-                    MapPersonalData.setSharedGroup(point, group);
-                    if (Minecraft.getInstance().gui.screen() == this) onClose();
-                } else { error = MapTexts.text(message); if (Minecraft.getInstance().gui.screen() == this) init(); }
-            });
-            if (pending) { error = MapTexts.text("request_sent"); init(); }
-        } catch (IllegalArgumentException error) { this.error = MapTexts.text("invalid_point"); }
+            if (session == null || !session.allows(MapSessionPayload.PUBLISH)) {
+                error = MapTexts.text("denied");
+                return;
+            }
+            pending = MapClient.send(original.shared() ? MapActionPayload.Action.UPDATE : MapActionPayload.Action.ADD,
+                    point, (success, message) -> {
+                        pending = false;
+                        if (success) {
+                            if (existing && !original.shared())
+                                MapPersonalData.remove(original.id());
+                            MapPersonalData.setSharedGroup(point, group);
+                            if (Minecraft.getInstance().gui.screen() == this)
+                                onClose();
+                        } else {
+                            error = MapTexts.text(message);
+                            if (Minecraft.getInstance().gui.screen() == this)
+                                init();
+                        }
+                    });
+            if (pending) {
+                error = MapTexts.text("request_sent");
+                init();
+            }
+        } catch (IllegalArgumentException error) {
+            this.error = MapTexts.text("invalid_point");
+        }
     }
 
     private boolean sameContent(MapWaypoint point) {
@@ -110,16 +163,20 @@ public final class MapWaypointEditScreen extends MapScreen {
                 && original.color() == point.color();
     }
 
-    @Override protected void content(GuiGraphicsExtractor g, int mx, int my, float delta) {
+    @Override
+    protected void content(GuiGraphicsExtractor g, int mx, int my, float delta) {
         int x = panelX + 18, y = panelY + 49, w = panelWidth - 36;
         label(g, MapTexts.text("name"), x, y, 70);
-        if (groupLabelWidth > 0) label(g, MapTexts.text("group"), x, y + rowHeight, groupLabelWidth - 4);
+        if (groupLabelWidth > 0)
+            label(g, MapTexts.text("group"), x, y + rowHeight, groupLabelWidth - 4);
         int dimensionY = y + rowHeight + groupHeight;
-        label(g, MapTexts.text("dimension"), x, dimensionY, 70); label(g, MapTexts.text("color"), x, dimensionY + rowHeight * 2, 70);
+        label(g, MapTexts.text("dimension"), x, dimensionY, 70);
+        label(g, MapTexts.text("color"), x, dimensionY + rowHeight * 2, 70);
         int cw = (w - 12) / 3;
         label(g, net.minecraft.network.chat.Component.literal("X"), x, dimensionY + rowHeight, 13);
         label(g, net.minecraft.network.chat.Component.literal("Y"), x + cw + 6, dimensionY + rowHeight, 13);
         label(g, net.minecraft.network.chat.Component.literal("Z"), x + (cw + 6) * 2, dimensionY + rowHeight, 13);
-        if (!editable()) label(g, MapTexts.text("locked_point"), x, panelY + panelHeight - 64, w);
+        if (!editable())
+            label(g, MapTexts.text("locked_point"), x, panelY + panelHeight - 64, w);
     }
 }

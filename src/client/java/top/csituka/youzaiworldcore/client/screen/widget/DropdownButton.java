@@ -50,7 +50,10 @@ public class DropdownButton extends AbstractWidget {
         this.onToggleOpen = onToggleOpen;
     }
 
-    public int getSelectedIndex() { return selectedIndex; }
+    public int getSelectedIndex() {
+        return selectedIndex;
+    }
+
     /** 同步外部选项，不触发选择回调；当前自定义值可以不在可选列表中。 */
     public void updateOptions(List<String> options, int selectedIndex, String currentValueLabel) {
         List<String> replacement = List.copyOf(options);
@@ -64,41 +67,61 @@ public class DropdownButton extends AbstractWidget {
         }
         this.currentValueLabel = currentValueLabel;
     }
-    public boolean isOpen() { return open; }
+
+    public boolean isOpen() {
+        return open;
+    }
+
     /** 设置行单独绘制名称时只展示当前值，保留原消息供旁白使用。 */
-    public DropdownButton setLabelVisible(boolean value) { labelVisible = value; return this; }
-    public void setExternalAlpha(float value) { externalAlpha = Math.clamp(value, 0f, 1f); }
+    public DropdownButton setLabelVisible(boolean value) {
+        labelVisible = value;
+        return this;
+    }
+
+    public void setExternalAlpha(float value) {
+        externalAlpha = Math.clamp(value, 0f, 1f);
+    }
+
     /** 邮件等独立设计视口显式提供边界，避免把物理宽高误用为设计坐标。 */
     public void setCanvasSize(int width, int height) {
         canvasWidth = Math.max(0, width);
         canvasHeight = Math.max(0, height);
     }
+
     public void closePopup() {
         if (open) {
             open = false;
-            if (onToggleOpen != null) onToggleOpen.run();
+            if (onToggleOpen != null)
+                onToggleOpen.run();
         }
     }
 
     private void openPopup() {
-        if (!active || options.isEmpty()) return;
+        if (!active || options.isEmpty())
+            return;
         open = true;
         keyboardIndex = Math.clamp(selectedIndex, 0, options.size() - 1);
         keepVisible();
-        if (onToggleOpen != null) onToggleOpen.run();
+        if (onToggleOpen != null)
+            onToggleOpen.run();
     }
 
     private void choose(int index) {
-        if (index < 0 || index >= options.size()) return;
+        if (index < 0 || index >= options.size())
+            return;
         selectedIndex = index;
         currentValueLabel = null;
         closePopup();
-        if (onSelectionChanged != null) onSelectionChanged.accept(index);
+        if (onSelectionChanged != null)
+            onSelectionChanged.accept(index);
     }
 
+    @SuppressWarnings("null")
     @Override
-    protected void extractWidgetRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float tick) {
-        if (!visible) return;
+    protected void extractWidgetRenderState(@SuppressWarnings("null") GuiGraphicsExtractor g, int mouseX, int mouseY,
+            float tick) {
+        if (!visible)
+            return;
         var font = Minecraft.getInstance().font;
         int x = getX(), y = getY();
         boolean hover = mouseX >= x && mouseX < x + width && mouseY >= y && mouseY < y + rowHeight;
@@ -129,6 +152,7 @@ public class DropdownButton extends AbstractWidget {
     }
 
     /** 坐标与调用方的滚动内容一致，边界则使用页面坐标。 */
+    @SuppressWarnings("null")
     public void renderPopup(GuiGraphicsExtractor g, int mouseX, int mouseY, float tick,
             int viewportTop, int viewportBottom, double scrollOffset) {
         long now = System.nanoTime();
@@ -137,11 +161,13 @@ public class DropdownButton extends AbstractWidget {
         lastFrame = now;
         float target = open ? 1f : 0f;
         popupAlpha = GuiAnimationController.isEnabled() ? popupAlpha + (target - popupAlpha) * amount : target;
-        if (popupAlpha < 0.01f || options.isEmpty() || !visible) return;
+        if (popupAlpha < 0.01f || options.isEmpty() || !visible)
+            return;
 
         var font = Minecraft.getInstance().font;
         int naturalWidth = requestedPopupWidth;
-        for (String option : options) naturalWidth = Math.max(naturalWidth, font.width(option) + 32);
+        for (String option : options)
+            naturalWidth = Math.max(naturalWidth, font.width(option) + 32);
         int viewportWidth = canvasWidth > 0 ? canvasWidth : g.guiWidth();
         int pw = Math.min(naturalWidth, Math.max(1, viewportWidth - 16));
         int top = Math.max(4, viewportTop), bottom = Math.max(top + rowHeight, viewportBottom - 4);
@@ -161,8 +187,9 @@ public class DropdownButton extends AbstractWidget {
 
         g.nextStratum();
         float opacity = popupAlpha * externalAlpha * getAlpha();
-        if (!YzuiTheme.minimal()) RoundedRect.fill(g, px, py + 2, pw, ph, 8,
-                YzuiTheme.alpha(0xFF000000, 0.14f * opacity));
+        if (!YzuiTheme.minimal())
+            RoundedRect.fill(g, px, py + 2, pw, ph, 8,
+                    YzuiTheme.alpha(0xFF000000, 0.14f * opacity));
         RoundedRect.fill(g, px, py, pw, ph, 8, YzuiTheme.multiplyAlpha(YzuiTheme.surface(), opacity));
         YzuiTheme.border(g, px, py, pw, ph, 8, YzuiTheme.alpha(YzuiTheme.outlineVariant(), opacity));
         int hovered = optionAt(mouseX, mouseY);
@@ -173,28 +200,34 @@ public class DropdownButton extends AbstractWidget {
             boolean selected = index == selectedIndex;
             if (selected || index == hovered || (hovered < 0 && index == keyboardIndex && isFocused())) {
                 RoundedRect.fill(g, px + 3, rowY, pw - 6, rowHeight, 5,
-                        YzuiTheme.multiplyAlpha(selected ? YzuiTheme.alpha(YzuiTheme.primaryContainer(), 0.7f) : YzuiTheme.slotHover(), opacity));
+                        YzuiTheme.multiplyAlpha(
+                                selected ? YzuiTheme.alpha(YzuiTheme.primaryContainer(), 0.7f) : YzuiTheme.slotHover(),
+                                opacity));
             }
             int color = selected ? YzuiTheme.onPrimaryContainer() : YzuiTheme.text();
             YzuiTheme.label(g, font, Component.literal(options.get(index)), px + 12,
                     rowY + (rowHeight - font.lineHeight) / 2, pw - 32, YzuiTheme.alpha(color, opacity), false);
-            if (selected) g.text(font, "✓", px + pw - 16, rowY + (rowHeight - font.lineHeight) / 2,
-                    YzuiTheme.alpha(YzuiTheme.primary(), opacity), false);
+            if (selected)
+                g.text(font, "✓", px + pw - 16, rowY + (rowHeight - font.lineHeight) / 2,
+                        YzuiTheme.alpha(YzuiTheme.primary(), opacity), false);
         }
         g.disableScissor();
     }
 
     private int optionAt(double x, double y) {
         if (x < popupLeft || x >= popupLeft + popupRenderWidth
-                || y < popupTop + 2 || y >= popupTop + popupRenderHeight - 2) return -1;
+                || y < popupTop + 2 || y >= popupTop + popupRenderHeight - 2)
+            return -1;
         int index = firstVisible + (int) ((y - popupTop - 2) / rowHeight);
         return index < options.size() ? index : -1;
     }
 
     private void keepVisible() {
         firstVisible = Math.clamp(firstVisible, 0, Math.max(0, options.size() - visibleRows));
-        if (keyboardIndex < firstVisible) firstVisible = keyboardIndex;
-        if (keyboardIndex >= firstVisible + visibleRows) firstVisible = keyboardIndex - visibleRows + 1;
+        if (keyboardIndex < firstVisible)
+            firstVisible = keyboardIndex;
+        if (keyboardIndex >= firstVisible + visibleRows)
+            firstVisible = keyboardIndex - visibleRows + 1;
     }
 
     public boolean isPositionInsidePopup(double x, double y) {
@@ -203,15 +236,17 @@ public class DropdownButton extends AbstractWidget {
 
     @Override
     public boolean isMouseOver(double x, double y) {
-        if (!active || !visible) return false;
+        if (!active || !visible)
+            return false;
         return x >= getX() && x < getX() + width && y >= getY() && y < getY() + rowHeight
                 || open && x >= popupLeft && x < popupLeft + popupRenderWidth
-                && y >= popupTop && y < popupTop + popupRenderHeight;
+                        && y >= popupTop && y < popupTop + popupRenderHeight;
     }
 
     @Override
-    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
-        if (!isMouseOver(event.x(), event.y()) || event.button() != InputConstants.MOUSE_BUTTON_LEFT) return false;
+    public boolean mouseClicked(@SuppressWarnings("null") MouseButtonEvent event, boolean doubleClick) {
+        if (!isMouseOver(event.x(), event.y()) || event.button() != InputConstants.MOUSE_BUTTON_LEFT)
+            return false;
         setFocused(true);
         playDownSound(Minecraft.getInstance().getSoundManager());
         onClick(event, doubleClick);
@@ -219,19 +254,24 @@ public class DropdownButton extends AbstractWidget {
     }
 
     @Override
-    public void onClick(MouseButtonEvent event, boolean doubleClick) {
-        if (!active || !visible) return;
-        if (!open) openPopup();
+    public void onClick(@SuppressWarnings("null") MouseButtonEvent event, boolean doubleClick) {
+        if (!active || !visible)
+            return;
+        if (!open)
+            openPopup();
         else {
             int index = optionAt(event.x(), event.y());
-            if (index >= 0) choose(index);
-            else closePopup();
+            if (index >= 0)
+                choose(index);
+            else
+                closePopup();
         }
     }
 
     @Override
     public boolean mouseScrolled(double x, double y, double horizontal, double vertical) {
-        if (!open || !isMouseOver(x, y)) return false;
+        if (!open || !isMouseOver(x, y))
+            return false;
         firstVisible = Math.clamp(firstVisible - (int) Math.signum(vertical), 0,
                 Math.max(0, options.size() - visibleRows));
         keyboardIndex = Math.clamp(keyboardIndex, firstVisible,
@@ -240,16 +280,27 @@ public class DropdownButton extends AbstractWidget {
     }
 
     @Override
-    public boolean keyPressed(KeyEvent event) {
-        if (!active || !visible || (!isFocused() && !open)) return false;
-        if (event.key() == InputConstants.KEY_ESCAPE && open) { closePopup(); return true; }
-        if (event.key() == InputConstants.KEY_RETURN || event.key() == InputConstants.KEY_NUMPADENTER || event.key() == InputConstants.KEY_SPACE) {
-            if (open) choose(keyboardIndex); else openPopup();
+    public boolean keyPressed(@SuppressWarnings("null") KeyEvent event) {
+        if (!active || !visible || (!isFocused() && !open))
+            return false;
+        if (event.key() == InputConstants.KEY_ESCAPE && open) {
+            closePopup();
+            return true;
+        }
+        if (event.key() == InputConstants.KEY_RETURN || event.key() == InputConstants.KEY_NUMPADENTER
+                || event.key() == InputConstants.KEY_SPACE) {
+            if (open)
+                choose(keyboardIndex);
+            else
+                openPopup();
             return true;
         }
         if (event.key() == InputConstants.KEY_DOWN || event.key() == InputConstants.KEY_UP) {
-            if (!open) openPopup();
-            else keyboardIndex = Math.clamp(keyboardIndex + (event.key() == InputConstants.KEY_DOWN ? 1 : -1), 0, options.size() - 1);
+            if (!open)
+                openPopup();
+            else
+                keyboardIndex = Math.clamp(keyboardIndex + (event.key() == InputConstants.KEY_DOWN ? 1 : -1), 0,
+                        options.size() - 1);
             keepVisible();
             return true;
         }
@@ -259,11 +310,13 @@ public class DropdownButton extends AbstractWidget {
     @Override
     public void setFocused(boolean focused) {
         super.setFocused(focused);
-        if (!focused) closePopup();
+        if (!focused)
+            closePopup();
     }
 
+    @SuppressWarnings("null")
     @Override
-    protected void updateWidgetNarration(NarrationElementOutput output) {
+    protected void updateWidgetNarration(@SuppressWarnings("null") NarrationElementOutput output) {
         defaultButtonNarrationText(output);
     }
 }

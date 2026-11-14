@@ -8,7 +8,6 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.screens.Screen;
@@ -38,8 +37,8 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
 /** Shift+F 菜单：页面控件按视口复用，标题、内容与页脚各自保留边界。 */
 @SuppressWarnings("null")
 public class MenuScreen extends Screen implements YzuiMenuScreen {
-    private static final Identifier VERSION_ICON =
-            Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "textures/gui/icon.png");
+    private static final Identifier VERSION_ICON = Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID,
+            "textures/gui/icon.png");
     private final Deque<MenuElementGroup> history = new ArrayDeque<>();
     private final Map<MenuElementGroup, Integer> rememberedFocus = new IdentityHashMap<>();
     private MenuElementGroup shownGroup;
@@ -70,19 +69,22 @@ public class MenuScreen extends Screen implements YzuiMenuScreen {
         backButton.setBackgroundVisible(false);
         closeButton.setBackgroundVisible(false);
         activateCurrentGroup();
-        if (currentDialog != null) currentDialog.init(width, height);
+        if (currentDialog != null)
+            currentDialog.init(width, height);
         DebugLogger.debug("MenuScreen", "菜单布局更新：%d×%d，当前页面 %s", width, height,
                 currentGroup.getClass().getSimpleName());
     }
 
     public void switchTo(MenuElementGroup newGroup) {
-        if (targetGroup != null || GuiAnimationController.isExiting(this)) return;
+        if (targetGroup != null || GuiAnimationController.isExiting(this))
+            return;
         history.push(currentGroup);
         navigate(newGroup, false);
     }
 
     public void goBack() {
-        if (targetGroup != null || history.isEmpty() || GuiAnimationController.isExiting(this)) return;
+        if (targetGroup != null || history.isEmpty() || GuiAnimationController.isExiting(this))
+            return;
         navigate(history.pop(), true);
     }
 
@@ -90,7 +92,8 @@ public class MenuScreen extends Screen implements YzuiMenuScreen {
         rememberPageFocus();
         for (AbstractWidget button : currentButtons) {
             button.setFocused(false);
-            if (button instanceof DropdownButton dropdown) dropdown.closePopup();
+            if (button instanceof DropdownButton dropdown)
+                dropdown.closePopup();
         }
         DebugLogger.debug("MenuScreen", "菜单切换：%s → %s", currentGroup.getClass().getSimpleName(),
                 next.getClass().getSimpleName());
@@ -114,9 +117,11 @@ public class MenuScreen extends Screen implements YzuiMenuScreen {
         clearWidgets();
         currentButtons.clear();
         currentButtons.addAll(buttonsFor(currentGroup));
-        if (!currentGroup.isRoot()) currentButtons.add(backButton);
+        if (!currentGroup.isRoot())
+            currentButtons.add(backButton);
         currentButtons.add(closeButton);
-        for (AbstractWidget button : currentButtons) addWidget(button);
+        for (AbstractWidget button : currentButtons)
+            addWidget(button);
         if (shownGroup != currentGroup) {
             shownGroup = currentGroup;
             currentGroup.onShown();
@@ -133,9 +138,11 @@ public class MenuScreen extends Screen implements YzuiMenuScreen {
     /** 返回与窗口重排后恢复原入口，避免键盘从首页第一个按钮重新开始。 */
     private void rememberPageFocus() {
         var buttons = pageButtons.get(currentGroup);
-        if (buttons == null) return;
+        if (buttons == null)
+            return;
         for (int i = 0; i < buttons.size(); i++) {
-            if (buttons.get(i).isFocused()) rememberedFocus.put(currentGroup, i);
+            if (buttons.get(i).isFocused())
+                rememberedFocus.put(currentGroup, i);
         }
     }
 
@@ -152,7 +159,8 @@ public class MenuScreen extends Screen implements YzuiMenuScreen {
     }
 
     public void closeDialog() {
-        if (currentDialog != null) currentDialog.hide();
+        if (currentDialog != null)
+            currentDialog.hide();
     }
 
     public boolean hasDialog() {
@@ -161,7 +169,10 @@ public class MenuScreen extends Screen implements YzuiMenuScreen {
 
     @Override
     public void onClose() {
-        if (hasDialog()) { closeDialog(); return; }
+        if (hasDialog()) {
+            closeDialog();
+            return;
+        }
         for (AbstractWidget button : currentButtons) {
             if (button instanceof DropdownButton dropdown && dropdown.isOpen()) {
                 dropdown.closePopup();
@@ -170,23 +181,29 @@ public class MenuScreen extends Screen implements YzuiMenuScreen {
         }
         if (targetGroup != null) {
             // 前进途中取消本次前进；返回途中完成本次返回，每次 Esc 只退一层。
-            if (transitionReverse) currentGroup = targetGroup;
-            else if (!history.isEmpty()) history.pop();
+            if (transitionReverse)
+                currentGroup = targetGroup;
+            else if (!history.isEmpty())
+                history.pop();
             targetGroup = null;
             activateCurrentGroup();
             return;
         }
-        if (!history.isEmpty()) goBack();
-        else closeMenu();
+        if (!history.isEmpty())
+            goBack();
+        else
+            closeMenu();
     }
 
     /** 网络结果只交给实际打开的世界页，迟到响应不能关闭其他页面。 */
     public void applyWorldPoolState(top.csituka.youzaiworldcore.network.WorldPoolMenuStatePayload payload) {
-        if (currentGroup instanceof SwitchWorldMenuElements worlds) worlds.applyState(payload);
+        if (currentGroup instanceof SwitchWorldMenuElements worlds)
+            worlds.applyState(payload);
     }
 
     public void applyWorldPoolResult(top.csituka.youzaiworldcore.network.WorldPoolTeleportResultPayload payload) {
-        if (targetGroup == null && currentGroup instanceof SwitchWorldMenuElements worlds) worlds.applyResult(this, payload);
+        if (targetGroup == null && currentGroup instanceof SwitchWorldMenuElements worlds)
+            worlds.applyResult(this, payload);
     }
 
     public void startExit(Runnable onComplete) {
@@ -198,8 +215,10 @@ public class MenuScreen extends Screen implements YzuiMenuScreen {
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
-        float progress = targetGroup == null ? 1f : YzuiMotion.progress(
-                System.currentTimeMillis() - transitionStartTime, YzuiMotion.switchDuration(YzuiTheme.visualStyle()));
+        float progress = targetGroup == null ? 1f
+                : YzuiMotion.progress(
+                        System.currentTimeMillis() - transitionStartTime,
+                        YzuiMotion.switchDuration(YzuiTheme.visualStyle()));
         if (targetGroup != null && (GuiAnimationController.isDisabled() || progress >= 1f)) {
             currentGroup = targetGroup;
             targetGroup = null;
@@ -228,7 +247,8 @@ public class MenuScreen extends Screen implements YzuiMenuScreen {
                     layout.contentBottom() - 70);
         }
         renderPage(g, displayedGroup, opacity, offset, mouseX, mouseY, partialTick, interactive);
-        if (!displayedGroup.isRoot()) renderWidget(backButton, g, mouseX, mouseY, partialTick, interactive);
+        if (!displayedGroup.isRoot())
+            renderWidget(backButton, g, mouseX, mouseY, partialTick, interactive);
         renderWidget(closeButton, g, mouseX, mouseY, partialTick, interactive);
         renderVersionText(g);
 
@@ -279,18 +299,21 @@ public class MenuScreen extends Screen implements YzuiMenuScreen {
     private void renderWidget(AbstractWidget button, GuiGraphicsExtractor g, int mouseX, int mouseY,
             float partialTick, boolean interactive) {
         boolean focused = button.isFocused();
-        if (!interactive) button.setFocused(false);
+        if (!interactive)
+            button.setFocused(false);
         try {
             // 原版入口同时维护提示计时和焦点朗读，不再绕过它直接画控件。
             button.extractRenderState(g, interactive ? mouseX : -1, interactive ? mouseY : -1, partialTick);
         } finally {
-            if (!interactive) button.setFocused(focused);
+            if (!interactive)
+                button.setFocused(focused);
         }
     }
 
     private void renderTitle(GuiGraphicsExtractor g, MenuElementGroup group) {
         var layout = new MenuLayout(width, height);
-        if (group.isRoot()) MenuIcon.WORLD.render(g, layout.backX() + 4, 27, YzuiTheme.primary());
+        if (group.isRoot())
+            MenuIcon.WORLD.render(g, layout.backX() + 4, 27, YzuiTheme.primary());
         YzuiTheme.label(g, font, Component.literal(group.getTitleText()),
                 layout.titleX(), 24, layout.titleWidth(), YzuiTheme.text(), false);
         String subtitle = group.getSubtitleText();
@@ -318,41 +341,56 @@ public class MenuScreen extends Screen implements YzuiMenuScreen {
 
     @Override
     public boolean keyPressed(KeyEvent event) {
-        if (YzuiMenuScreen.handleEscape(this, event)) return true;
-        if (hasDialog()) return currentDialog.keyPressed(event);
-        if (GuiAnimationController.isExiting(this) || targetGroup != null) return true;
+        if (YzuiMenuScreen.handleEscape(this, event))
+            return true;
+        if (hasDialog())
+            return currentDialog.keyPressed(event);
+        if (GuiAnimationController.isExiting(this) || targetGroup != null)
+            return true;
         currentGroup.updateButtons(buttonsFor(currentGroup));
         for (AbstractWidget button : currentButtons) {
-            if (button instanceof DropdownButton dropdown && dropdown.isOpen() && dropdown.keyPressed(event)) return true;
+            if (button instanceof DropdownButton dropdown && dropdown.isOpen() && dropdown.keyPressed(event))
+                return true;
         }
-        if (event.key() == InputConstants.KEY_ESCAPE) { onClose(); return true; }
+        if (event.key() == InputConstants.KEY_ESCAPE) {
+            onClose();
+            return true;
+        }
         return WidgetFocus.moveInGrid(event, currentButtons)
                 || WidgetFocus.keyPressed(event, currentButtons) || super.keyPressed(event);
     }
 
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean isActuallyClick) {
-        if (event.button() == InputConstants.MOUSE_BUTTON_LEFT && closeButton.mouseClicked(event, isActuallyClick)) return true;
-        if (GuiAnimationController.isExiting(this) || targetGroup != null || event.button() != InputConstants.MOUSE_BUTTON_LEFT) return true;
-        if (hasDialog()) return currentDialog.mouseClicked(event.x(), event.y());
+        if (event.button() == InputConstants.MOUSE_BUTTON_LEFT && closeButton.mouseClicked(event, isActuallyClick))
+            return true;
+        if (GuiAnimationController.isExiting(this) || targetGroup != null
+                || event.button() != InputConstants.MOUSE_BUTTON_LEFT)
+            return true;
+        if (hasDialog())
+            return currentDialog.mouseClicked(event.x(), event.y());
         currentGroup.updateButtons(buttonsFor(currentGroup));
         for (AbstractWidget button : currentButtons) {
             if (button instanceof DropdownButton dropdown && dropdown.isOpen()) {
-                if (!dropdown.mouseClicked(event, isActuallyClick)) dropdown.closePopup();
+                if (!dropdown.mouseClicked(event, isActuallyClick))
+                    dropdown.closePopup();
                 return true;
             }
         }
         WidgetFocus.mouseFocus(event.x(), event.y(), currentButtons);
         for (AbstractWidget button : currentButtons) {
-            if (button.active && button.visible && button.mouseClicked(event, isActuallyClick)) return true;
+            if (button.active && button.visible && button.mouseClicked(event, isActuallyClick))
+                return true;
         }
         return false;
     }
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
-        if (hasDialog()) return currentDialog.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
-        if (GuiAnimationController.isExiting(this) || targetGroup != null) return true;
+        if (hasDialog())
+            return currentDialog.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
+        if (GuiAnimationController.isExiting(this) || targetGroup != null)
+            return true;
         for (AbstractWidget button : currentButtons) {
             if (button instanceof DropdownButton dropdown && dropdown.isOpen()) {
                 dropdown.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
@@ -368,5 +406,7 @@ public class MenuScreen extends Screen implements YzuiMenuScreen {
     }
 
     @Override
-    public boolean isPauseScreen() { return false; }
+    public boolean isPauseScreen() {
+        return false;
+    }
 }

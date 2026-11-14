@@ -28,6 +28,7 @@ public class SwitchWorldMenuElements implements MenuElementGroup {
     private boolean ready, loadingMetadata;
     private Component status = text("loading");
 
+    @SuppressWarnings("null")
     @Override
     public void onShown() {
         ready = false;
@@ -47,15 +48,18 @@ public class SwitchWorldMenuElements implements MenuElementGroup {
         ClientPlayNetworking.send(new WorldPoolMenuRequestPayload(metadataRequest, ""));
     }
 
+    @SuppressWarnings("null")
     public void applyState(WorldPoolMenuStatePayload payload) {
-        if (!payload.requestId().equals(metadataRequest) && !payload.requestId().equals(lastTeleportRequest)) return;
+        if (!payload.requestId().equals(metadataRequest) && !payload.requestId().equals(lastTeleportRequest))
+            return;
         worlds = payload.entries().stream().collect(java.util.stream.Collectors.toMap(
                 WorldPoolMenuStatePayload.Entry::poolId, entry -> entry, (first, second) -> first));
         currentPoolId = payload.currentPoolId();
         currentName = payload.currentName();
         ready = true;
         loadingMetadata = false;
-        if (payload.requestId().equals(metadataRequest) && pendingRequest == null) status = text("hint");
+        if (payload.requestId().equals(metadataRequest) && pendingRequest == null)
+            status = text("hint");
     }
 
     public void applyResult(MenuScreen screen, WorldPoolTeleportResultPayload payload) {
@@ -65,12 +69,15 @@ public class SwitchWorldMenuElements implements MenuElementGroup {
             status = payload.message();
             return;
         }
-        if (!payload.requestId().equals(pendingRequest)) return;
+        if (!payload.requestId().equals(pendingRequest))
+            return;
         pendingRequest = null;
         status = payload.message();
-        if (payload.success()) screen.closeMenu();
+        if (payload.success())
+            screen.closeMenu();
     }
 
+    @SuppressWarnings("null")
     private static Component text(String key, Object... args) {
         return Component.translatable("screen.youzaiworldcore.world_menu." + key, args);
     }
@@ -82,8 +89,7 @@ public class SwitchWorldMenuElements implements MenuElementGroup {
             "creative", "creation_pool",
             "building", "building_pool",
             "command", "commands_pool",
-            "marketplace", "tutorial_world_pool"
-    );
+            "marketplace", "tutorial_world_pool");
 
     private static final String[] ENTRIES = {
             "survival_world", "kingdom", "gameplay", "creative",
@@ -105,11 +111,14 @@ public class SwitchWorldMenuElements implements MenuElementGroup {
     @Override
     public String getSubtitleText() {
         return text("current", currentName.isBlank()
-                ? I18n.get("youzaiworldcore.message.gui.unknown") : currentName).getString();
+                ? I18n.get("youzaiworldcore.message.gui.unknown")
+                : currentName).getString();
     }
 
     @Override
-    public boolean isRoot() { return false; }
+    public boolean isRoot() {
+        return false;
+    }
 
     @Override
     public List<AbstractWidget> createButtons(MenuScreen screen, int screenWidth, int screenHeight,
@@ -139,6 +148,7 @@ public class SwitchWorldMenuElements implements MenuElementGroup {
         return buttons;
     }
 
+    @SuppressWarnings("null")
     @Override
     public void updateButtons(List<AbstractWidget> buttons) {
         if (loadingMetadata && System.currentTimeMillis() - metadataRequestedAt > 15000) {
@@ -151,26 +161,33 @@ public class SwitchWorldMenuElements implements MenuElementGroup {
         }
         for (int i = 0; i < Math.min(buttons.size(), ENTRIES.length); i++) {
             String poolId = switch (i) {
-                case 0 -> POOL_MAP.get("survival"); case 1 -> POOL_MAP.get("kingdom");
-                case 2 -> POOL_MAP.get("gameplay"); case 3 -> POOL_MAP.get("creative");
-                case 4 -> POOL_MAP.get("building"); case 5 -> POOL_MAP.get("marketplace");
-                case 8 -> POOL_MAP.get("command"); default -> null;
+                case 0 -> POOL_MAP.get("survival");
+                case 1 -> POOL_MAP.get("kingdom");
+                case 2 -> POOL_MAP.get("gameplay");
+                case 3 -> POOL_MAP.get("creative");
+                case 4 -> POOL_MAP.get("building");
+                case 5 -> POOL_MAP.get("marketplace");
+                case 8 -> POOL_MAP.get("command");
+                default -> null;
             };
-            if (poolId == null) continue;
+            if (poolId == null)
+                continue;
             var button = (MenuNavigationButton) buttons.get(i);
             var world = worlds.get(poolId);
             boolean current = poolId.equals(currentPoolId);
             button.active = ready && pendingRequest == null && world != null && world.available() && !current;
-            if (world != null) button.setMessage(Component.literal(world.name()));
-            button.setDetail(!ready ? text(loadingMetadata ? "loading" : "unavailable") : current ? text("here")
-                    : world == null || !world.available() ? text("unavailable")
-                    : Component.translatable("gameMode." + world.gameMode()));
+            if (world != null)
+                button.setMessage(Component.literal(world.name()));
+            button.setDetail(!ready ? text(loadingMetadata ? "loading" : "unavailable")
+                    : current ? text("here")
+                            : world == null || !world.available() ? text("unavailable")
+                                    : Component.translatable("gameMode." + world.gameMode()));
         }
     }
 
     @Override
     public void renderCustomContent(GuiGraphicsExtractor graphics, int width, int height, float alpha,
-                                    float xOffset, int mouseX, int mouseY) {
+            float xOffset, int mouseX, int mouseY) {
         var font = Minecraft.getInstance().font;
         YzuiTheme.label(graphics, font, status, (width - new MenuLayout(width, height).contentWidth(640)) / 2,
                 height - MenuLayout.FOOTER_MARGIN - 16, new MenuLayout(width, height).contentWidth(640),
@@ -181,17 +198,20 @@ public class SwitchWorldMenuElements implements MenuElementGroup {
      * 发送维度池传送请求（7 个维度池按钮使用此方法）。
      * <p>
      * 通过 Fabric 网络包 {@link WorldPoolMenuRequestPayload} 向服务端发送目标池 ID，
-     * 服务端接收后由 {@link top.csituka.youzaiworldcore.dimensionalinventories.DimensionPoolManager}
+     * 服务端接收后由
+     * {@link top.csituka.youzaiworldcore.dimensionalinventories.DimensionPoolManager}
      * 执行完整的池切换流程。
      */
     private void requestPoolTeleport(MenuScreen screen, String buttonId) {
         String poolId = POOL_MAP.get(buttonId);
         var world = worlds.get(poolId);
-        if (!ready || pendingRequest != null || world == null || !world.available() || poolId.equals(currentPoolId)) return;
+        if (!ready || pendingRequest != null || world == null || !world.available() || poolId.equals(currentPoolId))
+            return;
         ConfirmationDialog dialog = new ConfirmationDialog(
                 text("confirm_title", world.name()).getString(),
                 new String[] {
-                        text("confirm_mode", Component.translatable("gameMode." + world.gameMode()).getString()).getString(),
+                        text("confirm_mode", Component.translatable("gameMode." + world.gameMode()).getString())
+                                .getString(),
                         text("confirm_inventory").getString(), text("confirm_position").getString()
                 }, () -> {
                     pendingRequest = UUID.randomUUID();
@@ -210,7 +230,8 @@ public class SwitchWorldMenuElements implements MenuElementGroup {
     private void showTeleportDialog(MenuScreen screen, String worldId) {
         ConfirmationDialog dialog = new ConfirmationDialog(
                 I18n.get("youzaiworldcore.message.gui.confirm_teleport_title"),
-                new String[]{I18n.get("youzaiworldcore.message.gui.confirm_teleport_msg1"), I18n.get("youzaiworldcore.message.gui.confirm_teleport_msg2")},
+                new String[] { I18n.get("youzaiworldcore.message.gui.confirm_teleport_msg1"),
+                        I18n.get("youzaiworldcore.message.gui.confirm_teleport_msg2") },
                 () -> {
                     var player = Minecraft.getInstance().player;
                     if (player != null) {
@@ -218,8 +239,7 @@ public class SwitchWorldMenuElements implements MenuElementGroup {
                     }
                     Minecraft.getInstance().gui.setScreen(null);
                 },
-                null
-        );
+                null);
         screen.showDialog(dialog);
     }
 

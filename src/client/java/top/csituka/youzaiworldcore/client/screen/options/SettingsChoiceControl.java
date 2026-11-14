@@ -15,7 +15,8 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
 
 /** 设置中心的开关与下拉选择适配；保存、校验和联动仍执行原版控件注册的回调。 */
 final class SettingsChoiceControl {
-    private SettingsChoiceControl() { }
+    private SettingsChoiceControl() {
+    }
 
     static AbstractWidget adapt(AbstractWidget widget) {
         return widget instanceof CycleButton<?> cycle ? adaptCycle(cycle) : widget;
@@ -34,7 +35,8 @@ final class SettingsChoiceControl {
     }
 
     static void synchronize(AbstractWidget widget) {
-        if (widget instanceof BoundControl bound) bound.synchronize();
+        if (widget instanceof BoundControl bound)
+            bound.synchronize();
     }
 
     static String searchText(AbstractWidget widget) {
@@ -45,6 +47,7 @@ final class SettingsChoiceControl {
 
     private interface BoundControl {
         Binding<?> binding();
+
         void synchronize();
     }
 
@@ -80,7 +83,9 @@ final class SettingsChoiceControl {
             return SettingsWidgets.key(labels.apply(value), on ? "options.on" : "options.off");
         }
 
-        private boolean isOn() { return isOnOffValue(source.getValue(), true); }
+        private boolean isOn() {
+            return isOnOffValue(source.getValue(), true);
+        }
 
         private void synchronize(AbstractWidget widget) {
             widget.active = source.active && !values.getSelectedList().isEmpty();
@@ -106,17 +111,20 @@ final class SettingsChoiceControl {
         }
 
         private void select(int index) {
-            if (index >= 0 && index < presented.size()) choose(presented.get(index));
+            if (index >= 0 && index < presented.size())
+                choose(presented.get(index));
         }
 
         private void choose(T value) {
             try {
                 if (!source.active || !source.visible || !values.getSelectedList().contains(value)
-                        || Objects.equals(source.getValue(), value)) return;
+                        || Objects.equals(source.getValue(), value))
+                    return;
                 // setValue 本身不执行保存回调；直接应用一次目标值，避免循环经过中间选项。
                 source.setValue(value);
                 onChange.onValueChange(source, value);
-                DebugLogger.debug("YzuiSettings", "设置选项：%s → %s", name.getString(), labels.apply(source.getValue()).getString());
+                DebugLogger.debug("YzuiSettings", "设置选项：%s → %s", name.getString(),
+                        labels.apply(source.getValue()).getString());
             } finally {
                 control.synchronize();
             }
@@ -132,12 +140,20 @@ final class SettingsChoiceControl {
             setWrapMessage(true);
         }
 
-        @Override public Binding<T> binding() { return binding; }
-        @Override public void synchronize() {
+        @Override
+        public Binding<T> binding() {
+            return binding;
+        }
+
+        @Override
+        public void synchronize() {
             binding.synchronize(this);
             setChecked(binding.isOn());
         }
-        @Override protected MutableComponent createNarrationMessage() {
+
+        @SuppressWarnings("null")
+        @Override
+        protected MutableComponent createNarrationMessage() {
             return binding.source.createDefaultNarrationMessage();
         }
     }
@@ -150,18 +166,30 @@ final class SettingsChoiceControl {
             this.binding = binding;
         }
 
-        @Override public Binding<T> binding() { return binding; }
-        @Override public void synchronize() {
+        @Override
+        public Binding<T> binding() {
+            return binding;
+        }
+
+        @SuppressWarnings("null")
+        @Override
+        public void synchronize() {
             binding.synchronize(this);
             List<T> available = List.copyOf(binding.values.getSelectedList());
             // 动态可选范围改变时关闭旧菜单，旧条目的索引不能指向另一批值。
-            if (!available.equals(binding.presented)) closePopup();
+            if (!available.equals(binding.presented))
+                closePopup();
             binding.presented = available;
             updateOptions(available.stream().map(value -> binding.labels.apply(value).getString()).toList(),
-                    available.indexOf(binding.source.getValue()), binding.labels.apply(binding.source.getValue()).getString());
-            if (!active || !visible) closePopup();
+                    available.indexOf(binding.source.getValue()),
+                    binding.labels.apply(binding.source.getValue()).getString());
+            if (!active || !visible)
+                closePopup();
         }
-        @Override protected MutableComponent createNarrationMessage() {
+
+        @SuppressWarnings("null")
+        @Override
+        protected MutableComponent createNarrationMessage() {
             return binding.source.createDefaultNarrationMessage();
         }
     }

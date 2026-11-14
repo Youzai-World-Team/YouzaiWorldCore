@@ -42,13 +42,21 @@ public final class WelcomeGuideScreen extends Screen {
     private static final int PANEL_MAX_WIDTH = 700;
     private static final int PANEL_MAX_HEIGHT = 440;
     private static final int PANEL_MARGIN = 12;
-    private static final int PANEL_RADIUS = 8;
     private static final int CARD_GAP = 10;
     private static final int BUTTON_WIDTH = 110;
     private static final int BUTTON_HEIGHT = 24;
-    private static int textColor() { return YzuiTheme.text(); }
-    private static int mutedTextColor() { return YzuiTheme.textMuted(); }
-    private static int accentColor() { return YzuiTheme.primary(); }
+
+    private static int textColor() {
+        return YzuiTheme.text();
+    }
+
+    private static int mutedTextColor() {
+        return YzuiTheme.textMuted();
+    }
+
+    private static int accentColor() {
+        return YzuiTheme.primary();
+    }
 
     private static final FontDescription.Resource VANILLA_PREVIEW_FONT = new FontDescription.Resource(
             Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "vanilla_preview"));
@@ -334,7 +342,7 @@ public final class WelcomeGuideScreen extends Screen {
         boolean selected = widget.selected.getAsBoolean();
         boolean childHighlighted = widget.previewButton != null
                 && (widget.previewButton.isHoveredOrFocused()
-                || widget.previewSlider.isHoveredOrFocused());
+                        || widget.previewSlider.isHoveredOrFocused());
         boolean highlighted = widget.isHoveredOrFocused() || childHighlighted;
         int border = selected || highlighted ? accentColor() : YzuiTheme.outlineVariant();
         int fill = selected ? YzuiTheme.primaryContainer() : YzuiTheme.surfaceLow();
