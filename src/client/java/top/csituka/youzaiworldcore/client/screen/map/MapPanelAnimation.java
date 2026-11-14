@@ -65,6 +65,11 @@ final class MapPanelAnimation {
         return GuiAnimationController.isEnabled() && exiting.stream().anyMatch(entry -> entry.panel.isMouseOver(x, y));
     }
 
+    /** 模态弹窗的退出遮罩尚可见时，继续拦截整个地图的输入。 */
+    boolean isClosing() {
+        return GuiAnimationController.isEnabled() && !exiting.isEmpty();
+    }
+
     boolean coversClosing(AbstractWidget widget) {
         return GuiAnimationController.isEnabled() && exiting.stream()
                 .anyMatch(entry -> entry.panel.getRectangle().intersects(widget.getRectangle()));

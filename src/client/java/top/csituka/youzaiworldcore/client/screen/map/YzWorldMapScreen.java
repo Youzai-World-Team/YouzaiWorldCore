@@ -8,8 +8,10 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.components.Tooltip;
+import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.input.PreeditEvent;
 import net.minecraft.network.chat.Component;
 import top.csituka.youzaiworldcore.client.config.MapSettings;
 import top.csituka.youzaiworldcore.client.map.MapCanvas;
@@ -51,8 +53,10 @@ public final class YzWorldMapScreen extends Screen {
     private MapSettingsPanel settingsPanel;
     private MapDetailPanel detailPanel;
     private MapOverlayPanel overlayPanel;
+    private MapOverlayPanel modalPanel;
     private TransparentButton contextMenu;
     private final MapPanelAnimation panelAnimation = new MapPanelAnimation();
+    private final MapPanelAnimation modalAnimation = new MapPanelAnimation();
     private final List<TransparentButton> layerControls = new ArrayList<>();
     private List<Integer> exploredLayers = List.of();
     private Integer exploredHeight;
@@ -79,6 +83,7 @@ public final class YzWorldMapScreen extends Screen {
     @Override protected void init() {
         closeContextMenu();
         panelAnimation.layout(width, height);
+        modalAnimation.layout(width, height);
         clearFocus(); clearWidgets(); controls.clear(); displayed = null;
         dragging = false; zoomDragging = false;
         left = 0; top = 0; mapWidth = Math.max(1, width); mapHeight = Math.max(1, height);
@@ -142,6 +147,7 @@ public final class YzWorldMapScreen extends Screen {
         if (settingsPanel != null) { settingsPanel.layout(width, height); addWidget(settingsPanel); panelAnimation.show(settingsPanel); }
         if (detailPanel != null) { detailPanel.layout(width, height); addWidget(detailPanel); panelAnimation.show(detailPanel); }
         if (overlayPanel != null) { overlayPanel.layout(width, height); addWidget(overlayPanel); panelAnimation.show(overlayPanel); }
+        if (modalPanel != null) { modalPanel.layout(width, height); addWidget(modalPanel); modalAnimation.show(modalPanel); setFocused(modalPanel); }
         DebugLogger.debug("WorldMap", "全屏地图布局：%dx%d", width, height);
     }
 
@@ -212,9 +218,30 @@ public final class YzWorldMapScreen extends Screen {
         clearFocus(); setFocused(overlay);
     }
     void closeOverlay(MapOverlayPanel overlay) {
+        if (overlay != null && modalPanel == overlay) { closeModal(); return; }
         if (overlay == null || overlayPanel != overlay) return;
+        closeModal();
         clearFocus(); panelAnimation.hide(overlayPanel); removeWidget(overlayPanel); overlayPanel = null;
     }
+
+    /** 在现有路径点面板上叠加弹窗，保留底层面板及地图视口。 */
+    void openModal(MapOverlayPanel modal) {
+        closeContextMenu(); closeModal(); clearFocus();
+        dragging = false; zoomDragging = false; setDragging(false);
+        modalPanel = modal; modal.layout(width, height); addWidget(modal);
+        modalAnimation.show(modal); setFocused(modal);
+        DebugLogger.debug("WorldMap", "打开叠加弹窗：%s", modal.getClass().getSimpleName());
+    }
+
+    private void closeModal() {
+        if (modalPanel == null) return;
+        clearFocus(); modalAnimation.hide(modalPanel); removeWidget(modalPanel); modalPanel = null;
+        setDragging(false);
+        if (overlayPanel != null) setFocused(overlayPanel);
+        DebugLogger.debug("WorldMap", "关闭叠加弹窗并返回原面板");
+    }
+
+    private boolean modalBlocksInput() { return modalPanel != null || modalAnimation.isClosing(); }
     void locatePoint(top.csituka.youzaiworldcore.map.MapWaypoint point) {
         dimension = point.dimension(); centerX = point.x(); centerZ = point.z(); follow = false; exploredHeight = null; overviewLayer = null;
         closeOverlay(overlayPanel); canvas.close(); init();
@@ -247,6 +274,8 @@ public final class YzWorldMapScreen extends Screen {
 
     /** 被覆盖的地图按钮不参与键盘焦点和鼠标命中。 */
     @Override public List<? extends GuiEventListener> children() {
+        if (modalPanel != null) return List.of(modalPanel);
+        if (modalAnimation.isClosing()) return List.of();
         if (contextMenu != null) return List.of(contextMenu);
         return super.children().stream().filter(child -> !(child instanceof AbstractWidget widget)
                 || !panelAnimation.coversClosing(widget)
@@ -324,7 +353,8 @@ public final class YzWorldMapScreen extends Screen {
     }
 
     @Override public void tick() {
-        if (overlayPanel != null) overlayPanel.tick();
+        if (modalPanel != null) modalPanel.tick();
+        else if (overlayPanel != null) overlayPanel.tick();
         if (detailPanel != null) detailPanel.tick();
         var available = availableLayers();
         if (!available.equals(exploredLayers)) {
@@ -356,6 +386,7 @@ public final class YzWorldMapScreen extends Screen {
     @Override public void extractBackground(GuiGraphicsExtractor g, int x, int y, float delta) { YzuiTheme.backdrop(g); }
     @Override public void extractRenderState(GuiGraphicsExtractor g, int mx, int my, float delta) {
         panelAnimation.update();
+        modalAnimation.update();
         var player = Minecraft.getInstance().player;
         if (follow && player != null) {
             var tracked = MapClient.tracked(dimension);
@@ -412,13 +443,16 @@ public final class YzWorldMapScreen extends Screen {
         boolean covered = overOverlay(mx, my);
         super.extractRenderState(g, covered ? -100 : mx, covered ? -100 : my, delta);
         boolean overMenu = overContextMenu(mx, my);
-        panelAnimation.draw(g, overMenu ? -100 : mx, overMenu ? -100 : my, delta);
+        boolean hidePanelHover = overMenu || modalBlocksInput();
+        if (modalBlocksInput() && overlayPanel != null) overlayPanel.clearFocus();
+        panelAnimation.draw(g, hidePanelHover ? -100 : mx, hidePanelHover ? -100 : my, delta);
         if (contextMenu != null) {
             g.nextStratum();
             YzuiTheme.card(g, contextMenu.getX() - CONTEXT_MENU_PADDING, contextMenu.getY() - CONTEXT_MENU_PADDING,
                     contextMenu.getWidth() + CONTEXT_MENU_PADDING * 2, contextMenu.getHeight() + CONTEXT_MENU_PADDING * 2);
             contextMenu.extractRenderState(g, mx, my, delta);
         }
+        modalAnimation.draw(g, mx, my, delta);
     }
 
     private boolean inside(double x, double y) {
@@ -426,7 +460,7 @@ public final class YzWorldMapScreen extends Screen {
     }
     /** 覆盖页使用完整面板区域拦截命中，空白处也不能触发底层悬停提示。 */
     private boolean overOverlay(double x, double y) {
-        return overContextMenu(x, y)
+        return modalBlocksInput() || overContextMenu(x, y)
                 || overlayPanel != null && overlayPanel.isMouseOver(x, y)
                 || detailPanel != null && detailPanel.isMouseOver(x, y)
                 || settingsPanel != null && settingsPanel.isMouseOver(x, y)
@@ -496,6 +530,13 @@ public final class YzWorldMapScreen extends Screen {
     }
 
     @Override public boolean mouseClicked(MouseButtonEvent event, boolean actual) {
+        if (modalBlocksInput()) {
+            if (modalPanel != null && modalPanel.isMouseOver(event.x(), event.y())) {
+                setFocused(modalPanel); setDragging(event.button() == InputConstants.MOUSE_BUTTON_LEFT);
+                modalPanel.mouseClicked(event, actual);
+            }
+            return true;
+        }
         if (contextMenu != null) {
             if (overContextMenu(event.x(), event.y())) {
                 contextMenu.mouseClicked(event, actual); return true;
@@ -545,6 +586,7 @@ public final class YzWorldMapScreen extends Screen {
     }
 
     @Override public boolean mouseDragged(MouseButtonEvent event, double dx, double dy) {
+        if (modalBlocksInput()) { if (modalPanel != null) modalPanel.mouseDragged(event, dx, dy); return true; }
         if (contextMenu != null) return true;
         if (zoomDragging && event.button() == InputConstants.MOUSE_BUTTON_LEFT) { slideZoom(event.y()); return true; }
         if (!dragging || event.button() != InputConstants.MOUSE_BUTTON_LEFT) return super.mouseDragged(event, dx, dy);
@@ -554,6 +596,10 @@ public final class YzWorldMapScreen extends Screen {
     }
 
     @Override public boolean mouseReleased(MouseButtonEvent event) {
+        if (modalBlocksInput()) {
+            if (modalPanel != null) modalPanel.mouseReleased(event);
+            setDragging(false); return true;
+        }
         if (event.button() == InputConstants.MOUSE_BUTTON_LEFT && zoomDragging) { zoomDragging = false; return true; }
         if (event.button() == InputConstants.MOUSE_BUTTON_LEFT && dragging) {
             dragging = false;
@@ -565,6 +611,7 @@ public final class YzWorldMapScreen extends Screen {
     private int playerHeight() { var player = Minecraft.getInstance().player; return player == null ? 64 : player.getBlockY(); }
 
     @Override public boolean mouseScrolled(double x, double y, double horizontal, double vertical) {
+        if (modalBlocksInput()) { if (modalPanel != null) modalPanel.mouseScrolled(x, y, horizontal, vertical); return true; }
         if (contextMenu != null) {
             if (!overContextMenu(x, y)) closeContextMenu();
             return true;
@@ -583,6 +630,12 @@ public final class YzWorldMapScreen extends Screen {
         centerZ = Math.clamp(zoomed.centerZ(), -MapTileKey.WORLD_LIMIT, MapTileKey.WORLD_LIMIT); follow = false; return true;
     }
     @Override public boolean keyPressed(KeyEvent event) {
+        if (modalPanel != null) {
+            if (event.key() == InputConstants.KEY_ESCAPE) modalPanel.onClose();
+            else super.keyPressed(event);
+            return true;
+        }
+        if (modalAnimation.isClosing()) return true;
         if (contextMenu != null) {
             if (event.key() == InputConstants.KEY_ESCAPE) closeContextMenu();
             else if (MapClient.OPEN.matches(event)) onClose();
@@ -603,10 +656,26 @@ public final class YzWorldMapScreen extends Screen {
         if (event.key() == InputConstants.KEY_MINUS || event.key() == SDLScancode.SDL_SCANCODE_KP_MINUS) { zoom(scale / 1.25); return true; }
         return super.keyPressed(event);
     }
+
+    @Override public boolean keyReleased(KeyEvent event) {
+        if (modalBlocksInput()) { if (modalPanel != null) modalPanel.keyReleased(event); return true; }
+        return super.keyReleased(event);
+    }
+
+    @Override public boolean charTyped(CharacterEvent event) {
+        if (modalBlocksInput()) { if (modalPanel != null) modalPanel.charTyped(event); return true; }
+        return super.charTyped(event);
+    }
+
+    @Override public boolean preeditUpdated(PreeditEvent event) {
+        if (modalBlocksInput()) { if (modalPanel != null) modalPanel.preeditUpdated(event); return true; }
+        return super.preeditUpdated(event);
+    }
+
     @Override public boolean isPauseScreen() { return false; }
     @Override public void onClose() {
         if (MapSettings.enabled(MapSettings.Toggle.REMEMBER_VIEW)) MapPersonalData.rememberView(dimension, centerX, centerZ, scale);
         MapClient.suppressShortcuts(); Minecraft.getInstance().gui.setScreen(parent);
     }
-    @Override public void removed() { closeContextMenu(); panelAnimation.finish(); canvas.close(); displayed = null; zoomDragging = false; dragging = false; super.removed(); }
+    @Override public void removed() { closeContextMenu(); panelAnimation.finish(); modalAnimation.finish(); canvas.close(); displayed = null; zoomDragging = false; dragging = false; super.removed(); }
 }

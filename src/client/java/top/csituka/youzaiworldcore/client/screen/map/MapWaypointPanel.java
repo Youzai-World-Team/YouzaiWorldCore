@@ -190,10 +190,12 @@ final class MapWaypointPanel extends MapOverlayPanel {
     }
     private void editGroup(boolean creating) {
         if (!creating && (filter != Filter.GROUP || !group.editable())) return;
-        Minecraft.getInstance().gui.setScreen(new MapGroupEditScreen(owner, creating ? null : group, value -> {
-            group = value; filter = Filter.GROUP; selected = null; page = 0;
-            expanded.add(dimension); dirty = true;
-        }));
+        if (creating) owner.openModal(new MapGroupCreatePanel(owner, this::groupChanged));
+        else Minecraft.getInstance().gui.setScreen(new MapGroupEditScreen(owner, group, this::groupChanged));
+    }
+    private void groupChanged(MapWaypointGroup value) {
+        group = value; filter = Filter.GROUP; selected = null; page = 0;
+        expanded.add(dimension); dirty = true;
     }
     private void newPoint() {
         var player = Minecraft.getInstance().player; if (player == null) return;
