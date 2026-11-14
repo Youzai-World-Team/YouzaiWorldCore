@@ -1292,7 +1292,5 @@
   "screen.youzaiworldcore.pets.login_required": "Vor der Tierverwaltung anmelden",
   "screen.youzaiworldcore.pause.profile": "Aktueller Spieler",
   "screen.youzaiworldcore.pause.singleplayer": "Einzelspielerwelt",
-  "screen.youzaiworldcore.pause.paused": "Spiel pausiert · Bereit zum Weiterspielen",
-  "screen.youzaiworldcore.pause.live": "Menü geöffnet · Die Welt läuft weiter",
   "screen.youzaiworldcore.pause.hint": "Esc · Zurück zum Spiel"
 }

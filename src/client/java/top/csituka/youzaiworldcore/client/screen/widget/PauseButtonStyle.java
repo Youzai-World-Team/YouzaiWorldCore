@@ -48,12 +48,13 @@ public final class PauseButtonStyle {
                         ? YzuiTheme.palette().error() : YzuiTheme.palette().text(), surface);
         color = YzuiTheme.alpha(color, button.getAlpha() * (button.active ? 1f : 0.68f));
         int x = button.getX(), y = button.getY(), w = button.getWidth(), h = button.getHeight();
-        decoration.icon().render(g, x + 9, y + (h - 16) / 2, color);
+        int iconSize = 12;
+        decoration.icon().render(g, x + 10, y + (h - iconSize) / 2, iconSize, color);
         var font = Minecraft.getInstance().font;
         // 退出按钮右侧留空，保留原版未提交举报草稿的提示图标。
         int trailing = decoration.style() == YzuiTheme.ButtonStyle.DANGER ? 23 : 9;
-        YzuiTheme.label(g, font, button.getMessage(), x + 32, y + (h - font.lineHeight) / 2,
-                w - 32 - trailing, color, false);
+        YzuiTheme.label(g, font, button.getMessage(), x + 30, y + (h - font.lineHeight) / 2,
+                w - 30 - trailing, color, false);
         return true;
     }
 

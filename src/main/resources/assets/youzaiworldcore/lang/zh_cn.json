@@ -1292,7 +1292,5 @@
   "screen.youzaiworldcore.pets.login_required": "请先登录再管理宠物",
   "screen.youzaiworldcore.pause.profile": "当前玩家",
   "screen.youzaiworldcore.pause.singleplayer": "单人世界",
-  "screen.youzaiworldcore.pause.paused": "游戏已暂停 · 随时继续冒险",
-  "screen.youzaiworldcore.pause.live": "菜单已打开 · 世界仍在运行",
   "screen.youzaiworldcore.pause.hint": "Esc · 返回游戏"
 }

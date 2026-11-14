@@ -46,8 +46,7 @@ public final class YzuiPauseMenu {
             PauseMenuLayout.Rect rect = rect(key);
             if (child instanceof Button button && rect != null) {
                 button.setRectangle(rect.width(), rect.height(), rect.x(), rect.y());
-                // 世界选项可能附带服务端自定义限制的原版提示，不能覆盖。
-                if (!"options.worldOptions.button".equals(key)) button.setTooltip(Tooltip.create(button.getMessage()));
+                button.setTooltip(Tooltip.create(button.getMessage()));
                 PauseButtonStyle.set(button, icon(key), style(key));
                 buttons.add(button);
             } else {
@@ -88,13 +87,9 @@ public final class YzuiPauseMenu {
         int muted = YzuiMenuPanel.textOn(p.textMuted(), p.surface());
         YzuiMenuPanel.card(g, actions.x(), actions.y(), actions.width(), actions.height());
         int x = actions.x() + layout.padding(), y = actions.y() + layout.padding();
-        MenuIcon.GAME.render(g, x, y, YzuiMenuPanel.textOn(p.primary(), p.surface()));
+        MenuIcon.GAME.render(g, x + 2, y + 2, 12, YzuiMenuPanel.textOn(p.primary(), p.surface()));
         YzuiTheme.label(g, font, screen.getTitle(), x + 26, y + 3,
                 actions.width() - layout.padding() * 2 - 26, text, false);
-        if (layout.subtitle()) {
-            YzuiTheme.label(g, font, status(), x, y + 25,
-                    actions.width() - layout.padding() * 2, muted, false);
-        }
         if (layout.footerY() >= 0) {
             // 底部提示直接位于世界画面上，沿用 HUD 的字形阴影。
             Component hint = Component.translatable("screen.youzaiworldcore.pause.hint");
@@ -111,7 +106,7 @@ public final class YzuiPauseMenu {
         var client = Minecraft.getInstance();
         var font = ((ScreenAccessor) screen).youzaiworldcore$getFont();
         YzuiMenuPanel.card(g, profile.x(), profile.y(), profile.width(), profile.height());
-        MenuIcon.ACCOUNT.render(g, profile.x() + 12, profile.y() + 14, muted);
+        MenuIcon.ACCOUNT.render(g, profile.x() + 14, profile.y() + 16, 12, muted);
         YzuiTheme.label(g, font, Component.translatable("screen.youzaiworldcore.pause.profile"),
                 profile.x() + 34, profile.y() + 17, profile.width() - 46, muted, false);
         Component name = client.player == null ? Component.empty() : client.player.getName();
@@ -129,12 +124,6 @@ public final class YzuiPauseMenu {
         } finally {
             g.disableScissor();
         }
-    }
-
-    /** 读取实际客户端暂停状态，局域网和多人游戏不能显示“已暂停”。 */
-    public static Component status() {
-        return Component.translatable(Minecraft.getInstance().isPaused()
-                ? "screen.youzaiworldcore.pause.paused" : "screen.youzaiworldcore.pause.live");
     }
 
     /** 与原版 Screen 的焦点对象同步，让回车和朗读跟随方向键选中的按钮。 */
@@ -168,7 +157,6 @@ public final class YzuiPauseMenu {
             case "gui.advancements" -> layout.advancements();
             case "gui.stats" -> layout.statistics();
             case "menu.options" -> layout.options();
-            case "options.worldOptions.button" -> layout.worldOptions();
             case "menu.returnToMenu", "menu.disconnect" -> layout.disconnect();
             default -> null;
         };
@@ -180,8 +168,7 @@ public final class YzuiPauseMenu {
             case "gui.advancements" -> MenuIcon.CROWN;
             case "gui.stats" -> MenuIcon.LEVEL;
             case "menu.options" -> MenuIcon.SETTINGS;
-            case "options.worldOptions.button" -> MenuIcon.WORLD;
-            default -> MenuIcon.BACK;
+            default -> MenuIcon.EXIT;
         };
     }
 

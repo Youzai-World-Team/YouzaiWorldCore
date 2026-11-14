@@ -41,7 +41,6 @@ import java.util.List;
  *       <li>{@code gui.advancements} — 进度</li>
  *       <li>{@code gui.stats} — 统计信息</li>
  *       <li>{@code menu.options} — 选项</li>
- *       <li>{@code options.worldOptions.button} — 世界选项（26.3 起取代「对局域网开放」，含局域网设置）</li>
  *       <li>{@code menu.returnToMenu} / {@code menu.disconnect} — 保存并退回到标题屏幕</li>
  *     </ul>
  *   </li>
@@ -57,7 +56,7 @@ import java.util.List;
  * <pre>
  *   [      回到游戏      ] 204px        ┌ 玩家名字 ┐
  *   [进度 98][ 统计信息 98]             │ 玩家模型 │
- *   [选项 98][对局域网开放98]            └──────────┘
+ *   [选项 98][ 账户管理 98]              └──────────┘
  *   [  保存并退回到标题屏幕  ] 204px
  *   └──── 左移 38px ────┘  └─ 16px ─┘ └── 60px ──┘
  * </pre>
@@ -116,9 +115,6 @@ public abstract class PauseScreenMixin extends Screen {
     /** 玩家名字底部与模型区上缘的间距 */
     private static final int NAME_GAP_ABOVE = 2;
 
-    /** 玩家模型与账户管理按钮之间的间距。 */
-    private static final int ACCOUNT_BUTTON_GAP = 4;
-
     // ========== 模型渲染状态（每次 init 重新计算） ==========
 
     /** 模型是否可用（暂停菜单按钮存在且屏幕足够宽） */
@@ -162,7 +158,6 @@ public abstract class PauseScreenMixin extends Screen {
         AbstractWidget advBtn = null;
         AbstractWidget statsBtn = null;
         AbstractWidget optionsBtn = null;
-        AbstractWidget mpOptionsBtn = null;
         AbstractWidget disconnectBtn = null;
         List<GuiEventListener> toRemove = new ArrayList<>();
 
@@ -177,7 +172,6 @@ public abstract class PauseScreenMixin extends Screen {
                         case "gui.advancements"           -> advBtn = widget;
                         case "gui.stats"                  -> statsBtn = widget;
                         case "menu.options"               -> optionsBtn = widget;
-                        case "options.worldOptions.button" -> mpOptionsBtn = widget;
                         case "menu.returnToMenu", "menu.disconnect" -> disconnectBtn = widget;
                         default -> toRemove.add(child);
                     }
@@ -186,7 +180,7 @@ public abstract class PauseScreenMixin extends Screen {
         }
 
         boolean hasMenuButtons = returnBtn != null || advBtn != null || statsBtn != null
-                || optionsBtn != null || mpOptionsBtn != null || disconnectBtn != null;
+                || optionsBtn != null || disconnectBtn != null;
         if (!hasMenuButtons) {
             // 暂停菜单无按钮（showPauseMenu=false 场景，如「已暂停」纯标题屏）→ 不调整布局、不渲染模型
             this.youzaiworldcore$modelReady = false;
@@ -248,18 +242,16 @@ public abstract class PauseScreenMixin extends Screen {
 
         int row2Y = row1Y + BTN_H + GAP;
 
-        // 行 2：选项 | 世界选项
+        // 行 2：选项 | 账户管理
         if (optionsBtn != null) {
             optionsBtn.setX(centerX - FULL_W / 2);
             optionsBtn.setY(row2Y);
-            optionsBtn.setWidth(HALF_W);
+            optionsBtn.setWidth(accountManagementAllowed ? HALF_W : FULL_W);
             optionsBtn.setHeight(BTN_H);
         }
-        if (mpOptionsBtn != null) {
-            mpOptionsBtn.setX(centerX + FULL_W / 2 - HALF_W);
-            mpOptionsBtn.setY(row2Y);
-            mpOptionsBtn.setWidth(HALF_W);
-            mpOptionsBtn.setHeight(BTN_H);
+        if (accountManagementAllowed) {
+            youzaiworldcore$addAccountManagementButton(screen, accessor,
+                    centerX + FULL_W / 2 - HALF_W, row2Y, HALF_W);
         }
 
         int row3Y = row2Y + BTN_H + GAP;
@@ -293,14 +285,6 @@ public abstract class PauseScreenMixin extends Screen {
             this.youzaiworldcore$playerName =
                     mc.player != null ? mc.player.getName().getString() : null;
 
-            if (accountManagementAllowed) {
-                youzaiworldcore$addAccountManagementButton(
-                        screen, accessor,
-                        this.youzaiworldcore$modelX0,
-                        this.youzaiworldcore$modelY1 + ACCOUNT_BUTTON_GAP,
-                        MODEL_RECT_W);
-            }
-
             DebugLogger.info("PauseScreen",
                     "暂停菜单布局: 按钮左移 %dpx, 模型区=(%d,%d)-(%d,%d) 尺寸=%dx%d 缩放比=%d, 名字+模型组合=%dpx(名字行高%d+间距%d+模型区%d) 居中于按钮列高%dpx, 玩家名=%s",
                     MODEL_SHIFT, this.youzaiworldcore$modelX0, this.youzaiworldcore$modelY0,
@@ -311,14 +295,6 @@ public abstract class PauseScreenMixin extends Screen {
         } else {
             this.youzaiworldcore$modelReady = false;
             this.youzaiworldcore$playerName = null;
-            // 窄屏没有右侧模型时仍保留入口，作为菜单末尾的全宽按钮显示。
-            if (accountManagementAllowed) {
-                youzaiworldcore$addAccountManagementButton(
-                        screen, accessor,
-                        centerX - FULL_W / 2,
-                        row3Y + BTN_H + GAP,
-                        FULL_W);
-            }
             DebugLogger.warn("PauseScreen",
                     "屏幕过窄 (%dpx < %dpx)，禁用玩家模型，按钮列不左移", screen.width, MIN_SCREEN_W);
         }

@@ -5,11 +5,35 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 /** 菜单的 16×16 线性图标；几何绘制跟随主题，不依赖字体符号或图片内文字。 */
 public enum MenuIcon {
     WORLD, MAIL, LEVEL, ACCOUNT, CROWN, SETTINGS, WEBSITE, BOOK, EVENTS, SURVEY, REPORT, ADMIN,
-    HOME, GAME, BUILD, COMMAND, PORTAL, CLOSE, BACK, MAP;
+    HOME, GAME, BUILD, COMMAND, PORTAL, CLOSE, BACK, MAP, EXIT;
+
+    /** 固定正方形图标框，横纵使用相同比例缩放，保留调用方的页面变换。 */
+    public void render(GuiGraphicsExtractor g, int x, int y, int size, int color) {
+        if (size <= 0) return;
+        g.pose().pushMatrix();
+        try {
+            g.pose().translate(x, y);
+            float scale = size / 16f;
+            g.pose().scale(scale, scale);
+            render(g, 0, 0, color);
+        } finally {
+            g.pose().popMatrix();
+        }
+    }
 
     /** 在逻辑 GUI 坐标中绘制图标，颜色已包含调用方的透明度。 */
     public void render(GuiGraphicsExtractor g, int x, int y, int color) {
         switch (this) {
+            case EXIT -> {
+                line(g, x, y, 8, 2, 2, 2, color);
+                line(g, x, y, 2, 2, 2, 14, color);
+                line(g, x, y, 2, 14, 8, 14, color);
+                line(g, x, y, 8, 2, 8, 5, color);
+                line(g, x, y, 8, 11, 8, 14, color);
+                line(g, x, y, 6, 8, 14, 8, color);
+                line(g, x, y, 11, 5, 14, 8, color);
+                line(g, x, y, 14, 8, 11, 11, color);
+            }
             case MAP -> {
                 line(g, x, y, 1, 3, 5, 1, color);
                 line(g, x, y, 5, 1, 11, 4, color);

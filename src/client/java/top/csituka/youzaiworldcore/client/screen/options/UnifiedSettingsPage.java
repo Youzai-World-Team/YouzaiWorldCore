@@ -157,6 +157,9 @@ final class UnifiedSettingsPage {
         heading(rows, anchor(home), YzuiOptionsScreen.text("game")).navigationGroup = Component.literal("Minecraft");
         for (AbstractWidget widget : SettingsWidgets.flatten(home)) {
             if (isTitle(home, widget)) continue;
+            // 通用分类不显示视场角；按选项实例识别，不依赖语言或滑块当前数值。
+            if (widget instanceof OptionInstance.OptionInstanceSliderButton<?> slider
+                    && SettingsWidgets.read(slider, "instance", OptionInstance.class) == minecraft.options.fov()) continue;
             if (isFooter(widget)) { footer.add(widget); continue; }
             if (isInlineLink(widget) || SettingsWidgets.key(widget.getMessage(), "options.telemetry")) continue;
             if (SettingsWidgets.key(widget.getMessage(), "options.language")) language = widget;

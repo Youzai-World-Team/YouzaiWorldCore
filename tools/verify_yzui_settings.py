@@ -738,7 +738,7 @@ public class OptionsScreen extends Screen {
     public void init(int width, int height) {
         super.init(width, height);
         if (!nodes.isEmpty()) return;
-        nodes.add(new net.minecraft.client.gui.components.AbstractWidget(net.minecraft.network.chat.Component.literal("options.fov")));
+        nodes.add(new net.minecraft.client.OptionInstance.OptionInstanceSliderButton<>(net.minecraft.client.Minecraft.getInstance().options.fov()));
         for (String key : java.util.List.of("options.video", "options.sounds", "options.controls", "options.chat",
                 "options.accessibility", "options.online", "options.skinCustomisation",
                 "options.language", "options.resourcepack", "options.telemetry", "options.credits_and_attribution", "thirdparty.entry", "gui.done")) {
@@ -798,6 +798,8 @@ public class Minecraft {
 """)
     stub("net.minecraft.client.Options", """
 public final class Options {
+    private final OptionInstance<Integer> fov = new OptionInstance<>("options.fov", 70);
+    public OptionInstance<Integer> fov() { return fov; }
     private final OptionInstance<Boolean> optIn = new OptionInstance<>("telemetry.opt_in", false);
     private final OptionInstance<Boolean> contrast = new OptionInstance<>("hidden.highContrast", true);
     private final OptionInstance<Boolean> logo = new OptionInstance<>("hidden.darkLogo", true);
@@ -1235,6 +1237,8 @@ public final class UnifiedSettingsChecks {
         check(videoSearch.children().size() == 1 && videoSearch.children().getFirst().widgets.getFirst().getMessage().getString().equals("video.section.option.1"),
                 "subgroup search still finds its associated options");
         check(footer.size() == 1 && SettingsWidgets.key(footer.getFirst().getMessage(), "gui.done"), "one shared footer");
+        check(widgets.stream().noneMatch(widget -> widget instanceof net.minecraft.client.OptionInstance.OptionInstanceSliderButton<?> slider
+                && SettingsWidgets.read(slider, "instance", net.minecraft.client.OptionInstance.class) == client.options.fov()), "general category excludes the FOV slider");
         for (String hidden : List.of("options.video", "options.sounds", "options.controls", "options.chat", "options.accessibility",
                 "options.online", "options.skinCustomisation", "options.worldOptions.button", "options.mouse_settings")) {
             check(widgets.stream().noneMatch(widget -> SettingsWidgets.key(widget.getMessage(), hidden)), "ordinary category button removed: " + hidden);
@@ -1502,7 +1506,7 @@ public class SettingsModEntryChecks {
         match = re.search(r"    private [^\n]+\b" + name + r"\([^\n]*\) \{[\s\S]*?\n    \}", link_source)
         assert match, f"未找到链接确认真实方法：{name}"
         link_methods.append(match.group())
-    link_predicate = re.search(r"    boolean isLinkConfirmation\(\) \{[^\n]+\}", link_source)
+    link_predicate = re.search(r"    boolean isLinkConfirmation\(\) \{[\s\S]*?\n    \}", link_source)
     assert link_predicate
     stub(settings + ".SettingsLinkDialogChecks", r"""
 import java.util.ArrayList;

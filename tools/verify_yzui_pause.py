@@ -200,8 +200,9 @@ public class PauseChecks {
         for(int[] size:new int[][]{{320,180},{320,210},{320,240},{320,260},{320,320},{460,260},{480,360},{854,480},{960,540},{1920,1080}}){
             for(boolean account:new boolean[]{false,true}){
                 var layout=PauseMenuLayout.of(size[0],size[1],account);
-                var widgets=new ArrayList<PauseMenuLayout.Rect>(List.of(layout.resume(),layout.advancements(),layout.statistics(),layout.options(),layout.worldOptions(),layout.disconnect()));
+                var widgets=new ArrayList<PauseMenuLayout.Rect>(List.of(layout.resume(),layout.advancements(),layout.statistics(),layout.options(),layout.disconnect()));
                 if(account)widgets.add(layout.account());
+                check(!account||layout.account().y()==layout.options().y(),"账户必须与选项并排");
                 for(var r:widgets){
                     check(r.width()>0&&r.height()>=20,"控件必须可点击");
                     check(r.x()>=0&&r.y()>=0&&r.right()<=size[0]&&r.bottom()<=size[1],"按钮越出窗口 "+Arrays.toString(size));
@@ -209,7 +210,7 @@ public class PauseChecks {
                 }
                 check(layout.actions().bottom()<=size[1],"底板越出窗口");
                 if(layout.profile().width()>0){
-                    check(layout.model().bottom()<=layout.account().y()-8||!account,"模型遮挡账户入口");
+                    check(layout.model().bottom()<=layout.profile().bottom()-16,"模型越出玩家卡片");
                     check(layout.model().x()>=layout.profile().x()&&layout.model().right()<=layout.profile().right(),"模型越出卡片");
                 }
             }
@@ -221,11 +222,12 @@ public class PauseChecks {
         originals.get(4).active=false;
         var restriction=Tooltip.create(Component.literal("server restriction"));originals.get(4).setTooltip(restriction);
         var menu=new YzuiPauseMenu(screen,null);
-        check(screen.children.size()==7&&screen.renderables.size()==7&&screen.narratables.size()==7,"控件列表未同步");
-        for(var button:originals)check(screen.children.contains(button)&&screen.renderables.contains(button),"原版按钮被替换");
-        check(originals.get(4).getTooltip()==restriction&&!originals.get(4).active,"原版限制提示和禁用状态丢失");
+        check(screen.children.size()==6&&screen.renderables.size()==6&&screen.narratables.size()==6,"控件列表未同步");
+        for(int i=0;i<originals.size();i++)if(i!=4)check(screen.children.contains(originals.get(i))&&screen.renderables.contains(originals.get(i)),"原版按钮被替换");
+        check(!screen.children.contains(originals.get(4))&&!screen.renderables.contains(originals.get(4))&&!screen.narratables.contains(originals.get(4)),"世界选项按钮未完全移除");
         originals.get(5).press();check(originals.get(5).getMessage().getString().equals("clicked"),"原版退出回调丢失");
-        var account=(Button)screen.children.getLast();account.press();
+        var account=(Button)screen.children.stream().filter(value->value instanceof Button button&&button.getMessage().getString().equals("screen.youzaiworldcore.account_management.button_open")).findFirst().orElseThrow();account.press();
+        check(account.getY()==originals.get(3).getY()&&account.getX()>originals.get(3).getX(),"账户按钮没有替换世界选项位置");
         check(client.screen instanceof top.csituka.youzaiworldcore.client.screen.AccountManagementScreen a&&a.parent==screen,"账户页面没有返回暂停菜单");
         var fresh=screen(320,240);menu=new YzuiPauseMenu(fresh,null);
         menu.moveFocus(new KeyEvent(81,false));check(fresh.focused.getMessage().getString().equals(KEYS[0]),"方向键未建立焦点");
@@ -238,13 +240,16 @@ public class PauseChecks {
         var graphic=new GuiGraphicsExtractor();next.render(graphic,0,0);
         check(graphic.scissors==0&&graphic.boxes.stream().anyMatch(b->b.kind().equals("model")),"模型未裁剪或裁剪未恢复");
         client.player=null;next.render(new GuiGraphicsExtractor(),0,0);client.player=new net.minecraft.client.player.LocalPlayer();
-        client.paused=true;check(YzuiPauseMenu.status().getString().endsWith(".paused"),"单人暂停状态不正确");
-        client.paused=false;client.singleplayer=true;check(YzuiPauseMenu.status().getString().endsWith(".live"),"局域网世界误报暂停");
+        for(boolean paused:new boolean[]{true,false}){
+            client.paused=paused;var rendered=new GuiGraphicsExtractor();next.render(rendered,0,0);
+            check(rendered.boxes.stream().noneMatch(b->b.text().contains("pause.paused")||b.text().contains("pause.live")),"仍然绘制暂停状态句子");
+        }
+        client.singleplayer=true;
         ClientExternalSettings.dev=true;client.player.name="Developer";
         var developer=screen(480,360);new YzuiPauseMenu(developer,null);
-        check(developer.children.size()==6,"开发者单人测试账户入口未隐藏");
+        check(developer.children.size()==5,"开发者单人测试账户入口未隐藏");
         client.singleplayer=false;var multiplayer=screen(480,360);new YzuiPauseMenu(multiplayer,null);
-        check(multiplayer.children.size()==7,"多人游戏错误隐藏账户入口");
+        check(multiplayer.children.size()==6,"多人游戏错误隐藏账户入口");
         ClientExternalSettings.dev=false;
     }
     static void contrast(){
@@ -265,7 +270,26 @@ public class PauseChecks {
             }
         }
     }
-    public static void main(String[] args){geometry();behavior();contrast();System.out.println("暂停屏幕回归通过："+assertions+" 项断言。");}
+    static void icons(){
+        for(var icon:MenuIcon.values()){
+            var original=new GuiGraphicsExtractor();icon.render(original,0,0,-1);
+            var scaled=new GuiGraphicsExtractor();icon.render(scaled,23,31,12,-1);
+            check(original.boxes.size()==scaled.boxes.size(),"等比绘制改变图标几何");
+            for(int i=0;i<original.boxes.size();i++){
+                var source=original.boxes.get(i);var target=scaled.boxes.get(i);
+                check(Math.abs(target.x()-(23+source.x()*0.75))<0.001&&Math.abs(target.y()-(31+source.y()*0.75))<0.001,"图标坐标缩放不一致");
+                check(Math.abs(target.w()-source.w()*0.75)<0.001&&Math.abs(target.h()-source.h()*0.75)<0.001,"图标纵横缩放不一致");
+                check(target.x()>=23&&target.y()>=31&&target.x()+target.w()<=35&&target.y()+target.h()<=43,"图标越出正方形边界");
+            }
+            check(scaled.pose().stack.isEmpty()&&scaled.pose().m00()==1&&scaled.pose().m11()==1,"图标变换影响后续文字");
+        }
+        var button=new Button(Component.literal("disconnect"),b->{});
+        PauseButtonStyle.set(button,MenuIcon.EXIT,YzuiTheme.ButtonStyle.DANGER);
+        var decorated=new GuiGraphicsExtractor();PauseButtonStyle.label(decorated,button,0);
+        var expected=new GuiGraphicsExtractor();MenuIcon.EXIT.render(expected,10,4,12,0);
+        check(decorated.boxes.subList(0,expected.boxes.size()).equals(expected.boxes),"退出按钮图标未采用门与箭头");
+    }
+    public static void main(String[] args){geometry();behavior();contrast();icons();System.out.println("暂停屏幕回归通过："+assertions+" 项断言。");}
 }
 """
 
@@ -293,7 +317,7 @@ def main():
         subprocess.run([str(binary / ("javac" + suffix)), "--release", "25", "-encoding", "UTF-8",
                         "-d", str(temporary), *sources, *[str(CLIENT / path) for path in production], str(harness)], check=True)
         subprocess.run([str(binary / ("java" + suffix)), "-cp", str(temporary), "PauseChecks"], check=True)
-    names = {"screen.youzaiworldcore.pause." + key for key in ("profile", "singleplayer", "paused", "live", "hint")}
+    names = {"screen.youzaiworldcore.pause." + key for key in ("profile", "singleplayer", "hint")}
     for path in (ROOT / "src/main/resources/assets/youzaiworldcore/lang").glob("*.json"):
         def unique(pairs):
             result = {}
@@ -304,7 +328,9 @@ def main():
             return result
         language = json.loads(path.read_text(encoding="utf-8"), object_pairs_hook=unique)
         assert names <= language.keys(), path
-    print("暂停屏幕五条文案的十种语言与重复键检查通过。")
+        assert "screen.youzaiworldcore.pause.paused" not in language, path
+        assert "screen.youzaiworldcore.pause.live" not in language, path
+    print("暂停屏幕三条文案的十种语言、移除状态提示与重复键检查通过。")
 
 
 if __name__ == "__main__":
