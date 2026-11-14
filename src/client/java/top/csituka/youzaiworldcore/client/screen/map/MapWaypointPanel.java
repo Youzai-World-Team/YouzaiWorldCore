@@ -35,7 +35,7 @@ import java.util.stream.Collectors;
 /** 路径点管理：同页维度树、自建分组与卡片列表，名称、图标及归属存入客户端地图 SQLite。 */
 @SuppressWarnings("null")
 final class MapWaypointPanel extends MapOverlayPanel {
-    private enum Filter { ALL, ANCHORS, SHARED, GROUP }
+    private enum Filter { ALL, ANCHORS, GROUP }
     private enum View { LIST, ACTIONS, CATEGORY }
     private record Branch(String dimension, Filter filter, MapWaypointGroup group, Component label, boolean root, boolean last) { }
     private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
@@ -102,7 +102,6 @@ final class MapWaypointPanel extends MapOverlayPanel {
         return switch (kind) {
             case ALL -> true;
             case ANCHORS -> MapClient.isAnchor(point);
-            case SHARED -> point.shared() && !MapClient.isAnchor(point);
             case GROUP -> MapPersonalData.groupOf(point).id().equals(category.id()) && !MapClient.isAnchor(point);
         };
     }
@@ -112,7 +111,7 @@ final class MapWaypointPanel extends MapOverlayPanel {
                 .filter(point -> (MapTexts.waypoint(point).getString() + " " + MapGroupIcons.label(MapPersonalData.groupOf(point)).getString() + " "
                         + point.dimension() + " " + point.x() + " " + point.y() + " " + point.z()).toLowerCase(Locale.ROOT).contains(search)).toList();
     }
-    private List<MapWaypoint> privateMatches() { return filtered().stream().filter(p -> !p.shared() && !MapClient.isAnchor(p)).toList(); }
+    private List<MapWaypoint> privateMatches() { return filtered().stream().filter(p -> !MapClient.isAnchor(p)).toList(); }
     private MapWaypoint selectedPoint() { return snapshot.stream().filter(point -> point.id().equals(selected)).findFirst().orElse(null); }
     private int maxPage() { return Math.max(0, (matches.size() - 1) / capacity); }
 
@@ -147,7 +146,6 @@ final class MapWaypointPanel extends MapOverlayPanel {
             entries.add(new Branch(dim, Filter.ALL, MapWaypointGroup.UNGROUPED, MapTexts.dimension(dim), true, false));
             if (!expanded.contains(dim)) continue;
             entries.add(new Branch(dim, Filter.ANCHORS, MapWaypointGroup.UNGROUPED, MapTexts.text("activated_anchors"), false, false));
-            entries.add(new Branch(dim, Filter.SHARED, MapWaypointGroup.UNGROUPED, MapTexts.text("shared_point"), false, false));
             for (var value : MapPersonalData.groups()) entries.add(new Branch(dim, Filter.GROUP, value,
                     MapGroupIcons.label(value), false, value.equals(MapPersonalData.groups().getLast())));
         }
@@ -210,13 +208,13 @@ final class MapWaypointPanel extends MapOverlayPanel {
         action(2, y, cell, "teleport", () -> request(MapActionPayload.Action.TELEPORT, point), session != null && session.allows(MapSessionPayload.TELEPORT));
         action(3, y, cell, "copy", () -> { Minecraft.getInstance().keyboardHandler.setClipboard(MapCoordinates.coordinate(point)); error = MapTexts.text("copied"); }, true);
         action(4, y, cell, "share_chat", () -> MapCoordinates.share(point), true);
-        action(5, y, cell, point.enabled() ? "hide_point" : "show_point", () -> { MapPersonalData.put(point.withEnabled(!point.enabled())); init(); }, !point.shared() && !MapClient.isAnchor(point));
+        action(5, y, cell, point.enabled() ? "hide_point" : "show_point", () -> { MapPersonalData.put(point.withEnabled(!point.enabled())); init(); }, !MapClient.isAnchor(point));
         action(6, y, cell, "move_up", () -> { MapPersonalData.swap(point.id(), privatePoints.get(index - 1).id()); init(); }, index > 0);
         action(7, y, cell, "move_down", () -> { MapPersonalData.swap(point.id(), privatePoints.get(index + 1).id()); init(); }, index >= 0 && index + 1 < privatePoints.size());
         action(8, y, cell, "edit_point", () -> owner.openPoint(point, false), editable(point));
         action(9, y, cell, deleteArmed ? "confirm_delete" : "delete", () -> {
             if (!deleteArmed) { deleteArmed = true; init(); return; }
-            if (point.shared()) request(MapActionPayload.Action.DELETE, point); else { MapPersonalData.remove(point.id()); selected = null; view = View.LIST; init(); }
+            MapPersonalData.remove(point.id()); selected = null; view = View.LIST; init();
         }, editable(point));
         button(panelX + 12, footer, panelWidth - 24, MapTexts.text("manager_back"), () -> { view = View.LIST; init(); });
     }
@@ -224,11 +222,7 @@ final class MapWaypointPanel extends MapOverlayPanel {
         var button = control(panelX + 12 + index % 2 * (width + 6), y + index / 2 * 23, width, MapTexts.text(key), key, run); button.active = enabled && !pending;
     }
     private boolean editable(MapWaypoint point) {
-        if (MapClient.isAnchor(point)) return false;
-        if (!point.shared()) return true;
-        var session = MapClient.session(); var player = Minecraft.getInstance().player;
-        return session != null && (session.allows(MapSessionPayload.MANAGE) || session.allows(MapSessionPayload.PUBLISH)
-                && player != null && point.owner().equals(player.getUUID()) && point.kind() == MapWaypoint.Kind.NORMAL);
+        return !MapClient.isAnchor(point);
     }
     private void request(MapActionPayload.Action action, MapWaypoint point) {
         if (pending) return;

@@ -11,7 +11,7 @@ import top.csituka.youzaiworldcore.map.MapWaypoint;
 import top.csituka.youzaiworldcore.network.MapActionPayload;
 import top.csituka.youzaiworldcore.network.MapSessionPayload;
 
-/** 路径点动作页，明确区分本机导航、公共编辑和受权限约束的传送。 */
+/** 本人路径点动作页，提供本机编辑、聊天分享和受权限约束的传送。 */
 public final class MapWaypointActionsScreen extends MapScreen {
     private MapWaypoint point;
     private boolean pending;
@@ -43,27 +43,15 @@ public final class MapWaypointActionsScreen extends MapScreen {
         button(x + w + 8, y + 56, w, MapTexts.text(point.enabled() ? "hide_point" : "show_point"), () -> {
             MapPersonalData.put(point.withEnabled(!point.enabled()));
             onClose();
-        }).active = !point.shared();
+        }).active = !MapClient.isAnchor(point);
         var session = MapClient.session();
-        boolean manage = session != null && session.allows(MapSessionPayload.MANAGE);
-        button(x, y + 84, w, MapTexts.text(point.kind() == MapWaypoint.Kind.SERVER ? "unlock_point" : "lock_point"),
-                () -> action(point.kind() == MapWaypoint.Kind.SERVER ? MapActionPayload.Action.UNLOCK
-                        : MapActionPayload.Action.LOCK)).active = point.shared() && !MapClient.isAnchor(point) && manage
-                                && !pending;
-        button(x + w + 8, y + 84, w, MapTexts.text("teleport"),
+        button(x, y + 84, w * 2 + 8, MapTexts.text("teleport"),
                 () -> action(MapActionPayload.Action.TELEPORT)).active = session != null
                         && session.allows(MapSessionPayload.TELEPORT) && !pending;
         button(x, panelY + panelHeight - 34, w, MapTexts.text("delete"), () -> {
-            if (point.shared())
-                action(MapActionPayload.Action.DELETE);
-            else {
-                MapPersonalData.remove(point.id());
-                onClose();
-            }
-        }).active = !pending && !MapClient.isAnchor(point)
-                && (!point.shared() || manage || Minecraft.getInstance().player != null
-                        && point.owner().equals(Minecraft.getInstance().player.getUUID())
-                        && point.kind() == MapWaypoint.Kind.NORMAL);
+            MapPersonalData.remove(point.id());
+            onClose();
+        }).active = !pending && !MapClient.isAnchor(point);
         button(x + w + 8, panelY + panelHeight - 34, w, MapTexts.text("done"), this::onClose);
     }
 

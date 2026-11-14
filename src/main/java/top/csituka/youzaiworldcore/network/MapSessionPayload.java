@@ -19,8 +19,8 @@ public record MapSessionPayload(UUID worldId, int flags, List<Dimension> dimensi
                     || minY < -4096 || maxY > 4095 || minY > maxY) throw new IllegalArgumentException("地图维度无效");
         }
     }
-    public static final int ENABLED = 1, TERRAIN = 2, RADAR = 4, WAYPOINTS = 8,
-            LOAD_STATE = 16, TELEPORT = 32, MANAGE = 64, PUBLISH = 128;
+    public static final int ENABLED = 1, TERRAIN = 2, RADAR = 4, ANCHORS = 8,
+            LOAD_STATE = 16, TELEPORT = 32;
     public static final Type<MapSessionPayload> ID = new Type<>(Identifier.fromNamespaceAndPath("youzaiworldcore", "map_session"));
     public static final StreamCodec<RegistryFriendlyByteBuf, MapSessionPayload> STREAM_CODEC = new StreamCodec<>() {
         @Override public MapSessionPayload decode(RegistryFriendlyByteBuf buf) {

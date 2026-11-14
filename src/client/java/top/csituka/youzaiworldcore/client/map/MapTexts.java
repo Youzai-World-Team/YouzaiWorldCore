@@ -24,9 +24,6 @@ public final class MapTexts {
 
     @SuppressWarnings("null")
     public static Component waypoint(MapWaypoint point) {
-        return point.kind() == MapWaypoint.Kind.STRUCTURE
-                ? Component.translatableWithFallback("structure." + point.name().replace(':', '.').replace('/', '.'),
-                        point.name())
-                : Component.literal(point.name());
+        return Component.literal(point.name());
     }
 }

@@ -38,32 +38,24 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * 地图服务端权威入口。公共点、共享玩家、地形与加载等级均在认证之后提供；
- * 配置使用 map_module，地形与公共点随世界保存在 data/yzwc/data/map_module。
+ * 地图服务端权威入口。本人锚点、共享玩家、地形与加载等级均在认证之后提供；
+ * 配置使用 map_module，地形随世界保存在 data/yzwc/data/map_module。
  */
 @SuppressWarnings("null")
 public final class MapServerManager {
-    private static final UUID SERVER_OWNER = new UUID(0, 0);
     private static final Map<UUID, Subscription> CLIENTS = new LinkedHashMap<>();
     private static final Map<UUID, Boolean> VISIBILITY = new HashMap<>();
-    private static final List<MapWaypoint> POINTS = new ArrayList<>();
     private static MinecraftServer server;
     private static MapTerrainStore terrain;
     private static MapDatabase metadata;
     private static MapDiskCapture capture;
     private static UUID worldId;
-    private static long pointsRevision;
-    private static boolean metadataDirty;
     private static MapApiUploader uploader;
     private MapServerManager() { }
 
     /** 在服务端初始化阶段注册生命周期，不启动额外端口或网页服务。 */
     public static void initialize() {
         MapServerSettings.load();
-        net.fabricmc.fabric.api.event.lifecycle.v1.ServerChunkEvents.CHUNK_LOAD.register((level, chunk, generated) -> {
-            if (server == level.getServer() && MapServerSettings.enabled && MapServerSettings.shareStructures
-                    && !level.dimension().identifier().toString().equals("youzaiworldcore:login_hall")) discoverStructures(level, chunk);
-        });
         ServerLifecycleEvents.SERVER_STARTED.register(MapServerManager::start);
         ServerLifecycleEvents.SERVER_STOPPING.register(MapServerManager::stop);
         ServerTickEvents.END_SERVER_TICK.register(MapServerManager::tick);
@@ -76,13 +68,10 @@ public final class MapServerManager {
         var identity = metadata.settings("identity");
         worldId = UUID.fromString(identity.getOrDefault("world_id", UUID.randomUUID().toString()));
         metadata.settings("identity", Map.of("world_id", worldId.toString()));
-        POINTS.clear();
-        metadata.records("shared", "points").values().forEach(bytes -> POINTS.add(MapBinaryCodec.waypoint(bytes)));
         terrain = new MapTerrainStore(metadata);
         capture = new MapDiskCapture(instance, terrain);
         uploader = new MapApiUploader(instance, terrain, metadata, worldId);
-        pointsRevision++;
-        DebugLogger.info("MapServerManager", "地图存档已打开：%s，公共点=%d", worldId, POINTS.size());
+        DebugLogger.info("MapServerManager", "地图存档已打开：%s", worldId);
     }
 
     private static void stop(MinecraftServer instance) {
@@ -91,9 +80,8 @@ public final class MapServerManager {
         uploader = null;
         if (capture != null) capture.close();
         capture = null;
-        if (metadataDirty) savePoints();
         if (terrain != null) terrain.close();
-        MapSocialManager.clear(); MapMobRadarServer.clear(); CLIENTS.clear(); VISIBILITY.clear(); POINTS.clear();
+        MapSocialManager.clear(); MapMobRadarServer.clear(); CLIENTS.clear(); VISIBILITY.clear();
         if (metadata != null) metadata.close();
         terrain = null; metadata = null; server = null; worldId = null;
         DebugLogger.info("MapServerManager", "地图共享服务已关闭");
@@ -140,14 +128,13 @@ public final class MapServerManager {
             state.credit = Math.min(Math.max(MapServerSettings.bandwidth, 106496), state.credit + MapServerSettings.bandwidth / 20.0);
             if (tick % 20 == 0) {
                 sendSession(player, state);
-                if (state.pointsRevision != pointsRevision || !state.anchors.equals(TeleportAnchorManager.get(server).getPointsForPlayer(player))) sendPoints(player, state);
+                if (!state.anchors.equals(TeleportAnchorManager.get(server).getPointsForPlayer(player))) sendPoints(player, state);
                 if (state.view != null && tick - state.lastRequest <= 100) sendLive(player, state);
             }
             if (MapServerSettings.enabled && MapServerSettings.shareTerrain && state.view != null && tick - state.lastRequest <= 100) {
                 stream(player, state);
             }
         }
-        if (metadataDirty && tick % 200 == 0) savePoints();
     }
 
     /** 保存事件只安排读取 Minecraft 区块存储，不接收玩家客户端地形。 */
@@ -183,11 +170,9 @@ public final class MapServerManager {
         int flags = MapSessionPayload.ENABLED;
         if (MapServerSettings.shareTerrain) flags |= MapSessionPayload.TERRAIN;
         if (MapServerSettings.sharePlayers) flags |= MapSessionPayload.RADAR;
-        if (MapServerSettings.shareWaypoints) flags |= MapSessionPayload.WAYPOINTS;
+        flags |= MapSessionPayload.ANCHORS;
         if (MapServerSettings.shareLoadState) flags |= MapSessionPayload.LOAD_STATE;
         if (canTeleport(player)) flags |= MapSessionPayload.TELEPORT;
-        if (canManage(player)) flags |= MapSessionPayload.MANAGE;
-        if (canPublish(player)) flags |= MapSessionPayload.PUBLISH;
         return flags;
     }
 
@@ -195,7 +180,7 @@ public final class MapServerManager {
         if (!ServerPlayNetworking.canSend(player, MapSessionPayload.ID)) return;
         int flags = flags(player);
         if (state.flags == flags) return;
-        state.flags = flags; state.pointsRevision = -1;
+        state.flags = flags;
         var dimensions = server.levelKeys().stream().sorted(java.util.Comparator.comparing(value -> value.identifier().toString()))
                 .limit(128).map(key -> {
                     var level = server.getLevel(key);
@@ -210,13 +195,10 @@ public final class MapServerManager {
 
     private static void sendPoints(ServerPlayer player, Subscription state) {
         if (!ServerPlayNetworking.canSend(player, MapWaypointsPayload.ID)) return;
-        var points = MapServerSettings.enabled && MapServerSettings.shareWaypoints
-                ? POINTS.stream().filter(value -> value.kind() != MapWaypoint.Kind.STRUCTURE || MapServerSettings.shareStructures).toList()
-                : List.<MapWaypoint>of();
         // 只发送接收者自己的激活记录；不读取远处区块，不创建区块加载票。
         state.anchors = List.copyOf(TeleportAnchorManager.get(server).getPointsForPlayer(player));
         var anchors = new ArrayList<MapWaypoint>();
-        if (MapServerSettings.enabled && MapServerSettings.shareWaypoints) for (var anchor : state.anchors) {
+        if (MapServerSettings.enabled) for (var anchor : state.anchors) {
             if (anchors.size() >= 512) break;
             String dimension = anchor.dimension().identifier().toString();
             var pos = anchor.pos();
@@ -228,9 +210,8 @@ public final class MapServerManager {
                     name.substring(0, Math.min(64, name.length())), MapWaypointGroup.UNGROUPED.id(), dimension, pos.getX(), pos.getY(), pos.getZ(),
                     0xFF87CDA3, true, true, MapWaypoint.Kind.SERVER, 0));
         }
-        ServerPlayNetworking.send(player, new MapWaypointsPayload(worldId, points, List.copyOf(anchors)));
-        DebugLogger.debug("MapServerManager", "同步地图路径点：公共点=%d，本人锚点=%d", points.size(), anchors.size());
-        state.pointsRevision = pointsRevision;
+        ServerPlayNetworking.send(player, new MapWaypointsPayload(worldId, List.of(), List.copyOf(anchors)));
+        DebugLogger.debug("MapServerManager", "同步本人地图锚点：%d", anchors.size());
     }
 
     private static void sendLive(ServerPlayer receiver, Subscription state) {
@@ -286,7 +267,7 @@ public final class MapServerManager {
                 new MapActionResultPayload(worldId, request.point().id(), request.action(), success, state.lastResult));
     }
 
-    /** 处理经认证的公共点操作与管理员传送；所有权始终取服务端已有记录。 */
+    /** 处理经认证的位置共享与管理员传送；旧公共点操作一律拒绝。 */
     public static boolean action(ServerPlayer player, MapActionPayload request) {
         if (!eligible(player) || !MapServerSettings.enabled) return false;
         var subscription = CLIENTS.computeIfAbsent(player.getUUID(), ignored -> new Subscription());
@@ -313,50 +294,7 @@ public final class MapServerManager {
             DebugLogger.info("MapServerManager", "管理员地图传送：%s → %s %d %d %d", player.getName().getString(), input.dimension(), input.x(), input.y(), input.z());
             return feedback(player, true, "teleported");
         }
-        if (!MapServerSettings.shareWaypoints || !canPublish(player)) return feedback(player, false, "denied");
-        if (request.action() == MapActionPayload.Action.ADD || request.action() == MapActionPayload.Action.UPDATE) {
-            ServerLevel target = server.getLevel(ResourceKey.create(Registries.DIMENSION, Identifier.parse(input.dimension())));
-            if (target == null || input.y() < target.getMinY() || input.y() > target.getMaxY()
-                    || !target.getWorldBorder().isWithinBounds(new net.minecraft.core.BlockPos(input.x(), input.y(), input.z()))) return feedback(player, false, "invalid_position");
-        }
-        var existing = POINTS.stream().filter(value -> value.id().equals(input.id())).findFirst().orElse(null);
-        if (request.action() == MapActionPayload.Action.ADD) {
-            if (existing != null || POINTS.size() >= MapServerSettings.maxShared
-                    || (!canManage(player) && POINTS.stream().filter(value -> value.owner().equals(player.getUUID())).count() >= MapServerSettings.maxPerPlayer)) {
-                return feedback(player, false, "limit");
-            }
-            POINTS.add(new MapWaypoint(input.id(), player.getUUID(), input.name(), MapWaypointGroup.UNGROUPED.id(), input.dimension(),
-                    input.x(), input.y(), input.z(), input.color(), true, true, MapWaypoint.Kind.NORMAL, System.currentTimeMillis()));
-        } else {
-            if (existing == null) return feedback(player, false, "missing");
-            boolean manage = canManage(player);
-            if (!manage && (!existing.owner().equals(player.getUUID()) || existing.kind() != MapWaypoint.Kind.NORMAL)) {
-                return feedback(player, false, "denied");
-            }
-            if ((request.action() == MapActionPayload.Action.LOCK || request.action() == MapActionPayload.Action.UNLOCK) && !manage) {
-                return feedback(player, false, "denied");
-            }
-            if (request.action() == MapActionPayload.Action.DELETE) POINTS.remove(existing);
-            else {
-                MapWaypoint replacement = switch (request.action()) {
-                    case LOCK, UNLOCK -> new MapWaypoint(existing.id(), existing.owner(), existing.name(), existing.group(), existing.dimension(),
-                            existing.x(), existing.y(), existing.z(), existing.color(), true, true,
-                            request.action() == MapActionPayload.Action.LOCK ? MapWaypoint.Kind.SERVER : MapWaypoint.Kind.NORMAL, existing.createdAt());
-                    case UPDATE -> new MapWaypoint(existing.id(), existing.owner(), input.name(), MapWaypointGroup.UNGROUPED.id(), input.dimension(),
-                            input.x(), input.y(), input.z(), input.color(), true, true, existing.kind(), existing.createdAt());
-                    default -> null;
-                };
-                if (replacement == null) return feedback(player, false, "denied");
-                POINTS.set(POINTS.indexOf(existing), replacement);
-            }
-        }
-        pointsRevision++; savePoints();
-        for (var entry : CLIENTS.entrySet()) {
-            var online = server.getPlayerList().getPlayer(entry.getKey());
-            if (eligible(online) && ServerPlayNetworking.canSend(online, MapWaypointsPayload.ID)) sendPoints(online, entry.getValue());
-        }
-        DebugLogger.info("MapServerManager", "公共点操作：%s %s %s", player.getName().getString(), request.action(), input.id());
-        return feedback(player, true, "saved");
+        return feedback(player, false, "denied");
     }
 
     private static boolean feedback(ServerPlayer player, boolean result, String key) {
@@ -364,15 +302,6 @@ public final class MapServerManager {
         if (state != null) state.lastResult = key;
         if (!player.hasDisconnected()) player.sendSystemMessage(Component.translatable("map.youzaiworldcore." + key));
         return result;
-    }
-
-    public static boolean canManage(ServerPlayer player) {
-        return LuckPermsHelper.checkPermission(player.createCommandSourceStack(), LuckPermsHelper.PERMISSION_MAP_MANAGE, Commands.LEVEL_ADMINS);
-    }
-
-    public static boolean canPublish(ServerPlayer player) {
-        return canManage(player) || (MapServerSettings.allowPublish && LuckPermsHelper.checkPermission(
-                player.createCommandSourceStack(), LuckPermsHelper.PERMISSION_MAP_SHARED, Commands.LEVEL_ALL));
     }
 
     public static boolean canTeleport(ServerPlayer player) {
@@ -385,56 +314,24 @@ public final class MapServerManager {
                 && !player.hasDisconnected() && !AuthPlayerHelper.shouldBlockActions(player);
     }
 
-    private static void savePoints() {
-        metadata.transaction(db -> { MapDatabase.records(db, "shared", "points", MapDatabase.points(POINTS)); return null; });
-        metadataDirty = false;
-    }
-
-    private static void discoverStructures(ServerLevel level, net.minecraft.world.level.chunk.LevelChunk chunk) {
-        int structureLimit = Math.min(256, MapServerSettings.maxShared / 2);
-        long structureCount = POINTS.stream().filter(point -> point.kind() == MapWaypoint.Kind.STRUCTURE).count();
-        if (POINTS.size() >= MapServerSettings.maxShared || structureCount >= structureLimit) return;
-        for (var entry : chunk.getAllStarts().entrySet()) {
-            if (!entry.getValue().isValid()) continue;
-            Identifier type = level.registryAccess().lookupOrThrow(Registries.STRUCTURE).getKey(entry.getKey());
-            if (type == null) continue;
-            var position = entry.getValue().getBoundingBox().getCenter();
-            if (Math.abs((long) position.getX()) > MapTileKey.WORLD_LIMIT || Math.abs((long) position.getY()) > MapTileKey.WORLD_LIMIT
-                    || Math.abs((long) position.getZ()) > MapTileKey.WORLD_LIMIT) continue;
-            String identity = level.dimension().identifier().toString() + "/" + type + "/" + chunk.getPos().x() + "/" + chunk.getPos().z();
-            UUID id = UUID.nameUUIDFromBytes(identity.getBytes(StandardCharsets.UTF_8));
-            if (POINTS.stream().anyMatch(point -> point.id().equals(id))) continue;
-            String name = type.toString();
-            if (name.length() > 64) name = name.substring(0, 64);
-            POINTS.add(new MapWaypoint(id, SERVER_OWNER, name, MapWaypointGroup.UNGROUPED.id(), level.dimension().identifier().toString(), position.getX(), position.getY(), position.getZ(),
-                    0xFFE8BB68, true, true, MapWaypoint.Kind.STRUCTURE, System.currentTimeMillis()));
-            pointsRevision++; metadataDirty = true;
-            structureCount++;
-            if (POINTS.size() >= MapServerSettings.maxShared || structureCount >= structureLimit) break;
-        }
-    }
-
-    /** 命令行读取的公共点快照。 */
-    public static List<MapWaypoint> points() { return List.copyOf(POINTS); }
-
     /** @return 当前连接的地形同步统计 */
     public static Component performance(UUID player) {
         var state = CLIENTS.get(player);
         return Component.translatable("map.youzaiworldcore.performance", state == null ? 0 : state.tiles, state == null ? 0 : state.bytes / 1024);
     }
 
-    /** 重载配置后使能力与公共点推送失效，不删除已探索地形。 */
+    /** 重载配置后使地图能力失效，不删除已探索地形。 */
     public static void reload() {
-        MapServerSettings.load(); pointsRevision++; VISIBILITY.clear(); MapSocialManager.clear();
+        MapServerSettings.load(); VISIBILITY.clear(); MapSocialManager.clear();
         if (capture != null) capture.configure();
-        CLIENTS.values().forEach(state -> { state.flags = -1; state.pointsRevision = -1; });
+        CLIENTS.values().forEach(state -> state.flags = -1);
     }
 
     private static final class Subscription {
         private MapViewRequestPayload view;
         private int cursor, flags = -1, lastRequest = -1000, lastAction = -1000;
         private List<TeleportAnchorData> anchors = List.of();
-        private long pointsRevision = -1, bytes, tiles;
+        private long bytes, tiles;
         private double credit = MapServerSettings.bandwidth;
         private String lastResult = "denied";
         private final Map<MapTileKey, Long> sent = new LinkedHashMap<>();

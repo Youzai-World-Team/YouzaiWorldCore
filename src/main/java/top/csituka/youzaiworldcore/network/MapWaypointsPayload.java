@@ -10,7 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-/** S2C：公共路径点与接收者本人已激活锚点的独立快照；锚点仅供地图定位，不授予免费传送权限。 */
+/** S2C：接收者本人已激活锚点；points 仅保留旧协议布局，服务端始终发空列表，客户端忽略。 */
 public record MapWaypointsPayload(UUID worldId, List<MapWaypoint> points, List<MapWaypoint> anchors) implements CustomPacketPayload {
     public static final Type<MapWaypointsPayload> ID = new Type<>(Identifier.fromNamespaceAndPath("youzaiworldcore", "map_waypoints"));
     public static final StreamCodec<RegistryFriendlyByteBuf, MapWaypointsPayload> STREAM_CODEC = new StreamCodec<>() {

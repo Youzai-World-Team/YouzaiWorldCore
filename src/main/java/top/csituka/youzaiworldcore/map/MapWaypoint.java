@@ -8,7 +8,11 @@ import java.util.UUID;
 public record MapWaypoint(UUID id, UUID owner, String name, String group, String dimension,
                           int x, int y, int z, int color, boolean enabled, boolean shared,
                           Kind kind, long createdAt) {
-    public enum Kind { NORMAL, DEATH, SERVER, STRUCTURE }
+    public enum Kind {
+        NORMAL, DEATH, SERVER,
+        /** 仅保留旧磁盘记录与网络字段的解码身份，自动结构点不再生成或显示。 */
+        STRUCTURE
+    }
 
     public MapWaypoint {
         if (id == null || owner == null || name == null || name.isBlank() || name.length() > 64

@@ -65,7 +65,7 @@ public final class MapClient {
     private static ClientLevel level;
     private static MapSampler.Job sampling;
     private static MapSessionPayload session;
-    private static List<MapWaypoint> shared = List.of(), anchors = List.of();
+    private static List<MapWaypoint> anchors = List.of();
     private static Set<UUID> anchorIds = Set.of();
     private static List<MapLivePayload.Player> remotePlayers = List.of();
     private static Map<Long, Integer> loadLevels = Map.of();
@@ -198,16 +198,19 @@ public final class MapClient {
         shortcutsAfter = ticks + 2;
     }
 
-    /** 合并私人点与服务端公共点，公共点不能被本地配置覆盖。 */
+    /** 只显示本人私人路径点与已激活锚点，忽略旧版公共点和自动结构点。 */
     public static List<MapWaypoint> waypoints() {
+        var player = Minecraft.getInstance().player;
+        if (player == null) return List.of();
         var points = new LinkedHashMap<UUID, MapWaypoint>();
-        MapPersonalData.points().forEach(point -> points.put(point.id(), point));
-        shared.forEach(point -> points.put(point.id(), point));
+        MapPersonalData.points().stream().filter(point -> !point.shared())
+                .forEach(point -> points.put(point.id(), point));
         anchors.forEach(point -> points.put(point.id(), point));
-        return List.copyOf(points.values());
+        return points.values().stream().filter(point -> point.owner().equals(player.getUUID())
+                && point.kind() != MapWaypoint.Kind.STRUCTURE).toList();
     }
 
-    /** 服务端单独发送的本人锚点只读投影，不属于可编辑的公共点。 */
+    /** 服务端单独发送的本人锚点投影，不属于私人路径点。 */
     public static boolean isAnchor(MapWaypoint point) {
         return anchorIds.contains(point.id());
     }
@@ -223,7 +226,7 @@ public final class MapClient {
         dimensions.add(dimension());
         if (session != null)
             session.dimensions().forEach(value -> dimensions.add(value.id()));
-        for (var point : MapPersonalData.points())
+        for (var point : waypoints())
             dimensions.add(point.dimension());
         return List.copyOf(dimensions);
     }
@@ -577,7 +580,6 @@ public final class MapClient {
         if (session == null || !session.worldId().equals(value.worldId())) {
             CACHE.clear();
             SAMPLED.clear();
-            shared = List.of();
             anchors = List.of();
             anchorIds = Set.of();
             remotePlayers = List.of();
@@ -592,8 +594,7 @@ public final class MapClient {
             radar = radar.stream().filter(marker -> !marker.player()).toList();
             TRACKED_HISTORY.values().removeIf(seen -> seen.marker().player());
         }
-        if (!value.allows(MapSessionPayload.WAYPOINTS)) {
-            shared = List.of();
+        if (!value.allows(MapSessionPayload.ANCHORS)) {
             anchors = List.of();
             anchorIds = Set.of();
         }
@@ -611,9 +612,11 @@ public final class MapClient {
 
     public static void waypoints(MapWaypointsPayload value) {
         if (session != null && session.worldId().equals(value.worldId())
-                && session.allows(MapSessionPayload.WAYPOINTS)) {
-            shared = value.points();
-            anchors = value.anchors();
+                && session.allows(MapSessionPayload.ANCHORS)) {
+            // 旧协议中的公共点列表一律忽略，只保留本人已激活锚点。
+            var player = Minecraft.getInstance().player;
+            anchors = player == null ? List.of() : value.anchors().stream()
+                    .filter(point -> point.owner().equals(player.getUUID()) && point.kind() != MapWaypoint.Kind.STRUCTURE).toList();
             anchorIds = anchors.stream().map(MapWaypoint::id).collect(java.util.stream.Collectors.toUnmodifiableSet());
         }
     }
@@ -678,7 +681,6 @@ public final class MapClient {
         sampling = null;
         session = null;
         level = null;
-        shared = List.of();
         anchors = List.of();
         anchorIds = Set.of();
         remotePlayers = List.of();

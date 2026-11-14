@@ -47,7 +47,7 @@ final class MapDetailPanel extends AbstractContainerEventHandler implements Rend
     private final boolean dimensions;
     private final boolean anchor;
     private final boolean dialog;
-    private boolean creating, editing, pending, confirmingDelete, editingNote, shared;
+    private boolean creating, editing, pending, confirmingDelete, editingNote;
     private MapWaypoint point;
     private String name, note;
     private MapWaypointGroup group;
@@ -62,7 +62,7 @@ final class MapDetailPanel extends AbstractContainerEventHandler implements Rend
         this.owner = owner; dimensions = true; anchor = false; dialog = false;
     }
     MapDetailPanel(YzWorldMapScreen owner, MapWaypoint point, boolean creating) {
-        this.owner = owner; this.point = point; this.creating = creating; shared = point.shared(); dimensions = false;
+        this.owner = owner; this.point = point; this.creating = creating; dimensions = false;
         anchor = MapClient.isAnchor(point); dialog = creating; editing = creating; editingNote = creating;
         name = MapTexts.waypoint(point).getString(); group = MapPersonalData.groupOf(point); note = MapPersonalData.note(point.id());
     }
@@ -128,10 +128,7 @@ final class MapDetailPanel extends AbstractContainerEventHandler implements Rend
         button(x + 12, y + height - 32, width - 24, MapTexts.text("done"), this::close, false);
     }
     private boolean editable() {
-        if (anchor || !point.shared()) return true;
-        var session = MapClient.session(); var player = Minecraft.getInstance().player;
-        return session != null && (session.allows(MapSessionPayload.MANAGE) || session.allows(MapSessionPayload.PUBLISH)
-                && player != null && point.owner().equals(player.getUUID()) && point.kind() == MapWaypoint.Kind.NORMAL);
+        return anchor || !point.shared();
     }
     private void buildPoint() {
         int row = 0, inner = width - 24;
@@ -166,16 +163,8 @@ final class MapDetailPanel extends AbstractContainerEventHandler implements Rend
             if (creating) lines.add(new Line(MapTexts.text("group"), x + 12, top + row + 7 - scroll, 50));
             else { line(MapTexts.text("group"), row); row += 15; }
             row += MapGroupButton.selector(x + 12 + groupInset, top + row - scroll, inner - groupInset, () -> group, value -> {
-                if (point.shared() && !creating && !editing) {
-                    if (!MapPersonalData.setSharedGroup(point, value)) { message = MapTexts.text("invalid_group"); return; }
-                    group = value;
-                } else { group = value; editing = true; }
+                group = value; editing = true;
             }, icon -> { widgets.add(icon); body.add(icon); }, !pending && point.kind() != MapWaypoint.Kind.DEATH);
-        }
-        if (creating) {
-            button(x + 12, top + row - scroll, inner, MapTexts.text(shared ? "shared_point" : "private_point"),
-                    () -> { shared = !shared; rebuild(); }, true).active = !pending && (shared || MapClient.session() != null
-                    && MapClient.session().allows(MapSessionPayload.PUBLISH)); row += 28;
         }
         if (creating) {
             line(MapTexts.text("private_description"), row); row += 15;
@@ -229,8 +218,8 @@ final class MapDetailPanel extends AbstractContainerEventHandler implements Rend
         }
     }
     private MapWaypoint changed() {
-        return new MapWaypoint(point.id(), point.owner(), name, shared ? MapWaypointGroup.UNGROUPED.id() : point.kind() == MapWaypoint.Kind.DEATH ? MapWaypointGroup.DEATH.id() : group.id(), point.dimension(), point.x(), point.y(), point.z(),
-                point.color(), point.enabled(), shared, point.kind(), point.createdAt());
+        return new MapWaypoint(point.id(), point.owner(), name, point.kind() == MapWaypoint.Kind.DEATH ? MapWaypointGroup.DEATH.id() : group.id(), point.dimension(), point.x(), point.y(), point.z(),
+                point.color(), point.enabled(), anchor, point.kind(), point.createdAt());
     }
     private void save(boolean track) {
         try {
@@ -240,17 +229,8 @@ final class MapDetailPanel extends AbstractContainerEventHandler implements Rend
                         ResourceKey.create(Registries.DIMENSION, Identifier.parse(point.dimension())), value.name()));
                 finish(value, track); message = MapTexts.text("request_sent"); return;
             }
-            if (!value.shared()) {
-                if (!MapPersonalData.put(value)) { message = MapTexts.text("limit"); return; }
-                finish(value, track); return;
-            }
-            if (!creating && point.name().equals(value.name())) {
-                if (!MapPersonalData.setSharedGroup(point, group)) { message = MapTexts.text("invalid_group"); return; }
-                finish(value, track); return;
-            }
-            pending = MapClient.send(creating ? MapActionPayload.Action.ADD : MapActionPayload.Action.UPDATE, value, (ok, key) -> {
-                pending = false; message = MapTexts.text(key); if (ok) { MapPersonalData.setSharedGroup(value, group); finish(value, track); } else rebuild();
-            }); rebuild();
+            if (!MapPersonalData.put(value)) { message = MapTexts.text("limit"); return; }
+            finish(value, track);
         } catch (IllegalArgumentException invalid) { message = MapTexts.text("invalid_point"); }
     }
     private void finish(MapWaypoint value, boolean track) {
@@ -267,12 +247,7 @@ final class MapDetailPanel extends AbstractContainerEventHandler implements Rend
         if (anchor) {
             ClientPlayNetworking.send(new TeleportAnchorDeletePayload(new BlockPos(point.x(), point.y(), point.z()),
                     ResourceKey.create(Registries.DIMENSION, Identifier.parse(point.dimension())))); close();
-        } else if (!point.shared()) { MapPersonalData.remove(point.id()); close(); }
-        else {
-            pending = MapClient.send(MapActionPayload.Action.DELETE, point, (ok, key) -> {
-                pending = false; message = MapTexts.text(key); if (ok) close(); else rebuild();
-            }); rebuild();
-        }
+        } else { MapPersonalData.remove(point.id()); close(); }
     }
     private void copyAsWaypoint() {
         var copy = new MapWaypoint(UUID.randomUUID(), point.owner(), name, MapWaypointGroup.UNGROUPED.id(), point.dimension(), point.x(), point.y(), point.z(),

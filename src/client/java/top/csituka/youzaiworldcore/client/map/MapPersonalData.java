@@ -22,7 +22,7 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * 按服务器存档身份隔离的私人路径点、分组、公共点私人归属、描述和视角，存入客户端地图 SQLite。
+ * 按服务器存档身份隔离的私人路径点、分组、描述和视角，存入客户端地图 SQLite。
  */
 public final class MapPersonalData {
     public static final int MAX_POINTS = 512;
@@ -40,7 +40,6 @@ public final class MapPersonalData {
     private static final java.util.Map<UUID, String> NOTES = new java.util.LinkedHashMap<>();
     public static final int MAX_GROUPS = 64;
     private static final Map<String, MapWaypointGroup> GROUPS = new LinkedHashMap<>();
-    private static final Map<UUID, String> SHARED_GROUPS = new LinkedHashMap<>();
     private static final Set<MapTileKey> PENDING_EXPLORATION = new HashSet<>();
     private static boolean explorationDirty;
     private static String world = "";
@@ -61,11 +60,12 @@ public final class MapPersonalData {
         PENDING_EXPLORATION.clear();
         NOTES.clear();
         GROUPS.clear();
-        SHARED_GROUPS.clear();
         explorationDirty = false;
         var database = MapSettings.database();
         writableWorld = true;
-        database.records(world, "points").values().forEach(bytes -> POINTS.add(MapBinaryCodec.waypoint(bytes)));
+        // 旧公共点和自动结构点不载入，不占用私人路径点容量。
+        database.records(world, "points").values().stream().map(MapBinaryCodec::waypoint)
+                .filter(point -> !point.shared() && point.kind() != MapWaypoint.Kind.STRUCTURE).forEach(POINTS::add);
         database.records(world, "notes").forEach(
                 (id, bytes) -> NOTES.put(UUID.fromString(id), MapBinaryCodec.decode(bytes, in -> in.readUTF())));
         database.records(world, "groups").forEach((id, bytes) -> {
@@ -73,12 +73,6 @@ public final class MapPersonalData {
             if (!group.editable() || GROUPS.size() >= MAX_GROUPS)
                 throw new IllegalStateException("地图自建分组数量或身份无效");
             GROUPS.put(id, group);
-        });
-        database.records(world, "point_groups").forEach((id, bytes) -> {
-            String group = MapBinaryCodec.decode(bytes, in -> in.readUTF());
-            if (!group.isEmpty() && !GROUPS.containsKey(group))
-                throw new IllegalStateException("地图公共点的私人分组不存在：" + group);
-            SHARED_GROUPS.put(UUID.fromString(id), group);
         });
         var view = database.records(world, "view").get("last");
         if (view != null)
@@ -123,11 +117,11 @@ public final class MapPersonalData {
         return groups().stream().filter(group -> !group.equals(MapWaypointGroup.DEATH)).toList();
     }
 
-    /** 旧固定分组仅保留原记录，显示到未分组；公共点归属仅本人可见。 */
+    /** 旧固定分组仅保留原记录，显示到未分组。 */
     public static MapWaypointGroup groupOf(MapWaypoint point) {
         if (point.kind() == MapWaypoint.Kind.DEATH)
             return MapWaypointGroup.DEATH;
-        String id = point.shared() ? SHARED_GROUPS.getOrDefault(point.id(), "") : point.group();
+        String id = point.group();
         return GROUPS.getOrDefault(id, MapWaypointGroup.UNGROUPED);
     }
 
@@ -157,7 +151,7 @@ public final class MapPersonalData {
         var group = new MapWaypointGroup(UUID.randomUUID().toString().replace("-", ""), value, icon);
         var groups = new LinkedHashMap<>(GROUPS);
         groups.put(group.id(), group);
-        persistGroups(groups, POINTS, SHARED_GROUPS);
+        persistGroups(groups, POINTS);
         GROUPS.clear();
         GROUPS.putAll(groups);
         DebugLogger.info("MapPersonalData", "创建地图分组：%s，图标=%s", group.id(), icon.id());
@@ -173,14 +167,14 @@ public final class MapPersonalData {
             return false;
         var groups = new LinkedHashMap<>(GROUPS);
         groups.put(id, new MapWaypointGroup(id, value, icon));
-        persistGroups(groups, POINTS, SHARED_GROUPS);
+        persistGroups(groups, POINTS);
         GROUPS.clear();
         GROUPS.putAll(groups);
         DebugLogger.info("MapPersonalData", "编辑地图分组：%s，图标=%s", id, icon.id());
         return true;
     }
 
-    /** 删除自建分组并将其全部路径点转入未分组；三个集合在同一事务保存。 */
+    /** 删除自建分组并将其全部路径点转入未分组；分组与路径点在同一事务保存。 */
     public static boolean deleteGroup(String id) {
         if (world.isEmpty() || !writableWorld || !GROUPS.containsKey(id))
             return false;
@@ -189,51 +183,25 @@ public final class MapPersonalData {
         var points = POINTS.stream().map(point -> point.group().equals(id)
                 ? point.withGroup(MapWaypointGroup.UNGROUPED)
                 : point).toList();
-        var shared = new LinkedHashMap<>(SHARED_GROUPS);
-        shared.values().removeIf(id::equals);
-        persistGroups(groups, points, shared);
+        persistGroups(groups, points);
         GROUPS.clear();
         GROUPS.putAll(groups);
         POINTS.clear();
         POINTS.addAll(points);
-        SHARED_GROUPS.clear();
-        SHARED_GROUPS.putAll(shared);
         DebugLogger.info("MapPersonalData", "删除地图分组并保留路径点：%s", id);
         return true;
     }
 
-    /** 整理公共点不修改服务器内容和其他玩家的分组，不需要公共点编辑权限。 */
-    public static boolean setSharedGroup(MapWaypoint point, MapWaypointGroup group) {
-        if (world.isEmpty() || !writableWorld || !point.shared() || point.kind() == MapWaypoint.Kind.DEATH
-                || MapClient.isAnchor(point) || !assignable(group))
-            return false;
-        var shared = new LinkedHashMap<>(SHARED_GROUPS);
-        if (group.equals(MapWaypointGroup.UNGROUPED))
-            shared.remove(point.id());
-        else
-            shared.put(point.id(), group.id());
-        persistGroups(GROUPS, POINTS, shared);
-        SHARED_GROUPS.clear();
-        SHARED_GROUPS.putAll(shared);
-        DebugLogger.debug("MapPersonalData", "修改公共点私人分组：%s / %s", point.id(), group.id());
-        return true;
-    }
-
-    private static void writeGroups(java.sql.Connection db, Map<String, MapWaypointGroup> groups,
-            Map<UUID, String> shared) throws java.sql.SQLException {
+    private static void writeGroups(java.sql.Connection db, Map<String, MapWaypointGroup> groups)
+            throws java.sql.SQLException {
         var records = new LinkedHashMap<String, byte[]>();
         groups.forEach((id, group) -> records.put(id, MapBinaryCodec.group(group)));
         MapDatabase.records(db, world, "groups", records);
-        var assignments = new LinkedHashMap<String, byte[]>();
-        shared.forEach(
-                (id, group) -> assignments.put(id.toString(), MapBinaryCodec.encode(out -> out.writeUTF(group))));
-        MapDatabase.records(db, world, "point_groups", assignments);
     }
 
-    private static void persistGroups(Map<String, MapWaypointGroup> groups, List<MapWaypoint> points,
-            Map<UUID, String> shared) {
+    private static void persistGroups(Map<String, MapWaypointGroup> groups, List<MapWaypoint> points) {
         MapSettings.database().transaction(db -> {
-            writeGroups(db, groups, shared);
+            writeGroups(db, groups);
             MapDatabase.records(db, world, "points", MapDatabase.points(points));
             return null;
         });
@@ -253,7 +221,7 @@ public final class MapPersonalData {
         DebugLogger.debug("MapPersonalData", "保存地图视角：%s %.1f %.1f", dimension, x, z);
     }
 
-    /** 对同一筛选结果中的两个私人点交换顺序，不改动创建时间及公共数据。 */
+    /** 对同一筛选结果中的两个私人点交换顺序，不改动创建时间及地形数据。 */
     public static void swap(UUID first, UUID second) {
         int a = -1, b = -1;
         for (int i = 0; i < POINTS.size(); i++) {
@@ -302,7 +270,7 @@ public final class MapPersonalData {
 
     /** 新增或修改私人点；达到容量时返回 false，原记录保持不变。 */
     public static boolean put(MapWaypoint point) {
-        if (point.shared() || world.isEmpty() || !writableWorld)
+        if (point.shared() || point.kind() == MapWaypoint.Kind.STRUCTURE || world.isEmpty() || !writableWorld)
             return false;
         int index = -1;
         for (int i = 0; i < POINTS.size(); i++)
@@ -324,7 +292,7 @@ public final class MapPersonalData {
         return true;
     }
 
-    /** 私人描述按存档和标记身份保存，公共点与锚点的描述也仅本人可见。 */
+    /** 私人描述按存档和标记身份保存，锚点的描述也仅本人可见。 */
     public static String note(UUID id) {
         return NOTES.getOrDefault(id, "");
     }
@@ -346,12 +314,11 @@ public final class MapPersonalData {
     public static void remove(UUID id) {
         if (POINTS.removeIf(point -> point.id().equals(id))) {
             NOTES.remove(id);
-            SHARED_GROUPS.remove(id);
             save();
         }
     }
 
-    /** 批量整理当前筛选的私人与公共点；死亡点和锚点不改变归属。 */
+    /** 批量整理当前筛选的私人点；死亡点和锚点不改变归属。 */
     public static boolean group(List<MapWaypoint> selected, MapWaypointGroup group) {
         if (world.isEmpty() || !writableWorld || !assignable(group))
             return false;
@@ -362,19 +329,9 @@ public final class MapPersonalData {
         var points = POINTS.stream().map(point -> ids.contains(point.id()) && point.kind() != MapWaypoint.Kind.DEATH
                 ? point.withGroup(group)
                 : point).toList();
-        var shared = new LinkedHashMap<>(SHARED_GROUPS);
-        for (var point : selected)
-            if (point.shared() && ids.contains(point.id())) {
-                if (group.equals(MapWaypointGroup.UNGROUPED))
-                    shared.remove(point.id());
-                else
-                    shared.put(point.id(), group.id());
-            }
-        persistGroups(GROUPS, points, shared);
+        persistGroups(GROUPS, points);
         POINTS.clear();
         POINTS.addAll(points);
-        SHARED_GROUPS.clear();
-        SHARED_GROUPS.putAll(shared);
         DebugLogger.debug("MapPersonalData", "移动路径点至私人分组：%s，数量=%d", group.id(), ids.size());
         return true;
     }
@@ -420,7 +377,7 @@ public final class MapPersonalData {
             return;
         MapSettings.database().transaction(db -> {
             MapDatabase.records(db, world, "points", MapDatabase.points(POINTS));
-            writeGroups(db, GROUPS, SHARED_GROUPS);
+            writeGroups(db, GROUPS);
             var notes = new LinkedHashMap<String, byte[]>();
             NOTES.forEach((id, text) -> notes.put(id.toString(), MapBinaryCodec.encode(out -> out.writeUTF(text))));
             MapDatabase.records(db, world, "notes", notes);
@@ -461,7 +418,6 @@ public final class MapPersonalData {
         PENDING_EXPLORATION.clear();
         NOTES.clear();
         GROUPS.clear();
-        SHARED_GROUPS.clear();
         explorationDirty = false;
         world = "";
         writableWorld = false;

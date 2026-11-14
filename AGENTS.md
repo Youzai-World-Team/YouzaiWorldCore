@@ -187,7 +187,7 @@ DebugLogger.exiting("ModuleName", "methodName", "result=" + r);
 
 ### 4.3 文件存放规范（强制）
 
-**YZMAP 例外（按用户要求）**：地图显示、布局、私人数据及客户端地形写入 `ModPaths.clientMapDatabase()`；服务端地图设置与玩家共享规则写入 `serverMapDatabase()`；世界地形、公共点与同步游标写入 `worldMapDatabase(server)`。全部使用 SQLite，不接入全局/个人 JSON 默认写入器，不迁移旧地图数据。地形上传只来自 Minecraft 区块文件，协议版本 2；详见 `docs/YZMAP.md`。
+**YZMAP 例外（按用户要求）**：地图显示、布局、私人数据及客户端地形写入 `ModPaths.clientMapDatabase()`；服务端地图设置与玩家共享规则写入 `serverMapDatabase()`；世界地形与同步游标写入 `worldMapDatabase(server)`。全部使用 SQLite，不接入全局/个人 JSON 默认写入器，不迁移旧地图数据。地形上传只来自 Minecraft 区块文件，协议版本 2；详见 `docs/YZMAP.md`。
 
 所有配置 / 数据 / 备份 / 缓存文件**只能**通过 `config/ModPaths` 取路径，禁止手写
 `getConfigDir().resolve("youzaiworldcore")` 之类的散装路径。目录布局：
