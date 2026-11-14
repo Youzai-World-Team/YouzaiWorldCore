@@ -2,6 +2,7 @@ package top.csituka.youzaiworldcore.client.screen.map;
 
 import org.jspecify.annotations.NonNull;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.network.chat.Component;
@@ -9,30 +10,44 @@ import top.csituka.youzaiworldcore.client.animation.YzuiHover;
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
 import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
 
-/** 全屏地图的线条图标按钮；保留中文提示、朗读与键盘激活，无额外纹理依赖。 */
+/** 全屏地图的线条图标按钮；底部入口可显示图标和文字，保留提示、朗读与键盘激活。 */
 final class MapIconButton extends TransparentButton {
     enum Icon {
-        MAP, CLOSE, PLUS, MINUS, CENTER, SETTINGS, PIN, PLAYERS, RADAR
+        MAP, CLOSE, PLUS, MINUS, CENTER, SETTINGS, PIN, PLAYERS, RADAR, DIMENSION
     }
 
     private final Icon icon;
+    private final boolean labeled;
     private final YzuiHover hover = new YzuiHover();
 
     MapIconButton(int x, int y, int size, @NonNull Component label, Icon icon, Runnable action) {
-        super(x, y, size, size, label, action);
+        this(x, y, size, size, label, icon, false, action);
+    }
+
+    /** 底部图文入口使用独立宽高，上方图标、下方完整名称。 */
+    MapIconButton(int x, int y, int width, int height, @NonNull Component label, Icon icon, Runnable action) {
+        this(x, y, width, height, label, icon, true, action);
+    }
+
+    private MapIconButton(int x, int y, int width, int height, @NonNull Component label,
+                          Icon icon, boolean labeled, Runnable action) {
+        super(x, y, width, height, label, action);
         this.icon = icon;
+        this.labeled = labeled;
         setTooltip(Tooltip.create(label));
     }
 
     @Override
     protected void extractWidgetRenderState(GuiGraphicsExtractor g, int mx, int my, float delta) {
         isHovered = isMouseOver(mx, my);
+        float opacity = getAlpha() * externalAlpha();
         YzuiTheme.button(g, getX(), getY(), getWidth(), getHeight(), hover.sample(active && isHovered),
-                isFocused(), active, 1, YzuiTheme.ButtonStyle.TONAL);
-        int color = active ? YzuiTheme.onPrimaryContainer() : YzuiTheme.textMuted();
+                isFocused(), active, opacity, YzuiTheme.ButtonStyle.TONAL);
+        int color = YzuiTheme.alpha(YzuiTheme.buttonText(YzuiTheme.ButtonStyle.TONAL, active), opacity);
         g.pose().pushMatrix();
-        g.pose().translate(getX() + getWidth() * 0.2f, getY() + getHeight() * 0.2f);
-        float scale = getWidth() * 0.6f / 16;
+        float size = labeled ? Math.max(1, Math.min(18, getWidth() - 12)) : getWidth() * 0.6f;
+        g.pose().translate(getX() + (getWidth() - size) / 2, labeled ? getY() + 6 : getY() + getHeight() * 0.2f);
+        float scale = size / 16;
         g.pose().scale(scale, scale);
         switch (icon) {
             case MAP -> {
@@ -93,8 +108,23 @@ final class MapIconButton extends TransparentButton {
                 circle(g, 8, 8, 4, color);
                 line(g, 8, 8, 13, 2, color);
             }
+            case DIMENSION -> {
+                line(g, 2, 4, 8, 1, color);
+                line(g, 8, 1, 14, 4, color);
+                line(g, 14, 4, 8, 7, color);
+                line(g, 8, 7, 2, 4, color);
+                line(g, 2, 8, 8, 11, color);
+                line(g, 8, 11, 14, 8, color);
+                line(g, 2, 12, 8, 15, color);
+                line(g, 8, 15, 14, 12, color);
+            }
         }
         g.pose().popMatrix();
+        if (labeled) {
+            var font = Minecraft.getInstance().font;
+            YzuiTheme.label(g, font, getMessage(), getX() + 6, getY() + getHeight() - font.lineHeight - 6,
+                    getWidth() - 12, color, true);
+        }
     }
 
     private static void circle(GuiGraphicsExtractor g, int x, int y, int radius, int color) {

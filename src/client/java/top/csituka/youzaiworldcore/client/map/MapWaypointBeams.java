@@ -30,7 +30,7 @@ public final class MapWaypointBeams {
     public static void initialize() {
         LevelExtractionEvents.END_EXTRACTION.register(MapWaypointBeams::extract);
         LevelRenderEvents.COLLECT_SUBMITS.register(MapWaypointBeams::submit);
-        DebugLogger.info("MapWaypointBeams", "世界内路径点信标光柱已注册，跟随世界内导航开关");
+        DebugLogger.info("MapWaypointBeams", "世界内路径点上下信标光柱已注册，跟随世界内导航开关，到达五米内隐藏");
     }
 
     private static void extract(LevelExtractionContext context) {
@@ -60,8 +60,9 @@ public final class MapWaypointBeams {
             poses.pushPose();
             // 原版函数内部会向 X/Z 各偏移半格，在这里抵消，保证光柱中心与保存坐标完全重合。
             poses.translate(beam.x() - origin.x - 0.5, beam.y() - origin.y, beam.z() - origin.z - 0.5);
+            // 从标点下方开始，使用正高度贯穿上下两侧，保持连续材质和原版面的绘制方向。
             BeaconRenderer.submitBeaconBeam(poses, context.submitNodeCollector(), BeaconRenderer.BEAM_LOCATION,
-                    1.0F, frame.animationTime(), 0, BeaconRenderer.MAX_RENDER_Y, beam.color(),
+                    1.0F, frame.animationTime(), -BeaconRenderer.MAX_RENDER_Y, BeaconRenderer.MAX_RENDER_Y * 2, beam.color(),
                     BeaconRenderer.SOLID_BEAM_RADIUS * beam.radiusScale(), BeaconRenderer.BEAM_GLOW_RADIUS * beam.radiusScale());
             poses.popPose();
         }

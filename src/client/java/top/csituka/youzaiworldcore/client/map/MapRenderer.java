@@ -306,8 +306,10 @@ public final class MapRenderer {
             var target = point.projected(MapClient.dimension(), MapSettings.enabled(MapSettings.Toggle.PORTAL_PROJECTION));
             if (target == null) continue;
             // 世界导航使用完整三维距离，垂直高差同样参与排序、显示及距离限制。
-            double dx = target.x() - player.getX(), dy = point.y() - player.getY(), dz = target.z() - player.getZ();
-            double distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+            double distanceSquared = MapClient.waypointDistanceSquared(point, target);
+            // 五米内只隐藏世界悬浮标点及光柱，离开后恢复；地图和列表仍保留这个地点。
+            if (distanceSquared <= MapClient.WAYPOINT_ARRIVAL_DISTANCE_SQUARED) continue;
+            double distance = Math.sqrt(distanceSquared);
             if (distance > MapSettings.waypointDistance()) continue;
             targets.add(new NavigationTarget(point, target, distance));
         }
