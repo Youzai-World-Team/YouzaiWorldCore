@@ -1289,5 +1289,10 @@
   "screen.youzaiworldcore.pets.hunting": "狩獵",
   "screen.youzaiworldcore.pets.attack": "攻擊",
   "screen.youzaiworldcore.pets.guard": "守衛",
-  "screen.youzaiworldcore.pets.login_required": "請先登入再管理寵物"
+  "screen.youzaiworldcore.pets.login_required": "請先登入再管理寵物",
+  "screen.youzaiworldcore.pause.profile": "目前玩家",
+  "screen.youzaiworldcore.pause.singleplayer": "單人世界",
+  "screen.youzaiworldcore.pause.paused": "遊戲已暫停 · 隨時繼續冒險",
+  "screen.youzaiworldcore.pause.live": "選單已開啟 · 世界仍在運作",
+  "screen.youzaiworldcore.pause.hint": "Esc · 返回遊戲"
 }

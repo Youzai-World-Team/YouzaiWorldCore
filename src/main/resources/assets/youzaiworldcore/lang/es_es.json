@@ -1289,5 +1289,10 @@
   "screen.youzaiworldcore.pets.hunting": "Cazar",
   "screen.youzaiworldcore.pets.attack": "Atacar",
   "screen.youzaiworldcore.pets.guard": "Guardar",
-  "screen.youzaiworldcore.pets.login_required": "Inicia sesión para gestionar mascotas"
+  "screen.youzaiworldcore.pets.login_required": "Inicia sesión para gestionar mascotas",
+  "screen.youzaiworldcore.pause.profile": "Jugador actual",
+  "screen.youzaiworldcore.pause.singleplayer": "Mundo individual",
+  "screen.youzaiworldcore.pause.paused": "Juego en pausa · Continúa cuando quieras",
+  "screen.youzaiworldcore.pause.live": "Menú abierto · El mundo sigue activo",
+  "screen.youzaiworldcore.pause.hint": "Esc · Volver al juego"
 }

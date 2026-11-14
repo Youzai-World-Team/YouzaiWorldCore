@@ -583,6 +583,8 @@ Asynchronously detects new mod versions, prompting for online or forced updates.
 
 ### 37. YZUI Interface System ★NEW
 
+The Esc pause screen uses mint rounded action cards and a player preview, following the existing light/dark themes and visual presets. Small windows use one column while retaining account management. Vanilla resume, advancements, statistics, options, world options, and disconnect behavior are preserved, with separate status messages for paused and still-running worlds. See [the pause screen notes](docs/YZUI_PAUSE.md).
+
 A purely client-side, whole-interface restyle that replaces the vanilla inventory, HUD, recipe book, and contextual bars with the **YZUI look** (translucent white rounded panels + rounded fill bars). Controlled by a **global toggle**: the "Enable YZUI" checkbox in the Visual section of client settings (`screen.youzaiworldcore.settings.toggle_yzui`), persisted as `yzuiEnabled` in `client_external_settings.json` (on by default). **Turning it off reverts everything to vanilla rendering**, so resource packs can take over.
 
 #### 37.1 Inventory Screens

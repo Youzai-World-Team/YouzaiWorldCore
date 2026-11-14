@@ -45,6 +45,12 @@ public final class WidgetFocus {
     /** 菜单卡片按实际位置用方向键移动；表单和下拉框仍自行处理方向键。 */
     @SuppressWarnings("null")
     public static boolean moveInGrid(KeyEvent event, List<? extends AbstractWidget> widgets) {
+        return moveInGrid(event, widgets, false);
+    }
+
+    /** 混合全宽和半宽按钮时优先相邻行，防止方向键跳过中间卡片。 */
+    @SuppressWarnings("null")
+    public static boolean moveInGrid(KeyEvent event, List<? extends AbstractWidget> widgets, boolean preferNearestRow) {
         int dx = switch (event.key()) {
             case InputConstants.KEY_LEFT -> -1;
             case InputConstants.KEY_RIGHT -> 1;
@@ -74,6 +80,7 @@ public final class WidgetFocus {
         double centerY = current.getY() + current.getHeight() / 2.0;
         AbstractWidget next = null;
         double best = Double.POSITIVE_INFINITY;
+        double bestForward = Double.POSITIVE_INFINITY;
         boolean bestAligned = false;
         for (AbstractWidget candidate : available) {
             @SuppressWarnings("null")
@@ -87,9 +94,13 @@ public final class WidgetFocus {
                     : candidate.getY() < current.getBottom() && candidate.getBottom() > current.getY();
             double sideways = dx == 0 ? x : y;
             double distance = forward * forward + sideways * sideways * 4;
-            if (next == null || (aligned && !bestAligned) || (aligned == bestAligned && distance < best)) {
+            boolean closer = preferNearestRow && aligned && bestAligned
+                    ? forward < bestForward || (forward == bestForward && distance < best)
+                    : distance < best;
+            if (next == null || (aligned && !bestAligned) || (aligned == bestAligned && closer)) {
                 next = candidate;
                 best = distance;
+                bestForward = forward;
                 bestAligned = aligned;
             }
         }

@@ -23,6 +23,12 @@ def stub(name, body):
     STUBS[name.replace(".", "/") + ".java"] = "package " + package + ";\n" + body
 
 
+stub("org.jspecify.annotations.NonNull", """
+@java.lang.annotation.Target(java.lang.annotation.ElementType.TYPE_USE)
+public @interface NonNull {}
+""")
+
+
 stub("org.joml.Vector2f", "public class Vector2f { public float x,y; }")
 
 stub("net.minecraft.resources.Identifier", """

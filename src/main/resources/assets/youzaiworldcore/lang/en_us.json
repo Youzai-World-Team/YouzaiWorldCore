@@ -1289,5 +1289,10 @@
   "screen.youzaiworldcore.pets.hunting": "Hunt",
   "screen.youzaiworldcore.pets.attack": "Attack",
   "screen.youzaiworldcore.pets.guard": "Guard",
-  "screen.youzaiworldcore.pets.login_required": "Log in before managing pets"
+  "screen.youzaiworldcore.pets.login_required": "Log in before managing pets",
+  "screen.youzaiworldcore.pause.profile": "Current player",
+  "screen.youzaiworldcore.pause.singleplayer": "Singleplayer world",
+  "screen.youzaiworldcore.pause.paused": "Game paused · Ready when you are",
+  "screen.youzaiworldcore.pause.live": "Menu open · The world keeps running",
+  "screen.youzaiworldcore.pause.hint": "Esc · Back to game"
 }

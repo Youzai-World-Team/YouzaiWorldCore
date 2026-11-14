@@ -1289,5 +1289,10 @@
   "screen.youzaiworldcore.pets.hunting": "Chasser",
   "screen.youzaiworldcore.pets.attack": "Attaquer",
   "screen.youzaiworldcore.pets.guard": "Garder",
-  "screen.youzaiworldcore.pets.login_required": "Connectez-vous pour gérer les animaux"
+  "screen.youzaiworldcore.pets.login_required": "Connectez-vous pour gérer les animaux",
+  "screen.youzaiworldcore.pause.profile": "Joueur actuel",
+  "screen.youzaiworldcore.pause.singleplayer": "Monde solo",
+  "screen.youzaiworldcore.pause.paused": "Jeu en pause · Reprenez à votre rythme",
+  "screen.youzaiworldcore.pause.live": "Menu ouvert · Le monde reste actif",
+  "screen.youzaiworldcore.pause.hint": "Échap · Reprendre le jeu"
 }

@@ -9,7 +9,9 @@ import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.narration.NarratableEntry;
 import net.minecraft.client.gui.screens.PauseScreen;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
+import net.minecraft.client.input.KeyEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.ComponentContents;
 import net.minecraft.network.chat.contents.TranslatableContents;
@@ -22,6 +24,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import top.csituka.youzaiworldcore.client.screen.AccountManagementScreen;
 import top.csituka.youzaiworldcore.client.config.ClientExternalSettings;
+import top.csituka.youzaiworldcore.client.screen.pause.YzuiPauseMenu;
 import top.csituka.youzaiworldcore.account.util.AuthPlayerHelper;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
@@ -30,6 +33,7 @@ import java.util.List;
 
 /**
  * 修改 ESC 暂停菜单（{@link PauseScreen}）：
+ * <p>开启 YZUI 时由 {@link YzuiPauseMenu} 提供响应式主题卡片；下述紧凑布局用于关闭 YZUI 后的既有外观。</p>
  * <ol>
  *   <li>保留以下按钮，其余全部移除（含模组注册的）：
  *     <ul>
@@ -63,7 +67,14 @@ import java.util.List;
  */
 @Mixin(PauseScreen.class)
 @SuppressWarnings("null")
-public class PauseScreenMixin {
+public abstract class PauseScreenMixin extends Screen {
+
+    @Unique
+    private YzuiPauseMenu youzaiworldcore$pauseMenu;
+
+    protected PauseScreenMixin(Component title) {
+        super(title);
+    }
 
     @Unique
     private static final Logger youzaiworldcore$LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/PauseScreenMixin");
@@ -138,6 +149,13 @@ public class PauseScreenMixin {
     private void youzaiworldcore$restructurePauseButtons(CallbackInfo ci) {
         PauseScreen screen = (PauseScreen) (Object) this;
         ScreenAccessor accessor = (ScreenAccessor) screen;
+        String previousFocus = youzaiworldcore$pauseMenu == null ? null : youzaiworldcore$pauseMenu.focusedKey();
+        youzaiworldcore$pauseMenu = null;
+        if (ClientExternalSettings.isYzuiEnabled() && screen.showsPauseMenu()) {
+            youzaiworldcore$modelReady = false;
+            youzaiworldcore$pauseMenu = new YzuiPauseMenu(screen, previousFocus);
+            return;
+        }
 
         // ============ 1. 收集保留/移除的按钮 ============
         AbstractWidget returnBtn = null;
@@ -348,6 +366,7 @@ public class PauseScreenMixin {
     @Inject(method = "extractRenderState", at = @At("TAIL"))
     private void youzaiworldcore$renderPlayerModel(GuiGraphicsExtractor g, int mouseX, int mouseY,
             float partialTick, CallbackInfo ci) {
+        if (youzaiworldcore$pauseMenu != null) return;
         if (!this.youzaiworldcore$modelReady) {
             return;
         }
@@ -368,6 +387,37 @@ public class PauseScreenMixin {
             int ny = this.youzaiworldcore$modelY0 - NAME_GAP_ABOVE - font.lineHeight;
             g.text(font, this.youzaiworldcore$playerName, nx, ny, NAME_COLOR, true);
         }
+    }
+
+    /** 卡片先于原版按钮绘制，原版音乐和退出提示继续参与渲染。 */
+    @Inject(method = "extractRenderState", at = @At("HEAD"))
+    private void youzaiworldcore$renderPauseMenu(GuiGraphicsExtractor g, int mouseX, int mouseY,
+            float partialTick, CallbackInfo ci) {
+        if (youzaiworldcore$pauseMenu != null) youzaiworldcore$pauseMenu.render(g, mouseX, mouseY);
+    }
+
+    /** 游戏画面只加轻遮罩，不模糊；保留原版延迟字幕的提交。 */
+    @Inject(method = "extractBackground", at = @At("HEAD"), cancellable = true)
+    private void youzaiworldcore$renderPauseBackground(GuiGraphicsExtractor g, int mouseX, int mouseY,
+            float partialTick, CallbackInfo ci) {
+        if (youzaiworldcore$pauseMenu == null) return;
+        g.nextStratum();
+        g.fill(0, 0, g.guiWidth(), g.guiHeight(), 0x0C0B1912);
+        Minecraft.getInstance().gui.hud.extractDeferredSubtitles();
+        ci.cancel();
+    }
+
+    /** 方向键按卡片位置导航，其余输入沿用原版 Screen。 */
+    @Override
+    public boolean keyPressed(KeyEvent event) {
+        if (youzaiworldcore$pauseMenu != null && youzaiworldcore$pauseMenu.moveFocus(event)) return true;
+        return super.keyPressed(event);
+    }
+
+    @Override
+    protected void setInitialFocus() {
+        if (youzaiworldcore$pauseMenu != null && youzaiworldcore$pauseMenu.restoreFocus()) return;
+        super.setInitialFocus();
     }
 
     private static String extractTranslationKey(Component component) {

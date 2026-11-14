@@ -1289,5 +1289,10 @@
   "screen.youzaiworldcore.pets.hunting": "Охота",
   "screen.youzaiworldcore.pets.attack": "Атака",
   "screen.youzaiworldcore.pets.guard": "Охрана",
-  "screen.youzaiworldcore.pets.login_required": "Войдите, чтобы управлять питомцами"
+  "screen.youzaiworldcore.pets.login_required": "Войдите, чтобы управлять питомцами",
+  "screen.youzaiworldcore.pause.profile": "Текущий игрок",
+  "screen.youzaiworldcore.pause.singleplayer": "Одиночный мир",
+  "screen.youzaiworldcore.pause.paused": "Игра на паузе · Можно продолжить",
+  "screen.youzaiworldcore.pause.live": "Меню открыто · Мир продолжает жить",
+  "screen.youzaiworldcore.pause.hint": "Esc · Вернуться в игру"
 }
