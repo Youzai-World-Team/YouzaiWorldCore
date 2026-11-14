@@ -450,7 +450,12 @@ public final class MapClient {
     }
 
     public static void cycleLayer() {
-        MapSettings.setLayer(MapLayer.values()[(MapSettings.layer().ordinal() + 1) % MapLayer.values().length]);
+        selectLayer(MapLayer.values()[(MapSettings.layer().ordinal() + 1) % MapLayer.values().length]);
+    }
+
+    /** 直接选择目标图层，只保存一次，并保留原切层的采样重置。 */
+    public static void selectLayer(MapLayer layer) {
+        MapSettings.setLayer(layer);
         sampling = null;
         scanCursor = 0;
     }

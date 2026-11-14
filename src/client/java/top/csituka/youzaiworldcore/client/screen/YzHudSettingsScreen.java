@@ -120,15 +120,19 @@ public final class YzHudSettingsScreen extends Screen {
         }
         updateComponentButtons();
 
-        int buttonsWidth = BUTTON_WIDTH * 2 + BUTTON_GAP;
+        int actionWidth = Math.min(BUTTON_WIDTH, Math.max(24, (width - PAGE_MARGIN * 2 - BUTTON_GAP * 2) / 3));
+        int buttonsWidth = actionWidth * 3 + BUTTON_GAP * 2;
         int buttonX = (width - buttonsWidth) / 2;
         int buttonY = Math.max(CANVAS_TOP + 4, height - BUTTON_HEIGHT - 10);
         addRenderableWidget(new TransparentButton(
-                buttonX, buttonY, BUTTON_WIDTH, BUTTON_HEIGHT,
+                buttonX, buttonY, actionWidth, BUTTON_HEIGHT,
                 Component.translatable("screen.youzaiworldcore.yzhud.reset"),
                 this::resetSettings));
         addRenderableWidget(new TransparentButton(
-                buttonX + BUTTON_WIDTH + BUTTON_GAP, buttonY, BUTTON_WIDTH, BUTTON_HEIGHT,
+                buttonX + actionWidth + BUTTON_GAP, buttonY, actionWidth, BUTTON_HEIGHT,
+                Component.translatable("gui.cancel"), this::onClose));
+        addRenderableWidget(new TransparentButton(
+                buttonX + (actionWidth + BUTTON_GAP) * 2, buttonY, actionWidth, BUTTON_HEIGHT,
                 Component.translatable("screen.youzaiworldcore.yzhud.save"), this::saveAndClose));
         addRenderableWidget(new TransparentButton(buttonX, buttonY - BUTTON_HEIGHT - 4,
                 BUTTON_WIDTH, BUTTON_HEIGHT, enabledMessage(),
@@ -152,11 +156,15 @@ public final class YzHudSettingsScreen extends Screen {
         drawHudPreview(graphics);
         drawComponentOutlines(graphics);
 
+        YzuiTheme.label(graphics, font, Component.translatable("screen.youzaiworldcore.options.hud.save_hint"),
+                PAGE_MARGIN, Math.max(0, height - BUTTON_HEIGHT * 3 - 14), width - PAGE_MARGIN * 2,
+                YzuiTheme.textMuted(), true);
+
         if (scoreboardLocked) {
             Component hint = Component.translatable(
                     "screen.youzaiworldcore.yzhud.scoreboard_locked");
             graphics.text(font, hint, (width - font.width(hint)) / 2,
-                    Math.max(0, height - BUTTON_HEIGHT * 3 - 18), lockedHintColor(), false);
+                    Math.max(0, height - BUTTON_HEIGHT * 3 - 30), lockedHintColor(), false);
         }
 
         super.extractRenderState(graphics, mouseX, mouseY, partialTick);

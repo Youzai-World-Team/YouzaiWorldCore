@@ -961,8 +961,8 @@
   "screen.youzaiworldcore.options.pack.down": "Bajar",
   "screen.youzaiworldcore.options.rules.loading": "Solicitando las reglas de juego al servidor…",
   "screen.youzaiworldcore.options.title": "Ajustes",
-  "screen.youzaiworldcore.options.search.all": "Buscar en todos los ajustes…",
-  "screen.youzaiworldcore.options.resources": "Recursos e información",
+  "screen.youzaiworldcore.options.search.all": "Buscar ajustes…",
+  "screen.youzaiworldcore.options.resources": "Paquetes de recursos e información",
   "map.youzaiworldcore.title": "Mapa Youzai",
   "map.youzaiworldcore.settings": "Ajustes del mapa",
   "map.youzaiworldcore.waypoints": "Puntos de ruta",
@@ -1213,5 +1213,11 @@
   "map.youzaiworldcore.marker_display.icons": "Iconos",
   "map.youzaiworldcore.marker_display.icons_and_labels": "Iconos + texto",
   "map.youzaiworldcore.position_sharing": "Compartir posición",
-  "map.youzaiworldcore.position_sharing_hint": "Al desactivarlo, otros jugadores no ven tu posición. Las listas de permitidos y bloqueados se conservan."
+  "map.youzaiworldcore.position_sharing_hint": "Al desactivarlo, otros jugadores no ven tu posición. Las listas de permitidos y bloqueados se conservan.",
+  "screen.youzaiworldcore.options.more": "Más ajustes",
+  "screen.youzaiworldcore.options.language.apply": "Aplicar idioma",
+  "screen.youzaiworldcore.options.map.preview": "Vista previa del mapa",
+  "screen.youzaiworldcore.options.map.general": "Visualización del mapa",
+  "screen.youzaiworldcore.options.hud.save_hint": "Guardar conserva los cambios; Cancelar o Esc los descarta.",
+  "screen.youzaiworldcore.options.number.hint": "Introduce un entero de %s a %s. Pulsa Intro o sal del campo para aplicar."
 }

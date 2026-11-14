@@ -205,10 +205,18 @@ final class UnifiedSettingsPage {
         displayed = rows.stream().flatMap(row -> row.widgets.stream()).toList();
     }
 
-    private static void appendCoreOptions(List<SettingsList.Row> rows, YouzaiWorldCoreSettingsScreen core) {
+    private void appendCoreOptions(List<SettingsList.Row> rows, YouzaiWorldCoreSettingsScreen core) {
+        if (core.getSelectedSection() == CoreSettingsSection.APPEARANCE.id()) SettingsDetails.appearance(rows);
+        if (core.getSelectedSection() == CoreSettingsSection.MAP.id()) {
+            SettingsDetails.map(rows, host, null);
+            return;
+        }
         for (var option : core.embeddedOptions()) {
+            if (option.control() != null && SettingsWidgets.key(option.control().getMessage(), "screen.youzaiworldcore.appearance.title")) continue;
+            Component description = option.control() != null && SettingsWidgets.key(option.control().getMessage(), "screen.youzaiworldcore.settings.yzhud_customize")
+                    ? YzuiOptionsScreen.text("hud.save_hint") : option.description();
             rows.add(option.control() == null ? SettingsList.Row.text(option.label(), option.description())
-                    : SettingsList.Row.controls(option.label(), option.description(), option.control()));
+                    : SettingsList.Row.controls(option.label(), description, option.control()));
         }
     }
 
@@ -253,6 +261,9 @@ final class UnifiedSettingsPage {
 
     private SettingsList.Row heading(List<SettingsList.Row> rows, String anchor, Component title) {
         SettingsList.Row row = SettingsList.Row.heading(title);
+        row.sectionId = anchor;
+        row.advanced = anchor.equals("resources") || anchor.equals("mods")
+                || anchor.equals("core.1") || anchor.equals("core.2") || anchor.equals("core.3");
         anchors.put(anchor, row);
         rows.add(row);
         return row;
@@ -311,6 +322,7 @@ final class UnifiedSettingsPage {
     }
 
     void removed() {
+        SettingsDetails.commitNumbers(displayed);
         flush();
         if (video != null) minecraft.getWindow().changeFullscreenVideoMode();
         for (Page page : pages) page.screen.removed();

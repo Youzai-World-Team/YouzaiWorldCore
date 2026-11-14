@@ -961,8 +961,8 @@
   "screen.youzaiworldcore.options.pack.down": "Nach unten",
   "screen.youzaiworldcore.options.rules.loading": "Spielregeln werden vom Server angefordert…",
   "screen.youzaiworldcore.options.title": "Einstellungen",
-  "screen.youzaiworldcore.options.search.all": "Alle Einstellungen durchsuchen…",
-  "screen.youzaiworldcore.options.resources": "Ressourcen und Informationen",
+  "screen.youzaiworldcore.options.search.all": "Einstellungen suchen…",
+  "screen.youzaiworldcore.options.resources": "Ressourcenpakete und Informationen",
   "map.youzaiworldcore.title": "Youzai-Karte",
   "map.youzaiworldcore.settings": "Karteneinstellungen",
   "map.youzaiworldcore.waypoints": "Wegpunkte",
@@ -1213,5 +1213,11 @@
   "map.youzaiworldcore.marker_display.icons": "Symbole",
   "map.youzaiworldcore.marker_display.icons_and_labels": "Symbole + Text",
   "map.youzaiworldcore.position_sharing": "Position teilen",
-  "map.youzaiworldcore.position_sharing_hint": "Ausgeschaltet sehen andere Spieler deine Position nicht. Freigabe- und Sperrlisten bleiben erhalten."
+  "map.youzaiworldcore.position_sharing_hint": "Ausgeschaltet sehen andere Spieler deine Position nicht. Freigabe- und Sperrlisten bleiben erhalten.",
+  "screen.youzaiworldcore.options.more": "Weitere Einstellungen",
+  "screen.youzaiworldcore.options.language.apply": "Sprache anwenden",
+  "screen.youzaiworldcore.options.map.preview": "Kartenvorschau",
+  "screen.youzaiworldcore.options.map.general": "Kartenanzeige",
+  "screen.youzaiworldcore.options.hud.save_hint": "Speichern übernimmt Änderungen; Abbrechen oder Esc verwirft sie.",
+  "screen.youzaiworldcore.options.number.hint": "Ganzzahl von %s bis %s eingeben. Mit Enter oder beim Verlassen anwenden."
 }

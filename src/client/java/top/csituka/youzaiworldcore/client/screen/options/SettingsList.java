@@ -34,6 +34,22 @@ final class SettingsList extends ContainerObjectSelectionList<SettingsList.Row> 
     private Row selectedSection;
     private boolean separateSections;
     private String query = "";
+    private SettingsViewState viewState = new SettingsViewState();
+    private String displayedSection;
+    private boolean positioned;
+
+    void useViewState(SettingsViewState state) { viewState = state; }
+    void rememberView() { rememberPosition(); }
+
+    private void rememberPosition() {
+        if (!positioned) return;
+        if (!query.isBlank()) {
+            viewState.searchQuery = query;
+            viewState.searchScroll = scrollAmount();
+        } else if (separateSections && displayedSection != null) {
+            viewState.sectionScroll.put(displayedSection, scrollAmount());
+        }
+    }
 
     SettingsList(int x, int y, int width, int height) {
         super(Minecraft.getInstance(), width, height, y, 40);
@@ -55,6 +71,7 @@ final class SettingsList extends ContainerObjectSelectionList<SettingsList.Row> 
     }
 
     void filter(String query) {
+        rememberPosition();
         this.query = query;
         closePopups();
         setFocused(null);
@@ -68,6 +85,8 @@ final class SettingsList extends ContainerObjectSelectionList<SettingsList.Row> 
                 group = "";
             } else if (row.heading) group = row.label.getString();
             row.section = section;
+            row.breadcrumb = query.isBlank() || section == null ? Component.empty()
+                    : Component.literal(section.label.getString() + (group.isBlank() ? "" : " › " + group));
             String sectionText = section == null ? "" : section.label.getString();
             // 普通浏览只装入当前分区，滚动范围和键盘焦点都不会越过分区边界；搜索仍覆盖全部设置。
             boolean shown = query.isBlank() ? !separateSections || section == selectedSection
@@ -76,7 +95,11 @@ final class SettingsList extends ContainerObjectSelectionList<SettingsList.Row> 
                 addEntry(row, row.heightFor(getRowWidth()));
             }
         }
-        setScrollAmount(0);
+        displayedSection = selectedSection == null ? null : selectedSection.key();
+        double restored = !query.isBlank() ? query.equals(viewState.searchQuery) ? viewState.searchScroll : 0
+                : separateSections && displayedSection != null ? viewState.sectionScroll.getOrDefault(displayedSection, 0d) : 0;
+        setScrollAmount(restored);
+        positioned = true;
     }
 
     static boolean matches(String query, String text) {
@@ -93,11 +116,13 @@ final class SettingsList extends ContainerObjectSelectionList<SettingsList.Row> 
 
     Row selectedSection() { return selectedSection; }
 
-    /** 独立分区切换内容并回到顶部；普通列表仍按实际行高定位标题。 */
+    /** 独立分区恢复浏览位置；普通列表仍按实际行高定位标题。 */
     void reveal(Row row) {
         if (separateSections && allRows.contains(row)) {
             selectedSection = row.section;
             filter("");
+            // 点击分类恢复该分类的浏览位置；搜索结果内的具体项目仍可准确定位。
+            if (row.navigation) return;
         }
         int offset = 0;
         for (Row entry : children()) {
@@ -191,6 +216,7 @@ final class SettingsList extends ContainerObjectSelectionList<SettingsList.Row> 
     public void updateWidgetNarration(NarrationElementOutput output) {
         Row row = getHovered() != null ? getHovered() : getFocused();
         if (row != null) {
+            if (!row.breadcrumb.getString().isEmpty()) output.add(NarratedElementType.HINT, row.breadcrumb);
             if (!row.label.getString().isEmpty()) output.add(NarratedElementType.TITLE, row.label);
             if (!row.detail.getString().isEmpty()) output.add(NarratedElementType.HINT, row.detail);
         }
@@ -206,6 +232,9 @@ final class SettingsList extends ContainerObjectSelectionList<SettingsList.Row> 
         boolean navigation;
         /** 在对应侧栏按钮上方显示的纯文本分组标题。 */
         Component navigationGroup;
+        String sectionId;
+        boolean advanced;
+        private Component breadcrumb = Component.empty();
         private Row section;
         private final Identifier icon;
         private final boolean choice;
@@ -258,6 +287,11 @@ final class SettingsList extends ContainerObjectSelectionList<SettingsList.Row> 
         }
 
         void addSearchTerms(String terms) { keywords += " " + terms; }
+        String key() { return sectionId == null ? label.getString() : sectionId; }
+
+        private int breadcrumbHeight(int width) {
+            return breadcrumb.getString().isEmpty() ? 0 : Minecraft.getInstance().font.split(breadcrumb, Math.max(1, width - 20)).size() * 12 + 4;
+        }
 
         static Row pack(Component label, Component detail, Identifier icon, String id, AbstractWidget... widgets) {
             return new Row(label, detail, List.of(widgets), false, icon, id);
@@ -271,6 +305,10 @@ final class SettingsList extends ContainerObjectSelectionList<SettingsList.Row> 
         }
 
         int heightFor(int width) {
+            return baseHeightFor(width) + breadcrumbHeight(width);
+        }
+
+        private int baseHeightFor(int width) {
             if (heading) return 28;
             if (widgets.size() == 1 && widgets.getFirst() instanceof MultiLineTextWidget text) {
                 text.setMaxWidth(Math.max(1, width - 24)).setMaxRows(Integer.MAX_VALUE);
@@ -308,7 +346,8 @@ final class SettingsList extends ContainerObjectSelectionList<SettingsList.Row> 
             if (widgets.isEmpty()) return;
             if (choice) {
                 int width = choiceControlWidth(getWidth());
-                int y = inlineChoice(getWidth()) ? getY() + (getHeight() - 24) / 2 : getY() + getHeight() - 32;
+                int trail = breadcrumbHeight(getWidth());
+                int y = inlineChoice(getWidth()) ? getY() + trail + (getHeight() - trail - 24) / 2 : getY() + getHeight() - 32;
                 widgets.getFirst().setRectangle(width, 24, getX() + getWidth() - width - 10, y);
                 return;
             }
@@ -316,7 +355,7 @@ final class SettingsList extends ContainerObjectSelectionList<SettingsList.Row> 
                 // 保留原生富文本的链接点击与键盘操作，长说明可以完整滚动阅读。
                 text.setMaxWidth(Math.max(1, getWidth() - 24));
                 text.setX(getX() + 10);
-                text.setY(getY() + 9);
+                text.setY(getY() + 9 + breadcrumbHeight(getWidth()));
                 int color = YzuiTheme.text() & 0xFFFFFF;
                 var currentColor = text.getMessage().getStyle().getColor();
                 if (currentColor == null || currentColor.getValue() != color) {
@@ -360,6 +399,13 @@ final class SettingsList extends ContainerObjectSelectionList<SettingsList.Row> 
                 textWidth -= 40;
             }
             int textY = y + 9;
+            if (!breadcrumb.getString().isEmpty()) {
+                for (var line : font.split(breadcrumb, Math.max(1, width - 20))) {
+                    g.text(font, line, x + 10, textY, YzuiTheme.textMuted(), false);
+                    textY += 12;
+                }
+                textY += 4;
+            }
             if (!label.getString().isEmpty()) {
                 for (var line : font.split(label, Math.max(1, textWidth))) {
                     g.text(font, line, textX, textY, YzuiTheme.text(), false);

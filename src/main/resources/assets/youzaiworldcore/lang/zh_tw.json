@@ -961,8 +961,8 @@
   "screen.youzaiworldcore.options.pack.down": "下移",
   "screen.youzaiworldcore.options.rules.loading": "正在取得伺服器遊戲規則…",
   "screen.youzaiworldcore.options.title": "設定中心",
-  "screen.youzaiworldcore.options.search.all": "搜尋所有設定…",
-  "screen.youzaiworldcore.options.resources": "資源與資訊",
+  "screen.youzaiworldcore.options.search.all": "搜尋設定…",
+  "screen.youzaiworldcore.options.resources": "資源包與資訊",
   "map.youzaiworldcore.title": "悠哉地圖",
   "map.youzaiworldcore.settings": "地圖設置",
   "map.youzaiworldcore.waypoints": "路徑點",
@@ -1213,5 +1213,11 @@
   "map.youzaiworldcore.marker_display.icons": "僅圖示",
   "map.youzaiworldcore.marker_display.icons_and_labels": "圖示＋文字",
   "map.youzaiworldcore.position_sharing": "分享位置",
-  "map.youzaiworldcore.position_sharing_hint": "關閉後其他玩家無法查看你的位置；分享名單與黑名單保留。"
+  "map.youzaiworldcore.position_sharing_hint": "關閉後其他玩家無法查看你的位置；分享名單與黑名單保留。",
+  "screen.youzaiworldcore.options.more": "更多設定",
+  "screen.youzaiworldcore.options.language.apply": "套用語言",
+  "screen.youzaiworldcore.options.map.preview": "地圖預覽",
+  "screen.youzaiworldcore.options.map.general": "地圖顯示",
+  "screen.youzaiworldcore.options.hud.save_hint": "儲存後保留修改，取消或 Esc 放棄。",
+  "screen.youzaiworldcore.options.number.hint": "輸入 %s 至 %s 的整數，按 Enter 或離開輸入框提交。"
 }

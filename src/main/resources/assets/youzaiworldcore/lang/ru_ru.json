@@ -961,8 +961,8 @@
   "screen.youzaiworldcore.options.pack.down": "Ниже",
   "screen.youzaiworldcore.options.rules.loading": "Запрос правил игры с сервера…",
   "screen.youzaiworldcore.options.title": "Настройки",
-  "screen.youzaiworldcore.options.search.all": "Поиск по всем настройкам…",
-  "screen.youzaiworldcore.options.resources": "Ресурсы и информация",
+  "screen.youzaiworldcore.options.search.all": "Поиск настроек…",
+  "screen.youzaiworldcore.options.resources": "Наборы ресурсов и информация",
   "map.youzaiworldcore.title": "Карта Youzai",
   "map.youzaiworldcore.settings": "Настройки карты",
   "map.youzaiworldcore.waypoints": "Путевые точки",
@@ -1213,5 +1213,11 @@
   "map.youzaiworldcore.marker_display.icons": "Значки",
   "map.youzaiworldcore.marker_display.icons_and_labels": "Значки + текст",
   "map.youzaiworldcore.position_sharing": "Делиться позицией",
-  "map.youzaiworldcore.position_sharing_hint": "При отключении другие игроки не видят вашу позицию. Списки доступа и блокировки сохраняются."
+  "map.youzaiworldcore.position_sharing_hint": "При отключении другие игроки не видят вашу позицию. Списки доступа и блокировки сохраняются.",
+  "screen.youzaiworldcore.options.more": "Другие настройки",
+  "screen.youzaiworldcore.options.language.apply": "Применить язык",
+  "screen.youzaiworldcore.options.map.preview": "Предпросмотр карты",
+  "screen.youzaiworldcore.options.map.general": "Отображение карты",
+  "screen.youzaiworldcore.options.hud.save_hint": "Сохранение оставляет изменения; отмена или Esc их сбрасывает.",
+  "screen.youzaiworldcore.options.number.hint": "Введите целое число от %s до %s. Нажмите Enter или выйдите из поля."
 }

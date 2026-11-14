@@ -961,7 +961,7 @@
   "screen.youzaiworldcore.options.pack.down": "下移",
   "screen.youzaiworldcore.options.rules.loading": "正取伺服器之遊戲規則…",
   "screen.youzaiworldcore.options.title": "諸設定",
-  "screen.youzaiworldcore.options.search.all": "尋諸設定…",
+  "screen.youzaiworldcore.options.search.all": "尋設定…",
   "screen.youzaiworldcore.options.resources": "資源與資訊",
   "map.youzaiworldcore.title": "悠哉輿圖",
   "map.youzaiworldcore.settings": "輿圖之設",
@@ -1213,5 +1213,11 @@
   "map.youzaiworldcore.marker_display.icons": "唯圖",
   "map.youzaiworldcore.marker_display.icons_and_labels": "圖與文",
   "map.youzaiworldcore.position_sharing": "共享位置",
-  "map.youzaiworldcore.position_sharing_hint": "關則他人不見己位；白黑之名單仍存。"
+  "map.youzaiworldcore.position_sharing_hint": "關則他人不見己位；白黑之名單仍存。",
+  "screen.youzaiworldcore.options.more": "其他設定",
+  "screen.youzaiworldcore.options.language.apply": "用此語言",
+  "screen.youzaiworldcore.options.map.preview": "覽地圖",
+  "screen.youzaiworldcore.options.map.general": "地圖顯示",
+  "screen.youzaiworldcore.options.hud.save_hint": "儲存則留其改，取消或 Esc 則棄。",
+  "screen.youzaiworldcore.options.number.hint": "填 %s 至 %s 之整數，按回車或離此欄以存。"
 }

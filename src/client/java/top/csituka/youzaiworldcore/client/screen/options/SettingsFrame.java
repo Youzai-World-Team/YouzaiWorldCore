@@ -32,6 +32,10 @@ final class SettingsFrame {
     private boolean navigationInitialized;
     private final List<AbstractWidget> footer;
     private final TransparentButton back;
+    private final SettingsViewState viewState;
+    private List<SettingsList.Row> sections = List.of();
+    private SettingsList.Row moreRow;
+    private TransparentButton moreButton;
 
     SettingsFrame(Screen screen, List<SettingsList.Row> rows, List<AbstractWidget> footer,
                   Consumer<AbstractWidget> addWidget, String query, double scroll, boolean searchable) {
@@ -41,7 +45,14 @@ final class SettingsFrame {
     SettingsFrame(Screen screen, List<SettingsList.Row> rows, List<AbstractWidget> footer,
                   Consumer<AbstractWidget> addWidget, String query, double scroll, boolean searchable,
                   SettingsList.Row selectedSection) {
+        this(screen, rows, footer, addWidget, query, scroll, searchable, selectedSection, new SettingsViewState());
+    }
+
+    SettingsFrame(Screen screen, List<SettingsList.Row> rows, List<AbstractWidget> footer,
+                  Consumer<AbstractWidget> addWidget, String query, double scroll, boolean searchable,
+                  SettingsList.Row selectedSection, SettingsViewState viewState) {
         this.screen = screen;
+        this.viewState = viewState;
         this.addWidget = addWidget;
         this.footer = List.copyOf(footer);
         compactDialog = screen instanceof YzuiOptionsScreen options && options.isLinkConfirmation();
@@ -79,8 +90,9 @@ final class SettingsFrame {
         if (searchable) addChrome(search);
 
         content = new SettingsList(bodyX, bodyY, bodyWidth, bodyHeight);
+        content.useViewState(viewState);
         content.setRows(rows, query, separateSections, selectedSection);
-        content.setScrollAmount(scroll);
+        if (scroll > 0) content.setScrollAmount(scroll);
         addWidget.accept(content);
         search.setResponder(content::filter);
         rebuildNavigation(rows);
@@ -104,34 +116,68 @@ final class SettingsFrame {
 
     private void rebuildNavigation(List<SettingsList.Row> rows) {
         if (navigationWidth == 0) return;
+        sections = rows.stream().filter(row -> row.navigation).toList();
         navigation = new SettingsList(x + 12, bodyY, navigationWidth, bodyHeight);
-        List<SettingsList.Row> navigationRows = new ArrayList<>();
-        for (SettingsList.Row row : rows) {
-            if (!row.navigation) continue;
-            if (row.navigationGroup != null) {
-                navigationRows.add(SettingsList.Row.subheading(row.navigationGroup));
-            }
-            TransparentButton button = new TransparentButton(0, 0, 100, 24, row.label, () -> {
-                search.setValue("");
-                content.reveal(row);
-                updateNavigation();
-            });
-            button.setStyle(YzuiTheme.ButtonStyle.TEXT);
-            button.setTextLeftAligned(true);
-            button.setTooltip(Tooltip.create(row.label));
-            SettingsList.Row navigationRow = SettingsList.Row.widget(button);
-            navigationRows.add(navigationRow);
-            navigationEntries.add(new NavigationEntry(row, navigationRow, button));
-        }
-        navigation.setRows(navigationRows, "");
+        fillNavigation();
         addWidget.accept(navigation);
         updateNavigation();
+    }
+
+    private void fillNavigation() {
+        navigationEntries.clear();
+        List<SettingsList.Row> navigationRows = new ArrayList<>();
+        for (SettingsList.Row row : sections) {
+            if (row.advanced) continue;
+            addNavigation(row, navigationRows, true);
+        }
+        if (sections.stream().anyMatch(row -> row.advanced)) {
+            moreButton = new TransparentButton(0, 0, 100, 24,
+                    Component.literal(viewState.moreExpanded ? "▾ " : "▸ ").append(YzuiOptionsScreen.text("more")), () -> {
+                viewState.moreExpanded = !viewState.moreExpanded;
+                fillNavigation();
+                navigationInitialized = false;
+                updateNavigation();
+                screen.setFocused(navigation);
+                navigation.setFocused(moreRow);
+                moreRow.setFocused(moreButton);
+                navigation.ensureVisible(moreRow);
+            });
+            moreButton.setStyle(YzuiTheme.ButtonStyle.TEXT);
+            moreButton.setTextLeftAligned(true);
+            moreRow = SettingsList.Row.widget(moreButton);
+            navigationRows.add(moreRow);
+            if (viewState.moreExpanded) {
+                for (SettingsList.Row row : sections) if (row.advanced) addNavigation(row, navigationRows, false);
+            }
+        }
+        navigation.setRows(navigationRows, "");
+    }
+
+    private void addNavigation(SettingsList.Row row, List<SettingsList.Row> navigationRows, boolean grouped) {
+        if (grouped && row.navigationGroup != null) {
+            navigationRows.add(SettingsList.Row.subheading(row.navigationGroup));
+        }
+        TransparentButton button = new TransparentButton(0, 0, 100, 24, row.label, () -> {
+            search.setValue("");
+            content.reveal(row);
+            updateNavigation();
+        });
+        button.setStyle(YzuiTheme.ButtonStyle.TEXT);
+        button.setTextLeftAligned(true);
+        button.setTooltip(Tooltip.create(row.label));
+        SettingsList.Row navigationRow = SettingsList.Row.widget(button);
+        navigationRows.add(navigationRow);
+        navigationEntries.add(new NavigationEntry(row, navigationRow, button));
     }
 
     private void updateNavigation() {
         if (navigation == null) return;
         SettingsList.Row current = content.activeSection();
         if (navigationInitialized && current == activeSection) return;
+        if (current != activeSection && current != null && current.advanced && !viewState.moreExpanded) {
+            viewState.moreExpanded = true;
+            fillNavigation();
+        }
         activeSection = current;
         navigationInitialized = true;
         for (NavigationEntry entry : navigationEntries) {

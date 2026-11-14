@@ -961,8 +961,8 @@
   "screen.youzaiworldcore.options.pack.down": "Move down",
   "screen.youzaiworldcore.options.rules.loading": "Requesting game rules from the server…",
   "screen.youzaiworldcore.options.title": "Settings",
-  "screen.youzaiworldcore.options.search.all": "Search all settings…",
-  "screen.youzaiworldcore.options.resources": "Resources and information",
+  "screen.youzaiworldcore.options.search.all": "Search settings…",
+  "screen.youzaiworldcore.options.resources": "Resource packs and information",
   "map.youzaiworldcore.title": "Youzai Map",
   "map.youzaiworldcore.settings": "Map settings",
   "map.youzaiworldcore.waypoints": "Waypoints",
@@ -1213,5 +1213,11 @@
   "map.youzaiworldcore.marker_display.icons": "Icons",
   "map.youzaiworldcore.marker_display.icons_and_labels": "Icons + labels",
   "map.youzaiworldcore.position_sharing": "Share position",
-  "map.youzaiworldcore.position_sharing_hint": "Turning this off hides your position from other players. Allowed and blocked lists are kept."
+  "map.youzaiworldcore.position_sharing_hint": "Turning this off hides your position from other players. Allowed and blocked lists are kept.",
+  "screen.youzaiworldcore.options.more": "More settings",
+  "screen.youzaiworldcore.options.language.apply": "Apply language",
+  "screen.youzaiworldcore.options.map.preview": "Map preview",
+  "screen.youzaiworldcore.options.map.general": "Map display",
+  "screen.youzaiworldcore.options.hud.save_hint": "Save keeps changes; Cancel or Esc discards them.",
+  "screen.youzaiworldcore.options.number.hint": "Enter an integer from %s to %s. Press Enter or leave the field to apply."
 }

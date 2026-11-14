@@ -70,6 +70,7 @@ public final class YzuiOptionsScreen extends Screen implements HasDifficultyReac
     private String query = "";
     private String pendingLanguageCode;
     private double scroll;
+    private final SettingsViewState viewState = new SettingsViewState();
     private List<Object> packEntries = List.of();
     private boolean telemetryOptIn;
     private Object videoPreset;
@@ -129,7 +130,7 @@ public final class YzuiOptionsScreen extends Screen implements HasDifficultyReac
                 || source instanceof YouzaiWorldCoreSettingsScreen core && core.isConfigOperationActive();
     }
 
-    static Component text(String key) { return Component.translatable("screen.youzaiworldcore.options." + key); }
+    static Component text(String key, Object... args) { return Component.translatable("screen.youzaiworldcore.options." + key, args); }
 
     @Override
     protected void init() {
@@ -141,6 +142,7 @@ public final class YzuiOptionsScreen extends Screen implements HasDifficultyReac
             AbstractWidget focused = SettingsWidgets.focused(this);
             boolean searchFocused = frame != null && frame.search.isFocused();
             if (frame != null) {
+                frame.content.rememberView();
                 query = frame.search.getValue();
                 scroll = frame.content.scrollAmount();
             }
@@ -181,7 +183,10 @@ public final class YzuiOptionsScreen extends Screen implements HasDifficultyReac
                 }
                 pendingAnchor = null;
             }
-            frame = new SettingsFrame(this, rows, footer, this::addRenderableWidget, query, scroll, searchable, selectedSection);
+            if (source instanceof LanguageSelectScreen) {
+                for (AbstractWidget button : footer) if (SettingsWidgets.key(button.getMessage(), "gui.done")) button.setMessage(text("language.apply"));
+            }
+            frame = new SettingsFrame(this, rows, footer, this::addRenderableWidget, query, scroll, searchable, selectedSection, viewState);
             if (source != null) captured = SettingsWidgets.flatten(source);
             if (videoPage() != null) videoPreset = minecraft.options.graphicsPreset().get();
             refreshKeyLabels();
@@ -224,7 +229,7 @@ public final class YzuiOptionsScreen extends Screen implements HasDifficultyReac
 
     private static boolean takeFooter(AbstractWidget widget, List<AbstractWidget> footer) {
         if (!(widget instanceof Button)) return false;
-        for (String key : List.of("gui.done", "gui.back", "gui.cancel")) {
+        for (String key : List.of("gui.done", "gui.back", "gui.cancel", "screen.youzaiworldcore.options.language.apply")) {
             if (SettingsWidgets.key(widget.getMessage(), key)) {
                 footer.add(widget);
                 return true;
@@ -622,6 +627,7 @@ public final class YzuiOptionsScreen extends Screen implements HasDifficultyReac
 
     @Override
     public void removed() {
+        if (frame != null) frame.content.rememberView();
         if (frame != null) frame.content.closePopups();
         if (unified != null) unified.removed();
         if (source != null) {

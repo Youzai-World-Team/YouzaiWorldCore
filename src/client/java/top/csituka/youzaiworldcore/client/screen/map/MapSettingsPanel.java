@@ -20,6 +20,7 @@ import top.csituka.youzaiworldcore.client.map.MapTexts;
 import top.csituka.youzaiworldcore.client.render.RoundedRect;
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
 import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
+import top.csituka.youzaiworldcore.client.screen.widget.DropdownButton;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 import java.util.ArrayList;
 import java.util.List;
@@ -38,7 +39,7 @@ final class MapSettingsPanel extends AbstractContainerEventHandler implements Re
         Entry(String key) { this.key = key; toggle = null; }
     }
     private final YzWorldMapScreen owner;
-    private final List<TransparentButton> widgets = new ArrayList<>();
+    private final List<AbstractWidget> widgets = new ArrayList<>();
     private int panelX, panelY, panelWidth, panelHeight, offset, visibleRows, listTop, listBottom;
     MapSettingsPanel(YzWorldMapScreen owner) { this.owner = owner; }
 
@@ -56,6 +57,20 @@ final class MapSettingsPanel extends AbstractContainerEventHandler implements Re
                 .setTooltip(Tooltip.create(MapTexts.text("done")));
         for (int i = 0; i < visibleRows && offset + i < Entry.values().length; i++) {
             var entry = Entry.values()[offset + i];
+            if (entry == Entry.MARKERS) {
+                var values = MapSettings.MarkerDisplay.values();
+                var labels = java.util.Arrays.stream(values).map(value -> MapTexts.text("marker_display."
+                        + value.name().toLowerCase(java.util.Locale.ROOT)).getString()).toList();
+                widgets.add(new DropdownButton(panelX + 12, listTop + i * 23, panelWidth - 28, panelWidth - 28, 22,
+                        MapTexts.text(entry.key), labels, MapSettings.markerDisplay().ordinal(), false,
+                        selected -> MapSettings.setMarkerDisplay(values[selected]), null) {
+                    @Override protected void extractWidgetRenderState(GuiGraphicsExtractor g, int x, int y, float tick) {
+                        updateOptions(labels, MapSettings.markerDisplay().ordinal(), MapSettingsCategoryScreen.markerDisplayLabel().getString());
+                        super.extractWidgetRenderState(g, x, y, tick);
+                    }
+                });
+                continue;
+            }
             var control = new TransparentButton(panelX + 12, listTop + i * 23, panelWidth - 28, 22,
                     MapTexts.text(entry.key), () -> activate(entry)) {
                 @Override protected void extractWidgetRenderState(GuiGraphicsExtractor g, int mx, int my, float delta) {
@@ -84,10 +99,6 @@ final class MapSettingsPanel extends AbstractContainerEventHandler implements Re
     }
     private void activate(Entry entry) {
         if (entry.toggle != null) { MapSettings.toggle(entry.toggle); return; }
-        if (entry == Entry.MARKERS) {
-            var values = MapSettings.MarkerDisplay.values();
-            MapSettings.setMarkerDisplay(values[(MapSettings.markerDisplay().ordinal() + 1) % values.length]); return;
-        }
         var category = switch (entry) {
             case APPEARANCE -> MapSettingsCategoryScreen.Category.APPEARANCE;
             case INFORMATION -> MapSettingsCategoryScreen.Category.INFORMATION;
@@ -126,16 +137,28 @@ final class MapSettingsPanel extends AbstractContainerEventHandler implements Re
             g.fill(panelX + panelWidth - 6, y, panelX + panelWidth - 4, y + thumb, YzuiTheme.primary());
         }
         for (var widget : widgets) widget.extractRenderState(g, mx, my, delta);
+        for (var widget : widgets) if (widget instanceof DropdownButton dropdown) {
+            dropdown.renderPopup(g, mx, my, delta, listTop, listBottom, 0);
+        }
     }
     @Override public boolean mouseClicked(MouseButtonEvent event, boolean actual) {
+        for (var widget : widgets) if (widget instanceof DropdownButton dropdown && dropdown.isOpen()) {
+            if (dropdown.isMouseOver(event.x(), event.y())) return dropdown.mouseClicked(event, actual);
+            dropdown.closePopup();
+        }
         if (!isMouseOver(event.x(), event.y())) return false;
         super.mouseClicked(event, actual); return true;
     }
     @Override public boolean mouseScrolled(double x, double y, double horizontal, double vertical) {
+        for (var widget : widgets) if (widget instanceof DropdownButton dropdown && dropdown.isOpen()) {
+            if (dropdown.mouseScrolled(x, y, horizontal, vertical)) return true;
+            dropdown.closePopup();
+        }
         if (vertical == 0 || x < panelX || x >= panelX + panelWidth || y < listTop || y >= listBottom) return false;
         offset = Math.clamp(offset + (vertical > 0 ? -1 : 1), 0, Math.max(0, Entry.values().length - visibleRows)); init(); return true;
     }
     @Override public boolean keyPressed(KeyEvent event) {
+        for (var widget : widgets) if (widget instanceof DropdownButton dropdown && dropdown.isOpen() && dropdown.keyPressed(event)) return true;
         if (event.key() == InputConstants.KEY_ESCAPE) { owner.closeSettings(); return true; }
         return super.keyPressed(event);
     }
