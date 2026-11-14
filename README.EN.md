@@ -585,6 +585,8 @@ Asynchronously detects new mod versions, prompting for online or forced updates.
 
 The Esc pause screen uses mint rounded action cards and a player preview, following the existing light/dark themes and visual presets. Account management replaces world options beside the options button, and small windows use one column. Icons keep their proportions in square bounds; disconnect uses a door and arrow icon. Vanilla resume, advancements, statistics, options, and disconnect behavior are preserved. See [the pause screen notes](docs/YZUI_PAUSE.md).
 
+Enchanting tables, looms, cartography tables, stonecutters, and grindstones use matching themed cards, slots, choices, and a close icon at the top right, while preserving vanilla book animations, banner and map previews, and menu interactions. Brewing stands keep their existing interface. See [the workstation interface notes and checks](docs/YZUI_WORKSTATIONS.md).
+
 A purely client-side, whole-interface restyle that replaces the vanilla inventory, HUD, recipe book, and contextual bars with the **YZUI look** (translucent white rounded panels + rounded fill bars). Controlled by a **global toggle**: the "Enable YZUI" checkbox in the Visual section of client settings (`screen.youzaiworldcore.settings.toggle_yzui`), persisted as `yzuiEnabled` in `client_external_settings.json` (on by default). **Turning it off reverts everything to vanilla rendering**, so resource packs can take over.
 
 #### 37.1 Inventory Screens
