@@ -47,7 +47,7 @@ public final class YzWorldMapScreen extends Screen {
     private MapView displayed;
     private int unit, inset;
     private int zoomTop, zoomBottom, infoX, infoY, infoWidth;
-    private boolean zoomDragging;
+    private boolean zoomDragging, compactZoom;
     private MapSettingsPanel settingsPanel;
     private MapDetailPanel detailPanel;
     private MapOverlayPanel overlayPanel;
@@ -87,21 +87,48 @@ public final class YzWorldMapScreen extends Screen {
         int right = width - inset - unit;
         icon(right, inset, MapIconButton.Icon.CLOSE, "done", this::onClose);
 
-        // 缩放轨道在小窗口中收短，为底部文字入口留出空间。
-        int zoomY = Math.max(inset + unit + 8, height / 4);
-        zoomTop = zoomY + unit + 10;
-        zoomBottom = Math.max(zoomTop + 12, Math.min(height * 2 / 3, height - inset - 26 - unit * 2 - 26));
-        icon(inset, zoomY, MapIconButton.Icon.PLUS, "zoom_in", () -> zoom(scale * 1.25));
-        icon(inset, zoomBottom + 10, MapIconButton.Icon.MINUS, "zoom_out", () -> zoom(scale / 1.25));
-        icon(inset, height - inset - 26 - unit - 8, MapIconButton.Icon.CENTER, "recenter", this::recenter);
-        int entryWidth = Math.min(110, (width - inset * 2 - 24) / 5);
-        int entryY = height - inset - 26;
         String[] entryKeys = { "settings", "waypoints", "players", "radar", "dimension" };
+        MapIconButton.Icon[] entryIcons = { MapIconButton.Icon.SETTINGS, MapIconButton.Icon.PIN,
+                MapIconButton.Icon.PLAYERS, MapIconButton.Icon.RADAR, MapIconButton.Icon.DIMENSION };
         Runnable[] entryActions = { this::openSettings, this::openWaypoints,
                 () -> openOverlay(new MapPlayersPanel(this)), () -> openOverlay(new MapRadarPanel(this)), this::openDimensions };
-        for (int i = 0; i < entryKeys.length; i++) {
-            button(inset + i * (entryWidth + 6), entryY, entryWidth, MapTexts.text(entryKeys[i]), entryActions[i]).setHeight(26);
+        // 用当前语言文字宽度决定列数，窄屏换行，避免入口退化为只有图标。
+        int minimumEntryWidth = 52, entryGap = 6, entryHeight = 44;
+        for (String key : entryKeys) minimumEntryWidth = Math.max(minimumEntryWidth, font.width(MapTexts.text(key)) + 12);
+        int availableEntryWidth = width - inset * 2;
+        int entryColumns = Math.clamp((availableEntryWidth + entryGap) / (minimumEntryWidth + entryGap), 1, entryKeys.length);
+        if (entryColumns == 4) entryColumns = 3;
+        int entryRows = (entryKeys.length + entryColumns - 1) / entryColumns;
+        int entryWidth = Math.min(Math.max(110, minimumEntryWidth),
+                (availableEntryWidth - entryGap * (entryColumns - 1)) / entryColumns);
+        int entryY = height - inset - entryRows * entryHeight - (entryRows - 1) * entryGap;
+        int recenterY = entryY - unit - 8;
+
+        // 缩放轨道为整个底部图文区域让位，多行时同时上移缩放和回中控件。
+        int zoomY = Math.max(inset + unit + 8, Math.min(height / 4, recenterY - unit * 2 - 40));
+        zoomTop = zoomY + unit + 10;
+        zoomBottom = Math.max(zoomTop + 12, Math.min(height * 2 / 3, recenterY - unit - 18));
+        compactZoom = recenterY - unit * 2 - 40 < inset + unit + 8;
+        if (compactZoom) {
+            // 低矮窗口或长译名占用多行时，三个操作横排，收起无空间的缩放轨道。
+            icon(inset, recenterY, MapIconButton.Icon.PLUS, "zoom_in", () -> zoom(scale * 1.25));
+            icon(inset + unit + 6, recenterY, MapIconButton.Icon.MINUS, "zoom_out", () -> zoom(scale / 1.25));
+            icon(inset + (unit + 6) * 2, recenterY, MapIconButton.Icon.CENTER, "recenter", this::recenter);
+        } else {
+            icon(inset, zoomY, MapIconButton.Icon.PLUS, "zoom_in", () -> zoom(scale * 1.25));
+            icon(inset, zoomBottom + 10, MapIconButton.Icon.MINUS, "zoom_out", () -> zoom(scale / 1.25));
+            icon(inset, recenterY, MapIconButton.Icon.CENTER, "recenter", this::recenter);
         }
+        for (int i = 0; i < entryKeys.length; i++) {
+            int row = i / entryColumns, column = i % entryColumns;
+            int rowCount = Math.min(entryColumns, entryKeys.length - row * entryColumns);
+            int rowX = (width - rowCount * entryWidth - (rowCount - 1) * entryGap) / 2;
+            var entry = addRenderableWidget(new MapIconButton(rowX + column * (entryWidth + entryGap),
+                    entryY + row * (entryHeight + entryGap), entryWidth, entryHeight,
+                    MapTexts.text(entryKeys[i]), entryIcons[i], entryActions[i]));
+            controls.add(entry);
+        }
+        DebugLogger.debug("WorldMap", "底部图文入口布局：%d 列，%d 行", entryColumns, entryRows);
 
         layerControls.clear();
         exploredLayers = availableLayers();
@@ -353,12 +380,14 @@ public final class YzWorldMapScreen extends Screen {
                 .append(layer.hasHeight() ? " Y " + currentHeight(layer) : "").append(" / ").append(MapTexts.dimension(dimension));
         if (positionTile != null) location = location.copy().append(" / ").append(MapTexts.biome(positionTile.biome(positionPixel)));
         YzuiTheme.label(g, font, location, infoX + 7, infoY + 24, infoWidth - 14, YzuiTheme.textMuted(), false);
-        int railX = inset + unit / 2;
-        YzuiTheme.card(g, inset, zoomTop - 5, unit, zoomBottom - zoomTop + 10);
-        g.fill(railX - 1, zoomTop, railX + 1, zoomBottom, YzuiTheme.outline());
-        int thumb = zoomBottom - (int) Math.round(Math.log(scale / 0.125) / Math.log(128) * (zoomBottom - zoomTop));
-        g.fill(railX - 5, thumb - 3, railX + 5, thumb + 3, YzuiTheme.primary());
-        if (overZoom(mx, my)) g.setTooltipForNextFrame(MapTexts.text("fullscreen_zoom", String.format(Locale.ROOT, "%.2f", scale)), mx, my);
+        if (!compactZoom) {
+            int railX = inset + unit / 2;
+            YzuiTheme.card(g, inset, zoomTop - 5, unit, zoomBottom - zoomTop + 10);
+            g.fill(railX - 1, zoomTop, railX + 1, zoomBottom, YzuiTheme.outline());
+            int thumb = zoomBottom - (int) Math.round(Math.log(scale / 0.125) / Math.log(128) * (zoomBottom - zoomTop));
+            g.fill(railX - 5, thumb - 3, railX + 5, thumb + 3, YzuiTheme.primary());
+            if (overZoom(mx, my)) g.setTooltipForNextFrame(MapTexts.text("fullscreen_zoom", String.format(Locale.ROOT, "%.2f", scale)), mx, my);
+        }
         if (inside(mx, my)) {
             var world = shown().world(mx - left, my - top); int x = bounded(world.x()), z = bounded(world.y());
             var tile = MapClient.cache().get(new MapTileKey(dimension, layer, currentHeight(layer), Math.floorDiv(x, 16), Math.floorDiv(z, 16)));
@@ -405,7 +434,7 @@ public final class YzWorldMapScreen extends Screen {
     }
     // 缩放条自行绘制，不经过普通按钮的鼠标屏蔽，所有命中入口在此统一排除覆盖区域。
     private boolean overZoom(double x, double y) {
-        return !overOverlay(x, y) && x >= inset && x < inset + unit && y >= zoomTop - 5 && y <= zoomBottom + 5;
+        return !compactZoom && !overOverlay(x, y) && x >= inset && x < inset + unit && y >= zoomTop - 5 && y <= zoomBottom + 5;
     }
     private boolean overControls(double x, double y) {
         return overOverlay(x, y) || controls.stream().anyMatch(widget -> widget.visible && widget.isMouseOver(x, y)) || overZoom(x, y)
