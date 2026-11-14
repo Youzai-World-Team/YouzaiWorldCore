@@ -28,6 +28,7 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -49,7 +50,7 @@ final class MapWaypointPanel extends MapOverlayPanel {
     private View view = View.LIST;
     private int page, capacity, treeOffset, treeCapacity, treeCount, sidebar, treeX, treeTop, treeBottom,
             listX, listWidth, listTop, listBottom, rowHeight, footer, actionTop;
-    private UUID selected;
+    private UUID selected, navigationSnapshot;
     private boolean compact, narrow, dirty, pending, deleteArmed;
     private EditBox searchBox;
     private TransparentButton previous, next, editGroupButton, moveGroupButton;
@@ -231,7 +232,9 @@ final class MapWaypointPanel extends MapOverlayPanel {
     }
     @Override public void onClose() { if (view != View.LIST) { view = View.LIST; error = Component.empty(); init(); } else super.onClose(); }
     @Override public void tick() {
-        if (view != View.CATEGORY && (dirty || !snapshot.equals(MapClient.waypoints()) || !groupSnapshot.equals(MapPersonalData.groups()))) {
+        boolean navigationChanged = !Objects.equals(navigationSnapshot, MapClient.navigation());
+        navigationSnapshot = MapClient.navigation();
+        if (view != View.CATEGORY && (dirty || navigationChanged || !snapshot.equals(MapClient.waypoints()) || !groupSnapshot.equals(MapPersonalData.groups()))) {
             if (!groupSnapshot.equals(MapPersonalData.groups())) { init(); return; }
             if (view == View.LIST) refresh(); else { dirty = false; init(); }
         }

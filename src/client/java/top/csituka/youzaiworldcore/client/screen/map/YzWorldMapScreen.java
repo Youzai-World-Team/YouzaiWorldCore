@@ -298,6 +298,7 @@ public final class YzWorldMapScreen extends Screen {
 
     @Override public void tick() {
         if (overlayPanel != null) overlayPanel.tick();
+        if (detailPanel != null) detailPanel.tick();
         var available = availableLayers();
         if (!available.equals(exploredLayers)) {
             exploredLayers = available; layerPage = 0;

@@ -26,6 +26,7 @@ import top.csituka.youzaiworldcore.map.MapScanPattern;
 import top.csituka.youzaiworldcore.map.MapTileKey;
 import top.csituka.youzaiworldcore.map.MapWaypoint;
 import top.csituka.youzaiworldcore.map.MapWaypointGroup;
+import top.csituka.youzaiworldcore.map.MapVertex;
 import top.csituka.youzaiworldcore.network.MapActionPayload;
 import top.csituka.youzaiworldcore.network.MapActionResultPayload;
 import top.csituka.youzaiworldcore.network.MapLivePayload;
@@ -48,6 +49,8 @@ import java.util.UUID;
 /** 客户端地图装配、采样与连接状态。客户端只接收共享地形，不上传地形或直连 Api。 */
 @SuppressWarnings("null")
 public final class MapClient {
+    /** 世界内标点隐藏与导航到达共用五米三维半径（平方距离）。 */
+    static final double WAYPOINT_ARRIVAL_DISTANCE_SQUARED = 5.0 * 5.0;
     private static final KeyMapping.Category CATEGORY = KeyMapping.Category
             .register(Identifier.fromNamespaceAndPath("youzaiworldcore", "map"));
     public static final KeyMapping OPEN = key("open", InputConstants.KEY_M);
@@ -184,10 +187,35 @@ public final class MapClient {
     /** 选中路径点用于世界导航；传入 null 可取消。 */
     public static void navigate(UUID id) {
         navigation = id;
+        cancelNavigationOnArrival();
     }
 
     public static UUID navigation() {
         return navigation;
+    }
+
+    /** 世界内显示与到达判断共用完整 XYZ 距离；投影坐标只替换 X/Z。 */
+    static double waypointDistanceSquared(MapWaypoint point, MapVertex position) {
+        var player = Minecraft.getInstance().player;
+        if (player == null || position == null) return Double.POSITIVE_INFINITY;
+        double dx = position.x() - player.getX(), dy = point.y() - player.getY(), dz = position.z() - player.getZ();
+        return dx * dx + dy * dy + dz * dz;
+    }
+
+    /** 到达真实所在维度的导航地点后取消追踪，不把另一维度的传送门投影误判为到达。 */
+    private static void cancelNavigationOnArrival() {
+        var client = Minecraft.getInstance();
+        if (navigation == null || client.player == null || client.level == null || !client.player.isAlive()) return;
+        String currentDimension = client.level.dimension().identifier().toString();
+        for (var point : waypoints()) {
+            if (!point.id().equals(navigation) || !point.dimension().equals(currentDimension)) continue;
+            double distanceSquared = waypointDistanceSquared(point, new MapVertex(point.x(), point.z()));
+            if (distanceSquared <= WAYPOINT_ARRIVAL_DISTANCE_SQUARED) {
+                navigation = null;
+                DebugLogger.debug("MapClient", "已到达路径点，自动取消追踪：%s，三维距离=%.2fm", point.id(), Math.sqrt(distanceSquared));
+            }
+            return;
+        }
     }
 
     /** 延后一帧打开命令请求的页面，避开聊天界面的关闭流程。 */
@@ -332,6 +360,8 @@ public final class MapClient {
                     client.player.getBlockY(), client.player.getBlockZ());
         alive = living;
         if (living) {
+            // 到达判断独立于界面、HUD 显隐和地图开关，隐藏标点时也能结束已完成的导航。
+            cancelNavigationOnArrival();
             if (ticks % 20 == 0)
                 recordExploration(client);
             sample(client);

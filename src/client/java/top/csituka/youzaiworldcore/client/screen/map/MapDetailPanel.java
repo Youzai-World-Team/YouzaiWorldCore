@@ -38,6 +38,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 /** 地图覆盖层：新建路径点使用居中小弹窗，维度选择和已有路径点详情使用右侧面板。 */
@@ -57,6 +58,8 @@ final class MapDetailPanel extends AbstractContainerEventHandler implements Rend
     private final List<Line> lines = new ArrayList<>();
     private int x, y, width, height, top, bottom, scroll, contentHeight;
     private int colorPreviewY = -1;
+    private TransparentButton navigationButton;
+    private UUID navigationSnapshot;
     private record Line(Component text, int x, int y, int width) { }
 
     MapDetailPanel(YzWorldMapScreen owner) {
@@ -95,6 +98,7 @@ final class MapDetailPanel extends AbstractContainerEventHandler implements Rend
     private void line(Component label, int row) { lines.add(new Line(label, x + 12, top + row - scroll, width - 24)); }
     private void rebuild() {
         setFocused(null); widgets.clear(); body.clear(); lines.clear(); colorPreviewY = -1;
+        navigationButton = null; navigationSnapshot = MapClient.navigation();
         button(x + width - 32, y + 7, 22, Component.literal("×"), this::close, false);
         if (dimensions) buildDimensions(); else buildPoint();
         int maxScroll = Math.max(0, contentHeight - (bottom - top));
@@ -222,10 +226,19 @@ final class MapDetailPanel extends AbstractContainerEventHandler implements Rend
             }, false).active = !pending;
         } else {
             if (anchor) button(x + 12, footer, half, MapTexts.text("teleport"), this::teleport, false).active = !pending && (anchor || MapClient.session() != null && MapClient.session().allows(MapSessionPayload.TELEPORT));
-            button(anchor ? x + 18 + half : x + 12, footer, anchor ? half : inner, MapTexts.text(point.id().equals(MapClient.navigation()) ? "stop_navigation" : "navigate"), () -> {
+            navigationButton = button(anchor ? x + 18 + half : x + 12, footer, anchor ? half : inner, MapTexts.text(point.id().equals(MapClient.navigation()) ? "stop_navigation" : "navigate"), () -> {
                 MapClient.navigate(point.id().equals(MapClient.navigation()) ? null : point.id()); close();
             }, false);
         }
+    }
+
+    /** 玩家到达时导航可在界面外自动取消，详情按钮同步真实状态。 */
+    void tick() {
+        if (navigationButton == null || Objects.equals(navigationSnapshot, MapClient.navigation())) return;
+        navigationSnapshot = MapClient.navigation();
+        var label = MapTexts.text(point.id().equals(navigationSnapshot) ? "stop_navigation" : "navigate");
+        navigationButton.setMessage(label);
+        navigationButton.setTooltip(Tooltip.create(label));
     }
     private MapWaypoint changed() {
         return new MapWaypoint(point.id(), point.owner(), name, point.kind() == MapWaypoint.Kind.DEATH ? MapWaypointGroup.DEATH.id() : group.id(), point.dimension(), point.x(), point.y(), point.z(),
