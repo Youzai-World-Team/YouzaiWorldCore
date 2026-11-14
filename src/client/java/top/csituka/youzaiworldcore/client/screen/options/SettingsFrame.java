@@ -32,10 +32,7 @@ final class SettingsFrame {
     private boolean navigationInitialized;
     private final List<AbstractWidget> footer;
     private final TransparentButton back;
-    private final SettingsViewState viewState;
     private List<SettingsList.Row> sections = List.of();
-    private SettingsList.Row moreRow;
-    private TransparentButton moreButton;
 
     SettingsFrame(Screen screen, List<SettingsList.Row> rows, List<AbstractWidget> footer,
                   Consumer<AbstractWidget> addWidget, String query, double scroll, boolean searchable) {
@@ -52,7 +49,6 @@ final class SettingsFrame {
                   Consumer<AbstractWidget> addWidget, String query, double scroll, boolean searchable,
                   SettingsList.Row selectedSection, SettingsViewState viewState) {
         this.screen = screen;
-        this.viewState = viewState;
         this.addWidget = addWidget;
         this.footer = List.copyOf(footer);
         compactDialog = screen instanceof YzuiOptionsScreen options && options.isLinkConfirmation();
@@ -127,34 +123,13 @@ final class SettingsFrame {
         navigationEntries.clear();
         List<SettingsList.Row> navigationRows = new ArrayList<>();
         for (SettingsList.Row row : sections) {
-            if (row.advanced) continue;
-            addNavigation(row, navigationRows, true);
-        }
-        if (sections.stream().anyMatch(row -> row.advanced)) {
-            moreButton = new TransparentButton(0, 0, 100, 24,
-                    Component.literal(viewState.moreExpanded ? "▾ " : "▸ ").append(YzuiOptionsScreen.text("more")), () -> {
-                viewState.moreExpanded = !viewState.moreExpanded;
-                fillNavigation();
-                navigationInitialized = false;
-                updateNavigation();
-                screen.setFocused(navigation);
-                navigation.setFocused(moreRow);
-                moreRow.setFocused(moreButton);
-                navigation.ensureVisible(moreRow);
-            });
-            moreButton.setStyle(YzuiTheme.ButtonStyle.TEXT);
-            moreButton.setTextLeftAligned(true);
-            moreRow = SettingsList.Row.widget(moreButton);
-            navigationRows.add(moreRow);
-            if (viewState.moreExpanded) {
-                for (SettingsList.Row row : sections) if (row.advanced) addNavigation(row, navigationRows, false);
-            }
+            addNavigation(row, navigationRows);
         }
         navigation.setRows(navigationRows, "");
     }
 
-    private void addNavigation(SettingsList.Row row, List<SettingsList.Row> navigationRows, boolean grouped) {
-        if (grouped && row.navigationGroup != null) {
+    private void addNavigation(SettingsList.Row row, List<SettingsList.Row> navigationRows) {
+        if (row.navigationGroup != null) {
             navigationRows.add(SettingsList.Row.subheading(row.navigationGroup));
         }
         TransparentButton button = new TransparentButton(0, 0, 100, 24, row.label, () -> {
@@ -174,10 +149,6 @@ final class SettingsFrame {
         if (navigation == null) return;
         SettingsList.Row current = content.activeSection();
         if (navigationInitialized && current == activeSection) return;
-        if (current != activeSection && current != null && current.advanced && !viewState.moreExpanded) {
-            viewState.moreExpanded = true;
-            fillNavigation();
-        }
         activeSection = current;
         navigationInitialized = true;
         for (NavigationEntry entry : navigationEntries) {

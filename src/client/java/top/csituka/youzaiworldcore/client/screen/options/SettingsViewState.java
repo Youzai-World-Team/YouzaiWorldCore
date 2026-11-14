@@ -8,5 +8,4 @@ final class SettingsViewState {
     final Map<String, Double> sectionScroll = new HashMap<>();
     String searchQuery = "";
     double searchScroll;
-    boolean moreExpanded;
 }

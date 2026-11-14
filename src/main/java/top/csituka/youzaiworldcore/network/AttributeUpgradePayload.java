@@ -10,7 +10,9 @@ import top.csituka.youzaiworldcore.YouzaiworldCore;
  * C2S 数据包：玩家请求为某项属性加点。
  */
 @SuppressWarnings("null")
-public record AttributeUpgradePayload(String attributeKey) implements CustomPacketPayload {
+public record AttributeUpgradePayload(String attributeKey, long requestId) implements CustomPacketPayload {
+
+    public AttributeUpgradePayload(String attributeKey) { this(attributeKey, 0); }
 
     public static final Identifier ID = Identifier.fromNamespaceAndPath(
             YouzaiworldCore.MOD_ID, "attribute_upgrade");
@@ -19,8 +21,8 @@ public record AttributeUpgradePayload(String attributeKey) implements CustomPack
 
     public static final StreamCodec<RegistryFriendlyByteBuf, AttributeUpgradePayload> STREAM_CODEC =
             StreamCodec.of(
-                    (buf, p) -> buf.writeUtf(p.attributeKey),
-                    buf -> new AttributeUpgradePayload(buf.readUtf())
+                    (buf, p) -> { buf.writeUtf(p.attributeKey); buf.writeLong(p.requestId); },
+                    buf -> new AttributeUpgradePayload(buf.readUtf(), buf.readLong())
             );
 
     @Override

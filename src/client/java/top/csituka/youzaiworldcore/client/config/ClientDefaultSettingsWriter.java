@@ -34,6 +34,7 @@ public final class ClientDefaultSettingsWriter {
             Configurator.writeDefaults();
             ClientUpdateCheckerConfig.writeDefaults();
             InventoryItemGroupsConfig.writeDefaults();
+            ClientGlobalSettings.section(ClientGlobalSettings.MAIL_MODULE);
         });
         DebugLogger.exiting(MODULE, "writeAllDefaults");
     }

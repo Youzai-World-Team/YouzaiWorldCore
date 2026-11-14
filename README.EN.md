@@ -82,6 +82,7 @@ Fully redesigned Minecraft main menu via `TitleScreenMixin`: a left panel with c
 
 - **Online announcement**: the API dashboard's **Core 公告** page (`/core-announcement`) edits the title, subtitle and plain-text paragraphs. The title screen fetches `https://api.mcyzw.top/api/announcement/core` asynchronously every 60 seconds without joining a server or using an API secret. Failures retain the last announcement fetched during the current client session; missing cached content or an explicit disabled response uses the built-in localized announcement. Pending updates take priority, and announcement fetching is independent of update-check settings. Disabling YZUI retains the vanilla title screen.
 - **Scrolling and refresh**: paragraphs wrap automatically and support the mouse wheel and PageUp / PageDown / Home / End. Changed content resets scrolling; repeated identical responses preserve the reading position.
+- **Startup with empty options**: when `options.txt` is missing or empty, the default language is Simplified Chinese (`zh_cn`) and the vanilla welcome screen is skipped. Existing language preferences are preserved, and the mod's own welcome guide still appears normally.
 
 ### 4. Window Customization
 
@@ -1085,3 +1086,5 @@ src/                                       # 452 Java source files (main 273 / c
 > **Note**: Test the mod on a server environment; running it on the client alone will not function correctly. Client commands (`/yzwc pet`, `/yzwc mail`, `/yzwc function *`, `/yzwc settings highlight_item`) require being connected to a server to take effect.
 >
 > **On YZUI**: The YZUI interface system (inventory / HUD / recipe book restyle) is purely client-side and can be turned off via the "Enable YZUI" checkbox in the Visual section of client settings; everything then reverts to vanilla rendering so resource packs can take over.
+
+UI navigation update: the main menu includes direct pet and waypoint shortcuts, and map controls display text labels. Attribute upgrades preview their cost and bonus, wait for server feedback, and stop spending points at 80% damage reduction. Mail retains normal GUI text size in small windows, separates the inbox list and detail view, and scrolls message content and compose forms. Save/restore drafts keeps local content separated by server and player. See [the in-game menu notes](docs/YZUI_INGAME_MENU.md) for verification and in-game checks.

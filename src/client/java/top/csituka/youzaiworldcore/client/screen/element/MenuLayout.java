@@ -36,6 +36,10 @@ public record MenuLayout(int width, int height) {
             return new Rect(left + index % 3 * (tileWidth + GRID_GAP),
                     headingY(index / 3) + 18, tileWidth, tileHeight);
         }
+        public Rect shortcut(int index) {
+            int width = (tileWidth * 3 + GRID_GAP * 2 - 24) / 4;
+            return new Rect(left + index * (width + 8), top + tileHeight * 2 + 62, width, 26);
+        }
         public Rect footer(int index) {
             int width = (tileWidth * 3 + GRID_GAP * 2 - 8) / 2;
             return new Rect(left + index * (width + 8), top + tileHeight * 2 + 62, width, 26);

@@ -20,7 +20,6 @@ def adapt_stubs():
     public Screen(Component c){title=c;}
     protected <T extends AbstractWidget> T addRenderableWidget(T w){return addWidget(w);}
     public boolean charTyped(CharacterEvent event){return false;}
-    public void removed(){}
 """)
     stub("net.minecraft.client.input.CharacterEvent", "public record CharacterEvent(int codepoint) {}")
     stub("net.minecraft.client.gui.components.EditBox", """

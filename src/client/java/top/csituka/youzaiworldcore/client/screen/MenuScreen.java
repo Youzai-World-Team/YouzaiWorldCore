@@ -41,6 +41,7 @@ public class MenuScreen extends Screen implements YzuiMenuScreen {
     private static final Identifier VERSION_ICON =
             Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "textures/gui/icon.png");
     private final Deque<MenuElementGroup> history = new ArrayDeque<>();
+    private final Map<MenuElementGroup, Integer> rememberedFocus = new IdentityHashMap<>();
     private MenuElementGroup shownGroup;
     private final Map<MenuElementGroup, List<AbstractWidget>> pageButtons = new IdentityHashMap<>();
     private final List<AbstractWidget> currentButtons = new ArrayList<>();
@@ -59,11 +60,12 @@ public class MenuScreen extends Screen implements YzuiMenuScreen {
 
     @Override
     protected void init() {
+        rememberPageFocus();
         super.init();
         pageButtons.clear();
         var layout = new MenuLayout(width, height);
         backButton = new TransparentButton(layout.backX(), 18, MenuLayout.NAVIGATION_SIZE, MenuLayout.NAVIGATION_SIZE,
-                Component.translatable("youzaiworldcore.message.gui.back_button"), this::goBack);
+                Component.translatable("youzaiworldcore.message.gui.back_button"), this::onClose);
         closeButton = new MenuCloseButton(layout.closeX(), 18, this);
         backButton.setBackgroundVisible(false);
         closeButton.setBackgroundVisible(false);
@@ -85,6 +87,7 @@ public class MenuScreen extends Screen implements YzuiMenuScreen {
     }
 
     private void navigate(MenuElementGroup next, boolean reverse) {
+        rememberPageFocus();
         for (AbstractWidget button : currentButtons) {
             button.setFocused(false);
             if (button instanceof DropdownButton dropdown) dropdown.closePopup();
@@ -107,6 +110,7 @@ public class MenuScreen extends Screen implements YzuiMenuScreen {
 
     private void activateCurrentGroup() {
         pageButtons.keySet().removeIf(page -> page != currentGroup && !history.contains(page));
+        rememberedFocus.keySet().removeIf(page -> page != currentGroup && !history.contains(page));
         clearWidgets();
         currentButtons.clear();
         currentButtons.addAll(buttonsFor(currentGroup));
@@ -118,6 +122,27 @@ public class MenuScreen extends Screen implements YzuiMenuScreen {
             currentGroup.onShown();
         }
         currentGroup.updateButtons(buttonsFor(currentGroup));
+        Integer focus = rememberedFocus.get(currentGroup);
+        var buttons = buttonsFor(currentGroup);
+        for (int i = 0; i < buttons.size(); i++) {
+            var button = buttons.get(i);
+            button.setFocused(focus != null && i == focus && button.active && button.visible);
+        }
+    }
+
+    /** 返回与窗口重排后恢复原入口，避免键盘从首页第一个按钮重新开始。 */
+    private void rememberPageFocus() {
+        var buttons = pageButtons.get(currentGroup);
+        if (buttons == null) return;
+        for (int i = 0; i < buttons.size(); i++) {
+            if (buttons.get(i).isFocused()) rememberedFocus.put(currentGroup, i);
+        }
+    }
+
+    @Override
+    public void removed() {
+        rememberPageFocus();
+        super.removed();
     }
 
     public void showDialog(ConfirmationDialog dialog) {
@@ -165,7 +190,10 @@ public class MenuScreen extends Screen implements YzuiMenuScreen {
     }
 
     public void startExit(Runnable onComplete) {
-        if (!GuiAnimationController.isExiting(this)) onComplete.run();
+        if (!GuiAnimationController.isExiting(this)) {
+            rememberPageFocus();
+            onComplete.run();
+        }
     }
 
     @Override
@@ -298,7 +326,8 @@ public class MenuScreen extends Screen implements YzuiMenuScreen {
             if (button instanceof DropdownButton dropdown && dropdown.isOpen() && dropdown.keyPressed(event)) return true;
         }
         if (event.key() == InputConstants.KEY_ESCAPE) { onClose(); return true; }
-        return WidgetFocus.keyPressed(event, currentButtons) || super.keyPressed(event);
+        return WidgetFocus.moveInGrid(event, currentButtons)
+                || WidgetFocus.keyPressed(event, currentButtons) || super.keyPressed(event);
     }
 
     @Override

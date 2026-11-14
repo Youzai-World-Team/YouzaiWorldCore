@@ -49,6 +49,7 @@ public class AttributeManager {
      * @return true 表示加点成功
      */
     public static boolean handleUpgrade(ServerPlayer player, String attributeKey) {
+        if (!java.util.Arrays.asList(PlayerAttributeData.ATTRIBUTE_KEYS).contains(attributeKey)) return false;
         UUID uuid = player.getUUID();
         PlayerAttributeData data = PlayerAttributeStorage.getOrCreate(uuid, player.getName().getString());
         int playerLevel = AdventureLevelManager.getLevelFromExp(
@@ -60,6 +61,7 @@ public class AttributeManager {
         if (playerLevel < 20 && !"damageResistance".equals(attributeKey)) return false;
 
         int current = data.get(attributeKey);
+        if (current == Integer.MAX_VALUE || ("damageResistance".equals(attributeKey) && current >= 40)) return false;
         data.set(attributeKey, current + 1);
         data.skillPointsAvailable--;
         PlayerAttributeStorage.markDirty(uuid);
