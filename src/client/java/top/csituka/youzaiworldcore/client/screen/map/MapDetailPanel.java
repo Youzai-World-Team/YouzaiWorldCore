@@ -40,12 +40,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-/** 右侧半屏覆盖层：按服务端维度池切图、新建标记及标记详情，底图继续实时绘制。 */
+/** 地图覆盖层：新建路径点使用居中小弹窗，维度选择和已有路径点详情使用右侧面板。 */
 @SuppressWarnings("null")
 final class MapDetailPanel extends AbstractContainerEventHandler implements Renderable, NarratableEntry {
     private final YzWorldMapScreen owner;
     private final boolean dimensions;
     private final boolean anchor;
+    private final boolean dialog;
     private boolean creating, editing, pending, confirmingDelete, editingNote, shared;
     private MapWaypoint point;
     private String name, note;
@@ -58,19 +59,25 @@ final class MapDetailPanel extends AbstractContainerEventHandler implements Rend
     private record Line(Component text, int x, int y, int width) { }
 
     MapDetailPanel(YzWorldMapScreen owner) {
-        this.owner = owner; dimensions = true; anchor = false;
+        this.owner = owner; dimensions = true; anchor = false; dialog = false;
     }
     MapDetailPanel(YzWorldMapScreen owner, MapWaypoint point, boolean creating) {
         this.owner = owner; this.point = point; this.creating = creating; shared = point.shared(); dimensions = false;
-        anchor = MapClient.isAnchor(point); editing = creating; editingNote = creating;
+        anchor = MapClient.isAnchor(point); dialog = creating; editing = creating; editingNote = creating;
         name = MapTexts.waypoint(point).getString(); group = MapPersonalData.groupOf(point); note = MapPersonalData.note(point.id());
     }
 
     private void close() { if (owner.isDetails(this)) owner.closeDetails(); }
 
     void layout(int screenWidth, int screenHeight) {
-        width = Math.min(screenWidth - 16, Math.max(180, screenWidth / 2));
-        x = screenWidth - width - 8; y = 8; height = screenHeight - 16;
+        if (dialog) {
+            width = Math.min(360, screenWidth - 32); height = Math.min(320, screenHeight - 32);
+            x = (screenWidth - width) / 2; y = (screenHeight - height) / 2;
+            DebugLogger.debug("WorldMap", "新建路径点弹窗布局：%dx%d，位置=%d,%d", width, height, x, y);
+        } else {
+            width = Math.min(screenWidth - 16, Math.max(180, screenWidth / 2));
+            x = screenWidth - width - 8; y = 8; height = screenHeight - 16;
+        }
         top = y + 38; bottom = y + height - 62; rebuild();
     }
 
@@ -129,8 +136,13 @@ final class MapDetailPanel extends AbstractContainerEventHandler implements Rend
     private void buildPoint() {
         int row = 0, inner = width - 24;
         if (editing) {
-            line(MapTexts.text("name"), row); row += 15;
-            field(x + 12, top + row - scroll, inner, "name", name, 64, value -> name = value).setEditable(editable() && !pending);
+            if (creating) {
+                lines.add(new Line(MapTexts.text("name"), x + 12, top + row + 6 - scroll, 50));
+                field(x + 68, top + row - scroll, inner - 56, "name", name, 64, value -> name = value).setEditable(!pending);
+            } else {
+                line(MapTexts.text("name"), row); row += 15;
+                field(x + 12, top + row - scroll, inner, "name", name, 64, value -> name = value).setEditable(editable() && !pending);
+            }
             row += 28;
         } else {
             button(x + 12, top + row - scroll, inner - (anchor ? 52 : 78), MapTexts.waypoint(point).copy().append("  ✎"),
@@ -150,8 +162,10 @@ final class MapDetailPanel extends AbstractContainerEventHandler implements Rend
             line(MapTexts.text("created_at").copy().append("  " + date), row); row += 24;
         }
         if (!anchor) {
-            line(MapTexts.text("group"), row); row += 15;
-            row += MapGroupButton.selector(x + 12, top + row - scroll, inner, () -> group, value -> {
+            int groupInset = creating ? 56 : 0;
+            if (creating) lines.add(new Line(MapTexts.text("group"), x + 12, top + row + 7 - scroll, 50));
+            else { line(MapTexts.text("group"), row); row += 15; }
+            row += MapGroupButton.selector(x + 12 + groupInset, top + row - scroll, inner - groupInset, () -> group, value -> {
                 if (point.shared() && !creating && !editing) {
                     if (!MapPersonalData.setSharedGroup(point, value)) { message = MapTexts.text("invalid_group"); return; }
                     group = value;
@@ -163,13 +177,18 @@ final class MapDetailPanel extends AbstractContainerEventHandler implements Rend
                     () -> { shared = !shared; rebuild(); }, true).active = !pending && (shared || MapClient.session() != null
                     && MapClient.session().allows(MapSessionPayload.PUBLISH)); row += 28;
         }
-        line(MapTexts.text("private_description"), row + 6);
-        button(x + width - 36, top + row - scroll, 24, Component.literal(editingNote ? "✓" : "✎"), () -> {
-            if (editingNote && !creating && !MapPersonalData.note(point.id(), note)) { message = MapTexts.text("limit"); return; }
-            editingNote = !editingNote; rebuild();
-        }, true).active = !pending;
-        row += 28;
-        int noteHeight = Math.min(140, Math.max(36, (bottom - top) / 2));
+        if (creating) {
+            line(MapTexts.text("private_description"), row); row += 15;
+        } else {
+            line(MapTexts.text("private_description"), row + 6);
+            button(x + width - 36, top + row - scroll, 24, Component.literal(editingNote ? "✓" : "✎"), () -> {
+                if (editingNote && !MapPersonalData.note(point.id(), note)) { message = MapTexts.text("limit"); return; }
+                editingNote = !editingNote; rebuild();
+            }, true).active = !pending;
+            row += 28;
+        }
+        int noteHeight = dialog ? Math.min(56, Math.max(36, (bottom - top) / 3))
+                : Math.min(140, Math.max(36, (bottom - top) / 2));
         if (editingNote) {
             var description = MultiLineEditBox.builder().setX(x + 12).setY(top + row - scroll)
                     .setPlaceholder(MapTexts.text("private_description"))
@@ -236,9 +255,12 @@ final class MapDetailPanel extends AbstractContainerEventHandler implements Rend
     }
     private void finish(MapWaypoint value, boolean track) {
         point = value; creating = false; editing = false; group = MapPersonalData.groupOf(point);
-        message = MapTexts.text(MapPersonalData.note(point.id(), note) ? "saved" : "limit");
-        if (track && owner.isDetails(this)) { MapClient.navigate(point.id()); close(); } else rebuild();
-        DebugLogger.info("WorldMap", "保存地图侧栏标记：%s", point.id());
+        boolean noteSaved = MapPersonalData.note(point.id(), note);
+        message = MapTexts.text(noteSaved ? "saved" : "limit");
+        if (track && owner.isDetails(this)) { MapClient.navigate(point.id()); close(); }
+        else if (dialog && noteSaved) close();
+        else rebuild();
+        DebugLogger.info("WorldMap", "保存地图路径点：%s", point.id());
     }
     private void delete() {
         if (!confirmingDelete) { confirmingDelete = true; rebuild(); return; }
@@ -269,16 +291,22 @@ final class MapDetailPanel extends AbstractContainerEventHandler implements Rend
         }
     }
     @Override public List<? extends GuiEventListener> children() { return widgets.stream().filter(w -> w.visible).toList(); }
-    @Override public boolean isMouseOver(double mx, double my) { return mx >= x && mx < x + width && my >= y && my < y + height; }
-    boolean covers(AbstractWidget widget) { return widget.getX() < x + width && widget.getX() + widget.getWidth() > x && widget.getY() < y + height && widget.getY() + widget.getHeight() > y; }
-    @Override public ScreenRectangle getRectangle() { return new ScreenRectangle(x, y, width, height); }
+    private boolean insidePanel(double mx, double my) { return mx >= x && mx < x + width && my >= y && my < y + height; }
+    /** 小弹窗以整个屏幕拦截地图操作，表单滚动仍只在卡片内部生效。 */
+    @Override public boolean isMouseOver(double mx, double my) {
+        return dialog ? mx >= 0 && mx < owner.width && my >= 0 && my < owner.height : insidePanel(mx, my);
+    }
+    boolean covers(AbstractWidget widget) { return dialog || widget.getX() < x + width && widget.getX() + widget.getWidth() > x && widget.getY() < y + height && widget.getY() + widget.getHeight() > y; }
+    @Override public ScreenRectangle getRectangle() { return dialog ? new ScreenRectangle(0, 0, owner.width, owner.height) : new ScreenRectangle(x, y, width, height); }
     @Override public NarrationPriority narrationPriority() { return getFocused() == null ? NarrationPriority.NONE : NarrationPriority.FOCUSED; }
     @Override public void updateNarration(NarrationElementOutput output) {
         output.add(NarratedElementType.TITLE, MapTexts.text(dimensions ? "dimension" : creating ? "new_point" : "point_actions"));
         if (getFocused() instanceof NarratableEntry entry) entry.updateNarration(output.nest());
     }
     @Override public void extractRenderState(GuiGraphicsExtractor g, int mx, int my, float delta) {
-        g.nextStratum(); YzuiTheme.card(g, x, y, width, height);
+        g.nextStratum();
+        if (dialog) g.fill(0, 0, owner.width, owner.height, YzuiTheme.alpha(0xFF000000, 0.3f));
+        YzuiTheme.card(g, x, y, width, height);
         YzuiTheme.label(g, Minecraft.getInstance().font, MapTexts.text(dimensions ? "dimension" : creating ? "new_point" : "point_actions"), x + 12, y + 14, width - 48, YzuiTheme.text(), false);
         g.fill(x + 12, top - 7, x + width - 12, top - 6, YzuiTheme.outlineVariant());
         g.enableScissor(x, top, x + width, bottom);
@@ -294,11 +322,11 @@ final class MapDetailPanel extends AbstractContainerEventHandler implements Rend
         }
     }
     @Override public boolean mouseClicked(MouseButtonEvent event, boolean actual) {
-        if (!isMouseOver(event.x(), event.y())) return false;
+        if (!insidePanel(event.x(), event.y())) return dialog;
         super.mouseClicked(event, actual); return true;
     }
     @Override public boolean mouseScrolled(double mx, double my, double horizontal, double vertical) {
-        if (!isMouseOver(mx, my)) return false;
+        if (!insidePanel(mx, my)) return dialog;
         for (var widget : body) if (widget.visible && widget instanceof MultiLineEditBox && widget.isMouseOver(mx, my)
                 && widget.mouseScrolled(mx, my, horizontal, vertical)) return true;
         scroll = Math.clamp(scroll - (int) (vertical * 24), 0, Math.max(0, contentHeight - (bottom - top))); rebuild(); return true;

@@ -160,7 +160,7 @@ public final class YzWorldMapScreen extends Screen {
         detailPanel = detail; detail.layout(width, height); addWidget(detail);
         panelAnimation.show(detail);
         clearFocus(); setFocused(detail);
-        DebugLogger.debug("WorldMap", "打开地图右侧覆盖面板");
+        DebugLogger.debug("WorldMap", "打开地图详情界面");
     }
 
     /** 快捷键和命令直接打开地图中的路径点覆盖列表。 */
