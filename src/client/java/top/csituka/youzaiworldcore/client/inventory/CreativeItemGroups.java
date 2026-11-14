@@ -119,7 +119,7 @@ public final class CreativeItemGroups {
     /**
      * 从分类的原始展示列表构建分组，同一分类刷新时保留已有展开状态与动画进度。
      * <p>只有至少匹配三个未认领物品的规则才形成分组；无效的小组不会抢占后续规则的物品。</p>
-     * <p>悠哉世界和兼容模组在自定义规则之后应用内置分类，不改写玩家保存的规则列表。</p>
+     * <p>新版原版物品、悠哉世界和兼容模组在自定义规则之后应用内置分类，不改写玩家保存的规则列表。</p>
      */
     public void rebuild(CreativeModeTab selectedTab, Collection<ItemStack> original) {
         Map<InventoryItemGroupRule, Group> previousGroups = new HashMap<>();

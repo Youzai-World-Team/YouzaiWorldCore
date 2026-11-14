@@ -4,11 +4,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 原版创造标签页的默认可编辑规则，以及可选模组的内置兼容分组。
+ * 原版创造标签页的默认可编辑规则，以及新版原版物品和可选模组的内置补充分组。
  * <p>规则参考 Inventory Item Groups（Copyright (c) 2026 Bizarre Cube，MIT），
  * 完整授权见 LICENSE.txt。</p>
  */
 public final class InventoryItemGroupDefaults {
+
+    private static final String COLORED_BLOCKS_TAB = "minecraft:colored_blocks";
+    private static final List<InventoryItemGroupRule> COLORED_BLOCKS_GROUPS = List.of(
+            new InventoryItemGroupRule("cushions", COLORED_BLOCKS_TAB,
+                    List.of(), List.of("_cushion"), List.of()));
 
     private static final String BACKPACKS_TAB = "sophisticatedbackpacks:main";
     private static final List<InventoryItemGroupRule> BACKPACKS_GROUPS = List.of(
@@ -51,7 +56,7 @@ public final class InventoryItemGroupDefaults {
         addGroup(defaults, tabId, "decorative_stone", List.of("bricks", "chiseled", "tiles", "polished"));
         addGroup(defaults, tabId, "sandstone", List.of("sandstone"));
 
-        tabId = "minecraft:colored_blocks";
+        tabId = COLORED_BLOCKS_TAB;
         addGroup(defaults, tabId, "wool", List.of("wool"));
         addGroup(defaults, tabId, "carpets", List.of("carpet"));
         addGroup(defaults, tabId, "glazed_terracotta", List.of("glazed_terracotta"));
@@ -64,12 +69,13 @@ public final class InventoryItemGroupDefaults {
         addGroup(defaults, tabId, "candles", List.of("candle"));
         addGroup(defaults, tabId, "banners", List.of("banner"));
         addGroup(defaults, tabId, "beds", List.of("bed"));
+        defaults.addAll(COLORED_BLOCKS_GROUPS);
 
         tabId = "minecraft:natural_blocks";
         addGroup(defaults, tabId, "ores", List.of("_ore", "debris", "raw_"));
         addGroup(defaults, tabId, "mushrooms", List.of("mushroom", "fungus"));
         addGroup(defaults, tabId, "saplings", List.of("sapling", "propagule"));
-        addGroup(defaults, tabId, "ground_cover", List.of("fern", "_grass", "bush", "_sprouts", "hanging_moss", "_vines"), List.of("_bush"));
+        addGroup(defaults, tabId, "ground_cover", List.of("fern", "_grass", "bush", "_shrub", "_sprouts", "hanging_moss", "_vines"), List.of("_bush"));
         addGroup(defaults, tabId, "seeds", List.of("seeds", "_pod"));
         addGroup(defaults, tabId, "flowers", List.of("dandelion", "poppy", "orchid", "allium", "tulip", "daisy", "cornflower", "torchflower", "azure_bluet", "valley", "cactus_flower", "eyeblossom", "rose", "petals", "wildflower", "crimson_roots", "warped_roots", "sunflower", "peony", "lilac", "pitcher_plant"));
         addGroup(defaults, tabId, "leaves", List.of("leaves"));
@@ -157,7 +163,12 @@ public final class InventoryItemGroupDefaults {
      * <p>只使用注册 ID，不依赖第三方模组类，也不写入或覆盖玩家现有配置。</p>
      */
     public static List<InventoryItemGroupRule> getBuiltInRules(String tabId) {
-        return BACKPACKS_TAB.equals(tabId) ? BACKPACKS_GROUPS : List.of();
+        return switch (tabId) {
+            // 已保存的规则也能折叠 26.3 新增坐垫，不需要重置或改写客户端配置。
+            case COLORED_BLOCKS_TAB -> COLORED_BLOCKS_GROUPS;
+            case BACKPACKS_TAB -> BACKPACKS_GROUPS;
+            default -> List.of();
+        };
     }
 
     private static void addGroup(List<InventoryItemGroupRule> rules, String tabId, String name,

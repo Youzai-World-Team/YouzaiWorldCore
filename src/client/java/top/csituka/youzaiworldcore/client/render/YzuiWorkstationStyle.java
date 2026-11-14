@@ -5,31 +5,33 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.BeaconMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import top.csituka.youzaiworldcore.client.screen.widget.YzuiCloseButton;
 
-/** 五种工作方块共用的主题外壳；原版菜单、预览及点击坐标保持一致。 */
+/** 工作方块共用的主题外壳；原版菜单、预览及点击坐标保持一致。 */
 @SuppressWarnings("null")
 public enum YzuiWorkstationStyle {
     ENCHANTMENT(Items.ENCHANTING_TABLE, -1),
     LOOM(Items.LOOM, 3),
     CARTOGRAPHY(Items.CARTOGRAPHY_TABLE, 2),
     STONECUTTER(Items.STONECUTTER, 1),
-    GRINDSTONE(Items.GRINDSTONE, 2);
+    GRINDSTONE(Items.GRINDSTONE, 2),
+    BEACON(Items.BEACON, 0);
 
     /** 标题栏向原版内容区上方延伸，避免遮住附魔选项、图案及地图预览。 */
     public static final int HEADER_HEIGHT = 20;
     private static final int CLOSE_SIZE = 14;
     private static final int CLOSE_MARGIN = 6;
     private final ItemStack icon;
-    private final int resultSlot;
+    private final int accentSlot;
 
-    YzuiWorkstationStyle(Item item, int resultSlot) {
+    YzuiWorkstationStyle(Item item, int accentSlot) {
         this.icon = new ItemStack(item);
-        this.resultSlot = resultSlot;
+        this.accentSlot = accentSlot;
     }
 
     /** 使用与全屏地图及已有工作方块一致的关闭控件。 */
@@ -50,23 +52,23 @@ public enum YzuiWorkstationStyle {
             int left, int top, int width, int height, int mouseX, int mouseY) {
         YzuiTheme.card(g, left, top - HEADER_HEIGHT, width, height + HEADER_HEIGHT);
         drawTitle(g, font, title, left, top, width);
-        drawAreas(g, left, top);
+        drawAreas(g, left, top, menu);
         for (int index = 0; index < menu.slots.size(); index++) {
             Slot slot = menu.slots.get(index);
             if (!slot.isActive()) continue;
             int x = left + slot.x, y = top + slot.y;
             boolean hovered = mouseX >= x && mouseX < x + 16 && mouseY >= y && mouseY < y + 16;
             RoundedRect.fill(g, x, y, 16, 16, 3, hovered ? YzuiTheme.slotHover() : YzuiTheme.slot());
-            if (index == resultSlot) {
+            if (index == accentSlot) {
                 YzuiTheme.border(g, x - 2, y - 2, 20, 20, 4, YzuiTheme.primary());
             }
         }
     }
 
-    /** 背包标签使用原版相对坐标；制图台为右侧地图预览留出空间。 */
+    /** 背包标签按内容留出空间：制图台避开地图，信标避开付款确认按钮。 */
     public void drawInventoryLabel(GuiGraphicsExtractor g, Font font, Component title, int x, int y, int width) {
-        YzuiTheme.label(g, font, title, x, y, this == CARTOGRAPHY ? 55 : width - x - 8,
-                YzuiTheme.text(), false);
+        int available = this == CARTOGRAPHY ? 55 : this == BEACON ? 120 : width - x - 8;
+        YzuiTheme.label(g, font, title, x, y, available, YzuiTheme.text(), false);
     }
 
     private void drawTitle(GuiGraphicsExtractor g, Font font, Component title, int left, int top, int width) {
@@ -86,7 +88,7 @@ public enum YzuiWorkstationStyle {
         RoundedRect.fill(g, textX, y + 10, Math.min(font.width(title), available), 2, 1, YzuiTheme.primary());
     }
 
-    private void drawAreas(GuiGraphicsExtractor g, int left, int top) {
+    private void drawAreas(GuiGraphicsExtractor g, int left, int top, AbstractContainerMenu menu) {
         switch (this) {
             case ENCHANTMENT -> area(g, left + 12, top + 12, 42, 35);
             case LOOM -> {
@@ -107,11 +109,33 @@ public enum YzuiWorkstationStyle {
                 area(g, left + 45, top + 15, 34, 56);
                 arrow(g, left + 95, top + 35, 22);
             }
+            case BEACON -> {
+                area(g, left + 8, top + 5, 106, 94);
+                area(g, left + 122, top + 5, 100, 94);
+                int levels = menu instanceof BeaconMenu beacon ? beacon.getLevels() : 0;
+                for (int tier = 1; tier <= 3; tier++) {
+                    beaconPyramid(g, left + 27, top + 39 + (tier - 1) * 25, tier, levels >= tier);
+                }
+                beaconPyramid(g, left + 167, top + 43, 4, levels >= 4);
+            }
         }
     }
 
     private static void area(GuiGraphicsExtractor g, int x, int y, int w, int h) {
         RoundedRect.fill(g, x, y, w, h, 4, YzuiTheme.surfaceLow());
+    }
+
+    /** 信标层级示意图以几何图标绘制，解锁颜色由原版菜单同步的层数决定。 */
+    private static void beaconPyramid(GuiGraphicsExtractor g, int centerX, int bottom, int tier, boolean unlocked) {
+        int color = unlocked ? YzuiTheme.primary() : YzuiTheme.outlineVariant();
+        for (int row = 0; row < tier; row++) {
+            int halfWidth = 2 + row * 3;
+            int y = bottom - (tier - row) * 3;
+            g.fill(centerX - halfWidth, y, centerX + halfWidth + 1, y + 2, color);
+        }
+        int top = bottom - tier * 3;
+        g.fill(centerX - 1, top - 4, centerX + 2, top - 1, color);
+        g.fill(centerX, top - 9, centerX + 1, top - 4, YzuiTheme.alpha(color, 0.5f));
     }
 
     /** 加号及箭头以几何线条绘制，不依赖字体字形。 */

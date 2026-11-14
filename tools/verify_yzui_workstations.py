@@ -29,7 +29,8 @@ def describe(javap, jar, name, parents=None):
     result = subprocess.run([str(javap), "-classpath", str(jar), "-p", "-c", "-s", name],
                             text=True, capture_output=True, check=True)
     if parents is not None:
-        declaration = next(line for line in result.stdout.splitlines() if line.startswith("public ") and "class " in line)
+        declaration = next(line for line in result.stdout.splitlines()
+                           if re.search(r"\bclass " + re.escape(name) + r"\b", line))
         parent = re.search(r"\bextends ([\w.]+)", declaration)
         parents[name] = parent[1] if parent else None
     methods = {}
@@ -164,6 +165,61 @@ def check_screens(native, jar):
     print("通过：五种屏幕保留原版菜单、预览提取与交互坐标；关闭控件、路由开关及资源引用完整。")
 
 
+def check_beacon(javap, jar):
+    """核验信标内部按钮的真实注入点，避免干扰选择、付款、升级和取消协议。"""
+    text = source("client/screen/YzuBeaconScreen.java")
+    route = source("mixin/client/YzuContainerScreenSwitchMixin.java")
+    assert "extends BeaconScreen implements YzuiWorkstationScreen" in text
+    assert "new YzuBeaconScreen(workstation.getMenu(), player.getInventory(), workstation.getTitle())" in route
+    assert "this::onClose" in text and "hasClickedOutside(" in text
+    assert not re.search(r"\b(?:imageWidth|imageHeight|leftPos|topPos)\s*=", text)
+    assert not re.search(r"\b(?:mouseClicked|mouseDragged|mouseScrolled|containerTick|removed)\s*\(", text)
+    assert "super.extractRenderState(" in text and "super.extractBackground(" not in text
+    beacon = describe(javap, jar, SCREEN_PACKAGE + "BeaconScreen")
+    constructor = ("(Lnet/minecraft/world/inventory/BeaconMenu;Lnet/minecraft/world/entity/player/Inventory;"
+                   "Lnet/minecraft/network/chat/Component;)V")
+    assert any(descriptor == constructor for descriptor, _ in beacon["<init>"])
+    background = beacon["extractBackground"][0][1]
+    icon_call = "// Method net/minecraft/client/gui/GuiGraphicsExtractor.item:(Lnet/minecraft/world/item/ItemStack;II)V"
+    assert background.count(icon_call) == 5, "信标原版背景内容改变，需要重新核验付款示意图"
+    native_items = re.findall(r"// Field net/minecraft/world/item/Items\.(\w+):", background)
+    assert native_items == re.findall(r"new ItemStack\(Items\.(\w+)\)", text), "付款示意图与原版不符"
+    assert len(re.findall(r"// Method net/minecraft/client/gui/GuiGraphicsExtractor\.", background)) == 6, (
+        "信标原版背景新增了其他绘制，应保留其内容")
+
+    name = "BeaconScreenButtonYzuiMixin"
+    config = json.loads((ROOT / "src/client/resources/youzaiworldcore.client.mixins.json").read_text())
+    assert config["client"].count(name) == 1
+    mixin = source(f"mixin/client/{name}.java")
+    target = re.search(r'@Mixin\(targets = "([^"]+)"\)', mixin)[1]
+    assert target == SCREEN_PACKAGE + "BeaconScreen$BeaconScreenButton"
+    parents = {}
+    buttons = describe(javap, jar, target, parents)
+    assert parents[target] == "net.minecraft.client.gui.components.AbstractButton", "信标按钮基类已改变"
+    method, owner, call, descriptor, arguments = re.search(
+        r'@WrapOperation\(method = "([^"]+)", at = @At\(value = "INVOKE",\s*'
+        r'target = "L([^;]+);(\w+)(\([^\"]+)"\)\)\s*'
+        r'private void [\w$]+\((.*?)\) \{', mixin, re.S).groups()
+    assert method == "extractContents" and len(buttons[method]) == 1
+    code = buttons[method][0][1]
+    reference = "// Method " + owner + "." + call + ":" + descriptor
+    assert re.search(r"invokevirtual\s+[^\n]*" + re.escape(reference), code), "信标按钮注入点或调用类型不符"
+    validate_arguments(arguments, [owner.rsplit("/", 1)[-1], *java_types(descriptor.split(")")[0]), "Operation"],
+                       {}, "信标按钮外观包装")
+    assert java_types(descriptor.split(")")[1]) == ["void"]
+    assert "instanceof YzuBeaconScreen" in mixin and "original.call(" in mixin
+    assert code.index(reference) < code.index("// Method extractIcon:"), "图标渲染顺序已改变"
+
+    confirm = describe(javap, jar, SCREEN_PACKAGE + "BeaconScreen$BeaconConfirmButton")
+    assert "ServerboundSetBeaconPacket" in confirm["onPress"][0][1]
+    assert "BeaconMenu.hasPayment:()Z" in confirm["updateStatus"][0][1]
+    upgrade = describe(javap, jar, SCREEN_PACKAGE + "BeaconScreen$BeaconUpgradePowerButton")
+    assert "BeaconPowerButton.updateStatus:(I)V" in upgrade["updateStatus"][0][1]
+    cancel = describe(javap, jar, SCREEN_PACKAGE + "BeaconScreen$BeaconCancelButton")
+    assert "LocalPlayer.closeContainer:()V" in cancel["onPress"][0][1]
+    print("通过：信标菜单与付款示意图、内部按钮注入签名和图标顺序、原版付款确认/二级升级/取消协议。")
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--java-home", type=Path)
@@ -174,3 +230,4 @@ if __name__ == "__main__":
     javap = args.java_home / "bin/javap" if args.java_home else shutil.which("javap")
     assert javap, "未找到 javap；请用 --java-home 指定 JDK"
     check_screens(check_mixins(javap, jar), jar)
+    check_beacon(javap, jar)

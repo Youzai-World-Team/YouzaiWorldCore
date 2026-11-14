@@ -4,6 +4,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.AnvilScreen;
+import net.minecraft.client.gui.screens.inventory.BeaconScreen;
 import net.minecraft.client.gui.screens.inventory.BlastFurnaceScreen;
 import net.minecraft.client.gui.screens.inventory.BrewingStandScreen;
 import net.minecraft.client.gui.screens.inventory.CartographyTableScreen;
@@ -35,6 +36,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import top.csituka.youzaiworldcore.client.config.ClientExternalSettings;
 import top.csituka.youzaiworldcore.client.screen.YzuAnvilScreen;
+import top.csituka.youzaiworldcore.client.screen.YzuBeaconScreen;
 import top.csituka.youzaiworldcore.client.screen.YzuBrewingStandScreen;
 import top.csituka.youzaiworldcore.client.screen.YzuCartographyTableScreen;
 import top.csituka.youzaiworldcore.client.screen.YzuContainerScreen;
@@ -51,7 +53,7 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
 
 /**
  * 拦截 {@link Gui#setScreen(Screen)}，将原版容器/潜影盒/铁砧/锻造台/工作台/酿造台
- * /熔炉/高炉/烟熏炉/附魔台/织布机/制图台/切石机/砂轮屏幕替换为 YZUI 版本。
+ * /熔炉/高炉/烟熏炉/附魔台/织布机/制图台/切石机/砂轮/信标屏幕替换为 YZUI 版本。
  * <p>
  * 26.2 中普通箱子、陷阱箱、末影箱、木桶、双格大箱子统一由
  * {@link ContainerScreen}（原 ChestScreen 重命名）承载；潜影盒（含 16 种染色
@@ -80,6 +82,7 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
  *   <tr><td>{@link CartographyTableScreen}</td><td>{@link YzuCartographyTableScreen}</td></tr>
  *   <tr><td>{@link StonecutterScreen}</td><td>{@link YzuStonecutterScreen}</td></tr>
  *   <tr><td>{@link GrindstoneScreen}</td><td>{@link YzuGrindstoneScreen}</td></tr>
+ *   <tr><td>{@link BeaconScreen}</td><td>{@link YzuBeaconScreen}</td></tr>
  * </table>
  * 替换过程通过静态标志 {@code yzwc$containerSwitchingScreen} 防止递归（嵌套 setScreen 调用
  * 仍会触发本方法与 InventoryScreenSwitchMixin；继承原版的新增屏幕通过 YzuiWorkstationScreen 标记排除）。
@@ -112,7 +115,7 @@ public abstract class YzuContainerScreenSwitchMixin {
                 || newScreen instanceof LoomScreen
                 || newScreen instanceof CartographyTableScreen
                 || newScreen instanceof StonecutterScreen
-                || newScreen instanceof GrindstoneScreen))
+                || newScreen instanceof GrindstoneScreen || newScreen instanceof BeaconScreen))
             return;
 
         yzwc$containerSwitchingScreen = true;
@@ -192,6 +195,11 @@ public abstract class YzuContainerScreenSwitchMixin {
                 DebugLogger.debug("YzuContainerScreen", "替换为 YzuGrindstoneScreen：%s", workstation.getTitle().getString());
                 Minecraft.getInstance().gui.setScreen(
                         new YzuGrindstoneScreen(workstation.getMenu(), player.getInventory(), workstation.getTitle()));
+                ci.cancel();
+            } else if (newScreen instanceof BeaconScreen workstation) {
+                DebugLogger.debug("YzuContainerScreen", "替换为 YzuBeaconScreen：%s", workstation.getTitle().getString());
+                Minecraft.getInstance().gui.setScreen(
+                        new YzuBeaconScreen(workstation.getMenu(), player.getInventory(), workstation.getTitle()));
                 ci.cancel();
             } else if (newScreen instanceof FurnaceScreen || newScreen instanceof BlastFurnaceScreen
                     || newScreen instanceof SmokerScreen) {

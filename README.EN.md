@@ -214,7 +214,9 @@ These groups are generated from the tab's item list, so existing client settings
 
 #### Creative Item Groups
 
-Collapsible groups inspired by Inventory Item Groups work in both vanilla and YZUI creative inventories. **102 editable default rules** cover vanilla categories, alongside the **7 built-in Youzai World groups** above and **4 Sophisticated Backpacks compatibility rules**. Click a `+` / `−` group header, or hover over it and press Enter or Space, to expand or collapse it. Expanded item entries retain normal creative pickup behavior.
+Collapsible groups inspired by Inventory Item Groups work in both vanilla and YZUI creative inventories. **103 editable default rules** cover vanilla categories, alongside the **7 built-in Youzai World groups** above and **4 Sophisticated Backpacks compatibility rules**. Click a `+` / `−` group header, or hover over it and press Enter or Space, to expand or collapse it. Expanded item entries retain normal creative pickup behavior.
+
+Minecraft **26.3**'s 16 cushion colours share a **Cushions** group in Colored Blocks. This supplemental group also works with existing settings, with custom rules taking priority. New wool and concrete stairs and slabs join their respective Wool and Concrete groups; poplar items and shelf mushrooms use the existing matching categories. The default Ground Cover rule also includes red shrubs; existing rules can include `_shrub` or restore and save the defaults.
 
 The Sophisticated Backpacks tab (`sophisticatedbackpacks:main`) groups items into **Backpacks, Upgraded Backpacks, Stack Upgrades and Stack Upgrade Conversions**. Dyed backpack variants are retained; stack upgrades exclude `_conversion` items, which match the separate conversion group. Existing settings need no reset, and custom rules take priority.
 
@@ -585,7 +587,7 @@ Asynchronously detects new mod versions, prompting for online or forced updates.
 
 The Esc pause screen uses mint rounded action cards and a player preview, following the existing light/dark themes and visual presets. Account management replaces world options beside the options button, and small windows use one column. Icons keep their proportions in square bounds; disconnect uses a door and arrow icon. Vanilla resume, advancements, statistics, options, and disconnect behavior are preserved. See [the pause screen notes](docs/YZUI_PAUSE.md).
 
-Enchanting tables, looms, cartography tables, stonecutters, and grindstones use matching themed cards, slots, choices, and a close icon at the top right, while preserving vanilla book animations, banner and map previews, and menu interactions. Brewing stands keep their existing interface. See [the workstation interface notes and checks](docs/YZUI_WORKSTATIONS.md).
+Enchanting tables, looms, cartography tables, stonecutters, grindstones, and beacons use matching themed cards, slots, choices, and a close icon at the top right, while preserving vanilla book animations, banner and map previews, and menu interactions. Beacons retain effect tiers, level II upgrades, and payment confirmation. Brewing stands keep their existing interface. See [the workstation interface notes and checks](docs/YZUI_WORKSTATIONS.md).
 
 A purely client-side, whole-interface restyle that replaces the vanilla inventory, HUD, recipe book, and contextual bars with the **YZUI look** (translucent white rounded panels + rounded fill bars). Controlled by a **global toggle**: the "Enable YZUI" checkbox in the Visual section of client settings (`screen.youzaiworldcore.settings.toggle_yzui`), persisted as `yzuiEnabled` in `client_external_settings.json` (on by default). **Turning it off reverts everything to vanilla rendering**, so resource packs can take over.
 
