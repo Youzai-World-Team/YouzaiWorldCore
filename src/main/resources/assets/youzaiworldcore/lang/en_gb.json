@@ -1291,5 +1291,21 @@
   "screen.youzaiworldcore.pets.login_required": "Log in before managing pets",
   "screen.youzaiworldcore.pause.profile": "Current player",
   "screen.youzaiworldcore.pause.singleplayer": "Singleplayer world",
-  "screen.youzaiworldcore.pause.hint": "Esc · Back to game"
+  "screen.youzaiworldcore.pause.hint": "Esc · Back to game",
+  "screen.youzaiworldcore.cosmetic_preview.title": "Skin and cape preview",
+  "screen.youzaiworldcore.cosmetic_preview.local_notice": "Local preview. No files are uploaded.",
+  "screen.youzaiworldcore.cosmetic_preview.front": "Front",
+  "screen.youzaiworldcore.cosmetic_preview.back": "Back",
+  "screen.youzaiworldcore.cosmetic_preview.hide_cloak": "Hide cape",
+  "screen.youzaiworldcore.cosmetic_preview.show_cloak": "Show cape",
+  "screen.youzaiworldcore.cosmetic_preview.reload": "Reload files",
+  "screen.youzaiworldcore.cosmetic_preview.folder": "Open folder",
+  "screen.youzaiworldcore.cosmetic_preview.rotate": "Drag the model or use the arrow keys to rotate.",
+  "screen.youzaiworldcore.cosmetic_preview.invalid": "%s is invalid and cannot be previewed",
+  "screen.youzaiworldcore.cosmetic_preview.skin_missing": "No skin file; using the current/default skin",
+  "screen.youzaiworldcore.cosmetic_preview.cloak_missing": "No cape file found",
+  "screen.youzaiworldcore.cosmetic_preview.skin_conflict": "skin.png · wide model takes priority",
+  "screen.youzaiworldcore.cosmetic_preview.skin_wide": "skin.png · wide model",
+  "screen.youzaiworldcore.cosmetic_preview.skin_slim": "skin_slim.png · slim model",
+  "screen.youzaiworldcore.cosmetic_preview.cloak_loaded": "cloak.png · 64×32"
 }

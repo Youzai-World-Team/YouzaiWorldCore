@@ -512,6 +512,9 @@ public final class CosmeticClientManager {
                 DebugLogger.warn(MODULE, "玩家 %s 的 %s 解码尺寸与 IHDR 不一致", ownerUuid, slot.fileName());
                 return null;
             }
+            if (!slot.cloak()) {
+                image = CosmeticSkinImages.prepare(image);
+            }
             NativeImage ownedImage = image;
             texture = new DynamicTexture(
                     () -> "YouzaiWorldCore cosmetic " + ownerUuid + " " + slot.fileName(), ownedImage);

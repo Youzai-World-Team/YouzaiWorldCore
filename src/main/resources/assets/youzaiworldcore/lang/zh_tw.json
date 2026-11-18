@@ -1291,5 +1291,21 @@
   "screen.youzaiworldcore.pets.login_required": "請先登入再管理寵物",
   "screen.youzaiworldcore.pause.profile": "目前玩家",
   "screen.youzaiworldcore.pause.singleplayer": "單人世界",
-  "screen.youzaiworldcore.pause.hint": "Esc · 返回遊戲"
+  "screen.youzaiworldcore.pause.hint": "Esc · 返回遊戲",
+  "screen.youzaiworldcore.cosmetic_preview.title": "皮膚與披風預覽",
+  "screen.youzaiworldcore.cosmetic_preview.local_notice": "本機預覽，不會上傳檔案。",
+  "screen.youzaiworldcore.cosmetic_preview.front": "正面",
+  "screen.youzaiworldcore.cosmetic_preview.back": "背面",
+  "screen.youzaiworldcore.cosmetic_preview.hide_cloak": "隱藏披風",
+  "screen.youzaiworldcore.cosmetic_preview.show_cloak": "顯示披風",
+  "screen.youzaiworldcore.cosmetic_preview.reload": "重新讀取",
+  "screen.youzaiworldcore.cosmetic_preview.folder": "開啟資料夾",
+  "screen.youzaiworldcore.cosmetic_preview.rotate": "拖曳模型或使用方向鍵旋轉。",
+  "screen.youzaiworldcore.cosmetic_preview.invalid": "%s 無效，無法預覽",
+  "screen.youzaiworldcore.cosmetic_preview.skin_missing": "找不到皮膚，使用目前/預設皮膚",
+  "screen.youzaiworldcore.cosmetic_preview.cloak_missing": "找不到披風",
+  "screen.youzaiworldcore.cosmetic_preview.skin_conflict": "skin.png · 已優先寬模型",
+  "screen.youzaiworldcore.cosmetic_preview.skin_wide": "skin.png · 寬模型",
+  "screen.youzaiworldcore.cosmetic_preview.skin_slim": "skin_slim.png · 纖細模型",
+  "screen.youzaiworldcore.cosmetic_preview.cloak_loaded": "cloak.png · 64×32"
 }

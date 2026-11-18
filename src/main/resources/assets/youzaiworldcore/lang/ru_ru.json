@@ -1291,5 +1291,21 @@
   "screen.youzaiworldcore.pets.login_required": "Войдите, чтобы управлять питомцами",
   "screen.youzaiworldcore.pause.profile": "Текущий игрок",
   "screen.youzaiworldcore.pause.singleplayer": "Одиночный мир",
-  "screen.youzaiworldcore.pause.hint": "Esc · Вернуться в игру"
+  "screen.youzaiworldcore.pause.hint": "Esc · Вернуться в игру",
+  "screen.youzaiworldcore.cosmetic_preview.title": "Просмотр скина и плаща",
+  "screen.youzaiworldcore.cosmetic_preview.local_notice": "Локальный просмотр без загрузки файлов.",
+  "screen.youzaiworldcore.cosmetic_preview.front": "Спереди",
+  "screen.youzaiworldcore.cosmetic_preview.back": "Сзади",
+  "screen.youzaiworldcore.cosmetic_preview.hide_cloak": "Без плаща",
+  "screen.youzaiworldcore.cosmetic_preview.show_cloak": "С плащом",
+  "screen.youzaiworldcore.cosmetic_preview.reload": "Перечитать",
+  "screen.youzaiworldcore.cosmetic_preview.folder": "Открыть папку",
+  "screen.youzaiworldcore.cosmetic_preview.rotate": "Вращайте модель мышью или клавишами со стрелками.",
+  "screen.youzaiworldcore.cosmetic_preview.invalid": "%s недействителен и не может быть показан",
+  "screen.youzaiworldcore.cosmetic_preview.skin_missing": "Нет файла скина; показан текущий/стандартный",
+  "screen.youzaiworldcore.cosmetic_preview.cloak_missing": "Файл плаща не найден",
+  "screen.youzaiworldcore.cosmetic_preview.skin_conflict": "skin.png · приоритет широкой модели",
+  "screen.youzaiworldcore.cosmetic_preview.skin_wide": "skin.png · широкая модель",
+  "screen.youzaiworldcore.cosmetic_preview.skin_slim": "skin_slim.png · узкая модель",
+  "screen.youzaiworldcore.cosmetic_preview.cloak_loaded": "cloak.png · 64×32"
 }

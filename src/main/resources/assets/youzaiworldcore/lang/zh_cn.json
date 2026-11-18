@@ -1291,5 +1291,21 @@
   "screen.youzaiworldcore.pets.login_required": "请先登录再管理宠物",
   "screen.youzaiworldcore.pause.profile": "当前玩家",
   "screen.youzaiworldcore.pause.singleplayer": "单人世界",
-  "screen.youzaiworldcore.pause.hint": "Esc · 返回游戏"
+  "screen.youzaiworldcore.pause.hint": "Esc · 返回游戏",
+  "screen.youzaiworldcore.cosmetic_preview.title": "皮肤与披风预览",
+  "screen.youzaiworldcore.cosmetic_preview.local_notice": "本地预览，不会上传文件。",
+  "screen.youzaiworldcore.cosmetic_preview.front": "正面",
+  "screen.youzaiworldcore.cosmetic_preview.back": "背面",
+  "screen.youzaiworldcore.cosmetic_preview.hide_cloak": "隐藏披风",
+  "screen.youzaiworldcore.cosmetic_preview.show_cloak": "显示披风",
+  "screen.youzaiworldcore.cosmetic_preview.reload": "重新读取",
+  "screen.youzaiworldcore.cosmetic_preview.folder": "打开文件夹",
+  "screen.youzaiworldcore.cosmetic_preview.rotate": "拖动模型或使用方向键旋转。",
+  "screen.youzaiworldcore.cosmetic_preview.invalid": "%s 无效，无法预览",
+  "screen.youzaiworldcore.cosmetic_preview.skin_missing": "未找到皮肤，使用当前/默认皮肤",
+  "screen.youzaiworldcore.cosmetic_preview.cloak_missing": "未找到披风",
+  "screen.youzaiworldcore.cosmetic_preview.skin_conflict": "skin.png · 已优先宽模型",
+  "screen.youzaiworldcore.cosmetic_preview.skin_wide": "skin.png · 宽模型",
+  "screen.youzaiworldcore.cosmetic_preview.skin_slim": "skin_slim.png · 细模型",
+  "screen.youzaiworldcore.cosmetic_preview.cloak_loaded": "cloak.png · 64×32"
 }

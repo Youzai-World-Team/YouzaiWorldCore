@@ -1291,5 +1291,21 @@
   "screen.youzaiworldcore.pets.login_required": "Connectez-vous pour gérer les animaux",
   "screen.youzaiworldcore.pause.profile": "Joueur actuel",
   "screen.youzaiworldcore.pause.singleplayer": "Monde solo",
-  "screen.youzaiworldcore.pause.hint": "Échap · Reprendre le jeu"
+  "screen.youzaiworldcore.pause.hint": "Échap · Reprendre le jeu",
+  "screen.youzaiworldcore.cosmetic_preview.title": "Aperçu du skin et de la cape",
+  "screen.youzaiworldcore.cosmetic_preview.local_notice": "Aperçu local, sans envoi de fichiers.",
+  "screen.youzaiworldcore.cosmetic_preview.front": "Face",
+  "screen.youzaiworldcore.cosmetic_preview.back": "Dos",
+  "screen.youzaiworldcore.cosmetic_preview.hide_cloak": "Masquer cape",
+  "screen.youzaiworldcore.cosmetic_preview.show_cloak": "Afficher cape",
+  "screen.youzaiworldcore.cosmetic_preview.reload": "Recharger",
+  "screen.youzaiworldcore.cosmetic_preview.folder": "Ouvrir dossier",
+  "screen.youzaiworldcore.cosmetic_preview.rotate": "Faites glisser le modèle ou utilisez les flèches pour le tourner.",
+  "screen.youzaiworldcore.cosmetic_preview.invalid": "%s est invalide et ne peut pas être affiché",
+  "screen.youzaiworldcore.cosmetic_preview.skin_missing": "Aucun skin ; skin actuel/par défaut utilisé",
+  "screen.youzaiworldcore.cosmetic_preview.cloak_missing": "Aucune cape trouvée",
+  "screen.youzaiworldcore.cosmetic_preview.skin_conflict": "skin.png · priorité au modèle large",
+  "screen.youzaiworldcore.cosmetic_preview.skin_wide": "skin.png · modèle large",
+  "screen.youzaiworldcore.cosmetic_preview.skin_slim": "skin_slim.png · modèle fin",
+  "screen.youzaiworldcore.cosmetic_preview.cloak_loaded": "cloak.png · 64×32"
 }

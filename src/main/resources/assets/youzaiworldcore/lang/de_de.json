@@ -1291,5 +1291,21 @@
   "screen.youzaiworldcore.pets.login_required": "Vor der Tierverwaltung anmelden",
   "screen.youzaiworldcore.pause.profile": "Aktueller Spieler",
   "screen.youzaiworldcore.pause.singleplayer": "Einzelspielerwelt",
-  "screen.youzaiworldcore.pause.hint": "Esc · Zurück zum Spiel"
+  "screen.youzaiworldcore.pause.hint": "Esc · Zurück zum Spiel",
+  "screen.youzaiworldcore.cosmetic_preview.title": "Skin- und Umhangvorschau",
+  "screen.youzaiworldcore.cosmetic_preview.local_notice": "Lokale Vorschau ohne Datei-Upload.",
+  "screen.youzaiworldcore.cosmetic_preview.front": "Vorne",
+  "screen.youzaiworldcore.cosmetic_preview.back": "Hinten",
+  "screen.youzaiworldcore.cosmetic_preview.hide_cloak": "Ohne Umhang",
+  "screen.youzaiworldcore.cosmetic_preview.show_cloak": "Mit Umhang",
+  "screen.youzaiworldcore.cosmetic_preview.reload": "Neu laden",
+  "screen.youzaiworldcore.cosmetic_preview.folder": "Ordner öffnen",
+  "screen.youzaiworldcore.cosmetic_preview.rotate": "Modell ziehen oder mit den Pfeiltasten drehen.",
+  "screen.youzaiworldcore.cosmetic_preview.invalid": "%s ist ungültig und kann nicht angezeigt werden",
+  "screen.youzaiworldcore.cosmetic_preview.skin_missing": "Kein Skin; aktueller/Standard-Skin wird verwendet",
+  "screen.youzaiworldcore.cosmetic_preview.cloak_missing": "Kein Umhang gefunden",
+  "screen.youzaiworldcore.cosmetic_preview.skin_conflict": "skin.png · breites Modell hat Vorrang",
+  "screen.youzaiworldcore.cosmetic_preview.skin_wide": "skin.png · breites Modell",
+  "screen.youzaiworldcore.cosmetic_preview.skin_slim": "skin_slim.png · schmales Modell",
+  "screen.youzaiworldcore.cosmetic_preview.cloak_loaded": "cloak.png · 64×32"
 }

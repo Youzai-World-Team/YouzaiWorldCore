@@ -1291,5 +1291,21 @@
   "screen.youzaiworldcore.pets.login_required": "先登入而理寵物",
   "screen.youzaiworldcore.pause.profile": "今之玩家",
   "screen.youzaiworldcore.pause.singleplayer": "獨遊之世",
-  "screen.youzaiworldcore.pause.hint": "Esc · 返遊"
+  "screen.youzaiworldcore.pause.hint": "Esc · 返遊",
+  "screen.youzaiworldcore.cosmetic_preview.title": "肌衣披風預覽",
+  "screen.youzaiworldcore.cosmetic_preview.local_notice": "僅覽本機，不上傳。",
+  "screen.youzaiworldcore.cosmetic_preview.front": "正面",
+  "screen.youzaiworldcore.cosmetic_preview.back": "背面",
+  "screen.youzaiworldcore.cosmetic_preview.hide_cloak": "隱披風",
+  "screen.youzaiworldcore.cosmetic_preview.show_cloak": "顯披風",
+  "screen.youzaiworldcore.cosmetic_preview.reload": "重讀",
+  "screen.youzaiworldcore.cosmetic_preview.folder": "啟目錄",
+  "screen.youzaiworldcore.cosmetic_preview.rotate": "拖曳人形，或以方向鍵旋之。",
+  "screen.youzaiworldcore.cosmetic_preview.invalid": "%s 不可覽",
+  "screen.youzaiworldcore.cosmetic_preview.skin_missing": "未見肌衣，沿用今衣或常服",
+  "screen.youzaiworldcore.cosmetic_preview.cloak_missing": "未見披風",
+  "screen.youzaiworldcore.cosmetic_preview.skin_conflict": "skin.png · 寬形為先",
+  "screen.youzaiworldcore.cosmetic_preview.skin_wide": "skin.png · 寬形",
+  "screen.youzaiworldcore.cosmetic_preview.skin_slim": "skin_slim.png · 纖形",
+  "screen.youzaiworldcore.cosmetic_preview.cloak_loaded": "cloak.png · 64×32"
 }

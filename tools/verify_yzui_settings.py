@@ -853,7 +853,13 @@ public class TransparentButton extends net.minecraft.client.gui.components.Butto
         super(label); this.action = action; setRectangle(width, height, x, y);
     }
     public TransparentButton setStyle(top.csituka.youzaiworldcore.client.render.YzuiTheme.ButtonStyle value) { style = value; return this; }
+    public TransparentButton setLineIcon(top.csituka.youzaiworldcore.client.render.MenuIcon value) { return this; }
     public void setTextLeftAligned(boolean value) {}
+}
+""")
+    stub(PACKAGE + ".client.render.MenuIcon", """
+public enum MenuIcon { CHEVRON_LEFT, CHEVRON_RIGHT;
+    public void renderCentered(Object... args) {}
 }
 """)
     stub(PACKAGE + ".client.render.YzuiTheme", """
@@ -2110,7 +2116,7 @@ public class TitleScreenTextButton extends TransparentButton {
     public void setSelected(boolean value) { selected = value; }
 }
 """)
-    for name in ("YzuiAppearanceScreen", "YzHudSettingsScreen"):
+    for name in ("YzuiAppearanceScreen", "YzHudSettingsScreen", "CosmeticPreviewScreen"):
         stub(PACKAGE + ".client.screen." + name, "public class " + name + " extends net.minecraft.client.gui.screens.Screen { public final net.minecraft.client.gui.screens.Screen parent; public "
              + name + "(net.minecraft.client.gui.screens.Screen parent) { this.parent = parent; } }")
     stub(PACKAGE + ".client.map.MapTexts", "public class MapTexts { public static net.minecraft.network.chat.Component text(String key, Object... args) { return net.minecraft.network.chat.Component.translatable(\"map.youzaiworldcore.\" + key, args); } }")
@@ -2203,11 +2209,14 @@ public final class CoreCategoryChecks extends Screen {
                     "keyboard dropdown selection maps to stable category ID: " + section);
         }
         page.selectSection(CoreSettingsSection.APPEARANCE);
-        check(page.content().size() == 4, "appearance contains only theme, YZUI, animation and font controls");
+        check(page.content().size() == 5, "appearance contains theme, cosmetic preview, YZUI, animation and font controls");
         var theme = (TransparentButton) page.control("screen.youzaiworldcore.appearance.title");
         theme.action.run();
         check(Minecraft.getInstance().gui.current instanceof YzuiAppearanceScreen editor && editor.parent == page,
                 "appearance editor returns to the standalone Core page");
+        ((TransparentButton) page.control("screen.youzaiworldcore.cosmetic_preview.title")).action.run();
+        check(Minecraft.getInstance().gui.current instanceof CosmeticPreviewScreen preview && preview.parent == page,
+                "cosmetic preview returns to the standalone Core page");
         var ui = (CheckboxButton) page.control("screen.youzaiworldcore.settings.toggle_yzui");
         ui.onClick(null, false);
         check(!ClientExternalSettings.enabled && ClientExternalSettings.uiSaves == 1, "YZUI toggle applies and saves once");
@@ -2254,6 +2263,11 @@ public final class CoreCategoryChecks extends Screen {
         ((TransparentButton) embedded.content().getFirst()).action.run();
         check(Minecraft.getInstance().gui.current instanceof top.csituka.youzaiworldcore.client.screen.map.YzWorldMapScreen map && map.parent == embedded.parentScreen,
                 "embedded map editor returns to the unified settings host");
+        embedded.setEmbeddedSection(CoreSettingsSection.APPEARANCE.id());
+        ((TransparentButton) embedded.control("screen.youzaiworldcore.cosmetic_preview.title")).action.run();
+        check(Minecraft.getInstance().gui.current instanceof CosmeticPreviewScreen preview && preview.parent == embedded.parentScreen,
+                "embedded cosmetic preview returns to the unified settings host");
+        embedded.setEmbeddedSection(CoreSettingsSection.MAP.id());
         embedded.configureEmbedded(0, 0, 200, 300, CoreSettingsSection.APPEARANCE.id());
         check(embedded.selectedSection == CoreSettingsSection.MAP.id(), "resizing embedded content preserves the selected category");
         embedded.configOpActive = true;

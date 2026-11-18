@@ -880,6 +880,10 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
                 () -> Minecraft.getInstance().gui.setScreen(new YzuiAppearanceScreen(returnScreen)))
                 .setStyle(top.csituka.youzaiworldcore.client.render.YzuiTheme.ButtonStyle.FILLED));
         y += 36;
+        addRenderableWidget(new TransparentButton(contentLeft, y, contentWidth, 26,
+                Component.translatable("screen.youzaiworldcore.cosmetic_preview.title"),
+                () -> Minecraft.getInstance().gui.setScreen(new CosmeticPreviewScreen(returnScreen))));
+        y += 36;
         Component toggleMessage = Component.translatable("screen.youzaiworldcore.settings.toggle_yzui");
         int toggleHeight = checkboxHeight(toggleMessage);
         CheckboxButton yzuiToggle = new CheckboxButton(
