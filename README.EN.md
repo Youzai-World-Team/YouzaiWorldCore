@@ -70,12 +70,13 @@ The main menu uses rounded cards and animated transitions, grouped into common a
 
 #### Title System
 
-- **Player management**: The Title button in the main menu opens a management screen where players can view owned titles, page through them, equip one, or unequip the current title; page size adapts to the window height
+- **Player management**: The Title button opens a management screen with the current selection at the top, a paginated text list, and fixed no-title and pagination controls at the bottom. Page size adapts to window height; hover over a long title to read it in full
 - **Registration default**: Accounts that complete registration after the feature is deployed automatically receive and equip "Newbie Plea." Existing accounts are not backfilled, and ordinary account updates do not restore a title after an administrator revokes it
 - **Administrator titles**: LuckPerms nodes `youzaiworldcore.admin.junior`, `.middle`, and `.senior` map to junior, middle, and senior administrator titles. Only the highest matching tier is granted. Without LuckPerms, players with vanilla administrator permission receive all three tiers. Titles are cosmetic and never grant command permissions
-- **Display positions**: With styled chat disabled, the title appears to the right of the sender name. With styled chat enabled, `${title}` can be placed anywhere in the chat template. The Tab list places the title before the AFK marker and player name. Entity nameplates render it on the line below without creating or modifying a vanilla scoreboard objective
-- **Text and textures**: Definitions support text, bitmap-font glyphs, or combined text + texture titles. Built-in images use the `youzaiworldcore:title` bitmap font; a forced server resource pack can keep client assets consistent
+- **Display positions**: Chat, the Tab list, entity nameplates and menus consistently display `{title}`, such as `{萌新求饶}`. No title is shown when unequipped. With styled chat disabled it appears after the sender name; styled chat supports `${title}` in templates. Tab places it before the AFK marker and player name. Entity nameplates use a separate line without creating or modifying a vanilla scoreboard objective
+- **Text titles**: Titles use ordinary text with configurable color, bold and italic. Texture types, image identifiers, font glyphs and title PNG assets have been removed
 - **Api-authoritative data**: The title catalog, per-player grant sources, and equipped selection are stored in the Api server's SQLite database. The Minecraft server synchronizes through HMAC endpoints on login, after registration, on manual refresh, and every 60 seconds. The "Player Titles" admin page can create/edit/enable/disable definitions, grant or revoke titles, and change equipped selections; registration, manual, and permission grants remain independent sources
+- **Updating**: Api upgrades convert existing texture titles to text while preserving definitions, grants and equipped selections. Ordinary synchronization keeps a player's no-title choice. The text-title packet no longer carries image fields, so update the Minecraft client and server together
 
 ### 3. Title Screen Overhaul
 

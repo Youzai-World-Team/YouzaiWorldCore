@@ -904,6 +904,8 @@
   "screen.youzaiworldcore.title_management.none": "Sin título",
   "screen.youzaiworldcore.title_management.loading": "Sincronizando…",
   "screen.youzaiworldcore.title_management.empty": "Aún no tienes títulos",
+  "screen.youzaiworldcore.title_management.owned": "Títulos obtenidos",
+  "screen.youzaiworldcore.title_management.refresh": "Actualizar",
   "screen.youzaiworldcore.appearance.title": "Apariencia de la interfaz",
   "screen.youzaiworldcore.appearance.theme": "Tema de color",
   "screen.youzaiworldcore.appearance.effects": "Efectos visuales",

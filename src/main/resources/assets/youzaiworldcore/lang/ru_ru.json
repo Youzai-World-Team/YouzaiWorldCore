@@ -904,6 +904,8 @@
   "screen.youzaiworldcore.title_management.none": "Без титула",
   "screen.youzaiworldcore.title_management.loading": "Синхронизация…",
   "screen.youzaiworldcore.title_management.empty": "У вас пока нет титулов",
+  "screen.youzaiworldcore.title_management.owned": "Ваши титулы",
+  "screen.youzaiworldcore.title_management.refresh": "Обновить",
   "screen.youzaiworldcore.appearance.title": "Оформление интерфейса",
   "screen.youzaiworldcore.appearance.theme": "Цветовая тема",
   "screen.youzaiworldcore.appearance.effects": "Визуальные эффекты",

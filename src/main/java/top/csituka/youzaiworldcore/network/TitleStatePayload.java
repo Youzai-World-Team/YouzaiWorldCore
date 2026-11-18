@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-/** S2C：称号目录、本玩家授权和全部在线玩家的佩戴快照。 */
+/** S2C：文字称号目录、本玩家授权和全部在线玩家的佩戴快照。 */
 public record TitleStatePayload(
         List<TitleDefinition> definitions,
         List<String> ownedTitleIds,
@@ -24,7 +24,6 @@ public record TitleStatePayload(
     private static final int MAX_OWNED_TITLE_IDS = 512;
     private static final int MAX_EQUIPPED_PLAYERS = 1024;
     private static final int MAX_TITLE_ID_LENGTH = 64;
-    private static final int MAX_FONT_ID_LENGTH = 128;
 
     public record EquippedPlayer(UUID playerUuid, String titleId) {
     }
@@ -52,14 +51,10 @@ public record TitleStatePayload(
             TitleDefinition title = payload.definitions().get(i);
             buf.writeUtf(limitUtf(title.id(), MAX_TITLE_ID_LENGTH), MAX_TITLE_ID_LENGTH);
             buf.writeUtf(limitUtf(title.displayName(), 64), 64);
-            EnumBufs.write(buf, title.renderType());
             buf.writeUtf(limitUtf(title.textContent(), 128), 128);
             buf.writeInt(title.textColor());
             buf.writeBoolean(title.bold());
             buf.writeBoolean(title.italic());
-            buf.writeUtf(limitUtf(title.textureKey(), 128), 128);
-            buf.writeUtf(limitUtf(title.fontId(), MAX_FONT_ID_LENGTH), MAX_FONT_ID_LENGTH);
-            buf.writeUtf(limitUtf(title.glyph(), 16), 16);
             buf.writeVarInt(title.sortOrder());
         }
         int ownedCount = Math.min(MAX_OWNED_TITLE_IDS, payload.ownedTitleIds().size());
@@ -82,9 +77,8 @@ public record TitleStatePayload(
         List<TitleDefinition> definitions = new ArrayList<>(titleCount);
         for (int i = 0; i < titleCount; i++) {
             definitions.add(new TitleDefinition(
-                    buf.readUtf(MAX_TITLE_ID_LENGTH), buf.readUtf(64), EnumBufs.read(buf, TitleDefinition.RenderType.class),
-                    buf.readUtf(128), buf.readInt(), buf.readBoolean(), buf.readBoolean(),
-                    buf.readUtf(128), buf.readUtf(128), buf.readUtf(16), buf.readVarInt()));
+                    buf.readUtf(MAX_TITLE_ID_LENGTH), buf.readUtf(64), buf.readUtf(128),
+                    buf.readInt(), buf.readBoolean(), buf.readBoolean(), buf.readVarInt()));
         }
         int ownedCount = Math.min(MAX_OWNED_TITLE_IDS, Math.max(0, buf.readVarInt()));
         List<String> owned = new ArrayList<>(ownedCount);

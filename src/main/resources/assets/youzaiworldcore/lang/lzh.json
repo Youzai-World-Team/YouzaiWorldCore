@@ -904,6 +904,8 @@
   "screen.youzaiworldcore.title_management.none": "不佩稱號",
   "screen.youzaiworldcore.title_management.loading": "方同步…",
   "screen.youzaiworldcore.title_management.empty": "尚無可佩之稱號",
+  "screen.youzaiworldcore.title_management.owned": "已有稱號",
+  "screen.youzaiworldcore.title_management.refresh": "更新",
   "screen.youzaiworldcore.appearance.title": "界面主题与效果",
   "screen.youzaiworldcore.appearance.theme": "颜色主题",
   "screen.youzaiworldcore.appearance.effects": "视觉效果",

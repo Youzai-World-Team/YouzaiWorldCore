@@ -119,14 +119,10 @@ public final class TitleApiClient {
         return new TitleDefinition(
                 string(value, "id"),
                 string(value, "display_name"),
-                TitleDefinition.RenderType.parse(string(value, "render_type")),
                 string(value, "text_content"),
                 parseColor(string(value, "text_color")),
                 bool(value, "bold"),
                 bool(value, "italic"),
-                string(value, "texture_key"),
-                string(value, "font_id"),
-                string(value, "glyph"),
                 number(value, "sort_order"));
     }
 
