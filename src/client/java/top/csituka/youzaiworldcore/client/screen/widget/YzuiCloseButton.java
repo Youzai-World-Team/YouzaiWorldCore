@@ -4,6 +4,8 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.network.chat.Component;
 import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 import top.csituka.youzaiworldcore.client.animation.YzuiHover;
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
 import top.csituka.youzaiworldcore.util.DebugLogger;
@@ -26,9 +28,11 @@ public final class YzuiCloseButton extends TransparentButton {
         setTooltip(Tooltip.create(label));
     }
 
+    @SuppressWarnings("null")
     @Override
-    protected void extractWidgetRenderState(@NonNull GuiGraphicsExtractor g, int mouseX, int mouseY, float delta) {
-        if (!visible) return;
+    protected void extractWidgetRenderState(@Nullable GuiGraphicsExtractor g, int mouseX, int mouseY, float delta) {
+        if (!visible)
+            return;
         isHovered = isMouseOver(mouseX, mouseY);
         float opacity = getAlpha() * externalAlpha();
         YzuiTheme.button(g, getX(), getY(), getWidth(), getHeight(), hover.sample(active && isHovered),

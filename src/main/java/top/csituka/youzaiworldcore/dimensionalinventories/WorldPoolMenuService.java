@@ -13,10 +13,12 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
 
 /** 世界菜单读取与切换反馈；在服务端主线程调用，沿用维度池权威校验。 */
 public final class WorldPoolMenuService {
-    private WorldPoolMenuService() { }
+    private WorldPoolMenuService() {
+    }
 
     public static void handle(ServerPlayer player, WorldPoolMenuRequestPayload request) {
-        if (player.hasDisconnected()) return;
+        if (player.hasDisconnected())
+            return;
         if (AuthPlayerHelper.shouldBlockActions(player)) {
             ServerPlayNetworking.send(player, new WorldPoolTeleportResultPayload(request.requestId(), false,
                     Component.translatable("screen.youzaiworldcore.world_menu.login_required")));
@@ -26,6 +28,7 @@ public final class WorldPoolMenuService {
             sendState(player, request);
             return;
         }
+        @SuppressWarnings("null")
         AtomicReference<Component> message = new AtomicReference<>(
                 Component.translatable("screen.youzaiworldcore.world_menu.failed"));
         boolean success;
@@ -37,7 +40,8 @@ public final class WorldPoolMenuService {
             success = false;
         }
         if (!player.hasDisconnected()) {
-            ServerPlayNetworking.send(player, new WorldPoolTeleportResultPayload(request.requestId(), success, message.get()));
+            ServerPlayNetworking.send(player,
+                    new WorldPoolTeleportResultPayload(request.requestId(), success, message.get()));
             sendState(player, request);
         }
     }
@@ -46,9 +50,11 @@ public final class WorldPoolMenuService {
         var current = DimensionPoolSettings.getPoolByDimension(
                 player.level().dimension().identifier().toString())
                 .filter(pool -> !DimensionPoolSettings.isHiddenPool(pool.id())).orElse(null);
+        @SuppressWarnings("null")
         List<WorldPoolMenuStatePayload.Entry> entries = DimensionPoolSettings.getAllPools().stream().limit(128)
                 .map(pool -> new WorldPoolMenuStatePayload.Entry(pool.id(), pool.displayName(),
-                        pool.gameMode().getName(), !pool.isEmpty())).toList();
+                        pool.gameMode().getName(), !pool.isEmpty()))
+                .toList();
         ServerPlayNetworking.send(player, new WorldPoolMenuStatePayload(request.requestId(),
                 current == null ? "" : current.id(), current == null ? "" : current.displayName(), entries));
         DebugLogger.debug("WorldPoolMenu", "已同步 %d 个公开世界", entries.size());

@@ -32,8 +32,10 @@ public final class ModMessageSource {
             Map<String, String> sources = new HashMap<>();
             try {
                 for (var method : type.getDeclaredMethods()) {
+                    @SuppressWarnings("null")
                     MixinMerged merged = method.getAnnotation(MixinMerged.class);
-                    if (merged != null) sources.put(method.getName(), merged.mixin());
+                    if (merged != null)
+                        sources.put(method.getName(), merged.mixin());
                 }
             } catch (RuntimeException | LinkageError error) {
                 DebugLogger.exceptionSummary("ChatMessages", "resolveMixinMessageSource", error.getMessage());
@@ -53,7 +55,8 @@ public final class ModMessageSource {
                 String name = frame.getClassName();
                 String method = frame.getMethodName();
                 if (name.startsWith(CORE_PACKAGE + "chat.")
-                        || name.startsWith(CORE_PACKAGE + "client.chat.") || isFormattingHook(method)) continue;
+                        || name.startsWith(CORE_PACKAGE + "client.chat.") || isFormattingHook(method))
+                    continue;
                 if (name.startsWith(CORE_PACKAGE) || method.contains("youzaiworldcore$") || method.contains("yzwc$")) {
                     return Optional.of("YouzaiWorldCore");
                 }
@@ -62,27 +65,33 @@ public final class ModMessageSource {
                     String mixin = MIXIN_SOURCES.get(frame.getDeclaringClass()).get(method);
                     if (mixin != null) {
                         Optional<String> owner = owner(mixin);
-                        if (owner.isPresent()) return owner;
+                        if (owner.isPresent())
+                            return owner;
                     }
                 }
-                if (TRANSPORT_CLASSES.contains(name) || isLibrary(name)) continue;
+                if (TRANSPORT_CLASSES.contains(name) || isLibrary(name))
+                    continue;
                 // 原版业务代码才是发送者时，不把外层模组调度器误识别成消息来源。
-                if (name.startsWith("net.minecraft.")) return Optional.empty();
+                if (name.startsWith("net.minecraft."))
+                    return Optional.empty();
                 Optional<String> owner = owner(frame.getDeclaringClass().getNestHost().getName());
-                if (owner.isPresent()) return owner;
+                if (owner.isPresent())
+                    return owner;
             }
             return Optional.empty();
         });
     }
 
     private static Optional<String> owner(String className) {
-        if (className.startsWith(CORE_PACKAGE)) return Optional.of("YouzaiWorldCore");
+        if (className.startsWith(CORE_PACKAGE))
+            return Optional.of("YouzaiWorldCore");
         return OWNERS.computeIfAbsent(className, name -> {
             String resource = name.replace('.', '/') + ".class";
             try {
                 for (var mod : FabricLoader.getInstance().getAllMods()) {
                     String id = mod.getMetadata().getId();
-                    if (id.equals("minecraft") || id.equals("fabricloader") || id.startsWith("fabric-")) continue;
+                    if (id.equals("minecraft") || id.equals("fabricloader") || id.startsWith("fabric-"))
+                        continue;
                     if (mod.findPath(resource).isPresent()) {
                         String displayName = mod.getMetadata().getName();
                         DebugLogger.debug("ChatMessages", "已识别消息类 %s 的模组：%s", name, id);

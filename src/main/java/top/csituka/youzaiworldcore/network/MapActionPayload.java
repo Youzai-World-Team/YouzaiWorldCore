@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.network;
 
+import org.jspecify.annotations.NonNull;
+
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -8,16 +10,28 @@ import top.csituka.youzaiworldcore.map.MapWaypoint;
 
 /** C2S：位置共享或受权限保护的传送请求；旧公共点动作仅保留协议序号，服务端拒绝执行。 */
 public record MapActionPayload(Action action, MapWaypoint point) implements CustomPacketPayload {
-    public enum Action { ADD, UPDATE, DELETE, LOCK, UNLOCK, TELEPORT, HIDE_POSITION, SHOW_POSITION }
-    public static final Type<MapActionPayload> ID = new Type<>(Identifier.fromNamespaceAndPath("youzaiworldcore", "map_action"));
+    public enum Action {
+        ADD, UPDATE, DELETE, LOCK, UNLOCK, TELEPORT, HIDE_POSITION, SHOW_POSITION
+    }
+
+    public static final Type<MapActionPayload> ID = new Type<>(
+            Identifier.fromNamespaceAndPath("youzaiworldcore", "map_action"));
     public static final StreamCodec<RegistryFriendlyByteBuf, MapActionPayload> STREAM_CODEC = new StreamCodec<>() {
-        @Override public MapActionPayload decode(RegistryFriendlyByteBuf buf) {
+        @Override
+        public MapActionPayload decode(RegistryFriendlyByteBuf buf) {
             return new MapActionPayload(EnumBufs.read(buf, Action.class), MapStreamCodecs.readWaypoint(buf));
         }
-        @Override public void encode(RegistryFriendlyByteBuf buf, MapActionPayload value) {
+
+        @Override
+        public void encode(RegistryFriendlyByteBuf buf, MapActionPayload value) {
             EnumBufs.write(buf, value.action());
             MapStreamCodecs.writeWaypoint(buf, value.point());
         }
     };
-    @Override public Type<? extends CustomPacketPayload> type() { return ID; }
+
+    @SuppressWarnings("null")
+    @Override
+    public @NonNull Type<? extends CustomPacketPayload> type() {
+        return ID;
+    }
 }

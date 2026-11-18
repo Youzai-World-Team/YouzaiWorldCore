@@ -10,12 +10,14 @@ import java.util.ArrayList;
 
 /** 地图协议使用定长像素数组和有上限的集合，不接受客户端提交地形。 */
 public final class MapStreamCodecs {
-    private MapStreamCodecs() { }
+    private MapStreamCodecs() {
+    }
 
     /** 在分配集合前检查网络计数。 */
     public static int count(RegistryFriendlyByteBuf buf, int maximum) {
         int count = buf.readVarInt();
-        if (count < 0 || count > maximum) throw new IllegalArgumentException("地图数据数量超限");
+        if (count < 0 || count > maximum)
+            throw new IllegalArgumentException("地图数据数量超限");
         return count;
     }
 
@@ -34,14 +36,17 @@ public final class MapStreamCodecs {
         int[] colors = new int[256];
         short[] heights = new short[256];
         byte[] lights = new byte[256], indices = new byte[256];
-        for (int i = 0; i < 256; i++) colors[i] = buf.readInt();
-        for (int i = 0; i < 256; i++) heights[i] = buf.readShort();
+        for (int i = 0; i < 256; i++)
+            colors[i] = buf.readInt();
+        for (int i = 0; i < 256; i++)
+            heights[i] = buf.readShort();
         buf.readBytes(lights);
         buf.readBytes(indices);
         return new MapTile(key, revision, colors, heights, lights, indices, biomes, biomeColors);
     }
 
     /** 写入一个瓦片；最坏情况下也远小于单个自定义包的大小上限。 */
+    @SuppressWarnings("null")
     public static void writeTile(RegistryFriendlyByteBuf buf, MapTile tile) {
         var key = tile.key();
         buf.writeUtf(key.dimension(), 128);
@@ -55,8 +60,10 @@ public final class MapStreamCodecs {
             buf.writeUtf(tile.biomes().get(i), 128);
             buf.writeInt(tile.biomeColors()[i]);
         }
-        for (int value : tile.colors()) buf.writeInt(value);
-        for (short value : tile.heights()) buf.writeShort(value);
+        for (int value : tile.colors())
+            buf.writeInt(value);
+        for (short value : tile.heights())
+            buf.writeShort(value);
         buf.writeBytes(tile.lights());
         buf.writeBytes(tile.biomeIndices());
     }
@@ -68,6 +75,7 @@ public final class MapStreamCodecs {
                 buf.readBoolean(), buf.readBoolean(), EnumBufs.read(buf, MapWaypoint.Kind.class), buf.readLong());
     }
 
+    @SuppressWarnings("null")
     public static void writeWaypoint(RegistryFriendlyByteBuf buf, MapWaypoint point) {
         buf.writeUUID(point.id());
         buf.writeUUID(point.owner());

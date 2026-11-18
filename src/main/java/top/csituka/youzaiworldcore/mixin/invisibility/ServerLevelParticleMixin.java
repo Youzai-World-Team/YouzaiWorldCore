@@ -18,7 +18,8 @@ import java.util.List;
 /**
  * 隐身玩家粒子效果屏蔽 Mixin。
  * <p>
- * 拦截 {@link ServerLevel#sendParticles(ParticleOptions, boolean, boolean, double, double, double, int, double, double, double, double)}
+ * 拦截
+ * {@link ServerLevel#sendParticles(ParticleOptions, boolean, boolean, double, double, double, int, double, double, double, double)}
  * 广播版本。当粒子产生位置附近存在隐身玩家时，将粒子数据包仅发送给该隐身玩家自身，
  * 而不广播给其他玩家，从而隐藏隐身玩家触发的粒子效果。
  * </p>
@@ -34,23 +35,21 @@ public abstract class ServerLevelParticleMixin {
     private List<ServerPlayer> players;
 
     @Shadow
-    private boolean sendParticles(ServerPlayer player, boolean longDistance, double x, double y, double z, Packet<?> packet) {
+    private boolean sendParticles(ServerPlayer player, boolean longDistance, double x, double y, double z,
+            Packet<?> packet) {
         throw new AssertionError("Shadow method not implemented");
     }
 
     /**
-     * 拦截 {@code sendParticles(ParticleOptions, boolean, boolean, double, double, double, int, double, double, double, double)}
+     * 拦截
+     * {@code sendParticles(ParticleOptions, boolean, boolean, double, double, double, int, double, double, double, double)}
      * —— 粒子广播方法。
      * <p>
      * 检查粒子位置附近是否存在隐身玩家，若存在则将粒子仅发送给该隐身玩家，
      * 从而对其他玩家隐藏粒子效果。
      * </p>
      */
-    @Inject(
-            method = "sendParticles(Lnet/minecraft/core/particles/ParticleOptions;ZZDDDIDDDD)I",
-            at = @At("HEAD"),
-            cancellable = true
-    )
+    @Inject(method = "sendParticles(Lnet/minecraft/core/particles/ParticleOptions;ZZDDDIDDDD)I", at = @At("HEAD"), cancellable = true)
     private <T extends ParticleOptions> void youzaiworldcore$onSendParticles(
             T options,
             boolean longDistance,
@@ -63,8 +62,7 @@ public abstract class ServerLevelParticleMixin {
             double dy,
             double dz,
             double speed,
-            CallbackInfoReturnable<Integer> cir
-    ) {
+            CallbackInfoReturnable<Integer> cir) {
         // 快路径：无隐身玩家时直接跳过，避免在热路径上做全服扫描
         if (!InvisibilityManager.hasInvisiblePlayers()) {
             return;
@@ -76,6 +74,7 @@ public abstract class ServerLevelParticleMixin {
             return;
         }
 
+        @SuppressWarnings("null")
         ClientboundLevelParticlesPacket packet = new ClientboundLevelParticlesPacket(
                 options,
                 longDistance,
@@ -83,8 +82,7 @@ public abstract class ServerLevelParticleMixin {
                 x, y, z,
                 (float) dx, (float) dy, (float) dz,
                 (float) speed,
-                count
-        );
+                count);
 
         // 仅发送给隐身玩家自身，不广播给其他玩家
         boolean sent = this.sendParticles(invisiblePlayer, longDistance, x, y, z, packet);

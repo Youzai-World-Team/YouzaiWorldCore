@@ -8,6 +8,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.SignBlockEntity;
 import net.minecraft.world.level.block.entity.SignTextSlot;
+
+import org.jspecify.annotations.NonNull;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -21,7 +23,7 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
 public abstract class InkSacItemMixin {
 
     @Inject(method = "tryApplyToSign", at = @At("HEAD"), cancellable = true)
-    private void youzaiworldcore$removeFlashing(Level level, SignBlockEntity sign, SignTextSlot slot,
+    private void youzaiworldcore$removeFlashing(Level level, SignBlockEntity sign, @NonNull SignTextSlot slot,
             ItemStack stack, Player player, CallbackInfoReturnable<Boolean> callbackInfo) {
         boolean front = slot == SignTextSlot.FRONT;
         if (!(sign instanceof FlashingSign flashingSign)

@@ -11,26 +11,41 @@ import java.util.List;
 import java.util.UUID;
 
 /** S2C：接收者本人已激活锚点；points 仅保留旧协议布局，服务端始终发空列表，客户端忽略。 */
-public record MapWaypointsPayload(UUID worldId, List<MapWaypoint> points, List<MapWaypoint> anchors) implements CustomPacketPayload {
-    public static final Type<MapWaypointsPayload> ID = new Type<>(Identifier.fromNamespaceAndPath("youzaiworldcore", "map_waypoints"));
+public record MapWaypointsPayload(UUID worldId, List<MapWaypoint> points, List<MapWaypoint> anchors)
+        implements CustomPacketPayload {
+    public static final Type<MapWaypointsPayload> ID = new Type<>(
+            Identifier.fromNamespaceAndPath("youzaiworldcore", "map_waypoints"));
     public static final StreamCodec<RegistryFriendlyByteBuf, MapWaypointsPayload> STREAM_CODEC = new StreamCodec<>() {
-        @Override public MapWaypointsPayload decode(RegistryFriendlyByteBuf buf) {
+        @Override
+        public MapWaypointsPayload decode(RegistryFriendlyByteBuf buf) {
             UUID world = buf.readUUID();
             int count = MapStreamCodecs.count(buf, 512);
             var points = new ArrayList<MapWaypoint>(count);
-            for (int i = 0; i < count; i++) points.add(MapStreamCodecs.readWaypoint(buf));
+            for (int i = 0; i < count; i++)
+                points.add(MapStreamCodecs.readWaypoint(buf));
             int anchorCount = MapStreamCodecs.count(buf, 512);
             var anchors = new ArrayList<MapWaypoint>(anchorCount);
-            for (int i = 0; i < anchorCount; i++) anchors.add(MapStreamCodecs.readWaypoint(buf));
+            for (int i = 0; i < anchorCount; i++)
+                anchors.add(MapStreamCodecs.readWaypoint(buf));
             return new MapWaypointsPayload(world, List.copyOf(points), List.copyOf(anchors));
         }
-        @Override public void encode(RegistryFriendlyByteBuf buf, MapWaypointsPayload value) {
+
+        @SuppressWarnings("null")
+        @Override
+        public void encode(RegistryFriendlyByteBuf buf, MapWaypointsPayload value) {
             buf.writeUUID(value.worldId());
             buf.writeVarInt(value.points().size());
-            for (MapWaypoint point : value.points()) MapStreamCodecs.writeWaypoint(buf, point);
+            for (MapWaypoint point : value.points())
+                MapStreamCodecs.writeWaypoint(buf, point);
             buf.writeVarInt(value.anchors().size());
-            for (MapWaypoint point : value.anchors()) MapStreamCodecs.writeWaypoint(buf, point);
+            for (MapWaypoint point : value.anchors())
+                MapStreamCodecs.writeWaypoint(buf, point);
         }
     };
-    @Override public Type<? extends CustomPacketPayload> type() { return ID; }
+
+    @SuppressWarnings("null")
+    @Override
+    public Type<? extends CustomPacketPayload> type() {
+        return ID;
+    }
 }

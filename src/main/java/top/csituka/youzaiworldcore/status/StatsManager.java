@@ -239,7 +239,8 @@ public final class StatsManager {
             checkMonthlyReset(server);
             if (++tickCounter >= REFRESH_INTERVAL_TICKS) {
                 tickCounter = 0;
-                if (pendingMonthlyReset != null) return;
+                if (pendingMonthlyReset != null)
+                    return;
                 refreshAllOnline(server);
                 saveAsync(server);
                 uploadAsync(server);
@@ -321,7 +322,8 @@ public final class StatsManager {
             save(server);
             return;
         }
-        if (!lastResetMonth.equals(currentMonth)) beginMonthlyReset(server);
+        if (!lastResetMonth.equals(currentMonth))
+            beginMonthlyReset(server);
     }
 
     private static void checkMonthlyReset(MinecraftServer server) {
@@ -333,11 +335,13 @@ public final class StatsManager {
             lastResetMonth = YearMonth.now().toString();
             return;
         }
-        if (!lastResetMonth.equals(YearMonth.now().toString())) beginMonthlyReset(server);
+        if (!lastResetMonth.equals(YearMonth.now().toString()))
+            beginMonthlyReset(server);
     }
 
     private static void beginMonthlyReset(MinecraftServer server) {
-        if (pendingMonthlyReset != null || MONTHLY_RESET_UPLOAD_IN_FLIGHT.get() || UPLOAD_IN_FLIGHT.get()) return;
+        if (pendingMonthlyReset != null || MONTHLY_RESET_UPLOAD_IN_FLIGHT.get() || UPLOAD_IN_FLIGHT.get())
+            return;
         refreshAllOnline(server);
         String month = YearMonth.now().toString();
         String resetId = month + "-" + UUID.randomUUID();
@@ -350,7 +354,8 @@ public final class StatsManager {
 
     private static void uploadPendingMonthlyReset(MinecraftServer server) {
         PendingMonthlyReset pending = pendingMonthlyReset;
-        if (pending == null || !MONTHLY_RESET_UPLOAD_IN_FLIGHT.compareAndSet(false, true)) return;
+        if (pending == null || !MONTHLY_RESET_UPLOAD_IN_FLIGHT.compareAndSet(false, true))
+            return;
         CompletableFuture.supplyAsync(() -> uploadBatches(pending.entries(), "reset", pending.resetId()))
                 .whenComplete((success, error) -> {
                     MONTHLY_RESET_UPLOAD_IN_FLIGHT.set(false);
@@ -360,7 +365,8 @@ public final class StatsManager {
                         return;
                     }
                     server.execute(() -> {
-                        if (pendingMonthlyReset != pending) return;
+                        if (pendingMonthlyReset != pending)
+                            return;
                         pendingMonthlyReset = null;
                         lastResetMonth = pending.month();
                         save(server);
@@ -420,7 +426,8 @@ public final class StatsManager {
         List<PendingStatsUpload> result = new ArrayList<>();
         for (PlayerStats player : CACHE.values()) {
             Map<String, Long> delta = player.getUploadDelta();
-            if (delta == null) continue;
+            if (delta == null)
+                continue;
             result.add(new PendingStatsUpload(new ApiServiceClient.StatsUploadEntry(
                     player.getUuid(), player.getName(), player.getLastUpdated(), delta)));
         }
@@ -441,14 +448,16 @@ public final class StatsManager {
         for (PendingStatsUpload upload : pending) {
             ApiServiceClient.StatsUploadEntry entry = upload.entry();
             PlayerStats player = CACHE.get(entry.uuid().toString());
-            if (player != null) player.markUploaded(entry.username(), entry.stats());
+            if (player != null)
+                player.markUploaded(entry.username(), entry.stats());
         }
     }
 
     // ===== 红石统计 =====
 
     private static void buildRedstoneItems() {
-        if (REDSTONE_ITEMS != null) return;
+        if (REDSTONE_ITEMS != null)
+            return;
         Set<Item> items = BuiltInRegistries.ITEM.stream()
                 .filter(StatsManager::isRedstoneComponent)
                 .collect(Collectors.toSet());
@@ -457,7 +466,8 @@ public final class StatsManager {
 
     static boolean isRedstoneComponent(Item item) {
         Identifier id = BuiltInRegistries.ITEM.getKey(item);
-        if (!"minecraft".equals(id.getNamespace())) return false;
+        if (!"minecraft".equals(id.getNamespace()))
+            return false;
         String path = id.getPath();
         return REDSTONE_COMPONENTS.contains(path)
                 || path.endsWith("_button")
@@ -466,7 +476,8 @@ public final class StatsManager {
 
     private static long readRedstonePlaced(ServerPlayer player) {
         Set<Item> items = REDSTONE_ITEMS;
-        if (items == null) return 0L;
+        if (items == null)
+            return 0L;
         long total = 0L;
         for (Item item : items) {
             total += player.getStats().getValue(Stats.ITEM_USED.get(item));
@@ -484,7 +495,8 @@ public final class StatsManager {
             }
         }
         resetOfflineStatsFiles(server);
-        for (PlayerStats player : CACHE.values()) player.resetForNewMonth();
+        for (PlayerStats player : CACHE.values())
+            player.resetForNewMonth();
     }
 
     private static void resetVanillaStats(ServerPlayer player) {
@@ -505,14 +517,17 @@ public final class StatsManager {
 
     private static void resetOfflineStatsFiles(MinecraftServer server) {
         Path statsDir = server.getWorldPath(LevelResource.ROOT).resolve("stats");
-        if (!Files.isDirectory(statsDir)) return;
+        if (!Files.isDirectory(statsDir))
+            return;
         try (Stream<Path> files = Files.list(statsDir)) {
             for (Path statFile : files.filter(path -> path.getFileName().toString().endsWith(".json")).toList()) {
                 try (Reader reader = Files.newBufferedReader(statFile)) {
                     JsonElement root = JsonParser.parseReader(reader);
-                    if (!root.isJsonObject()) continue;
+                    if (!root.isJsonObject())
+                        continue;
                     JsonObject statsRoot = root.getAsJsonObject().getAsJsonObject("stats");
-                    if (statsRoot == null) continue;
+                    if (statsRoot == null)
+                        continue;
                     zeroJsonNumbers(statsRoot);
                     Path temporary = statFile.resolveSibling(statFile.getFileName() + ".tmp");
                     Files.writeString(temporary, GSON.toJson(root));
@@ -532,7 +547,8 @@ public final class StatsManager {
     }
 
     private static void zeroJsonNumbers(JsonElement element) {
-        if (element == null || element.isJsonNull()) return;
+        if (element == null || element.isJsonNull())
+            return;
         if (element.isJsonObject()) {
             for (Map.Entry<String, JsonElement> entry : element.getAsJsonObject().entrySet()) {
                 if (entry.getValue().isJsonPrimitive() && entry.getValue().getAsJsonPrimitive().isNumber()) {
@@ -543,7 +559,8 @@ public final class StatsManager {
             }
         } else if (element.isJsonArray()) {
             JsonArray array = element.getAsJsonArray();
-            for (JsonElement child : array) zeroJsonNumbers(child);
+            for (JsonElement child : array)
+                zeroJsonNumbers(child);
         }
     }
 
@@ -569,10 +586,10 @@ public final class StatsManager {
     @SuppressWarnings("unchecked")
     static void load(MinecraftServer server) {
         Path file = getDataFile(server);
-        if (!Files.isRegularFile(file)) return;
+        if (!Files.isRegularFile(file))
+            return;
         try (Reader reader = Files.newBufferedReader(file)) {
             Map<String, Object> raw = GSON.fromJson(reader, Map.class);
-            if (raw == null) return;
             Object resetMonth = raw.get("lastResetMonth");
             lastResetMonth = resetMonth == null ? null : String.valueOf(resetMonth);
             pendingMonthlyReset = parsePendingMonthlyReset(raw.get("pendingMonthlyReset"));
@@ -613,7 +630,8 @@ public final class StatsManager {
                     }
                     boolean uploadInitialized = Boolean.TRUE.equals(data.get("uploadInitialized"));
                     String uploadedName = data.get("uploadedName") == null
-                            ? null : String.valueOf(data.get("uploadedName"));
+                            ? null
+                            : String.valueOf(data.get("uploadedName"));
                     CACHE.put(entry.getKey(), new PlayerStats(uuid, name, lastUpdated, stats,
                             uploadedStats, uploadedName, uploadInitialized));
                 } catch (RuntimeException e) {
@@ -634,7 +652,8 @@ public final class StatsManager {
     /** 扫描并以原版 stats 文件校准离线缓存，避免旧缓存遮蔽权威数据。 */
     static void scanOfflineStats(MinecraftServer server) {
         Path statsDir = server.getWorldPath(LevelResource.ROOT).resolve("stats");
-        if (!Files.isDirectory(statsDir)) return;
+        if (!Files.isDirectory(statsDir))
+            return;
         try (Stream<Path> files = Files.list(statsDir)) {
             for (Path statFile : files.filter(path -> path.getFileName().toString().endsWith(".json")).toList()) {
                 String fileName = statFile.getFileName().toString();
@@ -649,24 +668,29 @@ public final class StatsManager {
                 PlayerStats parsed = previous == null
                         ? new PlayerStats(uuid, uuidText.substring(0, 8))
                         : new PlayerStats(uuid, previous.getName(), previous.getLastUpdated(), new HashMap<>(),
-                                previous.getUploadedStats(), previous.getUploadedName(), previous.isUploadInitialized());
+                                previous.getUploadedStats(), previous.getUploadedName(),
+                                previous.isUploadInitialized());
                 try (Reader reader = Files.newBufferedReader(statFile)) {
                     var root = JsonParser.parseReader(reader).getAsJsonObject();
                     var statsObject = root.getAsJsonObject("stats");
-                    if (statsObject == null) continue;
+                    if (statsObject == null)
+                        continue;
                     var custom = statsObject.getAsJsonObject("minecraft:custom");
                     if (custom != null) {
                         for (MetricDef metric : METRICS) {
-                            if (metric.isAggregate) continue;
+                            if (metric.isAggregate)
+                                continue;
                             JsonElement value = custom.get("minecraft:" + metric.statId.getPath());
-                            if (value != null && value.isJsonPrimitive()) parsed.set(metric.key, value.getAsLong());
+                            if (value != null && value.isJsonPrimitive())
+                                parsed.set(metric.key, value.getAsLong());
                         }
                     }
                     var used = statsObject.getAsJsonObject("minecraft:used");
                     if (used != null) {
                         long redstone = 0L;
                         for (Map.Entry<String, JsonElement> entry : used.entrySet()) {
-                            if (isRedstoneItemId(entry.getKey())) redstone += entry.getValue().getAsLong();
+                            if (isRedstoneItemId(entry.getKey()))
+                                redstone += entry.getValue().getAsLong();
                         }
                         parsed.set("redstone_placed", redstone);
                     }
@@ -674,7 +698,8 @@ public final class StatsManager {
                     CACHE.put(uuidText, parsed);
                 } catch (Exception e) {
                     DebugLogger.warn(MODULE, "读取玩家统计文件失败: %s - %s", statFile, e.getMessage());
-                    if (previous == null) CACHE.put(uuidText, parsed);
+                    if (previous == null)
+                        CACHE.put(uuidText, parsed);
                 }
             }
         } catch (IOException e) {
@@ -684,7 +709,8 @@ public final class StatsManager {
 
     private static boolean isRedstoneItemId(String itemId) {
         int colon = itemId.indexOf(':');
-        if (colon >= 0 && !"minecraft".equals(itemId.substring(0, colon))) return false;
+        if (colon >= 0 && !"minecraft".equals(itemId.substring(0, colon)))
+            return false;
         String path = colon >= 0 ? itemId.substring(colon + 1) : itemId;
         return REDSTONE_COMPONENTS.contains(path)
                 || path.endsWith("_button")
@@ -707,7 +733,8 @@ public final class StatsManager {
     }
 
     private static void refreshAllOnline(MinecraftServer server) {
-        for (ServerPlayer player : server.getPlayerList().getPlayers()) refreshPlayer(server, player);
+        for (ServerPlayer player : server.getPlayerList().getPlayers())
+            refreshPlayer(server, player);
     }
 
     private static void save(MinecraftServer server) {
@@ -735,22 +762,26 @@ public final class StatsManager {
     private static String serializeRoot(StatsSnapshot snapshot) {
         Map<String, Object> root = new LinkedHashMap<>();
         root.put("version", 5);
-        if (lastResetMonth != null) root.put("lastResetMonth", lastResetMonth);
+        if (lastResetMonth != null)
+            root.put("lastResetMonth", lastResetMonth);
         PendingMonthlyReset pending = pendingMonthlyReset;
-        if (pending != null) root.put("pendingMonthlyReset", serializePendingMonthlyReset(pending));
+        if (pending != null)
+            root.put("pendingMonthlyReset", serializePendingMonthlyReset(pending));
         root.put("players", snapshot.players());
         return GSON.toJson(root);
     }
 
-    @SuppressWarnings("unchecked")
     private static PendingMonthlyReset parsePendingMonthlyReset(Object value) {
-        if (!(value instanceof Map<?, ?> raw)) return null;
+        if (!(value instanceof Map<?, ?> raw))
+            return null;
         String resetId = raw.get("resetId") == null ? "" : String.valueOf(raw.get("resetId"));
         String month = raw.get("month") == null ? "" : String.valueOf(raw.get("month"));
-        if (resetId.isBlank() || month.isBlank() || !(raw.get("entries") instanceof List<?> rawEntries)) return null;
+        if (resetId.isBlank() || month.isBlank() || !(raw.get("entries") instanceof List<?> rawEntries))
+            return null;
         List<ApiServiceClient.StatsUploadEntry> entries = new ArrayList<>();
         for (Object rawEntry : rawEntries) {
-            if (!(rawEntry instanceof Map<?, ?> entry)) continue;
+            if (!(rawEntry instanceof Map<?, ?> entry))
+                continue;
             try {
                 UUID uuid = UUID.fromString(String.valueOf(entry.get("uuid")));
                 String username = entry.get("username") == null ? "" : String.valueOf(entry.get("username"));
@@ -804,7 +835,8 @@ public final class StatsManager {
 
     private static void flushIoExecutor() {
         try {
-            Future<?> barrier = IO_EXECUTOR.submit(() -> { });
+            Future<?> barrier = IO_EXECUTOR.submit(() -> {
+            });
             barrier.get(15, TimeUnit.SECONDS);
         } catch (Exception e) {
             LOGGER.warn("等待状态异步保存完成失败", e);
@@ -829,8 +861,10 @@ public final class StatsManager {
         long hours = seconds / 3600;
         long minutes = (seconds % 3600) / 60;
         long secs = seconds % 60;
-        if (hours > 0) return hours + "h " + minutes + "m " + secs + "s";
-        if (minutes > 0) return minutes + "m " + secs + "s";
+        if (hours > 0)
+            return hours + "h " + minutes + "m " + secs + "s";
+        if (minutes > 0)
+            return minutes + "m " + secs + "s";
         return secs + "s";
     }
 
@@ -839,8 +873,10 @@ public final class StatsManager {
     }
 
     private static String formatDistance(long cm) {
-        if (cm >= 100000) return String.format(Locale.ROOT, "%,.2f km", cm / 100000.0);
-        if (cm >= 100) return String.format(Locale.ROOT, "%,.1f m", cm / 100.0);
+        if (cm >= 100000)
+            return String.format(Locale.ROOT, "%,.2f km", cm / 100000.0);
+        if (cm >= 100)
+            return String.format(Locale.ROOT, "%,.1f m", cm / 100.0);
         return cm + " cm";
     }
 
@@ -922,17 +958,49 @@ public final class StatsManager {
             this.uploadInitialized = uploadInitialized;
         }
 
-        UUID getUuid() { return uuid; }
-        String getName() { return name; }
-        long getLastUpdated() { return lastUpdated; }
-        Map<String, Long> getStats() { return stats; }
-        Map<String, Long> getUploadedStats() { return uploadedStats; }
-        String getUploadedName() { return uploadedName; }
-        boolean isUploadInitialized() { return uploadInitialized; }
-        void setLastUpdated(long value) { lastUpdated = value; }
-        void setName(String value) { name = value; }
-        long get(String key) { return stats.getOrDefault(key, 0L); }
-        void set(String key, long value) { stats.put(key, value); }
+        UUID getUuid() {
+            return uuid;
+        }
+
+        String getName() {
+            return name;
+        }
+
+        long getLastUpdated() {
+            return lastUpdated;
+        }
+
+        Map<String, Long> getStats() {
+            return stats;
+        }
+
+        Map<String, Long> getUploadedStats() {
+            return uploadedStats;
+        }
+
+        String getUploadedName() {
+            return uploadedName;
+        }
+
+        boolean isUploadInitialized() {
+            return uploadInitialized;
+        }
+
+        void setLastUpdated(long value) {
+            lastUpdated = value;
+        }
+
+        void setName(String value) {
+            name = value;
+        }
+
+        long get(String key) {
+            return stats.getOrDefault(key, 0L);
+        }
+
+        void set(String key, long value) {
+            stats.put(key, value);
+        }
 
         Map<String, Long> getUploadDelta() {
             Map<String, Long> current = new LinkedHashMap<>(stats);
@@ -952,15 +1020,18 @@ public final class StatsManager {
         }
 
         void markUploaded(String username, Map<String, Long> delta) {
-            if (uploadedStats == null) uploadedStats = new HashMap<>();
-            if (delta != null) uploadedStats.putAll(delta);
+            if (uploadedStats == null)
+                uploadedStats = new HashMap<>();
+            if (delta != null)
+                uploadedStats.putAll(delta);
             uploadedName = username;
             uploadInitialized = true;
         }
 
         void resetForNewMonth() {
             stats.clear();
-            for (MetricDef metric : METRICS) stats.put(metric.key, 0L);
+            for (MetricDef metric : METRICS)
+                stats.put(metric.key, 0L);
             uploadedStats = new HashMap<>(stats);
             uploadedName = name;
             uploadInitialized = true;

@@ -40,39 +40,35 @@ public abstract class PlayerListMixin {
     private ServerPlayer youzaiworldcore$tempPlayer = null;
 
     /** 命令消息使用实际执行者，包括 /execute as 切换后的实体。 */
-    @ModifyVariable(method = "broadcastChatMessage(Lnet/minecraft/network/chat/PlayerChatMessage;Lnet/minecraft/commands/CommandSourceStack;Lnet/minecraft/network/chat/ChatType$Bound;)V",
-            at = @At("HEAD"), argsOnly = true)
+    @SuppressWarnings("null")
+    @ModifyVariable(method = "broadcastChatMessage(Lnet/minecraft/network/chat/PlayerChatMessage;Lnet/minecraft/commands/CommandSourceStack;Lnet/minecraft/network/chat/ChatType$Bound;)V", at = @At("HEAD"), argsOnly = true)
     private ChatType.Bound youzaiworldcore$gameChatHeader(ChatType.Bound parameters,
             PlayerChatMessage message, CommandSourceStack source, ChatType.Bound original) {
-        if (ChatMessageStyle.isHeader(parameters.name())) return parameters;
+        if (ChatMessageStyle.isHeader(parameters.name()))
+            return parameters;
         DebugLogger.debug("ChatMessages", "游戏命令消息：执行者=%s", source.getTextName());
         return ChatType.bind(ChatFormatHelper.MESSAGE_TYPE_ID, source.getServer().registryAccess(),
                 ChatMessageStyle.gameHeader(source.getTextName()));
     }
 
-    @ModifyVariable(method = "broadcastChatMessage(Lnet/minecraft/network/chat/PlayerChatMessage;Lnet/minecraft/commands/CommandSourceStack;Lnet/minecraft/network/chat/ChatType$Bound;)V",
-            at = @At("HEAD"), argsOnly = true)
+    @ModifyVariable(method = "broadcastChatMessage(Lnet/minecraft/network/chat/PlayerChatMessage;Lnet/minecraft/commands/CommandSourceStack;Lnet/minecraft/network/chat/ChatType$Bound;)V", at = @At("HEAD"), argsOnly = true)
     private PlayerChatMessage youzaiworldcore$preserveGameChatText(PlayerChatMessage message) {
         return message.withUnsignedContent(Component.literal(message.signedContent()));
     }
 
     @Inject(method = "placeNewPlayer", at = @At("HEAD"))
     private void youzaiworldcore$storePlayer(Connection connection, ServerPlayer player,
-                                             CommonListenerCookie clientData, CallbackInfo ci) {
+            CommonListenerCookie clientData, CallbackInfo ci) {
         this.youzaiworldcore$tempPlayer = player;
     }
 
     @Inject(method = "placeNewPlayer", at = @At("RETURN"))
     private void youzaiworldcore$clearStoredPlayer(Connection connection, ServerPlayer player,
-                                                   CommonListenerCookie clientData, CallbackInfo ci) {
+            CommonListenerCookie clientData, CallbackInfo ci) {
         this.youzaiworldcore$tempPlayer = null;
     }
 
-    @ModifyArg(
-            method = "placeNewPlayer",
-            at = @At(value = "INVOKE",
-                    target = "Lnet/minecraft/server/players/PlayerList;broadcastSystemMessage(Lnet/minecraft/network/chat/Component;Z)V")
-    )
+    @ModifyArg(method = "placeNewPlayer", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/players/PlayerList;broadcastSystemMessage(Lnet/minecraft/network/chat/Component;Z)V"))
     private Component youzaiworldcore$replaceJoinMessage(Component text) {
         if (!ChatFormatSettings.isEnabled() || this.youzaiworldcore$tempPlayer == null) {
             return text;

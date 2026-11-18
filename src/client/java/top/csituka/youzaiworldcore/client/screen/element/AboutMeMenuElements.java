@@ -36,8 +36,10 @@ public class AboutMeMenuElements implements MenuElementGroup {
         return false;
     }
 
+    @SuppressWarnings("null")
     @Override
-    public List<AbstractWidget> createButtons(MenuScreen screen, int screenWidth, int screenHeight, float scale, float alpha) {
+    public List<AbstractWidget> createButtons(MenuScreen screen, int screenWidth, int screenHeight, float scale,
+            float alpha) {
         int w = new MenuLayout(screenWidth, screenHeight).contentWidth(560);
         int top = new MenuLayout(screenWidth, screenHeight).centeredTop(238);
         var button = new top.csituka.youzaiworldcore.client.screen.widget.TransparentButton(
@@ -51,9 +53,11 @@ public class AboutMeMenuElements implements MenuElementGroup {
 
     @SuppressWarnings("null")
     @Override
-    public void renderCustomContent(GuiGraphicsExtractor guiGraphics, int screenWidth, int screenHeight, float alpha, float xOffset, int mouseX, int mouseY) {
+    public void renderCustomContent(GuiGraphicsExtractor guiGraphics, int screenWidth, int screenHeight, float alpha,
+            float xOffset, int mouseX, int mouseY) {
         Minecraft client = Minecraft.getInstance();
-        if (client.player == null) return;
+        if (client.player == null)
+            return;
         var player = client.player;
         var font = client.font;
         int w = new MenuLayout(screenWidth, screenHeight).contentWidth(560);
@@ -69,10 +73,10 @@ public class AboutMeMenuElements implements MenuElementGroup {
             guiGraphics.disableScissor();
         }
         String[][] info = {
-                {I18n.get("youzaiworldcore.message.gui.label_player_id"), player.getName().getString()},
-                {I18n.get("youzaiworldcore.message.gui.label_first_join"), getFirstJoinDate(player)},
-                {I18n.get("youzaiworldcore.message.gui.label_last_join"), getLastJoinDate(client)},
-                {I18n.get("youzaiworldcore.message.gui.label_play_time"), getPlayTime(player)}
+                { I18n.get("youzaiworldcore.message.gui.label_player_id"), player.getName().getString() },
+                { I18n.get("youzaiworldcore.message.gui.label_first_join"), getFirstJoinDate(player) },
+                { I18n.get("youzaiworldcore.message.gui.label_last_join"), getLastJoinDate(client) },
+                { I18n.get("youzaiworldcore.message.gui.label_play_time"), getPlayTime(player) }
         };
         int textX = x + modelWidth + 24;
         for (int row = 0; row < info.length; row++) {

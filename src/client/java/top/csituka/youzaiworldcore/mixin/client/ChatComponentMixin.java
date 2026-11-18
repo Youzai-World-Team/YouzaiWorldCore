@@ -37,14 +37,19 @@ import java.util.List;
  */
 @Mixin(ChatComponent.class)
 public abstract class ChatComponentMixin {
-    @Shadow @Final private List<GuiMessage> allMessages;
-    @Shadow @Final private List<GuiMessage.Line> trimmedMessages;
-    @Shadow private int chatScrollbarPos;
-    @Unique private final ChatRepeatTracker youzaiworldcore$repeats = new ChatRepeatTracker();
+    @Shadow
+    @Final
+    private List<GuiMessage> allMessages;
+    @Shadow
+    @Final
+    private List<GuiMessage.Line> trimmedMessages;
+    @Shadow
+    private int chatScrollbarPos;
+    @Unique
+    private final ChatRepeatTracker youzaiworldcore$repeats = new ChatRepeatTracker();
 
     /** 本机模组提示也进入统一排版；服务端已排版的消息按结构识别。 */
-    @ModifyVariable(method = "addMessage(Lnet/minecraft/network/chat/Component;Lnet/minecraft/network/chat/MessageSignature;Lnet/minecraft/client/multiplayer/chat/GuiMessageSource;Lnet/minecraft/client/multiplayer/chat/GuiMessageTag;)V",
-            at = @At("HEAD"), argsOnly = true)
+    @ModifyVariable(method = "addMessage(Lnet/minecraft/network/chat/Component;Lnet/minecraft/network/chat/MessageSignature;Lnet/minecraft/client/multiplayer/chat/GuiMessageSource;Lnet/minecraft/client/multiplayer/chat/GuiMessageTag;)V", at = @At("HEAD"), argsOnly = true)
     private Component youzaiworldcore$formatClientMessage(Component message, Component original,
             MessageSignature signature, GuiMessageSource source, GuiMessageTag tag) {
         return ChatMessageStyle.system(message, null);
@@ -57,7 +62,8 @@ public abstract class ChatComponentMixin {
             int before = trimmedMessages.size();
             trimmedMessages.removeIf(line -> line.parent() == result.replaced());
             int removed = before - trimmedMessages.size();
-            if (chatScrollbarPos > 0) chatScrollbarPos = Math.max(0, chatScrollbarPos - removed);
+            if (chatScrollbarPos > 0)
+                chatScrollbarPos = Math.max(0, chatScrollbarPos - removed);
         }
         return result.displayed();
     }
@@ -82,19 +88,18 @@ public abstract class ChatComponentMixin {
         youzaiworldcore$repeats.endReplay();
     }
 
+    @SuppressWarnings("null")
     @Inject(method = "createDeletedMarker", at = @At("RETURN"), cancellable = true)
     private static void youzaiworldcore$formatDeletedMarker(GuiMessage original,
             CallbackInfoReturnable<GuiMessage> cir) {
         GuiMessage deleted = cir.getReturnValue();
-        if (ChatMessageStyle.isFormatted(deleted.content())) return;
+        if (ChatMessageStyle.isFormatted(deleted.content()))
+            return;
         cir.setReturnValue(new GuiMessage(deleted.addedTime(), ChatMessageStyle.game("Server", deleted.content()),
                 deleted.signature(), deleted.source(), deleted.tag()));
     }
 
-    @ModifyConstant(
-            method = "extractRenderState(Lnet/minecraft/client/gui/components/ChatComponent$ChatGraphicsAccess;IILnet/minecraft/client/gui/components/ChatComponent$DisplayMode;)V",
-            constant = @Constant(intValue = 40)
-    )
+    @ModifyConstant(method = "extractRenderState(Lnet/minecraft/client/gui/components/ChatComponent$ChatGraphicsAccess;IILnet/minecraft/client/gui/components/ChatComponent$DisplayMode;)V", constant = @Constant(intValue = 40))
     private int adjustBottomMarginInRender(int bottomMargin) {
         return Math.max(bottomMargin, SharedStorage.getOptimalChatMargin());
     }

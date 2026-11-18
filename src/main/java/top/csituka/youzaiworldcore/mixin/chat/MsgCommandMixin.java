@@ -21,8 +21,8 @@ public abstract class MsgCommandMixin {
         return message.withUnsignedContent(Component.literal(message.signedContent()));
     }
 
-    @Redirect(method = "sendMessage", at = @At(value = "INVOKE",
-            target = "Lnet/minecraft/network/chat/ChatType;bind(Lnet/minecraft/resources/ResourceKey;Lnet/minecraft/commands/CommandSourceStack;)Lnet/minecraft/network/chat/ChatType$Bound;"))
+    @SuppressWarnings("null")
+    @Redirect(method = "sendMessage", at = @At(value = "INVOKE", target = "Lnet/minecraft/network/chat/ChatType;bind(Lnet/minecraft/resources/ResourceKey;Lnet/minecraft/commands/CommandSourceStack;)Lnet/minecraft/network/chat/ChatType$Bound;"))
     private static ChatType.Bound youzaiworldcore$privateHeader(ResourceKey<ChatType> original,
             CommandSourceStack source) {
         DebugLogger.debug("ChatMessages", "私信前缀：发送者=%s", source.getTextName());

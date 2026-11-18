@@ -31,6 +31,7 @@ public final class YzuiPauseMenu {
     private final List<Button> buttons = new ArrayList<>();
     private String lastFocus;
 
+    @SuppressWarnings("unlikely-arg-type")
     public YzuiPauseMenu(PauseScreen screen, String previousFocus) {
         this.screen = screen;
         lastFocus = previousFocus;
@@ -41,7 +42,8 @@ public final class YzuiPauseMenu {
         ScreenAccessor accessor = (ScreenAccessor) screen;
         // 保留原版按钮实例，disconnectButton 字段及异步回调不会指向已被替换的控件。
         for (var child : List.copyOf(screen.children())) {
-            if (!(child instanceof AbstractWidget widget)) continue;
+            if (!(child instanceof AbstractWidget widget))
+                continue;
             String key = translationKey(widget.getMessage());
             PauseMenuLayout.Rect rect = rect(key);
             if (child instanceof Button button && rect != null) {
@@ -57,8 +59,9 @@ public final class YzuiPauseMenu {
         }
         if (accountAllowed) {
             var rect = layout.account();
-            Button account = Button.builder(Component.translatable("screen.youzaiworldcore.account_management.button_open"),
-                    button -> client.setScreenAndShow(new AccountManagementScreen(screen)))
+            Button account = Button
+                    .builder(Component.translatable("screen.youzaiworldcore.account_management.button_open"),
+                            button -> client.setScreenAndShow(new AccountManagementScreen(screen)))
                     .bounds(rect.x(), rect.y(), rect.width(), rect.height()).build();
             account.setTooltip(Tooltip.create(account.getMessage()));
             PauseButtonStyle.set(account, MenuIcon.ACCOUNT, YzuiTheme.ButtonStyle.TONAL);
@@ -102,7 +105,8 @@ public final class YzuiPauseMenu {
 
     private void renderProfile(GuiGraphicsExtractor g, int mouseX, int mouseY, int text, int muted) {
         var profile = layout.profile();
-        if (profile.width() == 0) return;
+        if (profile.width() == 0)
+            return;
         var client = Minecraft.getInstance();
         var font = ((ScreenAccessor) screen).youzaiworldcore$getFont();
         YzuiMenuPanel.card(g, profile.x(), profile.y(), profile.width(), profile.height());
@@ -115,7 +119,8 @@ public final class YzuiPauseMenu {
         Component session = server == null ? Component.translatable("screen.youzaiworldcore.pause.singleplayer")
                 : Component.literal(server.name);
         YzuiTheme.label(g, font, session, profile.x() + 12, profile.y() + 56, profile.width() - 24, muted, true);
-        if (client.player == null) return;
+        if (client.player == null)
+            return;
         var model = layout.model();
         g.enableScissor(model.x(), model.y(), model.right(), model.bottom());
         try {
@@ -128,7 +133,8 @@ public final class YzuiPauseMenu {
 
     /** 与原版 Screen 的焦点对象同步，让回车和朗读跟随方向键选中的按钮。 */
     public boolean moveFocus(KeyEvent event) {
-        if (!WidgetFocus.moveInGrid(event, buttons, true)) return false;
+        if (!WidgetFocus.moveInGrid(event, buttons, true))
+            return false;
         buttons.stream().filter(Button::isFocused).findFirst().ifPresent(screen::setFocused);
         lastFocus = focusedKey();
         return true;
@@ -142,16 +148,19 @@ public final class YzuiPauseMenu {
 
     /** 原版窗口重建会先清除旧控件焦点，使用上一帧记录恢复实际入口。 */
     public boolean restoreFocus() {
-        if (lastFocus == null) return false;
+        if (lastFocus == null)
+            return false;
         var button = buttons.stream().filter(value -> value.active && value.visible
                 && lastFocus.equals(translationKey(value.getMessage()))).findFirst().orElse(null);
-        if (button == null) return false;
+        if (button == null)
+            return false;
         screen.setFocused(button);
         return true;
     }
 
     private PauseMenuLayout.Rect rect(String key) {
-        if (key == null) return null;
+        if (key == null)
+            return null;
         return switch (key) {
             case "menu.returnToGame" -> layout.resume();
             case "gui.advancements" -> layout.advancements();
@@ -181,10 +190,12 @@ public final class YzuiPauseMenu {
     }
 
     private static String translationKey(Component message) {
-        if (message.getContents() instanceof TranslatableContents contents) return contents.getKey();
+        if (message.getContents() instanceof TranslatableContents contents)
+            return contents.getKey();
         for (Component sibling : message.getSiblings()) {
             String key = translationKey(sibling);
-            if (key != null) return key;
+            if (key != null)
+                return key;
         }
         return null;
     }
