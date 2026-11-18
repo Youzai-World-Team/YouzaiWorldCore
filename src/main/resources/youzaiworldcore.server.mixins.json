@@ -48,7 +48,10 @@
     "chat.OutgoingChatMessageMixin",
     "chat.PlayerListMixin",
     "chat.ServerPlayerChatMixin",
-    "chat.MsgCommandMixin"
+    "chat.MsgCommandMixin",
+    "chat.CommandSourceStackChatMixin",
+    "chat.SystemChatPacketMixin",
+    "chat.TellRawCommandMixin"
   ],
   "injectors": {
     "defaultRequire": 1

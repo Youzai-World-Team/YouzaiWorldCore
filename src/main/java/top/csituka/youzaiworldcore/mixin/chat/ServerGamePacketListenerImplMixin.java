@@ -20,9 +20,8 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
 /**
  * 玩家聊天广播入口注入（仿 Styled Chat 的 ServerGamePacketListenerImplMixin）。
  * <ol>
- *   <li>重定向 {@code ChatDecorator.decorate}：把消息文本解析成格式化内容（支持 %papi%），
- *       作为 unsignedContent 供聊天预览 / 客户端安全聊天模式使用；</li>
- *   <li>{@code broadcastChatMessage} 入口：按模板组合完整消息并挂到 {@code override} 参数，
+ *   <li>重定向 {@code ChatDecorator.decorate}：保留聊天原文；</li>
+ *   <li>{@code broadcastChatMessage} 入口：生成等级、称号与玩家代号前缀，
  *       供 {@code OutgoingChatMessage.create} 替换发送。</li>
  * </ol>
  */
@@ -40,7 +39,7 @@ public abstract class ServerGamePacketListenerImplMixin {
                     target = "Lnet/minecraft/network/chat/ChatDecorator;decorate(Lnet/minecraft/server/level/ServerPlayer;Lnet/minecraft/network/chat/Component;)Lnet/minecraft/network/chat/Component;")
     )
     private Component youzaiworldcore$replaceDecorator(ChatDecorator instance, ServerPlayer player, Component text) {
-        if (!ChatFormatSettings.isEnabled() || player == null) {
+        if (player == null) {
             return text;
         }
         String input = text.getString();
@@ -52,8 +51,7 @@ public abstract class ServerGamePacketListenerImplMixin {
 
     @Inject(method = "broadcastChatMessage", at = @At("HEAD"))
     private void youzaiworldcore$setFormattedMessage(PlayerChatMessage signedMessage, CallbackInfo ci) {
-        if (ChatFormatSettings.isEnabled()) ChatFormatHelper.modifyForSending(signedMessage, this.player);
-        else ChatFormatHelper.modifyVanillaTitleForSending(signedMessage, this.player);
+        ChatFormatHelper.modifyForSending(signedMessage, this.player);
     }
 
     @ModifyArg(

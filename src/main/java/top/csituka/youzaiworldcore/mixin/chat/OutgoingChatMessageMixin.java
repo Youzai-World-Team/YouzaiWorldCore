@@ -15,9 +15,9 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
 /**
  * 出站聊天消息替换（仿 Styled Chat 的 OutgoingChatMessageMixin）。
  * <p>
- * 当消息上挂有 {@code override}（由 {@code broadcastChatMessage} 入口设置）时，
+ * 当消息上挂有 {@code chat_header}（由广播入口设置）时，
  * 把 {@code OutgoingChatMessage.create} 的结果替换为 {@link StyledChatMessage}，
- * 使发送阶段使用自定义 ChatType 原样渲染完整格式化消息。
+ * 自定义 ChatType 分别渲染前缀和经过原版过滤的正文。
  * </p>
  * <p>
  * 注意：本类为 <b>interface mixin</b>，禁止声明非 {@code @Shadow} 字段
@@ -31,10 +31,10 @@ public interface OutgoingChatMessageMixin {
     private static void youzaiworldcore$patchStyle(PlayerChatMessage message,
                                                    CallbackInfoReturnable<OutgoingChatMessage> cir) {
         try {
-            var override = ((ExtPlayerChatMessage) (Object) message).youzaiworldcore_getArg("override");
-            if (override != ChatFormatHelper.EMPTY_TEXT && ChatFormatHelper.server != null) {
+            var header = ((ExtPlayerChatMessage) (Object) message).youzaiworldcore_getArg(ChatFormatHelper.HEADER_ARG);
+            if (header != null && header != ChatFormatHelper.EMPTY_TEXT && ChatFormatHelper.server != null) {
                 cir.setReturnValue(new StyledChatMessage(
-                        message, override, ChatFormatHelper.createParameters(override)));
+                        message, header, ChatFormatHelper.createParameters(header)));
                 DebugLogger.trace("ChatMixin.OutgoingChatMessage", "OutgoingChatMessage replaced with styled message");
             }
         } catch (Exception e) {

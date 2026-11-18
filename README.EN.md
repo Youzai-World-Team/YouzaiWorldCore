@@ -73,10 +73,24 @@ The main menu uses rounded cards and animated transitions, grouped into common a
 - **Player management**: The Title button opens a management screen with the current selection at the top, a paginated text list, and fixed no-title and pagination controls at the bottom. Page size adapts to window height; hover over a long title to read it in full
 - **Registration default**: Accounts that complete registration after the feature is deployed automatically receive and equip "Newbie Plea." Existing accounts are not backfilled, and ordinary account updates do not restore a title after an administrator revokes it
 - **Administrator titles**: LuckPerms nodes `youzaiworldcore.admin.junior`, `.middle`, and `.senior` map to junior, middle, and senior administrator titles. Only the highest matching tier is granted. Without LuckPerms, players with vanilla administrator permission receive all three tiers. Titles are cosmetic and never grant command permissions
-- **Display positions**: Chat, the Tab list, entity nameplates and menus consistently display `{title}`, such as `{萌新求饶}`. No title is shown when unequipped. With styled chat disabled it appears after the sender name; styled chat supports `${title}` in templates. Tab places it before the AFK marker and player name. Entity nameplates use a separate line without creating or modifying a vanilla scoreboard objective
+- **Display positions**: Chat, the Tab list, entity nameplates and menus consistently display `{title}`, such as `{萌新求饶}`. No title is shown when unequipped. Chat and private messages place it after `Lv.level·` and before the account name. Tab places it before the AFK marker and player name. Entity nameplates use a separate line without creating or modifying a vanilla scoreboard objective
 - **Text titles**: Titles use ordinary text with configurable color, bold and italic. Texture types, image identifiers, font glyphs and title PNG assets have been removed
 - **Api-authoritative data**: The title catalog, per-player grant sources, and equipped selection are stored in the Api server's SQLite database. The Minecraft server synchronizes through HMAC endpoints on login, after registration, on manual refresh, and every 60 seconds. The "Player Titles" admin page can create/edit/enable/disable definitions, grant or revoke titles, and change equipped selections; registration, manual, and permission grants remain independent sources
 - **Updating**: Api upgrades convert existing texture titles to text while preserving definitions, grants and equipped selections. Ordinary synchronization keeps a player's no-title choice. The text-title packet no longer carries image fields, so update the Minecraft client and server together
+
+#### Chat Message Layout
+
+| Type | Display format |
+| --- | --- |
+| Player chat | `[聊天]\|Lv.16·{管理员}zxabinbina >> Hello World!` |
+| `/tell`, `/msg`, `/w` | `[私信]\|Lv.16·{管理员}zxabinbina >> Hello World!` |
+| `/say`, `/tellraw`, command feedback | `[游戏]\|Server >> Hello World!` |
+| Mod notifications | `[模组]\|YouzaiWorldCore >> Hello World!` |
+
+- Levels come from the server's adventure-level system; unequipped titles are omitted. Both private-message views identify the sender. Command messages identify the current executor, including entities selected by `/execute as`
+- Message text stays literal. Consecutive identical messages with the same source, content and styling collapse to one visible entry, with `[!2]`, `[!3]` appended from the second occurrence. Original history, signatures and private-message recipients remain intact
+- Fabric metadata and merged-Mixin origins identify emitting mods. Unattributed system notifications use `Server`. Resizing preserves counts, clearing chat starts new counts, and action-bar messages are separate
+- Layout is fixed; legacy chat/private-message templates are no longer read. `chat_format_module.enabled` only controls join, leave and death templates. Update both client and server for the new `youzaiworldcore:chat_line` type. See [implementation and checks](docs/CHAT_MESSAGES.md)
 
 ### 3. Title Screen Overhaul
 

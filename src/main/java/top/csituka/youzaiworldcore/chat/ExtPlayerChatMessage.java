@@ -8,7 +8,7 @@ import org.jspecify.annotations.Nullable;
  * {@link PlayerChatMessage} 的扩展接口（Mixin 附加数据）。
  * <p>
  * 仿 Styled Chat 的 {@code ExtPlayerChatMessage}：在不改动原版消息签名的前提下，
- * 把「格式化后的完整消息」作为 {@code override} 参数挂到消息对象上，
+ * 把来源前缀作为 {@code chat_header} 参数挂到消息对象上，
  * 供发送阶段（{@code OutgoingChatMessage.create}）取出并替换为自定义发送消息。
  * </p>
  */

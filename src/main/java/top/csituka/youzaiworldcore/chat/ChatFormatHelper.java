@@ -21,25 +21,26 @@ import java.util.Map;
 import java.util.function.Function;
 
 import top.csituka.youzaiworldcore.config.ChatFormatSettings;
+import top.csituka.youzaiworldcore.skill.PlayerLevelStorage;
 import top.csituka.youzaiworldcore.title.TitleManager;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
 /**
- * 聊天消息格式化核心（仿 Styled Chat 精简版）。
+ * 玩家聊天、私信前缀及系统事件模板的格式化入口。
  * <p>
- * 支持的消息类型：玩家聊天、加入（含首次/改名）、离开、死亡、私聊（发出/收到）。
- * 所有模板均支持 {@code <tag>} 简化文本标签与 {@code %papi%} 占位符（始终解析）。
+ * 玩家聊天和私信使用固定的等级、称号、玩家代号前缀，正文保留原文。
+ * 加入、离开和死亡事件仍支持简化文本标签与服务端占位符模板。
  * </p>
  * <p>
- * 处理链路（与 26.2 原版聊天管线对应）：
+ * 处理链路（Minecraft 26.3）：
  * <ol>
  *   <li>玩家聊天：{@code ChatDecorator.decorate} 被重定向生成消息内容 →
- *       {@code broadcastChatMessage} 入口把模板组合结果挂到 {@code override} →
+ *       {@code broadcastChatMessage} 入口只挂上 {@code chat_header} 前缀 →
  *       {@code OutgoingChatMessage.create} 替换为 {@link StyledChatMessage} 发送；</li>
  *   <li>加入/离开：{@code PlayerList} / {@code ServerGamePacketListenerImpl} 的
  *       {@code broadcastSystemMessage} 参数被替换为模板结果；</li>
  *   <li>死亡：{@code ServerPlayer.die} 中 {@code CombatTracker.getDeathMessage} 被重定向；</li>
- *   <li>私聊：{@code MsgCommand.sendMessage} 中发送者/接收者各自的 ChatType 绑定被替换。</li>
+ *   <li>私聊：替换 {@code MsgCommand.sendMessage} 的 ChatType 绑定，保留原版投递及过滤。</li>
  * </ol>
  * </p>
  */
@@ -48,18 +49,19 @@ public final class ChatFormatHelper {
 
     public static final String MODULE = "ChatFormat";
 
-    /** 空消息哨兵：未设置 override 时 {@link ExtPlayerChatMessage#youzaiworldcore_getArg} 的返回值 */
+    /** 空消息哨兵：未设置前缀时扩展接口的返回值。 */
     public static final Component EMPTY_TEXT = Component.empty();
+    public static final String HEADER_ARG = "chat_header";
 
-    /** 自定义 ChatType：translation_key 为 {@code %s}，客户端只透传第一个参数（sender=override） */
+    /** 前缀与正文分别传递，正文继续由 Minecraft 处理过滤及签名。 */
     public static final ResourceKey<ChatType> MESSAGE_TYPE_ID = ResourceKey.create(
-            Registries.CHAT_TYPE, Identifier.fromNamespaceAndPath("youzaiworldcore", "generic_hack"));
+            Registries.CHAT_TYPE, Identifier.fromNamespaceAndPath("youzaiworldcore", "chat_line"));
 
-    /** 模板变量 {@code ${...}} 的动态解析 key（{@code ${player}} / {@code ${message}} 等） */
+    /** 系统事件模板变量的动态解析 key（如 ${player} 和 ${level}）。 */
     public static final ParserContext.Key<Function<String, Component>> DYN_KEY =
             DynamicTextNode.key("youzaiworldcore_chat");
 
-    /** 模板 / 消息共用的解析器：Simplified Text 标签 + %papi% 服务端占位符 + ${...} 动态变量 */
+    /** 系统事件模板解析器：文本标签、服务端占位符及动态变量。 */
     private static final NodeParser PARSER = NodeParser.builder()
             .simplifiedTextFormat()
             .serverPlaceholders()
@@ -67,7 +69,7 @@ public final class ChatFormatHelper {
             .staticPreParsing()
             .build();
 
-    /** 最后一次处理聊天消息的服务器（供发送阶段绑定 ChatType 用），随 {@link #modifyForSending} 刷新 */
+    /** 当前聊天服务器，供普通玩家消息的出站前缀绑定使用。 */
     @Nullable
     public static MinecraftServer server = null;
 
@@ -92,17 +94,6 @@ public final class ChatFormatHelper {
         return FORMAT_NODE_CACHE.get(format);
     }
 
-    /**
-     * 解析单条消息文本（不含玩家名）：{@code <tag>} → {@code %papi%}。
-     * 返回的 TextNode 在 {@code toComponent(context)} 时才求值占位符。
-     */
-    public static TextNode parseMessageText(ServerPlayer player, String input) {
-        if (DebugLogger.isEnabled(DebugLogger.LEVEL_DEBUG)) {
-            DebugLogger.trace(MODULE, "parseMessageText player={} input={}", player.getName().getString(), input);
-        }
-        return PARSER.parseNode(TextNode.of(input));
-    }
-
     /** 通用模板应用：把变量注入模板并解析（含 %papi%） */
     private static Component applyFormat(ServerPlayer player, String format, Map<String, Component> variables) {
         var context = ServerPlaceholderContext.of(player);
@@ -110,55 +101,45 @@ public final class ChatFormatHelper {
                 context.asParserContext().with(DYN_KEY, variables::get));
     }
 
-    /** 通用模板应用（基于 CommandSourceStack 上下文，用于非玩家发送者场景） */
-    private static Component applyFormat(net.minecraft.commands.CommandSourceStack source, String format,
-                                         Map<String, Component> variables) {
-        var context = ServerPlaceholderContext.of(source);
-        return getFormatNode(format).toComponent(
-                context.asParserContext().with(DYN_KEY, variables::get));
-    }
-
     private static Map<String, Component> playerVars(ServerPlayer player) {
-        Map<String, Component> vars = new HashMap<>(5);
+        Map<String, Component> vars = new HashMap<>();
         vars.put("player", player.getDisplayName());
         vars.put("default", player.getDisplayName());
         vars.put("name", player.getName());
         vars.put("title", TitleManager.getEquippedComponent(player));
+        vars.put("tag", vars.get("title"));
+        vars.put("level", Component.literal("Lv." + level(player)));
+        vars.put("player_name", Component.literal(player.getScoreboardName()));
         return vars;
     }
 
-    // ===== 消息内容（chat 的 ${message} 部分） =====
+    // ===== 消息正文 =====
 
-    /** 消息内容格式化（供 {@code ChatDecorator.decorate} 重定向，作为 unsignedContent） */
+    /** 普通聊天正文原样保留，百分号、标签及占位符均作为普通文字。 */
     public static Component formatMessageContent(ServerPlayer player, String input) {
-        if (!ChatFormatSettings.isEnabled()) {
-            return Component.literal(input);
-        }
-        return parseMessageText(player, input).toComponent(ServerPlaceholderContext.of(player).asParserContext());
+        return Component.literal(input);
     }
 
     // ===== 各消息类型 =====
 
-    /** 按配置模板组合完整聊天消息（含玩家名），返回 {@code override} */
-    public static Component formatChat(ServerPlayer player, PlayerChatMessage message) {
-        var context = ServerPlaceholderContext.of(player);
-        var papiContext = context.asParserContext();
-        Component displayName = player.getDisplayName();
-        Component messageContent = message.decoratedContent();
+    /** 普通消息：[聊天]|Lv.n·{称号}玩家代号。 */
+    public static Component formatChatHeader(ServerPlayer player) {
+        return ChatMessageStyle.playerHeader(false, player.getScoreboardName(), level(player),
+                TitleManager.getEquippedComponent(player));
+    }
 
-        var value = getFormatNode(ChatFormatSettings.getChatFormat()).toComponent(
-                papiContext.with(DYN_KEY, Map.of(
-                        "player", displayName,
-                        "default", displayName,
-                        "name", player.getName(),
-                        "title", TitleManager.getEquippedComponent(player),
-                        "message", messageContent
-                )::get));
+    /** 私信双方均显示实际发送者；非玩家发送者没有冒险等级和称号。 */
+    public static Component formatPrivateHeader(net.minecraft.commands.CommandSourceStack source) {
+        ServerPlayer sender = source.getPlayer();
+        return sender == null
+                ? ChatMessageStyle.playerHeader(true, source.getTextName(), 0, Component.empty())
+                : ChatMessageStyle.playerHeader(true, sender.getScoreboardName(), level(sender),
+                        TitleManager.getEquippedComponent(sender));
+    }
 
-        if (DebugLogger.isEnabled(DebugLogger.LEVEL_DETAILED)) {
-            DebugLogger.debug(MODULE, "formatChat player={} -> {}", player.getName().getString(), value.getString());
-        }
-        return value;
+    private static int level(ServerPlayer player) {
+        var data = PlayerLevelStorage.get(player.getUUID());
+        return data == null ? 1 : data.getLevel();
     }
 
     public static Component formatJoin(ServerPlayer player) {
@@ -187,58 +168,28 @@ public final class ChatFormatHelper {
         return applyFormat(player, ChatFormatSettings.getDeathFormat(), vars);
     }
 
-    /** 私聊发出消息（发送者视角） */
-    public static Component formatPrivateMessageSent(net.minecraft.commands.CommandSourceStack source,
-                                                     Component sender, Component receiver, Component message) {
-        return applyFormat(source, ChatFormatSettings.getPrivateMessageSentFormat(), Map.of(
-                "sender", sender, "receiver", receiver, "message", message));
-    }
-
-    /** 私聊收到消息（接收者视角） */
-    public static Component formatPrivateMessageReceived(net.minecraft.commands.CommandSourceStack source,
-                                                         Component sender, Component receiver, Component message) {
-        return applyFormat(source, ChatFormatSettings.getPrivateMessageReceivedFormat(), Map.of(
-                "sender", sender, "receiver", receiver, "message", message));
-    }
-
     // ===== 发送辅助 =====
 
-    /** 在广播入口为消息附加 override 参数，供发送阶段替换 */
+    /** 在广播入口附加来源前缀，正文不放入前缀参数。 */
     public static void modifyForSending(PlayerChatMessage message, ServerPlayer player) {
         try {
-            ExtPlayerChatMessage.setArg(message, "override", formatChat(player, message));
+            ExtPlayerChatMessage.setArg(message, HEADER_ARG, formatChatHeader(player));
             server = player.level().getServer();
             if (DebugLogger.isEnabled(DebugLogger.LEVEL_DEBUG)) {
-                DebugLogger.trace(MODULE, "modifyForSending player={} override set", player.getName().getString());
+                DebugLogger.trace(MODULE, "已设置玩家聊天前缀：%s", player.getScoreboardName());
             }
         } catch (Exception e) {
             DebugLogger.exception(MODULE, "modifyForSending", e);
         }
     }
 
-    /** 样式化聊天关闭时，仅在原版发送者名称右侧追加称号。 */
-    public static void modifyVanillaTitleForSending(PlayerChatMessage message, ServerPlayer player) {
-        Component title = TitleManager.getEquippedComponent(player);
-        if (title.getString().isBlank()) return;
-        try {
-            Component sender = player.getDisplayName().copy()
-                    .append(Component.literal(" "))
-                    .append(title);
-            Component override = Component.translatable("chat.type.text", sender, message.decoratedContent());
-            ExtPlayerChatMessage.setArg(message, "override", override);
-            server = player.level().getServer();
-        } catch (Exception e) {
-            DebugLogger.exception(MODULE, "modifyVanillaTitleForSending", e);
-        }
-    }
-
-    /** 用自定义 ChatType 绑定完整消息（客户端显示即为 override） */
-    public static ChatType.Bound createParameters(Component override) {
+    /** 用自定义 ChatType 绑定前缀，正文保留独立 content 参数。 */
+    public static ChatType.Bound createParameters(Component header) {
         MinecraftServer s = server;
         if (s == null) {
             // 理论不可达：modifyForSending 会在广播前设置 server；此处抛错由调用方兜底走原版
             throw new IllegalStateException("ChatFormatHelper.server is null");
         }
-        return ChatType.bind(MESSAGE_TYPE_ID, s.registryAccess(), override);
+        return ChatType.bind(MESSAGE_TYPE_ID, s.registryAccess(), header);
     }
 }

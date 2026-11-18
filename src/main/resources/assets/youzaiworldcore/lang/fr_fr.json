@@ -1,4 +1,9 @@
 {
+  "chat.youzaiworldcore.player": "[聊天]|%s%s%s",
+  "chat.youzaiworldcore.private": "[私信]|%s%s%s",
+  "chat.youzaiworldcore.game_header": "[游戏]|%s",
+  "chat.youzaiworldcore.game": "[游戏]|%s >> %s",
+  "chat.youzaiworldcore.mod": "[模组]|%s >> %s",
   "advancements.youzaiworldcore.deep_dark.enter_ancient_city.description": "Entre dans la cité antique oubliée.",
   "advancements.youzaiworldcore.deep_dark.enter_ancient_city.title": "Ruines de la cité antique",
   "advancements.youzaiworldcore.deep_dark.hold_recovery_compass.description": "Obtiens une boussole de récupération.",

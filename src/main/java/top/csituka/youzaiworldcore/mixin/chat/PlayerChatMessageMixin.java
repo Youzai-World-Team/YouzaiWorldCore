@@ -20,12 +20,12 @@ import top.csituka.youzaiworldcore.chat.ExtPlayerChatMessage;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
 /**
- * 为 {@link PlayerChatMessage} 附加 {@code override} 等参数（仿 Styled Chat）。
+ * 为玩家消息附加 {@code chat_header} 等参数。
  * <p>
  * 由于 {@code withUnsignedContent} / {@code filter} /
  * {@code removeUnsignedContent}
  * 都会返回<b>新的</b> PlayerChatMessage，必须把附加参数同步拷贝到新对象，
- * 否则发送阶段的 {@code OutgoingChatMessage.create} 会读不到 override。
+ * 否则发送阶段会丢失来源前缀。
  * </p>
  */
 @Mixin(PlayerChatMessage.class)
