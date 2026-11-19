@@ -155,8 +155,8 @@ public class PlayerChatMessage implements ExtPlayerChatMessage {
  public String signedContent(){return text;} public Component decoratedContent(){return filtering&&filter==Filter.PARTIAL?Component.literal("###"):content;}
  public MessageSignature signature(){return signature;}
  public PlayerChatMessage withUnsignedContent(Component c){var r=new PlayerChatMessage(text,c,signature,filter,filtering);r.args.putAll(args);return r;}
- public PlayerChatMessage filter(boolean b){var r=new PlayerChatMessage(text,content,signature,filter,b);r.args.putAll(args);return r;}
- public boolean isFullyFiltered(){return filtering&&filter==Filter.FULL;}
+ public PlayerChatMessage filter(boolean b){var r=new PlayerChatMessage(text,content,signature,b?filter:Filter.NONE,b);r.args.putAll(args);return r;}
+ public boolean isFullyFiltered(){return filter==Filter.FULL;}
  public String youzaiworldcore_getOriginal(){return text;}
  public void youzaiworldcore_setArg(String k,Component v){args.put(k,v);}
  public Component youzaiworldcore_getArg(String k){return args.getOrDefault(k,ChatFormatHelper.EMPTY_TEXT);}
@@ -208,6 +208,7 @@ public class CommandSourceStack extends top.csituka.youzaiworldcore.mixin.chat.C
  public net.minecraft.server.MinecraftServer getServer(){return server;}
  public net.minecraft.server.level.ServerPlayer getPlayer(){return player;} public String getTextName(){return name;}
  public boolean silent;
+ public boolean isSilent(){return silent;}
  public final java.util.List<net.minecraft.network.chat.Component> feedback=new java.util.ArrayList<>();
  public void sendChatMessage(net.minecraft.network.chat.OutgoingChatMessage message,boolean filtered,net.minecraft.network.chat.ChatType.Bound parameters){
   if(silent)return;
@@ -430,6 +431,9 @@ public class TellRoutingBridge {
   if(applyFix)hook("youzaiworldcore$skipSelfFeedback",feedbackSource,message,filtered,parameters,commandSource,targets,original);
   else feedbackSource.sendChatMessage(message,filtered,parameters);
  }
+ public static void sent(CommandSourceStack source,Collection<ServerPlayer> targets,PlayerChatMessage message){
+  if(applyFix)hook("youzaiworldcore$sendPrivateReceipt",source,targets,message,null);
+ }
  public static void send(CommandSourceStack source,Collection<ServerPlayer> targets,PlayerChatMessage message)throws Exception {
   Method send=net.minecraft.server.commands.MsgCommand.class.getDeclaredMethod("sendMessage",CommandSourceStack.class,Collection.class,PlayerChatMessage.class);
   send.setAccessible(true);send.invoke(null,source,targets,message);
@@ -469,6 +473,13 @@ public class NativeTellFixture {
        super.visitVarInsn(Opcodes.ALOAD,0);super.visitVarInsn(Opcodes.ALOAD,1);super.visitVarInsn(Opcodes.ALOAD,2);
        super.visitMethodInsn(Opcodes.INVOKESTATIC,bridge,"senderFeedback","("+source+outgoing+"Z"+bound+source+"Ljava/util/Collection;"+raw+")V",false);
       } else super.visitMethodInsn(opcode,owner,method,desc,iface);
+     }
+     @Override public void visitInsn(int opcode) {
+      if(opcode==Opcodes.RETURN){
+       super.visitVarInsn(Opcodes.ALOAD,0);super.visitVarInsn(Opcodes.ALOAD,1);super.visitVarInsn(Opcodes.ALOAD,2);
+       super.visitMethodInsn(Opcodes.INVOKESTATIC,bridge,"sent","("+source+"Ljava/util/Collection;"+raw+")V",false);
+      }
+      super.visitInsn(opcode);
      }
     };
    }
@@ -652,17 +663,48 @@ public class ChatMessageChecks {
    check(self.connection.signature==signature,"自发自收签名保持原对象");
    corrected.add(message(n,self.connection.displayed,GuiMessageSource.PLAYER));
    check(n==1?!corrected.latest().content().getString().contains("[!"):corrected.latest().content().getString().endsWith("[!"+n+"]"),"自发自收计数逐次加一");
+   check(selfSource.feedback.size()==n&&selfSource.feedback.getLast().getString().equals("[私信]|Lv.1·self >> 已发送给 self"),"自发自收每次追加明确发送回执");
+   corrected.add(new GuiMessage(n,selfSource.feedback.getLast(),null,GuiMessageSource.SYSTEM_SERVER,new GuiMessageTag("system")));
+   check(!corrected.latest().content().getString().contains("[!"),"回执自身不追加正文计数");
+  }
+  corrected.replay();
+  check(corrected.lines.stream().map(GuiMessage.Line::parent).filter(m->!ChatMessageStyle.isPrivateReceipt(m.content()))
+   .anyMatch(m->m.content().getString().endsWith("[!3]")),"交错回执重排后私信正文仍累计三次");
+  check(corrected.history.size()==6,"自发自收原始历史保留三条正文和三条回执");
+  var receiptHistory=new Display();
+  for(int n=1;n<=150;n++){
+   receiptHistory.add(message(n,self.connection.displayed,GuiMessageSource.PLAYER));
+   receiptHistory.add(new GuiMessage(n,selfSource.feedback.getLast(),null,GuiMessageSource.SYSTEM_SERVER,new GuiMessageTag("system")));
+  }
+  receiptHistory.replay();
+  check(receiptHistory.history.size()==100&&receiptHistory.lines.stream().map(GuiMessage.Line::parent)
+   .anyMatch(m->m.source()==GuiMessageSource.PLAYER&&m.content().getString().endsWith("[!150]")),"交错回执的历史裁剪和重排保留累计次数");
+  receiptHistory.add(message(151,self.connection.displayed,GuiMessageSource.PLAYER));
+  check(receiptHistory.latest().content().getString().endsWith("[!151]"),"交错回执历史重排后继续累计正文");
+  Component receipt=ChatMessageStyle.privateSent(ChatFormatHelper.formatPrivateHeader(selfSource),Component.literal("peer"));
+  check(ChatMessageStyle.isPrivateReceipt(receipt)&&ChatMessageStyle.isFormatted(receipt),"发送回执通过结构识别并保留私信类别");
+  check(!ChatMessageStyle.isPrivateReceipt(line(ChatFormatHelper.formatPrivateHeader(selfSource),Component.literal("已发送给 peer"))),"玩家输入相同回执文字仍作为真实正文计数");
+  for(ChatStyleMode mode:ChatStyleMode.values()){
+   Component shown=ChatMessageRenderer.render(receipt,mode);
+   check(shown.getString().equals(receipt.getString()),mode+" 回执配色保留收件人和文案");
+   color(shown,"已发送给 peer",0xF3EFEF,mode+" 回执沿用正文色板");
+   if(mode==ChatStyleMode.GRADIENT)gradient(shown,"self",0xC03AFF,0xDF61FF,"回执发送者使用私信渐变");
   }
   self.connection.clear();
   verify.chat.TellRoutingBridge.send(selfSource,List.of(self),new PlayerChatMessage("未签名",null,PlayerChatMessage.Filter.NONE));
   check(self.connection.sends==1,"未签名自发自收也只投递一次");
   self.connection.clear();
+  selfSource.feedback.clear();
   var peer=new ServerPlayer(UUID.randomUUID(),"peer",server);
   verify.chat.TellRoutingBridge.send(selfSource,List.of(peer),new PlayerChatMessage("发给别人",null,PlayerChatMessage.Filter.NONE));
   check(self.connection.sends==1&&peer.connection.sends==1,"不同玩家仍分别收到回执和私信");
+  check(selfSource.feedback.size()==1&&selfSource.feedback.getLast().getString().endsWith("已发送给 peer"),"发给别人时发送者收到含目标名称的确认");
+  check(!selfSource.feedback.getLast().getString().contains("发给别人"),"独立回执不重复私信正文");
   self.connection.clear();peer.connection.clear();
+  selfSource.feedback.clear();
   verify.chat.TellRoutingBridge.send(selfSource,List.of(peer,self),new PlayerChatMessage("包含自己的多目标",null,PlayerChatMessage.Filter.NONE));
   check(self.connection.sends==1&&peer.connection.sends==1,"多目标包含自己时仍每人一次");
+  check(selfSource.feedback.size()==1&&selfSource.feedback.getLast().getString().endsWith("已发送给 peer, self"),"多目标发送只追加一条列明目标的确认");
   self.connection.clear();peer.connection.clear();
   peer.textFiltering=true;
   verify.chat.TellRoutingBridge.send(selfSource,List.of(peer),new PlayerChatMessage("要过滤",null,PlayerChatMessage.Filter.PARTIAL));
@@ -671,8 +713,24 @@ public class ChatMessageChecks {
   self.textFiltering=true;
   verify.chat.TellRoutingBridge.send(selfSource,List.of(self),new PlayerChatMessage("自己的原文",null,PlayerChatMessage.Filter.FULL));
   check(self.connection.sends==1&&self.connection.displayed.getString().endsWith("自己的原文"),"自发自收仍遵循原版自身不过滤规则");
+  selfSource.feedback.clear();peer.connection.clear();self.connection.clear();
+  verify.chat.TellRoutingBridge.send(selfSource,List.of(peer),new PlayerChatMessage("完全过滤",null,PlayerChatMessage.Filter.FULL));
+  check(peer.connection.sends==0&&selfSource.feedback.size()==1
+   &&selfSource.feedback.getFirst()==net.minecraft.server.players.PlayerList.CHAT_FILTERED_FULL,"完全过滤时只保留原版失败反馈，不报告发送成功");
+  selfSource.feedback.clear();peer.connection.clear();self.connection.clear();
+  verify.chat.TellRoutingBridge.send(selfSource,List.of(peer,self),new PlayerChatMessage("部分目标被过滤",null,PlayerChatMessage.Filter.FULL));
+  check(peer.connection.sends==0&&self.connection.sends==1&&selfSource.feedback.size()==2
+   &&selfSource.feedback.getLast().getString().endsWith("已发送给 self"),"回执只列出未被完全过滤的收件人");
+  selfSource.feedback.clear();
+  verify.chat.TellRoutingBridge.send(selfSource,List.of(),new PlayerChatMessage("空目标",null,PlayerChatMessage.Filter.NONE));
+  check(selfSource.feedback.isEmpty(),"空目标不产生成功回执");
+  selfSource.silent=true;self.connection.clear();peer.connection.clear();
+  verify.chat.TellRoutingBridge.send(selfSource,List.of(peer),new PlayerChatMessage("静默",null,PlayerChatMessage.Filter.NONE));
+  check(selfSource.feedback.isEmpty()&&self.connection.sends==0&&peer.connection.sends==1,"静默命令仍投递正文但不产生发送者反馈");
+  selfSource.silent=false;
+  peer.connection.clear();
   verify.chat.TellRoutingBridge.send(console,List.of(peer),new PlayerChatMessage("控制台私信",null,PlayerChatMessage.Filter.NONE));
-  check(console.feedback.size()==1&&peer.connection.sends==1,"控制台私信反馈和收件仍保留");
+  check(console.feedback.size()==2&&peer.connection.sends==1&&console.feedback.getLast().getString().endsWith("已发送给 peer"),"控制台保留原版回执并收到明确目标确认");
   var display=new Display();var content=line(header,body);
   var marker=new GuiMessage(1,Component.literal("消息已删除"),null,GuiMessageSource.SYSTEM_SERVER,new GuiMessageTag("system"));
   var markerResult=new org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable<GuiMessage>("deleted",true,marker);
@@ -722,16 +780,17 @@ public class ChatMessageChecks {
   String[] names={"zxabinbina","zxabinbina","Server","YouzaiWorldCore"};
   int[] plain={0xE77280,0xF36B7B,0xF47B8A,0x007AFF};
   int[] start={0xFF3364,0xC03AFF,0xFF8A00,0x007AFF},end={0xD0529E,0xDF61FF,0xE79D0E,0xC03AFF};
+  int[] namePlain={0xF7F7F7,0xF7F7F7,0xFF8A00,0x5B8CFF},nameStart={0xFF3364,0xC03AFF,0xFF8A00,0x5B8CFF};
   for(ChatStyleMode mode:ChatStyleMode.values())for(int i=0;i<messages.length;i++){
    Component rendered=ChatMessageRenderer.render(messages[i],mode);
    check(rendered.getString().equals(messages[i].getString()),mode+" "+labels[i]+" 着色保留原文");
    if(mode==ChatStyleMode.PLAIN)color(rendered,labels[i],plain[i],labels[i]+" 纯色标签");
    else gradient(rendered,labels[i],start[i],end[i],labels[i]+" 渐变标签两端");
-   if(mode==ChatStyleMode.GRADIENT&&i<2)gradient(rendered,names[i],start[i],end[i],labels[i]+" 玩家名渐变两端");
-   else color(rendered,names[i],0xF7F7F7,labels[i]+" 来源或玩家名纯色");
+   if(mode==ChatStyleMode.GRADIENT)gradient(rendered,names[i],nameStart[i],end[i],labels[i]+" 名称渐变两端");
+   else color(rendered,names[i],namePlain[i],labels[i]+" 来源或玩家名纯色");
    color(rendered,"|",0x555555,labels[i]+" 竖线颜色");color(rendered," >> ",0x555555,labels[i]+" 箭头与空格颜色");
    color(rendered,"Hello World!",0xF3EFEF,labels[i]+" 正文颜色");
-   Component repeated=ChatMessageStyle.repeated(rendered,3);color(repeated," [!3]",0xE7E4E4,labels[i]+" 计数颜色与空格");
+   Component repeated=ChatMessageStyle.repeated(rendered,3);color(repeated," [!3]",0x2DD4BF,labels[i]+" 计数颜色与空格");
    check(ChatMessageStyle.repeated(rendered,1)==rendered&&!rendered.getString().endsWith(" "),labels[i]+" 单条无计数或尾部空格");
    if(i<2){color(rendered,"Lv.16",0xF36B7B,labels[i]+" 等级颜色");color(rendered,"·",0x555555,labels[i]+" 点号颜色");
     color(rendered,"{管理员}",0xF47B8A,labels[i]+" 称号颜色");}
@@ -742,7 +801,9 @@ public class ChatMessageChecks {
    Component console=ChatMessageRenderer.render(line(ChatMessageStyle.playerHeader(true,"Server",0,Component.empty()),body),mode);
    check(console.getString().equals("[私信]|Server >> Hello World!"),mode+" 非玩家私信不伪造等级");
    Component game=ChatMessageRenderer.render(line(ChatMessageStyle.gameHeader("Sheep"),body),mode);
-   color(game,"Sheep",0xF7F7F7,mode+" 原版命令绑定来源颜色");color(game," >> ",0x555555,mode+" 原版命令绑定分隔符颜色");
+   if(mode==ChatStyleMode.GRADIENT)gradient(game,"Sheep",0xFF8A00,0xE79D0E,mode+" 原版命令绑定来源渐变");
+   else color(game,"Sheep",0xFF8A00,mode+" 原版命令绑定来源橙色");
+   color(game," >> ",0x555555,mode+" 原版命令绑定分隔符颜色");
    Component special=ChatMessageRenderer.render(line(header,Component.literal(original)),mode);
    check(special.getString().equals(header.getString()+" >> "+original),mode+" 正文标签与百分号不解析");
    color(special,original,0xF3EFEF,mode+" Unicode 多行正文颜色");
@@ -759,8 +820,9 @@ public class ChatMessageChecks {
    gradient(rawHeader,"zxabinbina",privateMessage?0xC03AFF:0xFF3364,privateMessage?0xDF61FF:0xD0529E,"服务端发送前已有玩家名渐变");
    color(rawHeader,"Lv.16",0xF36B7B,"服务端等级基础配色");color(rawHeader,"·",0x555555,"服务端分隔符基础配色");
   }
-  color(ChatMessageStyle.game("Server",body),"Server",0xF7F7F7,"服务端游戏来源使用近白色而非纯白");
-  color(ChatMessageStyle.mod("YouzaiWorldCore",body),"YouzaiWorldCore",0xF7F7F7,"服务端模组来源使用近白色而非纯白");
+  color(ChatMessageStyle.gameHeader("Server"),"Server",0xFF8A00,"服务端命令前缀来源使用橙色");
+  color(ChatMessageStyle.game("Server",body),"Server",0xFF8A00,"服务端游戏来源使用橙色");
+  color(ChatMessageStyle.mod("YouzaiWorldCore",body),"YouzaiWorldCore",0x5B8CFF,"服务端模组来源使用蓝色");
   Style rich=Style.EMPTY.withColor(0x112233).withBold(true).withItalic(true)
    .withClickEvent(new ClickEvent.RunCommand("/help")).withHoverEvent(new HoverEvent.ShowText(Component.literal("详情")))
    .withFont(new FontDescription.Resource(new net.minecraft.resources.Identifier("example:font"))).withInsertion("insert me");
@@ -837,7 +899,7 @@ public class ChatMessageChecks {
   check(source.client.gui.hud.getChat().rescaleCalls==1&&history.groups()==1
    &&history.latest().content().getString().endsWith(" [!350]"),"切换重绘历史且保留裁剪前累计次数");
   color(history.latest().content(),"[聊天]",0xE77280,"旧聊天记录立即使用纯色");
-  color(history.latest().content()," [!350]",0xE7E4E4,"旧聊天计数保持指定颜色");
+  color(history.latest().content()," [!350]",0x2DD4BF,"旧聊天计数保持指定颜色");
   check(history.history.equals(originals)&&java.util.stream.IntStream.range(0,originals.size())
    .allMatch(i->history.history.get(i)==originals.get(i))&&history.latest().signature()==originals.getFirst().signature(),"切换保留原始历史对象与签名");
   var stored=com.google.gson.JsonParser.parseString(java.nio.file.Files.readString(ClientGlobalSettings.file())).getAsJsonObject();
@@ -900,7 +962,7 @@ def validate_resources():
     for file in locales:
         data = json.loads(file.read_text(), object_pairs_hook=unique)
         assert all(data.get(key) == value for key, value in expected.items()), file
-        for key in ["chat.youzaiworldcore.style.current", "chat.youzaiworldcore.style.changed"]:
+        for key in ["chat.youzaiworldcore.style.current", "chat.youzaiworldcore.style.changed", "chat.youzaiworldcore.private.sent_to"]:
             assert data.get(key, "").count("%s") == 1, (file, key)
     chat_type = json.loads((ROOT / "src/main/resources/data/youzaiworldcore/chat_type/chat_line.json").read_text())
     for key in ["chat", "narration"]:

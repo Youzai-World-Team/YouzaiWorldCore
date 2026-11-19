@@ -15,12 +15,14 @@ import java.util.Optional;
 public final class ChatMessageStyle {
     public static final String PLAYER_HEADER = "chat.youzaiworldcore.player";
     public static final String PRIVATE_HEADER = "chat.youzaiworldcore.private";
+    public static final String PRIVATE_SENT_TO = "chat.youzaiworldcore.private.sent_to";
     public static final String GAME_HEADER = "chat.youzaiworldcore.game_header";
     public static final String GAME_MESSAGE = "chat.youzaiworldcore.game";
     public static final String MOD_MESSAGE = "chat.youzaiworldcore.mod";
-    public static final int REPEAT_COLOR = 0xE7E4E4;
+    public static final int REPEAT_COLOR = 0x2DD4BF;
+    public static final int GAME_NAME_COLOR = 0xFF8A00;
+    public static final int MOD_NAME_COLOR = 0x5B8CFF;
     private static final int BODY_COLOR = 0xF3EFEF;
-    private static final int NAME_COLOR = 0xF7F7F7;
     private static final int LEVEL_COLOR = 0xF36B7B;
     private static final int SEPARATOR_COLOR = 0x555555;
 
@@ -44,19 +46,39 @@ public final class ChatMessageStyle {
 
     /** /say、/me 等命令使用执行者名称，正文由原版 ChatType 单独传递。 */
     public static Component gameHeader(String from) {
-        return Component.translatableWithFallback(GAME_HEADER, "[游戏]|%s", name(from))
+        return Component.translatableWithFallback(GAME_HEADER, "[游戏]|%s", name(from, GAME_NAME_COLOR))
                 .withStyle(style -> style.withColor(BODY_COLOR));
     }
 
     public static Component game(String from, Component message) {
-        return Component.translatableWithFallback(GAME_MESSAGE, "[游戏]|%s >> %s", name(from), message.copy())
+        return Component.translatableWithFallback(GAME_MESSAGE, "[游戏]|%s >> %s", name(from, GAME_NAME_COLOR), message.copy())
                 .withStyle(style -> style.withColor(BODY_COLOR));
     }
 
     /** 模组也可直接调用本方法，明确提供发送模组的显示名称。 */
     public static Component mod(String modName, Component message) {
-        return Component.translatableWithFallback(MOD_MESSAGE, "[模组]|%s >> %s", name(modName), message.copy())
+        return Component.translatableWithFallback(MOD_MESSAGE, "[模组]|%s >> %s", name(modName, MOD_NAME_COLOR), message.copy())
                 .withStyle(style -> style.withColor(BODY_COLOR));
+    }
+
+    /** 发送者的独立私信回执；正文仅包含收件人名称，不重复私信内容。 */
+    public static Component privateSent(Component senderHeader, Component recipients) {
+        Component receipt = Component.translatableWithFallback(PRIVATE_SENT_TO, "已发送给 %s", recipients.copy());
+        return Component.translatable("%s >> %s", senderHeader.copy(), receipt)
+                .withStyle(style -> style.withColor(BODY_COLOR));
+    }
+
+    /** 通过结构识别发送回执，使它不打断真实私信的连续重复计数。 */
+    public static boolean isPrivateReceipt(Component message) {
+        if (!(message.getContents() instanceof TranslatableContents contents)) return false;
+        Object[] args = contents.getArgs();
+        return "%s >> %s".equals(contents.getKey()) && args.length == 2
+                && args[0] instanceof Component header
+                && header.getContents() instanceof TranslatableContents prefix
+                && PRIVATE_HEADER.equals(prefix.getKey())
+                && args[1] instanceof Component body
+                && body.getContents() instanceof TranslatableContents receipt
+                && PRIVATE_SENT_TO.equals(receipt.getKey()) && receipt.getArgs().length == 1;
     }
 
     /** 命令反馈与普通系统消息在发送入口识别实际发送模组。 */
@@ -124,8 +146,8 @@ public final class ChatMessageStyle {
         return name == null || name.isBlank() ? "Server" : name;
     }
 
-    private static Component name(String value) {
-        return Component.literal(sourceName(value)).withStyle(style -> style.withColor(NAME_COLOR));
+    private static Component name(String value, int color) {
+        return Component.literal(sourceName(value)).withStyle(style -> style.withColor(color));
     }
 
     public static void logRepeat(int count) {

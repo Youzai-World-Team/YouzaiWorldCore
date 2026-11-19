@@ -29,6 +29,10 @@ public final class ChatRepeatTracker {
 
     /** 原始对象用于分组及历史序号，配色副本只用于显示，避免换色影响计数。 */
     public Result accept(GuiMessage message, Component styledContent) {
+        // 发送确认是独立反馈，既不增加私信计数，也不打断正在累计的正文组。
+        if (ChatMessageStyle.isPrivateReceipt(message.content())) {
+            return new Result(displayed(message, styledContent), null);
+        }
         boolean repeated = lastOriginal != null
                 && lastOriginal.source() == message.source()
                 && Objects.equals(lastOriginal.tag(), message.tag())
@@ -39,13 +43,17 @@ public final class ChatRepeatTracker {
         firstReplayMessage = false;
         ordinals.put(message, count);
         Component display = ChatMessageStyle.repeated(styledContent, count);
-        GuiMessage shown = display == message.content() ? message : new GuiMessage(
-                message.addedTime(), display, message.signature(), message.source(), message.tag());
+        GuiMessage shown = displayed(message, display);
         lastOriginal = message;
         lastContent = message.content().copy();
         lastDisplayed = shown;
         if (repeated) ChatMessageStyle.logRepeat(count);
         return new Result(shown, replaced);
+    }
+
+    private static GuiMessage displayed(GuiMessage message, Component content) {
+        return content == message.content() ? message : new GuiMessage(
+                message.addedTime(), content, message.signature(), message.source(), message.tag());
     }
 
     public void reset() {

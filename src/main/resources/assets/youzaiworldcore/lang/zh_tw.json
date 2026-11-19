@@ -1,6 +1,7 @@
 {
   "chat.youzaiworldcore.player": "[聊天]|%s%s%s%s",
   "chat.youzaiworldcore.private": "[私信]|%s%s%s%s",
+  "chat.youzaiworldcore.private.sent_to": "已傳送給 %s",
   "chat.youzaiworldcore.game_header": "[游戏]|%s",
   "chat.youzaiworldcore.game": "[游戏]|%s >> %s",
   "chat.youzaiworldcore.mod": "[模组]|%s >> %s",

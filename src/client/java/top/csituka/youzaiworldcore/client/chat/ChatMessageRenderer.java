@@ -98,7 +98,9 @@ public final class ChatMessageRenderer {
                         modMessage ? 0x007AFF : 0xF47B8A,
                         modMessage ? 0x007AFF : 0xFF8A00, modMessage ? 0xC03AFF : 0xE79D0E, mode))
                 .append(solid(Component.literal("|"), SEPARATOR))
-                .append(solid(name, NAME));
+                .append(accent(name, modMessage ? ChatMessageStyle.MOD_NAME_COLOR : ChatMessageStyle.GAME_NAME_COLOR,
+                        modMessage ? ChatMessageStyle.MOD_NAME_COLOR : ChatMessageStyle.GAME_NAME_COLOR,
+                        modMessage ? 0xC03AFF : 0xE79D0E, mode));
     }
 
     private static Component argument(Object value) {
