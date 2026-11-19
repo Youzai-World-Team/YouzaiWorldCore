@@ -925,6 +925,7 @@ public class AccountCommands {
             authPlayer.yzwc$setAccount(remote.account());
         }
         authPlayer.yzwc$setSessionToken(null);
+        top.csituka.youzaiworldcore.map.MapServerManager.recordPlayerPosition(player, "logout");
         authPlayer.yzwc$setAuthenticated(false);
         EmailChangeSessionStore.clear(player.getUUID());
         CosmeticManager.onDeauthenticated(player);

@@ -21,6 +21,10 @@ stub("org.jspecify.annotations.Nullable", """
 @java.lang.annotation.Target({java.lang.annotation.ElementType.TYPE_USE,java.lang.annotation.ElementType.FIELD,java.lang.annotation.ElementType.PARAMETER})
 public @interface Nullable {}
 """)
+stub("org.jspecify.annotations.NonNull", """
+@java.lang.annotation.Target({java.lang.annotation.ElementType.TYPE_USE,java.lang.annotation.ElementType.FIELD,java.lang.annotation.ElementType.PARAMETER})
+public @interface NonNull {}
+""")
 stub("net.minecraft.ChatFormatting", """
 public enum ChatFormatting { WHITE(0xffffff),GRAY(0xaaaaaa),RED(0xff5555);
  public final int color; ChatFormatting(int color){this.color=color;} }
@@ -91,10 +95,13 @@ import net.minecraft.commands.CommandSourceStack;
 public class ChatType {
  public static final ResourceKey<ChatType> CHAT=ResourceKey.create(null,new net.minecraft.resources.Identifier("minecraft:chat"));
  public static final ResourceKey<ChatType> SAY_COMMAND=ResourceKey.create(null,new net.minecraft.resources.Identifier("minecraft:say_command"));
+ public static final ResourceKey<ChatType> MSG_COMMAND_INCOMING=ResourceKey.create(null,new net.minecraft.resources.Identifier("minecraft:msg_incoming"));
+ public static final ResourceKey<ChatType> MSG_COMMAND_OUTGOING=ResourceKey.create(null,new net.minecraft.resources.Identifier("minecraft:msg_outgoing"));
  public static Bound bind(ResourceKey<ChatType> key,Object registry,Component name){return new Bound(key,name);}
  public static Bound bind(ResourceKey<ChatType> key,CommandSourceStack source){return bind(key,source.getServer().registryAccess(),Component.literal(source.getTextName()));}
  public record Bound(ResourceKey<ChatType> type,Component name) {
   public Component decorate(Component body){return Component.translatable("%s >> %s",name,body);}
+  public Bound withTargetName(Component target){return this;}
  }
 }
 """)
@@ -121,6 +128,14 @@ public class PlayerChatMessage implements ExtPlayerChatMessage {
 stub("net.minecraft.network.chat.OutgoingChatMessage", """
 public interface OutgoingChatMessage {
  Component content(); void sendToPlayer(net.minecraft.server.level.ServerPlayer p,boolean filter,ChatType.Bound b);
+ static OutgoingChatMessage create(PlayerChatMessage message){return new Player(message);}
+ record Player(PlayerChatMessage message) implements OutgoingChatMessage {
+  public Component content(){return message.decoratedContent();}
+  public void sendToPlayer(net.minecraft.server.level.ServerPlayer p,boolean filter,ChatType.Bound b) {
+   PlayerChatMessage filtered=message.filter(filter);
+   if(!filtered.isFullyFiltered())p.connection.sendPlayerChatMessage(filtered,b);
+  }
+ }
 }
 """)
 stub("net.minecraft.server.MinecraftServer", "public class MinecraftServer { public Object registryAccess(){return this;} }")
@@ -133,14 +148,19 @@ import net.minecraft.network.chat.*;
 public class ServerPlayer {
  private final UUID id;private final String name;private final ServerLevel level;
  public final Connection connection=new Connection();
+ public boolean textFiltering;
  public ServerPlayer(UUID id,String n,net.minecraft.server.MinecraftServer s){this.id=id;name=n;level=new ServerLevel(s);}
  public UUID getUUID(){return id;} public String getScoreboardName(){return name;}
  public Component getName(){return Component.literal(name);} public Component getDisplayName(){return Component.literal("DISPLAY "+name);}
  public ServerLevel level(){return level;} public Stats getStats(){return new Stats();}
+ public void sendChatMessage(OutgoingChatMessage message,boolean filtered,ChatType.Bound parameters){message.sendToPlayer(this,filtered,parameters);}
  public static class Stats { public int getValue(Object v){return 1;} }
  public static class Connection {
   public int sends;public Component displayed;public MessageSignature signature;
-  public void sendPlayerChatMessage(PlayerChatMessage m,ChatType.Bound b){sends++;displayed=b.decorate(m.decoratedContent());signature=m.signature();}
+  public final java.util.List<Component> messages=new java.util.ArrayList<>();
+  public final java.util.List<MessageSignature> signatures=new java.util.ArrayList<>();
+  public void sendPlayerChatMessage(PlayerChatMessage m,ChatType.Bound b){sends++;displayed=b.decorate(m.decoratedContent());signature=m.signature();messages.add(displayed);signatures.add(signature);}
+  public void clear(){sends=0;messages.clear();signatures.clear();}
  }
 }
 """)
@@ -150,11 +170,21 @@ public class CommandSourceStack extends top.csituka.youzaiworldcore.mixin.chat.C
  public CommandSourceStack(net.minecraft.server.MinecraftServer s,net.minecraft.server.level.ServerPlayer p,String n){server=s;player=p;name=n;}
  public net.minecraft.server.MinecraftServer getServer(){return server;}
  public net.minecraft.server.level.ServerPlayer getPlayer(){return player;} public String getTextName(){return name;}
+ public boolean silent;
+ public final java.util.List<net.minecraft.network.chat.Component> feedback=new java.util.ArrayList<>();
+ public void sendChatMessage(net.minecraft.network.chat.OutgoingChatMessage message,boolean filtered,net.minecraft.network.chat.ChatType.Bound parameters){
+  if(silent)return;
+  if(player!=null)player.sendChatMessage(message,filtered,parameters);else feedback.add(parameters.decorate(message.content()));
+ }
+ public boolean shouldFilterMessageTo(net.minecraft.server.level.ServerPlayer target){return target!=player&&((player!=null&&player.textFiltering)||target.textFiltering);}
+ public void sendSystemMessage(net.minecraft.network.chat.Component message){if(!silent)feedback.add(message);}
 }
 """)
 stub("net.minecraft.network.Connection", "public class Connection {}")
 stub("net.minecraft.server.network.CommonListenerCookie", "public class CommonListenerCookie {}")
-stub("net.minecraft.server.players.PlayerList", "public class PlayerList {}")
+stub("net.minecraft.server.players.PlayerList", """public class PlayerList {
+ public static final net.minecraft.network.chat.Component CHAT_FILTERED_FULL=net.minecraft.network.chat.Component.literal("已完全过滤");
+}""")
 stub("net.minecraft.stats.Stats", """
 public class Stats { public static final Object LEAVE_GAME=new Object();public static final Custom CUSTOM=new Custom();
  public static class Custom { public Object get(Object value){return value;} } }
@@ -311,6 +341,76 @@ public class MarkMergedFixture {
  }
 }
 """
+stub("verify.chat.TellRoutingBridge", """
+import java.util.*;
+import java.lang.reflect.*;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.network.chat.*;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.level.ServerPlayer;
+import top.csituka.youzaiworldcore.mixin.chat.MsgCommandMixin;
+public class TellRoutingBridge {
+ public static boolean applyFix;
+ private static Object hook(String name,Object... args) {
+  try {for(Method m:MsgCommandMixin.class.getDeclaredMethods())if(m.getName().equals(name)){m.setAccessible(true);return m.invoke(null,args);}}
+  catch(ReflectiveOperationException error){throw new RuntimeException(error);}
+  throw new AssertionError(name);
+ }
+ public static PlayerChatMessage preserve(PlayerChatMessage message){return (PlayerChatMessage)hook("youzaiworldcore$preservePrivateText",message);}
+ public static ChatType.Bound bind(ResourceKey<ChatType> type,CommandSourceStack source){return (ChatType.Bound)hook("youzaiworldcore$privateHeader",type,source);}
+ public static void senderFeedback(CommandSourceStack feedbackSource,OutgoingChatMessage message,boolean filtered,ChatType.Bound parameters,
+   CommandSourceStack commandSource,Collection<ServerPlayer> targets,PlayerChatMessage original) {
+  if(applyFix)hook("youzaiworldcore$skipSelfFeedback",feedbackSource,message,filtered,parameters,commandSource,targets,original);
+  else feedbackSource.sendChatMessage(message,filtered,parameters);
+ }
+ public static void send(CommandSourceStack source,Collection<ServerPlayer> targets,PlayerChatMessage message)throws Exception {
+  Method send=net.minecraft.server.commands.MsgCommand.class.getDeclaredMethod("sendMessage",CommandSourceStack.class,Collection.class,PlayerChatMessage.class);
+  send.setAccessible(true);send.invoke(null,source,targets,message);
+ }
+}
+""")
+STUBS["NativeTellFixture.java"] = """
+import java.nio.file.*;
+import java.util.jar.JarFile;
+import org.objectweb.asm.*;
+public class NativeTellFixture {
+ public static void main(String[] args)throws Exception {
+  byte[] bytes;
+  try(JarFile jar=new JarFile(args[0])){bytes=jar.getInputStream(jar.getJarEntry("net/minecraft/server/commands/MsgCommand.class")).readAllBytes();}
+  ClassReader reader=new ClassReader(bytes);ClassWriter writer=new ClassWriter(ClassWriter.COMPUTE_MAXS);
+  writer.visit(Opcodes.V25,Opcodes.ACC_PUBLIC|Opcodes.ACC_SUPER,"net/minecraft/server/commands/MsgCommand",null,"java/lang/Object",null);
+  final String bridge="verify/chat/TellRoutingBridge";
+  final String source="Lnet/minecraft/commands/CommandSourceStack;";
+  final String raw="Lnet/minecraft/network/chat/PlayerChatMessage;";
+  final String outgoing="Lnet/minecraft/network/chat/OutgoingChatMessage;";
+  final String bound="Lnet/minecraft/network/chat/ChatType$Bound;";
+  boolean[] found={false};
+  reader.accept(new ClassVisitor(Opcodes.ASM9) {
+   @Override public MethodVisitor visitMethod(int access,String name,String descriptor,String signature,String[] exceptions) {
+    if(!name.equals("sendMessage"))return null;
+    found[0]=true;
+    return new MethodVisitor(Opcodes.ASM9,writer.visitMethod(access,name,descriptor,signature,exceptions)) {
+     @Override public void visitCode() {
+      super.visitCode();super.visitVarInsn(Opcodes.ALOAD,2);
+      super.visitMethodInsn(Opcodes.INVOKESTATIC,bridge,"preserve","("+raw+")"+raw,false);
+      super.visitVarInsn(Opcodes.ASTORE,2);
+     }
+     @Override public void visitMethodInsn(int opcode,String owner,String method,String desc,boolean iface) {
+      if(owner.equals("net/minecraft/network/chat/ChatType")&&method.equals("bind")) {
+       super.visitMethodInsn(Opcodes.INVOKESTATIC,bridge,"bind",desc,false);
+      } else if(owner.equals("net/minecraft/commands/CommandSourceStack")&&method.equals("sendChatMessage")) {
+       super.visitVarInsn(Opcodes.ALOAD,0);super.visitVarInsn(Opcodes.ALOAD,1);super.visitVarInsn(Opcodes.ALOAD,2);
+       super.visitMethodInsn(Opcodes.INVOKESTATIC,bridge,"senderFeedback","("+source+outgoing+"Z"+bound+source+"Ljava/util/Collection;"+raw+")V",false);
+      } else super.visitMethodInsn(opcode,owner,method,desc,iface);
+     }
+    };
+   }
+  },0);
+  if(!found[0])throw new AssertionError("找不到原版私信投递方法");
+  writer.visitEnd();Files.write(Path.of(args[1]),writer.toByteArray());
+ }
+}
+"""
 
 CHECKS = r"""
 import java.util.*;
@@ -431,6 +531,47 @@ public class ChatMessageChecks {
   int sends=receiver.connection.sends;
   new StyledChatMessage(new PlayerChatMessage("secret",null,PlayerChatMessage.Filter.FULL),header,parameters).sendToPlayer(receiver,true,parameters);
   check(receiver.connection.sends==sends,"完全过滤不投递");
+  var self=new ServerPlayer(UUID.randomUUID(),"self",server);
+  var selfSource=new CommandSourceStack(server,self,"self");
+  verify.chat.TellRoutingBridge.applyFix=false;
+  var duplicated=new Display();
+  for(int n=1;n<=3;n++) {
+   verify.chat.TellRoutingBridge.send(selfSource,List.of(self),new PlayerChatMessage("重复私信",new MessageSignature("before-"+n),PlayerChatMessage.Filter.NONE));
+   check(self.connection.sends==n*2,"原版自发自收每次投递两条");
+  }
+  for(int n=0;n<self.connection.messages.size();n++)duplicated.add(message(n,self.connection.messages.get(n),GuiMessageSource.PLAYER));
+  check(duplicated.latest().content().getString().endsWith("[!6]"),"复现修复前私信计数每次加二");
+  self.connection.clear();
+  verify.chat.TellRoutingBridge.applyFix=true;
+  var corrected=new Display();
+  for(int n=1;n<=3;n++) {
+   var signature=new MessageSignature("after-"+n);
+   verify.chat.TellRoutingBridge.send(selfSource,List.of(self),new PlayerChatMessage("重复私信",signature,PlayerChatMessage.Filter.NONE));
+   check(self.connection.sends==n,"自发自收只投递一次");
+   check(self.connection.signature==signature,"自发自收签名保持原对象");
+   corrected.add(message(n,self.connection.displayed,GuiMessageSource.PLAYER));
+   check(n==1?!corrected.latest().content().getString().contains("[!"):corrected.latest().content().getString().endsWith("[!"+n+"]"),"自发自收计数逐次加一");
+  }
+  self.connection.clear();
+  verify.chat.TellRoutingBridge.send(selfSource,List.of(self),new PlayerChatMessage("未签名",null,PlayerChatMessage.Filter.NONE));
+  check(self.connection.sends==1,"未签名自发自收也只投递一次");
+  self.connection.clear();
+  var peer=new ServerPlayer(UUID.randomUUID(),"peer",server);
+  verify.chat.TellRoutingBridge.send(selfSource,List.of(peer),new PlayerChatMessage("发给别人",null,PlayerChatMessage.Filter.NONE));
+  check(self.connection.sends==1&&peer.connection.sends==1,"不同玩家仍分别收到回执和私信");
+  self.connection.clear();peer.connection.clear();
+  verify.chat.TellRoutingBridge.send(selfSource,List.of(peer,self),new PlayerChatMessage("包含自己的多目标",null,PlayerChatMessage.Filter.NONE));
+  check(self.connection.sends==1&&peer.connection.sends==1,"多目标包含自己时仍每人一次");
+  self.connection.clear();peer.connection.clear();
+  peer.textFiltering=true;
+  verify.chat.TellRoutingBridge.send(selfSource,List.of(peer),new PlayerChatMessage("要过滤",null,PlayerChatMessage.Filter.PARTIAL));
+  check(self.connection.displayed.getString().endsWith("要过滤")&&peer.connection.displayed.getString().endsWith("###"),"私信收件人过滤不受回执修复影响");
+  self.connection.clear();peer.connection.clear();
+  self.textFiltering=true;
+  verify.chat.TellRoutingBridge.send(selfSource,List.of(self),new PlayerChatMessage("自己的原文",null,PlayerChatMessage.Filter.FULL));
+  check(self.connection.sends==1&&self.connection.displayed.getString().endsWith("自己的原文"),"自发自收仍遵循原版自身不过滤规则");
+  verify.chat.TellRoutingBridge.send(console,List.of(peer),new PlayerChatMessage("控制台私信",null,PlayerChatMessage.Filter.NONE));
+  check(console.feedback.size()==1&&peer.connection.sends==1,"控制台私信反馈和收件仍保留");
   var display=new Display();var content=line(header,body);
   var marker=new GuiMessage(1,Component.literal("消息已删除"),null,GuiMessageSource.SYSTEM_SERVER,new GuiMessageTag("system"));
   var markerResult=new org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable<GuiMessage>("deleted",true,marker);
@@ -556,6 +697,11 @@ def main():
         # MixinMerged 禁止直接出现在 Java 源码里，和 Mixin 一样从字节码添加。
         subprocess.run([str(binary / "java"), "-XX:-UsePerfData", "-cp", runtime_classpath, "MarkMergedFixture",
                         str(temporary / "net/minecraft/server/commands/MergedEmitter.class")], cwd=ROOT, check=True)
+        minecraft = ROOT / "minecraft_jar/26.3/26.3.jar"
+        assert minecraft.is_file(), "需要 Minecraft 26.3 原版 jar 来验证实际私信投递循环"
+        # 从原版 jar 提取真实循环，只把现有前缀及回执 Mixin 调用接入测试桥。
+        subprocess.run([str(binary / "java"), "-XX:-UsePerfData", "-cp", runtime_classpath, "NativeTellFixture",
+                        str(minecraft), str(temporary / "net/minecraft/server/commands/MsgCommand.class")], cwd=ROOT, check=True)
         subprocess.run([str(binary / "java"), "-XX:-UsePerfData", "-cp", runtime_classpath, "ChatMessageChecks"], cwd=ROOT, check=True)
 
 

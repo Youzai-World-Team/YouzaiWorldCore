@@ -13,6 +13,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import top.csituka.youzaiworldcore.account.util.AuthPlayerHelper;
 import top.csituka.youzaiworldcore.config.ModPaths;
+import top.csituka.youzaiworldcore.config.ApiModuleSettings;
 import top.csituka.youzaiworldcore.invisibility.InvisibilityManager;
 import top.csituka.youzaiworldcore.luckperms.LuckPermsHelper;
 import top.csituka.youzaiworldcore.mixin.map.ChunkMapAccessor;
@@ -50,6 +51,8 @@ public final class MapServerManager {
     private static MapDiskCapture capture;
     private static UUID worldId;
     private static MapApiUploader uploader;
+    private static MapPlayerPositionStore playerPositions;
+    private static final Set<UUID> POSITION_LOGINS = new java.util.HashSet<>();
 
     private MapServerManager() {
     }
@@ -70,14 +73,17 @@ public final class MapServerManager {
         worldId = UUID.fromString(identity.getOrDefault("world_id", UUID.randomUUID().toString()));
         metadata.settings("identity", Map.of("world_id", worldId.toString()));
         terrain = new MapTerrainStore(metadata);
+        playerPositions = new MapPlayerPositionStore(metadata);
         capture = new MapDiskCapture(instance, terrain);
-        uploader = new MapApiUploader(instance, terrain, metadata, worldId);
+        uploader = new MapApiUploader(instance, terrain, metadata, worldId, playerPositions,
+                () -> recordOnlinePositions("upload"));
         DebugLogger.info("MapServerManager", "地图存档已打开：%s", worldId);
     }
 
     private static void stop(MinecraftServer instance) {
         if (server != instance)
             return;
+        recordOnlinePositions("logout");
         if (uploader != null)
             uploader.stop();
         uploader = null;
@@ -90,10 +96,12 @@ public final class MapServerManager {
         MapMobRadarServer.clear();
         CLIENTS.clear();
         VISIBILITY.clear();
+        POSITION_LOGINS.clear();
         if (metadata != null)
             metadata.close();
         terrain = null;
         metadata = null;
+        playerPositions = null;
         server = null;
         worldId = null;
         DebugLogger.info("MapServerManager", "地图共享服务已关闭");
@@ -140,6 +148,13 @@ public final class MapServerManager {
         if (instance != server || terrain == null)
             return;
         terrain.tick();
+        POSITION_LOGINS.removeIf(id -> instance.getPlayerList().getPlayer(id) == null);
+        for (var player : instance.getPlayerList().getPlayers()) {
+            if (AuthPlayerHelper.shouldBlockActions(player)) POSITION_LOGINS.remove(player.getUUID());
+            else if (!POSITION_LOGINS.contains(player.getUUID()) && recordPlayerPosition(player, "login")) {
+                POSITION_LOGINS.add(player.getUUID());
+            }
+        }
         int tick = instance.getTickCount();
         CLIENTS.keySet().removeIf(id -> instance.getPlayerList().getPlayer(id) == null);
         VISIBILITY.keySet().removeIf(id -> instance.getPlayerList().getPlayer(id) == null);
@@ -176,6 +191,28 @@ public final class MapServerManager {
     /** 管理员命令触发异步上传，实际权限由命令入口核验。 */
     public static boolean uploadToApi() {
         return uploader != null && uploader.upload();
+    }
+
+    /** 认证后的首个 Tick、离开前和上传时调用；先保存实体快照，再由上传器异步发送。 */
+    public static boolean recordPlayerPosition(ServerPlayer player, String source) {
+        if ("logout".equals(source) && player != null) POSITION_LOGINS.remove(player.getUUID());
+        if (player == null || server == null || playerPositions == null || player.level().getServer() != server
+                || AuthPlayerHelper.shouldBlockActions(player) || !MapServerSettings.enabled
+                || !MapServerSettings.apiUpload || !ApiModuleSettings.isEnabled()
+                || player.level().dimension().equals(AuthPlayerHelper.LOGIN_HALL_KEY)) return false;
+        try {
+            playerPositions.capture(player, source);
+            if (uploader != null) uploader.playerPositionsChanged();
+            return true;
+        } catch (RuntimeException error) {
+            DebugLogger.exception("MapServerManager", "保存玩家地图位置失败：" + player.getUUID(), error);
+            return false;
+        }
+    }
+
+    private static void recordOnlinePositions(String source) {
+        if (server == null) return;
+        for (var player : server.getPlayerList().getPlayers()) recordPlayerPosition(player, source);
     }
 
     private static void stream(ServerPlayer player, Subscription state) {

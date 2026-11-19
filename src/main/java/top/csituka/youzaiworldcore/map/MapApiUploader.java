@@ -20,36 +20,47 @@ import java.util.concurrent.TimeUnit;
 public final class MapApiUploader {
     private static final long RETRY_MILLIS = TimeUnit.MINUTES.toMillis(10);
     private static final int BATCH_TILES = 128;
+    private static final int BATCH_PLAYERS = 256;
     private static final String ENDPOINT = "/api/game/maps/upload";
+    private static final String PLAYERS_ENDPOINT = "/api/game/maps/players";
     private final MinecraftServer server;
     private final MapTerrainStore terrain;
     private final MapDatabase metadata;
     private final UUID worldId;
     private final String worldName;
+    private final MapPlayerPositionStore playerPositions;
+    private final Runnable capturePlayers;
     private long lastSuccess, cutoff, nextAttempt, configuredInterval;
     private String destination;
     private volatile String configuredDestination;
     private volatile boolean uploadAllowed;
     private boolean running;
+    private boolean playersRunning, playersDirty = true;
+    private long nextPlayersAttempt;
+    private String dataId;
     private volatile boolean stopped;
     private final AtomicBoolean checkQueued = new AtomicBoolean();
     private final ScheduledExecutorService clock = Executors.newSingleThreadScheduledExecutor(
             Thread.ofPlatform().daemon().name("yzwc-map-clock").factory());
 
     /** 使用世界 map_module 主数据记录同步时间，失败不推进增量基线。 */
-    public MapApiUploader(MinecraftServer server, MapTerrainStore terrain, MapDatabase metadata, UUID worldId) {
+    public MapApiUploader(MinecraftServer server, MapTerrainStore terrain, MapDatabase metadata, UUID worldId,
+                          MapPlayerPositionStore playerPositions, Runnable capturePlayers) {
         this.server = server; this.terrain = terrain; this.metadata = metadata; this.worldId = worldId;
+        this.playerPositions = playerPositions; this.capturePlayers = capturePlayers;
         String name = server.getWorldData().getLevelName();
         worldName = name.isBlank() ? "Minecraft" : name.substring(0, Math.min(128, name.length()));
         var section = new MapSqlSettings(metadata, "upload");
         lastSuccess = Long.parseLong(section.getString("last_success", "0"));
         cutoff = Long.parseLong(section.getString("revision", "0"));
         destination = section.getString("destination", "");
+        dataId = section.getString("data_id", "");
         configuredDestination = ApiModuleSettings.getBaseUrl();
         if (lastSuccess < 0 || cutoff < 0) invalidProgress();
         configuredInterval = intervalMillis();
         nextAttempt = Math.max(System.currentTimeMillis() + 60000,
                 destination.equals(configuredDestination) ? lastSuccess + intervalMillis() : 0);
+        if (dataId.isBlank()) nextAttempt = Math.min(nextAttempt, System.currentTimeMillis() + 60000);
         clock.scheduleWithFixedDelay(this::queueCheck, 1, 1, TimeUnit.SECONDS);
     }
 
@@ -81,11 +92,42 @@ public final class MapApiUploader {
             nextAttempt = Math.max(System.currentTimeMillis(), lastSuccess + configuredInterval);
         }
         if (System.currentTimeMillis() >= nextAttempt) upload();
+        if (uploadAllowed && !running && !playersRunning && playersDirty && !dataId.isBlank()
+                && destination.equals(configuredDestination) && System.currentTimeMillis() >= nextPlayersAttempt) {
+            uploadPlayerPositions();
+        }
+    }
+
+    /** 主线程通知位置发生变化，合并为一次异步上传任务，不影响地形上传周期。 */
+    public void playerPositionsChanged() { playersDirty = true; }
+
+    private void uploadPlayerPositions() {
+        String target = configuredDestination, identity = dataId;
+        var available = new java.util.HashSet<String>();
+        for (var level : server.getAllLevels()) available.add(level.dimension().identifier().toString());
+        playersRunning = true; playersDirty = false;
+        nextPlayersAttempt = System.currentTimeMillis() + 2000;
+        CompletableFuture.supplyAsync(() -> transferPlayers(identity, target, available, false))
+                .whenComplete((count, error) -> server.execute(() -> {
+                    if (stopped) return;
+                    playersRunning = false;
+                    if (error != null) {
+                        playersDirty = true; nextPlayersAttempt = System.currentTimeMillis() + RETRY_MILLIS;
+                        Throwable cause = error instanceof java.util.concurrent.CompletionException ? error.getCause() : error;
+                        if (cause instanceof PositionsResetException) {
+                            dataId = ""; nextAttempt = System.currentTimeMillis();
+                        }
+                        DebugLogger.exception("MapApiUploader", "玩家位置上传失败，保留快照等待重试", error);
+                    } else if (count > 0) {
+                        DebugLogger.info("MapApiUploader", "玩家位置快照已同步：%d 位玩家", count);
+                    }
+                }));
     }
 
     /** 立即安排上传；返回 false 表示关闭、正在上传或已经关服。 */
     public boolean upload() {
-        if (stopped || running || !MapServerSettings.enabled || !MapServerSettings.apiUpload || !ApiModuleSettings.isEnabled()) return false;
+        if (stopped || running || playersRunning || !MapServerSettings.enabled || !MapServerSettings.apiUpload || !ApiModuleSettings.isEnabled()) return false;
+        capturePlayers.run();
         long through = terrain.revision();
         uploadAllowed = true;
         String target = ApiModuleSettings.getBaseUrl();
@@ -99,7 +141,7 @@ public final class MapApiUploader {
         }
         running = true;
         DebugLogger.info("MapApiUploader", "开始同步地图 %s 到 Api", worldId);
-        CompletableFuture.supplyAsync(() -> transfer(since, through, target, dimensions)).whenComplete((count, error) -> server.execute(() -> {
+        CompletableFuture.supplyAsync(() -> transfer(since, through, target, dimensions)).whenComplete((result, error) -> server.execute(() -> {
             if (stopped) return;
             running = false;
             if (!target.equals(ApiModuleSettings.getBaseUrl())) {
@@ -114,15 +156,18 @@ public final class MapApiUploader {
             }
             lastSuccess = System.currentTimeMillis();
             cutoff = through; destination = target;
+            dataId = result.dataId(); nextPlayersAttempt = 0;
             nextAttempt = lastSuccess + intervalMillis();
             metadata.settings("upload", java.util.Map.of("last_success", Long.toString(lastSuccess),
-                    "revision", Long.toString(cutoff), "destination", destination));
-            DebugLogger.info("MapApiUploader", "地图同步完成：%d 个瓦片，修订号=%d", count, cutoff);
+                    "revision", Long.toString(cutoff), "destination", destination, "data_id", dataId));
+            DebugLogger.info("MapApiUploader", "地图同步完成：%d 个瓦片、%d 位玩家快照，修订号=%d", result.tiles(), result.players(), cutoff);
         }));
         return true;
     }
 
-    private int transfer(long since, long through, String destination, JsonArray dimensions) {
+    private record Transfer(int tiles, int players, String dataId) { }
+
+    private Transfer transfer(long since, long through, String destination, JsonArray dimensions) {
         var available = new java.util.HashSet<String>();
         dimensions.forEach(value -> available.add(value.getAsJsonObject().get("id").getAsString()));
         UUID run = UUID.randomUUID();
@@ -135,6 +180,10 @@ public final class MapApiUploader {
         long accepted = reply.get("accepted_revision").getAsLong();
         if (accepted < 0 || accepted > through) throw new IllegalStateException("Api 地图修订进度不一致");
         long baseline = reply.get("full_required").getAsBoolean() ? 0 : Math.min(since, accepted);
+        String identity = ApiHttp.stringValue(reply, "data_id");
+        if (identity == null || identity.isBlank() || !UUID.fromString(identity).toString().equals(identity)) {
+            throw new IllegalStateException("Api 未返回有效的地图数据标识，请同步更新 Api");
+        }
         class Batch {
             private JsonArray tiles = new JsonArray();
             private int sequence, total;
@@ -154,8 +203,27 @@ public final class MapApiUploader {
         try { terrain.visitSaved(baseline, through, batch::add); }
         catch (java.io.IOException error) { throw new java.io.UncheckedIOException(error); }
         batch.flush();
+        int players = transferPlayers(identity, destination, available, true);
         send(envelope(run, "complete", batch.sequence, through), destination);
-        return batch.total;
+        return new Transfer(batch.total, players, identity);
+    }
+
+    private int transferPlayers(String identity, String target, java.util.Set<String> dimensions, boolean all) {
+        var positions = playerPositions.read(all).stream().filter(value -> dimensions.contains(value.dimension())).toList();
+        for (int offset = 0; offset < positions.size(); offset += BATCH_PLAYERS) {
+            var batch = positions.subList(offset, Math.min(positions.size(), offset + BATCH_PLAYERS));
+            var body = new JsonObject(); var values = new JsonArray();
+            batch.forEach(position -> values.add(position.json()));
+            body.addProperty("version", 2); body.addProperty("source", "minecraft_server");
+            body.addProperty("world_id", worldId.toString()); body.addProperty("data_id", identity);
+            body.add("players", values); send(body, target, PLAYERS_ENDPOINT);
+            playerPositions.acknowledge(batch);
+        }
+        return positions.size();
+    }
+
+    private static final class PositionsResetException extends IllegalStateException {
+        private PositionsResetException() { super("Api 地图已清空，需重新同步数据标识"); }
     }
 
     private JsonObject envelope(UUID run, String phase, int batch, long revision) {
@@ -166,10 +234,17 @@ public final class MapApiUploader {
     }
 
     private JsonObject send(JsonObject body, String destination) {
+        return send(body, destination, ENDPOINT);
+    }
+
+    private JsonObject send(JsonObject body, String destination, String endpoint) {
         if (stopped || !uploadAllowed || Thread.currentThread().isInterrupted() || !destination.equals(configuredDestination)) {
             throw new IllegalStateException("地图上传已停止、关闭或 Api 地址已更改");
         }
-        var response = ApiHttp.request("POST", ENDPOINT, body.toString(), null, 30);
+        var response = ApiHttp.request("POST", endpoint, body.toString(), null, 30);
+        if (response != null && response.statusCode() == 409 && PLAYERS_ENDPOINT.equals(endpoint)) {
+            throw new PositionsResetException();
+        }
         if (!ApiHttp.successful(response)) throw new IllegalStateException(response == null
                 ? ApiHttp.failureMessage() : "Api 地图上传返回 HTTP " + response.statusCode());
         JsonObject result = ApiHttp.parse(response.body());
