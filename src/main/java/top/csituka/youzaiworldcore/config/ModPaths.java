@@ -1,5 +1,6 @@
 package top.csituka.youzaiworldcore.config;
 
+import net.fabricmc.api.EnvType;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.level.storage.LevelResource;
@@ -74,6 +75,20 @@ public final class ModPaths {
     public static final String DEFAULT_DATA_FILE_NAME = "data.json";
 
     private ModPaths() {
+    }
+
+    /** 通用资源注册的物理环境；集成服务器业务日志应明确使用 SERVER。 */
+    public static boolean isClientEnvironment() {
+        return FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT;
+    }
+
+    /** 模组日志与游戏日志集中在 logs/，由统一日志输出层负责轮转。 */
+    public static Path clientLogFile() {
+        return FabricLoader.getInstance().getGameDir().resolve("logs").resolve("youzaiworldcore-client.log");
+    }
+
+    public static Path serverLogFile() {
+        return FabricLoader.getInstance().getGameDir().resolve("logs").resolve("youzaiworldcore-server.log");
     }
 
     /** 地图是独立 SQLite 数据域，不使用全局 JSON；旧文件不迁移。 */

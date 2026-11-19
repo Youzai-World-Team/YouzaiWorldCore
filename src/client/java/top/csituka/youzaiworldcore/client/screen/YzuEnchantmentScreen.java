@@ -22,7 +22,7 @@ public class YzuEnchantmentScreen extends EnchantmentScreen implements YzuiWorks
     protected void init() {
         super.init();
         addRenderableWidget(YzuiWorkstationStyle.closeButton(leftPos, topPos, imageWidth, this::onClose));
-        DebugLogger.debug("YzuEnchantmentScreen", "初始化附魔台界面：%s", title.getString());
+        DebugLogger.CLIENT.debug("YzuEnchantmentScreen", "初始化附魔台界面：{}", title.getString());
     }
 
     @Override

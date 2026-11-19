@@ -54,7 +54,7 @@ final class MapGroupCreatePanel extends MapOverlayPanel {
             return;
         }
         created.accept(group);
-        DebugLogger.debug("MapWaypoints", "添加分组弹窗保存成功：%s", group.id());
+        DebugLogger.CLIENT.debug("MapWaypoints", "添加分组弹窗保存成功：{}", group.id());
         onClose();
     }
 

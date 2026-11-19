@@ -1,9 +1,9 @@
 package top.csituka.youzaiworldcore.highlightitem;
 
+import top.csituka.youzaiworldcore.util.DebugLogger;
+
 import com.google.gson.JsonObject;
 import net.minecraft.util.ARGB;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * 颜色工具类（参考 HighLightItem，适配 YouzaiWorldCore 26.2）。
@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory;
  * RGBA 各分量范围 0..1（着色器约定），对外存储/比较时使用 0..255 的整数。
  */
 public class Colors {
-    private static final Logger LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/HighlightItem");
+    private static final DebugLogger.ModuleLogger LOGGER = DebugLogger.CLIENT.module("HighlightItem");
 
     /** 默认高亮色对应的 ARGB 整数（与 {@link HighLightColor#DEFAULT} 一致）。 */
     public static int getDefaultColorARGB() {

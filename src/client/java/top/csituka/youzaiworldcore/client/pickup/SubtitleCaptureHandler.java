@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.client.pickup;
 
+import top.csituka.youzaiworldcore.util.LogValues;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.client.sounds.SoundEventListener;
@@ -40,7 +42,7 @@ public final class SubtitleCaptureHandler implements SoundEventListener {
         if (!registered) {
             soundManager.addListener(this);
             registered = true;
-            DebugLogger.info("SubtitleCaptureHandler", "已注册声音字幕监听器");
+            DebugLogger.CLIENT.debug("SubtitleCaptureHandler", "已注册声音字幕监听器");
         }
     }
 
@@ -51,7 +53,7 @@ public final class SubtitleCaptureHandler implements SoundEventListener {
         if (registered) {
             soundManager.removeListener(this);
             registered = false;
-            DebugLogger.info("SubtitleCaptureHandler", "已注销声音字幕监听器");
+            DebugLogger.CLIENT.debug("SubtitleCaptureHandler", "已注销声音字幕监听器");
         }
     }
 
@@ -64,7 +66,9 @@ public final class SubtitleCaptureHandler implements SoundEventListener {
         Component text = soundEvent.getSubtitle();
         if (text == null || range <= 0.0f) return;
 
-        DebugLogger.info("SubtitleCaptureHandler", "字幕事件: %s (range=%.1f)", text.getString(), range);
+        if (DebugLogger.CLIENT.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+            DebugLogger.CLIENT.trace("SubtitleCaptureHandler", "字幕事件: {} (range={})", text.getString(), LogValues.decimal(range, 1));
+        }
 
         Vec3 soundPos = new Vec3(sound.getX(), sound.getY(), sound.getZ());
 

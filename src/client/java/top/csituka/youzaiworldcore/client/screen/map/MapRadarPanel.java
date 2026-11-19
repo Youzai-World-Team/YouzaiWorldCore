@@ -27,7 +27,7 @@ final class MapRadarPanel extends MapOverlayPanel {
 
     MapRadarPanel(YzWorldMapScreen owner) {
         super(owner, "radar");
-        DebugLogger.debug("MapRadar", "打开生物种类图标目录");
+        DebugLogger.CLIENT.debug("MapRadar", "打开生物种类图标目录");
     }
 
     @SuppressWarnings("null")

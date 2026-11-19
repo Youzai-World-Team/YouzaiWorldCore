@@ -1,7 +1,8 @@
 package top.csituka.youzaiworldcore.client.renderer.feature;
 
+import top.csituka.youzaiworldcore.util.DebugLogger;
+
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.logging.LogUtils;
 import net.minecraft.client.model.EntityModel;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.entity.RenderLayerParent;
@@ -11,7 +12,6 @@ import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.Identifier;
 import org.jspecify.annotations.NonNull;
-import org.slf4j.Logger;
 
 import top.csituka.youzaiworldcore.client.accessor.RenderCrownDuck;
 
@@ -30,7 +30,7 @@ import top.csituka.youzaiworldcore.client.accessor.RenderCrownDuck;
 public class TechnoCrownFeatureRenderer<S extends LivingEntityRenderState, RM extends EntityModel<? super S>, EM extends EntityModel<? super S>>
         extends RenderLayer<S, RM> {
 
-    private static final Logger LOGGER = LogUtils.getLogger();
+    private static final DebugLogger.ModuleLogger LOGGER = DebugLogger.CLIENT.module("TechnoCrownFeatureRenderer");
 
     private final @NonNull Identifier TEXTURE_ADULT = Identifier.withDefaultNamespace(
             "textures/entity/pig/technocrown_adult.png");
@@ -84,7 +84,9 @@ public class TechnoCrownFeatureRenderer<S extends LivingEntityRenderState, RM ex
             );
         }
 
-        LOGGER.debug("[YouzaiWorldCore] Rendered technocrown for pig, isBaby={}", state.isBaby);
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("[YouzaiWorldCore] Rendered technocrown for pig, isBaby={}", state.isBaby);
+        }
     }
 
 }

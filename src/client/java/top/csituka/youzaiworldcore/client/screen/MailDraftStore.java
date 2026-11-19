@@ -46,7 +46,7 @@ final class MailDraftStore {
             throw new IllegalStateException("草稿未关联服务器与玩家");
         ClientGlobalSettings.section(ClientGlobalSettings.MAIL_MODULE).set(key, snapshot);
         ClientGlobalSettings.save();
-        DebugLogger.info("MailDraft", "已保存本机草稿");
+        DebugLogger.CLIENT.debug("MailDraft", "已保存本机草稿");
     }
 
     static void delete(String key) {
@@ -54,6 +54,6 @@ final class MailDraftStore {
             return;
         ClientGlobalSettings.section(ClientGlobalSettings.MAIL_MODULE).remove(key);
         ClientGlobalSettings.save();
-        DebugLogger.info("MailDraft", "已清除本机草稿");
+        DebugLogger.CLIENT.debug("MailDraft", "已清除本机草稿");
     }
 }

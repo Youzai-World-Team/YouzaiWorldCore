@@ -61,29 +61,37 @@ public final class DrawEntriesHandler {
     public void addEntry(@NonNull Object key, @NonNull DisplayEntry<?> entry) {
         if (!enabled) return;
 
-        DebugLogger.entering("DrawEntriesHandler", "addEntry",
-                "key=" + key + ", type=" + entry.getClass().getSimpleName());
+        if (DebugLogger.CLIENT.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+            DebugLogger.CLIENT.entering("DrawEntriesHandler", "addEntry",
+                    "key=" + key + ", type=" + entry.getClass().getSimpleName());
+        }
 
         if (collector.size() >= MAX_ENTRIES && !collector.containsKey(key)) {
             Iterator<Map.Entry<Object, DisplayEntry<?>>> it = collector.entrySet().iterator();
             if (it.hasNext()) {
                 it.next();
                 it.remove();
-                DebugLogger.info("DrawEntriesHandler", "Removed oldest entry, collector size=" + collector.size());
+                if (DebugLogger.CLIENT.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+                    DebugLogger.CLIENT.trace("DrawEntriesHandler", "Removed oldest entry, collector size=" + collector.size());
+                }
             }
         }
 
         DisplayEntry<?> existing = collector.get(key);
         if (existing != null) {
             existing.mergeWith(entry);
-            DebugLogger.info("DrawEntriesHandler", "Merged entry, new amount=" + 
-                    (entry instanceof ItemDisplayEntry ? ((ItemDisplayEntry) entry).getAmountText() : ""));
+            if (DebugLogger.CLIENT.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+                DebugLogger.CLIENT.trace("DrawEntriesHandler", "Merged entry, new amount=" +
+                        (entry instanceof ItemDisplayEntry ? ((ItemDisplayEntry) entry).getAmountText() : ""));
+            }
         } else {
             collector.put(key, entry);
-            DebugLogger.info("DrawEntriesHandler", "Added new entry, collector size=" + collector.size());
+            if (DebugLogger.CLIENT.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+                DebugLogger.CLIENT.trace("DrawEntriesHandler", "Added new entry, collector size=" + collector.size());
+            }
         }
 
-        DebugLogger.exiting("DrawEntriesHandler", "addEntry");
+        DebugLogger.CLIENT.exiting("DrawEntriesHandler", "addEntry");
     }
 
     /**
@@ -109,7 +117,9 @@ public final class DrawEntriesHandler {
             // 移出动画完成后移除条目
             if (displayEntry.shouldDiscard()) {
                 it.remove();
-                DebugLogger.info("DrawEntriesHandler", "Removed expired entry, collector size=" + collector.size());
+                if (DebugLogger.CLIENT.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+                    DebugLogger.CLIENT.trace("DrawEntriesHandler", "Removed expired entry, collector size=" + collector.size());
+                }
             }
         }
     }
@@ -173,12 +183,12 @@ public final class DrawEntriesHandler {
 
     public void clear() {
         collector.clear();
-        DebugLogger.info("DrawEntriesHandler", "Cleared all entries");
+        DebugLogger.CLIENT.debug("DrawEntriesHandler", "Cleared all entries");
     }
 
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
-        DebugLogger.stateChange("DrawEntriesHandler", "instance", "enabled", enabled);
+        DebugLogger.CLIENT.stateChange("DrawEntriesHandler", "instance", "enabled", enabled);
         if (!enabled) {
             clear();
         }

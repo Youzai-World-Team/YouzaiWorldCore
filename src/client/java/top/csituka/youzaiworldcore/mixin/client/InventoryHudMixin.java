@@ -92,7 +92,7 @@ public abstract class InventoryHudMixin {
                 }
             }
         } catch (Exception e) {
-            DebugLogger.exception(LOG_TAG, "render" + component.name(), e);
+            DebugLogger.CLIENT.exception(LOG_TAG, "render" + component.name(), e);
         } finally {
             if (pushed) {
                 graphics.pose().popMatrix();

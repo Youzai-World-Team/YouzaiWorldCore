@@ -59,11 +59,11 @@ public final class ChatFormatSettings {
     public static void setDeathFormat(String v) { if (!Objects.equals(deathFormat, v)) { deathFormat = v; save(); } }
 
     public static void load() {
-        DebugLogger.entering(MODULE, "load");
+        DebugLogger.SERVER.entering(MODULE, "load");
         ConfigSection section = GlobalSettings.section(GlobalSettings.CHAT_FORMAT_MODULE);
         if (section.isEmpty()) {
             save();
-            DebugLogger.exiting(MODULE, "load", "created default");
+            DebugLogger.SERVER.exiting(MODULE, "load", "created default");
             return;
         }
         enabled = section.getBoolean("enabled", enabled);
@@ -72,8 +72,8 @@ public final class ChatFormatSettings {
         joinedRenamedFormat = section.getString("joined_renamed_format", joinedRenamedFormat);
         leftGameFormat = section.getString("left_game_format", leftGameFormat);
         deathFormat = section.getString("death_format", deathFormat);
-        DebugLogger.info(MODULE, "已加载聊天格式化配置：enabled=%s", enabled);
-        DebugLogger.exiting(MODULE, "load");
+        DebugLogger.SERVER.info(MODULE, "已加载聊天格式化配置：enabled={}", enabled);
+        DebugLogger.SERVER.exiting(MODULE, "load");
     }
 
     /** 重置为默认值并写入 {@code chat_format_module} 分节（新开服 / 坏文件恢复用） */

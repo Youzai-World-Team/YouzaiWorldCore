@@ -26,7 +26,7 @@ public class AttributeManager {
     private static final String MODIFIER_NS = "youzaiworldcore_attr_";
 
     public static void initialize() {
-        DebugLogger.entering("AttributeManager", "initialize");
+        DebugLogger.SERVER.entering("AttributeManager", "initialize");
 
         // 玩家加入时应用属性并同步
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
@@ -38,7 +38,7 @@ public class AttributeManager {
             });
         });
 
-        DebugLogger.exiting("AttributeManager", "initialize");
+        DebugLogger.SERVER.exiting("AttributeManager", "initialize");
     }
 
     // ==================== 加点处理 ====================
@@ -69,9 +69,7 @@ public class AttributeManager {
         applySingleAttribute(player, attributeKey, data.get(attributeKey));
         syncToClient(player);
 
-        DebugLogger.info("AttributeManager",
-                "玩家 %s 属性 %s: %d → %d (剩余技能点 %d)",
-                player.getName().getString(), attributeKey, current, current + 1, data.skillPointsAvailable);
+        DebugLogger.SERVER.info("AttributeManager", "玩家 {} 属性 {}: {} → {} (剩余技能点 {})", player.getName().getString(), attributeKey, current, current + 1, data.skillPointsAvailable);
         return true;
     }
 

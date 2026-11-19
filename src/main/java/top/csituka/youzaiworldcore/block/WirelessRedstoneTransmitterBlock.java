@@ -92,10 +92,8 @@ public class WirelessRedstoneTransmitterBlock extends WirelessRedstoneComponentB
         if (shouldBeActive != state.getValue(POWERED)
                 && !level.getBlockTicks().willTickThisTick(pos, this)) {
             level.scheduleTick(pos, this, TICK_DELAY);
-            if (DebugLogger.isEnabled(DebugLogger.LEVEL_DETAILED)) {
-                DebugLogger.debug(MODULE,
-                        "scheduleEvaluation @%s: POWERED=%s, shouldBeActive=%s -> tick=%d",
-                        pos.toShortString(), state.getValue(POWERED), shouldBeActive, TICK_DELAY);
+            if (DebugLogger.SERVER.isEnabled(DebugLogger.LEVEL_DETAILED)) {
+                DebugLogger.SERVER.debug(MODULE, "scheduleEvaluation @{}: POWERED={}, shouldBeActive={} -> tick={}", pos.toShortString(), state.getValue(POWERED), shouldBeActive, TICK_DELAY);
             }
         }
     }
@@ -115,14 +113,13 @@ public class WirelessRedstoneTransmitterBlock extends WirelessRedstoneComponentB
         boolean shouldBeActive = hasHorizontalInput(level, pos);
         boolean isActive = state.getValue(POWERED);
 
-        if (DebugLogger.isEnabled(DebugLogger.LEVEL_DETAILED)) {
-            DebugLogger.debug(MODULE, "tick @%s: shouldBeActive=%s, isActive=%s",
-                    pos.toShortString(), shouldBeActive, isActive);
+        if (DebugLogger.SERVER.isEnabled(DebugLogger.LEVEL_DETAILED)) {
+            DebugLogger.SERVER.debug(MODULE, "tick @{}: shouldBeActive={}, isActive={}", pos.toShortString(), shouldBeActive, isActive);
         }
 
         if (shouldBeActive != isActive) {
             level.setBlock(pos, state.setValue(POWERED, shouldBeActive), Block.UPDATE_ALL);
-            DebugLogger.stateChange(MODULE, "transmitter@" + pos.toShortString(),
+            DebugLogger.SERVER.traceStateChange(MODULE, "transmitter@" + pos.toShortString(),
                     "POWERED", isActive, shouldBeActive);
         }
 

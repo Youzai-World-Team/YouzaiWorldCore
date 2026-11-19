@@ -111,7 +111,7 @@ public final class ApiServiceClient {
                 }
             return Optional.of(accounts);
         } catch (RuntimeException e) {
-            DebugLogger.exception(MODULE, "loadAccounts", e);
+            DebugLogger.SERVER.exception(MODULE, "loadAccounts", e);
             return Optional.empty();
         }
     }
@@ -129,7 +129,7 @@ public final class ApiServiceClient {
             PlayerAccount account = PlayerAccount.GSON.fromJson(root, PlayerAccount.class);
             return new AccountResult(true, response.statusCode(), "", account, stringValue(root, "token"));
         } catch (RuntimeException e) {
-            DebugLogger.exception(MODULE, "getAccount", e);
+            DebugLogger.SERVER.exception(MODULE, "getAccount", e);
             return new AccountResult(false, response.statusCode(), "Api 账户数据格式无效", null, null);
         }
     }
@@ -418,7 +418,7 @@ public final class ApiServiceClient {
                 PlayerAccount account = PlayerAccount.GSON.fromJson(parse(response.body()), PlayerAccount.class);
                 return new SessionValidationResult(SessionValidationState.VALID, account);
             } catch (RuntimeException e) {
-                DebugLogger.exception(MODULE, "validateSession", e);
+                DebugLogger.SERVER.exception(MODULE, "validateSession", e);
                 return new SessionValidationResult(SessionValidationState.UNAVAILABLE, null);
             }
         }
@@ -467,7 +467,7 @@ public final class ApiServiceClient {
             return Optional.of(new CosmeticSnapshot(decode(files, "skin.png"), decode(files, "skin_slim.png"),
                     decode(files, "cloak.png")));
         } catch (RuntimeException e) {
-            DebugLogger.exception(MODULE, "fetchCosmeticSnapshot", e);
+            DebugLogger.SERVER.exception(MODULE, "fetchCosmeticSnapshot", e);
             return Optional.empty();
         }
     }
@@ -564,7 +564,7 @@ public final class ApiServiceClient {
         try {
             return PlayerAccount.GSON.fromJson(account, PlayerAccount.class);
         } catch (RuntimeException e) {
-            DebugLogger.exception(MODULE, "parseAccount", e);
+            DebugLogger.SERVER.exception(MODULE, "parseAccount", e);
             return null;
         }
     }

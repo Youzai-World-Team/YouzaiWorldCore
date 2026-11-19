@@ -45,7 +45,7 @@ public class LoadingOverlayMixin {
             int textureWidth, int textureHeight, int color) {
         if (!youzaiworldcore$logged) {
             youzaiworldcore$logged = true;
-            DebugLogger.info("YzuiLoading", "资源加载主题卡片已就绪");
+            DebugLogger.CLIENT.debug("YzuiLoading", "资源加载主题卡片已就绪");
         }
         // 完成后明确显示 100%，不让平滑进度在淡出时停留于 99%。
         YzuiLoadingRenderer.render(g, logo, fadeOutStart >= 0 ? 1f : currentProgress, (color >>> 24) / 255f);

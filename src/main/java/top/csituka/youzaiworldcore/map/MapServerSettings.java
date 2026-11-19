@@ -43,7 +43,7 @@ public final class MapServerSettings {
         chunksPerPass = section.getInt("chunks_per_pass", 64, 1, 1024);
         uploadIntervalMinutes = section.getInt("upload_interval_minutes", 2880, 1, 43200);
         save();
-        DebugLogger.info("MapServerSettings", "地图共享配置已加载，地形=%s，玩家=%s", shareTerrain, sharePlayers);
+        DebugLogger.SERVER.info("MapServerSettings", "地图共享配置已加载，地形={}，玩家={}", shareTerrain, sharePlayers);
     }
 
     /** 只写当前有效设置，旧设置行保留但不再读取或写入。 */

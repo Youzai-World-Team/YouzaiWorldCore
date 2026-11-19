@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.item;
 
+import top.csituka.youzaiworldcore.util.LogValues;
+
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.LivingEntity;
@@ -36,7 +38,7 @@ public class SweetMadameItem extends Item {
 
     public SweetMadameItem(Properties settings) {
         super(settings);
-        DebugLogger.entering("SweetMadameItem", "constructor",
+        DebugLogger.SERVER.entering("SweetMadameItem", "constructor",
                 "healPercent=%.0f%%".formatted(HEAL_PERCENT * 100));
     }
 
@@ -52,11 +54,7 @@ public class SweetMadameItem extends Item {
         if (!level.isClientSide() && entity instanceof Player player) {
             float healAmount = player.getMaxHealth() * HEAL_PERCENT;
             player.heal(healAmount);
-            DebugLogger.info("SweetMadameItem",
-                    "玩家 %s 食用甜甜花酿鸡，恢复生命值 %.1f (24%% of %.1f)".formatted(
-                            player.getName().getString(),
-                            healAmount,
-                            player.getMaxHealth()));
+            DebugLogger.SERVER.debug("SweetMadameItem", "玩家 {} 食用甜甜花酿鸡，恢复生命值 {} (24% of {})", player.getName().getString(), LogValues.decimal(healAmount, 1), LogValues.decimal(player.getMaxHealth(), 1));
         }
 
         return result;

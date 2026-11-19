@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.event;
 
+import top.csituka.youzaiworldcore.util.LogValues;
+
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
@@ -42,8 +44,7 @@ public class LeechingHandler {
             float healAmount = (enchantLevel == 1) ? 2.0f : 4.0f;
             player.heal(healAmount);
 
-            DebugLogger.info(MODULE, "Leeching healed %s for %.1f HP (level=%d, victim=%s)",
-                    player.getName().getString(), healAmount, enchantLevel, entity.getName().getString());
+            DebugLogger.SERVER.debug(MODULE, "Leeching healed {} for {} HP (level={}, victim={})", player.getName().getString(), LogValues.decimal(healAmount, 1), enchantLevel, entity.getName().getString());
         });
     }
 }

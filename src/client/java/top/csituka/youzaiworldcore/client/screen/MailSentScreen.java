@@ -47,7 +47,7 @@ public class MailSentScreen extends MailBaseScreen {
     @Override
     protected void init() {
         super.init();
-        DebugLogger.info(MODULE, "已打开已发送邮件页面");
+        DebugLogger.CLIENT.debug(MODULE, "已打开已发送邮件页面");
     }
 
     @Override
@@ -185,7 +185,7 @@ public class MailSentScreen extends MailBaseScreen {
         if (refreshRect.contains(mouseX, mouseY)) {
             ClientPlayNetworking.send(new MailSentListRequestPayload());
             MailToast.show("正在刷新已发送邮件...", true);
-            DebugLogger.info(MODULE, "已请求刷新已发送邮件");
+            DebugLogger.CLIENT.debug(MODULE, "已请求刷新已发送邮件");
             return true;
         }
         if (backRect.contains(mouseX, mouseY)) {
@@ -209,13 +209,13 @@ public class MailSentScreen extends MailBaseScreen {
             int rowY = tableRect.y() + 30 + (i - scrollOffset) * rowHeight();
             if (editRect(rowY, actionX).contains(mouseX, mouseY)) {
                 MailNavigationRequests.edit(this, summary.mailId());
-                DebugLogger.info(MODULE, "已请求编辑邮件: mailId=%s", summary.mailId());
+                DebugLogger.CLIENT.debug(MODULE, "已请求编辑邮件: mailId={}", summary.mailId());
                 return true;
             }
             if (recallRect(rowY, actionX).contains(mouseX, mouseY)) {
                 ClientPlayNetworking.send(new MailRecallPayload(summary.mailId()));
                 MailClientState.currentSentList.removeIf(entry -> entry.mailId().equals(summary.mailId()));
-                DebugLogger.info(MODULE, "已请求撤回邮件: mailId=%s", summary.mailId());
+                DebugLogger.CLIENT.debug(MODULE, "已请求撤回邮件: mailId={}", summary.mailId());
                 return true;
             }
         }

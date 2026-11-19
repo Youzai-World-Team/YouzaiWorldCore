@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.account.util;
 
+import top.csituka.youzaiworldcore.util.DebugLogger;
+
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
@@ -21,6 +23,8 @@ import java.util.Set;
  */
 @SuppressWarnings({"null", "unused"})
 public class AuthPlayerHelper {
+    private static final DebugLogger.ModuleLogger MOD_LOG = DebugLogger.SERVER.module("AuthPlayerHelper");
+
 
     /**
      * 登录大厅维度标识，用于隔离未认证玩家。
@@ -50,9 +54,9 @@ public class AuthPlayerHelper {
 
     /** 判断是否为开发者模式下的单人测试玩家。 */
     public static boolean isDeveloperSingleplayerPlayer(ServerPlayer player) {
-        if (player == null || !YouzaiworldCore.devModeEnabled) return false;
+        if (player == null) return false;
         MinecraftServer server = player.level().getServer();
-        return server != null && server.isSingleplayer()
+        return server != null && server.isSingleplayer() && DebugLogger.CLIENT.isDevModeEnabled()
                 && isDeveloperPlayerName(player.getScoreboardName());
     }
 
@@ -105,14 +109,14 @@ public class AuthPlayerHelper {
     public static void restoreLocation(ServerPlayer player) {
         AuthLocationData loc = getLastLocation(player);
         if (loc == null || loc.position == null) {
-            YouzaiworldCore.LOGGER.warn("玩家 {} 没有保存的位置，传送到主世界出生点", player.getScoreboardName());
+            MOD_LOG.debug("玩家 {} 没有保存的位置，传送到主世界出生点", player.getScoreboardName());
             teleportToSpawn(player);
             return;
         }
 
         // 如果位置是虚空坐标，也传送到出生点
         if (isVoidLocation(loc)) {
-            YouzaiworldCore.LOGGER.warn("玩家 {} 的位置在虚空中，传送到主世界出生点", player.getScoreboardName());
+            MOD_LOG.debug("玩家 {} 的位置在虚空中，传送到主世界出生点", player.getScoreboardName());
             teleportToSpawn(player);
             return;
         }
@@ -126,7 +130,7 @@ public class AuthPlayerHelper {
         if (targetWorld == null) targetWorld = server.overworld();
 
         player.teleportTo(targetWorld, loc.position.x, loc.position.y, loc.position.z, Set.of(), loc.yaw, loc.pitch, true);
-        YouzaiworldCore.LOGGER.info("已将玩家 {} 恢复到原位置", player.getScoreboardName());
+        MOD_LOG.debug("已将玩家 {} 恢复到原位置", player.getScoreboardName());
     }
 
     public static boolean isVoidLocation(AuthLocationData loc) {
@@ -144,6 +148,6 @@ public class AuthPlayerHelper {
         var overworld = server.overworld();
         var spawnPos = overworld.getRespawnData().pos();
         player.teleportTo(overworld, spawnPos.getX(), spawnPos.getY(), spawnPos.getZ(), Set.of(), player.getYRot(), player.getXRot(), true);
-        YouzaiworldCore.LOGGER.info("已将玩家 {} 传送至主世界出生点", player.getScoreboardName());
+        MOD_LOG.debug("已将玩家 {} 传送至主世界出生点", player.getScoreboardName());
     }
 }

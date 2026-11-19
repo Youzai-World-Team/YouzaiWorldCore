@@ -16,7 +16,7 @@ public interface YzuiMenuScreen {
     /** 用户主动关闭时直接回到游戏，取消尚未提交的页面过渡。 */
     default void closeMenu() {
         if (!canCloseMenu()) return;
-        DebugLogger.debug("YzuiMenu", "关闭菜单：%s", getClass().getSimpleName());
+        DebugLogger.CLIENT.debug("YzuiMenu", "关闭菜单：{}", getClass().getSimpleName());
         GuiAnimationController.setScreenImmediately(Minecraft.getInstance().gui, null);
     }
 

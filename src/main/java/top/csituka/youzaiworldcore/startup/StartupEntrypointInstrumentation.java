@@ -72,16 +72,16 @@ final class StartupEntrypointInstrumentation {
                     if (instrumentation.isModifiableClass(errorGuiClass)) {
                         instrumentation.retransformClasses(errorGuiClass);
                     } else {
-                        DebugLogger.warn("StartupLoading", "Fabric 错误窗口类不支持重新转换");
+                        DebugLogger.bootstrap().warn("StartupLoading", "Fabric 错误窗口类不支持重新转换");
                     }
                 } catch (Throwable throwable) {
                     // 错误提示属于附加能力，不能因其安装失败撤销已经生效的模组进度追踪。
-                    DebugLogger.exception("StartupLoading", "接入 Fabric 错误窗口", throwable);
+                    DebugLogger.bootstrap().exception("StartupLoading", "接入 Fabric 错误窗口", throwable);
                 }
             }
 
             installed = true;
-            DebugLogger.info("StartupLoading", "Fabric Loader 实时模组进度追踪已启用");
+            DebugLogger.bootstrap().debug("StartupLoading", "Fabric Loader 实时模组进度追踪已启用");
         } catch (Throwable throwable) {
             if (instrumentation != null && installedTransformer != null) {
                 instrumentation.removeTransformer(installedTransformer);

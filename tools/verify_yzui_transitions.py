@@ -132,10 +132,7 @@ public class YzuiTheme {
 """,
     "top/csituka/youzaiworldcore/util/DebugLogger.java": """
 package top.csituka.youzaiworldcore.util;
-public class DebugLogger {
-    public static void info(String module, String format, Object... args) {}
-    public static void debug(String module, String format, Object... args) {}
-}
+public final class DebugLogger { public static final int LEVEL_OFF=0,LEVEL_BASIC=1,LEVEL_DETAILED=2,LEVEL_DEBUG=3; public static final DebugLogger SERVER=new DebugLogger(),CLIENT=new DebugLogger(); private boolean developer; private int level; public void configure(boolean d,int l){developer=d;level=l;} public boolean isDevModeEnabled(){return developer;} public int getLogLevel(){return level;} public static boolean isEnabled(int l){return false;} public static boolean isEnabled(){return false;} public static DebugLogger bootstrap(){return CLIENT;} public static DebugLogger forFile(java.nio.file.Path p){return SERVER;} public ModuleLogger module(String m){return new ModuleLogger();} public static void notice(String m,String s,Object...a){} public static void warn(String m,String s,Object...a){} public static void error(String m,String s,Object...a){} public static void exception(String m,String s,Object...a){} public static void exceptionSummary(String m,String s,Object...a){} public static void info(String m,String s,Object...a){} public static void stateChange(String m,String s,Object...a){} public static void debug(String m,String s,Object...a){} public static void branch(String m,String s,Object...a){} public static void debugStateChange(String m,String s,Object...a){} public static void trace(String m,String s,Object...a){} public static void entering(String m,String s,Object...a){} public static void exiting(String m,String s,Object...a){} public static void traceBranch(String m,String s,Object...a){} public static void traceStateChange(String m,String s,Object...a){} public static final class ModuleLogger { public void notice(String s,Object...a){} public void info(String s,Object...a){} public void debug(String s,Object...a){} public void trace(String s,Object...a){} public void warn(String s,Object...a){} public void error(String s,Object...a){} public boolean isInfoEnabled(){return false;} public boolean isDebugEnabled(){return false;} public boolean isTraceEnabled(){return false;} } }
 """,
 }
 for name in ("MailBaseScreen", "YzHudSettingsScreen", "RootPage", "ChildPage", "DialogPage"):
@@ -437,7 +434,7 @@ def main():
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(source, encoding="utf-8")
         subprocess.run([javac, "--release", "25", "-encoding", "UTF-8", "-d", str(temporary),
-                        *map(str, sources), *map(str, temporary.rglob("*.java"))], cwd=ROOT, check=True)
+                        *map(str, sources), *map(str, temporary.rglob("*.java")), str(Path(__file__).resolve().parents[1] / "src/main/java/top/csituka/youzaiworldcore/util/LogValues.java")], cwd=ROOT, check=True)
         subprocess.run([java, "-cp", str(temporary), "YzuiTransitionCheck"], cwd=ROOT, check=True)
     print("页面生命周期回归通过：普通页面场景背景、弹窗与同类窗口嵌套、延迟切换、返回/替换、模式与世界切换、异常恢复、模态及图片透明度。")
 

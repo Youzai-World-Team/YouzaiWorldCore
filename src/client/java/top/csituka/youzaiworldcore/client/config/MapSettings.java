@@ -153,7 +153,7 @@ public final class MapSettings {
     /** 修改统一的标记显示模式，立即持久化。 */
     public static void setMarkerDisplay(MarkerDisplay value) {
         var before = markerDisplay; markerDisplay = java.util.Objects.requireNonNull(value); save();
-        DebugLogger.stateChange("MapSettings", "display", "markerDisplay", before, markerDisplay);
+        DebugLogger.CLIENT.stateChange("MapSettings", "display", "markerDisplay", before, markerDisplay);
     }
 
     public static void setShape(Shape value) {
@@ -188,7 +188,7 @@ public final class MapSettings {
         layer = section.getEnum("layer", DEFAULT_LAYER, MapLayer.class);
         overlay = section.getEnum("overlay", DEFAULT_OVERLAY, Overlay.class);
         save();
-        DebugLogger.info("MapSettings", "地图配置已加载，形状=%s，图层=%s", shape, layer);
+        DebugLogger.CLIENT.info("MapSettings", "地图配置已加载，形状={}，图层={}", shape, layer);
     }
 
     /** 保存显示设置；私人数据保存在独立的 SQLite 记录中。 */
@@ -201,7 +201,7 @@ public final class MapSettings {
         values.put("marker_display", markerDisplay.name()); values.put("shape", shape.name());
         values.put("layer", layer.name()); values.put("overlay", overlay.name());
         database().settings("display", values);
-        DebugLogger.debug("MapSettings", "地图显示设置已保存");
+        DebugLogger.CLIENT.debug("MapSettings", "地图显示设置已保存");
     }
 
     /** 恢复显示默认值，不删除玩家的路径点。 */

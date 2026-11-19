@@ -1,7 +1,7 @@
 package top.csituka.youzaiworldcore.config;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import top.csituka.youzaiworldcore.util.DebugLogger;
+
 
 /**
  * 末地传送门相关功能（末地传送门框可合成 / 可搬运 / 末影龙额外龙蛋）的配置。
@@ -19,7 +19,7 @@ import org.slf4j.LoggerFactory;
 @SuppressWarnings({"null", "unused"})
 public final class EndPortalConfig {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/EndPortalConfig");
+    private static final DebugLogger.ModuleLogger LOGGER = DebugLogger.SERVER.module("EndPortalConfig");
 
     /** 默认值：破坏末地传送门框需要精准采集 */
     private static final boolean DEFAULT_MUST_HAVE_SILK_TOUCH = true;

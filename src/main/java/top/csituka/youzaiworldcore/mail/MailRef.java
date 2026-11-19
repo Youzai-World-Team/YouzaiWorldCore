@@ -27,12 +27,12 @@ public class MailRef {
     }
 
     public MailRef(UUID mailId) {
-        DebugLogger.entering(MODULE, "MailRef", "mailId=" + mailId);
+        DebugLogger.SERVER.entering(MODULE, "MailRef", "mailId=" + mailId);
         this.mailId = mailId;
         this.read = false;
         this.starred = false;
         this.claimed = false;
-        DebugLogger.exiting(MODULE, "MailRef");
+        DebugLogger.SERVER.exiting(MODULE, "MailRef");
     }
 
     public MailRef(UUID mailId, boolean read, boolean starred, boolean claimed) {
@@ -47,19 +47,19 @@ public class MailRef {
 
     public boolean isRead() { return read; }
     public void setRead(boolean read) {
-        DebugLogger.stateChange(MODULE, "MailRef", "read", String.valueOf(read));
+        DebugLogger.SERVER.stateChange(MODULE, "MailRef", "read", String.valueOf(read));
         this.read = read;
     }
 
     public boolean isStarred() { return starred; }
     public void setStarred(boolean starred) {
-        DebugLogger.stateChange(MODULE, "MailRef", "starred", String.valueOf(starred));
+        DebugLogger.SERVER.stateChange(MODULE, "MailRef", "starred", String.valueOf(starred));
         this.starred = starred;
     }
 
     public boolean isClaimed() { return claimed; }
     public void setClaimed(boolean claimed) {
-        DebugLogger.stateChange(MODULE, "MailRef", "claimed", String.valueOf(claimed));
+        DebugLogger.SERVER.stateChange(MODULE, "MailRef", "claimed", String.valueOf(claimed));
         this.claimed = claimed;
     }
 

@@ -96,7 +96,7 @@ final class MapSettingsPanel extends AbstractContainerEventHandler implements Re
         }
         button(panelX + 12, panelY + panelHeight - 34, panelWidth - 24, MapTexts.text("more_settings"),
                 () -> Minecraft.getInstance().gui.setScreen(new MapAdvancedSettingsScreen(owner)));
-        DebugLogger.debug("MapSettings", "显示十项地图日常设置，滚动位置=%d", offset);
+        DebugLogger.CLIENT.debug("MapSettings", "显示十项地图日常设置，滚动位置={}", offset);
     }
     private void activate(Entry entry) {
         if (entry.toggle != null) { MapSettings.toggle(entry.toggle); return; }

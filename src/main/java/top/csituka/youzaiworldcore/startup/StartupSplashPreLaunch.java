@@ -24,20 +24,20 @@ public final class StartupSplashPreLaunch implements PreLaunchEntrypoint {
      */
     @Override
     public void onPreLaunch() {
-        DebugLogger.entering("StartupSplash", "onPreLaunch");
+        DebugLogger.bootstrap().entering("StartupSplash", "onPreLaunch");
         StartupLoadingStatus.reset("正在启动 Fabric 模组加载器");
 
         boolean clientEnvironment = FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT;
-        DebugLogger.branch("StartupSplash", "当前为客户端环境", clientEnvironment);
+        DebugLogger.bootstrap().branch("StartupSplash", "当前为客户端环境", clientEnvironment);
         if (!clientEnvironment) {
-            DebugLogger.exiting("StartupSplash", "onPreLaunch", "跳过专用服务端");
+            DebugLogger.bootstrap().exiting("StartupSplash", "onPreLaunch", "跳过专用服务端");
             return;
         }
 
         boolean dataGeneration = System.getProperty(DATA_GENERATION_PROPERTY) != null;
-        DebugLogger.branch("StartupSplash", "当前为数据生成进程", dataGeneration);
+        DebugLogger.bootstrap().branch("StartupSplash", "当前为数据生成进程", dataGeneration);
         if (dataGeneration) {
-            DebugLogger.exiting("StartupSplash", "onPreLaunch", "跳过数据生成进程");
+            DebugLogger.bootstrap().exiting("StartupSplash", "onPreLaunch", "跳过数据生成进程");
             return;
         }
 
@@ -50,14 +50,14 @@ public final class StartupSplashPreLaunch implements PreLaunchEntrypoint {
             splashClass.getMethod("show").invoke(null);
 
             if (Boolean.parseBoolean(System.getProperty(TEST_FAILURE_PROPERTY, "false"))) {
-                DebugLogger.warn("StartupSplash", "已触发启动失败界面测试开关：" + TEST_FAILURE_PROPERTY);
+                DebugLogger.bootstrap().warn("StartupSplash", "已触发启动失败界面测试开关：" + TEST_FAILURE_PROPERTY);
                 throw new IllegalStateException("YouzaiWorldCore 启动失败界面测试异常");
             }
         } catch (ReflectiveOperationException | LinkageError | SecurityException e) {
             // 启动窗口属于非关键界面，创建失败时不能阻止游戏继续启动。
-            DebugLogger.exception("StartupSplash", "加载客户端启动窗口", e);
+            DebugLogger.bootstrap().exception("StartupSplash", "加载客户端启动窗口", e);
         }
 
-        DebugLogger.exiting("StartupSplash", "onPreLaunch");
+        DebugLogger.bootstrap().exiting("StartupSplash", "onPreLaunch");
     }
 }

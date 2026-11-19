@@ -315,7 +315,7 @@ def main():
         harness = temporary / "PauseChecks.java"
         harness.write_text(HARNESS, encoding="utf-8")
         subprocess.run([str(binary / ("javac" + suffix)), "--release", "25", "-encoding", "UTF-8",
-                        "-d", str(temporary), *sources, *[str(CLIENT / path) for path in production], str(harness)], check=True)
+                        "-d", str(temporary), *sources, *[str(CLIENT / path) for path in production], str(harness), str(Path(__file__).resolve().parents[1] / "src/main/java/top/csituka/youzaiworldcore/util/LogValues.java")], check=True)
         subprocess.run([str(binary / ("java" + suffix)), "-cp", str(temporary), "PauseChecks"], check=True)
     names = {"screen.youzaiworldcore.pause." + key for key in ("profile", "singleplayer", "hint")}
     for path in (ROOT / "src/main/resources/assets/youzaiworldcore/lang").glob("*.json"):

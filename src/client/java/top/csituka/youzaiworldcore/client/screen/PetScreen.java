@@ -56,7 +56,7 @@ public final class PetScreen extends MailBaseScreen {
         connection = Minecraft.getInstance().getConnection(); pending = ++sequence; deadline = System.currentTimeMillis() + 15000;
         status = text("loading");
         ClientPlayNetworking.send(new PetMenuRequestPayload(pending, action, selected == null ? "" : selected, value));
-        DebugLogger.info("PetMenu", "请求宠物操作：%s", action);
+        DebugLogger.CLIENT.debug("PetMenu", "请求宠物操作：{}", action);
         if (nameInput != null) rebuildWidgets();
     }
     public void receive(PetMenuStatePayload result, Object source) {

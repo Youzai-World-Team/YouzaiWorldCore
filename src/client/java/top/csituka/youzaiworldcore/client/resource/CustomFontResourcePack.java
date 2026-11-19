@@ -42,7 +42,7 @@ public final class CustomFontResourcePack {
             return;
         }
 
-        DebugLogger.entering(MODULE, "register");
+        DebugLogger.CLIENT.entering(MODULE, "register");
         var container = FabricLoader.getInstance().getModContainer(YouzaiworldCore.MOD_ID)
                 .orElseThrow(() -> new IllegalStateException("无法取得 YouzaiWorldCore 模组容器"));
         PackActivationType activationType = ClientExternalSettings.isCustomFontEnabled()
@@ -55,16 +55,15 @@ public final class CustomFontResourcePack {
                 Component.translatable("resourcepack.youzaiworldcore.custom_font.name"),
                 activationType);
         if (!registered) {
-            DebugLogger.error(MODULE, "内置字体资源包注册失败：resourcepacks/custom_font");
-            DebugLogger.exiting(MODULE, "register", "failed");
+            DebugLogger.CLIENT.error(MODULE, "内置字体资源包注册失败：resourcepacks/custom_font");
+            DebugLogger.CLIENT.exiting(MODULE, "register", "failed");
             return;
         }
 
         ClientLifecycleEvents.CLIENT_STARTED.register(client ->
                 applySelection(client, ClientExternalSettings.isCustomFontEnabled()));
-        DebugLogger.info(MODULE, "内置字体资源包已注册：id=%s, defaultEnabled=%s",
-                PACK_ID, activationType.isEnabledByDefault());
-        DebugLogger.exiting(MODULE, "register");
+        DebugLogger.CLIENT.debug(MODULE, "内置字体资源包已注册：id={}, defaultEnabled={}", PACK_ID, activationType.isEnabledByDefault());
+        DebugLogger.CLIENT.exiting(MODULE, "register");
     }
 
     /**
@@ -83,23 +82,23 @@ public final class CustomFontResourcePack {
             repository.reload();
         }
         if (!repository.isAvailable(PACK_ID)) {
-            DebugLogger.error(MODULE, "字体资源包不可用，无法切换：%s", PACK_ID);
+            DebugLogger.CLIENT.error(MODULE, "字体资源包不可用，无法切换：{}", PACK_ID);
             return;
         }
 
         boolean selected = repository.getSelectedIds().contains(PACK_ID);
         if (selected == enabled) {
-            DebugLogger.debug(MODULE, "字体资源包状态已同步：enabled=%s", enabled);
+            DebugLogger.CLIENT.debug(MODULE, "字体资源包状态已同步：enabled={}", enabled);
             return;
         }
 
         boolean changed = enabled ? repository.addPack(PACK_ID) : repository.removePack(PACK_ID);
         if (!changed) {
-            DebugLogger.warn(MODULE, "字体资源包状态切换失败：enabled=%s, selected=%s", enabled, selected);
+            DebugLogger.CLIENT.warn(MODULE, "字体资源包状态切换失败：enabled={}, selected={}", enabled, selected);
             return;
         }
 
         client.options.updateResourcePacks(repository);
-        DebugLogger.stateChange(MODULE, PACK_ID, "enabled", selected, enabled);
+        DebugLogger.CLIENT.stateChange(MODULE, PACK_ID, "enabled", selected, enabled);
     }
 }

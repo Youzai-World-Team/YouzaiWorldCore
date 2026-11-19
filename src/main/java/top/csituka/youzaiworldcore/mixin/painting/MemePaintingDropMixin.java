@@ -63,8 +63,7 @@ public class MemePaintingDropMixin {
             return; // 不是自定义画，保持原版逻辑
         }
 
-        DebugLogger.debug("MemePaintingDropMixin",
-                "自定义画被破坏，掉落专用物品: variant=%s".formatted(key.identifier()));
+        DebugLogger.SERVER.debug("MemePaintingDropMixin", "自定义画被破坏，掉落专用物品: variant={}", key.identifier());
 
         self.playSound(SoundEvents.PAINTING_BREAK, 1.0F, 1.0F);
 
@@ -94,10 +93,7 @@ public class MemePaintingDropMixin {
             return;
         }
 
-        DebugLogger.debug("MemePaintingDropMixin",
-                "中键拾取自定义画: variant=%s -> item=%s".formatted(
-                        key.identifier(),
-                        customItem));
+        DebugLogger.SERVER.debug("MemePaintingDropMixin", "中键拾取自定义画: variant={} -> item={}", key.identifier(), customItem);
 
         cir.setReturnValue(new ItemStack(customItem));
     }

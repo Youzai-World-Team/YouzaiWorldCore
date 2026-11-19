@@ -88,7 +88,7 @@ public final class ChatFormatHelper {
             TextNode node = PARSER.parseNode(format);
             FORMAT_SOURCE_CACHE.put(format, format);
             FORMAT_NODE_CACHE.put(format, node);
-            DebugLogger.info(MODULE, "聊天模板已重新解析: %s", format);
+            DebugLogger.SERVER.debug(MODULE, "聊天模板已重新解析: {}", format);
             return node;
         }
         return FORMAT_NODE_CACHE.get(format);
@@ -175,11 +175,11 @@ public final class ChatFormatHelper {
         try {
             ExtPlayerChatMessage.setArg(message, HEADER_ARG, formatChatHeader(player));
             server = player.level().getServer();
-            if (DebugLogger.isEnabled(DebugLogger.LEVEL_DEBUG)) {
-                DebugLogger.trace(MODULE, "已设置玩家聊天前缀：%s", player.getScoreboardName());
+            if (DebugLogger.SERVER.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+                DebugLogger.SERVER.trace(MODULE, "已设置玩家聊天前缀：{}", player.getScoreboardName());
             }
         } catch (Exception e) {
-            DebugLogger.exception(MODULE, "modifyForSending", e);
+            DebugLogger.SERVER.exception(MODULE, "modifyForSending", e);
         }
     }
 

@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.itemborder;
 
+import top.csituka.youzaiworldcore.util.LogValues;
+
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.item.component.CustomData;
@@ -201,9 +203,8 @@ public final class ItemBorderRenderer {
         Integer manualColor = matchManualBorder(item);
         if (manualColor != null) {
             // 先判等级再取参数：getKey() 与变长参数数组在渲染热路径上是白扔的垃圾
-            if (DebugLogger.isEnabled(DebugLogger.LEVEL_DEBUG)) {
-                DebugLogger.trace(MODULE, "手动匹配颜色: %08X for %s", manualColor,
-                        BuiltInRegistries.ITEM.getKey(item.getItem()));
+            if (DebugLogger.CLIENT.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+                DebugLogger.CLIENT.trace(MODULE, "手动匹配颜色: {} for {}", LogValues.hex(manualColor, 8), BuiltInRegistries.ITEM.getKey(item.getItem()));
             }
             return manualColor | 0xEE000000;
         }
@@ -383,7 +384,7 @@ public final class ItemBorderRenderer {
             } catch (NumberFormatException ignored) {}
         }
 
-        DebugLogger.warn(MODULE, "无法解析颜色值: \"%s\"", trimmed);
+        DebugLogger.CLIENT.warn(MODULE, "无法解析颜色值: \"{}\"", trimmed);
         return null;
     }
 

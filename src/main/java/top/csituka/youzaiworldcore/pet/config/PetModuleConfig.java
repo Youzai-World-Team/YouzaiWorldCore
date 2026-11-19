@@ -41,12 +41,12 @@ public final class PetModuleConfig {
 
     /** 从全局配置的 {@code pet_module} 分节加载（分节缺失则写入默认配置） */
     public static void load() {
-        DebugLogger.entering(MODULE, "load");
+        DebugLogger.SERVER.entering(MODULE, "load");
         ConfigSection section = GlobalSettings.section(GlobalSettings.PET_MODULE);
         if (section.isEmpty()) {
             save();
-            DebugLogger.info(MODULE, "pet_module 分节不存在，已写入默认配置");
-            DebugLogger.exiting(MODULE, "load", "created default");
+            DebugLogger.SERVER.info(MODULE, "pet_module 分节不存在，已写入默认配置");
+            DebugLogger.SERVER.exiting(MODULE, "load", "created default");
             return;
         }
 
@@ -56,9 +56,8 @@ public final class PetModuleConfig {
                 1, Integer.MAX_VALUE);
         autoBackupEnabled = section.getBoolean("auto_backup_enabled", autoBackupEnabled);
 
-        DebugLogger.info(MODULE, "宠物模块配置已加载: interval=%ds, retention=%d, autoBackup=%s",
-                backupIntervalSeconds, backupRetentionCount, autoBackupEnabled);
-        DebugLogger.exiting(MODULE, "load");
+        DebugLogger.SERVER.info(MODULE, "宠物模块配置已加载: interval={}s, retention={}, autoBackup={}", backupIntervalSeconds, backupRetentionCount, autoBackupEnabled);
+        DebugLogger.SERVER.exiting(MODULE, "load");
     }
 
     /** 重置为默认值并写入 {@code pet_module} 分节（新开服 / 坏文件恢复用） */
@@ -76,7 +75,7 @@ public final class PetModuleConfig {
         section.set("backup_retention_count", backupRetentionCount);
         section.set("auto_backup_enabled", autoBackupEnabled);
         GlobalSettings.save();
-        DebugLogger.info(MODULE, "宠物模块配置已保存");
+        DebugLogger.SERVER.debug(MODULE, "宠物模块配置已保存");
     }
 
     public static int getBackupIntervalSeconds() {

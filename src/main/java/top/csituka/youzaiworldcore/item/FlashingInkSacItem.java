@@ -47,8 +47,7 @@ public class FlashingInkSacItem extends Item implements SignApplicator {
 
         level.playSound(null, sign.getBlockPos(), SoundEvents.GLOW_INK_SAC_USE,
                 SoundSource.BLOCKS, 1.0f, 1.0f);
-        DebugLogger.info(MODULE, "已启用原版告示牌闪烁：pos=%s, front=%s",
-                sign.getBlockPos().toShortString(), front);
+        DebugLogger.SERVER.debug(MODULE, "已启用原版告示牌闪烁：pos={}, front={}", sign.getBlockPos().toShortString(), front);
         return true;
     }
 }

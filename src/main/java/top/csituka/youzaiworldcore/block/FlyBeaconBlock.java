@@ -26,9 +26,9 @@ public class FlyBeaconBlock extends BaseEntityBlock {
     public static final BooleanProperty ACTIVE = BooleanProperty.create("active");
     public FlyBeaconBlock(BlockBehaviour.Properties properties) {
         super(properties);
-        DebugLogger.entering("FlyBeaconBlock", "constructor");
+        DebugLogger.SERVER.entering("FlyBeaconBlock", "constructor");
         this.registerDefaultState(this.stateDefinition.any().setValue(ACTIVE, false));
-        DebugLogger.exiting("FlyBeaconBlock", "constructor");
+        DebugLogger.SERVER.exiting("FlyBeaconBlock", "constructor");
     }
 
     @Override
@@ -38,9 +38,9 @@ public class FlyBeaconBlock extends BaseEntityBlock {
 
     @Override
     public BlockEntity newBlockEntity(@NonNull BlockPos pos, @NonNull BlockState state) {
-        DebugLogger.entering("FlyBeaconBlock", "newBlockEntity", "pos=" + pos);
+        DebugLogger.SERVER.entering("FlyBeaconBlock", "newBlockEntity", "pos=" + pos);
         FlyBeaconBlockEntity entity = new FlyBeaconBlockEntity(pos, state);
-        DebugLogger.exiting("FlyBeaconBlock", "newBlockEntity");
+        DebugLogger.SERVER.exiting("FlyBeaconBlock", "newBlockEntity");
         return entity;
     }
 
@@ -53,28 +53,28 @@ public class FlyBeaconBlock extends BaseEntityBlock {
     @Nullable
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, @NonNull BlockState state, @NonNull BlockEntityType<T> blockEntityType) {
-        DebugLogger.entering("FlyBeaconBlock", "getTicker");
+        DebugLogger.SERVER.entering("FlyBeaconBlock", "getTicker");
         if (!level.isClientSide()) {
-            DebugLogger.branch("FlyBeaconBlock", "is server side", true);
-            DebugLogger.exiting("FlyBeaconBlock", "getTicker", "server ticker");
+            DebugLogger.SERVER.branch("FlyBeaconBlock", "is server side", true);
+            DebugLogger.SERVER.exiting("FlyBeaconBlock", "getTicker", "server ticker");
             return createTickerHelper(blockEntityType, ModBlockEntities.FLY_BEACON, FlyBeaconBlockEntity::serverTick);
         }
-        DebugLogger.branch("FlyBeaconBlock", "is client side, no ticker", false);
-        DebugLogger.exiting("FlyBeaconBlock", "getTicker", "null (client)");
+        DebugLogger.SERVER.branch("FlyBeaconBlock", "is client side, no ticker", false);
+        DebugLogger.SERVER.exiting("FlyBeaconBlock", "getTicker", "null (client)");
         return null;
     }
 
     @Override
     @NonNull
     protected InteractionResult useWithoutItem(@NonNull BlockState state, Level level, @NonNull BlockPos pos, @NonNull Player player, @NonNull BlockHitResult hitResult) {
-        DebugLogger.entering("FlyBeaconBlock", "useWithoutItem", "pos=" + pos + ", player=" + player.getName().getString());
+        DebugLogger.SERVER.entering("FlyBeaconBlock", "useWithoutItem", "pos=" + pos + ", player=" + player.getName().getString());
         if (!level.isClientSide()) {
             BlockEntity blockEntity = level.getBlockEntity(pos);
             if (blockEntity instanceof FlyBeaconBlockEntity flyBeacon) {
                 player.openMenu(flyBeacon);
             }
         }
-        DebugLogger.exiting("FlyBeaconBlock", "useWithoutItem", "SUCCESS");
+        DebugLogger.SERVER.exiting("FlyBeaconBlock", "useWithoutItem", "SUCCESS");
         return InteractionResult.SUCCESS;
     }
 }

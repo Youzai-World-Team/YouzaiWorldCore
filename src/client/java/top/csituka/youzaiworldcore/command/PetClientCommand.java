@@ -24,7 +24,7 @@ public class PetClientCommand {
 
     @SuppressWarnings("null")
     public static void register() {
-        DebugLogger.entering(MODULE, "register");
+        DebugLogger.CLIENT.entering(MODULE, "register");
 
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, context) -> dispatcher.register(
                 literal("yzwc")
@@ -32,7 +32,7 @@ public class PetClientCommand {
                                 .then(argument("args", StringArgumentType.greedyString())
                                         .executes(cmdContext -> {
                                             String args = StringArgumentType.getString(cmdContext, "args");
-                                            DebugLogger.info(MODULE, "转发宠物命令: args=%s", args);
+                                            DebugLogger.CLIENT.debug(MODULE, "转发宠物命令: args={}", args);
                                             ClientPlayNetworking.send(new PetCommandPayload(args));
                                             return Command.SINGLE_SUCCESS;
                                         })
@@ -40,7 +40,7 @@ public class PetClientCommand {
                         )
         ));
 
-        DebugLogger.info(MODULE, "客户端命令 /yzwc pet 已注册 (greedy forwarding)");
-        DebugLogger.exiting(MODULE, "register");
+        DebugLogger.CLIENT.debug(MODULE, "客户端命令 /yzwc pet 已注册 (greedy forwarding)");
+        DebugLogger.CLIENT.exiting(MODULE, "register");
     }
 }

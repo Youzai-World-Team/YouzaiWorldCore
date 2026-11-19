@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.event;
 
+import top.csituka.youzaiworldcore.util.LogValues;
+
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
@@ -27,7 +29,7 @@ public class MeteorSmashHandler {
     private static final int FIRE_DURATION = 200; // 10 秒
 
     public static void register() {
-        DebugLogger.entering(MODULE, "register");
+        DebugLogger.SERVER.entering(MODULE, "register");
 
         ServerLivingEntityEvents.AFTER_DAMAGE.register((entity, source, baseDamage, damageTaken, blocked) -> {
             if (entity.level().isClientSide())
@@ -56,11 +58,10 @@ public class MeteorSmashHandler {
                 target.igniteForTicks(FIRE_DURATION);
             }
 
-            DebugLogger.info(MODULE, "Meteor Smash 点燃 %d 个实体 (player=%s, center=%s, radius=%.1f)",
-                    nearby.size(), player.getName().getString(), entity.getName().getString(), RADIUS);
+            DebugLogger.SERVER.debug(MODULE, "Meteor Smash 点燃 {} 个实体 (player={}, center={}, radius={})", nearby.size(), player.getName().getString(), entity.getName().getString(), LogValues.decimal(RADIUS, 1));
         });
 
-        DebugLogger.info(MODULE, "流星猛击附魔事件处理器已注册 (ServerLivingEntityEvents.AFTER_DAMAGE)");
-        DebugLogger.exiting(MODULE, "register");
+        DebugLogger.SERVER.debug(MODULE, "流星猛击附魔事件处理器已注册 (ServerLivingEntityEvents.AFTER_DAMAGE)");
+        DebugLogger.SERVER.exiting(MODULE, "register");
     }
 }

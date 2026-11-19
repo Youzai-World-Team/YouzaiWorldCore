@@ -39,8 +39,9 @@ public abstract class WolfModeAttackMixin {
 
         // COMPANIONSHIP 模式：不攻击任何目标
         if (mode == PetMode.COMPANIONSHIP) {
-            DebugLogger.debug(MODULE, "COMPANIONSHIP 模式阻止攻击: wolf=%s, target=%s",
-                    wolf.getUUID(), target != null ? target.getUUID() : "null");
+            if (DebugLogger.SERVER.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+                DebugLogger.SERVER.trace(MODULE, "COMPANIONSHIP 模式阻止攻击: wolf={}, target={}", wolf.getUUID(), target != null ? target.getUUID() : "null");
+            }
             cir.setReturnValue(false);
         }
 

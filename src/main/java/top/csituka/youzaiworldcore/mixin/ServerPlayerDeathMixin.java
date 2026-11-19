@@ -95,10 +95,7 @@ public class ServerPlayerDeathMixin implements InPlaceRespawnPlayerAccess {
 
         InPlaceRespawnManager.syncDeathInfo(player,
                 youzaiworldcore$inPlaceRespawnEnabled, youzaiworldcore$inPlaceRespawnCost);
-        DebugLogger.info("InPlaceRespawn", "玩家 %s 死亡：enabled=%s, cost=%d, heart=%s, dimension=%s",
-                player.getName().getString(), youzaiworldcore$inPlaceRespawnEnabled,
-                youzaiworldcore$inPlaceRespawnCost, youzaiworldcore$hadHeartBeforeDeath,
-                youzaiworldcore$deathDimension.identifier());
+        DebugLogger.SERVER.info("InPlaceRespawn", "玩家 {} 死亡：enabled={}, cost={}, heart={}, dimension={}", player.getName().getString(), youzaiworldcore$inPlaceRespawnEnabled, youzaiworldcore$inPlaceRespawnCost, youzaiworldcore$hadHeartBeforeDeath, youzaiworldcore$deathDimension.identifier());
     }
 
     @Unique
@@ -246,7 +243,7 @@ public class ServerPlayerDeathMixin implements InPlaceRespawnPlayerAccess {
             AdventureLevelManager.grantExpSilent(
                     player.getUUID(), player.getName().getString(), amount);
         } catch (Exception e) {
-            DebugLogger.exception("InPlaceRespawn", "grantAdventureExperience", e);
+            DebugLogger.SERVER.exception("InPlaceRespawn", "grantAdventureExperience", e);
         }
     }
 

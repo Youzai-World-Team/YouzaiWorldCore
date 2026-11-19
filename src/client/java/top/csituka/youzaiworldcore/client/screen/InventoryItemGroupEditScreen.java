@@ -103,11 +103,11 @@ public final class InventoryItemGroupEditScreen extends Screen {
         invalidField = rule.invalidField();
         if (invalidField != null) {
             saveButton.setTooltip(Tooltip.create(text("invalid." + invalidField)));
-            DebugLogger.debug("InventoryItemGroupEditScreen", "分组草稿字段校验失败：%s", invalidField);
+            DebugLogger.CLIENT.debug("InventoryItemGroupEditScreen", "分组草稿字段校验失败：{}", invalidField);
             return;
         }
         onSave.accept(rule);
-        DebugLogger.debug("InventoryItemGroupEditScreen", "已更新分组草稿：%s", rule.groupName());
+        DebugLogger.CLIENT.debug("InventoryItemGroupEditScreen", "已更新分组草稿：{}", rule.groupName());
         onClose();
     }
 

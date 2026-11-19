@@ -69,6 +69,6 @@ public final class DoubleDoorsState {
         }
         UserSettings.section(playerUuid, GlobalSettings.DOUBLE_DOORS_MODULE).set(KEY_ENABLED, enabled);
         UserSettings.save(playerUuid);
-        DebugLogger.info(MODULE, "玩家 %s 双开门状态已设置为 %s", playerUuid, enabled);
+        DebugLogger.SERVER.info(MODULE, "玩家 {} 双开门状态已设置为 {}", playerUuid, enabled);
     }
 }

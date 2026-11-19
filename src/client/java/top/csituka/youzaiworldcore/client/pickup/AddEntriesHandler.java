@@ -38,8 +38,10 @@ public final class AddEntriesHandler {
     public static void drainQueue() {
         if (PendingPickupQueue.isEmpty()) return;
 
-        DebugLogger.entering("AddEntriesHandler", "drainQueue",
-                "queueSize=" + PendingPickupQueue.size());
+        if (DebugLogger.CLIENT.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+            DebugLogger.CLIENT.entering("AddEntriesHandler", "drainQueue",
+                    "queueSize=" + PendingPickupQueue.size());
+        }
 
         PendingPickupQueue.PendingPickup pickup;
         while ((pickup = PendingPickupQueue.dequeue()) != null) {
@@ -48,8 +50,9 @@ public final class AddEntriesHandler {
                     ItemStack stack = itemPickup.stack();
                     if (stack.isEmpty()) continue;
 
-                    DebugLogger.info("AddEntriesHandler", "Item pickup: %s x%d",
-                            stack.getHoverName().getString(), itemPickup.amount());
+                    if (DebugLogger.CLIENT.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+                        DebugLogger.CLIENT.trace("AddEntriesHandler", "Item pickup: {} x{}", stack.getHoverName().getString(), itemPickup.amount());
+                    }
 
                     ItemDisplayEntry entry = new ItemDisplayEntry(
                             stack, itemPickup.amount(), DrawEntriesHandler.DISPLAY_TIME);
@@ -57,7 +60,9 @@ public final class AddEntriesHandler {
                 }
                 case Experience xpPickup -> {
                     int xpValue = xpPickup.xpValue();
-                    DebugLogger.info("AddEntriesHandler", "Experience pickup: value=%d", xpValue);
+                    if (DebugLogger.CLIENT.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+                        DebugLogger.CLIENT.trace("AddEntriesHandler", "Experience pickup: value={}", xpValue);
+                    }
 
                     ExperienceDisplayEntry entry = new ExperienceDisplayEntry(
                             xpValue, DrawEntriesHandler.DISPLAY_TIME);
@@ -66,6 +71,6 @@ public final class AddEntriesHandler {
             }
         }
 
-        DebugLogger.exiting("AddEntriesHandler", "drainQueue");
+        DebugLogger.CLIENT.exiting("AddEntriesHandler", "drainQueue");
     }
 }

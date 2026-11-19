@@ -113,7 +113,7 @@ public final class GuiAnimationController {
         // Mod Menu 在 onClose() 中先释放图标纹理再 setScreen，不能继续绘制退出帧。
         // 用类名判断避免统一动画控制器直接链接第三方类；目标页仍正常播放进入动画。
         if (oldScreen.getClass().getName().equals("com.terraformersmc.modmenu.gui.ModsScreen")) {
-            DebugLogger.debug(MODULE, "Mod Menu 退出时立即切页，避免访问已释放的图标纹理");
+            DebugLogger.CLIENT.debug(MODULE, "Mod Menu 退出时立即切页，避免访问已释放的图标纹理");
             setScreenImmediately(gui, newScreen);
             return true;
         }
@@ -133,9 +133,7 @@ public final class GuiAnimationController {
         exitingScreen = oldScreen;
         exitStartedAt = System.currentTimeMillis();
         transitionPending = true;
-        DebugLogger.info(MODULE, "接管页面切换：%s -> %s",
-                oldScreen.getClass().getSimpleName(),
-                newScreen == null ? "游戏画面" : newScreen.getClass().getSimpleName());
+        DebugLogger.CLIENT.debug(MODULE, "接管页面切换：{} -> {}", oldScreen.getClass().getSimpleName(), newScreen == null ? "游戏画面" : newScreen.getClass().getSimpleName());
         return true;
     }
 
@@ -147,7 +145,7 @@ public final class GuiAnimationController {
         lastRenderedScreen = null;
         if (newScreen != null) {
             enterStartedAt = returning ? 0L : System.currentTimeMillis();
-            DebugLogger.debug(MODULE, "页面进入动画开始：%s", newScreen.getClass().getSimpleName());
+            DebugLogger.CLIENT.debug(MODULE, "页面进入动画开始：{}", newScreen.getClass().getSimpleName());
         }
     }
 

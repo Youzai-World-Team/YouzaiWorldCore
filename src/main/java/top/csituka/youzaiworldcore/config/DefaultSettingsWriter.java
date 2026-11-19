@@ -31,7 +31,7 @@ public final class DefaultSettingsWriter {
      * <p>顺序即生成文件里分节的出现顺序，按「核心 → 账户 → 玩法 → 运营」排列。</p>
      */
     public static void writeAllDefaults() {
-        DebugLogger.entering(MODULE, "writeAllDefaults");
+        DebugLogger.SERVER.entering(MODULE, "writeAllDefaults");
         GlobalSettings.runBatched(() -> {
             // 核心
             ServerExternalSettings.writeDefaults();
@@ -55,6 +55,6 @@ public final class DefaultSettingsWriter {
             // 运营
             UpdateCheckerConfig.writeDefaults();
         });
-        DebugLogger.exiting(MODULE, "writeAllDefaults");
+        DebugLogger.SERVER.exiting(MODULE, "writeAllDefaults");
     }
 }

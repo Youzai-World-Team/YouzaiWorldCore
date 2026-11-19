@@ -51,7 +51,7 @@ public class PetCommand {
     public static final String PERMISSION_PET_ADMIN = "youzaiworldcore.command.pet.admin";
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
-        DebugLogger.entering(MODULE, "register");
+        DebugLogger.SERVER.entering(MODULE, "register");
 
         // 建议提供者：列出玩家所有的宠物内部名称
         SuggestionProvider<CommandSourceStack> petNameSuggestions = (ctx, builder) -> {
@@ -155,7 +155,7 @@ public class PetCommand {
                 )
         );
 
-        DebugLogger.exiting(MODULE, "register");
+        DebugLogger.SERVER.exiting(MODULE, "register");
     }
 
     // ==================== 命令执行方法 ====================
@@ -163,12 +163,12 @@ public class PetCommand {
     // ===== 1. 查看宠物列表 =====
 
     private static int executeList(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
-        DebugLogger.entering(MODULE, "executeList");
+        DebugLogger.SERVER.entering(MODULE, "executeList");
         CommandSourceStack source = ctx.getSource();
 
         if (!source.isPlayer()) {
             source.sendFailure(Component.translatable("youzaiworldcore.message.command.player_only"));
-            DebugLogger.exiting(MODULE, "executeList", "0 (console)");
+            DebugLogger.SERVER.exiting(MODULE, "executeList", "0 (console)");
             return 0;
         }
 
@@ -184,7 +184,7 @@ public class PetCommand {
         if (ownedPets.isEmpty() && trustedPets.isEmpty()) {
             source.sendSuccess(() -> Component.translatable(
                     "youzaiworldcore.message.pet.list.empty"), false);
-            DebugLogger.exiting(MODULE, "executeList", "0 (empty)");
+            DebugLogger.SERVER.exiting(MODULE, "executeList", "0 (empty)");
             return 0;
         }
 
@@ -219,7 +219,7 @@ public class PetCommand {
                             pet.formattedTameTime())), false);
         }
 
-        DebugLogger.exiting(MODULE, "executeList", "1");
+        DebugLogger.SERVER.exiting(MODULE, "executeList", "1");
         return 1;
     }
 
@@ -273,7 +273,7 @@ public class PetCommand {
     // ===== 3. 重命名 =====
 
     private static int executeRename(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
-        DebugLogger.entering(MODULE, "executeRename");
+        DebugLogger.SERVER.entering(MODULE, "executeRename");
         CommandSourceStack source = ctx.getSource();
 
         String internalName = StringArgumentType.getString(ctx, "internalName").toUpperCase(Locale.ROOT);
@@ -282,7 +282,7 @@ public class PetCommand {
         ValidationResult vr = validatePetAccess(ctx, internalName);
         if (vr.hasError()) {
             source.sendFailure(Component.translatable(vr.errorKey(), vr.errorArgs()));
-            DebugLogger.exiting(MODULE, "executeRename", "0 (access denied)");
+            DebugLogger.SERVER.exiting(MODULE, "executeRename", "0 (access denied)");
             return 0;
         }
 
@@ -294,7 +294,7 @@ public class PetCommand {
         if (newDisplayName.equals(entry.displayName())) {
             source.sendSuccess(() -> Component.translatable(
                     "youzaiworldcore.message.pet.rename.no_change"), false);
-            DebugLogger.exiting(MODULE, "executeRename", "1 (no change)");
+            DebugLogger.SERVER.exiting(MODULE, "executeRename", "1 (no change)");
             return 1;
         }
 
@@ -305,7 +305,7 @@ public class PetCommand {
         if (nameTaken) {
             source.sendFailure(Component.translatable(
                     "youzaiworldcore.message.pet.rename.duplicate", newDisplayName));
-            DebugLogger.exiting(MODULE, "executeRename", "0 (duplicate)");
+            DebugLogger.SERVER.exiting(MODULE, "executeRename", "0 (duplicate)");
             return 0;
         }
 
@@ -323,15 +323,15 @@ public class PetCommand {
                 "youzaiworldcore.message.pet.rename.success",
                 internalName, newDisplayName), false);
 
-        DebugLogger.info(MODULE, "重命名: [%s] -> %s", internalName, newDisplayName);
-        DebugLogger.exiting(MODULE, "executeRename", "1");
+        DebugLogger.SERVER.info(MODULE, "重命名: [{}] -> {}", internalName, newDisplayName);
+        DebugLogger.SERVER.exiting(MODULE, "executeRename", "1");
         return 1;
     }
 
     // ===== 4. 设置模式 =====
 
     private static int executeSetMode(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
-        DebugLogger.entering(MODULE, "executeSetMode");
+        DebugLogger.SERVER.entering(MODULE, "executeSetMode");
         CommandSourceStack source = ctx.getSource();
 
         String internalName = StringArgumentType.getString(ctx, "internalName").toUpperCase(Locale.ROOT);
@@ -343,14 +343,14 @@ public class PetCommand {
         } catch (IllegalArgumentException e) {
             source.sendFailure(Component.translatable(
                     "youzaiworldcore.message.pet.mode.invalid", modeStr));
-            DebugLogger.exiting(MODULE, "executeSetMode", "0 (invalid mode)");
+            DebugLogger.SERVER.exiting(MODULE, "executeSetMode", "0 (invalid mode)");
             return 0;
         }
 
         ValidationResult vr = validatePetAccess(ctx, internalName);
         if (vr.hasError()) {
             source.sendFailure(Component.translatable(vr.errorKey(), vr.errorArgs()));
-            DebugLogger.exiting(MODULE, "executeSetMode", "0 (access denied)");
+            DebugLogger.SERVER.exiting(MODULE, "executeSetMode", "0 (access denied)");
             return 0;
         }
 
@@ -366,15 +366,15 @@ public class PetCommand {
                 "youzaiworldcore.message.pet.mode.set",
                 internalName, newMode.getSerializedName()), false);
 
-        DebugLogger.info(MODULE, "设置模式: [%s] -> %s", internalName, newMode);
-        DebugLogger.exiting(MODULE, "executeSetMode", "1");
+        DebugLogger.SERVER.info(MODULE, "设置模式: [{}] -> {}", internalName, newMode);
+        DebugLogger.SERVER.exiting(MODULE, "executeSetMode", "1");
         return 1;
     }
 
     // ===== 5. 管理信任列表 =====
 
     private static int executeTrustAdd(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
-        DebugLogger.entering(MODULE, "executeTrustAdd");
+        DebugLogger.SERVER.entering(MODULE, "executeTrustAdd");
         CommandSourceStack source = ctx.getSource();
 
         String internalName = StringArgumentType.getString(ctx, "internalName").toUpperCase(Locale.ROOT);
@@ -382,7 +382,7 @@ public class PetCommand {
         ValidationResult vr = validatePetAccess(ctx, internalName);
         if (vr.hasError()) {
             source.sendFailure(Component.translatable(vr.errorKey(), vr.errorArgs()));
-            DebugLogger.exiting(MODULE, "executeTrustAdd", "0 (access denied)");
+            DebugLogger.SERVER.exiting(MODULE, "executeTrustAdd", "0 (access denied)");
             return 0;
         }
 
@@ -395,14 +395,14 @@ public class PetCommand {
         } catch (Exception e) {
             source.sendFailure(Component.translatable(
                     "youzaiworldcore.message.pet.trust.player_not_found"));
-            DebugLogger.exiting(MODULE, "executeTrustAdd", "0 (player not found)");
+            DebugLogger.SERVER.exiting(MODULE, "executeTrustAdd", "0 (player not found)");
             return 0;
         }
 
         if (profiles.isEmpty()) {
             source.sendFailure(Component.translatable(
                     "youzaiworldcore.message.pet.trust.player_not_found"));
-            DebugLogger.exiting(MODULE, "executeTrustAdd", "0 (no player)");
+            DebugLogger.SERVER.exiting(MODULE, "executeTrustAdd", "0 (no player)");
             return 0;
         }
 
@@ -412,14 +412,14 @@ public class PetCommand {
         if (targetUUID.equals(entry.ownerUUID())) {
             source.sendFailure(Component.translatable(
                     "youzaiworldcore.message.pet.trust.add_owner"));
-            DebugLogger.exiting(MODULE, "executeTrustAdd", "0 (add owner)");
+            DebugLogger.SERVER.exiting(MODULE, "executeTrustAdd", "0 (add owner)");
             return 0;
         }
 
         if (entry.trustedPlayers().contains(targetUUID)) {
             source.sendFailure(Component.translatable(
                     "youzaiworldcore.message.pet.trust.already_added"));
-            DebugLogger.exiting(MODULE, "executeTrustAdd", "0 (already added)");
+            DebugLogger.SERVER.exiting(MODULE, "executeTrustAdd", "0 (already added)");
             return 0;
         }
 
@@ -433,13 +433,13 @@ public class PetCommand {
                 "youzaiworldcore.message.pet.trust.added",
                 targetProfile.name(), internalName), false);
 
-        DebugLogger.info(MODULE, "信任添加: [%s] +%s", internalName, targetUUID);
-        DebugLogger.exiting(MODULE, "executeTrustAdd", "1");
+        DebugLogger.SERVER.info(MODULE, "信任添加: [{}] +{}", internalName, targetUUID);
+        DebugLogger.SERVER.exiting(MODULE, "executeTrustAdd", "1");
         return 1;
     }
 
     private static int executeTrustRemove(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
-        DebugLogger.entering(MODULE, "executeTrustRemove");
+        DebugLogger.SERVER.entering(MODULE, "executeTrustRemove");
         CommandSourceStack source = ctx.getSource();
 
         String internalName = StringArgumentType.getString(ctx, "internalName").toUpperCase(Locale.ROOT);
@@ -447,7 +447,7 @@ public class PetCommand {
         ValidationResult vr = validatePetAccess(ctx, internalName);
         if (vr.hasError()) {
             source.sendFailure(Component.translatable(vr.errorKey(), vr.errorArgs()));
-            DebugLogger.exiting(MODULE, "executeTrustRemove", "0 (access denied)");
+            DebugLogger.SERVER.exiting(MODULE, "executeTrustRemove", "0 (access denied)");
             return 0;
         }
 
@@ -460,14 +460,14 @@ public class PetCommand {
         } catch (Exception e) {
             source.sendFailure(Component.translatable(
                     "youzaiworldcore.message.pet.trust.player_not_found"));
-            DebugLogger.exiting(MODULE, "executeTrustRemove", "0 (player not found)");
+            DebugLogger.SERVER.exiting(MODULE, "executeTrustRemove", "0 (player not found)");
             return 0;
         }
 
         if (profiles.isEmpty()) {
             source.sendFailure(Component.translatable(
                     "youzaiworldcore.message.pet.trust.player_not_found"));
-            DebugLogger.exiting(MODULE, "executeTrustRemove", "0 (no player)");
+            DebugLogger.SERVER.exiting(MODULE, "executeTrustRemove", "0 (no player)");
             return 0;
         }
 
@@ -477,14 +477,14 @@ public class PetCommand {
         if (targetUUID.equals(entry.ownerUUID())) {
             source.sendFailure(Component.translatable(
                     "youzaiworldcore.message.pet.trust.remove_owner"));
-            DebugLogger.exiting(MODULE, "executeTrustRemove", "0 (remove owner)");
+            DebugLogger.SERVER.exiting(MODULE, "executeTrustRemove", "0 (remove owner)");
             return 0;
         }
 
         if (!entry.trustedPlayers().contains(targetUUID)) {
             source.sendFailure(Component.translatable(
                     "youzaiworldcore.message.pet.trust.not_found"));
-            DebugLogger.exiting(MODULE, "executeTrustRemove", "0 (not found)");
+            DebugLogger.SERVER.exiting(MODULE, "executeTrustRemove", "0 (not found)");
             return 0;
         }
 
@@ -498,20 +498,20 @@ public class PetCommand {
                 "youzaiworldcore.message.pet.trust.removed",
                 targetProfile.name(), internalName), false);
 
-        DebugLogger.info(MODULE, "信任移除: [%s] -%s", internalName, targetUUID);
-        DebugLogger.exiting(MODULE, "executeTrustRemove", "1");
+        DebugLogger.SERVER.info(MODULE, "信任移除: [{}] -{}", internalName, targetUUID);
+        DebugLogger.SERVER.exiting(MODULE, "executeTrustRemove", "1");
         return 1;
     }
 
     private static int executeTrustList(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
-        DebugLogger.entering(MODULE, "executeTrustList");
+        DebugLogger.SERVER.entering(MODULE, "executeTrustList");
         CommandSourceStack source = ctx.getSource();
 
         String internalName = StringArgumentType.getString(ctx, "internalName").toUpperCase(Locale.ROOT);
 
         if (!source.isPlayer()) {
             source.sendFailure(Component.translatable("youzaiworldcore.message.command.player_only"));
-            DebugLogger.exiting(MODULE, "executeTrustList", "0 (console)");
+            DebugLogger.SERVER.exiting(MODULE, "executeTrustList", "0 (console)");
             return 0;
         }
 
@@ -522,7 +522,7 @@ public class PetCommand {
         if (optEntry.isEmpty()) {
             source.sendFailure(Component.translatable(
                     "youzaiworldcore.message.pet.not_found", internalName));
-            DebugLogger.exiting(MODULE, "executeTrustList", "0 (not found)");
+            DebugLogger.SERVER.exiting(MODULE, "executeTrustList", "0 (not found)");
             return 0;
         }
 
@@ -532,7 +532,7 @@ public class PetCommand {
         if (!entry.isTrustedOrOwner(player.getUUID())) {
             source.sendFailure(Component.translatable(
                     "youzaiworldcore.message.pet.not_owner"));
-            DebugLogger.exiting(MODULE, "executeTrustList", "0 (no permission)");
+            DebugLogger.SERVER.exiting(MODULE, "executeTrustList", "0 (no permission)");
             return 0;
         }
 
@@ -540,7 +540,7 @@ public class PetCommand {
         if (trusted.isEmpty()) {
             source.sendSuccess(() -> Component.translatable(
                     "youzaiworldcore.message.pet.trust.empty", internalName), false);
-            DebugLogger.exiting(MODULE, "executeTrustList", "1 (empty)");
+            DebugLogger.SERVER.exiting(MODULE, "executeTrustList", "1 (empty)");
             return 1;
         }
 
@@ -561,19 +561,19 @@ public class PetCommand {
             index++;
         }
 
-        DebugLogger.exiting(MODULE, "executeTrustList", "1");
+        DebugLogger.SERVER.exiting(MODULE, "executeTrustList", "1");
         return 1;
     }
 
     // ===== 6. 高亮追踪 =====
 
     private static int executeHighlight(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
-        DebugLogger.entering(MODULE, "executeHighlight");
+        DebugLogger.SERVER.entering(MODULE, "executeHighlight");
         CommandSourceStack source = ctx.getSource();
 
         if (!source.isPlayer()) {
             source.sendFailure(Component.translatable("youzaiworldcore.message.command.player_only"));
-            DebugLogger.exiting(MODULE, "executeHighlight", "0 (console)");
+            DebugLogger.SERVER.exiting(MODULE, "executeHighlight", "0 (console)");
             return 0;
         }
 
@@ -585,7 +585,7 @@ public class PetCommand {
         if (optEntry.isEmpty()) {
             source.sendFailure(Component.translatable(
                     "youzaiworldcore.message.pet.not_found", internalName));
-            DebugLogger.exiting(MODULE, "executeHighlight", "0 (not found)");
+            DebugLogger.SERVER.exiting(MODULE, "executeHighlight", "0 (not found)");
             return 0;
         }
 
@@ -595,7 +595,7 @@ public class PetCommand {
         if (!entry.isTrustedOrOwner(player.getUUID())) {
             source.sendFailure(Component.translatable(
                     "youzaiworldcore.message.pet.not_trusted_or_owner"));
-            DebugLogger.exiting(MODULE, "executeHighlight", "0 (no permission)");
+            DebugLogger.SERVER.exiting(MODULE, "executeHighlight", "0 (no permission)");
             return 0;
         }
 
@@ -604,7 +604,7 @@ public class PetCommand {
         if (!(entity instanceof Wolf wolf)) {
             source.sendFailure(Component.translatable(
                     "youzaiworldcore.message.pet.not_loaded"));
-            DebugLogger.exiting(MODULE, "executeHighlight", "0 (not loaded)");
+            DebugLogger.SERVER.exiting(MODULE, "executeHighlight", "0 (not loaded)");
             return 0;
         }
 
@@ -614,15 +614,15 @@ public class PetCommand {
         source.sendSuccess(() -> Component.translatable(
                 "youzaiworldcore.message.pet.highlight.success", internalName), false);
 
-        DebugLogger.info(MODULE, "高亮: [%s]", internalName);
-        DebugLogger.exiting(MODULE, "executeHighlight", "1");
+        DebugLogger.SERVER.info(MODULE, "高亮: [{}]", internalName);
+        DebugLogger.SERVER.exiting(MODULE, "executeHighlight", "1");
         return 1;
     }
 
     // ===== 7. 放生 =====
 
     private static int executeReleaseLife(CommandContext<CommandSourceStack> ctx, boolean force) throws CommandSyntaxException {
-        DebugLogger.entering(MODULE, "executeReleaseLife", "force=" + force);
+        DebugLogger.SERVER.entering(MODULE, "executeReleaseLife", "force=" + force);
         CommandSourceStack source = ctx.getSource();
 
         String internalName = StringArgumentType.getString(ctx, "internalName").toUpperCase(Locale.ROOT);
@@ -630,7 +630,7 @@ public class PetCommand {
         ValidationResult vr = validatePetAccess(ctx, internalName);
         if (vr.hasError()) {
             source.sendFailure(Component.translatable(vr.errorKey(), vr.errorArgs()));
-            DebugLogger.exiting(MODULE, "executeReleaseLife", "0 (access denied)");
+            DebugLogger.SERVER.exiting(MODULE, "executeReleaseLife", "0 (access denied)");
             return 0;
         }
 
@@ -641,7 +641,7 @@ public class PetCommand {
         if (!force) {
             source.sendFailure(Component.translatable(
                     "youzaiworldcore.message.pet.release.confirm", internalName));
-            DebugLogger.exiting(MODULE, "executeReleaseLife", "0 (need confirm)");
+            DebugLogger.SERVER.exiting(MODULE, "executeReleaseLife", "0 (need confirm)");
             return 0;
         }
 
@@ -670,23 +670,21 @@ public class PetCommand {
         } else {
             // 实体未加载：仅从注册表删除
             state.removePet(entry.entityUUID());
-            DebugLogger.info(MODULE, "离线放生: [%s] UUID=%s (实体未加载)",
-                    entry.internalName(), entry.entityUUID());
+            DebugLogger.SERVER.info(MODULE, "离线放生: [{}] UUID={} (实体未加载)", entry.internalName(), entry.entityUUID());
         }
 
         source.sendSuccess(() -> Component.translatable(
                 "youzaiworldcore.message.pet.release.success", internalName), true);
 
-        DebugLogger.info(MODULE, "放生: [%s], force=%s, entityLoaded=%s",
-                internalName, force, entityLoaded);
-        DebugLogger.exiting(MODULE, "executeReleaseLife", "1");
+        DebugLogger.SERVER.info(MODULE, "放生: [{}], force={}, entityLoaded={}", internalName, force, entityLoaded);
+        DebugLogger.SERVER.exiting(MODULE, "executeReleaseLife", "1");
         return 1;
     }
 
     // ===== 8. 转让所有权 =====
 
     private static int executeTransfer(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
-        DebugLogger.entering(MODULE, "executeTransfer");
+        DebugLogger.SERVER.entering(MODULE, "executeTransfer");
         CommandSourceStack source = ctx.getSource();
 
         String internalName = StringArgumentType.getString(ctx, "internalName").toUpperCase(Locale.ROOT);
@@ -694,7 +692,7 @@ public class PetCommand {
         ValidationResult vr = validatePetAccess(ctx, internalName);
         if (vr.hasError()) {
             source.sendFailure(Component.translatable(vr.errorKey(), vr.errorArgs()));
-            DebugLogger.exiting(MODULE, "executeTransfer", "0 (access denied)");
+            DebugLogger.SERVER.exiting(MODULE, "executeTransfer", "0 (access denied)");
             return 0;
         }
 
@@ -707,14 +705,14 @@ public class PetCommand {
         } catch (Exception e) {
             source.sendFailure(Component.translatable(
                     "youzaiworldcore.message.pet.trust.player_not_found"));
-            DebugLogger.exiting(MODULE, "executeTransfer", "0 (player not found)");
+            DebugLogger.SERVER.exiting(MODULE, "executeTransfer", "0 (player not found)");
             return 0;
         }
 
         if (newOwnerProfiles.isEmpty()) {
             source.sendFailure(Component.translatable(
                     "youzaiworldcore.message.pet.trust.player_not_found"));
-            DebugLogger.exiting(MODULE, "executeTransfer", "0 (no player)");
+            DebugLogger.SERVER.exiting(MODULE, "executeTransfer", "0 (no player)");
             return 0;
         }
 
@@ -724,7 +722,7 @@ public class PetCommand {
         if (newOwnerUUID.equals(entry.ownerUUID())) {
             source.sendFailure(Component.translatable(
                     "youzaiworldcore.message.pet.transfer.to_self"));
-            DebugLogger.exiting(MODULE, "executeTransfer", "0 (to self)");
+            DebugLogger.SERVER.exiting(MODULE, "executeTransfer", "0 (to self)");
             return 0;
         }
 
@@ -749,23 +747,22 @@ public class PetCommand {
                     internalName, player.getName().getString()));
         }
 
-        DebugLogger.info(MODULE, "转让: [%s] 原主人=%s -> 新主人=%s",
-                internalName, entry.ownerUUID(), newOwnerUUID);
-        DebugLogger.exiting(MODULE, "executeTransfer", "1");
+        DebugLogger.SERVER.info(MODULE, "转让: [{}] 原主人={} -> 新主人={}", internalName, entry.ownerUUID(), newOwnerUUID);
+        DebugLogger.SERVER.exiting(MODULE, "executeTransfer", "1");
         return 1;
     }
 
     // ===== 管理命令 =====
 
     private static int executeAdminRestore(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
-        DebugLogger.entering(MODULE, "executeAdminRestore");
+        DebugLogger.SERVER.entering(MODULE, "executeAdminRestore");
         CommandSourceStack source = ctx.getSource();
 
         List<Path> backups = PetBackupManager.listBackups();
         if (backups.isEmpty()) {
             source.sendFailure(Component.translatable(
                     "youzaiworldcore.message.pet.admin.no_backups"));
-            DebugLogger.exiting(MODULE, "executeAdminRestore", "0 (no backups)");
+            DebugLogger.SERVER.exiting(MODULE, "executeAdminRestore", "0 (no backups)");
             return 0;
         }
 
@@ -778,7 +775,7 @@ public class PetCommand {
         if (restored.isEmpty()) {
             source.sendFailure(Component.translatable(
                     "youzaiworldcore.message.pet.admin.restore_failed"));
-            DebugLogger.exiting(MODULE, "executeAdminRestore", "0 (restore failed)");
+            DebugLogger.SERVER.exiting(MODULE, "executeAdminRestore", "0 (restore failed)");
             return 0;
         }
 
@@ -789,8 +786,8 @@ public class PetCommand {
                 "youzaiworldcore.message.pet.admin.restore_success",
                 restored.size()), true);
 
-        DebugLogger.info(MODULE, "管理员从备份恢复: %d 条记录", restored.size());
-        DebugLogger.exiting(MODULE, "executeAdminRestore", "1");
+        DebugLogger.SERVER.notice(MODULE, "管理员从备份恢复: {} 条记录", restored.size());
+        DebugLogger.SERVER.exiting(MODULE, "executeAdminRestore", "1");
         return 1;
     }
 

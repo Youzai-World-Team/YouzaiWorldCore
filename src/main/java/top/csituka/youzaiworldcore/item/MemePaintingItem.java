@@ -58,8 +58,7 @@ public class MemePaintingItem extends Item {
         super(settings);
         this.variantKey = variantKey;
         VARIANT_ITEM_MAP.put(variantKey, this);
-        DebugLogger.info("MemePaintingItem",
-                "注册自定义画物品 variant=%s".formatted(variantKey.identifier()));
+        DebugLogger.bootstrap().debug("MemePaintingItem", "注册自定义画物品 variant={}", variantKey.identifier());
     }
 
     /**
@@ -80,7 +79,7 @@ public class MemePaintingItem extends Item {
     @Override
     @NonNull
     public InteractionResult useOn(@NonNull UseOnContext context) {
-        DebugLogger.entering("MemePaintingItem", "useOn",
+        DebugLogger.SERVER.entering("MemePaintingItem", "useOn",
                 "variant=%s player=%s".formatted(
                         variantKey.identifier(),
                         context.getPlayer() != null ? context.getPlayer().getName().getString() : "null"));
@@ -94,24 +93,24 @@ public class MemePaintingItem extends Item {
 
         // ===== 基础校验 =====
         if (player == null) {
-            DebugLogger.branch("MemePaintingItem", "player is null", false);
-            DebugLogger.exiting("MemePaintingItem", "useOn", "FAIL (no player)");
+            DebugLogger.SERVER.branch("MemePaintingItem", "player is null", false);
+            DebugLogger.SERVER.exiting("MemePaintingItem", "useOn", "FAIL (no player)");
             return InteractionResult.FAIL;
         }
 
         // 画只能附着在竖直面（水平方向），顶部/底部不可放置
         if (!face.getAxis().isHorizontal()) {
-            DebugLogger.branch("MemePaintingItem", "direction is horizontal", false,
+            DebugLogger.SERVER.branch("MemePaintingItem", "direction is horizontal", false,
                     "face=" + face);
-            DebugLogger.exiting("MemePaintingItem", "useOn", "FAIL (non-horizontal face)");
+            DebugLogger.SERVER.exiting("MemePaintingItem", "useOn", "FAIL (non-horizontal face)");
             return InteractionResult.FAIL;
         }
 
         // 校验玩家是否可以在此处使用物品（覆盖 canBuild / 冒险模式检查）
         if (!player.mayUseItemAt(placePos, face, stack)) {
-            DebugLogger.branch("MemePaintingItem", "player may use item at pos", false,
+            DebugLogger.SERVER.branch("MemePaintingItem", "player may use item at pos", false,
                     "pos=" + placePos + " face=" + face);
-            DebugLogger.exiting("MemePaintingItem", "useOn", "FAIL (mayUseItemAt)");
+            DebugLogger.SERVER.exiting("MemePaintingItem", "useOn", "FAIL (mayUseItemAt)");
             return InteractionResult.FAIL;
         }
 
@@ -121,16 +120,13 @@ public class MemePaintingItem extends Item {
         Optional<Holder.Reference<PaintingVariant>> holderOpt = lookup.get(variantKey);
 
         if (holderOpt.isEmpty()) {
-            DebugLogger.warn("MemePaintingItem",
-                    "painting variant %s 不在注册表中".formatted(variantKey.identifier()));
-            DebugLogger.exiting("MemePaintingItem", "useOn", "FAIL (variant not found)");
+            DebugLogger.SERVER.warn("MemePaintingItem", "painting variant {} 不在注册表中", variantKey.identifier());
+            DebugLogger.SERVER.exiting("MemePaintingItem", "useOn", "FAIL (variant not found)");
             return InteractionResult.FAIL;
         }
 
         Holder<PaintingVariant> holder = holderOpt.get();
-        DebugLogger.info("MemePaintingItem", "获取到 painting variant holder: %s (size=%d×%d)",
-                variantKey.identifier(),
-                holder.value().width(), holder.value().height());
+        DebugLogger.SERVER.debug("MemePaintingItem", "获取到 painting variant holder: {} (size={}×{})", variantKey.identifier(), holder.value().width(), holder.value().height());
 
         Painting painting = new Painting(level, placePos, face, holder);
 
@@ -138,23 +134,23 @@ public class MemePaintingItem extends Item {
         EntityType.createDefaultStackConfig(level, stack, player).apply(painting);
 
         if (!painting.survives()) {
-            DebugLogger.branch("MemePaintingItem", "painting survives", false,
+            DebugLogger.SERVER.branch("MemePaintingItem", "painting survives", false,
                     "pos=" + placePos + " dir=" + face);
-            DebugLogger.exiting("MemePaintingItem", "useOn", "CONSUME (cannot survive)");
+            DebugLogger.SERVER.exiting("MemePaintingItem", "useOn", "CONSUME (cannot survive)");
             return InteractionResult.CONSUME;
         }
 
         AABB boundingBox = painting.getBoundingBox();
         if (!level.getEntities(painting, boundingBox).isEmpty()) {
-            DebugLogger.branch("MemePaintingItem", "no entity collision", false,
+            DebugLogger.SERVER.branch("MemePaintingItem", "no entity collision", false,
                     "bbox=" + boundingBox);
-            DebugLogger.exiting("MemePaintingItem", "useOn", "FAIL (collision)");
+            DebugLogger.SERVER.exiting("MemePaintingItem", "useOn", "FAIL (collision)");
             return InteractionResult.FAIL;
         }
 
         if (level.isClientSide()) {
-            DebugLogger.branch("MemePaintingItem", "is server side", false, "客户端 SUCCESS");
-            DebugLogger.exiting("MemePaintingItem", "useOn", "SUCCESS (client)");
+            DebugLogger.SERVER.branch("MemePaintingItem", "is server side", false, "客户端 SUCCESS");
+            DebugLogger.SERVER.exiting("MemePaintingItem", "useOn", "SUCCESS (client)");
             return InteractionResult.SUCCESS;
         }
 
@@ -164,18 +160,16 @@ public class MemePaintingItem extends Item {
 
         boolean added = level.addFreshEntity(painting);
         if (!added) {
-            DebugLogger.warn("MemePaintingItem", "无法将画实体添加到世界，pos=%s".formatted(placePos));
-            DebugLogger.exiting("MemePaintingItem", "useOn", "FAIL (add entity failed)");
+            DebugLogger.SERVER.warn("MemePaintingItem", "无法将画实体添加到世界，pos={}", placePos);
+            DebugLogger.SERVER.exiting("MemePaintingItem", "useOn", "FAIL (add entity failed)");
             return InteractionResult.FAIL;
         }
 
         stack.shrink(1);
         player.getInventory().setChanged();
 
-        DebugLogger.info("MemePaintingItem", "画已放置：玩家=%s pos=%s variant=%s dir=%s",
-                player.getName().getString(), placePos,
-                variantKey.identifier(), face);
-        DebugLogger.exiting("MemePaintingItem", "useOn", "SUCCESS");
+        DebugLogger.SERVER.debug("MemePaintingItem", "画已放置：玩家={} pos={} variant={} dir={}", player.getName().getString(), placePos, variantKey.identifier(), face);
+        DebugLogger.SERVER.exiting("MemePaintingItem", "useOn", "SUCCESS");
         return InteractionResult.SUCCESS;
     }
 }

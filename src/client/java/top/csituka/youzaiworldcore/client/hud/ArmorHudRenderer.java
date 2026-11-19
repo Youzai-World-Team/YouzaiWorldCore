@@ -467,9 +467,11 @@ public final class ArmorHudRenderer {
             }
         }
         if ((arrows != cachedArrowCount || fireworks != cachedFireworkCount)
-                && DebugLogger.isEnabled(DebugLogger.LEVEL_DETAILED)) {
-            DebugLogger.debug(MODULE, "更新 HUD 弹药统计: arrows=" + arrows
-                    + ", fireworks=" + fireworks);
+                && DebugLogger.CLIENT.isEnabled(DebugLogger.LEVEL_DETAILED)) {
+            if (DebugLogger.CLIENT.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+                DebugLogger.CLIENT.trace(MODULE, "更新 HUD 弹药统计: arrows=" + arrows
+                        + ", fireworks=" + fireworks);
+            }
         }
         cachedEmptySlots = empty;
         cachedArrowCount = arrows;

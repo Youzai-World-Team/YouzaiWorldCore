@@ -25,7 +25,7 @@ public class BoneMealSugarCaneDispenserBehavior extends DefaultDispenseItemBehav
 
     @Override
     protected ItemStack execute(BlockSource pointer, ItemStack stack) {
-        DebugLogger.entering("BoneMealSugarCaneDispenserBehavior", "execute");
+        DebugLogger.SERVER.entering("BoneMealSugarCaneDispenserBehavior", "execute");
 
         ServerLevel level = pointer.level();
         Direction facing = pointer.state().getValue(DispenserBlock.FACING);
@@ -34,39 +34,38 @@ public class BoneMealSugarCaneDispenserBehavior extends DefaultDispenseItemBehav
 
         // ===== 条件：目标方块必须是甘蔗 =====
         if (!(frontState.getBlock() instanceof SugarCaneBlock)) {
-            DebugLogger.branch("BoneMealSugarCaneDispenserBehavior", "front is sugar cane",
+            DebugLogger.SERVER.branch("BoneMealSugarCaneDispenserBehavior", "front is sugar cane",
                     false, "block=" + frontState.getBlock());
             // 不是甘蔗，回退到默认行为（弹出物品）
-            DebugLogger.exiting("BoneMealSugarCaneDispenserBehavior", "execute", "FALLBACK to default");
+            DebugLogger.SERVER.exiting("BoneMealSugarCaneDispenserBehavior", "execute", "FALLBACK to default");
             return super.execute(pointer, stack);
         }
 
-        DebugLogger.branch("BoneMealSugarCaneDispenserBehavior", "front is sugar cane",
+        DebugLogger.SERVER.branch("BoneMealSugarCaneDispenserBehavior", "front is sugar cane",
                 true, "pos=" + frontPos);
 
         boolean grew = BoneMealSugarCaneHandler.tryGrowSugarCane(level, frontPos);
 
         if (!grew) {
-            DebugLogger.branch("BoneMealSugarCaneDispenserBehavior", "cane grown",
+            DebugLogger.SERVER.branch("BoneMealSugarCaneDispenserBehavior", "cane grown",
                     false, "催熟失败（已满三格或无空间），不消耗骨粉");
             // 不消耗骨粉，原样返还物品堆
-            DebugLogger.exiting("BoneMealSugarCaneDispenserBehavior", "execute", "SKIP (no consumption)");
+            DebugLogger.SERVER.exiting("BoneMealSugarCaneDispenserBehavior", "execute", "SKIP (no consumption)");
             return stack;
         }
 
         // ===== 催熟成功：消耗骨粉 =====
         stack.shrink(1);
 
-        DebugLogger.info("BoneMealSugarCaneDispenserBehavior",
-                "发射器催熟甘蔗成功：位置=%s, 方向=%s", frontPos, facing);
-        DebugLogger.exiting("BoneMealSugarCaneDispenserBehavior", "execute", "SUCCESS");
+        DebugLogger.SERVER.debug("BoneMealSugarCaneDispenserBehavior", "发射器催熟甘蔗成功：位置={}, 方向={}", frontPos, facing);
+        DebugLogger.SERVER.exiting("BoneMealSugarCaneDispenserBehavior", "execute", "SUCCESS");
         return stack;
     }
 
     public static void register() {
-        DebugLogger.entering("BoneMealSugarCaneDispenserBehavior", "register");
+        DebugLogger.SERVER.entering("BoneMealSugarCaneDispenserBehavior", "register");
         DispenserBlock.registerBehavior(Items.BONE_MEAL, new BoneMealSugarCaneDispenserBehavior());
-        DebugLogger.info("BoneMealSugarCaneDispenserBehavior", "发射器骨粉催熟甘蔗行为已注册");
-        DebugLogger.exiting("BoneMealSugarCaneDispenserBehavior", "register");
+        DebugLogger.SERVER.debug("BoneMealSugarCaneDispenserBehavior", "发射器骨粉催熟甘蔗行为已注册");
+        DebugLogger.SERVER.exiting("BoneMealSugarCaneDispenserBehavior", "register");
     }
 }

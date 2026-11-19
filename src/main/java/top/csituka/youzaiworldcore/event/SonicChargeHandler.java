@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.event;
 
+import top.csituka.youzaiworldcore.util.LogValues;
+
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
@@ -33,7 +35,7 @@ public class SonicChargeHandler {
     private static final Map<UUID, Long> lastRecoilGameTime = new HashMap<>();
 
     public static void register() {
-        DebugLogger.entering(MODULE, "register");
+        DebugLogger.SERVER.entering(MODULE, "register");
 
         ServerEntityEvents.ENTITY_LOAD.register((Entity entity, ServerLevel world) -> {
             if (!(entity instanceof Projectile proj))
@@ -67,11 +69,10 @@ public class SonicChargeHandler {
             player.setDeltaMovement(player.getDeltaMovement().add(recoil));
             player.syncVelocity = true;
 
-            DebugLogger.info(MODULE, "Sonic Charge Lv%d 后坐力: player=%s, strength=%.2f",
-                    level, player.getName().getString(), strength);
+            DebugLogger.SERVER.debug(MODULE, "Sonic Charge Lv{} 后坐力: player={}, strength={}", level, player.getName().getString(), LogValues.decimal(strength, 2));
         });
 
-        DebugLogger.info(MODULE, "音速充能附魔事件处理器已注册 (ServerEntityEvents.ENTITY_LOAD)");
-        DebugLogger.exiting(MODULE, "register");
+        DebugLogger.SERVER.debug(MODULE, "音速充能附魔事件处理器已注册 (ServerEntityEvents.ENTITY_LOAD)");
+        DebugLogger.SERVER.exiting(MODULE, "register");
     }
 }

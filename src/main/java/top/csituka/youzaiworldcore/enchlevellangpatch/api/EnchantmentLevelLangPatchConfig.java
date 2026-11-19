@@ -1,10 +1,8 @@
 package top.csituka.youzaiworldcore.enchlevellangpatch.api;
 
+import top.csituka.youzaiworldcore.util.DebugLogger;
+
 import com.google.common.collect.BiMap;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.Marker;
-import org.apache.logging.log4j.MarkerManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Unmodifiable;
@@ -20,8 +18,8 @@ import top.csituka.youzaiworldcore.enchlevellangpatch.impl.NamespacedKey;
  * @see EnchantmentLevelLangPatch#registerPotionPatch
  */
 public final class EnchantmentLevelLangPatchConfig {
-    private static final Logger LOGGER = LogManager.getLogger();
-    private static final Marker MARKER = MarkerManager.getMarker("LangPatch/Config");
+    private static final DebugLogger.ModuleLogger LOGGER = DebugLogger.bootstrap().module("EnchantmentLevelLangPatchConfig");
+
 
     /**
      * A thread-safe storage for the ID of the current enchantment level and potion
@@ -44,7 +42,7 @@ public final class EnchantmentLevelLangPatchConfig {
     @SuppressWarnings("unused")
     public static void setCurrentEnchantmentHooks(@Nullable EnchantmentLevelLangPatch hooks) {
         if (isEnchantmentHooksFrozen()) {
-            LOGGER.warn(MARKER, "Enchantment Hooks is frozen. Changes may not be applied.");
+            LOGGER.warn("Enchantment Hooks is frozen. Changes may not be applied.");
             return;
         }
         currentEnchantmentHooksId = LangPatchImpl.ENCHANTMENT_HOOK.getId(hooks);
@@ -63,7 +61,7 @@ public final class EnchantmentLevelLangPatchConfig {
     @SuppressWarnings("unused")
     public static void setCurrentPotionHooks(@Nullable EnchantmentLevelLangPatch hooks) {
         if (isPotionHooksFrozen()) {
-            LOGGER.warn(MARKER, "Potion Hooks is frozen. Changes may not be applied.");
+            LOGGER.warn("Potion Hooks is frozen. Changes may not be applied.");
             return;
         }
         currentPotionHooksId = LangPatchImpl.POTION_HOOK.getId(hooks);

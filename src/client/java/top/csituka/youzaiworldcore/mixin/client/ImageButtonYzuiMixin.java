@@ -46,7 +46,7 @@ public class ImageButtonYzuiMixin {
     private YzuiHover youzaiworldcore$getImageButtonHover() {
         if (youzaiworldcore$imageButtonHover == null) {
             youzaiworldcore$imageButtonHover = new YzuiHover();
-            DebugLogger.debug("ImageButtonYzui", "初始化配方书按钮悬停动画");
+            DebugLogger.CLIENT.debug("ImageButtonYzui", "初始化配方书按钮悬停动画");
         }
         return youzaiworldcore$imageButtonHover;
     }
@@ -140,10 +140,8 @@ public class ImageButtonYzuiMixin {
         // 先判等级再取参数：本方法每个翻页按钮每帧各跑一次，
         // 4 个 int + 2 个 boolean 装箱与 varargs 数组在日志关闭时是白扔的垃圾。
         // 另降级为 trace：原先用 info（仅需 LEVEL_BASIC），一开日志就会以帧率刷屏。
-        if (DebugLogger.isEnabled(DebugLogger.LEVEL_DEBUG)) {
-            DebugLogger.trace(YZWC_PAGE_BTN_DBG,
-                    "YZUI page button at (%d,%d) %dx%d forward=%s hovered=%s",
-                    x, y, w, h, forward, hover > 0f);
+        if (DebugLogger.CLIENT.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+            DebugLogger.CLIENT.trace(YZWC_PAGE_BTN_DBG, "YZUI page button at ({},{}) {}x{} forward={} hovered={}", x, y, w, h, forward, hover > 0f);
         }
     }
 

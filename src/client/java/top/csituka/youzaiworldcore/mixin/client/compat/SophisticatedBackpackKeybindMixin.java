@@ -38,7 +38,7 @@ public abstract class SophisticatedBackpackKeybindMixin {
         } catch (ReflectiveOperationException | LinkageError error) {
             // 不能把饰品槽编号当作主物品栏编号，避免错误打开另一只背包。
             cir.setReturnValue(Optional.empty());
-            DebugLogger.exception("SophisticatedBackpackKeybindMixin", "trinketInventory", error);
+            DebugLogger.CLIENT.exception("SophisticatedBackpackKeybindMixin", "trinketInventory", error);
         }
     }
 }

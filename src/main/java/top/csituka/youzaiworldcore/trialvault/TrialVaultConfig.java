@@ -1,7 +1,5 @@
 package top.csituka.youzaiworldcore.trialvault;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import top.csituka.youzaiworldcore.config.ConfigSection;
 import top.csituka.youzaiworldcore.config.GlobalSettings;
@@ -24,7 +22,7 @@ public final class TrialVaultConfig {
 
     public static final String MODULE = "TrialVaultConfig";
 
-    private static final Logger LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/TrialVaultConfig");
+    private static final DebugLogger.ModuleLogger LOGGER = DebugLogger.SERVER.module("TrialVaultConfig");
 
     private static final boolean DEFAULT_ENABLED = true;
 
@@ -45,36 +43,36 @@ public final class TrialVaultConfig {
 
     /** 设置功能总开关并持久化到配置文件 */
     public static void setEnabled(boolean value) {
-        DebugLogger.entering(MODULE, "setEnabled", "value=" + value);
+        DebugLogger.SERVER.entering(MODULE, "setEnabled", "value=" + value);
         if (enabled == value) {
-            DebugLogger.info(MODULE, "enabled 未变化，跳过保存");
-            DebugLogger.exiting(MODULE, "setEnabled", "no-change");
+            DebugLogger.SERVER.debug(MODULE, "enabled 未变化，跳过保存");
+            DebugLogger.SERVER.exiting(MODULE, "setEnabled", "no-change");
             return;
         }
-        DebugLogger.stateChange(MODULE, "TrialVaultConfig", "enabled", enabled, value);
+        DebugLogger.SERVER.stateChange(MODULE, "TrialVaultConfig", "enabled", enabled, value);
         enabled = value;
         save();
-        DebugLogger.exiting(MODULE, "setEnabled", "1");
+        DebugLogger.SERVER.exiting(MODULE, "setEnabled", "1");
     }
 
     // ===== 持久化 =====
 
     /** 从全局配置的 {@code trial_vault_module} 分节加载（分节缺失则写入默认配置） */
     public static void load() {
-        DebugLogger.entering(MODULE, "load");
+        DebugLogger.SERVER.entering(MODULE, "load");
 
         ConfigSection section = GlobalSettings.section(GlobalSettings.TRIAL_VAULT_MODULE);
         if (section.isEmpty()) {
-            DebugLogger.info(MODULE, "trial_vault_module 分节不存在，写入默认配置");
+            DebugLogger.SERVER.debug(MODULE, "trial_vault_module 分节不存在，写入默认配置");
             save();
-            DebugLogger.exiting(MODULE, "load", "created default");
+            DebugLogger.SERVER.exiting(MODULE, "load", "created default");
             return;
         }
 
         enabled = section.getBoolean("enabled", enabled);
 
-        DebugLogger.info(MODULE, "已加载配置: enabled=%s", enabled);
-        DebugLogger.exiting(MODULE, "load");
+        DebugLogger.SERVER.debug(MODULE, "已加载配置: enabled={}", enabled);
+        DebugLogger.SERVER.exiting(MODULE, "load");
     }
 
     /** 重置为默认值并写入 {@code trial_vault_module} 分节（新开服 / 坏文件恢复用） */

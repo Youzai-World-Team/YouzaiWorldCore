@@ -123,7 +123,7 @@ final class UnifiedSettingsPage {
             }
             fresh = false;
             refreshWorld = false;
-            DebugLogger.info("YzuiSettings", "已加载 %d 个设置分区，按选中分区独立展示", pages.size());
+            DebugLogger.CLIENT.debug("YzuiSettings", "已加载 {} 个设置分区，按选中分区独立展示", pages.size());
         } else if (refreshWorld) {
             for (int index = 0; index < pages.size(); index++) {
                 Page previous = pages.get(index);

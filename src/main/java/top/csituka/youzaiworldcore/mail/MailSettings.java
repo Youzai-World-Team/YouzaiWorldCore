@@ -59,16 +59,16 @@ public class MailSettings {
      * 初始化配置：从全局配置的 {@code mail_module} 分节读取；分节缺失时写入默认值。
      */
     public static void initialize() {
-        DebugLogger.entering(MODULE, "initialize");
+        DebugLogger.SERVER.entering(MODULE, "initialize");
         ConfigSection section = GlobalSettings.section(GlobalSettings.MAIL_MODULE);
         if (section.isEmpty()) {
             INSTANCE = new MailSettings();
             save();
-            DebugLogger.info(MODULE, "mail_module 分节不存在，已写入默认邮件配置");
+            DebugLogger.SERVER.debug(MODULE, "mail_module 分节不存在，已写入默认邮件配置");
         } else {
             load();
         }
-        DebugLogger.exiting(MODULE, "initialize");
+        DebugLogger.SERVER.exiting(MODULE, "initialize");
     }
 
     // ===== 加载 / 保存 =====
@@ -77,7 +77,7 @@ public class MailSettings {
      * 从全局配置的 {@code mail_module} 分节加载。
      */
     public static void load() {
-        DebugLogger.entering(MODULE, "load");
+        DebugLogger.SERVER.entering(MODULE, "load");
         ConfigSection section = GlobalSettings.section(GlobalSettings.MAIL_MODULE);
         MailSettings loaded = new MailSettings();
 
@@ -105,8 +105,8 @@ public class MailSettings {
         }
 
         INSTANCE = loaded;
-        DebugLogger.info(MODULE, "已加载邮件配置");
-        DebugLogger.exiting(MODULE, "load");
+        DebugLogger.SERVER.debug(MODULE, "已加载邮件配置");
+        DebugLogger.SERVER.exiting(MODULE, "load");
     }
 
     /**
@@ -121,7 +121,7 @@ public class MailSettings {
      * 保存当前配置到全局配置文件的 {@code mail_module} 分节。
      */
     public static void save() {
-        DebugLogger.entering(MODULE, "save");
+        DebugLogger.SERVER.entering(MODULE, "save");
         MailSettings current = get();
         ConfigSection section = GlobalSettings.section(GlobalSettings.MAIL_MODULE);
         section.set("default_expire", current.defaultExpire);
@@ -135,8 +135,8 @@ public class MailSettings {
         section.set("max_item_attachments", current.maxItemAttachments);
         section.set("max_attachments_per_mail", current.maxAttachmentsPerMail);
         GlobalSettings.save();
-        DebugLogger.info(MODULE, "已保存邮件配置");
-        DebugLogger.exiting(MODULE, "save");
+        DebugLogger.SERVER.debug(MODULE, "已保存邮件配置");
+        DebugLogger.SERVER.exiting(MODULE, "save");
     }
 
     public static MailSettings get() {

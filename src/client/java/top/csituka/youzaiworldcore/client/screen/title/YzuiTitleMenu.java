@@ -77,10 +77,9 @@ public final class YzuiTitleMenu {
         ignoreButton = add(layout.ignore(), "title.youzaiworldcore.update_ignore_btn",
                 this::ignore, YzuiTheme.ButtonStyle.TEXT);
         downloadButton.visible = ignoreButton.visible = false;
-        DebugLogger.info("YzuiTitleMenu", "标题页已初始化，尺寸 %d×%d，主题 %s",
-                screen.width, screen.height, ClientExternalSettings.getYzuiTheme());
+        DebugLogger.CLIENT.debug("YzuiTitleMenu", "标题页已初始化，尺寸 {}×{}，主题 {}", screen.width, screen.height, ClientExternalSettings.getYzuiTheme());
         if (ClientUpdateCheckerConfig.isCheckOnStartup()) {
-            UpdateChecker.checkAsync().thenAccept(result -> {
+            UpdateChecker.checkAsync(DebugLogger.CLIENT).thenAccept(result -> {
                 if (result != null) ClientUpdateState.set(result);
             });
         }
@@ -226,7 +225,7 @@ public final class YzuiTitleMenu {
         if (update != null && update.forcedUpdate()) {
             minecraft.gui.setScreen(new ForcedUpdateScreen());
         } else if (JoinBlockedScreen.isBlocked()) {
-            DebugLogger.info("YzuiTitleMenu", "开发版账号命中限制，显示加入限制弹窗");
+            DebugLogger.CLIENT.debug("YzuiTitleMenu", "开发版账号命中限制，显示加入限制弹窗");
             minecraft.gui.setScreen(new JoinBlockedScreen());
         } else {
             connect("Youzai World", "play.mcyzw.top");
@@ -253,11 +252,11 @@ public final class YzuiTitleMenu {
     private void download() {
         UpdateResult result = visibleUpdate();
         if (result == null || result.downloadUrl() == null || result.downloadUrl().isBlank()) return;
-        DebugLogger.info("YzuiTitleMenu", "显示更新下载链接确认");
+        DebugLogger.CLIENT.debug("YzuiTitleMenu", "显示更新下载链接确认");
         try {
             ConfirmLinkScreen.confirmLinkNow(screen, Util.parseAndValidateUntrustedUri(result.downloadUrl()));
         } catch (URISyntaxException e) {
-            DebugLogger.warn("YzuiTitleMenu", "更新下载地址无效，已忽略：%s", result.downloadUrl());
+            DebugLogger.CLIENT.warn("YzuiTitleMenu", "更新下载地址无效，已忽略：{}", result.downloadUrl());
         }
     }
 
@@ -265,7 +264,7 @@ public final class YzuiTitleMenu {
         UpdateResult result = visibleUpdate();
         if (result == null || result.forcedUpdate() || result.latestVersion() == null) return;
         ClientExternalSettings.setIgnoredUpdateVersion(result.latestVersion());
-        DebugLogger.info("YzuiTitleMenu", "已忽略版本更新提示: %s", result.latestVersion());
+        DebugLogger.CLIENT.debug("YzuiTitleMenu", "已忽略版本更新提示: {}", result.latestVersion());
     }
 
     private static void card(GuiGraphicsExtractor g, TitleMenuLayout.Rect rect, float alpha) {

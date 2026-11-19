@@ -85,7 +85,7 @@ public class MailScreen extends MailBaseScreen {
     protected void init() {
         super.init();
         ClientPlayNetworking.send(new MailOpenPayload());
-        DebugLogger.info(MODULE, "已打开玩家信箱");
+        DebugLogger.CLIENT.debug(MODULE, "已打开玩家信箱");
     }
 
     @Override
@@ -453,12 +453,12 @@ public class MailScreen extends MailBaseScreen {
         }
         if (MailClientState.canSend && composeRect.contains(mouseX, mouseY)) {
             MailNavigationRequests.compose(this);
-            DebugLogger.info(MODULE, "请求打开发布邮件页面");
+            DebugLogger.CLIENT.debug(MODULE, "请求打开发布邮件页面");
             return true;
         }
         if (MailClientState.canSend && sentRect.contains(mouseX, mouseY)) {
             MailNavigationRequests.sent(this);
-            DebugLogger.info(MODULE, "请求打开已发送邮件页面");
+            DebugLogger.CLIENT.debug(MODULE, "请求打开已发送邮件页面");
             return true;
         }
 
@@ -563,7 +563,7 @@ public class MailScreen extends MailBaseScreen {
         selectedMailId = mail.getId();
         detailVisible = true;
         markRead(ref);
-        DebugLogger.info(MODULE, "已选择邮件: mailId=%s", mail.getId());
+        DebugLogger.CLIENT.debug(MODULE, "已选择邮件: mailId={}", mail.getId());
     }
 
     /**
@@ -590,7 +590,7 @@ public class MailScreen extends MailBaseScreen {
         ClientPlayNetworking.send(new MailActionPayload(pair.mail().getId(), MailActionPayload.ACTION_CLAIM));
         pair.ref().setClaimed(true);
         markRead(pair.ref());
-        DebugLogger.info(MODULE, "请求领取邮件奖励: mailId=%s", pair.mail().getId());
+        DebugLogger.CLIENT.debug(MODULE, "请求领取邮件奖励: mailId={}", pair.mail().getId());
     }
 
     private void toggleStar(MailStreamCodecs.MailRefAndMail pair) {
@@ -598,7 +598,7 @@ public class MailScreen extends MailBaseScreen {
         pair.ref().setStarred(starred);
         ClientPlayNetworking.send(new MailActionPayload(pair.mail().getId(),
                 starred ? MailActionPayload.ACTION_STAR : MailActionPayload.ACTION_UNSTAR));
-        DebugLogger.info(MODULE, "邮件星标状态已切换: mailId=%s, starred=%s", pair.mail().getId(), starred);
+        DebugLogger.CLIENT.debug(MODULE, "邮件星标状态已切换: mailId={}, starred={}", pair.mail().getId(), starred);
     }
 
     private void deleteMail(UUID mailId) {
@@ -618,7 +618,7 @@ public class MailScreen extends MailBaseScreen {
             selectedMailId = null;
         }
         MailToast.show(logMessage + " ×" + ids.size(), true);
-        DebugLogger.info(MODULE, "%s: count=%d", logMessage, ids.size());
+        DebugLogger.CLIENT.debug(MODULE, "{}: count={}", logMessage, ids.size());
     }
 
     private List<MailStreamCodecs.MailRefAndMail> visibleInbox() {
@@ -780,7 +780,7 @@ public class MailScreen extends MailBaseScreen {
             }
             return stack;
         } catch (Exception e) {
-            DebugLogger.exception(MODULE, "decodeAttachmentItem", e);
+            DebugLogger.CLIENT.exception(MODULE, "decodeAttachmentItem", e);
             return ItemStack.EMPTY;
         }
     }

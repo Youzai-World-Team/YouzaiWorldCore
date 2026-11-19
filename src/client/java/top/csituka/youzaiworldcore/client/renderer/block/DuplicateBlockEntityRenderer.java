@@ -37,7 +37,7 @@ public class DuplicateBlockEntityRenderer
     private static final double MAX_RENDER_DISTANCE_SQR = 16.0 * 16.0;
 
     public DuplicateBlockEntityRenderer(BlockEntityRendererProvider.Context context) {
-        DebugLogger.info("DuplicateBlockRenderer", "复制方块 2D 指示贴图渲染器已创建");
+        DebugLogger.CLIENT.debug("DuplicateBlockRenderer", "复制方块 2D 指示贴图渲染器已创建");
     }
 
     @Override

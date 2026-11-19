@@ -43,7 +43,7 @@ public final class DamageNumberRenderer {
     public static void initialize() {
         ClientTickEvents.END_CLIENT_TICK.register(DamageNumberRenderer::tick);
         LevelRenderEvents.COLLECT_SUBMITS.register(DamageNumberRenderer::render);
-        DebugLogger.info(MODULE, "伤害跳字客户端渲染器已初始化");
+        DebugLogger.CLIENT.debug(MODULE, "伤害跳字客户端渲染器已初始化");
     }
 
     /**

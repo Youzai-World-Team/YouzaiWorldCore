@@ -1,7 +1,5 @@
 package top.csituka.youzaiworldcore.client.config;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import top.csituka.youzaiworldcore.config.ModPaths;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
@@ -38,7 +36,7 @@ import java.util.zip.ZipOutputStream;
  */
 public final class ConfigIOManager {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/ConfigIO");
+    private static final DebugLogger.ModuleLogger LOGGER = DebugLogger.CLIENT.module("ConfigIO");
     private static final String DEBUG_TAG = "ConfigIO";
 
     /** ZIP 炸弹防御：最大解压字节数（500 MB） */
@@ -77,17 +75,17 @@ public final class ConfigIOManager {
      * @return 导出 ZIP 的路径
      */
     public static CompletableFuture<Path> exportConfig(File gameDir, ProgressCallback callback) {
-        DebugLogger.entering(DEBUG_TAG, "exportConfig", "gameDir=" + gameDir);
+        DebugLogger.CLIENT.entering(DEBUG_TAG, "exportConfig", "gameDir=" + gameDir);
         Path backupDir = gameDir.toPath().resolve("config_backups");
         try {
             Files.createDirectories(backupDir);
         } catch (IOException e) {
-            DebugLogger.exception(DEBUG_TAG, "create config_backups dir", e);
+            DebugLogger.CLIENT.exception(DEBUG_TAG, "create config_backups dir", e);
             return CompletableFuture.failedFuture(e);
         }
         String fileName = "config_export_" + timestamp() + ".zip";
         Path zipPath = backupDir.resolve(fileName);
-        DebugLogger.info(DEBUG_TAG, "导出路径: %s", zipPath);
+        DebugLogger.CLIENT.debug(DEBUG_TAG, "导出路径: {}", zipPath);
         return runExport(zipPath, gameDir, callback)
                 .thenApply(v -> { cleanupOldBackups(backupDir); return zipPath; });
     }
@@ -101,10 +99,10 @@ public final class ConfigIOManager {
      * @return {@link CompletableFuture}，完成时表示导入成功
      */
     public static CompletableFuture<Void> importConfig(Path zipPath, File gameDir, ProgressCallback callback) {
-        DebugLogger.entering(DEBUG_TAG, "importConfig", "zipPath=" + zipPath);
+        DebugLogger.CLIENT.entering(DEBUG_TAG, "importConfig", "zipPath=" + zipPath);
 
         isImporting.set(true);
-        DebugLogger.stateChange(DEBUG_TAG, "ConfigIOManager", "isImporting", false, true);
+        DebugLogger.CLIENT.stateChange(DEBUG_TAG, "ConfigIOManager", "isImporting", false, true);
 
         return CompletableFuture.runAsync(() -> {
             try {
@@ -112,17 +110,17 @@ public final class ConfigIOManager {
             } catch (Exception e) {
                 // 有任何异常则回滚
                 LOGGER.error("导入过程异常，开始回滚", e);
-                DebugLogger.exception(DEBUG_TAG, "importConfig", e);
+                DebugLogger.CLIENT.exception(DEBUG_TAG, "importConfig", e);
                 try {
                     rollbackImport(gameDir);
                 } catch (Exception rollbackEx) {
                     LOGGER.error("回滚失败！请手动恢复备份", rollbackEx);
-                    DebugLogger.exception(DEBUG_TAG, "导入回滚失败", rollbackEx);
+                    DebugLogger.CLIENT.exception(DEBUG_TAG, "导入回滚失败", rollbackEx);
                 }
                 throw new RuntimeException(e);
             } finally {
                 isImporting.set(false);
-                DebugLogger.stateChange(DEBUG_TAG, "ConfigIOManager", "isImporting", true, false);
+                DebugLogger.CLIENT.stateChange(DEBUG_TAG, "ConfigIOManager", "isImporting", true, false);
             }
         });
     }
@@ -137,7 +135,7 @@ public final class ConfigIOManager {
      * @param gameDir 游戏根目录
      */
     public static void recoverIfNeeded(File gameDir) {
-        DebugLogger.entering(DEBUG_TAG, "recoverIfNeeded");
+        DebugLogger.CLIENT.entering(DEBUG_TAG, "recoverIfNeeded");
         Path root = gameDir.toPath();
         Path configDir = root.resolve("config");
         Path optionsFile = root.resolve("options.txt");
@@ -149,7 +147,7 @@ public final class ConfigIOManager {
 
         File[] entries = gameDir.listFiles();
         if (entries == null) {
-            DebugLogger.warn(DEBUG_TAG, "gameDir.listFiles() 返回 null，跳过自愈");
+            DebugLogger.CLIENT.warn(DEBUG_TAG, "gameDir.listFiles() 返回 null，跳过自愈");
             return;
         }
         for (File f : entries) {
@@ -168,23 +166,23 @@ public final class ConfigIOManager {
         boolean clientMissing = !Files.isRegularFile(clientSettings);
 
         if (!configMissing && !optionsMissing && !clientMissing) {
-            DebugLogger.debug(DEBUG_TAG, "自愈无需执行：config / options.txt / client_settings 均存在");
+            DebugLogger.CLIENT.debug(DEBUG_TAG, "自愈无需执行：config / options.txt / client_settings 均存在");
             return;
         }
 
         if (configMissing) {
             if (configBaks.isEmpty()) {
-                DebugLogger.warn(DEBUG_TAG, "config 缺失但未找到 config_bak_* 备份，无法自愈");
+                DebugLogger.CLIENT.warn(DEBUG_TAG, "config 缺失但未找到 config_bak_* 备份，无法自愈");
             } else {
                 // 按最后修改时间排序，取最新的
                 configBaks.sort(Comparator.comparingLong((File f) -> f.lastModified()).reversed());
                 File newest = configBaks.get(0);
                 try {
                     Files.move(newest.toPath(), configDir);
-                    DebugLogger.info(DEBUG_TAG, "已恢复 config 备份: %s", newest.getName());
+                    DebugLogger.CLIENT.notice(DEBUG_TAG, "已恢复 config 备份: {}", newest.getName());
                 } catch (IOException e) {
                     LOGGER.error("恢复 config 备份失败: {}", newest.getName(), e);
-                    DebugLogger.exception(DEBUG_TAG, "恢复 config 备份", e);
+                    DebugLogger.CLIENT.exception(DEBUG_TAG, "恢复 config 备份", e);
                 }
                 for (int i = 1; i < configBaks.size(); i++) {
                     deleteQuietly(configBaks.get(i).toPath());
@@ -194,16 +192,16 @@ public final class ConfigIOManager {
 
         if (optionsMissing) {
             if (optionsBaks.isEmpty()) {
-                DebugLogger.warn(DEBUG_TAG, "options.txt 缺失但未找到 options_bak_* 备份，无法自愈");
+                DebugLogger.CLIENT.warn(DEBUG_TAG, "options.txt 缺失但未找到 options_bak_* 备份，无法自愈");
             } else {
                 optionsBaks.sort(Comparator.comparingLong((File f) -> f.lastModified()).reversed());
                 File newest = optionsBaks.get(0);
                 try {
                     Files.move(newest.toPath(), optionsFile);
-                    DebugLogger.info(DEBUG_TAG, "已恢复 options.txt 备份: %s", newest.getName());
+                    DebugLogger.CLIENT.notice(DEBUG_TAG, "已恢复 options.txt 备份: {}", newest.getName());
                 } catch (IOException e) {
                     LOGGER.error("恢复 options.txt 备份失败: {}", newest.getName(), e);
-                    DebugLogger.exception(DEBUG_TAG, "恢复 options.txt 备份", e);
+                    DebugLogger.CLIENT.exception(DEBUG_TAG, "恢复 options.txt 备份", e);
                 }
                 for (int i = 1; i < optionsBaks.size(); i++) {
                     deleteQuietly(optionsBaks.get(i).toPath());
@@ -213,17 +211,17 @@ public final class ConfigIOManager {
 
         if (clientMissing) {
             if (clientBaks.isEmpty()) {
-                DebugLogger.warn(DEBUG_TAG, "客户端配置缺失但未找到 yzwc_client_bak_* 备份，无法自愈");
+                DebugLogger.CLIENT.warn(DEBUG_TAG, "客户端配置缺失但未找到 yzwc_client_bak_* 备份，无法自愈");
             } else {
                 clientBaks.sort(Comparator.comparingLong((File f) -> f.lastModified()).reversed());
                 File newest = clientBaks.get(0);
                 try {
                     Files.createDirectories(clientSettings.getParent());
                     Files.move(newest.toPath(), clientSettings);
-                    DebugLogger.info(DEBUG_TAG, "已恢复客户端配置备份: %s", newest.getName());
+                    DebugLogger.CLIENT.notice(DEBUG_TAG, "已恢复客户端配置备份: {}", newest.getName());
                 } catch (IOException e) {
                     LOGGER.error("恢复客户端配置备份失败: {}", newest.getName(), e);
-                    DebugLogger.exception(DEBUG_TAG, "恢复客户端配置备份", e);
+                    DebugLogger.CLIENT.exception(DEBUG_TAG, "恢复客户端配置备份", e);
                 }
                 for (int i = 1; i < clientBaks.size(); i++) {
                     deleteQuietly(clientBaks.get(i).toPath());
@@ -231,23 +229,22 @@ public final class ConfigIOManager {
             }
         }
 
-        DebugLogger.info(DEBUG_TAG, "启动自愈流程完成 (configMissing=%s, optionsMissing=%s, clientMissing=%s)",
-                configMissing, optionsMissing, clientMissing);
+        DebugLogger.CLIENT.notice(DEBUG_TAG, "启动自愈流程完成 (configMissing={}, optionsMissing={}, clientMissing={})", configMissing, optionsMissing, clientMissing);
     }
 
     // 内部：导出执行
 
     private static CompletableFuture<Void> runExport(Path zipPath, File gameDir, ProgressCallback callback) {
         return CompletableFuture.runAsync(() -> {
-            DebugLogger.entering(DEBUG_TAG, "performExport", "zipPath=" + zipPath);
+            DebugLogger.CLIENT.entering(DEBUG_TAG, "performExport", "zipPath=" + zipPath);
             try {
                 performExport(zipPath, gameDir, callback);
-                DebugLogger.info(DEBUG_TAG, "导出成功: %s", zipPath);
+                DebugLogger.CLIENT.notice(DEBUG_TAG, "导出成功: {}", zipPath);
             } catch (IOException e) {
-                DebugLogger.exception(DEBUG_TAG, "导出失败", e);
+                DebugLogger.CLIENT.exception(DEBUG_TAG, "导出失败", e);
                 throw new RuntimeException(e);
             }
-            DebugLogger.exiting(DEBUG_TAG, "performExport");
+            DebugLogger.CLIENT.exiting(DEBUG_TAG, "performExport");
         });
     }
 
@@ -267,7 +264,7 @@ public final class ConfigIOManager {
         if (optionsFile.isFile()) totalFiles++;
         if (Files.isRegularFile(clientSettings)) totalFiles++;
 
-        DebugLogger.debug(DEBUG_TAG, "待打包文件: config(%d) + options.txt + client_settings", configFiles.size());
+        DebugLogger.CLIENT.debug(DEBUG_TAG, "待打包文件: config({}) + options.txt + client_settings", configFiles.size());
 
         try (ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(zipPath.toFile()))) {
             int processed = 0;
@@ -305,17 +302,17 @@ public final class ConfigIOManager {
     // 内部：导入执行（三步安全写入）
 
     private static void performImport(Path zipPath, File gameDir, ProgressCallback callback) throws Exception {
-        LOGGER.info("开始导入配置: {}", zipPath);
-        DebugLogger.info(DEBUG_TAG, "=== 导入流程开始 ===");
+        LOGGER.notice("开始导入配置: {}", zipPath);
+        DebugLogger.CLIENT.trace(DEBUG_TAG, "=== 导入流程开始 ===");
 
         // === 第零步：并发防护 ===
         // 刷新当前设置到磁盘
         try {
             net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
             mc.options.save();
-            DebugLogger.info(DEBUG_TAG, "已强制落盘 options");
+            DebugLogger.CLIENT.debug(DEBUG_TAG, "已强制落盘 options");
         } catch (Exception e) {
-            DebugLogger.warn(DEBUG_TAG, "options.save() 未预期异常: %s", e.getMessage());
+            DebugLogger.CLIENT.warn(DEBUG_TAG, "options.save() 未预期异常: {}", e.getMessage());
         }
 
         // === 第一步：备份旧文件 ===
@@ -338,10 +335,10 @@ public final class ConfigIOManager {
             try {
                 Files.move(configDir, bakConfigDir);
                 hasConfigBackup = true;
-                DebugLogger.stateChange(DEBUG_TAG, "config", "renamed", configDir, bakConfigDir);
+                DebugLogger.CLIENT.stateChange(DEBUG_TAG, "config", "renamed", configDir, bakConfigDir);
             } catch (IOException e) {
                 LOGGER.error("备份 config 失败（文件被占用？）", e);
-                DebugLogger.exception(DEBUG_TAG, "备份 config 目录", e);
+                DebugLogger.CLIENT.exception(DEBUG_TAG, "备份 config 目录", e);
                 isImporting.set(false);
                 throw new IOException("导入失败：检测到配置文件被外部程序占用，请关闭相关软件后重试。", e);
             }
@@ -351,10 +348,10 @@ public final class ConfigIOManager {
             try {
                 Files.move(optionsFile, bakOptionsFile);
                 hasOptionsBackup = true;
-                DebugLogger.stateChange(DEBUG_TAG, "options.txt", "renamed", optionsFile, bakOptionsFile);
+                DebugLogger.CLIENT.stateChange(DEBUG_TAG, "options.txt", "renamed", optionsFile, bakOptionsFile);
             } catch (IOException e) {
                 LOGGER.error("备份 options.txt 失败（文件被占用？）", e);
-                DebugLogger.exception(DEBUG_TAG, "备份 options.txt", e);
+                DebugLogger.CLIENT.exception(DEBUG_TAG, "备份 options.txt", e);
                 // 回滚 config
                 if (hasConfigBackup) {
                     try { Files.move(bakConfigDir, configDir); } catch (IOException ignored) {}
@@ -368,10 +365,10 @@ public final class ConfigIOManager {
             try {
                 Files.move(clientSettings, bakClientSettings);
                 hasClientSettingsBackup = true;
-                DebugLogger.stateChange(DEBUG_TAG, "client_settings", "renamed", clientSettings, bakClientSettings);
+                DebugLogger.CLIENT.stateChange(DEBUG_TAG, "client_settings", "renamed", clientSettings, bakClientSettings);
             } catch (IOException e) {
                 LOGGER.error("备份客户端配置失败（文件被占用？）", e);
-                DebugLogger.exception(DEBUG_TAG, "备份 client_settings", e);
+                DebugLogger.CLIENT.exception(DEBUG_TAG, "备份 client_settings", e);
                 // 回滚 config 和 options
                 if (hasConfigBackup) {
                     try { Files.move(bakConfigDir, configDir); } catch (IOException ignored) {}
@@ -384,7 +381,7 @@ public final class ConfigIOManager {
             }
         }
 
-        DebugLogger.branch(DEBUG_TAG, "备份结果", hasConfigBackup,
+        DebugLogger.CLIENT.branch(DEBUG_TAG, "备份结果", hasConfigBackup,
                 "config=" + hasConfigBackup + " options=" + hasOptionsBackup + " client=" + hasClientSettingsBackup);
 
         // === 第二步：执行解压（带路径校验 + ZIP 炸弹防御） ===
@@ -397,7 +394,7 @@ public final class ConfigIOManager {
 
             // 先遍历一次统计总条目数用于进度
             int totalEntryCount = countZipEntries(zipPath);
-            DebugLogger.debug(DEBUG_TAG, "ZIP 总条目数: %d", totalEntryCount);
+            DebugLogger.CLIENT.debug(DEBUG_TAG, "ZIP 总条目数: {}", totalEntryCount);
 
             while ((entry = zis.getNextEntry()) != null) {
                 totalEntries++;
@@ -408,7 +405,7 @@ public final class ConfigIOManager {
                 Path targetPath = root.resolve(entry.getName()).normalize();
 
                 if (!isPathAllowed(root, targetPath)) {
-                    DebugLogger.debug(DEBUG_TAG, "跳过不允许的条目: %s", entry.getName());
+                    DebugLogger.CLIENT.debug(DEBUG_TAG, "跳过不允许的条目: {}", entry.getName());
                     zis.closeEntry();
                     continue;
                 }
@@ -436,39 +433,39 @@ public final class ConfigIOManager {
             }
         }
 
-        DebugLogger.info(DEBUG_TAG, "解压完成：%d 条目 / %d bytes", totalEntries, totalBytes);
+        DebugLogger.CLIENT.debug(DEBUG_TAG, "解压完成：{} 条目 / {} bytes", totalEntries, totalBytes);
 
         // === 第三步：清理备份（同步完成确保无磁盘操作遗留） ===
         if (hasConfigBackup) {
             try {
                 deleteRecursively(bakConfigDir);
-                DebugLogger.debug(DEBUG_TAG, "已删除备份: %s", bakConfigDir);
+                DebugLogger.CLIENT.debug(DEBUG_TAG, "已删除备份: {}", bakConfigDir);
             } catch (IOException e) {
                 LOGGER.warn("删除 config 备份失败（无害）: {}", bakConfigDir, e);
-                DebugLogger.exception(DEBUG_TAG, "删除备份", e);
+                DebugLogger.CLIENT.exception(DEBUG_TAG, "删除备份", e);
             }
         }
         if (hasOptionsBackup) {
             try {
                 Files.deleteIfExists(bakOptionsFile);
-                DebugLogger.debug(DEBUG_TAG, "已删除备份: %s", bakOptionsFile);
+                DebugLogger.CLIENT.debug(DEBUG_TAG, "已删除备份: {}", bakOptionsFile);
             } catch (IOException e) {
                 LOGGER.warn("删除 options 备份失败（无害）: {}", bakOptionsFile, e);
-                DebugLogger.exception(DEBUG_TAG, "删除备份", e);
+                DebugLogger.CLIENT.exception(DEBUG_TAG, "删除备份", e);
             }
         }
         if (hasClientSettingsBackup) {
             try {
                 Files.deleteIfExists(bakClientSettings);
-                DebugLogger.debug(DEBUG_TAG, "已删除备份: %s", bakClientSettings);
+                DebugLogger.CLIENT.debug(DEBUG_TAG, "已删除备份: {}", bakClientSettings);
             } catch (IOException e) {
                 LOGGER.warn("删除客户端配置备份失败（无害）: {}", bakClientSettings, e);
-                DebugLogger.exception(DEBUG_TAG, "删除备份", e);
+                DebugLogger.CLIENT.exception(DEBUG_TAG, "删除备份", e);
             }
         }
 
-        DebugLogger.info(DEBUG_TAG, "=== 导入流程成功完成 ===");
-        LOGGER.info("配置导入成功");
+        DebugLogger.CLIENT.trace(DEBUG_TAG, "=== 导入流程成功完成 ===");
+        LOGGER.notice("配置导入成功");
     }
 
     private static void rollbackImport(File gameDir) {
@@ -507,20 +504,20 @@ public final class ConfigIOManager {
         if (Files.isDirectory(configDir)) {
             try {
                 deleteRecursively(configDir);
-                DebugLogger.debug(DEBUG_TAG, "回滚：删除了半成品 config");
+                DebugLogger.CLIENT.debug(DEBUG_TAG, "回滚：删除了半成品 config");
             } catch (IOException e) {
                 LOGGER.error("回滚删除半成品 config 失败", e);
-                DebugLogger.exception(DEBUG_TAG, "回滚删除 config", e);
+                DebugLogger.CLIENT.exception(DEBUG_TAG, "回滚删除 config", e);
             }
         }
 
         if (latestConfigBak != null) {
             try {
                 Files.move(latestConfigBak, configDir);
-                DebugLogger.info(DEBUG_TAG, "回滚：已恢复 config 备份");
+                DebugLogger.CLIENT.notice(DEBUG_TAG, "回滚：已恢复 config 备份");
             } catch (IOException e) {
                 LOGGER.error("回滚恢复 config 失败！请手动恢复", e);
-                DebugLogger.exception(DEBUG_TAG, "回滚恢复 config", e);
+                DebugLogger.CLIENT.exception(DEBUG_TAG, "回滚恢复 config", e);
             }
         }
 
@@ -528,10 +525,10 @@ public final class ConfigIOManager {
         if (latestOptionsBak != null) {
             try {
                 Files.move(latestOptionsBak, optionsFile);
-                DebugLogger.info(DEBUG_TAG, "回滚：已恢复 options.txt 备份");
+                DebugLogger.CLIENT.notice(DEBUG_TAG, "回滚：已恢复 options.txt 备份");
             } catch (IOException e) {
                 LOGGER.error("回滚恢复 options.txt 失败！请手动恢复", e);
-                DebugLogger.exception(DEBUG_TAG, "回滚恢复 options.txt", e);
+                DebugLogger.CLIENT.exception(DEBUG_TAG, "回滚恢复 options.txt", e);
             }
         }
 
@@ -541,19 +538,19 @@ public final class ConfigIOManager {
                 Files.deleteIfExists(clientSettings);
                 Files.createDirectories(clientSettings.getParent());
                 Files.move(latestClientBak, clientSettings);
-                DebugLogger.info(DEBUG_TAG, "回滚：已恢复客户端配置备份");
+                DebugLogger.CLIENT.notice(DEBUG_TAG, "回滚：已恢复客户端配置备份");
             } catch (IOException e) {
                 LOGGER.error("回滚恢复客户端配置失败！请手动恢复", e);
-                DebugLogger.exception(DEBUG_TAG, "回滚恢复 client_settings", e);
+                DebugLogger.CLIENT.exception(DEBUG_TAG, "回滚恢复 client_settings", e);
             }
         }
 
         // 尝试重载 options 内存状态
         try {
             net.minecraft.client.Minecraft.getInstance().options.load();
-            DebugLogger.debug(DEBUG_TAG, "回滚后已重载 options 内存状态");
+            DebugLogger.CLIENT.debug(DEBUG_TAG, "回滚后已重载 options 内存状态");
         } catch (Exception e) {
-            DebugLogger.warn(DEBUG_TAG, "回滚后 options.load() 异常（无害，重启后可恢复）: %s", e.getMessage());
+            DebugLogger.CLIENT.warn(DEBUG_TAG, "回滚后 options.load() 异常（无害，重启后可恢复）: {}", e.getMessage());
         }
     }
 
@@ -611,16 +608,16 @@ public final class ConfigIOManager {
 
     /** Android 端：仅保留最新 5 份备份 */
     private static void cleanupOldBackups(Path backupDir) {
-        DebugLogger.entering(DEBUG_TAG, "cleanupOldBackups");
+        DebugLogger.CLIENT.entering(DEBUG_TAG, "cleanupOldBackups");
         File[] files = backupDir.toFile().listFiles((dir, name) -> name.startsWith("config_export_") && name.endsWith(".zip"));
         if (files == null || files.length <= 5) return;
 
         Arrays.sort(files, Comparator.comparingLong((File f) -> f.lastModified()).reversed());
         for (int i = 5; i < files.length; i++) {
             deleteQuietly(files[i].toPath());
-            DebugLogger.debug(DEBUG_TAG, "清理旧备份: %s", files[i].getName());
+            DebugLogger.CLIENT.debug(DEBUG_TAG, "清理旧备份: {}", files[i].getName());
         }
-        DebugLogger.info(DEBUG_TAG, "已清理 %d 份旧备份", files.length - 5);
+        DebugLogger.CLIENT.debug(DEBUG_TAG, "已清理 {} 份旧备份", files.length - 5);
     }
 
     /** 递归删除目录或文件（静默忽略失败） */
@@ -632,7 +629,7 @@ public final class ConfigIOManager {
                 Files.deleteIfExists(path);
             }
         } catch (IOException e) {
-            DebugLogger.warn(DEBUG_TAG, "清理文件失败（无害）: %s", path);
+            DebugLogger.CLIENT.warn(DEBUG_TAG, "清理文件失败（无害）: {}", path);
         }
     }
 

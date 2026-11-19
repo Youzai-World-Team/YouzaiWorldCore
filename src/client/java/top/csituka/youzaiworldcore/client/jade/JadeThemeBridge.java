@@ -60,11 +60,11 @@ public final class JadeThemeBridge {
             if (!forcing) {
                 userThemeId = isManagedTheme(active) ? DEFAULT_THEME_ID : active;
                 forcing = true;
-                DebugLogger.info(MODULE, "启用 YZUI Jade 主题，保留用户主题 %s", userThemeId);
+                DebugLogger.CLIENT.debug(MODULE, "启用 YZUI Jade 主题，保留用户主题 {}", userThemeId);
             }
             if (!desired.equals(active)) {
                 overlay.applyTheme(desired);
-                DebugLogger.stateChange(MODULE, "jade_theme", "active_theme", active, desired);
+                DebugLogger.CLIENT.stateChange(MODULE, "jade_theme", "active_theme", active, desired);
             }
         } else if (forcing || isManagedTheme(active)) {
             Identifier restore = userThemeId == null ? DEFAULT_THEME_ID : userThemeId;
@@ -76,7 +76,7 @@ public final class JadeThemeBridge {
             IWailaConfig.get().save();
             forcing = false;
             userThemeId = null;
-            DebugLogger.stateChange(MODULE, "jade_theme", "active_theme", active, restore);
+            DebugLogger.CLIENT.stateChange(MODULE, "jade_theme", "active_theme", active, restore);
         }
     }
 

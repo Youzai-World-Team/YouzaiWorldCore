@@ -65,10 +65,10 @@ public final class DimensionPool {
     public void setDefaultSpawn(@Nullable DefaultSpawn defaultSpawn) { this.defaultSpawn = defaultSpawn; }
 
     public void addDimension(String dimension) {
-        DebugLogger.entering("DimPool", "addDimension", "poolId=" + this.id + ", dimension=" + dimension);
+        DebugLogger.SERVER.entering("DimPool", "addDimension", "poolId=" + this.id + ", dimension=" + dimension);
         this.dimensions.add(dimension);
-        DebugLogger.stateChange("DimPool", this.id != null ? this.id : "null", "dimensions", dimension + " added, total=" + this.dimensions.size());
-        DebugLogger.exiting("DimPool", "addDimension");
+        DebugLogger.SERVER.stateChange("DimPool", this.id != null ? this.id : "null", "dimensions", dimension + " added, total=" + this.dimensions.size());
+        DebugLogger.SERVER.exiting("DimPool", "addDimension");
     }
 
     public void removeDimension(String dimension) {
@@ -76,16 +76,16 @@ public final class DimensionPool {
     }
 
     public boolean containsDimension(String dimension) {
-        DebugLogger.entering("DimPool", "containsDimension", "poolId=" + this.id + ", dimension=" + dimension);
+        DebugLogger.SERVER.entering("DimPool", "containsDimension", "poolId=" + this.id + ", dimension=" + dimension);
         boolean result = this.dimensions.contains(dimension);
-        DebugLogger.exiting("DimPool", "containsDimension", String.valueOf(result));
+        DebugLogger.SERVER.exiting("DimPool", "containsDimension", String.valueOf(result));
         return result;
     }
 
     public boolean isEmpty() {
-        DebugLogger.entering("DimPool", "isEmpty", "poolId=" + this.id);
+        DebugLogger.SERVER.entering("DimPool", "isEmpty", "poolId=" + this.id);
         boolean result = this.dimensions.isEmpty();
-        DebugLogger.exiting("DimPool", "isEmpty", String.valueOf(result));
+        DebugLogger.SERVER.exiting("DimPool", "isEmpty", String.valueOf(result));
         return result;
     }
 

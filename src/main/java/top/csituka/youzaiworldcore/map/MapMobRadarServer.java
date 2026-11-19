@@ -47,7 +47,7 @@ public final class MapMobRadarServer {
                 int parts = Math.max(1, Math.ceilDiv(targets.size(), MapMobSnapshotPayload.BATCH_SIZE));
                 // 网络解码有总量边界；超出边界拒绝此次快照，不能把截断数据冒充完整查询。
                 if (parts > MapMobSnapshotPayload.MAX_PARTS) {
-                        DebugLogger.warn("MapMobRadar", "生物雷达快照过大：%d", targets.size());
+                        DebugLogger.SERVER.warn("MapMobRadar", "生物雷达快照过大：{}", targets.size());
                         return;
                 }
                 for (int part = 0; part < parts; part++) {
@@ -58,7 +58,9 @@ public final class MapMobRadarServer {
                                                         level.dimension().identifier().toString(),
                                                         request.entityType(), part, parts, targets.subList(from, to)));
                 }
-                DebugLogger.debug("MapMobRadar", "查询 %s，半径=%d 区块，生物=%d", request.entityType(), radius, targets.size());
+                if (DebugLogger.SERVER.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+                    DebugLogger.SERVER.trace("MapMobRadar", "查询 {}，半径={} 区块，生物={}", request.entityType(), radius, targets.size());
+                }
         }
 
         public static void clear() {

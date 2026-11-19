@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.event;
 
+import top.csituka.youzaiworldcore.util.DebugLogger;
+
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
@@ -18,8 +20,6 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Optional;
@@ -50,7 +50,7 @@ public class DragonElytraDropHandler {
     private static final int SEARCH_RADIUS = 30;
 
     private static final DragonElytraDropHandler INSTANCE = new DragonElytraDropHandler();
-    private static final Logger LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/DragonElytra");
+    private static final DebugLogger.ModuleLogger LOGGER = DebugLogger.SERVER.module("DragonElytra");
 
     private DragonElytraDropHandler() {
     }
@@ -68,7 +68,7 @@ public class DragonElytraDropHandler {
             return;
         }
 
-        LOGGER.info("末影龙被击杀，触发鞘翅掉落逻辑");
+        LOGGER.debug("末影龙被击杀，触发鞘翅掉落逻辑");
 
         // ===== 1. 确定击杀归属玩家 =====
         Optional<Player> attributionPlayer = findAttributionPlayer((EnderDragon) entity, damageSource);
@@ -91,7 +91,7 @@ public class DragonElytraDropHandler {
         elytraEntity.setDefaultPickUpDelay();
         level.addFreshEntity(elytraEntity);
 
-        LOGGER.info("鞘翅已生成于 [{}, {}, {}]", dropPos.getX(), dropPos.getY() + 1, dropPos.getZ());
+        LOGGER.debug("鞘翅已生成于 [{}, {}, {}]", dropPos.getX(), dropPos.getY() + 1, dropPos.getZ());
 
         // ===== 4. 广播提示消息（所有在末地世界的玩家） =====
         Component broadcastMsg = Component.translatable(
@@ -114,7 +114,7 @@ public class DragonElytraDropHandler {
             }
         });
 
-        LOGGER.info("末影龙鞘翅掉落逻辑执行完毕");
+        LOGGER.debug("末影龙鞘翅掉落逻辑执行完毕");
     }
 
     /**
@@ -164,13 +164,13 @@ public class DragonElytraDropHandler {
                     a.distanceToSqr(dragon),
                     b.distanceToSqr(dragon)));
             Player nearest = nearbyPlayers.getFirst();
-            LOGGER.info("通过半径搜索确定归属玩家: {} (距离={})",
+            LOGGER.debug("通过半径搜索确定归属玩家: {} (距离={})",
                     nearest.getName().getString(),
                     Math.sqrt(nearest.distanceToSqr(dragon)));
             return Optional.of(nearest);
         }
 
-        LOGGER.warn("末地范围内无玩家可接收鞘翅掉落");
+        LOGGER.debug("末地范围内无玩家可接收鞘翅掉落");
         return Optional.empty();
     }
 
@@ -184,6 +184,6 @@ public class DragonElytraDropHandler {
      */
     public static void register() {
         ServerLivingEntityEvents.AFTER_DEATH.register(INSTANCE::onEntityDeath);
-        LOGGER.info("末影龙鞘翅掉落事件处理器已注册 (ServerLivingEntityEvents.AFTER_DEATH)");
+        LOGGER.debug("末影龙鞘翅掉落事件处理器已注册 (ServerLivingEntityEvents.AFTER_DEATH)");
     }
 }

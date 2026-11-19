@@ -58,7 +58,7 @@ final class MapWaypointPanel extends MapOverlayPanel {
 
     public MapWaypointPanel(YzWorldMapScreen owner) {
         super(owner, "waypoints"); dimension = owner.mapDimension(); expanded.add(dimension);
-        DebugLogger.debug("MapWaypoints", "打开路径点分组树管理器：%s", dimension);
+        DebugLogger.CLIENT.debug("MapWaypoints", "打开路径点分组树管理器：{}", dimension);
     }
 
     @Override protected void init() {
@@ -163,12 +163,12 @@ final class MapWaypointPanel extends MapOverlayPanel {
     }
     private void selectBranch(Branch branch) {
         dimension = branch.dimension(); filter = branch.filter(); group = branch.group(); selected = null; page = 0;
-        DebugLogger.debug("MapWaypoints", "选择分组：%s / %s / %s", dimension, filter, group);
+        DebugLogger.CLIENT.debug("MapWaypoints", "选择分组：{} / {} / {}", dimension, filter, group);
         refresh();
     }
     private void toggleBranch(Branch branch) {
         if (!expanded.add(branch.dimension())) expanded.remove(branch.dimension());
-        DebugLogger.debug("MapWaypoints", "分组展开：%s = %s", branch.dimension(), expanded.contains(branch.dimension()));
+        DebugLogger.CLIENT.debug("MapWaypoints", "分组展开：{} = {}", branch.dimension(), expanded.contains(branch.dimension()));
         buildTree();
         for (var row : branches) if (row instanceof BranchRow treeRow && treeRow.branch.equals(branch)) { setFocused(row); break; }
     }

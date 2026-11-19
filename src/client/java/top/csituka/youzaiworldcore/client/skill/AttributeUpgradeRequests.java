@@ -34,14 +34,14 @@ public final class AttributeUpgradeRequests {
         deadline = System.currentTimeMillis() + 15000;
         status = text("waiting");
         ClientPlayNetworking.send(new AttributeUpgradePayload(key, pending));
-        DebugLogger.info("AttributeUpgrade", "已提交加点请求 %d：%s", pending, key);
+        DebugLogger.CLIENT.debug("AttributeUpgrade", "已提交加点请求 {}：{}", pending, key);
     }
 
     public static void receive(AttributeUpgradeResultPayload result, Object sourceConnection) {
         if (!waiting() || sourceConnection != connection || result.requestId() != pending) return;
         pending = 0;
         status = text(result.success() ? "success" : "rejected");
-        DebugLogger.info("AttributeUpgrade", "加点结果 %d：%s", result.requestId(), result.success());
+        DebugLogger.CLIENT.debug("AttributeUpgrade", "加点结果 {}：{}", result.requestId(), result.success());
     }
 
     private static Component text(String key) {

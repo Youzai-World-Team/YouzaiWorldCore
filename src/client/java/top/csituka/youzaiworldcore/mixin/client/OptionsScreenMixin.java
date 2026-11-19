@@ -17,8 +17,6 @@ import net.minecraft.client.gui.screens.options.OptionsScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.ComponentContents;
 import net.minecraft.network.chat.contents.TranslatableContents;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -45,7 +43,7 @@ import java.util.List;
 public class OptionsScreenMixin {
 
     @Unique
-    private static final Logger youzaiworldcore$LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/OptionsScreenMixin");
+    private static final DebugLogger.ModuleLogger youzaiworldcore$LOGGER = DebugLogger.CLIENT.module("OptionsScreenMixin");
     private static final String MODS_SCREEN_CLASS = "com.terraformersmc.modmenu.gui.ModsScreen";
     private static boolean modMenuChecked = false;
     private static Class<?> modsScreenClass = null;
@@ -166,7 +164,7 @@ public class OptionsScreenMixin {
 
             reflectionReady = true;
             if (ClientExternalSettings.getLogLevel() > 0) {
-                youzaiworldcore$LOGGER.info("Reflection fields initialized for GridLayout manipulation");
+                youzaiworldcore$LOGGER.debug("Reflection fields initialized for GridLayout manipulation");
             }
         } catch (ReflectiveOperationException e) {
             youzaiworldcore$LOGGER.error("Failed to initialize reflection for GridLayout manipulation", e);
@@ -362,7 +360,7 @@ public class OptionsScreenMixin {
             if (ClientExternalSettings.getLogLevel() > 0) {
                 youzaiworldcore$LOGGER.debug("Added YouzaiWorldCore settings button to header");
             }
-            DebugLogger.info("OptionsScreenMixin", "已在选项页表头添加 YouzaiWorldCore 设置按钮");
+            DebugLogger.CLIENT.debug("OptionsScreenMixin", "已在选项页表头添加 YouzaiWorldCore 设置按钮");
             return settingsButton;
         } catch (ReflectiveOperationException e) {
             youzaiworldcore$LOGGER.error("Failed to add settings button to header", e);
@@ -478,7 +476,7 @@ public class OptionsScreenMixin {
             narratables.remove((Object) child);
         }
         if (!modAddedToRemove.isEmpty() && ClientExternalSettings.getLogLevel() > 0) {
-            youzaiworldcore$LOGGER.info("Removed {} mod-added option buttons from OptionsScreen", modAddedToRemove.size());
+            youzaiworldcore$LOGGER.debug("Removed {} mod-added option buttons from OptionsScreen", modAddedToRemove.size());
         }
 
         // ============ 7. 如果修改了布局，触发重新布局 ============

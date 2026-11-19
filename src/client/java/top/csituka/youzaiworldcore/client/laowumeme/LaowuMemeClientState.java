@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.client.laowumeme;
 
+import top.csituka.youzaiworldcore.util.LogValues;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.core.particles.ParticleTypes;
@@ -106,15 +108,13 @@ public final class LaowuMemeClientState {
             double pz = mid.z + (Math.random() - 0.5) * 0.8;
             mc.level.addParticle(ParticleTypes.ANGRY_VILLAGER, px, py, pz,
                     0.0, PARTICLE_RISE_SPEED, 0.0);
-            DebugLogger.debug(MODULE, "生成愤怒粒子: (%.2f, %.2f, %.2f) 配对 %d<->%d",
-                    px, py, pz, aId, bId);
+            DebugLogger.CLIENT.debug(MODULE, "生成愤怒粒子: ({}, {}, {}) 配对 {}<->{}", LogValues.decimal(px, 2), LogValues.decimal(py, 2), LogValues.decimal(pz, 2), aId, bId);
         }
     }
 
     /** 收到服务端 trigger 包：记录两只猫并按服务端选曲起音乐 */
     public void onTrigger(int catAId, int catBId, int soundId, int rollSign) {
-        DebugLogger.info(MODULE, "收到 trigger: %s <-> %s (soundId=%d, rollSign=%d)",
-                catAId, catBId, soundId, rollSign);
+        DebugLogger.CLIENT.debug(MODULE, "收到 trigger: {} <-> {} (soundId={}, rollSign={})", catAId, catBId, soundId, rollSign);
         ActiveCat sa = new ActiveCat();
         sa.partnerId = catBId;
         sa.soundId = soundId;
@@ -130,7 +130,7 @@ public final class LaowuMemeClientState {
 
     /** 收到服务端 stop 包：清状态 + 停音乐 */
     public void onStop(int catAId, int catBId) {
-        DebugLogger.info(MODULE, "收到 stop: %s <-> %s", catAId, catBId);
+        DebugLogger.CLIENT.debug(MODULE, "收到 stop: {} <-> {}", catAId, catBId);
         active.remove(catAId);
         active.remove(catBId);
         stopSound(catAId, catBId);
@@ -157,13 +157,13 @@ public final class LaowuMemeClientState {
         // 服务端选曲：按 soundId 播放对应内置曲（多人同听）；soundId 越界时回退本地随机
         net.minecraft.sounds.SoundEvent event = LaowuAudioPool.pickForSoundId(soundId);
         if (event == null) {
-            DebugLogger.info(MODULE, "音频池为空（未初始化），跳过播放");
+            DebugLogger.CLIENT.debug(MODULE, "音频池为空（未初始化），跳过播放");
             return;
         }
         SoundInstance inst = new LaowuSoundInstance(event, catAId, catBId);
         sounds.put(key(catAId, catBId), inst);
         mc.getSoundManager().play(inst);
-        DebugLogger.info(MODULE, "播放音频: %s (服务端 soundId=%d)", event.location(), soundId);
+        DebugLogger.CLIENT.debug(MODULE, "播放音频: {} (服务端 soundId={})", event.location(), soundId);
     }
 
     private void stopSound(int catAId, int catBId) {

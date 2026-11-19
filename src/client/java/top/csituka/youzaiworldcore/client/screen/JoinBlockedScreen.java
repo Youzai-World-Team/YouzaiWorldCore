@@ -11,8 +11,6 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
 import top.csituka.youzaiworldcore.update.UpdateChecker;
 import top.csituka.youzaiworldcore.util.DebugLogger;
@@ -39,7 +37,7 @@ import java.util.regex.Pattern;
 public class JoinBlockedScreen extends Screen implements YzuiPopupScreen {
 
     @SuppressWarnings("unused")
-    private static final Logger LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/JoinBlockedScreen");
+    private static final DebugLogger.ModuleLogger LOGGER = DebugLogger.CLIENT.module("JoinBlockedScreen");
 
     public static final String MODULE = "JoinBlockedScreen";
 
@@ -75,21 +73,19 @@ public class JoinBlockedScreen extends Screen implements YzuiPopupScreen {
             String version = UpdateChecker.getCurrentVersionString();
             boolean isDevBuild = version != null && version.contains("indev");
             if (!isDevBuild) {
-                DebugLogger.debug(MODULE, "版本非开发版(version=%s)，放行加入服务器", version);
+                DebugLogger.CLIENT.debug(MODULE, "版本非开发版(version={})，放行加入服务器", version);
                 return false;
             }
             User user = Minecraft.getInstance().getUser();
             String name = (user != null) ? user.getName() : null;
             boolean nameMatch = name != null && DEFAULT_PLAYER_NAME.matcher(name).matches();
-            DebugLogger.debug(MODULE, "拦截检查: version=%s, playerName=%s, nameMatch=%s",
-                    version, name, nameMatch);
+            DebugLogger.CLIENT.debug(MODULE, "拦截检查: version={}, playerName={}, nameMatch={}", version, name, nameMatch);
             if (nameMatch) {
-                DebugLogger.info(MODULE, "开发版(%s) + 玩家代号 %s 命中限制，阻止加入服务器",
-                        version, name);
+                DebugLogger.CLIENT.debug(MODULE, "开发版({}) + 玩家代号 {} 命中限制，阻止加入服务器", version, name);
             }
             return nameMatch;
         } catch (Exception e) {
-            DebugLogger.exception(MODULE, "isBlocked", e);
+            DebugLogger.CLIENT.exception(MODULE, "isBlocked", e);
             return false;
         }
     }
@@ -162,7 +158,7 @@ public class JoinBlockedScreen extends Screen implements YzuiPopupScreen {
     private void onBack() {
         if (GuiAnimationController.isExiting(this))
             return;
-        DebugLogger.info(MODULE, "玩家点击返回，淡出后回到标题屏幕");
+        DebugLogger.CLIENT.debug(MODULE, "玩家点击返回，淡出后回到标题屏幕");
         startExitAnimation(() -> {
             Minecraft.getInstance().setScreenAndShow(YzuiBackdrop.parent(this));
         });

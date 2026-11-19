@@ -109,8 +109,8 @@ public final class StatusEffectHudRenderer {
         Holder<MobEffect> effect = instance.getEffect();
         if (!acquisitionOrder.contains(effect)) {
             acquisitionOrder.add(effect);
-            if (DebugLogger.isEnabled(DebugLogger.LEVEL_DETAILED)) {
-                DebugLogger.debug(MODULE, "记录状态效果获得顺序: "
+            if (DebugLogger.CLIENT.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+                DebugLogger.CLIENT.trace(MODULE, "记录状态效果获得顺序: "
                         + effect.getRegisteredName() + ", order=" + acquisitionOrder.size());
             }
         }
@@ -126,9 +126,11 @@ public final class StatusEffectHudRenderer {
     public static void onEffectRemoved(Player player, MobEffectInstance instance) {
         ensureTrackedPlayer(player);
         if (acquisitionOrder.remove(instance.getEffect())
-                && DebugLogger.isEnabled(DebugLogger.LEVEL_DETAILED)) {
-            DebugLogger.debug(MODULE, "移除状态效果顺序记录: "
-                    + instance.getEffect().getRegisteredName());
+                && DebugLogger.CLIENT.isEnabled(DebugLogger.LEVEL_DETAILED)) {
+            if (DebugLogger.CLIENT.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+                DebugLogger.CLIENT.trace(MODULE, "移除状态效果顺序记录: "
+                        + instance.getEffect().getRegisteredName());
+            }
         }
     }
 
@@ -158,8 +160,10 @@ public final class StatusEffectHudRenderer {
         if (orderedEffects.size() > MAX_VISIBLE_EFFECTS) {
             int total = orderedEffects.size();
             if (lastOverflowEffectCount != total) {
-                DebugLogger.warn(MODULE, "状态效果数量超过 HUD 容量，保留最新效果: "
-                        + total + " -> " + MAX_VISIBLE_EFFECTS);
+                if (DebugLogger.CLIENT.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+                    DebugLogger.CLIENT.trace(MODULE, "状态效果数量超过 HUD 容量，保留最新效果: "
+                            + total + " -> " + MAX_VISIBLE_EFFECTS);
+                }
                 lastOverflowEffectCount = total;
             }
             orderedEffects = orderedEffects.subList(total - MAX_VISIBLE_EFFECTS, total);
@@ -345,7 +349,7 @@ public final class StatusEffectHudRenderer {
         animationStates.clear();
         animationsInitialized = false;
         trackedPlayerRef = new WeakReference<>(player);
-        DebugLogger.debug(MODULE, "本地玩家实例已变化，重置状态效果获得顺序");
+        DebugLogger.CLIENT.trace(MODULE, "本地玩家实例已变化，重置状态效果获得顺序");
     }
 
     private static void synchronizeOrder(Map<Holder<MobEffect>, MobEffectInstance> activeEffects) {
@@ -362,9 +366,11 @@ public final class StatusEffectHudRenderer {
         }
 
         if (previousSize != acquisitionOrder.size()
-                && DebugLogger.isEnabled(DebugLogger.LEVEL_DETAILED)) {
-            DebugLogger.debug(MODULE, "同步状态效果顺序: "
-                    + previousSize + " -> " + acquisitionOrder.size());
+                && DebugLogger.CLIENT.isEnabled(DebugLogger.LEVEL_DETAILED)) {
+            if (DebugLogger.CLIENT.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+                DebugLogger.CLIENT.trace(MODULE, "同步状态效果顺序: "
+                        + previousSize + " -> " + acquisitionOrder.size());
+            }
         }
     }
 

@@ -71,8 +71,7 @@ public class MenuScreen extends Screen implements YzuiMenuScreen {
         activateCurrentGroup();
         if (currentDialog != null)
             currentDialog.init(width, height);
-        DebugLogger.debug("MenuScreen", "菜单布局更新：%d×%d，当前页面 %s", width, height,
-                currentGroup.getClass().getSimpleName());
+        DebugLogger.CLIENT.debug("MenuScreen", "菜单布局更新：{}×{}，当前页面 {}", width, height, currentGroup.getClass().getSimpleName());
     }
 
     public void switchTo(MenuElementGroup newGroup) {
@@ -95,8 +94,7 @@ public class MenuScreen extends Screen implements YzuiMenuScreen {
             if (button instanceof DropdownButton dropdown)
                 dropdown.closePopup();
         }
-        DebugLogger.debug("MenuScreen", "菜单切换：%s → %s", currentGroup.getClass().getSimpleName(),
-                next.getClass().getSimpleName());
+        DebugLogger.CLIENT.debug("MenuScreen", "菜单切换：{} → {}", currentGroup.getClass().getSimpleName(), next.getClass().getSimpleName());
         if (GuiAnimationController.isDisabled()) {
             currentGroup = next;
             activateCurrentGroup();

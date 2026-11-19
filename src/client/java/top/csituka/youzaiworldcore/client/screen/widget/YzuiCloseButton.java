@@ -22,7 +22,7 @@ public final class YzuiCloseButton extends TransparentButton {
     /** 允许地图保留自身提示文案，所有界面共用同一套图标与交互样式。 */
     public YzuiCloseButton(int x, int y, int size, @NonNull Component label, Runnable action) {
         super(x, y, size, size, label, () -> {
-            DebugLogger.debug("YzuiCloseButton", "激活关闭按钮");
+            DebugLogger.CLIENT.debug("YzuiCloseButton", "激活关闭按钮");
             action.run();
         });
         setTooltip(Tooltip.create(label));

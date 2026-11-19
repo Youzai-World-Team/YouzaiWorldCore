@@ -1,7 +1,5 @@
 package top.csituka.youzaiworldcore.config;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
@@ -22,7 +20,7 @@ public final class LaowuMemeConfig {
 
     public static final String MODULE = "LaowuMemeConfig";
 
-    private static final Logger LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/LaowuMemeConfig");
+    private static final DebugLogger.ModuleLogger LOGGER = DebugLogger.SERVER.module("LaowuMemeConfig");
 
     private static final boolean DEFAULT_ENABLED = true;
 
@@ -49,16 +47,16 @@ public final class LaowuMemeConfig {
 
     /** 设置事件总开关并持久化到配置文件 */
     public static void setEnabled(boolean value) {
-        DebugLogger.entering(MODULE, "setEnabled", "value=" + value);
+        DebugLogger.SERVER.entering(MODULE, "setEnabled", "value=" + value);
         if (enabled == value) {
-            DebugLogger.info(MODULE, "enabled 未变化，跳过保存");
-            DebugLogger.exiting(MODULE, "setEnabled", "no-change");
+            DebugLogger.SERVER.debug(MODULE, "enabled 未变化，跳过保存");
+            DebugLogger.SERVER.exiting(MODULE, "setEnabled", "no-change");
             return;
         }
-        DebugLogger.stateChange(MODULE, "LaowuMemeConfig", "enabled", enabled, value);
+        DebugLogger.SERVER.stateChange(MODULE, "LaowuMemeConfig", "enabled", enabled, value);
         enabled = value;
         save();
-        DebugLogger.exiting(MODULE, "setEnabled", "1");
+        DebugLogger.SERVER.exiting(MODULE, "setEnabled", "1");
     }
 
     /** 获取释放后的冷却时长（秒） */
@@ -68,34 +66,34 @@ public final class LaowuMemeConfig {
 
     /** 设置释放后的冷却时长（秒，至少 {@link #MIN_COOLDOWN_SECONDS}）并持久化 */
     public static void setCooldownSeconds(int seconds) {
-        DebugLogger.entering(MODULE, "setCooldownSeconds", "seconds=" + seconds);
+        DebugLogger.SERVER.entering(MODULE, "setCooldownSeconds", "seconds=" + seconds);
         if (seconds < MIN_COOLDOWN_SECONDS) {
-            DebugLogger.warn(MODULE, "冷却时长非法: %d（必须 >= %d），忽略", seconds, MIN_COOLDOWN_SECONDS);
-            DebugLogger.exiting(MODULE, "setCooldownSeconds", "invalid");
+            DebugLogger.SERVER.warn(MODULE, "冷却时长非法: {}（必须 >= {}），忽略", seconds, MIN_COOLDOWN_SECONDS);
+            DebugLogger.SERVER.exiting(MODULE, "setCooldownSeconds", "invalid");
             return;
         }
         if (cooldownSeconds == seconds) {
-            DebugLogger.info(MODULE, "cooldownSeconds 未变化，跳过保存");
-            DebugLogger.exiting(MODULE, "setCooldownSeconds", "no-change");
+            DebugLogger.SERVER.debug(MODULE, "cooldownSeconds 未变化，跳过保存");
+            DebugLogger.SERVER.exiting(MODULE, "setCooldownSeconds", "no-change");
             return;
         }
-        DebugLogger.stateChange(MODULE, "LaowuMemeConfig", "cooldownSeconds", cooldownSeconds, seconds);
+        DebugLogger.SERVER.stateChange(MODULE, "LaowuMemeConfig", "cooldownSeconds", cooldownSeconds, seconds);
         cooldownSeconds = seconds;
         save();
-        DebugLogger.exiting(MODULE, "setCooldownSeconds", "1");
+        DebugLogger.SERVER.exiting(MODULE, "setCooldownSeconds", "1");
     }
 
     // ===== 持久化 =====
 
     /** 从全局配置的 {@code laowu_meme_module} 分节加载（分节缺失则写入默认配置） */
     public static void load() {
-        DebugLogger.entering(MODULE, "load");
+        DebugLogger.SERVER.entering(MODULE, "load");
 
         ConfigSection section = GlobalSettings.section(GlobalSettings.LAOWU_MEME_MODULE);
         if (section.isEmpty()) {
-            DebugLogger.info(MODULE, "laowu_meme_module 分节不存在，写入默认配置 (enabled=%s)", enabled);
+            DebugLogger.SERVER.info(MODULE, "laowu_meme_module 分节不存在，写入默认配置 (enabled={})", enabled);
             save();
-            DebugLogger.exiting(MODULE, "load", "created default");
+            DebugLogger.SERVER.exiting(MODULE, "load", "created default");
             return;
         }
 
@@ -103,8 +101,8 @@ public final class LaowuMemeConfig {
         cooldownSeconds = section.getInt("cooldown_seconds", cooldownSeconds,
                 MIN_COOLDOWN_SECONDS, Integer.MAX_VALUE);
 
-        DebugLogger.info(MODULE, "已加载配置: enabled=%s, cooldown_seconds=%d", enabled, cooldownSeconds);
-        DebugLogger.exiting(MODULE, "load");
+        DebugLogger.SERVER.info(MODULE, "已加载配置: enabled={}, cooldown_seconds={}", enabled, cooldownSeconds);
+        DebugLogger.SERVER.exiting(MODULE, "load");
     }
 
     /** 重置为默认值并写入 {@code laowu_meme_module} 分节（新开服 / 坏文件恢复用） */

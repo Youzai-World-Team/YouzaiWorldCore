@@ -67,8 +67,9 @@ public class RecipeBookBackgroundMixin {
         int combX = x - YZWC_TAB_STRIP_W;
         int combW = 147 + YZWC_TAB_STRIP_W;
         yzwc$fillRoundedRect(g, combX, y, combW, 166, YZWC_RECIPE_BG_RADIUS, yzwcRecipeBookBg());
-        DebugLogger.info(YZWC_BG_DBG,
-                "YZUI recipe book bg at (%d, %d) %dx%d (controls still render)", combX, y, combW, 166);
+        if (DebugLogger.CLIENT.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+            DebugLogger.CLIENT.trace(YZWC_BG_DBG, "YZUI recipe book bg at ({}, {}) {}x{} (controls still render)", combX, y, combW, 166);
+        }
     }
 
     @Unique

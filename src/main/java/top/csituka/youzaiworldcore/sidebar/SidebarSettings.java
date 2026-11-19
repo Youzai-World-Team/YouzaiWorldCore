@@ -222,12 +222,12 @@ public final class SidebarSettings {
     // ===== 加载 / 保存 =====
 
     public static void load() {
-        DebugLogger.entering(MODULE, "load");
+        DebugLogger.SERVER.entering(MODULE, "load");
         ConfigSection section = GlobalSettings.section(GlobalSettings.SIDEBAR_MODULE);
         if (section.isEmpty()) {
             // 老服升级：global_settings.json 已存在但没有 sidebar_module 分节 → 补写默认值
             writeDefaults();
-            DebugLogger.exiting(MODULE, "load", "created default");
+            DebugLogger.SERVER.exiting(MODULE, "load", "created default");
             return;
         }
         enabled = section.getBoolean("enabled", enabled);
@@ -243,12 +243,8 @@ public final class SidebarSettings {
         title = section.raw().get("title");
         lines = section.raw().get("lines");
         pages = section.raw().get("pages");
-        DebugLogger.info(MODULE,
-                "已加载侧边栏配置：enabled=%s, updateTickTime=%d, titleChange=%d, pageChange=%d, scrollSpeed=%d, scrollLoop=%s, title=%s, lines=%s, pages=%s",
-                enabled, updateTickTime, titleChange, pageChange, scrollSpeed, scrollLoop,
-                title == null ? "null" : "set", lines == null ? "null" : "set",
-                pages == null ? "null" : "set");
-        DebugLogger.exiting(MODULE, "load");
+        DebugLogger.SERVER.debug(MODULE, "已加载侧边栏配置：enabled={}, updateTickTime={}, titleChange={}, pageChange={}, scrollSpeed={}, scrollLoop={}, title={}, lines={}, pages={}", enabled, updateTickTime, titleChange, pageChange, scrollSpeed, scrollLoop, title == null ? "null" : "set", lines == null ? "null" : "set", pages == null ? "null" : "set");
+        DebugLogger.SERVER.exiting(MODULE, "load");
     }
 
     /** 重置为默认值并写入 {@code sidebar_module} 分节（新开服 / 坏文件恢复用） */

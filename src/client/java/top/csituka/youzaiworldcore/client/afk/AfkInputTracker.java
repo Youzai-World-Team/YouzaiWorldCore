@@ -67,7 +67,7 @@ public final class AfkInputTracker {
         lastInputNanos = System.nanoTime();
         tickCounter = 0;
         inputSequence = 0;
-        DebugLogger.trace(MODULE, "已重置客户端 AFK 输入基线");
+        DebugLogger.CLIENT.trace(MODULE, "已重置客户端 AFK 输入基线");
     }
 
     /**
@@ -124,6 +124,6 @@ public final class AfkInputTracker {
         long idleNanos = Math.max(0L, System.nanoTime() - lastInputNanos);
         int idleTicks = (int) Math.min(Integer.MAX_VALUE, idleNanos / NANOS_PER_TICK);
         ClientPlayNetworking.send(new AfkHeartbeatPayload(idleTicks, inputSequence));
-        DebugLogger.trace(MODULE, "发送 AFK 心跳: idleTicks=%d, sequence=%d", idleTicks, inputSequence);
+        DebugLogger.CLIENT.trace(MODULE, "发送 AFK 心跳: idleTicks={}, sequence={}", idleTicks, inputSequence);
     }
 }

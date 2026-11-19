@@ -72,7 +72,7 @@ public final class MapDiskCapture implements AutoCloseable {
         }
         configure();
         worker.scheduleWithFixedDelay(this::run, 1, 1, TimeUnit.SECONDS);
-        DebugLogger.info("MapDiskCapture", "已启动区块文件采集，维度=%d", dimensions.size());
+        DebugLogger.SERVER.debug("MapDiskCapture", "已启动区块文件采集，维度={}", dimensions.size());
     }
 
     /** 主线程重载时发布配置快照，不从工作线程访问游戏配置或世界。 */
@@ -131,7 +131,7 @@ public final class MapDiskCapture implements AutoCloseable {
             }
         } catch (Exception error) {
             if (!closed)
-                DebugLogger.exception("MapDiskCapture", "采集区块文件，下轮继续重试", error);
+                DebugLogger.SERVER.exception("MapDiskCapture", "采集区块文件，下轮继续重试", error);
         }
     }
 

@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.client.screen;
 
+import top.csituka.youzaiworldcore.util.LogValues;
+
 import net.minecraft.util.Prediction;
 import com.mojang.blaze3d.platform.InputConstants;
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
@@ -28,8 +30,6 @@ import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.inventory.ContainerInput;
 import org.jspecify.annotations.NonNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -58,7 +58,7 @@ import top.csituka.youzaiworldcore.util.TrinketHelper;
 @SuppressWarnings("null")
 public class YzuCreativeInventoryScreen extends Screen {
 
-    private static final Logger LOG = LoggerFactory.getLogger("YzuCreativeInventoryScreen");
+    private static final DebugLogger.ModuleLogger LOG = DebugLogger.CLIENT.module("YzuCreativeInventoryScreen");
 
     private static final int PW = 356, PH = 168;
     private static final int CLOSE_SIZE = 22;
@@ -169,7 +169,7 @@ public class YzuCreativeInventoryScreen extends Screen {
 
         super.init();
         registerCreativeInventoryListener();
-        LOG.info("init lp={} tp={} tabs={} allItems={} vis={}", lp, tp, tabs.size(), allItems.size(), vis.size());
+        LOG.debug("init lp={} tp={} tabs={} allItems={} vis={}", lp, tp, tabs.size(), allItems.size(), vis.size());
     }
 
     /**
@@ -185,7 +185,7 @@ public class YzuCreativeInventoryScreen extends Screen {
         }
         creativeInventoryListener = new CreativeInventoryListener(minecraft);
         player.inventoryMenu.addSlotListener(creativeInventoryListener);
-        DebugLogger.info("YzuCreativeInventoryScreen", "已注册创造模式物品栏同步监听器");
+        DebugLogger.CLIENT.debug("YzuCreativeInventoryScreen", "已注册创造模式物品栏同步监听器");
     }
 
     @Override
@@ -200,7 +200,7 @@ public class YzuCreativeInventoryScreen extends Screen {
         if (creativeInventoryListener != null) {
             player.inventoryMenu.removeSlotListener(creativeInventoryListener);
             creativeInventoryListener = null;
-            DebugLogger.info("YzuCreativeInventoryScreen", "已移除创造模式物品栏同步监听器");
+            DebugLogger.CLIENT.debug("YzuCreativeInventoryScreen", "已移除创造模式物品栏同步监听器");
         }
     }
 
@@ -236,9 +236,9 @@ public class YzuCreativeInventoryScreen extends Screen {
                 cachedAllItems = null;
                 cachedAllItemNames = null;
             }
-            DebugLogger.info("YzuCreativeInventoryScreen", "已构建 %d 个可见创造模式分类", tabs.size());
+            DebugLogger.CLIENT.debug("YzuCreativeInventoryScreen", "已构建 {} 个可见创造模式分类", tabs.size());
         } catch (Exception e) {
-            DebugLogger.exception("YzuCreativeInventoryScreen", "forceBuildTabContents", e);
+            DebugLogger.CLIENT.exception("YzuCreativeInventoryScreen", "forceBuildTabContents", e);
         }
     }
 
@@ -259,8 +259,7 @@ public class YzuCreativeInventoryScreen extends Screen {
             cachedAllItemNames = List.copyOf(names);
             cachedRegistrySize = registrySize;
             cachedLanguage = language;
-            DebugLogger.info("YzuCreativeInventoryScreen", "已重建创造模式搜索缓存，共 %d 个物品变体",
-                    cachedAllItems.size());
+            DebugLogger.CLIENT.debug("YzuCreativeInventoryScreen", "已重建创造模式搜索缓存，共 {} 个物品变体", cachedAllItems.size());
         }
         allItems = cachedAllItems;
         allItemNames = cachedAllItemNames;
@@ -600,8 +599,7 @@ public class YzuCreativeInventoryScreen extends Screen {
 
         if ((action == TrinketInteractPayload.ACTION_PLACE || action == TrinketInteractPayload.ACTION_SWAP)
                 && !TrinketHelper.canPlaceInSlot(tsi, carried, player)) {
-            DebugLogger.info("TrinketClick", "物品 %s 未通过饰品槽 %s[%d] 的客户端校验",
-                    carried.getHoverName().getString(), tsi.groupKey(), tsi.slotIndex());
+            DebugLogger.CLIENT.debug("TrinketClick", "物品 {} 未通过饰品槽 {}[{}] 的客户端校验", carried.getHoverName().getString(), tsi.groupKey(), tsi.slotIndex());
             return;
         }
 
@@ -630,7 +628,7 @@ public class YzuCreativeInventoryScreen extends Screen {
                 }
             }
         } catch (Exception e) {
-            DebugLogger.warn("TrinketClick", "Local preview failed: %s", e.getMessage());
+            DebugLogger.CLIENT.warn("TrinketClick", "Local preview failed: {}", e.getMessage());
         }
     }
 
@@ -651,12 +649,10 @@ public class YzuCreativeInventoryScreen extends Screen {
     private void trinketQuickMove(TrinketHelper.TrinketSlotInfo tsi) {
         ItemStack slotStack = TrinketHelper.getSlotStack(tsi);
         if (slotStack.isEmpty()) {
-            DebugLogger.info("TrinketClick", "Shift-click on %s[%d]: slot empty, nothing to move",
-                    tsi.groupKey(), tsi.slotIndex());
+            DebugLogger.CLIENT.debug("TrinketClick", "Shift-click on {}[{}]: slot empty, nothing to move", tsi.groupKey(), tsi.slotIndex());
             return;
         }
-        DebugLogger.info("TrinketClick", "Shift-click on %s[%d] -> QUICK_MOVE to inventory",
-                tsi.groupKey(), tsi.slotIndex());
+        DebugLogger.CLIENT.debug("TrinketClick", "Shift-click on {}[{}] -> QUICK_MOVE to inventory", tsi.groupKey(), tsi.slotIndex());
         ClientPlayNetworking.send(new TrinketInteractPayload(tsi.groupKey(), tsi.slotIndex(),
                 TrinketInteractPayload.ACTION_QUICK_MOVE));
         // 本地预览：同种堆叠 → 空位，与服务端逻辑一致
@@ -682,7 +678,7 @@ public class YzuCreativeInventoryScreen extends Screen {
             }
             TrinketHelper.setSlotStack(tsi, toMove.isEmpty() ? ItemStack.EMPTY : toMove);
         } catch (Exception e) {
-            DebugLogger.warn("TrinketClick", "Local preview failed: %s", e.getMessage());
+            DebugLogger.CLIENT.warn("TrinketClick", "Local preview failed: {}", e.getMessage());
         }
         trinketSourceSlot = -1;
         activeTrinketSlots = List.of();
@@ -877,7 +873,7 @@ public class YzuCreativeInventoryScreen extends Screen {
             scrollBarDragOffset = (int) Math.round(mouseY - thumbY);
         }
         scrollBarDragging = true;
-        DebugLogger.info("YzuCreativeInventoryScreen", "开始拖动创造物品滚动条，scroll=%.2f/%d", soff, maxS);
+        DebugLogger.CLIENT.debug("YzuCreativeInventoryScreen", "开始拖动创造物品滚动条，scroll={}/{}", LogValues.decimal(soff, 2), maxS);
         return true;
     }
 
@@ -986,7 +982,7 @@ public class YzuCreativeInventoryScreen extends Screen {
         player.drop(toDrop, true, Prediction.PREDICTED);
         minecraft.gameMode.handleCreativeModeItemDrop(toDrop);
         resetDragState();
-        DebugLogger.info("YzuCreativeInventoryScreen", "创造模式物品拖出界面，已作为掉落物丢出");
+        DebugLogger.CLIENT.debug("YzuCreativeInventoryScreen", "创造模式物品拖出界面，已作为掉落物丢出");
         return true;
     }
 
@@ -998,8 +994,7 @@ public class YzuCreativeInventoryScreen extends Screen {
      */
     private void clickInventorySlot(int slotIndex, int button, ContainerInput input) {
         if (slotIndex < 0 || slotIndex >= player.inventoryMenu.slots.size()) {
-            DebugLogger.warn("YzuCreativeInventoryScreen", "忽略越界槽位点击：slot=%d, input=%s",
-                    slotIndex, input);
+            DebugLogger.CLIENT.debug("YzuCreativeInventoryScreen", "忽略越界槽位点击：slot={}, input={}", slotIndex, input);
             return;
         }
         player.inventoryMenu.clicked(slotIndex, button, input, player);
@@ -1459,8 +1454,7 @@ public class YzuCreativeInventoryScreen extends Screen {
         if (scrollBarDragging && ContainerMouseButtons.of(ev) == 0) {
             scrollBarDragging = false;
             scrollBarDragOffset = 0;
-            DebugLogger.info("YzuCreativeInventoryScreen", "结束拖动创造物品滚动条，scroll=%.2f/%d",
-                    soff, getGridMaxScroll());
+            DebugLogger.CLIENT.debug("YzuCreativeInventoryScreen", "结束拖动创造物品滚动条，scroll={}/{}", LogValues.decimal(soff, 2), getGridMaxScroll());
             return true;
         }
 
@@ -1607,9 +1601,7 @@ public class YzuCreativeInventoryScreen extends Screen {
                     toDrop.setCount(ev.hasControlDown() ? toDrop.getMaxStackSize() : 1);
                     player.drop(toDrop, true, Prediction.PREDICTED);
                     minecraft.gameMode.handleCreativeModeItemDrop(toDrop);
-                    DebugLogger.info("YzuCreativeInventoryScreen",
-                            "grid drop: %s x%d (ctrl=%b)", toDrop.getHoverName().getString(),
-                            toDrop.getCount(), ev.hasControlDown());
+                    DebugLogger.CLIENT.debug("YzuCreativeInventoryScreen", "grid drop: {} x{} (ctrl={})", toDrop.getHoverName().getString(), toDrop.getCount(), ev.hasControlDown());
                     return true;
                 }
 
@@ -1628,8 +1620,7 @@ public class YzuCreativeInventoryScreen extends Screen {
                     if (minecraft.options.keySwapOffhand.matches(ev)) {
                         player.getInventory().setItem(40, fullStack);
                         player.inventoryMenu.broadcastChanges();
-                        DebugLogger.info("YzuCreativeInventoryScreen", "grid to offhand: %s x%d",
-                                fullStack.getHoverName().getString(), fullStack.getCount());
+                        DebugLogger.CLIENT.debug("YzuCreativeInventoryScreen", "grid to offhand: {} x{}", fullStack.getHoverName().getString(), fullStack.getCount());
                         return true;
                     }
 
@@ -1638,9 +1629,7 @@ public class YzuCreativeInventoryScreen extends Screen {
                         if (minecraft.options.keyHotbarSlots[i].matches(ev)) {
                             player.getInventory().setItem(i, fullStack);
                             player.inventoryMenu.broadcastChanges();
-                            DebugLogger.info("YzuCreativeInventoryScreen",
-                                    "grid to hotbar[%d]: %s x%d", i,
-                                    fullStack.getHoverName().getString(), fullStack.getCount());
+                            DebugLogger.CLIENT.debug("YzuCreativeInventoryScreen", "grid to hotbar[{}]: {} x{}", i, fullStack.getHoverName().getString(), fullStack.getCount());
                             return true;
                         }
                     }
@@ -1667,10 +1656,7 @@ public class YzuCreativeInventoryScreen extends Screen {
                         minecraft.gameMode.handleCreativeModeItemDrop(removed);
                         minecraft.gameMode.handleCreativeModeItemAdd(
                                 remaining.isEmpty() ? ItemStack.EMPTY : remaining, hovSlot);
-                        DebugLogger.info("YzuCreativeInventoryScreen",
-                                "right-panel drop: slot=%d %s remove=%d remain=%d (ctrl=%b)",
-                                hovSlot, removed.getHoverName().getString(),
-                                removed.getCount(), remaining.getCount(), ev.hasControlDown());
+                        DebugLogger.CLIENT.debug("YzuCreativeInventoryScreen", "right-panel drop: slot={} {} remove={} remain={} (ctrl={})", hovSlot, removed.getHoverName().getString(), removed.getCount(), remaining.getCount(), ev.hasControlDown());
                     }
                 }
                 return true;

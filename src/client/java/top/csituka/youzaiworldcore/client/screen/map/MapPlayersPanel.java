@@ -77,7 +77,7 @@ final class MapPlayersPanel extends MapOverlayPanel {
         super(owner, "players_title");
         state = MapClient.social();
         fetch();
-        DebugLogger.debug("MapPlayers", "打开玩家位置共享管理面板");
+        DebugLogger.CLIENT.debug("MapPlayers", "打开玩家位置共享管理面板");
     }
 
     @SuppressWarnings("null")
@@ -260,7 +260,7 @@ final class MapPlayersPanel extends MapOverlayPanel {
         } else
             showNotice("players_denied", true);
         refreshEnabled();
-        DebugLogger.debug("MapPlayers", "提交位置共享总开关：%s", show);
+        DebugLogger.CLIENT.debug("MapPlayers", "提交位置共享总开关：{}", show);
     }
 
     private Component scopeLabel() {
@@ -520,7 +520,7 @@ final class MapPlayersPanel extends MapOverlayPanel {
         lastSendTick = ticks;
         showNotice("players_pending", false);
         refreshEnabled();
-        DebugLogger.debug("MapPlayers", "提交位置共享操作：%s / %s", action, id);
+        DebugLogger.CLIENT.debug("MapPlayers", "提交位置共享操作：{} / {}", action, id);
     }
 
     @SuppressWarnings("null")

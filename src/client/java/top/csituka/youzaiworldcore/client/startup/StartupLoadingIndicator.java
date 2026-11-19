@@ -71,7 +71,7 @@ public final class StartupLoadingIndicator extends JComponent {
         this.animationStartedAtNanos = System.nanoTime();
         this.repaintTimer.start();
         repaint();
-        DebugLogger.info("StartupLoadingIndicator", "启动窗口加载动画已开始");
+        DebugLogger.CLIENT.debug("StartupLoadingIndicator", "启动窗口加载动画已开始");
     }
 
     /**
@@ -83,7 +83,7 @@ public final class StartupLoadingIndicator extends JComponent {
         }
 
         this.repaintTimer.stop();
-        DebugLogger.info("StartupLoadingIndicator", "启动窗口加载动画已停止");
+        DebugLogger.CLIENT.debug("StartupLoadingIndicator", "启动窗口加载动画已停止");
     }
 
     /**

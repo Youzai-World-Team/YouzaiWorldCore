@@ -32,7 +32,7 @@ public final class YzuiGameRulesScreen extends InWorldGameRulesScreen {
         super(Minecraft.getInstance().getConnection(), ignored -> Minecraft.getInstance().gui.setScreen(parent),
                 parent);
         this.parent = parent;
-        DebugLogger.info("YzuiSettings", "创建游戏规则编辑页面");
+        DebugLogger.CLIENT.debug("YzuiSettings", "创建游戏规则编辑页面");
     }
 
     YzuiOptionsScreen parent() {
@@ -112,7 +112,7 @@ public final class YzuiGameRulesScreen extends InWorldGameRulesScreen {
     public void onGameRuleValuesUpdated(Map<ResourceKey<GameRule<?>>, String> values) {
         super.onGameRuleValuesUpdated(values);
         installFrame();
-        DebugLogger.info("YzuiSettings", "收到 %d 项服务端游戏规则", values.size());
+        DebugLogger.CLIENT.debug("YzuiSettings", "收到 {} 项服务端游戏规则", values.size());
     }
 
     @Override

@@ -5,7 +5,6 @@ import com.mojang.brigadier.context.CommandContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
-import top.csituka.youzaiworldcore.YouzaiworldCore;
 import top.csituka.youzaiworldcore.account.data.AccountDataStorage;
 import top.csituka.youzaiworldcore.luckperms.LuckPermsHelper;
 import top.csituka.youzaiworldcore.config.ChatFormatSettings;
@@ -14,7 +13,6 @@ import top.csituka.youzaiworldcore.config.CosmeticModuleSettings;
 import top.csituka.youzaiworldcore.config.GlobalSettings;
 import top.csituka.youzaiworldcore.config.AfkConfig;
 import top.csituka.youzaiworldcore.afk.AfkManager;
-import top.csituka.youzaiworldcore.config.ServerExternalSettings;
 import top.csituka.youzaiworldcore.config.UpdateCheckerConfig;
 import top.csituka.youzaiworldcore.dimensionalinventories.DimensionPoolSettings;
 import top.csituka.youzaiworldcore.cosmetic.CosmeticManager;
@@ -28,76 +26,76 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
  * 无需重启服务器即可应用数据文件变更。
  * </p>
  *
- * <p>权限：需要 {@code youzaiworldcore.command.reload} 节点或 OP 4</p>
+ * <p>
+ * 权限：需要 {@code youzaiworldcore.command.reload} 节点或 OP 4
+ * </p>
  */
 public class ReloadCommand {
+        private static final DebugLogger.ModuleLogger MOD_LOG = DebugLogger.SERVER.module("ReloadCommand");
 
-    public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
-        DebugLogger.entering("ReloadCommand", "register");
-        dispatcher.register(Commands.literal("yzwc")
-                .then(Commands.literal("reload")
-                        .requires(source -> LuckPermsHelper.checkPermission(
-                                source, LuckPermsHelper.PERMISSION_RELOAD, Commands.LEVEL_ADMINS))
-                        .executes(ReloadCommand::executeReload)
-                )
-        );
-        DebugLogger.exiting("ReloadCommand", "register");
-    }
+        public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
+                DebugLogger.SERVER.entering("ReloadCommand", "register");
+                dispatcher.register(Commands.literal("yzwc")
+                                .then(Commands.literal("reload")
+                                                .requires(source -> LuckPermsHelper.checkPermission(
+                                                                source, LuckPermsHelper.PERMISSION_RELOAD,
+                                                                Commands.LEVEL_ADMINS))
+                                                .executes(ReloadCommand::executeReload)));
+                DebugLogger.SERVER.exiting("ReloadCommand", "register");
+        }
 
-    /**
-     * 重载各模块配置与账户缓存，并向在线玩家同步受影响的状态。
-     */
-    private static int executeReload(CommandContext<CommandSourceStack> ctx) {
-        CommandSourceStack source = ctx.getSource();
-        DebugLogger.entering("ReloadCommand", "executeReload",
-                "source=" + source.getTextName());
+        /**
+         * 重载各模块配置与账户缓存，并向在线玩家同步受影响的状态。
+         */
+        private static int executeReload(CommandContext<CommandSourceStack> ctx) {
+                CommandSourceStack source = ctx.getSource();
+                DebugLogger.SERVER.entering("ReloadCommand", "executeReload",
+                                "source=" + source.getTextName());
 
-        YouzaiworldCore.LOGGER.info("管理员 {} 正在重载模组...",
-                source.getTextName());
-        DebugLogger.info("ReloadCommand", "管理员 %s 正在重载模组", source.getTextName());
+                MOD_LOG.notice("管理员 {} 正在重载模组...",
+                                source.getTextName());
 
-        // 先重读全局配置文件，后续各模块 reload 都从新内容里取分节
-        boolean afkWasEnabled = AfkConfig.isEnabled();
-        var previousAfkMode = AfkConfig.getDetectMode();
-        GlobalSettings.load();
-        AfkConfig.load();
-        AfkManager.applyConfiguration(source.getServer(),
-                afkWasEnabled != AfkConfig.isEnabled() || previousAfkMode != AfkConfig.getDetectMode());
-        ServerExternalSettings.load();
-        top.csituka.youzaiworldcore.map.MapServerManager.reload();
-        ApiModuleSettings.load();
+                // 先重读全局配置文件，后续各模块 reload 都从新内容里取分节
+                boolean afkWasEnabled = AfkConfig.isEnabled();
+                var previousAfkMode = AfkConfig.getDetectMode();
+                GlobalSettings.load();
+                AfkConfig.load();
+                AfkManager.applyConfiguration(source.getServer(),
+                                afkWasEnabled != AfkConfig.isEnabled() || previousAfkMode != AfkConfig.getDetectMode());
+                top.csituka.youzaiworldcore.map.MapServerManager.reload();
+                ApiModuleSettings.load();
 
-        int accountCount = AccountDataStorage.reload();
+                int accountCount = AccountDataStorage.reload();
 
-        UpdateCheckerConfig.reload();
+                UpdateCheckerConfig.reload();
 
-        DimensionPoolSettings.reload();
-        InPlaceRespawnConfig.reload();
+                DimensionPoolSettings.reload();
+                InPlaceRespawnConfig.reload();
 
-        // 重载聊天消息格式化配置（模板缓存随 load 自动失效重解析）
-        ChatFormatSettings.load();
+                // 重载聊天消息格式化配置（模板缓存随 load 自动失效重解析）
+                ChatFormatSettings.load();
 
-        // 重载自定义皮肤与披风配置，并把启用状态重新同步给在线玩家
-        CosmeticModuleSettings.load();
-        CosmeticManager.reload(source.getServer());
+                // 重载自定义皮肤与披风配置，并把启用状态重新同步给在线玩家
+                CosmeticModuleSettings.load();
+                CosmeticManager.reload(source.getServer());
 
-        // 重载 Tab 列表抬头 / 页脚定制（重新解析模板帧）
-        top.csituka.youzaiworldcore.tablist.TabListManager.reload();
+                // 重载 Tab 列表抬头 / 页脚定制（重新解析模板帧）
+                top.csituka.youzaiworldcore.tablist.TabListManager.reload();
 
-        // 重载侧边栏定制（重新解析模板帧并重置动画计数）
-        top.csituka.youzaiworldcore.sidebar.SidebarManager.reload();
+                // 重载侧边栏定制（重新解析模板帧并重置动画计数）
+                top.csituka.youzaiworldcore.sidebar.SidebarManager.reload();
 
+                source.sendSuccess(
+                                () -> Component.translatable("youzaiworldcore.message.command.reload_success",
+                                                accountCount),
+                                true);
 
-        source.sendSuccess(() ->
-                Component.translatable("youzaiworldcore.message.command.reload_success", accountCount),
-                true
-        );
+                MOD_LOG.notice("模组重载完成，已重新加载 {} 个账户数据", accountCount);
 
-        YouzaiworldCore.LOGGER.info("模组重载完成，已重新加载 {} 个账户数据", accountCount);
-
-        DebugLogger.branch("ReloadCommand", "reload result", accountCount > 0,
-                "accountCount=" + accountCount);
-        DebugLogger.exiting("ReloadCommand", "executeReload", "1 (success, accounts=" + accountCount + ")");
-        return 1;
-    }
+                DebugLogger.SERVER.branch("ReloadCommand", "reload result", accountCount > 0,
+                                "accountCount=" + accountCount);
+                DebugLogger.SERVER.exiting("ReloadCommand", "executeReload",
+                                "1 (success, accounts=" + accountCount + ")");
+                return 1;
+        }
 }

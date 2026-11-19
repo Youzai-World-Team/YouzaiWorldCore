@@ -29,7 +29,7 @@ public class UpdateCommand {
     private static final String MODULE = "UpdateCommand";
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
-        DebugLogger.entering(MODULE, "register");
+        DebugLogger.SERVER.entering(MODULE, "register");
         dispatcher.register(Commands.literal("yzwc")
                 .then(Commands.literal("update")
                         .requires(source -> LuckPermsHelper.checkPermission(
@@ -38,16 +38,16 @@ public class UpdateCommand {
                         .then(Commands.literal("check").executes(UpdateCommand::checkUpdate))
                 )
         );
-        DebugLogger.exiting(MODULE, "register");
+        DebugLogger.SERVER.exiting(MODULE, "register");
     }
 
     private static int checkUpdate(CommandContext<CommandSourceStack> ctx) {
         CommandSourceStack source = ctx.getSource();
-        DebugLogger.entering(MODULE, "checkUpdate", "source=" + source.getTextName());
+        DebugLogger.SERVER.entering(MODULE, "checkUpdate", "source=" + source.getTextName());
 
         if (!UpdateCheckerConfig.isEnabled()) {
             source.sendFailure(Component.translatable("youzaiworldcore.message.command.update.disabled"));
-            DebugLogger.exiting(MODULE, "checkUpdate", "0 (disabled)");
+            DebugLogger.SERVER.exiting(MODULE, "checkUpdate", "0 (disabled)");
             return 0;
         }
 
@@ -83,7 +83,7 @@ public class UpdateCommand {
             finalSource.sendSuccess(() -> link, true);
         }));
 
-        DebugLogger.exiting(MODULE, "checkUpdate", "submitted");
+        DebugLogger.SERVER.exiting(MODULE, "checkUpdate", "submitted");
         return 1;
     }
 }

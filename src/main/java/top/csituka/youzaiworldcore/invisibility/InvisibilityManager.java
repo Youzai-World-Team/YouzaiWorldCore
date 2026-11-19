@@ -15,8 +15,6 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.PositionMoveRotation;
 import net.minecraft.world.phys.Vec3;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
 import java.util.*;
@@ -37,7 +35,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @SuppressWarnings("null")
 public final class InvisibilityManager {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/InvisibilityManager");
+    private static final DebugLogger.ModuleLogger LOGGER = DebugLogger.SERVER.module("InvisibilityManager");
 
     private static final Set<UUID> INVISIBLE_PLAYERS = new HashSet<>();
     private static final Set<UUID> INVISIBLE_PLAYERS_VIEW = Collections.unmodifiableSet(INVISIBLE_PLAYERS);
@@ -55,9 +53,9 @@ public final class InvisibilityManager {
     // ==================== 公开 API ====================
 
     public static boolean isInvisible(ServerPlayer player) {
-        DebugLogger.entering("InvisibilityManager", "isInvisible", "player=" + player.getName().getString());
+        DebugLogger.SERVER.entering("InvisibilityManager", "isInvisible", "player=" + player.getName().getString());
         boolean result = INVISIBLE_PLAYERS.contains(player.getUUID());
-        DebugLogger.exiting("InvisibilityManager", "isInvisible", String.valueOf(result));
+        DebugLogger.SERVER.exiting("InvisibilityManager", "isInvisible", String.valueOf(result));
         return result;
     }
 
@@ -76,19 +74,19 @@ public final class InvisibilityManager {
      * <p>只有 OP（原版 4 级）或拥有权限节点的玩家才能使用。</p>
      */
     public static boolean hasPermission(ServerPlayer player) {
-        DebugLogger.entering("InvisibilityManager", "hasPermission", "player=" + player.getName().getString());
+        DebugLogger.SERVER.entering("InvisibilityManager", "hasPermission", "player=" + player.getName().getString());
         // OP 检查（4 级）
         if (Commands.LEVEL_ADMINS.check(player.permissions())) {
-            DebugLogger.branch("InvisibilityManager", "OP 4级权限检查通过", true);
-            DebugLogger.exiting("InvisibilityManager", "hasPermission", "true (OP)");
+            DebugLogger.SERVER.branch("InvisibilityManager", "OP 4级权限检查通过", true);
+            DebugLogger.SERVER.exiting("InvisibilityManager", "hasPermission", "true (OP)");
             return true;
         }
-        DebugLogger.branch("InvisibilityManager", "OP 4级权限检查未通过，检查 LuckPerms", false);
+        DebugLogger.SERVER.branch("InvisibilityManager", "OP 4级权限检查未通过，检查 LuckPerms", false);
         boolean hasLuckPerms = top.csituka.youzaiworldcore.luckperms.LuckPermsHelper.checkLuckPermsOnly(
                 player.getUUID(), PERMISSION_INVISIBILITY
         );
-        DebugLogger.branch("InvisibilityManager", "LuckPerms 权限检查", hasLuckPerms);
-        DebugLogger.exiting("InvisibilityManager", "hasPermission", String.valueOf(hasLuckPerms));
+        DebugLogger.SERVER.branch("InvisibilityManager", "LuckPerms 权限检查", hasLuckPerms);
+        DebugLogger.SERVER.exiting("InvisibilityManager", "hasPermission", String.valueOf(hasLuckPerms));
         return hasLuckPerms;
     }
 
@@ -99,22 +97,22 @@ public final class InvisibilityManager {
      */
     public static void enable(ServerPlayer player) {
         String playerName = player.getName().getString();
-        DebugLogger.entering("InvisibilityManager", "enable", "player=" + playerName);
+        DebugLogger.SERVER.entering("InvisibilityManager", "enable", "player=" + playerName);
         UUID uuid = player.getUUID();
         if (INVISIBLE_PLAYERS.contains(uuid)) {
-            DebugLogger.branch("InvisibilityManager", "玩家已处于隐身状态", true, playerName);
+            DebugLogger.SERVER.branch("InvisibilityManager", "玩家已处于隐身状态", true, playerName);
             player.sendSystemMessage(Component.literal("§c你已经处于隐身状态了"));
-            DebugLogger.exiting("InvisibilityManager", "enable");
+            DebugLogger.SERVER.exiting("InvisibilityManager", "enable");
             return;
         }
-        DebugLogger.branch("InvisibilityManager", "玩家未隐身，开始执行启用流程", false);
+        DebugLogger.SERVER.branch("InvisibilityManager", "玩家未隐身，开始执行启用流程", false);
 
         MinecraftServer server = player.level().getServer();
         PlayerList playerList = server.getPlayerList();
         List<ServerPlayer> allPlayers = playerList.getPlayers();
 
         // 1. 添加隐身状态效果（使本体及装备不可见）
-        DebugLogger.branch("InvisibilityManager", "步骤1: 添加隐身状态效果", true);
+        DebugLogger.SERVER.branch("InvisibilityManager", "步骤1: 添加隐身状态效果", true);
         player.addEffect(new MobEffectInstance(
                 MobEffects.INVISIBILITY,
                 MobEffectInstance.INFINITE_DURATION,
@@ -125,7 +123,7 @@ public final class InvisibilityManager {
         ));
 
         // 2. 仅从其他玩家的 Tab 列表中移除（自己保留，方便观察）
-        DebugLogger.branch("InvisibilityManager", "步骤2: 从其他玩家 Tab 列表中移除", true);
+        DebugLogger.SERVER.branch("InvisibilityManager", "步骤2: 从其他玩家 Tab 列表中移除", true);
         ClientboundPlayerInfoRemovePacket removePacket =
                 new ClientboundPlayerInfoRemovePacket(List.of(uuid));
         for (ServerPlayer other : allPlayers) {
@@ -135,7 +133,7 @@ public final class InvisibilityManager {
         }
 
         // 3. 仅从其他玩家的视野中移除实体（自己不移除）
-        DebugLogger.branch("InvisibilityManager", "步骤3: 从其他玩家视野中移除实体", true);
+        DebugLogger.SERVER.branch("InvisibilityManager", "步骤3: 从其他玩家视野中移除实体", true);
         ClientboundRemoveEntitiesPacket removeEntityPacket =
                 new ClientboundRemoveEntitiesPacket(player.getId());
         for (ServerPlayer other : allPlayers) {
@@ -145,7 +143,7 @@ public final class InvisibilityManager {
         }
 
         // 4. 仅给其他玩家发送伪装退服消息
-        DebugLogger.branch("InvisibilityManager", "步骤4: 发送伪装退服消息给其他玩家", true);
+        DebugLogger.SERVER.branch("InvisibilityManager", "步骤4: 发送伪装退服消息给其他玩家", true);
         Component leaveMessage = Component.translatable(
                 "multiplayer.player.left", player.getDisplayName()
         );
@@ -169,11 +167,11 @@ public final class InvisibilityManager {
         BOSS_BARS.put(uuid, bossBar);
 
         INVISIBLE_PLAYERS.add(uuid);
-        DebugLogger.stateChange("InvisibilityManager", String.valueOf(uuid), "INVISIBLE_PLAYERS", "added");
-        DebugLogger.stateChange("InvisibilityManager", String.valueOf(uuid), "BOSS_BARS", "created");
-        DebugLogger.info("InvisibilityManager", "玩家 %s 已开启隐身", playerName);
+        DebugLogger.SERVER.stateChange("InvisibilityManager", String.valueOf(uuid), "INVISIBLE_PLAYERS", "added");
+        DebugLogger.SERVER.stateChange("InvisibilityManager", String.valueOf(uuid), "BOSS_BARS", "created");
+        DebugLogger.SERVER.info("InvisibilityManager", "玩家 {} 已开启隐身", playerName);
         LOGGER.info("玩家 {} 已开启隐身", player.getName().getString());
-        DebugLogger.exiting("InvisibilityManager", "enable");
+        DebugLogger.SERVER.exiting("InvisibilityManager", "enable");
     }
 
     /**
@@ -183,25 +181,25 @@ public final class InvisibilityManager {
      */
     public static void disable(ServerPlayer player) {
         String playerName = player.getName().getString();
-        DebugLogger.entering("InvisibilityManager", "disable", "player=" + playerName);
+        DebugLogger.SERVER.entering("InvisibilityManager", "disable", "player=" + playerName);
         UUID uuid = player.getUUID();
         if (!INVISIBLE_PLAYERS.contains(uuid)) {
-            DebugLogger.branch("InvisibilityManager", "玩家未处于隐身状态", true, playerName);
+            DebugLogger.SERVER.branch("InvisibilityManager", "玩家未处于隐身状态", true, playerName);
             player.sendSystemMessage(Component.literal("§c你并未处于隐身状态"));
-            DebugLogger.exiting("InvisibilityManager", "disable");
+            DebugLogger.SERVER.exiting("InvisibilityManager", "disable");
             return;
         }
-        DebugLogger.branch("InvisibilityManager", "玩家隐身中，开始执行关闭流程", false);
+        DebugLogger.SERVER.branch("InvisibilityManager", "玩家隐身中，开始执行关闭流程", false);
 
         MinecraftServer server = player.level().getServer();
         PlayerList playerList = server.getPlayerList();
         List<ServerPlayer> allPlayers = playerList.getPlayers();
 
-        DebugLogger.branch("InvisibilityManager", "步骤1: 移除隐身状态效果", true);
+        DebugLogger.SERVER.branch("InvisibilityManager", "步骤1: 移除隐身状态效果", true);
         player.removeEffect(MobEffects.INVISIBILITY);
 
         // 2. 仅向其他玩家重新发送玩家信息（恢复 Tab 列表）
-        DebugLogger.branch("InvisibilityManager", "步骤2: 恢复其他玩家 Tab 列表", true);
+        DebugLogger.SERVER.branch("InvisibilityManager", "步骤2: 恢复其他玩家 Tab 列表", true);
         ClientboundPlayerInfoUpdatePacket addToTabPacket =
                 new ClientboundPlayerInfoUpdatePacket(
                         EnumSet.allOf(ClientboundPlayerInfoUpdatePacket.Action.class),
@@ -214,14 +212,14 @@ public final class InvisibilityManager {
         }
 
         // 3. 仅向其他玩家重新发送玩家实体包（恢复可见）
-        DebugLogger.branch("InvisibilityManager", "步骤3: 恢复其他玩家实体可见", true);
+        DebugLogger.SERVER.branch("InvisibilityManager", "步骤3: 恢复其他玩家实体可见", true);
         List<ServerPlayer> others = allPlayers.stream()
                 .filter(p -> p != player)
                 .toList();
         resendPlayerEntity(player, others);
 
         // 4. 发送伪装进服消息给其他玩家
-        DebugLogger.branch("InvisibilityManager", "步骤4: 发送伪装进服消息给其他玩家", true);
+        DebugLogger.SERVER.branch("InvisibilityManager", "步骤4: 发送伪装进服消息给其他玩家", true);
         Component joinMessage = Component.translatable(
                 "multiplayer.player.joined", player.getDisplayName()
         );
@@ -239,10 +237,10 @@ public final class InvisibilityManager {
         }
 
         INVISIBLE_PLAYERS.remove(uuid);
-        DebugLogger.stateChange("InvisibilityManager", String.valueOf(uuid), "INVISIBLE_PLAYERS", "removed");
-        DebugLogger.stateChange("InvisibilityManager", String.valueOf(uuid), "BOSS_BARS", "removed");
+        DebugLogger.SERVER.stateChange("InvisibilityManager", String.valueOf(uuid), "INVISIBLE_PLAYERS", "removed");
+        DebugLogger.SERVER.stateChange("InvisibilityManager", String.valueOf(uuid), "BOSS_BARS", "removed");
         LOGGER.info("玩家 {} 已关闭隐身", player.getName().getString());
-        DebugLogger.exiting("InvisibilityManager", "disable");
+        DebugLogger.SERVER.exiting("InvisibilityManager", "disable");
     }
 
     /**
@@ -251,24 +249,24 @@ public final class InvisibilityManager {
      */
     public static void forceDisable(ServerPlayer player) {
         String playerName = player.getName().getString();
-        DebugLogger.entering("InvisibilityManager", "forceDisable", "player=" + playerName);
+        DebugLogger.SERVER.entering("InvisibilityManager", "forceDisable", "player=" + playerName);
         UUID uuid = player.getUUID();
         if (!INVISIBLE_PLAYERS.contains(uuid)) {
-            DebugLogger.branch("InvisibilityManager", "玩家未隐身，无需强制关闭", true, playerName);
-            DebugLogger.exiting("InvisibilityManager", "forceDisable");
+            DebugLogger.SERVER.branch("InvisibilityManager", "玩家未隐身，无需强制关闭", true, playerName);
+            DebugLogger.SERVER.exiting("InvisibilityManager", "forceDisable");
             return;
         }
-        DebugLogger.branch("InvisibilityManager", "玩家隐身中，开始执行强制关闭流程", false);
+        DebugLogger.SERVER.branch("InvisibilityManager", "玩家隐身中，开始执行强制关闭流程", false);
 
         MinecraftServer server = player.level().getServer();
         PlayerList playerList = server.getPlayerList();
         List<ServerPlayer> allPlayers = playerList.getPlayers();
 
-        DebugLogger.branch("InvisibilityManager", "步骤1: 移除隐身效果", true);
+        DebugLogger.SERVER.branch("InvisibilityManager", "步骤1: 移除隐身效果", true);
         player.removeEffect(MobEffects.INVISIBILITY);
 
         // 2. 仅向其他玩家恢复 Tab 列表
-        DebugLogger.branch("InvisibilityManager", "步骤2: 恢复其他玩家 Tab 列表", true);
+        DebugLogger.SERVER.branch("InvisibilityManager", "步骤2: 恢复其他玩家 Tab 列表", true);
         ClientboundPlayerInfoUpdatePacket addToTabPacket =
                 new ClientboundPlayerInfoUpdatePacket(
                         EnumSet.allOf(ClientboundPlayerInfoUpdatePacket.Action.class),
@@ -281,7 +279,7 @@ public final class InvisibilityManager {
         }
 
         // 3. 仅恢复其他玩家的实体可见
-        DebugLogger.branch("InvisibilityManager", "步骤3: 恢复其他玩家实体可见", true);
+        DebugLogger.SERVER.branch("InvisibilityManager", "步骤3: 恢复其他玩家实体可见", true);
         List<ServerPlayer> others = allPlayers.stream()
                 .filter(p -> p != player)
                 .toList();
@@ -293,10 +291,10 @@ public final class InvisibilityManager {
         }
 
         INVISIBLE_PLAYERS.remove(uuid);
-        DebugLogger.stateChange("InvisibilityManager", String.valueOf(uuid), "INVISIBLE_PLAYERS", "removed");
-        DebugLogger.stateChange("InvisibilityManager", String.valueOf(uuid), "BOSS_BARS", "removed");
+        DebugLogger.SERVER.stateChange("InvisibilityManager", String.valueOf(uuid), "INVISIBLE_PLAYERS", "removed");
+        DebugLogger.SERVER.stateChange("InvisibilityManager", String.valueOf(uuid), "BOSS_BARS", "removed");
         LOGGER.info("玩家 {} 隐身已被强制关闭", player.getName().getString());
-        DebugLogger.exiting("InvisibilityManager", "forceDisable");
+        DebugLogger.SERVER.exiting("InvisibilityManager", "forceDisable");
     }
 
     /**
@@ -304,14 +302,14 @@ public final class InvisibilityManager {
      */
     public static void onPlayerDisconnect(ServerPlayer player) {
         String playerName = player.getName().getString();
-        DebugLogger.entering("InvisibilityManager", "onPlayerDisconnect", "player=" + playerName);
+        DebugLogger.SERVER.entering("InvisibilityManager", "onPlayerDisconnect", "player=" + playerName);
         UUID uuid = player.getUUID();
         if (!INVISIBLE_PLAYERS.contains(uuid)) {
-            DebugLogger.branch("InvisibilityManager", "玩家未隐身，无需清理", true, playerName);
-            DebugLogger.exiting("InvisibilityManager", "onPlayerDisconnect");
+            DebugLogger.SERVER.branch("InvisibilityManager", "玩家未隐身，无需清理", true, playerName);
+            DebugLogger.SERVER.exiting("InvisibilityManager", "onPlayerDisconnect");
             return;
         }
-        DebugLogger.branch("InvisibilityManager", "玩家隐身中，清理隐身状态", false);
+        DebugLogger.SERVER.branch("InvisibilityManager", "玩家隐身中，清理隐身状态", false);
 
         ServerBossEvent bossBar = BOSS_BARS.remove(uuid);
         if (bossBar != null) {
@@ -319,19 +317,19 @@ public final class InvisibilityManager {
         }
 
         INVISIBLE_PLAYERS.remove(uuid);
-        DebugLogger.stateChange("InvisibilityManager", String.valueOf(uuid), "INVISIBLE_PLAYERS", "removed (disconnect)");
-        DebugLogger.stateChange("InvisibilityManager", String.valueOf(uuid), "BOSS_BARS", "removed (disconnect)");
-        LOGGER.info("玩家 {} 登出，已清理隐身状态", player.getName().getString());
-        DebugLogger.exiting("InvisibilityManager", "onPlayerDisconnect");
+        DebugLogger.SERVER.stateChange("InvisibilityManager", String.valueOf(uuid), "INVISIBLE_PLAYERS", "removed (disconnect)");
+        DebugLogger.SERVER.stateChange("InvisibilityManager", String.valueOf(uuid), "BOSS_BARS", "removed (disconnect)");
+        LOGGER.debug("玩家 {} 登出，已清理隐身状态", player.getName().getString());
+        DebugLogger.SERVER.exiting("InvisibilityManager", "onPlayerDisconnect");
     }
 
     /**
      * 获取当前所有隐身中的玩家 UUID 集合（只读视图）。
      */
     public static Set<UUID> getInvisiblePlayers() {
-        DebugLogger.entering("InvisibilityManager", "getInvisiblePlayers");
+        DebugLogger.SERVER.entering("InvisibilityManager", "getInvisiblePlayers");
         Set<UUID> result = INVISIBLE_PLAYERS_VIEW;
-        DebugLogger.exiting("InvisibilityManager", "getInvisiblePlayers", "size=" + result.size());
+        DebugLogger.SERVER.exiting("InvisibilityManager", "getInvisiblePlayers", "size=" + result.size());
         return result;
     }
 
@@ -378,7 +376,7 @@ public final class InvisibilityManager {
     @SuppressWarnings({"null"})
     private static void resendPlayerEntity(ServerPlayer player, Collection<ServerPlayer> targets) {
         String playerName = player.getName().getString();
-        DebugLogger.entering("InvisibilityManager", "resendPlayerEntity",
+        DebugLogger.SERVER.entering("InvisibilityManager", "resendPlayerEntity",
                 "player=" + playerName + ", targetCount=" + targets.size());
         int entityId = player.getId();
         UUID uuid = player.getUUID();
@@ -407,12 +405,12 @@ public final class InvisibilityManager {
         for (ServerPlayer target : targets) {
             String targetName = target.getName().getString();
             target.connection.send(addEntityPacket);
-            DebugLogger.trace("InvisibilityManager", "发送添加实体包到 %s (entityId=%d)", targetName, entityId);
+            DebugLogger.SERVER.trace("InvisibilityManager", "发送添加实体包到 {} (entityId={})", targetName, entityId);
 
             // 2. 发送实体同步数据（包括装备、状态等）
             if (packedData != null && !packedData.isEmpty()) {
                 target.connection.send(new ClientboundSetEntityDataPacket(entityId, packedData));
-                DebugLogger.trace("InvisibilityManager", "发送实体同步数据到 %s (entityId=%d)", targetName, entityId);
+                DebugLogger.SERVER.trace("InvisibilityManager", "发送实体同步数据到 {} (entityId={})", targetName, entityId);
             }
 
             // 3. 发送位置同步包（确保位置精确）
@@ -422,16 +420,15 @@ public final class InvisibilityManager {
                     Collections.emptySet(),
                     player.onGround()
             ));
-            DebugLogger.trace("InvisibilityManager", "发送位置同步包到 %s (entityId=%d)", targetName, entityId);
+            DebugLogger.SERVER.trace("InvisibilityManager", "发送位置同步包到 {} (entityId={})", targetName, entityId);
 
             for (MobEffectInstance effect : player.getActiveEffects()) {
                 target.connection.send(new ClientboundUpdateMobEffectPacket(
                         entityId, effect, false
                 ));
-                DebugLogger.trace("InvisibilityManager", "发送状态效果到 %s (entityId=%d, effect=%s)",
-                        targetName, entityId, effect.getEffect().getRegisteredName());
+                DebugLogger.SERVER.trace("InvisibilityManager", "发送状态效果到 {} (entityId={}, effect={})", targetName, entityId, effect.getEffect().getRegisteredName());
             }
         }
-        DebugLogger.exiting("InvisibilityManager", "resendPlayerEntity");
+        DebugLogger.SERVER.exiting("InvisibilityManager", "resendPlayerEntity");
     }
 }

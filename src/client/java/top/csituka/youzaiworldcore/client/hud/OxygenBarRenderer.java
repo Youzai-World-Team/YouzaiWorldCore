@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.client.hud;
 
+import top.csituka.youzaiworldcore.util.LogValues;
+
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
 
 import net.minecraft.client.Minecraft;
@@ -62,10 +64,8 @@ public final class OxygenBarRenderer {
         float fillRatio = Math.min(1.0f, Math.max(0.0f, (float) displayAir / maxAirSupply));
 
         // 先判等级：基本类型装箱 + varargs 数组在每帧路径上是白扔的垃圾
-        if (DebugLogger.isEnabled(DebugLogger.LEVEL_DETAILED)) {
-            DebugLogger.debug(LOG_TAG,
-                    "渲染氧气条: air=%d, max=%d, fill=%.2f, pos=(%d,%d)",
-                    displayAir, maxAirSupply, fillRatio, barX, barY);
+        if (DebugLogger.CLIENT.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+            DebugLogger.CLIENT.trace(LOG_TAG, "渲染氧气条: air={}, max={}, fill={}, pos=({},{})", displayAir, maxAirSupply, LogValues.decimal(fillRatio, 2), barX, barY);
         }
 
         // === 1. 背景（圆角） ===

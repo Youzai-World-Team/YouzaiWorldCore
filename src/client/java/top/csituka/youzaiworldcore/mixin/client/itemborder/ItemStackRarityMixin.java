@@ -45,25 +45,25 @@ public abstract class ItemStackRarityMixin {
     private static final Map<Identifier, Rarity> ITEM_RARITY_OVERRIDES;
 
     static {
-        DebugLogger.info(MODULE, "构建物品稀有度覆写映射表...");
+        DebugLogger.CLIENT.debug(MODULE, "构建物品稀有度覆写映射表...");
         Map<Identifier, Rarity> map = new HashMap<>();
         for (Map.Entry<String, List<String>> entry : ItemBorderConfig.MANUAL_BORDERS.entrySet()) {
             Rarity rarity = colorNameToRarity(entry.getKey());
             if (rarity == null) {
-                DebugLogger.warn(MODULE, "无法将颜色键 '%s' 映射为 Rarity", entry.getKey());
+                DebugLogger.CLIENT.warn(MODULE, "无法将颜色键 '{}' 映射为 Rarity", entry.getKey());
                 continue;
             }
             for (String itemId : entry.getValue()) {
                 Identifier parsed = Identifier.tryParse(itemId);
                 if (parsed == null) {
-                    DebugLogger.warn(MODULE, "无法解析物品 ID '%s'", itemId);
+                    DebugLogger.CLIENT.warn(MODULE, "无法解析物品 ID '{}'", itemId);
                     continue;
                 }
                 map.put(parsed, rarity);
             }
         }
         ITEM_RARITY_OVERRIDES = Collections.unmodifiableMap(map);
-        DebugLogger.info(MODULE, "已加载 %d 条稀有度覆写", ITEM_RARITY_OVERRIDES.size());
+        DebugLogger.CLIENT.debug(MODULE, "已加载 {} 条稀有度覆写", ITEM_RARITY_OVERRIDES.size());
     }
 
     /**
@@ -92,8 +92,8 @@ public abstract class ItemStackRarityMixin {
         if (itemId == null) return;
         Rarity override = ITEM_RARITY_OVERRIDES.get(itemId);
         if (override != null) {
-            if (DebugLogger.isEnabled(DebugLogger.LEVEL_DEBUG)) {
-                DebugLogger.trace(MODULE, "覆写稀有度: %s → %s", itemId, override);
+            if (DebugLogger.CLIENT.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+                DebugLogger.CLIENT.trace(MODULE, "覆写稀有度: {} → {}", itemId, override);
             }
             cir.setReturnValue(override);
         }

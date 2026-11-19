@@ -83,13 +83,13 @@ public final class LaowuMemeHandler {
         if (registered) {
             return;
         }
-        DebugLogger.entering(MODULE, "register");
+        DebugLogger.SERVER.entering(MODULE, "register");
         ServerTickEvents.END_SERVER_TICK.register(LaowuMemeHandler::serverTick);
         UseEntityCallback.EVENT
                 .register((player, world, hand, entity, hitResult) -> onRightClick(entity instanceof Cat c ? c : null));
         registered = true;
-        DebugLogger.info(MODULE, "老吴贴贴事件已注册（服务端权威架构）");
-        DebugLogger.exiting(MODULE, "register");
+        DebugLogger.SERVER.debug(MODULE, "老吴贴贴事件已注册（服务端权威架构）");
+        DebugLogger.SERVER.exiting(MODULE, "register");
     }
 
     /** 每个服务端 tick 推进一次（END_SERVER_TICK） */
@@ -98,7 +98,7 @@ public final class LaowuMemeHandler {
             // 事件被禁用：立即释放全部活跃配对（恢复 AI + 广播 stop）并清空冷却，
             // 保证重新启用后可立即再次触发，且不残留任何锁定的猫。
             if (!activePairs.isEmpty()) {
-                DebugLogger.info(MODULE, "事件被禁用，释放全部活跃配对 (%d)", activePairs.size());
+                DebugLogger.SERVER.debug(MODULE, "事件被禁用，释放全部活跃配对 ({})", activePairs.size());
                 for (MemePair p : new ArrayList<>(activePairs)) {
                     abort(p);
                 }
@@ -126,7 +126,7 @@ public final class LaowuMemeHandler {
             if (!p.grounded()) {
                 // 配对期间任一只猫脚下悬空（虚空/无支撑）：释放配对恢复 AI 与物理，
                 // 猫自然下落，不再被 setOnGround(true)+setPos 强行悬浮。
-                DebugLogger.info(MODULE, "配对 %s <-> %s 脚下悬空，释放配对", p.catAId, p.catBId);
+                DebugLogger.SERVER.trace(MODULE, "配对 {} <-> {} 脚下悬空，释放配对", p.catAId, p.catBId);
                 abort(p);
                 it.remove();
                 continue;
@@ -147,7 +147,7 @@ public final class LaowuMemeHandler {
         if (p == null) {
             return InteractionResult.PASS;
         }
-        DebugLogger.info(MODULE, "玩家右键释放配对: %s <-> %s", p.catAId, p.catBId);
+        DebugLogger.SERVER.debug(MODULE, "玩家右键释放配对: {} <-> {}", p.catAId, p.catBId);
         release(p, true);
         activePairs.remove(p);
         return InteractionResult.SUCCESS;
@@ -207,8 +207,7 @@ public final class LaowuMemeHandler {
         // 客户端必须按它播放，实现全体玩家同听。
         int soundId = a.getRandom().nextInt(BUILTIN_SOUND_COUNT);
         activePairs.add(new MemePair(a, b, rollSign, soundId));
-        DebugLogger.info(MODULE, "配对锁定：%s <-> %s (soundId=%d, rollSign=%d)",
-                a.getUUID(), b.getUUID(), soundId, rollSign);
+        DebugLogger.SERVER.debug(MODULE, "配对锁定：{} <-> {} (soundId={}, rollSign={})", a.getUUID(), b.getUUID(), soundId, rollSign);
     }
 
     /** 右键释放：恢复 AI + 向外速度 + 写入冷却 + 广播 stop */
@@ -363,7 +362,7 @@ public final class LaowuMemeHandler {
             if (catA.distanceTo(catB) <= LOCK_DISTANCE + 0.05) {
                 locked = true;
                 broadcastTrigger(this);
-                DebugLogger.info(MODULE, "进入锁定：%s <-> %s (soundId=%d)", catAId, catBId, soundId);
+                DebugLogger.SERVER.debug(MODULE, "进入锁定：{} <-> {} (soundId={})", catAId, catBId, soundId);
             }
         }
 

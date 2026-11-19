@@ -173,7 +173,7 @@ public final class YzuiSettingsRouter {
         @SuppressWarnings("null")
         OptionsScreen screen = new OptionsScreen(parent, minecraft.options);
         COMPATIBILITY.put(screen, parent.origin());
-        DebugLogger.info("YzuiSettings", "打开原版选项兼容入口");
+        DebugLogger.CLIENT.debug("YzuiSettings", "打开原版选项兼容入口");
         minecraft.gui.setScreen(screen);
     }
 }

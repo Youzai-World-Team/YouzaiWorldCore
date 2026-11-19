@@ -22,11 +22,10 @@ public final class ItemBorderClient {
      * </p>
      */
     public static void initialize() {
-        DebugLogger.entering(MODULE, "initialize");
+        DebugLogger.CLIENT.entering(MODULE, "initialize");
 
-        DebugLogger.info(MODULE, "物品边框功能已就绪 (enabled=%s)",
-                ItemBorderConfig.ENABLED);
+        DebugLogger.CLIENT.debug(MODULE, "物品边框功能已就绪 (enabled={})", ItemBorderConfig.ENABLED);
 
-        DebugLogger.exiting(MODULE, "initialize");
+        DebugLogger.CLIENT.exiting(MODULE, "initialize");
     }
 }

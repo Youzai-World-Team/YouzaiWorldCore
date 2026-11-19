@@ -43,7 +43,7 @@ public final class LoadingCircleRenderer {
         long now = Util.getMillis();
         if (this.animationStartMillis == -1L) {
             this.animationStartMillis = now;
-            DebugLogger.info(MODULE_NAME, "启动加载圈组件已开始渲染");
+            DebugLogger.CLIENT.debug(MODULE_NAME, "启动加载圈组件已开始渲染");
         }
 
         int overlayAlpha = Math.max(0, Math.min(255, Math.round(alpha * 255.0f)));

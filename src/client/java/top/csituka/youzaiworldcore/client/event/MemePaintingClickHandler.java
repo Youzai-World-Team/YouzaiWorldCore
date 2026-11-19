@@ -53,8 +53,7 @@ public class MemePaintingClickHandler {
                 return InteractionResult.PASS;
             }
 
-            DebugLogger.info("MemePaintingClickHandler",
-                    "玩家右键点击 meme_12 画，弹出链接确认: %s".formatted(PAIMON_LINK));
+            DebugLogger.CLIENT.debug("MemePaintingClickHandler", "玩家右键点击 meme_12 画，弹出链接确认: {}", PAIMON_LINK);
 
             ConfirmLinkScreen.confirmLinkNow(
                     null,

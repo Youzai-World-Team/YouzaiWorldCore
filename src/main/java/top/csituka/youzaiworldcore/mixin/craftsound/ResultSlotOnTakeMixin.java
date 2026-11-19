@@ -42,8 +42,7 @@ public abstract class ResultSlotOnTakeMixin {
             player.level().playSound(null,
                     player.getX(), player.getY(), player.getZ(),
                     sound, SoundSource.PLAYERS, 0.7f, 1.0f);
-            DebugLogger.debug("CraftSound", "合成音效: %s -> %s",
-                    stack.getDisplayName().getString(), sound.location());
+            DebugLogger.SERVER.debug("CraftSound", "合成音效: {} -> {}", stack.getDisplayName().getString(), sound.location());
         }
     }
 

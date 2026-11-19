@@ -32,7 +32,7 @@ final class MapGroupSelectScreen extends MapScreen {
                     () -> selected.equals(group.id()), () -> {
                         if (!world.equals(MapPersonalData.worldId())) { error = MapTexts.text("invalid_group"); return; }
                         choose.accept(group);
-                        DebugLogger.debug("MapWaypoints", "选择路径点分组：%s", group.id()); onClose();
+                        DebugLogger.CLIENT.debug("MapWaypoints", "选择路径点分组：{}", group.id()); onClose();
                     }));
         }
         int footer = panelY + panelHeight - 62;

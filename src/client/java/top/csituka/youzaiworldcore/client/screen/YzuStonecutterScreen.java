@@ -22,7 +22,7 @@ public class YzuStonecutterScreen extends StonecutterScreen implements YzuiWorks
     protected void init() {
         super.init();
         addRenderableWidget(YzuiWorkstationStyle.closeButton(leftPos, topPos, imageWidth, this::onClose));
-        DebugLogger.debug("YzuStonecutterScreen", "初始化切石机界面：%s", title.getString());
+        DebugLogger.CLIENT.debug("YzuStonecutterScreen", "初始化切石机界面：{}", title.getString());
     }
 
     @Override

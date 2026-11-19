@@ -73,18 +73,18 @@ public class EndPortalHandler {
      * </p>
      */
     private boolean onBlockBreak(Level level, Player player, BlockPos pos, BlockState state, @Nullable BlockEntity blockEntity) {
-        DebugLogger.entering("EndPortalHandler", "onBlockBreak",
+        DebugLogger.SERVER.entering("EndPortalHandler", "onBlockBreak",
                 "player=" + player.getName().getString() + ", pos=" + pos);
 
         if (level.isClientSide()) {
-            DebugLogger.exiting("EndPortalHandler", "onBlockBreak", "PASS (client)");
+            DebugLogger.SERVER.exiting("EndPortalHandler", "onBlockBreak", "PASS (client)");
             return true;
         }
 
         ItemStack hand = player.getItemInHand(InteractionHand.MAIN_HAND);
         if (!hand.is(net.minecraft.tags.ItemTags.PICKAXES)) {
-            DebugLogger.branch("EndPortalHandler", "holding pickaxe", false);
-            DebugLogger.exiting("EndPortalHandler", "onBlockBreak", "PASS (not pickaxe)");
+            DebugLogger.SERVER.branch("EndPortalHandler", "holding pickaxe", false);
+            DebugLogger.SERVER.exiting("EndPortalHandler", "onBlockBreak", "PASS (not pickaxe)");
             return true;
         }
 
@@ -96,21 +96,20 @@ public class EndPortalHandler {
                     hand
             );
             if (silkTouchLevel < 1) {
-                DebugLogger.branch("EndPortalHandler", "has silk touch", false, "必须精准采集");
-                DebugLogger.exiting("EndPortalHandler", "onBlockBreak", "PASS (no silk touch)");
+                DebugLogger.SERVER.branch("EndPortalHandler", "has silk touch", false, "必须精准采集");
+                DebugLogger.SERVER.exiting("EndPortalHandler", "onBlockBreak", "PASS (no silk touch)");
                 return true;
             }
         }
 
         if (!state.is(Blocks.END_PORTAL_FRAME)) {
-            DebugLogger.branch("EndPortalHandler", "target is END_PORTAL_FRAME", false,
+            DebugLogger.SERVER.branch("EndPortalHandler", "target is END_PORTAL_FRAME", false,
                     "actual=" + state.getBlock());
-            DebugLogger.exiting("EndPortalHandler", "onBlockBreak", "PASS (not frame)");
+            DebugLogger.SERVER.exiting("EndPortalHandler", "onBlockBreak", "PASS (not frame)");
             return true;
         }
 
-        DebugLogger.info("EndPortalHandler", "Breaking portal frame at %s by %s",
-                pos, player.getName().getString());
+        DebugLogger.SERVER.debug("EndPortalHandler", "Breaking portal frame at {} by {}", pos, player.getName().getString());
 
         ItemStack portalFrameStack = new ItemStack(Blocks.END_PORTAL_FRAME, 1);
         boolean isFilled = state.getValue(EndPortalFrameBlock.HAS_EYE);
@@ -147,9 +146,9 @@ public class EndPortalHandler {
                 cleared++;
             }
         }
-        DebugLogger.info("EndPortalHandler", "Cleared %d END_PORTAL blocks around %s", cleared, pos);
+        DebugLogger.SERVER.debug("EndPortalHandler", "Cleared {} END_PORTAL blocks around {}", cleared, pos);
 
-        DebugLogger.exiting("EndPortalHandler", "onBlockBreak", "SUCCESS (cancelled original break)");
+        DebugLogger.SERVER.exiting("EndPortalHandler", "onBlockBreak", "SUCCESS (cancelled original break)");
         return false;
     }
 
@@ -170,7 +169,7 @@ public class EndPortalHandler {
             return;
         }
 
-        DebugLogger.info("EndPortalHandler", "EnderDragon killed – granting extra dragon egg");
+        DebugLogger.SERVER.debug("EndPortalHandler", "EnderDragon killed – granting extra dragon egg");
 
         Entity source = damageSource.getEntity();
         Player targetPlayer;
@@ -192,15 +191,14 @@ public class EndPortalHandler {
                 }
             }
             if (found == null) {
-                DebugLogger.warn("EndPortalHandler", "No player within 50 blocks to receive dragon egg");
+                DebugLogger.SERVER.debug("EndPortalHandler", "No player within 50 blocks to receive dragon egg");
                 return;
             }
             targetPlayer = found;
         }
 
         giveOrDropItemStack(targetPlayer, new ItemStack(Blocks.DRAGON_EGG, 1));
-        DebugLogger.info("EndPortalHandler", "Extra dragon egg given to %s",
-                targetPlayer.getName().getString());
+        DebugLogger.SERVER.debug("EndPortalHandler", "Extra dragon egg given to {}", targetPlayer.getName().getString());
 
         if (EndPortalConfig.isSendMessageOnExtraDragonEggDrop()) {
             targetPlayer.sendSystemMessage(
@@ -232,14 +230,14 @@ public class EndPortalHandler {
      * </p>
      */
     public static void register() {
-        DebugLogger.entering("EndPortalHandler", "register");
+        DebugLogger.SERVER.entering("EndPortalHandler", "register");
 
         PlayerBlockBreakEvents.BEFORE.register(INSTANCE::onBlockBreak);
-        DebugLogger.info("EndPortalHandler", "注册方块破坏前置事件 (PlayerBlockBreakEvents.BEFORE)");
+        DebugLogger.SERVER.debug("EndPortalHandler", "注册方块破坏前置事件 (PlayerBlockBreakEvents.BEFORE)");
 
         ServerLivingEntityEvents.AFTER_DEATH.register(INSTANCE::onEntityDeath);
-        DebugLogger.info("EndPortalHandler", "注册生物死亡后置事件 (ServerLivingEntityEvents.AFTER_DEATH)");
+        DebugLogger.SERVER.debug("EndPortalHandler", "注册生物死亡后置事件 (ServerLivingEntityEvents.AFTER_DEATH)");
 
-        DebugLogger.exiting("EndPortalHandler", "register");
+        DebugLogger.SERVER.exiting("EndPortalHandler", "register");
     }
 }

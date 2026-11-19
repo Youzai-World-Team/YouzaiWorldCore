@@ -11,8 +11,6 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,7 +26,7 @@ import java.util.Optional;
 @SuppressWarnings("null")
 public final class TrinketHelper {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/TrinketHelper");
+    private static final DebugLogger.ModuleLogger LOGGER = DebugLogger.SERVER.module("TrinketHelper");
 
     private TrinketHelper() {
     }

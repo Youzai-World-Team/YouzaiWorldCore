@@ -28,12 +28,12 @@ public final class AccountDataStorage {
     }
 
     public static void initialize() {
-        DebugLogger.entering(MODULE, "initialize");
+        DebugLogger.SERVER.entering(MODULE, "initialize");
         ApiServiceClient.getAccountSettings().ifPresentOrElse(settings -> {
             loginCooldown = settings.loginCooldown();
-        }, () -> DebugLogger.warn(MODULE, "无法从 Api 加载账户设置，账户认证操作将继续以 Api 可达性为准"));
+        }, () -> DebugLogger.SERVER.warn(MODULE, "无法从 Api 加载账户设置，账户认证操作将继续以 Api 可达性为准"));
         reload();
-        DebugLogger.exiting(MODULE, "initialize", "accounts=" + CACHE.size());
+        DebugLogger.SERVER.exiting(MODULE, "initialize", "accounts=" + CACHE.size());
     }
 
     public static boolean setLoginCooldown(int seconds) {
@@ -65,7 +65,7 @@ public final class AccountDataStorage {
         }
         ApiServiceClient.AccountResult result = ApiServiceClient.ensureAccount(username, uuid);
         if (!result.success() || result.account() == null) {
-            DebugLogger.warn(MODULE, "Api 创建/读取账户失败：%s (%d)", result.message(), result.statusCode());
+            DebugLogger.SERVER.warn(MODULE, "Api 创建/读取账户失败：{} ({})", result.message(), result.statusCode());
             return null;
         }
         cache(result.account());
@@ -81,7 +81,7 @@ public final class AccountDataStorage {
         PlayerAccount previous = get(username);
         ApiServiceClient.AccountResult result = ApiServiceClient.ensureAccount(username, uuid);
         if (!result.success() || result.account() == null) {
-            DebugLogger.warn(MODULE, "Api 创建/读取账户失败：%s (%d)", result.message(), result.statusCode());
+            DebugLogger.SERVER.warn(MODULE, "Api 创建/读取账户失败：{} ({})", result.message(), result.statusCode());
             return null;
         }
         PlayerAccount account = result.account();
@@ -90,10 +90,7 @@ public final class AccountDataStorage {
                 && (remoteUuid == null || !uuid.equals(remoteUuid))) {
             String previousUuid = account.uuid;
             account.uuid = uuid.toString();
-            DebugLogger.warn(MODULE,
-                    "正版登录发现账户 %s 的 UUID 不一致：Api=%s，Mojang=%s；正在固定为 Mojang UUID。"
-                            + " 旧 UUID 关联的外观/个人数据不会自动迁移。",
-                    username, previousUuid, uuid);
+            DebugLogger.SERVER.warn(MODULE, "正版登录发现账户 {} 的 UUID 不一致：Api={}，Mojang={}；正在固定为 Mojang UUID。 旧 UUID 关联的外观/个人数据不会自动迁移。", username, previousUuid, uuid);
             account = ApiServiceClient.updateAccount(account).orElse(account);
         }
         cache(account);
@@ -115,7 +112,7 @@ public final class AccountDataStorage {
         if (account == null)
             return;
         ApiServiceClient.updateAccount(account).ifPresentOrElse(AccountDataStorage::cache,
-                () -> DebugLogger.warn(MODULE, "Api 更新账户失败：%s", account.username));
+                () -> DebugLogger.SERVER.warn(MODULE, "Api 更新账户失败：{}", account.username));
     }
 
     /** 玩家断线时同步账户状态；再次加入服务器仍需重新输入密码。 */
@@ -123,7 +120,7 @@ public final class AccountDataStorage {
         if (account == null)
             return;
         ApiServiceClient.updateAccountForDisconnect(account).ifPresentOrElse(AccountDataStorage::cache,
-                () -> DebugLogger.warn(MODULE, "Api 更新断线会话失败：%s", account.username));
+                () -> DebugLogger.SERVER.warn(MODULE, "Api 更新断线会话失败：{}", account.username));
     }
 
     /** 仅同步位置，避免未认证断开时重新创建 Api 会话。 */
@@ -131,7 +128,7 @@ public final class AccountDataStorage {
         if (account == null)
             return;
         ApiServiceClient.updateAccountPosition(account).ifPresentOrElse(AccountDataStorage::cache,
-                () -> DebugLogger.warn(MODULE, "Api 更新账户位置失败：%s", account.username));
+                () -> DebugLogger.SERVER.warn(MODULE, "Api 更新账户位置失败：{}", account.username));
     }
 
     public static boolean delete(String username) {
@@ -204,7 +201,7 @@ public final class AccountDataStorage {
 
     /** 兼容旧调用点：账户状态已由 Api 同步，不执行任何本地写入。 */
     public static void saveToDisk() {
-        DebugLogger.debug(MODULE, "saveToDisk 已停用：账户由 Api 服务端保存");
+        DebugLogger.SERVER.debug(MODULE, "saveToDisk 已停用：账户由 Api 服务端保存");
     }
 
     public static void flushToDisk() {

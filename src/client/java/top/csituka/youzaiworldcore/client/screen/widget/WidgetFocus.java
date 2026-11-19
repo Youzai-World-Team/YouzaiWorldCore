@@ -107,7 +107,7 @@ public final class WidgetFocus {
         if (next != null) {
             for (AbstractWidget widget : widgets)
                 widget.setFocused(widget == next);
-            DebugLogger.debug("YzuiMenu", "方向键移动焦点：%s", next.getMessage().getString());
+            DebugLogger.CLIENT.debug("YzuiMenu", "方向键移动焦点：{}", next.getMessage().getString());
         }
         return true;
     }

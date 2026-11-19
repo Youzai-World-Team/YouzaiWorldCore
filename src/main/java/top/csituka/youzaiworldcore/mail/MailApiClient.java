@@ -103,14 +103,14 @@ public final class MailApiClient {
      * @return 收件箱条目与未读数；Api 不可达时 success=false
      */
     public static InboxResult fetchInbox(UUID playerUuid) {
-        DebugLogger.entering(MODULE, "fetchInbox", "playerUuid=" + playerUuid);
+        DebugLogger.SERVER.entering(MODULE, "fetchInbox", "playerUuid=" + playerUuid);
         boolean keepStarred = MailSettings.get().isKeepStarredAfterExpire();
         HttpResponse<String> response = ApiHttp.request("GET",
                 BASE + "/inbox?uuid=" + ApiHttp.encode(playerUuid.toString())
                         + "&keep_starred=" + keepStarred, null);
         JsonObject root = body(response);
         if (!ApiHttp.successful(response)) {
-            DebugLogger.exiting(MODULE, "fetchInbox", "failed");
+            DebugLogger.SERVER.exiting(MODULE, "fetchInbox", "failed");
             return new InboxResult(false, status(response), message(response, root), List.of(), 0);
         }
         List<MailStreamCodecs.MailRefAndMail> entries = new ArrayList<>();
@@ -126,7 +126,7 @@ public final class MailApiClient {
             }
         }
         int unread = ApiHttp.intValue(root, "unread", 0);
-        DebugLogger.exiting(MODULE, "fetchInbox", "entries=" + entries.size() + ", unread=" + unread);
+        DebugLogger.SERVER.exiting(MODULE, "fetchInbox", "entries=" + entries.size() + ", unread=" + unread);
         return new InboxResult(true, status(response), "", entries, unread);
     }
 
@@ -159,7 +159,7 @@ public final class MailApiClient {
             HttpResponse<String> response = ApiHttp.request("POST", BASE + "/unread", request.toString());
             JsonObject root = body(response);
             if (!ApiHttp.successful(response)) {
-                DebugLogger.warn(MODULE, "批量查询未读数失败：%s", message(response, root));
+                DebugLogger.SERVER.warn(MODULE, "批量查询未读数失败：{}", message(response, root));
                 continue;
             }
             JsonObject raw = object(root, "counts");
@@ -201,7 +201,7 @@ public final class MailApiClient {
             HttpResponse<String> response = ApiHttp.request("POST", BASE + "/refs", request.toString());
             JsonObject root = body(response);
             if (!ApiHttp.successful(response)) {
-                DebugLogger.warn(MODULE, "批量查询邮件引用失败：%s", message(response, root));
+                DebugLogger.SERVER.warn(MODULE, "批量查询邮件引用失败：{}", message(response, root));
                 continue;
             }
             JsonObject raw = object(root, "refs");
@@ -223,11 +223,11 @@ public final class MailApiClient {
 
     /** 已发送邮件摘要列表（不含正文与附件）。 */
     public static SentListResult fetchSentList() {
-        DebugLogger.entering(MODULE, "fetchSentList");
+        DebugLogger.SERVER.entering(MODULE, "fetchSentList");
         HttpResponse<String> response = ApiHttp.request("GET", BASE + "/sent", null);
         JsonObject root = body(response);
         if (!ApiHttp.successful(response)) {
-            DebugLogger.exiting(MODULE, "fetchSentList", "failed");
+            DebugLogger.SERVER.exiting(MODULE, "fetchSentList", "failed");
             return new SentListResult(false, status(response), message(response, root), List.of());
         }
         List<MailStreamCodecs.MailSummary> summaries = new ArrayList<>();
@@ -249,7 +249,7 @@ public final class MailApiClient {
                     optionalLong(json, "expire_time"),
                     ApiHttp.stringValue(json, "sender")));
         }
-        DebugLogger.exiting(MODULE, "fetchSentList", "summaries=" + summaries.size());
+        DebugLogger.SERVER.exiting(MODULE, "fetchSentList", "summaries=" + summaries.size());
         return new SentListResult(true, status(response), "", summaries);
     }
 
@@ -260,13 +260,13 @@ public final class MailApiClient {
      * @param viewer 查看者（用于带回其自己的读/星标/领取状态），可为 null
      */
     public static DetailResult fetchDetail(UUID mailId, UUID viewer) {
-        DebugLogger.entering(MODULE, "fetchDetail", "mailId=" + mailId);
+        DebugLogger.SERVER.entering(MODULE, "fetchDetail", "mailId=" + mailId);
         String path = BASE + "/detail?id=" + ApiHttp.encode(mailId.toString())
                 + (viewer == null ? "" : "&viewer=" + ApiHttp.encode(viewer.toString()));
         HttpResponse<String> response = ApiHttp.request("GET", path, null);
         JsonObject root = body(response);
         if (!ApiHttp.successful(response)) {
-            DebugLogger.exiting(MODULE, "fetchDetail", "failed");
+            DebugLogger.SERVER.exiting(MODULE, "fetchDetail", "failed");
             return new DetailResult(false, status(response), message(response, root),
                     null, null, false, false, "");
         }
@@ -275,7 +275,7 @@ public final class MailApiClient {
             return new DetailResult(false, status(response), "Api 邮件数据格式无效",
                     null, null, false, false, "");
         }
-        DebugLogger.exiting(MODULE, "fetchDetail", "canEdit=" + ApiHttp.booleanValue(root, "can_edit", false));
+        DebugLogger.SERVER.exiting(MODULE, "fetchDetail", "canEdit=" + ApiHttp.booleanValue(root, "can_edit", false));
         return new DetailResult(true, status(response), "", mail, refFromJson(object(root, "ref")),
                 ApiHttp.booleanValue(root, "can_edit", false),
                 ApiHttp.booleanValue(root, "need_hidden", false),
@@ -290,21 +290,21 @@ public final class MailApiClient {
     public static SendResult send(String sender, MailType type, List<TargetSpec> targets, String scopeSummary,
             String title, String body, Long expireTime, List<MailAttachment> attachments,
             Collection<UUID> recipients) {
-        DebugLogger.entering(MODULE, "send", "sender=" + sender + ", title=" + title
+        DebugLogger.SERVER.entering(MODULE, "send", "sender=" + sender + ", title=" + title
                 + ", recipients=" + recipients.size());
         JsonObject request = mailFields(type, sender, targets, scopeSummary, title, body, expireTime, attachments);
         request.add("recipients", uuidArray(recipients));
         HttpResponse<String> response = ApiHttp.request("POST", BASE, request.toString());
         JsonObject root = body(response);
         if (!ApiHttp.successful(response)) {
-            DebugLogger.exiting(MODULE, "send", "failed");
+            DebugLogger.SERVER.exiting(MODULE, "send", "failed");
             return new SendResult(false, status(response), message(response, root), null, List.of());
         }
         Mail mail = mailFromJson(object(root, "mail"));
         if (mail == null) {
             return new SendResult(false, status(response), "Api 邮件数据格式无效", null, List.of());
         }
-        DebugLogger.exiting(MODULE, "send", "mailId=" + mail.getId());
+        DebugLogger.SERVER.exiting(MODULE, "send", "mailId=" + mail.getId());
         return new SendResult(true, status(response), "", mail, uuidList(root, "recipients"));
     }
 
@@ -316,7 +316,7 @@ public final class MailApiClient {
     public static EditResult edit(UUID mailId, String sender, MailType type, List<TargetSpec> targets,
             String scopeSummary, String title, String body, Long expireTime,
             List<MailAttachment> attachments, Collection<UUID> recipients, Boolean hidden) {
-        DebugLogger.entering(MODULE, "edit", "mailId=" + mailId + ", recipients=" + recipients.size());
+        DebugLogger.SERVER.entering(MODULE, "edit", "mailId=" + mailId + ", recipients=" + recipients.size());
         JsonObject request = mailFields(type, sender, targets, scopeSummary, title, body, expireTime, attachments);
         request.addProperty("id", mailId.toString());
         request.add("recipients", uuidArray(recipients));
@@ -326,43 +326,43 @@ public final class MailApiClient {
         HttpResponse<String> response = ApiHttp.request("PATCH", BASE, request.toString());
         JsonObject root = body(response);
         if (!ApiHttp.successful(response)) {
-            DebugLogger.exiting(MODULE, "edit", "failed");
+            DebugLogger.SERVER.exiting(MODULE, "edit", "failed");
             return new EditResult(false, status(response), message(response, root), null, List.of(), List.of());
         }
-        DebugLogger.exiting(MODULE, "edit", "success");
+        DebugLogger.SERVER.exiting(MODULE, "edit", "success");
         return new EditResult(true, status(response), "", mailFromJson(object(root, "mail")),
                 uuidList(root, "recipients"), uuidList(root, "removed"));
     }
 
     /** 撤回邮件；返回原收件人以便向在线玩家推送移除。 */
     public static RecallResult recall(UUID mailId) {
-        DebugLogger.entering(MODULE, "recall", "mailId=" + mailId);
+        DebugLogger.SERVER.entering(MODULE, "recall", "mailId=" + mailId);
         HttpResponse<String> response = ApiHttp.request("DELETE",
                 BASE + "?id=" + ApiHttp.encode(mailId.toString()), null);
         JsonObject root = body(response);
         if (!ApiHttp.successful(response)) {
-            DebugLogger.exiting(MODULE, "recall", "failed");
+            DebugLogger.SERVER.exiting(MODULE, "recall", "failed");
             return new RecallResult(false, status(response), message(response, root), List.of());
         }
         boolean removed = ApiHttp.booleanValue(root, "ok", false);
-        DebugLogger.exiting(MODULE, "recall", "removed=" + removed);
+        DebugLogger.SERVER.exiting(MODULE, "recall", "removed=" + removed);
         return new RecallResult(removed, status(response),
                 removed ? "" : "邮件不存在或已撤回", uuidList(root, "recipients"));
     }
 
     /** 编辑期间隐藏 / 恢复邮件。 */
     public static HiddenResult setHidden(UUID mailId, boolean hidden) {
-        DebugLogger.entering(MODULE, "setHidden", "mailId=" + mailId + ", hidden=" + hidden);
+        DebugLogger.SERVER.entering(MODULE, "setHidden", "mailId=" + mailId + ", hidden=" + hidden);
         JsonObject request = new JsonObject();
         request.addProperty("id", mailId.toString());
         request.addProperty("hidden", hidden);
         HttpResponse<String> response = ApiHttp.request("POST", BASE + "/hidden", request.toString());
         JsonObject root = body(response);
         if (!ApiHttp.successful(response)) {
-            DebugLogger.exiting(MODULE, "setHidden", "failed");
+            DebugLogger.SERVER.exiting(MODULE, "setHidden", "failed");
             return new HiddenResult(false, status(response), message(response, root), null, List.of());
         }
-        DebugLogger.exiting(MODULE, "setHidden", "success");
+        DebugLogger.SERVER.exiting(MODULE, "setHidden", "success");
         return new HiddenResult(true, status(response), "", mailFromJson(object(root, "mail")),
                 uuidList(root, "recipients"));
     }
@@ -373,7 +373,7 @@ public final class MailApiClient {
      * @param action {@code read} / {@code star} / {@code unstar} / {@code delete}
      */
     public static ActionResult action(UUID playerUuid, UUID mailId, String action) {
-        DebugLogger.entering(MODULE, "action", "playerUuid=" + playerUuid + ", mailId=" + mailId
+        DebugLogger.SERVER.entering(MODULE, "action", "playerUuid=" + playerUuid + ", mailId=" + mailId
                 + ", action=" + action);
         JsonObject request = new JsonObject();
         request.addProperty("uuid", playerUuid.toString());
@@ -382,10 +382,10 @@ public final class MailApiClient {
         HttpResponse<String> response = ApiHttp.request("POST", BASE + "/action", request.toString());
         JsonObject root = body(response);
         if (!ApiHttp.successful(response)) {
-            DebugLogger.exiting(MODULE, "action", "failed");
+            DebugLogger.SERVER.exiting(MODULE, "action", "failed");
             return new ActionResult(false, status(response), message(response, root), null, 0);
         }
-        DebugLogger.exiting(MODULE, "action", "success");
+        DebugLogger.SERVER.exiting(MODULE, "action", "success");
         return new ActionResult(true, status(response), "", refFromJson(object(root, "ref")),
                 ApiHttp.intValue(root, "unread", 0));
     }
@@ -395,52 +395,51 @@ public final class MailApiClient {
      * {@link MailManager#applyAttachments} 在主线程实际发放。
      */
     public static ClaimResult claim(UUID playerUuid, UUID mailId) {
-        DebugLogger.entering(MODULE, "claim", "playerUuid=" + playerUuid + ", mailId=" + mailId);
+        DebugLogger.SERVER.entering(MODULE, "claim", "playerUuid=" + playerUuid + ", mailId=" + mailId);
         JsonObject request = new JsonObject();
         request.addProperty("uuid", playerUuid.toString());
         request.addProperty("mail_id", mailId.toString());
         HttpResponse<String> response = ApiHttp.request("POST", BASE + "/claim", request.toString());
         JsonObject root = body(response);
         if (!ApiHttp.successful(response)) {
-            DebugLogger.exiting(MODULE, "claim", "failed");
+            DebugLogger.SERVER.exiting(MODULE, "claim", "failed");
             return new ClaimResult(false, status(response), message(response, root), null, null, 0);
         }
         Mail mail = mailFromJson(object(root, "mail"));
         if (mail == null) {
             return new ClaimResult(false, status(response), "Api 邮件数据格式无效", null, null, 0);
         }
-        DebugLogger.exiting(MODULE, "claim", "success");
+        DebugLogger.SERVER.exiting(MODULE, "claim", "success");
         return new ClaimResult(true, status(response), "", mail, refFromJson(object(root, "ref")),
                 ApiHttp.intValue(root, "unread", 0));
     }
 
     public static PurgeResult purge(boolean keepStarred) {
-        DebugLogger.entering(MODULE, "purge", "keepStarred=" + keepStarred);
+        DebugLogger.SERVER.entering(MODULE, "purge", "keepStarred=" + keepStarred);
         JsonObject request = new JsonObject();
         request.addProperty("keep_starred", keepStarred);
         HttpResponse<String> response = ApiHttp.request("POST", BASE + "/purge", request.toString());
         JsonObject root = body(response);
         if (!ApiHttp.successful(response)) {
-            DebugLogger.exiting(MODULE, "purge", "failed");
+            DebugLogger.SERVER.exiting(MODULE, "purge", "failed");
             return new PurgeResult(false, status(response), message(response, root), 0, 0, List.of());
         }
         int removed = ApiHttp.intValue(root, "removed", 0);
         int pruned = ApiHttp.intValue(root, "pruned_refs", 0);
-        DebugLogger.exiting(MODULE, "purge", "removed=" + removed + ", prunedRefs=" + pruned);
+        DebugLogger.SERVER.exiting(MODULE, "purge", "removed=" + removed + ", prunedRefs=" + pruned);
         return new PurgeResult(true, status(response), "", removed, pruned, uuidList(root, "affected"));
     }
 
     /** 账户注销时清空该玩家收件箱。 */
     public static boolean deleteBox(UUID playerUuid) {
-        DebugLogger.entering(MODULE, "deleteBox", "playerUuid=" + playerUuid);
+        DebugLogger.SERVER.entering(MODULE, "deleteBox", "playerUuid=" + playerUuid);
         HttpResponse<String> response = ApiHttp.request("DELETE",
                 BASE + "/box?uuid=" + ApiHttp.encode(playerUuid.toString()), null);
         boolean success = ApiHttp.successful(response);
         if (!success) {
-            DebugLogger.warn(MODULE, "清空收件箱失败：playerUuid=%s, %s",
-                    playerUuid, message(response, body(response)));
+            DebugLogger.SERVER.warn(MODULE, "清空收件箱失败：playerUuid={}, {}", playerUuid, message(response, body(response)));
         }
-        DebugLogger.exiting(MODULE, "deleteBox", "success=" + success);
+        DebugLogger.SERVER.exiting(MODULE, "deleteBox", "success=" + success);
         return success;
     }
 
@@ -546,7 +545,7 @@ public final class MailApiClient {
             try {
                 type = AttachmentType.valueOf(ApiHttp.stringValue(json, "type"));
             } catch (IllegalArgumentException e) {
-                DebugLogger.warn(MODULE, "未知附件类型，已跳过：%s", ApiHttp.stringValue(json, "type"));
+                DebugLogger.SERVER.warn(MODULE, "未知附件类型，已跳过：{}", ApiHttp.stringValue(json, "type"));
                 continue;
             }
             String itemNbt = ApiHttp.stringValue(json, "item_nbt");
@@ -680,7 +679,7 @@ public final class MailApiClient {
         try {
             return MailType.valueOf(value);
         } catch (IllegalArgumentException ignored) {
-            DebugLogger.warn(MODULE, "未知邮件类型，按通知处理：%s", value);
+            DebugLogger.SERVER.warn(MODULE, "未知邮件类型，按通知处理：{}", value);
             return MailType.NOTICE;
         }
     }

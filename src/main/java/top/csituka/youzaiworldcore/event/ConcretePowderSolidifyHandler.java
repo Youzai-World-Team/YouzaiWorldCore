@@ -68,7 +68,7 @@ public class ConcretePowderSolidifyHandler implements ServerTickEvents.StartTick
      * </p>
      */
     public static void initialize() {
-        DebugLogger.entering("ConcretePowderSolidifyHandler", "initialize");
+        DebugLogger.SERVER.entering("ConcretePowderSolidifyHandler", "initialize");
 
         POWDER_TO_CONCRETE.clear();
         int count = 0;
@@ -96,17 +96,14 @@ public class ConcretePowderSolidifyHandler implements ServerTickEvents.StartTick
                 if (powderItem != Items.AIR && powderItem != concreteItem) {
                     POWDER_TO_CONCRETE.put(powderItem, concreteItem);
                     count++;
-                    DebugLogger.debug("ConcretePowderSolidifyHandler",
-                            "映射: %s(%s) -> %s(%s)",
-                            powderItem, powderId, concreteItem, concreteId);
+                    DebugLogger.SERVER.debug("ConcretePowderSolidifyHandler", "映射: {}({}) -> {}({})", powderItem, powderId, concreteItem, concreteId);
                 }
             }
         }
 
         initialized = true;
-        DebugLogger.info("ConcretePowderSolidifyHandler",
-                "混凝土粉末→混凝土映射已初始化，共 %d 种", count);
-        DebugLogger.exiting("ConcretePowderSolidifyHandler", "initialize");
+        DebugLogger.SERVER.debug("ConcretePowderSolidifyHandler", "混凝土粉末→混凝土映射已初始化，共 {} 种", count);
+        DebugLogger.SERVER.exiting("ConcretePowderSolidifyHandler", "initialize");
     }
 
     @Override
@@ -118,7 +115,7 @@ public class ConcretePowderSolidifyHandler implements ServerTickEvents.StartTick
         if (tickCounter % CHECK_INTERVAL != 0)
             return;
 
-        DebugLogger.trace("ConcretePowderSolidifyHandler", "开始检查掉落物固化...");
+        DebugLogger.SERVER.trace("ConcretePowderSolidifyHandler", "开始检查掉落物固化...");
 
         for (ServerLevel level : server.getAllLevels()) {
             processLevel(level);
@@ -140,9 +137,7 @@ public class ConcretePowderSolidifyHandler implements ServerTickEvents.StartTick
         if (MATCHED_ITEMS.isEmpty())
             return;
 
-        DebugLogger.trace("ConcretePowderSolidifyHandler",
-                "维度 %s 中有 %d 个混凝土粉末掉落物待固化",
-                level.dimension().identifier(), MATCHED_ITEMS.size());
+        DebugLogger.SERVER.trace("ConcretePowderSolidifyHandler", "维度 {} 中有 {} 个混凝土粉末掉落物待固化", level.dimension().identifier(), MATCHED_ITEMS.size());
 
         int converted = 0;
         for (ItemEntity itemEntity : MATCHED_ITEMS) {
@@ -158,24 +153,19 @@ public class ConcretePowderSolidifyHandler implements ServerTickEvents.StartTick
                         SoundEvents.STONE_PLACE, SoundSource.BLOCKS,
                         1.0F, 1.0F);
 
-                DebugLogger.info("ConcretePowderSolidifyHandler",
-                        "混凝土粉末固化: %s -> %s, 位置=%s, 数量=%d",
-                        item, concreteItem,
-                        itemEntity.blockPosition(), stack.getCount());
+                DebugLogger.SERVER.debug("ConcretePowderSolidifyHandler", "混凝土粉末固化: {} -> {}, 位置={}, 数量={}", item, concreteItem, itemEntity.blockPosition(), stack.getCount());
                 converted++;
             }
         }
 
         if (converted > 0) {
-            DebugLogger.debug("ConcretePowderSolidifyHandler",
-                    "维度 %s 中 %d 个掉落物已固化",
-                    level.dimension().identifier(), converted);
+            DebugLogger.SERVER.debug("ConcretePowderSolidifyHandler", "维度 {} 中 {} 个掉落物已固化", level.dimension().identifier(), converted);
         }
     }
 
     public static void register() {
-        DebugLogger.entering("ConcretePowderSolidifyHandler", "register");
+        DebugLogger.SERVER.entering("ConcretePowderSolidifyHandler", "register");
         ServerTickEvents.START_SERVER_TICK.register(INSTANCE);
-        DebugLogger.exiting("ConcretePowderSolidifyHandler", "register");
+        DebugLogger.SERVER.exiting("ConcretePowderSolidifyHandler", "register");
     }
 }

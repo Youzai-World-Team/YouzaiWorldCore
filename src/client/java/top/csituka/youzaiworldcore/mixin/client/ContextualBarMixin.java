@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.mixin.client;
 
+import top.csituka.youzaiworldcore.util.LogValues;
+
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -132,9 +134,9 @@ public abstract class ContextualBarMixin {
                 0xFF000000, false);
         graphics.text(font, neededText, neededX, textY, 0xFFFFFFFF, false);
 
-        DebugLogger.debug(LOG_TAG,
-                "经验条: progress=%.3f, current=%d, needed=%d, width=%d/%d",
-                progress, currentXp, xpNeeded, progressWidth, BAR_WIDTH);
+        if (DebugLogger.CLIENT.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+            DebugLogger.CLIENT.trace(LOG_TAG, "经验条: progress={}, current={}, needed={}, width={}/{}", LogValues.decimal(progress, 3), currentXp, xpNeeded, progressWidth, BAR_WIDTH);
+        }
     }
 
     /**
@@ -150,7 +152,9 @@ public abstract class ContextualBarMixin {
         if (vehicle.getJumpCooldown() > 0) {
             // 冷却中：暗红全条
             HealthBarRenderer.fillBarFill(graphics, left, top, BAR_WIDTH, BAR_WIDTH, COLOR_JUMP_COOLDOWN);
-            DebugLogger.debug(LOG_TAG, "跳跃条: cooldown=%d", vehicle.getJumpCooldown());
+            if (DebugLogger.CLIENT.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+                DebugLogger.CLIENT.trace(LOG_TAG, "跳跃条: cooldown={}", vehicle.getJumpCooldown());
+            }
         } else {
             // 蓄力进度：蓝色
             float scale = localPlayer.getJumpRidingScale();
@@ -159,7 +163,9 @@ public abstract class ContextualBarMixin {
                 if (progressWidth > 0) {
                     HealthBarRenderer.fillBarFill(graphics, left, top, progressWidth, BAR_WIDTH, COLOR_JUMP_FILL);
                 }
-                DebugLogger.debug(LOG_TAG, "跳跃条: scale=%.3f, width=%d", scale, progressWidth);
+                if (DebugLogger.CLIENT.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+                    DebugLogger.CLIENT.trace(LOG_TAG, "跳跃条: scale={}, width={}", LogValues.decimal(scale, 3), progressWidth);
+                }
             }
         }
     }

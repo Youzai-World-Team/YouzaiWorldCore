@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.dimensionalinventories;
 
+import top.csituka.youzaiworldcore.util.LogValues;
+
 import com.mojang.datafixers.DataFixer;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderLookup;
@@ -13,8 +15,6 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 import top.csituka.youzaiworldcore.util.ItemStackNbtUpgrader;
 
@@ -33,7 +33,7 @@ import java.util.*;
 @SuppressWarnings("null")
 public final class PlayerStateData {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/PlayerStateData");
+    private static final DebugLogger.ModuleLogger LOGGER = DebugLogger.SERVER.module("PlayerStateData");
 
     // ===== 数据版本（0 表示引入本字段之前写出的文件，按 26.2 处理） =====
     private int dataVersion;
@@ -73,7 +73,7 @@ public final class PlayerStateData {
     // ===== 从玩家保存状态 =====
 
     public static PlayerStateData fromPlayer(ServerPlayer player) {
-        DebugLogger.entering("PlayerState", "fromPlayer", "player=" + player.getName().getString());
+        DebugLogger.SERVER.entering("PlayerState", "fromPlayer", "player=" + player.getName().getString());
         PlayerStateData data = new PlayerStateData();
         data.dataVersion = ItemStackNbtUpgrader.currentDataVersion();
 
@@ -104,58 +104,57 @@ public final class PlayerStateData {
             data.effects.add(SavedEffect.fromEffect(effect));
         }
 
-        DebugLogger.info("PlayerState", "保存玩家状态: %s @ %s [%.1f, %.1f, %.1f] 生命=%.1f 饥饿=%d",
-                player.getName().getString(), data.dimension, data.x, data.y, data.z, data.health, data.foodLevel);
-        DebugLogger.exiting("PlayerState", "fromPlayer");
+        DebugLogger.SERVER.debug("PlayerState", "保存玩家状态: {} @ {} [{}, {}, {}] 生命={} 饥饿={}", player.getName().getString(), data.dimension, LogValues.decimal(data.x, 1), LogValues.decimal(data.y, 1), LogValues.decimal(data.z, 1), LogValues.decimal(data.health, 1), data.foodLevel);
+        DebugLogger.SERVER.exiting("PlayerState", "fromPlayer");
         return data;
     }
 
     // ===== 应用到玩家 =====
 
     public void applyToPlayer(ServerPlayer player) {
-        DebugLogger.entering("PlayerState", "applyToPlayer", "player=" + player.getName().getString());
+        DebugLogger.SERVER.entering("PlayerState", "applyToPlayer", "player=" + player.getName().getString());
         ItemReader lookup = new ItemReader(getLookup(player), player.level().getServer().getFixerUpper(),
                 this.dataVersion > 0 ? this.dataVersion : ItemStackNbtUpgrader.LEGACY_DATA_VERSION);
 
         // — 物品栏 —
-        DebugLogger.branch("PlayerState", "mainInventory empty", this.mainInventory == null || this.mainInventory.isEmpty());
+        DebugLogger.SERVER.branch("PlayerState", "mainInventory empty", this.mainInventory == null || this.mainInventory.isEmpty());
         if (this.mainInventory != null && !this.mainInventory.isEmpty()) {
             deserializeToMainInventory(player, this.mainInventory, lookup);
         }
-        DebugLogger.branch("PlayerState", "armorInventory empty", this.armorInventory == null || this.armorInventory.isEmpty());
+        DebugLogger.SERVER.branch("PlayerState", "armorInventory empty", this.armorInventory == null || this.armorInventory.isEmpty());
         if (this.armorInventory != null && !this.armorInventory.isEmpty()) {
             deserializeArmor(player, this.armorInventory, lookup);
         }
         boolean hasOffhand = this.offhandItem != null && !this.offhandItem.isEmpty();
-        DebugLogger.branch("PlayerState", "hasOffhandItem", hasOffhand);
+        DebugLogger.SERVER.branch("PlayerState", "hasOffhandItem", hasOffhand);
         player.setItemSlot(EquipmentSlot.OFFHAND,
                 hasOffhand
                         ? deserializeItemStack(this.offhandItem, lookup)
                         : ItemStack.EMPTY);
-        DebugLogger.branch("PlayerState", "enderChestInventory empty", this.enderChestInventory == null || this.enderChestInventory.isEmpty());
+        DebugLogger.SERVER.branch("PlayerState", "enderChestInventory empty", this.enderChestInventory == null || this.enderChestInventory.isEmpty());
         if (this.enderChestInventory != null && !this.enderChestInventory.isEmpty()) {
             deserializeToItemList(player.getEnderChestInventory().getItems(), this.enderChestInventory, lookup);
         }
 
         // — 状态 —
-        DebugLogger.stateChange("PlayerState", player.getName().getString(), "health", this.health);
+        DebugLogger.SERVER.debugStateChange("PlayerState", player.getName().getString(), "health", this.health);
         player.setHealth(this.health);
-        DebugLogger.stateChange("PlayerState", player.getName().getString(), "foodLevel", this.foodLevel);
+        DebugLogger.SERVER.debugStateChange("PlayerState", player.getName().getString(), "foodLevel", this.foodLevel);
         player.getFoodData().setFoodLevel(this.foodLevel);
-        DebugLogger.stateChange("PlayerState", player.getName().getString(), "saturation", this.saturation);
+        DebugLogger.SERVER.debugStateChange("PlayerState", player.getName().getString(), "saturation", this.saturation);
         player.getFoodData().setSaturation(this.saturation);
-        DebugLogger.stateChange("PlayerState", player.getName().getString(), "exhaustion", this.exhaustion);
+        DebugLogger.SERVER.debugStateChange("PlayerState", player.getName().getString(), "exhaustion", this.exhaustion);
         setExhaustion(player, this.exhaustion);
-        DebugLogger.stateChange("PlayerState", player.getName().getString(), "experienceLevel", this.experienceLevel);
+        DebugLogger.SERVER.debugStateChange("PlayerState", player.getName().getString(), "experienceLevel", this.experienceLevel);
         player.experienceLevel = this.experienceLevel;
-        DebugLogger.stateChange("PlayerState", player.getName().getString(), "experienceProgress", this.experienceProgress);
+        DebugLogger.SERVER.debugStateChange("PlayerState", player.getName().getString(), "experienceProgress", this.experienceProgress);
         player.experienceProgress = this.experienceProgress;
-        DebugLogger.stateChange("PlayerState", player.getName().getString(), "score", this.score);
+        DebugLogger.SERVER.debugStateChange("PlayerState", player.getName().getString(), "score", this.score);
         player.setScore(this.score);
 
         player.removeAllEffects();
         boolean hasEffects = this.effects != null && !this.effects.isEmpty();
-        DebugLogger.branch("PlayerState", "hasSavedEffects", hasEffects);
+        DebugLogger.SERVER.branch("PlayerState", "hasSavedEffects", hasEffects);
         if (this.effects != null) {
             for (SavedEffect saved : this.effects) {
                 MobEffectInstance effect = saved.toEffect();
@@ -165,9 +164,8 @@ public final class PlayerStateData {
             }
         }
 
-        DebugLogger.info("PlayerState", "应用玩家状态: %s 生命=%.1f 饥饿=%d 经验=%d",
-                player.getName().getString(), this.health, this.foodLevel, this.experienceLevel);
-        DebugLogger.exiting("PlayerState", "applyToPlayer");
+        DebugLogger.SERVER.debug("PlayerState", "应用玩家状态: {} 生命={} 饥饿={} 经验={}", player.getName().getString(), LogValues.decimal(this.health, 1), this.foodLevel, this.experienceLevel);
+        DebugLogger.SERVER.exiting("PlayerState", "applyToPlayer");
     }
 
     public static void clearPlayerInventory(ServerPlayer player) {

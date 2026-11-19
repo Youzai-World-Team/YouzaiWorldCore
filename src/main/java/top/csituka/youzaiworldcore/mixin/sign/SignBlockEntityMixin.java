@@ -48,7 +48,7 @@ public abstract class SignBlockEntityMixin implements FlashingSign {
             sign.getLevel().sendBlockUpdated(sign.getBlockPos(), sign.getBlockState(),
                     sign.getBlockState(), Block.UPDATE_ALL);
         }
-        DebugLogger.stateChange("SignBlockEntity", "sign@" + sign.getBlockPos().toShortString(),
+        DebugLogger.SERVER.stateChange("SignBlockEntity", "sign@" + sign.getBlockPos().toShortString(),
                 front ? "frontFlashing" : "backFlashing", old, flashing);
         return true;
     }

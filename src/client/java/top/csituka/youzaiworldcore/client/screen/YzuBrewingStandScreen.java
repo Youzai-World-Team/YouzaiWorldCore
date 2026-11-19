@@ -136,8 +136,7 @@ public class YzuBrewingStandScreen extends AbstractContainerScreen<BrewingStandM
 
     public YzuBrewingStandScreen(BrewingStandMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title, MAIN_WIDTH, MAIN_HEIGHT);
-        DebugLogger.info(MODULE, "创建 YZUI 酿造台屏幕: title=%s menuType=%s",
-                title.getString(), menu.getType());
+        DebugLogger.CLIENT.debug(MODULE, "创建 YZUI 酿造台屏幕: title={} menuType={}", title.getString(), menu.getType());
     }
 
     // ===== 初始化与布局 =====
@@ -160,8 +159,7 @@ public class YzuBrewingStandScreen extends AbstractContainerScreen<BrewingStandM
         initGuideSearchBox();
         rebuildFilteredRecipes();
 
-        DebugLogger.debug(MODULE, "初始化酿造台布局: left=%d top=%d guideOpen=%s",
-                this.leftPos, this.topPos, this.guideOpen);
+        DebugLogger.CLIENT.debug(MODULE, "初始化酿造台布局: left={} top={} guideOpen={}", this.leftPos, this.topPos, this.guideOpen);
     }
 
     private boolean canFitGuide() {
@@ -200,8 +198,7 @@ public class YzuBrewingStandScreen extends AbstractContainerScreen<BrewingStandM
 
     private void setSlotPosition(int index, int x, int y) {
         if (index < 0 || index >= this.menu.slots.size()) {
-            DebugLogger.warn(MODULE, "槽位索引越界，无法调整位置: index=%d size=%d",
-                    index, this.menu.slots.size());
+            DebugLogger.CLIENT.warn(MODULE, "槽位索引越界，无法调整位置: index={} size={}", index, this.menu.slots.size());
             return;
         }
         SlotPositionAccessor accessor = (SlotPositionAccessor) this.menu.slots.get(index);
@@ -561,7 +558,7 @@ public class YzuBrewingStandScreen extends AbstractContainerScreen<BrewingStandM
         int oldPage = this.guidePage;
         this.guidePage = Mth.clamp(this.guidePage + delta, 0, totalPages - 1);
         if (oldPage != this.guidePage) {
-            DebugLogger.debug(MODULE, "切换酿造指南页码: %d -> %d", oldPage + 1, this.guidePage + 1);
+            DebugLogger.CLIENT.debug(MODULE, "切换酿造指南页码: {} -> {}", oldPage + 1, this.guidePage + 1);
         }
     }
 
@@ -619,10 +616,7 @@ public class YzuBrewingStandScreen extends AbstractContainerScreen<BrewingStandM
             int recipeIndex = this.guidePage * ROWS_PER_PAGE + row;
             if (recipeIndex < this.filteredRecipes.size()) {
                 BrewingGuideRecipe recipe = this.filteredRecipes.get(recipeIndex);
-                DebugLogger.debug(MODULE, "查看酿造配方: %s + %s -> %s",
-                        recipe.inputName().getString(),
-                        recipe.ingredientStack().getHoverName().getString(),
-                        recipe.outputName().getString());
+                DebugLogger.CLIENT.debug(MODULE, "查看酿造配方: {} + {} -> {}", recipe.inputName().getString(), recipe.ingredientStack().getHoverName().getString(), recipe.outputName().getString());
             }
             this.guideSearchBox.setFocused(false);
             return true;
@@ -639,8 +633,7 @@ public class YzuBrewingStandScreen extends AbstractContainerScreen<BrewingStandM
 
     private void toggleGuide() {
         if (!this.guideOpen && !canFitGuide()) {
-            DebugLogger.warn(MODULE, "当前界面宽度不足，无法展开酿造指南: width=%d required=%d",
-                    this.width, MAIN_WIDTH + GUIDE_WIDTH + GUIDE_GAP + 2);
+            DebugLogger.CLIENT.debug(MODULE, "当前界面宽度不足，无法展开酿造指南: width={} required={}", this.width, MAIN_WIDTH + GUIDE_WIDTH + GUIDE_GAP + 2);
             return;
         }
 
@@ -657,7 +650,7 @@ public class YzuBrewingStandScreen extends AbstractContainerScreen<BrewingStandM
                 this.guideSearchBox.setFocused(false);
             }
         }
-        DebugLogger.stateChange(MODULE, "brewing_guide", "open", oldValue, this.guideOpen);
+        DebugLogger.CLIENT.stateChange(MODULE, "brewing_guide", "open", oldValue, this.guideOpen);
     }
 
     // ===== 工具方法 =====

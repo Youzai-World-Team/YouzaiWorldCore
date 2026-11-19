@@ -45,8 +45,9 @@ public abstract class WolfHurtByTargetGoalMixin {
 
         // COMPANIONSHIP 模式下不反击
         if (!PetModeController.shouldAllowHurtByTarget(mode)) {
-            DebugLogger.debug(MODULE, "HurtByTargetGoal 被拦截: mode=%s, wolf=%s",
-                    mode, wolf.getUUID());
+            if (DebugLogger.SERVER.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+                DebugLogger.SERVER.trace(MODULE, "HurtByTargetGoal 被拦截: mode={}, wolf={}", mode, wolf.getUUID());
+            }
             cir.setReturnValue(false);
         }
     }

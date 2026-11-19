@@ -35,7 +35,7 @@ public final class WorldPoolMenuService {
         try {
             success = DimensionPoolManager.teleportToPool(player, request.poolId(), message::set);
         } catch (RuntimeException error) {
-            DebugLogger.exception("WorldPoolMenu", "切换世界失败", error);
+            DebugLogger.SERVER.exception("WorldPoolMenu", "切换世界失败", error);
             message.set(Component.translatable("screen.youzaiworldcore.world_menu.failed"));
             success = false;
         }
@@ -57,6 +57,6 @@ public final class WorldPoolMenuService {
                 .toList();
         ServerPlayNetworking.send(player, new WorldPoolMenuStatePayload(request.requestId(),
                 current == null ? "" : current.id(), current == null ? "" : current.displayName(), entries));
-        DebugLogger.debug("WorldPoolMenu", "已同步 %d 个公开世界", entries.size());
+        DebugLogger.SERVER.debug("WorldPoolMenu", "已同步 {} 个公开世界", entries.size());
     }
 }

@@ -87,7 +87,8 @@ The main menu uses rounded cards and animated transitions, grouped into common a
 | `/say`, `/tellraw`, command feedback | `[游戏]\|Server >> Hello World!` |
 | Mod notifications | `[模组]\|YouzaiWorldCore >> Hello World!` |
 
-- Levels come from the server's adventure-level system; unequipped titles are omitted. Both private-message views identify the sender. Command messages identify the current executor, including entities selected by `/execute as`
+- Levels come from the server's adventure-level system; unequipped titles are omitted while the `·` after the level remains. Both private-message views identify the sender. Command messages identify the current executor, including entities selected by `/execute as`
+- **Gradient accents** are enabled by default. Use `/yzwc chat_style gradient` for gradients or `/yzwc chat_style plain` for the website's solid palette; omit the name to query the current style. Vanilla completion includes the command and both names in singleplayer and multiplayer. Switching immediately redraws chat history and saves `chat_style_module.style` in the local `yzwc/client/global_settings.json`, without requiring OP permission
 - Message text stays literal. Consecutive identical messages with the same source, content and styling collapse to one visible entry, with `[!2]`, `[!3]` appended from the second occurrence. Original history, signatures and private-message recipients remain intact. When whisper targets include the sender, the extra outgoing echo is omitted so self-whispers count once per command
 - Fabric metadata and merged-Mixin origins identify emitting mods. Unattributed system notifications use `Server`. Resizing preserves counts, clearing chat starts new counts, and action-bar messages are separate
 - Layout is fixed; legacy chat/private-message templates are no longer read. `chat_format_module.enabled` only controls join, leave and death templates. Update both client and server for the new `youzaiworldcore:chat_line` type. See [implementation and checks](docs/CHAT_MESSAGES.md)
@@ -327,13 +328,13 @@ If step 1 fails (file locked, etc.) step 2 is skipped so the original is never c
 
 | Config                   | Location                                                                       | Contents                                                                                             |
 | ------------------------ | ------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
-| Mod Core                 | `yzwc/server/config/global_settings.json` → `core_module`                      | `dev_mode_enabled`, `log_to_file` (dual-toggle for DebugLogger)                                      |
+| Mod Core                 | `yzwc/server/config/global_settings.json` → `core_module`                      | `dev_mode_enabled`, `log_level` (0–3; server diagnostics only) |
 | Api Bridge               | `global_settings.json` → `api_module`                                          | Api URL (production: `https://api.mcyzw.top`), HMAC shared key, request timeout (10 seconds by default) |
 | Accounts & Authentication| Api-side SQLite `game_accounts` / `game_sessions`                              | Player name, password hash, UUID, sessions and login cooldown; the mod only keeps a runtime non-credential cache |
 | Custom Cosmetics         | Api-side SQLite `game_cosmetics`                                               | Skin and cape bytes; no PNG files are stored on the Minecraft server                                 |
 | Per-Player Config        | `yzwc/server/config/user_settings/<UUID>.json`                                 | `double_doors_module`, `function_module` (7 per-player toggles: ladder extend / crop XP / tool info / block animation / craft sound / item sparkle / damage numbers) |
-| Client External Settings | `config/youzaiworldcore/client_external_settings.json` (client, not migrated)  | `devModeEnabled`, `logLevel` (0–3), `yzuiEnabled` (YZUI interface master toggle), debug address/port |
-| DebugLogger              | `util/DebugLogger`                                                             | 4 log levels (OFF/BASIC/DETAILED/DEBUG), entering/exiting/branch/stateChange/exception tracing       |
+| Client External Settings | `yzwc/client/global_settings.json` → `core_module` | `dev_mode_enabled`, `log_level` (0–3, immediate), `yzui_enabled`, debug address/port |
+| DebugLogger | `util/DebugLogger` | Independent SERVER/CLIENT channels, ordinary logs always visible, cumulative diagnostics 0–3 |
 | Update Checker Settings  | `global_settings.json` → `update_module`                                       | `enabled` (toggles update checks, UpdateCheckerConfig)                                               |
 | Trial Vault Settings     | `global_settings.json` → `trial_vault_module`                                  | `enabled` (unlimited-reward toggle, TrialVaultConfig, default true)                                  |
 | Mail Settings            | `global_settings.json` → `mail_module`                                         | Expiry policy, permission node/level, attachment caps                                                |
@@ -350,6 +351,9 @@ If step 1 fails (file locked, etc.) step 2 is skipped so the original is never c
 | Pet Backups              | `yzwc/server/backup/pet_module/pet_backup_<timestamp>.zip`                     | Scheduled backup archives (containing a `.json` of the same name)                                    |
 | Player Stats Data        | `<world_name>/data/yzwc/data/status_module/data.json` + Api `game_player_stats` | Local data resets monthly and keeps pending reset batches; first upload is a full snapshot, then only changed players and metrics are sent; Api keeps cumulative totals by game UUID |
 | Dimension Pool State     | `<world_name>/data/yzwc/data/dimensional_inventories_module/<pool>/<uuid>.json`| Per-pool independent inventory and player state                                                      |
+
+Logging configuration, file output and classification: [Logging](docs/LOGGING.md), [per-file audit](docs/LOGGING_AUDIT.md).
+
 
 ### 19. Enchantment Level Language Patch System
 
@@ -605,7 +609,7 @@ The Esc pause screen uses mint rounded action cards and a player preview, follow
 
 Enchanting tables, looms, cartography tables, stonecutters, grindstones, and beacons use matching themed cards, slots, choices, and a close icon at the top right, while preserving vanilla book animations, banner and map previews, and menu interactions. Beacons retain effect tiers, level II upgrades, and payment confirmation. Brewing stands keep their existing interface. See [the workstation interface notes and checks](docs/YZUI_WORKSTATIONS.md).
 
-A purely client-side, whole-interface restyle that replaces the vanilla inventory, HUD, recipe book, and contextual bars with the **YZUI look** (translucent white rounded panels + rounded fill bars). Controlled by a **global toggle**: the "Enable YZUI" checkbox in the Visual section of client settings (`screen.youzaiworldcore.settings.toggle_yzui`), persisted as `yzuiEnabled` in `client_external_settings.json` (on by default). **Turning it off reverts everything to vanilla rendering**, so resource packs can take over.
+A purely client-side, whole-interface restyle that replaces the vanilla inventory, HUD, recipe book, and contextual bars with the **YZUI look** (translucent white rounded panels + rounded fill bars). Controlled by a **global toggle**: the "Enable YZUI" checkbox in the Visual section of client settings (`screen.youzaiworldcore.settings.toggle_yzui`), persisted as `core_module.yzui_enabled` in `yzwc/client/global_settings.json` (on by default). **Turning it off reverts everything to vanilla rendering**, so resource packs can take over.
 
 #### 37.1 Inventory Screens
 
@@ -721,10 +725,12 @@ Client display/layout settings, private records and terrain use `yzwc/client/map
 
 ## 📜 Command Tree
 
-All commands use `/yzwc` as the root command. Subcommands marked **(client command)** only parse arguments and forward them; the authoritative logic runs in the server-side packet receiver.
+All commands use `/yzwc` as the root command. Gameplay subcommands marked **(client command)** parse arguments and forward them to the authoritative server-side packet receiver. Local display settings such as chat style are handled directly on the client.
 
 ```
 /yzwc
+├── chat_style [plain|gradient]  # Local chat palette; defaults to gradient, no name queries the current style
+│
 ├── map [settings|waypoints|add|refresh]  # Local map UI
 │   ├── position <show|hide>
 │   ├── stats
@@ -837,7 +843,7 @@ All commands use `/yzwc` as the root command. Subcommands marked **(client comma
     └── Check for mod updates (fetches remote version info, reports normal/forced update + download link)
 ```
 
-> **Client command note**: `/yzwc pet`, `/yzwc mail`, `/yzwc function invisibility`, and `/yzwc function double_doors` are registered on the client and only parse arguments, forwarding them through the corresponding C→S packets (`PetCommandPayload` / `MailComposeOpenPayload` and other mail packets / `InvisibilityPayload` / `DoubleDoorsTogglePayload`); the server holds the authoritative state and permission checks. `/yzwc function damage_numbers` and the other `FunctionCommand` children are server-side commands forwarded unchanged by the client placeholder mirror.
+> **Client command note**: `/yzwc chat_style` directly updates local display settings and redraws chat history. `/yzwc pet`, `/yzwc mail`, `/yzwc function invisibility`, and `/yzwc function double_doors` are registered on the client and only parse arguments, forwarding them through the corresponding C→S packets (`PetCommandPayload` / `MailComposeOpenPayload` and other mail packets / `InvisibilityPayload` / `DoubleDoorsTogglePayload`); the server holds the authoritative state and permission checks. `/yzwc function damage_numbers` and the other `FunctionCommand` children are server-side commands forwarded unchanged by the client placeholder mirror.
 
 ### Permission Nodes Overview
 

@@ -58,9 +58,9 @@ public final class SophisticatedBackpacksCompat {
             Object stack = callback(stackType, args -> stack((Player) args[0], (String) args[1], (int) args[2]));
             // 可开启、可渲染，不作为主物品栏，不使用独立渲染器；沿用背包自身的渲染与升级处理。
             register.invoke(provider, HANDLER_NAME, identifiers, count, stack, false, true, false, true);
-            DebugLogger.info(MODULE, "已补充精妙背包 Trinkets 库存处理器");
+            DebugLogger.SERVER.debug(MODULE, "已补充精妙背包 Trinkets 库存处理器");
         } catch (ReflectiveOperationException | LinkageError error) {
-            DebugLogger.exception(MODULE, "registerProvider", error);
+            DebugLogger.SERVER.exception(MODULE, "registerProvider", error);
         }
     }
 

@@ -33,7 +33,7 @@ public final class MapDatabase implements AutoCloseable {
                 sql.execute("CREATE TABLE IF NOT EXISTS source_chunks (dimension TEXT NOT NULL, x INTEGER NOT NULL, z INTEGER NOT NULL, stamp TEXT NOT NULL, PRIMARY KEY(dimension,x,z))");
                 sql.execute("CREATE TABLE IF NOT EXISTS player_positions (uuid TEXT PRIMARY KEY, name TEXT NOT NULL, dimension TEXT NOT NULL, x REAL NOT NULL, y REAL NOT NULL, z REAL NOT NULL, recorded_at INTEGER NOT NULL, source TEXT NOT NULL, uploaded_at INTEGER NOT NULL DEFAULT 0)");
             }
-            DebugLogger.info("MapDatabase", "已打开地图 SQLite：%s", path);
+            DebugLogger.forFile(path).info("MapDatabase", "已打开地图 SQLite：{}", path);
         } catch (Exception error) { throw failure(error); }
     }
     public Path path() { return path; }
@@ -97,7 +97,7 @@ public final class MapDatabase implements AutoCloseable {
         return values;
     }
     private IllegalStateException failure(Exception error) {
-        DebugLogger.exception("MapDatabase", "地图数据库操作失败：" + path, error);
+        DebugLogger.forFile(path).exception("MapDatabase", "地图数据库操作失败：" + path, error);
         return new IllegalStateException("无法读写地图数据库：" + path, error);
     }
     @Override public synchronized void close() {

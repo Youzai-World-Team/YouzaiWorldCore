@@ -51,7 +51,7 @@ public final class CosmeticUploadState {
             });
             return result;
         } catch (RuntimeException e) {
-            DebugLogger.exception(MODULE, "loadScope", e);
+            DebugLogger.CLIENT.exception(MODULE, "loadScope", e);
             return new LinkedHashMap<>();
         }
     }
@@ -76,12 +76,12 @@ public final class CosmeticUploadState {
                 Files.move(temp, file, StandardCopyOption.REPLACE_EXISTING);
             }
         } catch (IOException e) {
-            DebugLogger.exception(MODULE, "save", e);
+            DebugLogger.CLIENT.exception(MODULE, "save", e);
         } finally {
             try {
                 Files.deleteIfExists(temp);
             } catch (IOException e) {
-                DebugLogger.exception(MODULE, "cleanupTemp", e);
+                DebugLogger.CLIENT.exception(MODULE, "cleanupTemp", e);
             }
         }
     }
@@ -109,7 +109,7 @@ public final class CosmeticUploadState {
             });
             return stored;
         } catch (IOException | RuntimeException e) {
-            DebugLogger.exception(MODULE, "readStoredState", e);
+            DebugLogger.CLIENT.exception(MODULE, "readStoredState", e);
             return new StoredState();
         }
     }

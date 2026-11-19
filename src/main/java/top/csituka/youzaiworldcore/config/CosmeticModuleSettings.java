@@ -54,11 +54,11 @@ public final class CosmeticModuleSettings {
 
     /** 从 {@code cosmetic_module} 分节加载配置。 */
     public static void load() {
-        DebugLogger.entering(MODULE, "load");
+        DebugLogger.SERVER.entering(MODULE, "load");
         ConfigSection section = GlobalSettings.section(GlobalSettings.COSMETIC_MODULE);
         if (section.isEmpty()) {
             writeDefaults();
-            DebugLogger.exiting(MODULE, "load", "created default");
+            DebugLogger.SERVER.exiting(MODULE, "load", "created default");
             return;
         }
 
@@ -69,10 +69,8 @@ public final class CosmeticModuleSettings {
         requestCooldownSeconds = section.getInt(
                 "request_cooldown_seconds", requestCooldownSeconds, 0, 3600);
         requireAuthenticated = section.getBoolean("require_authenticated", requireAuthenticated);
-        DebugLogger.info(MODULE,
-                "已加载配置: enabled=%s, maxFileBytes=%d, uploadCooldown=%ds, requestCooldown=%ds, requireAuthenticated=%s",
-                enabled, maxFileBytes, uploadCooldownSeconds, requestCooldownSeconds, requireAuthenticated);
-        DebugLogger.exiting(MODULE, "load");
+        DebugLogger.SERVER.info(MODULE, "已加载配置: enabled={}, maxFileBytes={}, uploadCooldown={}s, requestCooldown={}s, requireAuthenticated={}", enabled, maxFileBytes, uploadCooldownSeconds, requestCooldownSeconds, requireAuthenticated);
+        DebugLogger.SERVER.exiting(MODULE, "load");
     }
 
     /** 重置并写入模块默认值。 */

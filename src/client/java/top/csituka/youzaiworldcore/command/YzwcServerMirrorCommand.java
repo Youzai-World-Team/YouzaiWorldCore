@@ -62,7 +62,7 @@ public final class YzwcServerMirrorCommand {
      * </p>
      */
     public static void register() {
-        DebugLogger.entering(MODULE, "register");
+        DebugLogger.CLIENT.entering(MODULE, "register");
 
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, context) -> {
             LiteralArgumentBuilder<FabricClientCommandSource> root = literal("yzwc");
@@ -139,11 +139,11 @@ public final class YzwcServerMirrorCommand {
             root.then(literal("afk").then(greedyArgs()));
 
             dispatcher.register(root);
-            DebugLogger.info(MODULE,
+            DebugLogger.CLIENT.debug(MODULE,
                     "服务端 /yzwc 子命令占位镜像已注册：teleport_world / open_menu / status / world_pool / account / reload / teleport_anchor / event / update / afk");
         });
 
-        DebugLogger.exiting(MODULE, "register");
+        DebugLogger.CLIENT.exiting(MODULE, "register");
     }
 
     /**

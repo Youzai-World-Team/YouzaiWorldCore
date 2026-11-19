@@ -62,8 +62,7 @@ public final class CosmeticPreviewTextures implements AutoCloseable {
                 : skinName.equals("skin_slim.png") ? PlayerModelType.SLIM : PlayerModelType.WIDE;
         skin = PlayerSkin.insecure(body.texture() == null ? fallback.body() : body.texture(),
                 cloak.texture(), null, model);
-        DebugLogger.info(MODULE, "已重新读取本地预览：皮肤=%s，披风=%s，皮肤冲突=%s",
-                skinFile.status(), cloakFile.status(), skinConflict);
+        DebugLogger.CLIENT.debug(MODULE, "已重新读取本地预览：皮肤={}，披风={}，皮肤冲突={}", skinFile.status(), cloakFile.status(), skinConflict);
     }
 
     public PlayerSkin skin() { return skin; }
@@ -80,7 +79,7 @@ public final class CosmeticPreviewTextures implements AutoCloseable {
         try {
             long size = Files.size(file);
             if (size <= 0 || size > CosmeticPngValidator.ABSOLUTE_MAX_FILE_BYTES) {
-                DebugLogger.warn(MODULE, "预览文件大小不合法：%s（%d 字节）", name, size);
+                DebugLogger.CLIENT.warn(MODULE, "预览文件大小不合法：{}（{} 字节）", name, size);
                 return invalid(name);
             }
             byte[] bytes = Files.readAllBytes(file);
@@ -88,12 +87,12 @@ public final class CosmeticPreviewTextures implements AutoCloseable {
                     ? CosmeticPngValidator.validateCloak(bytes, CosmeticPngValidator.ABSOLUTE_MAX_FILE_BYTES)
                     : CosmeticPngValidator.validateSkin(bytes, CosmeticPngValidator.ABSOLUTE_MAX_FILE_BYTES);
             if (!validation.valid()) {
-                DebugLogger.warn(MODULE, "预览文件校验失败：%s（%s）", name, validation.reason());
+                DebugLogger.CLIENT.warn(MODULE, "预览文件校验失败：{}（{}）", name, validation.reason());
                 return invalid(name);
             }
             image = NativeImage.read(bytes);
             if (image.getWidth() != validation.width() || image.getHeight() != validation.height()) {
-                DebugLogger.warn(MODULE, "预览文件解码尺寸与 PNG 头不一致：%s", name);
+                DebugLogger.CLIENT.warn(MODULE, "预览文件解码尺寸与 PNG 头不一致：{}", name);
                 return invalid(name);
             }
             if (!cloak) image = CosmeticSkinImages.prepare(image);
@@ -106,7 +105,7 @@ public final class CosmeticPreviewTextures implements AutoCloseable {
             textureIds.add(identifier);
             return new LoadedFile(new FilePreview(name, Status.LOADED), new CosmeticTexture(identifier, identifier));
         } catch (IOException | RuntimeException e) {
-            DebugLogger.exception(MODULE, "读取预览文件 " + name, e);
+            DebugLogger.CLIENT.exception(MODULE, "读取预览文件 " + name, e);
             return invalid(name);
         } finally {
             if (texture != null) texture.close();

@@ -34,7 +34,7 @@ public abstract class AbstractContainerScreenMixin {
 
         // 悬停的是空槽位时不作任何高亮，避免所有空格子被连带着高亮
         if (this.hoveredSlot.getItem().isEmpty()) {
-            DebugLogger.trace("HighlightItem", "悬停槽位为空，跳过高亮");
+            DebugLogger.CLIENT.trace("HighlightItem", "悬停槽位为空，跳过高亮");
             return;
         }
 
@@ -46,9 +46,8 @@ public abstract class AbstractContainerScreenMixin {
         if (slot.isActive()
                 && ItemComparator.test(Configurator.COMPARATOR, this.hoveredSlot.getItem(), slot.getItem())) {
             // 先判等级：getDescriptionId() 与 varargs 数组在「每槽位每帧」路径上是白扔的垃圾
-            if (DebugLogger.isEnabled(DebugLogger.LEVEL_DEBUG)) {
-                DebugLogger.trace("HighlightItem", "绘制高亮槽位: %s (mode=%s)",
-                        slot.getItem().getItem().getDescriptionId(), Configurator.COMPARATOR.name());
+            if (DebugLogger.CLIENT.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+                DebugLogger.CLIENT.trace("HighlightItem", "绘制高亮槽位: {} (mode={})", slot.getItem().getItem().getDescriptionId(), Configurator.COMPARATOR.name());
             }
             gui.fillGradient(slot.x, slot.y, slot.x + 16, slot.y + 16, Configurator.COLOR, Configurator.COLOR);
         }

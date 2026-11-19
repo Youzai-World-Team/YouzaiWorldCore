@@ -18,7 +18,6 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
-import top.csituka.youzaiworldcore.YouzaiworldCore;
 import top.csituka.youzaiworldcore.api.ApiServiceClient;
 import top.csituka.youzaiworldcore.account.data.AccountDataStorage;
 import top.csituka.youzaiworldcore.account.data.EmailChangeSessionStore;
@@ -45,24 +44,29 @@ import java.util.Set;
 @SuppressWarnings("null")
 @Mixin(PlayerList.class)
 public abstract class AccountPlayerListMixin {
+    @Unique
+    private static final DebugLogger.ModuleLogger youzaiworldcore$MOD_LOG = DebugLogger.SERVER
+            .module("AccountPlayerListMixin");
 
-    @Shadow @Final
+    @Shadow
+    @Final
     private MinecraftServer server;
 
     @Inject(method = "placeNewPlayer", at = @At("HEAD"), cancellable = true)
-    private void onPlayerPreJoin(Connection connection, ServerPlayer player, CommonListenerCookie cookie, CallbackInfo ci) {
+    private void onPlayerPreJoin(Connection connection, ServerPlayer player, CommonListenerCookie cookie,
+            CallbackInfo ci) {
         String username = player.getScoreboardName();
         RegistrationEmailSessionStore.clear(player.getUUID());
         PasswordResetSessionStore.clear(player.getUUID());
         EmailChangeSessionStore.clear(player.getUUID());
-        YouzaiworldCore.LOGGER.info("玩家 {} 正在加入服务器...", username);
+        youzaiworldcore$MOD_LOG.info("玩家 {} 正在加入服务器...", username);
 
         // 开发者模式下的单人测试玩家不连接 Api，也不进入登录大厅。
         if (AuthPlayerHelper.isDeveloperSingleplayerPlayer(player)) {
             AuthPlayerHelper.setAccount(player, new PlayerAccount(username));
             AuthPlayerHelper.setCanSkipAuth(player, true);
             AuthPlayerHelper.setAuthenticated(player, true);
-            DebugLogger.info("AccountPlayerListMixin", "开发者单人测试玩家 %s 跳过账户登录/注册流程", username);
+            DebugLogger.SERVER.debug("AccountPlayerListMixin", "开发者单人测试玩家 {} 跳过账户登录/注册流程", username);
             return;
         }
 
@@ -74,9 +78,8 @@ public abstract class AccountPlayerListMixin {
         if (account != null
                 && !trustedOnlineIdentity
                 && !AccountDataStorage.matchesUuid(account, player.getUUID())) {
-            DebugLogger.warn("AccountPlayerListMixin",
-                    "已拒绝离线 UUID %s 使用已绑定正版 UUID 的账户名 %s",
-                    player.getUUID(), username);
+            DebugLogger.SERVER.warn("AccountPlayerListMixin", "已拒绝离线 UUID {} 使用已绑定正版 UUID 的账户名 {}", player.getUUID(),
+                    username);
             connection.disconnect(Component.literal("该账户名已绑定正版 Mojang UUID，请使用对应正版账户进入服务器"));
             ci.cancel();
             return;
@@ -90,7 +93,7 @@ public abstract class AccountPlayerListMixin {
             AuthLocationData persistedLoc = AuthLocationData.fromJson(account.lastPositionJson);
             if (persistedLoc != null) {
                 AuthPlayerHelper.setLastLocation(player, persistedLoc);
-                YouzaiworldCore.LOGGER.info("已从持久化数据恢复玩家 {} 的位置", username);
+                youzaiworldcore$MOD_LOG.debug("已从持久化数据恢复玩家 {} 的位置", username);
             }
         } else {
             // 首次加入或已清除缓存，保存当前位置
@@ -101,8 +104,10 @@ public abstract class AccountPlayerListMixin {
     }
 
     @Inject(method = "placeNewPlayer", at = @At("RETURN"))
-    private void onPlayerPostJoin(Connection connection, ServerPlayer player, CommonListenerCookie cookie, CallbackInfo ci) {
-        if (AuthPlayerHelper.canSkipAuth(player)) return;
+    private void onPlayerPostJoin(Connection connection, ServerPlayer player, CommonListenerCookie cookie,
+            CallbackInfo ci) {
+        if (AuthPlayerHelper.canSkipAuth(player))
+            return;
 
         teleportToVoid(player);
 
@@ -120,7 +125,8 @@ public abstract class AccountPlayerListMixin {
     @Inject(method = "remove", at = @At("HEAD"))
     private void onPlayerLeave(ServerPlayer player, CallbackInfo ci) {
         top.csituka.youzaiworldcore.map.MapServerManager.recordPlayerPosition(player, "logout");
-        if (AuthPlayerHelper.canSkipAuth(player)) return;
+        if (AuthPlayerHelper.canSkipAuth(player))
+            return;
 
         PlayerAuthAccess authPlayer = (PlayerAuthAccess) (Object) player;
         RegistrationEmailSessionStore.clear(player.getUUID());
@@ -130,7 +136,8 @@ public abstract class AccountPlayerListMixin {
         authPlayer.yzwc$setSessionToken(null);
         PlayerAccount account = AuthPlayerHelper.getAccount(player);
 
-        if (account == null) return;
+        if (account == null)
+            return;
         AuthLocationData loc;
         if (AuthPlayerHelper.isAuthenticated(player)) {
             loc = new AuthLocationData();
@@ -157,14 +164,15 @@ public abstract class AccountPlayerListMixin {
     @Inject(method = "canPlayerLogin", at = @At("HEAD"), cancellable = true)
     private void onCanPlayerLogin(SocketAddress address, NameAndId profile, CallbackInfoReturnable<Component> cir) {
         String username = profile.name();
-        YouzaiworldCore.LOGGER.debug("检查玩家 {} 的登录权限", username);
+        youzaiworldcore$MOD_LOG.debug("检查玩家 {} 的登录权限", username);
     }
 
     @Unique
     private void teleportToVoid(ServerPlayer player) {
         ResourceKey<Level> loginHallKey = AuthPlayerHelper.LOGIN_HALL_KEY;
         ServerLevel loginHall = server.getLevel(loginHallKey);
-        if (loginHall == null) loginHall = server.overworld();
+        if (loginHall == null)
+            loginHall = server.overworld();
         player.teleportTo(loginHall, AuthPlayerHelper.LOGIN_HALL_X, AuthPlayerHelper.LOGIN_HALL_Y,
                 AuthPlayerHelper.LOGIN_HALL_Z, Set.of(), 0, 0, true);
     }

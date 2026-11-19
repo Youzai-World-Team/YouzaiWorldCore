@@ -57,7 +57,7 @@ public final class InventoryItemGroupsConfig {
 
     /** 从统一客户端配置读取；非法规则沿用隔离、重建默认值并退出的流程。 */
     public static void load() {
-        DebugLogger.entering(MODULE, "load");
+        DebugLogger.CLIENT.entering(MODULE, "load");
         ConfigSection section = ClientGlobalSettings.section(ClientGlobalSettings.INVENTORY_ITEM_GROUPS_MODULE);
         if (section.isEmpty()) {
             writeDefaults();
@@ -91,9 +91,8 @@ public final class InventoryItemGroupsConfig {
             }
             groups = List.copyOf(loaded);
         }
-        DebugLogger.info(MODULE, "已加载创造物品分组：启用=%s，规则=%d，排序=%s，轮播=%s",
-                enabled, groups.size(), sort, showItemsInGroup);
-        DebugLogger.exiting(MODULE, "load");
+        DebugLogger.CLIENT.info(MODULE, "已加载创造物品分组：启用={}，规则={}，排序={}，轮播={}", enabled, groups.size(), sort, showItemsInGroup);
+        DebugLogger.CLIENT.exiting(MODULE, "load");
     }
 
     /** 确认设置页面的草稿，校验完成后一次性保存。 */
@@ -110,7 +109,7 @@ public final class InventoryItemGroupsConfig {
         showItemsInGroup = newShowItems;
         groups = checked;
         save();
-        DebugLogger.info(MODULE, "已保存创造物品分组设置，共 %d 条规则", groups.size());
+        DebugLogger.CLIENT.debug(MODULE, "已保存创造物品分组设置，共 {} 条规则", groups.size());
     }
 
     /** 重置全部字段为默认值，供首次启动和坏配置恢复使用。 */

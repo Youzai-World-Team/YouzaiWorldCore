@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.client.screen;
 
+import top.csituka.youzaiworldcore.util.LogValues;
+
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
 import top.csituka.youzaiworldcore.client.screen.widget.YzuiCloseButton;
 
@@ -14,8 +16,6 @@ import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import org.jspecify.annotations.NonNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
@@ -47,7 +47,7 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
 @SuppressWarnings({ "null", "unused" })
 public class YzuShulkerBoxScreen extends AbstractContainerScreen<ShulkerBoxMenu> {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger("YzuShulkerBoxScreen");
+    private static final DebugLogger.ModuleLogger LOGGER = DebugLogger.CLIENT.module("YzuShulkerBoxScreen");
 
     // ========== YZUI 统一设计常量（与 YzuContainerScreen 一致） ==========
 
@@ -102,8 +102,7 @@ public class YzuShulkerBoxScreen extends AbstractContainerScreen<ShulkerBoxMenu>
                 ? new ItemStack(Items.DYED_SHULKER_BOX.asList().get(dye.ordinal()))
                 : new ItemStack(Items.SHULKER_BOX);
 
-        DebugLogger.info("YzuShulkerBoxScreen", "创建 YZUI 潜影盒屏幕: title=%s dye=%s baseColor=#%06X",
-                title.getString(), dye != null ? dye.getName() : "undyed", base);
+        DebugLogger.CLIENT.debug("YzuShulkerBoxScreen", "创建 YZUI 潜影盒屏幕: title={} dye={} baseColor=#{}", title.getString(), dye != null ? dye.getName() : "undyed", LogValues.hex(base, 6));
     }
 
     /**

@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.event;
 
+import top.csituka.youzaiworldcore.util.LogValues;
+
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.server.level.ServerLevel;
@@ -42,14 +44,14 @@ public class ChargedCreeperHandler {
     }
 
     public static void register() {
-        DebugLogger.entering(MODULE, "register");
+        DebugLogger.SERVER.entering(MODULE, "register");
 
         double chance = ChargedCreeperConfig.getChance();
-        DebugLogger.info(MODULE, "天然带电苦力怕处理器已注册 (chance=%.4f)", chance);
+        DebugLogger.SERVER.debug(MODULE, "天然带电苦力怕处理器已注册 (chance={})", LogValues.decimal(chance, 4));
 
         ServerEntityEvents.ENTITY_LOAD.register((Entity entity, ServerLevel world) -> onEntityJoin(world, entity));
 
-        DebugLogger.exiting(MODULE, "register");
+        DebugLogger.SERVER.exiting(MODULE, "register");
     }
 
     /**
@@ -69,35 +71,34 @@ public class ChargedCreeperHandler {
 
         // 功能总开关（由 /yzwc event naturally_charged_creepers enable 控制）
         if (!ChargedCreeperConfig.isEnabled()) {
-            DebugLogger.debug(MODULE, "功能已禁用，creeper %s 跳过判定", entity.getUUID());
+            DebugLogger.SERVER.debug(MODULE, "功能已禁用，creeper {} 跳过判定", entity.getUUID());
             return;
         }
 
         // 已判定过的苦力怕跳过（标签随实体持久化，跨区块重载依然有效）
         Set<String> tags = entity.entityTags();
         if (tags.contains(CHECKED_TAG)) {
-            DebugLogger.debug(MODULE, "creeper %s 已判定过，跳过", entity.getUUID());
+            DebugLogger.SERVER.debug(MODULE, "creeper {} 已判定过，跳过", entity.getUUID());
             return;
         }
         entity.addTag(CHECKED_TAG);
 
         double chance = ChargedCreeperConfig.getChance();
         if (chance <= 0.0) {
-            DebugLogger.debug(MODULE, "chance<=0，creeper %s 不带电", entity.getUUID());
+            DebugLogger.SERVER.debug(MODULE, "chance<=0，creeper {} 不带电", entity.getUUID());
             return;
         }
 
         double roll = Math.random();
         boolean charged = chance >= 1.0 || roll < chance;
 
-        DebugLogger.debug(MODULE, "creeper %s 判定: roll=%.4f chance=%.4f -> %s",
-                entity.getUUID(), roll, chance, charged ? "带电" : "普通");
+        DebugLogger.SERVER.debug(MODULE, "creeper {} 判定: roll={} chance={} -> {}", entity.getUUID(), LogValues.decimal(roll, 4), LogValues.decimal(chance, 4), charged ? "带电" : "普通");
 
         if (charged) {
             EntityDataAccessor<Boolean> poweredData = ((CreeperChargedAccessor) creeper)
                     .youzaiworldcore$getDataIsPowered();
             creeper.getEntityData().set(poweredData, true);
-            DebugLogger.info(MODULE, "creeper %s 已设为带电状态", entity.getUUID());
+            DebugLogger.SERVER.debug(MODULE, "creeper {} 已设为带电状态", entity.getUUID());
         }
     }
 }

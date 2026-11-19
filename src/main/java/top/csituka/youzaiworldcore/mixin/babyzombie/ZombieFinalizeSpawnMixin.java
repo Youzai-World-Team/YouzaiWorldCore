@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.mixin.babyzombie;
 
+import top.csituka.youzaiworldcore.util.LogValues;
+
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.SpawnGroupData;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -43,8 +45,7 @@ public abstract class ZombieFinalizeSpawnMixin {
             double oldMax = maxHealthAttr.getBaseValue();
             maxHealthAttr.setBaseValue(10.0);
             self.setHealth(10.0f);
-            DebugLogger.debug("BabyZombieWeak", "幼年僵尸弱化: %s 最大生命 %.1f -> 10",
-                    self.getName().getString(), oldMax);
+            DebugLogger.SERVER.debug("BabyZombieWeak", "幼年僵尸弱化: {} 最大生命 {} -> 10", self.getName().getString(), LogValues.decimal(oldMax, 1));
         }
     }
 }

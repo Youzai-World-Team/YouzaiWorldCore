@@ -54,7 +54,7 @@ public final class PetMenuHandler {
                     success = server.getCommands().getDispatcher().execute("yzwc pet " + command, source.withSource(collector)) > 0;
                 } catch (Exception e) {
                     success = false; feedback[0] = Component.translatable("screen.youzaiworldcore.pets.failed");
-                    DebugLogger.exception("PetMenu", "execute", e);
+                    DebugLogger.SERVER.exception("PetMenu", "execute", e);
                 }
             }
         }
@@ -63,7 +63,7 @@ public final class PetMenuHandler {
                 .sorted(java.util.Comparator.comparing(PetEntry::internalName)).limit(10000)
                 .map(p -> new PetMenuStatePayload.Entry(p.internalName(), p.displayName(), p.mode().name().toLowerCase(java.util.Locale.ROOT))).toList();
         ServerPlayNetworking.send(player, new PetMenuStatePayload(request.requestId(), success, feedback[0], pets));
-        DebugLogger.info("PetMenu", "菜单操作 %s：%s", request.action(), success);
+        DebugLogger.SERVER.debug("PetMenu", "菜单操作 {}：{}", request.action(), success);
     }
     private static String quote(String value) { return "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"") + "\""; }
 }

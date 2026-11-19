@@ -1,11 +1,11 @@
 package top.csituka.youzaiworldcore.mixin.client;
 
+import top.csituka.youzaiworldcore.util.DebugLogger;
+
 import com.mojang.blaze3d.platform.Window;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.main.GameConfig;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
@@ -42,7 +42,7 @@ import top.csituka.youzaiworldcore.client.screen.ConfigImportSuccessScreen;
 public class MinecraftQuitMixin {
 
     @Unique
-    private static final Logger youzaiworldcore$LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/MinecraftQuitMixin");
+    private static final DebugLogger.ModuleLogger youzaiworldcore$LOGGER = DebugLogger.CLIENT.module("MinecraftQuitMixin");
 
     @Shadow
     @Final
@@ -89,7 +89,7 @@ public class MinecraftQuitMixin {
                 return true;
             }
 
-            youzaiworldcore$LOGGER.info("Window close requested, showing confirmation dialog");
+            youzaiworldcore$LOGGER.debug("Window close requested, showing confirmation dialog");
 
             // 清除窗口关闭标志，防止游戏主循环退出
             ((WindowAccessor) (Object) window).youzaiworldcore$setShouldClose(false);
@@ -106,7 +106,7 @@ public class MinecraftQuitMixin {
 
             // 如果当前显示的是「配置导入成功」重启弹窗，直接退出（不可被退出弹窗替换）
             if (currentScreen instanceof ConfigImportSuccessScreen) {
-                youzaiworldcore$LOGGER.info("ConfigImportSuccessScreen showing during window close, stopping game directly");
+                youzaiworldcore$LOGGER.debug("ConfigImportSuccessScreen showing during window close, stopping game directly");
                 return true;
             }
 

@@ -130,7 +130,7 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
             } else if (widget == configImportButton) {
                 description = Component.translatable("screen.youzaiworldcore.settings.config_io_import_hint");
             } else if (widget == logLevelDropdown) {
-                description = Component.translatable("screen.youzaiworldcore.settings.log_level_restart_hint");
+                description = Component.translatable("screen.youzaiworldcore.settings.log_level_apply_hint");
             } else if (widget == debugAddressInput) {
                 description = Component.translatable("screen.youzaiworldcore.settings.label_debug_section");
             }
@@ -217,7 +217,7 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
     private int debugAddrLabelY;
     private int debugPortLabelY;
     /** "重启客户端后生效" 提示文字 Y */
-    private int restartHintY;
+    private int logLevelHintY;
 
     /** 内容区底部的最大 Y 值（由 buildContentWidgets 追踪） */
     private int maxContentY = 0;
@@ -543,7 +543,7 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
     /** 鼠标与键盘共用分类切换，配置操作期间不切换内容。 */
     private void selectSection(CoreSettingsSection section) {
         if (configOpActive) return;
-        DebugLogger.debug("SettingsScreen", "切换设置分类：%s", section);
+        DebugLogger.CLIENT.debug("SettingsScreen", "切换设置分类：{}", section);
         selectedSection = section.id();
         rebuildWidgets();
     }
@@ -619,7 +619,7 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
      */
     private void onConfigExport() {
         if (configOpActive) return;
-        DebugLogger.entering("SettingsScreen", "onConfigExport");
+        DebugLogger.CLIENT.entering("SettingsScreen", "onConfigExport");
         File gameDir = Minecraft.getInstance().gameDirectory;
 
         configOpActive = true;
@@ -667,7 +667,7 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
      */
     private void onConfigImport() {
         if (configOpActive) return;
-        DebugLogger.entering("SettingsScreen", "onConfigImport");
+        DebugLogger.CLIENT.entering("SettingsScreen", "onConfigImport");
         File gameDir = Minecraft.getInstance().gameDirectory;
 
         Minecraft.getInstance().execute(() -> {
@@ -742,7 +742,6 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
                 () -> {
                     ClientExternalSettings.setDevModeEnabled(!devModeEnabled);
                     devModeEnabled = !devModeEnabled;
-                    top.csituka.youzaiworldcore.YouzaiworldCore.devModeEnabled = devModeEnabled;
                     rebuildWidgets();
                 }
         ).setWrapMessage(true);
@@ -758,7 +757,7 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
                     boolean newVal = !autoSkipExperimentalWarning;
                     autoSkipExperimentalWarning = newVal;
                     ClientExternalSettings.setAutoSkipExperimentalWarning(newVal);
-                    DebugLogger.info("SettingsScreen", "自动跳过实验性设置警告已" + (newVal ? "启用" : "禁用"));
+                    DebugLogger.CLIENT.debug("SettingsScreen", "自动跳过实验性设置警告已" + (newVal ? "启用" : "禁用"));
                 }
         ).setWrapMessage(true);
         addRenderableWidget(autoSkipExperimentalToggle);
@@ -773,7 +772,7 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
                     String newAction = (idx == 0) ? "backup" : "skip";
                     ClientExternalSettings.setExperimentalWarningSkipAction(newAction);
                     experimentalWarningSkipAction = newAction;
-                    DebugLogger.info("SettingsScreen", "实验性设置跳过操作已设为：" + newAction);
+                    DebugLogger.CLIENT.debug("SettingsScreen", "实验性设置跳过操作已设为：" + newAction);
                 },
                 null
         );
@@ -802,10 +801,10 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
             addRenderableWidget(logLevelDropdown);
             y += 26;
 
-            restartHintY = y;
-            Component restartHint = Component.translatable(
-                    "screen.youzaiworldcore.settings.log_level_restart_hint");
-            y += wrappedTextHeight(restartHint, contentWidth) + 4;
+            logLevelHintY = y;
+            Component applyHint = Component.translatable(
+                    "screen.youzaiworldcore.settings.log_level_apply_hint");
+            y += wrappedTextHeight(applyHint, contentWidth) + 4;
 
             boolean isDedicated = "dedicated".equals(debugModeType);
             int debugModeIndex = isDedicated ? 1 : 0;
@@ -865,7 +864,7 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
 
     /** 重置完成标记并从当前设置页重新打开欢迎导览。 */
     private void rerunWelcomeGuide() {
-        DebugLogger.info("SettingsScreen", "从开发者页面重新进行 OOBE 流程");
+        DebugLogger.CLIENT.debug("SettingsScreen", "从开发者页面重新进行 OOBE 流程");
         ClientExternalSettings.resetWelcomeGuide();
         Minecraft.getInstance().gui.setScreen(new WelcomeGuideScreen(this));
     }
@@ -892,7 +891,7 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
                     boolean newVal = !yzuiEnabled;
                     yzuiEnabled = newVal;
                     ClientExternalSettings.setYzuiEnabled(newVal);
-                    DebugLogger.info("SettingsScreen", "YZUI 已" + (newVal ? "启用" : "禁用"));
+                    DebugLogger.CLIENT.debug("SettingsScreen", "YZUI 已" + (newVal ? "启用" : "禁用"));
                 }
         ).setWrapMessage(true);
         addRenderableWidget(yzuiToggle);
@@ -914,7 +913,7 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
                         default -> GuiAnimationMode.FULL;
                     };
                     ClientExternalSettings.setGuiAnimationMode(guiAnimationMode);
-                    DebugLogger.info("SettingsScreen", "界面动画作用范围已设为：%s", guiAnimationMode);
+                    DebugLogger.CLIENT.debug("SettingsScreen", "界面动画作用范围已设为：{}", guiAnimationMode);
                 },
                 null
         );
@@ -931,7 +930,7 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
                     customFontEnabled = newVal;
                     ClientExternalSettings.setCustomFontEnabled(newVal);
                     CustomFontResourcePack.setEnabled(newVal);
-                    DebugLogger.info("SettingsScreen", "自定义字体资源包已" + (newVal ? "启用" : "禁用"));
+                    DebugLogger.CLIENT.debug("SettingsScreen", "自定义字体资源包已" + (newVal ? "启用" : "禁用"));
                 }
         ).setWrapMessage(true);
         addRenderableWidget(customFontToggle);
@@ -948,7 +947,7 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
                 () -> {
                     leftHudEnabled = !leftHudEnabled;
                     ClientExternalSettings.setLeftHudEnabled(leftHudEnabled);
-                    DebugLogger.info("SettingsScreen", "YZHUD 已" + (leftHudEnabled ? "启用" : "禁用"));
+                    DebugLogger.CLIENT.debug("SettingsScreen", "YZHUD 已" + (leftHudEnabled ? "启用" : "禁用"));
                 }).setWrapMessage(true));
         y += toggleHeight + 6;
         addRenderableWidget(new TransparentButton(contentLeft, y, contentWidth, 22,
@@ -1094,7 +1093,7 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
 
     private void openOssNotice() {
         String url = "https://github.com/Youzai-World-Team/YouzaiWorldCore/blob/main/NOTICE.txt";
-        DebugLogger.info("SettingsScreen", "显示开源许可链接确认: %s", url);
+        DebugLogger.CLIENT.debug("SettingsScreen", "显示开源许可链接确认: {}", url);
         ConfirmLinkScreen.confirmLinkNow(this, URI.create(url));
     }
 
@@ -1191,9 +1190,9 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
                     contentLeft, warningY, contentWidth, YzuiTheme.text(), false);
 
             if (devModeEnabled) {
-                var restartHint = Component.translatable("screen.youzaiworldcore.settings.log_level_restart_hint");
-                drawWrappedText(guiGraphics, restartHint,
-                        contentLeft, restartHintY, contentWidth, YzuiTheme.text(), false);
+                var applyHint = Component.translatable("screen.youzaiworldcore.settings.log_level_apply_hint");
+                drawWrappedText(guiGraphics, applyHint,
+                        contentLeft, logLevelHintY, contentWidth, YzuiTheme.text(), false);
 
                 if ("dedicated".equals(debugModeType)) {
                     drawWrappedText(guiGraphics,
@@ -1326,8 +1325,7 @@ public class YouzaiWorldCoreSettingsScreen extends Screen {
     @Override
     public void onClose() {
         if (configOpActive) return; // 操作进行中不可关闭
-        DebugLogger.info("SettingsScreen", "返回上级屏幕: %s",
-                parentScreen == null ? "默认屏幕" : parentScreen.getClass().getSimpleName());
+        DebugLogger.CLIENT.debug("SettingsScreen", "返回上级屏幕: {}", parentScreen == null ? "默认屏幕" : parentScreen.getClass().getSimpleName());
         Minecraft.getInstance().gui.setScreen(parentScreen);
     }
 }

@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.event;
 
+import top.csituka.youzaiworldcore.util.LogValues;
+
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
 import net.minecraft.core.BlockPos;
@@ -36,7 +38,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * <li>仅服务端生效，客户端忽略。</li>
  * </ul>
  * 所有诊断日志均通过 {@link DebugLogger} 输出，受开发者模式 + 日志级别双维度控制，
- * 生产环境无噪音，调试时可在配置中开启 devMode / logToFile 获得完整日志。
+ * 生产环境仅保留故障信息；开启开发者模式并设置 log_level 可获得分级诊断日志。
  * </p>
  */
 @SuppressWarnings("null")
@@ -60,16 +62,15 @@ public class ChorusFruitDropHandler {
     }
 
     public static void register() {
-        DebugLogger.entering(MODULE, "register");
+        DebugLogger.SERVER.entering(MODULE, "register");
 
         PlayerBlockBreakEvents.AFTER
                 .register((world, player, pos, state, blockEntity) -> onBlockBreak(world, pos, state));
 
         ServerEntityEvents.ENTITY_LOAD.register((Entity entity, ServerLevel world) -> onChorusFruit(world, entity));
 
-        DebugLogger.info(MODULE, "紫颂果就近掉落处理器已注册 (maxDistance=%.1f, expiry=%dms)",
-                MAX_DISTANCE, EXPIRY_MS);
-        DebugLogger.exiting(MODULE, "register");
+        DebugLogger.SERVER.debug(MODULE, "紫颂果就近掉落处理器已注册 (maxDistance={}, expiry={}ms)", LogValues.decimal(MAX_DISTANCE, 1), EXPIRY_MS);
+        DebugLogger.SERVER.exiting(MODULE, "register");
     }
 
     /**
@@ -80,11 +81,13 @@ public class ChorusFruitDropHandler {
      * @param state 被破坏方块的方块状态
      */
     private static void onBlockBreak(Level world, BlockPos pos, BlockState state) {
-        DebugLogger.entering(MODULE, "onBlockBreak", "pos=" + pos + ", block=" + state.getBlock());
+        if (DebugLogger.SERVER.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+            DebugLogger.SERVER.entering(MODULE, "onBlockBreak", "pos=" + pos + ", block=" + state.getBlock());
+        }
 
         if (world.isClientSide()) {
-            DebugLogger.branch(MODULE, "is server side", false, "客户端忽略");
-            DebugLogger.exiting(MODULE, "onBlockBreak", "PASS (client)");
+            DebugLogger.SERVER.branch(MODULE, "is server side", false, "客户端忽略");
+            DebugLogger.SERVER.exiting(MODULE, "onBlockBreak", "PASS (client)");
             return;
         }
 
@@ -92,13 +95,14 @@ public class ChorusFruitDropHandler {
             BlockPos immutablePos = pos.immutable();
             lastChorusBlock.add(immutablePos);
             lastAction.put(immutablePos, System.currentTimeMillis());
-            DebugLogger.info(MODULE, "记录紫颂植物破坏位置: %s (当前记录数=%d)",
-                    immutablePos, lastChorusBlock.size());
+            if (DebugLogger.SERVER.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+                DebugLogger.SERVER.trace(MODULE, "记录紫颂植物破坏位置: {} (当前记录数={})", immutablePos, lastChorusBlock.size());
+            }
         } else {
-            DebugLogger.branch(MODULE, "block is chorus_plant", false, state.getBlock().toString());
+            DebugLogger.SERVER.branch(MODULE, "block is chorus_plant", false, state.getBlock().toString());
         }
 
-        DebugLogger.exiting(MODULE, "onBlockBreak", "done");
+        DebugLogger.SERVER.exiting(MODULE, "onBlockBreak", "done");
     }
 
     /**
@@ -125,8 +129,7 @@ public class ChorusFruitDropHandler {
             return;
         }
 
-        DebugLogger.debug(MODULE, "紫颂果进入世界: %s (当前记录位置数=%d)",
-                itemEntity, lastChorusBlock.size());
+        DebugLogger.SERVER.debug(MODULE, "紫颂果进入世界: {} (当前记录位置数={})", itemEntity, lastChorusBlock.size());
 
         // 将 Y 轴归一化为 1，使后续 closerThan 比较退化为纯水平（XZ）距离
         BlockPos lowChorusPos = BlockPos.containing(itemEntity.getX(), 1.0, itemEntity.getZ());
@@ -142,7 +145,7 @@ public class ChorusFruitDropHandler {
             // 过期清理：记录位置超过时间窗口则移除
             long ageMs = now - last;
             if (ageMs > EXPIRY_MS) {
-                DebugLogger.debug(MODULE, "记录位置已过期，移除: %s (age=%dms)", recordedPos, ageMs);
+                DebugLogger.SERVER.debug(MODULE, "记录位置已过期，移除: {} (age={}ms)", recordedPos, ageMs);
                 lastChorusBlock.remove(recordedPos);
                 lastAction.remove(recordedPos);
                 continue;
@@ -155,8 +158,7 @@ public class ChorusFruitDropHandler {
                 BlockPos target = new BlockPos(recordedPos.getX(), recordedPos.getY() + 1, recordedPos.getZ());
                 itemEntity.teleportTo(target.getX(), target.getY(), target.getZ());
                 lastAction.put(recordedPos.immutable(), now);
-                DebugLogger.info(MODULE, "紫颂果就近传送至 %s (原位置 x=%.2f, z=%.2f)",
-                        target, itemEntity.getX(), itemEntity.getZ());
+                DebugLogger.SERVER.debug(MODULE, "紫颂果就近传送至 {} (原位置 x={}, z={})", target, LogValues.decimal(itemEntity.getX(), 2), LogValues.decimal(itemEntity.getZ(), 2));
                 break;
             }
         }

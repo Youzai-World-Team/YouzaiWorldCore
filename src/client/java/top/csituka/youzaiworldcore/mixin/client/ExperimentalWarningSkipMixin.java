@@ -46,7 +46,7 @@ public abstract class ExperimentalWarningSkipMixin {
         }
         // 仅在生命周期为 experimental（非 stable 且非 deprecated）时跳过
         if (lifecycle == Lifecycle.experimental()) {
-            DebugLogger.info("ExperimentalWarningSkip",
+            DebugLogger.CLIENT.debug("ExperimentalWarningSkip",
                     "自动跳过创建世界的实验性设置确认屏");
             runnable.run();
             ci.cancel();
@@ -77,12 +77,12 @@ public abstract class ExperimentalWarningSkipMixin {
         // 仅跳过实验性设置导致的备份确认，不跳过旧自定义世界
         if (!isOldCustomized) {
             if (ClientExternalSettings.isExperimentalWarningSkipBackup()) {
-                DebugLogger.info("ExperimentalWarningSkip",
+                DebugLogger.CLIENT.debug("ExperimentalWarningSkip",
                         "自动跳过实验性设置备份确认屏（创建备份并进入）");
                 EditWorldScreen.conditionallyMakeBackupAndShowToast(true, access)
                         .thenAcceptAsync(v -> onProceed.run(), Minecraft.getInstance());
             } else {
-                DebugLogger.info("ExperimentalWarningSkip",
+                DebugLogger.CLIENT.debug("ExperimentalWarningSkip",
                         "自动跳过实验性设置备份确认屏（不备份，直接进入）");
                 onProceed.run();
             }

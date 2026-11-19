@@ -74,13 +74,13 @@ public final class ApiHttp {
         LAST_FAILURE_MESSAGE.remove();
         if (!ApiModuleSettings.isEnabled()) {
             LAST_FAILURE_MESSAGE.set("Api 网桥已关闭");
-            DebugLogger.warn(MODULE, "Api 网桥已关闭，拒绝执行 %s %s", method, path);
+            DebugLogger.SERVER.debug(MODULE, "Api 网桥已关闭，拒绝执行 {} {}", method, path);
             return null;
         }
         String key = ApiModuleSettings.getServerKey();
         if (key == null || key.length() < 32) {
             LAST_FAILURE_MESSAGE.set("Api 网桥密钥未配置");
-            DebugLogger.warn(MODULE, "Api 网桥密钥未配置或长度不足，拒绝发送请求");
+            DebugLogger.SERVER.warn(MODULE, "Api 网桥密钥未配置或长度不足，拒绝发送请求");
             return null;
         }
         try {
@@ -111,13 +111,12 @@ public final class ApiHttp {
             return CLIENT.send(builder.build(), HttpResponse.BodyHandlers.ofString());
         } catch (HttpTimeoutException e) {
             LAST_FAILURE_MESSAGE.set("Api 请求超时（" + timeoutSeconds + " 秒）");
-            DebugLogger.warn(MODULE, "Api 请求超时 %s %s：超过 %d 秒未收到响应",
-                    method, path, timeoutSeconds);
+            DebugLogger.SERVER.warn(MODULE, "Api 请求超时 {} {}：超过 {} 秒未收到响应", method, path, timeoutSeconds);
             return null;
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             LAST_FAILURE_MESSAGE.set("Api 请求被中断");
-            DebugLogger.warn(MODULE, "Api 请求被中断 %s %s", method, path);
+            DebugLogger.SERVER.debug(MODULE, "Api 请求被中断 {} {}", method, path);
             return null;
         } catch (Exception e) {
             LAST_FAILURE_MESSAGE.set("Api 服务端不可用");
@@ -125,7 +124,7 @@ public final class ApiHttp {
             if (e.getCause() != null) {
                 detail += " (cause=" + e.getCause().getClass().getSimpleName() + ": " + e.getCause().getMessage() + ")";
             }
-            DebugLogger.warn(MODULE, "Api 请求失败 %s %s：%s", method, path, detail);
+            DebugLogger.SERVER.warn(MODULE, "Api 请求失败 {} {}：{}", method, path, detail);
             return null;
         }
     }

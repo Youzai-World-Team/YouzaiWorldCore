@@ -56,9 +56,7 @@ public final class YzuiJadeStyleManager {
         if (!loadedChecked) {
             loadedChecked = true;
             jadeLoaded = FabricLoader.getInstance().isModLoaded(JADE_MOD_ID);
-            DebugLogger.info(MODULE, "Jade 模组%s，YZUI 样式桥接%s",
-                    jadeLoaded ? "已加载" : "未加载",
-                    jadeLoaded ? "已启用" : "跳过（不影响其他功能）");
+            DebugLogger.CLIENT.debug(MODULE, "Jade 模组{}，YZUI 样式桥接{}", jadeLoaded ? "已加载" : "未加载", jadeLoaded ? "已启用" : "跳过（不影响其他功能）");
         }
         return jadeLoaded;
     }

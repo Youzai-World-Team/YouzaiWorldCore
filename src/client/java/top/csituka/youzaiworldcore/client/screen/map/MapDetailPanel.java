@@ -78,7 +78,7 @@ final class MapDetailPanel extends AbstractContainerEventHandler implements Rend
         if (dialog) {
             width = Math.min(360, screenWidth - 32); height = Math.min(320, screenHeight - 32);
             x = (screenWidth - width) / 2; y = (screenHeight - height) / 2;
-            DebugLogger.debug("WorldMap", "新建路径点弹窗布局：%dx%d，位置=%d,%d", width, height, x, y);
+            DebugLogger.CLIENT.debug("WorldMap", "新建路径点弹窗布局：{}x{}，位置={},{}", width, height, x, y);
         } else {
             width = Math.min(screenWidth - 16, Math.max(180, screenWidth / 2));
             x = screenWidth - width - 8; y = 8; height = screenHeight - 16;
@@ -263,7 +263,7 @@ final class MapDetailPanel extends AbstractContainerEventHandler implements Rend
         if (track && owner.isDetails(this)) { MapClient.navigate(point.id()); close(); }
         else if (dialog && noteSaved) close();
         else rebuild();
-        DebugLogger.info("WorldMap", "保存地图路径点：%s", point.id());
+        DebugLogger.CLIENT.debug("WorldMap", "保存地图路径点：{}", point.id());
     }
     private void delete() {
         if (!confirmingDelete) { confirmingDelete = true; rebuild(); return; }

@@ -62,10 +62,10 @@ public final class ModCreativeModeTabs {
 
     /** 注册一个创造标签页；七个分类由客户端共用的物品分组模型展示。 */
     public static void initialize() {
-        DebugLogger.entering(MODULE, "initialize");
+        DebugLogger.bootstrap().entering(MODULE, "initialize");
         Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, YOUZAI_WORLD_KEY, YOUZAI_WORLD);
-        DebugLogger.info(MODULE, "已注册悠哉世界创造标签页：%s", YOUZAI_WORLD_KEY.identifier());
-        DebugLogger.exiting(MODULE, "initialize");
+        DebugLogger.bootstrap().debug(MODULE, "已注册悠哉世界创造标签页：{}", YOUZAI_WORLD_KEY.identifier());
+        DebugLogger.bootstrap().exiting(MODULE, "initialize");
     }
 
     private static void displayItems(CreativeModeTab.ItemDisplayParameters params, CreativeModeTab.Output output) {
@@ -168,16 +168,16 @@ public final class ModCreativeModeTabs {
                         items.accept(EnchantmentHelper.createBook(new EnchantmentInstance(holder, level)));
                         total++;
                     }
-                    DebugLogger.debug(MODULE, "已加入附魔 %s 的全部等级（最高 %d 级）", key.identifier(), maxLevel);
+                    DebugLogger.bootstrap().debug(MODULE, "已加入附魔 {} 的全部等级（最高 {} 级）", key.identifier(), maxLevel);
                 } else {
-                    DebugLogger.warn(MODULE, "注册表中未找到附魔 %s，跳过对应附魔书", key.identifier());
+                    DebugLogger.bootstrap().warn(MODULE, "注册表中未找到附魔 {}，跳过对应附魔书", key.identifier());
                 }
             }
-            DebugLogger.debug(MODULE, "附魔分类已加入 %d 本附魔书", total);
+            DebugLogger.bootstrap().debug(MODULE, "附魔分类已加入 {} 本附魔书", total);
         });
 
         itemGroups = List.copyOf(rebuilt);
-        DebugLogger.debug(MODULE, "已生成悠哉世界创造标签页及 %d 个内置分类", itemGroups.size());
+        DebugLogger.bootstrap().debug(MODULE, "已生成悠哉世界创造标签页及 {} 个内置分类", itemGroups.size());
     }
 
     private static void addGroup(List<ItemGroup> groups, String groupName, CreativeModeTab.Output output,

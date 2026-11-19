@@ -27,8 +27,6 @@ import net.minecraft.world.item.equipment.Equippable;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import org.jspecify.annotations.NonNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Optional;
@@ -71,7 +69,7 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
 @SuppressWarnings({ "null", "unused" })
 public class YzuSmithingScreen extends ItemCombinerScreen<SmithingMenu> {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger("YzuSmithingScreen");
+    private static final DebugLogger.ModuleLogger LOGGER = DebugLogger.CLIENT.module("YzuSmithingScreen");
 
     // ========== YZUI 统一设计常量（与 YzuContainerScreen 一致） ==========
 
@@ -160,8 +158,7 @@ public class YzuSmithingScreen extends ItemCombinerScreen<SmithingMenu> {
         this.armorStandPreview.xRot = 25.0F;
         this.armorStandPreview.bodyRot = 210.0F;
 
-        DebugLogger.info("YzuSmithingScreen", "创建 YZUI 锻造台屏幕: title=%s menuType=%s",
-                title.getString(), menu.getType());
+        DebugLogger.CLIENT.debug("YzuSmithingScreen", "创建 YZUI 锻造台屏幕: title={} menuType={}", title.getString(), menu.getType());
     }
 
     @Override

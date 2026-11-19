@@ -1,10 +1,8 @@
 package top.csituka.youzaiworldcore.mixin.client.enchlevellangpatch;
 
+import top.csituka.youzaiworldcore.util.DebugLogger;
+
 import net.minecraft.client.resources.language.ClientLanguage;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.Marker;
-import org.apache.logging.log4j.MarkerManager;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
@@ -28,8 +26,8 @@ import java.util.Map;
 public class EnchantmentLevelLangPatchMixin {
 
     @Unique
-    private static final Logger youzaiworldcore$LOGGER = LogManager.getLogger();
-    private static final Marker MARKER = MarkerManager.getMarker("LangPatch/Mixin");
+    private static final DebugLogger.ModuleLogger youzaiworldcore$LOGGER = DebugLogger.CLIENT.module("EnchantmentLevelLangPatchMixin");
+
 
     @Shadow
     @Final
@@ -41,7 +39,9 @@ public class EnchantmentLevelLangPatchMixin {
     private void youzaiworldcore$onGetOrDefault(String key, String fallback, CallbackInfoReturnable<String> cir) {
         String result = LangPatchImpl.hookWithFallback(key, this.storage, fallback);
         if (result != null) {
-            youzaiworldcore$LOGGER.debug(MARKER, "Patched translation: {} -> {}", key, result);
+            if (youzaiworldcore$LOGGER.isTraceEnabled()) {
+                youzaiworldcore$LOGGER.trace("Patched translation: {} -> {}", key, result);
+            }
             cir.setReturnValue(result);
         }
     }

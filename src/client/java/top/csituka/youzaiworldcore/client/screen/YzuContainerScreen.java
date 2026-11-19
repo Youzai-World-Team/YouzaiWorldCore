@@ -14,8 +14,6 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import org.jspecify.annotations.NonNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
@@ -27,7 +25,7 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
 @SuppressWarnings({ "null", "unused" })
 public class YzuContainerScreen extends AbstractContainerScreen<ChestMenu> {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger("YzuContainerScreen");
+    private static final DebugLogger.ModuleLogger LOGGER = DebugLogger.CLIENT.module("YzuContainerScreen");
 
     // ========== YZUI 统一设计常量 ==========
 
@@ -62,8 +60,7 @@ public class YzuContainerScreen extends AbstractContainerScreen<ChestMenu> {
         super(menu, playerInventory, title, 176, 114 + menu.getRowCount() * 18);
         this.containerRows = menu.getRowCount();
         this.kind = Kind.resolve(menu, title);
-        DebugLogger.info("YzuContainerScreen", "创建 YZUI 容器屏幕: kind=%s rows=%d title=%s menuType=%s",
-                kind, containerRows, title.getString(), menu.getType());
+        DebugLogger.CLIENT.debug("YzuContainerScreen", "创建 YZUI 容器屏幕: kind={} rows={} title={} menuType={}", kind, containerRows, title.getString(), menu.getType());
     }
 
     @Override

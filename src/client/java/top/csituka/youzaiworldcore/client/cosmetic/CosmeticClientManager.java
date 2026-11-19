@@ -102,12 +102,12 @@ public final class CosmeticClientManager {
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) ->
                 client.execute(CosmeticClientManager::clearSession));
         ClientTickEvents.END_CLIENT_TICK.register(client -> tick());
-        DebugLogger.info(MODULE, "客户端自定义皮肤与披风管理器已初始化");
+        DebugLogger.CLIENT.debug(MODULE, "客户端自定义皮肤与披风管理器已初始化");
     }
 
     /** 处理服务端在账户认证完成后下发的就绪状态。 */
     public static void onReady(CosmeticReadyPayload payload) {
-        DebugLogger.entering(MODULE, "onReady", "ready=" + payload.ready());
+        DebugLogger.CLIENT.entering(MODULE, "onReady", "ready=" + payload.ready());
         if (!payload.ready()) {
             serverReady = false;
             PENDING_REQUESTS.clear();
@@ -120,7 +120,7 @@ public final class CosmeticClientManager {
             MOJANG_SKIN_KEYS.clear();
             MOJANG_SKINS.clear();
             releaseAll();
-            DebugLogger.exiting(MODULE, "onReady", "disabled");
+            DebugLogger.CLIENT.exiting(MODULE, "onReady", "disabled");
             return;
         }
 
@@ -131,7 +131,7 @@ public final class CosmeticClientManager {
             serverInstanceId = null;
             skinConflictNotified = false;
             releaseAll();
-            DebugLogger.exiting(MODULE, "onReady", "custom cosmetic disabled locally");
+            DebugLogger.CLIENT.exiting(MODULE, "onReady", "custom cosmetic disabled locally");
             return;
         }
 
@@ -141,7 +141,7 @@ public final class CosmeticClientManager {
 
         Minecraft client = Minecraft.getInstance();
         if (client.player == null) {
-            DebugLogger.exiting(MODULE, "onReady", "player unavailable");
+            DebugLogger.CLIENT.exiting(MODULE, "onReady", "player unavailable");
             return;
         }
 
@@ -149,7 +149,7 @@ public final class CosmeticClientManager {
         if (VERIFIED_MOJANG_OWNERS.contains(selfUuid)) {
             release(selfUuid);
             pendingUpload = null;
-            DebugLogger.exiting(MODULE, "onReady", "verified Mojang profile");
+            DebugLogger.CLIENT.exiting(MODULE, "onReady", "verified Mojang profile");
             return;
         }
 
@@ -158,7 +158,7 @@ public final class CosmeticClientManager {
             client.player.sendSystemMessage(Component.translatable(
                     "youzaiworldcore.message.cosmetic.skin_conflict").withStyle(ChatFormatting.YELLOW));
             skinConflictNotified = true;
-            DebugLogger.info(MODULE, "同时检测到 skin.png 和 skin_slim.png，已优先使用 skin.png");
+            DebugLogger.CLIENT.info(MODULE, "同时检测到 skin.png 和 skin_slim.png，已优先使用 skin.png");
         }
 
         release(selfUuid);
@@ -172,12 +172,12 @@ public final class CosmeticClientManager {
                 CosmeticUploadState.save(serverInstanceId, selfUuid, snapshot.states());
             }
             pendingUpload = null;
-            DebugLogger.debug(MODULE, "服务端外观快照已与本地一致，跳过上传");
+            DebugLogger.CLIENT.debug(MODULE, "服务端外观快照已与本地一致，跳过上传");
         } else {
             pendingUpload = new PendingUpload(serverInstanceId, selfUuid, snapshot);
             sendPendingUpload();
         }
-        DebugLogger.exiting(MODULE, "onReady");
+        DebugLogger.CLIENT.exiting(MODULE, "onReady");
     }
 
     /** 响应服务端的一次性 Mojang 会话挑战，不上传访问令牌。 */
@@ -189,7 +189,7 @@ public final class CosmeticClientManager {
         mojangChallenge = payload.challenge();
         if (isOfflineSession()) {
             ClientPlayNetworking.send(new MojangProfileRequestPayload(payload.challenge(), EMPTY_UUID, ""));
-            DebugLogger.info(MODULE, "当前客户端不是正版会话，跳过 Mojang 外观核验");
+            DebugLogger.CLIENT.debug(MODULE, "当前客户端不是正版会话，跳过 Mojang 外观核验");
             return;
         }
         long challengeEpoch = sessionEpoch;
@@ -207,10 +207,10 @@ public final class CosmeticClientManager {
                     }
                     ClientPlayNetworking.send(new MojangProfileRequestPayload(
                             payload.challenge(), user.getProfileId(), user.getName()));
-                    DebugLogger.info(MODULE, "已完成 Mojang 会话挑战并提交档案标识");
+                    DebugLogger.CLIENT.debug(MODULE, "已完成 Mojang 会话挑战并提交档案标识");
                 });
             } catch (Exception e) {
-                DebugLogger.warn(MODULE, "Mojang 会话挑战失败：%s", e.getClass().getSimpleName());
+                DebugLogger.CLIENT.warn(MODULE, "Mojang 会话挑战失败：{}", e.getClass().getSimpleName());
                 client.execute(() -> {
                     if (challengeEpoch == sessionEpoch
                             && payload.challenge().equals(mojangChallenge)
@@ -230,7 +230,7 @@ public final class CosmeticClientManager {
             VERIFIED_MOJANG_OWNERS.remove(ownerUuid);
             MOJANG_SKIN_KEYS.remove(ownerUuid);
             MOJANG_SKINS.remove(ownerUuid);
-            DebugLogger.debug(MODULE, "已清除玩家 %s 的正版外观缓存", ownerUuid);
+            DebugLogger.CLIENT.debug(MODULE, "已清除玩家 {} 的正版外观缓存", ownerUuid);
             return;
         }
         MojangSkinKey skinKey = new MojangSkinKey(
@@ -256,14 +256,14 @@ public final class CosmeticClientManager {
                     return;
                 }
                 if (error != null || skin == null || skin.isEmpty()) {
-                    DebugLogger.warn(MODULE, "玩家 %s 的 Mojang 纹理下载失败", ownerUuid);
+                    DebugLogger.CLIENT.warn(MODULE, "玩家 {} 的 Mojang 纹理下载失败", ownerUuid);
                     return;
                 }
                 MOJANG_SKINS.put(ownerUuid, skin.get());
-                DebugLogger.info(MODULE, "已缓存玩家 %s 的 Mojang 正版皮肤与披风", ownerUuid);
+                DebugLogger.CLIENT.debug(MODULE, "已缓存玩家 {} 的 Mojang 正版皮肤与披风", ownerUuid);
             }));
         } catch (RuntimeException e) {
-            DebugLogger.exception(MODULE, "onMojangSkin", e);
+            DebugLogger.CLIENT.exception(MODULE, "onMojangSkin", e);
         }
     }
 
@@ -309,19 +309,19 @@ public final class CosmeticClientManager {
 
         PendingRequest pending = PENDING_REQUESTS.get(ownerUuid);
         if (pending == null) {
-            DebugLogger.debug(MODULE, "忽略玩家 %s 的未请求外观快照", ownerUuid);
+            DebugLogger.CLIENT.debug(MODULE, "忽略玩家 {} 的未请求外观快照", ownerUuid);
             return;
         }
         String actualHash = CosmeticSnapshotHasher.hash(
                 payload.skinWide(), payload.skinSlim(), payload.cloak());
         if (!actualHash.equals(payload.snapshotHash())) {
-            DebugLogger.warn(MODULE, "丢弃玩家 %s 的外观数据：快照哈希不匹配", ownerUuid);
+            DebugLogger.CLIENT.warn(MODULE, "丢弃玩家 {} 的外观数据：快照哈希不匹配", ownerUuid);
             scheduleRequestRetry(ownerUuid, pending.snapshotHash());
             return;
         }
 
         if (pending != null && !pending.snapshotHash().equals(payload.snapshotHash())) {
-            DebugLogger.debug(MODULE, "忽略玩家 %s 的过期外观快照", ownerUuid);
+            DebugLogger.CLIENT.debug(MODULE, "忽略玩家 {} 的过期外观快照", ownerUuid);
             return;
         }
 
@@ -344,18 +344,17 @@ public final class CosmeticClientManager {
                     pending.serverInstanceId(), pending.playerUuid(), pending.snapshot().states());
             pendingUpload = null;
             nextUploadRetryNanos = 0L;
-            DebugLogger.info(MODULE, "服务端已确认自定义外观快照");
+            DebugLogger.CLIENT.info(MODULE, "服务端已确认自定义外观快照");
             return;
         }
         if (payload.retryAfterSeconds() > 0) {
             nextUploadRetryNanos = System.nanoTime()
                     + payload.retryAfterSeconds() * 1_000_000_000L;
-            DebugLogger.debug(MODULE, "服务端暂未接受外观快照，将在 %d 秒后重试",
-                    payload.retryAfterSeconds());
+            DebugLogger.CLIENT.debug(MODULE, "服务端暂未接受外观快照，将在 {} 秒后重试", payload.retryAfterSeconds());
         } else {
             pendingUpload = null;
             nextUploadRetryNanos = 0L;
-            DebugLogger.warn(MODULE, "服务端拒绝了本次自定义外观快照");
+            DebugLogger.CLIENT.warn(MODULE, "服务端拒绝了本次自定义外观快照");
         }
     }
 
@@ -428,7 +427,7 @@ public final class CosmeticClientManager {
         try {
             long size = Files.size(file);
             if (size <= 0 || size > CosmeticPngValidator.ABSOLUTE_MAX_FILE_BYTES) {
-                DebugLogger.warn(MODULE, "忽略大小不合法的本地外观文件：%s（%d 字节）", file, size);
+                DebugLogger.CLIENT.warn(MODULE, "忽略大小不合法的本地外观文件：{}（{} 字节）", file, size);
                 return new ScannedFile(EMPTY, new CosmeticUploadState.FileState("", size, false));
             }
 
@@ -438,14 +437,14 @@ public final class CosmeticClientManager {
                     ? CosmeticPngValidator.validateCloak(bytes, CosmeticPngValidator.ABSOLUTE_MAX_FILE_BYTES)
                     : CosmeticPngValidator.validateSkin(bytes, CosmeticPngValidator.ABSOLUTE_MAX_FILE_BYTES);
             if (!validation.valid()) {
-                DebugLogger.warn(MODULE, "忽略不合法的本地外观文件 %s：%s", file, validation.reason());
+                DebugLogger.CLIENT.warn(MODULE, "忽略不合法的本地外观文件 {}：{}", file, validation.reason());
                 return new ScannedFile(EMPTY,
                         new CosmeticUploadState.FileState(sha256, bytes.length, false));
             }
             return new ScannedFile(bytes,
                     new CosmeticUploadState.FileState(sha256, bytes.length, true));
         } catch (IOException e) {
-            DebugLogger.exception(MODULE, "scanFile", e);
+            DebugLogger.CLIENT.exception(MODULE, "scanFile", e);
             return new ScannedFile(EMPTY, new CosmeticUploadState.FileState("", -1L, false));
         }
     }
@@ -497,7 +496,7 @@ public final class CosmeticClientManager {
                 ? CosmeticPngValidator.validateCloak(data, CosmeticPngValidator.ABSOLUTE_MAX_FILE_BYTES)
                 : CosmeticPngValidator.validateSkin(data, CosmeticPngValidator.ABSOLUTE_MAX_FILE_BYTES);
         if (!validation.valid()) {
-            DebugLogger.warn(MODULE, "丢弃玩家 %s 的非法 %s：%s", ownerUuid, slot.fileName(), validation.reason());
+            DebugLogger.CLIENT.warn(MODULE, "丢弃玩家 {} 的非法 {}：{}", ownerUuid, slot.fileName(), validation.reason());
             return null;
         }
 
@@ -509,7 +508,7 @@ public final class CosmeticClientManager {
         try {
             image = NativeImage.read(data);
             if (image.getWidth() != validation.width() || image.getHeight() != validation.height()) {
-                DebugLogger.warn(MODULE, "玩家 %s 的 %s 解码尺寸与 IHDR 不一致", ownerUuid, slot.fileName());
+                DebugLogger.CLIENT.warn(MODULE, "玩家 {} 的 {} 解码尺寸与 IHDR 不一致", ownerUuid, slot.fileName());
                 return null;
             }
             if (!slot.cloak()) {
@@ -524,7 +523,7 @@ public final class CosmeticClientManager {
             textureIds.add(identifier);
             return new CosmeticTexture(identifier, identifier);
         } catch (IOException | RuntimeException e) {
-            DebugLogger.exception(MODULE, "registerTexture", e);
+            DebugLogger.CLIENT.exception(MODULE, "registerTexture", e);
             return null;
         } finally {
             if (texture != null) {
@@ -572,7 +571,7 @@ public final class CosmeticClientManager {
                 continue;
             }
             if (request.attempts() >= MAX_REQUEST_ATTEMPTS) {
-                DebugLogger.warn(MODULE, "玩家 %s 的外观数据连续请求失败，停止本轮重试", entry.getKey());
+                DebugLogger.CLIENT.warn(MODULE, "玩家 {} 的外观数据连续请求失败，停止本轮重试", entry.getKey());
                 iterator.remove();
                 continue;
             }
@@ -588,7 +587,7 @@ public final class CosmeticClientManager {
         PendingUpload pending = pendingUpload;
         if (pending == null || isLocalMojangVerified()) {
             if (pending != null) {
-                DebugLogger.info(MODULE, "当前玩家已通过 Mojang 正版核验，忽略本地自定义外观上传请求");
+                DebugLogger.CLIENT.debug(MODULE, "当前玩家已通过 Mojang 正版核验，忽略本地自定义外观上传请求");
                 pendingUpload = null;
             }
             return;
@@ -601,7 +600,7 @@ public final class CosmeticClientManager {
                 snapshot.skinSlim(),
                 snapshot.cloak()));
         nextUploadRetryNanos = System.nanoTime() + UPLOAD_ACK_TIMEOUT_SECONDS * 1_000_000_000L;
-        DebugLogger.info(MODULE, "本地外观快照已发送，等待服务端确认");
+        DebugLogger.CLIENT.debug(MODULE, "本地外观快照已发送，等待服务端确认");
     }
 
     private static void requestSnapshot(UUID ownerUuid, String snapshotHash) {

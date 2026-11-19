@@ -196,7 +196,7 @@ public class ModItems {
         ResourceKey<Item> itemKey = ResourceKey.create(Registries.ITEM,
                 Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, name));
         Item item = new FlashingInkSacItem(settings.setId(itemKey));
-        DebugLogger.info("ModItems", "注册物品 %s (FlashingInkSac)".formatted(itemKey.identifier()));
+        DebugLogger.bootstrap().debug("ModItems", "注册物品 {} (FlashingInkSac)", itemKey.identifier());
         return Registry.register(BuiltInRegistries.ITEM, itemKey, item);
     }
 
@@ -287,7 +287,7 @@ public class ModItems {
     private static Item registerReturnScroll(String name, Item.Properties settings) {
         ResourceKey<Item> itemKey = ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, name));
         Item item = new ReturnScrollItem(settings.setId(itemKey));
-        DebugLogger.info("ModItems", "注册物品 %s (ReturnScroll)".formatted(itemKey.identifier()));
+        DebugLogger.bootstrap().debug("ModItems", "注册物品 {} (ReturnScroll)", itemKey.identifier());
         return Registry.register(BuiltInRegistries.ITEM, itemKey, item);
     }
 
@@ -299,9 +299,7 @@ public class ModItems {
     private static Item registerMusicDiscCloudGenshin(String name, Item.Properties settings) {
         ResourceKey<Item> itemKey = ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, name));
         Item item = new Item(settings.setId(itemKey));
-        DebugLogger.info("ModItems",
-                "注册物品 %s (MusicDisc<CloudGenshin>, stacksTo=1, rarity=EPIC)",
-                itemKey.identifier());
+        DebugLogger.bootstrap().debug("ModItems", "注册物品 {} (MusicDisc<CloudGenshin>, stacksTo=1, rarity=EPIC)", itemKey.identifier());
         return Registry.register(BuiltInRegistries.ITEM, itemKey, item);
     }
 
@@ -327,7 +325,7 @@ public class ModItems {
                 Registries.ITEM,
                 Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, id));
         Item item = new MemePaintingItem(variantKey, new Item.Properties().setId(itemKey).rarity(Rarity.UNCOMMON));
-        DebugLogger.info("ModItems", "注册物品 %s (MemePainting)".formatted(itemKey.identifier()));
+        DebugLogger.bootstrap().debug("ModItems", "注册物品 {} (MemePainting)", itemKey.identifier());
         return Registry.register(BuiltInRegistries.ITEM, itemKey, item);
     }
 
@@ -343,7 +341,7 @@ public class ModItems {
                 Registries.ITEM,
                 Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, name));
         Item item = new Item(new Item.Properties().setId(itemKey).rarity(Rarity.EPIC));
-        DebugLogger.info("ModItems", "注册物品 %s (Primogem raw material, rarity=EPIC)".formatted(itemKey.identifier()));
+        DebugLogger.bootstrap().debug("ModItems", "注册物品 {} (Primogem raw material, rarity=EPIC)", itemKey.identifier());
         return Registry.register(BuiltInRegistries.ITEM, itemKey, item);
     }
 
@@ -364,7 +362,7 @@ public class ModItems {
                 .saturationModifier(0.6f)
                 .build();
         Item item = new SweetMadameItem(new Item.Properties().setId(itemKey).rarity(Rarity.EPIC).food(food));
-        DebugLogger.info("ModItems", "注册物品 %s (SweetMadame food: nutrition=6, sat=0.6, rarity=EPIC)".formatted(itemKey.identifier()));
+        DebugLogger.bootstrap().debug("ModItems", "注册物品 {} (SweetMadame food: nutrition=6, sat=0.6, rarity=EPIC)", itemKey.identifier());
         return Registry.register(BuiltInRegistries.ITEM, itemKey, item);
     }
 }

@@ -40,7 +40,7 @@ public class AfkCommand {
     }
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
-        DebugLogger.entering(MODULE, "register");
+        DebugLogger.SERVER.entering(MODULE, "register");
 
         dispatcher.register(Commands.literal("yzwc")
                 .then(Commands.literal("afk")
@@ -68,58 +68,57 @@ public class AfkCommand {
                                         .then(Commands.argument("value", StringArgumentType.greedyString())
                                                 .executes(AfkCommand::setSetting))))));
 
-        DebugLogger.exiting(MODULE, "register");
+        DebugLogger.SERVER.exiting(MODULE, "register");
     }
 
     // ==================== 手动切换 ====================
 
     private static int toggle(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
-        DebugLogger.entering(MODULE, "toggle");
+        DebugLogger.SERVER.entering(MODULE, "toggle");
         ServerPlayer player = ctx.getSource().getPlayerOrException();
 
         if (!AfkConfig.isEnabled() || !AfkConfig.isManualToggleEnabled()) {
             player.sendSystemMessage(Component.translatable(
                     "youzaiworldcore.message.afk.command.manual_disabled"));
-            DebugLogger.exiting(MODULE, "toggle", "manual-disabled");
+            DebugLogger.SERVER.exiting(MODULE, "toggle", "manual-disabled");
             return 0;
         }
         boolean nowAfk = AfkManager.toggleManual(player);
         player.sendSystemMessage(Component.translatable(nowAfk
                 ? "youzaiworldcore.message.afk.command.toggle_entered"
                 : "youzaiworldcore.message.afk.command.toggle_left"));
-        DebugLogger.info(MODULE, "%s 手动切换 AFK → %s",
-                player.getName().getString(), nowAfk);
-        DebugLogger.exiting(MODULE, "toggle", "nowAfk=" + nowAfk);
+        DebugLogger.SERVER.info(MODULE, "{} 手动切换 AFK → {}", player.getName().getString(), nowAfk);
+        DebugLogger.SERVER.exiting(MODULE, "toggle", "nowAfk=" + nowAfk);
         return 1;
     }
 
     // ==================== 查询 ====================
 
     private static int querySelf(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
-        DebugLogger.entering(MODULE, "querySelf");
+        DebugLogger.SERVER.entering(MODULE, "querySelf");
         ServerPlayer player = ctx.getSource().getPlayerOrException();
         boolean afk = AfkManager.isAfk(player);
         player.sendSystemMessage(Component.translatable(afk
                 ? "youzaiworldcore.message.afk.command.status_self_afk"
                 : "youzaiworldcore.message.afk.command.status_self_active"));
-        DebugLogger.exiting(MODULE, "querySelf", "afk=" + afk);
+        DebugLogger.SERVER.exiting(MODULE, "querySelf", "afk=" + afk);
         return 1;
     }
 
     private static int queryOther(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
-        DebugLogger.entering(MODULE, "queryOther");
+        DebugLogger.SERVER.entering(MODULE, "queryOther");
         ServerPlayer target = EntityArgument.getPlayer(ctx, "player");
         boolean afk = AfkManager.isAfk(target);
         ctx.getSource().sendSuccess(() -> Component.translatable(afk
                         ? "youzaiworldcore.message.afk.command.status_other_afk"
                         : "youzaiworldcore.message.afk.command.status_other_active",
                 target.getName()), false);
-        DebugLogger.exiting(MODULE, "queryOther", "target=" + target.getName().getString() + ", afk=" + afk);
+        DebugLogger.SERVER.exiting(MODULE, "queryOther", "target=" + target.getName().getString() + ", afk=" + afk);
         return 1;
     }
 
     private static int list(CommandContext<CommandSourceStack> ctx) {
-        DebugLogger.entering(MODULE, "list");
+        DebugLogger.SERVER.entering(MODULE, "list");
         var afkUuids = AfkManager.getAfkPlayers();
         var server = ctx.getSource().getServer();
         var afkPlayers = new java.util.ArrayList<ServerPlayer>();
@@ -141,20 +140,18 @@ public class AfkCommand {
                         "youzaiworldcore.message.afk.command.list_entry", fixed.getName()), false);
             }
         }
-        DebugLogger.info(MODULE, "%s 查询 AFK 列表，共 %d 人",
-                ctx.getSource().getTextName(), afkPlayers.size());
-        DebugLogger.exiting(MODULE, "list");
+        DebugLogger.SERVER.debug(MODULE, "{} 查询 AFK 列表，共 {} 人", ctx.getSource().getTextName(), afkPlayers.size());
+        DebugLogger.SERVER.exiting(MODULE, "list");
         return 1;
     }
 
     // ==================== 配置修改 ====================
 
     private static int setSetting(CommandContext<CommandSourceStack> ctx) {
-        DebugLogger.entering(MODULE, "setSetting");
+        DebugLogger.SERVER.entering(MODULE, "setSetting");
         String key = StringArgumentType.getString(ctx, "key");
         String value = StringArgumentType.getString(ctx, "value");
-        DebugLogger.info(MODULE, "修改 AFK 配置: %s = %s（执行者 %s）",
-                key, value, ctx.getSource().getTextName());
+        DebugLogger.SERVER.info(MODULE, "修改 AFK 配置: {} = {}（执行者 {}）", key, value, ctx.getSource().getTextName());
 
         try {
             switch (key) {
@@ -235,19 +232,19 @@ public class AfkCommand {
                 default -> {
                     ctx.getSource().sendFailure(Component.translatable(
                             "youzaiworldcore.message.afk.command.settings_unknown_key", key));
-                    DebugLogger.exiting(MODULE, "setSetting", "unknown-key");
+                    DebugLogger.SERVER.exiting(MODULE, "setSetting", "unknown-key");
                     return 0;
                 }
             }
         } catch (IllegalArgumentException e) {
             ctx.getSource().sendFailure(Component.translatable(
                     "youzaiworldcore.message.afk.command.settings_invalid_value", key, value));
-            DebugLogger.warn(MODULE, "配置值非法: key=%s, value=%s", key, value);
-            DebugLogger.exiting(MODULE, "setSetting", "invalid-value");
+            DebugLogger.SERVER.warn(MODULE, "配置值非法: key={}, value={}", key, value);
+            DebugLogger.SERVER.exiting(MODULE, "setSetting", "invalid-value");
             return 0;
         }
 
-        DebugLogger.exiting(MODULE, "setSetting", "1");
+        DebugLogger.SERVER.exiting(MODULE, "setSetting", "1");
         return 1;
     }
 

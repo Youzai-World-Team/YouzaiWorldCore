@@ -104,7 +104,7 @@ public class LargeSignBlockEntity extends BlockEntity implements FlashingSign {
         boolean oldFlashing = flashing;
         flashing = newFlashing;
         markUpdated();
-        DebugLogger.stateChange(MODULE, "largeSign@" + worldPosition.toShortString(),
+        DebugLogger.SERVER.stateChange(MODULE, "largeSign@" + worldPosition.toShortString(),
                 "flashing", oldFlashing, newFlashing);
         return true;
     }
@@ -121,12 +121,12 @@ public class LargeSignBlockEntity extends BlockEntity implements FlashingSign {
      */
     public boolean setText(String newText) {
         if (waxed) {
-            DebugLogger.branch(MODULE, "setText 被拒绝：字牌已涂蜡", false);
+            DebugLogger.SERVER.branch(MODULE, "setText 被拒绝：字牌已涂蜡", false);
             return false;
         }
         String value = newText == null ? "" : newText;
         if (!LargeSignTextRules.isValid(value)) {
-            DebugLogger.warn(MODULE, "setText 被拒绝：文本不合法 text=%s", value);
+            DebugLogger.SERVER.warn(MODULE, "setText 被拒绝：文本不合法 text={}", value);
             return false;
         }
         if (value.equals(text)) {
@@ -136,7 +136,7 @@ public class LargeSignBlockEntity extends BlockEntity implements FlashingSign {
         String oldText = text;
         text = value;
         markUpdated();
-        DebugLogger.stateChange(MODULE, "largeSign@" + worldPosition.toShortString(), "text", oldText, value);
+        DebugLogger.SERVER.stateChange(MODULE, "largeSign@" + worldPosition.toShortString(), "text", oldText, value);
         return true;
     }
 
@@ -154,7 +154,7 @@ public class LargeSignBlockEntity extends BlockEntity implements FlashingSign {
         DyeColor oldColor = color;
         color = newColor;
         markUpdated();
-        DebugLogger.stateChange(MODULE, "largeSign@" + worldPosition.toShortString(), "color", oldColor, newColor);
+        DebugLogger.SERVER.stateChange(MODULE, "largeSign@" + worldPosition.toShortString(), "color", oldColor, newColor);
         return true;
     }
 
@@ -171,7 +171,7 @@ public class LargeSignBlockEntity extends BlockEntity implements FlashingSign {
 
         glowing = newGlowing;
         markUpdated();
-        DebugLogger.stateChange(MODULE, "largeSign@" + worldPosition.toShortString(),
+        DebugLogger.SERVER.stateChange(MODULE, "largeSign@" + worldPosition.toShortString(),
                 "glowing", !newGlowing, newGlowing);
         return true;
     }
@@ -193,7 +193,7 @@ public class LargeSignBlockEntity extends BlockEntity implements FlashingSign {
         // 涂蜡后立即失效编辑授权，避免已打开的编辑界面还能提交
         playerWhoMayEdit = null;
         markUpdated();
-        DebugLogger.stateChange(MODULE, "largeSign@" + worldPosition.toShortString(),
+        DebugLogger.SERVER.stateChange(MODULE, "largeSign@" + worldPosition.toShortString(),
                 "waxed", !newWaxed, newWaxed);
         return true;
     }

@@ -34,19 +34,18 @@ public final class ClientUpdateCheckerConfig {
     }
 
     public static void load() {
-        DebugLogger.entering(MODULE, "load");
+        DebugLogger.CLIENT.entering(MODULE, "load");
         ConfigSection section = ClientGlobalSettings.section(ClientGlobalSettings.UPDATE_MODULE);
         if (section.isEmpty()) {
             writeDefaults();
-            DebugLogger.exiting(MODULE, "load", "created default");
+            DebugLogger.CLIENT.exiting(MODULE, "load", "created default");
             return;
         }
         enabled = section.getBoolean("enabled", DEFAULT_ENABLED);
         checkOnStartup = section.getBoolean("check_on_startup", DEFAULT_CHECK_ON_STARTUP);
         showOnTitleScreen = section.getBoolean("show_on_title_screen", DEFAULT_SHOW_ON_TITLE_SCREEN);
-        DebugLogger.info(MODULE, "客户端更新检查配置已加载: enabled=%s, startup=%s, title=%s",
-                enabled, checkOnStartup, showOnTitleScreen);
-        DebugLogger.exiting(MODULE, "load");
+        DebugLogger.CLIENT.info(MODULE, "客户端更新检查配置已加载: enabled={}, startup={}, title={}", enabled, checkOnStartup, showOnTitleScreen);
+        DebugLogger.CLIENT.exiting(MODULE, "load");
     }
 
     /** 重置为默认值并写入客户端配置。 */

@@ -38,13 +38,13 @@ final class SettingsCompatibility {
             // 走公开工厂与原生初始化流程，Reese、Extra、Iris 可继续替换页面或添加选项。
             Screen screen = (Screen) Class.forName(SODIUM_SCREEN).getMethod("createScreen", Screen.class)
                     .invoke(null, parent);
-            DebugLogger.info("YzuiSettings", "打开 Sodium 及附属模组设置");
+            DebugLogger.CLIENT.debug("YzuiSettings", "打开 Sodium 及附属模组设置");
             return screen;
         } catch (ReflectiveOperationException | LinkageError exception) {
             Throwable cause = exception instanceof InvocationTargetException invocation
                     ? invocation.getTargetException()
                     : exception;
-            DebugLogger.exception("YzuiSettings", "openSodium", cause);
+            DebugLogger.CLIENT.exception("YzuiSettings", "openSodium", cause);
             return new ModsScreen(parent);
         }
     }
@@ -85,7 +85,7 @@ final class SettingsCompatibility {
             else
                 openMods(parent);
         } catch (RuntimeException | LinkageError exception) {
-            DebugLogger.exception("YzuiSettings", "openConfig:" + mod.getMetadata().getId(), exception);
+            DebugLogger.CLIENT.exception("YzuiSettings", "openConfig:" + mod.getMetadata().getId(), exception);
             openMods(parent);
         }
     }

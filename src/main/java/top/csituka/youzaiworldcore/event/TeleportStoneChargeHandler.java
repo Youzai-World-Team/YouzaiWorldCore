@@ -34,7 +34,7 @@ public final class TeleportStoneChargeHandler {
     }
 
     public static void register() {
-        DebugLogger.entering("TeleportStoneChargeHandler", "register");
+        DebugLogger.SERVER.entering("TeleportStoneChargeHandler", "register");
 
         ServerLivingEntityEvents.AFTER_DAMAGE.register(
                 (entity, source, baseDamageTaken, damageTaken, blocked) -> {
@@ -59,13 +59,11 @@ public final class TeleportStoneChargeHandler {
                             Component.translatable(TeleportStoneItem.CHARGE_INTERRUPTED_KEY)
                                     .withStyle(ChatFormatting.RED));
 
-                    DebugLogger.info("TeleportStoneChargeHandler",
-                            "玩家 %s 受到伤害，传送物品蓄力被打断（物品=%s）",
-                            player.getName().getString(), usedItem);
+                    DebugLogger.SERVER.debug("TeleportStoneChargeHandler", "玩家 {} 受到伤害，传送物品蓄力被打断（物品={}）", player.getName().getString(), usedItem);
                 });
 
-        DebugLogger.info("TeleportStoneChargeHandler",
+        DebugLogger.SERVER.debug("TeleportStoneChargeHandler",
                 "传送物品蓄力打断处理器已注册 (ServerLivingEntityEvents.AFTER_DAMAGE)");
-        DebugLogger.exiting("TeleportStoneChargeHandler", "register");
+        DebugLogger.SERVER.exiting("TeleportStoneChargeHandler", "register");
     }
 }

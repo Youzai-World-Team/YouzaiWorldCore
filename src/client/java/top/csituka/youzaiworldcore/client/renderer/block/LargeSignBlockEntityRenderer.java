@@ -69,7 +69,7 @@ public class LargeSignBlockEntityRenderer
 
     public LargeSignBlockEntityRenderer(BlockEntityRendererProvider.Context context) {
         this.font = context.font();
-        DebugLogger.info("LargeSignRenderer", "大字牌方块实体渲染器已创建");
+        DebugLogger.CLIENT.debug("LargeSignRenderer", "大字牌方块实体渲染器已创建");
     }
 
     @Override

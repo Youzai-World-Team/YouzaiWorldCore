@@ -43,7 +43,7 @@ public class DoubleDoorsHandler {
      * 注册回调。本类由 Mixin 直接调用，无需向 Fabric 事件系统注册。
      */
     public static void register() {
-        DebugLogger.info(MODULE, "双开门处理器已就绪（点击触发，按玩家开关，仅木门/栅栏门）");
+        DebugLogger.SERVER.debug(MODULE, "双开门处理器已就绪（点击触发，按玩家开关，仅木门/栅栏门）");
     }
 
     // ===== 接口方法（由 Mixin 调用）=====
@@ -68,13 +68,11 @@ public class DoubleDoorsHandler {
         }
         if (player.isCrouching()) {
             // 潜行时禁用双开，仅保留原版单开行为
-            DebugLogger.debug(MODULE, "onDoorClick: 玩家 %s 潜行中，跳过双开",
-                    player.getName().getString());
+            DebugLogger.SERVER.debug(MODULE, "onDoorClick: 玩家 {} 潜行中，跳过双开", player.getName().getString());
             return;
         }
         if (!DoubleDoorsState.isEnabled(player.getUUID())) {
-            DebugLogger.debug(MODULE, "onDoorClick: 玩家 %s 未启用双开门，跳过",
-                    player.getName().getString());
+            DebugLogger.SERVER.debug(MODULE, "onDoorClick: 玩家 {} 未启用双开门，跳过", player.getName().getString());
             return;
         }
 
@@ -87,8 +85,7 @@ public class DoubleDoorsHandler {
             return;
         }
 
-        DebugLogger.debug(MODULE, "onDoorClick: pos=%s, player=%s, targetOpen=%s",
-                blockPos, player.getName().getString(), targetOpen);
+        DebugLogger.SERVER.debug(MODULE, "onDoorClick: pos={}, player={}, targetOpen={}", blockPos, player.getName().getString(), targetOpen);
 
         processDoor(player, level, blockPos, clickState, targetOpen);
     }
@@ -123,7 +120,7 @@ public class DoubleDoorsHandler {
     private static void processDoor(@Nullable Player player, Level level,
                                    @NotNull BlockPos blockPos, BlockState blockState,
                                    boolean targetOpen) {
-        DebugLogger.entering(MODULE, "processDoor",
+        DebugLogger.SERVER.entering(MODULE, "processDoor",
                 "pos=" + blockPos + ", targetOpen=" + targetOpen);
 
         Block block = blockState.getBlock();
@@ -133,13 +130,13 @@ public class DoubleDoorsHandler {
             if (blockState.getValue(DoorBlock.HALF).equals(DoubleBlockHalf.UPPER)) {
                 blockPos = blockPos.below().immutable();
                 blockState = level.getBlockState(blockPos);
-                DebugLogger.debug(MODULE, "processDoor: 归一化到下半部分 %s", blockPos);
+                DebugLogger.SERVER.debug(MODULE, "processDoor: 归一化到下半部分 {}", blockPos);
             }
         }
 
         if (!blockState.hasProperty(BlockStateProperties.OPEN)) {
-            DebugLogger.debug(MODULE, "processDoor: 方块无 OPEN 属性，返回");
-            DebugLogger.exiting(MODULE, "processDoor", "false (no OPEN)");
+            DebugLogger.SERVER.debug(MODULE, "processDoor: 方块无 OPEN 属性，返回");
+            DebugLogger.SERVER.exiting(MODULE, "processDoor", "false (no OPEN)");
             return;
         }
 
@@ -159,13 +156,12 @@ public class DoubleDoorsHandler {
                 level, blockPos, block, doorName, yOffset);
 
         if (partnerList.isEmpty()) {
-            DebugLogger.debug(MODULE, "processDoor: 未找到配对门，返回");
-            DebugLogger.exiting(MODULE, "processDoor", "false (no partner)");
+            DebugLogger.SERVER.debug(MODULE, "processDoor: 未找到配对门，返回");
+            DebugLogger.SERVER.exiting(MODULE, "processDoor", "false (no partner)");
             return;
         }
 
-        DebugLogger.info(MODULE, "processDoor: 找到 %d 个配对门，统一设置 OPEN=%s",
-                partnerList.size(), targetOpen);
+        DebugLogger.SERVER.debug(MODULE, "processDoor: 找到 {} 个配对门，统一设置 OPEN={}", partnerList.size(), targetOpen);
 
         for (BlockPos partnerPos : partnerList) {
             BlockState partnerState = level.getBlockState(partnerPos);
@@ -174,7 +170,7 @@ public class DoubleDoorsHandler {
             if (partnerBlock instanceof DoorBlock) {
                 level.setBlock(partnerPos,
                         partnerState.setValue(DoorBlock.OPEN, targetOpen), 10);
-                DebugLogger.debug(MODULE, "processDoor: 同步门 %s -> OPEN=%s", partnerPos, targetOpen);
+                DebugLogger.SERVER.debug(MODULE, "processDoor: 同步门 {} -> OPEN={}", partnerPos, targetOpen);
             } else if (partnerBlock instanceof FenceGateBlock) {
                 Direction partnerFacing = partnerState.getValue(FenceGateBlock.FACING);
                 // 只在朝向相同或相反的栅栏门之间同步（保持开合方向一致）
@@ -183,8 +179,7 @@ public class DoubleDoorsHandler {
                             partnerState.setValue(FenceGateBlock.OPEN, targetOpen)
                                     .setValue(FenceGateBlock.FACING, facing),
                             10);
-                    DebugLogger.debug(MODULE, "processDoor: 同步栅栏门 %s -> OPEN=%s, FACING=%s",
-                            partnerPos, targetOpen, facing);
+                    DebugLogger.SERVER.debug(MODULE, "processDoor: 同步栅栏门 {} -> OPEN={}, FACING={}", partnerPos, targetOpen, facing);
                 }
             }
         }
@@ -193,7 +188,7 @@ public class DoubleDoorsHandler {
             player.swing(InteractionHand.MAIN_HAND, player.getMainHandItem().getInteractAnimation(), false);
         }
 
-        DebugLogger.exiting(MODULE, "processDoor", "true (synced)");
+        DebugLogger.SERVER.exiting(MODULE, "processDoor", "true (synced)");
     }
 
     /**
@@ -232,7 +227,7 @@ public class DoubleDoorsHandler {
                         continue;
                     }
                     result.add(pos);
-                    DebugLogger.debug(MODULE, "findPartnerDoors: 找到配对门 %s", pos);
+                    DebugLogger.SERVER.debug(MODULE, "findPartnerDoors: 找到配对门 {}", pos);
                 }
             }
         }

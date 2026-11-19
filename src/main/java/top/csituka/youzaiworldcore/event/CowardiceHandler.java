@@ -32,7 +32,7 @@ public class CowardiceHandler {
 
     @SuppressWarnings("null")
     public static void register() {
-        DebugLogger.entering(MODULE, "register");
+        DebugLogger.SERVER.entering(MODULE, "register");
 
         ServerTickEvents.END_SERVER_TICK.register(server -> {
             tickCounter++;
@@ -71,7 +71,7 @@ public class CowardiceHandler {
             }
         });
 
-        DebugLogger.info(MODULE, "怯懦附魔 Tick 事件处理器已注册 (interval=%d)", INTERVAL);
-        DebugLogger.exiting(MODULE, "register");
+        DebugLogger.SERVER.debug(MODULE, "怯懦附魔 Tick 事件处理器已注册 (interval={})", INTERVAL);
+        DebugLogger.SERVER.exiting(MODULE, "register");
     }
 }

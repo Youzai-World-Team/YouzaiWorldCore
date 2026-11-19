@@ -45,7 +45,7 @@ public final class StartupLoadingStatus {
             maximum = 1;
             failed = false;
         }
-        DebugLogger.info("StartupLoadingStatus", "启动状态已重置：%s", initialStage);
+        DebugLogger.bootstrap().debug("StartupLoadingStatus", "启动状态已重置：{}", initialStage);
     }
 
     /** 开始一个阶段组，例如“公共注册”或“客户端初始化”。 */
@@ -62,12 +62,7 @@ public final class StartupLoadingStatus {
             maximum = 1;
             failed = false;
         }
-        DebugLogger.info(
-                "StartupLoadingStatus",
-                "开始加载阶段：%s（共 %d 项）",
-                phaseName,
-                Math.max(0, totalStages)
-        );
+        DebugLogger.bootstrap().debug("StartupLoadingStatus", "开始加载阶段：{}（共 {} 项）", phaseName, Math.max(0, totalStages));
     }
 
     /** 开始阶段组中的下一项。 */
@@ -81,7 +76,7 @@ public final class StartupLoadingStatus {
             progress = 0;
             maximum = 1;
         }
-        DebugLogger.info("StartupLoadingStatus", "开始加载项目：%s", stageName);
+        DebugLogger.bootstrap().debug("StartupLoadingStatus", "开始加载项目：{}", stageName);
     }
 
     /** 更新当前项目的细分进度，数值会自动限制在有效范围。 */
@@ -128,7 +123,7 @@ public final class StartupLoadingStatus {
             progress = maximum;
             failed = true;
         }
-        DebugLogger.error("StartupLoadingStatus", "启动失败：%s", stage);
+        DebugLogger.bootstrap().error("StartupLoadingStatus", "启动失败：{}", stage);
     }
 
     /** 返回供界面线程读取的不可变状态快照。 */
@@ -154,7 +149,7 @@ public final class StartupLoadingStatus {
             return true;
         } catch (ReflectiveOperationException | RuntimeException exception) {
             sharedBridgeClass = null;
-            DebugLogger.exception("StartupLoadingStatus", "调用共享启动状态桥接：" + methodName, exception);
+            DebugLogger.bootstrap().exception("StartupLoadingStatus", "调用共享启动状态桥接：" + methodName, exception);
             return false;
         }
     }
@@ -168,7 +163,7 @@ public final class StartupLoadingStatus {
             return (Object[]) bridgeClass.getMethod("snapshot").invoke(null);
         } catch (ReflectiveOperationException | RuntimeException exception) {
             sharedBridgeClass = null;
-            DebugLogger.exception("StartupLoadingStatus", "读取共享启动状态桥接", exception);
+            DebugLogger.bootstrap().exception("StartupLoadingStatus", "读取共享启动状态桥接", exception);
             return null;
         }
     }

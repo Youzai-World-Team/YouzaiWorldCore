@@ -1,10 +1,8 @@
 package top.csituka.youzaiworldcore.enchlevellangpatch.impl;
 
+import top.csituka.youzaiworldcore.util.DebugLogger;
+
 import com.google.common.base.Preconditions;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.Marker;
-import org.apache.logging.log4j.MarkerManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.NotNullByDefault;
 import org.jetbrains.annotations.Nullable;
@@ -21,8 +19,8 @@ import static top.csituka.youzaiworldcore.enchlevellangpatch.impl.NumberFormatUt
 
 public final class LangPatchImpl {
     private LangPatchImpl() {}
-    private static final Logger LOGGER = LogManager.getLogger();
-    private static final Marker MARKER = MarkerManager.getMarker("LangPatch/Impl");
+    private static final DebugLogger.ModuleLogger LOGGER = DebugLogger.bootstrap().module("LangPatchImpl");
+
 
     public static final String KEY_ENCHANTMENT_TYPE = "langpatch.conf.enchantment.default.type";
     public static final String KEY_ENCHANTMENT_OVERRIDE = "langpatch.conf.enchantment.override";
@@ -63,7 +61,7 @@ public final class LangPatchImpl {
         try {
             return String.format(translationStorage.getOrDefault(key, "%s"), arg);
         } catch (IllegalFormatException e) {
-            LOGGER.warn(MARKER, "Invalid format string for translation key {}. Using as-is format.", key, e);
+            LOGGER.warn("Invalid format string for translation key {}. Using as-is format.", key, e);
             return arg.toString();
         }
     }
@@ -142,7 +140,7 @@ public final class LangPatchImpl {
             EnchantmentLevelLangPatch hooks
     ) {
         if (reg.isFrozen()) {
-            LOGGER.warn(MARKER, "{} is frozen. Patch {} may not be applied", reg, id);
+            LOGGER.warn("{} is frozen. Patch {} may not be applied", reg, id);
             return;
         }
         reg.add(id, hooks);
@@ -152,7 +150,7 @@ public final class LangPatchImpl {
                                 @NotNull EnchantmentLevelLangPatch edition) {
         synchronized (PREDICATES_WRITE_LOCK) {
             if (isPredicatesLocked) {
-                LOGGER.warn(MARKER, "Patch list is frozen. The patch may not be applied.");
+                LOGGER.warn("Patch list is frozen. The patch may not be applied.");
                 return;
             }
             PREDICATES.add(new PredicatedPatch(keyPredicate, edition));
@@ -162,20 +160,20 @@ public final class LangPatchImpl {
     private static void lockAll() {
         ENCHANTMENT_HOOK.freeze();
         POTION_HOOK.freeze();
-        LOGGER.debug(MARKER, "Registries are locked");
+        LOGGER.debug("Registries are locked");
     }
 
     private static void lockPredicates() {
         synchronized (PREDICATES_WRITE_LOCK) {
             isPredicatesLocked = true;
         }
-        LOGGER.debug(MARKER, "Predicates are locked");
+        LOGGER.debug("Predicates are locked");
     }
 
     // *** ENTRYPOINT *** //
 
     public static void init() {
-        LOGGER.info(MARKER, "Initializing Enchantment Level Language Patch integration");
+        LOGGER.debug("Initializing Enchantment Level Language Patch integration");
 
         applyConf4();
         lockAll();
@@ -194,7 +192,7 @@ public final class LangPatchImpl {
         );
         lockPredicates();
 
-        LOGGER.info(MARKER, "Enchantment Level Language Patch initialized ({} patches registered)", PREDICATES.size());
+        LOGGER.debug("Enchantment Level Language Patch initialized ({} patches registered)", PREDICATES.size());
     }
 
     private static void applyConf4() {
@@ -202,37 +200,37 @@ public final class LangPatchImpl {
         try {
             c = Class.forName("top.csituka.youzaiworldcore.enchlevellangpatch.ext.conf4.LangPatchConfigHooks");
             if (!ConfigProvider.class.isAssignableFrom(c)) {
-                LOGGER.warn(MARKER, "{} is not instance of ConfigProvider", c);
+                LOGGER.warn("{} is not instance of ConfigProvider", c);
                 return;
             }
         } catch (ClassNotFoundException e) {
-            LOGGER.debug(MARKER, "Conf4 not detected");
+            LOGGER.debug("Conf4 not detected");
             return;
         }
         MethodHandles.Lookup lookup = MethodHandles.lookup();
-        LOGGER.debug(MARKER, "Detected Conf4");
+        LOGGER.debug("Detected Conf4");
 
         ConfigProvider provider;
         try {
             final MethodHandle cons = lookup.findConstructor(c, MethodType.methodType(void.class));
             provider = (ConfigProvider) cons.invoke();
         } catch (Throwable t) {
-            LOGGER.warn(MARKER, "Cannot instantiate {}", c, t);
+            LOGGER.warn("Cannot instantiate {}", c, t);
             return;
         }
 
-        LOGGER.debug(MARKER, "Applying Conf4");
-        Marker marker = MarkerManager.getMarker("LangPatch/Conf4");
+        LOGGER.debug("Applying Conf4");
+
         final String e = provider.getEnchantmentConfig(), p = provider.getPotionConfig();
         if (e != null) {
             final EnchantmentLevelLangPatch patch = ENCHANTMENT_HOOK.get(NamespacedKey.of(e));
             EnchantmentLevelLangPatchConfig.setCurrentEnchantmentHooks(patch);
-            LOGGER.info(marker, "Set enchantment hook to {}", e);
+            LOGGER.debug("Set enchantment hook to {}", e);
         }
         if (p != null) {
             final EnchantmentLevelLangPatch patch = POTION_HOOK.get(NamespacedKey.of(p));
             EnchantmentLevelLangPatchConfig.setCurrentPotionHooks(patch);
-            LOGGER.info(marker, "Set potion hook to {}", p);
+            LOGGER.debug("Set potion hook to {}", p);
         }
     }
 

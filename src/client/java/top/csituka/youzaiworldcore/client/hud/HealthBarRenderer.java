@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.client.hud;
 
+import top.csituka.youzaiworldcore.util.LogValues;
+
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
 
 import net.minecraft.client.Minecraft;
@@ -82,10 +84,8 @@ public final class HealthBarRenderer {
         float fillRatio = Math.min(1.0f, Math.max(0.0f, health / maxHealth));
 
         // 先判等级：6 个基本类型装箱 + varargs 数组在每帧路径上是白扔的垃圾
-        if (DebugLogger.isEnabled(DebugLogger.LEVEL_DETAILED)) {
-            DebugLogger.debug(LOG_TAG,
-                    "渲染血条: health=%.1f, max=%.1f, absorb=%.1f, fill=%.2f, pos=(%d,%d)",
-                    health, maxHealth, absorption, fillRatio, barX, barY);
+        if (DebugLogger.CLIENT.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+            DebugLogger.CLIENT.trace(LOG_TAG, "渲染血条: health={}, max={}, absorb={}, fill={}, pos=({},{})", LogValues.decimal(health, 1), LogValues.decimal(maxHealth, 1), LogValues.decimal(absorption, 1), LogValues.decimal(fillRatio, 2), barX, barY);
         }
 
         // === 1. 背景（圆角） ===
@@ -126,12 +126,8 @@ public final class HealthBarRenderer {
                 graphics.fill(overlayStart, barY, overlayEnd, barY + BAR_HEIGHT, overlayColor);
             }
 
-            if (DebugLogger.isEnabled(DebugLogger.LEVEL_DETAILED)) {
-                DebugLogger.debug(LOG_TAG,
-                        "预测血量: predictedHeal=%d, predictedHealth=%.1f, overlay=(%d,%d)-(%d,%d), flashAlpha=%.2f",
-                        predictedHeal, predictedHealth, overlayStart, barY,
-                        Math.min(barX + predictedWidth, barX + BAR_WIDTH), barY + BAR_HEIGHT,
-                        FoodBarRenderer.flashAlpha);
+            if (DebugLogger.CLIENT.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+                DebugLogger.CLIENT.trace(LOG_TAG, "预测血量: predictedHeal={}, predictedHealth={}, overlay=({},{})-({},{}), flashAlpha={}", predictedHeal, LogValues.decimal(predictedHealth, 1), overlayStart, barY, Math.min(barX + predictedWidth, barX + BAR_WIDTH), barY + BAR_HEIGHT, LogValues.decimal(FoodBarRenderer.flashAlpha, 2));
             }
         }
 
@@ -299,9 +295,9 @@ public final class HealthBarRenderer {
             }
         }
 
-        DebugLogger.debug(LOG_TAG,
-                "效果指示器: poison=%s, wither=%s, guiTicks=%d, flash=%s",
-                hasPoison, hasWither, guiTicks, flash);
+        if (DebugLogger.CLIENT.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+            DebugLogger.CLIENT.trace(LOG_TAG, "效果指示器: poison={}, wither={}, guiTicks={}, flash={}", hasPoison, hasWither, guiTicks, flash);
+        }
     }
 
     /**

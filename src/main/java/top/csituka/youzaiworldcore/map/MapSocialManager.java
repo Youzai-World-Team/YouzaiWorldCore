@@ -152,7 +152,7 @@ public final class MapSocialManager {
         }
         if (changed)
             save(player.getUUID(), value);
-        DebugLogger.info("MapSocial", "位置共享操作：%s / %s", player.getUUID(), payload.action());
+        DebugLogger.SERVER.debug("MapSocial", "位置共享操作：{} / {}", player.getUUID(), payload.action());
         send(player, result);
     }
 

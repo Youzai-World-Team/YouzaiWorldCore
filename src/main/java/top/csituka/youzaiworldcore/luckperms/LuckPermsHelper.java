@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.luckperms;
 
+import top.csituka.youzaiworldcore.util.DebugLogger;
+
 import net.fabricmc.loader.api.FabricLoader;
 import net.luckperms.api.LuckPerms;
 import net.luckperms.api.LuckPermsProvider;
@@ -9,8 +11,6 @@ import net.luckperms.api.node.types.InheritanceNode;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.server.permissions.PermissionCheck;
 import net.minecraft.server.level.ServerPlayer;
-import top.csituka.youzaiworldcore.YouzaiworldCore;
-
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -19,25 +19,30 @@ import java.util.stream.Collectors;
 /**
  * LuckPerms 权限集成工具类。
  * <p>
- * 提供基于 LuckPerms API 的细粒度权限检查，同时包含必要的降级保障：</p>
+ * 提供基于 LuckPerms API 的细粒度权限检查，同时包含必要的降级保障：
+ * </p>
  * <ul>
- *   <li>当 LuckPerms 模组未安装时 → 所有直接 LP 方法返回空值/ {@code false}，<b>不会</b>
- *       导致模组崩溃或抛出异常</li>
- *   <li>调用方（如命令注册处）需通过 {@link #isLuckPermsLoaded()} 判断当前模式，
- *       并在 LP 不可用时自行回退到原版 OP 等级检查（提供 {@link CommandSourceStack#hasPermission}）</li>
- *   <li>所有公共方法均为 null-safe 和线程安全</li>
+ * <li>当 LuckPerms 模组未安装时 → 所有直接 LP 方法返回空值/ {@code false}，<b>不会</b>
+ * 导致模组崩溃或抛出异常</li>
+ * <li>调用方（如命令注册处）需通过 {@link #isLuckPermsLoaded()} 判断当前模式，
+ * 并在 LP 不可用时自行回退到原版 OP 等级检查（提供 {@link CommandSourceStack#hasPermission}）</li>
+ * <li>所有公共方法均为 null-safe 和线程安全</li>
  * </ul>
  *
  * <p>
- * 权限节点命名遵循 {@code domain.subdomain.action} 规范：</p>
+ * 权限节点命名遵循 {@code domain.subdomain.action} 规范：
+ * </p>
  * <ul>
- *   <li>{@code youzaiworldcore.command.teleport_world} — 跨维度传送</li>
- *   <li>{@code youzaiworldcore.command.open_menu} — 打开管理菜单</li>
- *   <li>{@code youzaiworldcore.command.*} — 所有命令的通配符</li>
- *   <li>{@code youzaiworldcore.*} — 所有模组权限的通配符</li>
+ * <li>{@code youzaiworldcore.command.teleport_world} — 跨维度传送</li>
+ * <li>{@code youzaiworldcore.command.open_menu} — 打开管理菜单</li>
+ * <li>{@code youzaiworldcore.command.*} — 所有命令的通配符</li>
+ * <li>{@code youzaiworldcore.*} — 所有模组权限的通配符</li>
  * </ul>
  *
- * <p>使用示例：</p>
+ * <p>
+ * 使用示例：
+ * </p>
+ * 
  * <pre>{@code
  * // 在命令注册时：
  * .requires(source -> LuckPermsHelper.checkPermission(
@@ -51,6 +56,7 @@ import java.util.stream.Collectors;
  */
 @SuppressWarnings("null")
 public final class LuckPermsHelper {
+    private static final DebugLogger.ModuleLogger MOD_LOG = DebugLogger.SERVER.module("LuckPermsHelper");
 
     // ===== 权限节点常量 =====
     // 按照 LuckPerms 推荐的 域.子域.操作 三级命名规范
@@ -154,9 +160,9 @@ public final class LuckPermsHelper {
         // 初始化时检查 LuckPerms 模组是否已加载
         LUCKPERMS_LOADED = FabricLoader.getInstance().isModLoaded("luckperms");
         if (LUCKPERMS_LOADED) {
-            YouzaiworldCore.LOGGER.info("LuckPerms API 可用，将启用细粒度权限控制");
+            MOD_LOG.debug("LuckPerms API 可用，将启用细粒度权限控制");
         } else {
-            YouzaiworldCore.LOGGER.info("LuckPerms 未安装，将回退到原版 OP 等级权限检查");
+            MOD_LOG.debug("LuckPerms 未安装，将回退到原版 OP 等级权限检查");
         }
     }
 
@@ -196,7 +202,7 @@ public final class LuckPermsHelper {
             try {
                 luckPermsInstance = LuckPermsProvider.get();
             } catch (Exception e) {
-                YouzaiworldCore.LOGGER.error("获取 LuckPerms API 失败: {}", e.getMessage());
+                MOD_LOG.error("获取 LuckPerms API 失败: {}", e.getMessage());
                 return Optional.empty();
             }
         }
@@ -208,22 +214,24 @@ public final class LuckPermsHelper {
     /**
      * 检查命令执行源（玩家）是否拥有指定的 LuckPerms 权限节点。
      * <p>
-     * 该方法配合 Brigadier 的 {@code .requires()} 使用：</p>
+     * 该方法配合 Brigadier 的 {@code .requires()} 使用：
+     * </p>
      * <ul>
-     *   <li>如果 LuckPerms 已安装 → 通过 LuckPerms 原生 API 检查权限节点</li>
-     *   <li>如果 LuckPerms 未安装 → 回退到 {@code fallbackPermission} 对应的原版 OP 等级检查</li>
-     *   <li>如果执行者不是玩家（如控制台）→ 直接放行（{@code true}）</li>
-     *   <li>如果发生任何异常 → 安全地返回 {@code false}</li>
+     * <li>如果 LuckPerms 已安装 → 通过 LuckPerms 原生 API 检查权限节点</li>
+     * <li>如果 LuckPerms 未安装 → 回退到 {@code fallbackPermission} 对应的原版 OP 等级检查</li>
+     * <li>如果执行者不是玩家（如控制台）→ 直接放行（{@code true}）</li>
+     * <li>如果发生任何异常 → 安全地返回 {@code false}</li>
      * </ul>
      *
-     * @param source               命令执行源
-     * @param permission           要检查的 LuckPerms 权限节点
-     * @param fallbackPermission   当 LP 不可用时回退使用的原版 {@link PermissionCheck}
-     *                             （通常为 {@code Commands.LEVEL_ADMINS} 或 {@code Commands.LEVEL_ALL}）
+     * @param source             命令执行源
+     * @param permission         要检查的 LuckPerms 权限节点
+     * @param fallbackPermission 当 LP 不可用时回退使用的原版 {@link PermissionCheck}
+     *                           （通常为 {@code Commands.LEVEL_ADMINS} 或
+     *                           {@code Commands.LEVEL_ALL}）
      * @return true 如果执行者拥有该权限
      */
     public static boolean checkPermission(CommandSourceStack source, String permission,
-                                          PermissionCheck fallbackPermission) {
+            PermissionCheck fallbackPermission) {
         if (source == null || permission == null || permission.isEmpty()) {
             return false;
         }
@@ -253,7 +261,7 @@ public final class LuckPermsHelper {
                 // LP 已加载但玩家没有明确设置该权限 → 回退到 OP 等级检查
             }
         } catch (Exception e) {
-            YouzaiworldCore.LOGGER.debug("LuckPerms 权限检查异常，回退到 OP 等级: {}", e.getMessage());
+            MOD_LOG.debug("LuckPerms 权限检查异常，回退到 OP 等级: {}", e.getMessage());
         }
 
         // 降级到原版 OP 等级检查
@@ -291,7 +299,7 @@ public final class LuckPermsHelper {
             }
             return user.getCachedData().getPermissionData().checkPermission(permission).asBoolean();
         } catch (Exception e) {
-            YouzaiworldCore.LOGGER.error("LuckPerms 权限检查失败 [{}]: {}", player, e.getMessage());
+            MOD_LOG.error("LuckPerms 权限检查失败 [{}]: {}", player, e.getMessage());
             return false;
         }
     }
@@ -329,7 +337,7 @@ public final class LuckPermsHelper {
                     .map(InheritanceNode::getGroupName)
                     .collect(Collectors.toUnmodifiableSet());
         } catch (Exception e) {
-            YouzaiworldCore.LOGGER.error("获取 LuckPerms 用户组失败 [{}]: {}", player, e.getMessage());
+            MOD_LOG.error("获取 LuckPerms 用户组失败 [{}]: {}", player, e.getMessage());
             return Set.of();
         }
     }
@@ -357,7 +365,7 @@ public final class LuckPermsHelper {
             }
             return user.getPrimaryGroup();
         } catch (Exception e) {
-            YouzaiworldCore.LOGGER.error("获取 LuckPerms 主用户组失败 [{}]: {}", player, e.getMessage());
+            MOD_LOG.error("获取 LuckPerms 主用户组失败 [{}]: {}", player, e.getMessage());
             return "default";
         }
     }

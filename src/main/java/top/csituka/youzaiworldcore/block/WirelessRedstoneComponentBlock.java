@@ -121,7 +121,7 @@ public abstract class WirelessRedstoneComponentBlock extends BaseEntityBlock {
             Block.dropResources(state, level, pos);
             level.removeBlock(pos, false);
             broadcastNeighborUpdates(level, pos);
-            DebugLogger.info(logModule(), "支撑方块消失，于 %s 处掉落本元件", pos.toShortString());
+            DebugLogger.SERVER.debug(logModule(), "支撑方块消失，于 {} 处掉落本元件", pos.toShortString());
             return;
         }
 
@@ -190,8 +190,7 @@ public abstract class WirelessRedstoneComponentBlock extends BaseEntityBlock {
         component.setAllowedPlayerEditor(serverPlayer.getUUID());
         ServerPlayNetworking.send(serverPlayer, new WirelessRedstoneOpenChannelPayload(
                 pos, component.getChannel(), component.isTransmitter()));
-        DebugLogger.info(logModule(), "玩家 %s 打开无线红石频道界面：pos=%s, channel=%d",
-                serverPlayer.getName().getString(), pos.toShortString(), component.getChannel());
+        DebugLogger.SERVER.debug(logModule(), "玩家 {} 打开无线红石频道界面：pos={}, channel={}", serverPlayer.getName().getString(), pos.toShortString(), component.getChannel());
         return InteractionResult.SUCCESS;
     }
 }

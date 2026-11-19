@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.client.map;
 
+import top.csituka.youzaiworldcore.util.LogValues;
+
 import top.csituka.youzaiworldcore.map.MapTileKey;
 import top.csituka.youzaiworldcore.map.MapLayer;
 import net.minecraft.network.chat.Component;
@@ -90,7 +92,7 @@ public final class MapPersonalData {
             return null;
         });
         MapClient.cache().selectWorld(identity);
-        DebugLogger.info("MapPersonalData", "地图私人数据已切换：%s，路径点=%d", world, POINTS.size());
+        DebugLogger.CLIENT.info("MapPersonalData", "地图私人数据已切换：{}，路径点={}", world, POINTS.size());
     }
 
     public static List<MapWaypoint> points() {
@@ -154,7 +156,7 @@ public final class MapPersonalData {
         persistGroups(groups, POINTS);
         GROUPS.clear();
         GROUPS.putAll(groups);
-        DebugLogger.info("MapPersonalData", "创建地图分组：%s，图标=%s", group.id(), icon.id());
+        DebugLogger.CLIENT.info("MapPersonalData", "创建地图分组：{}，图标={}", group.id(), icon.id());
         return group;
     }
 
@@ -170,7 +172,7 @@ public final class MapPersonalData {
         persistGroups(groups, POINTS);
         GROUPS.clear();
         GROUPS.putAll(groups);
-        DebugLogger.info("MapPersonalData", "编辑地图分组：%s，图标=%s", id, icon.id());
+        DebugLogger.CLIENT.info("MapPersonalData", "编辑地图分组：{}，图标={}", id, icon.id());
         return true;
     }
 
@@ -188,7 +190,7 @@ public final class MapPersonalData {
         GROUPS.putAll(groups);
         POINTS.clear();
         POINTS.addAll(points);
-        DebugLogger.info("MapPersonalData", "删除地图分组并保留路径点：%s", id);
+        DebugLogger.CLIENT.info("MapPersonalData", "删除地图分组并保留路径点：{}", id);
         return true;
     }
 
@@ -218,7 +220,9 @@ public final class MapPersonalData {
             return;
         lastView = new LastView(dimension, x, z, zoom);
         save();
-        DebugLogger.debug("MapPersonalData", "保存地图视角：%s %.1f %.1f", dimension, x, z);
+        if (DebugLogger.CLIENT.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+            DebugLogger.CLIENT.trace("MapPersonalData", "保存地图视角：{} {} {}", dimension, LogValues.decimal(x, 1), LogValues.decimal(z, 1));
+        }
     }
 
     /** 对同一筛选结果中的两个私人点交换顺序，不改动创建时间及地形数据。 */
@@ -234,7 +238,7 @@ public final class MapPersonalData {
             return;
         java.util.Collections.swap(POINTS, a, b);
         save();
-        DebugLogger.debug("MapPersonalData", "调整私人路径点顺序");
+        DebugLogger.CLIENT.debug("MapPersonalData", "调整私人路径点顺序");
     }
 
     /** 仅由玩家实际位置记录到访；后台切片和地图拖动不得调用。 */
@@ -244,7 +248,9 @@ public final class MapPersonalData {
         if (EXPLORED.add(new MapTileKey(dimension, MapLayer.CAVE, height, chunkX, chunkZ))) {
             explorationDirty = true;
             PENDING_EXPLORATION.add(new MapTileKey(dimension, MapLayer.CAVE, height, chunkX, chunkZ));
-            DebugLogger.debug("MapPersonalData", "发现地下地图层：%s [%d,%d] Y=%d", dimension, chunkX, chunkZ, height);
+            if (DebugLogger.CLIENT.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+                DebugLogger.CLIENT.trace("MapPersonalData", "发现地下地图层：{} [{},{}] Y={}", dimension, chunkX, chunkZ, height);
+            }
         }
     }
 
@@ -288,7 +294,7 @@ public final class MapPersonalData {
         else
             POINTS.set(index, point);
         save();
-        DebugLogger.info("MapPersonalData", "已保存私人路径点：%s", point.name());
+        DebugLogger.CLIENT.info("MapPersonalData", "已保存私人路径点：{}", point.name());
         return true;
     }
 
@@ -307,7 +313,7 @@ public final class MapPersonalData {
         else
             NOTES.put(id, text);
         save();
-        DebugLogger.debug("MapPersonalData", "保存标记私人描述：%s", id);
+        DebugLogger.CLIENT.debug("MapPersonalData", "保存标记私人描述：{}", id);
         return true;
     }
 
@@ -332,7 +338,7 @@ public final class MapPersonalData {
         persistGroups(GROUPS, points);
         POINTS.clear();
         POINTS.addAll(points);
-        DebugLogger.debug("MapPersonalData", "移动路径点至私人分组：%s，数量=%d", group.id(), ids.size());
+        DebugLogger.CLIENT.debug("MapPersonalData", "移动路径点至私人分组：{}，数量={}", group.id(), ids.size());
         return true;
     }
 

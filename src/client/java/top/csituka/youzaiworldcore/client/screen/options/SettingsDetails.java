@@ -155,7 +155,7 @@ final class SettingsDetails {
         var control = new DropdownButton(0, 0, 180, 180, 24, label, labels, choices.indexOf(getter.get()), false,
                 index -> {
                     setter.accept(choices.get(index));
-                    DebugLogger.debug("YzuiSettings", "设置 %s：%s", label.getString(), labels.get(index));
+                    DebugLogger.CLIENT.debug("YzuiSettings", "设置 {}：{}", label.getString(), labels.get(index));
                 }, null) {
             @Override
             protected void extractWidgetRenderState(GuiGraphicsExtractor g, int x, int y, float tick) {

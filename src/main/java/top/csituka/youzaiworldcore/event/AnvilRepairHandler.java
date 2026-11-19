@@ -30,12 +30,12 @@ public class AnvilRepairHandler implements UseBlockCallback {
 
     @Override
     public @NonNull InteractionResult interact(Player player, @NonNull Level level, @NonNull InteractionHand hand, @NonNull BlockHitResult hitResult) {
-        DebugLogger.entering("AnvilRepairHandler", "interact", "player=" + player.getName().getString());
+        DebugLogger.SERVER.entering("AnvilRepairHandler", "interact", "player=" + player.getName().getString());
 
         boolean isMainHand = hand == InteractionHand.MAIN_HAND;
-        DebugLogger.branch("AnvilRepairHandler", "hand == MAIN_HAND", isMainHand);
+        DebugLogger.SERVER.branch("AnvilRepairHandler", "hand == MAIN_HAND", isMainHand);
         if (!isMainHand) {
-            DebugLogger.exiting("AnvilRepairHandler", "interact", "PASS (not main hand)");
+            DebugLogger.SERVER.exiting("AnvilRepairHandler", "interact", "PASS (not main hand)");
             return InteractionResult.PASS;
         }
 
@@ -43,9 +43,9 @@ public class AnvilRepairHandler implements UseBlockCallback {
         BlockState state = level.getBlockState(pos);
 
         boolean isAnvil = state.getBlock() instanceof AnvilBlock;
-        DebugLogger.branch("AnvilRepairHandler", "block instanceof AnvilBlock", isAnvil, "pos=" + pos);
+        DebugLogger.SERVER.branch("AnvilRepairHandler", "block instanceof AnvilBlock", isAnvil, "pos=" + pos);
         if (!isAnvil) {
-            DebugLogger.exiting("AnvilRepairHandler", "interact", "PASS (not anvil)");
+            DebugLogger.SERVER.exiting("AnvilRepairHandler", "interact", "PASS (not anvil)");
             return InteractionResult.PASS;
         }
 
@@ -53,52 +53,52 @@ public class AnvilRepairHandler implements UseBlockCallback {
 
         boolean hasIronIngot = stack.is(Items.IRON_INGOT);
         boolean isCrouching = player.isSteppingCarefully();
-        DebugLogger.branch("AnvilRepairHandler", "holding IRON_INGOT", hasIronIngot);
-        DebugLogger.branch("AnvilRepairHandler", "player isSteppingCarefully", isCrouching);
+        DebugLogger.SERVER.branch("AnvilRepairHandler", "holding IRON_INGOT", hasIronIngot);
+        DebugLogger.SERVER.branch("AnvilRepairHandler", "player isSteppingCarefully", isCrouching);
         if (!hasIronIngot || !isCrouching) {
-            DebugLogger.exiting("AnvilRepairHandler", "interact", "PASS (not holding iron ingot or not crouching)");
+            DebugLogger.SERVER.exiting("AnvilRepairHandler", "interact", "PASS (not holding iron ingot or not crouching)");
             return InteractionResult.PASS;
         }
 
         BlockState newState = null;
 
         boolean isDamagedAnvil = state.is(Blocks.DAMAGED_ANVIL);
-        DebugLogger.branch("AnvilRepairHandler", "state is DAMAGED_ANVIL", isDamagedAnvil);
+        DebugLogger.SERVER.branch("AnvilRepairHandler", "state is DAMAGED_ANVIL", isDamagedAnvil);
         if (isDamagedAnvil) {
             newState = Blocks.CHIPPED_ANVIL.defaultBlockState()
                     .setValue(AnvilBlock.FACING, state.getValue(AnvilBlock.FACING));
         }
 
         boolean isChippedAnvil = !isDamagedAnvil && state.is(Blocks.CHIPPED_ANVIL);
-        DebugLogger.branch("AnvilRepairHandler", "state is CHIPPED_ANVIL", isChippedAnvil);
+        DebugLogger.SERVER.branch("AnvilRepairHandler", "state is CHIPPED_ANVIL", isChippedAnvil);
         if (isChippedAnvil) {
             newState = Blocks.ANVIL.defaultBlockState()
                     .setValue(AnvilBlock.FACING, state.getValue(AnvilBlock.FACING));
         }
 
         boolean canRepair = newState != null;
-        DebugLogger.branch("AnvilRepairHandler", "newState != null (can repair)", canRepair);
+        DebugLogger.SERVER.branch("AnvilRepairHandler", "newState != null (can repair)", canRepair);
         if (canRepair) {
             // 只在服务端执行方块更新和物品消耗
             boolean isServer = !level.isClientSide();
-            DebugLogger.branch("AnvilRepairHandler", "is server side", isServer);
+            DebugLogger.SERVER.branch("AnvilRepairHandler", "is server side", isServer);
             if (isServer) {
                 level.setBlock(pos, newState, 3);
                 stack.shrink(1);
-                DebugLogger.info("AnvilRepairHandler", "Repaired anvil at " + pos + ", consumed 1 iron ingot");
+                DebugLogger.SERVER.debug("AnvilRepairHandler", "Repaired anvil at " + pos + ", consumed 1 iron ingot");
             }
-            DebugLogger.exiting("AnvilRepairHandler", "interact", "SUCCESS");
+            DebugLogger.SERVER.exiting("AnvilRepairHandler", "interact", "SUCCESS");
             return InteractionResult.SUCCESS;
         }
 
         // 如果铁砧是正常的（已满耐久），不做任何事，继续原逻辑打开GUI
-        DebugLogger.exiting("AnvilRepairHandler", "interact", "PASS (anvil already full durability)");
+        DebugLogger.SERVER.exiting("AnvilRepairHandler", "interact", "PASS (anvil already full durability)");
         return InteractionResult.PASS;
     }
 
     public static void register() {
-        DebugLogger.entering("AnvilRepairHandler", "register");
+        DebugLogger.SERVER.entering("AnvilRepairHandler", "register");
         UseBlockCallback.EVENT.register(INSTANCE);
-        DebugLogger.exiting("AnvilRepairHandler", "register");
+        DebugLogger.SERVER.exiting("AnvilRepairHandler", "register");
     }
 }

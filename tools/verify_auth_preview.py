@@ -196,7 +196,7 @@ def main():
             path.write_text(source, encoding="utf-8")
             sources.append(str(path))
         subprocess.run([javac, "--release", "25", "-encoding", "UTF-8", "-d", str(temporary),
-                        *sources, *[str(CLIENT / path) for path in production]], cwd=ROOT, check=True)
+                        *sources, *[str(CLIENT / path) for path in production], str(Path(__file__).resolve().parents[1] / "src/main/java/top/csituka/youzaiworldcore/util/LogValues.java")], cwd=ROOT, check=True)
         subprocess.run([java, "-cp", str(temporary), "AuthPreviewChecks"], cwd=ROOT, check=True)
     for path in (ROOT / "src/main/resources/assets/youzaiworldcore/lang").glob("*.json"):
         pairs = json.loads(path.read_text(encoding="utf-8"), object_pairs_hook=list)

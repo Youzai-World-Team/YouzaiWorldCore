@@ -51,7 +51,7 @@ public class VaultServerDataMixin {
         if (!TrialVaultConfig.isEnabled()) {
             return;
         }
-        DebugLogger.branch(MODULE, "bypassHasRewardedPlayer", true,
+        DebugLogger.SERVER.branch(MODULE, "bypassHasRewardedPlayer", true,
                 "player=" + player.getScoreboardName() + ", enabled=true");
         cir.setReturnValue(false);
     }
@@ -72,7 +72,7 @@ public class VaultServerDataMixin {
         if (!TrialVaultConfig.isEnabled()) {
             return;
         }
-        DebugLogger.branch(MODULE, "bypassAddToRewardedPlayers", true,
+        DebugLogger.SERVER.branch(MODULE, "bypassAddToRewardedPlayers", true,
                 "player=" + player.getScoreboardName() + ", enabled=true");
         ci.cancel();
     }

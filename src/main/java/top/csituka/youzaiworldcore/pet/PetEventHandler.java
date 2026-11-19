@@ -37,7 +37,7 @@ public final class PetEventHandler {
      */
     @SuppressWarnings("null")
     public static void onTame(Wolf wolf, ServerPlayer player, ServerLevel level) {
-        DebugLogger.entering(MODULE, "onTame", "wolf=" + wolf.getUUID() + ", player=" + player.getName().getString());
+        DebugLogger.SERVER.entering(MODULE, "onTame", "wolf=" + wolf.getUUID() + ", player=" + player.getName().getString());
 
         PetGlobalState state = PetGlobalState.get(level.getServer());
 
@@ -48,7 +48,7 @@ public final class PetEventHandler {
         try {
             state.addPet(entry);
         } catch (IllegalArgumentException e) {
-            DebugLogger.error(MODULE, "添加宠物到注册表失败: %s", e.getMessage());
+            DebugLogger.SERVER.error(MODULE, "添加宠物到注册表失败: {}", e.getMessage());
             return;
         }
 
@@ -61,8 +61,8 @@ public final class PetEventHandler {
         wolf.addTag(PetInternalTags.TAG_PET_MARKER);
         wolf.addTag(PetInternalTags.internalNameTag(internalName));
 
-        DebugLogger.info(MODULE, "宠物驯服注册成功: [%s] 主人=%s", internalName, player.getName().getString());
-        DebugLogger.exiting(MODULE, "onTame");
+        DebugLogger.SERVER.info(MODULE, "宠物驯服注册成功: [{}] 主人={}", internalName, player.getName().getString());
+        DebugLogger.SERVER.exiting(MODULE, "onTame");
     }
 
     // 事件 2：繁殖继承
@@ -79,7 +79,7 @@ public final class PetEventHandler {
     @SuppressWarnings("null")
     public static void onBreed(Wolf parent1, Wolf parent2, Wolf baby,
                                 ServerPlayer breeder, ServerLevel level) {
-        DebugLogger.entering(MODULE, "onBreed",
+        DebugLogger.SERVER.entering(MODULE, "onBreed",
                 "父母=" + parent1.getUUID() + "/" + parent2.getUUID()
                         + ", 触发玩家=" + breeder.getName().getString());
 
@@ -90,8 +90,8 @@ public final class PetEventHandler {
 
         if (p1Opt.isEmpty() || p2Opt.isEmpty()) {
             // 一方为野生狼 → 取消繁殖（由预拦截处理，此处不应到达）
-            DebugLogger.warn(MODULE, "繁殖校验未通过：父母之一非宠物");
-            DebugLogger.exiting(MODULE, "onBreed", "cancelled");
+            DebugLogger.SERVER.debug(MODULE, "繁殖校验未通过：父母之一非宠物");
+            DebugLogger.SERVER.exiting(MODULE, "onBreed", "cancelled");
             return;
         }
 
@@ -105,8 +105,8 @@ public final class PetEventHandler {
         if (!effectiveTrust.contains(breeder.getUUID())) {
             breeder.sendSystemMessage(Component.translatable(
                     "youzaiworldcore.message.pet.breed.not_trusted"));
-            DebugLogger.info(MODULE, "繁殖被拒：玩家 %s 不在双亲信任集中", breeder.getName().getString());
-            DebugLogger.exiting(MODULE, "onBreed", "not_trusted");
+            DebugLogger.SERVER.debug(MODULE, "繁殖被拒：玩家 {} 不在双亲信任集中", breeder.getName().getString());
+            DebugLogger.SERVER.exiting(MODULE, "onBreed", "not_trusted");
             return;
         }
 
@@ -141,7 +141,7 @@ public final class PetEventHandler {
         try {
             state.addPet(babyEntry);
         } catch (IllegalArgumentException e) {
-            DebugLogger.error(MODULE, "繁殖：添加幼狼到注册表失败: %s", e.getMessage());
+            DebugLogger.SERVER.error(MODULE, "繁殖：添加幼狼到注册表失败: {}", e.getMessage());
             return;
         }
 
@@ -155,9 +155,8 @@ public final class PetEventHandler {
         breeder.sendSystemMessage(Component.translatable(
                 "youzaiworldcore.message.pet.breed.success", internalName));
 
-        DebugLogger.info(MODULE, "繁殖成功: 幼狼 [%s], 主人=%s, 信任=%d 人",
-                internalName, breeder.getName().getString(), initialTrust.size());
-        DebugLogger.exiting(MODULE, "onBreed");
+        DebugLogger.SERVER.info(MODULE, "繁殖成功: 幼狼 [{}], 主人={}, 信任={} 人", internalName, breeder.getName().getString(), initialTrust.size());
+        DebugLogger.SERVER.exiting(MODULE, "onBreed");
     }
 
     // 事件 3：死亡自动移除
@@ -169,16 +168,16 @@ public final class PetEventHandler {
      * @param level 服务端世界
      */
     public static void onDeath(Wolf wolf, ServerLevel level) {
-        DebugLogger.entering(MODULE, "onDeath", "wolf=" + wolf.getUUID());
+        DebugLogger.SERVER.entering(MODULE, "onDeath", "wolf=" + wolf.getUUID());
 
         PetGlobalState state = PetGlobalState.get(level.getServer());
         Optional<PetEntry> removed = state.removePet(wolf.getUUID());
 
         if (removed.isPresent()) {
-            DebugLogger.info(MODULE, "宠物死亡已移除: [%s]", removed.get().internalName());
+            DebugLogger.SERVER.info(MODULE, "宠物死亡已移除: [{}]", removed.get().internalName());
         }
 
-        DebugLogger.exiting(MODULE, "onDeath");
+        DebugLogger.SERVER.exiting(MODULE, "onDeath");
     }
 
     // 事件 5：信任玩家交互
@@ -238,8 +237,7 @@ public final class PetEventHandler {
 
         player.sendSystemMessage(Component.translatable(
                 "youzaiworldcore.message.pet.nametag.blocked"));
-        DebugLogger.info(MODULE, "拦截命名牌: 玩家=%s, 宠物=%s",
-                player.getName().getString(), wolf.getUUID());
+        DebugLogger.SERVER.debug(MODULE, "拦截命名牌: 玩家={}, 宠物={}", player.getName().getString(), wolf.getUUID());
 
         return true;
     }
@@ -254,7 +252,7 @@ public final class PetEventHandler {
      */
     @SuppressWarnings("null")
     public static void onEntityLoad(Wolf wolf, ServerLevel level) {
-        DebugLogger.debug(MODULE, "实体加载: wolf=%s", wolf.getUUID());
+        DebugLogger.SERVER.debug(MODULE, "实体加载: wolf={}", wolf.getUUID());
 
         PetGlobalState state = PetGlobalState.get(level.getServer());
 
@@ -264,11 +262,11 @@ public final class PetEventHandler {
             // 注册表存在 → 强制同步到实体
             PetEntry entry = optEntry.get();
             syncRegistryToEntity(wolf, entry);
-            DebugLogger.debug(MODULE, "实体同步: [%s] 显示名=%s", entry.internalName(), entry.displayName());
+            DebugLogger.SERVER.debug(MODULE, "实体同步: [{}] 显示名={}", entry.internalName(), entry.displayName());
         } else if (wolf.entityTags().contains(PetInternalTags.TAG_PET_MARKER)) {
             // 注册表不存在但实体有标记 → 垃圾回收：清理残留数据
             cleanupEntityData(wolf);
-            DebugLogger.info(MODULE, "垃圾回收: 清理孤儿实体 %s", wolf.getUUID());
+            DebugLogger.SERVER.trace(MODULE, "垃圾回收: 清理孤儿实体 {}", wolf.getUUID());
         }
     }
 
@@ -372,8 +370,7 @@ public final class PetEventHandler {
      */
     @SuppressWarnings("null")
     public static void onChangeDimension(ServerPlayer player, ServerLevel destination) {
-        DebugLogger.debug(MODULE, "维度变化: 玩家=%s, 目标=%s",
-                player.getName().getString(), destination.dimension().identifier());
+        DebugLogger.SERVER.debug(MODULE, "维度变化: 玩家={}, 目标={}", player.getName().getString(), destination.dimension().identifier());
 
         PetGlobalState state = PetGlobalState.get(player.level().getServer());
         List<PetEntry> pets = state.findByOwner(player.getUUID());
@@ -397,15 +394,14 @@ public final class PetEventHandler {
                             player.getX(), player.getY(), player.getZ(),
                             relativeSet, player.getYRot(), player.getXRot(), true);
                     teleported++;
-                    DebugLogger.debug(MODULE, "传送宠物 [%s] 至玩家位置", pet.internalName());
+                    DebugLogger.SERVER.debug(MODULE, "传送宠物 [{}] 至玩家位置", pet.internalName());
                     break;
                 }
             }
         }
 
         if (teleported > 0) {
-            DebugLogger.info(MODULE, "维度切换: 传送 %d 只宠物随玩家 %s",
-                    teleported, player.getName().getString());
+            DebugLogger.SERVER.debug(MODULE, "维度切换: 传送 {} 只宠物随玩家 {}", teleported, player.getName().getString());
         }
     }
 

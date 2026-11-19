@@ -52,7 +52,7 @@ public final class MapPlayerPositionStore {
             }
             return null;
         });
-        DebugLogger.debug("MapPlayerPositionStore", "已记录玩家位置：%s，时机=%s", player.getUUID(), source);
+        DebugLogger.SERVER.debug("MapPlayerPositionStore", "已记录玩家位置：{}，时机={}", player.getUUID(), source);
     }
 
     /** 上传线程读取有界快照；全量上传包含离线玩家，增量只读取尚未确认的记录。 */

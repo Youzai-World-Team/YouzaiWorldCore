@@ -33,47 +33,47 @@ public class PlayerLevelStorage {
      * 初始化存储路径并加载数据。
      */
     public static void initialize() {
-        DebugLogger.entering("PlayerLevelStorage", "initialize");
-        DebugLogger.info("PlayerLevelStorage", "数据文件=%s", SkillDataStore.file().toAbsolutePath());
+        DebugLogger.SERVER.entering("PlayerLevelStorage", "initialize");
+        DebugLogger.SERVER.debug("PlayerLevelStorage", "数据文件={}", SkillDataStore.file().toAbsolutePath());
         loadFromDisk();
-        DebugLogger.exiting("PlayerLevelStorage", "initialize");
+        DebugLogger.SERVER.exiting("PlayerLevelStorage", "initialize");
     }
 
     private static void loadFromDisk() {
-        DebugLogger.entering("PlayerLevelStorage", "loadFromDisk");
+        DebugLogger.SERVER.entering("PlayerLevelStorage", "loadFromDisk");
         LOCK.writeLock().lock();
         try {
             CACHE.clear();
             SkillDataStore.refresh();
             JsonObject levels = SkillDataStore.read(SkillDataStore.KEY_LEVELS);
             if (levels == null) {
-                DebugLogger.branch("PlayerLevelStorage", "levels 块存在", false);
+                DebugLogger.SERVER.branch("PlayerLevelStorage", "levels 块存在", false);
                 forceSave();
                 return;
             }
-            DebugLogger.branch("PlayerLevelStorage", "levels 块存在", true);
+            DebugLogger.SERVER.branch("PlayerLevelStorage", "levels 块存在", true);
 
             java.lang.reflect.Type type = new TypeToken<Map<String, PlayerLevelData>>() {}.getType();
             Map<String, PlayerLevelData> loaded = PlayerLevelData.GSON.fromJson(levels, type);
             if (loaded != null) {
                 CACHE.putAll(loaded);
             }
-            DebugLogger.info("PlayerLevelStorage", "loaded %d player level records", CACHE.size());
+            DebugLogger.SERVER.info("PlayerLevelStorage", "loaded {} player level records", CACHE.size());
         } finally {
             LOCK.writeLock().unlock();
-            DebugLogger.exiting("PlayerLevelStorage", "loadFromDisk");
+            DebugLogger.SERVER.exiting("PlayerLevelStorage", "loadFromDisk");
         }
     }
 
     public static void saveToDisk() {
-        DebugLogger.entering("PlayerLevelStorage", "saveToDisk");
+        DebugLogger.SERVER.entering("PlayerLevelStorage", "saveToDisk");
         LOCK.writeLock().lock();
         try {
             SkillDataStore.write(SkillDataStore.KEY_LEVELS,
                     PlayerLevelData.GSON.toJsonTree(CACHE).getAsJsonObject());
         } finally {
             LOCK.writeLock().unlock();
-            DebugLogger.exiting("PlayerLevelStorage", "saveToDisk");
+            DebugLogger.SERVER.exiting("PlayerLevelStorage", "saveToDisk");
         }
     }
 
@@ -138,10 +138,10 @@ public class PlayerLevelStorage {
     }
 
     public static int reload() {
-        DebugLogger.entering("PlayerLevelStorage", "reload");
+        DebugLogger.SERVER.entering("PlayerLevelStorage", "reload");
         loadFromDisk();
         int count = CACHE.size();
-        DebugLogger.exiting("PlayerLevelStorage", "reload", "count=" + count);
+        DebugLogger.SERVER.exiting("PlayerLevelStorage", "reload", "count=" + count);
         return count;
     }
 }

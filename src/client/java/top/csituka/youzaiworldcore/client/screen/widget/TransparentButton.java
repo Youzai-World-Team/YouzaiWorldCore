@@ -80,14 +80,14 @@ public class TransparentButton extends AbstractWidget {
     public TransparentButton setLineIcon(MenuIcon value) {
         lineIcon = value;
         setTooltip(Tooltip.create(getMessage()));
-        DebugLogger.debug("YzuiButton", "设置线条图标：%s", value);
+        DebugLogger.CLIENT.debug("YzuiButton", "设置线条图标：{}", value);
         return this;
     }
 
     /** 文案右侧绘制线条图标，并从文字可用宽度中预留空间。 */
     public TransparentButton setTrailingLineIcon(MenuIcon value) {
         trailingLineIcon = value;
-        DebugLogger.debug("YzuiButton", "设置行尾线条图标：%s", value);
+        DebugLogger.CLIENT.debug("YzuiButton", "设置行尾线条图标：{}", value);
         return this;
     }
 

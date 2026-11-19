@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.event;
 
+import top.csituka.youzaiworldcore.util.LogValues;
+
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.core.Holder;
@@ -99,7 +101,7 @@ public class StonecutterDamageHandler implements ServerTickEvents.StartTick {
             return;
         }
 
-        DebugLogger.entering("StonecutterDamageHandler", "onStartTick");
+        DebugLogger.SERVER.entering("StonecutterDamageHandler", "onStartTick");
 
         // Step 1: 处理已追踪玩家的计时器（每 tick 执行，极轻量）
         Iterator<Map.Entry<UUID, Integer>> it = playerTimers.entrySet().iterator();
@@ -110,8 +112,9 @@ public class StonecutterDamageHandler implements ServerTickEvents.StartTick {
             ServerPlayer player = server.getPlayerList().getPlayer(playerId);
 
             if (player == null || !player.isAlive()) {
-                DebugLogger.info("StonecutterDamageHandler",
-                        "Removing %s from tracker (offline/dead)", playerId);
+                if (DebugLogger.SERVER.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+                    DebugLogger.SERVER.trace("StonecutterDamageHandler", "Removing {} from tracker (offline/dead)", playerId);
+                }
                 it.remove();
                 continue;
             }
@@ -125,9 +128,9 @@ public class StonecutterDamageHandler implements ServerTickEvents.StartTick {
                             damageSource,
                             DAMAGE_AMOUNT
                     );
-                    DebugLogger.info("StonecutterDamageHandler",
-                            "Continual damage: dealt %.1f to %s (timer=%d) -> hurt=%s",
-                            DAMAGE_AMOUNT, player.getName().getString(), elapsed, hurtResult);
+                    if (DebugLogger.SERVER.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+                        DebugLogger.SERVER.trace("StonecutterDamageHandler", "Continual damage: dealt {} to {} (timer={}) -> hurt={}", LogValues.decimal(DAMAGE_AMOUNT, 1), player.getName().getString(), elapsed, hurtResult);
+                    }
 
                     // 若此次伤害导致玩家死亡，授予成就
                     if (!player.isAlive()) {
@@ -142,7 +145,7 @@ public class StonecutterDamageHandler implements ServerTickEvents.StartTick {
 
         // Step 2: 位置校验 + 新人入场扫描（每 SCAN_INTERVAL tick 一次）
         if (doScan) {
-            DebugLogger.debug("StonecutterDamageHandler", "Running periodic scan (scanTick=%d)", scanTickCounter);
+            DebugLogger.SERVER.debug("StonecutterDamageHandler", "Running periodic scan (scanTick={})", scanTickCounter);
 
             // ---- Step 2a: 校验已追踪玩家是否还站在切石机上 ----
             it = playerTimers.entrySet().iterator();
@@ -156,8 +159,9 @@ public class StonecutterDamageHandler implements ServerTickEvents.StartTick {
                     continue;
                 }
                 if (!isStandingOnStonecutter(player)) {
-                    DebugLogger.info("StonecutterDamageHandler",
-                            "Player %s left stonecutter (verified on scan)", player.getName().getString());
+                    if (DebugLogger.SERVER.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+                        DebugLogger.SERVER.trace("StonecutterDamageHandler", "Player {} left stonecutter (verified on scan)", player.getName().getString());
+                    }
                     it.remove();
                 }
             }
@@ -178,9 +182,9 @@ public class StonecutterDamageHandler implements ServerTickEvents.StartTick {
                                 damageSource,
                                 DAMAGE_AMOUNT
                         );
-                        DebugLogger.info("StonecutterDamageHandler",
-                                "New arrival: dealt %.1f to %s -> hurt=%s",
-                                DAMAGE_AMOUNT, player.getName().getString(), hurtResult);
+                        if (DebugLogger.SERVER.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+                            DebugLogger.SERVER.trace("StonecutterDamageHandler", "New arrival: dealt {} to {} -> hurt={}", LogValues.decimal(DAMAGE_AMOUNT, 1), player.getName().getString(), hurtResult);
+                        }
 
                         // 若此次伤害导致玩家死亡，授予成就
                         if (!player.isAlive()) {
@@ -188,15 +192,16 @@ public class StonecutterDamageHandler implements ServerTickEvents.StartTick {
                         }
                     }
                     playerTimers.put(player.getUUID(), 0);
-                    DebugLogger.info("StonecutterDamageHandler",
-                            "Player %s started being tracked on stonecutter", player.getName().getString());
+                    if (DebugLogger.SERVER.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+                        DebugLogger.SERVER.trace("StonecutterDamageHandler", "Player {} started being tracked on stonecutter", player.getName().getString());
+                    }
                 }
             }
         }
 
         // 先判等级再拼串：字符串拼接与 Integer.toString 在每 tick 路径上是白扔的垃圾
-        if (DebugLogger.isEnabled(DebugLogger.LEVEL_DEBUG)) {
-            DebugLogger.exiting("StonecutterDamageHandler", "onStartTick",
+        if (DebugLogger.SERVER.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+            DebugLogger.SERVER.exiting("StonecutterDamageHandler", "onStartTick",
                     "tracked=" + playerTimers.size());
         }
     }
@@ -240,7 +245,7 @@ public class StonecutterDamageHandler implements ServerTickEvents.StartTick {
             Holder.Reference<DamageType> holder = damageTypeRegistry.getOrThrow(STONECUTTER_DAMAGE);
             return new DamageSource(holder);
         } catch (Exception e) {
-            DebugLogger.exception("StonecutterDamageHandler",
+            DebugLogger.SERVER.exception("StonecutterDamageHandler",
                     "getStonecutterDamageSource", e);
             return null;
         }
@@ -260,18 +265,16 @@ public class StonecutterDamageHandler implements ServerTickEvents.StartTick {
         );
         if (advancement != null) {
             player.getAdvancements().award(advancement, "manual_grant");
-            DebugLogger.info("StonecutterDamageHandler",
-                    "Granted advancement 'tested_stonecutter' to %s",
-                    player.getName().getString());
+            DebugLogger.SERVER.debug("StonecutterDamageHandler", "Granted advancement 'tested_stonecutter' to {}", player.getName().getString());
         } else {
-            DebugLogger.warn("StonecutterDamageHandler",
+            DebugLogger.SERVER.warn("StonecutterDamageHandler",
                     "Advancement 'fun_little_challenge/tested_stonecutter' not found!");
         }
     }
 
     public static void register() {
-        DebugLogger.entering("StonecutterDamageHandler", "register");
+        DebugLogger.SERVER.entering("StonecutterDamageHandler", "register");
         ServerTickEvents.START_SERVER_TICK.register(INSTANCE);
-        DebugLogger.exiting("StonecutterDamageHandler", "register");
+        DebugLogger.SERVER.exiting("StonecutterDamageHandler", "register");
     }
 }

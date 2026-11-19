@@ -63,17 +63,16 @@ public final class ItemModelDefinitionValidator extends SimplePreparableReloadLi
      * </p>
      */
     public static void register() {
-        DebugLogger.entering(MODULE, "register");
+        DebugLogger.CLIENT.entering(MODULE, "register");
         ClientLifecycleEvents.CLIENT_STARTED.register(client -> {
             ReloadableResourceManager rm = (ReloadableResourceManager) client.getResourceManager();
             ItemModelDefinitionValidator validator = new ItemModelDefinitionValidator();
             rm.registerReloadListener(validator);
             // CLIENT_STARTED 时首次资源重载已完成，手动补一次启动校验
             validator.validate(rm);
-            DebugLogger.info(MODULE, "物品模型定义自检已注册（每次资源重载校验 assets/%s/%s*.json）",
-                    YouzaiworldCore.MOD_ID, ITEM_DEFINITION_DIR);
+            DebugLogger.CLIENT.debug(MODULE, "物品模型定义自检已注册（每次资源重载校验 assets/{}/{}*.json）", YouzaiworldCore.MOD_ID, ITEM_DEFINITION_DIR);
         });
-        DebugLogger.exiting(MODULE, "register");
+        DebugLogger.CLIENT.exiting(MODULE, "register");
     }
 
     @Override
@@ -88,7 +87,7 @@ public final class ItemModelDefinitionValidator extends SimplePreparableReloadLi
 
     /** 核心校验逻辑：遍历本模组物品，检查 items/*.json 定义是否存在 */
     private void validate(ResourceManager resourceManager) {
-        DebugLogger.entering(MODULE, "validate");
+        DebugLogger.CLIENT.entering(MODULE, "validate");
 
         List<String> missing = new ArrayList<>();
         int checked = 0;
@@ -103,31 +102,24 @@ public final class ItemModelDefinitionValidator extends SimplePreparableReloadLi
                     itemId.getNamespace(), ITEM_DEFINITION_DIR + itemId.getPath() + ".json");
             boolean present = resourceManager.getResource(definitionId).isPresent();
 
-            DebugLogger.trace(MODULE, "校验物品模型定义：%s -> %s (%s)",
-                    itemId, definitionId, present ? "存在" : "缺失");
+            DebugLogger.CLIENT.trace(MODULE, "校验物品模型定义：{} -> {} ({})", itemId, definitionId, present ? "存在" : "缺失");
 
             if (!present) {
                 missing.add(itemId.getPath());
             }
         }
 
-        DebugLogger.branch(MODULE, "所有模组物品均具备模型定义", missing.isEmpty(),
+        DebugLogger.CLIENT.branch(MODULE, "所有模组物品均具备模型定义", missing.isEmpty(),
                 "checked=" + checked + ", missing=" + missing.size());
 
         if (missing.isEmpty()) {
-            DebugLogger.info(MODULE, "物品模型定义自检通过：%d 个模组物品均已提供 %s*.json",
-                    checked, ITEM_DEFINITION_DIR);
+            DebugLogger.CLIENT.info(MODULE, "物品模型定义自检通过：{} 个模组物品均已提供 {}*.json", checked, ITEM_DEFINITION_DIR);
         } else {
-            DebugLogger.warn(MODULE,
-                    "物品模型定义缺失 %d/%d 项，这些物品在物品栏与手持时将显示为丢失材质（黑紫方块）：%s",
-                    missing.size(), checked, String.join(", ", missing));
-            DebugLogger.warn(MODULE,
-                    "修复方式：为每个缺失项补建 assets/%s/%s<物品ID>.json，"
-                            + "内容形如 {\"model\":{\"type\":\"minecraft:model\",\"model\":\"%s:item/<模型名>\"}}",
-                    YouzaiworldCore.MOD_ID, ITEM_DEFINITION_DIR, YouzaiworldCore.MOD_ID);
+            DebugLogger.CLIENT.warn(MODULE, "物品模型定义缺失 {}/{} 项，这些物品在物品栏与手持时将显示为丢失材质（黑紫方块）：{}", missing.size(), checked, String.join(", ", missing));
+            DebugLogger.CLIENT.warn(MODULE, "修复方式：为每个缺失项补建 assets/{}/{}<物品ID>.json，内容形如 {\"model\":{\"type\":\"minecraft:model\",\"model\":\"{}:item/<模型名>\"}}", YouzaiworldCore.MOD_ID, ITEM_DEFINITION_DIR, YouzaiworldCore.MOD_ID);
         }
 
-        DebugLogger.exiting(MODULE, "validate",
+        DebugLogger.CLIENT.exiting(MODULE, "validate",
                 "checked=" + checked + ", missing=" + missing.size());
     }
 }

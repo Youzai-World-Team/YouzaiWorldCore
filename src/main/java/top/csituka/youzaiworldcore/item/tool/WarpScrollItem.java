@@ -76,8 +76,8 @@ public class WarpScrollItem extends Item {
 
     public WarpScrollItem(Properties properties) {
         super(properties.stacksTo(MAX_STACK_SIZE).rarity(Rarity.UNCOMMON));
-        DebugLogger.entering("WarpScrollItem", "constructor");
-        DebugLogger.exiting("WarpScrollItem", "constructor");
+        DebugLogger.SERVER.entering("WarpScrollItem", "constructor");
+        DebugLogger.SERVER.exiting("WarpScrollItem", "constructor");
     }
 
     /**
@@ -114,7 +114,7 @@ public class WarpScrollItem extends Item {
     @Override
     @NonNull
     public InteractionResult use(Level level, Player player, @NonNull InteractionHand usedHand) {
-        DebugLogger.entering("WarpScrollItem", "use",
+        DebugLogger.SERVER.entering("WarpScrollItem", "use",
                 "player=" + player.getName().getString() + ", hand=" + usedHand);
 
         ItemStack stack = player.getItemInHand(usedHand);
@@ -124,8 +124,8 @@ public class WarpScrollItem extends Item {
             if (player instanceof ServerPlayer serverPlayer) {
                 sendCooldownMessage(serverPlayer, stack);
             }
-            DebugLogger.branch("WarpScrollItem", "on cooldown", true);
-            DebugLogger.exiting("WarpScrollItem", "use", "FAIL (cooldown)");
+            DebugLogger.SERVER.branch("WarpScrollItem", "on cooldown", true);
+            DebugLogger.SERVER.exiting("WarpScrollItem", "use", "FAIL (cooldown)");
             return InteractionResult.FAIL;
         }
 
@@ -134,11 +134,10 @@ public class WarpScrollItem extends Item {
         if (level instanceof ServerLevel serverLevel) {
             serverLevel.playSound(null, player.getX(), player.getY(), player.getZ(),
                     SoundEvents.BEACON_ACTIVATE, SoundSource.PLAYERS, 0.5F, 1.6F);
-            DebugLogger.info("WarpScrollItem", "玩家 %s 开始蓄力传送卷轴",
-                    player.getName().getString());
+            DebugLogger.SERVER.debug("WarpScrollItem", "玩家 {} 开始蓄力传送卷轴", player.getName().getString());
         }
 
-        DebugLogger.exiting("WarpScrollItem", "use", "CONSUME (charging)");
+        DebugLogger.SERVER.exiting("WarpScrollItem", "use", "CONSUME (charging)");
         return InteractionResult.CONSUME;
     }
 
@@ -212,7 +211,7 @@ public class WarpScrollItem extends Item {
         // 蓄力途中可能因为别的途径进入冷却，打开列表前再校验一次
         if (serverPlayer.getCooldowns().isOnCooldown(stack)) {
             sendCooldownMessage(serverPlayer, stack);
-            DebugLogger.info("WarpScrollItem", "蓄力完成但传送卷轴处于冷却中，未打开列表");
+            DebugLogger.SERVER.debug("WarpScrollItem", "蓄力完成但传送卷轴处于冷却中，未打开列表");
             return stack;
         }
 
@@ -244,8 +243,7 @@ public class WarpScrollItem extends Item {
         if (level instanceof ServerLevel serverLevel) {
             serverLevel.playSound(null, entity.getX(), entity.getY(), entity.getZ(),
                     SoundEvents.FIRE_EXTINGUISH, SoundSource.PLAYERS, 0.4F, 1.6F);
-            DebugLogger.info("WarpScrollItem", "玩家 %s 的传送卷轴蓄力被打断，剩余 %d tick",
-                    entity.getName().getString(), remainingTicks);
+            DebugLogger.SERVER.debug("WarpScrollItem", "玩家 {} 的传送卷轴蓄力被打断，剩余 {} tick", entity.getName().getString(), remainingTicks);
         }
         return false;
     }
@@ -263,8 +261,7 @@ public class WarpScrollItem extends Item {
 
         manager.markListOpenedByScroll(serverPlayer, hand);
 
-        DebugLogger.info("WarpScrollItem", "玩家 %s 蓄力完成，打开传送列表（卷轴入口），可用锚点 %d 个",
-                serverPlayer.getName().getString(), validPoints.size());
+        DebugLogger.SERVER.debug("WarpScrollItem", "玩家 {} 蓄力完成，打开传送列表（卷轴入口），可用锚点 {} 个", serverPlayer.getName().getString(), validPoints.size());
 
         ServerPlayNetworking.send(serverPlayer,
                 new TeleportAnchorListPayload(validPoints,

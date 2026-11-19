@@ -22,7 +22,7 @@ public class YzuGrindstoneScreen extends GrindstoneScreen implements YzuiWorksta
     protected void init() {
         super.init();
         addRenderableWidget(YzuiWorkstationStyle.closeButton(leftPos, topPos, imageWidth, this::onClose));
-        DebugLogger.debug("YzuGrindstoneScreen", "初始化砂轮界面：%s", title.getString());
+        DebugLogger.CLIENT.debug("YzuGrindstoneScreen", "初始化砂轮界面：{}", title.getString());
     }
 
     @Override

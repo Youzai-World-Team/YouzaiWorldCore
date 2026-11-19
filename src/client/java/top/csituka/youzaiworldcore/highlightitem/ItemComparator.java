@@ -17,9 +17,8 @@ public class ItemComparator {
         // 先判等级再取参数：本方法在容器界面里是「每槽位、每帧」调用
         // （创造物品栏一屏 100+ 槽位），而两次 getDescriptionId() 与 varargs
         // 数组即使日志关闭也会照常求值。
-        if (DebugLogger.isEnabled(DebugLogger.LEVEL_DEBUG)) {
-            DebugLogger.trace("HighlightItem", "比较物品: mode=%s, a=%s, b=%s",
-                    comparator.name(), stack.getItem().getDescriptionId(), stack2.getItem().getDescriptionId());
+        if (DebugLogger.CLIENT.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+            DebugLogger.CLIENT.trace("HighlightItem", "比较物品: mode={}, a={}, b={}", comparator.name(), stack.getItem().getDescriptionId(), stack2.getItem().getDescriptionId());
         }
         return comparator.predicate.test(stack, stack2);
     }

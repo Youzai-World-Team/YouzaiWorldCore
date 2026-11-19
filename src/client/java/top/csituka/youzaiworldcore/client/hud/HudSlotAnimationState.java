@@ -212,8 +212,8 @@ public final class HudSlotAnimationState {
     }
 
     private static void trace(String message) {
-        if (DebugLogger.isEnabled(DebugLogger.LEVEL_DEBUG)) {
-            DebugLogger.trace(MODULE, message);
+        if (DebugLogger.CLIENT.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+            DebugLogger.CLIENT.trace(MODULE, message);
         }
     }
 

@@ -69,8 +69,8 @@ public class ReturnScrollItem extends Item {
 
     public ReturnScrollItem(Properties properties) {
         super(properties.stacksTo(MAX_STACK_SIZE).rarity(Rarity.UNCOMMON));
-        DebugLogger.entering("ReturnScrollItem", "constructor");
-        DebugLogger.exiting("ReturnScrollItem", "constructor");
+        DebugLogger.SERVER.entering("ReturnScrollItem", "constructor");
+        DebugLogger.SERVER.exiting("ReturnScrollItem", "constructor");
     }
 
     /**
@@ -90,7 +90,7 @@ public class ReturnScrollItem extends Item {
     @Override
     @NonNull
     public InteractionResult use(Level level, Player player, @NonNull InteractionHand usedHand) {
-        DebugLogger.entering("ReturnScrollItem", "use",
+        DebugLogger.SERVER.entering("ReturnScrollItem", "use",
                 "player=" + player.getName().getString() + ", hand=" + usedHand);
 
         ItemStack stack = player.getItemInHand(usedHand);
@@ -99,8 +99,8 @@ public class ReturnScrollItem extends Item {
             if (player instanceof ServerPlayer serverPlayer) {
                 sendCooldownMessage(serverPlayer, stack);
             }
-            DebugLogger.branch("ReturnScrollItem", "on cooldown", true);
-            DebugLogger.exiting("ReturnScrollItem", "use", "FAIL (cooldown)");
+            DebugLogger.SERVER.branch("ReturnScrollItem", "on cooldown", true);
+            DebugLogger.SERVER.exiting("ReturnScrollItem", "use", "FAIL (cooldown)");
             return InteractionResult.FAIL;
         }
 
@@ -109,11 +109,10 @@ public class ReturnScrollItem extends Item {
         if (level instanceof ServerLevel serverLevel) {
             serverLevel.playSound(null, player.getX(), player.getY(), player.getZ(),
                     SoundEvents.BEACON_ACTIVATE, SoundSource.PLAYERS, 0.5F, 1.6F);
-            DebugLogger.info("ReturnScrollItem", "玩家 %s 开始蓄力返回卷轴",
-                    player.getName().getString());
+            DebugLogger.SERVER.debug("ReturnScrollItem", "玩家 {} 开始蓄力返回卷轴", player.getName().getString());
         }
 
-        DebugLogger.exiting("ReturnScrollItem", "use", "CONSUME (charging)");
+        DebugLogger.SERVER.exiting("ReturnScrollItem", "use", "CONSUME (charging)");
         return InteractionResult.CONSUME;
     }
 
@@ -184,7 +183,7 @@ public class ReturnScrollItem extends Item {
         // 蓄力途中可能因为别的途径进入冷却，先校验一次
         if (serverPlayer.getCooldowns().isOnCooldown(stack)) {
             sendCooldownMessage(serverPlayer, stack);
-            DebugLogger.info("ReturnScrollItem", "蓄力完成但返回卷轴处于冷却中，未执行回程");
+            DebugLogger.SERVER.debug("ReturnScrollItem", "蓄力完成但返回卷轴处于冷却中，未执行回程");
             return stack;
         }
 
@@ -216,8 +215,7 @@ public class ReturnScrollItem extends Item {
         if (level instanceof ServerLevel serverLevel) {
             serverLevel.playSound(null, entity.getX(), entity.getY(), entity.getZ(),
                     SoundEvents.FIRE_EXTINGUISH, SoundSource.PLAYERS, 0.4F, 1.6F);
-            DebugLogger.info("ReturnScrollItem", "玩家 %s 的返回卷轴蓄力被打断，剩余 %d tick",
-                    entity.getName().getString(), remainingTicks);
+            DebugLogger.SERVER.debug("ReturnScrollItem", "玩家 {} 的返回卷轴蓄力被打断，剩余 {} tick", entity.getName().getString(), remainingTicks);
         }
         return false;
     }
@@ -240,9 +238,7 @@ public class ReturnScrollItem extends Item {
                     serverPlayer.getX(), serverPlayer.getY() + 1.0, serverPlayer.getZ(),
                     20, 0.4, 0.4, 0.4, 0.05);
         }
-        DebugLogger.info("ReturnScrollItem",
-                "玩家 %s 当前维度无任何可用锚点，已进入冷却但未消耗卷轴",
-                serverPlayer.getName().getString());
+        DebugLogger.SERVER.debug("ReturnScrollItem", "玩家 {} 当前维度无任何可用锚点，已进入冷却但未消耗卷轴", serverPlayer.getName().getString());
     }
 
     /**
@@ -289,13 +285,7 @@ public class ReturnScrollItem extends Item {
                 Component.translatable("message.youzaiworldcore.return_scroll.teleported", target.name())
                         .withStyle(ChatFormatting.GREEN)));
 
-        DebugLogger.info("ReturnScrollItem",
-                "玩家 %s 通过返回卷轴传送到最近锚点 %s (次元=%s, 消耗 %d 张, 冷却 %d tick)",
-                serverPlayer.getName().getString(),
-                target.name(),
-                target.dimension().identifier(),
-                isCreative ? 0 : SCROLL_CONSUME_AMOUNT,
-                isCreative ? 0 : COOLDOWN_TICKS);
+        DebugLogger.SERVER.debug("ReturnScrollItem", "玩家 {} 通过返回卷轴传送到最近锚点 {} (次元={}, 消耗 {} 张, 冷却 {} tick)", serverPlayer.getName().getString(), target.name(), target.dimension().identifier(), isCreative ? 0 : SCROLL_CONSUME_AMOUNT, isCreative ? 0 : COOLDOWN_TICKS);
     }
 
     /**

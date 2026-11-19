@@ -76,7 +76,7 @@ public class PetGlobalState extends SavedData {
         this.nameIndex = new ConcurrentHashMap<>();
         this.ownerIndex = new ConcurrentHashMap<>();
         rebuildIndexes();
-        DebugLogger.info(MODULE, "PetGlobalState 初始化完成: %d 条宠物记录", this.entityMap.size());
+        DebugLogger.SERVER.info(MODULE, "PetGlobalState 初始化完成: {} 条宠物记录", this.entityMap.size());
     }
 
     // ===== 索引重建 =====
@@ -93,8 +93,7 @@ public class PetGlobalState extends SavedData {
             ownerIndex.computeIfAbsent(pet.ownerUUID(), k -> ConcurrentHashMap.newKeySet())
                     .add(entityUUID);
         }
-        DebugLogger.debug(MODULE, "索引重建完成: %d 个名称索引, %d 个所有者索引",
-                nameIndex.size(), ownerIndex.size());
+        DebugLogger.SERVER.debug(MODULE, "索引重建完成: {} 个名称索引, {} 个所有者索引", nameIndex.size(), ownerIndex.size());
     }
 
     /**
@@ -177,7 +176,7 @@ public class PetGlobalState extends SavedData {
      * @throws IllegalArgumentException 如果该实体 UUID 或内部名称已存在
      */
     public synchronized void addPet(@NotNull PetEntry entry) {
-        DebugLogger.entering(MODULE, "addPet", "internalName=" + entry.internalName()
+        DebugLogger.SERVER.entering(MODULE, "addPet", "internalName=" + entry.internalName()
                 + ", entityUUID=" + entry.entityUUID());
 
         if (entityMap.containsKey(entry.entityUUID())) {
@@ -193,9 +192,8 @@ public class PetGlobalState extends SavedData {
                 .add(entry.entityUUID());
 
         setDirty();
-        DebugLogger.info(MODULE, "宠物已注册: [%s] %s (主人=%s)",
-                entry.internalName(), entry.displayName(), entry.ownerUUID());
-        DebugLogger.exiting(MODULE, "addPet");
+        DebugLogger.SERVER.debug(MODULE, "宠物已注册: [{}] {} (主人={})", entry.internalName(), entry.displayName(), entry.ownerUUID());
+        DebugLogger.SERVER.exiting(MODULE, "addPet");
     }
 
     /**
@@ -205,7 +203,7 @@ public class PetGlobalState extends SavedData {
      * @throws IllegalArgumentException 如果实体 UUID 不存在于注册表中
      */
     public synchronized void updatePet(@NotNull PetEntry entry) {
-        DebugLogger.entering(MODULE, "updatePet", "internalName=" + entry.internalName());
+        DebugLogger.SERVER.entering(MODULE, "updatePet", "internalName=" + entry.internalName());
 
         PetEntry existing = entityMap.get(entry.entityUUID());
         if (existing == null) {
@@ -231,8 +229,8 @@ public class PetGlobalState extends SavedData {
         entityMap.put(entry.entityUUID(), entry);
 
         setDirty();
-        DebugLogger.info(MODULE, "宠物已更新: [%s] %s", entry.internalName(), entry.displayName());
-        DebugLogger.exiting(MODULE, "updatePet");
+        DebugLogger.SERVER.trace(MODULE, "宠物已更新: [{}] {}", entry.internalName(), entry.displayName());
+        DebugLogger.SERVER.exiting(MODULE, "updatePet");
     }
 
     /**
@@ -242,11 +240,11 @@ public class PetGlobalState extends SavedData {
      * @return Optional 包含被删除的 PetEntry，若不存在则为空
      */
     public synchronized Optional<PetEntry> removePet(@NotNull UUID entityUUID) {
-        DebugLogger.entering(MODULE, "removePet", "entityUUID=" + entityUUID);
+        DebugLogger.SERVER.entering(MODULE, "removePet", "entityUUID=" + entityUUID);
 
         PetEntry removed = entityMap.remove(entityUUID);
         if (removed == null) {
-            DebugLogger.exiting(MODULE, "removePet", "not_found");
+            DebugLogger.SERVER.exiting(MODULE, "removePet", "not_found");
             return Optional.empty();
         }
 
@@ -261,8 +259,8 @@ public class PetGlobalState extends SavedData {
         }
 
         setDirty();
-        DebugLogger.info(MODULE, "宠物已移除: [%s] %s", removed.internalName(), removed.displayName());
-        DebugLogger.exiting(MODULE, "removePet", "success");
+        DebugLogger.SERVER.debug(MODULE, "宠物已移除: [{}] {}", removed.internalName(), removed.displayName());
+        DebugLogger.SERVER.exiting(MODULE, "removePet", "success");
         return Optional.of(removed);
     }
 
@@ -285,11 +283,11 @@ public class PetGlobalState extends SavedData {
      * @param snapshot 备份快照
      */
     public synchronized void restoreFromSnapshot(Map<UUID, PetEntry> snapshot) {
-        DebugLogger.info(MODULE, "正在从快照恢复 %d 条宠物记录...", snapshot.size());
+        DebugLogger.SERVER.info(MODULE, "正在从快照恢复 {} 条宠物记录...", snapshot.size());
         this.entityMap.clear();
         this.entityMap.putAll(snapshot);
         rebuildIndexes();
         setDirty();
-        DebugLogger.info(MODULE, "从快照恢复完成");
+        DebugLogger.SERVER.info(MODULE, "从快照恢复完成");
     }
 }

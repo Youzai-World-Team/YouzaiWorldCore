@@ -27,10 +27,10 @@ public class PlayerAttributeStorage {
     private static final ConcurrentHashMap<String, PlayerAttributeData> CACHE = new ConcurrentHashMap<>();
 
     public static void initialize() {
-        DebugLogger.entering("PlayerAttributeStorage", "initialize");
-        DebugLogger.info("PlayerAttributeStorage", "数据文件=%s", SkillDataStore.file().toAbsolutePath());
+        DebugLogger.SERVER.entering("PlayerAttributeStorage", "initialize");
+        DebugLogger.SERVER.debug("PlayerAttributeStorage", "数据文件={}", SkillDataStore.file().toAbsolutePath());
         loadFromDisk();
-        DebugLogger.exiting("PlayerAttributeStorage", "initialize");
+        DebugLogger.SERVER.exiting("PlayerAttributeStorage", "initialize");
     }
 
     private static void loadFromDisk() {
@@ -46,7 +46,7 @@ public class PlayerAttributeStorage {
             java.lang.reflect.Type type = new TypeToken<Map<String, PlayerAttributeData>>() {}.getType();
             Map<String, PlayerAttributeData> loaded = PlayerAttributeData.GSON.fromJson(attributes, type);
             if (loaded != null) CACHE.putAll(loaded);
-            DebugLogger.info("PlayerAttributeStorage", "loaded %d player attribute records", CACHE.size());
+            DebugLogger.SERVER.info("PlayerAttributeStorage", "loaded {} player attribute records", CACHE.size());
         } finally {
             LOCK.writeLock().unlock();
         }

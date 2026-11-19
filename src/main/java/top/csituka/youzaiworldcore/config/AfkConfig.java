@@ -87,7 +87,7 @@ public final class AfkConfig {
 
     /** 设置名字牌前缀开关并持久化。 */
     public static void setNametagPrefixEnabled(boolean value) {
-        DebugLogger.stateChange(MODULE, "AfkConfig", "nametagPrefixEnabled", nametagPrefixEnabled, value);
+        DebugLogger.SERVER.stateChange(MODULE, "AfkConfig", "nametagPrefixEnabled", nametagPrefixEnabled, value);
         nametagPrefixEnabled = value;
         save();
     }
@@ -97,7 +97,7 @@ public final class AfkConfig {
         if (value == null || value.length() > MAX_PREFIX_LENGTH || value.contains("\n") || value.contains("\r")) {
             throw new IllegalArgumentException("invalid AFK prefix");
         }
-        DebugLogger.stateChange(MODULE, "AfkConfig", "prefix", prefix, value);
+        DebugLogger.SERVER.stateChange(MODULE, "AfkConfig", "prefix", prefix, value);
         prefix = value;
         save();
     }
@@ -124,143 +124,142 @@ public final class AfkConfig {
 
     /** 设置功能总开关并持久化（命令层关闭时会同步清除在线 AFK 状态） */
     public static void setEnabled(boolean value) {
-        DebugLogger.entering(MODULE, "setEnabled", "value=" + value);
+        DebugLogger.SERVER.entering(MODULE, "setEnabled", "value=" + value);
         if (enabled == value) {
-            DebugLogger.info(MODULE, "enabled 未变化，跳过保存");
-            DebugLogger.exiting(MODULE, "setEnabled", "no-change");
+            DebugLogger.SERVER.debug(MODULE, "enabled 未变化，跳过保存");
+            DebugLogger.SERVER.exiting(MODULE, "setEnabled", "no-change");
             return;
         }
-        DebugLogger.stateChange(MODULE, "AfkConfig", "enabled", enabled, value);
+        DebugLogger.SERVER.stateChange(MODULE, "AfkConfig", "enabled", enabled, value);
         enabled = value;
         save();
-        DebugLogger.exiting(MODULE, "setEnabled", "1");
+        DebugLogger.SERVER.exiting(MODULE, "setEnabled", "1");
     }
 
     /** 设置检测模式并持久化 */
     public static void setDetectMode(DetectMode mode) {
-        DebugLogger.entering(MODULE, "setDetectMode", "mode=" + mode);
+        DebugLogger.SERVER.entering(MODULE, "setDetectMode", "mode=" + mode);
         if (mode == null || detectMode == mode) {
-            DebugLogger.info(MODULE, "detectMode 未变化或非法，跳过保存");
-            DebugLogger.exiting(MODULE, "setDetectMode", "no-change");
+            DebugLogger.SERVER.debug(MODULE, "detectMode 未变化或非法，跳过保存");
+            DebugLogger.SERVER.exiting(MODULE, "setDetectMode", "no-change");
             return;
         }
-        DebugLogger.stateChange(MODULE, "AfkConfig", "detectMode", detectMode, mode);
+        DebugLogger.SERVER.stateChange(MODULE, "AfkConfig", "detectMode", detectMode, mode);
         detectMode = mode;
         save();
-        DebugLogger.exiting(MODULE, "setDetectMode", "1");
+        DebugLogger.SERVER.exiting(MODULE, "setDetectMode", "1");
     }
 
     /** 设置触发阈值（秒，至少 {@link #MIN_THRESHOLD_SECONDS}）并持久化 */
     public static void setThresholdSeconds(int seconds) {
-        DebugLogger.entering(MODULE, "setThresholdSeconds", "seconds=" + seconds);
+        DebugLogger.SERVER.entering(MODULE, "setThresholdSeconds", "seconds=" + seconds);
         if (seconds < MIN_THRESHOLD_SECONDS) {
-            DebugLogger.warn(MODULE, "触发阈值非法: %d（必须 >= %d），忽略", seconds, MIN_THRESHOLD_SECONDS);
-            DebugLogger.exiting(MODULE, "setThresholdSeconds", "invalid");
+            DebugLogger.SERVER.warn(MODULE, "触发阈值非法: {}（必须 >= {}），忽略", seconds, MIN_THRESHOLD_SECONDS);
+            DebugLogger.SERVER.exiting(MODULE, "setThresholdSeconds", "invalid");
             return;
         }
         if (thresholdSeconds == seconds) {
-            DebugLogger.info(MODULE, "thresholdSeconds 未变化，跳过保存");
-            DebugLogger.exiting(MODULE, "setThresholdSeconds", "no-change");
+            DebugLogger.SERVER.debug(MODULE, "thresholdSeconds 未变化，跳过保存");
+            DebugLogger.SERVER.exiting(MODULE, "setThresholdSeconds", "no-change");
             return;
         }
-        DebugLogger.stateChange(MODULE, "AfkConfig", "thresholdSeconds", thresholdSeconds, seconds);
+        DebugLogger.SERVER.stateChange(MODULE, "AfkConfig", "thresholdSeconds", thresholdSeconds, seconds);
         thresholdSeconds = seconds;
         // 自动踢出时长若小于新阈值则同步抬升（踢出必须晚于判定 AFK）
         if (autoKickSeconds > 0 && autoKickSeconds < thresholdSeconds) {
-            DebugLogger.stateChange(MODULE, "AfkConfig", "autoKickSeconds", autoKickSeconds, thresholdSeconds);
+            DebugLogger.SERVER.stateChange(MODULE, "AfkConfig", "autoKickSeconds", autoKickSeconds, thresholdSeconds);
             autoKickSeconds = thresholdSeconds;
         }
         save();
-        DebugLogger.exiting(MODULE, "setThresholdSeconds", "1");
+        DebugLogger.SERVER.exiting(MODULE, "setThresholdSeconds", "1");
     }
 
     /** 设置 Tab 前缀开关并持久化 */
     public static void setTabPrefixEnabled(boolean value) {
-        DebugLogger.entering(MODULE, "setTabPrefixEnabled", "value=" + value);
+        DebugLogger.SERVER.entering(MODULE, "setTabPrefixEnabled", "value=" + value);
         if (tabPrefixEnabled == value) {
-            DebugLogger.info(MODULE, "tabPrefixEnabled 未变化，跳过保存");
-            DebugLogger.exiting(MODULE, "setTabPrefixEnabled", "no-change");
+            DebugLogger.SERVER.debug(MODULE, "tabPrefixEnabled 未变化，跳过保存");
+            DebugLogger.SERVER.exiting(MODULE, "setTabPrefixEnabled", "no-change");
             return;
         }
-        DebugLogger.stateChange(MODULE, "AfkConfig", "tabPrefixEnabled", tabPrefixEnabled, value);
+        DebugLogger.SERVER.stateChange(MODULE, "AfkConfig", "tabPrefixEnabled", tabPrefixEnabled, value);
         tabPrefixEnabled = value;
         save();
-        DebugLogger.exiting(MODULE, "setTabPrefixEnabled", "1");
+        DebugLogger.SERVER.exiting(MODULE, "setTabPrefixEnabled", "1");
     }
 
     /** 设置广播开关并持久化 */
     public static void setBroadcastEnabled(boolean value) {
-        DebugLogger.entering(MODULE, "setBroadcastEnabled", "value=" + value);
+        DebugLogger.SERVER.entering(MODULE, "setBroadcastEnabled", "value=" + value);
         if (broadcastEnabled == value) {
-            DebugLogger.info(MODULE, "broadcastEnabled 未变化，跳过保存");
-            DebugLogger.exiting(MODULE, "setBroadcastEnabled", "no-change");
+            DebugLogger.SERVER.debug(MODULE, "broadcastEnabled 未变化，跳过保存");
+            DebugLogger.SERVER.exiting(MODULE, "setBroadcastEnabled", "no-change");
             return;
         }
-        DebugLogger.stateChange(MODULE, "AfkConfig", "broadcastEnabled", broadcastEnabled, value);
+        DebugLogger.SERVER.stateChange(MODULE, "AfkConfig", "broadcastEnabled", broadcastEnabled, value);
         broadcastEnabled = value;
         save();
-        DebugLogger.exiting(MODULE, "setBroadcastEnabled", "1");
+        DebugLogger.SERVER.exiting(MODULE, "setBroadcastEnabled", "1");
     }
 
     /** 设置无敌开关并持久化 */
     public static void setInvulnerableEnabled(boolean value) {
-        DebugLogger.entering(MODULE, "setInvulnerableEnabled", "value=" + value);
+        DebugLogger.SERVER.entering(MODULE, "setInvulnerableEnabled", "value=" + value);
         if (invulnerableEnabled == value) {
-            DebugLogger.info(MODULE, "invulnerableEnabled 未变化，跳过保存");
-            DebugLogger.exiting(MODULE, "setInvulnerableEnabled", "no-change");
+            DebugLogger.SERVER.debug(MODULE, "invulnerableEnabled 未变化，跳过保存");
+            DebugLogger.SERVER.exiting(MODULE, "setInvulnerableEnabled", "no-change");
             return;
         }
-        DebugLogger.stateChange(MODULE, "AfkConfig", "invulnerableEnabled", invulnerableEnabled, value);
+        DebugLogger.SERVER.stateChange(MODULE, "AfkConfig", "invulnerableEnabled", invulnerableEnabled, value);
         invulnerableEnabled = value;
         save();
-        DebugLogger.exiting(MODULE, "setInvulnerableEnabled", "1");
+        DebugLogger.SERVER.exiting(MODULE, "setInvulnerableEnabled", "1");
     }
 
     /** 设置自动踢出时长（秒，0 = 禁用，须 >= 触发阈值）并持久化 */
     public static void setAutoKickSeconds(int seconds) {
-        DebugLogger.entering(MODULE, "setAutoKickSeconds", "seconds=" + seconds);
+        DebugLogger.SERVER.entering(MODULE, "setAutoKickSeconds", "seconds=" + seconds);
         if (seconds < 0 || (seconds > 0 && seconds < thresholdSeconds)) {
-            DebugLogger.warn(MODULE, "自动踢出时长非法: %d（必须 0 或 >= 阈值 %d），忽略", seconds, thresholdSeconds);
-            DebugLogger.exiting(MODULE, "setAutoKickSeconds", "invalid");
+            DebugLogger.SERVER.warn(MODULE, "自动踢出时长非法: {}（必须 0 或 >= 阈值 {}），忽略", seconds, thresholdSeconds);
+            DebugLogger.SERVER.exiting(MODULE, "setAutoKickSeconds", "invalid");
             return;
         }
         if (autoKickSeconds == seconds) {
-            DebugLogger.info(MODULE, "autoKickSeconds 未变化，跳过保存");
-            DebugLogger.exiting(MODULE, "setAutoKickSeconds", "no-change");
+            DebugLogger.SERVER.debug(MODULE, "autoKickSeconds 未变化，跳过保存");
+            DebugLogger.SERVER.exiting(MODULE, "setAutoKickSeconds", "no-change");
             return;
         }
-        DebugLogger.stateChange(MODULE, "AfkConfig", "autoKickSeconds", autoKickSeconds, seconds);
+        DebugLogger.SERVER.stateChange(MODULE, "AfkConfig", "autoKickSeconds", autoKickSeconds, seconds);
         autoKickSeconds = seconds;
         save();
-        DebugLogger.exiting(MODULE, "setAutoKickSeconds", "1");
+        DebugLogger.SERVER.exiting(MODULE, "setAutoKickSeconds", "1");
     }
 
     /** 设置手动切换开关并持久化 */
     public static void setManualToggleEnabled(boolean value) {
-        DebugLogger.entering(MODULE, "setManualToggleEnabled", "value=" + value);
+        DebugLogger.SERVER.entering(MODULE, "setManualToggleEnabled", "value=" + value);
         if (manualToggleEnabled == value) {
-            DebugLogger.info(MODULE, "manualToggleEnabled 未变化，跳过保存");
-            DebugLogger.exiting(MODULE, "setManualToggleEnabled", "no-change");
+            DebugLogger.SERVER.debug(MODULE, "manualToggleEnabled 未变化，跳过保存");
+            DebugLogger.SERVER.exiting(MODULE, "setManualToggleEnabled", "no-change");
             return;
         }
-        DebugLogger.stateChange(MODULE, "AfkConfig", "manualToggleEnabled", manualToggleEnabled, value);
+        DebugLogger.SERVER.stateChange(MODULE, "AfkConfig", "manualToggleEnabled", manualToggleEnabled, value);
         manualToggleEnabled = value;
         save();
-        DebugLogger.exiting(MODULE, "setManualToggleEnabled", "1");
+        DebugLogger.SERVER.exiting(MODULE, "setManualToggleEnabled", "1");
     }
 
     // ===== 持久化 =====
 
     /** 从全局配置的 {@code afk_module} 分节加载（分节缺失则写入默认配置） */
     public static void load() {
-        DebugLogger.entering(MODULE, "load");
+        DebugLogger.SERVER.entering(MODULE, "load");
 
         ConfigSection section = GlobalSettings.section(GlobalSettings.AFK_MODULE);
         if (section.isEmpty()) {
-            DebugLogger.info(MODULE, "afk_module 分节不存在，写入默认配置 (enabled=%s, mode=%s, threshold=%ds)",
-                    enabled, detectMode, thresholdSeconds);
+            DebugLogger.SERVER.info(MODULE, "afk_module 分节不存在，写入默认配置 (enabled={}, mode={}, threshold={}s)", enabled, detectMode, thresholdSeconds);
             writeDefaults();
-            DebugLogger.exiting(MODULE, "load", "created default");
+            DebugLogger.SERVER.exiting(MODULE, "load", "created default");
             return;
         }
 
@@ -284,13 +283,9 @@ public final class AfkConfig {
         }
         manualToggleEnabled = section.getBoolean("manual_toggle_enabled", DEFAULT_MANUAL_TOGGLE_ENABLED);
 
-        DebugLogger.info(MODULE,
-                "已加载配置: enabled=%s, detect_mode=%s, threshold_seconds=%d, tab_prefix=%s, "
-                        + "broadcast=%s, invulnerable=%s, auto_kick=%ds, manual_toggle=%s",
-                enabled, detectMode, thresholdSeconds, tabPrefixEnabled,
-                broadcastEnabled, invulnerableEnabled, autoKickSeconds, manualToggleEnabled);
+        DebugLogger.SERVER.info(MODULE, "已加载配置: enabled={}, detect_mode={}, threshold_seconds={}, tab_prefix={}, broadcast={}, invulnerable={}, auto_kick={}s, manual_toggle={}", enabled, detectMode, thresholdSeconds, tabPrefixEnabled, broadcastEnabled, invulnerableEnabled, autoKickSeconds, manualToggleEnabled);
 
-        DebugLogger.exiting(MODULE, "load");
+        DebugLogger.SERVER.exiting(MODULE, "load");
     }
 
     /** 重置为默认值并写入 {@code afk_module} 分节（新开服 / 坏文件恢复用） */

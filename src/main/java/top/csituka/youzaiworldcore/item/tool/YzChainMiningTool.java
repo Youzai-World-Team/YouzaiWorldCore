@@ -18,56 +18,56 @@ public class YzChainMiningTool {
     private static final int CHAIN_RANGE = 6;
 
     public static boolean isChainMiningTool(ItemStack stack) {
-        DebugLogger.entering("YzChainMiningTool", "isChainMiningTool",
+        DebugLogger.SERVER.entering("YzChainMiningTool", "isChainMiningTool",
                 "item=" + (stack.isEmpty() ? "empty" : stack.getItem().toString()));
         if (stack.isEmpty()) {
-            DebugLogger.branch("YzChainMiningTool", "stack is empty", true);
-            DebugLogger.exiting("YzChainMiningTool", "isChainMiningTool", "false (empty)");
+            DebugLogger.SERVER.branch("YzChainMiningTool", "stack is empty", true);
+            DebugLogger.SERVER.exiting("YzChainMiningTool", "isChainMiningTool", "false (empty)");
             return false;
         }
         Item item = stack.getItem();
         boolean result = item instanceof YzShovelItem || item instanceof YzPickaxeItem;
-        DebugLogger.branch("YzChainMiningTool", "is chain tool", result, "item=" + item.getClass().getSimpleName());
-        DebugLogger.exiting("YzChainMiningTool", "isChainMiningTool", String.valueOf(result));
+        DebugLogger.SERVER.branch("YzChainMiningTool", "is chain tool", result, "item=" + item.getClass().getSimpleName());
+        DebugLogger.SERVER.exiting("YzChainMiningTool", "isChainMiningTool", String.valueOf(result));
         return result;
     }
 
     public static void registerChainMiningEvent() {
-        DebugLogger.entering("YzChainMiningTool", "registerChainMiningEvent");
+        DebugLogger.SERVER.entering("YzChainMiningTool", "registerChainMiningEvent");
         PlayerBlockBreakEvents.AFTER.register((world, player, pos, state, blockEntity) -> {
-            DebugLogger.entering("YzChainMiningTool", "lambda:onBlockBreak",
+            DebugLogger.SERVER.entering("YzChainMiningTool", "lambda:onBlockBreak",
                     "player=" + player.getName().getString() + ", pos=" + pos + ", block=" + state.getBlock());
             if (world.isClientSide()) {
-                DebugLogger.branch("YzChainMiningTool", "client side", true);
-                DebugLogger.exiting("YzChainMiningTool", "lambda:onBlockBreak", "skipped (client)");
+                DebugLogger.SERVER.branch("YzChainMiningTool", "client side", true);
+                DebugLogger.SERVER.exiting("YzChainMiningTool", "lambda:onBlockBreak", "skipped (client)");
                 return;
             }
-            DebugLogger.branch("YzChainMiningTool", "server side", false);
+            DebugLogger.SERVER.branch("YzChainMiningTool", "server side", false);
             if (!player.isShiftKeyDown()) {
-                DebugLogger.branch("YzChainMiningTool", "not sneaking", true);
-                DebugLogger.exiting("YzChainMiningTool", "lambda:onBlockBreak", "skipped (not sneaking)");
+                DebugLogger.SERVER.branch("YzChainMiningTool", "not sneaking", true);
+                DebugLogger.SERVER.exiting("YzChainMiningTool", "lambda:onBlockBreak", "skipped (not sneaking)");
                 return;
             }
-            DebugLogger.branch("YzChainMiningTool", "is sneaking", false);
+            DebugLogger.SERVER.branch("YzChainMiningTool", "is sneaking", false);
 
             ItemStack mainHand = player.getMainHandItem();
             if (!isChainMiningTool(mainHand)) {
-                DebugLogger.branch("YzChainMiningTool", "not chain mining tool", true,
+                DebugLogger.SERVER.branch("YzChainMiningTool", "not chain mining tool", true,
                         "item=" + mainHand.getItem());
-                DebugLogger.exiting("YzChainMiningTool", "lambda:onBlockBreak", "skipped (wrong tool)");
+                DebugLogger.SERVER.exiting("YzChainMiningTool", "lambda:onBlockBreak", "skipped (wrong tool)");
                 return;
             }
-            DebugLogger.branch("YzChainMiningTool", "is chain mining tool", false);
+            DebugLogger.SERVER.branch("YzChainMiningTool", "is chain mining tool", false);
 
             Direction lookDirection = getPlayerLookDirection(player);
             chainMine((ServerLevel) world, player, pos, state.getBlock(), lookDirection);
-            DebugLogger.exiting("YzChainMiningTool", "lambda:onBlockBreak", "chain mine executed");
+            DebugLogger.SERVER.exiting("YzChainMiningTool", "lambda:onBlockBreak", "chain mine executed");
         });
-        DebugLogger.exiting("YzChainMiningTool", "registerChainMiningEvent");
+        DebugLogger.SERVER.exiting("YzChainMiningTool", "registerChainMiningEvent");
     }
 
     private static Direction getPlayerLookDirection(Player player) {
-        DebugLogger.entering("YzChainMiningTool", "getPlayerLookDirection",
+        DebugLogger.SERVER.entering("YzChainMiningTool", "getPlayerLookDirection",
                 "player=" + player.getName().getString());
         Vec3 look = player.getLookAngle();
         double absX = Math.abs(look.x);
@@ -77,38 +77,38 @@ public class YzChainMiningTool {
         Direction result;
         if (absY > absX && absY > absZ) {
             result = look.y > 0 ? Direction.UP : Direction.DOWN;
-            DebugLogger.branch("YzChainMiningTool", "vertical look direction", true,
+            DebugLogger.SERVER.branch("YzChainMiningTool", "vertical look direction", true,
                     "result=" + result);
         } else if (absX > absZ) {
             result = look.x > 0 ? Direction.EAST : Direction.WEST;
-            DebugLogger.branch("YzChainMiningTool", "X-axis look direction", true,
+            DebugLogger.SERVER.branch("YzChainMiningTool", "X-axis look direction", true,
                     "result=" + result);
         } else {
             result = look.z > 0 ? Direction.SOUTH : Direction.NORTH;
-            DebugLogger.branch("YzChainMiningTool", "Z-axis look direction", false,
+            DebugLogger.SERVER.branch("YzChainMiningTool", "Z-axis look direction", false,
                     "result=" + result);
         }
-        DebugLogger.exiting("YzChainMiningTool", "getPlayerLookDirection", result.toString());
+        DebugLogger.SERVER.exiting("YzChainMiningTool", "getPlayerLookDirection", result.toString());
         return result;
     }
 
     private static void chainMine(ServerLevel world, Player player, BlockPos origin, Block targetType, Direction direction) {
-        DebugLogger.entering("YzChainMiningTool", "chainMine",
+        DebugLogger.SERVER.entering("YzChainMiningTool", "chainMine",
                 "origin=" + origin + ", targetType=" + targetType + ", direction=" + direction);
         for (int i = 1; i <= CHAIN_RANGE; i++) {
             BlockPos targetPos = origin.relative(direction, i);
             BlockState targetState = world.getBlockState(targetPos);
 
             if (!targetState.is(targetType)) {
-                DebugLogger.branch("YzChainMiningTool", "block type mismatch", true,
+                DebugLogger.SERVER.branch("YzChainMiningTool", "block type mismatch", true,
                         "pos=" + targetPos + ", expected=" + targetType + ", actual=" + targetState.getBlock());
                 break;
             }
-            DebugLogger.branch("YzChainMiningTool", "mining block", false,
+            DebugLogger.SERVER.branch("YzChainMiningTool", "mining block", false,
                     "pos=" + targetPos + ", i=" + i);
 
             world.destroyBlock(targetPos, true, player);
         }
-        DebugLogger.exiting("YzChainMiningTool", "chainMine");
+        DebugLogger.SERVER.exiting("YzChainMiningTool", "chainMine");
     }
 }

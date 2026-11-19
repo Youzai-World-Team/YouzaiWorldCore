@@ -260,6 +260,6 @@ public final class ManaHudRenderer {
     }
 
     public static void register() {
-        DebugLogger.info("ManaHudRenderer", "魔力条已接入 YZUI 主题，保留状态栏布局与左下角回退位置");
+        DebugLogger.CLIENT.debug("ManaHudRenderer", "魔力条已接入 YZUI 主题，保留状态栏布局与左下角回退位置");
     }
 }

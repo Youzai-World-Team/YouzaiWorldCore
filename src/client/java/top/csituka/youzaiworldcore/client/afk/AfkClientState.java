@@ -21,7 +21,7 @@ public final class AfkClientState {
     /** 注册断线清理，避免跨服务器保留上一会话状态。 */
     public static void initialize() {
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> clear());
-        DebugLogger.info(MODULE, "客户端 AFK 状态缓存已初始化");
+        DebugLogger.CLIENT.debug(MODULE, "客户端 AFK 状态缓存已初始化");
     }
 
     /** 应用服务端下发的单玩家 AFK 状态。 */
@@ -33,8 +33,7 @@ public final class AfkClientState {
             changed = AFK_PLAYERS.remove(payload.playerUuid()) != null;
         }
         if (changed) {
-            DebugLogger.trace(MODULE, "AFK 显示更新: player=%s, afk=%s, prefix=%s",
-                    payload.playerUuid(), payload.afk(), payload.prefix());
+            DebugLogger.CLIENT.trace(MODULE, "AFK 显示更新: player={}, afk={}, prefix={}", payload.playerUuid(), payload.afk(), payload.prefix());
         }
     }
 
@@ -49,7 +48,7 @@ public final class AfkClientState {
 
     private static void clear() {
         if (!AFK_PLAYERS.isEmpty()) {
-            DebugLogger.info(MODULE, "断开连接，清理 %d 条 AFK 状态", AFK_PLAYERS.size());
+            DebugLogger.CLIENT.debug(MODULE, "断开连接，清理 {} 条 AFK 状态", AFK_PLAYERS.size());
             AFK_PLAYERS.clear();
         }
     }

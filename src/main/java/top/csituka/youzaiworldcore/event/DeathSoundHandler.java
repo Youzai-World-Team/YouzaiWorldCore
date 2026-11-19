@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.event;
 
+import top.csituka.youzaiworldcore.util.DebugLogger;
+
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
@@ -9,8 +11,6 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import top.csituka.youzaiworldcore.config.EventSettings;
 
@@ -27,7 +27,7 @@ import java.util.Random;
 public class DeathSoundHandler {
 
     private static final DeathSoundHandler INSTANCE = new DeathSoundHandler();
-    private static final Logger LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/DeathSound");
+    private static final DebugLogger.ModuleLogger LOGGER = DebugLogger.SERVER.module("DeathSound");
     private static final Random RANDOM = new Random();
 
     private DeathSoundHandler() {
@@ -47,11 +47,11 @@ public class DeathSoundHandler {
             return;
         }
 
-        LOGGER.info("玩家死亡触发: {}", entity.getName().getString());
+        LOGGER.debug("玩家死亡触发: {}", entity.getName().getString());
 
         playRandomDeathSound(level, entity.getX(), entity.getY(), entity.getZ());
 
-        LOGGER.info("死亡音效已播放");
+        LOGGER.debug("死亡音效已播放");
     }
 
     /**
@@ -78,6 +78,6 @@ public class DeathSoundHandler {
 
     public static void register() {
         ServerLivingEntityEvents.AFTER_DEATH.register(INSTANCE::onEntityDeath);
-        LOGGER.info("死亡音效事件处理器已注册");
+        LOGGER.debug("死亡音效事件处理器已注册");
     }
 }

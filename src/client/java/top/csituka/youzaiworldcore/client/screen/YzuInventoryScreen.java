@@ -20,8 +20,6 @@ import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import org.jspecify.annotations.NonNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -55,7 +53,7 @@ import top.csituka.youzaiworldcore.util.TrinketHelper;
 @SuppressWarnings({ "null", "unused" })
 public class YzuInventoryScreen extends AbstractRecipeBookScreen<InventoryMenu> {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger("YzuInventoryScreen");
+    private static final DebugLogger.ModuleLogger LOGGER = DebugLogger.CLIENT.module("YzuInventoryScreen");
 
     // ========== YZUI 配色常量 ==========
     private static int panelBg() { return YzuiTheme.surface(); }
@@ -211,10 +209,9 @@ public class YzuInventoryScreen extends AbstractRecipeBookScreen<InventoryMenu> 
             int ex = (int) ev.x();
             int ey = (int) ev.y();
             int ti = getTrinketIndicatorAt(ex, ey);
-            DebugLogger.info("TrinketClick", "click at (%d,%d) trinketSrc=%d indCount=%d ti=%d",
-                    ex, ey, trinketSourceSlot, activeTrinketSlots.size(), ti);
+            DebugLogger.CLIENT.debug("TrinketClick", "click at ({},{}) trinketSrc={} indCount={} ti={}", ex, ey, trinketSourceSlot, activeTrinketSlots.size(), ti);
             if (ti >= 0 && ti < activeTrinketSlots.size()) {
-                DebugLogger.info("TrinketClick", "-> handling click on indicator %d", ti);
+                DebugLogger.CLIENT.debug("TrinketClick", "-> handling click on indicator {}", ti);
                 // 先清理残留手势状态，避免与指示器交互互相干扰
                 resetGesture();
                 TrinketHelper.TrinketSlotInfo tsi = activeTrinketSlots.get(ti);
@@ -508,8 +505,7 @@ public class YzuInventoryScreen extends AbstractRecipeBookScreen<InventoryMenu> 
                 activeTrinketSlots = TrinketHelper.getSlotsAttachedTo(this.minecraft.player, hitSlot);
                 trinketSourceSlot = activeTrinketSlots.isEmpty() ? -1 : hitIdx;
                 if (!activeTrinketSlots.isEmpty()) {
-                    DebugLogger.info("TrinketOverlay", "Show %d indicators for slot %d",
-                            activeTrinketSlots.size(), hitIdx);
+                    DebugLogger.CLIENT.trace("TrinketOverlay", "Show {} indicators for slot {}", activeTrinketSlots.size(), hitIdx);
                 }
             }
             trinketHideDeadline = -1; // 鼠标在有效区，取消隐藏计时
@@ -573,10 +569,7 @@ public class YzuInventoryScreen extends AbstractRecipeBookScreen<InventoryMenu> 
         LocalPlayer player = this.minecraft.player;
         ItemStack carried = player.containerMenu.getCarried();
         ItemStack slotStack = TrinketHelper.getSlotStack(tsi);
-        DebugLogger.info("TrinketClick", "Click on %s[%d] button=%d carried=%s slot=%s",
-                tsi.groupKey(), tsi.slotIndex(), button,
-                carried.isEmpty() ? "empty" : carried.getHoverName().getString(),
-                slotStack.isEmpty() ? "empty" : slotStack.getHoverName().getString());
+        DebugLogger.CLIENT.debug("TrinketClick", "Click on {}[{}] button={} carried={} slot={}", tsi.groupKey(), tsi.slotIndex(), button, carried.isEmpty() ? "empty" : carried.getHoverName().getString(), slotStack.isEmpty() ? "empty" : slotStack.getHoverName().getString());
         byte action;
         if (button == 0) {
             if (carried.isEmpty()) {
@@ -605,7 +598,7 @@ public class YzuInventoryScreen extends AbstractRecipeBookScreen<InventoryMenu> 
                 TrinketHelper.setSlotStack(tsi, carried.copy());
             }
         } catch (Exception e) {
-            DebugLogger.warn("TrinketClick", "Local preview failed: %s", e.getMessage());
+            DebugLogger.CLIENT.warn("TrinketClick", "Local preview failed: {}", e.getMessage());
         }
         // 让下一次 tick 重新查询
         trinketSourceSlot = -1;
@@ -625,12 +618,10 @@ public class YzuInventoryScreen extends AbstractRecipeBookScreen<InventoryMenu> 
         LocalPlayer player = this.minecraft.player;
         ItemStack slotStack = TrinketHelper.getSlotStack(tsi);
         if (slotStack.isEmpty()) {
-            DebugLogger.info("TrinketClick", "Shift-click on %s[%d]: slot empty, nothing to move",
-                    tsi.groupKey(), tsi.slotIndex());
+            DebugLogger.CLIENT.debug("TrinketClick", "Shift-click on {}[{}]: slot empty, nothing to move", tsi.groupKey(), tsi.slotIndex());
             return;
         }
-        DebugLogger.info("TrinketClick", "Shift-click on %s[%d] -> QUICK_MOVE to inventory",
-                tsi.groupKey(), tsi.slotIndex());
+        DebugLogger.CLIENT.debug("TrinketClick", "Shift-click on {}[{}] -> QUICK_MOVE to inventory", tsi.groupKey(), tsi.slotIndex());
         ClientPlayNetworking.send(new TrinketInteractPayload(tsi.groupKey(), tsi.slotIndex(),
                 TrinketInteractPayload.ACTION_QUICK_MOVE));
         try {
@@ -655,7 +646,7 @@ public class YzuInventoryScreen extends AbstractRecipeBookScreen<InventoryMenu> 
             }
             TrinketHelper.setSlotStack(tsi, toMove.isEmpty() ? ItemStack.EMPTY : toMove);
         } catch (Exception e) {
-            DebugLogger.warn("TrinketClick", "Local preview failed: %s", e.getMessage());
+            DebugLogger.CLIENT.warn("TrinketClick", "Local preview failed: {}", e.getMessage());
         }
         // 让下一次 tick 重新查询
         trinketSourceSlot = -1;

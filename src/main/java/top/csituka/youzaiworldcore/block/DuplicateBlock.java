@@ -43,9 +43,9 @@ public class DuplicateBlock extends BaseEntityBlock {
 
     public DuplicateBlock(BlockBehaviour.Properties properties) {
         super(properties);
-        DebugLogger.entering("DuplicateBlock", "constructor");
+        DebugLogger.SERVER.entering("DuplicateBlock", "constructor");
         this.registerDefaultState(this.stateDefinition.any().setValue(ACTIVE, false));
-        DebugLogger.exiting("DuplicateBlock", "constructor");
+        DebugLogger.SERVER.exiting("DuplicateBlock", "constructor");
     }
 
     @Override
@@ -104,10 +104,10 @@ public class DuplicateBlock extends BaseEntityBlock {
     public void setPlacedBy(@NonNull Level level, @NonNull BlockPos pos, @NonNull BlockState state,
             LivingEntity placer, @NonNull ItemStack stack) {
         super.setPlacedBy(level, pos, state, placer, stack);
-        DebugLogger.entering("DuplicateBlock", "setPlacedBy", "pos=" + pos);
+        DebugLogger.SERVER.entering("DuplicateBlock", "setPlacedBy", "pos=" + pos);
 
         if (level.isClientSide()) {
-            DebugLogger.exiting("DuplicateBlock", "setPlacedBy", "client side");
+            DebugLogger.SERVER.exiting("DuplicateBlock", "setPlacedBy", "client side");
             return;
         }
 
@@ -123,15 +123,12 @@ public class DuplicateBlock extends BaseEntityBlock {
                 BlockState copyState = level.getBlockState(sourcePos.above());
                 if (isCopyableTarget(copyState)) {
                     int replaced = fillBetween(level, sourcePos, pos, copyState);
-                    DebugLogger.info("DuplicateBlock",
-                            "玩家 %s 使用复制方块填充 %d 个方块：起点=%s, 终点=%s, 方块=%s",
-                            player.getName().getString(), replaced,
-                            sourcePos.toShortString(), pos.toShortString(), copyState.getBlock());
+                    DebugLogger.SERVER.debug("DuplicateBlock", "玩家 {} 使用复制方块填充 {} 个方块：起点={}, 终点={}, 方块={}", player.getName().getString(), replaced, sourcePos.toShortString(), pos.toShortString(), copyState.getBlock());
                 }
             }
         }
 
-        DebugLogger.exiting("DuplicateBlock", "setPlacedBy");
+        DebugLogger.SERVER.exiting("DuplicateBlock", "setPlacedBy");
     }
 
     @Override

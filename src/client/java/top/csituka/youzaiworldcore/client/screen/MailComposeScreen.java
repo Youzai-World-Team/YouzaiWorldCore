@@ -195,7 +195,7 @@ public class MailComposeScreen extends MailBaseScreen {
         }
         if (discardDialog != null) discardDialog.init(viewport.width(), viewport.height());
 
-        DebugLogger.info(MODULE, "已打开邮件%s页面", editMode ? "编辑" : "发布");
+        DebugLogger.CLIENT.debug(MODULE, "已打开邮件{}页面", editMode ? "编辑" : "发布");
     }
 
     /** 把当前表单内容打包成预填数据，用于 init 重建控件时原样恢复。 */
@@ -697,7 +697,7 @@ public class MailComposeScreen extends MailBaseScreen {
             selectedPlayers.clear();
             selectedPlayers.addAll(names);
             validationMessage = "";
-            DebugLogger.info(MODULE, "已选取指定玩家: %d 人", names.size());
+            DebugLogger.CLIENT.debug(MODULE, "已选取指定玩家: {} 人", names.size());
         });
     }
 
@@ -724,8 +724,7 @@ public class MailComposeScreen extends MailBaseScreen {
             copy.setCount(Math.min(parsePositive(itemAmountInput.getValue(), 1), copy.getMaxStackSize()));
             itemSlots[selectedItemSlot] = copy;
             itemAmountInput.setValue(String.valueOf(copy.getCount()));
-            DebugLogger.info(MODULE, "已选取物品附件: slot=%d, item=%s, count=%d",
-                    selectedItemSlot, copy.getDisplayName().getString(), copy.getCount());
+            DebugLogger.CLIENT.debug(MODULE, "已选取物品附件: slot={}, item={}, count={}", selectedItemSlot, copy.getDisplayName().getString(), copy.getCount());
         }
         inventoryPicker.hide();
     }
@@ -871,11 +870,11 @@ public class MailComposeScreen extends MailBaseScreen {
             ClientPlayNetworking.send(new MailAdminEditPayload(editMailId, false, targets, type, subject,
                     bodyInput.getValue(), expire, attachments));
             ClientPlayNetworking.send(new MailSentListRequestPayload());
-            DebugLogger.info(MODULE, "已提交邮件编辑: mailId=%s, title=%s", editMailId, subject);
+            DebugLogger.CLIENT.debug(MODULE, "已提交邮件编辑: mailId={}, title={}", editMailId, subject);
         } else {
             ClientPlayNetworking.send(new MailAdminSendPayload(targets, type, subject,
                     bodyInput.getValue(), expire, attachments));
-            DebugLogger.info(MODULE, "已提交邮件发布: title=%s, targets=%d", subject, targets.size());
+            DebugLogger.CLIENT.debug(MODULE, "已提交邮件发布: title={}, targets={}", subject, targets.size());
         }
         finished = true;
         navigateBack();
@@ -1021,7 +1020,7 @@ public class MailComposeScreen extends MailBaseScreen {
             }
             return stack;
         } catch (Exception exception) {
-            DebugLogger.exception(MODULE, "decodeItem", exception);
+            DebugLogger.CLIENT.exception(MODULE, "decodeItem", exception);
             return ItemStack.EMPTY;
         }
     }
@@ -1097,7 +1096,7 @@ public class MailComposeScreen extends MailBaseScreen {
             cancelEditing();
             navigateBack();
             MailToast.show(text("draft_saved"), true);
-        } catch (Exception e) { validationMessage = text("draft_failed"); DebugLogger.exception(MODULE, "saveDraft", e); }
+        } catch (Exception e) { validationMessage = text("draft_failed"); DebugLogger.CLIENT.exception(MODULE, "saveDraft", e); }
     }
 
     private void restoreDraft() {
@@ -1122,8 +1121,8 @@ public class MailComposeScreen extends MailBaseScreen {
                         restoringDraft = snapshot;
                         rebuildWidgets();
                         validationMessage = text("draft_restored");
-                        DebugLogger.info(MODULE, "已恢复本机草稿");
-                    } catch (Exception e) { validationMessage = text("draft_failed"); DebugLogger.exception(MODULE, "restoreDraft", e); }
+                        DebugLogger.CLIENT.debug(MODULE, "已恢复本机草稿");
+                    } catch (Exception e) { validationMessage = text("draft_failed"); DebugLogger.CLIENT.exception(MODULE, "restoreDraft", e); }
                 }, null);
         discardDialog.init(viewport.width(), viewport.height()); discardDialog.show();
     }
@@ -1194,7 +1193,7 @@ public class MailComposeScreen extends MailBaseScreen {
             cancelPacketSent = true;
             ClientPlayNetworking.send(new MailAdminEditPayload(editMailId, true, List.of(),
                     MailType.ANNOUNCEMENT, "", "", (byte) 0, List.of()));
-            DebugLogger.info(MODULE, "已取消邮件编辑: mailId=%s", editMailId);
+            DebugLogger.CLIENT.debug(MODULE, "已取消邮件编辑: mailId={}", editMailId);
         }
         finished = true;
     }

@@ -79,7 +79,7 @@ public class PlayerAccount {
     }
 
     public PlayerAccount(String username, String usernameLowerCase, String uuid, String jsonData) {
-        DebugLogger.entering("PlayerAccount", "PlayerAccount(json)",
+        DebugLogger.SERVER.entering("PlayerAccount", "PlayerAccount(json)",
                 "username=" + username + ", usernameLowerCase=" + usernameLowerCase + ", uuid=" + uuid);
         PlayerAccount parsed = GSON.fromJson(jsonData, PlayerAccount.class);
         this.username = username;
@@ -97,28 +97,28 @@ public class PlayerAccount {
             this.lastPositionJson = parsed.lastPositionJson;
             this.inPlaceRespawnCount = Math.max(0, parsed.inPlaceRespawnCount);
         }
-        DebugLogger.exiting("PlayerAccount", "PlayerAccount(json)");
+        DebugLogger.SERVER.exiting("PlayerAccount", "PlayerAccount(json)");
     }
 
     public PlayerAccount(String username) {
-        DebugLogger.entering("PlayerAccount", "PlayerAccount(name)", "username=" + username);
+        DebugLogger.SERVER.entering("PlayerAccount", "PlayerAccount(name)", "username=" + username);
         this.username = username;
         this.usernameLowerCase = username.toLowerCase(java.util.Locale.ENGLISH);
-        DebugLogger.exiting("PlayerAccount", "PlayerAccount(name)");
+        DebugLogger.SERVER.exiting("PlayerAccount", "PlayerAccount(name)");
     }
 
     public PlayerAccount(String username, java.util.UUID uuid) {
         this(username);
-        DebugLogger.entering("PlayerAccount", "PlayerAccount(name,uuid)",
+        DebugLogger.SERVER.entering("PlayerAccount", "PlayerAccount(name,uuid)",
                 "username=" + username + ", uuid=" + uuid);
         this.uuid = uuid != null ? uuid.toString() : null;
-        DebugLogger.exiting("PlayerAccount", "PlayerAccount(name,uuid)");
+        DebugLogger.SERVER.exiting("PlayerAccount", "PlayerAccount(name,uuid)");
     }
 
     public String toJson() {
-        DebugLogger.entering("PlayerAccount", "toJson", "username=" + username);
+        DebugLogger.SERVER.entering("PlayerAccount", "toJson", "username=" + username);
         String json = GSON.toJson(this);
-        DebugLogger.exiting("PlayerAccount", "toJson", "length=" + json.length());
+        DebugLogger.SERVER.exiting("PlayerAccount", "toJson", "length=" + json.length());
         return json;
     }
 
@@ -126,9 +126,9 @@ public class PlayerAccount {
      * 是否已注册（由 Api 服务端返回的状态决定）
      */
     public boolean isRegistered() {
-        DebugLogger.entering("PlayerAccount", "isRegistered", "username=" + username);
+        DebugLogger.SERVER.entering("PlayerAccount", "isRegistered", "username=" + username);
         boolean result = registered;
-        DebugLogger.exiting("PlayerAccount", "isRegistered", String.valueOf(result));
+        DebugLogger.SERVER.exiting("PlayerAccount", "isRegistered", String.valueOf(result));
         return result;
     }
 

@@ -9,8 +9,6 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.network.chat.Component;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import top.csituka.youzaiworldcore.client.config.ConfigIOManager;
 import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
 import top.csituka.youzaiworldcore.util.DebugLogger;
@@ -32,7 +30,7 @@ import java.util.List;
 @SuppressWarnings("null")
 public class ConfigBackupListScreen extends Screen {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/ConfigBackupListScreen");
+    private static final DebugLogger.ModuleLogger LOGGER = DebugLogger.CLIENT.module("ConfigBackupListScreen");
     private static final String LOG_MODULE = "ConfigBackupListScreen";
 
     private static final int LIST_START_Y = 60;
@@ -58,7 +56,7 @@ public class ConfigBackupListScreen extends Screen {
     @Override
     protected void init() {
         super.init();
-        DebugLogger.entering(LOG_MODULE, "init");
+        DebugLogger.CLIENT.entering(LOG_MODULE, "init");
         scanBackupFiles();
         rebuildEntryWidgets();
     }
@@ -68,7 +66,7 @@ public class ConfigBackupListScreen extends Screen {
         File dir = backupDir.toFile();
         if (!dir.isDirectory()) {
             backupFiles = new ArrayList<>();
-            DebugLogger.debug(LOG_MODULE, "config_backups 目录不存在");
+            DebugLogger.CLIENT.debug(LOG_MODULE, "config_backups 目录不存在");
             return;
         }
 
@@ -81,7 +79,7 @@ public class ConfigBackupListScreen extends Screen {
         backupFiles = new ArrayList<>(Arrays.asList(files));
         // 按修改时间倒序
         backupFiles.sort(Comparator.comparingLong(File::lastModified).reversed());
-        DebugLogger.debug(LOG_MODULE, "扫描到 %d 个备份文件", backupFiles.size());
+        DebugLogger.CLIENT.debug(LOG_MODULE, "扫描到 {} 个备份文件", backupFiles.size());
     }
 
     private void rebuildEntryWidgets() {
@@ -175,14 +173,14 @@ public class ConfigBackupListScreen extends Screen {
 
     private void onBack() {
         if (importInProgress) return;
-        DebugLogger.debug(LOG_MODULE, "返回上级菜单");
+        DebugLogger.CLIENT.debug(LOG_MODULE, "返回上级菜单");
         Minecraft.getInstance().setScreenAndShow(parentScreen);
     }
 
     private void onEntryClick(Path zipPath) {
         if (importInProgress) return;
-        DebugLogger.info(LOG_MODULE, "用户选择导入: %s", zipPath);
-        LOGGER.info("开始从 {} 导入配置", zipPath);
+        DebugLogger.CLIENT.debug(LOG_MODULE, "用户选择导入: {}", zipPath);
+        LOGGER.debug("开始从 {} 导入配置", zipPath);
 
         importInProgress = true;
 
@@ -190,7 +188,7 @@ public class ConfigBackupListScreen extends Screen {
         }).thenRun(() -> {
             importInProgress = false;
             Minecraft.getInstance().execute(() -> {
-                DebugLogger.info(LOG_MODULE, "导入成功，显示重启弹窗");
+                DebugLogger.CLIENT.debug(LOG_MODULE, "导入成功，显示重启弹窗");
                 Minecraft.getInstance().setScreenAndShow(new ConfigImportSuccessScreen());
             });
         }).exceptionally(ex -> {

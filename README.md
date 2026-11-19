@@ -88,7 +88,8 @@
 | `/say`、`/tellraw` 及命令反馈 | `[游戏]\|Server >> Hello World!` |
 | 模组提示 | `[模组]\|YouzaiWorldCore >> Hello World!` |
 
-- 等级取自服务端冒险等级；称号为空时直接接玩家代号。私信双方使用实际发送者身份；游戏命令使用当前执行者，包括 `/execute as` 切换后的实体
+- 等级取自服务端冒险等级；称号为空时省略称号，等级后的 `·` 保留，再接玩家代号。私信双方使用实际发送者身份；游戏命令使用当前执行者，包括 `/execute as` 切换后的实体
+- 默认**渐变点缀**配色，`/yzwc chat_style gradient` 使用渐变，`/yzwc chat_style plain` 使用官网色板纯色；无参数查询当前方案，名称在单人游戏及多人服务器中均支持原版补全。切换立即刷新历史记录，保存于本机 `yzwc/client/global_settings.json` 的 `chat_style_module.style`，无需 OP 权限
 - 正文按原文显示，聊天里的文本标签和占位符不会展开。相同来源、相同内容和样式的连续消息合并为一条，第二次起在末尾显示 `[!2]`、`[!3]`；原始历史、每条签名和私信投递范围保留。私信目标包含自己时省略额外回执，自发自收每次只计数一次
 - 模组来源通过 Fabric 目录和 Mixin 来源标记识别；普通无来源系统通知使用 `Server`。界面重排保留计数，清空聊天后重新计数，动作栏消息保持独立
 - 排版固定，旧 `chat_format` 和私信模板不再读取；`chat_format_module.enabled` 只控制加入、离开和死亡事件模板。使用新 `youzaiworldcore:chat_line` 聊天类型，客户端和服务端配套更新。实现与验收见 [聊天消息文档](docs/CHAT_MESSAGES.md)
@@ -324,14 +325,14 @@ Fabric 26.3 移植版 **3.24.1.0** 的 `stack_downgrade_tier_1/2/3` 也归入转
 
 | 配置           | 存放位置                                                                  | 内容                                                                                     |
 | -------------- | ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| 模组核心       | `yzwc/server/config/global_settings.json` → `core_module`                 | `dev_mode_enabled`、`log_to_file`（双开关控制 DebugLogger）                             |
+| 模组核心       | `yzwc/server/config/global_settings.json` → `core_module`                 | `dev_mode_enabled`、`log_level`（0–3，仅服务端诊断） |
 | Api 网桥       | `global_settings.json` → `api_module`                                     | Api 地址（生产环境为 `https://api.mcyzw.top`）、HMAC 共享密钥、请求超时（默认 10 秒）       |
 | 账户与认证     | Api 服务端 SQLite `game_accounts` / `game_sessions`                       | 玩家代号、密码哈希、UUID、会话、登录冷却；模组仅保留运行期非凭据缓存                    |
 | 自定义外观     | Api 服务端 SQLite `game_cosmetics`                                        | 皮肤和披风二进制数据；Minecraft 服务端不保存 PNG 文件                                   |
 | 邮件数据       | Api 服务端 SQLite `game_mails` / `game_mail_refs`                         | 邮件正文（含附件）与每玩家收件箱引用；Minecraft 服务端不再保存邮件文件                  |
 | 玩家个人配置   | `yzwc/server/config/user_settings/<UUID>.json`                            | `double_doors_module`、`function_module`（7 个个人功能开关：梯子延展/作物经验/工具信息/方块动画/合成音效/物品闪光/伤害跳字） |
-| 客户端外部设置 | `config/youzaiworldcore/client_external_settings.json`（客户端，未迁移）  | `devModeEnabled`、`logLevel`（0-3）、`yzuiEnabled`（YZUI 界面总开关）、调试地址/端口     |
-| DebugLogger    | `util/DebugLogger`                                                        | 四级日志（OFF/BASIC/DETAILED/DEBUG），entering/exiting/branch/stateChange/exception 追踪 |
+| 客户端外部设置 | `yzwc/client/global_settings.json` → `core_module` | `dev_mode_enabled`、`log_level`（0–3，即时生效）、`yzui_enabled`、调试地址/端口 |
+| DebugLogger | `util/DebugLogger` | 两端独立，普通日志始终可见，诊断日志按0–3档累积输出 |
 | 更新检查设置   | `global_settings.json` → `update_module`                                  | `enabled`（开关更新检查，UpdateCheckerConfig）                                           |
 | 试炼宝库设置   | `global_settings.json` → `trial_vault_module`                             | `enabled`（无限领奖开关，TrialVaultConfig，默认 true）                                   |
 | 邮件设置       | `global_settings.json` → `mail_module`                                    | 过期策略、权限节点/等级、附件上限、过期清理与未读刷新间隔                                |
@@ -347,6 +348,9 @@ Fabric 26.3 移植版 **3.24.1.0** 的 `stack_downgrade_tier_1/2/3` 也归入转
 | 宠物备份       | `yzwc/server/backup/pet_module/pet_backup_<时间戳>.zip`                   | 定时备份压缩包（内含同名 `.json`）                                                      |
 | 玩家统计数据   | `<world_name>/data/yzwc/data/status_module/data.json` + Api `game_player_stats` | 本地按月重置并保留待上传批次；首次上传完整快照，之后仅上传变化玩家和统计字段；Api 服务端按游戏 UUID 累计保存，不因本地月度重置而清零 |
 | 维度池玩家状态 | `<world_name>/data/yzwc/data/dimensional_inventories_module/<池>/<uuid>.json` | 各池内玩家的独立背包与状态                                                          |
+
+日志配置、输出文件及归类规则见[日志系统](docs/LOGGING.md)与[逐文件归档清单](docs/LOGGING_AUDIT.md)。
+
 
 ### 19. 附魔等级语言补丁系统
 
@@ -611,7 +615,7 @@ Esc 暂停屏幕采用薄荷绿圆角操作卡片与玩家预览，跟随现有�
 
 附魔台、织布机、制图台、切石机、砂轮和信标也采用同款主题卡片、槽位、选项与右上角关闭图标，保留原版书本动画、旗帜及地图预览和全部菜单交互。信标保留效果层级、二级升级及付款确认流程；酿造台沿用已有界面。详见 [工作方块界面说明与验收](docs/YZUI_WORKSTATIONS.md)。
 
-纯客户端的整体界面重绘方案，将原版物品栏、HUD、配方书与上下文栏统一替换为 **YZUI 风格**（半透明白色圆角面板 + 圆角填充条）。由**全局开关**控制：客户端设置「视觉」分栏中的「启用 YZUI」复选框（`screen.youzaiworldcore.settings.toggle_yzui`），持久化于 `client_external_settings.json` 的 `yzuiEnabled` 字段（默认开启）。**关闭后全部回退原版渲染**，便于资源包接管。
+纯客户端的整体界面重绘方案，将原版物品栏、HUD、配方书与上下文栏统一替换为 **YZUI 风格**（半透明白色圆角面板 + 圆角填充条）。由**全局开关**控制：客户端设置「视觉」分栏中的「启用 YZUI」复选框（`screen.youzaiworldcore.settings.toggle_yzui`），持久化于 `yzwc/client/global_settings.json` 的 `core_module.yzui_enabled` 字段（默认开启）。**关闭后全部回退原版渲染**，便于资源包接管。
 
 #### 37.1 物品栏屏幕
 
@@ -726,10 +730,12 @@ Esc 暂停屏幕采用薄荷绿圆角操作卡片与玩家预览，跟随现有�
 
 ## 📜 指令树
 
-所有指令以 `/yzwc` 为根命令。标注 **（客户端命令）** 的子命令仅做参数解析与转发，权威逻辑由服务端数据包接收器执行。
+所有指令以 `/yzwc` 为根命令。标注 **（客户端命令）** 的玩法子命令解析参数并转发，权威逻辑由服务端数据包接收器执行；聊天配色等本机显示设置由客户端直接处理。
 
 ```
 /yzwc
+├── chat_style [plain|gradient]  # 本机聊天配色，默认 gradient；省略名称查询
+│
 ├── map [settings|waypoints|add|refresh]  # 本机地图入口
 │   ├── position <show|hide>
 │   ├── stats
@@ -843,7 +849,7 @@ Esc 暂停屏幕采用薄荷绿圆角操作卡片与玩家预览，跟随现有�
     └── 检查模组更新（拉取远程版本信息，反馈普通/强制更新与下载链接）
 ```
 
-> **客户端命令说明**：`/yzwc pet`、`/yzwc mail`、`/yzwc function invisibility`、`/yzwc function double_doors` 均在客户端注册，仅负责解析参数并通过对应 C→S 数据包（`PetCommandPayload` / `MailComposeOpenPayload` 等邮件包 / `InvisibilityPayload` / `DoubleDoorsTogglePayload`）转发；服务端持有权威状态与权限判定。`/yzwc function damage_numbers` 及其他 `FunctionCommand` 子项是服务端命令，由客户端占位镜像原样转发。
+> **客户端命令说明**：`/yzwc chat_style` 直接修改本机显示配置并刷新聊天记录。`/yzwc pet`、`/yzwc mail`、`/yzwc function invisibility`、`/yzwc function double_doors` 均在客户端注册，仅负责解析参数并通过对应 C→S 数据包（`PetCommandPayload` / `MailComposeOpenPayload` 等邮件包 / `InvisibilityPayload` / `DoubleDoorsTogglePayload`）转发；服务端持有权威状态与权限判定。`/yzwc function damage_numbers` 及其他 `FunctionCommand` 子项是服务端命令，由客户端占位镜像原样转发。
 
 ### 权限节点一览
 

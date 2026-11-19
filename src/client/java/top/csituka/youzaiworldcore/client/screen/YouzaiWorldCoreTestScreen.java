@@ -44,7 +44,7 @@ public final class YouzaiWorldCoreTestScreen extends Screen implements YzuiMenuS
     private void openPreview(boolean registration) {
         Minecraft client = Minecraft.getInstance();
         String name = client.player == null ? client.getUser().getName() : client.player.getName().getString();
-        DebugLogger.debug("CoreTestScreen", "打开本地账户界面预览：%s", registration ? "注册" : "登入");
+        DebugLogger.CLIENT.debug("CoreTestScreen", "打开本地账户界面预览：{}", registration ? "注册" : "登入");
         client.setScreenAndShow(registration ? RegisterScreen.preview(name, this) : LoginScreen.preview(name, this));
     }
 

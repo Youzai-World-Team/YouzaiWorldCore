@@ -40,20 +40,20 @@ public class BoneMealSugarCaneHandler implements UseBlockCallback {
             @NonNull InteractionHand hand,
             @NonNull BlockHitResult hitResult
     ) {
-        DebugLogger.entering("BoneMealSugarCaneHandler", "interact",
+        DebugLogger.SERVER.entering("BoneMealSugarCaneHandler", "interact",
                 "player=" + player.getName().getString());
 
         if (hand != InteractionHand.MAIN_HAND) {
-            DebugLogger.branch("BoneMealSugarCaneHandler", "hand == MAIN_HAND", false, "副手忽略");
-            DebugLogger.exiting("BoneMealSugarCaneHandler", "interact", "PASS (not main hand)");
+            DebugLogger.SERVER.branch("BoneMealSugarCaneHandler", "hand == MAIN_HAND", false, "副手忽略");
+            DebugLogger.SERVER.exiting("BoneMealSugarCaneHandler", "interact", "PASS (not main hand)");
             return InteractionResult.PASS;
         }
 
         ItemStack stack = player.getItemInHand(hand);
         if (stack.getItem() != Items.BONE_MEAL) {
-            DebugLogger.branch("BoneMealSugarCaneHandler", "holding bone meal", false,
+            DebugLogger.SERVER.branch("BoneMealSugarCaneHandler", "holding bone meal", false,
                     "item=" + stack.getItem());
-            DebugLogger.exiting("BoneMealSugarCaneHandler", "interact", "PASS (not bone meal)");
+            DebugLogger.SERVER.exiting("BoneMealSugarCaneHandler", "interact", "PASS (not bone meal)");
             return InteractionResult.PASS;
         }
 
@@ -61,18 +61,18 @@ public class BoneMealSugarCaneHandler implements UseBlockCallback {
         BlockState clickedState = level.getBlockState(clickedPos);
 
         if (!(clickedState.getBlock() instanceof SugarCaneBlock)) {
-            DebugLogger.branch("BoneMealSugarCaneHandler", "block is sugar cane", false,
+            DebugLogger.SERVER.branch("BoneMealSugarCaneHandler", "block is sugar cane", false,
                     "block=" + clickedState.getBlock());
-            DebugLogger.exiting("BoneMealSugarCaneHandler", "interact", "PASS (not sugar cane)");
+            DebugLogger.SERVER.exiting("BoneMealSugarCaneHandler", "interact", "PASS (not sugar cane)");
             return InteractionResult.PASS;
         }
 
-        DebugLogger.branch("BoneMealSugarCaneHandler", "block is sugar cane", true,
+        DebugLogger.SERVER.branch("BoneMealSugarCaneHandler", "block is sugar cane", true,
                 "pos=" + clickedPos);
 
         // 客户端返回 SUCCESS 以让交互数据包发送到服务端
         if (level.isClientSide()) {
-            DebugLogger.branch("BoneMealSugarCaneHandler", "is server side", false, "客户端 PASS");
+            DebugLogger.SERVER.branch("BoneMealSugarCaneHandler", "is server side", false, "客户端 PASS");
             return InteractionResult.SUCCESS;
         }
 
@@ -83,7 +83,7 @@ public class BoneMealSugarCaneHandler implements UseBlockCallback {
         boolean grew = tryGrowSugarCane(serverLevel, clickedPos);
 
         if (!grew) {
-            DebugLogger.exiting("BoneMealSugarCaneHandler", "interact", "FAIL (could not grow)");
+            DebugLogger.SERVER.exiting("BoneMealSugarCaneHandler", "interact", "FAIL (could not grow)");
             return InteractionResult.FAIL;
         }
 
@@ -92,9 +92,8 @@ public class BoneMealSugarCaneHandler implements UseBlockCallback {
             serverPlayer.getInventory().setChanged();
         }
 
-        DebugLogger.info("BoneMealSugarCaneHandler",
-                "甘蔗催熟成功：玩家=%s", player.getName().getString());
-        DebugLogger.exiting("BoneMealSugarCaneHandler", "interact", "SUCCESS");
+        DebugLogger.SERVER.debug("BoneMealSugarCaneHandler", "甘蔗催熟成功：玩家={}", player.getName().getString());
+        DebugLogger.SERVER.exiting("BoneMealSugarCaneHandler", "interact", "SUCCESS");
         return InteractionResult.SUCCESS;
     }
 
@@ -122,18 +121,17 @@ public class BoneMealSugarCaneHandler implements UseBlockCallback {
             }
         }
 
-        DebugLogger.info("BoneMealSugarCaneHandler",
-                "甘蔗柱底部=%s, 顶部=%s, 高度=%d", bottomPos, topPos, caneHeight);
+        DebugLogger.SERVER.trace("BoneMealSugarCaneHandler", "甘蔗柱底部={}, 顶部={}, 高度={}", bottomPos, topPos, caneHeight);
 
         if (caneHeight >= MAX_CANE_HEIGHT) {
-            DebugLogger.branch("BoneMealSugarCaneHandler", "cane height < max", false,
+            DebugLogger.SERVER.branch("BoneMealSugarCaneHandler", "cane height < max", false,
                     "height=" + caneHeight + ", max=" + MAX_CANE_HEIGHT);
             return false;
         }
 
         BlockPos aboveTop = topPos.above();
         if (!level.getBlockState(aboveTop).isAir()) {
-            DebugLogger.branch("BoneMealSugarCaneHandler", "space above is air", false,
+            DebugLogger.SERVER.branch("BoneMealSugarCaneHandler", "space above is air", false,
                     "block=" + level.getBlockState(aboveTop).getBlock());
             return false;
         }
@@ -143,14 +141,13 @@ public class BoneMealSugarCaneHandler implements UseBlockCallback {
 
         level.levelEvent(1505, aboveTop, 15);
 
-        DebugLogger.info("BoneMealSugarCaneHandler",
-                "甘蔗催熟成功：新位置=%s", aboveTop);
+        DebugLogger.SERVER.debug("BoneMealSugarCaneHandler", "甘蔗催熟成功：新位置={}", aboveTop);
         return true;
     }
 
     public static void register() {
-        DebugLogger.entering("BoneMealSugarCaneHandler", "register");
+        DebugLogger.SERVER.entering("BoneMealSugarCaneHandler", "register");
         UseBlockCallback.EVENT.register(INSTANCE);
-        DebugLogger.exiting("BoneMealSugarCaneHandler", "register");
+        DebugLogger.SERVER.exiting("BoneMealSugarCaneHandler", "register");
     }
 }

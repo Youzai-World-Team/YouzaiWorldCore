@@ -67,7 +67,7 @@ public final class TabListManager {
 
     /** 初始化：加载配置、解析模板、注册 tick 与加入事件（在 onInitialize 中调用） */
     public static void initialize() {
-        DebugLogger.entering(MODULE, "initialize");
+        DebugLogger.SERVER.entering(MODULE, "initialize");
         reload();
 
         ServerTickEvents.END_SERVER_TICK.register(TabListManager::onServerTick);
@@ -77,7 +77,7 @@ public final class TabListManager {
                 return;
             }
             if (handler.getPlayer() instanceof ServerPlayer sp && sp.connection != null) {
-                DebugLogger.trace(MODULE, "玩家加入，立即发送 Tab 抬头 / 页脚: %s", sp.getName().getString());
+                DebugLogger.SERVER.trace(MODULE, "玩家加入，立即发送 Tab 抬头 / 页脚: {}", sp.getName().getString());
                 PlayerState state = STATES.computeIfAbsent(sp.getUUID(), u -> new PlayerState());
                 sendTo(sp, server.getTickCount(), state);
             }
@@ -86,7 +86,7 @@ public final class TabListManager {
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) ->
                 STATES.remove(handler.getPlayer().getUUID()));
 
-        DebugLogger.exiting(MODULE, "initialize");
+        DebugLogger.SERVER.exiting(MODULE, "initialize");
     }
 
     /** 重载配置并重解析模板（供 /yzwc reload 调用） */
@@ -97,9 +97,7 @@ public final class TabListManager {
         for (PlayerState state : STATES.values()) {
             state.dirty = true;
         }
-        DebugLogger.info(MODULE, "TabList 抬头 / 页脚已重载：enabled=%s, updateTickTime=%d, headerFrames=%d, footerFrames=%d",
-                TabListSettings.isEnabled(), TabListSettings.getUpdateTickTime(),
-                header.frames().size(), footer.frames().size());
+        DebugLogger.SERVER.debug(MODULE, "TabList 抬头 / 页脚已重载：enabled={}, updateTickTime={}, headerFrames={}, footerFrames={}", TabListSettings.isEnabled(), TabListSettings.getUpdateTickTime(), header.frames().size(), footer.frames().size());
     }
 
     // ===== 服务端 tick 调度 =====
@@ -107,7 +105,7 @@ public final class TabListManager {
     private static void onServerTick(MinecraftServer server) {
         boolean enabled = TabListSettings.isEnabled();
         if (enabled != lastEnabled) {
-            DebugLogger.stateChange(MODULE, "TabList", "enabled", lastEnabled, enabled);
+            DebugLogger.SERVER.stateChange(MODULE, "TabList", "enabled", lastEnabled, enabled);
             if (!enabled) {
                 // 关闭时清除客户端已显示的抬头 / 页脚残留
                 clearAll(server);
@@ -153,7 +151,7 @@ public final class TabListManager {
             state.lastFooter = f;
             state.dirty = false;
         } catch (Exception e) {
-            DebugLogger.exception(MODULE, "sendTo(" + player.getName().getString() + ")", e);
+            DebugLogger.SERVER.exception(MODULE, "sendTo(" + player.getName().getString() + ")", e);
         }
     }
 
@@ -171,8 +169,7 @@ public final class TabListManager {
                 state.dirty = false;
             }
         }
-        DebugLogger.info(MODULE, "TabList 功能已关闭，已向 %d 名在线玩家清除抬头 / 页脚",
-                server.getPlayerList().getPlayers().size());
+        DebugLogger.SERVER.debug(MODULE, "TabList 功能已关闭，已向 {} 名在线玩家清除抬头 / 页脚", server.getPlayerList().getPlayers().size());
     }
 
     // ===== 模板解析 =====
@@ -199,7 +196,7 @@ public final class TabListManager {
             int changeRate = readChangeRate(obj, label);
             JsonElement values = obj.get("values");
             if (values == null || !values.isJsonArray()) {
-                DebugLogger.warn(MODULE, "TabList 配置错误：%s 的动画对象缺少 values 数组，已回退为空", label);
+                DebugLogger.SERVER.warn(MODULE, "TabList 配置错误：{} 的动画对象缺少 values 数组，已回退为空", label);
                 return FrameSet.empty();
             }
             List<TextNode> frames = new ArrayList<>();
@@ -222,8 +219,7 @@ public final class TabListManager {
             return new FrameSet(List.of(PARSER.parseNode(element.getAsString())), 1);
         }
 
-        DebugLogger.warn(MODULE, "TabList 配置错误：%s 类型不受支持（期望字符串 / 字符串数组 / 动画对象），已回退为空",
-                label);
+        DebugLogger.SERVER.warn(MODULE, "TabList 配置错误：{} 类型不受支持（期望字符串 / 字符串数组 / 动画对象），已回退为空", label);
         return FrameSet.empty();
     }
 
@@ -248,7 +244,7 @@ public final class TabListManager {
             if (value >= 1) {
                 return value;
             }
-            DebugLogger.warn(MODULE, "TabList 配置错误：%s.change_rate=%d 非法（应 >= 1），已回退为 1", label, value);
+            DebugLogger.SERVER.warn(MODULE, "TabList 配置错误：{}.change_rate={} 非法（应 >= 1），已回退为 1", label, value);
         }
         return 1;
     }
@@ -259,7 +255,7 @@ public final class TabListManager {
      */
     private static List<String> toStringList(JsonElement element, String label) {
         if (element == null || !element.isJsonArray()) {
-            DebugLogger.warn(MODULE, "TabList 配置错误：%s 期望字符串数组，已回退为空行", label);
+            DebugLogger.SERVER.warn(MODULE, "TabList 配置错误：{} 期望字符串数组，已回退为空行", label);
             return List.of("");
         }
         JsonArray array = element.getAsJsonArray();
@@ -267,7 +263,7 @@ public final class TabListManager {
         for (int i = 0; i < array.size(); i++) {
             JsonElement item = array.get(i);
             if (item == null || !item.isJsonPrimitive() || !item.getAsJsonPrimitive().isString()) {
-                DebugLogger.warn(MODULE, "TabList 配置错误：%s[%d] 必须是字符串，该行已跳过", label, i);
+                DebugLogger.SERVER.warn(MODULE, "TabList 配置错误：{}[{}] 必须是字符串，该行已跳过", label, i);
                 continue;
             }
             lines.add(item.getAsString());

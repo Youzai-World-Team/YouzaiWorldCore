@@ -84,11 +84,7 @@ public final class ClientCommands {
 }
 """,
     f"{PACKAGE}/util/DebugLogger.java": """package top.csituka.youzaiworldcore.util;
-public final class DebugLogger {
-    public static void entering(String module, String method, Object... arguments) {}
-    public static void exiting(String module, String method, Object... arguments) {}
-    public static void info(String module, String message, Object... arguments) {}
-}
+public final class DebugLogger { public static final int LEVEL_OFF=0,LEVEL_BASIC=1,LEVEL_DETAILED=2,LEVEL_DEBUG=3; public static final DebugLogger SERVER=new DebugLogger(),CLIENT=new DebugLogger(); private boolean developer; private int level; public void configure(boolean d,int l){developer=d;level=l;} public boolean isDevModeEnabled(){return developer;} public int getLogLevel(){return level;} public static boolean isEnabled(int l){return false;} public static boolean isEnabled(){return false;} public static DebugLogger bootstrap(){return CLIENT;} public static DebugLogger forFile(java.nio.file.Path p){return SERVER;} public ModuleLogger module(String m){return new ModuleLogger();} public static void notice(String m,String s,Object...a){} public static void warn(String m,String s,Object...a){} public static void error(String m,String s,Object...a){} public static void exception(String m,String s,Object...a){} public static void exceptionSummary(String m,String s,Object...a){} public static void info(String m,String s,Object...a){} public static void stateChange(String m,String s,Object...a){} public static void debug(String m,String s,Object...a){} public static void branch(String m,String s,Object...a){} public static void debugStateChange(String m,String s,Object...a){} public static void trace(String m,String s,Object...a){} public static void entering(String m,String s,Object...a){} public static void exiting(String m,String s,Object...a){} public static void traceBranch(String m,String s,Object...a){} public static void traceStateChange(String m,String s,Object...a){} public static final class ModuleLogger { public void notice(String s,Object...a){} public void info(String s,Object...a){} public void debug(String s,Object...a){} public void trace(String s,Object...a){} public void warn(String s,Object...a){} public void error(String s,Object...a){} public boolean isInfoEnabled(){return false;} public boolean isDebugEnabled(){return false;} public boolean isTraceEnabled(){return false;} } }
 """,
     f"{PACKAGE}/config/ConfigSection.java": """package top.csituka.youzaiworldcore.config;
 import java.util.*;
@@ -249,7 +245,7 @@ final class LifecycleProbe {
     int common, server;
     static int commands;
     private void initializeCommonRegistrations() { common++; }
-    private static void registerServerCommands(Object dispatcher) { commands++; }
+    private static void registerServerCommands(Object dispatcher, Commands.CommandSelection environment) { commands++; }
 """ + method(core, "public void onInitialize()") + guard + "\n}"
 
     mod = json.loads((ROOT / "src/main/resources/fabric.mod.json").read_text())
@@ -283,7 +279,7 @@ final class LifecycleProbe {
         classes = directory / "classes"
         classes.mkdir()
         subprocess.run([javac, "--release", "25", "-encoding", "UTF-8", "-proc:none", "-cp", str(brigadier),
-                        "-d", str(classes), *map(str, directory.rglob("*.java")), *map(str, actual)], check=True)
+                        "-d", str(classes), *map(str, directory.rglob("*.java")), *map(str, actual), str(Path(__file__).resolve().parents[1] / "src/main/java/top/csituka/youzaiworldcore/util/LogValues.java")], check=True)
         modified = [ROOT / f"src/main/java/{PACKAGE}/YouzaiworldCore.java",
                     ROOT / f"src/main/java/{PACKAGE}/account/command/AccountCommands.java",
                     ROOT / f"src/main/java/{PACKAGE}/account/mixin/AccountServerPlayerMixin.java", *actual]

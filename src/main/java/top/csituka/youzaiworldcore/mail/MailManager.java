@@ -5,7 +5,6 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
-import top.csituka.youzaiworldcore.YouzaiworldCore;
 import top.csituka.youzaiworldcore.account.data.AccountDataStorage;
 import top.csituka.youzaiworldcore.account.data.PlayerAccount;
 import top.csituka.youzaiworldcore.luckperms.LuckPermsHelper;
@@ -45,6 +44,7 @@ import java.util.stream.Collectors;
  */
 @SuppressWarnings("null")
 public class MailManager {
+    private static final DebugLogger.ModuleLogger MOD_LOG = DebugLogger.SERVER.module("MailManager");
 
     private static final String MODULE = "MailManager";
 
@@ -69,10 +69,10 @@ public class MailManager {
      * @return 去重后的收件人 UUID 集合
      */
     public static Set<UUID> resolveTargets(List<TargetSpec> targets) {
-        DebugLogger.entering(MODULE, "resolveTargets", "targets=" + (targets == null ? 0 : targets.size()));
+        DebugLogger.SERVER.entering(MODULE, "resolveTargets", "targets=" + (targets == null ? 0 : targets.size()));
         Set<UUID> recipients = new HashSet<>();
         if (targets == null || targets.isEmpty()) {
-            DebugLogger.exiting(MODULE, "resolveTargets", "empty targets");
+            DebugLogger.SERVER.exiting(MODULE, "resolveTargets", "empty targets");
             return recipients;
         }
 
@@ -119,12 +119,12 @@ public class MailManager {
                         }
                     }
                 }
-                default -> DebugLogger.warn(MODULE, "未知 scope: %d", spec.scope());
+                default -> DebugLogger.SERVER.warn(MODULE, "未知 scope: {}", spec.scope());
             }
         }
 
-        DebugLogger.info(MODULE, "resolveTargets 结果: %d 个 UUID (去重后)", recipients.size());
-        DebugLogger.exiting(MODULE, "resolveTargets");
+        DebugLogger.SERVER.debug(MODULE, "resolveTargets 结果: {} 个 UUID (去重后)", recipients.size());
+        DebugLogger.SERVER.exiting(MODULE, "resolveTargets");
         return recipients;
     }
 
@@ -142,7 +142,7 @@ public class MailManager {
         try {
             return UUID.fromString(account.uuid);
         } catch (IllegalArgumentException ignored) {
-            DebugLogger.warn(MODULE, "账户 UUID 格式无效，已跳过：%s", account.username);
+            DebugLogger.SERVER.warn(MODULE, "账户 UUID 格式无效，已跳过：{}", account.username);
             return null;
         }
     }
@@ -161,13 +161,13 @@ public class MailManager {
      * @param mail   Api 返回的权威邮件（含附件）
      */
     public static void applyAttachments(ServerPlayer player, Mail mail) {
-        DebugLogger.entering(MODULE, "applyAttachments",
+        DebugLogger.SERVER.entering(MODULE, "applyAttachments",
                 "player=" + player.getScoreboardName() + ", mailId=" + mail.getId());
         MinecraftServer server = player.level().getServer();
         var lookup = server.registryAccess();
         List<MailAttachment> attachments = mail.getAttachments();
         if (attachments == null) {
-            DebugLogger.exiting(MODULE, "applyAttachments", "no attachments");
+            DebugLogger.SERVER.exiting(MODULE, "applyAttachments", "no attachments");
             return;
         }
 
@@ -182,8 +182,8 @@ public class MailManager {
                         com.mojang.serialization.DataResult<ItemStack> result = ItemStack.CODEC.parse(
                                 lookup.createSerializationContext(net.minecraft.nbt.NbtOps.INSTANCE),
                                 ItemStackNbtUpgrader.upgrade(server.getFixerUpper(), tag, att.effectiveDataVersion()));
-                        result.error().ifPresent(error -> DebugLogger.warn(MODULE,
-                                "邮件物品附件无法解析，已跳过: mailId=%s, %s", mail.getId(), error.message()));
+                        result.error().ifPresent(error -> DebugLogger.SERVER.warn(MODULE,
+                                "邮件物品附件无法解析，已跳过: mailId={}, {}", mail.getId(), error.message()));
                         ItemStack stack = result.result().orElse(ItemStack.EMPTY);
                         if (!stack.isEmpty()) {
                             stack.setCount(att.amount() > 0 ? Math.min(att.amount(), stack.getMaxStackSize()) : 1);
@@ -192,7 +192,7 @@ public class MailManager {
                                 var itemEntity = new ItemEntity(player.level(),
                                         player.getX(), player.getY(), player.getZ(), stack);
                                 player.level().addFreshEntity(itemEntity);
-                                DebugLogger.info(MODULE, "背包满，物品掉落: %s x%d", stack.getDisplayName().getString(),
+                                DebugLogger.SERVER.debug(MODULE, "背包满，物品掉落: {} x{}", stack.getDisplayName().getString(),
                                         stack.getCount());
                             }
                         }
@@ -209,11 +209,11 @@ public class MailManager {
                     case ADVENTURE_LEVEL -> grantAdventureLevels(player, att.amount());
                 }
             } catch (Exception e) {
-                DebugLogger.exception(MODULE, "applyAttachments", e);
+                DebugLogger.SERVER.exception(MODULE, "applyAttachments", e);
             }
         }
-        DebugLogger.info(MODULE, "玩家 %s 已领取奖励 mailId=%s", player.getScoreboardName(), mail.getId());
-        DebugLogger.exiting(MODULE, "applyAttachments");
+        DebugLogger.SERVER.info(MODULE, "玩家 {} 已领取奖励 mailId={}", player.getScoreboardName(), mail.getId());
+        DebugLogger.SERVER.exiting(MODULE, "applyAttachments");
     }
 
     /**
@@ -231,7 +231,7 @@ public class MailManager {
         int currentLevel = data.getLevel();
         long targetTotal = AdventureLevelManager.totalExpForLevel(currentLevel + levels);
         int delta = (int) Math.max(1L, targetTotal - data.totalExp);
-        DebugLogger.info(MODULE, "发放冒险等级: player=%s, levels=%d, Lv.%d → Lv.%d, exp=+%d",
+        DebugLogger.SERVER.info(MODULE, "发放冒险等级: player={}, levels={}, Lv.{} → Lv.{}, exp=+{}",
                 player.getScoreboardName(), levels, currentLevel, currentLevel + levels, delta);
         AdventureLevelManager.grantExp(player, delta);
     }
@@ -251,7 +251,7 @@ public class MailManager {
     public static void sendUnread(ServerPlayer player, int unread) {
         boolean canSend = MailPermissionHelper.hasMailPermission(player);
         ServerPlayNetworking.send(player, new MailUnreadCountPayload(unread, canSend));
-        DebugLogger.trace(MODULE, "同步未读数: player=%s, unread=%d", player.getScoreboardName(), unread);
+        DebugLogger.SERVER.trace(MODULE, "同步未读数: player={}, unread={}", player.getScoreboardName(), unread);
     }
 
     /** 异步拉取并回推单个玩家的未读数（玩家加入服务器时使用）。 */
@@ -261,12 +261,12 @@ public class MailManager {
         CompletableFuture.supplyAsync(() -> MailApiClient.fetchUnread(uuid))
                 .whenComplete((result, error) -> server.execute(() -> {
                     if (error != null) {
-                        DebugLogger.exception(MODULE, "refreshUnread", error);
+                        DebugLogger.SERVER.exception(MODULE, "refreshUnread", error);
                         return;
                     }
                     if (result == null || !result.success()) {
-                        DebugLogger.warn(MODULE, "拉取未读数失败: player=%s, %s",
-                                player.getScoreboardName(), result == null ? "无响应" : result.message());
+                        DebugLogger.SERVER.warn(MODULE, "拉取未读数失败: player={}, {}", player.getScoreboardName(),
+                                result == null ? "无响应" : result.message());
                         return;
                     }
                     if (player.hasDisconnected()) {
@@ -301,7 +301,7 @@ public class MailManager {
         CompletableFuture.supplyAsync(() -> MailApiClient.fetchUnreadBatch(online))
                 .whenComplete((counts, error) -> server.execute(() -> {
                     if (error != null) {
-                        DebugLogger.exception(MODULE, "refreshUnreadFor", error);
+                        DebugLogger.SERVER.exception(MODULE, "refreshUnreadFor", error);
                         return;
                     }
                     if (counts == null || counts.isEmpty()) {
@@ -340,7 +340,7 @@ public class MailManager {
         if (online.isEmpty()) {
             return;
         }
-        DebugLogger.trace(MODULE, "周期刷新未读徽标: online=%d", online.size());
+        DebugLogger.SERVER.trace(MODULE, "周期刷新未读徽标: online={}", online.size());
         refreshUnreadFor(server, online);
     }
 
@@ -366,7 +366,7 @@ public class MailManager {
         List<UUID> online = server.getPlayerList().getPlayers().stream()
                 .map(ServerPlayer::getUUID)
                 .toList();
-        DebugLogger.info(MODULE, "后台触发邮件拉取: mailId=%s, online=%d", mailId, online.size());
+        DebugLogger.SERVER.debug(MODULE, "后台触发邮件拉取: mailId={}, online={}", mailId, online.size());
 
         CompletableFuture.supplyAsync(() -> {
             MailApiClient.DetailResult detail = MailApiClient.fetchDetail(mailId, null);
@@ -378,7 +378,7 @@ public class MailManager {
             return new PullData(detail, refs, unreadCounts);
         }).whenComplete((data, error) -> server.execute(() -> {
             if (error != null) {
-                DebugLogger.exception(MODULE, "pullAndPushMail", error);
+                DebugLogger.SERVER.exception(MODULE, "pullAndPushMail", error);
                 completePull(completion, new PullResult(false, "拉取邮件时发生异常", 0));
                 return;
             }
@@ -386,7 +386,7 @@ public class MailManager {
                 String message = data == null || data.detail() == null || data.detail().message().isBlank()
                         ? "Api 未返回有效邮件"
                         : data.detail().message();
-                DebugLogger.warn(MODULE, "后台邮件拉取失败: mailId=%s, %s", mailId, message);
+                DebugLogger.SERVER.warn(MODULE, "后台邮件拉取失败: mailId={}, {}", mailId, message);
                 completePull(completion, new PullResult(false, message, 0));
                 return;
             }
@@ -413,17 +413,16 @@ public class MailManager {
         CompletableFuture.supplyAsync(() -> MailApiClient.purge(keepStarred))
                 .whenComplete((result, error) -> {
                     if (error != null) {
-                        DebugLogger.exception(MODULE, "purgeAsync", error);
+                        DebugLogger.SERVER.exception(MODULE, "purgeAsync", error);
                         return;
                     }
                     if (result == null || !result.success()) {
-                        DebugLogger.warn(MODULE, "清理过期邮件失败：%s",
-                                result == null ? "无响应" : result.message());
+                        DebugLogger.SERVER.warn(MODULE, "清理过期邮件失败：{}", result == null ? "无响应" : result.message());
                         return;
                     }
                     if (result.removed() > 0) {
-                        DebugLogger.info(MODULE, "清理过期邮件: 移除 %d 封, 整理引用 %d 条",
-                                result.removed(), result.prunedRefs());
+                        DebugLogger.SERVER.info(MODULE, "清理过期邮件: 移除 {} 封, 整理引用 {} 条", result.removed(),
+                                result.prunedRefs());
                     }
                     if (server != null && !result.affected().isEmpty()) {
                         server.execute(() -> refreshUnreadFor(server, result.affected()));
@@ -442,24 +441,24 @@ public class MailManager {
      * @param server 服务端实例
      */
     public static void purgeOnServerStart(MinecraftServer server) {
-        DebugLogger.entering(MODULE, "purgeOnServerStart");
+        DebugLogger.SERVER.entering(MODULE, "purgeOnServerStart");
         CompletableFuture.supplyAsync(() -> MailApiClient.purge(true))
                 .whenComplete((result, error) -> {
                     if (error != null) {
-                        DebugLogger.exception(MODULE, "purgeOnServerStart", error);
+                        DebugLogger.SERVER.exception(MODULE, "purgeOnServerStart", error);
                         return;
                     }
                     if (result == null || !result.success()) {
-                        YouzaiworldCore.LOGGER.warn("邮件启动清理失败：{}",
+                        MOD_LOG.warn("邮件启动清理失败：{}",
                                 result == null ? "Api 无响应" : result.message());
                         return;
                     }
-                    YouzaiworldCore.LOGGER.info("邮件启动清理：删除过期且无人星标的邮件 {} 封，整理收件箱引用 {} 条",
+                    MOD_LOG.debug("邮件启动清理：删除过期且无人星标的邮件 {} 封，整理收件箱引用 {} 条",
                             result.removed(), result.prunedRefs());
-                    DebugLogger.info(MODULE, "启动清理完成: removed=%d, prunedRefs=%d",
-                            result.removed(), result.prunedRefs());
+                    DebugLogger.SERVER.info(MODULE, "启动清理完成: removed={}, prunedRefs={}", result.removed(),
+                            result.prunedRefs());
                 });
-        DebugLogger.exiting(MODULE, "purgeOnServerStart");
+        DebugLogger.SERVER.exiting(MODULE, "purgeOnServerStart");
     }
 
     /**
@@ -468,14 +467,14 @@ public class MailManager {
      * @param playerUuid 被注销账户的玩家 UUID
      */
     public static void onAccountDeleted(UUID playerUuid) {
-        DebugLogger.entering(MODULE, "onAccountDeleted", "playerUuid=" + playerUuid);
+        DebugLogger.SERVER.entering(MODULE, "onAccountDeleted", "playerUuid=" + playerUuid);
         CompletableFuture.runAsync(() -> MailApiClient.deleteBox(playerUuid))
                 .whenComplete((ignored, error) -> {
                     if (error != null) {
-                        DebugLogger.exception(MODULE, "onAccountDeleted", error);
+                        DebugLogger.SERVER.exception(MODULE, "onAccountDeleted", error);
                     }
                 });
-        DebugLogger.exiting(MODULE, "onAccountDeleted");
+        DebugLogger.SERVER.exiting(MODULE, "onAccountDeleted");
     }
 
     /**

@@ -16,8 +16,6 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import org.jspecify.annotations.NonNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
@@ -56,7 +54,7 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
 @SuppressWarnings({ "null", "unused" })
 public class YzuCraftingScreen extends AbstractRecipeBookScreen<CraftingMenu> {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger("YzuCraftingScreen");
+    private static final DebugLogger.ModuleLogger LOGGER = DebugLogger.CLIENT.module("YzuCraftingScreen");
 
     // ========== YZUI 统一设计常量（与 YzuContainerScreen 一致） ==========
 
@@ -104,8 +102,7 @@ public class YzuCraftingScreen extends AbstractRecipeBookScreen<CraftingMenu> {
 
     public YzuCraftingScreen(CraftingMenu menu, Inventory playerInventory, Component title) {
         super(menu, new CraftingRecipeBookComponent(menu), playerInventory, title);
-        DebugLogger.info("YzuCraftingScreen", "创建 YZUI 工作台屏幕: title=%s menuType=%s",
-                title.getString(), menu.getType());
+        DebugLogger.CLIENT.debug("YzuCraftingScreen", "创建 YZUI 工作台屏幕: title={} menuType={}", title.getString(), menu.getType());
     }
 
     @Override

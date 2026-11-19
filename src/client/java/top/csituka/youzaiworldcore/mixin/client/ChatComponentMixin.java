@@ -15,6 +15,7 @@ import net.minecraft.client.multiplayer.chat.GuiMessageTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MessageSignature;
 import top.csituka.youzaiworldcore.chat.ChatMessageStyle;
+import top.csituka.youzaiworldcore.client.chat.ChatMessageRenderer;
 import top.csituka.youzaiworldcore.client.chat.ChatRepeatTracker;
 import top.csituka.youzaiworldcore.client.higherchat.SharedStorage;
 import org.spongepowered.asm.mixin.Mixin;
@@ -57,7 +58,7 @@ public abstract class ChatComponentMixin {
 
     @ModifyVariable(method = "addMessageToDisplayQueue", at = @At("HEAD"), argsOnly = true)
     private GuiMessage youzaiworldcore$collapseRepeatedMessage(GuiMessage message) {
-        var result = youzaiworldcore$repeats.accept(message);
+        var result = youzaiworldcore$repeats.accept(message, ChatMessageRenderer.render(message.content()));
         if (result.replaced() != null) {
             int before = trimmedMessages.size();
             trimmedMessages.removeIf(line -> line.parent() == result.replaced());

@@ -56,7 +56,7 @@ public final class MapCommand {
                     context.getSource().sendSuccess(() -> MapServerManager.performance(player.getUUID()), false);
                     return 1;
                 }))));
-        DebugLogger.info("MapCommand", "已注册 /yzwc map 服务端命令");
+        DebugLogger.SERVER.debug("MapCommand", "已注册 /yzwc map 服务端命令");
     }
 
     private static MapWaypoint here(ServerPlayer player, String name) {

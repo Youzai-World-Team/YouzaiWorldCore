@@ -1,13 +1,13 @@
 package top.csituka.youzaiworldcore.mixin.client;
 
+import top.csituka.youzaiworldcore.util.DebugLogger;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.CreativeModeInventoryScreen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.client.player.LocalPlayer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -28,7 +28,7 @@ import top.csituka.youzaiworldcore.client.screen.YzuInventoryScreen;
 public abstract class InventoryScreenSwitchMixin {
 
     @Unique
-    private static final Logger LOGGER = LoggerFactory.getLogger("ScreenSwitchMixin");
+    private static final DebugLogger.ModuleLogger youzaiworldcore$LOGGER = DebugLogger.CLIENT.module("ScreenSwitchMixin");
 
     @Unique
     private static boolean yzwc$switchingScreen = false;
@@ -47,10 +47,10 @@ public abstract class InventoryScreenSwitchMixin {
                 if (player == null) return;
 
                 if (player.hasInfiniteMaterials()) {
-                    LOGGER.debug("→ YzuCreativeInventoryScreen (creative)");
+                    youzaiworldcore$LOGGER.debug("→ YzuCreativeInventoryScreen (creative)");
                     Minecraft.getInstance().gui.setScreen(new YzuCreativeInventoryScreen(player));
                 } else {
-                    LOGGER.debug("→ YzuInventoryScreen (survival)");
+                    youzaiworldcore$LOGGER.debug("→ YzuInventoryScreen (survival)");
                     Minecraft.getInstance().gui.setScreen(new YzuInventoryScreen(player));
                 }
                 ci.cancel();
@@ -66,7 +66,7 @@ public abstract class InventoryScreenSwitchMixin {
             try {
                 LocalPlayer player = Minecraft.getInstance().player;
                 if (player == null) return;
-                LOGGER.debug("→ YzuCreativeInventoryScreen (from CreativeModeInventoryScreen)");
+                youzaiworldcore$LOGGER.debug("→ YzuCreativeInventoryScreen (from CreativeModeInventoryScreen)");
                 Minecraft.getInstance().gui.setScreen(new YzuCreativeInventoryScreen(player));
                 ci.cancel();
             } finally {

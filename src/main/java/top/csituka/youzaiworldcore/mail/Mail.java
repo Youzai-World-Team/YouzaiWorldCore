@@ -54,7 +54,7 @@ public class Mail {
                 String scopeSummary, String title, String body,
                 long createdTime, @Nullable Long expireTime,
                 boolean claimed, boolean hidden, List<MailAttachment> attachments) {
-        DebugLogger.entering(MODULE, "Mail(parameters)",
+        DebugLogger.SERVER.entering(MODULE, "Mail(parameters)",
                 "id=" + id + ", type=" + type + ", sender=" + sender);
         this.id = id;
         this.type = type;
@@ -68,7 +68,7 @@ public class Mail {
         this.claimed = claimed;
         this.hidden = hidden;
         this.attachments = attachments;
-        DebugLogger.exiting(MODULE, "Mail(parameters)");
+        DebugLogger.SERVER.exiting(MODULE, "Mail(parameters)");
     }
 
     // ===== 简化构造（新建邮件，不含运行时状态） =====
@@ -117,13 +117,13 @@ public class Mail {
 
     public boolean isClaimed() { return claimed; }
     public void setClaimed(boolean claimed) {
-        DebugLogger.stateChange(MODULE, "Mail", "claimed", String.valueOf(claimed));
+        DebugLogger.SERVER.stateChange(MODULE, "Mail", "claimed", String.valueOf(claimed));
         this.claimed = claimed;
     }
 
     public boolean isHidden() { return hidden; }
     public void setHidden(boolean hidden) {
-        DebugLogger.stateChange(MODULE, "Mail", "hidden", String.valueOf(hidden));
+        DebugLogger.SERVER.stateChange(MODULE, "Mail", "hidden", String.valueOf(hidden));
         this.hidden = hidden;
     }
 

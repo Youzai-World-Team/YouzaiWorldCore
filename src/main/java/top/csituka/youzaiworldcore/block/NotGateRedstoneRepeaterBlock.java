@@ -81,12 +81,12 @@ public class NotGateRedstoneRepeaterBlock extends HorizontalDirectionalBlock {
 
     public NotGateRedstoneRepeaterBlock(BlockBehaviour.Properties properties) {
         super(properties);
-        DebugLogger.entering("NotGateRedstoneRepeaterBlock", "constructor");
+        DebugLogger.SERVER.entering("NotGateRedstoneRepeaterBlock", "constructor");
         // 默认 POWERED=true（激活输出）；放置后若输入侧实际有信号，下一次 tick 会翻到 false。
         this.registerDefaultState(this.stateDefinition.any()
                 .setValue(FACING, Direction.NORTH)
                 .setValue(POWERED, Boolean.TRUE));
-        DebugLogger.exiting("NotGateRedstoneRepeaterBlock", "constructor",
+        DebugLogger.SERVER.exiting("NotGateRedstoneRepeaterBlock", "constructor",
                 "defaultState=facing=north,powered=true");
     }
 
@@ -130,7 +130,7 @@ public class NotGateRedstoneRepeaterBlock extends HorizontalDirectionalBlock {
     @Override
     protected void onPlace(@NonNull BlockState state, @NonNull Level level, @NonNull BlockPos pos,
                            @NonNull BlockState oldState, boolean movedByPiston) {
-        DebugLogger.entering("NotGateRedstoneRepeaterBlock", "onPlace", "pos=" + pos);
+        DebugLogger.SERVER.entering("NotGateRedstoneRepeaterBlock", "onPlace", "pos=" + pos);
 
         super.onPlace(state, level, pos, oldState, movedByPiston);
 
@@ -139,27 +139,27 @@ public class NotGateRedstoneRepeaterBlock extends HorizontalDirectionalBlock {
             scheduleEvaluationIfNeeded(level, pos, state);
         }
 
-        DebugLogger.exiting("NotGateRedstoneRepeaterBlock", "onPlace");
+        DebugLogger.SERVER.exiting("NotGateRedstoneRepeaterBlock", "onPlace");
     }
 
     @Override
     protected void affectNeighborsAfterRemoval(@NonNull BlockState state, @NonNull ServerLevel level,
                                                @NonNull BlockPos pos, boolean moved) {
-        DebugLogger.entering("NotGateRedstoneRepeaterBlock", "affectNeighborsAfterRemoval", "pos=" + pos);
+        DebugLogger.SERVER.entering("NotGateRedstoneRepeaterBlock", "affectNeighborsAfterRemoval", "pos=" + pos);
         // 移除后向六向邻居广播；输出端邻居失去信号源需重新评估。
         broadcastNeighborUpdates(level, pos);
-        DebugLogger.exiting("NotGateRedstoneRepeaterBlock", "affectNeighborsAfterRemoval");
+        DebugLogger.SERVER.exiting("NotGateRedstoneRepeaterBlock", "affectNeighborsAfterRemoval");
     }
 
     @Override
     protected void neighborChanged(@NonNull BlockState state, @NonNull Level level, @NonNull BlockPos pos,
                                    @NonNull Block block, @NonNull Orientation orientation, boolean movedByPiston) {
-        DebugLogger.entering("NotGateRedstoneRepeaterBlock", "neighborChanged", "pos=" + pos);
+        DebugLogger.SERVER.entering("NotGateRedstoneRepeaterBlock", "neighborChanged", "pos=" + pos);
 
         super.neighborChanged(state, level, pos, block, orientation, movedByPiston);
 
         if (level.isClientSide()) {
-            DebugLogger.exiting("NotGateRedstoneRepeaterBlock", "neighborChanged", "clientSide, skip");
+            DebugLogger.SERVER.exiting("NotGateRedstoneRepeaterBlock", "neighborChanged", "clientSide, skip");
             return;
         }
 
@@ -168,15 +168,14 @@ public class NotGateRedstoneRepeaterBlock extends HorizontalDirectionalBlock {
             Block.dropResources(state, level, pos);
             level.removeBlock(pos, false);
             broadcastNeighborUpdates(level, pos);
-            DebugLogger.info("NotGateRedstoneRepeaterBlock",
-                    "支撑方块消失，于 %s 处掉落本元件", pos.toShortString());
-            DebugLogger.exiting("NotGateRedstoneRepeaterBlock", "neighborChanged", "dropped (no support)");
+            DebugLogger.SERVER.debug("NotGateRedstoneRepeaterBlock", "支撑方块消失，于 {} 处掉落本元件", pos.toShortString());
+            DebugLogger.SERVER.exiting("NotGateRedstoneRepeaterBlock", "neighborChanged", "dropped (no support)");
             return;
         }
 
         // 2. 任意邻居变化（含输入侧红石线信号强度变化）→ 若状态需要翻转则调度 tick
         scheduleEvaluationIfNeeded(level, pos, state);
-        DebugLogger.exiting("NotGateRedstoneRepeaterBlock", "neighborChanged");
+        DebugLogger.SERVER.exiting("NotGateRedstoneRepeaterBlock", "neighborChanged");
     }
 
     // 核心：NOT 逻辑的延迟执行（vanilla 调度 tick 模式）
@@ -194,10 +193,8 @@ public class NotGateRedstoneRepeaterBlock extends HorizontalDirectionalBlock {
         if (shouldBeActive != state.getValue(POWERED)
                 && !level.getBlockTicks().willTickThisTick(pos, this)) {
             level.scheduleTick(pos, this, TICK_DELAY);
-            if (DebugLogger.isEnabled(DebugLogger.LEVEL_DETAILED)) {
-                DebugLogger.debug("NotGateRedstoneRepeaterBlock",
-                        "scheduleEvaluation @%s: POWERED=%s, shouldBeActive=%s -> tick=%d",
-                        pos.toShortString(), state.getValue(POWERED), shouldBeActive, TICK_DELAY);
+            if (DebugLogger.SERVER.isEnabled(DebugLogger.LEVEL_DETAILED)) {
+                DebugLogger.SERVER.debug("NotGateRedstoneRepeaterBlock", "scheduleEvaluation @{}: POWERED={}, shouldBeActive={} -> tick={}", pos.toShortString(), state.getValue(POWERED), shouldBeActive, TICK_DELAY);
             }
         }
     }
@@ -214,26 +211,24 @@ public class NotGateRedstoneRepeaterBlock extends HorizontalDirectionalBlock {
     @Override
     protected void tick(@NonNull BlockState state, @NonNull ServerLevel level, @NonNull BlockPos pos,
                         @NonNull RandomSource random) {
-        DebugLogger.entering("NotGateRedstoneRepeaterBlock", "tick", "pos=" + pos);
+        DebugLogger.SERVER.entering("NotGateRedstoneRepeaterBlock", "tick", "pos=" + pos);
 
         int inputSignal = readInputSignal(level, pos, state);
         boolean shouldBeActive = inputSignal <= 0;
         boolean isActive = state.getValue(POWERED);
 
-        if (DebugLogger.isEnabled(DebugLogger.LEVEL_DETAILED)) {
-            DebugLogger.debug("NotGateRedstoneRepeaterBlock",
-                    "tick @%s: facing=%s, inputSignal=%d, shouldBeActive=%s, isActive=%s",
-                    pos.toShortString(), state.getValue(FACING), inputSignal, shouldBeActive, isActive);
+        if (DebugLogger.SERVER.isEnabled(DebugLogger.LEVEL_DETAILED)) {
+            DebugLogger.SERVER.debug("NotGateRedstoneRepeaterBlock", "tick @{}: facing={}, inputSignal={}, shouldBeActive={}, isActive={}", pos.toShortString(), state.getValue(FACING), inputSignal, shouldBeActive, isActive);
         }
 
         if (shouldBeActive != isActive) {
             BlockState newState = state.setValue(POWERED, shouldBeActive);
             level.setBlock(pos, newState, Block.UPDATE_ALL);
-            DebugLogger.stateChange("NotGateRedstoneRepeaterBlock", pos.toShortString(), "POWERED",
+            DebugLogger.SERVER.traceStateChange("NotGateRedstoneRepeaterBlock", pos.toShortString(), "POWERED",
                     String.valueOf(isActive), String.valueOf(shouldBeActive));
         }
 
-        DebugLogger.exiting("NotGateRedstoneRepeaterBlock", "tick");
+        DebugLogger.SERVER.exiting("NotGateRedstoneRepeaterBlock", "tick");
     }
 
     /**

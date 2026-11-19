@@ -408,7 +408,7 @@ public final class YzHudSettingsScreen extends Screen {
     private void resetSettings() {
         YzHudSettings.resetPreview();
         rebuildWidgets();
-        DebugLogger.info(MODULE, "YZHUD 预览设置已恢复默认值");
+        DebugLogger.CLIENT.debug(MODULE, "YZHUD 预览设置已恢复默认值");
     }
 
     private Component enabledMessage() {

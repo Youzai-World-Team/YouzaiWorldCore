@@ -25,21 +25,21 @@ public class MailClientCommand {
     private static final String MODULE = "MailClientCommand";
 
     public static void register() {
-        DebugLogger.entering(MODULE, "register");
+        DebugLogger.CLIENT.entering(MODULE, "register");
 
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, context) -> dispatcher.register(
                 literal("yzwc")
                         .then(literal("mail")
                                 .then(literal("send_mail")
                                         .executes(cmdContext -> {
-                                            DebugLogger.info(MODULE, "转发命令: send_mail");
+                                            DebugLogger.CLIENT.debug(MODULE, "转发命令: send_mail");
                                             MailNavigationRequests.compose(null);
                                             return Command.SINGLE_SUCCESS;
                                         })
                                 )
                                 .then(literal("sent")
                                         .executes(cmdContext -> {
-                                            DebugLogger.info(MODULE, "转发命令: sent");
+                                            DebugLogger.CLIENT.debug(MODULE, "转发命令: sent");
                                             MailNavigationRequests.sent(null);
                                             return Command.SINGLE_SUCCESS;
                                         })
@@ -48,12 +48,12 @@ public class MailClientCommand {
                                         .then(argument("mailId", StringArgumentType.word())
                                                 .executes(cmdContext -> {
                                                     String mailIdStr = StringArgumentType.getString(cmdContext, "mailId");
-                                                    DebugLogger.info(MODULE, "转发命令: recall mailId=%s", mailIdStr);
+                                                    DebugLogger.CLIENT.debug(MODULE, "转发命令: recall mailId={}", mailIdStr);
                                                     try {
                                                         UUID mailId = UUID.fromString(mailIdStr);
                                                         ClientPlayNetworking.send(new MailRecallPayload(mailId));
                                                     } catch (IllegalArgumentException e) {
-                                                        DebugLogger.warn(MODULE, "无效的 mailId: %s", mailIdStr);
+                                                        DebugLogger.CLIENT.warn(MODULE, "无效的 mailId: {}", mailIdStr);
                                                     }
                                                     return Command.SINGLE_SUCCESS;
                                                 })
@@ -61,14 +61,14 @@ public class MailClientCommand {
                                 )
                                 .then(literal("purge")
                                         .executes(cmdContext -> {
-                                            DebugLogger.info(MODULE, "转发命令: purge (default all)");
+                                            DebugLogger.CLIENT.debug(MODULE, "转发命令: purge (default all)");
                                             ClientPlayNetworking.send(new MailPurgePayload("all"));
                                             return Command.SINGLE_SUCCESS;
                                         })
                                         .then(argument("target", StringArgumentType.greedyString())
                                                 .executes(cmdContext -> {
                                                     String target = StringArgumentType.getString(cmdContext, "target");
-                                                    DebugLogger.info(MODULE, "转发命令: purge target=%s", target);
+                                                    DebugLogger.CLIENT.debug(MODULE, "转发命令: purge target={}", target);
                                                     ClientPlayNetworking.send(new MailPurgePayload(target));
                                                     return Command.SINGLE_SUCCESS;
                                                 })
@@ -76,14 +76,14 @@ public class MailClientCommand {
                                 )
                                 .then(literal("list")
                                         .executes(cmdContext -> {
-                                            DebugLogger.info(MODULE, "转发命令: list (self)");
+                                            DebugLogger.CLIENT.debug(MODULE, "转发命令: list (self)");
                                             ClientPlayNetworking.send(new MailListRequestPayload(""));
                                             return Command.SINGLE_SUCCESS;
                                         })
                                         .then(argument("player", StringArgumentType.greedyString())
                                                 .executes(cmdContext -> {
                                                     String playerName = StringArgumentType.getString(cmdContext, "player");
-                                                    DebugLogger.info(MODULE, "转发命令: list player=%s", playerName);
+                                                    DebugLogger.CLIENT.debug(MODULE, "转发命令: list player={}", playerName);
                                                     ClientPlayNetworking.send(new MailListRequestPayload(playerName));
                                                     return Command.SINGLE_SUCCESS;
                                                 })
@@ -92,7 +92,7 @@ public class MailClientCommand {
                         )
         ));
 
-        DebugLogger.info(MODULE, "客户端命令 /yzwc mail 已注册 (send_mail / sent / recall / purge / list)");
-        DebugLogger.exiting(MODULE, "register");
+        DebugLogger.CLIENT.debug(MODULE, "客户端命令 /yzwc mail 已注册 (send_mail / sent / recall / purge / list)");
+        DebugLogger.CLIENT.exiting(MODULE, "register");
     }
 }

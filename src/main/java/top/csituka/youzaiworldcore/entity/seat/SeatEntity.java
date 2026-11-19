@@ -64,14 +64,14 @@ public class SeatEntity extends Entity {
                 case DOUBLE -> 1.0;
             };
         } else {
-            DebugLogger.warn("SeatEntity", "Unsupported block for seat: " + state.getBlock());
+            DebugLogger.SERVER.debug("SeatEntity", "Unsupported block for seat: " + state.getBlock());
             return null;
         }
 
         SeatEntity seat = new SeatEntity(ModSeatEntities.SEAT, level);
         seat.setPos(pos.getX() + 0.5, pos.getY() + yOffset, pos.getZ() + 0.5);
 
-        DebugLogger.info("SeatEntity", "Created seat entity at position: " + seat.blockPosition());
+        DebugLogger.SERVER.debug("SeatEntity", "Created seat entity at position: " + seat.blockPosition());
         return seat;
     }
 
@@ -101,8 +101,7 @@ public class SeatEntity extends Entity {
         player.level().getChunkSource()
                 .sendToTrackingPlayersAndSelf(this,
                         new ClientboundSetPassengersPacket(this));
-        DebugLogger.info("SeatEntity", "Player %s mounted on seat at %s",
-                player.getName().getString(), blockPosition());
+        DebugLogger.SERVER.debug("SeatEntity", "Player {} mounted on seat at {}", player.getName().getString(), blockPosition());
     }
 
     @Override
@@ -112,7 +111,7 @@ public class SeatEntity extends Entity {
         // 如果没有乘客，直接移除
         // getPassengers() 返回所有乘客的不可变列表，为空则表示无人乘坐
         if (!isRemoved() && getPassengers().isEmpty()) {
-            DebugLogger.info("SeatEntity", "No passengers, removing seat entity at " + blockPosition());
+            DebugLogger.SERVER.debug("SeatEntity", "No passengers, removing seat entity at " + blockPosition());
             discard();
         }
     }

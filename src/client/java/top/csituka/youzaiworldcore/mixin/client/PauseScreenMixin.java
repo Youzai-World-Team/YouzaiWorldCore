@@ -15,8 +15,6 @@ import net.minecraft.client.input.KeyEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.ComponentContents;
 import net.minecraft.network.chat.contents.TranslatableContents;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -76,7 +74,7 @@ public abstract class PauseScreenMixin extends Screen {
     }
 
     @Unique
-    private static final Logger youzaiworldcore$LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/PauseScreenMixin");
+    private static final DebugLogger.ModuleLogger youzaiworldcore$LOGGER = DebugLogger.CLIENT.module("PauseScreenMixin");
 
     /** 全宽按钮宽度（与原版保持一致） */
     private static final int FULL_W = 204;
@@ -205,7 +203,7 @@ public abstract class PauseScreenMixin extends Screen {
         boolean modelAllowed = screen.width >= MIN_SCREEN_W;
         boolean accountManagementAllowed = !youzaiworldcore$isDeveloperSingleplayerPlayer();
         if (!accountManagementAllowed) {
-            DebugLogger.info("PauseScreen", "开发者单人测试玩家隐藏暂停菜单账户管理入口");
+            DebugLogger.CLIENT.debug("PauseScreen", "开发者单人测试玩家隐藏暂停菜单账户管理入口");
         }
         int centerX = screen.width / 2 - (modelAllowed ? MODEL_SHIFT : 0);
 
@@ -285,18 +283,11 @@ public abstract class PauseScreenMixin extends Screen {
             this.youzaiworldcore$playerName =
                     mc.player != null ? mc.player.getName().getString() : null;
 
-            DebugLogger.info("PauseScreen",
-                    "暂停菜单布局: 按钮左移 %dpx, 模型区=(%d,%d)-(%d,%d) 尺寸=%dx%d 缩放比=%d, 名字+模型组合=%dpx(名字行高%d+间距%d+模型区%d) 居中于按钮列高%dpx, 玩家名=%s",
-                    MODEL_SHIFT, this.youzaiworldcore$modelX0, this.youzaiworldcore$modelY0,
-                    this.youzaiworldcore$modelX1, this.youzaiworldcore$modelY1,
-                    MODEL_RECT_W, MODEL_RECT_H, MODEL_SCALE,
-                    combH, accessor.youzaiworldcore$getFont().lineHeight, NAME_GAP_ABOVE,
-                    MODEL_RECT_H, totalHeight, this.youzaiworldcore$playerName);
+            DebugLogger.CLIENT.debug("PauseScreen", "暂停菜单布局: 按钮左移 {}px, 模型区=({},{})-({},{}) 尺寸={}x{} 缩放比={}, 名字+模型组合={}px(名字行高{}+间距{}+模型区{}) 居中于按钮列高{}px, 玩家名={}", MODEL_SHIFT, this.youzaiworldcore$modelX0, this.youzaiworldcore$modelY0, this.youzaiworldcore$modelX1, this.youzaiworldcore$modelY1, MODEL_RECT_W, MODEL_RECT_H, MODEL_SCALE, combH, accessor.youzaiworldcore$getFont().lineHeight, NAME_GAP_ABOVE, MODEL_RECT_H, totalHeight, this.youzaiworldcore$playerName);
         } else {
             this.youzaiworldcore$modelReady = false;
             this.youzaiworldcore$playerName = null;
-            DebugLogger.warn("PauseScreen",
-                    "屏幕过窄 (%dpx < %dpx)，禁用玩家模型，按钮列不左移", screen.width, MIN_SCREEN_W);
+            DebugLogger.CLIENT.debug("PauseScreen", "屏幕过窄 ({}px < {}px)，禁用玩家模型，按钮列不左移", screen.width, MIN_SCREEN_W);
         }
 
         if (ClientExternalSettings.getLogLevel() > 0) {

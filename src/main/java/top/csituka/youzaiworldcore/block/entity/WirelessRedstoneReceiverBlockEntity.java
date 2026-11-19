@@ -108,7 +108,7 @@ public class WirelessRedstoneReceiverBlockEntity extends WirelessRedstoneBlockEn
 
         level.setBlock(pos, state.setValue(BlockStateProperties.POWERED, shouldBePowered),
                 Block.UPDATE_ALL);
-        DebugLogger.stateChange(MODULE, "receiver@" + pos.toShortString(),
+        DebugLogger.SERVER.traceStateChange(MODULE, "receiver@" + pos.toShortString(),
                 "powered", isPowered, shouldBePowered);
     }
 }

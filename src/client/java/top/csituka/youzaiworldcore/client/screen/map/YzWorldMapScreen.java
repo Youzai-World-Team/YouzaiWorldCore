@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.client.screen.map;
 
+import top.csituka.youzaiworldcore.util.LogValues;
+
 import org.lwjgl.sdl.SDLScancode;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.Minecraft;
@@ -135,7 +137,7 @@ public final class YzWorldMapScreen extends Screen {
                     MapTexts.text(entryKeys[i]), entryIcons[i], entryActions[i]));
             controls.add(entry);
         }
-        DebugLogger.debug("WorldMap", "底部图文入口布局：%d 列，%d 行", entryColumns, entryRows);
+        DebugLogger.CLIENT.debug("WorldMap", "底部图文入口布局：{} 列，{} 行", entryColumns, entryRows);
 
         layerControls.clear();
         exploredLayers = availableLayers();
@@ -150,7 +152,7 @@ public final class YzWorldMapScreen extends Screen {
         if (detailPanel != null) { detailPanel.layout(width, height); addWidget(detailPanel); panelAnimation.show(detailPanel); }
         if (overlayPanel != null) { overlayPanel.layout(width, height); addWidget(overlayPanel); panelAnimation.show(overlayPanel); }
         if (modalPanel != null) { modalPanel.layout(width, height); addWidget(modalPanel); modalAnimation.show(modalPanel); setFocused(modalPanel); }
-        DebugLogger.debug("WorldMap", "全屏地图布局：%dx%d", width, height);
+        DebugLogger.CLIENT.debug("WorldMap", "全屏地图布局：{}x{}", width, height);
     }
 
     /** 非地图入口也直接打开带左侧覆盖设置的地图。 */
@@ -182,7 +184,7 @@ public final class YzWorldMapScreen extends Screen {
     void switchDimension(String target) {
         dimension = target; follow = false; exploredHeight = null;
         overviewLayer = null; canvas.close(); init();
-        DebugLogger.debug("WorldMap", "地图切换维度：%s", target);
+        DebugLogger.CLIENT.debug("WorldMap", "地图切换维度：{}", target);
     }
 
     private void openDimensions() { openDetails(new MapDetailPanel(this)); }
@@ -198,7 +200,7 @@ public final class YzWorldMapScreen extends Screen {
         detailPanel = detail; detail.layout(width, height); addWidget(detail);
         panelAnimation.show(detail);
         clearFocus(); setFocused(detail);
-        DebugLogger.debug("WorldMap", "打开地图详情界面");
+        DebugLogger.CLIENT.debug("WorldMap", "打开地图详情界面");
     }
 
     /** 快捷键和命令直接打开地图中的路径点覆盖列表。 */
@@ -232,7 +234,7 @@ public final class YzWorldMapScreen extends Screen {
         dragging = false; zoomDragging = false; setDragging(false);
         modalPanel = modal; modal.layout(width, height); addWidget(modal);
         modalAnimation.show(modal); setFocused(modal);
-        DebugLogger.debug("WorldMap", "打开叠加弹窗：%s", modal.getClass().getSimpleName());
+        DebugLogger.CLIENT.debug("WorldMap", "打开叠加弹窗：{}", modal.getClass().getSimpleName());
     }
 
     private void closeModal() {
@@ -240,7 +242,7 @@ public final class YzWorldMapScreen extends Screen {
         clearFocus(); modalAnimation.hide(modalPanel); removeWidget(modalPanel); modalPanel = null;
         setDragging(false);
         if (overlayPanel != null) setFocused(overlayPanel);
-        DebugLogger.debug("WorldMap", "关闭叠加弹窗并返回原面板");
+        DebugLogger.CLIENT.debug("WorldMap", "关闭叠加弹窗并返回原面板");
     }
 
     private boolean modalBlocksInput() { return modalPanel != null || modalAnimation.isClosing(); }
@@ -335,7 +337,7 @@ public final class YzWorldMapScreen extends Screen {
             addLayerControl(right, y + (i + 1) * (unit + 3), Component.literal(Integer.toString(elevation)), name,
                     currentLayer() == MapLayer.CAVE && currentHeight(MapLayer.CAVE) == elevation, () -> {
                         exploredHeight = elevation; overviewLayer = null; canvas.close(); rebuildLayerControls();
-                        DebugLogger.debug("WorldMap", "查看已探索地下层：%s Y=%d", dimension, elevation);
+                        DebugLogger.CLIENT.debug("WorldMap", "查看已探索地下层：{} Y={}", dimension, elevation);
                     });
         }
         if (pages > 1) {
@@ -372,7 +374,7 @@ public final class YzWorldMapScreen extends Screen {
         var player = Minecraft.getInstance().player;
         if (player != null) { centerX = player.getX(); centerZ = player.getZ(); }
         status = Component.empty(); canvas.close(); init();
-        DebugLogger.debug("WorldMap", "地图返回自身位置");
+        DebugLogger.CLIENT.debug("WorldMap", "地图返回自身位置");
     }
 
     private MapView view() { return new MapView(centerX, centerZ, scale, 0, mapWidth, mapHeight); }
@@ -478,7 +480,7 @@ public final class YzWorldMapScreen extends Screen {
     }
     private void zoom(double value) {
         double previous = scale; scale = Math.clamp(value, 0.125, 16); displayed = null;
-        DebugLogger.debug("WorldMap", "地图缩放：%.3f → %.3f", previous, scale);
+        DebugLogger.CLIENT.debug("WorldMap", "地图缩放：{} → {}", LogValues.decimal(previous, 3), LogValues.decimal(scale, 3));
     }
     private void slideZoom(double y) {
         zoom(0.125 * Math.pow(128, Math.clamp((zoomBottom - y) / (zoomBottom - zoomTop), 0, 1)));
@@ -508,13 +510,13 @@ public final class YzWorldMapScreen extends Screen {
         int menuY = Math.clamp((int) mouseY + CONTEXT_MENU_PADDING, CONTEXT_MENU_PADDING,
                 Math.max(CONTEXT_MENU_PADDING, height - menuHeight - CONTEXT_MENU_PADDING));
         contextMenu = addWidget(new TransparentButton(menuX, menuY, menuWidth, menuHeight, label, () -> {
-            DebugLogger.debug("WorldMap", "从右键菜单新建路径点：%s X=%d Y=%d Z=%d", targetDimension, x, y, z);
+            DebugLogger.CLIENT.debug("WorldMap", "从右键菜单新建路径点：{} X={} Y={} Z={}", targetDimension, x, y, z);
             openPoint(MapClient.newPoint(targetDimension, x, y, z), true);
         }));
         contextMenu.setTextLeftAligned(true);
         contextMenu.setTooltip(Tooltip.create(label));
         setFocused(contextMenu);
-        DebugLogger.debug("WorldMap", "打开地图右键菜单：%s X=%d Y=%d Z=%d", targetDimension, x, y, z);
+        DebugLogger.CLIENT.debug("WorldMap", "打开地图右键菜单：{} X={} Y={} Z={}", targetDimension, x, y, z);
     }
 
     /** 菜单底板的留白也拦截鼠标，避免点击穿透到地图或覆盖面板。 */
@@ -528,7 +530,7 @@ public final class YzWorldMapScreen extends Screen {
     private void closeContextMenu() {
         if (contextMenu == null) return;
         removeWidget(contextMenu); contextMenu = null; setDragging(false);
-        DebugLogger.debug("WorldMap", "关闭地图右键菜单");
+        DebugLogger.CLIENT.debug("WorldMap", "关闭地图右键菜单");
     }
 
     @Override public boolean mouseClicked(MouseButtonEvent event, boolean actual) {

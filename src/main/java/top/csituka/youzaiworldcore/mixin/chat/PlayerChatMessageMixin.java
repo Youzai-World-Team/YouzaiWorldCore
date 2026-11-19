@@ -95,8 +95,8 @@ public abstract class PlayerChatMessageMixin implements ExtPlayerChatMessage {
             mixin.youzaiworldcore_args = new HashMap<>();
         }
         mixin.youzaiworldcore_args.putAll(this.youzaiworldcore_args);
-        if (DebugLogger.isEnabled(DebugLogger.LEVEL_DEBUG)) {
-            DebugLogger.trace(MODULE, "copied {} args to new PlayerChatMessage", this.youzaiworldcore_args.size());
+        if (DebugLogger.SERVER.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+            DebugLogger.SERVER.trace(MODULE, "copied {} args to new PlayerChatMessage", this.youzaiworldcore_args.size());
         }
     }
 }

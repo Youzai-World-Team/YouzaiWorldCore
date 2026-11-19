@@ -196,7 +196,7 @@ public final class YzHudSettings {
         saveMinimap();
         section.set("opacity", opacity);
         ClientGlobalSettings.save();
-        DebugLogger.info(MODULE, "已保存 YZHUD 设置");
+        DebugLogger.CLIENT.debug(MODULE, "已保存 YZHUD 设置");
     }
 
     public static void reset() {

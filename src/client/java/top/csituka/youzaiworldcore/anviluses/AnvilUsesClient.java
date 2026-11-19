@@ -57,21 +57,21 @@ public final class AnvilUsesClient {
         if (initialized) {
             return;
         }
-        DebugLogger.entering(MODULE, "initialize");
+        DebugLogger.CLIENT.entering(MODULE, "initialize");
 
         ItemTooltipCallback.EVENT.register(AnvilUsesClient::onItemTooltip);
 
-        DebugLogger.info(MODULE, "铁砧使用次数与剩余可修显示功能已注册 (COST_FAIL=%d)", COST_FAIL);
+        DebugLogger.CLIENT.debug(MODULE, "铁砧使用次数与剩余可修显示功能已注册 (COST_FAIL={})", COST_FAIL);
 
         initialized = true;
-        DebugLogger.exiting(MODULE, "initialize");
+        DebugLogger.CLIENT.exiting(MODULE, "initialize");
     }
 
     /**
      * 工具提示回调：读取 {@code REPAIR_COST} 并追加使用次数与剩余可修行。
      */
     private static void onItemTooltip(ItemStack item, Item.TooltipContext context, TooltipFlag flag, List<Component> tooltip) {
-        DebugLogger.trace(MODULE, "onItemTooltip: item=%s", item.getItem());
+        DebugLogger.CLIENT.trace(MODULE, "onItemTooltip: item={}", item.getItem());
 
         int repairCost = item.getOrDefault(DataComponents.REPAIR_COST, 0);
 
@@ -80,13 +80,13 @@ public final class AnvilUsesClient {
             // repairCost+1 可能溢出为负数（当 repairCost == Integer.MAX_VALUE 时）
             // log2 处理：Integer.numberOfLeadingZeros(负数) = 0，结果为 31
             int uses = floorLog2(repairCost + 1);
-            DebugLogger.debug(MODULE, "repairCost=%d -> uses=%d", repairCost, uses);
+            DebugLogger.CLIENT.debug(MODULE, "repairCost={} -> uses={}", repairCost, uses);
 
             tooltip.add(Component.translatable("youzaiworldcore.anvil_uses", uses));
 
             // — 剩余可修次数 —
             int remaining = calculateRemainingRepairs(repairCost);
-            DebugLogger.debug(MODULE, "repairCost=%d -> remainingRepairs=%d", repairCost, remaining);
+            DebugLogger.CLIENT.debug(MODULE, "repairCost={} -> remainingRepairs={}", repairCost, remaining);
 
             if (remaining > 0) {
                 tooltip.add(Component.translatable("youzaiworldcore.anvil_remaining", remaining));
@@ -94,7 +94,7 @@ public final class AnvilUsesClient {
                 tooltip.add(Component.translatable("youzaiworldcore.anvil_exhausted"));
             }
         } else {
-            DebugLogger.trace(MODULE, "repairCost==0，跳过");
+            DebugLogger.CLIENT.trace(MODULE, "repairCost==0，跳过");
         }
     }
 

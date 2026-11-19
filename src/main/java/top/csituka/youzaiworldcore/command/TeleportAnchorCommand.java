@@ -28,7 +28,7 @@ public final class TeleportAnchorCommand {
     private TeleportAnchorCommand() {}
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
-        DebugLogger.entering("TeleportAnchorCommand", "register");
+        DebugLogger.SERVER.entering("TeleportAnchorCommand", "register");
 
         dispatcher.register(Commands.literal("yzwc")
             .then(Commands.literal("teleport_anchor")
@@ -45,11 +45,11 @@ public final class TeleportAnchorCommand {
             )
         );
 
-        DebugLogger.exiting("TeleportAnchorCommand", "register");
+        DebugLogger.SERVER.exiting("TeleportAnchorCommand", "register");
     }
 
     private static int executeList(CommandSourceStack source, ServerPlayer target) {
-        DebugLogger.entering("TeleportAnchorCommand", "executeList");
+        DebugLogger.SERVER.entering("TeleportAnchorCommand", "executeList");
 
         // 未指定玩家时使用命令执行者
         ServerPlayer lookupTarget;
@@ -60,7 +60,7 @@ public final class TeleportAnchorCommand {
                 lookupTarget = sp;
             } else {
                 source.sendSystemMessage(Component.literal("§c此命令只能由玩家执行，或指定目标玩家。"));
-                DebugLogger.exiting("TeleportAnchorCommand", "executeList", "non-player source without target");
+                DebugLogger.SERVER.exiting("TeleportAnchorCommand", "executeList", "non-player source without target");
                 return 0;
             }
         }
@@ -73,7 +73,7 @@ public final class TeleportAnchorCommand {
         if (points.isEmpty()) {
             source.sendSystemMessage(
                     Component.literal("§e玩家 " + targetName + " 没有任何传送锚点。"));
-            DebugLogger.exiting("TeleportAnchorCommand", "executeList", "no points");
+            DebugLogger.SERVER.exiting("TeleportAnchorCommand", "executeList", "no points");
             return 0;
         }
 
@@ -111,7 +111,7 @@ public final class TeleportAnchorCommand {
             source.sendSystemMessage(line);
         }
 
-        DebugLogger.exiting("TeleportAnchorCommand", "executeList", "success (" + points.size() + " points)");
+        DebugLogger.SERVER.exiting("TeleportAnchorCommand", "executeList", "success (" + points.size() + " points)");
         return points.size();
     }
 }

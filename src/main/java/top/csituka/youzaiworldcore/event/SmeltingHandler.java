@@ -76,7 +76,7 @@ public class SmeltingHandler {
                     int count = itemEntity.getItem().getCount();
                     itemEntity.setItem(new ItemStack(smeltedItem, count));
                     replaced = true;
-                    DebugLogger.info(MODULE, "Smelted %d x %s at %s", count, smeltedItem, pos);
+                    DebugLogger.SERVER.debug(MODULE, "Smelted {} x {} at {}", count, smeltedItem, pos);
                 }
             }
 
@@ -98,8 +98,7 @@ public class SmeltingHandler {
                     world.addFreshEntity(new ExperienceOrb(world,
                             pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 1));
                 }
-                DebugLogger.info(MODULE, "Smelting block drop: %s -> %s at %s",
-                        state.getBlock(), resultItem, pos);
+                DebugLogger.SERVER.debug(MODULE, "Smelting block drop: {} -> {} at {}", state.getBlock(), resultItem, pos);
             }
         });
     }

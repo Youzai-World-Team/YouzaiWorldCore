@@ -61,6 +61,6 @@ public class ManaTickHandler implements ServerTickEvents.StartTick {
         ManaManager.registerEvents();
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) ->
                 LAST_SYNCED_MANA.remove(handler.getPlayer().getUUID()));
-        DebugLogger.info("ManaTickHandler", "魔力恢复 Tick 处理器已注册");
+        DebugLogger.SERVER.debug("ManaTickHandler", "魔力恢复 Tick 处理器已注册");
     }
 }

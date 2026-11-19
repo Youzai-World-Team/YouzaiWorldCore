@@ -102,10 +102,10 @@ public class AdventureLevelManager {
     private static final Map<UUID, Integer> placeCounters = new ConcurrentHashMap<>();
 
     public static void initialize() {
-        DebugLogger.entering("AdventureLevelManager", "initialize");
+        DebugLogger.SERVER.entering("AdventureLevelManager", "initialize");
         PlayerLevelStorage.initialize();
         registerBlockBreakEvent();
-        DebugLogger.exiting("AdventureLevelManager", "initialize");
+        DebugLogger.SERVER.exiting("AdventureLevelManager", "initialize");
     }
 
     private static void registerBlockBreakEvent() {
@@ -157,9 +157,11 @@ public class AdventureLevelManager {
         ServerPlayNetworking.send(player, new LevelExpSyncPayload(
                 newLevel, data.getCurrentLevelExp(), data.getExpForNextLevel(), amount, leveledUp));
 
-        DebugLogger.info("AdventureLevelManager",
-                "玩家 %s 获得 %d 冒险经验 (Lv.%d → Lv.%d)",
-                player.getName().getString(), amount, oldLevel, newLevel);
+        if (leveledUp) {
+            DebugLogger.SERVER.info("AdventureLevelManager", "玩家 {} 冒险等级提升：Lv.{} → Lv.{}", player.getName().getString(), oldLevel, newLevel);
+        } else if (DebugLogger.SERVER.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+            DebugLogger.SERVER.trace("AdventureLevelManager", "玩家 {} 获得 {} 冒险经验 (Lv.{})", player.getName().getString(), amount, newLevel);
+        }
     }
 
     /** 无 ServerPlayer 上下文时使用（仅持久化，不发送 HUD 同步包） */

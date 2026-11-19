@@ -1,7 +1,5 @@
 package top.csituka.youzaiworldcore.config;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
@@ -17,7 +15,7 @@ public final class EventSettings {
 
     public static final String MODULE = "EventSettings";
 
-    private static final Logger LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/EventSettings");
+    private static final DebugLogger.ModuleLogger LOGGER = DebugLogger.SERVER.module("EventSettings");
 
     /** 各事件的默认值：全部启用 */
     private static final boolean DEFAULT_ENABLED = true;
@@ -47,11 +45,11 @@ public final class EventSettings {
     public static void setCropXpDrop(boolean v) { if (cropXpDrop != v) { cropXpDrop = v; save(); } }
 
     public static void load() {
-        DebugLogger.entering(MODULE, "load");
+        DebugLogger.SERVER.entering(MODULE, "load");
         ConfigSection section = GlobalSettings.section(GlobalSettings.EVENT_MODULE);
         if (section.isEmpty()) {
             save();
-            DebugLogger.exiting(MODULE, "load", "created default");
+            DebugLogger.SERVER.exiting(MODULE, "load", "created default");
             return;
         }
         deathSound = section.getBoolean("death_sound", deathSound);
@@ -60,8 +58,8 @@ public final class EventSettings {
         witherSkullDrop = section.getBoolean("wither_skull_drop", witherSkullDrop);
         tridentVoidProtect = section.getBoolean("trident_void_protect", tridentVoidProtect);
         cropXpDrop = section.getBoolean("crop_xp_drop", cropXpDrop);
-        DebugLogger.info(MODULE, "已加载全局事件配置");
-        DebugLogger.exiting(MODULE, "load");
+        DebugLogger.SERVER.info(MODULE, "已加载全局事件配置");
+        DebugLogger.SERVER.exiting(MODULE, "load");
     }
 
     /** 重置为默认值并写入 {@code event_module} 分节（新开服 / 坏文件恢复用） */

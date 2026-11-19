@@ -45,8 +45,9 @@ public abstract class WolfOwnerHurtByTargetGoalMixin {
 
         // HUNTING 和 COMPANIONSHIP 模式下不响应主人被攻击
         if (!PetModeController.shouldAllowOwnerHurtByTarget(mode)) {
-            DebugLogger.debug(MODULE, "OwnerHurtByTargetGoal 被拦截: mode=%s, wolf=%s",
-                    mode, wolf.getUUID());
+            if (DebugLogger.SERVER.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+                DebugLogger.SERVER.trace(MODULE, "OwnerHurtByTargetGoal 被拦截: mode={}, wolf={}", mode, wolf.getUUID());
+            }
             cir.setReturnValue(false);
         }
     }

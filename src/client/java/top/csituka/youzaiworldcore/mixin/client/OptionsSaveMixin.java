@@ -23,7 +23,7 @@ public class OptionsSaveMixin {
     @Inject(method = "save", at = @At("HEAD"), cancellable = true)
     private void onSave(CallbackInfo ci) {
         if (ConfigIOManager.isImporting.get()) {
-            DebugLogger.debug(LOG_MODULE, "导入进行中，跳过 options.save()");
+            DebugLogger.CLIENT.debug(LOG_MODULE, "导入进行中，跳过 options.save()");
             ci.cancel();
         }
     }

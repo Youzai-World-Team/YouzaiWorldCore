@@ -35,7 +35,7 @@ public class YzuBeaconScreen extends BeaconScreen implements YzuiWorkstationScre
         inventoryLabelX = 36;
         inventoryLabelY = 127;
         addRenderableWidget(YzuiWorkstationStyle.closeButton(leftPos, topPos, imageWidth, this::onClose));
-        DebugLogger.debug("YzuBeaconScreen", "初始化信标界面：%s", title.getString());
+        DebugLogger.CLIENT.debug("YzuBeaconScreen", "初始化信标界面：{}", title.getString());
     }
 
     @Override

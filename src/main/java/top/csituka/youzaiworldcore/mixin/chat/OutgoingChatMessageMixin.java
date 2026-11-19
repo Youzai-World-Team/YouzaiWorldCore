@@ -35,11 +35,11 @@ public interface OutgoingChatMessageMixin {
             if (header != null && header != ChatFormatHelper.EMPTY_TEXT && ChatFormatHelper.server != null) {
                 cir.setReturnValue(new StyledChatMessage(
                         message, header, ChatFormatHelper.createParameters(header)));
-                DebugLogger.trace("ChatMixin.OutgoingChatMessage", "OutgoingChatMessage replaced with styled message");
+                DebugLogger.SERVER.trace("ChatMixin.OutgoingChatMessage", "OutgoingChatMessage replaced with styled message");
             }
         } catch (Exception e) {
             // 兜底：异常时走原版发送，不影响聊天
-            DebugLogger.exceptionSummary("ChatMixin.OutgoingChatMessage", "create", e.getMessage());
+            DebugLogger.SERVER.exceptionSummary("ChatMixin.OutgoingChatMessage", "create", e.getMessage());
         }
     }
 }

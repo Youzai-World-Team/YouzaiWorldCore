@@ -1,6 +1,9 @@
 package top.csituka.youzaiworldcore.mixin.client.technocrown;
 
-import com.mojang.logging.LogUtils;
+import org.spongepowered.asm.mixin.Unique;
+
+import top.csituka.youzaiworldcore.util.DebugLogger;
+
 import net.minecraft.client.model.EntityModel;
 import net.minecraft.client.model.animal.pig.BabyPigModel;
 import net.minecraft.client.model.animal.pig.PigModel;
@@ -10,7 +13,6 @@ import net.minecraft.client.renderer.entity.LivingEntityRenderer;
 import net.minecraft.client.renderer.entity.PigRenderer;
 import net.minecraft.client.renderer.entity.state.PigRenderState;
 import net.minecraft.world.entity.animal.pig.Pig;
-import org.slf4j.Logger;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -34,7 +36,8 @@ import top.csituka.youzaiworldcore.client.accessor.RenderCrownDuck;
 @Mixin(PigRenderer.class)
 public abstract class PigRendererMixin extends LivingEntityRenderer {
 
-    private static final Logger LOGGER = LogUtils.getLogger();
+    @Unique
+    private static final DebugLogger.ModuleLogger youzaiworldcore$LOGGER = DebugLogger.CLIENT.module("PigRendererMixin");
 
     public PigRendererMixin(EntityRendererProvider.Context ctx, EntityModel model, float shadowRadius) {
         super(ctx, model, shadowRadius);
@@ -50,7 +53,7 @@ public abstract class PigRendererMixin extends LivingEntityRenderer {
                 this,
                 new PigModel(context.bakeLayer(ModelLayers.PIG_SADDLE)),
                 new BabyPigModel(context.bakeLayer(ModelLayers.PIG_BABY))));
-        LOGGER.debug("[YouzaiWorldCore] TechnoCrownFeatureRenderer added to PigRenderer");
+        youzaiworldcore$LOGGER.debug("[YouzaiWorldCore] TechnoCrownFeatureRenderer added to PigRenderer");
     }
 
     /**
@@ -63,7 +66,7 @@ public abstract class PigRendererMixin extends LivingEntityRenderer {
         boolean shouldRender = pigEntity.getName().getString().equals("Technoblade");
         ((RenderCrownDuck) pigEntityRenderState).youzaiworldcore$setRenderCrown(shouldRender);
         if (shouldRender) {
-            LOGGER.debug("[YouzaiWorldCore] Detected Technoblade pig, crown render flag = true");
+            youzaiworldcore$LOGGER.trace("[YouzaiWorldCore] Detected Technoblade pig, crown render flag = true");
         }
     }
 }

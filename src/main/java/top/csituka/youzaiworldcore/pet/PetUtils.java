@@ -2,8 +2,6 @@ package top.csituka.youzaiworldcore.pet;
 
 import net.minecraft.server.MinecraftServer;
 import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
 import java.util.Random;
@@ -14,7 +12,7 @@ import java.util.Random;
 public final class PetUtils {
 
     private static final String MODULE = "PetUtils";
-    private static final Logger LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/Pet");
+    private static final DebugLogger.ModuleLogger LOGGER = DebugLogger.SERVER.module("Pet");
 
     /** Base36 字符集：0-9, A-Z（大写字母 + 数字） */
     private static final char[] BASE36_CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ".toCharArray();
@@ -40,7 +38,7 @@ public final class PetUtils {
      */
     @NotNull
     public static String generateUniqueInternalName(@NotNull MinecraftServer server) {
-        DebugLogger.entering(MODULE, "generateUniqueInternalName");
+        DebugLogger.SERVER.entering(MODULE, "generateUniqueInternalName");
 
         PetGlobalState state;
         try {
@@ -49,7 +47,7 @@ public final class PetUtils {
             // 主世界不可用，仅做随机生成（极不可能发生）
             String fallback = generateRandomName();
             LOGGER.warn("PetGlobalState 不可用，使用 fallback 名称: {}", fallback);
-            DebugLogger.exiting(MODULE, "generateUniqueInternalName", "fallback=" + fallback);
+            DebugLogger.SERVER.exiting(MODULE, "generateUniqueInternalName", "fallback=" + fallback);
             return fallback;
         }
 
@@ -66,8 +64,8 @@ public final class PetUtils {
             }
         } while (state.isNameTaken(name));
 
-        DebugLogger.info(MODULE, "生成内部名称: %s (尝试 %d 次)", name, attempts);
-        DebugLogger.exiting(MODULE, "generateUniqueInternalName", name);
+        DebugLogger.SERVER.debug(MODULE, "生成内部名称: {} (尝试 {} 次)", name, attempts);
+        DebugLogger.SERVER.exiting(MODULE, "generateUniqueInternalName", name);
         return name;
     }
 

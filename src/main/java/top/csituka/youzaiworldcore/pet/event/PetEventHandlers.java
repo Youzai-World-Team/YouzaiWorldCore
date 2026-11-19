@@ -40,7 +40,7 @@ public final class PetEventHandlers {
         if (registered) {
             return;
         }
-        DebugLogger.entering(MODULE, "register");
+        DebugLogger.SERVER.entering(MODULE, "register");
 
         // ===== 交互事件（右键点击实体）=====
         registerInteractHandler();
@@ -58,8 +58,8 @@ public final class PetEventHandlers {
         registerDimensionChangeHandler();
 
         registered = true;
-        DebugLogger.info(MODULE, "宠物模块 Fabric 事件已注册");
-        DebugLogger.exiting(MODULE, "register");
+        DebugLogger.SERVER.debug(MODULE, "宠物模块 Fabric 事件已注册");
+        DebugLogger.SERVER.exiting(MODULE, "register");
     }
 
     // ===== 交互事件（右键点击）=====

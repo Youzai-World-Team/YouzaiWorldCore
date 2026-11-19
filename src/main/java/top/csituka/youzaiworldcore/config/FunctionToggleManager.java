@@ -68,7 +68,7 @@ public final class FunctionToggleManager {
         }
         UserSettings.section(uuid, GlobalSettings.FUNCTION_MODULE).set(key, value);
         UserSettings.save(uuid);
-        DebugLogger.info(MODULE, "玩家 %s 功能 %s = %s", uuid, key, value);
+        DebugLogger.SERVER.info(MODULE, "玩家 {} 功能 {} = {}", uuid, key, value);
     }
 
     /**

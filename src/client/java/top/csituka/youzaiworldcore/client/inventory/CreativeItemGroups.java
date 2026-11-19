@@ -173,7 +173,7 @@ public final class CreativeItemGroups {
                     owners[index] = group;
                 }
             }
-            DebugLogger.debug(MODULE, "分类 %s：%d 个物品变体，%d 个分组", tabId, source.size(), groups.size());
+            DebugLogger.CLIENT.debug(MODULE, "分类 {}：{} 个物品变体，{} 个分组", tabId, source.size(), groups.size());
         }
         rebuildEntries();
     }
@@ -206,7 +206,7 @@ public final class CreativeItemGroups {
         }
         if (changed) {
             rebuildEntries();
-            DebugLogger.debug(MODULE, "收起动画完成，创造列表更新为 %d 个格子", entries.size());
+            DebugLogger.CLIENT.debug(MODULE, "收起动画完成，创造列表更新为 {} 个格子", entries.size());
         }
         return changed;
     }
@@ -221,7 +221,7 @@ public final class CreativeItemGroups {
         boolean old = group.expanded;
         group.toggle(System.nanoTime());
         rebuildEntries();
-        DebugLogger.stateChange(MODULE, group.rule.groupName(), "expanded", old, group.expanded);
+        DebugLogger.CLIENT.stateChange(MODULE, group.rule.groupName(), "expanded", old, group.expanded);
         return true;
     }
 

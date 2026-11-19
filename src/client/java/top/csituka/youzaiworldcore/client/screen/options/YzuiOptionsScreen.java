@@ -109,7 +109,7 @@ public final class YzuiOptionsScreen extends Screen
         this.unified = source instanceof OptionsScreen options ? new UnifiedSettingsPage(this, options) : null;
         if (source != null)
             YzuiSettingsRouter.remember(source, this);
-        DebugLogger.info("YzuiSettings", "创建设置页面：%s", getTitle().getString());
+        DebugLogger.CLIENT.debug("YzuiSettings", "创建设置页面：{}", getTitle().getString());
     }
 
     Screen origin() {

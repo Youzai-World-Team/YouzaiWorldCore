@@ -91,7 +91,7 @@ public abstract class WirelessRedstoneBlockEntity extends BlockEntity {
      */
     public boolean setChannel(int newChannel) {
         if (!WirelessRedstoneChannel.isValid(newChannel)) {
-            DebugLogger.warn(logModule(), "setChannel 被拒绝：频道号越界 channel=%d", newChannel);
+            DebugLogger.SERVER.warn(logModule(), "setChannel 被拒绝：频道号越界 channel={}", newChannel);
             return false;
         }
         if (newChannel == channel) {
@@ -102,7 +102,7 @@ public abstract class WirelessRedstoneBlockEntity extends BlockEntity {
         channel = newChannel;
         markUpdated();
         onChannelChanged(oldChannel, newChannel);
-        DebugLogger.stateChange(logModule(),
+        DebugLogger.SERVER.debugStateChange(logModule(),
                 (isTransmitter() ? "transmitter@" : "receiver@") + worldPosition.toShortString(),
                 "channel", oldChannel, newChannel);
         return true;

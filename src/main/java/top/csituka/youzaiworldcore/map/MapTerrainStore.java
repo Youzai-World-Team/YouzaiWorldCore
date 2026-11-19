@@ -51,7 +51,7 @@ public final class MapTerrainStore implements AutoCloseable {
                         try (var rows = sql.executeQuery()) { return rows.next() ? MapBinaryCodec.tile(key, rows.getLong(1), rows.getBytes(2)) : null; }
                     }
                 });
-            } catch (RuntimeException error) { DebugLogger.exception("MapTerrainStore", "读取地图 SQLite", error); }
+            } catch (RuntimeException error) { DebugLogger.SERVER.exception("MapTerrainStore", "读取地图 SQLite", error); }
             complete(new ReadResult(key, tile));
             reading.remove(key);
         });

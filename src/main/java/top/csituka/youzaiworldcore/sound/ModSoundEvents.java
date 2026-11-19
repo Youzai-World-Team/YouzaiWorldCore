@@ -42,7 +42,7 @@ public class ModSoundEvents {
     private static SoundEvent register(String name, SoundEvent event) {
         Identifier id = Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, name);
         SoundEvent registered = Registry.register(BuiltInRegistries.SOUND_EVENT, id, event);
-        DebugLogger.info("ModSoundEvents", "注册 SoundEvent: %s".formatted(id));
+        DebugLogger.bootstrap().debug("ModSoundEvents", "注册 SoundEvent: {}", id);
         return registered;
     }
 
@@ -52,7 +52,6 @@ public class ModSoundEvents {
      * 此方法保留用于未来需要按需加载的额外 SoundEvent，并输出汇总日志。
      */
     public static void initialize() {
-        DebugLogger.info("ModSoundEvents", "SoundEvent 注册完毕：music_disc_cloud_genshin=%s".formatted(
-                MUSIC_DISC_CLOUD_GENSHIN.location()));
+        DebugLogger.bootstrap().debug("ModSoundEvents", "SoundEvent 注册完毕：music_disc_cloud_genshin={}", MUSIC_DISC_CLOUD_GENSHIN.location());
     }
 }

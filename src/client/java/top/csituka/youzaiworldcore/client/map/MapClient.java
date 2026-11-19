@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.client.map;
 
+import top.csituka.youzaiworldcore.util.LogValues;
+
 import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
@@ -134,7 +136,7 @@ public final class MapClient {
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> client.execute(MapClient::reset));
         ClientLifecycleEvents.CLIENT_STOPPING.register(client -> { reset(); CACHE.close(); MapSettings.database().close(); });
         MapClientCommands.register();
-        DebugLogger.info("MapClient", "悠哉地图已初始化：M 打开地图，N 新建路径点，U 查看路径点");
+        DebugLogger.CLIENT.debug("MapClient", "悠哉地图已初始化：M 打开地图，N 新建路径点，U 查看路径点");
     }
 
     private static KeyMapping key(String key, int code) {
@@ -212,7 +214,7 @@ public final class MapClient {
             double distanceSquared = waypointDistanceSquared(point, new MapVertex(point.x(), point.z()));
             if (distanceSquared <= WAYPOINT_ARRIVAL_DISTANCE_SQUARED) {
                 navigation = null;
-                DebugLogger.debug("MapClient", "已到达路径点，自动取消追踪：%s，三维距离=%.2fm", point.id(), Math.sqrt(distanceSquared));
+                DebugLogger.CLIENT.debug("MapClient", "已到达路径点，自动取消追踪：{}，三维距离={}m", point.id(), LogValues.decimal(Math.sqrt(distanceSquared), 2));
             }
             return;
         }
@@ -467,7 +469,7 @@ public final class MapClient {
             MapSettings.toggle(MapSettings.Toggle.WAYPOINTS);
         if (TOGGLE_NAVIGATION.consumeClick()) {
             MapSettings.toggle(MapSettings.Toggle.WAYPOINT_HUD);
-            DebugLogger.debug("MapClient", "世界内标点显示：%s", MapSettings.enabled(MapSettings.Toggle.WAYPOINT_HUD));
+            DebugLogger.CLIENT.debug("MapClient", "世界内标点显示：{}", MapSettings.enabled(MapSettings.Toggle.WAYPOINT_HUD));
         }
         if (ZOOM_IN.consumeClick())
             MapSettings.setZoom(MapSettings.zoom() * 1.25);
@@ -514,7 +516,7 @@ public final class MapClient {
         y = Math.clamp(y, -MapTileKey.WORLD_LIMIT, MapTileKey.WORLD_LIMIT);
         z = Math.clamp(z, -MapTileKey.WORLD_LIMIT, MapTileKey.WORLD_LIMIT);
         int color = MapWaypointColors.nextColor();
-        DebugLogger.debug("MapClient", "已为新路径点分配颜色：#%s", MapWaypointColors.hex(color));
+        DebugLogger.CLIENT.debug("MapClient", "已为新路径点分配颜色：#{}", MapWaypointColors.hex(color));
         return new MapWaypoint(UUID.randomUUID(), player == null ? new UUID(0, 0) : player.getUUID(),
                 MapTexts.text("new_point").getString(), MapWaypointGroup.UNGROUPED.id(), dimension, x, y, z, color, true, false,
                 MapWaypoint.Kind.NORMAL, System.currentTimeMillis());
@@ -638,7 +640,7 @@ public final class MapClient {
         }
         if (!value.allows(MapSessionPayload.LOAD_STATE))
             loadLevels = Map.of();
-        DebugLogger.info("MapClient", "地图服务已连接：%s，能力=%d", value.worldId(), value.flags());
+        DebugLogger.CLIENT.info("MapClient", "地图服务已连接：{}，能力={}", value.worldId(), value.flags());
     }
 
     public static void tile(MapTilePayload value) {

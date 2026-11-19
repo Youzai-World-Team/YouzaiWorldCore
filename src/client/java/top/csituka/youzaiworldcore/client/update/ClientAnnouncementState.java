@@ -84,9 +84,9 @@ public final class ClientAnnouncementState {
         if (error == null) {
             // 停用响应主动清空；失败则保留之前的公告。
             current = announcement;
-            DebugLogger.info(MODULE, announcement == null ? "线上公告已停用，使用内置公告" : "已获取最新标题页公告");
+            DebugLogger.CLIENT.info(MODULE, announcement == null ? "线上公告已停用，使用内置公告" : "已获取最新标题页公告");
         } else {
-            DebugLogger.warn(MODULE, "公告获取失败，保留现有公告：%s", error.getMessage());
+            DebugLogger.CLIENT.warn(MODULE, "公告获取失败，保留现有公告：{}", error.getMessage());
         }
         loading = false;
     }

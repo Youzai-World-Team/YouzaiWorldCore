@@ -75,7 +75,7 @@ public final class ScoreboardSidebarRenderer {
 
     /** 注册客户端记分板渲染器，并记录初始化里程碑。 */
     public static void initialize() {
-        DebugLogger.info(MODULE, "YZUI 记分板侧边栏渲染器已初始化");
+        DebugLogger.CLIENT.debug(MODULE, "YZUI 记分板侧边栏渲染器已初始化");
     }
 
     /**
@@ -210,8 +210,9 @@ public final class ScoreboardSidebarRenderer {
         }
 
         if (!objective.getName().equals(lastObjectiveName) || entries.size() != lastEntryCount) {
-            DebugLogger.debug(MODULE, "记分板目标=%s，显示条目=%d，面板=%dx%d",
-                    objective.getName(), entries.size(), panelWidth, panelHeight);
+            if (DebugLogger.CLIENT.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+                DebugLogger.CLIENT.trace(MODULE, "记分板目标={}，显示条目={}，面板={}x{}", objective.getName(), entries.size(), panelWidth, panelHeight);
+            }
             lastObjectiveName = objective.getName();
             lastEntryCount = entries.size();
         }

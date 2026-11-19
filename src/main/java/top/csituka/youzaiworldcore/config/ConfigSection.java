@@ -106,6 +106,17 @@ public final class ConfigSection {
         return value;
     }
 
+    /** 离散档位使用精确整数读取，拒绝小数截断与大数溢出后的伪合法值。 */
+    public int getIntExact(String key, int def, int min, int max) {
+        int value = getInt(key, def, min, max);
+        JsonElement element = json.get(key);
+        if (element != null && !element.isJsonNull()
+                && element.getAsBigDecimal().compareTo(java.math.BigDecimal.valueOf(value)) != 0) {
+            fail(key, "期望范围 [" + min + ", " + max + "] 内的整数，实际是 " + JsonFileStore.describe(element));
+        }
+        return value;
+    }
+
     /** 读长整数；缺失返回 {@code def}，类型不符则崩溃退出。 */
     public long getLong(String key, long def) {
         JsonElement e = json.get(key);

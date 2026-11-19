@@ -63,7 +63,7 @@ public abstract class HotbarMixin {
         try {
             HotbarRenderer.render(graphics, deltaTracker);
         } catch (Exception e) {
-            DebugLogger.error(LOG_TAG, "YZUI 热键栏渲染异常: %s", e.getMessage());
+            DebugLogger.CLIENT.error(LOG_TAG, "YZUI 热键栏渲染异常: {}", e.getMessage());
         }
     }
 

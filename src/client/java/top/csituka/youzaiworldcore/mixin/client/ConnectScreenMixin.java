@@ -98,6 +98,6 @@ public class ConnectScreenMixin implements ConnectScreenCancelAccess {
             }
         }
 
-        DebugLogger.info("ConnectScreen", "已通过 ESC 取消服务器连接");
+        DebugLogger.CLIENT.debug("ConnectScreen", "已通过 ESC 取消服务器连接");
     }
 }

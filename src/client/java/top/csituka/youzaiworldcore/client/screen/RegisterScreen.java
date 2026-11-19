@@ -354,7 +354,7 @@ public class RegisterScreen extends Screen implements YzuiMenuScreen {
 
     private void showPreviewResult() {
         processing = false;
-        DebugLogger.debug("AuthPreview", "本地预览按钮反馈：%s", getClass().getSimpleName());
+        DebugLogger.CLIENT.debug("AuthPreview", "本地预览按钮反馈：{}", getClass().getSimpleName());
         showErrorDialog(Component.translatable("screen.youzaiworldcore.test.local_notice").getString(),
                 new String[] { Component.translatable("screen.youzaiworldcore.test.local_result").getString() });
     }

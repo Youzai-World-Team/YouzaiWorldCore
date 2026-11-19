@@ -1,67 +1,38 @@
 package top.csituka.youzaiworldcore.config;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
 /**
- * 服务端外部设置持久化配置。
- * <p>
- * 存放位置：{@code yzwc/server/config/global_settings.json} 的
- * {@code core_module} 分节。
- * <p>
- * 当前支持设置：
- * <ul>
- *   <li>{@code dev_mode_enabled} — 启用开发者模式（服务端专用）</li>
- *   <li>{@code log_to_file} — 输出详细日志到 latest.log</li>
- * </ul>
+ * 服务端核心设置：yzwc/server/config/global_settings.json 的 core_module 分节。
+ * dev_mode_enabled 与 log_level（0 关闭、1 基本、2 详细、3 调试）只控制服务端诊断日志。
+ * 普通运维日志始终输出，/yzwc reload 会即时重新读取本端配置。
  */
-@SuppressWarnings({"null", "unused"})
 public final class ServerExternalSettings {
-
     public static final String MODULE = "ServerExternalSettings";
-
-    private static final Logger LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/ServerExternalSettings");
-
     private static final boolean DEFAULT_DEV_MODE_ENABLED = false;
-    private static final boolean DEFAULT_LOG_TO_FILE = false;
-
+    private static final int DEFAULT_LOG_LEVEL = DebugLogger.LEVEL_OFF;
     private static boolean devModeEnabled = DEFAULT_DEV_MODE_ENABLED;
-    private static boolean logToFile = DEFAULT_LOG_TO_FILE;
+    private static int logLevel = DEFAULT_LOG_LEVEL;
 
-    private ServerExternalSettings() {}
+    private ServerExternalSettings() { }
 
-    // ===== 读取 =====
+    public static boolean isDevModeEnabled() { return devModeEnabled; }
+    public static int getLogLevel() { return logLevel; }
 
-    public static boolean isDevModeEnabled() {
-        return devModeEnabled;
-    }
-
-    public static boolean isLogToFile() {
-        return logToFile;
-    }
-
-    // ===== 持久化 =====
-
-    /** 从全局配置加载并同步到 DebugLogger（分节缺失则写入默认值） */
+    /** 强类型读取并原子应用，只更新服务端；旧布尔配置不参与新级别计算。 */
     public static void load() {
         ConfigSection section = GlobalSettings.section(GlobalSettings.CORE_MODULE);
-        if (section.isEmpty()) {
-            save();
-            syncToDebugLogger();
-            return;
-        }
-        devModeEnabled = section.getBoolean("dev_mode_enabled", devModeEnabled);
-        logToFile = section.getBoolean("log_to_file", logToFile);
+        devModeEnabled = section.getBoolean("dev_mode_enabled", DEFAULT_DEV_MODE_ENABLED);
+        logLevel = section.getIntExact("log_level", DEFAULT_LOG_LEVEL, DebugLogger.LEVEL_OFF, DebugLogger.LEVEL_DEBUG);
+        if (!section.has("dev_mode_enabled") || !section.has("log_level") || section.has("log_to_file")) save();
         syncToDebugLogger();
-        LOGGER.debug("核心模块配置已加载: devMode={}, logToFile={}", devModeEnabled, logToFile);
+        DebugLogger.SERVER.debug(MODULE, "核心配置已加载：devMode={}, logLevel={}", devModeEnabled, logLevel);
     }
 
-    /** 重置为默认值并写入 {@code core_module} 分节（新开服 / 坏文件恢复用） */
+    /** 新配置与错误恢复都写出完整四档配置。 */
     public static void writeDefaults() {
         devModeEnabled = DEFAULT_DEV_MODE_ENABLED;
-        logToFile = DEFAULT_LOG_TO_FILE;
+        logLevel = DEFAULT_LOG_LEVEL;
         save();
         syncToDebugLogger();
     }
@@ -69,12 +40,12 @@ public final class ServerExternalSettings {
     public static void save() {
         ConfigSection section = GlobalSettings.section(GlobalSettings.CORE_MODULE);
         section.set("dev_mode_enabled", devModeEnabled);
-        section.set("log_to_file", logToFile);
+        section.set("log_level", logLevel);
+        section.remove("log_to_file");
         GlobalSettings.save();
     }
 
     private static void syncToDebugLogger() {
-        DebugLogger.setDevModeEnabled(devModeEnabled);
-        DebugLogger.setLogLevel(logToFile ? 1 : 0);
+        DebugLogger.SERVER.configure(devModeEnabled, logLevel);
     }
 }

@@ -46,7 +46,7 @@ public abstract class PlayerListMixin {
             PlayerChatMessage message, CommandSourceStack source, ChatType.Bound original) {
         if (ChatMessageStyle.isHeader(parameters.name()))
             return parameters;
-        DebugLogger.debug("ChatMessages", "游戏命令消息：执行者=%s", source.getTextName());
+        DebugLogger.SERVER.debug("ChatMessages", "游戏命令消息：执行者={}", source.getTextName());
         return ChatType.bind(ChatFormatHelper.MESSAGE_TYPE_ID, source.getServer().registryAccess(),
                 ChatMessageStyle.gameHeader(source.getTextName()));
     }
@@ -77,21 +77,21 @@ public abstract class PlayerListMixin {
 
         // 从未离开过服务器（LEAVE_GAME 统计为 0）→ 首次加入
         if (player.getStats().getValue(Stats.CUSTOM.get(Stats.LEAVE_GAME)) == 0) {
-            if (DebugLogger.isEnabled(DebugLogger.LEVEL_DEBUG)) {
-                DebugLogger.trace(MODULE, "replaceJoin first_time player={}", player.getName().getString());
+            if (DebugLogger.SERVER.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+                DebugLogger.SERVER.trace(MODULE, "replaceJoin first_time player={}", player.getName().getString());
             }
             return ChatFormatHelper.formatJoinFirstTime(player);
         }
 
         Object[] args = ((TranslatableContents) text.getContents()).getArgs();
         if (args.length == 1) {
-            if (DebugLogger.isEnabled(DebugLogger.LEVEL_DEBUG)) {
-                DebugLogger.trace(MODULE, "replaceJoin normal player={}", player.getName().getString());
+            if (DebugLogger.SERVER.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+                DebugLogger.SERVER.trace(MODULE, "replaceJoin normal player={}", player.getName().getString());
             }
             return ChatFormatHelper.formatJoin(player);
         } else {
-            if (DebugLogger.isEnabled(DebugLogger.LEVEL_DEBUG)) {
-                DebugLogger.trace(MODULE, "replaceJoin renamed player={}", player.getName().getString());
+            if (DebugLogger.SERVER.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+                DebugLogger.SERVER.trace(MODULE, "replaceJoin renamed player={}", player.getName().getString());
             }
             return ChatFormatHelper.formatJoinRenamed(player, (String) args[1]);
         }

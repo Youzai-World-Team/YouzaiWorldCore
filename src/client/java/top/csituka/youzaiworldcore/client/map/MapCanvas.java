@@ -118,7 +118,7 @@ public final class MapCanvas implements AutoCloseable {
                     if (epoch == ticket)
                         ready = new Ready(ticket, frame, tw, th, pixels);
                 } catch (Exception error) {
-                    DebugLogger.exception("MapCanvas", "合成地图纹理", error);
+                    DebugLogger.CLIENT.exception("MapCanvas", "合成地图纹理", error);
                 } finally {
                     pending = false;
                 }

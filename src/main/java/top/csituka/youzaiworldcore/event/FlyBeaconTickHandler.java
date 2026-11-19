@@ -45,10 +45,10 @@ public class FlyBeaconTickHandler implements ServerTickEvents.StartTick {
      */
     @Override
     public void onStartTick(@NonNull MinecraftServer server) {
-        DebugLogger.entering("FlyBeaconTickHandler", "onStartTick");
+        DebugLogger.SERVER.entering("FlyBeaconTickHandler", "onStartTick");
         tickCounter++;
         if (tickCounter < CHECK_INTERVAL) {
-            DebugLogger.exiting("FlyBeaconTickHandler", "onStartTick", "skipped (check interval not reached)");
+            DebugLogger.SERVER.exiting("FlyBeaconTickHandler", "onStartTick", "skipped (check interval not reached)");
             return;
         }
         tickCounter = 0;
@@ -57,7 +57,7 @@ public class FlyBeaconTickHandler implements ServerTickEvents.StartTick {
 
         // 快路径：无激活信标或无在线玩家，跳过 O(P*B) 遍历
         if (activeBeacons.isEmpty() || server.getPlayerList().getPlayerCount() == 0) {
-            DebugLogger.exiting("FlyBeaconTickHandler", "onStartTick", "no active beacons or no players");
+            DebugLogger.SERVER.exiting("FlyBeaconTickHandler", "onStartTick", "no active beacons or no players");
             return;
         }
 
@@ -104,7 +104,7 @@ public class FlyBeaconTickHandler implements ServerTickEvents.StartTick {
 
         beaconFlyingPlayers.clear();
         beaconFlyingPlayers.addAll(currentAffected);
-        DebugLogger.exiting("FlyBeaconTickHandler", "onStartTick");
+        DebugLogger.SERVER.exiting("FlyBeaconTickHandler", "onStartTick");
     }
 
     /**
@@ -145,8 +145,8 @@ public class FlyBeaconTickHandler implements ServerTickEvents.StartTick {
     }
 
     public static void register() {
-        DebugLogger.entering("FlyBeaconTickHandler", "register");
+        DebugLogger.SERVER.entering("FlyBeaconTickHandler", "register");
         ServerTickEvents.START_SERVER_TICK.register(INSTANCE);
-        DebugLogger.exiting("FlyBeaconTickHandler", "register");
+        DebugLogger.SERVER.exiting("FlyBeaconTickHandler", "register");
     }
 }

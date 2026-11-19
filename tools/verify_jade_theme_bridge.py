@@ -69,10 +69,7 @@ public final class ClientExternalSettings {
 """,
     "top/csituka/youzaiworldcore/util/DebugLogger.java": """
 package top.csituka.youzaiworldcore.util;
-public final class DebugLogger {
-    public static void info(String module, String format, Object... args) { }
-    public static void stateChange(String module, String target, String key, Object... values) { }
-}
+public final class DebugLogger { public static final int LEVEL_OFF=0,LEVEL_BASIC=1,LEVEL_DETAILED=2,LEVEL_DEBUG=3; public static final DebugLogger SERVER=new DebugLogger(),CLIENT=new DebugLogger(); private boolean developer; private int level; public void configure(boolean d,int l){developer=d;level=l;} public boolean isDevModeEnabled(){return developer;} public int getLogLevel(){return level;} public static boolean isEnabled(int l){return false;} public static boolean isEnabled(){return false;} public static DebugLogger bootstrap(){return CLIENT;} public static DebugLogger forFile(java.nio.file.Path p){return SERVER;} public ModuleLogger module(String m){return new ModuleLogger();} public static void notice(String m,String s,Object...a){} public static void warn(String m,String s,Object...a){} public static void error(String m,String s,Object...a){} public static void exception(String m,String s,Object...a){} public static void exceptionSummary(String m,String s,Object...a){} public static void info(String m,String s,Object...a){} public static void stateChange(String m,String s,Object...a){} public static void debug(String m,String s,Object...a){} public static void branch(String m,String s,Object...a){} public static void debugStateChange(String m,String s,Object...a){} public static void trace(String m,String s,Object...a){} public static void entering(String m,String s,Object...a){} public static void exiting(String m,String s,Object...a){} public static void traceBranch(String m,String s,Object...a){} public static void traceStateChange(String m,String s,Object...a){} public static final class ModuleLogger { public void notice(String s,Object...a){} public void info(String s,Object...a){} public void debug(String s,Object...a){} public void trace(String s,Object...a){} public void warn(String s,Object...a){} public void error(String s,Object...a){} public boolean isInfoEnabled(){return false;} public boolean isDebugEnabled(){return false;} public boolean isTraceEnabled(){return false;} } }
 """,
     "regression/JadeBridgeCheck.java": """
 package regression;
@@ -223,7 +220,7 @@ def check_jade_bridge(java_home, bridge_source=None):
         classes = temporary / "classes"
         classes.mkdir()
         subprocess.run([javac, "--release", "25", "-encoding", "UTF-8", "-proc:none", "-d", str(classes),
-                        *map(str, sources)], cwd=ROOT, check=True)
+                        *map(str, sources), str(Path(__file__).resolve().parents[1] / "src/main/java/top/csituka/youzaiworldcore/util/LogValues.java")], cwd=ROOT, check=True)
         subprocess.run([java, "-cp", str(classes), "regression.JadeBridgeCheck"], cwd=ROOT, check=True)
     print("Jade 源码回归检查通过：启动开/关、默认与目标主题延迟加载、资源重载、六种外观切换、原主题恢复及缺失回退。")
 

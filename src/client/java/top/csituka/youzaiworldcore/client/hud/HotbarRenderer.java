@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.client.hud;
 
+import top.csituka.youzaiworldcore.util.LogValues;
+
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
 
 import net.minecraft.client.AttackIndicatorStatus;
@@ -201,15 +203,15 @@ public final class HotbarRenderer {
                 } else {
                     virtualTarget = currentSlot;
                 }
-                DebugLogger.debug(LOG_TAG,
-                        "槽位切换(滚轮 dir=%d): animPos=%.2f → 实际=%d, 虚拟目标=%.1f",
-                        scrollDir, animSelectedSlot, currentSlot, virtualTarget);
+                if (DebugLogger.CLIENT.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+                    DebugLogger.CLIENT.trace(LOG_TAG, "槽位切换(滚轮 dir={}): animPos={} → 实际={}, 虚拟目标={}", scrollDir, LogValues.decimal(animSelectedSlot, 2), currentSlot, LogValues.decimal(virtualTarget, 1));
+                }
             } else {
                 // 数字键：直接跳转，不触发包装
                 virtualTarget = currentSlot;
-                DebugLogger.debug(LOG_TAG,
-                        "槽位切换(按键): animPos=%.2f → 实际=%d",
-                        animSelectedSlot, currentSlot);
+                if (DebugLogger.CLIENT.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+                    DebugLogger.CLIENT.trace(LOG_TAG, "槽位切换(按键): animPos={} → 实际={}", LogValues.decimal(animSelectedSlot, 2), currentSlot);
+                }
             }
             lastKnownSelectedSlot = currentSlot;
         }
@@ -228,16 +230,16 @@ public final class HotbarRenderer {
             float snap = 9.0f;
             animSelectedSlot -= snap;
             virtualTarget -= snap;
-            DebugLogger.debug(LOG_TAG,
-                    "包装瞬移(右→左): animPos=%.3f, 目标=%.1f",
-                    animSelectedSlot, virtualTarget);
+            if (DebugLogger.CLIENT.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+                DebugLogger.CLIENT.trace(LOG_TAG, "包装瞬移(右→左): animPos={}, 目标={}", LogValues.decimal(animSelectedSlot, 3), LogValues.decimal(virtualTarget, 1));
+            }
         } else if (virtualTarget < 0.0f && animSelectedSlot < -0.8f) {
             float snap = 9.0f;
             animSelectedSlot += snap;
             virtualTarget += snap;
-            DebugLogger.debug(LOG_TAG,
-                    "包装瞬移(左→右): animPos=%.3f, 目标=%.1f",
-                    animSelectedSlot, virtualTarget);
+            if (DebugLogger.CLIENT.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+                DebugLogger.CLIENT.trace(LOG_TAG, "包装瞬移(左→右): animPos={}, 目标={}", LogValues.decimal(animSelectedSlot, 3), LogValues.decimal(virtualTarget, 1));
+            }
         }
 
         if (Math.abs(animSelectedSlot - virtualTarget) < 0.005f) {
@@ -259,9 +261,9 @@ public final class HotbarRenderer {
 
         if (offhandHasItem != lastOffhandHasItem) {
             lastOffhandHasItem = offhandHasItem;
-            DebugLogger.debug(LOG_TAG,
-                    "副手槽过渡: hasItem=%b, animProgress=%.3f",
-                    offhandHasItem, offhandAnimProgress);
+            if (DebugLogger.CLIENT.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+                DebugLogger.CLIENT.trace(LOG_TAG, "副手槽过渡: hasItem={}, animProgress={}", offhandHasItem, LogValues.decimal(offhandAnimProgress, 3));
+            }
         }
 
         // 指数衰减动画（与选中槽位动画共用 animT）
@@ -417,10 +419,8 @@ public final class HotbarRenderer {
         }
 
         // 先判等级再取参数：varargs 数组与 4 个基本类型装箱在每帧路径上是白扔的垃圾
-        if (DebugLogger.isEnabled(DebugLogger.LEVEL_DETAILED)) {
-            DebugLogger.debug(LOG_TAG,
-                    "攻击冷却指示器: strength=%.3f, progressW=%d, pos=(%d,%d)",
-                    attackStrength, progressWidth, indicatorX, indicatorY);
+        if (DebugLogger.CLIENT.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+            DebugLogger.CLIENT.trace(LOG_TAG, "攻击冷却指示器: strength={}, progressW={}, pos=({},{})", LogValues.decimal(attackStrength, 3), progressWidth, indicatorX, indicatorY);
         }
     }
 }

@@ -67,10 +67,10 @@ public class MobPressurePlateBlock extends BasePressurePlateBlock {
      */
     public MobPressurePlateBlock(BlockBehaviour.Properties properties) {
         super(properties, BlockSetType.STONE);
-        DebugLogger.entering("MobPressurePlateBlock", "constructor",
+        DebugLogger.SERVER.entering("MobPressurePlateBlock", "constructor",
                 "type=STONE, sensitivity=MOBS(excluding Player)");
         this.registerDefaultState(this.stateDefinition.any().setValue(POWERED, Boolean.FALSE));
-        DebugLogger.exiting("MobPressurePlateBlock", "constructor", "defaultState=powered=false");
+        DebugLogger.SERVER.exiting("MobPressurePlateBlock", "constructor", "defaultState=powered=false");
     }
 
     /**
@@ -99,8 +99,8 @@ public class MobPressurePlateBlock extends BasePressurePlateBlock {
                 EntitySelector.NO_SPECTATORS.and(MobPressurePlateBlock::isCountableMob)
         ).isEmpty();
 
-        if (DebugLogger.isEnabled(DebugLogger.LEVEL_DETAILED)) {
-            DebugLogger.branch("MobPressurePlateBlock", "getSignalStrength",
+        if (DebugLogger.SERVER.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+            DebugLogger.SERVER.traceBranch("MobPressurePlateBlock", "getSignalStrength",
                     hasMob,
                     "pos=" + pos + ", sensitivity=LIVING_NOT_PLAYER");
         }
@@ -165,8 +165,8 @@ public class MobPressurePlateBlock extends BasePressurePlateBlock {
             // getSignalStrength 里也会被 Predicate 排除。
             // 此处显式短路是性能优化：避免每 tick 的玩家碰撞调用链路。
             // 热路径：手动包一层 isEnabled 判定，避免 varargs 数组分配。
-            if (DebugLogger.isEnabled(DebugLogger.LEVEL_DEBUG)) {
-                DebugLogger.trace("MobPressurePlateBlock", "entityInside: player IGNORED",
+            if (DebugLogger.SERVER.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+                DebugLogger.SERVER.trace("MobPressurePlateBlock", "entityInside: player IGNORED",
                         "player=" + player.getName().getString() + ", pos=" + pos);
             }
             return;

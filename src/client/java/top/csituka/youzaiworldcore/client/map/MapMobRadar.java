@@ -38,7 +38,7 @@ public final class MapMobRadar {
         selected = type;
         clearSnapshot();
         MapClient.track(null);
-        DebugLogger.debug("MapMobRadar", "选择定位种类：%s", type == null ? "清除" : EntityType.getKey(type));
+        DebugLogger.CLIENT.debug("MapMobRadar", "选择定位种类：{}", type == null ? "清除" : EntityType.getKey(type));
         MapClient.refreshRadar();
     }
 
@@ -126,7 +126,9 @@ public final class MapMobRadar {
         if (actualLayer != playerLayer) {
             playerLayer = actualLayer;
             MapClient.refreshRadar();
-            DebugLogger.debug("MapMobRadar", "玩家雷达图层更新：%d", playerLayer);
+            if (DebugLogger.CLIENT.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+                DebugLogger.CLIENT.trace("MapMobRadar", "玩家雷达图层更新：{}", playerLayer);
+            }
         }
         if (selected == null)
             return;

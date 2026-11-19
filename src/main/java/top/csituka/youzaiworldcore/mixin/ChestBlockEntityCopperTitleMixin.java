@@ -36,8 +36,7 @@ public abstract class ChestBlockEntityCopperTitleMixin {
         ChestBlockEntity self = (ChestBlockEntity) (Object) this;
         Block block = self.getBlockState().getBlock();
         if (block instanceof CopperChestBlock) {
-            DebugLogger.info("CopperChestTitle", "铜箱子容器标题修正: %s → %s",
-                    "container.chest", block.getName().getString());
+            DebugLogger.SERVER.debug("CopperChestTitle", "铜箱子容器标题修正: {} → {}", "container.chest", block.getName().getString());
             cir.setReturnValue(block.getName());
         }
     }

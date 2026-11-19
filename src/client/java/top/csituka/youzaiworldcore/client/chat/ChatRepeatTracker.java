@@ -24,6 +24,11 @@ public final class ChatRepeatTracker {
     }
 
     public Result accept(GuiMessage message) {
+        return accept(message, message.content());
+    }
+
+    /** 原始对象用于分组及历史序号，配色副本只用于显示，避免换色影响计数。 */
+    public Result accept(GuiMessage message, Component styledContent) {
         boolean repeated = lastOriginal != null
                 && lastOriginal.source() == message.source()
                 && Objects.equals(lastOriginal.tag(), message.tag())
@@ -33,8 +38,8 @@ public final class ChatRepeatTracker {
                 : repeated ? (int) Math.min((long) count + 1, Integer.MAX_VALUE) : 1;
         firstReplayMessage = false;
         ordinals.put(message, count);
-        Component display = ChatMessageStyle.repeated(message.content(), count);
-        GuiMessage shown = count == 1 ? message : new GuiMessage(
+        Component display = ChatMessageStyle.repeated(styledContent, count);
+        GuiMessage shown = display == message.content() ? message : new GuiMessage(
                 message.addedTime(), display, message.signature(), message.source(), message.tag());
         lastOriginal = message;
         lastContent = message.content().copy();

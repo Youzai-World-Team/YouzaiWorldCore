@@ -20,7 +20,7 @@ public final class ModPayloadTypes {
 
         @SuppressWarnings("null")
         public static void initialize() {
-                DebugLogger.entering(MODULE, "initialize");
+                DebugLogger.bootstrap().entering(MODULE, "initialize");
 
                 // ===== C2S =====
                 PayloadTypeRegistry.serverboundPlay().register(WorldPoolMenuRequestPayload.ID, WorldPoolMenuRequestPayload.STREAM_CODEC);
@@ -175,7 +175,7 @@ public final class ModPayloadTypes {
                                 MailPlayerListPayload.STREAM_CODEC);
                 PayloadTypeRegistry.clientboundPlay().register(TitleStatePayload.ID, TitleStatePayload.STREAM_CODEC);
 
-                DebugLogger.info(MODULE, "全部网络 Payload 类型已注册");
-                DebugLogger.exiting(MODULE, "initialize");
+                DebugLogger.bootstrap().debug(MODULE, "全部网络 Payload 类型已注册");
+                DebugLogger.bootstrap().exiting(MODULE, "initialize");
         }
 }

@@ -43,7 +43,7 @@ public abstract class ScoreboardSidebarMixin {
             ScoreboardSidebarRenderer.render(graphics, objective);
             ci.cancel();
         } catch (Exception exception) {
-            DebugLogger.exception(LOG_TAG, "renderScoreboardSidebar", exception);
+            DebugLogger.CLIENT.exception(LOG_TAG, "renderScoreboardSidebar", exception);
         }
     }
 

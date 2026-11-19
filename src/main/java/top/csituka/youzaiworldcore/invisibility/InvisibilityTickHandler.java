@@ -59,8 +59,8 @@ public class InvisibilityTickHandler implements ServerTickEvents.StartTick {
     }
 
     public static void register() {
-        DebugLogger.entering("InvisibilityTickHandler", "register");
+        DebugLogger.SERVER.entering("InvisibilityTickHandler", "register");
         ServerTickEvents.START_SERVER_TICK.register(INSTANCE);
-        DebugLogger.exiting("InvisibilityTickHandler", "register");
+        DebugLogger.SERVER.exiting("InvisibilityTickHandler", "register");
     }
 }

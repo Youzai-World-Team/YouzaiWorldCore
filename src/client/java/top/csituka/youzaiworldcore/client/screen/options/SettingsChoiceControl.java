@@ -123,8 +123,7 @@ final class SettingsChoiceControl {
                 // setValue 本身不执行保存回调；直接应用一次目标值，避免循环经过中间选项。
                 source.setValue(value);
                 onChange.onValueChange(source, value);
-                DebugLogger.debug("YzuiSettings", "设置选项：%s → %s", name.getString(),
-                        labels.apply(source.getValue()).getString());
+                DebugLogger.CLIENT.debug("YzuiSettings", "设置选项：{} → {}", name.getString(), labels.apply(source.getValue()).getString());
             } finally {
                 control.synchronize();
             }

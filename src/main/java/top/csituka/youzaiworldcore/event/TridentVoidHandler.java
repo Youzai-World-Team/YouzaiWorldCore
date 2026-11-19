@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.event;
 
+import top.csituka.youzaiworldcore.util.DebugLogger;
+
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
@@ -9,8 +11,6 @@ import net.minecraft.world.entity.projectile.arrow.ThrownTrident;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.entity.EntityTypeTest;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import top.csituka.youzaiworldcore.config.EventSettings;
 
@@ -26,7 +26,7 @@ import top.csituka.youzaiworldcore.config.EventSettings;
 public class TridentVoidHandler {
 
     private static final TridentVoidHandler INSTANCE = new TridentVoidHandler();
-    private static final Logger LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/TridentVoid");
+    private static final DebugLogger.ModuleLogger LOGGER = DebugLogger.SERVER.module("TridentVoid");
 
     /** 扫描间隔（tick），避免每tick全实体遍历。三叉戟是低频事件，20tick（1秒）足够。 */
     private static final int SCAN_INTERVAL = 20;
@@ -57,14 +57,14 @@ public class TridentVoidHandler {
                 spawnX = player.getX();
                 spawnY = player.getY() + 1.0;
                 spawnZ = player.getZ();
-                LOGGER.info("三叉戟落入虚空，返还给投掷者 {} at [{}, {}, {}]",
+                LOGGER.debug("三叉戟落入虚空，返还给投掷者 {} at [{}, {}, {}]",
                         player.getName().getString(), spawnX, spawnY, spawnZ);
             } else {
                 var respawnData = level.getRespawnData();
                 spawnX = respawnData.pos().getX() + 0.5;
                 spawnY = respawnData.pos().getY() + 1.0;
                 spawnZ = respawnData.pos().getZ() + 0.5;
-                LOGGER.info("三叉戟落入虚空，掉落于世界出生点");
+                LOGGER.debug("三叉戟落入虚空，掉落于世界出生点");
             }
 
             ItemEntity itemEntity = new ItemEntity(level,
@@ -90,6 +90,6 @@ public class TridentVoidHandler {
                 INSTANCE.onServerTick(level);
             }
         });
-        LOGGER.info("三叉戟虚空保护事件处理器已注册 (scanInterval={}tick)", SCAN_INTERVAL);
+        LOGGER.debug("三叉戟虚空保护事件处理器已注册 (scanInterval={}tick)", SCAN_INTERVAL);
     }
 }

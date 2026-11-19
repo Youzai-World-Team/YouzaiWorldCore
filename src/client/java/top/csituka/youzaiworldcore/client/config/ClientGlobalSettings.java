@@ -41,6 +41,8 @@ public final class ClientGlobalSettings {
     /** 客户端核心（开发者模式 / 日志级别 / 调试地址 / YZUI 开关等） */
     public static final String CORE_MODULE = "core_module";
     public static final String HIGHLIGHT_ITEM_MODULE = "highlight_item_module";
+    /** 本机聊天栏配色 */
+    public static final String CHAT_STYLE_MODULE = "chat_style_module";
     /** YZHUD（位置与透明度） */
     public static final String YZHUD_MODULE = "yzhud_module";
     /** 自定义皮肤与披风的客户端缓存 */
@@ -73,14 +75,14 @@ public final class ClientGlobalSettings {
      * <p>必须在任何模块 {@code load()} 之前调用；重复调用等同于重新加载。</p>
      */
     public static void load() {
-        DebugLogger.entering(MODULE, "load", "file=" + STORE.file());
+        DebugLogger.CLIENT.entering(MODULE, "load", "file=" + STORE.file());
         boolean created = STORE.loadOrCreateDefaults();
+        ClientExternalSettings.load();
         if (created) {
-            DebugLogger.info(MODULE, "未检测到客户端配置，已写出默认配置：%s", STORE.file());
+            DebugLogger.CLIENT.notice(MODULE, "未检测到客户端配置，已写出默认配置：{}", STORE.file());
         }
-        DebugLogger.info(MODULE, "客户端配置已加载：%s（模块分节 %d 个）",
-                STORE.file(), STORE.moduleNames().size());
-        DebugLogger.exiting(MODULE, "load", created ? "created default" : "loaded");
+        DebugLogger.CLIENT.info(MODULE, "客户端配置已加载：{}（模块分节 {} 个）", STORE.file(), STORE.moduleNames().size());
+        DebugLogger.CLIENT.exiting(MODULE, "load", created ? "created default" : "loaded");
     }
 
     /**

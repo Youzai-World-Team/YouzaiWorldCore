@@ -24,7 +24,7 @@ public class InvisibilityClientCommand {
 
     @SuppressWarnings("null")
     public static void register() {
-        DebugLogger.entering(MODULE, "register");
+        DebugLogger.CLIENT.entering(MODULE, "register");
 
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, context) -> dispatcher.register(
                 literal("yzwc")
@@ -48,17 +48,17 @@ public class InvisibilityClientCommand {
                         )
         ));
 
-        DebugLogger.info(MODULE, "客户端命令 /yzwc function invisibility 已注册");
-        DebugLogger.exiting(MODULE, "register");
+        DebugLogger.CLIENT.debug(MODULE, "客户端命令 /yzwc function invisibility 已注册");
+        DebugLogger.CLIENT.exiting(MODULE, "register");
     }
 
     /** 向服务端发送隐身切换 / 查询数据包 */
     private static void sendToggle(Player player, Boolean enabled) {
         if (player == null) {
-            DebugLogger.warn(MODULE, "sendToggle 跳过：玩家为 null（非玩家上下文）");
+            DebugLogger.CLIENT.debug(MODULE, "sendToggle 跳过：玩家为 null（非玩家上下文）");
             return;
         }
-        DebugLogger.info(MODULE, "发送隐身切换数据包：enabled=%s", enabled);
+        DebugLogger.CLIENT.debug(MODULE, "发送隐身切换数据包：enabled={}", enabled);
         ClientPlayNetworking.send(new InvisibilityPayload(enabled));
     }
 }

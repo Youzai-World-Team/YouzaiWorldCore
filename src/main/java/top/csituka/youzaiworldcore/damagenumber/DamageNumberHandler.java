@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.damagenumber;
 
+import top.csituka.youzaiworldcore.util.LogValues;
+
 import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.server.level.ServerPlayer;
@@ -26,7 +28,7 @@ public final class DamageNumberHandler {
     }
 
     public static void initialize() {
-        DebugLogger.info(MODULE, "伤害跳字服务端处理器已初始化");
+        DebugLogger.SERVER.debug(MODULE, "伤害跳字服务端处理器已初始化");
     }
 
     /**
@@ -67,9 +69,8 @@ public final class DamageNumberHandler {
             sentCount += sendTo(attackingPlayer, target, damagedPlayer, attackingPlayer, payload) ? 1 : 0;
         }
 
-        if (DebugLogger.isEnabled(DebugLogger.LEVEL_DEBUG)) {
-            DebugLogger.trace(MODULE, "已广播伤害跳字: target=%s, damage=%.2f, recipients=%d",
-                    target.getName().getString(), damage, sentCount);
+        if (DebugLogger.SERVER.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+            DebugLogger.SERVER.trace(MODULE, "已广播伤害跳字: target={}, damage={}, recipients={}", target.getName().getString(), LogValues.decimal(damage, 2), sentCount);
         }
     }
 

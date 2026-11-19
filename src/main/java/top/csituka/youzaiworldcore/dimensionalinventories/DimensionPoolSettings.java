@@ -5,8 +5,6 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.reflect.TypeToken;
 import net.minecraft.world.level.GameType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import top.csituka.youzaiworldcore.config.ConfigSection;
 import top.csituka.youzaiworldcore.config.GlobalSettings;
 import top.csituka.youzaiworldcore.util.DebugLogger;
@@ -26,7 +24,7 @@ import java.util.*;
  */
 public final class DimensionPoolSettings {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/DimensionPoolSettings");
+    private static final DebugLogger.ModuleLogger LOGGER = DebugLogger.SERVER.module("DimensionPoolSettings");
 
     private static final String KEY_POOLS = "pools";
 
@@ -57,50 +55,50 @@ public final class DimensionPoolSettings {
      * <p>隐藏池（内部使用）不会出现在结果中，见 {@link #isHiddenPool(String)}。</p>
      */
     public static Collection<DimensionPool> getAllPools() {
-        DebugLogger.entering("DimPoolSettings", "getAllPools");
+        DebugLogger.SERVER.entering("DimPoolSettings", "getAllPools");
         Collection<DimensionPool> result = POOLS.values().stream()
                 .filter(pool -> !isHiddenPool(pool.id()))
                 .toList();
-        DebugLogger.exiting("DimPoolSettings", "getAllPools", "size=" + result.size());
+        DebugLogger.SERVER.exiting("DimPoolSettings", "getAllPools", "size=" + result.size());
         return result;
     }
 
     public static DimensionPool getPool(String poolId) {
-        DebugLogger.entering("DimPoolSettings", "getPool", "poolId=" + poolId);
+        DebugLogger.SERVER.entering("DimPoolSettings", "getPool", "poolId=" + poolId);
         DimensionPool result = POOLS.get(poolId);
-        DebugLogger.exiting("DimPoolSettings", "getPool", result != null ? "found" : "null");
+        DebugLogger.SERVER.exiting("DimPoolSettings", "getPool", result != null ? "found" : "null");
         return result;
     }
 
     public static Optional<DimensionPool> getPoolByDimension(String dimensionId) {
-        DebugLogger.entering("DimPoolSettings", "getPoolByDimension", "dimensionId=" + dimensionId);
+        DebugLogger.SERVER.entering("DimPoolSettings", "getPoolByDimension", "dimensionId=" + dimensionId);
         String poolId = DIMENSION_TO_POOL.get(dimensionId);
         if (poolId == null) {
-            DebugLogger.exiting("DimPoolSettings", "getPoolByDimension", "not found");
+            DebugLogger.SERVER.exiting("DimPoolSettings", "getPoolByDimension", "not found");
             return Optional.empty();
         }
         Optional<DimensionPool> result = Optional.ofNullable(POOLS.get(poolId));
-        DebugLogger.exiting("DimPoolSettings", "getPoolByDimension", result.isPresent() ? "found" : "null");
+        DebugLogger.SERVER.exiting("DimPoolSettings", "getPoolByDimension", result.isPresent() ? "found" : "null");
         return result;
     }
 
     public static boolean dimensionsInSamePool(String dimA, String dimB) {
-        DebugLogger.entering("DimPoolSettings", "dimensionsInSamePool", "dimA=" + dimA + ", dimB=" + dimB);
+        DebugLogger.SERVER.entering("DimPoolSettings", "dimensionsInSamePool", "dimA=" + dimA + ", dimB=" + dimB);
         if (dimA.equals(dimB)) {
-            DebugLogger.exiting("DimPoolSettings", "dimensionsInSamePool", "true (same dimension)");
+            DebugLogger.SERVER.exiting("DimPoolSettings", "dimensionsInSamePool", "true (same dimension)");
             return true;
         }
         String poolA = DIMENSION_TO_POOL.get(dimA);
         String poolB = DIMENSION_TO_POOL.get(dimB);
         boolean result = poolA != null && poolA.equals(poolB);
-        DebugLogger.exiting("DimPoolSettings", "dimensionsInSamePool", String.valueOf(result));
+        DebugLogger.SERVER.exiting("DimPoolSettings", "dimensionsInSamePool", String.valueOf(result));
         return result;
     }
 
     public static boolean isDimensionInAnyPool(String dimensionId) {
-        DebugLogger.entering("DimPoolSettings", "isDimensionInAnyPool", "dimensionId=" + dimensionId);
+        DebugLogger.SERVER.entering("DimPoolSettings", "isDimensionInAnyPool", "dimensionId=" + dimensionId);
         boolean result = DIMENSION_TO_POOL.containsKey(dimensionId);
-        DebugLogger.exiting("DimPoolSettings", "isDimensionInAnyPool", String.valueOf(result));
+        DebugLogger.SERVER.exiting("DimPoolSettings", "isDimensionInAnyPool", String.valueOf(result));
         return result;
     }
 
@@ -108,18 +106,18 @@ public final class DimensionPoolSettings {
 
     /** 从全局配置加载，分节缺失则创建默认配置 */
     public static void load() {
-        DebugLogger.entering("DimPoolSettings", "load");
+        DebugLogger.SERVER.entering("DimPoolSettings", "load");
         ConfigSection section = GlobalSettings.section(GlobalSettings.DIMENSIONAL_INVENTORIES_MODULE);
         JsonArray poolArray = section.getArray(KEY_POOLS);
         if (poolArray == null) {
-            DebugLogger.branch("DimPoolSettings", "pools 已配置", false, "分节缺失，创建默认配置");
+            DebugLogger.SERVER.branch("DimPoolSettings", "pools 已配置", false, "分节缺失，创建默认配置");
             LOGGER.info("维度池配置不存在，正在创建默认配置...");
             createDefaultConfig();
             save();
-            DebugLogger.exiting("DimPoolSettings", "load", "default config created");
+            DebugLogger.SERVER.exiting("DimPoolSettings", "load", "default config created");
             return;
         }
-        DebugLogger.branch("DimPoolSettings", "pools 已配置", true, "共 " + poolArray.size() + " 项");
+        DebugLogger.SERVER.branch("DimPoolSettings", "pools 已配置", true, "共 " + poolArray.size() + " 项");
 
         Type listType = new TypeToken<List<DimensionPool>>() {}.getType();
         List<DimensionPool> poolList;
@@ -154,7 +152,7 @@ public final class DimensionPoolSettings {
                 section.fail(KEY_POOLS + "[" + i + "].id", "维度池 id 重复：" + pool.id());
             }
             POOLS.put(pool.id(), pool);
-            DebugLogger.trace("DimPoolSettings", "加载维度池: id=%s, dims=%s", pool.id(), pool.dimensions());
+            DebugLogger.SERVER.trace("DimPoolSettings", "加载维度池: id={}, dims={}", pool.id(), pool.dimensions());
             for (String dim : pool.dimensions()) {
                 String previous = DIMENSION_TO_POOL.put(dim, pool.id());
                 if (previous != null && !previous.equals(pool.id())) {
@@ -168,10 +166,9 @@ public final class DimensionPoolSettings {
         // 注册隐藏池（内部使用，不写入配置文件），必须在配置池加载完成后执行
         registerHiddenPools();
 
-        LOGGER.info("已加载 {} 个维度池（含隐藏池 {} 个）", POOLS.size(), HIDDEN_POOL_IDS.size());
-        DebugLogger.info("DimPoolSettings", "已加载 %d 个维度池（含隐藏池 %d 个）",
-                POOLS.size(), HIDDEN_POOL_IDS.size());
-        DebugLogger.exiting("DimPoolSettings", "load");
+
+        DebugLogger.SERVER.info("DimPoolSettings", "已加载 {} 个维度池（含隐藏池 {} 个）", POOLS.size(), HIDDEN_POOL_IDS.size());
+        DebugLogger.SERVER.exiting("DimPoolSettings", "load");
     }
 
     /** 重建 7 个默认维度池并写入 {@code dimensional_inventories_module} 分节（新开服 / 坏文件恢复用） */
@@ -182,7 +179,7 @@ public final class DimensionPoolSettings {
 
     /** 保存配置到全局配置文件的 {@code dimensional_inventories_module} 分节 */
     public static void save() {
-        DebugLogger.entering("DimPoolSettings", "save");
+        DebugLogger.SERVER.entering("DimPoolSettings", "save");
         ConfigSection section = GlobalSettings.section(GlobalSettings.DIMENSIONAL_INVENTORIES_MODULE);
         // 隐藏池（内部使用）不写入配置文件
         List<DimensionPool> poolList = POOLS.values().stream()
@@ -190,17 +187,16 @@ public final class DimensionPoolSettings {
                 .toList();
         section.set(KEY_POOLS, GSON.toJsonTree(poolList));
         GlobalSettings.save();
-        LOGGER.info("维度池配置已保存（{} 个可见池，{} 个隐藏池不写入）",
+        LOGGER.debug("维度池配置已保存（{} 个可见池，{} 个隐藏池不写入）",
                 poolList.size(), POOLS.size() - poolList.size());
-        DebugLogger.info("DimPoolSettings", "维度池配置已保存到 %s, 可见池 %d 个（隐藏池 %d 个不写入）",
-                GlobalSettings.file(), poolList.size(), POOLS.size() - poolList.size());
-        DebugLogger.exiting("DimPoolSettings", "save");
+        DebugLogger.SERVER.debug("DimPoolSettings", "维度池配置已保存到 {}, 可见池 {} 个（隐藏池 {} 个不写入）", GlobalSettings.file(), poolList.size(), POOLS.size() - poolList.size());
+        DebugLogger.SERVER.exiting("DimPoolSettings", "save");
     }
 
     public static void reload() {
-        DebugLogger.entering("DimPoolSettings", "reload");
+        DebugLogger.SERVER.entering("DimPoolSettings", "reload");
         load();
-        DebugLogger.exiting("DimPoolSettings", "reload");
+        DebugLogger.SERVER.exiting("DimPoolSettings", "reload");
     }
 
     // ===== 默认配置 =====
@@ -210,7 +206,7 @@ public final class DimensionPoolSettings {
      * "生存世界"包含原版三维度，其余池为空（等待管理员配置维度）。
      */
     private static void createDefaultConfig() {
-        DebugLogger.entering("DimPoolSettings", "createDefaultConfig");
+        DebugLogger.SERVER.entering("DimPoolSettings", "createDefaultConfig");
         POOLS.clear();
         DIMENSION_TO_POOL.clear();
 
@@ -225,43 +221,43 @@ public final class DimensionPoolSettings {
         survival.addDimension("minecraft:the_nether");
         survival.addDimension("minecraft:the_end");
         POOLS.put(survival.id(), survival);
-        DebugLogger.info("DimPoolSettings", "创建维度池: survival_world_pool (生存世界) 含3维度");
+        DebugLogger.SERVER.debug("DimPoolSettings", "创建维度池: survival_world_pool (生存世界) 含3维度");
 
         POOLS.put("main_city_pool", new DimensionPool(
                 "main_city_pool", "主城",
                 GameType.ADVENTURE, false, false
         ));
-        DebugLogger.info("DimPoolSettings", "创建维度池: main_city_pool (主城) 空池");
+        DebugLogger.SERVER.debug("DimPoolSettings", "创建维度池: main_city_pool (主城) 空池");
 
         POOLS.put("gameplay_pool", new DimensionPool(
                 "gameplay_pool", "玩法",
                 GameType.ADVENTURE, false, false
         ));
-        DebugLogger.info("DimPoolSettings", "创建维度池: gameplay_pool (玩法) 空池");
+        DebugLogger.SERVER.debug("DimPoolSettings", "创建维度池: gameplay_pool (玩法) 空池");
 
         POOLS.put("creation_pool", new DimensionPool(
                 "creation_pool", "创造",
                 GameType.CREATIVE, false, false
         ));
-        DebugLogger.info("DimPoolSettings", "创建维度池: creation_pool (创造) 空池");
+        DebugLogger.SERVER.debug("DimPoolSettings", "创建维度池: creation_pool (创造) 空池");
 
         POOLS.put("building_pool", new DimensionPool(
                 "building_pool", "建筑",
                 GameType.CREATIVE, false, false
         ));
-        DebugLogger.info("DimPoolSettings", "创建维度池: building_pool (建筑) 空池");
+        DebugLogger.SERVER.debug("DimPoolSettings", "创建维度池: building_pool (建筑) 空池");
 
         POOLS.put("commands_pool", new DimensionPool(
                 "commands_pool", "指令区",
                 GameType.ADVENTURE, false, false
         ));
-        DebugLogger.info("DimPoolSettings", "创建维度池: commands_pool (指令区) 空池");
+        DebugLogger.SERVER.debug("DimPoolSettings", "创建维度池: commands_pool (指令区) 空池");
 
         POOLS.put("tutorial_world_pool", new DimensionPool(
                 "tutorial_world_pool", "教程世界",
                 GameType.ADVENTURE, false, false
         ));
-        DebugLogger.info("DimPoolSettings", "创建维度池: tutorial_world_pool (教程世界) 空池");
+        DebugLogger.SERVER.debug("DimPoolSettings", "创建维度池: tutorial_world_pool (教程世界) 空池");
 
         for (DimensionPool pool : POOLS.values()) {
             for (String dim : pool.dimensions()) {
@@ -272,7 +268,7 @@ public final class DimensionPoolSettings {
         // 注册隐藏池（内部使用，不写入配置文件）
         registerHiddenPools();
 
-        DebugLogger.exiting("DimPoolSettings", "createDefaultConfig",
+        DebugLogger.SERVER.exiting("DimPoolSettings", "createDefaultConfig",
                 "共创建 " + POOLS.size() + " 个维度池（含隐藏池 " + HIDDEN_POOL_IDS.size() + " 个）");
     }
 
@@ -293,7 +289,7 @@ public final class DimensionPoolSettings {
      * 保证无论配置文件是否存在、是否经 /yzwc reload 重载，隐藏池始终注册在内存中。
      */
     private static void registerHiddenPools() {
-        DebugLogger.entering("DimPoolSettings", "registerHiddenPools");
+        DebugLogger.SERVER.entering("DimPoolSettings", "registerHiddenPools");
         DimensionPool loginHallPool = new DimensionPool(
                 HIDDEN_LOGIN_HALL_POOL_ID,
                 "Login Hall",
@@ -308,32 +304,25 @@ public final class DimensionPoolSettings {
         // 若配置文件中恰好存在同名池，覆盖并清理其残留维度归属（避免残留维度错误指向隐藏池）
         DimensionPool previousPool = POOLS.put(loginHallPool.id(), loginHallPool);
         if (previousPool != null) {
-            LOGGER.warn("隐藏池 {} 覆盖了配置中的同名可见池，该配置将被忽略且不会写回文件",
-                    loginHallPool.id());
-            DebugLogger.warn("DimPoolSettings",
-                    "隐藏池 %s 覆盖了配置中的同名可见池，该配置将被忽略且不会写回文件",
-                    loginHallPool.id());
+
+            DebugLogger.SERVER.warn("DimPoolSettings", "隐藏池 {} 覆盖了配置中的同名可见池，该配置将被忽略且不会写回文件", loginHallPool.id());
             DIMENSION_TO_POOL.entrySet().removeIf(e -> loginHallPool.id().equals(e.getValue()));
         }
 
         // 隐藏池维度归属（若被其他可见池占用，隐藏池优先级更高）
         String previous = DIMENSION_TO_POOL.put(LOGIN_HALL_DIMENSION, loginHallPool.id());
         if (previous != null && !previous.equals(loginHallPool.id())) {
-            LOGGER.warn("维度 {} 原本属于可见池 {}，隐藏池 {} 优先级更高，已覆盖该归属",
-                    LOGIN_HALL_DIMENSION, previous, loginHallPool.id());
-            DebugLogger.warn("DimPoolSettings",
-                    "维度 %s 原本属于可见池 %s，隐藏池 %s 优先级更高，已覆盖该归属",
-                    LOGIN_HALL_DIMENSION, previous, loginHallPool.id());
+
+            DebugLogger.SERVER.warn("DimPoolSettings", "维度 {} 原本属于可见池 {}，隐藏池 {} 优先级更高，已覆盖该归属", LOGIN_HALL_DIMENSION, previous, loginHallPool.id());
         }
-        DebugLogger.info("DimPoolSettings", "已注册隐藏池 %s（维度 %s，不写入配置文件）",
-                HIDDEN_LOGIN_HALL_POOL_ID, LOGIN_HALL_DIMENSION);
-        DebugLogger.exiting("DimPoolSettings", "registerHiddenPools");
+        DebugLogger.SERVER.debug("DimPoolSettings", "已注册隐藏池 {}（维度 {}，不写入配置文件）", HIDDEN_LOGIN_HALL_POOL_ID, LOGIN_HALL_DIMENSION);
+        DebugLogger.SERVER.exiting("DimPoolSettings", "registerHiddenPools");
     }
 
     /** 判断指定池是否为隐藏池（内部使用：不写入配置文件、不出现在命令列表/补全中） */
     public static boolean isHiddenPool(String poolId) {
         boolean result = HIDDEN_POOL_IDS.contains(poolId);
-        DebugLogger.trace("DimPoolSettings", "isHiddenPool: poolId=%s, result=%s", poolId, result);
+        DebugLogger.SERVER.trace("DimPoolSettings", "isHiddenPool: poolId={}, result={}", poolId, result);
         return result;
     }
 
@@ -341,7 +330,7 @@ public final class DimensionPoolSettings {
 
     /** 获取维度池的显示文本（用于 /yzwc world_pool list） */
     public static String formatPoolInfo(DimensionPool pool) {
-        DebugLogger.entering("DimPoolSettings", "formatPoolInfo", "poolId=" + pool.id());
+        DebugLogger.SERVER.entering("DimPoolSettings", "formatPoolInfo", "poolId=" + pool.id());
         StringBuilder sb = new StringBuilder();
         sb.append("  §6").append(pool.id()).append("§r");
         sb.append(" §7(").append(pool.displayName()).append(")§r");
@@ -356,7 +345,7 @@ public final class DimensionPoolSettings {
         if (pool.incrementStatistics()) sb.append(" §2[统计开]§r");
         else sb.append(" §8[统计关]§r");
         String result = sb.toString();
-        DebugLogger.exiting("DimPoolSettings", "formatPoolInfo", result);
+        DebugLogger.SERVER.exiting("DimPoolSettings", "formatPoolInfo", result);
         return result;
     }
 }

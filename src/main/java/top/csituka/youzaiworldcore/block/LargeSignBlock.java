@@ -220,7 +220,7 @@ public class LargeSignBlock extends BaseEntityBlock implements SimpleWaterlogged
 
         if (sign.isWaxed()) {
             level.playSound(null, pos, SoundEvents.WAXED_SIGN_INTERACT_FAIL, SoundSource.BLOCKS, 1.0f, 1.0f);
-            DebugLogger.branch(MODULE, "字牌已涂蜡，拒绝打开编辑界面", false);
+            DebugLogger.SERVER.branch(MODULE, "字牌已涂蜡，拒绝打开编辑界面", false);
             return InteractionResult.SUCCESS;
         }
 
@@ -230,8 +230,7 @@ public class LargeSignBlock extends BaseEntityBlock implements SimpleWaterlogged
 
         sign.setAllowedPlayerEditor(serverPlayer.getUUID());
         ServerPlayNetworking.send(serverPlayer, new LargeSignOpenEditPayload(pos, sign.getText()));
-        DebugLogger.info(MODULE, "玩家 %s 打开大字牌编辑界面：pos=%s, text=%s",
-                serverPlayer.getName().getString(), pos.toShortString(), sign.getText());
+        DebugLogger.SERVER.debug(MODULE, "玩家 {} 打开大字牌编辑界面：pos={}, text={}", serverPlayer.getName().getString(), pos.toShortString(), sign.getText());
         return InteractionResult.SUCCESS;
     }
 
@@ -275,8 +274,7 @@ public class LargeSignBlock extends BaseEntityBlock implements SimpleWaterlogged
         serverLevel.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(player, sign.getBlockState()));
         stack.consume(1, player);
 
-        DebugLogger.info(MODULE, "玩家 %s 对大字牌使用 %s：pos=%s",
-                player.getName().getString(), applicator, pos.toShortString());
+        DebugLogger.SERVER.debug(MODULE, "玩家 {} 对大字牌使用 {}：pos={}", player.getName().getString(), applicator, pos.toShortString());
         return InteractionResult.SUCCESS;
     }
 

@@ -58,7 +58,7 @@ public class BlockAnimationRenderer {
         }
         registered = true;
         ClientTickEvents.END_CLIENT_TICK.register(BlockAnimationRenderer::onClientTick);
-        DebugLogger.info(MODULE, "方块动画粒子渲染器已注册");
+        DebugLogger.CLIENT.debug(MODULE, "方块动画粒子渲染器已注册");
     }
 
     private static void onClientTick(Minecraft client) {

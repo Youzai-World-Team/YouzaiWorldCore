@@ -1,8 +1,6 @@
 package top.csituka.youzaiworldcore.config;
 
 import net.minecraft.server.MinecraftServer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
 import java.io.IOException;
@@ -29,7 +27,7 @@ import java.util.stream.Stream;
 public final class TempManager {
 
     private static final String MODULE = "TempManager";
-    private static final Logger LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/TempManager");
+    private static final DebugLogger.ModuleLogger LOGGER = DebugLogger.SERVER.module("TempManager");
 
     private TempManager() {
     }
@@ -40,11 +38,11 @@ public final class TempManager {
      * @param server 当前服务器实例
      */
     public static void clearOnServerStart(MinecraftServer server) {
-        DebugLogger.entering(MODULE, "clearOnServerStart");
+        DebugLogger.SERVER.entering(MODULE, "clearOnServerStart");
         int serverSide = clearRoot(ModPaths.serverTempRoot());
         int worldSide = clearRoot(ModPaths.worldTempRoot(server));
         LOGGER.info("临时目录已清空（服务端侧 {} 项，世界侧 {} 项）", serverSide, worldSide);
-        DebugLogger.exiting(MODULE, "clearOnServerStart",
+        DebugLogger.SERVER.exiting(MODULE, "clearOnServerStart",
                 "server=" + serverSide + ", world=" + worldSide);
     }
 

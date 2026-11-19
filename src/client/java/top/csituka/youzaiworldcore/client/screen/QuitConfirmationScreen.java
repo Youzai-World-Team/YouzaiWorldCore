@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.client.screen;
 
+import top.csituka.youzaiworldcore.util.DebugLogger;
+
 import com.mojang.blaze3d.platform.InputConstants;
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
 import top.csituka.youzaiworldcore.client.render.YzuiBackdrop;
@@ -10,8 +12,6 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
 import top.csituka.youzaiworldcore.client.animation.GuiAnimationController;
 
@@ -34,7 +34,7 @@ import top.csituka.youzaiworldcore.client.animation.GuiAnimationController;
 @SuppressWarnings("null")
 public class QuitConfirmationScreen extends Screen implements YzuiPopupScreen {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/QuitConfirmationScreen");
+    private static final DebugLogger.ModuleLogger LOGGER = DebugLogger.CLIENT.module("QuitConfirmationScreen");
 
     // ============ 布局常量 ============
     private static final int DIALOG_WIDTH = 400;
@@ -129,7 +129,7 @@ public class QuitConfirmationScreen extends Screen implements YzuiPopupScreen {
      */
     private void onConfirmQuit() {
         if (GuiAnimationController.isExiting(this)) return;
-        LOGGER.info("Player confirmed quit, shutting down game");
+        LOGGER.debug("Player confirmed quit, shutting down game");
         quitConfirmed = true;
         Minecraft.getInstance().stop();
     }

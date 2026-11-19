@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.client.hud;
 
+import top.csituka.youzaiworldcore.util.LogValues;
+
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
 
 import net.minecraft.client.Minecraft;
@@ -95,10 +97,8 @@ public final class FoodBarRenderer {
         float exhRatio  = Math.min(1.0f, Math.max(0.0f, exhaustion / MAX_EXHAUSTION));
 
         // 先判等级：基本类型装箱 + varargs 数组在每帧路径上是白扔的垃圾
-        if (DebugLogger.isEnabled(DebugLogger.LEVEL_DETAILED)) {
-            DebugLogger.debug(LOG_TAG,
-                    "food=%d, sat=%.1f, exh=%.2f, fill=%.2f, flash=%.2f",
-                    displayFood, displaySaturation, exhaustion, fillRatio, flashAlpha);
+        if (DebugLogger.CLIENT.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+            DebugLogger.CLIENT.trace(LOG_TAG, "food={}, sat={}, exh={}, fill={}, flash={}", displayFood, LogValues.decimal(displaySaturation, 1), LogValues.decimal(exhaustion, 2), LogValues.decimal(fillRatio, 2), LogValues.decimal(flashAlpha, 2));
         }
 
         // ===== 渲染层级（从下到上） =====

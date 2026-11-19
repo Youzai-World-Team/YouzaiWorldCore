@@ -45,7 +45,7 @@ public class ClientNetworking {
     }
 
     public static void initialize() {
-        DebugLogger.entering("ClientNetworking", "initialize");
+        DebugLogger.CLIENT.entering("ClientNetworking", "initialize");
         net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents.END_CLIENT_TICK.register(
                 client -> MailNavigationRequests.tick());
         net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents.DISCONNECT.register(
@@ -72,46 +72,46 @@ public class ClientNetworking {
                 top.csituka.youzaiworldcore.client.map.MapClient.receive(context.client(), () -> top.csituka.youzaiworldcore.client.map.MapClient.live(payload)));
         ClientPlayNetworking.registerGlobalReceiver(MapActionResultPayload.ID, (payload, context) ->
                 top.csituka.youzaiworldcore.client.map.MapClient.receive(context.client(), () -> top.csituka.youzaiworldcore.client.map.MapClient.actionResult(payload)));
-        DebugLogger.info("ClientNetworking", "已注册地图会话、地形、路径点、雷达及操作确认接收器");
+        DebugLogger.CLIENT.debug("ClientNetworking", "已注册地图会话、地形、路径点、雷达及操作确认接收器");
 
         ClientPlayNetworking.registerGlobalReceiver(CosmeticReadyPayload.ID, (payload, context) ->
                 context.client().execute(() -> CosmeticClientManager.onReady(payload)));
-        DebugLogger.info("ClientNetworking", "Registered receiver: CosmeticReadyPayload");
+        DebugLogger.CLIENT.debug("ClientNetworking", "Registered receiver: CosmeticReadyPayload");
 
         ClientPlayNetworking.registerGlobalReceiver(MojangAuthChallengePayload.ID, (payload, context) ->
                 context.client().execute(() -> CosmeticClientManager.onMojangAuthChallenge(payload)));
-        DebugLogger.info("ClientNetworking", "Registered receiver: MojangAuthChallengePayload");
+        DebugLogger.CLIENT.debug("ClientNetworking", "Registered receiver: MojangAuthChallengePayload");
 
         ClientPlayNetworking.registerGlobalReceiver(CosmeticUploadResultPayload.ID, (payload, context) ->
                 context.client().execute(() -> CosmeticClientManager.onUploadResult(payload)));
-        DebugLogger.info("ClientNetworking", "Registered receiver: CosmeticUploadResultPayload");
+        DebugLogger.CLIENT.debug("ClientNetworking", "Registered receiver: CosmeticUploadResultPayload");
 
         ClientPlayNetworking.registerGlobalReceiver(CosmeticInfoPayload.ID, (payload, context) ->
                 context.client().execute(() -> CosmeticClientManager.onInfo(payload)));
-        DebugLogger.info("ClientNetworking", "Registered receiver: CosmeticInfoPayload");
+        DebugLogger.CLIENT.debug("ClientNetworking", "Registered receiver: CosmeticInfoPayload");
 
         ClientPlayNetworking.registerGlobalReceiver(CosmeticDataPayload.ID, (payload, context) ->
                 context.client().execute(() -> CosmeticClientManager.onData(payload)));
-        DebugLogger.info("ClientNetworking", "Registered receiver: CosmeticDataPayload");
+        DebugLogger.CLIENT.debug("ClientNetworking", "Registered receiver: CosmeticDataPayload");
 
         ClientPlayNetworking.registerGlobalReceiver(MojangSkinPayload.ID, (payload, context) ->
                 context.client().execute(() -> CosmeticClientManager.onMojangSkin(payload)));
-        DebugLogger.info("ClientNetworking", "Registered receiver: MojangSkinPayload");
+        DebugLogger.CLIENT.debug("ClientNetworking", "Registered receiver: MojangSkinPayload");
 
         ClientPlayNetworking.registerGlobalReceiver(TitleStatePayload.ID, (payload, context) ->
                 context.client().execute(() ->
                         top.csituka.youzaiworldcore.client.title.TitleClientState.apply(payload)));
-        DebugLogger.info("ClientNetworking", "Registered receiver: TitleStatePayload");
+        DebugLogger.CLIENT.debug("ClientNetworking", "Registered receiver: TitleStatePayload");
 
         ClientPlayNetworking.registerGlobalReceiver(AfkStatePayload.ID, (payload, context) ->
                 context.client().execute(() ->
                         top.csituka.youzaiworldcore.client.afk.AfkClientState.apply(payload)));
-        DebugLogger.info("ClientNetworking", "Registered receiver: AfkStatePayload");
+        DebugLogger.CLIENT.debug("ClientNetworking", "Registered receiver: AfkStatePayload");
 
         ClientPlayNetworking.registerGlobalReceiver(InPlaceRespawnInfoPayload.ID, (payload, context) ->
                 context.client().execute(() -> InPlaceRespawnClientState.updateInfo(
                         payload.enabled(), payload.requiredLevel())));
-        DebugLogger.info("ClientNetworking", "Registered receiver: InPlaceRespawnInfoPayload");
+        DebugLogger.CLIENT.debug("ClientNetworking", "Registered receiver: InPlaceRespawnInfoPayload");
 
         ClientPlayNetworking.registerGlobalReceiver(InPlaceRespawnResultPayload.ID, (payload, context) ->
                 context.client().execute(() -> {
@@ -124,26 +124,26 @@ public class ClientNetworking {
                     InPlaceRespawnClientState.applyRejection(
                             payload.reason(), payload.requiredLevel(), payload.currentLevel());
                 }));
-        DebugLogger.info("ClientNetworking", "Registered receiver: InPlaceRespawnResultPayload");
+        DebugLogger.CLIENT.debug("ClientNetworking", "Registered receiver: InPlaceRespawnResultPayload");
 
         ClientPlayNetworking.registerGlobalReceiver(OpenMenuPayload.ID, (payload, context) -> {
-            DebugLogger.entering("ClientNetworking", "OpenMenuPayload handler");
+            DebugLogger.CLIENT.entering("ClientNetworking", "OpenMenuPayload handler");
             Minecraft client = context.client();
             client.execute(() -> {
                 // 服务端远程打开菜单不代表玩家产生输入，实际操作由输入追踪器记录。
                 MenuElementGroup element = MENU_MAP.get(payload.menuName());
                 boolean hasElement = element != null;
-                DebugLogger.branch("ClientNetworking", "MENU_MAP contains menuName", hasElement, "menuName=" + payload.menuName());
+                DebugLogger.CLIENT.branch("ClientNetworking", "MENU_MAP contains menuName", hasElement, "menuName=" + payload.menuName());
                 if (hasElement) {
                     client.setScreenAndShow(new MenuScreen(element));
                 }
             });
-            DebugLogger.exiting("ClientNetworking", "OpenMenuPayload handler");
+            DebugLogger.CLIENT.exiting("ClientNetworking", "OpenMenuPayload handler");
         });
-        DebugLogger.info("ClientNetworking", "Registered receiver: OpenMenuPayload");
+        DebugLogger.CLIENT.debug("ClientNetworking", "Registered receiver: OpenMenuPayload");
 
         ClientPlayNetworking.registerGlobalReceiver(OpenAuthScreenPayload.ID, (payload, context) -> {
-            DebugLogger.entering("ClientNetworking", "OpenAuthScreenPayload handler");
+            DebugLogger.CLIENT.entering("ClientNetworking", "OpenAuthScreenPayload handler");
             Minecraft client = context.client();
             client.execute(() -> {
                 // 只有目标界面已经打开时才跳过；登出或管理员重置密码时，必须允许登录界面替换旧的注册界面。
@@ -151,24 +151,24 @@ public class ClientNetworking {
                 boolean isRegisterScreen = currentScreen instanceof RegisterScreen;
                 boolean isLoginScreen = currentScreen instanceof LoginScreen;
                 boolean isPasswordResetScreen = currentScreen instanceof PasswordResetScreen;
-                DebugLogger.branch("ClientNetworking", "currentScreen instanceof RegisterScreen", isRegisterScreen);
-                DebugLogger.branch("ClientNetworking", "currentScreen instanceof LoginScreen", isLoginScreen);
+                DebugLogger.CLIENT.branch("ClientNetworking", "currentScreen instanceof RegisterScreen", isRegisterScreen);
+                DebugLogger.CLIENT.branch("ClientNetworking", "currentScreen instanceof LoginScreen", isLoginScreen);
                 String type = payload.screenType();
                 String username = payload.username();
                 if (client.hasSingleplayerServer()
                         && top.csituka.youzaiworldcore.client.config.ClientExternalSettings.isDevModeEnabled()
                         && AuthPlayerHelper.isDeveloperPlayerName(username)) {
-                    DebugLogger.info("ClientNetworking", "开发者单人测试玩家 %s 忽略账户认证界面请求", username);
+                    DebugLogger.CLIENT.debug("ClientNetworking", "开发者单人测试玩家 {} 忽略账户认证界面请求", username);
                     return;
                 }
                 boolean isRegister = "register".equals(type);
-                DebugLogger.branch("ClientNetworking", "screenType == register", isRegister);
+                DebugLogger.CLIENT.branch("ClientNetworking", "screenType == register", isRegister);
                 boolean isLogin = "login".equals(type);
                 boolean targetScreenAlreadyOpen = (isRegister && isRegisterScreen)
                         || (isLogin && (isLoginScreen || isPasswordResetScreen));
-                DebugLogger.branch("ClientNetworking", "target auth screen already open", targetScreenAlreadyOpen);
+                DebugLogger.CLIENT.branch("ClientNetworking", "target auth screen already open", targetScreenAlreadyOpen);
                 if (targetScreenAlreadyOpen) {
-                    DebugLogger.exiting("ClientNetworking", "OpenAuthScreenPayload handler (skipped, target screen already open)");
+                    DebugLogger.CLIENT.exiting("ClientNetworking", "OpenAuthScreenPayload handler (skipped, target screen already open)");
                     return;
                 }
                 if (isRegister) {
@@ -177,12 +177,12 @@ public class ClientNetworking {
                     client.setScreenAndShow(new LoginScreen(username));
                 }
             });
-            DebugLogger.exiting("ClientNetworking", "OpenAuthScreenPayload handler");
+            DebugLogger.CLIENT.exiting("ClientNetworking", "OpenAuthScreenPayload handler");
         });
-        DebugLogger.info("ClientNetworking", "Registered receiver: OpenAuthScreenPayload");
+        DebugLogger.CLIENT.debug("ClientNetworking", "Registered receiver: OpenAuthScreenPayload");
 
         ClientPlayNetworking.registerGlobalReceiver(RegistrationEmailStatePayload.ID, (payload, context) -> {
-            DebugLogger.entering("ClientNetworking", "RegistrationEmailStatePayload handler");
+            DebugLogger.CLIENT.entering("ClientNetworking", "RegistrationEmailStatePayload handler");
             Minecraft client = context.client();
             client.execute(() -> {
                 Screen currentScreen = client.gui.screen();
@@ -201,12 +201,12 @@ public class ClientNetworking {
                     client.setScreenAndShow(new RegisterScreen(username));
                 }
             });
-            DebugLogger.exiting("ClientNetworking", "RegistrationEmailStatePayload handler");
+            DebugLogger.CLIENT.exiting("ClientNetworking", "RegistrationEmailStatePayload handler");
         });
-        DebugLogger.info("ClientNetworking", "Registered receiver: RegistrationEmailStatePayload");
+        DebugLogger.CLIENT.debug("ClientNetworking", "Registered receiver: RegistrationEmailStatePayload");
 
         ClientPlayNetworking.registerGlobalReceiver(PasswordResetStatePayload.ID, (payload, context) -> {
-            DebugLogger.entering("ClientNetworking", "PasswordResetStatePayload handler");
+            DebugLogger.CLIENT.entering("ClientNetworking", "PasswordResetStatePayload handler");
             Minecraft client = context.client();
             client.execute(() -> {
                 Screen currentScreen = client.gui.screen();
@@ -214,12 +214,12 @@ public class ClientNetworking {
                     resetScreen.applyState(payload);
                 }
             });
-            DebugLogger.exiting("ClientNetworking", "PasswordResetStatePayload handler");
+            DebugLogger.CLIENT.exiting("ClientNetworking", "PasswordResetStatePayload handler");
         });
-        DebugLogger.info("ClientNetworking", "Registered receiver: PasswordResetStatePayload");
+        DebugLogger.CLIENT.debug("ClientNetworking", "Registered receiver: PasswordResetStatePayload");
 
         ClientPlayNetworking.registerGlobalReceiver(AccountManagementStatePayload.ID, (payload, context) -> {
-            DebugLogger.entering("ClientNetworking", "AccountManagementStatePayload handler");
+            DebugLogger.CLIENT.entering("ClientNetworking", "AccountManagementStatePayload handler");
             Minecraft client = context.client();
             client.execute(() -> {
                 Screen currentScreen = client.gui.screen();
@@ -227,72 +227,72 @@ public class ClientNetworking {
                     accountScreen.applyState(payload);
                 }
             });
-            DebugLogger.exiting("ClientNetworking", "AccountManagementStatePayload handler");
+            DebugLogger.CLIENT.exiting("ClientNetworking", "AccountManagementStatePayload handler");
         });
-        DebugLogger.info("ClientNetworking", "Registered receiver: AccountManagementStatePayload");
+        DebugLogger.CLIENT.debug("ClientNetworking", "Registered receiver: AccountManagementStatePayload");
 
         ClientPlayNetworking.registerGlobalReceiver(TeleportAnchorListPayload.TYPE, (payload, context) -> {
-            DebugLogger.entering("ClientNetworking", "TeleportAnchorListPayload handler");
+            DebugLogger.CLIENT.entering("ClientNetworking", "TeleportAnchorListPayload handler");
             context.client().execute(() -> {
                 context.client().setScreenAndShow(new TeleportAnchorScreen(
                         payload.points(), payload.currentPos(), payload.currentDim(),
                         payload.entryType(), payload.entryHand()));
             });
-            DebugLogger.exiting("ClientNetworking", "TeleportAnchorListPayload handler");
+            DebugLogger.CLIENT.exiting("ClientNetworking", "TeleportAnchorListPayload handler");
         });
-        DebugLogger.info("ClientNetworking", "Registered receiver: TeleportAnchorListPayload");
+        DebugLogger.CLIENT.debug("ClientNetworking", "Registered receiver: TeleportAnchorListPayload");
 
         ClientPlayNetworking.registerGlobalReceiver(TeleportAnchorOpenNamePayload.TYPE, (payload, context) -> {
-            DebugLogger.entering("ClientNetworking", "TeleportAnchorOpenNamePayload handler");
+            DebugLogger.CLIENT.entering("ClientNetworking", "TeleportAnchorOpenNamePayload handler");
             context.client().execute(() -> {
                 context.client().setScreenAndShow(
                         new TeleportAnchorNameScreen(payload.pos(), payload.dimension()));
             });
-            DebugLogger.exiting("ClientNetworking", "TeleportAnchorOpenNamePayload handler");
+            DebugLogger.CLIENT.exiting("ClientNetworking", "TeleportAnchorOpenNamePayload handler");
         });
-        DebugLogger.info("ClientNetworking", "Registered receiver: TeleportAnchorOpenNamePayload");
+        DebugLogger.CLIENT.debug("ClientNetworking", "Registered receiver: TeleportAnchorOpenNamePayload");
 
         // 注册大字牌编辑界面处理器（服务端已校验未涂蜡且玩家有建造权限）
         ClientPlayNetworking.registerGlobalReceiver(LargeSignOpenEditPayload.TYPE, (payload, context) -> {
-            DebugLogger.entering("ClientNetworking", "LargeSignOpenEditPayload handler");
+            DebugLogger.CLIENT.entering("ClientNetworking", "LargeSignOpenEditPayload handler");
             context.client().execute(() -> {
                 context.client().setScreenAndShow(
                         new LargeSignEditScreen(payload.pos(), payload.currentText()));
             });
-            DebugLogger.exiting("ClientNetworking", "LargeSignOpenEditPayload handler");
+            DebugLogger.CLIENT.exiting("ClientNetworking", "LargeSignOpenEditPayload handler");
         });
-        DebugLogger.info("ClientNetworking", "Registered receiver: LargeSignOpenEditPayload");
+        DebugLogger.CLIENT.debug("ClientNetworking", "Registered receiver: LargeSignOpenEditPayload");
 
         // 注册无线红石频道设置界面处理器（服务端已校验方块实体存在且玩家有建造权限）
         ClientPlayNetworking.registerGlobalReceiver(WirelessRedstoneOpenChannelPayload.TYPE, (payload, context) -> {
-            DebugLogger.entering("ClientNetworking", "WirelessRedstoneOpenChannelPayload handler");
+            DebugLogger.CLIENT.entering("ClientNetworking", "WirelessRedstoneOpenChannelPayload handler");
             context.client().execute(() -> {
                 context.client().setScreenAndShow(new WirelessRedstoneChannelScreen(
                         payload.pos(), payload.currentChannel(), payload.transmitter()));
             });
-            DebugLogger.exiting("ClientNetworking", "WirelessRedstoneOpenChannelPayload handler");
+            DebugLogger.CLIENT.exiting("ClientNetworking", "WirelessRedstoneOpenChannelPayload handler");
         });
-        DebugLogger.info("ClientNetworking", "Registered receiver: WirelessRedstoneOpenChannelPayload");
+        DebugLogger.CLIENT.debug("ClientNetworking", "Registered receiver: WirelessRedstoneOpenChannelPayload");
 
         // 注册传送石蓄力打断处理器：服务端已停止使用物品，客户端同步停手，避免一直保持蓄力动作
         ClientPlayNetworking.registerGlobalReceiver(TeleportStoneInterruptPayload.TYPE, (payload, context) -> {
-            DebugLogger.entering("ClientNetworking", "TeleportStoneInterruptPayload handler");
+            DebugLogger.CLIENT.entering("ClientNetworking", "TeleportStoneInterruptPayload handler");
             Minecraft client = context.client();
             client.execute(() -> {
                 if (client.player != null && client.player.isUsingItem() && client.gameMode != null) {
                     client.gameMode.releaseUsingItem(client.player);
                 }
             });
-            DebugLogger.exiting("ClientNetworking", "TeleportStoneInterruptPayload handler");
+            DebugLogger.CLIENT.exiting("ClientNetworking", "TeleportStoneInterruptPayload handler");
         });
-        DebugLogger.info("ClientNetworking", "Registered receiver: TeleportStoneInterruptPayload");
+        DebugLogger.CLIENT.debug("ClientNetworking", "Registered receiver: TeleportStoneInterruptPayload");
 
         ClientPlayNetworking.registerGlobalReceiver(ManaSyncPayload.ID, (payload, context) -> {
             context.client().execute(() -> {
                 ManaManager.setClientMana(payload.mana());
             });
         });
-        DebugLogger.info("ClientNetworking", "Registered receiver: ManaSyncPayload");
+        DebugLogger.CLIENT.debug("ClientNetworking", "Registered receiver: ManaSyncPayload");
 
         ClientPlayNetworking.registerGlobalReceiver(LevelExpSyncPayload.ID, (payload, context) -> {
             context.client().execute(() -> {
@@ -305,19 +305,19 @@ public class ClientNetworking {
                 );
             });
         });
-        DebugLogger.info("ClientNetworking", "Registered receiver: LevelExpSyncPayload");
+        DebugLogger.CLIENT.debug("ClientNetworking", "Registered receiver: LevelExpSyncPayload");
 
         ClientPlayNetworking.registerGlobalReceiver(DamageNumberPayload.ID, (payload, context) ->
                 context.client().execute(() -> DamageNumberRenderer.add(
                         payload.x(), payload.y(), payload.z(), payload.entityHeight(), payload.damage())));
-        DebugLogger.info("ClientNetworking", "Registered receiver: DamageNumberPayload");
+        DebugLogger.CLIENT.debug("ClientNetworking", "Registered receiver: DamageNumberPayload");
 
         ClientPlayNetworking.registerGlobalReceiver(AttributeSyncPayload.TYPE, (payload, context) -> {
             context.client().execute(() -> {
                 ClientAttributeData.update(payload);
             });
         });
-        DebugLogger.info("ClientNetworking", "Registered receiver: AttributeSyncPayload");
+        DebugLogger.CLIENT.debug("ClientNetworking", "Registered receiver: AttributeSyncPayload");
         ClientPlayNetworking.registerGlobalReceiver(AttributeUpgradeResultPayload.ID, (payload, context) -> {
             var connection = context.client().getConnection();
             context.client().execute(() -> top.csituka.youzaiworldcore.client.skill.AttributeUpgradeRequests.receive(payload, connection));
@@ -334,7 +334,7 @@ public class ClientNetworking {
         // 邮件系统（Mail）—— 客户端 S2C 接收器
 
         ClientPlayNetworking.registerGlobalReceiver(OpenMailComposePayload.ID, (payload, context) -> {
-            DebugLogger.entering("ClientNetworking", "OpenMailComposePayload handler");
+            DebugLogger.CLIENT.entering("ClientNetworking", "OpenMailComposePayload handler");
             context.client().execute(() -> {
                 var request = MailNavigationRequests.take(
                         MailNavigationRequests.Kind.COMPOSE, null);
@@ -343,24 +343,24 @@ public class ClientNetworking {
                             false, null, request.origin()));
                 }
             });
-            DebugLogger.exiting("ClientNetworking", "OpenMailComposePayload handler");
+            DebugLogger.CLIENT.exiting("ClientNetworking", "OpenMailComposePayload handler");
         });
-        DebugLogger.info("ClientNetworking", "Registered receiver: OpenMailComposePayload");
+        DebugLogger.CLIENT.debug("ClientNetworking", "Registered receiver: OpenMailComposePayload");
 
         ClientPlayNetworking.registerGlobalReceiver(MailListPayload.ID, (payload, context) -> {
-            DebugLogger.entering("ClientNetworking", "MailListPayload handler", "entries=" + payload.entries().size());
+            DebugLogger.CLIENT.entering("ClientNetworking", "MailListPayload handler", "entries=" + payload.entries().size());
             context.client().execute(() -> {
                 top.csituka.youzaiworldcore.client.MailClientState.currentInbox = new java.util.ArrayList<>(payload.entries());
                 // 列表是权威快照，按它重算未读数，避免徽标与列表对不上
                 top.csituka.youzaiworldcore.client.MailClientState.recalculateUnreadCount();
                 // MailScreen.renderMailContent 已从 MailClientState.currentInbox 读取数据
             });
-            DebugLogger.exiting("ClientNetworking", "MailListPayload handler");
+            DebugLogger.CLIENT.exiting("ClientNetworking", "MailListPayload handler");
         });
-        DebugLogger.info("ClientNetworking", "Registered receiver: MailListPayload");
+        DebugLogger.CLIENT.debug("ClientNetworking", "Registered receiver: MailListPayload");
 
         ClientPlayNetworking.registerGlobalReceiver(MailSentListPayload.ID, (payload, context) -> {
-            DebugLogger.entering("ClientNetworking", "MailSentListPayload handler", "summaries=" + payload.summaries().size());
+            DebugLogger.CLIENT.entering("ClientNetworking", "MailSentListPayload handler", "summaries=" + payload.summaries().size());
             context.client().execute(() -> {
                 top.csituka.youzaiworldcore.client.MailClientState.currentSentList = new java.util.ArrayList<>(payload.summaries());
                 var request = MailNavigationRequests.take(
@@ -370,13 +370,13 @@ public class ClientNetworking {
                             request.origin()));
                 }
             });
-            DebugLogger.exiting("ClientNetworking", "MailSentListPayload handler");
+            DebugLogger.CLIENT.exiting("ClientNetworking", "MailSentListPayload handler");
         });
-        DebugLogger.info("ClientNetworking", "Registered receiver: MailSentListPayload");
+        DebugLogger.CLIENT.debug("ClientNetworking", "Registered receiver: MailSentListPayload");
 
         // 邮件更新（新增/移除/编辑预填）
         ClientPlayNetworking.registerGlobalReceiver(MailUpdatePayload.ID, (payload, context) -> {
-            DebugLogger.entering("ClientNetworking", "MailUpdatePayload handler", "mode=" + payload.mode());
+            DebugLogger.CLIENT.entering("ClientNetworking", "MailUpdatePayload handler", "mode=" + payload.mode());
             context.client().execute(() -> {
                 switch (payload.mode()) {
                     case MailUpdatePayload.MODE_UPDATE -> {
@@ -399,8 +399,7 @@ public class ClientNetworking {
                     }
                     case MailUpdatePayload.MODE_EDIT_PREFILL -> {
                         // 编辑预填：存储数据后打开 MailComposeScreen 编辑模式
-                        DebugLogger.info("ClientNetworking", "Edit prefill received: mailId=%s, canEdit=%s",
-                                payload.mail().getId(), payload.canEdit());
+                        DebugLogger.CLIENT.debug("ClientNetworking", "Edit prefill received: mailId={}, canEdit={}", payload.mail().getId(), payload.canEdit());
                         var request = MailNavigationRequests.take(
                                 MailNavigationRequests.Kind.EDIT, payload.mail().getId());
                         if (request == null) {
@@ -421,42 +420,42 @@ public class ClientNetworking {
                 // 单条更新同样会改变未读数（如领取即已读），同步重算徽标
                 top.csituka.youzaiworldcore.client.MailClientState.recalculateUnreadCount();
             });
-            DebugLogger.exiting("ClientNetworking", "MailUpdatePayload handler");
+            DebugLogger.CLIENT.exiting("ClientNetworking", "MailUpdatePayload handler");
         });
-        DebugLogger.info("ClientNetworking", "Registered receiver: MailUpdatePayload");
+        DebugLogger.CLIENT.debug("ClientNetworking", "Registered receiver: MailUpdatePayload");
 
         // 操作结果反馈：邮件界面打开时走顶部提示条，否则回落到聊天栏
         ClientPlayNetworking.registerGlobalReceiver(MailOpResultPayload.ID, (payload, context) -> {
-            DebugLogger.entering("ClientNetworking", "MailOpResultPayload handler", "success=" + payload.success());
+            DebugLogger.CLIENT.entering("ClientNetworking", "MailOpResultPayload handler", "success=" + payload.success());
             context.client().execute(() -> {
                 if (!payload.success()) MailNavigationRequests.failed(payload.mailId());
                 notifyMailResult(context.client(),
                         payload.reason() != null ? payload.reason() : "", payload.success());
             });
-            DebugLogger.exiting("ClientNetworking", "MailOpResultPayload handler");
+            DebugLogger.CLIENT.exiting("ClientNetworking", "MailOpResultPayload handler");
         });
-        DebugLogger.info("ClientNetworking", "Registered receiver: MailOpResultPayload");
+        DebugLogger.CLIENT.debug("ClientNetworking", "Registered receiver: MailOpResultPayload");
 
         ClientPlayNetworking.registerGlobalReceiver(MailPlayerListPayload.ID, (payload, context) -> {
-            DebugLogger.entering("ClientNetworking", "MailPlayerListPayload handler",
+            DebugLogger.CLIENT.entering("ClientNetworking", "MailPlayerListPayload handler",
                     "players=" + payload.playerNames().size());
             context.client().execute(() ->
                     top.csituka.youzaiworldcore.client.MailClientState.registeredPlayers =
                             new java.util.ArrayList<>(payload.playerNames()));
-            DebugLogger.exiting("ClientNetworking", "MailPlayerListPayload handler");
+            DebugLogger.CLIENT.exiting("ClientNetworking", "MailPlayerListPayload handler");
         });
-        DebugLogger.info("ClientNetworking", "Registered receiver: MailPlayerListPayload");
+        DebugLogger.CLIENT.debug("ClientNetworking", "Registered receiver: MailPlayerListPayload");
 
         ClientPlayNetworking.registerGlobalReceiver(MailUnreadCountPayload.ID, (payload, context) -> {
-            DebugLogger.entering("ClientNetworking", "MailUnreadCountPayload handler", "unread=" + payload.unreadCount());
+            DebugLogger.CLIENT.entering("ClientNetworking", "MailUnreadCountPayload handler", "unread=" + payload.unreadCount());
             context.client().execute(() -> {
                 top.csituka.youzaiworldcore.client.MailClientState.unreadCount = payload.unreadCount();
                 top.csituka.youzaiworldcore.client.MailClientState.canSend = payload.canSend();
                 // MainMenuElements.renderCustomContent 已读取 MailClientState.unreadCount 绘制徽标
             });
-            DebugLogger.exiting("ClientNetworking", "MailUnreadCountPayload handler");
+            DebugLogger.CLIENT.exiting("ClientNetworking", "MailUnreadCountPayload handler");
         });
-        DebugLogger.info("ClientNetworking", "Registered receiver: MailUnreadCountPayload");
+        DebugLogger.CLIENT.debug("ClientNetworking", "Registered receiver: MailUnreadCountPayload");
 
         // 老吴贴贴事件（LaowuMeme）—— 客户端 S2C 接收器
         // 服务端权威状态机广播 trigger/stop，客户端只收包驱动渲染与音频。
@@ -466,14 +465,14 @@ public class ClientNetworking {
                     top.csituka.youzaiworldcore.client.laowumeme.LaowuMemeClientState.get()
                             .onTrigger(payload.catAId(), payload.catBId(), payload.soundId(), payload.rollSign()));
         });
-        DebugLogger.info("ClientNetworking", "Registered receiver: LaowuMemeTriggerPayload");
+        DebugLogger.CLIENT.debug("ClientNetworking", "Registered receiver: LaowuMemeTriggerPayload");
 
         ClientPlayNetworking.registerGlobalReceiver(LaowuMemeStopPayload.ID, (payload, context) -> {
             context.client().execute(() ->
                     top.csituka.youzaiworldcore.client.laowumeme.LaowuMemeClientState.get()
                             .onStop(payload.catAId(), payload.catBId()));
         });
-        DebugLogger.info("ClientNetworking", "Registered receiver: LaowuMemeStopPayload");
+        DebugLogger.CLIENT.debug("ClientNetworking", "Registered receiver: LaowuMemeStopPayload");
 
         ClientPlayNetworking.registerGlobalReceiver(FunctionToggleSyncPayload.TYPE, (payload, context) -> {
             var map = new java.util.HashMap<String, Boolean>();
@@ -483,11 +482,11 @@ public class ClientNetworking {
             map.put("crafting_sound", payload.craftingSound());
             map.put("item_sparkle", payload.itemSparkle());
             FunctionToggleClientState.update(map);
-            DebugLogger.debug("ClientNetworking", "收到功能开关同步包");
+            DebugLogger.CLIENT.debug("ClientNetworking", "收到功能开关同步包");
         });
-        DebugLogger.info("ClientNetworking", "Registered receiver: FunctionToggleSyncPayload");
+        DebugLogger.CLIENT.debug("ClientNetworking", "Registered receiver: FunctionToggleSyncPayload");
 
-        DebugLogger.exiting("ClientNetworking", "initialize");
+        DebugLogger.CLIENT.exiting("ClientNetworking", "initialize");
     }
 
     public static void sendDecomposePacket() {

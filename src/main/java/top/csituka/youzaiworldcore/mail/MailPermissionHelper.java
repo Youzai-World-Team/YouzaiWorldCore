@@ -30,19 +30,19 @@ public class MailPermissionHelper {
      * @return true 如果玩家有邮件系统操作权限
      */
     public static boolean hasMailPermission(ServerPlayer player) {
-        DebugLogger.entering(MODULE, "hasMailPermission", "player=" + player.getScoreboardName());
+        DebugLogger.SERVER.entering(MODULE, "hasMailPermission", "player=" + player.getScoreboardName());
         String node = MailSettings.get().getMailPermissionNode();
         int level = MailSettings.get().getMailPermissionLevel();
 
         boolean lpResult = LuckPermsHelper.checkLuckPermsOnly(player.getUUID(), node);
         if (lpResult) {
-            DebugLogger.exiting(MODULE, "hasMailPermission", "LP node granted");
+            DebugLogger.SERVER.exiting(MODULE, "hasMailPermission", "LP node granted");
             return true;
         }
 
         // 2. 回退到原版 OP 等级检查（使用 26.2 PermissionCheck API）
         boolean opResult = Commands.hasPermission(levelToCheck(level)).test(player.createCommandSourceStack());
-        DebugLogger.exiting(MODULE, "hasMailPermission", "OP level check=" + opResult);
+        DebugLogger.SERVER.exiting(MODULE, "hasMailPermission", "OP level check=" + opResult);
         return opResult;
     }
 
@@ -68,16 +68,16 @@ public class MailPermissionHelper {
      * @return true 如果执行者有邮件系统权限
      */
     public static boolean checkPermission(CommandSourceStack source) {
-        DebugLogger.entering(MODULE, "checkPermission");
+        DebugLogger.SERVER.entering(MODULE, "checkPermission");
         if (!source.isPlayer()) {
             // 控制台/命令方块始终放行
-            DebugLogger.exiting(MODULE, "checkPermission", "console=true");
+            DebugLogger.SERVER.exiting(MODULE, "checkPermission", "console=true");
             return true;
         }
         String node = MailSettings.get().getMailPermissionNode();
         boolean result = LuckPermsHelper.checkPermission(
                 source, node, Commands.LEVEL_ADMINS);
-        DebugLogger.exiting(MODULE, "checkPermission", "result=" + result);
+        DebugLogger.SERVER.exiting(MODULE, "checkPermission", "result=" + result);
         return result;
     }
 }

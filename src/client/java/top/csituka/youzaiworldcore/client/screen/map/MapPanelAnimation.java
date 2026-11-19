@@ -33,7 +33,7 @@ final class MapPanelAnimation {
         if (current != null)
             hide(current.panel);
         current = new Entry(panel, panel);
-        DebugLogger.debug("WorldMap", "覆盖页淡入：%s", panel.getClass().getSimpleName());
+        DebugLogger.CLIENT.debug("WorldMap", "覆盖页淡入：{}", panel.getClass().getSimpleName());
     }
 
     void hide(GuiEventListener panel) {
@@ -47,7 +47,7 @@ final class MapPanelAnimation {
             exiting.add(current);
         }
         current = null;
-        DebugLogger.debug("WorldMap", "覆盖页淡出：%s", panel.getClass().getSimpleName());
+        DebugLogger.CLIENT.debug("WorldMap", "覆盖页淡出：{}", panel.getClass().getSimpleName());
     }
 
     /** 绘制前采样一次，命中判断沿用当前可见帧，避免淡出未画完就提前放行鼠标。 */

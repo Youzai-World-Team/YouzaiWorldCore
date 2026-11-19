@@ -94,20 +94,20 @@ public final class StartupSplashWindow {
      * 同步等待启动窗口完成创建并显示，重复调用不会创建多个窗口。
      */
     public static void show() {
-        DebugLogger.entering("StartupSplash", "show");
+        DebugLogger.CLIENT.entering("StartupSplash", "show");
 
         boolean firstRequest = SHOW_REQUESTED.compareAndSet(false, true);
-        DebugLogger.branch("StartupSplash", "首次请求显示启动窗口", firstRequest);
+        DebugLogger.CLIENT.branch("StartupSplash", "首次请求显示启动窗口", firstRequest);
         if (!firstRequest || CLOSE_REQUESTED.get()) {
-            DebugLogger.exiting("StartupSplash", "show", "已显示或已请求关闭");
+            DebugLogger.CLIENT.exiting("StartupSplash", "show", "已显示或已请求关闭");
             return;
         }
 
         Thread startupThread = Thread.currentThread();
         try {
             if (GraphicsEnvironment.isHeadless()) {
-                DebugLogger.warn("StartupSplash", "当前图形环境不支持窗口，已跳过启动窗口");
-                DebugLogger.exiting("StartupSplash", "show", "无图形环境");
+                DebugLogger.CLIENT.debug("StartupSplash", "当前图形环境不支持窗口，已跳过启动窗口");
+                DebugLogger.CLIENT.exiting("StartupSplash", "show", "无图形环境");
                 return;
             }
 
@@ -122,30 +122,30 @@ public final class StartupSplashWindow {
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            DebugLogger.exception("StartupSplash", "等待启动窗口显示", e);
+            DebugLogger.CLIENT.exception("StartupSplash", "等待启动窗口显示", e);
             close();
         } catch (InvocationTargetException e) {
             Throwable cause = e.getCause() != null ? e.getCause() : e;
-            DebugLogger.exception("StartupSplash", "创建启动窗口", cause);
+            DebugLogger.CLIENT.exception("StartupSplash", "创建启动窗口", cause);
             close();
         } catch (RuntimeException | AWTError | LinkageError e) {
             // DISPLAY 无效、桌面模块不可用等情况只跳过启动窗口，不影响 Minecraft。
-            DebugLogger.exception("StartupSplash", "显示启动窗口", e);
+            DebugLogger.CLIENT.exception("StartupSplash", "显示启动窗口", e);
             close();
         }
 
-        DebugLogger.exiting("StartupSplash", "show");
+        DebugLogger.CLIENT.exiting("StartupSplash", "show");
     }
 
     /**
      * 异步关闭并释放启动窗口，允许从 Minecraft 渲染线程安全调用。
      */
     public static void close() {
-        DebugLogger.entering("StartupSplash", "close");
+        DebugLogger.CLIENT.entering("StartupSplash", "close");
         CLOSE_REQUESTED.set(true);
 
         if (window == null) {
-            DebugLogger.exiting("StartupSplash", "close", "窗口尚未创建或已经关闭");
+            DebugLogger.CLIENT.exiting("StartupSplash", "close", "窗口尚未创建或已经关闭");
             return;
         }
 
@@ -156,10 +156,10 @@ public final class StartupSplashWindow {
                 EventQueue.invokeLater(StartupSplashWindow::disposeOnEventThread);
             }
         } catch (RuntimeException | AWTError | LinkageError e) {
-            DebugLogger.exception("StartupSplash", "调度启动窗口关闭", e);
+            DebugLogger.CLIENT.exception("StartupSplash", "调度启动窗口关闭", e);
         }
 
-        DebugLogger.exiting("StartupSplash", "close");
+        DebugLogger.CLIENT.exiting("StartupSplash", "close");
     }
 
     // ===== 窗口创建与清理 =====
@@ -268,7 +268,7 @@ public final class StartupSplashWindow {
             splash.setVisible(true);
             indicator.startAnimation();
             startStatusRefreshTimer();
-            DebugLogger.info("StartupSplash", "启动加载窗口已显示");
+            DebugLogger.CLIENT.debug("StartupSplash", "启动加载窗口已显示");
 
             if (CLOSE_REQUESTED.get()) {
                 disposeOnEventThread();
@@ -280,7 +280,7 @@ public final class StartupSplashWindow {
             try {
                 splash.dispose();
             } catch (RuntimeException | AWTError disposeError) {
-                DebugLogger.exception("StartupSplash", "清理创建失败的启动窗口", disposeError);
+                DebugLogger.CLIENT.exception("StartupSplash", "清理创建失败的启动窗口", disposeError);
             } finally {
                 if (window == splash) {
                     window = null;
@@ -313,7 +313,7 @@ public final class StartupSplashWindow {
                 }
             }
         } catch (RuntimeException | AWTError e) {
-            DebugLogger.exception("StartupSplash", "选择逐像素透明图形配置", e);
+            DebugLogger.CLIENT.exception("StartupSplash", "选择逐像素透明图形配置", e);
         }
         JFrame splash = new JFrame();
         splash.setUndecorated(true);
@@ -327,17 +327,17 @@ public final class StartupSplashWindow {
             if (!configuration.isTranslucencyCapable()
                     || !device.isWindowTranslucencySupported(
                             GraphicsDevice.WindowTranslucency.PERPIXEL_TRANSLUCENT)) {
-                DebugLogger.warn("StartupSplash", "当前窗口系统不支持抗锯齿圆角，已使用原生圆角");
+                DebugLogger.CLIENT.debug("StartupSplash", "当前窗口系统不支持抗锯齿圆角，已使用原生圆角");
                 return false;
             }
 
             splash.setBackground(new Color(0, 0, 0, 0));
             splash.getRootPane().setOpaque(false);
             splash.getLayeredPane().setOpaque(false);
-            DebugLogger.info("StartupSplash", "启动窗口已启用逐像素透明抗锯齿圆角");
+            DebugLogger.CLIENT.debug("StartupSplash", "启动窗口已启用逐像素透明抗锯齿圆角");
             return true;
         } catch (RuntimeException | AWTError e) {
-            DebugLogger.exception("StartupSplash", "启用启动窗口抗锯齿圆角", e);
+            DebugLogger.CLIENT.exception("StartupSplash", "启用启动窗口抗锯齿圆角", e);
             return false;
         }
     }
@@ -345,15 +345,15 @@ public final class StartupSplashWindow {
     private static Font createLoadingFont() {
         try (InputStream stream = StartupSplashWindow.class.getResourceAsStream(LOADING_FONT_RESOURCE)) {
             if (stream == null) {
-                DebugLogger.warn("StartupSplash", "启动窗口字体资源未找到：" + LOADING_FONT_RESOURCE);
+                DebugLogger.CLIENT.warn("StartupSplash", "启动窗口字体资源未找到：" + LOADING_FONT_RESOURCE);
                 return createFallbackLoadingFont();
             }
 
             Font loadingFont = Font.createFont(Font.TRUETYPE_FONT, stream).deriveFont(LOADING_FONT_SIZE);
-            DebugLogger.info("StartupSplash", "启动窗口已加载 OPPOSans-Bold 字体");
+            DebugLogger.CLIENT.debug("StartupSplash", "启动窗口已加载 OPPOSans-Bold 字体");
             return loadingFont;
         } catch (IOException | FontFormatException | RuntimeException e) {
-            DebugLogger.exception("StartupSplash", "读取启动窗口字体资源", e);
+            DebugLogger.CLIENT.exception("StartupSplash", "读取启动窗口字体资源", e);
             return createFallbackLoadingFont();
         }
     }
@@ -365,13 +365,13 @@ public final class StartupSplashWindow {
     private static JLabel createLogoLabel() {
         try (InputStream stream = StartupSplashWindow.class.getResourceAsStream(LOGO_RESOURCE)) {
             if (stream == null) {
-                DebugLogger.warn("StartupSplash", "启动窗口标志资源未找到：" + LOGO_RESOURCE);
+                DebugLogger.CLIENT.warn("StartupSplash", "启动窗口标志资源未找到：" + LOGO_RESOURCE);
                 return null;
             }
 
             BufferedImage sourceImage = ImageIO.read(stream);
             if (sourceImage == null || sourceImage.getWidth() <= 0 || sourceImage.getHeight() <= 0) {
-                DebugLogger.warn("StartupSplash", "启动窗口标志资源无法解码：" + LOGO_RESOURCE);
+                DebugLogger.CLIENT.warn("StartupSplash", "启动窗口标志资源无法解码：" + LOGO_RESOURCE);
                 return null;
             }
 
@@ -386,7 +386,7 @@ public final class StartupSplashWindow {
             logoLabel.setBorder(BorderFactory.createEmptyBorder(24, LOGO_LEFT_MARGIN, 0, 0));
             return logoLabel;
         } catch (IOException e) {
-            DebugLogger.exception("StartupSplash", "读取启动窗口标志资源", e);
+            DebugLogger.CLIENT.exception("StartupSplash", "读取启动窗口标志资源", e);
             return null;
         }
     }
@@ -395,26 +395,26 @@ public final class StartupSplashWindow {
     private static void applyTaskbarIcon(JFrame splash) {
         try (InputStream stream = StartupSplashWindow.class.getResourceAsStream(TASKBAR_ICON_RESOURCE)) {
             if (stream == null) {
-                DebugLogger.warn("StartupSplash", "启动窗口任务栏图标未找到：" + TASKBAR_ICON_RESOURCE);
+                DebugLogger.CLIENT.warn("StartupSplash", "启动窗口任务栏图标未找到：" + TASKBAR_ICON_RESOURCE);
                 return;
             }
 
             BufferedImage icon = ImageIO.read(stream);
             if (icon == null) {
-                DebugLogger.warn("StartupSplash", "启动窗口任务栏图标无法解码：" + TASKBAR_ICON_RESOURCE);
+                DebugLogger.CLIENT.warn("StartupSplash", "启动窗口任务栏图标无法解码：" + TASKBAR_ICON_RESOURCE);
                 return;
             }
             splash.setIconImage(icon);
-            DebugLogger.info("StartupSplash", "启动窗口任务栏图标已设置");
+            DebugLogger.CLIENT.debug("StartupSplash", "启动窗口任务栏图标已设置");
         } catch (IOException | RuntimeException e) {
-            DebugLogger.exception("StartupSplash", "读取启动窗口任务栏图标", e);
+            DebugLogger.CLIENT.exception("StartupSplash", "读取启动窗口任务栏图标", e);
         }
     }
 
     private static void applyNativeRoundedShape(JFrame splash) {
         GraphicsDevice device = splash.getGraphicsConfiguration().getDevice();
         if (!device.isWindowTranslucencySupported(GraphicsDevice.WindowTranslucency.PERPIXEL_TRANSPARENT)) {
-            DebugLogger.warn("StartupSplash", "当前窗口系统不支持圆角窗口，已使用矩形外观");
+            DebugLogger.CLIENT.debug("StartupSplash", "当前窗口系统不支持圆角窗口，已使用矩形外观");
             return;
         }
 
@@ -428,7 +428,7 @@ public final class StartupSplashWindow {
                     CORNER_ARC
             ));
         } catch (UnsupportedOperationException | IllegalArgumentException e) {
-            DebugLogger.exception("StartupSplash", "设置启动窗口圆角", e);
+            DebugLogger.CLIENT.exception("StartupSplash", "设置启动窗口圆角", e);
         }
     }
 
@@ -499,15 +499,15 @@ public final class StartupSplashWindow {
         try {
             splash.setVisible(false);
         } catch (RuntimeException | AWTError e) {
-            DebugLogger.exception("StartupSplash", "隐藏启动窗口", e);
+            DebugLogger.CLIENT.exception("StartupSplash", "隐藏启动窗口", e);
         }
 
         try {
             // 即使隐藏操作失败也必须继续释放，避免 AWT 窗口阻止进程自然退出。
             splash.dispose();
-            DebugLogger.info("StartupSplash", "启动加载窗口已关闭");
+            DebugLogger.CLIENT.debug("StartupSplash", "启动加载窗口已关闭");
         } catch (RuntimeException | AWTError e) {
-            DebugLogger.exception("StartupSplash", "释放启动窗口", e);
+            DebugLogger.CLIENT.exception("StartupSplash", "释放启动窗口", e);
         } finally {
             if (indicator != null) {
                 indicator.stopAnimation();
@@ -631,7 +631,7 @@ public final class StartupSplashWindow {
         currentProgressBar.setForeground(FAILURE_TEXT_COLOR);
         currentProgressBar.setBackground(FAILURE_BAR_BACKGROUND_COLOR);
         currentProgressBar.setValue(100);
-        DebugLogger.error("StartupSplash", FAILURE_MESSAGE);
+        DebugLogger.CLIENT.error("StartupSplash", FAILURE_MESSAGE);
     }
 
     /** 将状态文字限制在进度条右端以内，超出时保留前缀并追加省略号。 */
@@ -679,7 +679,7 @@ public final class StartupSplashWindow {
                     startupThread.join();
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
-                    DebugLogger.exception("StartupSplash", "等待游戏启动线程结束", e);
+                    DebugLogger.CLIENT.exception("StartupSplash", "等待游戏启动线程结束", e);
                 } finally {
                     // 非正常异常可能会让 Fabric 错误窗口以非退出模式停留；此时保留本窗口的失败提示。
                     if (!StartupLoadingStatus.snapshot().failed()) {
@@ -690,7 +690,7 @@ public final class StartupSplashWindow {
             cleanupGuard.setDaemon(true);
             cleanupGuard.start();
         } catch (RuntimeException e) {
-            DebugLogger.exception("StartupSplash", "创建启动窗口清理守护线程", e);
+            DebugLogger.CLIENT.exception("StartupSplash", "创建启动窗口清理守护线程", e);
         }
     }
 }

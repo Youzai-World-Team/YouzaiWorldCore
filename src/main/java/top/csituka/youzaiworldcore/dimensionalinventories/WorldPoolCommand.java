@@ -63,19 +63,19 @@ public final class WorldPoolCommand {
     private static int executeTeleport(CommandSourceStack source,
                                         Collection<ServerPlayer> targets,
                                         String poolId) {
-        DebugLogger.entering("WorldPoolCmd", "executeTeleport", "poolId=" + poolId + ", targets=" + targets.size());
+        DebugLogger.SERVER.entering("WorldPoolCmd", "executeTeleport", "poolId=" + poolId + ", targets=" + targets.size());
         DimensionPool pool = DimensionPoolSettings.getPool(poolId);
         // 隐藏池（内部使用）对管理员命令不可见，视为不存在
         boolean hiddenPool = DimensionPoolSettings.isHiddenPool(poolId);
         if (pool == null || hiddenPool) {
-            DebugLogger.branch("WorldPoolCmd", "pool found", false,
+            DebugLogger.SERVER.branch("WorldPoolCmd", "pool found", false,
                     "poolId=" + poolId + " 不存在" + (hiddenPool ? "（隐藏池不可用）" : ""));
             source.sendFailure(Component.translatable(
                     "youzaiworldcore.message.diminv.pool_not_found", poolId));
-            DebugLogger.exiting("WorldPoolCmd", "executeTeleport", "pool not found, return 0");
+            DebugLogger.SERVER.exiting("WorldPoolCmd", "executeTeleport", "pool not found, return 0");
             return 0;
         }
-        DebugLogger.branch("WorldPoolCmd", "pool found", true, "poolId=" + poolId + " -> " + pool.displayName());
+        DebugLogger.SERVER.branch("WorldPoolCmd", "pool found", true, "poolId=" + poolId + " -> " + pool.displayName());
 
         int count = 0;
         for (ServerPlayer player : targets) {
@@ -89,8 +89,8 @@ public final class WorldPoolCommand {
                 "youzaiworldcore.message.diminv.teleport_command_success",
                 finalCount, pool.displayName()), true);
 
-        DebugLogger.info("WorldPoolCmd", "传送完成: %d/%d 玩家已传送到 %s", count, targets.size(), poolId);
-        DebugLogger.exiting("WorldPoolCmd", "executeTeleport", "count=" + count);
+        DebugLogger.SERVER.debug("WorldPoolCmd", "传送完成: {}/{} 玩家已传送到 {}", count, targets.size(), poolId);
+        DebugLogger.SERVER.exiting("WorldPoolCmd", "executeTeleport", "count=" + count);
         return count;
     }
 
@@ -98,17 +98,17 @@ public final class WorldPoolCommand {
      * 列出所有维度池及其包含的维度。
      */
     private static int executeList(CommandSourceStack source) {
-        DebugLogger.entering("WorldPoolCmd", "executeList");
+        DebugLogger.SERVER.entering("WorldPoolCmd", "executeList");
         Collection<DimensionPool> pools = DimensionPoolSettings.getAllPools();
 
         if (pools.isEmpty()) {
-            DebugLogger.branch("WorldPoolCmd", "pools empty", true);
+            DebugLogger.SERVER.branch("WorldPoolCmd", "pools empty", true);
             source.sendSuccess(() -> Component.translatable(
                     "youzaiworldcore.message.diminv.no_pools"), false);
-            DebugLogger.exiting("WorldPoolCmd", "executeList", "no pools, return 0");
+            DebugLogger.SERVER.exiting("WorldPoolCmd", "executeList", "no pools, return 0");
             return 0;
         }
-        DebugLogger.branch("WorldPoolCmd", "pools empty", false, "found " + pools.size() + " pools");
+        DebugLogger.SERVER.branch("WorldPoolCmd", "pools empty", false, "found " + pools.size() + " pools");
 
         source.sendSuccess(() -> Component.translatable(
                 "youzaiworldcore.message.diminv.pool_list_header", pools.size()), false);
@@ -117,7 +117,7 @@ public final class WorldPoolCommand {
             source.sendSuccess(() -> Component.literal(DimensionPoolSettings.formatPoolInfo(pool)), false);
         }
 
-        DebugLogger.exiting("WorldPoolCmd", "executeList", "listed " + pools.size() + " pools");
+        DebugLogger.SERVER.exiting("WorldPoolCmd", "executeList", "listed " + pools.size() + " pools");
         return pools.size();
     }
 }

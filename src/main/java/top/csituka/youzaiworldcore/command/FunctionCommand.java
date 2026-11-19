@@ -35,7 +35,7 @@ public class FunctionCommand {
     private static final String MODULE = "FunctionCommand";
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
-        DebugLogger.entering(MODULE, "register");
+        DebugLogger.SERVER.entering(MODULE, "register");
 
         dispatcher.register(Commands.literal("yzwc")
                 .then(Commands.literal("function")
@@ -46,7 +46,7 @@ public class FunctionCommand {
                         .then(functionNode("item_sparkle"))
                         .then(functionNode(FunctionToggleManager.KEY_DAMAGE_NUMBERS, true))));
 
-        DebugLogger.exiting(MODULE, "register");
+        DebugLogger.SERVER.exiting(MODULE, "register");
     }
 
     private static LiteralArgumentBuilder<CommandSourceStack> functionNode(String key) {

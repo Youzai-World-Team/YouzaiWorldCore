@@ -107,7 +107,7 @@ public final class MapTileCache {
     public long revision() { return revision; }
     public void clear() { epoch++; tiles.clear(); layers.clear(); revision++; }
     public void checkFailure() { if (failure != null) throw failure; }
-    private void fail(RuntimeException error) { failure = error; DebugLogger.exception("MapTileCache", "读写客户端地图 SQLite", error); }
+    private void fail(RuntimeException error) { failure = error; DebugLogger.CLIENT.exception("MapTileCache", "读写客户端地图 SQLite", error); }
     /** 退出游戏时等待已接收瓦片落盘；断线不停止存储线程。 */
     public void close() {
         flush(); io.shutdown();

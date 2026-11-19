@@ -90,7 +90,7 @@ public final class CosmeticPreviewScreen extends Screen implements YzuiMenuScree
     private void openFolder() {
         ModPaths.ensureDir(CosmeticPreviewTextures.directory());
         Blaze3D.openPath(CosmeticPreviewTextures.directory());
-        DebugLogger.info("CosmeticPreviewScreen", "已打开本地皮肤与披风目录");
+        DebugLogger.CLIENT.debug("CosmeticPreviewScreen", "已打开本地皮肤与披风目录");
     }
 
     @Override

@@ -67,14 +67,14 @@ public final class MapMobIcons {
                         result.add(type);
                     }
                 } catch (RuntimeException failure) {
-                    DebugLogger.exception("MapMobIcons", "创建生物图标 " + EntityType.getKey(type), failure);
+                    DebugLogger.CLIENT.exception("MapMobIcons", "创建生物图标 " + EntityType.getKey(type), failure);
                 }
             }
         result.sort(Comparator
                 .comparing((EntityType<?> type) -> type.getDescription().getString(), String.CASE_INSENSITIVE_ORDER)
                 .thenComparing(type -> EntityType.getKey(type).toString()));
         types = List.copyOf(result);
-        DebugLogger.debug("MapMobIcons", "已创建 %d 个带独立实体 ID 的图标预览", types.size());
+        DebugLogger.CLIENT.debug("MapMobIcons", "已创建 {} 个带独立实体 ID 的图标预览", types.size());
         return types;
     }
 
@@ -196,7 +196,7 @@ public final class MapMobIcons {
                 }
             }
         } catch (RuntimeException failure) {
-            DebugLogger.exception("MapMobIcons", "提取生物纹理 " + EntityType.getKey(preview.getType()), failure);
+            DebugLogger.CLIENT.exception("MapMobIcons", "提取生物纹理 " + EntityType.getKey(preview.getType()), failure);
         }
         return new Portrait(renderer, null, List.of(), 0, 0, 1, state);
     }

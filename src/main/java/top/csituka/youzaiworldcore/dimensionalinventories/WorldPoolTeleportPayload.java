@@ -26,14 +26,14 @@ public record WorldPoolTeleportPayload(String poolId) implements CustomPacketPay
     public static final StreamCodec<RegistryFriendlyByteBuf, WorldPoolTeleportPayload> STREAM_CODEC =
             StreamCodec.of(
                     (buf, payload) -> {
-                        DebugLogger.entering("WorldPoolPayload", "encode", "poolId=" + payload.poolId);
+                        DebugLogger.SERVER.entering("WorldPoolPayload", "encode", "poolId=" + payload.poolId);
                         buf.writeUtf(payload.poolId);
-                        DebugLogger.exiting("WorldPoolPayload", "encode");
+                        DebugLogger.SERVER.exiting("WorldPoolPayload", "encode");
                     },
                     buf -> {
-                        DebugLogger.entering("WorldPoolPayload", "decode");
+                        DebugLogger.SERVER.entering("WorldPoolPayload", "decode");
                         String poolId = buf.readUtf();
-                        DebugLogger.exiting("WorldPoolPayload", "decode", "poolId=" + poolId);
+                        DebugLogger.SERVER.exiting("WorldPoolPayload", "decode", "poolId=" + poolId);
                         return new WorldPoolTeleportPayload(poolId);
                     }
             );

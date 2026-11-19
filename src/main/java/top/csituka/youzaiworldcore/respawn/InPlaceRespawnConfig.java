@@ -32,23 +32,22 @@ public final class InPlaceRespawnConfig {
 
     /** 从全局配置的 {@code respawn_module} 分节加载；分节缺失时写出默认配置。 */
     public static void load() {
-        DebugLogger.entering(MODULE, "load");
+        DebugLogger.SERVER.entering(MODULE, "load");
         ConfigSection section = GlobalSettings.section(GlobalSettings.RESPAWN_MODULE);
         if (section.isEmpty()) {
             enabledDimensionPools = defaultPools();
             enabledDimensions = new LinkedHashSet<>();
             save();
-            DebugLogger.info(MODULE, "respawn_module 分节不存在，已写入默认原地重生配置");
-            DebugLogger.exiting(MODULE, "load", "default_created");
+            DebugLogger.SERVER.info(MODULE, "respawn_module 分节不存在，已写入默认原地重生配置");
+            DebugLogger.SERVER.exiting(MODULE, "load", "default_created");
             return;
         }
 
         enabledDimensionPools = section.getStringSet("enabled_dimension_pools", defaultPools());
         enabledDimensions = section.getStringSet("enabled_dimensions", new LinkedHashSet<>());
 
-        DebugLogger.info(MODULE, "已加载配置：维度池 %d 个，独立维度 %d 个",
-                enabledDimensionPools.size(), enabledDimensions.size());
-        DebugLogger.exiting(MODULE, "load");
+        DebugLogger.SERVER.info(MODULE, "已加载配置：维度池 {} 个，独立维度 {} 个", enabledDimensionPools.size(), enabledDimensions.size());
+        DebugLogger.SERVER.exiting(MODULE, "load");
     }
 
     public static void reload() {

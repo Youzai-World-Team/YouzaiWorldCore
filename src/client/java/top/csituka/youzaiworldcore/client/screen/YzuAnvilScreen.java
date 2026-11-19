@@ -20,8 +20,6 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import org.jspecify.annotations.NonNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
@@ -70,7 +68,7 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
 @SuppressWarnings({ "null", "unused" })
 public class YzuAnvilScreen extends ItemCombinerScreen<AnvilMenu> {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger("YzuAnvilScreen");
+    private static final DebugLogger.ModuleLogger LOGGER = DebugLogger.CLIENT.module("YzuAnvilScreen");
 
     // ========== YZUI 统一设计常量（与 YzuContainerScreen 一致） ==========
 
@@ -141,8 +139,7 @@ public class YzuAnvilScreen extends ItemCombinerScreen<AnvilMenu> {
                 Identifier.withDefaultNamespace("textures/gui/container/anvil.png"));
         this.player = playerInventory.player;
         this.titleLabelX = 60;
-        DebugLogger.info("YzuAnvilScreen", "创建 YZUI 铁砧屏幕: title=%s menuType=%s",
-                title.getString(), menu.getType());
+        DebugLogger.CLIENT.debug("YzuAnvilScreen", "创建 YZUI 铁砧屏幕: title={} menuType={}", title.getString(), menu.getType());
     }
 
     @Override
@@ -204,9 +201,7 @@ public class YzuAnvilScreen extends ItemCombinerScreen<AnvilMenu> {
         this.name.setValueListener(this::onNameChanged);
         this.name.setValue(initialValue);
         this.addRenderableWidget(this.name);
-        DebugLogger.info("YzuAnvilScreen", "重命名输入框初始化完成 @ (%d,%d) 161x28 multiLine=true"
-                        + "（视觉背景框 8..169，文本 12..165 与边框各留 4px 间距）",
-                this.leftPos + 8, this.topPos + 18);
+        DebugLogger.CLIENT.debug("YzuAnvilScreen", "重命名输入框初始化完成 @ ({},{}) 161x28 multiLine=true（视觉背景框 8..169，文本 12..165 与边框各留 4px 间距）", this.leftPos + 8, this.topPos + 18);
     }
 
     @Override

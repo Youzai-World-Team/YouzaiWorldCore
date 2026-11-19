@@ -117,8 +117,8 @@ public class TeleportStoneItem extends Item {
 
     public TeleportStoneItem(Properties properties) {
         super(properties.stacksTo(1).durability(MAX_DURABILITY).rarity(Rarity.UNCOMMON));
-        DebugLogger.entering("TeleportStoneItem", "constructor");
-        DebugLogger.exiting("TeleportStoneItem", "constructor");
+        DebugLogger.SERVER.entering("TeleportStoneItem", "constructor");
+        DebugLogger.SERVER.exiting("TeleportStoneItem", "constructor");
     }
 
     /**
@@ -156,7 +156,7 @@ public class TeleportStoneItem extends Item {
     @Override
     @NonNull
     public InteractionResult use(Level level, Player player, @NonNull InteractionHand usedHand) {
-        DebugLogger.entering("TeleportStoneItem", "use",
+        DebugLogger.SERVER.entering("TeleportStoneItem", "use",
                 "player=" + player.getName().getString() + ", hand=" + usedHand);
 
         ItemStack stack = player.getItemInHand(usedHand);
@@ -169,8 +169,8 @@ public class TeleportStoneItem extends Item {
             if (player instanceof ServerPlayer serverPlayer) {
                 sendCooldownMessage(serverPlayer, stack);
             }
-            DebugLogger.branch("TeleportStoneItem", "on cooldown", true);
-            DebugLogger.exiting("TeleportStoneItem", "use", "FAIL (cooldown)");
+            DebugLogger.SERVER.branch("TeleportStoneItem", "on cooldown", true);
+            DebugLogger.SERVER.exiting("TeleportStoneItem", "use", "FAIL (cooldown)");
             return InteractionResult.FAIL;
         }
 
@@ -179,11 +179,10 @@ public class TeleportStoneItem extends Item {
         if (level instanceof ServerLevel serverLevel) {
             serverLevel.playSound(null, player.getX(), player.getY(), player.getZ(),
                     SoundEvents.BEACON_ACTIVATE, SoundSource.PLAYERS, 0.5F, 1.6F);
-            DebugLogger.info("TeleportStoneItem", "玩家 %s 开始蓄力传送石",
-                    player.getName().getString());
+            DebugLogger.SERVER.debug("TeleportStoneItem", "玩家 {} 开始蓄力传送石", player.getName().getString());
         }
 
-        DebugLogger.exiting("TeleportStoneItem", "use", "CONSUME (charging)");
+        DebugLogger.SERVER.exiting("TeleportStoneItem", "use", "CONSUME (charging)");
         return InteractionResult.CONSUME;
     }
 
@@ -254,7 +253,7 @@ public class TeleportStoneItem extends Item {
         // 蓄力途中可能因为别的途径进入冷却，打开列表前再校验一次
         if (serverPlayer.getCooldowns().isOnCooldown(stack)) {
             sendCooldownMessage(serverPlayer, stack);
-            DebugLogger.info("TeleportStoneItem", "蓄力完成但传送石处于冷却中，未打开列表");
+            DebugLogger.SERVER.debug("TeleportStoneItem", "蓄力完成但传送石处于冷却中，未打开列表");
             return stack;
         }
 
@@ -289,8 +288,7 @@ public class TeleportStoneItem extends Item {
         if (level instanceof ServerLevel serverLevel) {
             serverLevel.playSound(null, entity.getX(), entity.getY(), entity.getZ(),
                     SoundEvents.FIRE_EXTINGUISH, SoundSource.PLAYERS, 0.4F, 1.6F);
-            DebugLogger.info("TeleportStoneItem", "玩家 %s 的传送石蓄力被打断，剩余 %d tick",
-                    entity.getName().getString(), remainingTicks);
+            DebugLogger.SERVER.debug("TeleportStoneItem", "玩家 {} 的传送石蓄力被打断，剩余 {} tick", entity.getName().getString(), remainingTicks);
         }
         return false;
     }
@@ -308,8 +306,7 @@ public class TeleportStoneItem extends Item {
 
         manager.markListOpenedByStone(serverPlayer, hand);
 
-        DebugLogger.info("TeleportStoneItem", "玩家 %s 蓄力完成，打开传送列表，可用锚点 %d 个",
-                serverPlayer.getName().getString(), validPoints.size());
+        DebugLogger.SERVER.debug("TeleportStoneItem", "玩家 {} 蓄力完成，打开传送列表，可用锚点 {} 个", serverPlayer.getName().getString(), validPoints.size());
 
         ServerPlayNetworking.send(serverPlayer, new TeleportAnchorListPayload(validPoints,
                 null, null,

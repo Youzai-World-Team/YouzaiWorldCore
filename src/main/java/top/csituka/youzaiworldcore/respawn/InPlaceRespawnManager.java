@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.respawn;
 
+import top.csituka.youzaiworldcore.util.LogValues;
+
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.network.chat.Component;
@@ -36,10 +38,10 @@ public final class InPlaceRespawnManager {
     }
 
     public static void initialize() {
-        DebugLogger.entering("InPlaceRespawn", "initialize");
+        DebugLogger.SERVER.entering("InPlaceRespawn", "initialize");
         ServerPlayerEvents.AFTER_RESPAWN.register(InPlaceRespawnManager::finishRespawn);
-        DebugLogger.info("InPlaceRespawn", "原地重生复活完成事件已注册");
-        DebugLogger.exiting("InPlaceRespawn", "initialize");
+        DebugLogger.SERVER.debug("InPlaceRespawn", "原地重生复活完成事件已注册");
+        DebugLogger.SERVER.exiting("InPlaceRespawn", "initialize");
     }
 
     /**
@@ -50,8 +52,7 @@ public final class InPlaceRespawnManager {
         PlayerAccount account = AccountDataStorage.getOrCreate(
                 player.getName().getString(), player.getUUID());
         if (account == null) {
-            DebugLogger.warn("InPlaceRespawn", "Api 账户状态不可用，拒绝为玩家 %s 计算原地重生费用",
-                    player.getName().getString());
+            DebugLogger.SERVER.warn("InPlaceRespawn", "Api 账户状态不可用，拒绝为玩家 {} 计算原地重生费用", player.getName().getString());
             return OptionalInt.empty();
         }
         long currentUseNumber = (long) Math.max(0, account.inPlaceRespawnCount) + 1L;
@@ -66,38 +67,37 @@ public final class InPlaceRespawnManager {
 
     /** 校验客户端的原地重生申请，通过后允许客户端发送原版重生指令。 */
     public static void handleRequest(ServerPlayer player) {
-        DebugLogger.entering("InPlaceRespawn", "handleRequest", "player=" + player.getName().getString());
+        DebugLogger.SERVER.entering("InPlaceRespawn", "handleRequest", "player=" + player.getName().getString());
         if (player.isAlive() || !(player instanceof InPlaceRespawnPlayerAccess access)
                 || !access.youzaiworldcore$isInPlaceRespawnEnabled()
                 || !InPlaceRespawnConfig.isEnabled(player)) {
             reject(player, RESULT_UNAVAILABLE, 0);
-            DebugLogger.exiting("InPlaceRespawn", "handleRequest", "unavailable");
+            DebugLogger.SERVER.exiting("InPlaceRespawn", "handleRequest", "unavailable");
             return;
         }
 
         OptionalInt requiredLevelResult = getRequiredLevel(player);
         if (requiredLevelResult.isEmpty()) {
             reject(player, RESULT_UNAVAILABLE, 0);
-            DebugLogger.exiting("InPlaceRespawn", "handleRequest", "account_unavailable");
+            DebugLogger.SERVER.exiting("InPlaceRespawn", "handleRequest", "account_unavailable");
             return;
         }
         int requiredLevel = requiredLevelResult.getAsInt();
         if (player.experienceLevel < requiredLevel) {
             reject(player, RESULT_NOT_ENOUGH_LEVELS, requiredLevel);
-            DebugLogger.branch("InPlaceRespawn", "玩家等级是否足够", false,
+            DebugLogger.SERVER.branch("InPlaceRespawn", "玩家等级是否足够", false,
                     "required=" + requiredLevel + ", current=" + player.experienceLevel);
-            DebugLogger.exiting("InPlaceRespawn", "handleRequest", "not_enough_levels");
+            DebugLogger.SERVER.exiting("InPlaceRespawn", "handleRequest", "not_enough_levels");
             return;
         }
 
         access.youzaiworldcore$selectInPlaceRespawn(requiredLevel);
         ServerPlayNetworking.send(player, new InPlaceRespawnResultPayload(
                 true, RESULT_APPROVED, requiredLevel, player.experienceLevel));
-        DebugLogger.branch("InPlaceRespawn", "玩家等级是否足够", true,
+        DebugLogger.SERVER.branch("InPlaceRespawn", "玩家等级是否足够", true,
                 "required=" + requiredLevel + ", current=" + player.experienceLevel);
-        DebugLogger.info("InPlaceRespawn", "已批准玩家 %s 的原地重生请求",
-                player.getName().getString());
-        DebugLogger.exiting("InPlaceRespawn", "handleRequest", "approved");
+        DebugLogger.SERVER.info("InPlaceRespawn", "已批准玩家 {} 的原地重生请求", player.getName().getString());
+        DebugLogger.SERVER.exiting("InPlaceRespawn", "handleRequest", "approved");
     }
 
     private static void reject(ServerPlayer player, String reason, int requiredLevel) {
@@ -111,16 +111,15 @@ public final class InPlaceRespawnManager {
             return;
         }
 
-        DebugLogger.entering("InPlaceRespawn", "finishRespawn",
+        DebugLogger.SERVER.entering("InPlaceRespawn", "finishRespawn",
                 "player=" + newPlayer.getName().getString());
         PlayerAccount account = AccountDataStorage.getOrCreate(
                 newPlayer.getName().getString(), newPlayer.getUUID());
         if (account == null) {
             newPlayer.sendSystemMessage(Component.translatable(
                     "youzaiworldcore.respawn.in_place.unavailable"));
-            DebugLogger.warn("InPlaceRespawn", "Api 账户状态不可用，取消玩家 %s 的原地重生结算",
-                    newPlayer.getName().getString());
-            DebugLogger.exiting("InPlaceRespawn", "finishRespawn", "account_unavailable");
+            DebugLogger.SERVER.warn("InPlaceRespawn", "Api 账户状态不可用，取消玩家 {} 的原地重生结算", newPlayer.getName().getString());
+            DebugLogger.SERVER.exiting("InPlaceRespawn", "finishRespawn", "account_unavailable");
             return;
         }
         ServerLevel deathLevel = newPlayer.level().getServer()
@@ -128,9 +127,8 @@ public final class InPlaceRespawnManager {
         if (deathLevel == null) {
             newPlayer.sendSystemMessage(Component.translatable(
                     "youzaiworldcore.respawn.in_place.unavailable"));
-            DebugLogger.warn("InPlaceRespawn", "死亡维度未加载，无法将玩家 %s 送回原地",
-                    newPlayer.getName().getString());
-            DebugLogger.exiting("InPlaceRespawn", "finishRespawn", "death_level_missing");
+            DebugLogger.SERVER.warn("InPlaceRespawn", "死亡维度未加载，无法将玩家 {} 送回原地", newPlayer.getName().getString());
+            DebugLogger.SERVER.exiting("InPlaceRespawn", "finishRespawn", "death_level_missing");
             return;
         }
 
@@ -143,23 +141,22 @@ public final class InPlaceRespawnManager {
         if (!teleported) {
             newPlayer.sendSystemMessage(Component.translatable(
                     "youzaiworldcore.respawn.in_place.unavailable"));
-            DebugLogger.warn("InPlaceRespawn", "玩家 %s 原地重生传送失败",
-                    newPlayer.getName().getString());
-            DebugLogger.exiting("InPlaceRespawn", "finishRespawn", "teleport_failed");
+            DebugLogger.SERVER.warn("InPlaceRespawn", "玩家 {} 原地重生传送失败", newPlayer.getName().getString());
+            DebugLogger.SERVER.exiting("InPlaceRespawn", "finishRespawn", "teleport_failed");
             return;
         }
 
         int requiredLevel = access.youzaiworldcore$getInPlaceRespawnCost();
         int oldLevel = newPlayer.experienceLevel;
         newPlayer.giveExperienceLevels(-requiredLevel);
-        DebugLogger.stateChange("InPlaceRespawn", newPlayer.getName().getString(),
+        DebugLogger.SERVER.stateChange("InPlaceRespawn", newPlayer.getName().getString(),
                 "experienceLevel", oldLevel, newPlayer.experienceLevel);
 
         int oldCount = account.inPlaceRespawnCount;
         account.inPlaceRespawnCount = oldCount == Integer.MAX_VALUE
                 ? Integer.MAX_VALUE : Math.max(0, oldCount) + 1;
         AccountDataStorage.update(account);
-        DebugLogger.stateChange("InPlaceRespawn", newPlayer.getName().getString(),
+        DebugLogger.SERVER.stateChange("InPlaceRespawn", newPlayer.getName().getString(),
                 "inPlaceRespawnCount", oldCount, account.inPlaceRespawnCount);
 
         newPlayer.addEffect(new MobEffectInstance(
@@ -173,12 +170,10 @@ public final class InPlaceRespawnManager {
                     newPlayer.getUUID(), newPlayer.getName().getString(),
                     AdventureLevelManager.EXP_DEATH);
         } catch (Exception e) {
-            DebugLogger.exception("InPlaceRespawn", "grantDeathAdventureExp", e);
+            DebugLogger.SERVER.exception("InPlaceRespawn", "grantDeathAdventureExp", e);
         }
 
-        DebugLogger.info("InPlaceRespawn", "玩家 %s 已在 %s 的 (%.2f, %.2f, %.2f) 原地重生，消耗 %d 级",
-                newPlayer.getName().getString(), deathLevel.dimension().identifier(),
-                deathPosition.x, deathPosition.y, deathPosition.z, requiredLevel);
-        DebugLogger.exiting("InPlaceRespawn", "finishRespawn", "success");
+        DebugLogger.SERVER.info("InPlaceRespawn", "玩家 {} 已在 {} 的 ({}, {}, {}) 原地重生，消耗 {} 级", newPlayer.getName().getString(), deathLevel.dimension().identifier(), LogValues.decimal(deathPosition.x, 2), LogValues.decimal(deathPosition.y, 2), LogValues.decimal(deathPosition.z, 2), requiredLevel);
+        DebugLogger.SERVER.exiting("InPlaceRespawn", "finishRespawn", "success");
     }
 }

@@ -23,7 +23,7 @@ public final class StartupLoadingLanguageAdapter implements LanguageAdapter {
                 StartupEntrypointInstrumentation.install();
             } catch (Throwable throwable) {
                 // 实时追踪属于增强能力，失败时保留原有启动窗口和本模组阶段进度。
-                DebugLogger.exception("StartupLoading", "安装 Fabric Loader 入口点追踪", throwable);
+                DebugLogger.bootstrap().exception("StartupLoading", "安装 Fabric Loader 入口点追踪", throwable);
             }
         }
     }

@@ -26,8 +26,7 @@ public abstract class ShulkerBoxBlockEntityNameMixin {
     @Inject(method = "getDefaultName", at = @At("HEAD"), cancellable = true)
     private void yzwc$useBlockName(CallbackInfoReturnable<Component> cir) {
         ShulkerBoxBlockEntity self = (ShulkerBoxBlockEntity) (Object) this;
-        DebugLogger.info("ShulkerBoxTitle", "潜影盒容器标题修正: %s → %s",
-                "container.shulkerBox", self.getBlockState().getBlock().getName().getString());
+        DebugLogger.SERVER.debug("ShulkerBoxTitle", "潜影盒容器标题修正: {} → {}", "container.shulkerBox", self.getBlockState().getBlock().getName().getString());
         cir.setReturnValue(self.getBlockState().getBlock().getName());
     }
 }

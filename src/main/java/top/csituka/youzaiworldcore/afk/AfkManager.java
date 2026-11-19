@@ -81,8 +81,7 @@ public final class AfkManager {
             return;
         }
         getOrCreate(player).activity.heartbeat(now, idleTicks, sequence);
-        DebugLogger.trace(MODULE, "心跳: player=%s, idle=%d, sequence=%d",
-                player.getName().getString(), idleTicks, sequence);
+        DebugLogger.SERVER.trace(MODULE, "心跳: player={}, idle={}, sequence={}", player.getName().getString(), idleTicks, sequence);
     }
 
     /** 聊天和命令都作为明确活动，并参与自动进入计时。 */
@@ -91,7 +90,7 @@ public final class AfkManager {
             return;
         }
         getOrCreate(player).activity.explicitActivity(now);
-        DebugLogger.trace(MODULE, "聊天/命令活动: player=%s, tick=%d", player.getName().getString(), now);
+        DebugLogger.SERVER.trace(MODULE, "聊天/命令活动: player={}, tick={}", player.getName().getString(), now);
     }
 
     /** 进入 AFK；重新采样位置，避免把执行命令前的移动当作新操作。 */
@@ -102,7 +101,7 @@ public final class AfkManager {
         }
         data.samplePosition(player);
         data.activity.enter(player.level().getServer().getTickCount(), manual);
-        DebugLogger.stateChange(MODULE, player.getName().getString(), "isAfk", false, true);
+        DebugLogger.SERVER.stateChange(MODULE, player.getName().getString(), "isAfk", false, true);
         announce(player, true);
         refreshTabDisplay(player);
         broadcastAfkState(player);
@@ -116,7 +115,7 @@ public final class AfkManager {
         }
         data.activity.exit(player.level().getServer().getTickCount());
         data.samplePosition(player);
-        DebugLogger.stateChange(MODULE, player.getName().getString(), "isAfk", true, false);
+        DebugLogger.SERVER.stateChange(MODULE, player.getName().getString(), "isAfk", true, false);
         announce(player, false);
         refreshTabDisplay(player);
         broadcastAfkState(player);
@@ -151,7 +150,7 @@ public final class AfkManager {
             if (wasAfk) {
                 refreshTabDisplay(player);
                 broadcastAfkState(player);
-                DebugLogger.info(MODULE, "功能禁用，清除 %s 的 AFK 状态", player.getName().getString());
+                DebugLogger.SERVER.info(MODULE, "功能禁用，清除 {} 的 AFK 状态", player.getName().getString());
             }
         }
     }
@@ -173,7 +172,7 @@ public final class AfkManager {
                 broadcastAfkState(player);
             }
         }
-        DebugLogger.info(MODULE, "AFK 配置已同步到在线玩家，重建活动基线=%s", rebase);
+        DebugLogger.SERVER.info(MODULE, "AFK 配置已同步到在线玩家，重建活动基线={}", rebase);
     }
 
     /** 加入时创建独立会话，并补发其他玩家的 AFK 状态。 */
@@ -185,14 +184,14 @@ public final class AfkManager {
                 ServerPlayNetworking.send(player, statePayload(uuid, true));
             }
         }
-        DebugLogger.info(MODULE, "初始化 AFK 会话: %s", player.getName().getString());
+        DebugLogger.SERVER.debug(MODULE, "初始化 AFK 会话: {}", player.getName().getString());
     }
 
     /** 掉线清理会话，不持久化 AFK 状态。 */
     public static void onDisconnect(ServerPlayer player) {
         DATA.remove(player.getUUID());
         broadcastAfkState(player);
-        DebugLogger.info(MODULE, "清理 AFK 会话: %s", player.getName().getString());
+        DebugLogger.SERVER.debug(MODULE, "清理 AFK 会话: {}", player.getName().getString());
     }
 
     private static AfkStatePayload statePayload(UUID uuid, boolean afk) {

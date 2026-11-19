@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.client.screen.options;
 
+import top.csituka.youzaiworldcore.util.LogValues;
+
 import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.List;
@@ -146,7 +148,7 @@ final class SettingsList extends ContainerObjectSelectionList<SettingsList.Row> 
                 // 末尾分组不足一屏时会被原版滚动上限截断，仍选中用户实际点击的可见分组。
                 if (scrollAmount() < offset)
                     revealedSection = row.section;
-                DebugLogger.debug("YzuiSettings", "定位设置分组：%s，滚动位置 %.0f", row.label.getString(), scrollAmount());
+                DebugLogger.CLIENT.debug("YzuiSettings", "定位设置分组：{}，滚动位置 {}", row.label.getString(), LogValues.decimal(scrollAmount(), 0));
                 return;
             }
             offset += entry.getHeight();

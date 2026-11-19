@@ -29,14 +29,14 @@ public final class MailCommand {
 
     /** 注册 {@code /yzwc mail pull <mailId>}。 */
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
-        DebugLogger.entering(MODULE, "register");
+        DebugLogger.SERVER.entering(MODULE, "register");
         dispatcher.register(Commands.literal("yzwc")
                 .then(Commands.literal("mail")
                         .then(Commands.literal("pull")
                                 .requires(MailPermissionHelper::checkPermission)
                                 .then(Commands.argument("mailId", StringArgumentType.word())
                                         .executes(MailCommand::pullMail)))));
-        DebugLogger.exiting(MODULE, "register");
+        DebugLogger.SERVER.exiting(MODULE, "register");
     }
 
     private static int pullMail(CommandContext<CommandSourceStack> context) {
@@ -50,7 +50,7 @@ public final class MailCommand {
             return 0;
         }
 
-        DebugLogger.info(MODULE, "%s 请求拉取后台邮件: mailId=%s", source.getTextName(), mailId);
+        DebugLogger.SERVER.debug(MODULE, "{} 请求拉取后台邮件: mailId={}", source.getTextName(), mailId);
         source.sendSuccess(() -> Component.literal("正在从 Api 拉取邮件 " + mailId), false);
         MailManager.pullAndPushMail(source.getServer(), mailId, result -> {
             if (!result.success()) {

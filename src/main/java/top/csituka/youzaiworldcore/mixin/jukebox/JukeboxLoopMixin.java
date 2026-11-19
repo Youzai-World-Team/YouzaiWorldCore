@@ -60,6 +60,6 @@ public class JukeboxLoopMixin {
         }
 
         jukebox.tryForcePlaySong();
-        DebugLogger.debug("JukeboxLoop", "唱片机循环播放: {}", pos);
+        DebugLogger.SERVER.debug("JukeboxLoop", "唱片机循环播放: {}", pos);
     }
 }

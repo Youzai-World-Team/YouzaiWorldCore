@@ -69,10 +69,10 @@ final class StartupEntrypointTransformer {
                     ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES
             );
             classNode.accept(writer);
-            DebugLogger.info("StartupLoading", "已接入 Fabric Loader 模组入口点进度");
+            DebugLogger.bootstrap().debug("StartupLoading", "已接入 Fabric Loader 模组入口点进度");
             return writer.toByteArray();
         } catch (Throwable throwable) {
-            DebugLogger.exception("StartupLoading", "转换 Fabric Loader 启动状态回调", throwable);
+            DebugLogger.bootstrap().exception("StartupLoading", "转换 Fabric Loader 启动状态回调", throwable);
             return null;
         }
     }
@@ -106,7 +106,7 @@ final class StartupEntrypointTransformer {
                 ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES
         );
         classNode.accept(writer);
-        DebugLogger.info("StartupLoading", "已接入 Fabric Loader 启动失败提示");
+        DebugLogger.bootstrap().debug("StartupLoading", "已接入 Fabric Loader 启动失败提示");
         return writer.toByteArray();
     }
 

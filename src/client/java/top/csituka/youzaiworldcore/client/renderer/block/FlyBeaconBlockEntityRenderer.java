@@ -146,9 +146,9 @@ public class FlyBeaconBlockEntityRenderer implements BlockEntityRenderer<FlyBeac
 
         if (!debugLoggedThisFrame) {
             debugLoggedThisFrame = true;
-            DebugLogger.info("FlyBeaconRenderer", "BE [%d,%d,%d]: 共 %d 个激活信标，当前贡献 %d 个可见墙面段、%d 个底部面片",
-                    myPos.getX(), myPos.getY(), myPos.getZ(), allSquares.size(),
-                    myVisibleFaces.size(), myVisibleBottomAreas.size());
+            if (DebugLogger.CLIENT.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+                DebugLogger.CLIENT.trace("FlyBeaconRenderer", "BE [{},{},{}]: 共 {} 个激活信标，当前贡献 {} 个可见墙面段、{} 个底部面片", myPos.getX(), myPos.getY(), myPos.getZ(), allSquares.size(), myVisibleFaces.size(), myVisibleBottomAreas.size());
+            }
         }
 
         matrices.pushPose();

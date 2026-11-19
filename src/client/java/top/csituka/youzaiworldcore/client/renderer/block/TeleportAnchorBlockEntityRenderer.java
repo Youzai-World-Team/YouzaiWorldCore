@@ -50,7 +50,7 @@ public class TeleportAnchorBlockEntityRenderer
             "youzaiworldcore", "textures/block/tp_anchor_active.png");
 
     static {
-        DebugLogger.info("TeleportAnchorRenderer",
+        DebugLogger.CLIENT.debug("TeleportAnchorRenderer",
                 "展开图 UV 布局已启用：顶饰行 V0-0.0781 / 柱头行 V0.0781-0.125 / "
                         + "柱身行 V0.125-0.4375 / 底座行 V0.4375-0.5 / 顶底面共用 (U0-0.25, V0.5-0.75)");
     }

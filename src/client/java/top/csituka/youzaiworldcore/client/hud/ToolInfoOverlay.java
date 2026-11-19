@@ -39,7 +39,7 @@ public class ToolInfoOverlay {
         }
         registered = true;
         ClientTickEvents.END_CLIENT_TICK.register(ToolInfoOverlay::onClientTick);
-        DebugLogger.info(MODULE, "工具信息 HUD 叠加层已注册");
+        DebugLogger.CLIENT.debug(MODULE, "工具信息 HUD 叠加层已注册");
     }
 
     private static void onClientTick(Minecraft client) {

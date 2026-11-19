@@ -72,6 +72,10 @@ public final class UpdateChecker {
 
     /** @return 当前模组版本字符串（如 "1.19.0-indev"），读取失败时回退 "0.0.0" */
     public static String getCurrentVersionString() {
+        return getCurrentVersionString(DebugLogger.bootstrap());
+    }
+
+    private static String getCurrentVersionString(DebugLogger logger) {
         try {
             Optional<net.fabricmc.loader.api.ModContainer> container =
                     FabricLoader.getInstance().getModContainer(YouzaiworldCore.MOD_ID);
@@ -79,7 +83,7 @@ public final class UpdateChecker {
                 return container.get().getMetadata().getVersion().getFriendlyString();
             }
         } catch (Exception e) {
-            DebugLogger.exception(MODULE, "getCurrentVersionString", e);
+            logger.exception(MODULE, "getCurrentVersionString", e);
         }
         return "0.0.0";
     }
@@ -125,14 +129,18 @@ public final class UpdateChecker {
 
     /** 同步拉取并解析远程更新 JSON（调用方需确保不在主线程执行） */
     public static RemoteVersionInfo fetchRemoteVersion(String url) throws Exception {
-        DebugLogger.entering(MODULE, "fetchRemoteVersion", "url=" + url);
+        return fetchRemoteVersion(url, DebugLogger.bootstrap());
+    }
+
+    private static RemoteVersionInfo fetchRemoteVersion(String url, DebugLogger logger) throws Exception {
+        logger.entering(MODULE, "fetchRemoteVersion", "url=" + url);
 
         // 先尝试 HTTP/2；若因协议版本不支持超时则降级到 HTTP/1.1 重试
         HttpResponse<String> response;
         try {
             response = tryFetch(HttpClient.Version.HTTP_2, url);
         } catch (java.net.http.HttpTimeoutException e) {
-            DebugLogger.info(MODULE, "HTTP/2 超时，降级到 HTTP/1.1 重试: url=%s", url);
+            logger.debug(MODULE, "HTTP/2 超时，降级到 HTTP/1.1 重试: url={}", url);
             response = tryFetch(HttpClient.Version.HTTP_1_1, url);
         }
         if (response.statusCode() != 200) {
@@ -164,7 +172,7 @@ public final class UpdateChecker {
             }
         }
 
-        DebugLogger.exiting(MODULE, "fetchRemoteVersion", "latest=" + latestVersion);
+        logger.exiting(MODULE, "fetchRemoteVersion", "latest=" + latestVersion);
         return new RemoteVersionInfo(latestVersion, type, forcedUpdate, releaseDate, releaseTime, changelog);
     }
 
@@ -173,7 +181,7 @@ public final class UpdateChecker {
     /**
      * 判断 {@code latest} 是否严格新于 {@code current}（版本号比较失败时视为无更新）。
      */
-    private static boolean isNewerThan(String current, String latest) {
+    private static boolean isNewerThan(String current, String latest, DebugLogger logger) {
         if (current == null || latest == null || latest.isEmpty()) {
             return false;
         }
@@ -184,8 +192,7 @@ public final class UpdateChecker {
             int cmp = currentVersion.compareTo(latestVersion);
             return cmp < 0;
         } catch (Exception e) {
-            DebugLogger.warn(MODULE, "版本号比较失败（%s vs %s）: %s",
-                    current, latest, e.getMessage());
+            logger.warn(MODULE, "版本号比较失败（{} vs {}）: {}", current, latest, e.getMessage());
             return false;
         }
     }
@@ -197,53 +204,58 @@ public final class UpdateChecker {
      * @return 检查结果；任何失败均以 {@link UpdateResult#errorMessage()} 体现，不会抛出异常
      */
     public static UpdateResult check() {
-        DebugLogger.entering(MODULE, "check",
+        return check(DebugLogger.SERVER);
+    }
+
+    /** 发起端显式传入日志实例，后台线程不会把客户端检查写到服务端文件。 */
+    public static UpdateResult check(DebugLogger logger) {
+        logger.entering(MODULE, "check",
                 "optional=" + API_OPTIONAL_URL + ", forced=" + API_FORCED_URL);
-        String current = getCurrentVersionString();
+        String current = getCurrentVersionString(logger);
         String downloadUrl = buildJumpUrl(current);
 
         // 1. 先查强制更新端点（更关键，优先）
         RemoteVersionInfo forced = null;
         try {
-            forced = fetchRemoteVersion(API_FORCED_URL);
+            forced = fetchRemoteVersion(API_FORCED_URL, logger);
         } catch (Exception e) {
-            DebugLogger.exception(MODULE, "check:forced-endpoint", e);
+            logger.exception(MODULE, "check:forced-endpoint", e);
         }
 
         // 2. 再查可选更新端点
         RemoteVersionInfo optional = null;
         try {
-            optional = fetchRemoteVersion(API_OPTIONAL_URL);
+            optional = fetchRemoteVersion(API_OPTIONAL_URL, logger);
         } catch (Exception e) {
-            DebugLogger.exception(MODULE, "check:optional-endpoint", e);
+            logger.exception(MODULE, "check:optional-endpoint", e);
         }
 
         // 两个端点均失败 → 返回错误结果
         if (forced == null && optional == null) {
-            DebugLogger.warn(MODULE, "更新检查失败：可选与强制更新端点均不可用");
+            logger.warn(MODULE, "更新检查失败：可选与强制更新端点均不可用");
             UpdateResult failed = new UpdateResult(false, current, null, null, false,
                     null, null, List.of(), downloadUrl,
                     "拉取失败: 可选与强制更新端点均不可用");
-            DebugLogger.exiting(MODULE, "check", "both-endpoints-failed");
+            logger.exiting(MODULE, "check", "both-endpoints-failed");
             return failed;
         }
 
         // 3. 合并判定：强制端点有更新 > 可选端点有更新 > 无更新
-        boolean forcedAvailable = forced != null && isNewerThan(current, forced.latestVersion());
-        boolean optionalAvailable = optional != null && isNewerThan(current, optional.latestVersion());
+        boolean forcedAvailable = forced != null && isNewerThan(current, forced.latestVersion(), logger);
+        boolean optionalAvailable = optional != null && isNewerThan(current, optional.latestVersion(), logger);
         boolean updateAvailable = forcedAvailable || optionalAvailable;
 
         RemoteVersionInfo remote;
         if (forcedAvailable) {
             remote = forced;
-            DebugLogger.info(MODULE, "存在强制更新: %s -> %s", current, forced.latestVersion());
+            logger.debug(MODULE, "存在强制更新: {} -> {}", current, forced.latestVersion());
         } else if (optionalAvailable) {
             remote = optional;
-            DebugLogger.info(MODULE, "存在可选更新: %s -> %s", current, optional.latestVersion());
+            logger.debug(MODULE, "存在可选更新: {} -> {}", current, optional.latestVersion());
         } else {
             // 无更新：展示任一成功拉取的端点信息（优先可选端点）
             remote = optional != null ? optional : forced;
-            DebugLogger.info(MODULE, "已是最新版本 (%s)", current);
+            logger.info(MODULE, "已是最新版本 ({})", current);
         }
 
         UpdateResult result = new UpdateResult(
@@ -258,7 +270,7 @@ public final class UpdateChecker {
                 downloadUrl,
                 null
         );
-        DebugLogger.exiting(MODULE, "check", "updateAvailable=" + updateAvailable
+        logger.exiting(MODULE, "check", "updateAvailable=" + updateAvailable
                 + ", latest=" + remote.latestVersion() + ", forced=" + remote.forcedUpdate());
         return result;
     }
@@ -269,6 +281,11 @@ public final class UpdateChecker {
      * @return 承载 {@link UpdateResult} 的 Future；回调中始终会收到一个结果对象
      */
     public static CompletableFuture<UpdateResult> checkAsync() {
-        return CompletableFuture.supplyAsync(UpdateChecker::check, EXECUTOR);
+        return checkAsync(DebugLogger.SERVER);
+    }
+
+    /** 异步检查保留调用者的日志端与实时配置。 */
+    public static CompletableFuture<UpdateResult> checkAsync(DebugLogger logger) {
+        return CompletableFuture.supplyAsync(() -> check(logger), EXECUTOR);
     }
 }

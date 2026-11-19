@@ -37,7 +37,7 @@ public final class LaowuAudioPool {
         BUILTINS.put("qiliang", LaowuModSounds.QILIANG);
         BUILTINS.put("zhanhou", LaowuModSounds.ZHANHOU);
 
-        DebugLogger.info(MODULE, "音频池初始化完成: 内置 %d 首（曲目不可被玩家禁用）", BUILTINS.size());
+        DebugLogger.CLIENT.debug(MODULE, "音频池初始化完成: 内置 {} 首（曲目不可被玩家禁用）", BUILTINS.size());
     }
 
     public static int builtinCount() {
@@ -64,7 +64,7 @@ public final class LaowuAudioPool {
         if (soundId >= 0 && soundId < keys.size()) {
             return BUILTINS.get(keys.get(soundId));
         }
-        DebugLogger.warn(MODULE, "服务端选曲 soundId=%d 越界（内置 %d 首），回退本地随机", soundId, keys.size());
+        DebugLogger.CLIENT.warn(MODULE, "服务端选曲 soundId={} 越界（内置 {} 首），回退本地随机", soundId, keys.size());
         return random();
     }
 

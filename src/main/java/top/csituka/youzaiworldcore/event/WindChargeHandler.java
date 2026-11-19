@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.event;
 
+import top.csituka.youzaiworldcore.util.LogValues;
+
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.core.Holder;
@@ -32,12 +34,12 @@ public class WindChargeHandler {
      */
     public static void markHolderDirty() {
         holderDirty = true;
-        DebugLogger.info(MODULE, "附魔注册表缓存已标记失效，下次 tick 将重新查询");
+        DebugLogger.SERVER.debug(MODULE, "附魔注册表缓存已标记失效，下次 tick 将重新查询");
     }
 
     @SuppressWarnings("null")
     public static void register() {
-        DebugLogger.entering(MODULE, "register");
+        DebugLogger.SERVER.entering(MODULE, "register");
 
         ServerTickEvents.END_SERVER_TICK.register(server -> {
             // 延迟初始化 + 失效检测：仅在首次使用或数据包重载后查询注册表
@@ -45,7 +47,7 @@ public class WindChargeHandler {
                 var reg = server.registryAccess().lookupOrThrow(Registries.ENCHANTMENT);
                 cachedHolder = reg.getOrThrow(ModEnchantments.WIND_CHARGE_KEY);
                 holderDirty = false;
-                DebugLogger.info(MODULE, "附魔注册表缓存已初始化/刷新");
+                DebugLogger.SERVER.debug(MODULE, "附魔注册表缓存已初始化/刷新");
             }
             Holder<Enchantment> holder = cachedHolder;
 
@@ -79,8 +81,7 @@ public class WindChargeHandler {
             }
         });
 
-        DebugLogger.info(MODULE, "风之充能附魔 Tick 事件处理器已注册 (maxHorizontalSpeed=%.2f)",
-                MAX_HORIZONTAL_SPEED);
-        DebugLogger.exiting(MODULE, "register");
+        DebugLogger.SERVER.debug(MODULE, "风之充能附魔 Tick 事件处理器已注册 (maxHorizontalSpeed={})", LogValues.decimal(MAX_HORIZONTAL_SPEED, 2));
+        DebugLogger.SERVER.exiting(MODULE, "register");
     }
 }

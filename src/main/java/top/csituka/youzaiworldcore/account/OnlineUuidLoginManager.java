@@ -69,7 +69,7 @@ public final class OnlineUuidLoginManager {
                 state.complete();
             }
         });
-        DebugLogger.info(MODULE, "已注册混合正版 UUID 登录查询（online-mode=false 时启用）");
+        DebugLogger.SERVER.debug(MODULE, "已注册混合正版 UUID 登录查询（online-mode=false 时启用）");
     }
 
     /** 服务端停止时释放本次运行的身份缓存。 */
@@ -77,7 +77,7 @@ public final class OnlineUuidLoginManager {
         STATES.forEach((listener, state) -> state.complete());
         STATES.clear();
         VERIFIED_UUIDS.clear();
-        DebugLogger.debug(MODULE, "已清理登录阶段 UUID 验证缓存");
+        DebugLogger.SERVER.debug(MODULE, "已清理登录阶段 UUID 验证缓存");
     }
 
     /** 判断某 UUID 是否由本管理器在本次服务器运行中完成 Mojang 验证。 */
@@ -113,11 +113,10 @@ public final class OnlineUuidLoginManager {
             LoginState current = STATES.get(listener);
             if (current == state && state.complete()) {
                 STATES.remove(listener, state);
-                DebugLogger.debug(MODULE, "玩家 %s 未在登录查询期限内完成正版验证，回退离线 UUID",
-                        listener.getUserName());
+                DebugLogger.SERVER.debug(MODULE, "玩家 {} 未在登录查询期限内完成正版验证，回退离线 UUID", listener.getUserName());
             }
         });
-        DebugLogger.debug(MODULE, "已向玩家 %s 发起登录阶段 Mojang UUID 验证", listener.getUserName());
+        DebugLogger.SERVER.debug(MODULE, "已向玩家 {} 发起登录阶段 Mojang UUID 验证", listener.getUserName());
     }
 
     private static void handleResponse(
@@ -175,8 +174,7 @@ public final class OnlineUuidLoginManager {
                             VERIFIED_UUIDS.put(profile.id(), Boolean.TRUE);
                             STATES.remove(listener, state);
                             state.complete();
-                            DebugLogger.info(MODULE, "玩家 %s 已在登录阶段切换为 Mojang UUID %s",
-                                    profile.name(), profile.id());
+                            DebugLogger.SERVER.debug(MODULE, "玩家 {} 已在登录阶段切换为 Mojang UUID {}", profile.name(), profile.id());
                         });
                     } catch (RuntimeException e) {
                         finishOffline(listener, state, "服务端主线程不可用");
@@ -197,7 +195,7 @@ public final class OnlineUuidLoginManager {
             }
             return profile;
         } catch (Exception e) {
-            DebugLogger.debug(MODULE, "Mojang 登录验证失败：%s", e.getClass().getSimpleName());
+            DebugLogger.SERVER.debug(MODULE, "Mojang 登录验证失败：{}", e.getClass().getSimpleName());
             return null;
         }
     }
@@ -205,7 +203,7 @@ public final class OnlineUuidLoginManager {
     private static void finishOffline(ServerLoginPacketListenerImpl listener, LoginState state, String reason) {
         if (STATES.remove(listener, state)) {
             state.complete();
-            DebugLogger.debug(MODULE, "玩家 %s 使用离线 UUID 继续登录：%s", listener.getUserName(), reason);
+            DebugLogger.SERVER.debug(MODULE, "玩家 {} 使用离线 UUID 继续登录：{}", listener.getUserName(), reason);
         }
     }
 

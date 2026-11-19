@@ -1,7 +1,7 @@
 package top.csituka.youzaiworldcore.config;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import top.csituka.youzaiworldcore.util.DebugLogger;
+
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -27,9 +27,6 @@ import java.time.format.DateTimeFormatter;
  * </p>
  */
 public final class ConfigCrash {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/Config");
-
     private static final String BORDER =
             "========================================================================";
 
@@ -109,7 +106,7 @@ public final class ConfigCrash {
                 Files.move(file, target);
                 return target;
             } catch (IOException e2) {
-                LOGGER.error("无法隔离出错的配置文件 {} → {}：{}", file, target, e2.getMessage());
+                DebugLogger.forFile(file).module("Config").error("无法隔离出错的配置文件 {} → {}：{}", file, target, e2.getMessage());
                 return null;
             }
         }
@@ -117,26 +114,26 @@ public final class ConfigCrash {
 
     private static void report(Path file, String jsonPath, String reason, Throwable cause,
                               Path quarantined, Path regenerated) {
-        LOGGER.error(BORDER);
-        LOGGER.error("YouzaiWorldCore 配置 / 数据文件错误，服务端已停止启动");
-        LOGGER.error("  文件：{}", file == null ? "<未知>" : file.toAbsolutePath());
-        LOGGER.error("  位置：{}", describePath(jsonPath));
-        LOGGER.error("  原因：{}", reason);
+        DebugLogger.forFile(file).module("Config").error(BORDER);
+        DebugLogger.forFile(file).module("Config").error("YouzaiWorldCore 配置 / 数据文件错误，服务端已停止启动");
+        DebugLogger.forFile(file).module("Config").error("  文件：{}", file == null ? "<未知>" : file.toAbsolutePath());
+        DebugLogger.forFile(file).module("Config").error("  位置：{}", describePath(jsonPath));
+        DebugLogger.forFile(file).module("Config").error("  原因：{}", reason);
         if (cause != null) {
-            LOGGER.error("  底层异常：{}: {}", cause.getClass().getName(), cause.getMessage());
+            DebugLogger.forFile(file).module("Config").error("  底层异常：{}: {}", cause.getClass().getName(), cause.getMessage());
         }
         if (quarantined != null) {
-            LOGGER.error("  出错的原文件已改名保留为：{}", quarantined.toAbsolutePath());
+            DebugLogger.forFile(file).module("Config").error("  出错的原文件已改名保留为：{}", quarantined.toAbsolutePath());
         } else if (file != null) {
-            LOGGER.error("  未能改名保留原文件，请手工检查该文件。");
+            DebugLogger.forFile(file).module("Config").error("  未能改名保留原文件，请手工检查该文件。");
         }
         if (regenerated != null) {
-            LOGGER.error("  已在原路径重新生成一份默认配置：{}", regenerated.toAbsolutePath());
-            LOGGER.error("  请对照 {} 把你的改动重新填进新文件后再启动。", ERROR_SUFFIX);
+            DebugLogger.forFile(file).module("Config").error("  已在原路径重新生成一份默认配置：{}", regenerated.toAbsolutePath());
+            DebugLogger.forFile(file).module("Config").error("  请对照 {} 把你的改动重新填进新文件后再启动。", ERROR_SUFFIX);
         } else {
-            LOGGER.error("  未能重新生成默认配置，请修正后重新启动。");
+            DebugLogger.forFile(file).module("Config").error("  未能重新生成默认配置，请修正后重新启动。");
         }
-        LOGGER.error(BORDER);
+        DebugLogger.forFile(file).module("Config").error(BORDER);
     }
 
     private static ConfigFormatException newException(Path file, String jsonPath, String reason,

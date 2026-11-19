@@ -27,15 +27,16 @@ public final class ClientDefaultSettingsWriter {
      * <p>顺序即生成文件里分节的出现顺序。</p>
      */
     public static void writeAllDefaults() {
-        DebugLogger.entering(MODULE, "writeAllDefaults");
+        DebugLogger.CLIENT.entering(MODULE, "writeAllDefaults");
         ClientGlobalSettings.runBatched(() -> {
             ClientExternalSettings.writeDefaults();
             YzHudSettings.writeDefaults();
             Configurator.writeDefaults();
+            ChatStyleSettings.writeDefaults();
             ClientUpdateCheckerConfig.writeDefaults();
             InventoryItemGroupsConfig.writeDefaults();
             ClientGlobalSettings.section(ClientGlobalSettings.MAIL_MODULE);
         });
-        DebugLogger.exiting(MODULE, "writeAllDefaults");
+        DebugLogger.CLIENT.exiting(MODULE, "writeAllDefaults");
     }
 }

@@ -51,7 +51,7 @@ public class ModSeatEntities {
         Identifier id = Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, name);
         ResourceKey<EntityType<?>> key = ResourceKey.create(Registries.ENTITY_TYPE, id);
         EntityType<T> type = builder.build(key);
-        DebugLogger.info("ModSeatEntities", "Registering entity: " + id);
+        DebugLogger.bootstrap().debug("ModSeatEntities", "Registering entity: " + id);
         return Registry.register(BuiltInRegistries.ENTITY_TYPE, key, type);
     }
 
@@ -60,8 +60,8 @@ public class ModSeatEntities {
      * 需在 {@link YouzaiworldCore#onInitialize()} 中调用。
      */
     public static void initialize() {
-        DebugLogger.entering("ModSeatEntities", "initialize");
-        DebugLogger.info("ModSeatEntities", "座椅实体已注册: seat");
-        DebugLogger.exiting("ModSeatEntities", "initialize");
+        DebugLogger.bootstrap().entering("ModSeatEntities", "initialize");
+        DebugLogger.bootstrap().debug("ModSeatEntities", "座椅实体已注册: seat");
+        DebugLogger.bootstrap().exiting("ModSeatEntities", "initialize");
     }
 }

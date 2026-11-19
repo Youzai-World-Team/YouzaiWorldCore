@@ -69,7 +69,7 @@ public class HighLightCommands {
                                                             } catch (IllegalArgumentException | IOException e) {
                                                                 cmdContext.getSource().sendError(
                                                                         Component.translatable("youzaiworldcore.highlight.config.update.fail"));
-                                                                DebugLogger.exception("HighlightItem", "命令 color 解析失败: " + name, e);
+                                                                DebugLogger.CLIENT.exception("HighlightItem", "命令 color 解析失败: " + name, e);
                                                             }
                                                             return Command.SINGLE_SUCCESS;
                                                         })))
@@ -86,7 +86,7 @@ public class HighLightCommands {
                                                             } catch (IllegalArgumentException e) {
                                                                 cmdContext.getSource().sendError(
                                                                         Component.translatable("youzaiworldcore.highlight.config.update.fail"));
-                                                                DebugLogger.exception("HighlightItem", "命令 mode 解析失败: " + name, e);
+                                                                DebugLogger.CLIENT.exception("HighlightItem", "命令 mode 解析失败: " + name, e);
                                                             }
                                                             return Command.SINGLE_SUCCESS;
                                                         })))

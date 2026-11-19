@@ -21,8 +21,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.RecipeBookCategories;
 import org.jspecify.annotations.NonNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
@@ -75,7 +73,7 @@ import java.util.List;
 @SuppressWarnings({ "null", "unused" })
 public class YzuFurnaceScreen extends AbstractRecipeBookScreen<AbstractFurnaceMenu> {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger("YzuFurnaceScreen");
+    private static final DebugLogger.ModuleLogger LOGGER = DebugLogger.CLIENT.module("YzuFurnaceScreen");
 
     // ========== YZUI 统一设计常量（与 YzuContainerScreen / YzuBrewingStandScreen 一致） ==========
 
@@ -133,9 +131,7 @@ public class YzuFurnaceScreen extends AbstractRecipeBookScreen<AbstractFurnaceMe
                         FurnaceKind.resolveTabs(menu.getType())),
                 playerInventory, title);
         this.kind = FurnaceKind.resolve(menu.getType());
-        DebugLogger.info("YzuFurnaceScreen",
-                "创建 YZUI 熔炉屏幕: kind=%s title=%s menuType=%s",
-                kind, title.getString(), menu.getType());
+        DebugLogger.CLIENT.debug("YzuFurnaceScreen", "创建 YZUI 熔炉屏幕: kind={} title={} menuType={}", kind, title.getString(), menu.getType());
     }
 
     @Override

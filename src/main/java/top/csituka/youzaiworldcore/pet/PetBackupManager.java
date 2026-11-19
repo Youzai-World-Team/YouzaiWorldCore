@@ -4,8 +4,6 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.mojang.serialization.JsonOps;
 import net.minecraft.server.MinecraftServer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import top.csituka.youzaiworldcore.config.GlobalSettings;
 import top.csituka.youzaiworldcore.config.ModPaths;
 import top.csituka.youzaiworldcore.pet.config.PetModuleConfig;
@@ -38,7 +36,7 @@ import java.util.stream.Stream;
 public final class PetBackupManager {
 
     private static final String MODULE = "PetBackupManager";
-    private static final Logger LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/PetBackup");
+    private static final DebugLogger.ModuleLogger LOGGER = DebugLogger.SERVER.module("PetBackup");
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final DateTimeFormatter TIMESTAMP_FORMATTER =
             DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss");
@@ -60,14 +58,14 @@ public final class PetBackupManager {
             return;
         }
         currentServer = server;
-        DebugLogger.entering(MODULE, "initialize");
+        DebugLogger.SERVER.entering(MODULE, "initialize");
 
         ModPaths.ensureDir(BACKUP_DIR);
-        DebugLogger.info(MODULE, "备份目录已创建: %s", BACKUP_DIR.toAbsolutePath());
+        DebugLogger.SERVER.debug(MODULE, "备份目录已创建: {}", BACKUP_DIR.toAbsolutePath());
 
         startScheduler();
         initialized = true;
-        DebugLogger.exiting(MODULE, "initialize");
+        DebugLogger.SERVER.exiting(MODULE, "initialize");
     }
 
     /**
@@ -76,7 +74,7 @@ public final class PetBackupManager {
     public static synchronized void shutdown() {
         if (scheduler != null && !scheduler.isShutdown()) {
             scheduler.shutdown();
-            DebugLogger.info(MODULE, "备份调度器已关闭");
+            DebugLogger.SERVER.debug(MODULE, "备份调度器已关闭");
         }
         initialized = false;
     }
@@ -88,7 +86,7 @@ public final class PetBackupManager {
 
         int interval = PetModuleConfig.getBackupIntervalSeconds();
         if (!PetModuleConfig.isAutoBackupEnabled() || interval <= 0) {
-            DebugLogger.info(MODULE, "自动备份已禁用，跳过调度");
+            DebugLogger.SERVER.debug(MODULE, "自动备份已禁用，跳过调度");
             return;
         }
 
@@ -105,7 +103,7 @@ public final class PetBackupManager {
                 TimeUnit.SECONDS
         );
 
-        DebugLogger.info(MODULE, "备份调度器已启动，间隔 %d 秒", interval);
+        DebugLogger.SERVER.debug(MODULE, "备份调度器已启动，间隔 {} 秒", interval);
     }
 
     /**
@@ -116,7 +114,7 @@ public final class PetBackupManager {
      */
     public static void executeBackup() {
         if (currentServer == null || !currentServer.isRunning()) {
-            DebugLogger.debug(MODULE, "服务器未运行，跳过备份");
+            DebugLogger.SERVER.debug(MODULE, "服务器未运行，跳过备份");
             return;
         }
 
@@ -156,8 +154,7 @@ public final class PetBackupManager {
                 String json = GSON.toJson(serializable);
                 BackupArchive.writeJson(backupFile, BACKUP_PREFIX + timestamp + ".json", json);
 
-                DebugLogger.info(MODULE, "备份已保存: %s (%d 条记录, %d 字节)",
-                        backupFile.getFileName(), snapshot.size(), json.length());
+                DebugLogger.SERVER.info(MODULE, "备份已保存: {} ({} 条记录, {} 字节)", backupFile.getFileName(), snapshot.size(), json.length());
 
                 cleanupOldBackups();
 
@@ -183,7 +180,7 @@ public final class PetBackupManager {
             for (int i = 0; i < toDelete; i++) {
                 try {
                     Files.deleteIfExists(backups.get(i));
-                    DebugLogger.debug(MODULE, "已清理旧备份: %s", backups.get(i).getFileName());
+                    DebugLogger.SERVER.debug(MODULE, "已清理旧备份: {}", backups.get(i).getFileName());
                 } catch (IOException e) {
                     LOGGER.warn("清理旧备份失败: {}", backups.get(i).getFileName());
                 }
@@ -225,7 +222,7 @@ public final class PetBackupManager {
      * @return 恢复的宠物条目映射；如果失败返回空映射
      */
     public static Map<UUID, PetEntry> restoreFromBackup(Path backupFile) {
-        DebugLogger.entering(MODULE, "restoreFromBackup", "file=" + backupFile);
+        DebugLogger.SERVER.entering(MODULE, "restoreFromBackup", "file=" + backupFile);
         try {
             String json = BackupArchive.readFirstJson(backupFile);
             if (json == null) {
@@ -252,8 +249,8 @@ public final class PetBackupManager {
                 }
             }
 
-            DebugLogger.info(MODULE, "从备份恢复 %d / %d 条记录", result.size(), raw.size());
-            DebugLogger.exiting(MODULE, "restoreFromBackup", "count=" + result.size());
+            DebugLogger.SERVER.info(MODULE, "从备份恢复 {} / {} 条记录", result.size(), raw.size());
+            DebugLogger.SERVER.exiting(MODULE, "restoreFromBackup", "count=" + result.size());
             return result;
         } catch (IOException e) {
             LOGGER.error("读取备份文件失败", e);

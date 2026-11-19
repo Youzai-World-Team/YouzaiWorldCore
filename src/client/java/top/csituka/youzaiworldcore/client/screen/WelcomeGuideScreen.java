@@ -84,7 +84,7 @@ public final class WelcomeGuideScreen extends Screen {
         this.parentScreen = parentScreen;
         this.yzuiEnabled = ClientExternalSettings.isYzuiEnabled();
         this.customFontEnabled = ClientExternalSettings.isCustomFontEnabled();
-        DebugLogger.entering(MODULE, "constructor",
+        DebugLogger.CLIENT.entering(MODULE, "constructor",
                 "yzui=" + yzuiEnabled + ", customFont=" + customFontEnabled);
     }
 
@@ -232,29 +232,29 @@ public final class WelcomeGuideScreen extends Screen {
     }
 
     private void selectYzui(boolean enabled) {
-        DebugLogger.stateChange(MODULE, "guide_selection", "yzui_enabled", yzuiEnabled, enabled);
+        DebugLogger.CLIENT.stateChange(MODULE, "guide_selection", "yzui_enabled", yzuiEnabled, enabled);
         yzuiEnabled = enabled;
     }
 
     private void selectCustomFont(boolean enabled) {
-        DebugLogger.stateChange(MODULE, "guide_selection", "custom_font_enabled", customFontEnabled, enabled);
+        DebugLogger.CLIENT.stateChange(MODULE, "guide_selection", "custom_font_enabled", customFontEnabled, enabled);
         customFontEnabled = enabled;
     }
 
     private void changePage(Page target) {
-        DebugLogger.stateChange(MODULE, "guide", "page", page, target);
+        DebugLogger.CLIENT.stateChange(MODULE, "guide", "page", page, target);
         page = target;
         rebuildWidgets();
     }
 
     private void finishGuide() {
-        DebugLogger.entering(MODULE, "finishGuide",
+        DebugLogger.CLIENT.entering(MODULE, "finishGuide",
                 "yzui=" + yzuiEnabled + ", customFont=" + customFontEnabled);
         ClientExternalSettings.completeWelcomeGuide(yzuiEnabled, customFontEnabled);
         Minecraft client = Minecraft.getInstance();
         client.gui.setScreen(parentScreen);
         CustomFontResourcePack.setEnabled(customFontEnabled);
-        DebugLogger.exiting(MODULE, "finishGuide");
+        DebugLogger.CLIENT.exiting(MODULE, "finishGuide");
     }
 
     @Override

@@ -35,7 +35,7 @@ final class MapWaypointColorScreen extends MapScreen {
         this.changed = changed;
         setColor(color);
         text = MapWaypointColors.hex(color);
-        DebugLogger.debug("WaypointColor", "打开路径点色图：#%s", text);
+        DebugLogger.CLIENT.debug("WaypointColor", "打开路径点色图：#{}", text);
     }
 
     @Override protected void init() {
@@ -52,7 +52,7 @@ final class MapWaypointColorScreen extends MapScreen {
         int buttonWidth = (w - 6) / 2, footer = panelY + panelHeight - 34;
         done = button(x, footer, buttonWidth, MapTexts.text("done"), () -> {
             changed.accept(color);
-            DebugLogger.debug("WaypointColor", "确认路径点颜色草稿：#%s", MapWaypointColors.hex(color));
+            DebugLogger.CLIENT.debug("WaypointColor", "确认路径点颜色草稿：#{}", MapWaypointColors.hex(color));
             onClose();
         }).setStyle(YzuiTheme.ButtonStyle.FILLED);
         button(x + buttonWidth + 6, footer, buttonWidth, MapTexts.text("cancel"), this::onClose);

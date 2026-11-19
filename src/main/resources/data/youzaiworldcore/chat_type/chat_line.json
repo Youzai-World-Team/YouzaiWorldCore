@@ -1,10 +1,12 @@
 {
   "chat": {
     "translation_key": "%s >> %s",
-    "parameters": ["sender", "content"]
+    "parameters": ["sender", "content"],
+    "style": { "color": "#f3efef" }
   },
   "narration": {
     "translation_key": "%s >> %s",
-    "parameters": ["sender", "content"]
+    "parameters": ["sender", "content"],
+    "style": { "color": "#f3efef" }
   }
 }

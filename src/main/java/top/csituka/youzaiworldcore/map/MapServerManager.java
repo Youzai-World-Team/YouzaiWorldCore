@@ -63,7 +63,7 @@ public final class MapServerManager {
         ServerLifecycleEvents.SERVER_STARTED.register(MapServerManager::start);
         ServerLifecycleEvents.SERVER_STOPPING.register(MapServerManager::stop);
         ServerTickEvents.END_SERVER_TICK.register(MapServerManager::tick);
-        DebugLogger.info("MapServerManager", "地图共享服务已注册");
+        DebugLogger.SERVER.debug("MapServerManager", "地图共享服务已注册");
     }
 
     private static void start(MinecraftServer instance) {
@@ -77,7 +77,7 @@ public final class MapServerManager {
         capture = new MapDiskCapture(instance, terrain);
         uploader = new MapApiUploader(instance, terrain, metadata, worldId, playerPositions,
                 () -> recordOnlinePositions("upload"));
-        DebugLogger.info("MapServerManager", "地图存档已打开：%s", worldId);
+        DebugLogger.SERVER.info("MapServerManager", "地图存档已打开：{}", worldId);
     }
 
     private static void stop(MinecraftServer instance) {
@@ -104,7 +104,7 @@ public final class MapServerManager {
         playerPositions = null;
         server = null;
         worldId = null;
-        DebugLogger.info("MapServerManager", "地图共享服务已关闭");
+        DebugLogger.SERVER.notice("MapServerManager", "地图共享服务已关闭");
     }
 
     /** 客户端接收器回到服务器线程后调用；非法视口不会触发磁盘读取或区块加载。 */
@@ -205,7 +205,7 @@ public final class MapServerManager {
             if (uploader != null) uploader.playerPositionsChanged();
             return true;
         } catch (RuntimeException error) {
-            DebugLogger.exception("MapServerManager", "保存玩家地图位置失败：" + player.getUUID(), error);
+            DebugLogger.SERVER.exception("MapServerManager", "保存玩家地图位置失败：" + player.getUUID(), error);
             return false;
         }
     }
@@ -307,7 +307,7 @@ public final class MapServerManager {
                         0xFF87CDA3, true, true, MapWaypoint.Kind.SERVER, 0));
             }
         ServerPlayNetworking.send(player, new MapWaypointsPayload(worldId, List.of(), List.copyOf(anchors)));
-        DebugLogger.debug("MapServerManager", "同步本人地图锚点：%d", anchors.size());
+        DebugLogger.SERVER.debug("MapServerManager", "同步本人地图锚点：{}", anchors.size());
     }
 
     private static void sendLive(ServerPlayer receiver, Subscription state) {
@@ -395,7 +395,7 @@ public final class MapServerManager {
                     Map.of("share_position", Boolean.toString(value)));
             VISIBILITY.put(player.getUUID(), value);
             MapSocialManager.refresh(player);
-            DebugLogger.info("MapServerManager", "玩家位置共享：%s = %s", player.getUUID(), value);
+            DebugLogger.SERVER.info("MapServerManager", "玩家位置共享：{} = {}", player.getUUID(), value);
             return feedback(player, true, value ? "position_shown" : "position_hidden");
         }
         if (request.action() == MapActionPayload.Action.TELEPORT) {
@@ -411,8 +411,7 @@ public final class MapServerManager {
             if (!player.teleportTo(target, input.x() + 0.5, input.y(), input.z() + 0.5, Set.of(), player.getYRot(),
                     player.getXRot(), true))
                 return feedback(player, false, "invalid_position");
-            DebugLogger.info("MapServerManager", "管理员地图传送：%s → %s %d %d %d", player.getName().getString(),
-                    input.dimension(), input.x(), input.y(), input.z());
+            DebugLogger.SERVER.notice("MapServerManager", "管理员地图传送：{} → {} {} {} {}", player.getName().getString(), input.dimension(), input.x(), input.y(), input.z());
             return feedback(player, true, "teleported");
         }
         return feedback(player, false, "denied");

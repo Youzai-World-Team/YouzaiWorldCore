@@ -76,8 +76,7 @@ public final class YzuiPauseMenu {
         children.removeAll(buttons);
         children.addAll(buttons);
         restoreFocus();
-        DebugLogger.info("YzuiPauseMenu", "暂停屏幕已初始化：%d×%d，玩家卡片=%s，账户入口=%s",
-                screen.width, screen.height, layout.profile().width() > 0, accountAllowed);
+        DebugLogger.CLIENT.debug("YzuiPauseMenu", "暂停屏幕已初始化：{}×{}，玩家卡片={}，账户入口={}", screen.width, screen.height, layout.profile().width() > 0, accountAllowed);
     }
 
     /** 在原版控件之前绘制卡片与玩家预览；原版音乐和举报草稿提示仍由暂停屏幕绘制。 */

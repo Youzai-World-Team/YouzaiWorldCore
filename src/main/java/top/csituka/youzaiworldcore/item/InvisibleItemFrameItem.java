@@ -31,7 +31,7 @@ public class InvisibleItemFrameItem extends Item {
 
     @Override
     public InteractionResult useOn(UseOnContext context) {
-        DebugLogger.entering("InvisibleItemFrameItem", "useOn");
+        DebugLogger.SERVER.entering("InvisibleItemFrameItem", "useOn");
 
         Level level = context.getLevel();
         BlockPos clickedPos = context.getClickedPos();
@@ -42,7 +42,7 @@ public class InvisibleItemFrameItem extends Item {
 
         BlockState placeState = level.getBlockState(placePos);
         if (!placeState.isAir() && !placeState.canBeReplaced()) {
-            DebugLogger.branch("InvisibleItemFrameItem", "place pos is replaceable", false,
+            DebugLogger.SERVER.branch("InvisibleItemFrameItem", "place pos is replaceable", false,
                     "block=" + placeState.getBlock());
             // 如果位置被方块占据，尝试在相邻的可替换方块上放置
             return InteractionResult.FAIL;
@@ -55,23 +55,23 @@ public class InvisibleItemFrameItem extends Item {
         ItemFrame frame = new ItemFrame(level, framePos, attachmentDir);
 
         if (!frame.survives()) {
-            DebugLogger.branch("InvisibleItemFrameItem", "frame survives", false,
+            DebugLogger.SERVER.branch("InvisibleItemFrameItem", "frame survives", false,
                     "pos=" + framePos + ", dir=" + attachmentDir);
-            DebugLogger.exiting("InvisibleItemFrameItem", "useOn", "FAIL (cannot attach)");
+            DebugLogger.SERVER.exiting("InvisibleItemFrameItem", "useOn", "FAIL (cannot attach)");
             return InteractionResult.FAIL;
         }
 
         AABB frameBox = frame.getBoundingBox();
         if (!level.getEntities(frame, frameBox).isEmpty()) {
-            DebugLogger.branch("InvisibleItemFrameItem", "no collision with other entities", false,
+            DebugLogger.SERVER.branch("InvisibleItemFrameItem", "no collision with other entities", false,
                     "bbox=" + frameBox);
-            DebugLogger.exiting("InvisibleItemFrameItem", "useOn", "FAIL (collision)");
+            DebugLogger.SERVER.exiting("InvisibleItemFrameItem", "useOn", "FAIL (collision)");
             return InteractionResult.FAIL;
         }
 
         // ===== 服务端执行 =====
         if (level.isClientSide()) {
-            DebugLogger.branch("InvisibleItemFrameItem", "is server side", false, "客户端 SUCCESS");
+            DebugLogger.SERVER.branch("InvisibleItemFrameItem", "is server side", false, "客户端 SUCCESS");
             return InteractionResult.SUCCESS;
         }
 
@@ -79,8 +79,8 @@ public class InvisibleItemFrameItem extends Item {
 
         boolean added = level.addFreshEntity(frame);
         if (!added) {
-            DebugLogger.warn("InvisibleItemFrameItem", "无法将隐形展示框添加到世界，pos=%s", framePos);
-            DebugLogger.exiting("InvisibleItemFrameItem", "useOn", "FAIL (add entity failed)");
+            DebugLogger.SERVER.warn("InvisibleItemFrameItem", "无法将隐形展示框添加到世界，pos={}", framePos);
+            DebugLogger.SERVER.exiting("InvisibleItemFrameItem", "useOn", "FAIL (add entity failed)");
             return InteractionResult.FAIL;
         }
 
@@ -92,10 +92,8 @@ public class InvisibleItemFrameItem extends Item {
             player.getInventory().setChanged();
         }
 
-        DebugLogger.info("InvisibleItemFrameItem", "隐形展示框已放置：玩家=%s, pos=%s, dir=%s",
-                player != null ? player.getName().getString() : "?",
-                framePos, attachmentDir);
-        DebugLogger.exiting("InvisibleItemFrameItem", "useOn", "SUCCESS");
+        DebugLogger.SERVER.debug("InvisibleItemFrameItem", "隐形展示框已放置：玩家={}, pos={}, dir={}", player != null ? player.getName().getString() : "?", framePos, attachmentDir);
+        DebugLogger.SERVER.exiting("InvisibleItemFrameItem", "useOn", "SUCCESS");
         return InteractionResult.SUCCESS;
     }
 }

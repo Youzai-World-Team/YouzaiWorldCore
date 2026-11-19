@@ -37,7 +37,7 @@ public class ItemSparkleRenderer {
         }
         registered = true;
         ClientTickEvents.END_CLIENT_TICK.register(ItemSparkleRenderer::onClientTick);
-        DebugLogger.info(MODULE, "物品闪烁粒子渲染器已注册");
+        DebugLogger.CLIENT.debug(MODULE, "物品闪烁粒子渲染器已注册");
     }
 
     private static void onClientTick(Minecraft client) {

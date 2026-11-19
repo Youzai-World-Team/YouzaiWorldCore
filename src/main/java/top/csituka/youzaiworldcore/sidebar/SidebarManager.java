@@ -123,7 +123,7 @@ public final class SidebarManager {
 
     /** 初始化：加载配置、解析模板、注册 tick 与连接事件（在 onInitialize 中调用） */
     public static void initialize() {
-        DebugLogger.entering(MODULE, "initialize");
+        DebugLogger.SERVER.entering(MODULE, "initialize");
         reload();
 
         ServerTickEvents.END_SERVER_TICK.register(SidebarManager::onServerTick);
@@ -133,7 +133,7 @@ public final class SidebarManager {
                 return;
             }
             if (handler.getPlayer() instanceof ServerPlayer sp && sp.connection != null) {
-                DebugLogger.trace(MODULE, "玩家加入，立即发送侧边栏: %s", sp.getName().getString());
+                DebugLogger.SERVER.trace(MODULE, "玩家加入，立即发送侧边栏: {}", sp.getName().getString());
                 PlayerState state = STATES.computeIfAbsent(sp.getUUID(), u -> new PlayerState());
                 render(sp, state);
             }
@@ -144,7 +144,7 @@ public final class SidebarManager {
             STATES.remove(handler.getPlayer().getUUID());
         });
 
-        DebugLogger.exiting(MODULE, "initialize");
+        DebugLogger.SERVER.exiting(MODULE, "initialize");
     }
 
     /** 重载配置并重解析模板（供 /yzwc reload 调用） */
@@ -158,11 +158,7 @@ public final class SidebarManager {
             state.title = 0;
             state.dirty = true;
         }
-        DebugLogger.info(MODULE,
-                "侧边栏已重载：enabled=%s, updateTickTime=%d, titleFrames=%d, lines=%s, pages=%d",
-                SidebarSettings.isEnabled(), SidebarSettings.getUpdateTickTime(),
-                titles.size(), lines == null ? "null" : String.valueOf(lines.size()),
-                pages == null ? 0 : pages.size());
+        DebugLogger.SERVER.debug(MODULE, "侧边栏已重载：enabled={}, updateTickTime={}, titleFrames={}, lines={}, pages={}", SidebarSettings.isEnabled(), SidebarSettings.getUpdateTickTime(), titles.size(), lines == null ? "null" : String.valueOf(lines.size()), pages == null ? 0 : pages.size());
     }
 
     // ===== 服务端 tick 调度 =====
@@ -170,7 +166,7 @@ public final class SidebarManager {
     private static void onServerTick(MinecraftServer server) {
         boolean enabled = SidebarSettings.isEnabled();
         if (enabled != lastEnabled) {
-            DebugLogger.stateChange(MODULE, "Sidebar", "enabled", lastEnabled, enabled);
+            DebugLogger.SERVER.stateChange(MODULE, "Sidebar", "enabled", lastEnabled, enabled);
             if (!enabled) {
                 // 关闭时清除客户端已显示的侧边栏残留
                 clearAll(server);
@@ -280,7 +276,7 @@ public final class SidebarManager {
             state.lastRows = List.copyOf(currentRows);
             state.dirty = false;
         } catch (Exception e) {
-            DebugLogger.exception(MODULE, "render(" + player.getName().getString() + ")", e);
+            DebugLogger.SERVER.exception(MODULE, "render(" + player.getName().getString() + ")", e);
         }
     }
 
@@ -370,8 +366,7 @@ public final class SidebarManager {
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
             clearPlayer(player, STATES.get(player.getUUID()));
         }
-        DebugLogger.info(MODULE, "侧边栏功能已关闭，已向 %d 名在线玩家清除计分板",
-                server.getPlayerList().getPlayers().size());
+        DebugLogger.SERVER.debug(MODULE, "侧边栏功能已关闭，已向 {} 名在线玩家清除计分板", server.getPlayerList().getPlayers().size());
     }
 
     // ===== 模板解析 =====
@@ -400,8 +395,7 @@ public final class SidebarManager {
             return List.of(TextNode.empty());
         }
         if (!element.isJsonArray()) {
-            DebugLogger.warn(MODULE, "标题配置错误：期望字符串数组 [ ... ]，实际是 %s，已回退为空标题",
-                    describe(element));
+            DebugLogger.SERVER.warn(MODULE, "标题配置错误：期望字符串数组 [ ... ]，实际是 {}，已回退为空标题", describe(element));
             return List.of(TextNode.empty());
         }
         JsonArray array = element.getAsJsonArray();
@@ -409,7 +403,7 @@ public final class SidebarManager {
         for (int i = 0; i < array.size(); i++) {
             JsonElement item = array.get(i);
             if (item == null || !item.isJsonPrimitive() || !item.getAsJsonPrimitive().isString()) {
-                DebugLogger.warn(MODULE, "标题配置错误：title[%d] 必须是字符串，该帧已跳过", i);
+                DebugLogger.SERVER.warn(MODULE, "标题配置错误：title[{}] 必须是字符串，该帧已跳过", i);
                 continue;
             }
             frames.add(PARSER.parseNode(item.getAsString()));
@@ -438,7 +432,7 @@ public final class SidebarManager {
         for (int i = 0; i < array.size(); i++) {
             JsonElement page = array.get(i);
             if (page == null || !page.isJsonArray()) {
-                DebugLogger.warn(MODULE, "分页配置错误：pages[%d] 必须是行数组，该页已跳过", i);
+                DebugLogger.SERVER.warn(MODULE, "分页配置错误：pages[{}] 必须是行数组，该页已跳过", i);
                 continue;
             }
             result.add(parseLines(page.getAsJsonArray()));
@@ -459,7 +453,7 @@ public final class SidebarManager {
     @Nullable
     private static ParsedLine parseLine(@Nullable JsonElement element, String label) {
         if (element == null || element.isJsonNull()) {
-            DebugLogger.warn(MODULE, "行配置错误：%s 为 null，该行已跳过", label);
+            DebugLogger.SERVER.warn(MODULE, "行配置错误：{} 为 null，该行已跳过", label);
             return null;
         }
         if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isString()) {
@@ -489,7 +483,7 @@ public final class SidebarManager {
                 values = obj.get("values");
             }
             if (values == null || values.isJsonNull()) {
-                DebugLogger.warn(MODULE, "行配置错误：%s 的 value 缺失，该行已跳过", label);
+                DebugLogger.SERVER.warn(MODULE, "行配置错误：{} 的 value 缺失，该行已跳过", label);
                 return null;
             }
             List<Pair<TextNode, TextNode>> list = new ArrayList<>();
@@ -503,8 +497,7 @@ public final class SidebarManager {
                         JsonArray pairArr = item.getAsJsonArray();
                         list.add(toPair(pairArr.get(0).getAsString(), pairArr.get(1).getAsString()));
                     } else {
-                        DebugLogger.warn(MODULE, "行配置错误：%s.value[%d] 必须是字符串或两元素数组，该项已跳过",
-                                label, i);
+                        DebugLogger.SERVER.warn(MODULE, "行配置错误：{}.value[{}] 必须是字符串或两元素数组，该项已跳过", label, i);
                     }
                 }
             } else if (values.isJsonObject()) {
@@ -515,16 +508,16 @@ public final class SidebarManager {
             } else if (values.isJsonPrimitive() && values.getAsJsonPrimitive().isString()) {
                 list.add(toPair(values.getAsString(), ""));
             } else {
-                DebugLogger.warn(MODULE, "行配置错误：%s.value 类型不受支持，该行已跳过", label);
+                DebugLogger.SERVER.warn(MODULE, "行配置错误：{}.value 类型不受支持，该行已跳过", label);
                 return null;
             }
             if (list.isEmpty()) {
-                DebugLogger.warn(MODULE, "行配置错误：%s.value 解析后为空，该行已跳过", label);
+                DebugLogger.SERVER.warn(MODULE, "行配置错误：{}.value 解析后为空，该行已跳过", label);
                 return null;
             }
             return new ParsedLine(list, permission);
         }
-        DebugLogger.warn(MODULE, "行配置错误：%s 类型不受支持（期望字符串 / 数组 / 对象），该行已跳过", label);
+        DebugLogger.SERVER.warn(MODULE, "行配置错误：{} 类型不受支持（期望字符串 / 数组 / 对象），该行已跳过", label);
         return null;
     }
 

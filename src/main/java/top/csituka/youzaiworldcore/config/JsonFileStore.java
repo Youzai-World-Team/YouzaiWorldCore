@@ -1,12 +1,12 @@
 package top.csituka.youzaiworldcore.config;
 
+import top.csituka.youzaiworldcore.util.DebugLogger;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -41,9 +41,6 @@ import java.util.Set;
  */
 @SuppressWarnings("null")
 public final class JsonFileStore {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/Config");
-
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
     private final Path file;
@@ -152,7 +149,7 @@ public final class JsonFileStore {
      */
     public boolean loadOrCreateDefaults() {
         if (!Files.isRegularFile(file)) {
-            LOGGER.info("配置 / 数据文件不存在，写出默认内容：{}", file.toAbsolutePath());
+            DebugLogger.forFile(file).module("Config").debug("配置 / 数据文件不存在，写出默认内容：{}", file.toAbsolutePath());
             // 必须先置位：默认内容写入器可能回调 GlobalSettings.section(...)，
             // 那里在未加载时会重新触发 load()，不先置位就会无限递归
             loaded = true;
@@ -191,7 +188,7 @@ public final class JsonFileStore {
             } catch (IOException e) {
                 lastWriteOk = false;
                 if (recovering) {
-                    LOGGER.error("重建默认配置时无法创建目录 {}：{}", parent, e.getMessage());
+                    DebugLogger.forFile(file).module("Config").error("重建默认配置时无法创建目录 {}：{}", parent, e.getMessage());
                     return;
                 }
                 fail(null, "无法创建父目录 " + parent + "：" + e.getMessage(), e);
@@ -204,7 +201,7 @@ public final class JsonFileStore {
         } catch (IOException e) {
             lastWriteOk = false;
             if (recovering) {
-                LOGGER.error("重建默认配置文件失败 {}：{}", file, e.getMessage());
+                DebugLogger.forFile(file).module("Config").error("重建默认配置文件失败 {}：{}", file, e.getMessage());
                 return;
             }
             fail(null, "写入文件失败：" + e.getMessage(), e);
@@ -251,7 +248,7 @@ public final class JsonFileStore {
                     regenerated = file;
                 }
             } catch (RuntimeException e) {
-                LOGGER.error("重建默认配置文件时出错 {}：{}", file, e.getMessage());
+                DebugLogger.forFile(file).module("Config").error("重建默认配置文件时出错 {}：{}", file, e.getMessage());
             } finally {
                 recovering = false;
             }

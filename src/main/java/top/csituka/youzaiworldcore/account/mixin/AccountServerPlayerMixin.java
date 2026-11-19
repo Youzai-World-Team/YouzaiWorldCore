@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.account.mixin;
 
+import top.csituka.youzaiworldcore.util.DebugLogger;
+
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -9,7 +11,6 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import top.csituka.youzaiworldcore.YouzaiworldCore;
 import top.csituka.youzaiworldcore.account.data.PlayerAccount;
 import top.csituka.youzaiworldcore.account.data.AccountDataStorage;
 import top.csituka.youzaiworldcore.account.data.EmailChangeSessionStore;
@@ -30,6 +31,9 @@ import java.util.Set;
  */
 @Mixin(ServerPlayer.class)
 public abstract class AccountServerPlayerMixin implements PlayerAuthAccess {
+    @Unique
+    private static final DebugLogger.ModuleLogger youzaiworldcore$MOD_LOG = DebugLogger.SERVER
+            .module("AccountServerPlayerMixin");
 
     @Unique
     private final ServerPlayer yzwc$player = (ServerPlayer) (Object) this;
@@ -136,7 +140,7 @@ public abstract class AccountServerPlayerMixin implements PlayerAuthAccess {
         loc.yaw = yzwc$player.getYRot();
         loc.pitch = yzwc$player.getXRot();
         this.yzwc$lastLocation = loc;
-        YouzaiworldCore.LOGGER.debug("已保存玩家 {} 的位置: {}", yzwc$player.getScoreboardName(), loc);
+        youzaiworldcore$MOD_LOG.debug("已保存玩家 {} 的位置: {}", yzwc$player.getScoreboardName(), loc);
     }
 
     // ===== 发送认证界面打开数据包 =====
@@ -147,7 +151,7 @@ public abstract class AccountServerPlayerMixin implements PlayerAuthAccess {
                 ServerPlayNetworking.send(yzwc$player,
                         new OpenAuthScreenPayload(type, yzwc$player.getScoreboardName()));
             } catch (Exception e) {
-                YouzaiworldCore.LOGGER.error("发送认证界面数据包失败: {}", e.getMessage());
+                youzaiworldcore$MOD_LOG.error("发送认证界面数据包失败: {}", e.getMessage());
             }
         }
     }
@@ -161,7 +165,7 @@ public abstract class AccountServerPlayerMixin implements PlayerAuthAccess {
                 ServerPlayNetworking.send(yzwc$player, RegistrationEmailStatePayload.required(
                         pending.sessionId(), pending.remainingSeconds()));
             } catch (Exception e) {
-                YouzaiworldCore.LOGGER.error("发送邮箱注册界面数据包失败: {}", e.getMessage());
+                youzaiworldcore$MOD_LOG.error("发送邮箱注册界面数据包失败: {}", e.getMessage());
             }
         }
     }

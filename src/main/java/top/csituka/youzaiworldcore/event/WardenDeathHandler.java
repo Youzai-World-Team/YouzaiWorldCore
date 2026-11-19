@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.event;
 
+import top.csituka.youzaiworldcore.util.DebugLogger;
+
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
@@ -26,8 +28,6 @@ import net.minecraft.world.item.enchantment.ItemEnchantments;
 import net.minecraft.world.item.ItemStackTemplate;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -52,7 +52,7 @@ public class WardenDeathHandler {
     private static final Identifier LIGHT_BLUE_BUNDLE_ID = Identifier.parse("minecraft:light_blue_bundle");
 
     private static final WardenDeathHandler INSTANCE = new WardenDeathHandler();
-    private static final Logger LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/WardenDeath");
+    private static final DebugLogger.ModuleLogger LOGGER = DebugLogger.SERVER.module("WardenDeath");
 
     private Item lightBlueBundle;
 
@@ -65,11 +65,11 @@ public class WardenDeathHandler {
         if (!(entity instanceof Warden warden))
             return;
 
-        LOGGER.info("监守者被击杀，触发战利品逻辑");
+        LOGGER.debug("监守者被击杀，触发战利品逻辑");
 
         Optional<Player> killerOpt = findAttributionPlayer(warden, damageSource);
         if (killerOpt.isEmpty()) {
-            LOGGER.info("非玩家击杀，跳过");
+            LOGGER.debug("非玩家击杀，跳过");
             return;
         }
         Player killer = killerOpt.get();
@@ -94,7 +94,7 @@ public class WardenDeathHandler {
 
         dropItemSafely(level, pos, createEnchantedBook(registries, random));
 
-        LOGGER.info("监守者战利品发放完成");
+        LOGGER.debug("监守者战利品发放完成");
     }
 
     private static void grantXp(Player killer, ServerLevel level, BlockPos pos) {
@@ -268,6 +268,6 @@ public class WardenDeathHandler {
 
     public static void register() {
         ServerLivingEntityEvents.AFTER_DEATH.register(INSTANCE::onEntityDeath);
-        LOGGER.info("监守者战利品发放事件处理器已注册");
+        LOGGER.debug("监守者战利品发放事件处理器已注册");
     }
 }

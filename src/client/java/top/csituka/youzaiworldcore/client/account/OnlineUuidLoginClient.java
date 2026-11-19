@@ -29,7 +29,7 @@ public final class OnlineUuidLoginClient {
     public static void initialize() {
         ClientLoginNetworking.registerGlobalReceiver(
                 OnlineUuidLoginManager.CHANNEL, OnlineUuidLoginClient::handleQuery);
-        DebugLogger.info(MODULE, "已注册 Mojang UUID 登录查询响应器");
+        DebugLogger.CLIENT.debug(MODULE, "已注册 Mojang UUID 登录查询响应器");
     }
 
     private static CompletableFuture<FriendlyByteBuf> handleQuery(
@@ -51,7 +51,7 @@ public final class OnlineUuidLoginClient {
         UUID profileId = user.getProfileId();
         String profileName = user.getName();
         if (profileId == null || profileName == null || profileName.isBlank() || isOfflineUser(user)) {
-            DebugLogger.debug(MODULE, "当前启动器会话不是正版账户，登录查询回退离线 UUID");
+            DebugLogger.CLIENT.debug(MODULE, "当前启动器会话不是正版账户，登录查询回退离线 UUID");
             return CompletableFuture.completedFuture(null);
         }
 
@@ -63,10 +63,10 @@ public final class OnlineUuidLoginClient {
                 response.writeUtf(challenge, MAX_TEXT_LENGTH);
                 response.writeUUID(profileId);
                 response.writeUtf(profileName, 64);
-                DebugLogger.debug(MODULE, "已完成 Mojang 登录会话证明: %s", profileName);
+                DebugLogger.CLIENT.debug(MODULE, "已完成 Mojang 登录会话证明: {}", profileName);
                 return response;
             } catch (Exception e) {
-                DebugLogger.debug(MODULE, "Mojang 登录会话证明失败：%s", e.getClass().getSimpleName());
+                DebugLogger.CLIENT.debug(MODULE, "Mojang 登录会话证明失败：{}", e.getClass().getSimpleName());
                 return null;
             }
         }).completeOnTimeout(null, TIMEOUT_SECONDS, TimeUnit.SECONDS);

@@ -50,7 +50,7 @@ public final class MailNavigationRequests {
         pending = new Request(kind, origin, mailId, client.getConnection(), System.currentTimeMillis());
         ClientPlayNetworking.send(payload);
         feedback(origin, "requesting", true);
-        DebugLogger.debug("MailNavigation", "请求邮件页面：%s，mailId=%s", kind, mailId);
+        DebugLogger.CLIENT.debug("MailNavigation", "请求邮件页面：{}，mailId={}", kind, mailId);
         return true;
     }
 
@@ -86,7 +86,7 @@ public final class MailNavigationRequests {
             Request request = pending;
             pending = null;
             if (request.origin() == client.gui.screen()) feedback(request.origin(), "request_timeout", false);
-            DebugLogger.debug("MailNavigation", "邮件页面请求超时：%s", request.kind());
+            DebugLogger.CLIENT.debug("MailNavigation", "邮件页面请求超时：{}", request.kind());
         }
     }
 
@@ -96,7 +96,7 @@ public final class MailNavigationRequests {
         if (current instanceof MailComposeScreen compose && compose.isEditing(mailId)) return;
         ClientPlayNetworking.send(new MailAdminEditPayload(mailId, true, java.util.List.of(),
                 MailType.ANNOUNCEMENT, "", "", (byte) 0, java.util.List.of()));
-        DebugLogger.debug("MailNavigation", "恢复已离开的邮件编辑：mailId=%s", mailId);
+        DebugLogger.CLIENT.debug("MailNavigation", "恢复已离开的邮件编辑：mailId={}", mailId);
     }
 
     public static void clear() {

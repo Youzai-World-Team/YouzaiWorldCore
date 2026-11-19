@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.event;
 
+import top.csituka.youzaiworldcore.util.DebugLogger;
+
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -17,8 +19,6 @@ import net.minecraft.world.level.block.LadderBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import top.csituka.youzaiworldcore.config.FunctionToggleManager;
 
@@ -34,7 +34,7 @@ import top.csituka.youzaiworldcore.config.FunctionToggleManager;
 public class LadderExtendHandler {
 
     private static final LadderExtendHandler INSTANCE = new LadderExtendHandler();
-    private static final Logger LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/LadderExtend");
+    private static final DebugLogger.ModuleLogger LOGGER = DebugLogger.SERVER.module("LadderExtend");
     private static final int MAX_EXTEND = 20;
 
     private LadderExtendHandler() {
@@ -99,7 +99,7 @@ public class LadderExtendHandler {
         }
 
         if (placed > 0) {
-            LOGGER.info("梯子向下延展 {} 格，位置: {}", placed, pos);
+            LOGGER.debug("梯子向下延展 {} 格，位置: {}", placed, pos);
             return InteractionResult.SUCCESS;
         }
 
@@ -108,6 +108,6 @@ public class LadderExtendHandler {
 
     public static void register() {
         UseBlockCallback.EVENT.register(INSTANCE::onUseBlock);
-        LOGGER.info("梯子向下延展事件处理器已注册");
+        LOGGER.debug("梯子向下延展事件处理器已注册");
     }
 }

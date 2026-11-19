@@ -53,17 +53,17 @@ public final class UserSettings {
      * @param playerUuid 玩家 UUID
      */
     public static void create(UUID playerUuid) {
-        DebugLogger.entering(MODULE, "create", "uuid=" + playerUuid);
+        DebugLogger.SERVER.entering(MODULE, "create", "uuid=" + playerUuid);
         Path file = ModPaths.userSettingsFile(playerUuid);
         if (Files.isRegularFile(file)) {
-            DebugLogger.info(MODULE, "个人配置已存在，跳过创建: %s", file);
-            DebugLogger.exiting(MODULE, "create", "already exists");
+            DebugLogger.SERVER.debug(MODULE, "个人配置已存在，跳过创建: {}", file);
+            DebugLogger.SERVER.exiting(MODULE, "create", "already exists");
             return;
         }
         JsonFileStore store = store(playerUuid);
         store.writeDefaults();
-        DebugLogger.info(MODULE, "已创建玩家个人配置: %s", file);
-        DebugLogger.exiting(MODULE, "create");
+        DebugLogger.SERVER.info(MODULE, "已创建玩家个人配置: {}", file);
+        DebugLogger.SERVER.exiting(MODULE, "create");
     }
 
     /**
@@ -72,19 +72,19 @@ public final class UserSettings {
      * @param playerUuid 玩家 UUID
      */
     public static void delete(UUID playerUuid) {
-        DebugLogger.entering(MODULE, "delete", "uuid=" + playerUuid);
+        DebugLogger.SERVER.entering(MODULE, "delete", "uuid=" + playerUuid);
         JsonFileStore store = CACHE.remove(playerUuid);
         if (store == null) {
             store = new JsonFileStore(ModPaths.userSettingsFile(playerUuid));
         }
         store.deleteFile();
-        DebugLogger.info(MODULE, "已删除玩家个人配置: %s", store.file());
-        DebugLogger.exiting(MODULE, "delete");
+        DebugLogger.SERVER.info(MODULE, "已删除玩家个人配置: {}", store.file());
+        DebugLogger.SERVER.exiting(MODULE, "delete");
     }
 
     /** 清空内存缓存（{@code /yzwc reload} 用），下次访问会重新读盘。 */
     public static void invalidateAll() {
-        DebugLogger.info(MODULE, "清空个人配置缓存（%d 份）", CACHE.size());
+        DebugLogger.SERVER.info(MODULE, "清空个人配置缓存（{} 份）", CACHE.size());
         CACHE.clear();
     }
 

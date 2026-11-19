@@ -114,7 +114,7 @@ public final class YzuiLoadingRenderer {
                     clip.start();
                 }
             } catch (Exception exception) {
-                DebugLogger.debug("YzuiLoading", "加载动画音效不可用: %s", exception.getClass().getSimpleName());
+                DebugLogger.CLIENT.debug("YzuiLoading", "加载动画音效不可用: {}", exception.getClass().getSimpleName());
             }
         }, "YouzaiWorldCore-LoadingSound");
         soundThread.setDaemon(true);

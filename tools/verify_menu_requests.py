@@ -95,7 +95,7 @@ def main():
   temp=Path(directory);files=[]
   for path,source in {**STUBS,'MenuRequestChecks.java':CHECK}.items():
    file=temp/path;file.parent.mkdir(parents=True,exist_ok=True);file.write_text(source);files.append(str(file))
-  result=subprocess.run([str(binary/'javac'),'--release','25','-encoding','UTF-8','-cp',str(gson[0]),'-d',str(temp),*files,*map(str,prod)],cwd=ROOT,capture_output=True,text=True)
+  result=subprocess.run([str(binary/'javac'),'--release','25','-encoding','UTF-8','-cp',str(gson[0]),'-d',str(temp),*files,*map(str,prod), str(Path(__file__).resolve().parents[1] / "src/main/java/top/csituka/youzaiworldcore/util/LogValues.java")],cwd=ROOT,capture_output=True,text=True)
   if result.returncode:print(result.stderr);raise SystemExit(result.returncode)
   subprocess.run([str(binary/'java'),'-cp',str(temp)+':'+str(gson[0]),'MenuRequestChecks'],cwd=ROOT,check=True)
 if __name__=='__main__':main()

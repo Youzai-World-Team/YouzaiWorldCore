@@ -45,7 +45,7 @@ public final class TitleManagementScreen extends Screen implements YzuiMenuScree
         super.init();
         TitleClientState.requestRefresh();
         rebuildTitleWidgets();
-        DebugLogger.info("TitleManagementScreen", "已打开文字称号管理页");
+        DebugLogger.CLIENT.debug("TitleManagementScreen", "已打开文字称号管理页");
     }
 
     @Override
@@ -136,8 +136,7 @@ public final class TitleManagementScreen extends Screen implements YzuiMenuScree
                 Component.translatable("gui.back"), () -> Minecraft.getInstance().setScreenAndShow(parent))
                 .setLineIcon(MenuIcon.CHEVRON_LEFT)
                 .setStyle(YzuiTheme.ButtonStyle.TEXT));
-        DebugLogger.debug("TitleManagementScreen", "称号列表：数量=%d，页码=%d/%d，每页=%d",
-                titles.size(), page + 1, pageCount, pageSize);
+        DebugLogger.CLIENT.debug("TitleManagementScreen", "称号列表：数量={}，页码={}/{}，每页={}", titles.size(), page + 1, pageCount, pageSize);
     }
 
     private int panelWidth() {

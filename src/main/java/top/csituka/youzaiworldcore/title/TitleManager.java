@@ -84,7 +84,7 @@ public final class TitleManager {
             lastRefreshTick = tick;
             refreshAll(server);
         });
-        DebugLogger.info(MODULE, "称号系统已初始化，在线同步周期=%d秒", REFRESH_INTERVAL_TICKS / 20);
+        DebugLogger.SERVER.debug(MODULE, "称号系统已初始化，在线同步周期={}秒", REFRESH_INTERVAL_TICKS / 20);
     }
 
     public static Component getEquippedComponent(ServerPlayer player) {
@@ -110,7 +110,7 @@ public final class TitleManager {
                     if (!isCurrent(requestContext, server, player)) return;
                     if (error != null) {
                         completeRequests(requestContext);
-                        DebugLogger.exception(MODULE, "refreshPlayer", error);
+                        DebugLogger.SERVER.exception(MODULE, "refreshPlayer", error);
                         sendState(player, reportResult ? "称号服务暂时不可用，正在显示缓存" : "");
                         return;
                     }
@@ -134,7 +134,7 @@ public final class TitleManager {
                     if (!isCurrent(requestContext, server, player)) return;
                     if (error != null) {
                         completeRequests(requestContext);
-                        DebugLogger.exception(MODULE, "requestEquip", error);
+                        DebugLogger.SERVER.exception(MODULE, "requestEquip", error);
                         sendState(player, "称号佩戴保存失败，请稍后重试");
                         return;
                     }
@@ -168,7 +168,7 @@ public final class TitleManager {
                     PERIODIC_REFRESH_RUNNING.set(false);
                     completeRequests(requestContext);
                     if (error != null) {
-                        DebugLogger.exception(MODULE, "refreshAll", error);
+                        DebugLogger.SERVER.exception(MODULE, "refreshAll", error);
                         return;
                     }
                     applyResult(server, result, "", null, requestContext);
@@ -186,7 +186,7 @@ public final class TitleManager {
         if (result == null || !result.success()) {
             String resultMessage = resultMessage(result);
             if (!resultMessage.isBlank()) {
-                DebugLogger.warn(MODULE, "称号 Api 请求失败：%s", resultMessage);
+                DebugLogger.SERVER.warn(MODULE, "称号 Api 请求失败：{}", resultMessage);
             }
             String notification = message == null || message.isBlank() ? "" : message;
             if (notificationTarget != null) {
@@ -236,7 +236,7 @@ public final class TitleManager {
             }
         }
         broadcastState(server, message == null ? "" : message);
-        DebugLogger.info(MODULE, "已同步 %d 个称号定义、%d 名在线玩家", DEFINITIONS.size(), snapshots.size());
+        DebugLogger.SERVER.trace(MODULE, "已同步 {} 个称号定义、{} 名在线玩家", DEFINITIONS.size(), snapshots.size());
     }
 
     private static String resultMessage(TitleApiClient.Result result) {

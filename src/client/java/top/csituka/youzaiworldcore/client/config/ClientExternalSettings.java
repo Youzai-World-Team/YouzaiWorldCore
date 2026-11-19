@@ -1,7 +1,5 @@
 package top.csituka.youzaiworldcore.client.config;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import top.csituka.youzaiworldcore.config.ConfigSection;
 import top.csituka.youzaiworldcore.client.animation.GuiAnimationController;
@@ -35,7 +33,7 @@ public final class ClientExternalSettings {
 
     private static final String MODULE = "ClientExternalSettings";
 
-    private static final Logger LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/ClientExternalSettings");
+    private static final DebugLogger.ModuleLogger LOGGER = DebugLogger.CLIENT.module("ClientExternalSettings");
 
     /** 日志级别上限（3=调试） */
     private static final int MAX_LOG_LEVEL = 3;
@@ -99,12 +97,6 @@ public final class ClientExternalSettings {
 
     public static boolean isDevModeEnabled() {
         return devModeEnabled;
-    }
-
-    /** @deprecated 请改用 {@link #getLogLevel()} */
-    @Deprecated
-    public static boolean isLogToFile() {
-        return logLevel > 0;
     }
 
     /** 获取日志输出丰富度等级（0=关闭, 1=基本, 2=详细, 3=调试） */
@@ -188,7 +180,7 @@ public final class ClientExternalSettings {
     /** 即时切换明暗主题并保存到客户端 core_module.yzui_theme。 */
     public static void setYzuiTheme(YzuiThemeMode value) {
         java.util.Objects.requireNonNull(value, "YZUI 主题");
-        DebugLogger.stateChange(MODULE, "yzui", "theme", yzuiTheme, value);
+        DebugLogger.CLIENT.stateChange(MODULE, "yzui", "theme", yzuiTheme, value);
         yzuiTheme = value;
         save();
     }
@@ -196,7 +188,7 @@ public final class ClientExternalSettings {
     /** 即时切换效果，并完成可能正在等待的页面退出动画。 */
     public static void setYzuiVisualStyle(YzuiVisualStyle value) {
         java.util.Objects.requireNonNull(value, "YZUI 视觉效果");
-        DebugLogger.stateChange(MODULE, "yzui", "visual_style", yzuiVisualStyle, value);
+        DebugLogger.CLIENT.stateChange(MODULE, "yzui", "visual_style", yzuiVisualStyle, value);
         yzuiVisualStyle = value;
         GuiAnimationController.onModeChanged(GuiAnimationController.getMode());
         save();
@@ -212,22 +204,14 @@ public final class ClientExternalSettings {
 
     public static void setDevModeEnabled(boolean value) {
         devModeEnabled = value;
-        DebugLogger.setDevModeEnabled(value);
+        syncRuntimeFlags();
         save();
-    }
-
-    /** @deprecated 请改用 {@link #setLogLevel(int)} */
-    @Deprecated
-    public static void setLogToFile(boolean value) {
-        setLogLevel(value ? 1 : 0);
     }
 
     /** 设置日志输出丰富度等级（0=关闭, 1=基本, 2=详细, 3=调试） */
     public static void setLogLevel(int level) {
         logLevel = Math.max(0, Math.min(MAX_LOG_LEVEL, level));
-        DebugLogger.setLogLevel(logLevel);
-        // 单人模式集成服务器：只要日志级别 > 0 就开启服务端日志输出
-        top.csituka.youzaiworldcore.YouzaiworldCore.logToFile = (logLevel > 0);
+        syncRuntimeFlags();
         save();
     }
 
@@ -249,21 +233,21 @@ public final class ClientExternalSettings {
     /** 设置 YZUI 启用状态并持久化 */
     public static void setYzuiEnabled(boolean value) {
         yzuiEnabled = value;
-        DebugLogger.info(MODULE, "YZUI 已" + (value ? "启用" : "禁用"));
+        DebugLogger.CLIENT.info(MODULE, "YZUI 已" + (value ? "启用" : "禁用"));
         save();
     }
 
     /** 设置 YZHUD（背包、装备栏、状态效果与自定义记分板样式）的显示状态并持久化 */
     public static void setLeftHudEnabled(boolean value) {
         leftHudEnabled = value;
-        DebugLogger.info(MODULE, "YZHUD 已" + (value ? "启用" : "禁用"));
+        DebugLogger.CLIENT.info(MODULE, "YZHUD 已" + (value ? "启用" : "禁用"));
         save();
     }
 
     /** 设置自定义字体资源包启用状态并持久化 */
     public static void setCustomFontEnabled(boolean value) {
         customFontEnabled = value;
-        DebugLogger.info(MODULE, "自定义字体资源包已" + (value ? "启用" : "禁用"));
+        DebugLogger.CLIENT.info(MODULE, "自定义字体资源包已" + (value ? "启用" : "禁用"));
         save();
     }
 
@@ -280,13 +264,13 @@ public final class ClientExternalSettings {
         yzuiEnabled = yzuiEnabledValue;
         customFontEnabled = customFontEnabledValue;
         welcomeGuideCompleted = true;
-        DebugLogger.stateChange(MODULE, "welcome_guide", "yzui_enabled",
+        DebugLogger.CLIENT.stateChange(MODULE, "welcome_guide", "yzui_enabled",
                 oldYzuiEnabled, yzuiEnabled);
-        DebugLogger.stateChange(MODULE, "welcome_guide", "custom_font_enabled",
+        DebugLogger.CLIENT.stateChange(MODULE, "welcome_guide", "custom_font_enabled",
                 oldCustomFontEnabled, customFontEnabled);
-        DebugLogger.stateChange(MODULE, "welcome_guide", "completed",
+        DebugLogger.CLIENT.stateChange(MODULE, "welcome_guide", "completed",
                 oldWelcomeGuideCompleted, welcomeGuideCompleted);
-        DebugLogger.info(MODULE, "首次启动欢迎导览已完成");
+        DebugLogger.CLIENT.info(MODULE, "首次启动欢迎导览已完成");
         save();
     }
 
@@ -294,30 +278,30 @@ public final class ClientExternalSettings {
     public static void resetWelcomeGuide() {
         boolean oldWelcomeGuideCompleted = welcomeGuideCompleted;
         welcomeGuideCompleted = false;
-        DebugLogger.stateChange(MODULE, "welcome_guide", "completed",
+        DebugLogger.CLIENT.stateChange(MODULE, "welcome_guide", "completed",
                 oldWelcomeGuideCompleted, welcomeGuideCompleted);
-        DebugLogger.info(MODULE, "欢迎导览完成状态已重置");
+        DebugLogger.CLIENT.info(MODULE, "欢迎导览完成状态已重置");
         save();
     }
 
     /** 设置自定义皮肤与披风启用状态并持久化。 */
     public static void setCosmeticEnabled(boolean value) {
         cosmeticEnabled = value;
-        DebugLogger.info(MODULE, "自定义皮肤与披风已" + (value ? "启用" : "禁用"));
+        DebugLogger.CLIENT.info(MODULE, "自定义皮肤与披风已" + (value ? "启用" : "禁用"));
         save();
     }
 
     /** 设置是否自动跳过实验性设置警告并持久化 */
     public static void setAutoSkipExperimentalWarning(boolean value) {
         autoSkipExperimentalWarning = value;
-        DebugLogger.info(MODULE, "自动跳过实验性设置警告已" + (value ? "启用" : "禁用"));
+        DebugLogger.CLIENT.debug(MODULE, "自动跳过实验性设置警告已" + (value ? "启用" : "禁用"));
         save();
     }
 
     /** 设置自动跳过时的操作（"skip" 或 "backup"）并持久化 */
     public static void setExperimentalWarningSkipAction(String value) {
         experimentalWarningSkipAction = ("backup".equals(value)) ? "backup" : "skip";
-        DebugLogger.info(MODULE, "自动跳过操作已设为：" + experimentalWarningSkipAction);
+        DebugLogger.CLIENT.debug(MODULE, "自动跳过操作已设为：" + experimentalWarningSkipAction);
         save();
     }
 
@@ -325,7 +309,7 @@ public final class ClientExternalSettings {
     public static void setGuiAnimationMode(GuiAnimationMode value) {
         GuiAnimationMode old = guiAnimationMode;
         guiAnimationMode = value == null ? DEFAULT_GUI_ANIMATION_MODE : value;
-        DebugLogger.stateChange(MODULE, "visual", "gui_animation_mode", old, guiAnimationMode);
+        DebugLogger.CLIENT.stateChange(MODULE, "visual", "gui_animation_mode", old, guiAnimationMode);
         GuiAnimationController.onModeChanged(guiAnimationMode);
         save();
     }
@@ -337,13 +321,12 @@ public final class ClientExternalSettings {
     public static void load() {
         ConfigSection section = ClientGlobalSettings.section(ClientGlobalSettings.CORE_MODULE);
         if (section.isEmpty()) {
-            save();
-            syncRuntimeFlags();
+            writeDefaults();
             return;
         }
 
-        devModeEnabled = section.getBoolean("dev_mode_enabled", devModeEnabled);
-        logLevel = section.getInt("log_level", logLevel, 0, MAX_LOG_LEVEL);
+        devModeEnabled = section.getBoolean("dev_mode_enabled", DEFAULT_DEV_MODE_ENABLED);
+        logLevel = section.getIntExact("log_level", DEFAULT_LOG_LEVEL, 0, MAX_LOG_LEVEL);
         debugModeType = section.getString("debug_mode_type", debugModeType);
         debugAddress = section.getString("debug_address", debugAddress);
         debugPort = section.getString("debug_port", debugPort);
@@ -366,10 +349,9 @@ public final class ClientExternalSettings {
         }
         experimentalWarningSkipAction = action;
 
-        if (logLevel > 0) {
-            LOGGER.info("已从 {} 加载客户端外部设置", ClientGlobalSettings.file());
-        }
+        if (!section.has("dev_mode_enabled") || !section.has("log_level")) save();
         syncRuntimeFlags();
+        LOGGER.info("已从 {} 加载客户端核心设置，日志级别={}", ClientGlobalSettings.file(), logLevel);
     }
 
     /** 重置为默认值并写入 {@code core_module} 分节（首次安装 / 坏文件恢复用） */
@@ -416,10 +398,8 @@ public final class ClientExternalSettings {
         ClientGlobalSettings.save();
     }
 
-    /** 把当前设置同步到 DebugLogger 与内嵌服务端的全局标志 */
+    /** 只应用客户端日志设置，集成服务器使用独立的服务端配置。 */
     private static void syncRuntimeFlags() {
-        DebugLogger.setDevModeEnabled(devModeEnabled);
-        DebugLogger.setLogLevel(logLevel);
-        top.csituka.youzaiworldcore.YouzaiworldCore.logToFile = (logLevel > 0);
+        DebugLogger.CLIENT.configure(devModeEnabled, logLevel);
     }
 }

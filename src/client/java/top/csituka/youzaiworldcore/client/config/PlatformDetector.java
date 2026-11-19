@@ -31,10 +31,10 @@ public final class PlatformDetector {
         try {
             Class.forName("android.os.Build");
             androidCache = true;
-            DebugLogger.info(LOG_MODULE, "平台检测: Android 环境");
+            DebugLogger.CLIENT.debug(LOG_MODULE, "平台检测: Android 环境");
         } catch (ClassNotFoundException e) {
             androidCache = false;
-            DebugLogger.info(LOG_MODULE, "平台检测: PC 环境");
+            DebugLogger.CLIENT.debug(LOG_MODULE, "平台检测: PC 环境");
         }
         return androidCache;
     }
@@ -44,6 +44,6 @@ public final class PlatformDetector {
      */
     public static void resetCache() {
         androidCache = null;
-        DebugLogger.debug(LOG_MODULE, "平台检测缓存已重置");
+        DebugLogger.CLIENT.debug(LOG_MODULE, "平台检测缓存已重置");
     }
 }

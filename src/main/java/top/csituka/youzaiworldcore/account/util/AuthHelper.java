@@ -5,21 +5,21 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
 public class AuthHelper {
 
     public static String getIp(java.net.SocketAddress socketAddress) {
-        DebugLogger.entering("AuthHelper", "getIp",
+        DebugLogger.SERVER.entering("AuthHelper", "getIp",
                 "socketAddress=" + socketAddress);
         if (socketAddress instanceof java.net.InetSocketAddress inetAddr) {
-            DebugLogger.branch("AuthHelper", "socketAddress is InetSocketAddress", true);
+            DebugLogger.SERVER.branch("AuthHelper", "socketAddress is InetSocketAddress", true);
             java.net.InetAddress addr = inetAddr.getAddress();
             if (addr != null) {
                 String ip = com.google.common.net.InetAddresses.toAddrString(addr);
-                DebugLogger.exiting("AuthHelper", "getIp", ip);
+                DebugLogger.SERVER.exiting("AuthHelper", "getIp", ip);
                 return ip;
             }
-            DebugLogger.branch("AuthHelper", "InetAddress is null", true);
+            DebugLogger.SERVER.branch("AuthHelper", "InetAddress is null", true);
         } else {
-            DebugLogger.branch("AuthHelper", "socketAddress is InetSocketAddress", false);
+            DebugLogger.SERVER.branch("AuthHelper", "socketAddress is InetSocketAddress", false);
         }
-        DebugLogger.exiting("AuthHelper", "getIp", "<unknown>");
+        DebugLogger.SERVER.exiting("AuthHelper", "getIp", "<unknown>");
         return "<unknown>";
     }
 }

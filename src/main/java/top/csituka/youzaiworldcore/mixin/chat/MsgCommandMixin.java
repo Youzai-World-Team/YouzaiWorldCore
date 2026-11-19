@@ -29,7 +29,7 @@ public abstract class MsgCommandMixin {
     @Redirect(method = "sendMessage", at = @At(value = "INVOKE", target = "Lnet/minecraft/network/chat/ChatType;bind(Lnet/minecraft/resources/ResourceKey;Lnet/minecraft/commands/CommandSourceStack;)Lnet/minecraft/network/chat/ChatType$Bound;"))
     private static ChatType.Bound youzaiworldcore$privateHeader(ResourceKey<ChatType> original,
             CommandSourceStack source) {
-        DebugLogger.debug("ChatMessages", "私信前缀：发送者=%s", source.getTextName());
+        DebugLogger.SERVER.debug("ChatMessages", "私信前缀：发送者={}", source.getTextName());
         return ChatType.bind(ChatFormatHelper.MESSAGE_TYPE_ID, source.getServer().registryAccess(),
                 ChatFormatHelper.formatPrivateHeader(source));
     }
@@ -43,7 +43,7 @@ public abstract class MsgCommandMixin {
             CommandSourceStack commandSource, Collection<ServerPlayer> targets, PlayerChatMessage originalMessage) {
         ServerPlayer sender = commandSource.getPlayer();
         if (sender != null && targets.stream().anyMatch(target -> target.getUUID().equals(sender.getUUID()))) {
-            DebugLogger.debug("ChatMessages", "自发自收私信省略额外回执：%s", sender.getScoreboardName());
+            DebugLogger.SERVER.debug("ChatMessages", "自发自收私信省略额外回执：{}", sender.getScoreboardName());
             return;
         }
         feedbackSource.sendChatMessage(message, filtered, parameters);

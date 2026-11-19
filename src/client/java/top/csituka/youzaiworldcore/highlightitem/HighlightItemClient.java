@@ -31,21 +31,21 @@ public class HighlightItemClient {
     }
 
     public static void initialize() {
-        DebugLogger.entering("HighlightItem", "initialize");
+        DebugLogger.CLIENT.entering("HighlightItem", "initialize");
 
         try {
             HighlightItem.configurator = new Configurator();
         } catch (Exception e) {
-            DebugLogger.exception("HighlightItem", "初始化配置失败", e);
+            DebugLogger.CLIENT.exception("HighlightItem", "初始化配置失败", e);
         }
 
         // 静态装配时经 Fabric 注册一次，原版负责显示、改键、重置和保存。
-        DebugLogger.info("HighlightItem", "高亮键位已注册到原版控制设置：切换高亮默认 F10，比较模式默认未绑定 (category=%s)", CATEGORY);
+        DebugLogger.CLIENT.debug("HighlightItem", "高亮键位已注册到原版控制设置：切换高亮默认 F10，比较模式默认未绑定 (category={})", CATEGORY);
 
         new HighLightCommands().register();
-        DebugLogger.info("HighlightItem", "客户端命令 /yzwc settings highlight_item 已注册");
+        DebugLogger.CLIENT.debug("HighlightItem", "客户端命令 /yzwc settings highlight_item 已注册");
 
-        DebugLogger.exiting("HighlightItem", "initialize");
+        DebugLogger.CLIENT.exiting("HighlightItem", "initialize");
     }
 
     public static void onClientTick(Minecraft client) {
@@ -55,11 +55,11 @@ public class HighlightItemClient {
         }
 
         if (TOGGLE_BIND.consumeClick()) {
-            DebugLogger.branch("HighlightItem", "可配置按键切换高亮", true);
+            DebugLogger.CLIENT.branch("HighlightItem", "可配置按键切换高亮", true);
             HighlightItem.configurator.updateToggle(player, Configurator.NotificationContext.ON_SCREEN);
         }
         if (COMPARATOR_BIND.consumeClick()) {
-            DebugLogger.branch("HighlightItem", "可配置按键切换比较模式", true);
+            DebugLogger.CLIENT.branch("HighlightItem", "可配置按键切换比较模式", true);
             HighlightItem.configurator.changeMode(player, Configurator.NotificationContext.ON_SCREEN);
         }
     }

@@ -32,6 +32,6 @@ public abstract class OptionsDefaultsMixin {
     private void youzaiworldcore$applyDefaults(CallbackInfo ci) {
         languageCode = "zh_cn";
         onboardAccessibility = false;
-        DebugLogger.info("OptionsDefaults", "原版空配置默认使用简体中文并跳过原版欢迎页");
+        DebugLogger.CLIENT.debug("OptionsDefaults", "原版空配置默认使用简体中文并跳过原版欢迎页");
     }
 }

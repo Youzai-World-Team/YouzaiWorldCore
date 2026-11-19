@@ -66,7 +66,7 @@ public class WirelessRedstoneTransmitterBlockEntity extends WirelessRedstoneBloc
     @Override
     public void setRemoved() {
         WirelessRedstoneNetwork.removeTransmitter(this.level, worldPosition);
-        DebugLogger.exiting(MODULE, "setRemoved", "pos=" + worldPosition.toShortString());
+        DebugLogger.SERVER.exiting(MODULE, "setRemoved", "pos=" + worldPosition.toShortString());
         super.setRemoved();
     }
 

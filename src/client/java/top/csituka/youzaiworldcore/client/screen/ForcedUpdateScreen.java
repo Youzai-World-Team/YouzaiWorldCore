@@ -13,8 +13,6 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
 import top.csituka.youzaiworldcore.client.update.ClientUpdateState;
 import top.csituka.youzaiworldcore.update.UpdateResult;
@@ -29,7 +27,7 @@ import top.csituka.youzaiworldcore.client.animation.GuiAnimationController;
 @SuppressWarnings("null")
 public class ForcedUpdateScreen extends Screen implements YzuiPopupScreen {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/ForcedUpdateScreen");
+    private static final DebugLogger.ModuleLogger LOGGER = DebugLogger.CLIENT.module("ForcedUpdateScreen");
 
     // ============ 布局常量 ============
     private static final int DIALOG_WIDTH = 400;
@@ -119,7 +117,7 @@ public class ForcedUpdateScreen extends Screen implements YzuiPopupScreen {
             LOGGER.warn("下载地址为空，无法打开下载页");
             return;
         }
-        DebugLogger.info("ForcedUpdateScreen", "显示下载页链接确认: %s", url);
+        DebugLogger.CLIENT.debug("ForcedUpdateScreen", "显示下载页链接确认: {}", url);
         try {
             ConfirmLinkScreen.confirmLinkNow(this, Util.parseAndValidateUntrustedUri(url));
         } catch (URISyntaxException e) {

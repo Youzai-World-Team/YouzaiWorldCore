@@ -21,7 +21,7 @@
 
 - **账户与安全**：离线服注册/登录/改密/注销、每次加入重新认证、登录冷却与锁定
 - **UI 系统**：YZUI 界面重绘（物品栏 / HUD / 配方书）、GUI 主菜单、标题界面与窗口定制
-- **聊天消息**：聊天 / 私信 / 游戏 / 模组四类固定排版，冒险等级与佩戴称号由服务端生成，客户端只合并连续重复显示；原始消息与签名保留。聊天类型 `youzaiworldcore:chat_line`，旧聊天及私信模板不再读取，详见 `docs/CHAT_MESSAGES.md`；离线验证 `python3 tools/verify_chat_messages.py`
+- **聊天消息**：聊天 / 私信 / 游戏 / 模组四类固定排版，冒险等级与佩戴称号由服务端生成，未佩戴时保留等级后的 `·`。服务端玩家名带基础渐变，客户端为显示副本统一着色并合并连续重复，原始正文与签名保留；默认渐变，`/yzwc chat_style plain|gradient` 切换并即时重绘历史，本机设置位于 `chat_style_module.style`。`ClientCommandSuggestionsMixin` 修复 Fabric 合并同名 `/yzwc` 根后丢失补全子节点的问题。聊天类型 `youzaiworldcore:chat_line`，旧聊天及私信模板不再读取，详见 `docs/CHAT_MESSAGES.md`；离线验证 `python3 tools/verify_chat_messages.py` 与 `python3 tools/verify_chat_runtime.py`
 - **玩法系统**：魔力、冒险等级与属性加点、传送锚点与传送卷轴、维度池、宠物、邮件、统计、AFK 挂机检测、隐身、坐姿、双开门、试炼宝库无限领奖
 - **内容扩展**：悠哉系列矿物/工具/法杖、自定义方块与方块实体（含魔力台）、自定义附魔（12 个）、音乐唱片、Meme 画作、成就、村庄结构注入、云原神遗迹结构、老吴贴贴彩蛋、Technoblade 纪念皇冠
 - **运营支撑**：LuckPerms 权限集成、Placeholder API 占位符、更新检查、配置导入导出、调试日志体系
@@ -120,6 +120,7 @@ YouzaiWorldCore/
 │   ├── client/Client.java            # ClientModInitializer 入口
 │   ├── client/DataGenerator.java     # fabric-datagen 入口
 │   ├── client/ModMenuIntegration.java
+│   ├── client/chat/                   # 聊天配色（ChatMessageRenderer / ChatStyleMode）与原始历史重复计数
 │   ├── client/{config,hud,screen,renderer,render,pickup,effect,skill,update,video,resource,accessor,laowumeme,particle,higherchat,afk}/
 │   ├── command/                      # 客户端命令（仅解析并转发数据包）
 │   ├── highlightitem/ · itemborder/ · anviluses/        # 纯客户端增强
@@ -163,28 +164,33 @@ YouzaiWorldCore/
 
 ### 4.2 日志规范（强制）
 
-所有新增功能**必须**通过 `top.csituka.youzaiworldcore.util.DebugLogger` 打日志，禁止裸用 `System.out`。
+所有新增日志必须经过 `DebugLogger.SERVER` / `DebugLogger.CLIENT` 或其绑定模块名的 `ModuleLogger`，禁止裸用 SLF4J / Log4j 或 `System.out`。日志基础设施本身除外。所有消息参数统一使用 `{}`，禁止在日志模板使用 `%s` / `%d` / `%.2f` 或预先调用 `String.format` / `.formatted()`；精度和补零使用惰性的 `LogValues` 参数。
 
 ```java
-DebugLogger.entering("ModuleName", "methodName", "param1=" + a + ", param2=" + b);
-DebugLogger.branch("ModuleName", "player has permission", hasPerm);      // 条件分支
-DebugLogger.stateChange("ModuleName", playerName, "manaValue", old, now); // 状态变更
-DebugLogger.info("ModuleName", "已加载 %d 条记录", count);                // 支持 String.format 占位符
-DebugLogger.exception("ModuleName", "loadConfig", e);                     // 异常（含堆栈）
-DebugLogger.exiting("ModuleName", "methodName", "result=" + r);
+DebugLogger.SERVER.info("ModuleName", "已加载 {} 条记录", count);
+DebugLogger.CLIENT.debug("ModuleName", "界面操作：{}", action);
+DebugLogger.SERVER.branch("ModuleName", "player has permission", hasPerm);
+DebugLogger.SERVER.stateChange("ModuleName", playerName, "level", old, now);
+DebugLogger.SERVER.notice("ModuleName", "服务端初始化完成");
+DebugLogger.SERVER.exception("ModuleName", "saveData", error);
+if (DebugLogger.CLIENT.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+    DebugLogger.CLIENT.entering("ModuleName", "render", "param=" + expensiveDescription());
+}
 ```
 
-日志级别与门槛（`DebugLogger.java` 顶部注释为权威说明）：
-
-| 级别 | 值 | 输出内容 |
+| 类别 | 值 | 输出内容 |
 |------|----|---------|
-| `LEVEL_OFF` | 0 | 不输出 |
-| `LEVEL_BASIC` | 1 | `info` / `warn` / `error` / `stateChange` / `exception` |
-| `LEVEL_DETAILED` | 2 | 追加 `debug` / `branch` |
-| `LEVEL_DEBUG` | 3 | 追加 `trace` / `entering` / `exiting` |
+| 普通日志 | 始终输出 | `notice` / `warn` / `error` / `exception` / `exceptionSummary`；启停、更新、账户审计、管理员操作和真实故障 |
+| `LEVEL_OFF` | 0 | 关闭诊断日志，普通日志仍保留 |
+| `LEVEL_BASIC` | 1 | `info` / `stateChange`；配置和数据摘要、重要状态与结果 |
+| `LEVEL_DETAILED` | 2 | 追加 `debug` / `branch` / `debugStateChange`；注册、网络、UI 操作及计算细节 |
+| `LEVEL_DEBUG` | 3 | 追加 `trace` / `entering` / `exiting` / `traceBranch` / `traceStateChange`；每帧、tick、逐物品或实体追踪 |
 
-**双开关**：仅当 `devModeEnabled == true` **且** `logLevel > 0` 时才输出。二者由 `yzwc/server/config/global_settings.json` 的 `core_module.dev_mode_enabled` / `core_module.log_to_file` 控制，在 `YouzaiworldCore.onInitialize()` 开头加载并同步。
-格式固定为 `[yyyy-MM-dd HH:mm:ss.SSS] [LEVEL] [Module] 描述`。模组启动横幅与关键里程碑另用 `YouzaiworldCore.LOGGER`（SLF4J，无条件输出）。
+诊断日志要求对应端 `core_module.dev_mode_enabled: true` 且达到 `core_module.log_level`（0–3）。两端默认关闭开发者模式、级别0；服务端配置在 `yzwc/server/config/global_settings.json`，客户端在 `yzwc/client/global_settings.json`。`GlobalSettings.load()` / `ClientGlobalSettings.load()` 在读入文件后立即应用本端日志配置。客户端设置即时生效，服务端 `/yzwc reload` 即时生效；没有跨端镜像字段。
+
+两端分别写入 `logs/youzaiworldcore-server.log` / `logs/youzaiworldcore-client.log`，20 MB或启动时轮转、各保留5份压缩归档。格式为 `[yyyy-MM-dd HH:mm:ss.SSS] [LEVEL] [CLIENT|SERVER] [Module] 描述`；入口 / 出口真正使用 TRACE，不改游戏根日志阈值。带参数或文本构建的高频调用必须先判本端 `isEnabled`，避免关闭日志时仍分配数组或拼接字符串。
+
+共享文件工具用 `DebugLogger.forFile(path)` 按文件归属路由；通用资源注册才使用 `bootstrap()`；异步更新检查显式传入发起端实例。完整说明见 `docs/LOGGING.md`，逐文件档位见 `docs/LOGGING_AUDIT.md`。离线检查 `python3 tools/verify_logging.py --write-audit`，不执行整包 Gradle 构建。
 
 ### 4.3 文件存放规范（强制）
 
@@ -251,7 +257,7 @@ DebugLogger.exiting("ModuleName", "methodName", "result=" + r);
 - **注释与用户可见文案一律中文**；类/公开方法写 Javadoc，说明用途、配置文件路径、权限节点。
 - 大段逻辑用 `// ===== 分节标题 =====` 分隔（全项目统一风格）。
 - 因 MC 源码缺少 `@Nullable` 标注，普遍在类上加 `@SuppressWarnings("null")`（必要时加 `"unused"`）以消除 IDE 噪音警告。
-- 工具类写成 `public final class` + 私有构造 + 全静态方法（如 `DebugLogger`、`LuckPermsHelper`、`ServerExternalSettings`）。
+- 无状态工具类使用 `public final class` + 私有构造 + 静态方法；`DebugLogger` 使用独立的客户端 / 服务端实例。
 
 ### 4.5 命名约定
 
@@ -341,14 +347,14 @@ src/client →  仅客户端：渲染、GUI、HUD、输入、客户端命令（�
 ```
 
 - Loom 的 `splitEnvironmentSourceSets()` 保证客户端类不会被打进服务端 classpath；在 `src/main` 中**禁止**引用 `net.minecraft.client.*`。
-- 客户端命令（`/yzwc pet`、`/yzwc mail`、`/yzwc function *`、`/yzwc settings highlight_item`）**只做参数解析并发包**，权威校验一律在服务端接收器中完成。
+- 客户端玩法命令（`/yzwc pet`、`/yzwc mail`、`/yzwc function *`）**只做参数解析并发包**，权威校验一律在服务端接收器中完成。`/yzwc chat_style` 等纯本机显示设置直接修改客户端配置，无需服务端权限或同步。
 
 ### 6.2 初始化时序
 
 ```
 YouzaiworldCore.onInitialize()
  ├─ GlobalSettings.load()                  # 最先：读 yzwc/server/config/global_settings.json
- ├─ ServerExternalSettings.load()          # 取 core_module 分节 → 同步 DebugLogger 开关
+ ├─ core_module 已在 GlobalSettings.load() 内应用到 DebugLogger.SERVER
  ├─ SERVER_STARTING: TempManager.clear...   # 每次开服清空 temp/
  ├─ LOGGER.info(LOGO)                      # ASCII 启动横幅
  ├─ ModDataComponents / ModBlocks / ModBlockEntities / ModItems
@@ -388,7 +394,7 @@ YouzaiworldCore.onInitialize()
 
 ### 6.4 关键设计决策
 
-1. **配置全部为 JSON + Gson，且集中收拢**（详见 [§4.3](#43-文件存放规范强制)）。服务端本地配置包括全局 `yzwc/server/config/global_settings.json` 与玩家个人 `yzwc/server/config/user_settings/<UUID>.json`；游戏账户凭据、认证会话、登录冷却、皮肤/披风以及**邮件正文与每玩家收件箱**由 Api 服务端 SQLite 权威保存，模组不生成账户凭据 JSON，不保存外观 PNG，也不再保存邮件文件。数据 / 备份 / 缓存分别在 `yzwc/server/` 下的 `data/` `backup/` `temp/`，随存档走的同结构放在 `<world_name>/data/yzwc/`。各配置类仍是静态单例 `load()` / `save()`，但本地配置读写都走 `GlobalSettings` / `UserSettings`，分节缺失时自动写出默认值，格式非法则崩溃退出。**客户端配置尚未迁移**，仍在 `config/youzaiworldcore/`（`client_external_settings.json`、`item_borders.json`、`fancy_tooltips.json`、`highlight_item/` 等）。
+1. **配置全部为 JSON + Gson，且集中收拢**（详见 [§4.3](#43-文件存放规范强制)）。服务端本地配置包括全局 `yzwc/server/config/global_settings.json` 与玩家个人 `yzwc/server/config/user_settings/<UUID>.json`；游戏账户凭据、认证会话、登录冷却、皮肤/披风以及**邮件正文与每玩家收件箱**由 Api 服务端 SQLite 权威保存，模组不生成账户凭据 JSON，不保存外观 PNG，也不再保存邮件文件。数据 / 备份 / 缓存分别在 `yzwc/server/` 下的 `data/` `backup/` `temp/`，随存档走的同结构放在 `<world_name>/data/yzwc/`。各配置类仍是静态单例 `load()` / `save()`，但本地配置读写都走 `GlobalSettings` / `UserSettings`，分节缺失时自动写出默认值，格式非法则崩溃退出。客户端结构化配置集中在 `yzwc/client/global_settings.json`；玩家外部资源使用 `yzwc/client/config/<模块名>/`。
 2. **网络层集中注册**：所有 Payload 的 `PayloadTypeRegistry` 注册与服务端接收器都写在 `ModNetworking.initialize()`，客户端接收器写在 `ClientNetworking`。Payload 一律用 `record` + `CustomPacketPayload.Type ID` + `StreamCodec STREAM_CODEC`。
 3. **权限双轨制**：`LuckPermsHelper` 暴露权限节点常量与 `checkPermission(...)`；LuckPerms 未安装时**不抛异常**，自动回退到原版 OP 等级（`Commands.LEVEL_ADMINS` = 4）。新增命令请在此类中补充节点常量并同步更新 README 权限表。
 4. **Mixin 三配置分离**：`youzaiworldcore.mixins.json`（服务端/通用）、`youzaiworldcore.account.mixins.json`（账户系统独立）、`youzaiworldcore.client.mixins.json`（客户端，`environment: client`）。新增 Mixin 必须登记进对应 JSON，否则不生效；`compatibilityLevel` 均为 `JAVA_25`，`injectors.defaultRequire = 1`，通用与客户端配置还开启了 `overwrites.requireAnnotations`。
@@ -408,8 +414,8 @@ YouzaiworldCore.onInitialize()
 
 ### 运行与调试
 - ⚠️ **测试必须在服务端进行**（`./gradlew runServer`）。单开客户端时账户、邮件、宠物、传送锚点等依赖服务端权威状态的功能都不会工作 —— 这是 `DESIGN.md` 首要提示。
-- **日志默认全部静默**。调不出日志时先检查 `yzwc/server/config/global_settings.json` 的 `core_module` 分节是否 `dev_mode_enabled: true` 且 `log_to_file: true`；两者缺一，`DebugLogger` 全部方法直接 return。
-- `YouzaiworldCore.logToFile` / `devModeEnabled` 是配置的镜像字段，只读不要手工赋值，改动请走 `ServerExternalSettings`。
+- **诊断日志默认关闭**。排查时在对应端配置的 `core_module` 设置 `dev_mode_enabled: true`、`log_level: 1–3`，并查看对应端 `logs/youzaiworldcore-<端>.log`；普通告警与故障不受开发者开关控制。
+- 客户端设置只更新 `DebugLogger.CLIENT`，服务端设置只更新 `DebugLogger.SERVER`；内置服务器也分别读取两端配置，不允许相互覆盖。
 - **配置写错会直接崩服**：这是刻意行为（见 [§4.3](#43-文件存放规范强制)）。模组会先把坏文件改名成 `<原名>.error` 保留现场，再在原路径生成一份默认配置，然后打印「文件 / 位置 / 原因 / 隔离到哪 / 已重建哪个」并退出。照着新生成的默认文件把 `.error` 里的改动搬回去即可。
 - **新开服会自动生成完整默认配置**：`global_settings.json` 不存在时由 `DefaultSettingsWriter` 一次性写出全部模块分节，不需要先跑一遍再看有哪些键。
 
@@ -426,7 +432,7 @@ YouzaiworldCore.onInitialize()
 ### 目录与版本控制
 - `run/`、`bin/`、`build/`、`.gradle/`、`minecraft_jar/`、`.idea/`、`.vscode/`、`.claude/`、`.workbuddy/`、`logo.txt` 均已 gitignore，勿提交。
 - 版本号只改 `gradle.properties`；`fabric.mod.json` 中的 `${version}` / `${minecraft_version}` / `${loader_version}` / `${trinkets_version}` 由 `processResources` 自动展开。
-- 根目录 `config/` 为空占位目录；服务端运行期文件实际生成在 `run/yzwc/server/`（开发期）与 `run/<world>/data/yzwc/`，客户端配置仍在 `run/config/youzaiworldcore/`。
+- 服务端运行期文件生成在 `run/yzwc/server/`（开发期）与 `run/<world>/data/yzwc/`；客户端结构化配置在 `run/yzwc/client/global_settings.json`，日志在 `run/logs/`。
 
 ---
 

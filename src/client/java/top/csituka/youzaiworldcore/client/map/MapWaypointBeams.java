@@ -30,7 +30,7 @@ public final class MapWaypointBeams {
     public static void initialize() {
         LevelExtractionEvents.END_EXTRACTION.register(MapWaypointBeams::extract);
         LevelRenderEvents.COLLECT_SUBMITS.register(MapWaypointBeams::submit);
-        DebugLogger.info("MapWaypointBeams", "世界内路径点上下信标光柱已注册，跟随世界内导航开关，到达五米内隐藏");
+        DebugLogger.CLIENT.debug("MapWaypointBeams", "世界内路径点上下信标光柱已注册，跟随世界内导航开关，到达五米内隐藏");
     }
 
     private static void extract(LevelExtractionContext context) {

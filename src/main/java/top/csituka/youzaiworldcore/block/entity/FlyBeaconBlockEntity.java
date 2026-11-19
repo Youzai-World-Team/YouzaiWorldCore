@@ -72,7 +72,9 @@ public class FlyBeaconBlockEntity extends BlockEntity implements Container, Menu
 
     public FlyBeaconBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.FLY_BEACON, pos, state);
-        DebugLogger.entering("FlyBeaconBlockEntity", "constructor", "pos=" + pos);
+        if (DebugLogger.SERVER.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+            DebugLogger.SERVER.entering("FlyBeaconBlockEntity", "constructor", "pos=" + pos);
+        }
     }
 
     public static void serverTick(Level level, BlockPos pos, BlockState state, FlyBeaconBlockEntity blockEntity) {
@@ -82,16 +84,18 @@ public class FlyBeaconBlockEntity extends BlockEntity implements Container, Menu
         // 日志开关提前取一次：本方法是方块实体的每 tick 回调（世界里每个飞行信标
         // 每秒各跑 20 次），而下面这些参数含 BlockPos.toString() 与字符串拼接，
         // 实参在调用前就已求值——不加判定，日志关闭时也会照常产生垃圾。
-        final boolean logDetail = DebugLogger.isEnabled(DebugLogger.LEVEL_DETAILED);
-        if (DebugLogger.isEnabled(DebugLogger.LEVEL_DEBUG)) {
-            DebugLogger.entering("FlyBeaconBlockEntity", "serverTick",
+        final boolean logDetail = DebugLogger.SERVER.isEnabled(DebugLogger.LEVEL_DETAILED);
+        if (DebugLogger.SERVER.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+            DebugLogger.SERVER.entering("FlyBeaconBlockEntity", "serverTick",
                     "pos=" + pos + ", active=" + blockEntity.active + ", energy=" + blockEntity.energy);
         }
 
         if (blockEntity.active && blockEntity.energy > 0) {
             if (logDetail) {
-                DebugLogger.branch("FlyBeaconBlockEntity", "active with energy", true,
-                        "energy=" + blockEntity.energy);
+                if (DebugLogger.SERVER.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+                    DebugLogger.SERVER.traceBranch("FlyBeaconBlockEntity", "active with energy", true,
+                            "energy=" + blockEntity.energy);
+                }
             }
             activeBeacons.add(pos.immutable());
             blockEntity.drainTickCounter++;
@@ -101,10 +105,10 @@ public class FlyBeaconBlockEntity extends BlockEntity implements Container, Menu
                 blockEntity.setChanged();
                 if (blockEntity.energy <= 0) {
                     if (logDetail) {
-                        DebugLogger.branch("FlyBeaconBlockEntity", "energy depleted", true);
+                        DebugLogger.SERVER.traceBranch("FlyBeaconBlockEntity", "energy depleted", true);
                     }
-                    if (DebugLogger.isEnabled(DebugLogger.LEVEL_BASIC)) {
-                        DebugLogger.stateChange("FlyBeaconBlockEntity", "flyBeacon@" + pos.toShortString(),
+                    if (DebugLogger.SERVER.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+                        DebugLogger.SERVER.traceStateChange("FlyBeaconBlockEntity", "flyBeacon@" + pos.toShortString(),
                                 "active", true, false);
                     }
                     blockEntity.active = false;
@@ -116,11 +120,13 @@ public class FlyBeaconBlockEntity extends BlockEntity implements Container, Menu
             }
         } else if (blockEntity.active) {
             if (logDetail) {
-                DebugLogger.branch("FlyBeaconBlockEntity", "active but no energy", true,
-                        "energy=" + blockEntity.energy);
+                if (DebugLogger.SERVER.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+                    DebugLogger.SERVER.traceBranch("FlyBeaconBlockEntity", "active but no energy", true,
+                            "energy=" + blockEntity.energy);
+                }
             }
-            if (DebugLogger.isEnabled(DebugLogger.LEVEL_BASIC)) {
-                DebugLogger.stateChange("FlyBeaconBlockEntity", "flyBeacon@" + pos.toShortString(),
+            if (DebugLogger.SERVER.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+                DebugLogger.SERVER.traceStateChange("FlyBeaconBlockEntity", "flyBeacon@" + pos.toShortString(),
                         "active", true, false);
             }
             blockEntity.active = false;
@@ -130,7 +136,7 @@ public class FlyBeaconBlockEntity extends BlockEntity implements Container, Menu
             blockEntity.setChanged();
             blockEntity.drainTickCounter = 0;
         } else {
-            DebugLogger.branch("FlyBeaconBlockEntity", "inactive", false);
+            DebugLogger.SERVER.traceBranch("FlyBeaconBlockEntity", "inactive", false);
             activeBeacons.remove(pos.immutable());
             blockEntity.drainTickCounter = 0;
         }
@@ -245,10 +251,12 @@ public class FlyBeaconBlockEntity extends BlockEntity implements Container, Menu
     }
 
     public void setActive(boolean active) {
-        DebugLogger.entering("FlyBeaconBlockEntity", "setActive",
-                "targetActive=" + active + ", currentActive=" + this.active + ", energy=" + energy);
+        if (DebugLogger.SERVER.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+            DebugLogger.SERVER.entering("FlyBeaconBlockEntity", "setActive",
+                    "targetActive=" + active + ", currentActive=" + this.active + ", energy=" + energy);
+        }
         if (active && energy <= 0) {
-            DebugLogger.branch("FlyBeaconBlockEntity", "cannot activate - no energy", true);
+            DebugLogger.SERVER.traceBranch("FlyBeaconBlockEntity", "cannot activate - no energy", true);
             return;
         }
         boolean oldActive = this.active;
@@ -265,9 +273,11 @@ public class FlyBeaconBlockEntity extends BlockEntity implements Container, Menu
             this.level.setBlock(this.worldPosition, newState, 3);
             this.level.sendBlockUpdated(this.worldPosition, currentState, newState, 3);
         }
-        DebugLogger.stateChange("FlyBeaconBlockEntity", "flyBeacon@" + worldPosition.toShortString(),
-                "active", oldActive, active);
-        DebugLogger.exiting("FlyBeaconBlockEntity", "setActive");
+        if (DebugLogger.SERVER.isEnabled(DebugLogger.LEVEL_DEBUG)) {
+            DebugLogger.SERVER.traceStateChange("FlyBeaconBlockEntity", "flyBeacon@" + worldPosition.toShortString(),
+                    "active", oldActive, active);
+        }
+        DebugLogger.SERVER.exiting("FlyBeaconBlockEntity", "setActive");
     }
 
     public static Set<BlockPos> getActiveBeacons() {

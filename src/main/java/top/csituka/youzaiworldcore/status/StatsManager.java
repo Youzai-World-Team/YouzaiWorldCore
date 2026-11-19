@@ -25,8 +25,6 @@ import net.minecraft.stats.StatType;
 import net.minecraft.stats.Stats;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.storage.LevelResource;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import top.csituka.youzaiworldcore.api.ApiServiceClient;
 import top.csituka.youzaiworldcore.luckperms.LuckPermsHelper;
 import top.csituka.youzaiworldcore.util.DebugLogger;
@@ -72,7 +70,7 @@ import java.util.stream.Stream;
 @SuppressWarnings("null")
 public final class StatsManager {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/StatsManager");
+    private static final DebugLogger.ModuleLogger LOGGER = DebugLogger.SERVER.module("StatsManager");
     private static final String MODULE = "StatsManager";
     /** 统计自动上传周期：6 小时（20 tick/秒）。 */
     private static final int REFRESH_INTERVAL_TICKS = 432000;
@@ -204,25 +202,24 @@ public final class StatsManager {
     }
 
     public static void initialize() {
-        DebugLogger.entering(MODULE, "initialize");
+        DebugLogger.SERVER.entering(MODULE, "initialize");
         if (initialized) {
-            DebugLogger.warn(MODULE, "StatsManager 已被初始化，跳过");
+            DebugLogger.SERVER.debug(MODULE, "StatsManager 已被初始化，跳过");
             return;
         }
 
         ServerLifecycleEvents.SERVER_STARTED.register(server -> {
-            DebugLogger.info(MODULE, "服务器启动，初始化状态目录...");
+            DebugLogger.SERVER.notice(MODULE, "服务器启动，初始化状态目录...");
             createDataDir(server);
             load(server);
             buildRedstoneItems();
             scanOfflineStats(server);
             initializeMonthlyReset(server);
-            DebugLogger.info(MODULE, "状态数据加载完成，共 %s 位玩家，%s 个红石相关物品",
-                    CACHE.size(), REDSTONE_ITEMS == null ? 0 : REDSTONE_ITEMS.size());
+            DebugLogger.SERVER.info(MODULE, "状态数据加载完成，共 {} 位玩家，{} 个红石相关物品", CACHE.size(), REDSTONE_ITEMS == null ? 0 : REDSTONE_ITEMS.size());
         });
 
         ServerLifecycleEvents.SERVER_STOPPING.register(server -> {
-            DebugLogger.info(MODULE, "服务器停止，保存最新状态副本...");
+            DebugLogger.SERVER.notice(MODULE, "服务器停止，保存最新状态副本...");
             refreshAllOnline(server);
             flushIoExecutor();
             save(server);
@@ -249,7 +246,7 @@ public final class StatsManager {
 
         CommandRegistrationCallback.EVENT.register(StatsManager::registerCommands);
         initialized = true;
-        DebugLogger.exiting(MODULE, "initialize");
+        DebugLogger.SERVER.exiting(MODULE, "initialize");
     }
 
     private static void registerCommands(
@@ -360,8 +357,7 @@ public final class StatsManager {
                 .whenComplete((success, error) -> {
                     MONTHLY_RESET_UPLOAD_IN_FLIGHT.set(false);
                     if (error != null || !Boolean.TRUE.equals(success)) {
-                        DebugLogger.warn(MODULE, "月度统计重置批次上传失败，将重试: %s",
-                                error == null ? "Api 返回失败" : error.getMessage());
+                        DebugLogger.SERVER.warn(MODULE, "月度统计重置批次上传失败，将重试: {}", error == null ? "Api 返回失败" : error.getMessage());
                         return;
                     }
                     server.execute(() -> {
@@ -370,14 +366,14 @@ public final class StatsManager {
                         pendingMonthlyReset = null;
                         lastResetMonth = pending.month();
                         save(server);
-                        DebugLogger.info(MODULE, "月度统计已重置并完成云端累计，月份 %s", pending.month());
+                        DebugLogger.SERVER.notice(MODULE, "月度统计已重置并完成云端累计，月份 {}", pending.month());
                     });
                 });
     }
 
     private static void uploadAsync(MinecraftServer server) {
         if (!UPLOAD_IN_FLIGHT.compareAndSet(false, true)) {
-            DebugLogger.debug(MODULE, "上一次统计上传尚未完成，跳过本轮");
+            DebugLogger.SERVER.debug(MODULE, "上一次统计上传尚未完成，跳过本轮");
             return;
         }
         List<PendingStatsUpload> pending = snapshotForUpload();
@@ -393,11 +389,10 @@ public final class StatsManager {
                 .whenComplete((success, error) -> {
                     UPLOAD_IN_FLIGHT.set(false);
                     if (error != null || !Boolean.TRUE.equals(success)) {
-                        DebugLogger.warn(MODULE, "统计上传失败，将在下一周期重试: %s",
-                                error == null ? "Api 返回失败" : error.getMessage());
+                        DebugLogger.SERVER.warn(MODULE, "统计上传失败，将在下一周期重试: {}", error == null ? "Api 返回失败" : error.getMessage());
                         return;
                     }
-                    DebugLogger.info(MODULE, "统计增量上传成功，共 %s 位玩家", entries.size());
+                    DebugLogger.SERVER.debug(MODULE, "统计增量上传成功，共 {} 位玩家", entries.size());
                     server.execute(() -> {
                         markUploaded(pending);
                         saveAsync(server);
@@ -415,7 +410,7 @@ public final class StatsManager {
             ApiServiceClient.StatsUploadResult result = ApiServiceClient.uploadStats(
                     entries.subList(start, end), mode, resetId);
             if (!result.success() || result.accepted() != end - start) {
-                DebugLogger.warn(MODULE, "统计批次上传失败: HTTP %s, %s", result.statusCode(), result.message());
+                DebugLogger.SERVER.warn(MODULE, "统计批次上传失败: HTTP {}, {}", result.statusCode(), result.message());
                 return false;
             }
         }
@@ -491,7 +486,7 @@ public final class StatsManager {
             try {
                 player.getStats().save();
             } catch (RuntimeException e) {
-                DebugLogger.warn(MODULE, "保存玩家 %s 的原版统计失败: %s", player.getName().getString(), e.getMessage());
+                DebugLogger.SERVER.warn(MODULE, "保存玩家 {} 的原版统计失败: {}", player.getName().getString(), e.getMessage());
             }
         }
         resetOfflineStatsFiles(server);
@@ -538,7 +533,7 @@ public final class StatsManager {
                         Files.move(temporary, statFile, StandardCopyOption.REPLACE_EXISTING);
                     }
                 } catch (Exception e) {
-                    DebugLogger.warn(MODULE, "重置原版统计文件失败: %s - %s", statFile, e.getMessage());
+                    DebugLogger.SERVER.warn(MODULE, "重置原版统计文件失败: {} - {}", statFile, e.getMessage());
                 }
             }
         } catch (IOException e) {
@@ -635,10 +630,10 @@ public final class StatsManager {
                     CACHE.put(entry.getKey(), new PlayerStats(uuid, name, lastUpdated, stats,
                             uploadedStats, uploadedName, uploadInitialized));
                 } catch (RuntimeException e) {
-                    DebugLogger.warn(MODULE, "解析玩家 %s 数据失败: %s", entry.getKey(), e.getMessage());
+                    DebugLogger.SERVER.warn(MODULE, "解析玩家 {} 数据失败: {}", entry.getKey(), e.getMessage());
                 }
             }
-            DebugLogger.info(MODULE, "已加载 %s 位玩家状态", CACHE.size());
+            DebugLogger.SERVER.info(MODULE, "已加载 {} 位玩家状态", CACHE.size());
         } catch (IOException | RuntimeException e) {
             LOGGER.error("读取状态数据文件失败: {}", file, e);
             backupCorruptFile(server, file);
@@ -697,7 +692,7 @@ public final class StatsManager {
                     parsed.setLastUpdated(Files.getLastModifiedTime(statFile).toMillis());
                     CACHE.put(uuidText, parsed);
                 } catch (Exception e) {
-                    DebugLogger.warn(MODULE, "读取玩家统计文件失败: %s - %s", statFile, e.getMessage());
+                    DebugLogger.SERVER.warn(MODULE, "读取玩家统计文件失败: {} - {}", statFile, e.getMessage());
                     if (previous == null)
                         CACHE.put(uuidText, parsed);
                 }
@@ -727,7 +722,7 @@ public final class StatsManager {
             try {
                 stats.set(metric.key, metric.reader.applyAsLong(player));
             } catch (Exception e) {
-                DebugLogger.warn(MODULE, "读取统计 %s 失败: %s", metric.key, e.getMessage());
+                DebugLogger.SERVER.warn(MODULE, "读取统计 {} 失败: {}", metric.key, e.getMessage());
             }
         }
     }
@@ -794,7 +789,7 @@ public final class StatsManager {
                 }
                 entries.add(new ApiServiceClient.StatsUploadEntry(uuid, username, lastUpdated, stats));
             } catch (RuntimeException ignored) {
-                DebugLogger.warn(MODULE, "忽略损坏的月度统计重置条目");
+                DebugLogger.SERVER.warn(MODULE, "忽略损坏的月度统计重置条目");
             }
         }
         return new PendingMonthlyReset(resetId, month, entries);
@@ -827,7 +822,7 @@ public final class StatsManager {
             } catch (AtomicMoveNotSupportedException e) {
                 Files.move(temporary, target, StandardCopyOption.REPLACE_EXISTING);
             }
-            DebugLogger.info(MODULE, "状态数据已保存，共 %s 位玩家", playerCount);
+            DebugLogger.SERVER.debug(MODULE, "状态数据已保存，共 {} 位玩家", playerCount);
         } catch (IOException e) {
             LOGGER.error("保存状态数据失败", e);
         }

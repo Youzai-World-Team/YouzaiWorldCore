@@ -27,8 +27,8 @@ public class DuplicateBlockEntity extends BlockEntity {
 
     public DuplicateBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.DUPLICATE_BLOCK, pos, state);
-        DebugLogger.entering("DuplicateBlockEntity", "constructor", "pos=" + pos);
-        DebugLogger.exiting("DuplicateBlockEntity", "constructor");
+        DebugLogger.SERVER.entering("DuplicateBlockEntity", "constructor", "pos=" + pos);
+        DebugLogger.SERVER.exiting("DuplicateBlockEntity", "constructor");
     }
 
     /**
@@ -40,7 +40,7 @@ public class DuplicateBlockEntity extends BlockEntity {
         UUID oldOwner = this.ownerUuid;
         this.ownerUuid = ownerUuid;
         setChanged();
-        DebugLogger.stateChange("DuplicateBlockEntity", "duplicateBlock@" + worldPosition.toShortString(),
+        DebugLogger.SERVER.stateChange("DuplicateBlockEntity", "duplicateBlock@" + worldPosition.toShortString(),
                 "owner", oldOwner, ownerUuid);
     }
 
@@ -57,7 +57,7 @@ public class DuplicateBlockEntity extends BlockEntity {
         activationArmed = !targetPresent;
         setActive(false);
         setChanged();
-        DebugLogger.stateChange("DuplicateBlockEntity", "duplicateBlock@" + worldPosition.toShortString(),
+        DebugLogger.SERVER.stateChange("DuplicateBlockEntity", "duplicateBlock@" + worldPosition.toShortString(),
                 "activationArmed", oldArmed, activationArmed);
     }
 
@@ -73,7 +73,7 @@ public class DuplicateBlockEntity extends BlockEntity {
         }
 
         if (!activationArmed) {
-            DebugLogger.stateChange("DuplicateBlockEntity", "duplicateBlock@" + worldPosition.toShortString(),
+            DebugLogger.SERVER.stateChange("DuplicateBlockEntity", "duplicateBlock@" + worldPosition.toShortString(),
                     "activationArmed", false, true);
         }
         activationArmed = true;
@@ -125,7 +125,7 @@ public class DuplicateBlockEntity extends BlockEntity {
         currentLevel.setBlock(worldPosition, newState, 3);
         currentLevel.sendBlockUpdated(worldPosition, currentState, newState, 3);
         setChanged();
-        DebugLogger.stateChange("DuplicateBlockEntity", "duplicateBlock@" + worldPosition.toShortString(),
+        DebugLogger.SERVER.stateChange("DuplicateBlockEntity", "duplicateBlock@" + worldPosition.toShortString(),
                 "active", currentActive, active);
     }
 

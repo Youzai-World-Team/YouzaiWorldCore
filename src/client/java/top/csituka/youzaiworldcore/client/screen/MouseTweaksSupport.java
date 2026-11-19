@@ -136,7 +136,7 @@ final class MouseTweaksSupport {
         }
 
         if (moved) {
-            DebugLogger.info("MouseTweaks", "滚轮移动 1 个物品：slot %d -> slot %d", sourceIndex, targetIndex);
+            DebugLogger.CLIENT.debug("MouseTweaks", "滚轮移动 1 个物品：slot {} -> slot {}", sourceIndex, targetIndex);
         }
         return moved;
     }

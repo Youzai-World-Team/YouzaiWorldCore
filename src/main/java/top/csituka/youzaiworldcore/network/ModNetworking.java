@@ -60,9 +60,11 @@ import java.util.concurrent.CompletableFuture;
 
 @SuppressWarnings({"null", "unused"})
 public class ModNetworking {
+    private static final DebugLogger.ModuleLogger MOD_LOG = DebugLogger.SERVER.module("ModNetworking");
+
     
     public static void initialize() {
-        DebugLogger.entering("ModNetworking", "initialize");
+        DebugLogger.SERVER.entering("ModNetworking", "initialize");
 
         ServerPlayNetworking.registerGlobalReceiver(MapViewRequestPayload.ID, (payload, context) -> {
             var player = context.player(); var server = player.level().getServer();
@@ -83,7 +85,7 @@ public class ModNetworking {
             var player = context.player(); var server = player.level().getServer();
             if (server != null) server.execute(() -> top.csituka.youzaiworldcore.map.MapServerManager.receiveAction(player, payload));
         });
-        DebugLogger.info("ModNetworking", "已注册地图订阅与公共操作接收器");
+        DebugLogger.SERVER.debug("ModNetworking", "已注册地图订阅与公共操作接收器");
 
         // ===== 服务端接收处理器 =====
         ServerPlayNetworking.registerGlobalReceiver(AuthRequestPayload.ID, (payload, context) -> {
@@ -183,38 +185,38 @@ public class ModNetworking {
         });
 
         ServerPlayNetworking.registerGlobalReceiver(DecomposeItemPayload.ID, (payload, context) -> {
-            DebugLogger.entering("ModNetworking", "DecomposeItemPayload handler");
+            DebugLogger.SERVER.entering("ModNetworking", "DecomposeItemPayload handler");
             boolean isDecompositionTable = context.player().containerMenu instanceof DecompositionTableMenu;
-            DebugLogger.branch("ModNetworking", "containerMenu instanceof DecompositionTableMenu", isDecompositionTable);
+            DebugLogger.SERVER.branch("ModNetworking", "containerMenu instanceof DecompositionTableMenu", isDecompositionTable);
             if (isDecompositionTable) {
                 DecompositionTableMenu menu = (DecompositionTableMenu) context.player().containerMenu;
                 menu.performDecomposition();
             }
-            DebugLogger.exiting("ModNetworking", "DecomposeItemPayload handler");
+            DebugLogger.SERVER.exiting("ModNetworking", "DecomposeItemPayload handler");
         });
         
         ServerPlayNetworking.registerGlobalReceiver(FlyBeaconActivePayload.ID, (payload, context) -> {
-            DebugLogger.entering("ModNetworking", "FlyBeaconActivePayload handler");
+            DebugLogger.SERVER.entering("ModNetworking", "FlyBeaconActivePayload handler");
             boolean isFlyBeaconMenu = context.player().containerMenu instanceof FlyBeaconMenu;
-            DebugLogger.branch("ModNetworking", "containerMenu instanceof FlyBeaconMenu", isFlyBeaconMenu);
+            DebugLogger.SERVER.branch("ModNetworking", "containerMenu instanceof FlyBeaconMenu", isFlyBeaconMenu);
             if (isFlyBeaconMenu) {
                 FlyBeaconMenu menu = (FlyBeaconMenu) context.player().containerMenu;
                 boolean isFlyBeaconBlockEntity = menu.getContainer() instanceof FlyBeaconBlockEntity;
-                DebugLogger.branch("ModNetworking", "getContainer() instanceof FlyBeaconBlockEntity", isFlyBeaconBlockEntity);
+                DebugLogger.SERVER.branch("ModNetworking", "getContainer() instanceof FlyBeaconBlockEntity", isFlyBeaconBlockEntity);
                 if (isFlyBeaconBlockEntity) {
                     FlyBeaconBlockEntity blockEntity = (FlyBeaconBlockEntity) menu.getContainer();
                     blockEntity.setActive(payload.active());
                 }
             }
-            DebugLogger.exiting("ModNetworking", "FlyBeaconActivePayload handler");
+            DebugLogger.SERVER.exiting("ModNetworking", "FlyBeaconActivePayload handler");
         });
 
         // ===== 原地重生请求处理器 =====
         ServerPlayNetworking.registerGlobalReceiver(InPlaceRespawnRequestPayload.ID, (payload, context) -> {
-            DebugLogger.entering("ModNetworking", "InPlaceRespawnRequestPayload handler");
+            DebugLogger.SERVER.entering("ModNetworking", "InPlaceRespawnRequestPayload handler");
             var player = context.player();
             player.level().getServer().execute(() -> InPlaceRespawnManager.handleRequest(player));
-            DebugLogger.exiting("ModNetworking", "InPlaceRespawnRequestPayload handler");
+            DebugLogger.SERVER.exiting("ModNetworking", "InPlaceRespawnRequestPayload handler");
         });
 
         // ===== 维度池传送处理器 =====
@@ -222,21 +224,21 @@ public class ModNetworking {
                 context.player().level().getServer().execute(() ->
                         top.csituka.youzaiworldcore.dimensionalinventories.WorldPoolMenuService.handle(context.player(), payload)));
         ServerPlayNetworking.registerGlobalReceiver(WorldPoolTeleportPayload.ID, (payload, context) -> {
-            DebugLogger.entering("ModNetworking", "WorldPoolTeleportPayload handler");
-            DebugLogger.info("ModNetworking", "Teleporting player to pool: " + payload.poolId());
+            DebugLogger.SERVER.entering("ModNetworking", "WorldPoolTeleportPayload handler");
+            DebugLogger.SERVER.debug("ModNetworking", "Teleporting player to pool: " + payload.poolId());
             context.player().level().getServer().execute(() -> {
                 DimensionPoolManager.teleportToPool(context.player(), payload.poolId());
             });
-            DebugLogger.exiting("ModNetworking", "WorldPoolTeleportPayload handler");
+            DebugLogger.SERVER.exiting("ModNetworking", "WorldPoolTeleportPayload handler");
         });
 
         // ===== 传送锚点传送处理器 =====
         ServerPlayNetworking.registerGlobalReceiver(TeleportAnchorTeleportPayload.TYPE, (payload, context) -> {
-            DebugLogger.entering("ModNetworking", "TeleportAnchorTeleportPayload handler");
+            DebugLogger.SERVER.entering("ModNetworking", "TeleportAnchorTeleportPayload handler");
             var player = context.player();
             var server = player.level().getServer();
             if (server == null) {
-                DebugLogger.exiting("ModNetworking", "TeleportAnchorTeleportPayload handler", "server is null");
+                DebugLogger.SERVER.exiting("ModNetworking", "TeleportAnchorTeleportPayload handler", "server is null");
                 return;
             }
             server.execute(() -> {
@@ -247,13 +249,13 @@ public class ModNetworking {
                 TeleportAnchorData target =
                         manager.findPoint(serverPlayer, payload.pos(), payload.dimension());
                 if (target == null) {
-                    DebugLogger.info("ModNetworking", "Teleport point not found at " + payload.pos());
+                    DebugLogger.SERVER.debug("ModNetworking", "Teleport point not found at " + payload.pos());
                     return;
                 }
 
                 var targetLevel = server.getLevel(target.dimension());
                 if (targetLevel == null) {
-                    DebugLogger.info("ModNetworking", "Target dimension not loaded: " + target.dimension().identifier());
+                    DebugLogger.SERVER.debug("ModNetworking", "Target dimension not loaded: " + target.dimension().identifier());
                     return;
                 }
 
@@ -265,7 +267,7 @@ public class ModNetworking {
                     manager.removePointByPos(serverPlayer, target.pos(), target.dimension());
                     serverPlayer.sendSystemMessage(
                             Component.translatable("message.youzaiworldcore.teleport_anchor.invalid"));
-                    DebugLogger.info("ModNetworking", "Target anchor invalid at " + target.pos());
+                    DebugLogger.SERVER.debug("ModNetworking", "Target anchor invalid at " + target.pos());
                     return;
                 }
 
@@ -283,7 +285,7 @@ public class ModNetworking {
                     if (sourcePool.isPresent() && targetPool.isPresent() && !samePool) {
                         serverPlayer.sendSystemMessage(
                                 Component.translatable("message.youzaiworldcore.teleport_anchor.pool_mismatch"));
-                        DebugLogger.info("ModNetworking", "Cross-pool teleport blocked: " + sourceDim + " -> " + targetDim);
+                        DebugLogger.SERVER.debug("ModNetworking", "Cross-pool teleport blocked: " + sourceDim + " -> " + targetDim);
                         return;
                     }
                 }
@@ -293,7 +295,7 @@ public class ModNetworking {
                     int remaining = manager.getRemainingCooldownSeconds(serverPlayer, gameTime);
                     serverPlayer.sendSystemMessage(
                             Component.translatable("message.youzaiworldcore.teleport_anchor.cooldown", remaining));
-                    DebugLogger.info("ModNetworking", "Player on cooldown: " + remaining + "s remaining");
+                    DebugLogger.SERVER.debug("ModNetworking", "Player on cooldown: " + remaining + "s remaining");
                     return;
                 }
 
@@ -310,7 +312,7 @@ public class ModNetworking {
                 if (!isScrollEntry && !isCreative && serverPlayer.experienceLevel < cost) {
                     serverPlayer.sendSystemMessage(
                             Component.translatable("message.youzaiworldcore.teleport_anchor.no_xp", cost));
-                    DebugLogger.info("ModNetworking", "Player lacks XP: needs " + cost + " but has " + serverPlayer.experienceLevel);
+                    DebugLogger.SERVER.debug("ModNetworking", "Player lacks XP: needs " + cost + " but has " + serverPlayer.experienceLevel);
                     return;
                 }
 
@@ -336,7 +338,7 @@ public class ModNetworking {
                             // 传送石已不在手上：拒绝传送，避免丢弃传送石白嫖免耐久传送
                             serverPlayer.sendSystemMessage(
                                     Component.translatable("message.youzaiworldcore.teleport_stone.not_held"));
-                            DebugLogger.info("ModNetworking", "Teleport stone no longer held, teleport cancelled");
+                            DebugLogger.SERVER.debug("ModNetworking", "Teleport stone no longer held, teleport cancelled");
                             return;
                         }
                     } else if (entryType == EntryType.SCROLL && !(entryItem instanceof WarpScrollItem)) {
@@ -351,7 +353,7 @@ public class ModNetworking {
                         } else {
                             serverPlayer.sendSystemMessage(
                                     Component.translatable("message.youzaiworldcore.warp_scroll.not_held"));
-                            DebugLogger.info("ModNetworking", "Warp scroll no longer held, teleport cancelled");
+                            DebugLogger.SERVER.debug("ModNetworking", "Warp scroll no longer held, teleport cancelled");
                             return;
                         }
                     } else {
@@ -366,7 +368,7 @@ public class ModNetworking {
                             serverPlayer.sendSystemMessage(
                                     Component.translatable("message.youzaiworldcore.teleport_stone.no_durability",
                                             durabilityCost, remainingDurability));
-                            DebugLogger.info("ModNetworking", "Teleport stone durability insufficient: needs "
+                            DebugLogger.SERVER.debug("ModNetworking", "Teleport stone durability insufficient: needs "
                                     + durabilityCost + " but has " + remainingDurability);
                             return;
                         }
@@ -375,7 +377,7 @@ public class ModNetworking {
                         if (itemStack.getCount() < WarpScrollItem.SCROLL_CONSUME_AMOUNT) {
                             serverPlayer.sendSystemMessage(
                                     Component.translatable("message.youzaiworldcore.warp_scroll.not_held"));
-                            DebugLogger.info("ModNetworking", "Warp scroll count insufficient, teleport cancelled");
+                            DebugLogger.SERVER.debug("ModNetworking", "Warp scroll count insufficient, teleport cancelled");
                             return;
                         }
                     }
@@ -393,13 +395,11 @@ public class ModNetworking {
                     if (entryType == EntryType.STONE) {
                         serverPlayer.getCooldowns().addCooldown(itemStack, TeleportStoneItem.COOLDOWN_TICKS);
                         itemStack.hurtAndBreak(durabilityCost, serverPlayer, itemHand);
-                        DebugLogger.info("ModNetworking", "Teleport stone consumed %d durability (hand=%s)",
-                                durabilityCost, itemHand);
+                        DebugLogger.SERVER.debug("ModNetworking", "Teleport stone consumed {} durability (hand={})", durabilityCost, itemHand);
                     } else if (entryType == EntryType.SCROLL) {
                         serverPlayer.getCooldowns().addCooldown(itemStack, WarpScrollItem.COOLDOWN_TICKS);
                         itemStack.shrink(WarpScrollItem.SCROLL_CONSUME_AMOUNT);
-                        DebugLogger.info("ModNetworking", "Warp scroll consumed 1 (hand=%s, remaining=%s)",
-                                itemHand, itemStack.isEmpty() ? "destroyed" : itemStack.getCount());
+                        DebugLogger.SERVER.debug("ModNetworking", "Warp scroll consumed 1 (hand={}, remaining={})", itemHand, itemStack.isEmpty() ? "destroyed" : itemStack.getCount());
                     }
                 }
 
@@ -411,9 +411,9 @@ public class ModNetworking {
                         serverPlayer.getYRot(),
                         serverPlayer.getXRot(),
                         true);
-                DebugLogger.info("ModNetworking", "Teleported player to " + target.pos() + " in " + target.dimension().identifier());
+                DebugLogger.SERVER.debug("ModNetworking", "Teleported player to " + target.pos() + " in " + target.dimension().identifier());
             });
-            DebugLogger.exiting("ModNetworking", "TeleportAnchorTeleportPayload handler");
+            DebugLogger.SERVER.exiting("ModNetworking", "TeleportAnchorTeleportPayload handler");
         });
 
         // ===== 传送锚点删除处理器 =====
@@ -443,27 +443,22 @@ public class ModNetworking {
                 String text = payload.text();
 
                 if (!(player.level().getBlockEntity(pos) instanceof LargeSignBlockEntity sign)) {
-                    DebugLogger.branch("ModNetworking", "大字牌文本提交：目标不是大字牌", false);
+                    DebugLogger.SERVER.branch("ModNetworking", "大字牌文本提交：目标不是大字牌", false);
                     return;
                 }
                 if (!player.mayBuild() || !sign.mayEdit(player)) {
-                    DebugLogger.warn("ModNetworking",
-                            "拒绝大字牌文本提交（无权限 / 非授权编辑者 / 距离过远）：player=%s, pos=%s",
-                            player.getName().getString(), pos.toShortString());
+                    DebugLogger.SERVER.debug("ModNetworking", "拒绝大字牌文本提交（无权限 / 非授权编辑者 / 距离过远）：player={}, pos={}", player.getName().getString(), pos.toShortString());
                     return;
                 }
                 if (!LargeSignTextRules.isValid(text)) {
-                    DebugLogger.warn("ModNetworking",
-                            "拒绝大字牌文本提交（内容不合法）：player=%s, pos=%s, text=%s",
-                            player.getName().getString(), pos.toShortString(), text);
+                    DebugLogger.SERVER.warn("ModNetworking", "拒绝大字牌文本提交（内容不合法）：player={}, pos={}, text={}", player.getName().getString(), pos.toShortString(), text);
                     return;
                 }
 
                 sign.setText(text);
                 // 一次授权只用一次，提交后立即失效
                 sign.setAllowedPlayerEditor(null);
-                DebugLogger.info("ModNetworking", "玩家 %s 写入大字牌文本：pos=%s, text=%s",
-                        player.getName().getString(), pos.toShortString(), text);
+                DebugLogger.SERVER.debug("ModNetworking", "玩家 {} 写入大字牌文本：pos={}, text={}", player.getName().getString(), pos.toShortString(), text);
             });
         });
 
@@ -482,28 +477,22 @@ public class ModNetworking {
                 int channel = payload.channel();
 
                 if (!(player.level().getBlockEntity(pos) instanceof WirelessRedstoneBlockEntity component)) {
-                    DebugLogger.branch("ModNetworking", "无线红石频道提交：目标不是无线红石元件", false);
+                    DebugLogger.SERVER.branch("ModNetworking", "无线红石频道提交：目标不是无线红石元件", false);
                     return;
                 }
                 if (!player.mayBuild() || !component.mayEdit(player)) {
-                    DebugLogger.warn("ModNetworking",
-                            "拒绝无线红石频道提交（无权限 / 非授权设置者 / 距离过远）：player=%s, pos=%s",
-                            player.getName().getString(), pos.toShortString());
+                    DebugLogger.SERVER.debug("ModNetworking", "拒绝无线红石频道提交（无权限 / 非授权设置者 / 距离过远）：player={}, pos={}", player.getName().getString(), pos.toShortString());
                     return;
                 }
                 if (!WirelessRedstoneChannel.isValid(channel)) {
-                    DebugLogger.warn("ModNetworking",
-                            "拒绝无线红石频道提交（频道号越界）：player=%s, pos=%s, channel=%d",
-                            player.getName().getString(), pos.toShortString(), channel);
+                    DebugLogger.SERVER.warn("ModNetworking", "拒绝无线红石频道提交（频道号越界）：player={}, pos={}, channel={}", player.getName().getString(), pos.toShortString(), channel);
                     return;
                 }
 
                 component.setChannel(channel);
                 // 一次授权只用一次，提交后立即失效
                 component.setAllowedPlayerEditor(null);
-                DebugLogger.info("ModNetworking", "玩家 %s 设置无线红石%s频道：pos=%s, channel=%d",
-                        player.getName().getString(), component.isTransmitter() ? "发射器" : "接收器",
-                        pos.toShortString(), channel);
+                DebugLogger.SERVER.debug("ModNetworking", "玩家 {} 设置无线红石{}频道：pos={}, channel={}", player.getName().getString(), component.isTransmitter() ? "发射器" : "接收器", pos.toShortString(), channel);
             });
         });
 
@@ -589,11 +578,11 @@ public class ModNetworking {
 
         // ===== 双开门功能切换 / 查询处理器 =====
         ServerPlayNetworking.registerGlobalReceiver(DoubleDoorsTogglePayload.ID, (payload, context) -> {
-            DebugLogger.entering("ModNetworking", "DoubleDoorsTogglePayload handler");
+            DebugLogger.SERVER.entering("ModNetworking", "DoubleDoorsTogglePayload handler");
             var player = context.player();
             var server = player.level().getServer();
             if (server == null) {
-                DebugLogger.exiting("ModNetworking", "DoubleDoorsTogglePayload handler", "server is null");
+                DebugLogger.SERVER.exiting("ModNetworking", "DoubleDoorsTogglePayload handler", "server is null");
                 return;
             }
             server.execute(() -> {
@@ -619,22 +608,22 @@ public class ModNetworking {
                                             : "youzaiworldcore.message.command.function.double_doors.query_disabled")));
                 }
             });
-            DebugLogger.exiting("ModNetworking", "DoubleDoorsTogglePayload handler");
+            DebugLogger.SERVER.exiting("ModNetworking", "DoubleDoorsTogglePayload handler");
         });
 
         // ===== 隐身功能切换处理器 =====
         ServerPlayNetworking.registerGlobalReceiver(InvisibilityPayload.ID, (payload, context) -> {
-            DebugLogger.entering("ModNetworking", "InvisibilityPayload handler");
+            DebugLogger.SERVER.entering("ModNetworking", "InvisibilityPayload handler");
             var player = context.player();
             var server = player.level().getServer();
             if (server == null) {
-                DebugLogger.exiting("ModNetworking", "InvisibilityPayload handler", "server is null");
+                DebugLogger.SERVER.exiting("ModNetworking", "InvisibilityPayload handler", "server is null");
                 return;
             }
             server.execute(() -> {
                 if (!InvisibilityManager.hasPermission(player)) {
                     player.sendSystemMessage(Component.literal("§c你没有权限使用隐身功能"));
-                    DebugLogger.exiting("ModNetworking", "InvisibilityPayload handler", "no permission");
+                    DebugLogger.SERVER.exiting("ModNetworking", "InvisibilityPayload handler", "no permission");
                     return;
                 }
                 Boolean enabled = payload.enabled();
@@ -650,21 +639,21 @@ public class ModNetworking {
                 if (player.gameMode() != GameType.CREATIVE) {
                     player.sendSystemMessage(Component.literal(
                             "§c只有创造模式才能使用隐身功能（请先切换到创造模式）"));
-                    DebugLogger.exiting("ModNetworking", "InvisibilityPayload handler", "not creative");
+                    DebugLogger.SERVER.exiting("ModNetworking", "InvisibilityPayload handler", "not creative");
                     return;
                 }
                 if (enabled) {
-                    DebugLogger.branch("ModNetworking", "InvisibilityPayload", true, "enabling");
+                    DebugLogger.SERVER.branch("ModNetworking", "InvisibilityPayload", true, "enabling");
                     InvisibilityManager.enable(player);
                 } else {
-                    DebugLogger.branch("ModNetworking", "InvisibilityPayload", false, "disabling");
+                    DebugLogger.SERVER.branch("ModNetworking", "InvisibilityPayload", false, "disabling");
                     InvisibilityManager.disable(player);
                 }
                 player.sendSystemMessage(Component.translatable(enabled
                         ? "youzaiworldcore.message.command.function.invisibility.set_enabled"
                         : "youzaiworldcore.message.command.function.invisibility.set_disabled"));
             });
-            DebugLogger.exiting("ModNetworking", "InvisibilityPayload handler");
+            DebugLogger.SERVER.exiting("ModNetworking", "InvisibilityPayload handler");
         });
 
         // ===== 属性加点 C2S 处理器 =====
@@ -689,29 +678,28 @@ public class ModNetworking {
         // ===== 宠物管理命令 C2S 转发处理器 =====
         ServerPlayNetworking.registerGlobalReceiver(PetCommandPayload.ID, (payload, context) -> {
             var player = context.player();
-            DebugLogger.entering("ModNetworking", "PetCommandPayload handler", "args=" + payload.args());
+            DebugLogger.SERVER.entering("ModNetworking", "PetCommandPayload handler", "args=" + payload.args());
             var server = player.level().getServer();
             if (server == null) {
-                DebugLogger.exiting("ModNetworking", "PetCommandPayload handler", "server is null");
+                DebugLogger.SERVER.exiting("ModNetworking", "PetCommandPayload handler", "server is null");
                 return;
             }
             server.execute(() -> {
                 try {
                     String fullCommand = "yzwc pet " + payload.args();
-                    DebugLogger.info("ModNetworking", "执行宠物命令: /%s", fullCommand);
+                    DebugLogger.SERVER.debug("ModNetworking", "执行宠物命令: /{}", fullCommand);
                     server.getCommands().performPrefixedCommand(player.createCommandSourceStack(), fullCommand);
                 } catch (Exception e) {
-                    DebugLogger.error("ModNetworking", "执行宠物命令失败: %s", e.getMessage());
+                    DebugLogger.SERVER.error("ModNetworking", "执行宠物命令失败: {}", e.getMessage());
                 }
             });
-            DebugLogger.exiting("ModNetworking", "PetCommandPayload handler");
+            DebugLogger.SERVER.exiting("ModNetworking", "PetCommandPayload handler");
         });
 
         // ===== AFK 客户端心跳处理器（服务端权威：更新客户端通道活动时间） =====
         ServerPlayNetworking.registerGlobalReceiver(AfkHeartbeatPayload.ID, (payload, context) -> {
             var player = context.player();
-            DebugLogger.trace("ModNetworking", "AfkHeartbeatPayload handler: player=%s, idleTicks=%d",
-                    player.getName().getString(), payload.idleTicks());
+            DebugLogger.SERVER.trace("ModNetworking", "AfkHeartbeatPayload handler: player={}, idleTicks={}", player.getName().getString(), payload.idleTicks());
             var server = player.level().getServer();
             if (server == null) {
                 return;
@@ -720,7 +708,7 @@ public class ModNetworking {
             // 输入序号排到后续命令执行之后，导致 /yzwc afk 被自己的心跳取消。
             AfkManager.onHeartbeat(player, server.getTickCount(), payload.idleTicks(), payload.inputSequence());
         });
-        DebugLogger.info("ModNetworking", "Registered receiver: AfkHeartbeatPayload");
+        DebugLogger.SERVER.debug("ModNetworking", "Registered receiver: AfkHeartbeatPayload");
 
         // ===== YZUI 生存物品栏左键拖拽收集（服务端权威操作） =====
         ServerPlayNetworking.registerGlobalReceiver(InventoryCollectPayload.ID, (payload, context) -> {
@@ -735,8 +723,7 @@ public class ModNetworking {
                         && menu.containerId == payload.containerId()
                         && !player.hasInfiniteMaterials();
                 if (!validMenu || payload.slotIndex() < 0 || payload.slotIndex() >= menu.slots.size()) {
-                    DebugLogger.info("InventoryCollect", "拒绝无效收集请求：container=%d, slot=%d",
-                            payload.containerId(), payload.slotIndex());
+                    DebugLogger.SERVER.debug("InventoryCollect", "拒绝无效收集请求：container={}, slot={}", payload.containerId(), payload.slotIndex());
                     menu.broadcastFullState();
                     return;
                 }
@@ -747,8 +734,7 @@ public class ModNetworking {
                 int capacity = carried.isEmpty() ? 0 : carried.getMaxStackSize() - carried.getCount();
                 if (!slot.isActive() || !slot.mayPickup(player) || slotStack.isEmpty() || capacity <= 0
                         || !ItemStack.isSameItemSameComponents(carried, slotStack)) {
-                    DebugLogger.info("InventoryCollect", "忽略不满足条件的收集请求：slot=%d",
-                            payload.slotIndex());
+                    DebugLogger.SERVER.debug("InventoryCollect", "忽略不满足条件的收集请求：slot={}", payload.slotIndex());
                     menu.broadcastFullState();
                     return;
                 }
@@ -756,7 +742,7 @@ public class ModNetworking {
                 int requested = Math.min(capacity, slotStack.getCount());
                 ItemStack taken = slot.safeTake(requested, requested, player);
                 if (taken.isEmpty() || !ItemStack.isSameItemSameComponents(carried, taken)) {
-                    DebugLogger.info("InventoryCollect", "槽位拒绝取出物品：slot=%d", payload.slotIndex());
+                    DebugLogger.SERVER.debug("InventoryCollect", "槽位拒绝取出物品：slot={}", payload.slotIndex());
                     menu.broadcastFullState();
                     return;
                 }
@@ -765,36 +751,35 @@ public class ModNetworking {
                 updatedCarried.grow(taken.getCount());
                 menu.setCarried(updatedCarried);
                 menu.broadcastChanges();
-                DebugLogger.info("InventoryCollect", "已从 slot %d 收集 %d 个 %s",
-                        payload.slotIndex(), taken.getCount(), taken.getHoverName().getString());
+                DebugLogger.SERVER.debug("InventoryCollect", "已从 slot {} 收集 {} 个 {}", payload.slotIndex(), taken.getCount(), taken.getHoverName().getString());
             });
         });
-        DebugLogger.info("ModNetworking", "Registered receiver: InventoryCollectPayload");
+        DebugLogger.SERVER.debug("ModNetworking", "Registered receiver: InventoryCollectPayload");
 
         // ===== Trinkets 饰品槽交互处理器（服务端权威操作） =====
         ServerPlayNetworking.registerGlobalReceiver(TrinketInteractPayload.ID, (payload, context) -> {
-            DebugLogger.entering("ModNetworking", "TrinketInteractPayload handler");
+            DebugLogger.SERVER.entering("ModNetworking", "TrinketInteractPayload handler");
             var player = context.player();
             var server = player.level().getServer();
             if (server == null) {
-                DebugLogger.exiting("ModNetworking", "TrinketInteractPayload handler", "server is null");
+                DebugLogger.SERVER.exiting("ModNetworking", "TrinketInteractPayload handler", "server is null");
                 return;
             }
             server.execute(() -> {
                 try {
                     eu.pb4.trinkets.api.TrinketAttachment attachment = eu.pb4.trinkets.api.TrinketsApi.getAttachment(player);
                     if (attachment == null) {
-                        DebugLogger.warn("ModNetworking", "TrinketAttachment is null for player %s", player.getName().getString());
+                        DebugLogger.SERVER.warn("ModNetworking", "TrinketAttachment is null for player {}", player.getName().getString());
                         return;
                     }
                     eu.pb4.trinkets.api.TrinketInventory inv = attachment.getInventories().get(payload.groupKey());
                     if (inv == null) {
-                        DebugLogger.warn("ModNetworking", "TrinketInventory '%s' not found", payload.groupKey());
+                        DebugLogger.SERVER.warn("ModNetworking", "TrinketInventory '{}' not found", payload.groupKey());
                         return;
                     }
                     eu.pb4.trinkets.api.TrinketSlotAccess access = inv.getSlotAccess(payload.slotIndex());
                     if (access == null) {
-                        DebugLogger.warn("ModNetworking", "TrinketSlotAccess at %s[%d] not found", payload.groupKey(), payload.slotIndex());
+                        DebugLogger.SERVER.warn("ModNetworking", "TrinketSlotAccess at {}[{}] not found", payload.groupKey(), payload.slotIndex());
                         return;
                     }
 
@@ -806,38 +791,30 @@ public class ModNetworking {
                     net.minecraft.world.item.ItemStack cursor = creativeCursor ? reported : carried;
                     net.minecraft.world.item.ItemStack slotStack = access.get();
 
-                    DebugLogger.info("ModNetworking", "TrinketReq group=%s[%d] action=%d serverCarried=%s cursor=%s(%d) slot=%s",
-                            payload.groupKey(), payload.slotIndex(), payload.action(),
-                            carried.isEmpty() ? "empty" : carried.getHoverName().getString(),
-                            cursor.isEmpty() ? "empty" : cursor.getHoverName().getString(), cursor.getCount(),
-                            slotStack.isEmpty() ? "empty" : slotStack.getHoverName().getString());
+                    DebugLogger.SERVER.debug("ModNetworking", "TrinketReq group={}[{}] action={} serverCarried={} cursor={}({}) slot={}", payload.groupKey(), payload.slotIndex(), payload.action(), carried.isEmpty() ? "empty" : carried.getHoverName().getString(), cursor.isEmpty() ? "empty" : cursor.getHoverName().getString(), cursor.getCount(), slotStack.isEmpty() ? "empty" : slotStack.getHoverName().getString());
 
                     switch (payload.action()) {
                         case TrinketInteractPayload.ACTION_PLACE:
                             if (cursor.isEmpty()) {
-                                DebugLogger.info("ModNetworking", "PLACE skipped: no item to place (serverCarried empty, clientCursor empty)");
+                                DebugLogger.SERVER.debug("ModNetworking", "PLACE skipped: no item to place (serverCarried empty, clientCursor empty)");
                                 break;
                             }
                             if (!slotStack.isEmpty()) {
-                                DebugLogger.info("ModNetworking", "PLACE rejected: slot %s[%d] is not empty",
-                                        payload.groupKey(), payload.slotIndex());
+                                DebugLogger.SERVER.debug("ModNetworking", "PLACE rejected: slot {}[{}] is not empty", payload.groupKey(), payload.slotIndex());
                                 break;
                             }
                             if (!access.slotType().validatorCheck(cursor, access, player)) {
-                                DebugLogger.info("ModNetworking", "Validator rejected %s -> %s[%d]",
-                                        cursor.getHoverName().getString(), payload.groupKey(), payload.slotIndex());
+                                DebugLogger.SERVER.debug("ModNetworking", "Validator rejected {} -> {}[{}]", cursor.getHoverName().getString(), payload.groupKey(), payload.slotIndex());
                                 break;
                             }
                             int placeCount = Math.min(cursor.getCount(), access.maxStackSize(cursor));
                             if (placeCount <= 0) {
-                                DebugLogger.info("ModNetworking", "PLACE rejected: slot %s[%d] has no capacity",
-                                        payload.groupKey(), payload.slotIndex());
+                                DebugLogger.SERVER.debug("ModNetworking", "PLACE rejected: slot {}[{}] has no capacity", payload.groupKey(), payload.slotIndex());
                                 break;
                             }
                             net.minecraft.world.item.ItemStack placed = cursor.copyWithCount(placeCount);
                             if (!access.set(placed)) {
-                                DebugLogger.info("ModNetworking", "PLACE rejected by slot access: %s[%d]",
-                                        payload.groupKey(), payload.slotIndex());
+                                DebugLogger.SERVER.debug("ModNetworking", "PLACE rejected by slot access: {}[{}]", payload.groupKey(), payload.slotIndex());
                                 break;
                             }
                             inv.setChanged();
@@ -847,14 +824,11 @@ public class ModNetworking {
                             remainder.shrink(placeCount);
                             player.containerMenu.setCarried(creativeCursor || remainder.isEmpty()
                                     ? net.minecraft.world.item.ItemStack.EMPTY : remainder);
-                            DebugLogger.info("ModNetworking", "Trinket PLACE: %s x%d -> %s[%d], remainder=%d",
-                                    placed.getHoverName().getString(), placed.getCount(), payload.groupKey(),
-                                    payload.slotIndex(), remainder.getCount());
+                            DebugLogger.SERVER.debug("ModNetworking", "Trinket PLACE: {} x{} -> {}[{}], remainder={}", placed.getHoverName().getString(), placed.getCount(), payload.groupKey(), payload.slotIndex(), remainder.getCount());
                             break;
                         case TrinketInteractPayload.ACTION_TAKE:
                             if (slotStack.isEmpty()) {
-                                DebugLogger.info("ModNetworking", "TAKE skipped: slot %s[%d] is empty",
-                                        payload.groupKey(), payload.slotIndex());
+                                DebugLogger.SERVER.debug("ModNetworking", "TAKE skipped: slot {}[{}] is empty", payload.groupKey(), payload.slotIndex());
                                 break;
                             }
                             player.containerMenu.setCarried(creativeCursor
@@ -862,26 +836,23 @@ public class ModNetworking {
                             access.set(net.minecraft.world.item.ItemStack.EMPTY);
                             inv.setChanged();
                             TrinketUtilities.callTrinketEquipmentChange(slotStack, net.minecraft.world.item.ItemStack.EMPTY, access, player);
-                            DebugLogger.info("ModNetworking", "Trinket TAKE: %s[%d] -> cursor", payload.groupKey(), payload.slotIndex());
+                            DebugLogger.SERVER.debug("ModNetworking", "Trinket TAKE: {}[{}] -> cursor", payload.groupKey(), payload.slotIndex());
                             break;
                         case TrinketInteractPayload.ACTION_SWAP:
                             if (cursor.isEmpty()) {
-                                DebugLogger.info("ModNetworking", "SWAP skipped: no item to swap (serverCarried empty, clientCursor empty)");
+                                DebugLogger.SERVER.debug("ModNetworking", "SWAP skipped: no item to swap (serverCarried empty, clientCursor empty)");
                                 break;
                             }
                             if (!access.slotType().validatorCheck(cursor, access, player)) {
-                                DebugLogger.info("ModNetworking", "Validator rejected %s -> %s[%d] (SWAP)",
-                                        cursor.getHoverName().getString(), payload.groupKey(), payload.slotIndex());
+                                DebugLogger.SERVER.debug("ModNetworking", "Validator rejected {} -> {}[{}] (SWAP)", cursor.getHoverName().getString(), payload.groupKey(), payload.slotIndex());
                                 break;
                             }
                             if (cursor.getCount() > access.maxStackSize(cursor)) {
-                                DebugLogger.info("ModNetworking", "SWAP rejected: %s x%d exceeds slot limit %d",
-                                        cursor.getHoverName().getString(), cursor.getCount(), access.maxStackSize(cursor));
+                                DebugLogger.SERVER.debug("ModNetworking", "SWAP rejected: {} x{} exceeds slot limit {}", cursor.getHoverName().getString(), cursor.getCount(), access.maxStackSize(cursor));
                                 break;
                             }
                             if (!access.set(cursor.copy())) {
-                                DebugLogger.info("ModNetworking", "SWAP rejected by slot access: %s[%d]",
-                                        payload.groupKey(), payload.slotIndex());
+                                DebugLogger.SERVER.debug("ModNetworking", "SWAP rejected by slot access: {}[{}]", payload.groupKey(), payload.slotIndex());
                                 break;
                             }
                             player.containerMenu.setCarried(creativeCursor
@@ -889,7 +860,7 @@ public class ModNetworking {
                             inv.setChanged();
                             TrinketUtilities.callTrinketEquipmentChange(slotStack, cursor, access, player);
                             CriteriaTriggers.INVENTORY_CHANGED.trigger(player, player.getInventory(), cursor);
-                            DebugLogger.info("ModNetworking", "Trinket SWAP: cursor <-> %s[%d]", payload.groupKey(), payload.slotIndex());
+                            DebugLogger.SERVER.debug("ModNetworking", "Trinket SWAP: cursor <-> {}[{}]", payload.groupKey(), payload.slotIndex());
                             break;
                         case TrinketInteractPayload.ACTION_QUICK_MOVE:
                             // 快捷移动：饰品槽物品 → 主物品栏/快捷栏（玩家背包 0-35）。
@@ -897,8 +868,7 @@ public class ModNetworking {
                             // 不能用标准 QUICK_MOVE 点击）；物品栏由 menu 广播同步，
                             // 饰品槽由 Trinkets 的 tick 级脏检查自动 SYNC_INVENTORY 同步。
                             if (slotStack.isEmpty()) {
-                                DebugLogger.info("ModNetworking", "QUICK_MOVE skipped: slot %s[%d] is empty",
-                                        payload.groupKey(), payload.slotIndex());
+                                DebugLogger.SERVER.debug("ModNetworking", "QUICK_MOVE skipped: slot {}[{}] is empty", payload.groupKey(), payload.slotIndex());
                                 break;
                             }
                             {
@@ -925,27 +895,25 @@ public class ModNetworking {
                                     access.set(net.minecraft.world.item.ItemStack.EMPTY);
                                     inv.setChanged();
                                     TrinketUtilities.callTrinketEquipmentChange(slotStack, net.minecraft.world.item.ItemStack.EMPTY, access, player);
-                                    DebugLogger.info("ModNetworking", "Trinket QUICK_MOVE: %s -> %s[%d] -> inventory",
-                                            slotStack.getHoverName().getString(), payload.groupKey(), payload.slotIndex());
+                                    DebugLogger.SERVER.debug("ModNetworking", "Trinket QUICK_MOVE: {} -> {}[{}] -> inventory", slotStack.getHoverName().getString(), payload.groupKey(), payload.slotIndex());
                                 } else {
                                     access.set(toMove);
                                     inv.setChanged();
                                     TrinketUtilities.callTrinketEquipmentChange(slotStack, toMove, access, player);
-                                    DebugLogger.info("ModNetworking", "Trinket QUICK_MOVE partial: %s -> %s[%d] (inventory full, %d left)",
-                                            slotStack.getHoverName().getString(), payload.groupKey(), payload.slotIndex(), toMove.getCount());
+                                    DebugLogger.SERVER.debug("ModNetworking", "Trinket QUICK_MOVE partial: {} -> {}[{}] (inventory full, {} left)", slotStack.getHoverName().getString(), payload.groupKey(), payload.slotIndex(), toMove.getCount());
                                 }
                             }
                             break;
                         default:
-                            DebugLogger.warn("ModNetworking", "Unknown trinket action: %d", payload.action());
+                            DebugLogger.SERVER.warn("ModNetworking", "Unknown trinket action: {}", payload.action());
                             break;
                     }
                     player.containerMenu.broadcastChanges();
                 } catch (Exception e) {
-                    DebugLogger.error("ModNetworking", "Trinket interact handler error: %s", e.getMessage());
+                    DebugLogger.SERVER.error("ModNetworking", "Trinket interact handler error: {}", e.getMessage());
                 }
             });
-            DebugLogger.exiting("ModNetworking", "TrinketInteractPayload handler");
+            DebugLogger.SERVER.exiting("ModNetworking", "TrinketInteractPayload handler");
         });
 
         // 邮件系统（Mail）—— 服务端接收处理器
@@ -955,23 +923,23 @@ public class ModNetworking {
 
         // 1. 打开发布 GUI（纯权限判定，不需要 Api）
         ServerPlayNetworking.registerGlobalReceiver(MailComposeOpenPayload.ID, (payload, context) -> {
-            DebugLogger.entering("ModNetworking", "MailComposeOpenPayload handler");
+            DebugLogger.SERVER.entering("ModNetworking", "MailComposeOpenPayload handler");
             var player = context.player();
             var server = player.level().getServer();
             if (server == null) return;
             server.execute(() -> {
                 if (MailPermissionHelper.hasMailPermission(player)) {
                     ServerPlayNetworking.send(player, new OpenMailComposePayload());
-                    DebugLogger.info("ModNetworking", "Opened mail compose GUI for %s", player.getScoreboardName());
+                    DebugLogger.SERVER.debug("ModNetworking", "Opened mail compose GUI for {}", player.getScoreboardName());
                 } else {
                     player.sendSystemMessage(Component.literal("§c你没有权限发布邮件"));
                 }
             });
-            DebugLogger.exiting("ModNetworking", "MailComposeOpenPayload handler");
+            DebugLogger.SERVER.exiting("ModNetworking", "MailComposeOpenPayload handler");
         });
 
         ServerPlayNetworking.registerGlobalReceiver(MailOpenPayload.ID, (payload, context) -> {
-            DebugLogger.entering("ModNetworking", "MailOpenPayload handler");
+            DebugLogger.SERVER.entering("ModNetworking", "MailOpenPayload handler");
             var player = context.player();
             var server = player.level().getServer();
             if (server == null) return;
@@ -985,21 +953,20 @@ public class ModNetworking {
                     }
                     ServerPlayNetworking.send(player, new MailListPayload(result.entries()));
                     MailManager.sendUnread(player, result.unread());
-                    DebugLogger.info("ModNetworking", "Sent inbox for %s: %d entries",
-                            player.getScoreboardName(), result.entries().size());
+                    DebugLogger.SERVER.debug("ModNetworking", "Sent inbox for {}: {} entries", player.getScoreboardName(), result.entries().size());
                 });
             });
-            DebugLogger.exiting("ModNetworking", "MailOpenPayload handler");
+            DebugLogger.SERVER.exiting("ModNetworking", "MailOpenPayload handler");
         });
 
         ServerPlayNetworking.registerGlobalReceiver(MailSentListRequestPayload.ID, (payload, context) -> {
-            DebugLogger.entering("ModNetworking", "MailSentListRequestPayload handler");
+            DebugLogger.SERVER.entering("ModNetworking", "MailSentListRequestPayload handler");
             var player = context.player();
             var server = player.level().getServer();
             if (server == null) return;
             server.execute(() -> {
                 if (!MailPermissionHelper.hasMailPermission(player)) {
-                    DebugLogger.exiting("ModNetworking", "MailSentListRequestPayload handler", "no permission");
+                    DebugLogger.SERVER.exiting("ModNetworking", "MailSentListRequestPayload handler", "no permission");
                     return;
                 }
                 mailApi(player, "MailSentListRequestPayload", MailApiClient::fetchSentList, result -> {
@@ -1009,21 +976,20 @@ public class ModNetworking {
                         return;
                     }
                     ServerPlayNetworking.send(player, new MailSentListPayload(result.summaries()));
-                    DebugLogger.info("ModNetworking", "Sent mail sent list for %s: %d entries",
-                            player.getScoreboardName(), result.summaries().size());
+                    DebugLogger.SERVER.debug("ModNetworking", "Sent mail sent list for {}: {} entries", player.getScoreboardName(), result.summaries().size());
                 });
             });
-            DebugLogger.exiting("ModNetworking", "MailSentListRequestPayload handler");
+            DebugLogger.SERVER.exiting("ModNetworking", "MailSentListRequestPayload handler");
         });
 
         ServerPlayNetworking.registerGlobalReceiver(MailRecallPayload.ID, (payload, context) -> {
-            DebugLogger.entering("ModNetworking", "MailRecallPayload handler");
+            DebugLogger.SERVER.entering("ModNetworking", "MailRecallPayload handler");
             var player = context.player();
             var server = player.level().getServer();
             if (server == null) return;
             server.execute(() -> {
                 if (!MailPermissionHelper.hasMailPermission(player)) {
-                    DebugLogger.exiting("ModNetworking", "MailRecallPayload handler", "no permission");
+                    DebugLogger.SERVER.exiting("ModNetworking", "MailRecallPayload handler", "no permission");
                     return;
                 }
                 UUID mailId = payload.mailId();
@@ -1042,21 +1008,20 @@ public class ModNetworking {
                     }
                     MailManager.refreshUnreadFor(server, result.recipients());
                     ServerPlayNetworking.send(player, MailOpResultPayload.success(mailId, "已撤回"));
-                    DebugLogger.info("ModNetworking", "Mail recalled: mailId=%s, recipients=%d",
-                            mailId, result.recipients().size());
+                    DebugLogger.SERVER.debug("ModNetworking", "Mail recalled: mailId={}, recipients={}", mailId, result.recipients().size());
                 });
             });
-            DebugLogger.exiting("ModNetworking", "MailRecallPayload handler");
+            DebugLogger.SERVER.exiting("ModNetworking", "MailRecallPayload handler");
         });
 
         ServerPlayNetworking.registerGlobalReceiver(MailPurgePayload.ID, (payload, context) -> {
-            DebugLogger.entering("ModNetworking", "MailPurgePayload handler");
+            DebugLogger.SERVER.entering("ModNetworking", "MailPurgePayload handler");
             var player = context.player();
             var server = player.level().getServer();
             if (server == null) return;
             server.execute(() -> {
                 if (!MailPermissionHelper.hasMailPermission(player)) {
-                    DebugLogger.exiting("ModNetworking", "MailPurgePayload handler", "no permission");
+                    DebugLogger.SERVER.exiting("ModNetworking", "MailPurgePayload handler", "no permission");
                     return;
                 }
                 boolean keepStarred = MailSettings.get().isKeepStarredAfterExpire();
@@ -1068,21 +1033,20 @@ public class ModNetworking {
                     }
                     MailManager.refreshUnreadFor(server, result.affected());
                     ServerPlayNetworking.send(player, MailOpResultPayload.success(null, "已清理过期邮件"));
-                    DebugLogger.info("ModNetworking", "Mail purge by %s: removed=%d",
-                            player.getScoreboardName(), result.removed());
+                    DebugLogger.SERVER.debug("ModNetworking", "Mail purge by {}: removed={}", player.getScoreboardName(), result.removed());
                 });
             });
-            DebugLogger.exiting("ModNetworking", "MailPurgePayload handler");
+            DebugLogger.SERVER.exiting("ModNetworking", "MailPurgePayload handler");
         });
 
         ServerPlayNetworking.registerGlobalReceiver(MailListRequestPayload.ID, (payload, context) -> {
-            DebugLogger.entering("ModNetworking", "MailListRequestPayload handler");
+            DebugLogger.SERVER.entering("ModNetworking", "MailListRequestPayload handler");
             var player = context.player();
             var server = player.level().getServer();
             if (server == null) return;
             server.execute(() -> {
                 if (!MailPermissionHelper.hasMailPermission(player)) {
-                    DebugLogger.exiting("ModNetworking", "MailListRequestPayload handler", "no permission");
+                    DebugLogger.SERVER.exiting("ModNetworking", "MailListRequestPayload handler", "no permission");
                     return;
                 }
                 String targetName = payload.targetPlayer();
@@ -1093,7 +1057,7 @@ public class ModNetworking {
                     targetUuid = accountUuid(AccountDataStorage.get(targetName));
                     if (targetUuid == null) {
                         ServerPlayNetworking.send(player, MailOpResultPayload.failure(null, "找不到玩家: " + targetName));
-                        DebugLogger.exiting("ModNetworking", "MailListRequestPayload handler", "player not found");
+                        DebugLogger.SERVER.exiting("ModNetworking", "MailListRequestPayload handler", "player not found");
                         return;
                     }
                 }
@@ -1104,21 +1068,20 @@ public class ModNetworking {
                         return;
                     }
                     ServerPlayNetworking.send(player, new MailListPayload(result.entries()));
-                    DebugLogger.info("ModNetworking", "Sent inbox for target %s: %d entries",
-                            targetName.isEmpty() ? "self" : targetName, result.entries().size());
+                    DebugLogger.SERVER.debug("ModNetworking", "Sent inbox for target {}: {} entries", targetName.isEmpty() ? "self" : targetName, result.entries().size());
                 });
             });
-            DebugLogger.exiting("ModNetworking", "MailListRequestPayload handler");
+            DebugLogger.SERVER.exiting("ModNetworking", "MailListRequestPayload handler");
         });
 
         ServerPlayNetworking.registerGlobalReceiver(MailFetchPayload.ID, (payload, context) -> {
-            DebugLogger.entering("ModNetworking", "MailFetchPayload handler");
+            DebugLogger.SERVER.entering("ModNetworking", "MailFetchPayload handler");
             var player = context.player();
             var server = player.level().getServer();
             if (server == null) return;
             server.execute(() -> {
                 if (!MailPermissionHelper.hasMailPermission(player)) {
-                    DebugLogger.exiting("ModNetworking", "MailFetchPayload handler", "no permission");
+                    DebugLogger.SERVER.exiting("ModNetworking", "MailFetchPayload handler", "no permission");
                     return;
                 }
                 UUID mailId = payload.mailId();
@@ -1135,7 +1098,7 @@ public class ModNetworking {
                     if (!detail.success() || detail.mail() == null) {
                         ServerPlayNetworking.send(player, MailOpResultPayload.failure(mailId,
                                 detail.statusCode() == 404 ? "邮件不存在" : mailApiFailure(detail.message())));
-                        DebugLogger.exiting("ModNetworking", "MailFetchPayload handler", "mail not found");
+                        DebugLogger.SERVER.exiting("ModNetworking", "MailFetchPayload handler", "mail not found");
                         return;
                     }
                     Mail mail = detail.mail();
@@ -1151,16 +1114,15 @@ public class ModNetworking {
                     }
                     MailRef ref = detail.ref() != null ? detail.ref() : new MailRef(mailId);
                     ServerPlayNetworking.send(player, MailUpdatePayload.createEditPrefill(ref, mail, detail.canEdit()));
-                    DebugLogger.info("ModNetworking", "Fetched mail %s for edit (canEdit=%s)",
-                            mailId, detail.canEdit());
+                    DebugLogger.SERVER.debug("ModNetworking", "Fetched mail {} for edit (canEdit={})", mailId, detail.canEdit());
                 });
             });
-            DebugLogger.exiting("ModNetworking", "MailFetchPayload handler");
+            DebugLogger.SERVER.exiting("ModNetworking", "MailFetchPayload handler");
         });
 
         // 8. 邮件操作（OPEN/READ/STAR/UNSTAR/CLAIM/DELETE）
         ServerPlayNetworking.registerGlobalReceiver(MailActionPayload.ID, (payload, context) -> {
-            DebugLogger.entering("ModNetworking", "MailActionPayload handler", "action=" + payload.action());
+            DebugLogger.SERVER.entering("ModNetworking", "MailActionPayload handler", "action=" + payload.action());
             var player = context.player();
             var server = player.level().getServer();
             if (server == null) return;
@@ -1173,31 +1135,31 @@ public class ModNetworking {
                     case MailActionPayload.ACTION_UNSTAR -> mailStateAction(player, mailId, "unstar", false);
                     case MailActionPayload.ACTION_DELETE -> mailStateAction(player, mailId, "delete", true);
                     case MailActionPayload.ACTION_CLAIM -> mailClaim(player, mailId);
-                    default -> DebugLogger.warn("ModNetworking", "未知邮件操作: %s", payload.action());
+                    default -> DebugLogger.SERVER.warn("ModNetworking", "未知邮件操作: {}", payload.action());
                 }
             });
-            DebugLogger.exiting("ModNetworking", "MailActionPayload handler");
+            DebugLogger.SERVER.exiting("ModNetworking", "MailActionPayload handler");
         });
 
         ServerPlayNetworking.registerGlobalReceiver(MailAdminSendPayload.ID, (payload, context) -> {
-            DebugLogger.entering("ModNetworking", "MailAdminSendPayload handler", "title=" + payload.title());
+            DebugLogger.SERVER.entering("ModNetworking", "MailAdminSendPayload handler", "title=" + payload.title());
             var player = context.player();
             var server = player.level().getServer();
             if (server == null) return;
             server.execute(() -> {
                 if (!MailPermissionHelper.hasMailPermission(player)) {
                     ServerPlayNetworking.send(player, MailOpResultPayload.failure(null, "没有权限"));
-                    DebugLogger.exiting("ModNetworking", "MailAdminSendPayload handler", "no permission");
+                    DebugLogger.SERVER.exiting("ModNetworking", "MailAdminSendPayload handler", "no permission");
                     return;
                 }
                 if (payload.targets().isEmpty()) {
                     ServerPlayNetworking.send(player, MailOpResultPayload.failure(null, "请至少选择一个接收范围"));
-                    DebugLogger.exiting("ModNetworking", "MailAdminSendPayload handler", "no targets");
+                    DebugLogger.SERVER.exiting("ModNetworking", "MailAdminSendPayload handler", "no targets");
                     return;
                 }
                 if (payload.title().isEmpty()) {
                     ServerPlayNetworking.send(player, MailOpResultPayload.failure(null, "主题不能为空"));
-                    DebugLogger.exiting("ModNetworking", "MailAdminSendPayload handler", "empty title");
+                    DebugLogger.SERVER.exiting("ModNetworking", "MailAdminSendPayload handler", "empty title");
                     return;
                 }
                 // 物品附件的 NBT 序列化需要 registryAccess，只能在服务端线程做
@@ -1227,15 +1189,14 @@ public class ModNetworking {
                     }
                     MailManager.refreshUnreadFor(server, result.recipients());
                     ServerPlayNetworking.send(player, MailOpResultPayload.success(mail.getId(), "已发布"));
-                    DebugLogger.info("ModNetworking", "Mail published: id=%s, title=%s, recipients=%d",
-                            mail.getId(), mail.getTitle(), result.recipients().size());
+                    DebugLogger.SERVER.debug("ModNetworking", "Mail published: id={}, title={}, recipients={}", mail.getId(), mail.getTitle(), result.recipients().size());
                 });
             });
-            DebugLogger.exiting("ModNetworking", "MailAdminSendPayload handler");
+            DebugLogger.SERVER.exiting("ModNetworking", "MailAdminSendPayload handler");
         });
 
         ServerPlayNetworking.registerGlobalReceiver(MailAdminEditPayload.ID, (payload, context) -> {
-            DebugLogger.entering("ModNetworking", "MailAdminEditPayload handler", "mailId=" + payload.mailId());
+            DebugLogger.SERVER.entering("ModNetworking", "MailAdminEditPayload handler", "mailId=" + payload.mailId());
             var player = context.player();
             var server = player.level().getServer();
             if (server == null) return;
@@ -1243,7 +1204,7 @@ public class ModNetworking {
                 UUID mailId = payload.mailId();
                 if (!MailPermissionHelper.hasMailPermission(player)) {
                     ServerPlayNetworking.send(player, MailOpResultPayload.failure(mailId, "没有权限"));
-                    DebugLogger.exiting("ModNetworking", "MailAdminEditPayload handler", "no permission");
+                    DebugLogger.SERVER.exiting("ModNetworking", "MailAdminEditPayload handler", "no permission");
                     return;
                 }
                 if (payload.cancel()) {
@@ -1264,7 +1225,7 @@ public class ModNetworking {
                         }
                         pushMailToOnline(server, hidden.mail(), restore.refs());
                         ServerPlayNetworking.send(player, MailOpResultPayload.success(mailId, "已取消编辑"));
-                        DebugLogger.info("ModNetworking", "Mail edit cancelled: mailId=%s", mailId);
+                        DebugLogger.SERVER.debug("ModNetworking", "Mail edit cancelled: mailId={}", mailId);
                     });
                     return;
                 }
@@ -1288,7 +1249,7 @@ public class ModNetworking {
                     if (!edit.success()) {
                         ServerPlayNetworking.send(player, MailOpResultPayload.failure(mailId,
                                 edit.message().isBlank() ? "编辑失败，邮件可能已被撤回" : edit.message()));
-                        DebugLogger.exiting("ModNetworking", "MailAdminEditPayload handler", "edit rejected");
+                        DebugLogger.SERVER.exiting("ModNetworking", "MailAdminEditPayload handler", "edit rejected");
                         return;
                     }
                     ServerPlayNetworking.send(player, MailOpResultPayload.success(mailId, "已保存修改"));
@@ -1303,23 +1264,22 @@ public class ModNetworking {
                     List<UUID> affected = new ArrayList<>(edit.recipients());
                     affected.addAll(edit.removed());
                     MailManager.refreshUnreadFor(server, affected);
-                    DebugLogger.info("ModNetworking", "Mail edited: mailId=%s, recipients=%d, removed=%d",
-                            mailId, edit.recipients().size(), edit.removed().size());
+                    DebugLogger.SERVER.debug("ModNetworking", "Mail edited: mailId={}, recipients={}, removed={}", mailId, edit.recipients().size(), edit.removed().size());
                 });
             });
-            DebugLogger.exiting("ModNetworking", "MailAdminEditPayload handler");
+            DebugLogger.SERVER.exiting("ModNetworking", "MailAdminEditPayload handler");
         });
 
         // 11. 请求已注册玩家名单（发布页「选取玩家」弹窗）
         ServerPlayNetworking.registerGlobalReceiver(MailPlayerListRequestPayload.ID, (payload, context) -> {
-            DebugLogger.entering("ModNetworking", "MailPlayerListRequestPayload handler");
+            DebugLogger.SERVER.entering("ModNetworking", "MailPlayerListRequestPayload handler");
             var player = context.player();
             var server = player.level().getServer();
             if (server == null) return;
             server.execute(() -> {
                 if (!MailPermissionHelper.hasMailPermission(player)) {
                     ServerPlayNetworking.send(player, MailOpResultPayload.failure(null, "没有权限"));
-                    DebugLogger.exiting("ModNetworking", "MailPlayerListRequestPayload handler", "no permission");
+                    DebugLogger.SERVER.exiting("ModNetworking", "MailPlayerListRequestPayload handler", "no permission");
                     return;
                 }
                 List<String> names = AccountDataStorage.getAll()
@@ -1330,13 +1290,12 @@ public class ModNetworking {
                         .sorted(String.CASE_INSENSITIVE_ORDER)
                         .toList();
                 ServerPlayNetworking.send(player, new MailPlayerListPayload(names));
-                DebugLogger.info("ModNetworking", "Sent registered player list to %s: %d entries",
-                        player.getScoreboardName(), names.size());
+                DebugLogger.SERVER.debug("ModNetworking", "Sent registered player list to {}: {} entries", player.getScoreboardName(), names.size());
             });
-            DebugLogger.exiting("ModNetworking", "MailPlayerListRequestPayload handler");
+            DebugLogger.SERVER.exiting("ModNetworking", "MailPlayerListRequestPayload handler");
         });
 
-        DebugLogger.exiting("ModNetworking", "initialize");
+        DebugLogger.SERVER.exiting("ModNetworking", "initialize");
     }
 
     /** 编辑预填的两步结果：详情 + （必要时）隐藏操作。 */
@@ -1384,18 +1343,18 @@ public class ModNetworking {
         if (server == null) return;
         CompletableFuture.supplyAsync(call).whenComplete((result, error) -> server.execute(() -> {
             if (error != null) {
-                DebugLogger.exception("ModNetworking", label, error);
+                DebugLogger.SERVER.exception("ModNetworking", label, error);
                 if (!player.hasDisconnected()) {
                     ServerPlayNetworking.send(player, MailOpResultPayload.failure(null, "邮件服务请求失败"));
                 }
                 return;
             }
             if (result == null) {
-                DebugLogger.warn("ModNetworking", "%s 未取得 Api 结果", label);
+                DebugLogger.SERVER.warn("ModNetworking", "{} 未取得 Api 结果", label);
                 return;
             }
             if (skipWhenOffline && player.hasDisconnected()) {
-                DebugLogger.debug("ModNetworking", "%s 结果到达时玩家已下线，丢弃", label);
+                DebugLogger.SERVER.debug("ModNetworking", "{} 结果到达时玩家已下线，丢弃", label);
                 return;
             }
             handler.accept(result);
@@ -1442,8 +1401,7 @@ public class ModNetworking {
         UUID uuid = player.getUUID();
         mailApi(player, "MailActionPayload:" + action, () -> MailApiClient.action(uuid, mailId, action), result -> {
             if (!result.success()) {
-                DebugLogger.warn("ModNetworking", "邮件操作 %s 失败: mailId=%s, %s",
-                        action, mailId, result.message());
+                DebugLogger.SERVER.warn("ModNetworking", "邮件操作 {} 失败: mailId={}, {}", action, mailId, result.message());
                 return;
             }
             if (removeFromClient) {
@@ -1451,8 +1409,7 @@ public class ModNetworking {
             }
             // 任何操作都可能改变未读数，统一回推权威值（修复红点不消失 / 空信箱仍显示数量）
             MailManager.sendUnread(player, result.unread());
-            DebugLogger.info("ModNetworking", "Mail action %s processed for %s",
-                    action, player.getScoreboardName());
+            DebugLogger.SERVER.debug("ModNetworking", "Mail action {} processed for {}", action, player.getScoreboardName());
         });
     }
 
@@ -1486,7 +1443,7 @@ public class ModNetworking {
                 return;
             }
             if (player.hasDisconnected()) {
-                top.csituka.youzaiworldcore.YouzaiworldCore.LOGGER.warn(
+                MOD_LOG.warn(
                         "玩家 {} 在领取邮件 {} 期间下线：Api 已记为已领取但奖励未发放，需要管理员补发",
                         player.getScoreboardName(), mailId);
                 return;
@@ -1520,7 +1477,7 @@ public class ModNetworking {
         try {
             return UUID.fromString(account.uuid);
         } catch (IllegalArgumentException ignored) {
-            DebugLogger.warn("ModNetworking", "账户 UUID 格式无效：%s", account.username);
+            DebugLogger.SERVER.warn("ModNetworking", "账户 UUID 格式无效：{}", account.username);
             return null;
         }
     }
@@ -1543,7 +1500,7 @@ public class ModNetworking {
                                     ad.itemStack()).getOrThrow();
                     itemNbt = tag.toString();
                 } catch (Exception e) {
-                    DebugLogger.error("ModNetworking", "序列化物品附件失败: %s", e.getMessage());
+                    DebugLogger.SERVER.error("ModNetworking", "序列化物品附件失败: {}", e.getMessage());
                 }
             }
             return new MailAttachment(ad.type(), ad.data(), ad.amount(), itemNbt,

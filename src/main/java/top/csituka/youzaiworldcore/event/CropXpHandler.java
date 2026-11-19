@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.event;
 
+import top.csituka.youzaiworldcore.util.DebugLogger;
+
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -13,8 +15,6 @@ import net.minecraft.world.level.block.CropBlock;
 import net.minecraft.world.level.block.NetherWartBlock;
 import net.minecraft.world.level.block.state.BlockState;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import top.csituka.youzaiworldcore.config.EventSettings;
 
@@ -29,7 +29,7 @@ import top.csituka.youzaiworldcore.config.EventSettings;
 public class CropXpHandler {
 
     private static final CropXpHandler INSTANCE = new CropXpHandler();
-    private static final Logger LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/CropXp");
+    private static final DebugLogger.ModuleLogger LOGGER = DebugLogger.SERVER.module("CropXp");
 
     /** 每次成熟作物收获掉落的经验值 */
     private static final int XP_PER_CROP = 1;
@@ -90,6 +90,6 @@ public class CropXpHandler {
 
     public static void register() {
         PlayerBlockBreakEvents.AFTER.register(INSTANCE::onBlockBreak);
-        LOGGER.info("农作物收获经验掉落事件处理器已注册");
+        LOGGER.debug("农作物收获经验掉落事件处理器已注册");
     }
 }

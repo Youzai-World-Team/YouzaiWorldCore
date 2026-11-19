@@ -72,8 +72,7 @@ final class MailPlayerPicker {
         if (preselected != null) {
             this.selected.addAll(preselected);
         }
-        DebugLogger.info(MODULE, "打开选取玩家弹窗: 预选 %d 人, 名单 %d 人",
-                this.selected.size(), MailClientState.registeredPlayers.size());
+        DebugLogger.CLIENT.debug(MODULE, "打开选取玩家弹窗: 预选 {} 人, 名单 {} 人", this.selected.size(), MailClientState.registeredPlayers.size());
     }
     void close() {
         animation.hide();
@@ -212,7 +211,7 @@ final class MailPlayerPicker {
             if (callback != null) {
                 callback.accept(result);
             }
-            DebugLogger.info(MODULE, "确认选取玩家: %d 人", result.size());
+            DebugLogger.CLIENT.debug(MODULE, "确认选取玩家: {} 人", result.size());
             return true;
         }
         if (cancelRect.contains(mouseX, mouseY)) {

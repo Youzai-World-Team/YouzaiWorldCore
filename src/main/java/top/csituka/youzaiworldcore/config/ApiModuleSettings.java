@@ -36,7 +36,7 @@ public final class ApiModuleSettings {
             baseUrl = DEFAULT_BASE_URL;
             serverKey = DEFAULT_SERVER_KEY;
             timeoutSeconds = DEFAULT_TIMEOUT_SECONDS;
-            DebugLogger.info(MODULE, "内置服务器已停用公网 Api 网桥");
+            DebugLogger.SERVER.info(MODULE, "内置服务器已停用公网 Api 网桥");
             return;
         }
         ConfigSection section = GlobalSettings.section(GlobalSettings.API_MODULE);
@@ -52,9 +52,7 @@ public final class ApiModuleSettings {
             ConfigCrash.fail(GlobalSettings.file(), GlobalSettings.API_MODULE + ".server_key",
                     "公网 Api HMAC 密钥必须配置为至少 32 位，并与 YZWC_GAME_API_KEY 保持一致");
         }
-        DebugLogger.info(MODULE,
-                "Api 网桥已加载: enabled=%s, baseUrl=%s, serverKeyConfigured=%s, timeoutSeconds=%d",
-                enabled, baseUrl, serverKey.length() >= 32, timeoutSeconds);
+        DebugLogger.SERVER.info(MODULE, "Api 网桥已加载: enabled={}, baseUrl={}, serverKeyConfigured={}, timeoutSeconds={}", enabled, baseUrl, serverKey.length() >= 32, timeoutSeconds);
     }
 
     public static void writeDefaults() {

@@ -18,8 +18,7 @@ public abstract class ServerPlayerAfkDamageMixin {
             float amount, CallbackInfoReturnable<Boolean> cir) {
         ServerPlayer player = (ServerPlayer) (Object) this;
         if (AfkManager.isProtected(player)) {
-            DebugLogger.trace("AfkDamage", "已拦截 %s 的 AFK 期间伤害: %s",
-                    player.getName().getString(), source);
+            DebugLogger.SERVER.trace("AfkDamage", "已拦截 {} 的 AFK 期间伤害: {}", player.getName().getString(), source);
             cir.setReturnValue(false);
         }
     }

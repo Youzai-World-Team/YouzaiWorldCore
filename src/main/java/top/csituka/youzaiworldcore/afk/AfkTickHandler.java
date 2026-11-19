@@ -26,7 +26,7 @@ public final class AfkTickHandler {
         if (!registered) {
             ServerTickEvents.END_SERVER_TICK.register(AfkTickHandler::serverTick);
             registered = true;
-            DebugLogger.info(MODULE, "AFK 检测已注册，间隔 %d tick", CHECK_INTERVAL);
+            DebugLogger.SERVER.debug(MODULE, "AFK 检测已注册，间隔 {} tick", CHECK_INTERVAL);
         }
     }
 
@@ -63,12 +63,12 @@ public final class AfkTickHandler {
 
         var mode = AfkConfig.getDetectMode();
         if (data.activity.shouldExit(mode, now)) {
-            DebugLogger.info(MODULE, "%s 出现新的有效活动，退出 AFK", player.getName().getString());
+            DebugLogger.SERVER.debug(MODULE, "{} 出现新的有效活动，退出 AFK", player.getName().getString());
             AfkManager.exitAfk(player);
         } else if (data.activity.shouldEnter(mode, now, AfkConfig.getThresholdSeconds() * 20L)) {
             AfkManager.enterAfk(player, false);
         } else if (data.activity.shouldKick(now, AfkConfig.getAutoKickSeconds() * 20L)) {
-            DebugLogger.info(MODULE, "%s AFK 超时，断开连接", player.getName().getString());
+            DebugLogger.SERVER.notice(MODULE, "{} AFK 超时，断开连接", player.getName().getString());
             player.connection.disconnect(Component.translatable("youzaiworldcore.message.afk.kicked"));
         }
     }

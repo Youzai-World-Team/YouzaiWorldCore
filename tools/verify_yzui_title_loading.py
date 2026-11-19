@@ -207,7 +207,7 @@ def main():
             path.write_text(content, encoding='utf-8')
             sources.append(path)
         subprocess.run([str(binary / ('javac' + suffix)), '--release', '25', '-encoding', 'UTF-8',
-                        '-d', str(temporary), *map(str, sources)], cwd=ROOT, check=True)
+                        '-d', str(temporary), *map(str, sources), str(Path(__file__).resolve().parents[1] / "src/main/java/top/csituka/youzaiworldcore/util/LogValues.java")], cwd=ROOT, check=True)
         classpath = os.pathsep.join([str(temporary), str(ROOT / 'src/client/resources')])
         subprocess.run([str(binary / ('java' + suffix)), '-Djava.awt.headless=true', '-cp', classpath, 'TitleLoadingChecks',
                         *([str(preview)] if preview else [])], cwd=ROOT, check=True)

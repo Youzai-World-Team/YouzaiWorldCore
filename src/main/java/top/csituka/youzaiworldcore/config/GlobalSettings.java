@@ -11,7 +11,7 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
  *
  * <pre>
  * {
- *   "core_module":   { "dev_mode_enabled": false, "log_to_file": false },
+ *   "core_module":   { "dev_mode_enabled": false, "log_level": 0 },
  *   "api_module":    { "base_url": "https://api.mcyzw.top", ... },
  *   "afk_module":    { "enabled": true, "threshold_seconds": 300, ... },
  *   ...
@@ -88,14 +88,14 @@ public final class GlobalSettings {
      * </p>
      */
     public static void load() {
-        DebugLogger.entering(MODULE, "load", "file=" + STORE.file());
+        DebugLogger.SERVER.entering(MODULE, "load", "file=" + STORE.file());
         boolean created = STORE.loadOrCreateDefaults();
+        ServerExternalSettings.load();
         if (created) {
-            DebugLogger.info(MODULE, "未检测到全局配置，已写出默认配置：%s", STORE.file());
+            DebugLogger.SERVER.notice(MODULE, "未检测到全局配置，已写出默认配置：{}", STORE.file());
         }
-        DebugLogger.info(MODULE, "全局配置已加载：%s（模块分节 %d 个）",
-                STORE.file(), STORE.moduleNames().size());
-        DebugLogger.exiting(MODULE, "load", created ? "created default" : "loaded");
+        DebugLogger.SERVER.info(MODULE, "全局配置已加载：{}（模块分节 {} 个）", STORE.file(), STORE.moduleNames().size());
+        DebugLogger.SERVER.exiting(MODULE, "load", created ? "created default" : "loaded");
     }
 
     /**

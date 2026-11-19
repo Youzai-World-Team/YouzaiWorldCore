@@ -9,8 +9,6 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 import top.csituka.youzaiworldcore.client.render.RoundedRect;
@@ -24,7 +22,7 @@ import top.csituka.youzaiworldcore.client.render.RoundedRect;
 @SuppressWarnings("null")
 public class ConfigImportSuccessScreen extends Screen implements YzuiPopupScreen {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/ConfigImportSuccessScreen");
+    private static final DebugLogger.ModuleLogger LOGGER = DebugLogger.CLIENT.module("ConfigImportSuccessScreen");
     private static final String LOG_MODULE = "ConfigImportSuccessScreen";
 
     // ============ 布局常量 ============
@@ -39,13 +37,13 @@ public class ConfigImportSuccessScreen extends Screen implements YzuiPopupScreen
 
     public ConfigImportSuccessScreen() {
         super(Component.translatable("screen.youzaiworldcore.config_io.import_success_title"));
-        LOGGER.info("配置导入成功弹窗已打开");
+        LOGGER.debug("配置导入成功弹窗已打开");
     }
 
     @Override
     protected void init() {
         super.init();
-        DebugLogger.debug(LOG_MODULE, "初始化配置导入成功弹窗");
+        DebugLogger.CLIENT.debug(LOG_MODULE, "初始化配置导入成功弹窗");
 
         int dialogX = (this.width - DIALOG_WIDTH) / 2;
         int dialogY = (this.height - DIALOG_HEIGHT) / 2;
@@ -110,8 +108,8 @@ public class ConfigImportSuccessScreen extends Screen implements YzuiPopupScreen
     // ========== 回调 ==========
 
     private void onQuit() {
-        DebugLogger.info(LOG_MODULE, "用户确认关闭客户端，配置文件将在下次启动时生效");
-        LOGGER.info("用户确认关闭客户端");
+        DebugLogger.CLIENT.debug(LOG_MODULE, "用户确认关闭客户端，配置文件将在下次启动时生效");
+        LOGGER.debug("用户确认关闭客户端");
         Minecraft.getInstance().stop();
     }
 

@@ -379,7 +379,7 @@ def check_java(java_home):
                         str(JAVA / "client/render/YzuiPalette.java"), str(JAVA / "client/render/YzuiLayout.java"),
                         str(JAVA / "client/render/YzuiLayerHistory.java"), str(JAVA / "client/animation/YzuiMotion.java"),
                         str(JAVA / "client/config/YzuiVisualStyle.java"),
-                        str(source)], cwd=ROOT, check=True)
+                        str(source), str(Path(__file__).resolve().parents[1] / "src/main/java/top/csituka/youzaiworldcore/util/LogValues.java")], cwd=ROOT, check=True)
         subprocess.run([java, "-cp", str(temporary), "YzuiInvariantCheck"], cwd=ROOT, check=True)
     print("Java 检查通过：6 种外观的实际透明度/文字对比、30 组视口、1212 帧动画与点击/拖拽往返、淡入打断连续性、有界页面层级。")
 
@@ -454,7 +454,7 @@ def compile_client_from_cache(java_home, gradle_cache):
                 "-classpath", classpath, *map(str, sources)]
         argfile = temporary / "compile.args"
         argfile.write_text("\n".join('"' + value.replace("\\", "/").replace('"', '\\"') + '"' for value in args), encoding="utf-8")
-        subprocess.run([str(javac), "-J-Duser.language=en", "-J-Duser.country=US", "@" + str(argfile)], cwd=ROOT, check=True)
+        subprocess.run([str(javac), "-J-Duser.language=en", "-J-Duser.country=US", "@" + str(argfile), str(Path(__file__).resolve().parents[1] / "src/main/java/top/csituka/youzaiworldcore/util/LogValues.java")], cwd=ROOT, check=True)
         print(f"客户端本地编译通过：当前 {len(sources)} 个 Java 源文件，生成 {len(list(classes.rglob('*.class')))} 个临时 class；检查后已清理。")
 
 

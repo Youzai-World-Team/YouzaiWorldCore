@@ -46,9 +46,9 @@ public class DecompositionTableBlock extends BaseEntityBlock {
 
     public DecompositionTableBlock(BlockBehaviour.Properties properties) {
         super(properties);
-        DebugLogger.entering("DecompositionTableBlock", "constructor");
+        DebugLogger.SERVER.entering("DecompositionTableBlock", "constructor");
         this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
-        DebugLogger.exiting("DecompositionTableBlock", "constructor");
+        DebugLogger.SERVER.exiting("DecompositionTableBlock", "constructor");
     }
 
     @Override
@@ -67,7 +67,7 @@ public class DecompositionTableBlock extends BaseEntityBlock {
     @NonNull
     protected InteractionResult useWithoutItem(@NonNull BlockState state, @NonNull Level level, @NonNull BlockPos pos,
                                                @NonNull Player player, @NonNull BlockHitResult hitResult) {
-        DebugLogger.entering("DecompositionTableBlock", "useWithoutItem",
+        DebugLogger.SERVER.entering("DecompositionTableBlock", "useWithoutItem",
                 "pos=" + pos + ", player=" + player.getName().getString());
         if (!level.isClientSide()) {
             BlockEntity blockEntity = level.getBlockEntity(pos);
@@ -81,7 +81,7 @@ public class DecompositionTableBlock extends BaseEntityBlock {
                 }
             }
         }
-        DebugLogger.exiting("DecompositionTableBlock", "useWithoutItem", "SUCCESS");
+        DebugLogger.SERVER.exiting("DecompositionTableBlock", "useWithoutItem", "SUCCESS");
         return InteractionResult.SUCCESS;
     }
 
@@ -92,18 +92,18 @@ public class DecompositionTableBlock extends BaseEntityBlock {
      * @param server Minecraft 服务器实例
      */
     private void grantUsedDecompositionTableAdvancement(ServerPlayer player, MinecraftServer server) {
-        DebugLogger.entering("DecompositionTableBlock", "grantUsedDecompositionTableAdvancement",
+        DebugLogger.SERVER.entering("DecompositionTableBlock", "grantUsedDecompositionTableAdvancement",
                 "player=" + player.getName().getString());
         AdvancementHolder advancementHolder = server.getAdvancements().get(
                 Identifier.fromNamespaceAndPath("youzaiworldcore", "youzaiworld/used_decomposition_table")
         );
         if (advancementHolder != null) {
-            DebugLogger.branch("DecompositionTableBlock", "advancement found", true);
+            DebugLogger.SERVER.branch("DecompositionTableBlock", "advancement found", true);
             player.getAdvancements().award(advancementHolder, "manual_grant");
         } else {
-            DebugLogger.branch("DecompositionTableBlock", "advancement not found", false);
+            DebugLogger.SERVER.branch("DecompositionTableBlock", "advancement not found", false);
         }
-        DebugLogger.exiting("DecompositionTableBlock", "grantUsedDecompositionTableAdvancement");
+        DebugLogger.SERVER.exiting("DecompositionTableBlock", "grantUsedDecompositionTableAdvancement");
     }
 
     @Override

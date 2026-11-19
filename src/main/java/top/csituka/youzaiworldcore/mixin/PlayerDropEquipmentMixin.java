@@ -65,13 +65,13 @@ public abstract class PlayerDropEquipmentMixin implements DeferredDeathDropAcces
 
     @Override
     public void youzaiworldcore$dropDeferredEquipment(ServerLevel level) {
-        DebugLogger.entering("InPlaceRespawn", "dropDeferredEquipment");
+        DebugLogger.SERVER.entering("InPlaceRespawn", "dropDeferredEquipment");
         youzaiworldcore$forceDeferredDrop = true;
         try {
             dropEquipment(level);
         } finally {
             youzaiworldcore$forceDeferredDrop = false;
-            DebugLogger.exiting("InPlaceRespawn", "dropDeferredEquipment");
+            DebugLogger.SERVER.exiting("InPlaceRespawn", "dropDeferredEquipment");
         }
     }
 

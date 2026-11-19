@@ -29,35 +29,35 @@ public class VoidStaffItem extends Item {
 
     public VoidStaffItem(Properties properties) {
         super(properties.stacksTo(1).durability(600).rarity(Rarity.RARE));
-        DebugLogger.entering("VoidStaffItem", "constructor");
-        DebugLogger.exiting("VoidStaffItem", "constructor");
+        DebugLogger.SERVER.entering("VoidStaffItem", "constructor");
+        DebugLogger.SERVER.exiting("VoidStaffItem", "constructor");
     }
 
     @Override
     @NonNull
     public InteractionResult use(Level level, Player player, @NonNull InteractionHand usedHand) {
         ItemStack stack = player.getItemInHand(usedHand);
-        DebugLogger.entering("VoidStaffItem", "use",
+        DebugLogger.SERVER.entering("VoidStaffItem", "use",
                 "player=" + player.getName().getString() + ", hand=" + usedHand);
 
         if (level.isClientSide()) {
-            DebugLogger.branch("VoidStaffItem", "client side", true);
-            DebugLogger.exiting("VoidStaffItem", "use", "PASS (client)");
+            DebugLogger.SERVER.branch("VoidStaffItem", "client side", true);
+            DebugLogger.SERVER.exiting("VoidStaffItem", "use", "PASS (client)");
             return InteractionResult.PASS;
         }
-        DebugLogger.branch("VoidStaffItem", "server side", false);
+        DebugLogger.SERVER.branch("VoidStaffItem", "server side", false);
 
         if (player.isCreative()) {
-            DebugLogger.branch("VoidStaffItem", "player is creative", true);
-            DebugLogger.exiting("VoidStaffItem", "use", "FAIL (creative)");
+            DebugLogger.SERVER.branch("VoidStaffItem", "player is creative", true);
+            DebugLogger.SERVER.exiting("VoidStaffItem", "use", "FAIL (creative)");
             return InteractionResult.FAIL;
         }
-        DebugLogger.branch("VoidStaffItem", "player is not creative", false);
+        DebugLogger.SERVER.branch("VoidStaffItem", "player is not creative", false);
 
         UUID playerId = player.getUUID();
 
         if (flyingPlayers.contains(playerId)) {
-            DebugLogger.branch("VoidStaffItem", "disabling flight", true);
+            DebugLogger.SERVER.branch("VoidStaffItem", "disabling flight", true);
             disableFlight(player);
             flyingPlayers.remove(playerId);
             stack.remove(ModDataComponents.VOID_STAFF_ACTIVE);
@@ -66,7 +66,7 @@ public class VoidStaffItem extends Item {
                             .withStyle(ChatFormatting.RED)
             );
         } else {
-            DebugLogger.branch("VoidStaffItem", "enabling flight", false);
+            DebugLogger.SERVER.branch("VoidStaffItem", "enabling flight", false);
             enableFlight(player);
             flyingPlayers.add(playerId);
             stack.set(ModDataComponents.VOID_STAFF_ACTIVE, true);
@@ -76,91 +76,91 @@ public class VoidStaffItem extends Item {
             );
         }
 
-        DebugLogger.exiting("VoidStaffItem", "use", "SUCCESS");
+        DebugLogger.SERVER.exiting("VoidStaffItem", "use", "SUCCESS");
         return InteractionResult.SUCCESS;
     }
 
     private void sendActionBar(Player player, Component message) {
-        DebugLogger.entering("VoidStaffItem", "sendActionBar",
+        DebugLogger.SERVER.entering("VoidStaffItem", "sendActionBar",
                 "player=" + player.getName().getString());
         if (player instanceof ServerPlayer serverPlayer) {
             ClientboundSetActionBarTextPacket packet = new ClientboundSetActionBarTextPacket(message);
             serverPlayer.connection.send(packet);
         }
-        DebugLogger.exiting("VoidStaffItem", "sendActionBar");
+        DebugLogger.SERVER.exiting("VoidStaffItem", "sendActionBar");
     }
 
     public static void enableFlight(Player player) {
-        DebugLogger.entering("VoidStaffItem", "enableFlight",
+        DebugLogger.SERVER.entering("VoidStaffItem", "enableFlight",
                 "player=" + player.getName().getString());
         player.getAbilities().mayfly = true;
         player.getAbilities().flying = true;
         player.onUpdateAbilities();
-        DebugLogger.exiting("VoidStaffItem", "enableFlight");
+        DebugLogger.SERVER.exiting("VoidStaffItem", "enableFlight");
     }
 
     public static void disableFlight(Player player) {
-        DebugLogger.entering("VoidStaffItem", "disableFlight",
+        DebugLogger.SERVER.entering("VoidStaffItem", "disableFlight",
                 "player=" + player.getName().getString());
         player.getAbilities().mayfly = false;
         player.getAbilities().flying = false;
         player.onUpdateAbilities();
-        DebugLogger.exiting("VoidStaffItem", "disableFlight");
+        DebugLogger.SERVER.exiting("VoidStaffItem", "disableFlight");
     }
 
     public static boolean isFlying(UUID playerId) {
-        DebugLogger.entering("VoidStaffItem", "isFlying", "playerId=" + playerId);
+        DebugLogger.SERVER.entering("VoidStaffItem", "isFlying", "playerId=" + playerId);
         boolean result = flyingPlayers.contains(playerId);
-        DebugLogger.exiting("VoidStaffItem", "isFlying", String.valueOf(result));
+        DebugLogger.SERVER.exiting("VoidStaffItem", "isFlying", String.valueOf(result));
         return result;
     }
 
     public static void setFlying(UUID playerId, boolean flying) {
-        DebugLogger.entering("VoidStaffItem", "setFlying",
+        DebugLogger.SERVER.entering("VoidStaffItem", "setFlying",
                 "playerId=" + playerId + ", flying=" + flying);
         if (flying) {
             flyingPlayers.add(playerId);
         } else {
             flyingPlayers.remove(playerId);
         }
-        DebugLogger.exiting("VoidStaffItem", "setFlying");
+        DebugLogger.SERVER.exiting("VoidStaffItem", "setFlying");
     }
 
     public static boolean hasVoidStaffInHand(Player player) {
-        DebugLogger.entering("VoidStaffItem", "hasVoidStaffInHand",
+        DebugLogger.SERVER.entering("VoidStaffItem", "hasVoidStaffInHand",
                 "player=" + player.getName().getString());
         ItemStack mainHand = player.getMainHandItem();
         ItemStack offHand = player.getOffhandItem();
 
         boolean result = mainHand.getItem() instanceof VoidStaffItem || offHand.getItem() instanceof VoidStaffItem;
-        DebugLogger.exiting("VoidStaffItem", "hasVoidStaffInHand", String.valueOf(result));
+        DebugLogger.SERVER.exiting("VoidStaffItem", "hasVoidStaffInHand", String.valueOf(result));
         return result;
     }
 
     public static ItemStack getVoidStaffInHand(Player player) {
-        DebugLogger.entering("VoidStaffItem", "getVoidStaffInHand",
+        DebugLogger.SERVER.entering("VoidStaffItem", "getVoidStaffInHand",
                 "player=" + player.getName().getString());
         ItemStack mainHand = player.getMainHandItem();
         ItemStack offHand = player.getOffhandItem();
 
         if (mainHand.getItem() instanceof VoidStaffItem) {
-            DebugLogger.branch("VoidStaffItem", "found in main hand", true);
-            DebugLogger.exiting("VoidStaffItem", "getVoidStaffInHand", "main hand");
+            DebugLogger.SERVER.branch("VoidStaffItem", "found in main hand", true);
+            DebugLogger.SERVER.exiting("VoidStaffItem", "getVoidStaffInHand", "main hand");
             return mainHand;
         } else if (offHand.getItem() instanceof VoidStaffItem) {
-            DebugLogger.branch("VoidStaffItem", "found in off hand", false);
-            DebugLogger.exiting("VoidStaffItem", "getVoidStaffInHand", "off hand");
+            DebugLogger.SERVER.branch("VoidStaffItem", "found in off hand", false);
+            DebugLogger.SERVER.exiting("VoidStaffItem", "getVoidStaffInHand", "off hand");
             return offHand;
         }
-        DebugLogger.exiting("VoidStaffItem", "getVoidStaffInHand", "null (not found)");
+        DebugLogger.SERVER.exiting("VoidStaffItem", "getVoidStaffInHand", "null (not found)");
         return null;
     }
 
     public static boolean isPlayerFlying(Player player) {
-        DebugLogger.entering("VoidStaffItem", "isPlayerFlying",
+        DebugLogger.SERVER.entering("VoidStaffItem", "isPlayerFlying",
                 "player=" + player.getName().getString());
         boolean result = flyingPlayers.contains(player.getUUID());
-        DebugLogger.exiting("VoidStaffItem", "isPlayerFlying", String.valueOf(result));
+        DebugLogger.SERVER.exiting("VoidStaffItem", "isPlayerFlying", String.valueOf(result));
         return result;
     }
 

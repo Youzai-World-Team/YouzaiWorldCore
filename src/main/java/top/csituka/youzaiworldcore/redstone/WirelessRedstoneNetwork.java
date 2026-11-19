@@ -89,8 +89,7 @@ public final class WirelessRedstoneNetwork {
      */
     public static void initialize() {
         ServerLifecycleEvents.SERVER_STOPPED.register(server -> clear());
-        DebugLogger.info(MODULE, "无线红石网络索引已就绪（传输半径 %d 格，频道 %d~%d）",
-                RANGE, WirelessRedstoneChannel.MIN, WirelessRedstoneChannel.MAX);
+        DebugLogger.SERVER.debug(MODULE, "无线红石网络索引已就绪（传输半径 {} 格，频道 {}~{}）", RANGE, WirelessRedstoneChannel.MIN, WirelessRedstoneChannel.MAX);
     }
 
     /**
@@ -127,9 +126,8 @@ public final class WirelessRedstoneNetwork {
         }
 
         generation++;
-        if (DebugLogger.isEnabled(DebugLogger.LEVEL_DETAILED)) {
-            DebugLogger.debug(MODULE, "发射器索引更新 @%s: channel=%d, active=%s, 该维度激活数=%d",
-                    pos.toShortString(), channel, active, index.size());
+        if (DebugLogger.SERVER.isEnabled(DebugLogger.LEVEL_DETAILED)) {
+            DebugLogger.SERVER.debug(MODULE, "发射器索引更新 @{}: channel={}, active={}, 该维度激活数={}", pos.toShortString(), channel, active, index.size());
         }
     }
 
@@ -149,9 +147,8 @@ public final class WirelessRedstoneNetwork {
         }
 
         generation++;
-        if (DebugLogger.isEnabled(DebugLogger.LEVEL_DETAILED)) {
-            DebugLogger.debug(MODULE, "发射器移出索引 @%s，该维度激活数=%d",
-                    pos.toShortString(), index.size());
+        if (DebugLogger.SERVER.isEnabled(DebugLogger.LEVEL_DETAILED)) {
+            DebugLogger.SERVER.debug(MODULE, "发射器移出索引 @{}，该维度激活数={}", pos.toShortString(), index.size());
         }
     }
 
@@ -194,7 +191,7 @@ public final class WirelessRedstoneNetwork {
      */
     public static void clear() {
         if (!INDEXES.isEmpty()) {
-            DebugLogger.info(MODULE, "清空无线红石网络索引（%d 个维度）", INDEXES.size());
+            DebugLogger.SERVER.debug(MODULE, "清空无线红石网络索引（{} 个维度）", INDEXES.size());
             INDEXES.clear();
             // 索引内容变了，作废所有接收器的缓存结果
             generation++;

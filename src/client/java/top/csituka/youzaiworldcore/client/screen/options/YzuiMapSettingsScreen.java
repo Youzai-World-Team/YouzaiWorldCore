@@ -24,7 +24,7 @@ public class YzuiMapSettingsScreen extends Screen {
         super(SettingsDetails.mapGroupTitle(SettingsDetails.MapGroup.valueOf(group)));
         this.parent = parent;
         this.group = SettingsDetails.MapGroup.valueOf(group);
-        DebugLogger.debug("MapSettings", "打开直接选择地图设置：%s", group);
+        DebugLogger.CLIENT.debug("MapSettings", "打开直接选择地图设置：{}", group);
     }
 
     @SuppressWarnings("null")

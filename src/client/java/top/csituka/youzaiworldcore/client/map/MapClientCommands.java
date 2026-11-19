@@ -38,7 +38,7 @@ public final class MapClientCommands {
                         .then(argument("args", StringArgumentType.greedyString())));
             dispatcher.register(literal("yzwc").then(map));
         });
-        DebugLogger.info("MapClientCommands", "已注册 /yzwc map 本机入口");
+        DebugLogger.CLIENT.debug("MapClientCommands", "已注册 /yzwc map 本机入口");
     }
 
     private static int open(Screen screen) {

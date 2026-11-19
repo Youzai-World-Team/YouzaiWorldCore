@@ -8,8 +8,6 @@ import net.minecraft.client.gui.components.toasts.SystemToast;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.ARGB;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import top.csituka.youzaiworldcore.client.config.ClientGlobalSettings;
 import top.csituka.youzaiworldcore.config.ConfigSection;
 import top.csituka.youzaiworldcore.util.DebugLogger;
@@ -25,7 +23,7 @@ import java.io.IOException;
  */
 public class Configurator {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/HighlightItem");
+    private static final DebugLogger.ModuleLogger LOGGER = DebugLogger.CLIENT.module("HighlightItem");
 
     public static boolean TOGGLE;
     public static int COLOR;
@@ -99,7 +97,7 @@ public class Configurator {
         ConfigSection section = section();
         if (section.isEmpty()) {
             writeDefaults();
-            DebugLogger.info("HighlightItem", "highlight_item_module 分节不存在，已写入默认配置");
+            DebugLogger.CLIENT.debug("HighlightItem", "highlight_item_module 分节不存在，已写入默认配置");
             return;
         }
 
@@ -121,10 +119,10 @@ public class Configurator {
         NOTIFICATION_PREFERENCE = section.getEnum(Config.NOTIFICATION_PREFERENCE.getKey(),
                 DEFAULT_NOTIFICATION_PREFERENCE, NotificationPreference.class);
 
-        DebugLogger.stateChange("HighlightItem", "config", "toggle", TOGGLE);
-        DebugLogger.stateChange("HighlightItem", "config", "color", COLOR);
-        DebugLogger.stateChange("HighlightItem", "config", "comparator", COMPARATOR.name());
-        DebugLogger.stateChange("HighlightItem", "config", "notif", NOTIFICATION_PREFERENCE.name());
+        DebugLogger.CLIENT.stateChange("HighlightItem", "config", "toggle", TOGGLE);
+        DebugLogger.CLIENT.stateChange("HighlightItem", "config", "color", COLOR);
+        DebugLogger.CLIENT.stateChange("HighlightItem", "config", "comparator", COMPARATOR.name());
+        DebugLogger.CLIENT.stateChange("HighlightItem", "config", "notif", NOTIFICATION_PREFERENCE.name());
     }
 
     /** 重置为默认值并写入 {@code highlight_item_module} 分节（首次安装 / 坏文件恢复用） */
@@ -181,7 +179,7 @@ public class Configurator {
                                     : "youzaiworldcore.highlight.deactivate"))
                             .withStyle(TOGGLE ? ChatFormatting.GRAY : ChatFormatting.DARK_GRAY),
                     player);
-            DebugLogger.stateChange("HighlightItem", "toggle", "value", TOGGLE);
+            DebugLogger.CLIENT.stateChange("HighlightItem", "toggle", "value", TOGGLE);
         } catch (IOException e) {
             notify(notification,
                     Component.translatable("youzaiworldcore.highlight.config.update.fail")
@@ -217,7 +215,7 @@ public class Configurator {
                                     .append(Component.literal(" (" + mode.name() + ")")))
                             .withStyle(ChatFormatting.GRAY),
                     player);
-            DebugLogger.stateChange("HighlightItem", "comparator", "value", mode.name());
+            DebugLogger.CLIENT.stateChange("HighlightItem", "comparator", "value", mode.name());
         } catch (IOException e) {
             notify(notification,
                     Component.translatable("youzaiworldcore.highlight.config.update.fail")
@@ -241,7 +239,7 @@ public class Configurator {
                 player.sendSystemMessage(
                         Component.translatable("youzaiworldcore.highlight.color").withStyle(ChatFormatting.GRAY));
             }
-            DebugLogger.stateChange("HighlightItem", "color", "value", COLOR);
+            DebugLogger.CLIENT.stateChange("HighlightItem", "color", "value", COLOR);
         } catch (IOException e) {
             if (player != null) {
                 player.sendSystemMessage(Component.translatable("youzaiworldcore.highlight.config.update.fail")
@@ -255,7 +253,7 @@ public class Configurator {
         NOTIFICATION_PREFERENCE = preference;
         try {
             updateConfig(Config.NOTIFICATION_PREFERENCE, preference.name());
-            DebugLogger.stateChange("HighlightItem", "notif", "value", preference.name());
+            DebugLogger.CLIENT.stateChange("HighlightItem", "notif", "value", preference.name());
         } catch (IOException e) {
             LOGGER.error("[HighlightItem] 无法更新通知偏好配置文件", e);
         }

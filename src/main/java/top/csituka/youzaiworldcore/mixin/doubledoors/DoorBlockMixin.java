@@ -65,10 +65,10 @@ public class DoorBlockMixin {
         boolean post = level.getBlockState(blockPos).getValue(BlockStateProperties.OPEN);
         if (post == pre) {
             // 未发生切换（如铁门无法徒手开启），不触发双开
-            DebugLogger.debug(MODULE, "useWithoutItem: 状态未变化，跳过 pos=%s", blockPos);
+            DebugLogger.SERVER.debug(MODULE, "useWithoutItem: 状态未变化，跳过 pos={}", blockPos);
             return;
         }
-        DebugLogger.debug(MODULE, "useWithoutItem: pos=%s, targetOpen=%s", blockPos, post);
+        DebugLogger.SERVER.debug(MODULE, "useWithoutItem: pos={}, targetOpen={}", blockPos, post);
         DoubleDoorsHandler.onDoorClick(level, player, blockPos, post);
     }
 }

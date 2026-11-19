@@ -1,7 +1,5 @@
 package top.csituka.youzaiworldcore.config;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
@@ -19,7 +17,7 @@ public final class UpdateCheckerConfig {
 
     public static final String MODULE = "UpdateCheckerConfig";
 
-    private static final Logger LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/UpdateCheckerConfig");
+    private static final DebugLogger.ModuleLogger LOGGER = DebugLogger.SERVER.module("UpdateCheckerConfig");
 
     private static final boolean DEFAULT_ENABLED = true;
     /** 默认值：各处检查 / 展示开关一律开启 */
@@ -67,26 +65,26 @@ public final class UpdateCheckerConfig {
     // ===== 写入 =====
 
     public static void setEnabled(boolean value) {
-        DebugLogger.entering(MODULE, "setEnabled", "value=" + value);
+        DebugLogger.SERVER.entering(MODULE, "setEnabled", "value=" + value);
         if (enabled == value) {
-            DebugLogger.exiting(MODULE, "setEnabled", "no-change");
+            DebugLogger.SERVER.exiting(MODULE, "setEnabled", "no-change");
             return;
         }
         enabled = value;
         save();
-        DebugLogger.exiting(MODULE, "setEnabled", "1");
+        DebugLogger.SERVER.exiting(MODULE, "setEnabled", "1");
     }
 
     // ===== 持久化 =====
 
     /** 从全局配置的 {@code update_module} 分节加载（分节缺失则写入默认配置） */
     public static void load() {
-        DebugLogger.entering(MODULE, "load");
+        DebugLogger.SERVER.entering(MODULE, "load");
         ConfigSection section = GlobalSettings.section(GlobalSettings.UPDATE_MODULE);
         if (section.isEmpty()) {
-            DebugLogger.info(MODULE, "update_module 分节不存在，写入默认配置");
+            DebugLogger.SERVER.info(MODULE, "update_module 分节不存在，写入默认配置");
             save();
-            DebugLogger.exiting(MODULE, "load", "created default");
+            DebugLogger.SERVER.exiting(MODULE, "load", "created default");
             return;
         }
         enabled = section.getBoolean("enabled", enabled);
@@ -94,16 +92,15 @@ public final class UpdateCheckerConfig {
         checkOnStartupClient = section.getBoolean("check_on_startup_client", checkOnStartupClient);
         announceToConsole = section.getBoolean("announce_to_console", announceToConsole);
         showOnTitleScreen = section.getBoolean("show_on_title_screen", showOnTitleScreen);
-        DebugLogger.info(MODULE, "已加载配置: enabled=%s, check_on_startup_server=%s, check_on_startup_client=%s",
-                enabled, checkOnStartupServer, checkOnStartupClient);
-        DebugLogger.exiting(MODULE, "load");
+        DebugLogger.SERVER.info(MODULE, "已加载配置: enabled={}, check_on_startup_server={}, check_on_startup_client={}", enabled, checkOnStartupServer, checkOnStartupClient);
+        DebugLogger.SERVER.exiting(MODULE, "load");
     }
 
     /** 重新加载配置（供 /yzwc reload 调用） */
     public static void reload() {
-        DebugLogger.entering(MODULE, "reload");
+        DebugLogger.SERVER.entering(MODULE, "reload");
         load();
-        DebugLogger.exiting(MODULE, "reload");
+        DebugLogger.SERVER.exiting(MODULE, "reload");
     }
 
     /** 重置为默认值并写入 {@code update_module} 分节（新开服 / 坏文件恢复用） */

@@ -32,8 +32,7 @@ public abstract class InkSacItemMixin {
         }
 
         flashingSign.youzaiworldcore$setFlashing(front, false);
-        DebugLogger.info("InkSacItem", "普通墨囊取消告示牌闪烁：pos=%s, front=%s",
-                sign.getBlockPos().toShortString(), front);
+        DebugLogger.SERVER.debug("InkSacItem", "普通墨囊取消告示牌闪烁：pos={}, front={}", sign.getBlockPos().toShortString(), front);
         // 有荧光文字时继续执行原版逻辑，让它同时取消发光；没有荧光文字时，
         // 原版逻辑会返回 false，此处直接完成一次有效的「取消闪烁」操作。
         if (!sign.getText(slot).hasGlowingText()) {

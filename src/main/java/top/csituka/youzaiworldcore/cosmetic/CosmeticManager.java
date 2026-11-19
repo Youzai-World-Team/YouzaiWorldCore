@@ -76,7 +76,7 @@ public final class CosmeticManager {
 
     /** 初始化服务端数据目录与内存冷却表。 */
     public static void initialize() {
-        DebugLogger.entering(MODULE, "initialize");
+        DebugLogger.SERVER.entering(MODULE, "initialize");
         ModPaths.ensureDir(ModPaths.serverData(GlobalSettings.COSMETIC_MODULE));
         METADATA_STORE.loadOrCreateDefaults();
         ConfigSection metadata = METADATA_STORE.section(GlobalSettings.COSMETIC_MODULE);
@@ -99,7 +99,7 @@ public final class CosmeticManager {
         VERIFYING_MOJANG_PROFILES.clear();
         VERIFIED_MOJANG_PROFILES.clear();
         ACTIVE_APPEARANCE_SESSIONS.clear();
-        DebugLogger.exiting(MODULE, "initialize", "serverInstanceId=" + serverInstanceId);
+        DebugLogger.SERVER.exiting(MODULE, "initialize", "serverInstanceId=" + serverInstanceId);
     }
 
     /** 服务器停止时释放仅存于内存的冷却记录。 */
@@ -129,7 +129,7 @@ public final class CosmeticManager {
             ServerPlayNetworking.send(player, CosmeticReadyPayload.disabled());
         }
         if (!isServerActive(server)) {
-            DebugLogger.info(MODULE, "外观模块配置已重载，模块当前关闭");
+            DebugLogger.SERVER.debug(MODULE, "外观模块配置已重载，模块当前关闭");
             return;
         }
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
@@ -137,7 +137,7 @@ public final class CosmeticManager {
                 onAuthenticated(player);
             }
         }
-        DebugLogger.info(MODULE, "外观模块配置已重载并同步至在线玩家");
+        DebugLogger.SERVER.debug(MODULE, "外观模块配置已重载并同步至在线玩家");
     }
 
     /**
@@ -164,11 +164,11 @@ public final class CosmeticManager {
                     profile.id(), profile.name(),
                     textures == null ? "" : textures.value(),
                     textures == null ? "" : textures.signature()));
-            DebugLogger.info(MODULE, "已复用玩家 %s 登录阶段核验的正版外观档案", player.getScoreboardName());
+            DebugLogger.SERVER.debug(MODULE, "已复用玩家 {} 登录阶段核验的正版外观档案", player.getScoreboardName());
             return;
         }
         requestMojangVerification(player);
-        DebugLogger.info(MODULE, "已向玩家 %s 发起 Mojang 正版外观核验", player.getScoreboardName());
+        DebugLogger.SERVER.debug(MODULE, "已向玩家 {} 发起 Mojang 正版外观核验", player.getScoreboardName());
     }
 
     /** 玩家离线时通知其他客户端释放其动态纹理，但保留服务端文件。 */
@@ -215,7 +215,7 @@ public final class CosmeticManager {
         if (pending == null
                 || pending.expiresAtNanos() < System.nanoTime()
                 || !pending.challenge().equals(payload.challenge())) {
-            DebugLogger.warn(MODULE, "忽略玩家 %s 的过期 Mojang 外观核验响应", player.getScoreboardName());
+            DebugLogger.SERVER.debug(MODULE, "忽略玩家 {} 的过期 Mojang 外观核验响应", player.getScoreboardName());
             return;
         }
         PENDING_MOJANG_CHALLENGES.remove(player.getUUID(), pending);
@@ -236,8 +236,7 @@ public final class CosmeticManager {
                 .orTimeout(MOJANG_VERIFICATION_TIMEOUT_SECONDS, TimeUnit.SECONDS)
                 .whenComplete((profile, error) -> server.execute(() -> {
                     if (!VERIFYING_MOJANG_PROFILES.remove(playerUuid, challenge)) {
-                        DebugLogger.debug(MODULE, "忽略玩家 %s 的旧 Mojang 外观核验结果",
-                                player.getScoreboardName());
+                        DebugLogger.SERVER.debug(MODULE, "忽略玩家 {} 的旧 Mojang 外观核验结果", player.getScoreboardName());
                         return;
                     }
                     if (error != null || profile == null) {
@@ -251,33 +250,32 @@ public final class CosmeticManager {
 
     /** 校验并应用客户端上传的完整外观快照。 */
     public static void applySnapshot(ServerPlayer player, CosmeticUploadPayload payload) {
-        DebugLogger.entering(MODULE, "applySnapshot", "player=" + player.getScoreboardName());
+        DebugLogger.SERVER.entering(MODULE, "applySnapshot", "player=" + player.getScoreboardName());
         MinecraftServer server = player.level().getServer();
         if (server == null || !isServerActive(server)) {
             sendUploadResult(player, payload.snapshotHash(), false, 0);
-            DebugLogger.exiting(MODULE, "applySnapshot", "server inactive");
+            DebugLogger.SERVER.exiting(MODULE, "applySnapshot", "server inactive");
             return;
         }
         if (CosmeticModuleSettings.isRequireAuthenticated() && !isAuthenticated(player)) {
-            DebugLogger.warn(MODULE, "拒绝未认证玩家 %s 的外观上传", player.getScoreboardName());
+            DebugLogger.SERVER.warn(MODULE, "拒绝未认证玩家 {} 的外观上传", player.getScoreboardName());
             sendUploadResult(player, payload.snapshotHash(), false, 0);
             return;
         }
         if (VERIFIED_MOJANG_PROFILES.containsKey(player.getUUID())
                 || PENDING_MOJANG_CHALLENGES.containsKey(player.getUUID())
                 || VERIFYING_MOJANG_PROFILES.containsKey(player.getUUID())) {
-            DebugLogger.info(MODULE, "忽略正版玩家 %s 的本地自定义外观上传请求", player.getScoreboardName());
+            DebugLogger.SERVER.debug(MODULE, "忽略正版玩家 {} 的本地自定义外观上传请求", player.getScoreboardName());
             sendUploadResult(player, payload.snapshotHash(), true, 0);
             return;
         }
         if (!payload.offlineSession()) {
-            DebugLogger.warn(MODULE, "拒绝玩家 %s 的外观上传：客户端未声明离线会话", player.getScoreboardName());
+            DebugLogger.SERVER.warn(MODULE, "拒绝玩家 {} 的外观上传：客户端未声明离线会话", player.getScoreboardName());
             sendUploadResult(player, payload.snapshotHash(), false, 0);
             return;
         }
         if (payload.skinWide().length > 0 && payload.skinSlim().length > 0) {
-            DebugLogger.warn(MODULE, "拒绝玩家 %s 的外观上传：skin.png 与 skin_slim.png 不得同时启用",
-                    player.getScoreboardName());
+            DebugLogger.SERVER.warn(MODULE, "拒绝玩家 {} 的外观上传：skin.png 与 skin_slim.png 不得同时启用", player.getScoreboardName());
             sendUploadResult(player, payload.snapshotHash(), false, 0);
             return;
         }
@@ -295,8 +293,7 @@ public final class CosmeticManager {
                     ? CosmeticPngValidator.validateCloak(slot.data(), CosmeticModuleSettings.getMaxFileBytes())
                     : CosmeticPngValidator.validateSkin(slot.data(), CosmeticModuleSettings.getMaxFileBytes());
             if (!validation.valid()) {
-                DebugLogger.warn(MODULE, "拒绝玩家 %s 的 %s：%s",
-                        player.getScoreboardName(), slot.fileName(), validation.reason());
+                DebugLogger.SERVER.warn(MODULE, "拒绝玩家 {} 的 {}：{}", player.getScoreboardName(), slot.fileName(), validation.reason());
                 sendUploadResult(player, payload.snapshotHash(), false, 0);
                 return;
             }
@@ -305,7 +302,7 @@ public final class CosmeticManager {
         String actualSnapshotHash = CosmeticSnapshotHasher.hash(
                 payload.skinWide(), payload.skinSlim(), payload.cloak());
         if (!payload.snapshotHash().equals(actualSnapshotHash)) {
-            DebugLogger.warn(MODULE, "拒绝玩家 %s 的外观上传：快照哈希不匹配", player.getScoreboardName());
+            DebugLogger.SERVER.warn(MODULE, "拒绝玩家 {} 的外观上传：快照哈希不匹配", player.getScoreboardName());
             sendUploadResult(player, payload.snapshotHash(), false, 0);
             return;
         }
@@ -314,7 +311,7 @@ public final class CosmeticManager {
         if (beforeSnapshot.snapshotHash().equals(payload.snapshotHash())) {
             trackOnlineSnapshot(player.getUUID(), beforeSnapshot);
             sendUploadResult(player, payload.snapshotHash(), true, 0);
-            DebugLogger.exiting(MODULE, "applySnapshot", "already aligned");
+            DebugLogger.SERVER.exiting(MODULE, "applySnapshot", "already aligned");
             return;
         }
 
@@ -322,7 +319,7 @@ public final class CosmeticManager {
         long cooldownNanos = secondsToNanos(CosmeticModuleSettings.getUploadCooldownSeconds());
         Long lastUpload = LAST_UPLOAD_NANOS.get(player.getUUID());
         if (lastUpload != null && now - lastUpload < cooldownNanos) {
-            DebugLogger.warn(MODULE, "玩家 %s 的外观上传触发冷却", player.getScoreboardName());
+            DebugLogger.SERVER.debug(MODULE, "玩家 {} 的外观上传触发冷却", player.getScoreboardName());
             long remainingNanos = cooldownNanos - (now - lastUpload);
             int retryAfter = (int) Math.min(Integer.MAX_VALUE,
                     Math.max(1L, (remainingNanos + 999_999_999L) / 1_000_000_000L));
@@ -333,7 +330,7 @@ public final class CosmeticManager {
         boolean changed = false;
         if (!ApiServiceClient.uploadCosmeticSnapshot(
                 player.getUUID(), payload.skinWide(), payload.skinSlim(), payload.cloak())) {
-            DebugLogger.warn(MODULE, "玩家 %s 的外观上传未被 Api 接受", player.getScoreboardName());
+            DebugLogger.SERVER.warn(MODULE, "玩家 {} 的外观上传未被 Api 接受", player.getScoreboardName());
             CosmeticSnapshot actualSnapshot = readSnapshot(player.getUUID());
             trackOnlineSnapshot(player.getUUID(), actualSnapshot);
             sendUploadResult(player, payload.snapshotHash(), false,
@@ -350,7 +347,7 @@ public final class CosmeticManager {
                 clearTargetRequestCooldowns(player.getUUID());
                 broadcastInfo(server, player.getUUID(), storedSnapshot, null);
             }
-            DebugLogger.warn(MODULE, "玩家 %s 的外观快照写入后校验不一致", player.getScoreboardName());
+            DebugLogger.SERVER.warn(MODULE, "玩家 {} 的外观快照写入后校验不一致", player.getScoreboardName());
             sendUploadResult(player, payload.snapshotHash(), false,
                     Math.max(1, CosmeticModuleSettings.getUploadCooldownSeconds()));
             return;
@@ -359,10 +356,10 @@ public final class CosmeticManager {
         if (changed) {
             clearTargetRequestCooldowns(player.getUUID());
             broadcastInfo(server, player.getUUID(), storedSnapshot, null);
-            DebugLogger.info(MODULE, "玩家 %s 的自定义外观快照已更新", player.getScoreboardName());
+            DebugLogger.SERVER.debug(MODULE, "玩家 {} 的自定义外观快照已更新", player.getScoreboardName());
         }
         sendUploadResult(player, payload.snapshotHash(), true, 0);
-        DebugLogger.exiting(MODULE, "applySnapshot", changed ? "changed" : "unchanged");
+        DebugLogger.SERVER.exiting(MODULE, "applySnapshot", changed ? "changed" : "unchanged");
     }
 
     /** 按请求冷却读取目标玩家文件并回传。 */
@@ -413,20 +410,20 @@ public final class CosmeticManager {
     /** 删除指定账户的全部自定义外观数据并广播清除。 */
     public static void deletePlayerData(MinecraftServer server, String uuidText) {
         if (uuidText == null || uuidText.isBlank()) {
-            DebugLogger.warn(MODULE, "账户缺少 UUID，无法删除自定义外观数据");
+            DebugLogger.SERVER.warn(MODULE, "账户缺少 UUID，无法删除自定义外观数据");
             return;
         }
         try {
             deletePlayerData(server, UUID.fromString(uuidText));
         } catch (IllegalArgumentException e) {
-            DebugLogger.warn(MODULE, "账户 UUID 非法，拒绝删除自定义外观数据：%s", uuidText);
+            DebugLogger.SERVER.warn(MODULE, "账户 UUID 非法，拒绝删除自定义外观数据：{}", uuidText);
         }
     }
 
     /** 删除指定 UUID 的全部自定义外观数据并广播清除。 */
     public static void deletePlayerData(MinecraftServer server, UUID playerUuid) {
         if (!ApiServiceClient.deleteCosmetics(playerUuid)) {
-            DebugLogger.warn(MODULE, "Api 删除玩家 %s 的外观数据失败", playerUuid);
+            DebugLogger.SERVER.warn(MODULE, "Api 删除玩家 {} 的外观数据失败", playerUuid);
             return;
         }
         LAST_UPLOAD_NANOS.remove(playerUuid);
@@ -434,7 +431,7 @@ public final class CosmeticManager {
         ONLINE_COSMETIC_OWNERS.remove(playerUuid);
         if (server != null)
             broadcastInfo(server, playerUuid, emptySnapshot(), null);
-        DebugLogger.info(MODULE, "已删除玩家 %s 的自定义外观数据", playerUuid);
+        DebugLogger.SERVER.debug(MODULE, "已删除玩家 {} 的自定义外观数据", playerUuid);
     }
 
     private static boolean isServerActive(MinecraftServer server) {
@@ -479,7 +476,7 @@ public final class CosmeticManager {
                     textureValue,
                     textures == null ? "" : textures.signature());
         } catch (Exception e) {
-            DebugLogger.warn(MODULE, "Mojang 正版外观核验失败：%s", e.getClass().getSimpleName());
+            DebugLogger.SERVER.warn(MODULE, "Mojang 正版外观核验失败：{}", e.getClass().getSimpleName());
             return null;
         }
     }
@@ -509,8 +506,7 @@ public final class CosmeticManager {
                 true, serverInstanceId, EMPTY_SNAPSHOT_HASH, CosmeticModuleSettings.getRequestCooldownSeconds()));
         sendVerifiedMojangAppearances(player);
         sendOnlineCustomAppearances(player);
-        DebugLogger.info(MODULE, "玩家 %s 已核验为 Mojang 正版账户，已启用正版皮肤与披风",
-                player.getScoreboardName());
+        DebugLogger.SERVER.debug(MODULE, "玩家 {} 已核验为 Mojang 正版账户，已启用正版皮肤与披风", player.getScoreboardName());
     }
 
     private static void handleMojangVerificationFailed(ServerPlayer player, String reason) {
@@ -519,8 +515,7 @@ public final class CosmeticManager {
         }
         VERIFIED_MOJANG_PROFILES.remove(player.getUUID());
         VERIFYING_MOJANG_PROFILES.remove(player.getUUID());
-        DebugLogger.info(MODULE, "玩家 %s 未通过 Mojang 正版核验（%s），启用离线自定义外观",
-                player.getScoreboardName(), reason);
+        DebugLogger.SERVER.debug(MODULE, "玩家 {} 未通过 Mojang 正版核验（{}），启用离线自定义外观", player.getScoreboardName(), reason);
         syncCustomAppearance(player);
     }
 
@@ -539,7 +534,7 @@ public final class CosmeticManager {
                 .whenComplete((snapshot, error) -> server.execute(() -> {
                     CosmeticSnapshot resolvedSnapshot = snapshot;
                     if (error != null) {
-                        DebugLogger.exception(MODULE, "读取离线外观快照", error);
+                        DebugLogger.SERVER.exception(MODULE, "读取离线外观快照", error);
                         resolvedSnapshot = emptySnapshot();
                     }
                     if (player.hasDisconnected()
@@ -592,7 +587,7 @@ public final class CosmeticManager {
                 .supplyAsync(() -> readSnapshots(ownerUuids))
                 .whenComplete((snapshots, error) -> server.execute(() -> {
                     if (error != null) {
-                        DebugLogger.exception(MODULE, "读取在线玩家外观快照", error);
+                        DebugLogger.SERVER.exception(MODULE, "读取在线玩家外观快照", error);
                         return;
                     }
                     if (receiver.hasDisconnected()
@@ -657,7 +652,7 @@ public final class CosmeticManager {
             return new CosmeticSnapshot(snapshot.skinWide(), snapshot.skinSlim(), snapshot.cloak(),
                     CosmeticSnapshotHasher.hash(snapshot.skinWide(), snapshot.skinSlim(), snapshot.cloak()));
         }
-        DebugLogger.warn(MODULE, "Api 无法读取玩家 %s 的外观数据", playerUuid);
+        DebugLogger.SERVER.warn(MODULE, "Api 无法读取玩家 {} 的外观数据", playerUuid);
         return emptySnapshot();
     }
 

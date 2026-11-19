@@ -58,10 +58,7 @@ public class GuiAnimationController {
 }
 """)
 stub(P + ".util.DebugLogger", """
-public class DebugLogger {
-    public static void debug(String m,String s,Object...args){}
-    public static void info(String m,String s,Object...args){}
-}
+public final class DebugLogger { public static final int LEVEL_OFF=0,LEVEL_BASIC=1,LEVEL_DETAILED=2,LEVEL_DEBUG=3; public static final DebugLogger SERVER=new DebugLogger(),CLIENT=new DebugLogger(); private boolean developer; private int level; public void configure(boolean d,int l){developer=d;level=l;} public boolean isDevModeEnabled(){return developer;} public int getLogLevel(){return level;} public static boolean isEnabled(int l){return false;} public static boolean isEnabled(){return false;} public static DebugLogger bootstrap(){return CLIENT;} public static DebugLogger forFile(java.nio.file.Path p){return SERVER;} public ModuleLogger module(String m){return new ModuleLogger();} public static void notice(String m,String s,Object...a){} public static void warn(String m,String s,Object...a){} public static void error(String m,String s,Object...a){} public static void exception(String m,String s,Object...a){} public static void exceptionSummary(String m,String s,Object...a){} public static void info(String m,String s,Object...a){} public static void stateChange(String m,String s,Object...a){} public static void debug(String m,String s,Object...a){} public static void branch(String m,String s,Object...a){} public static void debugStateChange(String m,String s,Object...a){} public static void trace(String m,String s,Object...a){} public static void entering(String m,String s,Object...a){} public static void exiting(String m,String s,Object...a){} public static void traceBranch(String m,String s,Object...a){} public static void traceStateChange(String m,String s,Object...a){} public static final class ModuleLogger { public void notice(String s,Object...a){} public void info(String s,Object...a){} public void debug(String s,Object...a){} public void trace(String s,Object...a){} public void warn(String s,Object...a){} public void error(String s,Object...a){} public boolean isInfoEnabled(){return false;} public boolean isDebugEnabled(){return false;} public boolean isTraceEnabled(){return false;} } }
 """)
 stub(C + ".render.YzuiTheme", "public class YzuiTheme {}")
 stub(C + ".screen.element.MainMenuElements", "public class MainMenuElements {}")
@@ -419,7 +416,7 @@ def main():
             file.write_text(content, encoding="utf-8")
             files.append(str(file))
         subprocess.run([javac, "--release", "25", "-encoding", "UTF-8", "-d", str(temporary),
-                        *files, *map(str, production)], cwd=ROOT, check=True)
+                        *files, *map(str, production), str(Path(__file__).resolve().parents[1] / "src/main/java/top/csituka/youzaiworldcore/util/LogValues.java")], cwd=ROOT, check=True)
         subprocess.run([java, "-cp", str(temporary), "MailNavigationChecks"], cwd=ROOT, check=True)
 
 

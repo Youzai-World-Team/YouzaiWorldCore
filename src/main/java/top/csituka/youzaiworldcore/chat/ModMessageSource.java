@@ -38,7 +38,7 @@ public final class ModMessageSource {
                         sources.put(method.getName(), merged.mixin());
                 }
             } catch (RuntimeException | LinkageError error) {
-                DebugLogger.exceptionSummary("ChatMessages", "resolveMixinMessageSource", error.getMessage());
+                DebugLogger.SERVER.exceptionSummary("ChatMessages", "resolveMixinMessageSource", error.getMessage());
             }
             return Map.copyOf(sources);
         }
@@ -94,12 +94,12 @@ public final class ModMessageSource {
                         continue;
                     if (mod.findPath(resource).isPresent()) {
                         String displayName = mod.getMetadata().getName();
-                        DebugLogger.debug("ChatMessages", "已识别消息类 %s 的模组：%s", name, id);
+                        DebugLogger.SERVER.debug("ChatMessages", "已识别消息类 {} 的模组：{}", name, id);
                         return Optional.of(displayName == null || displayName.isBlank() ? id : displayName);
                     }
                 }
             } catch (RuntimeException error) {
-                DebugLogger.exceptionSummary("ChatMessages", "resolveMessageMod", error.getMessage());
+                DebugLogger.SERVER.exceptionSummary("ChatMessages", "resolveMessageMod", error.getMessage());
             }
             return Optional.empty();
         });

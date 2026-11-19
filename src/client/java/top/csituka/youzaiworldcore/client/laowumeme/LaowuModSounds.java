@@ -36,7 +36,7 @@ public final class LaowuModSounds {
         LAOWU2 = register("laowu2");
         QILIANG = register("qiliang");
         ZHANHOU = register("zhanhou");
-        DebugLogger.info(MODULE, "已注册内置曲目 SoundEvent: laowu2 / qiliang / zhanhou");
+        DebugLogger.CLIENT.debug(MODULE, "已注册内置曲目 SoundEvent: laowu2 / qiliang / zhanhou");
     }
 
     private static SoundEvent register(String name) {

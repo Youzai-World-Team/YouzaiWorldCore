@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.event;
 
+import top.csituka.youzaiworldcore.util.LogValues;
+
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
@@ -22,7 +24,7 @@ public class BounceHandler {
     private static final String MODULE = "BounceHandler";
 
     public static void register() {
-        DebugLogger.entering(MODULE, "register");
+        DebugLogger.SERVER.entering(MODULE, "register");
 
         ServerLivingEntityEvents.AFTER_DAMAGE.register((entity, source, baseDamage, damageTaken, blocked) -> {
             if (!(entity instanceof ServerPlayer player))
@@ -54,11 +56,10 @@ public class BounceHandler {
             attacker.setDeltaMovement(attacker.getDeltaMovement().add(delta));
             attacker.syncVelocity = true;
 
-            DebugLogger.info(MODULE, "Bounce Lv%d 弹开攻击者: player=%s, attacker=%s, strength=%.2f",
-                    level, player.getName().getString(), attacker.getName().getString(), strength);
+            DebugLogger.SERVER.debug(MODULE, "Bounce Lv{} 弹开攻击者: player={}, attacker={}, strength={}", level, player.getName().getString(), attacker.getName().getString(), LogValues.decimal(strength, 2));
         });
 
-        DebugLogger.info(MODULE, "弹跳附魔事件处理器已注册 (ServerLivingEntityEvents.AFTER_DAMAGE)");
-        DebugLogger.exiting(MODULE, "register");
+        DebugLogger.SERVER.debug(MODULE, "弹跳附魔事件处理器已注册 (ServerLivingEntityEvents.AFTER_DAMAGE)");
+        DebugLogger.SERVER.exiting(MODULE, "register");
     }
 }

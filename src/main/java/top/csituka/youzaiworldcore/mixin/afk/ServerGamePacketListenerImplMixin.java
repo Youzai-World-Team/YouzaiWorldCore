@@ -57,8 +57,7 @@ public abstract class ServerGamePacketListenerImplMixin {
         var server = player.level().getServer();
         if (!player.hasDisconnected()) {
             AfkManager.onChatActivity(player, server.getTickCount());
-            DebugLogger.trace(MODULE, "%s 收到客户端%s数据包，已记录 AFK 活动",
-                    player.getName().getString(), source);
+            DebugLogger.SERVER.trace(MODULE, "{} 收到客户端{}数据包，已记录 AFK 活动", player.getName().getString(), source);
         }
     }
 }

@@ -1,7 +1,7 @@
 package top.csituka.youzaiworldcore.config;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import top.csituka.youzaiworldcore.util.LogValues;
+
 
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
@@ -21,7 +21,7 @@ public final class ChargedCreeperConfig {
 
     public static final String MODULE = "ChargedCreeperConfig";
 
-    private static final Logger LOGGER = LoggerFactory.getLogger("YouzaiWorldCore/ChargedCreeperConfig");
+    private static final DebugLogger.ModuleLogger LOGGER = DebugLogger.SERVER.module("ChargedCreeperConfig");
 
     private static final boolean DEFAULT_ENABLED = true;
     /** 默认值：10% 带电概率 */
@@ -51,24 +51,24 @@ public final class ChargedCreeperConfig {
 
     /** 设置功能总开关并持久化到配置文件 */
     public static void setEnabled(boolean value) {
-        DebugLogger.entering(MODULE, "setEnabled", "value=" + value);
+        DebugLogger.SERVER.entering(MODULE, "setEnabled", "value=" + value);
         if (enabled == value) {
-            DebugLogger.info(MODULE, "enabled 未变化，跳过保存");
-            DebugLogger.exiting(MODULE, "setEnabled", "no-change");
+            DebugLogger.SERVER.debug(MODULE, "enabled 未变化，跳过保存");
+            DebugLogger.SERVER.exiting(MODULE, "setEnabled", "no-change");
             return;
         }
-        DebugLogger.stateChange(MODULE, "ChargedCreeperConfig", "enabled", enabled, value);
+        DebugLogger.SERVER.stateChange(MODULE, "ChargedCreeperConfig", "enabled", enabled, value);
         enabled = value;
         save();
-        DebugLogger.exiting(MODULE, "setEnabled", "1");
+        DebugLogger.SERVER.exiting(MODULE, "setEnabled", "1");
     }
 
     /** 设置带电概率（自动钳制到 [0.0, 1.0]）并持久化到配置文件 */
     public static void setChance(double value) {
-        DebugLogger.entering(MODULE, "setChance", "value=" + value);
+        DebugLogger.SERVER.entering(MODULE, "setChance", "value=" + value);
         double clamped = value;
         if (Double.isNaN(clamped)) {
-            DebugLogger.info(MODULE, "setChance 收到 NaN，钳制为 0");
+            DebugLogger.SERVER.debug(MODULE, "setChance 收到 NaN，钳制为 0");
             clamped = 0.0;
         } else if (clamped < 0.0) {
             clamped = 0.0;
@@ -76,35 +76,35 @@ public final class ChargedCreeperConfig {
             clamped = 1.0;
         }
         if (chance == clamped) {
-            DebugLogger.info(MODULE, "chance 未变化，跳过保存");
-            DebugLogger.exiting(MODULE, "setChance", "no-change");
+            DebugLogger.SERVER.debug(MODULE, "chance 未变化，跳过保存");
+            DebugLogger.SERVER.exiting(MODULE, "setChance", "no-change");
             return;
         }
-        DebugLogger.stateChange(MODULE, "ChargedCreeperConfig", "chance", chance, clamped);
+        DebugLogger.SERVER.stateChange(MODULE, "ChargedCreeperConfig", "chance", chance, clamped);
         chance = clamped;
         save();
-        DebugLogger.exiting(MODULE, "setChance", "1");
+        DebugLogger.SERVER.exiting(MODULE, "setChance", "1");
     }
 
     // ===== 持久化 =====
 
     /** 从全局配置的 {@code charged_creeper_module} 分节加载（分节缺失则写入默认配置） */
     public static void load() {
-        DebugLogger.entering(MODULE, "load");
+        DebugLogger.SERVER.entering(MODULE, "load");
 
         ConfigSection section = GlobalSettings.section(GlobalSettings.CHARGED_CREEPER_MODULE);
         if (section.isEmpty()) {
-            DebugLogger.info(MODULE, "charged_creeper_module 分节不存在，写入默认配置 (chance=%.2f)", chance);
+            DebugLogger.SERVER.info(MODULE, "charged_creeper_module 分节不存在，写入默认配置 (chance={})", LogValues.decimal(chance, 2));
             save();
-            DebugLogger.exiting(MODULE, "load", "created default");
+            DebugLogger.SERVER.exiting(MODULE, "load", "created default");
             return;
         }
 
         enabled = section.getBoolean("enabled", enabled);
         chance = section.getDouble("chance", chance, 0.0, 1.0);
 
-        DebugLogger.info(MODULE, "已加载配置: enabled=%s, chance=%.4f", enabled, chance);
-        DebugLogger.exiting(MODULE, "load");
+        DebugLogger.SERVER.info(MODULE, "已加载配置: enabled={}, chance={}", enabled, LogValues.decimal(chance, 4));
+        DebugLogger.SERVER.exiting(MODULE, "load");
     }
 
     /** 重置为默认值并写入 {@code charged_creeper_module} 分节（新开服 / 坏文件恢复用） */

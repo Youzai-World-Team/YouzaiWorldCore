@@ -48,17 +48,17 @@ public class SitHandler implements UseBlockCallback {
             @NonNull InteractionHand hand,
             @NonNull BlockHitResult hitResult
     ) {
-        DebugLogger.entering("SitHandler", "interact", "player=" + player.getName().getString());
+        DebugLogger.SERVER.entering("SitHandler", "interact", "player=" + player.getName().getString());
 
         if (hand != InteractionHand.MAIN_HAND) {
-            DebugLogger.branch("SitHandler", "hand == MAIN_HAND", false, "副手忽略");
-            DebugLogger.exiting("SitHandler", "interact", "PASS (not main hand)");
+            DebugLogger.SERVER.branch("SitHandler", "hand == MAIN_HAND", false, "副手忽略");
+            DebugLogger.SERVER.exiting("SitHandler", "interact", "PASS (not main hand)");
             return InteractionResult.PASS;
         }
 
         if (!player.getMainHandItem().isEmpty()) {
-            DebugLogger.branch("SitHandler", "main hand empty", false, "持有物品");
-            DebugLogger.exiting("SitHandler", "interact", "PASS (holding item)");
+            DebugLogger.SERVER.branch("SitHandler", "main hand empty", false, "持有物品");
+            DebugLogger.SERVER.exiting("SitHandler", "interact", "PASS (holding item)");
             return InteractionResult.PASS;
         }
 
@@ -68,16 +68,16 @@ public class SitHandler implements UseBlockCallback {
         boolean isStairOrSlab = state.getBlock() instanceof StairBlock
                 || state.getBlock() instanceof SlabBlock;
         if (!isStairOrSlab) {
-            DebugLogger.branch("SitHandler", "block is stair or slab", false, String.valueOf(pos));
-            DebugLogger.exiting("SitHandler", "interact", "PASS (not stair/slab)");
+            DebugLogger.SERVER.branch("SitHandler", "block is stair or slab", false, String.valueOf(pos));
+            DebugLogger.SERVER.exiting("SitHandler", "interact", "PASS (not stair/slab)");
             return InteractionResult.PASS;
         }
-        DebugLogger.branch("SitHandler", "block is stair or slab", true,
+        DebugLogger.SERVER.branch("SitHandler", "block is stair or slab", true,
                 "block=" + state.getBlock() + ", pos=" + pos);
 
         if (player.isPassenger()) {
-            DebugLogger.branch("SitHandler", "player already seated", true);
-            DebugLogger.exiting("SitHandler", "interact", "PASS (already riding)");
+            DebugLogger.SERVER.branch("SitHandler", "player already seated", true);
+            DebugLogger.SERVER.exiting("SitHandler", "interact", "PASS (already riding)");
             return InteractionResult.PASS;
         }
 
@@ -85,7 +85,7 @@ public class SitHandler implements UseBlockCallback {
         // 客户端返回 PASS 以让右键交互数据包正常发送到服务端；
         // 由于楼梯/台阶方块没有原版右键行为，此 PASS 是安全的。
         if (level.isClientSide()) {
-            DebugLogger.branch("SitHandler", "is server side", false, "客户端 PASS，等待服务端处理");
+            DebugLogger.SERVER.branch("SitHandler", "is server side", false, "客户端 PASS，等待服务端处理");
             return InteractionResult.PASS;
         }
 
@@ -94,30 +94,30 @@ public class SitHandler implements UseBlockCallback {
         ServerPlayer serverPlayer = (ServerPlayer) player;
 
         if (hasExistingSeat(serverLevel, pos)) {
-            DebugLogger.branch("SitHandler", "seat already exists at", false, String.valueOf(pos));
-            DebugLogger.exiting("SitHandler", "interact", "PASS (seat exists)");
+            DebugLogger.SERVER.branch("SitHandler", "seat already exists at", false, String.valueOf(pos));
+            DebugLogger.SERVER.exiting("SitHandler", "interact", "PASS (seat exists)");
             return InteractionResult.PASS;
         }
 
         SeatEntity seat = SeatEntity.create(serverLevel, pos);
         if (seat == null) {
-            DebugLogger.warn("SitHandler", "Failed to create seat entity at " + pos);
-            DebugLogger.exiting("SitHandler", "interact", "FAIL (seat creation failed)");
+            DebugLogger.SERVER.warn("SitHandler", "Failed to create seat entity at " + pos);
+            DebugLogger.SERVER.exiting("SitHandler", "interact", "FAIL (seat creation failed)");
             return InteractionResult.FAIL;
         }
 
         boolean added = serverLevel.addFreshEntity(seat);
         if (!added) {
-            DebugLogger.warn("SitHandler", "Failed to add seat entity to world at " + pos);
-            DebugLogger.exiting("SitHandler", "interact", "FAIL (add entity failed)");
+            DebugLogger.SERVER.warn("SitHandler", "Failed to add seat entity to world at " + pos);
+            DebugLogger.SERVER.exiting("SitHandler", "interact", "FAIL (add entity failed)");
             return InteractionResult.FAIL;
         }
 
         // 让玩家骑乘座椅实体（通过 SeatEntity.mountPlayer 绕过 canSerialize 校验）
         seat.mountPlayer(serverPlayer);
 
-        DebugLogger.info("SitHandler", "Player %s is now sitting at %s", player.getName().getString(), pos);
-        DebugLogger.exiting("SitHandler", "interact", "SUCCESS");
+        DebugLogger.SERVER.debug("SitHandler", "Player {} is now sitting at {}", player.getName().getString(), pos);
+        DebugLogger.SERVER.exiting("SitHandler", "interact", "SUCCESS");
         return InteractionResult.SUCCESS;
     }
 
@@ -139,8 +139,8 @@ public class SitHandler implements UseBlockCallback {
     }
 
     public static void register() {
-        DebugLogger.entering("SitHandler", "register");
+        DebugLogger.SERVER.entering("SitHandler", "register");
         UseBlockCallback.EVENT.register(INSTANCE);
-        DebugLogger.exiting("SitHandler", "register");
+        DebugLogger.SERVER.exiting("SitHandler", "register");
     }
 }

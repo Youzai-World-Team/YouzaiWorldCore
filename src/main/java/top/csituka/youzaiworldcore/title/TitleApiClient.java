@@ -110,7 +110,7 @@ public final class TitleApiClient {
             }
             return new Result(true, "", definitions, snapshots);
         } catch (RuntimeException e) {
-            DebugLogger.exception(MODULE, "parse", e);
+            DebugLogger.SERVER.exception(MODULE, "parse", e);
             return new Result(false, "Api 称号数据格式无效", Map.of(), Map.of());
         }
     }
