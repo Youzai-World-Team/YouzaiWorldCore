@@ -149,7 +149,7 @@ public final class YzWorldMapScreen extends Screen {
         // 坐标卡片放在底部入口上方，避免窄屏遮挡。
         infoY = entryY - 48;
         if (settingsPanel != null) { settingsPanel.layout(width, height); addWidget(settingsPanel); panelAnimation.show(settingsPanel); }
-        if (detailPanel != null) { detailPanel.layout(width, height); addWidget(detailPanel); panelAnimation.show(detailPanel); }
+        if (detailPanel != null) { detailPanel.layout(width, height); addWidget(detailPanel); panelAnimation.show(detailPanel); setFocused(detailPanel); }
         if (overlayPanel != null) { overlayPanel.layout(width, height); addWidget(overlayPanel); panelAnimation.show(overlayPanel); }
         if (modalPanel != null) { modalPanel.layout(width, height); addWidget(modalPanel); modalAnimation.show(modalPanel); setFocused(modalPanel); }
         DebugLogger.CLIENT.debug("WorldMap", "全屏地图布局：{}x{}", width, height);

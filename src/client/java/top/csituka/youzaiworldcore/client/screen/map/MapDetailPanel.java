@@ -24,8 +24,11 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import top.csituka.youzaiworldcore.client.effect.TeleportFovEffect;
 import top.csituka.youzaiworldcore.client.map.*;
+import top.csituka.youzaiworldcore.client.render.MenuIcon;
+import top.csituka.youzaiworldcore.client.render.RoundedRect;
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
 import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
+import top.csituka.youzaiworldcore.client.screen.widget.YzuiCloseButton;
 import top.csituka.youzaiworldcore.map.MapWaypoint;
 import top.csituka.youzaiworldcore.map.MapWaypointGroup;
 import top.csituka.youzaiworldcore.network.*;
@@ -53,11 +56,15 @@ final class MapDetailPanel extends AbstractContainerEventHandler implements Rend
     private String name, note, color;
     private MapWaypointGroup group;
     private Component message = Component.empty();
+    private boolean messageError;
     private final List<AbstractWidget> widgets = new ArrayList<>();
     private final List<AbstractWidget> body = new ArrayList<>();
     private final List<Line> lines = new ArrayList<>();
     private int x, y, width, height, top, bottom, scroll, contentHeight;
     private int colorPreviewY = -1;
+    private int creationLocationY = -1;
+    private EditBox creationName;
+    private TransparentButton createButton, createTrackButton;
     private TransparentButton navigationButton;
     private UUID navigationSnapshot;
     private record Line(Component text, int x, int y, int width) { }
@@ -83,7 +90,9 @@ final class MapDetailPanel extends AbstractContainerEventHandler implements Rend
             width = Math.min(screenWidth - 16, Math.max(180, screenWidth / 2));
             x = screenWidth - width - 8; y = 8; height = screenHeight - 16;
         }
-        top = y + 38; bottom = y + height - 62; rebuild();
+        top = y + (dialog && creating ? 48 : 38);
+        bottom = y + height - (dialog && creating ? 60 : 62);
+        rebuild();
     }
 
     private TransparentButton button(int bx, int by, int bw, Component label, Runnable action, boolean inBody) {
@@ -97,14 +106,111 @@ final class MapDetailPanel extends AbstractContainerEventHandler implements Rend
     }
     private void line(Component label, int row) { lines.add(new Line(label, x + 12, top + row - scroll, width - 24)); }
     private void rebuild() {
+        int focusedIndex = widgets.indexOf(getFocused());
+        int cursor = creationName == null ? -1 : creationName.getCursorPosition();
         setFocused(null); widgets.clear(); body.clear(); lines.clear(); colorPreviewY = -1;
+        creationLocationY = -1; creationName = null; createButton = null; createTrackButton = null;
         navigationButton = null; navigationSnapshot = MapClient.navigation();
-        button(x + width - 32, y + 7, 22, Component.literal("×"), this::close, false);
-        if (dimensions) buildDimensions(); else buildPoint();
+        if (dialog && creating) {
+            widgets.add(new YzuiCloseButton(x + width - 40, y + 12, 24, MapTexts.text("cancel"), this::close));
+            buildCreation();
+        } else {
+            button(x + width - 32, y + 7, 22, Component.literal("×"), this::close, false);
+            if (dimensions) buildDimensions(); else buildPoint();
+        }
         int maxScroll = Math.max(0, contentHeight - (bottom - top));
         if (scroll > maxScroll) { scroll = maxScroll; rebuild(); return; }
         // 部分露出的控件也不参与命中，防止点击越过滚动区域。
-        for (var widget : body) widget.visible = widget.getY() >= top && widget.getY() + widget.getHeight() <= bottom;
+        updateBodyVisibility();
+        if (creationName != null) {
+            if (cursor >= 0) creationName.setCursorPosition(Math.min(cursor, name.length()));
+            else creationName.setHighlightPos(0);
+            var focus = focusedIndex >= 0 && focusedIndex < widgets.size() ? widgets.get(focusedIndex) : creationName;
+            if (focus.visible) setFocused(focus);
+        }
+    }
+
+    // ===== 新建路径点弹窗 =====
+
+    /** 独立表单布局，位置只读；颜色、分组及描述继续使用原有草稿与保存逻辑。 */
+    private void buildCreation() {
+        int left = x + 16, inner = width - 32, row = 0;
+        lines.add(new Line(MapTexts.text("name"), left, top - scroll, inner - 44));
+        creationName = new EditBox(Minecraft.getInstance().font, left, top + 12 - scroll, inner, 26, MapTexts.text("name"));
+        creationName.setMaxLength(64);
+        creationName.setValue(name);
+        creationName.setResponder(value -> {
+            name = value;
+            updateCreationActions();
+        });
+        creationName.setEditable(!pending);
+        widgets.add(creationName); body.add(creationName);
+        row += 44;
+
+        creationLocationY = top + row - scroll;
+        var copy = button(left + inner - 30, creationLocationY + 4, 24, MapTexts.text("copy"), () -> {
+            Minecraft.getInstance().keyboardHandler.setClipboard(MapCoordinates.coordinate(point));
+            message = MapTexts.text("copied"); messageError = false;
+        }, true);
+        copy.setHeight(24);
+        copy.setStyle(YzuiTheme.ButtonStyle.TEXT).setLineIcon(MenuIcon.COPY);
+        row += 56;
+
+        int gap = 10, colorWidth = Math.min(132, (inner - gap) / 2), groupX = left + colorWidth + gap;
+        lines.add(new Line(MapTexts.text("color"), left, top + row - scroll, colorWidth));
+        lines.add(new Line(MapTexts.text("group"), groupX, top + row - scroll, inner - colorWidth - gap));
+        var colorChoice = new CreationColorButton(left, top + row + 12 - scroll, colorWidth);
+        colorChoice.active = !pending;
+        widgets.add(colorChoice); body.add(colorChoice);
+        MapGroupButton.selector(groupX, top + row + 12 - scroll, inner - colorWidth - gap, () -> group,
+                value -> group = value, choice -> {
+                    choice.setHeight(26);
+                    widgets.add(choice); body.add(choice);
+                }, !pending && point.kind() != MapWaypoint.Kind.DEATH);
+        row += 46;
+
+        lines.add(new Line(MapTexts.text("private_description"), left, top + row - scroll, inner));
+        var description = MultiLineEditBox.builder().setX(left).setY(top + row + 12 - scroll)
+                .setPlaceholder(MapTexts.text("private_description"))
+                .build(Minecraft.getInstance().font, inner, 48, MapTexts.text("private_description"));
+        description.setCharacterLimit(1024); description.setValue(note);
+        description.setValueListener(value -> note = value);
+        description.active = !pending;
+        widgets.add(description); body.add(description);
+        contentHeight = row + 64;
+
+        int half = (inner - 8) / 2, footer = y + height - 38;
+        createTrackButton = button(left, footer, half, MapTexts.text("create_track"), () -> save(true), false);
+        createTrackButton.setHeight(26);
+        createButton = button(left + half + 8, footer, inner - half - 8, MapTexts.text("create"), () -> save(false), false);
+        createButton.setHeight(26);
+        createButton.setStyle(YzuiTheme.ButtonStyle.FILLED);
+        updateCreationActions();
+    }
+
+    private void updateCreationActions() {
+        boolean valid = !pending && name != null && !name.isBlank();
+        if (createButton != null) createButton.active = valid;
+        if (createTrackButton != null) createTrackButton.active = valid;
+    }
+
+    /** 色块与编辑入口合为同一个命中区域，显示颜色值并保留完整提示。 */
+    private final class CreationColorButton extends TransparentButton {
+        CreationColorButton(int bx, int by, int bw) {
+            super(bx, by, bw, 26, Component.literal("#" + color), () ->
+                    Minecraft.getInstance().gui.setScreen(new MapWaypointColorScreen(owner,
+                            MapWaypointColors.parse(color), selected -> color = MapWaypointColors.hex(selected))));
+            setTextLeftAligned(true);
+            setTextInsets(28, 6);
+            setTrailingLineIcon(MenuIcon.CHEVRON_RIGHT);
+            setTooltip(Tooltip.create(MapTexts.text("color").copy().append("  #" + color)));
+        }
+
+        @Override protected void extractWidgetRenderState(GuiGraphicsExtractor g, int mx, int my, float delta) {
+            super.extractWidgetRenderState(g, mx, my, delta);
+            MapWaypointColors.render(g, MapWaypointColors.parse(color), getX() + 15, getY() + 13,
+                    getAlpha() * externalAlpha());
+        }
     }
     private void buildDimensions() {
         Map<String, List<String>> groups = new LinkedHashMap<>();
@@ -245,6 +351,7 @@ final class MapDetailPanel extends AbstractContainerEventHandler implements Rend
                 anchor ? point.color() : MapWaypointColors.parse(color), point.enabled(), anchor, point.kind(), point.createdAt());
     }
     private void save(boolean track) {
+        messageError = false;
         try {
             MapWaypoint value = changed();
             if (anchor) {
@@ -252,14 +359,15 @@ final class MapDetailPanel extends AbstractContainerEventHandler implements Rend
                         ResourceKey.create(Registries.DIMENSION, Identifier.parse(point.dimension())), value.name()));
                 finish(value, track); message = MapTexts.text("request_sent"); return;
             }
-            if (!MapPersonalData.put(value)) { message = MapTexts.text("limit"); return; }
+            if (!MapPersonalData.put(value)) { message = MapTexts.text("limit"); messageError = true; return; }
             finish(value, track);
-        } catch (IllegalArgumentException invalid) { message = MapTexts.text("invalid_point"); }
+        } catch (IllegalArgumentException invalid) { message = MapTexts.text("invalid_point"); messageError = true; }
     }
     private void finish(MapWaypoint value, boolean track) {
         point = value; creating = false; editing = false; color = MapWaypointColors.hex(point.color()); group = MapPersonalData.groupOf(point);
         boolean noteSaved = MapPersonalData.note(point.id(), note);
         message = MapTexts.text(noteSaved ? "saved" : "limit");
+        messageError = !noteSaved;
         if (track && owner.isDetails(this)) { MapClient.navigate(point.id()); close(); }
         else if (dialog && noteSaved) close();
         else rebuild();
@@ -303,25 +411,100 @@ final class MapDetailPanel extends AbstractContainerEventHandler implements Rend
     }
     @Override public void extractRenderState(GuiGraphicsExtractor g, int mx, int my, float delta) {
         g.nextStratum();
-        if (dialog) g.fill(0, 0, owner.width, owner.height, YzuiTheme.alpha(0xFF000000, 0.3f));
+        if (dialog) g.fill(0, 0, owner.width, owner.height, YzuiTheme.scrim());
         YzuiTheme.card(g, x, y, width, height);
-        YzuiTheme.label(g, Minecraft.getInstance().font, MapTexts.text(dimensions ? "dimension" : creating ? "new_point" : "point_actions"), x + 12, y + 14, width - 48, YzuiTheme.text(), false);
-        g.fill(x + 12, top - 7, x + width - 12, top - 6, YzuiTheme.outlineVariant());
+        if (dialog && creating) renderCreationHeader(g);
+        else {
+            YzuiTheme.label(g, Minecraft.getInstance().font, MapTexts.text(dimensions ? "dimension" : creating ? "new_point" : "point_actions"), x + 12, y + 14, width - 48, YzuiTheme.text(), false);
+            g.fill(x + 12, top - 7, x + width - 12, top - 6, YzuiTheme.outlineVariant());
+        }
         g.enableScissor(x, top, x + width, bottom);
+        if (creationLocationY >= 0) renderCreationLocation(g);
         if (colorPreviewY >= 0) {
             int preview = point.color();
             try { preview = MapWaypointColors.parse(color); } catch (IllegalArgumentException ignored) { }
             MapWaypointColors.render(g, preview, x + 54, colorPreviewY, 1.0F);
         }
-        for (var line : lines) YzuiTheme.label(g, Minecraft.getInstance().font, line.text, line.x, line.y, line.width, YzuiTheme.text(), false);
+        for (var line : lines) YzuiTheme.label(g, Minecraft.getInstance().font, line.text, line.x, line.y, line.width,
+                dialog && creating ? YzuiTheme.textMuted() : YzuiTheme.text(), false);
+        if (creationName != null) YzuiTheme.label(g, Minecraft.getInstance().font,
+                Component.literal(name.length() + "/64"), x + width - 56, creationName.getY() - 12, 40, YzuiTheme.textMuted(), false);
         for (var widget : body) if (widget.visible) widget.extractRenderState(g, mx, my, delta);
         g.disableScissor();
         for (var widget : widgets) if (!body.contains(widget)) widget.extractRenderState(g, mx, my, delta);
-        YzuiTheme.label(g, Minecraft.getInstance().font, message, x + 12, y + height - 50, width - 24, YzuiTheme.textMuted(), false);
+        if (dialog && creating) g.fill(x + 16, bottom + 1, x + width - 16, bottom + 2,
+                YzuiTheme.alpha(YzuiTheme.outlineVariant(), 0.5F));
+        YzuiTheme.label(g, Minecraft.getInstance().font, message, x + 16, y + height - 53, width - 32,
+                messageError ? YzuiTheme.error() : YzuiTheme.textMuted(), false);
         if (contentHeight > bottom - top) {
             int track = bottom - top, thumb = Math.max(10, track * track / contentHeight);
             int sy = top + (track - thumb) * scroll / Math.max(1, contentHeight - track);
             g.fill(x + width - 5, sy, x + width - 3, sy + thumb, YzuiTheme.primary());
+        }
+    }
+
+    /** 标题以当前标点颜色作预览，明暗主题共用一套层级与间距。 */
+    private void renderCreationHeader(GuiGraphicsExtractor g) {
+        var font = Minecraft.getInstance().font;
+        RoundedRect.fill(g, x + 16, y + 10, 30, 30, 10, YzuiTheme.primaryContainer());
+        MapWaypointColors.render(g, MapWaypointColors.parse(color), x + 31, y + 25, 1.0F);
+        YzuiTheme.label(g, font, MapTexts.text("new_point"), x + 56, y + 13, width - 104, YzuiTheme.text(), false);
+        YzuiTheme.label(g, font, MapTexts.text("private_point"), x + 56, y + 27, width - 104, YzuiTheme.textMuted(), false);
+    }
+
+    /** 维度及 XYZ 保持只读，以独立卡片和等宽坐标栏显示预填的位置。 */
+    private void renderCreationLocation(GuiGraphicsExtractor g) {
+        int left = x + 16, inner = width - 32;
+        var font = Minecraft.getInstance().font;
+        RoundedRect.fill(g, left, creationLocationY, inner, 48, 7, YzuiTheme.surfaceLow());
+        MenuIcon.WORLD.render(g, left + 10, creationLocationY + 8, 12, YzuiTheme.textMuted());
+        YzuiTheme.label(g, font, MapTexts.dimension(point.dimension()), left + 28, creationLocationY + 10,
+                inner - 64, YzuiTheme.textMuted(), false);
+        int cell = (inner - 20) / 3;
+        String[] axes = { "X", "Y", "Z" };
+        int[] coordinates = { point.x(), point.y(), point.z() };
+        for (int index = 0; index < axes.length; index++) {
+            int column = left + 10 + index * cell;
+            if (index > 0) g.fill(column - 6, creationLocationY + 30, column - 5, creationLocationY + 41,
+                    YzuiTheme.alpha(YzuiTheme.outlineVariant(), 0.5F));
+            YzuiTheme.label(g, font, Component.literal(axes[index]), column, creationLocationY + 32, 10, YzuiTheme.textMuted(), false);
+            YzuiTheme.label(g, font, Component.literal(Integer.toString(coordinates[index])), column + 14,
+                    creationLocationY + 32, cell - 22, YzuiTheme.text(), false);
+        }
+    }
+
+    private void updateBodyVisibility() {
+        for (var widget : body) widget.visible = widget.getY() >= top && widget.getY() + widget.getHeight() <= bottom;
+        if (getFocused() instanceof AbstractWidget focused && !focused.visible) setFocused(null);
+    }
+
+    /** 滚动只移动已有控件，保留文本、光标及多行输入框自身的滚动位置。 */
+    private void scrollCreation(int value) {
+        int next = Math.clamp(value, 0, Math.max(0, contentHeight - (bottom - top)));
+        int offset = scroll - next;
+        if (offset == 0) return;
+        scroll = next;
+        for (var widget : body) widget.setY(widget.getY() + offset);
+        for (int index = 0; index < lines.size(); index++) {
+            var line = lines.get(index);
+            lines.set(index, new Line(line.text, line.x, line.y + offset, line.width));
+        }
+        creationLocationY += offset;
+        updateBodyVisibility();
+    }
+
+    /** Tab 在弹窗内循环，自动滚动到目标控件，窄窗口也可完整填写表单。 */
+    private void cycleCreationFocus(boolean backwards) {
+        int current = widgets.indexOf(getFocused()), direction = backwards ? -1 : 1;
+        for (int step = 1; step <= widgets.size(); step++) {
+            var target = widgets.get(Math.floorMod(current + step * direction, widgets.size()));
+            if (!target.active) continue;
+            if (body.contains(target)) {
+                if (target.getHeight() > bottom - top) continue;
+                if (target.getY() < top) scrollCreation(scroll + target.getY() - top);
+                else if (target.getBottom() > bottom) scrollCreation(scroll + target.getBottom() - bottom);
+            }
+            if (target.visible) { setFocused(target); return; }
         }
     }
     @Override public boolean mouseClicked(MouseButtonEvent event, boolean actual) {
@@ -330,12 +513,17 @@ final class MapDetailPanel extends AbstractContainerEventHandler implements Rend
     }
     @Override public boolean mouseScrolled(double mx, double my, double horizontal, double vertical) {
         if (!insidePanel(mx, my)) return dialog;
+        if (dialog && creating && (my < top || my >= bottom)) return true;
         for (var widget : body) if (widget.visible && widget instanceof MultiLineEditBox && widget.isMouseOver(mx, my)
                 && widget.mouseScrolled(mx, my, horizontal, vertical)) return true;
+        if (dialog && creating) { scrollCreation(scroll - (int) (vertical * 24)); return true; }
         scroll = Math.clamp(scroll - (int) (vertical * 24), 0, Math.max(0, contentHeight - (bottom - top))); rebuild(); return true;
     }
     @Override public boolean keyPressed(KeyEvent event) {
         if (event.key() == InputConstants.KEY_ESCAPE) { close(); return true; }
+        if (dialog && creating && event.key() == InputConstants.KEY_TAB) {
+            cycleCreationFocus(event.hasShiftDown()); return true;
+        }
         return super.keyPressed(event);
     }
 }
