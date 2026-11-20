@@ -12,7 +12,7 @@ import java.io.BufferedInputStream;
 import java.io.InputStream;
 
 /**
- * 首次启动与资源重载共用的主题卡片。仅用几何和原版提前注册的标志纹理，
+ * 首次启动与资源重载共用的纯色加载界面。仅用几何和原版提前注册的标志纹理，
  * 不访问字体、语言管理器或尚未完成重载的模组纹理。
  */
 public final class YzuiLoadingRenderer {
@@ -53,18 +53,8 @@ public final class YzuiLoadingRenderer {
         Layout l = Layout.of(g.guiWidth(), g.guiHeight());
         var p = YzuiTheme.palette();
         updateAnimation(progress);
-        // 纯几何背景与实体卡片无需额外资源；标志、进度和卡片一起淡出。
-        RoundedRect.fill(g, l.x() - 14, l.y() + 18, l.width() + 28, l.height() - 36, 24,
-                YzuiTheme.alpha(p.primaryContainer(), alpha * 0.24f));
-        RoundedRect.fill(g, l.x(), l.y(), l.width(), l.height(), 16,
-                YzuiTheme.alpha(p.outlineVariant(), alpha * 0.65f));
-        RoundedRect.fill(g, l.x() + 1, l.y() + 1, l.width() - 2, l.height() - 2, 15,
-                YzuiTheme.alpha(p.surface(), alpha));
+        // 背景由 background 统一填充主题色；标志与进度随原版透明度一起淡出。
         int center = g.guiWidth() / 2;
-        for (int i = 0; i < 3; i++) {
-            RoundedRect.fill(g, center - 15 + i * 12, l.y() + 22, 6, 6, 3,
-                    YzuiTheme.alpha(i == 1 ? p.primary() : p.primaryContainer(), alpha));
-        }
         renderBrandSequence(g, center, l, alpha);
         int tint = YzuiTheme.alpha(p.primary(), alpha);
         float value = Float.isFinite(progress) ? Math.clamp(progress, 0f, 1f) : 0f;
@@ -92,7 +82,7 @@ public final class YzuiLoadingRenderer {
         int serverWidth = layout.logoWidth();
         int serverHeight = YzuiBrandLogo.heightForWidth(serverWidth);
         int serverX = center - serverWidth / 2;
-        int serverY = layout.y() + 58;
+        int serverY = layout.y() + 42;
         g.blit(RenderPipelines.GUI_TEXTURED, SERVER_LOGO_TEXTURE, serverX, serverY,
                 YzuiBrandLogo.CONTENT_X, YzuiBrandLogo.CONTENT_Y,
                 serverWidth, serverHeight, YzuiBrandLogo.CONTENT_WIDTH,

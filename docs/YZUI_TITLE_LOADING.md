@@ -4,9 +4,17 @@
 
 标题页右上角提供「切换深色 / 切换浅色」。它与设置页共用 `ClientExternalSettings.setYzuiTheme`，即时生效并保存到 `yzwc/client/global_settings.json` 的 `core_module.yzui_theme`。资源重载界面、标题文字、按钮、卡片及滚动条都读取该主题。
 
-资源重载使用居中的品牌卡片、圆角进度条和百分比。首次启动只使用原版提前注册的标志纹理与几何绘制，不依赖尚未就绪的字体和普通模组纹理。完成后显示 100%，卡片随原版透明度淡出。仅替换绘制调用，原版进度采样、完成及异常回调、资源应用和 Overlay 关闭逻辑保持原样。
+资源重载使用跟随深浅主题的单一纯色背景，品牌标志水平居中并位于画面中心偏上，下方显示圆角进度条和百分比，不绘制层叠卡片或标志上方的三个装饰点。首次启动只使用原版提前注册的标志纹理与几何绘制，不依赖尚未就绪的字体和普通模组纹理。完成后显示 100%，加载界面随原版透明度淡出。仅替换绘制调用，原版进度采样、完成及异常回调、资源应用和 Overlay 关闭逻辑保持原样。
 
 标题页和加载页统一复用 `src/client/resources/assets/youzaiworldcore/textures/gui/startup/logo.png`，与官网静态资源的 `public/images/uzw-tm.png` 内容完全一致。保留原有彩色图案，只裁去透明留白并等比缩放。加载页的提前注册纹理直接从 classpath 读取该图，不再读取旧 `mojangstudios.png`；标题页也不再使用旧 `yzw-logo.png`。
+
+## 启动前的模组加载弹窗
+
+Minecraft 主窗口出现前，`StartupSplashWindow` 使用独立的 Swing 弹窗显示 Fabric 模组入口点进度。Linux 使用默认图形配置、不透明背景和 Swing 双缓冲；圆角由原生窗口形状裁剪实现，窗口系统不支持时使用矩形。此路径避免逐像素透明背景在清空和绘制子组件之间显示中间状态。其他系统继续按图形设备能力使用抗锯齿透明圆角。
+
+加载圈每 16 毫秒请求重绘，16 个像素块保持每秒一周的移动节奏；停止后保留当前帧。阶段文字和进度条同样在 AWT 事件线程中每 16 毫秒检查更新，启动失败时切换红色提示。定时器会合并积压事件，实际刷新频率受 AWT 事件线程负载影响。
+
+修改后的启动弹窗尚未进行桌面实测。验收时分别在 Linux X11、Wayland／XWayland 和 Windows 启动客户端，观察模组名称快速切换、进度条推进及加载圈旋转时是否出现背景透出、文字闪烁或像素残影；切走再恢复窗口后元素应完整，Minecraft 主窗口出现后弹窗应关闭。使用已有 JVM 开关 `-Dyouzaiworldcore.test.startup_failure=true` 验证失败提示、红色背景和动画停止。
 
 ## 客户端测试路径
 
@@ -15,7 +23,7 @@
 | 启动客户端 → 标题页 | 两处均显示官网彩色标志，无旧标志、白块或拉伸；标题页保留旋转全景，所有按钮可用 |
 | 标题页 → 切换深色 / 切换浅色 | 界面配色即时更新，标志保留原色；按钮名称表示下一次切换的主题 |
 | 标题页 → 选项 → YouzaiWorldCore 外观设置 → 修改主题 → 返回 | 标题页与设置页主题一致；重启客户端后加载页继续使用保存的主题 |
-| 游戏中 F3+T；选项 → 资源包 → 更换资源包 → 完成 | 重载卡片跟随当前主题，进度推进并完成淡出，回到原有页面或游戏 |
+| 游戏中 F3+T；选项 → 资源包 → 更换资源包 → 完成 | 单一纯色背景跟随当前主题，无层叠卡片与标志上方装饰点；进度推进并完成淡出，回到原有页面或游戏 |
 | 标题页 → 调整窗口 / GUI 缩放 | 从 320×240 GUI 尺寸到宽屏，标志、副标题、卡片与按钮不重叠、不出屏 |
 | 长公告 / 长更新日志 → 在正文上滚轮 | 能滚到最后一行；滚动条位置正确；下载和忽略按钮不随正文移动 |
 | 长公告 / 长更新日志 → Page Up / Page Down / Home / End | 能翻页、返回顶部与到达末尾；Tab 与 Enter / 空格继续控制按钮 |
@@ -44,7 +52,7 @@ python -B tools/verify_yzui_title_loading.py --java-home 'C:/Program Files/Java/
 
 - `src/client/java/top/csituka/youzaiworldcore/client/screen/title/TitleMenuLayout.java`：标题页统一几何布局。
 - `src/client/java/top/csituka/youzaiworldcore/client/screen/title/YzuiTitleMenu.java`：主题控件、公告滚动和原有入口逻辑。
-- `src/client/java/top/csituka/youzaiworldcore/client/render/YzuiLoadingRenderer.java`：无字体依赖的加载卡片。
+- `src/client/java/top/csituka/youzaiworldcore/client/render/YzuiLoadingRenderer.java`：无字体依赖的纯色加载界面。
 - `src/client/java/top/csituka/youzaiworldcore/client/render/YzuiBrandLogo.java`：共用彩色标志及启动阶段资源读取。
 - `src/client/java/top/csituka/youzaiworldcore/mixin/client/LogoTextureMixin.java`：将原版提前注册纹理的数据来源切换为官网标志。
 - `src/client/java/top/csituka/youzaiworldcore/mixin/client/TitleScreenMixin.java`：标题页生命周期与绘制接入。

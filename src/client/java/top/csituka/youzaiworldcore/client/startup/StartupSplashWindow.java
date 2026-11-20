@@ -38,6 +38,7 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
 import top.csituka.youzaiworldcore.startup.StartupLoadingStatus;
 
@@ -47,6 +48,7 @@ import top.csituka.youzaiworldcore.startup.StartupLoadingStatus;
  * 窗口默认使用浅绿色圆角无边框样式，左上角显示悠哉世界标志，
  * 左下角显示 8-bit 加载动画、当前初始化阶段与总体进度条；启动失败时切换为红色提示样式。
  * 窗口使用独立任务栏入口，方便玩家在启动期间点击恢复或切回窗口。
+ * Linux 使用不透明窗口与原生圆角裁剪，避免逐像素透明窗口更新元素时闪烁。
  * 所有 Swing 生命周期操作都在 AWT 事件调度线程执行。
  * </p>
  */
@@ -62,6 +64,7 @@ public final class StartupSplashWindow {
     private static final int LOADING_TEXT_LEFT_MARGIN = 16;
     /** 状态文字与进度条共用的最大显示宽度（像素）。 */
     private static final int STATUS_TEXT_WIDTH = 360;
+    private static final int STATUS_REFRESH_INTERVAL_MILLIS = 16;
     private static final float LOADING_FONT_SIZE = 16.0F;
     private static final float PHASE_FONT_SIZE = 12.0F;
     private static final String LOGO_RESOURCE =
@@ -169,7 +172,9 @@ public final class StartupSplashWindow {
             return;
         }
 
-        JFrame splash = createTranslucencyAwareWindow();
+        boolean usePerPixelTranslucency = !System.getProperty("os.name", "")
+                .toLowerCase(Locale.ROOT).contains("linux");
+        JFrame splash = createTranslucencyAwareWindow(usePerPixelTranslucency);
         StartupLoadingIndicator indicator = null;
         try {
             splash.setTitle("YouzaiWorldCore 启动中");
@@ -179,7 +184,9 @@ public final class StartupSplashWindow {
             splash.setAutoRequestFocus(false);
             applyTaskbarIcon(splash);
 
-            boolean antialiasedCorners = enableAntialiasedCorners(splash);
+            // Linux 的透明窗口可能直接呈现清空背景到子组件绘制之间的中间帧。
+            // 使用默认图形配置与不透明面板，让 Swing 将背景和子组件一起缓冲重绘。
+            boolean antialiasedCorners = usePerPixelTranslucency && enableAntialiasedCorners(splash);
             JPanel content;
             if (antialiasedCorners) {
                 content = new AntialiasedRoundedPanel();
@@ -268,7 +275,7 @@ public final class StartupSplashWindow {
             splash.setVisible(true);
             indicator.startAnimation();
             startStatusRefreshTimer();
-            DebugLogger.CLIENT.debug("StartupSplash", "启动加载窗口已显示");
+            DebugLogger.CLIENT.debug("StartupSplash", "启动加载窗口已显示（逐像素透明：{}）", antialiasedCorners);
 
             if (CLOSE_REQUESTED.get()) {
                 disposeOnEventThread();
@@ -297,23 +304,26 @@ public final class StartupSplashWindow {
         }
     }
 
-    private static JFrame createTranslucencyAwareWindow() {
-        try {
-            GraphicsDevice device = GraphicsEnvironment
-                    .getLocalGraphicsEnvironment()
-                    .getDefaultScreenDevice();
-            if (device.isWindowTranslucencySupported(
-                    GraphicsDevice.WindowTranslucency.PERPIXEL_TRANSLUCENT)) {
-                for (GraphicsConfiguration configuration : device.getConfigurations()) {
-                    if (configuration.isTranslucencyCapable()) {
-                        JFrame splash = new JFrame(configuration);
-                        splash.setUndecorated(true);
-                        return splash;
+    /** 按平台策略选择图形配置；不透明窗口使用默认配置，避免仍落入透明视觉路径。 */
+    private static JFrame createTranslucencyAwareWindow(boolean usePerPixelTranslucency) {
+        if (usePerPixelTranslucency) {
+            try {
+                GraphicsDevice device = GraphicsEnvironment
+                        .getLocalGraphicsEnvironment()
+                        .getDefaultScreenDevice();
+                if (device.isWindowTranslucencySupported(
+                        GraphicsDevice.WindowTranslucency.PERPIXEL_TRANSLUCENT)) {
+                    for (GraphicsConfiguration configuration : device.getConfigurations()) {
+                        if (configuration.isTranslucencyCapable()) {
+                            JFrame splash = new JFrame(configuration);
+                            splash.setUndecorated(true);
+                            return splash;
+                        }
                     }
                 }
+            } catch (RuntimeException | AWTError e) {
+                DebugLogger.CLIENT.exception("StartupSplash", "选择逐像素透明图形配置", e);
             }
-        } catch (RuntimeException | AWTError e) {
-            DebugLogger.CLIENT.exception("StartupSplash", "选择逐像素透明图形配置", e);
         }
         JFrame splash = new JFrame();
         splash.setUndecorated(true);
@@ -523,7 +533,7 @@ public final class StartupSplashWindow {
 
     /** 启动 Swing 定时器，将入口点线程发布的状态刷新到窗口。 */
     private static void startStatusRefreshTimer() {
-        Timer timer = new Timer(50, event -> refreshStatusOnEventThread());
+        Timer timer = new Timer(STATUS_REFRESH_INTERVAL_MILLIS, event -> refreshStatusOnEventThread());
         timer.setCoalesce(true);
         timer.setRepeats(true);
         statusRefreshTimer = timer;

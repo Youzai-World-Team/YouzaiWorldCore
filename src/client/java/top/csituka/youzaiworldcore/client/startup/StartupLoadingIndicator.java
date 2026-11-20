@@ -40,6 +40,7 @@ public final class StartupLoadingIndicator extends JComponent {
 
     private final Timer repaintTimer;
     private long animationStartedAtNanos;
+    private int firstVisibleBlock = VISIBLE_BLOCK_COUNT;
 
     /**
      * 创建指定颜色的像素风加载动画。
@@ -69,13 +70,14 @@ public final class StartupLoadingIndicator extends JComponent {
         }
 
         this.animationStartedAtNanos = System.nanoTime();
+        this.firstVisibleBlock = VISIBLE_BLOCK_COUNT;
         this.repaintTimer.start();
         repaint();
         DebugLogger.CLIENT.debug("StartupLoadingIndicator", "启动窗口加载动画已开始");
     }
 
     /**
-     * 停止动画并取消后续重绘任务。
+     * 停止动画并取消后续重绘任务，保留当前帧。
      */
     public void stopAnimation() {
         if (!this.repaintTimer.isRunning()) {
@@ -99,14 +101,9 @@ public final class StartupLoadingIndicator extends JComponent {
     protected void paintComponent(Graphics graphics) {
         super.paintComponent(graphics);
 
-        long elapsedNanos = this.repaintTimer.isRunning()
-                ? Math.max(0L, System.nanoTime() - this.animationStartedAtNanos)
-                : 0L;
-        int firstVisibleBlock = (8 + (int) (elapsedNanos / FRAME_DURATION_NANOS)) % BLOCK_COUNT;
-
         graphics.setColor(getForeground());
         for (int offset = 0; offset < VISIBLE_BLOCK_COUNT; offset++) {
-            int blockIndex = (firstVisibleBlock + offset) % BLOCK_COUNT;
+            int blockIndex = (this.firstVisibleBlock + offset) % BLOCK_COUNT;
             graphics.fillRect(
                     BLOCK_X[blockIndex],
                     BLOCK_Y[blockIndex],
@@ -121,6 +118,9 @@ public final class StartupLoadingIndicator extends JComponent {
             stopAnimation();
             return;
         }
+        long elapsedNanos = Math.max(0L, System.nanoTime() - this.animationStartedAtNanos);
+        this.firstVisibleBlock = (int) ((VISIBLE_BLOCK_COUNT + elapsedNanos / FRAME_DURATION_NANOS) % BLOCK_COUNT);
+        // 保持约每 16 毫秒重绘，像素块按原有的一秒一周节奏移动。
         repaint();
     }
 }

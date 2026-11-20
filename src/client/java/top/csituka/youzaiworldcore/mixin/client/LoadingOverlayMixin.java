@@ -40,12 +40,12 @@ public class LoadingOverlayMixin {
     }
 
     @Redirect(method = "extractRenderState", at = @At(value = "INVOKE", ordinal = 0, target = "Lnet/minecraft/client/gui/GuiGraphicsExtractor;blit(Lcom/mojang/renderpearl/api/pipeline/RenderPipeline;Lnet/minecraft/resources/Identifier;IIFFIIIIIII)V"))
-    private void youzaiworldcore$loadingCard(GuiGraphicsExtractor g, RenderPipeline pipeline, Identifier logo,
+    private void youzaiworldcore$loadingContent(GuiGraphicsExtractor g, RenderPipeline pipeline, Identifier logo,
             int x, int y, float u, float v, int width, int height, int sourceWidth, int sourceHeight,
             int textureWidth, int textureHeight, int color) {
         if (!youzaiworldcore$logged) {
             youzaiworldcore$logged = true;
-            DebugLogger.CLIENT.debug("YzuiLoading", "资源加载主题卡片已就绪");
+            DebugLogger.CLIENT.debug("YzuiLoading", "资源加载界面已就绪");
         }
         // 完成后明确显示 100%，不让平滑进度在淡出时停留于 99%。
         YzuiLoadingRenderer.render(g, logo, fadeOutStart >= 0 ? 1f : currentProgress, (color >>> 24) / 255f);
@@ -55,7 +55,7 @@ public class LoadingOverlayMixin {
     private void youzaiworldcore$skipSecondLogo(GuiGraphicsExtractor g, RenderPipeline pipeline, Identifier logo,
             int x, int y, float u, float v, int width, int height, int sourceWidth, int sourceHeight,
             int textureWidth, int textureHeight, int color) {
-        // 主题卡片已绘制完整的官网品牌标志，跳过原版第二次绘制。
+        // 加载界面已绘制完整的官网品牌标志，跳过原版第二次绘制。
     }
 
     @Inject(method = "extractProgressBar", at = @At("HEAD"), cancellable = true)
