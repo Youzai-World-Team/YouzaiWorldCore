@@ -18,5 +18,7 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 public interface CreeperChargedAccessor {
 
     @Accessor("DATA_IS_POWERED")
-    EntityDataAccessor<Boolean> youzaiworldcore$getDataIsPowered();
+    static EntityDataAccessor<Boolean> youzaiworldcore$getDataIsPowered() {
+        throw new AssertionError("苦力怕带电数据访问器尚未由 Mixin 注入");
+    }
 }

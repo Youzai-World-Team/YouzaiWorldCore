@@ -95,8 +95,7 @@ public class ChargedCreeperHandler {
         DebugLogger.SERVER.debug(MODULE, "creeper {} 判定: roll={} chance={} -> {}", entity.getUUID(), LogValues.decimal(roll, 4), LogValues.decimal(chance, 4), charged ? "带电" : "普通");
 
         if (charged) {
-            EntityDataAccessor<Boolean> poweredData = ((CreeperChargedAccessor) creeper)
-                    .youzaiworldcore$getDataIsPowered();
+            EntityDataAccessor<Boolean> poweredData = CreeperChargedAccessor.youzaiworldcore$getDataIsPowered();
             creeper.getEntityData().set(poweredData, true);
             DebugLogger.SERVER.debug(MODULE, "creeper {} 已设为带电状态", entity.getUUID());
         }

@@ -575,15 +575,19 @@ Declares 4 custom trinket slots for the **Trinkets** mod via `data/trinkets/` da
 
 Each slot has a custom icon and the `trinkets:default` validator; `order` controls sorting.
 
+Trinkets 4.2 cosmetic slots are display-only. Heart of Guardianship death protection, counting, and consumption use active trinkets. Hiding an active slot preserves its effects, and consumption marks the inventory for synchronization.
+
 **YZUI Trinket Interaction ★NEW**: The YZUI inventories (survival / creative) do not use the slots Trinkets injects. Instead they implement a **hover-indicator** interaction — hovering an equippable slot pops up the matching trinket slot indicator beside it, and clicking equips/unequips:
 
 - **Server-authoritative**: All operations are submitted through the C→S packet `trinket_interact` (`TrinketInteractPayload`); the server mutates authoritative data via the Trinkets API, and the Trinkets network layer syncs it back to the client and persists it
 - **Four actions**: `ACTION_PLACE` (cursor → slot, 0), `ACTION_TAKE` (slot → cursor, 1), `ACTION_SWAP` (2), `ACTION_QUICK_MOVE` (Shift + left click, slot → main inventory 0–35, 3)
 - **Cursor validation**: The packet carries the client's current cursor stack (`cursor`). Survival trusts only the server's `containerMenu.getCarried()`, while creative may use its client-generated virtual cursor; slot state, stack limits, and validators always remain server-authoritative
 - **Local preview**: The client previews the result locally before the server confirmation arrives, removing perceived interaction latency
-- **Native slot suppression**: `SurvivalTrinketSlotYzuiMixin` forces Trinkets' `SurvivalTrinketSlot#isActive()` to return `false` while a YZUI screen is open, preventing its injected slots from rendering as "useless cells" beside the armor slots and from overlapping the YZUI indicator coordinates. With YZUI off nothing is intercepted, so the native Trinkets inventory behaves normally (the mixin targets `eu.pb4.trinkets.impl.slots.SurvivalTrinketSlot`, matching the implementation package in Trinkets 4.1.0-rc.1)
+- **Native slot suppression**: `SurvivalTrinketSlotYzuiMixin` forces Trinkets' `SurvivalTrinketSlot#isActive()` to return `false` while a YZUI screen is open, preventing its injected slots from rendering as "useless cells" beside the armor slots and from overlapping the YZUI indicator coordinates. With YZUI off nothing is intercepted, so the native Trinkets inventory behaves normally (the mixin targets `eu.pb4.trinkets.impl.slots.SurvivalTrinketSlot`, matching the implementation package in Trinkets 4.2.1+26.3)
 
 Sophisticated Backpacks Fabric 26.3 **3.24.1.0** lacks a built-in Trinkets inventory handler. Core provides an optional bridge so equipped backpacks can be opened with the backpack mod's shortcut, participate in upgrade processing, and use its existing backpack renderer. Hiding a trinket affects rendering while its functions remain active. Hovering a vanilla trinket slot and opening it uses the correct trinket inventory identifier instead of a main-inventory slot. The bridge is skipped when the mod is absent or an older version provides native Trinkets compatibility.
+
+Cosmetic backpacks override the appearance of their corresponding active slot. Upgrades continue to use the active backpack, and hiding also applies to cosmetic backpacks. In the native inventory's cosmetic mode, the hover shortcut cannot accidentally open the active backpack at the same slot index.
 
 Registration IDs and API signatures were checked against the actual jar. Isolated regression: `node tools/verify-backpack-compat.mjs <backpack.jar> <JDK25-directory>`. Full in-game acceptance remains necessary.
 
@@ -989,16 +993,19 @@ All commands use `/yzwc` as the root command. Gameplay subcommands marked **(cli
 | ---------------------- | -------------------------------------- | --------------------------------------------------------------- |
 | Minecraft              | 26.3                                   | Engine                                                          |
 | Fabric Loader          | 0.20.1                                 | Mod loader                                                      |
-| Fabric API             | 0.165.2+26.3                           | Standard API                                                    |
-| ModMenu                | 21.0.0                                 | Mod menu integration                                            |
+| Fabric API             | 0.166.2+26.3                           | Standard API                                                    |
+| ModMenu                | 21.0.1                                 | Mod menu integration                                            |
 | Placeholder API        | 3.2.0+26.3                             | Text placeholders                                               |
-| Trinkets               | Exactly 4.2.1+26.3 (`trinkets_updated`) | Trinket slot system (Feature 34 depends on it; hard dependency) |
+| Trinkets               | >=4.2.1+26.3, <4.3 (`trinkets_updated`) | Trinket slots (verified against 4.2.1+26.3; hard dependency)    |
 | GeckoLib               | 5.5.7+                                 | Entity animation & model rendering (hard dependency)            |
-| Moog's Structure Lib   | 3.0.4                                  | Declared dependency (referenced by village structure injection) |
+| Moog's Structure Lib   | 3.4.2-fabric-26.3                       | Declared dependency (referenced by village structure injection) |
+| Jade                   | 26.3.5+fabric (optional)                | YZUI theme integration                                          |
 | Fabric Permissions API | 0.6.1 (bundled)                        | Cross-mod permission API                                        |
 | LuckPerms              | 5.5 (suggested runtime)                | Advanced permission control                                     |
 
-**Build Requirements**: JDK 25+ · Gradle 9.8.2 (Fabric Loom 1.19-SNAPSHOT) · Mod version `1.20.5-indev`
+**Build Requirements**: JDK 25+ · Gradle 9.8.2 (Fabric Loom 1.19-SNAPSHOT) · Mod version in `gradle.properties`. Minecraft support is limited to the 26.3 series; 26.4 requires another API review.
+
+Compatibility fixes and verification commands: [Minecraft 26.3 compatibility notes](docs/COMPATIBILITY_26_3.md).
 
 **Build & CI/CD**: GitHub Actions workflow (`.github/workflows/build.yml`) auto-builds on Ubuntu / Windows / macOS with JDK 25, with automatic Linux artifact upload.
 

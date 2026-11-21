@@ -64,7 +64,7 @@ public final class SophisticatedBackpacksCompat {
         }
     }
 
-    /** 渲染查询单独过滤隐藏槽；隐藏背包仍能快捷打开并执行升级功能。 */
+    /** 渲染查询尊重隐藏与外观槽；隐藏的有效背包仍能快捷打开并执行升级功能。 */
     public static <T> T withRenderVisibility(Supplier<T> query) {
         boolean previous = RENDER_QUERY.get();
         RENDER_QUERY.set(true);
@@ -85,8 +85,14 @@ public final class SophisticatedBackpacksCompat {
         TrinketInventory inventory = inventory(player, identifier);
         if (inventory == null || slot < 0 || slot >= inventory.getContainerSize()
                 || (RENDER_QUERY.get() && !inventory.isVisible(slot))) return ItemStack.EMPTY;
+        if (RENDER_QUERY.get() && inventory.hasCosmeticItems()) {
+            ItemStack cosmetic = inventory.getCosmeticItem(slot);
+            if (!cosmetic.isEmpty()) return cosmetic;
+        }
         TrinketSlotAccess access = inventory.getSlotAccess(slot);
-        return access == null ? ItemStack.EMPTY : access.get();
+        // 新版 Trinkets 的展示槽不能执行背包升级；是否隐藏只影响渲染。
+        return access == null || (!RENDER_QUERY.get() && !access.canApplyEffects())
+                ? ItemStack.EMPTY : access.get();
     }
 
     private static Object callback(Class<?> contract, Function<Object[], Object> function) {

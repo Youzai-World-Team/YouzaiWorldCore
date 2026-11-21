@@ -1,6 +1,7 @@
 package top.csituka.youzaiworldcore.mixin.client.compat;
 
 import eu.pb4.trinkets.api.TrinketInventory;
+import eu.pb4.trinkets.impl.slots.TrinketSlot;
 import net.minecraft.world.Container;
 import net.minecraft.world.inventory.Slot;
 import org.spongepowered.asm.mixin.Mixin;
@@ -28,6 +29,11 @@ public abstract class SophisticatedBackpackKeybindMixin {
     @Inject(method = "getPlayerInventory", at = @At("HEAD"), cancellable = true, require = 0)
     private static void youzaiworldcore$trinketInventory(Slot slot, CallbackInfoReturnable<Optional<?>> cir) {
         if (!(slot.container instanceof TrinketInventory inventory)) return;
+        if (slot instanceof TrinketSlot trinketSlot && trinketSlot.isDecorativeMode()) {
+            // 外观槽与有效槽共享编号，不能把外观背包的快捷键误发给同编号的有效背包。
+            cir.setReturnValue(Optional.empty());
+            return;
+        }
         try {
             if (youzaiworldcore$inventoryReturn == null) {
                 Class<?> result = Class.forName("net.p3pp3rf1y.sophisticatedbackpacks.client.KeybindHandler$PlayerInventoryReturn");

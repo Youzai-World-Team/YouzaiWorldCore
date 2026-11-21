@@ -581,15 +581,19 @@ Fabric 26.3 移植版 **3.24.1.0** 的 `stack_downgrade_tier_1/2/3` 也归入转
 
 每个槽位含自定义图标与 `trinkets:default` 校验器，order 控制排序。
 
+Trinkets 4.2 的外观槽仅用于展示。守护之心的死亡保护、数量检查和消耗只读取可生效的饰品；隐藏有效槽仍保留效果，消耗后标记库存同步。
+
 **YZUI 饰品交互 ★新增**：YZUI 物品栏（生存 / 创造）不使用 Trinkets 注入的原生槽位，而是实现了一套**悬停指示器**交互——鼠标悬停在可装备槽位上时，在其旁弹出对应饰品槽指示器，点击即可装卸：
 
 - **服务端权威**：所有操作经 C→S 数据包 `trinket_interact`（`TrinketInteractPayload`）提交，服务端通过 Trinkets API 修改权威数据后由 Trinkets 网络层同步回客户端并持久化
 - **四种操作**：`ACTION_PLACE`（光标→槽，0）、`ACTION_TAKE`（槽→光标，1）、`ACTION_SWAP`（互换，2）、`ACTION_QUICK_MOVE`（Shift+左键，槽→主物品栏 0–35，3）
 - **光标校验**：数据包携带客户端当前鼠标物品（`cursor`）。生存模式只信任服务端 `containerMenu.getCarried()`，创造模式才使用客户端生成的虚拟光标物品；槽位状态、堆叠上限与校验器始终以服务端为准
 - **本地预览**：客户端在收到服务端确认前先行本地预览，消除交互延迟感
-- **原生槽位屏蔽**：`SurvivalTrinketSlotYzuiMixin` 在 YZUI 屏幕下强制 Trinkets 的 `SurvivalTrinketSlot#isActive()` 返回 `false`，避免其注入槽位在装备位两侧渲染出"无用格子"并与 YZUI 指示器坐标重叠误触；YZUI 关闭时不拦截，Trinkets 原生物品栏行为不受影响（该 Mixin 以 `targets = "eu.pb4.trinkets.impl.slots.SurvivalTrinketSlot"` 字符串声明，适配 Trinkets 4.1.0-rc.1 的实现包结构）
+- **原生槽位屏蔽**：`SurvivalTrinketSlotYzuiMixin` 在 YZUI 屏幕下强制 Trinkets 的 `SurvivalTrinketSlot#isActive()` 返回 `false`，避免其注入槽位在装备位两侧渲染出"无用格子"并与 YZUI 指示器坐标重叠误触；YZUI 关闭时不拦截，Trinkets 原生物品栏行为不受影响（该 Mixin 以 `targets = "eu.pb4.trinkets.impl.slots.SurvivalTrinketSlot"` 字符串声明，适配 Trinkets 4.2.1+26.3 的实现包结构）
 
 精妙背包 Fabric 26.3 **3.24.1.0** 未内置 Trinkets 库存处理器，Core 为其补充可选桥接：饰品槽中的背包可由背包模组快捷键打开并参与升级处理，使用背包自身的背负渲染；隐藏饰品只影响显示，功能继续生效。原版饰品槽上的悬停打开也会使用正确的饰品库存标识，避免误读主物品栏。未安装精妙背包时跳过适配，旧版已有原生 Trinkets 处理器时不重复注册。
+
+新版外观背包覆盖同槽有效背包的显示；升级功能仍读取有效背包，隐藏状态同时作用于外观背包。在原生饰品界面的外观模式中，悬停快捷键不会误打开同编号的有效背包。
 
 已核对新版 jar 的实际注册和接口。隔离回归：`node tools/verify-backpack-compat.mjs <精妙背包.jar> <JDK25目录>`；完整游戏内操作仍需实机验收。
 
@@ -999,16 +1003,19 @@ Esc 暂停屏幕采用薄荷绿圆角操作卡片与玩家预览，跟随现有�
 | ---------------------- | --------------------------------------- | -------------------------------------- |
 | Minecraft              | 26.3                                    | 基础引擎                               |
 | Fabric Loader          | 0.20.1                                  | 模组加载器                             |
-| Fabric API             | 0.165.2+26.3                            | Fabric 标准 API                        |
-| ModMenu                | 21.0.0                                  | 模组菜单集成                           |
+| Fabric API             | 0.166.2+26.3                            | Fabric 标准 API                        |
+| ModMenu                | 21.0.1                                  | 模组菜单集成                           |
 | Placeholder API        | 3.2.0+26.3                              | 文本占位符                             |
-| Trinkets               | 精确匹配 4.2.1+26.3（`trinkets_updated`） | 饰品槽系统（第 34 项功能依赖，硬依赖） |
+| Trinkets               | >=4.2.1+26.3、<4.3（`trinkets_updated`） | 饰品槽系统（已核验 4.2.1+26.3，硬依赖） |
 | GeckoLib               | 5.5.7+                                  | 实体动画与模型渲染（硬依赖）           |
-| Moog's Structure Lib   | 3.0.4                                   | 声明依赖（村庄结构注入所引用）         |
+| Moog's Structure Lib   | 3.4.2-fabric-26.3                        | 声明依赖（村庄结构注入所引用）         |
+| Jade                   | 26.3.5+fabric（可选）                    | YZUI 主题集成                          |
 | Fabric Permissions API | 0.6.1（内置）                           | 跨模组权限 API                         |
 | LuckPerms              | 5.5（建议运行时）                       | 高级权限控制                           |
 
-**构建要求**：JDK 25+ · Gradle 9.8.2（Fabric Loom 1.19-SNAPSHOT）· 模组版本 `1.20.5-indev`
+**构建要求**：JDK 25+ · Gradle 9.8.2（Fabric Loom 1.19-SNAPSHOT）· 模组版本见 `gradle.properties`。加载范围为 Minecraft 26.3 系列；26.4 需重新核验接口。
+
+26.3 的兼容修复与验证命令见 [兼容说明](docs/COMPATIBILITY_26_3.md)。
 
 **构建与 CI/CD**：GitHub Actions 工作流（`.github/workflows/build.yml`）在 Ubuntu / Windows / macOS 三平台使用 JDK 25 自动构建，Linux 构建产物自动上传。
 

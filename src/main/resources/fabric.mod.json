@@ -68,18 +68,20 @@
   ],
   "accessWidener": "youzaiworldcore.client.accesswidener",
   "depends": {
-    "fabric-api": ">=0.165.2+26.3",
-    "minecraft": ">=${minecraft_version}",
-    "placeholder-api": ">=3.2.0",
-    "modmenu": ">=21.0.0",
-    "moogs_structures": ">=3.4.2",
-    "trinkets_updated": "=${trinkets_version}",
-    "geckolib": ">=5.5.7"
+    "fabricloader": ">=${loader_version}",
+    "java": ">=25",
+    "fabric-api": ">=${fabric_version}",
+    "minecraft": ">=${minecraft_version} <26.4",
+    "placeholder-api": ">=${placeholder_version}",
+    "modmenu": ">=${modmenu_version}",
+    "moogs_structures": ">=${moogs_structures_min_version}",
+    "trinkets_updated": ">=${trinkets_version} <4.3",
+    "geckolib": ">=${geckolib_version}"
   },
   "suggests": {
     "luckperms": "*",
     "advancementplaques": "*",
-    "EnchantmentDescriptions": "*",
+    "enchdesc": "*",
     "sophisticatedbackpacks": "*",
     "jade": "*"
   },

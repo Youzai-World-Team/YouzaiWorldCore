@@ -12,7 +12,7 @@ import org.objectweb.asm.tree.VarInsnNode;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
 /**
- * 为 Fabric Loader 0.19.3 的入口点调用循环注入启动进度回调。
+ * 为 Fabric Loader 0.20.1 的入口点调用循环注入启动进度回调。
  * <p>
  * 实现思路参考 Mod Loading Screen，并只保留本项目需要的 Fabric 入口点追踪。
  * </p>

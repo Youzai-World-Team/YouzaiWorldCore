@@ -140,9 +140,10 @@ public final class TrinketHelper {
         return null;
     }
 
+    /** 玩法效果只统计有效饰品，不包含新版 Trinkets 的外观槽或禁用效果的槽位。 */
     public static boolean isItemEquipped(LivingEntity entity, Item item) {
         TrinketAttachment attachment = TrinketsApi.getAttachment(entity);
-        return attachment != null && attachment.isEquipped(item);
+        return attachment != null && attachment.isEquipped(item, true);
     }
 
     public static int countItem(LivingEntity entity, Item item) {
@@ -151,13 +152,8 @@ public final class TrinketHelper {
             return 0;
         try {
             int total = 0;
-            for (Map.Entry<String, TrinketInventory> entry : attachment.getInventories().entrySet()) {
-                TrinketInventory inv = entry.getValue();
-                for (int i = 0; i < inv.getContainerSize(); i++) {
-                    ItemStack stack = inv.getItem(i);
-                    if (stack.is(item))
-                        total += stack.getCount();
-                }
+            for (TrinketSlotAccess access : attachment.equipped(item, true)) {
+                total += access.get().getCount();
             }
             return total;
         } catch (Exception e) {
@@ -171,10 +167,14 @@ public final class TrinketHelper {
         if (attachment == null)
             return false;
         try {
-            Optional<TrinketSlotAccess> opt = attachment.findFirst(stack -> stack.is(item));
+            Optional<TrinketSlotAccess> opt = attachment.findFirst(item, true);
             if (opt.isPresent()) {
-                ItemStack stack = opt.get().get();
-                stack.shrink(1);
+                TrinketSlotAccess access = opt.get();
+                ItemStack stack = access.get();
+                if (stack.isEmpty() || !access.set(stack.copyWithCount(stack.getCount() - 1))) {
+                    return false;
+                }
+                access.inventory().setChanged();
                 return true;
             }
             return false;

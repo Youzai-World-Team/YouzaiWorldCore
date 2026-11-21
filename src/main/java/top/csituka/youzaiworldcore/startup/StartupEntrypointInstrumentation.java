@@ -1,7 +1,5 @@
 package top.csituka.youzaiworldcore.startup;
 
-import net.lenni0451.reflect.Agents;
-import net.lenni0451.reflect.ClassLoaders;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
 import java.io.IOException;
@@ -39,7 +37,7 @@ final class StartupEntrypointInstrumentation {
         Instrumentation instrumentation = null;
         ClassFileTransformer installedTransformer = null;
         try {
-            instrumentation = Agents.getInstrumentation();
+            instrumentation = StartupReflectAccess.getInstrumentation();
             Class<?> loaderClass = findLoadedClass(instrumentation, TARGET_CLASS_NAME);
             if (loaderClass == null) {
                 throw new IllegalStateException("FabricLoaderImpl 尚未加载");
@@ -101,7 +99,7 @@ final class StartupEntrypointInstrumentation {
         return null;
     }
 
-    private static Class<?> defineBridgeClass(ClassLoader targetLoader) throws IOException {
+    private static Class<?> defineBridgeClass(ClassLoader targetLoader) throws Throwable {
         try {
             return Class.forName(BRIDGE_CLASS_NAME, false, targetLoader);
         } catch (ClassNotFoundException ignored) {
@@ -114,7 +112,7 @@ final class StartupEntrypointInstrumentation {
             if (input == null) {
                 throw new IOException("找不到启动进度桥接类资源：" + resourcePath);
             }
-            return ClassLoaders.defineClass(targetLoader, BRIDGE_CLASS_NAME, input.readAllBytes());
+            return StartupReflectAccess.defineClass(targetLoader, BRIDGE_CLASS_NAME, input.readAllBytes());
         }
     }
 }

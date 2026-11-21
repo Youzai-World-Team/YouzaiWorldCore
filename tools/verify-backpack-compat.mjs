@@ -3,12 +3,12 @@
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
 import { mkdtempSync, mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
-import { delimiter, dirname, join } from 'node:path'
+import { delimiter, dirname, join, resolve } from 'node:path'
 import { homedir, tmpdir } from 'node:os'
 import { fileURLToPath } from 'node:url'
 
 const root = fileURLToPath(new URL('../', import.meta.url))
-const backpackJar = process.argv[2]
+const backpackJar = process.argv[2] ? resolve(process.argv[2]) : undefined
 const javaHome = process.argv[3] || process.env.JAVA_HOME
 assert.ok(backpackJar, '请提供精妙背包 jar 路径')
 const bin = (name) => javaHome ? join(javaHome, 'bin', name) : name
@@ -37,7 +37,7 @@ const stubs = {
   'net/minecraft/world/item/Item.java': 'package net.minecraft.world.item; public class Item {}',
   'net/minecraft/world/item/ItemStack.java': `package net.minecraft.world.item;
     public class ItemStack { public static final ItemStack EMPTY = new ItemStack(new Item());
-    private final Item item; public ItemStack(Item item) { this.item=item; } public Item getItem() {return item;} }`,
+    private final Item item; public ItemStack(Item item) { this.item=item; } public Item getItem() {return item;} public boolean isEmpty(){return this==EMPTY;} }`,
   'net/minecraft/world/entity/LivingEntity.java': 'package net.minecraft.world.entity; public class LivingEntity {}',
   'net/minecraft/world/entity/EquipmentSlot.java': 'package net.minecraft.world.entity; public enum EquipmentSlot {CHEST,OFFHAND}',
   'net/minecraft/world/level/Level.java': 'package net.minecraft.world.level; public class Level {public long getGameTime(){return 0;}}',
@@ -64,9 +64,10 @@ const stubs = {
     net.fabricmc.api.EnvType getEnvironmentType(); }`,
   'eu/pb4/trinkets/api/SlotType.java': `package eu.pb4.trinkets.api; public record SlotType(String getId) {}`,
   'eu/pb4/trinkets/api/TrinketSlotAccess.java': `package eu.pb4.trinkets.api;
-    public record TrinketSlotAccess(net.minecraft.world.item.ItemStack get) {}`,
+    public record TrinketSlotAccess(net.minecraft.world.item.ItemStack get, boolean active) { public boolean canApplyEffects(){return active;} }`,
   'eu/pb4/trinkets/api/TrinketInventory.java': `package eu.pb4.trinkets.api;
-    public interface TrinketInventory extends net.minecraft.world.Container {int getContainerSize(); boolean isVisible(int slot); TrinketSlotAccess getSlotAccess(int slot); SlotType slotType();}`,
+    public interface TrinketInventory extends net.minecraft.world.Container {int getContainerSize(); boolean isVisible(int slot); TrinketSlotAccess getSlotAccess(int slot); SlotType slotType(); boolean hasCosmeticItems(); net.minecraft.world.item.ItemStack getCosmeticItem(int slot);}`,
+  'eu/pb4/trinkets/impl/slots/TrinketSlot.java': 'package eu.pb4.trinkets.impl.slots; public interface TrinketSlot {boolean isDecorativeMode();}',
   'eu/pb4/trinkets/api/TrinketAttachment.java': `package eu.pb4.trinkets.api;
     public interface TrinketAttachment {java.util.Map<String,TrinketInventory> getInventories();}`,
   'eu/pb4/trinkets/api/TrinketsApi.java': `package eu.pb4.trinkets.api; public class TrinketsApi {
@@ -99,12 +100,14 @@ public class BackpackRegression {
     static int checks;
     static void check(boolean value,String name){if(!value)throw new AssertionError(name); checks++;}
     static class Inventory implements TrinketInventory {
-        ItemStack[] items; boolean[] visible;
-        Inventory(ItemStack...items){this.items=items; visible=new boolean[items.length]; Arrays.fill(visible,true);}
+        ItemStack[] items,cosmetics; boolean[] visible,active;
+        Inventory(ItemStack...items){this.items=items; cosmetics=new ItemStack[items.length]; Arrays.fill(cosmetics,ItemStack.EMPTY); visible=new boolean[items.length]; active=new boolean[items.length]; Arrays.fill(visible,true); Arrays.fill(active,true);}
         public int getContainerSize(){return items.length;}
         public boolean isVisible(int slot){return visible[slot];}
-        public TrinketSlotAccess getSlotAccess(int slot){return items[slot]==null?null:new TrinketSlotAccess(items[slot]);}
+        public TrinketSlotAccess getSlotAccess(int slot){return items[slot]==null?null:new TrinketSlotAccess(items[slot],active[slot]);}
         public SlotType slotType(){return new SlotType("chest/backpack");}
+        public boolean hasCosmeticItems(){return true;}
+        public ItemStack getCosmeticItem(int slot){return cosmetics[slot];}
     }
     public static void main(String[] args)throws Exception {
         var provider=PlayerInventoryProvider.get();
@@ -139,6 +142,16 @@ public class BackpackRegression {
         var found=new ArrayList<ItemStack>();
         provider.runOnBackpacks(player,(stack,name,id,index)->{if(name.equals("trinkets"))found.add(stack); return false;});
         check(found.equals(List.of(one,two)),"实际背包枚举能找到饰品中的两只背包");
+        inv.active[0]=false;
+        check(handler.getStackInSlot(player,"chest/backpack",0)==ItemStack.EMPTY,"禁用效果的展示槽不参与背包升级");
+        inv.visible[0]=true; inv.cosmetics[0]=two;
+        check(SophisticatedBackpacksCompat.withRenderVisibility(()->provider.getBackpackFromRendered(player)).orElseThrow().backpack()==two,"外观背包覆盖同槽有效背包的渲染");
+        check(handler.getStackInSlot(player,"chest/backpack",0)==ItemStack.EMPTY,"外观覆盖不会赋予展示槽升级能力");
+        inv.active[0]=true;
+        check(handler.getStackInSlot(player,"chest/backpack",0)==one,"外观覆盖不改变有效背包的升级来源");
+        inv.visible[0]=false;
+        check(SophisticatedBackpacksCompat.withRenderVisibility(()->handler.getStackInSlot(player,"chest/backpack",0))==ItemStack.EMPTY,"隐藏同时作用于外观背包");
+        inv.cosmetics[0]=ItemStack.EMPTY;
         var other=new Player(); check(handler.getIdentifiers(other,0).isEmpty(),"玩家库存相互独立");
         Set<String> snapshot=handler.getIdentifiers(player,0); inventories.put("chest/elytra",new Inventory());
         check(!snapshot.contains("chest/elytra") && handler.getIdentifiers(player,0).contains("chest/elytra"),"标识实时刷新且旧快照不变");
@@ -157,6 +170,12 @@ public class BackpackRegression {
         check(id.invoke(value).equals("chest/backpack")&&name.invoke(value).equals("trinkets"),"实际快捷键返回对象使用饰品标识");
         var vanilla=new CallbackInfoReturnable<Optional<?>>("test",true,Optional.empty()); resolve.invoke(null,new Slot(new net.minecraft.world.Container(){}),vanilla);
         check(!vanilla.isCancelled(),"不改变原版槽位快捷键");
+        class CosmeticSlot extends Slot implements eu.pb4.trinkets.impl.slots.TrinketSlot {
+            CosmeticSlot(){super(inv);} public boolean isDecorativeMode(){return true;}
+        }
+        var cosmeticResult=new CallbackInfoReturnable<Optional<?>>("test",true,Optional.empty());
+        resolve.invoke(null,new CosmeticSlot(),cosmeticResult);
+        check(cosmeticResult.isCancelled()&&cosmeticResult.getReturnValue().isEmpty(),"外观槽快捷键不能打开同编号有效背包");
 
         var rules=InventoryItemGroupDefaults.getBuiltInRules("sophisticatedbackpacks:main");
         check(rules.size()==4,"原标签页仍有四组");

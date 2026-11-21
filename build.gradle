@@ -92,7 +92,7 @@ dependencies {
     include(implementation("org.xerial:sqlite-jdbc:3.53.4.0"))
 
     // Placeholder API
-    implementation('eu.pb4:placeholder-api:3.2.0+26.3')
+    implementation "eu.pb4:placeholder-api:${project.placeholder_version}"
 
     // Permissions API
     include(implementation('me.lucko:fabric-permissions-api:0.6.1'))
@@ -104,7 +104,7 @@ dependencies {
     compileOnly "com.terraformersmc:modmenu:${project.modmenu_version}"
 
     // Moog's Structure Lib
-    implementation "maven.modrinth:moogs-structure-lib:3.4.2-fabric-26.3"
+    implementation "maven.modrinth:moogs-structure-lib:${project.moogs_structures_version}"
 
     // Trinkets API
     implementation "eu.pb4:trinkets:${project.trinkets_version}"
@@ -117,7 +117,7 @@ dependencies {
     // Jade（可选集成：仅用于向 Jade 注入 YZUI 主题，compileOnly 不打包、不强制依赖；
     // 运行时玩家需自行安装 Jade，未安装时 YzuiJadeStyleManager 短路跳过。
     // 若该版本号在 Modrinth Maven 解析失败，可用版本 ID 替代：maven.modrinth:jade:71CTWqdE）
-    compileOnly "maven.modrinth:jade:26.3.5+fabric"
+    compileOnly "maven.modrinth:jade:${project.jade_version}"
 }
 
 processResources {
@@ -126,7 +126,12 @@ processResources {
             "version"          : project.version,
             "minecraft_version": project.minecraft_version,
             "loader_version"   : project.loader_version,
-            "trinkets_version" : project.trinkets_version
+            "trinkets_version" : project.trinkets_version,
+            "fabric_version" : project.fabric_version,
+            "placeholder_version" : project.placeholder_version,
+            "modmenu_version" : project.modmenu_version,
+            "moogs_structures_min_version" : project.moogs_structures_min_version,
+            "geckolib_version" : project.geckolib_version
     ]
     inputs.properties(expandProperties)
     filteringCharset = "UTF-8"
