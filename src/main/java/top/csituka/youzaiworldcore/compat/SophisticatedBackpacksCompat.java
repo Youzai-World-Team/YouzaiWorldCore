@@ -17,7 +17,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
- * 为缺少原生 Trinkets 适配的精妙背包 Fabric 26.3 版补充饰品库存来源。
+ * 为精妙背包 Fabric 26.3 版统一饰品库存读取；缺少原生适配时补注册库存来源。
  * 仅通过反射访问可选模组，未安装时不加载；不保存数据、不修改背包内容。
  */
 public final class SophisticatedBackpacksCompat {
@@ -31,7 +31,7 @@ public final class SophisticatedBackpacksCompat {
 
     /**
      * 在每个库存提供器构造结束后注册，覆盖客户端、专用服和单人集成服使用的实例。
-     * 老版已有原生适配时直接跳过，不覆盖第三方处理器。
+     * 已有原生适配时跳过补注册，改由原生适配 Mixin 复用相同的读取规则。
      */
     public static void registerProvider(Object provider) {
         ClassLoader loader = provider.getClass().getClassLoader();
@@ -47,12 +47,9 @@ public final class SophisticatedBackpacksCompat {
             Method register = provider.getClass().getMethod("addPlayerInventoryHandler",
                     String.class, BiFunction.class, countType, stackType,
                     boolean.class, boolean.class, boolean.class, boolean.class);
-            BiFunction<Player, Long, Set<String>> identifiers = (player, tick) -> {
-                TrinketAttachment attachment = TrinketsApi.getAttachment(player);
-                return attachment == null ? Set.of() : new LinkedHashSet<>(attachment.getInventories().keySet());
-            };
+            BiFunction<Player, Long, Set<String>> identifiers = (player, tick) -> getTrinketInventoryIds(player);
             Object count = callback(countType, args -> {
-                TrinketInventory inventory = inventory((Player) args[0], (String) args[1]);
+                TrinketInventory inventory = getTrinketInventory((Player) args[0], (String) args[1]);
                 return inventory == null ? 0 : inventory.getContainerSize();
             });
             Object stack = callback(stackType, args -> stack((Player) args[0], (String) args[1], (int) args[2]));
@@ -76,13 +73,36 @@ public final class SophisticatedBackpacksCompat {
         }
     }
 
-    private static TrinketInventory inventory(Player player, String identifier) {
+    /** 当前玩家的独立槽位快照；涵盖只放了外观背包的库存，不共享其他玩家的槽位缓存。 */
+    public static Set<String> getTrinketInventoryIds(Player player) {
+        TrinketAttachment attachment = TrinketsApi.getAttachment(player);
+        return attachment == null ? Set.of() : new LinkedHashSet<>(attachment.getInventories().keySet());
+    }
+
+    /** 原生联动使用作者声明的处理器名，旧版补注册仍使用 trinkets；只在打开快捷键时查询。 */
+    public static String getTrinketHandlerName() throws ReflectiveOperationException {
+        ClassLoader loader = SophisticatedBackpacksCompat.class.getClassLoader();
+        try {
+            Class.forName(NATIVE_COMPAT_CLASS, false, loader);
+        } catch (ClassNotFoundException ignored) {
+            return HANDLER_NAME;
+        }
+        Class<?> ids = Class.forName("net.p3pp3rf1y.sophisticatedbackpacks.compat.CompatModIds", false, loader);
+        return (String) ids.getField("TRINKETS").get(null);
+    }
+
+    /** 读取饰品库存；缺少附件或槽位时返回 null，交给原生处理器的默认值逻辑处理。 */
+    public static TrinketInventory getTrinketInventory(Player player, String identifier) {
         TrinketAttachment attachment = TrinketsApi.getAttachment(player);
         return attachment == null ? null : attachment.getInventories().get(identifier);
     }
 
     private static ItemStack stack(Player player, String identifier, int slot) {
-        TrinketInventory inventory = inventory(player, identifier);
+        return getTrinketStack(getTrinketInventory(player, identifier), slot);
+    }
+
+    /** 原生与补注册处理器共用的槽位读取：功能只读有效槽，渲染尊重隐藏与外观覆盖。 */
+    public static ItemStack getTrinketStack(TrinketInventory inventory, int slot) {
         if (inventory == null || slot < 0 || slot >= inventory.getContainerSize()
                 || (RENDER_QUERY.get() && !inventory.isVisible(slot))) return ItemStack.EMPTY;
         if (RENDER_QUERY.get() && inventory.hasCosmeticItems()) {

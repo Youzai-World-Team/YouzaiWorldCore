@@ -591,11 +591,11 @@ Trinkets 4.2 的外观槽仅用于展示。守护之心的死亡保护、数量�
 - **本地预览**：客户端在收到服务端确认前先行本地预览，消除交互延迟感
 - **原生槽位屏蔽**：`SurvivalTrinketSlotYzuiMixin` 在 YZUI 屏幕下强制 Trinkets 的 `SurvivalTrinketSlot#isActive()` 返回 `false`，避免其注入槽位在装备位两侧渲染出"无用格子"并与 YZUI 指示器坐标重叠误触；YZUI 关闭时不拦截，Trinkets 原生物品栏行为不受影响（该 Mixin 以 `targets = "eu.pb4.trinkets.impl.slots.SurvivalTrinketSlot"` 字符串声明，适配 Trinkets 4.2.1+26.3 的实现包结构）
 
-精妙背包 Fabric 26.3 **3.24.1.0** 未内置 Trinkets 库存处理器，Core 为其补充可选桥接：饰品槽中的背包可由背包模组快捷键打开并参与升级处理，使用背包自身的背负渲染；隐藏饰品只影响显示，功能继续生效。原版饰品槽上的悬停打开也会使用正确的饰品库存标识，避免误读主物品栏。未安装精妙背包时跳过适配，旧版已有原生 Trinkets 处理器时不重复注册。
+精妙背包 Fabric 26.3 **3.24.1.0** 未内置 Trinkets 库存处理器，Core 为其补充可选桥接。**3.24.1.3** 已提供原生联动，Core 保留作者的注册，通过 `SophisticatedBackpackTrinketsMixin` 统一饰品槽读取、缺失附件处理和每玩家槽位列表，再通过 `SophisticatedBackpackTrinketTickMixin` 排除无效槽的升级 tick。饰品背包继续使用背包自身的背负渲染；隐藏只影响显示，有效槽中的背包仍可打开并执行升级。未安装精妙背包时由 Pseudo 跳过，已有原生处理器时不重复注册。
 
-新版外观背包覆盖同槽有效背包的显示；升级功能仍读取有效背包，隐藏状态同时作用于外观背包。在原生饰品界面的外观模式中，悬停快捷键不会误打开同编号的有效背包。
+外观背包覆盖同槽有效背包的显示，包括有效槽为空的情况；功能读取和升级 tick 只作用于可生效槽，隐藏状态同时作用于外观背包。原生饰品界面的外观模式不能通过悬停快捷键误打开同编号的有效背包；B 键读取作者声明的处理器名，新版使用 `trinkets_updated`，旧版补注册使用 `trinkets`。槽位按当前玩家即时读取，不共用作者的跨玩家缓存。
 
-已核对新版 jar 的实际注册和接口。隔离回归：`node tools/verify-backpack-compat.mjs <精妙背包.jar> <JDK25目录>`；完整游戏内操作仍需实机验收。
+隔离回归：`node tools/verify-backpack-compat.mjs <精妙背包.jar> <JDK25目录>`。新版检查使用作者实际的原生注册、读取和 tick 字节码，先复现原始缺口，再按生产 Mixin 注解接入处理方法验证；测试不启动 Fabric/Mixin 服务，完整游戏内注入和操作仍需实机验收。
 
 ### 35. 配置导入/导出
 

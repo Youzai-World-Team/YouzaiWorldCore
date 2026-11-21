@@ -4,6 +4,7 @@ import eu.pb4.trinkets.api.TrinketInventory;
 import eu.pb4.trinkets.impl.slots.TrinketSlot;
 import net.minecraft.world.Container;
 import net.minecraft.world.inventory.Slot;
+import top.csituka.youzaiworldcore.compat.SophisticatedBackpacksCompat;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Pseudo;
 import org.spongepowered.asm.mixin.Unique;
@@ -40,7 +41,8 @@ public abstract class SophisticatedBackpackKeybindMixin {
                 youzaiworldcore$inventoryReturn = result.getDeclaredConstructor(String.class, String.class);
                 youzaiworldcore$inventoryReturn.setAccessible(true);
             }
-            cir.setReturnValue(Optional.of(youzaiworldcore$inventoryReturn.newInstance(inventory.slotType().getId(), "trinkets")));
+            cir.setReturnValue(Optional.of(youzaiworldcore$inventoryReturn.newInstance(
+                    inventory.slotType().getId(), SophisticatedBackpacksCompat.getTrinketHandlerName())));
         } catch (ReflectiveOperationException | LinkageError error) {
             // 不能把饰品槽编号当作主物品栏编号，避免错误打开另一只背包。
             cir.setReturnValue(Optional.empty());

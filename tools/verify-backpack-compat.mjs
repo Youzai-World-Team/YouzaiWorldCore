@@ -2,7 +2,7 @@
 // 用法：node tools/verify-backpack-compat.mjs <精妙背包.jar> <JDK25目录>
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
-import { mkdtempSync, mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdtempSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { delimiter, dirname, join, resolve } from 'node:path'
 import { homedir, tmpdir } from 'node:os'
 import { fileURLToPath } from 'node:url'
@@ -33,12 +33,16 @@ const write = (file, content) => {
 const pkg = 'top/csituka/youzaiworldcore'
 const third = 'net/p3pp3rf1y/sophisticatedbackpacks'
 const stubs = {
-  'net/minecraft/world/Container.java': 'package net.minecraft.world; public interface Container {}',
-  'net/minecraft/world/item/Item.java': 'package net.minecraft.world.item; public class Item {}',
+  'net/minecraft/world/Container.java': 'package net.minecraft.world; public interface Container {default int getContainerSize(){return 0;} default net.minecraft.world.item.ItemStack getItem(int slot){return net.minecraft.world.item.ItemStack.EMPTY;}}',
+  'net/minecraft/world/level/ItemLike.java': 'package net.minecraft.world.level; public interface ItemLike {net.minecraft.world.item.Item asItem();}',
+  'net/minecraft/world/item/Item.java': 'package net.minecraft.world.item; public class Item implements net.minecraft.world.level.ItemLike {public Item asItem(){return this;}}',
   'net/minecraft/world/item/ItemStack.java': `package net.minecraft.world.item;
     public class ItemStack { public static final ItemStack EMPTY = new ItemStack(new Item());
-    private final Item item; public ItemStack(Item item) { this.item=item; } public Item getItem() {return item;} public boolean isEmpty(){return this==EMPTY;} }`,
-  'net/minecraft/world/entity/LivingEntity.java': 'package net.minecraft.world.entity; public class LivingEntity {}',
+    public int ticks; public net.minecraft.world.entity.EquipmentSlot lastSlot;
+    public void inventoryTick(net.minecraft.world.level.Level level, net.minecraft.world.entity.Entity entity, net.minecraft.world.entity.EquipmentSlot slot){ticks++;lastSlot=slot;}
+    private final Item item; public ItemStack(Item item) { this.item=item; } public ItemStack(net.minecraft.world.level.ItemLike item){this(item.asItem());} public Item getItem() {return item;} public boolean isEmpty(){return this==EMPTY;} }`,
+  'net/minecraft/world/entity/Entity.java': 'package net.minecraft.world.entity; public class Entity {}',
+  'net/minecraft/world/entity/LivingEntity.java': 'package net.minecraft.world.entity; public class LivingEntity extends Entity {public net.minecraft.world.level.Level level(){return new net.minecraft.world.level.Level();}}',
   'net/minecraft/world/entity/EquipmentSlot.java': 'package net.minecraft.world.entity; public enum EquipmentSlot {CHEST,OFFHAND}',
   'net/minecraft/world/level/Level.java': 'package net.minecraft.world.level; public class Level {public long getGameTime(){return 0;}}',
   'net/minecraft/core/NonNullList.java': 'package net.minecraft.core; public class NonNullList<T> extends java.util.ArrayList<T> {}',
@@ -62,27 +66,41 @@ const stubs = {
   'net/fabricmc/loader/api/FabricLoader.java': `package net.fabricmc.loader.api; public interface FabricLoader {
     public static FabricLoader getInstance(){return () -> net.fabricmc.api.EnvType.CLIENT;}
     net.fabricmc.api.EnvType getEnvironmentType(); }`,
-  'eu/pb4/trinkets/api/SlotType.java': `package eu.pb4.trinkets.api; public record SlotType(String getId) {}`,
+  'eu/pb4/trinkets/api/SlotType.java': `package eu.pb4.trinkets.api; public interface SlotType {String getId();
+    default boolean validatorCheck(net.minecraft.world.item.ItemStack stack,TrinketSlotAccess access,net.minecraft.world.entity.LivingEntity entity){return true;}}`,
   'eu/pb4/trinkets/api/TrinketSlotAccess.java': `package eu.pb4.trinkets.api;
     public record TrinketSlotAccess(net.minecraft.world.item.ItemStack get, boolean active) { public boolean canApplyEffects(){return active;} }`,
   'eu/pb4/trinkets/api/TrinketInventory.java': `package eu.pb4.trinkets.api;
-    public interface TrinketInventory extends net.minecraft.world.Container {int getContainerSize(); boolean isVisible(int slot); TrinketSlotAccess getSlotAccess(int slot); SlotType slotType(); boolean hasCosmeticItems(); net.minecraft.world.item.ItemStack getCosmeticItem(int slot);}`,
+    public interface TrinketInventory extends net.minecraft.world.Container {int getContainerSize(); boolean isVisible(int slot); TrinketSlotAccess getSlotAccess(int slot); SlotType slotType(); boolean hasCosmeticItems(); net.minecraft.world.item.ItemStack getCosmeticItem(int slot);
+    default net.minecraft.world.item.ItemStack getItem(int slot){var access=getSlotAccess(slot);return access==null?net.minecraft.world.item.ItemStack.EMPTY:access.get();}}`,
   'eu/pb4/trinkets/impl/slots/TrinketSlot.java': 'package eu.pb4.trinkets.impl.slots; public interface TrinketSlot {boolean isDecorativeMode();}',
   'eu/pb4/trinkets/api/TrinketAttachment.java': `package eu.pb4.trinkets.api;
-    public interface TrinketAttachment {java.util.Map<String,TrinketInventory> getInventories();}`,
+    public interface TrinketAttachment {java.util.Map<String,TrinketInventory> getInventories();default TrinketInventory getInventory(String id){return getInventories().get(id);}}`,
+  'eu/pb4/trinkets/api/callback/TrinketCallback.java': `package eu.pb4.trinkets.api.callback;
+    public interface TrinketCallback {java.util.Map<net.minecraft.world.item.Item,TrinketCallback> CALLBACKS=new java.util.HashMap<>();
+    static void setCallback(net.minecraft.world.item.Item item,TrinketCallback callback){CALLBACKS.put(item,callback);}
+    default void tick(net.minecraft.world.item.ItemStack stack,eu.pb4.trinkets.api.TrinketSlotAccess access,net.minecraft.world.entity.LivingEntity entity){}}`,
   'eu/pb4/trinkets/api/TrinketsApi.java': `package eu.pb4.trinkets.api; public class TrinketsApi {
     public static TrinketAttachment getAttachment(net.minecraft.world.entity.LivingEntity player) {return ((net.minecraft.world.entity.player.Player)player).trinkets;} }`,
   [`${pkg}/util/DebugLogger.java`]: `package top.csituka.youzaiworldcore.util; public final class DebugLogger { public static final int LEVEL_OFF=0,LEVEL_BASIC=1,LEVEL_DETAILED=2,LEVEL_DEBUG=3; public static final DebugLogger SERVER=new DebugLogger(),CLIENT=new DebugLogger(); private boolean developer; private int level; public void configure(boolean d,int l){developer=d;level=l;} public boolean isDevModeEnabled(){return developer;} public int getLogLevel(){return level;} public static boolean isEnabled(int l){return false;} public static boolean isEnabled(){return false;} public static DebugLogger bootstrap(){return CLIENT;} public static DebugLogger forFile(java.nio.file.Path p){return SERVER;} public ModuleLogger module(String m){return new ModuleLogger();} public static void notice(String m,String s,Object...a){} public static void warn(String m,String s,Object...a){} public static void error(String m,String s,Object...a){} public static void exception(String m,String s,Object...a){} public static void exceptionSummary(String m,String s,Object...a){} public static void info(String m,String s,Object...a){} public static void stateChange(String m,String s,Object...a){} public static void debug(String m,String s,Object...a){} public static void branch(String m,String s,Object...a){} public static void debugStateChange(String m,String s,Object...a){} public static void trace(String m,String s,Object...a){} public static void entering(String m,String s,Object...a){} public static void exiting(String m,String s,Object...a){} public static void traceBranch(String m,String s,Object...a){} public static void traceStateChange(String m,String s,Object...a){} public static final class ModuleLogger { public void notice(String s,Object...a){} public void info(String s,Object...a){} public void debug(String s,Object...a){} public void trace(String s,Object...a){} public void warn(String s,Object...a){} public void error(String s,Object...a){} public boolean isInfoEnabled(){return false;} public boolean isDebugEnabled(){return false;} public boolean isTraceEnabled(){return false;} } }`,
   [`${third}/backpack/BackpackItem.java`]: 'package net.p3pp3rf1y.sophisticatedbackpacks.backpack; public class BackpackItem extends net.minecraft.world.item.Item {}',
+  [`${third}/init/ModItems.java`]: `package net.p3pp3rf1y.sophisticatedbackpacks.init;
+    public class ModItems {private static final net.p3pp3rf1y.sophisticatedbackpacks.backpack.BackpackItem ITEM=new net.p3pp3rf1y.sophisticatedbackpacks.backpack.BackpackItem();
+    public static final java.util.function.Supplier<net.p3pp3rf1y.sophisticatedbackpacks.backpack.BackpackItem> BACKPACK=()->ITEM;
+    public static final java.util.List<java.util.function.Supplier<net.p3pp3rf1y.sophisticatedbackpacks.backpack.BackpackItem>> BACKPACKS=java.util.List.of(BACKPACK);}`,
+  'net/p3pp3rf1y/sophisticatedcore/compat/ICompat.java': 'package net.p3pp3rf1y.sophisticatedcore.compat; public interface ICompat {default void init(){} default void setup(){}}',
 }
 
 try {
   const classes = ['util/PlayerInventoryProvider.class', 'util/PlayerInventoryProvider$RenderedBackpack.class',
     'util/PlayerInventoryProvider$RenderInfo.class', 'util/PlayerInventoryProvider$BackpackInventorySlotConsumer.class',
     'util/PlayerInventoryHandler.class', 'util/PlayerInventoryHandler$SlotCountGetter.class', 'util/PlayerInventoryHandler$SlotStackGetter.class',
-    'client/KeybindHandler$PlayerInventoryReturn.class']
+    'client/KeybindHandler$PlayerInventoryReturn.class', 'compat/CompatModIds.class']
   execFileSync(bin('jar'), ['xf', backpackJar, ...classes.map((name) => `${third}/${name}`)], { cwd: actual })
-  const libraries = [library('net.fabricmc', 'sponge-mixin'), library('io.github.llamalad7', 'mixinextras-fabric')]
+  execFileSync(bin('jar'), ['xf', backpackJar, `${third}/compat/trinkets/TrinketsCompat.class`, `${third}/compat/trinkets/BackpackTrinket.class`], { cwd: native })
+  const nativePresent = existsSync(join(native, third, 'compat/trinkets/TrinketsCompat.class'))
+  const libraries = [library('net.fabricmc', 'sponge-mixin'), library('io.github.llamalad7', 'mixinextras-fabric'),
+    library('org.ow2.asm', 'asm'), library('org.ow2.asm', 'asm-tree'), library('com.google.guava', 'guava')]
   const harness = write('BackpackRegression.java', `
 import java.lang.reflect.*;
 import java.util.*;
@@ -105,7 +123,7 @@ public class BackpackRegression {
         public int getContainerSize(){return items.length;}
         public boolean isVisible(int slot){return visible[slot];}
         public TrinketSlotAccess getSlotAccess(int slot){return items[slot]==null?null:new TrinketSlotAccess(items[slot],active[slot]);}
-        public SlotType slotType(){return new SlotType("chest/backpack");}
+        public SlotType slotType(){return ()->"chest/backpack";}
         public boolean hasCosmeticItems(){return true;}
         public ItemStack getCosmeticItem(int slot){return cosmetics[slot];}
     }
@@ -194,12 +212,16 @@ public class BackpackRegression {
     public static void main(String[]args)throws Exception {
         Class.forName("top.csituka.youzaiworldcore.compat.SophisticatedBackpacksCompat");
         Class.forName("top.csituka.youzaiworldcore.mixin.compat.SophisticatedBackpackInventoryMixin");
+        Class.forName("top.csituka.youzaiworldcore.mixin.compat.SophisticatedBackpackTrinketsMixin");
+        Class.forName("top.csituka.youzaiworldcore.mixin.compat.SophisticatedBackpackTrinketTickMixin");
         Class.forName("top.csituka.youzaiworldcore.mixin.client.compat.SophisticatedBackpackKeybindMixin");
-        System.out.println("未安装精妙背包时三个适配类均可加载。");
+        System.out.println("未安装精妙背包时五个适配类均可加载。");
     }} `)
   const source = Object.entries(stubs).map(([file, text]) => write(file, text))
   const production = [`src/main/java/${pkg}/compat/SophisticatedBackpacksCompat.java`,
     `src/main/java/${pkg}/mixin/compat/SophisticatedBackpackInventoryMixin.java`,
+    `src/main/java/${pkg}/mixin/compat/SophisticatedBackpackTrinketsMixin.java`,
+    `src/main/java/${pkg}/mixin/compat/SophisticatedBackpackTrinketTickMixin.java`,
     `src/client/java/${pkg}/mixin/client/compat/SophisticatedBackpackKeybindMixin.java`,
     `src/client/java/${pkg}/client/inventory/InventoryItemGroupDefaults.java`,
     `src/client/java/${pkg}/client/inventory/InventoryItemGroupRule.java`].map((path) => join(root, path))
@@ -207,8 +229,23 @@ public class BackpackRegression {
   const run = (extra, main, args=[]) => process.stdout.write(execFileSync(bin('java'), ['-cp',[output,...extra,...libraries].join(delimiter),main,...args],{encoding:'utf8'}))
   run([actual], 'BackpackRegression')
   run([], 'BackpackAbsent')
-  const marker=write(`${third}/compat/trinkets/TrinketsCompat.java`, 'package net.p3pp3rf1y.sophisticatedbackpacks.compat.trinkets; public class TrinketsCompat {}')
-  execFileSync(bin('javac'), ['-d',native,marker],{stdio:'inherit'})
+  if (nativePresent) {
+    const nativeCheck = write('BackpackNativeMixinChecks.java',
+      readFileSync(join(root,'tools/templates/BackpackNativeMixinChecks.java.template'),'utf8'))
+    execFileSync(bin('javac'), ['-proc:none','--release','25','-encoding','UTF-8','-cp',
+      [output,actual,native,...libraries].join(delimiter),'-d',output,nativeCheck],{stdio:'inherit'})
+    run([actual,native], 'BackpackNativeMixinChecks',['raw'])
+    run([actual,native], 'BackpackNativeMixinChecks',['weave',native,
+      join(output,pkg,'mixin/compat/SophisticatedBackpackTrinketsMixin.class'),
+      'net.p3pp3rf1y.sophisticatedbackpacks.compat.trinkets.TrinketsCompat'])
+    run([actual,native], 'BackpackNativeMixinChecks',['weave',native,
+      join(output,pkg,'mixin/compat/SophisticatedBackpackTrinketTickMixin.class'),
+      'net.p3pp3rf1y.sophisticatedbackpacks.compat.trinkets.BackpackTrinket'])
+    run([actual,native], 'BackpackNativeMixinChecks',['patched'])
+  } else {
+    const marker=write(`${third}/compat/trinkets/TrinketsCompat.java`, 'package net.p3pp3rf1y.sophisticatedbackpacks.compat.trinkets; public class TrinketsCompat {}')
+    execFileSync(bin('javac'), ['-d',native,marker],{stdio:'inherit'})
+  }
   run([actual,native], 'BackpackRegression',['native'])
 } finally {
   rmSync(directory,{recursive:true,force:true})

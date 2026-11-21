@@ -1,0 +1,259 @@
+import eu.pb4.trinkets.api.*;
+import eu.pb4.trinkets.api.callback.TrinketCallback;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.p3pp3rf1y.sophisticatedbackpacks.backpack.BackpackItem;
+import net.p3pp3rf1y.sophisticatedbackpacks.init.ModItems;
+import net.p3pp3rf1y.sophisticatedbackpacks.util.PlayerInventoryProvider;
+import org.objectweb.asm.*;
+import org.objectweb.asm.tree.*;
+import org.spongepowered.asm.mixin.injection.struct.MemberInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import top.csituka.youzaiworldcore.compat.SophisticatedBackpacksCompat;
+
+import java.nio.file.*;
+import java.util.*;
+
+/**
+ * 用作者实际的原生类与生产 Mixin 处理方法做隔离回归。
+ * 由 verify-backpack-compat.mjs 复制到临时目录，并与脚本生成的测试桩一起编译。
+ * 在原始路径复现缺口，再按注解的 HEAD 回调和调用点重定向接入处理方法；
+ * 游戏环境使用桩，不启动 Fabric/Mixin 服务，不能替代游戏内注入验证。
+ */
+public final class BackpackNativeMixinChecks {
+    private static final String NATIVE = "net.p3pp3rf1y.sophisticatedbackpacks.compat.trinkets.TrinketsCompat";
+    private static int checks;
+
+    private static void check(boolean value, String reason) {
+        checks++;
+        if (!value) throw new AssertionError(reason);
+    }
+
+    private static final class Inventory implements TrinketInventory {
+        final ItemStack[] items, cosmetics;
+        final boolean[] visible, active;
+        final String id;
+        Inventory(String id, ItemStack... items) {
+            this.id = id;
+            this.items = items;
+            cosmetics = new ItemStack[items.length];
+            visible = new boolean[items.length];
+            active = new boolean[items.length];
+            Arrays.fill(cosmetics, ItemStack.EMPTY);
+            Arrays.fill(visible, true);
+            Arrays.fill(active, true);
+        }
+        public int getContainerSize() { return items.length; }
+        public boolean isVisible(int slot) { return visible[slot]; }
+        public TrinketSlotAccess getSlotAccess(int slot) { return new TrinketSlotAccess(items[slot], active[slot]); }
+        public SlotType slotType() { return () -> id; }
+        public boolean hasCosmeticItems() { return true; }
+        public ItemStack getCosmeticItem(int slot) { return cosmetics[slot]; }
+    }
+
+    private static void behavior(boolean patched) throws Exception {
+        var provider = PlayerInventoryProvider.get();
+        SophisticatedBackpacksCompat.registerProvider(provider);
+        check(provider.getPlayerInventoryHandler("trinkets").isEmpty(), "保留作者原生注册，不提前补注册");
+        var nativeCompat = Class.forName(NATIVE).getConstructor().newInstance();
+        nativeCompat.getClass().getMethod("init").invoke(nativeCompat);
+        String handlerName = SophisticatedBackpacksCompat.getTrinketHandlerName();
+        check(handlerName.equals("trinkets_updated"), "识别作者新版实际处理器名");
+        var handler = provider.getPlayerInventoryHandler(handlerName).orElseThrow();
+        check(!handler.hasItsOwnRenderer(), "保留作者复用背包渲染器的设置");
+        var one = new ItemStack(new BackpackItem());
+        var two = new ItemStack(new BackpackItem());
+        var inventory = new Inventory("chest/back", one, two);
+        var inventories = new LinkedHashMap<String, TrinketInventory>();
+        inventories.put(inventory.id, inventory);
+        var player = new Player();
+        player.trinkets = () -> inventories;
+        handler.getIdentifiers(player, 0);
+
+        inventory.visible[0] = false;
+        check(handler.getStackInSlot(player, inventory.id, 0) == one, "隐藏的有效背包仍可用于打开和升级");
+        var rendered = SophisticatedBackpacksCompat.withRenderVisibility(() -> provider.getBackpackFromRendered(player));
+        check(rendered.orElseThrow().backpack() == (patched ? two : one),
+                patched ? "原生渲染枚举跳过隐藏背包" : "复现原生读取绕过隐藏标志");
+        inventory.visible[0] = true;
+        inventory.cosmetics[0] = two;
+        rendered = SophisticatedBackpacksCompat.withRenderVisibility(() -> provider.getBackpackFromRendered(player));
+        check(rendered.orElseThrow().backpack() == (patched ? two : one),
+                patched ? "原生渲染优先使用外观背包" : "复现原生读取忽略外观覆盖");
+        inventory.active[0] = false;
+        check(handler.getStackInSlot(player, inventory.id, 0) == (patched ? ItemStack.EMPTY : one),
+                patched ? "无效槽不参与功能处理" : "复现原生读取忽略有效槽标志");
+        nativeCompat.getClass().getMethod("setup").invoke(nativeCompat);
+        var callback = TrinketCallback.CALLBACKS.get(ModItems.BACKPACK.get());
+        check(callback != null && callback.getClass().getName().endsWith("BackpackTrinket"), "保留作者的原生 tick 注册");
+        var ticked = new ItemStack(ModItems.BACKPACK.get());
+        callback.tick(ticked, inventory.getSlotAccess(0), player);
+        check(ticked.ticks == (patched ? 0 : 1), patched ? "无效槽不执行升级 tick" : "复现无效槽仍执行原生升级 tick");
+        inventory.active[0] = true;
+        callback.tick(ticked, inventory.getSlotAccess(0), player);
+        check(ticked.ticks == (patched ? 1 : 2) && ticked.lastSlot == EquipmentSlot.CHEST, "隐藏的有效槽仍按胸甲槽执行 tick");
+        inventory.active[0] = false;
+        if (!patched) {
+            System.out.println("原生未注入路径通过 " + checks + " 项检查，已复现隐藏/外观/有效槽缺口。");
+            return;
+        }
+
+        var found = new ArrayList<ItemStack>();
+        provider.runOnBackpacks(player, (stack, name, id, slot) -> {
+            if (name.equals(handlerName)) found.add(stack);
+            return false;
+        });
+        check(found.equals(List.of(two)), "原生升级枚举只读取可生效背包");
+        inventory.active[0] = true;
+        check(handler.getStackInSlot(player, inventory.id, 0) == one, "外观覆盖不会替换功能背包");
+        inventory.visible[0] = false;
+        check(SophisticatedBackpacksCompat.withRenderVisibility(() -> handler.getStackInSlot(player, inventory.id, 0))
+                == ItemStack.EMPTY, "隐藏同时作用于外观背包");
+
+        var cosmeticOnly = new Inventory("chest/cosmetic_only", ItemStack.EMPTY);
+        cosmeticOnly.cosmetics[0] = two;
+        inventories.clear();
+        inventories.put(cosmeticOnly.id, cosmeticOnly);
+        check(handler.getIdentifiers(player, 0).equals(Set.of(cosmeticOnly.id)), "槽位变化同一 tick 即时生效");
+        check(SophisticatedBackpacksCompat.withRenderVisibility(() -> provider.getBackpackFromRendered(player))
+                .orElseThrow().backpack() == two, "仅外观槽有背包时也能渲染");
+        check(handler.getStackInSlot(player, cosmeticOnly.id, 0) == ItemStack.EMPTY, "外观背包不参与功能处理");
+
+        var other = new Player();
+        other.trinkets = () -> Map.of(inventory.id, inventory);
+        check(handler.getIdentifiers(other, 0).equals(Set.of(inventory.id)), "不同玩家不共享槽位缓存");
+        var missing = new Player();
+        check(handler.getIdentifiers(missing, 0).isEmpty(), "缺少附件时槽位为空");
+        check(handler.getSlotCount(missing, inventory.id) == 0, "缺少附件时原生计数默认值仍生效");
+        check(handler.getStackInSlot(missing, inventory.id, 0) == ItemStack.EMPTY, "缺少附件时读取安全");
+        check(handler.getStackInSlot(player, "missing", 0) == ItemStack.EMPTY, "缺少库存时读取安全");
+        check(handler.getStackInSlot(player, cosmeticOnly.id, -1) == ItemStack.EMPTY
+                && handler.getStackInSlot(player, cosmeticOnly.id, 1) == ItemStack.EMPTY, "越界编号读取安全");
+        try {
+            SophisticatedBackpacksCompat.withRenderVisibility(() -> { throw new IllegalStateException("expected"); });
+        } catch (IllegalStateException expected) { }
+        check(handler.getStackInSlot(other, inventory.id, 0) == one, "异常后恢复功能读取状态");
+
+        var keybind = Class.forName("top.csituka.youzaiworldcore.mixin.client.compat.SophisticatedBackpackKeybindMixin")
+                .getDeclaredMethod("youzaiworldcore$trinketInventory", net.minecraft.world.inventory.Slot.class,
+                        CallbackInfoReturnable.class);
+        keybind.setAccessible(true);
+        var result = new CallbackInfoReturnable<Optional<?>>("keybind", true, Optional.empty());
+        keybind.invoke(null, new net.minecraft.world.inventory.Slot(inventory), result);
+        Object open = result.getReturnValue().orElseThrow();
+        var nameMethod = open.getClass().getDeclaredMethod("handlerName");
+        nameMethod.setAccessible(true);
+        check(nameMethod.invoke(open).equals(handlerName), "B 键请求与作者注册的处理器名一致");
+        check(provider.getPlayerInventoryHandler(handlerName).orElseThrow() == handler, "没有重复注册或替换原生处理器");
+        System.out.println("原生注入路径通过 " + checks + " 项实际注册/读取/渲染/tick 检查。");
+    }
+
+    private static Object value(AnnotationNode annotation, String key) {
+        for (int i = 0; i < annotation.values.size(); i += 2) {
+            if (annotation.values.get(i).equals(key)) return annotation.values.get(i + 1);
+        }
+        return null;
+    }
+
+    private static AnnotationNode firstAt(AnnotationNode annotation) {
+        Object points = value(annotation, "at");
+        return points instanceof List<?> list ? (AnnotationNode) list.getFirst() : (AnnotationNode) points;
+    }
+
+    /** 在临时类副本上接入生产处理方法，保留作者 init/setup 和 lambda 注册字节码。 */
+    @SuppressWarnings("unchecked")
+    private static void weave(Path directory, Path mixinFile, String targetClass) throws Exception {
+        String owner = targetClass.replace('.', '/');
+        Path nativeFile = directory.resolve(owner + ".class");
+        var target = new ClassNode();
+        new ClassReader(Files.readAllBytes(nativeFile)).accept(target, 0);
+        var mixin = new ClassNode();
+        new ClassReader(Files.readAllBytes(mixinFile)).accept(mixin, 0);
+        var original = List.copyOf(target.methods);
+        int callbacks = 0, redirects = 0;
+        for (MethodNode hook : mixin.methods) {
+            if (hook.visibleAnnotations == null) continue;
+            for (AnnotationNode annotation : hook.visibleAnnotations) {
+                if (annotation.desc.endsWith("/Inject;")) {
+                    check(value(firstAt(annotation), "value").equals("HEAD"), "回调注解定位方法入口");
+                    for (String selector : (List<String>) value(annotation, "method")) {
+                        int matched = 0;
+                        for (MethodNode method : original) {
+                            if (!MemberInfo.parse(selector, null).matches(owner, method.name, method.desc).isMatch()) continue;
+                            boolean isStatic = (method.access & Opcodes.ACC_STATIC) != 0;
+                            check(isStatic == ((hook.access & Opcodes.ACC_STATIC) != 0), "HEAD 回调静态性与实际目标一致");
+                            Type[] args = Type.getArgumentTypes(method.desc);
+                            String callbackType = Type.getArgumentTypes(hook.desc)[args.length].getInternalName();
+                            boolean returnsVoid = Type.getReturnType(method.desc).getSort() == Type.VOID;
+                            int local = method.maxLocals;
+                            var head = new InsnList();
+                            head.add(new TypeInsnNode(Opcodes.NEW, callbackType));
+                            head.add(new InsnNode(Opcodes.DUP));
+                            head.add(new LdcInsnNode(method.name));
+                            head.add(new InsnNode(Opcodes.ICONST_1));
+                            head.add(new MethodInsnNode(Opcodes.INVOKESPECIAL, callbackType, "<init>", "(Ljava/lang/String;Z)V", false));
+                            head.add(new VarInsnNode(Opcodes.ASTORE, local));
+                            if (!isStatic) head.add(new VarInsnNode(Opcodes.ALOAD, 0));
+                            int index = isStatic ? 0 : 1;
+                            for (Type arg : args) {
+                                head.add(new VarInsnNode(arg.getOpcode(Opcodes.ILOAD), index));
+                                index += arg.getSize();
+                            }
+                            head.add(new VarInsnNode(Opcodes.ALOAD, local));
+                            head.add(new MethodInsnNode(isStatic ? Opcodes.INVOKESTATIC : Opcodes.INVOKESPECIAL,
+                                    owner, hook.name, hook.desc, false));
+                            head.add(new VarInsnNode(Opcodes.ALOAD, local));
+                            head.add(new MethodInsnNode(Opcodes.INVOKEVIRTUAL, callbackType, "isCancelled", "()Z", false));
+                            var proceed = new LabelNode();
+                            head.add(new JumpInsnNode(Opcodes.IFEQ, proceed));
+                            if (returnsVoid) {
+                                head.add(new InsnNode(Opcodes.RETURN));
+                            } else {
+                                head.add(new VarInsnNode(Opcodes.ALOAD, local));
+                                head.add(new MethodInsnNode(Opcodes.INVOKEVIRTUAL, callbackType, "getReturnValue", "()Ljava/lang/Object;", false));
+                                head.add(new TypeInsnNode(Opcodes.CHECKCAST, Type.getReturnType(method.desc).getInternalName()));
+                                head.add(new InsnNode(Opcodes.ARETURN));
+                            }
+                            head.add(proceed);
+                            method.instructions.insert(head);
+                            method.maxLocals++;
+                            matched++;
+                            callbacks++;
+                        }
+                        check(matched == 1, "HEAD 回调准确匹配一个实际方法：" + selector);
+                    }
+                    target.methods.add(hook);
+                } else if (annotation.desc.endsWith("/Redirect;")) {
+                    var at = firstAt(annotation);
+                    check(value(at, "value").equals("INVOKE"), "重定向定位实际调用点");
+                    var invokeSelector = MemberInfo.parse((String) value(at, "target"), null);
+                    for (String selector : (List<String>) value(annotation, "method")) {
+                        for (MethodNode method : original) {
+                            if (!MemberInfo.parse(selector, null).matches(owner, method.name, method.desc).isMatch()) continue;
+                            for (AbstractInsnNode instruction : method.instructions.toArray()) {
+                                if (!(instruction instanceof MethodInsnNode invoke)
+                                        || !invokeSelector.matches(invoke.owner, invoke.name, invoke.desc).isMatch()) continue;
+                                check((method.access & Opcodes.ACC_STATIC) != 0, "原生槽位读取 lambda 是静态方法");
+                                method.instructions.set(invoke, new MethodInsnNode(Opcodes.INVOKESTATIC, owner, hook.name, hook.desc, false));
+                                redirects++;
+                            }
+                        }
+                    }
+                    target.methods.add(hook);
+                }
+            }
+        }
+        check(targetClass.equals(NATIVE) ? callbacks == 2 && redirects == 1 : callbacks == 1 && redirects == 0,
+                "实际目标的所有回调和调用点均接入");
+        var writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
+        target.accept(writer);
+        Files.write(nativeFile, writer.toByteArray());
+        System.out.println("实际原生字节码注入点验证通过：" + checks + " 项（Mixin 服务未启动）。");
+    }
+
+    public static void main(String[] args) throws Exception {
+        if (args[0].equals("weave")) weave(Path.of(args[1]), Path.of(args[2]), args[3]);
+        else behavior(args[0].equals("patched"));
+    }
+}

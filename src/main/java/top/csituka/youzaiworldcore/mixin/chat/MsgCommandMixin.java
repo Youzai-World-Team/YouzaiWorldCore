@@ -40,8 +40,7 @@ public abstract class MsgCommandMixin {
 
     /** 原版每个收件人都会产生回执；自发自收时收件路径已经给发送者投递。 */
     @SuppressWarnings("null")
-    @Redirect(method = "sendMessage", at = @At(value = "INVOKE",
-            target = "Lnet/minecraft/commands/CommandSourceStack;sendChatMessage(Lnet/minecraft/network/chat/OutgoingChatMessage;ZLnet/minecraft/network/chat/ChatType$Bound;)V"))
+    @Redirect(method = "sendMessage", at = @At(value = "INVOKE", target = "Lnet/minecraft/commands/CommandSourceStack;sendChatMessage(Lnet/minecraft/network/chat/OutgoingChatMessage;ZLnet/minecraft/network/chat/ChatType$Bound;)V"))
     private static void youzaiworldcore$skipSelfFeedback(CommandSourceStack feedbackSource,
             OutgoingChatMessage message, boolean filtered, ChatType.Bound parameters,
             CommandSourceStack commandSource, Collection<ServerPlayer> targets, PlayerChatMessage originalMessage) {
@@ -54,14 +53,18 @@ public abstract class MsgCommandMixin {
     }
 
     /** 投递完成后向发送者确认收件人；完全过滤的目标不列入成功回执。 */
+    @SuppressWarnings("null")
     @Inject(method = "sendMessage", at = @At("RETURN"))
     private static void youzaiworldcore$sendPrivateReceipt(CommandSourceStack source,
             Collection<ServerPlayer> targets, PlayerChatMessage message, CallbackInfo ci) {
-        if (source.isSilent()) return;
+        if (source.isSilent())
+            return;
+        @SuppressWarnings("null")
         String recipients = targets.stream()
                 .filter(target -> !source.shouldFilterMessageTo(target) || !message.isFullyFiltered())
                 .map(ServerPlayer::getScoreboardName).distinct().collect(Collectors.joining(", "));
-        if (recipients.isEmpty()) return;
+        if (recipients.isEmpty())
+            return;
         source.sendSystemMessage(ChatMessageStyle.privateSent(ChatFormatHelper.formatPrivateHeader(source),
                 Component.literal(recipients)));
         DebugLogger.SERVER.debug("ChatMessages", "私信发送回执：发送者={}，收件人={}", source.getTextName(), recipients);
