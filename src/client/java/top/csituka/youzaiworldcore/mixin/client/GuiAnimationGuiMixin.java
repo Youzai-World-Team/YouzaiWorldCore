@@ -16,6 +16,11 @@ public abstract class GuiAnimationGuiMixin {
     @Shadow
     private Screen screen;
 
+    @Inject(method = "setClientLevelTeardownInProgress(Z)V", at = @At("HEAD"))
+    private void youzaiworldcore$clearWorldAnimations(boolean inProgress, CallbackInfo ci) {
+        GuiAnimationController.onClientLevelTeardownChanged(inProgress);
+    }
+
     @Inject(method = "setScreen", at = @At("HEAD"), cancellable = true)
     private void youzaiworldcore$interceptScreenChange(Screen newScreen, CallbackInfo ci) {
         if (GuiAnimationController.interceptScreenChange((Gui) (Object) this, newScreen)) {

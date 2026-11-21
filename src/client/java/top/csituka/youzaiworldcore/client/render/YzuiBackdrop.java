@@ -15,6 +15,12 @@ public final class YzuiBackdrop {
 
     private YzuiBackdrop() { }
 
+    /** 世界卸载开始时释放所有旧页面，不能在断线进度页背后继续绘制容器或玩家预览。 */
+    public static void clearHistory() {
+        HISTORY.clear();
+        scene = null;
+    }
+
     /** 只为明确声明的弹窗保留父页面，不能按自定义屏幕或类名推断。 */
     public static boolean isPopup(Screen screen) {
         return screen instanceof YzuiPopupScreen popup && popup.isPopup();

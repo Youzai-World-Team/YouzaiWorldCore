@@ -32,6 +32,7 @@ public final class GuiAnimationController {
     private static long exitStartedAt;
     private static boolean transitionPending;
     private static boolean bypassSetScreen;
+    private static boolean clientLevelTeardownInProgress;
     private static YzuiMotion.Frame exitStartFrame = YzuiMotion.Frame.IDENTITY;
     private static Screen lastRenderedScreen;
     private static YzuiMotion.Frame lastRenderedFrame = YzuiMotion.Frame.IDENTITY;
@@ -71,10 +72,29 @@ public final class GuiAnimationController {
 
     /** 读取当前配置，配置读取失败时由配置层负责报告并终止。 */
     public static GuiAnimationMode getMode() {
-        if (ClientExternalSettings.getYzuiVisualStyle() == YzuiVisualStyle.MINIMAL) {
+        if (clientLevelTeardownInProgress
+                || ClientExternalSettings.getYzuiVisualStyle() == YzuiVisualStyle.MINIMAL) {
             return GuiAnimationMode.OFF;
         }
         return ClientExternalSettings.getGuiAnimationMode();
+    }
+
+    /**
+     * 跟随原版世界卸载标记取消旧页面，避免断线后容器继续访问已清空的玩家。
+     * 此时还没有设置断线页面，只丢弃待完成的动画，不提交可能属于旧世界的目标页面。
+     */
+    public static void onClientLevelTeardownChanged(boolean inProgress) {
+        clientLevelTeardownInProgress = inProgress;
+        if (!inProgress) return;
+
+        clearPendingTransition();
+        currentScreen = null;
+        enterStartedAt = 0L;
+        lastRenderedScreen = null;
+        lastRenderedFrame = YzuiMotion.Frame.IDENTITY;
+        PICTURE_OPACITY.clear();
+        YzuiBackdrop.clearHistory();
+        DebugLogger.CLIENT.debug(MODULE, "客户端世界开始卸载，已取消页面动画和旧背景层");
     }
 
     private static long enterDuration() {
@@ -100,6 +120,8 @@ public final class GuiAnimationController {
      * @return 是否已经接管本次切换，调用方应取消原方法继续执行
      */
     public static boolean interceptScreenChange(Gui gui, Screen newScreen) {
+        // 原版必须在清空玩家前完成断线页面切换，不能保留旧容器等待退出动画。
+        if (clientLevelTeardownInProgress) return false;
         if (isBackgroundRendering()) return true;
         if (!animates(gui.screen()) || bypassSetScreen) {
             return false;
@@ -144,8 +166,10 @@ public final class GuiAnimationController {
         currentScreen = newScreen;
         lastRenderedScreen = null;
         if (newScreen != null) {
-            enterStartedAt = returning ? 0L : System.currentTimeMillis();
-            DebugLogger.CLIENT.debug(MODULE, "页面进入动画开始：{}", newScreen.getClass().getSimpleName());
+            enterStartedAt = returning || clientLevelTeardownInProgress ? 0L : System.currentTimeMillis();
+            if (!clientLevelTeardownInProgress) {
+                DebugLogger.CLIENT.debug(MODULE, "页面进入动画开始：{}", newScreen.getClass().getSimpleName());
+            }
         }
     }
 
@@ -220,10 +244,7 @@ public final class GuiAnimationController {
     /** 主动关闭菜单时取消延迟切换；next 为 null 表示回到游戏，防止旧目标在下一帧重新打开。 */
     public static void setScreenImmediately(Gui gui, @Nullable Screen next) {
         if (isBackgroundRendering()) return;
-        transitionPending = false;
-        pendingGui = null;
-        pendingScreen = null;
-        exitingScreen = null;
+        clearPendingTransition();
         lastRenderedScreen = null;
         boolean oldBypass = bypassSetScreen;
         bypassSetScreen = true;
@@ -232,6 +253,16 @@ public final class GuiAnimationController {
         } finally {
             bypassSetScreen = oldBypass;
         }
+    }
+
+    /** 只清理过渡状态，不触发页面初始化或关闭旧容器。 */
+    private static void clearPendingTransition() {
+        transitionPending = false;
+        pendingGui = null;
+        pendingScreen = null;
+        exitingScreen = null;
+        exitStartedAt = 0L;
+        exitStartFrame = YzuiMotion.Frame.IDENTITY;
     }
 
     public static void capturePictureOpacity(Object state) {
@@ -249,10 +280,7 @@ public final class GuiAnimationController {
 
         Gui gui = pendingGui;
         Screen next = pendingScreen;
-        transitionPending = false;
-        pendingGui = null;
-        pendingScreen = null;
-        exitingScreen = null;
+        clearPendingTransition();
 
         boolean oldBypass = bypassSetScreen;
         bypassSetScreen = true;

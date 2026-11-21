@@ -22,6 +22,7 @@ public class Screen {
     public int width = 854, height = 480, inits, renders;
     public Runnable onRender = () -> {};
     public void init() { inits++; }
+    public void tick() {}
     public boolean shouldCloseOnEsc() { return true; }
     public void onClose() {}
     public void extractRenderState(GuiGraphicsExtractor g, int x, int y, float tick) {
@@ -37,7 +38,14 @@ public class Screen {
 """,
     "net/minecraft/client/gui/screens/inventory/AbstractContainerScreen.java": """
 package net.minecraft.client.gui.screens.inventory;
-public class AbstractContainerScreen<T> extends net.minecraft.client.gui.screens.Screen {}
+public class AbstractContainerScreen<T> extends net.minecraft.client.gui.screens.Screen {
+    public int ticks;
+    // 原版 26.3 的容器 tick 直接访问玩家，不对断线后的 null 做容错。
+    @Override public void tick() {
+        net.minecraft.client.Minecraft.getInstance().player.isAlive();
+        ticks++;
+    }
+}
 """,
     "net/minecraft/client/gui/Gui.java": """
 package net.minecraft.client.gui;
@@ -45,9 +53,17 @@ import net.minecraft.client.gui.screens.Screen;
 import top.csituka.youzaiworldcore.client.animation.GuiAnimationController;
 public class Gui {
     private Screen screen;
+    private boolean clientLevelTeardownInProgress;
     public Screen screen() { return screen; }
+    public void tick() { if (screen != null) screen.tick(); }
+    public void setClientLevelTeardownInProgress(boolean inProgress) {
+        GuiAnimationController.onClientLevelTeardownChanged(inProgress);
+        clientLevelTeardownInProgress = inProgress;
+    }
     public void setScreen(Screen next) {
         if (GuiAnimationController.interceptScreenChange(this, next)) return;
+        if (next == null && clientLevelTeardownInProgress)
+            throw new IllegalStateException("Trying to return to in-game GUI during disconnection");
         screen = next;
         GuiAnimationController.onScreenChanged(next);
         if (next != null) next.init();
@@ -87,7 +103,8 @@ import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 public class Minecraft {
     private static final Minecraft INSTANCE = new Minecraft();
-    public Object level, player;
+    public Object level;
+    public net.minecraft.client.player.LocalPlayer player;
     public final Gui gui = new Gui();
     public final Renderer gameRenderer = new Renderer();
     public static Minecraft getInstance() { return INSTANCE; }
@@ -101,6 +118,12 @@ public class Minecraft {
             g.panoramas++;
         }
     }
+}
+""",
+    "net/minecraft/client/player/LocalPlayer.java": """
+package net.minecraft.client.player;
+public class LocalPlayer {
+    public boolean isAlive() { return true; }
 }
 """,
     "top/csituka/youzaiworldcore/client/config/ClientExternalSettings.java": """
@@ -173,6 +196,11 @@ public class MenuPage extends net.minecraft.client.gui.screens.Screen implements
     public void onClose() { closeMenu(); }
 }
 """
+STUBS["top/csituka/youzaiworldcore/client/screen/SurvivalContainerPage.java"] = """
+package top.csituka.youzaiworldcore.client.screen;
+public class SurvivalContainerPage
+        extends net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<Object> {}
+"""
 
 CHECK = """
 import java.lang.reflect.Field;
@@ -199,6 +227,56 @@ public final class YzuiTransitionCheck {
     private static void finishExit() throws Exception {
         age(null, "exitStartedAt", 10000);
         GuiAnimationController.tick();
+    }
+    private static void checkContainerDisconnect(GuiAnimationMode mode, boolean custom,
+            boolean pending) throws Exception {
+        var client = Minecraft.getInstance();
+        var gui = client.gui;
+        ClientExternalSettings.mode = mode;
+        ClientExternalSettings.style = YzuiVisualStyle.STANDARD;
+        client.level = new Object();
+        client.player = new net.minecraft.client.player.LocalPlayer();
+        var container = custom ? new SurvivalContainerPage()
+                : new net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<Object>();
+        GuiAnimationController.setScreenImmediately(gui, container);
+        gui.tick();
+        int ticks = container.ticks;
+        var obsoleteTarget = new ChildPage();
+        if (pending) {
+            gui.setScreen(obsoleteTarget);
+            require(gui.screen() == container && GuiAnimationController.isExiting(container),
+                    "断线前正在播放容器退出动画：" + mode);
+        }
+
+        // 跟随原版 disconnect 顺序：标记卸载、清空世界、切换页面、清空玩家。
+        gui.setClientLevelTeardownInProgress(true);
+        require(GuiAnimationController.isDisabled() && !GuiAnimationController.isExiting(container),
+                "世界卸载立即取消容器动画：" + mode);
+        client.level = null;
+        Screen disconnected = new Screen();
+        gui.setScreen(disconnected);
+        require(gui.screen() == disconnected, "清空玩家前已切换断线页面：" + mode);
+        client.player = null;
+        gui.tick();
+        require(container.ticks == ticks, "断线后不得再更新旧容器：" + mode);
+        gui.setClientLevelTeardownInProgress(false);
+        finishExit();
+        require(gui.screen() == disconnected && obsoleteTarget.inits == 0,
+                "过期目标不得在后续帧重新打开：" + mode);
+        require(GuiAnimationController.getMode() == mode
+                        && GuiAnimationController.frame(disconnected).equals(YzuiMotion.Frame.IDENTITY),
+                "断线后恢复动画设置且不补播断线页动画：" + mode);
+
+        // 重连后保留正常页面退出效果，确认临时关闭动画不会污染下一次会话。
+        client.level = new Object();
+        client.player = new net.minecraft.client.player.LocalPlayer();
+        var reopened = new SurvivalContainerPage();
+        GuiAnimationController.setScreenImmediately(gui, reopened);
+        gui.setScreen(new ChildPage());
+        require((gui.screen() == reopened) == (mode != GuiAnimationMode.OFF),
+                "重连后正常容器过渡恢复：" + mode);
+        finishExit();
+        GuiAnimationController.setScreenImmediately(gui, null);
     }
     public static void main(String[] args) throws Exception {
         var client = Minecraft.getInstance();
@@ -324,7 +402,7 @@ public final class YzuiTransitionCheck {
         gui.setScreen(root);
         finishExit();
         client.level = new Object();
-        client.player = new Object();
+        client.player = new net.minecraft.client.player.LocalPlayer();
         gui.setScreen(child);
         finishExit();
         require(YzuiBackdrop.parent(child) == null, "进入新世界清空标题页面历史");
@@ -406,6 +484,41 @@ public final class YzuiTransitionCheck {
             require(gui.screen() instanceof ChildPage, "立即关闭不能遗留动画旁路状态");
             GuiAnimationController.setScreenImmediately(gui, null);
         }
+        // 生存容器断线回归：完整/基础模式、原版/YZUI 容器、退出动画被网络断线打断。
+        checkContainerDisconnect(GuiAnimationMode.FULL, false, false);
+        checkContainerDisconnect(GuiAnimationMode.FULL, false, true);
+        checkContainerDisconnect(GuiAnimationMode.FULL, true, true);
+        checkContainerDisconnect(GuiAnimationMode.BASIC, true, false);
+        checkContainerDisconnect(GuiAnimationMode.BASIC, true, true);
+        checkContainerDisconnect(GuiAnimationMode.OFF, true, false);
+
+        ClientExternalSettings.mode = GuiAnimationMode.FULL;
+        client.level = new Object();
+        client.player = new net.minecraft.client.player.LocalPlayer();
+        var container = new SurvivalContainerPage();
+        GuiAnimationController.setScreenImmediately(gui, container);
+        var overlay = new DialogPage();
+        gui.setScreen(overlay);
+        require(YzuiBackdrop.parent(overlay) == container, "断线前弹窗保留容器背景");
+        var priorContent = GuiAnimationController.pushContent(new YzuiMotion.Frame(0.5f, 1, 0));
+        Object oldPicture = new Object();
+        GuiAnimationController.capturePictureOpacity(oldPicture);
+        GuiAnimationController.restoreContent(priorContent);
+        gui.setScreen(container);
+        gui.setClientLevelTeardownInProgress(true);
+        require(YzuiBackdrop.parent(overlay) == null
+                        && GuiAnimationController.pictureOpacity(oldPicture) == 1f,
+                "卸载开始即清除容器背景和旧玩家预览透明度，不等待世界变成 null");
+        graphics = new GuiGraphicsExtractor();
+        YzuiBackdrop.render(graphics, overlay, 0);
+        require(container.renders == 0 && graphics.trace.isEmpty(), "卸载时不再绘制旧容器背景");
+        gui.setScreen(new Screen());
+        client.level = null;
+        client.player = null;
+        gui.setClientLevelTeardownInProgress(false);
+        finishExit();
+        require(gui.screen() != container, "卸载前的返回目标不能复活旧容器");
+
         System.out.println("PASS YZUI backdrop lifecycle: " + checks + " assertions (native client and rendering stubbed)");
     }
 }
@@ -436,7 +549,7 @@ def main():
         subprocess.run([javac, "--release", "25", "-encoding", "UTF-8", "-d", str(temporary),
                         *map(str, sources), *map(str, temporary.rglob("*.java")), str(Path(__file__).resolve().parents[1] / "src/main/java/top/csituka/youzaiworldcore/util/LogValues.java")], cwd=ROOT, check=True)
         subprocess.run([java, "-cp", str(temporary), "YzuiTransitionCheck"], cwd=ROOT, check=True)
-    print("页面生命周期回归通过：普通页面场景背景、弹窗与同类窗口嵌套、延迟切换、返回/替换、模式与世界切换、异常恢复、模态及图片透明度。")
+    print("页面生命周期回归通过：普通页面场景背景、弹窗与同类窗口嵌套、延迟切换、返回/替换、模式与世界切换、异常恢复、模态及图片透明度，以及生存容器断线和重连。")
 
 
 if __name__ == "__main__":
