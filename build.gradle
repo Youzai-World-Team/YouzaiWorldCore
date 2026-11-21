@@ -82,20 +82,22 @@ dependencies {
     implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
     // 启动阶段获取 JVM Instrumentation，用于读取 Fabric Loader 的真实入口点进度。
-    include(implementation('net.lenni0451:Reflect:1.4.0'))
+    include(implementation("net.lenni0451:Reflect:${project.reflect_version}"))
+    // include 不会自动嵌入传递依赖；Reflect 1.6.x 运行时还需要 unchecked。
+    include(implementation("net.lenni0451.commons:unchecked:${project.reflect_unchecked_version}"))
     // Fabric Loader/Mixin 已在启动器类路径提供 ASM。这里只参与编译，禁止嵌入模组，
     // 否则 Knot 与 app 类加载器会各自加载 ClassNode，破坏其它模组的 Mixin 插件。
-    compileOnly('org.ow2.asm:asm:9.10.1')
-    compileOnly('org.ow2.asm:asm-tree:9.10.1')
+    compileOnly("org.ow2.asm:asm:${project.asm_version}")
+    compileOnly("org.ow2.asm:asm-tree:${project.asm_version}")
 
     // 地图持久化：内嵌 SQLite JDBC 及其各平台原生库。
-    include(implementation("org.xerial:sqlite-jdbc:3.53.4.0"))
+    include(implementation("org.xerial:sqlite-jdbc:${project.sqlite_jdbc_version}"))
 
     // Placeholder API
     implementation "eu.pb4:placeholder-api:${project.placeholder_version}"
 
     // Permissions API
-    include(implementation('me.lucko:fabric-permissions-api:0.6.1'))
+    include(implementation("me.lucko:fabric-permissions-api:${project.permissions_api_version}"))
 
     // LuckPerms API
     compileOnly "net.luckperms:api:${project.luckperms_version}"

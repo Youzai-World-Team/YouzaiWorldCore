@@ -20,6 +20,7 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.sql.DriverManager;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
@@ -52,6 +53,41 @@ public final class MinecraftRuntimeCompatChecks {
         var trinkets = VersionPredicate.parse(depends.get("trinkets_updated").getAsString());
         check(trinkets.test(Version.parse("4.2.2+26.3")), "允许同系列的 Trinkets 修订版");
         check(!trinkets.test(Version.parse("4.3.0")), "不自动放行下一系列的 Trinkets");
+    }
+
+    /** 使用实际 SQLite 原生驱动验证地图所需的 WAL、事务及二进制地形保存。 */
+    private static void sqliteStorage() throws Exception {
+        try (var connection = DriverManager.getConnection("jdbc:sqlite:runtime-compat.sqlite")) {
+            try (var statement = connection.createStatement()) {
+                try (var result = statement.executeQuery("PRAGMA journal_mode=WAL")) {
+                    check(result.next() && result.getString(1).equalsIgnoreCase("wal"), "SQLite 支持 WAL 模式");
+                }
+                statement.execute("CREATE TABLE tiles (x INTEGER, z INTEGER, data BLOB, PRIMARY KEY (x,z))");
+            }
+            byte[] terrain = {0, 1, 2, (byte) 255};
+            connection.setAutoCommit(false);
+            try (var insert = connection.prepareStatement("INSERT INTO tiles VALUES (?, ?, ?)")) {
+                insert.setInt(1, -12);
+                insert.setInt(2, 34);
+                insert.setBytes(3, terrain);
+                check(insert.executeUpdate() == 1, "SQLite 能写入地形记录");
+            }
+            connection.commit();
+            try (var statement = connection.createStatement()) {
+                statement.executeUpdate("DELETE FROM tiles");
+            }
+            connection.rollback();
+            try (var statement = connection.createStatement();
+                 var result = statement.executeQuery("SELECT x, z, data FROM tiles")) {
+                check(result.next() && result.getInt(1) == -12 && result.getInt(2) == 34
+                        && java.util.Arrays.equals(result.getBytes(3), terrain), "SQLite 回滚保留原始地形数据");
+            }
+        }
+        try (var connection = DriverManager.getConnection("jdbc:sqlite:runtime-compat.sqlite");
+             var statement = connection.createStatement();
+             var result = statement.executeQuery("SELECT count(*) FROM tiles")) {
+            check(result.next() && result.getInt(1) == 1, "SQLite 重新打开后仍能读取已提交数据");
+        }
     }
 
     private static void geckoResources(Path resources) throws Exception {
@@ -212,6 +248,7 @@ public final class MinecraftRuntimeCompatChecks {
         net.minecraft.SharedConstants.tryDetectVersion();
         net.minecraft.server.Bootstrap.bootStrap();
         dependencies(Path.of(args[0]), Path.of(args[1]));
+        sqliteStorage();
         geckoResources(Path.of(args[2]));
         trinketEffects();
         startupLibrary();

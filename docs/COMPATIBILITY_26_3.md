@@ -2,7 +2,7 @@
 
 ## 依赖基线
 
-以本地 Minecraft 26.3 原版 jar、Gradle 已解析依赖以及 `run/mods` 中的 26.3 模组核验接口。
+2026-11-21 联网核对最新发布版，以本地 Minecraft 26.3 原版 jar、下载的新依赖和 `run/mods` 中的 26.3 模组核验接口。
 
 | 依赖 | 核验版本 |
 | --- | --- |
@@ -14,10 +14,20 @@
 | GeckoLib | 5.5.7 |
 | Moog's Structure Lib | 3.4.2-fabric-26.3，模组元数据版本为 `3.4.2+fabric` |
 | Jade | 26.3.5+fabric |
-| Sophisticated Backpacks / Core | 3.24.1.0 / 1.2.10.0 |
+| Sophisticated Backpacks / Core | 3.24.1.3 / 1.2.10.4，Fabric 维护分支，已替换 `run/mods` 文件 |
 | Enchantment Descriptions | 26.3.0.2，模组 ID 为 `enchdesc` |
+| Fabric Permissions API | 0.7.0，支持 Minecraft >=26.1，内置打包 |
+| Reflect / unchecked | 1.6.4 / 1.9.2，两个库均内置打包 |
+| SQLite JDBC | 3.54.1.0，实际原生驱动、WAL 与事务读写通过 |
+| ASM / ASM Tree | 9.11.1 编译接口；另核验 Loader 提供的 9.10.1 运行接口 |
 
-依赖版本统一从 `gradle.properties` 读取，构建时展开到 `fabric.mod.json`。Minecraft 限定 `>=26.3 <26.4`，显式声明 Loader 0.20.1 和 Java 25 下限。Trinkets 允许同一 4.2 系列的修订版；实际接口核验仍以 4.2.1+26.3 为准。
+依赖版本统一从 `gradle.properties` 读取，需要声明的模组版本在构建时展开到 `fabric.mod.json`。Minecraft 限定 `>=26.3 <26.4`，显式声明 Loader 0.20.1 和 Java 25 下限。Trinkets 允许同一 4.2 系列的修订版；实际接口核验仍以 4.2.1+26.3 为准。
+
+本次新增版本更新：Reflect 1.4.0 → 1.6.4、ASM/ASM Tree 9.10.1 → 9.11.1、SQLite JDBC 3.53.4.0 → 3.54.1.0、Fabric Permissions API 0.6.1 → 0.7.0。Reflect 1.6.x 新增 `unchecked` 1.9.2 运行依赖；Gradle `include` 不递归嵌入传递依赖，因此显式将其内置，避免发布后出现缺类。
+
+Fabric Loader、Fabric API、ModMenu、Placeholder API、Trinkets Updated、GeckoLib、Moog's Structure Lib 和 Jade 当前已是适配 Fabric 26.3 的最新发布版。LuckPerms API 仍为 5.5；对应 Fabric 模组已核验 5.5.85。ASM 保持 `compileOnly`，不会把第二套 ASM 嵌入游戏类加载器。
+
+版本来源：[Fabric Loader](https://meta.fabricmc.net/v2/versions/loader)、[Modrinth](https://modrinth.com/)、Maven Central 的 [Reflect](https://repo.maven.apache.org/maven2/net/lenni0451/Reflect/maven-metadata.xml)、[ASM](https://repo.maven.apache.org/maven2/org/ow2/asm/asm/maven-metadata.xml)、[SQLite JDBC](https://repo1.maven.org/maven2/org/xerial/sqlite-jdbc/maven-metadata.xml)、[权限 API](https://repo.maven.apache.org/maven2/me/lucko/fabric-permissions-api/maven-metadata.xml)，以及精妙背包 Fabric 维护分支的 [Backpacks 发布页](https://github.com/Huziyang520/Sophisticated-Backpacks-Unofficial-Fabric-Continuation/releases) 与 [Core 发布页](https://github.com/Huziyang520/Sophisticated-Core-Unofficial-Fabric-Continuation/releases)。
 
 ## 修复内容
 
@@ -43,6 +53,9 @@ python3 tools/verify_java_types.py --runtime-mods run/mods
 # 使用实际 MC、Fabric、Trinkets、GeckoLib 类验证依赖范围、动画、饰品与启动追踪
 python3 tools/verify_minecraft_runtime_compat.py
 
+# 核验临时目录中的更新候选，避免旧 run/mods 文件覆盖指定的测试依赖
+python3 tools/verify_minecraft_runtime_compat.py --classpath-file <依赖列表> --runtime-mods <候选目录>
+
 # 使用实际精妙背包库存类验证接口、有效/外观/隐藏槽和快捷键
 node tools/verify-backpack-compat.mjs <精妙背包.jar> <JDK25目录>
 
@@ -50,6 +63,8 @@ node tools/verify-backpack-compat.mjs <精妙背包.jar> <JDK25目录>
 python3 tools/verify_jade_theme_bridge.py --java-home <JDK25目录>
 ```
 
-前两个 Python 工具默认读取 IDE 已解析的依赖，亦支持 `--classpath-file <文件>`（每行一个 jar 绝对路径）和 `--java-home <JDK25目录>`。运行期检查在临时目录执行，避免向游戏配置、存档和日志目录写入测试数据。
+前两个 Python 工具默认读取 IDE 已解析的依赖，亦支持 `--classpath-file <文件>`（每行一个 jar 绝对路径）、`--runtime-mods <目录>` 和 `--java-home <JDK25目录>`。运行期检查在临时目录执行，避免向游戏配置、存档和日志目录写入测试数据。
+
+本次用更新后的依赖完成 775 个 Java 文件的类型与符号分析，0 个错误；实际依赖回归 57 项通过，覆盖模型/动画、饰品、Reflect 启动追踪、Loader 字节码转换和 SQLite 原生读写。精妙背包新版本的 41 项接口/饰品/分组检查通过，未安装时的类加载与已有原生适配时的避让检查亦通过。
 
 本次还核对了 155 个外部 Mixin 目标的字段、注入方法描述符和方法内字节码调用位置；项目自身的设置页 Mixin 由源码分析核验。接口与隔离检查不能替代完整游戏验证。构建后需在服务端和客户端确认：加入服务器、猫的全部姿态、自然带电苦力怕、有效/外观守护之心的死亡行为、背包升级和快捷键，以及 Jade 资源重载。

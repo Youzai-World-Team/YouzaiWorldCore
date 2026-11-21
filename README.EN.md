@@ -1000,12 +1000,15 @@ All commands use `/yzwc` as the root command. Gameplay subcommands marked **(cli
 | GeckoLib               | 5.5.7+                                 | Entity animation & model rendering (hard dependency)            |
 | Moog's Structure Lib   | 3.4.2-fabric-26.3                       | Declared dependency (referenced by village structure injection) |
 | Jade                   | 26.3.5+fabric (optional)                | YZUI theme integration                                          |
-| Fabric Permissions API | 0.6.1 (bundled)                        | Cross-mod permission API                                        |
+| Fabric Permissions API | 0.7.0 (bundled)                        | Cross-mod permission API                                        |
+| Reflect / unchecked    | 1.6.4 / 1.9.2 (bundled)                | Startup entrypoint tracing and reflection support                |
+| SQLite JDBC            | 3.54.1.0 (bundled)                     | Map persistence and native drivers                              |
+| ASM / ASM Tree         | 9.11.1 (compile only)                  | Startup bytecode transformation; Loader supplies the runtime     |
 | LuckPerms              | 5.5 (suggested runtime)                | Advanced permission control                                     |
 
 **Build Requirements**: JDK 25+ · Gradle 9.8.2 (Fabric Loom 1.19-SNAPSHOT) · Mod version in `gradle.properties`. Minecraft support is limited to the 26.3 series; 26.4 requires another API review.
 
-Compatibility fixes and verification commands: [Minecraft 26.3 compatibility notes](docs/COMPATIBILITY_26_3.md).
+Compatibility fixes and verification commands: [Minecraft 26.3 compatibility notes](docs/COMPATIBILITY_26_3.md). Published versions were checked on 2026-11-21. The optional backpack bridge also passed checks against the Fabric continuation releases Backpacks 3.24.1.3 / Core 1.2.10.4; their files in `run/mods` have been replaced.
 
 **Build & CI/CD**: GitHub Actions workflow (`.github/workflows/build.yml`) auto-builds on Ubuntu / Windows / macOS with JDK 25, with automatic Linux artifact upload.
 

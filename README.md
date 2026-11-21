@@ -1010,12 +1010,15 @@ Esc 暂停屏幕采用薄荷绿圆角操作卡片与玩家预览，跟随现有�
 | GeckoLib               | 5.5.7+                                  | 实体动画与模型渲染（硬依赖）           |
 | Moog's Structure Lib   | 3.4.2-fabric-26.3                        | 声明依赖（村庄结构注入所引用）         |
 | Jade                   | 26.3.5+fabric（可选）                    | YZUI 主题集成                          |
-| Fabric Permissions API | 0.6.1（内置）                           | 跨模组权限 API                         |
+| Fabric Permissions API | 0.7.0（内置）                           | 跨模组权限 API                         |
+| Reflect / unchecked    | 1.6.4 / 1.9.2（内置）                   | 启动入口点追踪与反射支持               |
+| SQLite JDBC            | 3.54.1.0（内置）                        | 地图持久化与各平台原生驱动             |
+| ASM / ASM Tree         | 9.11.1（仅编译）                        | 启动字节码转换，运行时由 Loader 提供    |
 | LuckPerms              | 5.5（建议运行时）                       | 高级权限控制                           |
 
 **构建要求**：JDK 25+ · Gradle 9.8.2（Fabric Loom 1.19-SNAPSHOT）· 模组版本见 `gradle.properties`。加载范围为 Minecraft 26.3 系列；26.4 需重新核验接口。
 
-26.3 的兼容修复与验证命令见 [兼容说明](docs/COMPATIBILITY_26_3.md)。
+26.3 的兼容修复与验证命令见 [兼容说明](docs/COMPATIBILITY_26_3.md)。2026-11-21 已核对最新发布版本；精妙背包的可选桥接另已通过 Fabric 维护分支 Backpacks 3.24.1.3 / Core 1.2.10.4 验证，开发目录 `run/mods` 已同步替换。
 
 **构建与 CI/CD**：GitHub Actions 工作流（`.github/workflows/build.yml`）在 Ubuntu / Windows / macOS 三平台使用 JDK 25 自动构建，Linux 构建产物自动上传。
 

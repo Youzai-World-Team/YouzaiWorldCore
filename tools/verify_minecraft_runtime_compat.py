@@ -34,6 +34,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--java-home', type=Path)
     parser.add_argument('--classpath-file', type=Path, help='每行一个已解析依赖 jar 路径；未指定时使用 IDE 依赖')
+    parser.add_argument('--runtime-mods', type=Path, default=ROOT / 'run/mods',
+                        help='优先核验此目录中的依赖，支持在临时目录验证更新候选')
     args = parser.parse_args()
     binary = java_bin(args.java_home)
     minecraft = ROOT / 'minecraft_jar/26.3/26.3.jar'
@@ -48,7 +50,7 @@ def main():
     assert '${' not in source, '元数据仍有未展开版本变量'
     with tempfile.TemporaryDirectory(prefix='yzwc-runtime-compat-') as directory:
         temporary = Path(directory)
-        libs = with_runtime_mods(libs, ROOT / 'run/mods', temporary)
+        libs = with_runtime_mods(libs, args.runtime_mods, temporary)
         versions = {'java': '25'}
         for library in libs:
             with ZipFile(library) as archive:
