@@ -6,6 +6,9 @@ import eu.pb4.placeholders.api.node.DynamicTextNode;
 import eu.pb4.placeholders.api.node.TextNode;
 import eu.pb4.placeholders.api.parsers.NodeParser;
 import eu.pb4.placeholders.api.parsers.TagLikeParser;
+import net.minecraft.advancements.Advancement;
+import net.minecraft.advancements.AdvancementHolder;
+import net.minecraft.advancements.AdvancementType;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.ChatType;
 import net.minecraft.network.chat.Component;
@@ -26,10 +29,10 @@ import top.csituka.youzaiworldcore.title.TitleManager;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
 /**
- * 玩家聊天、私信前缀及系统事件模板的格式化入口。
+ * 玩家聊天、私信及成就、加入、离开、死亡事件的格式化入口。
  * <p>
  * 玩家聊天和私信使用固定的等级、称号、玩家代号前缀，正文保留原文。
- * 加入、离开和死亡事件仍支持简化文本标签与服务端占位符模板。
+ * 系统事件沿用等级、称号与玩家代号前缀；加入、离开和死亡事件支持自定义正文模板。
  * </p>
  * <p>
  * 处理链路（Minecraft 26.3）：
@@ -38,9 +41,10 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
  *       {@code broadcastChatMessage} 入口只挂上 {@code chat_header} 前缀 →
  *       {@code OutgoingChatMessage.create} 替换为 {@link StyledChatMessage} 发送；</li>
  *   <li>加入/离开：{@code PlayerList} / {@code ServerGamePacketListenerImpl} 的
- *       {@code broadcastSystemMessage} 参数被替换为模板结果；</li>
+ *       {@code broadcastSystemMessage} 参数被替换为事件前缀与正文；</li>
  *   <li>死亡：{@code ServerPlayer.die} 中 {@code CombatTracker.getDeathMessage} 被重定向；</li>
- *   <li>私聊：替换 {@code MsgCommand.sendMessage} 的 ChatType 绑定，保留原版投递及过滤。</li>
+ *   <li>私聊：替换 {@code MsgCommand.sendMessage} 的 ChatType 绑定，保留原版投递及过滤；</li>
+ *   <li>成就：替换 {@code PlayerAdvancements.lambda$award$0} 中的广播文本。</li>
  * </ol>
  * </p>
  */
@@ -124,7 +128,7 @@ public final class ChatFormatHelper {
 
     /** 普通消息：[聊天]|Lv.n·{称号}玩家代号。 */
     public static Component formatChatHeader(ServerPlayer player) {
-        return ChatMessageStyle.playerHeader(false, player.getScoreboardName(), level(player),
+        return ChatMessageStyle.playerHeader(false, ChatPlayerInfo.name(player), level(player),
                 TitleManager.getEquippedComponent(player));
     }
 
@@ -133,7 +137,7 @@ public final class ChatFormatHelper {
         ServerPlayer sender = source.getPlayer();
         return sender == null
                 ? ChatMessageStyle.playerHeader(true, source.getTextName(), 0, Component.empty())
-                : ChatMessageStyle.playerHeader(true, sender.getScoreboardName(), level(sender),
+                : ChatMessageStyle.playerHeader(true, ChatPlayerInfo.name(sender), level(sender),
                         TitleManager.getEquippedComponent(sender));
     }
 
@@ -143,29 +147,63 @@ public final class ChatFormatHelper {
     }
 
     public static Component formatJoin(ServerPlayer player) {
-        return applyFormat(player, ChatFormatSettings.getJoinedGameFormat(), playerVars(player));
+        return formatEvent(player, ChatEventType.JOIN, ChatFormatSettings.getJoinedGameFormat(),
+                ChatFormatSettings.DEFAULT_JOINED_FORMAT,
+                Component.translatableWithFallback("chat.youzaiworldcore.event.join.body", "加入了服务器"), playerVars(player));
     }
 
     public static Component formatJoinFirstTime(ServerPlayer player) {
-        return applyFormat(player, ChatFormatSettings.getJoinedFirstTimeFormat(), playerVars(player));
+        return formatEvent(player, ChatEventType.JOIN, ChatFormatSettings.getJoinedFirstTimeFormat(),
+                ChatFormatSettings.DEFAULT_JOINED_FIRST_TIME_FORMAT,
+                Component.translatableWithFallback("chat.youzaiworldcore.event.join.first", "首次加入服务器，欢迎！"), playerVars(player));
     }
 
     /** 改名后加入消息（oldName 为旧名） */
     public static Component formatJoinRenamed(ServerPlayer player, String oldName) {
         Map<String, Component> vars = playerVars(player);
         vars.put("old_name", Component.literal(oldName));
-        return applyFormat(player, ChatFormatSettings.getJoinedRenamedFormat(), vars);
+        return formatEvent(player, ChatEventType.JOIN, ChatFormatSettings.getJoinedRenamedFormat(),
+                ChatFormatSettings.DEFAULT_JOINED_RENAMED_FORMAT,
+                Component.translatableWithFallback("chat.youzaiworldcore.event.join.renamed", "加入了服务器（原名：%s）",
+                        vars.get("old_name")), vars);
     }
 
     public static Component formatLeft(ServerPlayer player) {
-        return applyFormat(player, ChatFormatSettings.getLeftGameFormat(), playerVars(player));
+        return formatEvent(player, ChatEventType.LEAVE, ChatFormatSettings.getLeftGameFormat(),
+                ChatFormatSettings.DEFAULT_LEFT_FORMAT,
+                Component.translatableWithFallback("chat.youzaiworldcore.event.leave.body", "退出了服务器"), playerVars(player));
     }
 
     /** 死亡消息（vanillaMessage 为原版死亡描述） */
     public static Component formatDeath(ServerPlayer player, Component vanillaMessage) {
         Map<String, Component> vars = playerVars(player);
-        vars.put("default_message", vanillaMessage);
-        return applyFormat(player, ChatFormatSettings.getDeathFormat(), vars);
+        return formatEvent(player, ChatEventType.DEATH, ChatFormatSettings.getDeathFormat(),
+                ChatFormatSettings.DEFAULT_DEATH_FORMAT, vanillaMessage, vars);
+    }
+
+    /** 成就、目标和挑战使用独立前缀，名称继续使用原版的颜色及悬停说明。 */
+    public static Component formatAdvancement(ServerPlayer player, AdvancementType type, AdvancementHolder holder) {
+        DebugLogger.SERVER.debug(MODULE, "成就聊天排版：玩家={}，类型={}", player.getScoreboardName(), type);
+        Component name = Advancement.name(holder);
+        Component body = switch (type) {
+            case TASK -> Component.translatableWithFallback("chat.youzaiworldcore.event.advancement.task", "达成进度 %s", name);
+            case GOAL -> Component.translatableWithFallback("chat.youzaiworldcore.event.advancement.goal", "完成目标 %s", name);
+            case CHALLENGE -> Component.translatableWithFallback("chat.youzaiworldcore.event.advancement.challenge", "完成挑战 %s", name);
+        };
+        return event(player, ChatEventType.ADVANCEMENT, body);
+    }
+
+    private static Component formatEvent(ServerPlayer player, ChatEventType type, String format,
+            String defaultFormat, Component defaultBody, Map<String, Component> variables) {
+        variables.put("default_message", defaultBody);
+        // 内置模板使用紧凑的本地化正文，玩家信息只在前缀出现；自定义模板继续原样解析。
+        Component body = format.equals(defaultFormat) ? defaultBody : applyFormat(player, format, variables);
+        return event(player, type, body);
+    }
+
+    private static Component event(ServerPlayer player, ChatEventType type, Component body) {
+        return ChatMessageStyle.event(type, ChatPlayerInfo.name(player), level(player),
+                TitleManager.getEquippedComponent(player), body);
     }
 
     // ===== 发送辅助 =====

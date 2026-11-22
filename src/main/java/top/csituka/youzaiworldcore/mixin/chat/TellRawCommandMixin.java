@@ -11,6 +11,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import top.csituka.youzaiworldcore.chat.ChatMessageStyle;
+import top.csituka.youzaiworldcore.chat.ChatPlayerInfo;
 
 /** /tellraw 保留 JSON 正文的文字与交互组件，并使用命令执行者作为游戏消息来源。 */
 @Mixin(TellRawCommand.class)
@@ -20,6 +21,6 @@ public abstract class TellRawCommandMixin {
     private static Component youzaiworldcore$formatTellRawMessage(CommandContext<CommandSourceStack> context,
             String name, Entity target) throws CommandSyntaxException {
         Component message = ComponentArgument.getResolvedComponent(context, name, target);
-        return ChatMessageStyle.game(context.getSource().getTextName(), message);
+        return ChatMessageStyle.game(ChatPlayerInfo.sourceName(context.getSource()), message);
     }
 }

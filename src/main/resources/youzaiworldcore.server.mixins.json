@@ -47,6 +47,7 @@
     "chat.ServerGamePacketListenerImplMixin",
     "chat.OutgoingChatMessageMixin",
     "chat.PlayerListMixin",
+    "chat.PlayerAdvancementsChatMixin",
     "chat.ServerPlayerChatMixin",
     "chat.MsgCommandMixin",
     "chat.CommandSourceStackChatMixin",

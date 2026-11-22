@@ -12,6 +12,23 @@ P = "top/csituka/youzaiworldcore"
 
 # 字形只提供固定字宽并记录绘制颜色，Minecraft 字体及其余链路均使用实际 jar。
 STUBS = {
+    P + "/skill/PlayerLevelStorage.java": """
+package top.csituka.youzaiworldcore.skill;
+public final class PlayerLevelStorage {
+ public static Data get(java.util.UUID id){return null;}
+ public record Data(int getLevel,int getCurrentLevelExp,int getExpForNextLevel) {}
+}
+""",
+    P + "/skill/AdventureLevelManager.java": """
+package top.csituka.youzaiworldcore.skill;
+public final class AdventureLevelManager {public static int expForNextLevel(int level){return 200;}}
+""",
+    P + "/title/TitleManager.java": """
+package top.csituka.youzaiworldcore.title;
+public final class TitleManager {
+ public static net.minecraft.network.chat.Component getEquippedComponent(net.minecraft.server.level.ServerPlayer p){return net.minecraft.network.chat.Component.empty();}
+}
+""",
     P + "/util/DebugLogger.java": """
 package top.csituka.youzaiworldcore.util;
 public final class DebugLogger { public static final int LEVEL_OFF=0,LEVEL_BASIC=1,LEVEL_DETAILED=2,LEVEL_DEBUG=3; public static final DebugLogger SERVER=new DebugLogger(),CLIENT=new DebugLogger(); private boolean developer; private int level; public void configure(boolean d,int l){developer=d;level=l;} public boolean isDevModeEnabled(){return developer;} public int getLogLevel(){return level;} public static boolean isEnabled(int l){return false;} public static boolean isEnabled(){return false;} public static DebugLogger bootstrap(){return CLIENT;} public static DebugLogger forFile(java.nio.file.Path p){return SERVER;} public ModuleLogger module(String m){return new ModuleLogger();} public static void notice(String m,String s,Object...a){} public static void warn(String m,String s,Object...a){} public static void error(String m,String s,Object...a){} public static void exception(String m,String s,Object...a){} public static void exceptionSummary(String m,String s,Object...a){} public static void info(String m,String s,Object...a){} public static void stateChange(String m,String s,Object...a){} public static void debug(String m,String s,Object...a){} public static void branch(String m,String s,Object...a){} public static void debugStateChange(String m,String s,Object...a){} public static void trace(String m,String s,Object...a){} public static void entering(String m,String s,Object...a){} public static void exiting(String m,String s,Object...a){} public static void traceBranch(String m,String s,Object...a){} public static void traceStateChange(String m,String s,Object...a){} public static final class ModuleLogger { public void notice(String s,Object...a){} public void info(String s,Object...a){} public void debug(String s,Object...a){} public void trace(String s,Object...a){} public void warn(String s,Object...a){} public void error(String s,Object...a){} public boolean isInfoEnabled(){return false;} public boolean isDebugEnabled(){return false;} public boolean isTraceEnabled(){return false;} } }
@@ -37,13 +54,19 @@ import net.minecraft.client.gui.font.glyphs.*;
 import net.minecraft.client.gui.font.TextRenderable;
 import net.minecraft.network.chat.*;
 public final class TestGlyphs {
- record Ink(int codePoint,int argb,Style style) {}
+ record Ink(int codePoint,int argb,Style style,float x,float y) {}
+ record Area(float left,float top,float right,float bottom,Style style) implements TextRenderable.Styled {
+  public void render(org.joml.Matrix4fc pose,com.mojang.blaze3d.vertex.VertexConsumer consumer,int light,boolean inverse){}
+  public net.minecraft.client.renderer.rendertype.RenderType renderType(Font.DisplayMode mode){return null;}
+  public com.mojang.renderpearl.api.textures.GpuTextureView textureView(){return null;}
+  public com.mojang.renderpearl.api.pipeline.RenderPipeline guiPipeline(){return null;}
+ }
  static final List<Ink> ink=new ArrayList<>();
  static final GlyphSource glyphs=new GlyphSource(){
   public BakedGlyph getGlyph(int cp){return new BakedGlyph(){
    public com.mojang.blaze3d.font.GlyphInfo info(){return com.mojang.blaze3d.font.GlyphInfo.simple(1);}
    public TextRenderable.Styled createGlyph(float x,float y,int color,int shadow,Style style,float bold,float offset){
-    ink.add(new Ink(cp,color,style));return null;
+    ink.add(new Ink(cp,color,style,x,y));return new Area(x,y,x+1,y+9,style);
    }
   };}
   public BakedGlyph getRandomGlyph(net.minecraft.util.RandomSource random,int cp){return getGlyph(cp);}
@@ -81,6 +104,7 @@ import net.fabricmc.fabric.api.client.command.v2.*;
 import net.fabricmc.fabric.impl.command.client.ClientCommandInternals;
 import com.mojang.brigadier.CommandDispatcher;
 import top.csituka.youzaiworldcore.chat.ChatMessageStyle;
+import top.csituka.youzaiworldcore.chat.ChatEventType;
 import top.csituka.youzaiworldcore.client.chat.*;
 import top.csituka.youzaiworldcore.command.ChatStyleClientCommand;
 import top.csituka.youzaiworldcore.mixin.client.ClientCommandSuggestionsMixin;
@@ -202,6 +226,120 @@ public final class NativeChatChecks {
   }
  }
 
+ static void originalBodyColors(){
+  var rich=Style.EMPTY.withColor(0x112233).withBold(true).withItalic(true)
+   .withClickEvent(new ClickEvent.RunCommand("/help"))
+   .withHoverEvent(new HoverEvent.ShowText(Component.literal("详情")))
+   .withInsertion("原文");
+  Component body=Component.translatableWithFallback("example.message","Base %s %s",
+   Component.literal("Red").withStyle(net.minecraft.ChatFormatting.RED),Component.literal("Inherited"))
+   .setStyle(rich).append(Component.literal(" White").withStyle(net.minecraft.ChatFormatting.WHITE))
+   .append(Component.literal(" Tail"));
+  Component[] originals={line(ChatMessageStyle.playerHeader(false,"Player",16,Component.empty()),body),
+   line(ChatMessageStyle.playerHeader(true,"Player",16,Component.empty()),body),
+   ChatMessageStyle.game("Server",body),ChatMessageStyle.mod("Mod",body),line(ChatMessageStyle.gameHeader("Server"),body)};
+  for(ChatStyleMode mode:ChatStyleMode.values())for(Component original:originals){
+   Component decoded=roundTrip(original);
+   color(glyphs(decoded),"Base",0x112233,"服务端包装及网络编码保留正文根颜色");
+   Component rendered=roundTrip(ChatMessageRenderer.render(decoded,mode));
+   check(rendered.getString().equals(original.getString()),"保留正文翻译和原始文字");
+   Component shownBody=rendered.getSiblings().getLast();
+   check(shownBody.getStyle().equals(rich),"保留正文颜色和完整交互样式");
+   check(shownBody.getContents() instanceof net.minecraft.network.chat.contents.TranslatableContents translated
+    &&translated.getKey().equals("example.message")&&translated.getFallback().equals("Base %s %s")
+    &&translated.getArgs().length==2,"保留翻译键、回退及参数");
+   color(glyphs(rendered),"Base",0x112233,"保留正文根颜色");
+   color(glyphs(rendered),"Red",0xFF5555,"保留翻译参数原色");
+   color(glyphs(rendered),"Inherited",0x112233,"未染色翻译参数继承正文颜色");
+   color(glyphs(rendered),"White",0xFFFFFF,"保留子组件显式白色");
+   color(glyphs(rendered),"Tail",0x112233,"未染色子组件继承正文颜色");
+   for(int width:List.of(1000,13))for(float opacity:List.of(1f,0.5f)){
+    var ink=drawn(roundTrip(ChatMessageStyle.repeated(rendered,3)),width,opacity);
+    color(ink,"Base",0x112233,"真实分行和字体绘制保留正文根颜色");
+    color(ink,"Red",0xFF5555,"真实字体绘制保留翻译参数红色");
+    color(ink,"Inherited",0x112233,"真实字体绘制保留参数继承色");
+    color(ink,"White",0xFFFFFF,"真实字体绘制保留显式白色");
+    color(ink,"Tail",0x112233,"真实字体绘制保留子组件继承色");
+    color(ink,"[!3]",0x2DD4BF,"带原色正文的消息计数保持青色");
+   }
+   var suffix=ChatMessageRenderer.render(decoded.copy().append(
+    Component.literal(" Suffix").withStyle(net.minecraft.ChatFormatting.RED)),mode);
+   color(glyphs(roundTrip(suffix)),"Suffix",0xFF5555,"附加正文原色经重绘和网络编码仍保留");
+   var rerendered=ChatMessageRenderer.render(ChatMessageStyle.repeated(decoded,3),mode);
+   color(glyphs(roundTrip(rerendered)),"[!3]",0x2DD4BF,"重绘已有后缀的消息保留计数色");
+   check(originals[0].getString().endsWith(body.getString())&&body.getStyle().equals(rich),"显示配色不修改原始正文");
+  }
+ }
+
+ static void eventColors(){
+  for(ChatEventType type:ChatEventType.values())for(ChatStyleMode mode:ChatStyleMode.values()){
+   var original=ChatMessageStyle.event(type,"Player",16,Component.literal("{管理员}"),
+    Component.literal("Original").withStyle(style->style.withColor(0x55FF55)
+     .withHoverEvent(new HoverEvent.ShowText(Component.literal("详情")))));
+   var decoded=roundTrip(original);
+   check(ChatMessageStyle.isFormatted(decoded)&&ChatMessageStyle.system(decoded,null)==decoded,"事件网络编码后不叠加来源前缀");
+   var rendered=roundTrip(ChatMessageRenderer.render(decoded,mode));
+   check(rendered.getString().equals(type.label()+"|Lv.16·{管理员}Player >> Original"),"真实事件文字排版");
+   for(int width:List.of(1000,13))for(float opacity:List.of(1f,0.5f)){
+    var ink=drawn(ChatMessageStyle.repeated(rendered,3),width,opacity);
+    if(mode==ChatStyleMode.PLAIN){color(ink,type.label(),type.plainColor(),"事件标签实际绘制纯色");
+     color(ink,"Player",0xF7F7F7,"事件玩家名实际绘制纯色");}
+    else{gradient(ink,type.label(),type.gradientStart(),type.gradientEnd(),"事件标签实际绘制渐变");
+     gradient(ink,"Player",type.gradientStart(),type.gradientEnd(),"事件玩家名实际绘制渐变");}
+    color(ink,"Lv.16",0xF36B7B,"事件等级实际绘制颜色");
+    color(ink,"{管理员}",0xF47B8A,"事件称号实际绘制颜色");
+    color(ink,"Original",0x55FF55,"事件正文实际绘制保留原色");
+    color(ink,"[!3]",0x2DD4BF,"事件计数实际绘制颜色");
+   }
+  }
+ }
+
+ static void playerHover(){
+  Component tooltip=Component.literal("玩家：A🙂B\n冒险等级：Lv.16\n升级经验：120 / 500\n佩戴称号：{管理员}\n游戏模式：生存");
+  Component name=Component.literal("A🙂B").withStyle(style->style.withHoverEvent(new HoverEvent.ShowText(tooltip)));
+  Component body=Component.literal("Body").withStyle(style->style.withColor(0x112233));
+  var originals=new ArrayList<Component>(List.of(line(ChatMessageStyle.playerHeader(false,name,16,Component.empty()),body),
+   line(ChatMessageStyle.playerHeader(true,name,16,Component.empty()),body),ChatMessageStyle.game(name,body),
+   line(ChatMessageStyle.gameHeader(name),body),ChatMessageStyle.privateSent(ChatMessageStyle.playerHeader(true,name,16,Component.empty()),name)));
+  for(ChatEventType type:ChatEventType.values())originals.add(ChatMessageStyle.event(type,name,16,Component.empty(),body));
+  for(ChatStyleMode mode:ChatStyleMode.values())for(Component original:originals){
+   Component shown=roundTrip(ChatMessageStyle.repeated(ChatMessageRenderer.render(roundTrip(original),mode),3));
+   for(int width:List.of(1000,13)){
+    List<Style> playerStyles=new ArrayList<>();StringBuilder text=new StringBuilder();
+    for(var line:new GuiMessage(1,shown,null,null,null).splitLines(TestGlyphs.font(),width)){
+     line.accept((index,style,cp)->{
+      if(style.getHoverEvent() instanceof HoverEvent.ShowText hover){
+       check(hover.value().getString().equals(tooltip.getString()),"网络编码和真实分行保留资料全文");
+       playerStyles.add(style);text.appendCodePoint(cp);
+      }
+      return true;
+     });
+    }
+    String expected=ChatMessageStyle.isPrivateReceipt(original)?"A🙂BA🙂B":"A🙂B";
+    check(text.toString().equals(expected)&&playerStyles.size()==expected.codePointCount(0,expected.length()),"Unicode 玩家名每个字都有资料悬停，其他字段没有");
+    for(float scale:List.of(1f,1.5f))for(var line:new GuiMessage(1,shown,null,null,null).splitLines(TestGlyphs.font(),width)){
+     TestGlyphs.ink.clear();var pose=new org.joml.Matrix3x2f().translate(7,9).scale(scale);
+     var state=new net.minecraft.client.renderer.state.gui.GuiTextRenderState(TestGlyphs.font(),line,pose,
+      0,0,0xFFFFFFFF,0,true,true,null);
+     state.ensurePrepared();
+     for(var glyph:TestGlyphs.ink){
+      var point=pose.transformPosition(new org.joml.Vector2f(glyph.x()+0.5f,glyph.y()+4.5f));
+      List<Style> hits=new ArrayList<>();
+      net.minecraft.client.gui.ActiveTextCollector.findElementUnderCursor(state,point.x,point.y,hits::add);
+      if(glyph.style().getHoverEvent() instanceof HoverEvent.ShowText){
+       check(hits.stream().anyMatch(style->style.getHoverEvent() instanceof HoverEvent.ShowText hover
+        &&hover.value().getString().equals(tooltip.getString())),"原版鼠标检测在缩放和换行后命中玩家资料");
+      }else{
+       check(hits.stream().noneMatch(style->style.getHoverEvent() instanceof HoverEvent.ShowText),"非玩家字段不误显示玩家资料");
+      }
+     }
+    }
+    var ink=drawn(shown,width,1f);color(ink,"[!3]",0x2DD4BF,"玩家悬停不影响真实绘制的计数颜色");
+    if(!ChatMessageStyle.isPrivateReceipt(original))color(ink,"Body",0x112233,"玩家悬停不影响正文原色");
+   }
+  }
+ }
+
  static void completions()throws Exception{
   var local=new CommandDispatcher<FabricClientCommandSource>();ChatStyleClientCommand.addCompletionNodes(local);
   ClientCommandInternals.setActiveDispatcher(local);
@@ -226,7 +364,7 @@ public final class NativeChatChecks {
  public static void main(String[] args)throws Exception{
   // 原版组件编解码器引用静态注册表，在离线进程内初始化，不创建世界或游戏窗口。
   net.minecraft.SharedConstants.tryDetectVersion();net.minecraft.server.Bootstrap.bootStrap();
-  colors();completions();System.out.println("真实 Minecraft 编解码、分行、字体颜色与 Fabric 补全回归通过："+checks+" 项断言。");
+  colors();originalBodyColors();eventColors();playerHover();completions();System.out.println("真实 Minecraft 编解码、分行、字体颜色与 Fabric 补全回归通过："+checks+" 项断言。");
  }
 }
 """
@@ -240,6 +378,8 @@ def verify_native_runtime(binary):
     assert minecraft.is_file(), "需要 Minecraft 26.3 原版 jar"
     assert any(p.name.startswith("fabric-command-api-v2-") for p in libraries), "需要缓存的 Fabric 命令 API"
     production = [
+        ROOT / ("src/main/java/" + P + "/chat/ChatEventType.java"),
+        ROOT / ("src/main/java/" + P + "/chat/ChatPlayerInfo.java"),
         ROOT / ("src/main/java/" + P + "/chat/ChatMessageStyle.java"),
         ROOT / ("src/client/java/" + P + "/client/chat/ChatMessageRenderer.java"),
         ROOT / ("src/client/java/" + P + "/client/chat/ChatStyleMode.java"),

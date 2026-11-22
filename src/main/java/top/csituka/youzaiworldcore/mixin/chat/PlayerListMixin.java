@@ -20,6 +20,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import top.csituka.youzaiworldcore.chat.ChatFormatHelper;
 import top.csituka.youzaiworldcore.chat.ChatMessageStyle;
+import top.csituka.youzaiworldcore.chat.ChatPlayerInfo;
 import top.csituka.youzaiworldcore.config.ChatFormatSettings;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
@@ -48,7 +49,7 @@ public abstract class PlayerListMixin {
             return parameters;
         DebugLogger.SERVER.debug("ChatMessages", "游戏命令消息：执行者={}", source.getTextName());
         return ChatType.bind(ChatFormatHelper.MESSAGE_TYPE_ID, source.getServer().registryAccess(),
-                ChatMessageStyle.gameHeader(source.getTextName()));
+                ChatMessageStyle.gameHeader(ChatPlayerInfo.sourceName(source)));
     }
 
     @ModifyVariable(method = "broadcastChatMessage(Lnet/minecraft/network/chat/PlayerChatMessage;Lnet/minecraft/commands/CommandSourceStack;Lnet/minecraft/network/chat/ChatType$Bound;)V", at = @At("HEAD"), argsOnly = true)

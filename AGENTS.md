@@ -21,7 +21,7 @@
 
 - **账户与安全**：离线服注册/登录/改密/注销、每次加入重新认证、登录冷却与锁定
 - **UI 系统**：YZUI 界面重绘（物品栏 / HUD / 配方书）、GUI 主菜单、标题界面与窗口定制
-- **聊天消息**：聊天 / 私信 / 游戏 / 模组四类固定排版，冒险等级与佩戴称号由服务端生成，未佩戴时保留等级后的 `·`。服务端玩家名带基础渐变，客户端为显示副本统一着色并合并连续重复，原始正文与签名保留；默认渐变，`/yzwc chat_style plain|gradient` 切换并即时重绘历史，本机设置位于 `chat_style_module.style`。`ClientCommandSuggestionsMixin` 修复 Fabric 合并同名 `/yzwc` 根后丢失补全子节点的问题。聊天类型 `youzaiworldcore:chat_line`，旧聊天及私信模板不再读取，详见 `docs/CHAT_MESSAGES.md`；离线验证 `python3 tools/verify_chat_messages.py` 与 `python3 tools/verify_chat_runtime.py`
+- **聊天消息**：聊天 / 私信 / 游戏 / 模组 / 成就 / 加入 / 死亡 / 退出八类固定排版，冒险等级与佩戴称号由服务端生成，未佩戴时保留等级后的 `·`。服务端玩家名带基础渐变，客户端只为显示副本的前缀着色并合并连续重复，正文原色、交互与签名保留。`ChatPlayerInfo` 为玩家名附加发送时的等级、升级经验、称号和游戏模式悬停卡，覆盖普通聊天、私信、事件、玩家游戏消息和私信回执收件人；默认渐变，`/yzwc chat_style plain|gradient` 切换并即时重绘历史，本机设置位于 `chat_style_module.style`。四类事件标签使用金、绿、红、灰蓝配色，`PlayerAdvancementsChatMixin` 只替换原版成就广播文本，成就名称保留原色和悬停；加入、退出和死亡仍支持自定义正文模板，`chat_format_module.enabled` 控制四类事件样式。`ClientCommandSuggestionsMixin` 修复 Fabric 合并同名 `/yzwc` 根后丢失补全子节点的问题。聊天类型 `youzaiworldcore:chat_line`，旧聊天及私信模板不再读取，详见 `docs/CHAT_MESSAGES.md`；离线验证 `python3 tools/verify_chat_messages.py` 与 `python3 tools/verify_chat_runtime.py`
 - **玩法系统**：魔力、冒险等级与属性加点、传送锚点与传送卷轴、维度池、宠物、邮件、统计、AFK 挂机检测、隐身、坐姿、双开门、试炼宝库无限领奖
 - **内容扩展**：悠哉系列矿物/工具/法杖、自定义方块与方块实体（含魔力台）、自定义附魔（12 个）、音乐唱片、Meme 画作、成就、村庄结构注入、云原神遗迹结构、老吴贴贴彩蛋、Technoblade 纪念皇冠
 - **运营支撑**：LuckPerms 权限集成、Placeholder API 占位符、更新检查、配置导入导出、调试日志体系

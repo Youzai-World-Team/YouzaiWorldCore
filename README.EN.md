@@ -86,14 +86,20 @@ The main menu uses rounded cards and animated transitions, grouped into common a
 | `/tell`, `/msg`, `/w` | `[私信]\|Lv.16·{管理员}zxabinbina >> Hello World!` |
 | `/say`, `/tellraw`, command feedback | `[游戏]\|Server >> Hello World!` |
 | Mod notifications | `[模组]\|YouzaiWorldCore >> Hello World!` |
+| Advancements, goals and challenges | `[成就]\|Lv.16·{管理员}zxabinbina >> Made the advancement [Diamonds!]` |
+| Joining the server | `[加入]\|Lv.16·{管理员}zxabinbina >> Joined the server` |
+| Death | `[死亡]\|Lv.16·{管理员}zxabinbina >> zxabinbina was shot by Skeleton` |
+| Leaving the server | `[退出]\|Lv.16·{管理员}zxabinbina >> Left the server` |
 
 - Levels come from the server's adventure-level system; unequipped titles are omitted while the `·` after the level remains. Both private-message views identify the sender. Command messages identify the current executor, including entities selected by `/execute as`
 - **Gradient accents** are enabled by default. Use `/yzwc chat_style gradient` for gradients or `/yzwc chat_style plain` for the website's solid palette; omit the name to query the current style. Vanilla completion includes the command and both names in singleplayer and multiplayer. Switching immediately redraws chat history and saves `chat_style_module.style` in the local `yzwc/client/global_settings.json`, without requiring OP permission
-- Message text stays literal. Consecutive identical messages with the same source, content and styling collapse to one visible entry, with `[!2]`, `[!3]` appended from the second occurrence. Original history, signatures and private-message recipients remain intact. When whisper targets include the sender, the extra outgoing echo is omitted so self-whispers count once per command
+- Message text stays literal and preserves original colors and interactions in mod notifications, `/tellraw` text and translation arguments. Uncolored text uses the default body color; switching palettes recolors only the prefix. Consecutive identical messages with the same source, content and styling collapse to one visible entry, with `[!2]`, `[!3]` appended from the second occurrence. Original history, signatures and private-message recipients remain intact. When whisper targets include the sender, the extra outgoing echo is omitted so self-whispers count once per command
 - Fabric metadata and merged-Mixin origins identify emitting mods. Unattributed system notifications use `Server`. Resizing preserves counts, clearing chat starts new counts, and action-bar messages are separate
 - Game sources use orange or an orange-to-gold gradient; mod names use blue or a blue-to-purple gradient. Repeat counts use teal `#2DD4BF` in both styles
+- Hovering over a player name shows their name, adventure level, level progress, equipped title and game mode at the time of sending. Chat, whispers, events, player game messages and whisper-receipt recipients support this card; palette changes, wrapping and history redraws preserve it
 - `/tell`, `/msg` and `/w` add a chat confirmation naming the recipients, including self-whispers. Multiple recipients share one confirmation, which does not interrupt repeat counts for the private-message text
-- Layout is fixed; legacy chat/private-message templates are no longer read. `chat_format_module.enabled` only controls join, leave and death templates. Update both client and server for the new `youzaiworldcore:chat_line` type. See [implementation and checks](docs/CHAT_MESSAGES.md)
+- Advancement, join, death and leave labels use gold, green, red and slate colors. First joins include a welcome message; renamed joins retain the old name. Advancement names keep their colors and hover descriptions, deaths keep the full vanilla description, and custom event body templates remain supported
+- Layout is fixed; legacy chat/private-message templates are no longer read. `chat_format_module.enabled` controls all four event styles. Update both client and server for the new `youzaiworldcore:chat_line` type. See [implementation and checks](docs/CHAT_MESSAGES.md)
 
 ### 3. Title Screen Overhaul
 

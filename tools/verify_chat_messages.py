@@ -38,6 +38,7 @@ public record Style(Integer color,Boolean bold,Boolean italic,ClickEvent click,H
  public static final Style EMPTY=new Style(null,null,null,null,null,null,null);
  public TextColor getColor(){return color==null?null:new TextColor(color);}
  public boolean isBold(){return Boolean.TRUE.equals(bold);}public boolean isItalic(){return Boolean.TRUE.equals(italic);}
+ public HoverEvent getHoverEvent(){return hover;}
  public Style withColor(int v){return new Style(v,bold,italic,click,hover,font,insertion);}
  public Style withBold(Boolean v){return new Style(color,v,italic,click,hover,font,insertion);}
  public Style withItalic(Boolean v){return new Style(color,bold,v,click,hover,font,insertion);}
@@ -111,6 +112,7 @@ public final class MutableComponent implements Component {
  public List<Component> getSiblings(){return siblings;}
  public MutableComponent append(Component c){siblings.add(c);return this;}
  public MutableComponent setStyle(Style s){style=s;return this;}
+ public MutableComponent append(String s){return append(Component.literal(s));}
  public MutableComponent withStyle(ChatFormatting c){style=style.withColor(c.color);return this;}
  public MutableComponent withStyle(UnaryOperator<Style> op){style=op.apply(style);return this;}
  public MutableComponent copy(){var c=new MutableComponent(contents);c.style=style;c.siblings.addAll(siblings);return c;}
@@ -182,16 +184,19 @@ public record ServerLevel(net.minecraft.server.MinecraftServer getServer) {}
 stub("net.minecraft.server.level.ServerPlayer", """
 import java.util.UUID;
 import net.minecraft.network.chat.*;
-public class ServerPlayer {
+public class ServerPlayer extends top.csituka.youzaiworldcore.mixin.chat.ServerPlayerChatMixin {
  private final UUID id;private final String name;private final ServerLevel level;
  public final Connection connection=new Connection();
  public boolean textFiltering;
  public ServerPlayer(UUID id,String n,net.minecraft.server.MinecraftServer s){this.id=id;name=n;level=new ServerLevel(s);}
  public UUID getUUID(){return id;} public String getScoreboardName(){return name;}
  public Component getName(){return Component.literal(name);} public Component getDisplayName(){return Component.literal("DISPLAY "+name);}
+ public int leaveGames=1;
+ public net.minecraft.world.level.GameType gameType=net.minecraft.world.level.GameType.SURVIVAL;
+ public net.minecraft.world.level.GameType gameMode(){return gameType;}
  public ServerLevel level(){return level;} public Stats getStats(){return new Stats();}
  public void sendChatMessage(OutgoingChatMessage message,boolean filtered,ChatType.Bound parameters){message.sendToPlayer(this,filtered,parameters);}
- public static class Stats { public int getValue(Object v){return 1;} }
+ public class Stats { public int getValue(Object v){return leaveGames;} }
  public static class Connection {
   public int sends;public Component displayed;public MessageSignature signature;
   public final java.util.List<Component> messages=new java.util.ArrayList<>();
@@ -234,6 +239,25 @@ public class ComponentArgument {
 }
 """)
 stub("net.minecraft.server.commands.MsgCommand", "public class MsgCommand {}")
+stub("net.minecraft.world.level.GameType", """
+public enum GameType { SURVIVAL("生存"),CREATIVE("创造"),ADVENTURE("冒险"),SPECTATOR("旁观");
+ private final String display;GameType(String display){this.display=display;}
+ public net.minecraft.network.chat.Component getShortDisplayName(){return net.minecraft.network.chat.Component.literal(display);}
+}
+""")
+stub("net.minecraft.server.PlayerAdvancements", "public class PlayerAdvancements {}")
+stub("net.minecraft.advancements.AdvancementHolder", "public record AdvancementHolder(net.minecraft.network.chat.Component name) {}")
+stub("net.minecraft.advancements.Advancement", "public class Advancement { public static net.minecraft.network.chat.Component name(AdvancementHolder holder){return holder.name();} }")
+stub("net.minecraft.advancements.AdvancementType", """
+public enum AdvancementType { TASK,GOAL,CHALLENGE;
+ public net.minecraft.network.chat.MutableComponent createAnnouncement(AdvancementHolder h,net.minecraft.server.level.ServerPlayer p){return net.minecraft.network.chat.Component.literal("vanilla advancement "+name());}
+}
+""")
+stub("net.minecraft.network.chat.ChatDecorator", "public interface ChatDecorator { Component decorate(net.minecraft.server.level.ServerPlayer p,Component c); }")
+stub("net.minecraft.server.network.ServerGamePacketListenerImpl", "public class ServerGamePacketListenerImpl {}")
+stub("net.minecraft.world.damagesource.CombatTracker", """
+public record CombatTracker(net.minecraft.network.chat.Component message) { public net.minecraft.network.chat.Component getDeathMessage(){return message;} }
+""")
 stub("net.minecraft.server.commands.TellRawCommand", "public class TellRawCommand {}")
 stub("net.minecraft.server.network.ServerCommonPacketListenerImpl", "public class ServerCommonPacketListenerImpl {}")
 stub("net.minecraft.network.protocol.Packet", "public interface Packet<T> {}")
@@ -335,9 +359,11 @@ public final class DebugLogger { public static final int LEVEL_OFF=0,LEVEL_BASIC
 stub("top.csituka.youzaiworldcore.skill.PlayerLevelStorage", """
 public class PlayerLevelStorage {
  public static final java.util.Map<java.util.UUID,Data> levels=new java.util.HashMap<>();
- public static Data get(java.util.UUID id){return levels.get(id);}public record Data(int getLevel) {}
+ public static Data get(java.util.UUID id){return levels.get(id);}
+ public record Data(int getLevel,int getCurrentLevelExp,int getExpForNextLevel) { public Data(int level){this(level,0,200);} }
 }
 """)
+stub("top.csituka.youzaiworldcore.skill.AdventureLevelManager", "public class AdventureLevelManager {public static int expForNextLevel(int level){return 200;} }")
 stub("top.csituka.youzaiworldcore.title.TitleManager", """
 public class TitleManager {
  public static final java.util.Map<java.util.UUID,net.minecraft.network.chat.Component> titles=new java.util.HashMap<>();
@@ -768,9 +794,136 @@ public class ChatMessageChecks {
   check(tracker.accept(message(2,content,GuiMessageSource.PLAYER)).displayed().content().getString().endsWith("[!2147483647]"),"计数不溢出");
   call(ChatComponentMixin.class,display.mixin,"youzaiworldcore$clearRepeatState",false,null);display.history.clear();display.lines.clear();
   display.add(message(10,content,GuiMessageSource.PLAYER));check(!display.latest().content().getString().contains("[!"),"清空聊天后重新计数");
+  verifyPlayerHover(server);
+  verifyEvents(player);
   verifyColors(body,header,original);
   verifyStyleCommands(content);
   System.out.println("聊天消息离线回归通过："+checks+" 项断言。");
+ }
+
+ static void hover(Component message,String name,Component tooltip,String label){
+  String text=message.getString();int offset=text.indexOf(name);check(offset>=0,label+" 找到玩家名");
+  int start=text.codePointCount(0,offset),length=name.codePointCount(0,name.length());
+  var chars=glyphs(message).subList(start,start+length);
+  check(chars.stream().allMatch(g->g.style().getHoverEvent() instanceof HoverEvent.ShowText h&&h.value().equals(tooltip)),label+" 每个码点的资料悬停一致");
+ }
+
+ static void verifyPlayerHover(net.minecraft.server.MinecraftServer server)throws Exception {
+  var player=new ServerPlayer(UUID.randomUUID(),"HoverPlayer🙂",server);
+  var source=new CommandSourceStack(server,player,player.getScoreboardName());
+  var body=Component.literal("原色正文").withStyle(net.minecraft.ChatFormatting.RED);
+  PlayerLevelStorage.levels.put(player.getUUID(),new PlayerLevelStorage.Data(16,120,500));
+  Component title=Component.literal("{管理员}").withStyle(style->style.withColor(0x55FFFF));
+  TitleManager.titles.put(player.getUUID(),title);
+  Component tooltip=ChatPlayerInfo.tooltip(player);
+  check(tooltip.getString().equals("玩家：HoverPlayer🙂\n冒险等级：Lv.16\n升级经验：120 / 500\n佩戴称号：{管理员}\n游戏模式：生存"),"玩家悬停字段来自服务端资料");
+  color(tooltip,"{管理员}",0x55FFFF,"悬停称号保留原色");
+  Component chat=line(ChatFormatHelper.formatChatHeader(player),body);
+  var messages=new ArrayList<Component>(List.of(chat,line(ChatFormatHelper.formatPrivateHeader(source),body),
+   ChatMessageStyle.system(body,source),line(ChatMessageStyle.gameHeader(ChatPlayerInfo.sourceName(source)),body)));
+  for(ChatEventType type:ChatEventType.values())messages.add(ChatMessageStyle.event(type,ChatPlayerInfo.name(player),16,title,body));
+  for(ChatStyleMode mode:ChatStyleMode.values())for(Component original:messages){
+   var shown=ChatMessageRenderer.render(original,mode);
+   hover(shown,player.getScoreboardName(),tooltip,mode+" 玩家名前缀");
+   hover(ChatMessageStyle.repeated(shown,3),player.getScoreboardName(),tooltip,mode+" 重复消息保留资料");
+   color(shown,"原色正文",0xFF5555,"资料悬停不影响正文原色");
+   var chars=glyphs(shown);check(chars.getFirst().style().getHoverEvent()==null,"资料只附在玩家名，不附在类型标签");
+  }
+  var gameMixin=new PlayerListMixin(){};
+  var commandRaw=new PlayerChatMessage("原色正文",null,PlayerChatMessage.Filter.NONE);
+  var originalBound=ChatType.bind(ChatType.MSG_COMMAND_INCOMING,source);
+  var gameBound=(ChatType.Bound)call(PlayerListMixin.class,gameMixin,"youzaiworldcore$gameChatHeader",originalBound,commandRaw,source,originalBound);
+  hover(gameBound.name(),player.getScoreboardName(),tooltip,"玩家 /say 来源使用资料悬停");
+  hover((Component)call(CommandSourceStackChatMixin.class,source,"youzaiworldcore$formatCommandOutput",body),
+   player.getScoreboardName(),tooltip,"玩家命令反馈使用资料悬停");
+  var peer=new ServerPlayer(UUID.randomUUID(),"Peer",server);
+  call(MsgCommandMixin.class,null,"youzaiworldcore$sendPrivateReceipt",source,List.of(player,peer,peer),commandRaw,null);
+  Component receipt=source.feedback.getLast();
+  check(receipt.getString().endsWith("已发送给 HoverPlayer🙂, Peer"),"私信回执保留收件人顺序并去重");
+  Component recipients=(Component)((TranslatableContents)((Component)((TranslatableContents)receipt.getContents()).getArgs()[1]).getContents()).getArgs()[0];
+  hover(recipients,player.getScoreboardName(),tooltip,"私信回执自身名称悬停");
+  hover(recipients,"Peer",ChatPlayerInfo.tooltip(peer),"私信回执其他收件人悬停");
+  var before=top.csituka.youzaiworldcore.client.config.ChatStyleSettings.getMode();
+  var history=new Display();history.add(message(1,chat,net.minecraft.client.multiplayer.chat.GuiMessageSource.PLAYER));
+  history.add(message(2,chat,net.minecraft.client.multiplayer.chat.GuiMessageSource.PLAYER));
+  for(ChatStyleMode mode:ChatStyleMode.values()){
+   top.csituka.youzaiworldcore.client.config.ChatStyleSettings.setMode(mode);history.replay();
+   hover(history.latest().content(),player.getScoreboardName(),tooltip,"历史重绘保留玩家资料");
+   check(history.latest().content().getString().endsWith("[!2]"),"资料悬停保留重复计数");
+  }
+  top.csituka.youzaiworldcore.client.config.ChatStyleSettings.setMode(before);
+  PlayerLevelStorage.levels.remove(player.getUUID());TitleManager.titles.remove(player.getUUID());
+  player.gameType=net.minecraft.world.level.GameType.CREATIVE;
+  check(ChatPlayerInfo.tooltip(player).getString().contains("冒险等级：Lv.1\n升级经验：0 / 200\n佩戴称号：未佩戴\n游戏模式：创造"),"无等级或称号时使用默认资料，并显示新游戏模式");
+  hover(ChatMessageRenderer.render(chat),player.getScoreboardName(),tooltip,"旧消息保留发送时资料快照");
+  var console=new CommandSourceStack(server,null,"Server");
+  check(ChatPlayerInfo.sourceName(console).getStyle().getHoverEvent()==null,"非玩家来源不显示玩家资料");
+ }
+
+ static void verifyEvents(ServerPlayer player)throws Exception {
+  top.csituka.youzaiworldcore.config.ChatFormatSettings.writeDefaults();
+  Component death=Component.translatableWithFallback("death.attack.arrow","%s 被 %s 射杀",
+   Component.literal("zxabinbina"),Component.literal("骷髅").withStyle(net.minecraft.ChatFormatting.RED))
+   .withStyle(style->style.withHoverEvent(new HoverEvent.ShowText(Component.literal("死因详情"))));
+  Component[] events={ChatFormatHelper.formatJoin(player),ChatFormatHelper.formatJoinFirstTime(player),
+   ChatFormatHelper.formatJoinRenamed(player,"OldName"),ChatFormatHelper.formatLeft(player),ChatFormatHelper.formatDeath(player,death)};
+  String[] expected={"[加入]|Lv.1·zxabinbina >> 加入了服务器","[加入]|Lv.1·zxabinbina >> 首次加入服务器，欢迎！",
+   "[加入]|Lv.1·zxabinbina >> 加入了服务器（原名：OldName）","[退出]|Lv.1·zxabinbina >> 退出了服务器",
+   "[死亡]|Lv.1·zxabinbina >> zxabinbina 被 骷髅 射杀"};
+  for(int i=0;i<events.length;i++){
+   check(events[i].getString().equals(expected[i]),"事件默认排版 "+i);
+   check(ChatMessageStyle.isFormatted(events[i])&&ChatMessageStyle.system(events[i],null)==events[i],"事件不叠加游戏或模组前缀");
+  }
+  var joins=new PlayerListMixin(){};set(PlayerListMixin.class,joins,"youzaiworldcore$tempPlayer",player);
+  Component vanillaJoin=Component.translatableWithFallback("multiplayer.player.joined","%s joined",player.getDisplayName());
+  check(call(PlayerListMixin.class,joins,"youzaiworldcore$replaceJoinMessage",vanillaJoin).equals(events[0]),"普通加入入口使用加入样式");
+  player.leaveGames=0;
+  check(call(PlayerListMixin.class,joins,"youzaiworldcore$replaceJoinMessage",vanillaJoin).equals(events[1]),"首次加入入口使用欢迎正文");
+  player.leaveGames=1;
+  check(call(PlayerListMixin.class,joins,"youzaiworldcore$replaceJoinMessage",
+   Component.translatable("multiplayer.player.joined.renamed",player.getDisplayName(),"OldName")).equals(events[2]),"改名加入入口保留旧名");
+  var leaves=new ServerGamePacketListenerImplMixin(){};
+  set(ServerGamePacketListenerImplMixin.class,leaves,"player",player);
+  check(call(ServerGamePacketListenerImplMixin.class,leaves,"youzaiworldcore$replaceLeaveMessage",vanillaJoin).equals(events[3]),"退出入口使用退出样式");
+  var combat=new net.minecraft.world.damagesource.CombatTracker(death);
+  check(call(ServerPlayerChatMixin.class,player,"youzaiworldcore$replaceDeathMessage",combat).equals(events[4]),"死亡入口保留完整原版死因");
+  var advancement=new PlayerAdvancementsChatMixin(){};
+  Component award=Component.literal("[钻石！]").withStyle(style->style.withColor(0x55FF55)
+   .withHoverEvent(new HoverEvent.ShowText(Component.literal("获得钻石"))));
+  var holder=new net.minecraft.advancements.AdvancementHolder(award);
+  String[] verbs={"达成进度 ","完成目标 ","完成挑战 "};
+  var types=new net.minecraft.advancements.AdvancementType[]{net.minecraft.advancements.AdvancementType.TASK,
+   net.minecraft.advancements.AdvancementType.GOAL,net.minecraft.advancements.AdvancementType.CHALLENGE};
+  for(int i=0;i<types.length;i++){
+   Component event=(Component)call(PlayerAdvancementsChatMixin.class,advancement,"youzaiworldcore$formatAdvancement",types[i],holder,player);
+   check(event.getString().equals("[成就]|Lv.1·zxabinbina >> "+verbs[i]+"[钻石！]"),"成就种类正文 "+types[i]);
+   for(ChatStyleMode mode:ChatStyleMode.values()){
+    var shown=ChatMessageRenderer.render(event,mode);
+    color(shown,"[钻石！]",0x55FF55,"成就名称保留原版颜色");
+    check(glyphs(shown).stream().filter(g->g.text().equals("钻")).allMatch(g->g.style().hover().equals(award.getStyle().hover())),"成就名称保留悬停说明");
+   }
+  }
+  for(ChatEventType type:ChatEventType.values())for(ChatStyleMode mode:ChatStyleMode.values()){
+   Component original=ChatMessageStyle.event(type,"Player",16,Component.literal("{管理员}"),death);
+   var shown=ChatMessageRenderer.render(original,mode);
+   check(shown.getString().equals(type.label()+"|Lv.16·{管理员}Player >> "+death.getString()),"事件完整等级称号排版");
+   if(mode==ChatStyleMode.PLAIN)color(shown,type.label(),type.plainColor(),"事件标签纯色");
+   else gradient(shown,type.label(),type.gradientStart(),type.gradientEnd(),"事件标签渐变");
+   color(shown,"Lv.16",0xF36B7B,"事件等级色");color(shown,"{管理员}",0xF47B8A,"事件称号色");
+   color(shown,"骷髅",0xFF5555,"事件正文保留原色");
+   if(mode==ChatStyleMode.PLAIN)color(shown,"Player",0xF7F7F7,"事件玩家名纯色");
+   else gradient(shown,"Player",type.gradientStart(),type.gradientEnd(),"事件玩家名渐变");
+   color(ChatMessageStyle.repeated(shown,3),"[!3]",0x2DD4BF,"事件重复计数青色");
+  }
+  top.csituka.youzaiworldcore.config.ChatFormatSettings.setJoinedGameFormat("Custom welcome");
+  check(ChatFormatHelper.formatJoin(player).getString().equals("[加入]|Lv.1·zxabinbina >> Custom welcome"),"自定义加入模板仍作为正文解析");
+  top.csituka.youzaiworldcore.config.ChatFormatSettings.setEnabled(false);
+  check(call(PlayerListMixin.class,joins,"youzaiworldcore$replaceJoinMessage",vanillaJoin)==vanillaJoin,"关闭事件样式保留原版加入消息");
+  check(call(ServerGamePacketListenerImplMixin.class,leaves,"youzaiworldcore$replaceLeaveMessage",vanillaJoin)==vanillaJoin,"关闭事件样式保留原版退出消息");
+  check(call(ServerPlayerChatMixin.class,player,"youzaiworldcore$replaceDeathMessage",combat)==death,"关闭事件样式保留原版死亡消息");
+  check(((Component)call(PlayerAdvancementsChatMixin.class,advancement,"youzaiworldcore$formatAdvancement",types[0],holder,player))
+   .getString().equals("vanilla advancement TASK"),"关闭事件样式保留原版成就消息");
+  top.csituka.youzaiworldcore.config.ChatFormatSettings.writeDefaults();
  }
 
  static void verifyColors(Component body,Component header,String original)throws Exception {
@@ -832,12 +985,14 @@ public class ChatMessageChecks {
   for(ChatStyleMode mode:ChatStyleMode.values()){
    var rendered=ChatMessageRenderer.render(ChatMessageStyle.game("Sheep",translated),mode);
    Component shownBody=rendered.getSiblings().getLast();
-   check(shownBody.getStyle().equals(rich.withColor(0xF3EFEF)),mode+" 保留正文交互、字体和文字样式");
+   check(shownBody.getStyle().equals(rich),mode+" 保留正文原色、交互、字体和文字样式");
    check(shownBody.getContents() instanceof TranslatableContents t&&t.getKey().equals("example.message")
     &&t.getFallback().equals("原文 %s"),mode+" 保留翻译内容和回退文本");
-   color(rendered,"原文 参数 后文",0xF3EFEF,mode+" 翻译参数及子组件统一正文色");
+   color(rendered,"原文",0x112233,mode+" 保留翻译组件原色");
+   color(rendered,"参数",0xFF5555,mode+" 保留翻译参数原色");
+   color(rendered," 后文",0xFFFFFF,mode+" 保留子组件显式白色");
    List<Glyph> chars=glyphs(rendered);int offset=rendered.getString().indexOf("原文");
-   check(chars.subList(offset,chars.size()).stream().allMatch(g->g.style().equals(rich.withColor(0xF3EFEF))),mode+" 翻译参数继承交互与字体");
+   check(chars.subList(offset,chars.size()).stream().allMatch(g->g.style().withColor(0x112233).equals(rich)),mode+" 翻译参数继承交互与字体");
    Component title=new TitleDefinition("rich","称号","称号",0x55FFFF,true,true,1).asComponent();
    Component titled=ChatMessageRenderer.render(line(ChatMessageStyle.playerHeader(false,"player",16,title),body),mode);
    color(titled,"{称号}",0xF47B8A,mode+" 聊天称号按指定色板覆盖目录颜色");
@@ -849,23 +1004,36 @@ public class ChatMessageChecks {
    color(shown,"Hello World!",0xF3EFEF,mode+" 包装旧色不覆盖正文色");
    Component suffix=ChatMessageRenderer.render(ChatMessageStyle.game("Server",body).copy()
     .append(Component.literal(" tail").withStyle(net.minecraft.ChatFormatting.RED)),mode);
-   color(suffix," tail",0xF3EFEF,mode+" 附加正文组件颜色");
+   color(suffix," tail",0xFF5555,mode+" 保留附加正文组件原色");
+   color(ChatMessageRenderer.render(ChatMessageStyle.repeated(ChatMessageStyle.mod("Mod",translated),3),mode),
+    " [!3]",0x2DD4BF,mode+" 重绘带计数的消息保留后缀颜色");
   }
   check(translated.getStyle().equals(rich)&&parameter.getStyle().getColor().getValue()==0xFF5555
    &&translated.getSiblings().getLast().getStyle().getColor().getValue()==0xFFFFFF,"着色不修改原始样式、参数或子组件");
   ComponentContents object=new ComponentContents(){public String text(){return "[item]";}};
   Component item=MutableComponent.create(object).setStyle(rich);
   Component shownItem=ChatMessageRenderer.render(ChatMessageStyle.game("Server",item),ChatStyleMode.GRADIENT).getSiblings().getLast();
-  check(shownItem.getContents()==object&&shownItem.getStyle().equals(rich.withColor(0xF3EFEF)),"保留非文字内容组件");
+  check(shownItem.getContents()==object&&shownItem.getStyle().equals(rich),"保留非文字内容组件和原色");
   var pretend=Component.literal("[聊天]|pretend");check(ChatMessageRenderer.render(pretend,ChatStyleMode.GRADIENT)==pretend,"正文前缀不被解释为配色来源");
   var malformed=Component.translatableWithFallback(ChatMessageStyle.GAME_MESSAGE,"unusual");
   check(ChatMessageRenderer.render(malformed,ChatStyleMode.GRADIENT)==malformed,"缺少结构参数的组件不导致显示崩溃");
   var distinct=new Display();
   Component red=ChatMessageStyle.game("Server",body.copy().withStyle(net.minecraft.ChatFormatting.RED));
   Component white=ChatMessageStyle.game("Server",body.copy().withStyle(net.minecraft.ChatFormatting.WHITE));
-  check(ChatMessageRenderer.render(red).equals(ChatMessageRenderer.render(white)),"原文颜色不同也按统一色板显示");
+  check(!ChatMessageRenderer.render(red).equals(ChatMessageRenderer.render(white)),"原文颜色不同则显示颜色也不同");
+  color(ChatMessageRenderer.render(red),"Hello World!",0xFF5555,"保留红色正文");
+  color(ChatMessageRenderer.render(white),"Hello World!",0xFFFFFF,"保留显式白色正文");
   distinct.add(message(1,red,GuiMessageSource.SYSTEM_SERVER));distinct.add(message(2,white,GuiMessageSource.SYSTEM_SERVER));
-  check(distinct.groups()==2,"显示颜色相同仍按原始组件区分重复组");
+  check(distinct.groups()==2,"按正文颜色区分重复组");
+  var coloredHistory=new Display();
+  for(int n=1;n<=3;n++)coloredHistory.add(message(n,red,GuiMessageSource.SYSTEM_SERVER));
+  var before=ChatStyleSettings.getMode();
+  for(ChatStyleMode mode:ChatStyleMode.values()){
+   ChatStyleSettings.setMode(mode);coloredHistory.replay();
+   color(coloredHistory.latest().content(),"Hello World!",0xFF5555,mode+" 历史重绘保留正文颜色");
+   color(coloredHistory.latest().content()," [!3]",0x2DD4BF,mode+" 历史重绘保留累计次数和计数颜色");
+  }
+  ChatStyleSettings.setMode(before);
  }
 
  static void verifyStyleCommands(Component content)throws Exception {
@@ -956,6 +1124,10 @@ def validate_resources():
         "chat.youzaiworldcore.game_header": "[游戏]|%s",
         "chat.youzaiworldcore.game": "[游戏]|%s >> %s",
         "chat.youzaiworldcore.mod": "[模组]|%s >> %s",
+        "chat.youzaiworldcore.event.advancement": "[成就]|%s%s%s%s",
+        "chat.youzaiworldcore.event.join": "[加入]|%s%s%s%s",
+        "chat.youzaiworldcore.event.death": "[死亡]|%s%s%s%s",
+        "chat.youzaiworldcore.event.leave": "[退出]|%s%s%s%s",
     }
     locales = list((ROOT / "src/main/resources/assets/youzaiworldcore/lang").glob("*.json"))
     assert len(locales) == 10
@@ -964,13 +1136,20 @@ def validate_resources():
         assert all(data.get(key) == value for key, value in expected.items()), file
         for key in ["chat.youzaiworldcore.style.current", "chat.youzaiworldcore.style.changed", "chat.youzaiworldcore.private.sent_to"]:
             assert data.get(key, "").count("%s") == 1, (file, key)
+        for suffix in ["join.body", "join.first", "join.renamed", "leave.body", "advancement.task", "advancement.goal", "advancement.challenge"]:
+            key = "chat.youzaiworldcore.event." + suffix
+            assert data.get(key), (file, key)
+            assert data[key].count("%s") == (1 if suffix in ["join.renamed", "advancement.task", "advancement.goal", "advancement.challenge"] else 0), (file, key)
+        for suffix, count in {"player": 1, "level": 1, "experience": 2, "title": 1, "game_mode": 1, "no_title": 0}.items():
+            key = "chat.youzaiworldcore.hover." + suffix
+            assert data.get(key) and data[key].count("%s") == count, (file, key)
     chat_type = json.loads((ROOT / "src/main/resources/data/youzaiworldcore/chat_type/chat_line.json").read_text())
     for key in ["chat", "narration"]:
         assert chat_type[key] == {"translation_key": "%s >> %s", "parameters": ["sender", "content"], "style": {"color": "#f3efef"}}
     client = json.loads((ROOT / "src/client/resources/youzaiworldcore.client.mixins.json").read_text())
     assert client["client"].count("ClientCommandSuggestionsMixin") == 1
     server = json.loads((ROOT / "src/main/resources/youzaiworldcore.server.mixins.json").read_text())
-    for name in ["chat.SystemChatPacketMixin", "chat.CommandSourceStackChatMixin", "chat.TellRawCommandMixin"]:
+    for name in ["chat.SystemChatPacketMixin", "chat.CommandSourceStackChatMixin", "chat.TellRawCommandMixin", "chat.PlayerAdvancementsChatMixin"]:
         assert server["mixins"].count(name) == 1
     print("十种语言、聊天类型及新增 Mixin 注册检查通过。")
 
@@ -1001,10 +1180,10 @@ def main():
     libraries = os.pathsep.join(str(p) for p in [mixins[0], asm[0], brigadier[0], gson[0]])
     production = [
         "src/main/java/" + P + "/chat/" + name + ".java"
-        for name in ["ChatMessageStyle", "ModMessageSource", "ChatFormatHelper", "StyledChatMessage", "ExtPlayerChatMessage"]
+        for name in ["ChatEventType", "ChatPlayerInfo", "ChatMessageStyle", "ModMessageSource", "ChatFormatHelper", "StyledChatMessage", "ExtPlayerChatMessage"]
     ] + [
         "src/main/java/" + P + "/mixin/chat/" + name + ".java"
-        for name in ["MsgCommandMixin", "PlayerListMixin", "SystemChatPacketMixin", "CommandSourceStackChatMixin", "TellRawCommandMixin"]
+        for name in ["MsgCommandMixin", "PlayerListMixin", "SystemChatPacketMixin", "CommandSourceStackChatMixin", "TellRawCommandMixin", "PlayerAdvancementsChatMixin", "ServerPlayerChatMixin", "ServerGamePacketListenerImplMixin"]
     ] + [
         "src/main/java/" + P + "/config/ChatFormatSettings.java",
         "src/main/java/" + P + "/title/TitleDefinition.java",

@@ -3,6 +3,7 @@ package top.csituka.youzaiworldcore.mixin.chat;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.network.chat.ChatType;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.PlayerChatMessage;
 import net.minecraft.network.chat.OutgoingChatMessage;
 import net.minecraft.resources.ResourceKey;
@@ -16,10 +17,13 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import top.csituka.youzaiworldcore.chat.ChatFormatHelper;
 import top.csituka.youzaiworldcore.chat.ChatMessageStyle;
+import top.csituka.youzaiworldcore.chat.ChatPlayerInfo;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
 import java.util.Collection;
-import java.util.stream.Collectors;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.UUID;
 
 /** 私信使用统一前缀和独立发送回执；自发自收正文只投递一次。 */
 @Mixin(MsgCommand.class)
@@ -59,14 +63,17 @@ public abstract class MsgCommandMixin {
             Collection<ServerPlayer> targets, PlayerChatMessage message, CallbackInfo ci) {
         if (source.isSilent())
             return;
-        @SuppressWarnings("null")
-        String recipients = targets.stream()
-                .filter(target -> !source.shouldFilterMessageTo(target) || !message.isFullyFiltered())
-                .map(ServerPlayer::getScoreboardName).distinct().collect(Collectors.joining(", "));
-        if (recipients.isEmpty())
+        MutableComponent recipients = Component.empty();
+        Set<UUID> included = new HashSet<>();
+        for (ServerPlayer target : targets) {
+            if (source.shouldFilterMessageTo(target) && message.isFullyFiltered()) continue;
+            if (!included.add(target.getUUID())) continue;
+            if (included.size() > 1) recipients.append(", ");
+            recipients.append(ChatPlayerInfo.name(target));
+        }
+        if (included.isEmpty())
             return;
-        source.sendSystemMessage(ChatMessageStyle.privateSent(ChatFormatHelper.formatPrivateHeader(source),
-                Component.literal(recipients)));
-        DebugLogger.SERVER.debug("ChatMessages", "私信发送回执：发送者={}，收件人={}", source.getTextName(), recipients);
+        source.sendSystemMessage(ChatMessageStyle.privateSent(ChatFormatHelper.formatPrivateHeader(source), recipients));
+        DebugLogger.SERVER.debug("ChatMessages", "私信发送回执：发送者={}，收件人数={}", source.getTextName(), included.size());
     }
 }

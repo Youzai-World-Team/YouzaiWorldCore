@@ -5,7 +5,7 @@ import java.util.Objects;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
 /**
- * 加入、离开及死亡事件的聊天模板配置。
+ * 系统事件聊天样式开关，以及加入、离开和死亡事件的正文模板配置。
  * <p>
  * 存放位置：{@code yzwc/server/config/global_settings.json} 的
  * {@code chat_format_module} 分节。
@@ -26,7 +26,7 @@ public final class ChatFormatSettings {
 
     public static final String MODULE = "ChatFormatSettings";
 
-    /** 默认加入消息模板（原版翻译键） */
+    /** 内置加入模板标识；默认正文采用紧凑的事件翻译，自定义模板继续解析。 */
     public static final String DEFAULT_JOINED_FORMAT = "<yellow><lang:multiplayer.player.joined:'${player}'></yellow>";
     public static final String DEFAULT_JOINED_FIRST_TIME_FORMAT = "<yellow><lang:multiplayer.player.joined:'${player}'></yellow>";
     public static final String DEFAULT_JOINED_RENAMED_FORMAT = "<yellow><lang:multiplayer.player.joined.renamed:'${player}':'${old_name}'></yellow>";

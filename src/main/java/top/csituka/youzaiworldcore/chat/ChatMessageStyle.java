@@ -10,7 +10,7 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
 
 import java.util.Optional;
 
-/** 聊天、私信、游戏和模组消息的统一排版；正文作为独立组件保留。 */
+/** 聊天、私信、游戏、模组和四类系统事件的统一排版；正文作为独立组件保留。 */
 @SuppressWarnings("null")
 public final class ChatMessageStyle {
     public static final String PLAYER_HEADER = "chat.youzaiworldcore.player";
@@ -31,26 +31,68 @@ public final class ChatMessageStyle {
 
     /** 玩家代号前显示冒险等级及已佩戴称号；非玩家私信使用 level=0。 */
     public static Component playerHeader(boolean privateMessage, String playerName, int level, Component title) {
+        return playerHeader(privateMessage, Component.literal(playerName), level, title);
+    }
+
+    /** 玩家名作为组件传递，保留服务端附加的资料悬停。 */
+    public static Component playerHeader(boolean privateMessage, Component playerName, int level, Component title) {
         String key = privateMessage ? PRIVATE_HEADER : PLAYER_HEADER;
         String fallback = privateMessage ? "[私信]|%s%s%s%s" : "[聊天]|%s%s%s%s";
+        return playerHeader(key, fallback, playerName, level, title,
+                privateMessage ? 0xC03AFF : 0xFF3364, privateMessage ? 0xDF61FF : 0xD0529E);
+    }
+
+    /** 事件前缀沿用玩家聊天的冒险等级、称号和账户代号结构。 */
+    public static Component eventHeader(ChatEventType type, String playerName, int level, Component title) {
+        return eventHeader(type, Component.literal(playerName), level, title);
+    }
+
+    /** 事件玩家名保留资料悬停，标题、等级和渐变排版与普通聊天一致。 */
+    public static Component eventHeader(ChatEventType type, Component playerName, int level, Component title) {
+        return playerHeader(type.headerKey(), type.label() + "|%s%s%s%s", playerName, level, title,
+                type.gradientStart(), type.gradientEnd());
+    }
+
+    /** 事件正文独立保留，避免重新染色或丢失成就及死亡消息的交互。 */
+    public static Component event(ChatEventType type, String playerName, int level, Component title, Component body) {
+        return event(type, Component.literal(playerName), level, title, body);
+    }
+
+    /** 事件正文独立保留，玩家名可携带资料交互。 */
+    public static Component event(ChatEventType type, Component playerName, int level, Component title, Component body) {
+        return Component.translatable("%s >> %s", eventHeader(type, playerName, level, title), body.copy())
+                .withStyle(style -> style.withColor(BODY_COLOR));
+    }
+
+    private static Component playerHeader(String key, String fallback, Component playerName, int level,
+            Component title, int start, int end) {
         Component levelText = level > 0 ? Component.literal("Lv." + level)
                 .withStyle(style -> style.withColor(LEVEL_COLOR)) : Component.empty();
         // 点号是玩家等级后的分隔符，未佩戴称号时仍保留；非玩家私信没有等级。
         Component separator = level > 0 ? Component.literal("·")
                 .withStyle(style -> style.withColor(SEPARATOR_COLOR)) : Component.empty();
-        Component name = gradient(Component.literal(playerName), privateMessage ? 0xC03AFF : 0xFF3364,
-                privateMessage ? 0xDF61FF : 0xD0529E);
+        Component name = gradient(playerName, start, end);
         return Component.translatableWithFallback(key, fallback, levelText, separator, title.copy(), name)
                 .withStyle(style -> style.withColor(BODY_COLOR));
     }
 
     /** /say、/me 等命令使用执行者名称，正文由原版 ChatType 单独传递。 */
     public static Component gameHeader(String from) {
+        return gameHeader(Component.literal(sourceName(from)));
+    }
+
+    /** 游戏命令的玩家来源保留其资料悬停。 */
+    public static Component gameHeader(Component from) {
         return Component.translatableWithFallback(GAME_HEADER, "[游戏]|%s", name(from, GAME_NAME_COLOR))
                 .withStyle(style -> style.withColor(BODY_COLOR));
     }
 
     public static Component game(String from, Component message) {
+        return game(Component.literal(sourceName(from)), message);
+    }
+
+    /** 游戏消息来源可携带玩家资料，正文样式保持原样。 */
+    public static Component game(Component from, Component message) {
         return Component.translatableWithFallback(GAME_MESSAGE, "[游戏]|%s >> %s", name(from, GAME_NAME_COLOR), message.copy())
                 .withStyle(style -> style.withColor(BODY_COLOR));
     }
@@ -86,7 +128,7 @@ public final class ChatMessageStyle {
         if (isFormatted(message)) return message;
         var mod = ModMessageSource.caller();
         if (mod.isPresent()) return mod(mod.get(), message);
-        return game(source == null ? "Server" : source.getTextName(), message);
+        return game(source == null ? Component.literal("Server") : ChatPlayerInfo.sourceName(source), message);
     }
 
     /** 单条不显示计数，连续重复时在正文后追加 [!n]。 */
@@ -124,7 +166,8 @@ public final class ChatMessageStyle {
     public static boolean isHeader(Component component) {
         if (!(component.getContents() instanceof TranslatableContents contents)) return false;
         String key = contents.getKey();
-        return PLAYER_HEADER.equals(key) || PRIVATE_HEADER.equals(key) || GAME_HEADER.equals(key);
+        return PLAYER_HEADER.equals(key) || PRIVATE_HEADER.equals(key) || GAME_HEADER.equals(key)
+                || ChatEventType.fromHeaderKey(key) != null;
     }
 
     /** 只识别结构化前缀，不根据正文是否恰好以「[聊天]」等文字开头判断来源。 */
@@ -147,7 +190,11 @@ public final class ChatMessageStyle {
     }
 
     private static Component name(String value, int color) {
-        return Component.literal(sourceName(value)).withStyle(style -> style.withColor(color));
+        return name(Component.literal(sourceName(value)), color);
+    }
+
+    private static Component name(Component value, int color) {
+        return value.copy().withStyle(style -> style.withColor(color));
     }
 
     public static void logRepeat(int count) {
