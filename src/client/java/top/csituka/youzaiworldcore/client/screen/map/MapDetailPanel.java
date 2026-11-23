@@ -34,9 +34,6 @@ import top.csituka.youzaiworldcore.map.MapWaypointGroup;
 import top.csituka.youzaiworldcore.network.*;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -61,7 +58,7 @@ final class MapDetailPanel extends AbstractContainerEventHandler implements Rend
     private final List<AbstractWidget> body = new ArrayList<>();
     private final List<Line> lines = new ArrayList<>();
     private int x, y, width, height, top, bottom, scroll, contentHeight;
-    private int colorPreviewY = -1;
+    private int pointLocationY = -1;
     private int creationLocationY = -1;
     private EditBox creationName;
     private TransparentButton createButton, createTrackButton;
@@ -90,7 +87,7 @@ final class MapDetailPanel extends AbstractContainerEventHandler implements Rend
             width = Math.min(screenWidth - 16, Math.max(180, screenWidth / 2));
             x = screenWidth - width - 8; y = 8; height = screenHeight - 16;
         }
-        top = y + (dialog && creating ? 48 : 38);
+        top = y + (dialog && creating ? 48 : dimensions ? 38 : 62);
         bottom = y + height - (dialog && creating ? 60 : 62);
         rebuild();
     }
@@ -108,7 +105,8 @@ final class MapDetailPanel extends AbstractContainerEventHandler implements Rend
     private void rebuild() {
         int focusedIndex = widgets.indexOf(getFocused());
         int cursor = creationName == null ? -1 : creationName.getCursorPosition();
-        setFocused(null); widgets.clear(); body.clear(); lines.clear(); colorPreviewY = -1;
+        setFocused(null); widgets.clear(); body.clear(); lines.clear();
+        pointLocationY = -1;
         creationLocationY = -1; creationName = null; createButton = null; createTrackButton = null;
         navigationButton = null; navigationSnapshot = MapClient.navigation();
         if (dialog && creating) {
@@ -159,11 +157,11 @@ final class MapDetailPanel extends AbstractContainerEventHandler implements Rend
         int gap = 10, colorWidth = Math.min(132, (inner - gap) / 2), groupX = left + colorWidth + gap;
         lines.add(new Line(MapTexts.text("color"), left, top + row - scroll, colorWidth));
         lines.add(new Line(MapTexts.text("group"), groupX, top + row - scroll, inner - colorWidth - gap));
-        var colorChoice = new CreationColorButton(left, top + row + 12 - scroll, colorWidth);
+        var colorChoice = new ColorChoiceButton(left, top + row + 12 - scroll, colorWidth, 26, false);
         colorChoice.active = !pending;
         widgets.add(colorChoice); body.add(colorChoice);
         MapGroupButton.selector(groupX, top + row + 12 - scroll, inner - colorWidth - gap, () -> group,
-                value -> group = value, choice -> {
+                value -> { group = value; rebuild(); }, choice -> {
                     choice.setHeight(26);
                     widgets.add(choice); body.add(choice);
                 }, !pending && point.kind() != MapWaypoint.Kind.DEATH);
@@ -195,20 +193,25 @@ final class MapDetailPanel extends AbstractContainerEventHandler implements Rend
     }
 
     /** 色块与编辑入口合为同一个命中区域，显示颜色值并保留完整提示。 */
-    private final class CreationColorButton extends TransparentButton {
-        CreationColorButton(int bx, int by, int bw) {
-            super(bx, by, bw, 26, Component.literal("#" + color), () ->
-                    Minecraft.getInstance().gui.setScreen(new MapWaypointColorScreen(owner,
-                            MapWaypointColors.parse(color), selected -> color = MapWaypointColors.hex(selected))));
+    private final class ColorChoiceButton extends TransparentButton {
+        ColorChoiceButton(int bx, int by, int bw, int bh, boolean markEditing) {
+            super(bx, by, bw, bh, Component.literal("#" + color), () -> {
+                int initial = previewColor();
+                Minecraft.getInstance().gui.setScreen(new MapWaypointColorScreen(owner, initial, selected -> {
+                    color = MapWaypointColors.hex(selected);
+                    if (markEditing) editing = true;
+                    rebuild();
+                }));
+            });
             setTextLeftAligned(true);
-            setTextInsets(28, 6);
+            setTextInsets(30, 6);
             setTrailingLineIcon(MenuIcon.CHEVRON_RIGHT);
             setTooltip(Tooltip.create(MapTexts.text("color").copy().append("  #" + color)));
         }
 
         @Override protected void extractWidgetRenderState(GuiGraphicsExtractor g, int mx, int my, float delta) {
             super.extractWidgetRenderState(g, mx, my, delta);
-            MapWaypointColors.render(g, MapWaypointColors.parse(color), getX() + 15, getY() + 13,
+            MapWaypointColors.render(g, previewColor(), getX() + 16, getY() + getHeight() / 2,
                     getAlpha() * externalAlpha());
         }
     }
@@ -242,99 +245,207 @@ final class MapDetailPanel extends AbstractContainerEventHandler implements Rend
     private boolean editable() {
         return anchor || !point.shared();
     }
+
+    /** 当前颜色的安全预览；草稿非法时回退到已保存颜色。 */
+    private int previewColor() {
+        try {
+            return MapWaypointColors.parse(color);
+        } catch (IllegalArgumentException ignored) {
+            return point.color();
+        }
+    }
+
+    private void copyCoordinate() {
+        Minecraft.getInstance().keyboardHandler.setClipboard(MapCoordinates.coordinate(point));
+        message = MapTexts.text("copied");
+        messageError = false;
+    }
+
+    private void createNoteField(int bx, int by, int bw, int bh) {
+        var description = MultiLineEditBox.builder().setX(bx).setY(by)
+                .setPlaceholder(MapTexts.text("private_description"))
+                .build(Minecraft.getInstance().font, bw, bh, MapTexts.text("private_description"));
+        description.setCharacterLimit(1024);
+        description.setValue(note);
+        description.setValueListener(value -> note = value);
+        description.active = !pending;
+        widgets.add(description); body.add(description);
+    }
+
+    /** 详情标题：颜色圆点、名称与「维度 · 类型」，编辑态直接反映草稿名称。 */
+    private void renderPointHeader(GuiGraphicsExtractor g) {
+        var font = Minecraft.getInstance().font;
+        int avatar = 34;
+        RoundedRect.fill(g, x + 12, y + 10, avatar, avatar, 10, YzuiTheme.primaryContainer());
+        MapWaypointColors.render(g, previewColor(), x + 12 + avatar / 2, y + 10 + avatar / 2, 1.0F);
+        Component displayName = Component.literal(editing && name != null && !name.isBlank() ? name : point.name());
+        YzuiTheme.label(g, font, displayName, x + 12 + avatar + 10, y + 12, width - avatar - 62,
+                YzuiTheme.text(), false);
+        Component subtitle = (editing ? MapTexts.text("edit_point")
+                : anchor ? Component.translatable("advancements.youzaiworldcore.youzaiworld.discover_teleport_anchor.title")
+                : MapTexts.text("private_point")).copy().append(" · ")
+                .append(MapTexts.dimension(point.dimension()));
+        YzuiTheme.label(g, font, subtitle, x + 12 + avatar + 10, y + 28, width - avatar - 62,
+                YzuiTheme.textMuted(), false);
+        g.fill(x + 12, top - 7, x + width - 12, top - 6, YzuiTheme.outlineVariant());
+    }
+
+    /** 只读位置卡片：维度与 XYZ 分栏，复制和分享作为卡片内图标按钮。 */
+    private void renderPointLocation(GuiGraphicsExtractor g) {
+        if (pointLocationY < 0) return;
+        int left = x + 12, inner = width - 24;
+        var font = Minecraft.getInstance().font;
+        RoundedRect.fill(g, left, pointLocationY, inner, 52, 8, YzuiTheme.surfaceLow());
+        MenuIcon.WORLD.render(g, left + 10, pointLocationY + 8, 12, YzuiTheme.textMuted());
+        YzuiTheme.label(g, font, MapTexts.dimension(point.dimension()), left + 28, pointLocationY + 10,
+                inner - 92, YzuiTheme.textMuted(), false);
+        int cell = (inner - 20) / 3;
+        String[] axes = { "X", "Y", "Z" };
+        int[] coordinates = { point.x(), point.y(), point.z() };
+        for (int index = 0; index < axes.length; index++) {
+            int column = left + 10 + index * cell;
+            if (index > 0) g.fill(column - 6, pointLocationY + 30, column - 5, pointLocationY + 41,
+                    YzuiTheme.alpha(YzuiTheme.outlineVariant(), 0.5F));
+            YzuiTheme.label(g, font, Component.literal(axes[index]), column, pointLocationY + 32, 10,
+                    YzuiTheme.textMuted(), false);
+            YzuiTheme.label(g, font, Component.literal(Integer.toString(coordinates[index])), column + 14,
+                    pointLocationY + 32, cell - 22, YzuiTheme.text(), false);
+        }
+    }
+
     private void buildPoint() {
-        int row = 0, inner = width - 24;
+        int left = x + 12, inner = width - 24, row = 0;
         if (editing) {
-            if (creating) {
-                lines.add(new Line(MapTexts.text("name"), x + 12, top + row + 6 - scroll, 50));
-                field(x + 68, top + row - scroll, inner - 56, "name", name, 64, value -> name = value).setEditable(!pending);
-            } else {
-                line(MapTexts.text("name"), row); row += 15;
-                field(x + 12, top + row - scroll, inner, "name", name, 64, value -> name = value).setEditable(editable() && !pending);
-            }
-            row += 28;
-        } else {
-            button(x + 12, top + row - scroll, inner - (anchor ? 52 : 78), MapTexts.waypoint(point).copy().append("  ✎"),
-                    () -> { editing = true; rebuild(); }, true).active = editable() && !pending;
-            button(x + width - 58, top + row - scroll, 46, MapTexts.text(confirmingDelete ? "confirm_delete" : "delete"), this::delete, true).active = editable() && !pending;
-            if (!anchor) button(x + width - 84, top + row - scroll, 22, Component.literal("↪"), () -> MapCoordinates.share(point), true)
-                    .setTooltip(Tooltip.create(MapTexts.text("share_chat")));
-            row += 29;
+            lines.add(new Line(MapTexts.text("name"), left, top + row - scroll, inner));
+            row += 15;
+            field(left, top + row - scroll, inner, "name", name, 64, value -> name = value)
+                    .setEditable(editable() && !pending);
+            row += 31;
         }
-        lines.add(new Line(Component.literal("X " + point.x() + "   Y " + point.y() + "   Z " + point.z()), x + 12, top + row + 6 - scroll, inner - 52));
-        button(x + width - 58, top + row - scroll, 46, MapTexts.text("copy"), () -> {
-            Minecraft.getInstance().keyboardHandler.setClipboard(MapCoordinates.coordinate(point)); message = MapTexts.text("copied");
-        }, true); row += 29;
-        line(MapTexts.dimension(point.dimension()), row); row += 20;
-        if (!creating) {
-            String date = point.createdAt() <= 0 ? "—" : DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm").withZone(ZoneId.systemDefault()).format(Instant.ofEpochMilli(point.createdAt()));
-            line(MapTexts.text("created_at").copy().append("  " + date), row); row += 24;
-        }
+
+        // ===== 只读位置卡片 =====
+        pointLocationY = top + row - scroll;
+        int icon = 22;
+        var copy = button(x + width - 12 - icon, pointLocationY + 4, icon, MapTexts.text("copy"),
+                this::copyCoordinate, true);
+        copy.setHeight(icon);
+        copy.setStyle(YzuiTheme.ButtonStyle.TEXT).setLineIcon(MenuIcon.COPY);
         if (!anchor) {
-            colorPreviewY = top + row + 10 - scroll;
-            lines.add(new Line(MapTexts.text("color"), x + 12, top + row + 6 - scroll, 34));
-            button(x + 68, top + row - scroll, inner - 56, Component.literal("#" + color + "  ✎"),
-                    () -> Minecraft.getInstance().gui.setScreen(new MapWaypointColorScreen(owner,
-                            MapWaypointColors.parse(color), selected -> {
-                                color = MapWaypointColors.hex(selected); editing = true;
-                            })), true).active = editable() && !pending;
-            row += 28;
-            int groupInset = creating ? 56 : 0;
-            if (creating) lines.add(new Line(MapTexts.text("group"), x + 12, top + row + 7 - scroll, 50));
-            else { line(MapTexts.text("group"), row); row += 15; }
-            row += MapGroupButton.selector(x + 12 + groupInset, top + row - scroll, inner - groupInset, () -> group, value -> {
-                group = value; editing = true;
-            }, icon -> { widgets.add(icon); body.add(icon); }, !pending && point.kind() != MapWaypoint.Kind.DEATH);
+            var share = button(x + width - 12 - icon * 2 - 4, pointLocationY + 4, icon,
+                    MapTexts.text("share_chat"), () -> MapCoordinates.share(point), true);
+            share.setHeight(icon);
+            share.setStyle(YzuiTheme.ButtonStyle.TEXT).setLineIcon(MenuIcon.SHARE);
+            share.active = !pending;
         }
-        if (creating) {
-            line(MapTexts.text("private_description"), row); row += 15;
-        } else {
-            line(MapTexts.text("private_description"), row + 6);
-            button(x + width - 36, top + row - scroll, 24, Component.literal(editingNote ? "✓" : "✎"), () -> {
-                if (editingNote && !MapPersonalData.note(point.id(), note)) { message = MapTexts.text("limit"); return; }
-                editingNote = !editingNote; rebuild();
-            }, true).active = !pending;
-            row += 28;
+        row += 62;
+
+        // ===== 编辑与删除 =====
+        if (!editing) {
+            int half = (inner - 6) / 2;
+            button(left, top + row - scroll, half, MapTexts.text("edit_point"),
+                    () -> { editing = true; rebuild(); }, true)
+                    .setStyle(YzuiTheme.ButtonStyle.TONAL).active = editable() && !pending;
+            button(left + half + 6, top + row - scroll, half,
+                    MapTexts.text(confirmingDelete ? "confirm_delete" : "delete"), this::delete, true)
+                    .setStyle(YzuiTheme.ButtonStyle.DANGER).active = editable() && !pending;
+            row += 32;
         }
-        int noteHeight = dialog ? Math.min(56, Math.max(36, (bottom - top) / 3))
-                : Math.min(140, Math.max(36, (bottom - top) / 2));
-        if (editingNote) {
-            var description = MultiLineEditBox.builder().setX(x + 12).setY(top + row - scroll)
-                    .setPlaceholder(MapTexts.text("private_description"))
-                    .build(Minecraft.getInstance().font, inner, noteHeight, MapTexts.text("private_description"));
-            description.setCharacterLimit(1024); description.setValue(note); description.setValueListener(value -> note = value);
-            description.active = !pending; widgets.add(description); body.add(description); row += noteHeight + 6;
+
+        // ===== 颜色与分组 =====
+        if (!anchor) {
+            int gap = 8, colorWidth = Math.min(124, (inner - gap) / 2), groupX = left + colorWidth + gap;
+            lines.add(new Line(MapTexts.text("color"), left, top + row - scroll, colorWidth));
+            lines.add(new Line(MapTexts.text("group"), groupX, top + row - scroll, inner - colorWidth - gap));
+            row += 14;
+            var colorChoice = new ColorChoiceButton(left, top + row - scroll, colorWidth, 26, editing);
+            colorChoice.active = editable() && !pending;
+            widgets.add(colorChoice); body.add(colorChoice);
+            MapGroupButton.selector(groupX, top + row - scroll, inner - colorWidth - gap, () -> group, value -> {
+                group = value; editing = true; rebuild();
+            }, choice -> { choice.setHeight(26); widgets.add(choice); body.add(choice); },
+                    editable() && !pending && point.kind() != MapWaypoint.Kind.DEATH);
+            row += 36;
+        }
+
+        // ===== 私人描述 =====
+        lines.add(new Line(MapTexts.text("private_description"), left, top + row + 7 - scroll, inner - 36));
+        if (!editing) {
+            var toggle = button(x + width - 12 - 24, top + row - scroll, 24,
+                    Component.literal(editingNote ? "✓" : "✎"), () -> {
+                        if (editingNote && !MapPersonalData.note(point.id(), note)) {
+                            message = MapTexts.text("limit"); return;
+                        }
+                        editingNote = !editingNote; rebuild();
+                    }, true);
+            toggle.setStyle(YzuiTheme.ButtonStyle.TEXT).active = !pending;
+        }
+        row += 30;
+        int noteHeight = Math.min(120, Math.max(48, (bottom - top) / 3));
+        if (editing || editingNote) {
+            createNoteField(left, top + row - scroll, inner, noteHeight);
+            row += noteHeight + 8;
         } else {
+            int noteY = top + row - scroll, cursor = noteY;
             for (String part : note.split("\\n", -1)) {
-                for (var text : Minecraft.getInstance().font.split(Component.literal(part), inner)) {
+                for (var text : Minecraft.getInstance().font.split(Component.literal(part), inner - 8)) {
                     var plain = new StringBuilder();
                     text.accept((index, style, codepoint) -> { plain.appendCodePoint(codepoint); return true; });
-                    line(Component.literal(plain.toString()), row); row += 12;
+                    lines.add(new Line(Component.literal(plain.toString()), left + 4, cursor, inner - 8));
+                    cursor += 11;
                 }
-                row += 4;
+                cursor += 3;
             }
-            row = Math.max(row, noteHeight);
+            var area = button(left, noteY, inner, noteHeight, Component.empty(),
+                    () -> { editingNote = true; rebuild(); }, true);
+            area.setStyle(YzuiTheme.ButtonStyle.TEXT);
+            area.setTooltip(Tooltip.create(MapTexts.text("private_description")));
+            row += Math.max(noteHeight, cursor - noteY) + 6;
         }
+
+        // ===== 锚点附加信息 =====
         if (anchor) {
-            row += 14;
+            row += 10;
             var player = Minecraft.getInstance().player;
-            int cost = player != null && player.getAbilities().instabuild ? 0 : point.dimension().equals(MapClient.dimension()) ? 1 : 2;
-            line(Component.translatable("screen.youzaiworldcore.teleport_anchor.cost_xp", cost), row); row += 20;
-            line(MapTexts.text("anchor_teleport_hint"), row); row += 24;
-            button(x + 12, top + row - scroll, inner, MapTexts.text("save_as_waypoint"), this::copyAsWaypoint, true); row += 28;
+            int cost = player != null && player.getAbilities().instabuild ? 0
+                    : point.dimension().equals(MapClient.dimension()) ? 1 : 2;
+            line(Component.translatable("screen.youzaiworldcore.teleport_anchor.cost_xp", cost), row); row += 18;
+            line(MapTexts.text("anchor_teleport_hint"), row); row += 22;
+            button(left, top + row - scroll, inner, MapTexts.text("save_as_waypoint"), this::copyAsWaypoint, true);
+            row += 28;
         }
         contentHeight = row;
+
+        // ===== 底部主操作 =====
         int footer = y + height - 32, half = (inner - 6) / 2;
         if (editing) {
-            button(x + 12, footer, half, MapTexts.text(creating ? "create" : "save"), () -> save(false), false).active = editable() && !pending;
-            button(x + 18 + half, footer, half, MapTexts.text(creating ? "create_track" : "cancel"), () -> {
-                if (creating) save(true); else { editing = false; name = MapTexts.waypoint(point).getString(); color = MapWaypointColors.hex(point.color()); group = MapPersonalData.groupOf(point); rebuild(); }
+            button(left, footer, half, MapTexts.text(creating ? "create" : "save"), () -> save(false), false)
+                    .setStyle(YzuiTheme.ButtonStyle.FILLED).active = editable() && !pending;
+            button(left + half + 6, footer, half, MapTexts.text(creating ? "create_track" : "cancel"), () -> {
+                if (creating) { save(true); return; }
+                editing = false; editingNote = false;
+                name = MapTexts.waypoint(point).getString();
+                color = MapWaypointColors.hex(point.color());
+                group = MapPersonalData.groupOf(point);
+                note = MapPersonalData.note(point.id());
+                rebuild();
             }, false).active = !pending;
         } else {
-            if (anchor) button(x + 12, footer, half, MapTexts.text("teleport"), this::teleport, false).active = !pending && (anchor || MapClient.session() != null && MapClient.session().allows(MapSessionPayload.TELEPORT));
-            navigationButton = button(anchor ? x + 18 + half : x + 12, footer, anchor ? half : inner, MapTexts.text(point.id().equals(MapClient.navigation()) ? "stop_navigation" : "navigate"), () -> {
-                MapClient.navigate(point.id().equals(MapClient.navigation()) ? null : point.id()); close();
-            }, false);
+            if (anchor) {
+                button(left, footer, half, MapTexts.text("teleport"), this::teleport, false)
+                        .setStyle(YzuiTheme.ButtonStyle.FILLED).active = !pending;
+                navigationButton = button(left + half + 6, footer, half,
+                        MapTexts.text(point.id().equals(MapClient.navigation()) ? "stop_navigation" : "navigate"),
+                        () -> {
+                            MapClient.navigate(point.id().equals(MapClient.navigation()) ? null : point.id()); close();
+                        }, false);
+            } else {
+                navigationButton = button(left, footer, inner,
+                        MapTexts.text(point.id().equals(MapClient.navigation()) ? "stop_navigation" : "navigate"),
+                        () -> {
+                            MapClient.navigate(point.id().equals(MapClient.navigation()) ? null : point.id()); close();
+                        }, false);
+                navigationButton.setStyle(YzuiTheme.ButtonStyle.FILLED);
+            }
         }
     }
 
@@ -414,17 +525,16 @@ final class MapDetailPanel extends AbstractContainerEventHandler implements Rend
         if (dialog) g.fill(0, 0, owner.width, owner.height, YzuiTheme.scrim());
         YzuiTheme.card(g, x, y, width, height);
         if (dialog && creating) renderCreationHeader(g);
-        else {
-            YzuiTheme.label(g, Minecraft.getInstance().font, MapTexts.text(dimensions ? "dimension" : creating ? "new_point" : "point_actions"), x + 12, y + 14, width - 48, YzuiTheme.text(), false);
+        else if (dimensions) {
+            YzuiTheme.label(g, Minecraft.getInstance().font, MapTexts.text("dimension"), x + 12, y + 14,
+                    width - 48, YzuiTheme.text(), false);
             g.fill(x + 12, top - 7, x + width - 12, top - 6, YzuiTheme.outlineVariant());
+        } else {
+            renderPointHeader(g);
         }
         g.enableScissor(x, top, x + width, bottom);
         if (creationLocationY >= 0) renderCreationLocation(g);
-        if (colorPreviewY >= 0) {
-            int preview = point.color();
-            try { preview = MapWaypointColors.parse(color); } catch (IllegalArgumentException ignored) { }
-            MapWaypointColors.render(g, preview, x + 54, colorPreviewY, 1.0F);
-        }
+        if (pointLocationY >= 0) renderPointLocation(g);
         for (var line : lines) YzuiTheme.label(g, Minecraft.getInstance().font, line.text, line.x, line.y, line.width,
                 dialog && creating ? YzuiTheme.textMuted() : YzuiTheme.text(), false);
         if (creationName != null) YzuiTheme.label(g, Minecraft.getInstance().font,

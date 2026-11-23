@@ -5,7 +5,7 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 /** 菜单的 16×16 线性图标；几何绘制跟随主题，不依赖字体符号或图片内文字。 */
 public enum MenuIcon {
     WORLD, MAIL, LEVEL, ACCOUNT, CROWN, SETTINGS, WEBSITE, BOOK, EVENTS, SURVEY, REPORT, ADMIN,
-    HOME, GAME, BUILD, COMMAND, PORTAL, CLOSE, BACK, MAP, EXIT, CHEVRON_LEFT, CHEVRON_RIGHT, COPY;
+    HOME, GAME, BUILD, COMMAND, PORTAL, CLOSE, BACK, MAP, EXIT, CHEVRON_LEFT, CHEVRON_RIGHT, COPY, SHARE;
 
     /** 在按钮区域内居中绘制线条图标，保留窄小翻页按钮的边距。 */
     public void renderCentered(GuiGraphicsExtractor g, int x, int y, int width, int height, int color) {
@@ -37,6 +37,13 @@ public enum MenuIcon {
                 line(g, x, y, 2, 2, 10, 2, color);
                 line(g, x, y, 10, 2, 10, 3, color);
                 line(g, x, y, 2, 10, 3, 10, color);
+            }
+            case SHARE -> {
+                box(g, x, y, 1, 5, 4, 4, color);
+                box(g, x, y, 11, 1, 4, 4, color);
+                box(g, x, y, 11, 11, 4, 4, color);
+                line(g, x, y, 6, 6, 11, 4, color);
+                line(g, x, y, 6, 10, 11, 12, color);
             }
             case CHEVRON_LEFT -> {
                 line(g, x, y, 10, 3, 5, 8, color);

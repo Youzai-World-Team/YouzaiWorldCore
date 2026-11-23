@@ -13,8 +13,9 @@ import top.csituka.youzaiworldcore.client.map.MapCoordinates;
 import top.csituka.youzaiworldcore.client.map.MapGroupIcons;
 import top.csituka.youzaiworldcore.client.map.MapPersonalData;
 import top.csituka.youzaiworldcore.client.map.MapTexts;
-import top.csituka.youzaiworldcore.client.render.YzuiTheme;
 import top.csituka.youzaiworldcore.client.render.MenuIcon;
+import top.csituka.youzaiworldcore.client.render.RoundedRect;
+import top.csituka.youzaiworldcore.client.render.YzuiTheme;
 import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
 import top.csituka.youzaiworldcore.map.MapWaypoint;
 import top.csituka.youzaiworldcore.map.MapWaypointGroup;
@@ -207,25 +208,53 @@ final class MapWaypointPanel extends MapOverlayPanel {
         owner.openPoint(point, true);
     }
     private void buildActions() {
-        var point = selectedPoint(); int cell = (panelWidth - 30) / 2, y = panelY + 60;
-        var privatePoints = privateMatches(); int index = privatePoints.indexOf(point); var session = MapClient.session();
-        action(0, y, cell, "locate", () -> owner.locatePoint(point), true);
-        action(1, y, cell, point.id().equals(MapClient.navigation()) ? "stop_navigation" : "navigate", () -> { MapClient.navigate(point.id().equals(MapClient.navigation()) ? null : point.id()); init(); }, true);
-        action(2, y, cell, "teleport", () -> request(MapActionPayload.Action.TELEPORT, point), session != null && session.allows(MapSessionPayload.TELEPORT));
-        action(3, y, cell, "copy", () -> { Minecraft.getInstance().keyboardHandler.setClipboard(MapCoordinates.coordinate(point)); error = MapTexts.text("copied"); }, true);
-        action(4, y, cell, "share_chat", () -> MapCoordinates.share(point), true);
-        action(5, y, cell, point.enabled() ? "hide_point" : "show_point", () -> { MapPersonalData.put(point.withEnabled(!point.enabled())); init(); }, !MapClient.isAnchor(point));
-        action(6, y, cell, "move_up", () -> { MapPersonalData.swap(point.id(), privatePoints.get(index - 1).id()); init(); }, index > 0);
-        action(7, y, cell, "move_down", () -> { MapPersonalData.swap(point.id(), privatePoints.get(index + 1).id()); init(); }, index >= 0 && index + 1 < privatePoints.size());
-        action(8, y, cell, "edit_point", () -> owner.openPoint(point, false), editable(point));
-        action(9, y, cell, deleteArmed ? "confirm_delete" : "delete", () -> {
+        var point = selectedPoint();
+        if (point == null) { view = View.LIST; return; }
+        var privatePoints = privateMatches();
+        int index = privatePoints.indexOf(point);
+        var session = MapClient.session();
+        record Entry(String key, Runnable action, boolean enabled, YzuiTheme.ButtonStyle style) { }
+        var entries = new ArrayList<Entry>();
+        entries.add(new Entry("locate", () -> owner.locatePoint(point), true, YzuiTheme.ButtonStyle.TONAL));
+        entries.add(new Entry(point.id().equals(MapClient.navigation()) ? "stop_navigation" : "navigate",
+                () -> { MapClient.navigate(point.id().equals(MapClient.navigation()) ? null : point.id()); init(); },
+                true, YzuiTheme.ButtonStyle.FILLED));
+        entries.add(new Entry("teleport", () -> request(MapActionPayload.Action.TELEPORT, point),
+                session != null && session.allows(MapSessionPayload.TELEPORT), YzuiTheme.ButtonStyle.TONAL));
+        entries.add(new Entry("copy", () -> {
+            Minecraft.getInstance().keyboardHandler.setClipboard(MapCoordinates.coordinate(point));
+            error = MapTexts.text("copied");
+        }, true, YzuiTheme.ButtonStyle.TONAL));
+        entries.add(new Entry("share_chat", () -> MapCoordinates.share(point), true, YzuiTheme.ButtonStyle.TONAL));
+        entries.add(new Entry(point.enabled() ? "hide_point" : "show_point", () -> {
+            MapPersonalData.put(point.withEnabled(!point.enabled())); init();
+        }, !MapClient.isAnchor(point), YzuiTheme.ButtonStyle.TONAL));
+        entries.add(new Entry("move_up", () -> {
+            MapPersonalData.swap(point.id(), privatePoints.get(index - 1).id()); init();
+        }, index > 0, YzuiTheme.ButtonStyle.TEXT));
+        entries.add(new Entry("move_down", () -> {
+            MapPersonalData.swap(point.id(), privatePoints.get(index + 1).id()); init();
+        }, index >= 0 && index + 1 < privatePoints.size(), YzuiTheme.ButtonStyle.TEXT));
+        entries.add(new Entry("edit_point", () -> owner.openPoint(point, false), editable(point),
+                YzuiTheme.ButtonStyle.TONAL));
+        entries.add(new Entry(deleteArmed ? "confirm_delete" : "delete", () -> {
             if (!deleteArmed) { deleteArmed = true; init(); return; }
             MapPersonalData.remove(point.id()); selected = null; view = View.LIST; init();
-        }, editable(point));
+        }, editable(point), YzuiTheme.ButtonStyle.DANGER));
+
+        int columns = compact ? 3 : 2, gap = 6, rowHeight = compact ? 22 : 24, rowGap = compact ? 4 : 6;
+        int cell = Math.max(40, (panelWidth - 30 - gap * (columns - 1)) / columns);
+        int top = panelY + (compact ? 76 : 92);
+        for (int i = 0; i < entries.size(); i++) {
+            var entry = entries.get(i);
+            var button = control(panelX + 12 + i % columns * (cell + gap),
+                    top + i / columns * (rowHeight + rowGap), cell, MapTexts.text(entry.key()),
+                    entry.key(), entry.action());
+            button.setHeight(rowHeight);
+            button.setStyle(entry.style());
+            button.active = entry.enabled() && !pending;
+        }
         button(panelX + 12, footer, panelWidth - 24, MapTexts.text("manager_back"), () -> { view = View.LIST; init(); });
-    }
-    private void action(int index, int y, int width, String key, Runnable run, boolean enabled) {
-        var button = control(panelX + 12 + index % 2 * (width + 6), y + index / 2 * 23, width, MapTexts.text(key), key, run); button.active = enabled && !pending;
     }
     private boolean editable(MapWaypoint point) {
         return !MapClient.isAnchor(point);
@@ -244,12 +273,31 @@ final class MapWaypointPanel extends MapOverlayPanel {
             if (view == View.LIST) refresh(); else { dirty = false; init(); }
         }
     }
+    private void renderActionHeader(GuiGraphicsExtractor g, MapWaypoint point) {
+        int left = panelX + 12, w = panelWidth - 24, top = panelY + (compact ? 32 : 34), h = compact ? 38 : 52;
+        RoundedRect.fill(g, left, top, w, h, 10, YzuiTheme.surfaceLow());
+        g.fill(left + 8, top + 9, left + 11, top + h - 9, point.color());
+        YzuiTheme.label(g, font, MapTexts.waypoint(point), left + 20, top + (compact ? 6 : 7), w - 32,
+                YzuiTheme.text(), false);
+        YzuiTheme.label(g, font, Component.literal("X " + point.x() + "  Y " + point.y() + "  Z " + point.z()),
+                left + 20, top + (compact ? 21 : 22), w - 32, YzuiTheme.textMuted(), false);
+        if (!compact) {
+            var group = MapPersonalData.groupOf(point);
+            MapGroupIcons.render(g, group, left + 20, top + 36, 10, YzuiTheme.textMuted());
+            YzuiTheme.label(g, font, MapGroupIcons.label(group), left + 33, top + 37, w - 45,
+                    YzuiTheme.textMuted(), false);
+        }
+    }
     @Override protected void content(GuiGraphicsExtractor g, int mx, int my, float delta) {
         if (view == View.CATEGORY) {
             label(g, MapTexts.text("rename_group"), panelX + 12, panelY + 42, panelWidth - 24);
             label(g, MapTexts.text("waypoints_group_scope", groupableMatches().size()), panelX + 12, panelY + 58, panelWidth - 24); return;
         }
-        if (view == View.ACTIONS) { var point = selectedPoint(); if (point != null) label(g, MapTexts.waypoint(point), panelX + 12, panelY + 42, panelWidth - 24); return; }
+        if (view == View.ACTIONS) {
+            var point = selectedPoint();
+            if (point != null) renderActionHeader(g, point);
+            return;
+        }
         label(g, MapTexts.text("group"), treeX + 4, listTop - 24, sidebar - 60);
         g.fill(listX - 8, panelY + 36, listX - 7, footer + 22, YzuiTheme.outlineVariant());
         if (treeCount > treeCapacity) {
