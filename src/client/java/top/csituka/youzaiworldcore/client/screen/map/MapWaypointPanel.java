@@ -17,10 +17,10 @@ import top.csituka.youzaiworldcore.client.render.MenuIcon;
 import top.csituka.youzaiworldcore.client.render.RoundedRect;
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
 import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
+import top.csituka.youzaiworldcore.client.screen.widget.YzuiCloseButton;
 import top.csituka.youzaiworldcore.map.MapWaypoint;
 import top.csituka.youzaiworldcore.map.MapWaypointGroup;
 import top.csituka.youzaiworldcore.network.MapActionPayload;
-import top.csituka.youzaiworldcore.network.MapSessionPayload;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -70,7 +70,7 @@ final class MapWaypointPanel extends MapOverlayPanel {
         footer = panelY + panelHeight - 32; snapshot = MapClient.waypoints();
         groupSnapshot = MapPersonalData.groups(); group = MapPersonalData.resolveGroup(group.id());
         if (view == View.ACTIONS && selectedPoint() == null) view = View.LIST;
-        control(panelX + panelWidth - 32, panelY + 7, 22, Component.literal("×"), "done", this::onClose);
+        addRenderableWidget(new YzuiCloseButton(panelX + panelWidth - 32, panelY + 7, 22, this::onClose));
         if (view == View.CATEGORY) { buildCategory(); return; }
         if (view == View.ACTIONS) { buildActions(); return; }
         sidebar = Math.clamp((panelWidth - 24) / 3, 116, 260);
@@ -212,32 +212,35 @@ final class MapWaypointPanel extends MapOverlayPanel {
         if (point == null) { view = View.LIST; return; }
         var privatePoints = privateMatches();
         int index = privatePoints.indexOf(point);
-        var session = MapClient.session();
-        record Entry(String key, Runnable action, boolean enabled, YzuiTheme.ButtonStyle style) { }
+        record Entry(String key, MenuIcon icon, Runnable action, boolean enabled, YzuiTheme.ButtonStyle style) { }
         var entries = new ArrayList<Entry>();
-        entries.add(new Entry("locate", () -> owner.locatePoint(point), true, YzuiTheme.ButtonStyle.TONAL));
+        entries.add(new Entry("locate", MenuIcon.TARGET, () -> owner.locatePoint(point), true, YzuiTheme.ButtonStyle.TONAL));
         entries.add(new Entry(point.id().equals(MapClient.navigation()) ? "stop_navigation" : "navigate",
+                point.id().equals(MapClient.navigation()) ? MenuIcon.STOP : MenuIcon.NAVIGATE,
                 () -> { MapClient.navigate(point.id().equals(MapClient.navigation()) ? null : point.id()); init(); },
                 true, YzuiTheme.ButtonStyle.FILLED));
-        entries.add(new Entry("teleport", () -> request(MapActionPayload.Action.TELEPORT, point),
-                session != null && session.allows(MapSessionPayload.TELEPORT), YzuiTheme.ButtonStyle.TONAL));
-        entries.add(new Entry("copy", () -> {
+        // 无传送权限时直接不生成按钮，避免留下永远禁用的入口。
+        if (MapClient.canTeleport())
+            entries.add(new Entry("teleport", MenuIcon.PORTAL, () -> request(MapActionPayload.Action.TELEPORT, point),
+                    true, YzuiTheme.ButtonStyle.TONAL));
+        entries.add(new Entry("copy", MenuIcon.COPY, () -> {
             Minecraft.getInstance().keyboardHandler.setClipboard(MapCoordinates.coordinate(point));
             error = MapTexts.text("copied");
         }, true, YzuiTheme.ButtonStyle.TONAL));
-        entries.add(new Entry("share_chat", () -> MapCoordinates.share(point), true, YzuiTheme.ButtonStyle.TONAL));
-        entries.add(new Entry(point.enabled() ? "hide_point" : "show_point", () -> {
+        entries.add(new Entry("share_chat", MenuIcon.SHARE, () -> MapCoordinates.share(point), true, YzuiTheme.ButtonStyle.TONAL));
+        entries.add(new Entry(point.enabled() ? "hide_point" : "show_point",
+                point.enabled() ? MenuIcon.EYE_OFF : MenuIcon.EYE, () -> {
             MapPersonalData.put(point.withEnabled(!point.enabled())); init();
         }, !MapClient.isAnchor(point), YzuiTheme.ButtonStyle.TONAL));
-        entries.add(new Entry("move_up", () -> {
+        entries.add(new Entry("move_up", MenuIcon.ARROW_UP, () -> {
             MapPersonalData.swap(point.id(), privatePoints.get(index - 1).id()); init();
         }, index > 0, YzuiTheme.ButtonStyle.TEXT));
-        entries.add(new Entry("move_down", () -> {
+        entries.add(new Entry("move_down", MenuIcon.ARROW_DOWN, () -> {
             MapPersonalData.swap(point.id(), privatePoints.get(index + 1).id()); init();
         }, index >= 0 && index + 1 < privatePoints.size(), YzuiTheme.ButtonStyle.TEXT));
-        entries.add(new Entry("edit_point", () -> owner.openPoint(point, false), editable(point),
+        entries.add(new Entry("edit_point", MenuIcon.EDIT, () -> owner.openPoint(point, false), editable(point),
                 YzuiTheme.ButtonStyle.TONAL));
-        entries.add(new Entry(deleteArmed ? "confirm_delete" : "delete", () -> {
+        entries.add(new Entry(deleteArmed ? "confirm_delete" : "delete", MenuIcon.TRASH, () -> {
             if (!deleteArmed) { deleteArmed = true; init(); return; }
             MapPersonalData.remove(point.id()); selected = null; view = View.LIST; init();
         }, editable(point), YzuiTheme.ButtonStyle.DANGER));
@@ -252,9 +255,11 @@ final class MapWaypointPanel extends MapOverlayPanel {
                     entry.key(), entry.action());
             button.setHeight(rowHeight);
             button.setStyle(entry.style());
+            button.setLeadingLineIcon(entry.icon());
             button.active = entry.enabled() && !pending;
         }
-        button(panelX + 12, footer, panelWidth - 24, MapTexts.text("manager_back"), () -> { view = View.LIST; init(); });
+        button(panelX + 12, footer, panelWidth - 24, MapTexts.text("manager_back"), () -> { view = View.LIST; init(); })
+                .setLeadingLineIcon(MenuIcon.BACK);
     }
     private boolean editable(MapWaypoint point) {
         return !MapClient.isAnchor(point);
@@ -335,7 +340,7 @@ final class MapWaypointPanel extends MapOverlayPanel {
             boolean chosen = dimension.equals(branch.dimension()) && filter == branch.filter() && group.equals(branch.group());
             var style = chosen ? YzuiTheme.ButtonStyle.FILLED : YzuiTheme.ButtonStyle.TEXT;
             int x = getX(), y = getY(), indent = branch.root() ? 0 : 20;
-            YzuiTheme.button(g, x + indent, y + 1, getWidth() - indent, 22, isMouseOver(mx, my) ? 1 : 0, isFocused(), true, 1, style);
+            YzuiTheme.button(g, x + indent, y, getWidth() - indent, getHeight(), isMouseOver(mx, my) ? 1 : 0, isFocused(), true, 1, style);
             int lineColor = YzuiTheme.textMuted(), textColor = chosen ? YzuiTheme.onPrimary() : YzuiTheme.text();
             if (branch.root()) {
                 boolean open = expanded.contains(branch.dimension());

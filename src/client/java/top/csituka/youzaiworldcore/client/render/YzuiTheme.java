@@ -342,7 +342,7 @@ public final class YzuiTheme {
         g.text(font, shaded, textX, textY, multiplyAlpha(color, opacity), true);
     }
 
-    /** 圆角描边只绘制边缘，不反复覆盖半透明卡片内部。 */
+    /** 圆角描边只绘制边缘，不反复覆盖半透明卡片内部；圆角外沿与填充轮廓逐像素对齐。 */
     public static void border(GuiGraphicsExtractor g, int x, int y, int w, int h, int radius, int color) {
         if (w < 2 || h < 2)
             return;
@@ -356,8 +356,9 @@ public final class YzuiTheme {
         g.fill(x, y + r, x + 1, y + h - r, color);
         g.fill(x + w - 1, y + r, x + w, y + h - r, color);
         for (int row = 0; row < r; row++) {
-            int inset = r - (int) Math.sqrt(r * r - (r - row - 1) * (r - row - 1));
-            int nextInset = row == 0 ? r : r - (int) Math.sqrt(r * r - (r - row) * (r - row));
+            // 与 RoundedRect.fill 共用跨度表：描边落在填充的最外侧像素上，左右两侧不留缝。
+            int inset = r - RoundedRect.cornerSpan(r, r - 1 - row);
+            int nextInset = row == r - 1 ? 0 : row == 0 ? r : r - RoundedRect.cornerSpan(r, r - 2 - row);
             int thickness = Math.max(1, nextInset - inset);
             g.fill(x + inset, y + row, x + inset + thickness, y + row + 1, color);
             g.fill(x + w - inset - thickness, y + row, x + w - inset, y + row + 1, color);

@@ -9,7 +9,6 @@ import top.csituka.youzaiworldcore.client.map.MapTexts;
 import top.csituka.youzaiworldcore.client.map.MapCoordinates;
 import top.csituka.youzaiworldcore.map.MapWaypoint;
 import top.csituka.youzaiworldcore.network.MapActionPayload;
-import top.csituka.youzaiworldcore.network.MapSessionPayload;
 
 /** 本人路径点动作页，提供本机编辑、聊天分享和受权限约束的传送。 */
 public final class MapWaypointActionsScreen extends MapScreen {
@@ -44,10 +43,10 @@ public final class MapWaypointActionsScreen extends MapScreen {
             MapPersonalData.put(point.withEnabled(!point.enabled()));
             onClose();
         }).active = !MapClient.isAnchor(point);
-        var session = MapClient.session();
-        button(x, y + 84, w * 2 + 8, MapTexts.text("teleport"),
-                () -> action(MapActionPayload.Action.TELEPORT)).active = session != null
-                        && session.allows(MapSessionPayload.TELEPORT) && !pending;
+        // 无传送权限时不创建按钮，页面只保留其它可用操作。
+        if (MapClient.canTeleport())
+            button(x, y + 84, w * 2 + 8, MapTexts.text("teleport"),
+                    () -> action(MapActionPayload.Action.TELEPORT)).active = !pending;
         button(x, panelY + panelHeight - 34, w, MapTexts.text("delete"), () -> {
             MapPersonalData.remove(point.id());
             onClose();

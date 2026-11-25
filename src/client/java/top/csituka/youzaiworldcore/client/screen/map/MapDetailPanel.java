@@ -116,7 +116,7 @@ final class MapDetailPanel extends AbstractContainerEventHandler implements Rend
             widgets.add(new YzuiCloseButton(x + width - 40, y + 12, 24, MapTexts.text("cancel"), this::close));
             buildCreation();
         } else {
-            button(x + width - 32, y + 7, 22, Component.literal("×"), this::close, false);
+            widgets.add(new YzuiCloseButton(x + width - 32, y + 7, 22, this::close));
             if (dimensions) buildDimensions(); else buildPoint();
         }
         int maxScroll = Math.max(0, contentHeight - (bottom - top));
@@ -183,9 +183,10 @@ final class MapDetailPanel extends AbstractContainerEventHandler implements Rend
         int half = (inner - 8) / 2, footer = y + height - 38;
         createTrackButton = button(left, footer, half, MapTexts.text("create_track"), () -> save(true), false);
         createTrackButton.setHeight(26);
+        createTrackButton.setLeadingLineIcon(MenuIcon.ROUTE);
         createButton = button(left + half + 8, footer, inner - half - 8, MapTexts.text("create"), () -> save(false), false);
         createButton.setHeight(26);
-        createButton.setStyle(YzuiTheme.ButtonStyle.FILLED);
+        createButton.setStyle(YzuiTheme.ButtonStyle.FILLED).setLeadingLineIcon(MenuIcon.PLUS);
         updateCreationActions();
     }
 
@@ -347,10 +348,12 @@ final class MapDetailPanel extends AbstractContainerEventHandler implements Rend
             int half = (inner - 6) / 2;
             button(left, top + row - scroll, half, MapTexts.text("edit_point"),
                     () -> { editing = true; rebuild(); }, true)
-                    .setStyle(YzuiTheme.ButtonStyle.TONAL).active = editable() && !pending;
+                    .setStyle(YzuiTheme.ButtonStyle.TONAL).setLeadingLineIcon(MenuIcon.EDIT)
+                    .active = editable() && !pending;
             button(left + half + 6, top + row - scroll, half,
                     MapTexts.text(confirmingDelete ? "confirm_delete" : "delete"), this::delete, true)
-                    .setStyle(YzuiTheme.ButtonStyle.DANGER).active = editable() && !pending;
+                    .setStyle(YzuiTheme.ButtonStyle.DANGER).setLeadingLineIcon(MenuIcon.TRASH)
+                    .active = editable() && !pending;
             row += 32;
         }
 
@@ -374,13 +377,15 @@ final class MapDetailPanel extends AbstractContainerEventHandler implements Rend
         lines.add(new Line(MapTexts.text("private_description"), left, top + row + 7 - scroll, inner - 36));
         if (!editing) {
             var toggle = button(x + width - 12 - 24, top + row - scroll, 24,
-                    Component.literal(editingNote ? "✓" : "✎"), () -> {
+                    MapTexts.text(editingNote ? "save" : "private_description"), () -> {
                         if (editingNote && !MapPersonalData.note(point.id(), note)) {
                             message = MapTexts.text("limit"); return;
                         }
                         editingNote = !editingNote; rebuild();
                     }, true);
-            toggle.setStyle(YzuiTheme.ButtonStyle.TEXT).active = !pending;
+            toggle.setStyle(YzuiTheme.ButtonStyle.TEXT)
+                    .setLineIcon(editingNote ? MenuIcon.CHECK : MenuIcon.EDIT)
+                    .active = !pending;
         }
         row += 30;
         int noteHeight = Math.min(120, Math.max(48, (bottom - top) / 3));
@@ -413,7 +418,8 @@ final class MapDetailPanel extends AbstractContainerEventHandler implements Rend
                     : point.dimension().equals(MapClient.dimension()) ? 1 : 2;
             line(Component.translatable("screen.youzaiworldcore.teleport_anchor.cost_xp", cost), row); row += 18;
             line(MapTexts.text("anchor_teleport_hint"), row); row += 22;
-            button(left, top + row - scroll, inner, MapTexts.text("save_as_waypoint"), this::copyAsWaypoint, true);
+            button(left, top + row - scroll, inner, MapTexts.text("save_as_waypoint"), this::copyAsWaypoint, true)
+                    .setLeadingLineIcon(MenuIcon.PIN);
             row += 28;
         }
         contentHeight = row;
@@ -422,7 +428,9 @@ final class MapDetailPanel extends AbstractContainerEventHandler implements Rend
         int footer = y + height - 32, half = (inner - 6) / 2;
         if (editing) {
             button(left, footer, half, MapTexts.text(creating ? "create" : "save"), () -> save(false), false)
-                    .setStyle(YzuiTheme.ButtonStyle.FILLED).active = editable() && !pending;
+                    .setStyle(YzuiTheme.ButtonStyle.FILLED)
+                    .setLeadingLineIcon(creating ? MenuIcon.PLUS : MenuIcon.CHECK)
+                    .active = editable() && !pending;
             button(left + half + 6, footer, half, MapTexts.text(creating ? "create_track" : "cancel"), () -> {
                 if (creating) { save(true); return; }
                 editing = false; editingNote = false;
@@ -431,22 +439,25 @@ final class MapDetailPanel extends AbstractContainerEventHandler implements Rend
                 group = MapPersonalData.groupOf(point);
                 note = MapPersonalData.note(point.id());
                 rebuild();
-            }, false).active = !pending;
+            }, false).setLeadingLineIcon(creating ? MenuIcon.ROUTE : MenuIcon.CLOSE).active = !pending;
         } else {
             if (anchor) {
                 button(left, footer, half, MapTexts.text("teleport"), this::teleport, false)
-                        .setStyle(YzuiTheme.ButtonStyle.FILLED).active = !pending;
+                        .setStyle(YzuiTheme.ButtonStyle.FILLED).setLeadingLineIcon(MenuIcon.TARGET)
+                        .active = !pending;
                 navigationButton = button(left + half + 6, footer, half,
                         MapTexts.text(point.id().equals(MapClient.navigation()) ? "stop_navigation" : "navigate"),
                         () -> {
                             MapClient.navigate(point.id().equals(MapClient.navigation()) ? null : point.id()); close();
-                        }, false);
+                        }, false)
+                        .setLeadingLineIcon(point.id().equals(MapClient.navigation()) ? MenuIcon.STOP : MenuIcon.NAVIGATE);
             } else {
                 navigationButton = button(left, footer, inner,
                         MapTexts.text(point.id().equals(MapClient.navigation()) ? "stop_navigation" : "navigate"),
                         () -> {
                             MapClient.navigate(point.id().equals(MapClient.navigation()) ? null : point.id()); close();
-                        }, false);
+                        }, false)
+                        .setLeadingLineIcon(point.id().equals(MapClient.navigation()) ? MenuIcon.STOP : MenuIcon.NAVIGATE);
                 navigationButton.setStyle(YzuiTheme.ButtonStyle.FILLED);
             }
         }
@@ -459,6 +470,7 @@ final class MapDetailPanel extends AbstractContainerEventHandler implements Rend
         var label = MapTexts.text(point.id().equals(navigationSnapshot) ? "stop_navigation" : "navigate");
         navigationButton.setMessage(label);
         navigationButton.setTooltip(Tooltip.create(label));
+        navigationButton.setLeadingLineIcon(point.id().equals(navigationSnapshot) ? MenuIcon.STOP : MenuIcon.NAVIGATE);
     }
     private MapWaypoint changed() {
         return new MapWaypoint(point.id(), point.owner(), name, point.kind() == MapWaypoint.Kind.DEATH ? MapWaypointGroup.DEATH.id() : group.id(), point.dimension(), point.x(), point.y(), point.z(),

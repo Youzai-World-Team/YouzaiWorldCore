@@ -5,7 +5,8 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 /** 菜单的 16×16 线性图标；几何绘制跟随主题，不依赖字体符号或图片内文字。 */
 public enum MenuIcon {
     WORLD, MAIL, LEVEL, ACCOUNT, CROWN, SETTINGS, WEBSITE, BOOK, EVENTS, SURVEY, REPORT, ADMIN,
-    HOME, GAME, BUILD, COMMAND, PORTAL, CLOSE, BACK, MAP, EXIT, CHEVRON_LEFT, CHEVRON_RIGHT, COPY, SHARE;
+    HOME, GAME, BUILD, COMMAND, PORTAL, CLOSE, BACK, MAP, EXIT, CHEVRON_LEFT, CHEVRON_RIGHT, COPY, SHARE,
+    EDIT, TRASH, CHECK, PLUS, PIN, ROUTE, TARGET, NAVIGATE, STOP, EYE, EYE_OFF, ARROW_UP, ARROW_DOWN;
 
     /** 在按钮区域内居中绘制线条图标，保留窄小翻页按钮的边距。 */
     public void renderCentered(GuiGraphicsExtractor g, int x, int y, int width, int height, int color) {
@@ -44,6 +45,97 @@ public enum MenuIcon {
                 box(g, x, y, 11, 11, 4, 4, color);
                 line(g, x, y, 6, 6, 11, 4, color);
                 line(g, x, y, 6, 10, 11, 12, color);
+            }
+            case EDIT -> {
+                line(g, x, y, 3, 13, 11, 5, color);
+                line(g, x, y, 5, 15, 13, 7, color);
+                line(g, x, y, 3, 13, 5, 15, color);
+                line(g, x, y, 11, 5, 13, 7, color);
+                line(g, x, y, 1, 15, 3, 13, color);
+                line(g, x, y, 12, 4, 14, 6, color);
+            }
+            case TRASH -> {
+                line(g, x, y, 2, 4, 14, 4, color);
+                line(g, x, y, 6, 2, 10, 2, color);
+                line(g, x, y, 6, 2, 6, 4, color);
+                line(g, x, y, 10, 2, 10, 4, color);
+                line(g, x, y, 4, 5, 4, 14, color);
+                line(g, x, y, 12, 5, 12, 14, color);
+                line(g, x, y, 4, 14, 12, 14, color);
+                line(g, x, y, 7, 7, 7, 12, color);
+                line(g, x, y, 9, 7, 9, 12, color);
+            }
+            case CHECK -> {
+                line(g, x, y, 2, 8, 6, 12, color);
+                line(g, x, y, 6, 12, 14, 4, color);
+                line(g, x, y, 3, 8, 6, 11, color);
+                line(g, x, y, 6, 11, 13, 4, color);
+            }
+            case PLUS -> {
+                line(g, x, y, 7, 2, 7, 13, color);
+                line(g, x, y, 8, 2, 8, 13, color);
+                line(g, x, y, 2, 7, 13, 7, color);
+                line(g, x, y, 2, 8, 13, 8, color);
+            }
+            case PIN -> {
+                box(g, x, y, 5, 2, 6, 6, color);
+                line(g, x, y, 5, 8, 8, 14, color);
+                line(g, x, y, 11, 8, 8, 14, color);
+                box(g, x, y, 7, 4, 2, 2, color);
+            }
+            case ROUTE -> {
+                box(g, x, y, 2, 2, 2, 2, color);
+                line(g, x, y, 5, 5, 6, 6, color);
+                box(g, x, y, 7, 7, 2, 2, color);
+                line(g, x, y, 10, 10, 11, 11, color);
+                box(g, x, y, 12, 12, 2, 2, color);
+            }
+            case TARGET -> {
+                box(g, x, y, 3, 3, 10, 10, color);
+                box(g, x, y, 6, 6, 4, 4, color);
+                line(g, x, y, 8, 0, 8, 2, color);
+                line(g, x, y, 8, 13, 8, 15, color);
+                line(g, x, y, 0, 8, 2, 8, color);
+                line(g, x, y, 13, 8, 15, 8, color);
+            }
+            case NAVIGATE -> {
+                line(g, x, y, 1, 7, 14, 1, color);
+                line(g, x, y, 14, 1, 9, 15, color);
+                line(g, x, y, 9, 15, 7, 9, color);
+                line(g, x, y, 7, 9, 1, 7, color);
+                line(g, x, y, 7, 9, 14, 1, color);
+            }
+            case STOP -> g.fill(x + 4, y + 4, x + 12, y + 12, color);
+            case EYE -> {
+                line(g, x, y, 1, 8, 4, 4, color);
+                line(g, x, y, 4, 4, 12, 4, color);
+                line(g, x, y, 12, 4, 15, 8, color);
+                line(g, x, y, 15, 8, 12, 12, color);
+                line(g, x, y, 12, 12, 4, 12, color);
+                line(g, x, y, 4, 12, 1, 8, color);
+                box(g, x, y, 6, 6, 4, 4, color);
+            }
+            case EYE_OFF -> {
+                line(g, x, y, 1, 8, 4, 4, color);
+                line(g, x, y, 4, 4, 12, 4, color);
+                line(g, x, y, 12, 4, 15, 8, color);
+                line(g, x, y, 15, 8, 12, 12, color);
+                line(g, x, y, 12, 12, 4, 12, color);
+                line(g, x, y, 4, 12, 1, 8, color);
+                line(g, x, y, 2, 2, 14, 14, color);
+                line(g, x, y, 3, 2, 14, 13, color);
+            }
+            case ARROW_UP -> {
+                line(g, x, y, 8, 2, 3, 7, color);
+                line(g, x, y, 8, 2, 13, 7, color);
+                line(g, x, y, 7, 3, 7, 13, color);
+                line(g, x, y, 8, 2, 8, 13, color);
+            }
+            case ARROW_DOWN -> {
+                line(g, x, y, 8, 13, 3, 8, color);
+                line(g, x, y, 8, 13, 13, 8, color);
+                line(g, x, y, 7, 2, 7, 12, color);
+                line(g, x, y, 8, 2, 8, 13, color);
             }
             case CHEVRON_LEFT -> {
                 line(g, x, y, 10, 3, 5, 8, color);

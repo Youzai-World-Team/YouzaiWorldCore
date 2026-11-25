@@ -75,7 +75,7 @@ final class MapGroupButton extends TransparentButton {
         YzuiTheme.button(g, getX(), getY(), getWidth(), getHeight(), hover.sample(active && isHovered),
                 isFocused(), active, opacity, style);
         if (chosen)
-            YzuiTheme.border(g, getX(), getY(), getWidth(), getHeight(), getHeight() / 2,
+            YzuiTheme.border(g, getX(), getY(), getWidth(), getHeight(), Math.min(12, getHeight() / 2),
                     YzuiTheme.alpha(YzuiTheme.primary(), opacity));
         int foreground = YzuiTheme.alpha(YzuiTheme.buttonText(style, active), opacity * (active ? 1f : 0.68f));
         int iconX = caption && getWidth() >= 60 ? getX() + 8 : getX() + (getWidth() - 16) / 2;

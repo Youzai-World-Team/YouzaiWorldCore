@@ -1,6 +1,6 @@
 package top.csituka.youzaiworldcore.client.animation;
 
-/** 帧率无关的轻微悬停状态层；低特效模式仍保留即时反馈。 */
+/** 帧率无关的 0→1 状态缓动（悬停、开关滑轨等共用）；低特效模式仍保留即时反馈。 */
 public final class YzuiHover {
     private long lastFrame;
     private float value;

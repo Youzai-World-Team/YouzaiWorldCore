@@ -27,6 +27,7 @@ public class TransparentButton extends AbstractWidget {
     private IntSupplier textColor;
     private Identifier icon;
     private MenuIcon lineIcon;
+    private MenuIcon leadingLineIcon;
     private MenuIcon trailingLineIcon;
     private final YzuiHover hoverState = new YzuiHover();
     private YzuiTheme.ButtonStyle style = YzuiTheme.ButtonStyle.TONAL;
@@ -84,6 +85,13 @@ public class TransparentButton extends AbstractWidget {
         return this;
     }
 
+    /** 文案左侧绘制线条图标，并从文字可用宽度中预留空间。 */
+    public TransparentButton setLeadingLineIcon(MenuIcon value) {
+        leadingLineIcon = value;
+        DebugLogger.CLIENT.debug("YzuiButton", "设置前置线条图标：{}", value);
+        return this;
+    }
+
     /** 文案右侧绘制线条图标，并从文字可用宽度中预留空间。 */
     public TransparentButton setTrailingLineIcon(MenuIcon value) {
         trailingLineIcon = value;
@@ -135,8 +143,14 @@ public class TransparentButton extends AbstractWidget {
             available -= size + 6;
         }
         var font = Minecraft.getInstance().font;
+        if (leadingLineIcon != null) {
+            int size = Math.max(1, Math.min(16, h - 4));
+            leadingLineIcon.render(g, textX, y + (h - size) / 2, size, foreground);
+            textX += size + 6;
+            available = Math.max(0, available - size - 6);
+        }
         YzuiTheme.label(g, font, getMessage(), textX, y + (h - font.lineHeight) / 2,
-                available, foreground, icon == null && !textLeftAligned);
+                available, foreground, icon == null && leadingLineIcon == null && !textLeftAligned);
     }
 
     public void render(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {

@@ -15,6 +15,7 @@ import net.minecraft.client.gui.navigation.ScreenRectangle;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
+import top.csituka.youzaiworldcore.client.animation.YzuiHover;
 import top.csituka.youzaiworldcore.client.config.MapSettings;
 import top.csituka.youzaiworldcore.client.map.MapTexts;
 import top.csituka.youzaiworldcore.client.render.RoundedRect;
@@ -72,6 +73,8 @@ final class MapSettingsPanel extends AbstractContainerEventHandler implements Re
                 });
                 continue;
             }
+            // 每行持有独立的滑块进度；开关本身不重建控件，动画可持续播完。
+            var switchState = new YzuiHover();
             var control = new TransparentButton(panelX + 12, listTop + i * 23, panelWidth - 28, 22,
                     MapTexts.text(entry.key), () -> activate(entry)) {
                 @Override protected void extractWidgetRenderState(GuiGraphicsExtractor g, int mx, int my, float delta) {
@@ -86,8 +89,11 @@ final class MapSettingsPanel extends AbstractContainerEventHandler implements Re
                             getWidth() - valueWidth - 6, YzuiTheme.text(), false);
                     if (toggle) {
                         int x = getX() + getWidth() - 34, y = getY() + 4;
-                        RoundedRect.fill(g, x, y, 32, 14, 7, on ? YzuiTheme.primary() : YzuiTheme.outlineVariant());
-                        RoundedRect.fill(g, x + (on ? 18 : 2), y + 2, 10, 10, 5, on ? YzuiTheme.onPrimary() : YzuiTheme.textMuted());
+                        float progress = switchState.sample(on);
+                        RoundedRect.fill(g, x, y, 32, 14, 7,
+                                YzuiTheme.mix(YzuiTheme.outlineVariant(), YzuiTheme.primary(), progress));
+                        RoundedRect.fill(g, x + 2 + Math.round(16 * progress), y + 2, 10, 10, 5,
+                                YzuiTheme.mix(YzuiTheme.textMuted(), YzuiTheme.onPrimary(), progress));
                     } else MenuIcon.CHEVRON_RIGHT.renderCentered(g, getX() + getWidth() - valueWidth,
                             getY(), valueWidth, getHeight(), YzuiTheme.textMuted());
                 }

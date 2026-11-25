@@ -151,6 +151,11 @@ public final class MapClient {
         return session;
     }
 
+    /** 服务端是否向当前玩家开放地图传送；未开放时界面不显示传送入口。 */
+    public static boolean canTeleport() {
+        return session != null && session.allows(MapSessionPayload.TELEPORT);
+    }
+
     public static long receivedTiles() {
         return receivedTiles;
     }

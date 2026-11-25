@@ -252,6 +252,19 @@ public final class RoundedRect {
 
     // ===== 内部：跨度表 =====
 
+    /**
+     * 圆角第 {@code row} 行（从最外侧向内数）点亮的横向像素数。
+     * <p>
+     * 描边可复用同一张跨度表，使描边外沿与填充轮廓逐像素重合。
+     * </p>
+     */
+    public static int cornerSpan(int radius, int row) {
+        if (radius <= 0 || row < 0 || row >= radius) {
+            return 0;
+        }
+        return spansFor(radius)[row];
+    }
+
     /** 取得（并按需构建）指定半径的每行跨度表。 */
     private static int[] spansFor(int r) {
         if (r > MAX_CACHED_RADIUS) {

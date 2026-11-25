@@ -38,7 +38,7 @@ public class MailCheckboxButton extends AbstractWidget {
     @Override
     protected void extractWidgetRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         if (!visible) return;
-        YzuiTheme.button(graphics, getX() - 2, getY(), getWidth() + 4, getHeight(),
+        YzuiTheme.button(graphics, getX(), getY(), getWidth(), getHeight(),
                 hoverState.sample(active && isMouseOver(mouseX, mouseY)), isFocused(), active, getAlpha(),
                 YzuiTheme.ButtonStyle.TEXT);
         int fill = checked ? YzuiTheme.primary() : YzuiTheme.surfaceHigh();

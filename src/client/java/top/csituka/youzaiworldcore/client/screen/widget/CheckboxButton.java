@@ -15,6 +15,7 @@ import top.csituka.youzaiworldcore.client.animation.YzuiHover;
 public class CheckboxButton extends AbstractWidget {
     private boolean checked;
     private final YzuiHover hoverState = new YzuiHover();
+    private final YzuiHover switchState = new YzuiHover();
     private final Runnable onToggle;
     private float externalAlpha = 1f;
     private boolean wrapMessage;
@@ -62,12 +63,15 @@ public class CheckboxButton extends AbstractWidget {
         YzuiTheme.field(g, x, y, w, h, hoverState.sample(active && hovered), isFocused(), active, opacity);
         int trackW = Math.min(28, labelVisible ? w / 3 : Math.max(2, w - 12)), trackH = Math.min(14, h - 4);
         int trackX = x + w - trackW - 6, trackY = y + (h - trackH) / 2;
-        int track = checked ? YzuiTheme.primary() : YzuiTheme.outlineVariant();
+        // 滑块位置与轨道颜色按同一进度过渡，关闭↔开启不再瞬切。
+        float on = switchState.sample(checked);
+        int track = YzuiTheme.mix(YzuiTheme.outlineVariant(), YzuiTheme.primary(), on);
         RoundedRect.fill(g, trackX, trackY, trackW, trackH, trackH / 2, YzuiTheme.alpha(track, opacity));
         int thumb = Math.max(2, trackH - 4);
-        int thumbX = checked ? trackX + trackW - thumb - 2 : trackX + 2;
-        RoundedRect.fill(g, thumbX, trackY + 2, thumb, thumb, thumb / 2,
-                YzuiTheme.alpha(checked ? YzuiTheme.onPrimary() : YzuiTheme.textMuted(), opacity));
+        int travel = Math.max(0, trackW - thumb - 4);
+        int thumbX = trackX + 2 + Math.round(travel * on);
+        int thumbColor = YzuiTheme.mix(YzuiTheme.textMuted(), YzuiTheme.onPrimary(), on);
+        RoundedRect.fill(g, thumbX, trackY + 2, thumb, thumb, thumb / 2, YzuiTheme.alpha(thumbColor, opacity));
 
         if (!labelVisible)
             return;

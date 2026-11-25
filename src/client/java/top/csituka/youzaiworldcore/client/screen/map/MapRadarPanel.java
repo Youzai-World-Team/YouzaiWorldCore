@@ -106,7 +106,7 @@ final class MapRadarPanel extends MapOverlayPanel {
                     YzuiTheme.label(g, font, type.getDescription(), getX() + 3, getY() + 40, getWidth() - 6, color,
                             true);
                     if (selected)
-                        g.outline(getX() + 1, getY() + 1, getWidth() - 2, getHeight() - 2, YzuiTheme.primary());
+                        g.outline(getX(), getY(), getWidth(), getHeight(), YzuiTheme.primary());
                 }
             };
             cell.setTooltip(Tooltip.create(type.getDescription().copy().append("\n" + EntityType.getKey(type))
