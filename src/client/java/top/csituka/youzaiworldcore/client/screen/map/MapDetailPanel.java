@@ -93,7 +93,10 @@ final class MapDetailPanel extends AbstractContainerEventHandler implements Rend
     }
 
     private TransparentButton button(int bx, int by, int bw, Component label, Runnable action, boolean inBody) {
-        var widget = new TransparentButton(bx, by, Math.max(16, bw), 22, label, action);
+        return button(bx, by, bw, 22, label, action, inBody);
+    }
+    private TransparentButton button(int bx, int by, int bw, int bh, Component label, Runnable action, boolean inBody) {
+        var widget = new TransparentButton(bx, by, Math.max(16, bw), Math.max(16, bh), label, action);
         widget.setTooltip(Tooltip.create(label)); widgets.add(widget); if (inBody) body.add(widget); return widget;
     }
     private EditBox field(int bx, int by, int bw, String key, String value, int limit, java.util.function.Consumer<String> setter) {
