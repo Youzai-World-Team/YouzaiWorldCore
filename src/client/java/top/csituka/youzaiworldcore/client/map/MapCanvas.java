@@ -1,5 +1,8 @@
 package top.csituka.youzaiworldcore.client.map;
 
+import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.renderpearl.api.textures.FilterMode;
+import com.mojang.renderpearl.api.textures.GpuSampler;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.texture.DynamicTexture;
@@ -76,7 +79,13 @@ public final class MapCanvas implements AutoCloseable {
                 if (texture == null) {
                     textureWidth = tw;
                     textureHeight = th;
-                    texture = new DynamicTexture("悠哉地图", tw, th, false);
+                    // 旧纹理按当前视口逐帧重投影，线性采样才能把位移落在纹素之间而不是整格跳动。
+                    texture = new DynamicTexture("悠哉地图", tw, th, false) {
+                        @Override
+                        public GpuSampler getSampler() {
+                            return RenderSystem.getSamplerCache().getClampToEdge(FilterMode.LINEAR);
+                        }
+                    };
                     Minecraft.getInstance().getTextureManager().register(id, texture);
                 }
                 var pixels = texture.getPixels();

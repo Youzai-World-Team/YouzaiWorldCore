@@ -393,13 +393,18 @@ public final class YzWorldMapScreen extends Screen {
         modalAnimation.update();
         var player = Minecraft.getInstance().player;
         if (follow && player != null) {
+            // 跟随目标按刻更新，取亚刻插值坐标让整张地图逐帧滑动。
             var tracked = MapClient.tracked(dimension);
-            if (tracked != null) { centerX = tracked.x(); centerZ = tracked.z(); }
-            else if (MapClient.trackedId() == null && dimension.equals(MapClient.dimension())) { centerX = player.getX(); centerZ = player.getZ(); }
+            var source = tracked == null ? null : tracked.entity();
+            if (source != null) { var position = source.getPosition(delta); centerX = position.x; centerZ = position.z; }
+            else if (tracked != null) { centerX = tracked.x(); centerZ = tracked.z(); }
+            else if (MapClient.trackedId() == null && dimension.equals(MapClient.dimension())) {
+                var position = player.getPosition(delta); centerX = position.x; centerZ = position.z;
+            }
         }
         var layer = currentLayer();
         displayed = canvas.drawInteractive(g, view(), dimension, layer, currentHeight(layer), left, top, Minecraft.getInstance().getWindow().getGuiScale());
-        MapRenderer.overlay(g, displayed, dimension, left, top, 0, 1, true);
+        MapRenderer.overlay(g, displayed, dimension, left, top, 0, 1, true, delta);
         g.nextStratum();
         // 信息与工具浮在地形上；鼠标悬停信息不覆盖玩家坐标。
         int positionX = bounded(shown().centerX()), positionZ = bounded(shown().centerZ());

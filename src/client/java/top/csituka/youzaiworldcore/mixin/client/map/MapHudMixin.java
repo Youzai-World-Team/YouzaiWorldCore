@@ -14,6 +14,6 @@ import top.csituka.youzaiworldcore.client.map.MapRenderer;
 public abstract class MapHudMixin {
     @Inject(method = "extractRenderState(Lnet/minecraft/client/gui/GuiGraphicsExtractor;Lnet/minecraft/client/DeltaTracker;)V", at = @At("RETURN"))
     private void youzaiworldcore$map(GuiGraphicsExtractor graphics, DeltaTracker delta, CallbackInfo ci) {
-        MapRenderer.hud(graphics);
+        MapRenderer.hud(graphics, delta.getGameTimeDeltaPartialTick(true));
     }
 }

@@ -71,7 +71,7 @@ public final class MapRenderer {
     }
 
     /** 由 HUD 提取尾部调用，尊重 F1、死亡界面、服务器地图开关和 YZHUD 透明度。 */
-    public static void hud(GuiGraphicsExtractor g) {
+    public static void hud(GuiGraphicsExtractor g, float partial) {
         var client = Minecraft.getInstance();
         if (client.player == null || client.level == null || !client.player.isAlive() || client.gui.hud.isHidden()
                 || client.gui.screen() != null || MapClient.dimension().equals("youzaiworldcore:login_hall")) return;
@@ -103,11 +103,13 @@ public final class MapRenderer {
         YzuiTheme.hudCard(g, 0, 0, size + 8, size + 8 + information, opacity);
         int radius = switch (MapSettings.shape()) { case CIRCLE -> size / 2; case SQUARE -> 0; case ROUNDED -> 10; };
         double angle = MapSettings.enabled(MapSettings.Toggle.ROTATE) ? Math.toRadians(client.player.getYRot()) + Math.PI : 0;
-        MapView view = new MapView(client.player.getX(), client.player.getZ(), MapSettings.zoom(), angle, size, size);
+        // 玩家坐标每刻才更新一次，取亚刻插值坐标，地形才能逐帧滑动而不是每刻跳一格。
+        var position = client.player.getPosition(partial);
+        MapView view = new MapView(position.x, position.z, MapSettings.zoom(), angle, size, size);
         String dimension = MapClient.dimension(); var layer = MapClient.layer(dimension);
         MapView displayed = MINIMAP.draw(g, view, dimension, layer, MapClient.height(layer), 4, 4, radius, opacity,
                 scale * client.getWindow().getGuiScale());
-        overlay(g, displayed, dimension, 4, 4, radius, opacity, false);
+        overlay(g, displayed, dimension, 4, 4, radius, opacity, false, partial);
         YzuiTheme.border(g, 3, 3, size + 2, size + 2, radius == 0 ? 0 : radius + 1,
                 YzuiTheme.alpha(YzuiTheme.primary(), 0.75f * opacity));
         int y = size + 8;
@@ -133,7 +135,8 @@ public final class MapRenderer {
     }
 
     /** 绘制地形之上的网格、路径点、雷达和自己的方向。 */
-    public static void overlay(GuiGraphicsExtractor g, MapView view, String dimension, int left, int top, int radius, float opacity, boolean labels) {
+    public static void overlay(GuiGraphicsExtractor g, MapView view, String dimension, int left, int top, int radius,
+            float opacity, boolean labels, float partial) {
         g.enableScissor(left, top, left + view.width(), top + view.height());
         if (MapSettings.enabled(MapSettings.Toggle.GRID) && view.scale() >= 0.5) {
             double reach = Math.hypot(view.width(), view.height()) / view.scale();
@@ -172,7 +175,14 @@ public final class MapRenderer {
             boolean selected = MapMobRadar.selected(radar);
             boolean mob = radar.entity() instanceof net.minecraft.world.entity.Mob || !radar.player() && selected;
             if (mob && !MapMobRadar.withinRange(radar.x(), radar.z())) continue;
-            var p = view.screen(radar.x(), radar.z());
+            // 雷达快照按刻采集，能取到实体时用亚刻插值坐标，标记才跟着地形一起平滑滑动。
+            double radarX = radar.x(), radarZ = radar.z(), radarYaw = radar.yaw();
+            var source = radar.entity();
+            if (source != null) {
+                var position = source.getPosition(partial);
+                radarX = position.x; radarZ = position.z; radarYaw = source.getYRot(partial);
+            }
+            var p = view.screen(radarX, radarZ);
             boolean edge = !MapShapes.contains(view, p.x(), p.y(), radius, radar.player() ? 16 : selected ? 10 : 8);
             if (edge) {
                 if (!selected) continue;
@@ -180,7 +190,7 @@ public final class MapRenderer {
             }
             int x = left + (int) p.x(), y = top + (int) p.y();
             if (MapSettings.markersVisible()) {
-                if (radar.player()) playerDirection(g, x, y, Math.toRadians(radar.yaw()) + Math.PI - view.angle(),
+                if (radar.player()) playerDirection(g, x, y, Math.toRadians(radarYaw) + Math.PI - view.angle(),
                         YzuiTheme.alpha(radar.color(), opacity), opacity);
                 if (selected) {
                     float pulse = 0.7f + 0.3f * (float) Math.sin(System.currentTimeMillis() / 220.0);
@@ -214,7 +224,8 @@ public final class MapRenderer {
         }
         var player = Minecraft.getInstance().player;
         if (player != null && dimension.equals(MapClient.dimension())) {
-            var p = view.screen(player.getX(), player.getZ());
+            var position = player.getPosition(partial);
+            var p = view.screen(position.x, position.z);
             if (MapShapes.contains(view, p.x(), p.y(), radius, 16)) {
                 int x = left + (int) p.x(), y = top + (int) p.y();
                 double angle = Math.toRadians(player.getYRot()) + Math.PI - view.angle();
