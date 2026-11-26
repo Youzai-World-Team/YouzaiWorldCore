@@ -21,6 +21,8 @@ public final class LoadingCircleRenderer {
     private static final long PHASE_STEP = 125L;
     private static final long OPAQUE_END = 1_000L;
     private static final long FADE_END = 1_020L;
+    /** 静止帧偏移半个相位步长，保留设计里的连续 8 块尾部。 */
+    private static final long STATIC_PHASE_MILLIS = PHASE_STEP / 2L;
 
     private static final int[][] BLOCK_OFFSETS = {
             {-1, -10}, {2, -10}, {5, -7}, {8, -4},
@@ -52,9 +54,11 @@ public final class LoadingCircleRenderer {
         }
 
         long elapsedMillis = Math.max(0L, now - this.animationStartMillis);
-        boolean animate = GuiAnimationController.isEnabled();
+        // 关闭动画时停在 8 块静止帧，不能让 16 块全部点亮——那样会退化成一个实心圆环，
+        // 看不出是加载；而世界卸载只是技术性禁用，加载圈仍需继续转。
+        long phaseMillis = GuiAnimationController.prefersStaticVisuals() ? STATIC_PHASE_MILLIS : elapsedMillis;
         for (int index = 0; index < BLOCK_COUNT; index++) {
-            float blockOpacity = animate ? opacityAt(elapsedMillis, index) : 1.0f;
+            float blockOpacity = opacityAt(phaseMillis, index);
             int blockAlpha = Math.round(overlayAlpha * blockOpacity);
             if (blockAlpha == 0) {
                 continue;

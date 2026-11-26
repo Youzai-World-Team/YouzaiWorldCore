@@ -70,6 +70,15 @@ public final class GuiAnimationController {
         return getMode() != GuiAnimationMode.OFF;
     }
 
+    /**
+     * 只反映用户的动效偏好，不含世界卸载期间的技术性禁用。
+     * 加载圈这类进度指示仍在推进时应当继续转动，否则会停在静止帧上。
+     */
+    public static boolean prefersStaticVisuals() {
+        return ClientExternalSettings.getYzuiVisualStyle() == YzuiVisualStyle.MINIMAL
+                || ClientExternalSettings.getGuiAnimationMode() == GuiAnimationMode.OFF;
+    }
+
     /** 读取当前配置，配置读取失败时由配置层负责报告并终止。 */
     public static GuiAnimationMode getMode() {
         if (clientLevelTeardownInProgress
