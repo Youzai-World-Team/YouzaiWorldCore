@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.client.screen.element;
 
+import com.mojang.blaze3d.Blaze3D;
+import top.csituka.youzaiworldcore.client.cosmetic.CosmeticClientManager;
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
 import top.csituka.youzaiworldcore.client.render.YzuiMenuPanel;
 
@@ -9,9 +11,14 @@ import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.resources.language.I18n;
+import net.minecraft.network.chat.Component;
 import net.minecraft.stats.Stats;
+import top.csituka.youzaiworldcore.client.screen.AccountManagementScreen;
+import top.csituka.youzaiworldcore.client.screen.CosmeticSettingsScreen;
 import top.csituka.youzaiworldcore.client.screen.MenuScreen;
+import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
 
+import java.net.URI;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -20,6 +27,8 @@ import java.util.List;
 public class AboutMeMenuElements implements MenuElementGroup {
 
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy/MM/dd");
+    private static final URI OFFICIAL_APPEARANCE = URI.create(
+            "https://www.minecraft.net/en-us/msaprofile/mygames/editskin");
 
     @Override
     public String getTitleText() {
@@ -40,15 +49,30 @@ public class AboutMeMenuElements implements MenuElementGroup {
     @Override
     public List<AbstractWidget> createButtons(MenuScreen screen, int screenWidth, int screenHeight, float scale,
             float alpha) {
-        int w = new MenuLayout(screenWidth, screenHeight).contentWidth(560);
-        int top = new MenuLayout(screenWidth, screenHeight).centeredTop(238);
-        var button = new top.csituka.youzaiworldcore.client.screen.widget.TransparentButton(
-                (screenWidth - w) / 2, top + 210, w, 28,
-                net.minecraft.network.chat.Component.translatable("screen.youzaiworldcore.account_management.title"),
+        var layout = new MenuLayout(screenWidth, screenHeight);
+        int gap = 10;
+        int width = layout.contentWidth(560) - gap;
+        int x = layout.left(560);
+        int y = layout.centeredTop(238) + 210;
+        int accountWidth = width / 2;
+        var account = new TransparentButton(x, y, accountWidth, 28,
+                Component.translatable("screen.youzaiworldcore.account_management.title"),
                 () -> screen.startExit(() -> Minecraft.getInstance().setScreenAndShow(
-                        new top.csituka.youzaiworldcore.client.screen.AccountManagementScreen(screen))));
-        button.setExternalAlpha(alpha);
-        return List.of(button);
+                        new AccountManagementScreen(screen))));
+        var cosmetics = new TransparentButton(x + accountWidth + gap, y, width - accountWidth, 28,
+                Component.translatable("screen.youzaiworldcore.cosmetic_settings.title"),
+                () -> openCosmeticSettings(screen));
+        account.setExternalAlpha(alpha);
+        cosmetics.setExternalAlpha(alpha);
+        return List.of(account, cosmetics);
+    }
+
+    private static void openCosmeticSettings(MenuScreen screen) {
+        if (CosmeticClientManager.usesOfficialAppearance()) {
+            Blaze3D.openUri(OFFICIAL_APPEARANCE);
+        } else {
+            screen.startExit(() -> Minecraft.getInstance().setScreenAndShow(new CosmeticSettingsScreen(screen)));
+        }
     }
 
     @SuppressWarnings("null")

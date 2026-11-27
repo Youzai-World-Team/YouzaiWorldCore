@@ -563,6 +563,13 @@ public class MenuChecks {
                     check(buttons.size()==7,"切换世界应有七个维度池入口");
                     for(var button:buttons)check(button.getWidth()==button.getHeight()*2,"世界按钮比例变形");
                 }
+                if(group instanceof AboutMeMenuElements){
+                    check(buttons.size()==2,"我的账户应提供账户管理和装扮设置");
+                    var account=buttons.get(0);
+                    var cosmetics=buttons.get(1);
+                    check(account.getY()==cosmetics.getY()&&account.getRight()<cosmetics.getX()
+                            &&Math.abs(account.getWidth()-cosmetics.getWidth())<=1,"两个账户入口应等宽并排");
+                }
                 GuiGraphicsExtractor g=new GuiGraphicsExtractor();
                 group.renderCustomBackground(g,w,h,1,0);
                 group.renderCustomContent(g,w,h,1,0,w/2,h/2);
@@ -853,6 +860,25 @@ public class MenuChecks {
         check(client.gui.screen==null,"直接打开子页的返回按钮无效");
         GuiAnimationController.enabled=true;
     }
+    static void accountActions(){
+        var client=Minecraft.getInstance();
+        var menu=new Menu(new AboutMeMenuElements());menu.setup(480,360);client.gui.setScreen(menu);
+        var cosmetics=menu.registered.get(1);
+        var click=new MouseButtonEvent(cosmetics.getX()+1,cosmetics.getY()+1,1);
+        check(cosmetics.mouseClicked(click,true),"装扮设置按钮无法点击");
+        check(client.gui.screen instanceof CosmeticSettingsScreen appearance&&appearance.parent==menu,
+                "装扮设置应直接打开并返回我的账户");
+        client.gui.setScreen(menu);
+        top.csituka.youzaiworldcore.client.cosmetic.CosmeticClientManager.official=true;
+        cosmetics.mouseClicked(click,true);
+        check(client.gui.screen==menu&&com.mojang.blaze3d.Blaze3D.opened!=null
+                &&"www.minecraft.net".equals(com.mojang.blaze3d.Blaze3D.opened.getHost()),
+                "正版装扮应打开官网并保留我的账户页");
+        top.csituka.youzaiworldcore.client.cosmetic.CosmeticClientManager.official=false;
+        var account=menu.registered.get(0);
+        account.mouseClicked(new MouseButtonEvent(account.getX()+1,account.getY()+1,1),true);
+        check(client.gui.screen instanceof AccountManagementScreen,"账户管理入口仍打开账户管理");
+    }
     static void upgrades()throws Exception{
         var client=Minecraft.getInstance();
         var data=top.csituka.youzaiworldcore.client.skill.ClientAttributeData.class;
@@ -926,7 +952,7 @@ public class MenuChecks {
         ClientPlayNetworking.supported = true;
     }
     public static void main(String[] args)throws Exception{
-        geometry();forms();images();lifecycle();worldActions();closure();contrast();keyboard();upgrades();playerSettings();
+        geometry();forms();images();lifecycle();worldActions();closure();contrast();keyboard();accountActions();upgrades();playerSettings();
         System.out.println("Shift+F 回归通过："+viewports+" 组页面/窗口组合；菜单布局、导航行为、维度池与个人设置。");
     }
 }
@@ -964,6 +990,23 @@ def main():
     javac = str(binary / ("javac" + suffix)) if binary else "javac"
     java = str(binary / ("java" + suffix)) if binary else "java"
     form_sources()
+    stub(C + ".screen.CosmeticSettingsScreen", """
+public class CosmeticSettingsScreen extends net.minecraft.client.gui.screens.Screen {
+    public final net.minecraft.client.gui.screens.Screen parent;
+    public CosmeticSettingsScreen(net.minecraft.client.gui.screens.Screen parent){
+        super(net.minecraft.network.chat.Component.literal("Appearance"));this.parent=parent;
+    }
+}
+""")
+    stub(C + ".cosmetic.CosmeticClientManager", """
+public class CosmeticClientManager {
+    public static boolean official;
+    public static boolean usesOfficialAppearance(){return official;}
+}
+""")
+    stub("com.mojang.blaze3d.Blaze3D", """
+public class Blaze3D {public static java.net.URI opened;public static void openUri(java.net.URI uri){opened=uri;}}
+""")
     production = [
         "animation/YzuiHover.java", "animation/YzuiMotion.java", "config/YzuiVisualStyle.java", "chat/ChatStyleMode.java",
         "render/YzuiLayout.java", "render/RoundedRect.java", "render/YzuiPalette.java",
