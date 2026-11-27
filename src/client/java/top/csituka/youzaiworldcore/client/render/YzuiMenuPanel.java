@@ -8,7 +8,7 @@ import net.minecraft.network.chat.Component;
 public final class YzuiMenuPanel {
     private YzuiMenuPanel() { }
 
-    public static float opacity() { return YzuiTheme.frosted() ? 0.70f : 0.74f; }
+    public static float opacity() { return YzuiTheme.vanilla() ? 1f : YzuiTheme.frosted() ? 0.70f : 0.74f; }
 
     /** 悬停色会改变底色，按当前表面与最不利的世界底色重新保证文字对比度。 */
     public static int textOn(int color, int surface) {
@@ -20,7 +20,7 @@ public final class YzuiMenuPanel {
         RoundedRect.fill(g, x, y, width, height, 16,
                 YzuiTheme.alpha(YzuiTheme.palette().surface(), opacity()));
         YzuiTheme.border(g, x, y, width, height, 16,
-                YzuiTheme.alpha(YzuiTheme.outline(), 0.32f));
+                YzuiTheme.alpha(YzuiTheme.outline(), YzuiTheme.vanilla() ? 1f : 0.32f));
     }
 
     /** 认证页面统一标题区，右侧保留关闭控件空间；受限页面只显示账户图标。 */

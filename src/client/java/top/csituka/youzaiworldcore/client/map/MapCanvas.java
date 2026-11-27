@@ -137,7 +137,7 @@ public final class MapCanvas implements AutoCloseable {
             drawTransformed(graphics, view, left, top, radius, opacity);
             return view;
         }
-        RoundedRect.fill(graphics, left, top, view.width(), view.height(), radius,
+        RoundedRect.fillRound(graphics, left, top, view.width(), view.height(), radius,
                 YzuiTheme.multiplyAlpha(YzuiTheme.surface(), opacity));
         return view;
     }
@@ -145,12 +145,12 @@ public final class MapCanvas implements AutoCloseable {
     @SuppressWarnings("null")
     private void drawTransformed(GuiGraphicsExtractor graphics, MapView view, int left, int top, int radius, float opacity) {
         // 新露出的区域先铺底色；后台纹理到达后仍按当前视口投影，避免回跳到旧位置。
-        RoundedRect.fill(graphics, left, top, view.width(), view.height(), radius,
+        RoundedRect.fillRound(graphics, left, top, view.width(), view.height(), radius,
                 YzuiTheme.multiplyAlpha(displayed.style.unknown(), opacity));
         MapView source = displayed.view;
         MapView.Point center = view.screen(source.centerX(), source.centerZ());
         float zoom = (float) (view.scale() / source.scale());
-        RoundedRect.clipped(graphics, left, top, view.width(), view.height(), radius, () -> {
+        RoundedRect.clippedRound(graphics, left, top, view.width(), view.height(), radius, () -> {
             graphics.pose().pushMatrix();
             try {
                 graphics.pose().translate((float) (left + center.x()), (float) (top + center.y()));

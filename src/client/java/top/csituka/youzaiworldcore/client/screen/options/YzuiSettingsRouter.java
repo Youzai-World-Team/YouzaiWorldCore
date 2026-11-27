@@ -40,21 +40,6 @@ public final class YzuiSettingsRouter {
     public static Screen resolve(Screen target) {
         if (target == null)
             return null;
-        if (!ClientExternalSettings.isYzuiEnabled()) {
-            if (target instanceof YzuiOptionsScreen settings)
-                return settings.legacyScreen();
-            if (target instanceof YzuiGameRulesScreen rules)
-                return rules.parent().legacyScreen();
-            if (target.getClass() == OptionsScreen.class
-                    && (HOSTS.containsKey(target) || COMPATIBILITY.containsKey(target))) {
-                OptionsScreen options = (OptionsScreen) target;
-                Screen parent = options.getLastScreen();
-                if (parent instanceof YzuiOptionsScreen settings)
-                    parent = settings.origin();
-                return new OptionsScreen(parent, Minecraft.getInstance().options);
-            }
-            return target;
-        }
         if (target instanceof YzuiOptionsScreen || target instanceof YzuiGameRulesScreen)
             return target;
         Screen current = Minecraft.getInstance().gui.screen();

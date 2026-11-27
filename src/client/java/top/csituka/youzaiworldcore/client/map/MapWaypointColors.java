@@ -48,8 +48,8 @@ public final class MapWaypointColors {
 
     /** 地图、世界内标点和颜色预览共用圆点，黑白轮廓在不同背景上保持可辨识。 */
     public static void render(GuiGraphicsExtractor g, int color, int x, int y, float opacity) {
-        RoundedRect.fill(g, x - 6, y - 6, 12, 12, 6, YzuiTheme.alpha(0xFF000000, opacity * 0.85F));
-        RoundedRect.fill(g, x - 5, y - 5, 10, 10, 5, YzuiTheme.alpha(0xFFFFFFFF, opacity));
-        RoundedRect.fill(g, x - 4, y - 4, 8, 8, 4, YzuiTheme.alpha(color, opacity));
+        RoundedRect.fillRound(g, x - 6, y - 6, 12, 12, 6, YzuiTheme.alpha(0xFF000000, opacity * 0.85F));
+        RoundedRect.fillRound(g, x - 5, y - 5, 10, 10, 5, YzuiTheme.alpha(0xFFFFFFFF, opacity));
+        RoundedRect.fillRound(g, x - 4, y - 4, 8, 8, 4, YzuiTheme.alpha(color, opacity));
     }
 }

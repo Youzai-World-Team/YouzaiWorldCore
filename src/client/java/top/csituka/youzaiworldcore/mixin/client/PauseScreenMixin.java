@@ -145,7 +145,7 @@ public abstract class PauseScreenMixin extends Screen {
         ScreenAccessor accessor = (ScreenAccessor) screen;
         String previousFocus = youzaiworldcore$pauseMenu == null ? null : youzaiworldcore$pauseMenu.focusedKey();
         youzaiworldcore$pauseMenu = null;
-        if (ClientExternalSettings.isYzuiEnabled() && screen.showsPauseMenu()) {
+        if (screen.showsPauseMenu()) {
             youzaiworldcore$modelReady = false;
             youzaiworldcore$pauseMenu = new YzuiPauseMenu(screen, previousFocus);
             return;

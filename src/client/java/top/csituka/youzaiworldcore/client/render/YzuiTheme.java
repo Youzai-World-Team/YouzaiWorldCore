@@ -1,6 +1,8 @@
 package top.csituka.youzaiworldcore.client.render;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.resources.Identifier;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
@@ -22,9 +24,19 @@ public final class YzuiTheme {
     private YzuiTheme() {
     }
 
-    /** 共用控件在原版页面遵守总开关，自定义页面始终使用主题。 */
+    /** 共用控件只在 YZUI 风格下替换皮肤；原版风格把控件交还原版绘制。 */
     public static boolean enabled() {
-        return ClientExternalSettings.isYzuiEnabled() || isCustomScreen(Minecraft.getInstance().gui.screen());
+        return !vanilla();
+    }
+
+    /** 关闭 YZUI 即进入原版风格：页面仍由本模组注入，但改用原版控件、配色与直角。 */
+    public static boolean vanilla() {
+        return !ClientExternalSettings.isYzuiEnabled();
+    }
+
+    /** 原版风格下所有圆角归零，YZUI 风格保持传入值。 */
+    public static int corners(int radius) {
+        return vanilla() ? 0 : radius;
     }
 
     /** 保留有色文本的色相，并使其在当前提示卡片上具备足够对比度。 */
@@ -50,13 +62,15 @@ public final class YzuiTheme {
     }
 
     public static YzuiPalette palette() {
+        if (vanilla())
+            return YzuiPalette.VANILLA;
         return ClientExternalSettings.getYzuiTheme() == YzuiThemeMode.DARK
                 ? YzuiPalette.DARK
                 : YzuiPalette.LIGHT;
     }
 
     public static boolean frosted() {
-        return ClientExternalSettings.getYzuiVisualStyle() == YzuiVisualStyle.FROSTED;
+        return !vanilla() && ClientExternalSettings.getYzuiVisualStyle() == YzuiVisualStyle.FROSTED;
     }
 
     public static boolean minimal() {
@@ -77,15 +91,20 @@ public final class YzuiTheme {
     }
 
     public static int surface() {
-        return alpha(palette().surface(), visualStyle().surfaceOpacity());
+        return layer(palette().surface(), visualStyle().surfaceOpacity());
     }
 
     public static int surfaceLow() {
-        return alpha(palette().surfaceLow(), visualStyle().layerOpacity());
+        return layer(palette().surfaceLow(), visualStyle().layerOpacity());
     }
 
     public static int surfaceHigh() {
-        return alpha(palette().surfaceHigh(), visualStyle().layerOpacity());
+        return layer(palette().surfaceHigh(), visualStyle().layerOpacity());
+    }
+
+    /** 原版面板是不透明的实心灰底，YZUI 风格才按预设叠透明度。 */
+    private static int layer(int color, float opacity) {
+        return alpha(color, vanilla() ? 1f : opacity);
     }
 
     public static int primary() {
@@ -145,7 +164,7 @@ public final class YzuiTheme {
     }
 
     public static int slot() {
-        return alpha(palette().surfaceHigh(), visualStyle().layerOpacity());
+        return layer(palette().surfaceHigh(), visualStyle().layerOpacity());
     }
 
     public static int slotHover() {
@@ -157,6 +176,8 @@ public final class YzuiTheme {
     }
 
     public static int scrim() {
+        if (vanilla())
+            return 0x60101010;
         return frosted() ? 0x280B1912 : 0x480B1912;
     }
 
@@ -179,19 +200,19 @@ public final class YzuiTheme {
     }
 
     public static int hudSurface() {
-        return alpha(palette().surface(), visualStyle().hudPanelOpacity());
+        return vanilla() ? 0x80000000 : alpha(palette().surface(), visualStyle().hudPanelOpacity());
     }
 
     public static int hudSlot() {
-        return alpha(palette().surfaceHigh(), visualStyle().hudSlotOpacity());
+        return vanilla() ? 0x60000000 : alpha(palette().surfaceHigh(), visualStyle().hudSlotOpacity());
     }
 
     public static int hudSelected() {
-        return alpha(primaryContainer(), visualStyle().hudSelectionOpacity());
+        return vanilla() ? 0x60FFFFFF : alpha(primaryContainer(), visualStyle().hudSelectionOpacity());
     }
 
     public static int hudRow() {
-        return alpha(palette().surfaceLow(), visualStyle().hudSlotOpacity());
+        return vanilla() ? 0x60000000 : alpha(palette().surfaceLow(), visualStyle().hudSlotOpacity());
     }
 
     /** 兼容旧按钮的显式文字色；中性色与状态色仍随主题即时变化。 */
@@ -276,7 +297,13 @@ public final class YzuiTheme {
     public static void card(GuiGraphicsExtractor g, int x, int y, int w, int h, float opacity) {
         if (w <= 0 || h <= 0)
             return;
-        int radius = Math.min(12, Math.min(w, h) / 2);
+        int radius = corners(Math.min(12, Math.min(w, h) / 2));
+        if (vanilla()) {
+            // 原版面板：不透明灰底 + 1 像素黑框，与 AbstractContainerScreen 一致。
+            g.fill(x, y, x + w, y + h, multiplyAlpha(surface(), opacity));
+            g.outline(x, y, w, h, multiplyAlpha(palette().outline(), opacity));
+            return;
+        }
         if (!minimal()) {
             RoundedRect.fill(g, x, y + 2, w, h, radius, alpha(0xFF000000, 0.125f * opacity));
         }
@@ -286,7 +313,7 @@ public final class YzuiTheme {
 
     /** 通知等 HUD 卡片采用更通透的底板，不在世界画面上叠加模糊。 */
     public static void hudCard(GuiGraphicsExtractor g, int x, int y, int w, int h, float opacity) {
-        int radius = Math.min(8, Math.min(w, h) / 2);
+        int radius = corners(Math.min(8, Math.min(w, h) / 2));
         RoundedRect.fill(g, x, y, w, h, radius, multiplyAlpha(hudSurface(), opacity));
         border(g, x, y, w, h, radius, alpha(outlineVariant(), 0.25f * opacity));
     }
@@ -296,8 +323,9 @@ public final class YzuiTheme {
             int textX, int textY, float opacity) {
         if (opacity <= 0f || textWidth <= 0)
             return;
-        RoundedRect.fill(g, textX - 3, textY - 1, textWidth + 6, font.lineHeight + 1, 3,
-                alpha(palette().surface(), visualStyle().hudLabelOpacity() * opacity));
+        RoundedRect.fill(g, textX - 3, textY - 1, textWidth + 6, font.lineHeight + 1, corners(3),
+                vanilla() ? alpha(0xFF000000, 0.42f * opacity)
+                        : alpha(palette().surface(), visualStyle().hudLabelOpacity() * opacity));
     }
 
     /** 绘制带主题底色的 HUD 数值；透明度同时作用于文字和底色。 */
@@ -344,6 +372,15 @@ public final class YzuiTheme {
 
     /** 圆角描边只绘制边缘，不反复覆盖半透明卡片内部；圆角外沿与填充轮廓逐像素对齐。 */
     public static void border(GuiGraphicsExtractor g, int x, int y, int w, int h, int radius, int color) {
+        borderAt(g, x, y, w, h, corners(radius), color);
+    }
+
+    /** 与 border 相同但始终保留圆角：地图视口等图形不随界面风格去圆角。 */
+    public static void borderRound(GuiGraphicsExtractor g, int x, int y, int w, int h, int radius, int color) {
+        borderAt(g, x, y, w, h, radius, color);
+    }
+
+    private static void borderAt(GuiGraphicsExtractor g, int x, int y, int w, int h, int radius, int color) {
         if (w < 2 || h < 2)
             return;
         int r = Math.clamp(radius, 0, Math.min(w, h) / 2);
@@ -368,6 +405,8 @@ public final class YzuiTheme {
     }
 
     public static int buttonText(ButtonStyle style, boolean enabled) {
+        if (vanilla())
+            return enabled ? 0xFFFFFFFF : 0xFFA0A0A0;
         if (!enabled)
             return textMuted();
         return switch (style) {
@@ -381,6 +420,13 @@ public final class YzuiTheme {
     /** MD3 按钮：色调/填充/文字/危险四类，保留键盘焦点和禁用状态反馈。 */
     public static void button(GuiGraphicsExtractor g, int x, int y, int w, int h,
             float hover, boolean focused, boolean enabled, float opacity, ButtonStyle style) {
+        if (vanilla()) {
+            // 原版按钮纹理自带九宫格缩放，自定义控件画出与 AbstractButton 一致的外观。
+            Identifier sprite = Identifier.withDefaultNamespace(!enabled ? "widget/button_disabled"
+                    : hover > 0.02f || focused ? "widget/button_highlighted" : "widget/button");
+            g.blitSprite(RenderPipelines.GUI_TEXTURED, sprite, x, y, w, h, opacity);
+            return;
+        }
         int base = switch (style) {
             case FILLED -> primary();
             case TONAL -> primaryContainer();
@@ -414,6 +460,12 @@ public final class YzuiTheme {
 
     public static void field(GuiGraphicsExtractor g, int x, int y, int w, int h,
             float hover, boolean focused, boolean enabled, float opacity) {
+        if (vanilla()) {
+            // 原版输入框：纯黑底 + 1 像素描边，聚焦时描边变亮。
+            g.fill(x, y, x + w, y + h, multiplyAlpha(0xFF000000, opacity));
+            g.outline(x, y, w, h, multiplyAlpha(enabled && focused ? 0xFFFFFFFF : 0xFFA0A0A0, opacity));
+            return;
+        }
         float state = enabled ? Math.clamp(hover, 0f, 1f) : 0f;
         int radius = menuContext() ? 8 : 5;
         float layerOpacity = menuContext() ? 0.24f : visualStyle().layerOpacity();

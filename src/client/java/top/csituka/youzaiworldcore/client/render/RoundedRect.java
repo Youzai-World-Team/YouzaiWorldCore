@@ -58,6 +58,12 @@ public final class RoundedRect {
      */
     private static final int[][] SPAN_CACHE = new int[MAX_CACHED_RADIUS + 1][];
 
+    /** 原版 UI 风格下界面圆角全部归零，仅保留地图标记等图形的自身轮廓。 */
+    private static int corners(int radius) {
+        int value = Math.max(0, radius);
+        return YzuiTheme.vanilla() ? 0 : value;
+    }
+
     private RoundedRect() {
     }
 
@@ -67,6 +73,15 @@ public final class RoundedRect {
      * 回调可独立变换纹理，裁切轮廓始终保持在视口位置。
      */
     public static void clipped(GuiGraphicsExtractor g, int x, int y, int w, int h, int radius, Runnable draw) {
+        clippedAt(g, x, y, w, h, corners(radius), draw);
+    }
+
+    /** 与 clipped 相同但始终保留圆角：地图视口等图形不随界面风格变化。 */
+    public static void clippedRound(GuiGraphicsExtractor g, int x, int y, int w, int h, int radius, Runnable draw) {
+        clippedAt(g, x, y, w, h, radius, draw);
+    }
+
+    private static void clippedAt(GuiGraphicsExtractor g, int x, int y, int w, int h, int radius, Runnable draw) {
         if (w <= 0 || h <= 0)
             return;
         var pose = g.pose();
@@ -114,7 +129,7 @@ public final class RoundedRect {
         int textureWidth = Math.max(w, (int) Math.ceil(imageWidth * scale));
         int textureHeight = Math.max(h, (int) Math.ceil(imageHeight * scale));
         float u = (textureWidth - w) / 2f, v = (textureHeight - h) / 2f;
-        int r = Math.clamp(radius, 0, Math.min(w, h) / 2);
+        int r = Math.clamp(corners(radius), 0, Math.min(w, h) / 2);
         blitBand(g, texture, x, y + r, w, h - 2 * r, u, v + r, textureWidth, textureHeight, tint);
         if (r == 0)
             return;
@@ -159,6 +174,17 @@ public final class RoundedRect {
             return;
         }
         int clamped = Math.min(w, h) / 2;
+        r = Math.min(corners(r), clamped);
+        drawClamped(g, x, y, w, h, r, color);
+    }
+
+    /** 与 fill 相同但始终保留圆角：地图圆点、头像圆环等图形不随界面风格去圆角。 */
+    public static void fillRound(GuiGraphicsExtractor g,
+            int x, int y, int w, int h, int r, int color) {
+        if (w <= 0 || h <= 0) {
+            return;
+        }
+        int clamped = Math.min(w, h) / 2;
         if (r > clamped) {
             r = clamped;
         }
@@ -190,6 +216,7 @@ public final class RoundedRect {
         if (w <= 0 || h <= 0) {
             return;
         }
+        r = corners(r);
         if (r > 0 && w <= r * 2) {
             g.fill(x, y, x + w, y + h, color);
             return;

@@ -36,7 +36,6 @@ public abstract class InventoryScreenSwitchMixin {
     @Inject(method = "setScreen", at = @At("HEAD"), cancellable = true)
     private void yzwc$onSetScreen(Screen newScreen, CallbackInfo ci) {
         if (yzwc$switchingScreen) return;
-        if (!ClientExternalSettings.isYzuiEnabled()) return;
         if (newScreen == null) return;
 
         // ───── 物品栏 ─────
