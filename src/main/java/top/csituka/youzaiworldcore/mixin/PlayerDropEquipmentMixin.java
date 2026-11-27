@@ -42,7 +42,7 @@ public abstract class PlayerDropEquipmentMixin implements DeferredDeathDropAcces
         Player player = (Player) (Object) this;
         boolean deferredForRespawn = player instanceof ServerPlayer
                 && player instanceof InPlaceRespawnPlayerAccess access
-                && access.youzaiworldcore$isInPlaceRespawnEnabled();
+                && (access.youzaiworldcore$isInPlaceRespawnEnabled() || access.youzaiworldcore$isPoolRespawn());
         if (deferredForRespawn || hasHeartInInventory(player)) {
             ci.cancel();
         }
@@ -58,7 +58,7 @@ public abstract class PlayerDropEquipmentMixin implements DeferredDeathDropAcces
         Player player = (Player) (Object) this;
         if (player instanceof ServerPlayer
                 && player instanceof InPlaceRespawnPlayerAccess access
-                && access.youzaiworldcore$isInPlaceRespawnEnabled()) {
+                && (access.youzaiworldcore$isInPlaceRespawnEnabled() || access.youzaiworldcore$isPoolRespawn())) {
             cir.setReturnValue(0);
         }
     }

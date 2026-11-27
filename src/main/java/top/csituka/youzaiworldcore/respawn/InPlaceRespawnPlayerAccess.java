@@ -11,6 +11,10 @@ public interface InPlaceRespawnPlayerAccess {
 
     boolean youzaiworldcore$isInPlaceRespawnSelected();
 
+    boolean youzaiworldcore$isPoolRespawn();
+
+    boolean youzaiworldcore$isReturningToSurvival();
+
     void youzaiworldcore$selectInPlaceRespawn(int requiredLevel);
 
     int youzaiworldcore$getInPlaceRespawnCost();

@@ -231,7 +231,10 @@ public class ModNetworking {
             DebugLogger.SERVER.entering("ModNetworking", "WorldPoolTeleportPayload handler");
             DebugLogger.SERVER.debug("ModNetworking", "Teleporting player to pool: " + payload.poolId());
             context.player().level().getServer().execute(() -> {
-                DimensionPoolManager.teleportToPool(context.player(), payload.poolId());
+                var player = context.player();
+                if (!player.hasDisconnected() && !AuthPlayerHelper.shouldBlockActions(player)) {
+                    DimensionPoolManager.teleportToPool(player, payload.poolId());
+                }
             });
             DebugLogger.SERVER.exiting("ModNetworking", "WorldPoolTeleportPayload handler");
         });

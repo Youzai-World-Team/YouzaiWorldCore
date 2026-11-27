@@ -2,7 +2,6 @@ package top.csituka.youzaiworldcore.respawn;
 
 import top.csituka.youzaiworldcore.util.LogValues;
 
-import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
@@ -35,13 +34,6 @@ public final class InPlaceRespawnManager {
     private static final int RESISTANCE_AMPLIFIER = 4;
 
     private InPlaceRespawnManager() {
-    }
-
-    public static void initialize() {
-        DebugLogger.SERVER.entering("InPlaceRespawn", "initialize");
-        ServerPlayerEvents.AFTER_RESPAWN.register(InPlaceRespawnManager::finishRespawn);
-        DebugLogger.SERVER.debug("InPlaceRespawn", "原地重生复活完成事件已注册");
-        DebugLogger.SERVER.exiting("InPlaceRespawn", "initialize");
     }
 
     /**
@@ -105,12 +97,7 @@ public final class InPlaceRespawnManager {
                 false, reason, requiredLevel, player.experienceLevel));
     }
 
-    private static void finishRespawn(ServerPlayer oldPlayer, ServerPlayer newPlayer, boolean alive) {
-        if (!(oldPlayer instanceof InPlaceRespawnPlayerAccess access)
-                || !access.youzaiworldcore$isInPlaceRespawnSelected()) {
-            return;
-        }
-
+    public static void finishRespawn(InPlaceRespawnPlayerAccess access, ServerPlayer newPlayer) {
         DebugLogger.SERVER.entering("InPlaceRespawn", "finishRespawn",
                 "player=" + newPlayer.getName().getString());
         PlayerAccount account = AccountDataStorage.getOrCreate(

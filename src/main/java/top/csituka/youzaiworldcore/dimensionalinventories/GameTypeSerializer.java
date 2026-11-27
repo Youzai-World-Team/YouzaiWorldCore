@@ -19,7 +19,7 @@ public final class GameTypeSerializer implements JsonSerializer<GameType>, JsonD
     @Override
     public GameType deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
         String name = json.getAsString();
-        GameType gameType = GameType.byName(name);
+        GameType gameType = GameType.byName(name, null);
         if (gameType == null) {
             throw new JsonParseException("未知的游戏模式: " + name);
         }

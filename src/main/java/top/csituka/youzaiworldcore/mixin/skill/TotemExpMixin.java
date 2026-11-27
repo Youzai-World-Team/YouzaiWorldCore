@@ -8,6 +8,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import top.csituka.youzaiworldcore.skill.AdventureLevelManager;
+import top.csituka.youzaiworldcore.dimensionalinventories.PoolRespawn;
 
 /**
  * 混合注入 {@link LivingEntity#checkTotemDeathProtection}，
@@ -15,6 +16,13 @@ import top.csituka.youzaiworldcore.skill.AdventureLevelManager;
  */
 @Mixin(LivingEntity.class)
 public class TotemExpMixin {
+    @Inject(method = "checkTotemDeathProtection", at = @At("HEAD"), cancellable = true)
+    private void youzaiworldcore$keepTotemWhenReturning(DamageSource damageSource,
+            CallbackInfoReturnable<Boolean> cir) {
+        if ((Object) this instanceof ServerPlayer player && PoolRespawn.needsSurvivalReturn(player)) {
+            cir.setReturnValue(false);
+        }
+    }
 
     /**
      * 在不死图腾成功保护后发放经验。

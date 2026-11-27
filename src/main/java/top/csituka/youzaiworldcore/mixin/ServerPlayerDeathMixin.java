@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.mixin;
 
+import com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod;
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -13,6 +15,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.gamerules.GameRules;
+import net.minecraft.world.level.portal.TeleportTransition;
 import net.minecraft.world.phys.Vec3;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -21,6 +24,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import top.csituka.youzaiworldcore.item.ModItems;
+import top.csituka.youzaiworldcore.dimensionalinventories.PoolRespawn;
 import top.csituka.youzaiworldcore.respawn.DeferredDeathDropAccess;
 import top.csituka.youzaiworldcore.respawn.InPlaceRespawnConfig;
 import top.csituka.youzaiworldcore.respawn.InPlaceRespawnManager;
@@ -53,6 +57,10 @@ public class ServerPlayerDeathMixin implements InPlaceRespawnPlayerAccess {
     @Unique
     private boolean youzaiworldcore$inPlaceRespawnSelected;
     @Unique
+    private boolean youzaiworldcore$poolRespawn;
+    @Unique
+    private boolean youzaiworldcore$returningToSurvival;
+    @Unique
     private int youzaiworldcore$inPlaceRespawnCost;
     @Unique
     private int youzaiworldcore$deferredExperienceReward;
@@ -69,13 +77,19 @@ public class ServerPlayerDeathMixin implements InPlaceRespawnPlayerAccess {
     private void youzaiworldcore$onDie(DamageSource damageSource, CallbackInfo ci) {
         ServerPlayer player = (ServerPlayer) (Object) this;
         youzaiworldcore$inPlaceRespawnSelected = false;
+        youzaiworldcore$poolRespawn = PoolRespawn.isManagedDeath(player);
+        if (youzaiworldcore$poolRespawn) {
+            PoolRespawn.settleInventoryMenu(player);
+        }
+        youzaiworldcore$returningToSurvival = false;
         youzaiworldcore$deathDimension = player.level().dimension();
         youzaiworldcore$deathPosition = player.position();
         youzaiworldcore$deathYaw = player.getYRot();
         youzaiworldcore$deathPitch = player.getXRot();
 
         boolean eligibleDeath = !player.isSpectator() && !server.isHardcore();
-        youzaiworldcore$inPlaceRespawnEnabled = eligibleDeath && InPlaceRespawnConfig.isEnabled(player);
+        youzaiworldcore$inPlaceRespawnEnabled = eligibleDeath && InPlaceRespawnConfig.isEnabled(player)
+                && !PoolRespawn.needsSurvivalReturn(player);
         OptionalInt requiredLevel = youzaiworldcore$inPlaceRespawnEnabled
                 ? InPlaceRespawnManager.getRequiredLevel(player)
                 : OptionalInt.empty();
@@ -95,7 +109,52 @@ public class ServerPlayerDeathMixin implements InPlaceRespawnPlayerAccess {
 
         InPlaceRespawnManager.syncDeathInfo(player,
                 youzaiworldcore$inPlaceRespawnEnabled, youzaiworldcore$inPlaceRespawnCost);
-        DebugLogger.SERVER.info("InPlaceRespawn", "玩家 {} 死亡：enabled={}, cost={}, heart={}, dimension={}", player.getName().getString(), youzaiworldcore$inPlaceRespawnEnabled, youzaiworldcore$inPlaceRespawnCost, youzaiworldcore$hadHeartBeforeDeath, youzaiworldcore$deathDimension.identifier());
+        DebugLogger.SERVER.info("InPlaceRespawn", "玩家 {} 死亡：enabled={}, cost={}, heart={}, dimension={}",
+                player.getName().getString(), youzaiworldcore$inPlaceRespawnEnabled, youzaiworldcore$inPlaceRespawnCost,
+                youzaiworldcore$hadHeartBeforeDeath, youzaiworldcore$deathDimension.identifier());
+    }
+
+    @WrapMethod(method = "findRespawnPositionAndUseSpawnBlock")
+    private TeleportTransition youzaiworldcore$choosePoolRespawn(boolean useSpawnBlock,
+            TeleportTransition.PostTeleportTransition postTransition, Operation<TeleportTransition> original) {
+        if (!useSpawnBlock) {
+            return original.call(useSpawnBlock, postTransition);
+        }
+        ServerPlayer player = (ServerPlayer) (Object) this;
+        if (!youzaiworldcore$poolRespawn && PoolRespawn.isManagedDeath(player)) {
+            // 断开后重新连接的死亡玩家也按所在池处理。
+            youzaiworldcore$poolRespawn = true;
+            boolean keepInventory = server.getGameRules().get(GameRules.KEEP_INVENTORY);
+            youzaiworldcore$hadHeartBeforeDeath = !keepInventory && !player.isSpectator()
+                    && hasHeartInInventory(player);
+            youzaiworldcore$deferredExperienceReward = !keepInventory && !player.isSpectator()
+                    ? Math.min(player.experienceLevel * 7, 100)
+                    : 0;
+        }
+        if (!youzaiworldcore$poolRespawn && !PoolRespawn.isSurvivalPool(player)) {
+            var preview = original.call(false, postTransition);
+            return PoolRespawn.staysInPool(player, preview)
+                    ? original.call(true, postTransition)
+                    : PoolRespawn.sourceSpawn(player);
+        }
+        if (youzaiworldcore$inPlaceRespawnSelected) {
+            return PoolRespawn.sourceSpawn(player);
+        }
+        if (PoolRespawn.hasUsablePersonalSpawn(player)) {
+            return original.call(true, postTransition);
+        }
+        TeleportTransition spawn = PoolRespawn.poolSpawn(player);
+        if (spawn != null) {
+            return spawn;
+        }
+        if (!youzaiworldcore$poolRespawn) {
+            @SuppressWarnings("null")
+            var spawnDefault = TeleportTransition.createDefault(player, postTransition);
+            return PoolRespawn.staysInPool(player, spawnDefault) ? spawnDefault : PoolRespawn.sourceSpawn(player);
+        }
+        youzaiworldcore$returningToSurvival = true;
+        PoolRespawn.reserveSurvivalReturn(player);
+        return PoolRespawn.sourceSpawn(player);
     }
 
     @Unique
@@ -158,7 +217,7 @@ public class ServerPlayerDeathMixin implements InPlaceRespawnPlayerAccess {
 
     @Inject(method = "die", at = @At("TAIL"))
     private void youzaiworldcore$afterDie(DamageSource damageSource, CallbackInfo ci) {
-        if (youzaiworldcore$inPlaceRespawnEnabled) {
+        if (youzaiworldcore$inPlaceRespawnEnabled || youzaiworldcore$poolRespawn) {
             return;
         }
 
@@ -173,6 +232,28 @@ public class ServerPlayerDeathMixin implements InPlaceRespawnPlayerAccess {
     }
 
     @SuppressWarnings("null")
+    @Inject(method = "restoreFrom", at = @At("HEAD"))
+    private void youzaiworldcore$settleDeathDrops(ServerPlayer oldPlayer, boolean alive, CallbackInfo ci) {
+        ServerPlayerDeathMixin oldMixin = (ServerPlayerDeathMixin) (Object) oldPlayer;
+        if (alive || oldMixin.youzaiworldcore$returningToSurvival || oldMixin.youzaiworldcore$inPlaceRespawnSelected
+                || (!oldMixin.youzaiworldcore$inPlaceRespawnEnabled && !oldMixin.youzaiworldcore$poolRespawn)
+                || server.getGameRules().get(GameRules.KEEP_INVENTORY)) {
+            return;
+        }
+
+        // 必须在 Trinkets 复制旧玩家的装备之前完成同池死亡掉落和消耗。
+        if (oldMixin.youzaiworldcore$hadHeartBeforeDeath) {
+            consumeOneHeart(oldPlayer);
+            return;
+        }
+        ((DeferredDeathDropAccess) oldPlayer).youzaiworldcore$dropDeferredEquipment(oldPlayer.level());
+        if (oldMixin.youzaiworldcore$deferredExperienceReward > 0) {
+            ExperienceOrb.award(oldPlayer.level(), oldMixin.youzaiworldcore$deathPosition,
+                    oldMixin.youzaiworldcore$deferredExperienceReward);
+        }
+    }
+
+    @SuppressWarnings("null")
     @Inject(method = "restoreFrom", at = @At("RETURN"))
     private void youzaiworldcore$restoreInventory(ServerPlayer oldPlayer, boolean alive, CallbackInfo ci) {
         if (alive) {
@@ -181,7 +262,13 @@ public class ServerPlayerDeathMixin implements InPlaceRespawnPlayerAccess {
 
         ServerPlayer newPlayer = (ServerPlayer) (Object) this;
         ServerPlayerDeathMixin oldMixin = (ServerPlayerDeathMixin) (Object) oldPlayer;
-        if (!oldMixin.youzaiworldcore$inPlaceRespawnEnabled) {
+        if (oldMixin.youzaiworldcore$returningToSurvival) {
+            if (!server.getGameRules().get(GameRules.KEEP_INVENTORY)) {
+                this.transferInventoryXpAndScore(oldPlayer);
+            }
+            return;
+        }
+        if (!oldMixin.youzaiworldcore$inPlaceRespawnEnabled && !oldMixin.youzaiworldcore$poolRespawn) {
             if (!server.getGameRules().get(GameRules.KEEP_INVENTORY)
                     && oldMixin.youzaiworldcore$hadHeartBeforeDeath) {
                 this.transferInventoryXpAndScore(oldPlayer);
@@ -202,24 +289,12 @@ public class ServerPlayerDeathMixin implements InPlaceRespawnPlayerAccess {
         }
 
         if (oldMixin.youzaiworldcore$hadHeartBeforeDeath) {
-            consumeOneHeart(oldPlayer);
-            int remaining = countHearts(oldPlayer);
             this.transferInventoryXpAndScore(oldPlayer);
-            // Trinkets 的 COPY_FROM 事件与本 Mixin 同处复活流程，执行顺序可能因模组而异。
-            // 若饰品状态已先复制到新玩家，则在新玩家侧补做一次消费；否则旧玩家的已消费状态会被复制。
-            if (countHearts(newPlayer) > remaining) {
-                consumeOneHeart(newPlayer);
-            }
-            handleHeartUsed(newPlayer, remaining);
+            handleHeartUsed(newPlayer, countHearts(oldPlayer));
             grantAdventureExperience(newPlayer, AdventureLevelManager.EXP_HEART_OF_GUARDIANSHIP);
             return;
         }
 
-        ((DeferredDeathDropAccess) oldPlayer).youzaiworldcore$dropDeferredEquipment(oldPlayer.level());
-        if (oldMixin.youzaiworldcore$deferredExperienceReward > 0) {
-            ExperienceOrb.award(oldPlayer.level(), oldMixin.youzaiworldcore$deathPosition,
-                    oldMixin.youzaiworldcore$deferredExperienceReward);
-        }
         grantAdventureExperience(newPlayer, AdventureLevelManager.EXP_DEATH);
     }
 
@@ -255,6 +330,16 @@ public class ServerPlayerDeathMixin implements InPlaceRespawnPlayerAccess {
     @Override
     public boolean youzaiworldcore$isInPlaceRespawnSelected() {
         return youzaiworldcore$inPlaceRespawnSelected;
+    }
+
+    @Override
+    public boolean youzaiworldcore$isPoolRespawn() {
+        return youzaiworldcore$poolRespawn;
+    }
+
+    @Override
+    public boolean youzaiworldcore$isReturningToSurvival() {
+        return youzaiworldcore$returningToSurvival;
     }
 
     @Override

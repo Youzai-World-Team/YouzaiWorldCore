@@ -185,8 +185,8 @@ Block-based player-owned teleport network — right-click to name, save, and rem
 Multi-world server management with independent state pools — players have separate inventories, health, effects, and game modes across pools.
 
 - **7 Predefined Pools**: Survival World (overworld/nether/end), Main City, Gameplay, Creation, Building, Commands, Tutorial World
-- **Switching Flow**: Check target pool → save current state → clear inventory + effects → load target state → teleport → force game mode
-- **Default Spawn**: Each pool can configure landing coordinates for post-death return
+- **Switching Flow**: The server records the player's state and recovery data before moving. It applies the destination's inventory, experience, and game mode after arrival. First visits use an independent initial state.
+- **Respawning**: Outside the survival pool, the server uses a valid personal respawn point in the current pool first, then that pool's configured spawn. If neither is available, it restores the previous survival dimension, position, inventory, and game mode. Returning to survival uses no Heart of Guardianship, totem, or respawn anchor charge.
 - **Cross-Pool Teleportation**: Supports dimension portals, commands, respawn events
 - **Storage**: Pool config in `dimensional_inventories_module.pools` of `yzwc/server/config/global_settings.json`, player state in `<world_name>/data/yzwc/data/dimensional_inventories_module/<pool-id>/<uuid>.json`
 

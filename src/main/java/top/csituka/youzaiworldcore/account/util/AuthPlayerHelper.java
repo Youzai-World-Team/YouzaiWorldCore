@@ -67,7 +67,8 @@ public class AuthPlayerHelper {
 
     public static boolean shouldBlockActions(ServerPlayer player) {
         PlayerAuthAccess a = access(player);
-        return !a.yzwc$isAuthenticated() && !a.yzwc$canSkipAuth();
+        return (!a.yzwc$isAuthenticated() && !a.yzwc$canSkipAuth())
+                || top.csituka.youzaiworldcore.dimensionalinventories.DimensionPoolManager.isRecoveryPending(player);
     }
 
     public static void setAuthenticated(ServerPlayer player, boolean authenticated) {

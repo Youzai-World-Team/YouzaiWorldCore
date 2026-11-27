@@ -201,6 +201,11 @@ public final class ModPaths {
                 .normalize();
     }
 
+    /** 原版玩家档案，与 PlayerDataStorage 使用同一路径。 */
+    public static Path vanillaPlayerData(MinecraftServer server, java.util.UUID playerId) {
+        return server.getWorldPath(LevelResource.PLAYER_DATA_DIR).resolve(playerId + ".dat");
+    }
+
     /** 世界配置根：{@code <world_name>/data/yzwc/config} */
     public static Path worldConfigRoot(MinecraftServer server) {
         return worldRoot(server).resolve(CONFIG_DIR_NAME);

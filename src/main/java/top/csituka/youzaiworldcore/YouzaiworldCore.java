@@ -68,7 +68,6 @@ import top.csituka.youzaiworldcore.dimensionalinventories.WorldPoolCommand;
 import top.csituka.youzaiworldcore.damagenumber.DamageNumberHandler;
 import top.csituka.youzaiworldcore.cosmetic.CosmeticManager;
 import top.csituka.youzaiworldcore.respawn.InPlaceRespawnConfig;
-import top.csituka.youzaiworldcore.respawn.InPlaceRespawnManager;
 import top.csituka.youzaiworldcore.entity.seat.ModSeatEntities;
 import top.csituka.youzaiworldcore.event.AnvilRepairHandler;
 import top.csituka.youzaiworldcore.event.BoneMealSugarCaneHandler;
@@ -457,16 +456,14 @@ public class YouzaiworldCore implements ModInitializer {
 
         DebugLogger.SERVER.entering("YouzaiworldCore", "InPlaceRespawnSystem.init");
         InPlaceRespawnConfig.load();
-        InPlaceRespawnManager.initialize();
         LOGGER.notice("原地重生系统已初始化");
         DebugLogger.SERVER.exiting("YouzaiworldCore", "InPlaceRespawnSystem.init");
 
         DebugLogger.SERVER.entering("YouzaiworldCore", "DimensionPoolEvents.register");
-        net.fabricmc.fabric.api.entity.event.v1.ServerEntityLevelChangeEvents.AFTER_PLAYER_CHANGE_LEVEL.register(
-                (player, origin, destination) -> {
-                    DebugLogger.SERVER.debug("DimensionPoolManager", "玩家维度变化事件触发: {} -> {} -> {}", player.getName().getString(), origin.dimension().identifier().toString(), destination.dimension().identifier().toString());
-                    DimensionPoolManager.onPlayerChangeDimension(player, origin, destination);
-                });
+        ServerPlayConnectionEvents.JOIN.register((handler, sender, server) ->
+                DimensionPoolManager.onPlayerJoin(handler.getPlayer()));
+        net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.END_SERVER_TICK.register(
+                DimensionPoolManager::tickRecovery);
         net.fabricmc.fabric.api.entity.event.v1.ServerEntityLevelChangeEvents.AFTER_ENTITY_CHANGE_LEVEL.register(
                 (originalEntity, newEntity, origin, destination) -> {
                     if (!(newEntity instanceof net.minecraft.server.level.ServerPlayer)) {
@@ -475,10 +472,7 @@ public class YouzaiworldCore implements ModInitializer {
                     }
                 });
         net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents.AFTER_RESPAWN.register(
-                (oldPlayer, newPlayer, alive) -> {
-                    DebugLogger.SERVER.debug("DimensionPoolManager", "玩家复活事件触发: {} (alive={})", newPlayer.getName().getString(), alive);
-                    DimensionPoolManager.onPlayerRespawn(oldPlayer, newPlayer, alive);
-                });
+                top.csituka.youzaiworldcore.dimensionalinventories.PoolRespawn::afterRespawn);
         LOGGER.notice("维度池事件已注册");
         DebugLogger.SERVER.exiting("YouzaiworldCore", "DimensionPoolEvents.register");
 

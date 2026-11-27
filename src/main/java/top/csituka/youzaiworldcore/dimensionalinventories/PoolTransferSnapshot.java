@@ -3,6 +3,7 @@ package top.csituka.youzaiworldcore.dimensionalinventories;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Container;
@@ -25,6 +26,7 @@ final class PoolTransferSnapshot {
     private final GameType gameMode;
     private final boolean flying;
     private final List<ItemStack> inventory, enderChest;
+    private final CompoundTag trinkets;
     private final int selectedSlot;
     private final List<MobEffectInstance> effects;
     private final float health, absorption, saturation, exhaustion, experienceProgress;
@@ -43,6 +45,7 @@ final class PoolTransferSnapshot {
         flying = player.getAbilities().flying;
         inventory = copyItems(player.getInventory());
         enderChest = copyItems(player.getEnderChestInventory());
+        trinkets = PlayerStateData.captureTrinkets(player);
         selectedSlot = player.getInventory().getSelectedSlot();
         effects = player.getActiveEffects().stream().map(MobEffectInstance::new).toList();
         health = player.getHealth();
@@ -87,6 +90,7 @@ final class PoolTransferSnapshot {
         try {
             restoreItems(player.getInventory(), inventory);
             restoreItems(player.getEnderChestInventory(), enderChest);
+            PlayerStateData.applyTrinkets(player, trinkets.copy());
             player.getInventory().setSelectedSlot(selectedSlot);
         } catch (RuntimeException error) {
             LOGGER.error("恢复玩家 {} 的物品时出错", player.getScoreboardName(), error);

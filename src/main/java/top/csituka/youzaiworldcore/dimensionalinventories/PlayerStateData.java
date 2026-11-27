@@ -1,5 +1,10 @@
 package top.csituka.youzaiworldcore.dimensionalinventories;
 
+import eu.pb4.trinkets.impl.LivingEntityTrinketAttachment;
+import net.minecraft.util.ProblemReporter;
+import net.minecraft.world.level.GameType;
+import net.minecraft.world.level.storage.TagValueInput;
+import net.minecraft.world.level.storage.TagValueOutput;
 import top.csituka.youzaiworldcore.util.LogValues;
 
 import com.mojang.datafixers.DataFixer;
@@ -15,6 +20,7 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
+import top.csituka.youzaiworldcore.mixin.TrinketAttachmentPoolAccessor;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 import top.csituka.youzaiworldcore.util.ItemStackNbtUpgrader;
 
@@ -42,20 +48,27 @@ public final class PlayerStateData {
     private String dimension;
     private double x, y, z;
     private float yRot, xRot;
+    private String gameMode;
 
     // ===== 物品栏（使用 SNBT 字符串存储，确保 Gson 兼容） =====
     private List<String> mainInventory;
     private List<String> armorInventory;
     private String offhandItem;
+    private String bodyItem;
+    private String saddleItem;
+    private String trinkets;
+    private int selectedSlot;
     private List<String> enderChestInventory;
 
     // ===== 状态 =====
     private float health;
+    private float absorption;
     private int foodLevel;
     private float saturation;
     private float exhaustion;
     private int experienceLevel;
     private float experienceProgress;
+    private int totalExperience;
     private int score;
 
     private List<SavedEffect> effects;
@@ -68,6 +81,12 @@ public final class PlayerStateData {
         this.health = 20.0f;
         this.foodLevel = 20;
         this.saturation = 5.0f;
+    }
+
+    static PlayerStateData initialState(ServerPlayer player) {
+        var state = new PlayerStateData();
+        state.health = player.getMaxHealth();
+        return state;
     }
 
     // ===== 从玩家保存状态 =====
@@ -84,19 +103,26 @@ public final class PlayerStateData {
         data.z = pos.z;
         data.yRot = player.getYRot();
         data.xRot = player.getXRot();
+        data.gameMode = player.gameMode().getName();
 
         HolderLookup.Provider lookup = getLookup(player);
         data.mainInventory = serializeItemList(player.getInventory().getNonEquipmentItems(), lookup);
         data.armorInventory = serializeArmor(player, lookup);
         data.offhandItem = serializeItemStack(player.getItemBySlot(EquipmentSlot.OFFHAND), lookup);
+        data.bodyItem = serializeItemStack(player.getItemBySlot(EquipmentSlot.BODY), lookup);
+        data.saddleItem = serializeItemStack(player.getItemBySlot(EquipmentSlot.SADDLE), lookup);
+        data.trinkets = captureTrinkets(player).toString();
+        data.selectedSlot = player.getInventory().getSelectedSlot();
         data.enderChestInventory = serializeItemList(player.getEnderChestInventory().getItems(), lookup);
 
         data.health = player.getHealth();
+        data.absorption = player.getAbsorptionAmount();
         data.foodLevel = player.getFoodData().getFoodLevel();
         data.saturation = player.getFoodData().getSaturationLevel();
         data.exhaustion = getExhaustion(player);
         data.experienceLevel = player.experienceLevel;
         data.experienceProgress = player.experienceProgress;
+        data.totalExperience = player.totalExperience;
         data.score = player.getScore();
 
         data.effects = new ArrayList<>();
@@ -139,6 +165,10 @@ public final class PlayerStateData {
                 hasOffhand
                         ? deserializeItemStack(this.offhandItem, lookup)
                         : ItemStack.EMPTY);
+        player.setItemSlot(EquipmentSlot.BODY, deserializeItemStack(bodyItem, lookup));
+        player.setItemSlot(EquipmentSlot.SADDLE, deserializeItemStack(saddleItem, lookup));
+        player.getInventory().setSelectedSlot(Math.clamp(selectedSlot, 0, 8));
+        applyTrinkets(player, stringToTag(trinkets, strictItems));
         DebugLogger.SERVER.branch("PlayerState", "enderChestInventory empty", this.enderChestInventory == null || this.enderChestInventory.isEmpty());
         if (this.enderChestInventory != null && !this.enderChestInventory.isEmpty()) {
             deserializeToItemList(player.getEnderChestInventory().getItems(), this.enderChestInventory, lookup);
@@ -146,7 +176,8 @@ public final class PlayerStateData {
 
         // — 状态 —
         DebugLogger.SERVER.debugStateChange("PlayerState", player.getName().getString(), "health", this.health);
-        player.setHealth(this.health);
+        player.setHealth(this.health > 0 ? this.health : player.getMaxHealth());
+        player.setAbsorptionAmount(this.absorption);
         DebugLogger.SERVER.debugStateChange("PlayerState", player.getName().getString(), "foodLevel", this.foodLevel);
         player.getFoodData().setFoodLevel(this.foodLevel);
         DebugLogger.SERVER.debugStateChange("PlayerState", player.getName().getString(), "saturation", this.saturation);
@@ -157,6 +188,7 @@ public final class PlayerStateData {
         player.experienceLevel = this.experienceLevel;
         DebugLogger.SERVER.debugStateChange("PlayerState", player.getName().getString(), "experienceProgress", this.experienceProgress);
         player.experienceProgress = this.experienceProgress;
+        player.totalExperience = this.totalExperience;
         DebugLogger.SERVER.debugStateChange("PlayerState", player.getName().getString(), "score", this.score);
         player.setScore(this.score);
 
@@ -189,6 +221,61 @@ public final class PlayerStateData {
         player.getEnderChestInventory().clearContent();
     }
 
+    static CompoundTag captureTrinkets(ServerPlayer player) {
+        var problems = new ProblemReporter.Collector();
+        var output = TagValueOutput.createWithContext(problems, getLookup(player));
+        var attachment = LivingEntityTrinketAttachment.get(player);
+        checkTrinketOverflow(attachment);
+        attachment.writeData(output);
+        if (!problems.isEmpty()) {
+            throw new IllegalStateException(problems.getReport());
+        }
+        return output.buildResult();
+    }
+
+    static void applyTrinkets(ServerPlayer player, CompoundTag data) {
+        if (data.isEmpty()) {
+            // 旧维度池存档和新池都从空饰品栏开始。
+            data = new CompoundTag();
+            data.putInt("__version", 1);
+        }
+        if (data.getIntOr("__version", 0) != 1) {
+            throw new IllegalArgumentException("维度池存档中的饰品格式无效");
+        }
+        var problems = new ProblemReporter.Collector();
+        var attachment = LivingEntityTrinketAttachment.get(player);
+        for (var inventory : attachment.getInventories().values()) {
+            if (inventory.hasCosmeticItems()) {
+                for (int slot = 0; slot < inventory.getContainerSize(); slot++) {
+                    inventory.setCosmeticItem(slot, ItemStack.EMPTY);
+                }
+            }
+        }
+        attachment.readData(TagValueInput.create(problems, getLookup(player), data));
+        if (!problems.isEmpty()) {
+            throw new IllegalStateException(problems.getReport());
+        }
+        checkTrinketOverflow(attachment);
+    }
+
+    private static void checkTrinketOverflow(LivingEntityTrinketAttachment attachment) {
+        var pending = ((TrinketAttachmentPoolAccessor) attachment).youzaiworldcore$getDelayedDropped();
+        if (pending != null && pending.stream().anyMatch(stack -> !stack.isEmpty())) {
+            throw new IllegalStateException("部分饰品尚未进入玩家物品栏或对应饰品槽不可用");
+        }
+    }
+
+    GameType savedGameMode(GameType fallback) {
+        if (gameMode == null) {
+            return fallback;
+        }
+        GameType mode = GameType.byName(gameMode, null);
+        if (mode == null) {
+            throw new IllegalStateException("玩家存档中的游戏模式无效：" + gameMode);
+        }
+        return mode;
+    }
+
     // ===== 位置 =====
 
     public String getDimension() { return dimension; }
@@ -197,6 +284,11 @@ public final class PlayerStateData {
     public double getZ() { return z; }
     public float getYRot() { return yRot; }
     public float getXRot() { return xRot; }
+
+    boolean hasValidPosition() {
+        return Double.isFinite(x) && Double.isFinite(y) && Double.isFinite(z)
+                && Float.isFinite(yRot) && Float.isFinite(xRot);
+    }
 
     // ===== ItemStack 序列化（SNBT 字符串方式，确保 Gson 兼容） =====
 

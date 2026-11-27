@@ -171,7 +171,9 @@ public class DimensionPoolManager {
         return outcome;
     }
 """ + method(manager.replace("    static ServerLevel findLoadedLevel(", "    public static ServerLevel findLoadedLevel("),
-             "findLoadedLevel") + method(manager, "getLoadedLevel") + "\n}")
+             "findLoadedLevel") + method(manager.replace("    static ServerLevel getLoadedLevel(",
+                                                         "    private static ServerLevel getLoadedLevel("),
+                                         "getLoadedLevel") + "\n}")
 
 CHECK = """
 import java.util.*;

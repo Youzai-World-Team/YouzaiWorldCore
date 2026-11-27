@@ -27,6 +27,8 @@ public final class DimensionPoolSettings {
     private static final DebugLogger.ModuleLogger LOGGER = DebugLogger.SERVER.module("DimensionPoolSettings");
 
     private static final String KEY_POOLS = "pools";
+    static final String SURVIVAL_POOL_ID = "survival_world_pool";
+    static final String UNASSIGNED_POOL_ID = "_unassigned";
 
     /** 隐藏池：登录大厅池 ID（内部使用，不写入配置文件） */
     private static final String HIDDEN_LOGIN_HALL_POOL_ID = "_hide_login_hall";
@@ -132,29 +134,38 @@ public final class DimensionPoolSettings {
             return; // 不可达
         }
 
-        POOLS.clear();
-        DIMENSION_TO_POOL.clear();
-
+        Map<String, DimensionPool> loadedPools = new LinkedHashMap<>();
+        Map<String, String> loadedDimensions = new HashMap<>();
+        Map<String, String> storageNames = new HashMap<>();
+        storageNames.put(storageKey(HIDDEN_LOGIN_HALL_POOL_ID), HIDDEN_LOGIN_HALL_POOL_ID);
+        storageNames.put(storageKey(UNASSIGNED_POOL_ID), UNASSIGNED_POOL_ID);
+        storageNames.put(storageKey(DimensionPoolManager.RECOVERY_DIRECTORY), DimensionPoolManager.RECOVERY_DIRECTORY);
         for (int i = 0; i < poolList.size(); i++) {
             DimensionPool pool = poolList.get(i);
             if (pool == null) {
                 section.fail(KEY_POOLS + "[" + i + "]", "维度池条目不能为 null");
                 continue; // 不可达，fail 一定抛异常
             }
-            if (pool.id() == null || pool.id().isBlank()) {
-                section.fail(KEY_POOLS + "[" + i + "].id", "维度池必须有非空的 id");
+            if (pool.id() == null || !pool.id().matches("[a-zA-Z0-9_-][a-zA-Z0-9_.:-]*")
+                    || pool.id().endsWith(".") || storageKey(pool.id()).isBlank()) {
+                section.fail(KEY_POOLS + "[" + i + "].id", "维度池 ID 不是有效的存档目录名");
             }
             if (pool.gameMode() == null) {
                 section.fail(KEY_POOLS + "[" + i + "].gameMode",
                         "维度池必须指定合法的游戏模式（survival / creative / adventure / spectator）");
             }
-            if (POOLS.containsKey(pool.id())) {
+            if (loadedPools.containsKey(pool.id())) {
                 section.fail(KEY_POOLS + "[" + i + "].id", "维度池 id 重复：" + pool.id());
             }
-            POOLS.put(pool.id(), pool);
+            String previousStorage = storageNames.putIfAbsent(storageKey(pool.id()), pool.id());
+            if (previousStorage != null) {
+                section.fail(KEY_POOLS + "[" + i + "].id",
+                        "维度池 " + pool.id() + " 与 " + previousStorage + " 共用存档目录");
+            }
+            loadedPools.put(pool.id(), pool);
             DebugLogger.SERVER.trace("DimPoolSettings", "加载维度池: id={}, dims={}", pool.id(), pool.dimensions());
             for (String dim : pool.dimensions()) {
-                String previous = DIMENSION_TO_POOL.put(dim, pool.id());
+                String previous = loadedDimensions.put(dim, pool.id());
                 if (previous != null && !previous.equals(pool.id())) {
                     section.fail(KEY_POOLS + "[" + i + "].dimensions",
                             "维度 " + dim + " 同时属于维度池 " + previous + " 与 " + pool.id()
@@ -163,6 +174,10 @@ public final class DimensionPoolSettings {
             }
         }
 
+        POOLS.clear();
+        POOLS.putAll(loadedPools);
+        DIMENSION_TO_POOL.clear();
+        DIMENSION_TO_POOL.putAll(loadedDimensions);
         // 注册隐藏池（内部使用，不写入配置文件），必须在配置池加载完成后执行
         registerHiddenPools();
 
@@ -324,6 +339,15 @@ public final class DimensionPoolSettings {
         boolean result = HIDDEN_POOL_IDS.contains(poolId);
         DebugLogger.SERVER.trace("DimPoolSettings", "isHiddenPool: poolId={}, result={}", poolId, result);
         return result;
+    }
+
+    /** 保持已部署目录名，加载时检查同名及跨平台大小写冲突。 */
+    static String storageKey(String poolId) {
+        return storageDirectory(poolId).toLowerCase(Locale.ROOT);
+    }
+
+    static String storageDirectory(String poolId) {
+        return poolId.replace(':', '_');
     }
 
     // ===== 管理操作（供指令使用） =====
