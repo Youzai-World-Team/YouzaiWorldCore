@@ -1,4 +1,4 @@
-"""执行本地皮肤/披风预览的文件、模型状态、操作和生命周期回归。
+"""执行皮肤及披风预览、装扮设置流程与资源生命周期回归。
 
 真实预览代码运行在记录型 Minecraft/GPU 替身上；PNG 由 JDK ImageIO 解码。
 另从当前原版 jar 核验所用接口。不启动游戏、不运行 Gradle、不访问网络。
@@ -17,19 +17,27 @@ from verify_yzui_settings import ClassFile
 ROOT, CLIENT, P, C = fixtures.ROOT, fixtures.CLIENT, fixtures.P, fixtures.C
 STUBS, stub = fixtures.STUBS, fixtures.stub
 PREFIX = "screen.youzaiworldcore.cosmetic_preview."
+SETTINGS_PREFIX = "screen.youzaiworldcore.cosmetic_settings."
 
 
 def check_resources_and_api():
     required = {PREFIX + key for key in (
         "title", "local_notice", "front", "back", "hide_cloak", "show_cloak", "reload", "folder", "rotate",
         "invalid", "skin_missing", "cloak_missing", "skin_conflict", "skin_wide", "skin_slim", "cloak_loaded")}
+    settings_required = {SETTINGS_PREFIX + key for key in (
+        "title", "saved", "draft", "skin", "cloak", "change", "apply", "retry", "folder", "reload", "loading",
+        "unavailable", "load_error", "uploading", "upload_error", "cooldown", "file_error", "no_files",
+        "get_files_again", "guide_title", "guide_place", "guide_wide", "guide_slim", "guide_cloak", "guide_apply",
+        "local_test", "local_test_error", "keep_saved", "wide_preferred", "missing", "invalid")}
     locales = list((ROOT / "src/main/resources/assets/youzaiworldcore/lang").glob("*.json"))
     for path in locales:
         pairs = json.loads(path.read_text(encoding="utf-8"), object_pairs_hook=list)
         values = dict(pairs)
         assert len(pairs) == len(values), f"重复语言键：{path}"
         assert {key for key in values if key.startswith(PREFIX)} == required, path
-        assert all(isinstance(values[key], str) and values[key].strip() for key in required), path
+        assert {key for key in values if key.startswith(SETTINGS_PREFIX)} == settings_required, path
+        assert all(isinstance(values[key], str) and values[key].strip() for key in required | settings_required), path
+        assert values[SETTINGS_PREFIX + "cooldown"].count("%s") == 1, path
         assert values[PREFIX + "invalid"].count("%s") == 1, path
     assert len(locales) == 10
     version = dict(line.split("=", 1) for line in (ROOT / "gradle.properties").read_text().splitlines()
@@ -71,7 +79,7 @@ def check_resources_and_api():
 
 def adapt_stubs():
     language = json.loads((ROOT / "src/main/resources/assets/youzaiworldcore/lang/en_us.json").read_text())
-    labels = {key: value for key, value in language.items() if key.startswith(PREFIX)}
+    labels = {key: value for key, value in language.items() if key.startswith((PREFIX, SETTINGS_PREFIX))}
     labels.update({"gui.back": "Back", "screen.youzaiworldcore.account_management.button_close": "Close"})
     entries = ",".join("java.util.Map.entry(" + json.dumps(key) + "," + json.dumps(value, ensure_ascii=False) + ")"
                        for key, value in labels.items())
@@ -151,7 +159,7 @@ import net.minecraft.network.chat.Component;
 public class Screen {
     public int width=854,height=480;
     protected final Font font=new Font();
-    private final Component title;
+    protected final Component title;
     private AbstractWidget focused;
     public final java.util.List<AbstractWidget> registered=new java.util.ArrayList<>();
     public Screen(Component title){this.title=title;}
@@ -163,6 +171,7 @@ public class Screen {
         for(var widget:registered)widget.extractRenderState(g,x,y,tick);
     }
     public void onClose(){}
+    public void tick(){}
     public void removed(){}
     public boolean shouldCloseOnEsc(){return true;}
     public boolean isPauseScreen(){return false;}
@@ -189,18 +198,30 @@ public class Screen {
         entities.add(new EntityPicture(state,scale,x,y,r,b));box("model",x,y,r-x,b-y,"");
     }
     public void setTooltipForNextFrame(Font font,Component message,int x,int y){}
+    public void blit(Object pipeline,net.minecraft.resources.Identifier id,int x,int y,float u,float v,
+            int w,int h,int sw,int sh,int tw,int th){
+        if(sw!=tw||sh!=th)throw new AssertionError("展开图必须绘制整张贴图");
+        blit(pipeline,id,x,y,u,v,w,h,tw,th);
+    }
 """)
     mc = "net/minecraft/client/Minecraft.java"
     STUBS[mc] = STUBS[mc].replace("public Textures getTextureManager(){return new Textures();}", """
     public final Textures textures=new Textures();
     public Textures getTextureManager(){return textures;}
-    public User getUser(){return new User();}
-    public static class User {public java.util.UUID getProfileId(){return new java.util.UUID(0,1);}}
+    public final User user=new User();
+    public User getUser(){return user;}
+    public boolean singleplayer;
+    public net.minecraft.client.multiplayer.ServerData server;
+    public boolean hasSingleplayerServer(){return singleplayer;}
+    public net.minecraft.client.multiplayer.ServerData getCurrentServer(){return server;}
+    public void execute(Runnable action){action.run();}
+    public com.mojang.authlib.SessionService services(){return new com.mojang.authlib.SessionService();}
+    public net.minecraft.client.resources.SkinManager getSkinManager(){return new net.minecraft.client.resources.SkinManager();}
 """).replace("public Object getSoundManager(){return this;}",
              "public net.minecraft.client.sounds.SoundManager getSoundManager(){return new net.minecraft.client.sounds.SoundManager();}") \
-        .replace("public static class Gui {public Screen screen;public void setScreen(Screen s){screen=s;}}", """
+        .replace("public static class Gui {public Screen screen;public final Hud hud=new Hud();public void setScreen(Screen s){screen=s;}}", """
     public static class Gui {
-        public Screen screen;public Screen screen(){return screen;}
+        public Screen screen;public Screen screen(){return screen;} public final Hud hud=new Hud();
         public void setScreen(Screen s){if(screen!=null&&screen!=s)screen.removed();screen=s;if(s!=null)s.init(854,480);}
     }
 """).replace("public static class Textures {public Texture getTexture(Identifier id){return new Texture();}}", """
@@ -221,6 +242,8 @@ public class Screen {
     public final Connection connection""")
     theme = C.replace(".", "/") + "/render/YzuiTheme.java"
     STUBS[theme] = STUBS[theme].replace("public static void card(GuiGraphicsExtractor g,int x,int y,int w,int h,float a)", """
+    public static int surfaceLow(){return 0xFF808080;}
+    public static int surface(){return -1;}
     public static void card(GuiGraphicsExtractor g,int x,int y,int w,int h){card(g,x,y,w,h,1f);}
     public static void card(GuiGraphicsExtractor g,int x,int y,int w,int h,float a)""")
     stub(C + ".render.YzuiMenuPanel", """
@@ -240,9 +263,7 @@ public class ModPaths {
     stub("com.mojang.blaze3d.Blaze3D", """
 public class Blaze3D {public static java.nio.file.Path opened;public static void openPath(java.nio.file.Path path){opened=path;}}
 """)
-    stub("net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking", """
-public class ClientPlayNetworking {public static int sends;public static void send(Object packet){sends++;}}
-""")
+    adapt_cosmetic_network_stubs()
     stub("net.minecraft.client.renderer.texture.DynamicTexture", """
 public class DynamicTexture implements AutoCloseable {
     public final com.mojang.blaze3d.platform.NativeImage image;
@@ -275,12 +296,108 @@ public class NativeImage implements AutoCloseable {
 """)
 
 
+def adapt_cosmetic_network_stubs():
+    network = P + ".network."
+    packets = {
+        "CosmeticDataPayload": "java.util.UUID ownerUuid,String snapshotHash,byte[] skinWide,byte[] skinSlim,byte[] cloak",
+        "CosmeticInfoPayload": "java.util.UUID ownerUuid,boolean hasSkin,boolean hasCloak,String snapshotHash",
+        "CosmeticReadyPayload": "boolean ready,int requestCooldownSeconds",
+        "CosmeticUploadResultPayload": "String snapshotHash,boolean accepted,int retryAfterSeconds",
+        "CosmeticUploadPayload": "boolean offlineSession,String snapshotHash,byte[] skinWide,byte[] skinSlim,byte[] cloak",
+        "CosmeticRequestPayload": "java.util.UUID targetUuid",
+        "MojangAuthChallengePayload": "String challenge",
+        "MojangProfileRequestPayload": "String challenge,java.util.UUID profileId,String profileName",
+    }
+    for name, args in packets.items():
+        stub(network + name, f"public record {name}({args}) {{public static final Object ID=new Object();}}")
+    stub(network + "MojangSkinPayload", """
+public record MojangSkinPayload(java.util.UUID ownerUuid,java.util.UUID profileId,String profileName,
+        String textureValue,String textureSignature) {
+    public boolean verified(){return true;} public boolean hasTextureProperty(){return true;}
+}
+""")
+    stub(C + ".config.ClientExternalSettings", """
+public class ClientExternalSettings {
+    public static boolean developer;
+    public static String debugMode="embedded";
+    public static boolean isDevModeEnabled(){return developer;}
+    public static boolean isCosmeticEnabled(){return true;}
+    public static String getDebugModeType(){return debugMode;}
+    public static String getDebugServerAddress(){return "localhost:25703";}
+}
+""")
+    stub("net.minecraft.client.User", """
+public class User {
+    public String accessToken="0";
+    public String getAccessToken(){return accessToken;}
+    public String getName(){return "Player";}
+    public java.util.UUID getProfileId(){return new java.util.UUID(1,2);}
+}
+""")
+    stub("net.minecraft.client.multiplayer.ServerData", """
+public class ServerData {public final String ip;public ServerData(String ip){this.ip=ip;}}
+""")
+    stub("net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking", """
+public class ClientPlayNetworking {
+    public static int sends;
+    public static boolean available=true;
+    public static Object lastPacket;
+    public static boolean canSend(Object id){return available;}
+    public static void send(Object packet){
+        if(!available)throw new AssertionError("网络不可用时发送了装扮数据");
+        sends++;lastPacket=packet;
+    }
+}
+""")
+    stub("net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents", """
+public class ClientPlayConnectionEvents {
+    public static final Event DISCONNECT=new Event();
+    public static class Event {
+        public java.util.function.BiConsumer<Object,net.minecraft.client.Minecraft> listener;
+        public void register(java.util.function.BiConsumer<Object,net.minecraft.client.Minecraft> handler){listener=handler;}
+    }
+}
+""")
+    stub("net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents", """
+public class ClientTickEvents {
+    public static final Event END_CLIENT_TICK=new Event();
+    public static class Event {public void register(java.util.function.Consumer<net.minecraft.client.Minecraft> handler){}}
+}
+""")
+    stub("com.google.common.collect.ImmutableMultimap", """
+public class ImmutableMultimap {public static Object of(Object key,Object value){return new Object();}}
+""")
+    stub("com.mojang.authlib.GameProfile", """
+public record GameProfile(java.util.UUID id,String name,com.mojang.authlib.properties.PropertyMap properties) {}
+""")
+    stub("com.mojang.authlib.properties.Property", "public record Property(String name,String value,String signature) {}")
+    stub("com.mojang.authlib.properties.PropertyMap", """
+public record PropertyMap(Object properties) {public static final PropertyMap EMPTY=new PropertyMap(null);}
+""")
+    stub("com.mojang.authlib.SessionService", """
+public class SessionService {
+    public SessionService sessionService(){return this;}
+    public void joinServer(java.util.UUID id,String token,String challenge){}
+}
+""")
+    stub("net.minecraft.client.resources.SkinManager", """
+public class SkinManager {
+    public java.util.concurrent.CompletableFuture<java.util.Optional<net.minecraft.world.entity.player.PlayerSkin>>
+    get(com.mojang.authlib.GameProfile profile){
+        return java.util.concurrent.CompletableFuture.completedFuture(java.util.Optional.empty());
+    }
+}
+""")
+
+
 HARNESS = r"""
 import java.nio.file.*;
 import java.util.*;
 import java.awt.image.BufferedImage;
 import javax.imageio.ImageIO;
 import com.mojang.blaze3d.platform.NativeImage;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractWidget;
@@ -290,8 +407,11 @@ import net.minecraft.client.resources.DefaultPlayerSkin;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.PlayerModelType;
 import top.csituka.youzaiworldcore.client.cosmetic.*;
+import top.csituka.youzaiworldcore.client.config.ClientExternalSettings;
+import top.csituka.youzaiworldcore.cosmetic.CosmeticSnapshotHasher;
 import top.csituka.youzaiworldcore.client.screen.*;
 import top.csituka.youzaiworldcore.client.screen.widget.*;
+import top.csituka.youzaiworldcore.network.*;
 
 public class CosmeticPreviewChecks {
     static int checks;
@@ -304,7 +424,7 @@ public class CosmeticPreviewChecks {
         ImageIO.write(image,"png",directory.resolve(name).toFile());
     }
     static void clearFiles()throws Exception {
-        for(String name:List.of("skin.png","skin_slim.png","cloak.png"))Files.deleteIfExists(directory.resolve(name));
+        for(String name:List.of("skin.png","skin_slim.png","skin_silm.png","cloak.png"))Files.deleteIfExists(directory.resolve(name));
     }
     static void files()throws Exception {
         Files.createDirectories(directory);Files.writeString(directory.resolve("upload_state.json"),"unchanged-upload-state");
@@ -412,9 +532,136 @@ public class CosmeticPreviewChecks {
         check(net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.sends==0,"预览操作不得发包");
         check(Files.readString(directory.resolve("upload_state.json")).equals("unchanged-upload-state"),"所有预览操作保持上传记录");
     }
+    static AbstractWidget setting(Screen screen,String suffix) {
+        return screen.registered.stream()
+                .filter(w->w.getMessage().key().equals("screen.youzaiworldcore.cosmetic_settings."+suffix))
+                .findFirst().orElseThrow();
+    }
+    static void settings()throws Exception {
+        clearFiles();
+        png("skin.png",64,32,10);png("cloak.png",64,32,11);
+        byte[] cloudSkin=Files.readAllBytes(directory.resolve("skin.png"));
+        byte[] cloudCape=Files.readAllBytes(directory.resolve("cloak.png"));
+        clearFiles();
+        png("skin_silm.png",64,64,12);
+        byte[] localSkin=Files.readAllBytes(directory.resolve("skin_silm.png"));
+        var parent=new Screen(Component.literal("account"));
+        var page=new CosmeticSettingsScreen(parent);
+        client.player=new net.minecraft.client.player.LocalPlayer();
+        UUID owner=client.player.getUUID();
+        CosmeticClientManager.onReady(new CosmeticReadyPayload(true,10));
+        CosmeticClientManager.onData(new CosmeticDataPayload(owner,
+                CosmeticSnapshotHasher.hash(cloudSkin,new byte[0],cloudCape),cloudSkin,new byte[0],cloudCape));
+        client.gui.setScreen(page);
+        var current=render(page);
+        check(current.entities.getFirst().state().skin.model()==PlayerModelType.WIDE,"初始模型来自服务器");
+        check(current.blits.stream().filter(b->b.tw()==64&&b.th()==32).count()==2,"原始旧皮肤和披风展开图保留尺寸");
+        check(ClientPlayNetworking.sends==0,"打开装扮页无上传");
+        click(page,setting(page,"change"));
+        check(render(page).entities.getFirst().state().skin.model()==PlayerModelType.SLIM,"更改后预览本地细皮肤");
+        check(render(page).blits.stream().anyMatch(b->b.tw()==64&&b.th()==64),"新皮肤展示完整展开图");
+        check(ClientPlayNetworking.sends==0,"更改装扮只读取本地 PNG");
+        for(int[] size:new int[][]{{256,144},{320,180},{480,270},{854,480}}) {
+            page.init(size[0],size[1]);
+            check(render(page).blits.stream().filter(b->b.tw()==64).count()==2,"紧凑视口保留两张展开图");
+            for(var widget:page.registered)if(widget.visible)check(
+                    widget.getX()>=0&&widget.getY()>=0&&widget.getRight()<=size[0]&&widget.getBottom()<=size[1],
+                    "装扮设置控件留在视口内");
+        }
+        Files.delete(directory.resolve("skin_silm.png"));
+        click(page,setting(page,"apply"));
+        check(ClientPlayNetworking.sends==1,"应用触发一次上传");
+        var upload=(CosmeticUploadPayload)ClientPlayNetworking.lastPacket;
+        check(Arrays.equals(upload.skinSlim(),localSkin)&&Arrays.equals(upload.cloak(),cloudCape)
+                &&upload.skinWide().length==0,"上传预览的确切字节并保留缺失披风");
+        check(client.gui.screen()==page&&!setting(page,"apply").active,"等待服务器确认，避免重复申请");
+        CosmeticClientManager.onUploadResult(new CosmeticUploadResultPayload(upload.snapshotHash(),false,0));
+        check(client.gui.screen()==page&&setting(page,"apply").active,"失败保留草稿并允许重试");
+        click(page,setting(page,"apply"));
+        CosmeticClientManager.onData(new CosmeticDataPayload(owner,upload.snapshotHash(),
+                upload.skinWide(),upload.skinSlim(),upload.cloak()));
+        CosmeticClientManager.onUploadResult(new CosmeticUploadResultPayload(upload.snapshotHash(),true,0));
+        check(client.gui.screen()==null&&client.textures.live.size()==2,"确认后退出到游戏并只保留游戏贴图");
+        page=new CosmeticSettingsScreen(parent);client.gui.setScreen(page);
+        click(page,setting(page,"change"));
+        page.init(256,144);
+        var guide=new GuiGraphicsExtractor();page.extractRenderState(guide,0,0,0);
+        check(guide.entities.isEmpty()&&client.textures.live.size()==2,"无本地文件时展示教程并释放预览");
+        int footerY=setting(page,"get_files_again").getY();
+        for(String key:List.of("guide_title","guide_place","guide_wide","guide_slim","guide_cloak","guide_apply")) {
+            String line=Component.translatable("screen.youzaiworldcore.cosmetic_settings."+key).getString();
+            check(guide.boxes.stream().anyMatch(b->b.text().equals(line)&&b.y()+b.h()<=footerY),
+                    "紧凑窗口完整保留教程内容和按钮空间");
+        }
+        check(page.registered.stream().noneMatch(w->w.visible&&w.getMessage().key().endsWith(".apply")),"教程不提供应用");
+        click(page,setting(page,"get_files_again"));
+        check(setting(page,"get_files_again").active&&ClientPlayNetworking.sends==2,"仍无文件时留在教程且不发送上传");
+        com.mojang.blaze3d.Blaze3D.opened=null;
+        click(page,setting(page,"folder"));
+        check(directory.equals(com.mojang.blaze3d.Blaze3D.opened),"教程可打开装扮目录");
+        click(page,page.registered.stream().filter(w->w.getMessage().key().equals("gui.back")).findFirst().orElseThrow());
+        check(client.gui.screen()==page&&render(page).entities.getFirst().state().skin.model()==PlayerModelType.SLIM,
+                "教程返回恢复当前云端装扮");
+        click(page,setting(page,"change"));
+        png("skin_slim.png",64,64,13);
+        click(page,setting(page,"get_files_again"));
+        check(setting(page,"apply").active&&render(page).entities.getFirst().state().skin.model()==PlayerModelType.SLIM
+                &&ClientPlayNetworking.sends==2,"找到新文件后显示预览，等待玩家应用");
+        png("skin_slim.png",32,32,13);
+        click(page,setting(page,"reload"));
+        check(!setting(page,"apply").active,"坏文件禁止应用");
+        page.onClose();
+        check(client.gui.screen()==page&&setting(page,"change").active,"放弃草稿后恢复当前装扮");
+        page.onClose();
+        check(client.gui.screen()==parent&&client.textures.live.size()==2,"返回账户管理并释放预览纹理");
+        CosmeticClientManager.clearSession();
+        clearFiles();
+    }
+    static void localTest()throws Exception {
+        ClientExternalSettings.developer=true;
+        client.singleplayer=true;
+        client.user.accessToken="test Microsoft session";
+        ClientPlayNetworking.available=false;
+        int sends=ClientPlayNetworking.sends;
+        UUID owner=client.player.getUUID();
+        var normal=DefaultPlayerSkin.SKIN;
+        check(CosmeticClientManager.canEditAppearance()&&!CosmeticClientManager.usesOfficialAppearance(),
+                "开发者单人世界在无上传渠道时仍能打开装扮");
+        CosmeticClientManager.requestOwnSnapshot();
+        check(CosmeticClientManager.ownSnapshot().skinWide().length==0 && ClientPlayNetworking.sends==sends,
+                "测试装扮从本地空快照开始且不请求服务端");
+        png("skin_silm.png",64,64,21);png("cloak.png",64,32,22);
+        var parent=new Screen(Component.literal("account"));
+        var page=new CosmeticSettingsScreen(parent);
+        client.gui.setScreen(page);
+        click(page,setting(page,"change"));
+        check(CosmeticClientManager.apply(owner,normal)==normal,"应用前只预览");
+        click(page,setting(page,"apply"));
+        check(client.gui.screen()==null&&ClientPlayNetworking.sends==sends,"本地应用关闭页面且不发包");
+        var applied=CosmeticClientManager.apply(owner,normal);
+        check(applied.model()==PlayerModelType.SLIM&&applied.cape()!=null&&applied.body()!=normal.body(),
+                "本机玩家同时获得皮肤和披风");
+        check(CosmeticClientManager.apply(UUID.randomUUID(),normal)==normal,"其他玩家渲染保持原样");
+        CosmeticClientManager.onReady(new CosmeticReadyPayload(false,0));
+        check(CosmeticClientManager.apply(owner,normal)==applied,"本地渲染独立于服务端就绪状态");
+
+        client.singleplayer=false;
+        ClientExternalSettings.debugMode="dedicated";
+        client.server=new net.minecraft.client.multiplayer.ServerData("play.example.com");
+        check(!CosmeticClientManager.canEditAppearance()&&CosmeticClientManager.usesOfficialAppearance()
+                &&CosmeticClientManager.apply(owner,normal)==normal,"开发者模式下的普通服务器不套用本地测试装扮");
+        client.server=new net.minecraft.client.multiplayer.ServerData("localhost:25703");
+        check(CosmeticClientManager.isLocalTestEnvironment(),"匹配配置的专用调试服务器启用本地演示");
+        ClientPlayConnectionEvents.DISCONNECT.listener.accept(null,client);
+        check(CosmeticClientManager.apply(owner,normal)==normal&&client.textures.live.isEmpty(),
+                "离开测试会话释放自己的测试纹理");
+        check(NativeImage.created==NativeImage.closed,"所有本地及联机纹理均已释放");
+        clearFiles();
+    }
     public static void main(String[] args)throws Exception {
-        files();legacy();page();
-        System.out.println("PASS 本地皮肤/披风预览："+checks+" 项断言；PNG、旧皮肤、旋转、重排、重读、关闭、资源释放与无网络副作用。");
+        CosmeticClientManager.initialize();
+        files();legacy();page();settings();localTest();
+        System.out.println("PASS 皮肤与披风："+checks+" 项断言；本地预览、云端预览、手动应用、失败重试、离线演示与资源释放。");
     }
 }
 """
@@ -432,11 +679,13 @@ def main():
     adapt_stubs()
     production = [CLIENT / name for name in (
         "cosmetic/CosmeticSkinImages.java", "cosmetic/CosmeticPreviewTextures.java", "cosmetic/CosmeticTexture.java",
+        "cosmetic/CosmeticDraft.java", "cosmetic/CosmeticClientManager.java", "screen/CosmeticSettingsScreen.java", "chat/ChatStyleMode.java",
         "screen/CosmeticPreviewScreen.java", "screen/widget/CosmeticPreviewWidget.java", "screen/YzuiMenuScreen.java",
         "screen/widget/TransparentButton.java", "screen/widget/MenuCloseButton.java", "render/MenuIcon.java",
         "render/YzuiPalette.java", "render/RoundedRect.java", "animation/YzuiHover.java", "animation/YzuiMotion.java",
         "config/YzuiVisualStyle.java")]
-    production.append(ROOT / "src/main/java/top/csituka/youzaiworldcore/cosmetic/CosmeticPngValidator.java")
+    production.extend(ROOT / "src/main/java/top/csituka/youzaiworldcore/cosmetic" / name
+                      for name in ("CosmeticPngValidator.java", "CosmeticSnapshotHasher.java"))
     with tempfile.TemporaryDirectory(prefix="yz-cosmetic-preview-") as temporary:
         temporary = Path(temporary)
         sources = []

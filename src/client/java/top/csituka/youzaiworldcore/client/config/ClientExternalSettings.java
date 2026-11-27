@@ -116,6 +116,10 @@ public final class ClientExternalSettings {
         return debugPort;
     }
 
+    public static String getDebugServerAddress() {
+        return getDebugAddress() + ":" + getDebugPort();
+    }
+
     /** @return 已忽略提示的更新版本号（空字符串表示未忽略任何版本） */
     public static String getIgnoredUpdateVersion() {
         return ignoredUpdateVersion;

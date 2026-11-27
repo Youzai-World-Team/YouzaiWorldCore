@@ -495,7 +495,8 @@ EXTRA
         body = body.replace("FIELDS", "\n".join("    private final TransparentButton " + f +
                     '=new TransparentButton(0,0,1,1,Component.literal(""),null);' for f in fields))
         body = body.replace("METHOD", arrange).replace("EXTRA",
-                    method(source, "containerTop") if name == "AccountManagementScreen" else "")
+                    (method(source, "containerTop") + "\n" + method(source, "containerHeight"))
+                    if name == "AccountManagementScreen" else "")
         stub(C + ".screen." + name, body)
         result.append(name)
     return result

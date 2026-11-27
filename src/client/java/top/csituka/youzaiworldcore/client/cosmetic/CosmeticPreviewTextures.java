@@ -27,7 +27,13 @@ public final class CosmeticPreviewTextures implements AutoCloseable {
     public record FilePreview(String fileName, Status status) {
     }
 
-    private record LoadedFile(FilePreview preview, ClientAsset.Texture texture) {
+    public record Atlas(Identifier texture, int height) {
+    }
+
+    private record LoadedFile(FilePreview preview, ClientAsset.Texture texture, Atlas atlas) {
+        private LoadedFile(FilePreview preview, ClientAsset.Texture texture) {
+            this(preview, texture, null);
+        }
     }
 
     private static final String MODULE = "CosmeticPreviewTextures";
@@ -36,9 +42,19 @@ public final class CosmeticPreviewTextures implements AutoCloseable {
     private FilePreview skinFile;
     private FilePreview cloakFile;
     private boolean skinConflict;
+    private Atlas skinAtlas;
+    private Atlas cloakAtlas;
 
     public CosmeticPreviewTextures(PlayerSkin fallback) {
         reload(fallback);
+    }
+
+    /** Builds a preview from the saved or staged snapshot, including the original PNG layouts. */
+    public CosmeticPreviewTextures(PlayerSkin fallback, byte[] body, boolean slim, byte[] cape) {
+        String scope = UUID.randomUUID().toString();
+        setPreview(fallback, slim,
+                loadBytes(slim ? "skin_slim.png" : "skin.png", body, false, scope, true),
+                loadBytes("cloak.png", cape, true, scope, true));
     }
 
     public static Path directory() {
@@ -50,20 +66,33 @@ public final class CosmeticPreviewTextures implements AutoCloseable {
         close();
         Path directory = directory();
         boolean wideExists = Files.isRegularFile(directory.resolve("skin.png"));
-        boolean slimExists = Files.isRegularFile(directory.resolve("skin_slim.png"));
+        Path slimFile = directory.resolve("skin_slim.png");
+        if (!Files.isRegularFile(slimFile)) {
+            slimFile = directory.resolve("skin_silm.png");
+        }
+        boolean slimExists = Files.isRegularFile(slimFile);
         skinConflict = wideExists && slimExists;
-        String skinName = wideExists || !slimExists ? "skin.png" : "skin_slim.png";
+        boolean useSlim = !wideExists && slimExists;
         String scope = UUID.randomUUID().toString();
-        LoadedFile body = load(directory.resolve(skinName), false, scope);
-        LoadedFile cloak = load(directory.resolve("cloak.png"), true, scope);
-        skinFile = body.preview();
-        cloakFile = cloak.preview();
-        PlayerModelType model = body.texture() == null ? fallback.model()
-                : skinName.equals("skin_slim.png") ? PlayerModelType.SLIM : PlayerModelType.WIDE;
-        skin = PlayerSkin.insecure(body.texture() == null ? fallback.body() : body.texture(),
-                cloak.texture(), null, model);
+        setPreview(fallback, useSlim,
+                load(useSlim ? slimFile : directory.resolve("skin.png"), false, scope),
+                load(directory.resolve("cloak.png"), true, scope));
         DebugLogger.CLIENT.debug(MODULE, "已重新读取本地预览：皮肤={}，披风={}，皮肤冲突={}", skinFile.status(), cloakFile.status(), skinConflict);
     }
+
+    private void setPreview(PlayerSkin fallback, boolean slim, LoadedFile body, LoadedFile cloak) {
+        skinFile = body.preview();
+        cloakFile = cloak.preview();
+        skinAtlas = body.atlas();
+        cloakAtlas = cloak.atlas();
+        PlayerModelType model = body.texture() == null ? fallback.model()
+                : slim ? PlayerModelType.SLIM : PlayerModelType.WIDE;
+        skin = PlayerSkin.insecure(body.texture() == null ? fallback.body() : body.texture(),
+                cloak.texture(), null, model);
+    }
+
+    public Atlas skinAtlas() { return skinAtlas; }
+    public Atlas cloakAtlas() { return cloakAtlas; }
 
     public PlayerSkin skin() { return skin; }
     public FilePreview skinFile() { return skinFile; }
@@ -74,15 +103,20 @@ public final class CosmeticPreviewTextures implements AutoCloseable {
     private LoadedFile load(Path file, boolean cloak, String scope) {
         String name = file.getFileName().toString();
         if (!Files.isRegularFile(file)) return new LoadedFile(new FilePreview(name, Status.MISSING), null);
+        try (var input = Files.newInputStream(file)) {
+            byte[] bytes = input.readNBytes(CosmeticPngValidator.ABSOLUTE_MAX_FILE_BYTES + 1);
+            return bytes.length == 0 ? invalid(name) : loadBytes(name, bytes, cloak, scope, false);
+        } catch (IOException | RuntimeException e) {
+            DebugLogger.CLIENT.exception(MODULE, "读取预览文件 " + name, e);
+            return invalid(name);
+        }
+    }
+
+    private LoadedFile loadBytes(String name, byte[] bytes, boolean cloak, String scope, boolean includeAtlas) {
+        if (bytes.length == 0) return new LoadedFile(new FilePreview(name, Status.MISSING), null);
         NativeImage image = null;
-        DynamicTexture texture = null;
+        int previousTextures = textureIds.size();
         try {
-            long size = Files.size(file);
-            if (size <= 0 || size > CosmeticPngValidator.ABSOLUTE_MAX_FILE_BYTES) {
-                DebugLogger.CLIENT.warn(MODULE, "预览文件大小不合法：{}（{} 字节）", name, size);
-                return invalid(name);
-            }
-            byte[] bytes = Files.readAllBytes(file);
             CosmeticPngValidator.Validation validation = cloak
                     ? CosmeticPngValidator.validateCloak(bytes, CosmeticPngValidator.ABSOLUTE_MAX_FILE_BYTES)
                     : CosmeticPngValidator.validateSkin(bytes, CosmeticPngValidator.ABSOLUTE_MAX_FILE_BYTES);
@@ -95,21 +129,43 @@ public final class CosmeticPreviewTextures implements AutoCloseable {
                 DebugLogger.CLIENT.warn(MODULE, "预览文件解码尺寸与 PNG 头不一致：{}", name);
                 return invalid(name);
             }
-            if (!cloak) image = CosmeticSkinImages.prepare(image);
             Identifier identifier = Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID,
                     "cosmetic_preview/" + scope + "/" + name);
-            texture = new DynamicTexture(() -> "YouzaiWorldCore local preview " + name, image);
+            Atlas atlas = includeAtlas ? new Atlas(identifier, validation.height()) : null;
+            if (!cloak && includeAtlas && validation.height() == 32) {
+                Identifier raw = Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID,
+                        "cosmetic_preview/" + scope + "/original_" + name);
+                NativeImage original = NativeImage.read(bytes);
+                register("original " + name, raw, original);
+                atlas = new Atlas(raw, validation.height());
+            }
+            if (!cloak) image = CosmeticSkinImages.prepare(image);
+            NativeImage textureImage = image;
             image = null;
-            Minecraft.getInstance().getTextureManager().register(identifier, texture);
-            texture = null;
-            textureIds.add(identifier);
-            return new LoadedFile(new FilePreview(name, Status.LOADED), new CosmeticTexture(identifier, identifier));
+            register(name, identifier, textureImage);
+            return new LoadedFile(new FilePreview(name, Status.LOADED), new CosmeticTexture(identifier, identifier), atlas);
         } catch (IOException | RuntimeException e) {
+            while (textureIds.size() > previousTextures) {
+                Minecraft.getInstance().getTextureManager().release(textureIds.removeLast());
+            }
             DebugLogger.CLIENT.exception(MODULE, "读取预览文件 " + name, e);
             return invalid(name);
         } finally {
-            if (texture != null) texture.close();
-            else if (image != null) image.close();
+            if (image != null) image.close();
+        }
+    }
+
+    /** The texture manager takes ownership of the image after registration. */
+    private void register(String name, Identifier identifier, NativeImage image) {
+        DynamicTexture texture = null;
+        try {
+            texture = new DynamicTexture(() -> "YouzaiWorldCore cosmetic preview " + name, image);
+            Minecraft.getInstance().getTextureManager().register(identifier, texture);
+            textureIds.add(identifier);
+        } catch (RuntimeException e) {
+            if (texture == null) image.close();
+            else texture.close();
+            throw e;
         }
     }
 

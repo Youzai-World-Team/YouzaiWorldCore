@@ -122,7 +122,7 @@ public final class CosmeticPreviewScreen extends Screen implements YzuiMenuScree
             case INVALID -> text("invalid", file.fileName());
             case MISSING -> text(skin ? "skin_missing" : "cloak_missing");
             case LOADED -> skin ? text(preview.skinConflict() ? "skin_conflict"
-                    : file.fileName().equals("skin_slim.png") ? "skin_slim" : "skin_wide") : text("cloak_loaded");
+                    : file.fileName().equals("skin.png") ? "skin_wide" : "skin_slim") : text("cloak_loaded");
         };
     }
 

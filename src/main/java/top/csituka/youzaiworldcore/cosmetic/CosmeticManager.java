@@ -7,10 +7,6 @@ import top.csituka.youzaiworldcore.account.OnlineUuidLoginManager;
 import top.csituka.youzaiworldcore.account.util.AuthPlayerHelper;
 import top.csituka.youzaiworldcore.api.ApiServiceClient;
 import top.csituka.youzaiworldcore.config.CosmeticModuleSettings;
-import top.csituka.youzaiworldcore.config.ConfigSection;
-import top.csituka.youzaiworldcore.config.GlobalSettings;
-import top.csituka.youzaiworldcore.config.JsonFileStore;
-import top.csituka.youzaiworldcore.config.ModPaths;
 import top.csituka.youzaiworldcore.network.CosmeticDataPayload;
 import top.csituka.youzaiworldcore.network.CosmeticInfoPayload;
 import top.csituka.youzaiworldcore.network.CosmeticReadyPayload;
@@ -25,13 +21,9 @@ import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
 
 import java.util.Collection;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -49,7 +41,6 @@ public final class CosmeticManager {
     private static final String SKIN_WIDE_FILE = "skin.png";
     private static final String SKIN_SLIM_FILE = "skin_slim.png";
     private static final String CLOAK_FILE = "cloak.png";
-    private static final String SERVER_INSTANCE_ID_KEY = "server_instance_id";
     private static final int MAX_REQUEST_TARGETS_PER_PLAYER = 128;
     private static final int MOJANG_VERIFICATION_TIMEOUT_SECONDS = 10;
     private static final byte[] EMPTY = new byte[0];
@@ -57,56 +48,29 @@ public final class CosmeticManager {
 
     private static final Map<UUID, Long> LAST_UPLOAD_NANOS = new HashMap<>();
     private static final Map<UUID, LinkedHashMap<UUID, Long>> LAST_REQUEST_NANOS = new HashMap<>();
-    private static final Set<UUID> ONLINE_COSMETIC_OWNERS = new HashSet<>();
+    private static final Map<UUID, CosmeticSnapshot> ONLINE_COSMETICS = new HashMap<>();
+    private static final Map<UUID, String> LOADING_SNAPSHOTS = new HashMap<>();
+    private static final Map<UUID, CompletableFuture<Boolean>> UPLOADING_SNAPSHOTS = new HashMap<>();
     private static final Map<UUID, MojangChallenge> PENDING_MOJANG_CHALLENGES = new HashMap<>();
     private static final Map<UUID, String> VERIFYING_MOJANG_PROFILES = new HashMap<>();
     private static final Map<UUID, MojangProfile> VERIFIED_MOJANG_PROFILES = new HashMap<>();
     private static final Map<UUID, String> ACTIVE_APPEARANCE_SESSIONS = new HashMap<>();
-    private static final JsonFileStore METADATA_STORE = new JsonFileStore(
-            ModPaths.serverDataFile(GlobalSettings.COSMETIC_MODULE));
-
-    private static UUID serverInstanceId;
-
-    static {
-        METADATA_STORE.setDefaultsWriter(CosmeticManager::writeMetadataDefaults);
-    }
 
     private CosmeticManager() {
     }
 
-    /** 初始化服务端数据目录与内存冷却表。 */
+    /** 初始化会话状态。 */
     public static void initialize() {
-        DebugLogger.SERVER.entering(MODULE, "initialize");
-        ModPaths.ensureDir(ModPaths.serverData(GlobalSettings.COSMETIC_MODULE));
-        METADATA_STORE.loadOrCreateDefaults();
-        ConfigSection metadata = METADATA_STORE.section(GlobalSettings.COSMETIC_MODULE);
-        if (!metadata.has(SERVER_INSTANCE_ID_KEY)) {
-            serverInstanceId = UUID.randomUUID();
-            metadata.set(SERVER_INSTANCE_ID_KEY, serverInstanceId.toString());
-            METADATA_STORE.save();
-        } else {
-            String rawInstanceId = metadata.getString(SERVER_INSTANCE_ID_KEY, "");
-            try {
-                serverInstanceId = UUID.fromString(rawInstanceId);
-            } catch (IllegalArgumentException e) {
-                metadata.fail(SERVER_INSTANCE_ID_KEY, "必须是合法 UUID，实际为：" + rawInstanceId);
-            }
-        }
-        LAST_UPLOAD_NANOS.clear();
-        LAST_REQUEST_NANOS.clear();
-        ONLINE_COSMETIC_OWNERS.clear();
-        PENDING_MOJANG_CHALLENGES.clear();
-        VERIFYING_MOJANG_PROFILES.clear();
-        VERIFIED_MOJANG_PROFILES.clear();
-        ACTIVE_APPEARANCE_SESSIONS.clear();
-        DebugLogger.SERVER.exiting(MODULE, "initialize", "serverInstanceId=" + serverInstanceId);
+        shutdown();
     }
 
-    /** 服务器停止时释放仅存于内存的冷却记录。 */
+    /** 服务器停止时清理会话快照、验证状态和冷却。 */
     public static void shutdown() {
         LAST_UPLOAD_NANOS.clear();
         LAST_REQUEST_NANOS.clear();
-        ONLINE_COSMETIC_OWNERS.clear();
+        ONLINE_COSMETICS.clear();
+        LOADING_SNAPSHOTS.clear();
+        UPLOADING_SNAPSHOTS.clear();
         PENDING_MOJANG_CHALLENGES.clear();
         VERIFYING_MOJANG_PROFILES.clear();
         VERIFIED_MOJANG_PROFILES.clear();
@@ -117,7 +81,8 @@ public final class CosmeticManager {
     public static void reload(MinecraftServer server) {
         LAST_UPLOAD_NANOS.clear();
         LAST_REQUEST_NANOS.clear();
-        ONLINE_COSMETIC_OWNERS.clear();
+        ONLINE_COSMETICS.clear();
+        LOADING_SNAPSHOTS.clear();
         PENDING_MOJANG_CHALLENGES.clear();
         VERIFYING_MOJANG_PROFILES.clear();
         VERIFIED_MOJANG_PROFILES.clear();
@@ -150,10 +115,12 @@ public final class CosmeticManager {
             return;
         }
 
+        ACTIVE_APPEARANCE_SESSIONS.remove(player.getUUID());
+        LOADING_SNAPSHOTS.remove(player.getUUID());
         VERIFIED_MOJANG_PROFILES.remove(player.getUUID());
         PENDING_MOJANG_CHALLENGES.remove(player.getUUID());
         VERIFYING_MOJANG_PROFILES.remove(player.getUUID());
-        ONLINE_COSMETIC_OWNERS.remove(player.getUUID());
+        ONLINE_COSMETICS.remove(player.getUUID());
         ServerPlayNetworking.send(player, CosmeticReadyPayload.disabled());
         if (OnlineUuidLoginManager.isTrustedOnlineIdentity(server, player.getUUID())) {
             // 登录阶段已经证明正版身份，直接复用该连接的完整档案，避免重复挑战失败后回落离线外观。
@@ -177,11 +144,12 @@ public final class CosmeticManager {
         UUID playerUuid = player.getUUID();
         LAST_UPLOAD_NANOS.remove(playerUuid);
         clearRequestCooldowns(playerUuid);
-        ONLINE_COSMETIC_OWNERS.remove(playerUuid);
+        ONLINE_COSMETICS.remove(playerUuid);
         PENDING_MOJANG_CHALLENGES.remove(playerUuid);
         VERIFYING_MOJANG_PROFILES.remove(playerUuid);
         VERIFIED_MOJANG_PROFILES.remove(playerUuid);
         ACTIVE_APPEARANCE_SESSIONS.remove(playerUuid);
+        LOADING_SNAPSHOTS.remove(playerUuid);
         if (server != null && isServerActive(server)) {
             broadcastInfo(server, playerUuid, emptySnapshot(), playerUuid);
             broadcastMojang(server, MojangSkinPayload.disabled(playerUuid));
@@ -194,11 +162,12 @@ public final class CosmeticManager {
         ServerPlayNetworking.send(player, CosmeticReadyPayload.disabled());
         LAST_UPLOAD_NANOS.remove(player.getUUID());
         clearRequestCooldowns(player.getUUID());
-        ONLINE_COSMETIC_OWNERS.remove(player.getUUID());
+        ONLINE_COSMETICS.remove(player.getUUID());
         PENDING_MOJANG_CHALLENGES.remove(player.getUUID());
         VERIFYING_MOJANG_PROFILES.remove(player.getUUID());
         VERIFIED_MOJANG_PROFILES.remove(player.getUUID());
         ACTIVE_APPEARANCE_SESSIONS.remove(player.getUUID());
+        LOADING_SNAPSHOTS.remove(player.getUUID());
         if (isServerActive(server)) {
             broadcastInfo(server, player.getUUID(), emptySnapshot(), player.getUUID());
             broadcastMojang(server, MojangSkinPayload.disabled(player.getUUID()));
@@ -257,16 +226,10 @@ public final class CosmeticManager {
             DebugLogger.SERVER.exiting(MODULE, "applySnapshot", "server inactive");
             return;
         }
-        if (CosmeticModuleSettings.isRequireAuthenticated() && !isAuthenticated(player)) {
-            DebugLogger.SERVER.warn(MODULE, "拒绝未认证玩家 {} 的外观上传", player.getScoreboardName());
+        UUID playerUuid = player.getUUID();
+        String session = ACTIVE_APPEARANCE_SESSIONS.get(playerUuid);
+        if (!isCurrentCustomSession(player, session)) {
             sendUploadResult(player, payload.snapshotHash(), false, 0);
-            return;
-        }
-        if (VERIFIED_MOJANG_PROFILES.containsKey(player.getUUID())
-                || PENDING_MOJANG_CHALLENGES.containsKey(player.getUUID())
-                || VERIFYING_MOJANG_PROFILES.containsKey(player.getUUID())) {
-            DebugLogger.SERVER.debug(MODULE, "忽略正版玩家 {} 的本地自定义外观上传请求", player.getScoreboardName());
-            sendUploadResult(player, payload.snapshotHash(), true, 0);
             return;
         }
         if (!payload.offlineSession()) {
@@ -307,76 +270,77 @@ public final class CosmeticManager {
             return;
         }
 
-        CosmeticSnapshot beforeSnapshot = readSnapshot(player.getUUID());
-        if (beforeSnapshot.snapshotHash().equals(payload.snapshotHash())) {
-            trackOnlineSnapshot(player.getUUID(), beforeSnapshot);
-            sendUploadResult(player, payload.snapshotHash(), true, 0);
-            DebugLogger.SERVER.exiting(MODULE, "applySnapshot", "already aligned");
+        CosmeticSnapshot snapshot = new CosmeticSnapshot(
+                payload.skinWide(), payload.skinSlim(), payload.cloak(), actualSnapshotHash);
+        CosmeticSnapshot current = ONLINE_COSMETICS.get(playerUuid);
+        if (UPLOADING_SNAPSHOTS.containsKey(playerUuid) || current == null
+                || LOADING_SNAPSHOTS.containsKey(playerUuid)) {
+            sendUploadResult(player, payload.snapshotHash(), false, 1);
+            return;
+        }
+        if (current.snapshotHash().equals(actualSnapshotHash)) {
+            sendUploadResult(player, actualSnapshotHash, true, 0);
             return;
         }
 
         long now = System.nanoTime();
         long cooldownNanos = secondsToNanos(CosmeticModuleSettings.getUploadCooldownSeconds());
-        Long lastUpload = LAST_UPLOAD_NANOS.get(player.getUUID());
+        Long lastUpload = LAST_UPLOAD_NANOS.get(playerUuid);
         if (lastUpload != null && now - lastUpload < cooldownNanos) {
-            DebugLogger.SERVER.debug(MODULE, "玩家 {} 的外观上传触发冷却", player.getScoreboardName());
             long remainingNanos = cooldownNanos - (now - lastUpload);
-            int retryAfter = (int) Math.min(Integer.MAX_VALUE,
-                    Math.max(1L, (remainingNanos + 999_999_999L) / 1_000_000_000L));
-            sendUploadResult(player, payload.snapshotHash(), false, retryAfter);
+            int retryAfter = (int) Math.max(1L, (remainingNanos + 999_999_999L) / 1_000_000_000L);
+            sendUploadResult(player, actualSnapshotHash, false, retryAfter);
             return;
         }
 
-        boolean changed = false;
-        if (!ApiServiceClient.uploadCosmeticSnapshot(
-                player.getUUID(), payload.skinWide(), payload.skinSlim(), payload.cloak())) {
-            DebugLogger.SERVER.warn(MODULE, "玩家 {} 的外观上传未被 Api 接受", player.getScoreboardName());
-            CosmeticSnapshot actualSnapshot = readSnapshot(player.getUUID());
-            trackOnlineSnapshot(player.getUUID(), actualSnapshot);
-            sendUploadResult(player, payload.snapshotHash(), false,
-                    Math.max(1, CosmeticModuleSettings.getUploadCooldownSeconds()));
-            return;
-        }
-        changed = !beforeSnapshot.snapshotHash().equals(payload.snapshotHash());
-        LAST_UPLOAD_NANOS.put(player.getUUID(), now);
-
-        CosmeticSnapshot storedSnapshot = readSnapshot(player.getUUID());
-        trackOnlineSnapshot(player.getUUID(), storedSnapshot);
-        if (!storedSnapshot.snapshotHash().equals(payload.snapshotHash())) {
-            if (!storedSnapshot.snapshotHash().equals(beforeSnapshot.snapshotHash())) {
-                clearTargetRequestCooldowns(player.getUUID());
-                broadcastInfo(server, player.getUUID(), storedSnapshot, null);
+        CompletableFuture<Boolean> upload = CompletableFuture.supplyAsync(() ->
+                ApiServiceClient.uploadCosmeticSnapshot(playerUuid, snapshot.skinWide(), snapshot.skinSlim(),
+                        snapshot.cloak()));
+        UPLOADING_SNAPSHOTS.put(playerUuid, upload);
+        upload.whenComplete((accepted, error) -> server.execute(() -> {
+            UPLOADING_SNAPSHOTS.remove(playerUuid, upload);
+            if (error != null) {
+                DebugLogger.SERVER.exception(MODULE, "保存装扮", error);
             }
-            DebugLogger.SERVER.warn(MODULE, "玩家 {} 的外观快照写入后校验不一致", player.getScoreboardName());
-            sendUploadResult(player, payload.snapshotHash(), false,
-                    Math.max(1, CosmeticModuleSettings.getUploadCooldownSeconds()));
-            return;
-        }
-
-        if (changed) {
-            clearTargetRequestCooldowns(player.getUUID());
-            broadcastInfo(server, player.getUUID(), storedSnapshot, null);
-            DebugLogger.SERVER.debug(MODULE, "玩家 {} 的自定义外观快照已更新", player.getScoreboardName());
-        }
-        sendUploadResult(player, payload.snapshotHash(), true, 0);
-        DebugLogger.SERVER.exiting(MODULE, "applySnapshot", changed ? "changed" : "unchanged");
+            ServerPlayer connected = server.getPlayerList().getPlayer(playerUuid);
+            if (connected == null || !isCurrentCustomSession(connected, session)) {
+                return;
+            }
+            if (!Boolean.TRUE.equals(accepted) || error != null) {
+                sendUploadResult(connected, actualSnapshotHash, false, 0);
+                return;
+            }
+            LAST_UPLOAD_NANOS.put(playerUuid, System.nanoTime());
+            publishSnapshot(connected, snapshot);
+            sendUploadResult(connected, actualSnapshotHash, true, 0);
+        }));
     }
 
-    /** 按请求冷却读取目标玩家文件并回传。 */
+    /** 本人请求可重试 Api 读取，其他玩家按冷却从当前会话的快照获取纹理。 */
     public static void handleRequest(ServerPlayer requester, UUID targetUuid) {
         MinecraftServer server = requester.level().getServer();
         if (server == null || !isServerActive(server)) {
             return;
         }
+        UUID requesterUuid = requester.getUUID();
+        if (requesterUuid.equals(targetUuid)) {
+            String session = ACTIVE_APPEARANCE_SESSIONS.get(requesterUuid);
+            if (isCurrentCustomSession(requester, session)) {
+                CosmeticSnapshot snapshot = ONLINE_COSMETICS.get(requesterUuid);
+                if (snapshot == null) {
+                    loadCustomAppearance(requester, session);
+                } else {
+                    sendSnapshot(requester, requesterUuid, snapshot);
+                }
+            }
+            return;
+        }
         if (CosmeticModuleSettings.isRequireAuthenticated() && !isAuthenticated(requester)) {
             return;
         }
-
         ServerPlayer target = server.getPlayerList().getPlayer(targetUuid);
-        if (target == null || !isAuthenticated(target)) {
-            return;
-        }
-        if (!ONLINE_COSMETIC_OWNERS.contains(targetUuid)) {
+        CosmeticSnapshot snapshot = ONLINE_COSMETICS.get(targetUuid);
+        if (target == null || !isAuthenticated(target) || snapshot == null || !snapshot.hasAny()) {
             return;
         }
 
@@ -384,27 +348,16 @@ public final class CosmeticManager {
         long cooldownNanos = secondsToNanos(CosmeticModuleSettings.getRequestCooldownSeconds());
         pruneRequestCooldowns(now, cooldownNanos);
         LinkedHashMap<UUID, Long> requesterRequests = LAST_REQUEST_NANOS.computeIfAbsent(
-                requester.getUUID(), ignored -> new LinkedHashMap<>(16, 0.75F, true));
+                requesterUuid, ignored -> new LinkedHashMap<>(16, 0.75F, true));
         Long lastRequest = requesterRequests.get(targetUuid);
         if (lastRequest != null && now - lastRequest < cooldownNanos) {
-            return;
-        }
-
-        CosmeticSnapshot snapshot = readSnapshot(targetUuid);
-        if (!snapshot.hasAny()) {
-            ONLINE_COSMETIC_OWNERS.remove(targetUuid);
-            if (requesterRequests.isEmpty()) {
-                LAST_REQUEST_NANOS.remove(requester.getUUID());
-            }
             return;
         }
         requesterRequests.put(targetUuid, now);
         while (requesterRequests.size() > MAX_REQUEST_TARGETS_PER_PLAYER) {
             requesterRequests.remove(requesterRequests.keySet().iterator().next());
         }
-        ServerPlayNetworking.send(requester,
-                new CosmeticDataPayload(targetUuid, snapshot.snapshotHash(),
-                        snapshot.skinWide(), snapshot.skinSlim(), snapshot.cloak()));
+        sendSnapshot(requester, targetUuid, snapshot);
     }
 
     /** 删除指定账户的全部自定义外观数据并广播清除。 */
@@ -428,7 +381,7 @@ public final class CosmeticManager {
         }
         LAST_UPLOAD_NANOS.remove(playerUuid);
         clearRequestCooldowns(playerUuid);
-        ONLINE_COSMETIC_OWNERS.remove(playerUuid);
+        ONLINE_COSMETICS.remove(playerUuid);
         if (server != null)
             broadcastInfo(server, playerUuid, emptySnapshot(), null);
         DebugLogger.SERVER.debug(MODULE, "已删除玩家 {} 的自定义外观数据", playerUuid);
@@ -498,12 +451,12 @@ public final class CosmeticManager {
         }
         VERIFIED_MOJANG_PROFILES.put(player.getUUID(), profile);
         VERIFYING_MOJANG_PROFILES.remove(player.getUUID());
-        ONLINE_COSMETIC_OWNERS.remove(player.getUUID());
+        ONLINE_COSMETICS.remove(player.getUUID());
         broadcastInfo(server, player.getUUID(), emptySnapshot(), null);
         broadcastMojang(server, new MojangSkinPayload(player.getUUID(), profile.profileId(),
                 profile.profileName(), profile.textureValue(), profile.textureSignature()));
         ServerPlayNetworking.send(player, new CosmeticReadyPayload(
-                true, serverInstanceId, EMPTY_SNAPSHOT_HASH, CosmeticModuleSettings.getRequestCooldownSeconds()));
+                true, CosmeticModuleSettings.getRequestCooldownSeconds()));
         sendVerifiedMojangAppearances(player);
         sendOnlineCustomAppearances(player);
         DebugLogger.SERVER.debug(MODULE, "玩家 {} 已核验为 Mojang 正版账户，已启用正版皮肤与披风", player.getScoreboardName());
@@ -520,105 +473,77 @@ public final class CosmeticManager {
     }
 
     private static void syncCustomAppearance(ServerPlayer player) {
+        UUID uuid = player.getUUID();
+        String session = ACTIVE_APPEARANCE_SESSIONS.get(uuid);
+        if (!isCurrentCustomSession(player, session)) {
+            return;
+        }
+        ServerPlayNetworking.send(player, new CosmeticReadyPayload(
+                true, CosmeticModuleSettings.getRequestCooldownSeconds()));
+        sendOnlineCustomAppearances(player);
+        sendVerifiedMojangAppearances(player);
+        loadCustomAppearance(player, session);
+    }
+
+    private static void loadCustomAppearance(ServerPlayer player, String session) {
+        UUID uuid = player.getUUID();
+        if (LOADING_SNAPSHOTS.putIfAbsent(uuid, session) != null) {
+            return;
+        }
         MinecraftServer server = player.level().getServer();
-        if (server == null || !isServerActive(server) || VERIFIED_MOJANG_PROFILES.containsKey(player.getUUID())) {
-            return;
-        }
-        UUID playerUuid = player.getUUID();
-        String appearanceSessionId = ACTIVE_APPEARANCE_SESSIONS.get(playerUuid);
-        if (appearanceSessionId == null) {
-            return;
-        }
-        CompletableFuture
-                .supplyAsync(() -> readSnapshot(playerUuid))
+        // A new login must read after any upload still finishing for an earlier connection.
+        CompletableFuture<?> previous = UPLOADING_SNAPSHOTS.getOrDefault(uuid, CompletableFuture.completedFuture(false));
+        previous.handle((accepted, error) -> null)
+                .thenApplyAsync(ignored -> readSnapshot(uuid))
                 .whenComplete((snapshot, error) -> server.execute(() -> {
-                    CosmeticSnapshot resolvedSnapshot = snapshot;
-                    if (error != null) {
-                        DebugLogger.SERVER.exception(MODULE, "读取离线外观快照", error);
-                        resolvedSnapshot = emptySnapshot();
-                    }
-                    if (player.hasDisconnected()
-                            || server.getPlayerList().getPlayer(playerUuid) != player
-                            || !appearanceSessionId.equals(ACTIVE_APPEARANCE_SESSIONS.get(playerUuid))
-                            || !isAuthenticated(player)
-                            || VERIFIED_MOJANG_PROFILES.containsKey(playerUuid)
-                            || PENDING_MOJANG_CHALLENGES.containsKey(playerUuid)
-                            || VERIFYING_MOJANG_PROFILES.containsKey(playerUuid)) {
+                    ServerPlayer connected = server.getPlayerList().getPlayer(uuid);
+                    if (!LOADING_SNAPSHOTS.remove(uuid, session)
+                            || connected == null || !isCurrentCustomSession(connected, session)) {
                         return;
                     }
-                    syncCustomAppearanceReady(player,
-                            resolvedSnapshot == null ? emptySnapshot() : resolvedSnapshot);
+                    if (error != null) {
+                        DebugLogger.SERVER.exception(MODULE, "读取装扮", error);
+                    }
+                    if (snapshot == null || error != null) {
+                        // An empty hash denotes a failed read. A saved empty appearance still has a SHA-256 hash.
+                        ServerPlayNetworking.send(connected, new CosmeticDataPayload(uuid, "", EMPTY, EMPTY, EMPTY));
+                        return;
+                    }
+                    publishSnapshot(connected, snapshot);
                 }));
     }
 
-    private static void syncCustomAppearanceReady(ServerPlayer player, CosmeticSnapshot ownSnapshot) {
+    private static boolean isCurrentCustomSession(ServerPlayer player, String session) {
         MinecraftServer server = player.level().getServer();
-        if (server == null || !isServerActive(server) || VERIFIED_MOJANG_PROFILES.containsKey(player.getUUID())) {
-            return;
-        }
-        trackOnlineSnapshot(player.getUUID(), ownSnapshot);
-        ServerPlayNetworking.send(player, new CosmeticReadyPayload(
-                true, serverInstanceId, ownSnapshot.snapshotHash(),
-                CosmeticModuleSettings.getRequestCooldownSeconds()));
+        UUID uuid = player.getUUID();
+        return server != null && isServerActive(server) && session != null
+                && session.equals(ACTIVE_APPEARANCE_SESSIONS.get(uuid))
+                && !player.hasDisconnected() && server.getPlayerList().getPlayer(uuid) == player
+                && isAuthenticated(player) && !VERIFIED_MOJANG_PROFILES.containsKey(uuid)
+                && !PENDING_MOJANG_CHALLENGES.containsKey(uuid) && !VERIFYING_MOJANG_PROFILES.containsKey(uuid);
+    }
 
-        sendOnlineCustomAppearances(player);
-        sendVerifiedMojangAppearances(player);
-        if (ownSnapshot.hasAny()) {
-            broadcastInfo(server, player.getUUID(), ownSnapshot, player.getUUID());
-        }
+    private static void publishSnapshot(ServerPlayer player, CosmeticSnapshot snapshot) {
+        UUID uuid = player.getUUID();
+        ONLINE_COSMETICS.put(uuid, snapshot);
+        clearTargetRequestCooldowns(uuid);
+        sendSnapshot(player, uuid, snapshot);
+        broadcastInfo(player.level().getServer(), uuid, snapshot, uuid);
+    }
+
+    private static void sendSnapshot(ServerPlayer receiver, UUID ownerUuid, CosmeticSnapshot snapshot) {
+        ServerPlayNetworking.send(receiver, new CosmeticDataPayload(
+                ownerUuid, snapshot.snapshotHash(), snapshot.skinWide(), snapshot.skinSlim(), snapshot.cloak()));
     }
 
     private static void sendOnlineCustomAppearances(ServerPlayer receiver) {
-        MinecraftServer server = receiver.level().getServer();
-        UUID receiverUuid = receiver.getUUID();
-        String appearanceSessionId = ACTIVE_APPEARANCE_SESSIONS.get(receiverUuid);
-        if (appearanceSessionId == null) {
-            return;
-        }
-        List<UUID> ownerUuids = new ArrayList<>();
-        for (ServerPlayer online : server.getPlayerList().getPlayers()) {
-            if (isAuthenticated(online)
-                    && !VERIFIED_MOJANG_PROFILES.containsKey(online.getUUID())
-                    && !online.getUUID().equals(receiverUuid)) {
-                ownerUuids.add(online.getUUID());
+        ONLINE_COSMETICS.forEach((uuid, snapshot) -> {
+            if (!uuid.equals(receiver.getUUID()) && snapshot.hasAny()) {
+                CosmeticState state = snapshot.state();
+                ServerPlayNetworking.send(receiver,
+                        new CosmeticInfoPayload(uuid, state.hasSkin(), state.hasCloak(), snapshot.snapshotHash()));
             }
-        }
-        CompletableFuture
-                .supplyAsync(() -> readSnapshots(ownerUuids))
-                .whenComplete((snapshots, error) -> server.execute(() -> {
-                    if (error != null) {
-                        DebugLogger.SERVER.exception(MODULE, "读取在线玩家外观快照", error);
-                        return;
-                    }
-                    if (receiver.hasDisconnected()
-                            || server.getPlayerList().getPlayer(receiverUuid) != receiver
-                            || !appearanceSessionId.equals(ACTIVE_APPEARANCE_SESSIONS.get(receiverUuid))
-                            || !isAuthenticated(receiver)) {
-                        return;
-                    }
-                    for (Map.Entry<UUID, CosmeticSnapshot> entry : snapshots.entrySet()) {
-                        ServerPlayer owner = server.getPlayerList().getPlayer(entry.getKey());
-                        if (owner == null || !isAuthenticated(owner)
-                                || VERIFIED_MOJANG_PROFILES.containsKey(entry.getKey())) {
-                            continue;
-                        }
-                        CosmeticSnapshot snapshot = entry.getValue();
-                        trackOnlineSnapshot(entry.getKey(), snapshot);
-                        if (snapshot.hasAny()) {
-                            CosmeticState state = snapshot.state();
-                            ServerPlayNetworking.send(receiver, new CosmeticInfoPayload(
-                                    entry.getKey(), state.hasSkin(), state.hasCloak(), snapshot.snapshotHash()));
-                        }
-                    }
-                }));
-    }
-
-    private static Map<UUID, CosmeticSnapshot> readSnapshots(List<UUID> ownerUuids) {
-        Map<UUID, CosmeticSnapshot> snapshots = new LinkedHashMap<>();
-        for (UUID ownerUuid : ownerUuids) {
-            snapshots.put(ownerUuid, readSnapshot(ownerUuid));
-        }
-        return snapshots;
+        });
     }
 
     private static void sendVerifiedMojangAppearances(ServerPlayer receiver) {
@@ -653,7 +578,7 @@ public final class CosmeticManager {
                     CosmeticSnapshotHasher.hash(snapshot.skinWide(), snapshot.skinSlim(), snapshot.cloak()));
         }
         DebugLogger.SERVER.warn(MODULE, "Api 无法读取玩家 {} 的外观数据", playerUuid);
-        return emptySnapshot();
+        return null;
     }
 
     private static void broadcastInfo(
@@ -676,12 +601,6 @@ public final class CosmeticManager {
         return seconds <= 0 ? 0L : seconds * 1_000_000_000L;
     }
 
-    private static void writeMetadataDefaults() {
-        UUID generated = UUID.randomUUID();
-        METADATA_STORE.section(GlobalSettings.COSMETIC_MODULE)
-                .set(SERVER_INSTANCE_ID_KEY, generated.toString());
-    }
-
     private static void sendUploadResult(
             ServerPlayer player, String snapshotHash, boolean accepted, int retryAfterSeconds) {
         ServerPlayNetworking.send(player, new CosmeticUploadResultPayload(
@@ -695,14 +614,6 @@ public final class CosmeticManager {
     private static void clearRequestCooldowns(UUID playerUuid) {
         LAST_REQUEST_NANOS.remove(playerUuid);
         clearTargetRequestCooldowns(playerUuid);
-    }
-
-    private static void trackOnlineSnapshot(UUID playerUuid, CosmeticSnapshot snapshot) {
-        if (snapshot.hasAny()) {
-            ONLINE_COSMETIC_OWNERS.add(playerUuid);
-        } else {
-            ONLINE_COSMETIC_OWNERS.remove(playerUuid);
-        }
     }
 
     private static void clearTargetRequestCooldowns(UUID targetUuid) {

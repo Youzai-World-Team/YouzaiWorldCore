@@ -464,6 +464,7 @@ public final class ApiServiceClient {
             return Optional.empty();
         try {
             JsonObject files = parse(response.body()).getAsJsonObject("files");
+            if (files == null) return Optional.empty();
             return Optional.of(new CosmeticSnapshot(decode(files, "skin.png"), decode(files, "skin_slim.png"),
                     decode(files, "cloak.png")));
         } catch (RuntimeException e) {

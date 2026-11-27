@@ -238,7 +238,7 @@ public final class YzuiTitleMenu {
 
     private void testEnvironment() {
         if ("dedicated".equals(ClientExternalSettings.getDebugModeType())) {
-            connect("Debug Server", ClientExternalSettings.getDebugAddress() + ":" + ClientExternalSettings.getDebugPort());
+            connect("Debug Server", ClientExternalSettings.getDebugServerAddress());
         } else {
             minecraft.gui.setScreen(new SelectWorldScreen(screen));
         }

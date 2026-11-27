@@ -1,6 +1,8 @@
 package top.csituka.youzaiworldcore.client.screen;
 
+import com.mojang.blaze3d.Blaze3D;
 import com.mojang.blaze3d.platform.InputConstants;
+import top.csituka.youzaiworldcore.client.cosmetic.CosmeticClientManager;
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
 import top.csituka.youzaiworldcore.client.render.YzuiMenuPanel;
 import top.csituka.youzaiworldcore.client.screen.widget.WidgetFocus;
@@ -21,6 +23,7 @@ import top.csituka.youzaiworldcore.client.screen.widget.MenuCloseButton;
 import top.csituka.youzaiworldcore.network.AccountManagementRequestPayload;
 import top.csituka.youzaiworldcore.network.AccountManagementStatePayload;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -29,6 +32,9 @@ import java.util.regex.Pattern;
 /** 已登录玩家的账户管理页面。 */
 @SuppressWarnings("null")
 public class AccountManagementScreen extends Screen implements YzuiMenuScreen {
+    private static final URI OFFICIAL_APPEARANCE = URI.create(
+            "https://www.minecraft.net/en-us/msaprofile/mygames/editskin");
+
     private static final int CONTAINER_HEIGHT = 336;
     private static final int FIELD_WIDTH = 190;
     private static final int FIELD_HEIGHT = 20;
@@ -77,6 +83,7 @@ public class AccountManagementScreen extends Screen implements YzuiMenuScreen {
 
     private TransparentButton changePasswordButton;
     private TransparentButton changeEmailButton;
+    private TransparentButton cosmeticSettingsButton;
     private TransparentButton deactivateModeButton;
     private TransparentButton closeButton;
     private MenuCloseButton windowCloseButton;
@@ -186,7 +193,7 @@ public class AccountManagementScreen extends Screen implements YzuiMenuScreen {
         if (this.currentDialog != null)
             this.currentDialog.init(this.width, this.height);
         updateButtonState();
-        if (!this.loaded && !this.loadRequested)
+        if (!CosmeticClientManager.isLocalTestEnvironment() && !this.loaded && !this.loadRequested)
             requestLoad();
     }
 
@@ -203,6 +210,9 @@ public class AccountManagementScreen extends Screen implements YzuiMenuScreen {
                 x, top + 116, width,
                 "screen.youzaiworldcore.account_management.button_change_email",
                 () -> switchMode(Mode.CHANGE_EMAIL));
+        this.cosmeticSettingsButton = button(
+                x, top + 150, width, "screen.youzaiworldcore.cosmetic_settings.title",
+                this::openCosmeticSettings);
         this.deactivateModeButton = button(
                 x, top + 150, width,
                 "screen.youzaiworldcore.account_management.button_deactivate",
@@ -211,6 +221,14 @@ public class AccountManagementScreen extends Screen implements YzuiMenuScreen {
         this.closeButton = button(
                 centerX - BUTTON_WIDTH / 2, top + 205, BUTTON_WIDTH,
                 "gui.back", () -> Minecraft.getInstance().setScreenAndShow(parent));
+    }
+
+    private void openCosmeticSettings() {
+        if (CosmeticClientManager.usesOfficialAppearance()) {
+            Blaze3D.openUri(OFFICIAL_APPEARANCE);
+        } else {
+            Minecraft.getInstance().setScreenAndShow(new CosmeticSettingsScreen(this));
+        }
     }
 
     private void initPasswordForm() {
@@ -318,14 +336,17 @@ public class AccountManagementScreen extends Screen implements YzuiMenuScreen {
             GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         updateButtonState();
         int w = Math.min(440, width - 40), x = (width - w) / 2, y = containerTop();
-        YzuiMenuPanel.card(graphics, x, y, w, CONTAINER_HEIGHT);
+        YzuiMenuPanel.card(graphics, x, y, w, containerHeight());
         YzuiMenuPanel.header(graphics, font, title,
                 Component.translatable("screen.youzaiworldcore.account_management.subtitle", playerName), x, y, w);
         if (mode == Mode.HOME) {
-            String email = !loaded ? Component.translatable("screen.youzaiworldcore.account_management.email_loading").getString()
+            String email = CosmeticClientManager.isLocalTestEnvironment()
+                    ? Component.translatable("screen.youzaiworldcore.cosmetic_settings.local_test").getString()
+                    : !loaded ? Component.translatable("screen.youzaiworldcore.account_management.email_loading").getString()
                     : Component.translatable("screen.youzaiworldcore.account_management.current_email",
                         currentEmail.isBlank() ? Component.translatable("screen.youzaiworldcore.account_management.email_unbound").getString() : currentEmail).getString();
-            YzuiTheme.wrapped(graphics, font, Component.literal(email), x + 24, y + 76, w - 48, 3, YzuiTheme.textMuted());
+            YzuiTheme.wrapped(graphics, font, Component.literal(email), x + 24, y + (containerHeight() < 280 ? 55 : 76), w - 48,
+                    containerHeight() < 220 ? 1 : 3, YzuiTheme.textMuted());
         } else {
             String key = switch (mode) {
                 case CHANGE_PASSWORD -> "change_password_title";
@@ -643,6 +664,11 @@ public class AccountManagementScreen extends Screen implements YzuiMenuScreen {
         if (this.changeEmailButton != null) {
             this.changeEmailButton.active = this.loaded && !this.processing && !this.completed;
         }
+        if (this.cosmeticSettingsButton != null) {
+            this.cosmeticSettingsButton.active = !this.processing && !this.completed
+                    && (this.loaded || CosmeticClientManager.isLocalTestEnvironment()
+                            || CosmeticClientManager.usesOfficialAppearance());
+        }
         if (this.deactivateModeButton != null) {
             this.deactivateModeButton.active = this.loaded && !this.processing && !this.completed;
         }
@@ -729,6 +755,7 @@ public class AccountManagementScreen extends Screen implements YzuiMenuScreen {
         this.deactivatePasswordField = null;
         this.changePasswordButton = null;
         this.changeEmailButton = null;
+        this.cosmeticSettingsButton = null;
         this.deactivateModeButton = null;
         this.closeButton = null;
         this.submitPasswordButton = null;
@@ -779,7 +806,11 @@ public class AccountManagementScreen extends Screen implements YzuiMenuScreen {
     }
 
     private int containerTop() {
-        return Math.max(8, (this.height - CONTAINER_HEIGHT) / 2);
+        return Math.max(8, (this.height - containerHeight()) / 2);
+    }
+
+    private int containerHeight() {
+        return mode == Mode.HOME ? Math.min(CONTAINER_HEIGHT, this.height - 16) : CONTAINER_HEIGHT;
     }
 
     private int remainingEmailSessionSeconds() {
@@ -795,11 +826,16 @@ public class AccountManagementScreen extends Screen implements YzuiMenuScreen {
         int w = Math.min(440, width - 40) - 48, x = (width - w) / 2, y = containerTop();
         switch (mode) {
             case HOME -> {
-                changePasswordButton.setRectangle(w, 30, x, y + 120);
-                changeEmailButton.setRectangle(w, 30, x, y + 162);
-                deactivateModeButton.setRectangle(w, 30, x, y + 204);
+                int homeHeight = containerHeight();
+                int start = homeHeight < 280 ? Math.min(85, Math.max(67, homeHeight - 122)) : 120;
+                int spacing = Math.max(13, Math.min(42, (homeHeight - start - 8) / 5));
+                int buttonHeight = Math.min(30, spacing - 3);
+                changePasswordButton.setRectangle(w, buttonHeight, x, y + start);
+                changeEmailButton.setRectangle(w, buttonHeight, x, y + start + spacing);
+                cosmeticSettingsButton.setRectangle(w, buttonHeight, x, y + start + spacing * 2);
+                deactivateModeButton.setRectangle(w, buttonHeight, x, y + start + spacing * 3);
                 deactivateModeButton.setStyle(YzuiTheme.ButtonStyle.DANGER);
-                closeButton.setRectangle(w, 28, x, y + 278);
+                closeButton.setRectangle(w, buttonHeight, x, y + start + spacing * 4);
             }
             case CHANGE_PASSWORD -> {
                 currentPasswordField.setRectangle(w, 24, x, y + 102);

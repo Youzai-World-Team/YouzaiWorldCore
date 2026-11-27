@@ -228,7 +228,7 @@ public final class YzuiTheme {
         if (name.startsWith("Yzu") || name.startsWith("Mail") || name.equals("YzuiAppearanceScreen")
                 || name.equals("FlyBeaconScreen") || name.equals("DecompositionTableScreen")
                 || name.equals("WelcomeGuideScreen") || name.equals("TitleManagementScreen")
-                || name.equals("CosmeticPreviewScreen")
+                || name.equals("CosmeticPreviewScreen") || name.equals("CosmeticSettingsScreen")
                 || name.equals("ConfigImportSuccessScreen") || name.equals("LoginScreen")
                 || name.equals("RegisterScreen") || name.equals("RegistrationEmailScreen")
                 || name.equals("PasswordResetScreen") || name.equals("AccountManagementScreen")

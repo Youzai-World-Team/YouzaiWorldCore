@@ -8,12 +8,10 @@ import com.mojang.blaze3d.platform.NativeImage;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.User;
 import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.core.ClientAsset;
-import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.PlayerModelType;
 import net.minecraft.world.entity.player.PlayerSkin;
@@ -35,12 +33,7 @@ import top.csituka.youzaiworldcore.network.MojangSkinPayload;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.HexFormat;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -53,8 +46,7 @@ import java.util.concurrent.CompletableFuture;
 /**
  * 自定义皮肤与披风客户端管理器。
  * <p>
- * 负责扫描 {@code yzwc/client/config/cosmetic_module/} 下的两个皮肤候选与单一披风 PNG、上传去重、按需下载、
- * 动态纹理注册以及最多 64 名玩家的 LRU 缓存。
+ * 负责已保存外观同步、手动上传、动态纹理注册与客户端缓存。
  * </p>
  */
 @SuppressWarnings("null")
@@ -63,9 +55,11 @@ public final class CosmeticClientManager {
     private static final String MODULE = "CosmeticClientManager";
     private static final int CACHE_LIMIT = 64;
     private static final int MAX_REQUEST_ATTEMPTS = 3;
-    private static final int UPLOAD_ACK_TIMEOUT_SECONDS = 10;
-    private static final byte[] EMPTY = new byte[0];
+    private static final int UPLOAD_ACK_TIMEOUT_SECONDS = 45;
     private static final UUID EMPTY_UUID = new UUID(0L, 0L);
+    private static final byte[] EMPTY = new byte[0];
+    private static final CosmeticDataPayload EMPTY_TEST_SNAPSHOT =
+            new CosmeticDataPayload(EMPTY_UUID, "", EMPTY, EMPTY, EMPTY);
 
     private static final Slot SKIN_WIDE = new Slot("skin.png", "skin", "wide", false);
     private static final Slot SKIN_SLIM = new Slot("skin_slim.png", "skin", "slim", false);
@@ -81,11 +75,11 @@ public final class CosmeticClientManager {
 
     private static boolean initialized;
     private static boolean serverReady;
-    private static UUID serverInstanceId;
     private static int requestRetrySeconds = 11;
+    private static CosmeticDataPayload ownSnapshot;
+    private static LocalTestAppearance localTestAppearance;
+    private static boolean ownSnapshotFailed;
     private static PendingUpload pendingUpload;
-    private static long nextUploadRetryNanos;
-    private static boolean skinConflictNotified;
     private static String mojangChallenge = "";
     private static long sessionEpoch;
 
@@ -99,85 +93,105 @@ public final class CosmeticClientManager {
         }
         initialized = true;
         ModPaths.ensureDir(ModPaths.clientConfig(ClientGlobalSettings.COSMETIC_MODULE));
-        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) ->
-                client.execute(CosmeticClientManager::clearSession));
+        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> client.execute(() -> {
+            if (localTestAppearance != null) {
+                releaseTextures(localTestAppearance.textures());
+                localTestAppearance = null;
+            }
+            clearSession();
+        }));
         ClientTickEvents.END_CLIENT_TICK.register(client -> tick());
         DebugLogger.CLIENT.debug(MODULE, "客户端自定义皮肤与披风管理器已初始化");
     }
 
-    /** 处理服务端在账户认证完成后下发的就绪状态。 */
+    /** 认证后只准备接收服务器上已保存的外观。 */
     public static void onReady(CosmeticReadyPayload payload) {
-        DebugLogger.CLIENT.entering(MODULE, "onReady", "ready=" + payload.ready());
         if (!payload.ready()) {
-            serverReady = false;
-            PENDING_REQUESTS.clear();
-            pendingUpload = null;
-            serverInstanceId = null;
-            skinConflictNotified = false;
-            mojangChallenge = "";
-            sessionEpoch++;
-            VERIFIED_MOJANG_OWNERS.clear();
-            MOJANG_SKIN_KEYS.clear();
-            MOJANG_SKINS.clear();
-            releaseAll();
-            DebugLogger.CLIENT.exiting(MODULE, "onReady", "disabled");
+            clearSession();
             return;
         }
-
-        serverReady = ClientExternalSettings.isCosmeticEnabled();
-        if (!serverReady) {
-            PENDING_REQUESTS.clear();
-            pendingUpload = null;
-            serverInstanceId = null;
-            skinConflictNotified = false;
-            releaseAll();
-            DebugLogger.CLIENT.exiting(MODULE, "onReady", "custom cosmetic disabled locally");
-            return;
-        }
-
-        serverInstanceId = payload.serverInstanceId();
+        serverReady = true;
         requestRetrySeconds = Math.max(1, Math.min(3600, payload.requestCooldownSeconds()) + 1);
-        PENDING_REQUESTS.clear();
+    }
 
+    /** 开发者单人世界或开发者选项中配置的专用测试连接。 */
+    public static boolean isLocalTestEnvironment() {
         Minecraft client = Minecraft.getInstance();
-        if (client.player == null) {
-            DebugLogger.CLIENT.exiting(MODULE, "onReady", "player unavailable");
-            return;
+        if (!ClientExternalSettings.isDevModeEnabled() || client.player == null) {
+            return false;
         }
-
-        UUID selfUuid = client.player.getUUID();
-        if (VERIFIED_MOJANG_OWNERS.contains(selfUuid)) {
-            release(selfUuid);
-            pendingUpload = null;
-            DebugLogger.CLIENT.exiting(MODULE, "onReady", "verified Mojang profile");
-            return;
+        if (client.hasSingleplayerServer()) {
+            return true;
         }
+        var server = client.getCurrentServer();
+        return "dedicated".equals(ClientExternalSettings.getDebugModeType())
+                && server != null
+                && ClientExternalSettings.getDebugServerAddress().equalsIgnoreCase(server.ip);
+    }
 
-        LocalSnapshot snapshot = scanLocalFiles();
-        if (snapshot.skinConflict() && !skinConflictNotified) {
-            client.player.sendSystemMessage(Component.translatable(
-                    "youzaiworldcore.message.cosmetic.skin_conflict").withStyle(ChatFormatting.YELLOW));
-            skinConflictNotified = true;
-            DebugLogger.CLIENT.info(MODULE, "同时检测到 skin.png 和 skin_slim.png，已优先使用 skin.png");
+    public static boolean usesOfficialAppearance() {
+        return !isLocalTestEnvironment() && (isLocalMojangVerified() || !isOfflineSession());
+    }
+
+    public static boolean canEditAppearance() {
+        return isLocalTestEnvironment()
+                || serverReady && !usesOfficialAppearance() && ClientPlayNetworking.canSend(CosmeticUploadPayload.ID);
+    }
+
+    public static CosmeticDataPayload ownSnapshot() {
+        if (isLocalTestEnvironment()) {
+            return localTestAppearance == null ? EMPTY_TEST_SNAPSHOT : localTestAppearance.snapshot();
         }
+        return ownSnapshot;
+    }
 
-        release(selfUuid);
-        cacheSnapshot(selfUuid, snapshot.snapshotHash(), snapshot.skinWide(), snapshot.skinSlim(),
-                snapshot.cloak());
+    public static boolean ownSnapshotFailed() {
+        return !isLocalTestEnvironment() && ownSnapshotFailed;
+    }
 
-        Map<String, CosmeticUploadState.FileState> previous =
-                CosmeticUploadState.load(serverInstanceId, selfUuid);
-        if (payload.ownSnapshotHash().equals(snapshot.snapshotHash())) {
-            if (!previous.equals(snapshot.states())) {
-                CosmeticUploadState.save(serverInstanceId, selfUuid, snapshot.states());
-            }
-            pendingUpload = null;
-            DebugLogger.CLIENT.debug(MODULE, "服务端外观快照已与本地一致，跳过上传");
-        } else {
-            pendingUpload = new PendingUpload(serverInstanceId, selfUuid, snapshot);
-            sendPendingUpload();
+    public static void requestOwnSnapshot() {
+        var player = Minecraft.getInstance().player;
+        if (player != null && !isLocalTestEnvironment() && canEditAppearance()
+                && ClientPlayNetworking.canSend(CosmeticRequestPayload.ID)) {
+            ownSnapshotFailed = false;
+            ClientPlayNetworking.send(new CosmeticRequestPayload(player.getUUID()));
         }
-        DebugLogger.CLIENT.exiting(MODULE, "onReady");
+    }
+
+    /** 使用预览过的字节提交装扮，开发者测试时只更新本机的渲染。 */
+    public static CompletableFuture<CosmeticUploadResultPayload> applyAppearance(
+            byte[] skinWide, byte[] skinSlim, byte[] cloak) {
+        String hash = CosmeticSnapshotHasher.hash(skinWide, skinSlim, cloak);
+        if (isLocalTestEnvironment()) {
+            UUID owner = Minecraft.getInstance().player.getUUID();
+            boolean applied = applyLocalTestAppearance(new CosmeticDataPayload(owner, hash, skinWide, skinSlim, cloak));
+            return CompletableFuture.completedFuture(new CosmeticUploadResultPayload(hash, applied, 0));
+        }
+        if (!canEditAppearance() || pendingUpload != null) {
+            return CompletableFuture.completedFuture(new CosmeticUploadResultPayload(hash, false, 0));
+        }
+        var result = new CompletableFuture<CosmeticUploadResultPayload>();
+        pendingUpload = new PendingUpload(hash,
+                System.nanoTime() + UPLOAD_ACK_TIMEOUT_SECONDS * 1_000_000_000L, result);
+        ClientPlayNetworking.send(new CosmeticUploadPayload(true, hash, skinWide, skinSlim, cloak));
+        return result;
+    }
+
+    private static boolean applyLocalTestAppearance(CosmeticDataPayload snapshot) {
+        LocalTestAppearance previous = localTestAppearance;
+        if (previous != null && previous.snapshot().ownerUuid().equals(snapshot.ownerUuid())
+                && previous.snapshot().snapshotHash().equals(snapshot.snapshotHash())) {
+            return true;
+        }
+        CachedAppearance textures = createAppearance(snapshot, "cosmetic/local_test/");
+        if (textures == null) {
+            return false;
+        }
+        localTestAppearance = new LocalTestAppearance(snapshot, textures);
+        if (previous != null) {
+            releaseTextures(previous.textures());
+        }
+        return true;
     }
 
     /** 响应服务端的一次性 Mojang 会话挑战，不上传访问令牌。 */
@@ -298,12 +312,15 @@ public final class CosmeticClientManager {
 
     /** 二次校验并注册服务端回传的动态纹理。 */
     public static void onData(CosmeticDataPayload payload) {
-        if (!serverReady || !ClientExternalSettings.isCosmeticEnabled()) {
+        if (!serverReady) {
             return;
         }
-
         UUID ownerUuid = payload.ownerUuid();
-        if (isLocalPlayer(ownerUuid) || VERIFIED_MOJANG_OWNERS.contains(ownerUuid)) {
+        if (isLocalPlayer(ownerUuid)) {
+            acceptOwnSnapshot(payload);
+            return;
+        }
+        if (!ClientExternalSettings.isCosmeticEnabled() || VERIFIED_MOJANG_OWNERS.contains(ownerUuid)) {
             return;
         }
 
@@ -333,28 +350,31 @@ public final class CosmeticClientManager {
         }
     }
 
-    /** 服务端确认上传成功后才持久化该作用域的去重状态。 */
+    private static void acceptOwnSnapshot(CosmeticDataPayload payload) {
+        if (isLocalMojangVerified()) {
+            return;
+        }
+        String hash = CosmeticSnapshotHasher.hash(payload.skinWide(), payload.skinSlim(), payload.cloak());
+        if (!hash.equals(payload.snapshotHash())) {
+            ownSnapshotFailed = true;
+            return;
+        }
+        ownSnapshot = payload;
+        ownSnapshotFailed = false;
+        UUID owner = payload.ownerUuid();
+        CachedAppearance cached = CACHE.get(owner);
+        if (cached != null && cached.snapshotHash().equals(hash)) {
+            return;
+        }
+        release(owner);
+        cacheSnapshot(owner, hash, payload.skinWide(), payload.skinSlim(), payload.cloak());
+    }
+
     public static void onUploadResult(CosmeticUploadResultPayload payload) {
         PendingUpload pending = pendingUpload;
-        if (!serverReady || pending == null || !pending.snapshot().snapshotHash().equals(payload.snapshotHash())) {
-            return;
-        }
-        if (payload.accepted()) {
-            CosmeticUploadState.save(
-                    pending.serverInstanceId(), pending.playerUuid(), pending.snapshot().states());
+        if (pending != null && pending.hash().equals(payload.snapshotHash())) {
             pendingUpload = null;
-            nextUploadRetryNanos = 0L;
-            DebugLogger.CLIENT.info(MODULE, "服务端已确认自定义外观快照");
-            return;
-        }
-        if (payload.retryAfterSeconds() > 0) {
-            nextUploadRetryNanos = System.nanoTime()
-                    + payload.retryAfterSeconds() * 1_000_000_000L;
-            DebugLogger.CLIENT.debug(MODULE, "服务端暂未接受外观快照，将在 {} 秒后重试", payload.retryAfterSeconds());
-        } else {
-            pendingUpload = null;
-            nextUploadRetryNanos = 0L;
-            DebugLogger.CLIENT.warn(MODULE, "服务端拒绝了本次自定义外观快照");
+            pending.result().complete(payload);
         }
     }
 
@@ -362,6 +382,11 @@ public final class CosmeticClientManager {
     public static PlayerSkin apply(UUID ownerUuid, PlayerSkin original) {
         if (original == null) {
             return original;
+        }
+        LocalTestAppearance test = localTestAppearance;
+        if (test != null && test.snapshot().ownerUuid().equals(ownerUuid)
+                && isLocalPlayer(ownerUuid) && isLocalTestEnvironment()) {
+            return test.textures().apply(original);
         }
         PlayerSkin mojangSkin = MOJANG_SKINS.get(ownerUuid);
         if (mojangSkin != null) {
@@ -385,76 +410,14 @@ public final class CosmeticClientManager {
         serverReady = false;
         mojangChallenge = "";
         sessionEpoch++;
-        serverInstanceId = null;
-        pendingUpload = null;
-        nextUploadRetryNanos = 0L;
-        skinConflictNotified = false;
+        ownSnapshot = null;
+        ownSnapshotFailed = false;
+        failPendingUpload();
         PENDING_REQUESTS.clear();
         VERIFIED_MOJANG_OWNERS.clear();
         MOJANG_SKIN_KEYS.clear();
         MOJANG_SKINS.clear();
         releaseAll();
-    }
-
-    private static LocalSnapshot scanLocalFiles() {
-        Path directory = ModPaths.clientConfig(ClientGlobalSettings.COSMETIC_MODULE);
-        Path wideSkinPath = directory.resolve(SKIN_WIDE.fileName());
-        Path slimSkinPath = directory.resolve(SKIN_SLIM.fileName());
-        boolean skinConflict = Files.isRegularFile(wideSkinPath) && Files.isRegularFile(slimSkinPath);
-
-        ScannedFile wideSkin = scanFile(wideSkinPath, SKIN_WIDE);
-        ScannedFile slimSkin = scanFile(slimSkinPath, SKIN_SLIM);
-        ScannedFile cloak = scanFile(directory.resolve(CLOAK.fileName()), CLOAK);
-        Map<String, CosmeticUploadState.FileState> states = new LinkedHashMap<>();
-        states.put(SKIN_WIDE.fileName(), wideSkin.state());
-        states.put(SKIN_SLIM.fileName(), slimSkin.state());
-        states.put(CLOAK.fileName(), cloak.state());
-
-        byte[] selectedSlimSkin = skinConflict ? EMPTY : slimSkin.data();
-        return new LocalSnapshot(
-                wideSkin.data(),
-                selectedSlimSkin,
-                cloak.data(),
-                CosmeticSnapshotHasher.hash(wideSkin.data(), selectedSlimSkin, cloak.data()),
-                states,
-                skinConflict);
-    }
-
-    private static ScannedFile scanFile(Path file, Slot slot) {
-        if (!Files.isRegularFile(file)) {
-            return new ScannedFile(EMPTY, new CosmeticUploadState.FileState("", 0L, false));
-        }
-        try {
-            long size = Files.size(file);
-            if (size <= 0 || size > CosmeticPngValidator.ABSOLUTE_MAX_FILE_BYTES) {
-                DebugLogger.CLIENT.warn(MODULE, "忽略大小不合法的本地外观文件：{}（{} 字节）", file, size);
-                return new ScannedFile(EMPTY, new CosmeticUploadState.FileState("", size, false));
-            }
-
-            byte[] bytes = Files.readAllBytes(file);
-            String sha256 = sha256(bytes);
-            CosmeticPngValidator.Validation validation = slot.cloak()
-                    ? CosmeticPngValidator.validateCloak(bytes, CosmeticPngValidator.ABSOLUTE_MAX_FILE_BYTES)
-                    : CosmeticPngValidator.validateSkin(bytes, CosmeticPngValidator.ABSOLUTE_MAX_FILE_BYTES);
-            if (!validation.valid()) {
-                DebugLogger.CLIENT.warn(MODULE, "忽略不合法的本地外观文件 {}：{}", file, validation.reason());
-                return new ScannedFile(EMPTY,
-                        new CosmeticUploadState.FileState(sha256, bytes.length, false));
-            }
-            return new ScannedFile(bytes,
-                    new CosmeticUploadState.FileState(sha256, bytes.length, true));
-        } catch (IOException e) {
-            DebugLogger.CLIENT.exception(MODULE, "scanFile", e);
-            return new ScannedFile(EMPTY, new CosmeticUploadState.FileState("", -1L, false));
-        }
-    }
-
-    private static String sha256(byte[] data) {
-        try {
-            return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(data));
-        } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException("当前 Java 运行时不支持 SHA-256", e);
-        }
     }
 
     private static boolean cacheSnapshot(
@@ -463,22 +426,12 @@ public final class CosmeticClientManager {
             byte[] skinWide,
             byte[] skinSlim,
             byte[] cloak) {
-        List<Identifier> textureIds = new ArrayList<>(3);
-        ClientAsset.Texture wideSkin = registerTexture(ownerUuid, snapshotHash, SKIN_WIDE, skinWide, textureIds);
-        ClientAsset.Texture slimSkin = registerTexture(ownerUuid, snapshotHash, SKIN_SLIM, skinSlim, textureIds);
-        ClientAsset.Texture cloakTexture = registerTexture(ownerUuid, snapshotHash, CLOAK, cloak, textureIds);
-        if (registrationFailed(skinWide, wideSkin)
-                || registrationFailed(skinSlim, slimSkin)
-                || registrationFailed(cloak, cloakTexture)) {
-            releaseTextureIds(textureIds);
+        CachedAppearance appearance = createAppearance(
+                new CosmeticDataPayload(ownerUuid, snapshotHash, skinWide, skinSlim, cloak), "cosmetic/");
+        if (appearance == null) {
             return false;
         }
-        if (wideSkin == null && slimSkin == null && cloakTexture == null) {
-            return false;
-        }
-
-        CachedAppearance previous = CACHE.put(ownerUuid,
-                new CachedAppearance(snapshotHash, wideSkin, slimSkin, cloakTexture, textureIds));
+        CachedAppearance previous = CACHE.put(ownerUuid, appearance);
         if (previous != null) {
             releaseTextures(previous);
         }
@@ -486,8 +439,28 @@ public final class CosmeticClientManager {
         return true;
     }
 
+    private static CachedAppearance createAppearance(CosmeticDataPayload snapshot, String textureRoot) {
+        UUID owner = snapshot.ownerUuid();
+        String hash = snapshot.snapshotHash();
+        String path = textureRoot + owner + "/" + hash.substring(0, 12);
+        List<Identifier> ids = new ArrayList<>(3);
+        ClientAsset.Texture wideSkin = registerTexture(owner, path, SKIN_WIDE, snapshot.skinWide(), ids);
+        ClientAsset.Texture slimSkin = registerTexture(owner, path, SKIN_SLIM, snapshot.skinSlim(), ids);
+        ClientAsset.Texture cloakTexture = registerTexture(owner, path, CLOAK, snapshot.cloak(), ids);
+        if (registrationFailed(snapshot.skinWide(), wideSkin)
+                || registrationFailed(snapshot.skinSlim(), slimSkin)
+                || registrationFailed(snapshot.cloak(), cloakTexture)) {
+            releaseTextureIds(ids);
+            return null;
+        }
+        if (ids.isEmpty()) {
+            return null;
+        }
+        return new CachedAppearance(hash, wideSkin, slimSkin, cloakTexture, ids);
+    }
+
     private static ClientAsset.Texture registerTexture(
-            UUID ownerUuid, String snapshotHash, Slot slot, byte[] data, List<Identifier> textureIds) {
+            UUID ownerUuid, String texturePath, Slot slot, byte[] data, List<Identifier> textureIds) {
         if (data == null || data.length == 0) {
             return null;
         }
@@ -501,8 +474,7 @@ public final class CosmeticClientManager {
         }
 
         Identifier identifier = Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID,
-                "cosmetic/" + ownerUuid + "/" + snapshotHash.substring(0, 12)
-                        + "/" + slot.category() + "/" + slot.model());
+                texturePath + "/" + slot.category() + "/" + slot.model());
         NativeImage image = null;
         DynamicTexture texture = null;
         try {
@@ -559,8 +531,8 @@ public final class CosmeticClientManager {
             return;
         }
         long now = System.nanoTime();
-        if (pendingUpload != null && nextUploadRetryNanos > 0L && now >= nextUploadRetryNanos) {
-            sendPendingUpload();
+        if (pendingUpload != null && now >= pendingUpload.expiresAtNanos()) {
+            failPendingUpload();
         }
 
         Iterator<Map.Entry<UUID, PendingRequest>> iterator = PENDING_REQUESTS.entrySet().iterator();
@@ -583,24 +555,12 @@ public final class CosmeticClientManager {
         }
     }
 
-    private static void sendPendingUpload() {
-        PendingUpload pending = pendingUpload;
-        if (pending == null || isLocalMojangVerified()) {
-            if (pending != null) {
-                DebugLogger.CLIENT.debug(MODULE, "当前玩家已通过 Mojang 正版核验，忽略本地自定义外观上传请求");
-                pendingUpload = null;
-            }
-            return;
+    private static void failPendingUpload() {
+        if (pendingUpload != null) {
+            PendingUpload pending = pendingUpload;
+            pendingUpload = null;
+            pending.result().complete(new CosmeticUploadResultPayload(pending.hash(), false, 0));
         }
-        LocalSnapshot snapshot = pending.snapshot();
-        ClientPlayNetworking.send(new CosmeticUploadPayload(
-                true,
-                snapshot.snapshotHash(),
-                snapshot.skinWide(),
-                snapshot.skinSlim(),
-                snapshot.cloak()));
-        nextUploadRetryNanos = System.nanoTime() + UPLOAD_ACK_TIMEOUT_SECONDS * 1_000_000_000L;
-        DebugLogger.CLIENT.debug(MODULE, "本地外观快照已发送，等待服务端确认");
     }
 
     private static void requestSnapshot(UUID ownerUuid, String snapshotHash) {
@@ -626,6 +586,9 @@ public final class CosmeticClientManager {
         Iterator<Map.Entry<UUID, CachedAppearance>> iterator = CACHE.entrySet().iterator();
         while (CACHE.size() > CACHE_LIMIT && iterator.hasNext()) {
             Map.Entry<UUID, CachedAppearance> eldest = iterator.next();
+            if (isLocalPlayer(eldest.getKey())) {
+                continue;
+            }
             iterator.remove();
             PENDING_REQUESTS.remove(eldest.getKey());
             releaseTextures(eldest.getValue());
@@ -654,18 +617,6 @@ public final class CosmeticClientManager {
     }
 
     private record Slot(String fileName, String category, String model, boolean cloak) {
-    }
-
-    private record ScannedFile(byte[] data, CosmeticUploadState.FileState state) {
-    }
-
-    private record LocalSnapshot(
-            byte[] skinWide,
-            byte[] skinSlim,
-            byte[] cloak,
-            String snapshotHash,
-            Map<String, CosmeticUploadState.FileState> states,
-            boolean skinConflict) {
     }
 
     private static final class CachedAppearance {
@@ -718,6 +669,10 @@ public final class CosmeticClientManager {
     private record MojangSkinKey(UUID profileId, String textureValue, String textureSignature) {
     }
 
-    private record PendingUpload(UUID serverInstanceId, UUID playerUuid, LocalSnapshot snapshot) {
+    private record LocalTestAppearance(CosmeticDataPayload snapshot, CachedAppearance textures) {
+    }
+
+    private record PendingUpload(String hash, long expiresAtNanos,
+                                 CompletableFuture<CosmeticUploadResultPayload> result) {
     }
 }

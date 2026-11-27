@@ -28,7 +28,7 @@ public record CosmeticUploadPayload(
     }
 
     public static final Identifier IDENTIFIER = Identifier.fromNamespaceAndPath(
-            YouzaiworldCore.MOD_ID, "cosmetic_upload");
+            YouzaiworldCore.MOD_ID, "cosmetic_apply");
     public static final Type<CosmeticUploadPayload> ID = new Type<>(IDENTIFIER);
     public static final StreamCodec<RegistryFriendlyByteBuf, CosmeticUploadPayload> STREAM_CODEC =
             StreamCodec.of(
