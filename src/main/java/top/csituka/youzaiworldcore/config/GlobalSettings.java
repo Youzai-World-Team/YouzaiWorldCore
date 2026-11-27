@@ -47,6 +47,7 @@ public final class GlobalSettings {
     public static final String RESPAWN_MODULE = "respawn_module";
     public static final String MAIL_MODULE = "mail_module";
     public static final String PET_MODULE = "pet_module";
+    public static final String BACKUP_MODULE = "backup_module";
     public static final String COSMETIC_MODULE = "cosmetic_module";
     /** 维度池（跨维度独立背包） */
     public static final String DIMENSIONAL_INVENTORIES_MODULE = "dimensional_inventories_module";

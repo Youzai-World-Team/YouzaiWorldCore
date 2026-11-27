@@ -6,10 +6,10 @@
 
 | 类别 | 调用点 | 内容 |
 |---|---:|---|
-| 普通日志 | 433 | 启停、更新、管理员操作及实际警告 / 故障 |
-| 1 基本 | 191 | 配置 / 数据摘要、重要状态和结果 |
-| 2 详细 | 1124 | 注册、网络操作、计算与分支诊断 |
-| 3 调试 | 1094 | 方法入口 / 出口、每帧 / tick 与逐条追踪 |
+| 普通日志 | 431 | 启停、更新、管理员操作及实际警告 / 故障 |
+| 1 基本 | 185 | 配置 / 数据摘要、重要状态和结果 |
+| 2 详细 | 1115 | 注册、网络操作、计算与分支诊断 |
+| 3 调试 | 1083 | 方法入口 / 出口、每帧 / tick 与逐条追踪 |
 
 共享存储按文件归属路由；通用资源注册按物理进程路由，其余调用明确指定客户端或服务端。
 
@@ -179,7 +179,7 @@
 | [src/client/mixin/client/itemborder/ItemStackRarityMixin.java](../src/client/java/top/csituka/youzaiworldcore/mixin/client/itemborder/ItemStackRarityMixin.java) | 2 | 0 | 2 | 1 |
 | [src/client/mixin/client/technocrown/PigRendererMixin.java](../src/client/java/top/csituka/youzaiworldcore/mixin/client/technocrown/PigRendererMixin.java) | 0 | 0 | 1 | 1 |
 | [src/client/network/ClientNetworking.java](../src/client/java/top/csituka/youzaiworldcore/network/ClientNetworking.java) | 0 | 0 | 43 | 37 |
-| [src/main/YouzaiworldCore.java](../src/main/java/top/csituka/youzaiworldcore/YouzaiworldCore.java) | 30 | 0 | 75 | 43 |
+| [src/main/YouzaiworldCore.java](../src/main/java/top/csituka/youzaiworldcore/YouzaiworldCore.java) | 30 | 0 | 73 | 43 |
 | [src/main/account/OnlineUuidLoginManager.java](../src/main/java/top/csituka/youzaiworldcore/account/OnlineUuidLoginManager.java) | 0 | 0 | 7 | 0 |
 | [src/main/account/command/AccountCommands.java](../src/main/java/top/csituka/youzaiworldcore/account/command/AccountCommands.java) | 25 | 5 | 74 | 73 |
 | [src/main/account/data/AccountDataStorage.java](../src/main/java/top/csituka/youzaiworldcore/account/data/AccountDataStorage.java) | 7 | 0 | 1 | 2 |
@@ -192,6 +192,8 @@
 | [src/main/afk/AfkTickHandler.java](../src/main/java/top/csituka/youzaiworldcore/afk/AfkTickHandler.java) | 1 | 0 | 2 | 0 |
 | [src/main/api/ApiHttp.java](../src/main/java/top/csituka/youzaiworldcore/api/ApiHttp.java) | 3 | 0 | 2 | 0 |
 | [src/main/api/ApiServiceClient.java](../src/main/java/top/csituka/youzaiworldcore/api/ApiServiceClient.java) | 5 | 0 | 0 | 0 |
+| [src/main/backup/BackupCommand.java](../src/main/java/top/csituka/youzaiworldcore/backup/BackupCommand.java) | 2 | 0 | 0 | 0 |
+| [src/main/backup/PlayerDataBackup.java](../src/main/java/top/csituka/youzaiworldcore/backup/PlayerDataBackup.java) | 6 | 0 | 0 | 0 |
 | [src/main/block/DecompositionTableBlock.java](../src/main/java/top/csituka/youzaiworldcore/block/DecompositionTableBlock.java) | 0 | 0 | 2 | 6 |
 | [src/main/block/DuplicateBlock.java](../src/main/java/top/csituka/youzaiworldcore/block/DuplicateBlock.java) | 0 | 0 | 1 | 5 |
 | [src/main/block/FlyBeaconBlock.java](../src/main/java/top/csituka/youzaiworldcore/block/FlyBeaconBlock.java) | 0 | 0 | 2 | 9 |
@@ -337,13 +339,11 @@
 | [src/main/mixin/trialvault/VaultServerDataMixin.java](../src/main/java/top/csituka/youzaiworldcore/mixin/trialvault/VaultServerDataMixin.java) | 0 | 0 | 2 | 0 |
 | [src/main/network/ModNetworking.java](../src/main/java/top/csituka/youzaiworldcore/network/ModNetworking.java) | 15 | 0 | 63 | 63 |
 | [src/main/network/ModPayloadTypes.java](../src/main/java/top/csituka/youzaiworldcore/network/ModPayloadTypes.java) | 0 | 0 | 1 | 2 |
-| [src/main/pet/PetBackupManager.java](../src/main/java/top/csituka/youzaiworldcore/pet/PetBackupManager.java) | 9 | 2 | 6 | 4 |
 | [src/main/pet/PetEventHandler.java](../src/main/java/top/csituka/youzaiworldcore/pet/PetEventHandler.java) | 2 | 3 | 8 | 9 |
-| [src/main/pet/PetGlobalState.java](../src/main/java/top/csituka/youzaiworldcore/pet/PetGlobalState.java) | 0 | 3 | 3 | 8 |
+| [src/main/pet/PetGlobalState.java](../src/main/java/top/csituka/youzaiworldcore/pet/PetGlobalState.java) | 0 | 1 | 3 | 8 |
 | [src/main/pet/PetMenuHandler.java](../src/main/java/top/csituka/youzaiworldcore/pet/PetMenuHandler.java) | 1 | 0 | 1 | 0 |
 | [src/main/pet/PetUtils.java](../src/main/java/top/csituka/youzaiworldcore/pet/PetUtils.java) | 2 | 0 | 1 | 3 |
-| [src/main/pet/command/PetCommand.java](../src/main/java/top/csituka/youzaiworldcore/pet/command/PetCommand.java) | 1 | 8 | 0 | 55 |
-| [src/main/pet/config/PetModuleConfig.java](../src/main/java/top/csituka/youzaiworldcore/pet/config/PetModuleConfig.java) | 0 | 2 | 1 | 3 |
+| [src/main/pet/command/PetCommand.java](../src/main/java/top/csituka/youzaiworldcore/pet/command/PetCommand.java) | 0 | 8 | 0 | 51 |
 | [src/main/pet/event/PetEventHandlers.java](../src/main/java/top/csituka/youzaiworldcore/pet/event/PetEventHandlers.java) | 0 | 0 | 1 | 2 |
 | [src/main/redstone/WirelessRedstoneNetwork.java](../src/main/java/top/csituka/youzaiworldcore/redstone/WirelessRedstoneNetwork.java) | 0 | 0 | 4 | 0 |
 | [src/main/respawn/InPlaceRespawnConfig.java](../src/main/java/top/csituka/youzaiworldcore/respawn/InPlaceRespawnConfig.java) | 0 | 2 | 0 | 3 |

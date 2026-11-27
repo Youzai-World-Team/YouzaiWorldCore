@@ -2,7 +2,6 @@ package top.csituka.youzaiworldcore.config;
 
 import top.csituka.youzaiworldcore.dimensionalinventories.DimensionPoolSettings;
 import top.csituka.youzaiworldcore.mail.MailSettings;
-import top.csituka.youzaiworldcore.pet.config.PetModuleConfig;
 import top.csituka.youzaiworldcore.respawn.InPlaceRespawnConfig;
 import top.csituka.youzaiworldcore.trialvault.TrialVaultConfig;
 import top.csituka.youzaiworldcore.util.DebugLogger;
@@ -48,7 +47,6 @@ public final class DefaultSettingsWriter {
             LaowuMemeConfig.writeDefaults();
             TrialVaultConfig.writeDefaults();
             InPlaceRespawnConfig.writeDefaults();
-            PetModuleConfig.writeDefaults();
             CosmeticModuleSettings.writeDefaults();
             MailSettings.writeDefaults();
             DimensionPoolSettings.writeDefaults();

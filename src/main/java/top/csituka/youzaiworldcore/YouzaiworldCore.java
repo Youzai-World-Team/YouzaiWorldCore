@@ -100,9 +100,7 @@ import top.csituka.youzaiworldcore.network.ModPayloadTypes;
 import top.csituka.youzaiworldcore.network.OpenMenuPayload;
 import top.csituka.youzaiworldcore.redstone.WirelessRedstoneNetwork;
 import top.csituka.youzaiworldcore.sound.ModSoundEvents;
-import top.csituka.youzaiworldcore.pet.PetBackupManager;
 import top.csituka.youzaiworldcore.pet.command.PetCommand;
-import top.csituka.youzaiworldcore.pet.config.PetModuleConfig;
 import top.csituka.youzaiworldcore.pet.event.PetEventHandlers;
 import top.csituka.youzaiworldcore.screen.ModMenuTypes;
 import top.csituka.youzaiworldcore.worldgen.StructureLoot;
@@ -238,6 +236,7 @@ public class YouzaiworldCore implements ModInitializer {
             ModPaths.bootstrapWorldLayout(server);
             TempManager.clearOnServerStart(server);
         });
+        top.csituka.youzaiworldcore.backup.PlayerDataBackup.register();
 
         DebugLogger.SERVER.debug("YouzaiworldCore", "初始化无线红石网络索引...");
         WirelessRedstoneNetwork.initialize();
@@ -361,7 +360,7 @@ public class YouzaiworldCore implements ModInitializer {
         DebugLogger.SERVER.exiting("YouzaiworldCore", "AdventureLevelSystem.init");
 
         DebugLogger.SERVER.entering("YouzaiworldCore", "AttributeSystem.init");
-        PlayerAttributeStorage.initialize();
+        ServerLifecycleEvents.SERVER_STARTING.register(server -> PlayerAttributeStorage.initialize());
         AttributeManager.initialize();
         LOGGER.notice("属性加点系统已初始化");
         DebugLogger.SERVER.exiting("YouzaiworldCore", "AttributeSystem.init");
@@ -515,15 +514,7 @@ public class YouzaiworldCore implements ModInitializer {
         DebugLogger.SERVER.exiting("YouzaiworldCore", "MailSystem.events");
 
         DebugLogger.SERVER.entering("YouzaiworldCore", "PetModule.init");
-        PetModuleConfig.load();
         PetEventHandlers.register();
-        // 宠物备份管理器在服务器启动时由 ServerLifecycleEvents 初始化
-        ServerLifecycleEvents.SERVER_STARTING.register(server -> {
-            PetBackupManager.initialize(server);
-        });
-        ServerLifecycleEvents.SERVER_STOPPING.register(server -> {
-            PetBackupManager.shutdown();
-        });
         LOGGER.notice("宠物模块已初始化");
         DebugLogger.SERVER.exiting("YouzaiworldCore", "PetModule.init");
 
@@ -539,6 +530,7 @@ public class YouzaiworldCore implements ModInitializer {
     /** 注册玩法命令，并按环境启用专用服务器的账户命令。 */
     private static void registerServerCommands(CommandDispatcher<CommandSourceStack> dispatcher,
                                                Commands.CommandSelection environment) {
+        top.csituka.youzaiworldcore.backup.BackupCommand.register(dispatcher);
         top.csituka.youzaiworldcore.command.MapCommand.register(dispatcher);
         DebugLogger.SERVER.debug("YouzaiworldCore", "注册命令: WorldPoolCommand");
         WorldPoolCommand.register(dispatcher);

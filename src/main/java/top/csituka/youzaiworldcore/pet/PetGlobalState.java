@@ -267,27 +267,4 @@ public class PetGlobalState extends SavedData {
     public boolean isPet(@NotNull UUID entityUUID) {
         return entityMap.containsKey(entityUUID);
     }
-
-    /**
-     * 获取深拷贝的条目映射（用于备份快照）。
-     *
-     * @return 实体 UUID → PetEntry 的新 HashMap
-     */
-    public Map<UUID, PetEntry> getSnapshot() {
-        return new HashMap<>(entityMap);
-    }
-
-    /**
-     * 从快照恢复注册表数据（用于备份恢复）。
-     *
-     * @param snapshot 备份快照
-     */
-    public synchronized void restoreFromSnapshot(Map<UUID, PetEntry> snapshot) {
-        DebugLogger.SERVER.info(MODULE, "正在从快照恢复 {} 条宠物记录...", snapshot.size());
-        this.entityMap.clear();
-        this.entityMap.putAll(snapshot);
-        rebuildIndexes();
-        setDirty();
-        DebugLogger.SERVER.info(MODULE, "从快照恢复完成");
-    }
 }

@@ -364,8 +364,8 @@ YouzaiworldCore.onInitialize()
  ├─ 各 XxxConfig.load()                    # 子系统配置（事件开关/带电苦力怕/末地门/试炼宝库/老吴贴贴/更新检查/AFK/维度池/原地重生）
  ├─ 各子系统 Manager/Storage.initialize()   # 账户 / 冒险等级 / 属性 / 原地重生 / 宠物 / 统计 …（邮件只需 MailSettings.initialize()，数据在 Api）
  ├─ BiomeModifications.addFeature(...)     # 矿物生成
- ├─ ServerLifecycleEvents.SERVER_STARTING  # 村庄结构注入 + 宠物备份
- ├─ ServerLifecycleEvents.SERVER_STARTED   # 异步更新检查 + 邮件过期清理（异步调 Api）
+ ├─ ServerLifecycleEvents.SERVER_STARTING  # 村庄结构注入 + 应用待还原的玩家数据
+ ├─ ServerLifecycleEvents.SERVER_STARTED   # 异步更新检查 + 邮件过期清理 + 启动每日备份调度
  ├─ ServerPlayConnectionEvents.JOIN        # AFK 登记 / 功能开关同步 / 邮件未读数推送（异步调 Api）
  ├─ ServerPlayConnectionEvents.DISCONNECT  # 隐身 / 维度池 / AFK / 外观收尾
  └─ CommandRegistrationCallback            # /yzwc 命令树注册

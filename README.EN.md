@@ -307,9 +307,9 @@ that module's settings:
 
 ```json
 {
-  "pet_module": {
-    "auto_backup_enabled": true,
-    "backup_interval_seconds": 600
+  "core_module": {
+    "dev_mode_enabled": false,
+    "log_level": 0
   },
   "afk_module": {
     "enabled": true,
@@ -349,7 +349,6 @@ If step 1 fails (file locked, etc.) step 2 is skipped so the original is never c
 | Update Checker Settings  | `global_settings.json` → `update_module`                                       | `enabled` (toggles update checks, UpdateCheckerConfig)                                               |
 | Trial Vault Settings     | `global_settings.json` → `trial_vault_module`                                  | `enabled` (unlimited-reward toggle, TrialVaultConfig, default true)                                  |
 | Mail Settings            | `global_settings.json` → `mail_module`                                         | Expiry policy, permission node/level, attachment caps                                                |
-| Pet Settings             | `global_settings.json` → `pet_module`                                          | Backup interval, retention count, auto-backup toggle                                                 |
 | AFK Settings             | `global_settings.json` → `afk_module`                                          | Detection threshold, prefix/broadcast/invulnerable/auto_kick                                         |
 | Laowu Meme Settings      | `global_settings.json` → `laowu_meme_module`                                   | Global toggle, cooldown                                                                              |
 | Global Event Toggles     | `global_settings.json` → `event_module`                                        | Death sound / jukebox loop / baby zombie nerf / wither skull / trident void protect / crop XP        |
@@ -359,7 +358,7 @@ If step 1 fails (file locked, etc.) step 2 is skipped so the original is never c
 | Dimension Pools          | `global_settings.json` → `dimensional_inventories_module`                      | `pools` pool definition list                                                                         |
 | Adventure Level / Attrs  | `yzwc/server/data/skill_module/data.json`                                      | `levels` / `attributes` blocks, keyed by player UUID                                                 |
 | Mail Data                | Api-side SQLite `game_mails` / `game_mail_refs`                                | Mail bodies (with attachments) + per-player inbox refs; no mail files on the Minecraft server        |
-| Pet Backups              | `yzwc/server/backup/pet_module/pet_backup_<timestamp>.zip`                     | Scheduled backup archives (containing a `.json` of the same name)                                    |
+| Pet Backups              | `<world_name>/data/yzwc/backup/pet_module/backups/daily-YYYY-MM-DD.zip`         | Daily player data archive created at 04:00                                                          |
 | Player Stats Data        | `<world_name>/data/yzwc/data/status_module/data.json` + Api `game_player_stats` | Local data resets monthly and keeps pending reset batches; first upload is a full snapshot, then only changed players and metrics are sent; Api keeps cumulative totals by game UUID |
 | Dimension Pool State     | `<world_name>/data/yzwc/data/dimensional_inventories_module/<pool>/<uuid>.json`| Per-pool independent inventory and player state                                                      |
 
@@ -475,8 +474,7 @@ A tamed-wolf (Wolf) tracking and management system that registers tamed wolves a
 - **Trust System**: Owners can add other players to a trust list; trusted players may view the list and highlight the pet; `trust add/remove/list <player>`
 - **Ownership Ops**: `rename`, `transfer <newOwner>` (transfers ownership; former owner auto-added to trust list), `release_life [force]` (release, requires confirmation)
 - **Quick Locate**: `highlight <internalName>` applies a 5-second Glowing effect to the target wolf for easy spotting
-- **Admin Ops**: `admin restore` (restore from latest backup), `admin backup_list` (list backups), `admin backup_interval <seconds>` (set scheduled backup interval, 60–3600s)
-- **Persistence**: config in `global_settings.json` → `pet_module`; scheduled backups at `yzwc/server/backup/pet_module/pet_backup_<timestamp>.zip` (containing a `.json` of the same name)
+- The pet registry is archived by the daily player data backup. Administrators can use `/yzwc backup list pet_module` to list dates and `/yzwc backup restore pet_module [YYYY-MM-DD]` to queue a restore.
 - **Command Architecture**: `/yzwc pet` is a **client command** that forwards its full argument string via `PetCommandPayload` (C→S); the server-side `PetCommand` holds the complete Brigadier tree and permission checks
 
 ### 28. Item Highlight System
@@ -738,12 +736,33 @@ Client display/layout settings, private records and terrain use `yzwc/client/map
 
 ---
 
+### Daily player data backups
+
+Backups start at 04:00 in the server's system time zone. A server started after 04:00 creates that day's backup if it is missing. Each module saves a ZIP at `<world>/data/yzwc/backup/<module>/backups/daily-YYYY-MM-DD.zip`. A completed daily batch can be restored together.
+
+| Module | Data |
+| --- | --- |
+| `pet_module` | Pet registry |
+| `skill_module` | Adventure levels and player attributes |
+| `dimensional_inventories_module` | Per-pool player files, recovery files, and active vanilla player data |
+| `status_module` | Mod and vanilla player statistics |
+| `double_doors_module` | Per-player double door preferences |
+| `function_module` | Per-player feature preferences |
+| `teleport_anchor_module` | Player teleport anchor lists |
+| `map_module` | Player sharing rules and locally recorded positions |
+
+Use `/yzwc backup list [module]` to see recent dates. Omitting the module lists completed batches. Run `/yzwc backup restore <module|all> [YYYY-MM-DD]` to queue a restore. The default is the latest available backup. The next server start restores every player's data for the selected modules to the chosen date, including removing records created afterward. Skills, player preferences, and map sharing rules are shared across worlds in the same game directory.
+
+Accounts, mail, skins, capes, and uploaded statistics are stored by the separate YouzaiWorldApi service. The daily archives cover Core's local server data.
+
 ## 📜 Command Tree
 
 All commands use `/yzwc` as the root command. Gameplay subcommands marked **(client command)** parse arguments and forward them to the authoritative server-side packet receiver. Local display settings such as chat style are handled directly on the client.
 
 ```
 /yzwc
+├── backup list [module] | restore <module|all> [YYYY-MM-DD]  # Player data backups, admins
+│
 ├── chat_style [plain|gradient]  # Local chat palette; defaults to gradient, no name queries the current style
 │
 ├── map [settings|waypoints|add|refresh]  # Local map UI
@@ -793,8 +812,7 @@ All commands use `/yzwc` as the root command. Gameplay subcommands marked **(cli
 │   ├── set <internalName> trust add|remove <player> | trust list → Trust management
 │   ├── set <internalName> release_life [force]       → Release (confirmation required)
 │   ├── set <internalName> transfer <newOwner>        → Transfer ownership
-│   ├── highlight <internalName>                      → Highlight (Glowing 5s)
-│   └── admin restore | backup_list | backup_interval <sec> → Admin backup/restore
+│   └── highlight <internalName>                      → Highlight (Glowing 5s)
 │
 ├── mail <args...>                         ← (client command, forwarded to server)
 │   ├── send_mail                                    → Open compose GUI (requires mail permission)
@@ -870,6 +888,7 @@ All commands use `/yzwc` as the root command. Gameplay subcommands marked **(cli
 | `youzaiworldcore.command.world_pool`                        | Dimension pool management                         | OP 4                     |
 | `youzaiworldcore.command.teleport_anchor`                   | Teleport anchor management                        | OP 4                     |
 | `youzaiworldcore.command.map.manage` | Upload maps | OP 4 |
+| `youzaiworldcore.command.backup.admin` | List and restore player data backups | Vanilla administrator |
 | `youzaiworldcore.command.map.teleport` | Teleport to a map coordinate | OP 4 and explicitly enabled in config |
 | `youzaiworldcore.command.function.invisibility`             | Invisibility function                             | OP 4                     |
 | `youzaiworldcore.command.function.double_doors`             | Double Doors function (self toggle / query)       | Everyone (self-only)     |
@@ -883,7 +902,6 @@ All commands use `/yzwc` as the root command. Gameplay subcommands marked **(cli
 | `youzaiworldcore.command.pet.list`                          | View pet list                                     | Everyone                 |
 | `youzaiworldcore.command.pet.set`                           | Pet settings (rename/mode/trust/release/transfer) | Everyone (own pets)      |
 | `youzaiworldcore.command.pet.highlight`                     | Highlight pet                                     | Everyone (owner/trusted) |
-| `youzaiworldcore.command.pet.admin`                         | Pet admin (backup/restore/interval)               | OP 4                     |
 | `youzaiworldcore.command.pet`                               | Pet module parent permission (base)               | OP 4                     |
 | `youzaiworldcore.mail`                                      | Mail system (compose/sent/recall/purge/list)      | OP 4                     |
 | `youzaiworldcore.admin.junior`                              | Junior administrator cosmetic title              | Without LuckPerms, OP admins unlock all three tiers |

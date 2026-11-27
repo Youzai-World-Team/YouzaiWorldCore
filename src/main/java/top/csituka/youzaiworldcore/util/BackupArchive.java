@@ -27,7 +27,7 @@ public final class BackupArchive {
      * 把一段 JSON 文本写成 zip 备份。
      *
      * @param zipFile   目标压缩包路径（含 {@code .zip} 后缀）
-     * @param entryName 压缩包内的条目名，形如 {@code pet_backup_20260812_101500.json}
+     * @param entryName 压缩包内的条目名，形如 {@code daily-2026-08-12.json}
      * @param json      要写入的 JSON 文本
      * @throws IOException 写盘失败
      */

@@ -23,7 +23,7 @@ import java.util.Set;
  *
  * <pre>
  * {
- *   "pet_module":  { "auto_backup_enabled": true, "backup_interval_seconds": 600 },
+ *   "core_module": { "dev_mode_enabled": false, "log_level": 0 },
  *   "afk_module":  { "enabled": true, "threshold_seconds": 300 }
  * }
  * </pre>

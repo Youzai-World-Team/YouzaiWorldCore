@@ -19,12 +19,8 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.animal.wolf.Wolf;
 import top.csituka.youzaiworldcore.luckperms.LuckPermsHelper;
 import top.csituka.youzaiworldcore.pet.*;
-import top.csituka.youzaiworldcore.pet.config.PetModuleConfig;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -48,7 +44,6 @@ public class PetCommand {
     public static final String PERMISSION_PET_LIST = "youzaiworldcore.command.pet.list";
     public static final String PERMISSION_PET_SET = "youzaiworldcore.command.pet.set";
     public static final String PERMISSION_PET_HIGHLIGHT = "youzaiworldcore.command.pet.highlight";
-    public static final String PERMISSION_PET_ADMIN = "youzaiworldcore.command.pet.admin";
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         DebugLogger.SERVER.entering(MODULE, "register");
@@ -135,21 +130,6 @@ public class PetCommand {
                                 .then(Commands.argument("internalName", StringArgumentType.word())
                                         .suggests(petNameSuggestions)
                                         .executes(PetCommand::executeHighlight)
-                                )
-                        )
-                        .then(Commands.literal("admin")
-                                .requires(src -> LuckPermsHelper.checkPermission(
-                                        src, PERMISSION_PET_ADMIN, Commands.LEVEL_ADMINS))
-                                .then(Commands.literal("restore")
-                                        .executes(PetCommand::executeAdminRestore)
-                                )
-                                .then(Commands.literal("backup_list")
-                                        .executes(PetCommand::executeAdminBackupList)
-                                )
-                                .then(Commands.literal("backup_interval")
-                                        .then(Commands.argument("seconds", com.mojang.brigadier.arguments.IntegerArgumentType.integer(60, 3600))
-                                                .executes(PetCommand::executeAdminBackupInterval)
-                                        )
                                 )
                         )
                 )
@@ -749,80 +729,6 @@ public class PetCommand {
 
         DebugLogger.SERVER.info(MODULE, "转让: [{}] 原主人={} -> 新主人={}", internalName, entry.ownerUUID(), newOwnerUUID);
         DebugLogger.SERVER.exiting(MODULE, "executeTransfer", "1");
-        return 1;
-    }
-
-    // ===== 管理命令 =====
-
-    private static int executeAdminRestore(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
-        DebugLogger.SERVER.entering(MODULE, "executeAdminRestore");
-        CommandSourceStack source = ctx.getSource();
-
-        List<Path> backups = PetBackupManager.listBackups();
-        if (backups.isEmpty()) {
-            source.sendFailure(Component.translatable(
-                    "youzaiworldcore.message.pet.admin.no_backups"));
-            DebugLogger.SERVER.exiting(MODULE, "executeAdminRestore", "0 (no backups)");
-            return 0;
-        }
-
-        // 使用最新的备份
-        Path latest = backups.get(backups.size() - 1);
-        source.sendSuccess(() -> Component.translatable(
-                "youzaiworldcore.message.pet.admin.restoring", latest.getFileName().toString()), false);
-
-        Map<UUID, PetEntry> restored = PetBackupManager.restoreFromBackup(latest);
-        if (restored.isEmpty()) {
-            source.sendFailure(Component.translatable(
-                    "youzaiworldcore.message.pet.admin.restore_failed"));
-            DebugLogger.SERVER.exiting(MODULE, "executeAdminRestore", "0 (restore failed)");
-            return 0;
-        }
-
-        PetGlobalState state = PetGlobalState.get(source.getServer());
-        state.restoreFromSnapshot(restored);
-
-        source.sendSuccess(() -> Component.translatable(
-                "youzaiworldcore.message.pet.admin.restore_success",
-                restored.size()), true);
-
-        DebugLogger.SERVER.notice(MODULE, "管理员从备份恢复: {} 条记录", restored.size());
-        DebugLogger.SERVER.exiting(MODULE, "executeAdminRestore", "1");
-        return 1;
-    }
-
-    private static int executeAdminBackupList(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
-        CommandSourceStack source = ctx.getSource();
-
-        List<Path> backups = PetBackupManager.listBackups();
-        if (backups.isEmpty()) {
-            source.sendSuccess(() -> Component.translatable(
-                    "youzaiworldcore.message.pet.admin.no_backups"), false);
-            return 0;
-        }
-
-        for (Path backup : backups) {
-            try {
-                long size = Files.size(backup);
-                source.sendSuccess(() -> Component.literal(
-                        String.format(" §7- %s §8(%d bytes)", backup.getFileName().toString(), size)), false);
-            } catch (IOException e) {
-                source.sendSuccess(() -> Component.literal(
-                        String.format(" §7- %s", backup.getFileName().toString())), false);
-            }
-        }
-
-        return 1;
-    }
-
-    private static int executeAdminBackupInterval(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
-        CommandSourceStack source = ctx.getSource();
-        int seconds = com.mojang.brigadier.arguments.IntegerArgumentType.getInteger(ctx, "seconds");
-
-        PetModuleConfig.setBackupIntervalSeconds(seconds);
-        source.sendSuccess(() -> Component.translatable(
-                "youzaiworldcore.message.pet.admin.backup_interval_set", seconds), true);
-
         return 1;
     }
 }

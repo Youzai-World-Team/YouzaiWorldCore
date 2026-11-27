@@ -3,6 +3,9 @@ package top.csituka.youzaiworldcore.config;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.dimension.DimensionType;
 import net.minecraft.world.level.storage.LevelResource;
 
 import java.io.IOException;
@@ -203,7 +206,20 @@ public final class ModPaths {
 
     /** 原版玩家档案，与 PlayerDataStorage 使用同一路径。 */
     public static Path vanillaPlayerData(MinecraftServer server, java.util.UUID playerId) {
-        return server.getWorldPath(LevelResource.PLAYER_DATA_DIR).resolve(playerId + ".dat");
+        return vanillaPlayerDataDir(server).resolve(playerId + ".dat");
+    }
+
+    public static Path vanillaPlayerDataDir(MinecraftServer server) {
+        return server.getWorldPath(LevelResource.PLAYER_DATA_DIR);
+    }
+
+    public static Path vanillaStatsDir(MinecraftServer server) {
+        return server.getWorldPath(LevelResource.PLAYER_STATS_DIR);
+    }
+
+    public static Path overworldSavedData(MinecraftServer server, Identifier id) {
+        Path dimension = DimensionType.getStorageFolder(Level.OVERWORLD, server.getWorldPath(LevelResource.ROOT));
+        return id.withSuffix(".dat").resolveAgainst(dimension.resolve(DATA_DIR_NAME));
     }
 
     /** 世界配置根：{@code <world_name>/data/yzwc/config} */
@@ -234,6 +250,11 @@ public final class ModPaths {
     /** 某模块的世界备份目录：{@code <world_name>/data/yzwc/backup/<module>} */
     public static Path worldBackup(MinecraftServer server, String module) {
         return worldBackupRoot(server).resolve(module);
+    }
+
+    /** Daily archives stay with the world so a batch always belongs to the same save. */
+    public static Path dailyBackups(MinecraftServer server, String module) {
+        return worldBackup(server, module).resolve("backups");
     }
 
     /** 世界缓存根：{@code <world_name>/data/yzwc/temp}（每次开服清空） */

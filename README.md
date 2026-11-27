@@ -307,9 +307,9 @@ Fabric 26.3 移植版 **3.24.1.0** 的 `stack_downgrade_tier_1/2/3` 也归入转
 
 ```json
 {
-  "pet_module": {
-    "auto_backup_enabled": true,
-    "backup_interval_seconds": 600
+  "core_module": {
+    "dev_mode_enabled": false,
+    "log_level": 0
   },
   "afk_module": {
     "enabled": true,
@@ -347,7 +347,6 @@ Fabric 26.3 移植版 **3.24.1.0** 的 `stack_downgrade_tier_1/2/3` 也归入转
 | 更新检查设置   | `global_settings.json` → `update_module`                                  | `enabled`（开关更新检查，UpdateCheckerConfig）                                           |
 | 试炼宝库设置   | `global_settings.json` → `trial_vault_module`                             | `enabled`（无限领奖开关，TrialVaultConfig，默认 true）                                   |
 | 邮件设置       | `global_settings.json` → `mail_module`                                    | 过期策略、权限节点/等级、附件上限、过期清理与未读刷新间隔                                |
-| 宠物设置       | `global_settings.json` → `pet_module`                                     | 宠物备份间隔、保留份数、自动备份开关                                                     |
 | AFK 设置       | `global_settings.json` → `afk_module`                                     | 检测阈值、前缀/广播/无敌/自动踢出等                                                     |
 | 老吴贴贴设置   | `global_settings.json` → `laowu_meme_module`                              | 全局开关、冷却时间等                                                                    |
 | 全局事件开关   | `global_settings.json` → `event_module`                                   | 死亡音效 / 唱片机循环 / 幼年僵尸削弱 / 凋零头颅 / 三叉戟虚空保护 / 作物经验              |
@@ -356,7 +355,7 @@ Fabric 26.3 移植版 **3.24.1.0** 的 `stack_downgrade_tier_1/2/3` 也归入转
 | 原地重生       | `global_settings.json` → `respawn_module`                                 | 启用的维度池与独立维度列表                                                              |
 | 维度池         | `global_settings.json` → `dimensional_inventories_module`                 | `pools` 池定义列表                                                                      |
 | 冒险等级/属性  | `yzwc/server/data/skill_module/data.json`                                 | `levels` / `attributes` 两块，按玩家 UUID 持久化                                         |
-| 宠物备份       | `yzwc/server/backup/pet_module/pet_backup_<时间戳>.zip`                   | 定时备份压缩包（内含同名 `.json`）                                                      |
+| 宠物备份       | `<world_name>/data/yzwc/backup/pet_module/backups/daily-YYYY-MM-DD.zip`   | 统一玩家数据备份每天 04:00 生成                                                         |
 | 玩家统计数据   | `<world_name>/data/yzwc/data/status_module/data.json` + Api `game_player_stats` | 本地按月重置并保留待上传批次；首次上传完整快照，之后仅上传变化玩家和统计字段；Api 服务端按游戏 UUID 累计保存，不因本地月度重置而清零 |
 | 维度池玩家状态 | `<world_name>/data/yzwc/data/dimensional_inventories_module/<池>/<uuid>.json` | 各池内玩家的独立背包与状态                                                          |
 
@@ -472,8 +471,7 @@ Fabric 26.3 移植版 **3.24.1.0** 的 `stack_downgrade_tier_1/2/3` 也归入转
 - **信任系统**：主人可将其他玩家加入信任列表，被信任者可以查看列表、高亮宠物；`trust add/remove/list <玩家>`
 - **归属操作**：`rename`（重命名）、`transfer <新主人>`（转让所有权，原主人自动进入信任列表）、`release_life [force]`（放生，需二次确认）
 - **快速定位**：`highlight <内部名>` 对目标狼施加 5 秒发光效果，便于在群体中定位
-- **管理员运维**：`admin restore`（从最新备份恢复）、`admin backup_list`（列出备份）、`admin backup_interval <秒>`（设置定时备份间隔，60–3600 秒）
-- **持久化**：配置在 `global_settings.json` → `pet_module`；定时备份为 `yzwc/server/backup/pet_module/pet_backup_<时间戳>.zip`（压缩包内是同名 `.json`）
+- 宠物注册表由统一玩家数据备份每天归档。管理员可用 `/yzwc backup list pet_module` 查看备份日期，用 `/yzwc backup restore pet_module [YYYY-MM-DD]` 安排还原。
 - **命令架构**：`/yzwc pet` 为**客户端命令**，客户端将参数经 `PetCommandPayload`（C→S）整体转发，服务端 `PetCommand` 持有完整 Brigadier 命令树与权限校验
 
 ### 28. 物品高亮系统
@@ -743,12 +741,33 @@ Esc 暂停屏幕采用薄荷绿圆角操作卡片与玩家预览，跟随现有�
 
 ---
 
+### 统一玩家数据备份
+
+服务端按系统时区每天凌晨 04:00 开始备份。当日 04:00 后开服会补做当天的备份。每个模块分别保存为 `<世界>/data/yzwc/backup/<模块>/backups/daily-YYYY-MM-DD.zip`，同一天的整批归档完成后可一起恢复。
+
+| 模块 | 保存内容 |
+| --- | --- |
+| `pet_module` | 宠物注册表 |
+| `skill_module` | 冒险等级与属性加点 |
+| `dimensional_inventories_module` | 各池玩家存档、切换恢复档和当前原版玩家档案 |
+| `status_module` | 模组统计缓存和原版玩家统计 |
+| `double_doors_module` | 玩家双开门开关 |
+| `function_module` | 玩家功能开关 |
+| `teleport_anchor_module` | 玩家传送锚点列表 |
+| `map_module` | 地图共享规则和本地最近位置 |
+
+`/yzwc backup list [模块]` 查看最近的备份日期，省略模块时显示完整批次。执行 `/yzwc backup restore <模块|all> [YYYY-MM-DD]` 安排还原，省略日期使用最新可用备份。服务端下次启动时还原对应模块在该日期的全部玩家数据，包括删除该日期之后新增的记录。技能、双开门、功能开关与地图共享规则存于服务端公共目录，恢复这些数据会影响同一游戏目录下的其他存档。
+
+账户、邮件、皮肤披风和已上传的云端统计由独立的 YouzaiWorldApi 保存。统一备份的范围是 Core 服务端本地玩家数据。
+
 ## 📜 指令树
 
 所有指令以 `/yzwc` 为根命令。标注 **（客户端命令）** 的玩法子命令解析参数并转发，权威逻辑由服务端数据包接收器执行；聊天配色等本机显示设置由客户端直接处理。
 
 ```
 /yzwc
+├── backup list [模块] | restore <模块|all> [YYYY-MM-DD]  # 玩家数据备份，管理员
+│
 ├── chat_style [plain|gradient]  # 本机聊天配色，默认 gradient；省略名称查询
 │
 ├── map [settings|waypoints|add|refresh]  # 本机地图入口
@@ -798,8 +817,7 @@ Esc 暂停屏幕采用薄荷绿圆角操作卡片与玩家预览，跟随现有�
 │   ├── set <内部名> trust add|remove <玩家> | trust list → 信任管理
 │   ├── set <内部名> release_life [force]              → 放生（需二次确认）
 │   ├── set <内部名> transfer <新主人>                 → 转让所有权
-│   ├── highlight <内部名>                            → 高亮定位（发光 5 秒）
-│   └── admin restore | backup_list | backup_interval <秒> → 管理员备份/恢复
+│   └── highlight <内部名>                            → 高亮定位（发光 5 秒）
 │
 ├── mail <args...>                         ← （客户端命令，整体转发至服务端）
 │   ├── send_mail                                    → 打开发布邮件 GUI（需邮件权限）
@@ -873,6 +891,7 @@ Esc 暂停屏幕采用薄荷绿圆角操作卡片与玩家预览，跟随现有�
 | `youzaiworldcore.command.teleport_world`                    | 跨维度传送                             | OP 4                    |
 | `youzaiworldcore.command.open_menu`                         | 打开 GUI 菜单                          | OP 4                    |
 | `youzaiworldcore.command.reload`                            | 模组重载                               | OP 4                    |
+| `youzaiworldcore.command.backup.admin`                      | 查看和还原玩家数据备份                 | 原版管理员              |
 | `youzaiworldcore.command.world_pool`                        | 维度池管理                             | OP 4                    |
 | `youzaiworldcore.command.teleport_anchor`                   | 传送锚点管理                           | OP 4                    |
 | `youzaiworldcore.command.map.manage` | 上传后台地图 | OP 4 |
@@ -889,7 +908,6 @@ Esc 暂停屏幕采用薄荷绿圆角操作卡片与玩家预览，跟随现有�
 | `youzaiworldcore.command.pet.list`                          | 查看宠物列表                           | 所有人                  |
 | `youzaiworldcore.command.pet.set`                           | 宠物设置（重命名/模式/信任/放生/转让） | 所有人（仅自身宠物）    |
 | `youzaiworldcore.command.pet.highlight`                     | 高亮宠物                               | 所有人（主人/信任玩家） |
-| `youzaiworldcore.command.pet.admin`                         | 宠物管理员（备份/恢复/间隔）           | OP 4                    |
 | `youzaiworldcore.command.pet`                               | 宠物模块父权限（基础）                 | OP 4                    |
 | `youzaiworldcore.mail`                                      | 邮件系统（发布/已发送/撤回/清理/查看） | OP 4                    |
 | `youzaiworldcore.admin.junior`                              | 初级管理员外观称号                     | 无 LuckPerms 时 OP 管理员解锁全部三级 |

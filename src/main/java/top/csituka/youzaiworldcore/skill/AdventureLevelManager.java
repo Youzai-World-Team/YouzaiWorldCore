@@ -103,7 +103,8 @@ public class AdventureLevelManager {
 
     public static void initialize() {
         DebugLogger.SERVER.entering("AdventureLevelManager", "initialize");
-        PlayerLevelStorage.initialize();
+        net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents.SERVER_STARTING.register(
+                server -> PlayerLevelStorage.initialize());
         registerBlockBreakEvent();
         DebugLogger.SERVER.exiting("AdventureLevelManager", "initialize");
     }

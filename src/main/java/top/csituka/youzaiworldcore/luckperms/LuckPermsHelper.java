@@ -122,6 +122,9 @@ public final class LuckPermsHelper {
     /** 统计查询命令 {@code /yzwc status <player> list} */
     public static final String PERMISSION_STATUS_QUERY = "youzaiworldcore.command.status.query";
 
+    /** 查看和恢复统一玩家数据备份。 */
+    public static final String PERMISSION_BACKUP_ADMIN = "youzaiworldcore.command.backup.admin";
+
     // ===== 宠物模块权限 =====
 
     /** 宠物模块管理命令基本权限 */
