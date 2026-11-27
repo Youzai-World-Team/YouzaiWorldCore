@@ -1,27 +1,50 @@
 package top.csituka.youzaiworldcore.client.screen.element;
 
+import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
+import top.csituka.youzaiworldcore.client.chat.ChatStyleMode;
+import top.csituka.youzaiworldcore.client.config.ChatStyleSettings;
 import top.csituka.youzaiworldcore.client.screen.MenuScreen;
+import top.csituka.youzaiworldcore.client.screen.YouzaiWorldCoreSettingsScreen;
+import top.csituka.youzaiworldcore.client.screen.YzuiAppearanceScreen;
 import top.csituka.youzaiworldcore.client.screen.widget.CheckboxButton;
-import top.csituka.youzaiworldcore.client.screen.widget.DropdownButton;
 import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
+import top.csituka.youzaiworldcore.highlightitem.Configurator;
+import top.csituka.youzaiworldcore.highlightitem.HighlightItem;
+import top.csituka.youzaiworldcore.network.PlayerSettingsRequestPayload;
+import top.csituka.youzaiworldcore.network.PlayerSettingsRequestPayload.Option;
+import top.csituka.youzaiworldcore.network.PlayerSettingsStatePayload;
 
-import java.util.ArrayList;
-import java.util.List;
-
+/** Shift+F 设置页，控制本机显示与当前玩家自己的玩法偏好。 */
 @SuppressWarnings("null")
 public class SettingsMenuElements implements MenuElementGroup {
+    private static final String TRANSLATION_PREFIX = "screen.youzaiworldcore.settings.player.";
+    private static final long REQUEST_TIMEOUT = TimeUnit.SECONDS.toNanos(15);
 
-    private boolean musicEnabled = true;
-    private boolean soundEnabled = true;
-    private boolean pvpEnabled = false;
-    private boolean friendlyFireEnabled = false;
-    private int difficultyIndex = 0;
-    private boolean dropdownOpen = false;
-    private DropdownButton difficultyDropdown;
+    private UUID pendingRequest;
+    private long sentAt;
+    private PlayerSettingsStatePayload state;
+    private ServerStatus status;
+
+    private enum ServerStatus {
+        READY(null),
+        UNAVAILABLE("unavailable"),
+        WAITING("waiting"),
+        TIMED_OUT("timeout");
+
+        private final Tooltip tooltip;
+
+        ServerStatus(String key) {
+            tooltip = key == null ? null : Tooltip.create(text(key));
+        }
+    }
 
     @Override
     public String getTitleText() {
@@ -39,48 +62,111 @@ public class SettingsMenuElements implements MenuElementGroup {
     }
 
     @Override
-    public List<AbstractWidget> createButtons(MenuScreen screen, int screenWidth, int screenHeight, float scale, float alpha) {
-        List<AbstractWidget> buttons = new ArrayList<>();
-        int listWidth = new MenuLayout(screenWidth, screenHeight).contentWidth(380);
-        int left = (screenWidth - listWidth) / 2;
-        int y = new MenuLayout(screenWidth, screenHeight).centeredTop(189);
-        buttons.add(new CheckboxButton(left, y, listWidth, 25,
-                Component.translatable("screen.youzaiworldcore.settings.checkbox_music"),
-                musicEnabled, () -> musicEnabled = !musicEnabled));
-        buttons.add(new CheckboxButton(left, y + 31, listWidth, 25,
-                Component.translatable("screen.youzaiworldcore.settings.checkbox_sound"),
-                soundEnabled, () -> soundEnabled = !soundEnabled));
-        buttons.add(new CheckboxButton(left, y + 62, listWidth, 25,
-                Component.translatable("screen.youzaiworldcore.settings.checkbox_pvp"),
-                pvpEnabled, () -> pvpEnabled = !pvpEnabled));
-        buttons.add(new CheckboxButton(left, y + 93, listWidth, 25,
-                Component.translatable("screen.youzaiworldcore.settings.checkbox_friendly_fire"),
-                friendlyFireEnabled, () -> friendlyFireEnabled = !friendlyFireEnabled));
-        List<String> difficultyOptions = List.of(
-                I18n.get("youzaiworldcore.message.gui.difficulty_peaceful"),
-                I18n.get("youzaiworldcore.message.gui.difficulty_easy"),
-                I18n.get("youzaiworldcore.message.gui.difficulty_normal"),
-                I18n.get("youzaiworldcore.message.gui.difficulty_hard"));
-        if (difficultyDropdown == null || difficultyDropdown.getWidth() != listWidth) {
-            difficultyDropdown = new DropdownButton(left, y + 124, listWidth, listWidth, 25,
-                Component.translatable("screen.youzaiworldcore.settings.dropdown_difficulty"),
-                difficultyOptions, difficultyIndex, dropdownOpen,
-                idx -> difficultyIndex = idx, () -> dropdownOpen = !dropdownOpen);
+    public void onShown() {
+        state = null;
+        pendingRequest = null;
+        request(Option.QUERY, false);
+    }
+
+    /** 接受当前页最近一次请求的服务端状态。 */
+    public void applyState(PlayerSettingsStatePayload payload) {
+        if (payload.requestId().equals(pendingRequest)) {
+            state = payload;
+            pendingRequest = null;
         }
-        // 视口变化时重新定位；日常渲染复用整个页面的控件。
-        difficultyDropdown.setX(left);
-        difficultyDropdown.setY(y + 124);
-        difficultyDropdown.setCanvasSize(screenWidth, screenHeight);
-        buttons.add(difficultyDropdown);
-        buttons.add(new TransparentButton(left, y + 163, (listWidth - 8) / 2, 26,
-                Component.translatable("options.youzaiworldcore.settings"),
-                () -> Minecraft.getInstance().gui.setScreen(
-                        new top.csituka.youzaiworldcore.client.screen.YouzaiWorldCoreSettingsScreen(screen))));
-        buttons.add(new TransparentButton(left + (listWidth + 8) / 2, y + 163, (listWidth - 8) / 2, 26,
-                Component.translatable("screen.youzaiworldcore.appearance.title"),
-                () -> Minecraft.getInstance().gui.setScreen(
-                        new top.csituka.youzaiworldcore.client.screen.YzuiAppearanceScreen(screen))));
-        for (AbstractWidget button : buttons) button.setAlpha(alpha);
+    }
+
+    @Override
+    public List<AbstractWidget> createButtons(MenuScreen screen, int screenWidth, int screenHeight, float scale, float alpha) {
+        var client = Minecraft.getInstance();
+        var layout = new MenuLayout(screenWidth, screenHeight);
+        int gap = 6;
+        int rowHeight = Math.max(1, Math.min(30, (layout.contentHeight() - gap * 2) / 3));
+        int left = layout.left(440);
+        int columnWidth = (layout.contentWidth(440) - gap) / 2;
+        int right = left + columnWidth + gap;
+        int top = layout.centeredTop(rowHeight * 3 + gap * 2);
+        int middle = top + rowHeight + gap;
+        int bottom = middle + rowHeight + gap;
+
+        var chatStyle = new CheckboxButton(left, top, columnWidth, rowHeight, text("gradient_chat"),
+                ChatStyleSettings.getMode() == ChatStyleMode.GRADIENT, () -> {
+                    ChatStyleSettings.setMode(ChatStyleSettings.getMode() == ChatStyleMode.GRADIENT
+                            ? ChatStyleMode.PLAIN : ChatStyleMode.GRADIENT);
+                    client.gui.hud.getChat().rescaleChat();
+                }).setWrapMessage(true);
+        var highlight = new CheckboxButton(right, top, columnWidth, rowHeight, text("highlight_item"),
+                Configurator.TOGGLE, () -> HighlightItem.configurator.updateToggle(
+                        client.player, Configurator.NotificationContext.NONE)).setWrapMessage(true);
+        var doubleDoors = new CheckboxButton(left, middle, columnWidth, rowHeight, text("double_doors"),
+                false, () -> request(Option.DOUBLE_DOORS, !state.doubleDoors())).setWrapMessage(true);
+        var damageNumbers = new CheckboxButton(right, middle, columnWidth, rowHeight, text("damage_numbers"),
+                false, () -> request(Option.DAMAGE_NUMBERS, !state.damageNumbers())).setWrapMessage(true);
+
+        List<AbstractWidget> buttons = List.of(chatStyle, highlight, doubleDoors, damageNumbers,
+                new TransparentButton(left, bottom, columnWidth, rowHeight,
+                        Component.translatable("options.youzaiworldcore.settings"),
+                        () -> client.gui.setScreen(new YouzaiWorldCoreSettingsScreen(screen))),
+                new TransparentButton(right, bottom, columnWidth, rowHeight,
+                        Component.translatable("screen.youzaiworldcore.appearance.title"),
+                        () -> client.gui.setScreen(new YzuiAppearanceScreen(screen))));
+        for (AbstractWidget button : buttons) {
+            button.setAlpha(alpha);
+        }
+        // 重排会创建新控件，当前请求状态的提示也需要重新绑定。
+        status = null;
         return buttons;
+    }
+
+    @Override
+    public void updateButtons(List<AbstractWidget> buttons) {
+        ((CheckboxButton) buttons.get(0)).setChecked(ChatStyleSettings.getMode() == ChatStyleMode.GRADIENT);
+        ((CheckboxButton) buttons.get(1)).setChecked(Configurator.TOGGLE);
+
+        var doubleDoors = (CheckboxButton) buttons.get(2);
+        var damageNumbers = (CheckboxButton) buttons.get(3);
+        doubleDoors.setChecked(state != null && state.doubleDoors());
+        damageNumbers.setChecked(state != null && state.damageNumbers());
+
+        ServerStatus next = serverStatus();
+        doubleDoors.active = damageNumbers.active = state != null
+                && (next == ServerStatus.READY || next == ServerStatus.TIMED_OUT);
+        if (next != status) {
+            status = next;
+            doubleDoors.setTooltip(next.tooltip);
+            damageNumbers.setTooltip(next.tooltip);
+        }
+    }
+
+    private ServerStatus serverStatus() {
+        if (!canRequest()) {
+            return ServerStatus.UNAVAILABLE;
+        }
+        if (pendingRequest != null) {
+            return isWaiting() ? ServerStatus.WAITING : ServerStatus.TIMED_OUT;
+        }
+        return ServerStatus.READY;
+    }
+
+    private boolean isWaiting() {
+        return pendingRequest != null && System.nanoTime() - sentAt < REQUEST_TIMEOUT;
+    }
+
+    private void request(Option option, boolean enabled) {
+        if (!canRequest() || isWaiting()) {
+            return;
+        }
+        pendingRequest = UUID.randomUUID();
+        sentAt = System.nanoTime();
+        ClientPlayNetworking.send(new PlayerSettingsRequestPayload(pendingRequest, option, enabled));
+    }
+
+    private static boolean canRequest() {
+        return Minecraft.getInstance().getConnection() != null
+                && ClientPlayNetworking.canSend(PlayerSettingsRequestPayload.ID);
+    }
+
+    private static Component text(String key) {
+        return Component.translatable(TRANSLATION_PREFIX + key);
     }
 }

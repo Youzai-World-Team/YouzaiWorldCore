@@ -58,6 +58,11 @@ public class ClientNetworking {
                 context.client().execute(() -> {
                     if (context.client().gui.screen() instanceof MenuScreen menu) menu.applyWorldPoolResult(payload);
                 }));
+        ClientPlayNetworking.registerGlobalReceiver(PlayerSettingsStatePayload.ID, (payload, context) ->
+                context.client().execute(() -> {
+                    if (context.client().gui.screen() instanceof MenuScreen menu)
+                        menu.applyPlayerSettings(payload);
+                }));
         ClientPlayNetworking.registerGlobalReceiver(MapSessionPayload.ID, (payload, context) ->
                 top.csituka.youzaiworldcore.client.map.MapClient.receive(context.client(), () -> top.csituka.youzaiworldcore.client.map.MapClient.session(payload)));
         ClientPlayNetworking.registerGlobalReceiver(MapTilePayload.ID, (payload, context) ->

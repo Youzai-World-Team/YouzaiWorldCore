@@ -28,10 +28,12 @@ import top.csituka.youzaiworldcore.client.screen.element.AboutMeMenuElements;
 import top.csituka.youzaiworldcore.client.screen.widget.MenuCloseButton;
 import top.csituka.youzaiworldcore.client.screen.element.MenuElementGroup;
 import top.csituka.youzaiworldcore.client.screen.element.MenuLayout;
+import top.csituka.youzaiworldcore.client.screen.element.SettingsMenuElements;
 import top.csituka.youzaiworldcore.client.screen.widget.ConfirmationDialog;
 import top.csituka.youzaiworldcore.client.screen.widget.DropdownButton;
 import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
 import top.csituka.youzaiworldcore.client.screen.widget.WidgetFocus;
+import top.csituka.youzaiworldcore.network.PlayerSettingsStatePayload;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
 /** Shift+F 菜单：页面控件按视口复用，标题、内容与页脚各自保留边界。 */
@@ -202,6 +204,12 @@ public class MenuScreen extends Screen implements YzuiMenuScreen {
     public void applyWorldPoolResult(top.csituka.youzaiworldcore.network.WorldPoolTeleportResultPayload payload) {
         if (targetGroup == null && currentGroup instanceof SwitchWorldMenuElements worlds)
             worlds.applyResult(this, payload);
+    }
+
+    /** 只向当前设置页交付服务端确认，由页面核对请求。 */
+    public void applyPlayerSettings(PlayerSettingsStatePayload payload) {
+        if (currentGroup instanceof SettingsMenuElements settings)
+            settings.applyState(payload);
     }
 
     public void startExit(Runnable onComplete) {

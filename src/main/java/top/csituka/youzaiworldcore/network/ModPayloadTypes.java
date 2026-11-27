@@ -68,6 +68,10 @@ public final class ModPayloadTypes {
                                 TeleportAnchorReorderPayload.TYPE, TeleportAnchorReorderPayload.STREAM_CODEC);
                 PayloadTypeRegistry.serverboundPlay().register(DoubleDoorsTogglePayload.ID,
                                 DoubleDoorsTogglePayload.STREAM_CODEC);
+                PayloadTypeRegistry.serverboundPlay().register(PlayerSettingsRequestPayload.ID,
+                                PlayerSettingsRequestPayload.STREAM_CODEC);
+                PayloadTypeRegistry.clientboundPlay().register(PlayerSettingsStatePayload.ID,
+                                PlayerSettingsStatePayload.STREAM_CODEC);
                 PayloadTypeRegistry.serverboundPlay().register(InvisibilityPayload.ID,
                                 InvisibilityPayload.STREAM_CODEC);
                 PayloadTypeRegistry.serverboundPlay().register(PetMenuRequestPayload.ID, PetMenuRequestPayload.STREAM_CODEC);

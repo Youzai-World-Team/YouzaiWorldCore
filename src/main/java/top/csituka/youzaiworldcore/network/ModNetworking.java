@@ -2,6 +2,7 @@ package top.csituka.youzaiworldcore.network;
 
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.advancements.triggers.CriteriaTriggers;
+import net.minecraft.commands.Commands;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -21,10 +22,12 @@ import top.csituka.youzaiworldcore.item.tool.TeleportStoneItem;
 import top.csituka.youzaiworldcore.item.tool.WarpScrollItem;
 import top.csituka.youzaiworldcore.network.TeleportAnchorListPayload.EntryType;
 import top.csituka.youzaiworldcore.config.DoubleDoorsState;
+import top.csituka.youzaiworldcore.config.FunctionToggleManager;
 import top.csituka.youzaiworldcore.afk.AfkManager;
 import top.csituka.youzaiworldcore.dimensionalinventories.DimensionPoolManager;
 import top.csituka.youzaiworldcore.dimensionalinventories.WorldPoolTeleportPayload;
 import top.csituka.youzaiworldcore.invisibility.InvisibilityManager;
+import top.csituka.youzaiworldcore.luckperms.LuckPermsHelper;
 import top.csituka.youzaiworldcore.redstone.WirelessRedstoneChannel;
 import top.csituka.youzaiworldcore.screen.DecompositionTableMenu;
 import top.csituka.youzaiworldcore.screen.FlyBeaconMenu;
@@ -34,6 +37,7 @@ import top.csituka.youzaiworldcore.cosmetic.CosmeticManager;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 import top.csituka.youzaiworldcore.util.LargeSignTextRules;
 import top.csituka.youzaiworldcore.account.data.AccountDataStorage;
+import top.csituka.youzaiworldcore.account.util.AuthPlayerHelper;
 import top.csituka.youzaiworldcore.mail.Mail;
 import top.csituka.youzaiworldcore.mail.MailApiClient;
 import top.csituka.youzaiworldcore.mail.MailAttachment;
@@ -575,6 +579,10 @@ public class ModNetworking {
                 });
             }
         });
+
+        ServerPlayNetworking.registerGlobalReceiver(PlayerSettingsRequestPayload.ID, (payload, context) ->
+                context.server().execute(() -> handlePlayerSettings(context.player(), payload)));
+        DebugLogger.SERVER.debug("ModNetworking", "已注册玩家个人设置接收器");
 
         // ===== 双开门功能切换 / 查询处理器 =====
         ServerPlayNetworking.registerGlobalReceiver(DoubleDoorsTogglePayload.ID, (payload, context) -> {
@@ -1455,6 +1463,30 @@ public class ModNetworking {
             ServerPlayNetworking.send(player, MailOpResultPayload.success(mailId, "已领取奖励"));
             MailManager.sendUnread(player, claim.unread());
         }, false);
+    }
+
+    /** 以当前连接的玩家身份读写个人设置，返回持久化后的状态。 */
+    private static void handlePlayerSettings(ServerPlayer player, PlayerSettingsRequestPayload request) {
+        if (player.hasDisconnected() || AuthPlayerHelper.shouldBlockActions(player)
+                || !ServerPlayNetworking.canSend(player, PlayerSettingsStatePayload.ID)) {
+            return;
+        }
+
+        UUID playerId = player.getUUID();
+        if (request.option() == PlayerSettingsRequestPayload.Option.DOUBLE_DOORS
+                && DoubleDoorsState.isEnabled(playerId) != request.enabled()) {
+            DoubleDoorsState.setEnabled(playerId, request.enabled());
+        } else if (request.option() == PlayerSettingsRequestPayload.Option.DAMAGE_NUMBERS
+                && LuckPermsHelper.checkPermission(player.createCommandSourceStack(),
+                        LuckPermsHelper.PERMISSION_DAMAGE_NUMBERS, Commands.LEVEL_ALL)
+                && FunctionToggleManager.isEnabled(playerId, FunctionToggleManager.KEY_DAMAGE_NUMBERS)
+                        != request.enabled()) {
+            FunctionToggleManager.setEnabled(playerId, FunctionToggleManager.KEY_DAMAGE_NUMBERS, request.enabled());
+        }
+
+        ServerPlayNetworking.send(player, new PlayerSettingsStatePayload(request.requestId(),
+                DoubleDoorsState.isEnabled(playerId),
+                FunctionToggleManager.isEnabled(playerId, FunctionToggleManager.KEY_DAMAGE_NUMBERS)));
     }
 
     /** 把一封邮件按各接收者自己的引用状态推给在线玩家。 */

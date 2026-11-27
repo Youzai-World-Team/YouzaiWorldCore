@@ -240,7 +240,9 @@ public class Minecraft {
     public void setScreenAndShow(Screen s){gui.setScreen(s);}
     public Object getSoundManager(){return this;}
     public Textures getTextureManager(){return new Textures();}
-    public static class Gui {public Screen screen;public void setScreen(Screen s){screen=s;}}
+    public static class Gui {public Screen screen;public final Hud hud=new Hud();public void setScreen(Screen s){screen=s;}}
+    public static class Hud {public final Chat chat=new Chat();public Chat getChat(){return chat;}}
+    public static class Chat {public int rescales;public void rescaleChat(){rescales++;}}
     public static class Level {public Level dimension(){return this;} public Identifier identifier(){return new Identifier("minecraft","overworld");}}
     public static class Textures {public Texture getTexture(Identifier id){return new Texture();}}
     public static class Texture {public Texture getTexture(){return this;} public int getWidth(int i){return imageWidth;} public int getHeight(int i){return imageHeight;}}
@@ -277,6 +279,33 @@ stub(C + ".screen.PetScreen", "public class PetScreen extends net.minecraft.clie
 stub(P + ".dimensionalinventories.WorldPoolTeleportPayload", """public record WorldPoolTeleportPayload(String poolId) {}""")
 stub(P + ".network.WorldPoolMenuRequestPayload", """
 public record WorldPoolMenuRequestPayload(java.util.UUID requestId, String poolId) { public static final Object ID = new Object(); }
+""")
+stub(P + ".network.PlayerSettingsRequestPayload", """
+public record PlayerSettingsRequestPayload(java.util.UUID requestId, Option option, boolean enabled) {
+    public static final Object ID = new Object();
+    public enum Option { QUERY, DOUBLE_DOORS, DAMAGE_NUMBERS }
+}
+""")
+stub(P + ".network.PlayerSettingsStatePayload", """
+public record PlayerSettingsStatePayload(java.util.UUID requestId, boolean doubleDoors, boolean damageNumbers) {}
+""")
+stub(C + ".config.ChatStyleSettings", """
+import top.csituka.youzaiworldcore.client.chat.ChatStyleMode;
+public class ChatStyleSettings {
+    private static ChatStyleMode mode=ChatStyleMode.GRADIENT;
+    public static ChatStyleMode getMode(){return mode;}
+    public static void setMode(ChatStyleMode value){mode=value;}
+}
+""")
+stub(P + ".highlightitem.Configurator", """
+public class Configurator {
+    public static boolean TOGGLE=true;
+    public enum NotificationContext { NONE }
+    public void updateToggle(net.minecraft.client.player.LocalPlayer player, NotificationContext context){TOGGLE=!TOGGLE;}
+}
+""")
+stub(P + ".highlightitem.HighlightItem", """
+public class HighlightItem { public static final Configurator configurator=new Configurator(); }
 """)
 stub(P + ".network.WorldPoolMenuStatePayload", """
 public record WorldPoolMenuStatePayload(java.util.UUID requestId, String currentPoolId, String currentName, java.util.List<Entry> entries) {
@@ -384,7 +413,11 @@ public class ConfirmationDialog {
 """)
 stub(C + ".screen.widget.CheckboxButton", """
 public class CheckboxButton extends TransparentButton {
-    public CheckboxButton(int x,int y,int w,int h,net.minecraft.network.chat.Component c,boolean b,Runnable r){super(x,y,w,h,c,r);}
+    private boolean checked;
+    public CheckboxButton(int x,int y,int w,int h,net.minecraft.network.chat.Component c,boolean b,Runnable r){super(x,y,w,h,c,r);checked=b;}
+    public CheckboxButton setWrapMessage(boolean wrap){return this;}
+    public void setChecked(boolean value){checked=value;}
+    public boolean isChecked(){return checked;}
 }
 """)
 stub(C + ".screen.widget.DropdownButton", """
@@ -471,6 +504,7 @@ EXTRA
 HARNESS = r"""
 import java.util.*;
 import java.lang.reflect.*;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractWidget;
@@ -483,6 +517,9 @@ import top.csituka.youzaiworldcore.client.screen.*;
 import top.csituka.youzaiworldcore.client.screen.element.*;
 import top.csituka.youzaiworldcore.client.screen.widget.*;
 import top.csituka.youzaiworldcore.client.skill.ClientAttributeData;
+import top.csituka.youzaiworldcore.network.PlayerSettingsRequestPayload;
+import top.csituka.youzaiworldcore.network.PlayerSettingsStatePayload;
+import top.csituka.youzaiworldcore.highlightitem.Configurator;
 
 public class MenuChecks {
     static int checks,viewports;
@@ -833,9 +870,60 @@ public class MenuChecks {
         var deadline=top.csituka.youzaiworldcore.client.skill.AttributeUpgradeRequests.class.getDeclaredField("deadline");deadline.setAccessible(true);deadline.setLong(null,0);
         check(!top.csituka.youzaiworldcore.client.skill.AttributeUpgradeRequests.waiting(),"加点请求未超时");
     }
+    static void playerSettings() throws Exception {
+        var page = new SettingsMenuElements();
+        var menu = new Menu(page);
+        menu.setup(480, 360);
+        var query = (PlayerSettingsRequestPayload) ClientPlayNetworking.last;
+        var doors = (CheckboxButton) menu.registered.get(2);
+        var numbers = (CheckboxButton) menu.registered.get(3);
+        check(query.option() == PlayerSettingsRequestPayload.Option.QUERY, "进入设置页未查询服务端设置");
+        check(!doors.active && !numbers.active, "等待服务端期间可点击玩法设置");
+
+        menu.applyPlayerSettings(new PlayerSettingsStatePayload(UUID.randomUUID(), true, true));
+        page.updateButtons(menu.registered);
+        check(!doors.active && !numbers.active, "设置页采用了过期响应");
+        menu.applyPlayerSettings(new PlayerSettingsStatePayload(query.requestId(), true, false));
+        page.updateButtons(menu.registered);
+        check(doors.active && doors.isChecked() && numbers.active && !numbers.isChecked(), "开关未显示服务端配置");
+
+        numbers.onClick(null, true);
+        var write = (PlayerSettingsRequestPayload) ClientPlayNetworking.last;
+        check(write.option() == PlayerSettingsRequestPayload.Option.DAMAGE_NUMBERS && write.enabled(), "未请求开启伤害跳字");
+        numbers.onClick(null, true);
+        check(ClientPlayNetworking.last == write, "同一开关请求重复发送");
+        menu.setup(320, 180);
+        widgets(menu.registered.subList(0, 6), 320, MenuLayout.CONTENT_TOP, new MenuLayout(320, 180).contentBottom());
+        numbers = (CheckboxButton) menu.registered.get(3);
+        check(ClientPlayNetworking.last == write && !numbers.active, "窗口重排丢失在途请求");
+        menu.applyPlayerSettings(new PlayerSettingsStatePayload(write.requestId(), true, true));
+        page.updateButtons(menu.registered);
+        check(numbers.active && numbers.isChecked(), "设置确认后未显示伤害跳字状态");
+        menu.registered.get(2).onClick(null, true);
+        var doorWrite = (PlayerSettingsRequestPayload) ClientPlayNetworking.last;
+        check(doorWrite.option() == PlayerSettingsRequestPayload.Option.DOUBLE_DOORS && !doorWrite.enabled(),
+                "未请求关闭双开门");
+        var sentAt = SettingsMenuElements.class.getDeclaredField("sentAt");
+        sentAt.setAccessible(true);
+        sentAt.setLong(page, System.nanoTime() - java.util.concurrent.TimeUnit.SECONDS.toNanos(16));
+        page.updateButtons(menu.registered);
+        check(numbers.active && numbers.getTooltip() != null, "超时后未恢复操作及提示");
+
+        ClientPlayNetworking.supported = false;
+        page.onShown();
+        page.updateButtons(menu.registered);
+        check(ClientPlayNetworking.last == doorWrite && !numbers.active, "旧服务端未禁用玩法开关");
+        var chat = Minecraft.getInstance().gui.hud.getChat();
+        menu.registered.get(0).onClick(null, true);
+        menu.registered.get(1).onClick(null, true);
+        page.updateButtons(menu.registered);
+        check(chat.rescales == 1 && !((CheckboxButton) menu.registered.get(0)).isChecked(), "切换配色未重绘聊天");
+        check(!Configurator.TOGGLE && !((CheckboxButton) menu.registered.get(1)).isChecked(), "物品高亮未读写本机配置");
+        ClientPlayNetworking.supported = true;
+    }
     public static void main(String[] args)throws Exception{
-        geometry();forms();images();lifecycle();worldActions();closure();contrast();keyboard();upgrades();
-        System.out.println("Shift+F 回归通过："+viewports+" 组页面/窗口组合；表单定位、卡片图标/文字、控件复用、即时关闭/锁定、分区过渡与 7 个维度池入口。");
+        geometry();forms();images();lifecycle();worldActions();closure();contrast();keyboard();upgrades();playerSettings();
+        System.out.println("Shift+F 回归通过："+viewports+" 组页面/窗口组合；菜单布局、导航行为、维度池与个人设置。");
     }
 }
 """
@@ -849,10 +937,14 @@ def check_navigation():
         entries = re.search(r"String\[\] ENTRIES = \{(.*?)\};", source, re.S).group(1)
         names.extend(re.findall(r'"([^"]+)"', entries))
     assert len(names) == len(set(names)) == 22, "导航入口数量不符"
+    settings = (CLIENT / "screen/element/SettingsMenuElements.java").read_text(encoding="utf-8")
+    labels = set(re.findall(r'(?:text|WAITING|UNAVAILABLE|TIMED_OUT)\("([a-z_]+)"\)', settings))
+    assert len(labels) == 7, "未找到完整的个人设置语言键"
     for path in (ROOT / "src/main/resources/assets/youzaiworldcore/lang").glob("*.json"):
         language = json.loads(path.read_text(encoding="utf-8"))
         assert all("screen.youzaiworldcore.navigation." + name in language for name in names), path
-    print("22 个导航入口的十种语言检查通过。")
+        assert all(language.get("screen.youzaiworldcore.settings.player." + key) for key in labels), path
+    print("22 个导航入口及个人设置的十种语言检查通过。")
 
 
 def main():
@@ -865,7 +957,7 @@ def main():
     java = str(binary / ("java" + suffix)) if binary else "java"
     form_sources()
     production = [
-        "animation/YzuiHover.java", "animation/YzuiMotion.java", "config/YzuiVisualStyle.java",
+        "animation/YzuiHover.java", "animation/YzuiMotion.java", "config/YzuiVisualStyle.java", "chat/ChatStyleMode.java",
         "render/YzuiLayout.java", "render/RoundedRect.java", "render/YzuiPalette.java",
         "render/MenuIcon.java", "render/YzuiMenuPanel.java", "screen/YzuiMenuScreen.java",
         "screen/widget/MenuNavigationButton.java", "screen/widget/MenuCloseButton.java",
