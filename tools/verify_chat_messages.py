@@ -33,6 +33,22 @@ stub("net.minecraft.network.chat.TextColor", "public record TextColor(int getVal
 stub("net.minecraft.network.chat.ClickEvent", "public interface ClickEvent { record RunCommand(String command) implements ClickEvent {} }")
 stub("net.minecraft.network.chat.HoverEvent", "public interface HoverEvent { record ShowText(Component value) implements HoverEvent {} }")
 stub("net.minecraft.network.chat.FontDescription", "public interface FontDescription { record Resource(net.minecraft.resources.Identifier id) implements FontDescription {} }")
+stub("com.mojang.authlib.GameProfile", "public record GameProfile(java.util.UUID id,String name) {}")
+stub("net.minecraft.world.item.component.ResolvableProfile", """
+public record ResolvableProfile(com.mojang.authlib.GameProfile partialProfile) {
+ public static ResolvableProfile createResolved(com.mojang.authlib.GameProfile profile){return new ResolvableProfile(profile);}
+}
+""")
+stub("net.minecraft.network.chat.contents.objects.PlayerSprite", "public record PlayerSprite(net.minecraft.world.item.component.ResolvableProfile player,boolean hat) {}")
+stub("net.minecraft.network.chat.contents.ObjectContents", """
+import net.minecraft.network.chat.*;
+public record ObjectContents(Object contents,Component fallback) implements ComponentContents {
+ public String text(){return fallback.getString();}
+ public <T> java.util.Optional<T> visit(FormattedText.StyledContentConsumer<T> consumer,Style style){
+  return consumer.accept(style,"\uFFFC");
+ }
+}
+""")
 stub("net.minecraft.network.chat.Style", """
 public record Style(Integer color,Boolean bold,Boolean italic,ClickEvent click,HoverEvent hover,FontDescription font,String insertion) {
  public static final Style EMPTY=new Style(null,null,null,null,null,null,null);
@@ -95,6 +111,9 @@ public interface Component extends com.mojang.brigadier.Message {
  }
  static MutableComponent literal(String s){return new MutableComponent(new Literal(s));}
  static MutableComponent empty(){return literal("");}
+ static MutableComponent object(net.minecraft.network.chat.contents.objects.PlayerSprite sprite,Component fallback){
+  return new MutableComponent(new net.minecraft.network.chat.contents.ObjectContents(sprite,fallback));
+ }
  static MutableComponent translatable(String k,Object... a){return translatableWithFallback(k,null,a);}
  static MutableComponent translatableWithFallback(String k,String f,Object... a){return new MutableComponent(new TranslatableContents(k,f,a));}
  record Literal(String text) implements ComponentContents {}
@@ -190,6 +209,7 @@ public class ServerPlayer extends top.csituka.youzaiworldcore.mixin.chat.ServerP
  public boolean textFiltering;
  public ServerPlayer(UUID id,String n,net.minecraft.server.MinecraftServer s){this.id=id;name=n;level=new ServerLevel(s);}
  public UUID getUUID(){return id;} public String getScoreboardName(){return name;}
+ public com.mojang.authlib.GameProfile getGameProfile(){return new com.mojang.authlib.GameProfile(id,name);}
  public Component getName(){return Component.literal(name);} public Component getDisplayName(){return Component.literal("DISPLAY "+name);}
  public int leaveGames=1;
  public net.minecraft.world.level.GameType gameType=net.minecraft.world.level.GameType.SURVIVAL;
@@ -547,6 +567,9 @@ public class ChatMessageChecks {
  static Component line(Component header,Component body){return Component.translatable("%s >> %s",header,body);}
  record Glyph(String text,Style style) {}
  static List<Glyph> glyphs(Component message){
+  return glyphsWithAvatars(message).stream().filter(glyph->!glyph.text().equals("\uFFFC")).toList();
+ }
+ static List<Glyph> glyphsWithAvatars(Component message){
   List<Glyph> result=new ArrayList<>();message.visit((style,text)->{
    text.codePoints().forEach(cp->result.add(new Glyph(new String(Character.toChars(cp)),style)));return Optional.empty();
   },Style.EMPTY);return result;
@@ -818,6 +841,10 @@ public class ChatMessageChecks {
   Component title=Component.literal("{管理员}").withStyle(style->style.withColor(0x55FFFF));
   TitleManager.titles.put(player.getUUID(),title);
   Component tooltip=ChatPlayerInfo.tooltip(player);
+  var avatar=ChatPlayerInfo.name(player).getSiblings().getFirst();
+  check(avatar.getContents() instanceof net.minecraft.network.chat.contents.ObjectContents icon
+   &&icon.contents() instanceof net.minecraft.network.chat.contents.objects.PlayerSprite sprite
+   &&sprite.player().partialProfile().id().equals(player.getUUID())&&sprite.hat(),"头像使用玩家 UUID 与皮肤外层");
   check(tooltip.getString().equals("玩家：HoverPlayer🙂\n冒险等级：Lv.16\n升级经验：120 / 500\n佩戴称号：{管理员}\n游戏模式：生存"),"玩家悬停字段来自服务端资料");
   color(tooltip,"{管理员}",0x55FFFF,"悬停称号保留原色");
   Component chat=line(ChatFormatHelper.formatChatHeader(player),body);
@@ -826,6 +853,10 @@ public class ChatMessageChecks {
   for(ChatEventType type:ChatEventType.values())messages.add(ChatMessageStyle.event(type,ChatPlayerInfo.name(player),16,title,body));
   for(ChatStyleMode mode:ChatStyleMode.values())for(Component original:messages){
    var shown=ChatMessageRenderer.render(original,mode);
+   var symbols=glyphsWithAvatars(shown);int index=0;
+   while(index<symbols.size()&&!symbols.get(index).text().equals("\uFFFC"))index++;
+   check(index+1<symbols.size()&&symbols.get(index+1).text().equals("H")
+    &&symbols.get(index).style().getColor().getValue()==0xFFFFFF,"两套色板均在玩家名左边原色绘制头像");
    hover(shown,player.getScoreboardName(),tooltip,mode+" 玩家名前缀");
    hover(ChatMessageStyle.repeated(shown,3),player.getScoreboardName(),tooltip,mode+" 重复消息保留资料");
    color(shown,"原色正文",0xFF5555,"资料悬停不影响正文原色");

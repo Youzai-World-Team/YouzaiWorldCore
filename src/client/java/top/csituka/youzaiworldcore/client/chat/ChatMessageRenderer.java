@@ -7,6 +7,7 @@ import net.minecraft.network.chat.contents.TranslatableContents;
 import org.jspecify.annotations.Nullable;
 import top.csituka.youzaiworldcore.chat.ChatMessageStyle;
 import top.csituka.youzaiworldcore.chat.ChatEventType;
+import top.csituka.youzaiworldcore.chat.ChatPlayerInfo;
 import top.csituka.youzaiworldcore.client.config.ChatStyleSettings;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
@@ -101,7 +102,7 @@ public final class ChatMessageRenderer {
                 .append(solid(argument(args[0]), LEVEL))
                 .append(solid(argument(args[1]), SEPARATOR))
                 .append(solid(argument(args[2]), TITLE))
-                .append(accent(argument(args[3]), NAME, start, end, mode));
+                .append(ChatPlayerInfo.colorName(argument(args[3]), text -> accent(text, NAME, start, end, mode)));
     }
 
     private static MutableComponent sourceHeader(boolean modMessage, Component name, ChatStyleMode mode) {
@@ -110,9 +111,10 @@ public final class ChatMessageRenderer {
                         modMessage ? 0x007AFF : 0xF47B8A,
                         modMessage ? 0x007AFF : 0xFF8A00, modMessage ? 0xC03AFF : 0xE79D0E, mode))
                 .append(solid(Component.literal("|"), SEPARATOR))
-                .append(accent(name, modMessage ? ChatMessageStyle.MOD_NAME_COLOR : ChatMessageStyle.GAME_NAME_COLOR,
+                .append(ChatPlayerInfo.colorName(name, text -> accent(text,
                         modMessage ? ChatMessageStyle.MOD_NAME_COLOR : ChatMessageStyle.GAME_NAME_COLOR,
-                        modMessage ? 0xC03AFF : 0xE79D0E, mode));
+                        modMessage ? ChatMessageStyle.MOD_NAME_COLOR : ChatMessageStyle.GAME_NAME_COLOR,
+                        modMessage ? 0xC03AFF : 0xE79D0E, mode)));
     }
 
     private static Component argument(Object value) {

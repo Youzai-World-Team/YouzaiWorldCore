@@ -3,21 +3,46 @@ package top.csituka.youzaiworldcore.chat;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.contents.ObjectContents;
+import net.minecraft.network.chat.contents.objects.PlayerSprite;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.component.ResolvableProfile;
 import top.csituka.youzaiworldcore.skill.AdventureLevelManager;
 import top.csituka.youzaiworldcore.skill.PlayerLevelStorage;
 import top.csituka.youzaiworldcore.title.TitleManager;
 
-/** 服务端生成聊天玩家名和资料悬停卡，使用发送消息时的内存数据，不查询外部服务。 */
+import java.util.function.UnaryOperator;
+
+/** 服务端生成聊天玩家名、皮肤头像和发送时的资料悬停卡。 */
 @SuppressWarnings("null")
 public final class ChatPlayerInfo {
     private ChatPlayerInfo() {
     }
 
-    /** 玩家名携带资料悬停；后续纯色或渐变处理会保留该交互。 */
+    /** 头像与名称共用资料悬停，头像以空文本回退，保留消息的纯文本内容。 */
     public static Component name(ServerPlayer player) {
-        return Component.literal(player.getScoreboardName())
-                .withStyle(style -> style.withHoverEvent(new HoverEvent.ShowText(tooltip(player))));
+        var profile = ResolvableProfile.createResolved(player.getGameProfile());
+        Component head = Component.object(new PlayerSprite(profile, true), Component.empty())
+                .withStyle(style -> style.withColor(0xFFFFFF));
+        return Component.empty()
+                .withStyle(style -> style.withHoverEvent(new HoverEvent.ShowText(tooltip(player))))
+                .append(head)
+                .append(player.getScoreboardName());
+    }
+
+    /** 名字换色时只处理头像右侧的文本，也适用于普通文本来源。 */
+    public static Component colorName(Component name, UnaryOperator<Component> colorText) {
+        var parts = name.getSiblings();
+        if (parts.size() == 2
+                && name.getContents().equals(Component.empty().getContents())
+                && parts.getFirst().getContents() instanceof ObjectContents object
+                && object.contents() instanceof PlayerSprite) {
+            return MutableComponent.create(name.getContents()).setStyle(name.getStyle())
+                    .append(parts.getFirst())
+                    .append(colorText.apply(parts.getLast()));
+        }
+        return colorText.apply(name);
     }
 
     /** 玩家命令来源附加资料；控制台和非玩家实体继续使用原来的来源名称。 */

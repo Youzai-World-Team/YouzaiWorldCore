@@ -71,7 +71,7 @@ public final class ChatMessageStyle {
         // 点号是玩家等级后的分隔符，未佩戴称号时仍保留；非玩家私信没有等级。
         Component separator = level > 0 ? Component.literal("·")
                 .withStyle(style -> style.withColor(SEPARATOR_COLOR)) : Component.empty();
-        Component name = gradient(playerName, start, end);
+        Component name = ChatPlayerInfo.colorName(playerName, text -> gradient(text, start, end));
         return Component.translatableWithFallback(key, fallback, levelText, separator, title.copy(), name)
                 .withStyle(style -> style.withColor(BODY_COLOR));
     }
@@ -194,7 +194,7 @@ public final class ChatMessageStyle {
     }
 
     private static Component name(Component value, int color) {
-        return value.copy().withStyle(style -> style.withColor(color));
+        return ChatPlayerInfo.colorName(value, text -> text.copy().withStyle(style -> style.withColor(color)));
     }
 
     public static void logRepeat(int count) {

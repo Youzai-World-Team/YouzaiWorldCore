@@ -64,9 +64,10 @@ public final class TestGlyphs {
  static final List<Ink> ink=new ArrayList<>();
  static final GlyphSource glyphs=new GlyphSource(){
   public BakedGlyph getGlyph(int cp){return new BakedGlyph(){
-   public com.mojang.blaze3d.font.GlyphInfo info(){return com.mojang.blaze3d.font.GlyphInfo.simple(1);}
+   private final int width=cp==0xFFFC?8:1;
+   public com.mojang.blaze3d.font.GlyphInfo info(){return com.mojang.blaze3d.font.GlyphInfo.simple(width);}
    public TextRenderable.Styled createGlyph(float x,float y,int color,int shadow,Style style,float bold,float offset){
-    ink.add(new Ink(cp,color,style,x,y));return new Area(x,y,x+1,y+9,style);
+    ink.add(new Ink(cp,color,style,x,y));return new Area(x,y,x+width,y+9,style);
    }
   };}
   public BakedGlyph getRandomGlyph(net.minecraft.util.RandomSource random,int cp){return getGlyph(cp);}
@@ -296,7 +297,12 @@ public final class NativeChatChecks {
 
  static void playerHover(){
   Component tooltip=Component.literal("玩家：A🙂B\n冒险等级：Lv.16\n升级经验：120 / 500\n佩戴称号：{管理员}\n游戏模式：生存");
-  Component name=Component.literal("A🙂B").withStyle(style->style.withHoverEvent(new HoverEvent.ShowText(tooltip)));
+  var profile=new com.mojang.authlib.GameProfile(UUID.randomUUID(),"Alex");
+  var resolvable=net.minecraft.world.item.component.ResolvableProfile.createResolved(profile);
+  var avatar=Component.object(new net.minecraft.network.chat.contents.objects.PlayerSprite(resolvable,true),Component.empty())
+   .withStyle(style->style.withColor(0xFFFFFF));
+  Component name=Component.empty().withStyle(style->style.withHoverEvent(new HoverEvent.ShowText(tooltip)))
+   .append(avatar).append("A🙂B");
   Component body=Component.literal("Body").withStyle(style->style.withColor(0x112233));
   var originals=new ArrayList<Component>(List.of(line(ChatMessageStyle.playerHeader(false,name,16,Component.empty()),body),
    line(ChatMessageStyle.playerHeader(true,name,16,Component.empty()),body),ChatMessageStyle.game(name,body),
@@ -304,19 +310,23 @@ public final class NativeChatChecks {
   for(ChatEventType type:ChatEventType.values())originals.add(ChatMessageStyle.event(type,name,16,Component.empty(),body));
   for(ChatStyleMode mode:ChatStyleMode.values())for(Component original:originals){
    Component shown=roundTrip(ChatMessageStyle.repeated(ChatMessageRenderer.render(roundTrip(original),mode),3));
+   check(shown.getString().equals(original.getString()+" [!3]"),"头像无纯文本占位符");
    for(int width:List.of(1000,13)){
     List<Style> playerStyles=new ArrayList<>();StringBuilder text=new StringBuilder();
     for(var line:new GuiMessage(1,shown,null,null,null).splitLines(TestGlyphs.font(),width)){
      line.accept((index,style,cp)->{
       if(style.getHoverEvent() instanceof HoverEvent.ShowText hover){
        check(hover.value().getString().equals(tooltip.getString()),"网络编码和真实分行保留资料全文");
+       if(cp==0xFFFC)check(style.getFont() instanceof FontDescription.PlayerSprite sprite
+        &&sprite.profile().partialProfile().id().equals(profile.id())&&sprite.hat()
+        &&style.getColor().getValue()==0xFFFFFF,"头像经编解码、着色及分行保留正确的皮肤和原色");
        playerStyles.add(style);text.appendCodePoint(cp);
       }
       return true;
      });
     }
-    String expected=ChatMessageStyle.isPrivateReceipt(original)?"A🙂BA🙂B":"A🙂B";
-    check(text.toString().equals(expected)&&playerStyles.size()==expected.codePointCount(0,expected.length()),"Unicode 玩家名每个字都有资料悬停，其他字段没有");
+    String expected=ChatMessageStyle.isPrivateReceipt(original)?"\uFFFCA🙂B\uFFFCA🙂B":"\uFFFCA🙂B";
+    check(text.toString().equals(expected)&&playerStyles.size()==expected.codePointCount(0,expected.length()),"头像始终排在玩家名前，头像和名称共享资料悬停");
     for(float scale:List.of(1f,1.5f))for(var line:new GuiMessage(1,shown,null,null,null).splitLines(TestGlyphs.font(),width)){
      TestGlyphs.ink.clear();var pose=new org.joml.Matrix3x2f().translate(7,9).scale(scale);
      var state=new net.minecraft.client.renderer.state.gui.GuiTextRenderState(TestGlyphs.font(),line,pose,
