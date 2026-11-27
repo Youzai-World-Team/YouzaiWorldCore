@@ -618,9 +618,11 @@ public class ChatMessageChecks {
   check(ChatFormatHelper.formatMessageContent(player,original).getString().equals(original),"正文不解析标签和占位符");
   top.csituka.youzaiworldcore.config.GlobalSettings.SECTION.set("chat_format","OLD");
   top.csituka.youzaiworldcore.config.GlobalSettings.SECTION.set("private_message_sent_format","OLD");
+  top.csituka.youzaiworldcore.config.GlobalSettings.SECTION.set("private_message_received_format","OLD");
+  top.csituka.youzaiworldcore.config.GlobalSettings.SECTION.set("enabled",false);
   top.csituka.youzaiworldcore.config.ChatFormatSettings.load();
-  top.csituka.youzaiworldcore.config.ChatFormatSettings.setEnabled(false);
   check(ChatFormatHelper.formatChatHeader(player).getString().equals("[聊天]|Lv.1·zxabinbina"),"旧模板和事件开关不覆盖固定排版");
+  check(ChatFormatHelper.formatPrivateHeader(source).getString().equals("[私信]|Lv.1·zxabinbina"),"旧模板和事件开关不覆盖私信排版");
   var styled=ChatMessageStyle.game("Sheep",Component.literal("正文").withStyle(net.minecraft.ChatFormatting.RED));
   check(ChatMessageStyle.isFormatted(styled),"结构化游戏消息");
   check(ChatMessageStyle.system(styled,null)==styled,"游戏消息不重复加前缀");
@@ -915,9 +917,11 @@ public class ChatMessageChecks {
    else gradient(shown,"Player",type.gradientStart(),type.gradientEnd(),"事件玩家名渐变");
    color(ChatMessageStyle.repeated(shown,3),"[!3]",0x2DD4BF,"事件重复计数青色");
   }
-  top.csituka.youzaiworldcore.config.ChatFormatSettings.setJoinedGameFormat("Custom welcome");
+  top.csituka.youzaiworldcore.config.GlobalSettings.SECTION.set("joined_game_format","Custom welcome");
+  top.csituka.youzaiworldcore.config.ChatFormatSettings.load();
   check(ChatFormatHelper.formatJoin(player).getString().equals("[加入]|Lv.1·zxabinbina >> Custom welcome"),"自定义加入模板仍作为正文解析");
-  top.csituka.youzaiworldcore.config.ChatFormatSettings.setEnabled(false);
+  top.csituka.youzaiworldcore.config.GlobalSettings.SECTION.set("enabled",false);
+  top.csituka.youzaiworldcore.config.ChatFormatSettings.load();
   check(call(PlayerListMixin.class,joins,"youzaiworldcore$replaceJoinMessage",vanillaJoin)==vanillaJoin,"关闭事件样式保留原版加入消息");
   check(call(ServerGamePacketListenerImplMixin.class,leaves,"youzaiworldcore$replaceLeaveMessage",vanillaJoin)==vanillaJoin,"关闭事件样式保留原版退出消息");
   check(call(ServerPlayerChatMixin.class,player,"youzaiworldcore$replaceDeathMessage",combat)==death,"关闭事件样式保留原版死亡消息");

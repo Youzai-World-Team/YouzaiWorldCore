@@ -101,6 +101,12 @@ The main menu uses rounded cards and animated transitions, grouped into common a
 - Advancement, join, death and leave labels use gold, green, red and slate colors. First joins include a welcome message; renamed joins retain the old name. Advancement names keep their colors and hover descriptions, deaths keep the full vanilla description, and custom event body templates remain supported
 - Layout is fixed; legacy chat/private-message templates are no longer read. `chat_format_module.enabled` controls all four event styles. Update both client and server for the new `youzaiworldcore:chat_line` type. See [implementation and checks](docs/CHAT_MESSAGES.md)
 
+#### Sidebar and Tab list
+
+- The sidebar uses a built-in mint-green template with alternating Chinese and English titles. It shows a greeting, dimension, server date and time, player count, TPS and MSPT, personal ping, and the server address.
+- The Tab list has a rainbow header with the current player count and limit. The footer shows the chat group number, server address, `fabric 26.3`, TPS, and personal ping.
+- Both server templates and their animation timing are fixed. The old `sidebar_module` and `tablist_module` sections can be removed from `global_settings.json`.
+
 ### 3. Title Screen Overhaul
 
 Fully redesigned Minecraft main menu via `TitleScreenMixin`: a left panel with custom buttons (Join Server `play.mcyzw.top` / Options / Quit), a right panel with the announcement + update info block (title/version/date/content/download/ignore, fade-in animation), a gradient background (`GradientBackgroundUtil`), the Mojang logo replaced with custom assets, and a test page button in developer mode. Clicking "Join Server" while a forced update is pending intercepts and shows `ForcedUpdateScreen`.

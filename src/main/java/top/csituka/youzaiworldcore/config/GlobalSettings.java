@@ -58,12 +58,8 @@ public final class GlobalSettings {
     public static final String DOUBLE_DOORS_MODULE = "double_doors_module";
     /** 单玩家功能开关（玩家个人配置，见 {@link UserSettings}） */
     public static final String FUNCTION_MODULE = "function_module";
-    /** 聊天消息格式化（仿 Styled Chat 精简版：模板 + %papi% 占位符） */
+    /** 聊天事件样式开关及事件正文模板 */
     public static final String CHAT_FORMAT_MODULE = "chat_format_module";
-    /** Tab 列表抬头 / 页脚定制（仿 Styled Player List 精简版，仅 Header/Footer） */
-    public static final String TABLIST_MODULE = "tablist_module";
-    /** 侧边栏定制（仿 Styled Sidebars 精简版，计分板驱动，单一全局样式） */
-    public static final String SIDEBAR_MODULE = "sidebar_module";
     /** Api 服务端账户与装扮网桥配置 */
     public static final String API_MODULE = "api_module";
 

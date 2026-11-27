@@ -1,7 +1,5 @@
 package top.csituka.youzaiworldcore.config;
 
-import java.util.Objects;
-
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
 /**
@@ -21,7 +19,7 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
  * </ul>
  * </p>
  */
-@SuppressWarnings({ "null", "unused" })
+@SuppressWarnings("null")
 public final class ChatFormatSettings {
 
     public static final String MODULE = "ChatFormatSettings";
@@ -50,13 +48,6 @@ public final class ChatFormatSettings {
     public static String getJoinedRenamedFormat() { return joinedRenamedFormat; }
     public static String getLeftGameFormat() { return leftGameFormat; }
     public static String getDeathFormat() { return deathFormat; }
-
-    public static void setEnabled(boolean v) { if (enabled != v) { enabled = v; save(); } }
-    public static void setJoinedGameFormat(String v) { if (!Objects.equals(joinedGameFormat, v)) { joinedGameFormat = v; save(); } }
-    public static void setJoinedFirstTimeFormat(String v) { if (!Objects.equals(joinedFirstTimeFormat, v)) { joinedFirstTimeFormat = v; save(); } }
-    public static void setJoinedRenamedFormat(String v) { if (!Objects.equals(joinedRenamedFormat, v)) { joinedRenamedFormat = v; save(); } }
-    public static void setLeftGameFormat(String v) { if (!Objects.equals(leftGameFormat, v)) { leftGameFormat = v; save(); } }
-    public static void setDeathFormat(String v) { if (!Objects.equals(deathFormat, v)) { deathFormat = v; save(); } }
 
     public static void load() {
         DebugLogger.SERVER.entering(MODULE, "load");
@@ -87,7 +78,7 @@ public final class ChatFormatSettings {
         save();
     }
 
-    public static void save() {
+    private static void save() {
         ConfigSection section = GlobalSettings.section(GlobalSettings.CHAT_FORMAT_MODULE);
         section.set("enabled", enabled);
         section.set("joined_game_format", joinedGameFormat);

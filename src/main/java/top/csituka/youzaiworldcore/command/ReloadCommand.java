@@ -71,18 +71,12 @@ public class ReloadCommand {
                 // 维度池归属决定玩家背包的保存目录，只在开服时读取。
                 InPlaceRespawnConfig.reload();
 
-                // 重载聊天消息格式化配置（模板缓存随 load 自动失效重解析）
+                // 重载聊天事件样式开关与正文模板
                 ChatFormatSettings.load();
 
                 // 重载自定义皮肤与披风配置，并把启用状态重新同步给在线玩家
                 CosmeticModuleSettings.load();
                 CosmeticManager.reload(source.getServer());
-
-                // 重载 Tab 列表抬头 / 页脚定制（重新解析模板帧）
-                top.csituka.youzaiworldcore.tablist.TabListManager.reload();
-
-                // 重载侧边栏定制（重新解析模板帧并重置动画计数）
-                top.csituka.youzaiworldcore.sidebar.SidebarManager.reload();
 
                 source.sendSuccess(
                                 () -> Component.translatable("youzaiworldcore.message.command.reload_success",

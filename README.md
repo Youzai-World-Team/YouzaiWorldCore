@@ -102,6 +102,12 @@
 - 成就、加入、死亡、退出分别使用金色、绿色、红色和灰蓝色标签；首次加入有欢迎语，改名加入保留旧名。成就名称保留原色和悬停说明，死亡保留完整原版死因，现有自定义事件正文模板继续生效
 - 排版固定，旧 `chat_format` 和私信模板不再读取；`chat_format_module.enabled` 控制四类事件样式。使用新 `youzaiworldcore:chat_line` 聊天类型，客户端和服务端配套更新。实现与验收见 [聊天消息文档](docs/CHAT_MESSAGES.md)
 
+#### 侧边栏与 Tab 列表
+
+- **侧边栏**使用内置薄荷绿模板，中英文标题交替播放。正文显示欢迎语、维度、日期时间、在线人数、TPS／MSPT、个人延迟及游玩地址。
+- **Tab 列表**使用彩虹抬头，显示在线人数与人数上限。页脚显示交流群号、游玩地址、`fabric 26.3`、TPS 和个人延迟。
+- 两者的服务端模板与动画节奏均固定。旧版 `sidebar_module` 和 `tablist_module` 分节可从 `global_settings.json` 删除。
+
 ### 3. 标题界面改造
 
 通过 `TitleScreenMixin` 对 Minecraft 主菜单进行了全面改造：左侧面板自定义按钮（加入服务器 `play.mcyzw.top` / 选项 / 退出游戏）、右侧公告 + 更新信息块（标题/版本/时间/内容/下载/忽略按钮，含淡入动画）、渐变背景（`GradientBackgroundUtil`）、Mojang Logo 替换为自定义资源，以及开发者模式下的测试页按钮。「加入服务器」在检测到强制更新时拦截并弹出 `ForcedUpdateScreen`。

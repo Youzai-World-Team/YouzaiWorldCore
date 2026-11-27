@@ -6,10 +6,10 @@
 
 | 类别 | 调用点 | 内容 |
 |---|---:|---|
-| 普通日志 | 431 | 启停、更新、管理员操作及实际警告 / 故障 |
-| 1 基本 | 185 | 配置 / 数据摘要、重要状态和结果 |
-| 2 详细 | 1115 | 注册、网络操作、计算与分支诊断 |
-| 3 调试 | 1083 | 方法入口 / 出口、每帧 / tick 与逐条追踪 |
+| 普通日志 | 417 | 启停、更新、管理员操作及实际警告 / 故障 |
+| 1 基本 | 183 | 配置 / 数据摘要、重要状态和结果 |
+| 2 详细 | 1109 | 注册、网络操作、计算与分支诊断 |
+| 3 调试 | 1077 | 方法入口 / 出口、每帧 / tick 与逐条追踪 |
 
 共享存储按文件归属路由；通用资源注册按物理进程路由，其余调用明确指定客户端或服务端。
 
@@ -348,8 +348,7 @@
 | [src/main/redstone/WirelessRedstoneNetwork.java](../src/main/java/top/csituka/youzaiworldcore/redstone/WirelessRedstoneNetwork.java) | 0 | 0 | 4 | 0 |
 | [src/main/respawn/InPlaceRespawnConfig.java](../src/main/java/top/csituka/youzaiworldcore/respawn/InPlaceRespawnConfig.java) | 0 | 2 | 0 | 3 |
 | [src/main/respawn/InPlaceRespawnManager.java](../src/main/java/top/csituka/youzaiworldcore/respawn/InPlaceRespawnManager.java) | 5 | 4 | 3 | 12 |
-| [src/main/sidebar/SidebarManager.java](../src/main/java/top/csituka/youzaiworldcore/sidebar/SidebarManager.java) | 10 | 1 | 2 | 3 |
-| [src/main/sidebar/SidebarSettings.java](../src/main/java/top/csituka/youzaiworldcore/sidebar/SidebarSettings.java) | 0 | 0 | 1 | 3 |
+| [src/main/sidebar/SidebarManager.java](../src/main/java/top/csituka/youzaiworldcore/sidebar/SidebarManager.java) | 1 | 0 | 0 | 3 |
 | [src/main/skill/AdventureLevelManager.java](../src/main/java/top/csituka/youzaiworldcore/skill/AdventureLevelManager.java) | 0 | 1 | 0 | 3 |
 | [src/main/skill/AttributeManager.java](../src/main/java/top/csituka/youzaiworldcore/skill/AttributeManager.java) | 0 | 1 | 0 | 2 |
 | [src/main/skill/PlayerAttributeStorage.java](../src/main/java/top/csituka/youzaiworldcore/skill/PlayerAttributeStorage.java) | 0 | 1 | 1 | 2 |
@@ -361,8 +360,7 @@
 | [src/main/startup/StartupLoadingStatus.java](../src/main/java/top/csituka/youzaiworldcore/startup/StartupLoadingStatus.java) | 3 | 0 | 3 | 0 |
 | [src/main/startup/StartupSplashPreLaunch.java](../src/main/java/top/csituka/youzaiworldcore/startup/StartupSplashPreLaunch.java) | 2 | 0 | 2 | 4 |
 | [src/main/status/StatsManager.java](../src/main/java/top/csituka/youzaiworldcore/status/StatsManager.java) | 19 | 2 | 4 | 2 |
-| [src/main/tablist/TabListManager.java](../src/main/java/top/csituka/youzaiworldcore/tablist/TabListManager.java) | 6 | 1 | 2 | 3 |
-| [src/main/tablist/TabListSettings.java](../src/main/java/top/csituka/youzaiworldcore/tablist/TabListSettings.java) | 0 | 0 | 1 | 3 |
+| [src/main/tablist/TabListManager.java](../src/main/java/top/csituka/youzaiworldcore/tablist/TabListManager.java) | 1 | 0 | 0 | 3 |
 | [src/main/title/TitleApiClient.java](../src/main/java/top/csituka/youzaiworldcore/title/TitleApiClient.java) | 1 | 0 | 0 | 0 |
 | [src/main/title/TitleManager.java](../src/main/java/top/csituka/youzaiworldcore/title/TitleManager.java) | 4 | 0 | 1 | 1 |
 | [src/main/trialvault/TrialVaultConfig.java](../src/main/java/top/csituka/youzaiworldcore/trialvault/TrialVaultConfig.java) | 0 | 1 | 3 | 6 |
