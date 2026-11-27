@@ -2,6 +2,11 @@ package top.csituka.youzaiworldcore.pet;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonParser;
+import com.google.gson.JsonPrimitive;
 import com.mojang.serialization.JsonOps;
 import net.minecraft.server.MinecraftServer;
 import top.csituka.youzaiworldcore.config.GlobalSettings;
@@ -146,12 +151,13 @@ public final class PetBackupManager {
                 String timestamp = LocalDateTime.now().format(TIMESTAMP_FORMATTER);
                 Path backupFile = BACKUP_DIR.resolve(BACKUP_PREFIX + timestamp + BACKUP_SUFFIX);
 
-                Map<String, PetEntry> serializable = new LinkedHashMap<>();
+                JsonObject pets = new JsonObject();
                 for (Map.Entry<UUID, PetEntry> entry : snapshot.entrySet()) {
-                    serializable.put(entry.getKey().toString(), entry.getValue());
+                    JsonElement encoded = PetEntry.CODEC.encodeStart(JsonOps.INSTANCE, entry.getValue()).getOrThrow();
+                    pets.add(entry.getKey().toString(), encoded);
                 }
 
-                String json = GSON.toJson(serializable);
+                String json = GSON.toJson(pets);
                 BackupArchive.writeJson(backupFile, BACKUP_PREFIX + timestamp + ".json", json);
 
                 DebugLogger.SERVER.info(MODULE, "备份已保存: {} ({} 条记录, {} 字节)", backupFile.getFileName(), snapshot.size(), json.length());
@@ -229,15 +235,22 @@ public final class PetBackupManager {
                 LOGGER.error("备份压缩包内没有 .json 条目: {}", backupFile);
                 return Map.of();
             }
-            @SuppressWarnings({"unchecked", "null"})
-            Map<String, Object> raw = GSON.fromJson(json, Map.class);
+            if (!(JsonParser.parseString(json) instanceof JsonObject pets)) {
+                LOGGER.error("宠物备份 JSON 的根节点必须是对象: {}", backupFile);
+                return Map.of();
+            }
 
             Map<UUID, PetEntry> result = new HashMap<>();
-            for (Map.Entry<String, Object> entry : raw.entrySet()) {
+            for (Map.Entry<String, JsonElement> entry : pets.entrySet()) {
                 try {
                     UUID uuid = UUID.fromString(entry.getKey());
-                    com.google.gson.JsonElement jsonElement = GSON.toJsonTree(entry.getValue());
-                    PetEntry petEntry = PetEntry.CODEC.parse(JsonOps.INSTANCE, jsonElement)
+                    JsonElement value = entry.getValue();
+                    if (value instanceof JsonObject pet && pet.get("mode") instanceof JsonPrimitive mode
+                            && mode.isString()) {
+                        // 旧备份由 Gson 写入 Java 枚举常量名，Codec 使用小写模式名。
+                        pet.addProperty("mode", PetMode.fromString(mode.getAsString()).getSerializedName());
+                    }
+                    PetEntry petEntry = PetEntry.CODEC.parse(JsonOps.INSTANCE, value)
                             .result().orElse(null);
                     if (petEntry == null) {
                         LOGGER.warn("反序列化 PetEntry 失败: {}", entry.getKey());
@@ -249,10 +262,10 @@ public final class PetBackupManager {
                 }
             }
 
-            DebugLogger.SERVER.info(MODULE, "从备份恢复 {} / {} 条记录", result.size(), raw.size());
+            DebugLogger.SERVER.info(MODULE, "从备份恢复 {} / {} 条记录", result.size(), pets.size());
             DebugLogger.SERVER.exiting(MODULE, "restoreFromBackup", "count=" + result.size());
             return result;
-        } catch (IOException e) {
+        } catch (IOException | JsonParseException e) {
             LOGGER.error("读取备份文件失败", e);
             return Map.of();
         }
