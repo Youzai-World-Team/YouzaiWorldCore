@@ -14,11 +14,11 @@ import top.csituka.youzaiworldcore.config.ChatFormatSettings;
 /** 只替换原版成就广播的文本，保留完成判定、奖励及游戏规则对广播的控制。 */
 @Mixin(PlayerAdvancements.class)
 public abstract class PlayerAdvancementsChatMixin {
-    @Redirect(method = "lambda$award$0", at = @At(value = "INVOKE",
-            target = "Lnet/minecraft/advancements/AdvancementType;createAnnouncement(Lnet/minecraft/advancements/AdvancementHolder;Lnet/minecraft/server/level/ServerPlayer;)Lnet/minecraft/network/chat/MutableComponent;"))
-    private MutableComponent youzaiworldcore$formatAdvancement(AdvancementType type, AdvancementHolder holder,
-            ServerPlayer player) {
-        return ChatFormatSettings.isEnabled() ? ChatFormatHelper.formatAdvancement(player, type, holder).copy()
-                : type.createAnnouncement(holder, player);
-    }
+        @SuppressWarnings("null")
+        @Redirect(method = "lambda$award$0", at = @At(value = "INVOKE", target = "Lnet/minecraft/advancements/AdvancementType;createAnnouncement(Lnet/minecraft/advancements/AdvancementHolder;Lnet/minecraft/server/level/ServerPlayer;)Lnet/minecraft/network/chat/MutableComponent;"))
+        private MutableComponent youzaiworldcore$formatAdvancement(AdvancementType type, AdvancementHolder holder,
+                        ServerPlayer player) {
+                return ChatFormatSettings.isEnabled() ? ChatFormatHelper.formatAdvancement(player, type, holder).copy()
+                                : type.createAnnouncement(holder, player);
+        }
 }

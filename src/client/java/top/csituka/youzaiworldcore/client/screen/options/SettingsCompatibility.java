@@ -79,6 +79,7 @@ final class SettingsCompatibility {
 
     private static void openConfig(ModContainer mod, Screen parent) {
         try {
+            @SuppressWarnings("null")
             Screen screen = ModMenu.getConfigScreen(mod.getMetadata().getId(), parent);
             if (screen != null)
                 Minecraft.getInstance().gui.setScreen(screen);

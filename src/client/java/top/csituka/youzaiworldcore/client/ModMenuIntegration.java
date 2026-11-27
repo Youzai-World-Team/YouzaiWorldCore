@@ -1,5 +1,7 @@
 package top.csituka.youzaiworldcore.client;
 
+import org.jspecify.annotations.NonNull;
+
 import com.terraformersmc.modmenu.api.ConfigScreenFactory;
 import com.terraformersmc.modmenu.api.ModMenuApi;
 import top.csituka.youzaiworldcore.client.screen.YouzaiWorldCoreSettingsScreen;
@@ -13,7 +15,7 @@ import top.csituka.youzaiworldcore.client.screen.YouzaiWorldCoreSettingsScreen;
 public class ModMenuIntegration implements ModMenuApi {
 
     @Override
-    public ConfigScreenFactory<?> getModConfigScreenFactory() {
+    public @NonNull ConfigScreenFactory<?> getModConfigScreenFactory() {
         return YouzaiWorldCoreSettingsScreen::new;
     }
 }
