@@ -12,17 +12,18 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
 import java.time.DateTimeException;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -34,8 +35,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public final class PlayerDataBackup {
     private static final DebugLogger.ModuleLogger LOGGER = DebugLogger.SERVER.module("PlayerDataBackup");
-    private static final LocalTime START_TIME = LocalTime.of(4, 0);
+    private static final int MAX_BACKUPS = 15;
     private static final int VERSION = 1;
+    @SuppressWarnings("null")
+    private static final Comparator<AvailableBackup> NEWEST_FIRST = Comparator
+            .comparing(AvailableBackup::writtenAt)
+            .thenComparing(backup -> backup.point().time())
+            .thenComparing(backup -> backup.point().id())
+            .reversed();
     private static PlayerDataBackup active;
 
     private final MinecraftServer server;
@@ -58,6 +65,7 @@ public final class PlayerDataBackup {
         ServerLifecycleEvents.SERVER_STARTING.register(server -> {
             recoverInterruptedSession(server);
             applyPendingRestore(server);
+            pruneBackups(server);
         });
         ServerLifecycleEvents.SERVER_STARTED.register(server -> {
             var backup = new PlayerDataBackup(server);
@@ -170,7 +178,7 @@ public final class PlayerDataBackup {
     }
 
     static LocalDate dueDate(ZonedDateTime now) {
-        return now.toLocalTime().isBefore(START_TIME) ? null : now.toLocalDate();
+        return now.toLocalTime().isBefore(BackupPoint.DAILY_TIME) ? null : now.toLocalDate();
     }
 
     private void tick(ZonedDateTime now) {
@@ -184,7 +192,7 @@ public final class PlayerDataBackup {
         }
         BackupPoint point = BackupPoint.daily(date);
         if (batchComplete(server, point)) {
-            nextCheck = date.plusDays(1).atTime(START_TIME).atZone(now.getZone()).toInstant();
+            nextCheck = date.plusDays(1).atTime(BackupPoint.DAILY_TIME).atZone(now.getZone()).toInstant();
             return;
         }
         nextCheck = now.toInstant().plusSeconds(300);
@@ -237,27 +245,82 @@ public final class PlayerDataBackup {
                 LOGGER.error("写入玩家数据备份完成标记失败: {}", point.id(), e);
             }
         }
+        if (written > 0) {
+            pruneBackups(server);
+        }
     }
 
     @SuppressWarnings("null")
-    static List<BackupPoint> points(MinecraftServer server, BackupModule module) throws IOException {
+    static synchronized List<BackupPoint> points(MinecraftServer server, BackupModule module) throws IOException {
+        return availableBackups(server, module).stream()
+                .filter(backup -> module != null || batchComplete(server, backup.point()))
+                .sorted(NEWEST_FIRST).map(AvailableBackup::point).toList();
+    }
+
+    private static List<AvailableBackup> availableBackups(MinecraftServer server, BackupModule module)
+            throws IOException {
         Path directory = ModPaths.playerDataBackups(server, module == null ? GlobalSettings.BACKUP_MODULE : module.id);
         String suffix = module == null ? ".complete" : ".zip";
         List<AvailableBackup> backups = new ArrayList<>();
         for (Path file : BackupFiles.files(directory, 1, name -> name.endsWith(suffix))) {
             String name = file.getFileName().toString();
+            String stem = name.substring(0, name.length() - suffix.length());
             try {
-                BackupPoint point = BackupPoint.parseFileStem(name.substring(0, name.length() - suffix.length()));
-                if (module != null || batchComplete(server, point)) {
+                BackupPoint point = BackupPoint.parseFileStem(stem);
+                if (stem.equals(point.fileStem())) {
                     backups.add(new AvailableBackup(point, Files.getLastModifiedTime(file)));
                 }
             } catch (DateTimeException | IllegalArgumentException ignored) {
                 // Other files aren't backups created by this scheduler.
             }
         }
-        backups.sort(Comparator.comparing(AvailableBackup::writtenAt).reversed()
-                .thenComparing(backup -> backup.point().id()));
-        return backups.stream().map(AvailableBackup::point).toList();
+        return backups;
+    }
+
+    private static synchronized void pruneBackups(MinecraftServer server) {
+        try {
+            Map<BackupPoint, AvailableBackup> groups = new HashMap<>();
+            for (BackupModule module : BackupModule.values()) {
+                for (AvailableBackup archive : availableBackups(server, module)) {
+                    groups.merge(archive.point(), archive,
+                            (left, right) -> NEWEST_FIRST.compare(left, right) <= 0 ? left : right);
+                }
+            }
+            // Count partial batches once, and order complete batches by their completion
+            // marker.
+            for (AvailableBackup marker : availableBackups(server, null)) {
+                if (batchComplete(server, marker.point())) {
+                    groups.replace(marker.point(), marker);
+                }
+            }
+            List<AvailableBackup> sorted = groups.values().stream().sorted(NEWEST_FIRST).toList();
+            for (int index = sorted.size() - 1; index >= MAX_BACKUPS; index--) {
+                pruneBackup(server, sorted.get(index).point());
+            }
+        } catch (IOException | RuntimeException e) {
+            LOGGER.error("扫描旧玩家数据备份失败", e);
+        }
+    }
+
+    private static void pruneBackup(MinecraftServer server, BackupPoint point) {
+        // Withdraw the complete batch before removing any of its individual archives.
+        if (deleteArchive(batchFile(server, point))) {
+            for (BackupModule module : BackupModule.values()) {
+                deleteArchive(archiveFile(server, module, point));
+            }
+        }
+    }
+
+    private static boolean deleteArchive(Path path) {
+        try {
+            if (Files.isRegularFile(path, LinkOption.NOFOLLOW_LINKS)) {
+                Files.deleteIfExists(path);
+            }
+            return true;
+        } catch (IOException | RuntimeException e) {
+            LOGGER.warn("清理旧玩家数据备份失败：{}", path, e);
+            return false;
+        }
     }
 
     private static boolean batchComplete(MinecraftServer server, BackupPoint point) {
@@ -272,7 +335,8 @@ public final class PlayerDataBackup {
         return true;
     }
 
-    static void queueRestore(MinecraftServer server, BackupModule module, BackupPoint point) throws IOException {
+    static synchronized void queueRestore(MinecraftServer server, BackupModule module, BackupPoint point)
+            throws IOException {
         Path pending = pendingFile(server);
         if (Files.exists(pending)) {
             throw new IllegalStateException("A restore is already queued");

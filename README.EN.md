@@ -740,7 +740,7 @@ Client display/layout settings, private records and terrain use `yzwc/client/map
 
 Backups start at 04:00 in the server's system time zone. A server started after 04:00 creates that day's backup if it is missing. A normal shutdown creates another backup after the final save. A crash that reaches the game's exception handler triggers a backup attempt. After a forced termination or power loss, the next startup archives data already saved to disk.
 
-Each module writes to `<world>/data/yzwc/backup/<module>/backups/`. Daily archives use `daily-YYYY-MM-DD.zip`. Shutdown and crash archives use the `shutdown-` or `crash-` prefix followed by a timestamp with milliseconds. Each run has its own files. A completed batch can be restored together.
+Each module writes to `<world>/data/yzwc/backup/<module>/backups/`. Daily archives use `daily-YYYY-MM-DD.zip`. Shutdown and crash archives use the `shutdown-` or `crash-` prefix followed by a timestamp with milliseconds. A completed batch can be restored together. Each world retains the 15 most recent backup runs across all three triggers. When the limit is exceeded, cleanup removes the oldest batch and its module archives.
 
 | Module | Data |
 | --- | --- |
