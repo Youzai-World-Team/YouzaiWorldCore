@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "A": "minecraft:amethyst_shard",
+    "E": "minecraft:ender_eye",
+    "Y": "youzaiworldcore:yz_ingot"
+  },
+  "pattern": [
+    " Y ",
+    "AEA",
+    " Y "
+  ],
+  "result": {
+    "id": "youzaiworldcore:teleport_stone"
+  }
+}

@@ -289,7 +289,7 @@ public class LargeSignBlock extends BaseEntityBlock implements SimpleWaterlogged
         DYE,
         /** 荧光墨囊：文字发光。 */
         GLOW,
-        /** 闪烁墨染：让文字按 20 tick 周期闪烁。 */
+        /** 闪烁墨囊：让文字按 20 tick 周期闪烁。 */
         FLASHING,
         /** 墨囊：取消发光。 */
         UNGLOW,

@@ -14,7 +14,7 @@ import top.csituka.youzaiworldcore.sign.FlashingSign;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
 /**
- * 闪烁墨染：让原版告示牌文字按 20 tick 周期闪烁。
+ * 闪烁墨囊：让原版告示牌文字按 20 tick 周期闪烁。
  * <p>
  * 原版 {@link net.minecraft.world.level.block.SignBlock} 会在调用本类前检查
  * 涂蜡、权限、距离和其他玩家编辑状态，因此这里仅处理实际状态变更。

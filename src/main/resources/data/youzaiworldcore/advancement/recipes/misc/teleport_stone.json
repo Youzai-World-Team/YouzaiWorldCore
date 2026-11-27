@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_the_recipe": {
+      "trigger": "minecraft:recipe_unlocked",
+      "conditions": {
+        "recipes": "youzaiworldcore:teleport_stone"
+      }
+    },
+    "has_ender_eye": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "minecraft:ender_eye"
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "has_the_recipe",
+      "has_ender_eye"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "youzaiworldcore:teleport_stone"
+    ]
+  }
+}

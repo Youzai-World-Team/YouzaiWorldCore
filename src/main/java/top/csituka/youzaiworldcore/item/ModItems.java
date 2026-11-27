@@ -50,7 +50,7 @@ public class ModItems {
             new Item.Properties()
     );
 
-    /** 闪烁墨染：使告示牌与大字牌文字按 20 tick 周期闪烁。 */
+    /** 闪烁墨囊：使告示牌与大字牌文字按 20 tick 周期闪烁。 */
     public static final Item FLASHING_INK_SAC = registerFlashingInkSac(
             "glow_ink_sac",
             new Item.Properties()

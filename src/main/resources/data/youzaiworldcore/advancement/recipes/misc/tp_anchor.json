@@ -7,26 +7,12 @@
         "recipes": "youzaiworldcore:tp_anchor"
       }
     },
-    "has_yz_ingot": {
+    "has_amethyst_shard": {
       "trigger": "minecraft:inventory_changed",
       "conditions": {
         "items": [
           {
-            "items": [
-              "youzaiworldcore:yz_ingot"
-            ]
-          }
-        ]
-      }
-    },
-    "has_ender_eye": {
-      "trigger": "minecraft:inventory_changed",
-      "conditions": {
-        "items": [
-          {
-            "items": [
-              "minecraft:ender_eye"
-            ]
+            "items": "minecraft:amethyst_shard"
           }
         ]
       }
@@ -35,8 +21,7 @@
   "requirements": [
     [
       "has_the_recipe",
-      "has_yz_ingot",
-      "has_ender_eye"
+      "has_amethyst_shard"
     ]
   ],
   "rewards": {

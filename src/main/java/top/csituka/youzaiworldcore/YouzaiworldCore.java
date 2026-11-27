@@ -106,6 +106,7 @@ import top.csituka.youzaiworldcore.pet.command.PetCommand;
 import top.csituka.youzaiworldcore.pet.config.PetModuleConfig;
 import top.csituka.youzaiworldcore.pet.event.PetEventHandlers;
 import top.csituka.youzaiworldcore.screen.ModMenuTypes;
+import top.csituka.youzaiworldcore.worldgen.StructureLoot;
 import top.csituka.youzaiworldcore.worldgen.VillageStructureInjector;
 import top.csituka.youzaiworldcore.startup.StartupLoadingStatus;
 
@@ -149,6 +150,7 @@ public class YouzaiworldCore implements ModInitializer {
         // 客户端需要这些注册表对象来解析服务端同步过来的物品、方块、菜单和实体；
         // 专用服务端则在此基础上继续执行权威玩法、账户和 Api 初始化。
         initializeCommonRegistrations();
+        StructureLoot.register();
 
         // 命令属于逻辑服务端；内置服务器运行在 CLIENT 物理环境，也必须注册。
         // INTEGRATED 命令树建立时才加载本地玩法，单纯连接远程服务器不读取本地服务端配置。
