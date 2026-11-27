@@ -280,7 +280,7 @@ final class MapDetailPanel extends AbstractContainerEventHandler implements Rend
     private void renderPointHeader(GuiGraphicsExtractor g) {
         var font = Minecraft.getInstance().font;
         int avatar = 34;
-        RoundedRect.fill(g, x + 12, y + 10, avatar, avatar, 10, YzuiTheme.primaryContainer());
+        RoundedRect.fillRound(g, x + 12, y + 10, avatar, avatar, 10, YzuiTheme.primaryContainer());
         MapWaypointColors.render(g, previewColor(), x + 12 + avatar / 2, y + 10 + avatar / 2, 1.0F);
         Component displayName = Component.literal(editing && name != null && !name.isBlank() ? name : point.name());
         YzuiTheme.label(g, font, displayName, x + 12 + avatar + 10, y + 12, width - avatar - 62,
@@ -571,7 +571,7 @@ final class MapDetailPanel extends AbstractContainerEventHandler implements Rend
     /** 标题以当前标点颜色作预览，明暗主题共用一套层级与间距。 */
     private void renderCreationHeader(GuiGraphicsExtractor g) {
         var font = Minecraft.getInstance().font;
-        RoundedRect.fill(g, x + 16, y + 10, 30, 30, 10, YzuiTheme.primaryContainer());
+        RoundedRect.fillRound(g, x + 16, y + 10, 30, 30, 10, YzuiTheme.primaryContainer());
         MapWaypointColors.render(g, MapWaypointColors.parse(color), x + 31, y + 25, 1.0F);
         YzuiTheme.label(g, font, MapTexts.text("new_point"), x + 56, y + 13, width - 104, YzuiTheme.text(), false);
         YzuiTheme.label(g, font, MapTexts.text("private_point"), x + 56, y + 27, width - 104, YzuiTheme.textMuted(), false);

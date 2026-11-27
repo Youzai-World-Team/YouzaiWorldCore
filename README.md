@@ -634,7 +634,9 @@ Esc 暂停屏幕采用薄荷绿圆角操作卡片与玩家预览，跟随现有�
 
 附魔台、织布机、制图台、切石机、砂轮和信标也采用同款主题卡片、槽位、选项与右上角关闭图标，保留原版书本动画、旗帜及地图预览和全部菜单交互。信标保留效果层级、二级升级及付款确认流程；酿造台沿用已有界面。详见 [工作方块界面说明与验收](docs/YZUI_WORKSTATIONS.md)。
 
-纯客户端的整体界面重绘方案，将原版物品栏、HUD、配方书与上下文栏统一替换为 **YZUI 风格**（半透明白色圆角面板 + 圆角填充条）。由**全局开关**控制：客户端设置「视觉」分栏中的「启用 YZUI」复选框（`screen.youzaiworldcore.settings.toggle_yzui`），持久化于 `yzwc/client/global_settings.json` 的 `core_module.yzui_enabled` 字段（默认开启）。**关闭后全部回退原版渲染**，便于资源包接管。
+纯客户端的整体界面重绘方案，将原版物品栏、HUD、配方书与上下文栏统一替换为 **YZUI 风格**（半透明白色圆角面板 + 圆角填充条）。由**全局开关**控制：客户端设置「视觉」分栏中的「启用 YZUI」复选框（`screen.youzaiworldcore.settings.toggle_yzui`），持久化于 `yzwc/client/global_settings.json` 的 `core_module.yzui_enabled` 字段（默认开启）。
+
+**关闭后进入「原版风格」，而不是退回原版页面**：页面注入、布局和交互全部保留，只把外观换成原版——按钮、滑条、输入框、多行输入框、提示框交还 `AbstractButton` / `AbstractSliderButton` / `EditBox` / `MultiLineEditBox` 等原版控件绘制（使用 `widget/button` 等原版九宫格纹理），面板改为 `YzuiPalette.VANILLA` 的不透明灰底 + 1 像素黑框，所有界面圆角归零。地图圆点、玩家头像圆环、小地图轮廓属于图形而非控件，保留自身形状。标题页、暂停页、物品栏、工作方块与设置页在关闭 YZUI 后仍由本模组绘制，因此资源包不能再通过关闭开关接管这些屏幕；HUD 仍由独立的「YZHUD」开关控制。
 
 #### 37.1 物品栏屏幕
 

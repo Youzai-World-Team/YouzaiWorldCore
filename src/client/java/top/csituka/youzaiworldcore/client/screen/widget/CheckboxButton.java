@@ -14,7 +14,6 @@ import top.csituka.youzaiworldcore.client.animation.YzuiHover;
 /** 设置行开关：清晰区分启用、禁用、键盘焦点与鼠标悬停。 */
 public class CheckboxButton extends AbstractWidget {
     private boolean checked;
-    private final YzuiHover hoverState = new YzuiHover();
     private final YzuiHover switchState = new YzuiHover();
     private final Runnable onToggle;
     private float externalAlpha = 1f;
@@ -60,12 +59,14 @@ public class CheckboxButton extends AbstractWidget {
         int x = getX(), y = getY(), w = getWidth(), h = getHeight();
         boolean hovered = mouseX >= x && mouseX < x + w && mouseY >= y && mouseY < y + h;
         float opacity = externalAlpha * getAlpha() * (active ? 1f : 0.6f);
-        YzuiTheme.field(g, x, y, w, h, hoverState.sample(active && hovered), isFocused(), active, opacity);
+        // 设置行本身已有整行底色，开关不再铺第二层输入框底板。
         int trackW = Math.min(28, labelVisible ? w / 3 : Math.max(2, w - 12)), trackH = Math.min(14, h - 4);
         int trackX = x + w - trackW - 6, trackY = y + (h - trackH) / 2;
-        // 滑块位置与轨道颜色按同一进度过渡，关闭↔开启不再瞬切。
+        // 滑块位置与轨道颜色按同一进度过渡，关闭↔开启不再瞬切；悬停与焦点只提亮轨道，不再新增底板。
         float on = switchState.sample(checked);
-        int track = YzuiTheme.mix(YzuiTheme.outlineVariant(), YzuiTheme.primary(), on);
+        float highlight = active ? (isFocused() ? 0.35f : hovered ? 0.18f : 0f) : 0f;
+        int track = YzuiTheme.mix(YzuiTheme.mix(YzuiTheme.outlineVariant(), YzuiTheme.primary(), on),
+                YzuiTheme.primary(), highlight);
         RoundedRect.fill(g, trackX, trackY, trackW, trackH, trackH / 2, YzuiTheme.alpha(track, opacity));
         int thumb = Math.max(2, trackH - 4);
         int travel = Math.max(0, trackW - thumb - 4);

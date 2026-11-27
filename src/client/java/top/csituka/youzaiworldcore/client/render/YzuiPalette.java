@@ -78,4 +78,11 @@ public record YzuiPalette(int background, int surface, int surfaceLow, int surfa
             0xFFA8E6CF, 0xFF12382C, 0xFF2D5143, 0xFFC7F4DF,
             0xFF35452C, 0xFFE3F0E7, 0xFFB8CCBF, 0xFF879F91, 0xFF42594B,
             0xFFFFB4AB, 0xFF60302B, 0xFF9ED9B1, 0xFFE4C46C, 0xFFA5D5F1);
+
+    /** 原版 UI 风格：经典灰底、黑色描边与深色正文，关闭 YZUI 时供全部自有页面套用。 */
+    public static final YzuiPalette VANILLA = new YzuiPalette(
+            0xFF101010, 0xFFC6C6C6, 0xFFB5B5B5, 0xFF8B8B8B,
+            0xFF4A4A4A, 0xFFFFFFFF, 0xFFA8A8A8, 0xFF1A1A1A,
+            0xFF9E9E9E, 0xFF404040, 0xFF6E6E6E, 0xFF000000, 0xFF8B8B8B,
+            0xFFA02020, 0xFFD9A0A0, 0xFF2A5F2A, 0xFF6B5B00, 0xFF2A4E6B);
 }

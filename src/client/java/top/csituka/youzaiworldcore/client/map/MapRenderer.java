@@ -110,7 +110,7 @@ public final class MapRenderer {
         MapView displayed = MINIMAP.draw(g, view, dimension, layer, MapClient.height(layer), 4, 4, radius, opacity,
                 scale * client.getWindow().getGuiScale());
         overlay(g, displayed, dimension, 4, 4, radius, opacity, false, partial);
-        YzuiTheme.border(g, 3, 3, size + 2, size + 2, radius == 0 ? 0 : radius + 1,
+        YzuiTheme.borderRound(g, 3, 3, size + 2, size + 2, radius == 0 ? 0 : radius + 1,
                 YzuiTheme.alpha(YzuiTheme.primary(), 0.75f * opacity));
         int y = size + 8;
         if (MapSettings.enabled(MapSettings.Toggle.COORDINATES)) {
@@ -163,7 +163,7 @@ public final class MapRenderer {
             if (!MapShapes.contains(view, p.x(), p.y(), radius, 10)) continue;
             if (MapSettings.markersVisible()) marker(g, left + p.x(), top + p.y(), (graphics, x, y) -> {
                 if (point.id().equals(MapClient.navigation()))
-                    RoundedRect.fill(graphics, x - 9, y - 9, 18, 18, 9, YzuiTheme.alpha(point.color(), opacity * 0.35F));
+                    RoundedRect.fillRound(graphics, x - 9, y - 9, 18, 18, 9, YzuiTheme.alpha(point.color(), opacity * 0.35F));
                 waypointIcon(graphics, point, x, y, opacity);
             });
             if (labels) markerLabel(g, view, left, top, p.x(), p.y(), MapTexts.waypoint(point).getString()
@@ -189,8 +189,8 @@ public final class MapRenderer {
                         YzuiTheme.alpha(radar.color(), opacity), opacity);
                 if (selected) {
                     float pulse = 0.7f + 0.3f * (float) Math.sin(System.currentTimeMillis() / 220.0);
-                    RoundedRect.fill(graphics, x - 9, y - 9, 18, 18, 5, YzuiTheme.alpha(YzuiTheme.primary(), opacity * pulse));
-                    RoundedRect.fill(graphics, x - 7, y - 7, 14, 14, 4, YzuiTheme.alpha(YzuiTheme.background(), opacity));
+                    RoundedRect.fillRound(graphics, x - 9, y - 9, 18, 18, 5, YzuiTheme.alpha(YzuiTheme.primary(), opacity * pulse));
+                    RoundedRect.fillRound(graphics, x - 7, y - 7, 14, 14, 4, YzuiTheme.alpha(YzuiTheme.background(), opacity));
                     if (edge) {
                         double angle = Math.atan2(p.x() - view.width() / 2.0, -(p.y() - view.height() / 2.0));
                         arrow(graphics, x + Math.sin(angle) * 7, y - Math.cos(angle) * 7, angle, YzuiTheme.alpha(YzuiTheme.primary(), opacity));
@@ -212,7 +212,7 @@ public final class MapRenderer {
                         graphics.blit(RenderPipelines.GUI_TEXTURED, texture, x - 4, y - 4, 40, 8, 8, 8, 64, 64, tint); head = true;
                     }
                 }
-                if (!head) RoundedRect.fill(graphics, x - 2, y - 2, 5, 5, radar.player() ? 1 : 2, YzuiTheme.alpha(radar.color(), opacity));
+                if (!head) RoundedRect.fillRound(graphics, x - 2, y - 2, 5, 5, radar.player() ? 1 : 2, YzuiTheme.alpha(radar.color(), opacity));
                 if (radar.id().equals(MapClient.trackedId())) graphics.outline(x - 6, y - 6, 13, 13, YzuiTheme.alpha(YzuiTheme.primary(), opacity));
             });
             if (labels && !edge) markerLabel(g, view, left, top, p.x(), p.y(), radar.name(), opacity);
@@ -303,8 +303,8 @@ public final class MapRenderer {
         double fx = Math.sin(angle), fy = -Math.cos(angle);
         MapShapes.rawLine(g, x + fx * 15, y + fy * 15, x + fx * 6 + fy * 5, y + fy * 6 - fx * 5, color, 2);
         MapShapes.rawLine(g, x + fx * 15, y + fy * 15, x + fx * 6 - fy * 5, y + fy * 6 + fx * 5, color, 2);
-        RoundedRect.fill(g, x - 7, y - 7, 15, 15, 7, color);
-        RoundedRect.fill(g, x - 5, y - 5, 11, 11, 5, YzuiTheme.alpha(YzuiTheme.background(), opacity));
+        RoundedRect.fillRound(g, x - 7, y - 7, 15, 15, 7, color);
+        RoundedRect.fillRound(g, x - 5, y - 5, 11, 11, 5, YzuiTheme.alpha(YzuiTheme.background(), opacity));
     }
 
     /** 世界标点与光柱共用显示门槛，F10、F1、界面和 HUD 总透明度同时生效。 */

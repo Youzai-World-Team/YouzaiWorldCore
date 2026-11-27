@@ -25,8 +25,8 @@ import top.csituka.youzaiworldcore.client.screen.title.YzuiTitleMenu;
  * 保留原版全景及生命周期，把标题页内容交给统一主题布局。
  *
  * <p>
- * YZUI 禁用时本类所有注入一律放行原版行为，标题页保持原版外观与交互，
- * 不写入任何自定义内容。
+ * 关闭 YZUI 后仍使用本类的标题布局，只把配色、控件与圆角换成原版风格：
+ * 面板变灰底直角，按钮等控件交还原版绘制。
  * </p>
  */
 @Mixin(TitleScreen.class)
@@ -46,11 +46,6 @@ public abstract class TitleScreenMixin extends Screen {
 
     @Inject(method = "init", at = @At("TAIL"))
     private void youzaiworldcore$initMenu(CallbackInfo ci) {
-        // YZUI 禁用时清掉可能残留的标题页菜单，交给原版 init 结果。
-        if (!ClientExternalSettings.isYzuiEnabled()) {
-            youzaiworldcore$menu = null;
-            return;
-        }
         splash = null;
         youzaiworldcore$menu = new YzuiTitleMenu((TitleScreen) (Object) this);
     }
@@ -59,8 +54,8 @@ public abstract class TitleScreenMixin extends Screen {
     @Redirect(method = "extractRenderState", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/components/LogoRenderer;extractRenderState(Lnet/minecraft/client/gui/GuiGraphicsExtractor;IF)V"))
     private void youzaiworldcore$hideVanillaLogo(LogoRenderer renderer, GuiGraphicsExtractor g, int width,
             float alpha) {
-        // YZUI 禁用时保留原版标志；启用时品牌标志由标题页卡片布局按真实比例绘制。
-        if (!ClientExternalSettings.isYzuiEnabled())
+        // 标题模板始终由 YzuiTitleMenu 按真实比例绘制品牌标志，未建菜单时回退原版标志。
+        if (youzaiworldcore$menu == null)
             renderer.extractRenderState(g, width, alpha);
     }
 
@@ -79,7 +74,7 @@ public abstract class TitleScreenMixin extends Screen {
     @Inject(method = "extractRenderState", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/screens/TitleScreen;extractPanorama(Lnet/minecraft/client/gui/GuiGraphicsExtractor;F)V", shift = At.Shift.AFTER))
     private void youzaiworldcore$renderMenu(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick,
             CallbackInfo ci) {
-        if (!ClientExternalSettings.isYzuiEnabled() || youzaiworldcore$menu == null)
+        if (youzaiworldcore$menu == null)
             return;
         float alpha = !GuiAnimationController.isEnabled() || !fading ? 1f
                 : Math.clamp((Util.getMillis() - fadeInStart) / 1000f - 1f, 0f, 1f);
@@ -89,7 +84,7 @@ public abstract class TitleScreenMixin extends Screen {
     @SuppressWarnings("null")
     @Override
     public boolean keyPressed(@SuppressWarnings("null") KeyEvent event) {
-        if (!ClientExternalSettings.isYzuiEnabled() || youzaiworldcore$menu == null)
+        if (youzaiworldcore$menu == null)
             return super.keyPressed(event);
         if (!GuiAnimationController.isExiting((TitleScreen) (Object) this)
                 && youzaiworldcore$menu.keyPressed(event.key()))

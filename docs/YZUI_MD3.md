@@ -53,6 +53,23 @@ HUD 保留原有布局、位置、排列及用户透明度设置。大底板与�
 
 导航按钮用整张 PNG 覆盖，不叠加名称文字；保留多语言悬停提示和鼠标/键盘操作。主菜单 12 张、世界入口 10 张统一建议 512×256 PNG。圆角、悬停、焦点和禁用状态由程序绘制，不需额外状态图。旧方图或竖图暂按比例居中裁切，新图由用户重绘后覆盖。完整文件名、主体元素、配色、安全区和本轮文件清单见 [YZUI_MENU_ARTWORK.md](YZUI_MENU_ARTWORK.md)。
 
+## 原版风格（关闭 YZUI）
+
+关闭「启用 YZUI」不再退回原版页面，而是切到**原版风格**：注入点和布局全部保留，只替换外观。
+
+| 部位 | 原版风格的行为 |
+| --- | --- |
+| 配色 | `YzuiTheme.palette()` 固定返回 `YzuiPalette.VANILLA`：灰底 `#C6C6C6`、黑色描边、正文 `#404040`、禁用文字 `#A0A0A0` |
+| 透明度 | 面板、槽位、菜单底板改为不透明（原版窗口没有半透明白底）；遮罩用 `0x60101010` 暗色 |
+| 圆角 | `RoundedRect` 与原版风格下的 `YzuiTheme.border` 把所有半径归零；卡片、按钮、槽位、HUD 底板、设置列表全部直角 |
+| 按钮 | `AbstractButtonMixin` 让原版绘制 `widget/button` / `button_highlighted` / `button_disabled` 九宫格；自有控件经 `YzuiTheme.button` 时同样绘制这三个原版纹理 |
+| 输入框 | `YzuiTheme.field` 画纯黑底 + 1 像素描边；`EditBox` / `MultiLineEditBox` 保留原版光标、滚动条与背景 |
+| 提示框 | 工具提示交还原版深色底与紫色边框 |
+| 阴影/模糊 | `card` 不提交阴影，`YzuiBackdrop` 不做背景模糊 |
+| 例外 | 地图圆点、玩家头像圆环、小地图轮廓用 `RoundedRect.fillRound` / `clippedRound` / `YzuiTheme.borderRound` 保持圆形，不受界面风格影响 |
+
+注入不再被总开关跳过的地方：标题页（`TitleScreenMixin`）、暂停页（`PauseScreenMixin`）、物品栏（`InventoryScreenSwitchMixin`）、工作方块与容器（`YzuContainerScreenSwitchMixin`）、设置路由（`YzuiSettingsRouter`）。HUD 仍由「YZHUD」开关单独控制，配方书与上下文栏的原版皮肤保持原版绘制。
+
 ## 修改的界面
 
 | 界面组 | 涵盖内容 | 主要变化 |

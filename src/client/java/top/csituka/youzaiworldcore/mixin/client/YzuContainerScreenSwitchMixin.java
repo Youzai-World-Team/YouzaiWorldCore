@@ -105,8 +105,6 @@ public abstract class YzuContainerScreenSwitchMixin {
     private void yzwc$onSetScreen(Screen newScreen, CallbackInfo ci) {
         if (yzwc$containerSwitchingScreen)
             return;
-        if (!ClientExternalSettings.isYzuiEnabled())
-            return;
         if (newScreen instanceof YzuiWorkstationScreen)
             return;
         if (newScreen == null)

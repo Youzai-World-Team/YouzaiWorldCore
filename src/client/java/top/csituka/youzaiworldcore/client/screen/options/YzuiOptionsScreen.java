@@ -78,7 +78,6 @@ public final class YzuiOptionsScreen extends Screen
     private boolean rebuilding;
     private boolean updatingPermissions;
     private boolean showingGraphicsWarning;
-    private boolean leavingForLegacy;
 
     YzuiOptionsScreen(Screen source, Screen origin, boolean inWorld) {
         this(source, origin, inWorld, null, -1);
@@ -140,10 +139,6 @@ public final class YzuiOptionsScreen extends Screen
 
     void reveal(String anchor) {
         pendingAnchor = anchor;
-    }
-
-    Screen legacyScreen() {
-        return new OptionsScreen(origin, minecraft.options);
     }
 
     private VideoSettingsScreen videoPage() {
@@ -562,14 +557,6 @@ public final class YzuiOptionsScreen extends Screen
 
     @Override
     public void tick() {
-        if (!ClientExternalSettings.isYzuiEnabled()) {
-            if (!leavingForLegacy) {
-                leavingForLegacy = true;
-                minecraft.gui.setScreen(legacyScreen());
-            }
-            return;
-        }
-        leavingForLegacy = false;
         if (source != null)
             source.tick();
         if (unified != null)

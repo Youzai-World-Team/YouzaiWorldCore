@@ -422,7 +422,7 @@ final class MapPlayersPanel extends MapOverlayPanel {
                 @SuppressWarnings("null")
                 var info = connection == null ? null : connection.getPlayerInfo(id);
                 int x = getX() + 6, cy = getY() + 5;
-                RoundedRect.fill(g, x, cy, 18, 18, 4, YzuiTheme.secondaryContainer());
+                RoundedRect.fillRound(g, x, cy, 18, 18, 4, YzuiTheme.secondaryContainer());
                 if (info != null) {
                     var texture = info.getSkin().body().texturePath();
                     g.blit(RenderPipelines.GUI_TEXTURED, texture, x + 1, cy + 1, 8, 8, 16, 16, 8, 8, 64, 64);

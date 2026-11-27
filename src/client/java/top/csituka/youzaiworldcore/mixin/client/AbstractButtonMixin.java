@@ -61,7 +61,7 @@ public class AbstractButtonMixin {
     private boolean yzwc$applyTheme() {
         int override = YzuiStyleOverride.get((AbstractButton) (Object) this);
         if (override == YzuiStyleOverride.STYLE_VANILLA) return false;
-        return override == YzuiStyleOverride.STYLE_YZUI || ClientExternalSettings.isYzuiEnabled()
-                || YzuiTheme.isCustomScreen(Minecraft.getInstance().gui.screen());
+        // 原版风格下所有按钮交还原版纹理与标签，自有页面同样如此。
+        return override == YzuiStyleOverride.STYLE_YZUI || YzuiTheme.enabled();
     }
 }
