@@ -14,7 +14,6 @@ import top.csituka.youzaiworldcore.config.GlobalSettings;
 import top.csituka.youzaiworldcore.config.AfkConfig;
 import top.csituka.youzaiworldcore.afk.AfkManager;
 import top.csituka.youzaiworldcore.config.UpdateCheckerConfig;
-import top.csituka.youzaiworldcore.dimensionalinventories.DimensionPoolSettings;
 import top.csituka.youzaiworldcore.cosmetic.CosmeticManager;
 import top.csituka.youzaiworldcore.respawn.InPlaceRespawnConfig;
 import top.csituka.youzaiworldcore.util.DebugLogger;
@@ -69,7 +68,7 @@ public class ReloadCommand {
 
                 UpdateCheckerConfig.reload();
 
-                DimensionPoolSettings.reload();
+                // 维度池归属决定玩家背包的保存目录，只在开服时读取。
                 InPlaceRespawnConfig.reload();
 
                 // 重载聊天消息格式化配置（模板缓存随 load 自动失效重解析）

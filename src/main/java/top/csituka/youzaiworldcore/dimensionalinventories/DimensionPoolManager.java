@@ -203,7 +203,7 @@ public final class DimensionPoolManager {
             return false;
         }
 
-        TeleportTarget target = determineTeleportTarget(server, targetPool, targetState, fallback);
+        TeleportTarget target = determineTeleportTarget(player, targetPool, targetState, fallback);
         Component failure = transferPlayer(player, poolId(sourcePool), targetState, targetPool.gameMode(),
                 () -> target.move(player), () -> target.hasArrived(player));
         if (failure != null) {
@@ -282,7 +282,7 @@ public final class DimensionPoolManager {
             PoolRespawn.settleInventoryMenu(player);
             origin = new PoolTransferSnapshot(player);
             backup = PlayerStateData.fromPlayer(player);
-            writePlayerState(getPlayerDataFile(server, originId, player.getUUID().toString()), backup);
+            // 在修改池存档或移动玩家之前，先留下供下次启动恢复的源状态。
             writePlayerState(recoveryFile(player), backup);
         } catch (IOException | RuntimeException error) {
             LOGGER.error("保存玩家 {} 的源池 {} 状态失败", player.getScoreboardName(), originId, error);
@@ -291,6 +291,8 @@ public final class DimensionPoolManager {
 
         return withTeleportGuard(player.getUUID(), () -> {
             try {
+                writeVanillaPlayerState(player);
+                writePlayerState(getPlayerDataFile(server, originId, player.getUUID().toString()), backup);
                 if (move.getAsBoolean() && arrived.getAsBoolean()) {
                     applyPoolState(player, targetState, mode);
                     if (arrived.getAsBoolean()) {
@@ -353,13 +355,14 @@ public final class DimensionPoolManager {
         }
     }
 
-    private static TeleportTarget determineTeleportTarget(MinecraftServer server, DimensionPool pool,
+    private static TeleportTarget determineTeleportTarget(ServerPlayer player, DimensionPool pool,
                                                           PlayerStateData state, ServerLevel fallback) {
-        TeleportTarget target = savedTarget(server, pool, state);
+        TeleportTarget target = savedTarget(fallback.getServer(), pool, state);
         if (target != null) {
             return target;
         }
-        return new TeleportTarget(fallback, 0.5, 100, 0.5, 90, 0);
+        TeleportTarget configured = configuredSpawnTarget(player, pool);
+        return configured != null ? configured : new TeleportTarget(fallback, 0.5, 100, 0.5, 90, 0);
     }
 
     private static TeleportTarget savedTarget(MinecraftServer server, DimensionPool pool, PlayerStateData state) {
@@ -465,11 +468,9 @@ public final class DimensionPoolManager {
     }
 
     private static TeleportTarget survivalSpawn(ServerPlayer player, MinecraftServer server, DimensionPool pool) {
-        var configured = PoolRespawn.configuredSpawn(player, pool);
+        var configured = configuredSpawnTarget(player, pool);
         if (configured != null) {
-            var position = configured.position();
-            return new TeleportTarget(configured.newLevel(), position.x, position.y, position.z,
-                    configured.yRot(), configured.xRot());
+            return configured;
         }
         ServerLevel first = findLoadedLevel(server, pool);
         if (first == null) {
@@ -480,6 +481,16 @@ public final class DimensionPoolManager {
         var spawn = level.getRespawnData();
         Vec3 position = Vec3.atBottomCenterOf(player.adjustSpawnLocation(level, spawn.pos()));
         return new TeleportTarget(level, position.x, position.y, position.z, spawn.yaw(), spawn.pitch());
+    }
+
+    private static TeleportTarget configuredSpawnTarget(ServerPlayer player, DimensionPool pool) {
+        var configured = PoolRespawn.configuredSpawn(player, pool);
+        if (configured == null) {
+            return null;
+        }
+        var position = configured.position();
+        return new TeleportTarget(configured.newLevel(), position.x, position.y, position.z,
+                configured.yRot(), configured.xRot());
     }
 
     /** 生存池暂时不可用时，保留复活玩家的源池物品并在可用后重试。 */
@@ -586,6 +597,11 @@ public final class DimensionPoolManager {
     }
 
     private static void finishTransaction(ServerPlayer player) throws IOException {
+        writeVanillaPlayerState(player);
+        Files.deleteIfExists(recoveryFile(player));
+    }
+
+    private static void writeVanillaPlayerState(ServerPlayer player) throws IOException {
         // 原版 PlayerDataStorage.save 捕获写入异常，事务必须先确认玩家档案已成功替换。
         var problems = new ProblemReporter.Collector(player.problemPath());
         var output = TagValueOutput.createWithContext(problems, player.registryAccess());
@@ -595,7 +611,6 @@ public final class DimensionPoolManager {
         }
         Path file = ModPaths.vanillaPlayerData(getServer(player), player.getUUID());
         writeAtomically(file, path -> NbtIo.writeCompressed(output.buildResult(), path));
-        Files.deleteIfExists(recoveryFile(player));
     }
 
     private static boolean recoverPlayer(ServerPlayer player, PlayerStateData state) {

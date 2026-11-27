@@ -185,7 +185,9 @@ Block-based player-owned teleport network — right-click to name, save, and rem
 Multi-world server management with independent state pools — players have separate inventories, health, effects, and game modes across pools.
 
 - **7 Predefined Pools**: Survival World (overworld/nether/end), Main City, Gameplay, Creation, Building, Commands, Tutorial World
-- **Switching Flow**: The server records the player's state and recovery data before moving. It applies the destination's inventory, experience, and game mode after arrival. First visits use an independent initial state.
+- **Pool configuration**: Loaded when the server starts. Configuration changes take effect after a restart.
+- **Switching flow**: The server records recovery data and the source state before moving. It applies the destination's inventory, experience, and game mode after arrival. If the server process crashes during a switch, the source state is restored when the player reconnects.
+- **Menu and command destinations**: Prefer the player's last position in the destination pool, then the pool's configured spawn, then `(0.5, 100, 0.5)` in the first loaded dimension in the pool. First visits use an independent initial state.
 - **Personal respawn points**: Each player has one point per pool. Beds, respawn anchors, and `/spawnpoint` save the point in the pool containing its dimension. On upgrade, the existing personal respawn point is assigned to that pool.
 - **Respawning**: Outside the survival pool, the server uses a valid personal respawn point in the current pool first, then that pool's configured spawn. If neither is available, it restores the previous survival dimension, position, inventory, and game mode. Returning to survival uses no Heart of Guardianship, totem, or respawn anchor charge.
 - **Cross-Pool Teleportation**: Supports dimension portals, commands, respawn events

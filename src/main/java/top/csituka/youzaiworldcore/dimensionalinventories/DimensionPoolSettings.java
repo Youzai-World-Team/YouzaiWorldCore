@@ -106,7 +106,7 @@ public final class DimensionPoolSettings {
 
     // ===== 加载/保存 =====
 
-    /** 从全局配置加载，分节缺失则创建默认配置 */
+    /** 启动时加载本次服务器运行期间使用的维度池。 */
     public static void load() {
         DebugLogger.SERVER.entering("DimPoolSettings", "load");
         ConfigSection section = GlobalSettings.section(GlobalSettings.DIMENSIONAL_INVENTORIES_MODULE);
@@ -114,10 +114,9 @@ public final class DimensionPoolSettings {
         if (poolArray == null) {
             DebugLogger.SERVER.branch("DimPoolSettings", "pools 已配置", false, "分节缺失，创建默认配置");
             LOGGER.info("维度池配置不存在，正在创建默认配置...");
-            createDefaultConfig();
-            save();
-            DebugLogger.SERVER.exiting("DimPoolSettings", "load", "default config created");
-            return;
+            poolArray = defaultPoolArray();
+            section.set(KEY_POOLS, poolArray);
+            GlobalSettings.save();
         }
         DebugLogger.SERVER.branch("DimPoolSettings", "pools 已配置", true, "共 " + poolArray.size() + " 项");
 
@@ -186,32 +185,10 @@ public final class DimensionPoolSettings {
         DebugLogger.SERVER.exiting("DimPoolSettings", "load");
     }
 
-    /** 重建 7 个默认维度池并写入 {@code dimensional_inventories_module} 分节（新开服 / 坏文件恢复用） */
+    /** 写出默认配置。运行中的池归属由启动时加载的配置决定。 */
     public static void writeDefaults() {
-        createDefaultConfig();
-        save();
-    }
-
-    /** 保存配置到全局配置文件的 {@code dimensional_inventories_module} 分节 */
-    public static void save() {
-        DebugLogger.SERVER.entering("DimPoolSettings", "save");
-        ConfigSection section = GlobalSettings.section(GlobalSettings.DIMENSIONAL_INVENTORIES_MODULE);
-        // 隐藏池（内部使用）不写入配置文件
-        List<DimensionPool> poolList = POOLS.values().stream()
-                .filter(pool -> !isHiddenPool(pool.id()))
-                .toList();
-        section.set(KEY_POOLS, GSON.toJsonTree(poolList));
+        GlobalSettings.section(GlobalSettings.DIMENSIONAL_INVENTORIES_MODULE).set(KEY_POOLS, defaultPoolArray());
         GlobalSettings.save();
-        LOGGER.debug("维度池配置已保存（{} 个可见池，{} 个隐藏池不写入）",
-                poolList.size(), POOLS.size() - poolList.size());
-        DebugLogger.SERVER.debug("DimPoolSettings", "维度池配置已保存到 {}, 可见池 {} 个（隐藏池 {} 个不写入）", GlobalSettings.file(), poolList.size(), POOLS.size() - poolList.size());
-        DebugLogger.SERVER.exiting("DimPoolSettings", "save");
-    }
-
-    public static void reload() {
-        DebugLogger.SERVER.entering("DimPoolSettings", "reload");
-        load();
-        DebugLogger.SERVER.exiting("DimPoolSettings", "reload");
     }
 
     // ===== 默认配置 =====
@@ -220,13 +197,9 @@ public final class DimensionPoolSettings {
      * 创建默认的 7 个维度池。
      * "生存世界"包含原版三维度，其余池为空（等待管理员配置维度）。
      */
-    private static void createDefaultConfig() {
-        DebugLogger.SERVER.entering("DimPoolSettings", "createDefaultConfig");
-        POOLS.clear();
-        DIMENSION_TO_POOL.clear();
-
+    private static JsonArray defaultPoolArray() {
         DimensionPool survival = new DimensionPool(
-                "survival_world_pool",
+                SURVIVAL_POOL_ID,
                 "生存世界",
                 GameType.SURVIVAL,
                 true,
@@ -235,56 +208,15 @@ public final class DimensionPoolSettings {
         survival.addDimension("minecraft:overworld");
         survival.addDimension("minecraft:the_nether");
         survival.addDimension("minecraft:the_end");
-        POOLS.put(survival.id(), survival);
-        DebugLogger.SERVER.debug("DimPoolSettings", "创建维度池: survival_world_pool (生存世界) 含3维度");
-
-        POOLS.put("main_city_pool", new DimensionPool(
-                "main_city_pool", "主城",
-                GameType.ADVENTURE, false, false
-        ));
-        DebugLogger.SERVER.debug("DimPoolSettings", "创建维度池: main_city_pool (主城) 空池");
-
-        POOLS.put("gameplay_pool", new DimensionPool(
-                "gameplay_pool", "玩法",
-                GameType.ADVENTURE, false, false
-        ));
-        DebugLogger.SERVER.debug("DimPoolSettings", "创建维度池: gameplay_pool (玩法) 空池");
-
-        POOLS.put("creation_pool", new DimensionPool(
-                "creation_pool", "创造",
-                GameType.CREATIVE, false, false
-        ));
-        DebugLogger.SERVER.debug("DimPoolSettings", "创建维度池: creation_pool (创造) 空池");
-
-        POOLS.put("building_pool", new DimensionPool(
-                "building_pool", "建筑",
-                GameType.CREATIVE, false, false
-        ));
-        DebugLogger.SERVER.debug("DimPoolSettings", "创建维度池: building_pool (建筑) 空池");
-
-        POOLS.put("commands_pool", new DimensionPool(
-                "commands_pool", "指令区",
-                GameType.ADVENTURE, false, false
-        ));
-        DebugLogger.SERVER.debug("DimPoolSettings", "创建维度池: commands_pool (指令区) 空池");
-
-        POOLS.put("tutorial_world_pool", new DimensionPool(
-                "tutorial_world_pool", "教程世界",
-                GameType.ADVENTURE, false, false
-        ));
-        DebugLogger.SERVER.debug("DimPoolSettings", "创建维度池: tutorial_world_pool (教程世界) 空池");
-
-        for (DimensionPool pool : POOLS.values()) {
-            for (String dim : pool.dimensions()) {
-                DIMENSION_TO_POOL.put(dim, pool.id());
-            }
-        }
-
-        // 注册隐藏池（内部使用，不写入配置文件）
-        registerHiddenPools();
-
-        DebugLogger.SERVER.exiting("DimPoolSettings", "createDefaultConfig",
-                "共创建 " + POOLS.size() + " 个维度池（含隐藏池 " + HIDDEN_POOL_IDS.size() + " 个）");
+        return GSON.toJsonTree(List.of(
+                survival,
+                new DimensionPool("main_city_pool", "主城", GameType.ADVENTURE, false, false),
+                new DimensionPool("gameplay_pool", "玩法", GameType.ADVENTURE, false, false),
+                new DimensionPool("creation_pool", "创造", GameType.CREATIVE, false, false),
+                new DimensionPool("building_pool", "建筑", GameType.CREATIVE, false, false),
+                new DimensionPool("commands_pool", "指令区", GameType.ADVENTURE, false, false),
+                new DimensionPool("tutorial_world_pool", "教程世界", GameType.ADVENTURE, false, false)
+        )).getAsJsonArray();
     }
 
     // ===== 隐藏池（内部使用，不写入配置文件） =====
@@ -300,8 +232,7 @@ public final class DimensionPoolSettings {
      *   <li>若管理员在配置文件中手动把 {@code youzaiworldcore:login_hall} 配给了某个可见池，
      *       以隐藏池为准（覆盖归属并告警）</li>
      * </ul>
-     * 该方法幂等，在 {@link #load()}（配置池加载完成后）与 {@link #createDefaultConfig()} 末尾调用，
-     * 保证无论配置文件是否存在、是否经 /yzwc reload 重载，隐藏池始终注册在内存中。
+     * 在 {@link #load()} 应用配置后注册。
      */
     private static void registerHiddenPools() {
         DebugLogger.SERVER.entering("DimPoolSettings", "registerHiddenPools");
