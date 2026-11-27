@@ -10,7 +10,6 @@ import top.csituka.youzaiworldcore.luckperms.LuckPermsHelper;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
 import java.io.IOException;
-import java.time.LocalDate;
 import java.util.List;
 
 public final class BackupCommand {
@@ -42,44 +41,45 @@ public final class BackupCommand {
     private static LiteralArgumentBuilder<CommandSourceStack> restoreTarget(String name, BackupModule module) {
         return Commands.literal(name)
                 .executes(context -> restore(context.getSource(), module, null))
-                .then(Commands.argument("date", StringArgumentType.word())
+                .then(Commands.argument("backup_id", StringArgumentType.word())
                         .executes(context -> restore(context.getSource(), module,
-                                StringArgumentType.getString(context, "date"))));
+                                StringArgumentType.getString(context, "backup_id"))));
     }
 
     private static int list(CommandSourceStack source, BackupModule module) {
         try {
-            List<LocalDate> dates = PlayerDataBackup.dates(source.getServer(), module);
-            if (dates.isEmpty()) {
+            List<BackupPoint> points = PlayerDataBackup.points(source.getServer(), module);
+            if (points.isEmpty()) {
                 source.sendFailure(Component.translatable(MESSAGE + "empty", target(module)));
                 return 0;
             }
             @SuppressWarnings("null")
-            String display = String.join(", ", dates.stream().limit(20).map(LocalDate::toString).toList());
+            String display = String.join(", ", points.stream().limit(20).map(BackupPoint::id).toList());
             source.sendSuccess(() -> Component.translatable(MESSAGE + "list", target(module), display), false);
-            return dates.size();
+            return points.size();
         } catch (IOException | RuntimeException e) {
             return failure(source, e);
         }
     }
 
-    private static int restore(CommandSourceStack source, BackupModule module, String requestedDate) {
+    private static int restore(CommandSourceStack source, BackupModule module, String requestedId) {
         try {
-            List<LocalDate> dates = PlayerDataBackup.dates(source.getServer(), module);
-            if (dates.isEmpty()) {
+            List<BackupPoint> points = PlayerDataBackup.points(source.getServer(), module);
+            if (points.isEmpty()) {
                 source.sendFailure(Component.translatable(MESSAGE + "empty", target(module)));
                 return 0;
             }
-            LocalDate date = requestedDate == null ? dates.getFirst() : LocalDate.parse(requestedDate);
-            if (!dates.contains(date)) {
-                source.sendFailure(Component.translatable(MESSAGE + "missing", target(module), date.toString()));
+            BackupPoint point = requestedId == null ? points.getFirst()
+                    : points.stream().filter(backup -> requestedId.equals(backup.id())).findFirst().orElse(null);
+            if (point == null) {
+                source.sendFailure(Component.translatable(MESSAGE + "missing", target(module), requestedId));
                 return 0;
             }
-            PlayerDataBackup.queueRestore(source.getServer(), module, date);
-            source.sendSuccess(() -> Component.translatable(MESSAGE + "queued", target(module), date.toString()),
+            PlayerDataBackup.queueRestore(source.getServer(), module, point);
+            source.sendSuccess(() -> Component.translatable(MESSAGE + "queued", target(module), point.id()),
                     false);
             LOGGER.notice("管理员 {} 已安排于下次启动还原 {} 的玩家数据备份（{}）",
-                    source.getTextName(), date, target(module));
+                    source.getTextName(), point.id(), target(module));
             return 1;
         } catch (IOException | RuntimeException e) {
             return failure(source, e);

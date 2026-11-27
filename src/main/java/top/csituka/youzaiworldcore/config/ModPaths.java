@@ -252,8 +252,8 @@ public final class ModPaths {
         return worldBackupRoot(server).resolve(module);
     }
 
-    /** Daily archives stay with the world so a batch always belongs to the same save. */
-    public static Path dailyBackups(MinecraftServer server, String module) {
+    /** Keep player data archives with the world so a batch always belongs to the same save. */
+    public static Path playerDataBackups(MinecraftServer server, String module) {
         return worldBackup(server, module).resolve("backups");
     }
 

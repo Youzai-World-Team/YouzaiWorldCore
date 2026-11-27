@@ -13,6 +13,7 @@ import top.csituka.youzaiworldcore.skill.PlayerLevelStorage;
 import top.csituka.youzaiworldcore.status.StatsManager;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -41,17 +42,23 @@ enum BackupModule {
         this.id = id;
     }
 
-    JsonObject capture(MinecraftServer server) throws IOException {
+    JsonObject capture(MinecraftServer server, boolean live) throws IOException {
         JsonObject data = new JsonObject();
         switch (this) {
             case PET, TELEPORT_ANCHOR -> data.add("saved_data", BackupFiles.readFile(savedData(server)));
             case SKILL -> {
-                PlayerLevelStorage.forceSave();
-                PlayerAttributeStorage.forceSave();
+                if (live) {
+                    flushSkills();
+                }
                 data.add("skill", BackupFiles.readFile(ModPaths.serverDataFile(id)));
             }
             case STATUS -> {
-                data.add("status", StatsManager.backupSnapshot(server));
+                JsonObject status = live ? StatsManager.backupSnapshot(server)
+                        : BackupFiles.readObject(ModPaths.worldDataFile(server, id));
+                if (!(status.get("players") instanceof JsonObject)) {
+                    throw new IOException("No saved player statistics available");
+                }
+                data.add("status", status);
                 data.add("vanilla_stats", BackupFiles.readFiles(ModPaths.vanillaStatsDir(server), 1,
                         PLAYER_JSON.asMatchPredicate()));
             }
@@ -68,9 +75,19 @@ enum BackupModule {
                     }
                 }
             }
-            case MAP -> data = MapPlayerBackup.capture(server);
+            case MAP -> {
+                if (!live && !Files.isRegularFile(ModPaths.worldMapDatabase(server))) {
+                    throw new IOException("No saved world map database available");
+                }
+                data = MapPlayerBackup.capture(server);
+            }
         }
         return data;
+    }
+
+    static void flushSkills() {
+        PlayerLevelStorage.forceSave();
+        PlayerAttributeStorage.forceSave();
     }
 
     void prepareRestore(MinecraftServer server, JsonObject data, BackupFiles.Restore restore,

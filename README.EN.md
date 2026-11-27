@@ -474,7 +474,7 @@ A tamed-wolf (Wolf) tracking and management system that registers tamed wolves a
 - **Trust System**: Owners can add other players to a trust list; trusted players may view the list and highlight the pet; `trust add/remove/list <player>`
 - **Ownership Ops**: `rename`, `transfer <newOwner>` (transfers ownership; former owner auto-added to trust list), `release_life [force]` (release, requires confirmation)
 - **Quick Locate**: `highlight <internalName>` applies a 5-second Glowing effect to the target wolf for easy spotting
-- The pet registry is archived by the daily player data backup. Administrators can use `/yzwc backup list pet_module` to list dates and `/yzwc backup restore pet_module [YYYY-MM-DD]` to queue a restore.
+- The player data backup archives the pet registry. Administrators can use `/yzwc backup list pet_module` to list backup IDs and `/yzwc backup restore pet_module [backup_id]` to queue a restore.
 - **Command Architecture**: `/yzwc pet` is a **client command** that forwards its full argument string via `PetCommandPayload` (C→S); the server-side `PetCommand` holds the complete Brigadier tree and permission checks
 
 ### 28. Item Highlight System
@@ -738,7 +738,9 @@ Client display/layout settings, private records and terrain use `yzwc/client/map
 
 ### Daily player data backups
 
-Backups start at 04:00 in the server's system time zone. A server started after 04:00 creates that day's backup if it is missing. Each module saves a ZIP at `<world>/data/yzwc/backup/<module>/backups/daily-YYYY-MM-DD.zip`. A completed daily batch can be restored together.
+Backups start at 04:00 in the server's system time zone. A server started after 04:00 creates that day's backup if it is missing. A normal shutdown creates another backup after the final save. A crash that reaches the game's exception handler triggers a backup attempt. After a forced termination or power loss, the next startup archives data already saved to disk.
+
+Each module writes to `<world>/data/yzwc/backup/<module>/backups/`. Daily archives use `daily-YYYY-MM-DD.zip`. Shutdown and crash archives use the `shutdown-` or `crash-` prefix followed by a timestamp with milliseconds. Each run has its own files. A completed batch can be restored together.
 
 | Module | Data |
 | --- | --- |
@@ -751,7 +753,9 @@ Backups start at 04:00 in the server's system time zone. A server started after 
 | `teleport_anchor_module` | Player teleport anchor lists |
 | `map_module` | Player sharing rules and locally recorded positions |
 
-Use `/yzwc backup list [module]` to see recent dates. Omitting the module lists completed batches. Run `/yzwc backup restore <module|all> [YYYY-MM-DD]` to queue a restore. The default is the latest available backup. The next server start restores every player's data for the selected modules to the chosen date, including removing records created afterward. Skills, player preferences, and map sharing rules are shared across worlds in the same game directory.
+Use `/yzwc backup list [module]` to see recent backup IDs. Omitting the module lists completed batches. Run `/yzwc backup restore <module|all> [backup_id]` to queue a restore. A daily archive can be selected by date, such as `2026-11-27`. For a shutdown or crash archive, use its full ID from the list, such as `shutdown-2026-11-27_20-30-00_000`. The default is the latest available backup.
+
+The next server start restores every player's data for the selected modules and removes records created after the chosen backup. Skills, player preferences, and map sharing rules are shared across worlds in the same game directory.
 
 Accounts, mail, skins, capes, and uploaded statistics are stored by the separate YouzaiWorldApi service. The daily archives cover Core's local server data.
 
@@ -761,7 +765,7 @@ All commands use `/yzwc` as the root command. Gameplay subcommands marked **(cli
 
 ```
 /yzwc
-├── backup list [module] | restore <module|all> [YYYY-MM-DD]  # Player data backups, admins
+├── backup list [module] | restore <module|all> [backup_id]  # Player data backups, admins
 │
 ├── chat_style [plain|gradient]  # Local chat palette; defaults to gradient, no name queries the current style
 │
