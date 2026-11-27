@@ -726,6 +726,8 @@
   "youzaiworldcore.message.diminv.pool_list_header": "§6=== Pools de dimensions (%s) ===",
   "youzaiworldcore.message.diminv.pool_not_found": "§cPool de dimensions %s introuvable",
   "youzaiworldcore.message.diminv.teleport_command_success": "§a%s joueurs téléportés vers le pool %s.",
+  "youzaiworldcore.message.diminv.rollback_failed": "§cVotre état précédent n’a pas pu être entièrement restauré. Contactez l’administration du serveur.",
+  "youzaiworldcore.message.diminv.teleport_failed": "§cImpossible de se téléporter vers le groupe de dimensions %s.",
   "youzaiworldcore.message.diminv.teleport_success": "§aTéléporté vers le pool %s.",
   "youzaiworldcore.message.dragon_elytra.elytra_dropped_position": "Un élytre a été laissé près de %s %s %s",
   "youzaiworldcore.message.dragon_elytra.seems_like_slain": "L'Ender Dragon semble avoir laissé tomber quelque chose…",

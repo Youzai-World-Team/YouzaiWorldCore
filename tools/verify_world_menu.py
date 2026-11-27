@@ -23,9 +23,28 @@ def stub(name, body):
 stub("net.minecraft.resources.Identifier", """
 public record Identifier(String namespace, String path) {
     public static Identifier fromNamespaceAndPath(String n,String p){return new Identifier(n,p);}
+    public static Identifier tryParse(String id){
+        if(!id.matches("[a-z_]+:[a-z_]+"))return null;
+        String[] parts=id.split(":");return new Identifier(parts[0],parts[1]);
+    }
     public String toString(){return namespace+":"+path;}
 }
 """)
+stub("net.minecraft.resources.ResourceKey", """
+public record ResourceKey<T>(Identifier identifier) {
+    public static <T> ResourceKey<T> create(Object registry, Identifier id){return new ResourceKey<>(id);}
+}
+""")
+stub("net.minecraft.core.registries.Registries", "public class Registries {public static final Object DIMENSION=new Object();}")
+stub("net.minecraft.server.MinecraftServer", """
+public class MinecraftServer {
+    public final java.util.Set<String> loaded=new java.util.HashSet<>();
+    public net.minecraft.server.level.ServerLevel getLevel(net.minecraft.resources.ResourceKey<?> key){
+        return loaded.contains(key.identifier().toString()) ? new net.minecraft.server.level.ServerLevel() : null;
+    }
+}
+""")
+stub("net.minecraft.server.level.ServerLevel", "public class ServerLevel {}")
 stub("net.minecraft.network.protocol.common.custom.CustomPacketPayload", """
 public interface CustomPacketPayload {
     record Type<T>(net.minecraft.resources.Identifier id) {}
@@ -89,9 +108,11 @@ stub("net.minecraft.server.level.ServerPlayer", """
 public class ServerPlayer {
     public boolean disconnected,blocked;
     public String dimension="minecraft:overworld";
+    public final net.minecraft.server.MinecraftServer server=new net.minecraft.server.MinecraftServer();
     public boolean hasDisconnected(){return disconnected;}
-    public Level level(){return new Level(dimension);}
-    public record Level(String id){
+    public Level level(){return new Level(dimension,server);}
+    public record Level(String id,net.minecraft.server.MinecraftServer server){
+        public net.minecraft.server.MinecraftServer getServer(){return server;}
         public Level dimension(){return this;}
         public net.minecraft.resources.Identifier identifier(){
             String[] parts=id.split(":");return new net.minecraft.resources.Identifier(parts[0],parts[1]);
@@ -117,7 +138,7 @@ stub(P + ".util.DebugLogger", """
 public final class DebugLogger { public static final int LEVEL_OFF=0,LEVEL_BASIC=1,LEVEL_DETAILED=2,LEVEL_DEBUG=3; public static final DebugLogger SERVER=new DebugLogger(),CLIENT=new DebugLogger(); private boolean developer; private int level; public void configure(boolean d,int l){developer=d;level=l;} public boolean isDevModeEnabled(){return developer;} public int getLogLevel(){return level;} public static boolean isEnabled(int l){return false;} public static boolean isEnabled(){return false;} public static DebugLogger bootstrap(){return CLIENT;} public static DebugLogger forFile(java.nio.file.Path p){return SERVER;} public ModuleLogger module(String m){return new ModuleLogger();} public static void notice(String m,String s,Object...a){} public static void warn(String m,String s,Object...a){} public static void error(String m,String s,Object...a){} public static void exception(String m,String s,Object...a){} public static void exceptionSummary(String m,String s,Object...a){} public static void info(String m,String s,Object...a){} public static void stateChange(String m,String s,Object...a){} public static void debug(String m,String s,Object...a){} public static void branch(String m,String s,Object...a){} public static void debugStateChange(String m,String s,Object...a){} public static void trace(String m,String s,Object...a){} public static void entering(String m,String s,Object...a){} public static void exiting(String m,String s,Object...a){} public static void traceBranch(String m,String s,Object...a){} public static void traceStateChange(String m,String s,Object...a){} public static final class ModuleLogger { public void notice(String s,Object...a){} public void info(String s,Object...a){} public void debug(String s,Object...a){} public void trace(String s,Object...a){} public void warn(String s,Object...a){} public void error(String s,Object...a){} public boolean isInfoEnabled(){return false;} public boolean isDebugEnabled(){return false;} public boolean isTraceEnabled(){return false;} } }
 """)
 stub(P + ".dimensionalinventories.DimensionPool", """
-public record DimensionPool(String id,String displayName,Mode gameMode,boolean isEmpty) {
+public record DimensionPool(String id,String displayName,Mode gameMode,java.util.List<String> dimensions) {
     public record Mode(String name){public String getName(){return name;}}
 }
 """)
@@ -131,7 +152,11 @@ public class DimensionPoolSettings {
     public static DimensionPool current;
     public static Optional<DimensionPool> getPoolByDimension(String id){return Optional.ofNullable(current);}
 """ + method(settings, "getAllPools") + method(settings, "isHiddenPool") + "\n}")
+manager = (MAIN / P.replace(".", "/") / "dimensionalinventories/DimensionPoolManager.java").read_text(encoding="utf-8")
 stub(P + ".dimensionalinventories.DimensionPoolManager", """
+import net.minecraft.resources.*;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
 public class DimensionPoolManager {
     public static boolean outcome=true,throwsError,disconnect;
     public static int calls;
@@ -145,8 +170,8 @@ public class DimensionPoolManager {
         if(disconnect)player.disconnected=true;
         return outcome;
     }
-}
-""")
+""" + method(manager.replace("    static ServerLevel findLoadedLevel(", "    public static ServerLevel findLoadedLevel("),
+             "findLoadedLevel") + method(manager, "getLoadedLevel") + "\n}")
 
 CHECK = """
 import java.util.*;
@@ -192,17 +217,27 @@ public class WorldMenuChecks {
     }
     static void service(){
         var player=new ServerPlayer();UUID id=UUID.randomUUID();
-        var publicPool=new DimensionPool("public","生存世界",new DimensionPool.Mode("survival"),false);
-        var hidden=new DimensionPool("login","登录大厅",new DimensionPool.Mode("adventure"),false);
-        var empty=new DimensionPool("empty","未配置",new DimensionPool.Mode("creative"),true);
+        player.server.loaded.add("minecraft:overworld");
+        var publicPool=new DimensionPool("public","生存世界",new DimensionPool.Mode("survival"),
+                List.of("invalid dimension","minecraft:the_nether","minecraft:overworld"));
+        var hidden=new DimensionPool("login","登录大厅",new DimensionPool.Mode("adventure"),List.of("audit:lobby"));
+        var empty=new DimensionPool("empty","未配置",new DimensionPool.Mode("creative"),List.of());
+        var unloaded=new DimensionPool("unloaded","未加载",new DimensionPool.Mode("creative"),List.of("audit:unloaded"));
         DimensionPoolSettings.POOLS.put("public",publicPool);DimensionPoolSettings.POOLS.put("login",hidden);
         DimensionPoolSettings.POOLS.put("empty",empty);DimensionPoolSettings.HIDDEN_POOL_IDS.add("login");
+        DimensionPoolSettings.POOLS.put("unloaded",unloaded);
         DimensionPoolSettings.current=publicPool;
         WorldPoolMenuService.handle(player,new WorldPoolMenuRequestPayload(id,""));
         var state=(WorldPoolMenuStatePayload)ServerPlayNetworking.sent.removeFirst();
         check(state.requestId().equals(id)&&state.currentName().equals("生存世界")&&state.currentPoolId().equals("public"),"当前世界信息失真");
-        check(state.entries().size()==2&&state.entries().stream().noneMatch(e->e.poolId().equals("login")),"隐藏池泄漏");
+        check(state.entries().size()==3&&state.entries().stream().noneMatch(e->e.poolId().equals("login")),"隐藏池泄漏");
+        check(state.entries().get(0).available(),"池内存在已加载维度，应允许进入");
         check(!state.entries().get(1).available()&&state.entries().get(1).gameMode().equals("creative"),"空池/模式信息错误");
+        check(!state.entries().get(2).available(),"未加载的维度不应启用入口");
+        player.server.loaded.add("audit:unloaded");
+        WorldPoolMenuService.handle(player,new WorldPoolMenuRequestPayload(id,""));
+        check(((WorldPoolMenuStatePayload)ServerPlayNetworking.sent.removeFirst()).entries().get(2).available(),
+                "维度加载后应启用入口");
         check(DimensionPoolManager.calls==0,"读目录触发传送");
         DimensionPoolSettings.current=hidden;
         WorldPoolMenuService.handle(player,new WorldPoolMenuRequestPayload(id,""));

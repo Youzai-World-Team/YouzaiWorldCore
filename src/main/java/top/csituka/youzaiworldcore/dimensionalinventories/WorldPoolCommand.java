@@ -84,6 +84,13 @@ public final class WorldPoolCommand {
             }
         }
 
+        if (count == 0) {
+            source.sendFailure(Component.translatable(
+                    "youzaiworldcore.message.diminv.teleport_failed", pool.displayName()));
+            DebugLogger.SERVER.exiting("WorldPoolCmd", "executeTeleport", "count=0");
+            return 0;
+        }
+
         final int finalCount = count;
         source.sendSuccess(() -> Component.translatable(
                 "youzaiworldcore.message.diminv.teleport_command_success",

@@ -726,6 +726,8 @@
   "youzaiworldcore.message.diminv.pool_list_header": "§6=== Пулы измерений (%s) ===",
   "youzaiworldcore.message.diminv.pool_not_found": "§cПул измерений %s не найден",
   "youzaiworldcore.message.diminv.teleport_command_success": "§aТелепортировано %s игроков в пул измерений %s.",
+  "youzaiworldcore.message.diminv.rollback_failed": "§cНе удалось полностью восстановить прежнее состояние игрока. Обратитесь к администратору сервера.",
+  "youzaiworldcore.message.diminv.teleport_failed": "§cНе удалось переместиться в группу измерений %s.",
   "youzaiworldcore.message.diminv.teleport_success": "§aТелепортировано в пул измерений %s.",
   "youzaiworldcore.message.dragon_elytra.elytra_dropped_position": "Элитры упали рядом с %s %s %s",
   "youzaiworldcore.message.dragon_elytra.seems_like_slain": "Дракон Эндера, кажется, уронил что-то…",

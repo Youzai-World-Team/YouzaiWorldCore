@@ -726,6 +726,8 @@
   "youzaiworldcore.message.diminv.pool_list_header": "§6=== 维度池列表 (%s) ===",
   "youzaiworldcore.message.diminv.pool_not_found": "§c维度池不存在: %s",
   "youzaiworldcore.message.diminv.teleport_command_success": "§a已将 %s 名玩家传送至 %s 维度池。",
+  "youzaiworldcore.message.diminv.rollback_failed": "§c玩家状态未能完整恢复，请联系服务器管理员。",
+  "youzaiworldcore.message.diminv.teleport_failed": "§c未能传送至 %s 维度池。",
   "youzaiworldcore.message.diminv.teleport_success": "§a已传送到 %s 维度池。",
   "youzaiworldcore.message.dragon_elytra.elytra_dropped_position": "一只鞘翅已掉落在 %s %s %s 附近",
   "youzaiworldcore.message.dragon_elytra.seems_like_slain": "末影龙似乎掉落了一些东西……",

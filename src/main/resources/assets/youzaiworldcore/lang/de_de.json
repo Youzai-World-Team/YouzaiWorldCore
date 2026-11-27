@@ -726,6 +726,8 @@
   "youzaiworldcore.message.diminv.pool_list_header": "§6=== Dimension-Pools (%s) ===",
   "youzaiworldcore.message.diminv.pool_not_found": "§cDimension-Pool %s nicht gefunden",
   "youzaiworldcore.message.diminv.teleport_command_success": "§a%s Spieler zum %s Dimension-Pool teleportiert.",
+  "youzaiworldcore.message.diminv.rollback_failed": "§cDer ursprüngliche Spielerzustand konnte nicht vollständig wiederhergestellt werden. Bitte kontaktiere die Serveradministration.",
+  "youzaiworldcore.message.diminv.teleport_failed": "§cTeleport in den Dimensionspool %s fehlgeschlagen.",
   "youzaiworldcore.message.diminv.teleport_success": "§aTeleportiert zum %s Dimension-Pool.",
   "youzaiworldcore.message.dragon_elytra.elytra_dropped_position": "Ein Elytren wurde in der Nähe von %s %s %s fallen gelassen",
   "youzaiworldcore.message.dragon_elytra.seems_like_slain": "Der Enderdrache scheint etwas fallen gelassen zu haben …",

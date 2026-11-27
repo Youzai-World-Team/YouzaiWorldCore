@@ -112,9 +112,17 @@ public final class PlayerStateData {
     // ===== 应用到玩家 =====
 
     public void applyToPlayer(ServerPlayer player) {
+        applyToPlayer(player, false);
+    }
+
+    /** 主动切换时遇到无法读取的物品应中止，并由调用方恢复源池状态。 */
+    void applyToPlayer(ServerPlayer player, boolean strictItems) {
         DebugLogger.SERVER.entering("PlayerState", "applyToPlayer", "player=" + player.getName().getString());
         ItemReader lookup = new ItemReader(getLookup(player), player.level().getServer().getFixerUpper(),
-                this.dataVersion > 0 ? this.dataVersion : ItemStackNbtUpgrader.LEGACY_DATA_VERSION);
+                this.dataVersion > 0 ? this.dataVersion : ItemStackNbtUpgrader.LEGACY_DATA_VERSION, strictItems);
+        if (strictItems) {
+            validateInventorySizes(player);
+        }
 
         // — 物品栏 —
         DebugLogger.SERVER.branch("PlayerState", "mainInventory empty", this.mainInventory == null || this.mainInventory.isEmpty());
@@ -168,6 +176,14 @@ public final class PlayerStateData {
         DebugLogger.SERVER.exiting("PlayerState", "applyToPlayer");
     }
 
+    private void validateInventorySizes(ServerPlayer player) {
+        if ((mainInventory != null && mainInventory.size() > player.getInventory().getNonEquipmentItems().size())
+                || (armorInventory != null && !armorInventory.isEmpty() && armorInventory.size() != 4)
+                || (enderChestInventory != null && enderChestInventory.size() > player.getEnderChestInventory().getContainerSize())) {
+            throw new IllegalArgumentException("维度池存档中的物品栏大小无效");
+        }
+    }
+
     public static void clearPlayerInventory(ServerPlayer player) {
         player.getInventory().clearContent();
         player.getEnderChestInventory().clearContent();
@@ -194,6 +210,9 @@ public final class PlayerStateData {
         if (tag == null || tag.isEmpty()) return ItemStack.EMPTY;
         CompoundTag upgraded = ItemStackNbtUpgrader.upgrade(reader.fixer(), tag, reader.dataVersion());
         var result = ItemStack.CODEC.parse(reader.lookup().createSerializationContext(NbtOps.INSTANCE), upgraded);
+        if (reader.strictItems()) {
+            return result.getOrThrow();
+        }
         result.error().ifPresent(error -> LOGGER.warn("维度池中保存的物品无法解析，已跳过：{}；原始数据：{}",
                 error.message(), tag));
         return result.result().orElse(ItemStack.EMPTY);
@@ -203,11 +222,14 @@ public final class PlayerStateData {
         return tag.isEmpty() ? "" : tag.toString();
     }
 
-    private static CompoundTag stringToTag(String str) {
+    private static CompoundTag stringToTag(String str, boolean strict) {
         if (str == null || str.isEmpty()) return new CompoundTag();
         try {
             return TagParser.parseCompoundFully(str);
         } catch (Exception e) {
+            if (strict) {
+                throw new IllegalArgumentException("维度池存档中的物品无法解析", e);
+            }
             return new CompoundTag();
         }
     }
@@ -217,7 +239,7 @@ public final class PlayerStateData {
     }
 
     private static ItemStack deserializeItemStack(String str, ItemReader reader) {
-        return decodeStack(stringToTag(str), reader);
+        return decodeStack(stringToTag(str, reader.strictItems()), reader);
     }
 
     private static List<String> serializeItemList(NonNullList<ItemStack> items, HolderLookup.Provider lookup) {
@@ -263,7 +285,7 @@ public final class PlayerStateData {
     }
 
     /** 读取物品所需的注册表、DataFixer 与数据写出时的版本。 */
-    private record ItemReader(HolderLookup.Provider lookup, DataFixer fixer, int dataVersion) {
+    private record ItemReader(HolderLookup.Provider lookup, DataFixer fixer, int dataVersion, boolean strictItems) {
     }
 
     // ===== HolderLookup.Provider 获取 =====
@@ -274,7 +296,7 @@ public final class PlayerStateData {
 
     // ===== 饥饿值 exhaustion 辅助 =====
 
-    private static float getExhaustion(ServerPlayer player) {
+    static float getExhaustion(ServerPlayer player) {
         try {
             var field = player.getFoodData().getClass().getDeclaredField("exhaustionLevel");
             field.setAccessible(true);
@@ -285,7 +307,7 @@ public final class PlayerStateData {
         }
     }
 
-    private static void setExhaustion(ServerPlayer player, float exhaustion) {
+    static void setExhaustion(ServerPlayer player, float exhaustion) {
         try {
             var field = player.getFoodData().getClass().getDeclaredField("exhaustionLevel");
             field.setAccessible(true);

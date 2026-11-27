@@ -726,6 +726,8 @@
   "youzaiworldcore.message.diminv.pool_list_header": "§6=== Grupos de dimensiones (%s) ===",
   "youzaiworldcore.message.diminv.pool_not_found": "§cGrupo de dimensiones %s no encontrado",
   "youzaiworldcore.message.diminv.teleport_command_success": "§aTeletransportados %s jugadores al grupo %s.",
+  "youzaiworldcore.message.diminv.rollback_failed": "§cNo se pudo restaurar por completo tu estado anterior. Contacta con la administración del servidor.",
+  "youzaiworldcore.message.diminv.teleport_failed": "§cNo se pudo viajar al grupo de dimensiones %s.",
   "youzaiworldcore.message.diminv.teleport_success": "§aTeletransportado al grupo %s.",
   "youzaiworldcore.message.dragon_elytra.elytra_dropped_position": "Se ha soltado un élitro cerca de %s %s %s",
   "youzaiworldcore.message.dragon_elytra.seems_like_slain": "El Enderdragón parece haber soltado algo…",

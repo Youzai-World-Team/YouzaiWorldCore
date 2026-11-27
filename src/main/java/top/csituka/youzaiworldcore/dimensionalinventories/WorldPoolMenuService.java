@@ -47,13 +47,14 @@ public final class WorldPoolMenuService {
     }
 
     private static void sendState(ServerPlayer player, WorldPoolMenuRequestPayload request) {
+        var server = player.level().getServer();
         var current = DimensionPoolSettings.getPoolByDimension(
                 player.level().dimension().identifier().toString())
                 .filter(pool -> !DimensionPoolSettings.isHiddenPool(pool.id())).orElse(null);
         @SuppressWarnings("null")
         List<WorldPoolMenuStatePayload.Entry> entries = DimensionPoolSettings.getAllPools().stream().limit(128)
                 .map(pool -> new WorldPoolMenuStatePayload.Entry(pool.id(), pool.displayName(),
-                        pool.gameMode().getName(), !pool.isEmpty()))
+                        pool.gameMode().getName(), DimensionPoolManager.findLoadedLevel(server, pool) != null))
                 .toList();
         ServerPlayNetworking.send(player, new WorldPoolMenuStatePayload(request.requestId(),
                 current == null ? "" : current.id(), current == null ? "" : current.displayName(), entries));

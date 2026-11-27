@@ -9,11 +9,13 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.GameType;
-import net.minecraft.world.level.Level;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
+import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -67,11 +69,13 @@ public final class DimensionPoolManager {
      * 用于原地重生，避免“出生点维度 → 死亡维度”的内部传送触发跨池背包切换。
      */
     public static <T> T withTeleportGuard(UUID playerUuid, Supplier<T> action) {
-        TELEPORT_IN_PROGRESS.add(playerUuid);
+        boolean added = TELEPORT_IN_PROGRESS.add(playerUuid);
         try {
             return action.get();
         } finally {
-            TELEPORT_IN_PROGRESS.remove(playerUuid);
+            if (added) {
+                TELEPORT_IN_PROGRESS.remove(playerUuid);
+            }
         }
     }
 
@@ -125,9 +129,8 @@ public final class DimensionPoolManager {
      *   <li>检查目标池是否存在</li>
      *   <li>如果目标池为空（无维度），提示管理员设置并取消传送</li>
      *   <li>保存玩家当前状态到源池</li>
-     *   <li>清空玩家背包</li>
-     *   <li>加载目标池的玩家历史状态</li>
      *   <li>将玩家传送到目标池保存的维度与坐标</li>
+     *   <li>传送成功后清空背包并加载目标池的玩家历史状态</li>
      *   <li>强制设置目标池的游戏模式</li>
      * </ol>
      */
@@ -177,209 +180,152 @@ public final class DimensionPoolManager {
             return true;
         }
 
-        // ★★★ 4. 先确定传送到哪个维度，验证可用性，再修改玩家状态 ★★★
-        ResourceKey<Level> targetDimensionKey = determineTeleportTarget(player, server, targetPool);
-        DebugLogger.SERVER.branch("DimensionPoolManager", "目标维度是否有效", targetDimensionKey == null, "targetPool=" + targetPool.id());
-        if (targetDimensionKey == null) {
+        ServerLevel fallback = findLoadedLevel(server, targetPool);
+        if (fallback == null) {
             sendTeleportMessage(player, feedback, Component.translatable(
-                    "youzaiworldcore.message.diminv.no_valid_dimension",
-                    targetPool.displayName()));
+                    "youzaiworldcore.message.diminv.no_valid_dimension", targetPool.displayName()));
             DebugLogger.SERVER.exiting("DimensionPoolManager", "teleportToPool", "result=false (no_valid_dimension)");
             return false;
         }
 
-        ServerLevel targetLevel = server.getLevel(targetDimensionKey);
-        DebugLogger.SERVER.branch("DimensionPoolManager", "目标维度是否已加载", targetLevel == null,
-                "dimKey=" + targetDimensionKey.identifier().toString());
-        if (targetLevel == null) {
-            sendTeleportMessage(player, feedback, Component.translatable(
-                    "youzaiworldcore.message.diminv.dimension_not_found",
-                    targetDimensionKey.identifier().toString()));
-            DebugLogger.SERVER.exiting("DimensionPoolManager", "teleportToPool", "result=false (dimension_not_found)");
+        if (TELEPORT_IN_PROGRESS.contains(player.getUUID())) {
+            sendTeleportMessage(player, feedback, transferFailure(targetPool));
             return false;
         }
 
-        double teleportX = 0.5, teleportY = 100, teleportZ = 0.5;
-        float teleportYRot = 90, teleportXRot = 0;
-
-        // ★★★ 优先使用死亡默认出生点（跨池死亡后首次传送） ★★★
-        String deathKey = deathSpawnKey(player.getUUID(), targetPool.id());
-        DimensionPool.DefaultSpawn defaultSpawn = null;
-        boolean hasDeathPending = DEATH_PENDING_SPAWN.contains(deathKey);
-        DebugLogger.SERVER.branch("DimensionPoolManager", "是否有跨池死亡默认出生点待处理", hasDeathPending, "deathKey=" + deathKey);
-        if (DEATH_PENDING_SPAWN.remove(deathKey)) {
-            DebugLogger.SERVER.stateChange("DimensionPoolManager", "DEATH_PENDING_SPAWN", "remove", deathKey, "removed");
-            defaultSpawn = targetPool.defaultSpawn();
-            if (defaultSpawn != null && defaultSpawn.getDimension() != null
-                    && targetPool.containsDimension(defaultSpawn.getDimension())) {
-                teleportX = defaultSpawn.getX();
-                teleportY = defaultSpawn.getY();
-                teleportZ = defaultSpawn.getZ();
-                teleportYRot = defaultSpawn.getYaw();
-                teleportXRot = defaultSpawn.getPitch();
-
-                DebugLogger.SERVER.debug("DimensionPoolManager", "玩家 {} 使用默认出生点传送至池 {}", player.getName().getString(), targetPool.id());
-            } else {
-                DebugLogger.SERVER.branch("DimensionPoolManager", "默认出生点配置无效，降级到已保存坐标",
-                        defaultSpawn == null || defaultSpawn.getDimension() == null,
-                        "defaultSpawn=" + defaultSpawn);
-                // 配置了默认出生点但无效，降级到已保存坐标
-                defaultSpawn = null;
-            }
-        }
-
-        DebugLogger.SERVER.branch("DimensionPoolManager", "是否使用默认出生点坐标", defaultSpawn == null, "");
-        if (defaultSpawn == null) {
-            boolean hasSavedState = hasSavedPlayerData(player, server, targetPool.id());
-            DebugLogger.SERVER.branch("DimensionPoolManager", "目标池是否有已保存的历史状态", hasSavedState,
-                    "targetPoolId=" + targetPool.id());
-            if (hasSavedState) {
-                PlayerStateData loadedData = getLastLoadedData(player, server, targetPool.id());
-                DebugLogger.SERVER.branch("DimensionPoolManager", "已加载的历史数据是否有效", loadedData != null, "");
-                if (loadedData != null) {
-                    teleportX = loadedData.getX();
-                    teleportY = loadedData.getY();
-                    teleportZ = loadedData.getZ();
-                    teleportYRot = loadedData.getYRot();
-                    teleportXRot = loadedData.getXRot();
-                    DebugLogger.SERVER.debug("DimensionPoolManager", "使用已保存坐标: ({}, {}, {}) 维度 {}", teleportX, teleportY, teleportZ, loadedData.getDimension());
-                } else {
-                    teleportX = 0.5; teleportY = 100; teleportZ = 0.5;
-                    teleportYRot = 90; teleportXRot = 0;
-                    DebugLogger.SERVER.debug("DimensionPoolManager", "已保存数据为 null，使用默认坐标");
-                }
-            } else {
-                teleportX = 0.5; teleportY = 100; teleportZ = 0.5;
-                teleportYRot = 90; teleportXRot = 0;
-                DebugLogger.SERVER.debug("DimensionPoolManager", "无历史状态，使用默认坐标");
-            }
-        }
-
-        // ★★★ 5. 验证通过，现在才修改玩家状态 ★★★
-        DebugLogger.SERVER.branch("DimensionPoolManager", "是否有源池需要保存状态", sourcePool != null,
-                "sourcePool=" + (sourcePool != null ? sourcePool.id() : "null"));
-        if (sourcePool != null) {
-            savePlayerState(player, server, sourcePool.id());
-        }
-
-        DebugLogger.SERVER.stateChange("DimensionPoolManager", player.getName().getString(), "inventory", "preserved", "cleared");
-        PlayerStateData.clearPlayerInventory(player);
-        DebugLogger.SERVER.stateChange("DimensionPoolManager", player.getName().getString(), "effects", "present", "removed");
-        player.removeAllEffects();
-
-        loadPlayerState(player, server, targetPool.id());
-
-        TELEPORT_IN_PROGRESS.add(player.getUUID());
-        DebugLogger.SERVER.stateChange("DimensionPoolManager", player.getName().getString(), "TELEPORT_IN_PROGRESS", "false", "true");
+        PlayerStateData targetState;
+        PoolTransferSnapshot origin;
         try {
-            player.teleportTo(targetLevel, teleportX, teleportY, teleportZ,
-                    java.util.Set.of(), teleportYRot, teleportXRot, true);
-        } finally {
-            TELEPORT_IN_PROGRESS.remove(player.getUUID());
-            DebugLogger.SERVER.stateChange("DimensionPoolManager", player.getName().getString(), "TELEPORT_IN_PROGRESS", "true", "false");
+            targetState = readPlayerState(player, server, targetPool.id());
+            origin = new PoolTransferSnapshot(player);
+        } catch (IOException | RuntimeException error) {
+            LOGGER.error("准备玩家 {} 的维度池切换失败", player.getScoreboardName(), error);
+            sendTeleportMessage(player, feedback, transferFailure(targetPool));
+            return false;
         }
 
-        DebugLogger.SERVER.stateChange("DimensionPoolManager", player.getName().getString(), "gameMode",
-                player.gameMode().toString(), targetPool.gameMode().toString());
-        player.setGameMode(targetPool.gameMode());
+        String deathKey = deathSpawnKey(player.getUUID(), targetPool.id());
+        boolean hasDeathPending = DEATH_PENDING_SPAWN.contains(deathKey);
+        TeleportTarget target = determineTeleportTarget(server, targetPool, targetState, fallback, hasDeathPending);
 
+        // 源池文件必须保存在原位置，保存失败时保留玩家的当前状态。
+        if (sourcePool != null && !savePlayerState(player, server, sourcePool.id())) {
+            sendTeleportMessage(player, feedback, transferFailure(targetPool));
+            return false;
+        }
+
+        Component failure = withTeleportGuard(player.getUUID(),
+                () -> transferPlayer(player, targetPool, targetState, origin, target));
+        if (failure != null) {
+            sendTeleportMessage(player, feedback, failure);
+            DebugLogger.SERVER.exiting("DimensionPoolManager", "teleportToPool", "result=false (transfer_failed)");
+            return false;
+        }
+
+        if (hasDeathPending) {
+            DEATH_PENDING_SPAWN.remove(deathKey);
+        }
         sendTeleportMessage(player, feedback, Component.translatable(
-                "youzaiworldcore.message.diminv.teleport_success",
-                targetPool.displayName()));
-
-
-        DebugLogger.SERVER.info("DimensionPoolManager", "玩家 {} 已传送到维度池 {}", player.getName().getString(), targetPoolId);
+                "youzaiworldcore.message.diminv.teleport_success", targetPool.displayName()));
+        DebugLogger.SERVER.info("DimensionPoolManager", "玩家 {} 已传送到维度池 {}",
+                player.getName().getString(), targetPoolId);
         DebugLogger.SERVER.exiting("DimensionPoolManager", "teleportToPool", "result=true (success)");
         return true;
     }
-    private static void sendTeleportMessage(ServerPlayer player, java.util.function.Consumer<Component> feedback,
-                                            Component message) {
-        player.sendSystemMessage(message);
-        if (feedback != null) feedback.accept(message);
-    }
 
-
-    /**
-     * 确定传送目标维度键。
-     * <p>
-     * 优先使用保存的历史数据中的维度；无历史数据时使用池配置的首个可用维度。
-     * 逐一验证池中的每个维度，返回第一个在服务端已加载的维度。
-     *
-     * @return 可用的目标维度 ResourceKey，如果池中所有维度均不可用则返回 null
-     */
-    private static ResourceKey<Level> determineTeleportTarget(
-            ServerPlayer player, MinecraftServer server, DimensionPool targetPool) {
-
-        DebugLogger.SERVER.entering("DimensionPoolManager", "determineTeleportTarget",
-                "player=" + player.getName().getString() + ", targetPool=" + targetPool.id());
-
-        // 优先使用已保存数据中的维度（但必须属于目标池）
-        boolean hasSaved = hasSavedPlayerData(player, server, targetPool.id());
-        DebugLogger.SERVER.branch("DimensionPoolManager", "是否有已保存的玩家数据", hasSaved, "poolId=" + targetPool.id());
-        if (hasSaved) {
-            PlayerStateData loadedData = getLastLoadedData(player, server, targetPool.id());
-            DebugLogger.SERVER.branch("DimensionPoolManager", "已加载数据是否有效", loadedData != null, "");
-            if (loadedData != null) {
-                String dimStr = loadedData.getDimension();
-                boolean dimValid = dimStr != null && !dimStr.isEmpty()
-                        && targetPool.containsDimension(dimStr);
-                DebugLogger.SERVER.branch("DimensionPoolManager", "已保存维度是否属于目标池", dimValid,
-                        "savedDim=" + dimStr + ", targetPool=" + targetPool.id());
-                if (dimValid) {  // ★ 验证维度属于此池
-                    ResourceKey<Level> key = ResourceKey.create(
-                            net.minecraft.core.registries.Registries.DIMENSION,
-                            Identifier.parse(dimStr));
-                    boolean levelLoaded = server.getLevel(key) != null;
-                    DebugLogger.SERVER.branch("DimensionPoolManager", "已保存维度是否已加载", !levelLoaded,
-                            "dim=" + dimStr);
-                    if (levelLoaded) {
-                        DebugLogger.SERVER.exiting("DimensionPoolManager", "determineTeleportTarget",
-                                "result=key=" + key.identifier() + " (from_saved_data)");
-                        return key;
-                    }
-
-                    DebugLogger.SERVER.warn("DimensionPoolManager", "保存的维度 {} 不可用，尝试池中的其他维度", dimStr);
-                } else {
-                    LOGGER.debug("忽略已保存的维度 {}（不属于池 {}）", dimStr, targetPool.id());
-                    DebugLogger.SERVER.debug("DimensionPoolManager", "忽略已保存的维度 {}（不属于池 {}）", dimStr, targetPool.id());
+    private static Component transferPlayer(ServerPlayer player, DimensionPool targetPool, PlayerStateData targetState,
+                                            PoolTransferSnapshot origin, TeleportTarget target) {
+        try {
+            if (player.teleportTo(target.level(), target.x(), target.y(), target.z(),
+                    Set.of(), target.yaw(), target.pitch(), true) && target.hasArrived(player)) {
+                PlayerStateData.clearPlayerInventory(player);
+                player.removeAllEffects();
+                if (targetState != null) {
+                    targetState.applyToPlayer(player, true);
+                }
+                GameType mode = targetPool.gameMode();
+                boolean modeApplied = player.gameMode() == mode || player.setGameMode(mode);
+                if (modeApplied && player.gameMode() == mode && target.hasArrived(player)) {
+                    return null;
                 }
             }
+        } catch (RuntimeException error) {
+            LOGGER.error("玩家 {} 切换至维度池 {} 时失败", player.getScoreboardName(), targetPool.id(), error);
         }
 
-        // 逐一遍历池中的维度，返回第一个可用的
-        DebugLogger.SERVER.debug("DimensionPoolManager", "遍历池 {} 中的维度，寻找可用目标", targetPool.id());
-        for (String dimId : targetPool.dimensions()) {
-            if (dimId == null || dimId.isEmpty()) continue;
-            ResourceKey<Level> key = ResourceKey.create(
-                    net.minecraft.core.registries.Registries.DIMENSION,
-                    Identifier.parse(dimId));
-            if (server.getLevel(key) != null) {
-                DebugLogger.SERVER.exiting("DimensionPoolManager", "determineTeleportTarget",
-                        "result=key=" + key.identifier() + " (from_pool_dimensions)");
-                return key;
+        if (origin.restore(player)) {
+            return transferFailure(targetPool);
+        }
+        LOGGER.error("玩家 {} 切换至维度池 {} 失败，且未能完整恢复源状态",
+                player.getScoreboardName(), targetPool.id());
+        return Component.translatable("youzaiworldcore.message.diminv.rollback_failed");
+    }
+
+    private static Component transferFailure(DimensionPool pool) {
+        return Component.translatable("youzaiworldcore.message.diminv.teleport_failed", pool.displayName());
+    }
+
+    private static void sendTeleportMessage(ServerPlayer player, java.util.function.Consumer<Component> feedback,
+                                            Component message) {
+        if (feedback != null) {
+            feedback.accept(message);
+        }
+        if (!player.hasDisconnected()) {
+            try {
+                player.sendSystemMessage(message);
+            } catch (RuntimeException error) {
+                LOGGER.error("向玩家 {} 发送维度池切换结果失败", player.getScoreboardName(), error);
             }
+        }
+    }
 
-            DebugLogger.SERVER.warn("DimensionPoolManager", "池 {} 中的维度 {} 不可用，尝试下一个", targetPool.displayName(), dimId);
+    private record TeleportTarget(ServerLevel level, double x, double y, double z, float yaw, float pitch) {
+        boolean hasArrived(ServerPlayer player) {
+            var position = player.position();
+            return player.level() == level && position.x == x && position.y == y && position.z == z;
+        }
+    }
+
+    /** 优先使用已加载的死亡出生点或历史维度，未加载时使用池内的第一个可用维度。 */
+    private static TeleportTarget determineTeleportTarget(MinecraftServer server, DimensionPool pool,
+                                                          PlayerStateData state, ServerLevel fallback,
+                                                          boolean useDeathSpawn) {
+        var spawn = useDeathSpawn ? pool.defaultSpawn() : null;
+        if (spawn != null && spawn.getDimension() != null && pool.containsDimension(spawn.getDimension())) {
+            ServerLevel level = getLoadedLevel(server, spawn.getDimension());
+            if (level != null) {
+                return new TeleportTarget(level, spawn.getX(), spawn.getY(), spawn.getZ(), spawn.getYaw(), spawn.getPitch());
+            }
         }
 
-        DebugLogger.SERVER.exiting("DimensionPoolManager", "determineTeleportTarget",
-                "result=null (no_available_dimension)");
+        if (state != null && state.getDimension() != null && pool.containsDimension(state.getDimension())) {
+            ServerLevel level = getLoadedLevel(server, state.getDimension());
+            if (level != null) {
+                return new TeleportTarget(level, state.getX(), state.getY(), state.getZ(), state.getYRot(), state.getXRot());
+            }
+        }
+
+        return new TeleportTarget(fallback, 0.5, 100, 0.5, 90, 0);
+    }
+
+    /** 查找池中第一个已加载的维度，供菜单目录和传送共用。 */
+    static ServerLevel findLoadedLevel(MinecraftServer server, DimensionPool pool) {
+        for (String dimensionId : pool.dimensions()) {
+            ServerLevel level = getLoadedLevel(server, dimensionId);
+            if (level != null) {
+                return level;
+            }
+        }
         return null;
     }
 
-    private static boolean hasSavedPlayerData(ServerPlayer player, MinecraftServer server, String poolId) {
-        DebugLogger.SERVER.entering("DimensionPoolManager", "hasSavedPlayerData",
-                "player=" + player.getName().getString() + ", poolId=" + poolId);
-        try {
-            Path file = getPlayerDataFile(server, poolId, player.getUUID().toString());
-            boolean exists = Files.exists(file);
-            DebugLogger.SERVER.exiting("DimensionPoolManager", "hasSavedPlayerData", "result=" + exists + ", file=" + file);
-            return exists;
-        } catch (Exception e) {
-            DebugLogger.SERVER.exception("DimensionPoolManager", "hasSavedPlayerData 检查文件是否存在", e);
-            DebugLogger.SERVER.exiting("DimensionPoolManager", "hasSavedPlayerData", "result=false (exception)");
-            return false;
+    private static ServerLevel getLoadedLevel(MinecraftServer server, String dimensionId) {
+        if (dimensionId == null || dimensionId.isEmpty()) {
+            return null;
         }
+        Identifier id = Identifier.tryParse(dimensionId);
+        return id == null ? null : server.getLevel(ResourceKey.create(
+                net.minecraft.core.registries.Registries.DIMENSION, id));
     }
 
     private static String deathSpawnKey(UUID playerUuid, String poolId) {
@@ -392,20 +338,26 @@ public final class DimensionPoolManager {
 
     // ===== 状态保存/加载 =====
 
-    private static void savePlayerState(ServerPlayer player, MinecraftServer server, String poolId) {
+    private static boolean savePlayerState(ServerPlayer player, MinecraftServer server, String poolId) {
         DebugLogger.SERVER.entering("DimensionPoolManager", "savePlayerState",
                 "player=" + player.getName().getString() + ", poolId=" + poolId);
         try {
             PlayerStateData data = PlayerStateData.fromPlayer(player);
             Path file = getPlayerDataFile(server, poolId, player.getUUID().toString());
             Files.createDirectories(file.getParent());
-            String json = GSON.toJson(data);
-            Files.writeString(file, json);
+            Path temporary = Files.createTempFile(file.getParent(), ".player-state-", ".tmp");
+            try {
+                Files.writeString(temporary, GSON.toJson(data));
+                Files.move(temporary, file, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+            } finally {
+                Files.deleteIfExists(temporary);
+            }
             DebugLogger.SERVER.stateChange("DimensionPoolManager", player.getName().getString(),
                     "savedState", "none", "pool=" + poolId + ", file=" + file);
             LOGGER.debug("玩家 {} 的状态已保存到池 {}", player.getName().getString(), poolId);
             DebugLogger.SERVER.debug("DimensionPoolManager", "玩家 {} 的状态已保存到池 {}", player.getName().getString(), poolId);
             DebugLogger.SERVER.exiting("DimensionPoolManager", "savePlayerState");
+            return true;
         } catch (Exception e) {
             LOGGER.error("保存玩家 {} 状态到池 {} 失败: {}",
                     player.getName().getString(), poolId, e.getMessage());
@@ -413,6 +365,7 @@ public final class DimensionPoolManager {
             DebugLogger.SERVER.exception("DimensionPoolManager", "savePlayerState 保存文件", e);
             player.sendSystemMessage(Component.literal("§c⚠ 数据保存失败，请联系管理员。"));
             DebugLogger.SERVER.exiting("DimensionPoolManager", "savePlayerState");
+            return false;
         }
     }
 
@@ -420,18 +373,9 @@ public final class DimensionPoolManager {
         DebugLogger.SERVER.entering("DimensionPoolManager", "loadPlayerState",
                 "player=" + player.getName().getString() + ", poolId=" + poolId);
         try {
-            Path file = getPlayerDataFile(server, poolId, player.getUUID().toString());
-            boolean fileExists = Files.exists(file);
-            DebugLogger.SERVER.branch("DimensionPoolManager", "状态文件是否存在", !fileExists, "file=" + file);
-            if (!fileExists) {
-                DebugLogger.SERVER.exiting("DimensionPoolManager", "loadPlayerState", "result=false (file_not_found)");
-                return false;
-            }
-            String json = Files.readString(file);
-            PlayerStateData data = GSON.fromJson(json, PlayerStateData.class);
-            DebugLogger.SERVER.branch("DimensionPoolManager", "反序列化数据是否有效", data == null, "");
+            PlayerStateData data = readPlayerState(player, server, poolId);
             if (data == null) {
-                DebugLogger.SERVER.exiting("DimensionPoolManager", "loadPlayerState", "result=false (null_data)");
+                DebugLogger.SERVER.exiting("DimensionPoolManager", "loadPlayerState", "result=false (file_not_found)");
                 return false;
             }
 
@@ -452,27 +396,21 @@ public final class DimensionPoolManager {
         }
     }
 
-    private static PlayerStateData getLastLoadedData(ServerPlayer player, MinecraftServer server, String poolId) {
-        DebugLogger.SERVER.entering("DimensionPoolManager", "getLastLoadedData",
-                "player=" + player.getName().getString() + ", poolId=" + poolId);
+    /** 缺少存档代表首次进入；读取失败或无效内容由调用方处理。 */
+    private static PlayerStateData readPlayerState(ServerPlayer player, MinecraftServer server, String poolId)
+            throws IOException {
+        Path file = getPlayerDataFile(server, poolId, player.getUUID().toString());
+        String json;
         try {
-            Path file = getPlayerDataFile(server, poolId, player.getUUID().toString());
-            boolean fileExists = Files.exists(file);
-            DebugLogger.SERVER.branch("DimensionPoolManager", "状态文件是否存在", !fileExists, "file=" + file);
-            if (!fileExists) {
-                DebugLogger.SERVER.exiting("DimensionPoolManager", "getLastLoadedData", "result=null (file_not_found)");
-                return null;
-            }
-
-            String json = Files.readString(file);
-            PlayerStateData result = GSON.fromJson(json, PlayerStateData.class);
-            DebugLogger.SERVER.exiting("DimensionPoolManager", "getLastLoadedData", "result=" + result);
-            return result;
-        } catch (Exception e) {
-            DebugLogger.SERVER.exception("DimensionPoolManager", "getLastLoadedData 读取文件", e);
-            DebugLogger.SERVER.exiting("DimensionPoolManager", "getLastLoadedData", "result=null (exception)");
+            json = Files.readString(file);
+        } catch (NoSuchFileException ignored) {
             return null;
         }
+        PlayerStateData data = GSON.fromJson(json, PlayerStateData.class);
+        if (data == null) {
+            throw new IOException("无效的维度池玩家存档：" + file);
+        }
+        return data;
     }
 
     // ===== 事件处理 =====
@@ -486,7 +424,7 @@ public final class DimensionPoolManager {
                         + ", destination=" + destination.dimension().identifier());
 
         // 守卫检查：如果该玩家的传送是由 teleportToPool() 主动触发的，
-        // 则跳过重复处理（teleportToPool() 已完成了状态保存/加载）。
+        // 则由 teleportToPool() 在移动成功后统一切换玩家状态。
         boolean teleportInProgress = TELEPORT_IN_PROGRESS.contains(player.getUUID());
         DebugLogger.SERVER.branch("DimensionPoolManager", "传送守卫检查（是否由 teleportToPool 主动触发）",
                 teleportInProgress, "player=" + player.getName().getString());
