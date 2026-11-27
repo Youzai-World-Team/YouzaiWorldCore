@@ -20,7 +20,11 @@ public enum YzuiWorkstationStyle {
     CARTOGRAPHY(Items.CARTOGRAPHY_TABLE, 2),
     STONECUTTER(Items.STONECUTTER, 1),
     GRINDSTONE(Items.GRINDSTONE, 2),
-    BEACON(Items.BEACON, 0);
+    BEACON(Items.BEACON, 0),
+    HOPPER(Items.HOPPER, -1, 0),
+    DISPENSER(Items.DISPENSER, -1, 0),
+    DROPPER(Items.DROPPER, -1, 0),
+    CRAFTER(Items.CRAFTER, 45, 0);
 
     /** 标题栏向原版内容区上方延伸，避免遮住附魔选项、图案及地图预览。 */
     public static final int HEADER_HEIGHT = 20;
@@ -28,16 +32,27 @@ public enum YzuiWorkstationStyle {
     private static final int CLOSE_MARGIN = 6;
     private final ItemStack icon;
     private final int accentSlot;
+    private final int headerExtension;
 
     YzuiWorkstationStyle(Item item, int accentSlot) {
-        this.icon = new ItemStack(item);
-        this.accentSlot = accentSlot;
+        this(item, accentSlot, HEADER_HEIGHT);
     }
 
-    /** 使用与全屏地图及已有工作方块一致的关闭控件。 */
+    YzuiWorkstationStyle(Item item, int accentSlot, int headerExtension) {
+        this.icon = new ItemStack(item);
+        this.accentSlot = accentSlot;
+        this.headerExtension = headerExtension;
+    }
+
+    /** 为使用外置标题栏的工作方块创建关闭控件。 */
     public static YzuiCloseButton closeButton(int left, int top, int width, Runnable close) {
+        return panelCloseButton(left, top - HEADER_HEIGHT, width, close);
+    }
+
+    /** 以卡片顶边为基准放置关闭控件。 */
+    public static YzuiCloseButton panelCloseButton(int left, int panelTop, int width, Runnable close) {
         return new YzuiCloseButton(left + width - CLOSE_MARGIN - CLOSE_SIZE,
-                top - HEADER_HEIGHT + 2, CLOSE_SIZE, close);
+                panelTop + 2, CLOSE_SIZE, close);
     }
 
     /** 扩展可点击的面板范围，点击标题空白处时不会把光标物品丢到界面外。 */
@@ -50,8 +65,9 @@ public enum YzuiWorkstationStyle {
     /** 绘制卡片、标题、槽位和操作图示，随后由原版绘制动态内容。 */
     public void drawBackground(GuiGraphicsExtractor g, Font font, Component title, AbstractContainerMenu menu,
             int left, int top, int width, int height, int mouseX, int mouseY) {
-        YzuiTheme.card(g, left, top - HEADER_HEIGHT, width, height + HEADER_HEIGHT);
-        drawTitle(g, font, title, left, top, width);
+        int panelTop = top - headerExtension;
+        YzuiTheme.card(g, left, panelTop, width, height + headerExtension);
+        drawTitle(g, font, title, left, panelTop, width);
         drawAreas(g, left, top, menu);
         for (int index = 0; index < menu.slots.size(); index++) {
             Slot slot = menu.slots.get(index);
@@ -71,8 +87,8 @@ public enum YzuiWorkstationStyle {
         YzuiTheme.label(g, font, title, x, y, available, YzuiTheme.text(), false);
     }
 
-    private void drawTitle(GuiGraphicsExtractor g, Font font, Component title, int left, int top, int width) {
-        int x = left + 8, y = top - HEADER_HEIGHT + 5;
+    private void drawTitle(GuiGraphicsExtractor g, Font font, Component title, int left, int panelTop, int width) {
+        int x = left + 8, y = panelTop + 5;
         RoundedRect.fill(g, x, y, 12, 12, 3, YzuiTheme.slot());
         g.pose().pushMatrix();
         try {
@@ -118,6 +134,9 @@ public enum YzuiWorkstationStyle {
                 }
                 beaconPyramid(g, left + 167, top + 43, 4, levels >= 4);
             }
+            case HOPPER, DISPENSER, DROPPER, CRAFTER -> {
+                // 容器槽位及合成器红石指示由各自的渲染流程绘制。
+            }
         }
     }
 
@@ -146,7 +165,10 @@ public enum YzuiWorkstationStyle {
     }
 
     private static void arrow(GuiGraphicsExtractor g, int x, int y, int width) {
-        int color = YzuiTheme.textMuted();
+        arrow(g, x, y, width, YzuiTheme.textMuted());
+    }
+
+    private static void arrow(GuiGraphicsExtractor g, int x, int y, int width, int color) {
         g.fill(x, y + 5, x + width - 1, y + 7, color);
         for (int row = 0; row < 13; row++) {
             int offset = Math.abs(row - 6);
@@ -155,7 +177,7 @@ public enum YzuiWorkstationStyle {
         }
     }
 
-    /** 仅替换控件底色；物品占位图、旗帜图案、等级标识、错误和锁定图标继续用原版资源。 */
+    /** 绘制有主题样式的控件，其他图标继续使用原版资源。 */
     public static boolean drawSprite(GuiGraphicsExtractor g, Identifier sprite, int x, int y, int w, int h) {
         if (!sprite.getNamespace().equals("minecraft")) return false;
         String path = sprite.getPath();
@@ -189,6 +211,21 @@ public enum YzuiWorkstationStyle {
                 // 原版的 50×66 sprite 在上、下两处绘制；实际地图框只有 50×50。
                 mapFrame(g, x, y, w, w);
             }
+            case "container/crafter/disabled_slot" -> {
+                int centerX = x + w / 2, centerY = y + h / 2;
+                int color = YzuiTheme.textMuted();
+                for (int offset = -3; offset <= 3; offset++) {
+                    int row = centerY + offset;
+                    g.fill(centerX + offset, row, centerX + offset + 2, row + 1, color);
+                    if (offset != 0) {
+                        g.fill(centerX - offset, row, centerX - offset + 2, row + 1, color);
+                    }
+                }
+            }
+            case "container/crafter/unpowered_redstone" ->
+                arrow(g, x, y + 1, w);
+            case "container/crafter/powered_redstone" ->
+                arrow(g, x, y + 1, w, YzuiTheme.error());
             default -> { return false; }
         }
         return true;

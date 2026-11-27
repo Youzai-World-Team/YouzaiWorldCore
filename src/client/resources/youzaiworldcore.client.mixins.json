@@ -68,6 +68,7 @@
     "InventoryScreenSwitchMixin",
     "YzuContainerScreenSwitchMixin",
     "WorkstationScreenYzuiMixin",
+    "CrafterScreenYzuiMixin",
     "EnchantmentScreenYzuiMixin",
     "StonecutterScreenYzuiMixin",
     "CartographyTableScreenYzuiMixin",

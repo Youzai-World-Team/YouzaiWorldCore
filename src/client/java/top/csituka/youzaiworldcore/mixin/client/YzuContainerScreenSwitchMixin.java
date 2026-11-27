@@ -9,10 +9,13 @@ import net.minecraft.client.gui.screens.inventory.BlastFurnaceScreen;
 import net.minecraft.client.gui.screens.inventory.BrewingStandScreen;
 import net.minecraft.client.gui.screens.inventory.CartographyTableScreen;
 import net.minecraft.client.gui.screens.inventory.ContainerScreen;
+import net.minecraft.client.gui.screens.inventory.CrafterScreen;
 import net.minecraft.client.gui.screens.inventory.CraftingScreen;
+import net.minecraft.client.gui.screens.inventory.DispenserScreen;
 import net.minecraft.client.gui.screens.inventory.EnchantmentScreen;
 import net.minecraft.client.gui.screens.inventory.FurnaceScreen;
 import net.minecraft.client.gui.screens.inventory.GrindstoneScreen;
+import net.minecraft.client.gui.screens.inventory.HopperScreen;
 import net.minecraft.client.gui.screens.inventory.LoomScreen;
 import net.minecraft.client.gui.screens.inventory.ShulkerBoxScreen;
 import net.minecraft.client.gui.screens.inventory.SmithingScreen;
@@ -38,6 +41,7 @@ import top.csituka.youzaiworldcore.client.screen.YzuBeaconScreen;
 import top.csituka.youzaiworldcore.client.screen.YzuBrewingStandScreen;
 import top.csituka.youzaiworldcore.client.screen.YzuCartographyTableScreen;
 import top.csituka.youzaiworldcore.client.screen.YzuContainerScreen;
+import top.csituka.youzaiworldcore.client.screen.YzuCrafterScreen;
 import top.csituka.youzaiworldcore.client.screen.YzuCraftingScreen;
 import top.csituka.youzaiworldcore.client.screen.YzuEnchantmentScreen;
 import top.csituka.youzaiworldcore.client.screen.YzuFurnaceScreen;
@@ -45,13 +49,14 @@ import top.csituka.youzaiworldcore.client.screen.YzuGrindstoneScreen;
 import top.csituka.youzaiworldcore.client.screen.YzuLoomScreen;
 import top.csituka.youzaiworldcore.client.screen.YzuShulkerBoxScreen;
 import top.csituka.youzaiworldcore.client.screen.YzuSmithingScreen;
+import top.csituka.youzaiworldcore.client.screen.YzuStorageScreen;
 import top.csituka.youzaiworldcore.client.screen.YzuStonecutterScreen;
 import top.csituka.youzaiworldcore.client.screen.YzuiWorkstationScreen;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
 /**
  * 拦截 {@link Gui#setScreen(Screen)}，将原版容器/潜影盒/铁砧/锻造台/工作台/酿造台
- * /熔炉/高炉/烟熏炉/附魔台/织布机/制图台/切石机/砂轮/信标屏幕替换为 YZUI 版本。
+ * /熔炉/高炉/烟熏炉/附魔台/织布机/制图台/切石机/砂轮/信标/漏斗/发射器/投掷器/合成器屏幕替换为 YZUI 版本。
  * <p>
  * 26.2 中普通箱子、陷阱箱、末影箱、木桶、双格大箱子统一由
  * {@link ContainerScreen}（原 ChestScreen 重命名）承载；潜影盒（含 16 种染色
@@ -69,6 +74,8 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
  *   <tr><th>原版屏幕</th><th>YZUI 替换</th></tr>
  *   <tr><td>{@link ContainerScreen}</td><td>{@link YzuContainerScreen}</td></tr>
  *   <tr><td>{@link ShulkerBoxScreen}</td><td>{@link YzuShulkerBoxScreen}</td></tr>
+ *   <tr><td>{@link HopperScreen} / {@link DispenserScreen}（含投掷器）</td><td>{@link YzuStorageScreen}</td></tr>
+ *   <tr><td>{@link CrafterScreen}</td><td>{@link YzuCrafterScreen}</td></tr>
  *   <tr><td>{@link AnvilScreen}</td><td>{@link YzuAnvilScreen}</td></tr>
  *   <tr><td>{@link SmithingScreen}</td><td>{@link YzuSmithingScreen}</td></tr>
  *   <tr><td>{@link CraftingScreen}</td><td>{@link YzuCraftingScreen}</td></tr>
@@ -105,6 +112,8 @@ public abstract class YzuContainerScreenSwitchMixin {
         if (newScreen == null)
             return;
         if (!(newScreen instanceof ContainerScreen || newScreen instanceof ShulkerBoxScreen
+                || newScreen instanceof HopperScreen || newScreen instanceof DispenserScreen
+                || newScreen instanceof CrafterScreen
                 || newScreen instanceof AnvilScreen || newScreen instanceof SmithingScreen
                 || newScreen instanceof CraftingScreen || newScreen instanceof BrewingStandScreen
                 || newScreen instanceof FurnaceScreen || newScreen instanceof BlastFurnaceScreen
@@ -136,6 +145,18 @@ public abstract class YzuContainerScreenSwitchMixin {
                 youzaiworldcore$YZWC_CONTAINER_SWITCH_LOGGER.debug("→ YzuShulkerBoxScreen (title={})", title.getString());
                 Minecraft.getInstance().gui.setScreen(
                         new YzuShulkerBoxScreen(menu, player.getInventory(), title));
+                ci.cancel();
+            } else if (newScreen instanceof HopperScreen hopper) {
+                Minecraft.getInstance().gui.setScreen(
+                        new YzuStorageScreen(hopper.getMenu(), player.getInventory(), hopper.getTitle()));
+                ci.cancel();
+            } else if (newScreen instanceof DispenserScreen dispenser) {
+                Minecraft.getInstance().gui.setScreen(
+                        new YzuStorageScreen(dispenser.getMenu(), player.getInventory(), dispenser.getTitle()));
+                ci.cancel();
+            } else if (newScreen instanceof CrafterScreen crafter) {
+                Minecraft.getInstance().gui.setScreen(
+                        new YzuCrafterScreen(crafter.getMenu(), player.getInventory(), crafter.getTitle()));
                 ci.cancel();
             } else if (newScreen instanceof AnvilScreen anvil) {
                 AnvilMenu menu = anvil.getMenu();
