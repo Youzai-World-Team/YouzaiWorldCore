@@ -12,6 +12,7 @@
     "PlayerListPoolRespawnMixin",
     "ServerGamePacketListenerPoolRespawnMixin",
     "ServerPlayerDeathMixin",
+    "ServerPlayerPoolRespawnPointsMixin",
     "ServerPlayerPoolTeleportMixin",
     "TrinketAttachmentPoolAccessor",
     "ServerPlayerGameModeCooldownMixin",

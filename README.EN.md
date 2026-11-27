@@ -186,6 +186,7 @@ Multi-world server management with independent state pools — players have sepa
 
 - **7 Predefined Pools**: Survival World (overworld/nether/end), Main City, Gameplay, Creation, Building, Commands, Tutorial World
 - **Switching Flow**: The server records the player's state and recovery data before moving. It applies the destination's inventory, experience, and game mode after arrival. First visits use an independent initial state.
+- **Personal respawn points**: Each player has one point per pool. Beds, respawn anchors, and `/spawnpoint` save the point in the pool containing its dimension. On upgrade, the existing personal respawn point is assigned to that pool.
 - **Respawning**: Outside the survival pool, the server uses a valid personal respawn point in the current pool first, then that pool's configured spawn. If neither is available, it restores the previous survival dimension, position, inventory, and game mode. Returning to survival uses no Heart of Guardianship, totem, or respawn anchor charge.
 - **Cross-Pool Teleportation**: Supports dimension portals, commands, respawn events
 - **Storage**: Pool config in `dimensional_inventories_module.pools` of `yzwc/server/config/global_settings.json`, player state in `<world_name>/data/yzwc/data/dimensional_inventories_module/<pool-id>/<uuid>.json`

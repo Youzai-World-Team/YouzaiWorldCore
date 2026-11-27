@@ -24,6 +24,7 @@ import top.csituka.youzaiworldcore.account.data.RegistrationEmailSessionStore;
 import top.csituka.youzaiworldcore.account.util.AuthLocationData;
 import top.csituka.youzaiworldcore.account.util.AuthPlayerHelper;
 import top.csituka.youzaiworldcore.cosmetic.CosmeticManager;
+import top.csituka.youzaiworldcore.dimensionalinventories.PoolRespawnPoints;
 import top.csituka.youzaiworldcore.invisibility.InvisibilityManager;
 import top.csituka.youzaiworldcore.network.AccountManagementRequestPayload;
 import top.csituka.youzaiworldcore.network.AccountManagementStatePayload;
@@ -1475,9 +1476,7 @@ public class AccountCommands {
 
         player.teleportTo(overworld, spawnPos.getX(), spawnPos.getY(), spawnPos.getZ(), java.util.Set.of(), player.getYRot(), player.getXRot(), true);
 
-        player.setRespawnPosition(new net.minecraft.server.level.ServerPlayer.RespawnConfig(
-                net.minecraft.world.level.storage.LevelData.RespawnData.DEFAULT, false
-        ), false);
+        PoolRespawnPoints.clearAll(player);
 
         MOD_LOG.info("已将玩家 {} 传送至主世界出生点并清除重生点", player.getScoreboardName());
     }
