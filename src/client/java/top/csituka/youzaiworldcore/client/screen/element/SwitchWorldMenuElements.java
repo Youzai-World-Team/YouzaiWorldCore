@@ -19,8 +19,21 @@ import top.csituka.youzaiworldcore.network.WorldPoolMenuRequestPayload;
 import top.csituka.youzaiworldcore.network.WorldPoolMenuStatePayload;
 import top.csituka.youzaiworldcore.network.WorldPoolTeleportResultPayload;
 
-/** 世界入口共用主菜单的通透卡片网格；保留七个维度池与三个旧入口的操作。 */
+/** 世界切换页按顺序展示七个维度池。 */
 public class SwitchWorldMenuElements implements MenuElementGroup {
+    @SuppressWarnings("null")
+    private static final List<Destination> DESTINATIONS = List.of(
+            new Destination("survival_world", MenuIcon.WORLD, "survival_world_pool"),
+            new Destination("kingdom", MenuIcon.HOME, "main_city_pool"),
+            new Destination("gameplay", MenuIcon.GAME, "gameplay_pool"),
+            new Destination("creative", MenuIcon.CROWN, "creation_pool"),
+            new Destination("building", MenuIcon.BUILD, "building_pool"),
+            new Destination("tutorials_world", MenuIcon.BOOK, "tutorial_world_pool"),
+            new Destination("command_zone", MenuIcon.COMMAND, "commands_pool"));
+
+    private record Destination(String navigationId, MenuIcon icon, String poolId) {
+    }
+
     private Map<String, WorldPoolMenuStatePayload.Entry> worlds = Map.of();
     private String currentPoolId = "", currentName = "";
     private UUID metadataRequest, pendingRequest, lastTeleportRequest;
@@ -82,27 +95,6 @@ public class SwitchWorldMenuElements implements MenuElementGroup {
         return Component.translatable("screen.youzaiworldcore.world_menu." + key, args);
     }
 
-    private static final Map<String, String> POOL_MAP = Map.of(
-            "survival", "survival_world_pool",
-            "kingdom", "main_city_pool",
-            "gameplay", "gameplay_pool",
-            "creative", "creation_pool",
-            "building", "building_pool",
-            "command", "commands_pool",
-            "marketplace", "tutorial_world_pool");
-
-    private static final String[] ENTRIES = {
-            "survival_world", "kingdom", "gameplay", "creative",
-            "building", "tutorials_world", "the_nether", "the_end",
-            "command_zone", "overworld"
-    };
-
-    private static final MenuIcon[] ICONS = {
-            MenuIcon.WORLD, MenuIcon.HOME, MenuIcon.GAME, MenuIcon.CROWN,
-            MenuIcon.BUILD, MenuIcon.BOOK, MenuIcon.PORTAL, MenuIcon.PORTAL,
-            MenuIcon.COMMAND, MenuIcon.WORLD
-    };
-
     @Override
     public String getTitleText() {
         return I18n.get("youzaiworldcore.message.gui.title_switch_world");
@@ -123,24 +115,14 @@ public class SwitchWorldMenuElements implements MenuElementGroup {
     @Override
     public List<AbstractWidget> createButtons(MenuScreen screen, int screenWidth, int screenHeight,
             float scale, float alpha) {
-        Runnable[] actions = {
-                () -> requestPoolTeleport(screen, "survival"),
-                () -> requestPoolTeleport(screen, "kingdom"),
-                () -> requestPoolTeleport(screen, "gameplay"),
-                () -> requestPoolTeleport(screen, "creative"),
-                () -> requestPoolTeleport(screen, "building"),
-                () -> requestPoolTeleport(screen, "marketplace"),
-                () -> showTeleportDialog(screen, "nether"),
-                () -> showTeleportDialog(screen, "end"),
-                () -> requestPoolTeleport(screen, "command"),
-                () -> showTeleportDialog(screen, "overworld")
-        };
-        var grid = new MenuLayout(screenWidth, screenHeight - 24).navigation(ENTRIES.length);
+        var grid = new MenuLayout(screenWidth, screenHeight - 24).navigation(DESTINATIONS.size());
         List<AbstractWidget> buttons = new ArrayList<>();
-        for (int i = 0; i < ENTRIES.length; i++) {
+        for (int i = 0; i < DESTINATIONS.size(); i++) {
+            var destination = DESTINATIONS.get(i);
             var bounds = grid.tile(i);
             var button = new MenuNavigationButton(bounds.x(), bounds.y(), bounds.width(), bounds.height(),
-                    ENTRIES[i], ICONS[i], actions[i]);
+                    destination.navigationId(), destination.icon(),
+                    () -> requestPoolTeleport(screen, destination.poolId()));
             button.setExternalAlpha(alpha);
             buttons.add(button);
         }
@@ -159,19 +141,8 @@ public class SwitchWorldMenuElements implements MenuElementGroup {
             pendingRequest = null;
             status = text("timeout");
         }
-        for (int i = 0; i < Math.min(buttons.size(), ENTRIES.length); i++) {
-            String poolId = switch (i) {
-                case 0 -> POOL_MAP.get("survival");
-                case 1 -> POOL_MAP.get("kingdom");
-                case 2 -> POOL_MAP.get("gameplay");
-                case 3 -> POOL_MAP.get("creative");
-                case 4 -> POOL_MAP.get("building");
-                case 5 -> POOL_MAP.get("marketplace");
-                case 8 -> POOL_MAP.get("command");
-                default -> null;
-            };
-            if (poolId == null)
-                continue;
+        for (int i = 0; i < Math.min(buttons.size(), DESTINATIONS.size()); i++) {
+            String poolId = DESTINATIONS.get(i).poolId();
             var button = (MenuNavigationButton) buttons.get(i);
             var world = worlds.get(poolId);
             boolean current = poolId.equals(currentPoolId);
@@ -202,8 +173,7 @@ public class SwitchWorldMenuElements implements MenuElementGroup {
      * {@link top.csituka.youzaiworldcore.dimensionalinventories.DimensionPoolManager}
      * 执行完整的池切换流程。
      */
-    private void requestPoolTeleport(MenuScreen screen, String buttonId) {
-        String poolId = POOL_MAP.get(buttonId);
+    private void requestPoolTeleport(MenuScreen screen, String poolId) {
         var world = worlds.get(poolId);
         if (!ready || pendingRequest != null || world == null || !world.available() || poolId.equals(currentPoolId))
             return;
@@ -220,26 +190,6 @@ public class SwitchWorldMenuElements implements MenuElementGroup {
                     status = text("waiting", world.name());
                     ClientPlayNetworking.send(new WorldPoolMenuRequestPayload(pendingRequest, poolId));
                 }, null);
-        screen.showDialog(dialog);
-    }
-
-    /**
-     * 显示传送确认对话框（非维度池按钮使用，仅输出聊天提示）。
-     * 保留给下界/末地/主世界等旧按钮。
-     */
-    private void showTeleportDialog(MenuScreen screen, String worldId) {
-        ConfirmationDialog dialog = new ConfirmationDialog(
-                I18n.get("youzaiworldcore.message.gui.confirm_teleport_title"),
-                new String[] { I18n.get("youzaiworldcore.message.gui.confirm_teleport_msg1"),
-                        I18n.get("youzaiworldcore.message.gui.confirm_teleport_msg2") },
-                () -> {
-                    var player = Minecraft.getInstance().player;
-                    if (player != null) {
-                        player.connection.sendCommand("say 传送" + worldId);
-                    }
-                    Minecraft.getInstance().gui.setScreen(null);
-                },
-                null);
         screen.showDialog(dialog);
     }
 

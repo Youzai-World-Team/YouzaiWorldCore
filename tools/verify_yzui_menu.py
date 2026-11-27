@@ -555,9 +555,12 @@ public class MenuChecks {
                 Menu menu=new Menu(group);menu.setup(w,h);
                 List<AbstractWidget> buttons=group.createButtons(menu,w,h,1,1);
                 widgets(buttons,w,MenuLayout.CONTENT_TOP,layout.contentBottom());
-                if(group instanceof MainMenuElements||group instanceof SwitchWorldMenuElements){
-                    check(buttons.size()==10,"导航数量不匹配");
-                    if(group instanceof SwitchWorldMenuElements) for(var button:buttons)check(button.getWidth()==button.getHeight()*2,"世界按钮比例变形");
+                if(group instanceof MainMenuElements){
+                    check(buttons.size()==10,"主菜单导航数量不匹配");
+                }
+                if(group instanceof SwitchWorldMenuElements){
+                    check(buttons.size()==7,"切换世界应有七个维度池入口");
+                    for(var button:buttons)check(button.getWidth()==button.getHeight()*2,"世界按钮比例变形");
                 }
                 GuiGraphicsExtractor g=new GuiGraphicsExtractor();
                 group.renderCustomBackground(g,w,h,1,0);
@@ -707,13 +710,13 @@ public class MenuChecks {
         var page=new SwitchWorldMenuElements();var menu=new Menu(page);menu.setup(480,360);client.gui.setScreen(menu);
         var request=(top.csituka.youzaiworldcore.network.WorldPoolMenuRequestPayload)net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.last;
         check(request.poolId().isEmpty(),"打开世界页只能请求目录");
-        String[] pools={"survival_world_pool","main_city_pool","gameplay_pool","creation_pool","building_pool","tutorial_world_pool",null,null,"commands_pool",null};
+        String[] pools={"survival_world_pool","main_city_pool","gameplay_pool","creation_pool","building_pool","tutorial_world_pool","commands_pool"};
         var entries=new ArrayList<top.csituka.youzaiworldcore.network.WorldPoolMenuStatePayload.Entry>();
-        for(String pool:pools)if(pool!=null)entries.add(new top.csituka.youzaiworldcore.network.WorldPoolMenuStatePayload.Entry(pool,"Test world","survival",true));
+        for(String pool:pools)entries.add(new top.csituka.youzaiworldcore.network.WorldPoolMenuStatePayload.Entry(pool,"Test world","survival",true));
         page.applyState(new top.csituka.youzaiworldcore.network.WorldPoolMenuStatePayload(request.requestId(),"","",entries));
         var buttons=page.createButtons(menu,480,360,1,1);
         Field dialogField=MenuScreen.class.getDeclaredField("currentDialog");dialogField.setAccessible(true);
-        for(int i=0;i<pools.length;i++)if(pools[i]!=null){
+        for(int i=0;i<pools.length;i++){
             net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.last=null;
             page.updateButtons(buttons);
             var b=buttons.get(i);b.mouseClicked(new MouseButtonEvent(b.getX()+1,b.getY()+1,1),true);
@@ -932,11 +935,15 @@ public class MenuChecks {
 def check_navigation():
     import json
     names = []
-    for filename in ("MainMenuElements.java", "MoreMenuElements.java", "SwitchWorldMenuElements.java"):
+    for filename in ("MainMenuElements.java", "MoreMenuElements.java"):
         source = (CLIENT / "screen/element" / filename).read_text(encoding="utf-8")
         entries = re.search(r"String\[\] ENTRIES = \{(.*?)\};", source, re.S).group(1)
         names.extend(re.findall(r'"([^"]+)"', entries))
-    assert len(names) == len(set(names)) == 22, "导航入口数量不符"
+    world_menu = (CLIENT / "screen/element/SwitchWorldMenuElements.java").read_text(encoding="utf-8")
+    worlds = re.findall(r'new Destination\("([^"]+)"', world_menu)
+    assert len(worlds) == 7 and not {"overworld", "the_nether", "the_end"}.intersection(worlds), worlds
+    names.extend(worlds)
+    assert len(names) == len(set(names)) == 19, "导航入口数量不符"
     settings = (CLIENT / "screen/element/SettingsMenuElements.java").read_text(encoding="utf-8")
     labels = set(re.findall(r'(?:text|WAITING|UNAVAILABLE|TIMED_OUT)\("([a-z_]+)"\)', settings))
     assert len(labels) == 7, "未找到完整的个人设置语言键"
@@ -944,7 +951,7 @@ def check_navigation():
         language = json.loads(path.read_text(encoding="utf-8"))
         assert all("screen.youzaiworldcore.navigation." + name in language for name in names), path
         assert all(language.get("screen.youzaiworldcore.settings.player." + key) for key in labels), path
-    print("22 个导航入口及个人设置的十种语言检查通过。")
+    print("19 个导航入口及个人设置的十种语言检查通过。")
 
 
 def main():

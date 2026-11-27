@@ -60,7 +60,7 @@ The main menu uses rounded cards and animated transitions, grouped into common a
 | Menu ID        | Name         | Description                                                            |
 | -------------- | ------------ | ---------------------------------------------------------------------- |
 | `main`         | Main Menu    | Worlds, mail, map, player information, level, titles; settings and More in the footer |
-| `switch_world` | Switch World | 10 entries, including 7 dimension pools; server world information and confirmed results |
+| `switch_world` | Switch World | 7 dimension pool entries with server world information and confirmed results |
 | `settings`     | Settings     | Chat colors, item highlighting, double doors, and damage numbers; links to client settings and interface appearance |
 | `about_me`     | About Me     | 3D player model render, ID, join/playtime                              |
 
