@@ -9,7 +9,6 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import top.csituka.youzaiworldcore.client.config.ClientExternalSettings;
 import top.csituka.youzaiworldcore.client.animation.YzuiHover;
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
 import top.csituka.youzaiworldcore.client.screen.widget.YzuiStyleOverride;
@@ -18,14 +17,18 @@ import top.csituka.youzaiworldcore.client.screen.widget.PauseButtonStyle;
 /** 原版按钮共用 MD3 外观，保留原屏幕布局、输入处理和 YZUI 回退开关。 */
 @Mixin(AbstractButton.class)
 public class AbstractButtonMixin {
-    @Unique private GuiGraphicsExtractor yzwc$buttonGraphics;
-    @Unique private float youzaiworldcore$hoverProgress;
-    @Unique private final YzuiHover youzaiworldcore$hover = new YzuiHover();
+    @Unique
+    private GuiGraphicsExtractor yzwc$buttonGraphics;
+    @Unique
+    private float youzaiworldcore$hoverProgress;
+    @Unique
+    private final YzuiHover youzaiworldcore$hover = new YzuiHover();
 
     @Inject(method = "extractDefaultSprite", at = @At("HEAD"), cancellable = true)
     private void yzwc$drawButton(GuiGraphicsExtractor g, CallbackInfo ci) {
         yzwc$buttonGraphics = null;
-        if (!yzwc$applyTheme()) return;
+        if (!yzwc$applyTheme())
+            return;
         AbstractButton button = (AbstractButton) (Object) this;
         yzwc$buttonGraphics = g;
         youzaiworldcore$hoverProgress = youzaiworldcore$hover.sample(button.active && button.isHoveredOrFocused());
@@ -41,7 +44,8 @@ public class AbstractButtonMixin {
 
     @Inject(method = "extractDefaultLabel", at = @At("HEAD"), cancellable = true)
     private void yzwc$drawLabel(ActiveTextCollector collector, CallbackInfo ci) {
-        if (!yzwc$applyTheme() || yzwc$buttonGraphics == null) return;
+        if (!yzwc$applyTheme() || yzwc$buttonGraphics == null)
+            return;
         AbstractButton button = (AbstractButton) (Object) this;
         if (PauseButtonStyle.label(yzwc$buttonGraphics, button, youzaiworldcore$hoverProgress)) {
             ci.cancel();
@@ -53,14 +57,16 @@ public class AbstractButtonMixin {
                 button.getY() + (button.getHeight() - font.lineHeight) / 2,
                 button.getWidth() - padding * 2,
                 YzuiTheme.alpha(YzuiTheme.buttonText(YzuiTheme.ButtonStyle.TONAL, button.active),
-                        button.getAlpha() * (button.active ? 1f : 0.68f)), true);
+                        button.getAlpha() * (button.active ? 1f : 0.68f)),
+                true);
         ci.cancel();
     }
 
     @Unique
     private boolean yzwc$applyTheme() {
         int override = YzuiStyleOverride.get((AbstractButton) (Object) this);
-        if (override == YzuiStyleOverride.STYLE_VANILLA) return false;
+        if (override == YzuiStyleOverride.STYLE_VANILLA)
+            return false;
         // 原版风格下所有按钮交还原版纹理与标签，自有页面同样如此。
         return override == YzuiStyleOverride.STYLE_YZUI || YzuiTheme.enabled();
     }

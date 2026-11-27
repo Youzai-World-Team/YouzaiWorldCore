@@ -1,5 +1,6 @@
 package top.csituka.youzaiworldcore.client.screen.widget;
 
+import com.mojang.blaze3d.Blaze3D;
 import com.mojang.blaze3d.platform.InputConstants;
 import java.util.function.Supplier;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -16,12 +17,18 @@ import net.minecraft.world.entity.player.PlayerSkin;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
-/** 可拖动、可用方向键旋转的独立玩家模型，始终显示皮肤外层与可选披风。 */
+/** 原地行走并缓慢旋转的独立玩家模型，支持拖动和方向键查看装扮。 */
 @SuppressWarnings("null")
 public final class CosmeticPreviewWidget extends AbstractWidget {
+    private static final double AUTO_ROTATION_SPEED = 30.0;
+    private static final double MANUAL_VIEW_SECONDS = 4.0;
+    private static final double WALK_CYCLE = 2.0 * Math.PI;
     private final Supplier<PlayerSkin> skin;
     private float yaw = 180f;
     private float pitch;
+    private double lastFrameAt = Blaze3D.getTime();
+    private double autoRotateAfter;
+    private double walkPhase;
 
     public CosmeticPreviewWidget(int x, int y, int width, int height, Supplier<PlayerSkin> skin) {
         super(x, y, width, height, Component.translatable("screen.youzaiworldcore.cosmetic_preview.rotate"));
@@ -31,6 +38,7 @@ public final class CosmeticPreviewWidget extends AbstractWidget {
     public void face(boolean back) {
         yaw = back ? 0f : 180f;
         pitch = 0f;
+        holdView();
     }
 
     @Override
@@ -42,6 +50,7 @@ public final class CosmeticPreviewWidget extends AbstractWidget {
         state.boundingBoxWidth = 0.6f;
         state.boundingBoxHeight = 1.8f;
         state.eyeHeight = 1.62f;
+        updateMotion(state);
         state.bodyRot = yaw;
         float scale = Math.max(1f, Math.min((getHeight() - 8f) / 1.875f, (getWidth() - 8f) / 1.4f));
         Quaternionf tilt = new Quaternionf().rotateX((float) Math.toRadians(pitch));
@@ -55,10 +64,30 @@ public final class CosmeticPreviewWidget extends AbstractWidget {
         }
     }
 
+    private void updateMotion(AvatarRenderState state) {
+        double now = Blaze3D.getTime();
+        // 从长时间未绘制的页面返回时，限制首帧的步长以避免模型突然转向。
+        double elapsed = Math.clamp(now - lastFrameAt, 0.0, 0.1);
+        lastFrameAt = now;
+        double rotationTime = Math.min(elapsed, Math.max(0.0, now - autoRotateAfter));
+        yaw = (yaw + (float) (rotationTime * AUTO_ROTATION_SPEED)) % 360f;
+        walkPhase = (walkPhase + elapsed * WALK_CYCLE) % WALK_CYCLE;
+        // 原版玩家骨骼用 walkAnimationPos * 0.6662 作为摆臂和迈步的相位。
+        state.walkAnimationPos = (float) (walkPhase / 0.6662);
+        state.walkAnimationSpeed = 0.55f;
+        state.capeLean = 18f;
+        state.capeFlap = (float) (3.0 + 2.0 * Math.sin(walkPhase * 2.0));
+    }
+
+    private void holdView() {
+        autoRotateAfter = Blaze3D.getTime() + MANUAL_VIEW_SECONDS;
+    }
+
     @Override
     protected void onDrag(MouseButtonEvent event, double dx, double dy) {
         yaw = (yaw + (float) dx * 2.5f) % 360f;
         pitch = Math.clamp(pitch - (float) dy * 2.5f, -30f, 30f);
+        holdView();
     }
 
     @Override
@@ -70,6 +99,7 @@ public final class CosmeticPreviewWidget extends AbstractWidget {
             case InputConstants.KEY_DOWN -> pitch = Math.min(30f, pitch + 5f);
             default -> { return super.keyPressed(event); }
         }
+        holdView();
         return true;
     }
 

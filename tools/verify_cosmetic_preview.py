@@ -57,6 +57,10 @@ def check_resources_and_api():
         assert avatar.methods.get(("<init>", "()V"), 0) & 1
         assert ("skin", "Lnet/minecraft/world/entity/player/PlayerSkin;") in avatar.fields
         assert ("showCape", "Z") in avatar.fields
+        assert blaze.methods.get(("getTime", "()D"), 0) & 9 == 9, "GUI 动画计时接口失配"
+        living = load("net/minecraft/client/renderer/entity/state/LivingEntityRenderState")
+        assert all((key, "F") in living.fields for key in ("walkAnimationPos", "walkAnimationSpeed"))
+        assert all((key, "F") in avatar.fields for key in ("capeLean", "capeFlap"))
         entity_types = load("net/minecraft/world/entity/EntityTypes")
         player_type = ("PLAYER", "Lnet/minecraft/world/entity/EntityType;")
         assert entity_types.fields.get(player_type, 0) & 9 == 9, "玩家类型常量必须来自 EntityTypes"
@@ -130,6 +134,7 @@ public class AvatarRenderState extends EntityRenderState {
     public net.minecraft.world.entity.EntityType entityType;
     public net.minecraft.world.entity.player.PlayerSkin skin;
     public float boundingBoxWidth,boundingBoxHeight,eyeHeight,bodyRot;
+    public float walkAnimationPos,walkAnimationSpeed,capeLean,capeFlap;
     public boolean showHat=true,showJacket=true,showCape=true;
 }
 """)
@@ -242,6 +247,7 @@ public class Screen {
     public final Connection connection""")
     theme = C.replace(".", "/") + "/render/YzuiTheme.java"
     STUBS[theme] = STUBS[theme].replace("public static void card(GuiGraphicsExtractor g,int x,int y,int w,int h,float a)", """
+    public static boolean vanilla(){return false;}
     public static int surfaceLow(){return 0xFF808080;}
     public static int surface(){return -1;}
     public static void card(GuiGraphicsExtractor g,int x,int y,int w,int h){card(g,x,y,w,h,1f);}
@@ -261,7 +267,12 @@ public class ModPaths {
 }
 """)
     stub("com.mojang.blaze3d.Blaze3D", """
-public class Blaze3D {public static java.nio.file.Path opened;public static void openPath(java.nio.file.Path path){opened=path;}}
+public class Blaze3D {
+    public static java.nio.file.Path opened;
+    public static double time;
+    public static double getTime(){return time;}
+    public static void openPath(java.nio.file.Path path){opened=path;}
+}
 """)
     adapt_cosmetic_network_stubs()
     stub("net.minecraft.client.renderer.texture.DynamicTexture", """
@@ -395,6 +406,7 @@ import java.nio.file.*;
 import java.util.*;
 import java.awt.image.BufferedImage;
 import javax.imageio.ImageIO;
+import com.mojang.blaze3d.Blaze3D;
 import com.mojang.blaze3d.platform.NativeImage;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
@@ -406,6 +418,7 @@ import net.minecraft.client.input.*;
 import net.minecraft.client.resources.DefaultPlayerSkin;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.PlayerModelType;
+import top.csituka.youzaiworldcore.client.animation.GuiAnimationController;
 import top.csituka.youzaiworldcore.client.cosmetic.*;
 import top.csituka.youzaiworldcore.client.config.ClientExternalSettings;
 import top.csituka.youzaiworldcore.cosmetic.CosmeticSnapshotHasher;
@@ -494,6 +507,11 @@ public class CosmeticPreviewChecks {
         check(state.skin.model()==PlayerModelType.SLIM&&state.skin.cape()!=null,"无世界和无连接仍可预览");
         check(state.entityType==net.minecraft.world.entity.EntityTypes.PLAYER,"预览使用 26.3 的真实玩家类型常量位置");
         check(state.bodyRot==180&&state.showHat&&state.showJacket&&state.showCape,"完整正面模型与外层");
+        Blaze3D.time+=0.08;
+        var moving=render(page).entities.getFirst().state();
+        check(moving.bodyRot>state.bodyRot&&moving.walkAnimationPos>state.walkAnimationPos
+                &&moving.walkAnimationSpeed>0,"模型自动转向并使用原地行走姿势");
+        check(moving.capeLean>0&&moving.capeFlap!=state.capeFlap,"披风跟随步幅摆动");
         click(page,button(page,"back"));check(render(page).entities.getFirst().state().bodyRot==0,"背面入口");
         click(page,button(page,"front"));check(render(page).entities.getFirst().state().bodyRot==180,"正面入口");
         click(page,button(page,"hide_cloak"));check(render(page).entities.getFirst().state().skin.cape()==null,"临时隐藏披风");
@@ -503,6 +521,10 @@ public class CosmeticPreviewChecks {
         model.mouseDragged(new MouseButtonEvent(model.getX()+1,model.getY()+1,1),8,50);
         check(render(page).entities.getFirst().state().bodyRot==200,"拖动旋转");
         model.keyPressed(new KeyEvent(80,false));check(render(page).entities.getFirst().state().bodyRot==185,"方向键旋转");
+        double manualAt=Blaze3D.time;
+        Blaze3D.time=manualAt+2;
+        var holding=render(page).entities.getFirst().state();
+        check(holding.bodyRot==185&&holding.walkAnimationPos!=moving.walkAnimationPos,"手动转向暂缓自动旋转并继续行走");
         int registered=client.textures.registers;
         for(int[] size:new int[][]{{320,240},{480,270},{640,360},{854,480},{1920,1080}}) {
             page.init(size[0],size[1]);var g=render(page);
@@ -512,6 +534,15 @@ public class CosmeticPreviewChecks {
                     &&widget.getBottom()<=size[1]&&widget.getWidth()>0&&widget.getHeight()>0,"控件应位于窗口内");
             check(g.entities.getFirst().scale()>0,"模型缩放为正");
         }
+        Blaze3D.time=manualAt+4.05;
+        var resumed=render(page).entities.getFirst().state();
+        check(resumed.bodyRot>185&&resumed.bodyRot<188,"自动旋转从手动选择的角度继续");
+        GuiAnimationController.enabled=false;
+        Blaze3D.time+=0.08;
+        var independent=render(page).entities.getFirst().state();
+        check(independent.bodyRot>resumed.bodyRot&&independent.walkAnimationPos>resumed.walkAnimationPos
+                &&independent.walkAnimationSpeed>0&&independent.capeFlap!=resumed.capeFlap,"关闭界面动效时模型继续走路和旋转");
+        GuiAnimationController.enabled=true;
         var failing=new GuiGraphicsExtractor();failing.failEntity=true;
         try {model.extractRenderState(failing,0,0,0);throw new AssertionError("未触发绘制异常");}
         catch(IllegalStateException expected){check(failing.scissors==0,"绘制失败仍恢复裁剪栈");}
@@ -555,6 +586,9 @@ public class CosmeticPreviewChecks {
         client.gui.setScreen(page);
         var current=render(page);
         check(current.entities.getFirst().state().skin.model()==PlayerModelType.WIDE,"初始模型来自服务器");
+        Blaze3D.time+=0.05;
+        var walking=render(page).entities.getFirst().state();
+        check(walking.bodyRot>180&&walking.walkAnimationSpeed>0,"装扮设置复用原地行走和自动旋转");
         check(current.blits.stream().filter(b->b.tw()==64&&b.th()==32).count()==2,"原始旧皮肤和披风展开图保留尺寸");
         check(ClientPlayNetworking.sends==0,"打开装扮页无上传");
         click(page,setting(page,"change"));

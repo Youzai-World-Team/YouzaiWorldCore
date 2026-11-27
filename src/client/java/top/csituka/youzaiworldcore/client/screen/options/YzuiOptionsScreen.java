@@ -41,7 +41,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
 import net.minecraft.sounds.Music;
 import net.minecraft.util.FormattedCharSequence;
-import top.csituka.youzaiworldcore.client.config.ClientExternalSettings;
 import top.csituka.youzaiworldcore.client.render.YzuiTheme;
 import top.csituka.youzaiworldcore.client.screen.CoreSettingsSection;
 import top.csituka.youzaiworldcore.client.screen.YouzaiWorldCoreSettingsScreen;

@@ -35,7 +35,6 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import top.csituka.youzaiworldcore.client.config.ClientExternalSettings;
 import top.csituka.youzaiworldcore.client.screen.YzuAnvilScreen;
 import top.csituka.youzaiworldcore.client.screen.YzuBeaconScreen;
 import top.csituka.youzaiworldcore.client.screen.YzuBrewingStandScreen;
@@ -62,32 +61,81 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
  * {@link ContainerScreen}（原 ChestScreen 重命名）承载；潜影盒（含 16 种染色
  * 变体）使用独立的 {@link ShulkerBoxScreen}；铁砧/锻造台继承
  * {@code ItemCombinerScreen}；工作台为配方书屏；酿造台为普通容器屏；
- * 熔炉、高炉、烟熏炉统一继承 {@code AbstractFurnaceScreen}（{@code extends AbstractRecipeBookScreen}），
+ * 熔炉、高炉、烟熏炉统一继承
+ * {@code AbstractFurnaceScreen}（{@code extends AbstractRecipeBookScreen}），
  * 三者共用 {@code FurnaceRecipeBookComponent}。各分支：
  * <ul>
  * <li>{@code yzuiEnabled == false} → 直接返回，原版屏幕原样通过（回退原版）；</li>
  * <li>{@code yzuiEnabled == true} → 按下表替换，原版屏幕的菜单与标题分别经
- *     {@link net.minecraft.client.gui.screens.inventory.MenuAccess#getMenu()} 与
- *     {@link Screen#getTitle()} 取出：</li>
+ * {@link net.minecraft.client.gui.screens.inventory.MenuAccess#getMenu()} 与
+ * {@link Screen#getTitle()} 取出：</li>
  * </ul>
  * <table>
- *   <tr><th>原版屏幕</th><th>YZUI 替换</th></tr>
- *   <tr><td>{@link ContainerScreen}</td><td>{@link YzuContainerScreen}</td></tr>
- *   <tr><td>{@link ShulkerBoxScreen}</td><td>{@link YzuShulkerBoxScreen}</td></tr>
- *   <tr><td>{@link HopperScreen} / {@link DispenserScreen}（含投掷器）</td><td>{@link YzuStorageScreen}</td></tr>
- *   <tr><td>{@link CrafterScreen}</td><td>{@link YzuCrafterScreen}</td></tr>
- *   <tr><td>{@link AnvilScreen}</td><td>{@link YzuAnvilScreen}</td></tr>
- *   <tr><td>{@link SmithingScreen}</td><td>{@link YzuSmithingScreen}</td></tr>
- *   <tr><td>{@link CraftingScreen}</td><td>{@link YzuCraftingScreen}</td></tr>
- *   <tr><td>{@link BrewingStandScreen}</td><td>{@link YzuBrewingStandScreen}</td></tr>
- *   <tr><td>{@link FurnaceScreen} / {@link BlastFurnaceScreen} / {@link SmokerScreen}</td>
- *       <td>{@link YzuFurnaceScreen}（单一屏幕类，按 {@code menu.getType()} 自动识别）</td></tr>
- *   <tr><td>{@link EnchantmentScreen}</td><td>{@link YzuEnchantmentScreen}</td></tr>
- *   <tr><td>{@link LoomScreen}</td><td>{@link YzuLoomScreen}</td></tr>
- *   <tr><td>{@link CartographyTableScreen}</td><td>{@link YzuCartographyTableScreen}</td></tr>
- *   <tr><td>{@link StonecutterScreen}</td><td>{@link YzuStonecutterScreen}</td></tr>
- *   <tr><td>{@link GrindstoneScreen}</td><td>{@link YzuGrindstoneScreen}</td></tr>
- *   <tr><td>{@link BeaconScreen}</td><td>{@link YzuBeaconScreen}</td></tr>
+ * <tr>
+ * <th>原版屏幕</th>
+ * <th>YZUI 替换</th>
+ * </tr>
+ * <tr>
+ * <td>{@link ContainerScreen}</td>
+ * <td>{@link YzuContainerScreen}</td>
+ * </tr>
+ * <tr>
+ * <td>{@link ShulkerBoxScreen}</td>
+ * <td>{@link YzuShulkerBoxScreen}</td>
+ * </tr>
+ * <tr>
+ * <td>{@link HopperScreen} / {@link DispenserScreen}（含投掷器）</td>
+ * <td>{@link YzuStorageScreen}</td>
+ * </tr>
+ * <tr>
+ * <td>{@link CrafterScreen}</td>
+ * <td>{@link YzuCrafterScreen}</td>
+ * </tr>
+ * <tr>
+ * <td>{@link AnvilScreen}</td>
+ * <td>{@link YzuAnvilScreen}</td>
+ * </tr>
+ * <tr>
+ * <td>{@link SmithingScreen}</td>
+ * <td>{@link YzuSmithingScreen}</td>
+ * </tr>
+ * <tr>
+ * <td>{@link CraftingScreen}</td>
+ * <td>{@link YzuCraftingScreen}</td>
+ * </tr>
+ * <tr>
+ * <td>{@link BrewingStandScreen}</td>
+ * <td>{@link YzuBrewingStandScreen}</td>
+ * </tr>
+ * <tr>
+ * <td>{@link FurnaceScreen} / {@link BlastFurnaceScreen} /
+ * {@link SmokerScreen}</td>
+ * <td>{@link YzuFurnaceScreen}（单一屏幕类，按 {@code menu.getType()} 自动识别）</td>
+ * </tr>
+ * <tr>
+ * <td>{@link EnchantmentScreen}</td>
+ * <td>{@link YzuEnchantmentScreen}</td>
+ * </tr>
+ * <tr>
+ * <td>{@link LoomScreen}</td>
+ * <td>{@link YzuLoomScreen}</td>
+ * </tr>
+ * <tr>
+ * <td>{@link CartographyTableScreen}</td>
+ * <td>{@link YzuCartographyTableScreen}</td>
+ * </tr>
+ * <tr>
+ * <td>{@link StonecutterScreen}</td>
+ * <td>{@link YzuStonecutterScreen}</td>
+ * </tr>
+ * <tr>
+ * <td>{@link GrindstoneScreen}</td>
+ * <td>{@link YzuGrindstoneScreen}</td>
+ * </tr>
+ * <tr>
+ * <td>{@link BeaconScreen}</td>
+ * <td>{@link YzuBeaconScreen}</td>
+ * </tr>
  * </table>
  * 替换过程通过静态标志 {@code yzwc$containerSwitchingScreen} 防止递归（嵌套 setScreen 调用
  * 仍会触发本方法与 InventoryScreenSwitchMixin；继承原版的新增屏幕通过 YzuiWorkstationScreen 标记排除）。
@@ -96,7 +144,8 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
 public abstract class YzuContainerScreenSwitchMixin {
 
     @Unique
-    private static final DebugLogger.ModuleLogger youzaiworldcore$YZWC_CONTAINER_SWITCH_LOGGER = DebugLogger.CLIENT.module("YzuContainerScreenSwitch");
+    private static final DebugLogger.ModuleLogger youzaiworldcore$YZWC_CONTAINER_SWITCH_LOGGER = DebugLogger.CLIENT
+            .module("YzuContainerScreenSwitch");
 
     @Unique
     private static boolean yzwc$containerSwitchingScreen = false;
@@ -132,7 +181,8 @@ public abstract class YzuContainerScreenSwitchMixin {
             if (newScreen instanceof ContainerScreen vanilla) {
                 ChestMenu menu = vanilla.getMenu();
                 Component title = vanilla.getTitle();
-                youzaiworldcore$YZWC_CONTAINER_SWITCH_LOGGER.debug("→ YzuContainerScreen (rows={}, menuType={}, title={})",
+                youzaiworldcore$YZWC_CONTAINER_SWITCH_LOGGER.debug(
+                        "→ YzuContainerScreen (rows={}, menuType={}, title={})",
                         menu.getRowCount(), menu.getType(), title.getString());
                 Minecraft.getInstance().gui.setScreen(
                         new YzuContainerScreen(menu, player.getInventory(), title));
@@ -140,7 +190,8 @@ public abstract class YzuContainerScreenSwitchMixin {
             } else if (newScreen instanceof ShulkerBoxScreen shulker) {
                 ShulkerBoxMenu menu = shulker.getMenu();
                 Component title = shulker.getTitle();
-                youzaiworldcore$YZWC_CONTAINER_SWITCH_LOGGER.debug("→ YzuShulkerBoxScreen (title={})", title.getString());
+                youzaiworldcore$YZWC_CONTAINER_SWITCH_LOGGER.debug("→ YzuShulkerBoxScreen (title={})",
+                        title.getString());
                 Minecraft.getInstance().gui.setScreen(
                         new YzuShulkerBoxScreen(menu, player.getInventory(), title));
                 ci.cancel();
@@ -189,32 +240,39 @@ public abstract class YzuContainerScreenSwitchMixin {
                         new YzuBrewingStandScreen(menu, player.getInventory(), title));
                 ci.cancel();
             } else if (newScreen instanceof EnchantmentScreen workstation) {
-                DebugLogger.CLIENT.debug("YzuContainerScreen", "替换为 YzuEnchantmentScreen：{}", workstation.getTitle().getString());
+                DebugLogger.CLIENT.debug("YzuContainerScreen", "替换为 YzuEnchantmentScreen：{}",
+                        workstation.getTitle().getString());
                 Minecraft.getInstance().gui.setScreen(
                         new YzuEnchantmentScreen(workstation.getMenu(), player.getInventory(), workstation.getTitle()));
                 ci.cancel();
             } else if (newScreen instanceof LoomScreen workstation) {
-                DebugLogger.CLIENT.debug("YzuContainerScreen", "替换为 YzuLoomScreen：{}", workstation.getTitle().getString());
+                DebugLogger.CLIENT.debug("YzuContainerScreen", "替换为 YzuLoomScreen：{}",
+                        workstation.getTitle().getString());
                 Minecraft.getInstance().gui.setScreen(
                         new YzuLoomScreen(workstation.getMenu(), player.getInventory(), workstation.getTitle()));
                 ci.cancel();
             } else if (newScreen instanceof CartographyTableScreen workstation) {
-                DebugLogger.CLIENT.debug("YzuContainerScreen", "替换为 YzuCartographyTableScreen：{}", workstation.getTitle().getString());
+                DebugLogger.CLIENT.debug("YzuContainerScreen", "替换为 YzuCartographyTableScreen：{}",
+                        workstation.getTitle().getString());
                 Minecraft.getInstance().gui.setScreen(
-                        new YzuCartographyTableScreen(workstation.getMenu(), player.getInventory(), workstation.getTitle()));
+                        new YzuCartographyTableScreen(workstation.getMenu(), player.getInventory(),
+                                workstation.getTitle()));
                 ci.cancel();
             } else if (newScreen instanceof StonecutterScreen workstation) {
-                DebugLogger.CLIENT.debug("YzuContainerScreen", "替换为 YzuStonecutterScreen：{}", workstation.getTitle().getString());
+                DebugLogger.CLIENT.debug("YzuContainerScreen", "替换为 YzuStonecutterScreen：{}",
+                        workstation.getTitle().getString());
                 Minecraft.getInstance().gui.setScreen(
                         new YzuStonecutterScreen(workstation.getMenu(), player.getInventory(), workstation.getTitle()));
                 ci.cancel();
             } else if (newScreen instanceof GrindstoneScreen workstation) {
-                DebugLogger.CLIENT.debug("YzuContainerScreen", "替换为 YzuGrindstoneScreen：{}", workstation.getTitle().getString());
+                DebugLogger.CLIENT.debug("YzuContainerScreen", "替换为 YzuGrindstoneScreen：{}",
+                        workstation.getTitle().getString());
                 Minecraft.getInstance().gui.setScreen(
                         new YzuGrindstoneScreen(workstation.getMenu(), player.getInventory(), workstation.getTitle()));
                 ci.cancel();
             } else if (newScreen instanceof BeaconScreen workstation) {
-                DebugLogger.CLIENT.debug("YzuContainerScreen", "替换为 YzuBeaconScreen：{}", workstation.getTitle().getString());
+                DebugLogger.CLIENT.debug("YzuContainerScreen", "替换为 YzuBeaconScreen：{}",
+                        workstation.getTitle().getString());
                 Minecraft.getInstance().gui.setScreen(
                         new YzuBeaconScreen(workstation.getMenu(), player.getInventory(), workstation.getTitle()));
                 ci.cancel();
@@ -238,7 +296,8 @@ public abstract class YzuContainerScreenSwitchMixin {
                     title = smoker.getTitle();
                     sourceKind = "SmokerScreen";
                 }
-                youzaiworldcore$YZWC_CONTAINER_SWITCH_LOGGER.debug("→ YzuFurnaceScreen (source={}, menuType={}, title={})",
+                youzaiworldcore$YZWC_CONTAINER_SWITCH_LOGGER.debug(
+                        "→ YzuFurnaceScreen (source={}, menuType={}, title={})",
                         sourceKind, menu.getType(), title.getString());
                 Minecraft.getInstance().gui.setScreen(
                         new YzuFurnaceScreen(menu, player.getInventory(), title));

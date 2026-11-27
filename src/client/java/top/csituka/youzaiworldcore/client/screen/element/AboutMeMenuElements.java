@@ -67,6 +67,7 @@ public class AboutMeMenuElements implements MenuElementGroup {
         return List.of(account, cosmetics);
     }
 
+    @SuppressWarnings("null")
     private static void openCosmeticSettings(MenuScreen screen) {
         if (CosmeticClientManager.usesOfficialAppearance()) {
             Blaze3D.openUri(OFFICIAL_APPEARANCE);

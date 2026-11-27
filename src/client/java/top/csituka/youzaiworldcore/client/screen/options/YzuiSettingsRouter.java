@@ -20,7 +20,6 @@ import net.minecraft.client.gui.screens.WorldOptionsScreen;
 import net.minecraft.client.gui.screens.options.UnsupportedGraphicsWarningScreen;
 import net.minecraft.client.gui.screens.packs.PackSelectionScreen;
 import net.minecraft.client.gui.screens.telemetry.TelemetryInfoScreen;
-import top.csituka.youzaiworldcore.client.config.ClientExternalSettings;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
 /** 在 Gui 屏幕切换入口选择独立的设置界面；不向原版设置屏幕注入新布局。 */
