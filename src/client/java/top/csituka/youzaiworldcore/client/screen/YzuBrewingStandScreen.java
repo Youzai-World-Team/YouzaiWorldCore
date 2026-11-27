@@ -62,12 +62,7 @@ public class YzuBrewingStandScreen extends AbstractContainerScreen<BrewingStandM
     // ===== 槽位布局 =====
 
     private static final int SLOT_SIZE = 16;
-    private static final int SLOT_RADIUS = 3;
     private static int potionSlotColor() { return YzuiTheme.slot(); }
-    private static int ingredientSlotColor() { return YzuiTheme.primaryContainer(); }
-    private static int fuelSlotColor() { return YzuiTheme.slot(); }
-    private static int inventorySlotColor() { return YzuiTheme.slot(); }
-    private static int slotHoverColor() { return YzuiTheme.slotHover(); }
 
     private static final int[] BOTTLE_X = { 49, 80, 111 };
     private static final int[] BOTTLE_Y = { 71, 75, 71 };
@@ -286,8 +281,13 @@ public class YzuBrewingStandScreen extends AbstractContainerScreen<BrewingStandM
         int guideX = this.leftPos + GUIDE_TOGGLE_X;
         int buttonY = this.topPos + BUTTON_TOP;
         boolean guideHovered = isInside(mouseX, mouseY, guideX, buttonY, BUTTON_SIZE, BUTTON_SIZE);
-        fillRounded(graphics, guideX, buttonY, BUTTON_SIZE, BUTTON_SIZE, BUTTON_RADIUS,
-                guideHovered ? buttonBgHover() : buttonBg());
+        if (YzuiTheme.light()) {
+            YzuiTheme.button(graphics, guideX, buttonY, BUTTON_SIZE, BUTTON_SIZE, guideHovered ? 1f : 0f,
+                    false, true, 1f, YzuiTheme.ButtonStyle.TONAL);
+        } else {
+            fillRounded(graphics, guideX, buttonY, BUTTON_SIZE, BUTTON_SIZE, BUTTON_RADIUS,
+                    guideHovered ? buttonBgHover() : buttonBg());
+        }
         graphics.pose().pushMatrix();
         graphics.pose().translate(guideX + 1, buttonY + 1);
         graphics.pose().scale(0.75F, 0.75F);
@@ -365,19 +365,8 @@ public class YzuBrewingStandScreen extends AbstractContainerScreen<BrewingStandM
 
             boolean hovered = isInside(mouseX, mouseY,
                     this.leftPos + slot.x, this.topPos + slot.y, SLOT_SIZE, SLOT_SIZE);
-            int color;
-            if (hovered) {
-                color = slotHoverColor();
-            } else if (index <= 2) {
-                color = potionSlotColor();
-            } else if (index == 3) {
-                color = ingredientSlotColor();
-            } else if (index == 4) {
-                color = fuelSlotColor();
-            } else {
-                color = inventorySlotColor();
-            }
-            fillRounded(graphics, slot.x, slot.y, SLOT_SIZE, SLOT_SIZE, SLOT_RADIUS, color);
+            YzuiTheme.drawSlot(graphics, slot.x, slot.y, SLOT_SIZE, SLOT_SIZE, 0, hovered,
+                    index == 3 ? YzuiTheme.SlotStyle.ACCENT : YzuiTheme.SlotStyle.NORMAL);
         }
     }
 
@@ -450,13 +439,20 @@ public class YzuBrewingStandScreen extends AbstractContainerScreen<BrewingStandM
                 && isInside(mouseX, mouseY, x + 5, y, PAGE_BUTTON_W, PAGE_BUTTON_H);
         boolean nextHovered = canGoNext && isInside(mouseX, mouseY,
                 x + GUIDE_WIDTH - 5 - PAGE_BUTTON_W, y, PAGE_BUTTON_W, PAGE_BUTTON_H);
-        fillRounded(graphics, x + 5, y, PAGE_BUTTON_W, PAGE_BUTTON_H, 4,
-                previousHovered ? rowHoverBg() : rowBg());
-        fillRounded(graphics, x + GUIDE_WIDTH - 5 - PAGE_BUTTON_W, y,
-                PAGE_BUTTON_W, PAGE_BUTTON_H, 4, nextHovered ? rowHoverBg() : rowBg());
+        int nextX = x + GUIDE_WIDTH - 5 - PAGE_BUTTON_W;
+        if (YzuiTheme.light()) {
+            YzuiTheme.button(graphics, x + 5, y, PAGE_BUTTON_W, PAGE_BUTTON_H, previousHovered ? 1f : 0f,
+                    false, canGoPrevious, 1f, YzuiTheme.ButtonStyle.TONAL);
+            YzuiTheme.button(graphics, nextX, y, PAGE_BUTTON_W, PAGE_BUTTON_H, nextHovered ? 1f : 0f,
+                    false, canGoNext, 1f, YzuiTheme.ButtonStyle.TONAL);
+        } else {
+            fillRounded(graphics, x + 5, y, PAGE_BUTTON_W, PAGE_BUTTON_H, 4,
+                    previousHovered ? rowHoverBg() : rowBg());
+            fillRounded(graphics, nextX, y, PAGE_BUTTON_W, PAGE_BUTTON_H, 4, nextHovered ? rowHoverBg() : rowBg());
+        }
         MenuIcon.CHEVRON_LEFT.renderCentered(graphics, x + 5, y, PAGE_BUTTON_W, PAGE_BUTTON_H,
                 canGoPrevious ? titleColor() : mutedColor());
-        MenuIcon.CHEVRON_RIGHT.renderCentered(graphics, x + GUIDE_WIDTH - 5 - PAGE_BUTTON_W, y,
+        MenuIcon.CHEVRON_RIGHT.renderCentered(graphics, nextX, y,
                 PAGE_BUTTON_W, PAGE_BUTTON_H, canGoNext ? titleColor() : mutedColor());
         graphics.centeredText(this.font,
                 Component.translatable("screen.youzaiworldcore.brewing.page", currentPage, totalPages),

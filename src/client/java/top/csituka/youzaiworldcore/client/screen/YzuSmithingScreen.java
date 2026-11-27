@@ -77,7 +77,6 @@ public class YzuSmithingScreen extends ItemCombinerScreen<SmithingMenu> {
     private static final int PANEL_RADIUS = 6;
 
     private static final int SLOT_SIZE = 16;
-    private static final int SLOT_RADIUS = 3;
 
     private static int labelColor() { return YzuiTheme.text(); }
 
@@ -98,7 +97,6 @@ public class YzuSmithingScreen extends ItemCombinerScreen<SmithingMenu> {
 
     private static int titleColor() { return YzuiTheme.primary(); }
     private static int slotColor() { return YzuiTheme.slot(); }
-    private static int slotHoverColor() { return YzuiTheme.slotHover(); }
     private static int accentBarColor() { return YzuiTheme.primary(); }
     private static final ItemStack ICON = new ItemStack(Items.SMITHING_TABLE);
 
@@ -355,8 +353,7 @@ public class YzuSmithingScreen extends ItemCombinerScreen<SmithingMenu> {
             }
             boolean hovered = mouseX >= this.leftPos + slot.x && mouseX < this.leftPos + slot.x + SLOT_SIZE
                     && mouseY >= this.topPos + slot.y && mouseY < this.topPos + slot.y + SLOT_SIZE;
-            fillR(g, slot.x, slot.y, SLOT_SIZE, SLOT_SIZE, SLOT_RADIUS,
-                    hovered ? slotHoverColor() : slotColor());
+            YzuiTheme.drawSlot(g, slot.x, slot.y, SLOT_SIZE, SLOT_SIZE, 0, hovered);
         }
     }
 

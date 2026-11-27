@@ -81,7 +81,6 @@ public class YzuFurnaceScreen extends AbstractRecipeBookScreen<AbstractFurnaceMe
     private static final int PANEL_RADIUS = 6;
 
     private static final int SLOT_SIZE = 16;
-    private static final int SLOT_RADIUS = 3;
 
     private static int labelColor() { return YzuiTheme.text(); }
 
@@ -264,8 +263,7 @@ public class YzuFurnaceScreen extends AbstractRecipeBookScreen<AbstractFurnaceMe
                 continue;
             boolean hovered = mouseX >= this.leftPos + slot.x && mouseX < this.leftPos + slot.x + SLOT_SIZE
                     && mouseY >= this.topPos + slot.y && mouseY < this.topPos + slot.y + SLOT_SIZE;
-            fillR(g, slot.x, slot.y, SLOT_SIZE, SLOT_SIZE, SLOT_RADIUS,
-                    hovered ? YzuiTheme.slotHover() : YzuiTheme.slot());
+            YzuiTheme.drawSlot(g, slot.x, slot.y, SLOT_SIZE, SLOT_SIZE, 0, hovered);
         }
     }
 

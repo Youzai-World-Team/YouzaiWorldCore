@@ -65,10 +65,16 @@ final class MailUi {
         int foreground = enabled ? textColor : textMuted();
         if (hovered && enabled) color = YzuiTheme.mix(color, foreground, 0.08f);
         boolean filled = enabled && (background & 0xFFFFFF) == (YzuiTheme.primary() & 0xFFFFFF);
-        RoundedRect.fill(graphics, rect.x(), rect.y(), rect.width(), rect.height(),
-                Math.min(10, rect.height() / 2), YzuiTheme.multiplyAlpha(color, filled ? 1f : YzuiTheme.visualStyle().controlOpacity()));
-        if (hovered && enabled) YzuiTheme.border(graphics, rect.x(), rect.y(), rect.width(), rect.height(),
-                Math.min(10, rect.height() / 2), YzuiTheme.alpha(filled ? YzuiTheme.onPrimary() : YzuiTheme.primary(), 0.32f));
+        int radius = Math.min(10, rect.height() / 2);
+        RoundedRect.fill(graphics, rect.x(), rect.y(), rect.width(), rect.height(), radius,
+                YzuiTheme.multiplyAlpha(color, filled ? 1f : YzuiTheme.visualStyle().controlOpacity()));
+        if (YzuiTheme.light() && enabled && !filled) {
+            YzuiTheme.border(graphics, rect.x(), rect.y(), rect.width(), rect.height(), radius,
+                    hovered ? YzuiTheme.primary() : YzuiTheme.controlOutline());
+        } else if (hovered && enabled) {
+            YzuiTheme.border(graphics, rect.x(), rect.y(), rect.width(), rect.height(), radius,
+                    YzuiTheme.alpha(filled ? YzuiTheme.onPrimary() : YzuiTheme.primary(), 0.32f));
+        }
         YzuiTheme.label(graphics, font, Component.literal(label), rect.x() + 8,
                 rect.y() + (rect.height() - font.lineHeight) / 2, rect.width() - 16, foreground, true);
     }

@@ -17,8 +17,18 @@ import top.csituka.youzaiworldcore.client.config.YzuiVisualStyle;
  * 仅提供客户端视觉，不参与网络、权限和物品操作。
  */
 public final class YzuiTheme {
+    private static final int LIGHT_SLOT_FILL = 0xFFCDDCD4;
+    private static final int LIGHT_SLOT_OUTLINE = 0xFF587166;
+    private static final int LIGHT_CONTROL_OUTLINE = 0xFF496258;
+    private static final int LIGHT_DANGER_TEXT = 0xFF8D211B;
+
     public enum ButtonStyle {
         TONAL, FILLED, TEXT, DANGER
+    }
+
+    /** 物品格的视觉用途。 */
+    public enum SlotStyle {
+        NORMAL, ACCENT, RESULT
     }
 
     private YzuiTheme() {
@@ -67,6 +77,11 @@ public final class YzuiTheme {
         return ClientExternalSettings.getYzuiTheme() == YzuiThemeMode.DARK
                 ? YzuiPalette.DARK
                 : YzuiPalette.LIGHT;
+    }
+
+    /** 浅色主题启用时使用专用的高对比控件样式。 */
+    public static boolean light() {
+        return palette() == YzuiPalette.LIGHT;
     }
 
     public static boolean frosted() {
@@ -143,6 +158,11 @@ public final class YzuiTheme {
         return palette().outlineVariant();
     }
 
+    /** 交互控件在浅色表面上的实线边界。 */
+    public static int controlOutline() {
+        return light() ? LIGHT_CONTROL_OUTLINE : outline();
+    }
+
     public static int error() {
         return surfaceText(palette().error());
     }
@@ -169,6 +189,27 @@ public final class YzuiTheme {
 
     public static int slotHover() {
         return alpha(mix(slot(), primaryContainer(), 0.28f), 0.66f);
+    }
+
+    /** 绘制普通物品格，调用方随后绘制物品及空槽图标。 */
+    public static void drawSlot(GuiGraphicsExtractor g, int x, int y, int w, int h, int radius, boolean hovered) {
+        drawSlot(g, x, y, w, h, radius, hovered, SlotStyle.NORMAL);
+    }
+
+    /** 浅色物品格以一像素描边和实色填充分开，避免场景透过面板后吞没边界。 */
+    public static void drawSlot(GuiGraphicsExtractor g, int x, int y, int w, int h, int radius,
+            boolean hovered, SlotStyle style) {
+        boolean accent = style != SlotStyle.NORMAL;
+        if (light()) {
+            int fill = accent ? primaryContainer() : LIGHT_SLOT_FILL;
+            if (hovered)
+                fill = mix(fill, primary(), 0.20f);
+            RoundedRect.fillWithBorder(g, x, y, w, h, 0, 0,
+                    hovered || accent ? primary() : LIGHT_SLOT_OUTLINE, fill);
+            return;
+        }
+        int fill = hovered && style != SlotStyle.RESULT ? slotHover() : accent ? primaryContainer() : slot();
+        RoundedRect.fill(g, x, y, w, h, radius, fill);
     }
 
     public static int selection() {
@@ -411,9 +452,9 @@ public final class YzuiTheme {
             return textMuted();
         return switch (style) {
             case FILLED -> onPrimary();
-            case DANGER -> error();
+            case DANGER -> light() ? LIGHT_DANGER_TEXT : error();
             case TONAL -> onPrimaryContainer();
-            case TEXT -> primary();
+            case TEXT -> light() ? onPrimaryContainer() : primary();
         };
     }
 
@@ -435,14 +476,27 @@ public final class YzuiTheme {
         };
         if (!enabled)
             base = surfaceHigh();
+        boolean light = light();
         int foreground = buttonText(style, enabled);
         float state = enabled ? Math.clamp(hover, 0f, 1f) : 0f;
-        int color = mix(base, foreground, state * 0.08f);
+        int color = mix(base, foreground, state * (light ? 0.14f : 0.08f));
         int radius = Math.min(12, h / 2);
         if (style != ButtonStyle.TEXT || hover > 0f || focused) {
             float a = style == ButtonStyle.TEXT ? state * 0.14f + (focused ? 0.08f : 0f)
                     : style == ButtonStyle.FILLED ? 1f : menuContext() ? 0.38f : visualStyle().controlOpacity();
             RoundedRect.fill(g, x, y, w, h, radius, alpha(color, opacity * a));
+        }
+        if (light && enabled && (style == ButtonStyle.TONAL || style == ButtonStyle.DANGER)) {
+            int line = style == ButtonStyle.DANGER ? foreground : primary();
+            border(g, x, y, w, h, radius,
+                    multiplyAlpha(focused ? line : mix(LIGHT_CONTROL_OUTLINE, line, state), opacity));
+            if (focused && w > 4 && h > 4)
+                border(g, x + 1, y + 1, w - 2, h - 2, radius - 1, multiplyAlpha(line, opacity));
+            return;
+        }
+        if (light && focused && enabled && style == ButtonStyle.FILLED) {
+            border(g, x + 1, y + 1, w - 2, h - 2, radius - 1, multiplyAlpha(onPrimary(), opacity));
+            return;
         }
         if (state > 0f && enabled && !focused) {
             border(g, x, y, w, h, radius, alpha(style == ButtonStyle.FILLED ? onPrimary() : primary(),
@@ -472,6 +526,11 @@ public final class YzuiTheme {
         RoundedRect.fill(g, x, y, w, h, radius,
                 multiplyAlpha(mix(alpha(palette().surfaceHigh(), layerOpacity), alpha(primaryContainer(), layerOpacity),
                         state * 0.20f), opacity));
+        if (enabled && light()) {
+            int line = focused ? primary() : mix(LIGHT_CONTROL_OUTLINE, primary(), state * 0.65f);
+            border(g, x, y, w, h, radius, multiplyAlpha(line, opacity));
+            return;
+        }
         int line = enabled && focused ? primary() : mix(outlineVariant(), primary(), state * 0.5f);
         border(g, x, y, w, h, radius, alpha(line, opacity * (focused && enabled ? 0.9f : 0.28f + state * 0.22f)));
     }

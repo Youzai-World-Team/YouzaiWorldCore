@@ -384,8 +384,8 @@ public class YzuCreativeInventoryScreen extends Screen {
         for (int r = 0; r < 2; r++)
             for (int c = 0; c < 2; c++) {
                 int sx = ax + c * (SS + SG), sy = ay + r * (SS + SG);
-                fillR(g, sx, sy, SS, SS, 3, mx >= sx && mx < sx + SS && my >= sy && my < sy + SS ? YzuiTheme.slotHover()
-                        : YzuiTheme.slot());
+                YzuiTheme.drawSlot(g, sx, sy, SS, SS, 0,
+                        mx >= sx && mx < sx + SS && my >= sy && my < sy + SS);
                 int slotIdx = 5 + r * 2 + c;
                 ItemStack ast = slots.get(slotIdx).getItem();
                 // 空槽绘制原版占位图标（通过 Slot.getNoItemIcon() 获取对应 sprite）
@@ -401,8 +401,8 @@ public class YzuCreativeInventoryScreen extends Screen {
 
         // 副手（slot 45）
         int ox = lp + OFF_X, oy = tp + OFF_Y;
-        fillR(g, ox, oy, SS, SS, 3,
-                mx >= ox && mx < ox + SS && my >= oy && my < oy + SS ? YzuiTheme.slotHover() : YzuiTheme.slot());
+        YzuiTheme.drawSlot(g, ox, oy, SS, SS, 0,
+                mx >= ox && mx < ox + SS && my >= oy && my < oy + SS);
         ItemStack ost = slots.get(45).getItem();
         if (ost.isEmpty()) {
             Identifier offId = slots.get(45).getNoItemIcon();
@@ -418,8 +418,8 @@ public class YzuCreativeInventoryScreen extends Screen {
         for (int r = 0; r < INV_ROWS; r++)
             for (int c = 0; c < INV_COLS; c++) {
                 int sx = invX + c * (SS + SG), sy = invY + r * (SS + SG);
-                fillR(g, sx, sy, SS, SS, 3, mx >= sx && mx < sx + SS && my >= sy && my < sy + SS ? YzuiTheme.slotHover()
-                        : YzuiTheme.slot());
+                YzuiTheme.drawSlot(g, sx, sy, SS, SS, 0,
+                        mx >= sx && mx < sx + SS && my >= sy && my < sy + SS);
                 ItemStack ist = slots.get(9 + r * INV_COLS + c).getItem();
                 renderSlot(g, ist, sx, sy, 220 + r * INV_COLS + c);
                 ItemBorderRenderer.renderBorder(g, sx, sy, ist);
@@ -429,8 +429,8 @@ public class YzuCreativeInventoryScreen extends Screen {
         int hbx = lp + HB_X, hby = tp + HB_Y;
         for (int c = 0; c < 9; c++) {
             int sx = hbx + c * (SS + SG);
-            fillR(g, sx, hby, SS, SS, 3,
-                    mx >= sx && mx < sx + SS && my >= hby && my < hby + SS ? YzuiTheme.slotHover() : YzuiTheme.slot());
+            YzuiTheme.drawSlot(g, sx, hby, SS, SS, 0,
+                    mx >= sx && mx < sx + SS && my >= hby && my < hby + SS);
             ItemStack hst = slots.get(36 + c).getItem();
             renderSlot(g, hst, sx, hby, c);
             ItemBorderRenderer.renderBorder(g, sx, hby, hst);
@@ -762,7 +762,7 @@ public class YzuCreativeInventoryScreen extends Screen {
         int leftX = lp + 3;
         boolean canLeft = tabPage > 0;
         boolean lh = canLeft && mx >= leftX && mx < leftX + TW && my >= arrowY && my < arrowY + TH;
-        fillR(g, leftX, arrowY, TW, TH, TR, lh ? YzuiTheme.primaryContainer() : YzuiTheme.surfaceLow());
+        drawTabArrowBackground(g, leftX, arrowY, lh, canLeft);
         MenuIcon.CHEVRON_LEFT.renderCentered(g, leftX, arrowY, TW, TH,
                 canLeft ? YzuiTheme.text() : YzuiTheme.outline());
 
@@ -771,8 +771,13 @@ public class YzuCreativeInventoryScreen extends Screen {
             CreativeModeTab t = tabs.get(i);
             boolean sel = selTab != null && t == selTab;
             boolean h = mx >= tx && mx < tx + TW && my >= arrowY && my < arrowY + TH;
-            fillR(g, tx, arrowY, TW, TH, TR,
-                    sel ? YzuiTheme.primaryContainer() : (h ? YzuiTheme.surfaceHigh() : YzuiTheme.surfaceLow()));
+            if (YzuiTheme.light()) {
+                YzuiTheme.drawSlot(g, tx, arrowY, TW, TH, 0, h,
+                        sel ? YzuiTheme.SlotStyle.ACCENT : YzuiTheme.SlotStyle.NORMAL);
+            } else {
+                fillR(g, tx, arrowY, TW, TH, TR,
+                        sel ? YzuiTheme.primaryContainer() : (h ? YzuiTheme.surfaceHigh() : YzuiTheme.surfaceLow()));
+            }
             ItemStack icon = t.getIconItem();
             if (!icon.isEmpty())
                 g.item(icon, tx + (TW - 16) / 2, arrowY + (TH - 16) / 2, 0);
@@ -785,9 +790,17 @@ public class YzuCreativeInventoryScreen extends Screen {
         int rightX = lp + 3 + TW + TG + MAX_VIS * (TW + TG);
         boolean canRight = tabPage < pc - 1;
         boolean rh = canRight && mx >= rightX && mx < rightX + TW && my >= arrowY && my < arrowY + TH;
-        fillR(g, rightX, arrowY, TW, TH, TR, rh ? YzuiTheme.primaryContainer() : YzuiTheme.surfaceLow());
+        drawTabArrowBackground(g, rightX, arrowY, rh, canRight);
         MenuIcon.CHEVRON_RIGHT.renderCentered(g, rightX, arrowY, TW, TH,
                 canRight ? YzuiTheme.text() : YzuiTheme.outline());
+    }
+
+    private static void drawTabArrowBackground(GuiGraphicsExtractor g, int x, int y, boolean hovered, boolean enabled) {
+        if (YzuiTheme.light() && enabled) {
+            YzuiTheme.button(g, x, y, TW, TH, hovered ? 1f : 0f, false, true, 1f, YzuiTheme.ButtonStyle.TONAL);
+            return;
+        }
+        fillR(g, x, y, TW, TH, TR, hovered ? YzuiTheme.primaryContainer() : YzuiTheme.surfaceLow());
     }
 
     private void drawGrid(GuiGraphicsExtractor g, int mx, int my) {
@@ -802,7 +815,7 @@ public class YzuCreativeInventoryScreen extends Screen {
                     break;
                 int gx = sx + c * (SS + SG), gy = sy + r * (SS + SG);
                 boolean h = mx >= gx && mx < gx + SS && my >= gy && my < gy + SS;
-                fillR(g, gx, gy, SS, SS, 3, h ? YzuiTheme.slotHover() : YzuiTheme.slot());
+                YzuiTheme.drawSlot(g, gx, gy, SS, SS, 0, h);
                 int vi = vis.get(idx);
                 CreativeItemGroups.Entry entry = getGroupEntry(vi);
                 if (!CreativeItemGroupRenderer.beginSlot(g, entry, gx, gy)) {

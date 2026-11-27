@@ -57,14 +57,8 @@ public class YzuInventoryScreen extends AbstractRecipeBookScreen<InventoryMenu> 
 
     // ========== YZUI 配色常量 ==========
     private static int panelBg() { return YzuiTheme.surface(); }
-    private static int slotColor() { return YzuiTheme.slot(); }
-    private static int slotHoverColor() { return YzuiTheme.slotHover(); }
-    private static int craftResultBg() { return YzuiTheme.primaryContainer(); }
-    /** 副手槽背景色（褐色块） */
-    private static int offhandSlotColor() { return YzuiTheme.primaryContainer(); }
 
     private static final int PANEL_RADIUS = 6;
-    private static final int SLOT_RADIUS = 3;
     private static final int SLOT_SIZE = 16;
 
     private static final int CLOSE_SIZE = 14;
@@ -389,7 +383,8 @@ public class YzuInventoryScreen extends AbstractRecipeBookScreen<InventoryMenu> 
     // ========== 槽位背景绘制 ==========
 
     private void drawSlotBackgrounds(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY) {
-        for (Slot slot : this.menu.slots) {
+        for (int index = 0; index < this.menu.slots.size(); index++) {
+            Slot slot = this.menu.slots.get(index);
             if (!slot.isActive())
                 continue;
 
@@ -399,25 +394,12 @@ public class YzuInventoryScreen extends AbstractRecipeBookScreen<InventoryMenu> 
             boolean isHovered = mouseX >= sx + this.leftPos && mouseX < sx + this.leftPos + SLOT_SIZE
                     && mouseY >= sy + this.topPos && mouseY < sy + this.topPos + SLOT_SIZE;
 
-            // 副手槽使用褐色背景
-            int color;
-            if (getSlotIndex(slot) == 45) {
-                color = isHovered ? YzuiTheme.slotHover() : offhandSlotColor();
-            } else {
-                color = isHovered ? slotHoverColor() : slotColor();
-            }
-
-            fillRoundedRect(guiGraphics, sx, sy, SLOT_SIZE, SLOT_SIZE, SLOT_RADIUS, color);
-        }
-
-        // 合成输出槽额外高亮
-        if (!this.menu.slots.isEmpty()) {
-            Slot resultSlot = this.menu.slots.get(0);
-            if (resultSlot.isActive()) {
-                fillRoundedRect(guiGraphics,
-                        resultSlot.x, resultSlot.y,
-                        SLOT_SIZE, SLOT_SIZE, SLOT_RADIUS, craftResultBg());
-            }
+            YzuiTheme.SlotStyle style = switch (index) {
+                case 0 -> YzuiTheme.SlotStyle.RESULT;
+                case 45 -> YzuiTheme.SlotStyle.ACCENT;
+                default -> YzuiTheme.SlotStyle.NORMAL;
+            };
+            YzuiTheme.drawSlot(guiGraphics, sx, sy, SLOT_SIZE, SLOT_SIZE, 0, isHovered, style);
         }
     }
 

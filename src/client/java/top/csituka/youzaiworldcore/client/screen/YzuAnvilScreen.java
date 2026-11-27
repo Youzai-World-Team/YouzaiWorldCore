@@ -76,7 +76,6 @@ public class YzuAnvilScreen extends ItemCombinerScreen<AnvilMenu> {
     private static final int PANEL_RADIUS = 6;
 
     private static final int SLOT_SIZE = 16;
-    private static final int SLOT_RADIUS = 3; // r≤3 走矩形快速路径
 
     /** 玩家背包标题（深灰，白底可读，无阴影） */
     private static int labelColor() { return YzuiTheme.text(); }
@@ -98,7 +97,6 @@ public class YzuAnvilScreen extends ItemCombinerScreen<AnvilMenu> {
 
     private static int titleColor() { return YzuiTheme.primary(); }
     private static int slotColor() { return YzuiTheme.slot(); }
-    private static int slotHoverColor() { return YzuiTheme.slotHover(); }
     private static int accentBarColor() { return YzuiTheme.primary(); }
     private static final ItemStack ICON = new ItemStack(Items.ANVIL);
 
@@ -390,8 +388,7 @@ public class YzuAnvilScreen extends ItemCombinerScreen<AnvilMenu> {
             }
             boolean hovered = mouseX >= this.leftPos + slot.x && mouseX < this.leftPos + slot.x + SLOT_SIZE
                     && mouseY >= this.topPos + slot.y && mouseY < this.topPos + slot.y + SLOT_SIZE;
-            fillR(g, slot.x, slot.y, SLOT_SIZE, SLOT_SIZE, SLOT_RADIUS,
-                    hovered ? slotHoverColor() : slotColor());
+            YzuiTheme.drawSlot(g, slot.x, slot.y, SLOT_SIZE, SLOT_SIZE, 0, hovered);
         }
     }
 

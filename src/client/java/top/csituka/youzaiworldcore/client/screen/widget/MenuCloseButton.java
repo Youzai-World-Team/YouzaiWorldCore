@@ -25,7 +25,7 @@ public final class MenuCloseButton extends TransparentButton {
         refresh();
         if (!visible) return;
         YzuiTheme.button(g, getX(), getY(), getWidth(), getHeight(), isMouseOver(mouseX, mouseY) ? 1f : 0f,
-                isFocused(), true, getAlpha(), YzuiTheme.ButtonStyle.TEXT);
+                isFocused(), true, getAlpha(), YzuiTheme.light() ? YzuiTheme.ButtonStyle.TONAL : YzuiTheme.ButtonStyle.TEXT);
         MenuIcon.CLOSE.render(g, getX() + (getWidth() - 16) / 2, getY() + (getHeight() - 16) / 2,
                 YzuiTheme.alpha(YzuiTheme.text(), getAlpha()));
     }

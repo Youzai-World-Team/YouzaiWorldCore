@@ -55,7 +55,6 @@ public class YzuShulkerBoxScreen extends AbstractContainerScreen<ShulkerBoxMenu>
     private static final int PANEL_RADIUS = 6;
 
     private static final int SLOT_SIZE = 16;
-    private static final int SLOT_RADIUS = 3; // r≤3 走矩形快速路径，等价实心矩形
 
     /** 玩家背包标题（深灰，白底可读，无阴影） */
     private static int labelColor() { return YzuiTheme.text(); }
@@ -86,7 +85,6 @@ public class YzuShulkerBoxScreen extends AbstractContainerScreen<ShulkerBoxMenu>
     /** 槽位常态底色（~31% alpha） */
     private static int slotColor() { return YzuiTheme.slot(); }
     /** 槽位悬停底色（~44% alpha） */
-    private static int slotHoverColor() { return YzuiTheme.slotHover(); }
     /** 标题下方强调条色（~69% alpha） */
     private static int accentBarColor() { return YzuiTheme.primary(); }
     /** 标题区图标（跟随潜影盒颜色） */
@@ -214,8 +212,7 @@ public class YzuShulkerBoxScreen extends AbstractContainerScreen<ShulkerBoxMenu>
                 continue;
             boolean hovered = mouseX >= this.leftPos + slot.x && mouseX < this.leftPos + slot.x + SLOT_SIZE
                     && mouseY >= this.topPos + slot.y && mouseY < this.topPos + slot.y + SLOT_SIZE;
-            fillR(g, slot.x, slot.y, SLOT_SIZE, SLOT_SIZE, SLOT_RADIUS,
-                    hovered ? slotHoverColor() : slotColor());
+            YzuiTheme.drawSlot(g, slot.x, slot.y, SLOT_SIZE, SLOT_SIZE, 0, hovered);
         }
     }
 

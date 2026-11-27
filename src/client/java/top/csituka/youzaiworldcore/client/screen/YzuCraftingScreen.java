@@ -62,10 +62,6 @@ public class YzuCraftingScreen extends AbstractRecipeBookScreen<CraftingMenu> {
     private static final int PANEL_RADIUS = 6;
 
     private static final int SLOT_SIZE = 16;
-    private static final int SLOT_RADIUS = 3;
-
-    /** 合成结果槽底色（比普通槽位更亮，突出输出位） */
-    private static int craftResultBg() { return YzuiTheme.primaryContainer(); }
 
     private static int labelColor() { return YzuiTheme.text(); }
 
@@ -94,7 +90,6 @@ public class YzuCraftingScreen extends AbstractRecipeBookScreen<CraftingMenu> {
 
     private static int titleColor() { return YzuiTheme.primary(); }
     private static int slotColor() { return YzuiTheme.slot(); }
-    private static int slotHoverColor() { return YzuiTheme.slotHover(); }
     private static int accentBarColor() { return YzuiTheme.primary(); }
     private static final ItemStack ICON = new ItemStack(Items.CRAFTING_TABLE);
 
@@ -200,7 +195,7 @@ public class YzuCraftingScreen extends AbstractRecipeBookScreen<CraftingMenu> {
                 this.leftPos + ARROW_X, this.topPos + ARROW_Y, ARROW_W, ARROW_H);
     }
 
-    /** 槽位背景：每个活动槽绘制主题色圆角矩形，悬浮提亮；结果槽额外提亮。 */
+    /** 为活动槽绘制背景，合成结果槽使用强调色。 */
     private void drawSlotBackgrounds(GuiGraphicsExtractor g, int mouseX, int mouseY) {
         for (int i = 0; i < this.menu.slots.size(); i++) {
             Slot slot = this.menu.slots.get(i);
@@ -209,8 +204,8 @@ public class YzuCraftingScreen extends AbstractRecipeBookScreen<CraftingMenu> {
             }
             boolean hovered = mouseX >= this.leftPos + slot.x && mouseX < this.leftPos + slot.x + SLOT_SIZE
                     && mouseY >= this.topPos + slot.y && mouseY < this.topPos + slot.y + SLOT_SIZE;
-            int color = (i == 0) ? craftResultBg() : (hovered ? slotHoverColor() : slotColor());
-            fillR(g, slot.x, slot.y, SLOT_SIZE, SLOT_SIZE, SLOT_RADIUS, color);
+            YzuiTheme.drawSlot(g, slot.x, slot.y, SLOT_SIZE, SLOT_SIZE, 0, hovered,
+                    i == 0 ? YzuiTheme.SlotStyle.RESULT : YzuiTheme.SlotStyle.NORMAL);
         }
     }
 

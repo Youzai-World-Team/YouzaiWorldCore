@@ -74,7 +74,7 @@ public enum YzuiWorkstationStyle {
             if (!slot.isActive()) continue;
             int x = left + slot.x, y = top + slot.y;
             boolean hovered = mouseX >= x && mouseX < x + 16 && mouseY >= y && mouseY < y + 16;
-            RoundedRect.fill(g, x, y, 16, 16, 3, hovered ? YzuiTheme.slotHover() : YzuiTheme.slot());
+            YzuiTheme.drawSlot(g, x, y, 16, 16, 3, hovered);
             if (index == accentSlot) {
                 YzuiTheme.border(g, x - 2, y - 2, 20, 20, 4, YzuiTheme.primary());
             }
@@ -195,6 +195,11 @@ public enum YzuiWorkstationStyle {
                     "container/enchanting_table/enchantment_slot_disabled" -> {
                 boolean selected = path.endsWith("_selected"), hovered = path.endsWith("_highlighted");
                 boolean disabled = path.endsWith("_disabled");
+                if (YzuiTheme.light() && !disabled) {
+                    YzuiTheme.drawSlot(g, x + 1, y + 1, w - 2, h - 2, 3, hovered,
+                            selected ? YzuiTheme.SlotStyle.ACCENT : YzuiTheme.SlotStyle.NORMAL);
+                    break;
+                }
                 int color = selected ? YzuiTheme.primaryContainer() : hovered ? YzuiTheme.slotHover()
                         : disabled ? YzuiTheme.surfaceLow() : YzuiTheme.slot();
                 RoundedRect.fill(g, x + 1, y + 1, w - 2, h - 2, 3, color);

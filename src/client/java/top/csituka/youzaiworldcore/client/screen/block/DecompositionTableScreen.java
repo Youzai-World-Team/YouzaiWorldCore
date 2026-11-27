@@ -30,14 +30,6 @@ public class DecompositionTableScreen extends AbstractContainerScreen<Decomposit
         return YzuiTheme.surface();
     }
 
-    private static int slotColor() {
-        return YzuiTheme.slot();
-    }
-
-    private static int slotHoverColor() {
-        return YzuiTheme.slotHover();
-    }
-
     private static int buttonColor() {
         return YzuiTheme.primaryContainer();
     }
@@ -136,9 +128,7 @@ public class DecompositionTableScreen extends AbstractContainerScreen<Decomposit
         int slotEndY = slotY + SLOT_SIZE;
 
         boolean isHovered = mouseX >= slotX && mouseX < slotEndX && mouseY >= slotY && mouseY < slotEndY;
-        int color = isHovered ? slotHoverColor() : slotColor();
-
-        fillRoundedRect(guiGraphics, slotX, slotY, SLOT_SIZE, SLOT_SIZE, 3, color);
+        YzuiTheme.drawSlot(guiGraphics, slotX, slotY, SLOT_SIZE, SLOT_SIZE, 3, isHovered);
     }
 
     private void drawOutputSlots(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY) {
@@ -151,9 +141,7 @@ public class DecompositionTableScreen extends AbstractContainerScreen<Decomposit
             int slotEndY = slotY + SLOT_SIZE;
 
             boolean isHovered = mouseX >= slotX && mouseX < slotEndX && mouseY >= slotY && mouseY < slotEndY;
-            int color = isHovered ? slotHoverColor() : slotColor();
-
-            fillRoundedRect(guiGraphics, slotX, slotY, SLOT_SIZE, SLOT_SIZE, 3, color);
+            YzuiTheme.drawSlot(guiGraphics, slotX, slotY, SLOT_SIZE, SLOT_SIZE, 3, isHovered);
         }
     }
 
@@ -170,9 +158,7 @@ public class DecompositionTableScreen extends AbstractContainerScreen<Decomposit
                 int slotEndY = slotY + SLOT_SIZE;
 
                 boolean isHovered = mouseX >= slotX && mouseX < slotEndX && mouseY >= slotY && mouseY < slotEndY;
-                int color = isHovered ? slotHoverColor() : slotColor();
-
-                fillRoundedRect(guiGraphics, slotX, slotY, SLOT_SIZE, SLOT_SIZE, 3, color);
+                YzuiTheme.drawSlot(guiGraphics, slotX, slotY, SLOT_SIZE, SLOT_SIZE, 3, isHovered);
             }
         }
 
@@ -183,16 +169,8 @@ public class DecompositionTableScreen extends AbstractContainerScreen<Decomposit
             int slotEndY = slotY + SLOT_SIZE;
 
             boolean isHovered = mouseX >= slotX && mouseX < slotEndX && mouseY >= slotY && mouseY < slotEndY;
-            int color = isHovered ? slotHoverColor() : slotColor();
-
-            fillRoundedRect(guiGraphics, slotX, slotY, SLOT_SIZE, SLOT_SIZE, 3, color);
+            YzuiTheme.drawSlot(guiGraphics, slotX, slotY, SLOT_SIZE, SLOT_SIZE, 3, isHovered);
         }
-    }
-
-    // 圆角矩形绘制统一走 RoundedRect（行扫描，r=6 时 135 次 fill → 13 次），
-    // 点亮的像素集合与原逐像素实现完全一致。
-    private void fillRoundedRect(GuiGraphicsExtractor g, int x, int y, int w, int h, int r, int color) {
-        RoundedRect.fillOrSquare(g, x, y, w, h, r, color);
     }
 
     private static class DecomposeButton extends AbstractWidget {
@@ -208,28 +186,18 @@ public class DecompositionTableScreen extends AbstractContainerScreen<Decomposit
         protected void extractWidgetRenderState(@NonNull GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY,
                 float partialTick) {
             boolean canDecompose = screen.canDecompose();
-            boolean isHovered = this.isHovered();
-
-            int color;
-            if (!canDecompose) {
-                color = buttonDisabledColor();
-            } else if (isHovered) {
-                color = buttonHoverColor();
-            } else {
-                color = buttonColor();
-            }
-
             int x = this.getX();
             int y = this.getY();
-
-            fillRoundedRect(guiGraphics, x, y, this.width, this.height, 3, color);
+            if (YzuiTheme.light()) {
+                YzuiTheme.button(guiGraphics, x, y, this.width, this.height, isHovered() ? 1f : 0f,
+                        isFocused(), canDecompose, 1f, YzuiTheme.ButtonStyle.TONAL);
+            } else {
+                int color = !canDecompose ? buttonDisabledColor() : isHovered() ? buttonHoverColor() : buttonColor();
+                RoundedRect.fillOrSquare(guiGraphics, x, y, this.width, this.height, 3, color);
+            }
 
             guiGraphics.blit(RenderPipelines.GUI_TEXTURED, DECOMPOSITION_BUTTON_TEXTURE, x, y, 0, 0, this.width,
                     this.height, this.width, this.height);
-        }
-
-        private void fillRoundedRect(GuiGraphicsExtractor g, int x, int y, int w, int h, int r, int color) {
-            RoundedRect.fillOrSquare(g, x, y, w, h, r, color);
         }
 
         @Override

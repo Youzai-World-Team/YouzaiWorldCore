@@ -32,9 +32,6 @@ import top.csituka.youzaiworldcore.client.render.RoundedRect;
 @Mixin(RecipeButton.class)
 public class RecipeButtonMixin {
 
-    @Unique
-    private static int yzwcSlotBg() { return YzuiTheme.slot(); }
-
     @Redirect(
             method = "extractWidgetRenderState",
             at = @At(value = "INVOKE",
@@ -54,16 +51,13 @@ public class RecipeButtonMixin {
             return;
         }
 
-        // YZUI 开启：绘制圆角背景。@Redirect 只替换 blitSprite，
-        // 方法后续的物品图标（fakeItem）渲染正常继续。
-        yzwc$fillRoundedRect(g, x, y, w, h, 3, yzwcSlotBg());
-    }
-
-    @Unique
-    private static void yzwc$fillRoundedRect(GuiGraphicsExtractor g, int iX, int iY, int iW, int iH, int r, int color) {
-        // 圆角绘制统一走 RoundedRect（行扫描：r=6 时 135 次 fill -> 13 次）。
-        // 原实现未做尺寸校验，r > min(w,h)/2 时会画出坐标反转/重叠的结果，此处会钳制半径。
-        RoundedRect.fill(g, iX, iY, iW, iH, r, color);
+        if (YzuiTheme.light()) {
+            RecipeButton button = (RecipeButton) (Object) this;
+            YzuiTheme.drawSlot(g, x, y, w, h, 3, button.isHoveredOrFocused(),
+                    button.getCollection().hasCraftable() ? YzuiTheme.SlotStyle.ACCENT : YzuiTheme.SlotStyle.NORMAL);
+        } else {
+            RoundedRect.fill(g, x, y, w, h, 3, YzuiTheme.slot());
+        }
     }
 
     @Unique

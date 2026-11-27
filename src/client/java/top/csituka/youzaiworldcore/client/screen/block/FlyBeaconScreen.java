@@ -21,14 +21,6 @@ public class FlyBeaconScreen extends AbstractContainerScreen<FlyBeaconMenu> {
         return YzuiTheme.surface();
     }
 
-    private static int slotColor() {
-        return YzuiTheme.slot();
-    }
-
-    private static int slotHoverColor() {
-        return YzuiTheme.slotHover();
-    }
-
     @SuppressWarnings("unused")
     private static final int CORNER_RADIUS = 6;
     private static final int SLOT_SIZE = 16;
@@ -145,9 +137,7 @@ public class FlyBeaconScreen extends AbstractContainerScreen<FlyBeaconMenu> {
         int slotEndY = slotY + SLOT_SIZE;
 
         boolean isHovered = mouseX >= slotX && mouseX < slotEndX && mouseY >= slotY && mouseY < slotEndY;
-        int color = isHovered ? slotHoverColor() : slotColor();
-
-        fillRoundedRect(guiGraphics, slotX, slotY, SLOT_SIZE, SLOT_SIZE, 3, color);
+        YzuiTheme.drawSlot(guiGraphics, slotX, slotY, SLOT_SIZE, SLOT_SIZE, 3, isHovered);
     }
 
     private void drawPlayerInventory(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY) {
@@ -163,9 +153,7 @@ public class FlyBeaconScreen extends AbstractContainerScreen<FlyBeaconMenu> {
                 int slotEndY = slotY + SLOT_SIZE;
 
                 boolean isHovered = mouseX >= slotX && mouseX < slotEndX && mouseY >= slotY && mouseY < slotEndY;
-                int color = isHovered ? slotHoverColor() : slotColor();
-
-                fillRoundedRect(guiGraphics, slotX, slotY, SLOT_SIZE, SLOT_SIZE, 3, color);
+                YzuiTheme.drawSlot(guiGraphics, slotX, slotY, SLOT_SIZE, SLOT_SIZE, 3, isHovered);
             }
         }
 
@@ -176,9 +164,7 @@ public class FlyBeaconScreen extends AbstractContainerScreen<FlyBeaconMenu> {
             int slotEndY = slotY + SLOT_SIZE;
 
             boolean isHovered = mouseX >= slotX && mouseX < slotEndX && mouseY >= slotY && mouseY < slotEndY;
-            int color = isHovered ? slotHoverColor() : slotColor();
-
-            fillRoundedRect(guiGraphics, slotX, slotY, SLOT_SIZE, SLOT_SIZE, 3, color);
+            YzuiTheme.drawSlot(guiGraphics, slotX, slotY, SLOT_SIZE, SLOT_SIZE, 3, isHovered);
         }
     }
 

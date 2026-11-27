@@ -553,8 +553,7 @@ public class MailComposeScreen extends MailBaseScreen {
             int slotX = gridX + i % 9 * 20;
             int slotY = gridY + i / 9 * 20;
             MailUi.Rect sourceRect = new MailUi.Rect(slotX, slotY, 18, 18);
-            graphics.fill(slotX, slotY, slotX + 18, slotY + 18,
-                    sourceRect.contains(mouseX, mouseY) ? YzuiTheme.slotHover() : YzuiTheme.slot());
+            YzuiTheme.drawSlot(graphics, slotX, slotY, 18, 18, 0, sourceRect.contains(mouseX, mouseY));
             ItemStack stack = inventory.getItem(i);
             if (!stack.isEmpty()) {
                 graphics.item(stack, slotX + 1, slotY + 1, i + 100);

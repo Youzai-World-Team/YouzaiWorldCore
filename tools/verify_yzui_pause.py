@@ -167,6 +167,9 @@ for method in ("text", "textMuted", "primary", "primaryContainer", "outline"):
     STUBS[theme_path] = STUBS[theme_path].replace(f"int {method}(){{return -1;}}", f"int {method}(){{return palette().{method}();}}")
 STUBS[theme_path] = STUBS[theme_path].replace("public enum ButtonStyle", """
     public static int onPrimary(){return palette().onPrimary();}
+    public static boolean vanilla(){return false;}
+    public static boolean light(){return palette()==YzuiPalette.LIGHT;}
+    public static int controlOutline(){return outline();}
     public static void hudText(GuiGraphicsExtractor g,Font f,Component c,int x,int y,int color,float alpha){g.text(f,c,x,y,color,true);}
     public enum ButtonStyle""").replace('int used=Math.min(w,f.width(c));', 'g.textColors.add(color); int used=Math.min(w,f.width(c));')
 graphics_path = "net/minecraft/client/gui/GuiGraphicsExtractor.java"

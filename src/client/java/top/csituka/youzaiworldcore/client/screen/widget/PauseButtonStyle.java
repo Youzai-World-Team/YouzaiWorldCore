@@ -30,9 +30,21 @@ public final class PauseButtonStyle {
         int x = button.getX(), y = button.getY(), w = button.getWidth(), h = button.getHeight();
         float alpha = button.getAlpha() * (button.active ? 1f : 0.45f);
         boolean filled = decoration.style() == YzuiTheme.ButtonStyle.FILLED;
-        RoundedRect.fill(g, x, y, w, h, Math.min(12, h / 2),
+        int radius = Math.min(12, h / 2);
+        RoundedRect.fill(g, x, y, w, h, radius,
                 YzuiTheme.alpha(surface, alpha * (filled ? 1f : YzuiMenuPanel.opacity())));
-        YzuiTheme.border(g, x, y, w, h, Math.min(12, h / 2),
+        if (YzuiTheme.light() && button.active && (!filled || button.isFocused())) {
+            if (filled) {
+                YzuiTheme.border(g, x + 1, y + 1, w - 2, h - 2, radius - 1,
+                        YzuiTheme.alpha(YzuiTheme.onPrimary(), alpha));
+            } else {
+                int accent = decoration.style() == YzuiTheme.ButtonStyle.DANGER ? YzuiTheme.error() : YzuiTheme.primary();
+                int line = button.isFocused() ? accent : YzuiTheme.mix(YzuiTheme.controlOutline(), accent, hover);
+                YzuiTheme.border(g, x, y, w, h, radius, YzuiTheme.alpha(line, alpha));
+            }
+            return true;
+        }
+        YzuiTheme.border(g, x, y, w, h, radius,
                 YzuiTheme.alpha(button.isFocused() ? YzuiTheme.primary() : YzuiTheme.outline(),
                         alpha * (button.isFocused() ? 1f : 0.28f + hover * 0.25f)));
         return true;
