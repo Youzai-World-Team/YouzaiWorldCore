@@ -1,0 +1,36 @@
+{
+  "parent": "youzaiworldcore:youzaiworld/have_warp_scroll",
+  "display": {
+    "icon": {
+      "id": "youzaiworldcore:teleport_stone"
+    },
+    "title": {
+      "translate": "advancements.youzaiworldcore.youzaiworld.have_teleport_stone.title"
+    },
+    "description": {
+      "translate": "advancements.youzaiworldcore.youzaiworld.have_teleport_stone.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "has_teleport_stone": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "youzaiworldcore:teleport_stone"
+          }
+        ],
+        "player": "youzaiworldcore:not_in_tutorial_dimension"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "has_teleport_stone"
+    ]
+  ]
+}

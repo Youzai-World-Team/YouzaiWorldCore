@@ -1,0 +1,46 @@
+{
+  "parent": "youzaiworldcore:youzaiworld/ancient_ruins",
+  "display": {
+    "icon": {
+      "id": "youzaiworldcore:glow_ink_sac"
+    },
+    "title": {
+      "translate": "advancements.youzaiworldcore.youzaiworld.loot_ruins.title"
+    },
+    "description": {
+      "translate": "advancements.youzaiworldcore.youzaiworld.loot_ruins.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "searched_ruins": {
+      "trigger": "minecraft:player_generates_container_loot",
+      "conditions": {
+        "loot_tables": [
+          "minecraft:chests/desert_pyramid",
+          "minecraft:archaeology/desert_pyramid",
+          "minecraft:chests/shipwreck_map",
+          "minecraft:chests/shipwreck_supply",
+          "minecraft:chests/shipwreck_treasure",
+          "minecraft:chests/underwater_ruin_big",
+          "minecraft:chests/underwater_ruin_small",
+          "minecraft:archaeology/ocean_ruin_cold",
+          "minecraft:archaeology/ocean_ruin_warm",
+          "youzaiworldcore:chests/genshin_ruins_barrel_food",
+          "youzaiworldcore:chests/genshin_ruins_barrel_tools",
+          "youzaiworldcore:chests/genshin_ruins_pot",
+          "youzaiworldcore:chests/genshin_ruins_treasure"
+        ],
+        "player": "youzaiworldcore:not_in_tutorial_dimension"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "searched_ruins"
+    ]
+  ]
+}

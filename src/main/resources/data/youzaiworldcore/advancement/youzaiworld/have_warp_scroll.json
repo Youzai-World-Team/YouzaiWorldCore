@@ -1,0 +1,36 @@
+{
+  "parent": "youzaiworldcore:youzaiworld/have_return_scroll",
+  "display": {
+    "icon": {
+      "id": "youzaiworldcore:warp_scroll"
+    },
+    "title": {
+      "translate": "advancements.youzaiworldcore.youzaiworld.have_warp_scroll.title"
+    },
+    "description": {
+      "translate": "advancements.youzaiworldcore.youzaiworld.have_warp_scroll.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "has_warp_scroll": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "youzaiworldcore:warp_scroll"
+          }
+        ],
+        "player": "youzaiworldcore:not_in_tutorial_dimension"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "has_warp_scroll"
+    ]
+  ]
+}

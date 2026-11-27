@@ -1,0 +1,35 @@
+{
+  "parent": "youzaiworldcore:youzaiworld/ancient_ruins",
+  "display": {
+    "icon": {
+      "id": "youzaiworldcore:tp_anchor"
+    },
+    "title": {
+      "translate": "advancements.youzaiworldcore.youzaiworld.place_teleport_anchor.title"
+    },
+    "description": {
+      "translate": "advancements.youzaiworldcore.youzaiworld.place_teleport_anchor.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "placed_anchor": {
+      "trigger": "minecraft:placed_block",
+      "conditions": {
+        "location": {
+          "type": "minecraft:match_block",
+          "blocks": "youzaiworldcore:tp_anchor"
+        },
+        "player": "youzaiworldcore:not_in_tutorial_dimension"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "placed_anchor"
+    ]
+  ]
+}
