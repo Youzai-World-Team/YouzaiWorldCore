@@ -7,7 +7,7 @@ import java.util.concurrent.CompletableFuture;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.animal.wolf.Wolf;
+import net.minecraft.world.entity.Mob;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.chunk.storage.EntityStorage;
 import net.minecraft.world.level.chunk.storage.SimpleRegionStorage;
@@ -19,6 +19,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import top.csituka.youzaiworldcore.dimensionalinventories.PoolPets;
+import top.csituka.youzaiworldcore.pet.PetUtils;
 
 @Mixin(EntityStorage.class)
 public abstract class EntityStoragePoolPetsMixin {
@@ -38,11 +39,11 @@ public abstract class EntityStoragePoolPetsMixin {
             chunk.getEntities().forEach(root -> {
                 roots.add(root);
                 for (Entity entity : root.getSelfAndPassengers().toList()) {
-                    if (entity instanceof Wolf wolf && !PoolPets.canLoad(level, wolf)) {
-                        roots.addAll(wolf.getPassengers());
-                        wolf.ejectPassengers();
-                        wolf.stopRiding();
-                        roots.remove(wolf);
+                    if (entity instanceof Mob pet && PetUtils.petType(pet) != null && !PoolPets.canLoad(level, pet)) {
+                        roots.addAll(pet.getPassengers());
+                        pet.ejectPassengers();
+                        pet.stopRiding();
+                        roots.remove(pet);
                     }
                 }
             });

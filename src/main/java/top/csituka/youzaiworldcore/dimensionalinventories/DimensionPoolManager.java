@@ -15,7 +15,7 @@ import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.portal.TeleportTransition;
 import net.minecraft.world.level.storage.TagValueOutput;
 import net.minecraft.world.phys.Vec3;
-import net.minecraft.world.entity.animal.wolf.Wolf;
+import net.minecraft.world.entity.Mob;
 import org.jspecify.annotations.Nullable;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 import top.csituka.youzaiworldcore.account.util.AuthPlayerHelper;
@@ -302,7 +302,9 @@ public final class DimensionPoolManager {
         MinecraftServer server = getServer(player);
         PoolTransferSnapshot origin;
         PlayerStateData backup;
-        List<Wolf> departingPets;
+        List<Mob> departingPets;
+        var petOrigin = player.level();
+        var petOriginPosition = player.position();
         try {
             PoolRespawn.settleInventoryMenu(player);
             departingPets = PoolPets.departingPets(player, originId);
@@ -337,7 +339,7 @@ public final class DimensionPoolManager {
             }
             if (switched) {
                 try {
-                    PoolPets.afterTransfer(player, originId, departingPets);
+                    PoolPets.afterTransfer(player, originId, departingPets, petOrigin, petOriginPosition);
                 } catch (RuntimeException error) {
                     LOGGER.error("玩家 {} 已切换维度池，宠物处理失败", player.getScoreboardName(), error);
                 }
@@ -644,8 +646,8 @@ public final class DimensionPoolManager {
                         && !isRecoveryPending(player) && finishSurvivalReturn(player);
             });
         }
-        PoolPets.tickPendingRestores(server);
         if (server.getTickCount() % 20 == 0) {
+            PoolPets.tickPendingRestores(server);
             PoolPets.tickPendingReleases(server);
         }
     }

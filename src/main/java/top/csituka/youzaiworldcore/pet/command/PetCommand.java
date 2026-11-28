@@ -92,8 +92,14 @@ public class PetCommand {
                                                 .requires(src -> LuckPermsHelper.checkPermission(
                                                         src, PERMISSION_PET_SET, Commands.LEVEL_ALL))
                                                 .then(Commands.argument("mode", StringArgumentType.word())
-                                                        .suggests((ctx, builder) -> SharedSuggestionProvider.suggest(
-                                                                new String[]{"hunting", "companionship", "attack", "guard"}, builder))
+                                                        .suggests((ctx, builder) -> {
+                                                            var pet = PetGlobalState.get(ctx.getSource().getServer())
+                                                                    .findByInternalName(StringArgumentType.getString(ctx, "internalName")
+                                                                            .toUpperCase(Locale.ROOT))
+                                                                    .orElse(null);
+                                                            return SharedSuggestionProvider.suggest(pet == null ? java.util.stream.Stream.empty()
+                                                                    : pet.availableModes().stream().map(PetMode::getSerializedName), builder);
+                                                        })
                                                         .executes(PetCommand::executeSetMode)
                                                 )
                                         )
@@ -201,7 +207,8 @@ public class PetCommand {
     }
 
     private static Component formatListEntry(PetEntry pet, String ownerPrefix) {
-        var detail = pet.hasCombatMode() ? Component.literal(pet.detailKey()) : Component.translatable(pet.detailKey());
+        Component detail = pet.hasCombatMode() ? Component.literal(pet.mode().getSerializedName())
+                : Component.translatable(pet.entityType().toLanguageKey("entity"));
         return Component.literal(" §7[" + pet.internalName() + "] " + ownerPrefix + "§f" + pet.displayName() + " §7(")
                 .append(detail).append(") §8" + pet.formattedTameTime());
     }
@@ -216,7 +223,7 @@ public class PetCommand {
      * @return Optional 包含 PetEntry 和验证结果
      */
     private static ValidationResult validatePetAccess(CommandContext<CommandSourceStack> ctx,
-            String internalName, boolean requiresWolf) throws CommandSyntaxException {
+            String internalName) throws CommandSyntaxException {
         CommandSourceStack source = ctx.getSource();
         if (!source.isPlayer()) {
             return new ValidationResult(null, "youzaiworldcore.message.command.player_only");
@@ -236,9 +243,6 @@ public class PetCommand {
         if (!entry.isOwner(player.getUUID())) {
             return new ValidationResult(null,
                     "youzaiworldcore.message.pet.not_owner");
-        }
-        if (requiresWolf && !entry.hasCombatMode()) {
-            return new ValidationResult(null, "youzaiworldcore.message.pet.wolf_only");
         }
 
         return new ValidationResult(entry, null);
@@ -265,7 +269,7 @@ public class PetCommand {
         String internalName = StringArgumentType.getString(ctx, "internalName").toUpperCase(Locale.ROOT);
         String newDisplayName = StringArgumentType.getString(ctx, "newDisplayName");
 
-        ValidationResult vr = validatePetAccess(ctx, internalName, false);
+        ValidationResult vr = validatePetAccess(ctx, internalName);
         if (vr.hasError()) {
             source.sendFailure(Component.translatable(vr.errorKey(), vr.errorArgs()));
             DebugLogger.SERVER.exiting(MODULE, "executeRename", "0 (access denied)");
@@ -332,7 +336,7 @@ public class PetCommand {
             return 0;
         }
 
-        ValidationResult vr = validatePetAccess(ctx, internalName, true);
+        ValidationResult vr = validatePetAccess(ctx, internalName);
         if (vr.hasError()) {
             source.sendFailure(Component.translatable(vr.errorKey(), vr.errorArgs()));
             DebugLogger.SERVER.exiting(MODULE, "executeSetMode", "0 (access denied)");
@@ -343,12 +347,21 @@ public class PetCommand {
         ServerPlayer player = source.getPlayerOrException();
         PetGlobalState state = PetGlobalState.get(player.level().getServer());
 
-        // 纯元数据修改：更新注册表
-        PetEntry updated = entry.withMode(newMode);
-        state.updatePet(updated);
-        Wolf wolf = PetUtils.findLoadedWolf(player.level().getServer(), entry.entityUUID());
-        if (wolf != null && newMode != entry.mode()) {
-            PetModeController.stopCombat(wolf);
+        if (!entry.availableModes().contains(newMode)) {
+            source.sendFailure(Component.translatable("youzaiworldcore.message.pet.mode.unavailable"));
+            return 0;
+        }
+        if (newMode != entry.mode()) {
+            PetEntry updated = entry.withMode(newMode);
+            state.updatePet(updated);
+            Mob pet = PetUtils.findLoadedPet(player.level().getServer(), updated);
+            if (pet instanceof Wolf wolf) {
+                PetModeController.stopCombat(wolf);
+            } else if (pet != null) {
+                PetEventHandler.applyMode(pet, updated);
+            } else if (updated.isStationary()) {
+                PoolPets.stationShoulderPet(player, updated.entityUUID());
+            }
         }
 
         source.sendSuccess(() -> Component.translatable(
@@ -368,7 +381,7 @@ public class PetCommand {
 
         String internalName = StringArgumentType.getString(ctx, "internalName").toUpperCase(Locale.ROOT);
 
-        ValidationResult vr = validatePetAccess(ctx, internalName, true);
+        ValidationResult vr = validatePetAccess(ctx, internalName);
         if (vr.hasError()) {
             source.sendFailure(Component.translatable(vr.errorKey(), vr.errorArgs()));
             DebugLogger.SERVER.exiting(MODULE, "executeTrustAdd", "0 (access denied)");
@@ -433,7 +446,7 @@ public class PetCommand {
 
         String internalName = StringArgumentType.getString(ctx, "internalName").toUpperCase(Locale.ROOT);
 
-        ValidationResult vr = validatePetAccess(ctx, internalName, true);
+        ValidationResult vr = validatePetAccess(ctx, internalName);
         if (vr.hasError()) {
             source.sendFailure(Component.translatable(vr.errorKey(), vr.errorArgs()));
             DebugLogger.SERVER.exiting(MODULE, "executeTrustRemove", "0 (access denied)");
@@ -616,7 +629,7 @@ public class PetCommand {
 
         String internalName = StringArgumentType.getString(ctx, "internalName").toUpperCase(Locale.ROOT);
 
-        ValidationResult vr = validatePetAccess(ctx, internalName, true);
+        ValidationResult vr = validatePetAccess(ctx, internalName);
         if (vr.hasError()) {
             source.sendFailure(Component.translatable(vr.errorKey(), vr.errorArgs()));
             DebugLogger.SERVER.exiting(MODULE, "executeReleaseLife", "0 (access denied)");
@@ -635,12 +648,12 @@ public class PetCommand {
         }
 
         MinecraftServer server = player.level().getServer();
-        Wolf wolf = PetUtils.findLoadedWolf(server, entry.entityUUID());
+        Mob pet = PetUtils.findLoadedPet(server, entry);
         try {
-            if (!PoolPets.releaseParked(server, entry, wolf)) {
+            if (!PoolPets.releaseParked(server, entry, pet)) {
                 state.removePet(entry.entityUUID());
-                if (wolf != null) {
-                    PetEventHandler.releaseWolf(wolf);
+                if (pet != null) {
+                    PetEventHandler.releasePet(pet);
                 }
             }
         } catch (java.io.IOException | RuntimeException error) {
@@ -652,7 +665,7 @@ public class PetCommand {
         source.sendSuccess(() -> Component.translatable(
                 "youzaiworldcore.message.pet.release.success", internalName), true);
 
-        DebugLogger.SERVER.info(MODULE, "放生: [{}], force={}, entityLoaded={}", internalName, force, wolf != null);
+        DebugLogger.SERVER.info(MODULE, "放生: [{}], force={}, entityLoaded={}", internalName, force, pet != null);
         DebugLogger.SERVER.exiting(MODULE, "executeReleaseLife", "1");
         return 1;
     }
@@ -665,7 +678,7 @@ public class PetCommand {
 
         String internalName = StringArgumentType.getString(ctx, "internalName").toUpperCase(Locale.ROOT);
 
-        ValidationResult vr = validatePetAccess(ctx, internalName, true);
+        ValidationResult vr = validatePetAccess(ctx, internalName);
         if (vr.hasError()) {
             source.sendFailure(Component.translatable(vr.errorKey(), vr.errorArgs()));
             DebugLogger.SERVER.exiting(MODULE, "executeTransfer", "0 (access denied)");
@@ -709,9 +722,9 @@ public class PetCommand {
         PetEntry updated = entry.withOwner(newOwnerUUID, newTrust);
         state.updatePet(updated);
 
-        Wolf wolf = PetUtils.findLoadedWolf(player.level().getServer(), entry.entityUUID());
-        if (wolf != null) {
-            PetEventHandler.syncRegistryToEntity(wolf, updated);
+        Mob pet = PetUtils.findLoadedPet(player.level().getServer(), updated);
+        if (pet != null) {
+            PetEventHandler.syncRegistryToEntity(pet, updated);
         }
 
         source.sendSuccess(() -> Component.translatable(

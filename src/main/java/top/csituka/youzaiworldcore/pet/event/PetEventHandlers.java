@@ -75,11 +75,11 @@ public final class PetEventHandlers {
                 return InteractionResult.PASS;
             }
 
-            if (!(entity instanceof Wolf wolf)) {
+            if (!(entity instanceof Mob pet) || PetUtils.petType(pet) == null) {
                 return InteractionResult.PASS;
             }
 
-            if (player.getItemInHand(hand).is(Items.NAME_TAG)) {
+            if (pet instanceof Wolf wolf && player.getItemInHand(hand).is(Items.NAME_TAG)) {
                 if (PetEventHandler.onNameTagUse(player, wolf)) {
                     return InteractionResult.FAIL;
                 }
@@ -87,7 +87,7 @@ public final class PetEventHandlers {
             }
 
             // 处理信任玩家交互权限
-            if (PetEventHandler.onInteract(player, wolf)) {
+            if (PetEventHandler.onInteract(player, pet)) {
                 // 非信任玩家 → 取消交互
                 return InteractionResult.FAIL;
             }
@@ -105,16 +105,16 @@ public final class PetEventHandlers {
                 return true;
             }
 
-            if (!(entity instanceof Wolf wolf)) {
+            if (!(entity instanceof Mob pet) || PetUtils.petType(pet) == null) {
                 return true;
             }
 
             ServerLevel level = (ServerLevel) entity.level();
-            boolean cancelled = PetEventHandler.onDamage(wolf, source, level);
+            boolean cancelled = PetEventHandler.onDamage(pet, source, level);
 
             if (cancelled) {
-                wolf.setPersistentAngerEndTime(0);
-                if (wolf.getPersistentAngerTarget() != null) {
+                if (pet instanceof Wolf wolf) {
+                    wolf.setPersistentAngerEndTime(0);
                     wolf.setPersistentAngerTarget(null);
                 }
                 return false;

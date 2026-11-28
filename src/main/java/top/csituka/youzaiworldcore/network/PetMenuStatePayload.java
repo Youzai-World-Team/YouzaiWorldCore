@@ -12,10 +12,27 @@ import top.csituka.youzaiworldcore.YouzaiworldCore;
 
 @SuppressWarnings("null")
 public record PetMenuStatePayload(long requestId, boolean success, Component message, List<Entry> pets) implements CustomPacketPayload {
-    /** 第三个字段沿用原有编码，记录狼的模式或其他宠物的原版实体翻译键。 */
+    /** 狼使用原模式字段，其他动物使用实体翻译键和可选的模式。 */
     public record Entry(String id, String name, String mode) {
         public boolean hasCombatMode() {
             return !mode.startsWith("entity.");
+        }
+
+        public String selectedMode() {
+            int separator = mode.indexOf('|');
+            return hasCombatMode() ? mode : separator < 0 ? "" : mode.substring(separator + 1);
+        }
+
+        public String speciesKey() {
+            int separator = mode.indexOf('|');
+            return separator < 0 ? mode : mode.substring(0, separator);
+        }
+
+        public List<String> availableModes() {
+            if (hasCombatMode()) {
+                return List.of("companionship", "hunting", "attack", "guard");
+            }
+            return selectedMode().isEmpty() ? List.of() : List.of("companionship", "stationary");
         }
     }
     public static final Type<PetMenuStatePayload> ID = new Type<>(Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "pet_menu_state"));

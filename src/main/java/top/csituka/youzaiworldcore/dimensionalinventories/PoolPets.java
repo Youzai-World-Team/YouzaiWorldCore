@@ -18,6 +18,7 @@ import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentTarget;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.UUIDUtil;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtAccounter;
 import net.minecraft.nbt.NbtIo;
@@ -28,10 +29,12 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntityReference;
 import net.minecraft.world.entity.EntitySpawnReason;
-import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.TamableAnimal;
 import net.minecraft.world.entity.animal.wolf.Wolf;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.storage.TagValueInput;
 import net.minecraft.world.level.storage.TagValueOutput;
@@ -39,17 +42,21 @@ import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;
 import top.csituka.youzaiworldcore.account.util.AuthPlayerHelper;
 import top.csituka.youzaiworldcore.config.ModPaths;
+import top.csituka.youzaiworldcore.mixin.pet.PetShoulderAccessor;
 import top.csituka.youzaiworldcore.pet.PetEntry;
 import top.csituka.youzaiworldcore.pet.PetEventHandler;
 import top.csituka.youzaiworldcore.pet.PetGlobalState;
+import top.csituka.youzaiworldcore.pet.PetStationaryAccess;
 import top.csituka.youzaiworldcore.pet.PetUtils;
 import top.csituka.youzaiworldcore.util.DebugLogger;
+import top.csituka.youzaiworldcore.util.LoadedChunks;
 
 /** 跨池收起的狼由原池存档保管，原版区块写盘确认后才移除回收用的实体数据。 */
 @SuppressWarnings("null")
 public final class PoolPets {
     private static final DebugLogger.ModuleLogger LOGGER = DebugLogger.SERVER.module("PoolPets");
     private static final Identifier RETURN_ID = Identifier.fromNamespaceAndPath("youzaiworldcore", "pool_pet_return");
+    private static final Identifier NAUTILUS = Identifier.withDefaultNamespace("nautilus");
     private static final AttachmentType<String> RETURN_TOKEN = AttachmentRegistry.createPersistent(RETURN_ID, Codec.STRING);
     private static final Map<MinecraftServer, Map<UUID, String>> UNSAVED_RETURNS = new WeakHashMap<>();
     private static final Map<MinecraftServer, Set<UUID>> PENDING_RESTORES = new WeakHashMap<>();
@@ -61,16 +68,17 @@ public final class PoolPets {
         ServerLifecycleEvents.SERVER_STARTED.register(PoolPets::loadPendingReleases);
     }
 
-    static List<Wolf> departingPets(ServerPlayer player, String pool) {
+    static List<Mob> departingPets(ServerPlayer player, String pool) {
         var server = player.level().getServer();
-        var wolves = new ArrayList<Wolf>();
+        var wolves = new ArrayList<Mob>();
         for (var pet : PetGlobalState.get(server).findByOwner(player.getUUID())) {
-            if (!pet.hasCombatMode()) {
+            if (pet.isStationary()) {
                 continue;
             }
             for (ServerLevel level : server.getAllLevels()) {
                 if (pool.equals(DimensionPoolSettings.statePoolId(level.dimension()))
-                        && level.getEntity(pet.entityUUID()) instanceof Wolf wolf && canFollow(wolf)) {
+                        && level.getEntity(pet.entityUUID()) instanceof Mob wolf && pet.entityType().equals(PetUtils.petType(wolf))
+                        && canFollow(wolf)) {
                     wolves.add(wolf);
                     break;
                 }
@@ -79,13 +87,16 @@ public final class PoolPets {
         return wolves;
     }
 
-    public static boolean canFollow(Wolf wolf) {
-        return wolf.isAlive() && !wolf.isOrderedToSit() && !wolf.isInSittingPose();
+    public static boolean canFollow(Mob pet) {
+        return pet.isAlive() && !((PetStationaryAccess) pet).yzwc$isStationary()
+                && (!(pet instanceof TamableAnimal animal)
+                || (!animal.isOrderedToSit() && !animal.isInSittingPose()));
     }
 
-    static void afterTransfer(ServerPlayer player, String originPool, List<Wolf> departing) {
+    static void afterTransfer(ServerPlayer player, String originPool, List<Mob> departing, ServerLevel origin,
+            Vec3 originPosition) {
         var server = player.level().getServer();
-        for (Wolf wolf : departing) {
+        for (Mob wolf : departing) {
             if (canFollow(wolf) && originPool.equals(DimensionPoolSettings.statePoolId(wolf.level().dimension()))) {
                 try {
                     park(server, originPool, wolf);
@@ -94,10 +105,58 @@ public final class PoolPets {
                 }
             }
         }
+        parkShoulderPets(player, originPool, origin, originPosition, null);
         restore(player);
     }
 
-    private static void park(MinecraftServer server, String pool, Wolf wolf) throws IOException {
+    public static void stationShoulderPet(ServerPlayer owner, UUID id) {
+        var level = owner.level();
+        if (parkShoulderPets(owner, DimensionPoolSettings.statePoolId(level.dimension()), level, owner.position(), id)) {
+            restore(owner);
+        }
+    }
+
+    private static boolean parkShoulderPets(ServerPlayer player, String pool, ServerLevel origin, Vec3 position,
+            @Nullable UUID onlyPet) {
+        var access = (PetShoulderAccessor) player;
+        boolean left = parkShoulderPet(player.getShoulderEntityLeft(), pool, origin, position, onlyPet);
+        if (left) access.yzwc$setPetShoulderLeft(new CompoundTag());
+        boolean right = parkShoulderPet(player.getShoulderEntityRight(), pool, origin, position, onlyPet);
+        if (right) access.yzwc$setPetShoulderRight(new CompoundTag());
+        return left || right;
+    }
+
+    private static boolean parkShoulderPet(CompoundTag data, String pool, ServerLevel origin, Vec3 position,
+            @Nullable UUID onlyPet) {
+        var id = data.read("UUID", UUIDUtil.CODEC).orElse(null);
+        if (id == null || (onlyPet != null && !id.equals(onlyPet))) {
+            return false;
+        }
+        var server = origin.getServer();
+        var pet = PetGlobalState.get(server).findByEntityUUID(id).orElse(null);
+        if (pet == null || !pet.entityType().toString().equals(data.getStringOr("id", ""))) {
+            return false;
+        }
+        try {
+            var existing = read(server, id);
+            var token = data.getCompoundOrEmpty("fabric:attachments").getStringOr(RETURN_ID.toString(), "");
+            if (existing != null && !existing.token.equals(token)) {
+                throw new IOException("肩载宠物与存档不一致：" + id);
+            }
+            var body = data.copy();
+            body.store("Pos", Vec3.CODEC, position);
+            write(server, id, new StoredPet(pool, origin.dimension().identifier().toString(), newToken(),
+                    body, null, pet.entityType()));
+            var unsaved = UNSAVED_RETURNS.get(server);
+            if (unsaved != null) unsaved.remove(id);
+            return true;
+        } catch (IOException | RuntimeException error) {
+            LOGGER.error("无法收起肩载宠物 {}", id, error);
+            return false;
+        }
+    }
+
+    private static void park(MinecraftServer server, String pool, Mob wolf) throws IOException {
         UUID id = wolf.getUUID();
         // 先核对原档，避免用当前实体覆盖一个无法解析的回收档。
         StoredPet previous = read(server, id);
@@ -105,7 +164,7 @@ public final class PoolPets {
             throw new IOException("实体与宠物档案不一致：" + id);
         }
         write(server, id, new StoredPet(pool, wolf.level().dimension().identifier().toString(), newToken(),
-                snapshot(wolf), null));
+                snapshot(wolf), null, PetUtils.petType(wolf)));
         wolf.stopRiding();
         wolf.ejectPassengers();
         wolf.remove(Entity.RemovalReason.CHANGED_DIMENSION);
@@ -115,7 +174,7 @@ public final class PoolPets {
         }
     }
 
-    private static CompoundTag snapshot(Wolf wolf) throws IOException {
+    private static CompoundTag snapshot(Mob wolf) throws IOException {
         var problems = new ProblemReporter.Collector(wolf.problemPath());
         var output = TagValueOutput.createWithContext(problems, wolf.registryAccess());
         wolf.saveWithoutId(output);
@@ -133,7 +192,7 @@ public final class PoolPets {
         }
         var server = player.level().getServer();
         if (!canRestore(player)) {
-            if (PetGlobalState.get(server).findByOwner(player.getUUID()).stream().anyMatch(PetEntry::hasCombatMode)) {
+            if (!PetGlobalState.get(server).findByOwner(player.getUUID()).isEmpty()) {
                 PENDING_RESTORES.computeIfAbsent(server, ignored -> new HashSet<>()).add(player.getUUID());
             }
             return;
@@ -142,7 +201,9 @@ public final class PoolPets {
         if (waiting != null) {
             waiting.remove(player.getUUID());
         }
-        restoreInLoadedChunk(player);
+        if (restoreInLoadedChunk(player)) {
+            PENDING_RESTORES.computeIfAbsent(server, ignored -> new HashSet<>()).add(player.getUUID());
+        }
     }
 
     static void tickPendingRestores(MinecraftServer server) {
@@ -158,8 +219,7 @@ public final class PoolPets {
             if (!canRestore(player)) {
                 return false;
             }
-            restoreInLoadedChunk(player);
-            return true;
+            return !restoreInLoadedChunk(player);
         });
     }
 
@@ -169,34 +229,72 @@ public final class PoolPets {
                 && isChunkLoaded(player.level(), ChunkPos.containing(player.blockPosition()));
     }
 
-    private static void restoreInLoadedChunk(ServerPlayer player) {
+    /** 返回 true 表示还有宠物需要等待实体区块。 */
+    private static boolean restoreInLoadedChunk(ServerPlayer player) {
         var level = player.level();
         var server = level.getServer();
-        // 登录时玩家可能经过大厅，恢复时才以实际所在池为准。
         String pool = DimensionPoolSettings.statePoolId(level.dimension());
+        boolean waiting = false;
         for (var pet : PetGlobalState.get(server).findByOwner(player.getUUID())) {
-            if (!pet.hasCombatMode()) {
-                continue;
-            }
             UUID id = pet.entityUUID();
             try {
                 StoredPet stored = read(server, id);
-                if (stored != null && stored.release == null && stored.body != null && pool.equals(stored.pool)
-                        && !UNSAVED_RETURNS.getOrDefault(server, Map.of()).containsKey(id)) {
-                    materialize(level, stored, id, wolf -> {
-                        wolf.setOwnerReference(EntityReference.of(player.getUUID()));
-                        wolf.setDeltaMovement(Vec3.ZERO);
-                        wolf.resetFallDistance();
-                        wolf.snapTo(player.getX(), player.getY(), player.getZ(), player.getYRot(), 0);
-                        if (isRecallAreaLoaded(player)) {
-                            wolf.tryToTeleportToOwner();
-                        }
-                    });
+                if (stored == null || stored.release != null || stored.body == null || !pool.equals(stored.pool)
+                        || !pet.entityType().equals(stored.type)
+                        || UNSAVED_RETURNS.getOrDefault(server, Map.of()).containsKey(id)) {
+                    continue;
                 }
+                if (pet.isStationary()) {
+                    // 宠物已暂存时也可切换模式。静止宠物回到原地，等原区块自然就绪。
+                    var location = releaseLocation(id, stored);
+                    var origin = DimensionPoolManager.getLoadedLevel(server, location.dimension);
+                    if (origin == null || !isEntityChunkReady(origin, location.chunk)) {
+                        waiting = true;
+                        continue;
+                    }
+                    materialize(origin, stored, id, animal -> PetEventHandler.syncRegistryToEntity(animal, pet));
+                    continue;
+                }
+                var playerChunk = ChunkPos.containing(player.blockPosition());
+                if (!pet.hasCombatMode() && !isEntityChunkReady(level, playerChunk)) {
+                    waiting = true;
+                    continue;
+                }
+                var destination = recallPosition(player, stored.type);
+                if (destination == null) {
+                    waiting = true;
+                    continue;
+                }
+                materialize(level, stored, id, animal -> {
+                    PetEventHandler.syncRegistryToEntity(animal, pet);
+                    animal.setDeltaMovement(Vec3.ZERO);
+                    animal.resetFallDistance();
+                    animal.snapTo(destination, player.getYRot(), 0);
+                    if (animal instanceof Wolf wolf && isRecallAreaLoaded(player)) {
+                        wolf.tryToTeleportToOwner();
+                    }
+                });
             } catch (IOException | RuntimeException error) {
                 LOGGER.error("无法恢复宠物 {}，保留原档", id, error);
             }
         }
+        return waiting;
+    }
+
+    private static @Nullable Vec3 recallPosition(ServerPlayer player, Identifier type) {
+        if (!NAUTILUS.equals(type)) {
+            return player.position();
+        }
+        var level = player.level();
+        for (BlockPos pos : BlockPos.withinManhattan(player.blockPosition(), 5)) {
+            var chunk = LoadedChunks.get(level, pos);
+            if (chunk != null && chunk.getBlockState(pos).is(Blocks.WATER)
+                    && chunk.getBlockState(pos.above()).is(Blocks.WATER)
+                    && isEntityChunkReady(level, ChunkPos.containing(pos))) {
+                return Vec3.atBottomCenterOf(pos);
+            }
+        }
+        return null;
     }
 
     private static boolean isRecallAreaLoaded(ServerPlayer player) {
@@ -218,8 +316,12 @@ public final class PoolPets {
         return level.getChunkSource().getChunkNow(pos.x(), pos.z()) != null;
     }
 
+    private static boolean isEntityChunkReady(ServerLevel level, ChunkPos pos) {
+        return isChunkLoaded(level, pos) && level.areEntitiesActuallyLoadedAndTicking(pos);
+    }
+
     /** 在确认放生前记录意图，等待原区块的实体数据自然就绪。 */
-    public static boolean releaseParked(MinecraftServer server, PetEntry pet, @Nullable Wolf loaded) throws IOException {
+    public static boolean releaseParked(MinecraftServer server, PetEntry pet, @Nullable Mob loaded) throws IOException {
         UUID id = pet.entityUUID();
         boolean awaitingSave = UNSAVED_RETURNS.getOrDefault(server, Map.of()).containsKey(id);
         if (loaded != null && !awaitingSave) {
@@ -229,20 +331,23 @@ public final class PoolPets {
         if (stored == null || stored.body == null) {
             return false;
         }
+        if (!stored.type.equals(pet.entityType())) {
+            throw new IOException("宠物存档类型不匹配：" + id);
+        }
         if ((loaded == null && awaitingSave) || (loaded != null && !stored.token.equals(returnToken(loaded)))) {
             throw new IOException("宠物仍在保存：" + id);
         }
         Release release = new Release(pet.internalName(), pet.tameTimestamp());
         StoredPet released = loaded == null
-                ? new StoredPet(stored.pool, stored.dimension, stored.token, stored.body, release)
+                ? new StoredPet(stored.pool, stored.dimension, stored.token, stored.body, release, stored.type)
                 : new StoredPet(DimensionPoolSettings.statePoolId(loaded.level().dimension()),
-                        loaded.level().dimension().identifier().toString(), newToken(), snapshot(loaded), release);
+                        loaded.level().dimension().identifier().toString(), newToken(), snapshot(loaded), release, stored.type);
         ReleaseLocation location = releaseLocation(id, released);
         write(server, id, released);
         PetGlobalState.get(server).removePet(id);
         if (loaded != null) {
             ((AttachmentTarget) loaded).setAttached(RETURN_TOKEN, released.token);
-            PetEventHandler.releaseWolf(loaded);
+            PetEventHandler.releasePet(loaded);
             UNSAVED_RETURNS.computeIfAbsent(server, ignored -> new HashMap<>()).put(id, released.token);
         } else if (!tryRelease(server, id, location)) {
             PENDING_RELEASES.computeIfAbsent(server, ignored -> new HashMap<>()).put(id, location);
@@ -273,14 +378,14 @@ public final class PoolPets {
                             if (stored.body != null) {
                                 // 新登记已落盘而实体尚未落盘时，按新主人的普通召回流程恢复。
                                 write(server, id, new StoredPet(stored.pool, stored.dimension, stored.token,
-                                        stored.body, null));
+                                        stored.body, null, stored.type));
                             }
                             continue;
                         }
                         state.removePet(id);
-                        Wolf wolf = PetUtils.findLoadedWolf(server, id);
+                        Mob wolf = PetUtils.findLoadedPet(server, pet);
                         if (wolf != null) {
-                            PetEventHandler.releaseWolf(wolf);
+                            PetEventHandler.releasePet(wolf);
                         }
                     }
                     if (stored.body != null) {
@@ -314,8 +419,7 @@ public final class PoolPets {
 
     private static boolean tryRelease(MinecraftServer server, UUID id, ReleaseLocation location) {
         ServerLevel level = DimensionPoolManager.getLoadedLevel(server, location.dimension);
-        if (level == null || !isChunkLoaded(level, location.chunk)
-                || !level.areEntitiesActuallyLoadedAndTicking(location.chunk)) {
+        if (level == null || !isEntityChunkReady(level, location.chunk)) {
             return false;
         }
         try {
@@ -326,24 +430,25 @@ public final class PoolPets {
             if (stored.token.equals(UNSAVED_RETURNS.getOrDefault(server, Map.of()).get(id))) {
                 return true; // 区块载入了上次已经写入的同版本实体。
             }
-            return materialize(level, stored, id, PetEventHandler::releaseWolf) != null;
+            return materialize(level, stored, id, PetEventHandler::releasePet) != null;
         } catch (IOException | RuntimeException error) {
             LOGGER.error("无法在原区块放生宠物 {}，保留原档", id, error);
             return false;
         }
     }
 
-    private static @Nullable Wolf materialize(ServerLevel level, StoredPet stored, UUID id,
-            java.util.function.Consumer<Wolf> prepare) throws IOException {
+    private static @Nullable Mob materialize(ServerLevel level, StoredPet stored, UUID id,
+            java.util.function.Consumer<Mob> prepare) throws IOException {
         MinecraftServer server = level.getServer();
         for (ServerLevel world : server.getAllLevels()) {
             if (world.getEntity(id) != null) {
                 return null;
             }
         }
-        Wolf wolf = EntityTypes.WOLF.create(level, EntitySpawnReason.LOAD);
-        if (wolf == null) {
-            return null;
+        var type = BuiltInRegistries.ENTITY_TYPE.getValue(stored.type);
+        if (type == null || !(type.create(level, EntitySpawnReason.LOAD) instanceof Mob wolf)
+                || !stored.type.equals(PetUtils.petType(wolf))) {
+            throw new IOException("无效的宠物实体类型：" + stored.type);
         }
         var problems = new ProblemReporter.Collector(wolf.problemPath());
         wolf.load(TagValueInput.create(problems, level.registryAccess(), stored.body));
@@ -353,7 +458,7 @@ public final class PoolPets {
         String token = newToken();
         ((AttachmentTarget) wolf).setAttached(RETURN_TOKEN, token);
         prepare.accept(wolf);
-        write(server, id, new StoredPet(stored.pool, stored.dimension, token, stored.body, stored.release));
+        write(server, id, new StoredPet(stored.pool, stored.dimension, token, stored.body, stored.release, stored.type));
         if (level.addFreshEntity(wolf)) {
             UNSAVED_RETURNS.computeIfAbsent(server, ignored -> new HashMap<>()).put(id, token);
             return wolf;
@@ -362,21 +467,31 @@ public final class PoolPets {
     }
 
     /** 比较区块里的副本与最近的一次收起或恢复，防止重启加载到旧区块中的狼。 */
-    public static boolean canLoad(ServerLevel level, Wolf wolf) {
+    public static boolean canLoad(ServerLevel level, Mob wolf) {
+        return canLoad(level, wolf.getUUID(), PetUtils.petType(wolf), returnToken(wolf));
+    }
+
+    public static boolean canLoadShoulder(ServerLevel level, CompoundTag data) {
+        var id = data.read("UUID", UUIDUtil.CODEC).orElse(null);
+        var type = Identifier.tryParse(data.getStringOr("id", ""));
+        var token = data.getCompoundOrEmpty("fabric:attachments").getStringOr(RETURN_ID.toString(), "");
+        return id == null || canLoad(level, id, type, token);
+    }
+
+    private static boolean canLoad(ServerLevel level, UUID id, @Nullable Identifier type, @Nullable String token) {
         try {
             var server = level.getServer();
-            UUID id = wolf.getUUID();
             StoredPet stored = read(server, id);
-            if (stored == null) {
+            if (stored == null || !stored.type.equals(type)) {
                 return true;
             }
-            boolean current = stored.token.equals(returnToken(wolf));
+            boolean current = stored.token.equals(token);
             if (current && stored.body != null) {
                 UNSAVED_RETURNS.computeIfAbsent(server, ignored -> new HashMap<>()).put(id, stored.token);
             }
             return current;
         } catch (IOException | RuntimeException error) {
-            LOGGER.error("无法读取宠物 {} 的回收档，保留区块中的实体", wolf.getUUID(), error);
+            LOGGER.error("无法读取宠物 {} 的回收档，保留原版实体", id, error);
             return true;
         }
     }
@@ -423,7 +538,7 @@ public final class PoolPets {
         try {
             StoredPet stored = read(server, id);
             if (stored != null && stored.body != null && token.equals(stored.token)) {
-                write(server, id, new StoredPet(stored.pool, stored.dimension, token, null, stored.release));
+                write(server, id, new StoredPet(stored.pool, stored.dimension, token, null, stored.release, stored.type));
             }
             unsaved.remove(id);
         } catch (IOException | RuntimeException error) {
@@ -431,7 +546,7 @@ public final class PoolPets {
         }
     }
 
-    private static @Nullable String returnToken(Wolf wolf) {
+    private static @Nullable String returnToken(Mob wolf) {
         return ((AttachmentTarget) wolf).getAttached(RETURN_TOKEN);
     }
 
@@ -449,8 +564,10 @@ public final class PoolPets {
         String pool = root.getStringOr("pool", "");
         String dimension = root.getStringOr("dimension", "");
         String token = root.getStringOr("token", "");
+        String bodyKey = root.contains("pet") ? "pet" : "wolf";
+        var type = Identifier.tryParse(root.getStringOr("entity_type", PetEntry.WOLF_TYPE.toString()));
         if (pool.isEmpty() || Identifier.tryParse(dimension) == null || dimension.isEmpty() || token.isEmpty()
-                || (root.contains("wolf") && root.getCompound("wolf").isEmpty())) {
+                || type == null || (root.contains(bodyKey) && root.getCompound(bodyKey).isEmpty())) {
             throw new IOException("无效的宠物回收档：" + id);
         }
         Release release = null;
@@ -463,7 +580,7 @@ public final class PoolPets {
             }
             release = new Release(name, timestamp.get());
         }
-        return new StoredPet(pool, dimension, token, root.getCompound("wolf").orElse(null), release);
+        return new StoredPet(pool, dimension, token, root.getCompound(bodyKey).orElse(null), release, type);
     }
 
     private static void write(MinecraftServer server, UUID id, StoredPet stored) throws IOException {
@@ -471,8 +588,9 @@ public final class PoolPets {
         tag.putString("pool", stored.pool);
         tag.putString("dimension", stored.dimension);
         tag.putString("token", stored.token);
+        tag.putString("entity_type", stored.type.toString());
         if (stored.body != null) {
-            tag.put("wolf", stored.body);
+            tag.put("pet", stored.body);
         }
         if (stored.release != null) {
             var receipt = new CompoundTag();
@@ -492,5 +610,5 @@ public final class PoolPets {
     }
 
     private record StoredPet(String pool, String dimension, String token, @Nullable CompoundTag body,
-            @Nullable Release release) {}
+            @Nullable Release release, Identifier type) {}
 }

@@ -38,8 +38,8 @@ public final class PetMenuHandler {
             else {
                 String command = switch (request.action()) {
                     case "rename" -> "set " + entry.internalName() + " rename " + quote(request.value());
-                    case "mode" -> entry.hasCombatMode()
-                            && java.util.List.of("companionship", "hunting", "attack", "guard").contains(request.value())
+                    case "mode" -> entry.availableModes().stream()
+                            .anyMatch(mode -> mode.getSerializedName().equals(request.value()))
                             ? "set " + entry.internalName() + " mode " + request.value() : null;
                     case "highlight" -> "highlight " + entry.internalName();
                     default -> null;

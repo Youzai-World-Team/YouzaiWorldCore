@@ -214,8 +214,9 @@ public final class PoolRuntimeAudit implements DedicatedServerModInitializer {
         @SuppressWarnings("null")
         private static boolean isParked(MinecraftServer server, UUID id) throws Exception {
                 var file = ModPaths.parkedPet(server, id);
-                return Files.exists(file)
-                                && NbtIo.readCompressed(file, NbtAccounter.uncompressedQuota()).contains("wolf");
+                if (!Files.exists(file)) return false;
+                var data = NbtIo.readCompressed(file, NbtAccounter.uncompressedQuota());
+                return data.contains("pet") || data.contains("wolf");
         }
 
         private static void awaitReturnedPetSave(MinecraftServer server, UUID id) {
@@ -570,6 +571,8 @@ public final class PoolRuntimeAudit implements DedicatedServerModInitializer {
         private static void nativePetManagement(MinecraftServer server) throws Exception {
                 var level = server.overworld();
                 var player = connect(server, level, UUID.randomUUID(), "NativePetAudit", new TestConnection(), false);
+                var ally = connect(server, level, UUID.randomUUID(), "NativePetAlly", new TestConnection(), false);
+                server.services().nameToIdCache().add(new NameAndId(ally.getGameProfile()));
                 var state = PetGlobalState.get(server);
                 var commands = server.getCommands().getDispatcher();
                 var source = player.createCommandSourceStack();
@@ -594,11 +597,12 @@ public final class PoolRuntimeAudit implements DedicatedServerModInitializer {
                 donkey.setOwner(player);
                 donkey.setTamed(true);
                 check(level.addFreshEntity(donkey), "previously tame donkey loads");
+                check(state.findByEntityUUID(donkey.getUUID()).isEmpty(), "old non-wolf data is not imported");
+                check(donkey.tameWithName(player), "new donkey tame is registered");
                 check(state.findByEntityUUID(camel.getUUID()).isEmpty(), "ownerless camel stays outside the registry");
                 check(state.findByOwner(player.getUUID()).size() == 5
                                 && state.findByOwner(player.getUUID()).stream().noneMatch(PetEntry::hasCombatMode),
-                                "tamed cat, parrot, nautilus, horse and existing donkey get basic management");
-                check(PoolPets.departingPets(player, MAIN).isEmpty(), "basic pets stay out of the wolf follow policy");
+                                "newly tamed non-wolf animals are registered");
 
                 var catEntry = state.findByEntityUUID(cat.getUUID()).orElseThrow();
                 check(catEntry.detailKey().equals("entity.minecraft.cat")
@@ -613,8 +617,12 @@ public final class PoolRuntimeAudit implements DedicatedServerModInitializer {
 
                 String setCat = "yzwc pet set " + catEntry.internalName() + " ";
                 check(commands.execute(setCat + "mode attack", source) == 0
-                                && commands.execute(setCat + "release_life true", source) == 0 && cat.isTame(),
-                                "wolf mode and release cannot affect the cat");
+                                && commands.execute(setCat + "mode stationary", source) == 0 && cat.isTame(),
+                                "cat retains its vanilla behavior and has no custom mode");
+                check(commands.execute(setCat + "trust add NativePetAlly", source) == 1
+                                && state.findByEntityUUID(cat.getUUID()).orElseThrow().isTrustedOrOwner(ally.getUUID())
+                                && commands.execute(setCat + "trust remove NativePetAlly", source) == 1,
+                                "trust management works for cats");
                 check(commands.execute("yzwc pet highlight " + catEntry.internalName(), source) == 1
                                 && cat.hasEffect(MobEffects.GLOWING), "highlight works on a loaded cat");
                 check(commands.execute(setCat + "rename MenuName", source) == 1
@@ -637,10 +645,68 @@ public final class PoolRuntimeAudit implements DedicatedServerModInitializer {
                                 && loaded.getName().getString().equals("PendingName"), "loaded cat applies pending name");
                 loaded.hurtServer(level, loaded.damageSources().genericKill(), Float.MAX_VALUE);
                 check(state.findByEntityUUID(loaded.getUUID()).isEmpty(), "dead cat is removed from the registry");
-                for (Mob animal : List.of(pony, parrot, nautilus, donkey, camel)) {
-                        animal.discard();
+                var parrotId = parrot.getUUID();
+                String setParrot = "yzwc pet set " + state.findByEntityUUID(parrotId).orElseThrow().internalName() + " ";
+                var station = parrot.position();
+                check(commands.execute(setParrot + "mode stationary", source) == 1
+                                && state.findByEntityUUID(parrotId).orElseThrow().station().orElseThrow().equals(station)
+                                && parrot.unableToMoveToOwner() && !parrot.setEntityOnShoulder(player),
+                                "stationary mode has a persisted center and stops native owner following and perching");
+                parrot.setPosRaw(station.x + 2, station.y, station.z);
+                check(parrot.distanceToSqr(station) == 4, "stationary pets can roam");
+                parrot.setPosRaw(station.x + 12, station.y, station.z);
+                check(parrot.distanceToSqr(station) <= 25.000001
+                                && !parrot.teleportTo(level, station.x + 20, station.y, station.z, Set.of(), 0, 0, true),
+                                "movement and teleport cannot take a stationary pet outside the boundary");
+                var stationed = state.findByEntityUUID(parrotId).orElseThrow();
+                check(PetEntry.CODEC.parse(NbtOps.INSTANCE,
+                                PetEntry.CODEC.encodeStart(NbtOps.INSTANCE, stationed).getOrThrow())
+                                .getOrThrow().station().orElseThrow().equals(station), "stationary center survives storage");
+
+                String setDonkey = "yzwc pet set " + state.findByEntityUUID(donkey.getUUID()).orElseThrow().internalName() + " ";
+                check(commands.execute(setDonkey + "transfer NativePetAlly", source) == 1
+                                && donkey.getOwner() == ally, "transfer updates mount's native owner");
+                check(commands.execute(setDonkey + "release_life true", ally.createCommandSourceStack()) == 1
+                                && !donkey.isTamed() && donkey.getOwnerReference() == null,
+                                "release clears the mount's original ownership");
+
+                var shoulderPet = EntityTypes.PARROT.create(level, EntitySpawnReason.LOAD);
+                shoulderPet.snapTo(player.position(), 0, 0);
+                check(level.addFreshEntity(shoulderPet), "companion parrot enters the world");
+                shoulderPet.tame(player);
+                player.setOnGround(true);
+                check(shoulderPet.setEntityOnShoulder(player), "companion parrot rides on a shoulder");
+                var oldShoulderData = player.getShoulderEntityLeft().copy();
+                check(DimensionPoolManager.teleportToPool(player, END) && isParked(server, pony.getUUID())
+                                && isParked(server, nautilus.getUUID()) && level.getEntity(parrotId) == parrot
+                                && !isParked(server, parrotId)
+                                && isParked(server, shoulderPet.getUUID()) && player.getShoulderEntityLeft().isEmpty()
+                                && !PoolPets.canLoadShoulder(level, oldShoulderData),
+                                "cross-pool parking honors stationary mode and saves shoulder pets without duplicates");
+                check(DimensionPoolManager.teleportToPool(player, MAIN), "original pool can be re-entered");
+                awaitPetChunk(level, player.blockPosition());
+                PoolPets.tickPendingRestores(server);
+                check(level.getEntity(nautilus.getUUID()) == null && isParked(server, nautilus.getUUID()),
+                                "nautilus waits for a suitable water destination");
+                var water = player.blockPosition().offset(2, 0, 0);
+                awaitPetChunk(level, water);
+                level.setBlockAndUpdate(water, Blocks.WATER.defaultBlockState());
+                level.setBlockAndUpdate(water.above(), Blocks.WATER.defaultBlockState());
+                PoolPets.tickPendingRestores(server);
+                check(level.getEntity(pony.getUUID()) instanceof net.minecraft.world.entity.animal.equine.Horse horse
+                                && horse.getOwner() == player
+                                && level.getEntity(nautilus.getUUID()) != null
+                                && level.getEntity(shoulderPet.getUUID()) instanceof net.minecraft.world.entity.animal.parrot.Parrot,
+                                "cross-pool recall restores the original species and owner");
+                check(commands.execute(setParrot + "mode companionship", player.createCommandSourceStack()) == 1
+                                && state.findByEntityUUID(parrotId).orElseThrow().station().isEmpty(),
+                                "companion mode clears the stationary restriction");
+                for (Mob animal : List.of(pony, parrot, nautilus, donkey, camel, shoulderPet)) {
+                        var active = level.getEntity(animal.getUUID());
+                        if (active != null) active.discard();
                         state.removePet(animal.getUUID());
                 }
+                detach(ally);
                 detach(player);
         }
 

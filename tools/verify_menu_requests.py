@@ -39,7 +39,11 @@ stub(P+'.luckperms.LuckPermsHelper','public class LuckPermsHelper {public static
 stub(P+'.pet.command.PetCommand','public class PetCommand {public static final String PERMISSION_PET_LIST="list";}')
 stub(P+'.pet.PetEntry','''public record PetEntry(String internalName,String displayName,java.util.UUID ownerUUID,String detailKey) {
  public boolean isOwner(java.util.UUID id){return ownerUUID.equals(id);}
- public boolean hasCombatMode(){return !detailKey.startsWith("entity.");}
+ public enum Mode {COMPANIONSHIP,HUNTING,ATTACK,GUARD,STATIONARY;
+  public String getSerializedName(){return name().toLowerCase(java.util.Locale.ROOT);}}
+ public java.util.List<Mode> availableModes(){return detailKey.startsWith("entity.")
+  ? detailKey.contains("|") ? java.util.List.of(Mode.COMPANIONSHIP,Mode.STATIONARY) : java.util.List.of()
+  : java.util.List.of(Mode.COMPANIONSHIP,Mode.HUNTING,Mode.ATTACK,Mode.GUARD);}
 }''')
 stub(P+'.pet.PetGlobalState','''public class PetGlobalState {
  public static java.util.List<PetEntry> pets=new java.util.ArrayList<>();public static PetGlobalState get(Object server){return new PetGlobalState();}
@@ -78,8 +82,11 @@ public class MenuRequestChecks {
   check(!invoke(player,"admin","DOG1","").success()&&Commands.calls==0,"菜单执行未开放命令");
   check(!invoke(player,"mode","DOG1","attack release_life").success()&&Commands.calls==0,"模式参数注入其他操作");
   PetGlobalState.pets.add(new PetEntry("PET1","Cat",player.id,"entity.minecraft.cat"));
+  PetGlobalState.pets.add(new PetEntry("PET2","Horse",player.id,"entity.minecraft.horse|companionship"));
   check(invoke(player,"list","","").pets().stream().anyMatch(p->p.id().equals("PET1")&&!p.hasCombatMode()&&p.mode().equals("entity.minecraft.cat")),"列表未返回非战斗宠物类型");
-  check(!invoke(player,"mode","PET1","attack").success()&&Commands.calls==0,"菜单向非战斗宠物开放模式命令");
+  check(!invoke(player,"mode","PET1","stationary").success()&&Commands.calls==0,"菜单向猫开放模式命令");
+  check(!invoke(player,"mode","PET2","attack").success()&&Commands.calls==0,"坐骑接受战斗模式");
+  check(invoke(player,"mode","PET2","stationary").success()&&Commands.last.equals("yzwc pet set PET2 mode stationary"),"坐骑无法切换静止模式");
   check(invoke(player,"mode","DOG1","attack").success()&&Commands.last.equals("yzwc pet set DOG1 mode attack"),"模式命令不正确");
   invoke(player,"rename","DOG1","A \\\" B\\\\C");check(Commands.last.equals("yzwc pet set DOG1 rename \\\"A \\\\\\\" B\\\\\\\\C\\\""),"改名字符串未安全引用");
   Commands.result=0;response=invoke(player,"highlight","DOG1","");check(!response.success()&&response.message().getString().equals("permission_denied"),"命令权限拒绝反馈被覆盖");

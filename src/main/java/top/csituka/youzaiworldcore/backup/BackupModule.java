@@ -55,7 +55,8 @@ enum BackupModule {
                 JsonObject parked = new JsonObject();
                 for (Path file : BackupFiles.files(ModPaths.parkedPets(server), 1, PARKED_PET.asMatchPredicate())) {
                     // 活跃实体的版本标记不包含狼的快照，不能用旧标记覆盖区块里的现行实体。
-                    if (NbtIo.readCompressed(file, NbtAccounter.uncompressedQuota()).contains("wolf")) {
+                    var archive = NbtIo.readCompressed(file, NbtAccounter.uncompressedQuota());
+                    if (archive.contains("pet") || archive.contains("wolf")) {
                         parked.add(file.getFileName().toString(), BackupFiles.readFile(file));
                     }
                 }

@@ -37,13 +37,14 @@ public final class PetScreen extends MailBaseScreen {
         addRenderableWidget(new MenuCloseButton(page.right() - 40, page.y() + 10, this));
         addRenderableWidget(new TransparentButton(page.right() - 106, page.y() + 12, 58, 24, text("refresh"), () -> request("list", "")));
         addRenderableWidget(new TransparentButton(page.x() + 12, page.y() + 12, 48, 24, text("back"), this::onClose));
-        int y = list.bottom() + 8, w = (list.width() - 18) / 4;
-        String[] modes = { "companionship", "hunting", "attack", "guard" };
-        if (selection != null && selection.hasCombatMode()) {
-            for (int i = 0; i < modes.length; i++) {
-                String mode = modes[i];
+        int y = list.bottom() + 8;
+        if (selection != null && !selection.availableModes().isEmpty()) {
+            List<String> modes = selection.availableModes();
+            int w = (list.width() - 6 * (modes.size() - 1)) / modes.size();
+            for (int i = 0; i < modes.size(); i++) {
+                String mode = modes.get(i);
                 var button = addRenderableWidget(new TransparentButton(list.x() + i * (w + 6), y, w, 24, text(mode), () -> request("mode", mode)));
-                button.active = pending == 0 && !selection.mode().equals(mode);
+                button.active = pending == 0 && !selection.selectedMode().equals(mode);
             }
         }
         nameInput = addRenderableWidget(new EditBox(font, list.x(), y + 32, list.width() - 122, 24, text("name")));
@@ -83,7 +84,10 @@ public final class PetScreen extends MailBaseScreen {
         for (int i = offset; i < end; i++) {
             var pet = pets.get(i); int y = list.y() + (i - offset) * 32;
             g.fill(list.x(), y, list.right(), y + 30, pet.id().equals(selected) ? MailUi.rowSelected() : MailUi.rowAlternate());
-            String detail = (pet.hasCombatMode() ? text(pet.mode()) : Component.translatable(pet.mode())).getString();
+            var mode = pet.selectedMode();
+            String detail = pet.hasCombatMode() ? text(mode).getString()
+                    : Component.translatable(pet.speciesKey()).getString()
+                            + (mode.isEmpty() ? "" : " · " + text(mode).getString());
             g.text(font, MailUi.ellipsize(font, pet.name(), list.width() - font.width(detail) - 24), list.x() + 8, y + 5, MailUi.textPrimary(), false);
             g.text(font, pet.id(), list.x() + 8, y + 18, MailUi.textMuted(), false);
             g.text(font, detail, list.right() - font.width(detail) - 8, y + 12, MailUi.textSecondary(), false);

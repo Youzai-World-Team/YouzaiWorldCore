@@ -8,7 +8,6 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.TamableAnimal;
 import net.minecraft.world.entity.animal.equine.AbstractHorse;
-import net.minecraft.world.entity.animal.wolf.Wolf;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import top.csituka.youzaiworldcore.util.DebugLogger;
@@ -35,16 +34,6 @@ public final class PetUtils {
     private static final Random RANDOM = new Random();
 
     private PetUtils() {
-    }
-
-    @SuppressWarnings("null")
-    public static @Nullable Wolf findLoadedWolf(MinecraftServer server, UUID id) {
-        for (ServerLevel level : server.getAllLevels()) {
-            if (level.getEntity(id) instanceof Wolf wolf) {
-                return wolf;
-            }
-        }
-        return null;
     }
 
     public static @Nullable Identifier petType(Entity entity) {

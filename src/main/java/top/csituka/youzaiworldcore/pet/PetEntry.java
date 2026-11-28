@@ -3,6 +3,7 @@ package top.csituka.youzaiworldcore.pet;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Instant;
@@ -23,9 +24,10 @@ import java.util.*;
  * @param ownerUUID     主人玩家的 UUID
  * @param displayName   显示名称（可自定义），默认为内部名称
  * @param trustedPlayers 信任玩家 UUID 集合
- * @param mode          当前战斗模式
+ * @param mode          当前行为模式
  * @param tameTimestamp 驯服时间戳（毫秒）
  * @param entityType    原版实体类型，旧存档默认为狼
+ * @param station       静止模式的活动中心
  */
 public record PetEntry(
         @NotNull String internalName,
@@ -35,10 +37,12 @@ public record PetEntry(
         @NotNull Set<UUID> trustedPlayers,
         @NotNull PetMode mode,
         long tameTimestamp,
-        @NotNull Identifier entityType
+        @NotNull Identifier entityType,
+        @NotNull Optional<Vec3> station
 ) {
 
     public static final Identifier WOLF_TYPE = Identifier.withDefaultNamespace("wolf");
+    public static final Identifier CAT_TYPE = Identifier.withDefaultNamespace("cat");
 
     private static final DateTimeFormatter DATE_FORMATTER =
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm").withZone(ZoneId.systemDefault());
@@ -67,7 +71,8 @@ public record PetEntry(
             UUID_SET_CODEC.fieldOf("trustedPlayers").forGetter(e -> e.trustedPlayers()),
             PetMode.CODEC.fieldOf("mode").forGetter(e -> e.mode()),
             Codec.LONG.fieldOf("tameTimestamp").forGetter(PetEntry::tameTimestamp),
-            Identifier.CODEC.optionalFieldOf("entityType", WOLF_TYPE).forGetter(PetEntry::entityType)
+            Identifier.CODEC.optionalFieldOf("entityType", WOLF_TYPE).forGetter(PetEntry::entityType),
+            Vec3.CODEC.optionalFieldOf("station").forGetter(PetEntry::station)
     ).apply(instance, PetEntry::new));
 
     /**
@@ -92,7 +97,8 @@ public record PetEntry(
                 new HashSet<>(),
                 PetMode.COMPANIONSHIP,
                 System.currentTimeMillis(),
-                entityType
+                entityType,
+                Optional.empty()
         );
     }
 
@@ -100,8 +106,23 @@ public record PetEntry(
         return WOLF_TYPE.equals(entityType);
     }
 
+    public List<PetMode> availableModes() {
+        if (hasCombatMode()) {
+            return List.of(PetMode.COMPANIONSHIP, PetMode.HUNTING, PetMode.ATTACK, PetMode.GUARD);
+        }
+        return CAT_TYPE.equals(entityType) ? List.of() : List.of(PetMode.COMPANIONSHIP, PetMode.STATIONARY);
+    }
+
     public String detailKey() {
-        return hasCombatMode() ? mode.getSerializedName() : entityType.toLanguageKey("entity");
+        if (hasCombatMode()) {
+            return mode.getSerializedName();
+        }
+        String typeKey = entityType.toLanguageKey("entity");
+        return availableModes().isEmpty() ? typeKey : typeKey + "|" + mode.getSerializedName();
+    }
+
+    public boolean isStationary() {
+        return mode == PetMode.STATIONARY && !hasCombatMode() && !CAT_TYPE.equals(entityType);
     }
 
     /**
@@ -153,7 +174,7 @@ public record PetEntry(
      */
     public PetEntry withOwner(UUID ownerUUID, Set<UUID> trustedPlayers) {
         return new PetEntry(internalName, entityUUID, ownerUUID, displayName,
-                new HashSet<>(trustedPlayers), mode, tameTimestamp, entityType);
+                new HashSet<>(trustedPlayers), mode, tameTimestamp, entityType, station);
     }
 
     /**
@@ -164,7 +185,7 @@ public record PetEntry(
      */
     public PetEntry withDisplayName(String displayName) {
         return new PetEntry(internalName, entityUUID, ownerUUID, displayName,
-                new HashSet<>(trustedPlayers), mode, tameTimestamp, entityType);
+                new HashSet<>(trustedPlayers), mode, tameTimestamp, entityType, station);
     }
 
     /**
@@ -175,7 +196,12 @@ public record PetEntry(
      */
     public PetEntry withMode(PetMode mode) {
         return new PetEntry(internalName, entityUUID, ownerUUID, displayName,
-                new HashSet<>(trustedPlayers), mode, tameTimestamp, entityType);
+                new HashSet<>(trustedPlayers), mode, tameTimestamp, entityType, Optional.empty());
+    }
+
+    public PetEntry withStation(Vec3 position) {
+        return new PetEntry(internalName, entityUUID, ownerUUID, displayName,
+                trustedPlayers, mode, tameTimestamp, entityType, Optional.of(position));
     }
 
     /**
@@ -186,6 +212,6 @@ public record PetEntry(
      */
     public PetEntry withTrustedPlayers(Set<UUID> trustedPlayers) {
         return new PetEntry(internalName, entityUUID, ownerUUID, displayName,
-                new HashSet<>(trustedPlayers), mode, tameTimestamp, entityType);
+                new HashSet<>(trustedPlayers), mode, tameTimestamp, entityType, station);
     }
 }

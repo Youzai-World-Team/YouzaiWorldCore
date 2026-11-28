@@ -24,7 +24,10 @@ public enum PetMode implements StringRepresentable {
     ATTACK,
 
     /** 守卫：保护受击的主人或信任玩家，也会自卫。 */
-    GUARD;
+    GUARD,
+
+    /** 非狼宠物以切换模式时的位置为中心活动。 */
+    STATIONARY;
 
     @SuppressWarnings("null")
     public static final Codec<PetMode> CODEC = StringRepresentable.fromEnum(PetMode::values);

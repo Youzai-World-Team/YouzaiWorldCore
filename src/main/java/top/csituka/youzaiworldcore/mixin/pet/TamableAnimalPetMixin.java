@@ -13,6 +13,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import top.csituka.youzaiworldcore.pet.PetEventHandler;
 import top.csituka.youzaiworldcore.pet.PetModeController;
+import top.csituka.youzaiworldcore.pet.PetStationaryAccess;
 
 /**
  * Mixin — 拦截 {@link TamableAnimal#tame(Player)} 以在驯服成功后注册宠物。
@@ -22,6 +23,20 @@ import top.csituka.youzaiworldcore.pet.PetModeController;
  */
 @Mixin(TamableAnimal.class)
 public abstract class TamableAnimalPetMixin {
+
+    @Inject(method = "unableToMoveToOwner", at = @At("HEAD"), cancellable = true)
+    private void yzwc$disableStationaryFollowing(CallbackInfoReturnable<Boolean> cir) {
+        if (((PetStationaryAccess) this).yzwc$isStationary()) {
+            cir.setReturnValue(true);
+        }
+    }
+
+    @Inject(method = "tryToTeleportToOwner", at = @At("HEAD"), cancellable = true)
+    private void yzwc$disableStationaryOwnerTeleport(CallbackInfo ci) {
+        if (((PetStationaryAccess) this).yzwc$isStationary()) {
+            ci.cancel();
+        }
+    }
 
     @Inject(method = "canAttack", at = @At("HEAD"), cancellable = true)
     private void yzwc$protectPetAllies(LivingEntity target, CallbackInfoReturnable<Boolean> cir) {
