@@ -54,6 +54,7 @@
     "pet.EntityStoragePoolPetsMixin",
     "pet.WolfBreedMixin",
     "pet.WolfModeAttackMixin",
+    "pet.WolfLineOfSightMixin",
     "pet.WolfHurtByTargetGoalMixin",
     "trialvault.VaultServerDataMixin",
     "afk.ServerPlayerTabDisplayNameMixin",

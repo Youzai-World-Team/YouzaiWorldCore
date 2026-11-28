@@ -637,20 +637,17 @@ public class PetCommand {
 
         MinecraftServer server = player.level().getServer();
         Wolf wolf = PetUtils.findLoadedWolf(server, entry.entityUUID());
-        if (wolf == null) {
-            try {
-                wolf = PoolPets.releaseParked(server, entry.entityUUID());
-            } catch (java.io.IOException | RuntimeException error) {
-                DebugLogger.SERVER.exception(MODULE, "releaseParked", error);
-                source.sendFailure(Component.translatable("youzaiworldcore.message.pet.not_loaded"));
-                return 0;
+        try {
+            if (!PoolPets.releaseParked(server, entry, wolf)) {
+                state.removePet(entry.entityUUID());
+                if (wolf != null) {
+                    PetEventHandler.releaseWolf(wolf);
+                }
             }
-        }
-        state.removePet(entry.entityUUID());
-        if (wolf != null) {
-            PetEventHandler.releaseWolf(wolf);
-        } else {
-            DebugLogger.SERVER.info(MODULE, "离线放生: [{}] UUID={} (实体未加载)", entry.internalName(), entry.entityUUID());
+        } catch (java.io.IOException | RuntimeException error) {
+            DebugLogger.SERVER.exception(MODULE, "executeReleaseLife", error);
+            source.sendFailure(Component.translatable("youzaiworldcore.message.pet.not_loaded"));
+            return 0;
         }
 
         source.sendSuccess(() -> Component.translatable(

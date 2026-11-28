@@ -645,6 +645,9 @@ public final class DimensionPoolManager {
             });
         }
         PoolPets.tickPendingRestores(server);
+        if (server.getTickCount() % 20 == 0) {
+            PoolPets.tickPendingReleases(server);
+        }
     }
 
     private static boolean canRecover(ServerPlayer player) {

@@ -16,6 +16,7 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtAccounter;
 import net.minecraft.nbt.NbtIo;
 import net.minecraft.network.Connection;
@@ -90,6 +91,8 @@ public final class PoolRuntimeAudit implements DedicatedServerModInitializer {
         private static final UUID END_PET = UUID.fromString("235c6a70-721b-4819-9b6e-cdbe5d36d6d2");
         private static final UUID UNLOADED_PET = UUID.fromString("79dc6671-646d-4e81-b785-f933e075f86c");
         private static final UUID RELEASED_PET = UUID.fromString("8ddce803-0eb9-492c-b61e-cac8f020ca9f");
+        private static final UUID COLD_RELEASED_PET = UUID.fromString("e1301069-f245-4d09-8a1a-a2dc457000a3");
+        private static final BlockPos COLD_RELEASE_POS = new BlockPos(32001, 190, 32001);
 
         @Override
         public void onInitializeServer() {
@@ -163,13 +166,29 @@ public final class PoolRuntimeAudit implements DedicatedServerModInitializer {
         }
 
         private static void trackPetChunk(ServerLevel level, BlockPos pos) throws Exception {
-                var field = ServerLevel.class.getDeclaredField("entityManager");
-                field.setAccessible(true);
-                var entities = (PersistentEntitySectionManager<?>) field.get(level);
                 @SuppressWarnings("null")
                 var chunk = ChunkPos.containing(pos);
                 level.getChunk(chunk.x(), chunk.z());
-                entities.updateChunkStatus(chunk, Visibility.TICKING);
+                petEntities(level).updateChunkStatus(chunk, Visibility.TICKING);
+        }
+
+        private static PersistentEntitySectionManager<?> petEntities(ServerLevel level) throws Exception {
+                var field = ServerLevel.class.getDeclaredField("entityManager");
+                field.setAccessible(true);
+                return (PersistentEntitySectionManager<?>) field.get(level);
+        }
+
+        @SuppressWarnings("null")
+        private static void awaitPetChunk(ServerLevel level, BlockPos pos) throws Exception {
+                trackPetChunk(level, pos);
+                var entities = petEntities(level);
+                var chunk = ChunkPos.containing(pos);
+                long deadline = System.nanoTime() + java.util.concurrent.TimeUnit.SECONDS.toNanos(5);
+                level.getServer().managedBlock(() -> {
+                        entities.tick();
+                        return level.areEntitiesActuallyLoadedAndTicking(chunk) || System.nanoTime() >= deadline;
+                });
+                check(level.areEntitiesActuallyLoadedAndTicking(chunk), "entity chunk is ready");
         }
 
         @SuppressWarnings("null")
@@ -193,6 +212,17 @@ public final class PoolRuntimeAudit implements DedicatedServerModInitializer {
                 var file = ModPaths.parkedPet(server, id);
                 return Files.exists(file)
                                 && NbtIo.readCompressed(file, NbtAccounter.uncompressedQuota()).contains("wolf");
+        }
+
+        private static void awaitReturnedPetSave(MinecraftServer server, UUID id) {
+                long deadline = System.nanoTime() + java.util.concurrent.TimeUnit.SECONDS.toNanos(5);
+                server.managedBlock(() -> {
+                        try {
+                                return !isParked(server, id) || System.nanoTime() >= deadline;
+                        } catch (Exception error) {
+                                throw new IllegalStateException(error);
+                        }
+                });
         }
 
         @SuppressWarnings("null")
@@ -334,6 +364,7 @@ public final class PoolRuntimeAudit implements DedicatedServerModInitializer {
                 var otherSocket = new TestConnection();
                 var player = connect(server, overworld, ID, "PoolAudit", socket, false);
                 var other = connect(server, end, UUID.randomUUID(), "PoolOther", otherSocket, false);
+                coldCombatSight(other);
                 // Same names, different scores, independent team settings and client audiences.
                 command(server, "scoreboard objectives add audit dummy");
                 command(server, "scoreboard players set Fake audit 11");
@@ -420,6 +451,7 @@ public final class PoolRuntimeAudit implements DedicatedServerModInitializer {
                                 "standing pet is parked and its stale chunk copy is rejected");
                 check(overworld.getEntity(SITTING_PET) == sitting && !isParked(server, SITTING_PET)
                                 && !isParked(server, UNLOADED_PET), "sitting and unloaded pets are left alone");
+                awaitPetChunk(overworld, standing.blockPosition());
                 server.getCommands().performPrefixedCommand(
                                 server.createCommandSourceStack().withLevel(end).withEntity(player),
                                 "yzwc pet set AUDITRELEASE release_life true");
@@ -519,20 +551,98 @@ public final class PoolRuntimeAudit implements DedicatedServerModInitializer {
                 Files.createDirectories(recovery.getParent());
                 Files.copy(source, recovery, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
                 server.saveEverything(false, true, true);
-                long deadline = System.nanoTime() + java.util.concurrent.TimeUnit.SECONDS.toNanos(5);
-                server.managedBlock(() -> {
-                        try {
-                                return !isParked(server, STANDING_PET) || System.nanoTime() >= deadline;
-                        } catch (Exception error) {
-                                throw new IllegalStateException(error);
-                        }
-                });
+                awaitReturnedPetSave(server, STANDING_PET);
                 check(!isParked(server, STANDING_PET) && isParked(server, END_PET),
                                 "written chunk takes over the restored wolf while the parked wolf retains its archive");
                 createColdAnchor(player, end, COLD_ANCHOR);
                 createColdAnchor(player, end, DEFERRED_ANCHOR);
+                stageColdRelease(player, end);
                 detach(player);
                 detach(other);
+        }
+
+        @SuppressWarnings("null")
+        private static void coldCombatSight(ServerPlayer owner) throws Exception {
+                var level = owner.level();
+                var original = owner.position();
+                owner.snapTo(16015.25, 190, 16015.75, 0, 0);
+                var wolf = addPet(owner, UUID.randomUUID(), "AUDITCOLDLOS", false);
+                var state = PetGlobalState.get(level.getServer());
+                state.updatePet(state.findByEntityUUID(wolf.getUUID()).orElseThrow().withMode(PetMode.HUNTING));
+                var target = EntityTypes.SKELETON.create(level, EntitySpawnReason.LOAD);
+                target.snapTo(16016.75, 190, 16016.25, 0, 0);
+                trackPetChunk(level, target.blockPosition());
+                check(level.addFreshEntity(target), "cold sight target enters the world");
+                var middle = new BlockPos(16015, 190, 16016);
+                check(LoadedChunks.get(level, middle) == null, "diagonal line of sight starts with a cold chunk");
+                var field = Mob.class.getDeclaredField("targetSelector");
+                field.setAccessible(true);
+                var selector = (GoalSelector) field.get(wolf);
+                owner.setLastHurtMob(target);
+                selector.tick();
+                check(wolf.getTarget() == null && LoadedChunks.get(level, middle) == null,
+                                "hunting treats the missing chunk as an obstruction and never loads it");
+                trackPetChunk(level, middle);
+                wolf.getSensing().tick();
+                selector.tick();
+                check(wolf.getTarget() == target, "hunting sees the target once the path is loaded");
+                wolf.discard();
+                state.removePet(wolf.getUUID());
+                target.discard();
+                owner.snapTo(original.x, original.y, original.z, 31, 11);
+        }
+
+        @SuppressWarnings("null")
+        private static void stageColdRelease(ServerPlayer player, ServerLevel origin) throws Exception {
+                var server = origin.getServer();
+                var state = PetGlobalState.get(server);
+                var entry = PetEntry.createNew("AUDITCOLDRELEASE", COLD_RELEASED_PET, player.getUUID());
+                state.addPet(entry);
+                var archived = EntityTypes.WOLF.create(origin, EntitySpawnReason.LOAD);
+                archived.setUUID(COLD_RELEASED_PET);
+                archived.setOwnerReference(EntityReference.of(player.getUUID()));
+                archived.setTame(true, true);
+                archived.snapTo(Vec3.atBottomCenterOf(COLD_RELEASE_POS), 0, 0);
+                var output = TagValueOutput.createWithContext(ProblemReporter.DISCARDING, origin.registryAccess());
+                archived.saveWithoutId(output);
+                var root = new CompoundTag();
+                root.putString("pool", END);
+                root.putString("dimension", origin.dimension().identifier().toString());
+                root.putString("token", UUID.randomUUID().toString());
+                root.put("wolf", output.buildResult());
+                var archive = ModPaths.parkedPet(server, COLD_RELEASED_PET);
+                Files.createDirectories(archive.getParent());
+                NbtIo.writeCompressed(root, archive);
+
+                int result = server.getCommands().getDispatcher().execute(
+                                "yzwc pet set AUDITCOLDRELEASE release_life true", player.createCommandSourceStack());
+                PoolPets.tickPendingReleases(server);
+                check(result == 1 && state.findByEntityUUID(COLD_RELEASED_PET).isEmpty()
+                                && !petEntities(origin).isLoaded(COLD_RELEASED_PET)
+                                && LoadedChunks.get(origin, COLD_RELEASE_POS) == null
+                                && NbtIo.readCompressed(archive, NbtAccounter.uncompressedQuota()).contains("release"),
+                                "cold release records the request without opening or inserting into the chunk");
+                // Simulate interruption after the release was committed but before the old registry was written.
+                state.addPet(entry);
+                server.overworld().getDataStorage().saveAndJoin();
+        }
+
+        @SuppressWarnings("null")
+        private static void finishColdRelease(MinecraftServer server, ServerLevel origin) throws Exception {
+                var state = PetGlobalState.get(server);
+                check(state.findByEntityUUID(COLD_RELEASED_PET).isEmpty() && isParked(server, COLD_RELEASED_PET)
+                                && LoadedChunks.get(origin, COLD_RELEASE_POS) == null,
+                                "restart replays the recorded release without opening a cold chunk");
+                awaitPetChunk(origin, COLD_RELEASE_POS);
+                check(origin.getEntity(COLD_RELEASED_PET) == null, "ready chunk has no old pet entity");
+                PoolPets.tickPendingReleases(server);
+                check(origin.getEntity(COLD_RELEASED_PET) instanceof Wolf wolf && !wolf.isTame()
+                                && wolf.getOwnerReference() == null && wolf.blockPosition().equals(COLD_RELEASE_POS)
+                                && isParked(server, COLD_RELEASED_PET),
+                                "deferred release puts the same wild wolf back and retains the archive until the write");
+                server.saveEverything(false, true, true);
+                awaitReturnedPetSave(server, COLD_RELEASED_PET);
+                check(!isParked(server, COLD_RELEASED_PET), "a durable entity write settles the release archive");
         }
 
         @SuppressWarnings("null")
@@ -656,6 +766,7 @@ public final class PoolRuntimeAudit implements DedicatedServerModInitializer {
                 checkTransferPayment(server, overworld, end);
                 coldPetReturn(server, end);
                 loginHallPetReturn(server, end);
+                finishColdRelease(server, end);
         }
 
         private static void checkTransferPayment(MinecraftServer server, ServerLevel origin, ServerLevel end)
@@ -748,6 +859,11 @@ public final class PoolRuntimeAudit implements DedicatedServerModInitializer {
         @SuppressWarnings("null")
         private static void badScoreboard(MinecraftServer server) throws Exception {
                 ServerLevel end = server.getLevel(Level.END);
+                awaitPetChunk(end, COLD_RELEASE_POS);
+                check(end.getEntity(COLD_RELEASED_PET) instanceof Wolf wolf && !wolf.isTame()
+                                && wolf.getOwnerReference() == null
+                                && PetGlobalState.get(server).findByEntityUUID(COLD_RELEASED_PET).isEmpty(),
+                                "released wolf is loaded from its entity chunk after a second restart");
                 check(LoadedChunks.get(end, DEFERRED_ANCHOR) == null,
                                 "pending deactivation starts with its chunk unloaded after restart");
                 end.getChunkAt(DEFERRED_ANCHOR);

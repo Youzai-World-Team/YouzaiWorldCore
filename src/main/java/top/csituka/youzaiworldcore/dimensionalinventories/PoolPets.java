@@ -2,6 +2,7 @@ package top.csituka.youzaiworldcore.dimensionalinventories;
 
 import com.mojang.serialization.Codec;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -15,6 +16,8 @@ import java.util.concurrent.CompletableFuture;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentTarget;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtAccounter;
 import net.minecraft.nbt.NbtIo;
@@ -36,7 +39,10 @@ import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;
 import top.csituka.youzaiworldcore.account.util.AuthPlayerHelper;
 import top.csituka.youzaiworldcore.config.ModPaths;
+import top.csituka.youzaiworldcore.pet.PetEntry;
+import top.csituka.youzaiworldcore.pet.PetEventHandler;
 import top.csituka.youzaiworldcore.pet.PetGlobalState;
+import top.csituka.youzaiworldcore.pet.PetUtils;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
 /** 跨池收起的狼由原池存档保管，原版区块写盘确认后才移除回收用的实体数据。 */
@@ -47,11 +53,12 @@ public final class PoolPets {
     private static final AttachmentType<String> RETURN_TOKEN = AttachmentRegistry.createPersistent(RETURN_ID, Codec.STRING);
     private static final Map<MinecraftServer, Map<UUID, String>> UNSAVED_RETURNS = new WeakHashMap<>();
     private static final Map<MinecraftServer, Set<UUID>> PENDING_RESTORES = new WeakHashMap<>();
+    private static final Map<MinecraftServer, Map<UUID, ReleaseLocation>> PENDING_RELEASES = new WeakHashMap<>();
 
     private PoolPets() {}
 
     public static void initialize() {
-        // 在读取任何实体存档之前注册持久化附件。
+        ServerLifecycleEvents.SERVER_STARTED.register(PoolPets::loadPendingReleases);
     }
 
     static List<Wolf> departingPets(ServerPlayer player, String pool) {
@@ -94,6 +101,18 @@ public final class PoolPets {
         if (previous != null && !previous.token.equals(returnToken(wolf))) {
             throw new IOException("实体与宠物档案不一致：" + id);
         }
+        write(server, id, new StoredPet(pool, wolf.level().dimension().identifier().toString(), newToken(),
+                snapshot(wolf), null));
+        wolf.stopRiding();
+        wolf.ejectPassengers();
+        wolf.remove(Entity.RemovalReason.CHANGED_DIMENSION);
+        var unsaved = UNSAVED_RETURNS.get(server);
+        if (unsaved != null) {
+            unsaved.remove(id);
+        }
+    }
+
+    private static CompoundTag snapshot(Wolf wolf) throws IOException {
         var problems = new ProblemReporter.Collector(wolf.problemPath());
         var output = TagValueOutput.createWithContext(problems, wolf.registryAccess());
         wolf.saveWithoutId(output);
@@ -102,14 +121,7 @@ public final class PoolPets {
         }
         CompoundTag body = output.buildResult();
         body.remove("Passengers");
-        write(server, id, new StoredPet(pool, wolf.level().dimension().identifier().toString(), newToken(), body));
-        wolf.stopRiding();
-        wolf.ejectPassengers();
-        wolf.remove(Entity.RemovalReason.CHANGED_DIMENSION);
-        var unsaved = UNSAVED_RETURNS.get(server);
-        if (unsaved != null) {
-            unsaved.remove(id);
-        }
+        return body;
     }
 
     static void restore(ServerPlayer player) {
@@ -163,7 +175,7 @@ public final class PoolPets {
             UUID id = pet.entityUUID();
             try {
                 StoredPet stored = read(server, id);
-                if (stored != null && stored.body != null && pool.equals(stored.pool)
+                if (stored != null && stored.release == null && stored.body != null && pool.equals(stored.pool)
                         && !UNSAVED_RETURNS.getOrDefault(server, Map.of()).containsKey(id)) {
                     materialize(level, stored, id, wolf -> {
                         wolf.setOwnerReference(EntityReference.of(player.getUUID()));
@@ -200,29 +212,119 @@ public final class PoolPets {
         return level.getChunkSource().getChunkNow(pos.x(), pos.z()) != null;
     }
 
-    /** 放生暂存的宠物时，先把实体放回原来的维度，再由命令将它恢复为野生狼。 */
-    public static @Nullable Wolf releaseParked(MinecraftServer server, UUID id) throws IOException {
+    /** 在确认放生前记录意图，等待原区块的实体数据自然就绪。 */
+    public static boolean releaseParked(MinecraftServer server, PetEntry pet, @Nullable Wolf loaded) throws IOException {
+        UUID id = pet.entityUUID();
+        boolean awaitingSave = UNSAVED_RETURNS.getOrDefault(server, Map.of()).containsKey(id);
+        if (loaded != null && !awaitingSave) {
+            return false;
+        }
         StoredPet stored = read(server, id);
         if (stored == null || stored.body == null) {
-            return null;
+            return false;
         }
-        for (ServerLevel world : server.getAllLevels()) {
-            if (world.getEntity(id) instanceof Wolf wolf) {
-                return wolf;
-            }
-        }
-        if (UNSAVED_RETURNS.getOrDefault(server, Map.of()).containsKey(id)) {
+        if ((loaded == null && awaitingSave) || (loaded != null && !stored.token.equals(returnToken(loaded)))) {
             throw new IOException("宠物仍在保存：" + id);
         }
-        ServerLevel level = DimensionPoolManager.getLoadedLevel(server, stored.dimension);
-        if (level == null) {
-            throw new IOException("宠物原维度不可用：" + stored.dimension);
+        Release release = new Release(pet.internalName(), pet.tameTimestamp());
+        StoredPet released = loaded == null
+                ? new StoredPet(stored.pool, stored.dimension, stored.token, stored.body, release)
+                : new StoredPet(DimensionPoolSettings.statePoolId(loaded.level().dimension()),
+                        loaded.level().dimension().identifier().toString(), newToken(), snapshot(loaded), release);
+        ReleaseLocation location = releaseLocation(id, released);
+        write(server, id, released);
+        PetGlobalState.get(server).removePet(id);
+        if (loaded != null) {
+            ((AttachmentTarget) loaded).setAttached(RETURN_TOKEN, released.token);
+            PetEventHandler.releaseWolf(loaded);
+            UNSAVED_RETURNS.computeIfAbsent(server, ignored -> new HashMap<>()).put(id, released.token);
+        } else if (!tryRelease(server, id, location)) {
+            PENDING_RELEASES.computeIfAbsent(server, ignored -> new HashMap<>()).put(id, location);
         }
-        Wolf wolf = materialize(level, stored, id, entity -> {});
-        if (wolf == null) {
-            throw new IOException("无法在原维度恢复宠物：" + id);
+        return true;
+    }
+
+    private static void loadPendingReleases(MinecraftServer server) {
+        try (var files = Files.newDirectoryStream(ModPaths.parkedPets(server), "*.dat")) {
+            for (var file : files) {
+                String name = file.getFileName().toString();
+                UUID id;
+                try {
+                    id = UUID.fromString(name.substring(0, name.length() - 4));
+                } catch (IllegalArgumentException ignored) {
+                    continue;
+                }
+                try {
+                    StoredPet stored = read(server, id);
+                    if (stored == null || stored.release == null) {
+                        continue;
+                    }
+                    var state = PetGlobalState.get(server);
+                    var pet = state.findByEntityUUID(id).orElse(null);
+                    // 放生记录只对应当时的登记。野生狼再次驯服会建立新的登记。
+                    if (pet != null) {
+                        if (!stored.release.matches(pet)) {
+                            if (stored.body != null) {
+                                // 新登记已落盘而实体尚未落盘时，按新主人的普通召回流程恢复。
+                                write(server, id, new StoredPet(stored.pool, stored.dimension, stored.token,
+                                        stored.body, null));
+                            }
+                            continue;
+                        }
+                        state.removePet(id);
+                        Wolf wolf = PetUtils.findLoadedWolf(server, id);
+                        if (wolf != null) {
+                            PetEventHandler.releaseWolf(wolf);
+                        }
+                    }
+                    if (stored.body != null) {
+                        PENDING_RELEASES.computeIfAbsent(server, ignored -> new HashMap<>())
+                                .put(id, releaseLocation(id, stored));
+                    }
+                } catch (IOException | RuntimeException error) {
+                    LOGGER.error("无法读取宠物 {} 的放生记录，保留原档", id, error);
+                }
+            }
+        } catch (NoSuchFileException ignored) {
+            // 当前存档没有暂存宠物。
+        } catch (IOException | RuntimeException error) {
+            LOGGER.error("无法读取宠物放生记录目录", error);
         }
-        return wolf;
+    }
+
+    static void tickPendingReleases(MinecraftServer server) {
+        var pending = PENDING_RELEASES.get(server);
+        if (pending != null) {
+            pending.entrySet().removeIf(entry -> tryRelease(server, entry.getKey(), entry.getValue()));
+        }
+    }
+
+    private static ReleaseLocation releaseLocation(UUID id, StoredPet stored) throws IOException {
+        Vec3 pos = stored.body.read("Pos", Vec3.CODEC)
+                .filter(value -> Double.isFinite(value.x) && Double.isFinite(value.y) && Double.isFinite(value.z))
+                .orElseThrow(() -> new IOException("宠物存档没有有效的原坐标：" + id));
+        return new ReleaseLocation(stored.dimension, ChunkPos.containing(BlockPos.containing(pos)));
+    }
+
+    private static boolean tryRelease(MinecraftServer server, UUID id, ReleaseLocation location) {
+        ServerLevel level = DimensionPoolManager.getLoadedLevel(server, location.dimension);
+        if (level == null || !isChunkLoaded(level, location.chunk)
+                || !level.areEntitiesActuallyLoadedAndTicking(location.chunk)) {
+            return false;
+        }
+        try {
+            StoredPet stored = read(server, id);
+            if (stored == null || stored.release == null || stored.body == null) {
+                return true;
+            }
+            if (stored.token.equals(UNSAVED_RETURNS.getOrDefault(server, Map.of()).get(id))) {
+                return true; // 区块载入了上次已经写入的同版本实体。
+            }
+            return materialize(level, stored, id, PetEventHandler::releaseWolf) != null;
+        } catch (IOException | RuntimeException error) {
+            LOGGER.error("无法在原区块放生宠物 {}，保留原档", id, error);
+            return false;
+        }
     }
 
     private static @Nullable Wolf materialize(ServerLevel level, StoredPet stored, UUID id,
@@ -245,7 +347,7 @@ public final class PoolPets {
         String token = newToken();
         ((AttachmentTarget) wolf).setAttached(RETURN_TOKEN, token);
         prepare.accept(wolf);
-        write(server, id, new StoredPet(stored.pool, stored.dimension, token, stored.body));
+        write(server, id, new StoredPet(stored.pool, stored.dimension, token, stored.body, stored.release));
         if (level.addFreshEntity(wolf)) {
             UNSAVED_RETURNS.computeIfAbsent(server, ignored -> new HashMap<>()).put(id, token);
             return wolf;
@@ -315,7 +417,7 @@ public final class PoolPets {
         try {
             StoredPet stored = read(server, id);
             if (stored != null && stored.body != null && token.equals(stored.token)) {
-                write(server, id, new StoredPet(stored.pool, stored.dimension, token, null));
+                write(server, id, new StoredPet(stored.pool, stored.dimension, token, null, stored.release));
             }
             unsaved.remove(id);
         } catch (IOException | RuntimeException error) {
@@ -345,7 +447,17 @@ public final class PoolPets {
                 || (root.contains("wolf") && root.getCompound("wolf").isEmpty())) {
             throw new IOException("无效的宠物回收档：" + id);
         }
-        return new StoredPet(pool, dimension, token, root.getCompound("wolf").orElse(null));
+        Release release = null;
+        if (root.contains("release")) {
+            CompoundTag receipt = root.getCompoundOrEmpty("release");
+            String name = receipt.getStringOr("name", "");
+            var timestamp = receipt.getLong("tame_timestamp");
+            if (name.isEmpty() || timestamp.isEmpty()) {
+                throw new IOException("无效的宠物放生记录：" + id);
+            }
+            release = new Release(name, timestamp.get());
+        }
+        return new StoredPet(pool, dimension, token, root.getCompound("wolf").orElse(null), release);
     }
 
     private static void write(MinecraftServer server, UUID id, StoredPet stored) throws IOException {
@@ -356,8 +468,23 @@ public final class PoolPets {
         if (stored.body != null) {
             tag.put("wolf", stored.body);
         }
+        if (stored.release != null) {
+            var receipt = new CompoundTag();
+            receipt.putString("name", stored.release.name);
+            receipt.putLong("tame_timestamp", stored.release.tameTimestamp);
+            tag.put("release", receipt);
+        }
         DimensionPoolManager.writeAtomically(ModPaths.parkedPet(server, id), file -> NbtIo.writeCompressed(tag, file));
     }
 
-    private record StoredPet(String pool, String dimension, String token, @Nullable CompoundTag body) {}
+    private record ReleaseLocation(String dimension, ChunkPos chunk) {}
+
+    private record Release(String name, long tameTimestamp) {
+        boolean matches(PetEntry pet) {
+            return name.equals(pet.internalName()) && tameTimestamp == pet.tameTimestamp();
+        }
+    }
+
+    private record StoredPet(String pool, String dimension, String token, @Nullable CompoundTag body,
+            @Nullable Release release) {}
 }
