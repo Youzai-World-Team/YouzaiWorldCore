@@ -45,6 +45,7 @@ Fabric Loader、Fabric API、ModMenu、Placeholder API、Trinkets Updated、Geck
 | 原生槽位列表缓存跨玩家复用，外观槽可能被默认背包校验遗漏 | 按当前玩家即时获取库存标识，功能读取仍经过 `canApplyEffects` |
 | B 键仍发送旧处理器名 `trinkets` | 从作者 `CompatModIds.TRINKETS` 读取原生名 `trinkets_updated`，旧版补注册保留旧名 |
 | Trinkets 对无效槽也调用原生背包 tick | 在 `BackpackTrinket.tick` 入口过滤无效槽，隐藏的有效背包仍执行原生升级 tick |
+| 精妙背包新增的 `chest/back` 与 Core 的背包槽同时显示 | 在 `EntitySlotLoader.apply` 合并完成后移除玩家的 `chest/back`，同步清理分组、玩家及全局槽位索引，保留 Core 的 `chest/backpack` 和其他实体的槽位 |
 
 ## 验证
 
@@ -63,11 +64,16 @@ python3 tools/verify_minecraft_runtime_compat.py --classpath-file <依赖列表>
 # 使用实际精妙背包库存类验证接口、有效/外观/隐藏槽和快捷键
 node tools/verify-backpack-compat.mjs <精妙背包.jar> <JDK25目录>
 
+# 使用实际 Trinkets 加载器及同步编解码验证背包槽移除、重载和可选依赖缺失
+python3 -B tools/verify_backpack_slots.py
+
 # Jade 启动、重载及主题切换回归
 python3 tools/verify_jade_theme_bridge.py --java-home <JDK25目录>
 ```
 
 前两个 Python 工具默认读取 IDE 已解析的依赖，亦支持 `--classpath-file <文件>`（每行一个 jar 绝对路径）、`--runtime-mods <目录>` 和 `--java-home <JDK25目录>`。运行期检查在临时目录执行，避免向游戏配置、存档和日志目录写入测试数据。
+
+背包槽检查使用当前模组的实际分配资源、Trinkets 加载器及同步编解码，覆盖玩家三个槽位索引、其他饰品槽、重载、可选依赖缺失、非玩家实体和空分组。生产回调的目标方法、返回注入点和 Shadow 字段会核验，回调由隔离检查程序执行；未启动 Fabric/Mixin 服务，仍需构建后在游戏中确认注入生效。
 
 本次用更新后的依赖完成 775 个 Java 文件的类型与符号分析，0 个错误；实际依赖回归 57 项通过，覆盖模型/动画、饰品、Reflect 启动追踪、Loader 字节码转换和 SQLite 原生读写。精妙背包新版本的 41 项接口/饰品/分组检查通过，未安装时的类加载与已有原生适配时的避让检查亦通过。
 
