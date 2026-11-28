@@ -25,18 +25,18 @@ public final class MapDatabase implements AutoCloseable {
                 sql.execute("CREATE TABLE IF NOT EXISTS records (scope TEXT NOT NULL, kind TEXT NOT NULL, id TEXT NOT NULL, data BLOB NOT NULL, PRIMARY KEY(scope,kind,id))");
                 sql.execute("CREATE TABLE IF NOT EXISTS explored (world TEXT NOT NULL, dimension TEXT NOT NULL, x INTEGER NOT NULL, z INTEGER NOT NULL, height INTEGER NOT NULL, PRIMARY KEY(world,dimension,x,z,height))");
                 sql.execute("CREATE TABLE IF NOT EXISTS tiles (dimension TEXT NOT NULL, layer TEXT NOT NULL, height INTEGER NOT NULL, x INTEGER NOT NULL, z INTEGER NOT NULL, revision INTEGER NOT NULL, data BLOB NOT NULL, PRIMARY KEY(dimension,layer,height,x,z))");
-                sql.execute("CREATE INDEX IF NOT EXISTS tiles_revision ON tiles(revision)");
+                sql.execute("DROP TABLE IF EXISTS player_positions");
+                sql.execute("DROP INDEX IF EXISTS tiles_revision");
+                sql.execute("DELETE FROM settings WHERE scope = 'upload' OR (scope = 'server' AND key IN ('api_upload', 'upload_interval_minutes'))");
                 sql.execute("CREATE INDEX IF NOT EXISTS tiles_chunk ON tiles(dimension,x,z)");
                 sql.execute("CREATE TABLE IF NOT EXISTS client_tiles (world TEXT NOT NULL, dimension TEXT NOT NULL, layer TEXT NOT NULL, height INTEGER NOT NULL, x INTEGER NOT NULL, z INTEGER NOT NULL, revision INTEGER NOT NULL, data BLOB NOT NULL, PRIMARY KEY(world,dimension,layer,height,x,z))");
                 sql.execute("CREATE TABLE IF NOT EXISTS sequence (id INTEGER PRIMARY KEY CHECK(id=1), value INTEGER NOT NULL)");
                 sql.execute("INSERT OR IGNORE INTO sequence VALUES(1,0)");
                 sql.execute("CREATE TABLE IF NOT EXISTS source_chunks (dimension TEXT NOT NULL, x INTEGER NOT NULL, z INTEGER NOT NULL, stamp TEXT NOT NULL, PRIMARY KEY(dimension,x,z))");
-                sql.execute("CREATE TABLE IF NOT EXISTS player_positions (uuid TEXT PRIMARY KEY, name TEXT NOT NULL, dimension TEXT NOT NULL, x REAL NOT NULL, y REAL NOT NULL, z REAL NOT NULL, recorded_at INTEGER NOT NULL, source TEXT NOT NULL, uploaded_at INTEGER NOT NULL DEFAULT 0)");
             }
             DebugLogger.forFile(path).info("MapDatabase", "已打开地图 SQLite：{}", path);
         } catch (Exception error) { throw failure(error); }
     }
-    public Path path() { return path; }
     public synchronized <T> T read(Work<T> work) {
         try { return work.run(connection); } catch (SQLException error) { throw failure(error); }
     }

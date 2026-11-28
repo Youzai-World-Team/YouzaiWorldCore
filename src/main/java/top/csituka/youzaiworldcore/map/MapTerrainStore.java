@@ -5,7 +5,7 @@ import java.sql.*;
 import java.util.*;
 import java.util.concurrent.*;
 
-/** 世界地形 SQLite；区块数据与处理游标在同一事务提交，上传按单调修订号读取。 */
+/** 世界地形 SQLite；区块数据与处理游标在同一事务提交。 */
 public final class MapTerrainStore implements AutoCloseable {
     private final MapDatabase database;
     private final ExecutorService io = Executors.newSingleThreadExecutor(Thread.ofPlatform().daemon().name("yzwc-map-read").factory());
@@ -17,7 +17,6 @@ public final class MapTerrainStore implements AutoCloseable {
     private volatile boolean closed;
     private record ReadResult(MapTileKey key, MapTile tile) { }
     public MapTerrainStore(MapDatabase database) { this.database = database; }
-    public MapDatabase database() { return database; }
     public void tick() {
         for (var entry : completed.entrySet()) {
             if (!completed.remove(entry.getKey(), entry.getValue())) continue;
@@ -101,29 +100,6 @@ public final class MapTerrainStore implements AutoCloseable {
             return result;
         });
         changed.forEach(tile -> { if (interested.contains(tile.key())) complete(new ReadResult(tile.key(), tile)); });
-    }
-    public long revision() {
-        return database.read(db -> { try (var sql = db.createStatement(); var rows = sql.executeQuery("SELECT value FROM sequence WHERE id=1")) { rows.next(); return rows.getLong(1); } });
-    }
-    /** 有界增量读取；上传期间新写入的修订号留给下次同步，不依赖文件时间戳。 */
-    public void visitSaved(long since, long through, java.util.function.Consumer<MapTile> visitor) throws java.io.IOException {
-        try (var db = DriverManager.getConnection("jdbc:sqlite:" + database.path())) {
-            try (var sql = db.createStatement()) { sql.execute("PRAGMA busy_timeout=10000"); sql.execute("PRAGMA query_only=ON"); }
-            long cursor = since;
-            while (!closed) {
-                var batch = new ArrayList<MapTile>();
-                try (var sql = db.prepareStatement("SELECT dimension,layer,height,x,z,revision,data FROM tiles WHERE revision>? AND revision<=? ORDER BY revision LIMIT 128")) {
-                    sql.setLong(1, cursor); sql.setLong(2, through);
-                    try (var rows = sql.executeQuery()) { while (rows.next()) {
-                        var key = new MapTileKey(rows.getString(1), MapLayer.valueOf(rows.getString(2)), rows.getInt(3), rows.getInt(4), rows.getInt(5));
-                        batch.add(MapBinaryCodec.tile(key, rows.getLong(6), rows.getBytes(7)));
-                    } }
-                }
-                if (batch.isEmpty()) return;
-                for (var tile : batch) { if (closed || Thread.currentThread().isInterrupted()) throw new java.io.IOException("地图服务已停止"); visitor.accept(tile); cursor = tile.revision(); }
-            }
-            throw new java.io.IOException("地图服务已停止");
-        } catch (SQLException error) { throw new java.io.IOException("读取地图上传修订失败", error); }
     }
     private static void bind(PreparedStatement sql, MapTileKey key, int index) throws SQLException {
         sql.setString(index, key.dimension()); sql.setString(index + 1, key.layer().name()); sql.setInt(index + 2, key.height());

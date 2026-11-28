@@ -77,7 +77,7 @@ public final class MapDiskCapture implements AutoCloseable {
 
     /** 主线程重载时发布配置快照，不从工作线程访问游戏配置或世界。 */
     public void configure() {
-        enabled = MapServerSettings.enabled && (MapServerSettings.shareTerrain || MapServerSettings.apiUpload);
+        enabled = MapServerSettings.enabled && MapServerSettings.shareTerrain;
         underground = MapServerSettings.captureUnderground;
         chunksPerPass = MapServerSettings.chunksPerPass;
         scanInterval = MapServerSettings.scanIntervalSeconds;

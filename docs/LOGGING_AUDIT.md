@@ -6,10 +6,10 @@
 
 | 类别 | 调用点 | 内容 |
 |---|---:|---|
-| 普通日志 | 417 | 启停、更新、管理员操作及实际警告 / 故障 |
+| 普通日志 | 413 | 启停、更新、管理员操作及实际警告 / 故障 |
 | 1 基本 | 183 | 配置 / 数据摘要、重要状态和结果 |
-| 2 详细 | 1109 | 注册、网络操作、计算与分支诊断 |
-| 3 调试 | 1077 | 方法入口 / 出口、每帧 / tick 与逐条追踪 |
+| 2 详细 | 1105 | 注册、网络操作、计算与分支诊断 |
+| 3 调试 | 1076 | 方法入口 / 出口、每帧 / tick 与逐条追踪 |
 
 共享存储按文件归属路由；通用资源注册按物理进程路由，其余调用明确指定客户端或服务端。
 
@@ -303,12 +303,10 @@
 | [src/main/mail/MailSettings.java](../src/main/java/top/csituka/youzaiworldcore/mail/MailSettings.java) | 0 | 0 | 3 | 6 |
 | [src/main/mana/ManaManager.java](../src/main/java/top/csituka/youzaiworldcore/mana/ManaManager.java) | 0 | 1 | 0 | 0 |
 | [src/main/mana/ManaTickHandler.java](../src/main/java/top/csituka/youzaiworldcore/mana/ManaTickHandler.java) | 0 | 0 | 1 | 0 |
-| [src/main/map/MapApiUploader.java](../src/main/java/top/csituka/youzaiworldcore/map/MapApiUploader.java) | 3 | 0 | 3 | 1 |
 | [src/main/map/MapDatabase.java](../src/main/java/top/csituka/youzaiworldcore/map/MapDatabase.java) | 1 | 1 | 0 | 0 |
 | [src/main/map/MapDiskCapture.java](../src/main/java/top/csituka/youzaiworldcore/map/MapDiskCapture.java) | 1 | 0 | 1 | 0 |
 | [src/main/map/MapMobRadarServer.java](../src/main/java/top/csituka/youzaiworldcore/map/MapMobRadarServer.java) | 1 | 0 | 0 | 1 |
-| [src/main/map/MapPlayerPositionStore.java](../src/main/java/top/csituka/youzaiworldcore/map/MapPlayerPositionStore.java) | 0 | 0 | 1 | 0 |
-| [src/main/map/MapServerManager.java](../src/main/java/top/csituka/youzaiworldcore/map/MapServerManager.java) | 3 | 2 | 2 | 0 |
+| [src/main/map/MapServerManager.java](../src/main/java/top/csituka/youzaiworldcore/map/MapServerManager.java) | 2 | 2 | 2 | 0 |
 | [src/main/map/MapServerSettings.java](../src/main/java/top/csituka/youzaiworldcore/map/MapServerSettings.java) | 0 | 1 | 0 | 0 |
 | [src/main/map/MapSocialManager.java](../src/main/java/top/csituka/youzaiworldcore/map/MapSocialManager.java) | 0 | 0 | 1 | 0 |
 | [src/main/map/MapTerrainStore.java](../src/main/java/top/csituka/youzaiworldcore/map/MapTerrainStore.java) | 1 | 0 | 0 | 0 |

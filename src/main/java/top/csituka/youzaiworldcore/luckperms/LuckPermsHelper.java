@@ -172,8 +172,6 @@ public final class LuckPermsHelper {
     private LuckPermsHelper() {
     }
 
-    /** 管理地图后台上传：无 LuckPerms 时回退 OP 4。 */
-    public static final String PERMISSION_MAP_MANAGE = "youzaiworldcore.command.map.manage";
     /** 地图坐标传送：默认配置关闭，开启后仍需此权限或 OP 4。 */
     public static final String PERMISSION_MAP_TELEPORT = "youzaiworldcore.command.map.teleport";
 

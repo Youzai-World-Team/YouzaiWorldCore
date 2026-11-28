@@ -124,7 +124,6 @@ public abstract class AccountPlayerListMixin {
 
     @Inject(method = "remove", at = @At("HEAD"))
     private void onPlayerLeave(ServerPlayer player, CallbackInfo ci) {
-        top.csituka.youzaiworldcore.map.MapServerManager.recordPlayerPosition(player, "logout");
         if (AuthPlayerHelper.canSkipAuth(player))
             return;
 

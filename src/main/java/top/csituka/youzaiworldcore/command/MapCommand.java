@@ -6,7 +6,6 @@ import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import top.csituka.youzaiworldcore.account.util.AuthPlayerHelper;
-import top.csituka.youzaiworldcore.luckperms.LuckPermsHelper;
 import top.csituka.youzaiworldcore.map.MapServerManager;
 import top.csituka.youzaiworldcore.map.MapWaypoint;
 import top.csituka.youzaiworldcore.map.MapWaypointGroup;
@@ -15,12 +14,12 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
 
 import java.util.UUID;
 
-/** /yzwc map：位置共享、同步统计及管理员 Api 地图上传。 */
+/** /yzwc map：位置共享及同步统计。 */
 public final class MapCommand {
     private MapCommand() {
     }
 
-    /** 注册服务端命令，地图上传权限使用 map.manage 节点。 */
+    /** 注册服务端地图命令。 */
     @SuppressWarnings("null")
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         var position = Commands.literal("position");
@@ -40,17 +39,6 @@ public final class MapCommand {
                     return 1;
                 })
                 .then(position)
-                .then(Commands.literal("upload")
-                        .requires(source -> LuckPermsHelper.checkPermission(source,
-                                LuckPermsHelper.PERMISSION_MAP_MANAGE, Commands.LEVEL_ADMINS))
-                        .executes(context -> {
-                            if (!MapServerManager.uploadToApi()) {
-                                context.getSource().sendFailure(text("upload_unavailable"));
-                                return 0;
-                            }
-                            context.getSource().sendSuccess(() -> text("upload_started"), false);
-                            return 1;
-                        }))
                 .then(Commands.literal("stats").executes(context -> {
                     var player = context.getSource().getPlayerOrException();
                     context.getSource().sendSuccess(() -> MapServerManager.performance(player.getUUID()), false);

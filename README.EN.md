@@ -738,7 +738,7 @@ An independent implementation based on Conflux Map's documented features, withou
 
 Default keys: `M` map, `H` minimap, `N` new waypoint, `U` waypoint list, `J` waypoint visibility, `Y` layer, `[`/`]` zoom, `,` settings, `F9` refresh, `F10` in-world waypoint visibility. All are rebindable.
 
-Client display/layout settings, private records and terrain use `yzwc/client/map_module/map.db`; server settings use `yzwc/server/data/map_module/map.db`; world terrain, player position snapshots and upload progress use `<world>/data/yzwc/data/map_module/map.db`. SQLite starts fresh without JSON/gzip migration. Client tiles are retained without capacity eviction. The existing fullscreen fixed-height fallback to surface is preserved. Minecraft reads existing and modified chunk files in the background to generate surface, roof and underground slices every 8 blocks; player clients never supply uploaded terrain. Saved historical regions are gradually backfilled without loading or generating game chunks. Revision-based uploads default to every 48 hours (`upload_interval_minutes` is configurable), with an initial attempt after about 60 seconds and manual `/yzwc map upload`. The dashboard also shows recent player positions captured after authentication and restoration, before disconnect or explicit logout, and during map uploads. World SQLite retains failed requests; HMAC uploads preserve world isolation and capture timestamps. Dashboard snapshots require map view permission and are independent of in-game player sharing. Clearing API maps removes player snapshots and rejects stale data identities and pre-reset records. Each world retains its most recent 4096 players. See the [map guide and acceptance steps](docs/YZMAP.md).
+Client display and layout settings, private records and terrain use `yzwc/client/map_module/map.db`. Server settings use `yzwc/server/data/map_module/map.db`, and world terrain uses `<world>/data/yzwc/data/map_module/map.db`. With in-game terrain sharing enabled, the server builds surface, roof and underground layers from saved chunks. The YZApi dashboard reads its map and live player locations from ElementsPanel. See the [map guide](docs/YZMAP.md).
 
 ---
 
@@ -897,7 +897,6 @@ All commands use `/yzwc` as the root command. Gameplay subcommands marked **(cli
 | `youzaiworldcore.command.reload`                            | Mod reload                                        | OP 4                     |
 | `youzaiworldcore.command.world_pool`                        | Dimension pool management                         | OP 4                     |
 | `youzaiworldcore.command.teleport_anchor`                   | Teleport anchor management                        | OP 4                     |
-| `youzaiworldcore.command.map.manage` | Upload maps | OP 4 |
 | `youzaiworldcore.command.backup.admin` | List and restore player data backups | Vanilla administrator |
 | `youzaiworldcore.command.map.teleport` | Teleport to a map coordinate | OP 4 and explicitly enabled in config |
 | `youzaiworldcore.command.function.invisibility`             | Invisibility function                             | OP 4                     |

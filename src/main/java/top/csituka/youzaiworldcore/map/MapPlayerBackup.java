@@ -2,24 +2,19 @@ package top.csituka.youzaiworldcore.map;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-import net.minecraft.server.MinecraftServer;
-import top.csituka.youzaiworldcore.config.ModPaths;
 
 import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
 
-/**
- * Snapshot the player-owned rows without copying the terrain database or its
- * WAL.
- */
+/** 备份游戏内玩家的位置共享规则。 */
 public final class MapPlayerBackup {
     private static final Gson GSON = new Gson();
 
     private MapPlayerBackup() {
     }
 
-    public static JsonObject capture(MinecraftServer server) {
+    public static JsonObject capture() {
         List<Rule> rules = MapServerSettings.database().read(db -> {
             var values = new java.util.ArrayList<Rule>();
             try (var sql = db.prepareStatement(
@@ -31,17 +26,11 @@ public final class MapPlayerBackup {
             }
             return values;
         });
-        try (var world = new MapDatabase(ModPaths.worldMapDatabase(server))) {
-            var positions = new MapPlayerPositionStore(world).read(true);
-            return GSON.toJsonTree(new Snapshot(rules, positions)).getAsJsonObject();
-        }
+        return GSON.toJsonTree(new Snapshot(rules)).getAsJsonObject();
     }
 
-    /**
-     * Decode everything before any module is changed. Apply on startup before map
-     * sessions are opened.
-     */
-    public static Runnable prepareRestore(MinecraftServer server, JsonObject data) {
+    /** 启动时先校验共享规则，再应用恢复；旧备份中的位置快照会被忽略。 */
+    public static Runnable prepareRestore(JsonObject data) {
         @SuppressWarnings("null")
         Snapshot snapshot = GSON.fromJson(data, Snapshot.class);
         var rules = new HashSet<List<String>>();
@@ -51,16 +40,10 @@ public final class MapPlayerBackup {
                 throw new IllegalArgumentException("Invalid map sharing rule");
             }
         }
-        var players = new HashSet<UUID>();
-        for (var position : snapshot.positions()) {
-            if (!players.add(position.uuid())) {
-                throw new IllegalArgumentException("Duplicate map player position");
-            }
-        }
-        return () -> restore(server, snapshot);
+        return () -> restore(snapshot);
     }
 
-    private static void restore(MinecraftServer server, Snapshot snapshot) {
+    private static void restore(Snapshot snapshot) {
         MapServerSettings.database().transaction(db -> {
             try (var clear = db.prepareStatement("DELETE FROM settings WHERE scope LIKE 'player:%'");
                     var insert = db.prepareStatement("INSERT INTO settings(scope,key,value) VALUES(?,?,?)")) {
@@ -75,38 +58,11 @@ public final class MapPlayerBackup {
             }
             return null;
         });
-        try (var world = new MapDatabase(ModPaths.worldMapDatabase(server))) {
-            world.transaction(db -> {
-                try (var clear = db.prepareStatement("DELETE FROM player_positions");
-                        var insert = db.prepareStatement("""
-                                INSERT INTO player_positions (uuid,name,dimension,x,y,z,recorded_at,source,uploaded_at)
-                                VALUES (?,?,?,?,?,?,?,?,?)
-                                """)) {
-                    clear.executeUpdate();
-                    for (var position : snapshot.positions()) {
-                        insert.setString(1, position.uuid().toString());
-                        insert.setString(2, position.name());
-                        insert.setString(3, position.dimension());
-                        insert.setDouble(4, position.x());
-                        insert.setDouble(5, position.y());
-                        insert.setDouble(6, position.z());
-                        insert.setLong(7, position.recordedAt());
-                        insert.setString(8, position.source());
-                        // Historical positions are for local recovery. Fresh observations are uploaded
-                        // normally.
-                        insert.setLong(9, position.recordedAt());
-                        insert.addBatch();
-                    }
-                    insert.executeBatch();
-                }
-                return null;
-            });
-        }
     }
 
     private record Rule(String scope, String key, String value) {
     }
 
-    private record Snapshot(List<Rule> rules, List<MapPlayerPositionStore.Snapshot> positions) {
+    private record Snapshot(List<Rule> rules) {
     }
 }

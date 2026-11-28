@@ -13,7 +13,6 @@ import top.csituka.youzaiworldcore.skill.PlayerLevelStorage;
 import top.csituka.youzaiworldcore.status.StatsManager;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -63,7 +62,8 @@ enum BackupModule {
                         PLAYER_JSON.asMatchPredicate()));
             }
             case DIMENSIONAL_INVENTORIES -> {
-                data.add("pools", BackupFiles.readFiles(ModPaths.worldData(server, id), 2, POOL_STATE.asMatchPredicate()));
+                data.add("pools",
+                        BackupFiles.readFiles(ModPaths.worldData(server, id), 2, POOL_STATE.asMatchPredicate()));
                 data.add("players", BackupFiles.readFiles(ModPaths.vanillaPlayerDataDir(server), 1,
                         PLAYER_NBT.asMatchPredicate()));
             }
@@ -75,12 +75,7 @@ enum BackupModule {
                     }
                 }
             }
-            case MAP -> {
-                if (!live && !Files.isRegularFile(ModPaths.worldMapDatabase(server))) {
-                    throw new IOException("No saved world map database available");
-                }
-                data = MapPlayerBackup.capture(server);
-            }
+            case MAP -> data = MapPlayerBackup.capture();
         }
         return data;
     }
@@ -91,7 +86,7 @@ enum BackupModule {
     }
 
     void prepareRestore(MinecraftServer server, JsonObject data, BackupFiles.Restore restore,
-                        List<Runnable> databases) throws IOException {
+            List<Runnable> databases) throws IOException {
         switch (this) {
             case PET, TELEPORT_ANCHOR -> restore.file(savedData(server), data.get("saved_data"));
             case SKILL -> restore.file(ModPaths.serverDataFile(id), data.get("skill"));
@@ -109,17 +104,19 @@ enum BackupModule {
                 } catch (JsonParseException | IllegalArgumentException e) {
                     current = new JsonObject();
                 }
-                restore.object(file, StatsManager.prepareBackupRestore(BackupFiles.object(data.get("status")), current));
+                restore.object(file,
+                        StatsManager.prepareBackupRestore(BackupFiles.object(data.get("status")), current));
                 restore.files(ModPaths.vanillaStatsDir(server), 1, PLAYER_JSON.asMatchPredicate(),
                         BackupFiles.object(data.get("vanilla_stats")));
             }
             case DOUBLE_DOORS, FUNCTION -> restoreSettings(data, restore);
-            case MAP -> databases.add(MapPlayerBackup.prepareRestore(server, data));
+            case MAP -> databases.add(MapPlayerBackup.prepareRestore(data));
         }
     }
 
     private Path savedData(MinecraftServer server) {
-        return ModPaths.overworldSavedData(server, this == PET ? PetGlobalState.TYPE.id() : TeleportAnchorManager.TYPE.id());
+        return ModPaths.overworldSavedData(server,
+                this == PET ? PetGlobalState.TYPE.id() : TeleportAnchorManager.TYPE.id());
     }
 
     private static List<Path> settingsFiles() throws IOException {

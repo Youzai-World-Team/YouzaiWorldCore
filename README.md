@@ -745,7 +745,7 @@ Esc 暂停屏幕采用薄荷绿圆角操作卡片与玩家预览，跟随现有�
 
 默认快捷键：`M` 地图、`H` 小地图开关、`N` 建点、`U` 路径点、`J` 路径点显隐、`Y` 图层、`[`/`]` 缩放、`,` 设置、`F9` 刷新、`F10` 世界内标点显隐，均可在控制设置中重绑。
 
-客户端显示、布局、私人记录与地形使用 `yzwc/client/map_module/map.db`；服务端配置使用 `yzwc/server/data/map_module/map.db`，世界地形、玩家位置快照及上传进度使用 `<world>/data/yzwc/data/map_module/map.db`。直接新建 SQLite，不迁移旧 JSON/gzip；客户端不再按容量淘汰旧瓦片。全屏固定高度的地表回落行为保留。Minecraft 服务端后台读取已有及修改后的区块文件生成地表、顶板和每 8 格地下切片，不从玩家客户端获取上传数据，也不加载或生成未知区块。默认每 48 小时按修订号增量上传 API（`upload_interval_minutes` 可调），首次约 60 秒后尝试，可用 `/yzwc map upload` 手动触发。历史已保存区域会逐步回填。后台玩家最近位置在认证恢复位置后的首个 Tick、下线／主动登出前和地图上传时记录，保存名称、维度、XYZ 与 Unix 毫秒时间；本地 SQLite 保留失败请求，HMAC 异步上传按存档隔离，后台显示记录时间并支持定位。该后台记录独立于服内玩家间的位置共享，仅向有地图查看权限的管理员提供。清空 API 地图时同时清空玩家位置，旧数据标识和清空前快照不能补回；每存档保留最近 4096 位玩家。完整配置和验收步骤见 [悠哉地图说明](docs/YZMAP.md)。
+客户端显示、布局、私人记录与地形使用 `yzwc/client/map_module/map.db`。服务端配置使用 `yzwc/server/data/map_module/map.db`，世界地形使用 `<world>/data/yzwc/data/map_module/map.db`。游戏内地形共享启用时，服务端从已有区块文件生成地表、顶板与地下切片。YZApi 后台地图和在线玩家位置由 ElementsPanel 提供。详见[悠哉地图说明](docs/YZMAP.md)。
 
 ---
 
@@ -906,7 +906,6 @@ Esc 暂停屏幕采用薄荷绿圆角操作卡片与玩家预览，跟随现有�
 | `youzaiworldcore.command.backup.admin`                      | 查看和还原玩家数据备份                 | 原版管理员              |
 | `youzaiworldcore.command.world_pool`                        | 维度池管理                             | OP 4                    |
 | `youzaiworldcore.command.teleport_anchor`                   | 传送锚点管理                           | OP 4                    |
-| `youzaiworldcore.command.map.manage` | 上传后台地图 | OP 4 |
 | `youzaiworldcore.command.map.teleport` | 地图坐标传送 | OP 4，且配置开启 |
 | `youzaiworldcore.command.function.invisibility`             | 隐身功能                               | OP 4                    |
 | `youzaiworldcore.command.function.double_doors`             | 双开门功能（自身开关 / 查询）          | 所有人（仅自身）        |
