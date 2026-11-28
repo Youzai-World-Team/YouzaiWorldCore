@@ -2,25 +2,31 @@ package top.csituka.youzaiworldcore.backup;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtAccounter;
 import net.minecraft.nbt.NbtIo;
+import net.minecraft.nbt.NbtOps;
 import net.minecraft.server.MinecraftServer;
 import top.csituka.youzaiworldcore.config.GlobalSettings;
 import top.csituka.youzaiworldcore.config.ModPaths;
 import top.csituka.youzaiworldcore.data.TeleportAnchorManager;
+import top.csituka.youzaiworldcore.dimensionalinventories.PoolPets;
+import top.csituka.youzaiworldcore.dimensionalinventories.PoolScoreboards;
 import top.csituka.youzaiworldcore.map.MapPlayerBackup;
 import top.csituka.youzaiworldcore.pet.PetGlobalState;
 import top.csituka.youzaiworldcore.skill.PlayerAttributeStorage;
 import top.csituka.youzaiworldcore.skill.PlayerLevelStorage;
 import top.csituka.youzaiworldcore.status.StatsManager;
+import top.csituka.youzaiworldcore.util.DebugLogger;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.UUID;
 import java.util.regex.Pattern;
-import top.csituka.youzaiworldcore.dimensionalinventories.PoolScoreboards;
 
 enum BackupModule {
     PET(GlobalSettings.PET_MODULE),
@@ -32,6 +38,7 @@ enum BackupModule {
     TELEPORT_ANCHOR("teleport_anchor_module"),
     MAP("map_module");
 
+    private static final DebugLogger.ModuleLogger LOGGER = DebugLogger.SERVER.module("PlayerDataBackup");
     private static final String UUID_PATTERN = "[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}";
     private static final Pattern PLAYER_JSON = Pattern.compile(UUID_PATTERN + "\\.json");
     private static final Pattern PLAYER_NBT = Pattern.compile(UUID_PATTERN + "\\.dat(?:_old)?");
@@ -112,17 +119,7 @@ enum BackupModule {
     void prepareRestore(MinecraftServer server, JsonObject data, BackupFiles.Restore restore,
             List<Runnable> databases) throws IOException {
         switch (this) {
-            case PET -> {
-                restore.file(savedData(server), data.get("saved_data"));
-                if (data.has("parked_pets")) {
-                    for (var entry : BackupFiles.object(data.get("parked_pets")).entrySet()) {
-                        if (!PARKED_PET.matcher(entry.getKey()).matches()) {
-                            throw new IOException("无效的暂存宠物备份文件名：" + entry.getKey());
-                        }
-                        restore.file(ModPaths.parkedPets(server).resolve(entry.getKey()), entry.getValue());
-                    }
-                }
-            }
+            case PET -> preparePetRestore(server, data, restore);
             case TELEPORT_ANCHOR -> restore.file(savedData(server), data.get("saved_data"));
             case SKILL -> restore.file(ModPaths.serverDataFile(id), data.get("skill"));
             case DIMENSIONAL_INVENTORIES -> {
@@ -153,6 +150,43 @@ enum BackupModule {
             }
             case DOUBLE_DOORS, FUNCTION -> restoreSettings(data, restore);
             case MAP -> databases.add(MapPlayerBackup.prepareRestore(data));
+        }
+    }
+
+    @SuppressWarnings("null")
+    private void preparePetRestore(MinecraftServer server, JsonObject data, BackupFiles.Restore restore)
+            throws IOException {
+        var registry = restore.file(savedData(server), data.get("saved_data"));
+        var parked = data.has("parked_pets") ? BackupFiles.object(data.get("parked_pets")) : new JsonObject();
+        for (var entry : parked.entrySet()) {
+            if (!PARKED_PET.matcher(entry.getKey()).matches()) {
+                throw new IOException("无效的暂存宠物备份文件名：" + entry.getKey());
+            }
+            restore.file(ModPaths.parkedPets(server).resolve(entry.getKey()), entry.getValue());
+        }
+        if (registry == null || !registry.contains("data")) {
+            return;
+        }
+        var state = PetGlobalState.TYPE.codec().parse(NbtOps.INSTANCE, registry.get("data")).resultOrPartial()
+                .orElse(null);
+        if (state == null) {
+            return;
+        }
+        for (var pet : state.getAllPets()) {
+            Path path = ModPaths.parkedPet(server, pet.entityUUID());
+            if (parked.has(path.getFileName().toString()) || !Files.isRegularFile(path, LinkOption.NOFOLLOW_LINKS)) {
+                continue;
+            }
+            CompoundTag current;
+            try {
+                current = NbtIo.readCompressed(path, NbtAccounter.uncompressedQuota());
+            } catch (IOException | RuntimeException error) {
+                LOGGER.warn("无法检查宠物 {} 的放生凭据，保留原档", pet.entityUUID(), error);
+                continue;
+            }
+            if (PoolPets.clearRestoredRelease(current, pet)) {
+                restore.nbt(path, current);
+            }
         }
     }
 

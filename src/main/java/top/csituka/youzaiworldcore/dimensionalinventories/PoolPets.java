@@ -570,17 +570,31 @@ public final class PoolPets {
                 || type == null || (root.contains(bodyKey) && root.getCompound(bodyKey).isEmpty())) {
             throw new IOException("无效的宠物回收档：" + id);
         }
-        Release release = null;
-        if (root.contains("release")) {
-            CompoundTag receipt = root.getCompoundOrEmpty("release");
-            String name = receipt.getStringOr("name", "");
-            var timestamp = receipt.getLong("tame_timestamp");
-            if (name.isEmpty() || timestamp.isEmpty()) {
-                throw new IOException("无效的宠物放生记录：" + id);
-            }
-            release = new Release(name, timestamp.get());
+        Release release = readRelease(root);
+        if (release == null && root.contains("release")) {
+            throw new IOException("无效的宠物放生记录：" + id);
         }
         return new StoredPet(pool, dimension, token, root.getCompound(bodyKey).orElse(null), release, type);
+    }
+
+    /** 显式还原登记时清除当前回收档中会撤销该登记的放生凭据，保留版本与实体。 */
+    public static boolean clearRestoredRelease(CompoundTag root, PetEntry pet) {
+        Release release = readRelease(root);
+        if (release == null || !release.matches(pet)) {
+            return false;
+        }
+        root.remove("release");
+        return true;
+    }
+
+    private static @Nullable Release readRelease(CompoundTag root) {
+        CompoundTag receipt = root.getCompound("release").orElse(null);
+        if (receipt == null) {
+            return null;
+        }
+        String name = receipt.getStringOr("name", "");
+        var timestamp = receipt.getLong("tame_timestamp");
+        return name.isEmpty() || timestamp.isEmpty() ? null : new Release(name, timestamp.get());
     }
 
     private static void write(MinecraftServer server, UUID id, StoredPet stored) throws IOException {

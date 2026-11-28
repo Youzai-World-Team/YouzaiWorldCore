@@ -114,7 +114,7 @@ def main():
         (game / 'eula.txt').write_text('eula=true\n')
         (game / 'server.properties').write_text(
             'server-ip=127.0.0.1\nserver-port=0\nonline-mode=false\nview-distance=2\nsimulation-distance=2\n')
-        for phase in ('switch', 'restart', 'bad-scoreboard'):
+        for phase in ('switch', 'restart', 'bad-scoreboard', 'pet-backup-restore'):
             if phase == 'bad-scoreboard':
                 (game / 'world/data/yzwc/data/dimensional_inventories_module/test_pool/scoreboard.dat').write_bytes(
                     b'invalid scoreboard')

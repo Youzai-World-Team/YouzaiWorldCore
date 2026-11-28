@@ -81,6 +81,7 @@ import top.csituka.youzaiworldcore.pet.PetGlobalState;
 import top.csituka.youzaiworldcore.pet.PetMode;
 import top.csituka.youzaiworldcore.mixin.PlayerEnchantmentSeedAccessor;
 import top.csituka.youzaiworldcore.respawn.InPlaceRespawnManager;
+import top.csituka.youzaiworldcore.util.BackupArchive;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 import top.csituka.youzaiworldcore.util.LoadedChunks;
 
@@ -98,6 +99,11 @@ public final class PoolRuntimeAudit implements DedicatedServerModInitializer {
         private static final UUID RELEASED_PET = UUID.fromString("8ddce803-0eb9-492c-b61e-cac8f020ca9f");
         private static final UUID COLD_RELEASED_PET = UUID.fromString("e1301069-f245-4d09-8a1a-a2dc457000a3");
         private static final BlockPos COLD_RELEASE_POS = new BlockPos(32001, 190, 32001);
+        private static final UUID RESTORE_OWNER = UUID.fromString("7ecb2181-07f0-458b-87e0-6f2f74f42093");
+        private static final UUID RESTORE_SAVED = UUID.fromString("3cef5ff3-ec20-4dcb-ab3a-d83a028b6964");
+        private static final UUID RESTORE_PENDING = UUID.fromString("686aac42-0ef4-4dca-a44e-1dd5f080d31d");
+        private static final BlockPos RESTORE_SAVED_POS = COLD_RELEASE_POS.offset(64, 0, 0);
+        private static final BlockPos RESTORE_PENDING_POS = COLD_RELEASE_POS.offset(128, 0, 0);
 
         @Override
         public void onInitializeServer() {
@@ -107,6 +113,7 @@ public final class PoolRuntimeAudit implements DedicatedServerModInitializer {
                                         case "switch" -> run(server);
                                         case "restart" -> restart(server);
                                         case "bad-scoreboard" -> badScoreboard(server);
+                                        case "pet-backup-restore" -> verifyPetBackupRestore(server);
                                         default ->
                                                 throw new IllegalArgumentException("Unknown dimension pool test phase");
                                 }
@@ -936,6 +943,101 @@ public final class PoolRuntimeAudit implements DedicatedServerModInitializer {
                 coldPetReturn(server, end);
                 loginHallPetReturn(server, end);
                 finishColdRelease(server, end);
+                stagePetBackup(server, end);
+        }
+
+        @SuppressWarnings("null")
+        private static void stagePetBackup(MinecraftServer server, ServerLevel end) throws Exception {
+                var owner = connect(server, end, RESTORE_OWNER, "PetBackupOwner", new TestConnection(), false);
+                owner.snapTo(Vec3.atBottomCenterOf(RESTORE_SAVED_POS), 0, 0);
+                awaitPetChunk(end, RESTORE_SAVED_POS);
+                addPet(owner, RESTORE_SAVED, "AUDITBACKUPSAVED", true);
+                owner.snapTo(Vec3.atBottomCenterOf(RESTORE_PENDING_POS), 0, 0);
+                awaitPetChunk(end, RESTORE_PENDING_POS);
+                addPet(owner, RESTORE_PENDING, "AUDITBACKUPPENDING", true);
+                detach(owner);
+                // 关服备份应保存登记，两只宠物的实体仍在各自的区块中。
+        }
+
+        @SuppressWarnings("null")
+        private static void queuePetBackupRestore(MinecraftServer server, ServerLevel end) throws Exception {
+                String moduleId = GlobalSettings.PET_MODULE;
+                java.nio.file.Path backup;
+                try (var files = Files.list(ModPaths.playerDataBackups(server, moduleId))) {
+                        backup = files.filter(file -> file.getFileName().toString().startsWith("shutdown-"))
+                                        .max(java.util.Comparator.naturalOrder()).orElseThrow();
+                }
+                var archive = JsonParser.parseString(BackupArchive.readFirstJson(backup)).getAsJsonObject();
+                var parked = archive.getAsJsonObject("data").getAsJsonObject("parked_pets");
+                check(!parked.has(RESTORE_SAVED + ".dat") && !parked.has(RESTORE_PENDING + ".dat"),
+                                "the shutdown backup has no parked snapshots for the live pets");
+
+                var owner = connect(server, server.overworld(), RESTORE_OWNER, "PetBackupOwner",
+                                new TestConnection(), false);
+                var state = PetGlobalState.get(server);
+                awaitPetChunk(end, RESTORE_SAVED_POS);
+                awaitPetChunk(end, RESTORE_PENDING_POS);
+                var saved = (Wolf) end.getEntity(RESTORE_SAVED);
+                var pending = (Wolf) end.getEntity(RESTORE_PENDING);
+                check(saved != null && pending != null, "both backed-up pets were saved as world entities");
+                saved.setOrderedToSit(false);
+                pending.setOrderedToSit(false);
+                saved.setInSittingPose(false);
+                pending.setInSittingPose(false);
+                PoolPets.afterTransfer(owner, END, List.of(saved, pending), end, pending.position());
+                check(saved.isRemoved() && pending.isRemoved(), "both pets were parked before release");
+                awaitPetChunk(end, RESTORE_SAVED_POS);
+                var pendingChunk = ChunkPos.containing(RESTORE_PENDING_POS);
+                petEntities(end).updateChunkStatus(pendingChunk, Visibility.TRACKED);
+                check(!end.areEntitiesActuallyLoadedAndTicking(pendingChunk), "pending release chunk cannot tick");
+                var commands = server.getCommands().getDispatcher();
+                for (UUID id : List.of(RESTORE_SAVED, RESTORE_PENDING)) {
+                        String name = state.findByEntityUUID(id).orElseThrow().internalName();
+                        check(commands.execute("yzwc pet set " + name + " release_life true",
+                                        owner.createCommandSourceStack()) == 1
+                                        && NbtIo.readCompressed(ModPaths.parkedPet(server, id),
+                                                        NbtAccounter.uncompressedQuota()).contains("release"),
+                                        "the real release command writes a receipt for " + name);
+                }
+                check(end.getEntity(RESTORE_SAVED) instanceof Wolf wild && !wild.isTame(),
+                                "the first release places a wild wolf in its ready chunk");
+                check(end.getEntity(RESTORE_PENDING) == null, "the second release is waiting for the entity chunk");
+                server.saveEverything(false, true, true);
+                awaitReturnedPetSave(server, RESTORE_SAVED);
+                check(!isParked(server, RESTORE_SAVED), "the first release was durably saved");
+                check(isParked(server, RESTORE_PENDING), "the pending release still has its snapshot");
+                check(commands.execute("yzwc backup restore " + moduleId + " " + archive.get("id").getAsString(),
+                                server.createCommandSourceStack()) == 1, "queue the actual shutdown backup");
+                detach(owner);
+        }
+
+        @SuppressWarnings("null")
+        private static void verifyPetBackupRestore(MinecraftServer server) throws Exception {
+                var end = server.getLevel(Level.END);
+                var state = PetGlobalState.get(server);
+                check(state.findByEntityUUID(RESTORE_SAVED).isPresent()
+                                && state.findByEntityUUID(RESTORE_PENDING).isPresent(),
+                                "explicit backup restore keeps both registrations despite later release receipts");
+                check(LoadedChunks.get(end, RESTORE_SAVED_POS) == null
+                                && LoadedChunks.get(end, RESTORE_PENDING_POS) == null,
+                                "restoring the pet registry does not open the animals' chunks");
+                check(NbtIo.readCompressed(ModPaths.parkedPet(server, COLD_RELEASED_PET),
+                                NbtAccounter.uncompressedQuota()).contains("release")
+                                && state.findByEntityUUID(COLD_RELEASED_PET).isEmpty(),
+                                "a release absent from the restored registry remains effective");
+                awaitPetChunk(end, RESTORE_SAVED_POS);
+                check(end.getEntity(RESTORE_SAVED) instanceof Wolf saved && saved.isTame()
+                                && saved.getOwnerReference().getUUID().equals(RESTORE_OWNER),
+                                "the saved entity keeps its valid version and recovers its owner");
+                var owner = connect(server, end, RESTORE_OWNER, "PetBackupOwner", new TestConnection(), false);
+                owner.snapTo(Vec3.atBottomCenterOf(RESTORE_PENDING_POS), 0, 0);
+                awaitPetChunk(end, RESTORE_PENDING_POS);
+                check(end.getEntity(RESTORE_PENDING) == null, "the pending archive has no duplicate in the chunk");
+                PoolPets.restore(owner);
+                check(end.getEntity(RESTORE_PENDING) instanceof Wolf pending && pending.isTame()
+                                && pending.getOwnerReference().getUUID().equals(RESTORE_OWNER),
+                                "the still-parked snapshot returns as the restored owner's pet");
+                detach(owner);
         }
 
         private static void checkTransferPayment(MinecraftServer server, ServerLevel origin, ServerLevel end)
@@ -1053,6 +1155,7 @@ public final class PoolRuntimeAudit implements DedicatedServerModInitializer {
                 server.saveEverything(false, true, true);
                 check(java.util.Arrays.equals(Files.readAllBytes(file), broken),
                                 "saving preserves the corrupt scoreboard");
+                queuePetBackupRestore(server, end);
         }
 
         private static void die(ServerPlayer player) {

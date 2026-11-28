@@ -248,6 +248,25 @@ public class MailUiChecks {
   var wolfPage=new PetScreen(null);wolfPage.width=320;wolfPage.height=240;value(wolfPage,"connection",client.getConnection());value(wolfPage,"pets",response.pets());value(wolfPage,"selected","DOG1");wolfPage.init();
   var horsePage=new PetScreen(null);horsePage.width=320;horsePage.height=240;value(horsePage,"connection",client.getConnection());value(horsePage,"pets",response.pets());value(horsePage,"selected","PET2");horsePage.init();
   check(wolfPage.children().size()==catPage.children().size()+4&&horsePage.children().size()==catPage.children().size()+2,"狼、猫和坐骑应显示各自的模式按钮");
+  var list=(MailUi.Rect)field(pet,"list");
+  int petX=pet.viewport.toScreenX(list.x()+8);
+  pet.mouseClicked(new net.minecraft.client.input.MouseButtonEvent(petX,pet.viewport.toScreenY(list.y()+33),0),true);
+  check(field(pet,"selected")==null,"点击列表底部留白选中了未显示的宠物");
+  pet.mouseClicked(new net.minecraft.client.input.MouseButtonEvent(petX,pet.viewport.toScreenY(list.y()+30),0),true);
+  check(field(pet,"selected")==null,"点击行间空隙选中了宠物");
+  pet.mouseScrolled(petX,pet.viewport.toScreenY(list.y()+8),0,-1);
+  pet.mouseClicked(new net.minecraft.client.input.MouseButtonEvent(petX,pet.viewport.toScreenY(list.y()+8),0),true);
+  check("PET1".equals(field(pet,"selected")),"滚动后点击可见行未选中猫");
+  value(pet,"deadline",Long.MAX_VALUE);value(pet,"pending",2L);
+  var updated=new PetMenuStatePayload(2,true,net.minecraft.network.chat.Component.empty(),java.util.List.of(
+    response.pets().get(0),new PetMenuStatePayload.Entry("PET1","Updated cat","entity.minecraft.cat"),response.pets().get(2)));
+  pet.receive(updated,client.getConnection());
+  var catName=(net.minecraft.client.gui.components.EditBox)field(pet,"nameInput");
+  check(catName.getValue().equals("Updated cat"),"刷新后宠物输入框仍显示旧名称");
+  catName.setValue("改名草稿");
+  value(pet,"deadline",Long.MAX_VALUE);value(pet,"pending",3L);
+  pet.receive(new PetMenuStatePayload(3,true,updated.message(),response.pets()),client.getConnection());
+  check(((net.minecraft.client.gui.components.EditBox)field(pet,"nameInput")).getValue().equals("改名草稿"),"刷新覆盖了手动输入的名字");
   value(pet,"deadline",0L);value(pet,"pending",1L);pet.tick();check((long)field(pet,"pending")==0,"宠物请求未超时");
   System.out.println("邮件/宠物界面回归通过："+checks+" 项断言。");
  }

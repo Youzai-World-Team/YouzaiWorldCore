@@ -5,11 +5,14 @@ import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtAccounter;
 import net.minecraft.nbt.NbtIo;
+import org.jspecify.annotations.Nullable;
 import top.csituka.youzaiworldcore.util.BackupArchive;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.AtomicMoveNotSupportedException;
@@ -23,7 +26,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
 
-/** Read and replace the specific files registered by the player data modules. */
+/**
+ * Read and replace the specific files registered by the player data modules.
+ */
 final class BackupFiles {
     private BackupFiles() {
     }
@@ -58,7 +63,8 @@ final class BackupFiles {
 
     static JsonObject readObject(Path path) throws IOException {
         return Files.isRegularFile(path, LinkOption.NOFOLLOW_LINKS)
-                ? object(JsonParser.parseString(Files.readString(path))) : new JsonObject();
+                ? object(JsonParser.parseString(Files.readString(path)))
+                : new JsonObject();
     }
 
     static JsonObject object(JsonElement value) {
@@ -77,8 +83,8 @@ final class BackupFiles {
 
     static void writeArchive(Path output, JsonObject value) throws IOException {
         String name = output.getFileName().toString();
-        atomicWrite(output, temporary ->
-                BackupArchive.writeJson(temporary, name.substring(0, name.length() - 4) + ".json", value.toString()));
+        atomicWrite(output, temporary -> BackupArchive.writeJson(temporary,
+                name.substring(0, name.length() - 4) + ".json", value.toString()));
     }
 
     static void atomicWrite(Path target, Writer writer) throws IOException {
@@ -102,7 +108,10 @@ final class BackupFiles {
         void write(Path file) throws IOException;
     }
 
-    /** Validate all changes before applying them. A queued restore can safely repeat these replacements. */
+    /**
+     * Validate all changes before applying them. A queued restore can safely repeat
+     * these replacements.
+     */
     static final class Restore {
         private final Map<Path, byte[]> replacements = new LinkedHashMap<>();
 
@@ -124,18 +133,29 @@ final class BackupFiles {
             }
         }
 
-        void file(Path path, JsonElement value) throws IOException {
+        /** 校验并安排替换文件。若文件包含 NBT，则返回解析后的内容。 */
+        @Nullable
+        CompoundTag file(Path path, JsonElement value) throws IOException {
             if (value == null) {
                 throw new IllegalArgumentException("Missing backup file: " + path.getFileName());
             }
             byte[] bytes = value.isJsonNull() ? null : Base64.getDecoder().decode(string(value));
             String name = path.getFileName().toString();
+            CompoundTag nbt = null;
             if (bytes != null && name.endsWith(".json")) {
                 BackupFiles.object(JsonParser.parseString(new String(bytes, StandardCharsets.UTF_8)));
             } else if (bytes != null && (name.endsWith(".dat") || name.endsWith(".dat_old"))) {
-                NbtIo.readCompressed(new ByteArrayInputStream(bytes), NbtAccounter.unlimitedHeap());
+                nbt = NbtIo.readCompressed(new ByteArrayInputStream(bytes), NbtAccounter.unlimitedHeap());
             }
             replacements.put(path, bytes);
+            return nbt;
+        }
+
+        @SuppressWarnings("null")
+        void nbt(Path path, CompoundTag value) throws IOException {
+            var bytes = new ByteArrayOutputStream();
+            NbtIo.writeCompressed(value, bytes);
+            replacements.put(path, bytes.toByteArray());
         }
 
         JsonObject readObject(Path path) throws IOException {

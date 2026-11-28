@@ -17,6 +17,8 @@ import top.csituka.youzaiworldcore.util.DebugLogger;
 /** 首页宠物管理：直接选择宠物、模式和改名，等待服务端结果后刷新。 */
 @SuppressWarnings("null")
 public final class PetScreen extends MailBaseScreen {
+    private static final int ROW_STEP = 32;
+    private static final int ROW_HEIGHT = 30;
     private static long sequence;
     private long pending, deadline;
     private Object connection;
@@ -25,6 +27,7 @@ public final class PetScreen extends MailBaseScreen {
     private int offset;
     private Component status = text("loading");
     private EditBox nameInput;
+    private String serverName = "";
     private MailUi.Rect page, list;
     public PetScreen(Screen parent) { super(text("title"), parent); }
 
@@ -32,8 +35,10 @@ public final class PetScreen extends MailBaseScreen {
         super.init();
         page = MailUi.centeredPage(660, 400, viewport.width(), viewport.height());
         list = new MailUi.Rect(page.x() + 12, page.y() + 50, page.width() - 24, Math.max(40, page.height() - 170));
+        offset = Math.min(offset, Math.max(0, pets.size() - visibleRows()));
         var selection = pets.stream().filter(p -> p.id().equals(selected)).findFirst().orElse(null);
-        String name = nameInput != null ? nameInput.getValue() : selection == null ? "" : selection.name();
+        String draft = nameInput == null ? serverName : nameInput.getValue();
+        boolean edited = !draft.equals(serverName);
         addRenderableWidget(new MenuCloseButton(page.right() - 40, page.y() + 10, this));
         addRenderableWidget(new TransparentButton(page.right() - 106, page.y() + 12, 58, 24, text("refresh"), () -> request("list", "")));
         addRenderableWidget(new TransparentButton(page.x() + 12, page.y() + 12, 48, 24, text("back"), this::onClose));
@@ -48,7 +53,10 @@ public final class PetScreen extends MailBaseScreen {
             }
         }
         nameInput = addRenderableWidget(new EditBox(font, list.x(), y + 32, list.width() - 122, 24, text("name")));
-        nameInput.setMaxLength(32); nameInput.setValue(name);
+        nameInput.setMaxLength(32);
+        nameInput.setValue(selection == null ? "" : selection.name());
+        serverName = nameInput.getValue();
+        if (edited) nameInput.setValue(draft);
         var rename = addRenderableWidget(new TransparentButton(nameInput.getRight() + 6, y + 32, 52, 24, text("rename"), () -> request("rename", nameInput.getValue())));
         var highlight = addRenderableWidget(new TransparentButton(rename.getRight() + 6, y + 32, 58, 24, text("highlight"), () -> request("highlight", "")));
         rename.active = highlight.active = selection != null && pending == 0;
@@ -67,10 +75,9 @@ public final class PetScreen extends MailBaseScreen {
         pending = 0; pets = result.pets();
         if (pets.stream().noneMatch(p -> p.id().equals(selected))) { selected = null; nameInput = null; }
         status = result.message().getString().isBlank() ? text(pets.isEmpty() ? "empty" : "ready") : result.message();
-        offset = Math.min(offset, Math.max(0, pets.size() - visibleRows()));
         rebuildWidgets();
     }
-    private int visibleRows() { return Math.max(1, list.height() / 32); }
+    private int visibleRows() { return Math.max(1, list.height() / ROW_STEP); }
     @Override public void tick() {
         super.tick();
         if (pending != 0 && (System.currentTimeMillis() >= deadline || connection != Minecraft.getInstance().getConnection())) {
@@ -82,8 +89,8 @@ public final class PetScreen extends MailBaseScreen {
         YzuiTheme.label(g, font, getTitle(), page.x() + 68, page.y() + 20, page.width() - 184, MailUi.textPrimary(), false);
         int end = Math.min(pets.size(), offset + visibleRows());
         for (int i = offset; i < end; i++) {
-            var pet = pets.get(i); int y = list.y() + (i - offset) * 32;
-            g.fill(list.x(), y, list.right(), y + 30, pet.id().equals(selected) ? MailUi.rowSelected() : MailUi.rowAlternate());
+            var pet = pets.get(i); int y = list.y() + (i - offset) * ROW_STEP;
+            g.fill(list.x(), y, list.right(), y + ROW_HEIGHT, pet.id().equals(selected) ? MailUi.rowSelected() : MailUi.rowAlternate());
             var mode = pet.selectedMode();
             String detail = pet.hasCombatMode() ? text(mode).getString()
                     : Component.translatable(pet.speciesKey()).getString()
@@ -99,8 +106,15 @@ public final class PetScreen extends MailBaseScreen {
         if (isExiting()) return true;
         double x = viewport.toDesignX(event.x()), y = viewport.toDesignY(event.y());
         if (pending == 0 && list.contains(x, y)) {
-            int index = offset + (int) ((y - list.y()) / 32);
-            if (index < pets.size()) { selected = pets.get(index).id(); nameInput = null; rebuildWidgets(); return true; }
+            double rowY = y - list.y();
+            int row = (int) (rowY / ROW_STEP);
+            int index = offset + row;
+            if (row < visibleRows() && rowY % ROW_STEP < ROW_HEIGHT && index < pets.size()) {
+                selected = pets.get(index).id();
+                nameInput = null;
+                rebuildWidgets();
+                return true;
+            }
         }
         return super.mouseClicked(event, actual);
     }
