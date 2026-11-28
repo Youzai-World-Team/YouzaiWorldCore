@@ -31,7 +31,8 @@ def compile_sources(java, temporary, libraries):
     metadata.write_text(json.dumps(mod), encoding='utf-8')
     arguments = [
         '--release', '25', '-proc:none', '-encoding', 'UTF-8', '-cp', os.pathsep.join(map(str, libraries)),
-        '-d', classes, *sorted((ROOT / 'src/main/java').rglob('*.java')), ROOT / 'tools/PoolRuntimeAudit.java',
+        '-d', classes, *sorted((ROOT / 'src/main/java').rglob('*.java')),
+        ROOT / 'src/poolAudit/java' / Path(*AUDIT.split('.')).with_suffix('.java'),
     ]
     argfile = temporary / 'javac.args'
     argfile.write_text('\n'.join(json.dumps(str(arg), ensure_ascii=False) for arg in arguments), encoding='utf-8')

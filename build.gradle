@@ -29,6 +29,12 @@ fabricApi {
     }
 }
 
+sourceSets {
+    poolAudit {
+        compileClasspath += sourceSets.main.output + sourceSets.main.compileClasspath
+    }
+}
+
 repositories {
     mavenCentral()
     mavenLocal()
