@@ -27,6 +27,7 @@ import net.minecraft.world.entity.EntityReference;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.animal.wolf.Wolf;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.storage.TagValueInput;
 import net.minecraft.world.level.storage.TagValueOutput;
 import net.minecraft.world.phys.Vec3;
@@ -43,6 +44,7 @@ public final class PoolPets {
     private static final Identifier RETURN_ID = Identifier.fromNamespaceAndPath("youzaiworldcore", "pool_pet_return");
     private static final AttachmentType<String> RETURN_TOKEN = AttachmentRegistry.createPersistent(RETURN_ID, Codec.STRING);
     private static final Map<MinecraftServer, Map<UUID, String>> UNSAVED_RETURNS = new WeakHashMap<>();
+    private static final Map<MinecraftServer, Map<UUID, String>> WAITING_FOR_CHUNK = new WeakHashMap<>();
 
     private PoolPets() {}
 
@@ -115,6 +117,42 @@ public final class PoolPets {
         var level = player.level();
         var server = level.getServer();
         String pool = DimensionPoolSettings.statePoolId(level.dimension());
+        if (!isChunkLoaded(level, ChunkPos.containing(player.blockPosition()))) {
+            if (!PetGlobalState.get(server).findByOwner(player.getUUID()).isEmpty()) {
+                WAITING_FOR_CHUNK.computeIfAbsent(server, ignored -> new HashMap<>()).put(player.getUUID(), pool);
+            }
+            return;
+        }
+        var waiting = WAITING_FOR_CHUNK.get(server);
+        if (waiting != null) {
+            waiting.remove(player.getUUID());
+        }
+        restoreInLoadedChunk(player, pool);
+    }
+
+    static void tickPendingRestores(MinecraftServer server) {
+        var waiting = WAITING_FOR_CHUNK.get(server);
+        if (waiting == null) {
+            return;
+        }
+        waiting.entrySet().removeIf(entry -> {
+            ServerPlayer player = server.getPlayerList().getPlayer(entry.getKey());
+            if (player == null || player.hasDisconnected() || !player.isAlive()
+                    || !entry.getValue().equals(DimensionPoolSettings.statePoolId(player.level().dimension()))) {
+                return true;
+            }
+            if (AuthPlayerHelper.shouldBlockActions(player)
+                    || !isChunkLoaded(player.level(), ChunkPos.containing(player.blockPosition()))) {
+                return false;
+            }
+            restoreInLoadedChunk(player, entry.getValue());
+            return true;
+        });
+    }
+
+    private static void restoreInLoadedChunk(ServerPlayer player, String pool) {
+        var level = player.level();
+        var server = level.getServer();
         for (var pet : PetGlobalState.get(server).findByOwner(player.getUUID())) {
             UUID id = pet.entityUUID();
             try {
@@ -126,13 +164,34 @@ public final class PoolPets {
                         wolf.setDeltaMovement(Vec3.ZERO);
                         wolf.resetFallDistance();
                         wolf.snapTo(player.getX(), player.getY(), player.getZ(), player.getYRot(), 0);
-                        wolf.tryToTeleportToOwner();
+                        if (isRecallAreaLoaded(player)) {
+                            wolf.tryToTeleportToOwner();
+                        }
                     });
                 }
             } catch (IOException | RuntimeException error) {
                 LOGGER.error("无法恢复宠物 {}，保留原档", id, error);
             }
         }
+    }
+
+    private static boolean isRecallAreaLoaded(ServerPlayer player) {
+        // 原版候选点距主人最多三格，寻路和碰撞还会检查候选点周围的方块。
+        var pos = player.blockPosition();
+        var min = ChunkPos.containing(pos.offset(-5, 0, -5));
+        var max = ChunkPos.containing(pos.offset(5, 0, 5));
+        for (int x = min.x(); x <= max.x(); x++) {
+            for (int z = min.z(); z <= max.z(); z++) {
+                if (!isChunkLoaded(player.level(), new ChunkPos(x, z))) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    private static boolean isChunkLoaded(ServerLevel level, ChunkPos pos) {
+        return level.getChunkSource().getChunkNow(pos.x(), pos.z()) != null;
     }
 
     /** 放生暂存的宠物时，先把实体放回原来的维度，再由命令将它恢复为野生狼。 */

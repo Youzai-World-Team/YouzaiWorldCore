@@ -621,6 +621,7 @@ public final class DimensionPoolManager {
                         && !isRecoveryPending(player) && finishSurvivalReturn(player);
             });
         }
+        PoolPets.tickPendingRestores(server);
     }
 
     private static boolean canRecover(ServerPlayer player) {
