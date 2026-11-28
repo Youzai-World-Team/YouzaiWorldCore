@@ -1,10 +1,14 @@
 package top.csituka.youzaiworldcore.pet;
 
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.animal.wolf.Wolf;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
 import java.util.Random;
+import java.util.UUID;
 
 /**
  * 宠物模块工具方法 — 名称生成与通用辅助。
@@ -24,6 +28,16 @@ public final class PetUtils {
     private static final Random RANDOM = new Random();
 
     private PetUtils() {
+    }
+
+    @SuppressWarnings("null")
+    public static @Nullable Wolf findLoadedWolf(MinecraftServer server, UUID id) {
+        for (ServerLevel level : server.getAllLevels()) {
+            if (level.getEntity(id) instanceof Wolf wolf) {
+                return wolf;
+            }
+        }
+        return null;
     }
 
     /**

@@ -20,11 +20,12 @@ import top.csituka.youzaiworldcore.pet.PetEventHandler;
 @Mixin(Wolf.class)
 public abstract class WolfBreedMixin {
 
-    @Inject(method = "getBreedOffspring", at = @At("RETURN"))
+    @Inject(method = "getBreedOffspring(Lnet/minecraft/server/level/ServerLevel;Lnet/minecraft/world/entity/AgeableMob;)Lnet/minecraft/world/entity/animal/wolf/Wolf;",
+            at = @At("RETURN"))
     private void onGetBreedOffspring(ServerLevel level, AgeableMob otherParent,
-                                     CallbackInfoReturnable<AgeableMob> cir) {
-        AgeableMob baby = cir.getReturnValue();
-        if (!(baby instanceof Wolf babyWolf) || !(otherParent instanceof Wolf otherWolf)) {
+                                     CallbackInfoReturnable<Wolf> cir) {
+        Wolf baby = cir.getReturnValue();
+        if (baby == null || !(otherParent instanceof Wolf otherWolf)) {
             return;
         }
 
@@ -40,6 +41,6 @@ public abstract class WolfBreedMixin {
             return;
         }
 
-        PetEventHandler.onBreed(self, otherWolf, babyWolf, breeder, level);
+        PetEventHandler.onBreed(self, otherWolf, baby, breeder, level);
     }
 }

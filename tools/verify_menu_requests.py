@@ -24,7 +24,10 @@ stub('net.minecraft.commands.Commands','''public class Commands {
  public Commands getDispatcher(){return this;}
  public int execute(String command,CommandSourceStack source){calls++;last=command;source.collector.sendSystemMessage(net.minecraft.network.chat.Component.translatable(result>0?"success":"permission_denied"));return result;}
 }''')
-stub('net.minecraft.server.MinecraftServer','public class MinecraftServer {public net.minecraft.commands.Commands getCommands(){return new net.minecraft.commands.Commands();}}')
+stub('net.minecraft.server.MinecraftServer','''public class MinecraftServer {
+ public net.minecraft.commands.Commands getCommands(){return new net.minecraft.commands.Commands();}
+ public net.minecraft.server.level.ServerLevel getLevel(net.minecraft.resources.ResourceKey<?> key){return null;}
+}''')
 stub('net.minecraft.server.level.ServerPlayer','''public class ServerPlayer {
  public boolean disconnected,blocked;public java.util.UUID id=new java.util.UUID(1,2);
  public boolean hasDisconnected(){return disconnected;}public Level level(){return new Level();}public java.util.UUID getUUID(){return id;}

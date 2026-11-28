@@ -5,8 +5,10 @@ import java.io.IOException;
 import java.nio.file.NoSuchFileException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.WeakHashMap;
 import java.util.concurrent.CompletableFuture;
@@ -44,7 +46,7 @@ public final class PoolPets {
     private static final Identifier RETURN_ID = Identifier.fromNamespaceAndPath("youzaiworldcore", "pool_pet_return");
     private static final AttachmentType<String> RETURN_TOKEN = AttachmentRegistry.createPersistent(RETURN_ID, Codec.STRING);
     private static final Map<MinecraftServer, Map<UUID, String>> UNSAVED_RETURNS = new WeakHashMap<>();
-    private static final Map<MinecraftServer, Map<UUID, String>> WAITING_FOR_CHUNK = new WeakHashMap<>();
+    private static final Map<MinecraftServer, Set<UUID>> PENDING_RESTORES = new WeakHashMap<>();
 
     private PoolPets() {}
 
@@ -111,48 +113,52 @@ public final class PoolPets {
     }
 
     static void restore(ServerPlayer player) {
-        if (!player.isAlive() || AuthPlayerHelper.shouldBlockActions(player)) {
+        if (!player.isAlive() || player.hasDisconnected()) {
             return;
         }
-        var level = player.level();
-        var server = level.getServer();
-        String pool = DimensionPoolSettings.statePoolId(level.dimension());
-        if (!isChunkLoaded(level, ChunkPos.containing(player.blockPosition()))) {
+        var server = player.level().getServer();
+        if (!canRestore(player)) {
             if (!PetGlobalState.get(server).findByOwner(player.getUUID()).isEmpty()) {
-                WAITING_FOR_CHUNK.computeIfAbsent(server, ignored -> new HashMap<>()).put(player.getUUID(), pool);
+                PENDING_RESTORES.computeIfAbsent(server, ignored -> new HashSet<>()).add(player.getUUID());
             }
             return;
         }
-        var waiting = WAITING_FOR_CHUNK.get(server);
+        var waiting = PENDING_RESTORES.get(server);
         if (waiting != null) {
             waiting.remove(player.getUUID());
         }
-        restoreInLoadedChunk(player, pool);
+        restoreInLoadedChunk(player);
     }
 
     static void tickPendingRestores(MinecraftServer server) {
-        var waiting = WAITING_FOR_CHUNK.get(server);
+        var waiting = PENDING_RESTORES.get(server);
         if (waiting == null) {
             return;
         }
-        waiting.entrySet().removeIf(entry -> {
-            ServerPlayer player = server.getPlayerList().getPlayer(entry.getKey());
-            if (player == null || player.hasDisconnected() || !player.isAlive()
-                    || !entry.getValue().equals(DimensionPoolSettings.statePoolId(player.level().dimension()))) {
+        waiting.removeIf(id -> {
+            ServerPlayer player = server.getPlayerList().getPlayer(id);
+            if (player == null || player.hasDisconnected() || !player.isAlive()) {
                 return true;
             }
-            if (AuthPlayerHelper.shouldBlockActions(player)
-                    || !isChunkLoaded(player.level(), ChunkPos.containing(player.blockPosition()))) {
+            if (!canRestore(player)) {
                 return false;
             }
-            restoreInLoadedChunk(player, entry.getValue());
+            restoreInLoadedChunk(player);
             return true;
         });
     }
 
-    private static void restoreInLoadedChunk(ServerPlayer player, String pool) {
+    private static boolean canRestore(ServerPlayer player) {
+        return !AuthPlayerHelper.shouldBlockActions(player)
+                && !AuthPlayerHelper.LOGIN_HALL_KEY.equals(player.level().dimension())
+                && isChunkLoaded(player.level(), ChunkPos.containing(player.blockPosition()));
+    }
+
+    private static void restoreInLoadedChunk(ServerPlayer player) {
         var level = player.level();
         var server = level.getServer();
+        // 登录时玩家可能经过大厅，恢复时才以实际所在池为准。
+        String pool = DimensionPoolSettings.statePoolId(level.dimension());
         for (var pet : PetGlobalState.get(server).findByOwner(player.getUUID())) {
             UUID id = pet.entityUUID();
             try {

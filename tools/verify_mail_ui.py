@@ -82,6 +82,8 @@ STUBS[graphics]=STUBS[graphics].replace('public class GuiGraphicsExtractor {',''
  public void setTooltipForNextFrame(Font font,Object stack,int x,int y){}
 ''')
 stub(C+'.render.YzuiTheme',"""public class YzuiTheme {
+ public static boolean light(){return false;}public static int controlOutline(){return -1;}
+ public static void drawSlot(net.minecraft.client.gui.GuiGraphicsExtractor g,int x,int y,int w,int h,int radius,boolean hovered){}
  public static int alpha(int color,float alpha){return color;}public static int multiplyAlpha(int color,float alpha){return color;}public static int mix(int a,int b,float f){return a;}
  public static int surface(){return -1;} public static int surfaceLow(){return -1;} public static int surfaceHigh(){return -1;}public static int slot(){return -1;}
  public static int primary(){return -1;}public static int primaryContainer(){return -1;}public static int onPrimary(){return -1;}public static int onPrimaryContainer(){return -1;}public static int secondaryContainer(){return -1;}

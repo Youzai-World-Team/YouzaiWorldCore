@@ -3,6 +3,7 @@ package top.csituka.youzaiworldcore.pet;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.EntityReference;
 import net.minecraft.world.entity.animal.wolf.Wolf;
 import net.minecraft.world.entity.player.Player;
 import top.csituka.youzaiworldcore.dimensionalinventories.DimensionPoolSettings;
@@ -54,14 +55,7 @@ public final class PetEventHandler {
             return;
         }
 
-        @SuppressWarnings("null")
-        Component tameName = Component.literal(internalName);
-        wolf.setCustomName(tameName);
-        wolf.setCustomNameVisible(true);
-
-        // 用实体标签标记为宠物（用于实体加载时快速识别）
-        wolf.addTag(PetInternalTags.TAG_PET_MARKER);
-        wolf.addTag(PetInternalTags.internalNameTag(internalName));
+        syncRegistryToEntity(wolf, entry);
 
         DebugLogger.SERVER.info(MODULE, "宠物驯服注册成功: [{}] 主人={}", internalName, player.getName().getString());
         DebugLogger.SERVER.exiting(MODULE, "onTame");
@@ -91,9 +85,8 @@ public final class PetEventHandler {
         Optional<PetEntry> p2Opt = state.findByEntityUUID(parent2.getUUID());
 
         if (p1Opt.isEmpty() || p2Opt.isEmpty()) {
-            // 一方为野生狼 → 取消繁殖（由预拦截处理，此处不应到达）
-            DebugLogger.SERVER.debug(MODULE, "繁殖校验未通过：父母之一非宠物");
-            DebugLogger.SERVER.exiting(MODULE, "onBreed", "cancelled");
+            DebugLogger.SERVER.debug(MODULE, "保留原版繁殖结果：父母之一未登记");
+            DebugLogger.SERVER.exiting(MODULE, "onBreed", "vanilla");
             return;
         }
 
@@ -124,10 +117,10 @@ public final class PetEventHandler {
             initialTrust = new HashSet<>();
             initialTrust.add(p1.ownerUUID());
             initialTrust.add(p2.ownerUUID());
-            initialTrust.remove(breeder.getUUID()); // 主人不记录在信任列表中
         } else {
             initialTrust = unionTrust;
         }
+        initialTrust.remove(breeder.getUUID());
 
         // 幼狼主人 = 触发繁殖的玩家
         PetEntry babyEntry = new PetEntry(
@@ -147,12 +140,7 @@ public final class PetEventHandler {
             return;
         }
 
-        @SuppressWarnings("null")
-        Component babyName = Component.literal(internalName);
-        baby.setCustomName(babyName);
-        baby.setCustomNameVisible(true);
-        baby.addTag(PetInternalTags.TAG_PET_MARKER);
-        baby.addTag(PetInternalTags.internalNameTag(internalName));
+        syncRegistryToEntity(baby, babyEntry);
 
         breeder.sendSystemMessage(Component.translatable(
                 "youzaiworldcore.message.pet.breed.success", internalName));
@@ -267,7 +255,7 @@ public final class PetEventHandler {
             DebugLogger.SERVER.debug(MODULE, "实体同步: [{}] 显示名={}", entry.internalName(), entry.displayName());
         } else if (wolf.entityTags().contains(PetInternalTags.TAG_PET_MARKER)) {
             // 注册表不存在但实体有标记 → 垃圾回收：清理残留数据
-            cleanupEntityData(wolf);
+            releaseWolf(wolf);
             DebugLogger.SERVER.trace(MODULE, "垃圾回收: 清理孤儿实体 {}", wolf.getUUID());
         }
     }
@@ -276,12 +264,23 @@ public final class PetEventHandler {
      * 将注册表数据同步到实体对象。
      */
     @SuppressWarnings("null")
-    private static void syncRegistryToEntity(Wolf wolf, PetEntry entry) {
+    public static void syncRegistryToEntity(Wolf wolf, PetEntry entry) {
+        var owner = wolf.getOwnerReference();
+        if (owner == null || !entry.ownerUUID().equals(owner.getUUID())) {
+            wolf.setOwnerReference(EntityReference.of(entry.ownerUUID()));
+            PetModeController.stopCombat(wolf);
+        }
+        if (!wolf.isTame()) {
+            wolf.setTame(true, true);
+        }
+        ((PetCombatAccess) wolf).yzwc$setManagedPet(true);
+
         @SuppressWarnings("null")
         Component displayName = Component.literal(entry.displayName());
         if (!displayName.equals(wolf.getCustomName())) {
             wolf.setCustomName(displayName);
         }
+        wolf.setCustomNameVisible(true);
 
         // 确保宠物标记和内部名称标签存在
         if (!wolf.entityTags().contains(PetInternalTags.TAG_PET_MARKER)) {
@@ -301,7 +300,7 @@ public final class PetEventHandler {
      * 清理实体上的宠物残留数据。
      */
     @SuppressWarnings("null")
-    private static void cleanupEntityData(Wolf wolf) {
+    public static void releaseWolf(Wolf wolf) {
         wolf.removeTag(PetInternalTags.TAG_PET_MARKER);
 
         new HashSet<>(wolf.entityTags()).stream()
@@ -312,11 +311,11 @@ public final class PetEventHandler {
         wolf.setCustomNameVisible(false);
 
         wolf.setOrderedToSit(false);
-        wolf.setPersistentAngerEndTime(0);
-        if (wolf.getPersistentAngerTarget() != null) {
-            wolf.setPersistentAngerTarget(null);
-        }
+        wolf.setInSittingPose(false);
+        wolf.setOwnerReference(null);
+        PetModeController.stopCombat(wolf);
         wolf.setTame(false, true);
+        ((PetCombatAccess) wolf).yzwc$setManagedPet(false);
     }
 
     // 事件 8：伤害拦截

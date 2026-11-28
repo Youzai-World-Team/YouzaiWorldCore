@@ -30,6 +30,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.CommonListenerCookie;
 import net.minecraft.server.network.ServerGamePacketListenerImpl;
+import net.minecraft.server.players.NameAndId;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -43,11 +44,18 @@ import net.minecraft.world.level.portal.TeleportTransition;
 import net.minecraft.world.entity.EntityReference;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.AgeableMob;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.ai.goal.GoalSelector;
+import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
+import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.animal.wolf.Wolf;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.storage.LevelData;
 import net.minecraft.world.level.storage.TagValueInput;
+import net.minecraft.world.level.storage.TagValueOutput;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
@@ -64,6 +72,7 @@ import top.csituka.youzaiworldcore.data.TeleportAnchorManager;
 import top.csituka.youzaiworldcore.mana.ManaManager;
 import top.csituka.youzaiworldcore.pet.PetEntry;
 import top.csituka.youzaiworldcore.pet.PetGlobalState;
+import top.csituka.youzaiworldcore.pet.PetMode;
 import top.csituka.youzaiworldcore.mixin.PlayerEnchantmentSeedAccessor;
 import top.csituka.youzaiworldcore.respawn.InPlaceRespawnManager;
 import top.csituka.youzaiworldcore.util.DebugLogger;
@@ -187,7 +196,137 @@ public final class PoolRuntimeAudit implements DedicatedServerModInitializer {
         }
 
         @SuppressWarnings("null")
+        private static Wolf reloadWolf(Wolf original) {
+                var level = (ServerLevel) original.level();
+                var output = TagValueOutput.createWithContext(ProblemReporter.DISCARDING, level.registryAccess());
+                original.saveWithoutId(output);
+                original.discard();
+                Wolf wolf = EntityTypes.WOLF.create(level, EntitySpawnReason.LOAD);
+                wolf.load(TagValueInput.create(ProblemReporter.DISCARDING, level.registryAccess(), output.buildResult()));
+                check(level.addFreshEntity(wolf), "reloaded wolf enters the world");
+                return wolf;
+        }
+
+        @SuppressWarnings("null")
+        private static void petLifecycleAndCombat(MinecraftServer server) throws Exception {
+                var level = server.overworld();
+                var owner = connect(server, level, UUID.randomUUID(), "PetAuditOwner", new TestConnection(), false);
+                var ally = connect(server, level, UUID.randomUUID(), "PetAuditAlly", new TestConnection(), false);
+                server.services().nameToIdCache().add(new NameAndId(owner.getGameProfile()));
+                server.services().nameToIdCache().add(new NameAndId(ally.getGameProfile()));
+                owner.snapTo(65.5, 190, 65.5, 0, 0);
+                ally.snapTo(65.5, 190, 65.5, 0, 0);
+                var state = PetGlobalState.get(server);
+                UUID wolfId = UUID.randomUUID();
+                Wolf wolf = addPet(owner, wolfId, "AUDITMODE", false);
+                var target = EntityTypes.SKELETON.create(level, EntitySpawnReason.LOAD);
+                target.snapTo(67.5, 190, 65.5, 0, 0);
+                check(level.addFreshEntity(target), "combat target enters the world");
+                var field = Mob.class.getDeclaredField("targetSelector");
+                field.setAccessible(true);
+                var selector = (GoalSelector) field.get(wolf);
+                var source = owner.createCommandSourceStack();
+                var commands = server.getCommands();
+                String command = "yzwc pet set AUDITMODE ";
+
+                AuthPlayerHelper.setAuthenticated(owner, false);
+                check(AuthPlayerHelper.shouldBlockActions(owner), "command test player requires login");
+                commands.performPrefixedCommand(source, command + "mode attack");
+                check(state.findByEntityUUID(wolfId).orElseThrow().mode() == PetMode.COMPANIONSHIP,
+                                "unauthenticated player cannot change pet mode");
+                AuthPlayerHelper.setAuthenticated(owner, true);
+                commands.performPrefixedCommand(source, command + "trust add PetAuditAlly");
+                check(state.findByEntityUUID(wolfId).orElseThrow().isTrustedOrOwner(ally.getUUID()),
+                                "the original trust command admits the ally");
+                wolf.setTarget(target);
+                selector.tick();
+                check(wolf.getTarget() == null && selector.getAvailableGoals().stream()
+                                .noneMatch(goal -> goal.getGoal() instanceof NearestAttackableTargetGoal<?>),
+                                "companion cannot target a skeleton even through vanilla target assignment");
+
+                commands.performPrefixedCommand(source, command + "mode hunting");
+                var wild = EntityTypes.WOLF.create(level, EntitySpawnReason.LOAD);
+                var alert = HurtByTargetGoal.class.getDeclaredMethod("alertOther", Mob.class, LivingEntity.class);
+                alert.setAccessible(true);
+                alert.invoke(new HurtByTargetGoal(wild), wolf, target);
+                check(wolf.getTarget() == null, "vanilla pack alerts do not bypass managed hunting");
+                ally.snapTo(77.6, 190, 65.5, 0, 0);
+                ally.setLastHurtMob(target);
+                selector.tick();
+                check(wolf.getTarget() == null, "hunting ignores an ally attack beyond ten blocks");
+                ally.snapTo(77.5, 190, 65.5, 0, 0);
+                selector.tick();
+                check(wolf.getTarget() == target, "hunting responds to the trusted attack at ten blocks");
+                ally.snapTo(77.6, 190, 65.5, 0, 0);
+                selector.tick();
+                check(wolf.getTarget() == null, "hunting stops beyond ten blocks");
+
+                commands.performPrefixedCommand(source, command + "mode guard");
+                ally.snapTo(65.5, 190, 65.5, 0, 0);
+                selector.tick();
+                check(wolf.getTarget() == null, "guard does not join an ally's attack");
+                ally.setLastHurtByMob(target);
+                selector.tick();
+                check(wolf.getTarget() == target, "guard protects a trusted player");
+                commands.performPrefixedCommand(source, command + "mode companionship");
+                check(wolf.getTarget() == null && wolf.getPersistentAngerTarget() == null,
+                                "mode switch immediately stops ongoing aggression");
+
+                commands.performPrefixedCommand(source, command + "mode attack");
+                ally.tickCount++;
+                ally.setLastHurtMob(target);
+                selector.tick();
+                check(wolf.getTarget() == target && !wolf.canAttack(ally),
+                                "attack mode joins a trusted player and protects the player from friendly fire");
+                commands.performPrefixedCommand(source, command + "trust remove PetAuditAlly");
+                selector.tick();
+                check(wolf.getTarget() == null, "revoking trust ends the active response");
+
+                commands.performPrefixedCommand(source, command + "transfer PetAuditAlly");
+                check(wolf.getOwner() == ally && state.findByEntityUUID(wolfId).orElseThrow().isOwner(ally.getUUID()),
+                                "loaded wolf follows the new registered owner");
+                wolf.discard();
+                Wolf unloaded = EntityTypes.WOLF.create(level, EntitySpawnReason.LOAD);
+                unloaded.setUUID(wolfId);
+                unloaded.setOwnerReference(EntityReference.of(ally.getUUID()));
+                unloaded.setTame(true, true);
+                unloaded.snapTo(65.5, 190, 65.5, 0, 0);
+                commands.performPrefixedCommand(ally.createCommandSourceStack(), command + "transfer PetAuditOwner");
+                check(level.addFreshEntity(unloaded) && unloaded.getOwner() == owner,
+                                "loading a transferred wolf replaces the old native owner");
+                var partner = addPet(owner, UUID.randomUUID(), "AUDITPARENT", false);
+                unloaded.setInLove(ally);
+                AgeableMob child = ((AgeableMob) unloaded).getBreedOffspring(level, partner);
+                check(child instanceof Wolf baby && baby.getOwner() == ally
+                                && state.findByEntityUUID(baby.getUUID()).orElseThrow().isOwner(ally.getUUID()),
+                                "offspring uses the breeder for both native and registered owner");
+                state.removePet(child.getUUID());
+                partner.discard();
+                state.removePet(partner.getUUID());
+
+                var unloadedData = TagValueOutput.createWithContext(ProblemReporter.DISCARDING, level.registryAccess());
+                unloaded.saveWithoutId(unloadedData);
+                unloaded.discard();
+                commands.performPrefixedCommand(source, command + "release_life true");
+                Wolf released = EntityTypes.WOLF.create(level, EntitySpawnReason.LOAD);
+                released.load(TagValueInput.create(ProblemReporter.DISCARDING, level.registryAccess(),
+                                unloadedData.buildResult()));
+                check(level.addFreshEntity(released) && !released.isTame() && released.getOwnerReference() == null,
+                                "offline release clears the native owner when the entity loads");
+                released = reloadWolf(released);
+                check(!released.isTame() && released.getOwnerReference() == null
+                                && ((GoalSelector) field.get(released)).getAvailableGoals().stream()
+                                        .anyMatch(goal -> goal.getGoal() instanceof NearestAttackableTargetGoal<?>),
+                                "released wolf remains wild after NBT reload and gets vanilla targets back");
+                released.discard();
+                target.discard();
+                detach(owner);
+                detach(ally);
+        }
+
+        @SuppressWarnings("null")
         private static void run(MinecraftServer server) throws Exception {
+                petLifecycleAndCombat(server);
                 ServerLevel overworld = server.overworld();
                 ServerLevel nether = server.getLevel(Level.NETHER);
                 ServerLevel end = server.getLevel(Level.END);
@@ -285,6 +424,7 @@ public final class PoolRuntimeAudit implements DedicatedServerModInitializer {
                                 server.createCommandSourceStack().withLevel(end).withEntity(player),
                                 "yzwc pet set AUDITRELEASE release_life true");
                 check(overworld.getEntity(RELEASED_PET) instanceof Wolf released && !released.isTame()
+                                && released.getOwnerReference() == null
                                 && PetGlobalState.get(server).findByEntityUUID(RELEASED_PET).isEmpty()
                                 && end.getEntity(RELEASED_PET) == null,
                                 "releasing a parked pet returns it to its own dimension");
@@ -515,6 +655,7 @@ public final class PoolRuntimeAudit implements DedicatedServerModInitializer {
                                 "in-place respawn leaves the other pool count alone");
                 checkTransferPayment(server, overworld, end);
                 coldPetReturn(server, end);
+                loginHallPetReturn(server, end);
         }
 
         private static void checkTransferPayment(MinecraftServer server, ServerLevel origin, ServerLevel end)
@@ -548,6 +689,7 @@ public final class PoolRuntimeAudit implements DedicatedServerModInitializer {
                 detach(owner);
 
                 var returning = connect(server, end, ownerId, "ColdPetOwner", new TestConnection(), false);
+                AuthPlayerHelper.setAuthenticated(returning, false);
                 returning.snapTo(16_000.5, 85, 16_000.5, 0, 0);
                 var pos = ChunkPos.containing(returning.blockPosition());
                 var chunks = end.getChunkSource();
@@ -561,10 +703,45 @@ public final class PoolRuntimeAudit implements DedicatedServerModInitializer {
                 trackPetChunk(end, returning.blockPosition());
                 check(chunks.getChunkNow(pos.x() - 1, pos.z()) == null, "adjacent chunk starts unloaded");
                 PoolPets.tickPendingRestores(server);
+                check(end.getEntity(petId) == null && isParked(server, petId),
+                                "recall still waits for authentication after the owner chunk loads");
+                AuthPlayerHelper.setAuthenticated(returning, true);
+                PoolPets.tickPendingRestores(server);
                 check(end.getEntity(petId) instanceof Wolf wolf && wolf.getOwner() == returning
                                 && wolf.distanceToSqr(returning) < 1
                                 && chunks.getChunkNow(pos.x() - 1, pos.z()) == null,
                                 "recall completes inside the loaded chunk without loading an adjacent chunk");
+                detach(returning);
+        }
+
+        @SuppressWarnings("null")
+        private static void loginHallPetReturn(MinecraftServer server, ServerLevel end) throws Exception {
+                UUID ownerId = UUID.randomUUID();
+                UUID petId = UUID.randomUUID();
+                var owner = connect(server, end, ownerId, "HallPetOwner", new TestConnection(), false);
+                addPet(owner, petId, "AUDITHALL", false);
+                check(DimensionPoolManager.teleportToPool(owner, MAIN) && isParked(server, petId),
+                                "login hall fixture is parked");
+                detach(owner);
+
+                var returning = connect(server, end, ownerId, "HallPetOwner", new TestConnection(), false);
+                AuthPlayerHelper.setAuthenticated(returning, false);
+                AuthPlayerHelper.saveLocation(returning);
+                DimensionPoolManager.onPlayerJoin(returning);
+                var hall = server.getLevel(AuthPlayerHelper.LOGIN_HALL_KEY);
+                check(returning.teleportTo(hall, 0, 64, 0, Set.of(), 0, 0, true)
+                                && returning.level() == hall, "owner enters the login hall");
+                PoolPets.tickPendingRestores(server);
+                AuthPlayerHelper.setAuthenticated(returning, true);
+                PoolPets.tickPendingRestores(server);
+                check(hall.getEntity(petId) == null && end.getEntity(petId) == null && isParked(server, petId),
+                                "authentication alone does not restore a wolf in the login hall");
+
+                AuthPlayerHelper.restoreLocation(returning);
+                check(returning.level() == end, "login returns the owner to the previous pool");
+                PoolPets.tickPendingRestores(server);
+                check(end.getEntity(petId) instanceof Wolf wolf && wolf.getOwner() == returning,
+                                "the pending restore survives a visit to the login hall");
                 detach(returning);
         }
 

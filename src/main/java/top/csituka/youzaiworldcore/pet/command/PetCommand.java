@@ -17,6 +17,8 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.players.NameAndId;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.animal.wolf.Wolf;
+import top.csituka.youzaiworldcore.account.util.AuthPlayerHelper;
+import top.csituka.youzaiworldcore.dimensionalinventories.PoolPets;
 import top.csituka.youzaiworldcore.luckperms.LuckPermsHelper;
 import top.csituka.youzaiworldcore.pet.*;
 import top.csituka.youzaiworldcore.util.DebugLogger;
@@ -65,6 +67,11 @@ public class PetCommand {
 
         dispatcher.register(Commands.literal("yzwc")
                 .then(Commands.literal("pet")
+                        .requires(source -> {
+                            ServerPlayer player = source.getPlayer();
+                            return player == null || (!player.hasDisconnected()
+                                    && !AuthPlayerHelper.shouldBlockActions(player));
+                        })
                         .then(Commands.literal("list")
                                 .requires(src -> LuckPermsHelper.checkPermission(
                                         src, PERMISSION_PET_LIST, Commands.LEVEL_ALL))
@@ -293,9 +300,8 @@ public class PetCommand {
         state.updatePet(updated);
 
         // 如果实体已加载，同步修改
-        ServerLevel level = player.level();
-        Entity entity = level.getEntity(entry.entityUUID());
-        if (entity instanceof Wolf wolf) {
+        Wolf wolf = PetUtils.findLoadedWolf(player.level().getServer(), entry.entityUUID());
+        if (wolf != null) {
             wolf.setCustomName(Component.literal(newDisplayName));
         }
 
@@ -341,6 +347,10 @@ public class PetCommand {
         // 纯元数据修改：更新注册表
         PetEntry updated = entry.withMode(newMode);
         state.updatePet(updated);
+        Wolf wolf = PetUtils.findLoadedWolf(player.level().getServer(), entry.entityUUID());
+        if (wolf != null && newMode != entry.mode()) {
+            PetModeController.stopCombat(wolf);
+        }
 
         source.sendSuccess(() -> Component.translatable(
                 "youzaiworldcore.message.pet.mode.set",
@@ -625,48 +635,28 @@ public class PetCommand {
             return 0;
         }
 
-        ServerLevel level = player.level();
-        Entity entity = level.getEntity(entry.entityUUID());
-        if (!(entity instanceof Wolf)) {
+        MinecraftServer server = player.level().getServer();
+        Wolf wolf = PetUtils.findLoadedWolf(server, entry.entityUUID());
+        if (wolf == null) {
             try {
-                entity = top.csituka.youzaiworldcore.dimensionalinventories.PoolPets.releaseParked(
-                        level.getServer(), entry.entityUUID());
+                wolf = PoolPets.releaseParked(server, entry.entityUUID());
             } catch (java.io.IOException | RuntimeException error) {
                 DebugLogger.SERVER.exception(MODULE, "releaseParked", error);
                 source.sendFailure(Component.translatable("youzaiworldcore.message.pet.not_loaded"));
                 return 0;
             }
         }
-        boolean entityLoaded = entity instanceof Wolf;
-
-        if (entityLoaded) {
-            Wolf wolf = (Wolf) entity;
-            state.removePet(entry.entityUUID());
-            wolf.removeTag(PetInternalTags.TAG_PET_MARKER);
-            new HashSet<>(wolf.entityTags()).stream()
-                    .filter(t -> t.startsWith(PetInternalTags.TAG_INTERNAL_NAME_PREFIX))
-                    .forEach(wolf::removeTag);
-            wolf.setCustomName(null);
-            wolf.setCustomNameVisible(false);
-            wolf.setPersistentAngerEndTime(0);
-            if (wolf.getPersistentAngerTarget() != null) {
-                wolf.setPersistentAngerTarget(null);
-            }
-            // ==== 将驯服狗还原为野生狼 ====
-            wolf.setOrderedToSit(false);
-            // 取消驯服标记并重置属性（setTame(false, true) 会调用 applyTamingSideEffects，
-            // 将最大生命值从 40 降回野生狼的 8）
-            wolf.setTame(false, true);
+        state.removePet(entry.entityUUID());
+        if (wolf != null) {
+            PetEventHandler.releaseWolf(wolf);
         } else {
-            // 实体未加载：仅从注册表删除
-            state.removePet(entry.entityUUID());
             DebugLogger.SERVER.info(MODULE, "离线放生: [{}] UUID={} (实体未加载)", entry.internalName(), entry.entityUUID());
         }
 
         source.sendSuccess(() -> Component.translatable(
                 "youzaiworldcore.message.pet.release.success", internalName), true);
 
-        DebugLogger.SERVER.info(MODULE, "放生: [{}], force={}, entityLoaded={}", internalName, force, entityLoaded);
+        DebugLogger.SERVER.info(MODULE, "放生: [{}], force={}, entityLoaded={}", internalName, force, wolf != null);
         DebugLogger.SERVER.exiting(MODULE, "executeReleaseLife", "1");
         return 1;
     }
@@ -723,8 +713,10 @@ public class PetCommand {
         PetEntry updated = entry.withOwner(newOwnerUUID, newTrust);
         state.updatePet(updated);
 
-        // 如果实体已加载，同步修改（EntityReference 无法在运行时直接修改）
-        // 下次实体加载时会从注册表同步
+        Wolf wolf = PetUtils.findLoadedWolf(player.level().getServer(), entry.entityUUID());
+        if (wolf != null) {
+            PetEventHandler.syncRegistryToEntity(wolf, updated);
+        }
 
         source.sendSuccess(() -> Component.translatable(
                 "youzaiworldcore.message.pet.transfer.success",

@@ -1,50 +1,57 @@
 package top.csituka.youzaiworldcore.mixin.pet;
 
-import net.minecraft.world.entity.LivingEntity;
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
+import java.util.ArrayList;
+import java.util.List;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.TamableAnimal;
+import net.minecraft.world.entity.ai.goal.Goal;
+import net.minecraft.world.entity.ai.goal.GoalSelector;
+import net.minecraft.world.entity.ai.goal.WrappedGoal;
 import net.minecraft.world.entity.animal.wolf.Wolf;
+import net.minecraft.world.level.Level;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
-import top.csituka.youzaiworldcore.pet.PetMode;
+import top.csituka.youzaiworldcore.pet.PetCombatAccess;
 import top.csituka.youzaiworldcore.pet.PetModeController;
-import top.csituka.youzaiworldcore.util.DebugLogger;
 
-/**
- * Mixin — 拦截 {@link Wolf#wantsToAttack(LivingEntity, LivingEntity)} 以根据宠物模式控制攻击行为。
- * <p>
- * {@code OwnerHurtByTargetGoal} 和 {@code OwnerHurtTargetGoal} 均会调用此方法。
- * 对于 COMPANIONSHIP 模式，直接返回 false 阻止所有攻击行为。
- * 对于 GUARD/HUNTING/ATTACK 模式，放行（精细控制在单独的目标 Goal Mixin 中处理）。
- * </p>
- */
 @Mixin(Wolf.class)
-public abstract class WolfModeAttackMixin {
+public abstract class WolfModeAttackMixin extends TamableAnimal implements PetCombatAccess {
+    @Unique
+    private List<WrappedGoal> yzwc$vanillaTargets;
+    @Unique
+    private PetModeController yzwc$petTarget;
 
-    private static final String MODULE = "WolfModeAttackMixin";
+    protected WolfModeAttackMixin(EntityType<? extends TamableAnimal> type, Level level) {
+        super(type, level);
+    }
 
-    @Inject(method = "wantsToAttack", at = @At("HEAD"), cancellable = true)
-    private void onWantsToAttack(LivingEntity target, LivingEntity owner,
-                                  CallbackInfoReturnable<Boolean> cir) {
-        Wolf wolf = (Wolf) (Object) this;
-
-        if (wolf.level().isClientSide()) {
-            return;
-        }
-
-        PetMode mode = PetModeController.getMode(wolf);
-        if (mode == null) {
-            return;
-        }
-
-        // COMPANIONSHIP 模式：不攻击任何目标
-        if (mode == PetMode.COMPANIONSHIP) {
-            if (DebugLogger.SERVER.isEnabled(DebugLogger.LEVEL_DEBUG)) {
-                DebugLogger.SERVER.trace(MODULE, "COMPANIONSHIP 模式阻止攻击: wolf={}, target={}", wolf.getUUID(), target != null ? target.getUUID() : "null");
+    @SuppressWarnings("null")
+    @WrapOperation(method = "registerGoals", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/ai/goal/GoalSelector;addGoal(ILnet/minecraft/world/entity/ai/goal/Goal;)V"))
+    private void yzwc$rememberVanillaTargets(GoalSelector selector, int priority, Goal goal, Operation<Void> original) {
+        original.call(selector, priority, goal);
+        if (selector == targetSelector) {
+            if (yzwc$vanillaTargets == null) {
+                yzwc$vanillaTargets = new ArrayList<>();
             }
-            cir.setReturnValue(false);
+            yzwc$vanillaTargets.add(new WrappedGoal(priority, goal));
         }
+    }
 
-        // 其他模式放行 — 精细控制由 OwnerHurtTargetGoal / HurtByTargetGoal 的 Mixin 处理
+    @Override
+    public void yzwc$setManagedPet(boolean managed) {
+        if (managed && yzwc$petTarget == null) {
+            yzwc$vanillaTargets.forEach(target -> targetSelector.removeGoal(target.getGoal()));
+            Wolf wolf = (Wolf) (Object) this;
+            PetModeController.stopCombat(wolf);
+            yzwc$petTarget = new PetModeController(wolf);
+            targetSelector.addGoal(1, yzwc$petTarget);
+        } else if (!managed && yzwc$petTarget != null) {
+            targetSelector.removeGoal(yzwc$petTarget);
+            yzwc$petTarget = null;
+            yzwc$vanillaTargets.forEach(target -> targetSelector.addGoal(target.getPriority(), target.getGoal()));
+        }
     }
 }
