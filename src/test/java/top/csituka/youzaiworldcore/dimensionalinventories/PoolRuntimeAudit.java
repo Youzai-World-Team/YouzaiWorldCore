@@ -55,6 +55,7 @@ import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.goal.GoalSelector;
 import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
+import net.minecraft.world.entity.animal.feline.Cat;
 import net.minecraft.world.entity.animal.wolf.Wolf;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -643,8 +644,7 @@ public final class PoolRuntimeAudit implements DedicatedServerModInitializer {
                 loaded.load(TagValueInput.create(ProblemReporter.DISCARDING, level.registryAccess(), snapshot.buildResult()));
                 check(level.addFreshEntity(loaded) && loaded.getOwner() == player
                                 && loaded.getName().getString().equals("PendingName"), "loaded cat applies pending name");
-                loaded.hurtServer(level, loaded.damageSources().genericKill(), Float.MAX_VALUE);
-                check(state.findByEntityUUID(loaded.getUUID()).isEmpty(), "dead cat is removed from the registry");
+                loaded.setHealth(6);
                 var parrotId = parrot.getUUID();
                 String setParrot = "yzwc pet set " + state.findByEntityUUID(parrotId).orElseThrow().internalName() + " ";
                 var station = parrot.position();
@@ -677,12 +677,22 @@ public final class PoolRuntimeAudit implements DedicatedServerModInitializer {
                 player.setOnGround(true);
                 check(shoulderPet.setEntityOnShoulder(player), "companion parrot rides on a shoulder");
                 var oldShoulderData = player.getShoulderEntityLeft().copy();
+                var sittingCat = EntityTypes.CAT.create(level, EntitySpawnReason.LOAD);
+                sittingCat.snapTo(player.position(), 0, 0);
+                check(level.addFreshEntity(sittingCat), "sitting cat enters the world");
+                sittingCat.tame(player);
+                sittingCat.setOrderedToSit(true);
                 check(DimensionPoolManager.teleportToPool(player, END) && isParked(server, pony.getUUID())
                                 && isParked(server, nautilus.getUUID()) && level.getEntity(parrotId) == parrot
                                 && !isParked(server, parrotId)
                                 && isParked(server, shoulderPet.getUUID()) && player.getShoulderEntityLeft().isEmpty()
                                 && !PoolPets.canLoadShoulder(level, oldShoulderData),
                                 "cross-pool parking honors stationary mode and saves shoulder pets without duplicates");
+                check(isParked(server, loaded.getUUID()) && level.getEntity(loaded.getUUID()) == null
+                                && player.level().getEntity(loaded.getUUID()) == null
+                                && level.getEntity(sittingCat.getUUID()) == sittingCat
+                                && !isParked(server, sittingCat.getUUID()),
+                                "standing cats are parked across pools while sitting cats stay in the original pool");
                 check(DimensionPoolManager.teleportToPool(player, MAIN), "original pool can be re-entered");
                 awaitPetChunk(level, player.blockPosition());
                 PoolPets.tickPendingRestores(server);
@@ -698,10 +708,20 @@ public final class PoolRuntimeAudit implements DedicatedServerModInitializer {
                                 && level.getEntity(nautilus.getUUID()) != null
                                 && level.getEntity(shoulderPet.getUUID()) instanceof net.minecraft.world.entity.animal.parrot.Parrot,
                                 "cross-pool recall restores the original species and owner");
+                var returnedCat = (Cat) level.getEntity(loaded.getUUID());
+                var returnedCatEntry = state.findByEntityUUID(loaded.getUUID()).orElseThrow();
+                check(returnedCat != null && returnedCat.getOwner() == player && returnedCat.getHealth() == 6
+                                && returnedCat.distanceToSqr(player) < 64
+                                && returnedCat.getName().getString().equals("PendingName")
+                                && returnedCatEntry.internalName().equals(catEntry.internalName())
+                                && returnedCatEntry.availableModes().isEmpty(),
+                                "cat recall preserves identity, ownership, health and name without a custom mode");
+                returnedCat.hurtServer(level, returnedCat.damageSources().genericKill(), Float.MAX_VALUE);
+                check(state.findByEntityUUID(returnedCat.getUUID()).isEmpty(), "dead cat is removed from the registry");
                 check(commands.execute(setParrot + "mode companionship", player.createCommandSourceStack()) == 1
                                 && state.findByEntityUUID(parrotId).orElseThrow().station().isEmpty(),
                                 "companion mode clears the stationary restriction");
-                for (Mob animal : List.of(pony, parrot, nautilus, donkey, camel, shoulderPet)) {
+                for (Mob animal : List.of(pony, parrot, nautilus, donkey, camel, shoulderPet, sittingCat)) {
                         var active = level.getEntity(animal.getUUID());
                         if (active != null) active.discard();
                         state.removePet(animal.getUUID());

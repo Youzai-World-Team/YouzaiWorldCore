@@ -485,7 +485,7 @@ The pet registry tracks vanilla animals after taming succeeds. Cats, parrots, ho
 - **Other pet modes**. Stationary pets remain within five blocks of where the mode was set. Companion pets use vanilla behavior. Cats keep their vanilla behavior.
 - **Ownership**. Owners of all registered pets can manage trust, transfer ownership, and confirm a release with `release_life true`. Trusted players can list and highlight the pet.
 - **Rename and locate**. Use `rename` to change a pet's name. `highlight <internalName>` applies Glowing for five seconds to a loaded pet.
-- When an owner leaves a dimension pool, eligible pets and shoulder parrots are stored in the original pool and restored when the owner returns. Stationary, sitting, and unloaded pets stay where they are. Nautiluses wait for loaded water near their owner.
+- When an owner leaves a dimension pool, eligible pets, including cats, and shoulder parrots are stored in the original pool and restored when the owner returns. Stationary, sitting, and unloaded pets stay where they are. Nautiluses wait for loaded water near their owner.
 - The player data backup archives the pet registry. Administrators can use `/yzwc backup list pet_module` to list backup IDs and `/yzwc backup restore pet_module [backup_id]` to queue a restore.
 - **Command Architecture**: `/yzwc pet` is a **client command** that forwards its full argument string via `PetCommandPayload` (C→S); the server-side `PetCommand` holds the complete Brigadier tree and permission checks
 
