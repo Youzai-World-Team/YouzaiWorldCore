@@ -114,6 +114,12 @@ public final class PoolRuntimeAudit implements DedicatedServerModInitializer {
         private static final UUID SHOULDER_RELEASED = UUID.fromString("6531ef86-f4f4-4807-9ab6-c49f61bdf7c0");
         private static final UUID SHOULDER_TRANSFERRED = UUID.fromString("c07ad0bb-6ff5-433a-b7cb-f59f03404a67");
         private static final BlockPos SHOULDER_TRANSFER_POS = COLD_RELEASE_POS.offset(256, 0, 0);
+        private static final UUID REPERCH_OWNER = UUID.fromString("d9132ba0-7644-4aa8-8a9f-efdd9c497f48");
+        private static final UUID REPERCH_ALLY = UUID.fromString("52d9043c-74af-450e-bd20-0ca3d9ed1a48");
+        private static final UUID REPERCH_LEFT = UUID.fromString("ca544092-fb13-4cb5-a85f-10736af22d3a");
+        private static final UUID REPERCH_RIGHT = UUID.fromString("ce8efdd2-6533-4d60-8e4c-4a480f37138e");
+        private static final BlockPos REPERCH_ORIGIN = new BlockPos(12289, 150, 12289);
+        private static final BlockPos REPERCH_CARRIER_POS = REPERCH_ORIGIN.offset(128, 0, 0);
 
         @Override
         public void onInitializeServer() {
@@ -585,6 +591,7 @@ public final class PoolRuntimeAudit implements DedicatedServerModInitializer {
                 detach(player);
                 detach(other);
                 stageShoulderTransfer(server);
+                stageReperchedTransfer(server);
         }
 
         @SuppressWarnings("null")
@@ -913,6 +920,103 @@ public final class PoolRuntimeAudit implements DedicatedServerModInitializer {
         }
 
         @SuppressWarnings("null")
+        private static void stageReperchedTransfer(MinecraftServer server) throws Exception {
+                var level = server.overworld();
+                var owner = connect(server, level, REPERCH_OWNER, "ReperchOwner", new TestConnection(), false);
+                var ally = connect(server, level, REPERCH_ALLY, "ReperchAlly", new TestConnection(), false);
+                owner.snapTo(Vec3.atBottomCenterOf(REPERCH_ORIGIN), 0, 0);
+                ally.snapTo(owner.position(), 0, 0);
+                awaitPetChunk(level, REPERCH_ORIGIN);
+                server.services().nameToIdCache().add(new NameAndId(ally.getGameProfile()));
+                addShoulderParrot(owner, REPERCH_LEFT, "ReperchedLeft");
+                addShoulderParrot(owner, REPERCH_RIGHT, "ReperchedRight");
+                server.getPlayerList().saveAll();
+                for (var id : List.of(REPERCH_LEFT, REPERCH_RIGHT)) {
+                        var entry = PetGlobalState.get(server).findByEntityUUID(id).orElseThrow();
+                        check(server.getCommands().getDispatcher().execute("yzwc pet set " + entry.internalName()
+                                        + " transfer ReperchAlly", owner.createCommandSourceStack()) == 1,
+                                        "transfer a perched parrot into a ready origin chunk");
+                        var parrot = (Parrot) level.getEntity(id);
+                        check(parrot != null && parrot.getOwner() == ally && isParked(server, id),
+                                        "transferred parrot awaits its first durable entity write");
+                        parrot.setHealth(id.equals(REPERCH_LEFT) ? 5 : 4);
+                        ally.setOnGround(true);
+                        check(parrot.setEntityOnShoulder(ally), "transferred parrot perches on the new owner");
+                }
+                ally.snapTo(Vec3.atBottomCenterOf(REPERCH_CARRIER_POS), 0, 0);
+                check(LoadedChunks.get(level, REPERCH_CARRIER_POS) == null, "the new carrier's chunk is cold");
+                var playerFile = ModPaths.vanillaPlayerData(server, REPERCH_ALLY);
+                var backup = playerFile.resolveSibling(REPERCH_ALLY + ".dat_old");
+                Files.createDirectory(backup);
+                Files.writeString(backup.resolve("blocked"), "force player file replacement to fail");
+                try {
+                        server.getPlayerList().saveAll();
+                        var failed = NbtIo.readCompressed(playerFile, NbtAccounter.uncompressedQuota());
+                        check(isParked(server, REPERCH_LEFT) && isParked(server, REPERCH_RIGHT)
+                                        && !failed.contains("ShoulderEntityLeft") && !failed.contains("ShoulderEntityRight"),
+                                        "a swallowed player save failure retains both recovery snapshots");
+                } finally {
+                        Files.delete(backup.resolve("blocked"));
+                        Files.delete(backup);
+                }
+                var interrupted = NbtIo.readCompressed(ModPaths.parkedPet(server, REPERCH_RIGHT),
+                                NbtAccounter.uncompressedQuota());
+                server.getPlayerList().saveAll();
+                var saved = NbtIo.readCompressed(playerFile, NbtAccounter.uncompressedQuota());
+                check(saved.getCompoundOrEmpty("ShoulderEntityLeft").getFloat("Health").orElse(-1F) == 5
+                                && saved.getCompoundOrEmpty("ShoulderEntityRight").getFloat("Health").orElse(-1F) == 4
+                                && !isParked(server, REPERCH_LEFT) && !isParked(server, REPERCH_RIGHT)
+                                && LoadedChunks.get(level, REPERCH_CARRIER_POS) == null,
+                                "a successful player save settles both snapshots without opening the carrier's chunk");
+                // 模拟玩家档案已替换，但右肩快照的结算尚未落盘就被中断。
+                NbtIo.writeCompressed(interrupted, ModPaths.parkedPet(server, REPERCH_RIGHT));
+                server.overworld().getDataStorage().saveAndJoin();
+                detach(owner);
+                detach(ally);
+        }
+
+        @SuppressWarnings("null")
+        private static void finishReperchedTransfer(MinecraftServer server) throws Exception {
+                var level = server.overworld();
+                check(!isParked(server, REPERCH_LEFT) && !isParked(server, REPERCH_RIGHT)
+                                && LoadedChunks.get(level, REPERCH_ORIGIN) == null
+                                && LoadedChunks.get(level, REPERCH_CARRIER_POS) == null,
+                                "startup settles the interrupted shoulder snapshot without loading either cold chunk");
+                // 先加载转让原区块，再让新主人重连，覆盖此前回滚血量和位置的顺序。
+                awaitPetChunk(level, REPERCH_ORIGIN);
+                PoolPets.tickPendingOriginReturns(server);
+                check(level.getEntity(REPERCH_LEFT) == null && level.getEntity(REPERCH_RIGHT) == null
+                                && !isParked(server, REPERCH_RIGHT)
+                                && LoadedChunks.get(level, REPERCH_CARRIER_POS) == null,
+                                "the saved shoulder version settles interrupted recovery without spawning an old copy");
+                var ally = connect(server, level, REPERCH_ALLY, "ReperchAlly", new TestConnection(), true);
+                DimensionPoolManager.onPlayerJoin(ally);
+                check(ally.blockPosition().equals(REPERCH_CARRIER_POS)
+                                && !ally.getShoulderEntityLeft().isEmpty() && !ally.getShoulderEntityRight().isEmpty(),
+                                "the new owner reconnects at the saved position with both parrots still perched");
+                var shoulders = List.of(ally.getShoulderEntityLeft(), ally.getShoulderEntityRight());
+                var ids = List.of(REPERCH_LEFT, REPERCH_RIGHT);
+                var names = List.of("ReperchedLeft", "ReperchedRight");
+                for (int i = 0; i < ids.size(); i++) {
+                        var parrot = EntityTypes.PARROT.create(level, EntitySpawnReason.LOAD);
+                        parrot.load(TagValueInput.create(ProblemReporter.DISCARDING, level.registryAccess(), shoulders.get(i)));
+                        check(parrot.getUUID().equals(ids.get(i)) && parrot.getOwner() == ally
+                                        && parrot.getName().getString().equals(names.get(i))
+                                        && parrot.getHealth() == (i == 0 ? 5 : 4)
+                                        && PoolPets.canLoadShoulder(level, shoulders.get(i))
+                                        && !NbtIo.readCompressed(ModPaths.parkedPet(server, ids.get(i)),
+                                                        NbtAccounter.uncompressedQuota()).getBooleanOr("return_to_origin", false),
+                                        "player shoulder storage preserves the current identity, owner, name and health");
+                }
+                var owner = connect(server, level, REPERCH_OWNER, "ReperchOwner", new TestConnection(), true);
+                DimensionPoolManager.onPlayerJoin(owner);
+                check(owner.getShoulderEntityLeft().isEmpty() && owner.getShoulderEntityRight().isEmpty(),
+                                "the original owner has no old shoulder copies after restart");
+                detach(owner);
+                detach(ally);
+        }
+
+        @SuppressWarnings("null")
         private static void coldCombatSight(ServerPlayer owner) throws Exception {
                 var level = owner.level();
                 var original = owner.position();
@@ -1081,6 +1185,7 @@ public final class PoolRuntimeAudit implements DedicatedServerModInitializer {
         private static void restart(MinecraftServer server) throws Exception {
                 ServerLevel overworld = server.overworld();
                 ServerLevel end = server.getLevel(Level.END);
+                finishReperchedTransfer(server);
                 check(score(overworld, "Fake", "audit") == 11 && score(end, "Fake", "audit") == 22,
                                 "scoreboard survives restart");
                 check(overworld.getScoreboard().getPlayersTeam("PoolAudit") != null

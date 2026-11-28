@@ -51,7 +51,7 @@ import top.csituka.youzaiworldcore.pet.PetUtils;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 import top.csituka.youzaiworldcore.util.LoadedChunks;
 
-/** 跨池及离肩宠物由原池存档保管，原版区块写盘确认后才移除回收用的实体数据。 */
+/** 跨池及离肩宠物由原池存档保管，原版实体或肩载存档写盘确认后才移除回收快照。 */
 @SuppressWarnings("null")
 public final class PoolPets {
     private static final DebugLogger.ModuleLogger LOGGER = DebugLogger.SERVER.module("PoolPets");
@@ -436,9 +436,13 @@ public final class PoolPets {
                         continue;
                     }
                     var state = PetGlobalState.get(server);
-                    var pet = stored.release == null ? null : state.findByEntityUUID(id).orElse(null);
+                    var pet = state.findByEntityUUID(id).orElse(null);
+                    if (stored.release == null && stored.body != null && pet != null
+                            && settlePersistedShoulder(server, pet, stored)) {
+                        continue;
+                    }
                     // 放生记录只对应当时的登记。野生狼再次驯服会建立新的登记。
-                    if (pet != null) {
+                    if (stored.release != null && pet != null) {
                         if (!stored.release.matches(pet)) {
                             if (stored.body != null) {
                                 // 新登记已落盘而实体尚未落盘时，按新主人的普通召回流程恢复。
@@ -487,10 +491,6 @@ public final class PoolPets {
     }
 
     private static boolean tryReturnAtOrigin(MinecraftServer server, UUID id, OriginLocation location) {
-        ServerLevel level = DimensionPoolManager.getLoadedLevel(server, location.dimension);
-        if (level == null || !isEntityChunkReady(level, location.chunk)) {
-            return false;
-        }
         try {
             StoredPet stored = read(server, id);
             if (stored == null || !stored.returnsAtOrigin() || stored.body == null) {
@@ -500,6 +500,10 @@ public final class PoolPets {
                 return true; // 区块载入了上次已经写入的同版本实体。
             }
             var entry = stored.release == null ? PetGlobalState.get(server).findByEntityUUID(id).orElse(null) : null;
+            ServerLevel level = DimensionPoolManager.getLoadedLevel(server, location.dimension);
+            if (level == null || !isEntityChunkReady(level, location.chunk)) {
+                return false;
+            }
             return materialize(level, stored, id, animal -> {
                 if (entry != null && entry.entityType().equals(stored.type)) {
                     PetEventHandler.syncRegistryToEntity(animal, entry);
@@ -511,6 +515,27 @@ public final class PoolPets {
             LOGGER.error("无法在原区块恢复宠物 {}，保留原档", id, error);
             return false;
         }
+    }
+
+    /** 玩家档案先写盘、快照结算后中断时，以已保存的同版本肩载数据为准。 */
+    private static boolean settlePersistedShoulder(MinecraftServer server, PetEntry pet, StoredPet stored)
+            throws IOException {
+        CompoundTag saved;
+        try {
+            saved = NbtIo.readCompressed(ModPaths.vanillaPlayerData(server, pet.ownerUUID()),
+                    NbtAccounter.uncompressedQuota());
+        } catch (NoSuchFileException ignored) {
+            return false;
+        }
+        for (String key : List.of("ShoulderEntityLeft", "ShoulderEntityRight")) {
+            CompoundTag shoulder = saved.getCompoundOrEmpty(key);
+            if (isShoulderPet(shoulder, pet) && stored.token.equals(shoulderToken(shoulder))) {
+                UNSAVED_RETURNS.computeIfAbsent(server, ignored -> new HashMap<>()).put(pet.entityUUID(), stored.token);
+                finishReturn(server, pet.entityUUID(), stored.token);
+                return true;
+            }
+        }
+        return false;
     }
 
     private static @Nullable Mob materialize(ServerLevel level, StoredPet stored, UUID id,
@@ -603,6 +628,18 @@ public final class PoolPets {
             write.thenCompose(ignored -> flush.get()).thenRun(() -> server.execute(() ->
                     saved.forEach((id, token) -> finishReturn(server, id, token))));
         }
+    }
+
+    /** 玩家档案成功写盘后，确认两侧肩载宠物由原版存档接管。 */
+    public static void afterPlayerWrite(MinecraftServer server, CompoundTag playerData) {
+        var unsaved = UNSAVED_RETURNS.get(server);
+        if (unsaved == null || unsaved.isEmpty()) {
+            return;
+        }
+        var saved = new HashMap<UUID, String>();
+        collectSavedReturns(playerData.getCompoundOrEmpty("ShoulderEntityLeft"), unsaved, saved);
+        collectSavedReturns(playerData.getCompoundOrEmpty("ShoulderEntityRight"), unsaved, saved);
+        saved.forEach((id, token) -> finishReturn(server, id, token));
     }
 
     private static void collectSavedReturns(CompoundTag entity, Map<UUID, String> unsaved, Map<UUID, String> saved) {

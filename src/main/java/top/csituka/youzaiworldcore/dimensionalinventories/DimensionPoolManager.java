@@ -671,7 +671,9 @@ public final class DimensionPoolManager {
             throw new IOException(problems.getReport());
         }
         Path file = ModPaths.vanillaPlayerData(getServer(player), player.getUUID());
-        writeAtomically(file, path -> NbtIo.writeCompressed(output.buildResult(), path));
+        var data = output.buildResult();
+        writeAtomically(file, path -> NbtIo.writeCompressed(data, path));
+        PoolPets.afterPlayerWrite(getServer(player), data);
     }
 
     private static boolean recoverPlayer(ServerPlayer player, PlayerStateData state) {

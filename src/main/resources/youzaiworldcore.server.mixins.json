@@ -57,6 +57,7 @@
     "pet.StationaryShoulderPetMixin",
     "pet.PetShoulderAccessor",
     "pet.PetShoulderStorageMixin",
+    "pet.PlayerDataStoragePetMixin",
     "pet.OwnedPetBreedingMixin",
     "pet.PetNameTagMixin",
     "pet.EntityStoragePoolPetsMixin",
