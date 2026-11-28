@@ -720,11 +720,19 @@ public class PetCommand {
         Set<UUID> newTrust = new HashSet<>();
         newTrust.add(entry.ownerUUID()); // 原主人成为信任成员
         PetEntry updated = entry.withOwner(newOwnerUUID, newTrust);
-        state.updatePet(updated);
-
-        Mob pet = PetUtils.findLoadedPet(player.level().getServer(), updated);
-        if (pet != null) {
-            PetEventHandler.syncRegistryToEntity(pet, updated);
+        var server = player.level().getServer();
+        try {
+            if (!PoolPets.transferShoulderPet(server, updated)) {
+                state.updatePet(updated);
+                Mob pet = PetUtils.findLoadedPet(server, updated);
+                if (pet != null) {
+                    PetEventHandler.syncRegistryToEntity(pet, updated);
+                }
+            }
+        } catch (java.io.IOException | RuntimeException error) {
+            DebugLogger.SERVER.exception(MODULE, "executeTransfer", error);
+            source.sendFailure(Component.translatable("youzaiworldcore.message.pet.not_loaded"));
+            return 0;
         }
 
         source.sendSuccess(() -> Component.translatable(

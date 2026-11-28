@@ -649,7 +649,7 @@ public final class DimensionPoolManager {
         }
         if (server.getTickCount() % 20 == 0) {
             PoolPets.tickPendingRestores(server);
-            PoolPets.tickPendingReleases(server);
+            PoolPets.tickPendingOriginReturns(server);
         }
     }
 

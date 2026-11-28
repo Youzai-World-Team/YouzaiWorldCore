@@ -57,6 +57,7 @@ import net.minecraft.world.entity.ai.goal.GoalSelector;
 import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.animal.feline.Cat;
+import net.minecraft.world.entity.animal.parrot.Parrot;
 import net.minecraft.world.entity.animal.wolf.Wolf;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -108,6 +109,11 @@ public final class PoolRuntimeAudit implements DedicatedServerModInitializer {
         private static final UUID RESTORE_PENDING = UUID.fromString("686aac42-0ef4-4dca-a44e-1dd5f080d31d");
         private static final BlockPos RESTORE_SAVED_POS = COLD_RELEASE_POS.offset(64, 0, 0);
         private static final BlockPos RESTORE_PENDING_POS = COLD_RELEASE_POS.offset(128, 0, 0);
+        private static final UUID SHOULDER_OWNER = UUID.fromString("a467560e-c2e6-4d97-8cf1-28b7a53470d4");
+        private static final UUID SHOULDER_ALLY = UUID.fromString("0ea5fd9c-4a6b-46c7-87f8-b827d3322f69");
+        private static final UUID SHOULDER_RELEASED = UUID.fromString("6531ef86-f4f4-4807-9ab6-c49f61bdf7c0");
+        private static final UUID SHOULDER_TRANSFERRED = UUID.fromString("c07ad0bb-6ff5-433a-b7cb-f59f03404a67");
+        private static final BlockPos SHOULDER_TRANSFER_POS = COLD_RELEASE_POS.offset(256, 0, 0);
 
         @Override
         public void onInitializeServer() {
@@ -578,6 +584,7 @@ public final class PoolRuntimeAudit implements DedicatedServerModInitializer {
                 stageDeadRelease(server, end);
                 detach(player);
                 detach(other);
+                stageShoulderTransfer(server);
         }
 
         @SuppressWarnings("null")
@@ -747,7 +754,7 @@ public final class PoolRuntimeAudit implements DedicatedServerModInitializer {
                 DimensionPoolManager.onPlayerJoin(player);
                 check(player.getShoulderEntityLeft().isEmpty(), "joining clears a stale player save's shoulder copy");
                 awaitPetChunk(level, player.blockPosition());
-                PoolPets.tickPendingReleases(server);
+                PoolPets.tickPendingOriginReturns(server);
                 check(level.getEntity(recalledParrot.getUUID()) instanceof net.minecraft.world.entity.animal.parrot.Parrot wild
                                 && !wild.isTame() && wild.getOwnerReference() == null,
                                 "the matching parrot is released into the original chunk as a wild animal");
@@ -771,6 +778,138 @@ public final class PoolRuntimeAudit implements DedicatedServerModInitializer {
                 }
                 detach(ally);
                 detach(player);
+        }
+
+        @SuppressWarnings("null")
+        private static void addShoulderParrot(ServerPlayer owner, UUID id, String name) throws Exception {
+                var level = owner.level();
+                var parrot = EntityTypes.PARROT.create(level, EntitySpawnReason.LOAD);
+                parrot.setUUID(id);
+                parrot.snapTo(owner.position(), 0, 0);
+                check(level.addFreshEntity(parrot), "shoulder transfer fixture enters the world");
+                parrot.tame(owner);
+                parrot.setHealth(3);
+                var entry = PetGlobalState.get(level.getServer()).findByEntityUUID(id).orElseThrow();
+                check(level.getServer().getCommands().getDispatcher().execute(
+                                "yzwc pet set " + entry.internalName() + " rename " + name,
+                                owner.createCommandSourceStack()) == 1, "shoulder fixture is named");
+                owner.setOnGround(true);
+                check(parrot.setEntityOnShoulder(owner), "transfer fixture perches on its owner");
+        }
+
+        @SuppressWarnings("null")
+        private static void stageShoulderTransfer(MinecraftServer server) throws Exception {
+                var level = server.overworld();
+                var owner = connect(server, level, SHOULDER_OWNER, "ShoulderOwner", new TestConnection(), false);
+                var ally = connect(server, level, SHOULDER_ALLY, "ShoulderAlly", new TestConnection(), false);
+                server.services().nameToIdCache().add(new NameAndId(ally.getGameProfile()));
+                awaitPetChunk(level, owner.blockPosition());
+                addShoulderParrot(owner, SHOULDER_RELEASED, "ReleasedParrot");
+                addShoulderParrot(owner, SHOULDER_TRANSFERRED, "TransferredParrot");
+                var left = owner.getShoulderEntityLeft().copy();
+                var right = owner.getShoulderEntityRight().copy();
+                var state = PetGlobalState.get(server);
+                var leftEntry = state.findByEntityUUID(SHOULDER_RELEASED).orElseThrow();
+                var rightEntry = state.findByEntityUUID(SHOULDER_TRANSFERRED).orElseThrow();
+                var commands = server.getCommands().getDispatcher();
+                var source = owner.createCommandSourceStack();
+                String leftCommand = "yzwc pet set " + leftEntry.internalName() + " ";
+                String rightCommand = "yzwc pet set " + rightEntry.internalName() + " ";
+                server.getPlayerList().saveAll();
+                var before = NbtIo.readCompressed(ModPaths.vanillaPlayerData(server, SHOULDER_OWNER),
+                                NbtAccounter.uncompressedQuota());
+                check(before.contains("ShoulderEntityLeft") && before.contains("ShoulderEntityRight"),
+                                "the original player save contains both shoulder parrots");
+
+                // 原主人站在未加载区块，操作仍必须只保存快照，不读取区块或生成实体。
+                owner.snapTo(Vec3.atBottomCenterOf(SHOULDER_TRANSFER_POS), 0, 0);
+                check(LoadedChunks.get(level, SHOULDER_TRANSFER_POS) == null, "transfer origin starts unloaded");
+                var brokenArchive = ModPaths.parkedPet(server, SHOULDER_RELEASED);
+                Files.createDirectories(brokenArchive.getParent());
+                Files.writeString(brokenArchive, "invalid parrot snapshot");
+                check(commands.execute(leftCommand + "transfer ShoulderAlly", source) == 0
+                                && state.findByEntityUUID(SHOULDER_RELEASED).orElseThrow().equals(leftEntry)
+                                && owner.getShoulderEntityLeft().equals(left) && owner.getShoulderEntityRight().equals(right),
+                                "failed shoulder snapshot leaves ownership and both slots intact");
+                Files.delete(brokenArchive);
+                check(commands.execute(leftCommand + "transfer ShoulderAlly", source) == 1
+                                && owner.getShoulderEntityLeft().isEmpty() && owner.getShoulderParrotLeft().isEmpty()
+                                && owner.getShoulderEntityRight().equals(right)
+                                && state.findByEntityUUID(SHOULDER_RELEASED).orElseThrow().ownerUUID().equals(SHOULDER_ALLY)
+                                && !PoolPets.canLoadShoulder(level, left),
+                                "left shoulder transfer detaches only the selected parrot and rejects the old copy");
+                check(commands.execute(rightCommand + "transfer ShoulderAlly", source) == 1
+                                && owner.getShoulderEntityRight().isEmpty() && owner.getShoulderParrotRight().isEmpty()
+                                && !PoolPets.canLoadShoulder(level, right)
+                                && state.findByEntityUUID(SHOULDER_TRANSFERRED).orElseThrow()
+                                                .equals(rightEntry.withOwner(SHOULDER_ALLY, Set.of(SHOULDER_OWNER))),
+                                "right shoulder transfer preserves identity, name, mode and the old owner's trust");
+                PoolPets.restore(ally);
+                PoolPets.tickPendingOriginReturns(server);
+                check(level.getEntity(SHOULDER_RELEASED) == null && level.getEntity(SHOULDER_TRANSFERRED) == null
+                                && LoadedChunks.get(level, SHOULDER_TRANSFER_POS) == null,
+                                "transfer waits at the cold origin instead of recalling to the new owner");
+                server.getPlayerList().saveAll();
+                detach(owner);
+                var after = NbtIo.readCompressed(ModPaths.vanillaPlayerData(server, SHOULDER_OWNER),
+                                NbtAccounter.uncompressedQuota());
+                check(!after.contains("ShoulderEntityLeft") && !after.contains("ShoulderEntityRight"),
+                                "logging out immediately after transfer saves empty shoulder slots");
+                check(commands.execute(leftCommand + "release_life true", ally.createCommandSourceStack()) == 1
+                                && state.findByEntityUUID(SHOULDER_RELEASED).isEmpty()
+                                && LoadedChunks.get(level, SHOULDER_TRANSFER_POS) == null,
+                                "new owner can release the detached parrot while the old owner is offline");
+                server.overworld().getDataStorage().saveAndJoin();
+                detach(ally);
+        }
+
+        @SuppressWarnings("null")
+        private static void finishShoulderTransfer(MinecraftServer server) throws Exception {
+                var level = server.overworld();
+                var state = PetGlobalState.get(server);
+                var entry = state.findByEntityUUID(SHOULDER_TRANSFERRED).orElseThrow();
+                check(entry.ownerUUID().equals(SHOULDER_ALLY) && entry.trustedPlayers().contains(SHOULDER_OWNER)
+                                && state.findByEntityUUID(SHOULDER_RELEASED).isEmpty()
+                                && isParked(server, SHOULDER_TRANSFERRED) && isParked(server, SHOULDER_RELEASED)
+                                && LoadedChunks.get(level, SHOULDER_TRANSFER_POS) == null,
+                                "restart preserves the pending transfer and release without loading their origin");
+                var owner = connect(server, level, SHOULDER_OWNER, "ShoulderOwner", new TestConnection(), true);
+                DimensionPoolManager.onPlayerJoin(owner);
+                var ally = connect(server, level, SHOULDER_ALLY, "ShoulderAlly", new TestConnection(), false);
+                PoolPets.restore(ally);
+                check(owner.getShoulderEntityLeft().isEmpty() && owner.getShoulderEntityRight().isEmpty()
+                                && level.getEntity(SHOULDER_TRANSFERRED) == null
+                                && LoadedChunks.get(level, SHOULDER_TRANSFER_POS) == null,
+                                "reconnecting the old owner does not restore a shoulder copy or open the origin chunk");
+                awaitPetChunk(level, SHOULDER_TRANSFER_POS);
+                PoolPets.tickPendingOriginReturns(server);
+                check(level.getEntity(SHOULDER_TRANSFERRED) instanceof Parrot parrot && parrot.isTame()
+                                && parrot.getOwner() == ally && parrot.getHealth() == 3
+                                && parrot.getName().getString().equals("TransferredParrot")
+                                && parrot.blockPosition().equals(SHOULDER_TRANSFER_POS)
+                                && state.findByEntityUUID(parrot.getUUID()).orElseThrow().equals(entry),
+                                "the transferred parrot returns at the original position with its new owner and data");
+                check(level.getEntity(SHOULDER_RELEASED) instanceof Parrot wild && !wild.isTame()
+                                && wild.getOwnerReference() == null && wild.getCustomName() == null
+                                && wild.blockPosition().equals(SHOULDER_TRANSFER_POS),
+                                "the released parrot returns at the original position as a wild animal");
+                check(DimensionPoolManager.teleportToPool(owner, END)
+                                && owner.getShoulderEntityLeft().isEmpty() && owner.getShoulderEntityRight().isEmpty()
+                                && owner.level().getEntity(SHOULDER_TRANSFERRED) == null
+                                && owner.level().getEntity(SHOULDER_RELEASED) == null,
+                                "the old owner cannot carry either parrot across pools after reconnecting");
+                server.saveEverything(false, true, true);
+                for (var id : List.of(SHOULDER_TRANSFERRED, SHOULDER_RELEASED)) {
+                        awaitReturnedPetSave(server, id);
+                        check(!isParked(server, id)
+                                        && !NbtIo.readCompressed(ModPaths.parkedPet(server, id),
+                                                        NbtAccounter.uncompressedQuota()).getBooleanOr("return_to_origin", false),
+                                        "durable entity writes settle the detached parrot snapshots");
+                        level.getEntity(id).discard();
+                        state.removePet(id);
+                }
+                detach(owner);
+                detach(ally);
         }
 
         @SuppressWarnings("null")
@@ -828,7 +967,7 @@ public final class PoolRuntimeAudit implements DedicatedServerModInitializer {
 
                 int result = server.getCommands().getDispatcher().execute(
                                 "yzwc pet set AUDITCOLDRELEASE release_life true", player.createCommandSourceStack());
-                PoolPets.tickPendingReleases(server);
+                PoolPets.tickPendingOriginReturns(server);
                 check(result == 1 && state.findByEntityUUID(COLD_RELEASED_PET).isEmpty()
                                 && !petEntities(origin).isLoaded(COLD_RELEASED_PET)
                                 && LoadedChunks.get(origin, COLD_RELEASE_POS) == null
@@ -847,7 +986,7 @@ public final class PoolRuntimeAudit implements DedicatedServerModInitializer {
                                 "restart replays the recorded release without opening a cold chunk");
                 awaitPetChunk(origin, COLD_RELEASE_POS);
                 check(origin.getEntity(COLD_RELEASED_PET) == null, "ready chunk has no old pet entity");
-                PoolPets.tickPendingReleases(server);
+                PoolPets.tickPendingOriginReturns(server);
                 check(origin.getEntity(COLD_RELEASED_PET) instanceof Wolf wolf && !wolf.isTame()
                                 && wolf.getOwnerReference() == null && wolf.blockPosition().equals(COLD_RELEASE_POS)
                                 && isParked(server, COLD_RELEASED_PET),
@@ -1003,9 +1142,10 @@ public final class PoolRuntimeAudit implements DedicatedServerModInitializer {
                 loginHallPetReturn(server, end);
                 finishColdRelease(server, end);
                 awaitPetChunk(end, DEAD_RELEASE_POS);
-                PoolPets.tickPendingReleases(server);
+                PoolPets.tickPendingOriginReturns(server);
                 check(end.getEntity(DEAD_RELEASED_PET) == null && !isParked(server, DEAD_RELEASED_PET),
                                 "the dead released wolf is not revived after restart");
+                finishShoulderTransfer(server);
                 stagePetBackup(server, end);
         }
 

@@ -51,22 +51,23 @@ import top.csituka.youzaiworldcore.pet.PetUtils;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 import top.csituka.youzaiworldcore.util.LoadedChunks;
 
-/** 跨池收起的狼由原池存档保管，原版区块写盘确认后才移除回收用的实体数据。 */
+/** 跨池及离肩宠物由原池存档保管，原版区块写盘确认后才移除回收用的实体数据。 */
 @SuppressWarnings("null")
 public final class PoolPets {
     private static final DebugLogger.ModuleLogger LOGGER = DebugLogger.SERVER.module("PoolPets");
     private static final Identifier RETURN_ID = Identifier.fromNamespaceAndPath("youzaiworldcore", "pool_pet_return");
     private static final Identifier NAUTILUS = Identifier.withDefaultNamespace("nautilus");
+    private static final Identifier PARROT = Identifier.withDefaultNamespace("parrot");
     private static final AttachmentType<String> RETURN_TOKEN = AttachmentRegistry.createPersistent(RETURN_ID, Codec.STRING);
     private static final Map<MinecraftServer, Map<UUID, String>> UNSAVED_RETURNS = new WeakHashMap<>();
     private static final Map<MinecraftServer, Set<UUID>> PENDING_RESTORES = new WeakHashMap<>();
-    private static final Map<MinecraftServer, Map<UUID, ReleaseLocation>> PENDING_RELEASES = new WeakHashMap<>();
+    private static final Map<MinecraftServer, Map<UUID, OriginLocation>> PENDING_ORIGIN_RETURNS = new WeakHashMap<>();
     private static final Map<MinecraftServer, Map<UUID, String>> PENDING_DEATHS = new WeakHashMap<>();
 
     private PoolPets() {}
 
     public static void initialize() {
-        ServerLifecycleEvents.SERVER_STARTED.register(PoolPets::loadPendingReleases);
+        ServerLifecycleEvents.SERVER_STARTED.register(PoolPets::loadPendingOriginReturns);
     }
 
     static List<Mob> departingPets(ServerPlayer player, String pool) {
@@ -139,7 +140,7 @@ public final class PoolPets {
             return false;
         }
         try {
-            writeShoulderPet(origin, pool, position, data, pet, null);
+            writeShoulderPet(origin, pool, position, data, pet, null, false);
             return true;
         } catch (IOException | RuntimeException error) {
             LOGGER.error("无法收起肩载宠物 {}", id, error);
@@ -148,7 +149,7 @@ public final class PoolPets {
     }
 
     private static void writeShoulderPet(ServerLevel level, String pool, Vec3 position, CompoundTag data,
-            PetEntry pet, @Nullable Release release) throws IOException {
+            PetEntry pet, @Nullable Release release, boolean returnToOrigin) throws IOException {
         var server = level.getServer();
         UUID id = pet.entityUUID();
         var existing = read(server, id);
@@ -158,7 +159,7 @@ public final class PoolPets {
         var body = data.copy();
         body.store("Pos", Vec3.CODEC, position);
         write(server, id, new StoredPet(pool, level.dimension().identifier().toString(), newToken(), body, release,
-                pet.entityType()));
+                pet.entityType(), returnToOrigin));
         var unsaved = UNSAVED_RETURNS.get(server);
         if (unsaved != null) unsaved.remove(id);
     }
@@ -168,7 +169,16 @@ public final class PoolPets {
                 && data.read("UUID", UUIDUtil.CODEC).filter(pet.entityUUID()::equals).isPresent();
     }
 
-    private static boolean releaseShoulderPet(MinecraftServer server, PetEntry pet) throws IOException {
+    /** 转让肩载鹦鹉，先保存离肩快照，再更新归属并等待原区块就绪。 */
+    public static boolean transferShoulderPet(MinecraftServer server, PetEntry updated) throws IOException {
+        return detachShoulderPet(server, updated, null);
+    }
+
+    private static boolean detachShoulderPet(MinecraftServer server, PetEntry pet, @Nullable Release release)
+            throws IOException {
+        if (!PARROT.equals(pet.entityType())) {
+            return false;
+        }
         for (ServerPlayer carrier : server.getPlayerList().getPlayers()) {
             var left = carrier.getShoulderEntityLeft();
             var right = carrier.getShoulderEntityRight();
@@ -179,17 +189,22 @@ public final class PoolPets {
             var level = carrier.level();
             UUID id = pet.entityUUID();
             String dimension = level.dimension().identifier().toString();
-            var location = new ReleaseLocation(dimension, ChunkPos.containing(carrier.blockPosition()));
+            var location = new OriginLocation(dimension, ChunkPos.containing(carrier.blockPosition()));
             writeShoulderPet(level, DimensionPoolSettings.statePoolId(level.dimension()), carrier.position(),
-                    onLeft ? left : right, pet, new Release(pet.internalName(), pet.tameTimestamp()));
+                    onLeft ? left : right, pet, release, release == null);
             var access = (PetShoulderAccessor) carrier;
             if (onLeft) {
                 access.yzwc$setPetShoulderLeft(new CompoundTag());
             } else {
                 access.yzwc$setPetShoulderRight(new CompoundTag());
             }
-            PetGlobalState.get(server).removePet(id);
-            releaseWhenReady(server, id, location);
+            var state = PetGlobalState.get(server);
+            if (release == null) {
+                state.updatePet(pet);
+            } else {
+                state.removePet(id);
+            }
+            returnAtOriginWhenReady(server, id, location);
             return true;
         }
         return false;
@@ -203,7 +218,7 @@ public final class PoolPets {
             throw new IOException("实体与宠物档案不一致：" + id);
         }
         write(server, id, new StoredPet(pool, wolf.level().dimension().identifier().toString(), newToken(),
-                snapshot(wolf), null, PetUtils.petType(wolf)));
+                snapshot(wolf), null, PetUtils.petType(wolf), false));
         wolf.stopRiding();
         wolf.ejectPassengers();
         wolf.remove(Entity.RemovalReason.CHANGED_DIMENSION);
@@ -278,14 +293,14 @@ public final class PoolPets {
             UUID id = pet.entityUUID();
             try {
                 StoredPet stored = read(server, id);
-                if (stored == null || stored.release != null || stored.body == null || !pool.equals(stored.pool)
+                if (stored == null || stored.returnsAtOrigin() || stored.body == null || !pool.equals(stored.pool)
                         || !pet.entityType().equals(stored.type)
                         || UNSAVED_RETURNS.getOrDefault(server, Map.of()).containsKey(id)) {
                     continue;
                 }
                 if (pet.isStationary()) {
                     // 宠物已暂存时也可切换模式。静止宠物回到原地，等原区块自然就绪。
-                    var location = releaseLocation(id, stored);
+                    var location = originLocation(id, stored);
                     var origin = DimensionPoolManager.getLoadedLevel(server, location.dimension);
                     if (origin == null || !isEntityChunkReady(origin, location.chunk)) {
                         waiting = true;
@@ -361,7 +376,8 @@ public final class PoolPets {
 
     /** 先记录暂存和肩载宠物的放生意图，再等待原区块的实体数据自然就绪。 */
     public static boolean releaseParked(MinecraftServer server, PetEntry pet, @Nullable Mob loaded) throws IOException {
-        if (loaded == null && releaseShoulderPet(server, pet)) {
+        Release release = new Release(pet.internalName(), pet.tameTimestamp());
+        if (loaded == null && detachShoulderPet(server, pet, release)) {
             return true;
         }
         UUID id = pet.entityUUID();
@@ -379,12 +395,13 @@ public final class PoolPets {
         if ((loaded == null && awaitingSave) || (loaded != null && !stored.token.equals(returnToken(loaded)))) {
             throw new IOException("宠物仍在保存：" + id);
         }
-        Release release = new Release(pet.internalName(), pet.tameTimestamp());
         StoredPet released = loaded == null
-                ? new StoredPet(stored.pool, stored.dimension, stored.token, stored.body, release, stored.type)
+                ? new StoredPet(stored.pool, stored.dimension, stored.token, stored.body, release, stored.type,
+                        stored.returnToOrigin)
                 : new StoredPet(DimensionPoolSettings.statePoolId(loaded.level().dimension()),
-                        loaded.level().dimension().identifier().toString(), newToken(), snapshot(loaded), release, stored.type);
-        ReleaseLocation location = releaseLocation(id, released);
+                        loaded.level().dimension().identifier().toString(), newToken(), snapshot(loaded), release,
+                        stored.type, false);
+        OriginLocation location = originLocation(id, released);
         write(server, id, released);
         PetGlobalState.get(server).removePet(id);
         if (loaded != null) {
@@ -392,18 +409,18 @@ public final class PoolPets {
             PetEventHandler.releasePet(loaded);
             UNSAVED_RETURNS.computeIfAbsent(server, ignored -> new HashMap<>()).put(id, released.token);
         } else {
-            releaseWhenReady(server, id, location);
+            returnAtOriginWhenReady(server, id, location);
         }
         return true;
     }
 
-    private static void releaseWhenReady(MinecraftServer server, UUID id, ReleaseLocation location) {
-        if (!tryRelease(server, id, location)) {
-            PENDING_RELEASES.computeIfAbsent(server, ignored -> new HashMap<>()).put(id, location);
+    private static void returnAtOriginWhenReady(MinecraftServer server, UUID id, OriginLocation location) {
+        if (!tryReturnAtOrigin(server, id, location)) {
+            PENDING_ORIGIN_RETURNS.computeIfAbsent(server, ignored -> new HashMap<>()).put(id, location);
         }
     }
 
-    private static void loadPendingReleases(MinecraftServer server) {
+    private static void loadPendingOriginReturns(MinecraftServer server) {
         try (var files = Files.newDirectoryStream(ModPaths.parkedPets(server), "*.dat")) {
             for (var file : files) {
                 String name = file.getFileName().toString();
@@ -415,18 +432,18 @@ public final class PoolPets {
                 }
                 try {
                     StoredPet stored = read(server, id);
-                    if (stored == null || stored.release == null) {
+                    if (stored == null || !stored.returnsAtOrigin()) {
                         continue;
                     }
                     var state = PetGlobalState.get(server);
-                    var pet = state.findByEntityUUID(id).orElse(null);
+                    var pet = stored.release == null ? null : state.findByEntityUUID(id).orElse(null);
                     // 放生记录只对应当时的登记。野生狼再次驯服会建立新的登记。
                     if (pet != null) {
                         if (!stored.release.matches(pet)) {
                             if (stored.body != null) {
                                 // 新登记已落盘而实体尚未落盘时，按新主人的普通召回流程恢复。
                                 write(server, id, new StoredPet(stored.pool, stored.dimension, stored.token,
-                                        stored.body, null, stored.type));
+                                        stored.body, null, stored.type, false));
                             }
                             continue;
                         }
@@ -437,54 +454,61 @@ public final class PoolPets {
                         }
                     }
                     if (stored.body != null) {
-                        PENDING_RELEASES.computeIfAbsent(server, ignored -> new HashMap<>())
-                                .put(id, releaseLocation(id, stored));
+                        PENDING_ORIGIN_RETURNS.computeIfAbsent(server, ignored -> new HashMap<>())
+                                .put(id, originLocation(id, stored));
                     }
                 } catch (IOException | RuntimeException error) {
-                    LOGGER.error("无法读取宠物 {} 的放生记录，保留原档", id, error);
+                    LOGGER.error("无法读取宠物 {} 的原地恢复记录，保留原档", id, error);
                 }
             }
         } catch (NoSuchFileException ignored) {
             // 当前存档没有暂存宠物。
         } catch (IOException | RuntimeException error) {
-            LOGGER.error("无法读取宠物放生记录目录", error);
+            LOGGER.error("无法读取宠物原地恢复记录目录", error);
         }
     }
 
-    static void tickPendingReleases(MinecraftServer server) {
+    static void tickPendingOriginReturns(MinecraftServer server) {
         var deaths = PENDING_DEATHS.get(server);
         if (deaths != null) {
             deaths.entrySet().removeIf(entry -> settleDeath(server, entry.getKey(), entry.getValue()));
         }
-        var pending = PENDING_RELEASES.get(server);
+        var pending = PENDING_ORIGIN_RETURNS.get(server);
         if (pending != null) {
-            pending.entrySet().removeIf(entry -> tryRelease(server, entry.getKey(), entry.getValue()));
+            pending.entrySet().removeIf(entry -> tryReturnAtOrigin(server, entry.getKey(), entry.getValue()));
         }
     }
 
-    private static ReleaseLocation releaseLocation(UUID id, StoredPet stored) throws IOException {
+    private static OriginLocation originLocation(UUID id, StoredPet stored) throws IOException {
         Vec3 pos = stored.body.read("Pos", Vec3.CODEC)
                 .filter(value -> Double.isFinite(value.x) && Double.isFinite(value.y) && Double.isFinite(value.z))
                 .orElseThrow(() -> new IOException("宠物存档没有有效的原坐标：" + id));
-        return new ReleaseLocation(stored.dimension, ChunkPos.containing(BlockPos.containing(pos)));
+        return new OriginLocation(stored.dimension, ChunkPos.containing(BlockPos.containing(pos)));
     }
 
-    private static boolean tryRelease(MinecraftServer server, UUID id, ReleaseLocation location) {
+    private static boolean tryReturnAtOrigin(MinecraftServer server, UUID id, OriginLocation location) {
         ServerLevel level = DimensionPoolManager.getLoadedLevel(server, location.dimension);
         if (level == null || !isEntityChunkReady(level, location.chunk)) {
             return false;
         }
         try {
             StoredPet stored = read(server, id);
-            if (stored == null || stored.release == null || stored.body == null) {
+            if (stored == null || !stored.returnsAtOrigin() || stored.body == null) {
                 return true;
             }
             if (stored.token.equals(UNSAVED_RETURNS.getOrDefault(server, Map.of()).get(id))) {
                 return true; // 区块载入了上次已经写入的同版本实体。
             }
-            return materialize(level, stored, id, PetEventHandler::releasePet) != null;
+            var entry = stored.release == null ? PetGlobalState.get(server).findByEntityUUID(id).orElse(null) : null;
+            return materialize(level, stored, id, animal -> {
+                if (entry != null && entry.entityType().equals(stored.type)) {
+                    PetEventHandler.syncRegistryToEntity(animal, entry);
+                } else {
+                    PetEventHandler.releasePet(animal);
+                }
+            }) != null;
         } catch (IOException | RuntimeException error) {
-            LOGGER.error("无法在原区块放生宠物 {}，保留原档", id, error);
+            LOGGER.error("无法在原区块恢复宠物 {}，保留原档", id, error);
             return false;
         }
     }
@@ -510,7 +534,8 @@ public final class PoolPets {
         String token = newToken();
         ((AttachmentTarget) wolf).setAttached(RETURN_TOKEN, token);
         prepare.accept(wolf);
-        write(server, id, new StoredPet(stored.pool, stored.dimension, token, stored.body, stored.release, stored.type));
+        write(server, id, new StoredPet(stored.pool, stored.dimension, token, stored.body, stored.release, stored.type,
+                stored.returnToOrigin));
         if (level.addFreshEntity(wolf)) {
             UNSAVED_RETURNS.computeIfAbsent(server, ignored -> new HashMap<>()).put(id, token);
             return wolf;
@@ -604,7 +629,8 @@ public final class PoolPets {
         try {
             StoredPet stored = read(server, id);
             if (stored != null && stored.body != null && token.equals(stored.token)) {
-                write(server, id, new StoredPet(stored.pool, stored.dimension, token, null, stored.release, stored.type));
+                write(server, id, new StoredPet(stored.pool, stored.dimension, token, null, stored.release, stored.type,
+                        false));
             }
             unsaved.remove(id);
         } catch (IOException | RuntimeException error) {
@@ -628,7 +654,7 @@ public final class PoolPets {
             StoredPet stored = read(server, id);
             if (stored != null && token.equals(stored.token)) {
                 write(server, id, new StoredPet(stored.pool, stored.dimension, newToken(), null, stored.release,
-                        stored.type));
+                        stored.type, false));
             }
             var unsaved = UNSAVED_RETURNS.get(server);
             if (unsaved != null) unsaved.remove(id, token);
@@ -667,7 +693,8 @@ public final class PoolPets {
         if (release == null && root.contains("release")) {
             throw new IOException("无效的宠物放生记录：" + id);
         }
-        return new StoredPet(pool, dimension, token, root.getCompound(bodyKey).orElse(null), release, type);
+        return new StoredPet(pool, dimension, token, root.getCompound(bodyKey).orElse(null), release, type,
+                root.getBooleanOr("return_to_origin", false));
     }
 
     /** 显式还原登记时清除当前回收档中会撤销该登记的放生凭据，保留版本与实体。 */
@@ -699,6 +726,9 @@ public final class PoolPets {
         if (stored.body != null) {
             tag.put("pet", stored.body);
         }
+        if (stored.returnToOrigin) {
+            tag.putBoolean("return_to_origin", true);
+        }
         if (stored.release != null) {
             var receipt = new CompoundTag();
             receipt.putString("name", stored.release.name);
@@ -708,7 +738,7 @@ public final class PoolPets {
         DimensionPoolManager.writeAtomically(ModPaths.parkedPet(server, id), file -> NbtIo.writeCompressed(tag, file));
     }
 
-    private record ReleaseLocation(String dimension, ChunkPos chunk) {}
+    private record OriginLocation(String dimension, ChunkPos chunk) {}
 
     private record Release(String name, long tameTimestamp) {
         boolean matches(PetEntry pet) {
@@ -717,5 +747,9 @@ public final class PoolPets {
     }
 
     private record StoredPet(String pool, String dimension, String token, @Nullable CompoundTag body,
-            @Nullable Release release, Identifier type) {}
+            @Nullable Release release, Identifier type, boolean returnToOrigin) {
+        boolean returnsAtOrigin() {
+            return returnToOrigin || release != null;
+        }
+    }
 }

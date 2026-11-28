@@ -484,6 +484,7 @@ The pet registry tracks vanilla animals after taming succeeds. Cats, parrots, ho
 - **Wolf behavior modes**. Switch between `hunting`, `companionship`, `attack`, and `guard` with `/yzwc pet set <internalName> mode`.
 - **Other pet modes**. Stationary pets remain within five blocks of where the mode was set. Companion pets use vanilla behavior. Cats keep their vanilla behavior.
 - **Ownership**. Owners of all registered pets can manage trust, transfer ownership, and confirm a release with `release_life true`. Trusted players can list and highlight the pet.
+- Releasing or transferring a shoulder parrot immediately removes it from its former owner's shoulder. It reappears at that location once the chunk is ready, with the new owner after transfer or as a wild animal after release.
 - **Rename and locate**. Use `rename` to change a pet's name. `highlight <internalName>` applies Glowing for five seconds to a loaded pet.
 - When an owner leaves a dimension pool, eligible pets, including cats, and shoulder parrots are stored in the original pool and restored when the owner returns. Stationary, sitting, and unloaded pets stay where they are. Nautiluses wait for loaded water near their owner.
 - The player data backup archives the pet registry. Administrators can use `/yzwc backup list pet_module` to list backup IDs and `/yzwc backup restore pet_module [backup_id]` to queue a restore.
