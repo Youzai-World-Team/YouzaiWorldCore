@@ -4,6 +4,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntityReference;
+import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.animal.wolf.Wolf;
 import net.minecraft.world.entity.player.Player;
 import top.csituka.youzaiworldcore.dimensionalinventories.DimensionPoolSettings;
@@ -28,37 +29,50 @@ public final class PetEventHandler {
 
     // 事件 1：驯服时自动注册
 
-    /**
-     * 当狼被驯服时调用。
-     * <p>
-     * 生成唯一内部名称，写入全局注册表，设置显示名称。
-     * </p>
-     *
-     * @param wolf   被驯服的狼
-     * @param player 驯服该狼的玩家
-     * @param level  服务端世界
-     */
+    /** 登记刚驯服的动物或已自然加载且具有原版主人的非狼宠物。 */
     @SuppressWarnings("null")
-    public static void onTame(Wolf wolf, ServerPlayer player, ServerLevel level) {
-        DebugLogger.SERVER.entering(MODULE, "onTame", "wolf=" + wolf.getUUID() + ", player=" + player.getName().getString());
-
+    public static void onTame(Mob pet, ServerLevel level) {
+        var type = PetUtils.petType(pet);
+        if (type == null || !pet.isAlive()) {
+            return;
+        }
         PetGlobalState state = PetGlobalState.get(level.getServer());
-
-        String internalName = PetUtils.generateUniqueInternalName(level.getServer());
-
-        PetEntry entry = PetEntry.createNew(internalName, wolf.getUUID(), player.getUUID());
-
-        try {
-            state.addPet(entry);
-        } catch (IllegalArgumentException e) {
-            DebugLogger.SERVER.error(MODULE, "添加宠物到注册表失败: {}", e.getMessage());
+        var owner = PetUtils.nativeOwner(pet);
+        var existing = state.findByEntityUUID(pet.getUUID()).orElse(null);
+        if (owner == null) {
+            if (existing != null && !existing.hasCombatMode() && type.equals(existing.entityType())) {
+                state.removePet(pet.getUUID());
+            }
+            return;
+        }
+        if (existing != null) {
+            if (!type.equals(existing.entityType()) || existing.hasCombatMode()) {
+                return;
+            }
+            if (!existing.isOwner(owner)) {
+                existing = existing.withOwner(owner, Set.of());
+                state.updatePet(existing);
+            }
+            syncDisplayName(pet, existing);
             return;
         }
 
-        syncRegistryToEntity(wolf, entry);
-
-        DebugLogger.SERVER.info(MODULE, "宠物驯服注册成功: [{}] 主人={}", internalName, player.getName().getString());
-        DebugLogger.SERVER.exiting(MODULE, "onTame");
+        String internalName = PetUtils.generateUniqueInternalName(level.getServer(), type);
+        var customName = pet.getCustomName();
+        String name = pet instanceof Wolf || customName == null ? internalName : customName.getString();
+        PetEntry entry = PetEntry.createNew(internalName, pet.getUUID(), owner, name, type);
+        try {
+            state.addPet(entry);
+        } catch (IllegalArgumentException error) {
+            DebugLogger.SERVER.error(MODULE, "添加宠物到注册表失败: {}", error.getMessage());
+            return;
+        }
+        if (pet instanceof Wolf wolf) {
+            syncRegistryToEntity(wolf, entry);
+        } else {
+            syncDisplayName(pet, entry);
+        }
+        DebugLogger.SERVER.info(MODULE, "宠物登记成功: [{}] 类型={} 主人={}", internalName, type, owner);
     }
 
     // 事件 2：繁殖继承
@@ -130,7 +144,8 @@ public final class PetEventHandler {
                 internalName,
                 initialTrust,
                 PetMode.COMPANIONSHIP,
-                System.currentTimeMillis()
+                System.currentTimeMillis(),
+                PetEntry.WOLF_TYPE
         );
 
         try {
@@ -152,16 +167,16 @@ public final class PetEventHandler {
     // 事件 3：死亡自动移除
 
     /**
-     * 当宠物狼死亡时调用 — 从全局注册表删除。
+     * 当宠物死亡时调用 — 从全局注册表删除。
      *
-     * @param wolf  死亡的狼
+     * @param pet   死亡的宠物
      * @param level 服务端世界
      */
-    public static void onDeath(Wolf wolf, ServerLevel level) {
-        DebugLogger.SERVER.entering(MODULE, "onDeath", "wolf=" + wolf.getUUID());
+    public static void onDeath(Mob pet, ServerLevel level) {
+        DebugLogger.SERVER.entering(MODULE, "onDeath", "pet=" + pet.getUUID());
 
         PetGlobalState state = PetGlobalState.get(level.getServer());
-        Optional<PetEntry> removed = state.removePet(wolf.getUUID());
+        Optional<PetEntry> removed = state.removePet(pet.getUUID());
 
         if (removed.isPresent()) {
             DebugLogger.SERVER.info(MODULE, "宠物死亡已移除: [{}]", removed.get().internalName());
@@ -237,16 +252,20 @@ public final class PetEventHandler {
     /**
      * 实体加载时执行同步与垃圾回收。
      *
-     * @param wolf  加载的狼实体
+     * @param pet   加载的宠物
      * @param level 服务端世界
      */
     @SuppressWarnings("null")
-    public static void onEntityLoad(Wolf wolf, ServerLevel level) {
+    public static void onEntityLoad(Mob pet, ServerLevel level) {
+        if (!(pet instanceof Wolf wolf)) {
+            onTame(pet, level);
+            return;
+        }
         DebugLogger.SERVER.debug(MODULE, "实体加载: wolf={}", wolf.getUUID());
 
         PetGlobalState state = PetGlobalState.get(level.getServer());
 
-        Optional<PetEntry> optEntry = state.findByEntityUUID(wolf.getUUID());
+        Optional<PetEntry> optEntry = state.findByEntityUUID(wolf.getUUID()).filter(PetEntry::hasCombatMode);
 
         if (optEntry.isPresent()) {
             // 注册表存在 → 强制同步到实体
@@ -275,11 +294,7 @@ public final class PetEventHandler {
         }
         ((PetCombatAccess) wolf).yzwc$setManagedPet(true);
 
-        @SuppressWarnings("null")
-        Component displayName = Component.literal(entry.displayName());
-        if (!displayName.equals(wolf.getCustomName())) {
-            wolf.setCustomName(displayName);
-        }
+        syncDisplayName(wolf, entry);
         wolf.setCustomNameVisible(true);
 
         // 确保宠物标记和内部名称标签存在
@@ -296,9 +311,30 @@ public final class PetEventHandler {
         }
     }
 
-    /**
-     * 清理实体上的宠物残留数据。
-     */
+    @SuppressWarnings("null")
+    public static void syncDisplayName(Mob pet, PetEntry entry) {
+        Component current = pet.getCustomName();
+        if (current == null && !entry.hasCombatMode() && entry.displayName().equals(entry.internalName())) {
+            return;
+        }
+        if (current == null || !entry.displayName().equals(current.getString())) {
+            pet.setCustomName(Component.literal(entry.displayName()));
+        }
+    }
+
+    public static void onVanillaNameChange(Mob pet, ServerLevel level) {
+        var type = PetUtils.petType(pet);
+        Component name = pet.getCustomName();
+        if (type == null || PetEntry.WOLF_TYPE.equals(type) || name == null) {
+            return;
+        }
+        var state = PetGlobalState.get(level.getServer());
+        state.findByEntityUUID(pet.getUUID()).filter(entry -> type.equals(entry.entityType()))
+                .filter(entry -> !entry.displayName().equals(name.getString()))
+                .ifPresent(entry -> state.updatePet(entry.withDisplayName(name.getString())));
+    }
+
+    /** 清理被放生的狼身上的宠物数据。 */
     @SuppressWarnings("null")
     public static void releaseWolf(Wolf wolf) {
         wolf.removeTag(PetInternalTags.TAG_PET_MARKER);
@@ -387,6 +423,9 @@ public final class PetEventHandler {
 
         int teleported = 0;
         for (PetEntry pet : pets) {
+            if (!pet.hasCombatMode()) {
+                continue;
+            }
             for (ServerLevel level : player.level().getServer().getAllLevels()) {
                 if (!pool.equals(DimensionPoolSettings.statePoolId(level.dimension()))) {
                     continue;

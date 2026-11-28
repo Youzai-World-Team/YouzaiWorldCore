@@ -9,12 +9,14 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.animal.wolf.Wolf;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.EntityHitResult;
 import top.csituka.youzaiworldcore.pet.PetEventHandler;
+import top.csituka.youzaiworldcore.pet.PetUtils;
 import top.csituka.youzaiworldcore.dimensionalinventories.PoolPets;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
@@ -130,12 +132,12 @@ public final class PetEventHandlers {
                 return;
             }
 
-            if (!(entity instanceof Wolf wolf)) {
+            if (!(entity instanceof Mob pet) || PetUtils.petType(pet) == null) {
                 return;
             }
 
             ServerLevel level = (ServerLevel) entity.level();
-            PetEventHandler.onDeath(wolf, level);
+            PetEventHandler.onDeath(pet, level);
         });
     }
 
@@ -147,11 +149,11 @@ public final class PetEventHandlers {
                 return;
             }
 
-            if (!(entity instanceof Wolf wolf)) {
+            if (!(entity instanceof Mob pet) || PetUtils.petType(pet) == null) {
                 return;
             }
 
-            PetEventHandler.onEntityLoad(wolf, world);
+            PetEventHandler.onEntityLoad(pet, world);
         });
     }
 

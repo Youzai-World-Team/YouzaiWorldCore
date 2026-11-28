@@ -17,11 +17,11 @@ import top.csituka.youzaiworldcore.pet.PetModeController;
 /**
  * Mixin — 拦截 {@link TamableAnimal#tame(Player)} 以在驯服成功后注册宠物。
  * <p>
- * 仅在目标实体为 {@link Wolf} 时执行宠物注册逻辑。
+ * 战斗权限仅作用于已登记的狼。
  * </p>
  */
 @Mixin(TamableAnimal.class)
-public abstract class WolfTameMixin {
+public abstract class TamableAnimalPetMixin {
 
     @Inject(method = "canAttack", at = @At("HEAD"), cancellable = true)
     private void yzwc$protectPetAllies(LivingEntity target, CallbackInfoReturnable<Boolean> cir) {
@@ -33,23 +33,8 @@ public abstract class WolfTameMixin {
     @Inject(method = "tame", at = @At("RETURN"))
     private void onPostTame(Player player, CallbackInfo ci) {
         TamableAnimal self = (TamableAnimal) (Object) this;
-
-        if (!(self instanceof Wolf wolf)) {
-            return;
+        if (self.level() instanceof ServerLevel level && player instanceof ServerPlayer) {
+            PetEventHandler.onTame(self, level);
         }
-
-        if (wolf.level().isClientSide()) {
-            return;
-        }
-
-        if (!wolf.isTame()) {
-            return;
-        }
-
-        if (!(player instanceof ServerPlayer serverPlayer)) {
-            return;
-        }
-
-        PetEventHandler.onTame(wolf, serverPlayer, (ServerLevel) wolf.level());
     }
 }

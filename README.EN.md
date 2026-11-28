@@ -478,14 +478,13 @@ A streamlined implementation that supports click-to-open only for "same-material
 
 ### 27. Pet System
 
-A tamed-wolf (Wolf) tracking and management system that registers tamed wolves as "pets" with persistent ownership, trust, and behavior management.
+The pet registry tracks vanilla animals with a recorded owner. Cats, parrots, horses, donkeys, mules, llamas, nautiluses, and their tameable variants can be listed, renamed, and highlighted. Previously tamed animals are registered as their chunks load, and vanilla name tags still work on these animals.
 
 - **Core Data**: `PetEntry` records internal name (`internalName`), display name, behavior mode, owner UUID, trusted players, tame time, and entity UUID; global registry `PetGlobalState` persists all pets
-- **Behavior Modes**: `hunting` / `companionship` / `attack` / `guard` — switched via `/yzwc pet set <internalName> mode`
-- **Trust System**: Owners can add other players to a trust list; trusted players may view the list and highlight the pet; `trust add/remove/list <player>`
-- **Ownership Ops**: `rename`, `transfer <newOwner>` (transfers ownership; former owner auto-added to trust list), `release_life [force]` (release, requires confirmation)
-- **Quick Locate**: `highlight <internalName>` applies a 5-second Glowing effect to the target wolf for easy spotting
-- When an owner leaves a dimension pool, their loaded, standing pets in that pool are stored outside the world. These pets reappear near the owner on return. Sitting and unloaded pets stay where they are. Pets still follow between dimensions in a single pool.
+- **Wolf behavior modes**. Switch between `hunting`, `companionship`, `attack`, and `guard` with `/yzwc pet set <internalName> mode`.
+- **Wolf ownership**. Owners can manage trust, transfer ownership, and confirm a release with `release_life true`. Trusted players can list and highlight the wolf.
+- **Rename and locate**. Use `rename` to change a pet's name. `highlight <internalName>` applies Glowing for five seconds to a loaded pet.
+- When an owner leaves a dimension pool, their loaded, standing wolves are stored outside the world and reappear near the owner on return. Sitting and unloaded wolves stay where they are. Wolves still follow between dimensions in a single pool.
 - The player data backup archives the pet registry. Administrators can use `/yzwc backup list pet_module` to list backup IDs and `/yzwc backup restore pet_module [backup_id]` to queue a restore.
 - **Command Architecture**: `/yzwc pet` is a **client command** that forwards its full argument string via `PetCommandPayload` (C→S); the server-side `PetCommand` holds the complete Brigadier tree and permission checks
 

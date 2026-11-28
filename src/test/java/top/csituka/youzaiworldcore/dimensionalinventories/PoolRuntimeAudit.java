@@ -16,10 +16,13 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtAccounter;
 import net.minecraft.nbt.NbtIo;
+import net.minecraft.nbt.NbtOps;
 import net.minecraft.network.Connection;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.PacketFlow;
 import net.minecraft.network.protocol.game.ClientboundSetObjectivePacket;
@@ -33,6 +36,7 @@ import net.minecraft.server.network.CommonListenerCookie;
 import net.minecraft.server.network.ServerGamePacketListenerImpl;
 import net.minecraft.server.players.NameAndId;
 import net.minecraft.util.ProblemReporter;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -357,6 +361,7 @@ public final class PoolRuntimeAudit implements DedicatedServerModInitializer {
         @SuppressWarnings("null")
         private static void run(MinecraftServer server) throws Exception {
                 petLifecycleAndCombat(server);
+                nativePetManagement(server);
                 ServerLevel overworld = server.overworld();
                 ServerLevel nether = server.getLevel(Level.NETHER);
                 ServerLevel end = server.getLevel(Level.END);
@@ -559,6 +564,84 @@ public final class PoolRuntimeAudit implements DedicatedServerModInitializer {
                 stageColdRelease(player, end);
                 detach(player);
                 detach(other);
+        }
+
+        @SuppressWarnings("null")
+        private static void nativePetManagement(MinecraftServer server) throws Exception {
+                var level = server.overworld();
+                var player = connect(server, level, UUID.randomUUID(), "NativePetAudit", new TestConnection(), false);
+                var state = PetGlobalState.get(server);
+                var commands = server.getCommands().getDispatcher();
+                var source = player.createCommandSourceStack();
+                trackPetChunk(level, player.blockPosition());
+
+                var cat = EntityTypes.CAT.create(level, EntitySpawnReason.LOAD);
+                var pony = EntityTypes.HORSE.create(level, EntitySpawnReason.LOAD);
+                var parrot = EntityTypes.PARROT.create(level, EntitySpawnReason.LOAD);
+                var nautilus = EntityTypes.NAUTILUS.create(level, EntitySpawnReason.LOAD);
+                var donkey = EntityTypes.DONKEY.create(level, EntitySpawnReason.LOAD);
+                var camel = EntityTypes.CAMEL.create(level, EntitySpawnReason.LOAD);
+                for (Mob animal : List.of(cat, pony, parrot, nautilus, donkey, camel)) {
+                        animal.snapTo(player.position(), 0, 0);
+                }
+                cat.setCustomName(Component.literal("VanillaName"));
+                check(level.addFreshEntity(cat) && level.addFreshEntity(pony) && level.addFreshEntity(parrot)
+                                && level.addFreshEntity(nautilus) && level.addFreshEntity(camel), "native pet fixtures load");
+                cat.tame(player);
+                parrot.tame(player);
+                nautilus.tame(player);
+                check(pony.tameWithName(player), "vanilla horse tame succeeds");
+                donkey.setOwner(player);
+                donkey.setTamed(true);
+                check(level.addFreshEntity(donkey), "previously tame donkey loads");
+                check(state.findByEntityUUID(camel.getUUID()).isEmpty(), "ownerless camel stays outside the registry");
+                check(state.findByOwner(player.getUUID()).size() == 5
+                                && state.findByOwner(player.getUUID()).stream().noneMatch(PetEntry::hasCombatMode),
+                                "tamed cat, parrot, nautilus, horse and existing donkey get basic management");
+                check(PoolPets.departingPets(player, MAIN).isEmpty(), "basic pets stay out of the wolf follow policy");
+
+                var catEntry = state.findByEntityUUID(cat.getUUID()).orElseThrow();
+                check(catEntry.detailKey().equals("entity.minecraft.cat")
+                                && catEntry.displayName().equals("VanillaName"), "existing name and species appear in the registry");
+                var legacy = PetEntry.createNew("DOGLEGACY", UUID.randomUUID(), player.getUUID());
+                var legacyNbt = (CompoundTag) PetEntry.CODEC.encodeStart(NbtOps.INSTANCE, legacy).getOrThrow();
+                check(!legacyNbt.contains("entityType")
+                                && PetEntry.CODEC.parse(NbtOps.INSTANCE, legacyNbt).getOrThrow().hasCombatMode(),
+                                "wolf records without a species field remain readable");
+                var catNbt = PetEntry.CODEC.encodeStart(NbtOps.INSTANCE, catEntry).getOrThrow();
+                check(PetEntry.CODEC.parse(NbtOps.INSTANCE, catNbt).getOrThrow().equals(catEntry), "cat record round-trips");
+
+                String setCat = "yzwc pet set " + catEntry.internalName() + " ";
+                check(commands.execute(setCat + "mode attack", source) == 0
+                                && commands.execute(setCat + "release_life true", source) == 0 && cat.isTame(),
+                                "wolf mode and release cannot affect the cat");
+                check(commands.execute("yzwc pet highlight " + catEntry.internalName(), source) == 1
+                                && cat.hasEffect(MobEffects.GLOWING), "highlight works on a loaded cat");
+                check(commands.execute(setCat + "rename MenuName", source) == 1
+                                && cat.getName().getString().equals("MenuName"), "rename updates a loaded cat");
+                var tag = new ItemStack(Items.NAME_TAG);
+                tag.set(DataComponents.CUSTOM_NAME, Component.literal("TagName"));
+                tag.getItem().interactLivingEntity(tag, player, cat, InteractionHand.MAIN_HAND);
+                check(state.findByEntityUUID(cat.getUUID()).orElseThrow().displayName().equals("TagName"),
+                                "vanilla name tag updates the menu name");
+
+                var snapshot = TagValueOutput.createWithContext(ProblemReporter.DISCARDING, level.registryAccess());
+                cat.saveWithoutId(snapshot);
+                cat.discard();
+                check(commands.execute(setCat + "rename PendingName", source) == 1
+                                && commands.execute("yzwc pet highlight " + catEntry.internalName(), source) == 0
+                                && level.getEntity(cat.getUUID()) == null, "unloaded rename only updates registry");
+                var loaded = EntityTypes.CAT.create(level, EntitySpawnReason.LOAD);
+                loaded.load(TagValueInput.create(ProblemReporter.DISCARDING, level.registryAccess(), snapshot.buildResult()));
+                check(level.addFreshEntity(loaded) && loaded.getOwner() == player
+                                && loaded.getName().getString().equals("PendingName"), "loaded cat applies pending name");
+                loaded.hurtServer(level, loaded.damageSources().genericKill(), Float.MAX_VALUE);
+                check(state.findByEntityUUID(loaded.getUUID()).isEmpty(), "dead cat is removed from the registry");
+                for (Mob animal : List.of(pony, parrot, nautilus, donkey, camel)) {
+                        animal.discard();
+                        state.removePet(animal.getUUID());
+                }
+                detach(player);
         }
 
         @SuppressWarnings("null")

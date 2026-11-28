@@ -12,7 +12,12 @@ import top.csituka.youzaiworldcore.YouzaiworldCore;
 
 @SuppressWarnings("null")
 public record PetMenuStatePayload(long requestId, boolean success, Component message, List<Entry> pets) implements CustomPacketPayload {
-    public record Entry(String id, String name, String mode) { }
+    /** 第三个字段沿用原有编码，记录狼的模式或其他宠物的原版实体翻译键。 */
+    public record Entry(String id, String name, String mode) {
+        public boolean hasCombatMode() {
+            return !mode.startsWith("entity.");
+        }
+    }
     public static final Type<PetMenuStatePayload> ID = new Type<>(Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "pet_menu_state"));
     public static final StreamCodec<RegistryFriendlyByteBuf, PetMenuStatePayload> STREAM_CODEC = StreamCodec.of(
             (buf, p) -> {

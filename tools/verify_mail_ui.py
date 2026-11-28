@@ -141,7 +141,9 @@ stub(C+'.MailClientState','''public class MailClientState {
 }''')
 stub(C+'.screen.MailNavigationRequests','public class MailNavigationRequests {public static void cancel(Object page){}public static void compose(Object page){}public static void sent(Object page){}public static void edit(Object page,java.util.UUID id){}}')
 stub(P+'.network.PetMenuRequestPayload','public record PetMenuRequestPayload(long requestId,String action,String petId,String value){}')
-stub(P+'.network.PetMenuStatePayload','public record PetMenuStatePayload(long requestId,boolean success,net.minecraft.network.chat.Component message,java.util.List<Entry> pets){public record Entry(String id,String name,String mode){}}')
+stub(P+'.network.PetMenuStatePayload','''public record PetMenuStatePayload(long requestId,boolean success,net.minecraft.network.chat.Component message,java.util.List<Entry> pets) {
+ public record Entry(String id,String name,String mode){public boolean hasCombatMode(){return !mode.startsWith("entity.");}}
+}''')
 
 # Interfaces used by the complete compose page and its picker.
 k=(P+'.util.DebugLogger').replace('.','/')+'.java'
@@ -229,12 +231,15 @@ public class MailUiChecks {
   String a=MailDraftStore.key(null);client.serverData.ip="server-b";check(!a.equals(MailDraftStore.key(null)),"跨服务器混用草稿");client.serverData.ip="server-a";
   check(!a.equals(MailDraftStore.key(java.util.UUID.randomUUID())),"不同邮件混用草稿");
   var pet=new PetScreen(null);pet.width=320;pet.height=240;pet.init();var request=(PetMenuRequestPayload)net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.last;
-  var response=new PetMenuStatePayload(request.requestId(),true,net.minecraft.network.chat.Component.empty(),java.util.List.of(new PetMenuStatePayload.Entry("DOG1","Wolf","guard")));
+  var response=new PetMenuStatePayload(request.requestId(),true,net.minecraft.network.chat.Component.empty(),java.util.List.of(new PetMenuStatePayload.Entry("DOG1","Wolf","guard"),new PetMenuStatePayload.Entry("PET1","Cat","entity.minecraft.cat")));
   client.gui.setScreen(null);PetMenuReceiverChecks.receive(response,client.getConnection());check((long)field(pet,"pending")==request.requestId()&&client.gui.screen()==null,"离开宠物页后响应仍更新页面或强制切页");
   client.gui.setScreen(pet);
   PetMenuReceiverChecks.receive(new PetMenuStatePayload(request.requestId()+1,true,net.minecraft.network.chat.Component.empty(),java.util.List.of()),client.getConnection());check((long)field(pet,"pending")==request.requestId(),"迟到宠物响应误匹配");
   PetMenuReceiverChecks.receive(response,new Object());check((long)field(pet,"pending")==request.requestId(),"旧连接响应更新宠物页面");
   PetMenuReceiverChecks.receive(response,client.getConnection());check((long)field(pet,"pending")==0,"宠物列表未结束等待");
+  var catPage=new PetScreen(null);catPage.width=320;catPage.height=240;value(catPage,"connection",client.getConnection());value(catPage,"pets",response.pets());value(catPage,"selected","PET1");catPage.init();
+  var wolfPage=new PetScreen(null);wolfPage.width=320;wolfPage.height=240;value(wolfPage,"connection",client.getConnection());value(wolfPage,"pets",response.pets());value(wolfPage,"selected","DOG1");wolfPage.init();
+  check(wolfPage.children().size()==catPage.children().size()+4,"仅狼应显示四个模式按钮");
   value(pet,"deadline",0L);value(pet,"pending",1L);pet.tick();check((long)field(pet,"pending")==0,"宠物请求未超时");
   System.out.println("邮件/宠物界面回归通过："+checks+" 项断言。");
  }

@@ -39,10 +39,12 @@ public final class PetScreen extends MailBaseScreen {
         addRenderableWidget(new TransparentButton(page.x() + 12, page.y() + 12, 48, 24, text("back"), this::onClose));
         int y = list.bottom() + 8, w = (list.width() - 18) / 4;
         String[] modes = { "companionship", "hunting", "attack", "guard" };
-        for (int i = 0; i < modes.length; i++) {
-            String mode = modes[i];
-            var button = addRenderableWidget(new TransparentButton(list.x() + i * (w + 6), y, w, 24, text(mode), () -> request("mode", mode)));
-            button.active = selection != null && pending == 0 && !selection.mode().equals(mode);
+        if (selection != null && selection.hasCombatMode()) {
+            for (int i = 0; i < modes.length; i++) {
+                String mode = modes[i];
+                var button = addRenderableWidget(new TransparentButton(list.x() + i * (w + 6), y, w, 24, text(mode), () -> request("mode", mode)));
+                button.active = pending == 0 && !selection.mode().equals(mode);
+            }
         }
         nameInput = addRenderableWidget(new EditBox(font, list.x(), y + 32, list.width() - 122, 24, text("name")));
         nameInput.setMaxLength(32); nameInput.setValue(name);
@@ -81,10 +83,10 @@ public final class PetScreen extends MailBaseScreen {
         for (int i = offset; i < end; i++) {
             var pet = pets.get(i); int y = list.y() + (i - offset) * 32;
             g.fill(list.x(), y, list.right(), y + 30, pet.id().equals(selected) ? MailUi.rowSelected() : MailUi.rowAlternate());
-            String mode = text(pet.mode()).getString();
-            g.text(font, MailUi.ellipsize(font, pet.name(), list.width() - font.width(mode) - 24), list.x() + 8, y + 5, MailUi.textPrimary(), false);
+            String detail = (pet.hasCombatMode() ? text(pet.mode()) : Component.translatable(pet.mode())).getString();
+            g.text(font, MailUi.ellipsize(font, pet.name(), list.width() - font.width(detail) - 24), list.x() + 8, y + 5, MailUi.textPrimary(), false);
             g.text(font, pet.id(), list.x() + 8, y + 18, MailUi.textMuted(), false);
-            g.text(font, mode, list.right() - font.width(mode) - 8, y + 12, MailUi.textSecondary(), false);
+            g.text(font, detail, list.right() - font.width(detail) - 8, y + 12, MailUi.textSecondary(), false);
         }
         YzuiTheme.label(g, font, status, page.x() + 12, page.bottom() - 20, page.width() - 24, MailUi.textSecondary(), false);
         renderWidgets(g, mx, my, delta);

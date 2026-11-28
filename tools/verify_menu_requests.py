@@ -37,8 +37,10 @@ stub('net.minecraft.server.level.ServerPlayer','''public class ServerPlayer {
 }''')
 stub(P+'.luckperms.LuckPermsHelper','public class LuckPermsHelper {public static boolean allowed=true;public static boolean checkPermission(net.minecraft.commands.CommandSourceStack src,String permission,int level){return allowed;}}')
 stub(P+'.pet.command.PetCommand','public class PetCommand {public static final String PERMISSION_PET_LIST="list";}')
-stub(P+'.pet.PetEntry','public record PetEntry(String internalName,String displayName,java.util.UUID ownerUUID,PetMode mode){public boolean isOwner(java.util.UUID id){return ownerUUID.equals(id);}}')
-stub(P+'.pet.PetMode','public enum PetMode {COMPANIONSHIP,HUNTING,ATTACK,GUARD}')
+stub(P+'.pet.PetEntry','''public record PetEntry(String internalName,String displayName,java.util.UUID ownerUUID,String detailKey) {
+ public boolean isOwner(java.util.UUID id){return ownerUUID.equals(id);}
+ public boolean hasCombatMode(){return !detailKey.startsWith("entity.");}
+}''')
 stub(P+'.pet.PetGlobalState','''public class PetGlobalState {
  public static java.util.List<PetEntry> pets=new java.util.ArrayList<>();public static PetGlobalState get(Object server){return new PetGlobalState();}
  public java.util.Optional<PetEntry> findByInternalName(String id){return pets.stream().filter(p->p.internalName().equals(id)).findFirst();}
@@ -67,14 +69,17 @@ public class MenuRequestChecks {
   AttributeUpgradePayload.STREAM_CODEC.encode(buf,request);check(AttributeUpgradePayload.STREAM_CODEC.decode(buf).equals(request),"加点请求序号丢失");
   buf=new RegistryFriendlyByteBuf();var result=new AttributeUpgradeResultPayload(7,false);AttributeUpgradeResultPayload.STREAM_CODEC.encode(buf,result);check(AttributeUpgradeResultPayload.STREAM_CODEC.decode(buf).equals(result),"加点失败结果丢失");
   buf=new RegistryFriendlyByteBuf();var petRequest=new PetMenuRequestPayload(5,"rename","DOG1","Name");PetMenuRequestPayload.STREAM_CODEC.encode(buf,petRequest);check(PetMenuRequestPayload.STREAM_CODEC.decode(buf).equals(petRequest),"宠物请求字段丢失");
-  buf=new RegistryFriendlyByteBuf();var petResult=new PetMenuStatePayload(5,true,net.minecraft.network.chat.Component.literal("done"),List.of(new PetMenuStatePayload.Entry("DOG1","Name","guard")));PetMenuStatePayload.STREAM_CODEC.encode(buf,petResult);check(PetMenuStatePayload.STREAM_CODEC.decode(buf).equals(petResult),"宠物列表字段丢失");
-  var player=new ServerPlayer();PetGlobalState.pets.add(new PetEntry("DOG1","Name",player.id,PetMode.GUARD));PetGlobalState.pets.add(new PetEntry("DOG2","Other",UUID.randomUUID(),PetMode.GUARD));
+  buf=new RegistryFriendlyByteBuf();var petResult=new PetMenuStatePayload(5,true,net.minecraft.network.chat.Component.literal("done"),List.of(new PetMenuStatePayload.Entry("DOG1","Name","guard"),new PetMenuStatePayload.Entry("PET1","Cat","entity.minecraft.cat")));PetMenuStatePayload.STREAM_CODEC.encode(buf,petResult);check(PetMenuStatePayload.STREAM_CODEC.decode(buf).equals(petResult),"宠物列表字段丢失");
+  var player=new ServerPlayer();PetGlobalState.pets.add(new PetEntry("DOG1","Name",player.id,"guard"));PetGlobalState.pets.add(new PetEntry("DOG2","Other",UUID.randomUUID(),"guard"));
   var response=invoke(player,"list","","");check(response.pets().size()==1&&Commands.calls==0,"列表泄漏其他玩家宠物或执行了命令");
   player.blocked=true;check(!invoke(player,"mode","DOG1","attack").success()&&Commands.calls==0,"未认证执行宠物操作");player.blocked=false;
   top.csituka.youzaiworldcore.luckperms.LuckPermsHelper.allowed=false;check(invoke(player,"list","","").pets().isEmpty(),"无权限泄漏列表");top.csituka.youzaiworldcore.luckperms.LuckPermsHelper.allowed=true;
   check(!invoke(player,"mode","DOG2","attack").success()&&Commands.calls==0,"操作其他玩家宠物");
   check(!invoke(player,"admin","DOG1","").success()&&Commands.calls==0,"菜单执行未开放命令");
   check(!invoke(player,"mode","DOG1","attack release_life").success()&&Commands.calls==0,"模式参数注入其他操作");
+  PetGlobalState.pets.add(new PetEntry("PET1","Cat",player.id,"entity.minecraft.cat"));
+  check(invoke(player,"list","","").pets().stream().anyMatch(p->p.id().equals("PET1")&&!p.hasCombatMode()&&p.mode().equals("entity.minecraft.cat")),"列表未返回非战斗宠物类型");
+  check(!invoke(player,"mode","PET1","attack").success()&&Commands.calls==0,"菜单向非战斗宠物开放模式命令");
   check(invoke(player,"mode","DOG1","attack").success()&&Commands.last.equals("yzwc pet set DOG1 mode attack"),"模式命令不正确");
   invoke(player,"rename","DOG1","A \\\" B\\\\C");check(Commands.last.equals("yzwc pet set DOG1 rename \\\"A \\\\\\\" B\\\\\\\\C\\\""),"改名字符串未安全引用");
   Commands.result=0;response=invoke(player,"highlight","DOG1","");check(!response.success()&&response.message().getString().equals("permission_denied"),"命令权限拒绝反馈被覆盖");

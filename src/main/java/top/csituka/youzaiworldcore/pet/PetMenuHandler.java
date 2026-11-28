@@ -38,7 +38,8 @@ public final class PetMenuHandler {
             else {
                 String command = switch (request.action()) {
                     case "rename" -> "set " + entry.internalName() + " rename " + quote(request.value());
-                    case "mode" -> java.util.List.of("companionship", "hunting", "attack", "guard").contains(request.value())
+                    case "mode" -> entry.hasCombatMode()
+                            && java.util.List.of("companionship", "hunting", "attack", "guard").contains(request.value())
                             ? "set " + entry.internalName() + " mode " + request.value() : null;
                     case "highlight" -> "highlight " + entry.internalName();
                     default -> null;
@@ -61,7 +62,7 @@ public final class PetMenuHandler {
         if (!success && (feedback[0] == null || feedback[0].getString().isBlank())) feedback[0] = Component.translatable("screen.youzaiworldcore.pets.failed");
         List<PetMenuStatePayload.Entry> pets = PetGlobalState.get(server).findByOwner(player.getUUID()).stream()
                 .sorted(java.util.Comparator.comparing(PetEntry::internalName)).limit(10000)
-                .map(p -> new PetMenuStatePayload.Entry(p.internalName(), p.displayName(), p.mode().name().toLowerCase(java.util.Locale.ROOT))).toList();
+                .map(p -> new PetMenuStatePayload.Entry(p.internalName(), p.displayName(), p.detailKey())).toList();
         ServerPlayNetworking.send(player, new PetMenuStatePayload(request.requestId(), success, feedback[0], pets));
         DebugLogger.SERVER.debug("PetMenu", "菜单操作 {}：{}", request.action(), success);
     }

@@ -1,7 +1,13 @@
 package top.csituka.youzaiworldcore.pet;
 
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.TamableAnimal;
+import net.minecraft.world.entity.animal.equine.AbstractHorse;
 import net.minecraft.world.entity.animal.wolf.Wolf;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -22,6 +28,7 @@ public final class PetUtils {
     private static final char[] BASE36_CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ".toCharArray();
 
     private static final String NAME_PREFIX = "DOG";
+    private static final String OTHER_PET_PREFIX = "PET";
 
     private static final int SUFFIX_LENGTH = 6;
 
@@ -40,6 +47,33 @@ public final class PetUtils {
         return null;
     }
 
+    public static @Nullable Identifier petType(Entity entity) {
+        if (!(entity instanceof TamableAnimal || entity instanceof AbstractHorse)) {
+            return null;
+        }
+        Identifier id = BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType());
+        return "minecraft".equals(id.getNamespace()) ? id : null;
+    }
+
+    public static @Nullable UUID nativeOwner(Mob pet) {
+        var owner = switch (pet) {
+            case TamableAnimal tameable when tameable.isTame() -> tameable.getOwnerReference();
+            case AbstractHorse horse when horse.isTamed() -> horse.getOwnerReference();
+            default -> null;
+        };
+        return owner == null ? null : owner.getUUID();
+    }
+
+    @SuppressWarnings("null")
+    public static @Nullable Mob findLoadedPet(MinecraftServer server, PetEntry entry) {
+        for (ServerLevel level : server.getAllLevels()) {
+            if (level.getEntity(entry.entityUUID()) instanceof Mob pet && entry.entityType().equals(petType(pet))) {
+                return pet;
+            }
+        }
+        return null;
+    }
+
     /**
      * 生成唯一的宠物内部名称。
      * <p>
@@ -52,6 +86,14 @@ public final class PetUtils {
      */
     @NotNull
     public static String generateUniqueInternalName(@NotNull MinecraftServer server) {
+        return generateUniqueInternalName(server, NAME_PREFIX);
+    }
+
+    public static String generateUniqueInternalName(MinecraftServer server, Identifier entityType) {
+        return generateUniqueInternalName(server, PetEntry.WOLF_TYPE.equals(entityType) ? NAME_PREFIX : OTHER_PET_PREFIX);
+    }
+
+    private static String generateUniqueInternalName(MinecraftServer server, String prefix) {
         DebugLogger.SERVER.entering(MODULE, "generateUniqueInternalName");
 
         PetGlobalState state;
@@ -59,7 +101,7 @@ public final class PetUtils {
             state = PetGlobalState.get(server);
         } catch (IllegalStateException e) {
             // 主世界不可用，仅做随机生成（极不可能发生）
-            String fallback = generateRandomName();
+            String fallback = generateRandomName(prefix);
             LOGGER.warn("PetGlobalState 不可用，使用 fallback 名称: {}", fallback);
             DebugLogger.SERVER.exiting(MODULE, "generateUniqueInternalName", "fallback=" + fallback);
             return fallback;
@@ -68,12 +110,12 @@ public final class PetUtils {
         String name;
         int attempts = 0;
         do {
-            name = generateRandomName();
+            name = generateRandomName(prefix);
             attempts++;
             if (attempts > 1000) {
                 // 极端碰撞保护（理论上不应发生）
                 LOGGER.error("内部名称生成碰撞超过 1000 次！使用时间戳后缀规避");
-                name = NAME_PREFIX + System.currentTimeMillis();
+                name = prefix + System.currentTimeMillis();
                 break;
             }
         } while (state.isNameTaken(name));
@@ -90,8 +132,12 @@ public final class PetUtils {
      */
     @NotNull
     public static String generateRandomName() {
-        StringBuilder sb = new StringBuilder(NAME_PREFIX.length() + SUFFIX_LENGTH);
-        sb.append(NAME_PREFIX);
+        return generateRandomName(NAME_PREFIX);
+    }
+
+    private static String generateRandomName(String prefix) {
+        StringBuilder sb = new StringBuilder(prefix.length() + SUFFIX_LENGTH);
+        sb.append(prefix);
         for (int i = 0; i < SUFFIX_LENGTH; i++) {
             sb.append(BASE36_CHARS[RANDOM.nextInt(BASE36_CHARS.length)]);
         }
@@ -108,7 +154,7 @@ public final class PetUtils {
         if (name.length() != NAME_PREFIX.length() + SUFFIX_LENGTH) {
             return false;
         }
-        if (!name.startsWith(NAME_PREFIX)) {
+        if (!(name.startsWith(NAME_PREFIX) || name.startsWith(OTHER_PET_PREFIX))) {
             return false;
         }
         for (int i = NAME_PREFIX.length(); i < name.length(); i++) {

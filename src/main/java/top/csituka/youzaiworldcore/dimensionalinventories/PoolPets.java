@@ -65,6 +65,9 @@ public final class PoolPets {
         var server = player.level().getServer();
         var wolves = new ArrayList<Wolf>();
         for (var pet : PetGlobalState.get(server).findByOwner(player.getUUID())) {
+            if (!pet.hasCombatMode()) {
+                continue;
+            }
             for (ServerLevel level : server.getAllLevels()) {
                 if (pool.equals(DimensionPoolSettings.statePoolId(level.dimension()))
                         && level.getEntity(pet.entityUUID()) instanceof Wolf wolf && canFollow(wolf)) {
@@ -130,7 +133,7 @@ public final class PoolPets {
         }
         var server = player.level().getServer();
         if (!canRestore(player)) {
-            if (!PetGlobalState.get(server).findByOwner(player.getUUID()).isEmpty()) {
+            if (PetGlobalState.get(server).findByOwner(player.getUUID()).stream().anyMatch(PetEntry::hasCombatMode)) {
                 PENDING_RESTORES.computeIfAbsent(server, ignored -> new HashSet<>()).add(player.getUUID());
             }
             return;
@@ -172,6 +175,9 @@ public final class PoolPets {
         // 登录时玩家可能经过大厅，恢复时才以实际所在池为准。
         String pool = DimensionPoolSettings.statePoolId(level.dimension());
         for (var pet : PetGlobalState.get(server).findByOwner(player.getUUID())) {
+            if (!pet.hasCombatMode()) {
+                continue;
+            }
             UUID id = pet.entityUUID();
             try {
                 StoredPet stored = read(server, id);
