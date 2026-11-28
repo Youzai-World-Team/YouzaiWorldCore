@@ -16,6 +16,7 @@ import net.minecraft.world.level.portal.TeleportTransition;
 import net.minecraft.world.level.storage.TagValueOutput;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.entity.animal.wolf.Wolf;
+import org.jspecify.annotations.Nullable;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 import top.csituka.youzaiworldcore.account.util.AuthPlayerHelper;
 import top.csituka.youzaiworldcore.config.ModPaths;
@@ -223,8 +224,16 @@ public final class DimensionPoolManager {
     /** 在原版修改位置之前完成源池存档，传送门和其他跨维度传送共用此事务。 */
     public static ServerPlayer onTeleport(ServerPlayer player, TeleportTransition transition,
                                           Supplier<ServerPlayer> vanilla) {
+        return onTeleport(player, transition, vanilla, null);
+    }
+
+    /** 传送费用属于源池，跨池失败时由原有回滚快照恢复。 */
+    public static ServerPlayer onTeleport(ServerPlayer player, TeleportTransition transition,
+                                          Supplier<ServerPlayer> vanilla, @Nullable Runnable chargeSource) {
         if (TELEPORT_IN_PROGRESS.contains(player.getUUID()) || player.level() == transition.newLevel()) {
-            return vanilla.get();
+            ServerPlayer moved = vanilla.get();
+            if (moved == player && chargeSource != null) chargeSource.run();
+            return moved;
         }
         MinecraftServer server = getServer(player);
         String sourceDimension = player.level().dimension().identifier().toString();
@@ -236,11 +245,14 @@ public final class DimensionPoolManager {
 
         if (isRecoveryPending(player) || hasSurvivalReturn(player)) {
             // 登录大厅仍需允许完成认证，恢复快照在认证后重新应用。
-            return (DimensionPoolSettings.isHiddenPool(originId) || DimensionPoolSettings.isHiddenPool(targetId))
+            return chargeSource == null
+                    && (DimensionPoolSettings.isHiddenPool(originId) || DimensionPoolSettings.isHiddenPool(targetId))
                     ? vanilla.get() : null;
         }
         if (originId.equals(targetId)) {
-            return vanilla.get();
+            ServerPlayer moved = vanilla.get();
+            if (moved == player && chargeSource != null) chargeSource.run();
+            return moved;
         }
         try {
             PlayerStateData targetState = readPlayerState(player, server, targetId);
@@ -249,7 +261,7 @@ public final class DimensionPoolManager {
                 mode = targetState.savedGameMode(mode);
             }
             Component failure = transferPlayer(player, originId, transition.newLevel(), targetState, mode,
-                    () -> vanilla.get() == player, () -> player.level() == transition.newLevel());
+                    () -> vanilla.get() == player, () -> player.level() == transition.newLevel(), chargeSource);
             if (failure == null) {
                 return player;
             }
@@ -276,6 +288,12 @@ public final class DimensionPoolManager {
     private static Component transferPlayer(ServerPlayer player, String originId, ServerLevel targetLevel,
                                             PlayerStateData targetState,
                                             GameType mode, BooleanSupplier move, BooleanSupplier arrived) {
+        return transferPlayer(player, originId, targetLevel, targetState, mode, move, arrived, null);
+    }
+
+    private static Component transferPlayer(ServerPlayer player, String originId, ServerLevel targetLevel,
+                                            PlayerStateData targetState, GameType mode, BooleanSupplier move,
+                                            BooleanSupplier arrived, @Nullable Runnable chargeSource) {
         if (!player.isAlive() || TELEPORT_IN_PROGRESS.contains(player.getUUID()) || isRecoveryPending(player)
                 || !PoolScoreboards.isAvailable(targetLevel)) {
             return Component.translatable("screen.youzaiworldcore.world_menu.failed");
@@ -300,8 +318,10 @@ public final class DimensionPoolManager {
         return withTeleportGuard(player.getUUID(), () -> {
             boolean switched = false;
             try {
+                if (chargeSource != null) chargeSource.run();
                 writeVanillaPlayerState(player);
-                writePlayerState(getPlayerDataFile(server, originId, player.getUUID().toString()), backup);
+                writePlayerState(getPlayerDataFile(server, originId, player.getUUID().toString()),
+                        chargeSource == null ? backup : PlayerStateData.fromPlayer(player));
                 // 原版传送包会引用最近死亡点，发送前应用目标池的字段。
                 PoolPlayerState.apply(player, targetState == null ? null : targetState.poolPlayerState(),
                         targetLevel.dimension());
@@ -325,6 +345,9 @@ public final class DimensionPoolManager {
             }
             try {
                 if (origin.restore(player)) {
+                    if (chargeSource != null) {
+                        writePlayerState(getPlayerDataFile(server, originId, player.getUUID().toString()), backup);
+                    }
                     finishTransaction(player);
                     return Component.translatable("screen.youzaiworldcore.world_menu.failed");
                 }

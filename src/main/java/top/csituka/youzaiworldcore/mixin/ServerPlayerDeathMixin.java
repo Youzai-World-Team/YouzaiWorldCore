@@ -140,8 +140,16 @@ public class ServerPlayerDeathMixin implements InPlaceRespawnPlayerAccess {
         if (youzaiworldcore$inPlaceRespawnSelected) {
             return PoolRespawn.sourceSpawn(player);
         }
-        if (PoolRespawn.hasUsablePersonalSpawn(player)) {
-            return original.call(true, postTransition);
+        var personalSpawnLevel = PoolRespawn.personalSpawnLevel(player);
+        if (personalSpawnLevel != null) {
+            try {
+                var personalSpawn = original.call(true, postTransition);
+                if (!personalSpawn.missingRespawnBlock() && personalSpawn.newLevel() == personalSpawnLevel) {
+                    return personalSpawn;
+                }
+            } catch (RuntimeException error) {
+                DebugLogger.SERVER.exception("InPlaceRespawn", "验证个人重生点", error);
+            }
         }
         TeleportTransition spawn = PoolRespawn.poolSpawn(player);
         if (spawn != null) {

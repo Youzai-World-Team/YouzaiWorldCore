@@ -29,10 +29,9 @@ fabricApi {
     }
 }
 
-sourceSets {
-    poolAudit {
-        compileClasspath += sourceSets.main.output + sourceSets.main.compileClasspath
-    }
+tasks.named('test') {
+    // 这个入口由 verify_dimension_pools.py 在独立 Fabric 服务端执行。
+    exclude '**/PoolRuntimeAudit*.class'
 }
 
 repositories {

@@ -26,6 +26,7 @@ import net.minecraft.world.level.levelgen.GenerationStep;
 import net.minecraft.world.level.levelgen.placement.PlacedFeature;
 import net.fabricmc.loader.api.FabricLoader;
 
+import top.csituka.youzaiworldcore.data.TeleportAnchorManager;
 import top.csituka.youzaiworldcore.account.command.AccountCommands;
 import top.csituka.youzaiworldcore.account.data.AccountDataStorage;
 import top.csituka.youzaiworldcore.afk.AfkManager;
@@ -262,6 +263,7 @@ public class YouzaiworldCore implements ModInitializer {
         DebugLogger.SERVER.debug("YouzaiworldCore", "注册坐姿交互事件...");
         SitHandler.register();
         DebugLogger.SERVER.debug("YouzaiworldCore", "注册传送锚点交互转发事件...");
+        TeleportAnchorManager.register();
         TeleportAnchorInteractHandler.register();
         DebugLogger.SERVER.debug("YouzaiworldCore", "注册传送石蓄力打断事件...");
         top.csituka.youzaiworldcore.event.TeleportStoneChargeHandler.register();

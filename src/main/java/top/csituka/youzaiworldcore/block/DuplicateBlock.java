@@ -1,6 +1,7 @@
 package top.csituka.youzaiworldcore.block;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.server.level.ServerPlayer;
@@ -23,6 +24,7 @@ import org.jspecify.annotations.NonNull;
 import org.jetbrains.annotations.Nullable;
 import top.csituka.youzaiworldcore.block.entity.DuplicateBlockEntity;
 import top.csituka.youzaiworldcore.util.DebugLogger;
+import top.csituka.youzaiworldcore.util.LoadedChunks;
 
 import java.util.UUID;
 
@@ -106,7 +108,7 @@ public class DuplicateBlock extends BaseEntityBlock {
         super.setPlacedBy(level, pos, state, placer, stack);
         DebugLogger.SERVER.entering("DuplicateBlock", "setPlacedBy", "pos=" + pos);
 
-        if (level.isClientSide()) {
+        if (!(level instanceof ServerLevel serverLevel)) {
             DebugLogger.SERVER.exiting("DuplicateBlock", "setPlacedBy", "client side");
             return;
         }
@@ -117,12 +119,12 @@ public class DuplicateBlock extends BaseEntityBlock {
             blockEntity.setOwner(playerUuid);
             blockEntity.initializeActivation(isCopyableTarget(level.getBlockState(pos.above())));
 
-            DuplicateBlockEntity source = findNearestActiveSource(level, pos, playerUuid);
+            DuplicateBlockEntity source = findNearestActiveSource(serverLevel, pos, playerUuid);
             if (source != null) {
                 BlockPos sourcePos = source.getBlockPos();
                 BlockState copyState = level.getBlockState(sourcePos.above());
                 if (isCopyableTarget(copyState)) {
-                    int replaced = fillBetween(level, sourcePos, pos, copyState);
+                    int replaced = fillBetween(serverLevel, sourcePos, pos, copyState);
                     DebugLogger.SERVER.debug("DuplicateBlock", "玩家 {} 使用复制方块填充 {} 个方块：起点={}, 终点={}, 方块={}", player.getName().getString(), replaced, sourcePos.toShortString(), pos.toShortString(), copyState.getBlock());
                 }
             }
@@ -156,7 +158,8 @@ public class DuplicateBlock extends BaseEntityBlock {
         }
     }
 
-    private static DuplicateBlockEntity findNearestActiveSource(Level level, BlockPos targetPos, UUID ownerUuid) {
+    private static DuplicateBlockEntity findNearestActiveSource(ServerLevel level,
+            BlockPos targetPos, UUID ownerUuid) {
         DuplicateBlockEntity nearest = null;
         long nearestDistance = Long.MAX_VALUE;
 
@@ -167,16 +170,20 @@ public class DuplicateBlock extends BaseEntityBlock {
                 continue;
             }
 
-            BlockState candidateState = level.getBlockState(candidate);
+            var chunk = LoadedChunks.get(level, candidate);
+            if (chunk == null) {
+                continue;
+            }
+            BlockState candidateState = chunk.getBlockState(candidate);
             if (!candidateState.is(ModBlocks.DUPLICATE_BLOCK)
                     || !candidateState.getValue(ACTIVE)
                     || !isWithinRange(candidate, targetPos)) {
                 continue;
             }
 
-            if (!(level.getBlockEntity(candidate) instanceof DuplicateBlockEntity candidateEntity)
+            if (!(chunk.getBlockEntity(candidate) instanceof DuplicateBlockEntity candidateEntity)
                     || !candidateEntity.isOwnedBy(ownerUuid)
-                    || !isCopyableTarget(level.getBlockState(candidate.above()))) {
+                    || !isCopyableTarget(chunk.getBlockState(candidate.above()))) {
                 continue;
             }
 
@@ -190,13 +197,17 @@ public class DuplicateBlock extends BaseEntityBlock {
         return nearest;
     }
 
-    private static int fillBetween(Level level, BlockPos sourcePos, BlockPos targetPos, BlockState copyState) {
+    private static int fillBetween(ServerLevel level, BlockPos sourcePos,
+            BlockPos targetPos, BlockState copyState) {
         int minX = Math.min(sourcePos.getX(), targetPos.getX());
         int maxX = Math.max(sourcePos.getX(), targetPos.getX());
         int minY = Math.min(sourcePos.getY(), targetPos.getY());
         int maxY = Math.max(sourcePos.getY(), targetPos.getY());
         int minZ = Math.min(sourcePos.getZ(), targetPos.getZ());
         int maxZ = Math.max(sourcePos.getZ(), targetPos.getZ());
+        if (!LoadedChunks.covers(level, new BlockPos(minX, minY, minZ), new BlockPos(maxX, maxY, maxZ), 1)) {
+            return 0;
+        }
         int replaced = 0;
 
         for (BlockPos fillPos : BlockPos.betweenClosed(minX, minY, minZ, maxX, maxY, maxZ)) {

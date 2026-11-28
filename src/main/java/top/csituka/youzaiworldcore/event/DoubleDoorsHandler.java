@@ -1,6 +1,7 @@
 package top.csituka.youzaiworldcore.event;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
@@ -17,6 +18,7 @@ import org.jetbrains.annotations.Nullable;
 
 import top.csituka.youzaiworldcore.config.DoubleDoorsState;
 import top.csituka.youzaiworldcore.util.DebugLogger;
+import top.csituka.youzaiworldcore.util.LoadedChunks;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -60,7 +62,7 @@ public class DoubleDoorsHandler {
     @SuppressWarnings("null")
     public static void onDoorClick(Level level, @Nullable Player player,
                                    @NotNull BlockPos blockPos, boolean targetOpen) {
-        if (level.isClientSide()) {
+        if (!(level instanceof ServerLevel serverLevel)) {
             return;
         }
         if (player == null) {
@@ -87,7 +89,7 @@ public class DoubleDoorsHandler {
 
         DebugLogger.SERVER.debug(MODULE, "onDoorClick: pos={}, player={}, targetOpen={}", blockPos, player.getName().getString(), targetOpen);
 
-        processDoor(player, level, blockPos, clickState, targetOpen);
+        processDoor(player, serverLevel, blockPos, clickState, targetOpen);
     }
 
     // ===== 类型判定 =====
@@ -117,7 +119,7 @@ public class DoubleDoorsHandler {
      * 把与被点击门相邻的同材质配对门同步为 {@code targetOpen} 状态。
      */
     @SuppressWarnings("null")
-    private static void processDoor(@Nullable Player player, Level level,
+    private static void processDoor(@Nullable Player player, ServerLevel level,
                                    @NotNull BlockPos blockPos, BlockState blockState,
                                    boolean targetOpen) {
         DebugLogger.SERVER.entering(MODULE, "processDoor",
@@ -200,7 +202,7 @@ public class DoubleDoorsHandler {
      * </p>
      */
     @SuppressWarnings("null")
-    private static List<BlockPos> findPartnerDoors(Level level, @NotNull BlockPos origin,
+    private static List<BlockPos> findPartnerDoors(ServerLevel level, @NotNull BlockPos origin,
                                                    Block block, @NotNull Component doorName,
                                                    int yOffset) {
         List<BlockPos> result = new ArrayList<>();
@@ -211,7 +213,11 @@ public class DoubleDoorsHandler {
                         continue;
                     }
                     BlockPos pos = origin.offset(x, y, z).immutable();
-                    BlockState state = level.getBlockState(pos);
+                    var chunk = LoadedChunks.get(level, pos);
+                    if (chunk == null || !LoadedChunks.covers(level, pos, pos, 1)) {
+                        continue;
+                    }
+                    BlockState state = chunk.getBlockState(pos);
                     Block b = state.getBlock();
 
                     boolean sameType = (block instanceof DoorBlock && b instanceof DoorBlock)

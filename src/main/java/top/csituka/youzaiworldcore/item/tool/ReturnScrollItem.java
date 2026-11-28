@@ -19,6 +19,7 @@ import net.minecraft.world.item.Rarity;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.component.TooltipDisplay;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.NonNull;
 import top.csituka.youzaiworldcore.data.TeleportAnchorData;
 import top.csituka.youzaiworldcore.data.TeleportAnchorManager;
@@ -71,14 +72,6 @@ public class ReturnScrollItem extends Item {
         super(properties.stacksTo(MAX_STACK_SIZE).rarity(Rarity.UNCOMMON));
         DebugLogger.SERVER.entering("ReturnScrollItem", "constructor");
         DebugLogger.SERVER.exiting("ReturnScrollItem", "constructor");
-    }
-
-    /**
-     * 取目标锚点的目标维度实例：因为本物品限定「同维度」，目标维度 = 玩家当前维度。
-     * 提取为单独方法以便日后扩展跨维度需求时只改这一处。
-     */
-    private static ServerLevel targetLevel(ServerPlayer serverPlayer, TeleportAnchorData target) {
-        return serverPlayer.level().getServer().getLevel(target.dimension());
     }
 
     /**
@@ -198,7 +191,7 @@ public class ReturnScrollItem extends Item {
         }
 
         TeleportAnchorData target = nearestOpt.get();
-        executeTeleport(serverPlayer, target, stack, level);
+        executeTeleport(manager, serverPlayer, target, stack, level);
         return stack;
     }
 
@@ -241,45 +234,27 @@ public class ReturnScrollItem extends Item {
         DebugLogger.SERVER.debug("ReturnScrollItem", "玩家 {} 当前维度无任何可用锚点，已进入冷却但未消耗卷轴", serverPlayer.getName().getString());
     }
 
-    /**
-     * 执行回程传送：扣 1 张卷轴 + 进入 60s 冷却，使用玩家当前位置 → 锚点上表面中心的精确传送。
-     * <p>
-     * 不走 {@code TeleportAnchorTeleportPayload}（那是 GUI 路径），改为服务端直接调用
-     * {@link ServerPlayer#teleportTo}：
-     * <ul>
-     * <li>玩家维度与锚点维度一致——直接站内传送</li>
-     * <li>传送成功后在玩家所在维度公告一次回程结果（仅输出到本玩家的动作栏）</li>
-     * <li>创造模式：只传送但不进冷却、不扣卷轴，便于快速测试</li>
-     * </ul>
-     */
-    private void executeTeleport(ServerPlayer serverPlayer, TeleportAnchorData target,
-            ItemStack stack, Level level) {
+    private void executeTeleport(TeleportAnchorManager manager, ServerPlayer serverPlayer,
+            TeleportAnchorData target, ItemStack stack, Level level) {
         boolean isCreative = serverPlayer.getAbilities().instabuild;
-
-        // 真正传送之前先扣卷轴与上冷却：若扣后被客观失败（如目标维度被卸载）则玩家仍会损失 1 张。
-        // 这里目标维度与玩家同维度所以不会失败，但保持「先扣、再传」的顺序与传送石一致，便于
-        // 服务端审计流程统一；传送失败也只是简单 return。
+        Vec3 departure = serverPlayer.position();
+        if (!manager.teleportToPoint(serverPlayer, target, null)) {
+            serverPlayer.connection.send(new ClientboundSetActionBarTextPacket(
+                    Component.translatable("message.youzaiworldcore.teleport_anchor.invalid")));
+            return;
+        }
         if (!isCreative) {
             serverPlayer.getCooldowns().addCooldown(stack, COOLDOWN_TICKS);
             stack.shrink(SCROLL_CONSUME_AMOUNT);
         }
 
         if (level instanceof ServerLevel serverLevel) {
-            serverLevel.playSound(null, serverPlayer.getX(), serverPlayer.getY(), serverPlayer.getZ(),
+            serverLevel.playSound(null, departure.x, departure.y, departure.z,
                     SoundEvents.BEACON_POWER_SELECT, SoundSource.PLAYERS, 0.6F, 1.4F);
             serverLevel.sendParticles(ParticleTypes.PORTAL,
-                    serverPlayer.getX(), serverPlayer.getY() + 1.0, serverPlayer.getZ(),
+                    departure.x, departure.y + 1.0, departure.z,
                     40, 0.4, 0.8, 0.4, 0.3);
         }
-
-        serverPlayer.teleportTo(ReturnScrollItem.targetLevel(serverPlayer, target),
-                target.pos().getX() + 0.5,
-                target.pos().getY() + 1.0,
-                target.pos().getZ() + 0.5,
-                java.util.Set.of(),
-                serverPlayer.getYRot(),
-                serverPlayer.getXRot(),
-                true);
 
         serverPlayer.connection.send(new ClientboundSetActionBarTextPacket(
                 Component.translatable("message.youzaiworldcore.return_scroll.teleported", target.name())

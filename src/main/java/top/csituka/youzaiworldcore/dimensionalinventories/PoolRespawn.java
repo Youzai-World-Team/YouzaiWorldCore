@@ -9,11 +9,15 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.level.GameType;
+import net.minecraft.world.level.block.AbstractBedBlock;
+import net.minecraft.world.level.block.RespawnAnchorBlock;
 import net.minecraft.world.level.portal.TeleportTransition;
 import net.minecraft.world.phys.Vec3;
 import top.csituka.youzaiworldcore.respawn.InPlaceRespawnManager;
 import top.csituka.youzaiworldcore.respawn.InPlaceRespawnPlayerAccess;
+import top.csituka.youzaiworldcore.util.LoadedChunks;
 
 /** 解析非生存池的复活位置，并在原版创建复活玩家后切换到生存池。 */
 public final class PoolRespawn {
@@ -35,21 +39,44 @@ public final class PoolRespawn {
     }
 
     public static boolean needsSurvivalReturn(ServerPlayer player) {
-        return isManagedDeath(player) && !hasUsablePersonalSpawn(player) && poolSpawn(player) == null;
+        return isManagedDeath(player) && poolSpawn(player) == null && !mayHaveUsablePersonalSpawn(player);
     }
 
-    /** 用不扣除重生锚充能的原版查询验证个人重生点。 */
     @SuppressWarnings("null")
-    public static boolean hasUsablePersonalSpawn(ServerPlayer player) {
+    public static ServerLevel personalSpawnLevel(ServerPlayer player) {
         var pool = currentPool(player);
         var config = player.getRespawnConfig();
         if (pool == null || config == null
                 || !pool.containsDimension(config.respawnData().dimension().identifier().toString())) {
-            return false;
+            return null;
         }
-        var location = player.findRespawnPositionAndUseSpawnBlock(false, TeleportTransition.DO_NOTHING);
-        return !location.missingRespawnBlock()
-                && location.newLevel().dimension().equals(config.respawnData().dimension());
+        ServerLevel level = player.level().getServer().getLevel(config.respawnData().dimension());
+        return level != null && level.isInWorldBounds(config.respawnData().pos()) ? level : null;
+    }
+
+    /** 死亡时只预查已加载的个人重生点，缺失区块留给实际重生流程处理。 */
+    @SuppressWarnings("null")
+    private static boolean mayHaveUsablePersonalSpawn(ServerPlayer player) {
+        var level = personalSpawnLevel(player);
+        var config = player.getRespawnConfig();
+        if (level == null || config == null) return false;
+        BlockPos pos = config.respawnData().pos();
+        // 床会搜索距床头最多两格的落脚点，方块碰撞和环境属性还会读取其附近。
+        if (!LoadedChunks.covers(level, pos, pos, 4)) return true;
+
+        var state = level.getBlockState(pos);
+        if (state.getBlock() instanceof RespawnAnchorBlock
+                && (config.forced() || state.getValue(RespawnAnchorBlock.CHARGE) > 0)
+                && RespawnAnchorBlock.canSetSpawn(level, pos)) {
+            return RespawnAnchorBlock.findStandUpPosition(EntityTypes.PLAYER, level, pos).isPresent();
+        }
+        if (state.getBlock() instanceof AbstractBedBlock bed && bed.getBedRule(level, pos).canSetSpawn(level)) {
+            return AbstractBedBlock.findStandUpPosition(EntityTypes.PLAYER, level, pos,
+                    state.getValue(AbstractBedBlock.FACING), config.respawnData().yaw()).isPresent();
+        }
+        if (!config.forced() || !state.getBlock().isPossibleToRespawnInThis(state)) return false;
+        var above = level.getBlockState(pos.above());
+        return above.getBlock().isPossibleToRespawnInThis(above);
     }
 
     @SuppressWarnings("null")

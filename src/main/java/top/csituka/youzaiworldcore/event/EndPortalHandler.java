@@ -3,6 +3,7 @@ package top.csituka.youzaiworldcore.event;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
 import net.minecraft.ChatFormatting;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
@@ -29,6 +30,7 @@ import org.jspecify.annotations.Nullable;
 
 import top.csituka.youzaiworldcore.config.EndPortalConfig;
 import top.csituka.youzaiworldcore.util.DebugLogger;
+import top.csituka.youzaiworldcore.util.LoadedChunks;
 
 import java.util.Iterator;
 import java.util.List;
@@ -76,7 +78,7 @@ public class EndPortalHandler {
         DebugLogger.SERVER.entering("EndPortalHandler", "onBlockBreak",
                 "player=" + player.getName().getString() + ", pos=" + pos);
 
-        if (level.isClientSide()) {
+        if (!(level instanceof ServerLevel serverLevel)) {
             DebugLogger.SERVER.exiting("EndPortalHandler", "onBlockBreak", "PASS (client)");
             return true;
         }
@@ -109,6 +111,9 @@ public class EndPortalHandler {
             return true;
         }
 
+        if (!LoadedChunks.covers(serverLevel, pos.offset(-3, 0, -3), pos.offset(3, 0, 3), 1)) {
+            return false;
+        }
         DebugLogger.SERVER.debug("EndPortalHandler", "Breaking portal frame at {} by {}", pos, player.getName().getString());
 
         ItemStack portalFrameStack = new ItemStack(Blocks.END_PORTAL_FRAME, 1);

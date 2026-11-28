@@ -11,6 +11,7 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import top.csituka.youzaiworldcore.util.DebugLogger;
+import top.csituka.youzaiworldcore.util.LoadedChunks;
 
 @SuppressWarnings("null")
 public class YzChainMiningTool {
@@ -97,7 +98,11 @@ public class YzChainMiningTool {
                 "origin=" + origin + ", targetType=" + targetType + ", direction=" + direction);
         for (int i = 1; i <= CHAIN_RANGE; i++) {
             BlockPos targetPos = origin.relative(direction, i);
-            BlockState targetState = world.getBlockState(targetPos);
+            var chunk = LoadedChunks.get(world, targetPos);
+            if (chunk == null || !LoadedChunks.covers(world, targetPos, targetPos, 1)) {
+                break;
+            }
+            BlockState targetState = chunk.getBlockState(targetPos);
 
             if (!targetState.is(targetType)) {
                 DebugLogger.SERVER.branch("YzChainMiningTool", "block type mismatch", true,

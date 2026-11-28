@@ -9,7 +9,9 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameType;
-import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.level.block.state.BlockState;
 import top.csituka.youzaiworldcore.block.TeleportAnchorBlock;
 import top.csituka.youzaiworldcore.block.entity.FlyBeaconBlockEntity;
@@ -36,6 +38,7 @@ import top.csituka.youzaiworldcore.respawn.InPlaceRespawnManager;
 import top.csituka.youzaiworldcore.cosmetic.CosmeticManager;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 import top.csituka.youzaiworldcore.util.LargeSignTextRules;
+import top.csituka.youzaiworldcore.util.LoadedChunks;
 import top.csituka.youzaiworldcore.account.data.AccountDataStorage;
 import top.csituka.youzaiworldcore.account.util.AuthPlayerHelper;
 import top.csituka.youzaiworldcore.mail.Mail;
@@ -249,6 +252,7 @@ public class ModNetworking {
                 return;
             }
             server.execute(() -> {
+                if (player.hasDisconnected() || !player.isAlive() || AuthPlayerHelper.shouldBlockActions(player)) return;
                 TeleportAnchorManager manager = TeleportAnchorManager.get(server);
                 net.minecraft.server.level.ServerPlayer serverPlayer = player;
 
@@ -260,41 +264,10 @@ public class ModNetworking {
                     return;
                 }
 
-                var targetLevel = server.getLevel(target.dimension());
-                if (targetLevel == null) {
-                    DebugLogger.SERVER.debug("ModNetworking", "Target dimension not loaded: " + target.dimension().identifier());
-                    return;
-                }
-
-                // 重新校验目标方块仍存在且处于激活状态
-                BlockState anchorState = targetLevel.getBlockState(target.pos());
-                if (!(anchorState.getBlock() instanceof TeleportAnchorBlock)
-                        || !anchorState.getValue(TeleportAnchorBlock.ACTIVE)) {
-                    // 目标锚点已失效，从玩家列表中清理
-                    manager.removePointByPos(serverPlayer, target.pos(), target.dimension());
+                if (!TeleportAnchorManager.allowsDimension(serverPlayer.level().dimension(), target.dimension())) {
                     serverPlayer.sendSystemMessage(
-                            Component.translatable("message.youzaiworldcore.teleport_anchor.invalid"));
-                    DebugLogger.SERVER.debug("ModNetworking", "Target anchor invalid at " + target.pos());
+                            Component.translatable("message.youzaiworldcore.teleport_anchor.pool_mismatch"));
                     return;
-                }
-
-                // 维度池隔离校验：源维度与目标维度必须同池，或至少一方未加入任何池
-                String sourceDim = serverPlayer.level().dimension().identifier().toString();
-                String targetDim = target.dimension().identifier().toString();
-                if (!sourceDim.equals(targetDim)) {
-                    boolean samePool = top.csituka.youzaiworldcore.dimensionalinventories.DimensionPoolSettings
-                            .dimensionsInSamePool(sourceDim, targetDim);
-                    var sourcePool = top.csituka.youzaiworldcore.dimensionalinventories.DimensionPoolSettings
-                            .getPoolByDimension(sourceDim);
-                    var targetPool = top.csituka.youzaiworldcore.dimensionalinventories.DimensionPoolSettings
-                            .getPoolByDimension(targetDim);
-                    // 仅当双方都有池但不同池时拒绝；任一方无池则放行
-                    if (sourcePool.isPresent() && targetPool.isPresent() && !samePool) {
-                        serverPlayer.sendSystemMessage(
-                                Component.translatable("message.youzaiworldcore.teleport_anchor.pool_mismatch"));
-                        DebugLogger.SERVER.debug("ModNetworking", "Cross-pool teleport blocked: " + sourceDim + " -> " + targetDim);
-                        return;
-                    }
                 }
 
                 long gameTime = serverPlayer.level().getGameTime();
@@ -308,7 +281,7 @@ public class ModNetworking {
 
                 // 经验等级消耗：同维度 1 级，跨维度 2 级；创造模式免费
                 // 仅传送锚点方块 / 传送石入口需要经验，传送卷轴一次性使用故免经验
-                TeleportAnchorManager.TeleportOpenerSource source = manager.consumeTeleportSourceMark(serverPlayer);
+                TeleportAnchorManager.TeleportOpenerSource source = manager.getTeleportSourceMark(serverPlayer);
                 EntryType entryType = source != null ? source.type() : EntryType.ANCHOR;
                 InteractionHand entryHand = source != null ? source.hand() : null;
                 boolean isScrollEntry = entryType == EntryType.SCROLL;
@@ -324,7 +297,6 @@ public class ModNetworking {
                 }
 
                 // ===== 传送物品入口结算（耐久 / 卷轴均在传送真正成功时扣，避免先扣后拒） =====
-                // 标记无论成败都在此消费；校验放在扣经验之前，避免校验失败却已扣掉经验。
                 ItemStack itemStack = null;
                 InteractionHand itemHand = null;
                 int durabilityCost = 0;
@@ -340,7 +312,6 @@ public class ModNetworking {
                         if (alternative.getItem() instanceof TeleportStoneItem) {
                             itemStack = alternative;
                             itemHand = otherHand;
-                            entryHand = otherHand;
                         } else {
                             // 传送石已不在手上：拒绝传送，避免丢弃传送石白嫖免耐久传送
                             serverPlayer.sendSystemMessage(
@@ -356,7 +327,6 @@ public class ModNetworking {
                         if (alternative.getItem() instanceof WarpScrollItem) {
                             itemStack = alternative;
                             itemHand = otherHand;
-                            entryHand = otherHand;
                         } else {
                             serverPlayer.sendSystemMessage(
                                     Component.translatable("message.youzaiworldcore.warp_scroll.not_held"));
@@ -390,34 +360,36 @@ public class ModNetworking {
                     }
                 }
 
-                if (!isScrollEntry && !isCreative) {
-                    serverPlayer.giveExperienceLevels(-cost);
+                if (itemStack != null && serverPlayer.getCooldowns().isOnCooldown(itemStack)) {
+                    return;
                 }
-
-                // 记录传送锚点自身的 3 秒入门冷却
-                manager.recordTeleport(serverPlayer, gameTime);
-
-                // 传送物品结算：先上冷却（堆对象还在），再扣耐久 / 缩卷轴
-                if (itemStack != null && itemHand != null) {
-                    if (entryType == EntryType.STONE) {
-                        serverPlayer.getCooldowns().addCooldown(itemStack, TeleportStoneItem.COOLDOWN_TICKS);
-                        itemStack.hurtAndBreak(durabilityCost, serverPlayer, itemHand);
-                        DebugLogger.SERVER.debug("ModNetworking", "Teleport stone consumed {} durability (hand={})", durabilityCost, itemHand);
-                    } else if (entryType == EntryType.SCROLL) {
-                        serverPlayer.getCooldowns().addCooldown(itemStack, WarpScrollItem.COOLDOWN_TICKS);
-                        itemStack.shrink(WarpScrollItem.SCROLL_CONSUME_AMOUNT);
-                        DebugLogger.SERVER.debug("ModNetworking", "Warp scroll consumed 1 (hand={}, remaining={})", itemHand, itemStack.isEmpty() ? "destroyed" : itemStack.getCount());
+                ItemStack payment = itemStack;
+                ItemStack cooldownItem = payment == null ? null : payment.copy();
+                InteractionHand paymentHand = itemHand;
+                int damage = durabilityCost;
+                if (!manager.teleportToPoint(serverPlayer, target, () -> {
+                    if (!isScrollEntry && !isCreative) {
+                        serverPlayer.giveExperienceLevels(-cost);
                     }
+                    if (payment != null && paymentHand != null) {
+                        if (entryType == EntryType.STONE) {
+                            payment.hurtAndBreak(damage, serverPlayer, paymentHand);
+                        } else if (entryType == EntryType.SCROLL) {
+                            payment.shrink(WarpScrollItem.SCROLL_CONSUME_AMOUNT);
+                        }
+                    }
+                })) {
+                    serverPlayer.sendSystemMessage(
+                            Component.translatable("message.youzaiworldcore.teleport_anchor.invalid"));
+                    return;
                 }
 
-                serverPlayer.teleportTo(targetLevel,
-                        target.pos().getX() + 0.5,
-                        target.pos().getY() + 1.0,
-                        target.pos().getZ() + 0.5,
-                        java.util.Set.of(),
-                        serverPlayer.getYRot(),
-                        serverPlayer.getXRot(),
-                        true);
+                manager.markListOpenedByAnchor(serverPlayer);
+                manager.recordTeleport(serverPlayer, gameTime);
+                if (cooldownItem != null) {
+                    serverPlayer.getCooldowns().addCooldown(cooldownItem, entryType == EntryType.STONE
+                            ? TeleportStoneItem.COOLDOWN_TICKS : WarpScrollItem.COOLDOWN_TICKS);
+                }
                 DebugLogger.SERVER.debug("ModNetworking", "Teleported player to " + target.pos() + " in " + target.dimension().identifier());
             });
             DebugLogger.SERVER.exiting("ModNetworking", "TeleportAnchorTeleportPayload handler");
@@ -449,16 +421,10 @@ public class ModNetworking {
                 BlockPos pos = payload.pos();
                 String text = payload.text();
 
-                if (!(player.level().getBlockEntity(pos) instanceof LargeSignBlockEntity sign)) {
-                    DebugLogger.SERVER.branch("ModNetworking", "大字牌文本提交：目标不是大字牌", false);
-                    return;
-                }
-                if (!player.mayBuild() || !sign.mayEdit(player)) {
-                    DebugLogger.SERVER.debug("ModNetworking", "拒绝大字牌文本提交（无权限 / 非授权编辑者 / 距离过远）：player={}, pos={}", player.getName().getString(), pos.toShortString());
-                    return;
-                }
-                if (!LargeSignTextRules.isValid(text)) {
-                    DebugLogger.SERVER.warn("ModNetworking", "拒绝大字牌文本提交（内容不合法）：player={}, pos={}, text={}", player.getName().getString(), pos.toShortString(), text);
+                if (!LargeSignTextRules.isValid(text)) return;
+                LevelChunk chunk = editableChunk(player, pos);
+                if (chunk == null || !(chunk.getBlockEntity(pos) instanceof LargeSignBlockEntity sign)
+                        || !sign.mayEdit(player)) {
                     return;
                 }
 
@@ -483,16 +449,10 @@ public class ModNetworking {
                 BlockPos pos = payload.pos();
                 int channel = payload.channel();
 
-                if (!(player.level().getBlockEntity(pos) instanceof WirelessRedstoneBlockEntity component)) {
-                    DebugLogger.SERVER.branch("ModNetworking", "无线红石频道提交：目标不是无线红石元件", false);
-                    return;
-                }
-                if (!player.mayBuild() || !component.mayEdit(player)) {
-                    DebugLogger.SERVER.debug("ModNetworking", "拒绝无线红石频道提交（无权限 / 非授权设置者 / 距离过远）：player={}, pos={}", player.getName().getString(), pos.toShortString());
-                    return;
-                }
-                if (!WirelessRedstoneChannel.isValid(channel)) {
-                    DebugLogger.SERVER.warn("ModNetworking", "拒绝无线红石频道提交（频道号越界）：player={}, pos={}, channel={}", player.getName().getString(), pos.toShortString(), channel);
+                if (!WirelessRedstoneChannel.isValid(channel)) return;
+                LevelChunk chunk = editableChunk(player, pos);
+                if (chunk == null || !(chunk.getBlockEntity(pos) instanceof WirelessRedstoneBlockEntity component)
+                        || !component.mayEdit(player)) {
                     return;
                 }
 
@@ -523,19 +483,21 @@ public class ModNetworking {
             if (server == null) return;
             server.execute(() -> {
                 BlockPos pos = payload.pos();
-                net.minecraft.world.level.Level level = player.level();
-                BlockState state = level.getBlockState(pos);
-                if (!(state.getBlock() instanceof TeleportAnchorBlock)) return;
-                BlockEntity be = level.getBlockEntity(pos);
-                if (!(be instanceof TeleportAnchorBlockEntity anchorBE)) return;
+                var level = player.level();
+                if (!level.dimension().equals(payload.dimension())) return;
+                LevelChunk chunk = editableChunk(player, pos);
+                if (chunk == null) return;
+                BlockState state = chunk.getBlockState(pos);
+                if (!(state.getBlock() instanceof TeleportAnchorBlock)
+                        || !(chunk.getBlockEntity(pos) instanceof TeleportAnchorBlockEntity anchorBE)) return;
 
                 UUID playerUuid = player.getUUID();
                 if (anchorBE.isActivatedBy(playerUuid)) return;
 
                 boolean wasEmpty = anchorBE.addActivator(playerUuid);
                 if (wasEmpty) {
-                    level.setBlock(pos, state.setValue(TeleportAnchorBlock.ACTIVE, true), 3);
-                    level.sendBlockUpdated(pos, state, state.setValue(TeleportAnchorBlock.ACTIVE, true), 3);
+                    level.setBlock(pos, state.setValue(TeleportAnchorBlock.ACTIVE, true),
+                            Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE);
                 }
 
                 {
@@ -1466,6 +1428,16 @@ public class ModNetworking {
             ServerPlayNetworking.send(player, MailOpResultPayload.success(mailId, "已领取奖励"));
             MailManager.sendUnread(player, claim.unread());
         }, false);
+    }
+
+    private static LevelChunk editableChunk(ServerPlayer player, BlockPos pos) {
+        if (player.hasDisconnected() || !player.isAlive() || !player.mayBuild()
+                || AuthPlayerHelper.shouldBlockActions(player)
+                || !(player.distanceToSqr(Vec3.atCenterOf(pos)) <= 64.0)
+                || !player.level().isInWorldBounds(pos)) {
+            return null;
+        }
+        return LoadedChunks.get(player.level(), pos);
     }
 
     /** 以当前连接的玩家身份读写个人设置，返回持久化后的状态。 */

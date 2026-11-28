@@ -1,6 +1,7 @@
 package top.csituka.youzaiworldcore.item.tool;
 
 import net.minecraft.ChatFormatting;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -17,8 +18,8 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.NonNull;
 import top.csituka.youzaiworldcore.mana.ManaManager;
+import top.csituka.youzaiworldcore.util.LoadedChunks;
 import java.util.List;
-import net.minecraft.server.level.ServerLevel;
 import java.util.function.Consumer;
 
 @SuppressWarnings("null")
@@ -70,7 +71,7 @@ public class FlameStaffItem extends Item {
 
     @Override
     public boolean releaseUsing(@NonNull ItemStack stack, @NonNull Level level, @NonNull LivingEntity livingEntity, int timeCharged) {
-        if (level.isClientSide() || !(livingEntity instanceof Player player)) {
+        if (!(level instanceof ServerLevel serverLevel) || !(livingEntity instanceof Player player)) {
             return false;
         }
 
@@ -81,13 +82,13 @@ public class FlameStaffItem extends Item {
             return false;
         }
 
-        if (!ManaManager.getInstance().consumeMana((ServerLevel) level, player.getUUID(), MANA_COST)) {
+        if (!ManaManager.getInstance().consumeMana(serverLevel, player.getUUID(), MANA_COST)) {
             return false;
         }
 
         float damage = BASE_DAMAGE + (chargeTicks * DAMAGE_PER_TICK);
 
-        fireFlameLaser(level, player, damage);
+        fireFlameLaser(serverLevel, player, damage);
 
         level.playSound(null, player.getX(), player.getY(), player.getZ(),
                 net.minecraft.sounds.SoundEvents.BLAZE_SHOOT,
@@ -99,7 +100,7 @@ public class FlameStaffItem extends Item {
      * 发射火焰激光：对前方直线上的实体造成伤害并点燃。
      */
     @SuppressWarnings("deprecation")
-    private void fireFlameLaser(Level level, Player player, float damage) {
+    private void fireFlameLaser(ServerLevel level, Player player, float damage) {
         Vec3 eyePos = player.getEyePosition(1.0f);
         Vec3 lookDir = player.getViewVector(1.0f);
         Vec3 endPos = eyePos.add(lookDir.x * LASER_RANGE, lookDir.y * LASER_RANGE, lookDir.z * LASER_RANGE);
@@ -110,7 +111,7 @@ public class FlameStaffItem extends Item {
         double distance = 0;
 
         // 先做一次方块碰撞检测，找到激光被阻挡的位置
-        net.minecraft.world.phys.BlockHitResult blockHit = level.clip(
+        net.minecraft.world.phys.BlockHitResult blockHit = LoadedChunks.collisionView(level).clip(
                 new net.minecraft.world.level.ClipContext(
                         eyePos, endPos,
                         net.minecraft.world.level.ClipContext.Block.COLLIDER,
@@ -144,12 +145,10 @@ public class FlameStaffItem extends Item {
         }
 
         // 在服务器端生成粒子效果（发送给所有玩家）
-        if (level instanceof net.minecraft.server.level.ServerLevel serverLevel) {
-            spawnLaserParticles(serverLevel, eyePos, endPos);
-        }
+        spawnLaserParticles(level, eyePos, endPos);
     }
 
-    private void spawnLaserParticles(net.minecraft.server.level.ServerLevel level, Vec3 start, Vec3 end) {
+    private void spawnLaserParticles(ServerLevel level, Vec3 start, Vec3 end) {
         Vec3 dir = end.subtract(start).normalize();
         double dist = start.distanceTo(end);
         int particles = (int) (dist * 2);

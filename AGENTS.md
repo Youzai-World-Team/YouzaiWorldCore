@@ -61,7 +61,7 @@
 
 ## 3. 项目结构
 
-本项目使用 **Loom 分环境源集**（`splitEnvironmentSourceSets`），共两个源集，**不存在 `test` 源集（项目无自动化测试）**。
+本项目使用 **Loom 分环境源集**（`splitEnvironmentSourceSets`），生产代码使用 `main` 和 `client` 源集。维度池的服务端验证入口在 `src/test/java`，由 `tools/verify_dimension_pools.py` 在隔离的 Fabric 服务端执行。
 
 ```
 YouzaiWorldCore/

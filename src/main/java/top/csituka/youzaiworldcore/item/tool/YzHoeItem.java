@@ -3,6 +3,7 @@ package top.csituka.youzaiworldcore.item.tool;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
@@ -15,6 +16,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jspecify.annotations.NonNull;
+import top.csituka.youzaiworldcore.util.LoadedChunks;
 
 import java.util.function.Consumer;
 
@@ -49,7 +51,7 @@ public class YzHoeItem extends Item {
         Player player = context.getPlayer();
         ItemStack stack = context.getItemInHand();
 
-        if (level.isClientSide()) {
+        if (!(level instanceof ServerLevel serverLevel)) {
             return InteractionResult.SUCCESS;
         }
 
@@ -58,7 +60,11 @@ public class YzHoeItem extends Item {
         for (int dx = -1; dx <= 1; dx++) {
             for (int dz = -1; dz <= 1; dz++) {
                 BlockPos pos = centerPos.offset(dx, 0, dz);
-                BlockState state = level.getBlockState(pos);
+                var chunk = LoadedChunks.get(serverLevel, pos);
+                if (chunk == null || !LoadedChunks.covers(serverLevel, pos, pos, 1)) {
+                    continue;
+                }
+                BlockState state = chunk.getBlockState(pos);
 
                 if (isTillable(level, pos, state)) {
                     level.setBlockAndUpdate(pos, Blocks.FARMLAND.defaultBlockState());

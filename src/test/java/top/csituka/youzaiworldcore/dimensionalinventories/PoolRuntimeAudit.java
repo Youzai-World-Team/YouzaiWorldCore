@@ -6,7 +6,6 @@ import io.netty.channel.ChannelFutureListener;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -14,6 +13,7 @@ import java.util.Set;
 import java.util.UUID;
 import net.fabricmc.api.DedicatedServerModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.nbt.NbtAccounter;
@@ -39,28 +39,42 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.entity.PersistentEntitySectionManager;
 import net.minecraft.world.level.entity.Visibility;
+import net.minecraft.world.level.portal.TeleportTransition;
 import net.minecraft.world.entity.EntityReference;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.animal.wolf.Wolf;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.storage.LevelData;
 import net.minecraft.world.level.storage.TagValueInput;
+import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.scores.ScoreHolder;
 import top.csituka.youzaiworldcore.account.data.AccountDataStorage;
 import top.csituka.youzaiworldcore.account.data.PlayerAccount;
 import top.csituka.youzaiworldcore.account.util.AuthPlayerHelper;
 import top.csituka.youzaiworldcore.config.GlobalSettings;
 import top.csituka.youzaiworldcore.config.ModPaths;
+import top.csituka.youzaiworldcore.block.ModBlocks;
+import top.csituka.youzaiworldcore.block.TeleportAnchorBlock;
+import top.csituka.youzaiworldcore.block.entity.TeleportAnchorBlockEntity;
+import top.csituka.youzaiworldcore.data.TeleportAnchorManager;
 import top.csituka.youzaiworldcore.mana.ManaManager;
 import top.csituka.youzaiworldcore.pet.PetEntry;
 import top.csituka.youzaiworldcore.pet.PetGlobalState;
 import top.csituka.youzaiworldcore.mixin.PlayerEnchantmentSeedAccessor;
 import top.csituka.youzaiworldcore.respawn.InPlaceRespawnManager;
 import top.csituka.youzaiworldcore.util.DebugLogger;
+import top.csituka.youzaiworldcore.util.LoadedChunks;
 
 public final class PoolRuntimeAudit implements DedicatedServerModInitializer {
         private static final DebugLogger.ModuleLogger LOGGER = DebugLogger.SERVER.module("PoolRuntimeAudit");
         private static final String MAIN = "survival_world_pool";
         private static final String END = "test_pool";
+        private static final BlockPos COLD_ANCHOR = new BlockPos(4098, 90, 4098);
+        private static final BlockPos DEFERRED_ANCHOR = COLD_ANCHOR.offset(64, 0, 64);
         private static final UUID ID = UUID.fromString("c057244f-2bd3-4e87-a20f-512ef55a1c18");
         private static final UUID STANDING_PET = UUID.fromString("66ac221a-c50a-4b79-97e6-2b837c570ebc");
         private static final UUID SITTING_PET = UUID.fromString("3ac58bd6-3647-4281-8c46-bf4e3734c23a");
@@ -95,21 +109,26 @@ public final class PoolRuntimeAudit implements DedicatedServerModInitializer {
                         throw new AssertionError(message);
         }
 
+        @SuppressWarnings("null")
         private static void command(MinecraftServer server, String command) {
                 server.getCommands().performPrefixedCommand(server.createCommandSourceStack(), command);
         }
 
         private static int score(ServerLevel level, String name, String objective) {
                 var board = level.getScoreboard();
+                @SuppressWarnings("null")
                 var info = board.getPlayerScoreInfo(ScoreHolder.forNameOnly(name), board.getObjective(objective));
                 return info == null ? -999 : info.value();
         }
 
+        @SuppressWarnings("null")
         private static ServerPlayer connect(MinecraftServer server, ServerLevel level, UUID id, String name,
                         TestConnection connection, boolean load) throws Exception {
                 var profile = new GameProfile(id, name);
+                @SuppressWarnings("null")
                 var player = new ServerPlayer(server, level, profile, ClientInformation.createDefault());
                 if (load) {
+                        @SuppressWarnings("null")
                         var input = TagValueInput.create(ProblemReporter.DISCARDING, server.registryAccess(),
                                         NbtIo.readCompressed(ModPaths.vanillaPlayerData(server, id),
                                                         NbtAccounter.unlimitedHeap()));
@@ -138,11 +157,13 @@ public final class PoolRuntimeAudit implements DedicatedServerModInitializer {
                 var field = ServerLevel.class.getDeclaredField("entityManager");
                 field.setAccessible(true);
                 var entities = (PersistentEntitySectionManager<?>) field.get(level);
+                @SuppressWarnings("null")
                 var chunk = ChunkPos.containing(pos);
                 level.getChunk(chunk.x(), chunk.z());
                 entities.updateChunkStatus(chunk, Visibility.TICKING);
         }
 
+        @SuppressWarnings("null")
         private static Wolf addPet(ServerPlayer player, UUID id, String name, boolean sitting) throws Exception {
                 var level = player.level();
                 trackPetChunk(level, player.blockPosition());
@@ -158,12 +179,14 @@ public final class PoolRuntimeAudit implements DedicatedServerModInitializer {
                 return wolf;
         }
 
+        @SuppressWarnings("null")
         private static boolean isParked(MinecraftServer server, UUID id) throws Exception {
                 var file = ModPaths.parkedPet(server, id);
                 return Files.exists(file)
                                 && NbtIo.readCompressed(file, NbtAccounter.uncompressedQuota()).contains("wolf");
         }
 
+        @SuppressWarnings("null")
         private static void run(MinecraftServer server) throws Exception {
                 ServerLevel overworld = server.overworld();
                 ServerLevel nether = server.getLevel(Level.NETHER);
@@ -247,6 +270,7 @@ public final class PoolRuntimeAudit implements DedicatedServerModInitializer {
                                 "an eligible pet still follows within a pool");
                 check(player.teleportTo(overworld, 1.5, 85, 2.5, Set.of(), 31, 11, true),
                                 "return with pet inside the same pool");
+                @SuppressWarnings("null")
                 Wolf standing = (Wolf) overworld.getEntity(STANDING_PET);
                 addPet(player, RELEASED_PET, "AUDITRELEASE", false);
 
@@ -332,6 +356,7 @@ public final class PoolRuntimeAudit implements DedicatedServerModInitializer {
                 broken.getAsJsonArray("mainInventory").set(0, new com.google.gson.JsonPrimitive("invalid SNBT"));
                 String malformedItem = broken.toString();
                 Files.writeString(target, malformedItem);
+                @SuppressWarnings("null")
                 var petBeforeFailure = overworld.getEntity(STANDING_PET);
                 check(!DimensionPoolManager.teleportToPool(player, END) && player.level() == overworld
                                 && player.getInventory().getItem(0).getCount() == 3
@@ -364,10 +389,71 @@ public final class PoolRuntimeAudit implements DedicatedServerModInitializer {
                 });
                 check(!isParked(server, STANDING_PET) && isParked(server, END_PET),
                                 "written chunk takes over the restored wolf while the parked wolf retains its archive");
+                createColdAnchor(player, end, COLD_ANCHOR);
+                createColdAnchor(player, end, DEFERRED_ANCHOR);
                 detach(player);
                 detach(other);
         }
 
+        @SuppressWarnings("null")
+        private static void createColdAnchor(ServerPlayer player, ServerLevel end, BlockPos pos) {
+                end.getChunkAt(pos);
+                check(end.setBlock(pos,
+                                ModBlocks.TP_ANCHOR.defaultBlockState().setValue(TeleportAnchorBlock.ACTIVE, true),
+                                Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE), "create future cold anchor");
+                @SuppressWarnings("null")
+                var blockEntity = (TeleportAnchorBlockEntity) end.getBlockEntity(pos);
+                blockEntity.addActivator(player.getUUID());
+                TeleportAnchorManager.get(end.getServer()).addPointWithName(player, pos,
+                                end.dimension(), "Cold anchor", END);
+        }
+
+        @SuppressWarnings("null")
+        private static void checkColdAnchor(ServerPlayer player, ServerLevel overworld, ServerLevel end) {
+                var manager = TeleportAnchorManager.get(end.getServer());
+                var point = manager.findPoint(player, COLD_ANCHOR, end.dimension());
+                check(point != null && LoadedChunks.get(end, COLD_ANCHOR) == null,
+                                "persisted anchor starts unloaded");
+                check(!manager.getValidPointsForPlayer(player, overworld.dimension()).contains(point)
+                                && manager.getValidPointsForPlayer(player, end.dimension()).contains(point)
+                                && LoadedChunks.get(end, COLD_ANCHOR) == null,
+                                "listing filters cross-pool anchors and keeps cold same-pool entries without loading");
+                check(manager.findNearestActiveAnchorInDimension(player, end.dimension()).orElseThrow().equals(point)
+                                && LoadedChunks.get(end, COLD_ANCHOR) == null,
+                                "finding the nearest anchor defers chunk access");
+                check(manager.removePointByPos(player, COLD_ANCHOR, end.dimension())
+                                && manager.findPoint(player, COLD_ANCHOR, end.dimension()) == null
+                                && LoadedChunks.get(end, COLD_ANCHOR) == null,
+                                "deleting a cold anchor leaves its chunk unloaded");
+                end.getChunkAt(COLD_ANCHOR);
+                ServerTickEvents.END_SERVER_TICK.invoker().onEndTick(end.getServer());
+                @SuppressWarnings("null")
+                var entity = (TeleportAnchorBlockEntity) end.getBlockEntity(COLD_ANCHOR);
+                check(!entity.isActivatedBy(player.getUUID())
+                                && !end.getBlockState(COLD_ANCHOR).getValue(TeleportAnchorBlock.ACTIVE),
+                                "deactivation is reconciled when the chunk loads");
+                check(LoadedChunks.get(end, DEFERRED_ANCHOR) == null
+                                && manager.removePointByPos(player, DEFERRED_ANCHOR, end.dimension())
+                                && LoadedChunks.get(end, DEFERRED_ANCHOR) == null,
+                                "deferred deletion stays pending through server shutdown");
+                boolean[] charged = { false };
+                check(!manager.teleportToPoint(player, point, () -> charged[0] = true) && !charged[0],
+                                "invalid anchor teleport leaves the source payment untouched");
+
+                var edge = new BlockPos((COLD_ANCHOR.getX() & ~15) + 15, 220, COLD_ANCHOR.getZ());
+                var adjacent = edge.east();
+                check(LoadedChunks.get(end, adjacent) == null && !LoadedChunks.covers(end, edge, edge, 1),
+                                "local writes reject a missing neighbor");
+                end.setBlock(edge, Blocks.AIR.defaultBlockState(), Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE);
+                var eye = Vec3.atCenterOf(edge);
+                var hit = LoadedChunks.collisionView(end).clip(new ClipContext(eye, eye.add(3, 0, 0),
+                                ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player));
+                check(hit.getType() == HitResult.Type.BLOCK && hit.getBlockPos().equals(adjacent)
+                                && LoadedChunks.get(end, adjacent) == null,
+                                "ray stops at the cold chunk boundary without loading it");
+        }
+
+        @SuppressWarnings("null")
         private static void restart(MinecraftServer server) throws Exception {
                 ServerLevel overworld = server.overworld();
                 ServerLevel end = server.getLevel(Level.END);
@@ -398,6 +484,13 @@ public final class PoolRuntimeAudit implements DedicatedServerModInitializer {
                                 && overworld.getEntity(END_PET) == null,
                                 "parked pet survives restart and returns only in its pool");
                 check(PoolRespawn.needsSurvivalReturn(player), "death without a pool spawn selects survival");
+                checkColdAnchor(player, overworld, end);
+                var coldSpawn = new BlockPos(8194, 230, 8194);
+                player.setRespawnPosition(new ServerPlayer.RespawnConfig(
+                                LevelData.RespawnData.of(end.dimension(), coldSpawn, 0, 0), false), false);
+                check(LoadedChunks.get(end, coldSpawn) == null && !PoolRespawn.needsSurvivalReturn(player)
+                                && LoadedChunks.get(end, coldSpawn) == null,
+                                "death preview defers verification of a cold personal respawn point");
                 var connection = player.connection;
                 die(player);
                 connection.handleClientCommand(new ServerboundClientCommandPacket(
@@ -420,9 +513,31 @@ public final class PoolRuntimeAudit implements DedicatedServerModInitializer {
                 check(DimensionPoolManager.teleportToPool(player, END)
                                 && PoolRespawnCounts.get(player).orElseThrow() == 1,
                                 "in-place respawn leaves the other pool count alone");
+                checkTransferPayment(server, overworld, end);
                 coldPetReturn(server, end);
         }
 
+        private static void checkTransferPayment(MinecraftServer server, ServerLevel origin, ServerLevel end)
+                        throws Exception {
+                var player = connect(server, origin, UUID.randomUUID(), "AnchorPayment", new TestConnection(), false);
+                player.giveExperienceLevels(8);
+                var destination = new Vec3(1.5, 100, 1.5);
+                @SuppressWarnings("null")
+                var transition = new TeleportTransition(end, destination, Vec3.ZERO, 0, 0,
+                                TeleportTransition.DO_NOTHING);
+                Runnable pay = () -> player.giveExperienceLevels(-2);
+                check(DimensionPoolManager.onTeleport(player, transition, () -> null, pay) == null
+                                && player.level() == origin && player.experienceLevel == 8,
+                                "failed cross-pool move restores the source payment");
+                check(DimensionPoolManager.onTeleport(player, transition, () -> player.teleport(transition),
+                                pay) == player && player.level() == end && player.experienceLevel == 0,
+                                "successful charged transfer applies the destination snapshot");
+                check(DimensionPoolManager.teleportToPool(player, MAIN) && player.experienceLevel == 6,
+                                "successful transfer persists the payment only in the source pool");
+                detach(player);
+        }
+
+        @SuppressWarnings("null")
         private static void coldPetReturn(MinecraftServer server, ServerLevel end) throws Exception {
                 UUID ownerId = UUID.randomUUID();
                 UUID petId = UUID.randomUUID();
@@ -453,7 +568,18 @@ public final class PoolRuntimeAudit implements DedicatedServerModInitializer {
                 detach(returning);
         }
 
+        @SuppressWarnings("null")
         private static void badScoreboard(MinecraftServer server) throws Exception {
+                ServerLevel end = server.getLevel(Level.END);
+                check(LoadedChunks.get(end, DEFERRED_ANCHOR) == null,
+                                "pending deactivation starts with its chunk unloaded after restart");
+                end.getChunkAt(DEFERRED_ANCHOR);
+                ServerTickEvents.END_SERVER_TICK.invoker().onEndTick(server);
+                @SuppressWarnings("null")
+                var deferredAnchor = (TeleportAnchorBlockEntity) end.getBlockEntity(DEFERRED_ANCHOR);
+                check(!deferredAnchor.isActivatedBy(ID)
+                                && !end.getBlockState(DEFERRED_ANCHOR).getValue(TeleportAnchorBlock.ACTIVE),
+                                "pending deactivation survives server restart");
                 var file = ModPaths.poolScoreboard(server, END);
                 byte[] broken = Files.readAllBytes(file);
                 var player = connect(server, server.overworld(), UUID.randomUUID(), "PoolBadBoard",

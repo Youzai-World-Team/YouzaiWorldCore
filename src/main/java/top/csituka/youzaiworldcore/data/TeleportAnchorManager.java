@@ -1,7 +1,13 @@
 package top.csituka.youzaiworldcore.data;
 
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerBlockEntityEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.GlobalPos;
+import net.minecraft.core.UUIDUtil;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
@@ -10,19 +16,28 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.datafix.DataFixTypes;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.portal.TeleportTransition;
 import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.level.saveddata.SavedDataType;
 import top.csituka.youzaiworldcore.YouzaiworldCore;
 import top.csituka.youzaiworldcore.block.TeleportAnchorBlock;
 import top.csituka.youzaiworldcore.block.entity.TeleportAnchorBlockEntity;
+import net.minecraft.world.phys.Vec3;
+import top.csituka.youzaiworldcore.dimensionalinventories.DimensionPoolManager;
+import top.csituka.youzaiworldcore.dimensionalinventories.DimensionPoolSettings;
 import top.csituka.youzaiworldcore.network.TeleportAnchorListPayload.EntryType;
+import top.csituka.youzaiworldcore.util.DebugLogger;
+import top.csituka.youzaiworldcore.util.LoadedChunks;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import org.jetbrains.annotations.Nullable;
@@ -60,23 +75,24 @@ public class TeleportAnchorManager extends SavedData {
      */
     private final transient Map<UUID, TeleportOpenerSource> openedLists = new HashMap<>();
 
-    private static final Codec<TeleportAnchorManager> CODEC = Codec.unboundedMap(
-            Codec.STRING,               // UUID → String
-            TeleportAnchorData.CODEC.listOf()  // 值：传送点列表
-    ).xmap(
-            map -> {
-                TeleportAnchorManager manager = new TeleportAnchorManager();
-                map.forEach((uuidStr, points) ->
-                        manager.playerPoints.put(UUID.fromString(uuidStr), new ArrayList<>(points)));
-                return manager;
-            },
-            manager -> {
-                Map<String, List<TeleportAnchorData>> map = new HashMap<>();
-                manager.playerPoints.forEach((uuid, points) ->
-                        map.put(uuid.toString(), points));
-                return map;
-            }
-    );
+    private record Deactivation(GlobalPos anchor, UUID player) {
+        private static final Codec<Deactivation> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+                GlobalPos.CODEC.fieldOf("anchor").forGetter(Deactivation::anchor),
+                UUIDUtil.CODEC.fieldOf("player").forGetter(Deactivation::player)
+        ).apply(instance, Deactivation::new));
+    }
+
+    private final Map<GlobalPos, Set<UUID>> pendingDeactivations = new HashMap<>();
+    private static final Map<TeleportAnchorBlockEntity, ServerLevel> LOADING_ANCHORS = new HashMap<>();
+    private static final Codec<Map<String, List<TeleportAnchorData>>> POINTS_CODEC =
+            Codec.unboundedMap(Codec.STRING, TeleportAnchorData.CODEC.listOf());
+    private static final Codec<TeleportAnchorManager> CODEC = Codec.withAlternative(
+            RecordCodecBuilder.create(instance -> instance.group(
+                    POINTS_CODEC.fieldOf("points").forGetter(TeleportAnchorManager::encodePoints),
+                    Deactivation.CODEC.listOf().optionalFieldOf("deactivations", List.of())
+                            .forGetter(TeleportAnchorManager::encodeDeactivations)
+            ).apply(instance, TeleportAnchorManager::new)),
+            POINTS_CODEC, points -> new TeleportAnchorManager(points, List.of()));
 
     public static final SavedDataType<TeleportAnchorManager> TYPE = new SavedDataType<>(
             Identifier.fromNamespaceAndPath(YouzaiworldCore.MOD_ID, "teleport_anchors"),
@@ -86,6 +102,44 @@ public class TeleportAnchorManager extends SavedData {
     );
 
     private TeleportAnchorManager() {
+    }
+
+    private TeleportAnchorManager(Map<String, List<TeleportAnchorData>> points, List<Deactivation> removals) {
+        points.forEach((uuid, anchors) -> playerPoints.put(UUID.fromString(uuid), new ArrayList<>(anchors)));
+        removals.forEach(removal -> queueDeactivation(removal.anchor(), removal.player()));
+    }
+
+    private Map<String, List<TeleportAnchorData>> encodePoints() {
+        Map<String, List<TeleportAnchorData>> points = new HashMap<>();
+        playerPoints.forEach((uuid, anchors) -> points.put(uuid.toString(), anchors));
+        return points;
+    }
+
+    private List<Deactivation> encodeDeactivations() {
+        List<Deactivation> removals = new ArrayList<>();
+        pendingDeactivations.forEach((anchor, players) -> players.forEach(
+                player -> removals.add(new Deactivation(anchor, player))));
+        return removals;
+    }
+
+    public static void register() {
+        ServerBlockEntityEvents.BLOCK_ENTITY_LOAD.register((entity, level) -> {
+            if (entity instanceof TeleportAnchorBlockEntity anchor) {
+                LOADING_ANCHORS.put(anchor, level);
+            }
+        });
+        ServerBlockEntityEvents.BLOCK_ENTITY_UNLOAD.register((entity, level) -> LOADING_ANCHORS.remove(entity));
+        ServerLifecycleEvents.SERVER_STOPPED.register(server -> LOADING_ANCHORS.clear());
+        // 区块加载回调可能早于方块实体读完 NBT，等到区块可用后再更新。
+        ServerTickEvents.END_SERVER_TICK.register(server -> LOADING_ANCHORS.entrySet().removeIf(entry -> {
+            var anchor = entry.getKey();
+            var level = entry.getValue();
+            if (anchor.isRemoved()) return true;
+            var chunk = LoadedChunks.get(level, anchor.getBlockPos());
+            if (chunk == null) return false;
+            get(server).applyDeactivations(level, chunk, anchor.getBlockPos());
+            return true;
+        }));
     }
 
     /**
@@ -133,24 +187,50 @@ public class TeleportAnchorManager extends SavedData {
     public List<TeleportAnchorData> getValidPointsForPlayer(ServerPlayer player, ResourceKey<Level> fromDimension) {
         MinecraftServer server = player.level().getServer();
 
-        // 当前维度所属的维度池 ID；未加入任何池时为 null（不做隔离）
-        String currentPoolId = top.csituka.youzaiworldcore.dimensionalinventories.DimensionPoolSettings
-                .getPoolByDimension(fromDimension.identifier().toString())
-                .map(p -> p.id())
-                .orElse(null);
-
         return getPointsForPlayer(player).stream()
-                .filter(p -> {
-                    ServerLevel targetLevel = server.getLevel(p.dimension());
-                    if (targetLevel == null) return false;
-                    BlockState anchorState = targetLevel.getBlockState(p.pos());
-                    if (!(anchorState.getBlock() instanceof TeleportAnchorBlock)) return false;
-                    if (!anchorState.getValue(TeleportAnchorBlock.ACTIVE)) return false;
-                    // 维度池隔离过滤：同池或至少一方未加入任何池时可通过
-                    if (p.poolId() == null || currentPoolId == null) return true;
-                    return p.poolId().equals(currentPoolId);
+                .filter(point -> allowsDimension(fromDimension, point.dimension()))
+                .filter(point -> {
+                    ServerLevel level = server.getLevel(point.dimension());
+                    if (level == null || !level.isInWorldBounds(point.pos())) return false;
+                    var chunk = LoadedChunks.get(level, point.pos());
+                    return chunk == null || isActiveAnchor(chunk.getBlockState(point.pos()));
                 })
                 .toList();
+    }
+
+    public static boolean allowsDimension(ResourceKey<Level> from, ResourceKey<Level> to) {
+        if (from.equals(to)) return true;
+        var sourcePool = DimensionPoolSettings.getPoolByDimension(from.identifier().toString());
+        var targetPool = DimensionPoolSettings.getPoolByDimension(to.identifier().toString());
+        return sourcePool.isEmpty() || targetPool.isEmpty() || sourcePool.get().id().equals(targetPool.get().id());
+    }
+
+    private static boolean isActiveAnchor(BlockState state) {
+        return state.getBlock() instanceof TeleportAnchorBlock && state.getValue(TeleportAnchorBlock.ACTIVE);
+    }
+
+    /** 在传送请求通过其他校验后，只读取所选目的地。 */
+    public boolean teleportToPoint(ServerPlayer player, TeleportAnchorData point, @Nullable Runnable chargeSource) {
+        ServerLevel target = player.level().getServer().getLevel(point.dimension());
+        if (target == null || !target.isInWorldBounds(point.pos())
+                || !allowsDimension(player.level().dimension(), point.dimension())) return false;
+        try {
+            BlockPos pos = point.pos();
+            if (!isActiveAnchor(target.getBlockState(pos))) {
+                removePointByPos(player, pos, point.dimension());
+                return false;
+            }
+            Vec3 destination = Vec3.atBottomCenterOf(pos.above());
+            var transition = new TeleportTransition(target, destination, Vec3.ZERO,
+                    player.getYRot(), player.getXRot(), TeleportTransition.DO_NOTHING);
+            return DimensionPoolManager.onTeleport(player, transition,
+                    () -> player.teleportTo(target, destination.x, destination.y, destination.z,
+                            Set.of(), player.getYRot(), player.getXRot(), true) ? player : null,
+                    chargeSource) == player;
+        } catch (RuntimeException error) {
+            DebugLogger.SERVER.exception("TeleportAnchor", "传送至锚点 " + point.pos(), error);
+            return false;
+        }
     }
 
     public int getPointCount(ServerPlayer player) {
@@ -164,7 +244,11 @@ public class TeleportAnchorManager extends SavedData {
      * @return 匹配的数据；未找到返回 null
      */
     public TeleportAnchorData findPoint(ServerPlayer player, BlockPos pos, ResourceKey<Level> dimension) {
-        List<TeleportAnchorData> points = playerPoints.get(player.getUUID());
+        return findPoint(player.getUUID(), pos, dimension);
+    }
+
+    private TeleportAnchorData findPoint(UUID player, BlockPos pos, ResourceKey<Level> dimension) {
+        List<TeleportAnchorData> points = playerPoints.get(player);
         if (points == null) return null;
         for (TeleportAnchorData p : points) {
             if (p.pos().equals(pos) && p.dimension().equals(dimension)) {
@@ -196,23 +280,37 @@ public class TeleportAnchorManager extends SavedData {
 
         TeleportAnchorData removed = points.remove(idx);
         setDirty();
+        queueDeactivation(GlobalPos.of(removed.dimension(), removed.pos()), player.getUUID());
 
-        // 更新对应方块 BlockEntity 的激活者集合
-        ServerLevel targetLevel = player.level().getServer().getLevel(removed.dimension());
-        if (targetLevel != null) {
-            BlockEntity be = targetLevel.getBlockEntity(removed.pos());
-            if (be instanceof TeleportAnchorBlockEntity anchorBE) {
-                boolean nowEmpty = anchorBE.removeActivator(player.getUUID());
-                if (nowEmpty) {
-                    BlockState newState = targetLevel.getBlockState(removed.pos())
-                            .setValue(TeleportAnchorBlock.ACTIVE, false);
-                    targetLevel.setBlock(removed.pos(), newState, 3);
-                    targetLevel.sendBlockUpdated(removed.pos(),
-                            targetLevel.getBlockState(removed.pos()), newState, 3);
-                }
-            }
+        ServerLevel level = player.level().getServer().getLevel(removed.dimension());
+        if (level != null) {
+            var chunk = LoadedChunks.get(level, removed.pos());
+            if (chunk != null) applyDeactivations(level, chunk, removed.pos());
         }
         return true;
+    }
+
+    private void queueDeactivation(GlobalPos anchor, UUID player) {
+        pendingDeactivations.computeIfAbsent(anchor, ignored -> new HashSet<>()).add(player);
+    }
+
+    private void applyDeactivations(ServerLevel level, LevelChunk chunk, BlockPos pos) {
+        GlobalPos anchor = GlobalPos.of(level.dimension(), pos);
+        Set<UUID> players = pendingDeactivations.get(anchor);
+        if (players == null) return;
+        BlockState state = chunk.getBlockState(pos);
+        if (state.getBlock() instanceof TeleportAnchorBlock
+                && chunk.getBlockEntity(pos) instanceof TeleportAnchorBlockEntity entity) {
+            for (UUID player : players) {
+                if (findPoint(player, pos, level.dimension()) == null) entity.removeActivator(player);
+            }
+            if (entity.getActivatorCount() == 0 && state.getValue(TeleportAnchorBlock.ACTIVE)) {
+                level.setBlock(pos, state.setValue(TeleportAnchorBlock.ACTIVE, false),
+                        Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE);
+            }
+        }
+        pendingDeactivations.remove(anchor);
+        setDirty();
     }
 
     /**
@@ -239,7 +337,7 @@ public class TeleportAnchorManager extends SavedData {
      * 移除所有玩家列表中指向指定坐标和维度的传送锚点（方块被破坏时调用）。
      */
     public void removeAnchorAt(BlockPos pos, ResourceKey<Level> dimension) {
-        boolean changed = false;
+        boolean changed = pendingDeactivations.remove(GlobalPos.of(dimension, pos)) != null;
         for (List<TeleportAnchorData> points : playerPoints.values()) {
             if (points.removeIf(p -> p.pos().equals(pos) && p.dimension().equals(dimension))) {
                 changed = true;
@@ -272,7 +370,7 @@ public class TeleportAnchorManager extends SavedData {
      * 在玩家当前维度内找到距离玩家最近的可用传送锚点。
      * <p>
      * 「可用」与 {@link #getValidPointsForPlayer(ServerPlayer, ResourceKey)} 同口径：
-     * 锚点方块仍然存在且处于激活状态、且与玩家维度同维度池（任意一方未入池时不做限制）。
+     * 已加载的锚点必须有效，未加载的锚点交由实际传送时验证。
      * <p>
      * 距离按传送石耐久计算公式的口径取：玩家坐标对锚点上表面中心
      * (pos.getX()+0.5, pos.getY()+1.0, pos.getZ()+0.5) 的欧氏距离。
@@ -291,6 +389,7 @@ public class TeleportAnchorManager extends SavedData {
         TeleportAnchorData nearest = null;
         double bestDistSq = Double.POSITIVE_INFINITY;
         for (TeleportAnchorData p : candidates) {
+            if (!p.dimension().equals(dimension)) continue;
             double dx = (p.pos().getX() + 0.5) - px;
             double dy = (p.pos().getY() + 1.0) - py;
             double dz = (p.pos().getZ() + 0.5) - pz;
@@ -342,17 +441,11 @@ public class TeleportAnchorManager extends SavedData {
     }
 
     /**
-     * 取出并清除玩家的「传送物品打开」标记。
-     * <p>
-     * 一次传送请求只对应一次标记：无论本次传送最终成功还是被各项校验拒绝，
-     * 标记都已消费——玩家需要重新用传送物品打开列表才会再次进入扣资源流程。
-     *
-     * @return 入口快照（含入口类型与使用物品的手），{@code null} 表示本次列表不是
-     *         通过传送物品打开的（即 {@link EntryType#ANCHOR} 入口，无资源消耗）
+     * 查询本次传送的物品入口，传送成功后清除。
      */
     @Nullable
-    public TeleportOpenerSource consumeTeleportSourceMark(ServerPlayer player) {
-        return openedLists.remove(player.getUUID());
+    public TeleportOpenerSource getTeleportSourceMark(ServerPlayer player) {
+        return openedLists.get(player.getUUID());
     }
 
     // ===== 传送冷却 =====

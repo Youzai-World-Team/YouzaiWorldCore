@@ -3,6 +3,7 @@ package top.csituka.youzaiworldcore.event;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.fabricmc.fabric.api.event.player.UseItemCallback;
 import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -14,6 +15,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.NonNull;
 import top.csituka.youzaiworldcore.block.TeleportAnchorBlock;
+import top.csituka.youzaiworldcore.util.LoadedChunks;
 
 /**
  * 传送锚点上方的交互转发及防放置处理器。
@@ -41,10 +43,12 @@ public class TeleportAnchorInteractHandler implements UseBlockCallback, UseItemC
     @NonNull
     public InteractionResult interact(Player player, @NonNull Level level, @NonNull InteractionHand hand,
                                        @NonNull BlockHitResult hitResult) {
-        if (level.isClientSide()) return InteractionResult.PASS;
+        if (!(level instanceof ServerLevel serverLevel)) return InteractionResult.PASS;
 
         BlockPos clickedPos = hitResult.getBlockPos();
-        BlockState clickedState = level.getBlockState(clickedPos);
+        var clickedChunk = LoadedChunks.get(serverLevel, clickedPos);
+        if (clickedChunk == null) return InteractionResult.PASS;
+        BlockState clickedState = clickedChunk.getBlockState(clickedPos);
 
         // 对传送锚点本身的交互放行
         if (clickedState.getBlock() instanceof TeleportAnchorBlock) {
@@ -54,12 +58,13 @@ public class TeleportAnchorInteractHandler implements UseBlockCallback, UseItemC
         // 阻止在锚点正上方放置方块
         BlockPos placementPos = clickedPos.relative(hitResult.getDirection());
         BlockPos belowPlacement = placementPos.below();
-        if (level.getBlockState(belowPlacement).getBlock() instanceof TeleportAnchorBlock) {
+        var placementChunk = LoadedChunks.get(serverLevel, belowPlacement);
+        if (placementChunk != null && placementChunk.getBlockState(belowPlacement).getBlock() instanceof TeleportAnchorBlock) {
             return InteractionResult.FAIL;
         }
 
         // 常规转发：点击锚点上方实体方块
-        return redirectToAnchorBelow(level, player, clickedPos, hitResult);
+        return redirectToAnchorBelow(serverLevel, player, clickedPos, hitResult);
     }
 
     // ---- UseItemCallback: 点击锚点正上方的空气时转发 ----
@@ -67,7 +72,7 @@ public class TeleportAnchorInteractHandler implements UseBlockCallback, UseItemC
     @Override
     @NonNull
     public InteractionResult interact(Player player, @NonNull Level level, @NonNull InteractionHand hand) {
-        if (level.isClientSide()) return InteractionResult.PASS;
+        if (!(level instanceof ServerLevel serverLevel)) return InteractionResult.PASS;
 
         ItemStack held = player.getItemInHand(hand);
         if (!held.isEmpty()) return InteractionResult.PASS;
@@ -81,7 +86,9 @@ public class TeleportAnchorInteractHandler implements UseBlockCallback, UseItemC
             BlockPos clickedPos = BlockPos.containing(sample.x, sample.y, sample.z);
             BlockPos below = clickedPos.below();
 
-            BlockState belowState = level.getBlockState(below);
+            var chunk = LoadedChunks.get(serverLevel, below);
+            if (chunk == null) break;
+            BlockState belowState = chunk.getBlockState(below);
             if (!(belowState.getBlock() instanceof TeleportAnchorBlock)) {
                 continue;
             }
@@ -103,10 +110,12 @@ public class TeleportAnchorInteractHandler implements UseBlockCallback, UseItemC
     /**
      * 检查目标位置下方是否为传送锚点，若是则将交互转发至锚点。
      */
-    private static InteractionResult redirectToAnchorBelow(Level level, Player player,
+    private static InteractionResult redirectToAnchorBelow(ServerLevel level, Player player,
                                                             BlockPos clickedPos, BlockHitResult hitResult) {
         BlockPos anchorPos = clickedPos.below();
-        BlockState anchorState = level.getBlockState(anchorPos);
+        var chunk = LoadedChunks.get(level, anchorPos);
+        if (chunk == null) return InteractionResult.PASS;
+        BlockState anchorState = chunk.getBlockState(anchorPos);
 
         if (anchorState.getBlock() instanceof TeleportAnchorBlock) {
             BlockHitResult redirectedHit = new BlockHitResult(

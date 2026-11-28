@@ -32,7 +32,7 @@ def compile_sources(java, temporary, libraries):
     arguments = [
         '--release', '25', '-proc:none', '-encoding', 'UTF-8', '-cp', os.pathsep.join(map(str, libraries)),
         '-d', classes, *sorted((ROOT / 'src/main/java').rglob('*.java')),
-        ROOT / 'src/poolAudit/java' / Path(*AUDIT.split('.')).with_suffix('.java'),
+        ROOT / 'src/test/java' / Path(*AUDIT.split('.')).with_suffix('.java'),
     ]
     argfile = temporary / 'javac.args'
     argfile.write_text('\n'.join(json.dumps(str(arg), ensure_ascii=False) for arg in arguments), encoding='utf-8')
