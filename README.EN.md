@@ -151,6 +151,8 @@ A new mineral and tool set equivalent to diamond tier (durability 1800, speed 8.
 | **Fly Beacon**                      | Grants flight within 9.56-block radius, glows when active (light 12)                                               |
 | **Teleport Anchor**                 | Right-click for teleport list after activation; supports naming/reordering/deleting/copying coordinates (light 15) |
 
+The mod includes labPBR maps for teleport anchors, fly beacons, magic tables, Youzai minerals, and selected staves and accessories. In Complementary Reimagined, set `RP Support` to `labPBR` to use the localized emission, reflections, and surface detail. Effects vary by shader pack. The active fly beacon top also uses vanilla model lighting.
+
 ### 7. Sit Interaction System
 
 Right-click any stair (StairBlock) or slab (SlabBlock) to sit — no commands or special items required.

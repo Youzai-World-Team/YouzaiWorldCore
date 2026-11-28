@@ -1,8 +1,27 @@
 {
-  "parent": "minecraft:block/cube_bottom_top",
+  "parent": "youzaiworldcore:block/fly_beacon",
   "textures": {
-    "top": "youzaiworldcore:block/fly_beacon_top_active",
-    "bottom": "youzaiworldcore:block/fly_beacon_around",
-    "side": "youzaiworldcore:block/fly_beacon_around"
-  }
+    "top": "youzaiworldcore:block/fly_beacon_top_active"
+  },
+  "elements": [
+    {
+      "from": [0, 0, 0],
+      "to": [16, 16, 16],
+      "faces": {
+        "down": { "texture": "#bottom", "cullface": "down" },
+        "north": { "texture": "#side", "cullface": "north" },
+        "south": { "texture": "#side", "cullface": "south" },
+        "west": { "texture": "#side", "cullface": "west" },
+        "east": { "texture": "#side", "cullface": "east" }
+      }
+    },
+    {
+      "from": [0, 0, 0],
+      "to": [16, 16, 16],
+      "light_emission": 15,
+      "faces": {
+        "up": { "texture": "#top", "cullface": "up" }
+      }
+    }
+  ]
 }
