@@ -591,7 +591,7 @@ Declares 4 custom trinket slots for the **Trinkets** mod via `data/trinkets/` da
 | `chest/elytra`   | Elytra                | Equip elytra in the chest trinket slot                  |
 | `chest/backpack` | Backpack              | Equip backpack in the chest trinket slot                |
 | `offhand/totem`  | Totem of Undying      | Equip totem in the offhand trinket slot                 |
-| `offhand/heart`  | Heart of Guardianship | Equip Heart of Guardianship in the offhand trinket slot |
+| `offhand/heart`  | Heart of Guardianship | Equip Heart of Guardianship in the offhand trinket slot; both the item and slot support stacks of 99 |
 
 Each slot has a custom icon and the `trinkets:default` validator; `order` controls sorting.
 

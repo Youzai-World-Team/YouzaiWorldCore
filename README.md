@@ -597,7 +597,7 @@ Fabric 26.3 移植版 **3.24.1.0** 的 `stack_downgrade_tier_1/2/3` 也归入转
 | `chest/elytra`   | 鞘翅（Elytra）                    | 胸饰槽装备鞘翅     |
 | `chest/backpack` | 背包（Backpack）                  | 胸饰槽装备背包     |
 | `offhand/totem`  | 不死图腾（Totem of Undying）      | 副手槽装备不死图腾 |
-| `offhand/heart`  | 守护之心（Heart of Guardianship） | 副手槽装备守护之心 |
+| `offhand/heart`  | 守护之心（Heart of Guardianship） | 副手槽装备守护之心，物品与槽位均可堆叠 99 个 |
 
 每个槽位含自定义图标与 `trinkets:default` 校验器，order 控制排序。
 

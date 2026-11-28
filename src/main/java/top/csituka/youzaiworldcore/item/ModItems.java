@@ -83,7 +83,7 @@ public class ModItems {
 
     public static final Item HEART_OF_GUARDIANSHIP = registerHeartOfGuardianship(
             "heart_of_guardianship",
-            new Item.Properties().rarity(Rarity.RARE)
+            new Item.Properties().stacksTo(99).rarity(Rarity.RARE)
     );
 
     public static final Item LOGO = registerLogo(
