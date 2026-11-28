@@ -267,7 +267,7 @@ public class PetCommand {
         CommandSourceStack source = ctx.getSource();
 
         String internalName = StringArgumentType.getString(ctx, "internalName").toUpperCase(Locale.ROOT);
-        String newDisplayName = StringArgumentType.getString(ctx, "newDisplayName");
+        String newDisplayName = PetEntry.limitDisplayName(StringArgumentType.getString(ctx, "newDisplayName"));
 
         ValidationResult vr = validatePetAccess(ctx, internalName);
         if (vr.hasError()) {

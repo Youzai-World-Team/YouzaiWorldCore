@@ -478,7 +478,7 @@ A streamlined implementation that supports click-to-open only for "same-material
 
 ### 27. Pet System
 
-The pet registry tracks vanilla animals after taming succeeds. Cats, parrots, horses, donkeys, mules, llamas, nautiluses, and their tameable variants can be listed, renamed, and highlighted. Vanilla name tags can also rename these animals.
+The pet registry tracks vanilla animals after taming succeeds. Cats, parrots, horses, donkeys, mules, llamas, nautiluses, and their tameable variants can be listed, renamed, and highlighted. Registration keeps up to 32 characters of an existing name. After registration, use the pet menu or the pet command to rename an animal.
 
 - **Core Data**: `PetEntry` records internal name (`internalName`), display name, behavior mode, owner UUID, trusted players, tame time, and entity UUID; global registry `PetGlobalState` persists all pets
 - **Wolf behavior modes**. Switch between `hunting`, `companionship`, `attack`, and `guard` with `/yzwc pet set <internalName> mode`.

@@ -12,6 +12,7 @@ import top.csituka.youzaiworldcore.client.screen.widget.TransparentButton;
 import top.csituka.youzaiworldcore.client.screen.widget.MenuCloseButton;
 import top.csituka.youzaiworldcore.network.PetMenuRequestPayload;
 import top.csituka.youzaiworldcore.network.PetMenuStatePayload;
+import top.csituka.youzaiworldcore.pet.PetEntry;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
 /** 首页宠物管理：直接选择宠物、模式和改名，等待服务端结果后刷新。 */
@@ -53,7 +54,7 @@ public final class PetScreen extends MailBaseScreen {
             }
         }
         nameInput = addRenderableWidget(new EditBox(font, list.x(), y + 32, list.width() - 122, 24, text("name")));
-        nameInput.setMaxLength(32);
+        nameInput.setMaxLength(PetEntry.MAX_DISPLAY_NAME_LENGTH);
         nameInput.setValue(selection == null ? "" : selection.name());
         serverName = nameInput.getValue();
         if (edited) nameInput.setValue(draft);

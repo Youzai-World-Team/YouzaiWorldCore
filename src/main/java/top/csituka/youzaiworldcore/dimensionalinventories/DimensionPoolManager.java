@@ -596,6 +596,7 @@ public final class DimensionPoolManager {
 
     public static void onPlayerJoin(ServerPlayer player) {
         MinecraftServer server = getServer(player);
+        PoolPets.discardStaleShoulderPets(player);
         if (Files.exists(survivalReturnMarker(player))) {
             SURVIVAL_RETURNS.computeIfAbsent(server, key -> new HashSet<>()).add(player.getUUID());
         }

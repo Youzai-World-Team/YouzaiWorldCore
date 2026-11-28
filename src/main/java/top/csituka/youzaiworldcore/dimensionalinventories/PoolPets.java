@@ -61,6 +61,7 @@ public final class PoolPets {
     private static final Map<MinecraftServer, Map<UUID, String>> UNSAVED_RETURNS = new WeakHashMap<>();
     private static final Map<MinecraftServer, Set<UUID>> PENDING_RESTORES = new WeakHashMap<>();
     private static final Map<MinecraftServer, Map<UUID, ReleaseLocation>> PENDING_RELEASES = new WeakHashMap<>();
+    private static final Map<MinecraftServer, Map<UUID, String>> PENDING_DEATHS = new WeakHashMap<>();
 
     private PoolPets() {}
 
@@ -138,22 +139,60 @@ public final class PoolPets {
             return false;
         }
         try {
-            var existing = read(server, id);
-            var token = data.getCompoundOrEmpty("fabric:attachments").getStringOr(RETURN_ID.toString(), "");
-            if (existing != null && !existing.token.equals(token)) {
-                throw new IOException("肩载宠物与存档不一致：" + id);
-            }
-            var body = data.copy();
-            body.store("Pos", Vec3.CODEC, position);
-            write(server, id, new StoredPet(pool, origin.dimension().identifier().toString(), newToken(),
-                    body, null, pet.entityType()));
-            var unsaved = UNSAVED_RETURNS.get(server);
-            if (unsaved != null) unsaved.remove(id);
+            writeShoulderPet(origin, pool, position, data, pet, null);
             return true;
         } catch (IOException | RuntimeException error) {
             LOGGER.error("无法收起肩载宠物 {}", id, error);
             return false;
         }
+    }
+
+    private static void writeShoulderPet(ServerLevel level, String pool, Vec3 position, CompoundTag data,
+            PetEntry pet, @Nullable Release release) throws IOException {
+        var server = level.getServer();
+        UUID id = pet.entityUUID();
+        var existing = read(server, id);
+        if (existing != null && !existing.token.equals(shoulderToken(data))) {
+            throw new IOException("肩载宠物与存档不一致：" + id);
+        }
+        var body = data.copy();
+        body.store("Pos", Vec3.CODEC, position);
+        write(server, id, new StoredPet(pool, level.dimension().identifier().toString(), newToken(), body, release,
+                pet.entityType()));
+        var unsaved = UNSAVED_RETURNS.get(server);
+        if (unsaved != null) unsaved.remove(id);
+    }
+
+    private static boolean isShoulderPet(CompoundTag data, PetEntry pet) {
+        return pet.entityType().toString().equals(data.getStringOr("id", ""))
+                && data.read("UUID", UUIDUtil.CODEC).filter(pet.entityUUID()::equals).isPresent();
+    }
+
+    private static boolean releaseShoulderPet(MinecraftServer server, PetEntry pet) throws IOException {
+        for (ServerPlayer carrier : server.getPlayerList().getPlayers()) {
+            var left = carrier.getShoulderEntityLeft();
+            var right = carrier.getShoulderEntityRight();
+            boolean onLeft = isShoulderPet(left, pet);
+            if (!onLeft && !isShoulderPet(right, pet)) {
+                continue;
+            }
+            var level = carrier.level();
+            UUID id = pet.entityUUID();
+            String dimension = level.dimension().identifier().toString();
+            var location = new ReleaseLocation(dimension, ChunkPos.containing(carrier.blockPosition()));
+            writeShoulderPet(level, DimensionPoolSettings.statePoolId(level.dimension()), carrier.position(),
+                    onLeft ? left : right, pet, new Release(pet.internalName(), pet.tameTimestamp()));
+            var access = (PetShoulderAccessor) carrier;
+            if (onLeft) {
+                access.yzwc$setPetShoulderLeft(new CompoundTag());
+            } else {
+                access.yzwc$setPetShoulderRight(new CompoundTag());
+            }
+            PetGlobalState.get(server).removePet(id);
+            releaseWhenReady(server, id, location);
+            return true;
+        }
+        return false;
     }
 
     private static void park(MinecraftServer server, String pool, Mob wolf) throws IOException {
@@ -320,8 +359,11 @@ public final class PoolPets {
         return isChunkLoaded(level, pos) && level.areEntitiesActuallyLoadedAndTicking(pos);
     }
 
-    /** 在确认放生前记录意图，等待原区块的实体数据自然就绪。 */
+    /** 先记录暂存和肩载宠物的放生意图，再等待原区块的实体数据自然就绪。 */
     public static boolean releaseParked(MinecraftServer server, PetEntry pet, @Nullable Mob loaded) throws IOException {
+        if (loaded == null && releaseShoulderPet(server, pet)) {
+            return true;
+        }
         UUID id = pet.entityUUID();
         boolean awaitingSave = UNSAVED_RETURNS.getOrDefault(server, Map.of()).containsKey(id);
         if (loaded != null && !awaitingSave) {
@@ -349,10 +391,16 @@ public final class PoolPets {
             ((AttachmentTarget) loaded).setAttached(RETURN_TOKEN, released.token);
             PetEventHandler.releasePet(loaded);
             UNSAVED_RETURNS.computeIfAbsent(server, ignored -> new HashMap<>()).put(id, released.token);
-        } else if (!tryRelease(server, id, location)) {
-            PENDING_RELEASES.computeIfAbsent(server, ignored -> new HashMap<>()).put(id, location);
+        } else {
+            releaseWhenReady(server, id, location);
         }
         return true;
+    }
+
+    private static void releaseWhenReady(MinecraftServer server, UUID id, ReleaseLocation location) {
+        if (!tryRelease(server, id, location)) {
+            PENDING_RELEASES.computeIfAbsent(server, ignored -> new HashMap<>()).put(id, location);
+        }
     }
 
     private static void loadPendingReleases(MinecraftServer server) {
@@ -404,6 +452,10 @@ public final class PoolPets {
     }
 
     static void tickPendingReleases(MinecraftServer server) {
+        var deaths = PENDING_DEATHS.get(server);
+        if (deaths != null) {
+            deaths.entrySet().removeIf(entry -> settleDeath(server, entry.getKey(), entry.getValue()));
+        }
         var pending = PENDING_RELEASES.get(server);
         if (pending != null) {
             pending.entrySet().removeIf(entry -> tryRelease(server, entry.getKey(), entry.getValue()));
@@ -474,8 +526,22 @@ public final class PoolPets {
     public static boolean canLoadShoulder(ServerLevel level, CompoundTag data) {
         var id = data.read("UUID", UUIDUtil.CODEC).orElse(null);
         var type = Identifier.tryParse(data.getStringOr("id", ""));
-        var token = data.getCompoundOrEmpty("fabric:attachments").getStringOr(RETURN_ID.toString(), "");
-        return id == null || canLoad(level, id, type, token);
+        return id == null || canLoad(level, id, type, shoulderToken(data));
+    }
+
+    private static String shoulderToken(CompoundTag data) {
+        return data.getCompoundOrEmpty("fabric:attachments").getStringOr(RETURN_ID.toString(), "");
+    }
+
+    /** 玩家档案可能保留了写入新回收版本之前的肩载副本。 */
+    static void discardStaleShoulderPets(ServerPlayer player) {
+        var access = (PetShoulderAccessor) player;
+        if (!canLoadShoulder(player.level(), player.getShoulderEntityLeft())) {
+            access.yzwc$setPetShoulderLeft(new CompoundTag());
+        }
+        if (!canLoadShoulder(player.level(), player.getShoulderEntityRight())) {
+            access.yzwc$setPetShoulderRight(new CompoundTag());
+        }
     }
 
     private static boolean canLoad(ServerLevel level, UUID id, @Nullable Identifier type, @Nullable String token) {
@@ -543,6 +609,33 @@ public final class PoolPets {
             unsaved.remove(id);
         } catch (IOException | RuntimeException error) {
             LOGGER.error("无法结算宠物 {} 的恢复档，下次保存时重试", id, error);
+        }
+    }
+
+    /** 实体首次写盘前死亡时封存回收版本，阻止快照或先前写入的活体在重启后复活。 */
+    public static void onDeath(ServerLevel level, Mob pet) {
+        var server = level.getServer();
+        UUID id = pet.getUUID();
+        String token = returnToken(pet);
+        if (token != null && token.equals(UNSAVED_RETURNS.getOrDefault(server, Map.of()).get(id))
+                && !settleDeath(server, id, token)) {
+            PENDING_DEATHS.computeIfAbsent(server, ignored -> new HashMap<>()).put(id, token);
+        }
+    }
+
+    private static boolean settleDeath(MinecraftServer server, UUID id, String token) {
+        try {
+            StoredPet stored = read(server, id);
+            if (stored != null && token.equals(stored.token)) {
+                write(server, id, new StoredPet(stored.pool, stored.dimension, newToken(), null, stored.release,
+                        stored.type));
+            }
+            var unsaved = UNSAVED_RETURNS.get(server);
+            if (unsaved != null) unsaved.remove(id, token);
+            return true;
+        } catch (IOException | RuntimeException error) {
+            LOGGER.error("无法结算宠物 {} 的死亡，下次重试", id, error);
+            return false;
         }
     }
 

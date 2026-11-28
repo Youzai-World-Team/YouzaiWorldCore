@@ -79,11 +79,8 @@ public final class PetEventHandlers {
                 return InteractionResult.PASS;
             }
 
-            if (pet instanceof Wolf wolf && player.getItemInHand(hand).is(Items.NAME_TAG)) {
-                if (PetEventHandler.onNameTagUse(player, wolf)) {
-                    return InteractionResult.FAIL;
-                }
-                return InteractionResult.PASS;
+            if (player.getItemInHand(hand).is(Items.NAME_TAG) && PetEventHandler.onNameTagUse(player, pet)) {
+                return InteractionResult.FAIL;
             }
 
             // 处理信任玩家交互权限

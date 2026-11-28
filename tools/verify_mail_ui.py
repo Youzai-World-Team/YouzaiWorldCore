@@ -141,6 +141,7 @@ stub(C+'.MailClientState','''public class MailClientState {
 }''')
 stub(C+'.screen.MailNavigationRequests','public class MailNavigationRequests {public static void cancel(Object page){}public static void compose(Object page){}public static void sent(Object page){}public static void edit(Object page,java.util.UUID id){}}')
 stub(P+'.network.PetMenuRequestPayload','public record PetMenuRequestPayload(long requestId,String action,String petId,String value){}')
+stub(P+'.pet.PetEntry','public class PetEntry {public static final int MAX_DISPLAY_NAME_LENGTH=32;}')
 stub(P+'.network.PetMenuStatePayload','''public record PetMenuStatePayload(long requestId,boolean success,net.minecraft.network.chat.Component message,java.util.List<Entry> pets) {
  public record Entry(String id,String name,String mode){
   public boolean hasCombatMode(){return !mode.startsWith("entity.");}

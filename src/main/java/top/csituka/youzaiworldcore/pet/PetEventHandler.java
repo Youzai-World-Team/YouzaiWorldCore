@@ -46,7 +46,7 @@ public final class PetEventHandler {
         }
         String internalName = PetUtils.generateUniqueInternalName(level.getServer(), type);
         var customName = pet.getCustomName();
-        String name = pet instanceof Wolf || customName == null ? internalName : customName.getString();
+        String name = customName == null ? internalName : customName.getString();
         PetEntry entry = PetEntry.createNew(internalName, pet.getUUID(), owner, name, type);
         try {
             state.addPet(entry);
@@ -159,6 +159,7 @@ public final class PetEventHandler {
     public static void onDeath(Mob pet, ServerLevel level) {
         DebugLogger.SERVER.entering(MODULE, "onDeath", "pet=" + pet.getUUID());
 
+        PoolPets.onDeath(level, pet);
         PetGlobalState state = PetGlobalState.get(level.getServer());
         Optional<PetEntry> removed = state.removePet(pet.getUUID());
 
@@ -209,24 +210,23 @@ public final class PetEventHandler {
      * 检查并拦截命名牌使用。
      *
      * @param player 使用命名牌的玩家
-     * @param pet   被使用的狼
+     * @param pet   被使用的动物
      * @return true 如果拦截了命名牌使用
      */
-    public static boolean onNameTagUse(Player player, Wolf wolf) {
-        if (player.level().isClientSide()) {
+    public static boolean onNameTagUse(Player player, Mob pet) {
+        if (!(pet.level() instanceof ServerLevel level)) {
             return false;
         }
 
-        ServerLevel level = (ServerLevel) player.level();
         PetGlobalState state = PetGlobalState.get(level.getServer());
 
-        if (!state.isPet(wolf.getUUID())) {
+        if (!state.isPet(pet.getUUID())) {
             return false;
         }
 
         player.sendSystemMessage(Component.translatable(
                 "youzaiworldcore.message.pet.nametag.blocked"));
-        DebugLogger.SERVER.debug(MODULE, "拦截命名牌: 玩家={}, 宠物={}", player.getName().getString(), wolf.getUUID());
+        DebugLogger.SERVER.debug(MODULE, "拦截命名牌: 玩家={}, 宠物={}", player.getName().getString(), pet.getUUID());
 
         return true;
     }
@@ -298,18 +298,6 @@ public final class PetEventHandler {
         if (current == null || !entry.displayName().equals(current.getString())) {
             pet.setCustomName(Component.literal(entry.displayName()));
         }
-    }
-
-    public static void onVanillaNameChange(Mob pet, ServerLevel level) {
-        var type = PetUtils.petType(pet);
-        Component name = pet.getCustomName();
-        if (type == null || PetEntry.WOLF_TYPE.equals(type) || name == null) {
-            return;
-        }
-        var state = PetGlobalState.get(level.getServer());
-        state.findByEntityUUID(pet.getUUID()).filter(entry -> type.equals(entry.entityType()))
-                .filter(entry -> !entry.displayName().equals(name.getString()))
-                .ifPresent(entry -> state.updatePet(entry.withDisplayName(name.getString())));
     }
 
     /** 清理放生宠物的登记标志和原版主人引用。 */

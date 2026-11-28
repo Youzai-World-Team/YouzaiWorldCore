@@ -37,6 +37,7 @@ import net.minecraft.server.network.ServerGamePacketListenerImpl;
 import net.minecraft.server.players.NameAndId;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -80,6 +81,7 @@ import top.csituka.youzaiworldcore.pet.PetEntry;
 import top.csituka.youzaiworldcore.pet.PetGlobalState;
 import top.csituka.youzaiworldcore.pet.PetMode;
 import top.csituka.youzaiworldcore.mixin.PlayerEnchantmentSeedAccessor;
+import top.csituka.youzaiworldcore.mixin.pet.PetShoulderAccessor;
 import top.csituka.youzaiworldcore.respawn.InPlaceRespawnManager;
 import top.csituka.youzaiworldcore.util.BackupArchive;
 import top.csituka.youzaiworldcore.util.DebugLogger;
@@ -99,6 +101,8 @@ public final class PoolRuntimeAudit implements DedicatedServerModInitializer {
         private static final UUID RELEASED_PET = UUID.fromString("8ddce803-0eb9-492c-b61e-cac8f020ca9f");
         private static final UUID COLD_RELEASED_PET = UUID.fromString("e1301069-f245-4d09-8a1a-a2dc457000a3");
         private static final BlockPos COLD_RELEASE_POS = new BlockPos(32001, 190, 32001);
+        private static final UUID DEAD_RELEASED_PET = UUID.fromString("db018dfd-d2f4-4401-a23d-a2f38ead686d");
+        private static final BlockPos DEAD_RELEASE_POS = COLD_RELEASE_POS.offset(-64, 0, 0);
         private static final UUID RESTORE_OWNER = UUID.fromString("7ecb2181-07f0-458b-87e0-6f2f74f42093");
         private static final UUID RESTORE_SAVED = UUID.fromString("3cef5ff3-ec20-4dcb-ab3a-d83a028b6964");
         private static final UUID RESTORE_PENDING = UUID.fromString("686aac42-0ef4-4dca-a44e-1dd5f080d31d");
@@ -571,6 +575,7 @@ public final class PoolRuntimeAudit implements DedicatedServerModInitializer {
                 createColdAnchor(player, end, COLD_ANCHOR);
                 createColdAnchor(player, end, DEFERRED_ANCHOR);
                 stageColdRelease(player, end);
+                stageDeadRelease(server, end);
                 detach(player);
                 detach(other);
         }
@@ -595,9 +600,13 @@ public final class PoolRuntimeAudit implements DedicatedServerModInitializer {
                 for (Mob animal : List.of(cat, pony, parrot, nautilus, donkey, camel)) {
                         animal.snapTo(player.position(), 0, 0);
                 }
-                cat.setCustomName(Component.literal("VanillaName"));
                 check(level.addFreshEntity(cat) && level.addFreshEntity(pony) && level.addFreshEntity(parrot)
                                 && level.addFreshEntity(nautilus) && level.addFreshEntity(camel), "native pet fixtures load");
+                String initialName = "狸".repeat(32);
+                var originalTag = new ItemStack(Items.NAME_TAG);
+                originalTag.set(DataComponents.CUSTOM_NAME, Component.literal(initialName + "花"));
+                check(originalTag.getItem().interactLivingEntity(originalTag, player, cat, InteractionHand.MAIN_HAND)
+                                == InteractionResult.SUCCESS, "name tags still work before pet registration");
                 cat.tame(player);
                 parrot.tame(player);
                 nautilus.tame(player);
@@ -614,7 +623,8 @@ public final class PoolRuntimeAudit implements DedicatedServerModInitializer {
 
                 var catEntry = state.findByEntityUUID(cat.getUUID()).orElseThrow();
                 check(catEntry.detailKey().equals("entity.minecraft.cat")
-                                && catEntry.displayName().equals("VanillaName"), "existing name and species appear in the registry");
+                                && catEntry.displayName().equals(initialName) && cat.getName().getString().equals(initialName),
+                                "registration truncates the existing name on both the record and the animal");
                 var legacy = PetEntry.createNew("DOGLEGACY", UUID.randomUUID(), player.getUUID());
                 var legacyNbt = (CompoundTag) PetEntry.CODEC.encodeStart(NbtOps.INSTANCE, legacy).getOrThrow();
                 check(!legacyNbt.contains("entityType")
@@ -633,13 +643,17 @@ public final class PoolRuntimeAudit implements DedicatedServerModInitializer {
                                 "trust management works for cats");
                 check(commands.execute("yzwc pet highlight " + catEntry.internalName(), source) == 1
                                 && cat.hasEffect(MobEffects.GLOWING), "highlight works on a loaded cat");
-                check(commands.execute(setCat + "rename MenuName", source) == 1
-                                && cat.getName().getString().equals("MenuName"), "rename updates a loaded cat");
+                String commandName = "X".repeat(31);
+                check(commands.execute(setCat + "rename " + "\"" + commandName + "🐈tail\"", source) == 1
+                                && cat.getName().getString().equals(commandName),
+                                "rename uses the same limit without splitting a surrogate pair");
                 var tag = new ItemStack(Items.NAME_TAG);
                 tag.set(DataComponents.CUSTOM_NAME, Component.literal("TagName"));
-                tag.getItem().interactLivingEntity(tag, player, cat, InteractionHand.MAIN_HAND);
-                check(state.findByEntityUUID(cat.getUUID()).orElseThrow().displayName().equals("TagName"),
-                                "vanilla name tag updates the menu name");
+                check(tag.getItem().interactLivingEntity(tag, player, cat, InteractionHand.MAIN_HAND)
+                                == InteractionResult.FAIL && tag.getCount() == 1
+                                && cat.getName().getString().equals(commandName)
+                                && state.findByEntityUUID(cat.getUUID()).orElseThrow().displayName().equals(commandName),
+                                "registered pets reject name tags without consuming them");
 
                 var snapshot = TagValueOutput.createWithContext(ProblemReporter.DISCARDING, level.registryAccess());
                 cat.saveWithoutId(snapshot);
@@ -715,6 +729,28 @@ public final class PoolRuntimeAudit implements DedicatedServerModInitializer {
                                 && level.getEntity(nautilus.getUUID()) != null
                                 && level.getEntity(shoulderPet.getUUID()) instanceof net.minecraft.world.entity.animal.parrot.Parrot,
                                 "cross-pool recall restores the original species and owner");
+                var recalledParrot = (net.minecraft.world.entity.animal.parrot.Parrot) level.getEntity(shoulderPet.getUUID());
+                player.setOnGround(true);
+                check(isParked(server, recalledParrot.getUUID()) && recalledParrot.setEntityOnShoulder(player),
+                                "recalled parrot perches before its first entity write");
+                var staleShoulder = player.getShoulderEntityLeft().copy();
+                var parrotEntry = state.findByEntityUUID(recalledParrot.getUUID()).orElseThrow();
+                var shoulderChunk = ChunkPos.containing(player.blockPosition());
+                petEntities(level).updateChunkStatus(shoulderChunk, Visibility.TRACKED);
+                check(commands.execute("yzwc pet set " + parrotEntry.internalName() + " release_life true",
+                                player.createCommandSourceStack()) == 1
+                                && state.findByEntityUUID(recalledParrot.getUUID()).isEmpty()
+                                && player.getShoulderEntityLeft().isEmpty() && level.getEntity(recalledParrot.getUUID()) == null
+                                && !PoolPets.canLoadShoulder(level, staleShoulder),
+                                "shoulder release clears the slot, rejects the stale version and waits for entity readiness");
+                ((PetShoulderAccessor) player).yzwc$setPetShoulderLeft(staleShoulder);
+                DimensionPoolManager.onPlayerJoin(player);
+                check(player.getShoulderEntityLeft().isEmpty(), "joining clears a stale player save's shoulder copy");
+                awaitPetChunk(level, player.blockPosition());
+                PoolPets.tickPendingReleases(server);
+                check(level.getEntity(recalledParrot.getUUID()) instanceof net.minecraft.world.entity.animal.parrot.Parrot wild
+                                && !wild.isTame() && wild.getOwnerReference() == null,
+                                "the matching parrot is released into the original chunk as a wild animal");
                 var returnedCat = (Cat) level.getEntity(loaded.getUUID());
                 var returnedCatEntry = state.findByEntityUUID(loaded.getUUID()).orElseThrow();
                 check(returnedCat != null && returnedCat.getOwner() == player && returnedCat.getHealth() == 6
@@ -819,6 +855,29 @@ public final class PoolRuntimeAudit implements DedicatedServerModInitializer {
                 server.saveEverything(false, true, true);
                 awaitReturnedPetSave(server, COLD_RELEASED_PET);
                 check(!isParked(server, COLD_RELEASED_PET), "a durable entity write settles the release archive");
+        }
+
+        @SuppressWarnings("null")
+        private static void stageDeadRelease(MinecraftServer server, ServerLevel origin) throws Exception {
+                var owner = connect(server, origin, UUID.randomUUID(), "PetReleaseDeath", new TestConnection(), false);
+                owner.snapTo(Vec3.atBottomCenterOf(DEAD_RELEASE_POS), 0, 0);
+                awaitPetChunk(origin, DEAD_RELEASE_POS);
+                addPet(owner, DEAD_RELEASED_PET, "AUDITRELEASEDEATH", false);
+                check(DimensionPoolManager.teleportToPool(owner, MAIN) && isParked(server, DEAD_RELEASED_PET),
+                                "wolf has a real parked snapshot");
+                awaitPetChunk(origin, DEAD_RELEASE_POS);
+                check(server.getCommands().getDispatcher().execute("yzwc pet set AUDITRELEASEDEATH release_life true",
+                                owner.createCommandSourceStack()) == 1, "release the parked wolf");
+                var wild = (Wolf) origin.getEntity(DEAD_RELEASED_PET);
+                check(wild != null && !wild.isTame() && isParked(server, DEAD_RELEASED_PET),
+                                "released wolf is still awaiting its first durable write");
+                wild.kill(origin);
+                check(!wild.isAlive() && !isParked(server, DEAD_RELEASED_PET) && !PoolPets.canLoad(origin, wild)
+                                && NbtIo.readCompressed(ModPaths.parkedPet(server, DEAD_RELEASED_PET),
+                                                NbtAccounter.uncompressedQuota()).contains("release"),
+                                "death clears the snapshot and rejects older entity copies while keeping the receipt");
+                wild.remove(net.minecraft.world.entity.Entity.RemovalReason.KILLED);
+                detach(owner);
         }
 
         @SuppressWarnings("null")
@@ -943,6 +1002,10 @@ public final class PoolRuntimeAudit implements DedicatedServerModInitializer {
                 coldPetReturn(server, end);
                 loginHallPetReturn(server, end);
                 finishColdRelease(server, end);
+                awaitPetChunk(end, DEAD_RELEASE_POS);
+                PoolPets.tickPendingReleases(server);
+                check(end.getEntity(DEAD_RELEASED_PET) == null && !isParked(server, DEAD_RELEASED_PET),
+                                "the dead released wolf is not revived after restart");
                 stagePetBackup(server, end);
         }
 

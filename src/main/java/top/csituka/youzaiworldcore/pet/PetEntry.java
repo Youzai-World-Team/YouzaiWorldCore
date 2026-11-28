@@ -43,6 +43,23 @@ public record PetEntry(
 
     public static final Identifier WOLF_TYPE = Identifier.withDefaultNamespace("wolf");
     public static final Identifier CAT_TYPE = Identifier.withDefaultNamespace("cat");
+    public static final int MAX_DISPLAY_NAME_LENGTH = 32;
+
+    public PetEntry {
+        displayName = limitDisplayName(displayName);
+    }
+
+    /** 与客户端输入框使用同一长度限制，并保留完整的 Unicode 字符。 */
+    public static String limitDisplayName(String name) {
+        int end = MAX_DISPLAY_NAME_LENGTH;
+        if (name.length() <= end) {
+            return name;
+        }
+        if (Character.isSurrogatePair(name.charAt(end - 1), name.charAt(end))) {
+            end--;
+        }
+        return name.substring(0, end);
+    }
 
     private static final DateTimeFormatter DATE_FORMATTER =
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm").withZone(ZoneId.systemDefault());
