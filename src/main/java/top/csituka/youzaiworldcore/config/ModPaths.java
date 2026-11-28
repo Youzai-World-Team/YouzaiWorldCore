@@ -217,6 +217,16 @@ public final class ModPaths {
         return server.getWorldPath(LevelResource.PLAYER_STATS_DIR);
     }
 
+    public static Path poolScoreboard(MinecraftServer server, String poolDirectory) {
+        return worldData(server, GlobalSettings.DIMENSIONAL_INVENTORIES_MODULE)
+                .resolve(poolDirectory).resolve("scoreboard.dat");
+    }
+
+    public static Path vanillaScoreboard(MinecraftServer server) {
+        return net.minecraft.world.scores.ScoreboardSaveData.TYPE.id().withSuffix(".dat")
+                .resolveAgainst(server.getWorldPath(LevelResource.DATA));
+    }
+
     public static Path overworldSavedData(MinecraftServer server, Identifier id) {
         Path dimension = DimensionType.getStorageFolder(Level.OVERWORLD, server.getWorldPath(LevelResource.ROOT));
         return id.withSuffix(".dat").resolveAgainst(dimension.resolve(DATA_DIR_NAME));

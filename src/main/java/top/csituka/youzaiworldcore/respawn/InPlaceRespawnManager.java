@@ -8,9 +8,8 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
-import top.csituka.youzaiworldcore.account.data.AccountDataStorage;
-import top.csituka.youzaiworldcore.account.data.PlayerAccount;
 import top.csituka.youzaiworldcore.dimensionalinventories.DimensionPoolManager;
+import top.csituka.youzaiworldcore.dimensionalinventories.PoolRespawnCounts;
 import top.csituka.youzaiworldcore.network.InPlaceRespawnInfoPayload;
 import top.csituka.youzaiworldcore.network.InPlaceRespawnResultPayload;
 import top.csituka.youzaiworldcore.skill.AdventureLevelManager;
@@ -21,7 +20,7 @@ import java.util.OptionalInt;
 /**
  * 原地重生的服务端权威管理器。
  * <p>
- * 负责计费、请求校验、复活后传送、账户计数与 10 秒抗性 V。
+ * 负责计费、请求校验、复活后传送、池内计数与 10 秒抗性 V。
  */
 @SuppressWarnings("null")
 public final class InPlaceRespawnManager {
@@ -41,13 +40,12 @@ public final class InPlaceRespawnManager {
      * 第一次的本次累计次数为 1，因此费用为 floor(log2(1 + 1)) + 5 = 6。
      */
     public static OptionalInt getRequiredLevel(ServerPlayer player) {
-        PlayerAccount account = AccountDataStorage.getOrCreate(
-                player.getName().getString(), player.getUUID());
-        if (account == null) {
+        OptionalInt count = PoolRespawnCounts.get(player);
+        if (count.isEmpty()) {
             DebugLogger.SERVER.warn("InPlaceRespawn", "Api 账户状态不可用，拒绝为玩家 {} 计算原地重生费用", player.getName().getString());
             return OptionalInt.empty();
         }
-        long currentUseNumber = (long) Math.max(0, account.inPlaceRespawnCount) + 1L;
+        long currentUseNumber = (long) count.getAsInt() + 1L;
         int logarithm = 63 - Long.numberOfLeadingZeros(currentUseNumber + 1L);
         return OptionalInt.of(logarithm + 5);
     }
@@ -100,9 +98,7 @@ public final class InPlaceRespawnManager {
     public static void finishRespawn(InPlaceRespawnPlayerAccess access, ServerPlayer newPlayer) {
         DebugLogger.SERVER.entering("InPlaceRespawn", "finishRespawn",
                 "player=" + newPlayer.getName().getString());
-        PlayerAccount account = AccountDataStorage.getOrCreate(
-                newPlayer.getName().getString(), newPlayer.getUUID());
-        if (account == null) {
+        if (PoolRespawnCounts.get(newPlayer).isEmpty()) {
             newPlayer.sendSystemMessage(Component.translatable(
                     "youzaiworldcore.respawn.in_place.unavailable"));
             DebugLogger.SERVER.warn("InPlaceRespawn", "Api 账户状态不可用，取消玩家 {} 的原地重生结算", newPlayer.getName().getString());
@@ -139,12 +135,10 @@ public final class InPlaceRespawnManager {
         DebugLogger.SERVER.stateChange("InPlaceRespawn", newPlayer.getName().getString(),
                 "experienceLevel", oldLevel, newPlayer.experienceLevel);
 
-        int oldCount = account.inPlaceRespawnCount;
-        account.inPlaceRespawnCount = oldCount == Integer.MAX_VALUE
-                ? Integer.MAX_VALUE : Math.max(0, oldCount) + 1;
-        AccountDataStorage.update(account);
+        int oldCount = PoolRespawnCounts.get(newPlayer).orElseThrow();
+        int newCount = PoolRespawnCounts.increment(newPlayer);
         DebugLogger.SERVER.stateChange("InPlaceRespawn", newPlayer.getName().getString(),
-                "inPlaceRespawnCount", oldCount, account.inPlaceRespawnCount);
+                "inPlaceRespawnCount", oldCount, newCount);
 
         newPlayer.addEffect(new MobEffectInstance(
                 MobEffects.RESISTANCE, RESISTANCE_DURATION_TICKS,

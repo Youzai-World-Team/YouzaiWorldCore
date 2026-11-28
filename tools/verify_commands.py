@@ -244,6 +244,9 @@ final class LifecycleProbe {
     private boolean serverInitialized;
     int common, server;
     static int commands;
+    private static final class StructureLoot {
+        static void register() {}
+    }
     private void initializeCommonRegistrations() { common++; }
     private static void registerServerCommands(Object dispatcher, Commands.CommandSelection environment) { commands++; }
 """ + method(core, "public void onInitialize()") + guard + "\n}"

@@ -18,6 +18,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.UUID;
 import java.util.regex.Pattern;
+import top.csituka.youzaiworldcore.dimensionalinventories.PoolScoreboards;
 
 enum BackupModule {
     PET(GlobalSettings.PET_MODULE),
@@ -34,6 +35,7 @@ enum BackupModule {
     private static final Pattern PLAYER_NBT = Pattern.compile(UUID_PATTERN + "\\.dat(?:_old)?");
     private static final Pattern POOL_STATE = Pattern.compile(
             "[A-Za-z0-9_-][A-Za-z0-9_.-]*/" + UUID_PATTERN + "\\.json|_recovery/" + UUID_PATTERN + "\\.return");
+    private static final Pattern POOL_SCOREBOARD = Pattern.compile("[A-Za-z0-9_-][A-Za-z0-9_.-]*/scoreboard\\.dat");
 
     final String id;
 
@@ -62,8 +64,14 @@ enum BackupModule {
                         PLAYER_JSON.asMatchPredicate()));
             }
             case DIMENSIONAL_INVENTORIES -> {
+                if (live) {
+                    PoolScoreboards.flushForBackup(server);
+                }
                 data.add("pools",
                         BackupFiles.readFiles(ModPaths.worldData(server, id), 2, POOL_STATE.asMatchPredicate()));
+                data.add("scoreboards",
+                        BackupFiles.readFiles(ModPaths.worldData(server, id), 2, POOL_SCOREBOARD.asMatchPredicate()));
+                data.add("vanilla_scoreboard", BackupFiles.readFile(ModPaths.vanillaScoreboard(server)));
                 data.add("players", BackupFiles.readFiles(ModPaths.vanillaPlayerDataDir(server), 1,
                         PLAYER_NBT.asMatchPredicate()));
             }
@@ -95,6 +103,13 @@ enum BackupModule {
                         BackupFiles.object(data.get("pools")));
                 restore.files(ModPaths.vanillaPlayerDataDir(server), 1, PLAYER_NBT.asMatchPredicate(),
                         BackupFiles.object(data.get("players")));
+                if (data.has("scoreboards")) {
+                    restore.files(ModPaths.worldData(server, id), 2, POOL_SCOREBOARD.asMatchPredicate(),
+                            BackupFiles.object(data.get("scoreboards")));
+                }
+                if (data.has("vanilla_scoreboard")) {
+                    restore.file(ModPaths.vanillaScoreboard(server), data.get("vanilla_scoreboard"));
+                }
             }
             case STATUS -> {
                 Path file = ModPaths.worldDataFile(server, id);

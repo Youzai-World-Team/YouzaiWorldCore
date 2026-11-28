@@ -4,10 +4,14 @@ import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.players.PlayerList;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.portal.TeleportTransition;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import top.csituka.youzaiworldcore.dimensionalinventories.PoolRespawn;
+import top.csituka.youzaiworldcore.dimensionalinventories.PoolScoreboards;
 
 @Mixin(PlayerList.class)
 public abstract class PlayerListPoolRespawnMixin {
@@ -17,5 +21,12 @@ public abstract class PlayerListPoolRespawnMixin {
             TeleportTransition.PostTeleportTransition postTransition, Operation<TeleportTransition> original) {
         TeleportTransition target = original.call(player, useSpawnBlock, postTransition);
         return useSpawnBlock ? target : PoolRespawn.stageLivingTransfer(player, target);
+    }
+
+    @Inject(method = "respawn", at = @At("RETURN"))
+    private void youzaiworldcore$syncPoolScoreboard(ServerPlayer oldPlayer, boolean keepAllPlayerData,
+            Entity.RemovalReason removalReason, CallbackInfoReturnable<ServerPlayer> cir) {
+        ServerPlayer player = cir.getReturnValue();
+        PoolScoreboards.sync(player, oldPlayer.level(), player.level());
     }
 }

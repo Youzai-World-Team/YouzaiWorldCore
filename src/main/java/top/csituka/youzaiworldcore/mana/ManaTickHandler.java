@@ -18,12 +18,10 @@ public class ManaTickHandler implements ServerTickEvents.StartTick {
 
     private static final ManaTickHandler INSTANCE = new ManaTickHandler();
 
-    private static int recoverTickCounter = 0;
-    private static int syncTickCounter = 0;
     private static final Map<UUID, Integer> LAST_SYNCED_MANA = new HashMap<>();
 
-    /** 每 2 tick 恢复 1 点魔力 */
-    private static final int MANA_RECOVER_INTERVAL = 2;
+    /** 每 20 tick 恢复 1 点魔力 */
+    private static final int MANA_RECOVER_INTERVAL = 20;
     /** 每 5 tick 同步一次到客户端 */
     private static final int MANA_SYNC_INTERVAL = 5;
 
@@ -32,22 +30,18 @@ public class ManaTickHandler implements ServerTickEvents.StartTick {
 
     @Override
     public void onStartTick(@NonNull MinecraftServer server) {
-        recoverTickCounter++;
-        if (recoverTickCounter >= MANA_RECOVER_INTERVAL) {
-            recoverTickCounter = 0;
-            ManaManager.getInstance().onServerTick();
+        if (server.getTickCount() % MANA_RECOVER_INTERVAL == 0) {
+            ManaManager.getInstance().recover(server);
         }
 
-        syncTickCounter++;
-        if (syncTickCounter >= MANA_SYNC_INTERVAL) {
-            syncTickCounter = 0;
+        if (server.getTickCount() % MANA_SYNC_INTERVAL == 0) {
             syncManaToClients(server);
         }
     }
 
     private void syncManaToClients(MinecraftServer server) {
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
-            int mana = ManaManager.getInstance().getMana(player.getUUID());
+            int mana = ManaManager.getInstance().getMana(player.level(), player.getUUID());
             Integer previous = LAST_SYNCED_MANA.put(player.getUUID(), mana);
             if (previous != null && previous == mana) {
                 continue;
@@ -58,7 +52,6 @@ public class ManaTickHandler implements ServerTickEvents.StartTick {
 
     public static void register() {
         ServerTickEvents.START_SERVER_TICK.register(INSTANCE);
-        ManaManager.registerEvents();
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) ->
                 LAST_SYNCED_MANA.remove(handler.getPlayer().getUUID()));
         DebugLogger.SERVER.debug("ManaTickHandler", "魔力恢复 Tick 处理器已注册");

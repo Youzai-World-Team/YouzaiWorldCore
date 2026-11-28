@@ -20,7 +20,6 @@ import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.NonNull;
 import top.csituka.youzaiworldcore.mana.ManaManager;
 import java.util.List;
-import java.util.UUID;
 import java.util.function.Consumer;
 
 @SuppressWarnings("null")
@@ -51,13 +50,7 @@ public class SkyStarStaffItem extends Item {
             return InteractionResult.SUCCESS;
         }
 
-        UUID playerId = player.getUUID();
-        int mana = ManaManager.getInstance().getMana(playerId);
-        if (mana < MANA_COST) {
-            return InteractionResult.FAIL;
-        }
-
-        if (!ManaManager.getInstance().consumeMana(playerId, MANA_COST)) {
+        if (!ManaManager.getInstance().consumeMana((ServerLevel) level, player.getUUID(), MANA_COST)) {
             return InteractionResult.FAIL;
         }
 

@@ -30,6 +30,10 @@ final class DimensionPoolSettings {
     static Optional<DimensionPool> getPoolByDimension(String dimension) {
         return Optional.ofNullable(POOLS.get(dimension)).map(DimensionPool::new);
     }
+
+    static String statePoolId(net.minecraft.resources.ResourceKey<net.minecraft.world.level.Level> dimension) {
+        return POOLS.getOrDefault(dimension.identifier().toString(), UNASSIGNED_POOL_ID);
+    }
 }
 
 record DimensionPool(String id) {}

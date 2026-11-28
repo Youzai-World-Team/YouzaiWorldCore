@@ -8,7 +8,7 @@ import net.minecraft.world.level.storage.TagValueOutput;
 import top.csituka.youzaiworldcore.util.LogValues;
 
 import com.mojang.datafixers.DataFixer;
-import net.minecraft.core.Holder;
+import com.google.gson.JsonObject;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
@@ -72,6 +72,7 @@ public final class PlayerStateData {
     private int score;
 
     private List<SavedEffect> effects;
+    private PoolPlayerState playerState;
 
     public PlayerStateData() {
         this.mainInventory = new ArrayList<>();
@@ -104,6 +105,7 @@ public final class PlayerStateData {
         data.yRot = player.getYRot();
         data.xRot = player.getXRot();
         data.gameMode = player.gameMode().getName();
+        data.playerState = PoolPlayerState.capture(player);
 
         HolderLookup.Provider lookup = getLookup(player);
         data.mainInventory = serializeItemList(player.getInventory().getNonEquipmentItems(), lookup);
@@ -175,9 +177,6 @@ public final class PlayerStateData {
         }
 
         // — 状态 —
-        DebugLogger.SERVER.debugStateChange("PlayerState", player.getName().getString(), "health", this.health);
-        player.setHealth(this.health > 0 ? this.health : player.getMaxHealth());
-        player.setAbsorptionAmount(this.absorption);
         DebugLogger.SERVER.debugStateChange("PlayerState", player.getName().getString(), "foodLevel", this.foodLevel);
         player.getFoodData().setFoodLevel(this.foodLevel);
         DebugLogger.SERVER.debugStateChange("PlayerState", player.getName().getString(), "saturation", this.saturation);
@@ -203,6 +202,10 @@ public final class PlayerStateData {
                 }
             }
         }
+        // 最大生命和吸收上限受装备与状态效果影响。
+        DebugLogger.SERVER.debugStateChange("PlayerState", player.getName().getString(), "health", this.health);
+        player.setHealth(this.health > 0 ? this.health : player.getMaxHealth());
+        player.setAbsorptionAmount(this.absorption);
 
         DebugLogger.SERVER.debug("PlayerState", "应用玩家状态: {} 生命={} 饥饿={} 经验={}", player.getName().getString(), LogValues.decimal(this.health, 1), this.foodLevel, this.experienceLevel);
         DebugLogger.SERVER.exiting("PlayerState", "applyToPlayer");
@@ -276,6 +279,10 @@ public final class PlayerStateData {
         return mode;
     }
 
+    PoolPlayerState poolPlayerState() {
+        return playerState;
+    }
+
     // ===== 位置 =====
 
     public String getDimension() { return dimension; }
@@ -288,6 +295,26 @@ public final class PlayerStateData {
     boolean hasValidPosition() {
         return Double.isFinite(x) && Double.isFinite(y) && Double.isFinite(z)
                 && Float.isFinite(yRot) && Float.isFinite(xRot);
+    }
+
+    /** 防止缺失字段的 JSON 被当作新池的默认状态并清空玩家物品。 */
+    boolean hasCompleteSavedState(JsonObject document) {
+        if (dimension == null || Identifier.tryParse(dimension) == null || !hasValidPosition()
+                || !savedNumber(document, "x") || !savedNumber(document, "y") || !savedNumber(document, "z")
+                || !savedNumber(document, "health") || !Float.isFinite(health)
+                || !savedNumber(document, "foodLevel") || !savedNumber(document, "experienceLevel")) {
+            return false;
+        }
+        return validSavedItems(mainInventory, 36) && validSavedItems(armorInventory, 4)
+                && validSavedItems(enderChestInventory, 27);
+    }
+
+    private static boolean validSavedItems(List<String> items, int minimumSlots) {
+        return items != null && items.size() >= minimumSlots && items.stream().allMatch(Objects::nonNull);
+    }
+
+    private static boolean savedNumber(JsonObject document, String key) {
+        return document.get(key) instanceof com.google.gson.JsonPrimitive value && value.isNumber();
     }
 
     // ===== ItemStack 序列化（SNBT 字符串方式，确保 Gson 兼容） =====
@@ -432,9 +459,9 @@ public final class PlayerStateData {
 
         public MobEffectInstance toEffect() {
             Identifier id = Identifier.parse(this.effectId);
-            var effectOpt = net.minecraft.core.registries.BuiltInRegistries.MOB_EFFECT.getOptional(id);
+            var effectOpt = net.minecraft.core.registries.BuiltInRegistries.MOB_EFFECT.get(id);
             if (effectOpt.isEmpty()) return null;
-            return new MobEffectInstance(Holder.direct(effectOpt.get()), this.duration, this.amplifier,
+            return new MobEffectInstance(effectOpt.get(), this.duration, this.amplifier,
                     this.ambient, this.showParticles, this.showIcon);
         }
     }

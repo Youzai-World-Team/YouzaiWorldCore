@@ -68,7 +68,6 @@ public final class PoolRespawnPoints {
 
     @SuppressWarnings("null")
     private static String poolId(ResourceKey<Level> dimension) {
-        return DimensionPoolSettings.getPoolByDimension(dimension.identifier().toString())
-                .map(DimensionPool::id).orElse(DimensionPoolSettings.UNASSIGNED_POOL_ID);
+        return DimensionPoolSettings.statePoolId(dimension);
     }
 }

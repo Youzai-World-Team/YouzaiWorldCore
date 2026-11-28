@@ -2,6 +2,7 @@ package top.csituka.youzaiworldcore.dimensionalinventories;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonObject;
 import net.minecraft.nbt.NbtIo;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -204,7 +205,7 @@ public final class DimensionPoolManager {
         }
 
         TeleportTarget target = determineTeleportTarget(player, targetPool, targetState, fallback);
-        Component failure = transferPlayer(player, poolId(sourcePool), targetState, targetPool.gameMode(),
+        Component failure = transferPlayer(player, poolId(sourcePool), target.level(), targetState, targetPool.gameMode(),
                 () -> target.move(player), () -> target.hasArrived(player));
         if (failure != null) {
             sendTeleportMessage(player, feedback, failure);
@@ -244,7 +245,7 @@ public final class DimensionPoolManager {
             if (targetPool == null && targetState != null) {
                 mode = targetState.savedGameMode(mode);
             }
-            Component failure = transferPlayer(player, originId, targetState, mode,
+            Component failure = transferPlayer(player, originId, transition.newLevel(), targetState, mode,
                     () -> vanilla.get() == player, () -> player.level() == transition.newLevel());
             if (failure == null) {
                 return player;
@@ -269,9 +270,11 @@ public final class DimensionPoolManager {
                 .equals(DimensionPoolSettings.getPoolByDimension(destination.dimension().identifier().toString()));
     }
 
-    private static Component transferPlayer(ServerPlayer player, String originId, PlayerStateData targetState,
+    private static Component transferPlayer(ServerPlayer player, String originId, ServerLevel targetLevel,
+                                            PlayerStateData targetState,
                                             GameType mode, BooleanSupplier move, BooleanSupplier arrived) {
-        if (!player.isAlive() || TELEPORT_IN_PROGRESS.contains(player.getUUID()) || isRecoveryPending(player)) {
+        if (!player.isAlive() || TELEPORT_IN_PROGRESS.contains(player.getUUID()) || isRecoveryPending(player)
+                || !PoolScoreboards.isAvailable(targetLevel)) {
             return Component.translatable("screen.youzaiworldcore.world_menu.failed");
         }
 
@@ -293,6 +296,9 @@ public final class DimensionPoolManager {
             try {
                 writeVanillaPlayerState(player);
                 writePlayerState(getPlayerDataFile(server, originId, player.getUUID().toString()), backup);
+                // 原版传送包会引用最近死亡点，发送前应用目标池的字段。
+                PoolPlayerState.apply(player, targetState == null ? null : targetState.poolPlayerState(),
+                        targetLevel.dimension());
                 if (move.getAsBoolean() && arrived.getAsBoolean()) {
                     applyPoolState(player, targetState, mode);
                     if (arrived.getAsBoolean()) {
@@ -303,13 +309,13 @@ public final class DimensionPoolManager {
             } catch (IOException | RuntimeException error) {
                 LOGGER.error("玩家 {} 的维度池切换失败", player.getScoreboardName(), error);
             }
-            if (origin.restore(player)) {
-                try {
+            try {
+                if (origin.restore(player)) {
                     finishTransaction(player);
                     return Component.translatable("screen.youzaiworldcore.world_menu.failed");
-                } catch (IOException | RuntimeException error) {
-                    LOGGER.error("完成玩家 {} 的回滚存档失败", player.getScoreboardName(), error);
                 }
+            } catch (IOException | RuntimeException error) {
+                LOGGER.error("完成玩家 {} 的回滚存档失败", player.getScoreboardName(), error);
             }
             recordRecovery(player, backup);
             return Component.translatable("youzaiworldcore.message.diminv.rollback_failed");
@@ -400,11 +406,11 @@ public final class DimensionPoolManager {
     }
 
     @FunctionalInterface
-    private interface StateWriter {
+    interface StateWriter {
         void write(Path path) throws IOException;
     }
 
-    private static void writeAtomically(Path file, StateWriter writer) throws IOException {
+    static void writeAtomically(Path file, StateWriter writer) throws IOException {
         Files.createDirectories(file.getParent());
         Path temporary = Files.createTempFile(file.getParent(), ".player-state-", ".tmp");
         try {
@@ -428,8 +434,9 @@ public final class DimensionPoolManager {
         } catch (NoSuchFileException ignored) {
             return null;
         }
-        PlayerStateData data = GSON.fromJson(json, PlayerStateData.class);
-        if (data == null) {
+        JsonObject document = GSON.fromJson(json, JsonObject.class);
+        PlayerStateData data = document == null ? null : GSON.fromJson(document, PlayerStateData.class);
+        if (data == null || !data.hasCompleteSavedState(document)) {
             throw new IOException("无效的维度池玩家存档：" + file);
         }
         return data;
@@ -459,7 +466,7 @@ public final class DimensionPoolManager {
             }
             GameType mode = state == null ? pool.gameMode() : state.savedGameMode(pool.gameMode());
             TeleportTarget destination = target;
-            return transferPlayer(player, poolId(sourcePool), state, mode,
+            return transferPlayer(player, poolId(sourcePool), destination.level(), state, mode,
                     () -> destination.move(player), () -> destination.hasArrived(player)) == null;
         } catch (IOException | RuntimeException error) {
             LOGGER.error("玩家 {} 死亡后无法恢复生存池存档", player.getScoreboardName(), error);
@@ -617,6 +624,9 @@ public final class DimensionPoolManager {
         var target = savedTarget(getServer(player), null, state);
         try {
             if (target != null && withTeleportGuard(player.getUUID(), () -> {
+                if (state.poolPlayerState() != null) {
+                    PoolPlayerState.apply(player, state.poolPlayerState(), target.level().dimension());
+                }
                 if (!target.hasArrived(player) && !target.move(player)) {
                     return false;
                 }

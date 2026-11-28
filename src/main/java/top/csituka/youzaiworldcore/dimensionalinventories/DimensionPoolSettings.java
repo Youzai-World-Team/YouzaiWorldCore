@@ -4,7 +4,10 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.reflect.TypeToken;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.core.GlobalPos;
 import net.minecraft.world.level.GameType;
+import net.minecraft.world.level.Level;
 import top.csituka.youzaiworldcore.config.ConfigSection;
 import top.csituka.youzaiworldcore.config.GlobalSettings;
 import top.csituka.youzaiworldcore.util.DebugLogger;
@@ -35,6 +38,15 @@ public final class DimensionPoolSettings {
 
     /** 隐藏池：登录大厅池包含的维度（本项目注册的账号隔离维度） */
     private static final String LOGIN_HALL_DIMENSION = "youzaiworldcore:login_hall";
+
+    public static String statePoolId(ResourceKey<Level> dimension) {
+        return DIMENSION_TO_POOL.getOrDefault(dimension.identifier().toString(), UNASSIGNED_POOL_ID);
+    }
+
+    public static Optional<GlobalPos> deathLocationInPool(Optional<GlobalPos> location, ResourceKey<Level> dimension) {
+        String pool = statePoolId(dimension);
+        return location.filter(pos -> statePoolId(pos.dimension()).equals(pool));
+    }
 
     /** 隐藏池 ID 集合：这些池仅存在于内存（内部使用），不写入配置文件、不出现在命令列表/补全中 */
     private static final Set<String> HIDDEN_POOL_IDS = Set.of(HIDDEN_LOGIN_HALL_POOL_ID);

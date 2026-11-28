@@ -18,7 +18,7 @@ import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.NonNull;
 import top.csituka.youzaiworldcore.mana.ManaManager;
 import java.util.List;
-import java.util.UUID;
+import net.minecraft.server.level.ServerLevel;
 import java.util.function.Consumer;
 
 @SuppressWarnings("null")
@@ -59,8 +59,7 @@ public class FlameStaffItem extends Item {
             return InteractionResult.CONSUME;
         }
 
-        UUID playerId = player.getUUID();
-        int mana = ManaManager.getInstance().getMana(playerId);
+        int mana = ManaManager.getInstance().getMana((ServerLevel) level, player.getUUID());
         if (mana < MANA_COST) {
             return InteractionResult.FAIL;
         }
@@ -75,12 +74,6 @@ public class FlameStaffItem extends Item {
             return false;
         }
 
-        UUID playerId = player.getUUID();
-        int mana = ManaManager.getInstance().getMana(playerId);
-        if (mana < MANA_COST) {
-            return false;
-        }
-
         // 计算实际蓄力时间（已使用的 tick 数 = getUseDuration - timeCharged）
         int chargeTicks = Math.min(MAX_CHARGE_TICKS, getUseDuration(stack, livingEntity) - timeCharged);
         if (chargeTicks < 3) {
@@ -88,7 +81,9 @@ public class FlameStaffItem extends Item {
             return false;
         }
 
-        ManaManager.getInstance().consumeMana(playerId, MANA_COST);
+        if (!ManaManager.getInstance().consumeMana((ServerLevel) level, player.getUUID(), MANA_COST)) {
+            return false;
+        }
 
         float damage = BASE_DAMAGE + (chargeTicks * DAMAGE_PER_TICK);
 

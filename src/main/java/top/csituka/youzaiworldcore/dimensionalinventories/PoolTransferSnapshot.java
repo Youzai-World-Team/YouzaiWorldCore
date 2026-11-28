@@ -31,6 +31,7 @@ final class PoolTransferSnapshot {
     private final List<MobEffectInstance> effects;
     private final float health, absorption, saturation, exhaustion, experienceProgress;
     private final int foodLevel, experienceLevel, totalExperience, score;
+    private final PoolPlayerState playerState;
 
     @SuppressWarnings("null")
     PoolTransferSnapshot(ServerPlayer player) {
@@ -58,11 +59,13 @@ final class PoolTransferSnapshot {
         experienceProgress = player.experienceProgress;
         totalExperience = player.totalExperience;
         score = player.getScore();
+        playerState = PoolPlayerState.capture(player);
     }
 
     /** 独立尝试恢复位置、模式和装备，某一步异常时仍恢复其余状态。 */
     @SuppressWarnings("null")
     boolean restore(ServerPlayer player) {
+        PoolPlayerState.apply(player, playerState, level.dimension());
         if (!atOrigin(player)) {
             try {
                 player.teleportTo(level, position.x, position.y, position.z, Set.of(), yaw, pitch, true);
