@@ -7,11 +7,13 @@ import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.feature.ModelFeatureRenderer.CrumblingOverlay;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
+import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.Identifier;
+import net.minecraft.util.LightCoordsUtil;
 import net.minecraft.world.phys.Vec3;
 import top.csituka.youzaiworldcore.block.entity.TeleportAnchorBlockEntity;
-import top.csituka.youzaiworldcore.client.renderer.CustomRenderTypes;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
 /**
@@ -115,16 +117,9 @@ public class TeleportAnchorBlockEntityRenderer
     @Override
     public void submit(TeleportAnchorBlockEntityRenderState state, PoseStack matrices,
                        SubmitNodeCollector queue, CameraRenderState cameraState) {
-        boolean activated = state.isActivatedByMe();
-        Identifier texture = activated ? TEXTURE_ACTIVE : TEXTURE_INACTIVE;
-
-        var renderType = CustomRenderTypes.TP_ANCHOR.apply(texture);
-
-        matrices.pushPose();
-        queue.submitCustomGeometry(matrices, renderType, (pose, consumer) -> {
-            addPillar(consumer, pose, 0, 10);
-        });
-        matrices.popPose();
+        Identifier texture = state.isActivatedByMe() ? TEXTURE_ACTIVE : TEXTURE_INACTIVE;
+        // 使用 Iris 在主渲染和阴影阶段均支持的原版不透明管线。
+        queue.submitCustomGeometry(matrices, RenderTypes.entitySolid(texture), TeleportAnchorBlockEntityRenderer::addPillar);
     }
 
     // ---- 石柱几何体 ----
@@ -140,13 +135,12 @@ public class TeleportAnchorBlockEntityRenderer
      * </ul>
      * 每面 UV 与几何面等比例，游戏内无拉伸。石柱总高 2.0 格，底座满格 16x16。
      */
-    private static void addPillar(VertexConsumer consumer, PoseStack.Pose pose, int lu, int lv) {
+    private static void addPillar(PoseStack.Pose pose, VertexConsumer consumer) {
 
         // 1. 底座 Plinth — 满格 [0, 0, 0] → [16, 4, 16]
         addBox(consumer, pose,
                 0.0000f, 0.0000f, 0.0000f,
                 1.0000f, 0.2500f, 1.0000f,
-                lu, lv,
                 PLINTH_NORTH, PLINTH_SOUTH, PLINTH_WEST, PLINTH_EAST,
                 TOP_BOTTOM_UV, TOP_BOTTOM_UV);
 
@@ -154,7 +148,6 @@ public class TeleportAnchorBlockEntityRenderer
         addBox(consumer, pose,
                 0.2500f, 0.2500f, 0.2500f,
                 0.7500f, 1.5000f, 0.7500f,
-                lu, lv,
                 SHAFT_NORTH, SHAFT_SOUTH, SHAFT_WEST, SHAFT_EAST,
                 TOP_BOTTOM_UV, TOP_BOTTOM_UV);
 
@@ -162,7 +155,6 @@ public class TeleportAnchorBlockEntityRenderer
         addBox(consumer, pose,
                 0.1875f, 1.5000f, 0.1875f,
                 0.8125f, 1.6875f, 0.8125f,
-                lu, lv,
                 CAPITAL_NORTH, CAPITAL_SOUTH, CAPITAL_WEST, CAPITAL_EAST,
                 TOP_BOTTOM_UV, TOP_BOTTOM_UV);
 
@@ -170,7 +162,6 @@ public class TeleportAnchorBlockEntityRenderer
         addBox(consumer, pose,
                 0.2500f, 1.6875f, 0.2500f,
                 0.7500f, 2.0000f, 0.7500f,
-                lu, lv,
                 ABACUS_NORTH, ABACUS_SOUTH, ABACUS_WEST, ABACUS_EAST,
                 TOP_BOTTOM_UV, TOP_BOTTOM_UV);
     }
@@ -197,38 +188,37 @@ public class TeleportAnchorBlockEntityRenderer
     private static void addBox(VertexConsumer consumer, PoseStack.Pose pose,
                                float x1, float y1, float z1,
                                float x2, float y2, float z2,
-                               int lu, int lv,
                                FaceUv north, FaceUv south, FaceUv west, FaceUv east,
                                FaceUv down, FaceUv up) {
         // 北面 (z=z1) 法线 -Z —— uMin 在 +X(东) 侧
         addFace(consumer, pose,
                 x2, y2, z1,   x2, y1, z1,   x1, y1, z1,   x1, y2, z1,
-                0, 0, -1, lu, lv,
+                0, 0, -1,
                 north.uMin, north.vMin,   north.uMin, north.vMax,   north.uMax, north.vMax,   north.uMax, north.vMin);
         // 南面 (z=z2) 法线 +Z —— uMin 在 -X(西) 侧
         addFace(consumer, pose,
                 x1, y2, z2,   x1, y1, z2,   x2, y1, z2,   x2, y2, z2,
-                0, 0, 1, lu, lv,
+                0, 0, 1,
                 south.uMin, south.vMin,   south.uMin, south.vMax,   south.uMax, south.vMax,   south.uMax, south.vMin);
         // 西面 (x=x1) 法线 -X —— uMin 在 -Z(北) 侧
         addFace(consumer, pose,
                 x1, y2, z1,   x1, y1, z1,   x1, y1, z2,   x1, y2, z2,
-                -1, 0, 0, lu, lv,
+                -1, 0, 0,
                 west.uMin, west.vMin,   west.uMin, west.vMax,   west.uMax, west.vMax,   west.uMax, west.vMin);
         // 东面 (x=x2) 法线 +X —— uMin 在 +Z(南) 侧
         addFace(consumer, pose,
                 x2, y2, z2,   x2, y1, z2,   x2, y1, z1,   x2, y2, z1,
-                1, 0, 0, lu, lv,
+                1, 0, 0,
                 east.uMin, east.vMin,   east.uMin, east.vMax,   east.uMax, east.vMax,   east.uMax, east.vMin);
         // 底面 (y=y1) 法线 -Y —— uMin 在 -X(西) 侧，vMin 在 +Z(南) 侧
         addFace(consumer, pose,
                 x1, y1, z2,   x1, y1, z1,   x2, y1, z1,   x2, y1, z2,
-                0, -1, 0, lu, lv,
+                0, -1, 0,
                 down.uMin, down.vMin,   down.uMin, down.vMax,   down.uMax, down.vMax,   down.uMax, down.vMin);
         // 顶面 (y=y2) 法线 +Y —— uMin 在 -X(西) 侧，vMin 在 -Z(北) 侧
         addFace(consumer, pose,
                 x1, y2, z1,   x1, y2, z2,   x2, y2, z2,   x2, y2, z1,
-                0, 1, 0, lu, lv,
+                0, 1, 0,
                 up.uMin, up.vMin,   up.uMin, up.vMax,   up.uMax, up.vMax,   up.uMax, up.vMin);
     }
 
@@ -239,18 +229,21 @@ public class TeleportAnchorBlockEntityRenderer
                                 float x3, float y3, float z3,
                                 float x4, float y4, float z4,
                                 float nx, float ny, float nz,
-                                int lu, int lv,
                                 float u1, float v1,
                                 float u2, float v2,
                                 float u3, float v3,
                                 float u4, float v4) {
         consumer.addVertex(pose, x1, y1, z1).setColor(255, 255, 255, 255)
-                .setUv(u1, v1).setUv1(0, 10).setNormal(nx, ny, nz).setUv2(lu, lv);
+                .setUv(u1, v1).setOverlay(OverlayTexture.NO_OVERLAY)
+                .setLight(LightCoordsUtil.FULL_BRIGHT).setNormal(nx, ny, nz);
         consumer.addVertex(pose, x2, y2, z2).setColor(255, 255, 255, 255)
-                .setUv(u2, v2).setUv1(0, 10).setNormal(nx, ny, nz).setUv2(lu, lv);
+                .setUv(u2, v2).setOverlay(OverlayTexture.NO_OVERLAY)
+                .setLight(LightCoordsUtil.FULL_BRIGHT).setNormal(nx, ny, nz);
         consumer.addVertex(pose, x3, y3, z3).setColor(255, 255, 255, 255)
-                .setUv(u3, v3).setUv1(0, 10).setNormal(nx, ny, nz).setUv2(lu, lv);
+                .setUv(u3, v3).setOverlay(OverlayTexture.NO_OVERLAY)
+                .setLight(LightCoordsUtil.FULL_BRIGHT).setNormal(nx, ny, nz);
         consumer.addVertex(pose, x4, y4, z4).setColor(255, 255, 255, 255)
-                .setUv(u4, v4).setUv1(0, 10).setNormal(nx, ny, nz).setUv2(lu, lv);
+                .setUv(u4, v4).setOverlay(OverlayTexture.NO_OVERLAY)
+                .setLight(LightCoordsUtil.FULL_BRIGHT).setNormal(nx, ny, nz);
     }
 }
