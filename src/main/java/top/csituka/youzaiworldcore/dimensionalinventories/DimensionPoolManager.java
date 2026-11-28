@@ -15,6 +15,7 @@ import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.portal.TeleportTransition;
 import net.minecraft.world.level.storage.TagValueOutput;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.entity.animal.wolf.Wolf;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 import top.csituka.youzaiworldcore.account.util.AuthPlayerHelper;
 import top.csituka.youzaiworldcore.config.ModPaths;
@@ -27,6 +28,8 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Collections;
 import java.util.WeakHashMap;
@@ -281,8 +284,10 @@ public final class DimensionPoolManager {
         MinecraftServer server = getServer(player);
         PoolTransferSnapshot origin;
         PlayerStateData backup;
+        List<Wolf> departingPets;
         try {
             PoolRespawn.settleInventoryMenu(player);
+            departingPets = PoolPets.departingPets(player, originId);
             origin = new PoolTransferSnapshot(player);
             backup = PlayerStateData.fromPlayer(player);
             // 在修改池存档或移动玩家之前，先留下供下次启动恢复的源状态。
@@ -293,6 +298,7 @@ public final class DimensionPoolManager {
         }
 
         return withTeleportGuard(player.getUUID(), () -> {
+            boolean switched = false;
             try {
                 writeVanillaPlayerState(player);
                 writePlayerState(getPlayerDataFile(server, originId, player.getUUID().toString()), backup);
@@ -303,11 +309,19 @@ public final class DimensionPoolManager {
                     applyPoolState(player, targetState, mode);
                     if (arrived.getAsBoolean()) {
                         finishTransaction(player);
-                        return null;
+                        switched = true;
                     }
                 }
             } catch (IOException | RuntimeException error) {
                 LOGGER.error("玩家 {} 的维度池切换失败", player.getScoreboardName(), error);
+            }
+            if (switched) {
+                try {
+                    PoolPets.afterTransfer(player, originId, departingPets);
+                } catch (RuntimeException error) {
+                    LOGGER.error("玩家 {} 已切换维度池，宠物处理失败", player.getScoreboardName(), error);
+                }
+                return null;
             }
             try {
                 if (origin.restore(player)) {
@@ -575,6 +589,10 @@ public final class DimensionPoolManager {
         } catch (IOException | RuntimeException error) {
             LOGGER.error("读取玩家 {} 的回滚档案失败", player.getScoreboardName(), error);
             player.connection.disconnect(Component.translatable("youzaiworldcore.message.diminv.rollback_failed"));
+            return;
+        }
+        if (!hasSurvivalReturn(player)) {
+            PoolPets.restore(player);
         }
     }
 
@@ -582,12 +600,18 @@ public final class DimensionPoolManager {
     public static void tickRecovery(MinecraftServer server) {
         PoolRespawn.tickPendingRespawns(server);
         var recoveries = RECOVERIES.get(server);
-        if (recoveries != null) {
+        if (recoveries != null && !recoveries.isEmpty()) {
+            List<ServerPlayer> recovered = new ArrayList<>();
             recoveries.entrySet().removeIf(entry -> {
                 ServerPlayer player = server.getPlayerList().getPlayer(entry.getKey());
-                return player != null && PoolRespawn.isConnectionReady(player) && canRecover(player)
-                        && recoverPlayer(player, entry.getValue());
+                if (player == null || !PoolRespawn.isConnectionReady(player) || !canRecover(player)
+                        || !recoverPlayer(player, entry.getValue())) {
+                    return false;
+                }
+                recovered.add(player);
+                return true;
             });
+            recovered.stream().filter(player -> !hasSurvivalReturn(player)).forEach(PoolPets::restore);
         }
         var returns = SURVIVAL_RETURNS.get(server);
         if (returns != null && server.getTickCount() % 20 == 0) {

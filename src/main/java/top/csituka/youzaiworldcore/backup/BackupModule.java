@@ -2,6 +2,8 @@ package top.csituka.youzaiworldcore.backup;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
+import net.minecraft.nbt.NbtAccounter;
+import net.minecraft.nbt.NbtIo;
 import net.minecraft.server.MinecraftServer;
 import top.csituka.youzaiworldcore.config.GlobalSettings;
 import top.csituka.youzaiworldcore.config.ModPaths;
@@ -33,6 +35,7 @@ enum BackupModule {
     private static final String UUID_PATTERN = "[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}";
     private static final Pattern PLAYER_JSON = Pattern.compile(UUID_PATTERN + "\\.json");
     private static final Pattern PLAYER_NBT = Pattern.compile(UUID_PATTERN + "\\.dat(?:_old)?");
+    private static final Pattern PARKED_PET = Pattern.compile(UUID_PATTERN + "\\.dat");
     private static final Pattern POOL_STATE = Pattern.compile(
             "[A-Za-z0-9_-][A-Za-z0-9_.-]*/" + UUID_PATTERN + "\\.json|_recovery/" + UUID_PATTERN + "\\.return");
     private static final Pattern POOL_SCOREBOARD = Pattern.compile("[A-Za-z0-9_-][A-Za-z0-9_.-]*/scoreboard\\.dat");
@@ -43,10 +46,22 @@ enum BackupModule {
         this.id = id;
     }
 
+    @SuppressWarnings("null")
     JsonObject capture(MinecraftServer server, boolean live) throws IOException {
         JsonObject data = new JsonObject();
         switch (this) {
-            case PET, TELEPORT_ANCHOR -> data.add("saved_data", BackupFiles.readFile(savedData(server)));
+            case PET -> {
+                data.add("saved_data", BackupFiles.readFile(savedData(server)));
+                JsonObject parked = new JsonObject();
+                for (Path file : BackupFiles.files(ModPaths.parkedPets(server), 1, PARKED_PET.asMatchPredicate())) {
+                    // 活跃实体的版本标记不包含狼的快照，不能用旧标记覆盖区块里的现行实体。
+                    if (NbtIo.readCompressed(file, NbtAccounter.uncompressedQuota()).contains("wolf")) {
+                        parked.add(file.getFileName().toString(), BackupFiles.readFile(file));
+                    }
+                }
+                data.add("parked_pets", parked);
+            }
+            case TELEPORT_ANCHOR -> data.add("saved_data", BackupFiles.readFile(savedData(server)));
             case SKILL -> {
                 if (live) {
                     flushSkills();
@@ -96,7 +111,18 @@ enum BackupModule {
     void prepareRestore(MinecraftServer server, JsonObject data, BackupFiles.Restore restore,
             List<Runnable> databases) throws IOException {
         switch (this) {
-            case PET, TELEPORT_ANCHOR -> restore.file(savedData(server), data.get("saved_data"));
+            case PET -> {
+                restore.file(savedData(server), data.get("saved_data"));
+                if (data.has("parked_pets")) {
+                    for (var entry : BackupFiles.object(data.get("parked_pets")).entrySet()) {
+                        if (!PARKED_PET.matcher(entry.getKey()).matches()) {
+                            throw new IOException("无效的暂存宠物备份文件名：" + entry.getKey());
+                        }
+                        restore.file(ModPaths.parkedPets(server).resolve(entry.getKey()), entry.getValue());
+                    }
+                }
+            }
+            case TELEPORT_ANCHOR -> restore.file(savedData(server), data.get("saved_data"));
             case SKILL -> restore.file(ModPaths.serverDataFile(id), data.get("skill"));
             case DIMENSIONAL_INVENTORIES -> {
                 restore.files(ModPaths.worldData(server, id), 2, POOL_STATE.asMatchPredicate(),

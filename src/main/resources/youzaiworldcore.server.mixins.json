@@ -51,6 +51,7 @@
     "doubledoors.DoorBlockMixin",
     "doubledoors.FenceGateBlockMixin",
     "pet.WolfTameMixin",
+    "pet.EntityStoragePoolPetsMixin",
     "pet.WolfBreedMixin",
     "pet.WolfModeAttackMixin",
     "pet.WolfOwnerHurtTargetGoalMixin",

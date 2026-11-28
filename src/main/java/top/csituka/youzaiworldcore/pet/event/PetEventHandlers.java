@@ -15,6 +15,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.EntityHitResult;
 import top.csituka.youzaiworldcore.pet.PetEventHandler;
+import top.csituka.youzaiworldcore.dimensionalinventories.PoolPets;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
 /**
@@ -41,6 +42,7 @@ public final class PetEventHandlers {
             return;
         }
         DebugLogger.SERVER.entering(MODULE, "register");
+        PoolPets.initialize();
 
         // ===== 交互事件（右键点击实体）=====
         registerInteractHandler();
@@ -158,7 +160,7 @@ public final class PetEventHandlers {
     private static void registerDimensionChangeHandler() {
         ServerEntityLevelChangeEvents.AFTER_PLAYER_CHANGE_LEVEL.register(
                 (ServerPlayer player, ServerLevel origin, ServerLevel destination) -> {
-                    PetEventHandler.onChangeDimension(player, destination);
+                    PetEventHandler.onChangeDimension(player, origin, destination);
                 }
         );
     }

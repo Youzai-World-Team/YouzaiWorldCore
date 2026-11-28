@@ -627,6 +627,16 @@ public class PetCommand {
 
         ServerLevel level = player.level();
         Entity entity = level.getEntity(entry.entityUUID());
+        if (!(entity instanceof Wolf)) {
+            try {
+                entity = top.csituka.youzaiworldcore.dimensionalinventories.PoolPets.releaseParked(
+                        level.getServer(), entry.entityUUID());
+            } catch (java.io.IOException | RuntimeException error) {
+                DebugLogger.SERVER.exception(MODULE, "releaseParked", error);
+                source.sendFailure(Component.translatable("youzaiworldcore.message.pet.not_loaded"));
+                return 0;
+            }
+        }
         boolean entityLoaded = entity instanceof Wolf;
 
         if (entityLoaded) {

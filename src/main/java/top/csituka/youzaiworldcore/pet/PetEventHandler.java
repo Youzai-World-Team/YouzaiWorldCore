@@ -5,6 +5,8 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.animal.wolf.Wolf;
 import net.minecraft.world.entity.player.Player;
+import top.csituka.youzaiworldcore.dimensionalinventories.DimensionPoolSettings;
+import top.csituka.youzaiworldcore.dimensionalinventories.PoolPets;
 import top.csituka.youzaiworldcore.util.DebugLogger;
 
 import java.util.*;
@@ -363,13 +365,18 @@ public final class PetEventHandler {
     // 事件 4：跨维度传送跟随
 
     /**
-     * 当玩家切换维度时，传送已加载的宠物跟随。
+     * 同池换维度时，传送本池已加载且未坐下的宠物跟随。
      *
      * @param player      切换维度的玩家
+     * @param origin      源维度
      * @param destination 目标维度
      */
     @SuppressWarnings("null")
-    public static void onChangeDimension(ServerPlayer player, ServerLevel destination) {
+    public static void onChangeDimension(ServerPlayer player, ServerLevel origin, ServerLevel destination) {
+        String pool = DimensionPoolSettings.statePoolId(origin.dimension());
+        if (!pool.equals(DimensionPoolSettings.statePoolId(destination.dimension()))) {
+            return;
+        }
         DebugLogger.SERVER.debug(MODULE, "维度变化: 玩家={}, 目标={}", player.getName().getString(), destination.dimension().identifier());
 
         PetGlobalState state = PetGlobalState.get(player.level().getServer());
@@ -382,10 +389,13 @@ public final class PetEventHandler {
         int teleported = 0;
         for (PetEntry pet : pets) {
             for (ServerLevel level : player.level().getServer().getAllLevels()) {
+                if (!pool.equals(DimensionPoolSettings.statePoolId(level.dimension()))) {
+                    continue;
+                }
                 @SuppressWarnings("null")
                 net.minecraft.world.entity.Entity entity = level.getEntity(pet.entityUUID());
                 if (entity instanceof Wolf wolf) {
-                    if (wolf.isInSittingPose()) {
+                    if (!PoolPets.canFollow(wolf)) {
                         continue;
                     }
                     @SuppressWarnings("null")

@@ -99,6 +99,14 @@ public final class ModPaths {
     public static Path serverMapDatabase() { return serverData("map_module").resolve("map.db"); }
     public static Path worldMapDatabase(MinecraftServer server) { return worldData(server, "map_module").resolve("map.db"); }
 
+    public static Path parkedPets(MinecraftServer server) {
+        return worldData(server, GlobalSettings.PET_MODULE).resolve("parked");
+    }
+
+    public static Path parkedPet(MinecraftServer server, UUID id) {
+        return parkedPets(server).resolve(id + ".dat");
+    }
+
     // ===== 服务端侧（<gameDir>/yzwc/server） =====
 
     /** 服务端存放根：{@code <gameDir>/yzwc/server} */

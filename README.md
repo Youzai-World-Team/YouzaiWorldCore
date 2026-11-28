@@ -480,6 +480,7 @@ Fabric 26.3 移植版 **3.24.1.0** 的 `stack_downgrade_tier_1/2/3` 也归入转
 - **信任系统**：主人可将其他玩家加入信任列表，被信任者可以查看列表、高亮宠物；`trust add/remove/list <玩家>`
 - **归属操作**：`rename`（重命名）、`transfer <新主人>`（转让所有权，原主人自动进入信任列表）、`release_life [force]`（放生，需二次确认）
 - **快速定位**：`highlight <内部名>` 对目标狼施加 5 秒发光效果，便于在群体中定位
+- 主人成功离开维度池后，本池已加载且未坐下的宠物会从世界移入暂存档。主人回到该池时，宠物会出现在身边。坐下和未加载的宠物留在原处。同池换维度时，原有的跟随行为照常。
 - 宠物注册表由统一玩家数据备份归档。管理员可用 `/yzwc backup list pet_module` 查看备份编号，用 `/yzwc backup restore pet_module [备份编号]` 安排还原。
 - **命令架构**：`/yzwc pet` 为**客户端命令**，客户端将参数经 `PetCommandPayload`（C→S）整体转发，服务端 `PetCommand` 持有完整 Brigadier 命令树与权限校验
 
